@@ -31,6 +31,7 @@
       teamLevel: 0,
       inventory: [],
       effects: { luckyPulls: 0 },
+      randomEventHistory: [],
       currentZone: null,
       checkpoint: null,
       gameOver: false,
@@ -72,6 +73,7 @@
       teamLevel: run.teamLevel,
       inventory: run.inventory,
       effects: run.effects,
+      randomEventHistory: run.randomEventHistory,
       currentZone: run.currentZone,
     });
     return save(run);

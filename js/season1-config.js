@@ -23,6 +23,14 @@
       trade: 10,
       random: 15,
     },
+    hiddenNodeWeights: {
+      five_v_five: 20,
+      item: 20,
+      pull_free_agents: 20,
+      pull_unlocked_teams: 15,
+      trade: 15,
+      pull_legendary: 10,
+    },
     nodeLabels: {
       start: { label: "Partenza", icon: "◆", color: "#f6c85f" },
       five_v_five: { label: "Partita 5v5", icon: "5", color: "#e74c3c" },

@@ -26,11 +26,20 @@
 
   function resolveRandomNodeType(run, node) {
     if (node.revealedType) return node.revealedType;
-    const choices = availableTypes(run, { excludeRandom: true });
+    const configuredWeights = global.SEASON1_CONFIG.hiddenNodeWeights;
+    let choices = availableTypes(run, { excludeRandom: true }).map((entry) => ({
+      type: entry.type,
+      weight: Number(configuredWeights[entry.type] || entry.weight),
+    }));
+    const lastType = (run.randomEventHistory || []).at(-1);
+    if (choices.length > 1 && lastType) {
+      choices = choices.filter((entry) => entry.type !== lastType);
+    }
     const random = global.DraftEngine.randomFromSeed(
       `${run.currentZone.seed}:${node.id}:hidden-event`
     );
     node.revealedType = weightedChoice(choices, random);
+    run.randomEventHistory = [...(run.randomEventHistory || []), node.revealedType].slice(-3);
     return node.revealedType;
   }
 

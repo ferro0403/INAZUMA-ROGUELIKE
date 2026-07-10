@@ -4,17 +4,29 @@
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
   const toastRoot = document.getElementById("toast-root");
+  const STAT_LABELS = {
+    attack: "Attacco",
+    control: "Controllo",
+    speed: "Velocità",
+    grit: "Grinta",
+    physical: "Fisico",
+    stamina: "Resistenza",
+    defense: "Difesa",
+    save: "Parata",
+  };
 
   let seasonDb = null;
   let freeAgentsDb = null;
   let freeAgentsById = new Map();
   let seasonPlayersById = new Map();
+  let playerVisualsById = new Map();
   let run = null;
   const ui = {
     selectedSquadPlayerId: null,
     activeTab: "map",
     match: null,
     pendingReward: null,
+    squadEditMode: false,
   };
 
   function escapeHtml(value) {
@@ -38,15 +50,18 @@
     modalRoot.innerHTML = "";
   }
 
-  function openModal(content, { closeable = true } = {}) {
+  function openModal(content, { closeable = true, className = "", onClose = null } = {}) {
     modalRoot.innerHTML = `
       <div class="modal-backdrop">
-        <section class="modal">
+        <section class="modal ${className}">
           ${closeable ? '<button class="modal-close" data-close-modal aria-label="Chiudi">✕</button>' : ""}
           ${content}
         </section>
       </div>`;
-    modalRoot.querySelector("[data-close-modal]")?.addEventListener("click", closeModal);
+    modalRoot.querySelector("[data-close-modal]")?.addEventListener("click", () => {
+      closeModal();
+      if (onClose) onClose();
+    });
   }
 
   function formationById(id) {
@@ -69,6 +84,7 @@
     run.inventory = Array.isArray(run.inventory) ? run.inventory : [];
     run.effects = run.effects || { luckyPulls: 0 };
     run.effects.luckyPulls = Number(run.effects.luckyPulls || 0);
+    run.randomEventHistory = Array.isArray(run.randomEventHistory) ? run.randomEventHistory : [];
     run.roster = (run.roster || []).map((entry) => ({ ...entry, equippedItem: entry.equippedItem || null }));
     run.inventory = run.inventory.map((item) => {
       const definition = global.SEASON1_CONFIG.itemPool.find((candidate) => candidate.id === item.id);
@@ -190,6 +206,40 @@
           </div>
         </div>
       </${tag}>`;
+  }
+
+  function showPlayerDetails(playerId, onClose = null) {
+    const entry = rosterEntry(playerId);
+    const player = resolvedRosterPlayer(playerId);
+    if (!entry || !player) return toast("Giocatore non disponibile");
+    const visual = playerVisualsById.get(String(playerId)) || {};
+    const fullbodyUrl = visual.fullbodyUrl || player.portraitUrl;
+    const stats = Object.entries(STAT_LABELS).map(([stat, label]) => {
+      const base = Number(player.baseStats[stat] || 0);
+      const effective = Number(player.stats[stat] || 0);
+      const bonus = effective - base;
+      return `<div class="detail-stat"><span>${label}</span><strong>${effective}${bonus > 0 ? ` <em>+${bonus}</em>` : ""}</strong></div>`;
+    }).join("");
+    openModal(`
+      <div class="player-detail-layout">
+        <section class="player-detail-visual">
+          <img class="player-fullbody" src="${escapeHtml(fullbodyUrl)}" alt="${escapeHtml(player.name)}" />
+        </section>
+        <section class="player-detail-content">
+          <p class="eyebrow">Player detail</p>
+          <h2 class="player-detail-name">${escapeHtml(player.name)}</h2>
+          <div class="player-detail-tags"><span class="role-chip">${player.position}</span><span class="role-chip">${escapeHtml(player.element || player.type)}</span><span class="role-chip">Lv ${player.displayLevel}</span></div>
+          <div class="overall-comparison">
+            <div><span>Overall attuale</span><strong>${player.overall}</strong></div>
+            <div><span>Potenziale</span><strong>${player.finalOverall}</strong></div>
+          </div>
+          <p class="detail-category">${escapeHtml(player.category)}</p>
+          <div class="detail-stats">${stats}</div>
+          ${player.equipment ? `<div class="equipped-detail"><span>Oggetto assegnato</span><strong>${escapeHtml(player.equipment.name)}</strong><small>${escapeHtml(player.equipment.description)}</small></div>` : ""}
+        </section>
+      </div>`,
+      { closeable: true, className: "player-detail-modal", onClose }
+    );
   }
 
   function renderHome() {
@@ -375,14 +425,17 @@
         <div class="content">
           <div class="section-head">
             <div><p class="eyebrow">Rosa ${run.roster.length}/${global.SEASON1_CONFIG.maxRoster}</p><h2>Gestione squadra</h2></div>
-            <select class="btn" id="formation-select" aria-label="Cambia modulo">
-              ${seasonDb.formations.eleven.map((item) => `
-                <option value="${item.id}" ${item.id === run.formationId ? "selected" : ""} ${canUseFormation(item) ? "" : "disabled"}>
-                  ${item.name}${canUseFormation(item) ? "" : " · rosa non compatibile"}
-                </option>`).join("")}
-            </select>
+            <div class="squad-controls">
+              <select class="btn" id="formation-select" aria-label="Cambia modulo">
+                ${seasonDb.formations.eleven.map((item) => `
+                  <option value="${item.id}" ${item.id === run.formationId ? "selected" : ""} ${canUseFormation(item) ? "" : "disabled"}>
+                    ${item.name}${canUseFormation(item) ? "" : " · rosa non compatibile"}
+                  </option>`).join("")}
+              </select>
+              <button class="btn ${ui.squadEditMode ? "btn-yellow" : ""}" id="toggle-squad-edit">${ui.squadEditMode ? "Termina modifiche" : "Modifica titolari"}</button>
+            </div>
           </div>
-          <p class="muted small">Seleziona un titolare e poi una riserva dello stesso ruolo per scambiarli. Non sono previste sostituzioni durante la partita.</p>
+          <p class="muted small">${ui.squadEditMode ? "Seleziona un titolare e poi una riserva dello stesso ruolo per scambiarli." : "Seleziona un giocatore per aprire la scheda con statistiche, overall e potenziale."}</p>
           <div class="squad-layout">
             <section class="pitch">
               ${rows.map((row) => `<div class="pitch-row">${row.ids.map((id) => miniPlayer(id, "lineup")).join("")}</div>`).join("")}
@@ -411,7 +464,16 @@
     });
 
     document.querySelectorAll("[data-squad-player]").forEach((button) => {
-      button.addEventListener("click", () => handleSquadSelection(button.dataset.squadPlayer));
+      button.addEventListener("click", () => {
+        ui.squadEditMode
+          ? handleSquadSelection(button.dataset.squadPlayer)
+          : showPlayerDetails(button.dataset.squadPlayer);
+      });
+    });
+    document.getElementById("toggle-squad-edit").addEventListener("click", () => {
+      ui.squadEditMode = !ui.squadEditMode;
+      ui.selectedSquadPlayerId = null;
+      renderSquad();
     });
     document.getElementById("go-map").addEventListener("click", () => {
       ensureCurrentZone();
@@ -667,13 +729,20 @@
     run.lineup = run.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id));
     run.bench = run.bench.map((id) => String(id) === outgoingId ? incomingId : String(id));
     global.RunState.save(run);
+    showTradeResult(node, incoming, nextLevel);
+  }
+
+  function showTradeResult(node, incoming, nextLevel) {
     const database = incoming.source === "season1" ? seasonDb : freeAgentsDb;
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Scambio completato</p><h2>È arrivato ${escapeHtml(incoming.player.name)}</h2></div></div>
-      <div class="candidate-grid">${playerCard(incoming.player, { level: nextLevel, database })}</div>
-      <button class="btn btn-primary" id="finish-trade">Continua</button>`,
+      <div class="trade-result-card">${playerCard(incoming.player, { level: nextLevel, database })}</div>
+      <div class="button-row"><button class="btn" id="trade-player-detail">Apri scheda</button><button class="btn btn-primary" id="finish-trade">Continua</button></div>`,
       { closeable: false }
     );
+    document.getElementById("trade-player-detail").addEventListener("click", () => {
+      showPlayerDetails(incoming.player.playerId, () => showTradeResult(node, incoming, nextLevel));
+    });
     document.getElementById("finish-trade").addEventListener("click", () => finishNonMatchNode(node, `${incoming.player.name} entra nella rosa`));
   }
 
@@ -1160,14 +1229,17 @@
 
   async function init() {
     try {
-      const [seasonResponse, freeAgentsResponse] = await Promise.all([
+      const [seasonResponse, freeAgentsResponse, visualsResponse] = await Promise.all([
         fetch("data/IE1_season_compact.json"),
         fetch("data/FREE_AGENTS_compact.json"),
+        fetch("data/PLAYER_VISUALS.json"),
       ]);
-      if (!seasonResponse.ok || !freeAgentsResponse.ok) throw new Error("Database non raggiungibili");
+      if (!seasonResponse.ok || !freeAgentsResponse.ok || !visualsResponse.ok) throw new Error("Database non raggiungibili");
+      const visualsDb = await visualsResponse.json();
       [seasonDb, freeAgentsDb] = await Promise.all([seasonResponse.json(), freeAgentsResponse.json()]);
       freeAgentsById = new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player]));
       seasonPlayersById = new Map(seasonDb.players.map((player) => [String(player.playerId), player]));
+      playerVisualsById = new Map(Object.entries(visualsDb.players || {}));
       renderHome();
     } catch (error) {
       showLoadError(error);
