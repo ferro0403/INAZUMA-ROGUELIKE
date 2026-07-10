@@ -740,15 +740,21 @@
       source: "season1",
       database: seasonDb,
       level,
-      allowSkip: false,
+      allowSkip: true,
       onPick: (player) => {
         reward.excludedIds.push(String(player.playerId));
         recruitPlayer(player, "season1", level, () => {
-          reward.remaining -= 1;
-          reward.remaining > 0 ? showNextBossReward() : finishBossVictory();
-        }, { allowCancel: false });
+          advanceBossReward();
+        }, { allowCancel: true });
       },
+      onSkip: advanceBossReward,
     });
+  }
+
+  function advanceBossReward() {
+    const reward = ui.pendingReward;
+    reward.remaining -= 1;
+    reward.remaining > 0 ? showNextBossReward() : finishBossVictory();
   }
 
   function finishBossVictory() {
