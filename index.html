@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#07152b" />
+    <title>Inazuma Roguelike — Season 1 Prototype</title>
+    <link rel="stylesheet" href="css/game.css" />
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <section class="loading-screen">
+        <div class="ball-loader">⚽</div>
+        <h1>Inazuma Roguelike</h1>
+        <p>Caricamento database…</p>
+      </section>
+    </div>
+
+    <div id="modal-root"></div>
+    <div id="toast-root" class="toast-root" aria-live="polite"></div>
+
+    <script src="js/season1-config.js"></script>
+    <script src="js/run-state.js"></script>
+    <script src="js/draft.js"></script>
+    <script src="js/map-generator.js"></script>
+    <script src="js/roguelike_progression.js"></script>
+    <script src="js/game-rules.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
