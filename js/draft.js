@@ -100,6 +100,7 @@
       playerId: id,
       source: "free_agents",
       level: 0,
+      equippedItem: null,
     }));
     run.lineup = lineup;
     run.bench = [];

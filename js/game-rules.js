@@ -37,9 +37,45 @@
     return changed;
   }
 
+  function getTradeCandidates({ outgoingPlayer, rosterIds, freeAgents, seasonPlayers, unlockedTeamIds, teams }) {
+    if (!outgoingPlayer) return [];
+    const owned = new Set((rosterIds || []).map(String));
+    const unlocked = new Set((unlockedTeamIds || []).map(String));
+    const unlockedPlayerIds = new Set(
+      (teams || [])
+        .filter((team) => unlocked.has(String(team.teamId)))
+        .flatMap((team) => (team.playerIds || []).map(String))
+    );
+    const combined = [
+      ...(freeAgents || []).map((player) => ({ player, source: "free_agents" })),
+      ...(seasonPlayers || [])
+        .filter((player) => unlockedPlayerIds.has(String(player.playerId)))
+        .map((player) => ({ player, source: "season1" })),
+    ];
+    const unique = new Map();
+    combined.forEach((candidate) => {
+      const id = String(candidate.player.playerId);
+      if (owned.has(id)) return;
+      if (candidate.player.position !== outgoingPlayer.position) return;
+      if (Number(candidate.player.finalOverall) < Number(outgoingPlayer.finalOverall)) return;
+      if (!unique.has(id)) unique.set(id, candidate);
+    });
+    return [...unique.values()];
+  }
+
+  function applyEquipment(stats, equipment) {
+    const result = { ...stats };
+    if (equipment?.stat && Number.isFinite(Number(equipment.bonus))) {
+      result[equipment.stat] = Number(result[equipment.stat] || 0) + Number(equipment.bonus);
+    }
+    return result;
+  }
+
   global.RoguelikeRules = {
     unlockedPullLevel,
     defeatedBossRewardLevel,
     migrateDefeatedBossPlayerLevels,
+    getTradeCandidates,
+    applyEquipment,
   };
 })(globalThis);

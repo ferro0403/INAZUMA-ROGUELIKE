@@ -11,16 +11,27 @@
     return entries[entries.length - 1].type;
   }
 
-  function availableTypes(run) {
+  function availableTypes(run, options = {}) {
     const config = global.SEASON1_CONFIG;
     return Object.entries(config.nodeWeights)
       .filter(([type, weight]) => {
         if (weight <= 0 || config.disabledNodeTypes.includes(type)) return false;
+        if (options.excludeRandom && type === "random") return false;
         if (type === "pull_unlocked_teams" && run.unlockedTeamIds.length === 0) return false;
         if (type === "pull_legendary" && run.bossIndex < config.legendaryUnlockBossIndex) return false;
         return true;
       })
       .map(([type, weight]) => ({ type, weight }));
+  }
+
+  function resolveRandomNodeType(run, node) {
+    if (node.revealedType) return node.revealedType;
+    const choices = availableTypes(run, { excludeRandom: true });
+    const random = global.DraftEngine.randomFromSeed(
+      `${run.currentZone.seed}:${node.id}:hidden-event`
+    );
+    node.revealedType = weightedChoice(choices, random);
+    return node.revealedType;
   }
 
   function connectLayers(previous, next, random, edges) {
@@ -118,5 +129,6 @@
     reachableNodeIds,
     selectNode,
     completeNode,
+    resolveRandomNodeType,
   };
 })(globalThis);

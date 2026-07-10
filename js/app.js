@@ -64,6 +64,35 @@
     return run.roster.find((entry) => String(entry.playerId) === String(playerId));
   }
 
+  function ensureRunSchema() {
+    if (!run) return;
+    run.inventory = Array.isArray(run.inventory) ? run.inventory : [];
+    run.effects = run.effects || { luckyPulls: 0 };
+    run.effects.luckyPulls = Number(run.effects.luckyPulls || 0);
+    run.roster = (run.roster || []).map((entry) => ({ ...entry, equippedItem: entry.equippedItem || null }));
+    run.inventory = run.inventory.map((item) => {
+      const definition = global.SEASON1_CONFIG.itemPool.find((candidate) => candidate.id === item.id);
+      return {
+        ...(definition || item),
+        ...item,
+        instanceId: item.instanceId || `${item.id || "legacy"}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      };
+    });
+  }
+
+  function makeItemInstance(item, seedSuffix = "") {
+    return {
+      ...item,
+      instanceId: `${item.id}_${Date.now()}_${seedSuffix || Math.random().toString(36).slice(2, 8)}`,
+    };
+  }
+
+  function removeInventoryItem(instanceId) {
+    const index = run.inventory.findIndex((item) => item.instanceId === instanceId);
+    if (index < 0) return null;
+    return run.inventory.splice(index, 1)[0];
+  }
+
   function resolvedRosterPlayer(playerId) {
     const entry = rosterEntry(playerId);
     if (!entry) return null;
@@ -74,7 +103,16 @@
       Math.floor(Number(entry.level || 0)),
       database
     );
-    return { ...resolved, displayLevel: Number(entry.level || 0), source: entry.source };
+    const effectiveStats = global.RoguelikeRules.applyEquipment(resolved.stats, entry.equippedItem);
+    return {
+      ...resolved,
+      ...effectiveStats,
+      stats: effectiveStats,
+      baseStats: resolved.stats,
+      equipment: entry.equippedItem,
+      displayLevel: Number(entry.level || 0),
+      source: entry.source,
+    };
   }
 
   function hearts() {
@@ -156,6 +194,7 @@
 
   function renderHome() {
     run = global.RunState.load();
+    ensureRunSchema();
     if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) {
       global.RunState.save(run);
     }
@@ -317,6 +356,7 @@
         <img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" />
         <strong>${escapeHtml(player.name)}</strong>
         <span class="small muted">${player.position} · ${player.overall} · Lv ${player.displayLevel}</span>
+        ${player.equipment ? `<span class="small equipment-label">${escapeHtml(player.equipment.name)}</span>` : ""}
       </button>`;
   }
 
@@ -501,16 +541,20 @@
     }
     global.RunState.save(run);
 
-    if (node.type === "five_v_five" || node.type === "boss") {
-      ui.match = { nodeId, type: node.type };
+    if (node.type === "random") return resolveRandomNode(node);
+    dispatchNode(node, node.type);
+  }
+
+  function dispatchNode(node, eventType) {
+    if (eventType === "five_v_five" || eventType === "boss") {
+      ui.match = { nodeId: node.id, type: eventType };
       run.phase = "match";
       global.RunState.save(run);
       return renderMatch();
     }
-    if (node.type.startsWith("pull_")) return openPull(node);
-    if (node.type === "item") return resolveItemNode(node);
-    if (node.type === "random") return resolveRandomNode(node);
-    if (node.type === "trade") return resolveTradeNode(node);
+    if (eventType.startsWith("pull_")) return openPull(node, eventType);
+    if (eventType === "item") return resolveItemNode(node);
+    if (eventType === "trade") return resolveTradeNode(node);
   }
 
   function finishNonMatchNode(node, message) {
@@ -524,29 +568,143 @@
 
   function resolveItemNode(node) {
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}`);
-    const pool = global.SEASON1_CONFIG.itemPool;
-    const item = pool[Math.floor(random() * pool.length)];
-    run.inventory.push({ ...item, instanceId: `${item.id}_${Date.now()}` });
-    finishNonMatchNode(node, `Hai ottenuto: ${item.name}`);
+    const candidates = global.DraftEngine.shuffle(global.SEASON1_CONFIG.itemPool, random).slice(0, 3);
+    openModal(`
+      <div class="modal-head"><div><p class="eyebrow">Nodo oggetto</p><h2>Scegli un oggetto</h2><p class="muted">Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p></div></div>
+      <div class="item-grid">
+        ${candidates.map((item) => itemChoiceCard(item)).join("")}
+      </div>
+      <div class="button-row" style="margin-top:18px"><button class="btn btn-ghost" id="skip-item">Rinuncia</button></div>`,
+      { closeable: false }
+    );
+    modalRoot.querySelectorAll("[data-item-choice]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const item = candidates.find((candidate) => candidate.id === button.dataset.itemChoice);
+        receiveItem(item, node, () => finishNonMatchNode(node, `Hai ottenuto: ${item.name}`));
+      });
+    });
+    document.getElementById("skip-item").addEventListener("click", () => finishNonMatchNode(node, "Hai rinunciato all'oggetto"));
   }
 
   function resolveRandomNode(node) {
-    const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:random`);
-    if (random() < 0.55) {
-      const item = global.SEASON1_CONFIG.itemPool[Math.floor(random() * global.SEASON1_CONFIG.itemPool.length)];
-      run.inventory.push({ ...item, instanceId: `${item.id}_${Date.now()}` });
-      finishNonMatchNode(node, `Evento fortunato: ${item.name}`);
-    } else {
-      finishNonMatchNode(node, "L'evento non ha prodotto alcun effetto");
-    }
+    const revealedType = global.MapEngine.resolveRandomNodeType(run, node);
+    global.RunState.save(run);
+    const meta = global.SEASON1_CONFIG.nodeLabels[revealedType];
+    openModal(`
+      <div class="modal-head"><div><p class="eyebrow">Punto interrogativo</p><h2>${escapeHtml(meta.label)}</h2></div></div>
+      <div class="hidden-reveal" style="--reveal-color:${meta.color}"><span>${meta.icon}</span></div>
+      <p class="muted">Il contenuto è stato rivelato e non cambierà ricaricando la pagina.</p>
+      <button class="btn btn-primary" id="open-hidden-event">Continua</button>`,
+      { closeable: false }
+    );
+    document.getElementById("open-hidden-event").addEventListener("click", () => {
+      closeModal();
+      dispatchNode(node, revealedType);
+    });
   }
 
   function resolveTradeNode(node) {
+    const rosterPlayers = run.roster.map((entry) => ({
+      entry,
+      player: sourcePlayer(entry),
+      database: entry.source === "season1" ? seasonDb : freeAgentsDb,
+    }));
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">Scambio</p><h2>Scambio dello stesso ruolo</h2></div></div>
-      <p>Il sistema completo degli scambi verrà bilanciato nel prossimo passaggio. Per ora puoi proseguire senza modificare la rosa.</p>
-      <button class="btn btn-primary" id="finish-trade">Continua</button>`, { closeable: false });
-    document.getElementById("finish-trade").addEventListener("click", () => finishNonMatchNode(node, "Nodo scambio completato"));
+      <div class="modal-head"><div><p class="eyebrow">Scambio</p><h2>Scegli chi scambiare</h2><p class="muted">Riceverai un giocatore casuale dello stesso ruolo, con finalOverall uguale o superiore e un livello in più.</p></div></div>
+      <div class="player-grid">
+        ${rosterPlayers.map(({ entry, player, database }) => playerCard(player, { button: true, level: entry.level, database })).join("")}
+      </div>
+      <div class="button-row" style="margin-top:18px"><button class="btn btn-ghost" id="skip-trade">Rinuncia allo scambio</button></div>`,
+      { closeable: false }
+    );
+    modalRoot.querySelectorAll("[data-player-id]").forEach((button) => {
+      button.addEventListener("click", () => prepareTrade(node, button.dataset.playerId));
+    });
+    document.getElementById("skip-trade").addEventListener("click", () => finishNonMatchNode(node, "Hai rinunciato allo scambio"));
+  }
+
+  function prepareTrade(node, outgoingId) {
+    const outgoingEntry = rosterEntry(outgoingId);
+    const outgoingPlayer = sourcePlayer(outgoingEntry);
+    const candidates = global.RoguelikeRules.getTradeCandidates({
+      outgoingPlayer,
+      rosterIds: run.roster.map((entry) => entry.playerId),
+      freeAgents: freeAgentsDb.players,
+      seasonPlayers: seasonDb.players,
+      unlockedTeamIds: run.unlockedTeamIds,
+      teams: seasonDb.teams,
+    });
+    if (!candidates.length) {
+      toast(`Nessun ${outgoingPlayer.position} con finalOverall ${outgoingPlayer.finalOverall} o superiore disponibile`);
+      return resolveTradeNode(node);
+    }
+    const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:trade:${outgoingId}`);
+    const incoming = candidates[Math.floor(random() * candidates.length)];
+    const nextLevel = Math.min(20, Number(outgoingEntry.level || 0) + 1);
+    openModal(`
+      <div class="modal-head"><div><p class="eyebrow">Conferma scambio</p><h2>${escapeHtml(outgoingPlayer.name)}</h2></div></div>
+      <p>Riceverai un <strong>${outgoingPlayer.position}</strong> casuale con finalOverall almeno <strong>${outgoingPlayer.finalOverall}</strong>, al livello <strong>${nextLevel}</strong>.</p>
+      ${outgoingEntry.equippedItem ? `<p class="muted">${escapeHtml(outgoingEntry.equippedItem.name)} tornerà nell'inventario.</p>` : ""}
+      <div class="button-row"><button class="btn btn-danger" id="confirm-trade">Conferma</button><button class="btn" id="back-trade">Torna indietro</button></div>`,
+      { closeable: false }
+    );
+    document.getElementById("back-trade").addEventListener("click", () => resolveTradeNode(node));
+    document.getElementById("confirm-trade").addEventListener("click", () => {
+      const execute = () => executeTrade(node, outgoingEntry, incoming, nextLevel);
+      if (outgoingEntry.equippedItem && run.inventory.length >= global.SEASON1_CONFIG.maxInventory) {
+        return chooseInventoryDiscard("Libera uno spazio per recuperare l'oggetto equipaggiato", execute, () => resolveTradeNode(node));
+      }
+      execute();
+    });
+  }
+
+  function executeTrade(node, outgoingEntry, incoming, nextLevel) {
+    const outgoingId = String(outgoingEntry.playerId);
+    const incomingId = String(incoming.player.playerId);
+    const rosterIndex = run.roster.findIndex((entry) => String(entry.playerId) === outgoingId);
+    if (outgoingEntry.equippedItem) run.inventory.push(outgoingEntry.equippedItem);
+    run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null };
+    run.lineup = run.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id));
+    run.bench = run.bench.map((id) => String(id) === outgoingId ? incomingId : String(id));
+    global.RunState.save(run);
+    const database = incoming.source === "season1" ? seasonDb : freeAgentsDb;
+    openModal(`
+      <div class="modal-head"><div><p class="eyebrow">Scambio completato</p><h2>È arrivato ${escapeHtml(incoming.player.name)}</h2></div></div>
+      <div class="candidate-grid">${playerCard(incoming.player, { level: nextLevel, database })}</div>
+      <button class="btn btn-primary" id="finish-trade">Continua</button>`,
+      { closeable: false }
+    );
+    document.getElementById("finish-trade").addEventListener("click", () => finishNonMatchNode(node, `${incoming.player.name} entra nella rosa`));
+  }
+
+  function itemChoiceCard(item) {
+    return `<button class="item-card" data-item-choice="${item.id}"><span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p></button>`;
+  }
+
+  function receiveItem(item, node, done) {
+    const add = () => {
+      run.inventory.push(makeItemInstance(item, node.id));
+      global.RunState.save(run);
+      done();
+    };
+    if (run.inventory.length < global.SEASON1_CONFIG.maxInventory) return add();
+    chooseInventoryDiscard("Inventario pieno: scegli un oggetto da eliminare", add, () => resolveItemNode(node));
+  }
+
+  function chooseInventoryDiscard(title, onDiscard, onCancel) {
+    openModal(`
+      <div class="modal-head"><div><p class="eyebrow">Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p><h2>${escapeHtml(title)}</h2></div></div>
+      <div class="item-grid">${run.inventory.map((item) => `<button class="item-card danger-card" data-discard-item="${item.instanceId}"><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p></button>`).join("")}</div>
+      <div class="button-row" style="margin-top:18px"><button class="btn" id="cancel-discard">Annulla</button></div>`,
+      { closeable: false }
+    );
+    modalRoot.querySelectorAll("[data-discard-item]").forEach((button) => {
+      button.addEventListener("click", () => {
+        removeInventoryItem(button.dataset.discardItem);
+        onDiscard();
+      });
+    });
+    document.getElementById("cancel-discard").addEventListener("click", onCancel);
   }
 
   function previousBossLevel() {
@@ -563,32 +721,85 @@
       );
       return { players: seasonDb.players.filter((player) => ids.has(String(player.playerId))), source: "season1", database: seasonDb };
     }
+    const legendaryById = new Map();
+    const legendarySources = new Map();
+    freeAgentsDb.players
+      .filter((player) => global.SEASON1_CONFIG.legendaryCategories.includes(player.category))
+      .forEach((player) => {
+        legendaryById.set(String(player.playerId), player);
+        legendarySources.set(String(player.playerId), "free_agents");
+      });
+    seasonDb.players
+      .filter((player) => global.SEASON1_CONFIG.legendaryCategories.includes(player.category))
+      .forEach((player) => {
+        if (!legendaryById.has(String(player.playerId))) {
+          legendaryById.set(String(player.playerId), player);
+          legendarySources.set(String(player.playerId), "season1");
+        }
+      });
     return {
-      players: freeAgentsDb.players.filter((player) => ["Elite", "Forte"].includes(player.category)),
-      source: "free_agents",
+      players: [...legendaryById.values()],
+      source: "mixed",
+      sourceForPlayer: (player) => legendarySources.get(String(player.playerId)),
       database: freeAgentsDb,
     };
   }
 
-  function openPull(node) {
-    const pool = pullPool(node.type);
+  function selectWeightedCandidates(available, random, luckyApplied) {
+    if (!luckyApplied) return global.DraftEngine.shuffle(available, random).slice(0, 3);
+    const result = [];
+    const remaining = available.slice();
+    while (result.length < 3 && remaining.length) {
+      const weights = remaining.map((player) =>
+        1 + Number(global.SEASON1_CONFIG.categoryRanks[player.category] || 0) * global.SEASON1_CONFIG.luckyCharmWeightPerRank
+      );
+      let cursor = random() * weights.reduce((sum, weight) => sum + weight, 0);
+      let selectedIndex = 0;
+      for (let index = 0; index < weights.length; index += 1) {
+        cursor -= weights[index];
+        if (cursor <= 0) { selectedIndex = index; break; }
+      }
+      result.push(remaining.splice(selectedIndex, 1)[0]);
+    }
+    return result;
+  }
+
+  function pullCandidates(pool, node, luckyApplied) {
     const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
-    const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:pull`);
-    const candidates = global.DraftEngine.shuffle(
-      pool.players.filter((player) => !owned.has(String(player.playerId))),
-      random
-    ).slice(0, 3);
+    const excluded = new Set(node.pullState.excludedCandidateIds || []);
+    const available = pool.players.filter((player) => !owned.has(String(player.playerId)) && !excluded.has(String(player.playerId)));
+    const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:pull:${node.pullState.rerolls}`);
+    return selectWeightedCandidates(available, random, luckyApplied);
+  }
+
+  function openPull(node, pullType = node.type) {
+    const pool = pullPool(pullType);
+    if (!node.pullState) {
+      const luckyApplied = Number(run.effects.luckyPulls || 0) > 0;
+      if (luckyApplied) run.effects.luckyPulls -= 1;
+      node.pullState = { pullType, rerolls: 0, excludedCandidateIds: [], luckyApplied };
+    }
+    const candidates = pullCandidates(pool, node, node.pullState.luckyApplied);
     const level = previousBossLevel();
+    const scoutToken = run.inventory.find((item) => item.effect === "pull_reroll");
     showPlayerOffer({
-      title: global.SEASON1_CONFIG.nodeLabels[node.type].label,
-      subtitle: `Scegli 1 giocatore su 3 · Livello ${level}`,
+      title: global.SEASON1_CONFIG.nodeLabels[pullType].label,
+      subtitle: `Scegli 1 giocatore su 3 · Livello ${level}${node.pullState.luckyApplied ? " · Portafortuna attivo" : ""}`,
       candidates,
       source: pool.source,
       database: pool.database,
       level,
       allowSkip: true,
+      onReroll: scoutToken ? () => {
+        removeInventoryItem(scoutToken.instanceId);
+        node.pullState.excludedCandidateIds.push(...candidates.map((player) => String(player.playerId)));
+        node.pullState.rerolls += 1;
+        global.RunState.save(run);
+        openPull(node, pullType);
+      } : null,
       onPick: (player) => {
-        recruitPlayer(player, pool.source, level, (added) => {
+        const playerSource = pool.sourceForPlayer ? pool.sourceForPlayer(player) : pool.source;
+        recruitPlayer(player, playerSource, level, (added) => {
           finishNonMatchNode(node, added ? `${player.name} entra nella rosa` : "Hai rinunciato al nuovo giocatore");
         });
       },
@@ -602,7 +813,10 @@
       <div class="candidate-grid">
         ${options.candidates.map((player) => playerCard(player, { button: true, level: options.level, database: options.database })).join("")}
       </div>
-      ${options.allowSkip ? '<div class="button-row" style="margin-top:18px"><button class="btn btn-ghost" id="skip-offer">Rinuncia</button></div>' : ""}`,
+      <div class="button-row" style="margin-top:18px">
+        ${options.onReroll ? '<button class="btn btn-yellow" id="reroll-offer">Usa gettone scout</button>' : ""}
+        ${options.allowSkip ? '<button class="btn btn-ghost" id="skip-offer">Rinuncia</button>' : ""}
+      </div>`,
       { closeable: false }
     );
     modalRoot.querySelectorAll("[data-player-id]").forEach((button) => {
@@ -611,13 +825,14 @@
         options.onPick(player);
       });
     });
+    document.getElementById("reroll-offer")?.addEventListener("click", options.onReroll);
     document.getElementById("skip-offer")?.addEventListener("click", options.onSkip);
   }
 
   function recruitPlayer(player, source, level, done, options = {}) {
     const allowCancel = options.allowCancel !== false;
     if (run.roster.length < global.SEASON1_CONFIG.maxRoster) {
-      run.roster.push({ playerId: String(player.playerId), source, level });
+      run.roster.push({ playerId: String(player.playerId), source, level, equippedItem: null });
       run.bench.push(String(player.playerId));
       global.RunState.save(run);
       closeModal();
@@ -636,13 +851,25 @@
     modalRoot.querySelectorAll("[data-player-id]").forEach((button) => {
       button.addEventListener("click", () => {
         const removeId = String(button.dataset.playerId);
-        run.roster = run.roster.filter((entry) => String(entry.playerId) !== removeId);
-        run.bench = run.bench.filter((id) => String(id) !== removeId);
-        run.roster.push({ playerId: String(player.playerId), source, level });
-        run.bench.push(String(player.playerId));
-        global.RunState.save(run);
-        closeModal();
-        done(true);
+        const removedEntry = rosterEntry(removeId);
+        const replace = () => {
+          if (removedEntry.equippedItem) run.inventory.push(removedEntry.equippedItem);
+          run.roster = run.roster.filter((entry) => String(entry.playerId) !== removeId);
+          run.bench = run.bench.filter((id) => String(id) !== removeId);
+          run.roster.push({ playerId: String(player.playerId), source, level, equippedItem: null });
+          run.bench.push(String(player.playerId));
+          global.RunState.save(run);
+          closeModal();
+          done(true);
+        };
+        if (removedEntry.equippedItem && run.inventory.length >= global.SEASON1_CONFIG.maxInventory) {
+          return chooseInventoryDiscard(
+            "Libera uno spazio per recuperare l'oggetto equipaggiato",
+            replace,
+            () => recruitPlayer(player, source, level, done, options)
+          );
+        }
+        replace();
       });
     });
     document.getElementById("cancel-recruit")?.addEventListener("click", () => {
@@ -717,7 +944,10 @@
 
   function startBossRewards() {
     const boss = seasonDb.bossOrder[run.bossIndex];
-    ui.pendingReward = { boss, remaining: 2, excludedIds: [] };
+    const luckyApplied = Number(run.effects.luckyPulls || 0) > 0;
+    if (luckyApplied) run.effects.luckyPulls -= 1;
+    ui.pendingReward = { boss, remaining: 2, excludedIds: [], rerolls: 0, luckyApplied };
+    global.RunState.save(run);
     showNextBossReward();
   }
 
@@ -725,22 +955,28 @@
     const reward = ui.pendingReward;
     const team = seasonDb.teams.find((candidate) => String(candidate.teamId) === String(reward.boss.teamId));
     const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
-    const random = global.DraftEngine.randomFromSeed(`${run.runId}:bossReward:${run.bossIndex}:${reward.remaining}`);
-    const candidates = global.DraftEngine.shuffle(
-      team.playerIds
-        .map((id) => seasonPlayersById.get(String(id)))
-        .filter((player) => player && !owned.has(String(player.playerId)) && !reward.excludedIds.includes(String(player.playerId))),
-      random
-    ).slice(0, 3);
+    const random = global.DraftEngine.randomFromSeed(`${run.runId}:bossReward:${run.bossIndex}:${reward.remaining}:${reward.rerolls}`);
+    const available = team.playerIds
+      .map((id) => seasonPlayersById.get(String(id)))
+      .filter((player) => player && !owned.has(String(player.playerId)) && !reward.excludedIds.includes(String(player.playerId)));
+    const candidates = selectWeightedCandidates(available, random, reward.luckyApplied);
     const level = global.RoguelikeRules.defeatedBossRewardLevel(reward.boss);
+    const scoutToken = run.inventory.find((item) => item.effect === "pull_reroll");
     showPlayerOffer({
       title: `Ricompensa ${3 - reward.remaining} di 2 · ${reward.boss.teamName}`,
-      subtitle: `Scegli 1 giocatore su 3 · Livello ${level}`,
+      subtitle: `Scegli 1 giocatore su 3 · Livello ${level}${reward.luckyApplied ? " · Portafortuna attivo" : ""}`,
       candidates,
       source: "season1",
       database: seasonDb,
       level,
       allowSkip: true,
+      onReroll: scoutToken ? () => {
+        removeInventoryItem(scoutToken.instanceId);
+        reward.excludedIds.push(...candidates.map((player) => String(player.playerId)));
+        reward.rerolls += 1;
+        global.RunState.save(run);
+        showNextBossReward();
+      } : null,
       onPick: (player) => {
         reward.excludedIds.push(String(player.playerId));
         recruitPlayer(player, "season1", level, () => {
@@ -754,6 +990,8 @@
   function advanceBossReward() {
     const reward = ui.pendingReward;
     reward.remaining -= 1;
+    reward.rerolls = 0;
+    reward.luckyApplied = false;
     reward.remaining > 0 ? showNextBossReward() : finishBossVictory();
   }
 
@@ -777,20 +1015,119 @@
   }
 
   function renderInventory() {
+    ensureRunSchema();
+    const equipped = run.roster
+      .filter((entry) => entry.equippedItem)
+      .map((entry) => ({ entry, player: sourcePlayer(entry), resolved: resolvedRosterPlayer(entry.playerId), item: entry.equippedItem }));
     app.innerHTML = `
       <main class="screen">
         ${topbar("Oggetti")}
-        <div class="content narrow">
-          <div class="section-head"><div><p class="eyebrow">Inventario</p><h2>Oggetti raccolti</h2></div></div>
-          <div class="panel">
-            ${run.inventory.length ? run.inventory.map((item) => `
-              <article style="padding:12px 0;border-bottom:1px solid var(--line)"><strong>${escapeHtml(item.name)}</strong><p class="muted small">${escapeHtml(item.description)}</p></article>`).join("") : '<p class="muted">Non hai ancora raccolto oggetti.</p>'}
-            <p class="muted small" style="margin-top:18px">Gli effetti definitivi degli oggetti verranno bilanciati in seguito. Gli allenatori sono disattivati nella Season 1.</p>
+        <div class="content">
+          <div class="section-head"><div><p class="eyebrow">Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p><h2>Oggetti raccolti</h2></div></div>
+          <div class="item-grid">
+            ${run.inventory.length ? run.inventory.map((item) => inventoryItemCard(item)).join("") : '<p class="muted">Non hai ancora raccolto oggetti.</p>'}
+          </div>
+          <div class="section-head" style="margin-top:30px"><div><p class="eyebrow">Equipaggiati</p><h2>Oggetti dei giocatori</h2></div></div>
+          <div class="item-grid">
+            ${equipped.length ? equipped.map(({ entry, player, resolved, item }) => `
+              <article class="item-card static-item"><span class="item-kind">${escapeHtml(player.name)}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)} ${escapeHtml(item.stat)}: ${resolved.baseStats[item.stat]} → <strong>${resolved.stats[item.stat]}</strong></p><button class="btn btn-ghost" data-unequip-player="${entry.playerId}">Rimuovi</button></article>`).join("") : '<p class="muted">Nessun giocatore ha un oggetto equipaggiato.</p>'}
           </div>
         </div>
         ${bottomNav("inventory")}
       </main>`;
+    document.querySelectorAll("[data-use-item]").forEach((button) => button.addEventListener("click", () => useInventoryItem(button.dataset.useItem)));
+    document.querySelectorAll("[data-equip-item]").forEach((button) => button.addEventListener("click", () => chooseEquipmentPlayer(button.dataset.equipItem)));
+    document.querySelectorAll("[data-unequip-player]").forEach((button) => button.addEventListener("click", () => unequipPlayerItem(button.dataset.unequipPlayer)));
     bindBottomNav();
+  }
+
+  function inventoryItemCard(item) {
+    const action = item.kind === "equipment"
+      ? `<button class="btn btn-primary" data-equip-item="${item.instanceId}">Assegna</button>`
+      : item.effect === "pull_reroll"
+        ? '<span class="muted small">Utilizzabile durante una pull</span>'
+        : `<button class="btn btn-primary" data-use-item="${item.instanceId}">Usa</button>`;
+    return `<article class="item-card static-item"><span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p>${action}</article>`;
+  }
+
+  function useInventoryItem(instanceId) {
+    const item = run.inventory.find((candidate) => candidate.instanceId === instanceId);
+    if (!item) return;
+    if (item.effect === "player_level") return choosePlayerForConsumable(item);
+    if (item.effect === "team_level") {
+      addLevels(Number(item.amount || 0));
+      removeInventoryItem(instanceId);
+      global.RunState.save(run);
+      toast("Tutta la rosa guadagna 0,5 livello");
+      return renderInventory();
+    }
+    if (item.effect === "restore_life") {
+      if (run.lives >= global.SEASON1_CONFIG.startingLives) return toast("Hai già tutte le vite");
+      run.lives = Math.min(global.SEASON1_CONFIG.startingLives, run.lives + Number(item.amount || 1));
+      removeInventoryItem(instanceId);
+      global.RunState.save(run);
+      toast("Hai recuperato una vita");
+      return renderInventory();
+    }
+    if (item.effect === "lucky_pull") {
+      run.effects.luckyPulls += Number(item.amount || 1);
+      removeInventoryItem(instanceId);
+      global.RunState.save(run);
+      toast("Portafortuna attivo sulla prossima pull");
+      return renderInventory();
+    }
+  }
+
+  function choosePlayerForConsumable(item) {
+    openModal(`
+      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli un giocatore</h2></div></div>
+      <div class="player-grid">${run.roster.map((entry) => playerCard(sourcePlayer(entry), { button: true, level: entry.level, database: entry.source === "season1" ? seasonDb : freeAgentsDb })).join("")}</div>`,
+      { closeable: true }
+    );
+    modalRoot.querySelectorAll("[data-player-id]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const entry = rosterEntry(button.dataset.playerId);
+        entry.level = Math.min(20, Number(entry.level || 0) + Number(item.amount || 1));
+        removeInventoryItem(item.instanceId);
+        global.RunState.save(run);
+        closeModal();
+        toast(`${sourcePlayer(entry).name} sale al livello ${entry.level}`);
+        renderInventory();
+      });
+    });
+  }
+
+  function chooseEquipmentPlayer(instanceId) {
+    const item = run.inventory.find((candidate) => candidate.instanceId === instanceId);
+    if (!item) return;
+    openModal(`
+      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Assegna a un giocatore</h2><p class="muted">Ogni giocatore può avere un solo oggetto.</p></div></div>
+      <div class="player-grid">${run.roster.map((entry) => playerCard(sourcePlayer(entry), { button: true, level: entry.level, database: entry.source === "season1" ? seasonDb : freeAgentsDb })).join("")}</div>`,
+      { closeable: true }
+    );
+    modalRoot.querySelectorAll("[data-player-id]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const entry = rosterEntry(button.dataset.playerId);
+        const newEquipment = removeInventoryItem(instanceId);
+        if (entry.equippedItem) run.inventory.push(entry.equippedItem);
+        entry.equippedItem = newEquipment;
+        global.RunState.save(run);
+        closeModal();
+        toast(`${item.name} assegnato a ${sourcePlayer(entry).name}`);
+        renderInventory();
+      });
+    });
+  }
+
+  function unequipPlayerItem(playerId) {
+    const entry = rosterEntry(playerId);
+    if (!entry?.equippedItem) return;
+    if (run.inventory.length >= global.SEASON1_CONFIG.maxInventory) return toast("Inventario pieno: libera prima uno spazio");
+    run.inventory.push(entry.equippedItem);
+    entry.equippedItem = null;
+    global.RunState.save(run);
+    toast("Oggetto riportato nell'inventario");
+    renderInventory();
   }
 
   function renderGameOver() {

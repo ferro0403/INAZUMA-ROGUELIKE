@@ -17,6 +17,10 @@ CONTENUTO ATTUALE
 - Cambio modulo e scambio titolare/riserva dello stesso ruolo.
 - Percorsi casuali ramificati e persistenti.
 - Nodi 5v5, oggetto, pull, evento casuale, scambio e boss.
+- Scambi filtrati per ruolo e finalOverall, con giocatore ricevuto a +1 livello.
+- Inventario da 20, consumabili ed equipaggiamenti individuali con bonus +5.
+- Punto interrogativo che nasconde un vero nodo con probabilità proporzionali.
+- Gettone scout, portafortuna, kit medico e oggetti di allenamento funzionanti.
 - 3 vite e ripristino al checkpoint del boss corrente.
 - Progressione, due ricompense 1-su-3 dopo i boss e sblocco squadre.
 - Salvataggio automatico in localStorage.
@@ -24,7 +28,7 @@ CONTENUTO ATTUALE
 LIMITI VOLUTI DEL PROTOTIPO
 - Le partite usano pulsanti Vittoria/Sconfitta per testare la run.
 - Le grafiche e le icone sono provvisorie.
-- Gli effetti degli oggetti e il sistema scambi saranno bilanciati dopo.
+- Percentuali delle categorie e forza degli oggetti potranno essere bilanciate dopo i test.
 - Allenatori e partite secondarie 11v11 sono disattivati nella Season 1.
 
 FILE DI CONFIGURAZIONE

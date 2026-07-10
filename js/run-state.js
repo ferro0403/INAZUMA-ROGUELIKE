@@ -30,6 +30,7 @@
       unlockedTeamIds: [],
       teamLevel: 0,
       inventory: [],
+      effects: { luckyPulls: 0 },
       currentZone: null,
       checkpoint: null,
       gameOver: false,
@@ -70,6 +71,7 @@
       unlockedTeamIds: run.unlockedTeamIds,
       teamLevel: run.teamLevel,
       inventory: run.inventory,
+      effects: run.effects,
       currentZone: run.currentZone,
     });
     return save(run);

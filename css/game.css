@@ -176,6 +176,45 @@ button.player-card:hover { border-color: var(--yellow); transform: translateY(-3
 .player-title strong { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .overall { display: grid; place-items: center; min-width: 40px; height: 40px; border-radius: 50%; background: var(--yellow); color: #172033; font-weight: 950; }
 .player-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 8px; color: var(--muted); font-size: 0.78rem; }
+.equipment-label { display: block; margin-top: 5px; color: var(--yellow); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.item-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+}
+.item-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 9px;
+  min-height: 160px;
+  padding: 17px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: #0b1c37;
+  color: var(--text);
+  text-align: left;
+}
+button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px); }
+.item-card strong { font-size: 1.05rem; }
+.item-card p { color: var(--muted); font-size: .86rem; flex: 1; margin: 0; }
+.item-kind { color: var(--yellow); font-size: .7rem; font-weight: 950; letter-spacing: .1em; text-transform: uppercase; }
+.static-item { cursor: default; }
+.danger-card:hover { border-color: var(--red) !important; }
+.hidden-reveal {
+  display: grid;
+  place-items: center;
+  width: 112px;
+  height: 112px;
+  margin: 22px auto;
+  border: 6px solid rgba(255,255,255,.6);
+  border-radius: 50%;
+  background: var(--reveal-color);
+  box-shadow: 0 0 45px color-mix(in srgb, var(--reveal-color) 50%, transparent);
+  font-size: 2.8rem;
+  font-weight: 950;
+}
 
 .squad-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(260px, 1fr); gap: 18px; }
 .pitch {
