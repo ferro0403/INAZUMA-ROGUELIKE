@@ -757,8 +757,9 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .boss-match-log { max-height: 190px; }
   .boss-match-log li { grid-template-columns: 34px 24px minmax(0, 1fr); font-size: .82rem; }
   .boss-match-score { font-size: 2.4rem; }
-  .boss-match-controls { position: sticky; bottom: calc(78px + env(safe-area-inset-bottom)); z-index: 20; display: grid; }
+  .boss-match-controls { position: static; bottom: auto; z-index: auto; display: grid; align-items: stretch; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
   .boss-match-controls > .btn-yellow { min-width: 0; width: 100%; min-height: 48px; }
-  .boss-match-controls .button-row { justify-content: stretch; }
-  .boss-match-controls .button-row .btn { flex: 1 1 120px; padding: 10px; }
+  .boss-match-controls .button-row { display: grid; grid-template-columns: 1fr 1fr; justify-content: stretch; }
+  .boss-match-controls .button-row .btn { width: 100%; padding: 10px; }
+  .boss-match-controls .button-row .btn[data-nav="squad"] { grid-column: 1 / -1; }
 }
