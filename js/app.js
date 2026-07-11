@@ -27,6 +27,9 @@
     match: null,
     pendingReward: null,
     squadEditMode: false,
+    fiveVFiveSelectedSlot: null,
+    fiveVFiveRoleFilter: "all",
+    tradeSelectedPlayerId: null,
   };
 
   function escapeHtml(value) {
@@ -68,6 +71,21 @@
     return seasonDb.formations.eleven.find((formation) => formation.id === id);
   }
 
+  function fiveRoleForPlayerId(playerId) {
+    const entry = rosterEntry(playerId);
+    return entry ? sourcePlayer(entry)?.position : null;
+  }
+
+  function ensureFiveVFive() {
+    if (!run || !run.roster?.length) return null;
+    return global.FiveVFive.ensure(run, fiveRoleForPlayerId);
+  }
+
+  function fiveVFiveStatus() {
+    ensureFiveVFive();
+    return global.FiveVFive.validate(run, fiveRoleForPlayerId);
+  }
+
   function sourcePlayer(entryOrId, preferredSource) {
     const id = String(entryOrId && typeof entryOrId === "object" ? entryOrId.playerId : entryOrId);
     const source = preferredSource || (entryOrId && entryOrId.source);
@@ -86,6 +104,9 @@
     run.effects.luckyPulls = Number(run.effects.luckyPulls || 0);
     run.randomEventHistory = Array.isArray(run.randomEventHistory) ? run.randomEventHistory : [];
     run.roster = (run.roster || []).map((entry) => ({ ...entry, equippedItem: entry.equippedItem || null }));
+    run.lineup = (run.lineup || []).map(String);
+    run.bench = (run.bench || []).map(String);
+    if (run.roster.length && seasonDb && freeAgentsDb) ensureFiveVFive();
     run.inventory = run.inventory.map((item) => {
       const definition = global.SEASON1_CONFIG.itemPool.find((candidate) => candidate.id === item.id);
       return {
@@ -148,13 +169,31 @@
       </header>`;
   }
 
+  function navIcon(name) {
+    const icons = {
+      map: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5 9 4l6 2.5 5-2.5v13.5l-5 2.5-6-2.5-5 2.5V6.5Z"/><path d="M9 4v13.5M15 6.5V20"/></svg>',
+      squad: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM16 10a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM3.5 19c.7-3.2 2.4-5 4.5-5s3.8 1.8 4.5 5M12.5 17.5c.7-2.2 1.9-3.4 3.5-3.4 1.8 0 3.2 1.4 4 4"/></svg>',
+      inventory: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 8V6a5 5 0 0 1 10 0v2"/><path d="M5 8h14l-1 12H6L5 8Z"/><path d="M9 12h6"/></svg>',
+      five: '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="m12 8 3 2-1 4h-4l-1-4 3-2ZM4.8 10.5l4.2-.5M15 10l4.2.5M8.5 18l1.5-4M14 14l1.5 4"/></svg>',
+    };
+    return icons[name] || "";
+  }
+
   function bottomNav(active) {
     if (!run || !run.roster.length) return "";
+    const items = [
+      ["map", "Percorso", "map"],
+      ["squad", "Squadra", "squad"],
+      ["inventory", "Oggetti", "inventory"],
+      ["five", "5v5", "five"],
+    ];
     return `
-      <nav class="bottom-nav">
-        <button data-nav="map" class="${active === "map" ? "active" : ""}">Percorso</button>
-        <button data-nav="squad" class="${active === "squad" ? "active" : ""}">Squadra</button>
-        <button data-nav="inventory" class="${active === "inventory" ? "active" : ""}">Oggetti</button>
+      <nav class="bottom-nav" aria-label="Navigazione principale">
+        ${items.map(([destination, label, icon]) => `
+          <button data-nav="${destination}" class="${active === destination ? "active" : ""}" aria-label="${label}" aria-current="${active === destination ? "page" : "false"}">
+            <span class="nav-icon">${navIcon(icon)}</span>
+            <span class="nav-label">${label}</span>
+          </button>`).join("")}
       </nav>`;
   }
 
@@ -171,8 +210,10 @@
           run.phase = "squad";
           global.RunState.save(run);
           renderSquad();
-        } else {
+        } else if (destination === "inventory") {
           renderInventory();
+        } else if (destination === "five") {
+          renderFiveVFive();
         }
       });
     });
@@ -208,15 +249,17 @@
       </${tag}>`;
   }
 
-  function showPlayerDetails(playerId, onClose = null) {
-    const entry = rosterEntry(playerId);
-    const player = resolvedRosterPlayer(playerId);
-    if (!entry || !player) return toast("Giocatore non disponibile");
+  function showPlayerDetailsFor(player, { playerId = player.playerId, level = player.displayLevel ?? 0, database = freeAgentsDb, equipment = null, onClose = null } = {}) {
+    if (!player) return toast("Giocatore non disponibile");
     const visual = playerVisualsById.get(String(playerId)) || {};
     const fullbodyUrl = visual.fullbodyUrl || player.portraitUrl;
+    const resolved = player.stats && player.baseStats
+      ? player
+      : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(Number(level || 0)), database);
+    const effectiveStats = equipment ? global.RoguelikeRules.applyEquipment(resolved.stats, equipment) : resolved.stats;
     const stats = Object.entries(STAT_LABELS).map(([stat, label]) => {
-      const base = Number(player.baseStats[stat] || 0);
-      const effective = Number(player.stats[stat] || 0);
+      const base = Number(resolved.stats[stat] || 0);
+      const effective = Number(effectiveStats[stat] || 0);
       const bonus = effective - base;
       return `<div class="detail-stat"><span>${label}</span><strong>${effective}${bonus > 0 ? ` <em>+${bonus}</em>` : ""}</strong></div>`;
     }).join("");
@@ -228,18 +271,31 @@
         <section class="player-detail-content">
           <p class="eyebrow">Player detail</p>
           <h2 class="player-detail-name">${escapeHtml(player.name)}</h2>
-          <div class="player-detail-tags"><span class="role-chip">${player.position}</span><span class="role-chip">${escapeHtml(player.element || player.type)}</span><span class="role-chip">Lv ${player.displayLevel}</span></div>
+          <div class="player-detail-tags"><span class="role-chip">${player.position}</span><span class="role-chip">${escapeHtml(player.element || player.type)}</span><span class="role-chip">Lv ${Number(level || 0)}</span></div>
           <div class="overall-comparison">
-            <div><span>Overall attuale</span><strong>${player.overall}</strong></div>
+            <div><span>Overall attuale</span><strong>${resolved.overall}</strong></div>
             <div><span>Potenziale</span><strong>${player.finalOverall}</strong></div>
           </div>
           <p class="detail-category">${escapeHtml(player.category)}</p>
           <div class="detail-stats">${stats}</div>
-          ${player.equipment ? `<div class="equipped-detail"><span>Oggetto assegnato</span><strong>${escapeHtml(player.equipment.name)}</strong><small>${escapeHtml(player.equipment.description)}</small></div>` : ""}
+          ${equipment ? `<div class="equipped-detail"><span>Oggetto assegnato</span><strong>${escapeHtml(equipment.name)}</strong><small>${escapeHtml(equipment.description)}</small></div>` : ""}
         </section>
       </div>`,
       { closeable: true, className: "player-detail-modal", onClose }
     );
+  }
+
+  function showPlayerDetails(playerId, onClose = null) {
+    const entry = rosterEntry(playerId);
+    const player = resolvedRosterPlayer(playerId);
+    if (!entry || !player) return toast("Giocatore non disponibile");
+    showPlayerDetailsFor(player, {
+      playerId,
+      level: player.displayLevel,
+      database: entry.source === "season1" ? seasonDb : freeAgentsDb,
+      equipment: player.equipment,
+      onClose,
+    });
   }
 
   function renderHome() {
@@ -283,6 +339,8 @@
     if (run.phase === "formation") return renderFormationChoice();
     if (run.phase === "draft") return renderDraft();
     if (run.phase === "squad") return renderSquad();
+    if (run.phase === "five") return renderFiveVFive();
+    if (run.phase === "inventory") return renderInventory();
     if (run.phase === "match" && ui.match) return renderMatch();
     ensureCurrentZone();
     renderMap();
@@ -357,6 +415,7 @@
           freeAgentsDb.players,
           formationById(run.formationId)
         );
+        if (completed) ensureFiveVFive();
         global.RunState.save(run);
         toast(`${player.name} entra nella squadra`);
         completed ? renderSquad() : renderDraft();
@@ -397,12 +456,21 @@
     ui.selectedSquadPlayerId = null;
   }
 
-  function miniPlayer(id, area) {
+
+  function lineupRows() {
+    return ["FW", "MF", "DF", "GK"].map((role) => ({
+      role,
+      ids: run.lineup.filter((id) => sourcePlayer(rosterEntry(id)).position === role),
+    }));
+  }
+
+  function tacticalMiniPlayer(id, { mode = "squad", area = "lineup", selectedId = null } = {}) {
     const player = resolvedRosterPlayer(id);
     if (!player) return "";
-    const selected = ui.selectedSquadPlayerId === String(id);
+    const selected = String(selectedId || ui.selectedSquadPlayerId) === String(id);
+    const dataAttr = mode === "trade" ? `data-trade-player="${escapeHtml(id)}"` : `data-squad-player="${escapeHtml(id)}" data-area="${area}"`;
     return `
-      <button class="mini-player ${selected ? "selected" : ""}" data-squad-player="${escapeHtml(id)}" data-area="${area}">
+      <button class="mini-player ${selected ? "selected" : ""}" ${dataAttr}>
         <img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" />
         <strong>${escapeHtml(player.name)}</strong>
         <span class="small muted">${player.position} · ${player.overall} · Lv ${player.displayLevel}</span>
@@ -410,14 +478,25 @@
       </button>`;
   }
 
+  function squadPitchMarkup({ mode = "squad", selectedId = null } = {}) {
+    return `
+      <section class="pitch">
+        ${lineupRows().map((row) => `<div class="pitch-row" style="--players-in-row:${row.ids.length || 1}">${row.ids.map((id) => tacticalMiniPlayer(id, { mode, area: "lineup", selectedId })).join("")}</div>`).join("")}
+      </section>`;
+  }
+
+  function benchMarkup({ mode = "squad", selectedId = null } = {}) {
+    return run.bench.length ? run.bench.map((id) => tacticalMiniPlayer(id, { mode, area: "bench", selectedId })).join("") : '<p class="muted">Le riserve arriveranno con pull, scambi e ricompense.</p>';
+  }
+
+  function miniPlayer(id, area) {
+    return tacticalMiniPlayer(id, { mode: "squad", area });
+  }
+
   function renderSquad() {
     run.phase = "squad";
     global.RunState.save(run);
     const formation = formationById(run.formationId);
-    const rows = ["FW", "MF", "DF", "GK"].map((role) => ({
-      role,
-      ids: run.lineup.filter((id) => sourcePlayer(rosterEntry(id)).position === role),
-    }));
 
     app.innerHTML = `
       <main class="screen">
@@ -437,13 +516,11 @@
           </div>
           <p class="muted small">${ui.squadEditMode ? "Seleziona un titolare e poi una riserva dello stesso ruolo per scambiarli." : "Seleziona un giocatore per aprire la scheda con statistiche, overall e potenziale."}</p>
           <div class="squad-layout">
-            <section class="pitch">
-              ${rows.map((row) => `<div class="pitch-row">${row.ids.map((id) => miniPlayer(id, "lineup")).join("")}</div>`).join("")}
-            </section>
+            ${squadPitchMarkup()}
             <aside class="panel">
               <h3>Riserve ${run.bench.length}/4</h3>
               <div class="bench-list">
-                ${run.bench.length ? run.bench.map((id) => miniPlayer(id, "bench")).join("") : '<p class="muted">Le riserve arriveranno con pull, scambi e ricompense.</p>'}
+                ${benchMarkup()}
               </div>
               <div class="button-row" style="margin-top:18px">
                 <button class="btn btn-yellow" id="go-map">${run.currentZone ? "Torna al percorso" : "Inizia il percorso"}</button>
@@ -590,7 +667,8 @@
     bindBottomNav();
     requestAnimationFrame(() => {
       const scroll = document.getElementById("map-scroll");
-      if (zone.path.length <= 1 && scroll) scroll.scrollLeft = Math.max(0, (scroll.scrollWidth - scroll.clientWidth) / 2);
+      if (zone.path.length <= 1 && scroll && !window.matchMedia("(max-width: 780px)").matches) scroll.scrollLeft = Math.max(0, (scroll.scrollWidth - scroll.clientWidth) / 2);
+      if (scroll && window.matchMedia("(max-width: 780px)").matches) scroll.scrollLeft = 0;
     });
   }
 
@@ -608,7 +686,20 @@
   }
 
   function dispatchNode(node, eventType) {
-    if (eventType === "five_v_five" || eventType === "boss") {
+    if (eventType === "five_v_five") {
+      const status = fiveVFiveStatus();
+      if (!status.valid) {
+        toast("Completa la Formazione 5v5 prima di avviare la partitella.");
+        run.phase = "five";
+        global.RunState.save(run);
+        return renderFiveVFive();
+      }
+      ui.match = { nodeId: node.id, type: eventType };
+      run.phase = "match";
+      global.RunState.save(run);
+      return renderMatch();
+    }
+    if (eventType === "boss") {
       ui.match = { nodeId: node.id, type: eventType };
       run.phase = "match";
       global.RunState.save(run);
@@ -666,23 +757,37 @@
   }
 
   function resolveTradeNode(node) {
-    const rosterPlayers = run.roster.map((entry) => ({
-      entry,
-      player: sourcePlayer(entry),
-      database: entry.source === "season1" ? seasonDb : freeAgentsDb,
-    }));
+    ui.tradeSelectedPlayerId = ui.tradeSelectedPlayerId && rosterEntry(ui.tradeSelectedPlayerId) ? ui.tradeSelectedPlayerId : null;
+    const selected = ui.tradeSelectedPlayerId ? resolvedRosterPlayer(ui.tradeSelectedPlayerId) : null;
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">Scambio</p><h2>Scegli chi scambiare</h2><p class="muted">Riceverai un giocatore casuale dello stesso ruolo, con finalOverall uguale o superiore e un livello in più.</p></div></div>
-      <div class="player-grid">
-        ${rosterPlayers.map(({ entry, player, database }) => playerCard(player, { button: true, level: entry.level, database })).join("")}
+      <div class="modal-head"><div><p class="eyebrow">Scambio</p><h2>Scegli chi scambiare</h2><p class="muted">Seleziona un titolare dal campo o una riserva. Riceverai un giocatore casuale dello stesso ruolo, con finalOverall uguale o superiore e un livello in più.</p></div></div>
+      <div class="trade-squad-layout">
+        ${squadPitchMarkup({ mode: "trade", selectedId: ui.tradeSelectedPlayerId })}
+        <aside class="panel trade-bench-panel">
+          <h3>Riserve</h3>
+          <div class="bench-list">${benchMarkup({ mode: "trade", selectedId: ui.tradeSelectedPlayerId })}</div>
+        </aside>
       </div>
-      <div class="button-row" style="margin-top:18px"><button class="btn btn-ghost" id="skip-trade">Rinuncia allo scambio</button></div>`,
-      { closeable: false }
+      <div class="trade-selection-summary ${selected ? "selected" : ""}">
+        ${selected ? `<strong>${escapeHtml(selected.name)}</strong><span>${selected.position} · OVR ${selected.overall} · Lv ${selected.displayLevel}</span>` : '<strong>Nessun giocatore selezionato</strong><span>Scegli una card per procedere allo scambio.</span>'}
+      </div>
+      <div class="button-row" style="margin-top:18px">
+        <button class="btn btn-yellow" id="continue-trade" ${selected ? "" : "disabled"}>Procedi allo scambio</button>
+        <button class="btn btn-ghost" id="skip-trade">Rinuncia allo scambio</button>
+      </div>`,
+      { closeable: false, className: "trade-modal" }
     );
-    modalRoot.querySelectorAll("[data-player-id]").forEach((button) => {
-      button.addEventListener("click", () => prepareTrade(node, button.dataset.playerId));
+    modalRoot.querySelectorAll("[data-trade-player]").forEach((button) => {
+      button.addEventListener("click", () => {
+        ui.tradeSelectedPlayerId = String(button.dataset.tradePlayer);
+        resolveTradeNode(node);
+      });
     });
-    document.getElementById("skip-trade").addEventListener("click", () => finishNonMatchNode(node, "Hai rinunciato allo scambio"));
+    document.getElementById("continue-trade").addEventListener("click", () => prepareTrade(node, ui.tradeSelectedPlayerId));
+    document.getElementById("skip-trade").addEventListener("click", () => {
+      ui.tradeSelectedPlayerId = null;
+      finishNonMatchNode(node, "Hai rinunciato allo scambio");
+    });
   }
 
   function prepareTrade(node, outgoingId) {
@@ -728,6 +833,8 @@
     run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null };
     run.lineup = run.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id));
     run.bench = run.bench.map((id) => String(id) === outgoingId ? incomingId : String(id));
+    global.FiveVFive.removeUnavailable(run);
+    ui.tradeSelectedPlayerId = null;
     global.RunState.save(run);
     showTradeResult(node, incoming, nextLevel);
   }
@@ -851,21 +958,27 @@
     const candidates = pullCandidates(pool, node, node.pullState.luckyApplied);
     const level = previousBossLevel();
     const scoutToken = run.inventory.find((item) => item.effect === "pull_reroll");
+    const legendaryPull = pullType === "pull_legendary";
+    const rerollPull = () => {
+      if (legendaryPull) return toast("Il Gettone scout non può essere utilizzato nelle pull leggendarie.");
+      removeInventoryItem(scoutToken.instanceId);
+      node.pullState.excludedCandidateIds.push(...candidates.map((player) => String(player.playerId)));
+      node.pullState.rerolls += 1;
+      global.RunState.save(run);
+      openPull(node, pullType);
+    };
     showPlayerOffer({
       title: global.SEASON1_CONFIG.nodeLabels[pullType].label,
       subtitle: `Scegli 1 giocatore su 3 · Livello ${level}${node.pullState.luckyApplied ? " · Portafortuna attivo" : ""}`,
       candidates,
       source: pool.source,
+      sourceForPlayer: pool.sourceForPlayer,
       database: pool.database,
       level,
       allowSkip: true,
-      onReroll: scoutToken ? () => {
-        removeInventoryItem(scoutToken.instanceId);
-        node.pullState.excludedCandidateIds.push(...candidates.map((player) => String(player.playerId)));
-        node.pullState.rerolls += 1;
-        global.RunState.save(run);
-        openPull(node, pullType);
-      } : null,
+      onReroll: scoutToken ? rerollPull : null,
+      rerollDisabled: Boolean(scoutToken && legendaryPull),
+      rerollDisabledMessage: legendaryPull ? "Il Gettone scout non può essere utilizzato nelle pull leggendarie." : "",
       onPick: (player) => {
         const playerSource = pool.sourceForPlayer ? pool.sourceForPlayer(player) : pool.source;
         recruitPlayer(player, playerSource, level, (added) => {
@@ -876,14 +989,50 @@
     });
   }
 
+  function showPullConfirmation(options, player) {
+    let confirmed = false;
+    const playerSource = options.sourceForPlayer ? options.sourceForPlayer(player) : options.source;
+    const playerDatabase = playerSource === "season1" ? seasonDb : options.database;
+    openModal(`
+      <div class="modal-head"><div><p class="eyebrow">Conferma scelta</p><h2>Vuoi scegliere ${escapeHtml(player.name)}?</h2><p class="muted">La pull non verrà consumata finché non confermi.</p></div></div>
+      <div class="trade-result-card">${playerCard(player, { level: options.level, database: playerDatabase })}</div>
+      <div class="button-row">
+        <button class="btn btn-primary" id="confirm-pull-pick">Sì</button>
+        <button class="btn" id="cancel-pull-pick">No</button>
+        <button class="btn btn-yellow" id="detail-pull-pick">Apri scheda</button>
+      </div>`,
+      { closeable: false }
+    );
+    document.getElementById("confirm-pull-pick").focus();
+    document.getElementById("confirm-pull-pick").addEventListener("click", (event) => {
+      if (confirmed) return;
+      confirmed = true;
+      event.currentTarget.disabled = true;
+      options.onPick(player);
+    });
+    document.getElementById("cancel-pull-pick").addEventListener("click", () => showPlayerOffer(options));
+    document.getElementById("detail-pull-pick").addEventListener("click", () => {
+      showPlayerDetailsFor(player, {
+        playerId: player.playerId,
+        level: options.level,
+        database: playerDatabase,
+        onClose: () => showPullConfirmation(options, player),
+      });
+    });
+  }
+
   function showPlayerOffer(options) {
+    const rerollButton = options.onReroll
+      ? `<button class="btn btn-yellow" id="reroll-offer" ${options.rerollDisabled ? "disabled" : ""}>Usa gettone scout</button>`
+      : "";
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Scelta giocatore</p><h2>${escapeHtml(options.title)}</h2><p class="muted">${escapeHtml(options.subtitle)}</p></div></div>
       <div class="candidate-grid">
-        ${options.candidates.map((player) => playerCard(player, { button: true, level: options.level, database: options.database })).join("")}
+        ${options.candidates.map((player) => playerCard(player, { button: true, level: options.level, database: options.sourceForPlayer?.(player) === "season1" ? seasonDb : options.database })).join("")}
       </div>
+      ${options.rerollDisabledMessage ? `<p class="muted small">${escapeHtml(options.rerollDisabledMessage)}</p>` : ""}
       <div class="button-row" style="margin-top:18px">
-        ${options.onReroll ? '<button class="btn btn-yellow" id="reroll-offer">Usa gettone scout</button>' : ""}
+        ${rerollButton}
         ${options.allowSkip ? '<button class="btn btn-ghost" id="skip-offer">Rinuncia</button>' : ""}
       </div>`,
       { closeable: false }
@@ -891,10 +1040,13 @@
     modalRoot.querySelectorAll("[data-player-id]").forEach((button) => {
       button.addEventListener("click", () => {
         const player = options.candidates.find((candidate) => String(candidate.playerId) === button.dataset.playerId);
-        options.onPick(player);
+        showPullConfirmation(options, player);
       });
     });
-    document.getElementById("reroll-offer")?.addEventListener("click", options.onReroll);
+    document.getElementById("reroll-offer")?.addEventListener("click", () => {
+      if (options.rerollDisabled) return toast(options.rerollDisabledMessage || "Gettone scout non disponibile");
+      options.onReroll();
+    });
     document.getElementById("skip-offer")?.addEventListener("click", options.onSkip);
   }
 
@@ -927,6 +1079,7 @@
           run.bench = run.bench.filter((id) => String(id) !== removeId);
           run.roster.push({ playerId: String(player.playerId), source, level, equippedItem: null });
           run.bench.push(String(player.playerId));
+          global.FiveVFive.removeUnavailable(run);
           global.RunState.save(run);
           closeModal();
           done(true);
@@ -1081,6 +1234,148 @@
     global.RunState.createCheckpoint(run);
     toast(`${boss.teamName} sconfitta. Nuovo checkpoint raggiunto!`);
     renderMap();
+  }
+
+
+  function roleBadge(role) {
+    const icons = { GK: "▣", DF: "◆", MF: "●", FW: "▲", all: "✦" };
+    return `<span class="role-token role-${escapeHtml(role)}"><span>${icons[role] || icons.all}</span>${escapeHtml(role === "all" ? "Tutti" : role)}</span>`;
+  }
+
+  function fiveSlotCard(slot, playerId, status) {
+    const player = playerId ? resolvedRosterPlayer(playerId) : null;
+    const selected = ui.fiveVFiveSelectedSlot === slot.key;
+    const missing = !player && !status.valid;
+    return `
+      <button class="five-slot ${selected ? "selected" : ""} ${missing ? "missing" : ""}" data-five-slot="${escapeHtml(slot.key)}" style="grid-area:${escapeHtml(slot.line)}">
+        <span class="five-slot-role">${roleBadge(slot.role)}</span>
+        ${player ? `
+          <img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" />
+          <strong>${escapeHtml(player.name)}</strong>
+          <span class="small muted">${player.position} · Lv ${player.displayLevel}</span>
+        ` : `
+          <span class="five-empty">+</span>
+          <strong>Slot vuoto</strong>
+          <span class="small muted">Richiede ${escapeHtml(slot.role)}</span>
+        `}
+      </button>`;
+  }
+
+  function fiveRosterCard(entry, selectedSlot) {
+    const player = resolvedRosterPlayer(entry.playerId);
+    if (!player) return "";
+    const slot = selectedSlot ? global.FiveVFive.formationById(run.fiveVFive.formation).slots.find((item) => item.key === selectedSlot) : null;
+    const compatible = !slot || player.position === slot.role;
+    const assignedSlot = Object.entries(run.fiveVFive.slots).find(([, id]) => String(id) === String(entry.playerId))?.[0];
+    return `
+      <button class="five-roster-card ${compatible ? "" : "disabled"} ${assignedSlot ? "assigned" : ""}" data-five-player="${escapeHtml(entry.playerId)}" ${compatible ? "" : "disabled"}>
+        <img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" />
+        <span><strong>${escapeHtml(player.name)}</strong><small>${player.position} · OVR ${player.overall} · Lv ${player.displayLevel}${assignedSlot ? ` · ${assignedSlot}` : ""}</small></span>
+      </button>`;
+  }
+
+  function renderFiveVFive() {
+    run.phase = "five";
+    ensureRunSchema();
+    ensureFiveVFive();
+    global.RunState.save(run);
+    const status = fiveVFiveStatus();
+    const formation = status.formation;
+    const selectedSlot = ui.fiveVFiveSelectedSlot && formation.slots.some((slot) => slot.key === ui.fiveVFiveSelectedSlot)
+      ? ui.fiveVFiveSelectedSlot
+      : formation.slots.find((slot) => !run.fiveVFive.slots[slot.key])?.key || formation.slots[0].key;
+    ui.fiveVFiveSelectedSlot = selectedSlot;
+    const selectedRole = formation.slots.find((slot) => slot.key === selectedSlot)?.role;
+    const filter = ui.fiveVFiveRoleFilter || "all";
+    const rosterEntries = run.roster.filter((entry) => {
+      const role = fiveRoleForPlayerId(entry.playerId);
+      if (filter !== "all" && role !== filter) return false;
+      if (selectedRole && filter === "all") return role === selectedRole;
+      return true;
+    });
+    const rows = ["attack", "midfield", "defense", "goal"];
+    app.innerHTML = `
+      <main class="screen five-screen">
+        ${topbar("Formazione 5v5")}
+        <div class="content">
+          <div class="section-head">
+            <div>
+              <p class="eyebrow">Partitelle</p>
+              <h2>Formazione 5v5</h2>
+              <p class="muted">Configura la tua formazione per le partite 5v5 usando i giocatori della rosa.</p>
+            </div>
+          </div>
+          <section class="five-layout">
+            <div class="five-main">
+              <div class="five-formation-grid">
+                ${global.FiveVFive.formations.map((item) => `
+                  <button class="five-formation-card ${item.id === formation.id ? "selected" : ""}" data-five-formation="${escapeHtml(item.id)}">
+                    <strong>${escapeHtml(item.name)}</strong>
+                    <span>${escapeHtml(item.summary)}</span>
+                  </button>`).join("")}
+              </div>
+              <div class="five-pitch formation-${escapeHtml(formation.id)}">
+                ${rows.map((line) => `<div class="five-pitch-line line-${line}">${formation.slots.filter((slot) => slot.line === line).map((slot) => fiveSlotCard(slot, run.fiveVFive.slots[slot.key], status)).join("")}</div>`).join("")}
+              </div>
+              <div class="five-validation ${status.valid ? "valid" : "invalid"}">
+                <strong>${status.valid ? "Formazione 5v5 pronta" : `Formazione incompleta (${status.assignedCount}/5)`}</strong>
+                <p>${status.valid ? "Puoi affrontare i nodi Partita 5v5." : escapeHtml(status.messages[0] || "Completa tutti gli slot rispettando i ruoli.")}</p>
+              </div>
+              <div class="button-row"><button class="btn btn-yellow" id="save-five" ${status.valid ? "" : "disabled"}>Conferma formazione</button></div>
+            </div>
+            <aside class="panel five-selector">
+              <div class="section-head compact"><div><p class="eyebrow">${escapeHtml(selectedSlot)}</p><h3>Seleziona giocatore</h3><p class="muted small">Scegli un ${escapeHtml(selectedRole)} dalla rosa.</p></div></div>
+              <div class="role-filter-bar">
+                ${["all", "GK", "DF", "MF", "FW"].map((role) => `<button class="role-filter ${filter === role ? "active" : ""}" data-five-filter="${role}">${roleBadge(role)}</button>`).join("")}
+              </div>
+              <div class="five-roster-list">
+                ${rosterEntries.length ? rosterEntries.map((entry) => fiveRosterCard(entry, selectedSlot)).join("") : '<p class="muted">Nessun giocatore compatibile con questo filtro.</p>'}
+              </div>
+              <button class="btn btn-ghost" id="clear-five-slot">Svuota slot selezionato</button>
+            </aside>
+          </section>
+        </div>
+        ${bottomNav("five")}
+      </main>`;
+
+    document.querySelectorAll("[data-five-formation]").forEach((button) => button.addEventListener("click", () => {
+      global.FiveVFive.changeFormation(run, button.dataset.fiveFormation, fiveRoleForPlayerId);
+      ui.fiveVFiveSelectedSlot = null;
+      global.RunState.save(run);
+      renderFiveVFive();
+    }));
+    document.querySelectorAll("[data-five-slot]").forEach((button) => button.addEventListener("click", () => {
+      ui.fiveVFiveSelectedSlot = button.dataset.fiveSlot;
+      const role = formation.slots.find((slot) => slot.key === ui.fiveVFiveSelectedSlot)?.role;
+      ui.fiveVFiveRoleFilter = role || "all";
+      renderFiveVFive();
+    }));
+    document.querySelectorAll("[data-five-filter]").forEach((button) => button.addEventListener("click", () => {
+      ui.fiveVFiveRoleFilter = button.dataset.fiveFilter;
+      renderFiveVFive();
+    }));
+    document.querySelectorAll("[data-five-player]").forEach((button) => button.addEventListener("click", () => {
+      try {
+        global.FiveVFive.assign(run, ui.fiveVFiveSelectedSlot, button.dataset.fivePlayer, fiveRoleForPlayerId);
+        global.RunState.save(run);
+        toast("Giocatore assegnato alla formazione 5v5");
+        renderFiveVFive();
+      } catch (error) {
+        toast(error.message);
+      }
+    }));
+    document.getElementById("clear-five-slot").addEventListener("click", () => {
+      global.FiveVFive.clearSlot(run, ui.fiveVFiveSelectedSlot);
+      global.RunState.save(run);
+      renderFiveVFive();
+    });
+    document.getElementById("save-five").addEventListener("click", () => {
+      const nextStatus = fiveVFiveStatus();
+      if (!nextStatus.valid) return toast("Completa tutti e cinque gli slot prima di salvare.");
+      global.RunState.save(run);
+      toast("Formazione 5v5 salvata");
+    });
+    bindBottomNav();
   }
 
   function renderInventory() {

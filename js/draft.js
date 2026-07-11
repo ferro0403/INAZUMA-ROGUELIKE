@@ -104,6 +104,10 @@
     }));
     run.lineup = lineup;
     run.bench = [];
+    if (global.FiveVFive) {
+      const byId = new Map(players.map((player) => [String(player.playerId), player]));
+      global.FiveVFive.ensure(run, (id) => byId.get(String(id))?.position);
+    }
     run.draft = null;
     run.phase = "squad";
     return true;
