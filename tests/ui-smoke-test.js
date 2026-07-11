@@ -20,7 +20,7 @@ assert(css.includes("width: min(90%, 340px)"), "mobile fullbody art should keep 
 assert(css.includes(".rarity-normale") && css.includes(".rarity-leggenda"), "rarity card classes must be centralized in CSS");
 assert(css.includes(".rarity-debole { --rarity-bg: #0b1c37"), "Debole must keep the original dark card background");
 assert(css.includes(".trade-bench-panel .bench-list { grid-auto-rows: max-content;"), "trade reserve grid rows must size to content instead of stretching cards");
-assert(css.includes(".trade-bench-panel .mini-player { width: 100%; max-width: 150px;"), "trade reserve cards must keep a readable reserve-card width");
+assert(css.includes(".trade-bench-panel .mini-player { width: min(150px, 100%); max-width: 150px;"), "trade reserve cards must keep a readable reserve-card width without stretching");
 assert(css.includes(".player-card.selected") && css.includes("outline: 3px solid #05070b"), "selected player cards must have a high-contrast outline");
 assert(css.includes(".player-role { top: 8px; left: 8px;"), "player role badge must sit in the top-left card corner");
 assert(css.includes(".player-overall { top: 8px; right: 8px;"), "player overall badge must sit in the top-right card corner");
@@ -30,7 +30,10 @@ assert(css.includes(".player-info { padding: 8px 38px 34px; text-align: center;"
 assert(css.includes(".candidate-grid .player-card { display: block;"), "mobile candidate cards must keep the shared vertical player-card structure");
 assert(!/\.rarity-(?:scarso|normale|buono|forte|elite|mondiale|leggenda) \{[^}]*gradient\(/.test(css), "rarity classes must use flat colors, not gradients");
 assert(css.includes("background: var(--rarity-bg, #0b1c37)"), "player detail fullbody visual background must use rarity card color");
-assert(css.includes(".player-card-compact"), "squad, trade and item selection cards must reuse the shared compact player-card variant");
+assert(css.includes(".player-card-large"), "pull and candidate cards must keep a distinct large player-card variant");
+assert(css.includes(".player-card-compact, button.player-card-compact"), "compact tactical cards must override the generic button.player-card width rule");
+assert(/\.player-card-compact, button\.player-card-compact \{[^}]*max-width:\s*150px/.test(css), "desktop compact tactical cards must cap their width so two-player rows cannot stretch cards");
+assert(/\.player-card-compact, button\.player-card-compact \{[^}]*flex:\s*0 0 auto/.test(css), "compact tactical cards must not flex-grow like large cards");
 assert(css.includes(".player-card-compact .player-overall"), "compact player cards must resize the shared top-right overall badge");
 assert(css.includes(".player-card-compact .player-equipment"), "compact player cards must render equipped items as corner icons only");
 assert(css.includes(".item-icon"), "item icons must have shared SVG styling");
@@ -101,9 +104,12 @@ server.listen(0, "127.0.0.1", async () => {
     assert(firstDraftCard.querySelector(".player-overall"), "standard player cards render the overall in a top-right badge");
     assert(firstDraftCard.querySelector(".player-level"), "standard player cards render the level in a bottom-right badge");
     assert(firstDraftCard.querySelector(".player-title strong"), "standard player cards keep a central readable name");
+    assert(firstDraftCard.classList.contains("player-card-large"), "draft/pull cards must render with the large card variant");
+    assert(!firstDraftCard.classList.contains("player-card-compact"), "draft/pull cards must not inherit compact tactical sizing");
     assert(!firstDraftCard.querySelector(".player-equipment"), "standard player cards without equipment must not render an empty equipment badge");
     const compactCards = window.document.querySelectorAll(".pitch-row .player-card-compact");
     assert(compactCards.length > 0, "starters must render the compact shared player-card variant");
+    assert(!compactCards[0].classList.contains("player-card-large"), "squad starters must not inherit large pull card sizing");
     assert(compactCards[0].querySelector(".player-role"), "compact cards render the role in the top-left corner");
     assert(compactCards[0].querySelector(".player-overall"), "compact cards render the overall in the top-right corner");
     assert(compactCards[0].querySelector(".player-level"), "compact cards render the level in the bottom-right corner");
@@ -112,6 +118,7 @@ server.listen(0, "127.0.0.1", async () => {
     assert.deepEqual(rowCounts, [4, 2, 4, 1], "4-2-4 must keep 4 / 2 / 4 / 1 visual rows");
     assert([...window.document.querySelectorAll(".pitch-row")].every((row) => row.getAttribute("style").includes(`--players-in-row:${row.children.length || 1}`)));
     assert(css.includes("var(--pitch-card-size)"), "card width must stay constant for one- and two-player rows");
+    assert(/@media \(max-width: 780px\)[\s\S]*?\.pitch-row\s*\{[\s\S]*?gap:\s*clamp\(6px, 1\.8vw, 10px\)[\s\S]*?margin:\s*12px 0 26px/.test(css), "mobile squad rows must be slightly more spaced without expanding compact cards");
     assert.equal(window.document.querySelectorAll(".bottom-nav [data-nav]").length, 4, "bottom nav must expose four destinations");
     const squadSignature = [...window.document.querySelectorAll(".pitch-row")].map((row) => row.children.length).join("/");
     window.document.querySelector('[data-nav="inventory"]').click();
