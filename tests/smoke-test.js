@@ -49,6 +49,11 @@ assert(appJs.includes("runKeepingScroll") && appJs.includes("preserveScroll: scr
 assert(appJs.includes("focus({ preventScroll: true })"), "automatic focus must not force scroll movement");
 assert(appJs.includes('player-detail-visual ${rarityClass(player.category)}'), "player detail visual must inherit rarity color class");
 assert(appJs.includes("showPullConfirmation"), "player pulls must open a confirmation before picking a candidate");
+
+assert(appJs.includes("mobile-compact-player-list pull-confirmation-card"), "pull confirmation must reuse the shared compact mobile card container");
+assert(appJs.includes("mobile-compact-player-list bench-replacement-grid"), "full-roster bench replacement must reuse the shared compact mobile card container");
+assert(mobileMedia.includes(".mobile-compact-player-list .player-card-large"), "mobile compact contexts must share the pull card horizontal rules");
+assert(!appJs.includes("data-confirm-replacement"), "bench replacement logic should keep using the existing data-player-id click path");
 assert(appJs.includes("Il Gettone scout non può essere utilizzato nelle pull leggendarie."), "legendary pulls must block scout token rerolls in logic and UI");
 assert(css.includes("align-items: center"), "desktop fullbody visual must be vertically centered");
 assert(css.includes("width: min(100%, 560px)"), "desktop fullbody player art must keep the approved size");

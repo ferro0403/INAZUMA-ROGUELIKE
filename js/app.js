@@ -1136,7 +1136,7 @@
     const playerDatabase = playerSource === "season1" ? seasonDb : options.database;
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Conferma scelta</p><h2>Vuoi scegliere ${escapeHtml(player.name)}?</h2><p class="muted">La pull non verrà consumata finché non confermi.</p></div></div>
-      <div class="trade-result-card">${playerCard(player, { level: options.level, database: playerDatabase })}</div>
+      <div class="trade-result-card mobile-compact-player-list pull-confirmation-card">${playerCard(player, { level: options.level, database: playerDatabase })}</div>
       <div class="button-row">
         <button class="btn btn-primary" id="confirm-pull-pick">Sì</button>
         <button class="btn" id="cancel-pull-pick">No</button>
@@ -1204,7 +1204,7 @@
     const benchPlayers = run.bench.map((id) => resolvedRosterPlayer(id)).filter(Boolean);
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Rosa piena</p><h2>Scegli chi lasciare fuori</h2><p class="muted">${escapeHtml(player.name)} sostituirà una delle quattro riserve.</p></div></div>
-      <div class="player-grid">
+      <div class="player-grid mobile-compact-player-list bench-replacement-grid">
         ${benchPlayers.map((candidate) => playerCard(sourcePlayer(rosterEntry(candidate.playerId)), { button: true, level: candidate.displayLevel, database: candidate.source === "season1" ? seasonDb : freeAgentsDb })).join("")}
       </div>
       ${allowCancel ? '<div class="button-row" style="margin-top:18px"><button class="btn btn-ghost" id="cancel-recruit">Rinuncia al nuovo giocatore</button></div>' : ""}`,

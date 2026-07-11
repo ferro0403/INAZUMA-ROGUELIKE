@@ -394,14 +394,16 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .panel { padding: 15px; border-radius: 18px; }
   .candidate-grid { grid-template-columns: 1fr; }
   .candidate-grid .player-card { display: block; }
-  .pull-offer-grid { gap: 10px; }
-  .pull-offer-grid .player-card-large, .pull-offer-grid .pull-player-card--mobile {
+  .pull-offer-grid, .mobile-compact-player-list { gap: 10px; }
+  .mobile-compact-player-list { display: grid; }
+  .pull-confirmation-card { width: min(100%, 420px); margin: 18px auto; }
+  .pull-offer-grid .player-card-large, .mobile-compact-player-list .player-card-large, .pull-offer-grid .pull-player-card--mobile, .mobile-compact-player-list .pull-player-card--mobile {
     display: grid;
     grid-template-columns: 82px minmax(0, 1fr) 42px;
     align-items: center;
     min-height: 104px;
   }
-  .pull-offer-grid .player-card-large .player-portrait-wrap {
+  .pull-offer-grid .player-card-large .player-portrait-wrap, .mobile-compact-player-list .player-card-large .player-portrait-wrap {
     grid-column: 1;
     grid-row: 1;
     aspect-ratio: 1;
@@ -410,35 +412,35 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
     padding: 20px 8px 4px;
     background: radial-gradient(circle at 50% 75%, rgba(54, 169, 255, 0.20), transparent 58%);
   }
-  .pull-offer-grid .player-card-large .player-info {
+  .pull-offer-grid .player-card-large .player-info, .mobile-compact-player-list .player-card-large .player-info {
     grid-column: 2 / 4;
     grid-row: 1;
     padding: 16px 50px 14px 8px;
     text-align: left;
   }
-  .pull-offer-grid .player-card-large .player-title strong {
+  .pull-offer-grid .player-card-large .player-title strong, .mobile-compact-player-list .player-card-large .player-title strong {
     font-size: clamp(.9rem, 4vw, 1.05rem);
     white-space: normal;
     line-height: 1.05;
   }
-  .pull-offer-grid .player-card-large .player-meta {
+  .pull-offer-grid .player-card-large .player-meta, .mobile-compact-player-list .player-card-large .player-meta {
     justify-content: flex-start;
     gap: 5px;
     margin-top: 7px;
     font-size: .68rem;
   }
-  .pull-offer-grid .player-card-large .player-corner {
+  .pull-offer-grid .player-card-large .player-corner, .mobile-compact-player-list .player-card-large .player-corner {
     min-width: 28px;
     min-height: 24px;
     padding: 3px 6px;
     border-radius: 8px;
     font-size: .68rem;
   }
-  .pull-offer-grid .player-card-large .player-role {
+  .pull-offer-grid .player-card-large .player-role, .mobile-compact-player-list .player-card-large .player-role {
     top: 8px;
     left: 8px;
   }
-  .pull-offer-grid .player-card-large .player-overall {
+  .pull-offer-grid .player-card-large .player-overall, .mobile-compact-player-list .player-card-large .player-overall {
     top: 50%;
     right: 10px;
     min-width: 38px;
@@ -446,7 +448,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
     font-size: .9rem;
     transform: translateY(-50%);
   }
-  .pull-offer-grid .player-card-large .player-level {
+  .pull-offer-grid .player-card-large .player-level, .mobile-compact-player-list .player-card-large .player-level {
     right: 10px;
     bottom: 8px;
   }

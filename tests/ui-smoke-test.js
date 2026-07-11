@@ -28,6 +28,8 @@ assert(css.includes(".player-level { right: 8px; bottom: 8px;"), "player level b
 assert(css.includes(".player-equipment { bottom: 8px; left: 8px;"), "equipped item icon must sit in the bottom-left card corner");
 assert(css.includes(".player-info { padding: 8px 38px 34px; text-align: center;"), "player name must remain centered with corner-badge clearance");
 assert(css.includes(".candidate-grid .player-card { display: block;"), "mobile candidate cards must keep the shared vertical player-card structure");
+assert(css.includes(".pull-offer-grid, .mobile-compact-player-list { gap: 10px; }"), "pull, confirmation and bench replacement cards must share the compact mobile spacing");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.mobile-compact-player-list \.player-card-large[\s\S]*?grid-template-columns:\s*82px minmax\(0, 1fr\) 42px/.test(css), "mobile confirmation and full-roster replacement cards must use the same horizontal compact grid as pull candidates");
 assert(!/\.rarity-(?:scarso|normale|buono|forte|elite|mondiale|leggenda) \{[^}]*gradient\(/.test(css), "rarity classes must use flat colors, not gradients");
 assert(css.includes("background: var(--rarity-bg, #0b1c37)"), "player detail fullbody visual background must use rarity card color");
 assert(css.includes(".player-card-large"), "pull and candidate cards must keep a distinct large player-card variant");
