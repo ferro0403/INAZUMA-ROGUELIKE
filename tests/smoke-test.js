@@ -65,6 +65,16 @@ assert(css.includes("width: min(100%, 560px)"), "desktop fullbody player art mus
 assert(css.includes("object-fit: contain"), "fullbody image must preserve proportions");
 assert(mobileMedia.includes("width: min(90%, 340px)"), "mobile fullbody player art must keep the approved size");
 
+
+assert(appJs.includes('boss-match-screen'), "boss nodes must render the dedicated 11v11 boss match screen");
+assert(appJs.includes('bossMatchField({ players: userPlayers') && appJs.includes('bossMatchField({ players: bossPlayers'), "desktop boss match must render both teams at once");
+assert(appJs.includes('bossMatchTab') && appJs.includes('data-boss-tab="user"') && appJs.includes('data-boss-tab="boss"'), "mobile boss match tabs must switch between user and boss formations");
+assert(appJs.includes('function completeBossMatch(result)') && appJs.includes('ui.bossMatchResolving') && appJs.includes('ui.bossMatchState.startsWith("completed")'), "boss match completion must guard against duplicate resolution");
+assert(appJs.includes('result === "victory" ? winMatch() : loseMatch()'), "boss match controls must reuse the existing victory/defeat logic");
+assert(css.includes('.boss-match-card') && !/\.boss-match-card\s*,\s*\.mini-player/.test(css), "boss match cards must use isolated styles and not override mini-player cards");
+assert(css.includes('.boss-match-main-grid') && css.includes('@media (max-width: 780px)') && css.includes('.boss-match-mobile-field'), "boss match must define distinct desktop and mobile layouts");
+assert(css.includes('.boss-match-line[data-row-count="5"]'), "mobile boss match must keep five-player lines on one row with specific sizing");
+
 const expectedFormationRows = {
   "4-3-3": [3, 3, 4, 1],
   "4-4-2": [2, 4, 4, 1],
