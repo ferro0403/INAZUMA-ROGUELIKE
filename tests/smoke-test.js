@@ -41,7 +41,9 @@ assert(appJs.includes("--players-in-row:${row.ids.length || 1}"), "squad rows mu
 assert(appJs.includes('["five", "5v5", "five"]'), "bottom navigation must include the 5v5 section");
 assert(appJs.includes("Completa la Formazione 5v5"), "incomplete 5v5 formations must block 5v5 match nodes");
 assert(appJs.includes("trade-squad-layout"), "trade screen must reuse the tactical squad layout");
-assert(css.includes(".trade-bench-panel .mini-player { width: 100%; max-width: 150px;"), "trade bench cards must use an explicit, non-stretched reserve size");
+assert(css.includes(".trade-bench-panel .mini-player { width: min(150px, 100%); max-width: 150px;"), "trade bench cards must use an explicit, non-stretched reserve size");
+assert(css.includes(".player-card-large"), "large pull cards must have a class distinct from compact tactical cards");
+assert(css.includes(".player-card-compact, button.player-card-compact"), "compact tactical cards must override generic player-card button width");
 assert(css.includes(".mini-player.selected") && css.includes("outline: 3px solid #05070b"), "selected trade players must have a clear dark outline");
 assert(appJs.includes("runKeepingScroll") && appJs.includes("preserveScroll: scrollSnapshot()"), "trade selection and provisional win flows must preserve scroll");
 assert(appJs.includes("focus({ preventScroll: true })"), "automatic focus must not force scroll movement");
