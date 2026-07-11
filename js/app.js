@@ -177,6 +177,7 @@
   function ensureRunSchema() {
     if (!run) return;
     run.inventory = Array.isArray(run.inventory) ? run.inventory : [];
+    run.teamIdentity = normalizeTeamIdentity(run.teamIdentity);
     run.effects = run.effects || { luckyPulls: 0 };
     run.effects.luckyPulls = Number(run.effects.luckyPulls || 0);
     run.randomEventHistory = Array.isArray(run.randomEventHistory) ? run.randomEventHistory : [];
@@ -417,6 +418,40 @@
     });
   }
 
+
+  function inazumaLogoMarkup(className = "") {
+    return `<span class="inazuma-logo ${className}" aria-label="Logo Inazuma" role="img">⚡</span>`;
+  }
+
+  function normalizeTeamIdentity(identity = {}) {
+    const name = String(identity.name || "La tua squadra").trim() || "La tua squadra";
+    return { name, logo: identity.logo || "inazuma-lightning" };
+  }
+
+  function validateTeamName(value) {
+    const name = String(value || "").trim();
+    if (!name) return { valid: false, message: "Inserisci il nome della squadra." };
+    if (name.length < 2 || name.length > 24) return { valid: false, message: "Usa da 2 a 24 caratteri." };
+    if (!/^[\p{L}0-9 '\-]+$/u.test(name)) return { valid: false, message: "Sono ammessi lettere, numeri, spazi, apostrofi e trattini." };
+    return { valid: true, name };
+  }
+
+  function savedRunSummaryMarkup(savedRun) {
+    if (!savedRun) return "";
+    const identity = normalizeTeamIdentity(savedRun.teamIdentity);
+    const bossNumber = Number(savedRun.bossIndex || 0) + 1;
+    const totalBosses = seasonDb?.bossOrder?.length || 10;
+    return `
+      <section class="home-save-card" aria-label="Run salvata">
+        <div class="home-save-logo">${inazumaLogoMarkup("inazuma-logo--small")}</div>
+        <div>
+          <p class="eyebrow">Run salvata</p>
+          <h2>${escapeHtml(identity.name)}</h2>
+          <p class="muted">Boss ${escapeHtml(Math.min(bossNumber, totalBosses))} di ${escapeHtml(totalBosses)} · Lv ${escapeHtml(savedRun.teamLevel || 0)} · ${escapeHtml(savedRun.lives ?? "-")} vite</p>
+        </div>
+      </section>`;
+  }
+
   function renderHome() {
     run = global.RunState.load();
     ensureRunSchema();
@@ -424,32 +459,51 @@
       global.RunState.save(run);
     }
     app.innerHTML = `
-      <main class="hero-screen">
-        <div>
-          <p class="eyebrow">Season 1 · Prototipo funzionale</p>
-          <h1>Inazuma<br />Roguelike</h1>
-          <p class="muted">Costruisci la rosa, scegli il percorso e sconfiggi i dieci boss.</p>
-          <div class="button-row">
-            <button class="btn btn-yellow" id="new-run">Nuova run</button>
-            ${run ? '<button class="btn btn-primary" id="continue-run">Continua</button>' : ""}
-            ${run ? '<button class="btn btn-danger" id="delete-run">Cancella</button>' : ""}
+      <main class="hero-screen home-screen">
+        <section class="home-card panel">
+          <div class="home-brand-mark">${inazumaLogoMarkup("inazuma-logo--hero")}</div>
+          <div class="home-copy">
+            <p class="eyebrow">Season 1 · Prototipo funzionale</p>
+            <h1>Inazuma<br />Roguelike</h1>
+            <p class="muted">Costruisci la tua squadra, scegli il percorso e sconfiggi i dieci boss.</p>
           </div>
-        </div>
+          ${savedRunSummaryMarkup(run)}
+          <div class="home-actions button-row">
+            ${run ? '<button class="btn btn-primary" id="continue-run">Continua</button>' : ""}
+            <button class="btn btn-yellow" id="new-run">Nuova run</button>
+          </div>
+        </section>
       </main>`;
 
-    document.getElementById("new-run").addEventListener("click", () => {
-      if (run && !window.confirm("Vuoi sostituire la run salvata?")) return;
-      run = global.RunState.createRun();
-      global.RunState.save(run);
-      renderFormationChoice();
-    });
+    document.getElementById("new-run").addEventListener("click", openTeamNameModal);
     document.getElementById("continue-run")?.addEventListener("click", resumeRun);
-    document.getElementById("delete-run")?.addEventListener("click", () => {
-      if (!window.confirm("Eliminare definitivamente la run?")) return;
-      global.RunState.remove();
-      run = null;
-      renderHome();
-    });
+  }
+
+  function openTeamNameModal() {
+    openModal(`
+      <div class="modal-head"><div><p class="eyebrow">Nuova run</p><h2>Nome della squadra</h2><p class="muted">Scegli il nome che rappresenterà la tua squadra durante la run.</p></div>${inazumaLogoMarkup("inazuma-logo--modal")}</div>
+      ${run ? '<p class="home-overwrite-warning">Confermando sostituirai la run salvata.</p>' : ""}
+      <label class="team-name-field" for="team-name-input">Nome squadra</label>
+      <input class="team-name-input" id="team-name-input" type="text" placeholder="La mia squadra" maxlength="24" autocomplete="off" inputmode="text" />
+      <p class="team-name-error" id="team-name-error" aria-live="polite"></p>
+      <div class="button-row"><button class="btn btn-primary" id="confirm-team-name">Conferma</button><button class="btn" id="cancel-team-name">Indietro</button></div>`,
+      { closeable: false, className: "team-name-modal" }
+    );
+    const input = document.getElementById("team-name-input");
+    const error = document.getElementById("team-name-error");
+    if (window.matchMedia?.("(pointer: fine)").matches) input.focus();
+    const confirm = () => {
+      const result = validateTeamName(input.value);
+      if (!result.valid) { error.textContent = result.message; return; }
+      run = global.RunState.createRun({ name: result.name, logo: "inazuma-lightning" });
+      global.RunState.save(run);
+      closeModal();
+      renderFormationChoice();
+    };
+    document.getElementById("confirm-team-name").addEventListener("click", confirm);
+    document.getElementById("cancel-team-name").addEventListener("click", closeModal);
+    input.addEventListener("input", () => { error.textContent = ""; });
+    input.addEventListener("keydown", (event) => { if (event.key === "Enter") confirm(); });
   }
 
   function resumeRun() {
@@ -1295,10 +1349,9 @@
   }
 
   function bossMatchTeamMeta(boss) {
-    const userPlayer = userTeamPlayers()[0];
-    const userIdentity = userPlayer ? playerTeamIdentity(userPlayer, userPlayer.playerId) : { name: "La tua squadra", logoUrl: "" };
+    const userIdentity = normalizeTeamIdentity(run.teamIdentity);
     return {
-      user: { name: userIdentity.name || "La tua squadra", logoUrl: userIdentity.logoUrl || "", formation: run.formationId || "-", level: run.teamLevel },
+      user: { name: userIdentity.name || "La tua squadra", logoUrl: "", formation: run.formationId || "-", level: run.teamLevel },
       boss: { name: boss?.teamName || "Boss", logoUrl: boss?.logoUrl || teamById(boss?.teamId)?.logoUrl || "", formation: boss?.bossFormation || "-", level: boss?.bossLevel ?? "-", overall: boss?.teamOverall || null },
     };
   }
@@ -1855,9 +1908,7 @@
         <div class="button-row"><button class="btn btn-yellow" id="restart-run">Nuova run</button><button class="btn" id="home">Menu</button></div></div>
       </main>`;
     document.getElementById("restart-run").addEventListener("click", () => {
-      run = global.RunState.createRun();
-      global.RunState.save(run);
-      renderFormationChoice();
+      openTeamNameModal();
     });
     document.getElementById("home").addEventListener("click", renderHome);
   }

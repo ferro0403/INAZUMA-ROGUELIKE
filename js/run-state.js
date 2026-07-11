@@ -12,13 +12,18 @@
     return `${prefix}_${Date.now().toString(36)}_${random}`;
   }
 
-  function createRun() {
+  function createRun(teamIdentity = {}) {
+    const cleanIdentity = {
+      name: String(teamIdentity.name || "La tua squadra").trim() || "La tua squadra",
+      logo: teamIdentity.logo || "inazuma-lightning",
+    };
     return {
       version: config().saveVersion,
       runId: makeId("run"),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       phase: "formation",
+      teamIdentity: cleanIdentity,
       lives: config().startingLives,
       formationId: null,
       roster: [],
@@ -65,6 +70,7 @@
   function createCheckpoint(run) {
     run.checkpoint = clone({
       formationId: run.formationId,
+      teamIdentity: run.teamIdentity,
       roster: run.roster,
       lineup: run.lineup,
       bench: run.bench,

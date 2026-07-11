@@ -10,7 +10,7 @@ Non aprire index.html direttamente con doppio clic: i browser possono bloccare
 il caricamento dei database JSON quando la pagina usa il protocollo file://.
 
 CONTENUTO ATTUALE
-- Nuova run, continua e cancellazione salvataggio.
+- Nuova run con nome squadra obbligatorio e continua salvataggio.
 - Scelta di 6 moduli, compreso il 4-2-4.
 - Draft iniziale: 11 scelte da 1 giocatore su 3 in base ai ruoli del modulo.
 - Rosa con 11 titolari e fino a 4 riserve.

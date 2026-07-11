@@ -796,3 +796,83 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
     padding: 15px 18px;
   }
 }
+
+/* Run home screen and user team identity */
+.home-screen {
+  padding: clamp(18px, 4vw, 44px);
+  background:
+    radial-gradient(circle at 18% 16%, rgba(54,169,255,.18), transparent 30rem),
+    radial-gradient(circle at 82% 84%, rgba(255,211,79,.12), transparent 28rem),
+    var(--bg);
+}
+.home-card {
+  width: min(860px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: clamp(16px, 3vw, 24px);
+  padding: clamp(24px, 5vw, 46px);
+  border-color: rgba(54,169,255,.38);
+  text-align: center;
+}
+.home-copy h1 { margin-bottom: 10px; line-height: .92; }
+.home-copy .muted { max-width: 560px; margin-inline: auto; }
+.inazuma-logo {
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(54,169,255,.45);
+  border-radius: 24px;
+  background: linear-gradient(160deg, rgba(12,28,54,.98), rgba(7,23,44,.98));
+  color: var(--yellow);
+  box-shadow: inset 0 0 22px rgba(54,169,255,.12), var(--shadow);
+  line-height: 1;
+}
+.inazuma-logo--hero { width: clamp(92px, 18vw, 132px); height: clamp(92px, 18vw, 132px); font-size: clamp(3.4rem, 9vw, 5.4rem); }
+.inazuma-logo--small { width: 54px; height: 54px; border-radius: 16px; font-size: 2rem; box-shadow: inset 0 0 16px rgba(54,169,255,.12); }
+.inazuma-logo--modal { flex: 0 0 auto; width: 58px; height: 58px; border-radius: 17px; font-size: 2.2rem; }
+.home-save-card {
+  width: min(560px, 100%);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 16px;
+  border: 1px solid rgba(54,169,255,.34);
+  border-radius: 20px;
+  background: rgba(7,23,44,.72);
+  text-align: left;
+}
+.home-save-card h2 { margin-bottom: 4px; font-size: clamp(1.35rem, 4vw, 2rem); overflow-wrap: anywhere; }
+.home-save-card p { margin-bottom: 0; }
+.home-actions { width: min(440px, 100%); }
+.home-actions .btn { flex: 1 1 170px; }
+.team-name-modal { width: min(560px, 100%); }
+.home-overwrite-warning {
+  padding: 11px 13px;
+  border: 1px solid rgba(255,211,79,.45);
+  border-radius: 14px;
+  background: rgba(255,211,79,.1);
+  color: #ffe28a;
+  font-weight: 850;
+}
+.team-name-field { display: block; margin-bottom: 8px; color: var(--yellow); font-weight: 900; }
+.team-name-input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #07172c;
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+}
+.team-name-input:focus { outline: 3px solid rgba(54,169,255,.25); border-color: var(--blue); }
+.team-name-error { min-height: 1.3em; margin: 8px 0 16px; color: #ff9ba0; font-weight: 850; }
+
+@media (max-width: 620px) {
+  .home-screen { align-content: center; padding: 14px; }
+  .home-card { border-radius: 24px; }
+  .home-save-card { grid-template-columns: 1fr; justify-items: center; text-align: center; }
+  .home-actions { display: grid; }
+  .home-actions .btn { width: 100%; }
+  .team-name-modal .modal-head { align-items: center; }
+}
