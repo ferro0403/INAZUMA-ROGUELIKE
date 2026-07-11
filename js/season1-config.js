@@ -17,12 +17,18 @@
     nodeWeights: {
       five_v_five: 32,
       item: 15,
-      pull_free_agents: 15,
-      pull_unlocked_teams: 10,
+      pull_free_agents: 17,
+      pull_unlocked_teams: 8,
       pull_legendary: 3,
       trade: 10,
       random: 15,
     },
+    stageNodeWeightTiers: [
+      { minStage: 1, maxStage: 3, pull_free_agents: 17, pull_unlocked_teams: 8 },
+      { minStage: 4, maxStage: 5, pull_free_agents: 8, pull_unlocked_teams: 17 },
+      { minStage: 6, maxStage: 7, pull_free_agents: 5, pull_unlocked_teams: 20 },
+      { minStage: 8, maxStage: 10, pull_free_agents: 3, pull_unlocked_teams: 22 },
+    ],
     hiddenNodeWeights: {
       five_v_five: 20,
       item: 20,

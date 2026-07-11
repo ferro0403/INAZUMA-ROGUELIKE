@@ -102,6 +102,28 @@ const migratedRun = {
 assert.equal(global.RoguelikeRules.migrateDefeatedBossPlayerLevels(migratedRun, season), 1);
 assert.equal(migratedRun.roster[0].level, 3);
 assert.equal(Object.values(global.SEASON1_CONFIG.nodeWeights).reduce((sum, value) => sum + value, 0), 100);
+const expectedStagePullWeights = [
+  { bossIndex: 0, free: 17, defeated: 8 },
+  { bossIndex: 2, free: 17, defeated: 8 },
+  { bossIndex: 3, free: 8, defeated: 17 },
+  { bossIndex: 4, free: 8, defeated: 17 },
+  { bossIndex: 5, free: 5, defeated: 20 },
+  { bossIndex: 6, free: 5, defeated: 20 },
+  { bossIndex: 7, free: 3, defeated: 22 },
+  { bossIndex: 9, free: 3, defeated: 22 },
+];
+for (const { bossIndex, free, defeated } of expectedStagePullWeights) {
+  const weights = global.MapEngine.nodeWeightsForStage({ bossIndex });
+  assert.equal(weights.pull_free_agents, free, `stage ${bossIndex + 1} free agent pull weight`);
+  assert.equal(weights.pull_unlocked_teams, defeated, `stage ${bossIndex + 1} defeated team pull weight`);
+  assert.equal(weights.pull_free_agents + weights.pull_unlocked_teams, 25);
+  assert.equal(Object.values(weights).reduce((sum, value) => sum + value, 0), 100);
+  assert.equal(weights.five_v_five, 32);
+  assert.equal(weights.random, 15);
+  assert.equal(weights.item, 15);
+  assert.equal(weights.trade, 10);
+  assert.equal(weights.pull_legendary, 3);
+}
 assert.equal(Object.values(global.SEASON1_CONFIG.hiddenNodeWeights).reduce((sum, value) => sum + value, 0), 100);
 assert.equal(global.SEASON1_CONFIG.maxInventory, 20);
 assert(appJs.includes('mode === "equip"'), "equipment assignment must use tactical squad cards, not the old linear player list");
