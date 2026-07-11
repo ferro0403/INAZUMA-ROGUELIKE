@@ -13,8 +13,10 @@ assert(/@media \(max-width: 780px\)[\s\S]*?\.map-wrap[\s\S]*?overflow-x:\s*hidde
 assert(/@media \(max-width: 780px\)[\s\S]*?\.pitch-row\s*\{[^}]*--pitch-card-size:[^}]*display:\s*grid[\s\S]*?grid-template-columns:\s*repeat\(var\(--players-in-row, 1\), minmax\(0, var\(--pitch-card-size\)\)\)/.test(css), "mobile pitch rows must keep a constant card width while changing only player distribution");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.player-detail-modal\s*\{[\s\S]*?justify-self:\s*center[\s\S]*?width:\s*min\(100%, calc\(100vw - 24px\)\)/.test(css), "mobile player detail modal must be centered without lateral overflow");
 assert(css.includes("grid-template-columns: repeat(4, minmax(0, 1fr))"), "mobile bottom nav must show four uniform items");
-assert(css.includes("width: min(94%, 470px)"), "desktop fullbody art should be larger");
-assert(css.includes("width: min(88%, 330px)"), "mobile fullbody art should be larger without overflow");
+assert(css.includes("align-items: center"), "desktop fullbody visual should not be pinned to the bottom");
+assert(css.includes("width: min(100%, 560px)"), "desktop fullbody art should be larger");
+assert(css.includes("object-fit: contain"), "fullbody art should not deform");
+assert(css.includes("width: min(90%, 340px)"), "mobile fullbody art should be larger without overflow");
 const mime = {
   ".html": "text/html",
   ".css": "text/css",
