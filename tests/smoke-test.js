@@ -29,6 +29,9 @@ assert(mobileMedia.includes(".route-map"), "mobile route map rules must exist");
 assert(mobileMedia.includes("min-width: 0"), "mobile route map must remove the 620px minimum width");
 assert(mobileMedia.includes("overflow-x: hidden"), "mobile map container must prevent horizontal overflow");
 assert(mobileMedia.includes("touch-action: pan-y"), "mobile map must keep vertical panning without horizontal dragging");
+assert(mobileMedia.includes("--pitch-card-size"), "mobile squad cards must use a constant base card size");
+assert(mobileMedia.includes("var(--pitch-card-size)"), "mobile squad rows must not stretch cards based on row count");
+assert(mobileMedia.includes("width: min(100%, calc(100vw - 24px))"), "mobile player detail modal must fit and center inside viewport");
 assert(appJs.includes("--players-in-row:${row.ids.length || 1}"), "squad rows must expose player count to CSS grid");
 
 const expectedFormationRows = {

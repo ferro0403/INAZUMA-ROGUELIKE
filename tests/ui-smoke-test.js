@@ -10,7 +10,8 @@ const root = path.resolve(__dirname, "..");
 const css = fs.readFileSync(path.join(root, "css/game.css"), "utf8");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.route-map[\s\S]*?min-width:\s*0/.test(css), "mobile route map must not keep the desktop 620px min width");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.map-wrap[\s\S]*?overflow-x:\s*hidden/.test(css), "mobile map wrapper must hide horizontal overflow");
-assert(/@media \(max-width: 780px\)[\s\S]*?\.pitch-row\s*\{[^}]*display:\s*grid[\s\S]*?grid-template-columns:\s*repeat\(var\(--players-in-row/.test(css), "mobile pitch rows must use player-count CSS grid columns");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.pitch-row\s*\{[^}]*--pitch-card-size:[^}]*display:\s*grid[\s\S]*?grid-template-columns:\s*repeat\(var\(--players-in-row, 1\), minmax\(0, var\(--pitch-card-size\)\)\)/.test(css), "mobile pitch rows must keep a constant card width while changing only player distribution");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.player-detail-modal\s*\{[\s\S]*?justify-self:\s*center[\s\S]*?width:\s*min\(100%, calc\(100vw - 24px\)\)/.test(css), "mobile player detail modal must be centered without lateral overflow");
 const mime = {
   ".html": "text/html",
   ".css": "text/css",
@@ -75,6 +76,7 @@ server.listen(0, "127.0.0.1", async () => {
     const rowCounts = [...window.document.querySelectorAll(".pitch-row")].map((row) => row.children.length);
     assert.deepEqual(rowCounts, [4, 2, 4, 1], "4-2-4 must keep 4 / 2 / 4 / 1 visual rows");
     assert([...window.document.querySelectorAll(".pitch-row")].every((row) => row.getAttribute("style").includes(`--players-in-row:${row.children.length || 1}`)));
+    assert(css.includes("var(--pitch-card-size)"), "card width must stay constant for one- and two-player rows");
     window.document.querySelector("[data-squad-player]").click();
     await waitFor(window, ".player-detail-modal");
     assert(window.document.querySelector(".player-fullbody").src.includes("_fullbody.webp"));

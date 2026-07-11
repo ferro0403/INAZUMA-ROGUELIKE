@@ -354,8 +354,10 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .screen { overflow-x: clip; padding-bottom: 108px; }
   .pitch { min-height: 500px; padding: 14px 8px 24px; }
   .pitch-row {
+    --pitch-card-size: clamp(58px, 17vw, 76px);
     display: grid;
-    grid-template-columns: repeat(var(--players-in-row, 1), minmax(0, 1fr));
+    grid-template-columns: repeat(var(--players-in-row, 1), minmax(0, var(--pitch-card-size)));
+    justify-content: center;
     gap: clamp(4px, 1.4vw, 8px);
     margin: 10px 0 22px;
   }
@@ -396,10 +398,18 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .vs-text { font-size: 1.3rem; }
   .squad-controls { justify-content: stretch; }
   .squad-controls > * { flex: 1 1 150px; }
-  .player-detail-modal { width: 96vw; max-height: 94vh; overflow: auto; }
-  .player-detail-layout { grid-template-columns: 1fr; }
+  .modal-backdrop { padding-inline: 12px; }
+  .player-detail-modal {
+    justify-self: center;
+    width: min(100%, calc(100vw - 24px));
+    max-width: calc(100vw - 24px);
+    max-height: 94vh;
+    margin-inline: auto;
+    overflow: auto;
+  }
+  .player-detail-layout { grid-template-columns: 1fr; min-width: 0; }
   .player-detail-visual { min-height: 340px; padding-top: 42px; }
   .player-fullbody { max-height: 340px; }
-  .player-detail-content { padding: 28px 18px; }
+  .player-detail-content { min-width: 0; padding: 28px 18px; }
   .detail-stats { grid-template-columns: 1fr; }
 }
