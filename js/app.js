@@ -302,7 +302,7 @@
         </div>
         <div class="player-info">
           <div class="player-title"><strong>${escapeHtml(player.name)}</strong></div>
-          <div class="player-meta" aria-label="Dettagli giocatore"><span>${escapeHtml(player.element || player.type)}</span><span>${escapeHtml(player.category)}</span></div>
+          <div class="player-meta" aria-label="Dettagli giocatore"><span>${escapeHtml(player.position)}</span><span>${escapeHtml(overall)}</span><span>Lv ${escapeHtml(level)}</span></div>
         </div>
         ${equipment ? `<span class="player-corner player-equipment" aria-label="Oggetto equipaggiato" title="${escapeHtml(equipment.name)}">${itemIcon(equipment)}</span>` : ""}
         <span class="player-corner player-level" aria-label="Livello ${escapeHtml(level)}">Lv ${escapeHtml(level)}</span>
@@ -510,7 +510,7 @@
             <span class="role-chip">${escapeHtml(run.formationId)}</span>
           </div>
           <div class="progress-track"><div class="progress-bar" style="width:${progress}%"></div></div>
-          <div class="candidate-grid">
+          <div class="candidate-grid pull-offer-grid initial-draft-grid">
             ${candidates.map((player) => playerCard(player, { button: true })).join("")}
           </div>
         </div>
