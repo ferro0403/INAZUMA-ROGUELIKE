@@ -38,6 +38,7 @@
       effects: { luckyPulls: 0 },
       randomEventHistory: [],
       fiveVFive: null,
+      activeMatch: null,
       currentZone: null,
       checkpoint: null,
       gameOver: false,
@@ -82,6 +83,7 @@
       effects: run.effects,
       randomEventHistory: run.randomEventHistory,
       fiveVFive: run.fiveVFive,
+      activeMatch: run.activeMatch || null,
       currentZone: run.currentZone,
     });
     return save(run);
