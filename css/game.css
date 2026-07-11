@@ -470,11 +470,11 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .mini-player, .tactical-player-card, button.tactical-player-card, .tactical-player-card--mobile { width: 100%; max-width: var(--pitch-card-size); min-width: 0; padding: 6px 4px; border-radius: 12px; background: rgba(4, 20, 28, 0.82); color: white; }
   .player-card-compact .player-portrait-wrap { aspect-ratio: auto; height: clamp(38px, 11vw, 50px); padding: 0; background: transparent; }
   .mini-player img, .player-card-compact img.player-portrait { width: clamp(38px, 11vw, 50px); height: clamp(38px, 11vw, 50px); object-fit: contain; }
-  .player-card-compact .player-info { padding: 3px 2px 18px; }
+  .player-card-compact .player-info { padding: 3px 2px 5px; }
   .mini-player strong, .player-card-compact .player-title strong { font-size: clamp(.58rem, 2.2vw, .7rem); }
-  .player-card-compact .player-meta { display: none; }
-  .player-card-compact .player-corner { min-width: 22px; min-height: 18px; padding: 2px 4px; border-radius: 7px; font-size: .58rem; }
-  .player-card-compact .player-overall { min-width: 25px; min-height: 25px; font-size: .68rem; }
+  .player-card-compact .player-meta { display: flex; justify-content: center; gap: 3px; margin-top: 3px; font-size: clamp(.55rem, 2vw, .66rem); white-space: nowrap; }
+  .player-card-compact .player-meta span + span::before { content: "•"; margin-right: 3px; }
+  .player-card-compact .player-role, .player-card-compact .player-overall, .player-card-compact .player-level { display: none; }
   .player-card-compact .player-equipment { min-width: 22px; min-height: 22px; }
   .mini-player .small, .player-card-compact .small { font-size: clamp(.55rem, 2vw, .66rem); }
   .mini-player .equipment-label, .player-card-compact .equipment-label { display: none; }
@@ -618,8 +618,6 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 @media (max-width: 780px) {
   .equipment-badge { top: 3px; right: 3px; }
   .mini-player .equipment-badge .item-icon, .player-card-compact .player-equipment .item-icon { width: 19px; height: 19px; }
-  .player-card-compact, button.player-card-compact { min-width: 0; width: 100%; max-width: none; }
-  .player-card-compact .player-info { padding: 3px 22px 27px; }
-  .player-card-compact .player-portrait-wrap { padding: 25px 14px 3px; }
+  .player-card-compact, button.player-card-compact { min-width: 0; width: 100%; max-width: var(--pitch-card-size, 76px); }
   .item-assignment-layout { grid-template-columns: 1fr; }
 }
