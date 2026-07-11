@@ -77,6 +77,18 @@ assert.equal(migratedRun.roster[0].level, 3);
 assert.equal(Object.values(global.SEASON1_CONFIG.nodeWeights).reduce((sum, value) => sum + value, 0), 100);
 assert.equal(Object.values(global.SEASON1_CONFIG.hiddenNodeWeights).reduce((sum, value) => sum + value, 0), 100);
 assert.equal(global.SEASON1_CONFIG.maxInventory, 20);
+assert(appJs.includes('mode === "equip"'), "equipment assignment must use tactical squad cards, not the old linear player list");
+assert(appJs.includes("handleEquipmentTarget"), "equipment assignment must route through replacement confirmation logic");
+assert(appJs.includes("Conferma sostituzione"), "replacing equipped items must ask for confirmation");
+assert(appJs.includes("item-assignment-layout"), "equipment assignment modal must show pitch and bench sections");
+assert(appJs.includes("data-detail-unequip"), "player details must expose a direct remove item button");
+assert(appJs.includes("luckyEligible"), "lucky charm must only be consumed for eligible pull types");
+assert(appJs.includes("originalCandidates"), "lucky charm must improve the original candidate categories by one step");
+const itemWeights = global.SEASON1_CONFIG.itemPool.map((item) => item.weight);
+const luckyCharm = global.SEASON1_CONFIG.itemPool.find((item) => item.id === "lucky_charm");
+assert(luckyCharm, "lucky charm must exist");
+assert.equal(luckyCharm.weight, Math.min(...itemWeights), "lucky charm must have the lowest item spawn weight");
+assert(global.SEASON1_CONFIG.categoryRanks.Scarso < global.SEASON1_CONFIG.categoryRanks.Debole, "category ladder must support Scarso before Debole");
 
 const outgoing = free.players.find((player) => player.position === "FW" && player.finalOverall >= 74);
 const tradeCandidates = global.RoguelikeRules.getTradeCandidates({
