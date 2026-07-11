@@ -77,6 +77,7 @@
     bossMatchState: "pre-match",
     bossMatchLog: [],
     bossMatchResolving: false,
+    fiveMatchTab: "user",
   };
 
   function escapeHtml(value) {
@@ -155,7 +156,11 @@
 
   function ensureFiveVFive() {
     if (!run || !run.roster?.length) return null;
-    return global.FiveVFive.ensure(run, fiveRoleForPlayerId);
+    return global.FiveVFive.ensure(run, fiveRoleForPlayerId, fiveOverallForPlayerId);
+  }
+
+  function fiveOverallForPlayerId(playerId) {
+    return resolvedRosterPlayer(playerId)?.overall || 0;
   }
 
   function fiveVFiveStatus() {
@@ -181,6 +186,7 @@
     run.effects = run.effects || { luckyPulls: 0 };
     run.effects.luckyPulls = Number(run.effects.luckyPulls || 0);
     run.randomEventHistory = Array.isArray(run.randomEventHistory) ? run.randomEventHistory : [];
+    run.activeMatch = run.activeMatch || null;
     run.roster = (run.roster || []).map((entry) => ({ ...entry, equippedItem: entry.equippedItem || null }));
     run.lineup = (run.lineup || []).map(String);
     run.bench = (run.bench || []).map(String);
@@ -514,7 +520,12 @@
     if (run.phase === "squad") return renderSquad();
     if (run.phase === "five") return renderFiveVFive();
     if (run.phase === "inventory") return renderInventory();
-    if (run.phase === "match" && ui.match) return renderMatch();
+    if (run.phase === "match" && run.activeMatch) {
+      ui.match = run.activeMatch;
+      ui.bossMatchState = run.activeMatch.state || "pre-match";
+      ui.bossMatchLog = run.activeMatch.log || [];
+      return renderMatch();
+    }
     ensureCurrentZone();
     renderMap();
   }
@@ -867,20 +878,22 @@
         global.RunState.save(run);
         return renderFiveVFive();
       }
-      ui.match = { nodeId: node.id, type: eventType };
-      ui.bossMatchState = "pre-match";
-      ui.bossMatchLog = [];
+      ui.match = createOrLoadFiveMatch(node);
+      ui.bossMatchState = ui.match.state || "pre-match";
+      ui.bossMatchLog = ui.match.log || [];
       ui.bossMatchResolving = false;
       run.phase = "match";
+      run.activeMatch = ui.match;
       global.RunState.save(run);
       return renderMatch();
     }
     if (eventType === "boss") {
-      ui.match = { nodeId: node.id, type: eventType };
+      ui.match = { nodeId: node.id, type: eventType, state: "pre-match", log: [] };
       ui.bossMatchState = "pre-match";
       ui.bossMatchLog = [];
       ui.bossMatchResolving = false;
       run.phase = "match";
+      run.activeMatch = ui.match;
       global.RunState.save(run);
       return renderMatch();
     }
@@ -1397,29 +1410,162 @@
     }[ui.bossMatchState] || "Pre-partita";
   }
 
+
+  function fiveFormationRows(formationId, playersBySlot) {
+    const formation = global.FiveVFive.formationById(formationId);
+    return ["attack", "midfield", "defense", "goal"].map((line) => ({
+      line,
+      players: formation.slots.filter((slot) => slot.line === line).map((slot) => playersBySlot[slot.key]).filter(Boolean),
+    })).filter((row) => row.players.length);
+  }
+
+  function fiveUserPlayersBySlot() {
+    ensureFiveVFive();
+    return Object.fromEntries(Object.entries(run.fiveVFive.slots).map(([slot, id]) => [slot, resolvedRosterPlayer(id)]));
+  }
+
+  function fiveOpponentLevel() {
+    return Math.max(0, Math.floor(Number(run.teamLevel || 0)));
+  }
+
+  function createOrLoadFiveMatch(node) {
+    if (run.activeMatch?.type === "five_v_five" && run.activeMatch.nodeId === node.id && run.activeMatch.opponents?.length === 5) return run.activeMatch;
+    const formation = Math.random() < 0.5 ? "1-2-1" : "1-1-2";
+    const slots = global.FiveVFive.formationById(formation).slots;
+    const userIds = new Set((run.roster || []).map((entry) => String(entry.playerId)));
+    const used = new Set();
+    const opponents = slots.map((slot) => {
+      const pool = (freeAgentsDb.players || []).filter((player) => !used.has(String(player.playerId)) && !userIds.has(String(player.playerId)) && player.position === slot.role);
+      const fallback = (freeAgentsDb.players || []).filter((player) => !used.has(String(player.playerId)) && !userIds.has(String(player.playerId)));
+      const source = (pool.length ? pool : fallback)[Math.floor(Math.random() * (pool.length ? pool.length : fallback.length))];
+      if (!source) return null;
+      used.add(String(source.playerId));
+      return { slotKey: slot.key, playerId: String(source.playerId) };
+    }).filter(Boolean);
+    return {
+      nodeId: node.id,
+      type: "five_v_five",
+      state: "pre-match",
+      result: null,
+      level: fiveOpponentLevel(),
+      opponentFormation: formation,
+      opponents,
+      log: [],
+      score: [0, 0],
+    };
+  }
+
+  function fiveOpponentPlayersBySlot(match) {
+    const level = Number(match.level ?? fiveOpponentLevel());
+    return Object.fromEntries((match.opponents || []).map((opponent) => {
+      const source = freeAgentsById.get(String(opponent.playerId));
+      if (!source) return [opponent.slotKey, null];
+      const resolved = global.InazumaProgression.getPlayerAtLevel(source, Math.floor(level), freeAgentsDb);
+      return [opponent.slotKey, { ...resolved, displayLevel: level, source: "free_agents", playerId: String(opponent.playerId) }];
+    }));
+  }
+
+  function fiveMatchCard(player, side) {
+    return `
+      <button type="button" class="five-match-card five-match-card--${side} ${rarityClass(player.category)}" data-five-match-player="${escapeHtml(player.playerId)}" data-five-match-side="${side}" aria-label="Apri scheda ${escapeHtml(player.name)}">
+        <span class="five-match-card-role">${escapeHtml(player.position)}</span>
+        <span class="five-match-card-overall">${escapeHtml(player.overall ?? "-")}</span>
+        <img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" />
+        <strong>${escapeHtml(shortName(player.name))}</strong>
+        <small>Lv ${escapeHtml(player.displayLevel ?? 0)}</small>
+      </button>`;
+  }
+
+  function fiveMatchField(playersBySlot, formationId, side, mobile = false) {
+    return `<div class="five-match-field-side five-match-field-side--${side} ${mobile ? "five-match-field-side--mobile" : ""}">
+      ${fiveFormationRows(formationId, playersBySlot).map((row) => `<div class="five-match-line five-match-line--${row.line}" data-row-count="${row.players.length}" style="--five-row-count:${row.players.length || 1}">${row.players.map((player) => fiveMatchCard(player, side)).join("")}</div>`).join("")}
+    </div>`;
+  }
+
+  function persistMatchState() {
+    if (!ui.match) return;
+    ui.match.state = ui.bossMatchState;
+    ui.match.log = ui.bossMatchLog;
+    run.activeMatch = ui.match;
+    global.RunState.save(run);
+  }
+
   function renderMatch() {
     const boss = seasonDb.bossOrder[run.bossIndex];
     const isBoss = ui.match?.type === "boss";
     if (!isBoss) {
+      const match = createOrLoadFiveMatch({ id: ui.match?.nodeId });
+      ui.match = match;
+      run.activeMatch = match;
+      ui.bossMatchState = match.state || ui.bossMatchState || "pre-match";
+      ui.bossMatchLog = match.log || ui.bossMatchLog || [];
+      ensureFiveVFive();
+      const userPlayersBySlot = fiveUserPlayersBySlot();
+      const opponentPlayersBySlot = fiveOpponentPlayersBySlot(match);
+      const identity = normalizeTeamIdentity(run.teamIdentity);
+      const userName = identity.name || "La tua squadra";
+      const opponentName = "Svincolati";
+      const activeSide = ui.fiveMatchTab === "opponent" ? "opponent" : "user";
+      const resolved = ui.bossMatchState.startsWith("completed");
+      const simulating = ui.bossMatchState === "simulating";
+      const score = ui.bossMatchState === "completed-victory" ? [2, 1] : ui.bossMatchState === "completed-defeat" ? [1, 2] : (match.score || [0, 0]);
       app.innerHTML = `
-        <main class="screen">
+        <main class="screen five-match-screen" data-match-state="${escapeHtml(ui.bossMatchState)}">
           ${topbar("Partita 5v5")}
-          <div class="content">
-            <section class="panel match-card">
-              <p class="eyebrow">Modalità test</p>
-              <h2>Partitella 5v5</h2>
-              <div class="versus">
-                <div class="team-block"><div style="font-size:72px">⚡</div><h3>La tua squadra</h3><p>Livello ${run.teamLevel}</p></div>
-                <div class="vs-text">VS</div>
-                <div class="team-block"><div style="font-size:72px">⚽</div><h3>Squadra 5v5</h3><p>Livello ${Math.max(0, Math.floor(run.teamLevel))}</p></div>
+          <div class="content five-match-content">
+            <section class="panel five-match-hero">
+              <button class="btn btn-ghost" data-nav="map" aria-label="Torna al percorso">← Indietro</button>
+              <div><p class="eyebrow">Run Lv ${escapeHtml(run.teamLevel)} · ${hearts()}</p><h2>Partita 5v5</h2></div>
+              <div class="five-match-vs">
+                <div class="five-match-team"><span class="five-match-logo">⚡</span><strong>${escapeHtml(userName)}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(bossMatchAverage(Object.values(userPlayersBySlot).filter(Boolean)) || "-")}</small></div>
+                <span class="five-match-vs-badge">VS</span>
+                <div class="five-match-team"><span class="five-match-logo">⚽</span><strong>${opponentName}</strong><small>${escapeHtml(match.opponentFormation)} · Lv ${escapeHtml(match.level)}</small></div>
               </div>
-              <p class="muted">Il motore della partita verrà collegato più avanti. Questi pulsanti servono a collaudare vite, progressione e percorso.</p>
-              <div class="button-row"><button class="btn btn-primary" id="test-win">Segna vittoria</button><button class="btn btn-danger" id="test-loss">Segna sconfitta</button></div>
             </section>
+            <section class="panel five-match-pitch-panel">
+              <div class="five-match-tabs" role="tablist" aria-label="Squadra visualizzata">
+                <button class="five-match-team-tab ${activeSide === "user" ? "active" : ""}" data-five-match-tab="user">La tua squadra</button>
+                <button class="five-match-team-tab ${activeSide === "opponent" ? "active" : ""}" data-five-match-tab="opponent">Svincolati</button>
+              </div>
+              <div class="five-match-field" aria-label="Campo partita 5v5">
+                <div class="five-match-half-label five-match-half-label--user">${escapeHtml(userName)}</div>
+                <div class="five-match-half-label five-match-half-label--opponent">${opponentName}</div>
+                ${fiveMatchField(userPlayersBySlot, run.fiveVFive.formation, "user")}
+                ${fiveMatchField(opponentPlayersBySlot, match.opponentFormation, "opponent")}
+                <div class="five-match-mobile-field">${fiveMatchField(activeSide === "opponent" ? opponentPlayersBySlot : userPlayersBySlot, activeSide === "opponent" ? match.opponentFormation : run.fiveVFive.formation, activeSide, true)}</div>
+              </div>
+            </section>
+            <div class="five-match-bottom-grid">
+              <section class="panel boss-match-log-panel"><h3>Cronaca</h3><ol class="boss-match-log">${bossMatchTimeline()}</ol></section>
+              <section class="panel boss-match-result-panel"><h3>Risultato</h3><div class="boss-match-score"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(userName)}</span><span>${opponentName}</span></div></section>
+            </div>
+            <section class="panel five-match-controls"><button class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><div class="button-row"><button class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria</button><button class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button class="btn" id="edit-five-team">Modifica squadra</button></div></section>
           </div>
         </main>`;
-      document.getElementById("test-win").addEventListener("click", winMatch);
-      document.getElementById("test-loss").addEventListener("click", loseMatch);
+      bindBottomNav();
+      document.querySelectorAll("[data-five-match-tab]").forEach((button) => button.addEventListener("click", () => runKeepingScroll(() => { ui.fiveMatchTab = button.dataset.fiveMatchTab; renderMatch(); })));
+      document.querySelectorAll("[data-five-match-player]").forEach((button) => button.addEventListener("click", () => {
+        const id = button.dataset.fiveMatchPlayer;
+        if (button.dataset.fiveMatchSide === "user") return showPlayerDetails(id);
+        const player = Object.values(opponentPlayersBySlot).find((candidate) => String(candidate?.playerId) === String(id));
+        showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: freeAgentsDb, preserveScroll: scrollSnapshot() });
+      }));
+      document.getElementById("edit-five-team").addEventListener("click", () => renderFiveVFive({ returnToMatch: true }));
+      document.getElementById("test-win").addEventListener("click", () => completeFiveMatch("victory"));
+      document.getElementById("test-loss").addEventListener("click", () => completeFiveMatch("defeat"));
+      document.getElementById("simulate-boss-match").addEventListener("click", () => {
+        if (ui.bossMatchState !== "pre-match") return;
+        ui.bossMatchState = "simulating";
+        ui.bossMatchLog = [
+          { minute: "1'", icon: "▶", text: "Calcio d'inizio della partita 5v5." },
+          { minute: "12'", icon: "⚡", text: `${userName} prova a controllare il ritmo.` },
+          { minute: "24'", icon: "⚽", text: "Gli Svincolati rispondono con una ripartenza veloce." },
+          { minute: "40'", icon: "🏁", text: "Fine simulazione: scegli l'esito con i controlli provvisori." },
+        ];
+        persistMatchState();
+        runKeepingScroll(renderMatch);
+      });
+      persistMatchState();
       return;
     }
 
@@ -1506,6 +1652,16 @@
     });
   }
 
+  function completeFiveMatch(result) {
+    if (ui.bossMatchResolving || ui.bossMatchState.startsWith("completed")) return;
+    ui.bossMatchResolving = true;
+    ui.bossMatchState = result === "victory" ? "completed-victory" : "completed-defeat";
+    ui.bossMatchLog = [...ui.bossMatchLog, { minute: "FT", icon: result === "victory" ? "🏆" : "💔", text: result === "victory" ? "Vittoria 5v5 confermata." : "Sconfitta 5v5 confermata." }];
+    if (ui.match) { ui.match.result = result; ui.match.score = result === "victory" ? [2, 1] : [1, 2]; }
+    persistMatchState();
+    result === "victory" ? winMatch() : loseMatch();
+  }
+
   function completeBossMatch(result) {
     if (ui.bossMatchResolving || ui.bossMatchState.startsWith("completed")) return;
     ui.bossMatchResolving = true;
@@ -1529,6 +1685,7 @@
       global.MapEngine.completeNode(run.currentZone, node.id);
       run.phase = "map";
       ui.match = null;
+      run.activeMatch = null;
       global.RunState.save(run);
       toast("Vittoria: tutta la rosa guadagna 0,5 livelli");
       return runKeepingScroll(renderMap);
@@ -1537,6 +1694,7 @@
     global.MapEngine.completeNode(run.currentZone, node.id);
     ui.bossMatchResolving = "done";
     ui.match = null;
+    run.activeMatch = null;
     startBossRewards();
   }
 
@@ -1544,6 +1702,7 @@
     if (!ui.match || ui.bossMatchResolving === "done") return;
     ui.bossMatchResolving = "done";
     ui.match = null;
+    run.activeMatch = null;
     global.RunState.restoreAfterLoss(run);
     closeModal();
     if (run.gameOver) return renderGameOver();
@@ -1632,9 +1791,9 @@
     const selected = ui.fiveVFiveSelectedSlot === slot.key;
     const missing = !player && !status.valid;
     return `
-      <button class="five-slot ${selected ? "selected" : ""} ${missing ? "missing" : ""}" data-five-slot="${escapeHtml(slot.key)}" style="grid-area:${escapeHtml(slot.line)}">
+      <button class="five-slot ${selected ? "selected" : ""} ${missing ? "missing" : ""} ${player ? rarityClass(player.category) : ""}" data-five-slot="${escapeHtml(slot.key)}" style="grid-area:${escapeHtml(slot.line)}">
         <span class="five-slot-role">${roleBadge(slot.role)}</span>
-        ${player ? `
+        ${player ? `<span class="five-slot-overall">${escapeHtml(player.overall)}</span>
           <img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" />
           <strong>${escapeHtml(player.name)}</strong>
           <span class="small muted">${player.position} · Lv ${player.displayLevel}</span>
@@ -1659,7 +1818,7 @@
       </button>`;
   }
 
-  function renderFiveVFive() {
+  function renderFiveVFive(options = {}) {
     run.phase = "five";
     ensureRunSchema();
     ensureFiveVFive();
@@ -1706,7 +1865,7 @@
                 <strong>${status.valid ? "Formazione 5v5 pronta" : `Formazione incompleta (${status.assignedCount}/5)`}</strong>
                 <p>${status.valid ? "Puoi affrontare i nodi Partita 5v5." : escapeHtml(status.messages[0] || "Completa tutti gli slot rispettando i ruoli.")}</p>
               </div>
-              <div class="button-row"><button class="btn btn-yellow" id="save-five" ${status.valid ? "" : "disabled"}>Conferma formazione</button></div>
+              <div class="button-row"><button class="btn btn-yellow" id="save-five" ${status.valid ? "" : "disabled"}>Conferma formazione</button>${options.returnToMatch ? '<button class="btn" id="back-five-match">Torna alla partita</button>' : ""}</div>
             </div>
             <aside class="panel five-selector">
               <div class="section-head compact"><div><p class="eyebrow">${escapeHtml(selectedSlot)}</p><h3>Seleziona giocatore</h3><p class="muted small">Scegli un ${escapeHtml(selectedRole)} dalla rosa.</p></div></div>
@@ -1727,24 +1886,24 @@
       global.FiveVFive.changeFormation(run, button.dataset.fiveFormation, fiveRoleForPlayerId);
       ui.fiveVFiveSelectedSlot = null;
       global.RunState.save(run);
-      renderFiveVFive();
+      renderFiveVFive(options);
     }));
     document.querySelectorAll("[data-five-slot]").forEach((button) => button.addEventListener("click", () => {
       ui.fiveVFiveSelectedSlot = button.dataset.fiveSlot;
       const role = formation.slots.find((slot) => slot.key === ui.fiveVFiveSelectedSlot)?.role;
       ui.fiveVFiveRoleFilter = role || "all";
-      renderFiveVFive();
+      renderFiveVFive(options);
     }));
     document.querySelectorAll("[data-five-filter]").forEach((button) => button.addEventListener("click", () => {
       ui.fiveVFiveRoleFilter = button.dataset.fiveFilter;
-      renderFiveVFive();
+      renderFiveVFive(options);
     }));
     document.querySelectorAll("[data-five-player]").forEach((button) => button.addEventListener("click", () => {
       try {
         global.FiveVFive.assign(run, ui.fiveVFiveSelectedSlot, button.dataset.fivePlayer, fiveRoleForPlayerId);
         global.RunState.save(run);
         toast("Giocatore assegnato alla formazione 5v5");
-        renderFiveVFive();
+        renderFiveVFive(options);
       } catch (error) {
         toast(error.message);
       }
@@ -1752,7 +1911,7 @@
     document.getElementById("clear-five-slot").addEventListener("click", () => {
       global.FiveVFive.clearSlot(run, ui.fiveVFiveSelectedSlot);
       global.RunState.save(run);
-      renderFiveVFive();
+      renderFiveVFive(options);
     });
     document.getElementById("save-five").addEventListener("click", () => {
       const nextStatus = fiveVFiveStatus();

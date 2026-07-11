@@ -59,26 +59,36 @@
     });
   }
 
-  function autoFill(run, getRole) {
+  function autoFill(run, getRole, getOverall = null) {
     const state = normalize(run);
-    const used = new Set(Object.values(state.slots).filter(Boolean).map(String));
+    const owned = ownedIds(run);
+    const used = new Set();
     formationById(state.formation).slots.forEach((slot) => {
-      if (state.slots[slot.key]) return;
-      const candidate = (run.roster || []).find((entry) => {
-        const id = String(entry.playerId);
-        return !used.has(id) && getRole(id) === slot.role;
-      });
+      const id = state.slots[slot.key] ? String(state.slots[slot.key]) : null;
+      const valid = id && owned.has(id) && getRole(id) === slot.role && !used.has(id);
+      if (valid) {
+        used.add(id);
+        return;
+      }
+      state.slots[slot.key] = null;
+      const candidates = (run.roster || [])
+        .filter((entry) => {
+          const candidateId = String(entry.playerId);
+          return !used.has(candidateId) && owned.has(candidateId) && getRole(candidateId) === slot.role;
+        })
+        .sort((a, b) => Number(getOverall ? getOverall(b.playerId) : 0) - Number(getOverall ? getOverall(a.playerId) : 0));
+      const candidate = candidates[0];
       if (!candidate) return;
-      const id = String(candidate.playerId);
-      state.slots[slot.key] = id;
-      used.add(id);
+      const candidateId = String(candidate.playerId);
+      state.slots[slot.key] = candidateId;
+      used.add(candidateId);
     });
   }
 
-  function ensure(run, getRole) {
+  function ensure(run, getRole, getOverall = null) {
     normalize(run);
     removeUnavailable(run);
-    if (!Object.values(run.fiveVFive.slots).some(Boolean)) autoFill(run, getRole);
+    autoFill(run, getRole, getOverall);
     return run.fiveVFive;
   }
 

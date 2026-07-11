@@ -876,3 +876,73 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .home-actions .btn { width: 100%; }
   .team-name-modal .modal-head { align-items: center; }
 }
+
+/* Isolated 5v5 match screen */
+.five-match-screen { background: var(--bg); padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
+.five-match-content { display: grid; gap: 16px; }
+.five-match-hero { display: grid; grid-template-columns: auto minmax(160px, .7fr) minmax(0, 1.3fr); gap: 16px; align-items: center; }
+.five-match-vs { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+.five-match-team { min-width: 0; display: grid; justify-items: center; gap: 5px; text-align: center; }
+.five-match-team strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.five-match-team small { color: var(--muted); font-weight: 850; }
+.five-match-logo { display: grid; place-items: center; width: 54px; height: 54px; border: 1px solid var(--line); border-radius: 16px; background: #07172c; font-size: 2rem; }
+.five-match-vs-badge { color: var(--yellow); font-size: 1.6rem; font-weight: 950; }
+.five-match-tabs { display: none; }
+.five-match-field { position: relative; display: grid; grid-template-columns: 1fr 1fr; min-height: 420px; overflow: hidden; border: 2px solid rgba(255,255,255,.32); border-radius: 24px; background: linear-gradient(90deg, transparent calc(50% - 1px), rgba(255,255,255,.55) 50%, transparent calc(50% + 1px)), linear-gradient(rgba(255,255,255,.08) 2px, transparent 2px) center/100% 50%, repeating-linear-gradient(90deg, #14633f 0 12.5%, #176c45 12.5% 25%); }
+.five-match-half-label { position: absolute; top: 8px; z-index: 1; padding: 4px 9px; border-radius: 999px; background: rgba(5,7,11,.55); color: #dcefff; font-size: .72rem; font-weight: 900; }
+.five-match-half-label--user { left: 10px; }
+.five-match-half-label--opponent { right: 10px; }
+.five-match-field-side { display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 8px; align-items: center; min-width: 0; padding: 36px 12px 16px; }
+.five-match-field-side--user { direction: rtl; border-right: 1px solid rgba(54,169,255,.35); }
+.five-match-field-side--user .five-match-line, .five-match-field-side--user .five-match-card { direction: ltr; }
+.five-match-field-side--opponent { border-left: 1px solid rgba(255,91,98,.32); }
+.five-match-line { display: grid; grid-template-columns: repeat(var(--five-row-count, 1), minmax(0, 88px)); justify-content: center; justify-items: center; gap: clamp(8px, 1vw, 14px); min-width: 0; }
+.five-match-card { position: relative; display: grid; grid-template-rows: auto 1fr auto auto; justify-items: center; width: clamp(72px, 7vw, 88px); min-height: 104px; padding: 6px 5px 7px; border: 1px solid rgba(54,169,255,.58); border-radius: 13px; color: white; text-align: center; box-shadow: 0 8px 18px rgba(0,0,0,.18); }
+.five-match-card--opponent { border-color: rgba(255,91,98,.68); }
+.five-match-card:hover { border-color: var(--yellow); transform: translateY(-1px); }
+.five-match-card img { width: 44px; height: 44px; object-fit: contain; align-self: end; }
+.five-match-card strong { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .66rem; line-height: 1.05; }
+.five-match-card small { color: rgba(255,255,255,.9); font-size: .58rem; font-weight: 900; }
+.five-match-card-role, .five-match-card-overall, .five-slot-overall { position: absolute; top: 4px; min-width: 22px; padding: 2px 4px; border-radius: 7px; background: rgba(5,7,11,.72); font-size: .58rem; font-weight: 950; }
+.five-match-card-role { left: 4px; }
+.five-match-card-overall, .five-slot-overall { right: 4px; background: var(--yellow); color: #172033; }
+.five-match-mobile-field { display: none; }
+.five-match-bottom-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(240px, .65fr); gap: 16px; }
+.five-match-controls { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+.five-match-controls > .btn-yellow { min-width: 220px; }
+.five-slot { position: relative; }
+.five-slot .role-token { background: rgba(5,7,11,.72); }
+.five-slot strong, .five-slot .small { text-shadow: 0 1px 2px rgba(0,0,0,.55); }
+
+@media (max-width: 900px) {
+  .five-match-hero, .five-match-bottom-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 780px) {
+  .five-match-screen { padding-bottom: calc(128px + env(safe-area-inset-bottom)); }
+  .five-match-hero { grid-template-columns: 1fr; }
+  .five-match-vs { gap: 6px; }
+  .five-match-team strong { font-size: .82rem; }
+  .five-match-team small { font-size: .68rem; line-height: 1.15; }
+  .five-match-logo { width: 44px; height: 44px; border-radius: 12px; }
+  .five-match-vs-badge { font-size: 1.2rem; }
+  .five-match-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 10px; }
+  .five-match-team-tab { min-height: 42px; border: 1px solid var(--line); border-radius: 12px; background: #0b1c37; color: var(--text); font-weight: 900; }
+  .five-match-team-tab.active { border-color: var(--yellow); background: var(--yellow); color: #172033; }
+  .five-match-field { display: block; min-height: 430px; background: linear-gradient(rgba(255,255,255,.08) 2px, transparent 2px) center/100% 50%, repeating-linear-gradient(90deg, #14633f 0 12.5%, #176c45 12.5% 25%); }
+  .five-match-field > .five-match-field-side, .five-match-half-label { display: none; }
+  .five-match-mobile-field { display: block; height: 100%; }
+  .five-match-field-side--mobile { display: grid; height: 430px; padding: 16px 7px; direction: ltr; border: 0; }
+  .five-match-line { grid-template-columns: repeat(var(--five-row-count, 1), minmax(0, var(--five-mobile-card-width, 78px))); gap: clamp(6px, 2vw, 10px); }
+  .five-match-line[data-row-count="2"] { --five-mobile-card-width: clamp(82px, 29vw, 96px); }
+  .five-match-card { width: 100%; min-height: 92px; padding: 5px 3px 6px; border-radius: 11px; }
+  .five-match-card img { width: 38px; height: 38px; }
+  .five-match-card strong { font-size: clamp(.56rem, 2.1vw, .64rem); }
+  .five-match-controls { display: grid; grid-template-columns: 1fr; width: 100%; gap: 12px; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
+  .five-match-controls > .btn-yellow { min-width: 0; width: 100%; min-height: 58px; }
+  .five-match-controls .button-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 10px; }
+  .five-match-controls .button-row .btn { min-width: 0; width: 100%; min-height: 54px; }
+  .five-match-controls .button-row #edit-five-team { grid-column: 1 / -1; min-height: 58px; }
+}
+.five-slot[class*="rarity-"], .five-match-card[class*="rarity-"] { background: var(--rarity-bg); border-color: var(--rarity-border); color: var(--rarity-text); }
+.five-slot[class*="rarity-"] .muted, .five-match-card[class*="rarity-"] small { color: color-mix(in srgb, var(--rarity-text) 82%, transparent); }
