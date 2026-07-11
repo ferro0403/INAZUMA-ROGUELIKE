@@ -30,7 +30,9 @@ assert(css.includes(".player-info { padding: 8px 38px 34px; text-align: center;"
 assert(css.includes(".candidate-grid .player-card { display: block;"), "mobile candidate cards must keep the shared vertical player-card structure");
 assert(!/\.rarity-(?:scarso|normale|buono|forte|elite|mondiale|leggenda) \{[^}]*gradient\(/.test(css), "rarity classes must use flat colors, not gradients");
 assert(css.includes("background: var(--rarity-bg, #0b1c37)"), "player detail fullbody visual background must use rarity card color");
-assert(css.includes(".equipment-badge"), "mobile squad cards must have a compact equipment badge");
+assert(css.includes(".player-card-compact"), "squad, trade and item selection cards must reuse the shared compact player-card variant");
+assert(css.includes(".player-card-compact .player-overall"), "compact player cards must resize the shared top-right overall badge");
+assert(css.includes(".player-card-compact .player-equipment"), "compact player cards must render equipped items as corner icons only");
 assert(css.includes(".item-icon"), "item icons must have shared SVG styling");
 assert(css.includes(".item-assignment-layout"), "item assignment must reuse the tactical pitch layout responsively");
 const mime = {
@@ -100,6 +102,12 @@ server.listen(0, "127.0.0.1", async () => {
     assert(firstDraftCard.querySelector(".player-level"), "standard player cards render the level in a bottom-right badge");
     assert(firstDraftCard.querySelector(".player-title strong"), "standard player cards keep a central readable name");
     assert(!firstDraftCard.querySelector(".player-equipment"), "standard player cards without equipment must not render an empty equipment badge");
+    const compactCards = window.document.querySelectorAll(".pitch-row .player-card-compact");
+    assert(compactCards.length > 0, "starters must render the compact shared player-card variant");
+    assert(compactCards[0].querySelector(".player-role"), "compact cards render the role in the top-left corner");
+    assert(compactCards[0].querySelector(".player-overall"), "compact cards render the overall in the top-right corner");
+    assert(compactCards[0].querySelector(".player-level"), "compact cards render the level in the bottom-right corner");
+    assert(!compactCards[0].querySelector(".player-equipment"), "compact cards without equipment must not render an empty item icon");
     const rowCounts = [...window.document.querySelectorAll(".pitch-row")].map((row) => row.children.length);
     assert.deepEqual(rowCounts, [4, 2, 4, 1], "4-2-4 must keep 4 / 2 / 4 / 1 visual rows");
     assert([...window.document.querySelectorAll(".pitch-row")].every((row) => row.getAttribute("style").includes(`--players-in-row:${row.children.length || 1}`)));
@@ -129,7 +137,9 @@ server.listen(0, "127.0.0.1", async () => {
     window.document.querySelector("[data-squad-player]").click();
     await waitFor(window, ".player-detail-modal");
     assert(window.document.querySelector(".player-fullbody").src.includes("_fullbody.webp"));
-assert(window.document.querySelector(".player-detail-visual[class*=\"rarity-\"]"), "player detail visual must carry the player rarity class");
+    assert(window.document.querySelector(".player-detail-visual[class*=\"rarity-\"]"), "player detail visual must carry the player rarity class");
+    assert(window.document.querySelector(".player-detail-team"), "player detail must show the source team identity above the fullbody");
+    assert(window.document.querySelector(".player-detail-team strong").textContent.trim().length > 0, "player detail must show the source team name");
     assert.equal(window.document.querySelectorAll(".detail-stat").length, 8);
     assert(window.document.body.textContent.includes("Potenziale"));
     window.document.querySelector("[data-close-modal]").click();
@@ -138,7 +148,7 @@ assert(window.document.querySelector(".player-detail-visual[class*=\"rarity-\"]"
     assert(window.document.querySelectorAll(".map-node").length > 8);
     assert(window.document.querySelectorAll(".map-node.reachable").length > 0);
     assert(css.includes(".trade-squad-layout"), "trade modal should use tactical pitch layout styles");
-assert(window.runKeepingScroll === undefined, "scroll helpers should stay internal to the app closure");
+    assert(window.runKeepingScroll === undefined, "scroll helpers should stay internal to the app closure");
     assert(window.document.documentElement.innerHTML.includes("bottom-nav"));
     const mapScroll = window.document.querySelector("#map-scroll");
     mapScroll.scrollLeft = 99;
