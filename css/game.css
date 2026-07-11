@@ -669,3 +669,96 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .player-card-compact, button.player-card-compact { min-width: 0; width: 100%; max-width: var(--pitch-card-size, 76px); }
   .item-assignment-layout { grid-template-columns: 1fr; }
 }
+
+/* Isolated responsive 11v11 boss match screen */
+.boss-match-screen { background: var(--bg); padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
+.boss-match-content { display: grid; gap: 16px; }
+.boss-match-hero { display: grid; grid-template-columns: auto minmax(180px, .7fr) minmax(0, 1.3fr); gap: 16px; align-items: center; }
+.boss-match-hero h2 { margin-bottom: 0; }
+.boss-match-vs { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
+.boss-match-team { min-width: 0; display: grid; justify-items: center; gap: 5px; text-align: center; }
+.boss-match-team strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.boss-match-team small { color: var(--muted); font-weight: 850; }
+.boss-match-logo { display: grid; place-items: center; width: 58px; height: 58px; border: 1px solid var(--line); border-radius: 16px; background: #07172c; font-size: 2rem; }
+.boss-match-logo img { width: 48px; height: 48px; object-fit: contain; }
+.boss-match-vs-badge { color: var(--yellow); font-size: 1.8rem; font-weight: 950; }
+.boss-match-main-grid { display: grid; grid-template-columns: minmax(0, 1fr) 260px; gap: 16px; align-items: stretch; }
+.boss-match-pitch-panel { min-width: 0; }
+.boss-match-tabs { display: none; }
+.boss-match-field { position: relative; display: grid; grid-template-columns: 1fr 1fr; min-height: 520px; overflow: hidden; border: 2px solid rgba(255,255,255,.32); border-radius: 24px; background: linear-gradient(90deg, transparent calc(50% - 1px), rgba(255,255,255,.55) 50%, transparent calc(50% + 1px)), linear-gradient(rgba(255,255,255,.08) 2px, transparent 2px) center/100% 50%, repeating-linear-gradient(90deg, #14633f 0 12.5%, #176c45 12.5% 25%); }
+.boss-match-half-label { position: absolute; top: 8px; z-index: 1; padding: 4px 9px; border-radius: 999px; background: rgba(5,7,11,.55); color: #dcefff; font-size: .72rem; font-weight: 900; }
+.boss-match-half-label--user { left: 10px; }
+.boss-match-half-label--boss { right: 10px; }
+.boss-match-field-side { display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 8px; align-items: center; min-width: 0; padding: 36px 12px 16px; }
+.boss-match-field-side--user { direction: rtl; }
+.boss-match-field-side--user .boss-match-line, .boss-match-field-side--user .boss-match-card { direction: ltr; }
+.boss-match-line { display: grid; grid-template-columns: repeat(var(--boss-row-count, 1), minmax(0, 82px)); justify-content: center; justify-items: center; gap: clamp(5px, .7vw, 10px); min-width: 0; }
+.boss-match-card { position: relative; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; width: clamp(64px, 5.8vw, 82px); min-height: 92px; padding: 5px 5px 7px; border: 1px solid rgba(54,169,255,.55); border-radius: 13px; background: rgba(4,20,28,.86); color: white; text-align: center; box-shadow: 0 8px 18px rgba(0,0,0,.18); }
+.boss-match-card--boss { border-color: rgba(255,91,98,.62); }
+.boss-match-card:hover { border-color: var(--yellow); transform: translateY(-1px); }
+.boss-match-card img { width: 42px; height: 42px; object-fit: contain; align-self: end; }
+.boss-match-card strong { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .64rem; line-height: 1.05; }
+.boss-match-card-role, .boss-match-card-overall { position: absolute; top: 4px; min-width: 22px; padding: 2px 4px; border-radius: 7px; background: rgba(5,7,11,.72); font-size: .58rem; font-weight: 950; }
+.boss-match-card-role { left: 4px; }
+.boss-match-card-overall { right: 4px; background: var(--yellow); color: #172033; }
+.boss-match-card-item { position: absolute; left: 4px; bottom: 4px; }
+.boss-match-card-item .item-icon { width: 16px; height: 16px; border-radius: 5px; }
+.boss-match-card-item .item-icon svg { width: 11px; height: 11px; }
+.boss-match-mobile-field { display: none; }
+.boss-match-boss-panel { display: grid; align-content: start; gap: 8px; }
+.boss-match-boss-panel img { width: 88px; height: 88px; object-fit: contain; }
+.boss-match-boss-panel h3 { margin-bottom: 0; }
+.boss-match-reward { margin-top: 8px; padding: 12px; border: 1px solid rgba(255,211,79,.45); border-radius: 14px; background: rgba(255,211,79,.09); }
+.boss-match-reward span { display: block; color: var(--yellow); font-size: .72rem; font-weight: 950; text-transform: uppercase; }
+.boss-match-bottom-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr); gap: 16px; }
+.boss-match-log { display: grid; gap: 8px; max-height: 240px; overflow: auto; padding: 0 4px 0 0; margin: 0; list-style: none; }
+.boss-match-log li { display: grid; grid-template-columns: 42px 28px minmax(0, 1fr); gap: 8px; align-items: center; padding: 8px 10px; border: 1px solid rgba(92,130,177,.22); border-radius: 12px; background: rgba(7,23,44,.72); }
+.boss-match-log span { color: var(--yellow); font-weight: 950; }
+.boss-match-log p { margin: 0; color: #dce8f7; }
+.boss-match-result-panel { text-align: center; }
+.boss-match-score { display: flex; justify-content: center; align-items: center; gap: 12px; color: var(--yellow); font-size: 3rem; font-weight: 950; }
+.boss-match-score small { color: var(--muted); }
+.boss-match-score-teams { display: flex; justify-content: space-between; gap: 10px; color: var(--muted); font-size: .82rem; font-weight: 850; }
+.boss-match-controls { display: flex; justify-content: space-between; gap: 14px; align-items: center; }
+.boss-match-controls > .btn-yellow { min-width: 220px; }
+.boss-match-mobile-details { display: none; }
+
+@media (max-width: 900px) {
+  .boss-match-hero { grid-template-columns: 1fr; }
+  .boss-match-main-grid, .boss-match-bottom-grid { grid-template-columns: 1fr; }
+  .boss-match-boss-panel { display: none; }
+  .boss-match-mobile-details { display: block; }
+}
+
+@media (max-width: 780px) {
+  .boss-match-screen { padding-bottom: calc(128px + env(safe-area-inset-bottom)); }
+  .boss-match-vs { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 6px; }
+  .boss-match-team strong { font-size: .82rem; }
+  .boss-match-team small { font-size: .68rem; line-height: 1.15; }
+  .boss-match-logo { width: 44px; height: 44px; border-radius: 12px; }
+  .boss-match-logo img { width: 36px; height: 36px; }
+  .boss-match-vs-badge { font-size: 1.2rem; }
+  .boss-match-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 10px; }
+  .boss-match-team-tab { min-height: 42px; border: 1px solid var(--line); border-radius: 12px; background: #0b1c37; color: var(--text); font-weight: 900; }
+  .boss-match-team-tab.active { border-color: var(--yellow); background: var(--yellow); color: #172033; }
+  .boss-match-field { display: block; min-height: 620px; padding: 0; background: linear-gradient(rgba(255,255,255,.08) 2px, transparent 2px) center/100% 50%, repeating-linear-gradient(90deg, #14633f 0 12.5%, #176c45 12.5% 25%); }
+  .boss-match-field > .boss-match-field-side, .boss-match-half-label { display: none; }
+  .boss-match-mobile-field { display: block; height: 100%; }
+  .boss-match-field-side--mobile { display: grid; height: 620px; padding: 18px 7px; direction: ltr; }
+  .boss-match-line { grid-template-columns: repeat(var(--boss-row-count, 1), minmax(0, var(--boss-mobile-card-width, 64px))); gap: clamp(3px, 1.1vw, 6px); }
+  .boss-match-line[data-row-count="5"] { --boss-mobile-card-width: clamp(54px, 17vw, 66px); }
+  .boss-match-line[data-row-count="4"] { --boss-mobile-card-width: clamp(62px, 20vw, 74px); }
+  .boss-match-line[data-row-count="3"] { --boss-mobile-card-width: clamp(70px, 24vw, 84px); }
+  .boss-match-line[data-row-count="2"] { --boss-mobile-card-width: clamp(78px, 28vw, 92px); }
+  .boss-match-card { width: 100%; min-height: 86px; padding: 5px 3px 6px; border-radius: 11px; }
+  .boss-match-card img { width: 38px; height: 38px; }
+  .boss-match-card strong { font-size: clamp(.54rem, 2vw, .62rem); }
+  .boss-match-card-role, .boss-match-card-overall { font-size: .52rem; min-width: 19px; padding: 1px 3px; }
+  .boss-match-log { max-height: 190px; }
+  .boss-match-log li { grid-template-columns: 34px 24px minmax(0, 1fr); font-size: .82rem; }
+  .boss-match-score { font-size: 2.4rem; }
+  .boss-match-controls { position: sticky; bottom: calc(78px + env(safe-area-inset-bottom)); z-index: 20; display: grid; }
+  .boss-match-controls > .btn-yellow { min-width: 0; width: 100%; min-height: 48px; }
+  .boss-match-controls .button-row { justify-content: stretch; }
+  .boss-match-controls .button-row .btn { flex: 1 1 120px; padding: 10px; }
+}

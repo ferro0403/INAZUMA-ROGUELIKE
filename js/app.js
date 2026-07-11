@@ -73,6 +73,10 @@
     fiveVFiveSelectedSlot: null,
     fiveVFiveRoleFilter: "all",
     tradeSelectedPlayerId: null,
+    bossMatchTab: "user",
+    bossMatchState: "pre-match",
+    bossMatchLog: [],
+    bossMatchResolving: false,
   };
 
   function escapeHtml(value) {
@@ -810,12 +814,18 @@
         return renderFiveVFive();
       }
       ui.match = { nodeId: node.id, type: eventType };
+      ui.bossMatchState = "pre-match";
+      ui.bossMatchLog = [];
+      ui.bossMatchResolving = false;
       run.phase = "match";
       global.RunState.save(run);
       return renderMatch();
     }
     if (eventType === "boss") {
       ui.match = { nodeId: node.id, type: eventType };
+      ui.bossMatchState = "pre-match";
+      ui.bossMatchLog = [];
+      ui.bossMatchResolving = false;
       run.phase = "match";
       global.RunState.save(run);
       return renderMatch();
@@ -1245,35 +1255,210 @@
     });
   }
 
+
+  function shortName(name) {
+    const parts = String(name || "?").trim().split(/\s+/).filter(Boolean);
+    if (parts.length <= 1) return parts[0] || "?";
+    return `${parts[0][0]}. ${parts.slice(1).join(" ")}`;
+  }
+
+  function teamById(id) {
+    return seasonTeamsById.get(String(id)) || null;
+  }
+
+  function bossTeamPlayers(boss) {
+    const level = Number(boss?.bossLevel || 0);
+    return (boss?.startingXI || (boss?.startingXIPlayerIds || []).map((playerId) => ({ playerId, level })))
+      .slice(0, 11)
+      .map((slot) => {
+        const source = seasonPlayersById.get(String(slot.playerId));
+        if (!source) return null;
+        const resolved = global.InazumaProgression.getPlayerAtLevel(source, Math.floor(Number(slot.level ?? level)), seasonDb);
+        return { ...resolved, displayLevel: Number(slot.level ?? level), source: "season1", playerId: String(slot.playerId) };
+      })
+      .filter(Boolean);
+  }
+
+  function userTeamPlayers() {
+    return (run.lineup || []).slice(0, 11).map((id) => resolvedRosterPlayer(id)).filter(Boolean);
+  }
+
+  function formationRows(formationId, players) {
+    const formation = formationById(formationId) || formationById("4-3-3") || { requirements: { FW: 3, MF: 3, DF: 4, GK: 1 } };
+    let cursor = 0;
+    return ["FW", "MF", "DF", "GK"].map((role) => {
+      const count = Number(formation.requirements?.[role] || 0);
+      const row = { role, players: players.slice(cursor, cursor + count) };
+      cursor += count;
+      return row;
+    }).filter((row) => row.players.length);
+  }
+
+  function bossMatchTeamMeta(boss) {
+    const userPlayer = userTeamPlayers()[0];
+    const userIdentity = userPlayer ? playerTeamIdentity(userPlayer, userPlayer.playerId) : { name: "La tua squadra", logoUrl: "" };
+    return {
+      user: { name: userIdentity.name || "La tua squadra", logoUrl: userIdentity.logoUrl || "", formation: run.formationId || "-", level: run.teamLevel },
+      boss: { name: boss?.teamName || "Boss", logoUrl: boss?.logoUrl || teamById(boss?.teamId)?.logoUrl || "", formation: boss?.bossFormation || "-", level: boss?.bossLevel ?? "-", overall: boss?.teamOverall || null },
+    };
+  }
+
+  function bossMatchAverage(players) {
+    if (!players.length) return null;
+    return Math.round(players.reduce((sum, player) => sum + Number(player.overall || 0), 0) / players.length);
+  }
+
+  function bossMatchCard(player, side) {
+    const equipment = side === "user" ? rosterEntry(player.playerId)?.equippedItem : null;
+    return `
+      <button type="button" class="boss-match-card boss-match-card--${side} ${rarityClass(player.category)} ${equipment ? "has-equipment" : ""}" data-boss-player="${escapeHtml(player.playerId)}" data-boss-side="${side}" aria-label="Apri scheda ${escapeHtml(player.name)}">
+        <span class="boss-match-card-role">${escapeHtml(player.position)}</span>
+        <span class="boss-match-card-overall">${escapeHtml(player.overall ?? player.finalOverall ?? "-")}</span>
+        <img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" />
+        <strong>${escapeHtml(shortName(player.name))}</strong>
+        ${equipment ? `<span class="boss-match-card-item" aria-label="Oggetto equipaggiato">${itemIcon(equipment)}</span>` : ""}
+      </button>`;
+  }
+
+  function bossMatchField(team, side, mobile = false) {
+    const rows = formationRows(team.formationId, team.players);
+    return `
+      <div class="boss-match-field-side boss-match-field-side--${side} ${mobile ? "boss-match-field-side--mobile" : ""}" data-boss-team="${side}">
+        ${rows.map((row) => `<div class="boss-match-line boss-match-line--${row.role}" data-row-count="${row.players.length}" style="--boss-row-count:${row.players.length || 1}">${row.players.map((player) => bossMatchCard(player, side)).join("")}</div>`).join("")}
+      </div>`;
+  }
+
+  function bossMatchTimeline() {
+    const events = ui.bossMatchLog.length ? ui.bossMatchLog : [
+      { minute: "0'", icon: "⚽", text: "Formazioni pronte. Avvia la simulazione o usa i controlli provvisori." },
+    ];
+    return events.map((event) => `<li><span>${escapeHtml(event.minute)}</span><b>${event.icon}</b><p>${escapeHtml(event.text)}</p></li>`).join("");
+  }
+
+  function bossMatchStatusText() {
+    return {
+      "pre-match": "Pre-partita",
+      simulating: "Simulazione in corso",
+      "completed-victory": "Vittoria completata",
+      "completed-defeat": "Sconfitta completata",
+    }[ui.bossMatchState] || "Pre-partita";
+  }
+
   function renderMatch() {
     const boss = seasonDb.bossOrder[run.bossIndex];
     const isBoss = ui.match?.type === "boss";
-    app.innerHTML = `
-      <main class="screen">
-        ${topbar(isBoss ? `Boss · ${boss.teamName}` : "Partita 5v5")}
-        <div class="content">
-          <section class="panel match-card">
-            <p class="eyebrow">Modalità test</p>
-            <h2>${isBoss ? "Partita 11v11" : "Partitella 5v5"}</h2>
-            <div class="versus">
-              <div class="team-block"><div style="font-size:72px">⚡</div><h3>La tua squadra</h3><p>Livello ${run.teamLevel}</p></div>
-              <div class="vs-text">VS</div>
-              <div class="team-block">
-                ${isBoss ? `<img src="${escapeHtml(boss.logoUrl)}" alt="${escapeHtml(boss.teamName)}" />` : '<div style="font-size:72px">⚽</div>'}
-                <h3>${isBoss ? escapeHtml(boss.teamName) : "Squadra 5v5"}</h3>
-                <p>Livello ${isBoss ? boss.bossLevel : Math.max(0, Math.floor(run.teamLevel))}</p>
+    if (!isBoss) {
+      app.innerHTML = `
+        <main class="screen">
+          ${topbar("Partita 5v5")}
+          <div class="content">
+            <section class="panel match-card">
+              <p class="eyebrow">Modalità test</p>
+              <h2>Partitella 5v5</h2>
+              <div class="versus">
+                <div class="team-block"><div style="font-size:72px">⚡</div><h3>La tua squadra</h3><p>Livello ${run.teamLevel}</p></div>
+                <div class="vs-text">VS</div>
+                <div class="team-block"><div style="font-size:72px">⚽</div><h3>Squadra 5v5</h3><p>Livello ${Math.max(0, Math.floor(run.teamLevel))}</p></div>
               </div>
-            </div>
-            <p class="muted">Il motore della partita verrà collegato più avanti. Questi pulsanti servono a collaudare vite, progressione e percorso.</p>
-            <div class="button-row">
-              <button class="btn btn-primary" id="test-win">Segna vittoria</button>
-              <button class="btn btn-danger" id="test-loss">Segna sconfitta</button>
+              <p class="muted">Il motore della partita verrà collegato più avanti. Questi pulsanti servono a collaudare vite, progressione e percorso.</p>
+              <div class="button-row"><button class="btn btn-primary" id="test-win">Segna vittoria</button><button class="btn btn-danger" id="test-loss">Segna sconfitta</button></div>
+            </section>
+          </div>
+        </main>`;
+      document.getElementById("test-win").addEventListener("click", winMatch);
+      document.getElementById("test-loss").addEventListener("click", loseMatch);
+      return;
+    }
+
+    const userPlayers = userTeamPlayers();
+    const bossPlayers = bossTeamPlayers(boss);
+    const meta = bossMatchTeamMeta(boss);
+    const userAverage = bossMatchAverage(userPlayers);
+    const bossAverage = bossMatchAverage(bossPlayers);
+    const activeSide = ui.bossMatchTab === "boss" ? "boss" : "user";
+    const resolved = ui.bossMatchState.startsWith("completed");
+    const simulating = ui.bossMatchState === "simulating";
+    const score = ui.bossMatchState === "completed-victory" ? [1, 0] : ui.bossMatchState === "completed-defeat" ? [0, 1] : [0, 0];
+
+    app.innerHTML = `
+      <main class="screen boss-match-screen" data-match-state="${ui.bossMatchState}">
+        ${topbar("Sfida Boss 11v11")}
+        <div class="content boss-match-content">
+          <section class="boss-match-hero panel">
+            <button class="btn btn-ghost" data-nav="map" aria-label="Torna al percorso">← Indietro</button>
+            <div><p class="eyebrow">Boss ${run.bossIndex + 1} di ${seasonDb.bossOrder.length}</p><h2>Sfida Boss 11v11</h2></div>
+            <div class="boss-match-vs">
+              <div class="boss-match-team"><span class="boss-match-logo">${meta.user.logoUrl ? `<img src="${escapeHtml(meta.user.logoUrl)}" alt="${escapeHtml(meta.user.name)}" />` : "⚡"}</span><strong>${escapeHtml(meta.user.name)}</strong><small>${escapeHtml(meta.user.formation)} · Lv ${escapeHtml(meta.user.level)}${userAverage ? ` · OVR ${userAverage}` : ""}</small></div>
+              <span class="boss-match-vs-badge">VS</span>
+              <div class="boss-match-team"><span class="boss-match-logo">${meta.boss.logoUrl ? `<img src="${escapeHtml(meta.boss.logoUrl)}" alt="${escapeHtml(meta.boss.name)}" />` : "⚽"}</span><strong>${escapeHtml(meta.boss.name)}</strong><small>${escapeHtml(meta.boss.formation)} · Boss Lv ${escapeHtml(meta.boss.level)}${bossAverage ? ` · OVR ${bossAverage}` : ""}</small></div>
             </div>
           </section>
+
+          <div class="boss-match-main-grid">
+            <section class="panel boss-match-pitch-panel">
+              <div class="boss-match-tabs" role="tablist" aria-label="Squadra visualizzata">
+                <button class="boss-match-team-tab ${activeSide === "user" ? "active" : ""}" role="tab" aria-selected="${activeSide === "user"}" data-boss-tab="user">La tua squadra</button>
+                <button class="boss-match-team-tab ${activeSide === "boss" ? "active" : ""}" role="tab" aria-selected="${activeSide === "boss"}" data-boss-tab="boss">Boss</button>
+              </div>
+              <div class="boss-match-field" aria-label="Campo boss match">
+                <div class="boss-match-half-label boss-match-half-label--user">${escapeHtml(meta.user.name)}</div>
+                <div class="boss-match-half-label boss-match-half-label--boss">${escapeHtml(meta.boss.name)}</div>
+                ${bossMatchField({ players: userPlayers, formationId: run.formationId }, "user")}
+                ${bossMatchField({ players: bossPlayers, formationId: boss.bossFormation }, "boss")}
+                <div class="boss-match-mobile-field">${bossMatchField({ players: activeSide === "boss" ? bossPlayers : userPlayers, formationId: activeSide === "boss" ? boss.bossFormation : run.formationId }, activeSide, true)}</div>
+              </div>
+            </section>
+
+            <aside class="panel boss-match-boss-panel">
+              <img src="${escapeHtml(meta.boss.logoUrl || playerPortraitUrl(null))}" alt="${escapeHtml(meta.boss.name)}" />
+              <h3>${escapeHtml(meta.boss.name)}</h3>
+              <p>Livello boss <strong>${escapeHtml(meta.boss.level)}</strong></p>
+              <p>Formazione <strong>${escapeHtml(meta.boss.formation)}</strong></p>
+              ${meta.boss.overall ? `<p>Forza squadra <strong>${escapeHtml(meta.boss.overall)}</strong></p>` : ""}
+              <p class="muted">Difficoltà basata sui dati Season 1 già configurati.</p>
+              <div class="boss-match-reward"><span>Ricompensa</span><strong>2 pick 1 di 3 dalla squadra battuta</strong></div>
+            </aside>
+          </div>
+
+          <div class="boss-match-bottom-grid">
+            <section class="panel boss-match-log-panel"><h3>Cronaca</h3><ol class="boss-match-log">${bossMatchTimeline()}</ol></section>
+            <section class="panel boss-match-result-panel"><h3>Risultato</h3><div class="boss-match-score"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div></section>
+          </div>
+          <details class="panel boss-match-mobile-details"><summary>Info boss e ricompensa</summary><p>${escapeHtml(meta.boss.name)} · Lv ${escapeHtml(meta.boss.level)} · ${escapeHtml(meta.boss.formation)}</p><p>2 pick 1 di 3 dalla squadra battuta</p></details>
+          <section class="panel boss-match-controls"><button class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><div class="button-row"><button class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria</button><button class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button class="btn" data-nav="squad">Torna alla squadra</button></div></section>
         </div>
       </main>`;
-    document.getElementById("test-win").addEventListener("click", winMatch);
-    document.getElementById("test-loss").addEventListener("click", loseMatch);
+
+    bindBottomNav();
+    document.querySelectorAll("[data-boss-tab]").forEach((button) => button.addEventListener("click", () => runKeepingScroll(() => { ui.bossMatchTab = button.dataset.bossTab; renderMatch(); })));
+    document.querySelectorAll("[data-boss-player]").forEach((button) => button.addEventListener("click", () => {
+      const id = button.dataset.bossPlayer;
+      if (button.dataset.bossSide === "user") return showPlayerDetails(id);
+      const player = bossPlayers.find((candidate) => String(candidate.playerId) === String(id));
+      showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: seasonDb, preserveScroll: scrollSnapshot() });
+    }));
+    document.getElementById("test-win").addEventListener("click", () => completeBossMatch("victory"));
+    document.getElementById("test-loss").addEventListener("click", () => completeBossMatch("defeat"));
+    document.getElementById("simulate-boss-match").addEventListener("click", () => {
+      if (ui.bossMatchState !== "pre-match") return;
+      ui.bossMatchState = "simulating";
+      ui.bossMatchLog = [
+        { minute: "1'", icon: "▶", text: "Calcio d'inizio della sfida boss." },
+        { minute: "23'", icon: "🧤", text: `${meta.boss.name} costringe il portiere a una parata.` },
+        { minute: "45'", icon: "⏱", text: "Fine primo tempo." },
+        { minute: "68'", icon: "⚡", text: "La tua squadra accelera e cerca il gol decisivo." },
+        { minute: "90'", icon: "🏁", text: "Fine partita: scegli l'esito con i controlli provvisori." },
+      ];
+      runKeepingScroll(renderMatch);
+    });
+  }
+
+  function completeBossMatch(result) {
+    if (ui.bossMatchResolving || ui.bossMatchState.startsWith("completed")) return;
+    ui.bossMatchResolving = true;
+    ui.bossMatchState = result === "victory" ? "completed-victory" : "completed-defeat";
+    ui.bossMatchLog = [...ui.bossMatchLog, { minute: "FT", icon: result === "victory" ? "🏆" : "💔", text: result === "victory" ? "Vittoria confermata: flusso ricompensa boss esistente." : "Sconfitta confermata: flusso vite esistente." }];
+    result === "victory" ? winMatch() : loseMatch();
   }
 
   function addLevels(amount) {
@@ -1284,6 +1469,7 @@
   }
 
   function winMatch() {
+    if (!ui.match || ui.bossMatchResolving === "done") return;
     const node = run.currentZone.nodes.find((item) => item.id === ui.match.nodeId);
     if (ui.match.type === "five_v_five") {
       addLevels(0.5);
@@ -1296,11 +1482,14 @@
     }
     addLevels(1);
     global.MapEngine.completeNode(run.currentZone, node.id);
+    ui.bossMatchResolving = "done";
     ui.match = null;
     startBossRewards();
   }
 
   function loseMatch() {
+    if (!ui.match || ui.bossMatchResolving === "done") return;
+    ui.bossMatchResolving = "done";
     ui.match = null;
     global.RunState.restoreAfterLoss(run);
     closeModal();
