@@ -438,7 +438,7 @@
           <p class="muted small">${ui.squadEditMode ? "Seleziona un titolare e poi una riserva dello stesso ruolo per scambiarli." : "Seleziona un giocatore per aprire la scheda con statistiche, overall e potenziale."}</p>
           <div class="squad-layout">
             <section class="pitch">
-              ${rows.map((row) => `<div class="pitch-row">${row.ids.map((id) => miniPlayer(id, "lineup")).join("")}</div>`).join("")}
+              ${rows.map((row) => `<div class="pitch-row" style="--players-in-row:${row.ids.length || 1}">${row.ids.map((id) => miniPlayer(id, "lineup")).join("")}</div>`).join("")}
             </section>
             <aside class="panel">
               <h3>Riserve ${run.bench.length}/4</h3>
@@ -590,7 +590,8 @@
     bindBottomNav();
     requestAnimationFrame(() => {
       const scroll = document.getElementById("map-scroll");
-      if (zone.path.length <= 1 && scroll) scroll.scrollLeft = Math.max(0, (scroll.scrollWidth - scroll.clientWidth) / 2);
+      if (zone.path.length <= 1 && scroll && !window.matchMedia("(max-width: 780px)").matches) scroll.scrollLeft = Math.max(0, (scroll.scrollWidth - scroll.clientWidth) / 2);
+      if (scroll && window.matchMedia("(max-width: 780px)").matches) scroll.scrollLeft = 0;
     });
   }
 

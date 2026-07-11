@@ -7,6 +7,10 @@ const path = require("path");
 const { JSDOM, VirtualConsole } = require("/tmp/inazuma-jsdom/node_modules/jsdom");
 
 const root = path.resolve(__dirname, "..");
+const css = fs.readFileSync(path.join(root, "css/game.css"), "utf8");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.route-map[\s\S]*?min-width:\s*0/.test(css), "mobile route map must not keep the desktop 620px min width");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.map-wrap[\s\S]*?overflow-x:\s*hidden/.test(css), "mobile map wrapper must hide horizontal overflow");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.pitch-row\s*\{[^}]*display:\s*grid[\s\S]*?grid-template-columns:\s*repeat\(var\(--players-in-row/.test(css), "mobile pitch rows must use player-count CSS grid columns");
 const mime = {
   ".html": "text/html",
   ".css": "text/css",
@@ -56,6 +60,7 @@ server.listen(0, "127.0.0.1", async () => {
       beforeParse(window) {
         window.fetch = (input, options) => global.fetch(new URL(input, window.location.href), options);
         window.confirm = () => true;
+        window.matchMedia = (query) => ({ matches: /max-width:\s*780px/.test(query), media: query, addEventListener() {}, removeEventListener() {} });
       },
     });
 
@@ -67,6 +72,9 @@ server.listen(0, "127.0.0.1", async () => {
     }
     await waitFor(window, "#go-map");
     assert(window.document.body.textContent.includes("Gestione squadra"));
+    const rowCounts = [...window.document.querySelectorAll(".pitch-row")].map((row) => row.children.length);
+    assert.deepEqual(rowCounts, [4, 2, 4, 1], "4-2-4 must keep 4 / 2 / 4 / 1 visual rows");
+    assert([...window.document.querySelectorAll(".pitch-row")].every((row) => row.getAttribute("style").includes(`--players-in-row:${row.children.length || 1}`)));
     window.document.querySelector("[data-squad-player]").click();
     await waitFor(window, ".player-detail-modal");
     assert(window.document.querySelector(".player-fullbody").src.includes("_fullbody.webp"));
@@ -77,6 +85,11 @@ server.listen(0, "127.0.0.1", async () => {
     await waitFor(window, ".route-map");
     assert(window.document.querySelectorAll(".map-node").length > 8);
     assert(window.document.querySelectorAll(".map-node.reachable").length > 0);
+    const mapScroll = window.document.querySelector("#map-scroll");
+    mapScroll.scrollLeft = 99;
+    window.document.querySelector(".map-node.reachable").click();
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(mapScroll.scrollLeft, 99, "node click must not alter horizontal map scroll");
     assert.equal(errors.length, 0, errors.map((error) => error.message).join("\n"));
     console.log("UI smoke test passed: menu, 4-2-4 draft, squad and route map.");
     dom.window.close();

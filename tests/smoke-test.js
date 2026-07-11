@@ -22,6 +22,31 @@ require(path.join(root, "js/game-rules.js"));
 const season = JSON.parse(fs.readFileSync(path.join(root, "data/IE1_season_compact.json"), "utf8"));
 const free = JSON.parse(fs.readFileSync(path.join(root, "data/FREE_AGENTS_compact.json"), "utf8"));
 assert(season.formations.eleven.some((item) => item.id === "4-2-4"), "4-2-4 must exist");
+const css = fs.readFileSync(path.join(root, "css/game.css"), "utf8");
+const appJs = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
+const mobileMedia = css.slice(css.indexOf("@media (max-width: 780px)"));
+assert(mobileMedia.includes(".route-map"), "mobile route map rules must exist");
+assert(mobileMedia.includes("min-width: 0"), "mobile route map must remove the 620px minimum width");
+assert(mobileMedia.includes("overflow-x: hidden"), "mobile map container must prevent horizontal overflow");
+assert(mobileMedia.includes("touch-action: pan-y"), "mobile map must keep vertical panning without horizontal dragging");
+assert(appJs.includes("--players-in-row:${row.ids.length || 1}"), "squad rows must expose player count to CSS grid");
+
+const expectedFormationRows = {
+  "4-3-3": [3, 3, 4, 1],
+  "4-4-2": [2, 4, 4, 1],
+  "4-2-4": [4, 2, 4, 1],
+  "3-4-3": [3, 4, 3, 1],
+  "5-4-1": [1, 4, 5, 1],
+  "4-5-1": [1, 5, 4, 1],
+};
+for (const formation of season.formations.eleven) {
+  assert.deepEqual(
+    [formation.requirements.FW, formation.requirements.MF, formation.requirements.DF, formation.requirements.GK],
+    expectedFormationRows[formation.id],
+    `${formation.id} must render tactical rows without wrapping/reordering`
+  );
+}
+
 assert.equal(global.RoguelikeRules.defeatedBossRewardLevel(season.bossOrder[0]), 1);
 assert.equal(global.RoguelikeRules.defeatedBossRewardLevel(season.bossOrder[1]), 3);
 assert.equal(global.RoguelikeRules.unlockedPullLevel(season, 2), 3);

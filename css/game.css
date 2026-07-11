@@ -351,6 +351,41 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .panel { padding: 15px; border-radius: 18px; }
   .candidate-grid { grid-template-columns: 1fr; }
   .candidate-grid .player-card { display: grid; grid-template-columns: 120px 1fr; }
+  .screen { overflow-x: clip; padding-bottom: 108px; }
+  .pitch { min-height: 500px; padding: 14px 8px 24px; }
+  .pitch-row {
+    display: grid;
+    grid-template-columns: repeat(var(--players-in-row, 1), minmax(0, 1fr));
+    gap: clamp(4px, 1.4vw, 8px);
+    margin: 10px 0 22px;
+  }
+  .mini-player { width: 100%; min-width: 0; padding: 6px 4px; border-radius: 12px; }
+  .mini-player img { width: clamp(38px, 11vw, 50px); height: clamp(38px, 11vw, 50px); }
+  .mini-player strong { font-size: clamp(.58rem, 2.2vw, .7rem); }
+  .mini-player .small { font-size: clamp(.55rem, 2vw, .66rem); }
+  .mini-player .equipment-label { display: none; }
+  .map-wrap {
+    overflow-x: hidden;
+    overscroll-behavior-x: none;
+    touch-action: pan-y;
+    padding: 6px 0 28px;
+    max-width: 100%;
+  }
+  .route-map {
+    min-width: 0;
+    width: 100%;
+    height: min(900px, 238vw);
+    border-radius: 22px;
+  }
+  .map-node { width: clamp(58px, 16vw, 70px); padding: 2px; }
+  .node-icon {
+    width: clamp(44px, 12vw, 50px);
+    height: clamp(44px, 12vw, 50px);
+    border-width: 3px;
+    font-size: 1.05rem;
+  }
+  .node-label { margin-top: 3px; font-size: clamp(.54rem, 1.9vw, .62rem); line-height: 1.05; }
+
   .candidate-grid .player-portrait { aspect-ratio: 1; height: 100%; }
   .topbar { padding-inline: 10px; }
   .brand { font-size: .86rem; }
