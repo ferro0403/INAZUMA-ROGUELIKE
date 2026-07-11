@@ -4,6 +4,48 @@
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
   const toastRoot = document.getElementById("toast-root");
+
+  const CATEGORY_CLASS_BY_NAME = {
+    Scarso: "rarity-scarso",
+    Debole: "rarity-debole",
+    Normale: "rarity-normale",
+    Buono: "rarity-buono",
+    Forte: "rarity-forte",
+    Elite: "rarity-elite",
+    Mondiale: "rarity-mondiale",
+    Leggenda: "rarity-leggenda",
+  };
+  const CATEGORY_LADDER = ["Scarso", "Debole", "Normale", "Buono", "Forte", "Elite", "Mondiale", "Leggenda"];
+
+  function rarityClass(category) {
+    return CATEGORY_CLASS_BY_NAME[category] || "rarity-debole";
+  }
+
+  function improvedCategory(category) {
+    const index = CATEGORY_LADDER.indexOf(category);
+    return CATEGORY_LADDER[Math.min(CATEGORY_LADDER.length - 1, Math.max(0, index) + 1)];
+  }
+
+  function itemIcon(itemOrId) {
+    const id = String(typeof itemOrId === "string" ? itemOrId : itemOrId?.id || "");
+    const icons = {
+      energy_drink: `<svg viewBox="0 0 32 32"><path d="M11 8h10l-1 18h-8L11 8Z"/><path d="M13 4h6v4h-6z"/><path d="m16 12-3 6h3l-1 6 5-8h-3l1-4z"/></svg>`,
+      training_manual: `<svg viewBox="0 0 32 32"><path d="M7 6h13a5 5 0 0 1 5 5v15H11a4 4 0 0 0-4 4V6Z"/><path d="M11 11h9M11 16h7M11 21h8"/></svg>`,
+      scout_token: `<svg viewBox="0 0 32 32"><circle cx="16" cy="16" r="10"/><path d="m16 9 2 5 5 1-4 3 1 5-4-3-4 3 1-5-4-3 5-1 2-5Z"/></svg>`,
+      medical_kit: `<svg viewBox="0 0 32 32"><rect x="6" y="10" width="20" height="16" rx="3"/><path d="M12 10V7h8v3M16 14v8M12 18h8"/></svg>`,
+      lucky_charm: `<svg viewBox="0 0 32 32"><path d="M16 6c6 0 10 4 10 10 0 7-10 12-10 12S6 23 6 16C6 10 10 6 16 6Z"/><path d="M16 10v12M10 16h12"/></svg>`,
+      boots_attack: `<svg viewBox="0 0 32 32"><path d="M7 20c7 1 10-1 12-8l5 4v7H9c-2 0-3-1-2-3Z"/><path d="M20 16h6"/></svg>`,
+      boots_control: `<svg viewBox="0 0 32 32"><path d="M7 20c7 1 10-1 12-8l5 4v7H9c-2 0-3-1-2-3Z"/><circle cx="18" cy="19" r="2"/></svg>`,
+      boots_defense: `<svg viewBox="0 0 32 32"><path d="M7 20c7 1 10-1 12-8l5 4v7H9c-2 0-3-1-2-3Z"/><path d="M20 13 25 16 20 19Z"/></svg>`,
+      keeper_gloves: `<svg viewBox="0 0 32 32"><path d="M10 25V12a3 3 0 0 1 6 0v4-7a3 3 0 0 1 6 0v16H10Z"/><path d="M10 18 6 15"/></svg>`,
+      grit_band: `<svg viewBox="0 0 32 32"><path d="M7 12h18v8H7z"/><path d="m10 12 3-5h6l3 5M12 24h8"/></svg>`,
+      physical_band: `<svg viewBox="0 0 32 32"><path d="M7 16h18v7H7z"/><path d="M11 16c1-6 9-6 10 0M12 23l-2 4M20 23l2 4"/></svg>`,
+      speed_necklace: `<svg viewBox="0 0 32 32"><path d="M8 8c2 9 14 9 16 0"/><path d="m16 17-4 8h8l-4-8Z"/><path d="M6 20h5M21 20h5"/></svg>`,
+      stamina_necklace: `<svg viewBox="0 0 32 32"><path d="M8 8c2 9 14 9 16 0"/><circle cx="16" cy="21" r="5"/><path d="M16 18v3l2 2"/></svg>`,
+    };
+    return `<span class="item-icon" aria-hidden="true">${icons[id] || icons.scout_token}</span>`;
+  }
+
   const STAT_LABELS = {
     attack: "Attacco",
     control: "Controllo",
@@ -232,7 +274,7 @@
       ? `type="button" data-player-id="${escapeHtml(player.playerId)}"`
       : "";
     return `
-      <${tag} class="player-card ${options.selected ? "selected" : ""}" ${attributes}>
+      <${tag} class="player-card ${rarityClass(player.category)} ${options.selected ? "selected" : ""}" ${attributes}>
         <img class="player-portrait" src="${escapeHtml(player.portraitUrl)}" alt="${escapeHtml(player.name)}" loading="lazy" />
         <div class="player-info">
           <div class="player-title">
@@ -244,6 +286,7 @@
             <span>${escapeHtml(player.element || player.type)}</span>
             <span>${escapeHtml(player.category)}</span>
             <span>Lv ${escapeHtml(level)}</span>
+            ${options.equipment ? `<span class="equipment-pill">${itemIcon(options.equipment)}${escapeHtml(options.equipment.name)}</span>` : ""}
           </div>
         </div>
       </${tag}>`;
@@ -278,11 +321,12 @@
           </div>
           <p class="detail-category">${escapeHtml(player.category)}</p>
           <div class="detail-stats">${stats}</div>
-          ${equipment ? `<div class="equipped-detail"><span>Oggetto assegnato</span><strong>${escapeHtml(equipment.name)}</strong><small>${escapeHtml(equipment.description)}</small></div>` : ""}
+          ${equipment ? `<div class="equipped-detail">${itemIcon(equipment)}<span>Oggetto assegnato</span><strong>${escapeHtml(equipment.name)}</strong><small>${escapeHtml(equipment.description)}</small>${playerId ? `<button class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>` : ""}
         </section>
       </div>`,
       { closeable: true, className: "player-detail-modal", onClose }
     );
+    modalRoot.querySelector("[data-detail-unequip]")?.addEventListener("click", () => unequipPlayerItem(playerId, { render: () => { closeModal(); renderSquad(); } }));
   }
 
   function showPlayerDetails(playerId, onClose = null) {
@@ -468,13 +512,13 @@
     const player = resolvedRosterPlayer(id);
     if (!player) return "";
     const selected = String(selectedId || ui.selectedSquadPlayerId) === String(id);
-    const dataAttr = mode === "trade" ? `data-trade-player="${escapeHtml(id)}"` : `data-squad-player="${escapeHtml(id)}" data-area="${area}"`;
+    const dataAttr = mode === "trade" ? `data-trade-player="${escapeHtml(id)}"` : mode === "equip" ? `data-equip-player="${escapeHtml(id)}"` : `data-squad-player="${escapeHtml(id)}" data-area="${area}"`;
     return `
-      <button class="mini-player ${selected ? "selected" : ""}" ${dataAttr}>
+      <button class="mini-player ${rarityClass(player.category)} ${player.equipment ? "has-equipment" : ""} ${selected ? "selected" : ""}" ${dataAttr}>
         <img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" />
         <strong>${escapeHtml(player.name)}</strong>
         <span class="small muted">${player.position} · ${player.overall} · Lv ${player.displayLevel}</span>
-        ${player.equipment ? `<span class="small equipment-label">${escapeHtml(player.equipment.name)}</span>` : ""}
+        ${player.equipment ? `<span class="equipment-badge" title="${escapeHtml(player.equipment.name)}">${itemIcon(player.equipment)}</span><span class="small equipment-label">${escapeHtml(player.equipment.name)}</span>` : ""}
       </button>`;
   }
 
@@ -721,7 +765,7 @@
 
   function resolveItemNode(node) {
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}`);
-    const candidates = global.DraftEngine.shuffle(global.SEASON1_CONFIG.itemPool, random).slice(0, 3);
+    const candidates = weightedItemCandidates(random, 3);
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Nodo oggetto</p><h2>Scegli un oggetto</h2><p class="muted">Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p></div></div>
       <div class="item-grid">
@@ -854,7 +898,22 @@
   }
 
   function itemChoiceCard(item) {
-    return `<button class="item-card" data-item-choice="${item.id}"><span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p></button>`;
+    return `<button class="item-card" data-item-choice="${item.id}">${itemIcon(item)}<span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p></button>`;
+  }
+
+  function weightedItemCandidates(random, count) {
+    const pool = global.SEASON1_CONFIG.itemPool.slice();
+    const result = [];
+    while (result.length < count && pool.length) {
+      let cursor = random() * pool.reduce((sum, item) => sum + Number(item.weight || 10), 0);
+      let selectedIndex = 0;
+      for (let index = 0; index < pool.length; index += 1) {
+        cursor -= Number(pool[index].weight || 10);
+        if (cursor <= 0) { selectedIndex = index; break; }
+      }
+      result.push(pool.splice(selectedIndex, 1)[0]);
+    }
+    return result;
   }
 
   function receiveItem(item, node, done) {
@@ -921,8 +980,18 @@
     };
   }
 
-  function selectWeightedCandidates(available, random, luckyApplied) {
+  function selectWeightedCandidates(available, random, luckyApplied, originalCandidates = null) {
     if (!luckyApplied) return global.DraftEngine.shuffle(available, random).slice(0, 3);
+    if (originalCandidates?.length) {
+      const result = [];
+      const remaining = global.DraftEngine.shuffle(available, random);
+      originalCandidates.forEach((original) => {
+        const minRank = Number(global.SEASON1_CONFIG.categoryRanks[improvedCategory(original.category)] || 0);
+        const index = remaining.findIndex((player) => Number(global.SEASON1_CONFIG.categoryRanks[player.category] || 0) >= minRank);
+        if (index >= 0) result.push(remaining.splice(index, 1)[0]);
+      });
+      return result.concat(remaining.filter((player) => !result.includes(player)).slice(0, 3 - result.length)).slice(0, 3);
+    }
     const result = [];
     const remaining = available.slice();
     while (result.length < 3 && remaining.length) {
@@ -945,13 +1014,16 @@
     const excluded = new Set(node.pullState.excludedCandidateIds || []);
     const available = pool.players.filter((player) => !owned.has(String(player.playerId)) && !excluded.has(String(player.playerId)));
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:pull:${node.pullState.rerolls}`);
-    return selectWeightedCandidates(available, random, luckyApplied);
+    const baseRandom = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:pull:${node.pullState.rerolls}:base`);
+    const originalCandidates = luckyApplied ? global.DraftEngine.shuffle(available, baseRandom).slice(0, 3) : null;
+    return selectWeightedCandidates(available, random, luckyApplied, originalCandidates);
   }
 
   function openPull(node, pullType = node.type) {
     const pool = pullPool(pullType);
     if (!node.pullState) {
-      const luckyApplied = Number(run.effects.luckyPulls || 0) > 0;
+      const luckyEligible = ["pull_free_agents", "pull_unlocked_teams"].includes(pullType);
+      const luckyApplied = luckyEligible && Number(run.effects.luckyPulls || 0) > 0;
       if (luckyApplied) run.effects.luckyPulls -= 1;
       node.pullState = { pullType, rerolls: 0, excludedCandidateIds: [], luckyApplied };
     }
@@ -1166,9 +1238,7 @@
 
   function startBossRewards() {
     const boss = seasonDb.bossOrder[run.bossIndex];
-    const luckyApplied = Number(run.effects.luckyPulls || 0) > 0;
-    if (luckyApplied) run.effects.luckyPulls -= 1;
-    ui.pendingReward = { boss, remaining: 2, excludedIds: [], rerolls: 0, luckyApplied };
+    ui.pendingReward = { boss, remaining: 2, excludedIds: [], rerolls: 0, luckyApplied: false };
     global.RunState.save(run);
     showNextBossReward();
   }
@@ -1394,7 +1464,7 @@
           <div class="section-head" style="margin-top:30px"><div><p class="eyebrow">Equipaggiati</p><h2>Oggetti dei giocatori</h2></div></div>
           <div class="item-grid">
             ${equipped.length ? equipped.map(({ entry, player, resolved, item }) => `
-              <article class="item-card static-item"><span class="item-kind">${escapeHtml(player.name)}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)} ${escapeHtml(item.stat)}: ${resolved.baseStats[item.stat]} → <strong>${resolved.stats[item.stat]}</strong></p><button class="btn btn-ghost" data-unequip-player="${entry.playerId}">Rimuovi</button></article>`).join("") : '<p class="muted">Nessun giocatore ha un oggetto equipaggiato.</p>'}
+              <article class="item-card equipped-summary static-item">${itemIcon(item)}<span class="item-kind">${escapeHtml(player.name)}</span><strong>${escapeHtml(item.name)}</strong><div class="equipped-owner"><img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" /><span>${escapeHtml(player.name)} · ${escapeHtml(player.position)}</span></div><p>${escapeHtml(item.description)} ${escapeHtml(item.stat)}: ${resolved.baseStats[item.stat]} → <strong>${resolved.stats[item.stat]}</strong></p><button class="btn btn-ghost" data-unequip-player="${entry.playerId}">Rimuovi</button></article>`).join("") : '<p class="muted">Nessun giocatore ha un oggetto equipaggiato.</p>'}
           </div>
         </div>
         ${bottomNav("inventory")}
@@ -1411,7 +1481,7 @@
       : item.effect === "pull_reroll"
         ? '<span class="muted small">Utilizzabile durante una pull</span>'
         : `<button class="btn btn-primary" data-use-item="${item.instanceId}">Usa</button>`;
-    return `<article class="item-card static-item"><span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p>${action}</article>`;
+    return `<article class="item-card static-item">${itemIcon(item)}<span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p>${action}</article>`;
   }
 
   function useInventoryItem(instanceId) {
@@ -1465,25 +1535,47 @@
     const item = run.inventory.find((candidate) => candidate.instanceId === instanceId);
     if (!item) return;
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Assegna a un giocatore</h2><p class="muted">Ogni giocatore può avere un solo oggetto.</p></div></div>
-      <div class="player-grid">${run.roster.map((entry) => playerCard(sourcePlayer(entry), { button: true, level: entry.level, database: entry.source === "season1" ? seasonDb : freeAgentsDb })).join("")}</div>`,
-      { closeable: true }
+      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Assegna a un giocatore</h2><p class="muted">Scegli dalla formazione attuale: titolari sul campo e riserve separate. Non puoi modificare modulo o rosa da qui.</p></div></div>
+      <div class="item-assignment-layout">
+        ${squadPitchMarkup({ mode: "equip" })}
+        <aside class="panel"><h3>Riserve ${run.bench.length}/4</h3><div class="bench-list">${benchMarkup({ mode: "equip" })}</div></aside>
+      </div>`,
+      { closeable: true, className: "item-assignment-modal" }
     );
-    modalRoot.querySelectorAll("[data-player-id]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const entry = rosterEntry(button.dataset.playerId);
-        const newEquipment = removeInventoryItem(instanceId);
-        if (entry.equippedItem) run.inventory.push(entry.equippedItem);
-        entry.equippedItem = newEquipment;
-        global.RunState.save(run);
-        closeModal();
-        toast(`${item.name} assegnato a ${sourcePlayer(entry).name}`);
-        renderInventory();
-      });
+    modalRoot.querySelectorAll("[data-equip-player]").forEach((button) => {
+      button.addEventListener("click", () => handleEquipmentTarget(instanceId, button.dataset.equipPlayer));
     });
   }
 
-  function unequipPlayerItem(playerId) {
+  function handleEquipmentTarget(instanceId, playerId) {
+    const entry = rosterEntry(playerId);
+    const item = run.inventory.find((candidate) => candidate.instanceId === instanceId);
+    if (!entry || !item) return;
+    if (entry.equippedItem) {
+      const current = entry.equippedItem;
+      const player = sourcePlayer(entry);
+      return openModal(`
+        <div class="modal-head"><div><p class="eyebrow">Sostituzione oggetto</p><h2>${escapeHtml(player.name)} ha già equipaggiato ${escapeHtml(current.name)}.</h2><p class="muted">Vuoi sostituirlo con ${escapeHtml(item.name)}?</p></div></div>
+        <div class="button-row"><button class="btn btn-primary" id="confirm-equip-replace">Conferma sostituzione</button><button class="btn" id="cancel-equip-replace">Annulla</button></div>`,
+        { closeable: false }
+      ), document.getElementById("confirm-equip-replace").addEventListener("click", () => equipItemToEntry(instanceId, entry)), document.getElementById("cancel-equip-replace").addEventListener("click", () => chooseEquipmentPlayer(instanceId));
+    }
+    equipItemToEntry(instanceId, entry);
+  }
+
+  function equipItemToEntry(instanceId, entry) {
+    const item = run.inventory.find((candidate) => candidate.instanceId === instanceId);
+    if (!item) return;
+    const newEquipment = removeInventoryItem(instanceId);
+    if (entry.equippedItem) run.inventory.push(entry.equippedItem);
+    entry.equippedItem = newEquipment;
+    global.RunState.save(run);
+    closeModal();
+    toast(`${item.name} assegnato a ${sourcePlayer(entry).name}`);
+    renderInventory();
+  }
+
+  function unequipPlayerItem(playerId, options = {}) {
     const entry = rosterEntry(playerId);
     if (!entry?.equippedItem) return;
     if (run.inventory.length >= global.SEASON1_CONFIG.maxInventory) return toast("Inventario pieno: libera prima uno spazio");
@@ -1491,7 +1583,7 @@
     entry.equippedItem = null;
     global.RunState.save(run);
     toast("Oggetto riportato nell'inventario");
-    renderInventory();
+    (options.render || renderInventory)();
   }
 
   function renderGameOver() {

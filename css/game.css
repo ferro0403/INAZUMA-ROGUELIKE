@@ -480,3 +480,36 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .five-slot img, .five-empty { width: 48px; height: 48px; }
   .five-roster-list { max-height: none; }
 }
+
+/* Shared rarity treatment for every player card variant. Debole keeps the original dark tone. */
+.rarity-debole { --rarity-bg: #0b1c37; --rarity-border: var(--line); --rarity-text: var(--text); }
+.rarity-scarso { --rarity-bg: linear-gradient(145deg, #071426, #10213d); --rarity-border: rgba(255,255,255,.1); --rarity-text: var(--text); }
+.rarity-normale { --rarity-bg: linear-gradient(145deg, #d8dee7, #8392a5); --rarity-border: #d8dee7; --rarity-text: #07172c; }
+.rarity-buono { --rarity-bg: linear-gradient(145deg, #bff4d2, #2f9e62); --rarity-border: #9ee6bd; --rarity-text: #07172c; }
+.rarity-forte { --rarity-bg: linear-gradient(145deg, #bde9ff, #2f9ce4); --rarity-border: #95d8ff; --rarity-text: #06192b; }
+.rarity-elite { --rarity-bg: linear-gradient(145deg, #d8c3ff, #7a4bd4); --rarity-border: #c7a8ff; --rarity-text: #fff; }
+.rarity-mondiale { --rarity-bg: linear-gradient(145deg, #ffb7b7, #c83535); --rarity-border: #ff9494; --rarity-text: #fff; }
+.rarity-leggenda { --rarity-bg: linear-gradient(145deg, #ffe99b, #d49a19); --rarity-border: #ffd95a; --rarity-text: #1d1400; }
+.player-card[class*="rarity-"], .mini-player[class*="rarity-"] { background: var(--rarity-bg); border-color: var(--rarity-border); color: var(--rarity-text); }
+.player-card[class*="rarity-"] .player-meta, .mini-player[class*="rarity-"] .muted { color: color-mix(in srgb, var(--rarity-text) 78%, transparent); }
+.player-card.rarity-elite .role-chip, .player-card.rarity-mondiale .role-chip { color: #fff; }
+
+.item-icon { display: inline-grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; border: 1px solid rgba(255,211,79,.42); border-radius: 13px; background: rgba(255,211,79,.1); color: var(--yellow); }
+.item-icon svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+.equipment-pill { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 3px 7px; border-radius: 999px; background: rgba(255,211,79,.16); color: #ffe28a; font-weight: 900; }
+.equipment-pill .item-icon, .equipment-badge .item-icon { width: 22px; height: 22px; border-radius: 7px; }
+.equipment-pill .item-icon svg, .equipment-badge .item-icon svg { width: 16px; height: 16px; }
+.equipment-badge { position: absolute; top: 6px; right: 6px; z-index: 2; }
+.mini-player.has-equipment { box-shadow: 0 0 0 2px rgba(255,211,79,.34); }
+.equipped-detail { grid-template-columns: auto 1fr; align-items: center; }
+.equipped-detail small, .equipped-detail button { grid-column: 1 / -1; }
+.equipped-summary .equipped-owner { display: flex; align-items: center; gap: 9px; color: var(--text); font-weight: 850; }
+.equipped-summary .equipped-owner img { width: 42px; height: 42px; object-fit: contain; border-radius: 50%; background: rgba(255,255,255,.08); }
+.item-assignment-modal { width: min(1120px, 100%); }
+.item-assignment-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(240px, .8fr); gap: 16px; align-items: start; }
+
+@media (max-width: 780px) {
+  .equipment-badge { top: 3px; right: 3px; }
+  .mini-player .equipment-badge .item-icon { width: 19px; height: 19px; }
+  .item-assignment-layout { grid-template-columns: 1fr; }
+}

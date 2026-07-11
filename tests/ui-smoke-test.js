@@ -17,6 +17,11 @@ assert(css.includes("align-items: center"), "desktop fullbody visual should not 
 assert(css.includes("width: min(100%, 560px)"), "desktop fullbody art should keep the approved size");
 assert(css.includes("object-fit: contain"), "fullbody art should not deform");
 assert(css.includes("width: min(90%, 340px)"), "mobile fullbody art should keep the approved size without overflow");
+assert(css.includes(".rarity-normale") && css.includes(".rarity-leggenda"), "rarity card classes must be centralized in CSS");
+assert(css.includes(".rarity-debole { --rarity-bg: #0b1c37"), "Debole must keep the original dark card background");
+assert(css.includes(".equipment-badge"), "mobile squad cards must have a compact equipment badge");
+assert(css.includes(".item-icon"), "item icons must have shared SVG styling");
+assert(css.includes(".item-assignment-layout"), "item assignment must reuse the tactical pitch layout responsively");
 const mime = {
   ".html": "text/html",
   ".css": "text/css",
