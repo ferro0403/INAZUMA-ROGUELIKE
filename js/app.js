@@ -652,7 +652,13 @@
     const player = resolvedRosterPlayer(id);
     if (!player) return "";
     const selected = String(selectedId || ui.selectedSquadPlayerId) === String(id);
-    const dataAttr = mode === "trade" ? `data-trade-player="${escapeHtml(id)}"` : mode === "equip" ? `data-equip-player="${escapeHtml(id)}"` : `data-squad-player="${escapeHtml(id)}" data-area="${area}"`;
+    const dataAttr = mode === "trade"
+      ? `data-trade-player="${escapeHtml(id)}"`
+      : mode === "equip"
+        ? `data-equip-player="${escapeHtml(id)}"`
+        : mode === "consumable"
+          ? `data-consumable-player="${escapeHtml(id)}"`
+          : `data-squad-player="${escapeHtml(id)}" data-area="${area}"`;
     return compactPlayerCardMarkup(player, {
       equipment: player.equipment,
       level: player.displayLevel,
@@ -1988,13 +1994,17 @@
 
   function choosePlayerForConsumable(item) {
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli un giocatore</h2></div></div>
-      <div class="player-grid">${run.roster.map((entry) => playerCard(sourcePlayer(entry), { button: true, level: entry.level, database: entry.source === "season1" ? seasonDb : freeAgentsDb })).join("")}</div>`,
-      { closeable: true }
+      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli a chi usarla</h2><p class="muted">Tocca un giocatore della formazione: titolari sul campo e riserve separate. La Bevanda energetica assegna +${escapeHtml(item.amount || 1)} livello.</p></div></div>
+      <div class="item-assignment-layout consumable-assignment-layout">
+        ${squadPitchMarkup({ mode: "consumable" })}
+        <aside class="panel"><h3>Riserve ${run.bench.length}/4</h3><div class="bench-list">${benchMarkup({ mode: "consumable" })}</div></aside>
+      </div>`,
+      { closeable: true, className: "item-assignment-modal consumable-assignment-modal" }
     );
-    modalRoot.querySelectorAll("[data-player-id]").forEach((button) => {
+    modalRoot.querySelectorAll("[data-consumable-player]").forEach((button) => {
       button.addEventListener("click", () => {
-        const entry = rosterEntry(button.dataset.playerId);
+        const entry = rosterEntry(button.dataset.consumablePlayer);
+        if (!entry) return;
         entry.level = Math.min(20, Number(entry.level || 0) + Number(item.amount || 1));
         removeInventoryItem(item.instanceId);
         global.RunState.save(run);
