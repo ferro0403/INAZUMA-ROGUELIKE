@@ -14,9 +14,9 @@ assert(/@media \(max-width: 780px\)[\s\S]*?\.pitch-row\s*\{[^}]*--pitch-card-siz
 assert(/@media \(max-width: 780px\)[\s\S]*?\.player-detail-modal\s*\{[\s\S]*?justify-self:\s*center[\s\S]*?width:\s*min\(100%, calc\(100vw - 24px\)\)/.test(css), "mobile player detail modal must be centered without lateral overflow");
 assert(css.includes("grid-template-columns: repeat(4, minmax(0, 1fr))"), "mobile bottom nav must show four uniform items");
 assert(css.includes("align-items: center"), "desktop fullbody visual should not be pinned to the bottom");
-assert(css.includes("width: min(125%, 700px)"), "desktop fullbody art should be larger");
+assert(css.includes("width: min(100%, 560px)"), "desktop fullbody art should keep the approved size");
 assert(css.includes("object-fit: contain"), "fullbody art should not deform");
-assert(css.includes("width: min(104%, 380px)"), "mobile fullbody art should be larger without overflow");
+assert(css.includes("width: min(90%, 340px)"), "mobile fullbody art should keep the approved size without overflow");
 const mime = {
   ".html": "text/html",
   ".css": "text/css",
