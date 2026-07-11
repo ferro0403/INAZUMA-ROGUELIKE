@@ -304,21 +304,23 @@
       ? `type="button" data-player-id="${escapeHtml(player.playerId)}"`
       : "";
     return `
-      <${tag} class="player-card ${rarityClass(player.category)} ${options.selected ? "selected" : ""}" ${attributes}>
-        <img class="player-portrait" src="${escapeHtml(player.portraitUrl)}" alt="${escapeHtml(player.name)}" loading="lazy" />
+      <${tag} class="player-card ${rarityClass(player.category)} ${options.selected ? "selected" : ""} ${options.equipment ? "has-equipment" : ""}" ${attributes}>
+        <span class="player-corner player-role" aria-label="Ruolo ${escapeHtml(player.position)}">${escapeHtml(player.position)}</span>
+        <span class="player-corner player-overall" aria-label="Overall ${resolved.overall}">${resolved.overall}</span>
+        <div class="player-portrait-wrap">
+          <img class="player-portrait" src="${escapeHtml(player.portraitUrl)}" alt="${escapeHtml(player.name)}" loading="lazy" />
+        </div>
         <div class="player-info">
           <div class="player-title">
             <strong>${escapeHtml(player.name)}</strong>
-            <span class="overall">${resolved.overall}</span>
           </div>
-          <div class="player-meta">
-            <span class="role-chip">${escapeHtml(player.position)}</span>
+          <div class="player-meta" aria-label="Dettagli giocatore">
             <span>${escapeHtml(player.element || player.type)}</span>
             <span>${escapeHtml(player.category)}</span>
-            <span>Lv ${escapeHtml(level)}</span>
-            ${options.equipment ? `<span class="equipment-pill">${itemIcon(options.equipment)}${escapeHtml(options.equipment.name)}</span>` : ""}
           </div>
         </div>
+        ${options.equipment ? `<span class="player-corner player-equipment" aria-label="Oggetto equipaggiato">${itemIcon(options.equipment)}</span>` : ""}
+        <span class="player-corner player-level" aria-label="Livello ${escapeHtml(level)}">Lv ${escapeHtml(level)}</span>
       </${tag}>`;
   }
 

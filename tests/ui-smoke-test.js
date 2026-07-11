@@ -22,6 +22,12 @@ assert(css.includes(".rarity-debole { --rarity-bg: #0b1c37"), "Debole must keep 
 assert(css.includes(".trade-bench-panel .bench-list { grid-auto-rows: max-content;"), "trade reserve grid rows must size to content instead of stretching cards");
 assert(css.includes(".trade-bench-panel .mini-player { width: 100%; max-width: 150px;"), "trade reserve cards must keep a readable reserve-card width");
 assert(css.includes(".player-card.selected") && css.includes("outline: 3px solid #05070b"), "selected player cards must have a high-contrast outline");
+assert(css.includes(".player-role { top: 8px; left: 8px;"), "player role badge must sit in the top-left card corner");
+assert(css.includes(".player-overall { top: 8px; right: 8px;"), "player overall badge must sit in the top-right card corner");
+assert(css.includes(".player-level { right: 8px; bottom: 8px;"), "player level badge must sit in the bottom-right card corner");
+assert(css.includes(".player-equipment { bottom: 8px; left: 8px;"), "equipped item icon must sit in the bottom-left card corner");
+assert(css.includes(".player-info { padding: 8px 38px 34px; text-align: center;"), "player name must remain centered with corner-badge clearance");
+assert(css.includes(".candidate-grid .player-card { display: block;"), "mobile candidate cards must keep the shared vertical player-card structure");
 assert(!/\.rarity-(?:scarso|normale|buono|forte|elite|mondiale|leggenda) \{[^}]*gradient\(/.test(css), "rarity classes must use flat colors, not gradients");
 assert(css.includes("background: var(--rarity-bg, #0b1c37)"), "player detail fullbody visual background must use rarity card color");
 assert(css.includes(".equipment-badge"), "mobile squad cards must have a compact equipment badge");
@@ -88,6 +94,12 @@ server.listen(0, "127.0.0.1", async () => {
     }
     await waitFor(window, "#go-map");
     assert(window.document.body.textContent.includes("Gestione squadra"));
+    const firstDraftCard = window.document.querySelector(".player-card");
+    assert(firstDraftCard.querySelector(".player-role"), "standard player cards render the role in a top-left badge");
+    assert(firstDraftCard.querySelector(".player-overall"), "standard player cards render the overall in a top-right badge");
+    assert(firstDraftCard.querySelector(".player-level"), "standard player cards render the level in a bottom-right badge");
+    assert(firstDraftCard.querySelector(".player-title strong"), "standard player cards keep a central readable name");
+    assert(!firstDraftCard.querySelector(".player-equipment"), "standard player cards without equipment must not render an empty equipment badge");
     const rowCounts = [...window.document.querySelectorAll(".pitch-row")].map((row) => row.children.length);
     assert.deepEqual(rowCounts, [4, 2, 4, 1], "4-2-4 must keep 4 / 2 / 4 / 1 visual rows");
     assert([...window.document.querySelectorAll(".pitch-row")].every((row) => row.getAttribute("style").includes(`--players-in-row:${row.children.length || 1}`)));
