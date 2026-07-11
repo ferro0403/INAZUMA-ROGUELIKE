@@ -18,10 +18,45 @@ require(path.join(root, "js/draft.js"));
 require(path.join(root, "js/map-generator.js"));
 require(path.join(root, "js/roguelike_progression.js"));
 require(path.join(root, "js/game-rules.js"));
+require(path.join(root, "js/five-v-five.js"));
 
 const season = JSON.parse(fs.readFileSync(path.join(root, "data/IE1_season_compact.json"), "utf8"));
 const free = JSON.parse(fs.readFileSync(path.join(root, "data/FREE_AGENTS_compact.json"), "utf8"));
 assert(season.formations.eleven.some((item) => item.id === "4-2-4"), "4-2-4 must exist");
+
+const fiveFormations = global.FiveVFive.formations.map((formation) => formation.id);
+assert.deepEqual(fiveFormations, ["1-2-1", "1-1-2"], "only the two 5v5 formations should be available");
+
+const css = fs.readFileSync(path.join(root, "css/game.css"), "utf8");
+const appJs = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
+const mobileMedia = css.slice(css.indexOf("@media (max-width: 780px)"));
+assert(mobileMedia.includes(".route-map"), "mobile route map rules must exist");
+assert(mobileMedia.includes("min-width: 0"), "mobile route map must remove the 620px minimum width");
+assert(mobileMedia.includes("overflow-x: hidden"), "mobile map container must prevent horizontal overflow");
+assert(mobileMedia.includes("touch-action: pan-y"), "mobile map must keep vertical panning without horizontal dragging");
+assert(mobileMedia.includes("--pitch-card-size"), "mobile squad cards must use a constant base card size");
+assert(mobileMedia.includes("var(--pitch-card-size)"), "mobile squad rows must not stretch cards based on row count");
+assert(mobileMedia.includes("width: min(100%, calc(100vw - 24px))"), "mobile player detail modal must fit and center inside viewport");
+assert(appJs.includes("--players-in-row:${row.ids.length || 1}"), "squad rows must expose player count to CSS grid");
+assert(appJs.includes('["five", "5v5", "five"]'), "bottom navigation must include the 5v5 section");
+assert(appJs.includes("Completa la Formazione 5v5"), "incomplete 5v5 formations must block 5v5 match nodes");
+
+const expectedFormationRows = {
+  "4-3-3": [3, 3, 4, 1],
+  "4-4-2": [2, 4, 4, 1],
+  "4-2-4": [4, 2, 4, 1],
+  "3-4-3": [3, 4, 3, 1],
+  "5-4-1": [1, 4, 5, 1],
+  "4-5-1": [1, 5, 4, 1],
+};
+for (const formation of season.formations.eleven) {
+  assert.deepEqual(
+    [formation.requirements.FW, formation.requirements.MF, formation.requirements.DF, formation.requirements.GK],
+    expectedFormationRows[formation.id],
+    `${formation.id} must render tactical rows without wrapping/reordering`
+  );
+}
+
 assert.equal(global.RoguelikeRules.defeatedBossRewardLevel(season.bossOrder[0]), 1);
 assert.equal(global.RoguelikeRules.defeatedBossRewardLevel(season.bossOrder[1]), 3);
 assert.equal(global.RoguelikeRules.unlockedPullLevel(season, 2), 3);
@@ -76,6 +111,32 @@ for (const formation of season.formations.eleven) {
   }, {});
   assert.deepEqual(roleCounts, formation.requirements);
 }
+
+
+const roleOf = (id) => free.players.find((player) => String(player.playerId) === String(id))?.position;
+const fiveState = global.FiveVFive.ensure(run, roleOf);
+assert.equal(fiveState.formation, "1-2-1", "new drafted runs default to the 1-2-1 5v5 formation");
+assert.equal(Object.keys(fiveState.slots).length, 5, "5v5 formation must have exactly five slots");
+let fiveStatus = global.FiveVFive.validate(run, roleOf);
+assert.equal(fiveStatus.valid, true, fiveStatus.messages.join("; "));
+assert.equal(new Set(Object.values(fiveState.slots)).size, 5, "5v5 formation must not duplicate players");
+const originalLineup = run.lineup.join(",");
+global.FiveVFive.changeFormation(run, "1-1-2", roleOf);
+fiveStatus = global.FiveVFive.validate(run, roleOf);
+assert.equal(Object.keys(run.fiveVFive.slots).length, 5);
+assert.equal(run.lineup.join(","), originalLineup, "changing 5v5 formation must not modify 11v11 lineup");
+global.FiveVFive.clearSlot(run, "FW2");
+assert.equal(global.FiveVFive.validate(run, roleOf).valid, false, "incomplete 5v5 formations are not valid");
+global.RunState.save(run);
+const loadedFive = global.RunState.load().fiveVFive;
+assert.deepEqual(loadedFive, run.fiveVFive, "5v5 formation must persist through save/load");
+const removedFiveId = Object.values(run.fiveVFive.slots).find(Boolean);
+run.roster = run.roster.filter((entry) => String(entry.playerId) !== String(removedFiveId));
+global.FiveVFive.removeUnavailable(run);
+assert(!Object.values(run.fiveVFive.slots).includes(removedFiveId), "removed roster players must leave the 5v5 formation");
+const legacyRun = { roster: run.roster, fiveVFive: undefined };
+global.FiveVFive.ensure(legacyRun, roleOf);
+assert.equal(legacyRun.fiveVFive.formation, "1-2-1", "legacy runs receive a default 5v5 state");
 
 const sampleEntry = run.roster[0];
 const sample = free.players.find((player) => String(player.playerId) === sampleEntry.playerId);

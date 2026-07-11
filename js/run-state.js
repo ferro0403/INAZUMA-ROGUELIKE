@@ -32,6 +32,7 @@
       inventory: [],
       effects: { luckyPulls: 0 },
       randomEventHistory: [],
+      fiveVFive: null,
       currentZone: null,
       checkpoint: null,
       gameOver: false,
@@ -74,6 +75,7 @@
       inventory: run.inventory,
       effects: run.effects,
       randomEventHistory: run.randomEventHistory,
+      fiveVFive: run.fiveVFive,
       currentZone: run.currentZone,
     });
     return save(run);
