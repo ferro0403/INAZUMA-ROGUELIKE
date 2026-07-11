@@ -413,3 +413,60 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .player-detail-content { min-width: 0; padding: 28px 18px; }
   .detail-stats { grid-template-columns: 1fr; }
 }
+
+/* Dedicated 5v5 formation screen */
+.bottom-nav button { min-width: 92px; display: grid; place-items: center; gap: 3px; }
+.bottom-nav .nav-icon { display: grid; place-items: center; width: 23px; height: 23px; }
+.bottom-nav svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
+.bottom-nav .nav-label { font-size: .72rem; line-height: 1; }
+.bottom-nav button.active { box-shadow: inset 0 -3px 0 rgba(16,32,58,.28); }
+
+.five-layout { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(300px, .75fr); gap: 18px; align-items: start; }
+.five-main { display: grid; gap: 14px; }
+.five-formation-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.five-formation-card { padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: #0b1c37; color: var(--text); text-align: left; }
+.five-formation-card strong { display: block; margin-bottom: 6px; color: var(--yellow); font-size: 1.4rem; }
+.five-formation-card span { color: var(--muted); font-weight: 800; }
+.five-formation-card.selected { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,211,79,.18); }
+.five-pitch { display: grid; gap: 14px; min-height: 520px; padding: 22px; border: 2px solid rgba(255,255,255,.32); border-radius: 24px; background: linear-gradient(rgba(255,255,255,.08) 2px, transparent 2px) center/100% 50%, repeating-linear-gradient(90deg, #14633f 0 12.5%, #176c45 12.5% 25%); }
+.five-pitch-line { display: flex; justify-content: center; align-items: center; gap: 16px; }
+.five-slot { width: 132px; min-height: 138px; padding: 10px; border: 2px solid rgba(255,255,255,.2); border-radius: 16px; background: rgba(4,20,28,.86); color: white; text-align: center; }
+.five-slot.selected { border-color: var(--yellow); box-shadow: 0 0 0 4px rgba(255,211,79,.18); }
+.five-slot.missing { border-color: rgba(255,91,98,.7); }
+.five-slot img { width: 58px; height: 58px; object-fit: contain; }
+.five-slot strong, .five-roster-card strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.five-slot-role { display: flex; justify-content: center; margin-bottom: 5px; }
+.five-empty { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto 5px; border: 2px dashed rgba(255,255,255,.45); border-radius: 50%; color: var(--yellow); font-size: 2rem; }
+.role-token { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border: 1px solid rgba(255,255,255,.15); border-radius: 999px; background: rgba(54,169,255,.12); color: #d9ecff; font-size: .72rem; font-weight: 950; }
+.role-GK { background: rgba(255,211,79,.14); color: #ffe28a; }
+.role-DF { background: rgba(54,211,153,.14); color: #a9f4d2; }
+.role-MF { background: rgba(54,169,255,.16); color: #b9e2ff; }
+.role-FW { background: rgba(255,91,98,.16); color: #ffb5b9; }
+.five-validation { padding: 13px 15px; border-radius: 15px; border: 1px solid var(--line); background: rgba(10,28,54,.9); }
+.five-validation.valid { border-color: rgba(52,211,153,.65); }
+.five-validation.invalid { border-color: rgba(255,91,98,.65); }
+.five-validation p { margin: 4px 0 0; color: var(--muted); }
+.five-selector { display: grid; gap: 14px; }
+.section-head.compact { margin-bottom: 0; }
+.role-filter-bar { display: flex; flex-wrap: wrap; gap: 8px; }
+.role-filter { border: 1px solid var(--line); border-radius: 999px; padding: 0; background: rgba(10,28,54,.9); color: var(--muted); }
+.role-filter.active { border-color: var(--yellow); color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,211,79,.12); }
+.five-roster-list { display: grid; gap: 9px; max-height: 520px; overflow: auto; padding-right: 4px; }
+.five-roster-card { display: grid; grid-template-columns: 52px minmax(0, 1fr); gap: 10px; align-items: center; width: 100%; padding: 8px; border: 1px solid var(--line); border-radius: 14px; background: #0b1c37; color: var(--text); text-align: left; }
+.five-roster-card img { width: 52px; height: 52px; object-fit: contain; }
+.five-roster-card small { display: block; color: var(--muted); font-weight: 750; }
+.five-roster-card.assigned { border-color: rgba(255,211,79,.5); }
+.five-roster-card.disabled { filter: grayscale(1); opacity: .45; }
+
+@media (max-width: 780px) {
+  .bottom-nav { grid-template-columns: repeat(4, minmax(0, 1fr)); display: grid; gap: 4px; }
+  .bottom-nav button { min-width: 0; padding: 8px 4px; }
+  .bottom-nav .nav-label { font-size: .66rem; }
+  .five-layout { grid-template-columns: 1fr; }
+  .five-formation-grid { grid-template-columns: 1fr; }
+  .five-pitch { min-height: 430px; padding: 16px 8px; gap: 10px; }
+  .five-pitch-line { gap: 8px; }
+  .five-slot { width: clamp(96px, 28vw, 118px); min-height: 124px; padding: 8px 5px; }
+  .five-slot img, .five-empty { width: 48px; height: 48px; }
+  .five-roster-list { max-height: none; }
+}
