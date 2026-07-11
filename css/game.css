@@ -161,6 +161,7 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.5rem); }
 }
 
 button.player-card { text-align: left; width: 100%; padding: 0; }
+.player-card-large { width: 100%; }
 button.player-card:hover { border-color: var(--yellow); transform: translateY(-3px); box-shadow: var(--shadow); }
 .player-card.selected { outline: 3px solid #05070b; outline-offset: 3px; border-color: #05070b; box-shadow: 0 0 0 6px rgba(255,255,255,.28), var(--shadow); }
 
@@ -239,12 +240,16 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
     linear-gradient(rgba(255,255,255,.08) 2px, transparent 2px) center/100% 50%,
     repeating-linear-gradient(90deg, #14633f 0 12.5%, #176c45 12.5% 25%);
 }
-.pitch-row { display: flex; justify-content: center; gap: 10px; margin: 14px 0 28px; flex-wrap: wrap; }
+.pitch-row { --row-gap: 10px; --row-card-size: 150px; display: grid; grid-template-columns: repeat(var(--players-in-row, 1), minmax(0, var(--row-card-size))); justify-content: center; gap: var(--row-gap); margin: 14px 0 28px; }
+.pitch-row[data-row-count="4"] { --row-card-size: min(136px, calc((100% - 30px) / 4)); }
+.pitch-row[data-row-count="3"] { --row-card-size: min(145px, calc((100% - 20px) / 3)); }
+.pitch-row[data-row-count="2"] { --row-card-size: min(150px, calc((100% - 10px) / 2)); }
 .mini-player { width: min(130px, 28%); padding: 8px; border: 2px solid transparent; border-radius: 14px; background: rgba(4, 20, 28, 0.82); color: white; text-align: center; }
 .mini-player.selected { border-color: #05070b; outline: 3px solid #05070b; outline-offset: 2px; box-shadow: 0 0 0 5px rgba(255,255,255,.28), var(--shadow); }
 .mini-player img { width: 58px; height: 58px; object-fit: contain; }
 .mini-player strong { display: block; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.player-card-compact { width: min(136px, 28%); min-width: 112px; padding: 0; border-width: 2px; text-align: center; }
+.player-card-compact, button.player-card-compact { width: min(150px, 28%); max-width: 150px; min-width: 118px; padding: 0; border-width: 2px; text-align: center; flex: 0 0 auto; align-self: start; }
+.pitch-row > .player-card-compact, .pitch-row > button.player-card-compact { width: 100%; max-width: none; min-width: 0; }
 .player-card-compact .player-portrait-wrap { aspect-ratio: 1.05; padding: 28px 18px 4px; background: transparent; place-items: end center; }
 .player-card-compact .player-info { padding: 4px 26px 30px; }
 .player-card-compact .player-title strong { font-size: .76rem; }
@@ -252,6 +257,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .player-card-compact .player-corner { min-width: 28px; min-height: 22px; padding: 3px 5px; border-radius: 8px; font-size: .64rem; }
 .player-card-compact .player-overall { min-width: 31px; min-height: 31px; font-size: .78rem; }
 .player-card-compact .player-equipment { min-width: 25px; min-height: 25px; padding: 2px; }
+.player-card-compact img.player-portrait { width: 100%; height: 100%; }
 .bench-list { display: grid; gap: 10px; }
 
 .bottom-nav {
@@ -323,7 +329,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .trade-squad-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(240px, .8fr); gap: 16px; align-items: start; }
 .trade-bench-panel { align-self: start; min-width: 0; }
 .trade-bench-panel .bench-list { grid-auto-rows: max-content; align-items: start; justify-items: stretch; }
-.trade-bench-panel .mini-player { width: 100%; max-width: 150px; justify-self: center; height: auto; align-self: start; }
+.trade-bench-panel .mini-player { width: min(150px, 100%); max-width: 150px; justify-self: center; height: auto; align-self: start; }
 .trade-selection-summary { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-top: 16px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 15px; background: rgba(10,28,54,.9); }
 .trade-selection-summary.selected { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,211,79,.14); }
 .trade-selection-summary span { color: var(--muted); font-weight: 800; }
@@ -392,13 +398,15 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .screen { overflow-x: clip; padding-bottom: 108px; }
   .pitch { min-height: 500px; padding: 14px 8px 24px; }
   .pitch-row {
-    --pitch-card-size: clamp(58px, 17vw, 76px);
-    display: grid;
+    --pitch-row-gap: clamp(6px, 1.8vw, 10px);
+    --pitch-card-size: min(94px, 100%);
     grid-template-columns: repeat(var(--players-in-row, 1), minmax(0, var(--pitch-card-size)));
-    justify-content: center;
-    gap: clamp(4px, 1.4vw, 8px);
-    margin: 10px 0 22px;
+    gap: var(--pitch-row-gap);
+    margin: 12px 0 26px;
   }
+  .pitch-row[data-row-count="4"] { --pitch-card-size: min(82px, calc((100% - 30px) / 4)); }
+  .pitch-row[data-row-count="3"] { --pitch-card-size: min(88px, calc((100% - 20px) / 3)); }
+  .pitch-row[data-row-count="2"] { --pitch-card-size: min(94px, calc((100% - 10px) / 2)); }
   .mini-player { width: 100%; min-width: 0; padding: 6px 4px; border-radius: 12px; }
   .mini-player img { width: clamp(38px, 11vw, 50px); height: clamp(38px, 11vw, 50px); }
   .mini-player strong { font-size: clamp(.58rem, 2.2vw, .7rem); }
@@ -428,7 +436,15 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 
   .trade-squad-layout { grid-template-columns: 1fr; }
   .trade-selection-summary { align-items: flex-start; flex-direction: column; }
-  .candidate-grid .player-portrait { aspect-ratio: 1; height: 100%; }
+  .candidate-grid .player-card-large { display: grid; grid-template-columns: 72px minmax(0, 1fr) 44px; align-items: center; min-height: 92px; }
+  .candidate-grid .player-card-large .player-portrait-wrap { grid-column: 1; grid-row: 1; height: 86px; aspect-ratio: auto; padding: 12px 8px 6px; background: transparent; }
+  .candidate-grid .player-card-large .player-portrait { height: 100%; }
+  .candidate-grid .player-card-large .player-info { grid-column: 2 / 4; grid-row: 1; min-width: 0; padding: 14px 52px 14px 5px; text-align: left; }
+  .candidate-grid .player-card-large .player-title strong { font-size: .94rem; }
+  .candidate-grid .player-card-large .player-meta { justify-content: flex-start; margin-top: 4px; font-size: .68rem; }
+  .candidate-grid .player-card-large .player-role { top: 7px; left: 7px; min-width: 26px; min-height: 21px; font-size: .62rem; }
+  .candidate-grid .player-card-large .player-overall { top: 50%; right: 10px; transform: translateY(-50%); min-width: 36px; min-height: 36px; font-size: .86rem; }
+  .candidate-grid .player-card-large .player-level { right: 9px; bottom: 7px; min-width: 28px; min-height: 21px; font-size: .6rem; }
   .topbar { padding-inline: 10px; }
   .brand { font-size: .86rem; }
   .status-pill { padding: 6px 8px; font-size: .72rem; }
@@ -544,8 +560,13 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 @media (max-width: 780px) {
   .equipment-badge { top: 3px; right: 3px; }
   .mini-player .equipment-badge .item-icon, .player-card-compact .player-equipment .item-icon { width: 19px; height: 19px; }
-  .player-card-compact { min-width: 96px; width: min(112px, 30%); }
-  .player-card-compact .player-info { padding: 3px 22px 27px; }
-  .player-card-compact .player-portrait-wrap { padding: 25px 14px 3px; }
+  .player-card-compact, button.player-card-compact { min-width: 0; width: 100%; max-width: none; }
+  .player-card-compact .player-info { padding: 2px 17px 22px; }
+  .player-card-compact .player-portrait-wrap { aspect-ratio: .92; padding: 20px 8px 2px; }
+  .player-card-compact .player-title strong { font-size: clamp(.54rem, 2.1vw, .68rem); }
+  .player-card-compact .player-meta { gap: 2px; font-size: clamp(.48rem, 1.7vw, .56rem); }
+  .player-card-compact .player-corner { min-width: 22px; min-height: 18px; padding: 2px 4px; border-radius: 7px; font-size: .55rem; }
+  .player-card-compact .player-overall { min-width: 26px; min-height: 26px; font-size: .66rem; }
+  .player-card-compact .player-equipment { min-width: 21px; min-height: 21px; }
   .item-assignment-layout { grid-template-columns: 1fr; }
 }
