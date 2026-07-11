@@ -324,6 +324,30 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .trade-modal { width: min(1120px, 100%); }
 .trade-squad-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(240px, .8fr); gap: 16px; align-items: start; }
 .trade-bench-panel { align-self: start; min-width: 0; }
+.trade-modal .pitch-row {
+  flex-wrap: nowrap;
+  gap: clamp(6px, 1vw, 10px);
+}
+.trade-modal .pitch-row .player-card-compact,
+.trade-modal .pitch-row button.player-card-compact {
+  width: 136px;
+  min-width: 0;
+}
+.trade-modal .pitch-row[style*="--players-in-row:4"] .player-card-compact,
+.trade-modal .pitch-row[style*="--players-in-row:4"] button.player-card-compact {
+  width: calc((100% - 30px) / 4);
+  max-width: 118px;
+}
+.trade-modal .pitch-row[style*="--players-in-row:3"] .player-card-compact,
+.trade-modal .pitch-row[style*="--players-in-row:3"] button.player-card-compact {
+  width: calc((100% - 20px) / 3);
+  max-width: 128px;
+}
+.trade-modal .pitch-row[style*="--players-in-row:2"] .player-card-compact,
+.trade-modal .pitch-row[style*="--players-in-row:2"] button.player-card-compact {
+  width: calc((100% - 10px) / 2);
+  max-width: 138px;
+}
 .trade-bench-panel .bench-list { grid-auto-rows: max-content; align-items: start; justify-items: stretch; }
 .trade-bench-panel .mini-player { width: min(150px, 100%); max-width: 150px; justify-self: center; height: auto; align-self: start; }
 .trade-selection-summary { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-top: 16px; padding: 13px 15px; border: 1px solid var(--line); border-radius: 15px; background: rgba(10,28,54,.9); }
@@ -386,6 +410,62 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .panel { padding: 15px; border-radius: 18px; }
   .candidate-grid { grid-template-columns: 1fr; }
   .candidate-grid .player-card { display: block; }
+  .pull-offer-grid { gap: 10px; }
+  .pull-offer-grid .player-card-large {
+    display: grid;
+    grid-template-columns: 82px minmax(0, 1fr) 42px;
+    align-items: center;
+    min-height: 104px;
+  }
+  .pull-offer-grid .player-card-large .player-portrait-wrap {
+    grid-column: 1;
+    grid-row: 1;
+    aspect-ratio: 1;
+    height: 100%;
+    min-height: 104px;
+    padding: 20px 8px 4px;
+    background: radial-gradient(circle at 50% 75%, rgba(54, 169, 255, 0.20), transparent 58%);
+  }
+  .pull-offer-grid .player-card-large .player-info {
+    grid-column: 2 / 4;
+    grid-row: 1;
+    padding: 16px 50px 14px 8px;
+    text-align: left;
+  }
+  .pull-offer-grid .player-card-large .player-title strong {
+    font-size: clamp(.9rem, 4vw, 1.05rem);
+    white-space: normal;
+    line-height: 1.05;
+  }
+  .pull-offer-grid .player-card-large .player-meta {
+    justify-content: flex-start;
+    gap: 5px;
+    margin-top: 7px;
+    font-size: .68rem;
+  }
+  .pull-offer-grid .player-card-large .player-corner {
+    min-width: 28px;
+    min-height: 24px;
+    padding: 3px 6px;
+    border-radius: 8px;
+    font-size: .68rem;
+  }
+  .pull-offer-grid .player-card-large .player-role {
+    top: 8px;
+    left: 8px;
+  }
+  .pull-offer-grid .player-card-large .player-overall {
+    top: 50%;
+    right: 10px;
+    min-width: 38px;
+    min-height: 38px;
+    font-size: .9rem;
+    transform: translateY(-50%);
+  }
+  .pull-offer-grid .player-card-large .player-level {
+    right: 10px;
+    bottom: 8px;
+  }
   .player-portrait-wrap { padding: 32px 28px 6px; }
   .player-info { padding: 8px 34px 32px; }
   .player-corner { min-width: 30px; min-height: 25px; padding: 3px 6px; font-size: .72rem; border-radius: 9px; }
@@ -394,13 +474,17 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .screen { overflow-x: clip; padding-bottom: 108px; }
   .pitch { min-height: 500px; padding: 14px 8px 24px; }
   .pitch-row {
-    --pitch-card-size: clamp(58px, 17vw, 76px);
+    --pitch-gap: clamp(5px, 1.6vw, 8px);
+    --pitch-card-size: 84px;
     display: grid;
     grid-template-columns: repeat(var(--players-in-row, 1), minmax(0, var(--pitch-card-size)));
     justify-content: center;
-    gap: clamp(6px, 1.8vw, 10px);
+    gap: var(--pitch-gap);
     margin: 12px 0 26px;
   }
+  .pitch-row[style*="--players-in-row:4"] { --pitch-card-size: min(84px, calc((100vw - 84px) / 4)); }
+  .pitch-row[style*="--players-in-row:3"] { --pitch-card-size: min(84px, calc((100vw - 76px) / 3)); }
+  .pitch-row[style*="--players-in-row:2"] { --pitch-card-size: min(84px, calc((100vw - 68px) / 2)); }
   .mini-player { width: 100%; min-width: 0; padding: 6px 4px; border-radius: 12px; }
   .mini-player img { width: clamp(38px, 11vw, 50px); height: clamp(38px, 11vw, 50px); }
   .mini-player strong { font-size: clamp(.58rem, 2.2vw, .7rem); }
