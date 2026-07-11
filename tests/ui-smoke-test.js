@@ -19,6 +19,11 @@ assert(css.includes("object-fit: contain"), "fullbody art should not deform");
 assert(css.includes("width: min(90%, 340px)"), "mobile fullbody art should keep the approved size without overflow");
 assert(css.includes(".rarity-normale") && css.includes(".rarity-leggenda"), "rarity card classes must be centralized in CSS");
 assert(css.includes(".rarity-debole { --rarity-bg: #0b1c37"), "Debole must keep the original dark card background");
+assert(css.includes(".trade-bench-panel .bench-list { grid-auto-rows: max-content;"), "trade reserve grid rows must size to content instead of stretching cards");
+assert(css.includes(".trade-bench-panel .mini-player { width: 100%; max-width: 150px;"), "trade reserve cards must keep a readable reserve-card width");
+assert(css.includes(".player-card.selected") && css.includes("outline: 3px solid #05070b"), "selected player cards must have a high-contrast outline");
+assert(!/\.rarity-(?:scarso|normale|buono|forte|elite|mondiale|leggenda) \{[^}]*gradient\(/.test(css), "rarity classes must use flat colors, not gradients");
+assert(css.includes("background: var(--rarity-bg, #0b1c37)"), "player detail fullbody visual background must use rarity card color");
 assert(css.includes(".equipment-badge"), "mobile squad cards must have a compact equipment badge");
 assert(css.includes(".item-icon"), "item icons must have shared SVG styling");
 assert(css.includes(".item-assignment-layout"), "item assignment must reuse the tactical pitch layout responsively");
@@ -112,6 +117,7 @@ server.listen(0, "127.0.0.1", async () => {
     window.document.querySelector("[data-squad-player]").click();
     await waitFor(window, ".player-detail-modal");
     assert(window.document.querySelector(".player-fullbody").src.includes("_fullbody.webp"));
+assert(window.document.querySelector(".player-detail-visual[class*=\"rarity-\"]"), "player detail visual must carry the player rarity class");
     assert.equal(window.document.querySelectorAll(".detail-stat").length, 8);
     assert(window.document.body.textContent.includes("Potenziale"));
     window.document.querySelector("[data-close-modal]").click();
@@ -120,6 +126,7 @@ server.listen(0, "127.0.0.1", async () => {
     assert(window.document.querySelectorAll(".map-node").length > 8);
     assert(window.document.querySelectorAll(".map-node.reachable").length > 0);
     assert(css.includes(".trade-squad-layout"), "trade modal should use tactical pitch layout styles");
+assert(window.runKeepingScroll === undefined, "scroll helpers should stay internal to the app closure");
     assert(window.document.documentElement.innerHTML.includes("bottom-nav"));
     const mapScroll = window.document.querySelector("#map-scroll");
     mapScroll.scrollLeft = 99;

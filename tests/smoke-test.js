@@ -41,6 +41,11 @@ assert(appJs.includes("--players-in-row:${row.ids.length || 1}"), "squad rows mu
 assert(appJs.includes('["five", "5v5", "five"]'), "bottom navigation must include the 5v5 section");
 assert(appJs.includes("Completa la Formazione 5v5"), "incomplete 5v5 formations must block 5v5 match nodes");
 assert(appJs.includes("trade-squad-layout"), "trade screen must reuse the tactical squad layout");
+assert(css.includes(".trade-bench-panel .mini-player { width: 100%; max-width: 150px;"), "trade bench cards must use an explicit, non-stretched reserve size");
+assert(css.includes(".mini-player.selected") && css.includes("outline: 3px solid #05070b"), "selected trade players must have a clear dark outline");
+assert(appJs.includes("runKeepingScroll") && appJs.includes("preserveScroll: scrollSnapshot()"), "trade selection and provisional win flows must preserve scroll");
+assert(appJs.includes("focus({ preventScroll: true })"), "automatic focus must not force scroll movement");
+assert(appJs.includes('player-detail-visual ${rarityClass(player.category)}'), "player detail visual must inherit rarity color class");
 assert(appJs.includes("showPullConfirmation"), "player pulls must open a confirmation before picking a candidate");
 assert(appJs.includes("Il Gettone scout non può essere utilizzato nelle pull leggendarie."), "legendary pulls must block scout token rerolls in logic and UI");
 assert(css.includes("align-items: center"), "desktop fullbody visual must be vertically centered");

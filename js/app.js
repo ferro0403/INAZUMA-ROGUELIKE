@@ -95,7 +95,36 @@
     modalRoot.innerHTML = "";
   }
 
-  function openModal(content, { closeable = true, className = "", onClose = null } = {}) {
+  function scrollSnapshot() {
+    const modal = modalRoot.querySelector(".modal");
+    return {
+      windowX: window.scrollX || 0,
+      windowY: window.scrollY || 0,
+      modalTop: modal ? modal.scrollTop : 0,
+    };
+  }
+
+  function restoreScroll(snapshot) {
+    if (!snapshot) return;
+    const modal = modalRoot.querySelector(".modal");
+    if (modal) modal.scrollTop = snapshot.modalTop || 0;
+    try {
+      window.scrollTo(snapshot.windowX || 0, snapshot.windowY || 0);
+    } catch (error) {
+      window.scrollX = snapshot.windowX || 0;
+      window.scrollY = snapshot.windowY || 0;
+    }
+  }
+
+  function runKeepingScroll(callback) {
+    const snapshot = scrollSnapshot();
+    const result = callback();
+    requestAnimationFrame(() => restoreScroll(snapshot));
+    setTimeout(() => restoreScroll(snapshot), 0);
+    return result;
+  }
+
+  function openModal(content, { closeable = true, className = "", onClose = null, preserveScroll = null } = {}) {
     modalRoot.innerHTML = `
       <div class="modal-backdrop">
         <section class="modal ${className}">
@@ -107,6 +136,7 @@
       closeModal();
       if (onClose) onClose();
     });
+    restoreScroll(preserveScroll);
   }
 
   function formationById(id) {
@@ -308,7 +338,7 @@
     }).join("");
     openModal(`
       <div class="player-detail-layout">
-        <section class="player-detail-visual">
+        <section class="player-detail-visual ${rarityClass(player.category)}">
           <img class="player-fullbody" src="${escapeHtml(fullbodyUrl)}" alt="${escapeHtml(player.name)}" />
         </section>
         <section class="player-detail-content">
@@ -819,12 +849,14 @@
         <button class="btn btn-yellow" id="continue-trade" ${selected ? "" : "disabled"}>Procedi allo scambio</button>
         <button class="btn btn-ghost" id="skip-trade">Rinuncia allo scambio</button>
       </div>`,
-      { closeable: false, className: "trade-modal" }
+      { closeable: false, className: "trade-modal", preserveScroll: scrollSnapshot() }
     );
     modalRoot.querySelectorAll("[data-trade-player]").forEach((button) => {
       button.addEventListener("click", () => {
-        ui.tradeSelectedPlayerId = String(button.dataset.tradePlayer);
-        resolveTradeNode(node);
+        runKeepingScroll(() => {
+          ui.tradeSelectedPlayerId = String(button.dataset.tradePlayer);
+          resolveTradeNode(node);
+        });
       });
     });
     document.getElementById("continue-trade").addEventListener("click", () => prepareTrade(node, ui.tradeSelectedPlayerId));
@@ -1075,7 +1107,7 @@
       </div>`,
       { closeable: false }
     );
-    document.getElementById("confirm-pull-pick").focus();
+    document.getElementById("confirm-pull-pick").focus({ preventScroll: true });
     document.getElementById("confirm-pull-pick").addEventListener("click", (event) => {
       if (confirmed) return;
       confirmed = true;
@@ -1219,7 +1251,7 @@
       ui.match = null;
       global.RunState.save(run);
       toast("Vittoria: tutta la rosa guadagna 0,5 livelli");
-      return renderMap();
+      return runKeepingScroll(renderMap);
     }
     addLevels(1);
     global.MapEngine.completeNode(run.currentZone, node.id);
