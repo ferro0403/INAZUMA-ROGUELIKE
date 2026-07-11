@@ -30,6 +30,7 @@ assert(css.includes(".player-info { padding: 8px 38px 34px; text-align: center;"
 assert(css.includes(".candidate-grid .player-card { display: block;"), "mobile candidate cards must keep the shared vertical player-card structure");
 assert(css.includes(".pull-offer-grid, .mobile-compact-player-list { gap: 10px; }"), "pull, confirmation and bench replacement cards must share the compact mobile spacing");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.mobile-compact-player-list \.player-card-large[\s\S]*?grid-template-columns:\s*82px minmax\(0, 1fr\) 42px/.test(css), "mobile confirmation and full-roster replacement cards must use the same horizontal compact grid as pull candidates");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.pull-offer-grid \.player-card-large \.player-portrait, \.mobile-compact-player-list \.player-card-large \.player-portrait[\s\S]*?height:\s*100%[\s\S]*?object-fit:\s*contain/.test(css), "mobile confirmation portrait must reuse the pull compact visible portrait rule");
 assert(!/\.rarity-(?:scarso|normale|buono|forte|elite|mondiale|leggenda) \{[^}]*gradient\(/.test(css), "rarity classes must use flat colors, not gradients");
 assert(css.includes("background: var(--rarity-bg, #0b1c37)"), "player detail fullbody visual background must use rarity card color");
 assert(css.includes(".player-card-large"), "pull and candidate cards must keep a distinct large player-card variant");
