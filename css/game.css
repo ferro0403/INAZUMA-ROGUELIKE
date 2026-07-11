@@ -757,9 +757,42 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .boss-match-log { max-height: 190px; }
   .boss-match-log li { grid-template-columns: 34px 24px minmax(0, 1fr); font-size: .82rem; }
   .boss-match-score { font-size: 2.4rem; }
-  .boss-match-controls { position: static; bottom: auto; z-index: auto; display: grid; align-items: stretch; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
-  .boss-match-controls > .btn-yellow { min-width: 0; width: 100%; min-height: 48px; }
-  .boss-match-controls .button-row { display: grid; grid-template-columns: 1fr 1fr; justify-content: stretch; }
-  .boss-match-controls .button-row .btn { width: 100%; padding: 10px; }
-  .boss-match-controls .button-row .btn[data-nav="squad"] { grid-column: 1 / -1; }
+  .boss-match-controls {
+    position: static;
+    bottom: auto;
+    z-index: auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    align-items: stretch;
+    justify-content: stretch;
+    width: 100%;
+    gap: 12px;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom));
+  }
+  .boss-match-controls > .btn-yellow {
+    min-width: 0;
+    width: 100%;
+    min-height: 58px;
+    padding: 15px 18px;
+    font-size: 1rem;
+  }
+  .boss-match-controls .button-row {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
+    width: 100%;
+    gap: 10px;
+  }
+  .boss-match-controls .button-row .btn {
+    min-width: 0;
+    width: 100%;
+    min-height: 54px;
+    padding: 14px 12px;
+    font-size: .95rem;
+  }
+  .boss-match-controls .button-row .btn[data-nav="squad"] {
+    grid-column: 1 / -1;
+    min-height: 58px;
+    padding: 15px 18px;
+  }
 }
