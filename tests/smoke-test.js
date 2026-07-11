@@ -53,6 +53,11 @@ assert(appJs.includes("showPullConfirmation"), "player pulls must open a confirm
 assert(appJs.includes("mobile-compact-player-list pull-confirmation-card"), "pull confirmation must reuse the shared compact mobile card container");
 assert(appJs.includes("mobile-compact-player-list bench-replacement-grid"), "full-roster bench replacement must reuse the shared compact mobile card container");
 assert(mobileMedia.includes(".mobile-compact-player-list .player-card-large"), "mobile compact contexts must share the pull card horizontal rules");
+assert(mobileMedia.includes(".pull-offer-grid .player-card-large .player-portrait, .mobile-compact-player-list .player-card-large .player-portrait"), "mobile confirmation portraits must reuse the pull compact portrait image rule");
+assert(mobileMedia.includes("height: 100%") && mobileMedia.includes("object-fit: contain"), "mobile compact portraits must keep a visible non-deformed source inside the image column");
+assert(appJs.includes("function playerPortraitUrl(player)") && appJs.includes("player?.portraitUrl || player?.image || player?.imageUrl || player?.frontFullbodyUrl"), "pull cards must resolve a valid portrait source from supported player image fields");
+assert(appJs.includes("data:image/svg+xml") && appJs.includes('src="${escapeHtml(playerPortraitUrl(player))}" alt="${escapeHtml(player.name)}"'), "pull cards must render a portrait fallback through the shared helper");
+assert(appJs.includes('<button class="btn btn-primary" id="confirm-pull-pick">Sì</button>') && appJs.includes('<button class="btn" id="cancel-pull-pick">No</button>') && appJs.includes('<button class="btn btn-yellow" id="detail-pull-pick">Apri scheda</button>'), "pull confirmation buttons and logic hooks must remain unchanged");
 assert(!appJs.includes("data-confirm-replacement"), "bench replacement logic should keep using the existing data-player-id click path");
 assert(appJs.includes("Il Gettone scout non può essere utilizzato nelle pull leggendarie."), "legendary pulls must block scout token rerolls in logic and UI");
 assert(css.includes("align-items: center"), "desktop fullbody visual must be vertically centered");

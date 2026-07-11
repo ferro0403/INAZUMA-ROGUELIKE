@@ -292,13 +292,17 @@
     });
   }
 
+  function playerPortraitUrl(player) {
+    return player?.portraitUrl || player?.image || player?.imageUrl || player?.frontFullbodyUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='22' fill='%2311213f'/%3E%3Ccircle cx='60' cy='42' r='22' fill='%23ffd34f'/%3E%3Cpath d='M22 108c6-28 24-42 38-42s32 14 38 42' fill='%2385cdf5'/%3E%3C/svg%3E";
+  }
+
   function compactPlayerCardMarkup(player, { equipment = null, level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, selected = false, dataAttr = "" } = {}) {
     return `
       <button class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player ${rarityClass(player.category)} ${equipment ? "has-equipment" : ""} ${selected ? "selected" : ""}" ${dataAttr}>
         <span class="player-corner player-role" aria-label="Ruolo ${escapeHtml(player.position)}">${escapeHtml(player.position)}</span>
         <span class="player-corner player-overall" aria-label="Overall ${overall}">${overall}</span>
         <div class="player-portrait-wrap">
-          <img class="player-portrait" src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" />
+          <img class="player-portrait" src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" />
         </div>
         <div class="player-info">
           <div class="player-title"><strong>${escapeHtml(player.name)}</strong></div>
@@ -326,7 +330,7 @@
         <span class="player-corner player-role" aria-label="Ruolo ${escapeHtml(player.position)}">${escapeHtml(player.position)}</span>
         <span class="player-corner player-overall" aria-label="Overall ${resolved.overall}">${resolved.overall}</span>
         <div class="player-portrait-wrap">
-          <img class="player-portrait" src="${escapeHtml(player.portraitUrl)}" alt="${escapeHtml(player.name)}" loading="lazy" />
+          <img class="player-portrait" src="${escapeHtml(playerPortraitUrl(player))}" alt="${escapeHtml(player.name)}" loading="lazy" />
         </div>
         <div class="player-info">
           <div class="player-title">
