@@ -61,6 +61,7 @@
   let freeAgentsDb = null;
   let freeAgentsById = new Map();
   let seasonPlayersById = new Map();
+  let seasonTeamsById = new Map();
   let playerVisualsById = new Map();
   let run = null;
   const ui = {
@@ -291,6 +292,23 @@
     });
   }
 
+  function compactPlayerCardMarkup(player, { equipment = null, level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, selected = false, dataAttr = "" } = {}) {
+    return `
+      <button class="player-card player-card-compact mini-player ${rarityClass(player.category)} ${equipment ? "has-equipment" : ""} ${selected ? "selected" : ""}" ${dataAttr}>
+        <span class="player-corner player-role" aria-label="Ruolo ${escapeHtml(player.position)}">${escapeHtml(player.position)}</span>
+        <span class="player-corner player-overall" aria-label="Overall ${overall}">${overall}</span>
+        <div class="player-portrait-wrap">
+          <img class="player-portrait" src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" />
+        </div>
+        <div class="player-info">
+          <div class="player-title"><strong>${escapeHtml(player.name)}</strong></div>
+          <div class="player-meta" aria-label="Dettagli giocatore"><span>${escapeHtml(player.element || player.type)}</span><span>${escapeHtml(player.category)}</span></div>
+        </div>
+        ${equipment ? `<span class="player-corner player-equipment" aria-label="Oggetto equipaggiato" title="${escapeHtml(equipment.name)}">${itemIcon(equipment)}</span>` : ""}
+        <span class="player-corner player-level" aria-label="Livello ${escapeHtml(level)}">Lv ${escapeHtml(level)}</span>
+      </button>`;
+  }
+
   function playerCard(player, options = {}) {
     const database = options.database || freeAgentsDb;
     const level = Number(options.level ?? 0);
@@ -324,10 +342,26 @@
       </${tag}>`;
   }
 
+  function playerTeamIdentity(player, playerId) {
+    const entry = playerId ? rosterEntry(playerId) : null;
+    const ids = [entry?.teamId, player.teamId, ...(player.teamIds || [])].filter(Boolean);
+    let team = ids.map((id) => seasonTeamsById.get(String(id))).find(Boolean);
+    let teamName = team?.teamName || entry?.teamName || player.teamName || (player.teams || []).find((name) => name && name !== "Unaffiliated") || (player.teamId === "unaffiliated" ? "Svincolato" : "");
+    if (!team && teamName) team = (seasonDb?.teams || []).find((candidate) => candidate.teamName === teamName);
+    if (!teamName) teamName = "Svincolato";
+    return { name: teamName === "Unaffiliated" ? "Svincolato" : teamName, logoUrl: team?.logoUrl || "" };
+  }
+
   function showPlayerDetailsFor(player, { playerId = player.playerId, level = player.displayLevel ?? 0, database = freeAgentsDb, equipment = null, onClose = null } = {}) {
     if (!player) return toast("Giocatore non disponibile");
     const visual = playerVisualsById.get(String(playerId)) || {};
     const fullbodyUrl = visual.fullbodyUrl || player.portraitUrl;
+    const teamIdentity = playerTeamIdentity(player, playerId);
+    const teamBadge = teamIdentity.name ? `
+      <div class="player-detail-team" aria-label="Squadra ${escapeHtml(teamIdentity.name)}">
+        ${teamIdentity.logoUrl ? `<img src="${escapeHtml(teamIdentity.logoUrl)}" alt="${escapeHtml(teamIdentity.name)}" loading="lazy" />` : `<span class="team-logo-placeholder" aria-hidden="true">⚽</span>`}
+        <strong>${escapeHtml(teamIdentity.name)}</strong>
+      </div>` : "";
     const resolved = player.stats && player.baseStats
       ? player
       : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(Number(level || 0)), database);
@@ -341,6 +375,7 @@
     openModal(`
       <div class="player-detail-layout">
         <section class="player-detail-visual ${rarityClass(player.category)}">
+          ${teamBadge}
           <img class="player-fullbody" src="${escapeHtml(fullbodyUrl)}" alt="${escapeHtml(player.name)}" />
         </section>
         <section class="player-detail-content">
@@ -545,13 +580,13 @@
     if (!player) return "";
     const selected = String(selectedId || ui.selectedSquadPlayerId) === String(id);
     const dataAttr = mode === "trade" ? `data-trade-player="${escapeHtml(id)}"` : mode === "equip" ? `data-equip-player="${escapeHtml(id)}"` : `data-squad-player="${escapeHtml(id)}" data-area="${area}"`;
-    return `
-      <button class="mini-player ${rarityClass(player.category)} ${player.equipment ? "has-equipment" : ""} ${selected ? "selected" : ""}" ${dataAttr}>
-        <img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" />
-        <strong>${escapeHtml(player.name)}</strong>
-        <span class="small muted">${player.position} · ${player.overall} · Lv ${player.displayLevel}</span>
-        ${player.equipment ? `<span class="equipment-badge" title="${escapeHtml(player.equipment.name)}">${itemIcon(player.equipment)}</span><span class="small equipment-label">${escapeHtml(player.equipment.name)}</span>` : ""}
-      </button>`;
+    return compactPlayerCardMarkup(player, {
+      equipment: player.equipment,
+      level: player.displayLevel,
+      overall: player.overall,
+      selected,
+      dataAttr,
+    });
   }
 
   function squadPitchMarkup({ mode = "squad", selectedId = null } = {}) {
@@ -1660,6 +1695,7 @@
       [seasonDb, freeAgentsDb] = await Promise.all([seasonResponse.json(), freeAgentsResponse.json()]);
       freeAgentsById = new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player]));
       seasonPlayersById = new Map(seasonDb.players.map((player) => [String(player.playerId), player]));
+      seasonTeamsById = new Map((seasonDb.teams || []).map((team) => [String(team.teamId ?? team.id), team]));
       playerVisualsById = new Map(Object.entries(visualsDb.players || {}));
       renderHome();
     } catch (error) {

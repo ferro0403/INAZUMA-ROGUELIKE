@@ -244,6 +244,14 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .mini-player.selected { border-color: #05070b; outline: 3px solid #05070b; outline-offset: 2px; box-shadow: 0 0 0 5px rgba(255,255,255,.28), var(--shadow); }
 .mini-player img { width: 58px; height: 58px; object-fit: contain; }
 .mini-player strong { display: block; font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.player-card-compact { width: min(136px, 28%); min-width: 112px; padding: 0; border-width: 2px; text-align: center; }
+.player-card-compact .player-portrait-wrap { aspect-ratio: 1.05; padding: 28px 18px 4px; background: transparent; place-items: end center; }
+.player-card-compact .player-info { padding: 4px 26px 30px; }
+.player-card-compact .player-title strong { font-size: .76rem; }
+.player-card-compact .player-meta { margin-top: 3px; gap: 4px; font-size: .62rem; }
+.player-card-compact .player-corner { min-width: 28px; min-height: 22px; padding: 3px 5px; border-radius: 8px; font-size: .64rem; }
+.player-card-compact .player-overall { min-width: 31px; min-height: 31px; font-size: .78rem; }
+.player-card-compact .player-equipment { min-width: 25px; min-height: 25px; padding: 2px; }
 .bench-list { display: grid; gap: 10px; }
 
 .bottom-nav {
@@ -326,7 +334,10 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .player-detail-modal { position: relative; width: min(1180px, 96vw); padding: 0; overflow: hidden; }
 .player-detail-modal .modal-close { position: absolute; top: 16px; right: 18px; z-index: 4; width: 42px; height: 42px; border: 1px solid var(--line); border-radius: 50%; background: rgba(6,17,38,.8); }
 .player-detail-layout { display: grid; grid-template-columns: minmax(380px, 1.12fr) minmax(420px, 1.18fr); min-height: min(760px, 86vh); }
-.player-detail-visual { display: flex; align-items: center; justify-content: center; padding: 18px 12px; background: var(--rarity-bg, #0b1c37); }
+.player-detail-visual { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; padding: 18px 12px; background: var(--rarity-bg, #0b1c37); }
+.player-detail-team { display: inline-flex; align-items: center; justify-content: center; gap: 12px; max-width: min(86%, 360px); padding: 10px 14px; border: 1px solid rgba(255,255,255,.35); border-radius: 18px; background: rgba(5, 7, 11, .22); color: var(--rarity-text, #fff); box-shadow: 0 10px 24px rgba(0,0,0,.14); }
+.player-detail-team img, .team-logo-placeholder { display: grid; place-items: center; width: clamp(56px, 7vw, 90px); height: clamp(56px, 7vw, 90px); object-fit: contain; }
+.player-detail-team strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: clamp(.9rem, 1.7vw, 1.15rem); font-weight: 950; text-align: center; }
 .player-fullbody { display: block; width: min(100%, 560px); height: min(82vh, 720px); max-height: 720px; object-fit: contain; object-position: center center; filter: drop-shadow(0 18px 24px rgba(0,0,0,.36)); }
 .player-detail-content { padding: 48px 42px 36px; background: #07172c; }
 .player-detail-name { margin-bottom: 13px; font-size: clamp(2rem, 5vw, 4rem); line-height: .95; text-transform: uppercase; }
@@ -437,7 +448,10 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
     overflow: auto;
   }
   .player-detail-layout { grid-template-columns: 1fr; min-width: 0; }
-  .player-detail-visual { min-height: 380px; padding: 24px 10px 10px; }
+  .player-detail-visual { min-height: 380px; padding: 18px 10px 10px; gap: 8px; }
+  .player-detail-team { max-width: 92%; padding: 7px 10px; gap: 8px; }
+  .player-detail-team img, .team-logo-placeholder { width: 44px; height: 44px; }
+  .player-detail-team strong { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; white-space: normal; font-size: .82rem; }
   .player-fullbody { width: min(90%, 340px); height: auto; max-height: 380px; }
   .player-detail-content { min-width: 0; padding: 28px 18px; }
   .detail-stats { grid-template-columns: 1fr; }
@@ -529,6 +543,9 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 
 @media (max-width: 780px) {
   .equipment-badge { top: 3px; right: 3px; }
-  .mini-player .equipment-badge .item-icon { width: 19px; height: 19px; }
+  .mini-player .equipment-badge .item-icon, .player-card-compact .player-equipment .item-icon { width: 19px; height: 19px; }
+  .player-card-compact { min-width: 96px; width: min(112px, 30%); }
+  .player-card-compact .player-info { padding: 3px 22px 27px; }
+  .player-card-compact .player-portrait-wrap { padding: 25px 14px 3px; }
   .item-assignment-layout { grid-template-columns: 1fr; }
 }
