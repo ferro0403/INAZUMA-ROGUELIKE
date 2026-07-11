@@ -40,6 +40,13 @@ assert(mobileMedia.includes("width: min(100%, calc(100vw - 24px))"), "mobile pla
 assert(appJs.includes("--players-in-row:${row.ids.length || 1}"), "squad rows must expose player count to CSS grid");
 assert(appJs.includes('["five", "5v5", "five"]'), "bottom navigation must include the 5v5 section");
 assert(appJs.includes("Completa la Formazione 5v5"), "incomplete 5v5 formations must block 5v5 match nodes");
+assert(appJs.includes("trade-squad-layout"), "trade screen must reuse the tactical squad layout");
+assert(appJs.includes("showPullConfirmation"), "player pulls must open a confirmation before picking a candidate");
+assert(appJs.includes("Il Gettone scout non può essere utilizzato nelle pull leggendarie."), "legendary pulls must block scout token rerolls in logic and UI");
+assert(css.includes("align-items: center"), "desktop fullbody visual must be vertically centered");
+assert(css.includes("width: min(100%, 560px)"), "desktop fullbody player art must keep the approved size");
+assert(css.includes("object-fit: contain"), "fullbody image must preserve proportions");
+assert(mobileMedia.includes("width: min(90%, 340px)"), "mobile fullbody player art must keep the approved size");
 
 const expectedFormationRows = {
   "4-3-3": [3, 3, 4, 1],

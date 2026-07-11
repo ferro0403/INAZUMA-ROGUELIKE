@@ -13,6 +13,10 @@ assert(/@media \(max-width: 780px\)[\s\S]*?\.map-wrap[\s\S]*?overflow-x:\s*hidde
 assert(/@media \(max-width: 780px\)[\s\S]*?\.pitch-row\s*\{[^}]*--pitch-card-size:[^}]*display:\s*grid[\s\S]*?grid-template-columns:\s*repeat\(var\(--players-in-row, 1\), minmax\(0, var\(--pitch-card-size\)\)\)/.test(css), "mobile pitch rows must keep a constant card width while changing only player distribution");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.player-detail-modal\s*\{[\s\S]*?justify-self:\s*center[\s\S]*?width:\s*min\(100%, calc\(100vw - 24px\)\)/.test(css), "mobile player detail modal must be centered without lateral overflow");
 assert(css.includes("grid-template-columns: repeat(4, minmax(0, 1fr))"), "mobile bottom nav must show four uniform items");
+assert(css.includes("align-items: center"), "desktop fullbody visual should not be pinned to the bottom");
+assert(css.includes("width: min(100%, 560px)"), "desktop fullbody art should keep the approved size");
+assert(css.includes("object-fit: contain"), "fullbody art should not deform");
+assert(css.includes("width: min(90%, 340px)"), "mobile fullbody art should keep the approved size without overflow");
 const mime = {
   ".html": "text/html",
   ".css": "text/css",
@@ -110,6 +114,8 @@ server.listen(0, "127.0.0.1", async () => {
     await waitFor(window, ".route-map");
     assert(window.document.querySelectorAll(".map-node").length > 8);
     assert(window.document.querySelectorAll(".map-node.reachable").length > 0);
+    assert(css.includes(".trade-squad-layout"), "trade modal should use tactical pitch layout styles");
+    assert(window.document.documentElement.innerHTML.includes("bottom-nav"));
     const mapScroll = window.document.querySelector("#map-scroll");
     mapScroll.scrollLeft = 99;
     window.document.querySelector(".map-node.reachable").click();
