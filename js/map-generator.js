@@ -11,9 +11,30 @@
     return entries[entries.length - 1].type;
   }
 
+  function currentStage(run) {
+    return Number(run?.bossIndex || 0) + 1;
+  }
+
+  function nodeWeightsForStage(run) {
+    const config = global.SEASON1_CONFIG;
+    const stage = currentStage(run);
+    const tier = (config.stageNodeWeightTiers || []).find(
+      (entry) => stage >= entry.minStage && stage <= entry.maxStage
+    );
+    return {
+      ...config.nodeWeights,
+      ...(tier
+        ? {
+            pull_free_agents: tier.pull_free_agents,
+            pull_unlocked_teams: tier.pull_unlocked_teams,
+          }
+        : {}),
+    };
+  }
+
   function availableTypes(run, options = {}) {
     const config = global.SEASON1_CONFIG;
-    return Object.entries(config.nodeWeights)
+    return Object.entries(nodeWeightsForStage(run))
       .filter(([type, weight]) => {
         if (weight <= 0 || config.disabledNodeTypes.includes(type)) return false;
         if (options.excludeRandom && type === "random") return false;
@@ -135,6 +156,7 @@
 
   global.MapEngine = {
     generate,
+    nodeWeightsForStage,
     reachableNodeIds,
     selectNode,
     completeNode,
