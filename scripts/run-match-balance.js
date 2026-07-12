@@ -17,7 +17,8 @@ for (const type of ['eleven','five']) {
         goals += r.score.user + r.score.opponent;
         events += r.timeline.length;
       }
-      const expected = diff <= 4 ? 50 : diff <= 9 ? 60 : diff <= 14 ? 65 : diff <= 19 ? 70 : diff <= 24 ? 75 : diff <= 29 ? 80 : diff <= 34 ? 85 : diff <= 39 ? 90 : 95;
+      const probs = global.MatchSimulator.getFinalWinProbabilities(userOvr, oppOvr);
+      const expected = (strongUser ? probs.userChance : probs.opponentChance);
       const pct = strongWins / N * 100;
       console.log(`${type} diff=${diff} strong=${strongUser?'user':'opponent'} games=${N} strongWins=${strongWins} weakWins=${weakWins} draws=${draws} pct=${pct.toFixed(2)} expected=${expected} avgGoals=${(goals/N).toFixed(2)} avgEvents=${(events/N).toFixed(2)}`);
     }

@@ -1,8 +1,9 @@
 (function (global) {
   "use strict";
   global.MatchSimulatorConfig = {
-    playbackMs: 1100,
-    eventDelayMs: 1100,
+    playbackMs: 1500,
+    eventDelayMs: 1500,
+    userWinBonus: 10,
     probabilityBands: [
       { min: 0, max: 4, strong: 0.5 },
       { min: 5, max: 9, strong: 0.6 },
