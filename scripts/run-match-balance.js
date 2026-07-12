@@ -1,26 +1,35 @@
 require('../js/match-simulator-config.js');
 require('../js/match-simulator.js');
 const { makeTeam } = require('../tests/fixtures/match-simulator-teams.js');
-const diffs = [0,4,5,9,10,14,15,19,20,24,25,29,30,34,35,39,40,80];
-const N = 10000;
-for (const type of ['eleven','five']) {
-  for (const diff of diffs) {
-    for (const strongUser of [true,false]) {
-      const userOvr = strongUser ? 60 + diff : 60;
-      const oppOvr = strongUser ? 60 : 60 + diff;
-      let strongWins=0, weakWins=0, draws=0, goals=0, events=0;
-      for (let i=0;i<N;i++) {
-        const r = global.MatchSimulator.simulate({ type, seed:`${type}:${diff}:${strongUser}:${i}`, userTeam:makeTeam('U', type, userOvr), opponentTeam:makeTeam('O', type, oppOvr) });
-        if (r.score.user === r.score.opponent) draws++;
-        const strongWon = strongUser ? r.winner === 'user' : r.winner === 'opponent';
-        strongWon ? strongWins++ : weakWins++;
-        goals += r.score.user + r.score.opponent;
-        events += r.timeline.length;
-      }
-      const probs = global.MatchSimulator.getFinalWinProbabilities(userOvr, oppOvr);
-      const expected = (strongUser ? probs.userChance : probs.opponentChance);
-      const pct = strongWins / N * 100;
-      console.log(`${type} diff=${diff} strong=${strongUser?'user':'opponent'} games=${N} strongWins=${strongWins} weakWins=${weakWins} draws=${draws} pct=${pct.toFixed(2)} expected=${expected} avgGoals=${(goals/N).toFixed(2)} avgEvents=${(events/N).toFixed(2)}`);
+
+const scenarios = [0, 4, -4, 5, -5, 10, -10, 15, -15, 20, -20, 25, -25];
+const N = 20000;
+let failures = 0;
+
+for (const type of ['eleven', 'five']) {
+  console.log(`\n${type.toUpperCase()} balance (${N} simulations per scenario)`);
+  console.log('scenario expected userWins opponentWins realPct delta draws');
+  for (const delta of scenarios) {
+    const userOvr = 70 + delta;
+    const oppOvr = 70;
+    const probs = global.MatchSimulator.getMatchWinProbabilities(userOvr, oppOvr);
+    let userWins = 0, opponentWins = 0, draws = 0;
+    for (let i = 0; i < N; i += 1) {
+      const r = global.MatchSimulator.simulate({ type, seed:`${type}:${delta}:${i}`, userTeam:makeTeam('U', type, userOvr), opponentTeam:makeTeam('O', type, oppOvr) });
+      if (r.score.user === r.score.opponent) draws += 1;
+      if (r.winner === 'user') userWins += 1;
+      else if (r.winner === 'opponent') opponentWins += 1;
+      else failures += 1;
     }
+    const realPct = userWins / N * 100;
+    const deltaPct = realPct - probs.userChance;
+    const ok = Math.abs(deltaPct) <= 1.5 && draws === 0;
+    if (!ok) failures += 1;
+    console.log(`${delta >= 0 ? '+' : ''}${delta} ${probs.userChance.toFixed(2)}% ${userWins} ${opponentWins} ${realPct.toFixed(2)}% ${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(2)} ${draws}${ok ? '' : ' OUT_OF_TOLERANCE'}`);
   }
 }
+if (failures) {
+  console.error(`Balance check failed with ${failures} out-of-tolerance scenario(s).`);
+  process.exit(1);
+}
+console.log('\nBalance check passed. All scenarios are within ±1.5 percentage points and draws are zero.');

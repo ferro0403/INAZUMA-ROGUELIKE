@@ -3,18 +3,6 @@
   global.MatchSimulatorConfig = {
     playbackMs: 1500,
     eventDelayMs: 1500,
-    userWinBonus: 10,
-    probabilityBands: [
-      { min: 0, max: 4, strong: 0.5 },
-      { min: 5, max: 9, strong: 0.6 },
-      { min: 10, max: 14, strong: 0.65 },
-      { min: 15, max: 19, strong: 0.7 },
-      { min: 20, max: 24, strong: 0.75 },
-      { min: 25, max: 29, strong: 0.8 },
-      { min: 30, max: 34, strong: 0.85 },
-      { min: 35, max: 39, strong: 0.9 },
-      { min: 40, max: Infinity, strong: 0.95 },
-    ],
     forceWeights: { overall: 0.7, profile: 0.3 },
     profileWeights: { offense: 0.35, midfield: 0.25, defense: 0.25, goalkeeper: 0.15 },
     phases: {
