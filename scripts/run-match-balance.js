@@ -2,17 +2,20 @@ require('../js/match-simulator-config.js');
 require('../js/match-simulator.js');
 const { makeTeam } = require('../tests/fixtures/match-simulator-teams.js');
 
-const scenarios = [0, 4, -4, 5, -5, 10, -10, 15, -15, 20, -20, 25, -25];
+const scenariosByType = {
+  five: [0, -4, -10, -25, 4, 5, 10, 15],
+  eleven: [0, 4, -4, 5, -5, 10, -10, 15, -15, 20, -20, 25, -25],
+};
 const N = 20000;
 let failures = 0;
 
-for (const type of ['eleven', 'five']) {
-  console.log(`\n${type.toUpperCase()} balance (${N} simulations per scenario)`);
-  console.log('scenario expected userWins opponentWins realPct delta draws');
-  for (const delta of scenarios) {
+for (const type of ['five', 'eleven']) {
+  console.log(`\n${type === 'five' ? '5v5' : '11v11'} balance (${N} simulations per scenario)`);
+  console.log('mode userStrength opponentStrength expected realPct delta draws userWins opponentWins');
+  for (const delta of scenariosByType[type]) {
     const userOvr = 70 + delta;
     const oppOvr = 70;
-    const probs = global.MatchSimulator.getMatchWinProbabilities(userOvr, oppOvr);
+    const probs = global.MatchSimulator.getMatchWinProbabilities(type, userOvr, oppOvr);
     let userWins = 0, opponentWins = 0, draws = 0;
     for (let i = 0; i < N; i += 1) {
       const r = global.MatchSimulator.simulate({ type, seed:`${type}:${delta}:${i}`, userTeam:makeTeam('U', type, userOvr), opponentTeam:makeTeam('O', type, oppOvr) });
@@ -25,7 +28,7 @@ for (const type of ['eleven', 'five']) {
     const deltaPct = realPct - probs.userChance;
     const ok = Math.abs(deltaPct) <= 1.5 && draws === 0;
     if (!ok) failures += 1;
-    console.log(`${delta >= 0 ? '+' : ''}${delta} ${probs.userChance.toFixed(2)}% ${userWins} ${opponentWins} ${realPct.toFixed(2)}% ${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(2)} ${draws}${ok ? '' : ' OUT_OF_TOLERANCE'}`);
+    console.log(`${type} ${userOvr} ${oppOvr} ${probs.userChance.toFixed(2)}% ${realPct.toFixed(2)}% ${deltaPct >= 0 ? '+' : ''}${deltaPct.toFixed(2)} ${draws} ${userWins} ${opponentWins}${ok ? '' : ' OUT_OF_TOLERANCE'}`);
   }
 }
 if (failures) {
