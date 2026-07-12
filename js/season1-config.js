@@ -65,7 +65,7 @@
       { id: "training_manual", weight: 10, kind: "consumable", name: "Manuale di allenamento", description: "Tutta la rosa guadagna +0,5 livello.", effect: "team_level", amount: 0.5 },
       { id: "scout_token", weight: 9, kind: "consumable", name: "Gettone scout", description: "Rigenera i tre giocatori di una pull.", effect: "pull_reroll", amount: 1 },
       { id: "medical_kit", weight: 11, kind: "consumable", name: "Kit medico", description: "Recupera una vita, fino a un massimo di 3.", effect: "restore_life", amount: 1 },
-      { id: "lucky_charm", weight: 3, kind: "consumable", name: "Portafortuna", description: "Migliora le categorie della prossima pull.", effect: "lucky_pull", amount: 1 },
+      { id: "lucky_charm", weight: 3, kind: "consumable", name: "Portafortuna", description: "Rigenera i tre candidati di una Pull svincolati o Pull squadre aumentandone la categoria di un grado. Utilizzabile una sola volta per pull. Non funziona nelle Pull leggendarie o nelle ricompense boss.", effect: "lucky_pull", amount: 1 },
       { id: "boots_attack", weight: 8, kind: "equipment", name: "Scarpini offensivi", description: "Attacco +5.", stat: "attack", bonus: 5 },
       { id: "boots_control", weight: 8, kind: "equipment", name: "Scarpini tecnici", description: "Controllo +5.", stat: "control", bonus: 5 },
       { id: "boots_defense", weight: 8, kind: "equipment", name: "Scarpini difensivi", description: "Difesa +5.", stat: "defense", bonus: 5 },

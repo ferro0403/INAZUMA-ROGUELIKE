@@ -35,7 +35,7 @@
       unlockedTeamIds: [],
       teamLevel: 0,
       inventory: [],
-      effects: { luckyPulls: 0 },
+      effects: {},
       randomEventHistory: [],
       fiveVFive: null,
       activeMatch: null,

@@ -131,8 +131,12 @@ assert(appJs.includes("handleEquipmentTarget"), "equipment assignment must route
 assert(appJs.includes("Conferma sostituzione"), "replacing equipped items must ask for confirmation");
 assert(appJs.includes("item-assignment-layout"), "equipment assignment modal must show pitch and bench sections");
 assert(appJs.includes("data-detail-unequip"), "player details must expose a direct remove item button");
-assert(appJs.includes("luckyEligible"), "lucky charm must only be consumed for eligible pull types");
-assert(appJs.includes("originalCandidates"), "lucky charm must improve the original candidate categories by one step");
+assert(appJs.includes('luckyCompatible = ["pull_free_agents", "pull_unlocked_teams"].includes(pullType)'), "lucky charm must only be usable for eligible pull types");
+assert(appJs.includes("function useLuckyCharmOnPull") && appJs.includes("chooseLuckyUpgrade"), "lucky charm must reroll visible candidates with rarity upgrades during a pull");
+assert(appJs.includes("luckyCharmUsed") && appJs.includes("Portafortuna già utilizzato"), "lucky charm use must be persisted and blocked after one use per pull");
+assert(appJs.includes("luckyCharmPoolForPull") && appJs.includes("players: seasonDb.players"), "team-pull lucky charm rerolls must use all season teams");
+assert(appJs.includes('item.effect === "lucky_pull"') && appJs.includes("Utilizzabile durante una Pull svincolati o Pull squadre"), "inventory must show lucky charm as in-pull only without an activation button");
+assert(!appJs.includes("Portafortuna attivo sulla prossima pull"), "old pending lucky charm activation toast must be removed");
 const itemWeights = global.SEASON1_CONFIG.itemPool.map((item) => item.weight);
 const luckyCharm = global.SEASON1_CONFIG.itemPool.find((item) => item.id === "lucky_charm");
 assert(luckyCharm, "lucky charm must exist");
