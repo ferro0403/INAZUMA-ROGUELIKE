@@ -135,6 +135,16 @@ assert(appJs.includes('luckyCompatible = ["pull_free_agents", "pull_unlocked_tea
 assert(appJs.includes("function useLuckyCharmOnPull") && appJs.includes("chooseLuckyUpgrade"), "lucky charm must reroll visible candidates with rarity upgrades during a pull");
 assert(appJs.includes("luckyCharmUsed") && appJs.includes("Portafortuna già utilizzato"), "lucky charm use must be persisted and blocked after one use per pull");
 assert(appJs.includes("luckyCharmPoolForPull") && appJs.includes("players: seasonDb.players"), "team-pull lucky charm rerolls must use all season teams");
+assert(appJs.includes("function buildLuckyCharmUpgrades") && appJs.includes("currentCandidates.length !== 3"), "lucky charm must validate exactly three visible candidates before upgrading");
+assert(appJs.includes("upgradedCandidates.length !== 3") && appJs.includes("node.pullState.candidateIds = upgradedCandidates.map"), "lucky charm must atomically store the full upgraded array of three candidates");
+assert(!appJs.includes("higherUpgrade") && !appJs.includes("anyNotWeaker"), "lucky charm must not fall back to rarities above the immediate next category");
+assert(appJs.includes("candidate.category === improvedCategory(currentCandidates[index].category)"), "each lucky charm slot must upgrade by exactly one category");
+assert(appJs.includes("uniqueIds.size !== 3"), "lucky charm must reject duplicate upgraded candidates");
+assert(appJs.includes("Non è stato possibile migliorare tutti i candidati."), "failed lucky charm generation must be reported without consuming the item");
+assert(appJs.includes('removeInventoryItem(luckyCharm.instanceId);') && appJs.indexOf('const upgradedCandidates = buildLuckyCharmUpgrades') < appJs.indexOf('removeInventoryItem(luckyCharm.instanceId);'), "lucky charm must consume exactly one item only after all upgrades are valid");
+assert(!appJs.includes("Usa Portafortuna ×"), "lucky charm button must not suggest multiple consecutive uses");
+assert(appJs.includes('"Usa Portafortuna"') && appJs.includes('Disponibili: ${luckyCount}'), "lucky charm button text and available count must be separated");
+assert(appJs.includes('node.pullState?.luckyCharmUsed') && appJs.includes('luckyCharmPoolForPull(pullType)') && appJs.includes(': pullPool(pullType)'), "lucky charm upgraded team candidates from future teams must remain renderable without changing normal team pulls");
 assert(appJs.includes('item.effect === "lucky_pull"') && appJs.includes("Utilizzabile durante una Pull svincolati o Pull squadre"), "inventory must show lucky charm as in-pull only without an activation button");
 assert(!appJs.includes("Portafortuna attivo sulla prossima pull"), "old pending lucky charm activation toast must be removed");
 const itemWeights = global.SEASON1_CONFIG.itemPool.map((item) => item.weight);

@@ -1211,20 +1211,31 @@
   }
 
   function chooseLuckyUpgrade(original, available, usedIds, random) {
-    const requiredRank = categoryRank(improvedCategory(original.category));
-    const originalRank = categoryRank(original.category);
+    const requiredCategory = improvedCategory(original.category);
     const role = original.position;
+    const originalId = String(original.playerId);
     const shuffled = global.DraftEngine.shuffle(available.filter((player) => !usedIds.has(String(player.playerId))), random);
-    const exactUpgrade = shuffled.filter((player) => categoryRank(player.category) === requiredRank);
-    const higherUpgrade = shuffled.filter((player) => categoryRank(player.category) > requiredRank);
-    const sameRankFallback = shuffled.filter((player) => categoryRank(player.category) === originalRank);
-    const anyNotWeaker = shuffled.filter((player) => categoryRank(player.category) >= originalRank);
-    for (const tier of [exactUpgrade, higherUpgrade, sameRankFallback, anyNotWeaker]) {
-      const sameRole = tier.filter((player) => player.position === role);
-      if (sameRole.length) return sameRole[0];
-      if (tier.length) return tier[0];
-    }
-    return shuffled[0] || original;
+    const exactUpgrade = shuffled.filter((player) => player.category === requiredCategory);
+    const preferred = exactUpgrade.filter((player) => player.position === role && (requiredCategory !== original.category || String(player.playerId) !== originalId));
+    if (preferred.length) return preferred[0];
+    const alternatives = exactUpgrade.filter((player) => requiredCategory !== original.category || String(player.playerId) !== originalId);
+    if (alternatives.length) return alternatives[0];
+    return requiredCategory === original.category && !usedIds.has(originalId) ? original : null;
+  }
+
+  function buildLuckyCharmUpgrades(currentCandidates, available, random) {
+    if (!Array.isArray(currentCandidates) || currentCandidates.length !== 3) return null;
+    const usedIds = new Set();
+    const upgradedCandidates = currentCandidates.map((candidate) => {
+      const selected = chooseLuckyUpgrade(candidate, available, usedIds, random);
+      if (selected) usedIds.add(String(selected.playerId));
+      return selected;
+    });
+    if (upgradedCandidates.length !== 3 || upgradedCandidates.some((candidate) => !candidate)) return null;
+    const uniqueIds = new Set(upgradedCandidates.map((candidate) => String(candidate.playerId)));
+    if (uniqueIds.size !== 3) return null;
+    const validExactRarity = upgradedCandidates.every((candidate, index) => candidate.category === improvedCategory(currentCandidates[index].category));
+    return validExactRarity ? upgradedCandidates : null;
   }
 
   function useLuckyCharmOnPull(node, pullType, currentCandidates) {
@@ -1232,25 +1243,25 @@
     if (node.pullState.luckyCharmUsed) return toast("Portafortuna già utilizzato in questa pull.");
     const luckyCharm = run.inventory.find((item) => item.effect === "lucky_pull");
     if (!luckyCharm) return toast("Nessun Portafortuna disponibile.");
+    if (!Array.isArray(currentCandidates) || currentCandidates.length !== 3) return toast("Non è stato possibile migliorare tutti i candidati.");
     const pool = luckyCharmPoolForPull(pullType);
+    if (!pool) return toast("Portafortuna non utilizzabile in questa selezione.");
     const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
     const available = pool.players.filter((player) => !owned.has(String(player.playerId)));
-    const usedIds = new Set();
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:lucky:${node.pullState.rerolls}`);
-    const upgraded = currentCandidates.map((candidate) => {
-      const selected = chooseLuckyUpgrade(candidate, available, usedIds, random);
-      usedIds.add(String(selected.playerId));
-      return selected;
-    });
+    const upgradedCandidates = buildLuckyCharmUpgrades(currentCandidates, available, random);
+    if (!upgradedCandidates || upgradedCandidates.length !== 3) return toast("Non è stato possibile migliorare tutti i candidati.");
     removeInventoryItem(luckyCharm.instanceId);
     node.pullState.luckyCharmUsed = true;
-    node.pullState.candidateIds = upgraded.map((player) => String(player.playerId));
+    node.pullState.candidateIds = upgradedCandidates.map((player) => String(player.playerId));
     global.RunState.save(run);
     openPull(node, pullType);
   }
 
   function openPull(node, pullType = node.type) {
-    const pool = pullPool(pullType);
+    const pool = node.pullState?.luckyCharmUsed && ["pull_free_agents", "pull_unlocked_teams"].includes(pullType)
+      ? luckyCharmPoolForPull(pullType)
+      : pullPool(pullType);
     if (!node.pullState) {
       node.pullState = { pullType, rerolls: 0, excludedCandidateIds: [], luckyCharmUsed: false, candidateIds: [] };
     }
@@ -1331,8 +1342,9 @@
     const rerollButton = options.onReroll
       ? `<button class="btn btn-yellow" id="reroll-offer" ${options.rerollDisabled ? "disabled" : ""}>Usa gettone scout</button>`
       : "";
+    const luckyCount = Number(options.luckyCharmCount || 0);
     const luckyButton = options.onLuckyCharm || options.luckyCharmDisabledMessage
-      ? `<button class="btn btn-yellow" id="lucky-charm-offer" ${options.luckyCharmDisabled ? "disabled" : ""}>${options.luckyCharmDisabled && options.luckyCharmDisabledMessage ? escapeHtml(options.luckyCharmDisabledMessage) : `Usa Portafortuna ×${Number(options.luckyCharmCount || 0)}`}</button>`
+      ? `<button class="btn btn-yellow" id="lucky-charm-offer" ${options.luckyCharmDisabled ? "disabled" : ""}>${options.luckyCharmDisabled && options.luckyCharmDisabledMessage ? escapeHtml(options.luckyCharmDisabledMessage) : "Usa Portafortuna"}</button>${!options.luckyCharmDisabled && luckyCount > 0 ? `<span class="muted small">Disponibili: ${luckyCount}</span>` : ""}`
       : "";
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Scelta giocatore</p><h2>${escapeHtml(options.title)}</h2><p class="muted">${escapeHtml(options.subtitle)}</p></div></div>
