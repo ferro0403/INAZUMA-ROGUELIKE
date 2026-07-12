@@ -1,7 +1,7 @@
 require('../js/match-simulator-config.js');
 require('../js/match-simulator.js');
 const { makeTeam } = require('../tests/fixtures/match-simulator-teams.js');
-const diffs = [0,4,5,8,9,10,14,15,20];
+const diffs = [0,4,5,9,10,14,15,19,20,24,25,29,30,34,35,39,40,80];
 const N = 10000;
 for (const type of ['eleven','five']) {
   for (const diff of diffs) {
@@ -17,7 +17,7 @@ for (const type of ['eleven','five']) {
         goals += r.score.user + r.score.opponent;
         events += r.timeline.length;
       }
-      const expected = diff <= 4 ? 50 : diff <= 9 ? 60 : diff <= 14 ? 65 : 70;
+      const expected = diff <= 4 ? 50 : diff <= 9 ? 60 : diff <= 14 ? 65 : diff <= 19 ? 70 : diff <= 24 ? 75 : diff <= 29 ? 80 : diff <= 34 ? 85 : diff <= 39 ? 90 : 95;
       const pct = strongWins / N * 100;
       console.log(`${type} diff=${diff} strong=${strongUser?'user':'opponent'} games=${N} strongWins=${strongWins} weakWins=${weakWins} draws=${draws} pct=${pct.toFixed(2)} expected=${expected} avgGoals=${(goals/N).toFixed(2)} avgEvents=${(events/N).toFixed(2)}`);
     }

@@ -3,11 +3,22 @@ require('../js/match-simulator-config.js');
 require('../js/match-simulator.js');
 const { makeTeam } = require('./fixtures/match-simulator-teams.js');
 const sim = global.MatchSimulator;
-for (const [diff, expected] of [[0,.5],[4,.5],[5,.6],[8,.6],[9,.6],[10,.65],[14,.65],[15,.7],[30,.7]]) {
+const probabilityCases = [[0,.5],[4,.5],[5,.6],[9,.6],[10,.65],[14,.65],[15,.7],[19,.7],[20,.75],[24,.75],[25,.8],[29,.8],[30,.85],[34,.85],[35,.9],[39,.9],[40,.95],[80,.95]];
+for (const [diff, expected] of probabilityCases) {
   const p = sim.probabilities(60 + diff, 60);
   assert.equal(p.user, expected, `diff ${diff}`);
-  assert(p.user <= .7 && p.opponent <= .7);
-  assert(p.user >= .3 && p.opponent >= .3);
+  assert.equal(Number((p.user + p.opponent).toFixed(6)), 1, `sum ${diff}`);
+  assert(p.user <= .95 && p.opponent <= .95);
+  assert(p.user >= .05 && p.opponent >= .05);
+  const reverse = sim.probabilities(60, 60 + diff);
+  assert.equal(reverse.opponent, expected, `reverse ${diff}`);
+  assert.equal(reverse.user, p.opponent, `symmetric user ${diff}`);
+}
+for (const type of ['eleven', 'five']) {
+  const r = sim.simulate({ type, seed:'prob-ui', userTeam:makeTeam('P', type, 100), opponentTeam:makeTeam('Q', type, 60) });
+  assert(r.valid);
+  assert.equal(r.probabilities.user, .95, `${type} uses capped 95% probability`);
+  assert.equal(r.probabilities.opponent, .05, `${type} weak side keeps 5% chance`);
 }
 for (const type of ['eleven', 'five']) {
   const a = makeTeam('A', type, 65);

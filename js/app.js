@@ -201,7 +201,7 @@
     modalRoot.innerHTML = `
       <div class="modal-backdrop">
         <section class="modal ${className}">
-          ${closeable ? '<button class="modal-close" data-close-modal aria-label="Chiudi">✕</button>' : ""}
+          ${closeable ? '<button type="button" class="modal-close" data-close-modal aria-label="Chiudi">✕</button>' : ""}
           ${content}
         </section>
       </div>`;
@@ -351,7 +351,7 @@
     return `
       <nav class="bottom-nav" aria-label="Navigazione principale">
         ${items.map(([destination, label, icon]) => `
-          <button data-nav="${destination}" class="${active === destination ? "active" : ""}" aria-label="${label}" aria-current="${active === destination ? "page" : "false"}">
+          <button type="button" data-nav="${destination}" class="${active === destination ? "active" : ""}" aria-label="${label}" aria-current="${active === destination ? "page" : "false"}">
             <span class="nav-icon">${navIcon(icon)}</span>
             <span class="nav-label">${label}</span>
           </button>`).join("")}
@@ -386,7 +386,7 @@
 
   function compactPlayerCardMarkup(player, { equipment = null, level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, selected = false, dataAttr = "" } = {}) {
     return `
-      <button class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player ${rarityClass(player.category)} ${equipment ? "has-equipment" : ""} ${selected ? "selected" : ""}" ${dataAttr}>
+      <button type="button" class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player ${rarityClass(player.category)} ${equipment ? "has-equipment" : ""} ${selected ? "selected" : ""}" ${dataAttr}>
         <span class="player-corner player-role" aria-label="Ruolo ${escapeHtml(player.position)}">${escapeHtml(player.position)}</span>
         <span class="player-corner player-overall" aria-label="Overall ${overall}">${overall}</span>
         <div class="player-portrait-wrap">
@@ -480,7 +480,7 @@
           </div>
           <p class="detail-category">${escapeHtml(player.category)}</p>
           <div class="detail-stats">${stats}</div>
-          ${equipment ? `<div class="equipped-detail">${itemIcon(equipment)}<span>Oggetto assegnato</span><strong>${escapeHtml(equipment.name)}</strong><small>${escapeHtml(equipment.description)}</small>${playerId ? `<button class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>` : ""}
+          ${equipment ? `<div class="equipped-detail">${itemIcon(equipment)}<span>Oggetto assegnato</span><strong>${escapeHtml(equipment.name)}</strong><small>${escapeHtml(equipment.description)}</small>${playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>` : ""}
         </section>
       </div>`,
       { closeable: true, className: "player-detail-modal", onClose }
@@ -552,8 +552,8 @@
           </div>
           ${savedRunSummaryMarkup(run)}
           <div class="home-actions button-row">
-            ${run ? '<button class="btn btn-primary" id="continue-run">Continua</button>' : ""}
-            <button class="btn btn-yellow" id="new-run">Nuova run</button>
+            ${run ? '<button type="button" class="btn btn-primary" id="continue-run">Continua</button>' : ""}
+            <button type="button" class="btn btn-yellow" id="new-run">Nuova run</button>
           </div>
         </section>
       </main>`;
@@ -570,7 +570,7 @@
       <label class="team-name-field" for="team-name-input">Nome squadra</label>
       <input class="team-name-input" id="team-name-input" type="text" placeholder="La mia squadra" maxlength="24" autocomplete="off" inputmode="text" />
       <p class="team-name-error" id="team-name-error" aria-live="polite"></p>
-      <div class="button-row"><button class="btn btn-primary" id="confirm-team-name">Conferma</button><button class="btn" id="cancel-team-name">Indietro</button></div>`,
+      <div class="button-row"><button type="button" class="btn btn-primary" id="confirm-team-name">Conferma</button><button type="button" class="btn" id="cancel-team-name">Indietro</button></div>`,
       { closeable: false, className: "team-name-modal" }
     );
     const input = document.getElementById("team-name-input");
@@ -620,7 +620,7 @@
           </div>
           <div class="formation-grid">
             ${seasonDb.formations.eleven.map((formation) => `
-              <button class="formation-card" data-formation="${escapeHtml(formation.id)}">
+              <button type="button" class="formation-card" data-formation="${escapeHtml(formation.id)}">
                 <strong>${escapeHtml(formation.name)}</strong>
                 <p class="muted small">Il draft proporrà esattamente i ruoli necessari.</p>
                 <div class="formation-roles">
@@ -781,7 +781,7 @@
                     ${item.name}${canUseFormation(item) ? "" : " · rosa non compatibile"}
                   </option>`).join("")}
               </select>
-              <button class="btn ${ui.squadEditMode ? "btn-yellow" : ""}" id="toggle-squad-edit">${ui.squadEditMode ? "Termina modifiche" : "Modifica titolari"}</button>
+              <button type="button" class="btn ${ui.squadEditMode ? "btn-yellow" : ""}" id="toggle-squad-edit">${ui.squadEditMode ? "Termina modifiche" : "Modifica titolari"}</button>
             </div>
           </div>
           <p class="muted small">${ui.squadEditMode ? "Seleziona un titolare e poi una riserva dello stesso ruolo per scambiarli." : "Seleziona un giocatore per aprire la scheda con statistiche, overall e potenziale."}</p>
@@ -793,7 +793,7 @@
                 ${benchMarkup()}
               </div>
               <div class="button-row" style="margin-top:18px">
-                <button class="btn btn-yellow" id="go-map">${run.currentZone ? "Torna al percorso" : "Inizia il percorso"}</button>
+                <button type="button" class="btn btn-yellow" id="go-map">${run.currentZone ? "Torna al percorso" : "Inizia il percorso"}</button>
               </div>
             </aside>
           </div>
@@ -908,7 +908,7 @@
         <div class="content">
           <div class="section-head">
             <div><p class="eyebrow">Boss ${run.bossIndex + 1} di ${seasonDb.bossOrder.length}</p><h2>Scegli il percorso</h2></div>
-            <button class="btn" data-nav="squad">Modifica squadra</button>
+            <button type="button" class="btn" data-nav="squad">Modifica squadra</button>
           </div>
           <p class="muted">Puoi selezionare soltanto uno dei nodi collegati alla tua posizione attuale.</p>
           <div class="map-wrap" id="map-scroll">
@@ -920,7 +920,7 @@
                 const meta = labels[node.type];
                 const stateClass = completed.has(node.id) ? "completed" : reachable.has(node.id) ? "reachable" : "locked";
                 return `
-                  <button class="map-node ${stateClass}" data-node-id="${node.id}" ${reachable.has(node.id) ? "" : "disabled"}
+                  <button type="button" class="map-node ${stateClass}" data-node-id="${node.id}" ${reachable.has(node.id) ? "" : "disabled"}
                     style="left:${positions[node.id].x / 10}%;top:${positions[node.id].y / 10}%;--node-color:${meta.color}">
                     <span class="node-icon">${meta.icon}</span>
                     <span class="node-label">${node.type === "boss" ? escapeHtml(boss.teamName) : meta.label}</span>
@@ -1007,7 +1007,7 @@
       <div class="item-grid">
         ${candidates.map((item) => itemChoiceCard(item)).join("")}
       </div>
-      <div class="button-row" style="margin-top:18px"><button class="btn btn-ghost" id="skip-item">Rinuncia</button></div>`,
+      <div class="button-row" style="margin-top:18px"><button type="button" class="btn btn-ghost" id="skip-item">Rinuncia</button></div>`,
       { closeable: false }
     );
     modalRoot.querySelectorAll("[data-item-choice]").forEach((button) => {
@@ -1027,7 +1027,7 @@
       <div class="modal-head"><div><p class="eyebrow">Punto interrogativo</p><h2>${escapeHtml(meta.label)}</h2></div></div>
       <div class="hidden-reveal" style="--reveal-color:${meta.color}"><span>${meta.icon}</span></div>
       <p class="muted">Il contenuto è stato rivelato e non cambierà ricaricando la pagina.</p>
-      <button class="btn btn-primary" id="open-hidden-event">Continua</button>`,
+      <button type="button" class="btn btn-primary" id="open-hidden-event">Continua</button>`,
       { closeable: false }
     );
     document.getElementById("open-hidden-event").addEventListener("click", () => {
@@ -1052,8 +1052,8 @@
         ${selected ? `<strong>${escapeHtml(selected.name)}</strong><span>${selected.position} · OVR ${selected.overall} · Lv ${selected.displayLevel}</span>` : '<strong>Nessun giocatore selezionato</strong><span>Scegli una card per procedere allo scambio.</span>'}
       </div>
       <div class="button-row" style="margin-top:18px">
-        <button class="btn btn-yellow" id="continue-trade" ${selected ? "" : "disabled"}>Procedi allo scambio</button>
-        <button class="btn btn-ghost" id="skip-trade">Rinuncia allo scambio</button>
+        <button type="button" class="btn btn-yellow" id="continue-trade" ${selected ? "" : "disabled"}>Procedi allo scambio</button>
+        <button type="button" class="btn btn-ghost" id="skip-trade">Rinuncia allo scambio</button>
       </div>`,
       { closeable: false, className: "trade-modal", preserveScroll: scrollSnapshot() }
     );
@@ -1094,7 +1094,7 @@
       <div class="modal-head"><div><p class="eyebrow">Conferma scambio</p><h2>${escapeHtml(outgoingPlayer.name)}</h2></div></div>
       <p>Riceverai un <strong>${outgoingPlayer.position}</strong> casuale con finalOverall almeno <strong>${outgoingPlayer.finalOverall}</strong>, al livello <strong>${nextLevel}</strong>.</p>
       ${outgoingEntry.equippedItem ? `<p class="muted">${escapeHtml(outgoingEntry.equippedItem.name)} tornerà nell'inventario.</p>` : ""}
-      <div class="button-row"><button class="btn btn-danger" id="confirm-trade">Conferma</button><button class="btn" id="back-trade">Torna indietro</button></div>`,
+      <div class="button-row"><button type="button" class="btn btn-danger" id="confirm-trade">Conferma</button><button type="button" class="btn" id="back-trade">Torna indietro</button></div>`,
       { closeable: false }
     );
     document.getElementById("back-trade").addEventListener("click", () => resolveTradeNode(node));
@@ -1126,7 +1126,7 @@
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Scambio completato</p><h2>È arrivato ${escapeHtml(incoming.player.name)}</h2></div></div>
       <div class="trade-result-card mobile-compact-player-list">${playerCard(incoming.player, { level: nextLevel, database })}</div>
-      <div class="button-row"><button class="btn" id="trade-player-detail">Apri scheda</button><button class="btn btn-primary" id="finish-trade">Continua</button></div>`,
+      <div class="button-row"><button type="button" class="btn" id="trade-player-detail">Apri scheda</button><button type="button" class="btn btn-primary" id="finish-trade">Continua</button></div>`,
       { closeable: false }
     );
     document.getElementById("trade-player-detail").addEventListener("click", () => {
@@ -1136,7 +1136,7 @@
   }
 
   function itemChoiceCard(item) {
-    return `<button class="item-card" data-item-choice="${item.id}">${itemIcon(item)}<span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p></button>`;
+    return `<button type="button" class="item-card" data-item-choice="${item.id}">${itemIcon(item)}<span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p></button>`;
   }
 
   function weightedItemCandidates(random, count) {
@@ -1167,8 +1167,8 @@
   function chooseInventoryDiscard(title, onDiscard, onCancel) {
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p><h2>${escapeHtml(title)}</h2></div></div>
-      <div class="item-grid">${run.inventory.map((item) => `<button class="item-card danger-card" data-discard-item="${item.instanceId}"><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p></button>`).join("")}</div>
-      <div class="button-row" style="margin-top:18px"><button class="btn" id="cancel-discard">Annulla</button></div>`,
+      <div class="item-grid">${run.inventory.map((item) => `<button type="button" class="item-card danger-card" data-discard-item="${item.instanceId}"><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p></button>`).join("")}</div>
+      <div class="button-row" style="margin-top:18px"><button type="button" class="btn" id="cancel-discard">Annulla</button></div>`,
       { closeable: false }
     );
     modalRoot.querySelectorAll("[data-discard-item]").forEach((button) => {
@@ -1382,11 +1382,11 @@
 
   function showPlayerOffer(options) {
     const rerollButton = options.onReroll
-      ? `<button class="btn btn-yellow" id="reroll-offer" ${options.rerollDisabled ? "disabled" : ""}>Usa gettone scout</button>`
+      ? `<button type="button" class="btn btn-yellow" id="reroll-offer" ${options.rerollDisabled ? "disabled" : ""}>Usa gettone scout</button>`
       : "";
     const luckyCount = Number(options.luckyCharmCount || 0);
     const luckyButton = options.onLuckyCharm || options.luckyCharmDisabledMessage
-      ? `<button class="btn btn-yellow" id="lucky-charm-offer" ${options.luckyCharmDisabled ? "disabled" : ""}>${options.luckyCharmDisabled && options.luckyCharmDisabledMessage ? escapeHtml(options.luckyCharmDisabledMessage) : "Usa Portafortuna"}</button>${!options.luckyCharmDisabled && luckyCount > 0 ? `<span class="muted small">Disponibili: ${luckyCount}</span>` : ""}`
+      ? `<button type="button" class="btn btn-yellow" id="lucky-charm-offer" ${options.luckyCharmDisabled ? "disabled" : ""}>${options.luckyCharmDisabled && options.luckyCharmDisabledMessage ? escapeHtml(options.luckyCharmDisabledMessage) : "Usa Portafortuna"}</button>${!options.luckyCharmDisabled && luckyCount > 0 ? `<span class="muted small">Disponibili: ${luckyCount}</span>` : ""}`
       : "";
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Scelta giocatore</p><h2>${escapeHtml(options.title)}</h2><p class="muted">${escapeHtml(options.subtitle)}</p></div></div>
@@ -1397,7 +1397,7 @@
       <div class="button-row" style="margin-top:18px">
         ${rerollButton}
         ${luckyButton}
-        ${options.allowSkip ? '<button class="btn btn-ghost" id="skip-offer">Rinuncia</button>' : ""}
+        ${options.allowSkip ? '<button type="button" class="btn btn-ghost" id="skip-offer">Rinuncia</button>' : ""}
       </div>`,
       { closeable: false }
     );
@@ -1434,7 +1434,7 @@
       <div class="player-grid mobile-compact-player-list bench-replacement-grid">
         ${benchPlayers.map((candidate) => playerCard(sourcePlayer(rosterEntry(candidate.playerId)), { button: true, level: candidate.displayLevel, database: candidate.source === "season1" ? seasonDb : freeAgentsDb })).join("")}
       </div>
-      ${allowCancel ? '<div class="button-row" style="margin-top:18px"><button class="btn btn-ghost" id="cancel-recruit">Rinuncia al nuovo giocatore</button></div>' : ""}`,
+      ${allowCancel ? '<div class="button-row" style="margin-top:18px"><button type="button" class="btn btn-ghost" id="cancel-recruit">Rinuncia al nuovo giocatore</button></div>' : ""}`,
       { closeable: false }
     );
     modalRoot.querySelectorAll("[data-player-id]").forEach((button) => {
@@ -1541,10 +1541,8 @@
   }
 
   function bossMatchTimeline() {
-    const events = ui.bossMatchLog.length ? ui.bossMatchLog : [
-      { minute: "0'", icon: "⚽", text: "Formazioni pronte. Avvia la simulazione o usa i controlli provvisori." },
-    ];
-    return events.map((event) => `<li><span>${escapeHtml(event.minute)}</span><b>${event.icon}</b><p>${escapeHtml(event.text)}</p></li>`).join("");
+    if (!ui.bossMatchLog.length) return `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>Formazioni pronte. Avvia la simulazione o usa i controlli provvisori.</p></li>`;
+    return ui.bossMatchLog.map((event) => `<li><span>${escapeHtml(event.minute)}</span><b>${event.icon}</b><p>${escapeHtml(event.text)}</p></li>`).join("");
   }
 
   function bossMatchStatusText() {
@@ -1623,6 +1621,73 @@
     return sim.timeline.slice(0, sim.revealedCount).map((ev) => ({ minute: `${ev.minute}'`, icon: ({goal:"⚽",save:"🧤",counter:"⚡",long_shot:"🎯",post:"🥅",crossbar:"🥅",shot:"👟",defensive_stop:"🛡️",first_half_start:"▶",second_half_start:"▶"})[ev.type] || "•", text: ev.text }));
   }
 
+  function matchEventView(ev) {
+    return { minute: `${ev.minute}'`, icon: ({goal:"⚽",save:"🧤",counter:"⚡",long_shot:"🎯",post:"🥅",crossbar:"🥅",shot:"👟",defensive_stop:"🛡️",first_half_start:"▶",second_half_start:"▶"})[ev.type] || "•", text: ev.text };
+  }
+
+  function appendMatchLogEvent(event) {
+    const log = document.querySelector(".match-sim-log");
+    if (!log) return false;
+    if (log.querySelector("[data-empty-log]")) log.innerHTML = "";
+    const li = document.createElement("li");
+    const minute = document.createElement("span");
+    const icon = document.createElement("b");
+    const text = document.createElement("p");
+    minute.textContent = event.minute;
+    icon.textContent = event.icon;
+    text.textContent = event.text;
+    li.append(minute, icon, text);
+    log.appendChild(li);
+    requestAnimationFrame(() => { log.scrollTop = log.scrollHeight; });
+    return true;
+  }
+
+  function appendMissingMatchLogEvents(events) {
+    const log = document.querySelector(".match-sim-log");
+    if (!log) return false;
+    if (log.querySelector("[data-empty-log]")) log.innerHTML = "";
+    const fragment = document.createDocumentFragment();
+    events.forEach((event) => {
+      const li = document.createElement("li");
+      const minute = document.createElement("span");
+      const icon = document.createElement("b");
+      const text = document.createElement("p");
+      minute.textContent = event.minute;
+      icon.textContent = event.icon;
+      text.textContent = event.text;
+      li.append(minute, icon, text);
+      fragment.appendChild(li);
+    });
+    log.appendChild(fragment);
+    requestAnimationFrame(() => { log.scrollTop = log.scrollHeight; });
+    return true;
+  }
+
+  function updateMatchScoreDom(match, completed = false) {
+    const score = simulationScoreArray(match, completed);
+    const values = document.querySelectorAll(".boss-match-score span");
+    if (values[0]) values[0].textContent = score[0];
+    if (values[1]) values[1].textContent = score[1];
+  }
+
+  function updateMatchControlsDom() {
+    const state = ui.bossMatchState;
+    const resolved = state.startsWith("completed");
+    const simulating = state === "simulating";
+    const simulate = document.getElementById("simulate-boss-match");
+    const skip = document.getElementById("skip-match-result");
+    const status = document.querySelector(".boss-match-result-panel p");
+    if (simulate) {
+      simulate.disabled = simulating || resolved;
+      simulate.textContent = simulating ? "Simulazione..." : "Simula partita";
+    }
+    if (skip) {
+      skip.hidden = !simulating;
+      skip.disabled = !simulating;
+    }
+    if (status) status.textContent = bossMatchStatusText();
+  }
+
   function stepMatchPlayback() {
     const match = ui.match;
     const sim = match?.simulation;
@@ -1638,10 +1703,12 @@
     sim.revealedCount += 1;
     if (ev.type === "goal") sim.displayedScore[ev.team] += 1;
     match.score = [sim.displayedScore.user, sim.displayedScore.opponent];
-    ui.bossMatchLog = visibleTimeline(match);
+    ui.bossMatchLog = [...(ui.bossMatchLog || []), matchEventView(ev)];
     persistMatchState();
-    runKeepingScroll(renderMatch);
-    ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.playbackMs);
+    appendMatchLogEvent(matchEventView(ev));
+    updateMatchScoreDom(match);
+    updateMatchControlsDom();
+    ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.eventDelayMs || global.MatchSimulatorConfig.playbackMs);
   }
 
   function startMatchSimulation(match, options = {}) {
@@ -1659,15 +1726,36 @@
     match.score = [0, 0];
     persistMatchState();
     clearMatchPlaybackTimer();
-    runKeepingScroll(renderMatch);
-    ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.playbackMs);
+    renderMatch();
+    ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.eventDelayMs || global.MatchSimulatorConfig.playbackMs);
   }
 
   function resumeMatchSimulationIfNeeded(match) {
     const sim = match?.simulation;
     if (!sim || sim.state !== "simulating") return;
     clearMatchPlaybackTimer();
-    ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.playbackMs);
+    ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.eventDelayMs || global.MatchSimulatorConfig.playbackMs);
+  }
+
+  function skipMatchToResult(event) {
+    event?.preventDefault();
+    const match = ui.match;
+    const sim = match?.simulation;
+    if (!sim || sim.state !== "simulating" || sim.manuallyResolved) return;
+    clearMatchPlaybackTimer();
+    const missing = sim.timeline.slice(sim.revealedCount).map(matchEventView);
+    sim.revealedCount = sim.timeline.length;
+    sim.displayedScore = { ...sim.score };
+    sim.state = "completed";
+    match.score = [sim.score.user, sim.score.opponent];
+    ui.bossMatchState = "completed";
+    match.state = "completed";
+    ui.bossMatchLog = visibleTimeline(match);
+    persistMatchState();
+    appendMissingMatchLogEvents(missing);
+    updateMatchScoreDom(match, true);
+    updateMatchControlsDom();
+    applySimulationResolution(match);
   }
 
   function applySimulationResolution(match) {
@@ -1796,7 +1884,7 @@
           ${topbar("Partita 5v5")}
           <div class="content five-match-content">
             <section class="panel five-match-hero">
-              <button class="btn btn-ghost" data-nav="map" aria-label="Torna al percorso">← Indietro</button>
+              <button type="button" class="btn btn-ghost" data-nav="map" aria-label="Torna al percorso">← Indietro</button>
               <div><p class="eyebrow">Run Lv ${escapeHtml(run.teamLevel)} · ${hearts()}</p><h2>Partita 5v5</h2></div>
               <div class="five-match-vs">
                 <div class="five-match-team"><span class="five-match-logo">⚡</span><strong>${escapeHtml(userName)}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(simPreview.userStrength?.averageOverall ? Math.round(simPreview.userStrength.averageOverall) : bossMatchAverage(Object.values(userPlayersBySlot).filter(Boolean)) || "-")} · Forza ${escapeHtml(simPreview.userStrength?.final ?? "-")}</small></div>
@@ -1806,8 +1894,8 @@
             </section>
             <section class="panel five-match-pitch-panel">
               <div class="five-match-tabs" role="tablist" aria-label="Squadra visualizzata">
-                <button class="five-match-team-tab ${activeSide === "user" ? "active" : ""}" data-five-match-tab="user">La tua squadra</button>
-                <button class="five-match-team-tab ${activeSide === "opponent" ? "active" : ""}" data-five-match-tab="opponent">Svincolati</button>
+                <button type="button" class="five-match-team-tab ${activeSide === "user" ? "active" : ""}" data-five-match-tab="user">La tua squadra</button>
+                <button type="button" class="five-match-team-tab ${activeSide === "opponent" ? "active" : ""}" data-five-match-tab="opponent">Svincolati</button>
               </div>
               <div class="five-match-field" aria-label="Campo partita 5v5">
                 <div class="five-match-half-label five-match-half-label--user">${escapeHtml(userName)}</div>
@@ -1823,7 +1911,7 @@
               <section class="panel boss-match-log-panel"><h3>Cronaca</h3><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita">${bossMatchTimeline()}</ol></section>
               <section class="panel boss-match-result-panel"><h3>Risultato</h3><div class="boss-match-score"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(userName)}</span><span>${opponentName}</span></div></section>
             </div>
-            <section class="panel five-match-controls"><button class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><div class="button-row"><button class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button><button class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button class="btn" id="edit-five-team">Modifica squadra</button></div></section>
+            <section class="panel five-match-controls"><button type="button" class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><div class="button-row"><button type="button" class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button><button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button type="button" class="btn" id="edit-five-team">Modifica squadra</button></div></section>
           </div>
         </main>`;
       resetRenderedViewScroll();
@@ -1836,9 +1924,10 @@
         showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: freeAgentsDb, preserveScroll: scrollSnapshot() });
       }));
       document.getElementById("edit-five-team").addEventListener("click", () => renderFiveVFive({ returnToMatch: true }));
-      document.getElementById("test-win").addEventListener("click", () => manualResolveMatch("victory"));
-      document.getElementById("test-loss").addEventListener("click", () => manualResolveMatch("defeat"));
-      document.getElementById("simulate-boss-match").addEventListener("click", () => startMatchSimulation(match));
+      document.getElementById("test-win").addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("victory"); });
+      document.getElementById("test-loss").addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("defeat"); });
+      document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(match); });
+      document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
       persistMatchState();
       resumeMatchSimulationIfNeeded(match);
       return;
@@ -1862,7 +1951,7 @@
         ${topbar("Sfida Boss 11v11")}
         <div class="content boss-match-content">
           <section class="boss-match-hero panel">
-            <button class="btn btn-ghost" data-nav="map" aria-label="Torna al percorso">← Indietro</button>
+            <button type="button" class="btn btn-ghost" data-nav="map" aria-label="Torna al percorso">← Indietro</button>
             <div><p class="eyebrow">Boss ${run.bossIndex + 1} di ${seasonDb.bossOrder.length}</p><h2>Sfida Boss 11v11</h2></div>
             <div class="boss-match-vs">
               <div class="boss-match-team"><span class="boss-match-logo">${meta.user.logoUrl ? `<img src="${escapeHtml(meta.user.logoUrl)}" alt="${escapeHtml(meta.user.name)}" />` : "⚡"}</span><strong>${escapeHtml(meta.user.name)}</strong><small>${escapeHtml(meta.user.formation)} · Lv ${escapeHtml(meta.user.level)}${userAverage ? ` · OVR ${userAverage}` : ""}</small></div>
@@ -1874,8 +1963,8 @@
           <div class="boss-match-main-grid">
             <section class="panel boss-match-pitch-panel">
               <div class="boss-match-tabs" role="tablist" aria-label="Squadra visualizzata">
-                <button class="boss-match-team-tab ${activeSide === "user" ? "active" : ""}" role="tab" aria-selected="${activeSide === "user"}" data-boss-tab="user">La tua squadra</button>
-                <button class="boss-match-team-tab ${activeSide === "boss" ? "active" : ""}" role="tab" aria-selected="${activeSide === "boss"}" data-boss-tab="boss">Boss</button>
+                <button type="button" class="boss-match-team-tab ${activeSide === "user" ? "active" : ""}" role="tab" aria-selected="${activeSide === "user"}" data-boss-tab="user">La tua squadra</button>
+                <button type="button" class="boss-match-team-tab ${activeSide === "boss" ? "active" : ""}" role="tab" aria-selected="${activeSide === "boss"}" data-boss-tab="boss">Boss</button>
               </div>
               <div class="boss-match-field" aria-label="Campo boss match">
                 <div class="boss-match-half-label boss-match-half-label--user">${escapeHtml(meta.user.name)}</div>
@@ -1904,7 +1993,7 @@
             <section class="panel boss-match-result-panel"><h3>Risultato</h3><div class="boss-match-score"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div></section>
           </div>
           <details class="panel boss-match-mobile-details"><summary>Info boss e ricompensa</summary><p>${escapeHtml(meta.boss.name)} · Lv ${escapeHtml(meta.boss.level)} · ${escapeHtml(meta.boss.formation)}</p><p>2 pick 1 di 3 dalla squadra battuta</p></details>
-          <section class="panel boss-match-controls"><button class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><div class="button-row"><button class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button><button class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button class="btn" data-nav="squad">Torna alla squadra</button></div></section>
+          <section class="panel boss-match-controls"><button type="button" class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><div class="button-row"><button type="button" class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button><button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button type="button" class="btn" data-nav="squad">Torna alla squadra</button></div></section>
         </div>
       </main>`;
     resetRenderedViewScroll();
@@ -1917,9 +2006,10 @@
       const player = bossPlayers.find((candidate) => String(candidate.playerId) === String(id));
       showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: seasonDb, preserveScroll: scrollSnapshot() });
     }));
-    document.getElementById("test-win").addEventListener("click", () => manualResolveMatch("victory"));
-    document.getElementById("test-loss").addEventListener("click", () => manualResolveMatch("defeat"));
-    document.getElementById("simulate-boss-match").addEventListener("click", () => startMatchSimulation(ui.match, { boss }));
+    document.getElementById("test-win").addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("victory"); });
+    document.getElementById("test-loss").addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("defeat"); });
+    document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(ui.match, { boss }); });
+    document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
     persistMatchState();
     resumeMatchSimulationIfNeeded(ui.match);
   }
@@ -2062,7 +2152,7 @@
     const selected = ui.fiveVFiveSelectedSlot === slot.key;
     const missing = !player && !status.valid;
     return `
-      <button class="five-slot ${selected ? "selected" : ""} ${missing ? "missing" : ""} ${player ? rarityClass(player.category) : ""}" data-five-slot="${escapeHtml(slot.key)}" style="grid-area:${escapeHtml(slot.line)}">
+      <button type="button" class="five-slot ${selected ? "selected" : ""} ${missing ? "missing" : ""} ${player ? rarityClass(player.category) : ""}" data-five-slot="${escapeHtml(slot.key)}" style="grid-area:${escapeHtml(slot.line)}">
         <span class="five-slot-role">${roleBadge(slot.role)}</span>
         ${player ? `<span class="five-slot-overall">${escapeHtml(player.overall)}</span>
           <img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" />
@@ -2083,7 +2173,7 @@
     const compatible = !slot || player.position === slot.role;
     const assignedSlot = Object.entries(run.fiveVFive.slots).find(([, id]) => String(id) === String(entry.playerId))?.[0];
     return `
-      <button class="five-roster-card ${compatible ? "" : "disabled"} ${assignedSlot ? "assigned" : ""}" data-five-player="${escapeHtml(entry.playerId)}" ${compatible ? "" : "disabled"}>
+      <button type="button" class="five-roster-card ${compatible ? "" : "disabled"} ${assignedSlot ? "assigned" : ""}" data-five-player="${escapeHtml(entry.playerId)}" ${compatible ? "" : "disabled"}>
         <img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" />
         <span><strong>${escapeHtml(player.name)}</strong><small>${player.position} · OVR ${player.overall} · Lv ${player.displayLevel}${assignedSlot ? ` · ${assignedSlot}` : ""}</small></span>
       </button>`;
@@ -2124,7 +2214,7 @@
             <div class="five-main">
               <div class="five-formation-grid">
                 ${global.FiveVFive.formations.map((item) => `
-                  <button class="five-formation-card ${item.id === formation.id ? "selected" : ""}" data-five-formation="${escapeHtml(item.id)}">
+                  <button type="button" class="five-formation-card ${item.id === formation.id ? "selected" : ""}" data-five-formation="${escapeHtml(item.id)}">
                     <strong>${escapeHtml(item.name)}</strong>
                     <span>${escapeHtml(item.summary)}</span>
                   </button>`).join("")}
@@ -2136,17 +2226,17 @@
                 <strong>${status.valid ? "Formazione 5v5 pronta" : `Formazione incompleta (${status.assignedCount}/5)`}</strong>
                 <p>${status.valid ? "Puoi affrontare i nodi Partita 5v5." : escapeHtml(status.messages[0] || "Completa tutti gli slot rispettando i ruoli.")}</p>
               </div>
-              <div class="button-row"><button class="btn btn-yellow" id="save-five" ${status.valid ? "" : "disabled"}>Conferma formazione</button>${options.returnToMatch ? '<button class="btn" id="back-five-match">Torna alla partita</button>' : ""}</div>
+              <div class="button-row"><button type="button" class="btn btn-yellow" id="save-five" ${status.valid ? "" : "disabled"}>Conferma formazione</button>${options.returnToMatch ? '<button type="button" class="btn" id="back-five-match">Torna alla partita</button>' : ""}</div>
             </div>
             <aside class="panel five-selector">
               <div class="section-head compact"><div><p class="eyebrow">${escapeHtml(selectedSlot)}</p><h3>Seleziona giocatore</h3><p class="muted small">Scegli un ${escapeHtml(selectedRole)} dalla rosa.</p></div></div>
               <div class="role-filter-bar">
-                ${["all", "GK", "DF", "MF", "FW"].map((role) => `<button class="role-filter ${filter === role ? "active" : ""}" data-five-filter="${role}">${roleBadge(role)}</button>`).join("")}
+                ${["all", "GK", "DF", "MF", "FW"].map((role) => `<button type="button" class="role-filter ${filter === role ? "active" : ""}" data-five-filter="${role}">${roleBadge(role)}</button>`).join("")}
               </div>
               <div class="five-roster-list">
                 ${rosterEntries.length ? rosterEntries.map((entry) => fiveRosterCard(entry, selectedSlot)).join("") : '<p class="muted">Nessun giocatore compatibile con questo filtro.</p>'}
               </div>
-              <button class="btn btn-ghost" id="clear-five-slot">Svuota slot selezionato</button>
+              <button type="button" class="btn btn-ghost" id="clear-five-slot">Svuota slot selezionato</button>
             </aside>
           </section>
         </div>
@@ -2160,30 +2250,80 @@
       global.RunState.save(run);
       runKeepingScroll(() => renderFiveVFive(options));
     }));
-    document.querySelectorAll("[data-five-slot]").forEach((button) => button.addEventListener("click", () => {
+    const refreshFiveSelection = () => {
+      const currentStatus = fiveVFiveStatus();
+      const currentFormation = currentStatus.formation;
+      document.querySelectorAll("[data-five-slot]").forEach((slotButton) => {
+        slotButton.classList.toggle("selected", slotButton.dataset.fiveSlot === ui.fiveVFiveSelectedSlot);
+      });
+      document.querySelectorAll("[data-five-filter]").forEach((filterButton) => {
+        filterButton.classList.toggle("active", filterButton.dataset.fiveFilter === ui.fiveVFiveRoleFilter);
+      });
+      const currentSlot = currentFormation.slots.find((slot) => slot.key === ui.fiveVFiveSelectedSlot);
+      const selectedRoleNow = currentSlot?.role;
+      const currentFilter = ui.fiveVFiveRoleFilter || "all";
+      const nextEntries = run.roster.filter((entry) => {
+        const role = fiveRoleForPlayerId(entry.playerId);
+        if (currentFilter !== "all" && role !== currentFilter) return false;
+        if (selectedRoleNow && currentFilter === "all") return role === selectedRoleNow;
+        return true;
+      });
+      const selectorHead = document.querySelector(".five-selector .section-head.compact");
+      if (selectorHead && currentSlot) selectorHead.innerHTML = `<div><p class="eyebrow">${escapeHtml(currentSlot.key)}</p><h3>Seleziona giocatore</h3><p class="muted small">Scegli un ${escapeHtml(selectedRoleNow)} dalla rosa.</p></div>`;
+      const list = document.querySelector(".five-roster-list");
+      if (list) list.innerHTML = nextEntries.length ? nextEntries.map((entry) => fiveRosterCard(entry, ui.fiveVFiveSelectedSlot)).join("") : '<p class="muted">Nessun giocatore compatibile con questo filtro.</p>';
+      bindFiveRosterButtons();
+    };
+    const refreshFiveAfterAssignment = () => {
+      const snapshot = scrollSnapshot();
+      const currentStatus = fiveVFiveStatus();
+      document.querySelectorAll("[data-five-slot]").forEach((slotButton) => {
+        const slot = currentStatus.formation.slots.find((item) => item.key === slotButton.dataset.fiveSlot);
+        if (slot) slotButton.outerHTML = fiveSlotCard(slot, run.fiveVFive.slots[slot.key], currentStatus);
+      });
+      const validation = document.querySelector(".five-validation");
+      if (validation) {
+        validation.className = `five-validation ${currentStatus.valid ? "valid" : "invalid"}`;
+        validation.innerHTML = `<strong>${currentStatus.valid ? "Formazione 5v5 pronta" : `Formazione incompleta (${currentStatus.assignedCount}/5)`}</strong><p>${currentStatus.valid ? "Puoi affrontare i nodi Partita 5v5." : escapeHtml(currentStatus.messages[0] || "Completa tutti gli slot rispettando i ruoli.")}</p>`;
+      }
+      const save = document.getElementById("save-five");
+      if (save) save.disabled = !currentStatus.valid;
+      document.querySelectorAll("[data-five-slot]").forEach((slotButton) => slotButton.addEventListener("click", onFiveSlotClick));
+      refreshFiveSelection();
+      restoreScroll(snapshot);
+    };
+    const onFiveSlotClick = (event) => {
+      event.preventDefault();
+      const button = event.currentTarget;
       ui.fiveVFiveSelectedSlot = button.dataset.fiveSlot;
       const role = formation.slots.find((slot) => slot.key === ui.fiveVFiveSelectedSlot)?.role;
       ui.fiveVFiveRoleFilter = role || "all";
-      runKeepingScroll(() => renderFiveVFive(options));
-    }));
+      refreshFiveSelection();
+    };
+    const bindFiveRosterButtons = () => {
+      document.querySelectorAll("[data-five-player]").forEach((button) => button.addEventListener("click", (event) => {
+        event.preventDefault();
+        try {
+          global.FiveVFive.assign(run, ui.fiveVFiveSelectedSlot, button.dataset.fivePlayer, fiveRoleForPlayerId);
+          global.RunState.save(run);
+          toast("Giocatore assegnato alla formazione 5v5");
+          refreshFiveAfterAssignment();
+        } catch (error) {
+          toast(error.message);
+        }
+      }));
+    };
+    document.querySelectorAll("[data-five-slot]").forEach((button) => button.addEventListener("click", onFiveSlotClick));
     document.querySelectorAll("[data-five-filter]").forEach((button) => button.addEventListener("click", () => {
       ui.fiveVFiveRoleFilter = button.dataset.fiveFilter;
       runKeepingScroll(() => renderFiveVFive(options));
     }));
-    document.querySelectorAll("[data-five-player]").forEach((button) => button.addEventListener("click", () => {
-      try {
-        global.FiveVFive.assign(run, ui.fiveVFiveSelectedSlot, button.dataset.fivePlayer, fiveRoleForPlayerId);
-        global.RunState.save(run);
-        toast("Giocatore assegnato alla formazione 5v5");
-        runKeepingScroll(() => renderFiveVFive(options));
-      } catch (error) {
-        toast(error.message);
-      }
-    }));
-    document.getElementById("clear-five-slot").addEventListener("click", () => {
+    bindFiveRosterButtons();
+    document.getElementById("clear-five-slot").addEventListener("click", (event) => {
+      event.preventDefault();
       global.FiveVFive.clearSlot(run, ui.fiveVFiveSelectedSlot);
       global.RunState.save(run);
-      runKeepingScroll(() => renderFiveVFive(options));
+      refreshFiveAfterAssignment();
     });
     document.getElementById("save-five").addEventListener("click", () => {
       const nextStatus = fiveVFiveStatus();
@@ -2210,7 +2350,7 @@
           <div class="section-head" style="margin-top:30px"><div><p class="eyebrow">Equipaggiati</p><h2>Oggetti dei giocatori</h2></div></div>
           <div class="item-grid">
             ${equipped.length ? equipped.map(({ entry, player, resolved, item }) => `
-              <article class="item-card equipped-summary static-item">${itemIcon(item)}<span class="item-kind">${escapeHtml(player.name)}</span><strong>${escapeHtml(item.name)}</strong><div class="equipped-owner"><img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" /><span>${escapeHtml(player.name)} · ${escapeHtml(player.position)}</span></div><p>${escapeHtml(item.description)} ${escapeHtml(item.stat)}: ${resolved.baseStats[item.stat]} → <strong>${resolved.stats[item.stat]}</strong></p><button class="btn btn-ghost" data-unequip-player="${entry.playerId}">Rimuovi</button></article>`).join("") : '<p class="muted">Nessun giocatore ha un oggetto equipaggiato.</p>'}
+              <article class="item-card equipped-summary static-item">${itemIcon(item)}<span class="item-kind">${escapeHtml(player.name)}</span><strong>${escapeHtml(item.name)}</strong><div class="equipped-owner"><img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" /><span>${escapeHtml(player.name)} · ${escapeHtml(player.position)}</span></div><p>${escapeHtml(item.description)} ${escapeHtml(item.stat)}: ${resolved.baseStats[item.stat]} → <strong>${resolved.stats[item.stat]}</strong></p><button type="button" class="btn btn-ghost" data-unequip-player="${entry.playerId}">Rimuovi</button></article>`).join("") : '<p class="muted">Nessun giocatore ha un oggetto equipaggiato.</p>'}
           </div>
         </div>
         ${bottomNav("inventory")}
@@ -2224,12 +2364,12 @@
 
   function inventoryItemCard(item) {
     const action = item.kind === "equipment"
-      ? `<button class="btn btn-primary" data-equip-item="${item.instanceId}">Assegna</button>`
+      ? `<button type="button" class="btn btn-primary" data-equip-item="${item.instanceId}">Assegna</button>`
       : item.effect === "pull_reroll"
         ? '<span class="muted small">Utilizzabile durante una pull</span>'
         : item.effect === "lucky_pull"
           ? '<span class="muted small">Utilizzabile durante una Pull svincolati o Pull squadre</span>'
-          : `<button class="btn btn-primary" data-use-item="${item.instanceId}">Usa</button>`;
+          : `<button type="button" class="btn btn-primary" data-use-item="${item.instanceId}">Usa</button>`;
     return `<article class="item-card static-item">${itemIcon(item)}<span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p>${action}</article>`;
   }
 
@@ -2303,7 +2443,7 @@
       const player = sourcePlayer(entry);
       return openModal(`
         <div class="modal-head"><div><p class="eyebrow">Sostituzione oggetto</p><h2>${escapeHtml(player.name)} ha già equipaggiato ${escapeHtml(current.name)}.</h2><p class="muted">Vuoi sostituirlo con ${escapeHtml(item.name)}?</p></div></div>
-        <div class="button-row"><button class="btn btn-primary" id="confirm-equip-replace">Conferma sostituzione</button><button class="btn" id="cancel-equip-replace">Annulla</button></div>`,
+        <div class="button-row"><button type="button" class="btn btn-primary" id="confirm-equip-replace">Conferma sostituzione</button><button type="button" class="btn" id="cancel-equip-replace">Annulla</button></div>`,
         { closeable: false }
       ), document.getElementById("confirm-equip-replace").addEventListener("click", () => equipItemToEntry(instanceId, entry)), document.getElementById("cancel-equip-replace").addEventListener("click", () => chooseEquipmentPlayer(instanceId));
     }
@@ -2337,7 +2477,7 @@
     app.innerHTML = `
       <main class="gameover-screen">
         <div><p class="eyebrow">0 vite rimaste</p><h1>Run terminata</h1><p class="muted">Per riprovare devi ricominciare dalla scelta del modulo.</p>
-        <div class="button-row"><button class="btn btn-yellow" id="restart-run">Nuova run</button><button class="btn" id="home">Menu</button></div></div>
+        <div class="button-row"><button type="button" class="btn btn-yellow" id="restart-run">Nuova run</button><button type="button" class="btn" id="home">Menu</button></div></div>
       </main>`;
     resetRenderedViewScroll();
     document.getElementById("restart-run").addEventListener("click", () => {
@@ -2348,7 +2488,7 @@
 
   function renderSeasonComplete() {
     app.innerHTML = `
-      <main class="hero-screen"><div><p class="eyebrow">Season 1 completata</p><h1>Campioni!</h1><p class="muted">Hai sconfitto tutti i boss della prima stagione.</p><button class="btn btn-yellow" id="home">Torna al menu</button></div></main>`;
+      <main class="hero-screen"><div><p class="eyebrow">Season 1 completata</p><h1>Campioni!</h1><p class="muted">Hai sconfitto tutti i boss della prima stagione.</p><button type="button" class="btn btn-yellow" id="home">Torna al menu</button></div></main>`;
     resetRenderedViewScroll();
     document.getElementById("home").addEventListener("click", renderHome);
   }
