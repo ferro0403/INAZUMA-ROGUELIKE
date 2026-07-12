@@ -938,6 +938,20 @@
     return result;
   }
 
+
+  function bossTeamLogoUrl(boss) {
+    const team = teamById(boss?.teamId);
+    return boss?.logoUrl || team?.logoUrl || team?.logo || boss?.teamLogo || "";
+  }
+
+  function bossNodeIconMarkup(boss) {
+    const teamName = boss?.teamName || "Boss";
+    const logoUrl = bossTeamLogoUrl(boss);
+    const fallback = escapeHtml((teamName.trim()[0] || "⚽").toUpperCase());
+    if (!logoUrl) return `<span class="boss-logo-fallback boss-logo-fallback--visible" aria-hidden="true">${fallback}</span>`;
+    return `<img class="boss-node-logo" src="${escapeHtml(logoUrl)}" alt="Logo ${escapeHtml(teamName)}" loading="lazy" onerror="this.remove();this.parentElement?.classList.add('boss-logo-missing');" /><span class="boss-logo-fallback" aria-hidden="true">${fallback}</span>`;
+  }
+
   function renderMap() {
     ensureCurrentZone();
     if (!run.currentZone) return renderSeasonComplete();
@@ -970,7 +984,7 @@
                 return `
                   <button type="button" class="map-node ${stateClass}" data-node-id="${node.id}" ${reachable.has(node.id) ? "" : "disabled"}
                     style="left:${positions[node.id].x / 10}%;top:${positions[node.id].y / 10}%;--node-color:${meta.color}">
-                    <span class="node-icon">${meta.icon}</span>
+                    <span class="node-icon">${node.type === "boss" ? bossNodeIconMarkup(boss) : meta.icon}</span>
                     <span class="node-label">${node.type === "boss" ? escapeHtml(boss.teamName) : meta.label}</span>
                   </button>`;
               }).join("")}
