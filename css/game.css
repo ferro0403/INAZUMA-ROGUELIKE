@@ -946,3 +946,8 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 }
 .five-slot[class*="rarity-"], .five-match-card[class*="rarity-"] { background: var(--rarity-bg); border-color: var(--rarity-border); color: var(--rarity-text); }
 .five-slot[class*="rarity-"] .muted, .five-match-card[class*="rarity-"] small { color: color-mix(in srgb, var(--rarity-text) 82%, transparent); }
+.match-sim-summary { padding: 10px 14px; border: 1px solid rgba(255,211,79,.36); border-radius: 14px; background: rgba(255,211,79,.08); color: #ffe28a; font-weight: 900; text-align: center; }
+.match-sim-error { padding: 10px 14px; border: 1px solid rgba(255,91,98,.55); border-radius: 14px; background: rgba(255,91,98,.10); color: #ffb4b8; font-weight: 900; }
+.boss-match-log.match-sim-log { max-height: 310px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-gutter: stable; }
+.boss-match-log.match-sim-log:focus { outline: 3px solid rgba(54,169,255,.35); outline-offset: 3px; }
+@media (max-width: 780px) { .boss-match-log.match-sim-log { max-height: 260px; } }

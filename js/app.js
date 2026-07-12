@@ -71,6 +71,7 @@
     bossMatchLog: [],
     bossMatchResolving: false,
     fiveMatchTab: "user",
+    matchPlaybackTimer: null,
   };
 
   function escapeHtml(value) {
@@ -1556,6 +1557,137 @@
   }
 
 
+
+  function clearMatchPlaybackTimer() {
+    if (ui.matchPlaybackTimer) {
+      clearTimeout(ui.matchPlaybackTimer);
+      ui.matchPlaybackTimer = null;
+    }
+  }
+
+  function matchSeed(match) {
+    if (match.simulation?.seed) return match.simulation.seed;
+    return `${run.runId}:${match.type}:${match.nodeId}:${Date.now()}`;
+  }
+
+  function normalizedMatchPlayer(player) {
+    return player ? { ...player, role: player.position, playerId: String(player.playerId) } : null;
+  }
+
+  function simulationTeamsForCurrentMatch(match, options = {}) {
+    if (match.type === "five_v_five") {
+      const userPlayersBySlot = fiveUserPlayersBySlot();
+      const opponentPlayersBySlot = fiveOpponentPlayersBySlot(match);
+      return {
+        type: "five",
+        userTeam: { name: normalizeTeamIdentity(run.teamIdentity).name || "La tua squadra", players: Object.values(userPlayersBySlot).map(normalizedMatchPlayer).filter(Boolean) },
+        opponentTeam: { name: "Svincolati", players: Object.values(opponentPlayersBySlot).map(normalizedMatchPlayer).filter(Boolean) },
+      };
+    }
+    const boss = options.boss || seasonDb.bossOrder[run.bossIndex];
+    const meta = bossMatchTeamMeta(boss);
+    return {
+      type: "eleven",
+      userTeam: { name: meta.user.name, players: userTeamPlayers().map(normalizedMatchPlayer).filter(Boolean) },
+      opponentTeam: { name: meta.boss.name, players: bossTeamPlayers(boss).map(normalizedMatchPlayer).filter(Boolean) },
+    };
+  }
+
+  function ensureMatchPreview(match, options = {}) {
+    if (match.simulation?.valid) return match.simulation;
+    const teams = simulationTeamsForCurrentMatch(match, options);
+    const preview = global.MatchSimulator.simulate({ ...teams, seed: matchSeed(match) });
+    if (!preview.valid) return preview;
+    match.simulation = {
+      ...preview,
+      state: match.simulation?.state || "pre-match",
+      revealedCount: match.simulation?.revealedCount || 0,
+      displayedScore: match.simulation?.displayedScore || { user: 0, opponent: 0 },
+      resolutionApplied: Boolean(match.simulation?.resolutionApplied),
+      manuallyResolved: Boolean(match.simulation?.manuallyResolved),
+    };
+    match.score = [match.simulation.displayedScore.user, match.simulation.displayedScore.opponent];
+    return match.simulation;
+  }
+
+  function simulationScoreArray(match, completed = false) {
+    const sim = match?.simulation;
+    if (!sim?.valid) return match?.score || [0, 0];
+    const source = completed || sim.state === "completed" ? sim.score : sim.displayedScore;
+    return [source.user, source.opponent];
+  }
+
+  function visibleTimeline(match) {
+    const sim = match?.simulation;
+    if (!sim?.valid) return ui.bossMatchLog || [];
+    return sim.timeline.slice(0, sim.revealedCount).map((ev) => ({ minute: `${ev.minute}'`, icon: ({goal:"⚽",save:"🧤",counter:"⚡",long_shot:"🎯",post:"🥅",crossbar:"🥅",shot:"👟",defensive_stop:"🛡️",first_half_start:"▶",second_half_start:"▶"})[ev.type] || "•", text: ev.text }));
+  }
+
+  function stepMatchPlayback() {
+    const match = ui.match;
+    const sim = match?.simulation;
+    if (!sim || sim.state !== "simulating" || sim.manuallyResolved) return;
+    if (sim.revealedCount >= sim.timeline.length) {
+      sim.state = "completed";
+      sim.displayedScore = { ...sim.score };
+      match.score = [sim.score.user, sim.score.opponent];
+      persistMatchState();
+      return applySimulationResolution(match);
+    }
+    const ev = sim.timeline[sim.revealedCount];
+    sim.revealedCount += 1;
+    if (ev.type === "goal") sim.displayedScore[ev.team] += 1;
+    match.score = [sim.displayedScore.user, sim.displayedScore.opponent];
+    ui.bossMatchLog = visibleTimeline(match);
+    persistMatchState();
+    runKeepingScroll(renderMatch);
+    ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.playbackMs);
+  }
+
+  function startMatchSimulation(match, options = {}) {
+    if (match.simulation?.state && match.simulation.state !== "pre-match") return;
+    const sim = ensureMatchPreview(match, options);
+    if (!sim.valid) return toast(sim.message || "Formazione non valida: impossibile simulare.");
+    sim.seed = sim.seed || matchSeed(match);
+    sim.state = "simulating";
+    sim.revealedCount = 0;
+    sim.displayedScore = { user: 0, opponent: 0 };
+    sim.resolutionApplied = false;
+    match.state = "simulating";
+    ui.bossMatchState = "simulating";
+    ui.bossMatchLog = [];
+    match.score = [0, 0];
+    persistMatchState();
+    clearMatchPlaybackTimer();
+    runKeepingScroll(renderMatch);
+    ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.playbackMs);
+  }
+
+  function resumeMatchSimulationIfNeeded(match) {
+    const sim = match?.simulation;
+    if (!sim || sim.state !== "simulating") return;
+    clearMatchPlaybackTimer();
+    ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.playbackMs);
+  }
+
+  function applySimulationResolution(match) {
+    const sim = match?.simulation;
+    if (!sim || sim.resolutionApplied || sim.manuallyResolved) return;
+    sim.resolutionApplied = true;
+    persistMatchState();
+    sim.winner === "user" ? (match.type === "five_v_five" ? completeFiveMatch("victory") : completeBossMatch("victory")) : (match.type === "five_v_five" ? completeFiveMatch("defeat") : completeBossMatch("defeat"));
+  }
+
+  function manualResolveMatch(result) {
+    clearMatchPlaybackTimer();
+    if (ui.match?.simulation) {
+      ui.match.simulation.manuallyResolved = true;
+      ui.match.simulation.state = "manual";
+      ui.match.simulation.resolutionApplied = true;
+    }
+    ui.match?.type === "five_v_five" ? completeFiveMatch(result) : completeBossMatch(result);
+  }
+
   function fiveFormationRows(formationId, playersBySlot) {
     const formation = global.FiveVFive.formationById(formationId);
     return ["attack", "midfield", "defense", "goal"].map((line) => ({
@@ -1575,14 +1707,16 @@
 
   function createOrLoadFiveMatch(node) {
     if (run.activeMatch?.type === "five_v_five" && run.activeMatch.nodeId === node.id && run.activeMatch.opponents?.length === 5) return run.activeMatch;
-    const formation = Math.random() < 0.5 ? "1-2-1" : "1-1-2";
+    const opponentRandom = global.DraftEngine.randomFromSeed(`${run.runId}:${node.id}:fiveOpponents`);
+    const formation = opponentRandom() < 0.5 ? "1-2-1" : "1-1-2";
     const slots = global.FiveVFive.formationById(formation).slots;
     const userIds = new Set((run.roster || []).map((entry) => String(entry.playerId)));
     const used = new Set();
     const opponents = slots.map((slot) => {
       const pool = (freeAgentsDb.players || []).filter((player) => !used.has(String(player.playerId)) && !userIds.has(String(player.playerId)) && player.position === slot.role);
       const fallback = (freeAgentsDb.players || []).filter((player) => !used.has(String(player.playerId)) && !userIds.has(String(player.playerId)));
-      const source = (pool.length ? pool : fallback)[Math.floor(Math.random() * (pool.length ? pool.length : fallback.length))];
+      const availablePool = pool.length ? pool : fallback;
+      const source = availablePool[Math.floor(opponentRandom() * availablePool.length)];
       if (!source) return null;
       used.add(String(source.playerId));
       return { slotKey: slot.key, playerId: String(source.playerId) };
@@ -1650,10 +1784,13 @@
       const identity = normalizeTeamIdentity(run.teamIdentity);
       const userName = identity.name || "La tua squadra";
       const opponentName = "Svincolati";
+      const simPreview = ensureMatchPreview(match);
+      const simError = !simPreview.valid ? simPreview.message : "";
+      ui.bossMatchLog = visibleTimeline(match);
       const activeSide = ui.fiveMatchTab === "opponent" ? "opponent" : "user";
       const resolved = ui.bossMatchState.startsWith("completed");
       const simulating = ui.bossMatchState === "simulating";
-      const score = ui.bossMatchState === "completed-victory" ? [2, 1] : ui.bossMatchState === "completed-defeat" ? [1, 2] : (match.score || [0, 0]);
+      const score = simulationScoreArray(match, resolved);
       app.innerHTML = `
         <main class="screen five-match-screen" data-match-state="${escapeHtml(ui.bossMatchState)}">
           ${topbar("Partita 5v5")}
@@ -1662,9 +1799,9 @@
               <button class="btn btn-ghost" data-nav="map" aria-label="Torna al percorso">← Indietro</button>
               <div><p class="eyebrow">Run Lv ${escapeHtml(run.teamLevel)} · ${hearts()}</p><h2>Partita 5v5</h2></div>
               <div class="five-match-vs">
-                <div class="five-match-team"><span class="five-match-logo">⚡</span><strong>${escapeHtml(userName)}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(bossMatchAverage(Object.values(userPlayersBySlot).filter(Boolean)) || "-")}</small></div>
+                <div class="five-match-team"><span class="five-match-logo">⚡</span><strong>${escapeHtml(userName)}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(simPreview.userStrength?.averageOverall ? Math.round(simPreview.userStrength.averageOverall) : bossMatchAverage(Object.values(userPlayersBySlot).filter(Boolean)) || "-")} · Forza ${escapeHtml(simPreview.userStrength?.final ?? "-")}</small></div>
                 <span class="five-match-vs-badge">VS</span>
-                <div class="five-match-team"><span class="five-match-logo">⚽</span><strong>${opponentName}</strong><small>${escapeHtml(match.opponentFormation)} · Lv ${escapeHtml(match.level)}</small></div>
+                <div class="five-match-team"><span class="five-match-logo">⚽</span><strong>${opponentName}</strong><small>${escapeHtml(match.opponentFormation)} · OVR ${escapeHtml(simPreview.opponentStrength?.averageOverall ? Math.round(simPreview.opponentStrength.averageOverall) : "-")} · Forza ${escapeHtml(simPreview.opponentStrength?.final ?? "-")}</small></div>
               </div>
             </section>
             <section class="panel five-match-pitch-panel">
@@ -1680,11 +1817,13 @@
                 <div class="five-match-mobile-field">${fiveMatchField(activeSide === "opponent" ? opponentPlayersBySlot : userPlayersBySlot, activeSide === "opponent" ? match.opponentFormation : run.fiveVFive.formation, activeSide, true)}</div>
               </div>
             </section>
+            <div class="match-sim-summary">Forza: ${escapeHtml(simPreview.userStrength?.final ?? "-")} contro ${escapeHtml(simPreview.opponentStrength?.final ?? "-")} · Probabilità: ${escapeHtml(simPreview.probabilities ? Math.round(simPreview.probabilities.user * 100) : "-")}% contro ${escapeHtml(simPreview.probabilities ? Math.round(simPreview.probabilities.opponent * 100) : "-")}%</div>
+            ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
             <div class="five-match-bottom-grid">
-              <section class="panel boss-match-log-panel"><h3>Cronaca</h3><ol class="boss-match-log">${bossMatchTimeline()}</ol></section>
+              <section class="panel boss-match-log-panel"><h3>Cronaca</h3><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita">${bossMatchTimeline()}</ol></section>
               <section class="panel boss-match-result-panel"><h3>Risultato</h3><div class="boss-match-score"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(userName)}</span><span>${opponentName}</span></div></section>
             </div>
-            <section class="panel five-match-controls"><button class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><div class="button-row"><button class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria</button><button class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button class="btn" id="edit-five-team">Modifica squadra</button></div></section>
+            <section class="panel five-match-controls"><button class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><div class="button-row"><button class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button><button class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button class="btn" id="edit-five-team">Modifica squadra</button></div></section>
           </div>
         </main>`;
       resetRenderedViewScroll();
@@ -1697,21 +1836,11 @@
         showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: freeAgentsDb, preserveScroll: scrollSnapshot() });
       }));
       document.getElementById("edit-five-team").addEventListener("click", () => renderFiveVFive({ returnToMatch: true }));
-      document.getElementById("test-win").addEventListener("click", () => completeFiveMatch("victory"));
-      document.getElementById("test-loss").addEventListener("click", () => completeFiveMatch("defeat"));
-      document.getElementById("simulate-boss-match").addEventListener("click", () => {
-        if (ui.bossMatchState !== "pre-match") return;
-        ui.bossMatchState = "simulating";
-        ui.bossMatchLog = [
-          { minute: "1'", icon: "▶", text: "Calcio d'inizio della partita 5v5." },
-          { minute: "12'", icon: "⚡", text: `${userName} prova a controllare il ritmo.` },
-          { minute: "24'", icon: "⚽", text: "Gli Svincolati rispondono con una ripartenza veloce." },
-          { minute: "40'", icon: "🏁", text: "Fine simulazione: scegli l'esito con i controlli provvisori." },
-        ];
-        persistMatchState();
-        runKeepingScroll(renderMatch);
-      });
+      document.getElementById("test-win").addEventListener("click", () => manualResolveMatch("victory"));
+      document.getElementById("test-loss").addEventListener("click", () => manualResolveMatch("defeat"));
+      document.getElementById("simulate-boss-match").addEventListener("click", () => startMatchSimulation(match));
       persistMatchState();
+      resumeMatchSimulationIfNeeded(match);
       return;
     }
 
@@ -1723,7 +1852,10 @@
     const activeSide = ui.bossMatchTab === "boss" ? "boss" : "user";
     const resolved = ui.bossMatchState.startsWith("completed");
     const simulating = ui.bossMatchState === "simulating";
-    const score = ui.bossMatchState === "completed-victory" ? [1, 0] : ui.bossMatchState === "completed-defeat" ? [0, 1] : [0, 0];
+    const simPreview = ensureMatchPreview(ui.match, { boss });
+    const simError = !simPreview.valid ? simPreview.message : "";
+    ui.bossMatchLog = visibleTimeline(ui.match);
+    const score = simulationScoreArray(ui.match, resolved);
 
     app.innerHTML = `
       <main class="screen boss-match-screen" data-match-state="${ui.bossMatchState}">
@@ -1759,18 +1891,20 @@
               <h3>${escapeHtml(meta.boss.name)}</h3>
               <p>Livello boss <strong>${escapeHtml(meta.boss.level)}</strong></p>
               <p>Formazione <strong>${escapeHtml(meta.boss.formation)}</strong></p>
-              ${meta.boss.overall ? `<p>Forza squadra <strong>${escapeHtml(meta.boss.overall)}</strong></p>` : ""}
-              <p class="muted">Difficoltà basata sui dati Season 1 già configurati.</p>
+              <p>Forza simulata <strong>${escapeHtml(simPreview.opponentStrength?.final ?? meta.boss.overall ?? "-")}</strong></p>
+              <p class="muted">Probabilità utente ${escapeHtml(simPreview.probabilities ? Math.round(simPreview.probabilities.user * 100) : "-")}% · boss ${escapeHtml(simPreview.probabilities ? Math.round(simPreview.probabilities.opponent * 100) : "-")}%.</p>
               <div class="boss-match-reward"><span>Ricompensa</span><strong>2 pick 1 di 3 dalla squadra battuta</strong></div>
             </aside>
           </div>
 
+          <div class="match-sim-summary">Forza: ${escapeHtml(simPreview.userStrength?.final ?? "-")} contro ${escapeHtml(simPreview.opponentStrength?.final ?? "-")} · Probabilità: ${escapeHtml(simPreview.probabilities ? Math.round(simPreview.probabilities.user * 100) : "-")}% contro ${escapeHtml(simPreview.probabilities ? Math.round(simPreview.probabilities.opponent * 100) : "-")}%</div>
+          ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
           <div class="boss-match-bottom-grid">
-            <section class="panel boss-match-log-panel"><h3>Cronaca</h3><ol class="boss-match-log">${bossMatchTimeline()}</ol></section>
+            <section class="panel boss-match-log-panel"><h3>Cronaca</h3><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita">${bossMatchTimeline()}</ol></section>
             <section class="panel boss-match-result-panel"><h3>Risultato</h3><div class="boss-match-score"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div></section>
           </div>
           <details class="panel boss-match-mobile-details"><summary>Info boss e ricompensa</summary><p>${escapeHtml(meta.boss.name)} · Lv ${escapeHtml(meta.boss.level)} · ${escapeHtml(meta.boss.formation)}</p><p>2 pick 1 di 3 dalla squadra battuta</p></details>
-          <section class="panel boss-match-controls"><button class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><div class="button-row"><button class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria</button><button class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button class="btn" data-nav="squad">Torna alla squadra</button></div></section>
+          <section class="panel boss-match-controls"><button class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><div class="button-row"><button class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button><button class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button class="btn" data-nav="squad">Torna alla squadra</button></div></section>
         </div>
       </main>`;
     resetRenderedViewScroll();
@@ -1783,20 +1917,11 @@
       const player = bossPlayers.find((candidate) => String(candidate.playerId) === String(id));
       showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: seasonDb, preserveScroll: scrollSnapshot() });
     }));
-    document.getElementById("test-win").addEventListener("click", () => completeBossMatch("victory"));
-    document.getElementById("test-loss").addEventListener("click", () => completeBossMatch("defeat"));
-    document.getElementById("simulate-boss-match").addEventListener("click", () => {
-      if (ui.bossMatchState !== "pre-match") return;
-      ui.bossMatchState = "simulating";
-      ui.bossMatchLog = [
-        { minute: "1'", icon: "▶", text: "Calcio d'inizio della sfida boss." },
-        { minute: "23'", icon: "🧤", text: `${meta.boss.name} costringe il portiere a una parata.` },
-        { minute: "45'", icon: "⏱", text: "Fine primo tempo." },
-        { minute: "68'", icon: "⚡", text: "La tua squadra accelera e cerca il gol decisivo." },
-        { minute: "90'", icon: "🏁", text: "Fine partita: scegli l'esito con i controlli provvisori." },
-      ];
-      runKeepingScroll(renderMatch);
-    });
+    document.getElementById("test-win").addEventListener("click", () => manualResolveMatch("victory"));
+    document.getElementById("test-loss").addEventListener("click", () => manualResolveMatch("defeat"));
+    document.getElementById("simulate-boss-match").addEventListener("click", () => startMatchSimulation(ui.match, { boss }));
+    persistMatchState();
+    resumeMatchSimulationIfNeeded(ui.match);
   }
 
   function completeFiveMatch(result) {
