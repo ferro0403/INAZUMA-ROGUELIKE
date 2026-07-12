@@ -7,6 +7,8 @@ const path = require("path");
 const { JSDOM, VirtualConsole } = require("/tmp/inazuma-jsdom/node_modules/jsdom");
 
 const root = path.resolve(__dirname, "..");
+require(path.join(root, "js/match-simulator-config.js"));
+require(path.join(root, "js/match-simulator.js"));
 const css = fs.readFileSync(path.join(root, "css/game.css"), "utf8");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.route-map[\s\S]*?min-width:\s*0/.test(css), "mobile route map must not keep the desktop 620px min width");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.map-wrap[\s\S]*?overflow-x:\s*hidden/.test(css), "mobile map wrapper must hide horizontal overflow");
@@ -52,6 +54,16 @@ assert(indexHtml.includes("js/match-simulator-config.js") && indexHtml.includes(
 assert(appJs.includes("Simula partita"), "match screens must expose the Simula partita button");
 assert(appJs.includes("simPreview.probabilities ? Math.round(simPreview.probabilities.user * 100)"), "11v11 and 5v5 screens must render probabilities from the simulator helper result");
 assert(appJs.includes("global.MatchSimulator.simulate({ ...teams, seed: matchSeed(match) })"), "UI preview and engine simulation must use the same MatchSimulator entry point and helper-derived probabilities");
+const simulatorJs = fs.readFileSync(path.join(root, "js/match-simulator.js"), "utf8");
+assert(simulatorJs.includes("function getMatchWinProbabilities(mode, userStrength, opponentStrength)"), "central probability helper must receive the match mode");
+assert(simulatorJs.includes("const probs = probabilities(type, userStrength.final, opponentStrength.final)"), "engine must pass the normalized match type into the central probability helper");
+assert(simulatorJs.includes("determineUserWins(probs.userChance, rng)"), "engine RNG must use the same helper-derived userChance shown by the UI");
+assert(simulatorJs.includes("rng() < userChance / 100"), "RNG comparison must use userChance / 100 without inversion");
+assert.equal(global.MatchSimulator.getMatchWinProbabilities("five", 40, 60).userChance, 80, "5v5 UI table: weaker by 20 shows 80/20");
+assert.equal(global.MatchSimulator.getMatchWinProbabilities("five", 65, 60).userChance, 85, "5v5 UI table: stronger by 5 shows 85/15");
+assert.equal(global.MatchSimulator.getMatchWinProbabilities("five", 70, 60).userChance, 90, "5v5 UI table: stronger by 10 shows 90/10");
+assert.equal(global.MatchSimulator.getMatchWinProbabilities("five", 75, 60).userChance, 95, "5v5 UI table: stronger by 15 shows 95/5");
+assert.equal(global.MatchSimulator.getMatchWinProbabilities("eleven", 60, 85).userChance, 40, "11v11 table must not inherit the 5v5 80% floor");
 assert(appJs.includes("if (match.simulation?.valid) return match.simulation;") && appJs.includes("if (!sim || sim.state !== \"simulating\" || sim.manuallyResolved) return;"), "refresh and Vai al risultato must reuse the existing simulation instead of extracting again");
 assert(appJs.includes("Vittoria sicura"), "manual safe victory control must remain visible");
 assert(appJs.includes("startMatchSimulation") && appJs.includes("resolutionApplied"), "match UI must persist simulation and guard one-time resolution");

@@ -12,14 +12,28 @@
   function goalkeeperQuality(players) { const gk = players.find((p) => role(p) === "GK"); return gk ? statValue(gk, cfg().phases.goalkeeper.stats) : 0; }
   function validateTeam(team, type) { const players = team.players || []; const expected = type === "five" ? 5 : 11; const ids = new Set(players.map((p) => String(p.playerId ?? p.id ?? name(p)))); if (players.length !== expected || ids.size !== expected) return { valid:false, message:`Servono ${expected} giocatori schierati senza duplicati.` }; if (!players.some((p) => role(p) === "GK")) return { valid:false, message:"Serve un portiere schierato per simulare." }; return { valid:true }; }
   function teamStrength(team, type) { const validation = validateTeam(team, type); if (!validation.valid) return { ...validation }; const players = team.players; const averageOverall = players.reduce((s, p) => s + Number(p.overall || p.finalOverall || 0), 0) / players.length; const offense = phaseQuality(players, "offense"); const midfield = phaseQuality(players, "midfield"); const defense = phaseQuality(players, "defense"); const goalkeeper = goalkeeperQuality(players); const w = cfg().profileWeights; const statisticalProfile = offense*w.offense + midfield*w.midfield + defense*w.defense + goalkeeper*w.goalkeeper; const finalRaw = averageOverall*cfg().forceWeights.overall + statisticalProfile*cfg().forceWeights.profile; return { valid:true, averageOverall, offense, midfield, defense, goalkeeper, statisticalProfile, finalRaw, final: Math.round(finalRaw) }; }
-  function getMatchWinProbabilities(userStrength, opponentStrength) {
+  function normalizeMatchMode(mode) { return mode === "five" || mode === "five_v_five" ? "five" : "eleven"; }
+  function getMatchWinProbabilities(mode, userStrength, opponentStrength) {
+    if (arguments.length === 2) {
+      opponentStrength = userStrength;
+      userStrength = mode;
+      mode = "eleven";
+    }
+    const normalizedMode = normalizeMatchMode(mode);
     const roundedUserStrength = Math.round(Number(userStrength));
     const roundedOpponentStrength = Math.round(Number(opponentStrength));
     const difference = Math.abs(roundedUserStrength - roundedOpponentStrength);
+    const userIsStronger = roundedUserStrength > roundedOpponentStrength;
+    const userIsWeaker = roundedUserStrength < roundedOpponentStrength;
     let userChance;
-    if (difference <= 4) {
+    if (normalizedMode === "five") {
+      if (userIsWeaker || difference <= 4) userChance = 80;
+      else if (difference <= 9) userChance = 85;
+      else if (difference <= 14) userChance = 90;
+      else userChance = 95;
+    } else if (difference <= 4) {
       userChance = 70;
-    } else if (roundedUserStrength > roundedOpponentStrength) {
+    } else if (userIsStronger) {
       if (difference <= 9) userChance = 80;
       else if (difference <= 14) userChance = 88;
       else if (difference <= 19) userChance = 94;
@@ -38,9 +52,9 @@
     const opponentChance = 100 - userChance;
     const bandStart = Math.min(40, Math.floor(difference / 5) * 5);
     const band = difference <= 4 ? "0-4" : `${bandStart}${bandStart >= 40 ? "+" : `-${bandStart + 4}`}`;
-    return { user: userChance / 100, opponent: opponentChance / 100, diff: difference, difference, band, userChance, opponentChance };
+    return { mode: normalizedMode, user: userChance / 100, opponent: opponentChance / 100, diff: difference, difference, band, userChance, opponentChance };
   }
-  function probabilities(aForce, bForce) { return getMatchWinProbabilities(aForce, bForce); }
+  function probabilities(mode, aForce, bForce) { return getMatchWinProbabilities(mode, aForce, bForce); }
   function determineUserWins(userChance, rng) { return rng() < userChance / 100; }
   function pickScore(type, band, rng) { let dist = cfg().scores[type].map((x) => ({...x})); if (band === "0-4") dist = dist.map((x) => ({...x, weight: x.weight * (x.score[0]-x.score[1] === 1 ? 1.35 : .8)})); if (band === "10-14" || band === "15-19" || band === "20-24" || band === "25-29" || band === "30-34" || band === "35-39" || band === "40+") dist = dist.map((x) => ({...x, weight: x.weight * (x.score[0]-x.score[1] >= 2 ? 1.25 : .8)})); return weightedPick(dist, rng, (x) => x.weight).score.slice(); }
   function byRoleWeight(players, roleWeights, statWeights, rng) { const eligible = players.filter((p) => (roleWeights[role(p)] || 0) > 0); return weightedPick(eligible, rng, (p) => (roleWeights[role(p)] || 0) * Math.max(1, statValue(p, statWeights))); }
@@ -52,6 +66,6 @@
     while (goalSides.length) { const side = goalSides.shift(); const p = protagonist(teams[side], "goal", rng); displayed[side] += 1; events.push({ minute: 1 + Math.floor(rng()*limits.duration), type:"goal", team:side, playerId:p?.playerId, playerName:name(p), text:"" }); }
     if (type === "eleven") events.push({ minute:46, type:"second_half_start", team:null, text:"Inizio secondo tempo." });
     events.sort((a,b)=>a.minute-b.minute || (a.type.includes("start") ? -1 : 1)); displayed={user:0,opponent:0}; events.forEach((ev)=>{ if (ev.type === "goal") displayed[ev.team]+=1; ev.text = ev.text && ev.type !== "goal" ? ev.text : eventText(ev, teams, displayed); }); return events.slice(0, limits.max); }
-  function simulate({ type, seed, userTeam, opponentTeam }) { type = type === "five" || type === "five_v_five" ? "five" : "eleven"; const userStrength = teamStrength(userTeam, type); const opponentStrength = teamStrength(opponentTeam, type); if (!userStrength.valid) return { valid:false, message:userStrength.message }; if (!opponentStrength.valid) return { valid:false, message:opponentStrength.message }; const probs = probabilities(userStrength.final, opponentStrength.final); const rng = createRng(seed); const userWins = determineUserWins(probs.userChance, rng); const winner = userWins ? "user" : "opponent"; const picked = pickScore(type, probs.band, rng); const score = winner === "user" ? { user:picked[0], opponent:picked[1] } : { user:picked[1], opponent:picked[0] }; if (score.user === score.opponent) score[winner] += 1; const teams = { user: { name:userTeam.name || "La tua squadra", players:userTeam.players }, opponent:{ name:opponentTeam.name || "Avversari", players:opponentTeam.players } }; const timeline = generateTimeline(type, teams, score, winner, rng); return { valid:true, type, seed, userStrength, opponentStrength, probabilities: probs, winner, score, timeline } }
-  global.MatchSimulator = { createRng, teamStrength, probabilities, getMatchWinProbabilities, getFinalWinProbabilities: getMatchWinProbabilities, determineUserWins, simulate, validateTeam };
+  function simulate({ type, seed, userTeam, opponentTeam }) { type = normalizeMatchMode(type); const userStrength = teamStrength(userTeam, type); const opponentStrength = teamStrength(opponentTeam, type); if (!userStrength.valid) return { valid:false, message:userStrength.message }; if (!opponentStrength.valid) return { valid:false, message:opponentStrength.message }; const probs = probabilities(type, userStrength.final, opponentStrength.final); const rng = createRng(seed); const userWins = determineUserWins(probs.userChance, rng); const winner = userWins ? "user" : "opponent"; const picked = pickScore(type, probs.band, rng); const score = winner === "user" ? { user:picked[0], opponent:picked[1] } : { user:picked[1], opponent:picked[0] }; if (score.user === score.opponent) score[winner] += 1; const teams = { user: { name:userTeam.name || "La tua squadra", players:userTeam.players }, opponent:{ name:opponentTeam.name || "Avversari", players:opponentTeam.players } }; const timeline = generateTimeline(type, teams, score, winner, rng); return { valid:true, type, seed, userStrength, opponentStrength, probabilities: probs, winner, score, timeline } }
+  global.MatchSimulator = { createRng, teamStrength, probabilities, getMatchWinProbabilities, getFinalWinProbabilities: getMatchWinProbabilities, determineUserWins, simulate, validateTeam, normalizeMatchMode };
 })(globalThis);
