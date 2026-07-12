@@ -123,6 +123,34 @@
     return result;
   }
 
+  function scrollElementToStart(element) {
+    if (!element) return;
+    if (typeof element.scrollTo === "function") {
+      element.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    } else {
+      element.scrollTop = 0;
+      element.scrollLeft = 0;
+    }
+  }
+
+  function resetViewScroll(viewElement = null) {
+    const targets = [viewElement, app, document.scrollingElement, document.documentElement, document.body].filter(Boolean);
+    targets.forEach(scrollElementToStart);
+    try {
+      window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+    } catch (error) {
+      window.scrollX = 0;
+      window.scrollY = 0;
+    }
+  }
+
+  function resetRenderedViewScroll() {
+    const view = app.querySelector("main") || app.firstElementChild || app;
+    resetViewScroll(view);
+    requestAnimationFrame(() => resetViewScroll(view));
+    setTimeout(() => resetViewScroll(view), 0);
+  }
+
   function openModal(content, { closeable = true, className = "", onClose = null, preserveScroll = null } = {}) {
     modalRoot.innerHTML = `
       <div class="modal-backdrop">
@@ -135,7 +163,13 @@
       closeModal();
       if (onClose) onClose();
     });
-    restoreScroll(preserveScroll);
+    if (preserveScroll) {
+      restoreScroll(preserveScroll);
+    } else {
+      const modal = modalRoot.querySelector(".modal");
+      resetViewScroll(modal);
+      requestAnimationFrame(() => resetViewScroll(modal));
+    }
   }
 
   function formationById(id) {
@@ -481,6 +515,7 @@
           </div>
         </section>
       </main>`;
+    resetRenderedViewScroll();
 
     document.getElementById("new-run").addEventListener("click", openTeamNameModal);
     document.getElementById("continue-run")?.addEventListener("click", resumeRun);
@@ -556,6 +591,7 @@
           </div>
         </div>
       </main>`;
+    resetRenderedViewScroll();
 
     document.querySelectorAll("[data-formation]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -589,6 +625,7 @@
           </div>
         </div>
       </main>`;
+    resetRenderedViewScroll();
 
     document.querySelectorAll("[data-player-id]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -721,6 +758,7 @@
         </div>
         ${bottomNav("squad")}
       </main>`;
+    resetRenderedViewScroll();
 
     document.getElementById("formation-select").addEventListener("change", (event) => {
       const next = formationById(event.target.value);
@@ -728,7 +766,7 @@
       autoArrangeFormation(next);
       global.RunState.save(run);
       toast(`Modulo cambiato in ${next.name}`);
-      renderSquad();
+      runKeepingScroll(renderSquad);
     });
 
     document.querySelectorAll("[data-squad-player]").forEach((button) => {
@@ -741,7 +779,7 @@
     document.getElementById("toggle-squad-edit").addEventListener("click", () => {
       ui.squadEditMode = !ui.squadEditMode;
       ui.selectedSquadPlayerId = null;
-      renderSquad();
+      runKeepingScroll(renderSquad);
     });
     document.getElementById("go-map").addEventListener("click", () => {
       ensureCurrentZone();
@@ -756,18 +794,18 @@
     const selected = ui.selectedSquadPlayerId;
     if (!selected) {
       ui.selectedSquadPlayerId = String(playerId);
-      return renderSquad();
+      return runKeepingScroll(renderSquad);
     }
     if (selected === String(playerId)) {
       ui.selectedSquadPlayerId = null;
-      return renderSquad();
+      return runKeepingScroll(renderSquad);
     }
 
     const selectedInLineup = run.lineup.includes(selected);
     const clickedInLineup = run.lineup.includes(String(playerId));
     if (selectedInLineup === clickedInLineup) {
       ui.selectedSquadPlayerId = String(playerId);
-      return renderSquad();
+      return runKeepingScroll(renderSquad);
     }
 
     const starterId = selectedInLineup ? selected : String(playerId);
@@ -777,14 +815,14 @@
     if (starter.position !== reserve.position) {
       ui.selectedSquadPlayerId = null;
       toast("Il sostituto deve avere lo stesso ruolo del titolare");
-      return renderSquad();
+      return runKeepingScroll(renderSquad);
     }
     run.lineup[run.lineup.indexOf(starterId)] = benchId;
     run.bench[run.bench.indexOf(benchId)] = starterId;
     ui.selectedSquadPlayerId = null;
     global.RunState.save(run);
     toast(`${reserve.name} entra tra i titolari`);
-    renderSquad();
+    runKeepingScroll(renderSquad);
   }
 
   function ensureCurrentZone() {
@@ -851,6 +889,7 @@
         </div>
         ${bottomNav("map")}
       </main>`;
+    resetRenderedViewScroll();
 
     document.querySelectorAll("[data-node-id]").forEach((button) => {
       button.addEventListener("click", () => enterNode(button.dataset.nodeId));
@@ -1044,7 +1083,7 @@
     const database = incoming.source === "season1" ? seasonDb : freeAgentsDb;
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Scambio completato</p><h2>È arrivato ${escapeHtml(incoming.player.name)}</h2></div></div>
-      <div class="trade-result-card">${playerCard(incoming.player, { level: nextLevel, database })}</div>
+      <div class="trade-result-card mobile-compact-player-list">${playerCard(incoming.player, { level: nextLevel, database })}</div>
       <div class="button-row"><button class="btn" id="trade-player-detail">Apri scheda</button><button class="btn btn-primary" id="finish-trade">Continua</button></div>`,
       { closeable: false }
     );
@@ -1595,6 +1634,7 @@
             <section class="panel five-match-controls"><button class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><div class="button-row"><button class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria</button><button class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button class="btn" id="edit-five-team">Modifica squadra</button></div></section>
           </div>
         </main>`;
+      resetRenderedViewScroll();
       bindBottomNav();
       document.querySelectorAll("[data-five-match-tab]").forEach((button) => button.addEventListener("click", () => runKeepingScroll(() => { ui.fiveMatchTab = button.dataset.fiveMatchTab; renderMatch(); })));
       document.querySelectorAll("[data-five-match-player]").forEach((button) => button.addEventListener("click", () => {
@@ -1680,6 +1720,7 @@
           <section class="panel boss-match-controls"><button class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><div class="button-row"><button class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria</button><button class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button class="btn" data-nav="squad">Torna alla squadra</button></div></section>
         </div>
       </main>`;
+    resetRenderedViewScroll();
 
     bindBottomNav();
     document.querySelectorAll("[data-boss-tab]").forEach((button) => button.addEventListener("click", () => runKeepingScroll(() => { ui.bossMatchTab = button.dataset.bossTab; renderMatch(); })));
@@ -1933,29 +1974,30 @@
         </div>
         ${bottomNav("five")}
       </main>`;
+    resetRenderedViewScroll();
 
     document.querySelectorAll("[data-five-formation]").forEach((button) => button.addEventListener("click", () => {
       global.FiveVFive.changeFormation(run, button.dataset.fiveFormation, fiveRoleForPlayerId);
       ui.fiveVFiveSelectedSlot = null;
       global.RunState.save(run);
-      renderFiveVFive(options);
+      runKeepingScroll(() => renderFiveVFive(options));
     }));
     document.querySelectorAll("[data-five-slot]").forEach((button) => button.addEventListener("click", () => {
       ui.fiveVFiveSelectedSlot = button.dataset.fiveSlot;
       const role = formation.slots.find((slot) => slot.key === ui.fiveVFiveSelectedSlot)?.role;
       ui.fiveVFiveRoleFilter = role || "all";
-      renderFiveVFive(options);
+      runKeepingScroll(() => renderFiveVFive(options));
     }));
     document.querySelectorAll("[data-five-filter]").forEach((button) => button.addEventListener("click", () => {
       ui.fiveVFiveRoleFilter = button.dataset.fiveFilter;
-      renderFiveVFive(options);
+      runKeepingScroll(() => renderFiveVFive(options));
     }));
     document.querySelectorAll("[data-five-player]").forEach((button) => button.addEventListener("click", () => {
       try {
         global.FiveVFive.assign(run, ui.fiveVFiveSelectedSlot, button.dataset.fivePlayer, fiveRoleForPlayerId);
         global.RunState.save(run);
         toast("Giocatore assegnato alla formazione 5v5");
-        renderFiveVFive(options);
+        runKeepingScroll(() => renderFiveVFive(options));
       } catch (error) {
         toast(error.message);
       }
@@ -1963,7 +2005,7 @@
     document.getElementById("clear-five-slot").addEventListener("click", () => {
       global.FiveVFive.clearSlot(run, ui.fiveVFiveSelectedSlot);
       global.RunState.save(run);
-      renderFiveVFive(options);
+      runKeepingScroll(() => renderFiveVFive(options));
     });
     document.getElementById("save-five").addEventListener("click", () => {
       const nextStatus = fiveVFiveStatus();
@@ -1995,6 +2037,7 @@
         </div>
         ${bottomNav("inventory")}
       </main>`;
+    resetRenderedViewScroll();
     document.querySelectorAll("[data-use-item]").forEach((button) => button.addEventListener("click", () => useInventoryItem(button.dataset.useItem)));
     document.querySelectorAll("[data-equip-item]").forEach((button) => button.addEventListener("click", () => chooseEquipmentPlayer(button.dataset.equipItem)));
     document.querySelectorAll("[data-unequip-player]").forEach((button) => button.addEventListener("click", () => unequipPlayerItem(button.dataset.unequipPlayer)));
@@ -2118,6 +2161,7 @@
         <div><p class="eyebrow">0 vite rimaste</p><h1>Run terminata</h1><p class="muted">Per riprovare devi ricominciare dalla scelta del modulo.</p>
         <div class="button-row"><button class="btn btn-yellow" id="restart-run">Nuova run</button><button class="btn" id="home">Menu</button></div></div>
       </main>`;
+    resetRenderedViewScroll();
     document.getElementById("restart-run").addEventListener("click", () => {
       openTeamNameModal();
     });
@@ -2127,6 +2171,7 @@
   function renderSeasonComplete() {
     app.innerHTML = `
       <main class="hero-screen"><div><p class="eyebrow">Season 1 completata</p><h1>Campioni!</h1><p class="muted">Hai sconfitto tutti i boss della prima stagione.</p><button class="btn btn-yellow" id="home">Torna al menu</button></div></main>`;
+    resetRenderedViewScroll();
     document.getElementById("home").addEventListener("click", renderHome);
   }
 
