@@ -46,6 +46,14 @@ assert(css.includes(".item-icon"), "item icons must have shared SVG styling");
 assert(css.includes(".item-assignment-layout"), "item assignment must reuse the tactical pitch layout responsively");
 assert(css.includes(".button-row { display: flex; flex-wrap: wrap;"), "pull action buttons must wrap cleanly for mobile/desktop controls");
 
+const appJs = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
+assert(appJs.includes('function resetViewScroll(viewElement = null)'), "UI must use a centralized resetViewScroll helper");
+assert(appJs.includes('function scrollTargetsForView(viewElement = null)'), "reset helper must inspect the real scrollable view/modal containers");
+assert(appJs.includes('behavior: "auto"') && !appJs.includes('behavior: "smooth"'), "scroll resets must be immediate on desktop and mobile");
+assert(appJs.includes('history.scrollRestoration = "manual"'), "browser restoration must not override app-level scroll resets");
+assert(appJs.includes('function afterNextPaint(callback)') && appJs.includes('requestAnimationFrame(() => requestAnimationFrame(callback))'), "scroll resets must be scheduled after rendering");
+assert(!/resetViewScroll[\s\S]{0,260}max-width: 780px|innerWidth\s*<=\s*780/.test(appJs), "resetViewScroll must not be guarded by a mobile-only breakpoint");
+
 const mime = {
   ".html": "text/html",
   ".css": "text/css",
@@ -164,6 +172,43 @@ server.listen(0, "127.0.0.1", async () => {
     assert(window.document.querySelectorAll(".map-node").length > 8);
     assert(window.document.querySelectorAll(".map-node.reachable").length > 0);
     assert(css.includes(".trade-squad-layout"), "trade modal should use tactical pitch layout styles");
+    const scrollWait = () => new Promise((resolve) => window.requestAnimationFrame(() => window.requestAnimationFrame(resolve)));
+    const activeView = () => window.document.querySelector("main");
+    activeView().scrollTop = 321;
+    window.document.scrollingElement.scrollTop = 321;
+    window.scrollTo(0, 321);
+    window.document.querySelector('[data-nav="inventory"]').click();
+    await waitFor(window, ".item-grid");
+    await scrollWait();
+    assert.equal(window.document.scrollingElement.scrollTop, 0, "opening inventory must reset document scroll on desktop viewport");
+    assert.equal(activeView().scrollTop, 0, "opening inventory must reset the active view container");
+    activeView().scrollTop = 222;
+    window.document.querySelector('[data-nav="map"]').click();
+    await waitFor(window, ".route-map");
+    await scrollWait();
+    assert.equal(activeView().scrollTop, 0, "opening route map must reset the active view container");
+    activeView().scrollTop = 177;
+    window.document.querySelector('[data-nav="squad"]').click();
+    await waitFor(window, ".pitch-row");
+    await scrollWait();
+    assert.equal(activeView().scrollTop, 0, "opening squad must reset the active view container");
+    activeView().scrollTop = 246;
+    const selectedBefore = activeView().scrollTop;
+    window.document.querySelector("#toggle-squad-edit").click();
+    await scrollWait();
+    assert.equal(activeView().scrollTop, selectedBefore, "internal squad edit toggle must preserve scroll");
+    window.document.querySelector("[data-squad-player]").click();
+    await waitFor(window, ".mini-player.selected");
+    await scrollWait();
+    assert.equal(activeView().scrollTop, selectedBefore, "internal player selection must preserve scroll");
+    window.document.querySelector("#toggle-squad-edit").click();
+    await scrollWait();
+    activeView().scrollTop = 199;
+    window.document.querySelector("[data-squad-player]").click();
+    await waitFor(window, ".player-detail-modal");
+    await scrollWait();
+    assert.equal(window.document.querySelector(".modal").scrollTop, 0, "player detail modal must open at the top");
+    window.document.querySelector("[data-close-modal]").click();
     assert(window.runKeepingScroll === undefined, "scroll helpers should stay internal to the app closure");
     assert(window.document.documentElement.innerHTML.includes("bottom-nav"));
     const mapScroll = window.document.querySelector("#map-scroll");
