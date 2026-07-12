@@ -46,6 +46,13 @@ assert(css.includes(".player-card-large"), "large pull cards must have a class d
 assert(css.includes(".player-card-compact, button.player-card-compact"), "compact tactical cards must override generic player-card button width");
 assert(css.includes(".mini-player.selected") && css.includes("outline: 3px solid #05070b"), "selected trade players must have a clear dark outline");
 assert(appJs.includes("runKeepingScroll") && appJs.includes("preserveScroll: scrollSnapshot()"), "trade selection and provisional win flows must preserve scroll");
+assert(appJs.includes("function setSelectedSquadPlayer(playerId)"), "squad editing must update selection classes incrementally");
+assert(appJs.includes("function swapSquadPlayersInDom(starterId, benchId)"), "squad swaps must update only the affected starter and bench cards");
+assert(!/function handleSquadSelection[\s\S]*?runKeepingScroll\(renderSquad\)[\s\S]*?function ensureCurrentZone/.test(appJs), "squad player selection must not rerender the squad screen");
+assert(appJs.includes("function setSelectedTradePlayer(playerId)"), "trade player selection must update selection classes incrementally");
+assert(appJs.includes("function updateTradeConfirmState()"), "trade player selection must update only confirm/summary state");
+assert(!/modalRoot\.querySelectorAll\(\"\[data-trade-player\]\"\)[\s\S]*?resolveTradeNode/.test(appJs), "trade player clicks must not rerender the trade modal");
+assert(appJs.includes('const main = app.querySelector("main");') && appJs.includes('main.addEventListener("click"'), "squad player clicks must use one delegated listener on the stable screen");
 assert(appJs.includes("focus({ preventScroll: true })"), "automatic focus must not force scroll movement");
 assert(appJs.includes('history.scrollRestoration = "manual"'), "browser scroll restoration must be disabled centrally");
 assert(appJs.includes('function resetViewScroll(viewElement = null)') && appJs.includes('function scrollTargetsForView(viewElement = null)'), "view scroll reset must be centralized and discover scrollable containers");
