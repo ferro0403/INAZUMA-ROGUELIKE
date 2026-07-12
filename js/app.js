@@ -1632,7 +1632,7 @@
   }
 
   function matchSeed(match) {
-    if (match.simulation?.seed) return match.simulation.seed;
+    if (match.simulation?.seed && match.simulation?.state !== "pre-match") return match.simulation.seed;
     return `${run.runId}:${match.type}:${match.nodeId}:${Date.now()}`;
   }
 
@@ -1640,38 +1640,66 @@
     return player ? { ...player, role: player.position, playerId: String(player.playerId) } : null;
   }
 
+  function matchLineupSignature(players) {
+    return players.map((player) => [player.playerId, player.displayLevel ?? player.level ?? "", player.overall ?? player.finalOverall ?? ""].join(":")).join("|");
+  }
+
+  function matchSnapshotFromTeam(team) {
+    return {
+      name: team.name,
+      playerIds: team.players.map((player) => String(player.playerId)),
+      lineupSignature: matchLineupSignature(team.players),
+      players: team.players.map((player) => ({ ...player })),
+    };
+  }
+
   function simulationTeamsForCurrentMatch(match, options = {}) {
     if (match.type === "five_v_five") {
       const userPlayersBySlot = fiveUserPlayersBySlot();
       const opponentPlayersBySlot = fiveOpponentPlayersBySlot(match);
+      const userPlayers = Object.values(userPlayersBySlot).map(normalizedMatchPlayer).filter(Boolean);
+      const opponentPlayers = Object.values(opponentPlayersBySlot).map(normalizedMatchPlayer).filter(Boolean);
       return {
         type: "five",
-        userTeam: { name: normalizeTeamIdentity(run.teamIdentity).name || "La tua squadra", players: Object.values(userPlayersBySlot).map(normalizedMatchPlayer).filter(Boolean) },
-        opponentTeam: { name: "Svincolati", players: Object.values(opponentPlayersBySlot).map(normalizedMatchPlayer).filter(Boolean) },
+        userTeam: { name: normalizeTeamIdentity(run.teamIdentity).name || "La tua squadra", players: userPlayers },
+        opponentTeam: { name: "Svincolati", players: opponentPlayers },
+        userSnapshot: matchSnapshotFromTeam({ name: normalizeTeamIdentity(run.teamIdentity).name || "La tua squadra", players: userPlayers }),
       };
     }
     const boss = options.boss || seasonDb.bossOrder[run.bossIndex];
     const meta = bossMatchTeamMeta(boss);
+    const userPlayers = userTeamPlayers().map(normalizedMatchPlayer).filter(Boolean);
+    const opponentPlayers = bossTeamPlayers(boss).map(normalizedMatchPlayer).filter(Boolean);
     return {
       type: "eleven",
-      userTeam: { name: meta.user.name, players: userTeamPlayers().map(normalizedMatchPlayer).filter(Boolean) },
-      opponentTeam: { name: meta.boss.name, players: bossTeamPlayers(boss).map(normalizedMatchPlayer).filter(Boolean) },
+      userTeam: { name: meta.user.name, players: userPlayers },
+      opponentTeam: { name: meta.boss.name, players: opponentPlayers },
+      userSnapshot: matchSnapshotFromTeam({ name: meta.user.name, players: userPlayers }),
     };
   }
 
   function ensureMatchPreview(match, options = {}) {
-    if (match.simulation?.valid) return match.simulation;
+    const existingState = match.simulation?.state || match.state || "pre-match";
+    if (match.simulation?.valid && existingState !== "pre-match" && !options.forceRefresh) return match.simulation;
     const teams = simulationTeamsForCurrentMatch(match, options);
-    const preview = global.MatchSimulator.simulate({ ...teams, seed: matchSeed(match) });
+    if (match.simulation?.valid && existingState === "pre-match" && !options.forceRefresh && match.simulation.userSnapshot?.lineupSignature === teams.userSnapshot.lineupSignature) return match.simulation;
+    const seed = options.freeze ? matchSeed(match) : (match.simulation?.seed || `${run.runId}:${match.type}:${match.nodeId}:preview`);
+    const preview = global.MatchSimulator.simulate({ type: teams.type, seed, userTeam: teams.userTeam, opponentTeam: teams.opponentTeam });
     if (!preview.valid) return preview;
     match.simulation = {
       ...preview,
-      state: match.simulation?.state || "pre-match",
-      revealedCount: match.simulation?.revealedCount || 0,
-      displayedScore: match.simulation?.displayedScore || { user: 0, opponent: 0 },
-      resolutionApplied: Boolean(match.simulation?.resolutionApplied),
-      manuallyResolved: Boolean(match.simulation?.manuallyResolved),
+      seed: options.freeze ? seed : null,
+      state: options.freeze ? "pre-match" : existingState,
+      revealedCount: options.freeze ? 0 : (match.simulation?.revealedCount || 0),
+      displayedScore: options.freeze ? { user: 0, opponent: 0 } : (match.simulation?.displayedScore || { user: 0, opponent: 0 }),
+      resolutionApplied: options.freeze ? false : Boolean(match.simulation?.resolutionApplied),
+      manuallyResolved: options.freeze ? false : Boolean(match.simulation?.manuallyResolved),
+      userSnapshot: teams.userSnapshot,
     };
+    match.lineupSnapshot = teams.userSnapshot;
+    match.userPlayerIds = teams.userSnapshot.playerIds.slice();
+    match.userStrength = match.simulation.userStrength;
+    match.probabilities = match.simulation.probabilities;
     match.score = [match.simulation.displayedScore.user, match.simulation.displayedScore.opponent];
     return match.simulation;
   }
@@ -1788,7 +1816,7 @@
 
   function startMatchSimulation(match, options = {}) {
     if (match.simulation?.state && match.simulation.state !== "pre-match") return;
-    const sim = ensureMatchPreview(match, options);
+    const sim = ensureMatchPreview(match, { ...options, forceRefresh: true, freeze: true });
     if (!sim.valid) return toast(sim.message || "Formazione non valida: impossibile simulare.");
     sim.seed = sim.seed || matchSeed(match);
     sim.state = "simulating";

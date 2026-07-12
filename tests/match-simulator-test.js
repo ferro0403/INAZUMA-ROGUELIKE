@@ -107,4 +107,28 @@ for (const type of ['eleven', 'five']) {
   assert.equal(r1.winner === 'user', r1.score.user > r1.score.opponent, `${type} score coherent with extracted winner`);
 }
 
+for (const type of ['five', 'eleven']) {
+  const current = makeTeam('SYNC', type, 72);
+  const removed = makeTeam('OLD', type, 72);
+  const opponent = makeTeam('OPP', type, 65);
+  const result = sim.simulate({ type, seed:`sync-${type}`, userTeam:current, opponentTeam:opponent });
+  assert(result.valid, `${type} synced lineup simulation must be valid`);
+  const currentIds = new Set(current.players.map((p) => String(p.playerId)));
+  const removedIds = new Set(removed.players.map((p) => String(p.playerId)));
+  assert.equal(result.userPlayerIds.length, type === 'five' ? 5 : 11, `${type} snapshot size`);
+  assert.equal(new Set(result.userPlayerIds).size, result.userPlayerIds.length, `${type} no duplicated snapshot ids`);
+  for (const event of result.timeline.filter((ev) => ev.team === 'user' && ev.playerId)) {
+    assert(currentIds.has(String(event.playerId)), `${type} user protagonist ${event.playerId} belongs to final snapshot`);
+    assert(!removedIds.has(String(event.playerId)), `${type} old lineup player ${event.playerId} is not in commentary`);
+    if (event.type === 'save') {
+      const gk = current.players.find((p) => p.position === 'GK');
+      assert.equal(String(event.playerId), String(gk.playerId), `${type} saves use final snapshot GK`);
+    }
+  }
+  assert.equal(sim.validateUserTimeline(result.timeline, current).valid, true, `${type} timeline validates against final snapshot`);
+  const invalid = sim.validateUserTimeline([{ minute: 1, type: 'shot', team: 'user', playerId: removed.players[0].playerId }], current);
+  assert.equal(invalid.valid, false, `${type} validator rejects removed lineup protagonist`);
+}
+
+
 console.log('Match simulator test passed. Controlled RNG: 80/85/90/95 thresholds verified; 5v5 and 11v11 tables are separate.');
