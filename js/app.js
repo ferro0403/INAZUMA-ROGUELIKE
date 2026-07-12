@@ -381,6 +381,11 @@
     });
   }
 
+  function cssEscape(value) {
+    if (global.CSS && typeof global.CSS.escape === "function") return global.CSS.escape(String(value));
+    return String(value).replace(/[^a-zA-Z0-9_-]/g, "\\$&");
+  }
+
   function playerPortraitUrl(player) {
     return player?.portraitUrl || player?.image || player?.imageUrl || player?.frontFullbodyUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='22' fill='%2311213f'/%3E%3Ccircle cx='60' cy='42' r='22' fill='%23ffd34f'/%3E%3Cpath d='M22 108c6-28 24-42 38-42s32 14 38 42' fill='%2385cdf5'/%3E%3C/svg%3E";
   }
@@ -734,7 +739,7 @@
     if (!player) return "";
     const selected = String(selectedId || ui.selectedSquadPlayerId) === String(id);
     const dataAttr = mode === "trade"
-      ? `data-trade-player="${escapeHtml(id)}"`
+      ? `data-trade-player="${escapeHtml(id)}" data-area="${area}"`
       : mode === "equip"
         ? `data-equip-player="${escapeHtml(id)}"`
         : mode === "consumable"
@@ -785,7 +790,7 @@
               <button type="button" class="btn ${ui.squadEditMode ? "btn-yellow" : ""}" id="toggle-squad-edit">${ui.squadEditMode ? "Termina modifiche" : "Modifica titolari"}</button>
             </div>
           </div>
-          <p class="muted small">${ui.squadEditMode ? "Seleziona un titolare e poi una riserva dello stesso ruolo per scambiarli." : "Seleziona un giocatore per aprire la scheda con statistiche, overall e potenziale."}</p>
+          <p class="muted small" data-squad-hint>${squadStatusText()}</p>
           <div class="squad-layout">
             ${squadPitchMarkup()}
             <aside class="panel">
@@ -812,17 +817,18 @@
       runKeepingScroll(renderSquad);
     });
 
-    document.querySelectorAll("[data-squad-player]").forEach((button) => {
-      button.addEventListener("click", () => {
-        ui.squadEditMode
-          ? handleSquadSelection(button.dataset.squadPlayer)
-          : showPlayerDetails(button.dataset.squadPlayer);
-      });
+    const main = app.querySelector("main");
+    main.addEventListener("click", (event) => {
+      const squadPlayer = event.target.closest("[data-squad-player]");
+      if (!squadPlayer || !main.contains(squadPlayer)) return;
+      event.preventDefault();
+      ui.squadEditMode
+        ? handleSquadSelection(squadPlayer.dataset.squadPlayer)
+        : showPlayerDetails(squadPlayer.dataset.squadPlayer);
     });
-    document.getElementById("toggle-squad-edit").addEventListener("click", () => {
-      ui.squadEditMode = !ui.squadEditMode;
-      ui.selectedSquadPlayerId = null;
-      runKeepingScroll(renderSquad);
+    document.getElementById("toggle-squad-edit").addEventListener("click", (event) => {
+      event.preventDefault();
+      setSquadEditMode(!ui.squadEditMode);
     });
     document.getElementById("go-map").addEventListener("click", () => {
       ensureCurrentZone();
@@ -833,39 +839,80 @@
     bindBottomNav();
   }
 
+  function squadStatusText() {
+    return ui.squadEditMode
+      ? "Seleziona un titolare e poi una riserva dello stesso ruolo per scambiarli."
+      : "Seleziona un giocatore per aprire la scheda con statistiche, overall e potenziale.";
+  }
+
+  function setSelectedSquadPlayer(playerId) {
+    const previous = ui.selectedSquadPlayerId;
+    if (previous) document.querySelector(`[data-squad-player="${cssEscape(previous)}"]`)?.classList.remove("selected");
+    ui.selectedSquadPlayerId = playerId ? String(playerId) : null;
+    if (ui.selectedSquadPlayerId) document.querySelector(`[data-squad-player="${cssEscape(ui.selectedSquadPlayerId)}"]`)?.classList.add("selected");
+  }
+
+  function setSquadEditMode(enabled) {
+    ui.squadEditMode = Boolean(enabled);
+    setSelectedSquadPlayer(null);
+    const button = document.getElementById("toggle-squad-edit");
+    if (button) {
+      button.textContent = ui.squadEditMode ? "Termina modifiche" : "Modifica titolari";
+      button.classList.toggle("btn-yellow", ui.squadEditMode);
+    }
+    const hint = document.querySelector("[data-squad-hint]");
+    if (hint) hint.textContent = squadStatusText();
+    if (!ui.squadEditMode) global.RunState.save(run);
+  }
+
+  function updateSquadPlayerCard(playerId) {
+    const current = document.querySelector(`[data-squad-player="${cssEscape(playerId)}"]`);
+    if (!current) return;
+    const area = current.dataset.area || (run.lineup.includes(String(playerId)) ? "lineup" : "bench");
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = tacticalMiniPlayer(playerId, { mode: "squad", area }).trim();
+    const next = wrapper.firstElementChild;
+    if (next) current.replaceWith(next);
+  }
+
+  function replaceSquadPlayerCard(current, nextPlayerId, area) {
+    if (!current) return;
+    const wrapper = document.createElement("div");
+    wrapper.innerHTML = tacticalMiniPlayer(nextPlayerId, { mode: "squad", area }).trim();
+    const next = wrapper.firstElementChild;
+    if (next) current.replaceWith(next);
+  }
+
+  function swapSquadPlayersInDom(starterId, benchId) {
+    const starterCard = document.querySelector(`[data-squad-player="${cssEscape(starterId)}"]`);
+    const benchCard = document.querySelector(`[data-squad-player="${cssEscape(benchId)}"]`);
+    replaceSquadPlayerCard(starterCard, benchId, "lineup");
+    replaceSquadPlayerCard(benchCard, starterId, "bench");
+  }
+
   function handleSquadSelection(playerId) {
     const selected = ui.selectedSquadPlayerId;
-    if (!selected) {
-      ui.selectedSquadPlayerId = String(playerId);
-      return runKeepingScroll(renderSquad);
-    }
-    if (selected === String(playerId)) {
-      ui.selectedSquadPlayerId = null;
-      return runKeepingScroll(renderSquad);
-    }
+    if (!selected) return setSelectedSquadPlayer(playerId);
+    if (selected === String(playerId)) return setSelectedSquadPlayer(null);
 
     const selectedInLineup = run.lineup.includes(selected);
     const clickedInLineup = run.lineup.includes(String(playerId));
-    if (selectedInLineup === clickedInLineup) {
-      ui.selectedSquadPlayerId = String(playerId);
-      return runKeepingScroll(renderSquad);
-    }
+    if (selectedInLineup === clickedInLineup) return setSelectedSquadPlayer(playerId);
 
     const starterId = selectedInLineup ? selected : String(playerId);
     const benchId = selectedInLineup ? String(playerId) : selected;
     const starter = sourcePlayer(rosterEntry(starterId));
     const reserve = sourcePlayer(rosterEntry(benchId));
     if (starter.position !== reserve.position) {
-      ui.selectedSquadPlayerId = null;
-      toast("Il sostituto deve avere lo stesso ruolo del titolare");
-      return runKeepingScroll(renderSquad);
+      setSelectedSquadPlayer(null);
+      return toast("Il sostituto deve avere lo stesso ruolo del titolare");
     }
     run.lineup[run.lineup.indexOf(starterId)] = benchId;
     run.bench[run.bench.indexOf(benchId)] = starterId;
-    ui.selectedSquadPlayerId = null;
+    setSelectedSquadPlayer(null);
+    swapSquadPlayersInDom(starterId, benchId);
     global.RunState.save(run);
     toast(`${reserve.name} entra tra i titolari`);
-    runKeepingScroll(renderSquad);
   }
 
   function ensureCurrentZone() {
@@ -1037,6 +1084,27 @@
     });
   }
 
+  function updateTradeConfirmState() {
+    const selected = ui.tradeSelectedPlayerId ? resolvedRosterPlayer(ui.tradeSelectedPlayerId) : null;
+    const summary = modalRoot.querySelector(".trade-selection-summary");
+    if (summary) {
+      summary.classList.toggle("selected", Boolean(selected));
+      summary.innerHTML = selected
+        ? `<strong>${escapeHtml(selected.name)}</strong><span>${selected.position} · OVR ${selected.overall} · Lv ${selected.displayLevel}</span>`
+        : '<strong>Nessun giocatore selezionato</strong><span>Scegli una card per procedere allo scambio.</span>';
+    }
+    const confirm = document.getElementById("continue-trade");
+    if (confirm) confirm.disabled = !selected;
+  }
+
+  function setSelectedTradePlayer(playerId) {
+    const previous = ui.tradeSelectedPlayerId;
+    if (previous) modalRoot.querySelector(`[data-trade-player="${cssEscape(previous)}"]`)?.classList.remove("selected");
+    ui.tradeSelectedPlayerId = playerId ? String(playerId) : null;
+    if (ui.tradeSelectedPlayerId) modalRoot.querySelector(`[data-trade-player="${cssEscape(ui.tradeSelectedPlayerId)}"]`)?.classList.add("selected");
+    updateTradeConfirmState();
+  }
+
   function resolveTradeNode(node) {
     ui.tradeSelectedPlayerId = ui.tradeSelectedPlayerId && rosterEntry(ui.tradeSelectedPlayerId) ? ui.tradeSelectedPlayerId : null;
     const selected = ui.tradeSelectedPlayerId ? resolvedRosterPlayer(ui.tradeSelectedPlayerId) : null;
@@ -1058,13 +1126,12 @@
       </div>`,
       { closeable: false, className: "trade-modal", preserveScroll: scrollSnapshot() }
     );
-    modalRoot.querySelectorAll("[data-trade-player]").forEach((button) => {
-      button.addEventListener("click", () => {
-        runKeepingScroll(() => {
-          ui.tradeSelectedPlayerId = String(button.dataset.tradePlayer);
-          resolveTradeNode(node);
-        });
-      });
+    const modal = modalRoot.querySelector(".modal");
+    modal.addEventListener("click", (event) => {
+      const tradePlayer = event.target.closest("[data-trade-player]");
+      if (!tradePlayer || !modal.contains(tradePlayer)) return;
+      event.preventDefault();
+      setSelectedTradePlayer(tradePlayer.dataset.tradePlayer);
     });
     document.getElementById("continue-trade").addEventListener("click", () => prepareTrade(node, ui.tradeSelectedPlayerId));
     document.getElementById("skip-trade").addEventListener("click", () => {
