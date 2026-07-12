@@ -72,6 +72,7 @@
     bossMatchResolving: false,
     fiveMatchTab: "user",
     matchPlaybackTimer: null,
+    returnToMatchContext: null,
   };
 
   function escapeHtml(value) {
@@ -1676,6 +1677,7 @@
     const simulating = state === "simulating";
     const simulate = document.getElementById("simulate-boss-match");
     const skip = document.getElementById("skip-match-result");
+    const cont = document.getElementById("continue-match-result");
     const status = document.querySelector(".boss-match-result-panel p");
     if (simulate) {
       simulate.disabled = simulating || resolved;
@@ -1684,6 +1686,10 @@
     if (skip) {
       skip.hidden = !simulating;
       skip.disabled = !simulating;
+    }
+    if (cont) {
+      cont.hidden = !resolved;
+      cont.disabled = !resolved || Boolean(ui.match?.postMatchNavigationApplied);
     }
     if (status) status.textContent = bossMatchStatusText();
   }
@@ -1696,6 +1702,8 @@
       sim.state = "completed";
       sim.displayedScore = { ...sim.score };
       match.score = [sim.score.user, sim.score.opponent];
+      ui.bossMatchState = sim.winner === "user" ? "completed-victory" : "completed-defeat";
+      match.state = ui.bossMatchState;
       persistMatchState();
       return applySimulationResolution(match);
     }
@@ -1726,7 +1734,7 @@
     match.score = [0, 0];
     persistMatchState();
     clearMatchPlaybackTimer();
-    renderMatch();
+    updateMatchControlsDom();
     ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.eventDelayMs || global.MatchSimulatorConfig.playbackMs);
   }
 
@@ -1748,8 +1756,8 @@
     sim.displayedScore = { ...sim.score };
     sim.state = "completed";
     match.score = [sim.score.user, sim.score.opponent];
-    ui.bossMatchState = "completed";
-    match.state = "completed";
+    ui.bossMatchState = sim.winner === "user" ? "completed-victory" : "completed-defeat";
+    match.state = ui.bossMatchState;
     ui.bossMatchLog = visibleTimeline(match);
     persistMatchState();
     appendMissingMatchLogEvents(missing);
@@ -1761,8 +1769,6 @@
   function applySimulationResolution(match) {
     const sim = match?.simulation;
     if (!sim || sim.resolutionApplied || sim.manuallyResolved) return;
-    sim.resolutionApplied = true;
-    persistMatchState();
     sim.winner === "user" ? (match.type === "five_v_five" ? completeFiveMatch("victory") : completeBossMatch("victory")) : (match.type === "five_v_five" ? completeFiveMatch("defeat") : completeBossMatch("defeat"));
   }
 
@@ -1770,8 +1776,11 @@
     clearMatchPlaybackTimer();
     if (ui.match?.simulation) {
       ui.match.simulation.manuallyResolved = true;
-      ui.match.simulation.state = "manual";
-      ui.match.simulation.resolutionApplied = true;
+      ui.match.simulation.state = "completed";
+      ui.match.simulation.winner = result === "victory" ? "user" : "opponent";
+      ui.match.simulation.score = result === "victory" ? { user: 2, opponent: 1 } : { user: 1, opponent: 2 };
+      ui.match.simulation.displayedScore = { ...ui.match.simulation.score };
+      ui.match.simulation.revealedCount = ui.match.simulation.timeline?.length || 0;
     }
     ui.match?.type === "five_v_five" ? completeFiveMatch(result) : completeBossMatch(result);
   }
@@ -1911,7 +1920,7 @@
               <section class="panel boss-match-log-panel"><h3>Cronaca</h3><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita">${bossMatchTimeline()}</ol></section>
               <section class="panel boss-match-result-panel"><h3>Risultato</h3><div class="boss-match-score"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(userName)}</span><span>${opponentName}</span></div></section>
             </div>
-            <section class="panel five-match-controls"><button type="button" class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><div class="button-row"><button type="button" class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button><button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button type="button" class="btn" id="edit-five-team">Modifica squadra</button></div></section>
+            <section class="panel five-match-controls"><button type="button" class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Continua</button><div class="button-row"><button type="button" class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button><button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button type="button" class="btn" id="edit-five-team">Modifica squadra</button></div></section>
           </div>
         </main>`;
       resetRenderedViewScroll();
@@ -1923,11 +1932,12 @@
         const player = Object.values(opponentPlayersBySlot).find((candidate) => String(candidate?.playerId) === String(id));
         showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: freeAgentsDb, preserveScroll: scrollSnapshot() });
       }));
-      document.getElementById("edit-five-team").addEventListener("click", () => renderFiveVFive({ returnToMatch: true }));
+      document.getElementById("edit-five-team").addEventListener("click", () => { ui.returnToMatchContext = { type: match.type, nodeId: match.nodeId, scroll: scrollSnapshot() }; match.returnScroll = ui.returnToMatchContext.scroll; persistMatchState(); renderFiveVFive({ returnToMatch: true }); });
       document.getElementById("test-win").addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("victory"); });
       document.getElementById("test-loss").addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("defeat"); });
       document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(match); });
       document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
+      document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch);
       persistMatchState();
       resumeMatchSimulationIfNeeded(match);
       return;
@@ -1993,7 +2003,7 @@
             <section class="panel boss-match-result-panel"><h3>Risultato</h3><div class="boss-match-score"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div></section>
           </div>
           <details class="panel boss-match-mobile-details"><summary>Info boss e ricompensa</summary><p>${escapeHtml(meta.boss.name)} · Lv ${escapeHtml(meta.boss.level)} · ${escapeHtml(meta.boss.formation)}</p><p>2 pick 1 di 3 dalla squadra battuta</p></details>
-          <section class="panel boss-match-controls"><button type="button" class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><div class="button-row"><button type="button" class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button><button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button type="button" class="btn" data-nav="squad">Torna alla squadra</button></div></section>
+          <section class="panel boss-match-controls"><button type="button" class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Continua</button><div class="button-row"><button type="button" class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button><button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button type="button" class="btn" data-nav="squad">Torna alla squadra</button></div></section>
         </div>
       </main>`;
     resetRenderedViewScroll();
@@ -2010,26 +2020,9 @@
     document.getElementById("test-loss").addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("defeat"); });
     document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(ui.match, { boss }); });
     document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
+    document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch);
     persistMatchState();
     resumeMatchSimulationIfNeeded(ui.match);
-  }
-
-  function completeFiveMatch(result) {
-    if (ui.bossMatchResolving || ui.bossMatchState.startsWith("completed")) return;
-    ui.bossMatchResolving = true;
-    ui.bossMatchState = result === "victory" ? "completed-victory" : "completed-defeat";
-    ui.bossMatchLog = [...ui.bossMatchLog, { minute: "FT", icon: result === "victory" ? "🏆" : "💔", text: result === "victory" ? "Vittoria 5v5 confermata." : "Sconfitta 5v5 confermata." }];
-    if (ui.match) { ui.match.result = result; ui.match.score = result === "victory" ? [2, 1] : [1, 2]; }
-    persistMatchState();
-    result === "victory" ? winMatch() : loseMatch();
-  }
-
-  function completeBossMatch(result) {
-    if (ui.bossMatchResolving || ui.bossMatchState.startsWith("completed")) return;
-    ui.bossMatchResolving = true;
-    ui.bossMatchState = result === "victory" ? "completed-victory" : "completed-defeat";
-    ui.bossMatchLog = [...ui.bossMatchLog, { minute: "FT", icon: result === "victory" ? "🏆" : "💔", text: result === "victory" ? "Vittoria confermata: flusso ricompensa boss esistente." : "Sconfitta confermata: flusso vite esistente." }];
-    result === "victory" ? winMatch() : loseMatch();
   }
 
   function addLevels(amount) {
@@ -2039,37 +2032,84 @@
     });
   }
 
-  function winMatch() {
-    if (!ui.match || ui.bossMatchResolving === "done") return;
-    const node = run.currentZone.nodes.find((item) => item.id === ui.match.nodeId);
-    if (ui.match.type === "five_v_five") {
-      addLevels(0.5);
-      global.MapEngine.completeNode(run.currentZone, node.id);
-      run.phase = "map";
-      ui.match = null;
-      run.activeMatch = null;
-      global.RunState.save(run);
-      toast("Vittoria: tutta la rosa guadagna 0,5 livelli");
-      return renderMap();
+  function appendFinalMatchMessage(result, boss = false) {
+    const text = boss
+      ? (result === "victory" ? "Vittoria confermata: premi Continua per aprire le ricompense boss." : "Sconfitta confermata: premi Continua per tornare al checkpoint.")
+      : (result === "victory" ? "Vittoria 5v5 confermata: premi Continua per tornare al percorso." : "Sconfitta 5v5 confermata: premi Continua per tornare al checkpoint.");
+    if (!ui.bossMatchLog.some((event) => event.minute === "FT")) {
+      ui.bossMatchLog = [...ui.bossMatchLog, { minute: "FT", icon: result === "victory" ? "🏆" : "💔", text }];
+      appendMatchLogEvent(ui.bossMatchLog.at(-1));
     }
-    addLevels(1);
-    global.MapEngine.completeNode(run.currentZone, node.id);
-    ui.bossMatchResolving = "done";
-    ui.match = null;
-    run.activeMatch = null;
-    startBossRewards();
   }
 
-  function loseMatch() {
-    if (!ui.match || ui.bossMatchResolving === "done") return;
+  function completeFiveMatch(result) {
+    const match = ui.match;
+    if (!match?.simulation || match.simulation.resolutionApplied) return;
+    match.simulation.resolutionApplied = true;
     ui.bossMatchResolving = "done";
+    ui.bossMatchState = result === "victory" ? "completed-victory" : "completed-defeat";
+    match.state = ui.bossMatchState;
+    match.result = result;
+    if (match.simulation?.score) match.score = [match.simulation.score.user, match.simulation.score.opponent];
+    const node = run.currentZone.nodes.find((item) => item.id === match.nodeId);
+    if (result === "victory") {
+      addLevels(0.5);
+      if (node) global.MapEngine.completeNode(run.currentZone, node.id);
+      match.pendingPostMatchAction = { type: "map", toast: "Vittoria: tutta la rosa guadagna 0,5 livelli" };
+    } else {
+      global.RunState.restoreAfterLoss(run);
+      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: `Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Percorso ripristinato.` };
+    }
+    run.phase = "match";
+    run.activeMatch = match;
+    appendFinalMatchMessage(result, false);
+    persistMatchState();
+    updateMatchScoreDom(match, true);
+    updateMatchControlsDom();
+  }
+
+  function completeBossMatch(result) {
+    const match = ui.match;
+    if (!match?.simulation || match.simulation.resolutionApplied) return;
+    match.simulation.resolutionApplied = true;
+    ui.bossMatchResolving = "done";
+    ui.bossMatchState = result === "victory" ? "completed-victory" : "completed-defeat";
+    match.state = ui.bossMatchState;
+    match.result = result;
+    if (match.simulation?.score) match.score = [match.simulation.score.user, match.simulation.score.opponent];
+    const node = run.currentZone.nodes.find((item) => item.id === match.nodeId);
+    if (result === "victory") {
+      addLevels(1);
+      if (node) global.MapEngine.completeNode(run.currentZone, node.id);
+      match.pendingPostMatchAction = { type: "boss-rewards" };
+    } else {
+      global.RunState.restoreAfterLoss(run);
+      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: `Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Percorso ripristinato.` };
+    }
+    run.phase = "match";
+    run.activeMatch = match;
+    appendFinalMatchMessage(result, true);
+    persistMatchState();
+    updateMatchScoreDom(match, true);
+    updateMatchControlsDom();
+  }
+
+  function continueAfterMatch(event) {
+    event?.preventDefault();
+    const match = ui.match || run.activeMatch;
+    if (!match || match.postMatchNavigationApplied) return;
+    match.postMatchNavigationApplied = true;
+    const action = match.pendingPostMatchAction || { type: "map" };
     ui.match = null;
     run.activeMatch = null;
-    global.RunState.restoreAfterLoss(run);
-    closeModal();
-    if (run.gameOver) return renderGameOver();
-    toast(`Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Percorso ripristinato.`);
-    renderMap();
+    ui.bossMatchResolving = false;
+    global.RunState.save(run);
+    if (action.toast) toast(action.toast);
+    if (action.type === "boss-rewards") return startBossRewards();
+    if (action.type === "game-over") return renderGameOver();
+    run.phase = "map";
+    global.RunState.save(run);
+    return renderMap();
   }
 
   function startBossRewards() {
@@ -2330,6 +2370,21 @@
       if (!nextStatus.valid) return toast("Completa tutti e cinque gli slot prima di salvare.");
       global.RunState.save(run);
       toast("Formazione 5v5 salvata");
+    });
+    document.getElementById("back-five-match")?.addEventListener("click", (event) => {
+      event.preventDefault();
+      const nextStatus = fiveVFiveStatus();
+      if (!nextStatus.valid) return toast(nextStatus.messages?.[0] || "Formazione non valida: completa tutti gli slot prima di tornare alla partita.");
+      const context = ui.returnToMatchContext || run.activeMatch;
+      const match = run.activeMatch?.type === "five_v_five" ? run.activeMatch : null;
+      if (!context || !match) return toast("Nessuna partita da riprendere.");
+      global.RunState.save(run);
+      ui.match = match;
+      ui.bossMatchState = match.state || "pre-match";
+      ui.bossMatchLog = match.log || visibleTimeline(match);
+      run.phase = "match";
+      renderMatch();
+      restoreScroll(match.returnScroll || context.scroll || scrollSnapshot());
     });
     bindBottomNav();
   }
