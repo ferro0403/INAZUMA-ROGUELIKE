@@ -47,6 +47,13 @@ assert(css.includes(".item-assignment-layout"), "item assignment must reuse the 
 assert(css.includes(".button-row { display: flex; flex-wrap: wrap;"), "pull action buttons must wrap cleanly for mobile/desktop controls");
 
 const appJs = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
+const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
+assert(indexHtml.includes("js/match-simulator-config.js") && indexHtml.includes("js/match-simulator.js"), "match simulator scripts must be loaded before app.js");
+assert(appJs.includes("Simula partita"), "match screens must expose the Simula partita button");
+assert(appJs.includes("Vittoria sicura"), "manual safe victory control must remain visible");
+assert(appJs.includes("startMatchSimulation") && appJs.includes("resolutionApplied"), "match UI must persist simulation and guard one-time resolution");
+assert(css.includes(".boss-match-log.match-sim-log") && css.includes("overflow-y: auto") && css.includes("-webkit-overflow-scrolling: touch"), "match commentary must be internally scrollable on desktop and touch devices");
+
 assert(appJs.includes('function resetViewScroll(viewElement = null)'), "UI must use a centralized resetViewScroll helper");
 assert(appJs.includes('function scrollTargetsForView(viewElement = null)'), "reset helper must inspect the real scrollable view/modal containers");
 assert(appJs.includes('behavior: "auto"') && !appJs.includes('behavior: "smooth"'), "scroll resets must be immediate on desktop and mobile");
