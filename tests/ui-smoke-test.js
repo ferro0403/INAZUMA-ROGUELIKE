@@ -44,6 +44,8 @@ assert(css.includes(".player-card-compact .player-overall"), "compact player car
 assert(css.includes(".player-card-compact .player-equipment"), "compact player cards must render equipped items as corner icons only");
 assert(css.includes(".item-icon"), "item icons must have shared SVG styling");
 assert(css.includes(".item-assignment-layout"), "item assignment must reuse the tactical pitch layout responsively");
+assert(css.includes(".button-row { display: flex; flex-wrap: wrap;"), "pull action buttons must wrap cleanly for mobile/desktop controls");
+
 const mime = {
   ".html": "text/html",
   ".css": "text/css",

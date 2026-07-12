@@ -15,15 +15,8 @@
     Mondiale: "rarity-mondiale",
     Leggenda: "rarity-leggenda",
   };
-  const CATEGORY_LADDER = ["Scarso", "Debole", "Normale", "Buono", "Forte", "Elite", "Mondiale", "Leggenda"];
-
   function rarityClass(category) {
     return CATEGORY_CLASS_BY_NAME[category] || "rarity-debole";
-  }
-
-  function improvedCategory(category) {
-    const index = CATEGORY_LADDER.indexOf(category);
-    return CATEGORY_LADDER[Math.min(CATEGORY_LADDER.length - 1, Math.max(0, index) + 1)];
   }
 
   function itemIcon(itemOrId) {
@@ -183,8 +176,16 @@
     if (!run) return;
     run.inventory = Array.isArray(run.inventory) ? run.inventory : [];
     run.teamIdentity = normalizeTeamIdentity(run.teamIdentity);
-    run.effects = run.effects || { luckyPulls: 0 };
-    run.effects.luckyPulls = Number(run.effects.luckyPulls || 0);
+    run.effects = run.effects || {};
+    const legacyLuckyPulls = Number(run.effects.luckyPulls || run.luckyCharmActive || run.nextPullBoost || 0);
+    if (legacyLuckyPulls > 0 && !run.effects.luckyPullsMigrated) {
+      const luckyDefinition = global.SEASON1_CONFIG.itemPool.find((item) => item.id === "lucky_charm");
+      for (let index = 0; index < legacyLuckyPulls; index += 1) run.inventory.push(makeItemInstance(luckyDefinition, `legacy_lucky_${index}`));
+      run.effects.luckyPullsMigrated = true;
+    }
+    delete run.effects.luckyPulls;
+    delete run.luckyCharmActive;
+    delete run.nextPullBoost;
     run.randomEventHistory = Array.isArray(run.randomEventHistory) ? run.randomEventHistory : [];
     run.activeMatch = run.activeMatch || null;
     run.roster = (run.roster || []).map((entry) => ({ ...entry, equippedItem: entry.equippedItem || null }));
@@ -1136,68 +1137,102 @@
     };
   }
 
-  function selectWeightedCandidates(available, random, luckyApplied, originalCandidates = null) {
-    if (!luckyApplied) return global.DraftEngine.shuffle(available, random).slice(0, 3);
-    if (originalCandidates?.length) {
-      const result = [];
-      const remaining = global.DraftEngine.shuffle(available, random);
-      originalCandidates.forEach((original) => {
-        const minRank = Number(global.SEASON1_CONFIG.categoryRanks[improvedCategory(original.category)] || 0);
-        const index = remaining.findIndex((player) => Number(global.SEASON1_CONFIG.categoryRanks[player.category] || 0) >= minRank);
-        if (index >= 0) result.push(remaining.splice(index, 1)[0]);
-      });
-      return result.concat(remaining.filter((player) => !result.includes(player)).slice(0, 3 - result.length)).slice(0, 3);
-    }
-    const result = [];
-    const remaining = available.slice();
-    while (result.length < 3 && remaining.length) {
-      const weights = remaining.map((player) =>
-        1 + Number(global.SEASON1_CONFIG.categoryRanks[player.category] || 0) * global.SEASON1_CONFIG.luckyCharmWeightPerRank
-      );
-      let cursor = random() * weights.reduce((sum, weight) => sum + weight, 0);
-      let selectedIndex = 0;
-      for (let index = 0; index < weights.length; index += 1) {
-        cursor -= weights[index];
-        if (cursor <= 0) { selectedIndex = index; break; }
-      }
-      result.push(remaining.splice(selectedIndex, 1)[0]);
-    }
-    return result;
+  function selectWeightedCandidates(available, random) {
+    return global.DraftEngine.shuffle(available, random).slice(0, 3);
   }
 
-  function pullCandidates(pool, node, luckyApplied) {
+  function categoryRank(category) {
+    return Number(global.SEASON1_CONFIG.categoryRanks[category] ?? 0);
+  }
+
+  function improvedCategory(category) {
+    const ranks = global.SEASON1_CONFIG.categoryRanks;
+    const ordered = Object.keys(ranks).sort((left, right) => ranks[left] - ranks[right]);
+    const index = ordered.indexOf(category);
+    return ordered[Math.min(index < 0 ? 0 : index + 1, ordered.length - 1)] || category;
+  }
+
+  function pullCandidates(pool, node) {
+    if (node.pullState?.candidateIds?.length) {
+      return node.pullState.candidateIds.map((id) => pool.players.find((player) => String(player.playerId) === String(id))).filter(Boolean);
+    }
     const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
     const excluded = new Set(node.pullState.excludedCandidateIds || []);
     const available = pool.players.filter((player) => !owned.has(String(player.playerId)) && !excluded.has(String(player.playerId)));
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:pull:${node.pullState.rerolls}`);
-    const baseRandom = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:pull:${node.pullState.rerolls}:base`);
-    const originalCandidates = luckyApplied ? global.DraftEngine.shuffle(available, baseRandom).slice(0, 3) : null;
-    return selectWeightedCandidates(available, random, luckyApplied, originalCandidates);
+    const candidates = selectWeightedCandidates(available, random);
+    node.pullState.candidateIds = candidates.map((player) => String(player.playerId));
+    return candidates;
+  }
+
+  function luckyCharmPoolForPull(pullType) {
+    if (pullType === "pull_free_agents") return pullPool(pullType);
+    if (pullType === "pull_unlocked_teams") return { players: seasonDb.players, source: "season1", database: seasonDb };
+    return null;
+  }
+
+  function chooseLuckyUpgrade(original, available, usedIds, random) {
+    const requiredRank = categoryRank(improvedCategory(original.category));
+    const originalRank = categoryRank(original.category);
+    const role = original.position;
+    const shuffled = global.DraftEngine.shuffle(available.filter((player) => !usedIds.has(String(player.playerId))), random);
+    const exactUpgrade = shuffled.filter((player) => categoryRank(player.category) === requiredRank);
+    const higherUpgrade = shuffled.filter((player) => categoryRank(player.category) > requiredRank);
+    const sameRankFallback = shuffled.filter((player) => categoryRank(player.category) === originalRank);
+    const anyNotWeaker = shuffled.filter((player) => categoryRank(player.category) >= originalRank);
+    for (const tier of [exactUpgrade, higherUpgrade, sameRankFallback, anyNotWeaker]) {
+      const sameRole = tier.filter((player) => player.position === role);
+      if (sameRole.length) return sameRole[0];
+      if (tier.length) return tier[0];
+    }
+    return shuffled[0] || original;
+  }
+
+  function useLuckyCharmOnPull(node, pullType, currentCandidates) {
+    if (!["pull_free_agents", "pull_unlocked_teams"].includes(pullType)) return toast("Portafortuna non utilizzabile in questa selezione.");
+    if (node.pullState.luckyCharmUsed) return toast("Portafortuna già utilizzato in questa pull.");
+    const luckyCharm = run.inventory.find((item) => item.effect === "lucky_pull");
+    if (!luckyCharm) return toast("Nessun Portafortuna disponibile.");
+    const pool = luckyCharmPoolForPull(pullType);
+    const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
+    const available = pool.players.filter((player) => !owned.has(String(player.playerId)));
+    const usedIds = new Set();
+    const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:lucky:${node.pullState.rerolls}`);
+    const upgraded = currentCandidates.map((candidate) => {
+      const selected = chooseLuckyUpgrade(candidate, available, usedIds, random);
+      usedIds.add(String(selected.playerId));
+      return selected;
+    });
+    removeInventoryItem(luckyCharm.instanceId);
+    node.pullState.luckyCharmUsed = true;
+    node.pullState.candidateIds = upgraded.map((player) => String(player.playerId));
+    global.RunState.save(run);
+    openPull(node, pullType);
   }
 
   function openPull(node, pullType = node.type) {
     const pool = pullPool(pullType);
     if (!node.pullState) {
-      const luckyEligible = ["pull_free_agents", "pull_unlocked_teams"].includes(pullType);
-      const luckyApplied = luckyEligible && Number(run.effects.luckyPulls || 0) > 0;
-      if (luckyApplied) run.effects.luckyPulls -= 1;
-      node.pullState = { pullType, rerolls: 0, excludedCandidateIds: [], luckyApplied };
+      node.pullState = { pullType, rerolls: 0, excludedCandidateIds: [], luckyCharmUsed: false, candidateIds: [] };
     }
-    const candidates = pullCandidates(pool, node, node.pullState.luckyApplied);
+    const candidates = pullCandidates(pool, node);
     const level = previousBossLevel();
     const scoutToken = run.inventory.find((item) => item.effect === "pull_reroll");
+    const luckyCharm = run.inventory.find((item) => item.effect === "lucky_pull");
     const legendaryPull = pullType === "pull_legendary";
+    const luckyCompatible = ["pull_free_agents", "pull_unlocked_teams"].includes(pullType);
     const rerollPull = () => {
       if (legendaryPull) return toast("Il Gettone scout non può essere utilizzato nelle pull leggendarie.");
       removeInventoryItem(scoutToken.instanceId);
       node.pullState.excludedCandidateIds.push(...candidates.map((player) => String(player.playerId)));
       node.pullState.rerolls += 1;
+      node.pullState.candidateIds = [];
       global.RunState.save(run);
       openPull(node, pullType);
     };
     showPlayerOffer({
       title: global.SEASON1_CONFIG.nodeLabels[pullType].label,
-      subtitle: `Scegli 1 giocatore su 3 · Livello ${level}${node.pullState.luckyApplied ? " · Portafortuna attivo" : ""}`,
+      subtitle: `Scegli 1 giocatore su 3 · Livello ${level}${node.pullState.luckyCharmUsed ? " · Portafortuna già utilizzato" : ""}`,
       candidates,
       source: pool.source,
       sourceForPlayer: pool.sourceForPlayer,
@@ -1207,6 +1242,10 @@
       onReroll: scoutToken ? rerollPull : null,
       rerollDisabled: Boolean(scoutToken && legendaryPull),
       rerollDisabledMessage: legendaryPull ? "Il Gettone scout non può essere utilizzato nelle pull leggendarie." : "",
+      onLuckyCharm: luckyCompatible && luckyCharm ? () => useLuckyCharmOnPull(node, pullType, candidates) : null,
+      luckyCharmCount: run.inventory.filter((item) => item.effect === "lucky_pull").length,
+      luckyCharmDisabled: Boolean(!luckyCompatible || node.pullState.luckyCharmUsed || !luckyCharm),
+      luckyCharmDisabledMessage: !luckyCompatible ? "Portafortuna non utilizzabile in questa selezione." : node.pullState.luckyCharmUsed ? "Portafortuna già utilizzato" : !luckyCharm ? "Nessun Portafortuna disponibile" : "",
       onPick: (player) => {
         const playerSource = pool.sourceForPlayer ? pool.sourceForPlayer(player) : pool.source;
         recruitPlayer(player, playerSource, level, (added) => {
@@ -1253,6 +1292,9 @@
     const rerollButton = options.onReroll
       ? `<button class="btn btn-yellow" id="reroll-offer" ${options.rerollDisabled ? "disabled" : ""}>Usa gettone scout</button>`
       : "";
+    const luckyButton = options.onLuckyCharm || options.luckyCharmDisabledMessage
+      ? `<button class="btn btn-yellow" id="lucky-charm-offer" ${options.luckyCharmDisabled ? "disabled" : ""}>${options.luckyCharmDisabled && options.luckyCharmDisabledMessage ? escapeHtml(options.luckyCharmDisabledMessage) : `Usa Portafortuna ×${Number(options.luckyCharmCount || 0)}`}</button>`
+      : "";
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Scelta giocatore</p><h2>${escapeHtml(options.title)}</h2><p class="muted">${escapeHtml(options.subtitle)}</p></div></div>
       <div class="candidate-grid pull-offer-grid">
@@ -1261,6 +1303,7 @@
       ${options.rerollDisabledMessage ? `<p class="muted small">${escapeHtml(options.rerollDisabledMessage)}</p>` : ""}
       <div class="button-row" style="margin-top:18px">
         ${rerollButton}
+        ${luckyButton}
         ${options.allowSkip ? '<button class="btn btn-ghost" id="skip-offer">Rinuncia</button>' : ""}
       </div>`,
       { closeable: false }
@@ -1274,6 +1317,10 @@
     document.getElementById("reroll-offer")?.addEventListener("click", () => {
       if (options.rerollDisabled) return toast(options.rerollDisabledMessage || "Gettone scout non disponibile");
       options.onReroll();
+    });
+    document.getElementById("lucky-charm-offer")?.addEventListener("click", () => {
+      if (options.luckyCharmDisabled || !options.onLuckyCharm) return toast(options.luckyCharmDisabledMessage || "Portafortuna non disponibile");
+      options.onLuckyCharm();
     });
     document.getElementById("skip-offer")?.addEventListener("click", options.onSkip);
   }
@@ -1718,7 +1765,7 @@
 
   function startBossRewards() {
     const boss = seasonDb.bossOrder[run.bossIndex];
-    ui.pendingReward = { boss, remaining: 2, excludedIds: [], rerolls: 0, luckyApplied: false };
+    ui.pendingReward = { boss, remaining: 2, excludedIds: [], rerolls: 0 };
     global.RunState.save(run);
     showNextBossReward();
   }
@@ -1731,12 +1778,12 @@
     const available = team.playerIds
       .map((id) => seasonPlayersById.get(String(id)))
       .filter((player) => player && !owned.has(String(player.playerId)) && !reward.excludedIds.includes(String(player.playerId)));
-    const candidates = selectWeightedCandidates(available, random, reward.luckyApplied);
+    const candidates = selectWeightedCandidates(available, random);
     const level = global.RoguelikeRules.defeatedBossRewardLevel(reward.boss);
     const scoutToken = run.inventory.find((item) => item.effect === "pull_reroll");
     showPlayerOffer({
       title: `Ricompensa ${3 - reward.remaining} di 2 · ${reward.boss.teamName}`,
-      subtitle: `Scegli 1 giocatore su 3 · Livello ${level}${reward.luckyApplied ? " · Portafortuna attivo" : ""}`,
+      subtitle: `Scegli 1 giocatore su 3 · Livello ${level}`,
       candidates,
       source: "season1",
       database: seasonDb,
@@ -1763,7 +1810,6 @@
     const reward = ui.pendingReward;
     reward.remaining -= 1;
     reward.rerolls = 0;
-    reward.luckyApplied = false;
     reward.remaining > 0 ? showNextBossReward() : finishBossVictory();
   }
 
@@ -1960,7 +2006,9 @@
       ? `<button class="btn btn-primary" data-equip-item="${item.instanceId}">Assegna</button>`
       : item.effect === "pull_reroll"
         ? '<span class="muted small">Utilizzabile durante una pull</span>'
-        : `<button class="btn btn-primary" data-use-item="${item.instanceId}">Usa</button>`;
+        : item.effect === "lucky_pull"
+          ? '<span class="muted small">Utilizzabile durante una Pull svincolati o Pull squadre</span>'
+          : `<button class="btn btn-primary" data-use-item="${item.instanceId}">Usa</button>`;
     return `<article class="item-card static-item">${itemIcon(item)}<span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p>${action}</article>`;
   }
 
@@ -1983,13 +2031,7 @@
       toast("Hai recuperato una vita");
       return renderInventory();
     }
-    if (item.effect === "lucky_pull") {
-      run.effects.luckyPulls += Number(item.amount || 1);
-      removeInventoryItem(instanceId);
-      global.RunState.save(run);
-      toast("Portafortuna attivo sulla prossima pull");
-      return renderInventory();
-    }
+    if (item.effect === "lucky_pull") return toast("Portafortuna utilizzabile durante una Pull svincolati o Pull squadre.");
   }
 
   function choosePlayerForConsumable(item) {
