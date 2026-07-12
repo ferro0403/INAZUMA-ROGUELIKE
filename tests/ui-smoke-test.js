@@ -13,6 +13,13 @@ const css = fs.readFileSync(path.join(root, "css/game.css"), "utf8");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.route-map[\s\S]*?min-width:\s*0/.test(css), "mobile route map must not keep the desktop 620px min width");
 assert(css.includes(".route-map::before") && css.includes("pointer-events: none"), "route map field layers must be decorative and not intercept clicks");
 assert(css.includes("repeating-linear-gradient(90deg") && css.includes("radial-gradient(circle at 50% 50%"), "route map must render a striped soccer field with center-circle lines");
+const routeMapBefore = css.match(/\.route-map::before\s*\{([\s\S]*?)\n\}/)?.[1] || "";
+assert(routeMapBefore.includes("radial-gradient(circle at 50% 50%"), "route map center circle must remain visible");
+assert(routeMapBefore.includes("transparent calc(50%") && routeMapBefore.includes("calc(50% +"), "route map half-way line must remain visible");
+assert(!/linear-gradient\(90deg,\s*rgba\(244,255,242,[^)]+\) 0 0\)\s*(?:left|right) 50% top 50% \/ 18% 24% no-repeat/.test(css), "desktop route map must not draw filled center/penalty panels");
+assert(!/background(?:-color)?:\s*rgba\(255,\s*255,\s*255/.test(routeMapBefore), "route map field layer must not use a white translucent background");
+assert(css.includes("pointer-events: none"), "route map decorative layers must not intercept clicks");
+
 assert(css.includes(".boss-node-logo") && css.includes("object-fit: contain"), "boss node logos must keep original proportions inside the node");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.map-wrap[\s\S]*?overflow-x:\s*hidden/.test(css), "mobile map wrapper must hide horizontal overflow");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.pitch-row, \.tactical-row\s*\{[^}]*--pitch-card-size:[^}]*display:\s*grid[\s\S]*?grid-template-columns:\s*repeat\(var\(--row-count, var\(--players-in-row, 1\)\), minmax\(0, var\(--pitch-card-size\)\)\)/.test(css), "mobile tactical rows must keep compact fixed-width card columns by row count");

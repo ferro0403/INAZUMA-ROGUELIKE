@@ -34,6 +34,13 @@ assert(mobileMedia.includes(".route-map"), "mobile route map rules must exist");
 assert(mobileMedia.includes("min-width: 0"), "mobile route map must remove the 620px minimum width");
 assert(mobileMedia.includes("overflow-x: hidden"), "mobile map container must prevent horizontal overflow");
 assert(mobileMedia.includes("touch-action: pan-y"), "mobile map must keep vertical panning without horizontal dragging");
+const routeMapBefore = css.match(/\.route-map::before\s*\{([\s\S]*?)\n\}/)?.[1] || "";
+assert(routeMapBefore.includes("radial-gradient(circle at 50% 50%"), "route map center circle must remain visible");
+assert(routeMapBefore.includes("transparent calc(50%") && routeMapBefore.includes("calc(50% +"), "route map half-way line must remain visible");
+assert(!/linear-gradient\(90deg,\s*rgba\(244,255,242,[^)]+\) 0 0\)\s*(?:left|right) 50% top 50% \/ 18% 24% no-repeat/.test(css), "desktop route map must not draw filled center/penalty panels");
+assert(!/background(?:-color)?:\s*rgba\(255,\s*255,\s*255/.test(routeMapBefore), "route map field layer must not use a white translucent background");
+assert(css.includes("pointer-events: none"), "route map decorative layers must not intercept clicks");
+
 assert(mobileMedia.includes("--pitch-card-size"), "mobile squad cards must use a constant base card size");
 assert(mobileMedia.includes("var(--pitch-card-size)"), "mobile squad rows must not stretch cards based on row count");
 assert(mobileMedia.includes("width: min(100%, calc(100vw - 24px))"), "mobile player detail modal must fit and center inside viewport");
