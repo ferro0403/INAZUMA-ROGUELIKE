@@ -47,6 +47,14 @@ assert(css.includes(".player-card-compact, button.player-card-compact"), "compac
 assert(css.includes(".mini-player.selected") && css.includes("outline: 3px solid #05070b"), "selected trade players must have a clear dark outline");
 assert(appJs.includes("runKeepingScroll") && appJs.includes("preserveScroll: scrollSnapshot()"), "trade selection and provisional win flows must preserve scroll");
 assert(appJs.includes("focus({ preventScroll: true })"), "automatic focus must not force scroll movement");
+assert(appJs.includes('history.scrollRestoration = "manual"'), "browser scroll restoration must be disabled centrally");
+assert(appJs.includes('function resetViewScroll(viewElement = null)') && appJs.includes('function scrollTargetsForView(viewElement = null)'), "view scroll reset must be centralized and discover scrollable containers");
+assert(appJs.includes('requestAnimationFrame(() => requestAnimationFrame(callback))'), "view scroll reset must run after render/paint");
+assert(appJs.includes('behavior: "auto"') && !appJs.includes('behavior: "smooth"'), "scroll reset must be immediate and never smooth");
+assert(!/resetViewScroll[\s\S]{0,260}innerWidth|matchMedia\?\.\("\(max-width: 780px\)"\)[\s\S]{0,260}resetViewScroll/.test(appJs), "scroll reset must not be limited to mobile breakpoints");
+assert(appJs.includes('appTop') && appJs.includes('viewTop') && appJs.includes('modalTop'), "scroll snapshots must preserve app, view and modal positions for internal interactions");
+assert(appJs.includes('setScrollPosition(activeView') && appJs.includes('setScrollPosition(modal'), "returning from modal/internal updates must restore the previous context scroll");
+assert(!appJs.includes('return runKeepingScroll(renderMap);'), "opening the route after match resolution must be treated as a new view, not an internal scroll-preserving update");
 assert(appJs.includes('player-detail-visual ${rarityClass(player.category)}'), "player detail visual must inherit rarity color class");
 assert(appJs.includes("showPullConfirmation"), "player pulls must open a confirmation before picking a candidate");
 

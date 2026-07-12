@@ -94,61 +94,106 @@
     modalRoot.innerHTML = "";
   }
 
+  if (window.history && "scrollRestoration" in window.history) {
+    window.history.scrollRestoration = "manual";
+  }
+
   function scrollSnapshot() {
     const modal = modalRoot.querySelector(".modal");
+    const activeView = app.querySelector("main") || app.firstElementChild || app;
     return {
       windowX: window.scrollX || 0,
       windowY: window.scrollY || 0,
-      modalTop: modal ? modal.scrollTop : 0,
+      appLeft: app ? app.scrollLeft || 0 : 0,
+      appTop: app ? app.scrollTop || 0 : 0,
+      viewLeft: activeView ? activeView.scrollLeft || 0 : 0,
+      viewTop: activeView ? activeView.scrollTop || 0 : 0,
+      modalLeft: modal ? modal.scrollLeft || 0 : 0,
+      modalTop: modal ? modal.scrollTop || 0 : 0,
     };
   }
 
-  function restoreScroll(snapshot) {
+  function setScrollPosition(element, top = 0, left = 0) {
+    if (!element) return;
+    if (typeof element.scrollTo === "function") {
+      element.scrollTo({ top, left, behavior: "auto" });
+    } else {
+      element.scrollTop = top;
+      element.scrollLeft = left;
+    }
+    element.scrollTop = top;
+    element.scrollLeft = left;
+  }
+
+  function restorePageScroll(snapshot) {
     if (!snapshot) return;
-    const modal = modalRoot.querySelector(".modal");
-    if (modal) modal.scrollTop = snapshot.modalTop || 0;
+    const activeView = app.querySelector("main") || app.firstElementChild || app;
+    setScrollPosition(activeView, snapshot.viewTop || 0, snapshot.viewLeft || 0);
+    setScrollPosition(app, snapshot.appTop || 0, snapshot.appLeft || 0);
     try {
-      window.scrollTo(snapshot.windowX || 0, snapshot.windowY || 0);
+      window.scrollTo({ top: snapshot.windowY || 0, left: snapshot.windowX || 0, behavior: "auto" });
     } catch (error) {
       window.scrollX = snapshot.windowX || 0;
       window.scrollY = snapshot.windowY || 0;
     }
   }
 
+  function restoreScroll(snapshot) {
+    if (!snapshot) return;
+    const modal = modalRoot.querySelector(".modal");
+    setScrollPosition(modal, snapshot.modalTop || 0, snapshot.modalLeft || 0);
+    restorePageScroll(snapshot);
+  }
+
+  function afterNextPaint(callback) {
+    requestAnimationFrame(() => requestAnimationFrame(callback));
+  }
+
   function runKeepingScroll(callback) {
     const snapshot = scrollSnapshot();
     const result = callback();
-    requestAnimationFrame(() => restoreScroll(snapshot));
-    setTimeout(() => restoreScroll(snapshot), 0);
+    afterNextPaint(() => restoreScroll(snapshot));
     return result;
   }
 
-  function scrollElementToStart(element) {
-    if (!element) return;
-    if (typeof element.scrollTo === "function") {
-      element.scrollTo({ top: 0, left: 0, behavior: "auto" });
-    } else {
-      element.scrollTop = 0;
-      element.scrollLeft = 0;
-    }
+  function isScrollableElement(element) {
+    if (!element || element === document.body || element === document.documentElement) return false;
+    const style = window.getComputedStyle ? window.getComputedStyle(element) : null;
+    const overflowY = style ? `${style.overflowY} ${style.overflow}` : "";
+    const overflowX = style ? `${style.overflowX} ${style.overflow}` : "";
+    const canScrollY = /(auto|scroll|overlay)/.test(overflowY) && element.scrollHeight > element.clientHeight;
+    const canScrollX = /(auto|scroll|overlay)/.test(overflowX) && element.scrollWidth > element.clientWidth;
+    return canScrollY || canScrollX || element.scrollTop > 0 || element.scrollLeft > 0;
+  }
+
+  function scrollTargetsForView(viewElement = null) {
+    const roots = [viewElement, modalRoot.querySelector(".modal"), app.querySelector("main"), app, document.scrollingElement, document.documentElement, document.body].filter(Boolean);
+    const targets = new Set();
+    roots.forEach((root) => {
+      targets.add(root);
+      if (root.querySelectorAll) root.querySelectorAll("*").forEach((element) => {
+        if (isScrollableElement(element)) targets.add(element);
+      });
+    });
+    return [...targets];
   }
 
   function resetViewScroll(viewElement = null) {
-    const targets = [viewElement, app, document.scrollingElement, document.documentElement, document.body].filter(Boolean);
-    targets.forEach(scrollElementToStart);
+    scrollTargetsForView(viewElement).forEach((element) => setScrollPosition(element, 0, 0));
     try {
       window.scrollTo({ top: 0, left: 0, behavior: "auto" });
     } catch (error) {
       window.scrollX = 0;
       window.scrollY = 0;
     }
+    if (document.documentElement) { document.documentElement.scrollTop = 0; document.documentElement.scrollLeft = 0; }
+    if (document.body) { document.body.scrollTop = 0; document.body.scrollLeft = 0; }
   }
 
-  function resetRenderedViewScroll() {
-    const view = app.querySelector("main") || app.firstElementChild || app;
+  function resetRenderedViewScroll(viewElement = null) {
+    const view = viewElement || app.querySelector("main") || app.firstElementChild || app;
     resetViewScroll(view);
-    requestAnimationFrame(() => resetViewScroll(view));
-    setTimeout(() => resetViewScroll(view), 0);
+    afterNextPaint(() => resetViewScroll(view));
   }
 
   function openModal(content, { closeable = true, className = "", onClose = null, preserveScroll = null } = {}) {
@@ -163,13 +208,9 @@
       closeModal();
       if (onClose) onClose();
     });
-    if (preserveScroll) {
-      restoreScroll(preserveScroll);
-    } else {
-      const modal = modalRoot.querySelector(".modal");
-      resetViewScroll(modal);
-      requestAnimationFrame(() => resetViewScroll(modal));
-    }
+    const modal = modalRoot.querySelector(".modal");
+    resetRenderedViewScroll(modal);
+    if (preserveScroll) afterNextPaint(() => restorePageScroll(preserveScroll));
   }
 
   function formationById(id) {
@@ -533,7 +574,7 @@
     );
     const input = document.getElementById("team-name-input");
     const error = document.getElementById("team-name-error");
-    if (window.matchMedia?.("(pointer: fine)").matches) input.focus();
+    if (window.matchMedia?.("(pointer: fine)").matches) input.focus({ preventScroll: true });
     const confirm = () => {
       const result = validateTeamName(input.value);
       if (!result.valid) { error.textContent = result.message; return; }
@@ -1794,7 +1835,7 @@
       run.activeMatch = null;
       global.RunState.save(run);
       toast("Vittoria: tutta la rosa guadagna 0,5 livelli");
-      return runKeepingScroll(renderMap);
+      return renderMap();
     }
     addLevels(1);
     global.MapEngine.completeNode(run.currentZone, node.id);
