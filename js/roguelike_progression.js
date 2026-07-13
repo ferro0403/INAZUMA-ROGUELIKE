@@ -95,10 +95,13 @@
   }
 
   function categoryForPotential(potential, fallbackCategory, database) {
+    const effectivePotential = clampPotential(potential);
+    if (effectivePotential >= 95) return "Leggenda";
+
     const thresholds = categoryThresholds(database);
     let category = fallbackCategory;
     for (const [candidate, minimum] of thresholds) {
-      if (Number(potential) >= minimum) category = candidate;
+      if (effectivePotential >= minimum && minimum < 95) category = candidate;
     }
     return category;
   }

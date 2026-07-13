@@ -482,7 +482,6 @@
         ${teamIdentity.logoUrl ? `<img src="${escapeHtml(teamIdentity.logoUrl)}" alt="${escapeHtml(teamIdentity.name)}" loading="lazy" />` : `<span class="team-logo-placeholder" aria-hidden="true">⚽</span>`}
         <strong>${escapeHtml(teamIdentity.name)}</strong>
       </div>` : "";
-    // Legacy invariant: player-detail-visual ${rarityClass(player.category)} now resolves through effective potential.
     const resolved = player.stats && player.baseStats
       ? player
       : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(Number(level || 0)), database);
