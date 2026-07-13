@@ -69,7 +69,7 @@ assert(!/resetViewScroll[\s\S]{0,260}innerWidth|matchMedia\?\.\("\(max-width: 78
 assert(appJs.includes('appTop') && appJs.includes('viewTop') && appJs.includes('modalTop'), "scroll snapshots must preserve app, view and modal positions for internal interactions");
 assert(appJs.includes('setScrollPosition(activeView') && appJs.includes('setScrollPosition(modal'), "returning from modal/internal updates must restore the previous context scroll");
 assert(!appJs.includes('return runKeepingScroll(renderMap);'), "opening the route after match resolution must be treated as a new view, not an internal scroll-preserving update");
-assert(appJs.includes('player-detail-visual ${rarityClass(player.category)}'), "player detail visual must inherit rarity color class");
+assert(appJs.includes('player-detail-visual ${rarityClass(resolved.category)}'), "player detail visual must inherit effective rarity color class");
 assert(appJs.includes("showPullConfirmation"), "player pulls must open a confirmation before picking a candidate");
 
 assert(appJs.includes("mobile-compact-player-list pull-confirmation-card"), "pull confirmation must reuse the shared compact mobile card container");
@@ -320,6 +320,43 @@ assert.equal(secondTraining.potential, 85, "multiple intensive trainings stack o
 const clampedTraining = global.InazumaProgression.getPlayerAtLevel({ ...intensivePlayer, finalOverall: 98 }, 13, intensiveDb, { potentialBoost: 1, currentOverallBoost: 1 });
 assert.equal(clampedTraining.overall, 92, "when potential can only gain +1, current overall gains only +1");
 assert.equal(clampedTraining.potential, 99, "intensive training potential is clamped at 99");
+
+const legendaryDb = { compactFormat, players: [
+  { playerId: "world-92", category: "Mondiale", finalOverall: 92 },
+  { playerId: "world-94", category: "Mondiale", finalOverall: 94 },
+] };
+const legendaryCode = statCode.repeat(compactFormat.statOrder.length * (compactFormat.levelMax + 1));
+const boostedWorld92 = { playerId: "world-92", name: "World 92", position: "FW", category: "Mondiale", finalOverall: 92, maxLevel: 20, progressionCode: legendaryCode };
+const boostedWorld94 = { playerId: "world-94", name: "World 94", position: "FW", category: "Mondiale", finalOverall: 94, maxLevel: 20, progressionCode: legendaryCode };
+for (const potential of [95, 96, 97, 98, 99]) {
+  assert.equal(global.InazumaProgression.categoryForPotential(potential, "Mondiale", legendaryDb), "Leggenda", `${potential} potential must be Leggenda`);
+}
+assert.equal(global.InazumaProgression.categoryForPotential(94, "Mondiale", legendaryDb), "Mondiale", "94 potential must remain Mondiale");
+const world92Legend = global.InazumaProgression.getPlayerAtLevel(boostedWorld92, 20, legendaryDb, { potentialBoost: 3, currentOverallBoost: 3, potentialBoostApplications: [{ amount: 3, appliedLevel: 20 }] });
+assert.equal(world92Legend.potential, 95, "Mondiale 92 with +3 reaches effective potential 95");
+assert.equal(world92Legend.category, "Leggenda", "Mondiale 92 with +3 becomes Leggenda");
+const world94Legend = global.InazumaProgression.getPlayerAtLevel(boostedWorld94, 20, legendaryDb, { potentialBoost: 1, currentOverallBoost: 1, potentialBoostApplications: [{ amount: 1, appliedLevel: 20 }] });
+assert.equal(world94Legend.potential, 95, "Mondiale 94 with +1 reaches effective potential 95");
+assert.equal(world94Legend.category, "Leggenda", "Mondiale 94 with +1 becomes Leggenda");
+const refreshedWorld97 = global.InazumaProgression.getPlayerAtLevel(boostedWorld94, 20, legendaryDb, { potentialBoost: 3, currentOverallBoost: 3, potentialBoostApplications: [{ amount: 3, appliedLevel: 20 }] });
+assert.equal(refreshedWorld97.potential, 97, "saved potentialBoost is enough to restore effective potential 97 after refresh");
+assert.equal(refreshedWorld97.category, "Leggenda", "saved boosted player remains Leggenda after refresh");
+assert.equal(boostedWorld94.category, "Mondiale", "original database player category remains unchanged for a new run");
+assert.equal(global.InazumaProgression.getPlayerAtLevel(boostedWorld92, 20, legendaryDb, { potentialBoost: 2, currentOverallBoost: 2 }).category, "Mondiale", "potential below 95 must not become Leggenda");
+assert.equal(global.InazumaProgression.effectivePotential(boostedWorld94, { potentialBoost: 7 }), 99, "effective potential is clamped at 99");
+assert(appJs.includes('rarityClass(resolved.category)'), "Player Detail and pull cards must use effective category for rarity classes");
+assert(appJs.includes('class="player-card player-card-compact') && appJs.includes('${rarityClass(player.category)}'), "shared compact cards expose the effective player category to rarityClass");
+assert(appJs.includes('rarity-leggenda') && css.includes('.rarity-leggenda'), "legendary card class and golden styling must exist");
+assert(css.includes('.player-detail-layout.rarity-leggenda') && css.includes('#ffd34f'), "Player Detail legendary background must be gold");
+assert(!appJs.includes('player-detail-visual ${rarityClass(player.category)}'), "Player Detail must not keep the original rarity class");
+const markEvans = season.players.find((player) => player.name === "Mark Evans");
+assert(markEvans, "Mark Evans fixture must exist");
+const markBoost = 97 - Number(markEvans.finalOverall);
+const boostedMarkEvans = global.InazumaProgression.getPlayerAtLevel(markEvans, 20, season, { potentialBoost: markBoost, currentOverallBoost: markBoost, potentialBoostApplications: [{ amount: markBoost, appliedLevel: 20 }] });
+assert.equal(boostedMarkEvans.potential, 97, "Mark Evans effective potential reaches 97 with intensive training boost");
+assert.equal(boostedMarkEvans.category, "Leggenda", "Mark Evans at potential 97 must become Leggenda");
+assert.equal(global.InazumaProgression.categoryForPotential(boostedMarkEvans.potential, markEvans.category, season), "Leggenda", "Mark Evans effective category is not Mondiale at 97");
+assert.equal(markEvans.category, "Mondiale", "Mark Evans original database category remains Mondiale");
 
 const applyEnergyDrinkLevel = (level, amount = energyDrink.amount) => {
   const appliedLevels = Math.min(amount, 20 - level);
