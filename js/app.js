@@ -1038,7 +1038,7 @@
       return renderMatch();
     }
     if (eventType === "boss") {
-      ui.match = { nodeId: node.id, type: eventType, state: "pre-match", log: [] };
+      ui.match = { nodeId: node.id, previousNodeId: run.currentZone.currentNodeId, type: eventType, state: "pre-match", log: [] };
       ui.bossMatchState = "pre-match";
       ui.bossMatchLog = [];
       ui.bossMatchResolving = false;
@@ -1929,6 +1929,7 @@
     }).filter(Boolean);
     return {
       nodeId: node.id,
+      previousNodeId: run.currentZone?.currentNodeId || run.activeMatch?.previousNodeId || null,
       type: "five_v_five",
       state: "pre-match",
       result: null,
@@ -2143,8 +2144,8 @@
 
   function appendFinalMatchMessage(result, boss = false) {
     const text = boss
-      ? (result === "victory" ? "Vittoria confermata: premi Continua per aprire le ricompense boss." : "Sconfitta confermata: premi Continua per tornare al checkpoint.")
-      : (result === "victory" ? "Vittoria 5v5 confermata: premi Continua per tornare al percorso." : "Sconfitta 5v5 confermata: premi Continua per tornare al checkpoint.");
+      ? (result === "victory" ? "Vittoria confermata: premi Continua per aprire le ricompense boss." : "Sconfitta confermata: premi Continua per tornare al nodo precedente.")
+      : (result === "victory" ? "Vittoria 5v5 confermata: premi Continua per tornare al percorso." : "Sconfitta 5v5 confermata: premi Continua per tornare al nodo precedente.");
     if (!ui.bossMatchLog.some((event) => event.minute === "FT")) {
       ui.bossMatchLog = [...ui.bossMatchLog, { minute: "FT", icon: result === "victory" ? "🏆" : "💔", text }];
       appendMatchLogEvent(ui.bossMatchLog.at(-1));
@@ -2166,8 +2167,8 @@
       if (node) global.MapEngine.completeNode(run.currentZone, node.id);
       match.pendingPostMatchAction = { type: "map", toast: "Vittoria: tutta la rosa guadagna 0,5 livelli" };
     } else {
-      global.RunState.restoreAfterLoss(run);
-      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: `Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Percorso ripristinato.` };
+      global.RunState.restoreAfterLoss(run, match.previousNodeId);
+      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: `Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Torni al nodo precedente.` };
     }
     run.phase = "match";
     run.activeMatch = match;
@@ -2192,8 +2193,8 @@
       if (node) global.MapEngine.completeNode(run.currentZone, node.id);
       match.pendingPostMatchAction = { type: "boss-rewards" };
     } else {
-      global.RunState.restoreAfterLoss(run);
-      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: `Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Percorso ripristinato.` };
+      global.RunState.restoreAfterLoss(run, match.previousNodeId);
+      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: `Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Torni al nodo precedente.` };
     }
     run.phase = "match";
     run.activeMatch = match;

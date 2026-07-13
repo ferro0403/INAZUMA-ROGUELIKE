@@ -276,9 +276,38 @@ run.bossIndex = 0;
 run.unlockedTeamIds = [];
 global.RunState.createCheckpoint(run);
 const originalStart = run.currentZone.currentNodeId;
-run.currentZone.currentNodeId = "changed";
-global.RunState.restoreAfterLoss(run);
+const firstChoice = global.MapEngine.reachableNodeIds(run.currentZone)[0];
+global.MapEngine.completeNode(run.currentZone, firstChoice);
+const completedBeforeLoss = [...run.currentZone.completedNodeIds];
+const pathBeforeLoss = [...run.currentZone.path];
+const matchNode = global.MapEngine.reachableNodeIds(run.currentZone).find((nodeId) => run.currentZone.nodes.find((node) => node.id === nodeId)?.type === "five_v_five")
+  || global.MapEngine.reachableNodeIds(run.currentZone)[0];
+global.MapEngine.selectNode(run.currentZone, matchNode);
+run.activeMatch = { nodeId: matchNode, previousNodeId: firstChoice, type: "five_v_five" };
+global.RunState.save(run);
+global.RunState.restoreAfterLoss(run, run.activeMatch.previousNodeId);
 assert.equal(run.lives, 2);
-assert.equal(run.currentZone.currentNodeId, originalStart);
+assert.equal(run.currentZone.currentNodeId, firstChoice);
+assert.equal(run.currentZone.pendingNodeId, null);
+assert.deepEqual(run.currentZone.completedNodeIds, completedBeforeLoss, "completed nodes must survive match defeat");
+assert.deepEqual(run.currentZone.path, pathBeforeLoss, "path must not reset after match defeat");
+assert.notEqual(run.currentZone.currentNodeId, originalStart, "defeat must not restore the boss-path checkpoint start");
 
-console.log("Smoke test passed: all formations, progression, map and checkpoint loss.");
+const bossNode = run.currentZone.nodes.find((node) => node.type === "boss");
+run.currentZone.currentNodeId = firstChoice;
+run.currentZone.pendingNodeId = bossNode.id;
+run.activeMatch = { nodeId: bossNode.id, previousNodeId: firstChoice, type: "boss" };
+global.RunState.restoreAfterLoss(run, run.activeMatch.previousNodeId);
+assert.equal(run.lives, 1);
+assert.equal(run.currentZone.currentNodeId, firstChoice, "boss defeat must return to the immediate predecessor");
+
+run.lives = 1;
+run.phase = "match";
+run.gameOver = false;
+run.activeMatch = { nodeId: bossNode.id, previousNodeId: firstChoice, type: "boss" };
+global.RunState.restoreAfterLoss(run, run.activeMatch.previousNodeId);
+assert.equal(run.lives, 0);
+assert.equal(run.gameOver, true);
+assert.equal(run.phase, "gameover");
+
+console.log("Smoke test passed: all formations, progression, map and previous-node loss.");
