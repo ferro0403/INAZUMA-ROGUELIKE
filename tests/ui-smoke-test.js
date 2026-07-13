@@ -23,7 +23,7 @@ assert(css.includes("pointer-events: none"), "route map decorative layers must n
 assert(css.includes(".boss-node-logo") && css.includes("object-fit: contain"), "boss node logos must keep original proportions inside the node");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.map-wrap[\s\S]*?overflow-x:\s*hidden/.test(css), "mobile map wrapper must hide horizontal overflow");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.pitch-row, \.tactical-row\s*\{[^}]*--pitch-card-size:[^}]*display:\s*grid[\s\S]*?grid-template-columns:\s*repeat\(var\(--row-count, var\(--players-in-row, 1\)\), minmax\(0, var\(--pitch-card-size\)\)\)/.test(css), "mobile tactical rows must keep compact fixed-width card columns by row count");
-assert(/@media \(max-width: 780px\)[\s\S]*?\.player-detail-modal\s*\{[\s\S]*?justify-self:\s*center[\s\S]*?width:\s*min\(100%, calc\(100vw - 24px\)\)/.test(css), "mobile player detail modal must be centered without lateral overflow");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.player-detail-modal\s*\{[\s\S]*?justify-self:\s*center[\s\S]*?width:\s*calc\(100vw - 20px\)/.test(css), "mobile player detail modal must be centered without lateral overflow");
 assert(css.includes("grid-template-columns: repeat(4, minmax(0, 1fr))"), "mobile bottom nav must show four uniform items");
 assert(css.includes("align-items: center"), "desktop fullbody visual should not be pinned to the bottom");
 assert(css.includes("width: min(100%, 560px)"), "desktop fullbody art should keep the approved size");
@@ -44,7 +44,7 @@ assert(css.includes(".pull-offer-grid, .mobile-compact-player-list { gap: 10px; 
 assert(/@media \(max-width: 780px\)[\s\S]*?\.mobile-compact-player-list \.player-card-large[\s\S]*?grid-template-columns:\s*82px minmax\(0, 1fr\) 42px/.test(css), "mobile confirmation and full-roster replacement cards must use the same horizontal compact grid as pull candidates");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.pull-offer-grid \.player-card-large \.player-portrait, \.mobile-compact-player-list \.player-card-large \.player-portrait[\s\S]*?height:\s*100%[\s\S]*?object-fit:\s*contain/.test(css), "mobile confirmation portrait must reuse the pull compact visible portrait rule");
 assert(!/\.rarity-(?:scarso|normale|buono|forte|elite|mondiale|leggenda) \{[^}]*gradient\(/.test(css), "rarity classes must use flat colors, not gradients");
-assert(css.includes("background: var(--rarity-bg, #0b1c37)"), "player detail fullbody visual background must use rarity card color");
+assert(css.includes("--detail-rarity-bg"), "player detail fullbody visual background must use rarity card color");
 assert(css.includes(".player-card-large"), "pull and candidate cards must keep a distinct large player-card variant");
 assert(css.includes(".pull-player-card--desktop") && css.includes(".pull-player-card--mobile"), "pull cards must expose separated desktop/mobile variant classes");
 assert(css.includes(".tactical-player-card--desktop") && css.includes(".tactical-player-card--mobile"), "tactical cards must expose separated desktop/mobile variant classes");

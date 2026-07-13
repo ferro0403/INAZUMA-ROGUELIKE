@@ -39,6 +39,20 @@
     return `<span class="item-icon" aria-hidden="true">${icons[id] || icons.scout_token}</span>`;
   }
 
+  function statIcon(stat) {
+    const icons = {
+      attack: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4M9 12h6"/></svg>`,
+      control: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16M7 7l10 10M17 7 7 17"/></svg>`,
+      speed: `<svg viewBox="0 0 24 24"><path d="m13 2-7 11h6l-1 9 7-12h-6l1-8Z"/></svg>`,
+      grit: `<svg viewBox="0 0 24 24"><path d="M12 21c4-2 7-5 7-9 0-3-2-5-4-7 0 3-2 4-3 5-1-2-1-4-1-6-3 2-6 5-6 9 0 4 3 7 7 8Z"/></svg>`,
+      physical: `<svg viewBox="0 0 24 24"><path d="M7 13c1-5 4-8 8-7 2 1 3 3 2 5l3 1-2 4-4-1-2 4H7v-6Z"/><path d="M5 14h7"/></svg>`,
+      stamina: `<svg viewBox="0 0 24 24"><path d="M12 21S4 16 4 9a4 4 0 0 1 7-3 4 4 0 0 1 7 3c0 7-6 10-6 12Z"/><path d="M7 12h3l1-3 2 6 1-3h3"/></svg>`,
+      defense: `<svg viewBox="0 0 24 24"><path d="M12 3 19 6v6c0 5-3 8-7 9-4-1-7-4-7-9V6l7-3Z"/><path d="M12 7v10"/></svg>`,
+      save: `<svg viewBox="0 0 24 24"><path d="M7 20V8a2 2 0 0 1 4 0v5-7a2 2 0 0 1 4 0v7-4a2 2 0 0 1 4 0v11H7Z"/><path d="M7 14 4 12"/></svg>`,
+    };
+    return `<span class="detail-stat-icon" aria-hidden="true">${icons[stat] || icons.control}</span>`;
+  }
+
   const STAT_LABELS = {
     attack: "Attacco",
     control: "Controllo",
@@ -471,10 +485,10 @@
       const base = Number(baseStats[stat] || 0);
       const effective = Number(effectiveStats[stat] || 0);
       const bonus = effective - base;
-      return `<div class="detail-stat"><span>${label}</span><strong>${effective}${bonus > 0 ? ` <em>+${bonus}</em>` : ""}</strong></div>`;
+      return `<div class="detail-stat">${statIcon(stat)}<span>${label}</span><strong>${effective}</strong>${bonus > 0 ? `<em>+${bonus}</em>` : ""}</div>`;
     }).join("");
     openModal(`
-      <div class="player-detail-layout">
+      <div class="player-detail-layout ${rarityClass(player.category)}">
         <section class="player-detail-visual ${rarityClass(player.category)}">
           ${teamBadge}
           <img class="player-fullbody" src="${escapeHtml(fullbodyUrl)}" alt="${escapeHtml(player.name)}" />
@@ -482,14 +496,14 @@
         <section class="player-detail-content">
           <p class="eyebrow">Player detail</p>
           <h2 class="player-detail-name">${escapeHtml(player.name)}</h2>
-          <div class="player-detail-tags"><span class="role-chip">${player.position}</span><span class="role-chip">${escapeHtml(player.element || player.type)}</span><span class="role-chip">Lv ${Number(level || 0)}</span></div>
+          <div class="player-detail-tags"><span class="role-chip">${escapeHtml(player.position)}</span><span class="role-chip detail-element-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4 3 7 6 7 10a7 7 0 0 1-14 0c0-4 3-7 7-10Z"/></svg>${escapeHtml(player.element || player.type)}</span><span class="role-chip">Lv ${Number(level || 0)}</span></div>
           <div class="overall-comparison">
             <div><span>Overall attuale</span><strong>${resolved.overall}</strong></div>
             <div><span>Potenziale</span><strong>${player.finalOverall}</strong></div>
           </div>
-          <p class="detail-category">${escapeHtml(player.category)}</p>
+          <p class="detail-category"><span aria-hidden="true">★</span>${escapeHtml(player.category)}</p>
           <div class="detail-stats">${stats}</div>
-          ${equipment ? `<div class="equipped-detail">${itemIcon(equipment)}<span>Oggetto assegnato</span><strong>${escapeHtml(equipment.name)}</strong><small>${escapeHtml(equipment.description)}</small>${playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>` : ""}
+          ${equipment ? `<div class="equipped-detail">${itemIcon(equipment)}<div class="equipped-detail-copy"><span>Oggetto assegnato</span><strong>${escapeHtml(equipment.name)}</strong><small>${escapeHtml(equipment.description)}</small><em>+${Number(equipment.bonus || 0)} ${escapeHtml(STAT_LABELS[equipment.stat] || equipment.stat || "")}</em></div>${playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>` : ""}
         </section>
       </div>`,
       { closeable: true, className: "player-detail-modal", onClose }
