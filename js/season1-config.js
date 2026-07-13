@@ -13,7 +13,7 @@
     nodeCounts: [2, 3, 3, 2, 3, 2],
     legendaryUnlockBossIndex: 4,
     disabledNodeTypes: ["secondary_match", "coach"],
-    lossPolicy: "restore_last_boss_checkpoint",
+    lossPolicy: "return_to_previous_match_node",
     nodeWeights: {
       five_v_five: 32,
       item: 15,

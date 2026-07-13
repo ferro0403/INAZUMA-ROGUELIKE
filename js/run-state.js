@@ -89,7 +89,7 @@
     return save(run);
   }
 
-  function restoreAfterLoss(run) {
+  function restoreAfterLoss(run, previousNodeId = null) {
     run.lives -= 1;
     if (run.lives <= 0) {
       run.lives = 0;
@@ -98,11 +98,12 @@
       return save(run);
     }
 
-    const remainingLives = run.lives;
-    const checkpoint = clone(run.checkpoint);
-    if (!checkpoint) throw new Error("Checkpoint unavailable");
-    Object.assign(run, checkpoint);
-    run.lives = remainingLives;
+    const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null;
+    if (!targetNodeId) throw new Error("Previous match node unavailable");
+    if (run.currentZone) {
+      run.currentZone.currentNodeId = targetNodeId;
+      run.currentZone.pendingNodeId = null;
+    }
     run.phase = "map";
     run.gameOver = false;
     return save(run);
