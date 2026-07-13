@@ -19,6 +19,48 @@
     return CATEGORY_CLASS_BY_NAME[category] || "rarity-debole";
   }
 
+  const INVENTORY_CATEGORY_DEFINITIONS = [
+    { id: "training", title: "Allenamento e potenziamenti", icon: "▴", itemIds: ["energy_drink", "training_manual", "intensive_training"] },
+    { id: "equipment", title: "Equipaggiamenti", icon: "◆", itemIds: [] },
+    { id: "special", title: "Gettoni e oggetti speciali", icon: "✦", itemIds: ["scout_token", "medical_kit", "lucky_charm"] },
+  ];
+
+  function inventoryItemIdentity(item) {
+    return String(item?.itemId || item?.id || item?.effect || item?.name || "unknown_item");
+  }
+
+  function inventoryItemCategory(item) {
+    const id = inventoryItemIdentity(item);
+    if (item?.kind === "equipment") return "equipment";
+    const definition = INVENTORY_CATEGORY_DEFINITIONS.find((category) => category.itemIds.includes(id));
+    return definition?.id || "special";
+  }
+
+  function groupedInventoryItems(inventory) {
+    const groups = new Map();
+    (Array.isArray(inventory) ? inventory : []).forEach((item) => {
+      const key = inventoryItemIdentity(item);
+      const existing = groups.get(key);
+      if (existing) {
+        existing.quantity += 1;
+        existing.instances.push(item);
+      } else {
+        groups.set(key, { key, item, quantity: 1, instances: [item], category: inventoryItemCategory(item) });
+      }
+    });
+    return [...groups.values()];
+  }
+
+  function groupedInventoryByCategory(inventory) {
+    const groups = groupedInventoryItems(inventory);
+    return INVENTORY_CATEGORY_DEFINITIONS.map((category) => ({
+      ...category,
+      items: groups.filter((group) => group.category === category.id),
+    }));
+  }
+
+  global.InventoryHelpers = { inventoryItemIdentity, inventoryItemCategory, groupedInventoryItems, groupedInventoryByCategory, categories: INVENTORY_CATEGORY_DEFINITIONS };
+
   function itemIcon(itemOrId) {
     const id = String(typeof itemOrId === "string" ? itemOrId : itemOrId?.id || "");
     const icons = {
@@ -2647,8 +2689,8 @@
         ${topbar("Oggetti")}
         <div class="content">
           <div class="section-head"><div><p class="eyebrow">Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p><h2>Oggetti raccolti</h2></div></div>
-          <div class="item-grid">
-            ${run.inventory.length ? run.inventory.map((item) => inventoryItemCard(item)).join("") : '<p class="muted">Non hai ancora raccolto oggetti.</p>'}
+          <div class="inventory-categories">
+            ${inventoryCategoriesMarkup()}
           </div>
           <div class="section-head" style="margin-top:30px"><div><p class="eyebrow">Equipaggiati</p><h2>Oggetti dei giocatori</h2></div></div>
           <div class="item-grid">
@@ -2659,21 +2701,40 @@
         ${bottomNav("inventory")}
       </main>`;
     resetRenderedViewScroll();
-    document.querySelectorAll("[data-use-item]").forEach((button) => button.addEventListener("click", () => useInventoryItem(button.dataset.useItem)));
-    document.querySelectorAll("[data-equip-item]").forEach((button) => button.addEventListener("click", () => chooseEquipmentPlayer(button.dataset.equipItem)));
+    const inventoryCategories = document.querySelector(".inventory-categories");
+    inventoryCategories?.addEventListener("click", (event) => {
+      const useButton = event.target.closest("[data-use-item]");
+      if (useButton) return useInventoryItem(useButton.dataset.useItem);
+      const equipButton = event.target.closest("[data-equip-item]");
+      if (equipButton) return chooseEquipmentPlayer(equipButton.dataset.equipItem);
+    });
     document.querySelectorAll("[data-unequip-player]").forEach((button) => button.addEventListener("click", () => unequipPlayerItem(button.dataset.unequipPlayer)));
     bindBottomNav();
   }
 
-  function inventoryItemCard(item) {
+  function inventoryCategoriesMarkup() {
+    if (!run.inventory.length) return '<p class="muted inventory-empty">Non hai ancora raccolto oggetti.</p>';
+    return groupedInventoryByCategory(run.inventory)
+      .filter((category) => category.items.length)
+      .map((category) => `
+        <section class="inventory-category" data-inventory-category="${category.id}">
+          <header class="inventory-category-head"><span class="inventory-category-icon" aria-hidden="true">${category.icon}</span><div><h3>${escapeHtml(category.title)}</h3><p class="muted small">${category.items.reduce((sum, group) => sum + group.quantity, 0)} oggetti</p></div></header>
+          <div class="item-grid inventory-item-grid">${category.items.map((group) => inventoryItemCard(group)).join("")}</div>
+        </section>`).join("");
+  }
+
+  function inventoryItemCard(groupOrItem) {
+    const group = groupOrItem?.instances ? groupOrItem : { item: groupOrItem, quantity: 1, instances: [groupOrItem], key: inventoryItemIdentity(groupOrItem) };
+    const item = group.item;
+    const instanceId = group.instances[0]?.instanceId || item.instanceId;
     const action = item.kind === "equipment"
-      ? `<button type="button" class="btn btn-primary" data-equip-item="${item.instanceId}">Assegna</button>`
+      ? `<button type="button" class="btn btn-primary" data-equip-item="${instanceId}">Assegna</button>`
       : item.effect === "pull_reroll"
         ? '<span class="muted small">Utilizzabile durante una pull</span>'
         : item.effect === "lucky_pull"
           ? '<span class="muted small">Utilizzabile durante una Pull svincolati o Pull squadre</span>'
-          : `<button type="button" class="btn btn-primary" data-use-item="${item.instanceId}">Usa</button>`;
-    return `<article class="item-card static-item">${itemIcon(item)}<span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p>${action}</article>`;
+          : `<button type="button" class="btn btn-primary" data-use-item="${instanceId}">Usa</button>`;
+    return `<article class="item-card inventory-item-card static-item" data-item-id="${escapeHtml(group.key)}">${itemIcon(item)}<div class="item-card-main"><span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p></div><div class="item-card-actions"><span class="item-quantity" aria-label="Quantità ${group.quantity}">×${group.quantity}</span>${action}</div></article>`;
   }
 
   function useInventoryItem(instanceId) {
