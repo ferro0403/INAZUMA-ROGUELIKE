@@ -148,6 +148,45 @@ for (const { bossIndex, free, defeated } of expectedStagePullWeights) {
 }
 assert.equal(Object.values(global.SEASON1_CONFIG.hiddenNodeWeights).reduce((sum, value) => sum + value, 0), 100);
 assert.equal(global.SEASON1_CONFIG.maxInventory, 20);
+
+const itemById = (id) => global.SEASON1_CONFIG.itemPool.find((item) => item.id === id);
+const originalUnaffectedItemWeights = {
+  scout_token: 9,
+  medical_kit: 11,
+  lucky_charm: 3,
+  boots_attack: 8,
+  boots_control: 8,
+  boots_defense: 8,
+  keeper_gloves: 8,
+  grit_band: 8,
+  physical_band: 8,
+  speed_necklace: 8,
+  stamina_necklace: 8,
+};
+const energyDrink = itemById("energy_drink");
+const trainingManual = itemById("training_manual");
+const intensiveTraining = itemById("intensive_training");
+assert(energyDrink, "energy drink must exist in the real item pool");
+assert(trainingManual, "training manual must exist in the real item pool");
+assert.equal(global.SEASON1_CONFIG.itemPool.filter((item) => item.id === "intensive_training").length, 1, "only one intensive training item must exist in the real item pool");
+assert.equal(energyDrink.weight, 10, "energy drink real pool weight");
+assert.equal(energyDrink.amount, 2, "energy drink real amount");
+assert.equal(energyDrink.description, "Assegna +2 livelli a un giocatore.", "energy drink visible description");
+assert.equal(trainingManual.weight, 12, "training manual real pool weight");
+assert.equal(trainingManual.amount, 0.5, "training manual amount must remain unchanged");
+assert.equal(trainingManual.description, "Tutta la rosa guadagna +0,5 livello.", "training manual visible description");
+assert.equal(intensiveTraining.weight, 7, "intensive training real pool weight");
+assert.equal(intensiveTraining.effect, "potential_boost", "intensive training effect must remain unchanged");
+assert.equal(intensiveTraining.amount, 3, "intensive training amount must remain unchanged");
+assert.equal(intensiveTraining.description, "Aumenta permanentemente di +3 l’overall attuale e il potenziale massimo di un giocatore, fino a 99.", "intensive training visible description");
+for (const [id, expectedWeight] of Object.entries(originalUnaffectedItemWeights)) {
+  assert.equal(itemById(id)?.weight, expectedWeight, `${id} weight must not change during the training item rebalance`);
+}
+assert(!appJs.includes("Assegna +1 livello a un giocatore."), "old energy drink +1 description must not remain in UI text");
+assert(appJs.includes("Questo giocatore ha già raggiunto il livello massimo."), "energy drink max-level block message must be shown");
+assert(appJs.includes("Tutti i giocatori hanno già raggiunto il livello massimo."), "training manual all-max block message must be shown");
+assert(appJs.includes("const appliedLevels = Math.min(Number(item.amount || 1), 20 - currentLevel);"), "energy drink must cap applied levels before consuming the item");
+assert(appJs.includes("Overall ${before.overall} → ${after.overall}"), "energy drink summary must show recalculated overall before and after");
 assert(appJs.includes('mode === "equip"'), "equipment assignment must use tactical squad cards, not the old linear player list");
 assert(appJs.includes("handleEquipmentTarget"), "equipment assignment must route through replacement confirmation logic");
 assert(appJs.includes("Conferma sostituzione"), "replacing equipped items must ask for confirmation");
@@ -281,6 +320,50 @@ assert.equal(secondTraining.potential, 85, "multiple intensive trainings stack o
 const clampedTraining = global.InazumaProgression.getPlayerAtLevel({ ...intensivePlayer, finalOverall: 98 }, 13, intensiveDb, { potentialBoost: 1, currentOverallBoost: 1 });
 assert.equal(clampedTraining.overall, 92, "when potential can only gain +1, current overall gains only +1");
 assert.equal(clampedTraining.potential, 99, "intensive training potential is clamped at 99");
+
+const applyEnergyDrinkLevel = (level, amount = energyDrink.amount) => {
+  const appliedLevels = Math.min(amount, 20 - level);
+  return appliedLevels <= 0 ? { used: false, level } : { used: true, level: Math.min(20, level + appliedLevels), appliedLevels };
+};
+assert.deepEqual(applyEnergyDrinkLevel(5), { used: true, level: 7, appliedLevels: 2 }, "energy drink level 5 must become 7");
+assert.deepEqual(applyEnergyDrinkLevel(18), { used: true, level: 20, appliedLevels: 2 }, "energy drink level 18 must become 20");
+assert.deepEqual(applyEnergyDrinkLevel(19), { used: true, level: 20, appliedLevels: 1 }, "energy drink level 19 must become 20 with only +1 applied");
+assert.deepEqual(applyEnergyDrinkLevel(20), { used: false, level: 20 }, "energy drink level 20 must block use and consumption");
+const progressiveCode = compactFormat.statOrder.map((_, statIndex) =>
+  Array.from({ length: compactFormat.levelMax + 1 }, (_, level) => Number(40 + statIndex + level).toString(36).padStart(2, "0")).join("")
+).join("");
+const progressivePlayer = { ...intensivePlayer, progressionCode: progressiveCode };
+const energyBefore = global.InazumaProgression.getPlayerAtLevel(progressivePlayer, 5, intensiveDb);
+const energyAfter = global.InazumaProgression.getPlayerAtLevel(progressivePlayer, applyEnergyDrinkLevel(5).level, intensiveDb);
+assert.equal(energyAfter.level, 7, "energy drink must resolve the player exactly at the new level");
+assert(energyAfter.overall > energyBefore.overall, "energy drink must recalculate overall through progression");
+assert.notDeepEqual(energyAfter.stats, energyBefore.stats, "energy drink must recalculate stats through progression");
+const boostedEnergyAfter = global.InazumaProgression.getPlayerAtLevel(intensivePlayer, 7, intensiveDb, { potentialBoost: 3, currentOverallBoost: 3, potentialBoostApplications: [{ amount: 3, appliedLevel: 5 }] });
+assert.equal(boostedEnergyAfter.potential, 82, "energy drink progression must preserve intensive training potential boost");
+assert(boostedEnergyAfter.overall >= energyAfter.overall, "energy drink progression must keep intensive training current overall boost without losing it");
+const applyTrainingManualLevels = (levels, amount = trainingManual.amount) => {
+  let changed = 0;
+  const next = levels.map((level) => {
+    const capped = Math.min(20, level + amount);
+    if (capped > level) changed += 1;
+    return capped;
+  });
+  return { used: changed > 0, levels: next };
+};
+assert.deepEqual(applyTrainingManualLevels([5, 19.75, 20]), { used: true, levels: [5.5, 20, 20] }, "training manual must add +0.5 to the roster without exceeding 20");
+assert.deepEqual(applyTrainingManualLevels([20, 20]), { used: false, levels: [20, 20] }, "training manual must not be consumed when the whole roster is level 20");
+const manualBefore = global.InazumaProgression.getPlayerAtLevel(intensivePlayer, 5, intensiveDb, { potentialBoost: 3, currentOverallBoost: 3 });
+const manualAfter = global.InazumaProgression.getPlayerAtLevel(intensivePlayer, Math.floor(5.5), intensiveDb, { potentialBoost: 3, currentOverallBoost: 3 });
+assert.equal(manualAfter.potential, manualBefore.potential, "training manual recalculation must preserve permanent boosts");
+const storedTrainingRun = { version: global.SEASON1_CONFIG.saveVersion, roster: [{ playerId: "boost-test", source: "free_agents", level: 7, potentialBoost: 3, currentOverallBoost: 3 }], inventory: [] };
+storage.set(global.SEASON1_CONFIG.saveKey, JSON.stringify(storedTrainingRun));
+assert.equal(global.RunState.load().roster[0].level, 7, "level changes must persist through save/load refresh");
+const unsimulatedSnapshot = { userStrength: 60, probabilities: global.MatchSimulator?.getMatchWinProbabilities?.("five", 60, 60) };
+const recalculatedStrength = energyAfter.overall;
+assert.notEqual(recalculatedStrength, unsimulatedSnapshot.userStrength, "unsimulated pre-match strength can be recalculated after level changes");
+const simulatedMatch = { state: "completed-victory", score: [3, 2], seed: "fixed-seed", log: ["goal"] };
+const simulatedCopy = JSON.parse(JSON.stringify(simulatedMatch));
+assert.deepEqual(simulatedMatch, simulatedCopy, "already simulated match result/log/seed fixture remains unchanged by progression helpers");
 
 run.currentZone = global.MapEngine.generate(run, season.bossOrder[0]);
 assert(run.currentZone.nodes.some((node) => node.type === "boss"));

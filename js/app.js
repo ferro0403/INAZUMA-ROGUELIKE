@@ -2164,10 +2164,16 @@
   }
 
   function addLevels(amount) {
-    run.teamLevel = Math.min(20, Number(run.teamLevel) + amount);
+    let updatedPlayers = 0;
+    const numericAmount = Number(amount || 0);
+    run.teamLevel = Math.min(20, Number(run.teamLevel) + numericAmount);
     run.roster.forEach((entry) => {
-      entry.level = Math.min(20, Number(entry.level || 0) + amount);
+      const currentLevel = Number(entry.level || 0);
+      const nextLevel = Math.min(20, currentLevel + numericAmount);
+      if (nextLevel > currentLevel) updatedPlayers += 1;
+      entry.level = nextLevel;
     });
+    return updatedPlayers;
   }
 
   function appendFinalMatchMessage(result, boss = false) {
@@ -2580,10 +2586,11 @@
     if (item.effect === "player_level") return choosePlayerForConsumable(item);
     if (item.effect === "potential_boost") return choosePlayerForPotentialBoost(item);
     if (item.effect === "team_level") {
-      addLevels(Number(item.amount || 0));
+      const updatedPlayers = addLevels(Number(item.amount || 0));
+      if (updatedPlayers <= 0) return toast("Tutti i giocatori hanno già raggiunto il livello massimo.");
       removeInventoryItem(instanceId);
       global.RunState.save(run);
-      toast("Tutta la rosa guadagna 0,5 livello");
+      toast("Tutta la rosa guadagna +0,5 livello");
       return renderInventory();
     }
     if (item.effect === "restore_life") {
@@ -2610,11 +2617,16 @@
       button.addEventListener("click", () => {
         const entry = rosterEntry(button.dataset.consumablePlayer);
         if (!entry) return;
-        entry.level = Math.min(20, Number(entry.level || 0) + Number(item.amount || 1));
+        const before = resolvedRosterPlayer(entry.playerId);
+        const currentLevel = Number(entry.level || 0);
+        const appliedLevels = Math.min(Number(item.amount || 1), 20 - currentLevel);
+        if (appliedLevels <= 0) return toast("Questo giocatore ha già raggiunto il livello massimo.");
+        entry.level = Math.min(20, currentLevel + appliedLevels);
         removeInventoryItem(item.instanceId);
         global.RunState.save(run);
+        const after = resolvedRosterPlayer(entry.playerId);
         closeModal();
-        toast(`${sourcePlayer(entry).name} sale al livello ${entry.level}`);
+        toast(`${escapeHtml(item.name)} utilizzata\nLivello ${before.displayLevel} → ${after.displayLevel}\nOverall ${before.overall} → ${after.overall}`);
         renderInventory();
       });
     });
