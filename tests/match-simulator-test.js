@@ -132,3 +132,15 @@ for (const type of ['five', 'eleven']) {
 
 
 console.log('Match simulator test passed. Controlled RNG: 80/85/90/95 thresholds verified; 5v5 and 11v11 tables are separate.');
+
+for (const type of ['five', 'eleven']) {
+  const result = sim.simulate({ type, seed:`side-${type}`, userTeam:makeTeam(`USR-${type}`, type, 70), opponentTeam:makeTeam(`OPP-${type}`, type, 68) });
+  assert(result.valid, `${type} side simulation valid`);
+  assert(result.timeline.some((event) => event.team === 'user'), `${type} includes structured user-side events`);
+  assert(result.timeline.some((event) => event.team === 'opponent'), `${type} includes structured opponent-side events`);
+  assert(result.timeline.every((event) => event.team === 'user' || event.team === 'opponent' || event.team === null), `${type} every side is structured or neutral`);
+  if (type === 'eleven') assert(result.timeline.some((event) => event.team === null), '11v11 keeps neutral half-start events');
+  const before = JSON.stringify({ score: result.score, winner: result.winner, timeline: result.timeline });
+  const again = sim.simulate({ type, seed:`side-${type}`, userTeam:makeTeam(`USR-${type}`, type, 70), opponentTeam:makeTeam(`OPP-${type}`, type, 68) });
+  assert.equal(JSON.stringify({ score: again.score, winner: again.winner, timeline: again.timeline }), before, `${type} side metadata is deterministic and does not alter result`);
+}
