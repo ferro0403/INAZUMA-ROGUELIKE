@@ -463,9 +463,12 @@
     const resolved = player.stats && player.baseStats
       ? player
       : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(Number(level || 0)), database);
-    const effectiveStats = equipment ? global.RoguelikeRules.applyEquipment(resolved.stats, equipment) : resolved.stats;
+    const baseStats = resolved.baseStats || resolved.stats;
+    const effectiveStats = resolved.baseStats
+      ? resolved.stats
+      : (equipment ? global.RoguelikeRules.applyEquipment(resolved.stats, equipment) : resolved.stats);
     const stats = Object.entries(STAT_LABELS).map(([stat, label]) => {
-      const base = Number(resolved.stats[stat] || 0);
+      const base = Number(baseStats[stat] || 0);
       const effective = Number(effectiveStats[stat] || 0);
       const bonus = effective - base;
       return `<div class="detail-stat"><span>${label}</span><strong>${effective}${bonus > 0 ? ` <em>+${bonus}</em>` : ""}</strong></div>`;
@@ -1952,6 +1955,7 @@
   }
 
   function fiveMatchCard(player, side) {
+    const equipment = side === "user" ? (player.equipment || rosterEntry(player.playerId)?.equippedItem) : null;
     return `
       <button type="button" class="five-match-card five-match-card--${side} ${rarityClass(player.category)}" data-five-match-player="${escapeHtml(player.playerId)}" data-five-match-side="${side}" aria-label="Apri scheda ${escapeHtml(player.name)}">
         <span class="five-match-card-role">${escapeHtml(player.position)}</span>
@@ -1959,6 +1963,7 @@
         <img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" />
         <strong>${escapeHtml(shortName(player.name))}</strong>
         <small>Lv ${escapeHtml(player.displayLevel ?? 0)}</small>
+        ${fivePlayerEquipmentMarkup(equipment)}
       </button>`;
   }
 
@@ -2297,6 +2302,13 @@
     return `<span class="role-token role-${escapeHtml(role)}"><span>${icons[role] || icons.all}</span>${escapeHtml(role === "all" ? "Tutti" : role)}</span>`;
   }
 
+
+  function fivePlayerEquipmentMarkup(equipment) {
+    if (!equipment) return "";
+    const label = `Oggetto equipaggiato: ${equipment.name || "oggetto"}`;
+    return `<span class="five-player-equipment" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${itemIcon(equipment)}</span>`;
+  }
+
   function fiveSlotCard(slot, playerId, status) {
     const player = playerId ? resolvedRosterPlayer(playerId) : null;
     const selected = ui.fiveVFiveSelectedSlot === slot.key;
@@ -2308,6 +2320,7 @@
           <img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" />
           <strong>${escapeHtml(player.name)}</strong>
           <span class="small muted">${player.position} · Lv ${player.displayLevel}</span>
+          ${fivePlayerEquipmentMarkup(rosterEntry(player.playerId)?.equippedItem)}
         ` : `
           <span class="five-empty">+</span>
           <strong>Slot vuoto</strong>

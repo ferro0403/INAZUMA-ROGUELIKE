@@ -195,6 +195,18 @@ const equippedStats = global.RoguelikeRules.applyEquipment(
 assert.equal(equippedStats.attack, 104);
 assert.equal(equippedStats.control, 70);
 
+const equipmentItems = global.SEASON1_CONFIG.itemPool.filter((item) => item.kind === "equipment");
+assert.equal(equipmentItems.length, 8, "all eight equipment items must stay configured");
+for (const item of equipmentItems) {
+  assert.equal(item.bonus, 5, `${item.name} real equipment bonus must remain +5`);
+  const baseStats = { attack: 46, control: 46, speed: 46, grit: 46, physical: 46, stamina: 46, defense: 46, save: 46 };
+  const once = global.RoguelikeRules.applyEquipment(baseStats, item);
+  for (const stat of Object.keys(baseStats)) {
+    assert.equal(once[stat], stat === item.stat ? 51 : 46, `${item.name} must only affect ${item.stat} by +5`);
+  }
+  assert.equal(once[item.stat] - baseStats[item.stat], 5, `${item.name} detail badge delta must be +5, not +10`);
+}
+
 let run;
 for (const formation of season.formations.eleven) {
   run = global.RunState.createRun();
