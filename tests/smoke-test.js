@@ -43,7 +43,7 @@ assert(css.includes("pointer-events: none"), "route map decorative layers must n
 
 assert(mobileMedia.includes("--pitch-card-size"), "mobile squad cards must use a constant base card size");
 assert(mobileMedia.includes("var(--pitch-card-size)"), "mobile squad rows must not stretch cards based on row count");
-assert(mobileMedia.includes("width: min(100%, calc(100vw - 24px))"), "mobile player detail modal must fit and center inside viewport");
+assert(mobileMedia.includes("width: calc(100vw - 20px)"), "mobile player detail modal must fit and center inside viewport");
 assert(appJs.includes("--players-in-row:${row.ids.length || 1}"), "squad rows must expose player count to CSS grid");
 assert(appJs.includes('["five", "5v5", "five"]'), "bottom navigation must include the 5v5 section");
 assert(appJs.includes("Completa la Formazione 5v5"), "incomplete 5v5 formations must block 5v5 match nodes");
