@@ -51,6 +51,31 @@
     return shuffle(pool, random).slice(0, 3).map((player) => String(player.playerId));
   }
 
+  function selectCandidates(available, random, count = 3) {
+    return shuffle(available, random).slice(0, count);
+  }
+
+  function selectLegendaryCandidates(available, random, categoryRank, eliteCategory = "Elite", count = 3) {
+    const initiallySelected = selectCandidates(available, random, count);
+    const eliteRank = categoryRank(eliteCategory);
+    if (initiallySelected.some((player) => categoryRank(player.category) >= eliteRank)) {
+      return initiallySelected;
+    }
+
+    const selectedIds = new Set(initiallySelected.map((player) => String(player.playerId)));
+    const guaranteedPool = available.filter(
+      (player) => !selectedIds.has(String(player.playerId)) && categoryRank(player.category) >= eliteRank
+    );
+    if (!guaranteedPool.length) return initiallySelected;
+
+    const guaranteed = selectCandidates(guaranteedPool, random, 1)[0];
+    if (!guaranteed) return initiallySelected;
+
+    const candidates = initiallySelected.slice(0, Math.max(0, count - 1));
+    candidates.push(guaranteed);
+    return shuffle(candidates, random);
+  }
+
   function start(run, formation, players) {
     const roles = makeRoleSequence(formation);
     run.draft = {
@@ -118,6 +143,8 @@
     shuffle,
     makeRoleSequence,
     makeCandidates,
+    selectCandidates,
+    selectLegendaryCandidates,
     start,
     prepareStep,
     choose,

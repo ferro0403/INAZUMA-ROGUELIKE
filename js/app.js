@@ -1326,7 +1326,11 @@
   }
 
   function selectWeightedCandidates(available, random) {
-    return global.DraftEngine.shuffle(available, random).slice(0, 3);
+    return global.DraftEngine.selectCandidates(available, random, 3);
+  }
+
+  function selectLegendaryCandidates(available, random) {
+    return global.DraftEngine.selectLegendaryCandidates(available, random, categoryRank, "Elite", 3);
   }
 
   function categoryRank(category) {
@@ -1348,7 +1352,9 @@
     const excluded = new Set(node.pullState.excludedCandidateIds || []);
     const available = pool.players.filter((player) => !owned.has(String(player.playerId)) && !excluded.has(String(player.playerId)));
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:pull:${node.pullState.rerolls}`);
-    const candidates = selectWeightedCandidates(available, random);
+    const candidates = node.pullState.pullType === "pull_legendary"
+      ? selectLegendaryCandidates(available, random)
+      : selectWeightedCandidates(available, random);
     node.pullState.candidateIds = candidates.map((player) => String(player.playerId));
     return candidates;
   }
