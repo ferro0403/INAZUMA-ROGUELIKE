@@ -44,6 +44,12 @@
     return clampPotential(basePotential + totalBoost);
   }
 
+  function effectiveCurrentOverallBoost(player, options = {}) {
+    const maxAllowedBoost = Math.max(0, 99 - clampPotential(player?.finalOverall));
+    const rawBoost = options.currentOverallBoost ?? options.potentialBoost ?? 0;
+    return Math.min(maxAllowedBoost, Math.max(0, Number(rawBoost || 0)));
+  }
+
   function boostProgressAtLevel(boost, level, maxLevel) {
     if (level <= boost.appliedLevel || maxLevel <= boost.appliedLevel) return 0;
     const remainingLevels = maxLevel - boost.appliedLevel;
@@ -130,11 +136,9 @@
     });
 
     const baseOverall = Number(player.finalOverall) - (maxLevel - level);
-    const boosts = normalizePotentialBoostApplications(options);
-    const maxAllowedBoost = Math.max(0, 99 - clampPotential(player.finalOverall));
-    const visibleBoost = totalBoostProgressAtLevel(boosts, level, maxLevel, maxAllowedBoost);
+    const visibleBoost = effectiveCurrentOverallBoost(player, options);
     const potential = effectivePotential(player, options);
-    const overall = Math.min(potential, baseOverall + visibleBoost);
+    const overall = Math.min(potential, baseOverall + visibleBoost, 99);
     const boostedStats = distributeStatBoosts(stats, player, visibleBoost);
     const category = categoryForPotential(potential, player.category, database);
     return { ...player, ...boostedStats, level, overall, potential, category, stats: boostedStats };
@@ -179,6 +183,7 @@
     getTeamPlayers,
     getBossStartingXI,
     effectivePotential,
+    effectiveCurrentOverallBoost,
     categoryForPotential,
   };
 
