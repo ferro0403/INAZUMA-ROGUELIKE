@@ -1092,7 +1092,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .five-match-line[data-row-count="2"] { --five-mobile-card-width: clamp(82px, 29vw, 96px); }
   .five-match-card { width: 100%; min-height: 92px; padding: 5px 3px 6px; border-radius: 11px; }
   .five-match-card img { width: 38px; height: 38px; }
-  .five-match-screen .five-match-field-side--mobile.five-match-field-side--user .five-match-card .five-player-equipment { top: 7px; left: 4px; bottom: auto; width: 22px; height: 22px; border-radius: 7px; }
+  .five-match-screen .five-match-field-side--mobile.five-match-field-side--user .five-match-card .five-player-equipment { top: auto; bottom: 8px; left: 8px; width: 22px; height: 22px; border-radius: 7px; }
   .five-match-card .five-player-equipment .item-icon { width: 15px; height: 15px; }
   .five-match-card .five-player-equipment .item-icon svg { width: 13px; height: 13px; }
   .five-match-card strong { font-size: clamp(.56rem, 2.1vw, .64rem); }
