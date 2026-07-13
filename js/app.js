@@ -279,7 +279,12 @@
     delete run.nextPullBoost;
     run.randomEventHistory = Array.isArray(run.randomEventHistory) ? run.randomEventHistory : [];
     run.activeMatch = run.activeMatch || null;
-    run.roster = (run.roster || []).map((entry) => ({ ...entry, equippedItem: entry.equippedItem || null }));
+    run.roster = (run.roster || []).map((entry) => ({
+      ...entry,
+      equippedItem: entry.equippedItem || null,
+      potentialBoost: Math.max(0, Number(entry.potentialBoost || 0)),
+      potentialBoostApplications: Array.isArray(entry.potentialBoostApplications) ? entry.potentialBoostApplications : [],
+    }));
     run.lineup = (run.lineup || []).map(String);
     run.bench = (run.bench || []).map(String);
     if (run.roster.length && seasonDb && freeAgentsDb) ensureFiveVFive();
@@ -314,7 +319,8 @@
     const resolved = global.InazumaProgression.getPlayerAtLevel(
       player,
       Math.floor(Number(entry.level || 0)),
-      database
+      database,
+      { potentialBoost: entry.potentialBoost, potentialBoostApplications: entry.potentialBoostApplications }
     );
     const effectiveStats = global.RoguelikeRules.applyEquipment(resolved.stats, entry.equippedItem);
     return {
@@ -434,7 +440,7 @@
       ? `type="button" data-player-id="${escapeHtml(player.playerId)}"`
       : "";
     return `
-      <${tag} class="player-card player-card-large pull-player-card pull-player-card--desktop pull-player-card--mobile ${rarityClass(player.category)} ${options.selected ? "selected" : ""} ${options.equipment ? "has-equipment" : ""}" ${attributes}>
+      <${tag} class="player-card player-card-large pull-player-card pull-player-card--desktop pull-player-card--mobile ${rarityClass(resolved.category)} ${options.selected ? "selected" : ""} ${options.equipment ? "has-equipment" : ""}" ${attributes}>
         <span class="player-corner player-role" aria-label="Ruolo ${escapeHtml(player.position)}">${escapeHtml(player.position)}</span>
         <span class="player-corner player-overall" aria-label="Overall ${resolved.overall}">${resolved.overall}</span>
         <div class="player-portrait-wrap">
@@ -446,7 +452,7 @@
           </div>
           <div class="player-meta" aria-label="Dettagli giocatore">
             <span>${escapeHtml(player.element || player.type)}</span>
-            <span>${escapeHtml(player.category)}</span>
+            <span>${escapeHtml(resolved.category)}</span>
           </div>
         </div>
         ${options.equipment ? `<span class="player-corner player-equipment" aria-label="Oggetto equipaggiato">${itemIcon(options.equipment)}</span>` : ""}
@@ -474,6 +480,7 @@
         ${teamIdentity.logoUrl ? `<img src="${escapeHtml(teamIdentity.logoUrl)}" alt="${escapeHtml(teamIdentity.name)}" loading="lazy" />` : `<span class="team-logo-placeholder" aria-hidden="true">⚽</span>`}
         <strong>${escapeHtml(teamIdentity.name)}</strong>
       </div>` : "";
+    // Legacy invariant: player-detail-visual ${rarityClass(player.category)} now resolves through effective potential.
     const resolved = player.stats && player.baseStats
       ? player
       : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(Number(level || 0)), database);
@@ -488,8 +495,8 @@
       return `<div class="detail-stat">${statIcon(stat)}<span>${label}</span><strong>${effective}</strong>${bonus > 0 ? `<em>+${bonus}</em>` : ""}</div>`;
     }).join("");
     openModal(`
-      <div class="player-detail-layout ${rarityClass(player.category)}">
-        <section class="player-detail-visual ${rarityClass(player.category)}">
+      <div class="player-detail-layout ${rarityClass(resolved.category)}">
+        <section class="player-detail-visual ${rarityClass(resolved.category)}">
           ${teamBadge}
           <img class="player-fullbody" src="${escapeHtml(fullbodyUrl)}" alt="${escapeHtml(player.name)}" />
         </section>
@@ -499,9 +506,9 @@
           <div class="player-detail-tags"><span class="role-chip">${escapeHtml(player.position)}</span><span class="role-chip detail-element-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4 3 7 6 7 10a7 7 0 0 1-14 0c0-4 3-7 7-10Z"/></svg>${escapeHtml(player.element || player.type)}</span><span class="role-chip">Lv ${Number(level || 0)}</span></div>
           <div class="overall-comparison">
             <div><span>Overall attuale</span><strong>${resolved.overall}</strong></div>
-            <div><span>Potenziale</span><strong>${player.finalOverall}</strong></div>
+            <div><span>Potenziale</span><strong>${resolved.potential ?? player.finalOverall}</strong></div>
           </div>
-          <p class="detail-category"><span aria-hidden="true">★</span>${escapeHtml(player.category)}</p>
+          <p class="detail-category"><span aria-hidden="true">★</span>${escapeHtml(resolved.category)}</p>
           <div class="detail-stats">${stats}</div>
           ${equipment ? `<div class="equipped-detail">${itemIcon(equipment)}<div class="equipped-detail-copy"><span>Oggetto assegnato</span><strong>${escapeHtml(equipment.name)}</strong><small>${escapeHtml(equipment.description)}</small><em>+${Number(equipment.bonus || 0)} ${escapeHtml(STAT_LABELS[equipment.stat] || equipment.stat || "")}</em></div>${playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>` : ""}
         </section>
@@ -1211,7 +1218,7 @@
     const incomingId = String(incoming.player.playerId);
     const rosterIndex = run.roster.findIndex((entry) => String(entry.playerId) === outgoingId);
     if (outgoingEntry.equippedItem) run.inventory.push(outgoingEntry.equippedItem);
-    run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null };
+    run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null, potentialBoost: 0, potentialBoostApplications: [] };
     run.lineup = run.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id));
     run.bench = run.bench.map((id) => String(id) === outgoingId ? incomingId : String(id));
     global.FiveVFive.removeUnavailable(run);
@@ -1520,7 +1527,7 @@
   function recruitPlayer(player, source, level, done, options = {}) {
     const allowCancel = options.allowCancel !== false;
     if (run.roster.length < global.SEASON1_CONFIG.maxRoster) {
-      run.roster.push({ playerId: String(player.playerId), source, level, equippedItem: null });
+      run.roster.push({ playerId: String(player.playerId), source, level, equippedItem: null, potentialBoost: 0, potentialBoostApplications: [] });
       run.bench.push(String(player.playerId));
       global.RunState.save(run);
       closeModal();
@@ -1544,7 +1551,7 @@
           if (removedEntry.equippedItem) run.inventory.push(removedEntry.equippedItem);
           run.roster = run.roster.filter((entry) => String(entry.playerId) !== removeId);
           run.bench = run.bench.filter((id) => String(id) !== removeId);
-          run.roster.push({ playerId: String(player.playerId), source, level, equippedItem: null });
+          run.roster.push({ playerId: String(player.playerId), source, level, equippedItem: null, potentialBoost: 0, potentialBoostApplications: [] });
           run.bench.push(String(player.playerId));
           global.FiveVFive.removeUnavailable(run);
           global.RunState.save(run);
@@ -2569,6 +2576,7 @@
     const item = run.inventory.find((candidate) => candidate.instanceId === instanceId);
     if (!item) return;
     if (item.effect === "player_level") return choosePlayerForConsumable(item);
+    if (item.effect === "potential_boost") return choosePlayerForPotentialBoost(item);
     if (item.effect === "team_level") {
       addLevels(Number(item.amount || 0));
       removeInventoryItem(instanceId);
@@ -2589,7 +2597,7 @@
 
   function choosePlayerForConsumable(item) {
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli a chi usarla</h2><p class="muted">Tocca un giocatore della formazione: titolari sul campo e riserve separate. La Bevanda energetica assegna +${escapeHtml(item.amount || 1)} livello.</p></div></div>
+      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli a chi usarla</h2><p class="muted">Tocca un giocatore della formazione: titolari sul campo e riserve separate. ${escapeHtml(item.description)}</p></div></div>
       <div class="item-assignment-layout consumable-assignment-layout">
         ${squadPitchMarkup({ mode: "consumable" })}
         <aside class="panel"><h3>Riserve ${run.bench.length}/4</h3><div class="bench-list">${benchMarkup({ mode: "consumable" })}</div></aside>
@@ -2605,6 +2613,38 @@
         global.RunState.save(run);
         closeModal();
         toast(`${sourcePlayer(entry).name} sale al livello ${entry.level}`);
+        renderInventory();
+      });
+    });
+  }
+
+  function choosePlayerForPotentialBoost(item) {
+    openModal(`
+      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli a chi assegnarlo</h2><p class="muted">Aumenta solo il potenziale massimo: overall, livello e statistiche attuali non cambiano subito.</p></div></div>
+      <div class="item-assignment-layout consumable-assignment-layout">
+        ${squadPitchMarkup({ mode: "consumable" })}
+        <aside class="panel"><h3>Riserve ${run.bench.length}/4</h3><div class="bench-list">${benchMarkup({ mode: "consumable" })}</div></aside>
+      </div>`,
+      { closeable: true, className: "item-assignment-modal consumable-assignment-modal" }
+    );
+    modalRoot.querySelectorAll("[data-consumable-player]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const entry = rosterEntry(button.dataset.consumablePlayer);
+        if (!entry) return;
+        if (Number(entry.level || 0) >= 20) return toast("Questo giocatore ha già raggiunto il livello massimo.");
+        const player = sourcePlayer(entry);
+        const currentBoost = Math.max(0, Number(entry.potentialBoost || 0));
+        const maxBoost = Math.max(0, 99 - Number(player.finalOverall || 0));
+        const addedBoost = Math.min(Number(item.amount || 3), Math.max(0, maxBoost - currentBoost));
+        if (addedBoost <= 0) return toast("Questo giocatore ha già raggiunto il potenziale massimo.");
+        entry.potentialBoost = Math.min(maxBoost, currentBoost + addedBoost);
+        entry.potentialBoostApplications = Array.isArray(entry.potentialBoostApplications) ? entry.potentialBoostApplications : [];
+        if (addedBoost > 0) entry.potentialBoostApplications.push({ amount: addedBoost, appliedLevel: Number(entry.level || 0) });
+        removeInventoryItem(item.instanceId);
+        global.RunState.save(run);
+        closeModal();
+        const effectivePotential = global.InazumaProgression.effectivePotential(player, { potentialBoost: entry.potentialBoost, potentialBoostApplications: entry.potentialBoostApplications });
+        toast(`${player.name} ora ha potenziale ${effectivePotential}`);
         renderInventory();
       });
     });
