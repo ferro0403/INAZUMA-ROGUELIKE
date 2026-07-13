@@ -283,7 +283,9 @@
       ...entry,
       equippedItem: entry.equippedItem || null,
       potentialBoost: Math.max(0, Number(entry.potentialBoost || 0)),
+      currentOverallBoost: Math.max(0, Number(entry.currentOverallBoost ?? entry.potentialBoost ?? 0)),
       potentialBoostApplications: Array.isArray(entry.potentialBoostApplications) ? entry.potentialBoostApplications : [],
+      intensiveTrainingMigrated: entry.intensiveTrainingMigrated || entry.currentOverallBoost !== undefined,
     }));
     run.lineup = (run.lineup || []).map(String);
     run.bench = (run.bench || []).map(String);
@@ -320,7 +322,7 @@
       player,
       Math.floor(Number(entry.level || 0)),
       database,
-      { potentialBoost: entry.potentialBoost, potentialBoostApplications: entry.potentialBoostApplications }
+      { potentialBoost: entry.potentialBoost, currentOverallBoost: entry.currentOverallBoost, potentialBoostApplications: entry.potentialBoostApplications }
     );
     const effectiveStats = global.RoguelikeRules.applyEquipment(resolved.stats, entry.equippedItem);
     return {
@@ -1218,7 +1220,7 @@
     const incomingId = String(incoming.player.playerId);
     const rosterIndex = run.roster.findIndex((entry) => String(entry.playerId) === outgoingId);
     if (outgoingEntry.equippedItem) run.inventory.push(outgoingEntry.equippedItem);
-    run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null, potentialBoost: 0, potentialBoostApplications: [] };
+    run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], intensiveTrainingMigrated: true };
     run.lineup = run.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id));
     run.bench = run.bench.map((id) => String(id) === outgoingId ? incomingId : String(id));
     global.FiveVFive.removeUnavailable(run);
@@ -1527,7 +1529,7 @@
   function recruitPlayer(player, source, level, done, options = {}) {
     const allowCancel = options.allowCancel !== false;
     if (run.roster.length < global.SEASON1_CONFIG.maxRoster) {
-      run.roster.push({ playerId: String(player.playerId), source, level, equippedItem: null, potentialBoost: 0, potentialBoostApplications: [] });
+      run.roster.push({ playerId: String(player.playerId), source, level, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], intensiveTrainingMigrated: true });
       run.bench.push(String(player.playerId));
       global.RunState.save(run);
       closeModal();
@@ -1551,7 +1553,7 @@
           if (removedEntry.equippedItem) run.inventory.push(removedEntry.equippedItem);
           run.roster = run.roster.filter((entry) => String(entry.playerId) !== removeId);
           run.bench = run.bench.filter((id) => String(id) !== removeId);
-          run.roster.push({ playerId: String(player.playerId), source, level, equippedItem: null, potentialBoost: 0, potentialBoostApplications: [] });
+          run.roster.push({ playerId: String(player.playerId), source, level, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], intensiveTrainingMigrated: true });
           run.bench.push(String(player.playerId));
           global.FiveVFive.removeUnavailable(run);
           global.RunState.save(run);
@@ -2620,7 +2622,7 @@
 
   function choosePlayerForPotentialBoost(item) {
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli a chi assegnarlo</h2><p class="muted">Aumenta solo il potenziale massimo: overall, livello e statistiche attuali non cambiano subito.</p></div></div>
+      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli a chi assegnarlo</h2><p class="muted">Aumenta subito overall attuale e potenziale massimo dello stesso valore, senza cambiare livello.</p></div></div>
       <div class="item-assignment-layout consumable-assignment-layout">
         ${squadPitchMarkup({ mode: "consumable" })}
         <aside class="panel"><h3>Riserve ${run.bench.length}/4</h3><div class="bench-list">${benchMarkup({ mode: "consumable" })}</div></aside>
@@ -2631,20 +2633,24 @@
       button.addEventListener("click", () => {
         const entry = rosterEntry(button.dataset.consumablePlayer);
         if (!entry) return;
-        if (Number(entry.level || 0) >= 20) return toast("Questo giocatore ha già raggiunto il livello massimo.");
         const player = sourcePlayer(entry);
-        const currentBoost = Math.max(0, Number(entry.potentialBoost || 0));
+        const before = resolvedRosterPlayer(entry.playerId);
+        const currentPotentialBoost = Math.max(0, Number(entry.potentialBoost || 0));
+        const currentOverallBoost = Math.max(0, Number(entry.currentOverallBoost ?? currentPotentialBoost));
         const maxBoost = Math.max(0, 99 - Number(player.finalOverall || 0));
-        const addedBoost = Math.min(Number(item.amount || 3), Math.max(0, maxBoost - currentBoost));
-        if (addedBoost <= 0) return toast("Questo giocatore ha già raggiunto il potenziale massimo.");
-        entry.potentialBoost = Math.min(maxBoost, currentBoost + addedBoost);
+        const addedBoost = Math.min(Number(item.amount || 3), Math.max(0, maxBoost - currentPotentialBoost));
+        if (addedBoost <= 0) return toast("Questo giocatore ha già raggiunto il potenziale massimo. L'oggetto NON viene consumato.");
+        entry.potentialBoost = Math.min(maxBoost, currentPotentialBoost + addedBoost);
+        entry.currentOverallBoost = Math.min(maxBoost, currentOverallBoost + addedBoost);
+        entry.intensiveTrainingMigrated = true;
         entry.potentialBoostApplications = Array.isArray(entry.potentialBoostApplications) ? entry.potentialBoostApplications : [];
         if (addedBoost > 0) entry.potentialBoostApplications.push({ amount: addedBoost, appliedLevel: Number(entry.level || 0) });
         removeInventoryItem(item.instanceId);
         global.RunState.save(run);
+        const after = resolvedRosterPlayer(entry.playerId);
         closeModal();
-        const effectivePotential = global.InazumaProgression.effectivePotential(player, { potentialBoost: entry.potentialBoost, potentialBoostApplications: entry.potentialBoostApplications });
-        toast(`${player.name} ora ha potenziale ${effectivePotential}`);
+        const rarityMessage = before.category !== after.category ? `\nNuova rarità: ${after.category}` : "";
+        toast(`Allenamento intensivo completato\nOverall ${before.overall} → ${after.overall}\nPotenziale ${before.potential} → ${after.potential}${rarityMessage}`);
         renderInventory();
       });
     });

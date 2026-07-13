@@ -259,6 +259,29 @@ const sample = free.players.find((player) => String(player.playerId) === sampleE
 const atZero = global.InazumaProgression.getPlayerAtLevel(sample, 0, free);
 assert.equal(atZero.overall, sample.finalOverall - 20);
 
+const compactFormat = { statOrder: ["attack", "control", "speed", "grit", "physical", "stamina", "defense", "save"], codeWidth: 2, levelMax: 20 };
+const statCode = Number(50).toString(36).padStart(2, "0");
+const intensiveDb = { compactFormat, players: [
+  { playerId: "tier-base", category: "Forte", finalOverall: 79 },
+  { playerId: "tier-elite", category: "Elite", finalOverall: 82 },
+] };
+const intensivePlayer = { playerId: "boost-test", name: "Boost Test", position: "FW", category: "Forte", finalOverall: 79, maxLevel: 20, progressionCode: statCode.repeat(compactFormat.statOrder.length * (compactFormat.levelMax + 1)) };
+const beforeTraining = global.InazumaProgression.getPlayerAtLevel(intensivePlayer, 4, intensiveDb);
+assert.equal(beforeTraining.overall, 63, "test fixture starts from the requested current overall");
+assert.equal(beforeTraining.potential, 79, "test fixture starts from the requested potential");
+const afterTraining = global.InazumaProgression.getPlayerAtLevel(intensivePlayer, 4, intensiveDb, { potentialBoost: 3, currentOverallBoost: 3, potentialBoostApplications: [{ amount: 3, appliedLevel: 4 }] });
+assert.equal(afterTraining.overall, 66, "intensive training immediately raises current overall by the real boost");
+assert.equal(afterTraining.potential, 82, "intensive training raises potential by the same real boost");
+assert.equal(afterTraining.level, 4, "intensive training must not change player level");
+assert(afterTraining.attack > beforeTraining.attack, "intensive training updates real stats using existing role weights");
+assert.equal(afterTraining.category, "Elite", "intensive training recalculates rarity from boosted potential");
+const secondTraining = global.InazumaProgression.getPlayerAtLevel(intensivePlayer, 4, intensiveDb, { potentialBoost: 6, currentOverallBoost: 6 });
+assert.equal(secondTraining.overall, 69, "multiple intensive trainings stack on current overall");
+assert.equal(secondTraining.potential, 85, "multiple intensive trainings stack on potential");
+const clampedTraining = global.InazumaProgression.getPlayerAtLevel({ ...intensivePlayer, finalOverall: 98 }, 13, intensiveDb, { potentialBoost: 1, currentOverallBoost: 1 });
+assert.equal(clampedTraining.overall, 92, "when potential can only gain +1, current overall gains only +1");
+assert.equal(clampedTraining.potential, 99, "intensive training potential is clamped at 99");
+
 run.currentZone = global.MapEngine.generate(run, season.bossOrder[0]);
 assert(run.currentZone.nodes.some((node) => node.type === "boss"));
 assert(global.MapEngine.reachableNodeIds(run.currentZone).length > 0);
