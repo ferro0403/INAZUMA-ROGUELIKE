@@ -2,6 +2,9 @@
   "use strict";
 
   const config = () => global.SEASON1_CONFIG;
+  const PROFILE_KEY = "inazuma_roguelike_profile";
+  const DEFAULT_TEAM_NAME = "La tua squadra";
+  const USER_TEAM_LOGO = "inazuma-lightning";
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -12,11 +15,36 @@
     return `${prefix}_${Date.now().toString(36)}_${random}`;
   }
 
+  function normalizeTeamIdentity(teamIdentity = {}) {
+    const name = String(teamIdentity.name || DEFAULT_TEAM_NAME).trim() || DEFAULT_TEAM_NAME;
+    return { name, logo: USER_TEAM_LOGO };
+  }
+
+  function validTeamName(value) {
+    const name = String(value || "").trim();
+    return name.length >= 2 && name.length <= 24 && name !== DEFAULT_TEAM_NAME ? name : "";
+  }
+
+  function loadProfile() {
+    try {
+      const raw = localStorage.getItem(PROFILE_KEY);
+      const parsed = raw ? JSON.parse(raw) : {};
+      const name = validTeamName(parsed?.teamIdentity?.name || parsed?.teamName || parsed?.name);
+      return { teamIdentity: name ? { name, logo: USER_TEAM_LOGO } : null };
+    } catch (error) {
+      console.error("Unable to load profile", error);
+      return { teamIdentity: null };
+    }
+  }
+
+  function saveProfileTeamIdentity(teamIdentity) {
+    const cleanIdentity = normalizeTeamIdentity(teamIdentity);
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ version: 1, teamIdentity: cleanIdentity }));
+    return cleanIdentity;
+  }
+
   function createRun(teamIdentity = {}) {
-    const cleanIdentity = {
-      name: String(teamIdentity.name || "La tua squadra").trim() || "La tua squadra",
-      logo: teamIdentity.logo || "inazuma-lightning",
-    };
+    const cleanIdentity = normalizeTeamIdentity(teamIdentity);
     return {
       version: config().saveVersion,
       runId: makeId("run"),
@@ -114,6 +142,10 @@
     createRun,
     save,
     load,
+    normalizeTeamIdentity,
+    validTeamName,
+    loadProfile,
+    saveProfileTeamIdentity,
     remove,
     createCheckpoint,
     restoreAfterLoss,

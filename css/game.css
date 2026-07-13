@@ -868,6 +868,9 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .boss-match-bottom-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr); gap: 16px; }
 .boss-match-log { display: grid; gap: 8px; max-height: 240px; overflow: auto; padding: 0 4px 0 0; margin: 0; list-style: none; }
 .boss-match-log li { display: grid; grid-template-columns: 42px 28px minmax(0, 1fr); gap: 8px; align-items: center; padding: 8px 10px; border: 1px solid rgba(92,130,177,.22); border-radius: 12px; background: rgba(7,23,44,.72); }
+.boss-match-log li.match-event--user { border-left: 4px solid #36a9ff; background: linear-gradient(90deg, rgba(54,169,255,.18), rgba(7,23,44,.72) 42%); }
+.boss-match-log li.match-event--opponent { border-left: 4px solid #ff5b6e; background: linear-gradient(90deg, rgba(255,91,110,.18), rgba(7,23,44,.72) 42%); }
+.boss-match-log li.match-event--neutral { border-left: 4px solid rgba(255,211,79,.35); }
 .boss-match-log span { color: var(--yellow); font-weight: 950; }
 .boss-match-log p { margin: 0; color: #dce8f7; }
 .boss-match-result-panel { text-align: center; }

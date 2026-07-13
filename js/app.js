@@ -267,6 +267,7 @@
     if (!run) return;
     run.inventory = Array.isArray(run.inventory) ? run.inventory : [];
     run.teamIdentity = normalizeTeamIdentity(run.teamIdentity);
+    syncRunTeamIdentity();
     run.effects = run.effects || {};
     const legacyLuckyPulls = Number(run.effects.luckyPulls || run.luckyCharmActive || run.nextPullBoost || 0);
     if (legacyLuckyPulls > 0 && !run.effects.luckyPullsMigrated) {
@@ -538,8 +539,36 @@
   }
 
   function normalizeTeamIdentity(identity = {}) {
-    const name = String(identity.name || "La tua squadra").trim() || "La tua squadra";
-    return { name, logo: identity.logo || "inazuma-lightning" };
+    return global.RunState.normalizeTeamIdentity(identity);
+  }
+
+  function loadTeamProfile() {
+    return global.RunState.loadProfile();
+  }
+
+  function savedTeamIdentity() {
+    return loadTeamProfile().teamIdentity;
+  }
+
+  function syncRunTeamIdentity(identity = savedTeamIdentity()) {
+    if (!run || !identity) return false;
+    const cleanIdentity = normalizeTeamIdentity(identity);
+    if (run.teamIdentity?.name === cleanIdentity.name && run.teamIdentity?.logo === cleanIdentity.logo) return false;
+    run.teamIdentity = cleanIdentity;
+    return true;
+  }
+
+  function migrateTeamIdentityProfile() {
+    const profileIdentity = savedTeamIdentity();
+    if (profileIdentity) {
+      if (syncRunTeamIdentity(profileIdentity)) global.RunState.save(run);
+      return profileIdentity;
+    }
+    const legacyName = run ? global.RunState.validTeamName(run.teamIdentity?.name) : "";
+    if (!legacyName) return null;
+    const migrated = global.RunState.saveProfileTeamIdentity({ name: legacyName, logo: "inazuma-lightning" });
+    if (syncRunTeamIdentity(migrated)) global.RunState.save(run);
+    return migrated;
   }
 
   function validateTeamName(value) {
@@ -552,7 +581,7 @@
 
   function savedRunSummaryMarkup(savedRun) {
     if (!savedRun) return "";
-    const identity = normalizeTeamIdentity(savedRun.teamIdentity);
+    const identity = savedTeamIdentity() || normalizeTeamIdentity(savedRun.teamIdentity);
     const bossNumber = Number(savedRun.bossIndex || 0) + 1;
     const totalBosses = seasonDb?.bossOrder?.length || 10;
     return `
@@ -569,6 +598,7 @@
   function renderHome() {
     run = global.RunState.load();
     ensureRunSchema();
+    migrateTeamIdentityProfile();
     if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) {
       global.RunState.save(run);
     }
@@ -581,25 +611,63 @@
             <h1>Inazuma<br />Roguelike</h1>
             <p class="muted">Costruisci la tua squadra, scegli il percorso e sconfiggi i dieci boss.</p>
           </div>
-          ${savedRunSummaryMarkup(run)}
+          ${savedRunSummaryMarkup(run) || savedTeamSummaryMarkup()}
           <div class="home-actions button-row">
             ${run ? '<button type="button" class="btn btn-primary" id="continue-run">Continua</button>' : ""}
             <button type="button" class="btn btn-yellow" id="new-run">Nuova run</button>
+            ${savedTeamIdentity() ? '<button type="button" class="btn" id="edit-team-name">Modifica nome squadra</button>' : ""}
           </div>
         </section>
       </main>`;
     resetRenderedViewScroll();
 
-    document.getElementById("new-run").addEventListener("click", openTeamNameModal);
+    document.getElementById("new-run").addEventListener("click", startNewRunFromHome);
     document.getElementById("continue-run")?.addEventListener("click", resumeRun);
+    document.getElementById("edit-team-name")?.addEventListener("click", openEditTeamNameModal);
   }
 
-  function openTeamNameModal() {
+  function savedTeamSummaryMarkup() {
+    const identity = savedTeamIdentity();
+    if (!identity) return "";
+    return `
+      <section class="home-save-card" aria-label="Profilo squadra">
+        <div class="home-save-logo">${inazumaLogoMarkup("inazuma-logo--small")}</div>
+        <div>
+          <p class="eyebrow">Squadra</p>
+          <h2>${escapeHtml(identity.name)}</h2>
+          <p class="muted">Nome salvato sul profilo locale.</p>
+        </div>
+      </section>`;
+  }
+
+  function startRunWithIdentity(identity) {
+    const cleanIdentity = global.RunState.saveProfileTeamIdentity(identity);
+    run = global.RunState.createRun(cleanIdentity);
+    global.RunState.save(run);
+    closeModal();
+    renderFormationChoice();
+  }
+
+  function startNewRunFromHome() {
+    const identity = savedTeamIdentity();
+    if (!identity) return openTeamNameModal({ mode: "create" });
+    if (!run) return startRunWithIdentity(identity);
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">Nuova run</p><h2>Nome della squadra</h2><p class="muted">Scegli il nome che rappresenterà la tua squadra durante la run.</p></div>${inazumaLogoMarkup("inazuma-logo--modal")}</div>
-      ${run ? '<p class="home-overwrite-warning">Confermando sostituirai la run salvata.</p>' : ""}
+      <div class="modal-head"><div><p class="eyebrow">Nuova run</p><h2>Sostituire la run salvata?</h2><p class="muted">La nuova run userà ${escapeHtml(identity.name)} come nome squadra.</p></div>${inazumaLogoMarkup("inazuma-logo--modal")}</div>
+      <p class="home-overwrite-warning">Confermando sostituirai la run salvata. Il nome squadra globale resterà salvato.</p>
+      <div class="button-row"><button type="button" class="btn btn-primary" id="confirm-new-run">Conferma</button><button type="button" class="btn" id="cancel-new-run">Indietro</button></div>`,
+      { closeable: false, className: "team-name-modal" }
+    );
+    document.getElementById("confirm-new-run").addEventListener("click", () => startRunWithIdentity(identity));
+    document.getElementById("cancel-new-run").addEventListener("click", closeModal);
+  }
+
+  function openTeamNameModal({ mode = "create" } = {}) {
+    openModal(`
+      <div class="modal-head"><div><p class="eyebrow">${mode === "edit" ? "Home" : "Nuova run"}</p><h2>${mode === "edit" ? "Modifica nome squadra" : "Nome della squadra"}</h2><p class="muted">${mode === "edit" ? "Aggiorna il nome permanente della tua squadra." : "Scegli il nome che rappresenterà la tua squadra."}</p></div>${inazumaLogoMarkup("inazuma-logo--modal")}</div>
+      ${mode !== "edit" && run ? '<p class="home-overwrite-warning">Confermando sostituirai la run salvata.</p>' : ""}
       <label class="team-name-field" for="team-name-input">Nome squadra</label>
-      <input class="team-name-input" id="team-name-input" type="text" placeholder="La mia squadra" maxlength="24" autocomplete="off" inputmode="text" />
+      <input class="team-name-input" id="team-name-input" type="text" placeholder="La mia squadra" maxlength="24" autocomplete="off" inputmode="text" value="${escapeHtml(savedTeamIdentity()?.name || "")}" />
       <p class="team-name-error" id="team-name-error" aria-live="polite"></p>
       <div class="button-row"><button type="button" class="btn btn-primary" id="confirm-team-name">Conferma</button><button type="button" class="btn" id="cancel-team-name">Indietro</button></div>`,
       { closeable: false, className: "team-name-modal" }
@@ -610,15 +678,25 @@
     const confirm = () => {
       const result = validateTeamName(input.value);
       if (!result.valid) { error.textContent = result.message; return; }
-      run = global.RunState.createRun({ name: result.name, logo: "inazuma-lightning" });
-      global.RunState.save(run);
-      closeModal();
-      renderFormationChoice();
+      if (mode === "edit") {
+        const before = run ? JSON.stringify({ roster: run.roster, lineup: run.lineup, bench: run.bench, bossIndex: run.bossIndex, currentZone: run.currentZone }) : null;
+        const identity = global.RunState.saveProfileTeamIdentity({ name: result.name, logo: "inazuma-lightning" });
+        if (syncRunTeamIdentity(identity)) global.RunState.save(run);
+        if (before && before !== JSON.stringify({ roster: run.roster, lineup: run.lineup, bench: run.bench, bossIndex: run.bossIndex, currentZone: run.currentZone })) throw new Error("Team name edit changed run progress");
+        closeModal();
+        renderHome();
+        return;
+      }
+      startRunWithIdentity({ name: result.name, logo: "inazuma-lightning" });
     };
     document.getElementById("confirm-team-name").addEventListener("click", confirm);
     document.getElementById("cancel-team-name").addEventListener("click", closeModal);
     input.addEventListener("input", () => { error.textContent = ""; });
     input.addEventListener("keydown", (event) => { if (event.key === "Enter") confirm(); });
+  }
+
+  function openEditTeamNameModal() {
+    openTeamNameModal({ mode: "edit" });
   }
 
   function resumeRun() {
@@ -712,7 +790,6 @@
         );
         if (completed) ensureFiveVFive();
         global.RunState.save(run);
-        toast(`${player.name} entra nella squadra`);
         completed ? renderSquad() : renderDraft();
       });
     });
@@ -1655,7 +1732,7 @@
 
   function bossMatchTimeline() {
     if (!ui.bossMatchLog.length) return `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>Formazioni pronte. Avvia la simulazione o usa i controlli provvisori.</p></li>`;
-    return ui.bossMatchLog.map((event) => `<li><span>${escapeHtml(event.minute)}</span><b>${event.icon}</b><p>${escapeHtml(event.text)}</p></li>`).join("");
+    return ui.bossMatchLog.map((event) => `<li class="${matchEventSideClass(event.side)}"><span>${escapeHtml(event.minute)}</span><b>${event.icon}</b><p>${escapeHtml(event.text)}</p></li>`).join("");
   }
 
   function bossMatchStatusText() {
@@ -1759,11 +1836,15 @@
   function visibleTimeline(match) {
     const sim = match?.simulation;
     if (!sim?.valid) return ui.bossMatchLog || [];
-    return sim.timeline.slice(0, sim.revealedCount).map((ev) => ({ minute: `${ev.minute}'`, icon: ({goal:"⚽",save:"🧤",counter:"⚡",long_shot:"🎯",post:"🥅",crossbar:"🥅",shot:"👟",defensive_stop:"🛡️",first_half_start:"▶",second_half_start:"▶"})[ev.type] || "•", text: ev.text }));
+    return sim.timeline.slice(0, sim.revealedCount).map(matchEventView);
+  }
+
+  function matchEventSideClass(side) {
+    return side === "user" ? "match-event--user" : side === "opponent" ? "match-event--opponent" : "match-event--neutral";
   }
 
   function matchEventView(ev) {
-    return { minute: `${ev.minute}'`, icon: ({goal:"⚽",save:"🧤",counter:"⚡",long_shot:"🎯",post:"🥅",crossbar:"🥅",shot:"👟",defensive_stop:"🛡️",first_half_start:"▶",second_half_start:"▶"})[ev.type] || "•", text: ev.text };
+    return { minute: `${ev.minute}'`, icon: ({goal:"⚽",save:"🧤",counter:"⚡",long_shot:"🎯",post:"🥅",crossbar:"🥅",shot:"👟",defensive_stop:"🛡️",first_half_start:"▶",second_half_start:"▶"})[ev.type] || "•", text: ev.text, side: ev.team === "user" || ev.team === "opponent" ? ev.team : null };
   }
 
   function appendMatchLogEvent(event) {
@@ -1771,6 +1852,7 @@
     if (!log) return false;
     if (log.querySelector("[data-empty-log]")) log.innerHTML = "";
     const li = document.createElement("li");
+    li.className = matchEventSideClass(event.side);
     const minute = document.createElement("span");
     const icon = document.createElement("b");
     const text = document.createElement("p");
@@ -1790,6 +1872,7 @@
     const fragment = document.createDocumentFragment();
     events.forEach((event) => {
       const li = document.createElement("li");
+      li.className = matchEventSideClass(event.side);
       const minute = document.createElement("span");
       const icon = document.createElement("b");
       const text = document.createElement("p");
@@ -2186,7 +2269,7 @@
       ? (result === "victory" ? "Vittoria confermata: premi Continua per aprire le ricompense boss." : "Sconfitta confermata: premi Continua per tornare al nodo precedente.")
       : (result === "victory" ? "Vittoria 5v5 confermata: premi Continua per tornare al percorso." : "Sconfitta 5v5 confermata: premi Continua per tornare al nodo precedente.");
     if (!ui.bossMatchLog.some((event) => event.minute === "FT")) {
-      ui.bossMatchLog = [...ui.bossMatchLog, { minute: "FT", icon: result === "victory" ? "🏆" : "💔", text }];
+      ui.bossMatchLog = [...ui.bossMatchLog, { minute: "FT", icon: result === "victory" ? "🏆" : "💔", text, side: null }];
       appendMatchLogEvent(ui.bossMatchLog.at(-1));
     }
   }

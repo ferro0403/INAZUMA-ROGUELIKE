@@ -149,7 +149,13 @@ server.listen(0, "127.0.0.1", async () => {
 
     const { window } = dom;
     (await waitFor(window, "#new-run")).click();
-    (await waitFor(window, '[data-formation="4-2-4"]')).click();
+    const teamNameInput = await waitFor(window, "#team-name-input");
+    teamNameInput.value = "Raimon Test";
+    teamNameInput.dispatchEvent(new window.Event("input", { bubbles: true }));
+    window.document.querySelector("#confirm-team-name").click();
+    await waitFor(window, '[data-formation="4-2-4"]');
+    assert.equal(JSON.parse(window.localStorage.getItem("inazuma_roguelike_profile")).teamIdentity.name, "Raimon Test", "team name is saved in the global profile");
+    window.document.querySelector('[data-formation="4-2-4"]').click();
     for (let choice = 0; choice < 11; choice += 1) {
       (await waitFor(window, "[data-player-id]")).click();
     }
