@@ -24,10 +24,11 @@
     return {
       ...config.nodeWeights,
       ...(tier
-        ? {
-            pull_free_agents: tier.pull_free_agents,
-            pull_unlocked_teams: tier.pull_unlocked_teams,
-          }
+        ? Object.fromEntries(
+            ["pull_free_agents", "pull_unlocked_teams", "pull_legendary"]
+              .filter((type) => Number.isFinite(Number(tier[type])))
+              .map((type) => [type, Number(tier[type])])
+          )
         : {}),
     };
   }

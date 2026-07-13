@@ -25,9 +25,10 @@
     },
     stageNodeWeightTiers: [
       { minStage: 1, maxStage: 3, pull_free_agents: 17, pull_unlocked_teams: 8 },
-      { minStage: 4, maxStage: 5, pull_free_agents: 8, pull_unlocked_teams: 17 },
-      { minStage: 6, maxStage: 7, pull_free_agents: 5, pull_unlocked_teams: 20 },
-      { minStage: 8, maxStage: 10, pull_free_agents: 3, pull_unlocked_teams: 22 },
+      { minStage: 4, maxStage: 4, pull_free_agents: 8, pull_unlocked_teams: 17 },
+      { minStage: 5, maxStage: 5, pull_free_agents: 7, pull_unlocked_teams: 16, pull_legendary: 5 },
+      { minStage: 6, maxStage: 7, pull_free_agents: 4, pull_unlocked_teams: 19, pull_legendary: 5 },
+      { minStage: 8, maxStage: 10, pull_free_agents: 2, pull_unlocked_teams: 20, pull_legendary: 6 },
     ],
     hiddenNodeWeights: {
       five_v_five: 20,
