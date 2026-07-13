@@ -1402,7 +1402,9 @@
     };
   }
 
-  function selectWeightedCandidates(available, random) {
+  function selectWeightedCandidates(available, random, categoryWeights = null) {
+    const hasProgressionWeights = categoryWeights && Object.values(categoryWeights).some((weight) => Number(weight) !== 1);
+    if (hasProgressionWeights) return global.DraftEngine.selectWeightedCandidates(available, random, categoryWeights, 3);
     return global.DraftEngine.selectCandidates(available, random, 3);
   }
 
@@ -1431,7 +1433,13 @@
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:pull:${node.pullState.rerolls}`);
     const candidates = node.pullState.pullType === "pull_legendary"
       ? selectLegendaryCandidates(available, random)
-      : selectWeightedCandidates(available, random);
+      : selectWeightedCandidates(
+          available,
+          random,
+          node.pullState.pullType === "pull_unlocked_teams"
+            ? global.RoguelikeRules.unlockedTeamPullCategoryWeights(run.bossIndex)
+            : null
+        );
     node.pullState.candidateIds = candidates.map((player) => String(player.playerId));
     return candidates;
   }

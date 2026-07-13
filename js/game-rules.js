@@ -37,6 +37,24 @@
     return changed;
   }
 
+  function unlockedTeamPullCategoryWeights(currentBossIndex) {
+    const stage = Number(currentBossIndex || 0) + 1;
+    const base = {
+      Scarso: 1,
+      Debole: 1,
+      Normale: 1,
+      Buono: 1,
+      Forte: 1,
+      Elite: 1,
+      Mondiale: 1,
+      Leggenda: 1,
+    };
+    if (stage <= 3) return base;
+    if (stage <= 5) return { ...base, Buono: 1.05, Forte: 1.12, Elite: 1.08 };
+    if (stage <= 7) return { ...base, Buono: 1.04, Forte: 1.25, Elite: 1.12 };
+    return { ...base, Buono: 1.04, Forte: 1.35, Elite: 1.2, Mondiale: 1.05 };
+  }
+
   function getTradeCandidates({ outgoingPlayer, rosterIds, freeAgents, seasonPlayers, unlockedTeamIds, teams }) {
     if (!outgoingPlayer) return [];
     const owned = new Set((rosterIds || []).map(String));
@@ -73,6 +91,7 @@
 
   global.RoguelikeRules = {
     unlockedPullLevel,
+    unlockedTeamPullCategoryWeights,
     defeatedBossRewardLevel,
     migrateDefeatedBossPlayerLevels,
     getTradeCandidates,

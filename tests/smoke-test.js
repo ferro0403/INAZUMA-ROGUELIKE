@@ -125,27 +125,31 @@ assert.equal(global.RoguelikeRules.migrateDefeatedBossPlayerLevels(migratedRun, 
 assert.equal(migratedRun.roster[0].level, 3);
 assert.equal(Object.values(global.SEASON1_CONFIG.nodeWeights).reduce((sum, value) => sum + value, 0), 100);
 const expectedStagePullWeights = [
-  { bossIndex: 0, free: 17, defeated: 8 },
-  { bossIndex: 2, free: 17, defeated: 8 },
-  { bossIndex: 3, free: 8, defeated: 17 },
-  { bossIndex: 4, free: 8, defeated: 17 },
-  { bossIndex: 5, free: 5, defeated: 20 },
-  { bossIndex: 6, free: 5, defeated: 20 },
-  { bossIndex: 7, free: 3, defeated: 22 },
-  { bossIndex: 9, free: 3, defeated: 22 },
+  { bossIndex: 0, free: 17, defeated: 8, legendary: 3 },
+  { bossIndex: 2, free: 17, defeated: 8, legendary: 3 },
+  { bossIndex: 3, free: 8, defeated: 17, legendary: 3 },
+  { bossIndex: 4, free: 7, defeated: 16, legendary: 5 },
+  { bossIndex: 5, free: 4, defeated: 19, legendary: 5 },
+  { bossIndex: 6, free: 4, defeated: 19, legendary: 5 },
+  { bossIndex: 7, free: 2, defeated: 20, legendary: 6 },
+  { bossIndex: 9, free: 2, defeated: 20, legendary: 6 },
 ];
-for (const { bossIndex, free, defeated } of expectedStagePullWeights) {
+for (const { bossIndex, free, defeated, legendary } of expectedStagePullWeights) {
   const weights = global.MapEngine.nodeWeightsForStage({ bossIndex });
   assert.equal(weights.pull_free_agents, free, `stage ${bossIndex + 1} free agent pull weight`);
   assert.equal(weights.pull_unlocked_teams, defeated, `stage ${bossIndex + 1} defeated team pull weight`);
-  assert.equal(weights.pull_free_agents + weights.pull_unlocked_teams, 25);
+  assert.equal(weights.pull_legendary, legendary, `stage ${bossIndex + 1} legendary pull weight`);
   assert.equal(Object.values(weights).reduce((sum, value) => sum + value, 0), 100);
   assert.equal(weights.five_v_five, 32);
   assert.equal(weights.random, 15);
   assert.equal(weights.item, 15);
   assert.equal(weights.trade, 10);
-  assert.equal(weights.pull_legendary, 3);
 }
+assert.equal(global.MapEngine.availableTypes, undefined, "map internals must keep available type filtering private");
+assert.deepEqual(global.RoguelikeRules.unlockedTeamPullCategoryWeights(0), { Scarso: 1, Debole: 1, Normale: 1, Buono: 1, Forte: 1, Elite: 1, Mondiale: 1, Leggenda: 1 });
+assert(global.RoguelikeRules.unlockedTeamPullCategoryWeights(4).Forte > global.RoguelikeRules.unlockedTeamPullCategoryWeights(0).Forte, "boss 5 team pulls must slightly improve high rarity weights");
+assert(global.RoguelikeRules.unlockedTeamPullCategoryWeights(6).Forte > global.RoguelikeRules.unlockedTeamPullCategoryWeights(4).Forte, "boss 7 team pulls must increase Forte weight");
+assert(global.RoguelikeRules.unlockedTeamPullCategoryWeights(7).Elite > global.RoguelikeRules.unlockedTeamPullCategoryWeights(6).Elite, "boss 8 team pulls must increase Elite weight without guarantees");
 assert.equal(Object.values(global.SEASON1_CONFIG.hiddenNodeWeights).reduce((sum, value) => sum + value, 0), 100);
 assert.equal(global.SEASON1_CONFIG.maxInventory, 20);
 

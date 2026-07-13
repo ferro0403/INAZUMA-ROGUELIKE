@@ -55,6 +55,28 @@
     return shuffle(available, random).slice(0, count);
   }
 
+  function selectWeightedCandidates(available, random, categoryWeights = {}, count = 3) {
+    const remaining = available.slice();
+    const selected = [];
+    while (remaining.length && selected.length < count) {
+      const weighted = remaining.map((player) => ({
+        player,
+        weight: Math.max(0, Number(categoryWeights[player.category]) || 1),
+      }));
+      const total = weighted.reduce((sum, entry) => sum + entry.weight, 0);
+      if (!total) break;
+      let cursor = random() * total;
+      const index = weighted.findIndex((entry) => {
+        cursor -= entry.weight;
+        return cursor <= 0;
+      });
+      const pickedIndex = index >= 0 ? index : weighted.length - 1;
+      selected.push(weighted[pickedIndex].player);
+      remaining.splice(pickedIndex, 1);
+    }
+    return selected;
+  }
+
   function selectLegendaryCandidates(available, random, categoryRank, eliteCategory = "Elite", count = 3) {
     const initiallySelected = selectCandidates(available, random, count);
     const eliteRank = categoryRank(eliteCategory);
@@ -144,6 +166,7 @@
     makeRoleSequence,
     makeCandidates,
     selectCandidates,
+    selectWeightedCandidates,
     selectLegendaryCandidates,
     start,
     prepareStep,
