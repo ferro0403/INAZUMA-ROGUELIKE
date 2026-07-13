@@ -652,12 +652,15 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .five-formation-card.selected { border-color: var(--yellow); box-shadow: 0 0 0 3px rgba(255,211,79,.18); }
 .five-pitch { display: grid; gap: 14px; min-height: 520px; padding: 22px; border: 2px solid rgba(255,255,255,.32); border-radius: 24px; background: linear-gradient(rgba(255,255,255,.08) 2px, transparent 2px) center/100% 50%, repeating-linear-gradient(90deg, #14633f 0 12.5%, #176c45 12.5% 25%); }
 .five-pitch-line { display: flex; justify-content: center; align-items: center; gap: 16px; }
-.five-slot { width: 132px; min-height: 138px; padding: 10px; border: 2px solid rgba(255,255,255,.2); border-radius: 16px; background: rgba(4,20,28,.86); color: white; text-align: center; }
+.five-slot { position: relative; width: 132px; min-height: 138px; padding: 10px; border: 2px solid rgba(255,255,255,.2); border-radius: 16px; background: rgba(4,20,28,.86); color: white; text-align: center; }
 .five-slot.selected { border-color: var(--yellow); box-shadow: 0 0 0 4px rgba(255,211,79,.18); }
 .five-slot.missing { border-color: rgba(255,91,98,.7); }
 .five-slot img { width: 58px; height: 58px; object-fit: contain; }
 .five-slot strong, .five-roster-card strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .five-slot-role { display: flex; justify-content: center; margin-bottom: 5px; }
+.five-player-equipment { position: absolute; left: 6px; bottom: 6px; z-index: 2; display: inline-grid; place-items: center; width: 28px; height: 28px; border: 1px solid rgba(255,255,255,.32); border-radius: 9px; background: rgba(5,7,11,.76); color: var(--yellow); box-shadow: 0 4px 10px rgba(0,0,0,.22); pointer-events: none; box-sizing: border-box; }
+.five-player-equipment .item-icon { width: 18px; height: 18px; border: 0; border-radius: 0; background: transparent; }
+.five-player-equipment .item-icon svg { width: 16px; height: 16px; stroke-width: 2.35; }
 .five-empty { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto 5px; border: 2px dashed rgba(255,255,255,.45); border-radius: 50%; color: var(--yellow); font-size: 2rem; }
 .role-token { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border: 1px solid rgba(255,255,255,.15); border-radius: 999px; background: rgba(54,169,255,.12); color: #d9ecff; font-size: .72rem; font-weight: 950; }
 .role-GK { background: rgba(255,211,79,.14); color: #ffe28a; }
@@ -690,6 +693,9 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .five-pitch-line { gap: 8px; }
   .five-slot { width: clamp(96px, 28vw, 118px); min-height: 124px; padding: 8px 5px; }
   .five-slot img, .five-empty { width: 48px; height: 48px; }
+  .five-player-equipment { left: 5px; bottom: 5px; width: 22px; height: 22px; border-radius: 7px; }
+  .five-player-equipment .item-icon { width: 15px; height: 15px; }
+  .five-player-equipment .item-icon svg { width: 13px; height: 13px; }
   .five-roster-list { max-height: none; }
 }
 
@@ -995,6 +1001,9 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .five-match-line[data-row-count="2"] { --five-mobile-card-width: clamp(82px, 29vw, 96px); }
   .five-match-card { width: 100%; min-height: 92px; padding: 5px 3px 6px; border-radius: 11px; }
   .five-match-card img { width: 38px; height: 38px; }
+  .five-match-card .five-player-equipment { left: 4px; bottom: 4px; width: 22px; height: 22px; border-radius: 7px; }
+  .five-match-card .five-player-equipment .item-icon { width: 15px; height: 15px; }
+  .five-match-card .five-player-equipment .item-icon svg { width: 13px; height: 13px; }
   .five-match-card strong { font-size: clamp(.56rem, 2.1vw, .64rem); }
   .five-match-controls { display: grid; grid-template-columns: 1fr; width: 100%; gap: 12px; padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
   .five-match-controls > .btn-yellow { min-width: 0; width: 100%; min-height: 58px; }

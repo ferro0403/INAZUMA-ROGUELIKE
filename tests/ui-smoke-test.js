@@ -56,6 +56,9 @@ assert(css.includes(".player-card-compact .player-overall"), "compact player car
 assert(css.includes(".player-card-compact .player-equipment"), "compact player cards must render equipped items as corner icons only");
 assert(css.includes(".item-icon"), "item icons must have shared SVG styling");
 assert(css.includes(".item-assignment-layout"), "item assignment must reuse the tactical pitch layout responsively");
+assert(css.includes(".five-player-equipment { position: absolute; left: 6px; bottom: 6px;"), "5v5 equipment indicator must be pinned bottom-left without layout shift on desktop");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.five-player-equipment \{[^}]*width:\s*22px; height:\s*22px/.test(css), "5v5 equipment indicator must use smaller mobile dimensions");
+assert(css.includes(".five-match-card .five-player-equipment"), "5v5 match cards must have mobile-specific equipment sizing");
 assert(css.includes(".button-row { display: flex; flex-wrap: wrap;"), "pull action buttons must wrap cleanly for mobile/desktop controls");
 
 const appJs = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
@@ -79,6 +82,9 @@ assert.equal(global.MatchSimulator.getMatchWinProbabilities("eleven", 60, 85).us
 assert(appJs.includes("if (match.simulation?.valid) return match.simulation;") && appJs.includes("if (!sim || sim.state !== \"simulating\" || sim.manuallyResolved) return;"), "refresh and Vai al risultato must reuse the existing simulation instead of extracting again");
 assert(appJs.includes("Vittoria sicura"), "manual safe victory control must remain visible");
 assert(appJs.includes("startMatchSimulation") && appJs.includes("resolutionApplied"), "match UI must persist simulation and guard one-time resolution");
+assert(appJs.includes("const baseStats = resolved.baseStats || resolved.stats") && appJs.includes("? resolved.stats") && appJs.includes("applyEquipment(resolved.stats, equipment)"), "player detail must not apply equipment twice when resolved stats already include equipment");
+assert(appJs.includes("function fivePlayerEquipmentMarkup(equipment)") && appJs.includes("Oggetto equipaggiato:") && appJs.includes("fivePlayerEquipmentMarkup(rosterEntry(player.playerId)?.equippedItem)"), "5v5 formation cards must render an accessible equipped-item indicator from roster equipment");
+assert(appJs.includes('side === "user" ? (player.equipment || rosterEntry(player.playerId)?.equippedItem) : null'), "5v5 match cards must render equipment only for the user side, never for free-agent opponents");
 assert(css.includes(".boss-match-log.match-sim-log") && css.includes("overflow-y: auto") && css.includes("-webkit-overflow-scrolling: touch"), "match commentary must be internally scrollable on desktop and touch devices");
 
 assert(appJs.includes('function resetViewScroll(viewElement = null)'), "UI must use a centralized resetViewScroll helper");
