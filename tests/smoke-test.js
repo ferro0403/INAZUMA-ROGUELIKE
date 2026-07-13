@@ -214,6 +214,78 @@ assert(luckyCharm, "lucky charm must exist");
 assert.equal(luckyCharm.weight, Math.min(...itemWeights), "lucky charm must have the lowest item spawn weight");
 assert(global.SEASON1_CONFIG.categoryRanks.Scarso < global.SEASON1_CONFIG.categoryRanks.Debole, "category ladder must support Scarso before Debole");
 
+const rank = (category) => Number(global.SEASON1_CONFIG.categoryRanks[category] ?? 0);
+const eliteRank = rank("Elite");
+const legendaryCategories = new Set(global.SEASON1_CONFIG.legendaryCategories);
+const uniqueByPlayerId = (players) => [...new Map(players.map((player) => [String(player.playerId), player])).values()];
+const legendaryPool = uniqueByPlayerId([
+  ...free.players.filter((player) => legendaryCategories.has(player.category)),
+  ...season.players.filter((player) => legendaryCategories.has(player.category)),
+]);
+assert(legendaryPool.length >= 3, "real legendary pool must have enough candidates for guarantee tests");
+assert(legendaryPool.some((player) => rank(player.category) >= eliteRank), "real legendary pool must include Elite-or-better candidates");
+const ownedLegendaryIds = new Set(legendaryPool.slice(0, 2).map((player) => String(player.playerId)));
+const availableLegendary = legendaryPool.filter((player) => !ownedLegendaryIds.has(String(player.playerId)));
+const highTierPositions = new Set();
+let foundTwoForteAndHigh = false;
+let foundMixedHighWithForte = false;
+let persistenceIds = null;
+for (let index = 0; index < 200; index += 1) {
+  const random = global.DraftEngine.randomFromSeed(`legendary-guarantee:${index}`);
+  const candidates = global.DraftEngine.selectLegendaryCandidates(availableLegendary, random, rank);
+  assert.equal(candidates.length, 3, `legendary pull seed ${index} must show three candidates`);
+  assert.equal(new Set(candidates.map((player) => String(player.playerId))).size, 3, `legendary pull seed ${index} must not duplicate player IDs`);
+  assert(candidates.every((player) => !ownedLegendaryIds.has(String(player.playerId))), `legendary pull seed ${index} must not show owned players`);
+  assert(candidates.every((player) => legendaryCategories.has(player.category)), `legendary pull seed ${index} must only use legendary categories`);
+  assert(candidates.some((player) => rank(player.category) >= eliteRank), `legendary pull seed ${index} must include Elite or better`);
+  assert(!candidates.every((player) => player.category === "Forte"), `legendary pull seed ${index} must not be Forte + Forte + Forte`);
+  candidates.forEach((player, position) => {
+    if (rank(player.category) >= eliteRank) highTierPositions.add(position);
+  });
+  const forteCount = candidates.filter((player) => player.category === "Forte").length;
+  const highCount = candidates.filter((player) => rank(player.category) >= eliteRank).length;
+  if (forteCount === 2 && highCount === 1) foundTwoForteAndHigh = true;
+  if (forteCount >= 1 && highCount >= 2) foundMixedHighWithForte = true;
+  if (index === 42) persistenceIds = candidates.map((player) => String(player.playerId));
+}
+assert(foundTwoForteAndHigh, "legendary guarantee must leave room for two Forte candidates plus one Elite-or-better candidate");
+assert(foundMixedHighWithForte, "legendary guarantee must not filter the pull to only Elite-or-better candidates");
+assert.deepEqual([...highTierPositions].sort(), [0, 1, 2], "Elite-or-better candidates must be able to appear in every displayed position");
+const persistedAgain = global.DraftEngine.selectLegendaryCandidates(
+  availableLegendary,
+  global.DraftEngine.randomFromSeed("legendary-guarantee:42"),
+  rank
+).map((player) => String(player.playerId));
+assert.deepEqual(persistedAgain, persistenceIds, "legendary candidates must be deterministic for the same seed and pool");
+const oneElitePool = [
+  ...Array.from({ length: 8 }, (_, index) => ({ playerId: `strong-${index}`, category: "Forte" })),
+  { playerId: "only-elite", category: "Elite" },
+];
+for (let index = 0; index < 100; index += 1) {
+  const candidates = global.DraftEngine.selectLegendaryCandidates(oneElitePool, global.DraftEngine.randomFromSeed(`one-elite:${index}`), rank);
+  assert.equal(candidates.length, 3, "8 Forte + 1 Elite fixture must still show three candidates");
+  assert(candidates.some((player) => player.playerId === "only-elite"), "the only available Elite must be guaranteed");
+  assert.equal(new Set(candidates.map((player) => String(player.playerId))).size, 3, "8 Forte + 1 Elite fixture must not duplicate IDs");
+}
+const worldLegendPool = [
+  { playerId: "strong", category: "Forte" },
+  { playerId: "world", category: "Mondiale" },
+  { playerId: "legend", category: "Leggenda" },
+];
+const worldLegendCandidates = global.DraftEngine.selectLegendaryCandidates(worldLegendPool, global.DraftEngine.randomFromSeed("world-legend"), rank);
+assert.equal(worldLegendCandidates.length, 3, "Forte + Mondiale + Leggenda fixture must show all three unique candidates");
+assert(worldLegendCandidates.some((player) => ["Mondiale", "Leggenda"].includes(player.category)), "Mondiale and Leggenda must satisfy the guarantee");
+assert.equal(new Set(worldLegendCandidates.map((player) => String(player.playerId))).size, 3, "Forte + Mondiale + Leggenda fixture must not duplicate IDs");
+const onlyStrongPool = [{ playerId: "a", category: "Forte" }, { playerId: "b", category: "Forte" }];
+const onlyStrongCandidates = global.DraftEngine.selectLegendaryCandidates(onlyStrongPool, global.DraftEngine.randomFromSeed("only-strong"), rank);
+assert.equal(onlyStrongCandidates.length, 2, "fallback without Elite-or-better candidates must return available valid candidates");
+assert(onlyStrongCandidates.every((player) => player.category === "Forte"), "fallback without Elite-or-better candidates must not crash or invent players");
+const highOwnedIds = new Set(legendaryPool.filter((player) => rank(player.category) >= eliteRank).map((player) => String(player.playerId)));
+const highOwnedAvailable = legendaryPool.filter((player) => !highOwnedIds.has(String(player.playerId)));
+const highOwnedCandidates = global.DraftEngine.selectLegendaryCandidates(highOwnedAvailable, global.DraftEngine.randomFromSeed("high-owned"), rank);
+assert(highOwnedCandidates.every((player) => !highOwnedIds.has(String(player.playerId))), "fallback with all Elite-or-better owned must not show owned high-tier players");
+assert(highOwnedCandidates.length <= 3, "fallback with all Elite-or-better owned must safely return up to three candidates");
+
 const outgoing = free.players.find((player) => player.position === "FW" && player.finalOverall >= 74);
 const tradeCandidates = global.RoguelikeRules.getTradeCandidates({
   outgoingPlayer: outgoing,
