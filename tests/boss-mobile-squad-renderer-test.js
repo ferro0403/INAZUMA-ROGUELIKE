@@ -19,9 +19,11 @@ assert(appJs.includes('player-meta-line player-meta-line--level') && appJs.inclu
 assert(css.includes('.match-player-card.boss-match-card .player-meta--stacked'), "shared boss match cards must style the stacked detail hierarchy");
 assert(css.includes('.match-player-card--boss.boss-match-card .player-meta--stacked'), "boss cards must keep a readable opponent text treatment");
 assert(css.includes('.match-player-card--user.boss-match-card .player-title strong { color: #05070b; text-shadow: none; }'), "user boss-match cards must render player names in black without affecting shared or boss cards");
-assert(css.includes('.match-player-card--user.boss-match-card .player-meta-line--level { color: #05070b; }'), "user boss-match cards must render stacked level text in black");
+assert(css.includes('.match-player-card--user.boss-match-card .player-meta-line--role-overall, .match-player-card--user.boss-match-card .player-meta-line--level { color: #05070b; }'), "user boss-match cards must render stacked role/OVR and level text in black");
+assert(css.includes('.match-player-card--user.boss-match-card .player-role, .match-player-card--user.boss-match-card .player-overall, .match-player-card--user.boss-match-card .player-level { color: #05070b; }'), "user boss-match card corner role, OVR, and level text must stay black on desktop without affecting boss cards");
 assert(!css.includes('.match-player-card.boss-match-card .player-title strong { color: #05070b'), "black name text must not be applied to every boss-match card");
-assert(!css.includes('.match-player-card.boss-match-card .player-meta-line--level { color: #05070b'), "black level text must not be applied to every boss-match card");
+assert(!css.includes('.match-player-card.boss-match-card .player-meta-line--role-overall') && !css.includes('.match-player-card.boss-match-card .player-meta-line--level { color: #05070b'), "black role/OVR and level text must not be applied to every boss-match card");
+assert(!css.includes('.match-player-card.boss-match-card .player-role, .match-player-card.boss-match-card .player-overall, .match-player-card.boss-match-card .player-level { color: #05070b'), "black corner text must not be applied to every boss-match card");
 assert(css.includes('.match-player-card--boss.boss-match-card { border-color: rgba(255,91,98,.7); background: linear-gradient(180deg, rgba(54,12,18,.9), rgba(4,20,28,.86)); }'), "boss card dark/red treatment must remain unchanged");
 assert(!appJs.includes('function bossMatchMobileField(team, side)'), "mobile must not keep a separate boss-match renderer selector");
 assert.equal((appJs.match(/renderMatchFormation\(/g) || []).length >= 1, true, "boss match should route formation markup through the shared renderer");
