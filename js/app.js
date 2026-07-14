@@ -493,9 +493,9 @@
     return player?.portraitUrl || player?.image || player?.imageUrl || player?.frontFullbodyUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='22' fill='%2311213f'/%3E%3Ccircle cx='60' cy='42' r='22' fill='%23ffd34f'/%3E%3Cpath d='M22 108c6-28 24-42 38-42s32 14 38 42' fill='%2385cdf5'/%3E%3C/svg%3E";
   }
 
-  function compactPlayerCardMarkup(player, { equipment = null, level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, selected = false, dataAttr = "" } = {}) {
+  function compactPlayerCardMarkup(player, { equipment = null, level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, selected = false, dataAttr = "", extraClass = "" } = {}) {
     return `
-      <button type="button" class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player ${rarityClass(player.category)} ${equipment ? "has-equipment" : ""} ${selected ? "selected" : ""}" ${dataAttr}>
+      <button type="button" class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player ${escapeHtml(extraClass)} ${rarityClass(player.category)} ${equipment ? "has-equipment" : ""} ${selected ? "selected" : ""}" ${dataAttr}>
         <span class="player-corner player-role" aria-label="Ruolo ${escapeHtml(player.position)}">${escapeHtml(player.position)}</span>
         <span class="player-corner player-overall" aria-label="Overall ${overall}">${overall}</span>
         <div class="player-portrait-wrap">
@@ -926,9 +926,7 @@
         ? `data-equip-player="${escapeHtml(id)}"`
         : mode === "consumable"
           ? `data-consumable-player="${escapeHtml(id)}"`
-          : mode === "readonly-boss"
-            ? `data-boss-player="${escapeHtml(id)}" data-boss-side="user"`
-            : `data-squad-player="${escapeHtml(id)}" data-area="${area}"`;
+          : `data-squad-player="${escapeHtml(id)}" data-area="${area}"`;
     return compactPlayerCardMarkup(player, {
       equipment: player.equipment,
       level: player.displayLevel,
@@ -1807,31 +1805,34 @@
     return Math.round(players.reduce((sum, player) => sum + Number(player.overall || 0), 0) / players.length);
   }
 
-  function bossMatchCard(player, side) {
-    const equipment = side === "user" ? rosterEntry(player.playerId)?.equippedItem : null;
-    return `
-      <button type="button" class="boss-match-card boss-match-card--${side} ${rarityClass(player.category)} ${equipment ? "has-equipment" : ""}" data-boss-player="${escapeHtml(player.playerId)}" data-boss-side="${side}" aria-label="Apri scheda ${escapeHtml(player.name)}">
-        <span class="boss-match-card-role">${escapeHtml(player.position)}</span>
-        <span class="boss-match-card-overall">${escapeHtml(player.overall ?? player.finalOverall ?? "-")}</span>
-        <img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" />
-        <strong>${escapeHtml(shortName(player.name))}</strong>
-        ${equipmentBadgeMarkup(equipment, "boss-match-card-item")}
-      </button>`;
+  function matchFormationCard(player, { side = "user", readonly = true, showEquipment = false } = {}) {
+    const equipment = showEquipment ? (player.equipment || rosterEntry(player.playerId)?.equippedItem || null) : null;
+    return compactPlayerCardMarkup(player, {
+      equipment,
+      level: player.displayLevel ?? player.level ?? 0,
+      overall: player.overall ?? player.finalOverall ?? "-",
+      dataAttr: `data-boss-player="${escapeHtml(player.playerId)}" data-boss-side="${side}" ${readonly ? 'aria-label="Apri scheda ' + escapeHtml(player.name) + '"' : ""}`,
+      extraClass: `match-player-card match-player-card--${side} boss-match-card boss-match-card--${side}`,
+    });
   }
 
-  function bossMatchMobileField(team, side) {
-    if (side === "user") {
-      return `<div class="boss-match-shared-squad-field" data-boss-team="user">${squadPitchMarkup({ mode: "readonly-boss" })}</div>`;
-    }
-    return bossMatchField(team, side, true);
+  function renderMatchFormation({ players, formationId, side = "user", readonly = true, showEquipment = false, mobile = false } = {}) {
+    const rows = formationRows(formationId, players || []);
+    return `
+      <div class="match-formation match-formation--${side} boss-match-field-side boss-match-field-side--${side} ${mobile ? "boss-match-field-side--mobile" : ""}" data-boss-team="${side}" data-readonly="${readonly}">
+        ${rows.map((row) => `<div class="match-formation-line match-formation-line--${row.role} boss-match-line boss-match-line--${row.role}" data-row-count="${row.players.length}" style="--players-in-row:${row.players.length || 1};--row-count:${row.players.length || 1};--boss-row-count:${row.players.length || 1}">${row.players.map((player) => matchFormationCard(player, { side, readonly, showEquipment })).join("")}</div>`).join("")}
+      </div>`;
   }
 
   function bossMatchField(team, side, mobile = false) {
-    const rows = formationRows(team.formationId, team.players);
-    return `
-      <div class="boss-match-field-side boss-match-field-side--${side} ${mobile ? "boss-match-field-side--mobile" : ""}" data-boss-team="${side}">
-        ${rows.map((row) => `<div class="boss-match-line boss-match-line--${row.role}" data-row-count="${row.players.length}" style="--boss-row-count:${row.players.length || 1}">${row.players.map((player) => bossMatchCard(player, side)).join("")}</div>`).join("")}
-      </div>`;
+    return renderMatchFormation({
+      players: team.players,
+      formationId: team.formationId,
+      side,
+      readonly: true,
+      showEquipment: side === "user",
+      mobile,
+    });
   }
 
   function bossMatchTimeline() {
@@ -2318,7 +2319,7 @@
                 <div class="boss-match-half-label boss-match-half-label--boss">${escapeHtml(meta.boss.name)}</div>
                 ${bossMatchField({ players: userPlayers, formationId: run.formationId }, "user")}
                 ${bossMatchField({ players: bossPlayers, formationId: boss.bossFormation }, "boss")}
-                <div class="boss-match-mobile-field">${bossMatchMobileField({ players: activeSide === "boss" ? bossPlayers : userPlayers, formationId: activeSide === "boss" ? boss.bossFormation : run.formationId }, activeSide)}</div>
+                <div class="boss-match-mobile-field">${bossMatchField({ players: activeSide === "boss" ? bossPlayers : userPlayers, formationId: activeSide === "boss" ? boss.bossFormation : run.formationId }, activeSide, true)}</div>
               </div>
             </section>
 
