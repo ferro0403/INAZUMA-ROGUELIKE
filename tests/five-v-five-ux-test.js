@@ -29,11 +29,12 @@ assert(!appJs.includes('window.scrollTo(0, 0)'), 'match flow must not force-scro
 assert(css.includes('.btn-back') && css.includes('.btn-secondary') && css.includes('.btn-tool'), 'semantic button hierarchy styles are present');
 assert(css.includes('.five-match-summary') && css.includes('.five-match-probability'), '5v5 summary/probability styles are present');
 assert(css.includes('.five-match-controls { position: sticky;'), 'desktop 5v5 primary controls keep their existing sticky layout');
-assert(css.includes('--mobile-five-actions-height'), '5v5 screen defines a dedicated mobile action-bar compensation height');
-assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-screen \{[^}]*--mobile-five-actions-height:\s*220px/.test(css), 'mobile 5v5 screen uses a compact fixed-action compensation height');
-assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-content \{[^}]*padding-bottom:\s*calc\(var\(--mobile-five-actions-height\) \+ env\(safe-area-inset-bottom\) \+ 24px\)/.test(css), 'mobile 5v5 content has bottom compensation for the fixed action bar');
-assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-screen > \.five-v-five-mobile-actions \{[^}]*position:\s*fixed[\s\S]*?left:\s*12px[\s\S]*?right:\s*12px[\s\S]*?bottom:\s*calc\(10px \+ env\(safe-area-inset-bottom\)\)/.test(css), 'mobile 5v5 controls are fixed to the viewport bottom outside the content wrapper');
-assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-controls \{[^}]*padding:\s*8px 10px calc\(12px \+ env\(safe-area-inset-bottom\)\)/.test(css), 'mobile 5v5 controls account for iPhone safe area');
+assert(!css.includes('--mobile-five-actions-height'), '5v5 no longer defines fixed-action compensation height');
+assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-content \{[^}]*padding-bottom:\s*20px/.test(css), 'mobile 5v5 content keeps only normal in-flow ending space');
+assert(!/\.five-match-content \{[^}]*padding-bottom:\s*calc\(var\(--mobile-five-actions-height\)/.test(css), 'mobile 5v5 content no longer compensates a fixed action bar');
+assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-screen > \.five-v-five-mobile-actions \{[^}]*position:\s*static[\s\S]*?left:\s*auto[\s\S]*?right:\s*auto[\s\S]*?bottom:\s*auto[\s\S]*?z-index:\s*auto/.test(css), 'mobile 5v5 controls are static in the document flow');
+assert(!/@media \(max-width: 780px\)[\s\S]*?\.five-match-screen > \.five-v-five-mobile-actions \{[^}]*position:\s*(?:fixed|sticky|absolute)/.test(css), 'mobile 5v5 controls are not fixed, sticky, or absolute');
+assert(!/@media \(max-width: 780px\)[\s\S]*?\.five-match-controls \{[^}]*padding:[^;}]*env\(safe-area-inset-bottom\)/.test(css), 'mobile 5v5 controls no longer reserve fixed-bar safe-area padding');
 assert(!/boss-match-controls[\s\S]{0,120}position:\s*fixed/.test(css), '11v11 boss controls must not receive the mobile fixed 5v5 treatment');
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-tabs \{[\s\S]*?position:\s*sticky/.test(css), 'mobile 5v5 tabs are reinforced and sticky in the local 5v5 layer');
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-controls \.button-row \.btn-back \{[^}]*display:\s*none/.test(css), 'mobile 5v5 hides the lower return action so only one map action is visible');

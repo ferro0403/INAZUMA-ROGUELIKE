@@ -87,11 +87,12 @@ assert(appJs.includes("function fivePlayerEquipmentMarkup(equipment)") && appJs.
 assert(appJs.includes('side === "user" ? (player.equipment || rosterEntry(player.playerId)?.equippedItem) : null'), "5v5 match cards must render equipment only for the user side, never for free-agent opponents");
 assert(css.includes(".boss-match-log.match-sim-log") && css.includes("overflow-y: auto") && css.includes("-webkit-overflow-scrolling: touch"), "match commentary must be internally scrollable on desktop and touch devices");
 assert((appJs.match(/class="panel five-match-controls five-v-five-mobile-actions"/g) || []).length === 1, "5v5 mobile/desktop must reuse one action bar in the DOM");
-assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-screen > \.five-v-five-mobile-actions \{[^}]*position:\s*fixed[\s\S]*?left:\s*12px[\s\S]*?right:\s*12px[\s\S]*?bottom:\s*calc\(10px \+ env\(safe-area-inset-bottom\)\)/.test(css), "mobile 5v5 action bar must be fixed to the viewport outside the content wrapper");
-assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-content \{[^}]*padding-bottom:\s*calc\(var\(--mobile-five-actions-height\) \+ env\(safe-area-inset-bottom\) \+ 24px\)/.test(css), "mobile 5v5 content must compensate the fixed action bar");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-screen > \.five-v-five-mobile-actions \{[^}]*position:\s*static[\s\S]*?left:\s*auto[\s\S]*?right:\s*auto[\s\S]*?bottom:\s*auto[\s\S]*?z-index:\s*auto/.test(css), "mobile 5v5 action bar must stay in normal document flow");
+assert(!/@media \(max-width: 780px\)[\s\S]*?\.five-match-screen > \.five-v-five-mobile-actions \{[^}]*position:\s*(?:fixed|sticky|absolute)/.test(css), "mobile 5v5 action bar must not be fixed, sticky, or absolute");
+assert(!css.includes("--mobile-five-actions-height") && !/\.five-match-content \{[^}]*padding-bottom:\s*calc\(var\(--mobile-five-actions-height\)/.test(css), "mobile 5v5 content must not compensate a fixed action bar");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-controls \.button-row \.btn-back \{[^}]*display:\s*none/.test(css), "mobile 5v5 must expose only one visible return-to-map action");
 assert(appJs.includes('five-match-header-back') && appJs.includes('five-match-back-short'), "mobile 5v5 header must keep return navigation in normal layout");
-assert(!/boss-match-controls[\s\S]{0,120}position:\s*fixed/.test(css), "11v11 action bar must remain outside mobile 5v5 fixed treatment");
+assert(!/boss-match-controls[\s\S]{0,120}position:\s*fixed/.test(css), "11v11 action bar must remain outside mobile 5v5 positioning treatment");
 
 assert(appJs.includes('function resetViewScroll(viewElement = null)'), "UI must use a centralized resetViewScroll helper");
 assert(appJs.includes('function scrollTargetsForView(viewElement = null)'), "reset helper must inspect the real scrollable view/modal containers");
