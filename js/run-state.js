@@ -67,6 +67,7 @@
       randomEventHistory: [],
       fiveVFive: null,
       activeMatch: null,
+      pendingBossVictory: null,
       currentZone: null,
       checkpoint: null,
       gameOver: false,
@@ -112,6 +113,7 @@
       randomEventHistory: run.randomEventHistory,
       fiveVFive: run.fiveVFive,
       activeMatch: run.activeMatch || null,
+      pendingBossVictory: run.pendingBossVictory || null,
       currentZone: run.currentZone,
     });
     return save(run);
