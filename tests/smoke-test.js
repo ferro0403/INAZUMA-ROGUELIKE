@@ -81,7 +81,7 @@ assert(appJs.includes("function playerPortraitUrl(player)") && appJs.includes("p
 assert(appJs.includes("data:image/svg+xml") && appJs.includes('src="${escapeHtml(playerPortraitUrl(player))}" alt="${escapeHtml(player.name)}"'), "pull cards must render a portrait fallback through the shared helper");
 assert(appJs.includes('<button class="btn btn-primary" id="confirm-pull-pick">Sì</button>') && appJs.includes('<button class="btn" id="cancel-pull-pick">No</button>') && appJs.includes('<button class="btn btn-yellow" id="detail-pull-pick">Apri scheda</button>'), "pull confirmation buttons and logic hooks must remain unchanged");
 assert(!appJs.includes("data-confirm-replacement"), "bench replacement logic should keep using the existing data-player-id click path");
-assert(appJs.includes("Il Gettone scout non può essere utilizzato nelle pull leggendarie."), "legendary pulls must block scout token rerolls in logic and UI");
+assert(appJs.includes("Il Visore scout non può essere utilizzato nelle pull leggendarie."), "legendary pulls must block scout token rerolls in logic and UI");
 assert(css.includes("align-items: center"), "desktop fullbody visual must be vertically centered");
 assert(css.includes("width: min(100%, 560px)"), "desktop fullbody player art must keep the approved size");
 assert(css.includes("object-fit: contain"), "fullbody image must preserve proportions");
@@ -175,14 +175,17 @@ assert(trainingManual, "training manual must exist in the real item pool");
 assert.equal(global.SEASON1_CONFIG.itemPool.filter((item) => item.id === "intensive_training").length, 1, "only one intensive training item must exist in the real item pool");
 assert.equal(energyDrink.weight, 10, "energy drink real pool weight");
 assert.equal(energyDrink.amount, 2, "energy drink real amount");
-assert.equal(energyDrink.description, "Assegna +2 livelli a un giocatore.", "energy drink visible description");
+assert.equal(energyDrink.name, "Onigiri energetico", "energy drink visible name");
+assert.equal(energyDrink.description, "Aumenta di 2 livelli un giocatore, fino al livello 20.", "energy drink visible description");
 assert.equal(trainingManual.weight, 12, "training manual real pool weight");
 assert.equal(trainingManual.amount, 0.5, "training manual amount must remain unchanged");
-assert.equal(trainingManual.description, "Tutta la rosa guadagna +0,5 livello.", "training manual visible description");
+assert.equal(trainingManual.name, "Fascia della motivazione", "training manual visible name");
+assert.equal(trainingManual.description, "Aumenta di 0,5 livello tutta la rosa, fino al livello 20.", "training manual visible description");
 assert.equal(intensiveTraining.weight, 7, "intensive training real pool weight");
 assert.equal(intensiveTraining.effect, "potential_boost", "intensive training effect must remain unchanged");
 assert.equal(intensiveTraining.amount, 3, "intensive training amount must remain unchanged");
-assert.equal(intensiveTraining.description, "Aumenta permanentemente di +3 l’overall attuale e il potenziale massimo di un giocatore, fino a 99.", "intensive training visible description");
+assert.equal(intensiveTraining.name, "Pesi da allenamento", "intensive training visible name");
+assert.equal(intensiveTraining.description, "Aumenta di 3 l’overall attuale e il potenziale massimo di un giocatore, fino a 99.", "intensive training visible description");
 for (const [id, expectedWeight] of Object.entries(originalUnaffectedItemWeights)) {
   assert.equal(itemById(id)?.weight, expectedWeight, `${id} weight must not change during the training item rebalance`);
 }
@@ -199,6 +202,7 @@ assert(appJs.includes("data-detail-unequip"), "player details must expose a dire
 assert(appJs.includes('luckyCompatible = ["pull_free_agents", "pull_unlocked_teams"].includes(pullType)'), "lucky charm must only be usable for eligible pull types");
 assert(appJs.includes("function useLuckyCharmOnPull") && appJs.includes("chooseLuckyUpgrade"), "lucky charm must reroll visible candidates with rarity upgrades during a pull");
 assert(appJs.includes("luckyCharmUsed") && appJs.includes("Portafortuna già utilizzato"), "lucky charm use must be persisted and blocked after one use per pull");
+assert.equal(itemById("lucky_charm").name, "Talismano portafortuna", "lucky charm visible name uses new central config");
 assert(appJs.includes("luckyCharmPoolForPull") && appJs.includes("players: seasonDb.players"), "team-pull lucky charm rerolls must use all season teams");
 assert(appJs.includes("function buildLuckyCharmUpgrades") && appJs.includes("currentCandidates.length !== 3"), "lucky charm must validate exactly three visible candidates before upgrading");
 assert(appJs.includes("upgradedCandidates.length !== 3") && appJs.includes("node.pullState.candidateIds = upgradedCandidates.map"), "lucky charm must atomically store the full upgraded array of three candidates");
@@ -208,9 +212,9 @@ assert(appJs.includes("uniqueIds.size !== 3"), "lucky charm must reject duplicat
 assert(appJs.includes("Non è stato possibile migliorare tutti i candidati."), "failed lucky charm generation must be reported without consuming the item");
 assert(appJs.includes('removeInventoryItem(luckyCharm.instanceId);') && appJs.indexOf('const upgradedCandidates = buildLuckyCharmUpgrades') < appJs.indexOf('removeInventoryItem(luckyCharm.instanceId);'), "lucky charm must consume exactly one item only after all upgrades are valid");
 assert(!appJs.includes("Usa Portafortuna ×"), "lucky charm button must not suggest multiple consecutive uses");
-assert(appJs.includes('"Usa Portafortuna"') && appJs.includes('Disponibili: ${luckyCount}'), "lucky charm button text and available count must be separated");
+assert(appJs.includes("pull-item-action-copy") && appJs.includes("luckyItem.name") && appJs.includes("disponibili: ${luckyCount}"), "lucky charm button text and available count must use central item data and stay separated");
 assert(appJs.includes('node.pullState?.luckyCharmUsed') && appJs.includes('luckyCharmPoolForPull(pullType)') && appJs.includes(': pullPool(pullType)'), "lucky charm upgraded team candidates from future teams must remain renderable without changing normal team pulls");
-assert(appJs.includes('item.effect === "lucky_pull"') && appJs.includes("Utilizzabile durante una Pull svincolati o Pull squadre"), "inventory must show lucky charm as in-pull only without an activation button");
+assert(appJs.includes('item.effect === "lucky_pull"') && appJs.includes("utilizzabile durante una Pull svincolati o Pull squadre"), "inventory must show lucky charm as in-pull only without an activation button");
 assert(!appJs.includes("Portafortuna attivo sulla prossima pull"), "old pending lucky charm activation toast must be removed");
 const itemWeights = global.SEASON1_CONFIG.itemPool.map((item) => item.weight);
 const luckyCharm = global.SEASON1_CONFIG.itemPool.find((item) => item.id === "lucky_charm");

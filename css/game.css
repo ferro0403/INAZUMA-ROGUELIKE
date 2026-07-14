@@ -739,6 +739,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .inventory-item-card { grid-template-columns: 38px minmax(0, 1fr) auto; gap: 8px; min-height: 0; padding: 12px; }
   .inventory-item-card .item-icon { grid-row: 1; width: 38px; height: 38px; border-radius: 11px; }
   .inventory-item-card .item-icon svg { width: 24px; height: 24px; }
+  .inventory-item-card .item-icon img { width: 100%; height: 100%; object-fit: contain; }
   .inventory-item-card .item-card-main p { font-size: .8rem; line-height: 1.25; }
   .inventory-item-card .item-card-actions { grid-column: 3; grid-row: 1; flex-direction: column; align-items: end; justify-content: start; gap: 7px; width: auto; }
   .inventory-item-card .btn { min-height: 38px; padding: 8px 10px; }
@@ -829,6 +830,15 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 
 .item-icon { display: inline-grid; place-items: center; flex: 0 0 auto; width: 42px; height: 42px; border: 1px solid rgba(255,211,79,.42); border-radius: 13px; background: rgba(255,211,79,.1); color: var(--yellow); }
 .item-icon svg { width: 28px; height: 28px; fill: none; stroke: currentColor; stroke-width: 2.1; stroke-linecap: round; stroke-linejoin: round; }
+.item-icon--image { overflow: hidden; }
+.item-icon--image img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.item-icon--image svg { display: none; }
+.item-icon--image.item-icon--fallback img { display: none; }
+.item-icon--image.item-icon--fallback svg { display: block; width: 60%; height: 60%; }
+.item-choice-card .item-icon { width: 64px; height: 64px; border-radius: 16px; }
+.pull-item-action-copy { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.pull-item-action-copy .item-icon { width: 28px; height: 28px; border-radius: 8px; background: rgba(7,23,44,.22); }
+
 .equipment-pill { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 3px 7px; border-radius: 999px; background: rgba(255,211,79,.16); color: #ffe28a; font-weight: 900; }
 .equipment-pill .item-icon, .equipment-badge .item-icon, .player-equipment .item-icon { width: 22px; height: 22px; border-radius: 7px; }
 .equipment-pill .item-icon svg, .equipment-badge .item-icon svg, .player-equipment .item-icon svg { width: 16px; height: 16px; }

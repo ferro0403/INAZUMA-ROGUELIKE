@@ -25,6 +25,17 @@
     { id: "special", title: "Gettoni e oggetti speciali", icon: "✦", itemIds: ["scout_token", "medical_kit", "lucky_charm"] },
   ];
 
+  function itemDefinitionById(id) {
+    return global.SEASON1_CONFIG.itemPool.find((candidate) => candidate.id === id) || null;
+  }
+
+  function resolveItem(itemOrId) {
+    const id = String(typeof itemOrId === "string" ? itemOrId : itemOrId?.itemId || itemOrId?.id || "");
+    const definition = itemDefinitionById(id);
+    if (definition) return typeof itemOrId === "object" && itemOrId ? { ...itemOrId, ...definition, instanceId: itemOrId.instanceId } : definition;
+    return typeof itemOrId === "object" && itemOrId ? itemOrId : { id, name: "Oggetto", description: "Oggetto non disponibile." };
+  }
+
   function inventoryItemIdentity(item) {
     return String(item?.itemId || item?.id || item?.effect || item?.name || "unknown_item");
   }
@@ -61,8 +72,26 @@
 
   global.InventoryHelpers = { inventoryItemIdentity, inventoryItemCategory, groupedInventoryItems, groupedInventoryByCategory, categories: INVENTORY_CATEGORY_DEFINITIONS };
 
+  function itemImageFallbackSvg() {
+    return `<svg viewBox="0 0 32 32"><path d="M6 9h20v17H6z"/><path d="m9 23 5-6 4 4 3-3 2 5"/><circle cx="20" cy="14" r="2"/></svg>`;
+  }
+
+  global.handleItemImageError = function handleItemImageError(image) {
+    if (!image || image.dataset.fallbackApplied) return;
+    image.dataset.fallbackApplied = "true";
+    image.removeAttribute("src");
+    image.setAttribute("hidden", "");
+    const wrapper = image.closest(".item-icon");
+    if (wrapper) wrapper.classList.add("item-icon--fallback");
+  };
+
   function itemIcon(itemOrId) {
-    const id = String(typeof itemOrId === "string" ? itemOrId : itemOrId?.id || "");
+    const item = resolveItem(itemOrId);
+    const id = String(item?.id || "");
+    const name = item?.name || "Oggetto";
+    if (item?.imageUrl) {
+      return `<span class="item-icon item-icon--image" aria-label="${escapeHtml(name)}" title="${escapeHtml(name)}"><img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(name)}" loading="lazy" onerror="globalThis.handleItemImageError && globalThis.handleItemImageError(this)" />${itemImageFallbackSvg()}</span>`;
+    }
     const icons = {
       energy_drink: `<svg viewBox="0 0 32 32"><path d="M11 8h10l-1 18h-8L11 8Z"/><path d="M13 4h6v4h-6z"/><path d="m16 12-3 6h3l-1 6 5-8h-3l1-4z"/></svg>`,
       training_manual: `<svg viewBox="0 0 32 32"><path d="M7 6h13a5 5 0 0 1 5 5v15H11a4 4 0 0 0-4 4V6Z"/><path d="M11 11h9M11 16h7M11 21h8"/></svg>`,
@@ -78,7 +107,7 @@
       speed_necklace: `<svg viewBox="0 0 32 32"><path d="M8 8c2 9 14 9 16 0"/><path d="m16 17-4 8h8l-4-8Z"/><path d="M6 20h5M21 20h5"/></svg>`,
       stamina_necklace: `<svg viewBox="0 0 32 32"><path d="M8 8c2 9 14 9 16 0"/><circle cx="16" cy="21" r="5"/><path d="M16 18v3l2 2"/></svg>`,
     };
-    return `<span class="item-icon" aria-hidden="true">${icons[id] || icons.scout_token}</span>`;
+    return `<span class="item-icon item-icon--fallback" aria-label="${escapeHtml(name)}" title="${escapeHtml(name)}">${icons[id] || itemImageFallbackSvg()}</span>`;
   }
 
   function statIcon(stat) {
@@ -336,8 +365,8 @@
     run.inventory = run.inventory.map((item) => {
       const definition = global.SEASON1_CONFIG.itemPool.find((candidate) => candidate.id === item.id);
       return {
-        ...(definition || item),
         ...item,
+        ...(definition || {}),
         instanceId: item.instanceId || `${item.id || "legacy"}_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
       };
     });
@@ -554,7 +583,7 @@
           </div>
           <p class="detail-category"><span aria-hidden="true">★</span>${escapeHtml(resolved.category)}</p>
           <div class="detail-stats">${stats}</div>
-          ${equipment ? `<div class="equipped-detail">${itemIcon(equipment)}<div class="equipped-detail-copy"><span>Oggetto assegnato</span><strong>${escapeHtml(equipment.name)}</strong><small>${escapeHtml(equipment.description)}</small><em>+${Number(equipment.bonus || 0)} ${escapeHtml(STAT_LABELS[equipment.stat] || equipment.stat || "")}</em></div>${playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>` : ""}
+          ${equipment ? `<div class="equipped-detail">${itemIcon(equipment)}<div class="equipped-detail-copy"><span>Oggetto assegnato</span><strong>${escapeHtml(resolveItem(equipment).name)}</strong><small>${escapeHtml(resolveItem(equipment).description)}</small><em>+${Number(resolveItem(equipment).bonus || 0)} ${escapeHtml(STAT_LABELS[resolveItem(equipment).stat] || resolveItem(equipment).stat || "")}</em></div>${playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>` : ""}
         </section>
       </div>`,
       { closeable: true, className: "player-detail-modal", onClose }
@@ -1219,7 +1248,7 @@
     modalRoot.querySelectorAll("[data-item-choice]").forEach((button) => {
       button.addEventListener("click", () => {
         const item = candidates.find((candidate) => candidate.id === button.dataset.itemChoice);
-        receiveItem(item, node, () => finishNonMatchNode(node, `Hai ottenuto: ${item.name}`));
+        receiveItem(item, node, (instance) => finishNonMatchNode(node, `Hai ottenuto ${resolveItem(instance).name}`));
       });
     });
     document.getElementById("skip-item").addEventListener("click", () => finishNonMatchNode(node, "Hai rinunciato all'oggetto"));
@@ -1363,7 +1392,8 @@
   }
 
   function itemChoiceCard(item) {
-    return `<button type="button" class="item-card" data-item-choice="${item.id}">${itemIcon(item)}<span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p></button>`;
+    const resolved = resolveItem(item);
+    return `<button type="button" class="item-card item-choice-card" data-item-choice="${resolved.id}">${itemIcon(resolved)}<span class="item-kind">${resolved.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(resolved.name)}</strong><p>${escapeHtml(resolved.description)}</p></button>`;
   }
 
   function weightedItemCandidates(random, count) {
@@ -1383,9 +1413,10 @@
 
   function receiveItem(item, node, done) {
     const add = () => {
-      run.inventory.push(makeItemInstance(item, node.id));
+      const instance = makeItemInstance(item, node.id);
+      run.inventory.push(instance);
       global.RunState.save(run);
-      done();
+      done(instance);
     };
     if (run.inventory.length < global.SEASON1_CONFIG.maxInventory) return add();
     chooseInventoryDiscard("Inventario pieno: scegli un oggetto da eliminare", add, () => resolveItemNode(node));
@@ -1394,7 +1425,7 @@
   function chooseInventoryDiscard(title, onDiscard, onCancel) {
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p><h2>${escapeHtml(title)}</h2></div></div>
-      <div class="item-grid">${run.inventory.map((item) => `<button type="button" class="item-card danger-card" data-discard-item="${item.instanceId}"><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p></button>`).join("")}</div>
+      <div class="item-grid">${run.inventory.map((item) => { const resolved = resolveItem(item); return `<button type="button" class="item-card danger-card" data-discard-item="${item.instanceId}">${itemIcon(resolved)}<strong>${escapeHtml(resolved.name)}</strong><p>${escapeHtml(resolved.description)}</p></button>`; }).join("")}</div>
       <div class="button-row" style="margin-top:18px"><button type="button" class="btn" id="cancel-discard">Annulla</button></div>`,
       { closeable: false }
     );
@@ -1556,7 +1587,7 @@
     const legendaryPull = pullType === "pull_legendary";
     const luckyCompatible = ["pull_free_agents", "pull_unlocked_teams"].includes(pullType);
     const rerollPull = () => {
-      if (legendaryPull) return toast("Il Gettone scout non può essere utilizzato nelle pull leggendarie.");
+      if (legendaryPull) return toast("Il Visore scout non può essere utilizzato nelle pull leggendarie.");
       removeInventoryItem(scoutToken.instanceId);
       node.pullState.excludedCandidateIds.push(...candidates.map((player) => String(player.playerId)));
       node.pullState.rerolls += 1;
@@ -1575,7 +1606,7 @@
       allowSkip: true,
       onReroll: scoutToken ? rerollPull : null,
       rerollDisabled: Boolean(scoutToken && legendaryPull),
-      rerollDisabledMessage: legendaryPull ? "Il Gettone scout non può essere utilizzato nelle pull leggendarie." : "",
+      rerollDisabledMessage: legendaryPull ? "Il Visore scout non può essere utilizzato nelle pull leggendarie." : "",
       onLuckyCharm: luckyCompatible && luckyCharm ? () => useLuckyCharmOnPull(node, pullType, candidates) : null,
       luckyCharmCount: run.inventory.filter((item) => item.effect === "lucky_pull").length,
       luckyCharmDisabled: Boolean(!luckyCompatible || node.pullState.luckyCharmUsed || !luckyCharm),
@@ -1623,12 +1654,14 @@
   }
 
   function showPlayerOffer(options) {
+    const scoutItem = resolveItem("scout_token");
+    const luckyItem = resolveItem("lucky_charm");
     const rerollButton = options.onReroll
-      ? `<button type="button" class="btn btn-yellow" id="reroll-offer" ${options.rerollDisabled ? "disabled" : ""}>Usa gettone scout</button>`
+      ? `<button type="button" class="btn btn-yellow" id="reroll-offer" ${options.rerollDisabled ? "disabled" : ""}><span class="pull-item-action-copy">${itemIcon(scoutItem)}<span>Usa ${escapeHtml(scoutItem.name)}</span></span></button>`
       : "";
     const luckyCount = Number(options.luckyCharmCount || 0);
     const luckyButton = options.onLuckyCharm || options.luckyCharmDisabledMessage
-      ? `<button type="button" class="btn btn-yellow" id="lucky-charm-offer" ${options.luckyCharmDisabled ? "disabled" : ""}>${options.luckyCharmDisabled && options.luckyCharmDisabledMessage ? escapeHtml(options.luckyCharmDisabledMessage) : "Usa Portafortuna"}</button>${!options.luckyCharmDisabled && luckyCount > 0 ? `<span class="muted small">Disponibili: ${luckyCount}</span>` : ""}`
+      ? `<button type="button" class="btn btn-yellow" id="lucky-charm-offer" ${options.luckyCharmDisabled ? "disabled" : ""}>${options.luckyCharmDisabled && options.luckyCharmDisabledMessage ? escapeHtml(options.luckyCharmDisabledMessage) : `<span class="pull-item-action-copy">${itemIcon(luckyItem)}<span>Usa ${escapeHtml(luckyItem.name)}</span></span>`}</button>${!options.luckyCharmDisabled && luckyCount > 0 ? `<span class="muted small">${escapeHtml(luckyItem.name)} disponibili: ${luckyCount}</span>` : ""}`
       : "";
     openModal(`
       <div class="modal-head event-modal-head"><button type="button" class="btn btn-back" id="back-offer-map">← Torna alla mappa</button><div><p class="eyebrow">Scelta giocatore</p><h2>${escapeHtml(options.title)}</h2><p class="muted">${escapeHtml(options.subtitle)}</p></div></div>
@@ -1650,7 +1683,7 @@
       });
     });
     document.getElementById("reroll-offer")?.addEventListener("click", () => {
-      if (options.rerollDisabled) return toast(options.rerollDisabledMessage || "Gettone scout non disponibile");
+      if (options.rerollDisabled) return toast(options.rerollDisabledMessage || "Visore scout non disponibile");
       options.onReroll();
     });
     document.getElementById("lucky-charm-offer")?.addEventListener("click", () => {
@@ -2482,8 +2515,9 @@
 
   function fivePlayerEquipmentMarkup(equipment) {
     if (!equipment) return "";
-    const label = `Oggetto equipaggiato: ${equipment.name || "oggetto"}`;
-    return `<span class="five-player-equipment" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${itemIcon(equipment)}</span>`;
+    const resolvedEquipment = resolveItem(equipment);
+    const label = `Oggetto equipaggiato: ${resolvedEquipment.name || "oggetto"}`;
+    return `<span class="five-player-equipment" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${itemIcon(resolvedEquipment)}</span>`;
   }
 
   function fiveSlotCard(slot, playerId, status) {
@@ -2738,7 +2772,7 @@
 
   function inventoryItemCard(groupOrItem) {
     const group = groupOrItem?.instances ? groupOrItem : { item: groupOrItem, quantity: 1, instances: [groupOrItem], key: inventoryItemIdentity(groupOrItem) };
-    const item = group.item;
+    const item = resolveItem(group.item);
     const instanceId = group.instances[0]?.instanceId || item.instanceId;
     const action = item.kind === "equipment"
       ? `<button type="button" class="btn btn-primary" data-equip-item="${instanceId}">Assegna</button>`
@@ -2832,7 +2866,7 @@
         const after = resolvedRosterPlayer(entry.playerId);
         closeModal();
         const rarityMessage = before.category !== after.category ? `\nNuova rarità: ${after.category}` : "";
-        toast(`Allenamento intensivo completato\nOverall ${before.overall} → ${after.overall}\nPotenziale ${before.potential} → ${after.potential}${rarityMessage}`);
+        toast(`Pesi da allenamento completati\nOverall ${before.overall} → ${after.overall}\nPotenziale ${before.potential} → ${after.potential}${rarityMessage}`);
         renderInventory();
       });
     });
@@ -2878,7 +2912,7 @@
     entry.equippedItem = newEquipment;
     global.RunState.save(run);
     closeModal();
-    toast(`${item.name} assegnato a ${sourcePlayer(entry).name}`);
+    toast(`Hai equipaggiato ${resolveItem(item).name} a ${sourcePlayer(entry).name}`);
     renderInventory();
   }
 
