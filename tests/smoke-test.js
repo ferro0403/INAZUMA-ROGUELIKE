@@ -396,10 +396,11 @@ assert.equal(afterTraining.overall, 66, "intensive training immediately raises c
 assert.equal(afterTraining.potential, 82, "intensive training raises potential by the same real boost");
 assert.equal(afterTraining.level, 4, "intensive training must not change player level");
 assert(afterTraining.attack > beforeTraining.attack, "intensive training updates real stats using existing role weights");
-assert.equal(afterTraining.category, "Elite", "intensive training recalculates rarity from boosted potential");
+assert.equal(afterTraining.category, "Forte", "intensive training recalculates rarity from boosted potential using global thresholds");
 const secondTraining = global.InazumaProgression.getPlayerAtLevel(intensivePlayer, 4, intensiveDb, { potentialBoost: 6, currentOverallBoost: 6 });
 assert.equal(secondTraining.overall, 69, "multiple intensive trainings stack on current overall");
 assert.equal(secondTraining.potential, 85, "multiple intensive trainings stack on potential");
+assert.equal(secondTraining.category, "Elite", "global thresholds promote to Elite at 85");
 const clampedTraining = global.InazumaProgression.getPlayerAtLevel({ ...intensivePlayer, finalOverall: 98 }, 13, intensiveDb, { potentialBoost: 1, currentOverallBoost: 1 });
 assert.equal(clampedTraining.overall, 92, "when potential can only gain +1, current overall gains only +1");
 assert.equal(clampedTraining.potential, 99, "intensive training potential is clamped at 99");
