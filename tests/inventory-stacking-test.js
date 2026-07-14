@@ -47,9 +47,9 @@ assert.equal(grouped.find((group) => group.key === "boots_attack").quantity, 2, 
 assert.equal(grouped.length, 3, "different item ids are not grouped together");
 assert.equal(stacked.length, 6, "inventory total still counts every physical copy");
 
-assert.equal(category(byId("energy_drink")), "training", "Bevanda energetica category");
-assert.equal(category(byId("training_manual")), "training", "Manuale di allenamento category");
-assert.equal(category(byId("intensive_training")), "training", "Allenamento intensivo category");
+assert.equal(category(byId("energy_drink")), "training", "Onigiri energetico category");
+assert.equal(category(byId("training_manual")), "training", "Fascia della motivazione category");
+assert.equal(category(byId("intensive_training")), "training", "Pesi da allenamento category");
 for (const id of ["boots_attack", "boots_control", "boots_defense", "keeper_gloves", "grit_band", "physical_band", "speed_necklace", "stamina_necklace"]) {
   assert.equal(category(byId(id)), "equipment", `${id} category`);
   assert.equal(byId(id).bonus, 5, `${id} bonus remains +5`);
