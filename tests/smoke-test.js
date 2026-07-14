@@ -95,9 +95,9 @@ assert(appJs.includes('function completeBossMatch(result)') && appJs.includes('u
 assert(appJs.includes('completeBossMatch("victory")') && appJs.includes('completeBossMatch("defeat")'), "boss match controls must reuse the centralized victory/defeat completion logic");
 assert(css.includes('.boss-match-card') && !/\.boss-match-card\s*,\s*\.mini-player/.test(css), "boss match desktop/boss cards must use isolated styles and not override mini-player cards");
 assert(css.includes('.boss-match-main-grid') && css.includes('@media (max-width: 780px)') && css.includes('.boss-match-mobile-field'), "boss match must define distinct desktop and mobile layouts");
-assert(appJs.includes('function bossMatchMobileField(team, side)') && appJs.includes('squadPitchMarkup({ mode: "readonly-boss" })'), "mobile boss user tab must reuse the shared squad pitch renderer");
-assert(appJs.includes('mode === "readonly-boss"') && appJs.includes('data-boss-player') && appJs.includes('data-boss-side="user"'), "readonly boss squad cards must keep player-detail data attributes without squad edit hooks");
-assert(css.includes('.boss-match-shared-squad-field .pitch'), "mobile boss user tab must wrap the shared squad pitch without duplicating card CSS");
+assert(appJs.includes('function renderMatchFormation({ players, formationId, side = "user"') && appJs.includes('function matchFormationCard(player'), "boss match user and boss tabs must reuse the shared match formation renderer");
+assert(appJs.includes('data-boss-player') && appJs.includes('data-boss-side="${side}"'), "readonly boss squad cards must keep player-detail data attributes without squad edit hooks");
+assert(css.includes('.match-player-card.boss-match-card') && css.includes('.match-player-card--boss'), "boss match cards must use shared card classes plus side modifiers");
 assert(css.includes('.boss-match-line[data-row-count="5"]'), "mobile boss tab must keep five-player boss lines on one row with specific sizing");
 
 const expectedFormationRows = {

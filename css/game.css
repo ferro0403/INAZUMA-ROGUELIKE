@@ -883,18 +883,12 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .boss-match-field-side { display: grid; grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 8px; align-items: center; min-width: 0; padding: 36px 12px 16px; }
 .boss-match-field-side--user { direction: rtl; }
 .boss-match-field-side--user .boss-match-line, .boss-match-field-side--user .boss-match-card { direction: ltr; }
-.boss-match-line { display: grid; grid-template-columns: repeat(var(--boss-row-count, 1), minmax(0, 82px)); justify-content: center; justify-items: center; gap: clamp(5px, .7vw, 10px); min-width: 0; }
-.boss-match-card { position: relative; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; box-sizing: border-box; width: clamp(64px, 5.8vw, 82px); min-height: 92px; padding: 5px 5px 7px; border: 1px solid rgba(54,169,255,.55); border-radius: 13px; background: rgba(4,20,28,.86); color: white; text-align: center; box-shadow: 0 8px 18px rgba(0,0,0,.18); }
-.boss-match-card--boss { border-color: rgba(255,91,98,.62); }
-.boss-match-card:hover { border-color: var(--yellow); transform: translateY(-1px); }
-.boss-match-card img { width: 42px; height: 42px; object-fit: contain; align-self: end; }
-.boss-match-card strong { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .64rem; line-height: 1.05; }
-.boss-match-card-role, .boss-match-card-overall { position: absolute; top: 4px; min-width: 22px; padding: 2px 4px; border-radius: 7px; background: rgba(5,7,11,.72); font-size: .58rem; font-weight: 950; }
-.boss-match-card-role { left: 4px; }
-.boss-match-card-overall { right: 4px; background: var(--yellow); color: #172033; }
-.boss-match-card-item { left: 4px; bottom: 4px; top: auto; right: auto; }
-.boss-match-card-item .item-icon { width: 16px; height: 16px; border-radius: 5px; }
-.boss-match-card-item .item-icon svg { width: 11px; height: 11px; }
+.boss-match-line { display: grid; grid-template-columns: repeat(var(--boss-row-count, 1), minmax(0, 112px)); justify-content: center; justify-items: center; gap: clamp(5px, .7vw, 10px); min-width: 0; margin: 0; overflow: visible; }
+.match-player-card.boss-match-card { width: 100%; max-width: 112px; border-color: rgba(54,169,255,.55); box-shadow: 0 8px 18px rgba(0,0,0,.18); }
+.match-player-card--boss.boss-match-card { border-color: rgba(255,91,98,.7); background: linear-gradient(180deg, rgba(54,12,18,.9), rgba(4,20,28,.86)); }
+.match-player-card--boss .player-overall { background: #ff5b6e; color: #fff; }
+.match-player-card--boss .player-role, .match-player-card--boss .player-level { border-color: rgba(255,91,98,.5); }
+.match-player-card.boss-match-card:hover { border-color: var(--yellow); transform: translateY(-1px); }
 .boss-match-mobile-field { display: none; }
 .boss-match-boss-panel { display: grid; align-content: start; gap: 8px; }
 .boss-match-boss-panel img { width: 88px; height: 88px; object-fit: contain; }
@@ -938,18 +932,13 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .boss-match-field { display: block; min-height: 620px; padding: 0; background: linear-gradient(rgba(255,255,255,.08) 2px, transparent 2px) center/100% 50%, repeating-linear-gradient(90deg, #14633f 0 12.5%, #176c45 12.5% 25%); }
   .boss-match-field > .boss-match-field-side, .boss-match-half-label { display: none; }
   .boss-match-mobile-field { display: block; height: 100%; }
-  .boss-match-shared-squad-field { height: 100%; }
-  .boss-match-shared-squad-field .pitch { height: 100%; min-height: 620px; margin: 0; border: 0; border-radius: 0; background: transparent; box-shadow: none; }
   .boss-match-field-side--mobile { display: grid; height: 620px; padding: 18px 7px; direction: ltr; }
-  .boss-match-line { grid-template-columns: repeat(var(--boss-row-count, 1), minmax(0, var(--boss-mobile-card-width, 64px))); gap: clamp(3px, 1.1vw, 6px); }
+  .boss-match-line { grid-template-columns: repeat(var(--boss-row-count, 1), minmax(0, var(--boss-mobile-card-width, 64px))); gap: clamp(6px, 1.8vw, 10px); }
   .boss-match-line[data-row-count="5"] { --boss-mobile-card-width: clamp(54px, 17vw, 66px); }
   .boss-match-line[data-row-count="4"] { --boss-mobile-card-width: clamp(62px, 20vw, 74px); }
   .boss-match-line[data-row-count="3"] { --boss-mobile-card-width: clamp(70px, 24vw, 84px); }
   .boss-match-line[data-row-count="2"] { --boss-mobile-card-width: clamp(78px, 28vw, 92px); }
-  .boss-match-card { width: 100%; min-height: 86px; padding: 5px 3px 6px 26px; border-radius: 11px; overflow: visible; }
-  .boss-match-card img { width: 38px; height: 38px; }
-  .boss-match-card strong { font-size: clamp(.54rem, 2vw, .62rem); }
-  .boss-match-card-role, .boss-match-card-overall { font-size: .52rem; min-width: 19px; padding: 1px 3px; }
+  .match-player-card.boss-match-card { max-width: var(--boss-mobile-card-width, var(--pitch-card-size)); }
   .boss-match-log { max-height: 190px; }
   .boss-match-log li { grid-template-columns: 34px 24px minmax(0, 1fr); font-size: .82rem; }
   .boss-match-score { font-size: 2.4rem; }
