@@ -93,9 +93,12 @@ assert(appJs.includes('bossMatchField({ players: userPlayers') && appJs.includes
 assert(appJs.includes('bossMatchTab') && appJs.includes('data-boss-tab="user"') && appJs.includes('data-boss-tab="boss"'), "mobile boss match tabs must switch between user and boss formations");
 assert(appJs.includes('function completeBossMatch(result)') && appJs.includes('ui.bossMatchResolving') && appJs.includes('ui.bossMatchState.startsWith("completed")'), "boss match completion must guard against duplicate resolution");
 assert(appJs.includes('completeBossMatch("victory")') && appJs.includes('completeBossMatch("defeat")'), "boss match controls must reuse the centralized victory/defeat completion logic");
-assert(css.includes('.boss-match-card') && !/\.boss-match-card\s*,\s*\.mini-player/.test(css), "boss match cards must use isolated styles and not override mini-player cards");
+assert(css.includes('.boss-match-card') && !/\.boss-match-card\s*,\s*\.mini-player/.test(css), "boss match desktop/boss cards must use isolated styles and not override mini-player cards");
 assert(css.includes('.boss-match-main-grid') && css.includes('@media (max-width: 780px)') && css.includes('.boss-match-mobile-field'), "boss match must define distinct desktop and mobile layouts");
-assert(css.includes('.boss-match-line[data-row-count="5"]'), "mobile boss match must keep five-player lines on one row with specific sizing");
+assert(appJs.includes('function bossMatchMobileField(team, side)') && appJs.includes('squadPitchMarkup({ mode: "readonly-boss" })'), "mobile boss user tab must reuse the shared squad pitch renderer");
+assert(appJs.includes('mode === "readonly-boss"') && appJs.includes('data-boss-player') && appJs.includes('data-boss-side="user"'), "readonly boss squad cards must keep player-detail data attributes without squad edit hooks");
+assert(css.includes('.boss-match-shared-squad-field .pitch'), "mobile boss user tab must wrap the shared squad pitch without duplicating card CSS");
+assert(css.includes('.boss-match-line[data-row-count="5"]'), "mobile boss tab must keep five-player boss lines on one row with specific sizing");
 
 const expectedFormationRows = {
   "4-3-3": [3, 3, 4, 1],
