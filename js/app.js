@@ -361,6 +361,7 @@
     run.randomEventHistory = Array.isArray(run.randomEventHistory) ? run.randomEventHistory : [];
     run.activeMatch = run.activeMatch || null;
     run.pendingBossVictory = run.pendingBossVictory || null;
+    run.postBossFlow = run.postBossFlow || null;
     run.roster = (run.roster || []).map((entry) => {
       const source = sourcePlayer(entry);
       const maxBoost = source ? Math.max(0, 99 - Number(source.finalOverall || 0)) : Number.POSITIVE_INFINITY;
@@ -476,7 +477,7 @@
         if (destination === "map") {
           return resumePostBossFlowOrMap();
         } else if (destination === "squad") {
-          finalizeBossVictoryTransition({ clearMatch: true, keepSquad: true });
+          ensurePostBossFlow({ clearMatch: true });
           run.phase = "squad";
           global.RunState.save(run);
           renderSquad();
@@ -793,6 +794,7 @@
     if (run.gameOver || run.phase === "gameover") return renderGameOver();
     if (run.phase === "formation") return renderFormationChoice();
     if (run.phase === "draft") return renderDraft();
+    if (run.postBossFlow) return resumePostBossFlow();
     if (run.phase === "squad") return renderSquad();
     if (run.phase === "five") return renderFiveVFive();
     if (run.phase === "inventory") return renderInventory();
@@ -1141,9 +1143,8 @@
   }
 
   function renderMap() {
-    const bossFlow = finalizeBossVictoryTransition({ navigate: false });
-    if (bossFlow.destination === "boss-rewards") return startBossRewards();
-    if (bossFlow.destination === "season-complete") return renderSeasonComplete();
+    const bossFlow = resolvePendingRunFlow();
+    if (bossFlow.destination !== "none") return navigateBossVictoryDestination(bossFlow);
     ensureCurrentZone();
     if (!run.currentZone) return renderSeasonComplete();
     run.phase = "map";
@@ -2436,6 +2437,18 @@
       addLevels(1);
       if (node) global.MapEngine.completeNode(run.currentZone, node.id);
       match.pendingPostMatchAction = { type: "boss-rewards" };
+      run.postBossFlow = run.postBossFlow || {
+        status: "result",
+        bossIndex: Number(match.bossIndex ?? run.bossIndex),
+        bossTeamId: String(seasonDb.bossOrder[Number(match.bossIndex ?? run.bossIndex)]?.teamId || ""),
+        matchNodeId: match.nodeId || null,
+        remainingRewards: 2,
+        rewardNumber: 1,
+        excludedIds: [],
+        rerolls: 0,
+        candidateIds: [],
+        completed: false,
+      };
     } else {
       global.RunState.restoreAfterLoss(run, match.previousNodeId);
       match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: `Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Torni al nodo precedente.` };
@@ -2453,7 +2466,7 @@
     const match = ui.match || run.activeMatch;
     if (!match || match.postMatchNavigationApplied) return;
     if (match.type === "boss" && match.result === "victory") {
-      const flow = finalizeBossVictoryTransition({ clearMatch: true });
+      const flow = resolvePendingRunFlow({ clearMatch: true });
       return navigateBossVictoryDestination(flow);
     }
     match.postMatchNavigationApplied = true;
@@ -2470,7 +2483,7 @@
   }
 
   function resumePostBossFlowOrMap() {
-    const flow = finalizeBossVictoryTransition({ clearMatch: true });
+    const flow = resolvePendingRunFlow({ clearMatch: true });
     if (flow.destination !== "none") return navigateBossVictoryDestination(flow);
     ensureCurrentZone();
     run.phase = "map";
@@ -2483,70 +2496,103 @@
     return match?.type === "boss" && match.result === "victory" && String(match.state || "").startsWith("completed") ? match : null;
   }
 
-  function finalizeBossVictoryTransition(options = {}) {
+  function ensurePostBossFlow(options = {}) {
     const match = bossVictoryMatch();
-    const pending = run.pendingBossVictory;
-    if (!match && !pending) return { destination: "none" };
-    const bossIndex = Number(pending?.bossIndex ?? match?.bossIndex ?? run.bossIndex);
-    const boss = seasonDb.bossOrder[bossIndex];
-    if (!boss) {
-      run.pendingBossVictory = null;
-      global.RunState.save(run);
-      return { destination: "season-complete" };
+    if (!run.postBossFlow && run.pendingBossVictory) {
+      const pending = run.pendingBossVictory;
+      const remaining = Math.max(0, Number(pending.rewardsRemaining ?? pending.remainingRewards ?? 2));
+      run.postBossFlow = { status: remaining > 0 ? "reward" : "next-zone", bossIndex: Number(pending.bossIndex ?? run.bossIndex), bossTeamId: String(pending.bossId || pending.bossTeamId || ""), matchNodeId: pending.nodeId || pending.matchNodeId || null, remainingRewards: remaining, rewardNumber: Math.max(1, 3 - remaining), excludedIds: (pending.excludedIds || []).map(String), rerolls: Number(pending.rerolls || 0), candidateIds: (pending.candidateIds || []).map(String), completed: false };
     }
-    if (match && run.currentZone?.bossIndex === bossIndex) {
+    if (!run.postBossFlow && match) {
+      run.postBossFlow = { status: "result", bossIndex: Number(match.bossIndex ?? run.bossIndex), bossTeamId: String(seasonDb.bossOrder[Number(match.bossIndex ?? run.bossIndex)]?.teamId || ""), matchNodeId: match.nodeId || null, remainingRewards: 2, rewardNumber: 1, excludedIds: [], rerolls: 0, candidateIds: [], completed: false };
+    }
+    const flow = run.postBossFlow;
+    if (!flow) return null;
+    flow.remainingRewards = Math.max(0, Math.min(2, Number(flow.remainingRewards ?? flow.rewardsRemaining ?? 2)));
+    flow.rewardNumber = Math.max(1, Math.min(2, Number(flow.rewardNumber ?? (3 - flow.remainingRewards))));
+    flow.excludedIds = Array.isArray(flow.excludedIds) ? Array.from(new Set(flow.excludedIds.map(String))) : [];
+    flow.candidateIds = Array.isArray(flow.candidateIds) ? flow.candidateIds.map(String) : [];
+    flow.rerolls = Math.max(0, Number(flow.rerolls || 0));
+    flow.bossIndex = Number(flow.bossIndex ?? run.bossIndex);
+    const boss = seasonDb.bossOrder[flow.bossIndex];
+    if (boss && !flow.bossTeamId) flow.bossTeamId = String(boss.teamId);
+    if (match && run.currentZone?.bossIndex === flow.bossIndex) {
       const node = run.currentZone.nodes.find((item) => item.id === match.nodeId || item.type === "boss");
       if (node) global.MapEngine.completeNode(run.currentZone, node.id);
-    }
-    if (!run.pendingBossVictory) {
-      run.pendingBossVictory = { bossIndex, bossId: String(boss.teamId), nodeId: match?.nodeId || null, rewardsRemaining: 2, excludedIds: [], rerolls: 0 };
     }
     if (options.clearMatch && match) {
       match.postMatchNavigationApplied = true;
       ui.match = null;
       run.activeMatch = null;
       ui.bossMatchResolving = false;
+      if (flow.status === "result") flow.status = "reward";
     }
-    if (Number(run.pendingBossVictory.rewardsRemaining || 0) > 0) {
-      run.phase = options.keepSquad ? "squad" : run.phase;
-      global.RunState.save(run);
-      return { destination: "boss-rewards" };
-    }
+    return flow;
+  }
+
+  function resolvePendingRunFlow(options = {}) {
+    const flow = ensurePostBossFlow(options);
+    if (!flow) return { destination: "none" };
+    const boss = seasonDb.bossOrder[flow.bossIndex];
+    if (!boss && flow.status !== "season-complete") flow.status = "season-complete";
+    if (flow.status === "result") { global.RunState.save(run); return { destination: "boss-result" }; }
+    if (flow.status === "reward" && flow.remainingRewards > 0) { global.RunState.save(run); return { destination: "boss-rewards" }; }
+    if (flow.status === "season-complete") return finishBossVictoryTransition();
+    flow.status = "next-zone";
+    global.RunState.save(run);
     return finishBossVictoryTransition();
   }
 
+  function resumePostBossFlow() {
+    return navigateBossVictoryDestination(resolvePendingRunFlow({ clearMatch: true }));
+  }
+
   function navigateBossVictoryDestination(flow) {
+    if (flow.destination === "boss-result") {
+      if (run.activeMatch) { ui.match = run.activeMatch; ui.bossMatchState = run.activeMatch.state || "completed-victory"; ui.bossMatchLog = run.activeMatch.log || ui.bossMatchLog || []; return renderMatch(); }
+      return startBossRewards();
+    }
     if (flow.destination === "boss-rewards") return startBossRewards();
     if (flow.destination === "season-complete") return renderSeasonComplete();
     if (flow.destination === "map") return renderMap();
     return null;
   }
 
+  function bossRewardCandidates(flow, boss) {
+    const team = seasonDb.teams.find((candidate) => String(candidate.teamId) === String(boss.teamId));
+    const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
+    const random = global.DraftEngine.randomFromSeed(`${run.runId}:bossReward:${flow.bossIndex}:${flow.rewardNumber}:${flow.rerolls}`);
+    const available = (team?.playerIds || []).map((id) => seasonPlayersById.get(String(id))).filter((player) => player && !owned.has(String(player.playerId)) && !flow.excludedIds.includes(String(player.playerId)));
+    return selectWeightedCandidates(available, random);
+  }
+
   function startBossRewards() {
-    const flow = finalizeBossVictoryTransition({ clearMatch: true });
-    if (flow.destination === "season-complete") return renderSeasonComplete();
-    if (flow.destination === "map") return renderMap();
-    const pending = run.pendingBossVictory;
-    const boss = seasonDb.bossOrder[Number(pending?.bossIndex ?? run.bossIndex)];
-    if (!pending || !boss) return renderMap();
-    ui.pendingReward = { boss, remaining: Number(pending.rewardsRemaining || 0), excludedIds: pending.excludedIds || [], rerolls: Number(pending.rerolls || 0), bossIndex: Number(pending.bossIndex) };
+    const flowResult = resolvePendingRunFlow({ clearMatch: true });
+    if (flowResult.destination === "season-complete") return renderSeasonComplete();
+    if (flowResult.destination === "map") return renderMap();
+    const flow = run.postBossFlow;
+    const boss = seasonDb.bossOrder[Number(flow?.bossIndex ?? run.bossIndex)];
+    if (!flow || !boss) return renderMap();
+    flow.status = "reward";
+    if (!flow.candidateIds?.length) flow.candidateIds = bossRewardCandidates(flow, boss).map((player) => String(player.playerId));
     global.RunState.save(run);
     showNextBossReward();
   }
 
   function showNextBossReward() {
-    const reward = ui.pendingReward;
-    const team = seasonDb.teams.find((candidate) => String(candidate.teamId) === String(reward.boss.teamId));
-    const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
-    const random = global.DraftEngine.randomFromSeed(`${run.runId}:bossReward:${reward.bossIndex ?? run.bossIndex}:${reward.remaining}:${reward.rerolls}`);
-    const available = team.playerIds
-      .map((id) => seasonPlayersById.get(String(id)))
-      .filter((player) => player && !owned.has(String(player.playerId)) && !reward.excludedIds.includes(String(player.playerId)));
-    const candidates = selectWeightedCandidates(available, random);
-    const level = global.RoguelikeRules.defeatedBossRewardLevel(reward.boss);
+    const flow = run.postBossFlow;
+    const boss = seasonDb.bossOrder[Number(flow?.bossIndex ?? run.bossIndex)];
+    if (!flow || !boss) return renderMap();
+    let candidates = (flow.candidateIds || []).map((id) => seasonPlayersById.get(String(id))).filter(Boolean);
+    if (!candidates.length) {
+      candidates = bossRewardCandidates(flow, boss);
+      flow.candidateIds = candidates.map((player) => String(player.playerId));
+      global.RunState.save(run);
+    }
+    const level = global.RoguelikeRules.defeatedBossRewardLevel(boss);
     const scoutToken = run.inventory.find((item) => item.effect === "pull_reroll");
     showPlayerOffer({
-      title: `Ricompensa ${3 - reward.remaining} di 2 · ${reward.boss.teamName}`,
+      title: `Ricompensa ${flow.rewardNumber} di 2 · ${boss.teamName}`,
       subtitle: `Scegli 1 giocatore su 3 · Livello ${level}`,
       candidates,
       source: "season1",
@@ -2555,45 +2601,43 @@
       allowSkip: true,
       onReroll: scoutToken ? () => {
         removeInventoryItem(scoutToken.instanceId);
-        reward.excludedIds.push(...candidates.map((player) => String(player.playerId)));
-        reward.rerolls += 1;
-        if (run.pendingBossVictory) {
-          run.pendingBossVictory.excludedIds = reward.excludedIds.slice();
-          run.pendingBossVictory.rerolls = reward.rerolls;
-        }
+        flow.excludedIds.push(...candidates.map((player) => String(player.playerId)));
+        flow.excludedIds = Array.from(new Set(flow.excludedIds));
+        flow.rerolls += 1;
+        flow.candidateIds = bossRewardCandidates(flow, boss).map((player) => String(player.playerId));
         global.RunState.save(run);
         showNextBossReward();
       } : null,
       onPick: (player) => {
-        reward.excludedIds.push(String(player.playerId));
-        recruitPlayer(player, "season1", level, () => {
-          advanceBossReward();
-        }, { allowCancel: true });
+        flow.excludedIds.push(String(player.playerId));
+        flow.excludedIds = Array.from(new Set(flow.excludedIds));
+        global.RunState.save(run);
+        recruitPlayer(player, "season1", level, () => advanceBossReward(), { allowCancel: true });
       },
       onSkip: advanceBossReward,
     });
   }
 
   function advanceBossReward() {
-    const reward = ui.pendingReward;
-    reward.remaining -= 1;
-    reward.rerolls = 0;
-    if (run.pendingBossVictory) {
-      run.pendingBossVictory.rewardsRemaining = reward.remaining;
-      run.pendingBossVictory.excludedIds = reward.excludedIds.slice();
-      run.pendingBossVictory.rerolls = 0;
-    }
+    const flow = run.postBossFlow;
+    if (!flow) return renderMap();
+    flow.remainingRewards = Math.max(0, Number(flow.remainingRewards || 0) - 1);
+    flow.rewardNumber = Math.min(2, Number(flow.rewardNumber || 1) + 1);
+    flow.rerolls = 0;
+    flow.candidateIds = [];
+    if (flow.remainingRewards <= 0) flow.status = "next-zone";
     global.RunState.save(run);
-    reward.remaining > 0 ? showNextBossReward() : navigateBossVictoryDestination(finishBossVictoryTransition());
+    flow.remainingRewards > 0 ? showNextBossReward() : navigateBossVictoryDestination(finishBossVictoryTransition());
   }
 
   function finishBossVictoryTransition() {
-    const pending = run.pendingBossVictory;
-    const bossIndex = Number(pending?.bossIndex ?? run.bossIndex);
+    const flow = ensurePostBossFlow() || run.postBossFlow;
+    const bossIndex = Number(flow?.bossIndex ?? run.bossIndex);
     const boss = seasonDb.bossOrder[bossIndex];
     ui.pendingReward = null;
     closeModal();
     if (!boss) {
+      run.postBossFlow = null;
       run.pendingBossVictory = null;
       run.phase = "complete";
       global.RunState.save(run);
@@ -2607,13 +2651,14 @@
     run.activeMatch = null;
     ui.match = null;
     if (run.bossIndex >= seasonDb.bossOrder.length) {
+      run.postBossFlow = null;
       run.phase = "complete";
       global.RunState.save(run);
       return { destination: "season-complete" };
     }
     ensureCurrentZone();
+    run.postBossFlow = null;
     global.RunState.createCheckpoint(run);
-    toast(`${boss.teamName} sconfitta. Nuovo checkpoint raggiunto!`);
     return { destination: "map" };
   }
 

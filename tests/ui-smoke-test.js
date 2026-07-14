@@ -4,12 +4,22 @@ const assert = require("assert");
 const fs = require("fs");
 const http = require("http");
 const path = require("path");
-const { JSDOM, VirtualConsole } = require("/tmp/inazuma-jsdom/node_modules/jsdom");
+function loadJsdom() {
+  try { return require("jsdom"); } catch (firstError) {
+    try { return require("/tmp/inazuma-jsdom/node_modules/jsdom"); } catch (secondError) {
+      console.error("jsdom is required. Install it with: npm install --prefix /tmp/inazuma-jsdom --cache /tmp/npm-cache jsdom");
+      throw secondError;
+    }
+  }
+}
+const { JSDOM, VirtualConsole } = loadJsdom();
 
 const root = path.resolve(__dirname, "..");
 require(path.join(root, "js/match-simulator-config.js"));
 require(path.join(root, "js/match-simulator.js"));
 const css = fs.readFileSync(path.join(root, "css/game.css"), "utf8");
+const appJs = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
+const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.route-map[\s\S]*?min-width:\s*0/.test(css), "mobile route map must not keep the desktop 620px min width");
 assert(css.includes(".route-map::before") && css.includes("pointer-events: none"), "route map field layers must be decorative and not intercept clicks");
 assert(css.includes("repeating-linear-gradient(90deg") && css.includes("radial-gradient(circle at 50% 50%"), "route map must render a striped soccer field with center-circle lines");
@@ -68,8 +78,6 @@ assert(!/@media \(max-width: 780px\)[\s\S]*?\.boss-match-field-side--mobile \.bo
 assert(!/@media \(max-width: 780px\)[\s\S]*?(?:\.five-player-equipment|\.boss-match-card-item|\.player-equipment) \{[^}]*-(?:top|left|right|bottom):/.test(css), "mobile equipment badges must not use negative offsets");
 assert(css.includes(".button-row { display: flex; flex-wrap: wrap;"), "pull action buttons must wrap cleanly for mobile/desktop controls");
 
-const appJs = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
-const indexHtml = fs.readFileSync(path.join(root, "index.html"), "utf8");
 assert(indexHtml.includes("js/match-simulator-config.js") && indexHtml.includes("js/match-simulator.js"), "match simulator scripts must be loaded before app.js");
 assert(appJs.includes("Simula partita"), "match screens must expose the Simula partita button");
 assert(appJs.includes("function bossTeamLogoUrl(boss)") && appJs.includes("boss?.logoUrl || team?.logoUrl"), "boss map nodes must resolve logos from existing boss/team data");
@@ -151,10 +159,11 @@ server.listen(0, "127.0.0.1", async () => {
   virtualConsole.on("jsdomError", (error) => errors.push(error));
   virtualConsole.on("error", (error) => errors.push(error));
 
+  let dom = null;
   try {
     const address = server.address();
     const url = `http://127.0.0.1:${address.port}/`;
-    const dom = await JSDOM.fromURL(url, {
+    dom = await JSDOM.fromURL(url, {
       resources: "usable",
       runScripts: "dangerously",
       pretendToBeVisual: true,

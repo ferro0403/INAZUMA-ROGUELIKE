@@ -1,0 +1,18 @@
+"use strict";
+const assert = require("assert");
+const fs = require("fs");
+const path = require("path");
+const root = path.resolve(__dirname, "..");
+const appJs = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
+const runStateJs = fs.readFileSync(path.join(root, "js/run-state.js"), "utf8");
+assert(appJs.includes("postBossFlow") && runStateJs.includes("postBossFlow"), "post-boss state is persisted on the run");
+assert(appJs.includes('status: "result"') && appJs.includes('flow.status = "reward"') && appJs.includes('flow.status = "next-zone"'), "result/reward/next-zone states exist");
+assert(appJs.includes('run.phase = "complete"') && appJs.includes('destination: "season-complete"'), "last boss completes the season");
+assert(appJs.includes("function resolvePendingRunFlow") && appJs.includes("function resumePostBossFlow"), "navigation is centralized");
+assert(appJs.includes('ensurePostBossFlow({ clearMatch: true });\n          run.phase = "squad"'), "Modifica squadra persists flow without advancing the boss");
+assert(appJs.includes('flow.candidateIds') && appJs.includes('bossRewardCandidates(flow, boss)') && appJs.includes('flow.rerolls += 1'), "reward candidates and rerolls are persisted deterministically");
+assert(appJs.includes('if (run.bossIndex <= bossIndex) run.bossIndex = bossIndex + 1'), "bossIndex advances idempotently");
+assert(appJs.includes('!run.completedBossIds.includes') && appJs.includes('!run.unlockedTeamIds.includes'), "boss completion/unlock are not duplicated");
+assert(!appJs.includes('ui.pendingReward = { boss'), "reward truth no longer lives only in ui.pendingReward");
+assert(runStateJs.includes('defaultPostBossFlowFromPending') && runStateJs.includes('match?.type === "boss"'), "legacy stuck boss wins are normalized");
+console.log("post-boss-flow-test passed");

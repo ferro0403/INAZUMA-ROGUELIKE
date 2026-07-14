@@ -2,8 +2,9 @@
   "use strict";
 
   global.SEASON1_CONFIG = {
-    saveKey: "inazumaRoguelikeSeason1Run_v1",
-    saveVersion: 1,
+    saveKey: "inazumaRoguelikeSeason1Run_v2",
+    legacySaveKeys: ["inazumaRoguelikeSeason1Run_v1"],
+    saveVersion: 2,
     startingLives: 3,
     maxRoster: 15,
     maxInventory: 20,
