@@ -892,6 +892,8 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .match-player-card.boss-match-card .player-meta-line { display: inline-flex; align-items: center; justify-content: center; gap: 4px; max-width: 100%; min-width: 0; white-space: nowrap; }
 .match-player-card.boss-match-card .player-meta-line span { min-width: 0; }
 .match-player-card.boss-match-card .player-meta-line--level { color: rgba(255,226,138,.95); }
+.match-player-card--user.boss-match-card .player-title strong { color: #05070b; text-shadow: none; }
+.match-player-card--user.boss-match-card .player-meta-line--level { color: #05070b; }
 .match-player-card--boss.boss-match-card .player-meta--stacked { color: rgba(255,238,241,.94); }
 .match-player-card--boss.boss-match-card { border-color: rgba(255,91,98,.7); background: linear-gradient(180deg, rgba(54,12,18,.9), rgba(4,20,28,.86)); }
 .match-player-card--boss .player-overall { background: #ff5b6e; color: #fff; }
