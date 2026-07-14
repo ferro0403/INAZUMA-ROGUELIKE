@@ -1134,3 +1134,48 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .boss-match-log.match-sim-log { max-height: 310px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; scrollbar-gutter: stable; }
 .boss-match-log.match-sim-log:focus { outline: 3px solid rgba(54,169,255,.35); outline-offset: 3px; }
 @media (max-width: 780px) { .boss-match-log.match-sim-log { max-height: 260px; } }
+
+/* Event UX and 5v5 clarity layer */
+.btn-back { border: 1px solid rgba(92,130,177,.45); background: rgba(7,23,44,.82); color: #dcefff; box-shadow: 0 8px 18px rgba(0,0,0,.16); }
+.btn-back:hover, .btn-back:focus-visible { border-color: var(--yellow); color: var(--yellow); }
+.btn-secondary { border: 1px solid rgba(54,169,255,.45); background: rgba(54,169,255,.12); color: #dcefff; }
+.btn-tool { border: 1px solid rgba(255,211,79,.5); background: rgba(255,211,79,.12); color: var(--yellow); }
+.btn-primary-action { box-shadow: 0 10px 24px rgba(255,211,79,.18); }
+.event-modal-head { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 14px; align-items: start; }
+.event-modal-head .btn-back { min-height: 42px; }
+.match-state-badge { display: inline-flex; align-items: center; width: max-content; margin-top: 7px; padding: 5px 10px; border: 1px solid rgba(255,211,79,.42); border-radius: 999px; background: rgba(255,211,79,.10); color: var(--yellow); font-size: .72rem; font-weight: 950; text-transform: uppercase; letter-spacing: .04em; }
+.five-match-hero { grid-template-columns: auto minmax(170px,.55fr) minmax(0,1.45fr); background: linear-gradient(135deg, rgba(10,28,54,.96), rgba(7,23,44,.9)); }
+.five-match-summary { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; }
+.five-match-summary > div { min-width: 0; padding: 13px 15px; border: 1px solid rgba(92,130,177,.28); border-radius: 16px; background: rgba(10,28,54,.82); text-align: center; }
+.five-match-summary span { display: block; color: var(--muted); font-size: .72rem; font-weight: 950; text-transform: uppercase; }
+.five-match-summary strong { display: block; color: #fff; font-size: 1.7rem; line-height: 1.05; }
+.five-match-summary small { color: var(--muted); font-weight: 850; }
+.five-match-probability { border-color: rgba(255,211,79,.55) !important; background: linear-gradient(180deg, rgba(255,211,79,.16), rgba(10,28,54,.88)) !important; }
+.five-match-probability strong { color: var(--yellow); font-size: 2rem; }
+.panel-title-row { display: flex; align-items: start; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+.panel-title-row h3 { margin: 0; }
+.five-match-log-panel, .five-match-result-panel { min-width: 0; }
+.result-badges { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; margin-top: 12px; }
+.result-badges span { padding: 6px 9px; border: 1px solid rgba(92,130,177,.32); border-radius: 999px; background: rgba(7,23,44,.78); color: #dcefff; font-size: .76rem; font-weight: 900; }
+.five-editor-head { align-items: center; gap: 12px; }
+.five-roster-card.disabled { cursor: not-allowed; }
+.five-roster-card.disabled small::after { content: " · ruolo non compatibile"; color: #ffb4b8; }
+.five-match-controls { position: sticky; bottom: 12px; z-index: 5; border-color: rgba(255,211,79,.28); background: rgba(7,23,44,.94); backdrop-filter: blur(10px); }
+.five-match-controls .button-row { flex-wrap: wrap; justify-content: flex-end; }
+
+@media (max-width: 780px) {
+  .event-modal-head { grid-template-columns: 1fr; }
+  .event-modal-head .btn-back { width: 100%; min-height: 48px; }
+  .five-match-hero { gap: 10px; }
+  .five-match-hero > .btn-back { width: 100%; min-height: 46px; }
+  .five-match-summary { grid-template-columns: 1fr; gap: 8px; }
+  .five-match-summary > div { padding: 10px 12px; }
+  .five-match-summary strong { font-size: 1.45rem; }
+  .five-match-tabs { position: sticky; top: 8px; z-index: 4; padding: 6px; border: 1px solid rgba(92,130,177,.24); border-radius: 16px; background: rgba(5,15,30,.92); }
+  .five-match-team-tab { min-height: 48px; }
+  .five-match-controls { bottom: 8px; margin-inline: -2px; }
+  .five-match-controls .button-row { grid-template-columns: 1fr 1fr; }
+  .five-match-controls .button-row .btn-back { grid-column: 1 / -1; }
+  .five-editor-head { align-items: stretch; }
+  .five-editor-head .btn-back { width: 100%; min-height: 48px; }
+}
