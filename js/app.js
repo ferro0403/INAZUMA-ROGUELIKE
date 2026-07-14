@@ -360,6 +360,7 @@
     delete run.nextPullBoost;
     run.randomEventHistory = Array.isArray(run.randomEventHistory) ? run.randomEventHistory : [];
     run.activeMatch = run.activeMatch || null;
+    run.pendingBossVictory = run.pendingBossVictory || null;
     run.roster = (run.roster || []).map((entry) => ({
       ...entry,
       equippedItem: entry.equippedItem || null,
@@ -467,11 +468,9 @@
       button.addEventListener("click", () => {
         const destination = button.dataset.nav;
         if (destination === "map") {
-          ensureCurrentZone();
-          run.phase = "map";
-          global.RunState.save(run);
-          renderMap();
+          return resumePostBossFlowOrMap();
         } else if (destination === "squad") {
+          finalizeBossVictoryTransition({ clearMatch: true, keepSquad: true });
           run.phase = "squad";
           global.RunState.save(run);
           renderSquad();
@@ -1017,10 +1016,7 @@
       setSquadEditMode(!ui.squadEditMode);
     });
     document.getElementById("go-map").addEventListener("click", () => {
-      ensureCurrentZone();
-      run.phase = "map";
-      global.RunState.save(run);
-      renderMap();
+      resumePostBossFlowOrMap();
     });
     bindBottomNav();
   }
@@ -1139,6 +1135,9 @@
   }
 
   function renderMap() {
+    const bossFlow = finalizeBossVictoryTransition({ navigate: false });
+    if (bossFlow.destination === "boss-rewards") return startBossRewards();
+    if (bossFlow.destination === "season-complete") return renderSeasonComplete();
     ensureCurrentZone();
     if (!run.currentZone) return renderSeasonComplete();
     run.phase = "map";
@@ -2447,6 +2446,10 @@
     event?.preventDefault();
     const match = ui.match || run.activeMatch;
     if (!match || match.postMatchNavigationApplied) return;
+    if (match.type === "boss" && match.result === "victory") {
+      const flow = finalizeBossVictoryTransition({ clearMatch: true });
+      return navigateBossVictoryDestination(flow);
+    }
     match.postMatchNavigationApplied = true;
     const action = match.pendingPostMatchAction || { type: "map" };
     ui.match = null;
@@ -2454,16 +2457,73 @@
     ui.bossMatchResolving = false;
     global.RunState.save(run);
     if (action.toast) toast(action.toast);
-    if (action.type === "boss-rewards") return startBossRewards();
     if (action.type === "game-over") return renderGameOver();
     run.phase = "map";
     global.RunState.save(run);
     return renderMap();
   }
 
+  function resumePostBossFlowOrMap() {
+    const flow = finalizeBossVictoryTransition({ clearMatch: true });
+    if (flow.destination !== "none") return navigateBossVictoryDestination(flow);
+    ensureCurrentZone();
+    run.phase = "map";
+    global.RunState.save(run);
+    return renderMap();
+  }
+
+  function bossVictoryMatch() {
+    const match = ui.match || run.activeMatch;
+    return match?.type === "boss" && match.result === "victory" && String(match.state || "").startsWith("completed") ? match : null;
+  }
+
+  function finalizeBossVictoryTransition(options = {}) {
+    const match = bossVictoryMatch();
+    const pending = run.pendingBossVictory;
+    if (!match && !pending) return { destination: "none" };
+    const bossIndex = Number(pending?.bossIndex ?? match?.bossIndex ?? run.bossIndex);
+    const boss = seasonDb.bossOrder[bossIndex];
+    if (!boss) {
+      run.pendingBossVictory = null;
+      global.RunState.save(run);
+      return { destination: "season-complete" };
+    }
+    if (match && run.currentZone?.bossIndex === bossIndex) {
+      const node = run.currentZone.nodes.find((item) => item.id === match.nodeId || item.type === "boss");
+      if (node) global.MapEngine.completeNode(run.currentZone, node.id);
+    }
+    if (!run.pendingBossVictory) {
+      run.pendingBossVictory = { bossIndex, bossId: String(boss.teamId), nodeId: match?.nodeId || null, rewardsRemaining: 2, excludedIds: [], rerolls: 0 };
+    }
+    if (options.clearMatch && match) {
+      match.postMatchNavigationApplied = true;
+      ui.match = null;
+      run.activeMatch = null;
+      ui.bossMatchResolving = false;
+    }
+    if (Number(run.pendingBossVictory.rewardsRemaining || 0) > 0) {
+      run.phase = options.keepSquad ? "squad" : run.phase;
+      global.RunState.save(run);
+      return { destination: "boss-rewards" };
+    }
+    return finishBossVictoryTransition();
+  }
+
+  function navigateBossVictoryDestination(flow) {
+    if (flow.destination === "boss-rewards") return startBossRewards();
+    if (flow.destination === "season-complete") return renderSeasonComplete();
+    if (flow.destination === "map") return renderMap();
+    return null;
+  }
+
   function startBossRewards() {
-    const boss = seasonDb.bossOrder[run.bossIndex];
-    ui.pendingReward = { boss, remaining: 2, excludedIds: [], rerolls: 0 };
+    const flow = finalizeBossVictoryTransition({ clearMatch: true });
+    if (flow.destination === "season-complete") return renderSeasonComplete();
+    if (flow.destination === "map") return renderMap();
+    const pending = run.pendingBossVictory;
+    const boss = seasonDb.bossOrder[Number(pending?.bossIndex ?? run.bossIndex)];
+    if (!pending || !boss) return renderMap();
+    ui.pendingReward = { boss, remaining: Number(pending.rewardsRemaining || 0), excludedIds: pending.excludedIds || [], rerolls: Number(pending.rerolls || 0), bossIndex: Number(pending.bossIndex) };
     global.RunState.save(run);
     showNextBossReward();
   }
@@ -2472,7 +2532,7 @@
     const reward = ui.pendingReward;
     const team = seasonDb.teams.find((candidate) => String(candidate.teamId) === String(reward.boss.teamId));
     const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
-    const random = global.DraftEngine.randomFromSeed(`${run.runId}:bossReward:${run.bossIndex}:${reward.remaining}:${reward.rerolls}`);
+    const random = global.DraftEngine.randomFromSeed(`${run.runId}:bossReward:${reward.bossIndex ?? run.bossIndex}:${reward.remaining}:${reward.rerolls}`);
     const available = team.playerIds
       .map((id) => seasonPlayersById.get(String(id)))
       .filter((player) => player && !owned.has(String(player.playerId)) && !reward.excludedIds.includes(String(player.playerId)));
@@ -2491,6 +2551,10 @@
         removeInventoryItem(scoutToken.instanceId);
         reward.excludedIds.push(...candidates.map((player) => String(player.playerId)));
         reward.rerolls += 1;
+        if (run.pendingBossVictory) {
+          run.pendingBossVictory.excludedIds = reward.excludedIds.slice();
+          run.pendingBossVictory.rerolls = reward.rerolls;
+        }
         global.RunState.save(run);
         showNextBossReward();
       } : null,
@@ -2508,26 +2572,43 @@
     const reward = ui.pendingReward;
     reward.remaining -= 1;
     reward.rerolls = 0;
-    reward.remaining > 0 ? showNextBossReward() : finishBossVictory();
+    if (run.pendingBossVictory) {
+      run.pendingBossVictory.rewardsRemaining = reward.remaining;
+      run.pendingBossVictory.excludedIds = reward.excludedIds.slice();
+      run.pendingBossVictory.rerolls = 0;
+    }
+    global.RunState.save(run);
+    reward.remaining > 0 ? showNextBossReward() : navigateBossVictoryDestination(finishBossVictoryTransition());
   }
 
-  function finishBossVictory() {
-    const boss = ui.pendingReward.boss;
-    if (!run.completedBossIds.includes(String(boss.teamId))) run.completedBossIds.push(String(boss.teamId));
-    if (!run.unlockedTeamIds.includes(String(boss.teamId))) run.unlockedTeamIds.push(String(boss.teamId));
-    run.bossIndex += 1;
-    run.currentZone = null;
+  function finishBossVictoryTransition() {
+    const pending = run.pendingBossVictory;
+    const bossIndex = Number(pending?.bossIndex ?? run.bossIndex);
+    const boss = seasonDb.bossOrder[bossIndex];
     ui.pendingReward = null;
     closeModal();
+    if (!boss) {
+      run.pendingBossVictory = null;
+      run.phase = "complete";
+      global.RunState.save(run);
+      return { destination: "season-complete" };
+    }
+    if (!run.completedBossIds.includes(String(boss.teamId))) run.completedBossIds.push(String(boss.teamId));
+    if (!run.unlockedTeamIds.includes(String(boss.teamId))) run.unlockedTeamIds.push(String(boss.teamId));
+    if (run.bossIndex <= bossIndex) run.bossIndex = bossIndex + 1;
+    run.pendingBossVictory = null;
+    run.currentZone = null;
+    run.activeMatch = null;
+    ui.match = null;
     if (run.bossIndex >= seasonDb.bossOrder.length) {
       run.phase = "complete";
       global.RunState.save(run);
-      return renderSeasonComplete();
+      return { destination: "season-complete" };
     }
     ensureCurrentZone();
     global.RunState.createCheckpoint(run);
     toast(`${boss.teamName} sconfitta. Nuovo checkpoint raggiunto!`);
-    renderMap();
+    return { destination: "map" };
   }
 
 
