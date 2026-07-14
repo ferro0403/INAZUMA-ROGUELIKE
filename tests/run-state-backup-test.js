@@ -1,0 +1,28 @@
+"use strict";
+const assert = require("assert");
+const path = require("path");
+const root = path.resolve(__dirname, "..");
+function storage() { const store = new Map(); return { store, api: { getItem: (k) => store.get(k) ?? null, setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) } }; }
+let env = storage(); global.localStorage = env.api;
+require(path.join(root, "js/season1-config.js"));
+require(path.join(root, "js/run-state.js"));
+const keys = global.RunStorage.keys();
+const run = global.RunState.createRun({ name: "A" }); run.roster = []; global.RunState.save(run);
+assert(env.store.has(keys.primary), "primary saved");
+run.lives = 2; global.RunState.save(run);
+assert(env.store.has(keys.backup), "backup created");
+env.store.set(keys.primary, "{broken");
+const recovered = global.RunState.load();
+assert.equal(recovered.lives, 3, "backup recovered silently");
+assert.equal(JSON.parse(env.store.get(keys.primary)).lives, 3, "backup restored as primary");
+env.store.set(keys.primary, "{broken");
+env.store.delete(keys.backup);
+env.store.set(keys.temp, JSON.stringify({ ...run, runId: "temp-valid", version: 2, phase: "map", lives: 1, bossIndex: 0, roster: [], lineup: [], bench: [], inventory: [], completedBossIds: [], unlockedTeamIds: [], activeMatch: null, currentZone: null, postBossFlow: null }));
+assert.equal(global.RunState.load().runId, "temp-valid", "valid temp can recover");
+env.store.set(keys.primary, "{broken"); env.store.set(keys.temp, "{broken");
+assert.doesNotThrow(() => global.RunState.load(), "corrupt temp does not throw");
+const before = env.store.get(keys.primary);
+global.localStorage = { getItem: env.api.getItem, removeItem: env.api.removeItem, setItem: (k, v) => { if (k === keys.temp) throw new Error("quota"); env.api.setItem(k, v); } };
+assert.doesNotThrow(() => global.RunState.save({ ...run, lives: 0 }));
+assert.equal(env.store.get(keys.primary), before, "quota error preserves previous primary");
+console.log("run-state-backup-test passed");

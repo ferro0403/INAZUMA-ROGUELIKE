@@ -6,37 +6,29 @@
   const DEFAULT_TEAM_NAME = "La tua squadra";
   const USER_TEAM_LOGO = "inazuma-lightning";
 
-  function clone(value) {
-    return JSON.parse(JSON.stringify(value));
-  }
-
-  function makeId(prefix) {
-    const random = Math.random().toString(36).slice(2, 9);
-    return `${prefix}_${Date.now().toString(36)}_${random}`;
-  }
+  function clone(value) { return JSON.parse(JSON.stringify(value)); }
+  function makeId(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`; }
+  function primaryKey() { return config().saveKey; }
+  function legacyKeys() { return Array.from(new Set([...(config().legacySaveKeys || []), "inazumaRoguelikeSeason1Run_v1"].filter((key) => key && key !== primaryKey()))); }
+  function backupKey() { return `${primaryKey()}_backup`; }
+  function tempKey() { return `${primaryKey()}_tmp`; }
 
   function normalizeTeamIdentity(teamIdentity = {}) {
     const name = String(teamIdentity.name || DEFAULT_TEAM_NAME).trim() || DEFAULT_TEAM_NAME;
     return { name, logo: USER_TEAM_LOGO };
   }
-
   function validTeamName(value) {
     const name = String(value || "").trim();
     return name.length >= 2 && name.length <= 24 && name !== DEFAULT_TEAM_NAME ? name : "";
   }
-
   function loadProfile() {
     try {
       const raw = localStorage.getItem(PROFILE_KEY);
       const parsed = raw ? JSON.parse(raw) : {};
       const name = validTeamName(parsed?.teamIdentity?.name || parsed?.teamName || parsed?.name);
       return { teamIdentity: name ? { name, logo: USER_TEAM_LOGO } : null };
-    } catch (error) {
-      console.error("Unable to load profile", error);
-      return { teamIdentity: null };
-    }
+    } catch (error) { console.error("Unable to load profile", error); return { teamIdentity: null }; }
   }
-
   function saveProfileTeamIdentity(teamIdentity) {
     const cleanIdentity = normalizeTeamIdentity(teamIdentity);
     localStorage.setItem(PROFILE_KEY, JSON.stringify({ version: 1, teamIdentity: cleanIdentity }));
@@ -44,112 +36,99 @@
   }
 
   function createRun(teamIdentity = {}) {
-    const cleanIdentity = normalizeTeamIdentity(teamIdentity);
-    return {
-      version: config().saveVersion,
-      runId: makeId("run"),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      phase: "formation",
-      teamIdentity: cleanIdentity,
-      lives: config().startingLives,
-      formationId: null,
-      roster: [],
-      lineup: [],
-      bench: [],
-      draft: null,
-      bossIndex: 0,
-      completedBossIds: [],
-      unlockedTeamIds: [],
-      teamLevel: 0,
-      inventory: [],
-      effects: {},
-      randomEventHistory: [],
-      fiveVFive: null,
-      activeMatch: null,
-      pendingBossVictory: null,
-      currentZone: null,
-      checkpoint: null,
-      gameOver: false,
-      messages: [],
-    };
+    const now = new Date().toISOString();
+    return { version: config().saveVersion, runId: makeId("run"), createdAt: now, updatedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: (config().startingLives ?? 3), formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [] };
   }
 
-  function save(run) {
-    run.updatedAt = new Date().toISOString();
-    localStorage.setItem(config().saveKey, JSON.stringify(run));
+  function defaultPostBossFlowFromPending(run) {
+    const pending = run?.pendingBossVictory;
+    if (!pending) return null;
+    const remaining = Math.max(0, Number(pending.rewardsRemaining ?? pending.remainingRewards ?? 2));
+    return { status: remaining > 0 ? "reward" : "next-zone", bossIndex: Number(pending.bossIndex ?? run.bossIndex ?? 0), bossTeamId: pending.bossId || pending.bossTeamId || null, matchNodeId: pending.nodeId || pending.matchNodeId || null, remainingRewards: remaining, rewardNumber: Math.max(1, 3 - remaining), excludedIds: Array.isArray(pending.excludedIds) ? pending.excludedIds.map(String) : [], rerolls: Number(pending.rerolls || 0), candidateIds: Array.isArray(pending.candidateIds) ? pending.candidateIds.map(String) : [], completed: false };
+  }
+
+  function normalizePostBossFlow(run) {
+    let flow = run.postBossFlow || defaultPostBossFlowFromPending(run);
+    const match = run.activeMatch;
+    if (!flow && match?.type === "boss" && match.result === "victory" && String(match.state || "").startsWith("completed")) {
+      flow = { status: "result", bossIndex: Number(match.bossIndex ?? run.bossIndex ?? 0), bossTeamId: match.bossId || null, matchNodeId: match.nodeId || null, remainingRewards: 2, rewardNumber: 1, excludedIds: [], rerolls: 0, candidateIds: [], completed: false };
+    }
+    if (!flow) return null;
+    const remaining = Math.max(0, Math.min(2, Number(flow.remainingRewards ?? flow.rewardsRemaining ?? 2)));
+    return { status: ["result", "reward", "next-zone", "season-complete"].includes(flow.status) ? flow.status : (remaining > 0 ? "reward" : "next-zone"), bossIndex: Number(flow.bossIndex ?? run.bossIndex ?? 0), bossTeamId: flow.bossTeamId || flow.bossId || null, matchNodeId: flow.matchNodeId || flow.nodeId || null, remainingRewards: remaining, rewardNumber: Math.max(1, Math.min(2, Number(flow.rewardNumber ?? (3 - remaining)))), excludedIds: Array.isArray(flow.excludedIds) ? Array.from(new Set(flow.excludedIds.map(String))) : [], rerolls: Math.max(0, Number(flow.rerolls || 0)), candidateIds: Array.isArray(flow.candidateIds) ? flow.candidateIds.map(String) : [], completed: Boolean(flow.completed) };
+  }
+
+  function migrateV1ToV2(input) { const run = clone(input); run.version = 2; run.postBossFlow = normalizePostBossFlow(run); return run; }
+  const SAVE_MIGRATIONS = { 1: migrateV1ToV2 };
+  function migrate(input) {
+    let run = clone(input);
+    let version = Number(run.version || 1);
+    while (version < config().saveVersion) { const step = SAVE_MIGRATIONS[version]; if (!step) throw new Error(`Missing save migration ${version}`); run = step(run); version = Number(run.version); }
+    return normalize(run);
+  }
+  function normalize(run) {
+    run.version = config().saveVersion;
+    run.runId = run.runId || makeId("run");
+    run.phase = run.phase || "formation";
+    run.lives = Number.isFinite(Number(run.lives)) ? Number(run.lives) : (config().startingLives ?? 3);
+    run.bossIndex = Number.isFinite(Number(run.bossIndex)) ? Number(run.bossIndex) : 0;
+    for (const key of ["roster", "lineup", "bench", "inventory", "completedBossIds", "unlockedTeamIds"]) run[key] = Array.isArray(run[key]) ? run[key] : [];
+    run.activeMatch = run.activeMatch || null; run.currentZone = run.currentZone || null;
+    run.postBossFlow = normalizePostBossFlow(run);
+    run.pendingBossVictory = run.pendingBossVictory || null;
+    if (run.checkpoint) run.checkpoint.version = config().saveVersion;
     return run;
   }
+  function validate(run) {
+    return !!(run && typeof run === "object" && Number(run.version) === Number(config().saveVersion) && run.runId && run.phase && Number.isFinite(Number(run.lives)) && Number.isFinite(Number(run.bossIndex)) && Array.isArray(run.roster) && Array.isArray(run.lineup) && Array.isArray(run.bench) && Array.isArray(run.inventory) && Array.isArray(run.completedBossIds) && Array.isArray(run.unlockedTeamIds) && (run.activeMatch === null || typeof run.activeMatch === "object") && (run.currentZone === null || typeof run.currentZone === "object") && (run.postBossFlow === null || typeof run.postBossFlow === "object"));
+  }
+  function parseCandidate(raw) { if (!raw) return null; const parsed = JSON.parse(raw); const migrated = migrate(parsed); if (!validate(migrated)) throw new Error("Invalid run save"); return migrated; }
+  function tryLoadKey(key) { try { return parseCandidate(localStorage.getItem(key)); } catch (error) { console.warn(`Unable to load run candidate ${key}`, error); return null; } }
+  function save(run) { return RunStorage.save(run); }
+  function load() { return RunStorage.load(); }
+  function remove() { try { localStorage.removeItem(primaryKey()); localStorage.removeItem(backupKey()); localStorage.removeItem(tempKey()); } catch (error) { console.error("Unable to remove run", error); } }
+  function restoreBackup() { const backup = RunStorage.loadBackup(); if (!backup) return null; return save(backup); }
+  function loadBackup() { return tryLoadKey(backupKey()); }
 
-  function load() {
-    try {
-      const raw = localStorage.getItem(config().saveKey);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      return parsed && parsed.version === config().saveVersion ? parsed : null;
-    } catch (error) {
-      console.error("Unable to load run", error);
+  const RunStorage = {
+    keys: () => ({ primary: primaryKey(), backup: backupKey(), temp: tempKey(), legacy: legacyKeys() }),
+    validate, migrate,
+    loadBackup,
+    restoreBackup,
+    load() {
+      const order = [primaryKey(), backupKey(), tempKey(), ...legacyKeys()];
+      for (const key of order) {
+        const loaded = tryLoadKey(key);
+        if (loaded) { if (key !== primaryKey() || Number(loaded.version) !== Number(config().saveVersion)) this.save(loaded); return loaded; }
+      }
       return null;
-    }
-  }
-
-  function remove() {
-    localStorage.removeItem(config().saveKey);
-  }
+    },
+    save(run) {
+      try {
+        const normalized = normalize(run);
+        normalized.updatedAt = new Date().toISOString();
+        const json = JSON.stringify(normalized);
+        const reparsed = parseCandidate(json);
+        const tmp = tempKey(); const primary = primaryKey(); const backup = backupKey();
+        localStorage.setItem(tmp, json);
+        parseCandidate(localStorage.getItem(tmp));
+        const existing = localStorage.getItem(primary);
+        if (existing) { try { parseCandidate(existing); localStorage.setItem(backup, existing); } catch (_) {} }
+        localStorage.setItem(primary, json);
+        localStorage.removeItem(tmp);
+        Object.assign(run, reparsed);
+        return run;
+      } catch (error) { console.error("Unable to save run", error); return run; }
+    },
+    remove,
+  };
 
   function createCheckpoint(run) {
-    run.checkpoint = clone({
-      formationId: run.formationId,
-      teamIdentity: run.teamIdentity,
-      roster: run.roster,
-      lineup: run.lineup,
-      bench: run.bench,
-      bossIndex: run.bossIndex,
-      completedBossIds: run.completedBossIds,
-      unlockedTeamIds: run.unlockedTeamIds,
-      teamLevel: run.teamLevel,
-      inventory: run.inventory,
-      effects: run.effects,
-      randomEventHistory: run.randomEventHistory,
-      fiveVFive: run.fiveVFive,
-      activeMatch: run.activeMatch || null,
-      pendingBossVictory: run.pendingBossVictory || null,
-      currentZone: run.currentZone,
-    });
+    run.checkpoint = clone({ version: config().saveVersion, formationId: run.formationId, teamIdentity: run.teamIdentity, roster: run.roster, lineup: run.lineup, bench: run.bench, bossIndex: run.bossIndex, completedBossIds: run.completedBossIds, unlockedTeamIds: run.unlockedTeamIds, teamLevel: run.teamLevel, inventory: run.inventory, effects: run.effects, randomEventHistory: run.randomEventHistory, fiveVFive: run.fiveVFive, activeMatch: run.activeMatch || null, pendingBossVictory: run.pendingBossVictory || null, postBossFlow: run.postBossFlow || null, currentZone: run.currentZone });
     return save(run);
   }
+  function restoreAfterLoss(run, previousNodeId = null) { run.lives -= 1; if (run.lives <= 0) { run.lives = 0; run.gameOver = true; run.phase = "gameover"; return save(run); } const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null; if (!targetNodeId) throw new Error("Previous match node unavailable"); if (run.currentZone) { run.currentZone.currentNodeId = targetNodeId; run.currentZone.pendingNodeId = null; } run.phase = "map"; run.gameOver = false; return save(run); }
 
-  function restoreAfterLoss(run, previousNodeId = null) {
-    run.lives -= 1;
-    if (run.lives <= 0) {
-      run.lives = 0;
-      run.gameOver = true;
-      run.phase = "gameover";
-      return save(run);
-    }
-
-    const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null;
-    if (!targetNodeId) throw new Error("Previous match node unavailable");
-    if (run.currentZone) {
-      run.currentZone.currentNodeId = targetNodeId;
-      run.currentZone.pendingNodeId = null;
-    }
-    run.phase = "map";
-    run.gameOver = false;
-    return save(run);
-  }
-
-  global.RunState = {
-    clone,
-    createRun,
-    save,
-    load,
-    normalizeTeamIdentity,
-    validTeamName,
-    loadProfile,
-    saveProfileTeamIdentity,
-    remove,
-    createCheckpoint,
-    restoreAfterLoss,
-  };
+  global.RunStorage = RunStorage;
+  global.RunState = { clone, createRun, save, load, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, remove, createCheckpoint, restoreAfterLoss };
 })(globalThis);
