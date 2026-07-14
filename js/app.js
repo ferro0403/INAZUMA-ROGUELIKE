@@ -361,14 +361,20 @@
     run.randomEventHistory = Array.isArray(run.randomEventHistory) ? run.randomEventHistory : [];
     run.activeMatch = run.activeMatch || null;
     run.pendingBossVictory = run.pendingBossVictory || null;
-    run.roster = (run.roster || []).map((entry) => ({
-      ...entry,
-      equippedItem: entry.equippedItem || null,
-      potentialBoost: Math.max(0, Number(entry.potentialBoost || 0)),
-      currentOverallBoost: Math.max(0, Number(entry.currentOverallBoost ?? entry.potentialBoost ?? 0)),
-      potentialBoostApplications: Array.isArray(entry.potentialBoostApplications) ? entry.potentialBoostApplications : [],
-      intensiveTrainingMigrated: entry.intensiveTrainingMigrated || entry.currentOverallBoost !== undefined,
-    }));
+    run.roster = (run.roster || []).map((entry) => {
+      const source = sourcePlayer(entry);
+      const maxBoost = source ? Math.max(0, 99 - Number(source.finalOverall || 0)) : Number.POSITIVE_INFINITY;
+      const potentialBoostApplications = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
+      const potentialBoost = potentialBoostApplications.reduce((sum, boost) => sum + boost.amount, 0);
+      return {
+        ...entry,
+        equippedItem: entry.equippedItem || null,
+        potentialBoost,
+        currentOverallBoost: Math.min(potentialBoost, Math.max(0, Number(entry.currentOverallBoost ?? entry.potentialBoost ?? potentialBoost))),
+        potentialBoostApplications,
+        intensiveTrainingMigrated: entry.intensiveTrainingMigrated || entry.currentOverallBoost !== undefined || potentialBoostApplications.some((boost) => boost.legacy),
+      };
+    });
     run.lineup = (run.lineup || []).map(String);
     run.bench = (run.bench || []).map(String);
     if (run.roster.length && seasonDb && freeAgentsDb) ensureFiveVFive();
@@ -2953,9 +2959,10 @@
         if (!entry) return;
         const player = sourcePlayer(entry);
         const before = resolvedRosterPlayer(entry.playerId);
-        const currentPotentialBoost = Math.max(0, Number(entry.potentialBoost || 0));
-        const currentOverallBoost = Math.max(0, Number(entry.currentOverallBoost ?? currentPotentialBoost));
         const maxBoost = Math.max(0, 99 - Number(player.finalOverall || 0));
+        entry.potentialBoostApplications = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
+        const currentPotentialBoost = entry.potentialBoostApplications.reduce((sum, boost) => sum + boost.amount, 0);
+        const currentOverallBoost = Math.min(currentPotentialBoost, Math.max(0, Number(entry.currentOverallBoost ?? currentPotentialBoost)));
         const addedBoost = Math.min(Number(item.amount || 3), Math.max(0, maxBoost - currentPotentialBoost));
         if (addedBoost <= 0) return toast("Questo giocatore ha già raggiunto il potenziale massimo. L'oggetto NON viene consumato.");
         entry.potentialBoost = Math.min(maxBoost, currentPotentialBoost + addedBoost);

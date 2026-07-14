@@ -25,29 +25,63 @@
     return Math.max(0, Math.min(99, numeric));
   }
 
-  function normalizePotentialBoostApplications(options) {
-    if (Array.isArray(options?.potentialBoostApplications)) {
-      return options.potentialBoostApplications
-        .map((boost) => ({
-          amount: Math.max(0, Number(boost.amount || 0)),
-          appliedLevel: Math.max(0, Number(boost.appliedLevel || 0)),
-        }))
-        .filter((boost) => boost.amount > 0);
+  const RARITY_THRESHOLDS = Object.freeze([
+    Object.freeze({ category: "Scarso", min: 0 }),
+    Object.freeze({ category: "Debole", min: 66 }),
+    Object.freeze({ category: "Normale", min: 70 }),
+    Object.freeze({ category: "Buono", min: 75 }),
+    Object.freeze({ category: "Forte", min: 80 }),
+    Object.freeze({ category: "Elite", min: 85 }),
+    Object.freeze({ category: "Mondiale", min: 90 }),
+    Object.freeze({ category: "Leggenda", min: 95 }),
+  ]);
+
+  function normalizePotentialBoostApplications(options = {}, maxAllowedBoost = Number.POSITIVE_INFINITY) {
+    const cap = Math.max(0, Number.isFinite(Number(maxAllowedBoost)) ? Number(maxAllowedBoost) : Number.POSITIVE_INFINITY);
+    const savedPotentialBoost = Math.max(0, Number(options?.potentialBoost || 0));
+    const applications = Array.isArray(options?.potentialBoostApplications)
+      ? options.potentialBoostApplications
+          .map((boost) => ({
+            amount: Math.max(0, Number(boost.amount || 0)),
+            appliedLevel: Math.max(0, Number(boost.appliedLevel || 0)),
+            ...(boost.legacy ? { legacy: true } : {}),
+          }))
+          .filter((boost) => boost.amount > 0)
+      : [];
+
+    const validTotal = applications.reduce((sum, boost) => sum + boost.amount, 0);
+    const targetTotal = Math.min(cap, Math.max(savedPotentialBoost, validTotal));
+    const normalized = applications.map((boost) => ({ ...boost }));
+    if (targetTotal > validTotal) {
+      normalized.push({ amount: targetTotal - validTotal, appliedLevel: 0, legacy: true });
     }
-    const amount = Math.max(0, Number(options?.potentialBoost || 0));
-    return amount > 0 ? [{ amount, appliedLevel: 0 }] : [];
+
+    let accepted = 0;
+    return normalized
+      .map((boost) => {
+        const amount = Math.min(boost.amount, Math.max(0, cap - accepted));
+        accepted += amount;
+        return { ...boost, amount };
+      })
+      .filter((boost) => boost.amount > 0);
+  }
+
+  function normalizedPotentialBoost(options = {}, maxAllowedBoost = Number.POSITIVE_INFINITY) {
+    return normalizePotentialBoostApplications(options, maxAllowedBoost).reduce((sum, boost) => sum + boost.amount, 0);
   }
 
   function effectivePotential(player, options = {}) {
     const basePotential = clampPotential(player?.finalOverall);
-    const totalBoost = normalizePotentialBoostApplications(options).reduce((sum, boost) => sum + boost.amount, 0);
+    const maxAllowedBoost = Math.max(0, 99 - basePotential);
+    const totalBoost = normalizedPotentialBoost(options, maxAllowedBoost);
     return clampPotential(basePotential + totalBoost);
   }
 
   function effectiveCurrentOverallBoost(player, options = {}) {
     const maxAllowedBoost = Math.max(0, 99 - clampPotential(player?.finalOverall));
-    const rawBoost = options.currentOverallBoost ?? options.potentialBoost ?? 0;
-    return Math.min(maxAllowedBoost, Math.max(0, Number(rawBoost || 0)));
+    const potentialBoost = normalizedPotentialBoost(options, maxAllowedBoost);
+    const rawBoost = options.currentOverallBoost ?? potentialBoost;
+    return Math.min(potentialBoost, Math.min(maxAllowedBoost, Math.max(0, Number(rawBoost || 0))));
   }
 
   function boostProgressAtLevel(boost, level, maxLevel) {
@@ -82,26 +116,14 @@
     return result;
   }
 
-  function categoryThresholds(database) {
-    const players = database?.players || [];
-    const thresholds = new Map();
-    for (const player of players) {
-      const category = player.category;
-      const potential = Number(player.finalOverall);
-      if (!category || !Number.isFinite(potential)) continue;
-      thresholds.set(category, Math.min(thresholds.get(category) ?? potential, potential));
-    }
-    return [...thresholds.entries()].sort((a, b) => a[1] - b[1]);
-  }
+  function categoryForPotential(potential, fallbackCategory, _database) {
+    const numericPotential = Number(potential);
+    if (!Number.isFinite(numericPotential)) return fallbackCategory || "Scarso";
 
-  function categoryForPotential(potential, fallbackCategory, database) {
-    const effectivePotential = clampPotential(potential);
-    if (effectivePotential >= 95) return "Leggenda";
-
-    const thresholds = categoryThresholds(database);
-    let category = fallbackCategory;
-    for (const [candidate, minimum] of thresholds) {
-      if (effectivePotential >= minimum && minimum < 95) category = candidate;
+    const effectivePotential = clampPotential(numericPotential);
+    let category = RARITY_THRESHOLDS[0].category;
+    for (const threshold of RARITY_THRESHOLDS) {
+      if (effectivePotential >= threshold.min) category = threshold.category;
     }
     return category;
   }
@@ -188,6 +210,9 @@
     effectivePotential,
     effectiveCurrentOverallBoost,
     categoryForPotential,
+    normalizePotentialBoostApplications,
+    normalizedPotentialBoost,
+    RARITY_THRESHOLDS,
   };
 
   global.InazumaProgression = api;
