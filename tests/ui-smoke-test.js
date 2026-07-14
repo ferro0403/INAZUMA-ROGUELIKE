@@ -63,8 +63,9 @@ assert(css.includes(".mobile-equipment-badge"), "equipment badges must expose a 
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-card \{[^}]*box-sizing:\s*border-box[^}]*width:\s*var\(--five-mobile-card-width, 96px\)[^}]*height:\s*92px/.test(css), "mobile 5v5 match cards must share the same fixed box model");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-line\[data-row-count="2"\] \{ --five-mobile-card-width: 96px; \}/.test(css), "mobile 5v5 two-card midfield rows must not use a different card size");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-screen \.five-match-field-side--mobile\.five-match-field-side--user \.five-match-card \.five-player-equipment \{[^}]*bottom:\s*8px;[^}]*left:\s*8px;[^}]*width:\s*22px;[^}]*height:\s*22px/.test(css), "mobile 5v5 user equipment badge must stay inside the bottom-left corner");
-assert(/@media \(max-width: 780px\)[\s\S]*?\.boss-match-field-side--mobile \.boss-match-card-item \{[^}]*left:\s*6px;[^}]*bottom:\s*6px;[^}]*width:\s*22px;[^}]*height:\s*22px/.test(css), "mobile boss 11v11 equipment badge must stay inside the bottom-left corner");
-assert(!/@media \(max-width: 780px\)[\s\S]*?(?:\.five-player-equipment|\.boss-match-card-item) \{[^}]*-(?:top|left|right|bottom):/.test(css), "mobile match equipment badges must not use negative offsets");
+assert(appJs.includes('function bossMatchMobileField(team, side)') && appJs.includes('squadPitchMarkup({ mode: "readonly-boss" })'), "mobile boss 11v11 user preview must reuse the squad pitch renderer instead of boss card equipment CSS");
+assert(!/@media \(max-width: 780px\)[\s\S]*?\.boss-match-field-side--mobile \.boss-match-card-item/.test(css), "mobile boss user equipment badge must not have a separate boss-preview override");
+assert(!/@media \(max-width: 780px\)[\s\S]*?(?:\.five-player-equipment|\.boss-match-card-item|\.player-equipment) \{[^}]*-(?:top|left|right|bottom):/.test(css), "mobile equipment badges must not use negative offsets");
 assert(css.includes(".button-row { display: flex; flex-wrap: wrap;"), "pull action buttons must wrap cleanly for mobile/desktop controls");
 
 const appJs = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
@@ -91,7 +92,8 @@ assert(appJs.includes("startMatchSimulation") && appJs.includes("resolutionAppli
 assert(appJs.includes("const baseStats = resolved.baseStats || resolved.stats") && appJs.includes("? resolved.stats") && appJs.includes("applyEquipment(resolved.stats, equipment)"), "player detail must not apply equipment twice when resolved stats already include equipment");
 assert(appJs.includes("function fivePlayerEquipmentMarkup(equipment)") && appJs.includes("Oggetto equipaggiato:") && appJs.includes("fivePlayerEquipmentMarkup(rosterEntry(player.playerId)?.equippedItem)"), "5v5 formation cards must render an accessible equipped-item indicator from roster equipment");
 assert(appJs.includes("function equipmentBadgeMarkup(equipment") && appJs.includes("mobile-equipment-badge"), "equipment badge markup must be centralized with the shared mobile class");
-assert(appJs.includes('equipmentBadgeMarkup(equipment, "boss-match-card-item")'), "boss match cards must reuse the shared equipment badge helper");
+assert(appJs.includes('equipmentBadgeMarkup(equipment, "boss-match-card-item")'), "desktop/boss-side boss match cards must reuse the shared equipment badge helper");
+assert(appJs.includes('squadPitchMarkup({ mode: "readonly-boss" })'), "mobile boss user tab must inherit squad item badge rendering from compact player cards");
 assert(appJs.includes('return equipmentBadgeMarkup(equipment, "five-player-equipment");'), "5v5 cards must reuse the shared equipment badge helper");
 assert.equal((appJs.match(/fivePlayerEquipmentMarkup\(equipment\)/g) || []).length, 1, "5v5 equipment helper must be defined once");
 assert(appJs.includes('side === "user" ? (player.equipment || rosterEntry(player.playerId)?.equippedItem) : null'), "5v5 match cards must render equipment only for the user side, never for free-agent opponents");

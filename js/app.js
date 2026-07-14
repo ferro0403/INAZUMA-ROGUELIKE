@@ -926,7 +926,9 @@
         ? `data-equip-player="${escapeHtml(id)}"`
         : mode === "consumable"
           ? `data-consumable-player="${escapeHtml(id)}"`
-          : `data-squad-player="${escapeHtml(id)}" data-area="${area}"`;
+          : mode === "readonly-boss"
+            ? `data-boss-player="${escapeHtml(id)}" data-boss-side="user"`
+            : `data-squad-player="${escapeHtml(id)}" data-area="${area}"`;
     return compactPlayerCardMarkup(player, {
       equipment: player.equipment,
       level: player.displayLevel,
@@ -1817,6 +1819,13 @@
       </button>`;
   }
 
+  function bossMatchMobileField(team, side) {
+    if (side === "user") {
+      return `<div class="boss-match-shared-squad-field" data-boss-team="user">${squadPitchMarkup({ mode: "readonly-boss" })}</div>`;
+    }
+    return bossMatchField(team, side, true);
+  }
+
   function bossMatchField(team, side, mobile = false) {
     const rows = formationRows(team.formationId, team.players);
     return `
@@ -2309,7 +2318,7 @@
                 <div class="boss-match-half-label boss-match-half-label--boss">${escapeHtml(meta.boss.name)}</div>
                 ${bossMatchField({ players: userPlayers, formationId: run.formationId }, "user")}
                 ${bossMatchField({ players: bossPlayers, formationId: boss.bossFormation }, "boss")}
-                <div class="boss-match-mobile-field">${bossMatchField({ players: activeSide === "boss" ? bossPlayers : userPlayers, formationId: activeSide === "boss" ? boss.bossFormation : run.formationId }, activeSide, true)}</div>
+                <div class="boss-match-mobile-field">${bossMatchMobileField({ players: activeSide === "boss" ? bossPlayers : userPlayers, formationId: activeSide === "boss" ? boss.bossFormation : run.formationId }, activeSide)}</div>
               </div>
             </section>
 
