@@ -852,6 +852,9 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 
 @media (max-width: 780px) {
   .equipment-badge { top: 3px; right: 3px; }
+  .mobile-equipment-badge { box-sizing: border-box; display: inline-grid; place-items: center; overflow: visible; }
+  .mobile-equipment-badge .item-icon { box-sizing: border-box; overflow: hidden; }
+  .mobile-equipment-badge .item-icon img { width: 100%; height: 100%; object-fit: contain; display: block; }
   .mini-player .equipment-badge .item-icon, .player-card-compact .player-equipment .item-icon { width: 14px; height: 14px; border-radius: 5px; }
   .mini-player .equipment-badge .item-icon svg, .player-card-compact .player-equipment .item-icon svg { width: 10px; height: 10px; stroke-width: 2.4; }
   .player-card-compact, button.player-card-compact { min-width: 0; width: 100%; max-width: var(--pitch-card-size, 76px); }
@@ -881,7 +884,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .boss-match-field-side--user { direction: rtl; }
 .boss-match-field-side--user .boss-match-line, .boss-match-field-side--user .boss-match-card { direction: ltr; }
 .boss-match-line { display: grid; grid-template-columns: repeat(var(--boss-row-count, 1), minmax(0, 82px)); justify-content: center; justify-items: center; gap: clamp(5px, .7vw, 10px); min-width: 0; }
-.boss-match-card { position: relative; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; width: clamp(64px, 5.8vw, 82px); min-height: 92px; padding: 5px 5px 7px; border: 1px solid rgba(54,169,255,.55); border-radius: 13px; background: rgba(4,20,28,.86); color: white; text-align: center; box-shadow: 0 8px 18px rgba(0,0,0,.18); }
+.boss-match-card { position: relative; display: grid; grid-template-rows: auto 1fr auto; justify-items: center; box-sizing: border-box; width: clamp(64px, 5.8vw, 82px); min-height: 92px; padding: 5px 5px 7px; border: 1px solid rgba(54,169,255,.55); border-radius: 13px; background: rgba(4,20,28,.86); color: white; text-align: center; box-shadow: 0 8px 18px rgba(0,0,0,.18); }
 .boss-match-card--boss { border-color: rgba(255,91,98,.62); }
 .boss-match-card:hover { border-color: var(--yellow); transform: translateY(-1px); }
 .boss-match-card img { width: 42px; height: 42px; object-fit: contain; align-self: end; }
@@ -889,7 +892,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .boss-match-card-role, .boss-match-card-overall { position: absolute; top: 4px; min-width: 22px; padding: 2px 4px; border-radius: 7px; background: rgba(5,7,11,.72); font-size: .58rem; font-weight: 950; }
 .boss-match-card-role { left: 4px; }
 .boss-match-card-overall { right: 4px; background: var(--yellow); color: #172033; }
-.boss-match-card-item { position: absolute; left: 4px; bottom: 4px; }
+.boss-match-card-item { left: 4px; bottom: 4px; top: auto; right: auto; }
 .boss-match-card-item .item-icon { width: 16px; height: 16px; border-radius: 5px; }
 .boss-match-card-item .item-icon svg { width: 11px; height: 11px; }
 .boss-match-mobile-field { display: none; }
@@ -941,8 +944,11 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .boss-match-line[data-row-count="4"] { --boss-mobile-card-width: clamp(62px, 20vw, 74px); }
   .boss-match-line[data-row-count="3"] { --boss-mobile-card-width: clamp(70px, 24vw, 84px); }
   .boss-match-line[data-row-count="2"] { --boss-mobile-card-width: clamp(78px, 28vw, 92px); }
-  .boss-match-card { width: 100%; min-height: 86px; padding: 5px 3px 6px; border-radius: 11px; }
+  .boss-match-card { width: 100%; min-height: 86px; padding: 5px 3px 6px 26px; border-radius: 11px; overflow: visible; }
   .boss-match-card img { width: 38px; height: 38px; }
+  .boss-match-field-side--mobile .boss-match-card-item { top: auto; right: auto; left: 6px; bottom: 6px; width: 22px; height: 22px; padding: 2px; border-radius: 7px; }
+  .boss-match-field-side--mobile .boss-match-card-item .item-icon { width: 16px; height: 16px; border: 0; background: transparent; }
+  .boss-match-field-side--mobile .boss-match-card-item .item-icon svg { width: 13px; height: 13px; }
   .boss-match-card strong { font-size: clamp(.54rem, 2vw, .62rem); }
   .boss-match-card-role, .boss-match-card-overall { font-size: .52rem; min-width: 19px; padding: 1px 3px; }
   .boss-match-log { max-height: 190px; }
@@ -1090,7 +1096,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .five-match-field-side--user .five-match-line, .five-match-field-side--user .five-match-card { direction: ltr; }
 .five-match-field-side--opponent { border-left: 1px solid rgba(255,91,98,.32); }
 .five-match-line { display: grid; grid-template-columns: repeat(var(--five-row-count, 1), minmax(0, 88px)); justify-content: center; justify-items: center; gap: clamp(8px, 1vw, 14px); min-width: 0; }
-.five-match-card { position: relative; display: grid; grid-template-rows: auto 1fr auto auto; justify-items: center; width: clamp(72px, 7vw, 88px); min-height: 104px; padding: 6px 5px 7px; border: 1px solid rgba(54,169,255,.58); border-radius: 13px; color: white; text-align: center; box-shadow: 0 8px 18px rgba(0,0,0,.18); }
+.five-match-card { position: relative; display: grid; grid-template-rows: auto 1fr auto auto; justify-items: center; box-sizing: border-box; width: clamp(72px, 7vw, 88px); min-height: 104px; padding: 6px 5px 7px; border: 1px solid rgba(54,169,255,.58); border-radius: 13px; color: white; text-align: center; box-shadow: 0 8px 18px rgba(0,0,0,.18); }
 .five-match-card--opponent { border-color: rgba(255,91,98,.68); }
 .five-match-card:hover { border-color: var(--yellow); transform: translateY(-1px); }
 .five-match-card img { width: 44px; height: 44px; object-fit: contain; align-self: end; }
@@ -1134,14 +1140,15 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .five-match-field > .five-match-field-side, .five-match-half-label { display: none; }
   .five-match-mobile-field { display: block; height: 100%; }
   .five-match-field-side--mobile { display: grid; height: 430px; padding: 16px 7px; direction: ltr; border: 0; }
-  .five-match-line { grid-template-columns: repeat(var(--five-row-count, 1), minmax(0, var(--five-mobile-card-width, 78px))); gap: clamp(6px, 2vw, 10px); }
-  .five-match-line[data-row-count="2"] { --five-mobile-card-width: clamp(82px, 29vw, 96px); }
-  .five-match-card { width: 100%; min-height: 92px; padding: 5px 3px 6px; border-radius: 11px; }
+  .five-match-line { grid-template-columns: repeat(var(--five-row-count, 1), minmax(0, var(--five-mobile-card-width, 96px))); gap: clamp(6px, 2vw, 10px); }
+  .five-match-line[data-row-count="2"] { --five-mobile-card-width: 96px; }
+  .five-match-card { box-sizing: border-box; width: var(--five-mobile-card-width, 96px); min-width: var(--five-mobile-card-width, 96px); max-width: var(--five-mobile-card-width, 96px); height: 92px; min-height: 92px; max-height: 92px; padding: 5px 3px 6px; border-radius: 11px; overflow: visible; }
   .five-match-card img { width: 38px; height: 38px; }
-  .five-match-screen .five-match-field-side--mobile.five-match-field-side--user .five-match-card .five-player-equipment { top: auto; bottom: 8px; left: 8px; width: 22px; height: 22px; border-radius: 7px; }
-  .five-match-card .five-player-equipment .item-icon { width: 15px; height: 15px; }
+  .five-match-screen .five-match-field-side--mobile.five-match-field-side--user .five-match-card .five-player-equipment { top: auto; right: auto; bottom: 8px; left: 8px; width: 22px; height: 22px; padding: 2px; border-radius: 7px; }
+  .five-match-card .five-player-equipment .item-icon { width: 15px; height: 15px; border: 0; background: transparent; }
   .five-match-card .five-player-equipment .item-icon svg { width: 13px; height: 13px; }
   .five-match-card strong { font-size: clamp(.56rem, 2.1vw, .64rem); }
+  .five-match-card small { box-sizing: border-box; width: 100%; padding-left: 26px; text-align: center; }
   .five-match-controls { display: grid; grid-template-columns: 1fr; width: 100%; max-width: 100%; box-sizing: border-box; gap: 6px; padding: 8px 10px 12px; }
   .five-match-controls > .btn-yellow { min-width: 0; width: 100%; min-height: 44px; font-size: .9rem; }
   .five-match-controls .button-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); width: 100%; gap: 6px; }

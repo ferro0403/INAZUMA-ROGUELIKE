@@ -85,6 +85,15 @@
     if (wrapper) wrapper.classList.add("item-icon--fallback");
   };
 
+
+  function equipmentBadgeMarkup(equipment, className = "") {
+    if (!equipment) return "";
+    const resolvedEquipment = resolveItem(equipment);
+    const label = `Oggetto equipaggiato: ${resolvedEquipment.name || "oggetto"}`;
+    const classes = ["equipment-badge", "mobile-equipment-badge", className].filter(Boolean).join(" ");
+    return `<span class="${classes}" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${itemIcon(resolvedEquipment)}</span>`;
+  }
+
   function itemIcon(itemOrId) {
     const item = resolveItem(itemOrId);
     const id = String(item?.id || "");
@@ -1804,7 +1813,7 @@
         <span class="boss-match-card-overall">${escapeHtml(player.overall ?? player.finalOverall ?? "-")}</span>
         <img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" />
         <strong>${escapeHtml(shortName(player.name))}</strong>
-        ${equipment ? `<span class="boss-match-card-item" aria-label="Oggetto equipaggiato">${itemIcon(equipment)}</span>` : ""}
+        ${equipmentBadgeMarkup(equipment, "boss-match-card-item")}
       </button>`;
   }
 
@@ -2514,10 +2523,7 @@
 
 
   function fivePlayerEquipmentMarkup(equipment) {
-    if (!equipment) return "";
-    const resolvedEquipment = resolveItem(equipment);
-    const label = `Oggetto equipaggiato: ${resolvedEquipment.name || "oggetto"}`;
-    return `<span class="five-player-equipment" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${itemIcon(resolvedEquipment)}</span>`;
+    return equipmentBadgeMarkup(equipment, "five-player-equipment");
   }
 
   function fiveSlotCard(slot, playerId, status) {
