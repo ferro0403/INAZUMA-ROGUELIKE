@@ -621,6 +621,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .mini-player strong, .player-card-compact .player-title strong { font-size: clamp(.58rem, 2.2vw, .7rem); }
   .player-card-compact .player-meta { display: flex; justify-content: center; gap: 3px; margin-top: 3px; font-size: clamp(.55rem, 2vw, .66rem); white-space: nowrap; }
   .player-card-compact .player-meta span + span::before { content: "•"; margin-right: 3px; }
+.player-card-compact .player-meta--stacked span + span::before { content: none; margin-right: 0; }
   .player-card-compact .player-role, .player-card-compact .player-overall, .player-card-compact .player-level { display: none; }
   .player-card-compact .player-equipment { min-width: 22px; min-height: 22px; }
   .mini-player .small, .player-card-compact .small { font-size: clamp(.55rem, 2vw, .66rem); }
@@ -885,6 +886,13 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .boss-match-field-side--user .boss-match-line, .boss-match-field-side--user .boss-match-card { direction: ltr; }
 .boss-match-line { display: grid; grid-template-columns: repeat(var(--boss-row-count, 1), minmax(0, 112px)); justify-content: center; justify-items: center; gap: clamp(5px, .7vw, 10px); min-width: 0; margin: 0; overflow: visible; }
 .match-player-card.boss-match-card { width: 100%; max-width: 112px; border-color: rgba(54,169,255,.55); box-shadow: 0 8px 18px rgba(0,0,0,.18); }
+.match-player-card.boss-match-card .player-info { padding-bottom: 26px; }
+.match-player-card.boss-match-card .player-title strong { color: #f8fbff; text-shadow: 0 1px 4px rgba(0,0,0,.45); }
+.match-player-card.boss-match-card .player-meta--stacked { display: grid; justify-items: center; gap: 2px; width: 100%; color: rgba(236,246,255,.92); font-weight: 850; line-height: 1.15; }
+.match-player-card.boss-match-card .player-meta-line { display: inline-flex; align-items: center; justify-content: center; gap: 4px; max-width: 100%; min-width: 0; white-space: nowrap; }
+.match-player-card.boss-match-card .player-meta-line span { min-width: 0; }
+.match-player-card.boss-match-card .player-meta-line--level { color: rgba(255,226,138,.95); }
+.match-player-card--boss.boss-match-card .player-meta--stacked { color: rgba(255,238,241,.94); }
 .match-player-card--boss.boss-match-card { border-color: rgba(255,91,98,.7); background: linear-gradient(180deg, rgba(54,12,18,.9), rgba(4,20,28,.86)); }
 .match-player-card--boss .player-overall { background: #ff5b6e; color: #fff; }
 .match-player-card--boss .player-role, .match-player-card--boss .player-level { border-color: rgba(255,91,98,.5); }
