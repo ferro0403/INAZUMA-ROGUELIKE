@@ -11,7 +11,42 @@
   function phaseQuality(players, phase) { const def = cfg().phases[phase]; const eligible = players.filter((p) => (def.roles?.[role(p)] || 0) > 0); const denom = eligible.reduce((s, p) => s + (def.roles[role(p)] || 0), 0); if (!denom) return 0; return eligible.reduce((s, p) => s + statValue(p, def.stats) * def.roles[role(p)], 0) / denom; }
   function goalkeeperQuality(players) { const gk = players.find((p) => role(p) === "GK"); return gk ? statValue(gk, cfg().phases.goalkeeper.stats) : 0; }
   function validateTeam(team, type) { const players = team.players || []; const expected = type === "five" ? 5 : 11; const ids = new Set(players.map((p) => String(p.playerId ?? p.id ?? name(p)))); if (players.length !== expected || ids.size !== expected) return { valid:false, message:`Servono ${expected} giocatori schierati senza duplicati.` }; if (!players.some((p) => role(p) === "GK")) return { valid:false, message:"Serve un portiere schierato per simulare." }; return { valid:true }; }
-  function teamStrength(team, type) { const validation = validateTeam(team, type); if (!validation.valid) return { ...validation }; const players = team.players; const averageOverall = players.reduce((s, p) => s + Number(p.overall || p.finalOverall || 0), 0) / players.length; const offense = phaseQuality(players, "offense"); const midfield = phaseQuality(players, "midfield"); const defense = phaseQuality(players, "defense"); const goalkeeper = goalkeeperQuality(players); const w = cfg().profileWeights; const statisticalProfile = offense*w.offense + midfield*w.midfield + defense*w.defense + goalkeeper*w.goalkeeper; const finalRaw = averageOverall*cfg().forceWeights.overall + statisticalProfile*cfg().forceWeights.profile; return { valid:true, averageOverall, offense, midfield, defense, goalkeeper, statisticalProfile, finalRaw, final: Math.round(finalRaw) }; }
+  const FORMATION_TACTICS = Object.freeze({
+    "4-3-3": { id: "balanced_attack", name: "Equilibrato offensivo", description: "Più attacco e velocità, con una lieve esposizione difensiva.", modifiers: { attack: 0.04, speed: 0.03, control: 0.02, defense: -0.02 } },
+    "4-4-2": { id: "solid_compact", name: "Solido e compatto", description: "Più fisico, resistenza e stabilità difensiva.", modifiers: { physical: 0.04, stamina: 0.03, defense: 0.02, control: -0.02 } },
+    "3-4-3": { id: "constant_assault", name: "Assalto continuo", description: "Grande potenziale offensivo, ma forte esposizione difensiva.", modifiers: { attack: 0.06, speed: 0.04, control: 0.02, defense: -0.06, save: -0.02 } },
+    "5-4-1": { id: "defensive_block", name: "Blocco difensivo", description: "Protegge porta e difesa, sacrificando attacco e velocità.", modifiers: { defense: 0.06, save: 0.04, physical: 0.02, attack: -0.06, speed: -0.02 } },
+    "4-5-1": { id: "possession_control", name: "Possesso e controllo", description: "Domina il centrocampo e il ritmo, ma dipende dall’unica punta.", modifiers: { control: 0.06, stamina: 0.04, defense: 0.02, attack: -0.04 } },
+    "4-2-4": { id: "ultra_offensive", name: "Ultra offensivo", description: "Massimizza attacco e velocità, ma lascia grandi spazi.", modifiers: { attack: 0.08, speed: 0.04, defense: -0.07, control: -0.03 } },
+  });
+  const FALLBACK_TACTIC = Object.freeze({ id: "balanced", name: "Bilanciato", description: "Nessun modificatore.", modifiers: Object.freeze({}) });
+  const COMPONENT_KEYS = Object.freeze(["attack", "control", "defense", "save", "speed", "physical", "stamina"]);
+  function averageStat(players, key) { return players.reduce((s, p) => s + stat(p, key), 0) / players.length; }
+  function cloneTactic(tactic, formationId) { return { formationId: formationId || null, id: tactic.id, name: tactic.name, description: tactic.description, modifiers: { ...(tactic.modifiers || {}) } }; }
+  function formationTactic(formationId) { return cloneTactic(FORMATION_TACTICS[String(formationId || "")] || FALLBACK_TACTIC, formationId); }
+  function applyFormationTactics(baseComponents, formationId) {
+    const tactic = formationTactic(formationId);
+    const base = {};
+    const effective = {};
+    COMPONENT_KEYS.forEach((key) => {
+      base[key] = Number(baseComponents?.[key] || 0);
+      effective[key] = base[key] * (1 + Number(tactic.modifiers[key] || 0));
+    });
+    return { base, modifiers: { ...tactic.modifiers }, effective, tactic };
+  }
+  function teamStrength(team, type) {
+    const validation = validateTeam(team, type); if (!validation.valid) return { ...validation };
+    const players = team.players;
+    const averageOverall = players.reduce((s, p) => s + Number(p.overall || p.finalOverall || 0), 0) / players.length;
+    const offense = phaseQuality(players, "offense"); const midfield = phaseQuality(players, "midfield"); const defense = phaseQuality(players, "defense"); const goalkeeper = goalkeeperQuality(players);
+    if (normalizeMatchMode(type) === "five") { const w = cfg().profileWeights; const statisticalProfile = offense*w.offense + midfield*w.midfield + defense*w.defense + goalkeeper*w.goalkeeper; const finalRaw = averageOverall*cfg().forceWeights.overall + statisticalProfile*cfg().forceWeights.profile; return { valid:true, averageOverall, offense, midfield, defense, goalkeeper, statisticalProfile, finalRaw, final: Math.round(finalRaw) }; }
+    const baseComponents = { attack: offense, control: midfield, defense, save: goalkeeper, speed: averageStat(players, "speed"), physical: averageStat(players, "physical"), stamina: averageStat(players, "stamina") };
+    const tactics = applyFormationTactics(baseComponents, team.formationId || team.formation || team.tacticFormationId);
+    const w = cfg().tacticalComponentWeights || { attack:.28, control:.20, defense:.22, save:.12, speed:.07, physical:.06, stamina:.05 };
+    const statisticalProfile = COMPONENT_KEYS.reduce((sum, key) => sum + tactics.effective[key] * Number(w[key] || 0), 0);
+    const finalRaw = averageOverall*cfg().forceWeights.overall + statisticalProfile*cfg().forceWeights.profile;
+    return { valid:true, averageOverall, offense: tactics.effective.attack, midfield: tactics.effective.control, defense: tactics.effective.defense, goalkeeper: tactics.effective.save, statisticalProfile, finalRaw, final: Math.round(finalRaw), baseComponents: tactics.base, effectiveComponents: tactics.effective, formationModifiers: tactics.modifiers, tacticalIdentity: tactics.tactic };
+  }
   function normalizeMatchMode(mode) { return mode === "five" || mode === "five_v_five" ? "five" : "eleven"; }
   function getMatchWinProbabilities(mode, userStrength, opponentStrength) {
     if (arguments.length === 2) {
@@ -68,5 +103,5 @@
     if (type === "eleven") events.push({ minute:46, type:"second_half_start", team:null, text:"Inizio secondo tempo." });
     events.sort((a,b)=>a.minute-b.minute || (a.type.includes("start") ? -1 : 1)); displayed={user:0,opponent:0}; events.forEach((ev)=>{ if (ev.type === "goal") displayed[ev.team]+=1; ev.text = ev.text && ev.type !== "goal" ? ev.text : eventText(ev, teams, displayed); }); return events.slice(0, limits.max); }
   function simulate({ type, seed, userTeam, opponentTeam }) { type = normalizeMatchMode(type); const userStrength = teamStrength(userTeam, type); const opponentStrength = teamStrength(opponentTeam, type); if (!userStrength.valid) return { valid:false, message:userStrength.message }; if (!opponentStrength.valid) return { valid:false, message:opponentStrength.message }; const probs = probabilities(type, userStrength.final, opponentStrength.final); const rng = createRng(seed); const userWins = determineUserWins(probs.userChance, rng); const winner = userWins ? "user" : "opponent"; const picked = pickScore(type, probs.band, rng); const score = winner === "user" ? { user:picked[0], opponent:picked[1] } : { user:picked[1], opponent:picked[0] }; if (score.user === score.opponent) score[winner] += 1; const teams = { user: { name:userTeam.name || "La tua squadra", players:userTeam.players }, opponent:{ name:opponentTeam.name || "Avversari", players:opponentTeam.players } }; const timeline = generateTimeline(type, teams, score, winner, rng); const timelineValidation = validateUserTimeline(timeline, teams.user); if (!timelineValidation.valid) return { valid:false, message:timelineValidation.message, timelineValidation }; return { valid:true, type, seed, userStrength, opponentStrength, probabilities: probs, winner, score, timeline, userPlayerIds: teams.user.players.map((p) => String(p.playerId ?? p.id ?? name(p))) } }
-  global.MatchSimulator = { createRng, teamStrength, probabilities, getMatchWinProbabilities, getFinalWinProbabilities: getMatchWinProbabilities, determineUserWins, simulate, validateTeam, normalizeMatchMode, validateUserTimeline };
+  global.MatchSimulator = { createRng, teamStrength, probabilities, getMatchWinProbabilities, getFinalWinProbabilities: getMatchWinProbabilities, determineUserWins, simulate, validateTeam, normalizeMatchMode, validateUserTimeline, FORMATION_TACTICS, formationTactic, applyFormationTactics };
 })(globalThis);

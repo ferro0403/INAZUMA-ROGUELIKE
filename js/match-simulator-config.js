@@ -5,6 +5,7 @@
     eventDelayMs: 1500,
     forceWeights: { overall: 0.7, profile: 0.3 },
     profileWeights: { offense: 0.35, midfield: 0.25, defense: 0.25, goalkeeper: 0.15 },
+    tacticalComponentWeights: { attack: 0.28, control: 0.20, defense: 0.22, save: 0.12, speed: 0.07, physical: 0.06, stamina: 0.05 },
     phases: {
       offense: { stats: { attack: .45, control: .20, speed: .15, grit: .10, physical: .10 }, roles: { FW: 1, MF: .65, DF: .25, GK: 0 } },
       midfield: { stats: { control: .35, stamina: .20, grit: .15, speed: .15, attack: .10, defense: .05 }, roles: { MF: 1, DF: .60, FW: .50, GK: 0 } },

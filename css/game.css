@@ -1207,3 +1207,34 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .five-editor-head { align-items: stretch; }
   .five-editor-head .btn-back { width: 100%; min-height: 48px; }
 }
+
+.tactic-panel {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(92, 130, 177, 0.32);
+  border-radius: 18px;
+  background: rgba(10, 28, 54, 0.72);
+}
+.tactic-panel p { margin: 0; color: var(--muted); font-size: 0.88rem; }
+.tactic-heading { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.tactic-heading strong { color: var(--yellow); font-size: 1.05rem; }
+.tactic-heading span { font-weight: 900; }
+.tactic-chip-row { display: flex; flex-wrap: wrap; gap: 8px; }
+.tactic-chip { display: inline-flex; align-items: center; min-height: 30px; padding: 6px 10px; border-radius: 999px; border: 1px solid var(--line); background: rgba(18, 40, 71, 0.9); font-size: 0.78rem; font-weight: 900; white-space: nowrap; }
+.tactic-chip--bonus { color: #b8f7dc; border-color: rgba(52, 211, 153, 0.55); background: rgba(52, 211, 153, 0.12); }
+.tactic-chip--penalty { color: #ffc2c6; border-color: rgba(255, 91, 98, 0.55); background: rgba(255, 91, 98, 0.12); }
+.squad-tactic-panel { margin-bottom: 14px; }
+.boss-tactics-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; margin: 14px 0; }
+.tactic-panel--boss { border-color: rgba(255, 91, 98, 0.34); background: rgba(54, 12, 18, 0.42); }
+.tactic-strength { display: flex; flex-wrap: wrap; gap: 8px; }
+.tactic-strength span { padding: 6px 9px; border: 1px solid rgba(92, 130, 177, 0.28); border-radius: 12px; color: var(--muted); font-size: 0.78rem; font-weight: 800; }
+.tactic-strength strong { color: var(--text); }
+
+@media (max-width: 780px) {
+  .boss-tactics-grid { grid-template-columns: 1fr; }
+  .tactic-panel { padding: 12px; gap: 8px; }
+  .tactic-chip { font-size: 0.76rem; padding: 6px 9px; }
+  .tactic-strength { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .tactic-strength span { min-width: 0; }
+}
