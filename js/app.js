@@ -983,6 +983,7 @@
               <button type="button" class="btn ${ui.squadEditMode ? "btn-yellow" : ""}" id="toggle-squad-edit">${ui.squadEditMode ? "Termina modifiche" : "Modifica titolari"}</button>
             </div>
           </div>
+          ${tacticPanelMarkup(run.formationId, { className: "squad-tactic-panel", compact: true })}
           <p class="muted small" data-squad-hint>${squadStatusText()}</p>
           <div class="squad-layout">
             ${squadPitchMarkup()}
@@ -1815,6 +1816,32 @@
     return Math.round(players.reduce((sum, player) => sum + Number(player.overall || 0), 0) / players.length);
   }
 
+
+
+  const TACTIC_LABELS = { attack: "Attacco", control: "Controllo", defense: "Difesa", save: "Parata", speed: "Velocità", physical: "Fisico", stamina: "Resistenza" };
+  const TACTIC_SHORT_LABELS = { attack: "ATT", control: "CON", defense: "DIF", save: "PAR", speed: "VEL", physical: "FIS", stamina: "RES" };
+
+  function tacticSummary(formationId) {
+    return global.MatchSimulator.formationTactic(formationId);
+  }
+
+  function tacticChipMarkup(key, value, compact = false) {
+    const positive = Number(value) >= 0;
+    const percent = Math.round(Math.abs(Number(value) || 0) * 100);
+    const label = compact ? (TACTIC_SHORT_LABELS[key] || key.toUpperCase()) : (TACTIC_LABELS[key] || key);
+    const text = `${positive ? "↑" : "↓"} ${label} ${positive ? "+" : "-"}${percent}%`;
+    return `<span class="tactic-chip tactic-chip--${positive ? "bonus" : "penalty"}" aria-label="${escapeHtml(text)}">${escapeHtml(text)}</span>`;
+  }
+
+  function tacticPanelMarkup(formationId, { className = "", compact = false, strength = null, probability = null } = {}) {
+    const tactic = tacticSummary(formationId);
+    const entries = Object.entries(tactic.modifiers || {});
+    const bonuses = entries.filter(([, value]) => value >= 0).map(([key, value]) => tacticChipMarkup(key, value, compact)).join("");
+    const penalties = entries.filter(([, value]) => value < 0).map(([key, value]) => tacticChipMarkup(key, value, compact)).join("");
+    const strengthMarkup = strength ? `<div class="tactic-strength"><span>Forza base <strong>${escapeHtml(Math.round(strength.averageOverall ?? 0))}</strong></span><span>Forza effettiva <strong>${escapeHtml(strength.final ?? "-")}</strong></span>${probability != null ? `<span>Probabilità <strong>${escapeHtml(probability)}%</strong></span>` : ""}</div>` : "";
+    return `<section class="tactic-panel ${className}" data-tactic-panel data-formation="${escapeHtml(formationId || "")}"><div class="tactic-heading"><strong>${escapeHtml(formationId || "-")}</strong><span>${escapeHtml(tactic.name)}</span></div><p>${escapeHtml(tactic.description)}</p><div class="tactic-chip-row tactic-chip-row--bonus">${bonuses || '<span class="tactic-chip">Nessun bonus</span>'}</div><div class="tactic-chip-row tactic-chip-row--penalty">${penalties || '<span class="tactic-chip">Nessuna penalità</span>'}</div>${strengthMarkup}</section>`;
+  }
+
   function matchFormationCard(player, { side = "user", readonly = true, showEquipment = false } = {}) {
     const equipment = showEquipment ? (player.equipment || rosterEntry(player.playerId)?.equippedItem || null) : null;
     return compactPlayerCardMarkup(player, {
@@ -1910,8 +1937,8 @@
     const opponentPlayers = bossTeamPlayers(boss).map(normalizedMatchPlayer).filter(Boolean);
     return {
       type: "eleven",
-      userTeam: { name: meta.user.name, players: userPlayers },
-      opponentTeam: { name: meta.boss.name, players: opponentPlayers },
+      userTeam: { name: meta.user.name, players: userPlayers, formationId: meta.user.formation },
+      opponentTeam: { name: meta.boss.name, players: opponentPlayers, formationId: meta.boss.formation },
       userSnapshot: matchSnapshotFromTeam({ name: meta.user.name, players: userPlayers }),
     };
   }
@@ -2302,6 +2329,8 @@
     const simulating = ui.bossMatchState === "simulating";
     const simPreview = ensureMatchPreview(ui.match, { boss });
     const simError = !simPreview.valid ? simPreview.message : "";
+    const userProbability = simPreview.probabilities ? Math.round(simPreview.probabilities.user * 100) : null;
+    const bossProbability = simPreview.probabilities ? Math.round(simPreview.probabilities.opponent * 100) : null;
     ui.bossMatchLog = visibleTimeline(ui.match);
     const score = simulationScoreArray(ui.match, resolved);
 
@@ -2345,7 +2374,11 @@
             </aside>
           </div>
 
-          <div class="match-sim-summary">Forza: ${escapeHtml(simPreview.userStrength?.final ?? "-")} contro ${escapeHtml(simPreview.opponentStrength?.final ?? "-")} · Probabilità: ${escapeHtml(simPreview.probabilities ? Math.round(simPreview.probabilities.user * 100) : "-")}% contro ${escapeHtml(simPreview.probabilities ? Math.round(simPreview.probabilities.opponent * 100) : "-")}%</div>
+          <div class="boss-tactics-grid">
+            ${tacticPanelMarkup(run.formationId, { className: "tactic-panel--user", compact: true, strength: simPreview.userStrength, probability: userProbability })}
+            ${tacticPanelMarkup(boss.bossFormation, { className: "tactic-panel--boss", compact: true, strength: simPreview.opponentStrength, probability: bossProbability })}
+          </div>
+          <div class="match-sim-summary">Forza: ${escapeHtml(simPreview.userStrength?.final ?? "-")} contro ${escapeHtml(simPreview.opponentStrength?.final ?? "-")} · Probabilità: ${escapeHtml(userProbability ?? "-")}% contro ${escapeHtml(bossProbability ?? "-")}%</div>
           ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
           <div class="boss-match-bottom-grid">
             <section class="panel boss-match-log-panel"><h3>Cronaca</h3><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita">${bossMatchTimeline()}</ol></section>
