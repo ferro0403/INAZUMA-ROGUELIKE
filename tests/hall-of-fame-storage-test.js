@@ -1,0 +1,18 @@
+const assert = require('assert');
+const fs = require('fs');
+const vm = require('vm');
+const store = new Map();
+const context = { console, globalThis: null, localStorage: { getItem: (k) => store.get(k) || null, setItem: (k, v) => store.set(k, String(v)), removeItem: (k) => store.delete(k) } };
+context.globalThis = context;
+vm.runInNewContext(fs.readFileSync('js/hall-of-fame.js', 'utf8'), context);
+const H = context.HallOfFameStorage;
+const snapshot = { runId: 'run-a', modeId: 'season1', seasonId: 'season1', finalBossId: 'raimon', teamName: 'Storm', modeName: 'Season 1', seasonName: 'Season 1', victoryDate: '2026-07-17T00:00:00.000Z', finalFormation: '4-3-3', finalStartingEleven: [{ playerId: '1', name: 'A', portraitUrl: 'a.png' }], fullRoster: [{ playerId: '1', name: 'A', finalOverall: 90, formationSlot: 1 }], bench: [], runStatistics: {}, playerStatistics: {}, awards: [] };
+const first = H.addChampion(snapshot);
+const second = H.addChampion({ ...snapshot, teamName: 'Changed' });
+assert.equal(first.created, true);
+assert.equal(second.created, false);
+assert.equal(H.listSummaries().length, 1, 'same run must not duplicate hall entry');
+assert.equal(H.getTeam(first.team.hallTeamId).teamName, 'Storm', 'snapshot remains immutable after duplicate add');
+store.set(H.STORAGE_KEY, JSON.stringify({ schemaVersion: 1, teams: [H.getTeam(first.team.hallTeamId), { bad: true }] }));
+assert.equal(H.listSummaries().length, 1, 'corrupt entry is ignored without breaking archive');
+console.log('hall-of-fame-storage-test passed');

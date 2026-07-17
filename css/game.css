@@ -1238,3 +1238,48 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .tactic-strength { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .tactic-strength span { min-width: 0; }
 }
+
+/* Hall of Fame and final victory */
+.final-celebration-screen,
+.final-summary-screen,
+.hall-screen,
+.hall-detail-screen { min-height: 100dvh; padding: clamp(16px, 3vw, 32px); color: var(--text, #f6fbff); background: radial-gradient(circle at top, rgba(255,211,79,.24), transparent 34%), linear-gradient(135deg, #07152b, #102a52 58%, #1b1632); }
+.final-celebration-panel { max-width: 1180px; margin: 0 auto; min-height: calc(100dvh - 64px); display: grid; align-content: center; justify-items: center; gap: 14px; text-align: center; }
+.final-trophy { font-size: clamp(4rem, 13vw, 9rem); filter: drop-shadow(0 18px 36px rgba(255, 199, 44, .4)); animation: trophy-pop .9s ease both; }
+.final-celebration-panel h1 { font-size: clamp(2.4rem, 8vw, 6rem); margin: 0; color: #ffe071; text-shadow: 0 8px 28px rgba(0,0,0,.4); }
+.final-celebration-panel h2 { font-size: clamp(1.4rem, 4vw, 3rem); margin: 0; letter-spacing: .18em; }
+.final-celebration-panel .hall-pitch { width: min(100%, 980px); }
+.final-summary-head { max-width: 1200px; margin: 0 auto 18px; }
+.final-summary-head h1, .hall-screen h1, .hall-detail-screen h1 { margin: 0; color: #ffe071; }
+.final-summary-grid, .hall-detail-grid { max-width: 1280px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, .65fr); gap: 18px; align-items: start; }
+.final-actions-panel { display: grid; gap: 10px; position: sticky; top: 12px; }
+.final-tabs { max-width: 1280px; margin: 0 auto 14px; display: none; gap: 8px; }
+.final-tabs button { min-height: 44px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.08); color: inherit; padding: 0 16px; font-weight: 800; }
+.final-tabs button.active { background: #ffd34f; color: #10213c; }
+.hall-pitch .player-card { cursor: pointer; }
+.hall-stat { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.1); }
+.hall-stat span { color: rgba(246,251,255,.72); }
+.hall-award { display: grid; grid-template-columns: 54px 1fr; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.1); }
+.hall-award img, .hall-portraits img { width: 54px; height: 54px; border-radius: 14px; object-fit: cover; background: rgba(255,255,255,.1); }
+.hall-grid { max-width: 1280px; margin: 18px auto 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; }
+.hall-card { display: grid; gap: 10px; }
+.hall-card-trophy { color: #ffd34f; font-weight: 900; }
+.hall-portraits { display: flex; gap: 6px; flex-wrap: wrap; }
+.hall-empty { max-width: 720px; margin: 24px auto; text-align: center; }
+.bench-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+@keyframes trophy-pop { from { transform: scale(.75) translateY(16px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .final-trophy { animation: none; } }
+@media (max-width: 760px) {
+  .final-celebration-screen, .final-summary-screen, .hall-screen, .hall-detail-screen { padding: 14px; }
+  .final-celebration-panel { min-height: calc(100dvh - 28px); align-content: start; padding-top: 18px; }
+  .final-celebration-panel .final-actions { display: grid; grid-template-columns: 1fr; width: 100%; }
+  .final-summary-grid, .hall-detail-grid { display: block; }
+  .final-tabs { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .final-tab-panel { display: none; margin-bottom: 12px; }
+  .final-tab-panel.active { display: block; }
+  .final-actions-panel { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 12px; }
+  .hall-grid { grid-template-columns: 1fr; }
+  .hall-card { min-height: 0; }
+  .bench-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 761px) { .final-tab-panel { display: block !important; } }
