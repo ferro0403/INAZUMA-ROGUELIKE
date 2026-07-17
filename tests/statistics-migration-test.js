@@ -1,0 +1,16 @@
+const assert = require('node:assert/strict');
+require('../js/run-statistics.js');
+const S = global.RunStatistics;
+const legacy = { runId:'old', createdAt:'2026-01-01T00:00:00.000Z', roster:[{ playerId:'p1' }] };
+S.migrateLegacyRunStatistics(legacy);
+assert.equal(legacy.statistics.schemaVersion, 1, 'statistics schema created');
+assert.equal(legacy.statisticsComplete, false, 'legacy stats marked partial');
+assert.equal(legacy.statistics.matchesTotal, 0, 'legacy run does not invent matches');
+S.recordRunAction(legacy, S.ACTIONS.ITEM_USED, { itemId:'intensive_training', actionId:'a1' });
+S.recordRunAction(legacy, S.ACTIONS.ITEM_USED, { itemId:'intensive_training', actionId:'a1' });
+assert.equal(legacy.statistics.itemsUsed, 1, 'action idempotency');
+assert.equal(legacy.statistics.intensiveTrainingUsed, 1, 'intensive training counted once');
+const snap = S.buildHallOfFameStatisticsSnapshot(legacy);
+assert.equal(snap.statisticsSchemaVersion, 1, 'hall snapshot versioned');
+assert.equal(snap.statisticsComplete, false, 'hall snapshot freezes partial flag');
+console.log('statistics-migration-test passed');

@@ -1,0 +1,15 @@
+const assert = require('node:assert/strict');
+require('../js/run-statistics.js');
+const S = global.RunStatistics;
+const run = S.ensureRunStatistics({ runId:'retry' });
+const base = { type:'five_v_five', nodeId:'same', result:'defeat', score:{ user:0, opponent:1 }, lineupSnapshot:{ players:[1,2,3,4,5].map((n)=>({ playerId:`p${n}`, position:n===1?'GK':'FW', name:`P${n}` })) }, timeline:[] };
+const id1 = S.createStableMatchId(run, { ...base, attemptNumber:1, simulation:{ seed:'seed1' } });
+const id2 = S.createStableMatchId(run, { ...base, attemptNumber:2, simulation:{ seed:'seed2' } });
+assert.notEqual(id1, id2, 'retry same node creates different matchId');
+S.applyCompletedMatchStatistics(run, { ...base, matchId:id1 });
+const backup = JSON.parse(JSON.stringify(run));
+S.applyCompletedMatchStatistics(backup, { ...base, matchId:id1 });
+assert.equal(backup.statistics.matchesTotal, 1, 'backup recovery does not duplicate processed match');
+S.applyCompletedMatchStatistics(backup, { ...base, matchId:id2 });
+assert.equal(backup.statistics.matchesTotal, 2, 'new attempt counts separately');
+console.log('match-statistics-idempotency-test passed');

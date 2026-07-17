@@ -1,0 +1,16 @@
+const assert = require('node:assert/strict');
+require('../js/run-statistics.js');
+const S = global.RunStatistics;
+const r = S.ensureRunStatistics({ runId:'r2', createdAt:'2026-07-17T00:00:00.000Z' });
+const lineup = Array.from({ length: 11 }, (_, i) => ({ playerId:`p${i}`, name:`P${i}`, position:i===0?'GK':i<5?'DF':i<8?'MF':'FW', overall:70+i, displayLevel:2 }));
+S.applyCompletedMatchStatistics(r, { matchId:'boss1', type:'boss', nodeId:'b', bossId:'occult', result:'defeat', isFinal:true, score:{ user:1, opponent:3 }, lineupSnapshot:{ players:lineup }, timeline:[{ type:'goal', team:'user', playerId:'p9' }, { type:'save', team:'user', playerId:'p0' }, { type:'save', team:'user', playerId:'p0' }, { type:'defensive_stop', team:'user', playerId:'p2' }] });
+assert.equal(r.statistics.bossMatches, 1, 'boss match counted');
+assert.equal(r.statistics.bossLosses, 1, 'boss loss counted');
+assert.equal(Object.values(r.playerStatistics).reduce((s, ps) => s + ps.appearances, 0), 11, 'eleven appearances');
+assert.equal(r.playerStatistics.p0.saves, 2, 'GK saves counted');
+assert.equal(r.playerStatistics.p9.finalAppearances, 1, 'final appearances saved');
+assert.equal(r.playerStatistics.p9.finalMatchGoals, 1, 'final goals saved');
+assert.equal(r.playerStatistics.p9.ratingCount, 1, 'rating count saved');
+assert.equal(r.playerStatistics.p9.averageRating, r.playerStatistics.p9.bestRating, 'best rating initialized');
+assert(r.playerStatistics.p9.averageRating >= 5 && r.playerStatistics.p9.averageRating <= 10, 'rating clamped');
+console.log('player-statistics-test passed');
