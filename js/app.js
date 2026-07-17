@@ -1261,10 +1261,6 @@
     const completed = new Set(zone.completedNodeIds);
     const labels = global.SEASON1_CONFIG.nodeLabels;
     const currentNodeId = zone.currentNodeId;
-    const completedCount = completed.size;
-    const totalNodes = zone.nodes.length;
-    const runProgress = Math.min(100, Math.round((completedCount / Math.max(1, totalNodes - 1)) * 100));
-    const routeLegendTypes = ["five_v_five", "pull_free_agents", "pull_unlocked_teams", "item", "trade", "random", "boss"];
     const pathSet = new Set(zone.path || []);
     const edgeMarkup = zone.edges.map(([from, to]) => {
       const available = from === currentNodeId && reachable.has(to);
@@ -1278,21 +1274,18 @@
       <main class="screen route-screen">
         ${topbar(`Verso ${boss.teamName}`)}
         <div class="content route-content">
-          <section class="route-hero panel" aria-label="Riepilogo percorso">
+          <section class="route-hero panel" aria-label="Prossima sfida del percorso">
             <div class="route-hero-copy">
               <p class="eyebrow route-kicker">Boss ${run.bossIndex + 1} di ${seasonDb.bossOrder.length}</p>
-              <h2>Scegli il percorso</h2>
-              <p class="muted">Seleziona uno dei nodi collegati alla tua posizione attuale. Ogni scelta ti avvicina alla prossima sfida: <strong>${escapeHtml(boss.teamName)}</strong>.</p>
+              <h2>Verso ${escapeHtml(boss.teamName)}</h2>
+              <p class="muted">Scegli il prossimo nodo e avanza verso il boss.</p>
             </div>
-            <div class="route-hero-side">
-              <div class="route-target-card"><span>Prossima sfida</span><strong>${escapeHtml(boss.teamName)}</strong><small>Road to the boss</small></div>
-              <button type="button" class="btn btn-secondary route-squad-action" data-nav="squad">Gestisci squadra</button>
-            </div>
-          </section>
-          <section class="route-progress-panel" aria-label="Avanzamento verso il boss">
-            <div><span>Run attuale</span><strong>${escapeHtml(completedCount)} / ${escapeHtml(totalNodes - 1)} tappe superate</strong></div>
-            <div class="route-progress-track" aria-hidden="true"><span style="width:${runProgress}%"></span></div>
-            <p>Verso il boss: ${escapeHtml(boss.teamName)}</p>
+            <button type="button" class="route-target-card" id="open-boss-preview" aria-label="Vedi formazione boss ${escapeHtml(boss.teamName)}">
+              <span>Prossima sfida</span>
+              <strong>${escapeHtml(boss.teamName)}</strong>
+              <small>${escapeHtml(boss.bossFormation || "Boss della run")}${boss.bossLevel ? ` · Lv ${escapeHtml(boss.bossLevel)}` : ""}</small>
+              <em>Vedi formazione</em>
+            </button>
           </section>
           <div class="map-wrap" id="map-scroll">
             <div class="route-map" aria-label="Mappa percorso verso ${escapeHtml(boss.teamName)}">
@@ -1315,14 +1308,12 @@
               }).join("")}
             </div>
           </div>
-          <div class="route-legend" aria-label="Legenda nodi">
-            ${routeLegendTypes.map((type) => `<span class="route-legend-item" style="--node-color:${labels[type].color}"><span>${labels[type].icon}</span>${labels[type].label}</span>`).join("")}
-          </div>
         </div>
         ${bottomNav("map")}
       </main>`;
     resetRenderedViewScroll();
 
+    document.getElementById("open-boss-preview")?.addEventListener("click", () => openBossPreviewModal(boss));
     document.querySelectorAll("[data-node-id]").forEach((button) => {
       button.addEventListener("click", () => enterNode(button.dataset.nodeId));
     });
@@ -1905,6 +1896,35 @@
       closeModal();
       done(false);
     });
+  }
+
+  function openBossPreviewModal(boss) {
+    const bossPlayers = bossTeamPlayers(boss);
+    const meta = bossMatchTeamMeta(boss).boss;
+    const average = bossMatchAverage(bossPlayers);
+    openModal(`
+      <div class="modal-head route-boss-preview-head">
+        <div>
+          <p class="eyebrow">Prossima sfida</p>
+          <h2>${escapeHtml(meta.name)}</h2>
+          <p class="muted">${escapeHtml(meta.formation)} · Boss ${run.bossIndex + 1}/${seasonDb.bossOrder.length}${average ? ` · OVR ${escapeHtml(average)}` : ""}</p>
+        </div>
+        <span class="boss-match-logo route-boss-preview-logo">${meta.logoUrl ? `<img src="${escapeHtml(meta.logoUrl)}" alt="${escapeHtml(meta.name)}" />` : "⚽"}</span>
+      </div>
+      <section class="route-boss-preview-field" aria-label="Formazione boss ${escapeHtml(meta.name)}">
+        ${bossMatchField({ players: bossPlayers, formationId: boss.bossFormation }, "boss", true)}
+      </section>
+      <div class="button-row route-boss-preview-actions">
+        <button type="button" class="btn btn-yellow" data-close-modal>Chiudi</button>
+      </div>`,
+      { closeable: true, className: "route-boss-preview-modal", preserveScroll: scrollSnapshot() }
+    );
+    modalRoot.querySelectorAll("[data-boss-player]").forEach((button) => button.addEventListener("click", () => {
+      const id = button.dataset.bossPlayer;
+      const player = bossPlayers.find((candidate) => String(candidate.playerId) === String(id));
+      showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: seasonDb, preserveScroll: scrollSnapshot() });
+    }));
+    modalRoot.querySelectorAll(".route-boss-preview-actions [data-close-modal]").forEach((button) => button.addEventListener("click", closeModal));
   }
 
 
