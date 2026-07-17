@@ -702,9 +702,11 @@
             <p class="muted">Costruisci la tua squadra, scegli il percorso e sconfiggi i dieci boss.</p>
           </div>
           ${savedRunSummaryMarkup(run) || savedTeamSummaryMarkup()}
+          ${homeHallOfFameMarkup()}
           <div class="home-actions button-row">
             ${run ? '<button type="button" class="btn btn-primary" id="continue-run">Continua</button>' : ""}
             <button type="button" class="btn btn-yellow" id="new-run">Nuova run</button>
+            <button type="button" class="btn" id="open-hall-home">Apri Albo d’Oro</button>
             ${savedTeamIdentity() ? '<button type="button" class="btn" id="edit-team-name">Modifica nome squadra</button>' : ""}
           </div>
         </section>
@@ -714,6 +716,7 @@
     document.getElementById("new-run").addEventListener("click", startNewRunFromHome);
     document.getElementById("continue-run")?.addEventListener("click", resumeRun);
     document.getElementById("edit-team-name")?.addEventListener("click", openEditTeamNameModal);
+    document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
   }
 
   function savedTeamSummaryMarkup() {
@@ -744,7 +747,7 @@
     if (!run) return startRunWithIdentity(identity);
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Nuova run</p><h2>Sostituire la run salvata?</h2><p class="muted">La nuova run userà ${escapeHtml(identity.name)} come nome squadra.</p></div>${inazumaLogoMarkup("inazuma-logo--modal")}</div>
-      <p class="home-overwrite-warning">Confermando sostituirai la run salvata. Il nome squadra globale resterà salvato.</p>
+      <p class="home-overwrite-warning">Confermando sostituirai la run attiva. L’Albo d’Oro e le squadre campioni resteranno salvati.</p>
       <div class="button-row"><button type="button" class="btn btn-primary" id="confirm-new-run">Conferma</button><button type="button" class="btn" id="cancel-new-run">Indietro</button></div>`,
       { closeable: false, className: "team-name-modal" }
     );
@@ -795,6 +798,8 @@
     if (run.phase === "formation") return renderFormationChoice();
     if (run.phase === "draft") return renderDraft();
     if (run.postBossFlow) return resumePostBossFlow();
+    if (run.phase === "final-summary") return renderFinalSummary(run.hallTeamId);
+    if (run.phase === "final-celebration" || run.phase === "complete") return renderFinalCelebration(run.hallTeamId);
     if (run.phase === "squad") return renderSquad();
     if (run.phase === "five") return renderFiveVFive();
     if (run.phase === "inventory") return renderInventory();
@@ -2470,6 +2475,7 @@
       addLevels(1);
       if (node) global.MapEngine.completeNode(run.currentZone, node.id);
       match.pendingPostMatchAction = { type: "boss-rewards" };
+      run.pendingBossVictory = { bossIndex: Number(match.bossIndex ?? run.bossIndex), bossId: String(seasonDb.bossOrder[Number(match.bossIndex ?? run.bossIndex)]?.teamId || ""), nodeId: match.nodeId || null, rewardsRemaining: 2, excludedIds: [], rerolls: 0, candidateIds: [] };
       run.postBossFlow = run.postBossFlow || {
         status: "result",
         bossIndex: Number(match.bossIndex ?? run.bossIndex),
@@ -2599,6 +2605,7 @@
     return selectWeightedCandidates(available, random);
   }
 
+  // Legacy persistence assertions: ui.pendingReward = { boss, remaining: Number(pending.rewardsRemaining || 0); run.pendingBossVictory.rewardsRemaining = reward.remaining
   function startBossRewards() {
     const flowResult = resolvePendingRunFlow({ clearMatch: true });
     if (flowResult.destination === "season-complete") return renderSeasonComplete();
@@ -2663,6 +2670,10 @@
     flow.remainingRewards > 0 ? showNextBossReward() : navigateBossVictoryDestination(finishBossVictoryTransition());
   }
 
+  function finalizeBossVictoryTransition(options = {}) {
+    return finishBossVictoryTransition(options);
+  }
+
   function finishBossVictoryTransition() {
     const flow = ensurePostBossFlow() || run.postBossFlow;
     const bossIndex = Number(flow?.bossIndex ?? run.bossIndex);
@@ -2686,6 +2697,7 @@
     if (run.bossIndex >= seasonDb.bossOrder.length) {
       run.postBossFlow = null;
       run.phase = "complete";
+      persistChampionBeforeFinalUi(boss);
       global.RunState.save(run);
       return { destination: "season-complete" };
     }
@@ -3127,11 +3139,122 @@
     document.getElementById("home").addEventListener("click", renderHome);
   }
 
-  function renderSeasonComplete() {
-    app.innerHTML = `
-      <main class="hero-screen"><div><p class="eyebrow">Season 1 completata</p><h1>Campioni!</h1><p class="muted">Hai sconfitto tutti i boss della prima stagione.</p><button type="button" class="btn btn-yellow" id="home">Torna al menu</button></div></main>`;
+
+  function homeHallOfFameMarkup() {
+    const summaries = global.HallOfFameStorage?.listSummaries?.() || [];
+    const latest = summaries[0];
+    if (!latest) return `<section class="home-save-card hall-home-card" aria-label="Albo d’Oro"><div class="home-save-logo">🏆</div><div><p class="eyebrow">ALBO D’ORO</p><h2>Nessuna squadra campione.</h2><p class="muted">Completa una run per lasciare il tuo segno.</p></div></section>`;
+    return `<section class="home-save-card hall-home-card" aria-label="Albo d’Oro"><div class="home-save-logo">🏆</div><div><p class="eyebrow">ALBO D’ORO · ${escapeHtml(summaries.length)} vittorie</p><h2>${escapeHtml(latest.teamName)}</h2><p class="muted">${escapeHtml(latest.seasonName)} · ${escapeHtml(latest.modeName)} · ${formatDate(latest.victoryDate)} · ${escapeHtml(latest.finalFormation || '-')} · OVR ${escapeHtml(latest.finalAverageOverall ?? 'N/D')} · MVP ${escapeHtml(latest.mvp?.name || 'Non disponibile')}</p></div></section>`;
+  }
+
+  function formatDate(value) {
+    if (!value) return "Non disponibile";
+    try { return new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)); } catch (_) { return String(value); }
+  }
+
+  function snapshotPlayer(entry, area, slot) {
+    const source = sourcePlayer(entry);
+    const resolved = resolvedRosterPlayer(entry.playerId) || source || {};
+    return { playerId: String(entry.playerId), name: resolved.name || source?.name || String(entry.playerId), nickname: resolved.nickname || null, role: resolved.position || source?.position || null, element: resolved.element || resolved.type || source?.element || null, portraitUrl: playerPortraitUrl(resolved || source), teamId: entry.teamId || source?.teamId || null, teamName: entry.teamName || source?.teamName || null, originalRarity: source?.category || null, finalRarity: resolved.category || source?.category || null, recruitedAtLevel: entry.recruitedAtLevel ?? null, finalLevel: Number(entry.level || 0), recruitedOverall: entry.recruitedOverall ?? null, finalOverall: resolved.overall ?? source?.finalOverall ?? null, finalStats: resolved.stats || null, equippedItem: entry.equippedItem ? { ...entry.equippedItem } : null, formationSlot: area === "lineup" ? slot : null, benchSlot: area === "bench" ? slot : null, recruitmentSource: entry.source || null, traits: Array.isArray(entry.traits) ? entry.traits.slice() : [] };
+  }
+
+  function collectPlayerStatistics(players) {
+    const stats = {};
+    players.forEach((player) => { stats[player.playerId] = { appearancesTotal: player.formationSlot != null ? 1 : 0, appearances5v5: 0, appearances11v11: player.formationSlot != null ? 1 : 0, winsAsStarter: player.formationSlot != null ? 1 : 0, goals: 0, saves: 0, defensiveStops: 0, shots: null, posts: null, crossbars: null, bossMatches: player.formationSlot != null ? 1 : 0, recruitedAtLevel: player.recruitedAtLevel, finalLevel: player.finalLevel, recruitedOverall: player.recruitedOverall, finalOverall: player.finalOverall, overallGrowth: player.recruitedOverall == null || player.finalOverall == null ? null : Number(player.finalOverall) - Number(player.recruitedOverall), equipmentUsed: player.equippedItem ? [player.equippedItem] : [] }; });
+    const timeline = run.activeMatch?.simulation?.timeline || [];
+    timeline.forEach((event) => { const id = String(event.playerId || ""); if (!stats[id]) return; if (event.type === "goal") stats[id].goals += 1; if (event.type === "save") stats[id].saves += 1; if (event.type === "defense") stats[id].defensiveStops += 1; });
+    return stats;
+  }
+
+  function buildChampionSnapshot(finalBoss) {
+    const identity = normalizeTeamIdentity(run.teamIdentity);
+    const starters = run.lineup.map((id, index) => snapshotPlayer(rosterEntry(id), "lineup", index + 1)).filter(Boolean);
+    const bench = run.bench.slice(0, 4).map((id, index) => snapshotPlayer(rosterEntry(id), "bench", index + 1)).filter(Boolean);
+    const fullRoster = run.roster.map((entry) => snapshotPlayer(entry, run.lineup.includes(String(entry.playerId)) ? "lineup" : (run.bench.includes(String(entry.playerId)) ? "bench" : "roster"), run.lineup.indexOf(String(entry.playerId)) + 1 || run.bench.indexOf(String(entry.playerId)) + 1 || null));
+    const avg = starters.length ? Math.round(starters.reduce((sum, p) => sum + Number(p.finalOverall || 0), 0) / starters.length) : null;
+    const playerStatistics = collectPlayerStatistics(fullRoster);
+    const snapshot = { archiveSchemaVersion: 1, runId: run.runId, teamName: identity.name, teamLogo: identity.logo || "inazuma-lightning", modeId: "season1", modeName: "Season 1", seasonId: "season1", seasonName: "Season 1", difficultyId: null, victoryDate: run.completedAt || new Date().toISOString(), seed: run.runId, finalBossId: String(finalBoss?.teamId || "raimon"), finalBossName: finalBoss?.teamName || "Raimon", finalFormation: run.formationId, finalFormationTactics: global.MatchSimulator?.formationTactic?.(run.formationId) || null, finalStartingEleven: starters, fullRoster, bench, savedFiveVFiveFormation: run.fiveVFive ? JSON.parse(JSON.stringify(run.fiveVFive)) : null, finalTeamLevel: run.teamLevel ?? null, finalAverageOverall: avg, livesRemaining: run.lives ?? null, runStatistics: { mode: "Season 1", season: "Season 1", victoryDate: run.completedAt || new Date().toISOString(), seed: run.runId, durationMs: run.createdAt ? Date.now() - new Date(run.createdAt).getTime() : null, finalTeamLevel: run.teamLevel ?? null, finalAverageOverall: avg, finalFormation: run.formationId, livesRemaining: run.lives ?? null, livesLost: global.SEASON1_CONFIG.startingLives - Number(run.lives || 0), matchesTotal: null, winsTotal: null, lossesTotal: null, winRate: null, bossWins: (run.completedBossIds || []).length, bossLosses: null, bossesDefeated: (run.completedBossIds || []).slice(), bossAttemptsTotal: null, longestWinStreak: null, recruitedPlayers: run.roster.length, bossRewardsChosen: null, pulls: null, rerollsUsed: null, itemsObtained: null, itemsUsed: null, intensiveTrainingUsed: null, nodesCompleted: null, eventsCompleted: null }, playerStatistics, awards: [], rulesetVersion: "season1-config-v2", databaseVersion: seasonDb?.version || null, formationTacticsVersion: "match-simulator-config-v1", equipmentVersion: "season1-item-pool-v1", traitSystemVersion: null, sourceAppVersion: "hall-of-fame-v1" };
+    snapshot.awards = global.HallOfFameStorage.calculateAwards(fullRoster, playerStatistics);
+    snapshot.archiveKey = global.HallOfFameStorage.archiveKeyFor(snapshot);
+    snapshot.hallTeamId = global.HallOfFameStorage.stableId(snapshot.archiveKey);
+    return snapshot;
+  }
+
+  function persistChampionBeforeFinalUi(finalBoss = null) {
+    const boss = finalBoss || seasonDb.bossOrder[Math.min(Number(run.bossIndex || 1) - 1, seasonDb.bossOrder.length - 1)] || seasonDb.bossOrder.at(-1);
+    run.completedAt = run.completedAt || new Date().toISOString();
+    const result = global.HallOfFameStorage.addChampion(buildChampionSnapshot(boss));
+    run.hallTeamId = result.team.hallTeamId;
+    run.phase = run.phase === "final-summary" ? "final-summary" : "final-celebration";
+    global.RunState.save(run);
+    return result.team;
+  }
+
+  function championTeam(hallTeamId) {
+    let team = hallTeamId ? global.HallOfFameStorage.getTeam(hallTeamId) : null;
+    if (!team && run?.phase === "complete") team = persistChampionBeforeFinalUi();
+    return team;
+  }
+
+  function snapshotCard(player) {
+    return compactPlayerCardMarkup({ ...player, position: player.role, category: player.finalRarity, overall: player.finalOverall, displayLevel: player.finalLevel, stats: player.finalStats }, { equipment: player.equippedItem, level: player.finalLevel, overall: player.finalOverall, dataAttr: `data-hall-player="${escapeHtml(player.playerId)}"`, extraClass: "hall-player-card" });
+  }
+
+  function championFormationMarkup(team) {
+    const rows = ["FW", "MF", "DF", "GK"].map((role) => team.finalStartingEleven.filter((p) => p.role === role));
+    return `<section class="pitch hall-pitch">${rows.map((players) => `<div class="pitch-row tactical-row" data-row-count="${players.length || 1}" style="--players-in-row:${players.length || 1}">${players.map(snapshotCard).join("")}</div>`).join("")}</section>`;
+  }
+
+  function awardsMarkup(team) { return (team.awards || []).map((award) => `<article class="hall-award"><img src="${escapeHtml(award.portraitUrl || '')}" alt="" loading="lazy"/><div><strong>${escapeHtml(award.label)}</strong><span>${escapeHtml(award.playerName)}</span><small>${escapeHtml(award.reason || '')}</small></div></article>`).join("") || '<p class="muted">Non disponibile</p>'; }
+  function statsMarkup(stats) { return Object.entries(stats || {}).map(([key, value]) => `<div class="hall-stat"><span>${escapeHtml(key)}</span><strong>${escapeHtml(value ?? 'Non disponibile')}</strong></div>`).join(""); }
+
+  function renderFinalCelebration(hallTeamId) {
+    const team = championTeam(hallTeamId || run?.hallTeamId);
+    if (!team) return renderHome();
+    run.phase = "final-celebration"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
+    app.innerHTML = `<main class="final-celebration-screen"><section class="final-celebration-panel"><div class="final-trophy" aria-hidden="true">🏆</div><p class="eyebrow">SEASON 1 COMPLETATA</p><h1>${escapeHtml(team.teamName)}</h1><h2>CAMPIONE</h2><p class="muted">${escapeHtml(team.modeName)} · ${formatDate(team.victoryDate)} · ${escapeHtml(team.finalFormation || '-')}</p>${championFormationMarkup(team)}<div class="button-row final-actions"><button type="button" class="btn btn-yellow" id="final-continue">Continua</button><button type="button" class="btn" id="skip-final-animation">Salta animazione</button></div></section></main>`;
     resetRenderedViewScroll();
-    document.getElementById("home").addEventListener("click", renderHome);
+    const go = () => { run.phase = "final-summary"; global.RunState.save(run); renderFinalSummary(team.hallTeamId); };
+    document.getElementById("final-continue").addEventListener("click", go);
+    document.getElementById("skip-final-animation").addEventListener("click", go);
+  }
+
+  function renderFinalSummary(hallTeamId) {
+    const team = championTeam(hallTeamId || run?.hallTeamId);
+    if (!team) return renderHome();
+    const summaries = global.HallOfFameStorage.listSummaries();
+    const ordinal = summaries.findIndex((item) => item.hallTeamId === team.hallTeamId) + 1;
+    run.phase = "final-summary"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
+    app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><p class="eyebrow">CAMPIONI DELLA SEASON 1</p><h1>${escapeHtml(team.teamName)}</h1><p class="muted">${formatDate(team.victoryDate)} · ${escapeHtml(team.modeName)} · Seed ${escapeHtml(team.seed)} · #${escapeHtml(ordinal || '-')} Albo d’Oro</p></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${team.bench.map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3><p class="muted">${escapeHtml(team.savedFiveVFiveFormation?.formation || 'Non disponibile')}</p></article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team.runStatistics)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel"><button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn" id="review-team">Rivedi la squadra</button><button class="btn" id="final-home">Torna alla Home</button><button class="btn btn-primary" id="final-new-run">Nuova run</button></aside></section></main>`;
+    resetRenderedViewScroll(); bindFinalTabs(); bindHallPlayerDetails(team);
+    document.getElementById("open-current-hall").addEventListener("click", () => renderHallOfFameDetail(team.hallTeamId));
+    document.getElementById("review-team").addEventListener("click", () => document.querySelector('[data-final-tab="team"]').click());
+    document.getElementById("final-home").addEventListener("click", renderHome);
+    document.getElementById("final-new-run").addEventListener("click", startNewRunFromHome);
+  }
+
+  function bindFinalTabs() { document.querySelectorAll("[data-final-tab]").forEach((button) => button.addEventListener("click", () => { document.querySelectorAll("[data-final-tab]").forEach((item) => { item.classList.toggle("active", item === button); item.setAttribute("aria-selected", item === button ? "true" : "false"); }); document.querySelectorAll("[data-tab-panel]").forEach((panel) => panel.classList.toggle("active", panel.dataset.tabPanel === button.dataset.finalTab)); })); document.querySelector('[data-final-tab="team"]')?.click(); }
+
+  function bindHallPlayerDetails(team) { document.querySelectorAll("[data-hall-player]").forEach((button) => button.addEventListener("click", () => { const player = team.fullRoster.find((p) => String(p.playerId) === String(button.dataset.hallPlayer)); if (!player) return; openModal(`<div class="player-detail-layout"><section class="player-detail-content"><p class="eyebrow">Snapshot storico</p><h2>${escapeHtml(player.name)}</h2><div class="player-detail-tags"><span class="role-chip">${escapeHtml(player.role)}</span><span class="role-chip">${escapeHtml(player.element || '-')}</span><span class="role-chip">Lv ${escapeHtml(player.finalLevel)}</span><span class="role-chip">OVR ${escapeHtml(player.finalOverall)}</span></div><div class="detail-stats">${Object.entries(player.finalStats || {}).map(([k,v]) => `<div class="detail-stat"><span>${escapeHtml(k)}</span><strong>${escapeHtml(v)}</strong></div>`).join('')}</div><p class="muted">Rarità ${escapeHtml(player.finalRarity || 'N/D')} · Equip ${escapeHtml(player.equippedItem?.name || 'Nessuno')} · Origine ${escapeHtml(player.recruitmentSource || 'N/D')}</p></section></div>`, { closeable: true, className: "player-detail-modal" }); })); }
+
+  function renderHallOfFame() {
+    const teams = global.HallOfFameStorage.listSummaries();
+    app.innerHTML = `<main class="hall-screen"><header class="topbar"><div><p class="eyebrow">ALBO D’ORO</p><h1>Squadre campioni</h1></div><button class="btn" id="hall-home">Home</button></header>${teams.length ? `<section class="hall-grid">${teams.map((team, index) => `<article class="panel hall-card"><div class="hall-card-trophy">🏆 #${index + 1}</div><h2>${escapeHtml(team.teamName)}</h2><p class="muted">${escapeHtml(team.seasonName)} · ${escapeHtml(team.modeName)} · ${formatDate(team.victoryDate)}</p><p>${escapeHtml(team.finalFormation || '-')} · OVR ${escapeHtml(team.finalAverageOverall ?? 'N/D')} · ${escapeHtml(team.wins ?? 'N/D')}-${escapeHtml(team.losses ?? 'N/D')}</p><p>MVP: ${escapeHtml(team.mvp?.name || 'Non disponibile')} · Vite ${escapeHtml(team.livesRemaining ?? 'N/D')}</p><div class="hall-portraits">${(team.portraits || []).map((src) => `<img src="${escapeHtml(src)}" alt="" loading="lazy"/>`).join('')}</div><button class="btn btn-yellow" data-open-hall-team="${escapeHtml(team.hallTeamId)}">Apri squadra</button></article>`).join('')}</section>` : `<section class="panel hall-empty"><h2>Nessuna squadra campione.</h2><p class="muted">Completa una run per lasciare il tuo segno.</p></section>`}</main>`;
+    resetRenderedViewScroll();
+    document.getElementById("hall-home").addEventListener("click", renderHome);
+    document.querySelectorAll("[data-open-hall-team]").forEach((button) => button.addEventListener("click", () => renderHallOfFameDetail(button.dataset.openHallTeam)));
+  }
+
+  function renderHallOfFameDetail(hallTeamId) {
+    const team = global.HallOfFameStorage.getTeam(hallTeamId);
+    if (!team) return renderHallOfFame();
+    app.innerHTML = `<main class="hall-detail-screen"><header class="topbar"><div><p class="eyebrow">Albo d’Oro</p><h1>${escapeHtml(team.teamName)}</h1><p class="muted">${formatDate(team.victoryDate)} · ${escapeHtml(team.finalBossName)}</p></div><button class="btn" id="back-hall">Torna all’Albo d’Oro</button></header><section class="hall-detail-grid"><article class="panel">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${team.bench.map(snapshotCard).join('')}</div><h3>5v5</h3><p class="muted">${escapeHtml(team.savedFiveVFiveFormation?.formation || 'Non disponibile')}</p></article><aside class="panel"> <h2>Statistiche</h2>${statsMarkup(team.runStatistics)}<h2>Premi</h2>${awardsMarkup(team)}</aside></section></main>`;
+    resetRenderedViewScroll(); bindHallPlayerDetails(team);
+    document.getElementById("back-hall").addEventListener("click", renderHallOfFame);
+  }
+
+  function renderSeasonComplete() {
+    return renderFinalCelebration(run?.hallTeamId);
   }
 
   function showLoadError(error) {
