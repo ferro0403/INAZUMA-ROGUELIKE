@@ -5,5 +5,8 @@ assert(appJs.includes('function homeHallOfFameMarkup'), 'home renders Hall of Fa
 assert(appJs.includes('function renderHallOfFame()'), 'dedicated Hall of Fame page exists');
 assert(appJs.includes('function renderHallOfFameDetail'), 'Hall team detail page exists');
 assert(css.includes('@media (max-width: 760px)') && css.includes('.final-tabs'), 'mobile tabs are styled separately');
+assert(css.includes('.final-summary-grid > .panel') && css.includes('width: 100%') && css.includes('.hall-detail-screen .topbar .btn'), 'mobile final and hall detail panels expand full width');
+assert(css.includes('.hall-award-copy') && appJs.includes('class="hall-award-copy"'), 'award card copy is separated to avoid concatenated text');
+assert(appJs.includes('runStatsSections') && appJs.includes('Data vittoria') && !appJs.includes('statsMarkup(team.runStatistics)'), 'stats use user-friendly grouped labels');
 assert(css.includes('grid-template-columns: minmax(0, 1.35fr)'), 'desktop summary uses columns');
 console.log('hall-of-fame-ui-test passed');

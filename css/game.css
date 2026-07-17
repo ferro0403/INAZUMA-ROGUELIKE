@@ -1257,7 +1257,22 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .final-tabs button { min-height: 44px; border-radius: 999px; border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.08); color: inherit; padding: 0 16px; font-weight: 800; }
 .final-tabs button.active { background: #ffd34f; color: #10213c; }
 .hall-pitch .player-card { cursor: pointer; }
-.hall-stat { display: flex; justify-content: space-between; gap: 12px; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.1); }
+
+.final-summary-meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.final-summary-meta span { display: inline-flex; align-items: center; min-width: 0; overflow-wrap: anywhere; }
+.final-summary-meta span + span::before { content: "•"; margin-right: 8px; color: rgba(255,255,255,.45); }
+.hall-stat-group { display: grid; gap: 8px; margin-bottom: 16px; }
+.hall-stat-group h3 { margin: 0; color: #ffe071; }
+.hall-stat-list { display: grid; gap: 8px; }
+.hall-stat strong { text-align: right; overflow-wrap: anywhere; }
+.hall-stat-wide { display: grid; }
+.hall-stat-chips { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.hall-stat-chips em { font-style: normal; padding: 5px 8px; border-radius: 999px; background: rgba(255,211,79,.14); border: 1px solid rgba(255,211,79,.24); color: #ffe071; overflow-wrap: anywhere; }
+.hall-award-copy { display: grid; gap: 4px; min-width: 0; }
+.hall-award-copy strong, .hall-award-copy span, .hall-award-copy small { display: block; overflow-wrap: anywhere; }
+.hall-award-copy span { color: #ffe071; font-weight: 800; }
+.hall-award-copy small { color: rgba(246,251,255,.72); line-height: 1.35; }
+.hall-stat { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 11px 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; background: rgba(255,255,255,.06); }
 .hall-stat span { color: rgba(246,251,255,.72); }
 .hall-award { display: grid; grid-template-columns: 54px 1fr; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,.1); }
 .hall-award img, .hall-portraits img { width: 54px; height: 54px; border-radius: 14px; object-fit: cover; background: rgba(255,255,255,.1); }
@@ -1270,14 +1285,30 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 @keyframes trophy-pop { from { transform: scale(.75) translateY(16px); opacity: 0; } to { transform: scale(1) translateY(0); opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .final-trophy { animation: none; } }
 @media (max-width: 760px) {
-  .final-celebration-screen, .final-summary-screen, .hall-screen, .hall-detail-screen { padding: 14px; }
+  .final-celebration-screen, .final-summary-screen, .hall-screen, .hall-detail-screen { width: 100%; max-width: 100vw; overflow-x: clip; padding: 14px; box-sizing: border-box; }
+  .final-summary-head, .final-tabs, .final-summary-grid, .hall-detail-grid { width: 100%; max-width: none; margin-left: 0; margin-right: 0; }
+  .hall-detail-screen .topbar { position: static; display: grid; grid-template-columns: 1fr; align-items: start; gap: 12px; width: 100%; box-sizing: border-box; border-radius: 18px; margin-bottom: 14px; }
+  .hall-detail-screen .topbar .btn { width: 100%; justify-content: center; }
+  .final-summary-head h1, .hall-detail-screen h1 { font-size: clamp(1.9rem, 10vw, 2.8rem); line-height: 1; overflow-wrap: anywhere; }
+  .final-summary-meta { gap: 6px 0; line-height: 1.45; }
+  .final-summary-meta span { flex-basis: 100%; }
+  .final-summary-meta span + span::before { content: none; }
   .final-celebration-panel { min-height: calc(100dvh - 28px); align-content: start; padding-top: 18px; }
   .final-celebration-panel .final-actions { display: grid; grid-template-columns: 1fr; width: 100%; }
-  .final-summary-grid, .hall-detail-grid { display: block; }
-  .final-tabs { display: grid; grid-template-columns: repeat(3, 1fr); }
+  .final-summary-grid, .hall-detail-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .final-summary-grid > .panel, .hall-detail-grid > .panel, .hall-detail-grid > aside, .final-tab-panel { width: 100%; min-width: 0; box-sizing: border-box; justify-self: stretch; }
+  .final-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .final-tabs button { min-width: 0; padding-inline: 6px; text-align: center; font-size: clamp(.78rem, 3.4vw, .92rem); }
   .final-tab-panel { display: none; margin-bottom: 12px; }
   .final-tab-panel.active { display: block; }
-  .final-actions-panel { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 12px; }
+  .final-actions-panel { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: 0; }
+  .hall-pitch { width: 100%; margin-inline: auto; }
+  .hall-pitch.pitch { padding-inline: 8px; min-height: 500px; }
+  .hall-pitch .pitch-row, .hall-pitch .tactical-row { justify-content: center; }
+  .hall-stat { display: grid; grid-template-columns: 1fr; gap: 4px; }
+  .hall-stat strong { text-align: left; }
+  .hall-stat-chips { justify-content: flex-start; }
+  .hall-award { grid-template-columns: 58px minmax(0, 1fr); gap: 12px; padding: 12px; border: 1px solid rgba(255,255,255,.1); border-radius: 16px; background: rgba(255,255,255,.06); margin-bottom: 10px; }
   .hall-grid { grid-template-columns: 1fr; }
   .hall-card { min-height: 0; }
   .bench-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
