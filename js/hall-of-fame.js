@@ -65,14 +65,9 @@
   function calculateAwards(players, playerStats) {
     const stat = (p) => playerStats[String(p.playerId)] || {};
     const appeared = players.filter((p) => Number(stat(p).appearancesTotal || 0) > 0 || p.formationSlot != null);
-    const best = (scoreFn) => appeared.slice().sort((a, b) => scoreFn(b) - scoreFn(a) || String(a.name).localeCompare(String(b.name)) || String(a.playerId).localeCompare(String(b.playerId)))[0] || null;
-    const topScorer = best((p) => Number(stat(p).goals || 0));
-    const keeper = best((p) => (p.role === "GK" ? Number(stat(p).saves || 0) + Number(p.finalOverall || 0) / 100 : -1));
-    const defender = best((p) => (p.role === "DF" ? Number(stat(p).defensiveStops || 0) + Number(p.finalStats?.defense || 0) / 100 : -1));
-    const improved = best((p) => Number(p.finalOverall || 0) - Number(p.recruitedOverall ?? p.finalOverall ?? 0));
-    const finalHero = best((p) => Number(stat(p).goals || 0) * 3 + Number(stat(p).saves || 0) + Number(stat(p).defensiveStops || 0));
-    const mvp = best((p) => Number(stat(p).goals || 0) * 4 + Number(stat(p).saves || 0) * 2 + Number(stat(p).defensiveStops || 0) * 2 + Number(stat(p).winsAsStarter || 0) + Number(p.finalOverall || 0) / 10);
-    return [award("mvp", "MVP della run", mvp, "Impatto combinato su presenze, eventi e overall finale", null), award("top_scorer", "Capocannoniere", topScorer, "Maggior numero di gol registrati", stat(topScorer || {}).goals), award("best_keeper", "Miglior portiere", keeper, "Parate e valore finale da portiere", null), award("defensive_pillar", "Pilastro difensivo", defender, "Chiusure difensive e difesa finale", null), award("most_improved", "Giocatore più cresciuto", improved, "Crescita di overall dal reclutamento", null), award("final_hero", "Eroe della finale", finalHero, "Miglior impatto negli eventi congelati", null)].filter(Boolean);
+    const withGrowth = appeared.map((player) => ({ player, growth: Number(player.finalOverall) - Number(player.recruitedOverall) })).filter(({ growth }) => Number.isFinite(growth) && growth > 0);
+    const improved = withGrowth.sort((a, b) => b.growth - a.growth || String(a.player.name).localeCompare(String(b.player.name)) || String(a.player.playerId).localeCompare(String(b.player.playerId)))[0];
+    return improved ? [award("most_improved", "Giocatore più cresciuto", improved.player, "Premio basato sulla crescita di overall realmente salvata nella run", improved.growth)] : [];
   }
   function addChampion(snapshot) {
     const archive = loadArchive();
