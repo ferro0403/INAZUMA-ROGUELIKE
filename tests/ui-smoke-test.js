@@ -78,6 +78,11 @@ assert(!/@media \(max-width: 780px\)[\s\S]*?\.boss-match-field-side--mobile \.bo
 assert(!/@media \(max-width: 780px\)[\s\S]*?(?:\.five-player-equipment|\.boss-match-card-item|\.player-equipment) \{[^}]*-(?:top|left|right|bottom):/.test(css), "mobile equipment badges must not use negative offsets");
 assert(css.includes(".button-row { display: flex; flex-wrap: wrap;"), "pull action buttons must wrap cleanly for mobile/desktop controls");
 
+assert(appJs.includes('function renderHome()') && appJs.includes('class="home-screen modern-home"'), "Home must be rendered by the modern Home renderer");
+assert(appJs.includes('class="home-hub-card home-run-card"') && appJs.includes('class="home-hub-card hall-home-card"'), "Home cards must use modern run and Hall of Fame card classes");
+assert(appJs.includes('function homeRunCardMarkup(savedRun)') && appJs.includes('if (!savedRun)') && appJs.includes('class="stat-grid home-stat-grid"') && appJs.includes('class="home-avatar"'), "Home with and without an active run must keep structured stat and avatar containers");
+assert(!appJs.includes('Livello${escapeHtml(savedRun.teamLevel || 0)}') && !appJs.includes('Overall medio${escapeHtml(averageOverall())}') && !appJs.includes('Vite${escapeHtml(savedRun.lives ?? "-")}'), "Home stats must not be concatenated without stat-card markup");
+
 assert(indexHtml.includes("js/match-simulator-config.js") && indexHtml.includes("js/match-simulator.js"), "match simulator scripts must be loaded before app.js");
 assert(appJs.includes("Simula partita"), "match screens must expose the Simula partita button");
 assert(appJs.includes("function bossTeamLogoUrl(boss)") && appJs.includes("boss?.logoUrl || team?.logoUrl"), "boss map nodes must resolve logos from existing boss/team data");
@@ -176,6 +181,14 @@ server.listen(0, "127.0.0.1", async () => {
     });
 
     const { window } = dom;
+    await waitFor(window, ".modern-home");
+    assert.equal(window.document.querySelectorAll(".modern-home").length, 1, "Home must be rendered once");
+    assert(window.document.querySelector(".home-hero.panel"), "Home must include the modern hero panel");
+    assert(window.document.querySelector(".home-choice-grid > .home-run-card.home-hub-card"), "Home without run must include the modern run card");
+    assert(window.document.querySelector(".home-choice-grid > .hall-home-card.home-hub-card"), "Home without run must include the modern Hall of Fame card");
+    assert(window.document.querySelector(".home-run-card .empty-state"), "Home without run must show an empty-state inside the run card");
+    assert(!window.document.querySelector(".home-run-card .home-stat-grid"), "Home without run must not render active-run stats");
+    assert(!window.document.body.textContent.includes("Livello6") && !window.document.body.textContent.includes("Overall medio62") && !window.document.body.textContent.includes("Vite2"), "Home stats must not render as concatenated text on first load");
     (await waitFor(window, "#new-run")).click();
     const teamNameInput = await waitFor(window, "#team-name-input");
     teamNameInput.value = "Raimon Test";
