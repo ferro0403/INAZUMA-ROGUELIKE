@@ -1066,19 +1066,54 @@
     return tacticalMiniPlayer(id, { mode: "squad", area });
   }
 
+  function squadValiditySummary() {
+    const starters = (run.lineup || []).filter(Boolean).length;
+    const bench = (run.bench || []).filter(Boolean).length;
+    const unique = new Set([...(run.lineup || []), ...(run.bench || [])].filter(Boolean).map(String));
+    const complete = starters === 11 && bench === 4 && unique.size === starters + bench;
+    return { starters, bench, complete };
+  }
+
+  function squadFormationTabsMarkup() {
+    return seasonDb.formations.eleven.map((item) => `
+      <button type="button" class="squad-formation-tab ${item.id === run.formationId ? "active" : ""}" data-formation-tab="${escapeHtml(item.id)}" ${canUseFormation(item) ? "" : "disabled"} aria-pressed="${item.id === run.formationId ? "true" : "false"}">
+        <span>${escapeHtml(item.name)}</span>
+      </button>`).join("");
+  }
+
   function renderSquad() {
     run.phase = "squad";
     global.RunState.save(run);
     const formation = formationById(run.formationId);
+    const squadSummary = squadValiditySummary();
+    const teamIdentity = getTeamIdentity();
+    const avgOverall = averageOverall();
 
     app.innerHTML = `
-      <main class="screen">
+      <main class="screen squad-screen">
         ${topbar("La tua squadra")}
-        <div class="content">
-          <div class="section-head">
-            <div><p class="eyebrow">Rosa ${run.roster.length}/${global.SEASON1_CONFIG.maxRoster}</p><h2>Gestione squadra</h2></div>
-            <div class="squad-controls">
-              <select class="btn" id="formation-select" aria-label="Cambia modulo">
+        <div class="content squad-content">
+          <section class="squad-hero panel" aria-label="Riepilogo squadra">
+            <div class="squad-hero-main">
+              <p class="eyebrow">Gestione squadra</p>
+              <h2>${escapeHtml(teamIdentity.name)}</h2>
+              <p class="muted small" data-squad-hint>${squadStatusText()}</p>
+            </div>
+            <div class="squad-hero-metrics" aria-label="Metriche rosa">
+              <span class="squad-metric"><small>Lv run</small><strong>${escapeHtml(run.teamLevel)}</strong></span>
+              <span class="squad-metric"><small>OVR medio</small><strong>${escapeHtml(avgOverall)}</strong></span>
+              <span class="squad-metric"><small>Rosa</small><strong>${run.roster.length}/${global.SEASON1_CONFIG.maxRoster}</strong></span>
+              <span class="squad-metric"><small>Modulo</small><strong>${escapeHtml(formation?.name || run.formationId)}</strong></span>
+            </div>
+          </section>
+
+          <section class="squad-quick-row" aria-label="Stato formazione">
+            <div class="squad-status-card ${squadSummary.complete ? "valid" : "invalid"}">
+              <strong>${squadSummary.complete ? "Formazione pronta" : "Controlla la rosa"}</strong>
+              <span>${squadSummary.starters}/11 titolari · ${Math.min(squadSummary.bench, 4)}/4 riserve · ${escapeHtml(run.formationId)}</span>
+            </div>
+            <div class="squad-controls squad-controls--polished">
+              <select class="btn squad-formation-select" id="formation-select" aria-label="Cambia modulo">
                 ${seasonDb.formations.eleven.map((item) => `
                   <option value="${item.id}" ${item.id === run.formationId ? "selected" : ""} ${canUseFormation(item) ? "" : "disabled"}>
                     ${item.name}${canUseFormation(item) ? "" : " · rosa non compatibile"}
@@ -1086,34 +1121,51 @@
               </select>
               <button type="button" class="btn ${ui.squadEditMode ? "btn-yellow" : ""}" id="toggle-squad-edit">${ui.squadEditMode ? "Termina modifiche" : "Modifica titolari"}</button>
             </div>
-          </div>
-          ${tacticPanelMarkup(run.formationId, { className: "squad-tactic-panel", compact: true })}
-          <p class="muted small" data-squad-hint>${squadStatusText()}</p>
-          <div class="squad-layout">
-            ${squadPitchMarkup()}
-            <aside class="panel">
-              <h3>Riserve ${run.bench.length}/4</h3>
-              <div class="bench-list">
+          </section>
+
+          <section class="squad-formation-strip panel" aria-label="Selettore modulo 11v11">
+            <div class="squad-strip-head"><div><p class="eyebrow">Modulo 11v11</p><h3>${escapeHtml(formation?.name || run.formationId)}</h3></div><span class="muted small">Scorri e scegli il modulo</span></div>
+            <div class="squad-formation-tabs">${squadFormationTabsMarkup()}</div>
+          </section>
+
+          <div class="squad-layout squad-layout--polished">
+            <section class="squad-field-panel panel" aria-label="Campo 11v11">
+              <div class="squad-panel-head"><div><p class="eyebrow">Titolari</p><h3>Campo 11v11</h3></div><span class="role-chip">${squadSummary.starters}/11</span></div>
+              ${squadPitchMarkup()}
+            </section>
+            <aside class="panel squad-bench-panel" aria-label="Riserve">
+              <div class="squad-panel-head"><div><p class="eyebrow">Cambio rapido</p><h3>Riserve</h3></div><span class="role-chip">${Math.min(squadSummary.bench, 4)}/4</span></div>
+              <div class="bench-list squad-bench-list">
                 ${benchMarkup()}
               </div>
-              <div class="button-row" style="margin-top:18px">
+              <div class="squad-secondary-actions">
                 <button type="button" class="btn btn-yellow" id="go-map">${run.currentZone ? "Torna al percorso" : "Inizia il percorso"}</button>
               </div>
             </aside>
           </div>
+
+          ${tacticPanelMarkup(run.formationId, { className: "squad-tactic-panel", compact: true })}
         </div>
         ${bottomNav("squad")}
       </main>`;
     resetRenderedViewScroll();
 
-    document.getElementById("formation-select").addEventListener("change", (event) => {
-      const next = formationById(event.target.value);
+    const changeSquadFormation = (formationId) => {
+      const next = formationById(formationId);
       if (!canUseFormation(next)) return toast("La rosa non copre tutti i ruoli del modulo");
       autoArrangeFormation(next);
       global.RunState.save(run);
       toast(`Modulo cambiato in ${next.name}`);
       runKeepingScroll(renderSquad);
+    };
+
+    document.getElementById("formation-select").addEventListener("change", (event) => {
+      changeSquadFormation(event.target.value);
     });
+    document.querySelectorAll("[data-formation-tab]").forEach((button) => button.addEventListener("click", () => {
+      if (button.dataset.formationTab === run.formationId) return;
+      changeSquadFormation(button.dataset.formationTab);
+    }));
 
     const main = app.querySelector("main");
     main.addEventListener("click", (event) => {
