@@ -789,7 +789,7 @@
         <header class="home-hero panel">
           <div class="home-brand-mark">${inazumaLogoMarkup("inazuma-logo--hero")}</div>
           <div class="home-copy"><p class="eyebrow">Season 1</p><h1>Inazuma Roguelike</h1><p class="home-subtitle">Road to Raimon</p><p class="muted">Un viaggio roguelike tra draft, tattica e sfide decisive: costruisci una squadra da leggenda.</p></div>
-          <div class="home-actions button-row"><button type="button" class="btn btn-yellow" id="home-primary-cta">${run ? "Continua la run" : "Inizia una nuova run"}</button><button type="button" class="btn" id="open-hall-home">Apri Albo d’Oro</button>${savedTeamIdentity() ? '<button type="button" class="btn btn-ghost" id="edit-team-name">Modifica squadra</button>' : ""}</div>
+          <div class="home-actions button-row"><button type="button" class="btn btn-yellow" id="home-primary-cta">${run ? "Continua la run" : "Inizia una nuova run"}</button><button type="button" class="btn" id="open-hall-home">Apri Albo d’Oro</button></div>
         </header>
         <section class="home-choice-grid" aria-label="Hub principale">
           ${homeRunCardMarkup(run)}
@@ -801,7 +801,6 @@
     document.querySelectorAll("#new-run, #home-primary-cta").forEach((button) => button.addEventListener("click", () => run && button.id === "home-primary-cta" ? resumeRun() : startNewRunFromHome()));
     document.getElementById("continue-run")?.addEventListener("click", resumeRun);
     document.getElementById("manage-team-home")?.addEventListener("click", () => { if (!run) return; run.phase = "squad"; global.RunState.save(run); renderSquad(); });
-    document.getElementById("edit-team-name")?.addEventListener("click", openEditTeamNameModal);
     document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-hall-home-list")?.addEventListener("click", renderHallOfFame);
@@ -1086,7 +1085,7 @@
     global.RunState.save(run);
     const formation = formationById(run.formationId);
     const squadSummary = squadValiditySummary();
-    const teamIdentity = getTeamIdentity();
+    const teamIdentity = savedTeamIdentity() || normalizeTeamIdentity(run.teamIdentity);
     const avgOverall = averageOverall();
 
     app.innerHTML = `
