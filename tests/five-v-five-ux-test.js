@@ -6,9 +6,10 @@ const css = fs.readFileSync('css/game.css', 'utf8');
 
 const fiveControlsMatches = appJs.match(/class="panel five-match-controls five-v-five-mobile-actions"/g) || [];
 assert.equal(fiveControlsMatches.length, 1, '5v5 action panel is rendered once');
-['Simula partita', 'Modifica squadra', 'Vittoria sicura', 'Sconfitta', '← Torna alla mappa'].forEach((label) => {
+['Simula partita', 'Modifica squadra', '← Torna alla mappa'].forEach((label) => {
   assert(appJs.includes(label), `5v5 action panel keeps ${label}`);
 });
+assert(appJs.includes('DEV_MODE ? `<button type="button" class="btn btn-tool" id="test-win"'), '5v5 debug win control is hidden unless DEV_MODE is active');
 assert(appJs.includes('document.getElementById("edit-five-team").addEventListener("click"'), '5v5 edit-team handler remains attached to the single panel');
 assert(appJs.includes('document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(match); })'), 'simulate action keeps its existing handler');
 assert(appJs.includes('document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch)'), 'post-simulation continue action keeps its existing handler');
