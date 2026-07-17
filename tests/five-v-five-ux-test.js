@@ -6,16 +6,16 @@ const css = fs.readFileSync('css/game.css', 'utf8');
 
 const fiveControlsMatches = appJs.match(/class="panel five-match-controls five-v-five-mobile-actions"/g) || [];
 assert.equal(fiveControlsMatches.length, 1, '5v5 action panel is rendered once');
-['Simula partita', 'Modifica squadra', '← Torna alla mappa'].forEach((label) => {
+['Simula partita', 'Modifica squadra', '← Torna al percorso'].forEach((label) => {
   assert(appJs.includes(label), `5v5 action panel keeps ${label}`);
 });
-assert(appJs.includes('DEV_MODE ? `<button type="button" class="btn btn-tool" id="test-win"'), '5v5 debug win control is hidden unless DEV_MODE is active');
+assert(appJs.includes('const TEST_MATCH_CONTROLS_ENABLED = true') && appJs.includes('match-test-tools') && appJs.includes('id="test-win"'), '5v5 safe-win test control is visible and separated from primary actions');
 assert(appJs.includes('document.getElementById("edit-five-team").addEventListener("click"'), '5v5 edit-team handler remains attached to the single panel');
 assert(appJs.includes('document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(match); })'), 'simulate action keeps its existing handler');
 assert(appJs.includes('document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch)'), 'post-simulation continue action keeps its existing handler');
 assert(!appJs.includes('class="panel boss-match-controls five-match-controls"'), '11v11 screen does not reuse the 5v5 action-bar class');
 
-assert(appJs.includes('five-match-header-back') && appJs.includes('aria-label="Torna alla mappa"'), '5v5 match header exposes one compact mobile-safe return-to-map action');
+assert(appJs.includes('five-match-header-back') && appJs.includes('Torna al percorso'), '5v5 match header exposes one compact mobile-safe return-to-map action');
 assert.equal((appJs.match(/aria-label="Torna alla mappa"/g) || []).length, 2, '5v5 markup keeps the existing header return action without adding another duplicate');
 assert(appJs.includes('match-state-badge') && appJs.includes('Preparazione') && appJs.includes('In corso') && appJs.includes('Completata'), '5v5 header shows preparation/in-progress/completed state');
 assert(appJs.includes('class="five-match-summary"') && appJs.includes('Probabilità vittoria') && appJs.includes('Dato usato dalla simulazione'), '5v5 match summary separates strength and simulator probability');

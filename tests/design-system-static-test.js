@@ -12,7 +12,7 @@ const css = fs.readFileSync('css/game.css', 'utf8');
 });
 assert(appJs.includes('function homeRunCardMarkup') && appJs.includes('homeHallOfFameMarkup'), 'home separates RUN and ALBO D’ORO macro cards');
 assert(appJs.includes('Road to Raimon') && appJs.includes('Continua la run') && appJs.includes('Apri ultima squadra'), 'home uses premium Italian hub copy and CTAs');
-assert(appJs.includes('const DEV_MODE') && appJs.includes('DEV_MODE ? `<button type="button" class="btn btn-tool" id="test-win"'), 'debug match controls are centralized behind DEV_MODE');
+assert(appJs.includes('const TEST_MATCH_CONTROLS_ENABLED = true') && appJs.includes('match-test-tools') && appJs.includes('id="test-win"'), 'temporary match test controls are visible and separated from primary actions');
 assert(css.includes('@media (max-width: 780px)') && css.includes('@media (min-width: 781px)'), 'mobile and desktop navigation/layout breakpoints are explicit');
 assert(css.includes('@media (prefers-reduced-motion: reduce)'), 'reduced motion is respected');
 
