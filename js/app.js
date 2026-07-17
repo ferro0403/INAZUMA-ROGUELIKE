@@ -575,51 +575,61 @@
     return { name: teamName === "Unaffiliated" ? "Svincolato" : teamName, logoUrl: team?.logoUrl || "" };
   }
 
-  function showPlayerDetailsFor(player, { playerId = player.playerId, level = player.displayLevel ?? 0, database = freeAgentsDb, equipment = null, onClose = null } = {}) {
-    if (!player) return toast("Giocatore non disponibile");
-    const visual = playerVisualsById.get(String(playerId)) || {};
-    const fullbodyUrl = visual.fullbodyUrl || player.portraitUrl;
-    const teamIdentity = playerTeamIdentity(player, playerId);
+  function playerDetailMarkup(player, { playerId = player?.playerId, level = player?.displayLevel ?? 0, database = freeAgentsDb, equipment = null, mode = "current", readOnly = false, team = null, runStats = null, onClose = null, preserveScroll = null } = {}) {
+    if (!player) return "";
+    const historical = mode === "historical";
+    const visualFallback = playerVisualsById.get(String(playerId)) || {};
+    const sourceFallback = historical ? sourcePlayer(playerId, player.recruitmentSource) || sourcePlayer(playerId) || {} : {};
+    const fullbodyUrl = player.fullbodyUrl || player.frontFullbodyUrl || visualFallback.fullbodyUrl || sourceFallback.fullbodyUrl || player.portraitUrl || sourceFallback.portraitUrl || "";
+    const teamIdentity = historical
+      ? { name: player.teamName || player.originTeamName || sourceFallback.teamName || (team?.teamName ? `Rosa campione: ${team.teamName}` : "Svincolato"), logoUrl: player.teamLogo || player.teamLogoUrl || "" }
+      : playerTeamIdentity(player, playerId);
     const teamBadge = teamIdentity.name ? `
       <div class="player-detail-team" aria-label="Squadra ${escapeHtml(teamIdentity.name)}">
         ${teamIdentity.logoUrl ? `<img src="${escapeHtml(teamIdentity.logoUrl)}" alt="${escapeHtml(teamIdentity.name)}" loading="lazy" />` : `<span class="team-logo-placeholder" aria-hidden="true">⚽</span>`}
         <strong>${escapeHtml(teamIdentity.name)}</strong>
       </div>` : "";
-    const resolved = player.stats && player.baseStats
-      ? player
-      : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(Number(level || 0)), database);
-    const baseStats = resolved.baseStats || resolved.stats;
-    const effectiveStats = resolved.baseStats
-      ? resolved.stats
-      : (equipment ? global.RoguelikeRules.applyEquipment(resolved.stats, equipment) : resolved.stats);
+    const resolved = historical ? {
+      ...sourceFallback, ...player,
+      name: player.name || sourceFallback.name || String(playerId),
+      position: player.role || player.position || sourceFallback.position || "-",
+      element: player.element || sourceFallback.element || sourceFallback.type || "-",
+      category: player.finalRarity || player.category || sourceFallback.category || "Debole",
+      overall: player.finalOverall ?? player.overall ?? null,
+      potential: player.finalPotential ?? null,
+      stats: player.finalStats || player.stats || {},
+      baseStats: player.finalStats || player.stats || {},
+    } : (player.stats && player.baseStats ? player : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(Number(level || 0)), database));
+    const baseStats = resolved.baseStats || resolved.stats || {};
+    const effectiveStats = historical ? (resolved.stats || {}) : (resolved.baseStats ? resolved.stats : (equipment ? global.RoguelikeRules.applyEquipment(resolved.stats, equipment) : resolved.stats));
     const stats = Object.entries(STAT_LABELS).map(([stat, label]) => {
       const base = Number(baseStats[stat] || 0);
-      const effective = Number(effectiveStats[stat] || 0);
-      const bonus = effective - base;
+      const effective = Number(effectiveStats?.[stat] || 0);
+      const bonus = historical ? 0 : effective - base;
       return `<div class="detail-stat">${statIcon(stat)}<span>${label}</span><strong>${effective}</strong>${bonus > 0 ? `<em>+${bonus}</em>` : ""}</div>`;
     }).join("");
-    openModal(`
-      <div class="player-detail-layout ${rarityClass(resolved.category)}">
-        <section class="player-detail-visual ${rarityClass(resolved.category)}">
-          ${teamBadge}
-          <img class="player-fullbody" src="${escapeHtml(fullbodyUrl)}" alt="${escapeHtml(player.name)}" />
-        </section>
+    const potential = historical ? (resolved.potential ?? "Non disponibile") : (resolved.potential ?? player.finalOverall);
+    const origin = historical && team?.teamName ? `<p class="muted player-history-origin">Rosa campione: ${escapeHtml(team.teamName)}${player.recruitmentSource ? ` · Origine: ${escapeHtml(player.recruitmentSource)}` : ""}</p>` : "";
+    const equipmentMarkup = equipment ? `<div class="equipped-detail">${itemIcon(equipment)}<div class="equipped-detail-copy"><span>${historical ? "Equipaggiamento storico" : "Oggetto assegnato"}</span><strong>${escapeHtml(resolveItem(equipment).name)}</strong><small>${escapeHtml(resolveItem(equipment).description)}</small><em>+${Number(resolveItem(equipment).bonus || 0)} ${escapeHtml(STAT_LABELS[resolveItem(equipment).stat] || resolveItem(equipment).stat || "")}</em></div>${!readOnly && playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>` : `<p class="muted equipped-detail-empty">Nessun equipaggiamento.</p>`;
+    return `
+      <div class="player-detail-layout ${rarityClass(resolved.category)} ${historical ? "player-detail-historical" : ""}">
+        <section class="player-detail-visual ${rarityClass(resolved.category)}">${teamBadge}${fullbodyUrl ? `<img class="player-fullbody" src="${escapeHtml(fullbodyUrl)}" alt="${escapeHtml(resolved.name)}" />` : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`}</section>
         <section class="player-detail-content">
-          <p class="eyebrow">Player detail</p>
-          <h2 class="player-detail-name">${escapeHtml(player.name)}</h2>
-          <div class="player-detail-tags"><span class="role-chip">${escapeHtml(player.position)}</span><span class="role-chip detail-element-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4 3 7 6 7 10a7 7 0 0 1-14 0c0-4 3-7 7-10Z"/></svg>${escapeHtml(player.element || player.type)}</span><span class="role-chip">Lv ${Number(level || 0)}</span></div>
-          <div class="overall-comparison">
-            <div><span>Overall attuale</span><strong>${resolved.overall}</strong></div>
-            <div><span>Potenziale</span><strong>${resolved.potential ?? player.finalOverall}</strong></div>
-          </div>
+          <p class="eyebrow">${historical ? "Player detail · Squadra campione" : "Player detail"}</p>
+          <h2 class="player-detail-name">${escapeHtml(resolved.name)}</h2>
+          <div class="player-detail-tags"><span class="role-chip">${escapeHtml(resolved.position)}</span><span class="role-chip detail-element-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4 3 7 6 7 10a7 7 0 0 1-14 0c0-4 3-7 7-10Z"/></svg>${escapeHtml(resolved.element || resolved.type || "-")}</span><span class="role-chip">Lv ${escapeHtml(historical ? (player.finalLevel ?? "N/D") : Number(level || 0))}</span></div>
+          <div class="overall-comparison"><div><span>Overall attuale</span><strong>${escapeHtml(resolved.overall ?? "N/D")}</strong></div><div><span>Potenziale</span><strong>${escapeHtml(potential)}</strong></div></div>
           <p class="detail-category"><span aria-hidden="true">★</span>${escapeHtml(resolved.category)}</p>
-          <div class="detail-stats">${stats}</div>
-          ${equipment ? `<div class="equipped-detail">${itemIcon(equipment)}<div class="equipped-detail-copy"><span>Oggetto assegnato</span><strong>${escapeHtml(resolveItem(equipment).name)}</strong><small>${escapeHtml(resolveItem(equipment).description)}</small><em>+${Number(resolveItem(equipment).bonus || 0)} ${escapeHtml(STAT_LABELS[resolveItem(equipment).stat] || resolveItem(equipment).stat || "")}</em></div>${playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>` : ""}
+          <div class="detail-stats">${stats}</div>${equipmentMarkup}${historical ? playerStatsMarkup(team || {}, player, runStats) : ""}${origin}
         </section>
-      </div>`,
-      { closeable: true, className: "player-detail-modal", onClose }
-    );
-    modalRoot.querySelector("[data-detail-unequip]")?.addEventListener("click", () => unequipPlayerItem(playerId, { render: () => { closeModal(); renderSquad(); } }));
+      </div>`;
+  }
+
+  function showPlayerDetailsFor(player, options = {}) {
+    if (!player) return toast("Giocatore non disponibile");
+    const opts = { playerId: player.playerId, level: player.displayLevel ?? 0, database: freeAgentsDb, equipment: null, onClose: null, ...options };
+    openModal(playerDetailMarkup(player, opts), { closeable: true, className: "player-detail-modal", onClose: opts.onClose, preserveScroll: opts.preserveScroll });
+    if (!opts.readOnly) modalRoot.querySelector("[data-detail-unequip]")?.addEventListener("click", () => unequipPlayerItem(opts.playerId, { render: () => { closeModal(); renderSquad(); } }));
   }
 
   function showPlayerDetails(playerId, onClose = null) {
@@ -3221,7 +3231,7 @@
   function snapshotPlayer(entry, area, slot) {
     const source = sourcePlayer(entry);
     const resolved = resolvedRosterPlayer(entry.playerId) || source || {};
-    return { playerId: String(entry.playerId), name: resolved.name || source?.name || String(entry.playerId), nickname: resolved.nickname || null, role: resolved.position || source?.position || null, element: resolved.element || resolved.type || source?.element || null, portraitUrl: playerPortraitUrl(resolved || source), teamId: entry.teamId || source?.teamId || null, teamName: entry.teamName || source?.teamName || null, originalRarity: source?.category || null, finalRarity: resolved.category || source?.category || null, recruitedAtLevel: entry.recruitedAtLevel ?? null, finalLevel: Number(entry.level || 0), recruitedOverall: entry.recruitedOverall ?? null, finalOverall: resolved.overall ?? source?.finalOverall ?? null, finalStats: resolved.stats || null, equippedItem: entry.equippedItem ? { ...entry.equippedItem } : null, formationSlot: area === "lineup" ? slot : null, benchSlot: area === "bench" ? slot : null, recruitmentSource: entry.source || null, traits: Array.isArray(entry.traits) ? entry.traits.slice() : [] };
+    return { playerId: String(entry.playerId), name: resolved.name || source?.name || String(entry.playerId), nickname: resolved.nickname || null, role: resolved.position || source?.position || null, element: resolved.element || resolved.type || source?.element || null, portraitUrl: playerPortraitUrl(resolved || source), fullbodyUrl: playerVisualsById.get(String(entry.playerId))?.fullbodyUrl || null, teamId: entry.teamId || source?.teamId || null, teamName: entry.teamName || source?.teamName || null, originalRarity: source?.category || null, finalRarity: resolved.category || source?.category || null, recruitedAtLevel: entry.recruitedAtLevel ?? null, finalLevel: Number(entry.level || 0), recruitedOverall: entry.recruitedOverall ?? null, finalOverall: resolved.overall ?? source?.finalOverall ?? null, finalPotential: resolved.potential ?? null, finalStats: resolved.stats || null, equippedItem: entry.equippedItem ? { ...entry.equippedItem } : null, formationSlot: area === "lineup" ? slot : null, benchSlot: area === "bench" ? slot : null, recruitmentSource: entry.source || null, traits: Array.isArray(entry.traits) ? entry.traits.slice() : [] };
   }
 
   function collectPlayerStatistics(players) {
@@ -3353,7 +3363,10 @@
 
   function awardsMarkup(team) {
     const awards = (team.awards || []).filter((award) => award && award.playerName);
-    return awards.map((award) => `<article class="hall-award"><img src="${escapeHtml(award.portraitUrl || '')}" alt="" loading="lazy"/><div class="hall-award-copy"><strong>${escapeHtml(award.label || award.title)}</strong><span>${escapeHtml(award.playerName)}</span>${award.reason ? `<small>${escapeHtml(award.reason)}</small>` : ""}</div></article>`).join("") || '<p class="muted">Premi individuali disponibili solo quando i dati registrati sono affidabili.</p>';
+    return awards.map((award) => {
+      const playerAttr = award.playerId ? ` data-hall-player="${escapeHtml(award.playerId)}"` : "";
+      return `<article class="hall-award ${playerAttr ? "hall-player-card" : ""}"${playerAttr}><img src="${escapeHtml(award.portraitUrl || '')}" alt="" loading="lazy"/><div class="hall-award-copy"><strong>${escapeHtml(award.label || award.title)}</strong><span>${escapeHtml(award.playerName)}</span>${award.reason ? `<small>${escapeHtml(award.reason)}</small>` : ""}</div></article>`;
+    }).join("") || '<p class="muted">Premi individuali disponibili solo quando i dati registrati sono affidabili.</p>';
   }
 
   function renderFinalCelebration(hallTeamId) {
@@ -3361,7 +3374,7 @@
     if (!team) return renderHome();
     run.phase = "final-celebration"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
     app.innerHTML = `<main class="final-celebration-screen"><section class="final-celebration-panel"><div class="final-trophy" aria-hidden="true">🏆</div><p class="eyebrow">SEASON 1 COMPLETATA</p><h1>${escapeHtml(team.teamName)}</h1><h2>CAMPIONE</h2><p class="muted">${escapeHtml(team.modeName)} · ${formatDate(team.victoryDate)} · ${escapeHtml(team.finalFormation || '-')}</p>${championFormationMarkup(team)}<div class="button-row final-actions"><button type="button" class="btn btn-yellow" id="final-continue">Continua</button><button type="button" class="btn" id="skip-final-animation">Salta animazione</button></div></section></main>`;
-    resetRenderedViewScroll();
+    resetRenderedViewScroll(); bindHallPlayerDetails(team);
     const go = () => { run.phase = "final-summary"; global.RunState.save(run); renderFinalSummary(team.hallTeamId); };
     document.getElementById("final-continue").addEventListener("click", go);
     document.getElementById("skip-final-animation").addEventListener("click", go);
@@ -3381,21 +3394,33 @@
     document.getElementById("final-new-run").addEventListener("click", startNewRunFromHome);
   }
 
-  function playerStatsMarkup(team, player) {
-    const stats = team.playerStatistics?.[String(player.playerId)] || {};
-    const role = player.role || stats.role;
+  function playerStatsMarkup(team, player, explicitStats = null) {
+    const stats = explicitStats || team.playerStatistics?.[String(player.playerId)] || player.playerStatistics || {};
+    const role = player.role || player.position || stats.role;
     const items = [
-      ["Presenze", stats.appearances], ["Vittorie", stats.wins], ["Gol", stats.goals],
+      ["Presenze", stats.appearances ?? stats.appearancesTotal], ["Vittorie", stats.wins],
+      role !== "GK" ? ["Gol", stats.goals] : null,
+      role === "FW" || role === "MF" ? ["Tiri", stats.shots] : null,
       role === "GK" ? ["Parate", stats.saves] : null,
-      role === "DF" || role === "MF" ? ["Azioni difensive", stats.defensiveActions] : null,
-      ["Voto medio", stats.averageRating], ["Miglior voto", stats.bestRating], ["Crescita OVR", stats.overallGrowth],
+      role === "GK" || role === "DF" ? ["Clean sheet", stats.cleanSheets] : null,
+      role === "DF" || role === "MF" ? ["Azioni difensive", stats.defensiveActions ?? stats.defensiveStops] : null,
+      ["Voto medio", stats.averageRating], ["Miglior voto", stats.bestRating], ["Crescita overall", stats.overallGrowth],
     ].filter((item) => item && item[1] != null && item[1] !== "");
-    return `<div class="detail-stats player-history-stats">${items.map(([label, value]) => `<div class="detail-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}</div>`;
+    const awards = (team.awards || []).filter((award) => String(award.playerId || award.playerName) === String(player.playerId) || award.playerName === player.name).map((award) => award.label || award.title).filter(Boolean);
+    const awardsMarkup = awards.length ? `<div class="detail-stat"><span>Premi</span><strong>${escapeHtml(awards.join(", "))}</strong></div>` : "";
+    if (!items.length && !awardsMarkup) return '<section class="player-history-section"><h3>PRESTAZIONI NELLA RUN</h3><p class="muted">Statistiche complete non disponibili per questa run.</p></section>';
+    return `<section class="player-history-section"><h3>PRESTAZIONI NELLA RUN</h3><div class="detail-stats player-history-stats">${items.map(([label, value]) => `<div class="detail-stat"><span>${escapeHtml(label)}</span><strong>${escapeHtml(value)}</strong></div>`).join("")}${awardsMarkup}</div></section>`;
   }
 
   function bindFinalTabs() { document.querySelectorAll("[data-final-tab]").forEach((button) => button.addEventListener("click", () => { document.querySelectorAll("[data-final-tab]").forEach((item) => { item.classList.toggle("active", item === button); item.setAttribute("aria-selected", item === button ? "true" : "false"); }); document.querySelectorAll("[data-tab-panel]").forEach((panel) => panel.classList.toggle("active", panel.dataset.tabPanel === button.dataset.finalTab)); })); document.querySelector('[data-final-tab="team"]')?.click(); }
 
-  function bindHallPlayerDetails(team) { document.querySelectorAll("[data-hall-player]").forEach((button) => button.addEventListener("click", () => { const player = team.fullRoster.find((p) => String(p.playerId) === String(button.dataset.hallPlayer)); if (!player) return; openModal(`<div class="player-detail-layout"><section class="player-detail-content"><p class="eyebrow">Snapshot storico</p><h2>${escapeHtml(player.name)}</h2><div class="player-detail-tags"><span class="role-chip">${escapeHtml(player.role)}</span><span class="role-chip">${escapeHtml(player.element || '-')}</span><span class="role-chip">Lv ${escapeHtml(player.finalLevel)}</span><span class="role-chip">OVR ${escapeHtml(player.finalOverall)}</span></div><div class="detail-stats">${Object.entries(player.finalStats || {}).map(([k,v]) => `<div class="detail-stat"><span>${escapeHtml(k)}</span><strong>${escapeHtml(v)}</strong></div>`).join('')}</div>${playerStatsMarkup(team, player)}<p class="muted">Rarità ${escapeHtml(player.finalRarity || 'N/D')} · Equip ${escapeHtml(player.equippedItem?.name || 'Nessuno')} · Origine ${escapeHtml(player.recruitmentSource || 'N/D')}</p></section></div>`, { closeable: true, className: "player-detail-modal" }); })); }
+  function bindHallPlayerDetails(team) {
+    document.querySelectorAll("[data-hall-player]").forEach((button) => button.addEventListener("click", () => {
+      const player = (team.fullRoster || []).find((p) => String(p.playerId) === String(button.dataset.hallPlayer));
+      if (!player) return;
+      showPlayerDetailsFor(player, { mode: "historical", readOnly: true, source: "hall-of-fame", playerId: player.playerId, level: player.finalLevel, equipment: player.equippedItem, team, runStats: team.playerStatistics?.[String(player.playerId)] || null, preserveScroll: scrollSnapshot() });
+    }));
+  }
 
   function renderHallOfFame() {
     const teams = global.HallOfFameStorage.listSummaries();

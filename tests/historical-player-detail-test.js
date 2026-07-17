@@ -1,0 +1,27 @@
+"use strict";
+
+const assert = require("assert");
+const fs = require("fs");
+const path = require("path");
+const root = path.resolve(__dirname, "..");
+const appJs = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
+const css = fs.readFileSync(path.join(root, "css/game.css"), "utf8");
+
+assert(appJs.includes('function playerDetailMarkup(player'), "Player Detail renderer must be shared");
+assert(appJs.includes('mode = "current"') && appJs.includes('mode === "historical"'), "Player Detail must support current and historical modes");
+assert(appJs.includes('showPlayerDetailsFor(player, { mode: "historical", readOnly: true'), "Hall/final cards must open historical Player Detail");
+assert(!appJs.includes('Snapshot storico'), "legacy historical snapshot modal title must not be used");
+assert(appJs.includes('player.finalLevel ?? "N/D"'), "historical detail must render finalLevel from snapshot");
+assert(appJs.includes('overall: player.finalOverall ?? player.overall ?? null'), "historical detail must render finalOverall from snapshot");
+assert(appJs.includes('stats: player.finalStats || player.stats || {}'), "historical detail must render finalStats from snapshot");
+assert(appJs.includes('category: player.finalRarity || player.category'), "historical detail must render finalRarity from snapshot");
+assert(appJs.includes('const effectiveStats = historical ? (resolved.stats || {})'), "historical detail must not apply equipment over finalStats");
+assert(appJs.includes('potential: player.finalPotential ?? null') && appJs.includes('resolved.potential ?? "Non disponibile"'), "missing historical potential must not be invented");
+assert(appJs.includes('fullbodyUrl || player.frontFullbodyUrl || visualFallback.fullbodyUrl'), "visual fullbody fallback must be available without changing historical values");
+assert(appJs.includes('!readOnly && playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip'), "read-only historical mode must hide modifying equipment actions");
+assert(appJs.includes('PRESTAZIONI NELLA RUN'), "historical detail must include role-aware run performance section");
+assert(appJs.includes('role === "GK" ? ["Parate", stats.saves] : null') && appJs.includes('role !== "GK" ? ["Gol", stats.goals] : null'), "run stats must be pertinent to the role");
+assert(appJs.includes('finalPotential: resolved.potential ?? null'), "new champion snapshots must save final potential");
+assert(appJs.includes('fullbodyUrl: playerVisualsById.get(String(entry.playerId))?.fullbodyUrl || null'), "new champion snapshots must save available fullbody visuals");
+assert(appJs.includes('data-hall-player="${escapeHtml(award.playerId)}"'), "award cards with player ids must open the same historical detail");
+assert(css.includes('.player-detail-modal') && css.includes('@media (max-width: 780px)'), "historical detail must inherit existing responsive Player Detail CSS");
