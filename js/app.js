@@ -1111,19 +1111,16 @@
               <strong>${squadSummary.complete ? "Formazione pronta" : "Controlla la rosa"}</strong>
               <span>${squadSummary.starters}/11 titolari · ${Math.min(squadSummary.bench, 4)}/4 riserve · ${escapeHtml(run.formationId)}</span>
             </div>
-            <div class="squad-controls squad-controls--polished">
-              <select class="btn squad-formation-select" id="formation-select" aria-label="Cambia modulo">
-                ${seasonDb.formations.eleven.map((item) => `
-                  <option value="${item.id}" ${item.id === run.formationId ? "selected" : ""} ${canUseFormation(item) ? "" : "disabled"}>
-                    ${item.name}${canUseFormation(item) ? "" : " · rosa non compatibile"}
-                  </option>`).join("")}
-              </select>
-              <button type="button" class="btn ${ui.squadEditMode ? "btn-yellow" : ""}" id="toggle-squad-edit">${ui.squadEditMode ? "Termina modifiche" : "Modifica titolari"}</button>
-            </div>
           </section>
 
           <section class="squad-formation-strip panel" aria-label="Selettore modulo 11v11">
-            <div class="squad-strip-head"><div><p class="eyebrow">Modulo 11v11</p><h3>${escapeHtml(formation?.name || run.formationId)}</h3></div><span class="muted small">Scorri e scegli il modulo</span></div>
+            <div class="squad-strip-head">
+              <div>
+                <p class="eyebrow">Modulo</p>
+                <h3>${escapeHtml(formation?.name || run.formationId)}</h3>
+              </div>
+              <button type="button" class="btn squad-edit-toggle ${ui.squadEditMode ? "btn-yellow" : ""}" id="toggle-squad-edit">${ui.squadEditMode ? "Termina modifiche" : "Modifica titolari"}</button>
+            </div>
             <div class="squad-formation-tabs">${squadFormationTabsMarkup()}</div>
           </section>
 
@@ -1158,9 +1155,6 @@
       runKeepingScroll(renderSquad);
     };
 
-    document.getElementById("formation-select").addEventListener("change", (event) => {
-      changeSquadFormation(event.target.value);
-    });
     document.querySelectorAll("[data-formation-tab]").forEach((button) => button.addEventListener("click", () => {
       if (button.dataset.formationTab === run.formationId) return;
       changeSquadFormation(button.dataset.formationTab);
