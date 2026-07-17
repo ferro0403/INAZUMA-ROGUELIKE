@@ -1,6 +1,7 @@
 (function (global) {
   "use strict";
 
+  const DEV_MODE = /(?:localhost|127\.0\.0\.1)/.test(global.location?.hostname || "") && global.location?.search?.includes("dev=1");
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
   const toastRoot = document.getElementById("toast-root");
@@ -454,12 +455,31 @@
     ).join(" ");
   }
 
+
+  function averageOverall(players = null) {
+    const list = Array.isArray(players) ? players : (run?.roster || []).map((entry) => resolvedRosterPlayer(entry.playerId || entry.id)).filter(Boolean);
+    if (!list.length) return "-";
+    const total = list.reduce((sum, player) => sum + Number(player.displayOverall ?? player.overall ?? player.finalOverall ?? 0), 0);
+    return Math.round(total / list.length);
+  }
+
+  function formatDuration(ms) {
+    const value = Number(ms);
+    if (!Number.isFinite(value) || value <= 0) return "0 min";
+    const minutes = Math.max(1, Math.round(value / 60000));
+    const hours = Math.floor(minutes / 60);
+    const rest = minutes % 60;
+    return hours ? `${hours}h ${rest}m` : `${minutes} min`;
+  }
+
   function topbar(title) {
+    const identity = run ? normalizeTeamIdentity(run.teamIdentity) : null;
     return `
-      <header class="topbar">
-        <div><div class="brand">⚡ ${escapeHtml(title || "Inazuma Roguelike")}</div></div>
-        <div class="status-strip">
+      <header class="topbar game-topbar">
+        <div class="topbar-brand-block"><div class="brand">⚡ ${escapeHtml(title || "Inazuma Roguelike")}</div>${identity ? `<span class="topbar-subtitle">${escapeHtml(identity.name)}</span>` : ""}</div>
+        <div class="status-strip" aria-label="Stato run">
           <span class="status-pill">Lv ${escapeHtml(run.teamLevel)}</span>
+          <span class="status-pill">OVR ${escapeHtml(averageOverall())}</span>
           <span class="status-pill lives" title="Vite">${hearts()}</span>
         </div>
       </header>`;
@@ -731,6 +751,31 @@
       </section>`;
   }
 
+  function homeRunCardMarkup(savedRun) {
+    if (!savedRun) {
+      return `<article class="home-hub-card home-run-card" aria-label="Run">
+        <div class="home-card-kicker"><span>⚡</span><strong>RUN</strong></div>
+        <h2>Scendi in campo</h2>
+        <p class="muted">Crea una rosa, scegli il percorso e supera i boss della Season 1.</p>
+        <div class="empty-state compact-empty"><strong>Nessuna run attiva</strong><span>La prossima leggenda parte dal primo fischio.</span></div>
+        <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="new-run">Inizia una nuova run</button></div>
+      </article>`;
+    }
+    const identity = savedTeamIdentity() || normalizeTeamIdentity(savedRun.teamIdentity);
+    const boss = seasonDb?.bossOrder?.[Number(savedRun.bossIndex || 0)];
+    const bossNumber = Number(savedRun.bossIndex || 0) + 1;
+    const totalBosses = seasonDb?.bossOrder?.length || 10;
+    const rosterPreview = (savedRun.roster || []).slice(0, 5).map((entry) => resolvedRosterPlayer(entry.playerId || entry.id)).filter(Boolean);
+    return `<article class="home-hub-card home-run-card" aria-label="Run attiva">
+      <div class="home-card-kicker"><span>⚡</span><strong>RUN</strong></div>
+      <div class="home-card-title-row"><div><h2>${escapeHtml(identity.name)}</h2><p class="muted">Prossimo boss: ${escapeHtml(boss?.teamName || "Raimon")} · Stage ${escapeHtml(Math.min(bossNumber, totalBosses))}/${escapeHtml(totalBosses)}</p></div><span class="result-banner result-banner--live">${hearts()}</span></div>
+      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>Livello</span><strong>${escapeHtml(savedRun.teamLevel || 0)}</strong></div><div class="stat-card"><span>Overall medio</span><strong>${escapeHtml(averageOverall())}</strong></div><div class="stat-card"><span>Vite</span><strong>${escapeHtml(savedRun.lives ?? "-")}</strong></div><div class="stat-card"><span>Tempo run</span><strong>${escapeHtml(formatDuration(Date.now() - new Date(savedRun.createdAt || Date.now()).getTime()))}</strong></div></div>
+      <div class="home-roster-preview">${rosterPreview.map((p) => `<span class="home-avatar"><img src="${escapeHtml(p.portraitUrl || p.imageUrl || '')}" alt="${escapeHtml(p.name)}" loading="lazy"/><small>${escapeHtml(p.position || '')}</small></span>`).join("") || '<span class="muted">Rosa in preparazione</span>'}</div>
+      <div class="progress-track" aria-label="Progresso boss"><div class="progress-bar" style="width:${Math.round(((bossNumber - 1) / Math.max(1, totalBosses)) * 100)}%"></div></div>
+      <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="continue-run">Continua la run</button><button type="button" class="btn btn-primary" id="manage-team-home">Gestisci squadra</button><button type="button" class="btn btn-ghost" id="new-run">Nuova run</button></div>
+    </article>`;
+  }
+
   function renderHome() {
     run = global.RunState.load();
     ensureRunSchema();
@@ -739,30 +784,27 @@
       global.RunState.save(run);
     }
     app.innerHTML = `
-      <main class="hero-screen home-screen">
-        <section class="home-card panel">
+      <main class="home-screen modern-home">
+        <header class="home-hero panel">
           <div class="home-brand-mark">${inazumaLogoMarkup("inazuma-logo--hero")}</div>
-          <div class="home-copy">
-            <p class="eyebrow">Season 1 · Prototipo funzionale</p>
-            <h1>Inazuma<br />Roguelike</h1>
-            <p class="muted">Costruisci la tua squadra, scegli il percorso e sconfiggi i dieci boss.</p>
-          </div>
-          ${savedRunSummaryMarkup(run) || savedTeamSummaryMarkup()}
+          <div class="home-copy"><p class="eyebrow">Season 1</p><h1>Inazuma Roguelike</h1><p class="home-subtitle">Road to Raimon</p><p class="muted">Un viaggio roguelike tra draft, tattica e sfide decisive: costruisci una squadra da leggenda.</p></div>
+          <div class="home-actions button-row"><button type="button" class="btn btn-yellow" id="home-primary-cta">${run ? "Continua la run" : "Inizia una nuova run"}</button><button type="button" class="btn" id="open-hall-home">Apri Albo d’Oro</button>${savedTeamIdentity() ? '<button type="button" class="btn btn-ghost" id="edit-team-name">Modifica squadra</button>' : ""}</div>
+        </header>
+        <section class="home-choice-grid" aria-label="Hub principale">
+          ${homeRunCardMarkup(run)}
           ${homeHallOfFameMarkup()}
-          <div class="home-actions button-row">
-            ${run ? '<button type="button" class="btn btn-primary" id="continue-run">Continua</button>' : ""}
-            <button type="button" class="btn btn-yellow" id="new-run">Nuova run</button>
-            <button type="button" class="btn" id="open-hall-home">Apri Albo d’Oro</button>
-            ${savedTeamIdentity() ? '<button type="button" class="btn" id="edit-team-name">Modifica nome squadra</button>' : ""}
-          </div>
         </section>
       </main>`;
     resetRenderedViewScroll();
 
-    document.getElementById("new-run").addEventListener("click", startNewRunFromHome);
+    document.querySelectorAll("#new-run, #home-primary-cta").forEach((button) => button.addEventListener("click", () => run && button.id === "home-primary-cta" ? resumeRun() : startNewRunFromHome()));
     document.getElementById("continue-run")?.addEventListener("click", resumeRun);
+    document.getElementById("manage-team-home")?.addEventListener("click", () => { if (!run) return; run.phase = "squad"; global.RunState.save(run); renderSquad(); });
     document.getElementById("edit-team-name")?.addEventListener("click", openEditTeamNameModal);
     document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
+    document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
+    document.getElementById("open-hall-home-list")?.addEventListener("click", renderHallOfFame);
+    document.getElementById("open-latest-hall-home")?.addEventListener("click", (event) => renderHallOfFameDetail(event.currentTarget.dataset.latestHall));
   }
 
   function savedTeamSummaryMarkup() {
@@ -1224,7 +1266,7 @@
         <div class="content">
           <div class="section-head">
             <div><p class="eyebrow">Boss ${run.bossIndex + 1} di ${seasonDb.bossOrder.length}</p><h2>Scegli il percorso</h2></div>
-            <button type="button" class="btn" data-nav="squad">Modifica squadra</button>
+            <button type="button" class="btn btn-secondary map-squad-action" data-nav="squad">Modifica squadra</button>
           </div>
           <p class="muted">Puoi selezionare soltanto uno dei nodi collegati alla tua posizione attuale.</p>
           <div class="map-wrap" id="map-scroll">
@@ -2157,9 +2199,9 @@
   }
 
   function startMatchSimulation(match, options = {}) {
-    if (match.simulation?.state && match.simulation.state !== "pre-match") return;
+    if (match?.simulation?.state && match.simulation.state !== "pre-match") return false;
     const sim = ensureMatchPreview(match, { ...options, forceRefresh: true, freeze: true });
-    if (!sim.valid) return toast(sim.message || "Formazione non valida: impossibile simulare.");
+    if (!sim.valid) { toast(sim.message || "Formazione non valida: impossibile simulare."); return false; }
     sim.seed = sim.seed || matchSeed(match);
     sim.state = "simulating";
     sim.revealedCount = 0;
@@ -2174,6 +2216,28 @@
     updateMatchControlsDom();
     document.getElementById(match.type === "five_v_five" ? "five-match-log-panel" : "")?.scrollIntoView({ block: "nearest" });
     ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.eventDelayMs || global.MatchSimulatorConfig.playbackMs);
+    return true;
+  }
+
+  function handleStartMatchClick(match, options = {}) {
+    const button = document.getElementById("simulate-boss-match");
+    if (button?.disabled) return;
+    const previousLabel = button?.textContent || "Simula partita";
+    if (button) { button.disabled = true; button.textContent = "Avvio..."; }
+    try {
+      const started = startMatchSimulation(match, options);
+      if (!started && button) { button.disabled = false; button.textContent = previousLabel; }
+    } catch (error) {
+      console.error("Errore avvio simulazione", error);
+      if (match) {
+        match.state = match.simulation?.state && match.simulation.state !== "pre-match" ? match.state : "pre-match";
+        if (match.simulation?.state === "simulating") match.simulation.state = "pre-match";
+      }
+      ui.bossMatchState = match?.state || "pre-match";
+      persistMatchState();
+      if (button) { button.disabled = false; button.textContent = previousLabel; }
+      toast("Simulazione non avviata: riprova.");
+    }
   }
 
   function resumeMatchSimulationIfNeeded(match) {
@@ -2212,16 +2276,27 @@
   }
 
   function manualResolveMatch(result) {
+    const match = ui.match || run.activeMatch;
+    if (!match || match.result || match.simulation?.resolutionApplied) return;
     clearMatchPlaybackTimer();
-    if (ui.match?.simulation) {
-      ui.match.simulation.manuallyResolved = true;
-      ui.match.simulation.state = "completed";
-      ui.match.simulation.winner = result === "victory" ? "user" : "opponent";
-      ui.match.simulation.score = result === "victory" ? { user: 2, opponent: 1 } : { user: 1, opponent: 2 };
-      ui.match.simulation.displayedScore = { ...ui.match.simulation.score };
-      ui.match.simulation.revealedCount = ui.match.simulation.timeline?.length || 0;
-    }
-    ui.match?.type === "five_v_five" ? completeFiveMatch(result) : completeBossMatch(result);
+    const sim = ensureMatchPreview(match, { forceRefresh: !match.simulation?.valid, freeze: true });
+    if (!sim.valid) return toast(sim.message || "Formazione non valida: impossibile forzare il risultato.");
+    sim.testControl = true;
+    sim.forcedOutcome = result === "victory" ? "win" : "loss";
+    sim.state = "completed";
+    sim.winner = result === "victory" ? "user" : "opponent";
+    sim.score = result === "victory" ? { user: Math.max(2, Number(sim.score?.user || 0)), opponent: Math.min(Number(sim.score?.opponent || 1), 1) } : { user: Math.min(Number(sim.score?.user || 1), 1), opponent: Math.max(2, Number(sim.score?.opponent || 0)) };
+    if (result === "victory" && sim.score.user <= sim.score.opponent) sim.score = { user: 2, opponent: 1 };
+    if (result !== "victory" && sim.score.user >= sim.score.opponent) sim.score = { user: 1, opponent: 2 };
+    sim.displayedScore = { ...sim.score };
+    sim.revealedCount = sim.timeline?.length || 0;
+    sim.resolutionApplied = false;
+    match.score = [sim.score.user, sim.score.opponent];
+    match.forcedOutcome = sim.forcedOutcome;
+    match.testControl = true;
+    ui.bossMatchLog = visibleTimeline(match);
+    persistMatchState();
+    match.type === "five_v_five" ? completeFiveMatch(result) : completeBossMatch(result);
   }
 
   function fiveFormationRows(formationId, playersBySlot) {
@@ -2371,7 +2446,7 @@
               <section class="panel boss-match-result-panel five-match-result-panel" id="five-match-result-panel"><p class="eyebrow">Esito partita</p><h3>Risultato</h3><div class="boss-match-score"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(userName)}</span><span>${opponentName}</span></div><div class="result-badges"><span>${resolved && ui.bossMatchState.endsWith("victory") ? "+0,5 livello" : "Vite " + run.lives}</span><span>${resolved ? "Nodo di ritorno salvato" : "Snapshot pronta"}</span></div></section>
             </div>
           </div>
-          <section class="panel five-match-controls five-v-five-mobile-actions" aria-label="Azioni partita 5v5"><button type="button" class="btn btn-yellow btn-primary-action" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn btn-secondary" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow btn-primary-action" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Continua</button><div class="button-row"><button type="button" class="btn btn-secondary" id="edit-five-team" ${resolved ? "disabled" : ""}>Modifica squadra</button><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button><button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button type="button" class="btn btn-back" data-nav="map">← Torna alla mappa</button></div></section>
+          <section class="panel five-match-controls five-v-five-mobile-actions" aria-label="Azioni partita 5v5"><button type="button" class="btn btn-yellow btn-primary-action" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn btn-secondary" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow btn-primary-action" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Continua</button><div class="button-row"><button type="button" class="btn btn-secondary" id="edit-five-team" ${resolved ? "disabled" : ""}>Modifica squadra</button><div class="test-tools" aria-label="Strumenti di test"><span>Strumenti di test</span><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div><button type="button" class="btn btn-back" data-nav="map">← Percorso</button></div></section>
         </main>`;
       resetRenderedViewScroll();
       bindBottomNav();
@@ -2383,9 +2458,9 @@
         showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: freeAgentsDb, preserveScroll: scrollSnapshot() });
       }));
       document.getElementById("edit-five-team").addEventListener("click", () => { ui.returnToMatchContext = { type: match.type, nodeId: match.nodeId, scroll: scrollSnapshot() }; match.returnScroll = ui.returnToMatchContext.scroll; persistMatchState(); renderFiveVFive({ returnToMatch: true }); });
-      document.getElementById("test-win").addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("victory"); });
-      document.getElementById("test-loss").addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("defeat"); });
-      document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(match); });
+      document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("victory"); });
+      document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("defeat"); });
+      document.getElementById("simulate-boss-match")?.addEventListener("click", (event) => { event.preventDefault(); handleStartMatchClick(match); });
       document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
       document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch);
       persistMatchState();
@@ -2459,7 +2534,7 @@
             <section class="panel boss-match-result-panel"><h3>Risultato</h3><div class="boss-match-score"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div></section>
           </div>
           <details class="panel boss-match-mobile-details"><summary>Info boss e ricompensa</summary><p>${escapeHtml(meta.boss.name)} · Lv ${escapeHtml(meta.boss.level)} · ${escapeHtml(meta.boss.formation)}</p><p>2 pick 1 di 3 dalla squadra battuta</p></details>
-          <section class="panel boss-match-controls"><button type="button" class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Continua</button><div class="button-row"><button type="button" class="btn btn-primary" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button><button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta</button><button type="button" class="btn" data-nav="squad">Torna alla squadra</button></div></section>
+          <section class="panel boss-match-controls"><button type="button" class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Continua</button><div class="button-row"><div class="test-tools" aria-label="Strumenti di test"><span>Strumenti di test</span><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div><button type="button" class="btn" data-nav="squad">Torna alla squadra</button></div></section>
         </div>
       </main>`;
     resetRenderedViewScroll();
@@ -2472,9 +2547,9 @@
       const player = bossPlayers.find((candidate) => String(candidate.playerId) === String(id));
       showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: seasonDb, preserveScroll: scrollSnapshot() });
     }));
-    document.getElementById("test-win").addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("victory"); });
-    document.getElementById("test-loss").addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("defeat"); });
-    document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(ui.match, { boss }); });
+    document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("victory"); });
+    document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); manualResolveMatch("defeat"); });
+    document.getElementById("simulate-boss-match")?.addEventListener("click", (event) => { event.preventDefault(); handleStartMatchClick(ui.match, { boss }); });
     document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
     document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch);
     persistMatchState();
@@ -2877,7 +2952,7 @@
               <h2>Formazione 5v5</h2>
               <p class="muted">Configura la tua formazione per le partite 5v5 usando i giocatori della rosa.</p>
             </div>
-            ${options.returnToMatch ? '<button type="button" class="btn btn-back" id="back-five-match-head">← Torna alla partita</button>' : '<button type="button" class="btn btn-back" data-nav="map">← Torna alla mappa</button>'}
+            ${options.returnToMatch ? '<button type="button" class="btn btn-back" id="back-five-match-head">← Torna alla partita</button>' : '<button type="button" class="btn btn-back btn-back-compact" data-nav="map">← Percorso</button>'}
           </div>
           <section class="five-layout">
             <div class="five-main">
@@ -3243,8 +3318,9 @@
   function homeHallOfFameMarkup() {
     const summaries = global.HallOfFameStorage?.listSummaries?.() || [];
     const latest = summaries[0];
-    if (!latest) return `<section class="home-save-card hall-home-card" aria-label="Albo d’Oro"><div class="home-save-logo">🏆</div><div><p class="eyebrow">ALBO D’ORO</p><h2>Nessuna squadra campione.</h2><p class="muted">Completa una run per lasciare il tuo segno.</p></div></section>`;
-    return `<section class="home-save-card hall-home-card" aria-label="Albo d’Oro"><div class="home-save-logo">🏆</div><div><p class="eyebrow">ALBO D’ORO · ${escapeHtml(summaries.length)} vittorie</p><h2>${escapeHtml(latest.teamName)}</h2><p class="muted">${escapeHtml(latest.seasonName)} · ${escapeHtml(latest.modeName)} · ${formatDate(latest.victoryDate)} · ${escapeHtml(latest.finalFormation || '-')} · OVR ${escapeHtml(latest.finalAverageOverall ?? 'N/D')} · MVP ${escapeHtml(latest.mvp?.name || 'Non disponibile')}</p></div></section>`;
+    if (!latest) return `<article class="home-hub-card hall-home-card" aria-label="Albo d’Oro"><div class="home-card-kicker"><span>🏆</span><strong>ALBO D’ORO</strong></div><h2>Museo delle leggende</h2><p class="muted">Le squadre campioni appariranno qui dopo il trionfo finale.</p><div class="empty-state compact-empty"><strong>Nessun trofeo esposto</strong><span>Completa una run e inaugura la galleria.</span></div><div class="home-card-actions"><button type="button" class="btn" id="open-hall-home-empty">Apri Albo d’Oro</button></div></article>`;
+    const portraits = (latest.portraits || []).slice(0, 4).map((src) => `<img src="${escapeHtml(src)}" alt="" loading="lazy"/>`).join("");
+    return `<article class="home-hub-card hall-home-card" aria-label="Albo d’Oro"><div class="home-card-kicker"><span>🏆</span><strong>ALBO D’ORO · ${escapeHtml(summaries.length)} campioni</strong></div><div class="home-card-title-row"><div><h2>${escapeHtml(latest.teamName)}</h2><p class="muted">Ultima vincitrice · ${escapeHtml(latest.seasonName)} · ${formatDate(latest.victoryDate)}</p></div><span class="home-trophy">★</span></div><div class="stat-grid home-stat-grid"><div class="stat-card"><span>Modulo</span><strong>${escapeHtml(latest.finalFormation || '-')}</strong></div><div class="stat-card"><span>Overall medio</span><strong>${escapeHtml(latest.finalAverageOverall ?? 'N/D')}</strong></div><div class="stat-card"><span>MVP</span><strong>${escapeHtml(latest.mvp?.name || 'N/D')}</strong></div></div><div class="hall-portraits home-hall-portraits">${portraits}</div><div class="home-card-actions"><button type="button" class="btn" id="open-hall-home-list">Apri Albo d’Oro</button><button type="button" class="btn btn-yellow" id="open-latest-hall-home" data-latest-hall="${escapeHtml(latest.hallTeamId)}">Apri ultima squadra</button></div></article>`;
   }
 
   function formatDate(value) {

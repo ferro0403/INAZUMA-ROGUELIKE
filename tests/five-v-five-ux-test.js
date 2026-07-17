@@ -6,11 +6,12 @@ const css = fs.readFileSync('css/game.css', 'utf8');
 
 const fiveControlsMatches = appJs.match(/class="panel five-match-controls five-v-five-mobile-actions"/g) || [];
 assert.equal(fiveControlsMatches.length, 1, '5v5 action panel is rendered once');
-['Simula partita', 'Modifica squadra', 'Vittoria sicura', 'Sconfitta', '← Torna alla mappa'].forEach((label) => {
+['Simula partita', 'Modifica squadra', '← Percorso'].forEach((label) => {
   assert(appJs.includes(label), `5v5 action panel keeps ${label}`);
 });
+assert(appJs.includes('class="test-tools"') && appJs.includes('id="test-win"') && appJs.includes('Vittoria sicura'), '5v5 exposes compact test tools with safe victory');
 assert(appJs.includes('document.getElementById("edit-five-team").addEventListener("click"'), '5v5 edit-team handler remains attached to the single panel');
-assert(appJs.includes('document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(match); })'), 'simulate action keeps its existing handler');
+assert(appJs.includes('document.getElementById("simulate-boss-match")?.addEventListener("click", (event) => { event.preventDefault(); handleStartMatchClick(match); })'), 'simulate action uses guarded click handler');
 assert(appJs.includes('document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch)'), 'post-simulation continue action keeps its existing handler');
 assert(!appJs.includes('class="panel boss-match-controls five-match-controls"'), '11v11 screen does not reuse the 5v5 action-bar class');
 
@@ -38,6 +39,8 @@ assert(!/@media \(max-width: 780px\)[\s\S]*?\.five-match-controls \{[^}]*padding
 assert(!/boss-match-controls[\s\S]{0,120}position:\s*fixed/.test(css), '11v11 boss controls must not receive the mobile fixed 5v5 treatment');
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-tabs \{[\s\S]*?position:\s*sticky/.test(css), 'mobile 5v5 tabs are reinforced and sticky in the local 5v5 layer');
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-controls \.button-row \.btn-back \{[^}]*display:\s*none/.test(css), 'mobile 5v5 hides the lower return action so only one map action is visible');
+assert(/@media \(max-width: 780px\)[\s\S]*?\.map-squad-action \{ display:\s*none; \}/.test(css), 'mobile route map hides the redundant edit-squad header action');
+assert(css.includes('.test-tools') && css.includes('.btn-back-compact'), 'compact test and return controls are styled');
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-hero \{[^}]*grid-template-columns:\s*auto minmax\(0, 1fr\)/.test(css), 'mobile 5v5 header uses an in-flow compact two-column top row');
 assert(css.includes('.five-match-back-short { display: none; }') && /@media \(max-width: 780px\)[\s\S]*?\.five-match-back-short \{ display:\s*inline; \}/.test(css), 'mobile 5v5 abbreviates the header return label without losing aria-label');
 assert(css.includes('.five-roster-card.disabled small::after'), 'incompatible 5v5 candidates explain why they are disabled');

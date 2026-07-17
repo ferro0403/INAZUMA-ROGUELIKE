@@ -95,7 +95,7 @@ assert.equal(global.MatchSimulator.getMatchWinProbabilities("five", 70, 60).user
 assert.equal(global.MatchSimulator.getMatchWinProbabilities("five", 75, 60).userChance, 95, "5v5 UI table: stronger by 15 shows 95/5");
 assert.equal(global.MatchSimulator.getMatchWinProbabilities("eleven", 60, 85).userChance, 40, "11v11 table must not inherit the 5v5 80% floor");
 assert(appJs.includes("if (match.simulation?.valid) return match.simulation;") && appJs.includes("if (!sim || sim.state !== \"simulating\" || sim.manuallyResolved) return;"), "refresh and Vai al risultato must reuse the existing simulation instead of extracting again");
-assert(appJs.includes("Vittoria sicura"), "manual safe victory control must remain visible");
+assert(appJs.includes("class=\"test-tools\"") && appJs.includes("Vittoria sicura"), "manual safe victory control must be visible in compact test tools");
 assert(appJs.includes("startMatchSimulation") && appJs.includes("resolutionApplied"), "match UI must persist simulation and guard one-time resolution");
 assert(appJs.includes("const baseStats = resolved.baseStats || resolved.stats") && appJs.includes("? resolved.stats") && appJs.includes("applyEquipment(resolved.stats, equipment)"), "player detail must not apply equipment twice when resolved stats already include equipment");
 assert(appJs.includes("function fivePlayerEquipmentMarkup(equipment)") && appJs.includes("Oggetto equipaggiato:") && appJs.includes("fivePlayerEquipmentMarkup(rosterEntry(player.playerId)?.equippedItem)"), "5v5 formation cards must render an accessible equipped-item indicator from roster equipment");
