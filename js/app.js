@@ -1260,32 +1260,63 @@
     const reachable = new Set(global.MapEngine.reachableNodeIds(zone));
     const completed = new Set(zone.completedNodeIds);
     const labels = global.SEASON1_CONFIG.nodeLabels;
+    const currentNodeId = zone.currentNodeId;
+    const completedCount = completed.size;
+    const totalNodes = zone.nodes.length;
+    const runProgress = Math.min(100, Math.round((completedCount / Math.max(1, totalNodes - 1)) * 100));
+    const routeLegendTypes = ["five_v_five", "pull_free_agents", "pull_unlocked_teams", "item", "trade", "random", "boss"];
+    const pathSet = new Set(zone.path || []);
+    const edgeMarkup = zone.edges.map(([from, to]) => {
+      const available = from === currentNodeId && reachable.has(to);
+      const done = completed.has(from) && (completed.has(to) || pathSet.has(to));
+      const bossEdge = zone.nodes.find((node) => node.id === to)?.type === "boss";
+      const edgeClass = [available ? "available" : "", done ? "done" : "", bossEdge ? "boss-edge" : ""].filter(Boolean).join(" ");
+      return `<line class="${edgeClass}" x1="${positions[from].x}" y1="${positions[from].y}" x2="${positions[to].x}" y2="${positions[to].y}" />`;
+    }).join("");
 
     app.innerHTML = `
-      <main class="screen">
+      <main class="screen route-screen">
         ${topbar(`Verso ${boss.teamName}`)}
-        <div class="content">
-          <div class="section-head route-section-head">
-            <div><p class="eyebrow">Boss ${run.bossIndex + 1} di ${seasonDb.bossOrder.length}</p><h2>Scegli il percorso</h2></div>
-            <button type="button" class="btn btn-secondary route-squad-action" data-nav="squad">Modifica squadra</button>
-          </div>
-          <p class="muted">Puoi selezionare soltanto uno dei nodi collegati alla tua posizione attuale.</p>
+        <div class="content route-content">
+          <section class="route-hero panel" aria-label="Riepilogo percorso">
+            <div class="route-hero-copy">
+              <p class="eyebrow route-kicker">Boss ${run.bossIndex + 1} di ${seasonDb.bossOrder.length}</p>
+              <h2>Scegli il percorso</h2>
+              <p class="muted">Seleziona uno dei nodi collegati alla tua posizione attuale. Ogni scelta ti avvicina alla prossima sfida: <strong>${escapeHtml(boss.teamName)}</strong>.</p>
+            </div>
+            <div class="route-hero-side">
+              <div class="route-target-card"><span>Prossima sfida</span><strong>${escapeHtml(boss.teamName)}</strong><small>Road to the boss</small></div>
+              <button type="button" class="btn btn-secondary route-squad-action" data-nav="squad">Gestisci squadra</button>
+            </div>
+          </section>
+          <section class="route-progress-panel" aria-label="Avanzamento verso il boss">
+            <div><span>Run attuale</span><strong>${escapeHtml(completedCount)} / ${escapeHtml(totalNodes - 1)} tappe superate</strong></div>
+            <div class="route-progress-track" aria-hidden="true"><span style="width:${runProgress}%"></span></div>
+            <p>Verso il boss: ${escapeHtml(boss.teamName)}</p>
+          </section>
           <div class="map-wrap" id="map-scroll">
-            <div class="route-map">
-              <svg class="map-lines" viewBox="0 0 1000 1000" preserveAspectRatio="none">
-                ${zone.edges.map(([from, to]) => `<line x1="${positions[from].x}" y1="${positions[from].y}" x2="${positions[to].x}" y2="${positions[to].y}" />`).join("")}
-              </svg>
+            <div class="route-map" aria-label="Mappa percorso verso ${escapeHtml(boss.teamName)}">
+              <svg class="map-lines" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">${edgeMarkup}</svg>
               ${zone.nodes.map((node) => {
                 const meta = labels[node.type];
                 const stateClass = completed.has(node.id) ? "completed" : reachable.has(node.id) ? "reachable" : "locked";
+                const isBoss = node.type === "boss";
+                const isCurrent = node.id === currentNodeId;
+                const readableState = isCurrent ? "posizione attuale" : completed.has(node.id) ? "completato" : reachable.has(node.id) ? "selezionabile" : "bloccato";
                 return `
-                  <button type="button" class="map-node ${stateClass}" data-node-id="${node.id}" ${reachable.has(node.id) ? "" : "disabled"}
+                  <button type="button" class="map-node ${stateClass}${isCurrent ? " current" : ""}${isBoss ? " boss-node" : ""}" data-node-id="${node.id}" ${reachable.has(node.id) ? "" : "disabled"}
+                    aria-label="${escapeHtml((isBoss ? boss.teamName : meta.label) + ", " + readableState)}"
                     style="left:${positions[node.id].x / 10}%;top:${positions[node.id].y / 10}%;--node-color:${meta.color}">
-                    <span class="node-icon">${node.type === "boss" ? bossNodeIconMarkup(boss) : meta.icon}</span>
-                    <span class="node-label">${node.type === "boss" ? escapeHtml(boss.teamName) : meta.label}</span>
+                    ${isBoss ? '<span class="node-badge">Boss</span>' : ''}
+                    <span class="node-icon">${isBoss ? bossNodeIconMarkup(boss) : meta.icon}</span>
+                    <span class="node-label">${isBoss ? escapeHtml(boss.teamName) : meta.label}</span>
+                    <span class="node-state">${escapeHtml(readableState)}</span>
                   </button>`;
               }).join("")}
             </div>
+          </div>
+          <div class="route-legend" aria-label="Legenda nodi">
+            ${routeLegendTypes.map((type) => `<span class="route-legend-item" style="--node-color:${labels[type].color}"><span>${labels[type].icon}</span>${labels[type].label}</span>`).join("")}
           </div>
         </div>
         ${bottomNav("map")}
