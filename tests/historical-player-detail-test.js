@@ -28,3 +28,15 @@ assert(appJs.includes('function championFiveVFiveMarkup(team)') && appJs.include
 assert(appJs.includes('historicalTeamIdentity(player, team, sourceFallback)') && appJs.includes('teamLogoMarkup(teamIdentity)'), "historical detail must resolve team/logo through snapshot-first visual fallbacks");
 assert(appJs.includes('modalRoot._restoreFocusTo = document.activeElement') && appJs.includes('restorePageScroll(restoreScrollTo)'), "modal close must restore focus and page scroll");
 assert(css.includes('.player-detail-modal') && css.includes('@media (max-width: 780px)'), "historical detail must inherit existing responsive Player Detail CSS");
+assert(appJs.includes('class="detail-stat player-stat-card"'), "technical stat cards must expose a dedicated stable card class");
+assert(appJs.includes('class="detail-stat-label"') && appJs.includes('class="detail-stat-value"'), "technical stat labels and values must be separate DOM nodes");
+assert(appJs.includes('class="run-stat-card"') && appJs.includes('class="run-stat-label"') && appJs.includes('class="run-stat-value"'), "historical run stats must use dedicated label/value card markup");
+assert(!appJs.includes('detail-stats player-history-stats'), "run performance stats must not reuse the technical stat grid class");
+assert(/\.detail-stat\s*\{[^}]*grid-template-columns:\s*24px minmax\(0, 1fr\) auto auto/.test(css), "technical stats must reserve icon, flexible label, and right-aligned value columns");
+assert(/\.detail-stat-label, \.detail-stat span\s*\{[^}]*min-width:\s*0[^}]*overflow-wrap:\s*anywhere/.test(css), "technical labels including Resistenza must shrink/wrap instead of overlapping values");
+assert(/\.detail-stat-value, \.detail-stat strong\s*\{[^}]*justify-self:\s*end[^}]*white-space:\s*nowrap/.test(css), "technical values including Parata 10 must stay right-aligned and unwrapped");
+assert(/\.player-history-stats\s*\{[^}]*grid-template-columns:\s*repeat\(2, minmax\(0, 1fr\)\)/.test(css), "run performance stats must keep a two-column mobile-safe grid");
+assert(/\.run-stat-card\s*\{[^}]*grid-template-rows:\s*auto 1fr[^}]*min-height:\s*76px/.test(css), "run stat cards must separate long labels from numeric values vertically");
+assert(/\.run-stat-label\s*\{[^}]*overflow-wrap:\s*anywhere/.test(css), "long run labels such as Azioni difensive and Crescita overall must wrap safely");
+assert(/\.run-stat-value\s*\{[^}]*align-self:\s*end[^}]*line-height:\s*1/.test(css), "run values such as -2 and 6.9 must have a stable value row");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.detail-stats, \.player-history-stats \{ grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/.test(css), "mobile detail and run grids must remain two columns at 360px and wider");
