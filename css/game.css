@@ -1430,3 +1430,75 @@ body { background: var(--gradient-app); }
   .match-test-tools > span { text-align: center; }
   .match-test-tools .btn { width: 100%; min-height: 40px; padding: 8px 9px; }
 }
+
+/* Premium route map rework */
+.route-screen { padding-bottom: calc(104px + env(safe-area-inset-bottom)); }
+.route-content { display: grid; gap: 16px; width: min(1180px, 100%); margin-inline: auto; }
+.route-hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(220px, .34fr);
+  gap: 18px;
+  align-items: stretch;
+  overflow: hidden;
+  border-color: rgba(54, 169, 255, .24);
+  background:
+    radial-gradient(circle at 0 0, rgba(54,169,255,.18), transparent 34%),
+    radial-gradient(circle at 96% 18%, rgba(255,211,79,.16), transparent 28%),
+    linear-gradient(135deg, rgba(12,28,54,.96), rgba(7,19,40,.92));
+}
+.route-hero h2 { margin-bottom: 8px; letter-spacing: -.035em; }
+.route-hero .muted { max-width: 62ch; margin-bottom: 0; line-height: 1.55; }
+.route-hero .muted strong { color: var(--text); }
+.route-kicker { display: inline-flex; width: fit-content; padding: 7px 10px; border: 1px solid rgba(255,211,79,.34); border-radius: 999px; background: rgba(255,211,79,.09); }
+.route-hero-side { display: grid; gap: 10px; align-content: stretch; }
+.route-target-card { min-height: 100%; padding: 16px; border: 1px solid rgba(255,255,255,.13); border-radius: 20px; background: rgba(3,9,20,.45); box-shadow: inset 0 1px 0 rgba(255,255,255,.06); }
+.route-target-card span, .route-progress-panel span { display: block; color: var(--muted); font-size: .72rem; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
+.route-target-card strong { display: block; margin-top: 6px; color: var(--yellow); font-size: clamp(1.25rem, 2.5vw, 1.8rem); line-height: 1; }
+.route-target-card small { display: block; margin-top: 8px; color: var(--muted); font-weight: 850; }
+.route-progress-panel { display: grid; grid-template-columns: minmax(190px, auto) minmax(180px, 1fr) auto; gap: 12px; align-items: center; padding: 13px 16px; border: 1px solid rgba(255,255,255,.12); border-radius: 20px; background: rgba(6, 17, 38, .72); }
+.route-progress-panel strong { display: block; margin-top: 3px; }
+.route-progress-panel p { margin: 0; color: var(--muted); font-weight: 850; }
+.route-progress-track { height: 10px; overflow: hidden; border-radius: 999px; background: rgba(255,255,255,.09); box-shadow: inset 0 1px 4px rgba(0,0,0,.38); }
+.route-progress-track span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--blue), var(--yellow)); box-shadow: 0 0 18px rgba(54,169,255,.45); }
+.map-wrap { padding: 12px; border: 1px solid rgba(255,255,255,.12); border-radius: 30px; background: linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.018)); box-shadow: var(--shadow), inset 0 1px 0 rgba(255,255,255,.08); }
+.route-map {
+  height: clamp(820px, 78vh, 1080px);
+  border: 1px solid rgba(190, 255, 214, .52);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 50% -6%, rgba(255, 211, 79, .28) 0 8%, transparent 30%),
+    radial-gradient(circle at 18% 18%, rgba(54, 169, 255, .14) 0 8%, transparent 24%),
+    linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px) 0 0 / 44px 44px,
+    repeating-linear-gradient(90deg, rgba(62, 186, 98, .96) 0 8.33%, rgba(34, 137, 74, .96) 8.33% 16.66%),
+    linear-gradient(160deg, #36b66b, #105d3e 60%, #073426);
+  box-shadow: inset 0 0 120px rgba(0,0,0,.38), inset 0 0 0 1px rgba(255,255,255,.06), 0 20px 60px rgba(0,0,0,.32);
+}
+.route-map::before { border-color: rgba(244,255,242,.52); box-shadow: inset 0 0 0 999px rgba(4, 31, 22, .1), 0 0 28px rgba(244,255,242,.06); }
+.map-lines { filter: drop-shadow(0 2px 4px rgba(0,0,0,.6)); }
+.map-lines line { stroke: rgba(218, 235, 245, .34); stroke-width: 3; stroke-dasharray: 5 9; stroke-linecap: round; }
+.map-lines line.done { stroke: rgba(52, 211, 153, .54); stroke-dasharray: 0; }
+.map-lines line.available { stroke: rgba(255, 211, 79, .92); stroke-width: 4.5; stroke-dasharray: 10 8; animation: routeDash 1.2s linear infinite; }
+.map-lines line.boss-edge { stroke-width: 4; }
+.map-node { width: 104px; padding: 0; color: var(--text); transition: transform var(--transition-fast), opacity var(--transition-fast), filter var(--transition-fast); }
+.map-node:not(:disabled):hover, .map-node:not(:disabled):focus-visible { transform: translate(-50%, -50%) scale(1.07); outline: none; }
+.map-node:focus-visible .node-icon { box-shadow: 0 0 0 4px rgba(255,255,255,.72), 0 0 0 9px rgba(54,169,255,.34), 0 14px 28px rgba(0,0,0,.4); }
+.node-icon { width: 64px; height: 64px; border: 3px solid color-mix(in srgb, var(--node-color, #466) 42%, white); background: radial-gradient(circle at 32% 24%, rgba(255,255,255,.4), transparent 26%), linear-gradient(145deg, color-mix(in srgb, var(--node-color, #466) 82%, white), color-mix(in srgb, var(--node-color, #466) 72%, black)); box-shadow: 0 10px 24px rgba(0,0,0,.38), 0 0 0 6px color-mix(in srgb, var(--node-color, #466) 16%, transparent), inset 0 -8px 18px rgba(0,0,0,.18); }
+.node-label { margin-top: 6px; padding: 3px 6px; border-radius: 999px; background: rgba(3,9,20,.66); font-size: .7rem; line-height: 1.08; }
+.node-state { display: block; width: fit-content; max-width: 100%; margin: 4px auto 0; padding: 2px 6px; border-radius: 999px; background: rgba(255,255,255,.08); color: var(--muted); font-size: .55rem; font-weight: 950; text-transform: uppercase; letter-spacing: .04em; }
+.map-node.locked { filter: grayscale(.85) saturate(.55); opacity: .44; cursor: not-allowed; }
+.map-node.completed { opacity: .72; }
+.map-node.completed .node-icon::after { content: "✓"; position: absolute; right: -3px; bottom: -4px; display: grid; place-items: center; width: 22px; height: 22px; border: 2px solid rgba(255,255,255,.78); border-radius: 50%; background: var(--green); color: #062018; font-size: .8rem; }
+.map-node.reachable .node-icon { border-color: var(--yellow); animation: routeNodePulse 1.45s ease-in-out infinite; }
+.map-node.current .node-icon { border-color: #fff; box-shadow: 0 0 0 7px rgba(54,169,255,.28), 0 0 28px rgba(54,169,255,.55), 0 12px 28px rgba(0,0,0,.4); }
+.map-node.boss-node { width: 132px; }
+.map-node.boss-node .node-icon { width: 82px; height: 82px; border-radius: 28px; border-color: rgba(255,211,79,.95); background: radial-gradient(circle at 50% 28%, rgba(255,211,79,.42), transparent 34%), linear-gradient(145deg, #d63031, #5a1020); box-shadow: 0 0 0 8px rgba(255,211,79,.16), 0 0 42px rgba(255,91,98,.48), 0 18px 36px rgba(0,0,0,.45); animation: bossGlow 2.3s ease-in-out infinite; }
+.node-badge { display: inline-flex; margin-bottom: 5px; padding: 3px 8px; border: 1px solid rgba(255,211,79,.55); border-radius: 999px; background: rgba(7,19,40,.82); color: var(--yellow); font-size: .58rem; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
+.route-legend { display: flex; flex-wrap: wrap; gap: 8px; padding: 4px 2px 0; }
+.route-legend-item { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid color-mix(in srgb, var(--node-color) 42%, transparent); border-radius: 999px; background: color-mix(in srgb, var(--node-color) 15%, rgba(3,9,20,.78)); color: var(--text); font-size: .75rem; font-weight: 900; }
+.route-legend-item span { display: grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; background: var(--node-color); color: #fff; font-size: .7rem; }
+@keyframes routeNodePulse { 50% { transform: scale(1.08); box-shadow: 0 10px 24px rgba(0,0,0,.38), 0 0 0 10px rgba(255,211,79,.16), 0 0 28px rgba(255,211,79,.42); } }
+@keyframes routeDash { to { stroke-dashoffset: -18; } }
+@keyframes bossGlow { 50% { box-shadow: 0 0 0 11px rgba(255,211,79,.12), 0 0 54px rgba(255,91,98,.58), 0 18px 36px rgba(0,0,0,.45); } }
+@media (min-width: 1200px) { .route-content { grid-template-columns: minmax(0, 1fr) 270px; align-items: start; } .route-hero, .route-progress-panel, .route-legend { grid-column: 2; } .map-wrap { grid-column: 1; grid-row: 1 / span 3; } .route-hero, .route-progress-panel { grid-template-columns: 1fr; } .route-progress-panel { align-items: stretch; } }
+@media (max-width: 780px) { .route-screen { padding-bottom: calc(122px + env(safe-area-inset-bottom)); } .route-content { gap: 12px; } .route-hero { grid-template-columns: 1fr; padding: 16px; border-radius: 22px; } .route-hero-side { grid-template-columns: 1fr; } .route-squad-action { display: none; } .route-progress-panel { grid-template-columns: 1fr; gap: 8px; padding: 12px; border-radius: 18px; } .map-wrap { overflow-x: hidden; overscroll-behavior-x: none; touch-action: pan-y; padding: 8px; max-width: 100%; border-radius: 24px; } .route-map { min-width: 0; width: 100%; height: min(940px, 242vw); border-radius: 20px; } .map-node { width: clamp(68px, 18vw, 78px); } .node-icon { width: clamp(48px, 13vw, 56px); height: clamp(48px, 13vw, 56px); font-size: 1rem; } .map-node.boss-node { width: clamp(86px, 24vw, 104px); } .map-node.boss-node .node-icon { width: clamp(62px, 17vw, 72px); height: clamp(62px, 17vw, 72px); border-radius: 22px; } .node-label { font-size: clamp(.56rem, 2.25vw, .66rem); } .node-state { font-size: .48rem; } .route-legend { gap: 6px; padding-bottom: 8px; } .route-legend-item { padding: 6px 8px; font-size: .68rem; } }
+@media (prefers-reduced-motion: reduce) { .map-lines line.available, .map-node.reachable .node-icon, .map-node.boss-node .node-icon { animation: none !important; } }
