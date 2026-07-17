@@ -24,4 +24,7 @@ assert(appJs.includes('role === "GK" ? ["Parate", stats.saves] : null') && appJs
 assert(appJs.includes('finalPotential: resolved.potential ?? null'), "new champion snapshots must save final potential");
 assert(appJs.includes('fullbodyUrl: playerVisualsById.get(String(entry.playerId))?.fullbodyUrl || null'), "new champion snapshots must save available fullbody visuals");
 assert(appJs.includes('data-hall-player="${escapeHtml(award.playerId)}"'), "award cards with player ids must open the same historical detail");
+assert(appJs.includes('function championFiveVFiveMarkup(team)') && appJs.includes('hall-five-list'), "saved 5v5 champion cards must open the shared historical detail");
+assert(appJs.includes('historicalTeamIdentity(player, team, sourceFallback)') && appJs.includes('teamLogoMarkup(teamIdentity)'), "historical detail must resolve team/logo through snapshot-first visual fallbacks");
+assert(appJs.includes('modalRoot._restoreFocusTo = document.activeElement') && appJs.includes('restorePageScroll(restoreScrollTo)'), "modal close must restore focus and page scroll");
 assert(css.includes('.player-detail-modal') && css.includes('@media (max-width: 780px)'), "historical detail must inherit existing responsive Player Detail CSS");
