@@ -422,6 +422,44 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .trade-result-card { width: min(320px, 100%); margin: 18px auto; }
 .trade-result-card .player-portrait { height: 210px; aspect-ratio: auto; }
 
+.trade-node-head, .random-event-head, .item-reward-head { margin-bottom: 14px; }
+.trade-node-head h2, .random-event-head h2, .item-reward-head h2 { margin-bottom: 6px; }
+.trade-flow-summary, .trade-confirm-panel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.trade-flow-summary > div, .trade-confirm-panel > div { min-width: 0; padding: 12px 14px; border: 1px solid rgba(92,130,177,.34); border-radius: 16px; background: rgba(7,23,44,.72); }
+.trade-flow-summary span, .trade-confirm-panel span { display: block; color: var(--muted); font-size: .72rem; font-weight: 950; letter-spacing: .05em; text-transform: uppercase; }
+.trade-flow-summary strong, .trade-confirm-panel strong { display: block; margin-top: 3px; color: #fff; line-height: 1.2; }
+.trade-confirm-panel small { display: block; margin-top: 5px; color: var(--muted); font-weight: 850; }
+.trade-note { margin: -2px 0 14px; padding: 10px 12px; border: 1px solid rgba(255,211,79,.24); border-radius: 14px; background: rgba(255,211,79,.08); }
+.node-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+.node-actions .btn { min-height: 42px; }
+.node-choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.item-reward-modal { width: min(860px, 100%); }
+.item-reward-grid .item-choice-card { min-height: 100%; text-align: left; }
+.item-reward-grid .item-choice-card:focus-visible, .random-event-modal .btn:focus-visible, .trade-modal [data-trade-player]:focus-visible, .trade-confirm-modal .btn:focus-visible, .trade-result-modal .btn:focus-visible { outline: 3px solid rgba(255,211,79,.72); outline-offset: 3px; }
+.random-event-modal { width: min(560px, 100%); }
+.random-event-reveal { display: grid; place-items: center; gap: 7px; margin: 4px auto 16px; padding: 22px 16px; border: 1px solid color-mix(in srgb, var(--reveal-color, var(--yellow)) 52%, rgba(255,255,255,.18)); border-radius: 20px; background: radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--reveal-color, var(--yellow)) 24%, transparent), rgba(7,23,44,.9) 62%); text-align: center; }
+.random-event-reveal span { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 18px; background: color-mix(in srgb, var(--reveal-color, var(--yellow)) 18%, rgba(10,28,54,.92)); font-size: 2rem; box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
+.random-event-reveal strong { font-size: clamp(1.15rem, 3vw, 1.45rem); }
+.random-event-reveal small { color: var(--muted); font-weight: 900; }
+@media (min-width: 1180px) {
+  .trade-modal { width: min(1180px, calc(100vw - 42px)); }
+  .trade-squad-layout { grid-template-columns: minmax(0, 1.7fr) minmax(250px, .7fr); }
+}
+@media (max-width: 780px) {
+  .trade-modal, .trade-confirm-modal, .trade-result-modal, .random-event-modal, .item-reward-modal { width: calc(100vw - 20px); max-height: calc(100dvh - 24px); padding: 16px; }
+  .trade-flow-summary, .trade-confirm-panel, .node-choice-grid { grid-template-columns: 1fr; }
+  .node-actions { position: sticky; bottom: 0; z-index: 2; justify-content: stretch; margin-inline: -6px; padding: 10px 6px 2px; background: linear-gradient(180deg, transparent, rgba(7,23,44,.96) 28%); }
+  .node-actions .btn { flex: 1 1 150px; min-height: 46px; }
+  .trade-flow-summary > div, .trade-confirm-panel > div { padding: 10px 12px; }
+  .random-event-reveal { padding: 18px 12px; }
+  .random-event-reveal span { width: 56px; height: 56px; }
+  .item-reward-grid .item-choice-card { min-height: 136px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .random-event-reveal, .node-actions .btn { transition: none; }
+}
+
+
 
 .player-detail-modal {
   position: relative;
