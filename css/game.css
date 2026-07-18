@@ -1612,6 +1612,7 @@ body { background: var(--gradient-app); }
 @keyframes routeNodePulse { 50% { transform: scale(1.08); box-shadow: 0 10px 24px rgba(0,0,0,.38), 0 0 0 10px rgba(255,211,79,.16), 0 0 28px rgba(255,211,79,.42); } }
 @keyframes routeDash { to { stroke-dashoffset: -18; } }
 @keyframes bossGlow { 50% { box-shadow: 0 0 0 11px rgba(255,211,79,.12), 0 0 54px rgba(255,91,98,.58), 0 18px 36px rgba(0,0,0,.45); } }
+
 @media (min-width: 1200px) { .route-content { grid-template-columns: minmax(0, 1fr) 270px; align-items: start; } .route-hero { grid-column: 2; grid-template-columns: 1fr; } .map-wrap { grid-column: 1; grid-row: 1; } }
 @media (max-width: 780px) { .route-screen { padding-bottom: calc(122px + env(safe-area-inset-bottom)); } .route-content { gap: 12px; } .route-hero { grid-template-columns: 1fr; gap: 12px; padding: 15px; border-radius: 22px; } .route-hero h2 { margin-bottom: 5px; font-size: clamp(1.65rem, 8vw, 2.2rem); } .route-target-card { padding: 14px; border-radius: 18px; } .route-squad-action { display: none; } .map-wrap { overflow-x: hidden; overscroll-behavior-x: none; touch-action: pan-y; padding: 8px; max-width: 100%; border-radius: 24px; } .route-map { min-width: 0; width: 100%; height: min(940px, 242vw); border-radius: 20px; } .map-node { width: clamp(68px, 18vw, 78px); } .node-icon { width: clamp(48px, 13vw, 56px); height: clamp(48px, 13vw, 56px); font-size: 1rem; } .map-node.boss-node { width: clamp(86px, 24vw, 104px); } .map-node.boss-node .node-icon { width: clamp(62px, 17vw, 72px); height: clamp(62px, 17vw, 72px); border-radius: 22px; } .node-label { font-size: clamp(.56rem, 2.25vw, .66rem); } .node-state { font-size: .48rem; } }
 @media (prefers-reduced-motion: reduce) { .map-lines line.available, .map-node.reachable .node-icon, .map-node.boss-node .node-icon { animation: none !important; } }
@@ -1773,6 +1774,16 @@ body { background: var(--gradient-app); }
   .album-roster-title { gap: 10px; }
   .album-team-logo--header { width: 54px; height: 54px; }
 }
+
+@media (min-width: 1024px) {
+  .album-collection-grid { grid-template-columns: repeat(auto-fit, minmax(min(100%, 700px), 700px)); }
+  .album-collection-card { grid-template-columns: 36% minmax(0, 64%); align-items: stretch; min-height: 320px; }
+  .album-collection-cover { display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 100%; aspect-ratio: auto; padding: 28px; }
+  .album-collection-cover::after { background: linear-gradient(90deg, rgba(5,12,28,0), rgba(5,12,28,.18)); }
+  .album-collection-cover img { position: relative; z-index: 1; width: auto; height: auto; max-width: 68%; max-height: 68%; object-fit: contain; }
+  .album-collection-content { min-width: 0; padding: 30px 34px; border-left: 1px solid rgba(255,255,255,.08); background: rgba(18,48,93,.56); }
+}
+
 @media (min-width: 1200px) {
   .album-player-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
   .album-screen { max-width: 1540px; margin: 0 auto; }
