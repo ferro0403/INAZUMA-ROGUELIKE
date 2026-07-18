@@ -2564,6 +2564,33 @@
     </div>`;
   }
 
+
+  function fiveMatchStatAverage(players, statNames) {
+    const list = (players || []).filter(Boolean);
+    if (!list.length) return "-";
+    const totals = list.map((player) => {
+      const stats = player.finalStats || player.stats || {};
+      const values = statNames.map((name) => Number(stats[name] ?? 0)).filter((value) => Number.isFinite(value));
+      return values.length ? values.reduce((sum, value) => sum + value, 0) / values.length : 0;
+    });
+    return Math.round(totals.reduce((sum, value) => sum + value, 0) / totals.length);
+  }
+
+  function fiveMatchComparisonMarkup(userPlayers, opponentPlayers) {
+    const rows = [
+      ["Attacco", ["attack"], ["attack"]],
+      ["Controllo", ["control"], ["control"]],
+      ["Difesa", ["defense", "grit"], ["defense", "grit"]],
+      ["Velocità", ["speed"], ["speed"]],
+      ["Portiere", ["save"], ["save"]],
+    ];
+    return `<div class="five-match-traits" aria-label="Confronto sintetico valori reali">${rows.map(([label, userStats, opponentStats]) => {
+      const userValue = fiveMatchStatAverage(userPlayers, userStats);
+      const opponentValue = fiveMatchStatAverage(opponentPlayers, opponentStats);
+      return `<div class="five-match-trait"><span>${escapeHtml(label)}</span><strong>${escapeHtml(userValue)}</strong><small>${escapeHtml(opponentValue)}</small></div>`;
+    }).join("")}</div>`;
+  }
+
   function persistMatchState() {
     if (!ui.match) return;
     ui.match.state = ui.bossMatchState;
@@ -2588,12 +2615,17 @@
       const userName = identity.name || "La tua squadra";
       const opponentName = "Svincolati";
       const simPreview = ensureMatchPreview(match);
+      const userFivePlayers = Object.values(userPlayersBySlot).filter(Boolean);
+      const opponentFivePlayers = Object.values(opponentPlayersBySlot).filter(Boolean);
+      const userAverageOverall = simPreview.userStrength?.averageOverall ? Math.round(simPreview.userStrength.averageOverall) : bossMatchAverage(userFivePlayers) || "-";
+      const opponentAverageOverall = simPreview.opponentStrength?.averageOverall ? Math.round(simPreview.opponentStrength.averageOverall) : bossMatchAverage(opponentFivePlayers) || "-";
       const simError = !simPreview.valid ? simPreview.message : "";
       ui.bossMatchLog = visibleTimeline(match);
       const activeSide = ui.fiveMatchTab === "opponent" ? "opponent" : "user";
       const resolved = ui.bossMatchState.startsWith("completed");
       const simulating = ui.bossMatchState === "simulating";
       const score = simulationScoreArray(match, resolved);
+      const scoreLabel = `${userName} ${score[0]} - ${score[1]} ${opponentName}`;
       app.innerHTML = `
         <main class="screen five-match-screen" data-match-state="${escapeHtml(ui.bossMatchState)}">
           ${topbar("Partita 5v5")}
@@ -2602,9 +2634,9 @@
               <button type="button" class="btn btn-back five-match-header-back" data-nav="map" aria-label="Torna alla mappa">← <span class="five-match-back-full">Torna al percorso</span><span class="five-match-back-short">Percorso</span></button>
               <div class="five-match-header-main"><p class="eyebrow five-match-run-meta">Run Lv ${escapeHtml(run.teamLevel)} · ${hearts()}</p><h2>Partita 5v5</h2><span class="match-state-badge">${resolved ? "Completata" : simulating ? "In corso" : "Preparazione"}</span></div>
               <div class="five-match-vs">
-                <div class="five-match-team"><span class="five-match-logo">⚡</span><strong>${escapeHtml(userName)}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(simPreview.userStrength?.averageOverall ? Math.round(simPreview.userStrength.averageOverall) : bossMatchAverage(Object.values(userPlayersBySlot).filter(Boolean)) || "-")} · Forza ${escapeHtml(simPreview.userStrength?.final ?? "-")}</small></div>
+                <div class="five-match-team"><span class="five-match-logo">⚡</span><strong>${escapeHtml(userName)}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(userAverageOverall)} · Forza ${escapeHtml(simPreview.userStrength?.final ?? "-")}</small></div>
                 <span class="five-match-vs-badge">VS</span>
-                <div class="five-match-team"><span class="five-match-logo">⚽</span><strong>${opponentName}</strong><small>${escapeHtml(match.opponentFormation)} · OVR ${escapeHtml(simPreview.opponentStrength?.averageOverall ? Math.round(simPreview.opponentStrength.averageOverall) : "-")} · Forza ${escapeHtml(simPreview.opponentStrength?.final ?? "-")}</small></div>
+                <div class="five-match-team"><span class="five-match-logo">⚽</span><strong>${opponentName}</strong><small>${escapeHtml(match.opponentFormation)} · OVR ${escapeHtml(opponentAverageOverall)} · Forza ${escapeHtml(simPreview.opponentStrength?.final ?? "-")}</small></div>
               </div>
             </section>
             <section class="panel five-match-pitch-panel">
@@ -2621,17 +2653,18 @@
               </div>
             </section>
             <section class="five-match-summary" aria-label="Riepilogo partita 5v5">
-              <div><span>La tua forza</span><strong>${escapeHtml(simPreview.userStrength?.final ?? "-")}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(simPreview.userStrength?.averageOverall ? Math.round(simPreview.userStrength.averageOverall) : bossMatchAverage(Object.values(userPlayersBySlot).filter(Boolean)) || "-")}</small></div>
+              <div><span>La tua forza</span><strong>${escapeHtml(simPreview.userStrength?.final ?? "-")}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(userAverageOverall)}</small></div>
               <div class="five-match-probability"><span>Probabilità vittoria</span><strong>${escapeHtml(simPreview.probabilities ? Math.round(simPreview.probabilities.user * 100) : "-")}%</strong><small>Dato usato dalla simulazione</small></div>
-              <div><span>Forza Svincolati</span><strong>${escapeHtml(simPreview.opponentStrength?.final ?? "-")}</strong><small>${escapeHtml(match.opponentFormation)} · OVR ${escapeHtml(simPreview.opponentStrength?.averageOverall ? Math.round(simPreview.opponentStrength.averageOverall) : "-")}</small></div>
+              <div><span>Forza Svincolati</span><strong>${escapeHtml(simPreview.opponentStrength?.final ?? "-")}</strong><small>${escapeHtml(match.opponentFormation)} · OVR ${escapeHtml(opponentAverageOverall)}</small></div>
+              ${fiveMatchComparisonMarkup(userFivePlayers, opponentFivePlayers)}
             </section>
             ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
             <div class="five-match-bottom-grid">
-              <section class="panel boss-match-log-panel five-match-log-panel" id="five-match-log-panel"><div class="panel-title-row"><div><p class="eyebrow">30 minuti · 8-10 eventi</p><h3>Cronaca</h3></div><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita">${bossMatchTimeline()}</ol></section>
-              <section class="panel boss-match-result-panel five-match-result-panel" id="five-match-result-panel"><p class="eyebrow">Esito partita</p><h3>Risultato</h3><div class="boss-match-score"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(userName)}</span><span>${opponentName}</span></div><div class="result-badges"><span>${resolved && ui.bossMatchState.endsWith("victory") ? "+0,5 livello" : "Vite " + run.lives}</span><span>${resolved ? "Nodo di ritorno salvato" : "Snapshot pronta"}</span></div></section>
+              <section class="panel boss-match-log-panel five-match-log-panel" id="five-match-log-panel"><div class="panel-title-row"><div><p class="eyebrow">30 minuti · 8-10 eventi</p><h3>Cronaca</h3></div><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${bossMatchTimeline()}</ol></section>
+              <section class="panel boss-match-result-panel five-match-result-panel" id="five-match-result-panel"><p class="eyebrow">Esito partita</p><h3>Risultato</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(userName)}</span><span>${opponentName}</span></div><div class="result-badges"><span>${resolved && ui.bossMatchState.endsWith("victory") ? "+0,5 livello" : "Vite " + run.lives}</span><span>${resolved ? "Nodo di ritorno salvato" : "Snapshot pronta"}</span></div></section>
             </div>
           </div>
-          <section class="panel five-match-controls five-v-five-mobile-actions" aria-label="Azioni partita 5v5"><button type="button" class="btn btn-yellow btn-primary-action" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn btn-secondary" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow btn-primary-action" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Continua</button><div class="button-row"><button type="button" class="btn btn-secondary" id="edit-five-team" ${resolved ? "disabled" : ""}>Modifica squadra</button>${TEST_MATCH_CONTROLS_ENABLED ? `<div class="match-test-tools"><span>Strumenti di test</span><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div>` : ""}<button type="button" class="btn btn-back" data-nav="map">← Torna al percorso</button></div></section>
+          <section class="panel five-match-controls five-v-five-mobile-actions" aria-label="Azioni partita 5v5"><button type="button" class="btn btn-yellow btn-primary-action" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn btn-secondary" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow btn-primary-action" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Torna alla mappa</button><div class="button-row"><button type="button" class="btn btn-secondary" id="edit-five-team" ${resolved ? "disabled" : ""}>Modifica squadra</button>${TEST_MATCH_CONTROLS_ENABLED ? `<div class="match-test-tools"><span>Strumenti di test</span><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div>` : ""}<button type="button" class="btn btn-back" data-nav="map">← Torna al percorso</button></div></section>
         </main>`;
       resetRenderedViewScroll();
       bindBottomNav();
