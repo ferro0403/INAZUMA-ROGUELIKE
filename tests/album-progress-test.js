@@ -1,0 +1,27 @@
+"use strict";
+const assert = require("assert");
+const path = require("path");
+const root = path.resolve(__dirname, "..");
+const storage = new Map();
+global.localStorage = { getItem: (k) => storage.get(k) ?? null, setItem: (k, v) => storage.set(k, v), removeItem: (k) => storage.delete(k) };
+require(path.join(root, "js/album-progress.js"));
+const A = global.AlbumProgress;
+assert.equal(A.STORAGE_KEY, "inazumaRoguelike.albumProgress");
+assert.equal(A.ALBUM_COLLECTIONS.ie1.name, "Inazuma Eleven 1");
+assert.equal(A.unlockAlbumPlayer("ie1", "45", { source: "draft", firstUnlockedAt: "2026-01-01T00:00:00.000Z" }), true);
+assert.equal(A.unlockAlbumPlayer("ie1", "45", { source: "pull" }), false);
+let progress = A.read();
+assert.equal(progress.collections.ie1.unlockedPlayerIds["45"].firstSource, "draft");
+assert.equal(progress.collections.ie1.unlockedPlayerIds["45"].firstUnlockedAt, "2026-01-01T00:00:00.000Z");
+assert.equal(A.unlockAlbumPlayer("future", "45", { source: "future" }), true, "collectionId+playerId must not collide");
+progress = A.read();
+assert(progress.collections.ie1.unlockedPlayerIds["45"]);
+assert(progress.collections.future.unlockedPlayerIds["45"]);
+const saved = storage.get(A.STORAGE_KEY);
+// Simulate new run/game over by touching unrelated run state only: album key must survive.
+global.localStorage.setItem("inazumaRoguelikeSeason1Run_v2", JSON.stringify({ runId: "new", roster: [] }));
+assert.equal(storage.get(A.STORAGE_KEY), saved);
+assert.equal(A.backfillAlbumProgress({ run: { roster: [{ playerId: "100" }], lineup: ["101"], bench: ["102"], fiveVFive: { assignments: { a: "103" } } }, hallTeams: [{ fullRoster: [{ playerId: "200" }], finalStartingEleven: [{ playerId: "201" }], bench: [{ playerId: "202" }], savedFiveVFiveFormation: { assignments: { b: "203" } } }] }), 8);
+assert.equal(A.backfillAlbumProgress({ run: { roster: [{ playerId: "100" }], lineup: ["101"] }, hallTeams: [{ fullRoster: [{ playerId: "200" }] }] }), 0, "backfill is idempotent");
+assert.equal(Object.keys(A.read().collections.ie1.unlockedPlayerIds).length, 9);
+console.log("album-progress-test passed");

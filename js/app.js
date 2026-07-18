@@ -221,6 +221,8 @@
     matchPlaybackTimer: null,
     returnToMatchContext: null,
     inventoryFilter: "all",
+    albumCollectionId: null,
+    albumTeamId: null,
   };
 
   function escapeHtml(value) {
@@ -672,9 +674,10 @@
     return { name: name === "Unaffiliated" ? "Svincolato" : name, logoUrl: player.teamLogoUrl || player.logoUrl || dbTeam?.logoUrl || "", logo: player.teamLogo || player.logo || "" };
   }
 
-  function playerDetailMarkup(player, { playerId = player?.playerId, level = player?.displayLevel ?? 0, database = freeAgentsDb, equipment = null, mode = "current", readOnly = false, team = null, runStats = null, onClose = null, preserveScroll = null } = {}) {
+  function playerDetailMarkup(player, { playerId = player?.playerId, level = player?.displayLevel ?? 0, database = freeAgentsDb, equipment = null, mode = "current", readOnly = false, team = null, runStats = null, onClose = null, preserveScroll = null, albumUnlocked = false } = {}) {
     if (!player) return "";
     const historical = mode === "historical";
+    const albumMode = mode === "album";
     const visualFallback = playerVisualsById.get(String(playerId)) || {};
     const sourceFallback = historical ? sourcePlayer(playerId, player.recruitmentSource) || sourcePlayer(playerId) || {} : {};
     const fullbodyUrl = player.fullbodyUrl || player.frontFullbodyUrl || visualFallback.fullbodyUrl || sourceFallback.fullbodyUrl || player.portraitUrl || sourceFallback.portraitUrl || "";
@@ -698,11 +701,11 @@
       baseStats: player.finalStats || player.stats || {},
     } : (player.stats && player.baseStats ? player : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(Number(level || 0)), database));
     const baseStats = resolved.baseStats || resolved.stats || {};
-    const effectiveStats = historical ? (resolved.stats || {}) : (resolved.baseStats ? resolved.stats : (equipment ? global.RoguelikeRules.applyEquipment(resolved.stats, equipment) : resolved.stats));
+    const effectiveStats = historical ? (resolved.stats || {}) : (albumMode ? (resolved.stats || {}) : (resolved.baseStats ? resolved.stats : (equipment ? global.RoguelikeRules.applyEquipment(resolved.stats, equipment) : resolved.stats)));
     const stats = Object.entries(STAT_LABELS).map(([stat, label]) => {
       const base = Number(baseStats[stat] || 0);
       const effective = Number(effectiveStats?.[stat] || 0);
-      const bonus = historical ? 0 : effective - base;
+      const bonus = (historical || albumMode) ? 0 : effective - base;
       return `<div class="detail-stat player-stat-card">${statIcon(stat)}<span class="detail-stat-label">${label}</span><strong class="detail-stat-value">${effective}</strong>${bonus > 0 ? `<em class="detail-stat-bonus">+${bonus}</em>` : ""}</div>`;
     }).join("");
     const potential = historical ? (resolved.potential ?? "Non disponibile") : (resolved.potential ?? player.finalOverall);
@@ -712,12 +715,12 @@
       <div class="player-detail-layout ${rarityClass(resolved.category)} ${historical ? "player-detail-historical" : ""}">
         <section class="player-detail-visual ${rarityClass(resolved.category)}">${teamBadge}${fullbodyUrl ? `<img class="player-fullbody" src="${escapeHtml(fullbodyUrl)}" alt="${escapeHtml(resolved.name)}" />` : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`}</section>
         <section class="player-detail-content">
-          <p class="eyebrow">${historical ? "Player detail · Squadra campione" : "Player detail"}</p>
+          <p class="eyebrow">${albumMode ? "Player detail · Album" : (historical ? "Player detail · Squadra campione" : "Player detail")}</p>${albumMode ? `<span class="role-chip album-detail-badge">${albumUnlocked ? "SBLOCCATO" : "NON SBLOCCATO"}</span>` : ""}
           <h2 class="player-detail-name">${escapeHtml(resolved.name)}</h2>
           <div class="player-detail-tags"><span class="role-chip">${escapeHtml(resolved.position)}</span><span class="role-chip detail-element-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4 3 7 6 7 10a7 7 0 0 1-14 0c0-4 3-7 7-10Z"/></svg>${escapeHtml(resolved.element || resolved.type || "-")}</span><span class="role-chip">Lv ${escapeHtml(historical ? (player.finalLevel ?? "N/D") : Number(level || 0))}</span></div>
           <div class="overall-comparison"><div><span>Overall attuale</span><strong>${escapeHtml(resolved.overall ?? "N/D")}</strong></div><div><span>Potenziale</span><strong>${escapeHtml(potential)}</strong></div></div>
           <p class="detail-category"><span aria-hidden="true">★</span>${escapeHtml(resolved.category)}</p>
-          <div class="detail-stats">${stats}</div>${equipmentMarkup}${historical ? playerStatsMarkup(team || {}, player, runStats) : ""}${origin}
+          <div class="detail-stats">${stats}</div>${albumMode ? "" : equipmentMarkup}${historical ? playerStatsMarkup(team || {}, player, runStats) : ""}${origin}
         </section>
       </div>`;
   }
@@ -742,6 +745,99 @@
     });
   }
 
+
+  function albumHallTeams() {
+    return (global.HallOfFameStorage?.listSummaries?.() || []).map((summary) => global.HallOfFameStorage.getTeam(summary.hallTeamId)).filter(Boolean);
+  }
+
+  function ensureAlbumBackfill() {
+    return global.AlbumProgress?.backfillAlbumProgress?.({ run, hallTeams: albumHallTeams() }) || 0;
+  }
+
+  function unlockAlbumRecruit(playerId, source) {
+    return global.AlbumProgress?.unlockAlbumPlayer?.(global.AlbumProgress.DEFAULT_COLLECTION_ID, playerId, { source }) || false;
+  }
+
+  function albumCollectionPlayers() {
+    const byId = new Map();
+    (seasonDb?.players || []).forEach((player) => byId.set(String(player.playerId), { ...player, albumDatabase: seasonDb }));
+    (freeAgentsDb?.players || []).forEach((player) => byId.set(String(player.playerId), { ...player, albumDatabase: freeAgentsDb }));
+    return [...byId.values()];
+  }
+
+  function albumCollectionProgress(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
+    ensureAlbumBackfill();
+    const unlocked = global.AlbumProgress.unlockedSet(collectionId);
+    const totalIds = new Set(albumCollectionPlayers().map((player) => String(player.playerId)));
+    return { unlocked: [...totalIds].filter((id) => unlocked.has(id)).length, total: totalIds.size };
+  }
+
+  function albumTeamLogoMarkup(team) {
+    if (team?.logoUrl) return `<img src="${escapeHtml(team.logoUrl)}" alt="${escapeHtml(team.teamName || team.name)}" loading="lazy" decoding="async" />`;
+    return `<span class="album-free-agent-logo" aria-hidden="true">⚽</span>`;
+  }
+
+  function homeAlbumCardMarkup() {
+    const progress = albumCollectionProgress();
+    return `<article class="home-hub-card album-home-card" aria-label="Album">
+      <div class="home-card-kicker"><span>▣</span><strong>ALBUM</strong></div>
+      <h2>Album</h2>
+      <p class="muted">Completa la collezione dei giocatori.</p>
+      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>Inazuma Eleven 1</span><strong>${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)}</strong></div></div>
+      <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="open-album-home">Apri Album</button></div>
+    </article>`;
+  }
+
+  function albumProgressForPlayers(players, collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
+    const unlocked = global.AlbumProgress.unlockedSet(collectionId);
+    const ids = [...new Set((players || []).map((player) => String(player.playerId)))];
+    return { unlocked: ids.filter((id) => unlocked.has(id)).length, total: ids.length };
+  }
+
+  function albumPlayerView(player, database) {
+    const final = global.InazumaProgression.getPlayerAtLevel(player, Number(player.maxLevel || 20), database);
+    return { ...player, overall: player.finalOverall ?? final.overall, finalOverall: player.finalOverall ?? final.overall, category: player.category || final.category, stats: player.finalStats || final.stats, baseStats: player.finalStats || final.stats, displayLevel: Number(player.maxLevel || 20), albumDatabase: database };
+  }
+
+  function renderAlbumCollections() {
+    run = global.RunState.load();
+    ensureRunSchema();
+    ensureAlbumBackfill();
+    app.innerHTML = `<main class="album-screen"><header class="topbar album-topbar"><div><p class="eyebrow">Album</p><h1>Collezioni</h1><p class="muted">Progressi permanenti, separati dalla run attiva.</p></div><button class="btn" id="album-home">Home</button></header><section class="album-collection-grid">${Object.values(global.AlbumProgress.ALBUM_COLLECTIONS).map((collection) => { const progress = albumCollectionProgress(collection.id); return `<button type="button" class="panel album-collection-card" data-album-collection="${escapeHtml(collection.id)}"><span class="album-collection-icon">▣</span><strong>${escapeHtml(collection.name)}</strong><span>${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)} giocatori</span></button>`; }).join("")}</section></main>`;
+    resetRenderedViewScroll();
+    document.getElementById("album-home").addEventListener("click", renderHome);
+    document.querySelectorAll("[data-album-collection]").forEach((button) => button.addEventListener("click", () => renderAlbumTeams(button.dataset.albumCollection)));
+  }
+
+  function albumTeamsView() {
+    const teams = (seasonDb?.bossOrder?.length ? seasonDb.bossOrder.map((boss) => seasonTeamsById.get(String(boss.teamId))).filter(Boolean) : (seasonDb?.teams || []));
+    const freeAgentsTeam = { teamId: "__free_agents", teamName: "Svincolati", logoUrl: null, playerIds: (freeAgentsDb?.players || []).map((player) => String(player.playerId)), freeAgents: true };
+    return [...teams, freeAgentsTeam];
+  }
+
+  function renderAlbumTeams(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
+    ui.albumCollectionId = collectionId;
+    const collection = global.AlbumProgress.ALBUM_COLLECTIONS[collectionId];
+    ensureAlbumBackfill();
+    app.innerHTML = `<main class="album-screen"><header class="topbar album-topbar"><div><p class="eyebrow">Album → ${escapeHtml(collection.name)}</p><h1>Squadre</h1></div><button class="btn" id="album-back-collections">Collezioni</button></header><section class="album-team-grid">${albumTeamsView().map((team) => { const players = team.freeAgents ? (freeAgentsDb?.players || []) : (team.playerIds || []).map((id) => seasonPlayersById.get(String(id))).filter(Boolean); const progress = albumProgressForPlayers(players, collectionId); const complete = progress.total > 0 && progress.unlocked === progress.total; return `<button type="button" class="panel album-team-card ${complete ? "album-complete" : ""}" data-album-team="${escapeHtml(team.teamId)}" aria-label="${escapeHtml(team.teamName)} ${progress.unlocked} su ${progress.total}"><span class="album-team-logo">${albumTeamLogoMarkup(team)}</span><strong>${escapeHtml(team.teamName)}</strong><span>${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)}</span>${complete ? `<em>Completato</em>` : ""}</button>`; }).join("")}</section></main>`;
+    resetRenderedViewScroll();
+    document.getElementById("album-back-collections").addEventListener("click", renderAlbumCollections);
+    document.querySelectorAll("[data-album-team]").forEach((button) => button.addEventListener("click", () => renderAlbumRoster(collectionId, button.dataset.albumTeam)));
+  }
+
+  function renderAlbumRoster(collectionId, teamId) {
+    ui.albumCollectionId = collectionId; ui.albumTeamId = teamId;
+    const team = albumTeamsView().find((candidate) => String(candidate.teamId) === String(teamId));
+    if (!team) return renderAlbumTeams(collectionId);
+    const rawPlayers = team.freeAgents ? (freeAgentsDb?.players || []) : (team.playerIds || []).map((id) => seasonPlayersById.get(String(id))).filter(Boolean);
+    const players = rawPlayers.map((player) => albumPlayerView(player, team.freeAgents ? freeAgentsDb : seasonDb));
+    const progress = albumProgressForPlayers(players, collectionId);
+    const unlocked = global.AlbumProgress.unlockedSet(collectionId);
+    app.innerHTML = `<main class="album-screen album-roster-screen"><header class="topbar album-topbar"><div class="album-roster-title"><span class="album-team-logo album-team-logo--header">${albumTeamLogoMarkup(team)}</span><div><p class="eyebrow">Album → Inazuma Eleven 1</p><h1>${escapeHtml(team.teamName)}</h1><p class="muted">${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)} giocatori sbloccati</p></div></div><button class="btn" id="album-back-teams">Squadre</button></header><section class="album-player-grid" data-album-roster>${players.map((player) => { const isUnlocked = unlocked.has(String(player.playerId)); return `<div class="album-player-entry ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${playerCard(player, { button: true, level: player.maxLevel || 20, database: player.albumDatabase }).replace('data-player-id=', 'data-album-player=')}<span class="album-lock-overlay"><span aria-hidden="true">🔒</span>${isUnlocked ? "Sbloccato" : "Non sbloccato"}</span></div>`; }).join("")}</section></main>`;
+    resetRenderedViewScroll();
+    document.getElementById("album-back-teams").addEventListener("click", () => renderAlbumTeams(collectionId));
+    document.querySelector("[data-album-roster]").addEventListener("click", (event) => { const button = event.target.closest("[data-album-player]"); if (!button) return; const player = players.find((candidate) => String(candidate.playerId) === String(button.dataset.albumPlayer)); if (!player) return; const isUnlocked = unlocked.has(String(player.playerId)); showPlayerDetailsFor(player, { mode: "album", readOnly: true, playerId: player.playerId, level: player.maxLevel || 20, database: player.albumDatabase, equipment: null, preserveScroll: scrollSnapshot(), albumUnlocked: isUnlocked }); });
+  }
 
   function inazumaLogoMarkup(className = "") {
     return `<span class="inazuma-logo ${className}" aria-label="Logo Inazuma" role="img">⚡</span>`;
@@ -846,6 +942,7 @@
         <section class="home-choice-grid" aria-label="Hub principale">
           ${homeRunCardMarkup(run)}
           ${homeHallOfFameMarkup()}
+          ${homeAlbumCardMarkup()}
         </section>
       </main>`;
     resetRenderedViewScroll();
@@ -854,6 +951,7 @@
     document.getElementById("continue-run")?.addEventListener("click", resumeRun);
     document.getElementById("manage-team-home")?.addEventListener("click", () => { if (!run) return; run.phase = "squad"; global.RunState.save(run); renderSquad(); });
     document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
+    document.getElementById("open-album-home")?.addEventListener("click", renderAlbumCollections);
     document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-hall-home-list")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-latest-hall-home")?.addEventListener("click", (event) => renderHallOfFameDetail(event.currentTarget.dataset.latestHall));
@@ -1033,6 +1131,7 @@
             entry.recruitedAtLevel = entry.recruitedAtLevel ?? entry.level ?? 0;
             entry.recruitedOverall = entry.recruitedOverall ?? source?.finalOverall ?? null;
             global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player: source || entry, playerId: entry.playerId, source: "initial_draft", level: entry.level || 0, overall: entry.recruitedOverall, actionId: `${run.runId}:initial_draft:${entry.playerId}` });
+            unlockAlbumRecruit(entry.playerId, "initial_draft");
           });
         }
         global.RunState.save(run);
@@ -1622,6 +1721,7 @@
     const rosterIndex = run.roster.findIndex((entry) => String(entry.playerId) === outgoingId);
     if (outgoingEntry.equippedItem) run.inventory.push(outgoingEntry.equippedItem);
     run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], intensiveTrainingMigrated: true };
+    unlockAlbumRecruit(incomingId, "trade");
     run.lineup = run.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id));
     run.bench = run.bench.map((id) => String(id) === outgoingId ? incomingId : String(id));
     global.FiveVFive.removeUnavailable(run);
@@ -2008,6 +2108,7 @@
       run.roster.push({ playerId: String(player.playerId), source, level, recruitedAtLevel: level, recruitedOverall: player.overall ?? player.finalOverall ?? null, firstJoinedAt: new Date().toISOString(), recruitmentSource: options.recruitmentSource || source, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], intensiveTrainingMigrated: true });
       run.bench.push(String(player.playerId));
       global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: player.playerId, source: options.recruitmentSource || source, level, overall: player.overall ?? player.finalOverall, actionId: options.actionId || `${run.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}` });
+      unlockAlbumRecruit(player.playerId, options.recruitmentSource || source);
       global.RunState.save(run);
       closeModal();
       return done(true);
@@ -2033,6 +2134,7 @@
           run.roster.push({ playerId: String(player.playerId), source, level, recruitedAtLevel: level, recruitedOverall: player.overall ?? player.finalOverall ?? null, firstJoinedAt: new Date().toISOString(), recruitmentSource: options.recruitmentSource || source, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], intensiveTrainingMigrated: true });
           run.bench.push(String(player.playerId));
           global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: player.playerId, source: options.recruitmentSource || source, level, overall: player.overall ?? player.finalOverall, actionId: options.actionId || `${run.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}` });
+          unlockAlbumRecruit(player.playerId, options.recruitmentSource || source);
           global.FiveVFive.removeUnavailable(run);
           global.RunState.save(run);
           closeModal();
