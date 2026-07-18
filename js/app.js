@@ -1456,12 +1456,12 @@
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}`);
     const candidates = weightedItemCandidates(random, 3);
     openModal(`
-      <div class="modal-head event-modal-head"><button type="button" class="btn btn-back" id="back-item-map">← Torna alla mappa</button><div><p class="eyebrow">Nodo oggetto · Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p><h2>Scegli un oggetto</h2><p class="muted">Guarda icona, categoria ed effetto prima di confermare.</p></div></div>
-      <div class="item-grid">
+      <div class="modal-head event-modal-head item-reward-head"><button type="button" class="btn btn-back" id="back-item-map">← Torna alla mappa</button><div><p class="eyebrow">Ricompensa oggetto · Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p><h2>Scegli un oggetto</h2><p class="muted">Guarda icona, categoria ed effetto prima di confermare. L’inventario verrà aggiornato dopo la scelta.</p></div></div>
+      <div class="node-choice-grid item-reward-grid" aria-label="Oggetti disponibili">
         ${candidates.map((item) => itemChoiceCard(item)).join("")}
       </div>
-      <div class="button-row" style="margin-top:18px"><button type="button" class="btn btn-ghost" id="skip-item">Rinuncia</button></div>`,
-      { closeable: false }
+      <div class="node-actions"><button type="button" class="btn btn-ghost" id="skip-item">Rinuncia</button></div>`,
+      { closeable: false, className: "item-reward-modal" }
     );
     modalRoot.querySelectorAll("[data-item-choice]").forEach((button) => {
       button.addEventListener("click", () => {
@@ -1478,11 +1478,10 @@
     global.RunState.save(run);
     const meta = global.SEASON1_CONFIG.nodeLabels[revealedType];
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">Punto interrogativo</p><h2>${escapeHtml(meta.label)}</h2></div></div>
-      <div class="hidden-reveal" style="--reveal-color:${meta.color}"><span>${meta.icon}</span></div>
-      <p class="muted">Il contenuto è stato rivelato e non cambierà ricaricando la pagina.</p>
-      <button type="button" class="btn btn-primary" id="open-hidden-event">Continua</button>`,
-      { closeable: false }
+      <div class="modal-head random-event-head"><div><p class="eyebrow">Evento casuale</p><h2>${escapeHtml(meta.label)}</h2><p class="muted">Il contenuto è stato rivelato e non cambierà ricaricando la pagina.</p></div></div>
+      <div class="random-event-reveal" style="--reveal-color:${meta.color}"><span aria-hidden="true">${meta.icon}</span><strong>${escapeHtml(meta.label)}</strong><small>Pronto da aprire</small></div>
+      <div class="node-actions"><button type="button" class="btn btn-primary btn-primary-action" id="open-hidden-event">Continua</button></div>`,
+      { closeable: false, className: "random-event-modal" }
     );
     document.getElementById("open-hidden-event").addEventListener("click", () => {
       closeModal();
@@ -1515,7 +1514,8 @@
     ui.tradeSelectedPlayerId = ui.tradeSelectedPlayerId && rosterEntry(ui.tradeSelectedPlayerId) ? ui.tradeSelectedPlayerId : null;
     const selected = ui.tradeSelectedPlayerId ? resolvedRosterPlayer(ui.tradeSelectedPlayerId) : null;
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">Scambio</p><h2>Scegli chi scambiare</h2><p class="muted">Seleziona un titolare dal campo o una riserva. Riceverai un giocatore casuale dello stesso ruolo, con finalOverall uguale o superiore e un livello in più.</p></div></div>
+      <div class="modal-head trade-node-head"><div><p class="eyebrow">Scambio</p><h2>Scegli chi scambiare</h2><p class="muted">Offri un titolare o una riserva: riceverai un giocatore casuale dello stesso ruolo, con finalOverall uguale o superiore e un livello in più.</p></div></div>
+      <div class="trade-flow-summary" aria-label="Riepilogo scambio"><div><span>Offri</span><strong>1 giocatore della rosa</strong></div><div><span>Ricevi</span><strong>Stesso ruolo · OVR ≥ · Lv +1</strong></div></div>
       <div class="trade-squad-layout">
         ${squadPitchMarkup({ mode: "trade", selectedId: ui.tradeSelectedPlayerId })}
         <aside class="panel trade-bench-panel">
@@ -1526,9 +1526,9 @@
       <div class="trade-selection-summary ${selected ? "selected" : ""}">
         ${selected ? `<strong>${escapeHtml(selected.name)}</strong><span>${selected.position} · OVR ${selected.overall} · Lv ${selected.displayLevel}</span>` : '<strong>Nessun giocatore selezionato</strong><span>Scegli una card per procedere allo scambio.</span>'}
       </div>
-      <div class="button-row" style="margin-top:18px">
-        <button type="button" class="btn btn-yellow" id="continue-trade" ${selected ? "" : "disabled"}>Procedi allo scambio</button>
-        <button type="button" class="btn btn-ghost" id="skip-trade">Rinuncia allo scambio</button>
+      <div class="node-actions trade-actions">
+        <button type="button" class="btn btn-yellow btn-primary-action" id="continue-trade" ${selected ? "" : "disabled"}>Procedi allo scambio</button>
+        <button type="button" class="btn btn-ghost" id="skip-trade">Rinuncia e torna alla mappa</button>
       </div>`,
       { closeable: false, className: "trade-modal", preserveScroll: scrollSnapshot() }
     );
@@ -1565,11 +1565,11 @@
     const incoming = candidates[Math.floor(random() * candidates.length)];
     const nextLevel = Math.min(20, Number(outgoingEntry.level || 0) + 1);
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">Conferma scambio</p><h2>${escapeHtml(outgoingPlayer.name)}</h2></div></div>
-      <p>Riceverai un <strong>${outgoingPlayer.position}</strong> casuale con finalOverall almeno <strong>${outgoingPlayer.finalOverall}</strong>, al livello <strong>${nextLevel}</strong>.</p>
-      ${outgoingEntry.equippedItem ? `<p class="muted">${escapeHtml(outgoingEntry.equippedItem.name)} tornerà nell'inventario.</p>` : ""}
-      <div class="button-row"><button type="button" class="btn btn-danger" id="confirm-trade">Conferma</button><button type="button" class="btn" id="back-trade">Torna indietro</button></div>`,
-      { closeable: false }
+      <div class="modal-head trade-node-head"><div><p class="eyebrow">Conferma scambio</p><h2>${escapeHtml(outgoingPlayer.name)}</h2></div></div>
+      <div class="trade-confirm-panel"><div><span>Offri</span><strong>${escapeHtml(outgoingPlayer.name)}</strong><small>${outgoingPlayer.position} · OVR ${outgoingPlayer.finalOverall}</small></div><div><span>Ricevi</span><strong>${outgoingPlayer.position} casuale</strong><small>finalOverall almeno ${outgoingPlayer.finalOverall} · Lv ${nextLevel}</small></div></div>
+      ${outgoingEntry.equippedItem ? `<p class="muted trade-note">${escapeHtml(outgoingEntry.equippedItem.name)} tornerà nell'inventario.</p>` : ""}
+      <div class="node-actions"><button type="button" class="btn btn-danger" id="confirm-trade">Conferma scambio</button><button type="button" class="btn btn-ghost" id="back-trade">Annulla</button></div>`,
+      { closeable: false, className: "trade-confirm-modal" }
     );
     document.getElementById("back-trade").addEventListener("click", () => resolveTradeNode(node));
     document.getElementById("confirm-trade").addEventListener("click", () => {
@@ -1598,10 +1598,10 @@
   function showTradeResult(node, incoming, nextLevel) {
     const database = incoming.source === "season1" ? seasonDb : freeAgentsDb;
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">Scambio completato</p><h2>È arrivato ${escapeHtml(incoming.player.name)}</h2></div></div>
+      <div class="modal-head trade-node-head"><div><p class="eyebrow">Scambio completato</p><h2>È arrivato ${escapeHtml(incoming.player.name)}</h2><p class="muted">Il nuovo giocatore è già nella rosa. Continua per finalizzare il nodo e tornare alla mappa.</p></div></div>
       <div class="trade-result-card mobile-compact-player-list">${playerCard(incoming.player, { level: nextLevel, database })}</div>
-      <div class="button-row"><button type="button" class="btn" id="trade-player-detail">Apri scheda</button><button type="button" class="btn btn-primary" id="finish-trade">Continua</button></div>`,
-      { closeable: false }
+      <div class="node-actions"><button type="button" class="btn btn-secondary" id="trade-player-detail">Apri scheda</button><button type="button" class="btn btn-primary btn-primary-action" id="finish-trade">Continua</button></div>`,
+      { closeable: false, className: "trade-result-modal" }
     );
     document.getElementById("trade-player-detail").addEventListener("click", () => {
       showPlayerDetails(incoming.player.playerId, () => showTradeResult(node, incoming, nextLevel));
