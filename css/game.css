@@ -1803,10 +1803,13 @@ body { background: var(--gradient-app); }
     margin-inline: auto;
   }
 
-  .boss-match-screen,
   .five-match-screen,
   .route-screen {
     background-attachment: fixed;
+  }
+
+  .boss-match-screen {
+    background-attachment: scroll;
   }
 
   .five-match-screen .five-match-field-side--user .five-match-card .five-player-equipment {
@@ -1830,9 +1833,21 @@ body { background: var(--gradient-app); }
     background: transparent;
   }
 
+  .five-match-screen .five-match-field-side--user .five-match-card .five-player-equipment .item-icon img {
+    width: 14px;
+    height: 14px;
+    max-width: 55%;
+    max-height: 55%;
+    object-fit: contain;
+  }
+
   .five-match-screen .five-match-field-side--user .five-match-card .five-player-equipment .item-icon svg {
-    width: 15px;
-    height: 15px;
+    width: 14px;
+    height: 14px;
+  }
+
+  .boss-match-field [data-boss-team][hidden] {
+    display: none;
   }
 
   .boss-match-tabs {
