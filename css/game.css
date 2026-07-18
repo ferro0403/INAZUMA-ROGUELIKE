@@ -1620,3 +1620,30 @@ body { background: var(--gradient-app); }
   .squad-bench-panel { position: static; }
   .squad-bench-list { grid-template-columns: repeat(2, minmax(0, var(--bench-card-size, 86px))); justify-content: center; }
 }
+/* Final 5v5 match polish: in-flow actions, compact score and real stat comparison */
+.five-match-screen { padding-bottom: max(24px, env(safe-area-inset-bottom)); }
+.five-match-pitch-panel { background: linear-gradient(180deg, rgba(10,28,54,.94), rgba(7,23,44,.88)); }
+.five-match-field { min-height: 390px; border-color: rgba(255,255,255,.38); box-shadow: inset 0 0 0 1px rgba(5,7,11,.25), 0 18px 34px rgba(0,0,0,.18); background: radial-gradient(circle at 50% 50%, rgba(255,255,255,.18) 0 2px, transparent 3px 68px, rgba(255,255,255,.24) 69px 71px, transparent 72px), linear-gradient(90deg, transparent calc(50% - 1px), rgba(255,255,255,.55) 50%, transparent calc(50% + 1px)), repeating-linear-gradient(90deg, #115b39 0 12.5%, #176f45 12.5% 25%); }
+.five-match-traits { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.five-match-trait { display: grid; grid-template-columns: 1fr auto auto; align-items: center; gap: 8px; padding: 9px 10px; border: 1px solid rgba(92,130,177,.26); border-radius: 13px; background: rgba(5,15,30,.58); }
+.five-match-trait span { text-align: left; }
+.five-match-trait strong::before { content: "Tu "; color: var(--muted); font-size: .62rem; }
+.five-match-trait small::before { content: "SV "; color: var(--muted); font-size: .62rem; }
+.five-match-trait strong, .five-match-trait small { color: #fff; font-size: .94rem; font-weight: 950; }
+.five-match-scoreline { margin: 8px auto 4px; padding: 9px 12px; border: 1px solid rgba(255,211,79,.45); border-radius: 14px; background: rgba(255,211,79,.10); color: #fff4bd; font-size: clamp(1rem, 2.2vw, 1.35rem); font-weight: 950; text-align: center; }
+.five-match-controls { position: static; z-index: auto; margin: 0 auto 18px; width: min(1120px, calc(100% - 32px)); border-color: rgba(255,211,79,.28); background: rgba(7,23,44,.94); backdrop-filter: none; }
+.five-match-controls .match-test-tools { display: inline-flex; align-items: center; gap: 8px; padding: 5px; border: 1px dashed rgba(255,211,79,.32); border-radius: 12px; }
+.five-match-controls .match-test-tools span { color: var(--muted); font-size: .7rem; font-weight: 900; text-transform: uppercase; }
+.five-match-team-tab:focus-visible, .five-match-card:focus-visible { outline: 3px solid rgba(255,211,79,.6); outline-offset: 3px; }
+@media (max-width: 780px) {
+  .five-match-field { min-height: 392px; }
+  .five-match-field-side--mobile { height: 392px; padding: 13px 6px; }
+  .five-match-traits { grid-template-columns: 1fr; }
+  .five-match-trait { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .five-match-scoreline { font-size: 1rem; }
+  .five-match-controls { width: auto; margin: 0 10px 14px; }
+  .five-match-controls .match-test-tools { display: grid; grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .five-match-card:hover { transform: none; }
+}

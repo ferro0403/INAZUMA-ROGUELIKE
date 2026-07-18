@@ -18,7 +18,7 @@ assert(!appJs.includes('class="panel boss-match-controls five-match-controls"'),
 assert(appJs.includes('five-match-header-back') && appJs.includes('Torna al percorso'), '5v5 match header exposes one compact mobile-safe return-to-map action');
 assert.equal((appJs.match(/aria-label="Torna alla mappa"/g) || []).length, 2, '5v5 markup keeps the existing header return action without adding another duplicate');
 assert(appJs.includes('match-state-badge') && appJs.includes('Preparazione') && appJs.includes('In corso') && appJs.includes('Completata'), '5v5 header shows preparation/in-progress/completed state');
-assert(appJs.includes('class="five-match-summary"') && appJs.includes('Probabilità vittoria') && appJs.includes('Dato usato dalla simulazione'), '5v5 match summary separates strength and simulator probability');
+assert(appJs.includes('class="five-match-summary"') && appJs.includes('Probabilità vittoria') && appJs.includes('Dato usato dalla simulazione') && appJs.includes('fiveMatchComparisonMarkup'), '5v5 match summary separates strength, simulator probability, and real stat comparison');
 assert(appJs.includes('id="five-match-log-panel"') && appJs.includes('id="five-match-result-panel"'), '5v5 chronology and result are separated into addressable panels');
 assert(appJs.includes('Vai al risultato'), '5v5 simulation provides a skip-to-result action');
 assert(appJs.includes('id="back-five-match-head"') && appJs.includes('← Torna alla partita'), '5v5 editor provides a visible return-to-match action');
@@ -29,7 +29,7 @@ assert(!appJs.includes('window.scrollTo(0, 0)'), 'match flow must not force-scro
 
 assert(css.includes('.btn-back') && css.includes('.btn-secondary') && css.includes('.btn-tool'), 'semantic button hierarchy styles are present');
 assert(css.includes('.five-match-summary') && css.includes('.five-match-probability'), '5v5 summary/probability styles are present');
-assert(css.includes('.five-match-controls { position: sticky;'), 'desktop 5v5 primary controls keep their existing sticky layout');
+assert(css.includes('.five-match-controls { position: static;'), '5v5 primary controls stay in normal document flow on every viewport');
 assert(!css.includes('--mobile-five-actions-height'), '5v5 no longer defines fixed-action compensation height');
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-content \{[^}]*padding-bottom:\s*20px/.test(css), 'mobile 5v5 content keeps only normal in-flow ending space');
 assert(!/\.five-match-content \{[^}]*padding-bottom:\s*calc\(var\(--mobile-five-actions-height\)/.test(css), 'mobile 5v5 content no longer compensates a fixed action bar');
@@ -44,3 +44,6 @@ assert(css.includes('.five-match-back-short { display: none; }') && /@media \(ma
 assert(css.includes('.five-roster-card.disabled small::after'), 'incompatible 5v5 candidates explain why they are disabled');
 
 console.log('5v5 UX static test passed.');
+
+assert(appJs.includes('five-match-scoreline') && appJs.includes('aria-live="polite"'), '5v5 score and chronology expose live regions');
+assert(css.includes('.five-match-traits') && css.includes('.five-match-scoreline'), '5v5 real stat comparison and scoreline styles are present');
