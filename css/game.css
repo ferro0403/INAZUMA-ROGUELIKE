@@ -447,13 +447,36 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 }
 @media (max-width: 780px) {
   .trade-modal, .trade-confirm-modal, .trade-result-modal, .random-event-modal, .item-reward-modal { width: calc(100vw - 20px); max-height: calc(100dvh - 24px); padding: 16px; }
+  .trade-modal, .item-reward-modal { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
   .trade-flow-summary, .trade-confirm-panel, .node-choice-grid { grid-template-columns: 1fr; }
-  .node-actions { position: sticky; bottom: 0; z-index: 2; justify-content: stretch; margin-inline: -6px; padding: 10px 6px 2px; background: linear-gradient(180deg, transparent, rgba(7,23,44,.96) 28%); }
+  .node-actions { justify-content: stretch; margin-inline: -6px; padding: 10px 6px 2px; }
+  .trade-modal > .trade-actions, .item-reward-modal > .node-actions {
+    position: fixed;
+    left: 50%;
+    right: auto;
+    bottom: max(10px, env(safe-area-inset-bottom));
+    z-index: 120;
+    width: calc(100vw - 20px);
+    max-width: calc(100vw - 20px);
+    box-sizing: border-box;
+    transform: translateX(-50%);
+    margin: 0;
+    padding: 12px;
+    border: 1px solid rgba(92,130,177,.38);
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(12,31,58,.98), rgba(7,23,44,.98));
+    box-shadow: 0 -12px 30px rgba(0,0,0,.32), 0 0 0 1px rgba(255,255,255,.04) inset;
+    backdrop-filter: blur(12px);
+  }
   .node-actions .btn { flex: 1 1 150px; min-height: 46px; }
   .trade-flow-summary > div, .trade-confirm-panel > div { padding: 10px 12px; }
   .random-event-reveal { padding: 18px 12px; }
   .random-event-reveal span { width: 56px; height: 56px; }
   .item-reward-grid .item-choice-card { min-height: 136px; }
+}
+@media (max-width: 430px) {
+  .trade-modal > .trade-actions { flex-direction: column; }
+  .trade-modal > .trade-actions .btn, .item-reward-modal > .node-actions .btn { width: 100%; flex-basis: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   .random-event-reveal, .node-actions .btn { transition: none; }
