@@ -1722,3 +1722,39 @@ body { background: var(--gradient-app); }
 }
 
 @media (prefers-reduced-motion: reduce) { .boss-match-hero, .boss-match-vs-badge, .match-player-card.boss-match-card { transition: none !important; animation: none !important; } }
+
+/* Album */
+.album-screen { min-height: 100dvh; padding: calc(18px + env(safe-area-inset-top)) clamp(14px, 3vw, 36px) calc(88px + env(safe-area-inset-bottom)); color: var(--text, #f5f8ff); }
+.album-topbar { gap: 16px; align-items: center; }
+.album-collection-grid, .album-team-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-top: 18px; }
+.album-collection-card, .album-team-card { color: inherit; text-align: left; cursor: pointer; border: 1px solid rgba(255,255,255,.14); transition: transform .15s ease, border-color .15s ease; min-height: 154px; }
+.album-collection-card:hover, .album-team-card:hover, .album-collection-card:focus-visible, .album-team-card:focus-visible { transform: translateY(-2px); border-color: rgba(246,200,95,.75); outline: 3px solid rgba(246,200,95,.25); }
+.album-collection-icon { display: grid; place-items: center; width: 52px; height: 52px; border-radius: 18px; background: linear-gradient(135deg, #f6c85f, #ffef9a); color: #10203f; font-weight: 900; box-shadow: 0 12px 24px rgba(0,0,0,.25); }
+.album-team-card { display: grid; gap: 10px; place-items: center; text-align: center; min-height: 188px; }
+.album-team-card em { color: #f6c85f; font-style: normal; font-size: .82rem; font-weight: 800; text-transform: uppercase; }
+.album-team-logo { display: grid; place-items: center; width: 86px; height: 86px; border-radius: 24px; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.12); overflow: hidden; }
+.album-team-logo img { max-width: 82%; max-height: 82%; object-fit: contain; }
+.album-free-agent-logo { font-size: 2.15rem; filter: drop-shadow(0 8px 14px rgba(0,0,0,.35)); }
+.album-roster-title { display: flex; align-items: center; gap: 14px; min-width: 0; }
+.album-team-logo--header { width: 70px; height: 70px; flex: 0 0 auto; }
+.album-player-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 14px; margin-top: 18px; align-items: stretch; }
+.album-player-entry { position: relative; border-radius: 20px; isolation: isolate; }
+.album-player-entry > .player-card { width: 100%; height: 100%; }
+.album-player-entry.is-locked > .player-card { filter: grayscale(.78) saturate(.62); opacity: .82; }
+.album-lock-overlay { position: absolute; inset: 0; z-index: 2; display: flex; align-items: flex-end; justify-content: center; gap: 6px; padding: 10px; border-radius: inherit; background: linear-gradient(180deg, rgba(8,18,38,.18), rgba(8,18,38,.58)); color: #fff; font-weight: 900; font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; pointer-events: none; text-shadow: 0 2px 8px rgba(0,0,0,.55); }
+.album-player-entry.is-unlocked .album-lock-overlay { inset: auto 8px 8px auto; border-radius: 999px; background: rgba(49,196,141,.92); padding: 5px 8px; font-size: .68rem; }
+.album-detail-badge { display: inline-flex; margin-bottom: 10px; background: rgba(246,200,95,.16); color: #f6c85f; border-color: rgba(246,200,95,.35); }
+.album-home-card { background: linear-gradient(180deg, rgba(16,42,83,.96), rgba(7,21,43,.96)); }
+@media (max-width: 520px) {
+  .album-screen { padding-inline: 12px; }
+  .album-collection-grid, .album-team-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .album-collection-card, .album-team-card { min-height: 138px; padding: 12px; }
+  .album-team-logo { width: 62px; height: 62px; border-radius: 18px; }
+  .album-player-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .album-roster-title { gap: 10px; }
+  .album-team-logo--header { width: 54px; height: 54px; }
+}
+@media (min-width: 1200px) {
+  .album-player-grid { grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); }
+  .album-screen { max-width: 1540px; margin: 0 auto; }
+}
