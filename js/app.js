@@ -72,6 +72,33 @@
     }));
   }
 
+  function inventoryOwnershipSummary(run) {
+    const backpack = Array.isArray(run?.inventory) ? run.inventory : [];
+    const equippedEntries = (Array.isArray(run?.roster) ? run.roster : []).filter((entry) => entry?.equippedItem);
+    const seenInstanceIds = new Set();
+    let ownedCount = 0;
+    const countOwnedInstance = (item) => {
+      const instanceId = item?.instanceId;
+      if (instanceId) {
+        const key = String(instanceId);
+        if (seenInstanceIds.has(key)) return;
+        seenInstanceIds.add(key);
+      }
+      ownedCount += 1;
+    };
+
+    backpack.forEach(countOwnedInstance);
+    equippedEntries.forEach((entry) => countOwnedInstance(entry.equippedItem));
+
+    return {
+      backpackCount: backpack.length,
+      equippedCount: equippedEntries.length,
+      ownedCount,
+      equippedPlayerCount: new Set(equippedEntries.map((entry) => String(entry.playerId))).size,
+      consumableCount: backpack.filter((item) => resolveItem(item).kind === "consumable").length,
+    };
+  }
+
   function itemStatLabel(stat) {
     return ({ attack: "Attacco", control: "Controllo", defense: "Difesa", save: "Parata", grit: "Grinta", physical: "Fisico", speed: "Velocità", stamina: "Resistenza" })[stat] || stat || "Effetto";
   }
@@ -96,7 +123,7 @@
     return group.category === filterId;
   }
 
-  global.InventoryHelpers = { inventoryItemIdentity, inventoryItemCategory, groupedInventoryItems, groupedInventoryByCategory, categories: INVENTORY_CATEGORY_DEFINITIONS };
+  global.InventoryHelpers = { inventoryItemIdentity, inventoryItemCategory, groupedInventoryItems, groupedInventoryByCategory, inventoryOwnershipSummary, categories: INVENTORY_CATEGORY_DEFINITIONS };
 
   function itemImageFallbackSvg() {
     return `<svg viewBox="0 0 32 32"><path d="M6 9h20v17H6z"/><path d="m9 23 5-6 4 4 3-3 2 5"/><circle cx="20" cy="14" r="2"/></svg>`;
@@ -3350,8 +3377,7 @@
     const equipped = run.roster
       .filter((entry) => entry.equippedItem)
       .map((entry) => ({ entry, player: sourcePlayer(entry), resolved: resolvedRosterPlayer(entry.playerId), item: resolveItem(entry.equippedItem) }));
-    const totalItems = run.inventory.length;
-    const consumables = run.inventory.filter((item) => resolveItem(item).kind === "consumable").length;
+    const ownershipSummary = inventoryOwnershipSummary(run);
     const shouldKeepScroll = options.keepScroll;
     const previousScroll = shouldKeepScroll ? scrollSnapshot() : null;
     app.innerHTML = `
@@ -3360,15 +3386,15 @@
         <div class="content inventory-content">
           <header class="inventory-hero">
             <div>
-              <p class="eyebrow">Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p>
+              <p class="eyebrow">Nello zaino ${ownershipSummary.backpackCount}/${global.SEASON1_CONFIG.maxInventory}</p>
               <h2>Oggetti</h2>
               <p class="muted small">${activeFilter?.id !== "all" ? `Filtro: ${escapeHtml(activeFilter.label)}` : "Tutto ciò che hai raccolto nella run"}</p>
             </div>
             <div class="inventory-summary" aria-label="Riepilogo inventario">
-              <span><strong>${totalItems}</strong><small>posseduti</small></span>
-              <span><strong>${equipped.length}</strong><small>equipaggiati</small></span>
-              <span><strong>${new Set(equipped.map(({ entry }) => entry.playerId)).size}</strong><small>giocatori</small></span>
-              <span><strong>${consumables}</strong><small>consumabili</small></span>
+              <span><strong>${ownershipSummary.ownedCount}</strong><small>posseduti</small></span>
+              <span><strong>${ownershipSummary.equippedCount}</strong><small>equipaggiati</small></span>
+              <span><strong>${ownershipSummary.equippedPlayerCount}</strong><small>giocatori</small></span>
+              <span><strong>${ownershipSummary.consumableCount}</strong><small>consumabili</small></span>
             </div>
           </header>
           ${filterDefs.length > 1 ? `<nav class="inventory-filters" aria-label="Filtri inventario">${filterDefs.map((filter) => `<button type="button" class="inventory-filter ${filter.id === ui.inventoryFilter ? "active" : ""}" data-inventory-filter="${escapeHtml(filter.id)}"><span>${escapeHtml(filter.label)}</span><small>${filter.count}</small></button>`).join("")}</nav>` : ""}
