@@ -2700,6 +2700,9 @@
     const bossProbability = simPreview.probabilities ? Math.round(simPreview.probabilities.opponent * 100) : null;
     ui.bossMatchLog = visibleTimeline(ui.match);
     const score = simulationScoreArray(ui.match, resolved);
+    const scoreLabel = `${meta.user.name} ${score[0]} - ${score[1]} ${meta.boss.name}`;
+    const bossStatusLabel = resolved ? (ui.bossMatchState.endsWith("victory") ? "Vittoria" : "Sconfitta") : simulating ? "In corso" : "Preparazione";
+    const outcomeClass = resolved ? (ui.bossMatchState.endsWith("victory") ? "boss-match-result-panel--victory" : "boss-match-result-panel--defeat") : "";
 
     app.innerHTML = `
       <main class="screen boss-match-screen" data-match-state="${ui.bossMatchState}">
@@ -2707,16 +2710,20 @@
         <div class="content boss-match-content">
           <section class="boss-match-hero panel">
             <button type="button" class="btn btn-back" data-nav="map" aria-label="Torna alla mappa">← Torna alla mappa</button>
-            <div><p class="eyebrow">Boss ${run.bossIndex + 1} di ${seasonDb.bossOrder.length}</p><h2>Sfida Boss 11v11</h2></div>
-            <div class="boss-match-vs">
+            <div class="boss-match-heading">
+              <p class="eyebrow"><span>BOSS</span> · Boss ${run.bossIndex + 1} di ${seasonDb.bossOrder.length} · ${escapeHtml(meta.boss.name)}</p>
+              <h2>Sfida Boss 11v11</h2>
+              <div class="boss-match-header-stats" aria-label="Dati sfida boss"><span>Boss Lv ${escapeHtml(meta.boss.level)}</span><span>${escapeHtml(meta.user.name)}</span>${userAverage ? `<span>OVR ${escapeHtml(userAverage)}</span>` : ""}<span>${hearts()}</span></div>
+            </div>
+            <div class="boss-match-vs" aria-label="Presentazione squadre">
               <div class="boss-match-team"><span class="boss-match-logo">${meta.user.logoUrl ? `<img src="${escapeHtml(meta.user.logoUrl)}" alt="${escapeHtml(meta.user.name)}" />` : "⚡"}</span><strong>${escapeHtml(meta.user.name)}</strong><small>${escapeHtml(meta.user.formation)} · Lv ${escapeHtml(meta.user.level)}${userAverage ? ` · OVR ${userAverage}` : ""}</small></div>
               <span class="boss-match-vs-badge">VS</span>
-              <div class="boss-match-team"><span class="boss-match-logo">${meta.boss.logoUrl ? `<img src="${escapeHtml(meta.boss.logoUrl)}" alt="${escapeHtml(meta.boss.name)}" />` : "⚽"}</span><strong>${escapeHtml(meta.boss.name)}</strong><small>${escapeHtml(meta.boss.formation)} · Boss Lv ${escapeHtml(meta.boss.level)}${bossAverage ? ` · OVR ${bossAverage}` : ""}</small></div>
+              <div class="boss-match-team boss-match-team--boss"><span class="boss-match-logo">${meta.boss.logoUrl ? `<img src="${escapeHtml(meta.boss.logoUrl)}" alt="${escapeHtml(meta.boss.name)}" />` : "⚽"}</span><strong>${escapeHtml(meta.boss.name)}</strong><small>${escapeHtml(meta.boss.formation)} · Boss Lv ${escapeHtml(meta.boss.level)}${bossAverage ? ` · OVR ${bossAverage}` : ""}</small><em>${escapeHtml(bossStatusLabel)}</em></div>
             </div>
           </section>
 
           <div class="boss-match-main-grid">
-            <section class="panel boss-match-pitch-panel">
+            <section class="panel boss-match-pitch-panel" aria-label="Formazioni 11v11">
               <div class="boss-match-tabs" role="tablist" aria-label="Squadra visualizzata">
                 <button type="button" class="boss-match-team-tab ${activeSide === "user" ? "active" : ""}" role="tab" aria-selected="${activeSide === "user"}" data-boss-tab="user">La tua squadra</button>
                 <button type="button" class="boss-match-team-tab ${activeSide === "boss" ? "active" : ""}" role="tab" aria-selected="${activeSide === "boss"}" data-boss-tab="boss">Boss</button>
@@ -2730,7 +2737,7 @@
               </div>
             </section>
 
-            <aside class="panel boss-match-boss-panel">
+            <aside class="panel boss-match-boss-panel" aria-label="Hero Boss">
               <img src="${escapeHtml(meta.boss.logoUrl || playerPortraitUrl(null))}" alt="${escapeHtml(meta.boss.name)}" />
               <h3>${escapeHtml(meta.boss.name)}</h3>
               <p>Livello boss <strong>${escapeHtml(meta.boss.level)}</strong></p>
@@ -2741,15 +2748,18 @@
             </aside>
           </div>
 
-          <div class="boss-tactics-grid">
-            ${tacticPanelMarkup(run.formationId, { className: "tactic-panel--user", compact: true, strength: simPreview.userStrength, probability: userProbability })}
-            ${tacticPanelMarkup(boss.bossFormation, { className: "tactic-panel--boss", compact: true, strength: simPreview.opponentStrength, probability: bossProbability })}
-          </div>
-          <div class="match-sim-summary">Forza: ${escapeHtml(simPreview.userStrength?.final ?? "-")} contro ${escapeHtml(simPreview.opponentStrength?.final ?? "-")} · Probabilità: ${escapeHtml(userProbability ?? "-")}% contro ${escapeHtml(bossProbability ?? "-")}%</div>
+          <section class="boss-tactics-showdown" aria-label="Confronto tattico">
+            <div class="boss-tactics-grid">
+              ${tacticPanelMarkup(run.formationId, { className: "tactic-panel--user", compact: true, strength: simPreview.userStrength, probability: userProbability })}
+              ${tacticPanelMarkup(boss.bossFormation, { className: "tactic-panel--boss", compact: true, strength: simPreview.opponentStrength, probability: bossProbability })}
+            </div>
+            ${fiveMatchComparisonMarkup(userPlayers, bossPlayers)}
+            <div class="match-sim-summary">Forza: ${escapeHtml(simPreview.userStrength?.final ?? "-")} contro ${escapeHtml(simPreview.opponentStrength?.final ?? "-")} · Probabilità: ${escapeHtml(userProbability ?? "-")}% contro ${escapeHtml(bossProbability ?? "-")}%</div>
+          </section>
           ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
           <div class="boss-match-bottom-grid">
-            <section class="panel boss-match-log-panel"><h3>Cronaca</h3><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita">${bossMatchTimeline()}</ol></section>
-            <section class="panel boss-match-result-panel"><h3>Risultato</h3><div class="boss-match-score"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div></section>
+            <section class="panel boss-match-log-panel"><div class="panel-title-row"><div><p class="eyebrow">90 minuti · eventi reali</p><h3>Cronaca</h3></div><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${bossMatchTimeline()}</ol></section>
+            <section class="panel boss-match-result-panel ${outcomeClass}"><p class="eyebrow">Esito Boss</p><h3>${escapeHtml(bossStatusLabel)}</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div><div class="result-badges"><span>${resolved && ui.bossMatchState.endsWith("victory") ? "+1 livello" : "Vite " + run.lives}</span><span>${resolved && ui.bossMatchState.endsWith("victory") ? "Doppia pick boss" : resolved ? "Ritorno al nodo precedente" : "Finalizzazione protetta"}</span></div></section>
           </div>
           <details class="panel boss-match-mobile-details"><summary>Info boss e ricompensa</summary><p>${escapeHtml(meta.boss.name)} · Lv ${escapeHtml(meta.boss.level)} · ${escapeHtml(meta.boss.formation)}</p><p>2 pick 1 di 3 dalla squadra battuta</p></details>
           <section class="panel boss-match-controls"><button type="button" class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Continua</button><div class="button-row">${TEST_MATCH_CONTROLS_ENABLED ? `<div class="match-test-tools"><span>Strumenti di test</span><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div>` : ""}<button type="button" class="btn" data-nav="squad">Torna alla squadra</button></div></section>
