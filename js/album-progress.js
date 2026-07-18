@@ -5,7 +5,13 @@
   const SCHEMA_VERSION = 1;
   const DEFAULT_COLLECTION_ID = "ie1";
   const ALBUM_COLLECTIONS = {
-    ie1: { id: "ie1", name: "Inazuma Eleven 1", seasonId: "season1", freeAgentsTeamId: "unaffiliated" },
+    ie1: {
+      id: "ie1",
+      name: "Inazuma Eleven 1",
+      seasonId: "season1",
+      freeAgentsTeamId: "unaffiliated",
+      coverUrl: "https://static.wikia.nocookie.net/inazuma-eleven/images/5/51/FF_%28Ares_Logo%29.png/revision/latest?cb=20190424144108",
+    },
   };
 
   function nowIso() { return new Date().toISOString(); }
