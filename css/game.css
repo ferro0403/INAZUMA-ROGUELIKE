@@ -431,6 +431,9 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .trade-confirm-panel small { display: block; margin-top: 5px; color: var(--muted); font-weight: 850; }
 .trade-note { margin: -2px 0 14px; padding: 10px 12px; border: 1px solid rgba(255,211,79,.24); border-radius: 14px; background: rgba(255,211,79,.08); }
 .node-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 10px; margin-top: 16px; }
+.exchange-screen, .item-reward-screen { display: block; padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+.exchange-content, .item-reward-content { display: block; }
+.exchange-actions, .item-reward-actions { position: static; width: 100%; margin-top: 24px; }
 .node-actions .btn { min-height: 42px; }
 .node-choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
 .item-reward-modal { width: min(860px, 100%); }
@@ -447,26 +450,17 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 }
 @media (max-width: 780px) {
   .trade-modal, .trade-confirm-modal, .trade-result-modal, .random-event-modal, .item-reward-modal { width: calc(100vw - 20px); max-height: calc(100dvh - 24px); padding: 16px; }
-  .trade-modal, .item-reward-modal { padding-bottom: calc(112px + env(safe-area-inset-bottom)); }
   .trade-flow-summary, .trade-confirm-panel, .node-choice-grid { grid-template-columns: 1fr; }
   .node-actions { justify-content: stretch; margin-inline: -6px; padding: 10px 6px 2px; }
-  .trade-modal > .trade-actions, .item-reward-modal > .node-actions {
-    position: fixed;
-    left: 50%;
-    right: auto;
-    bottom: max(10px, env(safe-area-inset-bottom));
-    z-index: 120;
-    width: calc(100vw - 20px);
-    max-width: calc(100vw - 20px);
-    box-sizing: border-box;
-    transform: translateX(-50%);
-    margin: 0;
-    padding: 12px;
+  .exchange-screen, .item-reward-screen { padding-bottom: calc(122px + env(safe-area-inset-bottom)); }
+  .exchange-actions, .item-reward-actions {
+    position: static;
+    width: 100%;
+    margin-top: 24px;
     border: 1px solid rgba(92,130,177,.38);
     border-radius: 20px;
     background: linear-gradient(180deg, rgba(12,31,58,.98), rgba(7,23,44,.98));
-    box-shadow: 0 -12px 30px rgba(0,0,0,.32), 0 0 0 1px rgba(255,255,255,.04) inset;
-    backdrop-filter: blur(12px);
+    box-shadow: 0 12px 30px rgba(0,0,0,.24), 0 0 0 1px rgba(255,255,255,.04) inset;
   }
   .node-actions .btn { flex: 1 1 150px; min-height: 46px; }
   .trade-flow-summary > div, .trade-confirm-panel > div { padding: 10px 12px; }
@@ -475,8 +469,8 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .item-reward-grid .item-choice-card { min-height: 136px; }
 }
 @media (max-width: 430px) {
-  .trade-modal > .trade-actions { flex-direction: column; }
-  .trade-modal > .trade-actions .btn, .item-reward-modal > .node-actions .btn { width: 100%; flex-basis: auto; }
+  .exchange-actions { flex-direction: column; }
+  .exchange-actions .btn, .item-reward-actions .btn { width: 100%; flex-basis: auto; }
 }
 @media (prefers-reduced-motion: reduce) {
   .random-event-reveal, .node-actions .btn { transition: none; }
