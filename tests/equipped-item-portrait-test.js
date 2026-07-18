@@ -21,6 +21,8 @@ assert(!equippedRenderer.includes('playerPortraitUrl(run.roster') && !equippedRe
 assert(appJs.includes('function playerPortraitUrl(player)') && appJs.includes('data:image/svg+xml'), "shared player portrait resolver keeps the existing fallback for missing portraits");
 assert(!appJs.includes('function compactPlayerCardMarkup(player, { equipment = null') || appJs.includes('<img class="player-portrait" src="${escapeHtml(playerPortraitUrl(player))}"'), "shared player card renderer portrait markup remains unchanged");
 assert(css.includes('.equipped-player-portrait') && css.includes('width: 42px') && css.includes('height: 42px') && css.includes('object-fit: contain'), "equipped portrait has fixed, contained desktop sizing");
+assert(css.includes('.equipped-summary-copy { display: grid; justify-items: start;'), "equipped item copy keeps badge, item name and owner aligned to the left");
+assert(css.includes('.equipped-player { display: flex; align-items: center; justify-content: flex-start;') && css.includes('justify-self: start'), "equipped owner row remains left-aligned inside the item card");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.equipped-player-portrait \{ width: 40px; height: 40px; \}/.test(css), "mobile equipped portraits stay compact");
 
 console.log("equipped item portrait tests passed");
