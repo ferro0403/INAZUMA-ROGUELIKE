@@ -2706,14 +2706,12 @@
 
     app.innerHTML = `
       <main class="screen boss-match-screen" data-match-state="${ui.bossMatchState}">
-        ${topbar("Sfida Boss 11v11")}
+        ${topbar("Sfida Boss")}
         <div class="content boss-match-content">
           <section class="boss-match-hero panel">
             <button type="button" class="btn btn-back" data-nav="map" aria-label="Torna alla mappa">← Torna alla mappa</button>
             <div class="boss-match-heading">
-              <p class="eyebrow"><span>BOSS</span> · Boss ${run.bossIndex + 1} di ${seasonDb.bossOrder.length} · ${escapeHtml(meta.boss.name)}</p>
-              <h2>Sfida Boss 11v11</h2>
-              <div class="boss-match-header-stats" aria-label="Dati sfida boss"><span>Boss Lv ${escapeHtml(meta.boss.level)}</span><span>${escapeHtml(meta.user.name)}</span>${userAverage ? `<span>OVR ${escapeHtml(userAverage)}</span>` : ""}<span>${hearts()}</span></div>
+              <h2>Sfida Boss</h2>
             </div>
             <div class="boss-match-vs" aria-label="Presentazione squadre">
               <div class="boss-match-team"><span class="boss-match-logo">${meta.user.logoUrl ? `<img src="${escapeHtml(meta.user.logoUrl)}" alt="${escapeHtml(meta.user.name)}" />` : "⚡"}</span><strong>${escapeHtml(meta.user.name)}</strong><small>${escapeHtml(meta.user.formation)} · Lv ${escapeHtml(meta.user.level)}${userAverage ? ` · OVR ${userAverage}` : ""}</small></div>

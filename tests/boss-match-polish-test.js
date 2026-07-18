@@ -13,7 +13,9 @@ const css = fs.readFileSync(path.join(root, "css/game.css"), "utf8");
 });
 
 assert(appJs.includes('class="boss-match-heading"'), "Boss 11v11 must render a compact challenge header");
-assert(appJs.includes('class="boss-match-header-stats"'), "Boss 11v11 header must expose real run/boss stats");
+assert(!appJs.includes('class="boss-match-header-stats"'), "Boss header must not duplicate boss level, team name, OVR, or lives chips");
+assert(!appJs.includes('<h2>Sfida Boss 11v11</h2>'), "Boss title must be simplified to Sfida Boss");
+assert(appJs.includes('<h2>Sfida Boss</h2>'), "Boss hero must render the simplified title");
 assert(appJs.includes('class="boss-match-team boss-match-team--boss"'), "Boss hero must visually identify the opposing boss team");
 assert(appJs.includes('aria-label="Formazioni 11v11"'), "Boss formations panel must be accessible");
 assert(appJs.includes('role="tablist"') && appJs.includes('La tua squadra') && appJs.includes('data-boss-tab="boss"'), "mobile team tabs must remain explicit and accessible");
