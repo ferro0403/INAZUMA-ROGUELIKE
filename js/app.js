@@ -2284,15 +2284,15 @@
     });
   }
 
-  function renderMatchFormation({ players, formationId, side = "user", readonly = true, showEquipment = false, mobile = false } = {}) {
+  function renderMatchFormation({ players, formationId, side = "user", readonly = true, showEquipment = false, mobile = false, hidden = false } = {}) {
     const rows = formationRows(formationId, players || []);
     return `
-      <div class="match-formation match-formation--${side} boss-match-field-side boss-match-field-side--${side} ${mobile ? "boss-match-field-side--mobile" : ""}" data-boss-team="${side}" data-readonly="${readonly}">
+      <div class="match-formation match-formation--${side} boss-match-field-side boss-match-field-side--${side} ${mobile ? "boss-match-field-side--mobile" : ""}" data-boss-team="${side}" data-readonly="${readonly}"${hidden ? " hidden" : ""}>
         ${rows.map((row) => `<div class="match-formation-line match-formation-line--${row.role} boss-match-line boss-match-line--${row.role}" data-row-count="${row.players.length}" style="--players-in-row:${row.players.length || 1};--row-count:${row.players.length || 1};--boss-row-count:${row.players.length || 1}">${row.players.map((player) => matchFormationCard(player, { side, readonly, showEquipment })).join("")}</div>`).join("")}
       </div>`;
   }
 
-  function bossMatchField(team, side, mobile = false) {
+  function bossMatchField(team, side, mobile = false, hidden = false) {
     return renderMatchFormation({
       players: team.players,
       formationId: team.formationId,
@@ -2300,12 +2300,31 @@
       readonly: true,
       showEquipment: side === "user",
       mobile,
+      hidden,
     });
   }
 
   function bossMatchTimeline() {
     if (!ui.bossMatchLog.length) return `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>Formazioni pronte. Avvia la simulazione o usa i controlli provvisori.</p></li>`;
     return ui.bossMatchLog.map((event) => `<li class="${matchEventSideClass(event.side)}"><span>${escapeHtml(event.minute)}</span><b>${event.icon}</b><p>${escapeHtml(event.text)}</p></li>`).join("");
+  }
+
+  function switchBossMatchTab(side) {
+    const activeSide = side === "boss" ? "boss" : "user";
+    ui.bossMatchTab = activeSide;
+    const field = document.querySelector(".boss-match-field");
+    if (field) field.dataset.activeBossSide = activeSide;
+    document.querySelectorAll("[data-boss-tab]").forEach((button) => {
+      const selected = button.dataset.bossTab === activeSide;
+      button.classList.toggle("active", selected);
+      button.setAttribute("aria-selected", selected ? "true" : "false");
+    });
+    document.querySelectorAll(".boss-match-field [data-boss-team]").forEach((formation) => {
+      formation.hidden = formation.dataset.bossTeam !== activeSide;
+    });
+    const label = document.querySelector(".boss-match-half-label--active");
+    const team = document.querySelector(`.boss-match-team${activeSide === "boss" ? ".boss-match-team--boss" : ":not(.boss-match-team--boss)"} strong`);
+    if (label && team) label.textContent = team.textContent || "";
   }
 
   function bossMatchStatusText() {
@@ -2874,8 +2893,12 @@
               </div>
               <div class="boss-match-field" aria-label="Campo boss match" data-active-boss-side="${escapeHtml(activeSide)}">
                 <div class="boss-match-half-label boss-match-half-label--active">${escapeHtml(activeSide === "boss" ? meta.boss.name : meta.user.name)}</div>
-                ${bossMatchField({ players: activeSide === "boss" ? bossPlayers : userPlayers, formationId: activeSide === "boss" ? boss.bossFormation : run.formationId }, activeSide)}
-                <div class="boss-match-mobile-field">${bossMatchField({ players: activeSide === "boss" ? bossPlayers : userPlayers, formationId: activeSide === "boss" ? boss.bossFormation : run.formationId }, activeSide, true)}</div>
+                ${bossMatchField({ players: userPlayers, formationId: run.formationId }, "user", false, activeSide !== "user")}
+                ${bossMatchField({ players: bossPlayers, formationId: boss.bossFormation }, "boss", false, activeSide !== "boss")}
+                <div class="boss-match-mobile-field">
+                  ${bossMatchField({ players: userPlayers, formationId: run.formationId }, "user", true, activeSide !== "user")}
+                  ${bossMatchField({ players: bossPlayers, formationId: boss.bossFormation }, "boss", true, activeSide !== "boss")}
+                </div>
               </div>
             </section>
 
@@ -2910,7 +2933,12 @@
     resetRenderedViewScroll();
 
     bindBottomNav();
-    document.querySelectorAll("[data-boss-tab]").forEach((button) => button.addEventListener("click", () => runKeepingScroll(() => { ui.bossMatchTab = button.dataset.bossTab; renderMatch(); })));
+    const bossTabList = document.querySelector(".boss-match-tabs");
+    bossTabList?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-boss-tab]");
+      if (!button || button.dataset.bossTab === ui.bossMatchTab) return;
+      switchBossMatchTab(button.dataset.bossTab);
+    });
     document.querySelectorAll("[data-boss-player]").forEach((button) => button.addEventListener("click", () => {
       const id = button.dataset.bossPlayer;
       if (button.dataset.bossSide === "user") return showPlayerDetails(id);

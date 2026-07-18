@@ -42,6 +42,9 @@ assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-controls \.button-row \.
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-hero \{[^}]*grid-template-columns:\s*auto minmax\(0, 1fr\)/.test(css), 'mobile 5v5 header uses an in-flow compact two-column top row');
 assert(css.includes('.five-match-back-short { display: none; }') && /@media \(max-width: 780px\)[\s\S]*?\.five-match-back-short \{ display:\s*inline; \}/.test(css), 'mobile 5v5 abbreviates the header return label without losing aria-label');
 assert(css.includes('.five-roster-card.disabled small::after'), 'incompatible 5v5 candidates explain why they are disabled');
+assert(/@media \(min-width: 781px\)[\s\S]*?\.five-match-screen \.five-match-field-side--user \.five-match-card \.five-player-equipment \.item-icon img \{[\s\S]*?width:\s*14px;[\s\S]*?height:\s*14px;[\s\S]*?max-width:\s*55%;[\s\S]*?max-height:\s*55%;[\s\S]*?object-fit:\s*contain;/.test(css), 'desktop 5v5 equipment image content is reduced without changing the badge box');
+assert(/@media \(min-width: 781px\)[\s\S]*?\.five-match-screen \.five-match-field-side--user \.five-match-card \.five-player-equipment \{[\s\S]*?width:\s*26px;[\s\S]*?height:\s*26px;/.test(css), 'desktop 5v5 equipment badge container size remains unchanged');
+assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-card \.five-player-equipment \.item-icon \{ width:\s*15px; height:\s*15px;/.test(css), 'mobile 5v5 equipment icon size remains unchanged');
 
 console.log('5v5 UX static test passed.');
 
