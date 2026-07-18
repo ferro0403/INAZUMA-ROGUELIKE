@@ -1764,7 +1764,7 @@ body { background: var(--gradient-app); }
   .album-collection-grid { grid-template-columns: 1fr; gap: 14px; margin-top: 16px; }
   .album-collection-card { grid-template-columns: 1fr; min-height: 0; }
   .album-collection-cover { min-height: 0; aspect-ratio: 16 / 9; }
-  .album-collection-cover img { width: min(72%, 220px); height: min(68%, 150px); max-width: 72%; max-height: 68%; object-position: center 42%; transform: translateY(-6px); }
+  .album-collection-cover img { width: min(72%, 220px); height: min(68%, 150px); max-width: 72%; max-height: 68%; object-position: center 38%; transform: translateY(-12px); }
   .album-collection-content { padding: 18px; }
   .album-collection-progress-copy { align-items: flex-start; }
   .album-team-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
