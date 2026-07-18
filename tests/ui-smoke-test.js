@@ -35,6 +35,10 @@ assert(/@media \(max-width: 780px\)[\s\S]*?\.map-wrap[\s\S]*?overflow-x:\s*hidde
 assert(/@media \(max-width: 780px\)[\s\S]*?\.pitch-row, \.tactical-row\s*\{[^}]*--pitch-card-size:[^}]*display:\s*grid[\s\S]*?grid-template-columns:\s*repeat\(var\(--row-count, var\(--players-in-row, 1\)\), minmax\(0, var\(--pitch-card-size\)\)\)/.test(css), "mobile tactical rows must keep compact fixed-width card columns by row count");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.player-detail-modal\s*\{[\s\S]*?justify-self:\s*center[\s\S]*?width:\s*calc\(100vw - 20px\)/.test(css), "mobile player detail modal must be centered without lateral overflow");
 assert(css.includes("grid-template-columns: repeat(4, minmax(0, 1fr))"), "mobile bottom nav must show four uniform items");
+assert(/@media \(min-width: 781px\)[\s\S]*?\.bottom-nav \{[\s\S]*?left:\s*22px;[\s\S]*?right:\s*auto;[\s\S]*?top:\s*50%;[\s\S]*?transform:\s*translateY\(-50%\)/.test(css), "desktop navigation rail must be fixed on the left and vertically centered");
+assert(/@media \(min-width: 781px\)[\s\S]*?\.screen \{[\s\S]*?padding-right:\s*0;[\s\S]*?padding-left:\s*0/.test(css), "desktop screens must not keep the old right rail gutter");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.bottom-nav \{ width:\s*min\(100% - 16px, 460px\);/.test(css), "mobile bottom navigation must keep its existing bottom layout rules");
+
 assert(css.includes("align-items: center"), "desktop fullbody visual should not be pinned to the bottom");
 assert(css.includes("width: min(100%, 560px)"), "desktop fullbody art should keep the approved size");
 assert(css.includes("object-fit: contain"), "fullbody art should not deform");
@@ -72,6 +76,7 @@ assert(css.includes(".item-assignment-layout"), "item assignment must reuse the 
 assert(css.includes(".five-player-equipment { position: absolute; left: 6px; bottom: 6px;"), "5v5 equipment indicator must be pinned bottom-left without layout shift on desktop");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-player-equipment \{[^}]*width:\s*22px; height:\s*22px/.test(css), "5v5 equipment indicator must use smaller mobile dimensions");
 assert(css.includes(".five-match-card .five-player-equipment"), "5v5 match cards must have mobile-specific equipment sizing");
+assert(/@media \(min-width: 781px\)[\s\S]*?\.five-match-screen \.five-match-field-side--user \.five-match-card \.five-player-equipment \{[\s\S]*?bottom:\s*7px;[\s\S]*?left:\s*7px;[\s\S]*?width:\s*26px;[\s\S]*?height:\s*26px/.test(css), "desktop 5v5 user equipment badge must be compact and pinned inside the card");
 assert(css.includes(".mobile-equipment-badge"), "equipment badges must expose a shared mobile-specific class");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-card \{[^}]*box-sizing:\s*border-box[^}]*width:\s*var\(--five-mobile-card-width, 96px\)[^}]*height:\s*92px/.test(css), "mobile 5v5 match cards must share the same fixed box model");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-line\[data-row-count="2"\] \{ --five-mobile-card-width: 96px; \}/.test(css), "mobile 5v5 two-card midfield rows must not use a different card size");
@@ -121,6 +126,8 @@ assert(!css.includes("--mobile-five-actions-height") && !/\.five-match-content \
 assert(/@media \(max-width: 780px\)[\s\S]*?\.five-match-controls \.button-row \.btn-back \{[^}]*display:\s*none/.test(css), "mobile 5v5 must expose only one visible return-to-map action");
 assert(appJs.includes('five-match-header-back') && appJs.includes('five-match-back-short'), "mobile 5v5 header must keep return navigation in normal layout");
 assert(!/boss-match-controls[\s\S]{0,120}position:\s*fixed/.test(css), "11v11 action bar must remain outside mobile 5v5 positioning treatment");
+assert(/@media \(min-width: 781px\)[\s\S]*?\.boss-match-main-grid \{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\)/.test(css), "desktop boss 11v11 must not reserve a right-side panel column");
+assert(/@media \(min-width: 781px\)[\s\S]*?\.match-player-card\.boss-match-card \.player-meta--stacked \{[\s\S]*?display:\s*none/.test(css), "desktop boss 11v11 cards must hide duplicated role/overall/level text below the name");
 
 assert(appJs.includes('function resetViewScroll(viewElement = null)'), "UI must use a centralized resetViewScroll helper");
 assert(appJs.includes('function scrollTargetsForView(viewElement = null)'), "reset helper must inspect the real scrollable view/modal containers");

@@ -92,7 +92,7 @@ assert(mobileMedia.includes("width: min(90%, 340px)"), "mobile fullbody player a
 
 
 assert(appJs.includes('boss-match-screen'), "boss nodes must render the dedicated 11v11 boss match screen");
-assert(appJs.includes('bossMatchField({ players: userPlayers') && appJs.includes('bossMatchField({ players: bossPlayers'), "desktop boss match must render both teams at once");
+assert(appJs.includes('data-active-boss-side="${escapeHtml(activeSide)}"') && appJs.includes('activeSide === "boss" ? bossPlayers : userPlayers'), "desktop boss match must render one active tabbed formation at a time");
 assert(appJs.includes('bossMatchTab') && appJs.includes('data-boss-tab="user"') && appJs.includes('data-boss-tab="boss"'), "mobile boss match tabs must switch between user and boss formations");
 assert(appJs.includes('function completeBossMatch(result)') && appJs.includes('ui.bossMatchResolving') && appJs.includes('ui.bossMatchState.startsWith("completed")'), "boss match completion must guard against duplicate resolution");
 assert(appJs.includes('completeBossMatch("victory")') && appJs.includes('completeBossMatch("defeat")'), "boss match controls must reuse the centralized victory/defeat completion logic");
