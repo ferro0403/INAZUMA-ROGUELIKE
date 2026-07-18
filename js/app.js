@@ -2874,16 +2874,14 @@
                 <button type="button" class="boss-match-team-tab ${activeSide === "user" ? "active" : ""}" role="tab" aria-selected="${activeSide === "user"}" data-boss-tab="user">La tua squadra</button>
                 <button type="button" class="boss-match-team-tab ${activeSide === "boss" ? "active" : ""}" role="tab" aria-selected="${activeSide === "boss"}" data-boss-tab="boss">Boss</button>
               </div>
-              <div class="boss-match-field" aria-label="Campo boss match">
-                <div class="boss-match-half-label boss-match-half-label--user">${escapeHtml(meta.user.name)}</div>
-                <div class="boss-match-half-label boss-match-half-label--boss">${escapeHtml(meta.boss.name)}</div>
-                ${bossMatchField({ players: userPlayers, formationId: run.formationId }, "user")}
-                ${bossMatchField({ players: bossPlayers, formationId: boss.bossFormation }, "boss")}
+              <div class="boss-match-field" aria-label="Campo boss match" data-active-boss-side="${escapeHtml(activeSide)}">
+                <div class="boss-match-half-label boss-match-half-label--active">${escapeHtml(activeSide === "boss" ? meta.boss.name : meta.user.name)}</div>
+                ${bossMatchField({ players: activeSide === "boss" ? bossPlayers : userPlayers, formationId: activeSide === "boss" ? boss.bossFormation : run.formationId }, activeSide)}
                 <div class="boss-match-mobile-field">${bossMatchField({ players: activeSide === "boss" ? bossPlayers : userPlayers, formationId: activeSide === "boss" ? boss.bossFormation : run.formationId }, activeSide, true)}</div>
               </div>
             </section>
 
-            <aside class="panel boss-match-boss-panel" aria-label="Hero Boss">
+            <aside class="panel boss-match-boss-panel boss-match-boss-summary" aria-label="Riepilogo Boss">
               <img src="${escapeHtml(meta.boss.logoUrl || playerPortraitUrl(null))}" alt="${escapeHtml(meta.boss.name)}" />
               <h3>${escapeHtml(meta.boss.name)}</h3>
               <p>Livello boss <strong>${escapeHtml(meta.boss.level)}</strong></p>

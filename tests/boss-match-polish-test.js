@@ -19,7 +19,7 @@ assert(appJs.includes('<h2>Sfida Boss</h2>'), "Boss hero must render the simplif
 assert(appJs.includes('class="boss-match-team boss-match-team--boss"'), "Boss hero must visually identify the opposing boss team");
 assert(appJs.includes('aria-label="Formazioni 11v11"'), "Boss formations panel must be accessible");
 assert(appJs.includes('role="tablist"') && appJs.includes('La tua squadra') && appJs.includes('data-boss-tab="boss"'), "mobile team tabs must remain explicit and accessible");
-assert(appJs.includes('${bossMatchField({ players: userPlayers, formationId: run.formationId }, "user")}') && appJs.includes('${bossMatchField({ players: bossPlayers, formationId: boss.bossFormation }, "boss")}'), "desktop boss match must render both sides with the shared formation renderer");
+assert(appJs.includes('data-active-boss-side="${escapeHtml(activeSide)}"') && appJs.includes('${bossMatchField({ players: activeSide === "boss" ? bossPlayers : userPlayers, formationId: activeSide === "boss" ? boss.bossFormation : run.formationId }, activeSide)}'), "desktop boss match must render only the active tab through the shared formation renderer");
 assert(appJs.includes('showEquipment: side === "user"'), "Boss cards must only show equipment for the user side");
 assert(appJs.includes('fiveMatchComparisonMarkup(userPlayers, bossPlayers)'), "tactical comparison must use existing real player attributes");
 assert(appJs.includes('aria-live="polite"') && appJs.includes('scoreLabel'), "score and commentary must be announced without duplicating simulation events");
@@ -36,7 +36,8 @@ assert(css.includes('.boss-match-team-tab:focus-visible'), "Boss tabs must expos
 assert(css.includes('.boss-tactics-showdown'), "Boss tactical comparison must be grouped in its own section");
 assert(css.includes('.boss-match-result-panel--victory') && css.includes('.boss-match-result-panel--defeat'), "Boss result states must have explicit styles");
 assert(!/boss-match-controls[\s\S]{0,160}position:\s*(fixed|sticky)/.test(css), "Boss action bar must remain in normal document flow");
-assert(/@media \(max-width: 780px\)[\s\S]*?\.boss-match-tabs \{ display: grid/.test(css), "mobile boss tabs must be visible only in the mobile layout");
+assert(/@media \(min-width: 781px\)[\s\S]*?\.boss-match-tabs \{[\s\S]*?display: grid/.test(css), "desktop boss tabs must be visible in the desktop layout");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.boss-match-tabs \{ display: grid/.test(css), "mobile boss tabs must remain visible in the mobile layout");
 assert(css.includes('@media (prefers-reduced-motion: reduce)') && css.includes('.boss-match-hero'), "Boss presentation must respect reduced motion preferences");
 
 console.log("Boss 11v11 polish regression checks passed");
