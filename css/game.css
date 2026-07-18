@@ -877,6 +877,27 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .pull-item-action-copy { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
 .pull-item-action-copy .item-icon { width: 28px; height: 28px; border-radius: 8px; background: rgba(7,23,44,.22); }
 
+.pull-choice-option { position: relative; display: grid; gap: 0; border-radius: 24px; transition: transform 160ms ease, filter 160ms ease; }
+.pull-choice-option > .player-card { width: 100%; }
+.pull-choice-option.is-selected { transform: translateY(-2px); filter: drop-shadow(0 12px 22px rgba(0,0,0,.24)); }
+.pull-choice-option.is-selected > .player-card { outline: 3px solid color-mix(in srgb, var(--rarity-border, var(--yellow)) 72%, white); outline-offset: 3px; box-shadow: 0 0 0 4px rgba(255,255,255,.08), 0 0 26px color-mix(in srgb, var(--rarity-border, var(--yellow)) 54%, transparent); }
+.pull-choice-actions { margin-top: 8px; padding: 12px; border: 1px solid color-mix(in srgb, var(--rarity-border, var(--line)) 70%, white); border-radius: 16px; background: linear-gradient(180deg, rgba(10,28,54,.96), rgba(7,23,44,.92)); box-shadow: 0 12px 28px rgba(0,0,0,.22); color: var(--text); }
+.pull-choice-actions[hidden] { display: none; }
+.selected-indicator { display: inline-flex; width: fit-content; margin-bottom: 7px; padding: 4px 8px; border-radius: 999px; background: color-mix(in srgb, var(--rarity-border, var(--yellow)) 30%, rgba(255,255,255,.08)); color: var(--yellow); font-size: .72rem; font-weight: 950; letter-spacing: .04em; text-transform: uppercase; }
+.pull-choice-question { margin: 0 0 10px; font-weight: 900; }
+.pull-choice-action-row { margin: 0; gap: 8px; }
+.pull-choice-action-row .btn { min-height: 42px; }
+.pull-choice-option [data-player-id]:focus-visible { outline: 3px solid var(--yellow); outline-offset: 4px; }
+@media (prefers-reduced-motion: reduce) { .pull-choice-option { transition: none; } }
+@media (max-width: 780px) {
+  .pull-choice-option { border-radius: 18px; }
+  .pull-choice-option.is-selected { transform: none; }
+  .pull-choice-actions { margin-top: 6px; padding: 10px; border-radius: 14px; }
+  .pull-choice-question { font-size: .9rem; }
+  .pull-choice-action-row { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pull-choice-action-row .btn { min-width: 0; padding-inline: 8px; font-size: .82rem; }
+}
+
 .equipment-pill { display: inline-flex; align-items: center; gap: 5px; max-width: 100%; padding: 3px 7px; border-radius: 999px; background: rgba(255,211,79,.16); color: #ffe28a; font-weight: 900; }
 .equipment-pill .item-icon, .equipment-badge .item-icon, .player-equipment .item-icon { width: 22px; height: 22px; border-radius: 7px; }
 .equipment-pill .item-icon svg, .equipment-badge .item-icon svg, .player-equipment .item-icon svg { width: 16px; height: 16px; }
