@@ -1456,11 +1456,15 @@
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}`);
     const candidates = weightedItemCandidates(random, 3);
     openModal(`
-      <div class="modal-head event-modal-head item-reward-head"><button type="button" class="btn btn-back" id="back-item-map">← Torna alla mappa</button><div><p class="eyebrow">Ricompensa oggetto · Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p><h2>Scegli un oggetto</h2><p class="muted">Guarda icona, categoria ed effetto prima di confermare. L’inventario verrà aggiornato dopo la scelta.</p></div></div>
-      <div class="node-choice-grid item-reward-grid" aria-label="Oggetti disponibili">
-        ${candidates.map((item) => itemChoiceCard(item)).join("")}
-      </div>
-      <div class="node-actions"><button type="button" class="btn btn-ghost" id="skip-item">Rinuncia</button></div>`,
+      <section class="item-reward-screen">
+        <div class="modal-head event-modal-head item-reward-head"><button type="button" class="btn btn-back" id="back-item-map">← Torna alla mappa</button><div><p class="eyebrow">Ricompensa oggetto · Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p><h2>Scegli un oggetto</h2><p class="muted">Guarda icona, categoria ed effetto prima di confermare. L’inventario verrà aggiornato dopo la scelta.</p></div></div>
+        <main class="item-reward-content">
+          <div class="node-choice-grid item-reward-grid" aria-label="Oggetti disponibili">
+            ${candidates.map((item) => itemChoiceCard(item)).join("")}
+          </div>
+        </main>
+        <div class="node-actions item-reward-actions"><button type="button" class="btn btn-ghost" id="skip-item">Rinuncia</button></div>
+      </section>`,
       { closeable: false, className: "item-reward-modal" }
     );
     modalRoot.querySelectorAll("[data-item-choice]").forEach((button) => {
@@ -1514,22 +1518,26 @@
     ui.tradeSelectedPlayerId = ui.tradeSelectedPlayerId && rosterEntry(ui.tradeSelectedPlayerId) ? ui.tradeSelectedPlayerId : null;
     const selected = ui.tradeSelectedPlayerId ? resolvedRosterPlayer(ui.tradeSelectedPlayerId) : null;
     openModal(`
-      <div class="modal-head trade-node-head"><div><p class="eyebrow">Scambio</p><h2>Scegli chi scambiare</h2><p class="muted">Offri un titolare o una riserva: riceverai un giocatore casuale dello stesso ruolo, con finalOverall uguale o superiore e un livello in più.</p></div></div>
-      <div class="trade-flow-summary" aria-label="Riepilogo scambio"><div><span>Offri</span><strong>1 giocatore della rosa</strong></div><div><span>Ricevi</span><strong>Stesso ruolo · OVR ≥ · Lv +1</strong></div></div>
-      <div class="trade-squad-layout">
-        ${squadPitchMarkup({ mode: "trade", selectedId: ui.tradeSelectedPlayerId })}
-        <aside class="panel trade-bench-panel">
-          <h3>Riserve</h3>
-          <div class="bench-list">${benchMarkup({ mode: "trade", selectedId: ui.tradeSelectedPlayerId })}</div>
-        </aside>
-      </div>
-      <div class="trade-selection-summary ${selected ? "selected" : ""}">
-        ${selected ? `<strong>${escapeHtml(selected.name)}</strong><span>${selected.position} · OVR ${selected.overall} · Lv ${selected.displayLevel}</span>` : '<strong>Nessun giocatore selezionato</strong><span>Scegli una card per procedere allo scambio.</span>'}
-      </div>
-      <div class="node-actions trade-actions">
-        <button type="button" class="btn btn-yellow btn-primary-action" id="continue-trade" ${selected ? "" : "disabled"}>Procedi allo scambio</button>
-        <button type="button" class="btn btn-ghost" id="skip-trade">Rinuncia e torna alla mappa</button>
-      </div>`,
+      <section class="exchange-screen">
+        <div class="modal-head trade-node-head"><div><p class="eyebrow">Scambio</p><h2>Scegli chi scambiare</h2><p class="muted">Offri un titolare o una riserva: riceverai un giocatore casuale dello stesso ruolo, con finalOverall uguale o superiore e un livello in più.</p></div></div>
+        <main class="exchange-content">
+          <div class="trade-flow-summary" aria-label="Riepilogo scambio"><div><span>Offri</span><strong>1 giocatore della rosa</strong></div><div><span>Ricevi</span><strong>Stesso ruolo · OVR ≥ · Lv +1</strong></div></div>
+          <div class="trade-squad-layout">
+            ${squadPitchMarkup({ mode: "trade", selectedId: ui.tradeSelectedPlayerId })}
+            <aside class="panel trade-bench-panel">
+              <h3>Riserve</h3>
+              <div class="bench-list">${benchMarkup({ mode: "trade", selectedId: ui.tradeSelectedPlayerId })}</div>
+            </aside>
+          </div>
+          <div class="trade-selection-summary ${selected ? "selected" : ""}">
+            ${selected ? `<strong>${escapeHtml(selected.name)}</strong><span>${selected.position} · OVR ${selected.overall} · Lv ${selected.displayLevel}</span>` : '<strong>Nessun giocatore selezionato</strong><span>Scegli una card per procedere allo scambio.</span>'}
+          </div>
+        </main>
+        <div class="node-actions exchange-actions trade-actions">
+          <button type="button" class="btn btn-yellow btn-primary-action" id="continue-trade" ${selected ? "" : "disabled"}>Procedi allo scambio</button>
+          <button type="button" class="btn btn-ghost" id="skip-trade">Rinuncia e torna alla mappa</button>
+        </div>
+      </section>`,
       { closeable: false, className: "trade-modal", preserveScroll: scrollSnapshot() }
     );
     const modal = modalRoot.querySelector(".modal");
