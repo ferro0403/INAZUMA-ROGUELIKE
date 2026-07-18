@@ -72,6 +72,30 @@
     }));
   }
 
+  function itemStatLabel(stat) {
+    return ({ attack: "Attacco", control: "Controllo", defense: "Difesa", save: "Parata", grit: "Grinta", physical: "Fisico", speed: "Velocità", stamina: "Resistenza" })[stat] || stat || "Effetto";
+  }
+
+  function inventoryFilterDefinitions(inventory) {
+    const groups = groupedInventoryItems(inventory);
+    const hasKind = (kind) => groups.some((group) => resolveItem(group.item).kind === kind);
+    const hasStat = (stat) => groups.some((group) => resolveItem(group.item).stat === stat);
+    return [
+      { id: "all", label: "Tutti", count: groups.reduce((sum, group) => sum + group.quantity, 0) },
+      ...(hasKind("equipment") ? [{ id: "equipment", label: "Equipaggiabili", count: groups.filter((group) => resolveItem(group.item).kind === "equipment").reduce((sum, group) => sum + group.quantity, 0) }] : []),
+      ...(hasKind("consumable") ? [{ id: "consumable", label: "Consumabili", count: groups.filter((group) => resolveItem(group.item).kind === "consumable").reduce((sum, group) => sum + group.quantity, 0) }] : []),
+      ...["attack", "control", "defense", "save", "grit", "physical", "speed", "stamina"].filter(hasStat).map((stat) => ({ id: `stat:${stat}`, label: itemStatLabel(stat), count: groups.filter((group) => resolveItem(group.item).stat === stat).reduce((sum, group) => sum + group.quantity, 0) })),
+    ];
+  }
+
+  function inventoryGroupMatchesFilter(group, filterId) {
+    const item = resolveItem(group.item);
+    if (!filterId || filterId === "all") return true;
+    if (filterId === "equipment" || filterId === "consumable") return item.kind === filterId;
+    if (filterId.startsWith("stat:")) return item.stat === filterId.slice(5);
+    return group.category === filterId;
+  }
+
   global.InventoryHelpers = { inventoryItemIdentity, inventoryItemCategory, groupedInventoryItems, groupedInventoryByCategory, categories: INVENTORY_CATEGORY_DEFINITIONS };
 
   function itemImageFallbackSvg() {
@@ -169,6 +193,7 @@
     fiveMatchTab: "user",
     matchPlaybackTimer: null,
     returnToMatchContext: null,
+    inventoryFilter: "all",
   };
 
   function escapeHtml(value) {
@@ -3206,43 +3231,77 @@
     bindBottomNav();
   }
 
-  function renderInventory() {
+  function renderInventory(options = {}) {
     ensureRunSchema();
+    const filterDefs = inventoryFilterDefinitions(run.inventory);
+    if (!filterDefs.some((filter) => filter.id === ui.inventoryFilter)) ui.inventoryFilter = "all";
+    const activeFilter = filterDefs.find((filter) => filter.id === ui.inventoryFilter) || filterDefs[0];
     const equipped = run.roster
       .filter((entry) => entry.equippedItem)
-      .map((entry) => ({ entry, player: sourcePlayer(entry), resolved: resolvedRosterPlayer(entry.playerId), item: entry.equippedItem }));
+      .map((entry) => ({ entry, player: sourcePlayer(entry), resolved: resolvedRosterPlayer(entry.playerId), item: resolveItem(entry.equippedItem) }));
+    const totalItems = run.inventory.length;
+    const consumables = run.inventory.filter((item) => resolveItem(item).kind === "consumable").length;
+    const shouldKeepScroll = options.keepScroll;
+    const previousScroll = shouldKeepScroll ? scrollSnapshot() : null;
     app.innerHTML = `
-      <main class="screen">
+      <main class="screen inventory-screen">
         ${topbar("Oggetti")}
-        <div class="content">
-          <div class="section-head"><div><p class="eyebrow">Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p><h2>Oggetti raccolti</h2></div></div>
-          <div class="inventory-categories">
-            ${inventoryCategoriesMarkup()}
-          </div>
-          <div class="section-head" style="margin-top:30px"><div><p class="eyebrow">Equipaggiati</p><h2>Oggetti dei giocatori</h2></div></div>
-          <div class="item-grid">
-            ${equipped.length ? equipped.map(({ entry, player, resolved, item }) => `
-              <article class="item-card equipped-summary static-item">${itemIcon(item)}<span class="item-kind">${escapeHtml(player.name)}</span><strong>${escapeHtml(item.name)}</strong><div class="equipped-owner"><img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" /><span>${escapeHtml(player.name)} · ${escapeHtml(player.position)}</span></div><p>${escapeHtml(item.description)} ${escapeHtml(item.stat)}: ${resolved.baseStats[item.stat]} → <strong>${resolved.stats[item.stat]}</strong></p><button type="button" class="btn btn-ghost" data-unequip-player="${entry.playerId}">Rimuovi</button></article>`).join("") : '<p class="muted">Nessun giocatore ha un oggetto equipaggiato.</p>'}
-          </div>
+        <div class="content inventory-content">
+          <header class="inventory-hero">
+            <div>
+              <p class="eyebrow">Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p>
+              <h2>Oggetti</h2>
+              <p class="muted small">${activeFilter?.id !== "all" ? `Filtro: ${escapeHtml(activeFilter.label)}` : "Tutto ciò che hai raccolto nella run"}</p>
+            </div>
+            <div class="inventory-summary" aria-label="Riepilogo inventario">
+              <span><strong>${totalItems}</strong><small>posseduti</small></span>
+              <span><strong>${equipped.length}</strong><small>equipaggiati</small></span>
+              <span><strong>${new Set(equipped.map(({ entry }) => entry.playerId)).size}</strong><small>giocatori</small></span>
+              <span><strong>${consumables}</strong><small>consumabili</small></span>
+            </div>
+          </header>
+          ${filterDefs.length > 1 ? `<nav class="inventory-filters" aria-label="Filtri inventario">${filterDefs.map((filter) => `<button type="button" class="inventory-filter ${filter.id === ui.inventoryFilter ? "active" : ""}" data-inventory-filter="${escapeHtml(filter.id)}"><span>${escapeHtml(filter.label)}</span><small>${filter.count}</small></button>`).join("")}</nav>` : ""}
+          <section class="inventory-layout">
+            <div class="inventory-categories">
+              ${inventoryCategoriesMarkup(ui.inventoryFilter)}
+            </div>
+            <aside class="inventory-equipped-panel panel">
+              <div class="inventory-panel-head"><p class="eyebrow">Equipaggiati</p><h3>Stato giocatori</h3></div>
+              <div class="equipped-list">
+                ${equipped.length ? equipped.map(({ entry, player, resolved, item }) => `
+                  <article class="equipped-summary static-item">${itemIcon(item)}<div><span class="item-kind">Equipaggiato</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(player.name)} · ${escapeHtml(player.position)} · ${escapeHtml(itemStatLabel(item.stat))} ${resolved.baseStats[item.stat]} → <strong>${resolved.stats[item.stat]}</strong></p></div><button type="button" class="btn btn-ghost" data-unequip-player="${entry.playerId}">Rimuovi</button></article>`).join("") : '<p class="muted inventory-empty">Nessun giocatore ha un oggetto equipaggiato.</p>'}
+              </div>
+            </aside>
+          </section>
         </div>
         ${bottomNav("inventory")}
       </main>`;
-    resetRenderedViewScroll();
-    const inventoryCategories = document.querySelector(".inventory-categories");
-    inventoryCategories?.addEventListener("click", (event) => {
+    if (shouldKeepScroll) restoreScroll(previousScroll);
+    else resetRenderedViewScroll();
+    const content = document.querySelector(".inventory-content");
+    content?.addEventListener("click", (event) => {
+      const filterButton = event.target.closest("[data-inventory-filter]");
+      if (filterButton) {
+        ui.inventoryFilter = filterButton.dataset.inventoryFilter || "all";
+        return renderInventory({ keepScroll: true });
+      }
       const useButton = event.target.closest("[data-use-item]");
       if (useButton) return useInventoryItem(useButton.dataset.useItem);
       const equipButton = event.target.closest("[data-equip-item]");
       if (equipButton) return chooseEquipmentPlayer(equipButton.dataset.equipItem);
+      const unequipButton = event.target.closest("[data-unequip-player]");
+      if (unequipButton) return unequipPlayerItem(unequipButton.dataset.unequipPlayer);
     });
-    document.querySelectorAll("[data-unequip-player]").forEach((button) => button.addEventListener("click", () => unequipPlayerItem(button.dataset.unequipPlayer)));
     bindBottomNav();
   }
 
-  function inventoryCategoriesMarkup() {
-    if (!run.inventory.length) return '<p class="muted inventory-empty">Non hai ancora raccolto oggetti.</p>';
-    return groupedInventoryByCategory(run.inventory)
-      .filter((category) => category.items.length)
+  function inventoryCategoriesMarkup(filterId = "all") {
+    if (!run.inventory.length) return '<div class="inventory-empty-state"><strong>Nessun oggetto nello zaino</strong><p class="muted">Gli oggetti si ottengono dagli eventi della mappa durante la run.</p></div>';
+    const categories = groupedInventoryByCategory(run.inventory)
+      .map((category) => ({ ...category, items: category.items.filter((group) => inventoryGroupMatchesFilter(group, filterId)) }))
+      .filter((category) => category.items.length);
+    if (!categories.length) return '<div class="inventory-empty-state"><strong>Nessun oggetto in questo filtro</strong><p class="muted">Cambia categoria per vedere gli altri oggetti posseduti.</p></div>';
+    return categories
       .map((category) => `
         <section class="inventory-category" data-inventory-category="${category.id}">
           <header class="inventory-category-head"><span class="inventory-category-icon" aria-hidden="true">${category.icon}</span><div><h3>${escapeHtml(category.title)}</h3><p class="muted small">${category.items.reduce((sum, group) => sum + group.quantity, 0)} oggetti</p></div></header>
@@ -3254,14 +3313,16 @@
     const group = groupOrItem?.instances ? groupOrItem : { item: groupOrItem, quantity: 1, instances: [groupOrItem], key: inventoryItemIdentity(groupOrItem) };
     const item = resolveItem(group.item);
     const instanceId = group.instances[0]?.instanceId || item.instanceId;
+    const actionLabel = item.kind === "equipment" ? "Equipaggia" : "Usa";
     const action = item.kind === "equipment"
-      ? `<button type="button" class="btn btn-primary" data-equip-item="${instanceId}">Assegna</button>`
+      ? `<button type="button" class="btn btn-primary" data-equip-item="${instanceId}">${actionLabel}</button>`
       : item.effect === "pull_reroll"
-        ? '<span class="muted small">Utilizzabile durante una pull</span>'
+        ? '<span class="muted small item-action-note">Utilizzabile durante una pull</span>'
         : item.effect === "lucky_pull"
-          ? '<span class="muted small">Utilizzabile durante una Pull svincolati o Pull squadre</span>'
-          : `<button type="button" class="btn btn-primary" data-use-item="${instanceId}">Usa</button>`;
-    return `<article class="item-card inventory-item-card static-item" data-item-id="${escapeHtml(group.key)}">${itemIcon(item)}<div class="item-card-main"><span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(item.description)}</p></div><div class="item-card-actions"><span class="item-quantity" aria-label="Quantità ${group.quantity}">×${group.quantity}</span>${action}</div></article>`;
+          ? '<span class="muted small item-action-note">Utilizzabile durante una Pull svincolati o Pull squadre</span>'
+          : `<button type="button" class="btn btn-primary" data-use-item="${instanceId}">${actionLabel}</button>`;
+    const detail = item.kind === "equipment" ? `${escapeHtml(itemStatLabel(item.stat))} +${escapeHtml(item.bonus)}` : escapeHtml(item.description);
+    return `<article class="item-card inventory-item-card static-item" data-item-id="${escapeHtml(group.key)}" data-item-kind="${escapeHtml(item.kind)}">${itemIcon(item)}<div class="item-card-main"><span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${detail}</p></div><div class="item-card-actions"><span class="item-quantity" aria-label="Quantità ${group.quantity}">×${group.quantity}</span>${action}</div></article>`;
   }
 
   function useInventoryItem(instanceId) {

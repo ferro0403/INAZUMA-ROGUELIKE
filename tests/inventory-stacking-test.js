@@ -63,6 +63,10 @@ assert(appJs.includes("const newEquipment = removeInventoryItem(instanceId);"), 
 assert(appJs.includes("run.inventory.push(entry.equippedItem);") && appJs.includes("if (run.inventory.length >= global.SEASON1_CONFIG.maxInventory)"), "unequipping returns one copy and preserves full-inventory guard");
 assert(appJs.includes("entry.equippedItem = newEquipment;"), "only the selected equipment instance is assigned");
 assert(css.includes(".inventory-categories") && css.includes(".inventory-category") && css.includes(".item-quantity"), "desktop inventory category and quantity styles exist");
+assert(appJs.includes("inventoryFilterDefinitions") && appJs.includes("data-inventory-filter") && appJs.includes("inventoryGroupMatchesFilter"), "inventory has real filter view model without changing item data");
+assert(appJs.includes("inventory-empty-state") && appJs.includes("Gli oggetti si ottengono dagli eventi della mappa"), "inventory empty state explains where items come from");
+assert(appJs.includes("Equipaggiabili") && appJs.includes("Consumabili") && appJs.includes("itemStatLabel"), "inventory filters use real item kinds and equipment stats");
+assert(css.includes(".inventory-layout") && css.includes(".inventory-summary") && css.includes(".inventory-equipped-panel"), "inventory has desktop layout, summary, and equipped panel styles");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.inventory-item-card \{ grid-template-columns: 38px minmax\(0, 1fr\) auto/.test(css), "mobile inventory cards use compact horizontal layout without overflow");
 
 console.log("inventory stacking tests passed");
