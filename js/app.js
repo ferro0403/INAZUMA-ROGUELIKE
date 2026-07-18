@@ -1843,35 +1843,37 @@
     });
   }
 
-  function showPullConfirmation(options, player) {
-    let confirmed = false;
-    const playerSource = options.sourceForPlayer ? options.sourceForPlayer(player) : options.source;
-    const playerDatabase = playerSource === "season1" ? seasonDb : options.database;
-    openModal(`
-      <div class="modal-head"><div><p class="eyebrow">Conferma scelta</p><h2>Vuoi scegliere ${escapeHtml(player.name)}?</h2><p class="muted">La pull non verrà consumata finché non confermi.</p></div></div>
-      <div class="trade-result-card mobile-compact-player-list pull-confirmation-card">${playerCard(player, { level: options.level, database: playerDatabase })}</div>
-      <div class="button-row">
-        <button class="btn btn-primary" id="confirm-pull-pick">Sì</button>
-        <button class="btn" id="cancel-pull-pick">No</button>
-        <button class="btn btn-yellow" id="detail-pull-pick">Apri scheda</button>
-      </div>`,
-      { closeable: false }
-    );
-    document.getElementById("confirm-pull-pick").focus({ preventScroll: true });
-    document.getElementById("confirm-pull-pick").addEventListener("click", (event) => {
-      if (confirmed) return;
-      confirmed = true;
-      event.currentTarget.disabled = true;
-      options.onPick(player);
-    });
-    document.getElementById("cancel-pull-pick").addEventListener("click", () => showPlayerOffer(options));
-    document.getElementById("detail-pull-pick").addEventListener("click", () => {
-      showPlayerDetailsFor(player, {
-        playerId: player.playerId,
-        level: options.level,
-        database: playerDatabase,
-        onClose: () => showPullConfirmation(options, player),
-      });
+  function pullChoiceSource(options, player) {
+    return options.sourceForPlayer ? options.sourceForPlayer(player) : options.source;
+  }
+
+  function pullChoiceDatabase(options, player) {
+    return pullChoiceSource(options, player) === "season1" ? seasonDb : options.database;
+  }
+
+  function pullChoiceActionPanel(player, index) {
+    const panelId = `pull-choice-actions-${index}`;
+    return `
+      <div class="pull-choice-actions" id="${panelId}" role="group" aria-label="Conferma scelta per ${escapeHtml(player.name)}">
+        <span class="selected-indicator" aria-hidden="true">Selezionato</span>
+        <p class="pull-choice-question">Vuoi aggiungere questo giocatore?</p>
+        <div class="button-row pull-choice-action-row">
+          <button type="button" class="btn btn-primary" data-pull-action="confirm">Sì</button>
+          <button type="button" class="btn" data-pull-action="cancel">Annulla</button>
+          <button type="button" class="btn btn-yellow" data-pull-action="detail">Scheda</button>
+        </div>
+      </div>`;
+  }
+
+  function updateInlinePullSelection(grid, selectedId) {
+    grid.querySelectorAll(".pull-choice-option").forEach((option) => {
+      const selected = option.dataset.playerId === selectedId;
+      option.classList.toggle("is-selected", selected);
+      const trigger = option.querySelector("[data-player-id]");
+      const actions = option.querySelector(".pull-choice-actions");
+      trigger?.setAttribute("aria-expanded", selected ? "true" : "false");
+      trigger?.setAttribute("aria-pressed", selected ? "true" : "false");
+      if (actions) actions.hidden = !selected;
     });
   }
 
@@ -1887,8 +1889,14 @@
       : "";
     openModal(`
       <div class="modal-head event-modal-head"><button type="button" class="btn btn-back" id="back-offer-map">← Torna alla mappa</button><div><p class="eyebrow">Scelta giocatore</p><h2>${escapeHtml(options.title)}</h2><p class="muted">${escapeHtml(options.subtitle)}</p></div></div>
-      <div class="candidate-grid pull-offer-grid">
-        ${options.candidates.map((player) => playerCard(player, { button: true, level: options.level, database: options.sourceForPlayer?.(player) === "season1" ? seasonDb : options.database })).join("")}
+      <div class="candidate-grid pull-offer-grid" data-pull-choice-grid>
+        ${options.candidates.map((player, index) => {
+          const panelId = `pull-choice-actions-${index}`;
+          return `<div class="pull-choice-option ${rarityClass(player.category)}" data-player-id="${escapeHtml(player.playerId)}">
+            ${playerCard(player, { button: true, level: options.level, database: pullChoiceDatabase(options, player) }).replace(">", ` aria-expanded="false" aria-pressed="false" aria-controls="${panelId}">`)}
+            ${pullChoiceActionPanel(player, index)}
+          </div>`;
+        }).join("")}
       </div>
       ${options.rerollDisabledMessage ? `<p class="muted small">${escapeHtml(options.rerollDisabledMessage)}</p>` : ""}
       <div class="button-row" style="margin-top:18px">
@@ -1898,11 +1906,54 @@
       </div>`,
       { closeable: false }
     );
-    modalRoot.querySelectorAll("[data-player-id]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const player = options.candidates.find((candidate) => String(candidate.playerId) === button.dataset.playerId);
-        showPullConfirmation(options, player);
-      });
+    const choiceGrid = modalRoot.querySelector("[data-pull-choice-grid]");
+    let selectedPullPlayerId = null;
+    let pickConfirmed = false;
+    choiceGrid?.querySelectorAll(".pull-choice-actions").forEach((actions) => { actions.hidden = true; });
+    choiceGrid?.addEventListener("click", (event) => {
+      const actionButton = event.target.closest("[data-pull-action]");
+      const option = event.target.closest(".pull-choice-option");
+      if (!option) return;
+      const player = options.candidates.find((candidate) => String(candidate.playerId) === option.dataset.playerId);
+      if (!player) return;
+      if (!actionButton) {
+        selectedPullPlayerId = option.dataset.playerId;
+        updateInlinePullSelection(choiceGrid, selectedPullPlayerId);
+        return;
+      }
+      if (actionButton.dataset.pullAction === "cancel") {
+        selectedPullPlayerId = null;
+        updateInlinePullSelection(choiceGrid, selectedPullPlayerId);
+        option.querySelector("[data-player-id]")?.focus({ preventScroll: true });
+        return;
+      }
+      if (actionButton.dataset.pullAction === "detail") {
+        const playerDatabase = pullChoiceDatabase(options, player);
+        const pullScroll = scrollSnapshot();
+        showPlayerDetailsFor(player, {
+          playerId: player.playerId,
+          level: options.level,
+          database: playerDatabase,
+          onClose: () => {
+            showPlayerOffer(options);
+            afterNextPaint(() => {
+              const restoredGrid = modalRoot.querySelector("[data-pull-choice-grid]");
+              if (!restoredGrid) return;
+              selectedPullPlayerId = String(player.playerId);
+              updateInlinePullSelection(restoredGrid, selectedPullPlayerId);
+              restoreScroll(pullScroll);
+              restoredGrid.querySelector(`.pull-choice-option[data-player-id="${cssEscape(player.playerId)}"] [data-pull-action="detail"]`)?.focus({ preventScroll: true });
+            });
+          },
+        });
+        return;
+      }
+      if (actionButton.dataset.pullAction === "confirm") {
+        if (pickConfirmed) return;
+        pickConfirmed = true;
+        actionButton.disabled = true;
+        options.onPick(player);
+      }
     });
     document.getElementById("reroll-offer")?.addEventListener("click", () => {
       if (options.rerollDisabled) return toast(options.rerollDisabledMessage || "Visore scout non disponibile");
@@ -2923,6 +2974,14 @@
     showNextBossReward();
   }
 
+  function syncPendingBossReward(flow) {
+    if (!flow || !run.pendingBossVictory) return;
+    run.pendingBossVictory.rewardsRemaining = flow.remainingRewards;
+    run.pendingBossVictory.excludedIds = [...flow.excludedIds];
+    run.pendingBossVictory.rerolls = flow.rerolls;
+    run.pendingBossVictory.candidateIds = [...flow.candidateIds];
+  }
+
   function showNextBossReward() {
     const flow = run.postBossFlow;
     const boss = seasonDb.bossOrder[Number(flow?.bossIndex ?? run.bossIndex)];
@@ -2950,12 +3009,14 @@
         flow.excludedIds = Array.from(new Set(flow.excludedIds));
         flow.rerolls += 1;
         flow.candidateIds = bossRewardCandidates(flow, boss).map((player) => String(player.playerId));
+        syncPendingBossReward(flow);
         global.RunState.save(run);
         showNextBossReward();
       } : null,
       onPick: (player) => {
         flow.excludedIds.push(String(player.playerId));
         flow.excludedIds = Array.from(new Set(flow.excludedIds));
+        syncPendingBossReward(flow);
         global.RunState.save(run);
         global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.BOSS_REWARD_CHOSEN, { nodeId: flow.matchNodeId, playerId: player.playerId, actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:chosen` });
         recruitPlayer(player, "season1", level, () => advanceBossReward(), { allowCancel: true, recruitmentSource: "boss_reward", actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:recruit:${player.playerId}` });
@@ -2972,6 +3033,7 @@
     flow.rerolls = 0;
     flow.candidateIds = [];
     if (flow.remainingRewards <= 0) flow.status = "next-zone";
+    syncPendingBossReward(flow);
     global.RunState.save(run);
     flow.remainingRewards > 0 ? showNextBossReward() : navigateBossVictoryDestination(finishBossVictoryTransition());
   }
