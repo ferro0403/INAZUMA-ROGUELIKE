@@ -216,6 +216,14 @@ button.player-card:hover { border-color: var(--yellow); transform: translateY(-3
 .equipped-list { display: grid; gap: 10px; }
 .equipped-list .equipped-summary { display: grid; grid-template-columns: auto minmax(0,1fr); gap: 10px; align-items: start; padding: 12px; border: 1px solid rgba(255,211,79,.28); border-radius: 16px; background: rgba(11,28,55,.82); }
 .equipped-list .equipped-summary button { grid-column: 1 / -1; justify-self: start; }
+.equipped-summary-copy { display: grid; gap: 7px; min-width: 0; }
+.equipped-player { display: flex; align-items: center; gap: 10px; min-width: 0; color: var(--text); }
+.equipped-player-portrait { flex: 0 0 auto; display: inline-grid; place-items: center; width: 42px; height: 42px; border: 1px solid rgba(255,211,79,.22); border-radius: 50%; background: rgba(255,255,255,.08); overflow: hidden; }
+.equipped-player-portrait img { display: block; width: 100%; height: 100%; object-fit: contain; }
+.equipped-player-copy { display: grid; gap: 2px; min-width: 0; }
+.equipped-player-copy span { overflow-wrap: anywhere; color: var(--text); font-weight: 850; }
+.equipped-player-copy small { color: var(--muted); font-size: .82rem; }
+.equipped-player-copy small strong { color: var(--text); }
 .equipped-list .equipped-summary p { margin: 3px 0 0; color: var(--muted); font-size: .82rem; }
 .item-grid {
   display: grid;
@@ -838,6 +846,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .item-quantity { min-width: 40px; min-height: 28px; padding-inline: 8px; }
   .equipped-detail { grid-template-columns: auto minmax(0, 1fr); gap: 10px; }
   .equipped-detail button { grid-column: 1 / -1; width: 100%; min-height: 44px; }
+  .equipped-player-portrait { width: 40px; height: 40px; }
 }
 @media (max-width: 379px) {
   .detail-stats { grid-template-columns: 1fr; }
@@ -958,8 +967,6 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .equipment-pill .item-icon svg, .equipment-badge .item-icon svg, .player-equipment .item-icon svg { width: 16px; height: 16px; }
 .equipment-badge { position: absolute; top: 6px; right: 6px; z-index: 2; }
 .mini-player.has-equipment { box-shadow: 0 0 0 2px rgba(255,211,79,.34); }
-.equipped-summary .equipped-owner { display: flex; align-items: center; gap: 9px; color: var(--text); font-weight: 850; }
-.equipped-summary .equipped-owner img { width: 42px; height: 42px; object-fit: contain; border-radius: 50%; background: rgba(255,255,255,.08); }
 .item-assignment-modal { width: min(1120px, 100%); }
 .item-assignment-layout { display: grid; grid-template-columns: minmax(0, 2fr) minmax(240px, .8fr); gap: 16px; align-items: start; }
 
