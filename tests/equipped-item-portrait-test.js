@@ -11,6 +11,10 @@ const css = fs.readFileSync(path.join(root, "css/game.css"), "utf8");
 const equippedRenderer = appJs.slice(appJs.indexOf("function renderInventory"), appJs.indexOf("function chooseEquipmentPlayer"));
 
 assert(equippedRenderer.includes('class="equipped-player"'), "equipped item cards render a dedicated owner portrait block");
+
+const equippedArticlePattern = /<article class="equipped-summary static-item">\$\{itemIcon\(item\)\}<div class="equipped-summary-copy"><span class="item-kind">Equipaggiato<\/span><strong>\$\{escapeHtml\(item\.name\)\}<\/strong><\/div><div class="equipped-player">/;
+assert(equippedArticlePattern.test(equippedRenderer), "equipped owner row is a direct child of the equipped summary after the item copy");
+assert(!equippedRenderer.includes('<strong>${escapeHtml(item.name)}</strong><div class="equipped-player">'), "equipped owner row is not nested inside the item copy");
 assert(equippedRenderer.includes('class="equipped-player-portrait"') && equippedRenderer.includes('class="equipped-player-copy"'), "owner portrait and copy have scoped inventory classes");
 assert(equippedRenderer.includes('src="${escapeHtml(playerPortraitUrl(resolved || player))}"'), "equipped owner portrait uses the shared player portrait resolver and fallback");
 assert(equippedRenderer.includes('${escapeHtml(player.name)} · ${escapeHtml(player.position)}'), "owner name and role are rendered from the same player used for the equipped card");
@@ -21,8 +25,9 @@ assert(!equippedRenderer.includes('playerPortraitUrl(run.roster') && !equippedRe
 assert(appJs.includes('function playerPortraitUrl(player)') && appJs.includes('data:image/svg+xml'), "shared player portrait resolver keeps the existing fallback for missing portraits");
 assert(!appJs.includes('function compactPlayerCardMarkup(player, { equipment = null') || appJs.includes('<img class="player-portrait" src="${escapeHtml(playerPortraitUrl(player))}"'), "shared player card renderer portrait markup remains unchanged");
 assert(css.includes('.equipped-player-portrait') && css.includes('width: 42px') && css.includes('height: 42px') && css.includes('object-fit: contain'), "equipped portrait has fixed, contained desktop sizing");
-assert(css.includes('.equipped-summary-copy { display: grid; justify-items: start;'), "equipped item copy keeps badge, item name and owner aligned to the left");
-assert(css.includes('.equipped-player { display: flex; align-items: center; justify-content: flex-start;') && css.includes('justify-self: start'), "equipped owner row remains left-aligned inside the item card");
+assert(css.includes('.equipped-summary-copy { display: grid; justify-items: start;'), "equipped item copy keeps badge and item name aligned to the left");
+assert(css.includes('.equipped-player { display: flex; align-items: center; justify-content: flex-start; gap: 10px;'), "equipped owner row keeps its flex layout left-aligned");
+assert(css.includes('.equipped-list .equipped-summary > .equipped-player { grid-column: 1 / -1; justify-self: start; width: 100%; }'), "direct equipped owner rows span the full card grid from the left edge");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.equipped-player-portrait \{ width: 40px; height: 40px; \}/.test(css), "mobile equipped portraits stay compact");
 
 console.log("equipped item portrait tests passed");
