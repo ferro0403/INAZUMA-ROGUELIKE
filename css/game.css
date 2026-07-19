@@ -1072,6 +1072,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .boss-match-field > .boss-match-field-side, .boss-match-half-label { display: none; }
   .boss-match-mobile-field { display: block; height: 100%; }
   .boss-match-field-side--mobile { display: grid; height: 620px; padding: 18px 7px; direction: ltr; }
+  .boss-match-mobile-field > .boss-match-field-side--mobile[hidden] { display: none; }
   .boss-match-line { grid-template-columns: repeat(var(--boss-row-count, 1), minmax(0, var(--boss-mobile-card-width, 64px))); gap: clamp(6px, 1.8vw, 10px); }
   .boss-match-line[data-row-count="5"] { --boss-mobile-card-width: clamp(54px, 17vw, 66px); }
   .boss-match-line[data-row-count="4"] { --boss-mobile-card-width: clamp(62px, 20vw, 74px); }

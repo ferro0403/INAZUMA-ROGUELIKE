@@ -29,5 +29,6 @@ assert(!appJs.includes('function bossMatchMobileField(team, side)'), "mobile mus
 assert.equal((appJs.match(/renderMatchFormation\(/g) || []).length >= 1, true, "boss match should route formation markup through the shared renderer");
 assert(!/\.boss-match-field-side--mobile \.boss-match-card-item/.test(mobileCss), "mobile boss preview must not keep separate item-badge positioning overrides");
 assert(/\.boss-match-field \{[^}]*display:\s*block/.test(mobileCss), "mobile boss field rules must remain inside the mobile breakpoint");
+assert(mobileCss.includes('.boss-match-mobile-field > .boss-match-field-side--mobile[hidden] { display: none; }'), "inactive mobile boss tab formation must not be painted when hidden");
 
 console.log("Boss mobile squad renderer test passed: shared match formation renderer is used for both tabs.");
