@@ -2649,6 +2649,15 @@
     }
   }
 
+
+  const fiveMatchMarkupCache = new Map();
+  function fiveMatchCacheKey(prefix, ...parts) { return [prefix, ...parts.map((part) => String(part ?? ""))].join("|"); }
+  function memoizedFiveMatchMarkup(key, factory) {
+    if (fiveMatchMarkupCache.size > 80) fiveMatchMarkupCache.clear();
+    if (!fiveMatchMarkupCache.has(key)) fiveMatchMarkupCache.set(key, factory());
+    return fiveMatchMarkupCache.get(key);
+  }
+
   function fiveFormationRows(formationId, playersBySlot) {
     const formation = global.FiveVFive.formationById(formationId);
     return ["attack", "midfield", "defense", "goal"].map((line) => ({
@@ -2712,21 +2721,25 @@
 
   function fiveMatchCard(player, side) {
     const equipment = side === "user" ? (player.equipment || rosterEntry(player.playerId)?.equippedItem) : null;
-    return `
+    const equipmentKey = equipment ? `${equipment.instanceId || equipment.id || "item"}:${equipment.id || ""}` : "";
+    const key = fiveMatchCacheKey("card", side, player.playerId, player.name, player.position, player.overall, player.displayLevel, player.category, playerPortraitUrl(player), equipmentKey);
+    return memoizedFiveMatchMarkup(key, () => `
       <button type="button" class="five-match-card five-match-card--${side} ${rarityClass(player.category)}" data-five-match-player="${escapeHtml(player.playerId)}" data-five-match-side="${side}" aria-label="Apri scheda ${escapeHtml(player.name)}">
         <span class="five-match-card-role">${escapeHtml(player.position)}</span>
         <span class="five-match-card-overall">${escapeHtml(player.overall ?? "-")}</span>
-        <img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" />
+        <img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" decoding="async" />
         <strong>${escapeHtml(shortName(player.name))}</strong>
         <small>Lv ${escapeHtml(player.displayLevel ?? 0)}</small>
         ${fivePlayerEquipmentMarkup(equipment)}
-      </button>`;
+      </button>`);
   }
 
   function fiveMatchField(playersBySlot, formationId, side, mobile = false) {
-    return `<div class="five-match-field-side five-match-field-side--${side} ${mobile ? "five-match-field-side--mobile" : ""}">
+    const slotKey = Object.entries(playersBySlot || {}).map(([slot, player]) => `${slot}:${player?.playerId || ""}:${player?.overall || ""}:${player?.displayLevel || ""}`).join(",");
+    const key = fiveMatchCacheKey("field", formationId, side, mobile ? "mobile" : "desktop", slotKey);
+    return memoizedFiveMatchMarkup(key, () => `<div class="five-match-field-side five-match-field-side--${side} ${mobile ? "five-match-field-side--mobile" : ""}" data-five-field-side="${side}" ${mobile ? "" : ""}>
       ${fiveFormationRows(formationId, playersBySlot).map((row) => `<div class="five-match-line five-match-line--${row.line}" data-row-count="${row.players.length}" style="--five-row-count:${row.players.length || 1}">${row.players.map((player) => fiveMatchCard(player, side)).join("")}</div>`).join("")}
-    </div>`;
+    </div>`);
   }
 
 
@@ -2833,13 +2846,26 @@
         </main>`;
       resetRenderedViewScroll();
       bindBottomNav();
-      document.querySelectorAll("[data-five-match-tab]").forEach((button) => button.addEventListener("click", () => runKeepingScroll(() => { ui.fiveMatchTab = button.dataset.fiveMatchTab; renderMatch(); })));
-      document.querySelectorAll("[data-five-match-player]").forEach((button) => button.addEventListener("click", () => {
-        const id = button.dataset.fiveMatchPlayer;
-        if (button.dataset.fiveMatchSide === "user") return showPlayerDetails(id);
-        const player = Object.values(opponentPlayersBySlot).find((candidate) => String(candidate?.playerId) === String(id));
-        showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: freeAgentsDb, preserveScroll: scrollSnapshot() });
+      document.querySelectorAll("[data-five-match-tab]").forEach((button) => button.addEventListener("click", () => {
+        ui.fiveMatchTab = button.dataset.fiveMatchTab;
+        document.querySelectorAll("[data-five-match-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.fiveMatchTab === ui.fiveMatchTab));
+        const mobileField = document.querySelector(".five-match-mobile-field");
+        if (mobileField) mobileField.innerHTML = ui.fiveMatchTab === "opponent"
+          ? fiveMatchField(opponentPlayersBySlot, match.opponentFormation, "opponent", true)
+          : fiveMatchField(userPlayersBySlot, run.fiveVFive.formation, "user", true);
+        bindFiveMatchPlayerButtons();
       }));
+      const bindFiveMatchPlayerButtons = () => document.querySelectorAll("[data-five-match-player]").forEach((button) => {
+        if (button.dataset.boundFiveMatchPlayer === "1") return;
+        button.dataset.boundFiveMatchPlayer = "1";
+        button.addEventListener("click", () => {
+          const id = button.dataset.fiveMatchPlayer;
+          if (button.dataset.fiveMatchSide === "user") return showPlayerDetails(id);
+          const player = Object.values(opponentPlayersBySlot).find((candidate) => String(candidate?.playerId) === String(id));
+          showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: freeAgentsDb, preserveScroll: scrollSnapshot() });
+        });
+      });
+      bindFiveMatchPlayerButtons();
       document.getElementById("edit-five-team").addEventListener("click", () => { ui.returnToMatchContext = { type: match.type, nodeId: match.nodeId, scroll: scrollSnapshot() }; match.returnScroll = ui.returnToMatchContext.scroll; persistMatchState(); renderFiveVFive({ returnToMatch: true }); });
       document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("victory"); });
       document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("defeat"); });

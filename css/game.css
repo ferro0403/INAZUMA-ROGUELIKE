@@ -1952,3 +1952,49 @@ body { background: var(--gradient-app); }
     padding-bottom: 30px;
   }
 }
+
+/* 5v5 refinement/performance pass: keep player cards intact, lighten surrounding UI. */
+.five-screen { background: radial-gradient(circle at 14% 6%, rgba(54,169,255,.14), transparent 24rem), radial-gradient(circle at 88% 16%, rgba(255,211,79,.10), transparent 22rem), var(--bg); }
+.five-screen .content { display: grid; gap: 14px; }
+.five-editor-head { padding: 16px; border: 1px solid rgba(92,130,177,.24); border-radius: 22px; background: linear-gradient(135deg, rgba(10,28,54,.94), rgba(7,23,44,.78)); box-shadow: 0 12px 28px rgba(0,0,0,.18); }
+.five-editor-head h2 { margin: 0 0 3px; font-size: clamp(1.7rem, 4vw, 2.45rem); letter-spacing: -.03em; }
+.five-layout { grid-template-columns: minmax(0, 1.18fr) minmax(280px, .82fr); gap: 14px; }
+.five-main { gap: 12px; min-width: 0; }
+.five-formation-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.five-formation-card { padding: 13px 14px; border-color: rgba(92,130,177,.30); border-radius: 16px; background: linear-gradient(180deg, rgba(10,28,54,.92), rgba(7,23,44,.86)); transition: border-color .12s ease, background-color .12s ease; }
+.five-formation-card strong { margin-bottom: 3px; font-size: 1.12rem; }
+.five-formation-card.selected { border-color: rgba(255,211,79,.72); box-shadow: 0 0 0 2px rgba(255,211,79,.14); }
+.five-pitch { min-height: 470px; padding: 18px; border-width: 1px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.08); contain: layout paint; content-visibility: auto; contain-intrinsic-size: 470px; }
+.five-pitch-line { gap: 12px; }
+.five-validation { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; align-items: center; padding: 11px 13px; background: rgba(10,28,54,.78); }
+.five-validation strong { white-space: nowrap; }
+.five-validation p { margin: 0; }
+.five-selector { position: sticky; top: 12px; gap: 12px; max-height: calc(100vh - 24px); overflow: hidden; }
+.five-selector .section-head.compact { margin-bottom: 0; }
+.five-roster-list { max-height: min(480px, calc(100vh - 300px)); overscroll-behavior: contain; scrollbar-gutter: stable; content-visibility: auto; contain-intrinsic-size: 480px; }
+.five-roster-card { border-color: rgba(92,130,177,.26); background: rgba(7,23,44,.86); transition: border-color .12s ease, background-color .12s ease; }
+.five-roster-card:hover { border-color: rgba(255,211,79,.55); }
+.five-match-screen { background: radial-gradient(circle at 12% 8%, rgba(54,169,255,.12), transparent 24rem), var(--bg); }
+.five-match-content { gap: 14px; }
+.five-match-hero { overflow: hidden; border-color: rgba(54,169,255,.26); border-radius: 22px; box-shadow: 0 12px 30px rgba(0,0,0,.18); }
+.five-match-team { padding: 9px 10px; border: 1px solid rgba(92,130,177,.20); border-radius: 16px; background: rgba(5,15,30,.38); }
+.five-match-vs-badge { display: grid; place-items: center; width: 44px; height: 44px; border: 1px solid rgba(255,211,79,.38); border-radius: 50%; background: rgba(5,7,11,.42); font-size: 1.15rem; }
+.five-match-pitch-panel, .five-match-log-panel, .five-match-result-panel { content-visibility: auto; contain-intrinsic-size: 420px; }
+.five-match-field { min-height: 370px; box-shadow: inset 0 0 0 1px rgba(5,7,11,.22); contain: layout paint; }
+.five-match-field-side { gap: 6px; padding-block: 34px 14px; }
+.five-match-summary { gap: 10px; }
+.five-match-summary > div { padding: 11px 13px; background: rgba(10,28,54,.72); }
+.five-match-trait { padding: 8px 9px; background: rgba(5,15,30,.42); }
+.five-match-controls { border-radius: 18px; box-shadow: 0 10px 24px rgba(0,0,0,.16); }
+.five-match-card { will-change: auto; }
+.five-match-card:hover { transform: none; }
+@media (max-width: 780px) {
+  .five-layout { grid-template-columns: 1fr; }
+  .five-pitch { min-height: 410px; padding: 14px 8px; contain-intrinsic-size: 410px; }
+  .five-selector { position: static; max-height: none; overflow: visible; }
+  .five-validation { grid-template-columns: 1fr; }
+  .five-validation strong { white-space: normal; }
+  .five-match-hero { padding: 12px; }
+  .five-match-field { min-height: 390px; contain-intrinsic-size: 390px; }
+  .five-match-field-side--mobile { height: 390px; }
+}
