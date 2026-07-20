@@ -3412,7 +3412,7 @@
             <aside class="panel five-selector">
               <div class="section-head compact"><div><p class="eyebrow">${escapeHtml(selectedSlot)}</p><h3>Seleziona giocatore</h3><p class="muted small">Scegli un ${escapeHtml(selectedRole)} dalla rosa.</p></div></div>
               <div class="role-filter-bar">
-                ${["all", "GK", "DF", "MF", "FW"].map((role) => `<button type="button" class="role-filter ${filter === role ? "active" : ""}" data-five-filter="${role}">${roleBadge(role)}</button>`).join("")}
+                ${["all", "GK", "DF", "MF", "FW"].map((role) => `<button type="button" class="role-filter ${filter === role ? "active" : ""}" data-five-filter="${role}" aria-selected="${filter === role ? "true" : "false"}">${roleBadge(role)}</button>`).join("")}
               </div>
               <div class="five-roster-list">
                 ${rosterEntries.length ? rosterEntries.map((entry) => fiveRosterCard(entry, selectedSlot)).join("") : '<p class="muted">Nessun giocatore compatibile con questo filtro.</p>'}
@@ -3438,7 +3438,9 @@
         slotButton.classList.toggle("selected", slotButton.dataset.fiveSlot === ui.fiveVFiveSelectedSlot);
       });
       document.querySelectorAll("[data-five-filter]").forEach((filterButton) => {
-        filterButton.classList.toggle("active", filterButton.dataset.fiveFilter === ui.fiveVFiveRoleFilter);
+        const active = filterButton.dataset.fiveFilter === ui.fiveVFiveRoleFilter;
+        filterButton.classList.toggle("active", active);
+        filterButton.setAttribute("aria-selected", active ? "true" : "false");
       });
       const currentSlot = currentFormation.slots.find((slot) => slot.key === ui.fiveVFiveSelectedSlot);
       const selectedRoleNow = currentSlot?.role;
@@ -3452,8 +3454,22 @@
       const selectorHead = document.querySelector(".five-selector .section-head.compact");
       if (selectorHead && currentSlot) selectorHead.innerHTML = `<div><p class="eyebrow">${escapeHtml(currentSlot.key)}</p><h3>Seleziona giocatore</h3><p class="muted small">Scegli un ${escapeHtml(selectedRoleNow)} dalla rosa.</p></div>`;
       const list = document.querySelector(".five-roster-list");
-      if (list) list.innerHTML = nextEntries.length ? nextEntries.map((entry) => fiveRosterCard(entry, ui.fiveVFiveSelectedSlot)).join("") : '<p class="muted">Nessun giocatore compatibile con questo filtro.</p>';
-      bindFiveRosterButtons();
+      if (list) {
+        const fragment = document.createDocumentFragment();
+        if (nextEntries.length) {
+          nextEntries.forEach((entry) => {
+            const template = document.createElement("template");
+            template.innerHTML = fiveRosterCard(entry, ui.fiveVFiveSelectedSlot).trim();
+            if (template.content.firstElementChild) fragment.append(template.content.firstElementChild);
+          });
+        } else {
+          const empty = document.createElement("p");
+          empty.className = "muted";
+          empty.textContent = "Nessun giocatore compatibile con questo filtro.";
+          fragment.append(empty);
+        }
+        list.replaceChildren(fragment);
+      }
     };
     const refreshFiveAfterAssignment = () => {
       const snapshot = scrollSnapshot();
@@ -3481,25 +3497,29 @@
       ui.fiveVFiveRoleFilter = role || "all";
       refreshFiveSelection();
     };
-    const bindFiveRosterButtons = () => {
-      document.querySelectorAll("[data-five-player]").forEach((button) => button.addEventListener("click", (event) => {
+    const selector = document.querySelector(".five-selector");
+    selector?.addEventListener("click", (event) => {
+      const filterButton = event.target.closest("[data-five-filter]");
+      if (filterButton && selector.contains(filterButton)) {
         event.preventDefault();
-        try {
-          global.FiveVFive.assign(run, ui.fiveVFiveSelectedSlot, button.dataset.fivePlayer, fiveRoleForPlayerId);
-          global.RunState.save(run);
-          toast("Giocatore assegnato alla formazione 5v5");
-          refreshFiveAfterAssignment();
-        } catch (error) {
-          toast(error.message);
-        }
-      }));
-    };
+        ui.fiveVFiveRoleFilter = filterButton.dataset.fiveFilter || "all";
+        refreshFiveSelection();
+        filterButton.focus?.({ preventScroll: true });
+        return;
+      }
+      const playerButton = event.target.closest("[data-five-player]");
+      if (!playerButton || !selector.contains(playerButton)) return;
+      event.preventDefault();
+      try {
+        global.FiveVFive.assign(run, ui.fiveVFiveSelectedSlot, playerButton.dataset.fivePlayer, fiveRoleForPlayerId);
+        global.RunState.save(run);
+        toast("Giocatore assegnato alla formazione 5v5");
+        refreshFiveAfterAssignment();
+      } catch (error) {
+        toast(error.message);
+      }
+    });
     document.querySelectorAll("[data-five-slot]").forEach((button) => button.addEventListener("click", onFiveSlotClick));
-    document.querySelectorAll("[data-five-filter]").forEach((button) => button.addEventListener("click", () => {
-      ui.fiveVFiveRoleFilter = button.dataset.fiveFilter;
-      runKeepingScroll(() => renderFiveVFive(options));
-    }));
-    bindFiveRosterButtons();
     document.getElementById("clear-five-slot").addEventListener("click", (event) => {
       event.preventDefault();
       global.FiveVFive.clearSlot(run, ui.fiveVFiveSelectedSlot);
