@@ -7,6 +7,73 @@
   const modalRoot = document.getElementById("modal-root");
   const toastRoot = document.getElementById("toast-root");
 
+  const APP_BACKGROUND_BREAKPOINT = 1024;
+  const APP_BACKGROUND_PATHS = Object.freeze({
+    mobile: "/assets/backgrounds/inazuma-background-mobile-light.jpeg",
+    desktop: "/assets/backgrounds/inazuma-background-desktop-light.jpeg",
+  });
+
+  function createAppBackgroundController(shell) {
+    const state = { currentMode: null, loaded: new Set(), failed: new Set(), pending: new Map() };
+    const query = global.matchMedia ? global.matchMedia(`(min-width: ${APP_BACKGROUND_BREAKPOINT}px)`) : null;
+    const modeForViewport = () => (query ? (query.matches ? "desktop" : "mobile") : ((global.innerWidth || 0) >= APP_BACKGROUND_BREAKPOINT ? "desktop" : "mobile"));
+
+    const applyFallback = (mode) => {
+      if (!shell) return;
+      shell.classList.remove("app-shell--background-loaded");
+      shell.classList.toggle("app-shell--background-desktop", mode === "desktop");
+      shell.classList.toggle("app-shell--background-mobile", mode === "mobile");
+      shell.style.removeProperty("--app-background-image");
+    };
+
+    const applyLoaded = (mode, path) => {
+      if (!shell || mode !== state.currentMode) return;
+      shell.style.setProperty("--app-background-image", `url("${path}")`);
+      shell.classList.add("app-shell--background-loaded");
+      shell.classList.toggle("app-shell--background-desktop", mode === "desktop");
+      shell.classList.toggle("app-shell--background-mobile", mode === "mobile");
+    };
+
+    const preload = (mode) => {
+      const path = APP_BACKGROUND_PATHS[mode];
+      if (!path) return;
+      if (state.loaded.has(mode)) { applyLoaded(mode, path); return; }
+      if (state.failed.has(mode)) { applyFallback(mode); return; }
+      if (state.pending.has(mode)) return;
+
+      const image = new Image();
+      state.pending.set(mode, image);
+      image.onload = () => {
+        state.pending.delete(mode);
+        state.loaded.add(mode);
+        applyLoaded(mode, path);
+      };
+      image.onerror = () => {
+        state.pending.delete(mode);
+        state.failed.add(mode);
+        if (mode === state.currentMode) applyFallback(mode);
+      };
+      image.src = path;
+    };
+
+    const refresh = () => {
+      const mode = modeForViewport();
+      if (mode === state.currentMode) return;
+      state.currentMode = mode;
+      applyFallback(mode);
+      preload(mode);
+    };
+
+    refresh();
+    if (query?.addEventListener) query.addEventListener("change", refresh);
+    else if (query?.addListener) query.addListener(refresh);
+
+    return { refresh, paths: APP_BACKGROUND_PATHS, breakpoint: APP_BACKGROUND_BREAKPOINT };
+  }
+
+  const appBackgroundController = createAppBackgroundController(app);
+  global.InazumaBackgrounds = { paths: APP_BACKGROUND_PATHS, breakpoint: APP_BACKGROUND_BREAKPOINT, refresh: appBackgroundController.refresh };
+
   const CATEGORY_CLASS_BY_NAME = {
     Scarso: "rarity-scarso",
     Debole: "rarity-debole",

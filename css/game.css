@@ -1,16 +1,30 @@
 :root {
-  color-scheme: dark;
-  --bg: #061126;
-  --panel: #0c1c36;
-  --panel-2: #122847;
-  --line: #2c476b;
-  --text: #f3f7ff;
-  --muted: #9db1cc;
+  color-scheme: light;
+  --app-fallback-start: #dff3ff;
+  --app-fallback-middle: #eef8ff;
+  --app-fallback-end: #cfe8fa;
+  --app-fallback-glow: rgba(255, 255, 255, 0.95);
+  --surface-page: rgba(241, 249, 255, 0.82);
+  --surface-panel: rgba(255, 255, 255, 0.86);
+  --surface-panel-strong: rgba(238, 247, 255, 0.94);
+  --surface-header: rgba(231, 244, 255, 0.90);
+  --text-primary: #10213a;
+  --text-secondary: #405873;
+  --text-muted: #6a8096;
+  --border-soft: rgba(58, 113, 164, 0.26);
+  --border-strong: rgba(39, 94, 147, 0.44);
+  --shadow-soft: 0 12px 30px rgba(39, 80, 117, 0.14);
+  --bg: var(--app-fallback-end);
+  --panel: var(--surface-panel);
+  --panel-2: var(--surface-panel-strong);
+  --line: var(--border-soft);
+  --text: var(--text-primary);
+  --muted: var(--text-muted);
   --blue: #36a9ff;
   --yellow: #ffd34f;
   --red: #ff5b62;
   --green: #34d399;
-  --shadow: 0 16px 48px rgba(0, 0, 0, 0.35);
+  --shadow: var(--shadow-soft);
   --z-five-v-five-actions: 25;
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -22,17 +36,25 @@ html, body { min-height: 100%; }
 body {
   margin: 0;
   color: var(--text);
-  background:
-    radial-gradient(circle at 10% 0%, rgba(54, 169, 255, 0.18), transparent 34rem),
-    radial-gradient(circle at 90% 100%, rgba(255, 211, 79, 0.12), transparent 34rem),
-    var(--bg);
+  background: var(--app-light-fallback);
 }
 
 button, select { font: inherit; }
 button { cursor: pointer; }
 button:disabled { cursor: not-allowed; opacity: 0.5; }
 
-.app-shell { min-height: 100vh; }
+body {
+  --app-light-fallback:
+    radial-gradient(circle at 20% 15%, var(--app-fallback-glow), transparent 32%),
+    radial-gradient(circle at 84% 8%, rgba(188, 225, 255, 0.62), transparent 30rem),
+    linear-gradient(160deg, var(--app-fallback-start) 0%, var(--app-fallback-middle) 46%, var(--app-fallback-end) 100%);
+}
+
+.app-shell { min-height: 100vh; position: relative; isolation: isolate; background: transparent; }
+.app-shell::before { content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none; background: var(--app-light-fallback); background-repeat: no-repeat; background-size: cover; background-position: center; }
+.app-shell.app-shell--background-loaded::before { background-image: var(--app-background-image), var(--app-light-fallback); background-repeat: no-repeat, no-repeat; background-size: cover, cover; background-position: center, center; }
+.app-shell.app-shell--background-mobile::before { background-position: center top, center; }
+.app-shell.app-shell--background-desktop::before { background-position: center, center; }
 
 .loading-screen,
 .hero-screen,
@@ -1460,17 +1482,17 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   --color-danger-500: #ff5b62;
   --color-growth-500: #34d399;
   --color-elite-500: #8b5cf6;
-  --gradient-app: radial-gradient(circle at 14% 6%, rgba(54,169,255,.22), transparent 28rem), radial-gradient(circle at 88% 18%, rgba(139,92,246,.16), transparent 30rem), radial-gradient(circle at 72% 92%, rgba(255,211,79,.15), transparent 34rem), linear-gradient(180deg, #061126 0%, #030914 100%);
-  --gradient-panel: linear-gradient(155deg, rgba(16,43,82,.96), rgba(7,19,39,.94));
+  --gradient-app: var(--app-light-fallback);
+  --gradient-panel: linear-gradient(155deg, var(--surface-panel), var(--surface-panel-strong));
   --gradient-cta: linear-gradient(135deg, #ffd34f 0%, #ffb020 52%, #ff7a45 100%);
   --space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 24px; --space-6: 32px;
   --radius-sm: 10px; --radius-md: 16px; --radius-lg: 24px; --radius-xl: 32px;
-  --shadow-soft: 0 14px 40px rgba(0,0,0,.28);
-  --shadow-glow: 0 0 34px rgba(54,169,255,.18);
+  --shadow-soft: 0 12px 30px rgba(39, 80, 117, 0.14);
+  --shadow-glow: 0 0 34px rgba(54,169,255,.12);
   --transition-fast: 160ms ease;
   --bp-mobile: 780px;
   --z-header: 30; --z-bottom-nav: 40; --z-modal: 80;
-  --bg: var(--color-night-900); --panel: var(--color-navy-800); --panel-2: var(--color-navy-700); --text: var(--color-cream-100); --muted: var(--color-slate-300); --blue: var(--color-electric-500); --yellow: var(--color-gold-500); --red: var(--color-danger-500); --green: var(--color-growth-500);
+  --bg: var(--app-fallback-end); --panel: var(--surface-panel); --panel-2: var(--surface-panel-strong); --text: var(--text-primary); --muted: var(--text-muted); --blue: var(--color-electric-500); --yellow: var(--color-gold-500); --red: var(--color-danger-500); --green: var(--color-growth-500);
 }
 body { background: var(--gradient-app); }
 :focus-visible { outline: 3px solid rgba(255,211,79,.72); outline-offset: 3px; }
@@ -2005,3 +2027,27 @@ body { background: var(--gradient-app); }
   .five-match-field { min-height: 470px; contain-intrinsic-size: 470px; }
   .five-match-field-side--mobile { height: 470px; }
 }
+
+
+/* Responsive light background preparation: keep player cards and football fields visually unchanged. */
+.loading-screen, .hero-screen, .gameover-screen { color: var(--text-primary); }
+.topbar { border-bottom-color: var(--border-soft); background: var(--surface-header); color: var(--text-primary); box-shadow: 0 10px 24px rgba(39,80,117,.10); }
+.status-pill { background: var(--surface-panel-strong); border-color: var(--border-soft); color: var(--text-primary); }
+.panel, .formation-card, .inventory-hero, .inventory-category, .inventory-empty-state, .trade-selection-summary, .trade-flow-summary > div, .trade-confirm-panel > div, .squad-status-card, .five-editor-head, .five-formation-card, .five-validation, .five-roster-card, .five-match-hero, .five-match-team, .five-match-summary > div, .five-match-trait { background: var(--surface-panel); border-color: var(--border-soft); color: var(--text-primary); box-shadow: var(--shadow-soft); }
+.panel .panel, .modal .panel { background: var(--surface-panel-strong); }
+.btn:not(.btn-primary):not(.btn-yellow):not(.btn-danger), .inventory-filter, .squad-formation-tab, .boss-match-team-tab { background: var(--surface-panel-strong); border-color: var(--border-soft); color: var(--text-primary); }
+.btn-ghost { background: rgba(255,255,255,.35); }
+.muted, .player-meta, .inventory-summary small, .equipped-player-copy small, .equipped-list .equipped-summary p { color: var(--text-muted); }
+.role-chip { background: rgba(219, 238, 252, .92); color: #17395f; border: 1px solid rgba(58,113,164,.18); }
+.progress-track { background: rgba(176, 210, 235, .55); }
+.inventory-summary span, .equipped-list .equipped-summary { background: rgba(255,255,255,.64); border-color: var(--border-soft); color: var(--text-primary); }
+.inventory-summary strong, .item-quantity { color: #8a5d00; }
+.bottom-nav { background: rgba(246, 251, 255, .94); border-color: var(--border-soft); box-shadow: 0 16px 34px rgba(39,80,117,.18); }
+.bottom-nav button { color: var(--text-secondary); }
+.modal { background: var(--surface-panel-strong); color: var(--text-primary); border-color: var(--border-soft); box-shadow: 0 24px 70px rgba(16,33,58,.24); }
+.modal-backdrop { background: rgba(4, 13, 30, .62); }
+.player-card, .player-card *, .match-player-card, .match-player-card *, .pitch, .five-pitch, .five-match-field, .boss-match-field, .route-boss-preview-field { color-scheme: dark; }
+.player-card .role-chip, .match-player-card .role-chip, .player-detail-layout .role-chip { background: #1e3c64; color: #cce5ff; border-color: transparent; }
+.five-screen, .five-match-screen { background: transparent; }
+.album-home-card, .album-collection-content { background: var(--surface-panel); color: var(--text-primary); }
+@media (min-width: 781px) { .bottom-nav { background: rgba(246, 251, 255, .94); } }
