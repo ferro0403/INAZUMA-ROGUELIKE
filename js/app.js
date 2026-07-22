@@ -1062,18 +1062,75 @@
     if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
   }
 
+  function runTimestamp(run) {
+    return Math.max(0, ...[run?.lastPlayedAt, run?.updatedAt, run?.createdAt].map((value) => Date.parse(value || "") || 0));
+  }
+
+  function savedRosterEntries(savedRun) {
+    const byId = new Map((savedRun?.roster || []).map((entry) => [String(entry.playerId), entry]));
+    const orderedIds = [...(savedRun?.lineup || []), ...(savedRun?.bench || [])].map((entry) => String(entry?.playerId || entry)).filter(Boolean);
+    const ids = orderedIds.length ? orderedIds : (savedRun?.roster || []).map((entry) => String(entry.playerId)).filter(Boolean);
+    return [...new Set(ids)].map((id) => byId.get(id) || { playerId: id, level: savedRun?.teamLevel || 0 }).filter(Boolean);
+  }
+
+  function seasonRunAverageOverall(savedRun, database, playersById) {
+    const entries = savedRosterEntries(savedRun);
+    const overalls = entries.map((entry) => {
+      const source = playersById.get(String(entry.playerId));
+      if (!source) return null;
+      const level = Math.floor(Number(entry.level ?? savedRun?.teamLevel ?? 0));
+      return Number(global.InazumaProgression.getPlayerAtLevel(source, level, database)?.overall);
+    }).filter(Number.isFinite);
+    if (!overalls.length) return "-";
+    return Math.round(overalls.reduce((sum, value) => sum + value, 0) / overalls.length);
+  }
+
+  function seasonRosterPreviewMarkup(savedRun, database, playersById) {
+    const entries = savedRosterEntries(savedRun).slice(0, 5);
+    if (!entries.length) return `<div class="season-empty-preview"><strong>Rosa da costruire</strong><span>La preview apparirà appena sceglierai i primi giocatori.</span></div>`;
+    return entries.map((entry) => {
+      const source = playersById.get(String(entry.playerId));
+      if (!source) return "";
+      const level = Number(entry.level ?? savedRun?.teamLevel ?? 0);
+      const resolved = global.InazumaProgression.getPlayerAtLevel(source, Math.floor(level), database);
+      return compactPlayerCardMarkup({ ...source, ...resolved, playerId: source.playerId }, { level, overall: resolved.overall, extraClass: "season-preview-player", detailLayout: "stacked" });
+    }).join("");
+  }
+
+  function seasonSelectCardMarkup({ season, savedRun, database, playersById, isLastPlayed }) {
+    const activeSaved = savedRun && global.RunState.isActiveRun(savedRun) ? savedRun : null;
+    const identity = activeSaved ? normalizeTeamIdentity(activeSaved.teamIdentity) : null;
+    const totalBosses = database?.bossOrder?.length || 0;
+    const bossIndex = Math.min(Number(activeSaved?.bossIndex || 0), Math.max(totalBosses - 1, 0));
+    const boss = activeSaved ? database?.bossOrder?.[bossIndex] : null;
+    const formation = activeSaved ? database?.formations?.eleven?.find((item) => item.id === activeSaved.formationId) : null;
+    const average = activeSaved ? seasonRunAverageOverall(activeSaved, database, playersById) : "-";
+    const bossStep = activeSaved ? `${Math.min(Number(activeSaved.bossIndex || 0) + 1, totalBosses || 99)}/${totalBosses || "?"}` : "-";
+    const actions = activeSaved
+      ? `<button type="button" class="btn btn-yellow" data-season-continue="${escapeHtml(season.id)}">Continua run</button><button type="button" class="btn btn-ghost" data-season-new="${escapeHtml(season.id)}">Inizia nuova run</button>`
+      : `<button type="button" class="btn btn-yellow" data-season-new="${escapeHtml(season.id)}">Inizia nuova run</button>`;
+
+    if (!activeSaved) {
+      return `<article class="home-hub-card season-select-card season-select-card--empty"><div class="season-card-head"><div><div class="home-card-kicker"><span>⚡</span><strong>Season</strong></div><h2>${escapeHtml(season.name)}</h2></div><span class="season-status-pill">Nessuna run attiva</span></div><p class="season-empty-copy">Inizia una nuova leggenda con database, boss e salvataggio dedicati a questa Season.</p><div class="season-empty-preview"><strong>Preview run pronta</strong><span>Scegli la Season, crea la squadra e costruisci la rosa passo dopo passo.</span></div><div class="home-card-actions season-card-actions">${actions}</div></article>`;
+    }
+
+    return `<article class="home-hub-card season-select-card ${isLastPlayed ? "season-select-card--last" : ""}"><div class="season-card-head"><div><div class="home-card-kicker"><span>⚡</span><strong>Season</strong></div><h2>${escapeHtml(season.name)}</h2><p class="season-team-name">${escapeHtml(identity.name)}</p></div><div class="season-card-badges"><span class="season-status-pill">Run attiva</span>${isLastPlayed ? `<span class="season-status-pill season-status-pill--last">Ultima giocata</span>` : ""}</div></div><div class="season-run-strip"><span>Boss <strong>${escapeHtml(boss?.teamName || "-")}</strong> <em>${escapeHtml(bossStep)}</em></span><span>Lv <strong>${escapeHtml(activeSaved.teamLevel || 0)}</strong></span><span>${runHeartsMarkup(activeSaved)}</span></div><div class="season-info-grid"><div><span>Modulo</span><strong>${escapeHtml(formation?.name || activeSaved.formationId || "Da scegliere")}</strong></div><div><span>Overall medio</span><strong>${escapeHtml(average)}</strong></div></div><div class="season-roster-block"><div class="season-section-title"><span>Preview rosa</span><small>${escapeHtml(savedRosterEntries(activeSaved).length)} giocatori</small></div><div class="season-roster-preview">${seasonRosterPreviewMarkup(activeSaved, database, playersById)}</div></div><div class="home-card-actions season-card-actions">${actions}</div></article>`;
+  }
+
   async function renderSeasonSelect() {
     await loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID);
-    const cards = global.SeasonRegistry.list().map((season) => {
-      const saved = global.RunState.load(season.id);
-      const activeSaved = saved && global.RunState.isActiveRun(saved) ? saved : null;
-      const meta = activeSaved ? `Boss ${Math.min(Number(activeSaved.bossIndex || 0) + 1, 99)} · Lv ${activeSaved.teamLevel || 0} · ${activeSaved.lives ?? "-"} vite` : "Nessun salvataggio attivo per questa Season";
-      const actions = activeSaved
-        ? `<button type="button" class="btn btn-yellow" data-season-continue="${escapeHtml(season.id)}">Continua run</button><button type="button" class="btn btn-ghost" data-season-new="${escapeHtml(season.id)}">Inizia nuova run</button>`
-        : `<button type="button" class="btn btn-yellow" data-season-new="${escapeHtml(season.id)}">Inizia nuova run</button>`;
-      return `<article class="home-hub-card season-select-card"><div class="home-card-kicker"><span>⚡</span><strong>SEASON</strong></div><h2>${escapeHtml(season.name)}</h2><p class="muted">${escapeHtml(meta)}</p><div class="home-card-actions season-card-actions">${actions}</div></article>`;
-    }).join("");
-    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="topbar"><div><p class="eyebrow">Run</p><h1>Seleziona Season</h1><p class="muted">Ogni Season ha database, boss e salvataggio separati.</p></div><button class="btn" id="season-back-home">Home</button></header><section class="home-choice-grid">${cards}</section></main>`;
+    const seasons = global.SeasonRegistry.list();
+    await Promise.all(seasons.map((season) => global.SeasonRegistry.loadDatabase(season.id)));
+    const runs = seasons.map((season) => ({ season, savedRun: global.RunState.load(season.id) }));
+    const latestTime = Math.max(0, ...runs.filter((entry) => entry.savedRun && global.RunState.isActiveRun(entry.savedRun)).map((entry) => runTimestamp(entry.savedRun)));
+    const cards = runs.map(({ season, savedRun }) => seasonSelectCardMarkup({
+      season,
+      savedRun,
+      database: global.SeasonRegistry.database(season.id),
+      playersById: global.SeasonRegistry.playersIndex(season.id),
+      isLastPlayed: Boolean(savedRun && latestTime && runTimestamp(savedRun) === latestTime),
+    })).join("");
+    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="topbar season-select-topbar"><div><p class="eyebrow">Run</p><h1>Seleziona Season</h1><p class="muted">Scegli quale run continuare o da quale Season iniziare: ogni salvataggio resta separato.</p></div><button class="btn" id="season-back-home">Home</button></header><section class="home-choice-grid season-choice-grid">${cards}</section></main>`;
     resetRenderedViewScroll();
     document.getElementById("season-back-home").addEventListener("click", renderHome);
     document.querySelectorAll("[data-season-continue]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonContinue, { markPlayed: true }); resumeRun(); }));
