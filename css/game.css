@@ -2097,3 +2097,79 @@ body { background: var(--gradient-app); }
   .section-root-button { width: 46px; min-width: 46px; min-height: 46px; }
   .topbar-title-group { gap: 8px; }
 }
+
+/* Mobile V2 experimental vertical slice: Home, Season select, Route only. */
+@media (max-width: 780px), (pointer: coarse) {
+  .mobile-v2 {
+    --v2-ink: #fff6db;
+    --v2-gold: #ffd34f;
+    --v2-orange: #ff8a1f;
+    --v2-red: #ff4e4e;
+    position: relative;
+    min-height: 100svh;
+    overflow-x: clip;
+    color: var(--v2-ink);
+    background: #030406;
+    isolation: isolate;
+    padding: calc(12px + env(safe-area-inset-top)) 14px calc(18px + env(safe-area-inset-bottom));
+  }
+  .mobile-v2::before, .mobile-v2::after, .mobile-v2-stadium { content: ""; position: absolute; inset: 0; pointer-events: none; z-index: -1; }
+  .mobile-v2-stadium { background:
+    radial-gradient(circle at 18% 8%, rgba(255,211,79,.42), transparent 16%),
+    radial-gradient(circle at 88% 10%, rgba(255,138,31,.32), transparent 18%),
+    linear-gradient(120deg, rgba(255,211,79,.12) 0 1px, transparent 1px 34px),
+    linear-gradient(180deg, #05070b 0%, #07101b 45%, #030406 100%); }
+  .mobile-v2::before { background: linear-gradient(90deg, rgba(0,0,0,.82), rgba(0,0,0,.28) 46%, rgba(0,0,0,.74)), radial-gradient(ellipse at 50% 88%, rgba(255,211,79,.20), transparent 38%); }
+  .mobile-v2::after { inset: auto -20% 0; height: 42%; background: repeating-linear-gradient(88deg, rgba(255,255,255,.16) 0 1px, transparent 1px 62px), linear-gradient(180deg, transparent, rgba(19,90,45,.36)); transform: skewY(-7deg); opacity: .7; }
+  .mobile-v2-hud { position: relative; z-index: 4; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 42px; font-size: .75rem; font-weight: 950; letter-spacing: .06em; text-transform: uppercase; }
+  .mobile-v2-hud > span, .mobile-v2-hud .section-root-button { display: inline-flex; align-items: center; min-height: 34px; padding: 7px 10px; border: 1px solid rgba(255,211,79,.28); border-radius: 999px; background: rgba(5,7,11,.62); color: var(--v2-ink); box-shadow: 0 0 18px rgba(255,211,79,.08); }
+  .mobile-v2-lobby { position: relative; min-height: calc(100svh - 188px); display: grid; align-items: center; padding: 18px 0 120px; }
+  .mobile-v2-copy { position: relative; z-index: 2; width: 58%; padding: 18px 0 22px; text-shadow: 0 3px 20px rgba(0,0,0,.9); }
+  .mobile-v2-kicker { margin: 0 0 8px; color: var(--v2-gold); font-size: .76rem; font-weight: 950; text-transform: uppercase; letter-spacing: .16em; }
+  .mobile-v2 h1 { margin: 0; font-size: clamp(2.25rem, 13vw, 4.6rem); line-height: .82; letter-spacing: -.07em; text-transform: uppercase; }
+  .mobile-v2-boss { margin-top: 18px; display: grid; gap: 4px; }
+  .mobile-v2-boss span { color: rgba(255,246,219,.7); font-size: .7rem; text-transform: uppercase; font-weight: 900; }
+  .mobile-v2-boss strong { color: #fff; font-size: 1.1rem; }
+  .mobile-v2-progress { width: min(220px, 100%); height: 8px; margin-top: 16px; transform: skewX(-18deg); background: rgba(255,255,255,.13); overflow: hidden; }
+  .mobile-v2-progress span { display: block; height: 100%; background: linear-gradient(90deg, var(--v2-gold), var(--v2-orange)); box-shadow: 0 0 18px var(--v2-gold); }
+  .mobile-v2-player-art { position: absolute; right: -12%; bottom: 82px; z-index: 1; width: min(78vw, 360px); height: 72svh; object-fit: contain; object-position: bottom center; filter: drop-shadow(0 28px 30px rgba(0,0,0,.72)); animation: mobileV2Enter .28s ease-out both; }
+  .mobile-v2-player-art--empty { width: 58vw; height: 58svh; background: linear-gradient(135deg, rgba(255,211,79,.34), rgba(255,138,31,.10)); clip-path: polygon(42% 0, 68% 16%, 84% 55%, 62% 100%, 24% 86%, 10% 32%); }
+  .mobile-v2-cta-dock { position: fixed; left: 14px; right: 14px; bottom: calc(14px + env(safe-area-inset-bottom)); z-index: 5; display: grid; gap: 10px; }
+  .mobile-v2-continue, .mobile-v2-action-primary { min-height: 58px; border: 0; border-radius: 18px 18px 18px 4px; background: linear-gradient(100deg, var(--v2-gold), var(--v2-orange)); color: #130b00; font-size: 1.05rem; font-weight: 1000; text-transform: uppercase; box-shadow: 0 16px 38px rgba(255,138,31,.34); }
+  .mobile-v2-quick { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .mobile-v2-quick button, .mobile-v2-action-secondary { min-height: 48px; border: 1px solid rgba(255,211,79,.30); border-radius: 14px; background: rgba(5,7,11,.78); color: var(--v2-ink); font-weight: 950; }
+  .mobile-v2-season-rail { height: calc(100svh - 62px - env(safe-area-inset-top)); overflow-y: auto; scroll-snap-type: y mandatory; display: grid; gap: 16px; padding: 8px 0 18px; }
+  .mobile-v2-season-cover { position: relative; min-height: calc(100svh - 96px); overflow: hidden; border: 1px solid rgba(255,211,79,.25); border-radius: 30px; background: #05070b; scroll-snap-align: start; padding: 22px; box-shadow: inset 0 0 0 1px rgba(255,255,255,.06); }
+  .mobile-v2-season-cover--ie2 .mobile-v2-season-bg { filter: hue-rotate(330deg) saturate(1.2); }
+  .mobile-v2-season-bg { position: absolute; inset: 0; background: radial-gradient(circle at 80% 18%, rgba(255,138,31,.36), transparent 24%), radial-gradient(circle at 10% 82%, rgba(255,211,79,.24), transparent 22%), linear-gradient(135deg, rgba(255,255,255,.08) 0 1px, transparent 1px 26px); opacity: .9; }
+  .mobile-v2-season-copy, .mobile-v2-season-stats, .mobile-v2-season-boss, .mobile-v2-season-actions, .mobile-v2-season-preview { position: relative; z-index: 2; }
+  .mobile-v2-season-copy h2 { margin: 0; max-width: 62%; font-size: 2.4rem; line-height: .86; text-transform: uppercase; }
+  .mobile-v2-season-art { right: -25%; bottom: 128px; width: 86vw; height: 64svh; }
+  .mobile-v2-season-stats { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+  .mobile-v2-season-stats span, .mobile-v2-season-boss { padding: 8px 10px; border-radius: 999px; background: rgba(0,0,0,.58); color: var(--v2-ink); font-weight: 900; }
+  .mobile-v2-season-preview { position: absolute; left: 16px; right: 16px; bottom: 96px; display: flex; gap: 8px; align-items: end; overflow: visible; transform: scale(.88); transform-origin: left bottom; }
+  .mobile-v2-season-actions { position: absolute; left: 16px; right: 16px; bottom: 16px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .mobile-v2-season-actions .mobile-v2-action-primary:only-child, .mobile-v2-season-actions .mobile-v2-action-secondary:only-child { grid-column: 1 / -1; }
+  .mobile-v2-route { padding-left: 0; padding-right: 0; }
+  .mobile-v2-route-hud { padding-inline: 12px; font-size: .68rem; }
+  .mobile-v2-boss-plate { position: relative; z-index: 3; margin: 8px 14px 0 auto; display: grid; grid-template-columns: 1fr 44px; align-items: center; width: min(78%, 330px); padding: 12px; border: 1px solid rgba(255,78,78,.4); border-radius: 18px 4px 18px 18px; background: linear-gradient(100deg, rgba(0,0,0,.72), rgba(90,16,16,.72)); color: white; text-align: left; }
+  .mobile-v2-map-wrap { position: relative; height: calc(100svh - 172px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); overflow: auto; overscroll-behavior: contain; }
+  .mobile-v2-map { position: relative; width: 100%; height: 1180px; min-height: 100%; }
+  .mobile-v2-map-lines { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .mobile-v2-map-lines line { stroke: rgba(255,255,255,.18); stroke-width: 18; stroke-linecap: round; }
+  .mobile-v2-map-lines line.available { stroke: var(--v2-gold); filter: drop-shadow(0 0 8px var(--v2-gold)); }
+  .mobile-v2-map-lines line.done { stroke: rgba(255,138,31,.55); }
+  .mobile-v2-node { position: absolute; transform: translate(-50%, -50%); width: 86px; min-height: 72px; border: 1px solid color-mix(in srgb, var(--node-color) 70%, white); border-radius: 18px 18px 18px 4px; background: radial-gradient(circle at 50% 0, color-mix(in srgb, var(--node-color) 38%, transparent), rgba(5,7,11,.90) 62%); color: white; font-weight: 950; box-shadow: 0 14px 28px rgba(0,0,0,.45); }
+  .mobile-v2-node.current, .mobile-v2-node.reachable { animation: mobileV2Node .32s ease-out both; }
+  .mobile-v2-node.completed { opacity: .45; filter: grayscale(.7); }
+  .mobile-v2-node.locked { opacity: .28; }
+  .mobile-v2-node-icon { display: grid; place-items: center; margin: 0 auto 4px; width: 30px; height: 30px; border-radius: 50%; background: var(--node-color); color: #05070b; }
+  .mobile-v2-node small { display: block; font-size: .58rem; color: rgba(255,246,219,.72); }
+  .mobile-v2-route-actions { position: fixed; left: 14px; right: 14px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 4; display: flex; justify-content: space-between; padding: 14px 16px; border: 1px solid rgba(255,211,79,.28); border-radius: 18px; background: rgba(5,7,11,.86); color: var(--v2-ink); font-weight: 950; }
+  .mobile-v2 button:active { transform: translateY(1px) scale(.99); }
+  @keyframes mobileV2Enter { from { opacity: 0; transform: translateX(24px) scale(.98); } to { opacity: 1; transform: translateX(0) scale(1); } }
+  @keyframes mobileV2Node { from { opacity: .4; transform: translate(-50%, -50%) scale(.88); } to { opacity: 1; transform: translate(-50%, -50%) scale(1); } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .mobile-v2 *, .mobile-v2 *::before, .mobile-v2 *::after { animation: none !important; transition: none !important; scroll-behavior: auto !important; }
+}
