@@ -547,7 +547,7 @@
   }
 
   function hearts() {
-    return Array.from({ length: global.SEASON1_CONFIG.startingLives }, (_, index) =>
+    return Array.from({ length: global.RunState?.runLivesLimit?.() ?? global.SEASON1_CONFIG.startingLives }, (_, index) =>
       index < run.lives ? "♥" : "♡"
     ).join(" ");
   }
@@ -1006,7 +1006,7 @@
   }
 
   function runHeartsMarkup(savedRun) {
-    const maxLives = Math.max(Number(global.SEASON1_CONFIG.startingLives || 3), Number(savedRun?.lives || 0));
+    const maxLives = Number(global.RunState?.runLivesLimit?.() ?? global.SEASON1_CONFIG.maxRunLives ?? global.SEASON1_CONFIG.startingLives ?? 2);
     return Array.from({ length: maxLives }, (_, index) => index < Number(savedRun?.lives || 0) ? "♥" : "♡").join(" ");
   }
 
@@ -3909,8 +3909,9 @@
       return renderInventory();
     }
     if (item.effect === "restore_life") {
-      if (run.lives >= global.SEASON1_CONFIG.startingLives) return toast("Hai già tutte le vite");
-      run.lives = Math.min(global.SEASON1_CONFIG.startingLives, run.lives + Number(item.amount || 1));
+      const maxRunLives = Number(global.RunState?.runLivesLimit?.() ?? global.SEASON1_CONFIG.maxRunLives ?? global.SEASON1_CONFIG.startingLives ?? 2);
+      if (run.lives >= maxRunLives) return toast("Hai già tutte le vite");
+      run.lives = Math.min(maxRunLives, run.lives + Number(item.amount || 1));
       removeInventoryItem(instanceId);
       global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
       global.RunState.save(run);

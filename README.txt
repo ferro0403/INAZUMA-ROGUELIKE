@@ -24,7 +24,7 @@ CONTENUTO ATTUALE
 - Scheda giocatore con fullbody 3D, statistiche attuali, overall e potenziale.
 - Modalità separata per modificare i titolari senza perdere il clic sulle informazioni.
 - Punti interrogativi bilanciati e senza ripetizioni consecutive.
-- 3 vite e ripristino al checkpoint del boss corrente.
+- 2 vite e ripristino al checkpoint del boss corrente.
 - Progressione, due ricompense 1-su-3 dopo i boss e sblocco squadre.
 - Salvataggio automatico in localStorage.
 
