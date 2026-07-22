@@ -4,7 +4,7 @@
   const DEFAULT_SEASON_ID = "ie1";
   const SEASONS = Object.freeze({
     ie1: Object.freeze({ id: "ie1", name: "Inazuma Eleven 1", database: "data/IE1_season_compact.json", albumCollectionId: "ie1" }),
-    ie2: Object.freeze({ id: "ie2", name: "Inazuma Eleven 2", database: "data/IE2_season_compact.json", albumCollectionId: "ie2" }),
+    ie2: Object.freeze({ id: "ie2", name: "Inazuma Eleven Ares", database: "data/IE2_season_compact.json", albumCollectionId: "ie2" }),
   });
 
   const dbBySeason = new Map();

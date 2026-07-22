@@ -40,7 +40,7 @@
   function createRun(teamIdentity = {}, seasonId = null) {
     const now = new Date().toISOString();
     const normalizedSeasonId = seasonIdOf(seasonId || global.SeasonRegistry?.activeId?.());
-    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), createdAt: now, updatedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: (config().startingLives ?? 3), formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [] };
+    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), createdAt: now, updatedAt: now, lastPlayedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: (config().startingLives ?? 3), formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [] };
   }
 
   function defaultPostBossFlowFromPending(run) {
@@ -74,6 +74,7 @@
     run.version = config().saveVersion;
     run.runId = run.runId || makeId("run");
     run.phase = run.phase || "formation";
+    run.lastPlayedAt = run.lastPlayedAt || run.updatedAt || run.savedAt || run.timestamp || run.createdAt || null;
     run.lives = Number.isFinite(Number(run.lives)) ? Number(run.lives) : (config().startingLives ?? 3);
     run.bossIndex = Number.isFinite(Number(run.bossIndex)) ? Number(run.bossIndex) : 0;
     for (const key of ["roster", "lineup", "bench", "inventory", "completedBossIds", "unlockedTeamIds"]) run[key] = Array.isArray(run[key]) ? run[key] : [];
@@ -91,7 +92,12 @@
   function save(run) { return RunStorage.save(run); }
   function load(seasonId = null) { return RunStorage.load(seasonId); }
   function hasSave(seasonId = null) { return !!RunStorage.load(seasonId); }
-  function remove(seasonId = null) { try { localStorage.removeItem(primaryKey(seasonId)); localStorage.removeItem(backupKey(seasonId)); localStorage.removeItem(tempKey(seasonId)); } catch (error) { console.error("Unable to remove run", error); } }
+  function isActiveRun(run) { return validate(run) && !run.gameOver && !["complete", "final-summary", "final-celebration", "gameover"].includes(String(run.phase || "")); }
+  function runSortTime(run, fallbackIndex = 0) { const value = run?.lastPlayedAt || run?.updatedAt || run?.savedAt || run?.timestamp || run?.createdAt || ""; const time = Date.parse(value); return Number.isFinite(time) ? time : fallbackIndex; }
+  function touch(run) { if (!run) return run; run.lastPlayedAt = new Date().toISOString(); return save(run); }
+  function activeSaves() { return (global.SeasonRegistry?.list?.() || [{ id: "ie1" }]).map((season, index) => ({ season, run: load(season.id), index })).filter((entry) => entry.run && isActiveRun(entry.run)).sort((a, b) => runSortTime(b.run, b.index) - runSortTime(a.run, a.index)); }
+  function latestActiveSave() { return activeSaves()[0] || null; }
+  function remove(seasonId = null) { try { const sid = seasonIdOf(seasonId); localStorage.removeItem(primaryKey(sid)); localStorage.removeItem(backupKey(sid)); localStorage.removeItem(tempKey(sid)); if (sid === "ie1") { localStorage.removeItem(config().saveKey); localStorage.removeItem(`${config().saveKey}_backup`); localStorage.removeItem(`${config().saveKey}_tmp`); } } catch (error) { console.error("Unable to remove run", error); } }
   function restoreBackup() { const backup = RunStorage.loadBackup(); if (!backup) return null; return save(backup); }
   function loadBackup() { return tryLoadKey(backupKey()); }
 
@@ -100,19 +106,23 @@
     validate, migrate,
     loadBackup,
     restoreBackup,
+    isActiveRun, runSortTime, touch, activeSaves, latestActiveSave,
     load(seasonId = null) {
-      const sid = seasonIdOf(seasonId || global.SeasonRegistry?.activeId?.());
-      const order = [primaryKey(sid), backupKey(sid), tempKey(sid), ...(sid === "ie1" ? [config().saveKey, `${config().saveKey}_backup`, `${config().saveKey}_tmp`, ...legacyKeys()] : [])];
-      for (const key of order) {
-        const loaded = tryLoadKey(key);
-        if (loaded) { loaded.seasonId = loaded.seasonId || sid; if (key !== primaryKey(sid) || Number(loaded.version) !== Number(config().saveVersion)) this.save(loaded); return loaded; }
-      }
-      return null;
+      const sid = seasonId == null ? seasonIdOf(null) : seasonIdOf(seasonId);
+      const order = sid === "ie1" ? [primaryKey(sid), backupKey(sid), tempKey(sid), config().saveKey, `${config().saveKey}_backup`, `${config().saveKey}_tmp`, ...legacyKeys()] : [primaryKey(sid), backupKey(sid), tempKey(sid)];
+      const candidates = order.map((key, index) => { const loaded = tryLoadKey(key); const raw = key === config().saveKey ? localStorage.getItem(key) : ""; return { key, index, loaded, legacyGlobal: key === config().saveKey && loaded && !/"seasonId"\s*:/.test(raw || "") }; }).filter((entry) => entry.loaded);
+      if (!candidates.length) return null;
+      candidates.forEach((entry) => { entry.loaded.seasonId = entry.loaded.seasonId || sid; });
+      const best = candidates.sort((a, b) => Number(b.legacyGlobal) - Number(a.legacyGlobal) || runSortTime(b.loaded, b.index) - runSortTime(a.loaded, a.index))[0];
+      if (best.key !== primaryKey(sid) || Number(best.loaded.version) !== Number(config().saveVersion)) this.save(best.loaded);
+      return best.loaded;
     },
     save(run) {
       try {
         const normalized = normalize(run);
-        normalized.updatedAt = new Date().toISOString();
+        const stamp = new Date().toISOString();
+        normalized.updatedAt = stamp;
+        normalized.lastPlayedAt = normalized.lastPlayedAt || stamp;
         const json = JSON.stringify(normalized);
         const reparsed = parseCandidate(json);
         const sid = seasonIdOf(normalized.seasonId);
@@ -122,6 +132,7 @@
         const existing = localStorage.getItem(primary);
         if (existing) { try { parseCandidate(existing); localStorage.setItem(backup, existing); } catch (_) {} }
         localStorage.setItem(primary, json);
+        if (sid === "ie1") localStorage.setItem(config().saveKey, json);
         localStorage.removeItem(tmp);
         Object.assign(run, reparsed);
         return run;
@@ -137,5 +148,5 @@
   function restoreAfterLoss(run, previousNodeId = null) { run.lives -= 1; if (run.lives <= 0) { run.lives = 0; run.gameOver = true; run.phase = "gameover"; return save(run); } const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null; if (!targetNodeId) throw new Error("Previous match node unavailable"); if (run.currentZone) { run.currentZone.currentNodeId = targetNodeId; run.currentZone.pendingNodeId = null; } run.phase = "map"; run.gameOver = false; return save(run); }
 
   global.RunStorage = RunStorage;
-  global.RunState = { clone, createRun, save, load, hasSave, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, remove, createCheckpoint, restoreAfterLoss };
+  global.RunState = { clone, createRun, save, load, hasSave, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, remove, createCheckpoint, restoreAfterLoss, validate, isActiveRun, touch, activeSaves, latestActiveSave };
 })(globalThis);
