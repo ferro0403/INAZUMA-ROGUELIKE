@@ -1106,11 +1106,23 @@
     return Math.max(0, ...[run?.lastPlayedAt, run?.updatedAt, run?.createdAt].map((value) => Date.parse(value || "") || 0));
   }
 
+  function rosterPlayerId(entry) {
+    const raw = (entry && typeof entry === "object") ? (entry.playerId ?? entry.id ?? entry.player?.playerId ?? entry.player?.id) : entry;
+    const id = String(raw ?? "").trim();
+    return id && id !== "null" && id !== "undefined" ? id : "";
+  }
+
   function savedRosterEntries(savedRun) {
-    const byId = new Map((savedRun?.roster || []).map((entry) => [String(entry.playerId), entry]));
-    const orderedIds = [...(savedRun?.lineup || []), ...(savedRun?.bench || [])].map((entry) => String(entry?.playerId || entry)).filter(Boolean);
-    const ids = orderedIds.length ? orderedIds : (savedRun?.roster || []).map((entry) => String(entry.playerId)).filter(Boolean);
-    return [...new Set(ids)].map((id) => byId.get(id) || { playerId: id, level: savedRun?.teamLevel || 0 }).filter(Boolean);
+    const sourceEntries = Array.isArray(savedRun?.roster) ? savedRun.roster : [];
+    const byId = new Map(sourceEntries.map((entry) => [rosterPlayerId(entry), entry]).filter(([id]) => id));
+    const orderedEntries = [...(Array.isArray(savedRun?.lineup) ? savedRun.lineup : []), ...(Array.isArray(savedRun?.bench) ? savedRun.bench : [])];
+    const orderedIds = orderedEntries.map(rosterPlayerId).filter(Boolean);
+    const rosterIds = sourceEntries.map(rosterPlayerId).filter(Boolean);
+    const ids = [...new Set([...orderedIds, ...rosterIds])];
+    return ids.map((id) => {
+      const entry = byId.get(id);
+      return entry && typeof entry === "object" ? { ...entry, playerId: id } : { playerId: id, level: savedRun?.teamLevel || 0 };
+    });
   }
 
   function seasonRunAverageOverall(savedRun, database, playersById) {
@@ -1125,16 +1137,20 @@
     return Math.round(overalls.reduce((sum, value) => sum + value, 0) / overalls.length);
   }
 
-  function seasonRosterPreviewMarkup(savedRun, database, playersById) {
-    const entries = savedRosterEntries(savedRun).slice(0, 5);
-    if (!entries.length) return `<div class="season-empty-preview"><strong>Rosa da costruire</strong><span>La preview apparirà appena sceglierai i primi giocatori.</span></div>`;
-    return entries.map((entry) => {
+  function seasonRosterPreviewMarkup(savedRun, database, playersById, normalizedEntries = savedRosterEntries(savedRun)) {
+    if (!database || !playersById) return `<div class="season-preview-state season-preview-state--loading">Caricamento rosa…</div>`;
+    if (!normalizedEntries.length) return `<div class="season-preview-state">Rosa non disponibile</div>`;
+    const cards = normalizedEntries.slice(0, 6).map((entry) => {
       const source = playersById.get(String(entry.playerId));
-      if (!source) return "";
+      if (!source) {
+        console.warn("Season roster preview: giocatore non risolto", { seasonId: savedRun?.seasonId, playerId: entry.playerId });
+        return "";
+      }
       const level = Number(entry.level ?? savedRun?.teamLevel ?? 0);
       const resolved = global.InazumaProgression.getPlayerAtLevel(source, Math.floor(level), database);
       return compactPlayerCardMarkup({ ...source, ...resolved, playerId: source.playerId }, { level, overall: resolved.overall, extraClass: "season-preview-player", detailLayout: "stacked" });
-    }).join("");
+    }).filter(Boolean);
+    return cards.length ? cards.join("") : `<div class="season-preview-state">Rosa non disponibile</div>`;
   }
 
   function seasonSelectCardMarkup({ season, savedRun, database, playersById, isLastPlayed }) {
@@ -1144,6 +1160,7 @@
     const bossIndex = Math.min(Number(activeSaved?.bossIndex || 0), Math.max(totalBosses - 1, 0));
     const boss = activeSaved ? database?.bossOrder?.[bossIndex] : null;
     const formation = activeSaved ? database?.formations?.eleven?.find((item) => item.id === activeSaved.formationId) : null;
+    const normalizedRoster = activeSaved ? savedRosterEntries(activeSaved) : [];
     const average = activeSaved ? seasonRunAverageOverall(activeSaved, database, playersById) : "-";
     const bossStep = activeSaved ? `${Math.min(Number(activeSaved.bossIndex || 0) + 1, totalBosses || 99)}/${totalBosses || "?"}` : "-";
     const actions = activeSaved
@@ -1151,10 +1168,13 @@
       : `<button type="button" class="btn btn-yellow" data-season-new="${escapeHtml(season.id)}">Inizia nuova run</button>`;
 
     if (!activeSaved) {
-      return `<article class="home-hub-card season-select-card season-select-card--empty"><div class="season-card-head"><div><div class="home-card-kicker"><span>⚡</span><strong>Season</strong></div><h2>${escapeHtml(season.name)}</h2></div><span class="season-status-pill">Nessuna run attiva</span></div><p class="season-empty-copy">Inizia una nuova leggenda con database, boss e salvataggio dedicati a questa Season.</p><div class="season-empty-preview"><strong>Preview run pronta</strong><span>Scegli la Season, crea la squadra e costruisci la rosa passo dopo passo.</span></div><div class="home-card-actions season-card-actions">${actions}</div></article>`;
+      return `<article class="home-hub-card season-select-card season-select-card--empty"><div class="season-card-head"><div><h2>${escapeHtml(season.name)}</h2></div><span class="season-status-pill">Nessuna run attiva</span></div><div class="home-card-actions season-card-actions">${actions}</div></article>`;
     }
 
-    return `<article class="home-hub-card season-select-card ${isLastPlayed ? "season-select-card--last" : ""}"><div class="season-card-head"><div><div class="home-card-kicker"><span>⚡</span><strong>Season</strong></div><h2>${escapeHtml(season.name)}</h2><p class="season-team-name">${escapeHtml(identity.name)}</p></div><div class="season-card-badges"><span class="season-status-pill">Run attiva</span>${isLastPlayed ? `<span class="season-status-pill season-status-pill--last">Ultima giocata</span>` : ""}</div></div><div class="season-run-strip"><span>Boss <strong>${escapeHtml(boss?.teamName || "-")}</strong> <em>${escapeHtml(bossStep)}</em></span><span>Lv <strong>${escapeHtml(activeSaved.teamLevel || 0)}</strong></span><span>${runHeartsMarkup(activeSaved)}</span></div><div class="season-info-grid"><div><span>Modulo</span><strong>${escapeHtml(formation?.name || activeSaved.formationId || "Da scegliere")}</strong></div><div><span>Overall medio</span><strong>${escapeHtml(average)}</strong></div></div><div class="season-roster-block"><div class="season-section-title"><span>Preview rosa</span><small>${escapeHtml(savedRosterEntries(activeSaved).length)} giocatori</small></div><div class="season-roster-preview">${seasonRosterPreviewMarkup(activeSaved, database, playersById)}</div></div><div class="home-card-actions season-card-actions">${actions}</div></article>`;
+    const remainingMobilePlayers = Math.max(0, normalizedRoster.length - 4);
+    const remainingDesktopPlayers = Math.max(0, normalizedRoster.length - 6);
+    const remainingMarkup = `${remainingMobilePlayers ? `<small class="season-more-count season-more-count--mobile">+${escapeHtml(remainingMobilePlayers)} altri</small>` : ""}${remainingDesktopPlayers ? `<small class="season-more-count season-more-count--desktop">+${escapeHtml(remainingDesktopPlayers)} altri</small>` : ""}`;
+    return `<article class="home-hub-card season-select-card ${isLastPlayed ? "season-select-card--last" : ""}"><div class="season-card-head"><div><h2>${escapeHtml(season.name)}</h2><p class="season-team-name">${escapeHtml(identity.name || "La tua squadra")}</p></div><div class="season-card-badges"><span class="season-status-pill">Run attiva</span>${isLastPlayed ? `<span class="season-status-pill season-status-pill--last">Ultima giocata</span>` : ""}</div></div><div class="season-run-summary"><span><small>Boss</small><strong>${escapeHtml(boss?.teamName || "-")}</strong> <em>${escapeHtml(bossStep)}</em></span><span><small>Lv</small><strong>${escapeHtml(activeSaved.teamLevel || 0)}</strong></span><span><small>Vite</small><strong>${runHeartsMarkup(activeSaved)}</strong></span><span><small>OVR</small><strong>${escapeHtml(average)}</strong></span><span class="season-run-summary__wide"><small>Modulo</small><strong>${escapeHtml(formation?.name || activeSaved.formationId || "Da scegliere")}</strong></span></div><div class="season-roster-block"><div class="season-section-title"><span>Preview rosa · ${escapeHtml(normalizedRoster.length)} giocatori</span>${remainingMarkup}</div><div class="season-roster-preview">${seasonRosterPreviewMarkup(activeSaved, database, playersById, normalizedRoster)}</div></div><div class="home-card-actions season-card-actions">${actions}</div></article>`;
   }
 
   async function renderSeasonSelect() {
@@ -1170,7 +1190,7 @@
       playersById: global.SeasonRegistry.playersIndex(season.id),
       isLastPlayed: Boolean(savedRun && latestTime && runTimestamp(savedRun) === latestTime),
     })).join("");
-    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="topbar season-select-topbar"><div><p class="eyebrow">Run</p><h1>Seleziona Season</h1><p class="muted">Scegli quale run continuare o da quale Season iniziare: ogni salvataggio resta separato.</p></div>${sectionRootButton("seasonSelection")}</header><section class="home-choice-grid season-choice-grid">${cards}</section></main>`;
+    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="season-select-topbar">${sectionRootButton("seasonSelection", "season-select-home-button")}<h1>Seleziona Season</h1><span class="season-select-topbar-spacer" aria-hidden="true"></span></header><section class="home-choice-grid season-choice-grid">${cards}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav();
     document.querySelectorAll("[data-season-continue]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonContinue, { markPlayed: true }); resumeRun(); }));
