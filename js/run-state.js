@@ -4,6 +4,8 @@
   const config = () => global.SEASON1_CONFIG;
   const PROFILE_KEY = "inazuma_roguelike_profile";
   const DEFAULT_TEAM_NAME = "La tua squadra";
+  const runLivesLimit = () => Number(global.SEASON1_CONFIG?.maxRunLives ?? global.SEASON1_CONFIG?.startingLives ?? 2);
+  const initialRunLives = () => Number(global.SEASON1_CONFIG?.startingLives ?? runLivesLimit());
   const USER_TEAM_LOGO = "inazuma-lightning";
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
@@ -40,7 +42,7 @@
   function createRun(teamIdentity = {}, seasonId = null) {
     const now = new Date().toISOString();
     const normalizedSeasonId = seasonIdOf(seasonId || global.SeasonRegistry?.activeId?.());
-    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), createdAt: now, updatedAt: now, lastPlayedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: (config().startingLives ?? 3), formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [] };
+    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), createdAt: now, updatedAt: now, lastPlayedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: initialRunLives(), formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [] };
   }
 
   function defaultPostBossFlowFromPending(run) {
@@ -75,7 +77,9 @@
     run.runId = run.runId || makeId("run");
     run.phase = run.phase || "formation";
     run.lastPlayedAt = run.lastPlayedAt || run.updatedAt || run.savedAt || run.timestamp || run.createdAt || null;
-    run.lives = Number.isFinite(Number(run.lives)) ? Number(run.lives) : (config().startingLives ?? 3);
+    const rawLives = Number(run.lives);
+    const fallbackLives = run.gameOver || ["gameover", "complete", "final-summary", "final-celebration"].includes(String(run.phase || "")) ? 0 : initialRunLives();
+    run.lives = Math.max(0, Math.min(runLivesLimit(), Number.isFinite(rawLives) ? rawLives : fallbackLives));
     run.bossIndex = Number.isFinite(Number(run.bossIndex)) ? Number(run.bossIndex) : 0;
     for (const key of ["roster", "lineup", "bench", "inventory", "completedBossIds", "unlockedTeamIds"]) run[key] = Array.isArray(run[key]) ? run[key] : [];
     run.activeMatch = run.activeMatch || null; run.currentZone = run.currentZone || null;
@@ -114,7 +118,7 @@
       if (!candidates.length) return null;
       candidates.forEach((entry) => { entry.loaded.seasonId = entry.loaded.seasonId || sid; });
       const best = candidates.sort((a, b) => Number(b.legacyGlobal) - Number(a.legacyGlobal) || runSortTime(b.loaded, b.index) - runSortTime(a.loaded, a.index))[0];
-      if (best.key !== primaryKey(sid) || Number(best.loaded.version) !== Number(config().saveVersion)) this.save(best.loaded);
+      this.save(best.loaded);
       return best.loaded;
     },
     save(run) {
@@ -145,8 +149,8 @@
     run.checkpoint = clone({ version: config().saveVersion, formationId: run.formationId, teamIdentity: run.teamIdentity, roster: run.roster, lineup: run.lineup, bench: run.bench, bossIndex: run.bossIndex, completedBossIds: run.completedBossIds, unlockedTeamIds: run.unlockedTeamIds, teamLevel: run.teamLevel, inventory: run.inventory, effects: run.effects, randomEventHistory: run.randomEventHistory, fiveVFive: run.fiveVFive, activeMatch: run.activeMatch || null, pendingBossVictory: run.pendingBossVictory || null, postBossFlow: run.postBossFlow || null, currentZone: run.currentZone });
     return save(run);
   }
-  function restoreAfterLoss(run, previousNodeId = null) { run.lives -= 1; if (run.lives <= 0) { run.lives = 0; run.gameOver = true; run.phase = "gameover"; return save(run); } const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null; if (!targetNodeId) throw new Error("Previous match node unavailable"); if (run.currentZone) { run.currentZone.currentNodeId = targetNodeId; run.currentZone.pendingNodeId = null; } run.phase = "map"; run.gameOver = false; return save(run); }
+  function restoreAfterLoss(run, previousNodeId = null) { run.lives = Math.max(0, Math.min(runLivesLimit(), Number(run.lives) || 0) - 1); if (run.lives <= 0) { run.lives = 0; run.gameOver = true; run.phase = "gameover"; return save(run); } const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null; if (!targetNodeId) throw new Error("Previous match node unavailable"); if (run.currentZone) { run.currentZone.currentNodeId = targetNodeId; run.currentZone.pendingNodeId = null; } run.phase = "map"; run.gameOver = false; return save(run); }
 
   global.RunStorage = RunStorage;
-  global.RunState = { clone, createRun, save, load, hasSave, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, remove, createCheckpoint, restoreAfterLoss, validate, isActiveRun, touch, activeSaves, latestActiveSave };
+  global.RunState = { clone, createRun, save, load, hasSave, runLivesLimit, initialRunLives, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, remove, createCheckpoint, restoreAfterLoss, validate, isActiveRun, touch, activeSaves, latestActiveSave };
 })(globalThis);

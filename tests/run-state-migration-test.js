@@ -12,12 +12,14 @@ store.set("inazuma_roguelike_profile", JSON.stringify({ version: 1, teamIdentity
 const migrated = global.RunState.load();
 assert.equal(migrated.version, global.SEASON1_CONFIG.saveVersion);
 assert.equal(migrated.runId, "legacy");
+assert.equal(migrated.lives, 2, "legacy saves with 3 lives are clamped to the global maximum");
 assert.equal(migrated.roster[0].playerId, "p1");
 assert(migrated.postBossFlow, "postBossFlow is reconstructed");
 assert.equal(migrated.postBossFlow.status, "result");
 assert.equal(migrated.postBossFlow.remainingRewards, 2);
 const primary = JSON.parse(store.get(global.SEASON1_CONFIG.saveKey));
 assert.equal(primary.version, 2, "migrated save is promoted to primary");
+assert.equal(primary.lives, 2, "clamped lives are persisted during migration");
 const twice = global.RunStorage.migrate(primary);
 assert.deepEqual(twice.completedBossIds, primary.completedBossIds, "migration is idempotent for boss ids");
 assert.equal(global.RunState.loadProfile().teamIdentity.name, "Profile Name", "profile remains separate");

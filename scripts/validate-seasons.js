@@ -28,8 +28,14 @@ const run1 = context.RunState.createRun({ name: 'Validation', logo: 'inazuma-lig
 const run2 = context.RunState.createRun({ name: 'Validation', logo: 'inazuma-lightning' }, 'ie2');
 context.RunState.save(run1);
 context.RunState.save(run2);
-if (context.RunState.load('ie1')?.seasonId !== 'ie1') throw new Error('IE1 save did not round-trip');
-if (context.RunState.load('ie2')?.seasonId !== 'ie2') throw new Error('IE2 save did not round-trip');
+const loadedIe1 = context.RunState.load('ie1');
+const loadedIe2 = context.RunState.load('ie2');
+if (loadedIe1?.seasonId !== 'ie1' || loadedIe1.lives !== 2) throw new Error('IE1 save did not round-trip with 2 lives');
+if (loadedIe2?.seasonId !== 'ie2' || loadedIe2.lives !== 2) throw new Error('IE2 save did not round-trip with 2 lives');
+run1.lives = 1;
+context.RunState.save(run1);
+if (context.RunState.load('ie1')?.lives !== 1 || context.RunState.load('ie2')?.lives !== 2) throw new Error('IE1 and IE2 lives should remain separated');
 memory.set(context.SEASON1_CONFIG.saveKey, JSON.stringify({ version: 2, runId: 'legacy', phase: 'formation', lives: 3, bossIndex: 0, roster: [], lineup: [], bench: [], inventory: [], completedBossIds: [], unlockedTeamIds: [], activeMatch: null, currentZone: null, postBossFlow: null }));
-if (context.RunState.load('ie1')?.seasonId !== 'ie1') throw new Error('Legacy save without seasonId should load as IE1');
+const legacy = context.RunState.load('ie1');
+if (legacy?.seasonId !== 'ie1' || legacy.lives !== 2) throw new Error('Legacy save without seasonId should load as IE1 and clamp 3 lives to 2');
 console.log(`Validated IE2 bosses, new formations, separated saves, and player ${overlap.playerId}: IE1 ${ie1Profile.overall} vs IE2 ${ie2Profile.overall}.`);

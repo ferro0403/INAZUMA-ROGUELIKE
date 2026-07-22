@@ -21,7 +21,7 @@ CONTENUTO ATTUALE
 - Inventario da 20, consumabili ed equipaggiamenti individuali con bonus +5.
 - Punto interrogativo che nasconde un vero nodo con probabilità proporzionali.
 - Gettone scout, portafortuna, kit medico e oggetti di allenamento funzionanti.
-- 3 vite e ripristino al checkpoint del boss corrente.
+- 2 vite e ripristino al checkpoint del boss corrente.
 - Progressione, due ricompense 1-su-3 dopo i boss e sblocco squadre.
 - Salvataggio automatico in localStorage.
 
