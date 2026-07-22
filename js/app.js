@@ -3,6 +3,7 @@
 
   const DEV_MODE = /(?:localhost|127\.0\.0\.1)/.test(global.location?.hostname || "") && global.location?.search?.includes("dev=1");
   const TEST_MATCH_CONTROLS_ENABLED = true;
+  const MOBILE_V2_ENABLED = true;
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
   const toastRoot = document.getElementById("toast-root");
@@ -59,6 +60,15 @@
     document.querySelectorAll("[data-section-root]").forEach((button) => {
       button.addEventListener("click", () => navigateToSectionRoot(button.dataset.sectionRoot, context));
     });
+  }
+
+  function isMobileV2Active() {
+    if (!MOBILE_V2_ENABLED) return false;
+    const params = new URLSearchParams(global.location?.search || "");
+    if (params.get("mobileV2") === "0") return false;
+    const explicit = params.get("mobileV2") === "1";
+    const mobileViewport = global.matchMedia?.("(max-width: 780px), (pointer: coarse)")?.matches;
+    return Boolean(mobileViewport && (explicit || MOBILE_V2_ENABLED));
   }
 
   const INVENTORY_CATEGORY_DEFINITIONS = [
@@ -1056,6 +1066,56 @@
     </article>`;
   }
 
+  function runHeroPlayer(savedRun) {
+    const entries = savedRun?.lineup?.length ? savedRun.lineup : savedRun?.roster;
+    return (entries || []).map((entry) => resolvedRosterPlayer(entry.playerId || entry.id)).find((player) => resolvePlayerVisual(player).frontFullbodyUrl || resolvePlayerVisual(player).portraitUrl) || null;
+  }
+
+  function mobileV2Artwork(player, className = "") {
+    if (!player) return `<div class="mobile-v2-player-art mobile-v2-player-art--empty ${escapeHtml(className)}" aria-hidden="true"></div>`;
+    const visual = resolvePlayerVisual(player);
+    const src = visual.frontFullbodyUrl || visual.portraitUrl || visual.cardImageUrl || PLAYER_IMAGE_PLACEHOLDER;
+    return `<img class="mobile-v2-player-art ${escapeHtml(className)}" src="${escapeHtml(src)}" alt="" loading="lazy" ${imageFallbackAttributes([visual.portraitUrl, visual.cardImageUrl, PLAYER_IMAGE_PLACEHOLDER].filter(Boolean))} />`;
+  }
+
+  function mobileV2Progress(savedRun) {
+    const bossNumber = Number(savedRun?.bossIndex || 0) + 1;
+    const totalBosses = seasonDb?.bossOrder?.length || 10;
+    return Math.round(((bossNumber - 1) / Math.max(1, totalBosses)) * 100);
+  }
+
+  function mobileV2HomeMarkup(savedRun) {
+    const identity = normalizeTeamIdentity(savedRun?.teamIdentity);
+    const boss = savedRun ? seasonDb?.bossOrder?.[Number(savedRun.bossIndex || 0)] : null;
+    const hero = runHeroPlayer(savedRun);
+    return `
+      <main class="mobile-v2 mobile-v2-home" data-mobile-v2-view="home">
+        <div class="mobile-v2-stadium" aria-hidden="true"></div>
+        <header class="mobile-v2-hud">
+          <span>${escapeHtml(savedRun ? seasonDisplayName(savedRun.seasonId) : "Season")}</span>
+          <span>Lv ${escapeHtml(savedRun?.teamLevel ?? "-")}</span>
+          <span>${savedRun ? runHeartsMarkup(savedRun) : "♡ ♡ ♡"}</span>
+        </header>
+        <section class="mobile-v2-lobby" aria-label="Lobby run">
+          <div class="mobile-v2-copy">
+            <p class="mobile-v2-kicker">${escapeHtml(savedRun ? seasonDisplayName(savedRun.seasonId) : "Inazuma Roguelike")}</p>
+            <h1>${escapeHtml(savedRun ? identity.name : "Nuova leggenda")}</h1>
+            <div class="mobile-v2-boss"><span>Boss</span><strong>${escapeHtml(boss?.teamName || "Seleziona Season")}</strong></div>
+            <div class="mobile-v2-progress" aria-label="Progresso"><span style="width:${escapeHtml(savedRun ? mobileV2Progress(savedRun) : 0)}%"></span></div>
+          </div>
+          ${mobileV2Artwork(hero, "mobile-v2-home-art")}
+        </section>
+        <section class="mobile-v2-cta-dock" aria-label="Azioni">
+          <button type="button" class="mobile-v2-continue" id="home-primary-cta">${savedRun ? "Continua" : "Season"}</button>
+          <div class="mobile-v2-quick">
+            <button type="button" id="select-run">Season</button>
+            <button type="button" id="open-album-home">Album</button>
+            <button type="button" id="open-hall-home">Albo d’oro</button>
+          </div>
+        </section>
+      </main>`;
+  }
+
   async function renderHome() {
     const latest = global.RunState.latestActiveSave?.();
     if (latest?.run) {
@@ -1068,7 +1128,7 @@
     ensureRunSchema();
     migrateTeamIdentityProfile();
     if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
-    app.innerHTML = `
+    app.innerHTML = isMobileV2Active() ? mobileV2HomeMarkup(run) : `
       <main class="home-screen modern-home">
         <header class="home-hero panel">
           <div class="home-brand-mark">${inazumaLogoMarkup("inazuma-logo--hero")}</div>
@@ -1153,6 +1213,36 @@
     return cards.length ? cards.join("") : `<div class="season-preview-state">Rosa non disponibile</div>`;
   }
 
+  function mobileV2SeasonCardMarkup({ season, savedRun, database, playersById, isLastPlayed }) {
+    const activeSaved = savedRun && global.RunState.isActiveRun(savedRun) ? savedRun : null;
+    const identity = activeSaved ? normalizeTeamIdentity(activeSaved.teamIdentity) : { name: "Nuova squadra" };
+    const boss = activeSaved ? database?.bossOrder?.[Math.min(Number(activeSaved.bossIndex || 0), Math.max((database?.bossOrder?.length || 1) - 1, 0))] : null;
+    const roster = activeSaved ? savedRosterEntries(activeSaved) : [];
+    const hero = activeSaved ? roster.map((entry) => {
+      const source = playersById.get(String(entry.playerId));
+      return source ? global.InazumaProgression.getPlayerAtLevel(source, Math.floor(Number(entry.level ?? activeSaved.teamLevel ?? 0)), database) : null;
+    }).filter(Boolean)[0] : null;
+    const preview = activeSaved ? seasonRosterPreviewMarkup(activeSaved, database, playersById, roster.slice(0, 3)) : "";
+    const totalBosses = database?.bossOrder?.length || 0;
+    const bossStep = activeSaved ? `${Math.min(Number(activeSaved.bossIndex || 0) + 1, totalBosses || 99)}/${totalBosses || "?"}` : `0/${totalBosses || "?"}`;
+    return `<article class="mobile-v2-season-cover mobile-v2-season-cover--${escapeHtml(season.id)} ${isLastPlayed ? "is-last" : ""}" data-mobile-v2-season="${escapeHtml(season.id)}">
+      <div class="mobile-v2-season-bg" aria-hidden="true"></div>
+      ${mobileV2Artwork(hero, "mobile-v2-season-art")}
+      <div class="mobile-v2-season-copy">
+        <p class="mobile-v2-kicker">${escapeHtml(season.id)}</p>
+        <h2>${escapeHtml(season.name)}</h2>
+        <strong>${escapeHtml(identity.name)}</strong>
+      </div>
+      <div class="mobile-v2-season-stats"><span>Boss ${escapeHtml(bossStep)}</span><span>Lv ${escapeHtml(activeSaved?.teamLevel ?? "-")}</span><span>${activeSaved ? runHeartsMarkup(activeSaved) : "♡ ♡ ♡"}</span></div>
+      <div class="mobile-v2-season-boss">${escapeHtml(boss?.teamName || "Primo fischio")}</div>
+      <div class="mobile-v2-season-preview">${preview}</div>
+      <div class="mobile-v2-season-actions">
+        ${activeSaved ? `<button type="button" class="mobile-v2-action-primary" data-season-continue="${escapeHtml(season.id)}">Continua</button>` : ""}
+        <button type="button" class="mobile-v2-action-secondary" data-season-new="${escapeHtml(season.id)}">Nuova run</button>
+      </div>
+    </article>`;
+  }
+
   function seasonSelectCardMarkup({ season, savedRun, database, playersById, isLastPlayed }) {
     const activeSaved = savedRun && global.RunState.isActiveRun(savedRun) ? savedRun : null;
     const identity = activeSaved ? normalizeTeamIdentity(activeSaved.teamIdentity) : null;
@@ -1183,14 +1273,16 @@
     await Promise.all(seasons.map((season) => global.SeasonRegistry.loadDatabase(season.id)));
     const runs = seasons.map((season) => ({ season, savedRun: global.RunState.load(season.id) }));
     const latestTime = Math.max(0, ...runs.filter((entry) => entry.savedRun && global.RunState.isActiveRun(entry.savedRun)).map((entry) => runTimestamp(entry.savedRun)));
-    const cards = runs.map(({ season, savedRun }) => seasonSelectCardMarkup({
+    const cards = runs.map(({ season, savedRun }) => (isMobileV2Active() ? mobileV2SeasonCardMarkup : seasonSelectCardMarkup)({
       season,
       savedRun,
       database: global.SeasonRegistry.database(season.id),
       playersById: global.SeasonRegistry.playersIndex(season.id),
       isLastPlayed: Boolean(savedRun && latestTime && runTimestamp(savedRun) === latestTime),
     })).join("");
-    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="season-select-topbar">${sectionRootButton("seasonSelection", "season-select-home-button")}<h1>Seleziona Season</h1><span class="season-select-topbar-spacer" aria-hidden="true"></span></header><section class="home-choice-grid season-choice-grid">${cards}</section></main>`;
+    app.innerHTML = isMobileV2Active()
+      ? `<main class="mobile-v2 mobile-v2-seasons" data-mobile-v2-view="seasons"><div class="mobile-v2-stadium" aria-hidden="true"></div><header class="mobile-v2-hud">${sectionRootButton("seasonSelection", "season-select-home-button")}<span>Seleziona Season</span><span></span></header><section class="mobile-v2-season-rail">${cards}</section></main>`
+      : `<main class="home-screen modern-home season-select-screen"><header class="season-select-topbar">${sectionRootButton("seasonSelection", "season-select-home-button")}<h1>Seleziona Season</h1><span class="season-select-topbar-spacer" aria-hidden="true"></span></header><section class="home-choice-grid season-choice-grid">${cards}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav();
     document.querySelectorAll("[data-season-continue]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonContinue, { markPlayed: true }); resumeRun(); }));
@@ -1694,6 +1786,47 @@
     return `<img class="boss-node-logo" src="${escapeHtml(logoUrl)}" alt="Logo ${escapeHtml(teamName)}" loading="lazy" onerror="this.remove();this.parentElement?.classList.add('boss-logo-missing');" /><span class="boss-logo-fallback" aria-hidden="true">${fallback}</span>`;
   }
 
+  function mobileV2RouteNodeLabel(type) {
+    if (type === "five_v_five") return "5v5";
+    if (type === "pull_free_agents" || type === "pull_unlocked_teams" || type === "pull_legendary") return "Pull";
+    if (type === "random") return "Evento";
+    return global.SEASON1_CONFIG.nodeLabels[type]?.label || type;
+  }
+
+  function mobileV2RouteMarkup(zone, boss, positions, edgeMarkup, reachable, completed, pathSet) {
+    const identity = normalizeTeamIdentity(run.teamIdentity);
+    return `
+      <main class="mobile-v2 mobile-v2-route" data-mobile-v2-view="route">
+        <div class="mobile-v2-stadium" aria-hidden="true"></div>
+        <header class="mobile-v2-hud mobile-v2-route-hud">
+          ${sectionRootButton("run")}
+          <span>${escapeHtml(identity.name)}</span>
+          <span>${runHeartsMarkup(run)}</span>
+          <span>Lv ${escapeHtml(run.teamLevel)}</span>
+          <span>${escapeHtml(boss.teamName)}</span>
+        </header>
+        <button type="button" class="mobile-v2-boss-plate" id="open-boss-preview"><span>Boss</span><strong>${escapeHtml(boss.teamName)}</strong>${bossNodeIconMarkup(boss)}</button>
+        <div class="mobile-v2-map-wrap" id="map-scroll">
+          <div class="mobile-v2-map" aria-label="Mappa roguelike verso ${escapeHtml(boss.teamName)}">
+            <svg class="mobile-v2-map-lines" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">${edgeMarkup}</svg>
+            ${zone.nodes.map((node) => {
+              const meta = global.SEASON1_CONFIG.nodeLabels[node.type];
+              const isCurrent = node.id === zone.currentNodeId;
+              const stateClass = completed.has(node.id) ? "completed" : reachable.has(node.id) ? "reachable" : "locked";
+              const reward = node.reward ? String(node.reward).replaceAll("_", " ") : "";
+              const readableState = isCurrent ? "current" : completed.has(node.id) ? "done" : reachable.has(node.id) ? "choose" : "locked";
+              return `<button type="button" class="mobile-v2-node mobile-v2-node--${escapeHtml(node.type)} ${stateClass} ${isCurrent ? "current" : ""} ${pathSet.has(node.id) ? "on-path" : ""}" data-node-id="${escapeHtml(node.id)}" ${reachable.has(node.id) ? "" : "disabled"} style="left:${positions[node.id].x / 10}%;top:${positions[node.id].y / 10}%;--node-color:${meta.color}" aria-label="${escapeHtml(mobileV2RouteNodeLabel(node.type))}, ${escapeHtml(readableState)}">
+                <span class="mobile-v2-node-icon">${node.type === "boss" ? bossNodeIconMarkup(boss) : meta.icon}</span>
+                <strong>${escapeHtml(node.type === "boss" ? "Boss" : mobileV2RouteNodeLabel(node.type))}</strong>
+                <small>${escapeHtml(reward || readableState)}</small>
+              </button>`;
+            }).join("")}
+          </div>
+        </div>
+        <footer class="mobile-v2-route-actions"><span>Prossima scelta</span><strong>${escapeHtml([...reachable].length)} vie aperte</strong></footer>
+      </main>`;
+  }
+
   function renderMap() {
     if (run) global.RunState.touch(run);
     const bossFlow = resolvePendingRunFlow();
@@ -1718,7 +1851,7 @@
       return `<line class="${edgeClass}" x1="${positions[from].x}" y1="${positions[from].y}" x2="${positions[to].x}" y2="${positions[to].y}" />`;
     }).join("");
 
-    app.innerHTML = `
+    app.innerHTML = isMobileV2Active() ? mobileV2RouteMarkup(zone, boss, positions, edgeMarkup, reachable, completed, pathSet) : `
       <main class="screen route-screen">
         ${topbar(`Verso ${boss.teamName}`)}
         <div class="content route-content">
