@@ -561,6 +561,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .player-detail-team img, .team-logo-placeholder { display: grid; place-items: center; flex: 0 0 auto; width: clamp(46px, 5.4vw, 74px); height: clamp(46px, 5.4vw, 74px); object-fit: contain; }
 .player-detail-team strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; font-size: clamp(.9rem, 1.4vw, 1.08rem); font-weight: 950; text-align: center; }
 .player-fullbody { position: relative; z-index: 1; display: block; width: min(100%, 560px); height: auto; max-height: 720px; min-height: 0; object-fit: contain; object-position: center bottom; filter: drop-shadow(0 18px 24px rgba(0,0,0,.38)); }
+.player-fullbody--portrait, .player-fullbody--placeholder { width: min(68%, 360px); max-height: 520px; aspect-ratio: 1; border-radius: 28px; object-fit: contain; object-position: center; }
 .player-detail-content { min-width: 0; overflow-y: auto; overflow-x: hidden; padding: 54px 46px 34px; background: linear-gradient(180deg, #0a1c36 0%, #07172c 100%); }
 .player-detail-name { max-width: 100%; margin-bottom: 15px; font-size: clamp(42px, 5vw, 74px); line-height: .92; letter-spacing: -.06em; text-transform: uppercase; overflow-wrap: anywhere; }
 .player-detail-tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 22px; }

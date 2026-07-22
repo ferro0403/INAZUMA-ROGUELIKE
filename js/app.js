@@ -204,6 +204,7 @@
   let seasonPlayersById = new Map();
   let seasonTeamsById = new Map();
   let playerVisualsById = new Map();
+  const PLAYER_IMAGE_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='22' fill='%2311213f'/%3E%3Ccircle cx='60' cy='42' r='22' fill='%23ffd34f'/%3E%3Cpath d='M22 108c6-28 24-42 38-42s32 14 38 42' fill='%2385cdf5'/%3E%3C/svg%3E";
   let run = null;
   const ui = {
     selectedSquadPlayerId: null,
@@ -594,8 +595,60 @@
     return String(value).replace(/[^a-zA-Z0-9_-]/g, "\\$&");
   }
 
+  function playerImageCandidates(player, playerId = player?.playerId) {
+    const id = playerId != null ? String(playerId) : "";
+    const globalVisual = id ? (playerVisualsById.get(id) || {}) : {};
+    const seasonalFront = player?.frontFullbodyUrl || player?.fullbodyUrl || null;
+    const globalFront = globalVisual.frontFullbodyUrl || globalVisual.fullbodyUrl || null;
+    const seasonalPortrait = player?.portraitUrl || null;
+    const globalPortrait = globalVisual.portraitUrl || globalVisual.imageUrl || null;
+    const compatibleImage = player?.image || player?.imageUrl || globalVisual.image || globalVisual.imageUrl || null;
+    const portraitUrl = seasonalPortrait || globalPortrait || compatibleImage || null;
+    const frontFullbodyUrl = seasonalFront || globalFront || null;
+    return { playerId: id, portraitUrl, frontFullbodyUrl, seasonalPortrait, globalPortrait, compatibleImage, seasonalFront, globalFront };
+  }
+
+  function resolvePlayerVisual(player, { playerId = player?.playerId, placeholder = PLAYER_IMAGE_PLACEHOLDER } = {}) {
+    const visual = playerImageCandidates(player, playerId);
+    const detailFallbacks = [visual.frontFullbodyUrl, visual.portraitUrl, placeholder].filter(Boolean);
+    const cardFallbacks = [visual.portraitUrl, visual.frontFullbodyUrl, placeholder].filter(Boolean);
+    return {
+      playerId: visual.playerId,
+      portraitUrl: visual.portraitUrl,
+      frontFullbodyUrl: visual.frontFullbodyUrl,
+      detailImageUrl: detailFallbacks[0] || null,
+      cardImageUrl: cardFallbacks[0] || null,
+      detailFallbacks,
+      cardFallbacks,
+      detailImageKind: visual.frontFullbodyUrl ? "fullbody" : (visual.portraitUrl ? "portrait" : "placeholder"),
+      cardImageKind: visual.portraitUrl ? "portrait" : (visual.frontFullbodyUrl ? "fullbody" : "placeholder"),
+    };
+  }
+
+  function imageFallbackAttributes(urls, handler = "globalThis.handlePlayerImageError") {
+    const unique = [...new Set((urls || []).filter(Boolean))];
+    return `data-image-fallbacks="${escapeHtml(JSON.stringify(unique))}" data-image-fallback-index="0" onerror="${handler} && ${handler}(this)"`;
+  }
+
+  function handlePlayerImageError(img) {
+    if (!img || img.dataset.imageFallbackDone === "true") return;
+    let fallbacks = [];
+    try { fallbacks = JSON.parse(img.dataset.imageFallbacks || "[]"); } catch (_) { fallbacks = []; }
+    const current = Number(img.dataset.imageFallbackIndex || 0);
+    const next = current + 1;
+    if (fallbacks[next]) {
+      img.dataset.imageFallbackIndex = String(next);
+      img.src = fallbacks[next];
+      return;
+    }
+    img.dataset.imageFallbackDone = "true";
+    img.onerror = null;
+    if (img.src !== PLAYER_IMAGE_PLACEHOLDER) img.src = PLAYER_IMAGE_PLACEHOLDER;
+  }
+  global.handlePlayerImageError = handlePlayerImageError;
+
   function playerPortraitUrl(player) {
-    return player?.portraitUrl || player?.image || player?.imageUrl || player?.frontFullbodyUrl || "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='22' fill='%2311213f'/%3E%3Ccircle cx='60' cy='42' r='22' fill='%23ffd34f'/%3E%3Cpath d='M22 108c6-28 24-42 38-42s32 14 38 42' fill='%2385cdf5'/%3E%3C/svg%3E";
+    return resolvePlayerVisual(player).cardImageUrl || PLAYER_IMAGE_PLACEHOLDER;
   }
 
   function compactPlayerCardMarkup(player, { equipment = null, level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, selected = false, dataAttr = "", extraClass = "", detailLayout = "inline" } = {}) {
@@ -608,7 +661,7 @@
         <span class="player-corner player-role" aria-label="Ruolo ${escapeHtml(playerRole)}">${escapeHtml(playerRole)}</span>
         <span class="player-corner player-overall" aria-label="Overall ${overall}">${overall}</span>
         <div class="player-portrait-wrap">
-          <img class="player-portrait" src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" />
+          <img class="player-portrait" src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} />
         </div>
         <div class="player-info">
           <div class="player-title"><strong>${escapeHtml(player.name)}</strong></div>
@@ -636,7 +689,7 @@
         <span class="player-corner player-role" aria-label="Ruolo ${escapeHtml(player.position)}">${escapeHtml(player.position)}</span>
         <span class="player-corner player-overall" aria-label="Overall ${resolved.overall}">${resolved.overall}</span>
         <div class="player-portrait-wrap">
-          <img class="player-portrait" src="${escapeHtml(playerPortraitUrl(player))}" alt="${escapeHtml(player.name)}" loading="lazy" />
+          <img class="player-portrait" src="${escapeHtml(playerPortraitUrl(player))}" alt="${escapeHtml(player.name)}" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} />
         </div>
         <div class="player-info">
           <div class="player-title">
@@ -679,9 +732,9 @@
     if (!player) return "";
     const historical = mode === "historical";
     const albumMode = mode === "album";
-    const visualFallback = playerVisualsById.get(String(playerId)) || {};
     const sourceFallback = historical ? sourcePlayer(playerId, player.recruitmentSource) || sourcePlayer(playerId) || {} : {};
-    const fullbodyUrl = player.fullbodyUrl || player.frontFullbodyUrl || visualFallback.fullbodyUrl || sourceFallback.fullbodyUrl || player.portraitUrl || sourceFallback.portraitUrl || "";
+    const mergedVisualPlayer = { ...sourceFallback, ...player };
+    const detailVisual = resolvePlayerVisual(mergedVisualPlayer, { playerId });
     const teamIdentity = historical
       ? historicalTeamIdentity(player, team, sourceFallback)
       : playerTeamIdentity(player, playerId);
@@ -714,7 +767,7 @@
     const equipmentMarkup = equipment ? `<div class="equipped-detail">${itemIcon(equipment)}<div class="equipped-detail-copy"><span>${historical ? "Equipaggiamento storico" : "Oggetto assegnato"}</span><strong>${escapeHtml(resolveItem(equipment).name)}</strong><small>${escapeHtml(resolveItem(equipment).description)}</small><em>+${Number(resolveItem(equipment).bonus || 0)} ${escapeHtml(STAT_LABELS[resolveItem(equipment).stat] || resolveItem(equipment).stat || "")}</em></div>${!readOnly && playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>` : `<p class="muted equipped-detail-empty">Nessun equipaggiamento.</p>`;
     return `
       <div class="player-detail-layout ${rarityClass(resolved.category)} ${historical ? "player-detail-historical" : ""}">
-        <section class="player-detail-visual ${rarityClass(resolved.category)}">${teamBadge}${fullbodyUrl ? `<img class="player-fullbody" src="${escapeHtml(fullbodyUrl)}" alt="${escapeHtml(resolved.name)}" />` : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`}</section>
+        <section class="player-detail-visual ${rarityClass(resolved.category)}">${teamBadge}${detailVisual.detailImageUrl ? `<img class="player-fullbody player-fullbody--${escapeHtml(detailVisual.detailImageKind)}" src="${escapeHtml(detailVisual.detailImageUrl)}" alt="${escapeHtml(resolved.name)}" loading="lazy" ${imageFallbackAttributes(detailVisual.detailFallbacks)} />` : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`}</section>
         <section class="player-detail-content">
           <p class="eyebrow">${albumMode ? "Player detail · Album" : (historical ? "Player detail · Squadra campione" : "Player detail")}</p>${albumMode ? `<span class="role-chip album-detail-badge">${albumUnlocked ? "SBLOCCATO" : "NON SBLOCCATO"}</span>` : ""}
           <h2 class="player-detail-name">${escapeHtml(resolved.name)}</h2>
@@ -2753,7 +2806,7 @@
       <button type="button" class="five-match-card five-match-card--${side} ${rarityClass(player.category)}" data-five-match-player="${escapeHtml(player.playerId)}" data-five-match-side="${side}" aria-label="Apri scheda ${escapeHtml(player.name)}">
         <span class="five-match-card-role">${escapeHtml(player.position)}</span>
         <span class="five-match-card-overall">${escapeHtml(player.overall ?? "-")}</span>
-        <img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" decoding="async" />
+        <img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" decoding="async" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} />
         <strong>${escapeHtml(shortName(player.name))}</strong>
         <small>Lv ${escapeHtml(player.displayLevel ?? 0)}</small>
         ${fivePlayerEquipmentMarkup(equipment)}
@@ -3615,7 +3668,7 @@
               <div class="inventory-panel-head"><p class="eyebrow">Equipaggiati</p><h3>Stato giocatori</h3></div>
               <div class="equipped-list">
                 ${equipped.length ? equipped.map(({ entry, player, resolved, item }) => `
-                  <article class="equipped-summary static-item">${itemIcon(item)}<div class="equipped-summary-copy"><span class="item-kind">Equipaggiato</span><strong>${escapeHtml(item.name)}</strong></div><div class="equipped-player"><span class="equipped-player-portrait"><img src="${escapeHtml(playerPortraitUrl(resolved || player))}" alt="" loading="lazy" /></span><div class="equipped-player-copy"><span>${escapeHtml(player.name)} · ${escapeHtml(player.position)}</span><small>${escapeHtml(itemStatLabel(item.stat))} ${resolved.baseStats[item.stat]} → <strong>${resolved.stats[item.stat]}</strong></small></div></div><button type="button" class="btn btn-ghost" data-unequip-player="${entry.playerId}">Rimuovi</button></article>`).join("") : '<p class="muted inventory-empty">Nessun giocatore ha un oggetto equipaggiato.</p>'}
+                  <article class="equipped-summary static-item">${itemIcon(item)}<div class="equipped-summary-copy"><span class="item-kind">Equipaggiato</span><strong>${escapeHtml(item.name)}</strong></div><div class="equipped-player"><span class="equipped-player-portrait"><img src="${escapeHtml(playerPortraitUrl(resolved || player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(resolved || player).cardFallbacks)} /></span><div class="equipped-player-copy"><span>${escapeHtml(player.name)} · ${escapeHtml(player.position)}</span><small>${escapeHtml(itemStatLabel(item.stat))} ${resolved.baseStats[item.stat]} → <strong>${resolved.stats[item.stat]}</strong></small></div></div><button type="button" class="btn btn-ghost" data-unequip-player="${entry.playerId}">Rimuovi</button></article>`).join("") : '<p class="muted inventory-empty">Nessun giocatore ha un oggetto equipaggiato.</p>'}
               </div>
             </aside>
           </section>
@@ -3849,7 +3902,7 @@
   function snapshotPlayer(entry, area, slot) {
     const source = sourcePlayer(entry);
     const resolved = resolvedRosterPlayer(entry.playerId) || source || {};
-    return { playerId: String(entry.playerId), name: resolved.name || source?.name || String(entry.playerId), nickname: resolved.nickname || null, role: resolved.position || source?.position || null, element: resolved.element || resolved.type || source?.element || null, portraitUrl: playerPortraitUrl(resolved || source), fullbodyUrl: playerVisualsById.get(String(entry.playerId))?.fullbodyUrl || null, teamId: entry.teamId || source?.teamId || null, teamName: entry.teamName || source?.teamName || null, originalRarity: source?.category || null, finalRarity: resolved.category || source?.category || null, recruitedAtLevel: entry.recruitedAtLevel ?? null, finalLevel: Number(entry.level || 0), recruitedOverall: entry.recruitedOverall ?? null, finalOverall: resolved.overall ?? source?.finalOverall ?? null, finalPotential: resolved.potential ?? null, finalStats: resolved.stats || null, equippedItem: entry.equippedItem ? { ...entry.equippedItem } : null, formationSlot: area === "lineup" ? slot : null, benchSlot: area === "bench" ? slot : null, recruitmentSource: entry.source || null, traits: Array.isArray(entry.traits) ? entry.traits.slice() : [] };
+    return { playerId: String(entry.playerId), name: resolved.name || source?.name || String(entry.playerId), nickname: resolved.nickname || null, role: resolved.position || source?.position || null, element: resolved.element || resolved.type || source?.element || null, portraitUrl: playerPortraitUrl(resolved || source), fullbodyUrl: resolvePlayerVisual(resolved || source, { playerId: entry.playerId }).frontFullbodyUrl || null, teamId: entry.teamId || source?.teamId || null, teamName: entry.teamName || source?.teamName || null, originalRarity: source?.category || null, finalRarity: resolved.category || source?.category || null, recruitedAtLevel: entry.recruitedAtLevel ?? null, finalLevel: Number(entry.level || 0), recruitedOverall: entry.recruitedOverall ?? null, finalOverall: resolved.overall ?? source?.finalOverall ?? null, finalPotential: resolved.potential ?? null, finalStats: resolved.stats || null, equippedItem: entry.equippedItem ? { ...entry.equippedItem } : null, formationSlot: area === "lineup" ? slot : null, benchSlot: area === "bench" ? slot : null, recruitmentSource: entry.source || null, traits: Array.isArray(entry.traits) ? entry.traits.slice() : [] };
   }
 
   function collectPlayerStatistics(players) {
