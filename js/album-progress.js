@@ -14,7 +14,7 @@
     },
     ie2: {
       id: "ie2",
-      name: "Inazuma Eleven 2",
+      name: "Inazuma Eleven Ares",
       seasonId: "ie2",
       freeAgentsTeamId: "unaffiliated",
       coverUrl: "https://static.wikia.nocookie.net/inazuma-eleven/images/4/45/Minodouzan_emblem.png/revision/latest?cb=20251118125410",
