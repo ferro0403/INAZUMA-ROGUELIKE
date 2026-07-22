@@ -18,6 +18,9 @@
     "5-4-1": { id: "defensive_block", name: "Blocco difensivo", description: "Protegge porta e difesa, sacrificando attacco e velocità.", modifiers: { defense: 0.06, save: 0.04, physical: 0.02, attack: -0.06, speed: -0.02 } },
     "4-5-1": { id: "possession_control", name: "Possesso e controllo", description: "Domina il centrocampo e il ritmo, ma dipende dall’unica punta.", modifiers: { control: 0.06, stamina: 0.04, defense: 0.02, attack: -0.04 } },
     "4-2-4": { id: "ultra_offensive", name: "Ultra offensivo", description: "Massimizza attacco e velocità, ma lascia grandi spazi.", modifiers: { attack: 0.08, speed: 0.04, defense: -0.07, control: -0.03 } },
+    "5-3-2": { id: "low_block", name: "Blocco basso", description: "Difesa folta e ripartenze controllate, con meno presenza offensiva.", modifiers: { defense: 0.07, physical: 0.03, save: 0.02, attack: -0.04, speed: -0.01 } },
+    "2-4-4": { id: "all_out_attack", name: "Assalto totale", description: "Quattro attaccanti alzano pressione e finalizzazione, ma la retroguardia resta esposta.", modifiers: { attack: 0.09, speed: 0.04, control: 0.01, defense: -0.09, save: -0.02 } },
+    "3-3-4": { id: "vertical_charge", name: "Carica verticale", description: "Tanti uomini sopra la linea della palla e transizioni rapide.", modifiers: { attack: 0.07, speed: 0.05, grit: 0.02, defense: -0.05, control: -0.02 } },
   });
   const FALLBACK_TACTIC = Object.freeze({ id: "balanced", name: "Bilanciato", description: "Nessun modificatore.", modifiers: Object.freeze({}) });
   const COMPONENT_KEYS = Object.freeze(["attack", "control", "defense", "save", "speed", "physical", "stamina"]);
