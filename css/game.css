@@ -2097,3 +2097,131 @@ body { background: var(--gradient-app); }
   .section-root-button { width: 46px; min-width: 46px; min-height: 46px; }
   .topbar-title-group { gap: 8px; }
 }
+
+/* Isolated mobile-only Home redesign: compact run dashboard */
+@media (max-width: 780px) {
+  .mobile-run-home.home-screen {
+    min-height: 100svh;
+    display: block;
+    padding: 0 12px calc(18px + env(safe-area-inset-bottom));
+    overflow-x: hidden;
+    background:
+      radial-gradient(circle at 82% 2%, rgba(255,176,32,.16), transparent 15rem),
+      radial-gradient(circle at 12% 18%, rgba(54,169,255,.10), transparent 18rem),
+      linear-gradient(180deg, #030711 0%, #07101f 44%, #05070b 100%);
+  }
+
+  .mobile-run-home .home-mobile-topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: calc(58px + env(safe-area-inset-top));
+    padding: max(8px, env(safe-area-inset-top)) 2px 8px;
+  }
+
+  .mobile-run-home .home-mobile-team,
+  .mobile-run-home .home-mobile-status {
+    min-width: 0;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .mobile-run-home .inazuma-logo--home-topbar {
+    width: 38px;
+    height: 38px;
+    border-radius: 12px;
+    font-size: 1.45rem;
+    box-shadow: none;
+  }
+
+  .mobile-run-home .home-mobile-team span { min-width: 0; display: grid; gap: 1px; }
+  .mobile-run-home .home-mobile-team strong,
+  .mobile-run-home .home-mobile-team small {
+    display: block;
+    max-width: 42vw;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .mobile-run-home .home-mobile-team strong { color: #fff; font-size: .92rem; font-weight: 950; }
+  .mobile-run-home .home-mobile-team small { color: #a9b6c9; font-size: .68rem; font-weight: 850; }
+  .mobile-run-home .home-mobile-status { flex: 0 0 auto; gap: 5px; }
+
+  .mobile-run-home .home-status-chip {
+    padding: 6px 7px;
+    border: 1px solid rgba(255,211,79,.20);
+    border-radius: 999px;
+    background: rgba(7,15,29,.84);
+    color: #f4f7fb;
+    font-size: .72rem;
+    font-weight: 950;
+    line-height: 1;
+    white-space: nowrap;
+  }
+  .mobile-run-home .home-status-chip--lives { color: #ff6d74; letter-spacing: .04em; }
+
+  .mobile-run-home .home-mobile-content { display: grid; gap: 14px; width: min(100%, 430px); margin: 0 auto; }
+
+  .mobile-run-home .home-active-run-card,
+  .mobile-run-home .home-mobile-section {
+    min-width: 0;
+    border: 1px solid rgba(255,211,79,.18);
+    border-radius: 22px;
+    background: linear-gradient(160deg, rgba(9,16,30,.98), rgba(3,7,17,.98));
+    box-shadow: 0 14px 34px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.045);
+  }
+
+  .mobile-run-home .home-active-run-card {
+    position: relative;
+    overflow: hidden;
+    display: grid;
+    gap: 13px;
+    padding: 17px;
+  }
+  .mobile-run-home .home-active-run-card::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(circle at 86% 8%, rgba(255,176,32,.17), transparent 11rem), linear-gradient(135deg, rgba(255,255,255,.05), transparent 38%);
+  }
+  .mobile-run-home .home-active-run-card > * { position: relative; }
+  .mobile-run-home .home-card-kicker { font-size: .7rem; letter-spacing: .16em; }
+  .mobile-run-home .home-run-heading h2 { margin: 0; color: #fff; font-size: clamp(1.55rem, 9vw, 2.05rem); line-height: .98; letter-spacing: -.04em; }
+  .mobile-run-home .home-run-heading p { margin: 4px 0 0; color: #b7c2d2; font-size: .86rem; font-weight: 850; }
+  .mobile-run-home .home-run-boss { display: grid; gap: 3px; padding: 10px 0; border-block: 1px solid rgba(255,255,255,.08); }
+  .mobile-run-home .home-run-boss span,
+  .mobile-run-home .home-run-data-grid span { color: #8795aa; font-size: .68rem; font-weight: 950; letter-spacing: .10em; text-transform: uppercase; }
+  .mobile-run-home .home-run-boss strong { color: #fff; font-size: 1rem; }
+  .mobile-run-home .home-run-boss em { color: var(--yellow); font-style: normal; }
+  .mobile-run-home .home-run-data-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
+  .mobile-run-home .home-run-data-grid div { min-width: 0; padding: 10px; border: 1px solid rgba(255,255,255,.08); border-radius: 14px; background: rgba(255,255,255,.035); }
+  .mobile-run-home .home-run-data-grid strong { display: block; margin-top: 4px; color: #fff; font-size: .96rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mobile-run-home .home-run-hearts { color: #ff6d74; letter-spacing: .05em; }
+  .mobile-run-home .home-card-actions { margin-top: 0; }
+  .mobile-run-home .home-primary-run-button { width: 100%; min-height: 48px; border-radius: 16px; color: #171101; font-size: .88rem; letter-spacing: .05em; }
+  .mobile-run-home .home-primary-run-button:active,
+  .mobile-run-home .home-quick-card:active { transform: scale(.98); }
+
+  .mobile-run-home .home-mobile-section { display: grid; gap: 11px; padding: 14px; }
+  .mobile-run-home .home-section-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0; }
+  .mobile-run-home .home-section-head h2 { margin: 0; color: #fff; font-size: .76rem; letter-spacing: .15em; }
+  .mobile-run-home .home-section-actions { display: inline-flex; align-items: center; gap: 8px; color: #9facbf; font-size: .72rem; font-weight: 900; white-space: nowrap; }
+  .mobile-run-home .home-section-actions button { border: 0; background: transparent; color: var(--yellow); padding: 0; font-size: .72rem; font-weight: 950; }
+  .mobile-run-home .home-roster-card-grid { --pitch-card-size: clamp(64px, 20vw, 82px); display: grid; grid-template-columns: repeat(4, minmax(0, var(--pitch-card-size))); justify-content: space-between; gap: 6px; }
+  .mobile-run-home .home-roster-card-grid .player-card-compact { transform: scale(.94); transform-origin: top center; }
+  .mobile-run-home .home-roster-more { margin: -3px 0 0; color: #9facbf; font-size: .72rem; font-weight: 900; text-align: right; }
+
+  .mobile-run-home .home-quick-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .mobile-run-home .home-quick-card { min-width: 0; min-height: 86px; display: grid; place-items: center; gap: 6px; padding: 10px 6px; border: 1px solid rgba(255,255,255,.10); border-radius: 17px; background: rgba(7,15,29,.88); color: #fff; transition: transform 120ms ease, border-color 120ms ease; }
+  .mobile-run-home .home-quick-card span { font-size: 1.55rem; line-height: 1; }
+  .mobile-run-home .home-quick-card strong { font-size: clamp(.56rem, 2.4vw, .68rem); line-height: 1.15; letter-spacing: .04em; text-align: center; }
+  .mobile-run-home .home-quick-card:hover { border-color: rgba(255,211,79,.42); }
+}
+
+@media (max-width: 340px) {
+  .mobile-run-home .home-roster-card-grid { grid-template-columns: repeat(2, minmax(0, var(--pitch-card-size))); justify-content: center; gap: 8px 18px; }
+  .mobile-run-home .home-quick-card { min-height: 78px; padding-inline: 4px; }
+}
