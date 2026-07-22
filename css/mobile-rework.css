@@ -1,0 +1,191 @@
+/* Mobile Rework 2026 — cinematic anime football RPG layer.
+   Scope: mobile/tablet portrait only; desktop CSS remains the base stylesheet. */
+@media (max-width: 768px) {
+  :root {
+    --m-bg-void: #020611;
+    --m-bg-night: #06101f;
+    --m-blue-deep: #081a33;
+    --m-blue-glass: rgba(10, 30, 57, .72);
+    --m-cyan: #34c7ff;
+    --m-yellow: #ffd24a;
+    --m-orange: #ff8a1f;
+    --m-red: #ff4c5d;
+    --m-green: #35e2a0;
+    --m-warm: #fff3d6;
+    --m-muted: #a9bdd8;
+    --m-line: rgba(133, 205, 245, .25);
+    --m-line-hot: rgba(255, 210, 74, .55);
+    --m-radius-sm: 12px;
+    --m-radius: 18px;
+    --m-radius-lg: 26px;
+    --m-topbar-h: 56px;
+    --m-bottom-h: 76px;
+    --m-safe-top: env(safe-area-inset-top, 0px);
+    --m-safe-bottom: env(safe-area-inset-bottom, 0px);
+    --m-shadow: 0 18px 42px rgba(0, 0, 0, .48);
+    --m-glow-blue: 0 0 30px rgba(52, 199, 255, .32);
+    --m-glow-gold: 0 0 34px rgba(255, 210, 74, .34);
+    --m-fast: 160ms cubic-bezier(.2, .8, .2, 1);
+    --m-card-w: min(42vw, 172px);
+    font-family: "Trebuchet MS", "Arial Narrow", system-ui, sans-serif;
+  }
+
+  html { min-height: 100%; overflow-x: hidden; background: var(--m-bg-void); }
+  body {
+    min-height: 100%;
+    overflow-x: hidden;
+    color: var(--m-warm);
+    background:
+      radial-gradient(circle at 50% -12%, rgba(255, 210, 74, .22), transparent 27vh),
+      radial-gradient(circle at 12% 18%, rgba(52, 199, 255, .25), transparent 34vh),
+      radial-gradient(circle at 92% 72%, rgba(255, 96, 31, .18), transparent 30vh),
+      linear-gradient(180deg, #020611 0%, #071426 48%, #020611 100%);
+  }
+  body::before, body::after {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: -1;
+  }
+  body::before {
+    background:
+      linear-gradient(100deg, transparent 0 44%, rgba(255,255,255,.06) 45%, transparent 47% 100%),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.028) 0 1px, transparent 1px 18px),
+      repeating-linear-gradient(0deg, rgba(52,199,255,.035) 0 1px, transparent 1px 22px);
+    mask-image: linear-gradient(180deg, transparent, #000 18%, #000 82%, transparent);
+  }
+  body::after { background: radial-gradient(ellipse at 50% 105%, rgba(36, 255, 155, .17), transparent 34vh); }
+
+  .app-shell, .screen, .home-screen, .album-screen, .gameover-screen, .hero-screen {
+    min-height: 100svh;
+  }
+  .screen, .home-screen, .album-screen, .gameover-screen, .hero-screen, .loading-screen {
+    position: relative;
+    padding: calc(var(--m-topbar-h) + var(--m-safe-top) + 10px) 12px calc(var(--m-bottom-h) + var(--m-safe-bottom) + 18px);
+    background: transparent !important;
+    isolation: isolate;
+  }
+  .screen::before, .home-screen::before, .album-screen::before, .gameover-screen::before {
+    content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+    background:
+      radial-gradient(circle at 50% 12%, rgba(255, 210, 74, .14), transparent 23vh),
+      linear-gradient(180deg, rgba(4, 12, 26, .2), rgba(4, 8, 16, .94));
+  }
+
+  h1, h2, h3 { color: var(--m-warm); text-shadow: 0 2px 18px rgba(0,0,0,.5); letter-spacing: -.035em; }
+  h1 { font-size: clamp(1.45rem, 7vw, 2.15rem); line-height: .96; margin-bottom: 8px; }
+  h2 { font-size: clamp(1.2rem, 5.4vw, 1.7rem); }
+  p { line-height: 1.35; }
+  .muted { color: var(--m-muted); }
+  .eyebrow { color: var(--m-yellow); font-size: .68rem; letter-spacing: .18em; }
+
+  .topbar, .album-topbar, .season-select-topbar {
+    position: fixed !important; top: 0; left: 0; right: 0; z-index: 80;
+    min-height: calc(var(--m-topbar-h) + var(--m-safe-top));
+    display: grid; grid-template-columns: 48px minmax(0, 1fr) 48px; align-items: center; gap: 8px;
+    padding: calc(8px + var(--m-safe-top)) 10px 8px !important;
+    border: 0; border-bottom: 1px solid rgba(255,255,255,.1);
+    border-radius: 0 !important;
+    background: linear-gradient(180deg, rgba(2, 6, 17, .94), rgba(4, 13, 29, .76));
+    backdrop-filter: blur(18px);
+    box-shadow: 0 12px 28px rgba(0,0,0,.35);
+  }
+  .topbar > div, .album-topbar > div, .season-select-topbar h1 { text-align: center; min-width: 0; }
+  .topbar h1, .topbar h2, .topbar p, .album-topbar h1, .album-topbar p, .season-select-topbar h1 { margin: 0; }
+  .topbar .muted, .topbar .eyebrow, .album-topbar .muted, .album-topbar .eyebrow { display: none; }
+  .brand { justify-self: center; font-size: .95rem; text-transform: uppercase; }
+  .status-strip { justify-content: flex-end; gap: 4px; }
+  .status-pill { min-height: 34px; padding: 7px 8px; border-radius: 12px; background: rgba(255,255,255,.06); border-color: var(--m-line); font-size: .72rem; }
+  .section-root-button, .season-select-home-button, .icon-btn {
+    width: 44px; min-width: 44px; min-height: 44px; border-radius: 15px;
+    background: linear-gradient(145deg, rgba(255, 210, 74, .18), rgba(52, 199, 255, .12));
+    border: 1px solid var(--m-line-hot); color: var(--m-yellow); box-shadow: var(--m-glow-gold);
+  }
+
+  .content, .narrow { width: 100%; padding-top: 0; margin: 0; }
+  .panel, .home-hub-card, .season-select-card, .album-collection-card, .album-team-card, .formation-card, .player-card, .candidate-card, .item-card, .event-card, .match-panel, .hall-card {
+    position: relative; overflow: hidden;
+    border-radius: var(--m-radius-lg) !important;
+    border: 1px solid rgba(255,255,255,.13) !important;
+    background:
+      linear-gradient(155deg, rgba(255,255,255,.105), rgba(255,255,255,.025) 42%, rgba(0,0,0,.22)),
+      var(--m-blue-glass) !important;
+    box-shadow: var(--m-shadow), inset 0 1px 0 rgba(255,255,255,.1) !important;
+  }
+  .panel::before, .home-hub-card::before, .season-select-card::before, .player-card::before, .candidate-card::before, .album-collection-card::before {
+    content: ""; position: absolute; inset: -1px; pointer-events: none;
+    background: linear-gradient(115deg, transparent 0 30%, rgba(255,255,255,.13) 42%, transparent 54% 100%);
+    opacity: .55;
+  }
+  .panel > *, .home-hub-card > *, .season-select-card > *, .player-card > *, .candidate-card > * { position: relative; }
+
+  .btn {
+    min-height: 44px; border-radius: 999px; padding: 12px 16px; border: 1px solid rgba(255,255,255,.14);
+    background: rgba(255,255,255,.07); color: var(--m-warm); font-weight: 950; letter-spacing: .01em;
+    box-shadow: 0 10px 22px rgba(0,0,0,.26); transition: transform var(--m-fast), filter var(--m-fast), box-shadow var(--m-fast);
+  }
+  .btn:active { transform: scale(.97); filter: brightness(1.14); }
+  .btn-primary, .btn-yellow {
+    color: #160e02; border: 0;
+    background: linear-gradient(135deg, var(--m-yellow), var(--m-orange));
+    box-shadow: 0 12px 28px rgba(255, 138, 31, .28), var(--m-glow-gold);
+  }
+  .btn-danger { background: rgba(255, 76, 93, .14); border-color: rgba(255, 76, 93, .45); color: #ffc0c7; }
+  .button-row, .home-card-actions, .season-card-actions {
+    position: sticky; bottom: calc(8px + var(--m-safe-bottom)); z-index: 60;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(128px, 1fr)); gap: 8px;
+    padding: 8px; border: 1px solid rgba(255,255,255,.12); border-radius: 22px;
+    background: rgba(2,6,17,.78); backdrop-filter: blur(18px); box-shadow: 0 -10px 28px rgba(0,0,0,.35);
+  }
+
+  .modern-home { display: grid; align-content: start; gap: 12px; }
+  .modern-home::before { background: radial-gradient(circle at 52% 8%, rgba(255,210,74,.24), transparent 24vh), linear-gradient(180deg, rgba(7,19,38,.18), rgba(2,6,17,.95)); }
+  .home-hero, .home-hub-card:first-of-type { min-height: 310px; display: grid; align-content: end; padding-top: 96px; }
+  .home-hub-card:first-of-type::after { content: "⚡"; position: absolute; top: 12px; right: 20px; font-size: 5rem; opacity: .28; filter: drop-shadow(0 0 24px var(--m-yellow)); }
+  .home-roster-preview, .season-roster-preview { display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; scroll-snap-type: x proximity; }
+  .home-avatar, .compact-player-card, .season-preview-player { flex: 0 0 72px; scroll-snap-align: start; }
+
+  .season-choice-grid, .album-collection-grid, .album-team-grid, .candidate-grid, .player-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .season-select-card { min-height: 330px; padding: 16px; display: grid; align-content: end; gap: 12px; }
+  .season-select-card:nth-child(odd) { background: radial-gradient(circle at 20% 8%, rgba(52,199,255,.34), transparent 42%), linear-gradient(155deg, rgba(7,32,64,.86), rgba(0,0,0,.54)) !important; }
+  .season-select-card:nth-child(even) { background: radial-gradient(circle at 80% 12%, rgba(255,138,31,.36), transparent 44%), linear-gradient(155deg, rgba(39,15,6,.82), rgba(0,0,0,.58)) !important; }
+  .season-run-summary { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 6px; }
+  .season-run-summary > span { border-radius: 14px; background: rgba(0,0,0,.35); }
+  .season-run-summary__wide { grid-column: span 4; }
+
+  .route-screen::before { background: radial-gradient(circle at 50% 16%, rgba(255,76,93,.24), transparent 26vh), linear-gradient(180deg, #06101f, #020611); }
+  .route-map, .map-view, .route-path, .map-panel { min-height: 62vh; border-radius: 30px; background: linear-gradient(180deg, rgba(15,42,76,.68), rgba(0,0,0,.36)); }
+  .route-node, .map-node, [data-route-choice] { border-radius: 999px !important; box-shadow: 0 0 0 5px rgba(52,199,255,.08), var(--m-glow-blue); }
+  .route-target-card { min-height: 154px; border-radius: 28px !important; background: radial-gradient(circle at 80% 10%, rgba(255,76,93,.28), transparent 40%), rgba(0,0,0,.38) !important; }
+
+  .squad-screen::before, .match-screen::before, .five-screen::before { background: radial-gradient(ellipse at 50% 82%, rgba(32,180,104,.32), transparent 34vh), linear-gradient(180deg, #041020, #020611); }
+  .pitch, .formation-pitch, .match-formation, .squad-pitch { border-radius: 28px !important; background: linear-gradient(180deg, rgba(23,103,71,.92), rgba(8,58,45,.88)) !important; border: 1px solid rgba(176,255,219,.22) !important; box-shadow: inset 0 0 0 2px rgba(255,255,255,.08), var(--m-shadow); }
+  .tactical-player, .lineup-player, .mini-player, .compact-player-card { border-radius: 16px !important; background: rgba(2,6,17,.72) !important; border: 1px solid rgba(255,255,255,.16) !important; }
+
+  .player-card, .candidate-card { min-height: 220px; background: radial-gradient(circle at 50% 2%, rgba(255,210,74,.22), transparent 36%), linear-gradient(180deg, rgba(16,38,76,.9), rgba(2,6,17,.88)) !important; }
+  .player-card img, .candidate-card img, .home-avatar img, .album-player-entry img { object-fit: contain !important; filter: drop-shadow(0 10px 18px rgba(0,0,0,.55)); }
+  .role-chip, .rarity-chip, .element-chip, .status-pill { border-radius: 999px; border-color: rgba(255,255,255,.16); background: rgba(0,0,0,.32); color: var(--m-warm); }
+  .player-detail-modal, .modal { border-radius: 30px !important; background: radial-gradient(circle at 50% 0, rgba(255,210,74,.18), transparent 32%), rgba(4,12,26,.96) !important; border: 1px solid rgba(255,255,255,.16) !important; box-shadow: 0 24px 70px rgba(0,0,0,.68); }
+  .modal-backdrop { backdrop-filter: blur(8px); background: rgba(0,0,0,.72) !important; }
+
+  .inventory-screen::before { background: radial-gradient(circle at 18% 18%, rgba(255,210,74,.2), transparent 25vh), linear-gradient(180deg, #080c17, #020611); }
+  .item-card { display: grid; grid-template-columns: 58px minmax(0,1fr); gap: 10px; align-items: center; }
+  .training-screen::before { background: radial-gradient(circle at 50% 18%, rgba(52,199,255,.2), transparent 30vh), linear-gradient(180deg, #071426, #020611); }
+  .hall-screen::before, .gameover-screen::before { background: radial-gradient(circle at 50% 16%, rgba(255,210,74,.3), transparent 30vh), linear-gradient(180deg, #120d05, #020611); }
+  .album-player-entry.is-locked { filter: grayscale(1); opacity: .55; }
+  .album-player-entry.is-unlocked .album-lock-overlay, .album-complete em { display: none !important; }
+
+  .match-log, .timeline, .log-list { display: grid; gap: 8px; }
+  .match-log li, .timeline-event, .log-event { list-style: none; border-left: 3px solid var(--m-cyan); border-radius: 16px; padding: 10px 12px; background: rgba(255,255,255,.06); }
+  .match-log li.opponent, .timeline-event.opponent, .log-event.opponent { border-left-color: var(--m-red); }
+
+  img { max-width: 100%; }
+  a, button, select, [role="button"] { touch-action: manipulation; }
+  :focus-visible { outline: 3px solid var(--m-yellow); outline-offset: 3px; }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .screen, .home-screen, .album-screen, .gameover-screen { animation: m-screen-in .28s ease-out both; }
+    .panel, .home-hub-card, .season-select-card, .player-card, .candidate-card { animation: m-card-rise .34s ease-out both; }
+    .progress-bar, .album-collection-progress-bar span { animation: m-meter .55s ease-out both; }
+  }
+  @keyframes m-screen-in { from { opacity: 0; transform: translateY(10px); } }
+  @keyframes m-card-rise { from { opacity: 0; transform: translateY(14px) scale(.985); } }
+  @keyframes m-meter { from { transform: scaleX(.2); transform-origin: left; } }
+}

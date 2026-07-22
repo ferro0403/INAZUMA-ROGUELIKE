@@ -1,0 +1,15 @@
+@media (max-width: 768px) {
+  .draft-screen::before, .pull-screen::before { background: radial-gradient(circle at 50% 20%, rgba(255,210,74,.35), transparent 30vh), linear-gradient(180deg, #071528, #020611); }
+  .boss-screen::before, .boss-preview::before { background: radial-gradient(circle at 50% 14%, rgba(255,76,93,.28), transparent 32vh), linear-gradient(180deg, #160711, #020611); }
+  .event-screen::before { background: radial-gradient(circle at 18% 18%, rgba(138,92,246,.27), transparent 30vh), linear-gradient(180deg, #0b1028, #020611); }
+  .trade-screen::before { background: radial-gradient(circle at 50% 18%, rgba(52,199,255,.24), transparent 28vh), linear-gradient(180deg, #061426, #020611); }
+  .gameover-screen.victory, .victory-screen { background: radial-gradient(circle at 50% 20%, rgba(255,210,74,.34), transparent 34vh), linear-gradient(180deg, #221505, #020611) !important; }
+  .gameover-screen.defeat, .defeat-screen { background: radial-gradient(circle at 50% 18%, rgba(255,76,93,.28), transparent 34vh), linear-gradient(180deg, #190611, #020611) !important; }
+  .album-screen { background: radial-gradient(circle at 50% 14%, rgba(255,210,74,.2), transparent 32vh), linear-gradient(180deg, #100d08, #020611) !important; }
+  .album-team-card { min-height: 150px; align-content: end; }
+  .album-collection-card { min-height: 260px; align-content: end; }
+  .candidate-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 7px; }
+  .candidate-grid .player-card, .candidate-grid .candidate-card { min-height: 172px; border-radius: 20px !important; }
+  .candidate-grid .btn { width: 100%; padding-inline: 8px; font-size: .78rem; }
+  @media (max-width: 340px) { .candidate-grid { gap: 5px; } .candidate-grid .player-card, .candidate-grid .candidate-card { min-height: 158px; } }
+}
