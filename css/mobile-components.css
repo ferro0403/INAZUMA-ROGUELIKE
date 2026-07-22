@@ -1,0 +1,14 @@
+@media (max-width: 768px) {
+  .mobile-bottom-actions, .bottom-actions, .match-actions, .inventory-actions {
+    position: sticky; bottom: calc(8px + env(safe-area-inset-bottom, 0px)); z-index: 61;
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(124px, 1fr)); gap: 8px;
+    padding: 8px; border-radius: 22px; background: rgba(2,6,17,.82); backdrop-filter: blur(18px);
+    border: 1px solid rgba(255,255,255,.12); box-shadow: 0 -14px 32px rgba(0,0,0,.38);
+  }
+  .empty-state, .loading-screen, .error-state, .skeleton {
+    border-radius: 26px; border: 1px dashed rgba(255,210,74,.36); background: rgba(255,210,74,.07); color: #fff3d6;
+  }
+  .skeleton { min-height: 84px; background: linear-gradient(90deg, rgba(255,255,255,.05), rgba(255,255,255,.14), rgba(255,255,255,.05)); background-size: 220% 100%; animation: m-skeleton 1.2s linear infinite; }
+  @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; } }
+  @keyframes m-skeleton { to { background-position: -220% 0; } }
+}
