@@ -198,6 +198,7 @@
   };
 
   let seasonDb = null;
+  let activeSeason = null;
   let freeAgentsDb = null;
   let freeAgentsById = new Map();
   let seasonPlayersById = new Map();
@@ -402,8 +403,8 @@
   function sourcePlayer(entryOrId, preferredSource) {
     const id = String(entryOrId && typeof entryOrId === "object" ? entryOrId.playerId : entryOrId);
     const source = preferredSource || (entryOrId && entryOrId.source);
-    if (source === "season1") return seasonPlayersById.get(id);
-    return freeAgentsById.get(id) || seasonPlayersById.get(id);
+    if (global.SeasonRegistry?.isSeasonSource?.(source)) return global.SeasonRegistry.player(id, source);
+    return seasonPlayersById.get(id) || freeAgentsById.get(id);
   }
 
   function rosterEntry(playerId) {
@@ -485,7 +486,7 @@
     const entry = rosterEntry(playerId);
     if (!entry) return null;
     const player = sourcePlayer(entry);
-    const database = entry.source === "season1" ? seasonDb : freeAgentsDb;
+    const database = global.SeasonRegistry?.isSeasonSource?.(entry.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb;
     const resolved = global.InazumaProgression.getPlayerAtLevel(
       player,
       Math.floor(Number(entry.level || 0)),
@@ -739,7 +740,7 @@
     showPlayerDetailsFor(player, {
       playerId,
       level: player.displayLevel,
-      database: entry.source === "season1" ? seasonDb : freeAgentsDb,
+      database: global.SeasonRegistry?.isSeasonSource?.(entry.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb,
       equipment: player.equipment,
       onClose,
     });
@@ -755,20 +756,21 @@
   }
 
   function unlockAlbumRecruit(playerId, source) {
-    return global.AlbumProgress?.unlockAlbumPlayer?.(global.AlbumProgress.DEFAULT_COLLECTION_ID, playerId, { source }) || false;
+    return global.AlbumProgress?.unlockAlbumPlayer?.(run?.seasonId || global.AlbumProgress.DEFAULT_COLLECTION_ID, playerId, { source }) || false;
   }
 
-  function albumCollectionPlayers() {
+  function albumCollectionPlayers(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
+    const db = global.SeasonRegistry.database(collectionId) || seasonDb;
     const byId = new Map();
-    (seasonDb?.players || []).forEach((player) => byId.set(String(player.playerId), { ...player, albumDatabase: seasonDb }));
-    (freeAgentsDb?.players || []).forEach((player) => byId.set(String(player.playerId), { ...player, albumDatabase: freeAgentsDb }));
+    (db?.players || []).forEach((player) => byId.set(String(player.playerId), { ...player, albumDatabase: db }));
+    (freeAgentsDb?.players || []).forEach((player) => { if (!byId.has(String(player.playerId))) byId.set(String(player.playerId), { ...player, albumDatabase: freeAgentsDb }); });
     return [...byId.values()];
   }
 
   function albumCollectionProgress(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
     ensureAlbumBackfill();
     const unlocked = global.AlbumProgress.unlockedSet(collectionId);
-    const totalIds = new Set(albumCollectionPlayers().map((player) => String(player.playerId)));
+    const totalIds = new Set(albumCollectionPlayers(collectionId).map((player) => String(player.playerId)));
     return { unlocked: [...totalIds].filter((id) => unlocked.has(id)).length, total: totalIds.size };
   }
 
@@ -824,7 +826,8 @@
     return [...teams, freeAgentsTeam];
   }
 
-  function renderAlbumTeams(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
+  async function renderAlbumTeams(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
+    await loadSeason(collectionId);
     ui.albumCollectionId = collectionId;
     const collection = global.AlbumProgress.ALBUM_COLLECTIONS[collectionId];
     ensureAlbumBackfill();
@@ -842,7 +845,7 @@
     const players = rawPlayers.map((player) => albumPlayerView(player, team.freeAgents ? freeAgentsDb : seasonDb));
     const progress = albumProgressForPlayers(players, collectionId);
     const unlocked = global.AlbumProgress.unlockedSet(collectionId);
-    app.innerHTML = `<main class="album-screen album-roster-screen"><header class="topbar album-topbar album-roster-header"><div class="album-roster-title"><span class="album-team-logo album-team-logo--header album-roster-logo">${albumTeamLogoMarkup(team)}</span><div class="album-roster-heading"><p class="eyebrow album-roster-breadcrumb">Album → Inazuma Eleven 1</p><h1 class="album-roster-name">${escapeHtml(team.teamName)}</h1><p class="muted album-roster-progress">${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)} giocatori sbloccati</p></div></div><button class="btn album-roster-action" id="album-back-teams">Squadre</button></header><section class="album-player-grid" data-album-roster>${players.map((player) => { const isUnlocked = unlocked.has(String(player.playerId)); return `<div class="album-player-entry ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${playerCard(player, { button: true, level: player.maxLevel || 20, database: player.albumDatabase }).replace('data-player-id=', 'data-album-player=')}${isUnlocked ? "" : `<span class="album-lock-overlay album-player-lock"><span aria-hidden="true">🔒</span>Non sbloccato</span>`}</div>`; }).join("")}</section></main>`;
+    app.innerHTML = `<main class="album-screen album-roster-screen"><header class="topbar album-topbar album-roster-header"><div class="album-roster-title"><span class="album-team-logo album-team-logo--header album-roster-logo">${albumTeamLogoMarkup(team)}</span><div class="album-roster-heading"><p class="eyebrow album-roster-breadcrumb">Album → ${escapeHtml(global.AlbumProgress.ALBUM_COLLECTIONS[collectionId]?.name || collectionId)}</p><h1 class="album-roster-name">${escapeHtml(team.teamName)}</h1><p class="muted album-roster-progress">${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)} giocatori sbloccati</p></div></div><button class="btn album-roster-action" id="album-back-teams">Squadre</button></header><section class="album-player-grid" data-album-roster>${players.map((player) => { const isUnlocked = unlocked.has(String(player.playerId)); return `<div class="album-player-entry ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${playerCard(player, { button: true, level: player.maxLevel || 20, database: player.albumDatabase }).replace('data-player-id=', 'data-album-player=')}${isUnlocked ? "" : `<span class="album-lock-overlay album-player-lock"><span aria-hidden="true">🔒</span>Non sbloccato</span>`}</div>`; }).join("")}</section></main>`;
     resetRenderedViewScroll();
     document.getElementById("album-back-teams").addEventListener("click", () => renderAlbumTeams(collectionId));
     document.querySelector("[data-album-roster]").addEventListener("click", (event) => { const button = event.target.closest("[data-album-player]"); if (!button) return; const player = players.find((candidate) => String(candidate.playerId) === String(button.dataset.albumPlayer)); if (!player) return; const isUnlocked = unlocked.has(String(player.playerId)); showPlayerDetailsFor(player, { mode: "album", readOnly: true, playerId: player.playerId, level: player.maxLevel || 20, database: player.albumDatabase, equipment: null, preserveScroll: scrollSnapshot(), albumUnlocked: isUnlocked }); });
@@ -914,9 +917,9 @@
       return `<article class="home-hub-card home-run-card" aria-label="Run">
         <div class="home-card-kicker"><span>⚡</span><strong>RUN</strong></div>
         <h2>Scendi in campo</h2>
-        <p class="muted">Crea una rosa, scegli il percorso e supera i boss della Season 1.</p>
+        <p class="muted">Scegli la Season, crea una rosa e supera i boss della campagna selezionata.</p>
         <div class="empty-state compact-empty"><strong>Nessuna run attiva</strong><span>La prossima leggenda parte dal primo fischio.</span></div>
-        <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="new-run">Inizia una nuova run</button></div>
+        <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="new-run">Seleziona Season</button></div>
       </article>`;
     }
     const identity = savedTeamIdentity() || normalizeTeamIdentity(savedRun.teamIdentity);
@@ -934,36 +937,56 @@
     </article>`;
   }
 
-  function renderHome() {
-    run = global.RunState.load();
+  async function renderHome() {
+    await loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID);
+    run = null;
     ensureRunSchema();
     migrateTeamIdentityProfile();
-    if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) {
-      global.RunState.save(run);
-    }
     app.innerHTML = `
       <main class="home-screen modern-home">
         <header class="home-hero panel">
           <div class="home-brand-mark">${inazumaLogoMarkup("inazuma-logo--hero")}</div>
-          <div class="home-copy"><p class="eyebrow">Season 1</p><h1>Inazuma Roguelike</h1><p class="home-subtitle">Road to Raimon</p><p class="muted">Un viaggio roguelike tra draft, tattica e sfide decisive: costruisci una squadra da leggenda.</p></div>
-          <div class="home-actions button-row"><button type="button" class="btn btn-yellow" id="home-primary-cta">${run ? "Continua la run" : "Inizia una nuova run"}</button><button type="button" class="btn" id="open-hall-home">Apri Albo d’Oro</button></div>
+          <div class="home-copy"><p class="eyebrow">Multi Season</p><h1>Inazuma Roguelike</h1><p class="home-subtitle">Road to Raimon</p><p class="muted">Un viaggio roguelike tra draft, tattica e sfide decisive: costruisci una squadra da leggenda.</p></div>
+          <div class="home-actions button-row"><button type="button" class="btn btn-yellow" id="home-primary-cta">${run ? "Continua la run" : "Seleziona Season"}</button><button type="button" class="btn" id="open-hall-home">Apri Albo d’Oro</button></div>
         </header>
         <section class="home-choice-grid" aria-label="Hub principale">
-          ${homeRunCardMarkup(run)}
+          ${homeRunCardMarkup(null)}
           ${homeHallOfFameMarkup()}
           ${homeAlbumCardMarkup()}
         </section>
       </main>`;
     resetRenderedViewScroll();
 
-    document.querySelectorAll("#new-run, #home-primary-cta").forEach((button) => button.addEventListener("click", () => run && button.id === "home-primary-cta" ? resumeRun() : startNewRunFromHome()));
-    document.getElementById("continue-run")?.addEventListener("click", resumeRun);
-    document.getElementById("manage-team-home")?.addEventListener("click", () => { if (!run) return; run.phase = "squad"; global.RunState.save(run); renderSquad(); });
+    document.querySelectorAll("#new-run, #home-primary-cta").forEach((button) => button.addEventListener("click", renderSeasonSelect));
+    document.getElementById("continue-run")?.addEventListener("click", renderSeasonSelect);
+    document.getElementById("manage-team-home")?.addEventListener("click", renderSeasonSelect);
     document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-album-home")?.addEventListener("click", renderAlbumCollections);
     document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-hall-home-list")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-latest-hall-home")?.addEventListener("click", (event) => renderHallOfFameDetail(event.currentTarget.dataset.latestHall));
+  }
+
+
+  async function selectSeason(seasonId) {
+    await loadSeason(seasonId);
+    run = global.RunState.load(activeSeason.id);
+    ensureRunSchema();
+    if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
+  }
+
+  async function renderSeasonSelect() {
+    await loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID);
+    const cards = global.SeasonRegistry.list().map((season) => {
+      const saved = global.RunState.load(season.id);
+      const status = saved ? "Continua run" : "Nuova run";
+      const meta = saved ? `Boss ${Math.min(Number(saved.bossIndex || 0) + 1, 99)} · Lv ${saved.teamLevel || 0} · ${saved.lives ?? "-"} vite` : "Nessun salvataggio per questa Season";
+      return `<article class="home-hub-card season-select-card"><div class="home-card-kicker"><span>⚡</span><strong>SEASON</strong></div><h2>${escapeHtml(season.name)}</h2><p class="muted">${escapeHtml(meta)}</p><div class="home-card-actions"><button type="button" class="btn btn-yellow" data-season-start="${escapeHtml(season.id)}">${escapeHtml(status)}</button></div></article>`;
+    }).join("");
+    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="topbar"><div><p class="eyebrow">Run</p><h1>Seleziona Season</h1><p class="muted">Ogni Season ha database, boss e salvataggio separati.</p></div><button class="btn" id="season-back-home">Home</button></header><section class="home-choice-grid">${cards}</section></main>`;
+    resetRenderedViewScroll();
+    document.getElementById("season-back-home").addEventListener("click", renderHome);
+    document.querySelectorAll("[data-season-start]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonStart); if (run) return resumeRun(); startNewRunFromHome(); }));
   }
 
   function savedTeamSummaryMarkup() {
@@ -982,7 +1005,7 @@
 
   function startRunWithIdentity(identity) {
     const cleanIdentity = global.RunState.saveProfileTeamIdentity(identity);
-    run = global.RunState.createRun(cleanIdentity);
+    run = global.RunState.createRun(cleanIdentity, activeSeason?.id);
     global.RunState.save(run);
     closeModal();
     renderFormationChoice();
@@ -991,6 +1014,7 @@
   function startNewRunFromHome() {
     const identity = savedTeamIdentity();
     if (!identity) return openTeamNameModal({ mode: "create" });
+    run = global.RunState.load(activeSeason?.id);
     if (!run) return startRunWithIdentity(identity);
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Nuova run</p><h2>Sostituire la run salvata?</h2><p class="muted">La nuova run userà ${escapeHtml(identity.name)} come nome squadra.</p></div>${inazumaLogoMarkup("inazuma-logo--modal")}</div>
@@ -1039,7 +1063,8 @@
     openTeamNameModal({ mode: "edit" });
   }
 
-  function resumeRun() {
+  async function resumeRun() {
+    await selectSeason(run?.seasonId || activeSeason?.id);
     if (!run) return renderHome();
     if (run.gameOver || run.phase === "gameover") return renderGameOver();
     if (run.phase === "formation") return renderFormationChoice();
@@ -1740,7 +1765,7 @@
   }
 
   function showTradeResult(node, incoming, nextLevel) {
-    const database = incoming.source === "season1" ? seasonDb : freeAgentsDb;
+    const database = global.SeasonRegistry?.isSeasonSource?.(incoming.source) ? (global.SeasonRegistry.database(incoming.source) || seasonDb) : freeAgentsDb;
     openModal(`
       <div class="modal-head trade-node-head"><div><p class="eyebrow">Scambio completato</p><h2>È arrivato ${escapeHtml(incoming.player.name)}</h2><p class="muted">Il nuovo giocatore è già nella rosa. Continua per finalizzare il nodo e tornare alla mappa.</p></div></div>
       <div class="trade-result-card mobile-compact-player-list">${playerCard(incoming.player, { level: nextLevel, database })}</div>
@@ -1813,7 +1838,7 @@
           .filter((team) => run.unlockedTeamIds.includes(String(team.teamId)))
           .flatMap((team) => team.playerIds.map(String))
       );
-      return { players: seasonDb.players.filter((player) => ids.has(String(player.playerId))), source: "season1", database: seasonDb };
+      return { players: seasonDb.players.filter((player) => ids.has(String(player.playerId))), source: global.SeasonRegistry.sourceForSeason(run?.seasonId), database: seasonDb };
     }
     const legendaryById = new Map();
     const legendarySources = new Map();
@@ -1828,7 +1853,7 @@
       .forEach((player) => {
         if (!legendaryById.has(String(player.playerId))) {
           legendaryById.set(String(player.playerId), player);
-          legendarySources.set(String(player.playerId), "season1");
+          legendarySources.set(String(player.playerId), global.SeasonRegistry.sourceForSeason(run?.seasonId));
         }
       });
     return {
@@ -1883,7 +1908,7 @@
 
   function luckyCharmPoolForPull(pullType) {
     if (pullType === "pull_free_agents") return pullPool(pullType);
-    if (pullType === "pull_unlocked_teams") return { players: seasonDb.players, source: "season1", database: seasonDb };
+    if (pullType === "pull_unlocked_teams") return { players: seasonDb.players, source: global.SeasonRegistry.sourceForSeason(run?.seasonId), database: seasonDb };
     return null;
   }
 
@@ -1992,7 +2017,8 @@
   }
 
   function pullChoiceDatabase(options, player) {
-    return pullChoiceSource(options, player) === "season1" ? seasonDb : options.database;
+    const src = pullChoiceSource(options, player);
+    return global.SeasonRegistry?.isSeasonSource?.(src) ? (global.SeasonRegistry.database(src) || seasonDb) : options.database;
   }
 
   function pullChoiceActionPanel(player, index) {
@@ -2127,7 +2153,7 @@
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Rosa piena</p><h2>Scegli chi lasciare fuori</h2><p class="muted">${escapeHtml(player.name)} sostituirà una delle quattro riserve.</p></div></div>
       <div class="player-grid mobile-compact-player-list bench-replacement-grid">
-        ${benchPlayers.map((candidate) => playerCard(sourcePlayer(rosterEntry(candidate.playerId)), { button: true, level: candidate.displayLevel, database: candidate.source === "season1" ? seasonDb : freeAgentsDb })).join("")}
+        ${benchPlayers.map((candidate) => playerCard(sourcePlayer(rosterEntry(candidate.playerId)), { button: true, level: candidate.displayLevel, database: global.SeasonRegistry?.isSeasonSource?.(candidate.source) ? (global.SeasonRegistry.database(candidate.source) || seasonDb) : freeAgentsDb })).join("")}
       </div>
       ${allowCancel ? '<div class="button-row" style="margin-top:18px"><button type="button" class="btn btn-ghost" id="cancel-recruit">Rinuncia al nuovo giocatore</button></div>' : ""}`,
       { closeable: false }
@@ -2213,7 +2239,7 @@
         const source = seasonPlayersById.get(String(slot.playerId));
         if (!source) return null;
         const resolved = global.InazumaProgression.getPlayerAtLevel(source, Math.floor(Number(slot.level ?? level)), seasonDb);
-        return { ...resolved, displayLevel: Number(slot.level ?? level), source: "season1", playerId: String(slot.playerId) };
+        return { ...resolved, displayLevel: Number(slot.level ?? level), source: global.SeasonRegistry.sourceForSeason(run?.seasonId), playerId: String(slot.playerId) };
       })
       .filter(Boolean);
   }
@@ -3237,7 +3263,7 @@
       title: `Ricompensa ${flow.rewardNumber} di 2 · ${boss.teamName}`,
       subtitle: `Scegli 1 giocatore su 3 · Livello ${level}`,
       candidates,
-      source: "season1",
+      source: global.SeasonRegistry.sourceForSeason(run?.seasonId),
       database: seasonDb,
       level,
       allowSkip: true,
@@ -3258,7 +3284,7 @@
         syncPendingBossReward(flow);
         global.RunState.save(run);
         global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.BOSS_REWARD_CHOSEN, { nodeId: flow.matchNodeId, playerId: player.playerId, actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:chosen` });
-        recruitPlayer(player, "season1", level, () => advanceBossReward(), { allowCancel: true, recruitmentSource: "boss_reward", actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:recruit:${player.playerId}` });
+        recruitPlayer(player, global.SeasonRegistry.sourceForSeason(run?.seasonId), level, () => advanceBossReward(), { allowCancel: true, recruitmentSource: "boss_reward", actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:recruit:${player.playerId}` });
       },
       onSkip: () => { global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.BOSS_REWARD_DECLINED, { nodeId: flow.matchNodeId, actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:declined` }); advanceBossReward(); },
     });
@@ -3842,8 +3868,9 @@
     const avg = starters.length ? Math.round(starters.reduce((sum, p) => sum + Number(p.finalOverall || 0), 0) / starters.length) : null;
     global.RunStatistics?.snapshotFinalPlayerStats?.(run, fullRoster);
     const statsSnapshot = global.RunStatistics?.buildHallOfFameStatisticsSnapshot?.(run) || { runStatistics: {}, playerStatistics: {}, matchHistory: [], awards: [] };
-    const runStatistics = { ...statsSnapshot.runStatistics, mode: "Season 1", season: "Season 1", victoryDate: run.completedAt || new Date().toISOString(), seed: run.runId, durationMs: run.createdAt ? Date.now() - new Date(run.createdAt).getTime() : statsSnapshot.runStatistics.durationMs, finalTeamLevel: run.teamLevel ?? null, finalAverageOverall: avg, finalFormation: run.formationId, livesRemaining: run.lives ?? null, recruitedPlayers: run.roster.length, bossesDefeated: (run.completedBossIds || []).slice() };
-    const snapshot = { archiveSchemaVersion: 1, runId: run.runId, teamName: identity.name, teamLogo: identity.logo || "inazuma-lightning", modeId: "season1", modeName: "Season 1", seasonId: "season1", seasonName: "Season 1", difficultyId: null, victoryDate: run.completedAt || new Date().toISOString(), seed: run.runId, finalBossId: String(finalBoss?.teamId || "raimon"), finalBossName: finalBoss?.teamName || "Raimon", finalFormation: run.formationId, finalFormationTactics: global.MatchSimulator?.formationTactic?.(run.formationId) || null, finalStartingEleven: starters, fullRoster, bench, savedFiveVFiveFormation: run.fiveVFive ? JSON.parse(JSON.stringify(run.fiveVFive)) : null, finalTeamLevel: run.teamLevel ?? null, finalAverageOverall: avg, livesRemaining: run.lives ?? null, statisticsSchemaVersion: statsSnapshot.statisticsSchemaVersion || 1, statisticsComplete: statsSnapshot.statisticsComplete, statisticsStartedAt: statsSnapshot.statisticsStartedAt, runStatistics, playerStatistics: statsSnapshot.playerStatistics, matchHistory: statsSnapshot.matchHistory, awards: statsSnapshot.awards, rulesetVersion: "season1-config-v2", databaseVersion: seasonDb?.version || null, formationTacticsVersion: "match-simulator-config-v1", equipmentVersion: "season1-item-pool-v1", traitSystemVersion: null, sourceAppVersion: "hall-of-fame-v2-run-statistics" };
+    const seasonMeta = global.SeasonRegistry.get(run?.seasonId);
+    const runStatistics = { ...statsSnapshot.runStatistics, mode: seasonMeta.name, season: seasonMeta.name, victoryDate: run.completedAt || new Date().toISOString(), seed: run.runId, durationMs: run.createdAt ? Date.now() - new Date(run.createdAt).getTime() : statsSnapshot.runStatistics.durationMs, finalTeamLevel: run.teamLevel ?? null, finalAverageOverall: avg, finalFormation: run.formationId, livesRemaining: run.lives ?? null, recruitedPlayers: run.roster.length, bossesDefeated: (run.completedBossIds || []).slice() };
+    const snapshot = { archiveSchemaVersion: 1, runId: run.runId, teamName: identity.name, teamLogo: identity.logo || "inazuma-lightning", modeId: seasonMeta.id, modeName: seasonMeta.name, seasonId: seasonMeta.id, seasonName: seasonMeta.name, difficultyId: null, victoryDate: run.completedAt || new Date().toISOString(), seed: run.runId, finalBossId: String(finalBoss?.teamId || "raimon"), finalBossName: finalBoss?.teamName || "Raimon", finalFormation: run.formationId, finalFormationTactics: global.MatchSimulator?.formationTactic?.(run.formationId) || null, finalStartingEleven: starters, fullRoster, bench, savedFiveVFiveFormation: run.fiveVFive ? JSON.parse(JSON.stringify(run.fiveVFive)) : null, finalTeamLevel: run.teamLevel ?? null, finalAverageOverall: avg, livesRemaining: run.lives ?? null, statisticsSchemaVersion: statsSnapshot.statisticsSchemaVersion || 1, statisticsComplete: statsSnapshot.statisticsComplete, statisticsStartedAt: statsSnapshot.statisticsStartedAt, runStatistics, playerStatistics: statsSnapshot.playerStatistics, matchHistory: statsSnapshot.matchHistory, awards: statsSnapshot.awards, rulesetVersion: "season1-config-v2", databaseVersion: seasonDb?.version || null, formationTacticsVersion: "match-simulator-config-v1", equipmentVersion: "season1-item-pool-v1", traitSystemVersion: null, sourceAppVersion: "hall-of-fame-v2-run-statistics" };
     snapshot.archiveKey = global.HallOfFameStorage.archiveKeyFor(snapshot);
     snapshot.hallTeamId = global.HallOfFameStorage.stableId(snapshot.archiveKey);
     return snapshot;
@@ -4044,6 +4071,16 @@
     return renderFinalCelebration(run?.hallTeamId);
   }
 
+
+  async function loadSeason(seasonId) {
+    activeSeason = global.SeasonRegistry.setActive(seasonId);
+    seasonDb = await global.SeasonRegistry.loadDatabase(activeSeason.id);
+    activeSeason = global.SeasonRegistry.get(activeSeason.id);
+    seasonPlayersById = global.SeasonRegistry.playersIndex(activeSeason.id);
+    seasonTeamsById = global.SeasonRegistry.teamsIndex(activeSeason.id);
+    return seasonDb;
+  }
+
   function showLoadError(error) {
     console.error(error);
     app.innerHTML = `
@@ -4054,17 +4091,15 @@
 
   async function init() {
     try {
-      const [seasonResponse, freeAgentsResponse, visualsResponse] = await Promise.all([
-        fetch("data/IE1_season_compact.json"),
+      const [activeDb, freeAgentsResponse, visualsResponse] = await Promise.all([
+        loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID),
         fetch("data/FREE_AGENTS_compact.json"),
         fetch("data/PLAYER_VISUALS.json"),
       ]);
-      if (!seasonResponse.ok || !freeAgentsResponse.ok || !visualsResponse.ok) throw new Error("Database non raggiungibili");
+      if (!activeDb || !freeAgentsResponse.ok || !visualsResponse.ok) throw new Error("Database non raggiungibili");
       const visualsDb = await visualsResponse.json();
-      [seasonDb, freeAgentsDb] = await Promise.all([seasonResponse.json(), freeAgentsResponse.json()]);
+      freeAgentsDb = await freeAgentsResponse.json();
       freeAgentsById = new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player]));
-      seasonPlayersById = new Map(seasonDb.players.map((player) => [String(player.playerId), player]));
-      seasonTeamsById = new Map((seasonDb.teams || []).map((team) => [String(team.teamId ?? team.id), team]));
       playerVisualsById = new Map(Object.entries(visualsDb.players || {}));
       renderHome();
     } catch (error) {
