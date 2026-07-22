@@ -2044,3 +2044,42 @@ body { background: var(--gradient-app); }
 @media (max-width: 980px) { .season-roster-preview { grid-template-columns: repeat(5, minmax(58px, 1fr)); } }
 @media (max-width: 780px) { .season-select-topbar { grid-template-columns: 1fr; align-items: start; gap: 12px; border-radius: 22px; } .season-select-topbar .btn { width: 100%; } .season-card-head { display: grid; } .season-card-badges { justify-content: flex-start; } .season-run-strip > span { flex: 1 1 44%; } .season-roster-preview { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 5px; } .season-roster-block { padding: 9px; } .season-info-grid { grid-template-columns: 1fr; } .season-card-actions .btn { flex-basis: 100%; } }
 @media (max-width: 430px) { .season-roster-preview { grid-template-columns: repeat(4, minmax(0, 1fr)); } .season-roster-preview .season-preview-player:nth-child(n+5) { display: none; } .season-run-strip > span { flex-basis: 100%; } }
+
+/* Compact hierarchical section-root navigation */
+.topbar-title-group {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-root-button {
+  flex: 0 0 auto;
+  width: 44px;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid rgba(255, 176, 32, .58);
+  border-radius: 14px;
+  background: rgba(7, 23, 44, .88);
+  color: var(--yellow);
+  box-shadow: 0 8px 18px rgba(0,0,0,.18), inset 0 0 0 1px rgba(255,255,255,.03);
+  font-size: 1.15rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: 160ms ease;
+}
+.section-root-button:hover,
+.section-root-button:focus-visible {
+  transform: translateY(-2px);
+  border-color: var(--yellow);
+  background: rgba(18, 32, 58, .96);
+}
+.topbar > .section-root-button { order: -1; }
+.album-roster-header > .album-roster-title,
+.topbar > div { min-width: 0; }
+@media (max-width: 780px) {
+  .topbar { padding-top: max(12px, env(safe-area-inset-top)); }
+  .section-root-button { width: 46px; min-width: 46px; min-height: 46px; }
+  .topbar-title-group { gap: 8px; }
+}
