@@ -962,7 +962,17 @@
 
   function runFormationLabel(savedRun) {
     const formation = seasonDb?.formations?.eleven?.find((item) => item.id === savedRun?.formationId);
-    return formation?.formation || savedRun?.formationId || "Da scegliere";
+    return formation?.formation || formation?.name || savedRun?.formationId || "Da scegliere";
+  }
+
+  function runHeartsMarkup(savedRun) {
+    const maxLives = Math.max(Number(global.SEASON1_CONFIG.startingLives || 3), Number(savedRun?.lives || 0));
+    return Array.from({ length: maxLives }, (_, index) => index < Number(savedRun?.lives || 0) ? "♥" : "♡").join(" ");
+  }
+
+  function runAverageOverall(savedRun) {
+    const players = (savedRun?.roster || []).map((entry) => resolvedRosterPlayer(entry.playerId || entry.id)).filter(Boolean);
+    return averageOverall(players);
   }
 
   function savedRunSummaryMarkup(savedRun) {
@@ -998,8 +1008,8 @@
     const rosterPreview = (savedRun.roster || []).slice(0, 5).map((entry) => resolvedRosterPlayer(entry.playerId || entry.id)).filter(Boolean);
     return `<article class="home-hub-card home-run-card" aria-label="Run attiva">
       <div class="home-card-kicker"><span>⚡</span><strong>RUN</strong></div>
-      <div class="home-card-title-row"><div><p class="eyebrow">${escapeHtml(seasonDisplayName(savedRun.seasonId))}</p><h2>${escapeHtml(identity.name)}</h2><p class="muted">Prossimo boss: ${escapeHtml(boss?.teamName || "Raimon")} · Stage ${escapeHtml(Math.min(bossNumber, totalBosses))}/${escapeHtml(totalBosses)}</p></div><span class="result-banner result-banner--live">${hearts()}</span></div>
-      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>Livello</span><strong>${escapeHtml(savedRun.teamLevel || 0)}</strong></div><div class="stat-card"><span>Overall medio</span><strong>${escapeHtml(averageOverall())}</strong></div><div class="stat-card"><span>Vite</span><strong>${escapeHtml(savedRun.lives ?? "-")}</strong></div><div class="stat-card"><span>Modulo</span><strong>${escapeHtml(runFormationLabel(savedRun))}</strong></div></div>
+      <div class="home-card-title-row"><div><p class="eyebrow">${escapeHtml(seasonDisplayName(savedRun.seasonId))}</p><h2>${escapeHtml(identity.name)}</h2><p class="muted">Prossimo boss: ${escapeHtml(boss?.teamName || "Raimon")} · Stage ${escapeHtml(Math.min(bossNumber, totalBosses))}/${escapeHtml(totalBosses)}</p></div><span class="result-banner result-banner--live">${runHeartsMarkup(savedRun)}</span></div>
+      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>Livello</span><strong>${escapeHtml(savedRun.teamLevel || 0)}</strong></div><div class="stat-card"><span>Overall medio</span><strong>${escapeHtml(runAverageOverall(savedRun))}</strong></div><div class="stat-card"><span>Vite</span><strong>${escapeHtml(savedRun.lives ?? "-")}</strong></div><div class="stat-card"><span>Modulo</span><strong>${escapeHtml(runFormationLabel(savedRun))}</strong></div></div>
       <div class="home-roster-preview">${rosterPreview.map((p) => `<span class="home-avatar"><img src="${escapeHtml(p.portraitUrl || p.imageUrl || '')}" alt="${escapeHtml(p.name)}" loading="lazy"/><small>${escapeHtml(p.position || '')}</small></span>`).join("") || '<span class="muted">Rosa in preparazione</span>'}</div>
       <div class="progress-track" aria-label="Progresso boss"><div class="progress-bar" style="width:${Math.round(((bossNumber - 1) / Math.max(1, totalBosses)) * 100)}%"></div></div>
       <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="continue-run" aria-label="Continua la run mostrata">Continua run</button><button type="button" class="btn" id="select-run">Seleziona run</button></div>
@@ -1056,14 +1066,18 @@
     await loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID);
     const cards = global.SeasonRegistry.list().map((season) => {
       const saved = global.RunState.load(season.id);
-      const status = saved ? "Continua run" : "Nuova run";
-      const meta = saved ? `Boss ${Math.min(Number(saved.bossIndex || 0) + 1, 99)} · Lv ${saved.teamLevel || 0} · ${saved.lives ?? "-"} vite` : "Nessun salvataggio per questa Season";
-      return `<article class="home-hub-card season-select-card"><div class="home-card-kicker"><span>⚡</span><strong>SEASON</strong></div><h2>${escapeHtml(season.name)}</h2><p class="muted">${escapeHtml(meta)}</p><div class="home-card-actions"><button type="button" class="btn btn-yellow" data-season-start="${escapeHtml(season.id)}">${escapeHtml(status)}</button></div></article>`;
+      const activeSaved = saved && global.RunState.isActiveRun(saved) ? saved : null;
+      const meta = activeSaved ? `Boss ${Math.min(Number(activeSaved.bossIndex || 0) + 1, 99)} · Lv ${activeSaved.teamLevel || 0} · ${activeSaved.lives ?? "-"} vite` : "Nessun salvataggio attivo per questa Season";
+      const actions = activeSaved
+        ? `<button type="button" class="btn btn-yellow" data-season-continue="${escapeHtml(season.id)}">Continua run</button><button type="button" class="btn btn-ghost" data-season-new="${escapeHtml(season.id)}">Inizia nuova run</button>`
+        : `<button type="button" class="btn btn-yellow" data-season-new="${escapeHtml(season.id)}">Inizia nuova run</button>`;
+      return `<article class="home-hub-card season-select-card"><div class="home-card-kicker"><span>⚡</span><strong>SEASON</strong></div><h2>${escapeHtml(season.name)}</h2><p class="muted">${escapeHtml(meta)}</p><div class="home-card-actions season-card-actions">${actions}</div></article>`;
     }).join("");
     app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="topbar"><div><p class="eyebrow">Run</p><h1>Seleziona Season</h1><p class="muted">Ogni Season ha database, boss e salvataggio separati.</p></div><button class="btn" id="season-back-home">Home</button></header><section class="home-choice-grid">${cards}</section></main>`;
     resetRenderedViewScroll();
     document.getElementById("season-back-home").addEventListener("click", renderHome);
-    document.querySelectorAll("[data-season-start]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonStart, { markPlayed: true }); if (run) return resumeRun(); startNewRunFromHome(); }));
+    document.querySelectorAll("[data-season-continue]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonContinue, { markPlayed: true }); resumeRun(); }));
+    document.querySelectorAll("[data-season-new]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonNew); startNewRunFromHome(); }));
   }
 
   function savedTeamSummaryMarkup() {
@@ -1090,16 +1104,22 @@
 
   function startNewRunFromHome() {
     const identity = savedTeamIdentity();
-    if (!identity) return openTeamNameModal({ mode: "create" });
     run = global.RunState.load(activeSeason?.id);
-    if (!run) return startRunWithIdentity(identity);
+    const startConfirmedRun = () => {
+      const confirmedIdentity = savedTeamIdentity();
+      if (!confirmedIdentity) return openTeamNameModal({ mode: "create" });
+      return startRunWithIdentity(confirmedIdentity);
+    };
+    if (!run || !global.RunState.isActiveRun(run)) return identity ? startRunWithIdentity(identity) : openTeamNameModal({ mode: "create" });
+    const seasonName = seasonDisplayName(activeSeason?.id);
+    const bossLine = `Boss ${Math.min(Number(run.bossIndex || 0) + 1, seasonDb?.bossOrder?.length || 99)} · Livello ${run.teamLevel || 0} · ${run.lives ?? "-"} vite`;
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">Nuova run</p><h2>Sostituire la run salvata?</h2><p class="muted">La nuova run userà ${escapeHtml(identity.name)} come nome squadra.</p></div>${inazumaLogoMarkup("inazuma-logo--modal")}</div>
-      <p class="home-overwrite-warning">Confermando sostituirai la run attiva. L’Albo d’Oro e le squadre campioni resteranno salvati.</p>
-      <div class="button-row"><button type="button" class="btn btn-primary" id="confirm-new-run">Conferma</button><button type="button" class="btn" id="cancel-new-run">Indietro</button></div>`,
-      { closeable: false, className: "team-name-modal" }
+      <div class="modal-head"><div><p class="eyebrow">Nuova run</p><h2>Inizia nuova run</h2><p class="muted">Hai già una run attiva in ${escapeHtml(seasonName)}.</p></div>${inazumaLogoMarkup("inazuma-logo--modal")}</div>
+      <p class="home-overwrite-warning"><strong>${escapeHtml(bossLine)}</strong><br>Iniziando una nuova run, i progressi attuali di ${escapeHtml(seasonName)} verranno sostituiti. Le altre Season resteranno intatte.</p>
+      <div class="button-row"><button type="button" class="btn" id="cancel-new-run">Annulla</button><button type="button" class="btn btn-yellow" id="confirm-new-run">Inizia nuova run</button></div>`,
+      { closeable: false, className: "team-name-modal new-run-confirm-modal" }
     );
-    document.getElementById("confirm-new-run").addEventListener("click", () => startRunWithIdentity(identity));
+    document.getElementById("confirm-new-run").addEventListener("click", startConfirmedRun);
     document.getElementById("cancel-new-run").addEventListener("click", closeModal);
   }
 
