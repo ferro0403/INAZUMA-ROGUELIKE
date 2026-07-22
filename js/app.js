@@ -1031,6 +1031,75 @@
       </section>`;
   }
 
+  function homeRosterPreviewMarkup(savedRun) {
+    const rosterEntries = (savedRun?.roster || []).slice(0, 4);
+    const cards = rosterEntries.map((entry) => {
+      const playerId = entry.playerId || entry.id;
+      const player = resolvedRosterPlayer(playerId);
+      if (!player) return "";
+      return `<div class="home-lobby-roster-card">${playerCard(player, { level: player.displayLevel ?? entry.level ?? 0, database: seasonDb, equipment: entry.equippedItem })}</div>`;
+    }).join("");
+    return cards || '<p class="muted">Rosa in preparazione</p>';
+  }
+
+  function homeLobbyMarkup(savedRun) {
+    const hasRun = Boolean(savedRun);
+    const identity = normalizeTeamIdentity(savedRun?.teamIdentity);
+    const seasonName = hasRun ? seasonDisplayName(savedRun.seasonId) : "Inazuma Roguelike";
+    const boss = hasRun ? seasonDb?.bossOrder?.[Number(savedRun.bossIndex || 0)] : null;
+    const bossNumber = hasRun ? Number(savedRun.bossIndex || 0) + 1 : 0;
+    const totalBosses = seasonDb?.bossOrder?.length || 10;
+    const currentBoss = hasRun ? Math.min(bossNumber, totalBosses) : 0;
+    const progressPercent = hasRun ? Math.max(0, Math.min(100, Math.round(((currentBoss - 1) / Math.max(1, totalBosses)) * 100))) : 0;
+    const rosterCount = savedRun?.roster?.length || 0;
+    const bossLogo = boss?.logoUrl ? `<img src="${escapeHtml(boss.logoUrl)}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true;" />` : `<span>${hasRun ? "⚡" : "?"}</span>`;
+    return `
+      <main class="home-screen modern-home home-lobby">
+        <header class="home-lobby-topbar" aria-label="Home">
+          <div class="home-lobby-brand">
+            <div class="home-lobby-logo">${teamLogoMarkup(hasRun ? identity : { logo: "inazuma-lightning", name: "Inazuma Roguelike" })}</div>
+            <div>
+              <h1>${escapeHtml(hasRun ? identity.name : "Inazuma Roguelike")}</h1>
+              <p>${escapeHtml(seasonName)}</p>
+            </div>
+          </div>
+          <div class="home-lobby-status" aria-label="Stato run">
+            <span>Lv ${escapeHtml(savedRun?.teamLevel ?? 0)}</span>
+            <span class="lives">${hasRun ? runHeartsMarkup(savedRun) : "♡ ♡ ♡"}</span>
+          </div>
+        </header>
+
+        <section class="home-run-hero" aria-label="${hasRun ? "Run attiva" : "Nessuna run attiva"}">
+          <div class="home-run-hero__content">
+            <p class="home-run-hero__kicker">${hasRun ? "Prossimo boss" : "Nessuna run attiva"}</p>
+            <h2>${escapeHtml(hasRun ? (boss?.teamName || "Raimon") : "Scegli la Season")}</h2>
+            <div class="home-run-hero__meta">
+              <span>${escapeHtml(hasRun ? `${currentBoss} / ${totalBosses}` : "0 / 0")}</span>
+              <span>Lv ${escapeHtml(savedRun?.teamLevel ?? 0)}</span>
+              <span>${escapeHtml(savedRun?.lives ?? 0)} vite</span>
+            </div>
+            <div class="home-run-hero__progress" aria-label="Progresso ${escapeHtml(currentBoss)} di ${escapeHtml(totalBosses)}"><span style="width:${progressPercent}%"></span></div>
+            <button type="button" class="btn btn-yellow home-run-hero__cta" id="home-primary-cta">${hasRun ? "Continua run" : "Seleziona Season"}</button>
+          </div>
+          <div class="home-run-hero__scene" aria-hidden="true">
+            <div class="home-run-hero__emblem">${bossLogo}</div>
+            <div class="home-run-hero__stadium"></div>
+          </div>
+        </section>
+
+        ${hasRun ? `<section class="home-roster-lobby" aria-label="La tua rosa">
+          <div class="home-lobby-section-head"><h2>La tua rosa <span>(${escapeHtml(rosterCount)})</span></h2><button type="button" id="manage-team-home">Vedi tutti</button></div>
+          <div class="home-lobby-roster-grid">${homeRosterPreviewMarkup(savedRun)}</div>
+        </section>` : ""}
+
+        <nav class="home-quick-access" aria-label="Accessi rapidi">
+          <button type="button" id="new-run"><span>▰</span>Season</button>
+          <button type="button" id="open-album-home"><span>▣</span>Album</button>
+          <button type="button" id="open-hall-home"><span>★</span>Albo d’oro</button>
+        </nav>
+      </main>`;
+  }
+
   function homeRunCardMarkup(savedRun) {
     if (!savedRun) {
       return `<article class="home-hub-card home-run-card" aria-label="Run">
@@ -1068,24 +1137,13 @@
     ensureRunSchema();
     migrateTeamIdentityProfile();
     if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
-    app.innerHTML = `
-      <main class="home-screen modern-home">
-        <header class="home-hero panel">
-          <div class="home-brand-mark">${inazumaLogoMarkup("inazuma-logo--hero")}</div>
-          <div class="home-copy"><p class="eyebrow">Multi Season</p><h1>Inazuma Roguelike</h1><p class="home-subtitle">Road to Raimon</p><p class="muted">Un viaggio roguelike tra draft, tattica e sfide decisive: costruisci una squadra da leggenda.</p></div>
-          <div class="home-actions button-row"><button type="button" class="btn btn-yellow" id="home-primary-cta">${run ? "Continua run" : "Seleziona Season"}</button><button type="button" class="btn" id="open-hall-home">Apri Albo d’Oro</button></div>
-        </header>
-        <section class="home-choice-grid" aria-label="Hub principale">
-          ${homeRunCardMarkup(run)}
-          ${homeHallOfFameMarkup()}
-          ${homeAlbumCardMarkup()}
-        </section>
-      </main>`;
+    app.innerHTML = homeLobbyMarkup(run);
     resetRenderedViewScroll();
 
-    document.querySelectorAll("#new-run, #select-run, #manage-team-home").forEach((button) => button.addEventListener("click", renderSeasonSelect));
+    document.querySelectorAll("#new-run, #select-run").forEach((button) => button.addEventListener("click", renderSeasonSelect));
     document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : renderSeasonSelect());
     document.getElementById("continue-run")?.addEventListener("click", resumeRun);
+    document.getElementById("manage-team-home")?.addEventListener("click", () => { if (!run) return renderSeasonSelect(); run.phase = "squad"; global.RunState.save(run); renderSquad(); });
     document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-album-home")?.addEventListener("click", renderAlbumCollections);
     document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
