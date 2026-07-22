@@ -1031,7 +1031,35 @@
       </section>`;
   }
 
-  function homeRunCardMarkup(savedRun) {
+  function activeRunBossInfo(savedRun) {
+    const bossIndex = Number(savedRun?.bossIndex || 0);
+    const totalBosses = seasonDb?.bossOrder?.length || 10;
+    const boss = seasonDb?.bossOrder?.[bossIndex];
+    return { boss, bossNumber: Math.min(bossIndex + 1, totalBosses), totalBosses };
+  }
+
+  function activeRunRosterEntries(savedRun) {
+    const starters = (savedRun?.lineup || []).filter(Boolean).map(String);
+    const rosterIds = (savedRun?.roster || []).map((entry) => String(entry.playerId || entry.id)).filter(Boolean);
+    const orderedIds = [...starters, ...rosterIds.filter((id) => !starters.includes(id))];
+    return orderedIds.map((id) => resolvedRosterPlayer(id)).filter(Boolean);
+  }
+
+  function homeTopbarMarkup(savedRun) {
+    const identity = savedRun ? normalizeTeamIdentity(savedRun.teamIdentity) : savedTeamIdentity();
+    return `<header class="home-mobile-topbar" aria-label="Riepilogo Home">
+      <div class="home-mobile-team">
+        ${inazumaLogoMarkup("inazuma-logo--home-topbar")}
+        <span><strong>${escapeHtml(identity?.name || "Inazuma Roguelike")}</strong><small>${escapeHtml(savedRun ? seasonDisplayName(savedRun.seasonId) : "Inazuma Eleven 1")}</small></span>
+      </div>
+      <div class="home-mobile-status" aria-label="Stato run">
+        <span class="home-status-chip home-status-chip--lives">${savedRun ? runHeartsMarkup(savedRun) : "♡ ♡ ♡"}</span>
+        <span class="home-status-chip">Lv ${escapeHtml(savedRun?.teamLevel || 0)}</span>
+      </div>
+    </header>`;
+  }
+
+  function homeLegacyRunCardMarkup(savedRun) {
     if (!savedRun) {
       return `<article class="home-hub-card home-run-card" aria-label="Run">
         <div class="home-card-kicker"><span>⚡</span><strong>RUN</strong></div>
@@ -1042,18 +1070,63 @@
       </article>`;
     }
     const identity = normalizeTeamIdentity(savedRun.teamIdentity);
-    const boss = seasonDb?.bossOrder?.[Number(savedRun.bossIndex || 0)];
-    const bossNumber = Number(savedRun.bossIndex || 0) + 1;
-    const totalBosses = seasonDb?.bossOrder?.length || 10;
+    const { boss, bossNumber, totalBosses } = activeRunBossInfo(savedRun);
     const rosterPreview = (savedRun.roster || []).slice(0, 5).map((entry) => resolvedRosterPlayer(entry.playerId || entry.id)).filter(Boolean);
     return `<article class="home-hub-card home-run-card" aria-label="Run attiva">
       <div class="home-card-kicker"><span>⚡</span><strong>RUN</strong></div>
-      <div class="home-card-title-row"><div><p class="eyebrow">${escapeHtml(seasonDisplayName(savedRun.seasonId))}</p><h2>${escapeHtml(identity.name)}</h2><p class="muted">Prossimo boss: ${escapeHtml(boss?.teamName || "Raimon")} · Stage ${escapeHtml(Math.min(bossNumber, totalBosses))}/${escapeHtml(totalBosses)}</p></div><span class="result-banner result-banner--live">${runHeartsMarkup(savedRun)}</span></div>
+      <div class="home-card-title-row"><div><p class="eyebrow">${escapeHtml(seasonDisplayName(savedRun.seasonId))}</p><h2>${escapeHtml(identity.name)}</h2><p class="muted">Prossimo boss: ${escapeHtml(boss?.teamName || "Raimon")} · Stage ${escapeHtml(bossNumber)}/${escapeHtml(totalBosses)}</p></div><span class="result-banner result-banner--live">${runHeartsMarkup(savedRun)}</span></div>
       <div class="stat-grid home-stat-grid"><div class="stat-card"><span>Livello</span><strong>${escapeHtml(savedRun.teamLevel || 0)}</strong></div><div class="stat-card"><span>Overall medio</span><strong>${escapeHtml(runAverageOverall(savedRun))}</strong></div><div class="stat-card"><span>Vite</span><strong>${escapeHtml(savedRun.lives ?? "-")}</strong></div><div class="stat-card"><span>Modulo</span><strong>${escapeHtml(runFormationLabel(savedRun))}</strong></div></div>
-      <div class="home-roster-preview">${rosterPreview.map((p) => `<span class="home-avatar"><img src="${escapeHtml(p.portraitUrl || p.imageUrl || '')}" alt="${escapeHtml(p.name)}" loading="lazy"/><small>${escapeHtml(p.position || '')}</small></span>`).join("") || '<span class="muted">Rosa in preparazione</span>'}</div>
+      <div class="home-roster-preview">${rosterPreview.map((player) => `<span class="home-avatar"><img src="${escapeHtml(player.portraitUrl || player.imageUrl || '')}" alt="${escapeHtml(player.name)}" loading="lazy"/><small>${escapeHtml(player.position || '')}</small></span>`).join("") || '<span class="muted">Rosa in preparazione</span>'}</div>
       <div class="progress-track" aria-label="Progresso boss"><div class="progress-bar" style="width:${Math.round(((bossNumber - 1) / Math.max(1, totalBosses)) * 100)}%"></div></div>
       <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="continue-run" aria-label="Continua la run mostrata">Continua run</button><button type="button" class="btn" id="select-run">Seleziona run</button></div>
     </article>`;
+  }
+
+  function homeRunCardMarkup(savedRun) {
+    if (!savedRun) {
+      return `<article class="home-active-run-card" aria-label="Nessuna run attiva">
+        <div class="home-card-kicker"><strong>NESSUNA RUN ATTIVA</strong></div>
+        <div class="home-run-heading"><h2>Inazuma Roguelike</h2></div>
+        <div class="home-card-actions"><button type="button" class="btn btn-yellow home-primary-run-button" id="new-run">SELEZIONA SEASON</button></div>
+      </article>`;
+    }
+    const identity = normalizeTeamIdentity(savedRun.teamIdentity);
+    const { boss, bossNumber, totalBosses } = activeRunBossInfo(savedRun);
+    return `<article class="home-active-run-card" aria-label="Run attiva">
+      <div class="home-card-kicker"><strong>RUN ATTIVA</strong></div>
+      <div class="home-run-heading"><h2>${escapeHtml(identity.name)}</h2><p>${escapeHtml(seasonDisplayName(savedRun.seasonId))}</p></div>
+      <div class="home-run-boss"><span>Boss</span><strong>${escapeHtml(boss?.teamName || "-")} <em>${escapeHtml(bossNumber)}/${escapeHtml(totalBosses)}</em></strong></div>
+      <div class="home-run-data-grid">
+        <div><span>Livello</span><strong>Lv ${escapeHtml(savedRun.teamLevel || 0)}</strong></div>
+        <div><span>Vite</span><strong class="home-run-hearts">${runHeartsMarkup(savedRun)}</strong></div>
+        <div><span>Overall</span><strong>${escapeHtml(runAverageOverall(savedRun))}</strong></div>
+        <div><span>Modulo</span><strong>${escapeHtml(runFormationLabel(savedRun))}</strong></div>
+      </div>
+      <div class="home-card-actions"><button type="button" class="btn btn-yellow home-primary-run-button" id="continue-run" aria-label="Continua la run mostrata">CONTINUA RUN</button></div>
+    </article>`;
+  }
+
+  function homeRosterSectionMarkup(savedRun) {
+    if (!savedRun) return "";
+    const players = activeRunRosterEntries(savedRun);
+    const preview = players.slice(0, 4);
+    const remaining = Math.max(0, players.length - preview.length);
+    return `<section class="home-mobile-section home-roster-section" aria-label="La tua rosa">
+      <div class="home-section-head"><h2>LA TUA ROSA</h2><div class="home-section-actions"><span>${escapeHtml(players.length)} giocatori</span><button type="button" id="home-view-squad">Vedi tutti</button></div></div>
+      <div class="home-roster-card-grid">${preview.map((player) => compactPlayerCardMarkup(player, { dataAttr: `data-home-player="${escapeHtml(player.playerId)}"` })).join("")}</div>
+      ${remaining ? `<p class="home-roster-more">+${escapeHtml(remaining)} altri</p>` : ""}
+    </section>`;
+  }
+
+  function homeQuickLinksMarkup() {
+    return `<section class="home-mobile-section home-quick-section" aria-label="Accessi rapidi">
+      <div class="home-section-head"><h2>ACCESSI RAPIDI</h2></div>
+      <div class="home-quick-grid">
+        <button type="button" class="home-quick-card" id="home-quick-season"><span aria-hidden="true">⚡</span><strong>SELEZIONA SEASON</strong></button>
+        <button type="button" class="home-quick-card" id="home-quick-album"><span aria-hidden="true">📖</span><strong>ALBUM</strong></button>
+        <button type="button" class="home-quick-card" id="home-quick-hall"><span aria-hidden="true">🏆</span><strong>ALBO D'ORO</strong></button>
+      </div>
+    </section>`;
   }
 
   async function renderHome() {
@@ -1068,31 +1141,51 @@
     ensureRunSchema();
     migrateTeamIdentityProfile();
     if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
+    const mobileHome = window.matchMedia?.("(max-width: 780px)")?.matches ?? true;
+    if (!mobileHome) {
+      app.innerHTML = `
+        <main class="home-screen modern-home">
+          <header class="home-hero panel">
+            <div class="home-brand-mark">${inazumaLogoMarkup("inazuma-logo--hero")}</div>
+            <div class="home-copy"><p class="eyebrow">Multi Season</p><h1>Inazuma Roguelike</h1><p class="home-subtitle">Road to Raimon</p><p class="muted">Un viaggio roguelike tra draft, tattica e sfide decisive: costruisci una squadra da leggenda.</p></div>
+            <div class="home-actions button-row"><button type="button" class="btn btn-yellow" id="home-primary-cta">${run ? "Continua run" : "Seleziona Season"}</button><button type="button" class="btn" id="open-hall-home">Apri Albo d’Oro</button></div>
+          </header>
+          <section class="home-choice-grid" aria-label="Hub principale">
+            ${homeLegacyRunCardMarkup(run)}
+            ${homeHallOfFameMarkup()}
+            ${homeAlbumCardMarkup()}
+          </section>
+        </main>`;
+      resetRenderedViewScroll();
+      document.querySelectorAll("#new-run, #select-run, #manage-team-home").forEach((button) => button.addEventListener("click", renderSeasonSelect));
+      document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : renderSeasonSelect());
+      document.getElementById("continue-run")?.addEventListener("click", resumeRun);
+      document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
+      document.getElementById("open-album-home")?.addEventListener("click", renderAlbumCollections);
+      document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
+      document.getElementById("open-hall-home-list")?.addEventListener("click", renderHallOfFame);
+      document.getElementById("open-latest-hall-home")?.addEventListener("click", (event) => renderHallOfFameDetail(event.currentTarget.dataset.latestHall));
+      return;
+    }
     app.innerHTML = `
-      <main class="home-screen modern-home">
-        <header class="home-hero panel">
-          <div class="home-brand-mark">${inazumaLogoMarkup("inazuma-logo--hero")}</div>
-          <div class="home-copy"><p class="eyebrow">Multi Season</p><h1>Inazuma Roguelike</h1><p class="home-subtitle">Road to Raimon</p><p class="muted">Un viaggio roguelike tra draft, tattica e sfide decisive: costruisci una squadra da leggenda.</p></div>
-          <div class="home-actions button-row"><button type="button" class="btn btn-yellow" id="home-primary-cta">${run ? "Continua run" : "Seleziona Season"}</button><button type="button" class="btn" id="open-hall-home">Apri Albo d’Oro</button></div>
-        </header>
-        <section class="home-choice-grid" aria-label="Hub principale">
+      <main class="home-screen modern-home mobile-run-home">
+        ${homeTopbarMarkup(run)}
+        <div class="home-mobile-content">
           ${homeRunCardMarkup(run)}
-          ${homeHallOfFameMarkup()}
-          ${homeAlbumCardMarkup()}
-        </section>
+          ${homeRosterSectionMarkup(run)}
+          ${homeQuickLinksMarkup()}
+        </div>
       </main>`;
     resetRenderedViewScroll();
 
-    document.querySelectorAll("#new-run, #select-run, #manage-team-home").forEach((button) => button.addEventListener("click", renderSeasonSelect));
-    document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : renderSeasonSelect());
+    document.getElementById("new-run")?.addEventListener("click", renderSeasonSelect);
     document.getElementById("continue-run")?.addEventListener("click", resumeRun);
-    document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
-    document.getElementById("open-album-home")?.addEventListener("click", renderAlbumCollections);
-    document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
-    document.getElementById("open-hall-home-list")?.addEventListener("click", renderHallOfFame);
-    document.getElementById("open-latest-hall-home")?.addEventListener("click", (event) => renderHallOfFameDetail(event.currentTarget.dataset.latestHall));
+    document.getElementById("home-view-squad")?.addEventListener("click", async () => { await selectSeason(run?.seasonId || activeSeason?.id, { markPlayed: true }); if (run) renderSquad(); });
+    document.querySelectorAll("[data-home-player]").forEach((button) => button.addEventListener("click", (event) => openPlayerDetail(event.currentTarget.dataset.homePlayer, { render: renderHome })));
+    document.getElementById("home-quick-season")?.addEventListener("click", renderSeasonSelect);
+    document.getElementById("home-quick-album")?.addEventListener("click", renderAlbumCollections);
+    document.getElementById("home-quick-hall")?.addEventListener("click", renderHallOfFame);
   }
-
 
   async function selectSeason(seasonId, { markPlayed = false } = {}) {
     await loadSeason(seasonId);
