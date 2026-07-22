@@ -372,106 +372,303 @@ Potranno restare come placeholder temporanei o per casi volutamente secondari fi
 
 # 6.1 Immagini atmosferiche di riferimento
 
-Le due immagini allegate mostrano uno stadio calcistico anime molto luminoso e costituiscono riferimenti concreti per atmosfera e composizione.
+La presente revisione è basata sull'analisi diretta dei due file realmente allegati alla conversazione:
 
-- **Immagine A, verticale:** riferimento principale per la composizione futura mobile.
-- **Immagine B, orizzontale:** riferimento principale per la composizione futura desktop.
+- **asset mobile verticale:** `864 × 1536`, rapporto `9:16`;
+- **asset desktop orizzontale:** `1536 × 864`, rapporto `16:9`.
 
-Entrambe esprimono correttamente:
+Le immagini appartengono chiaramente alla stessa composizione artistica: uno stadio calcistico anime estremamente luminoso, osservato frontalmente, con una grande apertura di cielo al centro, energia acquatica/celeste sul lato sinistro ed energia giallo-oro, elettrica e rocciosa sul lato destro. Il campo e l'anello dello stadio occupano la zona inferiore, mentre il centro superiore resta ampio e relativamente libero.
 
-- atmosfera da grande torneo;
-- luminosità;
-- energia anime;
-- contrasto tra area azzurra e area giallo-oro;
-- centralità dello stadio;
-- spazio visivo adatto a ospitare l'interfaccia;
-- sensazione di finale o competizione importante.
+Le due immagini vengono interpretate obbligatoriamente così:
 
-## Interpretazione cromatica
+- **immagine verticale:** riferimento atmosferico e compositivo principale per mobile;
+- **immagine orizzontale:** riferimento atmosferico e compositivo principale per desktop.
 
-Il celeste e l'azzurro presenti nelle immagini sono ammessi come colori atmosferici dell'illustrazione. Non devono però riportare il blu come colore strutturale dominante di:
+Questa classificazione non rende gli asset sfondi definitivi. Li rende riferimenti concreti da usare nei piloti per verificare se la futura UI riesce a conservare luminosità, atmosfera da torneo e leggibilità.
 
-- pannelli;
-- pulsanti;
-- navigazione;
-- shell;
-- bordi principali.
+## Metodo di lettura
 
-Il blu atmosferico appartiene allo sfondo illustrato; non definisce il tema dei componenti.
+Per evitare di trasformare ipotesi in decisioni già approvate, questa sezione distingue tre livelli:
 
-Giallo e oro dell'interfaccia dovranno restare distinguibili dai bagliori presenti nelle immagini. La UI non dovrà perdere gerarchia quando un elemento giallo si sovrappone a una zona luminosa dello stadio.
+- **osservabile:** caratteristica realmente presente nei file allegati;
+- **possibile scelta futura:** trattamento progettuale compatibile con l'immagine, ma non ancora implementato o approvato;
+- **da testare:** comportamento che può essere confermato soltanto nell'applicazione, con pannelli reali e viewport reali.
 
-## Uso futuro
+## Caratteristiche comuni realmente osservabili
 
-Le immagini:
+In entrambi gli asset sono osservabili:
 
-- non implicano che ogni schermata debba avere lo stesso sfondo;
-- potranno essere usate integralmente, ritagliate o reinterpretate soltanto dopo test di leggibilità;
-- sono riferimenti visivi e candidati asset, non una scelta obbligatoria per ogni schermata;
-- non dovranno essere aggiunte al repository in questa fase documentale.
+- uno stadio calcistico anime di grande scala;
+- un punto di vista centrale rivolto verso il campo;
+- una luminosità generale molto elevata;
+- un cielo celeste e bianco che occupa la maggior parte della composizione;
+- una zona centrale quasi bianca in prossimità dell'orizzonte;
+- una massa energetica azzurra/acquatica sulla sinistra;
+- una massa energetica giallo-oro/elettrica sulla destra;
+- foglie e frammenti nella zona sinistra;
+- rocce, scintille e scariche nella zona destra;
+- geometrie traslucide e fasci diagonali nel cielo;
+- un campo relativamente piccolo rispetto all'intera immagine;
+- una sensazione coerente con finale, torneo o competizione importante.
 
-I testi non dovranno essere posizionati direttamente sulle zone più luminose senza una superficie di contrasto.
+Non è invece possibile dedurre dalle sole immagini:
 
-Pannelli bianchi sovrapposti dovranno avere bordi neri, ombre, fasce o separazioni sufficienti. Un pannello bianco semitrasparente privo di struttura rischierebbe di scomparire nello sfondo.
+- che debbano essere usate in ogni schermata;
+- che il centro libero sia automaticamente leggibile con testo sovrapposto;
+- che un unico crop funzioni per tutti i dispositivi;
+- che il bianco dei pannelli sia sufficiente senza bordo o ombra;
+- che serva necessariamente blur;
+- che l'asset debba restare sempre a piena saturazione o luminosità;
+- che l'immagine possa essere distribuita nel prodotto senza una verifica di provenienza e licenza.
 
-La parte centrale della composizione dovrà restare abbastanza libera da non creare rumore dietro ai contenuti principali. Le decorazioni laterali non dovranno interferire con:
+## Immagine verticale — riferimento mobile
 
-- safe area;
-- navigazione;
-- action bar;
-- pulsanti di ritorno;
-- elementi sticky o fixed.
+### Osservazioni compositive
 
-## Responsive delle immagini
+L'asset verticale ha rapporto `9:16`. La composizione non è un semplice ritaglio casuale dell'immagine orizzontale: è organizzata per conservare una grande colonna di cielo e collocare stadio e campo nella parte bassa.
 
-Mobile e desktop dovranno usare composizioni correlate ma non un unico asset stirato.
+Sono osservabili:
 
-La composizione verticale è particolarmente adatta al mobile perché può preservare:
+- una quantità molto ampia di spazio negativo nella metà superiore;
+- un asse centrale quasi libero, formato soprattutto da cielo celeste e bianco;
+- fasci e geometrie diagonali tenui nella parte alta;
+- l'anello dello stadio collocato indicativamente nel terzo inferiore;
+- il campo visibile vicino al fondo, con prospettiva centrale;
+- energia azzurra che cresce lungo il bordo sinistro, soprattutto dalla metà verso il basso;
+- energia oro che cresce lungo il bordo destro e culmina nelle rocce dell'angolo inferiore;
+- una luminosità centrale molto forte sopra il campo;
+- dettagli più rumorosi e contrastati nei due angoli inferiori.
 
-- cielo;
-- stadio;
-- campo;
-- profondità verticale;
-- bilanciamento delle aree azzurra e oro.
+Il grande cielo superiore rende plausibile una composizione mobile con contenuto principale nella parte alta o medio-alta, ma **non rende sicuro il testo libero**: le nuvole, i fasci chiari e le variazioni celesti possono ridurre il contrasto, soprattutto con testo bianco, grigio chiaro o giallo.
 
-La composizione orizzontale è particolarmente adatta al desktop perché può sostenere:
+### Zone più adatte ai contenuti
 
-- pannelli affiancati;
-- campi più ampi;
-- shell orizzontale;
-- contenuti centrali più larghi;
-- respiro laterale.
+Potenzialmente adatte, previa superficie di contrasto:
 
-Non dovrà essere usato un unico `background-size: cover` concettualmente identico per tutti i viewport senza valutazione dei crop.
+- area centrale alta, per titolo breve o identità della schermata;
+- fascia medio-alta, per un pannello principale non trasparente;
+- zona centrale sopra l'anello dello stadio, se il pannello non copre completamente la profondità dell'illustrazione;
+- aree interne lontane dai bordi, per CTA e metriche.
 
-Mobile e desktop dovranno preservare:
+Poco adatte:
 
-- campo;
-- effetto stadio;
-- centro visivo;
-- equilibrio tra lato azzurro e lato oro;
-- aree libere per i contenuti.
+- angolo inferiore sinistro, molto ricco di acqua, foglie e contrasti;
+- angolo inferiore destro, occupato da rocce, bagliori e fulmini oro;
+- centro immediatamente sopra il campo, quasi bianco;
+- aree sulle nuvole più luminose senza pannello;
+- bordo superiore se la topbar è trasparente e contiene testo chiaro.
 
-In futuro potranno essere usati crop o composizioni differenti pur mantenendo una stessa identità.
+### Topbar, bottom bar e safe area
 
-## Prestazioni e provenienza
+La topbar si troverebbe sopra un cielo molto chiaro. Una futura topbar dovrà quindi avere una propria struttura leggibile, per esempio:
 
-Prima dell'uso definitivo dovranno essere verificati:
+- superficie bianca o quasi bianca sufficientemente opaca con bordo inferiore scuro;
+- fascia nera con testo chiaro;
+- composizione bianca con bordo, ombra e accento giallo;
+- overlay locale limitato all'area della barra.
 
-- provenienza degli asset;
-- diritto di utilizzo;
-- eventuali limitazioni di modifica o distribuzione;
-- qualità sufficiente per i viewport previsti.
+La bottom action bar si sovrapporrebbe alla zona più illustrata e competitiva dell'asset: campo, acqua, oro e rocce. Non dovrà essere lasciata senza superficie. Dovrà inoltre rispettare `env(safe-area-inset-bottom)` e non coprire in modo permanente la parte del campo necessaria a mantenere riconoscibile lo stadio.
 
-Gli asset finali dovranno essere:
+Le decorazioni laterali non devono essere usate come giustificazione per spostare controlli essenziali troppo vicino ai bordi o dentro la safe area.
 
-- ottimizzati localmente;
-- preferibilmente WebP o AVIF;
-- accompagnati da fallback quando necessario;
-- privi di dipendenza da URL esterni fragili;
-- caricati senza introdurre layout shift o lampeggiamenti.
+### Viewport mobili di riferimento
 
-Dovrà esistere un fallback cromatico coerente nel caso in cui l'immagine non venga caricata.
+I tre viewport hanno un rapporto più stretto del file `9:16`. Con un futuro comportamento equivalente a `cover`, l'immagine tenderebbe quindi a perdere una parte dei lati, non dell'altezza. Questo può ridurre proprio la separazione visiva tra energia azzurra e oro.
+
+| Viewport | Valutazione preliminare | Rischio principale | Verifica necessaria |
+|---|---|---|---|
+| `360 × 800` | viewport più stretto e critico | crop laterale più evidente; action bar e pannello possono occupare gran parte del campo | preservare almeno parte di entrambi i lati energetici e la linea dello stadio |
+| `390 × 844` | comportamento simile al 360, con poco spazio aggiuntivo | pannello centrale lungo può scendere sulla zona quasi bianca e sul campo | provare composizione Home reale con safe area |
+| `430 × 932` | maggiore respiro, ma rapporto ancora più stretto del file | rischio di allargare eccessivamente i pannelli fino a coprire le energie laterali | mantenere margini e gerarchia senza creare colonne vuote |
+
+L'uso futuro richiederà probabilmente un `background-position` o un `object-position` dedicato al mobile. La posizione non viene fissata ora. Dovranno essere confrontate almeno:
+
+- centro;
+- centro-basso;
+- una posizione verticale calibrata per mantenere l'anello dello stadio visibile sopra la bottom bar;
+- eventuali crop dedicati per viewport bassi o per schermate con contenuto lungo.
+
+Non è sufficiente dichiarare `background-size: cover` una sola volta e presumere che il campo resti sempre visibile. Su schermate che superano l'altezza del viewport, su browser mobile con barre dinamiche o con tastiera aperta, il rapporto tra immagine, contenitore e contenuto può cambiare.
+
+Gli overlay, se necessari, dovranno essere **locali**:
+
+- dietro un hero;
+- dietro un pannello;
+- sotto topbar o action bar;
+- in una fascia specifica.
+
+È da evitare un overlay scuro uniforme su tutta l'immagine, perché eliminerebbe la caratteristica più importante dell'asset: la luminosità da grande torneo.
+
+## Immagine orizzontale — riferimento desktop
+
+### Osservazioni compositive
+
+L'asset desktop ha rapporto `16:9`. La composizione dedica una parte molto ampia al cielo e mantiene l'orizzonte dello stadio e il campo nella fascia inferiore.
+
+Sono osservabili:
+
+- una vasta zona centrale azzurro-bianca;
+- un punto di massima luminosità vicino all'orizzonte del campo;
+- lo stadio disposto ad arco da sinistra a destra;
+- il campo centrato nella parte bassa;
+- la linea di metà campo visibile come riferimento prospettico centrale;
+- energia azzurra/acquatica concentrata nel lato e nell'angolo inferiore sinistro;
+- energia oro/elettrica e rocce concentrate nel lato e nell'angolo inferiore destro;
+- un equilibrio cromatico intenzionale tra i due lati;
+- fasci diagonali e geometrie traslucide nel cielo superiore;
+- grande respiro orizzontale, specialmente nella parte alta e centrale.
+
+La zona centrale è ampia ma estremamente luminosa. È adatta a sostenere una composizione di pannelli soltanto se i pannelli hanno una silhouette forte; non è un fondale neutro per card bianche prive di bordo.
+
+### Zone più adatte ai pannelli
+
+Potenzialmente adatte:
+
+- area centrale alta per titolo, logo o hero contenuti in una superficie strutturata;
+- colonna centrale per un pannello principale con larghezza controllata;
+- composizione a due pannelli medio-alti, purché non invada completamente le energie laterali;
+- fascia superiore per navigazione opaca o ad alto contrasto;
+- area centrale sopra lo stadio per una Home con pochi blocchi e forte gerarchia.
+
+Poco adatte:
+
+- centro basso immediatamente sopra il campo, quasi bianco;
+- angolo inferiore sinistro, visivamente molto attivo;
+- angolo inferiore destro, ricco di rocce e bagliori;
+- intera larghezza con una griglia densa di card bianche, che cancellerebbe lo stadio senza ottenere contrasto;
+- testo chiaro direttamente sul cielo.
+
+### Viewport desktop di riferimento
+
+| Viewport | Relazione con l'asset | Rischio principale | Verifica necessaria |
+|---|---|---|---|
+| `1366 × 768` | quasi identico a `16:9` | altezza ridotta: hero, navigazione e CTA possono coprire rapidamente stadio e campo | assicurare che il contenuto prioritario resti sopra la piega senza cancellare l'orizzonte |
+| `1440 × 900` | viewport più alto e meno largo del `16:9` | un comportamento `cover` tende a tagliare parte dei lati, riducendo acqua e oro | confrontare crop centrale e posizione dedicata |
+| `1920 × 1080` | rapporto `16:9` coerente | pannelli troppo larghi possono occupare il grande spazio disponibile e rendere l'immagine irrilevante | limitare la larghezza del contenuto e preservare respiro laterale |
+
+Su monitor molto larghi un semplice `cover` può tagliare cielo e fascia inferiore. Se l'allineamento privilegia il centro, il campo rischia di perdere importanza; se privilegia il fondo, può ridursi eccessivamente il cielo. Potrebbero quindi essere necessari:
+
+- un asset o crop ultrawide dedicato;
+- un limite alla larghezza visiva dell'illustrazione con estensione cromatica laterale;
+- una posizione verticale differente;
+- una composizione in più livelli, da verificare soltanto in fase di prototipo.
+
+Su finestre desktop poco alte, il problema è ancora più evidente: topbar, pannelli e action area possono comprimere il campo nella porzione inferiore o nasconderlo. La verifica dovrà includere finestre ridimensionate, non soltanto monitor a schermo intero.
+
+Non viene fissato ora un unico `background-position`. La scelta dovrà dipendere dalla schermata e dal viewport, con priorità a:
+
+1. riconoscibilità dello stadio;
+2. leggibilità dei pannelli;
+3. conservazione del bilanciamento azzurro/oro;
+4. assenza di tagli casuali su campo e linea centrale.
+
+## Ruolo preciso di celeste, azzurro, bianco, giallo e oro
+
+Le immagini confermano che celeste e azzurro sono parte importante dell'atmosfera. Devono rimanere nell'illustrazione: eliminarli o neutralizzarli artificialmente indebolirebbe cielo, energia, profondità e contrasto tra i due lati.
+
+La distinzione obbligatoria è:
+
+- **celeste e azzurro illustrati:** cielo, acqua, energia, profondità atmosferica;
+- **bianco UI:** superfici informative, pannelli, card e modali;
+- **nero UI:** testo, struttura, bordi, navigazione e separazione;
+- **giallo UI:** azione, selezione, focus ed energia Inazuma;
+- **oro UI:** prestigio, vittorie, boss, trofei ed elementi speciali.
+
+Celeste e azzurro non devono diventare il colore strutturale dominante di pannelli, shell, navigazione o pulsanti. La nuova UI resta fondata su bianco, nero, giallo e oro.
+
+La componente azzurra dello sfondo può contribuire alla percezione di aria, cielo e velocità, ma i pannelli non dovranno usare automaticamente bordi, riempimenti o glow blu che li riportino visivamente al tema precedente.
+
+Il lato giallo-oro dell'illustrazione è molto luminoso. Giallo e oro della UI dovranno essere separati dallo sfondo tramite bordo scuro, area piena, pattern o posizione. Non è sufficiente collocare una CTA gialla direttamente sopra il bagliore destro.
+
+## Pannelli e testi sopra le immagini
+
+Criteri concreti per i futuri prototipi:
+
+- pannelli bianchi o avorio non completamente trasparenti;
+- bordo nero o molto scuro chiaramente percepibile;
+- ombra netta, sufficiente a separare la superficie dal cielo quasi bianco;
+- possibile fascia nera o gialla per titolo, stato o azione;
+- testi principali neri o quasi neri;
+- nessun testo libero sulle aree bianche del cielo;
+- nessun testo giallo chiaro senza un fondo scuro;
+- niente glassmorphism dominante;
+- blur usato soltanto se localizzato e realmente necessario;
+- eventuale overlay collocato dietro il singolo gruppo di contenuti, non sull'intera immagine;
+- navigazione e action bar dotate di propria superficie;
+- pannelli con larghezza controllata, per non cancellare completamente lo stadio.
+
+È da evitare un overlay scuro uniforme che trasformi l'immagine luminosa in un generico sfondo cupo. L'obiettivo è mantenere l'identità chiara degli asset e costruire il contrasto attraverso la UI.
+
+## Prima valutazione delle schermate di utilizzo
+
+### Potenzialmente adatte
+
+Le immagini potrebbero funzionare bene, previa verifica nei piloti, in superfici con contenuto relativamente concentrato e valore atmosferico elevato:
+
+- **Home:** candidato principale, soprattutto per validare shell, pannelli e differenze tra composizione mobile e desktop;
+- **selezione Season:** adatta se le card Season non coprono completamente campo e lati energetici;
+- **creazione nuova run:** possibile come fondale della shell, con modal o pannello molto leggibile;
+- **celebrazione finale:** coerente con atmosfera da finale e con il lato oro;
+- **riepilogo finale:** possibile nelle aree hero o header, non necessariamente dietro tutte le statistiche;
+- **Game Over:** possibile per contrasto narrativo, ma richiede trattamento rosso/nero che non annulli la luminosità;
+- **Albo d'Oro:** possibile per testata, hero o dettaglio prestigioso, più rischioso dietro liste lunghe;
+- **schermate boss o torneo:** possibile come fascia atmosferica o sfondo selettivo, senza interferire con formazioni e cronaca.
+
+### Potenzialmente poco adatte o ad alto rischio
+
+Gli asset possono creare troppo rumore o un costo visivo inutile nelle superfici dense:
+
+- **Squadra completa:** campo 11v11, panchina e molte Player Card richiedono uno sfondo più controllato;
+- **Inventario:** categorie, card oggetto e pannelli sticky hanno già elevata densità;
+- **Album con griglie lunghe:** l'immagine si ripeterebbe o scomparirebbe dietro centinaia di card;
+- **rosa Album:** stato locked, rarità e ritratti richiedono contrasto stabile;
+- **match con cronaca:** campo, log, punteggio e controlli competono con lo stadio illustrato;
+- **modali dense:** pull, trade, assegnazione oggetti e Player Detail devono mantenere una superficie autonoma;
+- **campi con molte Player Card:** le energie laterali possono confondersi con rarità, equipaggiamenti e stati selected.
+
+“Poco adatta” non significa vietata. Significa che l'asset non dovrebbe essere assunto come sfondo completo senza un confronto con un fallback più semplice.
+
+## Crop, overlay e posizionamento: decisioni non definitive
+
+Restano da testare:
+
+- crop specifico per ciascuno dei sei viewport di riferimento;
+- `background-position` o `object-position` separato per mobile e desktop;
+- comportamento con contenuto più alto del viewport;
+- comportamento con browser mobile e barre dinamiche;
+- conservazione del campo sopra una bottom action bar;
+- quantità di cielo necessaria sopra il pannello principale;
+- opportunità di overlay locali chiari, scuri o neutri;
+- eventuale uso dell'immagine soltanto nella fascia hero;
+- eventuale separazione tra sfondo della shell e sfondo dei contenuti;
+- intensità di contrasto e saturazione;
+- eventuale sfocatura esclusivamente locale;
+- gestione di monitor ultrawide e finestre desktop poco alte.
+
+Nessun crop, overlay o posizionamento viene approvato definitivamente in questa fase.
+
+## Prestazioni, file e provenienza
+
+Le immagini non vengono aggiunte al repository con questo documento.
+
+Prima di qualsiasi uso definitivo dovranno essere verificati:
+
+- provenienza;
+- autore o processo di generazione;
+- diritto di utilizzo, modifica e distribuzione;
+- eventuale necessità di generare asset originali equivalenti;
+- risoluzione effettiva richiesta sui diversi device pixel ratio;
+- qualità dopo compressione;
+- conversione WebP o AVIF;
+- fallback per browser o condizioni non supportate;
+- caricamento differenziato mobile e desktop;
+- preload soltanto dove realmente utile;
+- dimensione finale dei file;
+- impatto sul tempo di apertura della Home;
+- assenza di dipendenza da URL esterni fragili;
+- fallback cromatico coerente in caso di errore di caricamento.
+
+Il fatto che i file allegati abbiano rapporti corretti per i viewport principali non dimostra ancora che la loro risoluzione, compressione o licenza siano adatte alla distribuzione finale.
 
 # 7. Motion e microinterazioni
 
