@@ -8,10 +8,12 @@
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
   function makeId(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`; }
-  function primaryKey() { return config().saveKey; }
+  function seasonIdOf(runOrId = null) { return global.SeasonRegistry?.normalizeSeasonId?.(typeof runOrId === "object" ? runOrId?.seasonId : runOrId) || "ie1"; }
+  function seasonSaveKey(seasonId = null) { return `${config().saveKey}:${seasonIdOf(seasonId)}`; }
+  function primaryKey(seasonId = null) { return seasonSaveKey(seasonId); }
   function legacyKeys() { return Array.from(new Set([...(config().legacySaveKeys || []), "inazumaRoguelikeSeason1Run_v1"].filter((key) => key && key !== primaryKey()))); }
-  function backupKey() { return `${primaryKey()}_backup`; }
-  function tempKey() { return `${primaryKey()}_tmp`; }
+  function backupKey(seasonId = null) { return `${primaryKey(seasonId)}_backup`; }
+  function tempKey(seasonId = null) { return `${primaryKey(seasonId)}_tmp`; }
 
   function normalizeTeamIdentity(teamIdentity = {}) {
     const name = String(teamIdentity.name || DEFAULT_TEAM_NAME).trim() || DEFAULT_TEAM_NAME;
@@ -35,9 +37,10 @@
     return cleanIdentity;
   }
 
-  function createRun(teamIdentity = {}) {
+  function createRun(teamIdentity = {}, seasonId = null) {
     const now = new Date().toISOString();
-    return { version: config().saveVersion, runId: makeId("run"), createdAt: now, updatedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: (config().startingLives ?? 3), formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [] };
+    const normalizedSeasonId = seasonIdOf(seasonId || global.SeasonRegistry?.activeId?.());
+    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), createdAt: now, updatedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: (config().startingLives ?? 3), formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [] };
   }
 
   function defaultPostBossFlowFromPending(run) {
@@ -67,6 +70,7 @@
     return normalize(run);
   }
   function normalize(run) {
+    run.seasonId = seasonIdOf(run.seasonId);
     run.version = config().saveVersion;
     run.runId = run.runId || makeId("run");
     run.phase = run.phase || "formation";
@@ -85,21 +89,23 @@
   function parseCandidate(raw) { if (!raw) return null; const parsed = JSON.parse(raw); const migrated = migrate(parsed); if (!validate(migrated)) throw new Error("Invalid run save"); return migrated; }
   function tryLoadKey(key) { try { return parseCandidate(localStorage.getItem(key)); } catch (error) { console.warn(`Unable to load run candidate ${key}`, error); return null; } }
   function save(run) { return RunStorage.save(run); }
-  function load() { return RunStorage.load(); }
-  function remove() { try { localStorage.removeItem(primaryKey()); localStorage.removeItem(backupKey()); localStorage.removeItem(tempKey()); } catch (error) { console.error("Unable to remove run", error); } }
+  function load(seasonId = null) { return RunStorage.load(seasonId); }
+  function hasSave(seasonId = null) { return !!RunStorage.load(seasonId); }
+  function remove(seasonId = null) { try { localStorage.removeItem(primaryKey(seasonId)); localStorage.removeItem(backupKey(seasonId)); localStorage.removeItem(tempKey(seasonId)); } catch (error) { console.error("Unable to remove run", error); } }
   function restoreBackup() { const backup = RunStorage.loadBackup(); if (!backup) return null; return save(backup); }
   function loadBackup() { return tryLoadKey(backupKey()); }
 
   const RunStorage = {
-    keys: () => ({ primary: primaryKey(), backup: backupKey(), temp: tempKey(), legacy: legacyKeys() }),
+    keys: (seasonId = null) => ({ primary: primaryKey(seasonId), backup: backupKey(seasonId), temp: tempKey(seasonId), legacy: legacyKeys() }),
     validate, migrate,
     loadBackup,
     restoreBackup,
-    load() {
-      const order = [primaryKey(), backupKey(), tempKey(), ...legacyKeys()];
+    load(seasonId = null) {
+      const sid = seasonIdOf(seasonId || global.SeasonRegistry?.activeId?.());
+      const order = [primaryKey(sid), backupKey(sid), tempKey(sid), ...(sid === "ie1" ? [config().saveKey, `${config().saveKey}_backup`, `${config().saveKey}_tmp`, ...legacyKeys()] : [])];
       for (const key of order) {
         const loaded = tryLoadKey(key);
-        if (loaded) { if (key !== primaryKey() || Number(loaded.version) !== Number(config().saveVersion)) this.save(loaded); return loaded; }
+        if (loaded) { loaded.seasonId = loaded.seasonId || sid; if (key !== primaryKey(sid) || Number(loaded.version) !== Number(config().saveVersion)) this.save(loaded); return loaded; }
       }
       return null;
     },
@@ -109,7 +115,8 @@
         normalized.updatedAt = new Date().toISOString();
         const json = JSON.stringify(normalized);
         const reparsed = parseCandidate(json);
-        const tmp = tempKey(); const primary = primaryKey(); const backup = backupKey();
+        const sid = seasonIdOf(normalized.seasonId);
+        const tmp = tempKey(sid); const primary = primaryKey(sid); const backup = backupKey(sid);
         localStorage.setItem(tmp, json);
         parseCandidate(localStorage.getItem(tmp));
         const existing = localStorage.getItem(primary);
@@ -130,5 +137,5 @@
   function restoreAfterLoss(run, previousNodeId = null) { run.lives -= 1; if (run.lives <= 0) { run.lives = 0; run.gameOver = true; run.phase = "gameover"; return save(run); } const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null; if (!targetNodeId) throw new Error("Previous match node unavailable"); if (run.currentZone) { run.currentZone.currentNodeId = targetNodeId; run.currentZone.pendingNodeId = null; } run.phase = "map"; run.gameOver = false; return save(run); }
 
   global.RunStorage = RunStorage;
-  global.RunState = { clone, createRun, save, load, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, remove, createCheckpoint, restoreAfterLoss };
+  global.RunState = { clone, createRun, save, load, hasSave, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, remove, createCheckpoint, restoreAfterLoss };
 })(globalThis);

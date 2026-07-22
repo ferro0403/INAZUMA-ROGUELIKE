@@ -8,9 +8,16 @@
     ie1: {
       id: "ie1",
       name: "Inazuma Eleven 1",
-      seasonId: "season1",
+      seasonId: "ie1",
       freeAgentsTeamId: "unaffiliated",
       coverUrl: "https://static.wikia.nocookie.net/inazuma-eleven/images/5/51/FF_%28Ares_Logo%29.png/revision/latest?cb=20190424144108",
+    },
+    ie2: {
+      id: "ie2",
+      name: "Inazuma Eleven 2",
+      seasonId: "ie2",
+      freeAgentsTeamId: "unaffiliated",
+      coverUrl: "https://static.wikia.nocookie.net/inazuma-eleven/images/4/45/Minodouzan_emblem.png/revision/latest?cb=20251118125410",
     },
   };
 
@@ -73,8 +80,8 @@
   }
   function backfillAlbumProgress({ run = null, hallTeams = [] } = {}) {
     let changed = 0;
-    changed += unlockAlbumPlayers(DEFAULT_COLLECTION_ID, collectIdsFromRun(run), { source: "backfill-run" });
-    (Array.isArray(hallTeams) ? hallTeams : []).forEach((team) => { changed += unlockAlbumPlayers(DEFAULT_COLLECTION_ID, collectIdsFromHallTeam(team), { source: "backfill-hall-of-fame" }); });
+    changed += unlockAlbumPlayers(run?.seasonId || DEFAULT_COLLECTION_ID, collectIdsFromRun(run), { source: "backfill-run" });
+    (Array.isArray(hallTeams) ? hallTeams : []).forEach((team) => { changed += unlockAlbumPlayers(team?.seasonId || DEFAULT_COLLECTION_ID, collectIdsFromHallTeam(team), { source: "backfill-hall-of-fame" }); });
     return changed;
   }
   global.AlbumProgress = { STORAGE_KEY, SCHEMA_VERSION, DEFAULT_COLLECTION_ID, ALBUM_COLLECTIONS, read: readStorage, write: writeStorage, unlockAlbumPlayer, unlockAlbumPlayers, isAlbumPlayerUnlocked, unlockedSet, backfillAlbumProgress, collectIdsFromRun, collectIdsFromHallTeam };

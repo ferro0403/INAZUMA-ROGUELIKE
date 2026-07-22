@@ -138,9 +138,17 @@
     return parseInt(code.slice(offset, offset + codeWidth), 36);
   }
 
+  function statsFromRatings(player, overall, statOrder) {
+    const ratings = player?.ratings || {};
+    const values = statOrder.map((stat) => Number(ratings[stat] || 0));
+    const avg = values.reduce((sum, value) => sum + value, 0) / Math.max(1, values.length);
+    const targetAvg = Math.max(1, Math.min(99, Number(overall || 0)));
+    return Object.fromEntries(statOrder.map((stat) => [stat, Math.max(1, Math.min(99, Math.round(targetAvg + ((Number(ratings[stat] || 0) - avg) * 4))))]));
+  }
+
   function getPlayerAtLevel(player, requestedLevel, database, options = {}) {
-    if (!player || typeof player.progressionCode !== "string") {
-      throw new Error("Invalid compact player: progressionCode is missing");
+    if (!player || (typeof player.progressionCode !== "string" && !player.ratings)) {
+      throw new Error("Invalid compact player: progression data is missing");
     }
 
     const format = (database && database.compactFormat) || {};
@@ -148,17 +156,21 @@
     const codeWidth = format.codeWidth || 2;
     const maxLevel = Number(player.maxLevel ?? format.levelMax ?? 20);
     const level = clampLevel(requestedLevel, maxLevel);
-    const stats = {};
+    let stats = {};
 
-    statOrder.forEach((stat, statIndex) => {
-      stats[stat] = decodeStat(
-        player.progressionCode,
-        statIndex,
-        level,
-        maxLevel,
-        codeWidth
-      );
-    });
+    if (typeof player.progressionCode === "string") {
+      statOrder.forEach((stat, statIndex) => {
+        stats[stat] = decodeStat(
+          player.progressionCode,
+          statIndex,
+          level,
+          maxLevel,
+          codeWidth
+        );
+      });
+    } else {
+      stats = statsFromRatings(player, Number(player.finalOverall) - (maxLevel - level), statOrder);
+    }
 
     const baseOverall = Number(player.finalOverall) - (maxLevel - level);
     const visibleBoost = effectiveCurrentOverallBoost(player, options);
