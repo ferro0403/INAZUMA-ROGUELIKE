@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Inazuma Roguelike — Home v1</title>
+    <link rel="stylesheet" href="home-v1.css" />
+  </head>
+  <body>
+    <main class="home-shell">
+      <header class="topbar">
+        <div class="wordmark" aria-label="Inazuma Roguelike">
+          <span class="wordmark-bolt" aria-hidden="true">⚡</span>
+          <div>
+            <h1>Inazuma</h1>
+            <p>Roguelike</p>
+          </div>
+        </div>
+
+        <div class="status-row" aria-label="Stato squadra">
+          <div class="status-chip">
+            <span aria-hidden="true">⚡</span>
+            <strong>2</strong>
+            <small>Vite</small>
+          </div>
+          <div class="status-chip">
+            <span class="status-prefix">LV</span>
+            <strong>9</strong>
+            <small>Livello team</small>
+          </div>
+        </div>
+      </header>
+
+      <section class="team-banner panel-cut">
+        <img src="assets/team-crest.svg" alt="Stemma Fulmini di Raimon United" />
+        <div>
+          <p class="eyebrow">La tua squadra</p>
+          <h2>Fulmini di<br class="desktop-break" /> Raimon United</h2>
+          <p class="season"><span></span>Stagione 1<span></span></p>
+        </div>
+        <span class="team-spark" aria-hidden="true">⚡</span>
+      </section>
+
+      <section class="run-panel panel-cut">
+        <h2 class="section-tag"><span>⚡</span> Run in corso</h2>
+        <div class="boss-row">
+          <div class="boss-info">
+            <img src="assets/boss-shuriken.svg" alt="Ritratto placeholder del boss Shuriken" />
+            <div>
+              <p class="metric-label">Prossimo boss</p>
+              <h3>Shuriken</h3>
+            </div>
+          </div>
+          <div class="stage">
+            <p class="metric-label">Stage</p>
+            <strong>5<em>/10</em></strong>
+          </div>
+        </div>
+        <div class="metrics">
+          <div>
+            <p class="metric-label">Media team</p>
+            <strong>80</strong>
+          </div>
+          <div>
+            <p class="metric-label">Modulo</p>
+            <strong>4-3-3</strong>
+          </div>
+          <div class="progress-metric">
+            <p class="metric-label">Progresso zona</p>
+            <strong>40%</strong>
+            <div class="progress-track" role="progressbar" aria-valuenow="40" aria-valuemin="0" aria-valuemax="100">
+              <span></span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="actions" aria-label="Azioni Home">
+        <button class="primary-action" type="button">
+          <span aria-hidden="true">⚡</span>
+          <strong>Continua run</strong>
+          <span class="chevrons" aria-hidden="true">»</span>
+        </button>
+        <nav class="secondary-actions" aria-label="Sezioni">
+          <button type="button"><span aria-hidden="true">▣</span>Album</button>
+          <button type="button"><span aria-hidden="true">♛</span>Albo d’Oro</button>
+          <button type="button"><span aria-hidden="true">◎</span>Seleziona run</button>
+        </nav>
+      </section>
+
+      <section class="squad-preview">
+        <h2 class="section-tag"><span>⚡</span> La tua squadra</h2>
+        <div class="player-grid" id="player-grid" aria-label="Anteprima di cinque giocatori"></div>
+      </section>
+
+      <section class="runs-panel panel-cut">
+        <h2 class="section-tag"><span>⚡</span> Le tue run</h2>
+        <div class="run-list">
+          <article class="run-card active">
+            <strong>Run #07</strong>
+            <small>Stage 5/10</small>
+            <div class="mini-progress"><span></span></div>
+          </article>
+          <article class="run-card">
+            <strong>Run #06</strong>
+            <small>Completato ✓</small>
+          </article>
+          <article class="run-card">
+            <strong>Run #05</strong>
+            <small>Stage 3/10</small>
+            <div class="mini-progress muted"><span></span></div>
+          </article>
+          <button class="new-run" type="button"><span>+</span>Nuova run</button>
+        </div>
+      </section>
+    </main>
+    <script src="home-v1.js"></script>
+  </body>
+</html>
