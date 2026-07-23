@@ -2278,14 +2278,40 @@ body { background: var(--gradient-app); }
 .home-player-equipment .item-icon { width: 18px; height: 18px; border: 0; background: transparent; }
 .home-player-equipment .item-icon svg { width: 14px; height: 14px; }
 .home-roster-empty { grid-column: 1 / -1; margin: 0; padding: 22px; border: 3px dashed var(--home-ink); background: rgba(255,254,249,.9); color: var(--home-ink); font-weight: 900; text-align: center; }
-.home-empty-dashboard { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 18px; padding-top: clamp(35px, 9vh, 100px); }
-.home-empty-panel { width: min(760px, 100%); display: grid; justify-items: center; gap: 12px; padding: clamp(34px, 6vw, 64px); text-align: center; }
-.home-empty-bolt { color: var(--home-yellow); font-size: clamp(3.8rem, 9vw, 6.8rem); line-height: 1; text-shadow: 4px 4px 0 var(--home-ink); }
-.home-empty-panel .home-panel-kicker { color: var(--home-paper); }
-.home-empty-panel h1 { margin: 2px 0 0; color: var(--home-ink); font-size: clamp(2.7rem, 7vw, 5.6rem); line-height: .88; text-transform: uppercase; }
-.home-empty-panel > p:not(.home-panel-kicker) { max-width: 540px; margin: 0 0 8px; color: #45484d; font-style: normal; font-weight: 750; }
-.home-empty-panel .home-main-cta { grid-area: auto; width: min(560px, 100%); }
-.home-empty-dashboard .home-quick-actions { grid-area: auto; width: min(760px, 100%); }
+.home-empty-dashboard { display: grid; grid-template-columns: minmax(0, 1fr); justify-items: center; gap: 14px; padding-top: clamp(12px, 3.5vh, 34px); }
+.home-empty-panel {
+  width: min(820px, 100%);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 18px;
+  padding: 60px clamp(24px, 4.5vw, 52px) 30px;
+  text-align: left;
+}
+.home-empty-panel::after { content: ""; position: absolute; right: 18px; bottom: 18px; width: 112px; height: 8px; background: var(--home-yellow); transform: skew(-22deg); }
+.home-empty-kicker {
+  position: absolute;
+  top: -3px;
+  left: 22px;
+  width: fit-content;
+  padding: 9px 30px 9px 16px;
+  background: var(--home-ink);
+  color: var(--home-paper);
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 14px) 100%, 0 100%);
+  font-size: .76rem;
+  font-weight: 950;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  transform: skew(-9deg);
+}
+.home-empty-copy { min-width: 0; padding-right: clamp(0px, 4vw, 40px); }
+.home-empty-copy h1 { max-width: 690px; margin: 0 0 10px; color: var(--home-ink); font-size: clamp(2.2rem, 5vw, 4.35rem); line-height: .9; letter-spacing: -.045em; text-transform: uppercase; }
+.home-empty-copy p { max-width: 620px; margin: 0; color: #45484d; font-style: normal; font-weight: 750; line-height: 1.45; }
+.home-empty-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.home-empty-steps li { min-width: 0; display: flex; align-items: center; gap: 9px; padding: 10px 12px; border: 2px solid var(--home-ink); background: rgba(255,254,249,.72); clip-path: polygon(5px 0, 100% 0, calc(100% - 5px) 100%, 0 calc(100% - 4px)); text-transform: uppercase; }
+.home-empty-steps span { flex: 0 0 29px; width: 29px; height: 29px; display: grid; place-items: center; border: 2px solid var(--home-ink); background: var(--home-yellow); font-size: .78rem; font-weight: 1000; transform: skew(-7deg); }
+.home-empty-steps strong { min-width: 0; font-size: .72rem; line-height: 1.05; }
+.home-empty-panel .home-main-cta { grid-area: auto; width: min(540px, 100%); min-height: 68px; }
+.home-empty-dashboard .home-quick-actions { grid-area: auto; width: min(820px, 100%); }
 
 @media (max-width: 780px) {
   #clean-home { gap: 14px; padding: max(12px, env(safe-area-inset-top)) max(10px, env(safe-area-inset-right)) max(22px, env(safe-area-inset-bottom)) max(10px, env(safe-area-inset-left)); background-image: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01)), url("../assets/home/inazuma-stadium-mobile-light.jpeg"); background-position: center top; background-size: cover; background-attachment: scroll; }
@@ -2335,11 +2361,18 @@ body { background: var(--gradient-app); }
   .home-player-equipment { left: 3px; bottom: 3px; width: 18px; height: 18px; border-width: 1px; }
   .home-player-equipment .item-icon { width: 14px; height: 14px; }
   .home-player-equipment .item-icon svg { width: 11px; height: 11px; }
-  .home-empty-dashboard { padding-top: clamp(30px, 8vh, 70px); }
-  .home-empty-panel { gap: 10px; padding: 34px 20px 40px; }
-  .home-empty-bolt { font-size: 4.4rem; }
-  .home-empty-panel h1 { font-size: clamp(2.6rem, 14vw, 4rem); }
-  .home-empty-panel > p:not(.home-panel-kicker) { font-size: .9rem; }
+  .home-empty-dashboard { gap: 10px; padding-top: 8px; }
+  .home-empty-panel { gap: 14px; padding: 48px 17px 22px; }
+  .home-empty-panel::after { right: 12px; bottom: 11px; width: 70px; height: 6px; }
+  .home-empty-kicker { left: 12px; padding: 7px 23px 7px 11px; font-size: .61rem; }
+  .home-empty-copy { padding-right: 0; }
+  .home-empty-copy h1 { margin-bottom: 7px; font-size: clamp(2rem, 10.5vw, 2.75rem); }
+  .home-empty-copy p { font-size: .82rem; line-height: 1.35; }
+  .home-empty-steps { grid-template-columns: 1fr; gap: 6px; }
+  .home-empty-steps li { min-height: 40px; padding: 6px 9px; }
+  .home-empty-steps span { flex-basis: 25px; width: 25px; height: 25px; font-size: .68rem; }
+  .home-empty-steps strong { font-size: .68rem; }
+  .home-empty-panel .home-main-cta { min-height: 58px; font-size: 1.08rem; }
 }
 
 @media (min-width: 1100px) and (min-height: 760px) {

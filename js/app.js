@@ -1048,8 +1048,8 @@
   function homeQuickActionsMarkup(hasRun) {
     return `<nav class="home-quick-actions" aria-label="Sezioni principali">
       <button type="button" class="home-quick-button" id="open-album-home"><span aria-hidden="true">▣</span><strong>Album</strong></button>
-      <button type="button" class="home-quick-button home-quick-button--gold" id="open-hall-home"><span aria-hidden="true">★</span><strong>Apri Albo d’Oro</strong></button>
-      <button type="button" class="home-quick-button" id="select-run"><span aria-hidden="true">◎</span><strong>${hasRun ? "Seleziona run" : "Seleziona Season"}</strong></button>
+      <button type="button" class="home-quick-button home-quick-button--gold" id="open-hall-home"><span aria-hidden="true">★</span><strong>${hasRun ? "Apri Albo d’Oro" : "Albo d’Oro"}</strong></button>
+      <button type="button" class="home-quick-button" id="select-run"><span aria-hidden="true">◎</span><strong>${hasRun ? "Seleziona run" : "Modalità"}</strong></button>
     </nav>`;
   }
 
@@ -1101,11 +1101,17 @@
   function homeEmptyRunMarkup() {
     return `<section class="home-hero home-empty-dashboard" aria-label="Home senza run attiva">
       <article class="home-empty-panel anime-panel">
-        <div class="home-empty-bolt" aria-hidden="true">⚡</div>
-        <p class="home-panel-kicker">Nuova leggenda</p>
-        <h1>Scendi in campo</h1>
-        <p>Scegli una Season, crea la tua squadra e supera ogni boss fino alla sfida finale.</p>
-        <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="new-run">Inizia nuova run</strong><span class="home-cta-arrows" aria-hidden="true">»</span></button>
+        <div class="home-empty-kicker">Nessuna run attiva</div>
+        <div class="home-empty-copy">
+          <h1>Scegli la tua prossima sfida</h1>
+          <p>Seleziona una run, costruisci la tua squadra e inizia una nuova scalata verso la vittoria.</p>
+        </div>
+        <ol class="home-empty-steps" aria-label="Come iniziare">
+          <li><span>1</span><strong>Scegli la run</strong></li>
+          <li><span>2</span><strong>Crea la squadra</strong></li>
+          <li><span>3</span><strong>Affronta i boss</strong></li>
+        </ol>
+        <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">◎</span><strong id="choose-run">Scegli una run</strong><span class="home-cta-arrows" aria-hidden="true">»</span></button>
       </article>
       ${homeQuickActionsMarkup(false)}
     </section>`;
@@ -1140,7 +1146,7 @@
 
     document.getElementById("select-run")?.addEventListener("click", renderSeasonSelect);
     document.getElementById("manage-team-home")?.addEventListener("click", resumeRun);
-    document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : startNewRunFromHome());
+    document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : renderSeasonSelect());
     document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-album-home")?.addEventListener("click", renderAlbumCollections);
     document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
