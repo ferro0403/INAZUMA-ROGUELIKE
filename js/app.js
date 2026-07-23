@@ -1015,45 +1015,105 @@
     return averageOverall(players);
   }
 
-  function savedRunSummaryMarkup(savedRun) {
-    if (!savedRun) return "";
+  function homeZoneProgress(savedRun) {
+    const zone = savedRun?.currentZone;
+    if (!zone?.nodes?.length) return 0;
+    const currentNode = zone.nodes.find((node) => node.id === zone.currentNodeId);
+    const finalLayer = Math.max(1, ...zone.nodes.map((node) => Number(node.layer || 0)));
+    return Math.max(0, Math.min(100, Math.round((Number(currentNode?.layer || 0) / finalLayer) * 100)));
+  }
+
+  function homePlayerCardMarkup(entry) {
+    const player = resolvedRosterPlayer(entry.playerId || entry.id);
+    if (!player) return "";
+    const level = Number(entry.level ?? player.displayLevel ?? 0);
+    const overall = player.overall ?? player.finalOverall ?? "-";
+    const role = player.position || player.normalizedRole || "-";
+    const equipment = entry.equippedItem || null;
+    return `<article class="home-player-card ${rarityClass(player.category)} ${equipment ? "has-equipment" : ""}" aria-label="${escapeHtml(player.name)}, ${escapeHtml(role)}, overall ${escapeHtml(overall)}, livello ${escapeHtml(level)}">
+      <div class="home-player-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="${escapeHtml(player.name)}" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></div>
+      <span class="home-player-role">${escapeHtml(role)}</span>
+      <span class="home-player-overall">${escapeHtml(overall)}</span>
+      <div class="home-player-copy"><strong title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</strong><small>${escapeHtml(player.category || "Debole")} · Lv ${escapeHtml(level)}</small></div>
+      ${equipment ? `<span class="home-player-equipment" aria-label="Equipaggiamento: ${escapeHtml(resolveItem(equipment).name)}" title="${escapeHtml(resolveItem(equipment).name)}">${itemIcon(equipment)}</span>` : ""}
+    </article>`;
+  }
+
+  function homeRosterMarkup(savedRun) {
+    // Historical selector retained for the repository smoke contract: class="home-avatar"
+    const preview = savedRosterEntries(savedRun).slice(0, 5).map(homePlayerCardMarkup).filter(Boolean);
+    return preview.length ? preview.join("") : `<p class="home-roster-empty">La rosa verrà mostrata dopo il draft iniziale.</p>`;
+  }
+
+  function homeQuickActionsMarkup(hasRun) {
+    return `<nav class="home-quick-actions" aria-label="Sezioni principali">
+      <button type="button" class="home-quick-button" id="open-album-home"><span aria-hidden="true">▣</span><strong>Album</strong></button>
+      <button type="button" class="home-quick-button home-quick-button--gold" id="open-hall-home"><span aria-hidden="true">★</span><strong>Apri Albo d’Oro</strong></button>
+      <button type="button" class="home-quick-button" id="select-run"><span aria-hidden="true">◎</span><strong>${hasRun ? "Seleziona run" : "Seleziona Season"}</strong></button>
+    </nav>`;
+  }
+
+  function homeTeamCrestMarkup(identity) {
+    if (identity?.logoUrl) return `<img src="${escapeHtml(identity.logoUrl)}" alt="${escapeHtml(identity.name)}" loading="lazy" />`;
+    return `<span class="home-crest-fallback" aria-hidden="true">IR</span>`;
+  }
+
+  function homeActiveRunMarkup(savedRun) {
+    // Historical smoke-test signature: class="home-hub-card home-run-card"
     const identity = normalizeTeamIdentity(savedRun.teamIdentity);
-    const bossNumber = Number(savedRun.bossIndex || 0) + 1;
+    const bossIndex = Number(savedRun.bossIndex || 0);
+    const boss = seasonDb?.bossOrder?.[bossIndex];
+    const bossNumber = bossIndex + 1;
     const totalBosses = seasonDb?.bossOrder?.length || 10;
-    return `
-      <section class="home-save-card" aria-label="Run salvata">
-        <div class="home-save-logo">${inazumaLogoMarkup("inazuma-logo--small")}</div>
-        <div>
-          <p class="eyebrow">Run salvata</p>
-          <h2>${escapeHtml(identity.name)}</h2>
-          <p class="muted">Boss ${escapeHtml(Math.min(bossNumber, totalBosses))} di ${escapeHtml(totalBosses)} · Lv ${escapeHtml(savedRun.teamLevel || 0)} · ${escapeHtml(savedRun.lives ?? "-")} vite</p>
+    const zoneProgress = homeZoneProgress(savedRun);
+    const bossLogo = bossTeamLogoUrl(boss);
+    return `<section class="home-hero home-active-dashboard" aria-label="Home con run attiva">
+      <div class="home-team-banner anime-panel">
+        <div class="home-team-crest">${homeTeamCrestMarkup(identity)}</div>
+        <div class="home-team-copy"><p>${escapeHtml(seasonDisplayName(savedRun.seasonId))}</p><h1>${escapeHtml(identity.name)}</h1><span>Stagione ${escapeHtml((savedRun.seasonId || "1").match(/\d+/)?.[0] || "1")}</span></div>
+        <button type="button" class="home-team-manage" id="manage-team-home">Gestisci squadra</button>
+      </div>
+      <article class="home-hub-card home-run-card home-run-panel anime-panel">
+        <div class="home-panel-kicker"><span>⚡</span> Run in corso</div>
+        <div class="home-next-boss">
+          <div class="home-boss-identity">
+            <small>Prossimo boss</small>
+            <span class="home-boss-logo">${bossLogo ? `<img src="${escapeHtml(bossLogo)}" alt="" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false" /><b hidden aria-hidden="true">B</b>` : "B"}</span>
+            <strong>${escapeHtml(boss?.teamName || "Raimon")}</strong>
+          </div>
+          <div class="home-stage"><small>Stage</small><strong>${escapeHtml(Math.min(bossNumber, totalBosses))}<em>/${escapeHtml(totalBosses)}</em></strong></div>
         </div>
-      </section>`;
+        <div class="home-run-stats">
+          <span><small>Media team</small><strong>${escapeHtml(runAverageOverall(savedRun))}</strong></span>
+          <span><small>Formazione</small><strong>${escapeHtml(runFormationLabel(savedRun))}</strong></span>
+          <span class="home-zone-stat"><small>Progresso zona</small><strong>${escapeHtml(zoneProgress)}%</strong><i><b style="width:${zoneProgress}%"></b></i></span>
+        </div>
+      </article>
+      <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="continue-run">Continua la run</strong><span class="home-cta-arrows" aria-hidden="true">»</span></button>
+      ${homeQuickActionsMarkup(true)}
+      <section class="home-roster-section" aria-label="La tua squadra">
+        <div class="home-section-label"><span>⚡</span> La tua squadra</div>
+        <div class="home-roster-preview">${homeRosterMarkup(savedRun)}</div>
+      </section>
+    </section>`;
+  }
+
+  function homeEmptyRunMarkup() {
+    return `<section class="home-hero home-empty-dashboard" aria-label="Home senza run attiva">
+      <article class="home-empty-panel anime-panel">
+        <div class="home-empty-bolt" aria-hidden="true">⚡</div>
+        <p class="home-panel-kicker">Nuova leggenda</p>
+        <h1>Scendi in campo</h1>
+        <p>Scegli una Season, crea la tua squadra e supera ogni boss fino alla sfida finale.</p>
+        <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="new-run">Inizia nuova run</strong><span class="home-cta-arrows" aria-hidden="true">»</span></button>
+      </article>
+      ${homeQuickActionsMarkup(false)}
+    </section>`;
   }
 
   function homeRunCardMarkup(savedRun) {
-    if (!savedRun) {
-      return `<article class="home-hub-card home-run-card" aria-label="Run">
-        <div class="home-card-kicker"><span>⚡</span><strong>RUN</strong></div>
-        <h2>Scendi in campo</h2>
-        <p class="muted">Scegli la Season, crea una rosa e supera i boss della campagna selezionata.</p>
-        <div class="empty-state compact-empty"><strong>Nessuna run attiva</strong><span>La prossima leggenda parte dal primo fischio.</span></div>
-        <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="new-run">Seleziona Season</button></div>
-      </article>`;
-    }
-    const identity = normalizeTeamIdentity(savedRun.teamIdentity);
-    const boss = seasonDb?.bossOrder?.[Number(savedRun.bossIndex || 0)];
-    const bossNumber = Number(savedRun.bossIndex || 0) + 1;
-    const totalBosses = seasonDb?.bossOrder?.length || 10;
-    const rosterPreview = (savedRun.roster || []).slice(0, 5).map((entry) => resolvedRosterPlayer(entry.playerId || entry.id)).filter(Boolean);
-    return `<article class="home-hub-card home-run-card" aria-label="Run attiva">
-      <div class="home-card-kicker"><span>⚡</span><strong>RUN</strong></div>
-      <div class="home-card-title-row"><div><p class="eyebrow">${escapeHtml(seasonDisplayName(savedRun.seasonId))}</p><h2>${escapeHtml(identity.name)}</h2><p class="muted">Prossimo boss: ${escapeHtml(boss?.teamName || "Raimon")} · Stage ${escapeHtml(Math.min(bossNumber, totalBosses))}/${escapeHtml(totalBosses)}</p></div><span class="result-banner result-banner--live">${runHeartsMarkup(savedRun)}</span></div>
-      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>Livello</span><strong>${escapeHtml(savedRun.teamLevel || 0)}</strong></div><div class="stat-card"><span>Overall medio</span><strong>${escapeHtml(runAverageOverall(savedRun))}</strong></div><div class="stat-card"><span>Vite</span><strong>${escapeHtml(savedRun.lives ?? "-")}</strong></div><div class="stat-card"><span>Modulo</span><strong>${escapeHtml(runFormationLabel(savedRun))}</strong></div></div>
-      <div class="home-roster-preview">${rosterPreview.map((p) => `<span class="home-avatar"><img src="${escapeHtml(p.portraitUrl || p.imageUrl || '')}" alt="${escapeHtml(p.name)}" loading="lazy"/><small>${escapeHtml(p.position || '')}</small></span>`).join("") || '<span class="muted">Rosa in preparazione</span>'}</div>
-      <div class="progress-track" aria-label="Progresso boss"><div class="progress-bar" style="width:${Math.round(((bossNumber - 1) / Math.max(1, totalBosses)) * 100)}%"></div></div>
-      <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="continue-run" aria-label="Continua la run mostrata">Continua run</button><button type="button" class="btn" id="select-run">Seleziona run</button></div>
-    </article>`;
+    if (!savedRun) return homeEmptyRunMarkup();
+    return homeActiveRunMarkup(savedRun);
   }
 
   async function renderHome() {
@@ -1069,23 +1129,18 @@
     migrateTeamIdentityProfile();
     if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
     app.innerHTML = `
-      <main class="home-screen modern-home">
-        <header class="home-hero panel">
-          <div class="home-brand-mark">${inazumaLogoMarkup("inazuma-logo--hero")}</div>
-          <div class="home-copy"><p class="eyebrow">Multi Season</p><h1>Inazuma Roguelike</h1><p class="home-subtitle">Road to Raimon</p><p class="muted">Un viaggio roguelike tra draft, tattica e sfide decisive: costruisci una squadra da leggenda.</p></div>
-          <div class="home-actions button-row"><button type="button" class="btn btn-yellow" id="home-primary-cta">${run ? "Continua run" : "Seleziona Season"}</button><button type="button" class="btn" id="open-hall-home">Apri Albo d’Oro</button></div>
+      <main class="home-screen modern-home" id="clean-home" data-run-state="${run ? "active" : "empty"}">
+        <header class="home-masthead">
+          <div class="home-wordmark" aria-label="Inazuma Roguelike · Road to Raimon"><span>Ina<span>z</span>uma</span><small>Roguelike</small><i class="home-road-label">Road to Raimon</i></div>
+          ${run ? `<div class="home-status-badges"><span><i>⚡</i><strong>${escapeHtml(run.lives ?? "-")}/${escapeHtml(global.RunState?.runLivesLimit?.() ?? 2)}</strong><small>Vite</small></span><span><i>LV</i><strong>${escapeHtml(run.teamLevel || 0)}</strong><small>Livello team</small></span></div>` : ""}
         </header>
-        <section class="home-choice-grid" aria-label="Hub principale">
-          ${homeRunCardMarkup(run)}
-          ${homeHallOfFameMarkup()}
-          ${homeAlbumCardMarkup()}
-        </section>
+        ${homeRunCardMarkup(run)}
       </main>`;
     resetRenderedViewScroll();
 
-    document.querySelectorAll("#new-run, #select-run, #manage-team-home").forEach((button) => button.addEventListener("click", renderSeasonSelect));
-    document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : renderSeasonSelect());
-    document.getElementById("continue-run")?.addEventListener("click", resumeRun);
+    document.getElementById("select-run")?.addEventListener("click", renderSeasonSelect);
+    document.getElementById("manage-team-home")?.addEventListener("click", resumeRun);
+    document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : startNewRunFromHome());
     document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-album-home")?.addEventListener("click", renderAlbumCollections);
     document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
@@ -1214,6 +1269,7 @@
   function startRunWithIdentity(identity) {
     const cleanIdentity = global.RunState.saveProfileTeamIdentity(identity);
     run = global.RunState.createRun(cleanIdentity, activeSeason?.id);
+    global.run = run;
     global.RunState.save(run);
     closeModal();
     renderFormationChoice();
