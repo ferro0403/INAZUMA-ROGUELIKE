@@ -1,0 +1,721 @@
+:root {
+  --ink: #101010;
+  --paper: #fffef8;
+  --yellow: #ffd51c;
+  --gold: #c99517;
+  --shadow: 7px 7px 0 rgba(8, 8, 8, 0.2);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100%;
+  color: var(--ink);
+  font-family: "Arial Narrow", "Roboto Condensed", Impact, system-ui, sans-serif;
+}
+
+body {
+  min-height: 100vh;
+  overflow-x: hidden;
+  background: #dff5ff url("assets/stadium-mobile.jpg") center / cover fixed no-repeat;
+  font-style: italic;
+  font-weight: 800;
+}
+
+button {
+  color: inherit;
+  font: inherit;
+  font-style: italic;
+  cursor: pointer;
+}
+
+.home-shell {
+  width: min(100%, 1520px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 18px 14px 26px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.wordmark {
+  display: flex;
+  align-items: center;
+  filter: drop-shadow(3px 3px 0 #fff);
+  transform: skew(-5deg);
+}
+
+.wordmark-bolt {
+  z-index: 1;
+  margin-right: -8px;
+  color: #ffc400;
+  font-size: 34px;
+  -webkit-text-stroke: 2px var(--ink);
+}
+
+.wordmark h1,
+.wordmark p {
+  margin: 0;
+  line-height: 0.8;
+  text-transform: uppercase;
+}
+
+.wordmark h1 {
+  font-size: clamp(30px, 10vw, 45px);
+  letter-spacing: -2px;
+  -webkit-text-stroke: 1px var(--ink);
+}
+
+.wordmark p {
+  margin-top: 8px;
+  padding-left: 8px;
+  font-size: 12px;
+  letter-spacing: 5px;
+}
+
+.status-row {
+  display: flex;
+  gap: 6px;
+}
+
+.status-chip {
+  position: relative;
+  min-width: 67px;
+  padding: 7px 6px 5px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  justify-items: center;
+  background: var(--paper);
+  border: 3px solid var(--ink);
+  box-shadow: 3px 3px 0 var(--gold);
+  clip-path: polygon(9% 0, 91% 0, 100% 20%, 94% 100%, 8% 100%, 0 78%, 0 20%);
+  font-style: normal;
+}
+
+.status-chip > span {
+  color: #f6bc00;
+}
+
+.status-chip .status-prefix {
+  color: var(--ink);
+  font-size: 10px;
+}
+
+.status-chip strong {
+  font-size: 21px;
+}
+
+.status-chip small {
+  grid-column: 1 / -1;
+  padding-top: 3px;
+  border-top: 1px solid #aaa;
+  font-size: 7px;
+  text-transform: uppercase;
+}
+
+.panel-cut {
+  position: relative;
+  background: rgba(255, 254, 248, 0.96);
+  border: 4px solid var(--ink);
+  box-shadow: var(--shadow), inset 0 0 0 2px #fff, inset 0 0 0 3px #d0a32a;
+  clip-path: polygon(2% 0, 98% 0, 100% 8%, 99% 94%, 96% 100%, 3% 100%, 0 92%, 0 7%);
+}
+
+.team-banner {
+  min-height: 116px;
+  padding: 14px 40px 12px 104px;
+  display: flex;
+  align-items: center;
+}
+
+.team-banner > img {
+  position: absolute;
+  left: 15px;
+  width: 78px;
+  height: 82px;
+}
+
+.eyebrow {
+  display: none;
+}
+
+.team-banner h2 {
+  margin: 0;
+  font-size: clamp(25px, 7.6vw, 35px);
+  line-height: 0.94;
+  text-transform: uppercase;
+}
+
+.season {
+  margin: 8px 0 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--gold);
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.season span {
+  width: 34px;
+  height: 2px;
+  background: var(--gold);
+}
+
+.team-spark {
+  position: absolute;
+  right: 14px;
+  color: #f4bc00;
+  font-size: 28px;
+}
+
+.section-tag {
+  position: absolute;
+  z-index: 2;
+  top: -26px;
+  left: -4px;
+  min-width: 180px;
+  margin: 0;
+  padding: 7px 22px 6px 15px;
+  color: #fff;
+  background: var(--ink);
+  clip-path: polygon(4% 0, 100% 0, 91% 100%, 0 100%);
+  font-size: 14px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.section-tag span {
+  color: var(--yellow);
+}
+
+.run-panel {
+  margin-top: 16px;
+  padding: 20px 17px 13px;
+}
+
+.boss-row {
+  min-height: 98px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 92px;
+  align-items: center;
+  border-bottom: 1px solid #cfb27a;
+}
+
+.boss-info {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.boss-info img {
+  width: 72px;
+  height: 72px;
+  flex: 0 0 auto;
+  border: 3px solid var(--ink);
+  border-radius: 50%;
+  background: #e8e8e8;
+}
+
+.metric-label {
+  margin: 0 0 5px;
+  color: #5b5b5b;
+  font-size: 10px;
+  font-style: normal;
+  text-transform: uppercase;
+}
+
+.boss-info h3 {
+  margin: 0;
+  font-size: clamp(22px, 6.5vw, 34px);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.stage {
+  padding-left: 12px;
+  border-left: 1px solid #cfb27a;
+  text-align: center;
+}
+
+.stage strong {
+  font-size: 52px;
+  line-height: 0.9;
+}
+
+.stage em {
+  color: var(--gold);
+  font-size: 26px;
+}
+
+.metrics {
+  padding-top: 11px;
+  display: grid;
+  grid-template-columns: 0.8fr 0.9fr 1.4fr;
+}
+
+.metrics > div {
+  padding: 0 10px;
+  border-left: 1px solid #cfb27a;
+}
+
+.metrics > div:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.metrics strong {
+  font-size: 24px;
+}
+
+.progress-track,
+.mini-progress {
+  height: 11px;
+  margin-top: 4px;
+  overflow: hidden;
+  background: var(--ink);
+  border: 1px solid var(--ink);
+  transform: skew(-8deg);
+}
+
+.progress-track span,
+.mini-progress span {
+  display: block;
+  width: 40%;
+  height: 100%;
+  background: var(--yellow);
+}
+
+.actions {
+  display: grid;
+  gap: 9px;
+}
+
+.primary-action {
+  width: 100%;
+  min-height: 65px;
+  padding: 0 20px;
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  border: 4px solid var(--ink);
+  background: linear-gradient(100deg, #ffe43c 0%, #ffc914 74%, #f6b900 100%);
+  box-shadow: 5px 5px 0 rgba(0, 0, 0, 0.25);
+  clip-path: polygon(2% 0, 98% 0, 100% 18%, 98% 100%, 2% 100%, 0 82%, 0 18%);
+  text-transform: uppercase;
+}
+
+.primary-action > span:first-child {
+  color: #fff;
+  font-size: 24px;
+}
+
+.primary-action strong {
+  font-size: clamp(24px, 8vw, 36px);
+}
+
+.chevrons {
+  font-size: 42px !important;
+  line-height: 1;
+}
+
+.secondary-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 7px;
+}
+
+.secondary-actions button {
+  min-width: 0;
+  min-height: 48px;
+  padding: 4px;
+  border: 3px solid var(--ink);
+  background: var(--paper);
+  box-shadow: 3px 3px 0 var(--gold);
+  clip-path: polygon(5% 0, 95% 0, 100% 18%, 96% 100%, 4% 100%, 0 82%);
+  font-size: 10px;
+  text-transform: uppercase;
+}
+
+.secondary-actions span {
+  display: block;
+  font-size: 15px;
+  font-style: normal;
+}
+
+.squad-preview {
+  position: relative;
+  margin-top: 17px;
+}
+
+.squad-preview > .section-tag {
+  top: -25px;
+}
+
+.player-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.player-card {
+  --rarity: #555;
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  background: linear-gradient(#fff 0 66%, #f2f1ea 66%);
+  border: 3px solid var(--ink);
+  border-bottom: 5px solid var(--rarity);
+  box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.2), inset 0 0 0 2px #fff;
+  clip-path: polygon(5% 0, 95% 0, 100% 4%, 100% 96%, 93% 100%, 7% 100%, 0 96%, 0 4%);
+}
+
+.rarity-good { --rarity: #4da73c; }
+.rarity-strong { --rarity: #1d9fe0; }
+.rarity-elite { --rarity: #953bc0; }
+.rarity-world { --rarity: #d52d32; }
+.rarity-legend { --rarity: #d7a716; }
+
+.rarity-strip {
+  position: absolute;
+  z-index: 2;
+  inset: 0 0 auto;
+  padding: 4px 5px;
+  display: flex;
+  justify-content: space-between;
+  color: #fff;
+  background: linear-gradient(90deg, var(--rarity), color-mix(in srgb, var(--rarity), #111 35%));
+  font-size: clamp(7px, 2.3vw, 11px);
+  text-transform: uppercase;
+}
+
+.player-card > img {
+  width: 100%;
+  aspect-ratio: 0.74;
+  display: block;
+  object-fit: cover;
+  object-position: center top;
+  background: #eee;
+}
+
+.player-copy {
+  padding: 3px 2px 5px;
+  text-align: center;
+}
+
+.overall {
+  display: block;
+  font-size: clamp(19px, 6vw, 34px);
+  line-height: 1;
+}
+
+.player-copy h3 {
+  margin: 3px 0 0;
+  overflow: hidden;
+  font-size: clamp(8px, 2.5vw, 14px);
+  line-height: 1;
+  text-overflow: ellipsis;
+  text-transform: uppercase;
+}
+
+.equipment {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: #171717;
+  border: 2px solid var(--rarity);
+  font-size: 10px;
+  font-style: normal;
+  transform: rotate(-5deg);
+}
+
+.runs-panel {
+  display: none;
+}
+
+.is-pressed {
+  transform: translate(2px, 2px);
+}
+
+@media (max-width: 600px) {
+  .home-shell {
+    max-width: 420px;
+  }
+
+  .boss-info {
+    gap: 7px;
+  }
+
+  .boss-info img {
+    width: 60px;
+    height: 60px;
+  }
+
+  .boss-info h3 {
+    font-size: 24px;
+  }
+}
+
+@media (min-width: 800px) {
+  body {
+    background-image: url("assets/stadium-desktop.jpg");
+  }
+
+  .home-shell {
+    height: 100vh;
+    min-height: 720px;
+    padding: clamp(24px, 4vh, 44px) clamp(46px, 5vw, 82px) 30px;
+    grid-template-columns: minmax(470px, 1.05fr) minmax(550px, 1fr);
+    grid-template-rows: 135px 254px 108px minmax(184px, 1fr);
+    column-gap: clamp(55px, 6vw, 100px);
+    row-gap: 15px;
+  }
+
+  .topbar {
+    grid-column: 1 / -1;
+    align-self: start;
+  }
+
+  .wordmark h1 {
+    font-size: 64px;
+  }
+
+  .wordmark p {
+    font-size: 16px;
+    letter-spacing: 8px;
+  }
+
+  .wordmark-bolt {
+    font-size: 46px;
+  }
+
+  .status-row {
+    gap: 15px;
+  }
+
+  .status-chip {
+    min-width: 112px;
+    min-height: 66px;
+  }
+
+  .status-chip strong {
+    font-size: 28px;
+  }
+
+  .status-chip small {
+    font-size: 9px;
+  }
+
+  .team-banner {
+    grid-column: 1;
+    grid-row: 2;
+    height: 200px;
+    align-self: start;
+    padding-left: 175px;
+  }
+
+  .team-banner > img {
+    left: 32px;
+    width: 125px;
+    height: 132px;
+  }
+
+  .team-banner h2 {
+    font-size: clamp(38px, 3.2vw, 52px);
+  }
+
+  .season {
+    font-size: 18px;
+  }
+
+  .team-spark {
+    right: 32px;
+    font-size: 38px;
+  }
+
+  .run-panel {
+    grid-column: 2;
+    grid-row: 2;
+    height: 254px;
+    margin-top: 0;
+    padding: 27px 28px 18px;
+  }
+
+  .boss-row {
+    min-height: 135px;
+    grid-template-columns: 1fr 170px;
+  }
+
+  .boss-info img {
+    width: 88px;
+    height: 88px;
+  }
+
+  .boss-info h3 {
+    font-size: 42px;
+  }
+
+  .stage strong {
+    font-size: 70px;
+  }
+
+  .stage em {
+    font-size: 38px;
+  }
+
+  .metrics strong {
+    font-size: 31px;
+  }
+
+  .actions {
+    grid-column: 2;
+    grid-row: 3;
+  }
+
+  .primary-action {
+    min-height: 72px;
+  }
+
+  .primary-action strong {
+    font-size: 34px;
+  }
+
+  .secondary-actions button {
+    min-height: 52px;
+    font-size: 12px;
+  }
+
+  .secondary-actions span {
+    display: inline;
+    margin-right: 8px;
+  }
+
+  .squad-preview {
+    grid-column: 1;
+    grid-row: 3 / 5;
+    align-self: end;
+    margin-top: 0;
+  }
+
+  .player-grid {
+    gap: 11px;
+  }
+
+  .player-card > img {
+    aspect-ratio: 0.76;
+  }
+
+  .rarity-strip {
+    font-size: 10px;
+  }
+
+  .overall {
+    font-size: 31px;
+  }
+
+  .player-copy h3 {
+    font-size: 13px;
+  }
+
+  .runs-panel {
+    grid-column: 2;
+    grid-row: 4;
+    align-self: end;
+    min-height: 154px;
+    margin-top: 25px;
+    padding: 24px 14px 13px;
+    display: block;
+  }
+
+  .run-list {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+  }
+
+  .run-card,
+  .new-run {
+    min-height: 100px;
+    padding: 13px 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 13px;
+    align-items: flex-start;
+    justify-content: center;
+    background: #f2f1ec;
+    border: 1px solid #aaa;
+    font-style: normal;
+  }
+
+  .run-card.active {
+    background: #fff;
+    border: 2px solid var(--gold);
+  }
+
+  .run-card small {
+    font-size: 10px;
+    text-transform: uppercase;
+  }
+
+  .mini-progress {
+    width: 100%;
+    height: 8px;
+  }
+
+  .mini-progress.muted span {
+    width: 30%;
+    background: #777;
+  }
+
+  .new-run {
+    align-items: center;
+    color: #fff;
+    background: #242424;
+    border: 0;
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+
+  .new-run span {
+    font-size: 24px;
+  }
+}
+
+@media (min-width: 800px) and (max-height: 820px) {
+  .home-shell {
+    grid-template-rows: 108px 220px 96px minmax(154px, 1fr);
+    padding-top: 20px;
+  }
+
+  .team-banner {
+    height: 180px;
+  }
+
+  .run-panel {
+    height: 220px;
+  }
+
+  .boss-row {
+    min-height: 112px;
+  }
+}

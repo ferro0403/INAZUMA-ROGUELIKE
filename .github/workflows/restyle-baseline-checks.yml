@@ -1,0 +1,45 @@
+name: Restyle baseline checks
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "tests/visual/**"
+      - ".github/workflows/restyle-baseline-checks.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  existing-node-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Run smoke test
+        run: node tests/smoke-test.js
+      - name: Run UI smoke test
+        run: node tests/ui-smoke-test.js
+      - name: Run match simulator test
+        run: node tests/match-simulator-test.js
+
+  home-visual-baseline:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install visual test dependencies
+        run: pip install -r tests/visual/requirements.txt
+      - name: Install Chromium for Playwright
+        run: python -m playwright install --with-deps chromium
+      - name: Verify active-run Home baseline
+        run: python tests/visual/home-active-baseline.py

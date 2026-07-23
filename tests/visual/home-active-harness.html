@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Home con run attiva — visual fixture</title>
+  <link rel="stylesheet" href="home-active-current.css" />
+</head>
+<body>
+  <div id="app" class="app-shell"><section class="loading-screen"><div class="ball-loader">⚽</div><h1>Inazuma Roguelike</h1><p>Caricamento fixture…</p></section></div>
+  <div id="modal-root"></div>
+  <div id="toast-root" class="toast-root" aria-live="polite"></div>
+  <script src="home-active.fixture.js"></script>
+  <script>
+    (() => {
+      "use strict";
+      const activation = globalThis.__INAZUMA_VISUAL_FIXTURE_ACTIVATION__ || null;
+      const fixture = globalThis.HOME_ACTIVE_FIXTURE;
+      if (!activation || activation.fixtureId !== "home-active-v1") throw new Error("Harness Home non attivato dal test");
+      if (!fixture || fixture.fixtureId !== activation.fixtureId) throw new Error("Fixture Home attiva non valida");
+      const run = fixture.run;
+      const preview = run.roster.slice(0, 5);
+      const app = document.getElementById("app");
+      const escapeHtml = (value) => String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
+      const hearts = Array.from({ length: 2 }, (_, index) => index < run.lives ? "♥" : "♡").join(" ");
+      const logo = (className) => `<span class="inazuma-logo ${className}" aria-label="Logo Inazuma" role="img">⚡</span>`;
+      app.innerHTML = `
+        <main class="home-screen modern-home" data-testid="home-active-root" data-fixture-id="${escapeHtml(fixture.fixtureId)}">
+          <header class="home-hero panel">
+            <div class="home-brand-mark">${logo("inazuma-logo--hero")}</div>
+            <div class="home-copy"><p class="eyebrow">Multi Season</p><h1>Inazuma Roguelike</h1><p class="home-subtitle">Road to Raimon</p><p class="muted">Un viaggio roguelike tra draft, tattica e sfide decisive: costruisci una squadra da leggenda.</p></div>
+            <div class="home-actions button-row"><button type="button" class="btn btn-yellow" id="home-primary-cta">Continua run</button><button type="button" class="btn" id="open-hall-home">Apri Albo d’Oro</button></div>
+          </header>
+          <section class="home-choice-grid" aria-label="Hub principale">
+            <article class="home-hub-card home-run-card" aria-label="Run attiva">
+              <div class="home-card-kicker"><span>⚡</span><strong>RUN</strong></div>
+              <div class="home-card-title-row"><div><p class="eyebrow">${escapeHtml(fixture.season.name)}</p><h2 data-testid="team-name">${escapeHtml(fixture.teamIdentity.name)}</h2><p class="muted">Prossimo boss: ${escapeHtml(run.bossName)} · Stage ${run.bossStep}/${run.bossTotal}</p></div><span class="result-banner result-banner--live">${hearts}</span></div>
+              <div class="stat-grid home-stat-grid" data-testid="home-metrics"><div class="stat-card"><span>Livello</span><strong>${run.teamLevel}</strong></div><div class="stat-card"><span>Overall medio</span><strong>${run.averageOverall}</strong></div><div class="stat-card"><span>Vite</span><strong>${run.lives}</strong></div><div class="stat-card"><span>Modulo</span><strong>${escapeHtml(run.formationLabel)}</strong></div></div>
+              <div class="home-roster-preview" data-testid="roster-preview">${preview.map((player) => `<span class="home-avatar" data-player-id="${escapeHtml(player.playerId)}" data-rarity="${escapeHtml(player.category)}"><img src="${player.portraitUrl}" alt="${escapeHtml(player.name)}"/><small>${escapeHtml(player.position)}</small></span>`).join("")}</div>
+              <div class="progress-track" aria-label="Progresso boss"><div class="progress-bar" style="width:${Math.round(run.zoneProgress * 100)}%"></div></div>
+              <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="continue-run" aria-label="Continua la run mostrata">Continua run</button><button type="button" class="btn" id="select-run">Seleziona run</button></div>
+            </article>
+            <article class="home-hub-card hall-home-card" aria-label="Albo d’Oro">
+              <div class="home-card-kicker"><span>🏆</span><strong>ALBO D’ORO</strong></div>
+              <h2>Albo d’Oro</h2>
+              <p class="muted">Le squadre che hanno completato una run vengono conservate qui.</p>
+              <div class="empty-state compact-empty"><strong>Nessuna squadra campione</strong><span>Completa la Season per inaugurare l’Albo d’Oro.</span></div>
+              <div class="home-card-actions"><button type="button" class="btn" id="open-hall-home-empty">Apri Albo d’Oro</button></div>
+            </article>
+            <article class="home-hub-card album-home-card" aria-label="Album">
+              <div class="home-card-kicker"><span>▣</span><strong>ALBUM</strong></div>
+              <h2>Album</h2>
+              <p class="muted">Completa la collezione dei giocatori.</p>
+              <div class="stat-grid home-stat-grid"><div class="stat-card"><span>Inazuma Eleven 1</span><strong>${run.album.unlocked} / ${run.album.total}</strong></div></div>
+              <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="open-album-home">Apri Album</button></div>
+            </article>
+          </section>
+        </main>`;
+      document.documentElement.dataset.visualFixtureReady = "true";
+    })();
+  </script>
+</body>
+</html>
