@@ -25,9 +25,11 @@ assert(!equippedRenderer.includes('playerPortraitUrl(run.roster') && !equippedRe
 assert(appJs.includes('function playerPortraitUrl(player)') && appJs.includes('data:image/svg+xml'), "shared player portrait resolver keeps the existing fallback for missing portraits");
 assert(!appJs.includes('function compactPlayerCardMarkup(player, { equipment = null') || appJs.includes('<img class="player-portrait" src="${escapeHtml(playerPortraitUrl(player))}"'), "shared player card renderer portrait markup remains unchanged");
 assert(css.includes('.equipped-player-portrait') && css.includes('width: 42px') && css.includes('height: 42px') && css.includes('object-fit: contain'), "equipped portrait has fixed, contained desktop sizing");
+assert(css.includes('.inventory-screen .equipped-player-portrait { width: 38px; height: 38px;'), "restyled inventory keeps the equipped player portrait small and left aligned on desktop");
 assert(css.includes('.equipped-summary-copy { display: grid; justify-items: start;'), "equipped item copy keeps badge and item name aligned to the left");
 assert(css.includes('.equipped-player { display: flex; align-items: center; justify-content: flex-start; gap: 10px;'), "equipped owner row keeps its flex layout left-aligned");
 assert(css.includes('.equipped-list .equipped-summary > .equipped-player { grid-column: 1 / -1; justify-self: start; width: 100%; }'), "direct equipped owner rows span the full card grid from the left edge");
 assert(/@media \(max-width: 780px\)[\s\S]*?\.equipped-player-portrait \{ width: 40px; height: 40px; \}/.test(css), "mobile equipped portraits stay compact");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.inventory-screen \.equipped-player-portrait \{ width: 34px; height: 34px; \}/.test(css), "restyled inventory reduces the mobile equipped player portrait without using oversized faces");
 
 console.log("equipped item portrait tests passed");

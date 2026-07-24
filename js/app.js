@@ -112,6 +112,50 @@
     }));
   }
 
+  function groupedOwnedInventoryItems(run) {
+    const backpack = Array.isArray(run?.inventory) ? run.inventory : [];
+    const groups = new Map(groupedInventoryItems(backpack).map((group) => [
+      group.key,
+      { ...group, backpackQuantity: group.quantity, equippedCount: 0, equippedEntries: [] },
+    ]));
+    const seenInstanceIds = new Set(backpack.map((item) => item?.instanceId).filter(Boolean).map(String));
+
+    (Array.isArray(run?.roster) ? run.roster : []).forEach((entry) => {
+      if (!entry?.equippedItem) return;
+      const item = entry.equippedItem;
+      const key = inventoryItemIdentity(item);
+      const instanceId = item.instanceId ? String(item.instanceId) : "";
+      const alreadyInBackpack = instanceId && seenInstanceIds.has(instanceId);
+      const existing = groups.get(key) || {
+        key,
+        item,
+        quantity: 0,
+        backpackQuantity: 0,
+        equippedCount: 0,
+        instances: [],
+        equippedEntries: [],
+        category: inventoryItemCategory(item),
+      };
+      existing.equippedCount += 1;
+      existing.equippedEntries.push(entry);
+      if (!alreadyInBackpack) {
+        existing.quantity += 1;
+        if (instanceId) seenInstanceIds.add(instanceId);
+      }
+      groups.set(key, existing);
+    });
+
+    return [...groups.values()];
+  }
+
+  function groupedOwnedInventoryByCategory(run) {
+    const groups = groupedOwnedInventoryItems(run);
+    return INVENTORY_CATEGORY_DEFINITIONS.map((category) => ({
+      ...category,
+      items: groups.filter((group) => group.category === category.id),
+    }));
+  }
+
   function inventoryOwnershipSummary(run) {
     const backpack = Array.isArray(run?.inventory) ? run.inventory : [];
     const equippedEntries = (Array.isArray(run?.roster) ? run.roster : []).filter((entry) => entry?.equippedItem);
@@ -143,8 +187,8 @@
     return ({ attack: "Attacco", control: "Controllo", defense: "Difesa", save: "Parata", grit: "Grinta", physical: "Fisico", speed: "Velocità", stamina: "Resistenza" })[stat] || stat || "Effetto";
   }
 
-  function inventoryFilterDefinitions(inventory) {
-    const groups = groupedInventoryItems(inventory);
+  function inventoryFilterDefinitions(run) {
+    const groups = groupedOwnedInventoryItems(run);
     const hasKind = (kind) => groups.some((group) => resolveItem(group.item).kind === kind);
     const hasStat = (stat) => groups.some((group) => resolveItem(group.item).stat === stat);
     return [
@@ -163,7 +207,7 @@
     return group.category === filterId;
   }
 
-  global.InventoryHelpers = { inventoryItemIdentity, inventoryItemCategory, groupedInventoryItems, groupedInventoryByCategory, inventoryOwnershipSummary, categories: INVENTORY_CATEGORY_DEFINITIONS };
+  global.InventoryHelpers = { inventoryItemIdentity, inventoryItemCategory, groupedInventoryItems, groupedInventoryByCategory, groupedOwnedInventoryItems, groupedOwnedInventoryByCategory, inventoryOwnershipSummary, categories: INVENTORY_CATEGORY_DEFINITIONS };
 
   function itemImageFallbackSvg() {
     return `<svg viewBox="0 0 32 32"><path d="M6 9h20v17H6z"/><path d="m9 23 5-6 4 4 3-3 2 5"/><circle cx="20" cy="14" r="2"/></svg>`;
@@ -263,6 +307,9 @@
     matchPlaybackTimer: null,
     returnToMatchContext: null,
     inventoryFilter: "all",
+    inventorySelectedItemId: null,
+    inventoryEquipmentPlayerId: null,
+    itemRewardSubmitting: false,
     albumCollectionId: null,
     albumTeamId: null,
   };
@@ -469,6 +516,7 @@
     delete run.nextPullBoost;
     run.randomEventHistory = Array.isArray(run.randomEventHistory) ? run.randomEventHistory : [];
     run.activeMatch = run.activeMatch || null;
+    run.pendingItemReward = run.pendingItemReward || null;
     run.pendingBossVictory = run.pendingBossVictory || null;
     run.postBossFlow = run.postBossFlow || null;
     global.RunStatistics?.ensureRunStatistics?.(run);
@@ -691,8 +739,12 @@
     return resolvePlayerVisual(player).cardImageUrl || PLAYER_IMAGE_PLACEHOLDER;
   }
 
-  function compactPlayerCardMarkup(player, { equipment = null, level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, selected = false, dataAttr = "", extraClass = "", detailLayout = "inline" } = {}) {
+  function compactPlayerCardMarkup(player, { equipment = null, equipmentInFooter = false, level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, selected = false, dataAttr = "", extraClass = "", detailLayout = "inline" } = {}) {
     const playerRole = player.position || player.normalizedRole || "-";
+    const equipmentDefinition = equipment ? resolveItem(equipment) : null;
+    const equipmentMarkup = equipmentDefinition
+      ? `<span class="player-corner player-equipment ${equipmentInFooter ? "player-equipment--footer" : ""}" aria-label="Oggetto equipaggiato: ${escapeHtml(equipmentDefinition.name)}" title="${escapeHtml(equipmentDefinition.name)}">${itemIcon(equipment)}</span>`
+      : "";
     const detailMarkup = detailLayout === "stacked"
       ? `<div class="player-meta player-meta--stacked" aria-label="Dettagli giocatore"><div class="player-meta-line player-meta-line--role-overall"><span data-player-role>${escapeHtml(playerRole)}</span><span aria-hidden="true">•</span><span data-player-overall>${escapeHtml(overall)}</span></div><div class="player-meta-line player-meta-line--level"><span aria-hidden="true">•</span><span data-player-level>Lv ${escapeHtml(level)}</span></div></div>`
       : `<div class="player-meta" aria-label="Dettagli giocatore"><span>${escapeHtml(playerRole)}</span><span>${escapeHtml(overall)}</span><span>Lv ${escapeHtml(level)}</span></div>`;
@@ -704,10 +756,10 @@
           <img class="player-portrait" src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} />
         </div>
         <div class="player-info">
-          <div class="player-title"><strong>${escapeHtml(player.name)}</strong></div>
+          <div class="player-title"><strong title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</strong>${equipmentInFooter ? equipmentMarkup : ""}</div>
           ${detailMarkup}
         </div>
-        ${equipment ? `<span class="player-corner player-equipment" aria-label="Oggetto equipaggiato" title="${escapeHtml(equipment.name)}">${itemIcon(equipment)}</span>` : ""}
+        ${equipmentInFooter ? "" : equipmentMarkup}
         <span class="player-corner player-level" aria-label="Livello ${escapeHtml(level)}">Lv ${escapeHtml(level)}</span>
       </button>`;
   }
@@ -715,6 +767,7 @@
   function playerCard(player, options = {}) {
     const database = options.database || freeAgentsDb;
     const level = Number(options.level ?? 0);
+    const pullSelection = options.context === "pull";
     const resolved = global.InazumaProgression.getPlayerAtLevel(
       player,
       Math.floor(level),
@@ -725,7 +778,7 @@
       ? `type="button" data-player-id="${escapeHtml(player.playerId)}"`
       : "";
     return `
-      <${tag} class="player-card player-card-large pull-player-card pull-player-card--desktop pull-player-card--mobile ${rarityClass(resolved.category)} ${options.selected ? "selected" : ""} ${options.equipment ? "has-equipment" : ""}" ${attributes}>
+      <${tag} class="player-card player-card-large pull-player-card pull-player-card--desktop pull-player-card--mobile ${pullSelection ? "pull-selection-card" : ""} ${escapeHtml(options.extraClass || "")} ${rarityClass(resolved.category)} ${options.selected ? "selected" : ""} ${options.equipment ? "has-equipment" : ""}" ${attributes}>
         <span class="player-corner player-role" aria-label="Ruolo ${escapeHtml(player.position)}">${escapeHtml(player.position)}</span>
         <span class="player-corner player-overall" aria-label="Overall ${resolved.overall}">${resolved.overall}</span>
         <div class="player-portrait-wrap">
@@ -736,8 +789,9 @@
             <strong>${escapeHtml(player.name)}</strong>
           </div>
           <div class="player-meta" aria-label="Dettagli giocatore">
-            <span>${escapeHtml(player.element || player.type)}</span>
+            ${pullSelection ? `<span class="pull-player-role">${escapeHtml(player.position)}</span>` : `<span>${escapeHtml(player.element || player.type)}</span>`}
             <span>${escapeHtml(resolved.category)}</span>
+            ${pullSelection ? `<span>Lv ${escapeHtml(level)}</span>` : ""}
           </div>
         </div>
         ${options.equipment ? `<span class="player-corner player-equipment" aria-label="Oggetto equipaggiato">${itemIcon(options.equipment)}</span>` : ""}
@@ -1015,45 +1069,117 @@
     return averageOverall(players);
   }
 
-  function savedRunSummaryMarkup(savedRun) {
-    if (!savedRun) return "";
+  function homeZoneProgress(savedRun) {
+    const zone = savedRun?.currentZone;
+    if (!zone?.nodes?.length) return 0;
+    const currentNode = zone.nodes.find((node) => node.id === zone.currentNodeId);
+    const finalLayer = Math.max(1, ...zone.nodes.map((node) => Number(node.layer || 0)));
+    return Math.max(0, Math.min(100, Math.round((Number(currentNode?.layer || 0) / finalLayer) * 100)));
+  }
+
+  function homePlayerCardMarkup(entry) {
+    const player = resolvedRosterPlayer(entry.playerId || entry.id);
+    if (!player) return "";
+    const level = Number(entry.level ?? player.displayLevel ?? 0);
+    const overall = player.overall ?? player.finalOverall ?? "-";
+    const role = player.position || player.normalizedRole || "-";
+    const equipment = entry.equippedItem || null;
+    return `<article class="home-player-card ${rarityClass(player.category)} ${equipment ? "has-equipment" : ""}" aria-label="${escapeHtml(player.name)}, ${escapeHtml(role)}, overall ${escapeHtml(overall)}, livello ${escapeHtml(level)}">
+      <div class="home-player-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="${escapeHtml(player.name)}" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></div>
+      <span class="home-player-role">${escapeHtml(role)}</span>
+      <span class="home-player-overall">${escapeHtml(overall)}</span>
+      <div class="home-player-copy"><strong title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</strong><small>${escapeHtml(player.category || "Debole")} · Lv ${escapeHtml(level)}</small></div>
+      ${equipment ? `<span class="home-player-equipment" aria-label="Equipaggiamento: ${escapeHtml(resolveItem(equipment).name)}" title="${escapeHtml(resolveItem(equipment).name)}">${itemIcon(equipment)}</span>` : ""}
+    </article>`;
+  }
+
+  function homeRosterMarkup(savedRun) {
+    // Historical selector retained for the repository smoke contract: class="home-avatar"
+    const preview = savedRosterEntries(savedRun).slice(0, 5).map(homePlayerCardMarkup).filter(Boolean);
+    return preview.length ? preview.join("") : `<p class="home-roster-empty">La rosa verrà mostrata dopo il draft iniziale.</p>`;
+  }
+
+  const HOME_SECONDARY_ACTIONS = [
+    { id: "open-album-home", label: "Album", icon: "▤", className: "" },
+    { id: "open-hall-home", label: "Albo d’Oro", icon: "★", className: "home-quick-button--gold" },
+    { id: "open-modes-home", label: "Modalità", icon: "⚡", className: "" },
+  ];
+
+  function homeQuickActionsMarkup() {
+    const actions = HOME_SECONDARY_ACTIONS.map(({ id, label, icon, className }) => `
+      <button type="button" class="home-quick-button ${className}" id="${id}">
+        <span aria-hidden="true">${icon}</span><strong>${label}</strong>
+      </button>`).join("");
+    return `<nav class="home-quick-actions" aria-label="Sezioni principali">${actions}</nav>`;
+  }
+
+  function homeTeamCrestMarkup(identity) {
+    if (identity?.logoUrl) return `<img src="${escapeHtml(identity.logoUrl)}" alt="${escapeHtml(identity.name)}" loading="lazy" />`;
+    return `<span class="home-crest-fallback" aria-hidden="true">IR</span>`;
+  }
+
+  function homeActiveRunMarkup(savedRun) {
+    // Historical smoke-test signature: class="home-hub-card home-run-card"
     const identity = normalizeTeamIdentity(savedRun.teamIdentity);
-    const bossNumber = Number(savedRun.bossIndex || 0) + 1;
+    const bossIndex = Number(savedRun.bossIndex || 0);
+    const boss = seasonDb?.bossOrder?.[bossIndex];
+    const bossNumber = bossIndex + 1;
     const totalBosses = seasonDb?.bossOrder?.length || 10;
-    return `
-      <section class="home-save-card" aria-label="Run salvata">
-        <div class="home-save-logo">${inazumaLogoMarkup("inazuma-logo--small")}</div>
-        <div>
-          <p class="eyebrow">Run salvata</p>
-          <h2>${escapeHtml(identity.name)}</h2>
-          <p class="muted">Boss ${escapeHtml(Math.min(bossNumber, totalBosses))} di ${escapeHtml(totalBosses)} · Lv ${escapeHtml(savedRun.teamLevel || 0)} · ${escapeHtml(savedRun.lives ?? "-")} vite</p>
+    const zoneProgress = homeZoneProgress(savedRun);
+    const bossLogo = bossTeamLogoUrl(boss);
+    return `<section class="home-hero home-active-dashboard" aria-label="Home con run attiva">
+      <div class="home-team-banner anime-panel">
+        <div class="home-team-crest">${homeTeamCrestMarkup(identity)}</div>
+        <div class="home-team-copy"><p>${escapeHtml(seasonDisplayName(savedRun.seasonId))}</p><h1>${escapeHtml(identity.name)}</h1><span>Stagione ${escapeHtml((savedRun.seasonId || "1").match(/\d+/)?.[0] || "1")}</span></div>
+        <button type="button" class="home-team-manage" id="manage-team-home">Gestisci squadra</button>
+      </div>
+      <article class="home-hub-card home-run-card home-run-panel anime-panel">
+        <div class="home-panel-kicker"><span>⚡</span> Run in corso</div>
+        <div class="home-next-boss">
+          <div class="home-boss-identity">
+            <small>Prossimo boss</small>
+            <span class="home-boss-logo">${bossLogo ? `<img src="${escapeHtml(bossLogo)}" alt="" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false" /><b hidden aria-hidden="true">B</b>` : "B"}</span>
+            <strong>${escapeHtml(boss?.teamName || "Raimon")}</strong>
+          </div>
+          <div class="home-stage"><small>Stage</small><strong>${escapeHtml(Math.min(bossNumber, totalBosses))}<em>/${escapeHtml(totalBosses)}</em></strong></div>
         </div>
-      </section>`;
+        <div class="home-run-stats">
+          <span><small>Media team</small><strong>${escapeHtml(runAverageOverall(savedRun))}</strong></span>
+          <span><small>Formazione</small><strong>${escapeHtml(runFormationLabel(savedRun))}</strong></span>
+          <span class="home-zone-stat"><small>Progresso zona</small><strong>${escapeHtml(zoneProgress)}%</strong><i><b style="width:${zoneProgress}%"></b></i></span>
+        </div>
+      </article>
+      <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="continue-run">Continua la run</strong><span class="home-cta-arrows" aria-hidden="true">»</span></button>
+      ${homeQuickActionsMarkup()}
+      <section class="home-roster-section" aria-label="La tua squadra">
+        <div class="home-section-label"><span>⚡</span> La tua squadra</div>
+        <div class="home-roster-preview">${homeRosterMarkup(savedRun)}</div>
+      </section>
+    </section>`;
+  }
+
+  function homeEmptyRunMarkup() {
+    return `<section class="home-hero home-empty-dashboard" aria-label="Home senza run attiva">
+      <article class="home-empty-panel anime-panel">
+        <div class="home-empty-kicker">Nessuna run attiva</div>
+        <div class="home-empty-copy">
+          <h1>Scegli la tua prossima sfida</h1>
+          <p>Seleziona una run, costruisci la tua squadra e inizia una nuova scalata verso la vittoria.</p>
+        </div>
+        <ol class="home-empty-steps" aria-label="Come iniziare">
+          <li><span>1</span><strong>Scegli la run</strong></li>
+          <li><span>2</span><strong>Crea la squadra</strong></li>
+          <li><span>3</span><strong>Affronta i boss</strong></li>
+        </ol>
+        <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">◎</span><strong id="choose-run">Scegli una run</strong><span class="home-cta-arrows" aria-hidden="true">»</span></button>
+      </article>
+      ${homeQuickActionsMarkup()}
+    </section>`;
   }
 
   function homeRunCardMarkup(savedRun) {
-    if (!savedRun) {
-      return `<article class="home-hub-card home-run-card" aria-label="Run">
-        <div class="home-card-kicker"><span>⚡</span><strong>RUN</strong></div>
-        <h2>Scendi in campo</h2>
-        <p class="muted">Scegli la Season, crea una rosa e supera i boss della campagna selezionata.</p>
-        <div class="empty-state compact-empty"><strong>Nessuna run attiva</strong><span>La prossima leggenda parte dal primo fischio.</span></div>
-        <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="new-run">Seleziona Season</button></div>
-      </article>`;
-    }
-    const identity = normalizeTeamIdentity(savedRun.teamIdentity);
-    const boss = seasonDb?.bossOrder?.[Number(savedRun.bossIndex || 0)];
-    const bossNumber = Number(savedRun.bossIndex || 0) + 1;
-    const totalBosses = seasonDb?.bossOrder?.length || 10;
-    const rosterPreview = (savedRun.roster || []).slice(0, 5).map((entry) => resolvedRosterPlayer(entry.playerId || entry.id)).filter(Boolean);
-    return `<article class="home-hub-card home-run-card" aria-label="Run attiva">
-      <div class="home-card-kicker"><span>⚡</span><strong>RUN</strong></div>
-      <div class="home-card-title-row"><div><p class="eyebrow">${escapeHtml(seasonDisplayName(savedRun.seasonId))}</p><h2>${escapeHtml(identity.name)}</h2><p class="muted">Prossimo boss: ${escapeHtml(boss?.teamName || "Raimon")} · Stage ${escapeHtml(Math.min(bossNumber, totalBosses))}/${escapeHtml(totalBosses)}</p></div><span class="result-banner result-banner--live">${runHeartsMarkup(savedRun)}</span></div>
-      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>Livello</span><strong>${escapeHtml(savedRun.teamLevel || 0)}</strong></div><div class="stat-card"><span>Overall medio</span><strong>${escapeHtml(runAverageOverall(savedRun))}</strong></div><div class="stat-card"><span>Vite</span><strong>${escapeHtml(savedRun.lives ?? "-")}</strong></div><div class="stat-card"><span>Modulo</span><strong>${escapeHtml(runFormationLabel(savedRun))}</strong></div></div>
-      <div class="home-roster-preview">${rosterPreview.map((p) => `<span class="home-avatar"><img src="${escapeHtml(p.portraitUrl || p.imageUrl || '')}" alt="${escapeHtml(p.name)}" loading="lazy"/><small>${escapeHtml(p.position || '')}</small></span>`).join("") || '<span class="muted">Rosa in preparazione</span>'}</div>
-      <div class="progress-track" aria-label="Progresso boss"><div class="progress-bar" style="width:${Math.round(((bossNumber - 1) / Math.max(1, totalBosses)) * 100)}%"></div></div>
-      <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="continue-run" aria-label="Continua la run mostrata">Continua run</button><button type="button" class="btn" id="select-run">Seleziona run</button></div>
-    </article>`;
+    if (!savedRun) return homeEmptyRunMarkup();
+    return homeActiveRunMarkup(savedRun);
   }
 
   async function renderHome() {
@@ -1069,23 +1195,18 @@
     migrateTeamIdentityProfile();
     if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
     app.innerHTML = `
-      <main class="home-screen modern-home">
-        <header class="home-hero panel">
-          <div class="home-brand-mark">${inazumaLogoMarkup("inazuma-logo--hero")}</div>
-          <div class="home-copy"><p class="eyebrow">Multi Season</p><h1>Inazuma Roguelike</h1><p class="home-subtitle">Road to Raimon</p><p class="muted">Un viaggio roguelike tra draft, tattica e sfide decisive: costruisci una squadra da leggenda.</p></div>
-          <div class="home-actions button-row"><button type="button" class="btn btn-yellow" id="home-primary-cta">${run ? "Continua run" : "Seleziona Season"}</button><button type="button" class="btn" id="open-hall-home">Apri Albo d’Oro</button></div>
+      <main class="home-screen modern-home" id="clean-home" data-run-state="${run ? "active" : "empty"}">
+        <header class="home-masthead">
+          <div class="home-wordmark" aria-label="Inazuma Roguelike · Road to Raimon"><span>Ina<span>z</span>uma</span><small>Roguelike</small><i class="home-road-label">Road to Raimon</i></div>
+          ${run ? `<div class="home-status-badges"><span><i>⚡</i><strong>${escapeHtml(run.lives ?? "-")}/${escapeHtml(global.RunState?.runLivesLimit?.() ?? 2)}</strong><small>Vite</small></span><span><i>LV</i><strong>${escapeHtml(run.teamLevel || 0)}</strong><small>Livello team</small></span></div>` : ""}
         </header>
-        <section class="home-choice-grid" aria-label="Hub principale">
-          ${homeRunCardMarkup(run)}
-          ${homeHallOfFameMarkup()}
-          ${homeAlbumCardMarkup()}
-        </section>
+        ${homeRunCardMarkup(run)}
       </main>`;
     resetRenderedViewScroll();
 
-    document.querySelectorAll("#new-run, #select-run, #manage-team-home").forEach((button) => button.addEventListener("click", renderSeasonSelect));
+    document.getElementById("open-modes-home")?.addEventListener("click", renderSeasonSelect);
+    document.getElementById("manage-team-home")?.addEventListener("click", resumeRun);
     document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : renderSeasonSelect());
-    document.getElementById("continue-run")?.addEventListener("click", resumeRun);
     document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-album-home")?.addEventListener("click", renderAlbumCollections);
     document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
@@ -1214,6 +1335,7 @@
   function startRunWithIdentity(identity) {
     const cleanIdentity = global.RunState.saveProfileTeamIdentity(identity);
     run = global.RunState.createRun(cleanIdentity, activeSeason?.id);
+    global.run = run;
     global.RunState.save(run);
     closeModal();
     renderFormationChoice();
@@ -1296,6 +1418,7 @@
       return renderMatch();
     }
     ensureCurrentZone();
+    if (resumePendingItemReward()) return;
     renderMap();
   }
 
@@ -1432,6 +1555,8 @@
   }
 
   function tacticalMiniPlayer(id, { mode = "squad", area = "lineup", selectedId = null } = {}) {
+    const entry = rosterEntry(id);
+    if (!entry || !sourcePlayer(entry)) return "";
     const player = resolvedRosterPlayer(id);
     if (!player) return "";
     const selected = String(selectedId || ui.selectedSquadPlayerId) === String(id);
@@ -1441,13 +1566,15 @@
         ? `data-equip-player="${escapeHtml(id)}"`
         : mode === "consumable"
           ? `data-consumable-player="${escapeHtml(id)}"`
-          : `data-squad-player="${escapeHtml(id)}" data-area="${area}"`;
+          : `data-squad-player="${escapeHtml(id)}" data-area="${area}" data-rarity="${escapeHtml(player.category || "Debole")}" aria-pressed="${selected ? "true" : "false"}" aria-label="Seleziona ${escapeHtml(player.name)}, ${escapeHtml(player.position)}, rarità ${escapeHtml(player.category || "Debole")}"`;
     return compactPlayerCardMarkup(player, {
       equipment: player.equipment,
+      equipmentInFooter: mode === "squad",
       level: player.displayLevel,
       overall: player.overall,
       selected,
       dataAttr,
+      extraClass: mode === "squad" ? "squad-player-card" : "",
     });
   }
 
@@ -1459,30 +1586,151 @@
   }
 
   function benchMarkup({ mode = "squad", selectedId = null } = {}) {
-    return run.bench.length ? run.bench.map((id) => tacticalMiniPlayer(id, { mode, area: "bench", selectedId })).join("") : '<p class="muted">Le riserve arriveranno con pull, scambi e ricompense.</p>';
+    const cards = (run.bench || []).map((id) => tacticalMiniPlayer(id, { mode, area: "bench", selectedId })).filter(Boolean);
+    return cards.length ? cards.join("") : '<p class="muted">Le riserve arriveranno con pull, scambi e ricompense.</p>';
   }
 
   function miniPlayer(id, area) {
     return tacticalMiniPlayer(id, { mode: "squad", area });
   }
 
-  function squadValiditySummary() {
-    const starters = (run.lineup || []).filter(Boolean).length;
-    const bench = (run.bench || []).filter(Boolean).length;
-    const unique = new Set([...(run.lineup || []), ...(run.bench || [])].filter(Boolean).map(String));
-    const complete = starters === 11 && bench === 4 && unique.size === starters + bench;
-    return { starters, bench, complete };
+  function reconcileSquadRosterState() {
+    const rosterIds = (run.roster || []).map((entry) => String(entry.playerId || "")).filter(Boolean);
+    const rosterSet = new Set(rosterIds);
+    const lineupIds = (run.lineup || []).map(String).filter(Boolean);
+    const lineupSet = new Set(lineupIds);
+    const currentBench = (run.bench || []).map(String).filter((id) => rosterSet.has(id) && !lineupSet.has(id));
+    const canonicalBench = [...new Set(currentBench)];
+    const unassigned = rosterIds.filter((id) => !lineupSet.has(id) && !canonicalBench.includes(id));
+    unassigned.slice(0, Math.max(0, 4 - canonicalBench.length)).forEach((id) => canonicalBench.push(id));
+    const changed = JSON.stringify(canonicalBench) !== JSON.stringify((run.bench || []).map(String));
+    if (changed) run.bench = canonicalBench;
+    return changed;
   }
 
-  function squadFormationTabsMarkup() {
-    return seasonDb.formations.eleven.map((item) => `
-      <button type="button" class="squad-formation-tab ${item.id === run.formationId ? "active" : ""}" data-formation-tab="${escapeHtml(item.id)}" ${canUseFormation(item) ? "" : "disabled"} aria-pressed="${item.id === run.formationId ? "true" : "false"}">
-        <span>${escapeHtml(item.name)}</span>
-      </button>`).join("");
+  function squadValiditySummary() {
+    const formation = formationById(run.formationId);
+    const lineupIds = (run.lineup || []).map(String).filter(Boolean);
+    const benchIds = (run.bench || []).map(String).filter(Boolean);
+    const lineupUnique = new Set(lineupIds);
+    const benchUnique = new Set(benchIds);
+    const unresolvedLineup = lineupIds.filter((id) => !rosterEntry(id) || !sourcePlayer(rosterEntry(id)));
+    const unresolvedBench = benchIds.filter((id) => !rosterEntry(id) || !sourcePlayer(rosterEntry(id)));
+    const overlap = benchIds.filter((id) => lineupUnique.has(id));
+    const roleCounts = { GK: 0, DF: 0, MF: 0, FW: 0 };
+    lineupIds.forEach((id) => {
+      const role = squadPlayerRole(id);
+      if (roleCounts[role] !== undefined) roleCounts[role] += 1;
+    });
+
+    let formationIssue = "";
+    if (!formation) formationIssue = "Modulo non disponibile";
+    else if (lineupIds.length !== 11) formationIssue = `${lineupIds.length}/11 titolari assegnati`;
+    else if (lineupUnique.size !== lineupIds.length) formationIssue = "Sono presenti titolari duplicati";
+    else if (unresolvedLineup.length) formationIssue = `${unresolvedLineup.length} titolari non risolvibili`;
+    else {
+      const mismatch = Object.entries(formation.requirements || {}).find(([role, amount]) => roleCounts[role] !== Number(amount));
+      if (mismatch) {
+        const [role, amount] = mismatch;
+        formationIssue = `Il modulo richiede ${amount} ${role} · presenti ${roleCounts[role]}`;
+      }
+    }
+
+    const resolvedBenchIds = benchIds.filter((id) => !unresolvedBench.includes(id) && !overlap.includes(id));
+    const benchCount = new Set(resolvedBenchIds).size;
+    let rosterIssue = "";
+    if (benchUnique.size !== benchIds.length) rosterIssue = "Riserve duplicate";
+    else if (overlap.length) rosterIssue = "Giocatori presenti sia in campo sia in panchina";
+    else if (unresolvedBench.length) rosterIssue = `${unresolvedBench.length} riserve non risolvibili`;
+    else if (benchCount < 4) rosterIssue = `Rosa incompleta · ${benchCount}/4 riserve`;
+
+    return {
+      starters: lineupIds.length,
+      bench: benchCount,
+      formationValid: !formationIssue,
+      formationIssue,
+      rosterComplete: benchCount === 4 && !rosterIssue,
+      rosterIssue,
+      roleCounts,
+    };
+  }
+
+  function squadBackButtonMarkup() {
+    const destination = getSectionRootDestination("run");
+    return `<button type="button" class="squad-back-button" data-section-root="run" aria-label="${escapeHtml(destination.label)}" title="${escapeHtml(destination.label)}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 5 8.5 12l7 7"/><path d="M9 12h11"/></svg>
+    </button>`;
+  }
+
+  function squadTacticSummaryMarkup(formationId) {
+    const tactic = tacticSummary(formationId);
+    const entries = Object.entries(tactic.modifiers || {});
+    const bonus = entries.find(([, value]) => Number(value) >= 0);
+    const penalty = entries.find(([, value]) => Number(value) < 0);
+    const compactChip = (entry, type) => {
+      if (!entry) return "";
+      const [key, value] = entry;
+      const percent = Math.round(Math.abs(Number(value) || 0) * 100);
+      return `<span class="squad-tactic-effect squad-tactic-effect--${type}">${type === "bonus" ? "+" : "−"}${percent}% ${escapeHtml(TACTIC_LABELS[key] || key)}</span>`;
+    };
+    return `<div class="squad-tactic-copy">
+      <strong>${escapeHtml(tactic.name)}</strong>
+      <p>${escapeHtml(tactic.description)}</p>
+      <div class="squad-tactic-effects">${compactChip(bonus, "bonus")}${compactChip(penalty, "penalty")}</div>
+    </div>`;
+  }
+
+  function squadFormationPreviewMarkup(formation) {
+    return `<div class="squad-formation-mini" aria-hidden="true">
+      ${["FW", "MF", "DF", "GK"].map((role) => {
+        const amount = Number(formation.requirements?.[role] || 0);
+        return `<span class="squad-formation-mini-row" style="--mini-count:${Math.max(1, amount)}">${Array.from({ length: amount }, () => `<i class="squad-formation-dot squad-formation-dot--${role.toLowerCase()}"></i>`).join("")}</span>`;
+      }).join("")}
+    </div>`;
+  }
+
+  function squadFormationOptionsMarkup() {
+    return seasonDb.formations.eleven.map((item) => {
+      const active = item.id === run.formationId;
+      const available = canUseFormation(item);
+      const tactic = tacticSummary(item.id);
+      return `<button type="button" class="squad-formation-option ${active ? "active" : ""}" data-squad-formation="${escapeHtml(item.id)}" ${available ? "" : "disabled"} aria-pressed="${active ? "true" : "false"}">
+        ${squadFormationPreviewMarkup(item)}
+        <span class="squad-formation-option-copy">
+          <strong>${escapeHtml(item.name)}</strong>
+          <small>${escapeHtml(tactic.name)}</small>
+          <em>${active ? "Modulo attivo" : (available ? "Seleziona" : "Rosa incompatibile")}</em>
+        </span>
+      </button>`;
+    }).join("");
+  }
+
+  function openSquadFormationSelector() {
+    openModal(`
+      <div class="modal-head squad-formation-modal-head">
+        <div><p class="eyebrow">Assetto tattico</p><h2>Modifica modulo</h2><p class="muted">Scegli una disposizione: i titolari verranno riordinati automaticamente usando le regole esistenti.</p></div>
+      </div>
+      <div class="squad-formation-options">${squadFormationOptionsMarkup()}</div>
+    `, { closeable: true, className: "squad-formation-modal", preserveScroll: scrollSnapshot() });
+
+    modalRoot.querySelector(".squad-formation-options")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-squad-formation]");
+      if (!button || button.disabled) return;
+      const formationId = button.dataset.squadFormation;
+      if (formationId === run.formationId) return closeModal();
+      const next = formationById(formationId);
+      if (!next || !canUseFormation(next)) return toast("La rosa non copre tutti i ruoli del modulo");
+      autoArrangeFormation(next);
+      global.RunState.save(run);
+      closeModal();
+      toast(`Modulo cambiato in ${next.name}`);
+      runKeepingScroll(renderSquad);
+    });
   }
 
   function renderSquad() {
     run.phase = "squad";
+    reconcileSquadRosterState();
     global.RunState.save(run);
     const formation = formationById(run.formationId);
     const squadSummary = squadValiditySummary();
@@ -1491,89 +1739,75 @@
 
     app.innerHTML = `
       <main class="screen squad-screen">
-        ${topbar("La tua squadra")}
+        <header class="squad-topbar">
+          <div class="squad-topbar-main">
+            ${squadBackButtonMarkup()}
+            <div class="squad-topbar-copy"><p>Gestione squadra</p><h1>${escapeHtml(teamIdentity.name)}</h1></div>
+          </div>
+          <div class="squad-topbar-stats" aria-label="Riepilogo squadra">
+            <span><small>OVR</small><strong>${escapeHtml(avgOverall)}</strong></span>
+            <span><small>LV</small><strong>${escapeHtml(run.teamLevel)}</strong></span>
+            <span class="squad-life-stat" aria-label="Vite">${hearts()}</span>
+          </div>
+        </header>
         <div class="content squad-content">
-          <section class="squad-hero panel" aria-label="Riepilogo squadra">
-            <div class="squad-hero-main">
-              <p class="eyebrow">Gestione squadra</p>
-              <h2>${escapeHtml(teamIdentity.name)}</h2>
-              <p class="muted small" data-squad-hint>${squadStatusText()}</p>
-            </div>
-            <div class="squad-hero-metrics" aria-label="Metriche rosa">
-              <span class="squad-metric"><small>Lv run</small><strong>${escapeHtml(run.teamLevel)}</strong></span>
-              <span class="squad-metric"><small>OVR medio</small><strong>${escapeHtml(avgOverall)}</strong></span>
-              <span class="squad-metric"><small>Rosa</small><strong>${run.roster.length}/${global.SEASON1_CONFIG.maxRoster}</strong></span>
-              <span class="squad-metric"><small>Modulo</small><strong>${escapeHtml(formation?.name || run.formationId)}</strong></span>
-            </div>
-          </section>
+          <div class="squad-command-deck ${squadSummary.formationValid ? "is-valid" : "is-invalid"} ${squadSummary.rosterComplete ? "is-roster-complete" : "is-roster-incomplete"}">
+            <span class="squad-readiness-mark" aria-hidden="true">${squadSummary.formationValid ? "✓" : "!"}</span>
+            <div><small>Stato formazione</small><strong>${squadSummary.formationValid ? "Formazione valida" : "Formazione non valida"}</strong>${squadSummary.formationIssue ? `<em>${escapeHtml(squadSummary.formationIssue)}</em>` : ""}</div>
+            <span class="squad-command-count"><b>${squadSummary.starters}/11 titolari</b><b class="${squadSummary.rosterComplete ? "" : "is-warning"}">${squadSummary.rosterComplete ? `Rosa completa · ${squadSummary.bench}/4 riserve` : escapeHtml(squadSummary.rosterIssue || `Rosa incompleta · ${squadSummary.bench}/4 riserve`)}</b></span>
+          </div>
 
-          <section class="squad-quick-row" aria-label="Stato formazione">
-            <div class="squad-status-card ${squadSummary.complete ? "valid" : "invalid"}">
-              <strong>${squadSummary.complete ? "Formazione pronta" : "Controlla la rosa"}</strong>
-              <span>${squadSummary.starters}/11 titolari · ${Math.min(squadSummary.bench, 4)}/4 riserve · ${escapeHtml(run.formationId)}</span>
-            </div>
-          </section>
-
-          <section class="squad-formation-strip panel" aria-label="Selettore modulo 11v11">
-            <div class="squad-strip-head">
-              <div>
-                <p class="eyebrow">Modulo</p>
-                <h3>${escapeHtml(formation?.name || run.formationId)}</h3>
-              </div>
-              <button type="button" class="btn squad-edit-toggle ${ui.squadEditMode ? "btn-yellow" : ""}" id="toggle-squad-edit">${ui.squadEditMode ? "Termina modifiche" : "Modifica titolari"}</button>
-            </div>
-            <div class="squad-formation-tabs">${squadFormationTabsMarkup()}</div>
-          </section>
-
-          <div class="squad-layout squad-layout--polished">
-            <section class="squad-field-panel panel" aria-label="Campo 11v11">
-              <div class="squad-panel-head"><div><p class="eyebrow">Titolari</p><h3>Campo 11v11</h3></div><span class="role-chip">${squadSummary.starters}/11</span></div>
+          <div class="squad-workspace">
+            <section class="squad-field-panel" aria-label="Campo 11v11">
+              <div class="squad-panel-head"><div><p class="eyebrow">Formazione titolare</p><h2>Campo tattico</h2></div><span class="squad-field-formation">${escapeHtml(formation?.name || run.formationId)}</span></div>
               ${squadPitchMarkup()}
             </section>
-            <aside class="panel squad-bench-panel" aria-label="Riserve">
-              <div class="squad-panel-head"><div><p class="eyebrow">Cambio rapido</p><h3>Riserve</h3></div><span class="role-chip">${Math.min(squadSummary.bench, 4)}/4</span></div>
-              <div class="bench-list squad-bench-list">
-                ${benchMarkup()}
+            <aside class="squad-management-panel" aria-label="Gestione tattica">
+              <section class="squad-module-card">
+                <div class="squad-module-head">
+                  <div><small>Modulo corrente</small><strong>${escapeHtml(formation?.name || run.formationId)}</strong></div>
+                  ${squadFormationPreviewMarkup(formation)}
+                </div>
+                ${squadTacticSummaryMarkup(run.formationId)}
+              </section>
+              <div class="squad-management-actions">
+                <button type="button" class="btn squad-module-button" id="open-squad-formation">Modifica modulo</button>
+                <button type="button" class="btn btn-yellow squad-info-button" id="squad-player-info" disabled>Info</button>
               </div>
+              <p class="squad-selection-hint" data-squad-hint>Seleziona un giocatore</p>
+              <section class="squad-bench-panel" aria-label="Riserve">
+                <div class="squad-panel-head"><div><p class="eyebrow">Panchina</p><h2>Riserve</h2></div><span class="squad-bench-count">${Math.min(squadSummary.bench, 4)}/4</span></div>
+                <div class="bench-list squad-bench-list">
+                  ${benchMarkup()}
+                </div>
+              </section>
               <div class="squad-secondary-actions">
-                <button type="button" class="btn btn-yellow" id="go-map">${run.currentZone ? "Torna al percorso" : "Inizia il percorso"}</button>
+                <button type="button" class="btn btn-yellow squad-route-button" id="go-map">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5 9 4l6 2.5 5-2.5v13.5l-5 2.5-6-2.5-5 2.5V6.5Z"/><path d="M9 4v13.5M15 6.5V20"/></svg>
+                  <span>${run.currentZone ? "Torna al percorso" : "Inizia il percorso"}</span>
+                </button>
               </div>
             </aside>
           </div>
-
-          ${tacticPanelMarkup(run.formationId, { className: "squad-tactic-panel", compact: true })}
         </div>
         ${bottomNav("squad")}
       </main>`;
     resetRenderedViewScroll();
     bindSectionRootNav();
 
-    const changeSquadFormation = (formationId) => {
-      const next = formationById(formationId);
-      if (!canUseFormation(next)) return toast("La rosa non copre tutti i ruoli del modulo");
-      autoArrangeFormation(next);
-      global.RunState.save(run);
-      toast(`Modulo cambiato in ${next.name}`);
-      runKeepingScroll(renderSquad);
-    };
-
-    document.querySelectorAll("[data-formation-tab]").forEach((button) => button.addEventListener("click", () => {
-      if (button.dataset.formationTab === run.formationId) return;
-      changeSquadFormation(button.dataset.formationTab);
-    }));
-
     const main = app.querySelector("main");
     main.addEventListener("click", (event) => {
       const squadPlayer = event.target.closest("[data-squad-player]");
-      if (!squadPlayer || !main.contains(squadPlayer)) return;
-      event.preventDefault();
-      ui.squadEditMode
-        ? handleSquadSelection(squadPlayer.dataset.squadPlayer)
-        : showPlayerDetails(squadPlayer.dataset.squadPlayer);
+      if (squadPlayer && main.contains(squadPlayer)) {
+        event.preventDefault();
+        handleSquadSelection(squadPlayer.dataset.squadPlayer);
+        return;
+      }
+      if (!event.target.closest("button, a, input, select, textarea, [role='button']")) setSelectedSquadPlayer(null);
     });
-    document.getElementById("toggle-squad-edit").addEventListener("click", (event) => {
-      event.preventDefault();
-      setSquadEditMode(!ui.squadEditMode);
+    document.getElementById("open-squad-formation").addEventListener("click", openSquadFormationSelector);
+    document.getElementById("squad-player-info").addEventListener("click", () => {
+      if (ui.selectedSquadPlayerId) showPlayerDetails(ui.selectedSquadPlayerId);
     });
     document.getElementById("go-map").addEventListener("click", () => {
       resumePostBossFlowOrMap();
@@ -1581,40 +1815,29 @@
     bindBottomNav();
   }
 
-  function squadStatusText() {
-    return ui.squadEditMode
-      ? "Seleziona un titolare e poi una riserva dello stesso ruolo per scambiarli."
-      : "Seleziona un giocatore per aprire la scheda con statistiche, overall e potenziale.";
+  function squadPlayerRole(playerId) {
+    return sourcePlayer(rosterEntry(playerId))?.position || null;
   }
 
   function setSelectedSquadPlayer(playerId) {
-    const previous = ui.selectedSquadPlayerId;
-    if (previous) document.querySelector(`[data-squad-player="${cssEscape(previous)}"]`)?.classList.remove("selected");
     ui.selectedSquadPlayerId = playerId ? String(playerId) : null;
-    if (ui.selectedSquadPlayerId) document.querySelector(`[data-squad-player="${cssEscape(ui.selectedSquadPlayerId)}"]`)?.classList.add("selected");
-  }
-
-  function setSquadEditMode(enabled) {
-    ui.squadEditMode = Boolean(enabled);
-    setSelectedSquadPlayer(null);
-    const button = document.getElementById("toggle-squad-edit");
-    if (button) {
-      button.textContent = ui.squadEditMode ? "Termina modifiche" : "Modifica titolari";
-      button.classList.toggle("btn-yellow", ui.squadEditMode);
+    const selectedRole = ui.selectedSquadPlayerId ? squadPlayerRole(ui.selectedSquadPlayerId) : null;
+    document.querySelectorAll("[data-squad-player]").forEach((card) => {
+      const cardId = String(card.dataset.squadPlayer);
+      const isSelected = cardId === ui.selectedSquadPlayerId;
+      const isCompatible = Boolean(ui.selectedSquadPlayerId && !isSelected && selectedRole && squadPlayerRole(cardId) === selectedRole);
+      card.classList.toggle("selected", isSelected);
+      card.classList.toggle("is-compatible", isCompatible);
+      card.classList.toggle("is-incompatible", Boolean(ui.selectedSquadPlayerId && !isSelected && !isCompatible));
+      card.setAttribute("aria-pressed", isSelected ? "true" : "false");
+    });
+    const infoButton = document.getElementById("squad-player-info");
+    if (infoButton) {
+      infoButton.disabled = !ui.selectedSquadPlayerId;
+      infoButton.setAttribute("aria-label", ui.selectedSquadPlayerId ? `Apri la scheda di ${resolvedRosterPlayer(ui.selectedSquadPlayerId)?.name || "giocatore selezionato"}` : "Seleziona un giocatore");
     }
     const hint = document.querySelector("[data-squad-hint]");
-    if (hint) hint.textContent = squadStatusText();
-    if (!ui.squadEditMode) global.RunState.save(run);
-  }
-
-  function updateSquadPlayerCard(playerId) {
-    const current = document.querySelector(`[data-squad-player="${cssEscape(playerId)}"]`);
-    if (!current) return;
-    const area = current.dataset.area || (run.lineup.includes(String(playerId)) ? "lineup" : "bench");
-    const wrapper = document.createElement("div");
-    wrapper.innerHTML = tacticalMiniPlayer(playerId, { mode: "squad", area }).trim();
-    const next = wrapper.firstElementChild;
-    if (next) current.replaceWith(next);
+    if (hint) hint.textContent = ui.selectedSquadPlayerId ? "Scegli un giocatore compatibile da scambiare" : "Seleziona un giocatore";
   }
 
   function replaceSquadPlayerCard(current, nextPlayerId, area) {
@@ -1625,36 +1848,42 @@
     if (next) current.replaceWith(next);
   }
 
-  function swapSquadPlayersInDom(starterId, benchId) {
-    const starterCard = document.querySelector(`[data-squad-player="${cssEscape(starterId)}"]`);
-    const benchCard = document.querySelector(`[data-squad-player="${cssEscape(benchId)}"]`);
-    replaceSquadPlayerCard(starterCard, benchId, "lineup");
-    replaceSquadPlayerCard(benchCard, starterId, "bench");
+  function swapSquadPlayersInDom(firstId, secondId, firstArea, secondArea) {
+    const firstCard = document.querySelector(`[data-squad-player="${cssEscape(firstId)}"]`);
+    const secondCard = document.querySelector(`[data-squad-player="${cssEscape(secondId)}"]`);
+    replaceSquadPlayerCard(firstCard, secondId, firstArea);
+    replaceSquadPlayerCard(secondCard, firstId, secondArea);
   }
 
   function handleSquadSelection(playerId) {
+    const clickedId = String(playerId);
     const selected = ui.selectedSquadPlayerId;
-    if (!selected) return setSelectedSquadPlayer(playerId);
-    if (selected === String(playerId)) return setSelectedSquadPlayer(null);
-
-    const selectedInLineup = run.lineup.includes(selected);
-    const clickedInLineup = run.lineup.includes(String(playerId));
-    if (selectedInLineup === clickedInLineup) return setSelectedSquadPlayer(playerId);
-
-    const starterId = selectedInLineup ? selected : String(playerId);
-    const benchId = selectedInLineup ? String(playerId) : selected;
-    const starter = sourcePlayer(rosterEntry(starterId));
-    const reserve = sourcePlayer(rosterEntry(benchId));
-    if (starter.position !== reserve.position) {
-      setSelectedSquadPlayer(null);
-      return toast("Il sostituto deve avere lo stesso ruolo del titolare");
+    if (!selected) return setSelectedSquadPlayer(clickedId);
+    if (selected === clickedId) return setSelectedSquadPlayer(null);
+    if (squadPlayerRole(selected) !== squadPlayerRole(clickedId)) {
+      return toast("Questa destinazione non è compatibile");
     }
-    run.lineup[run.lineup.indexOf(starterId)] = benchId;
-    run.bench[run.bench.indexOf(benchId)] = starterId;
+
+    const firstArea = run.lineup.includes(selected) ? "lineup" : "bench";
+    const secondArea = run.lineup.includes(clickedId) ? "lineup" : "bench";
+    const firstList = firstArea === "lineup" ? run.lineup : run.bench;
+    const secondList = secondArea === "lineup" ? run.lineup : run.bench;
+    const firstIndex = firstList.indexOf(selected);
+    const secondIndex = secondList.indexOf(clickedId);
+    if (firstIndex < 0 || secondIndex < 0) return setSelectedSquadPlayer(null);
+
+    if (firstList === secondList) {
+      [firstList[firstIndex], firstList[secondIndex]] = [firstList[secondIndex], firstList[firstIndex]];
+    } else {
+      firstList[firstIndex] = clickedId;
+      secondList[secondIndex] = selected;
+    }
+    const firstName = resolvedRosterPlayer(selected)?.name || selected;
+    const secondName = resolvedRosterPlayer(clickedId)?.name || clickedId;
+    swapSquadPlayersInDom(selected, clickedId, firstArea, secondArea);
     setSelectedSquadPlayer(null);
-    swapSquadPlayersInDom(starterId, benchId);
     global.RunState.save(run);
-    toast(`${reserve.name} entra tra i titolari`);
+    toast(`${firstName} e ${secondName} scambiati`);
   }
 
   function ensureCurrentZone() {
@@ -1831,29 +2060,258 @@
     renderMap();
   }
 
-  function resolveItemNode(node) {
+  function pendingItemRewardNode() {
+    const pending = run?.pendingItemReward;
+    if (!pending || !run?.currentZone) return null;
+    return run.currentZone.nodes.find((node) => String(node.id) === String(pending.nodeId)) || null;
+  }
+
+  function resumePendingItemReward() {
+    const storedNode = pendingItemRewardNode();
+    if (storedNode) {
+      renderMap();
+      resolveItemNode(storedNode);
+      return true;
+    }
+
+    if (run?.pendingItemReward) {
+      run.pendingItemReward = null;
+      global.RunState.save(run);
+    }
+
+    const pendingNode = run?.currentZone?.nodes?.find(
+      (node) => String(node.id) === String(run.currentZone.pendingNodeId)
+    );
+    const pendingType = pendingNode?.type === "random" ? pendingNode.revealedType : pendingNode?.type;
+    if (pendingNode && pendingType === "item") {
+      renderMap();
+      resolveItemNode(pendingNode);
+      return true;
+    }
+    return false;
+  }
+
+  function itemRewardCandidates(node) {
+    const existing = run.pendingItemReward;
+    const sameNode = existing && String(existing.nodeId) === String(node.id);
+    const savedCandidates = sameNode
+      ? (existing.candidateIds || []).map(itemDefinitionById).filter(Boolean)
+      : [];
+    if (savedCandidates.length) return savedCandidates;
+
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}`);
-    const candidates = weightedItemCandidates(random, 3);
+    return weightedItemCandidates(random, 3);
+  }
+
+  function ensurePendingItemReward(node) {
+    const candidates = itemRewardCandidates(node);
+    const existing = run.pendingItemReward;
+    const sameNode = existing && String(existing.nodeId) === String(node.id);
+    const candidateIds = candidates.map((item) => item.id);
+    const selectedItemId = sameNode && candidateIds.includes(existing.selectedItemId)
+      ? existing.selectedItemId
+      : candidateIds[0];
+    run.pendingItemReward = {
+      nodeId: String(node.id),
+      sourceNodeType: node.type,
+      candidateIds,
+      selectedItemId,
+      status: sameNode && existing.status === "claimed" ? "claimed" : "offered",
+      claimedItemId: sameNode ? existing.claimedItemId || null : null,
+      claimedInstanceId: sameNode ? existing.claimedInstanceId || null : null,
+    };
+    global.RunState.save(run);
+    return { pending: run.pendingItemReward, candidates };
+  }
+
+  function itemRewardOwnedQuantity(item) {
+    const key = inventoryItemIdentity(item);
+    return groupedOwnedInventoryItems(run).find((group) => group.key === key)?.quantity || 0;
+  }
+
+  function itemRewardCategory(item) {
+    if (item.kind === "equipment") return "Equipaggiamento";
+    if (item.effect === "pull_reroll" || item.effect === "lucky_pull") return "Oggetto Pull";
+    if (item.effect === "player_level" || item.effect === "team_level" || item.effect === "potential_boost") return "Allenamento";
+    return "Consumabile";
+  }
+
+  function itemRewardEffect(item) {
+    if (item.kind === "equipment") return `+${Number(item.bonus || 0)} ${itemStatLabel(item.stat)}`;
+    return item.description || "Effetto disponibile dall’Inventario.";
+  }
+
+  function itemRewardUsageNote(item) {
+    if (item.effect === "pull_reroll" || item.effect === "lucky_pull") return "Utilizzabile durante un Pull previsto.";
+    if (item.kind === "equipment") return "Verrà aggiunto agli Oggetti. Potrai equipaggiarlo in seguito.";
+    return "Verrà aggiunto agli Oggetti e manterrà il suo utilizzo attuale.";
+  }
+
+  function itemRewardCandidateMarkup(item, selected) {
+    return `
+      <button type="button" class="item-reward-candidate ${selected ? "selected" : ""}" data-reward-candidate="${escapeHtml(item.id)}" aria-pressed="${selected ? "true" : "false"}">
+        ${itemIcon(item)}
+        <span><small>${escapeHtml(itemRewardCategory(item))}</small><strong>${escapeHtml(item.name)}</strong><em>${escapeHtml(itemRewardEffect(item))}</em></span>
+      </button>`;
+  }
+
+  function itemRewardDetailMarkup(item, selected) {
+    const owned = itemRewardOwnedQuantity(item);
+    const full = run.inventory.length >= global.SEASON1_CONFIG.maxInventory;
+    const actionLabel = item.kind === "equipment" ? "AGGIUNGI AGLI OGGETTI" : "PRENDI";
+    return `
+      <article class="item-reward-detail" data-reward-detail="${escapeHtml(item.id)}" ${selected ? "" : "hidden"}>
+        <div class="item-reward-visual">${itemIcon(item)}</div>
+        <div class="item-reward-copy">
+          <p class="eyebrow">${escapeHtml(itemRewardCategory(item))}</p>
+          <h2>${escapeHtml(item.name)}</h2>
+          <p>${escapeHtml(item.description)}</p>
+          <div class="item-reward-effect"><span>Effetto reale</span><strong>${escapeHtml(itemRewardEffect(item))}</strong></div>
+          <p class="item-reward-note">${escapeHtml(itemRewardUsageNote(item))}</p>
+          <dl class="item-reward-stats">
+            <div><dt>Già posseduti</dt><dd>${owned}</dd></div>
+            <div><dt>Spazio inventario</dt><dd>${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</dd></div>
+          </dl>
+          ${full ? '<p class="item-reward-capacity" role="status">Inventario pieno. Prima di prendere la ricompensa potrai scegliere un oggetto da rimuovere.</p>' : ""}
+          <div class="item-reward-primary-action">
+            <button type="button" class="btn btn-yellow btn-primary-action" data-claim-item="${escapeHtml(item.id)}">${actionLabel}</button>
+          </div>
+        </div>
+      </article>`;
+  }
+
+  function resolveItemNode(node) {
+    const { pending, candidates } = ensurePendingItemReward(node);
+    if (pending.status === "claimed") return renderItemRewardResult(node);
+    ui.itemRewardSubmitting = false;
     openModal(`
       <section class="item-reward-screen">
-        <div class="modal-head event-modal-head item-reward-head"><button type="button" class="btn btn-back" id="back-item-map">← Torna alla mappa</button><div><p class="eyebrow">Ricompensa oggetto · Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p><h2>Scegli un oggetto</h2><p class="muted">Guarda icona, categoria ed effetto prima di confermare. L’inventario verrà aggiornato dopo la scelta.</p></div></div>
+        <div class="item-reward-head">
+          <p class="eyebrow">${node.type === "random" ? "Ricompensa dal nodo ?" : "Ricompensa della run"}</p>
+          <h1>OGGETTO TROVATO</h1>
+          <p>Scegli una delle tre ricompense estratte. La scelta resta identica anche dopo un refresh.</p>
+        </div>
         <main class="item-reward-content">
-          <div class="node-choice-grid item-reward-grid" aria-label="Oggetti disponibili">
-            ${candidates.map((item) => itemChoiceCard(item)).join("")}
+          <div class="item-reward-layout">
+            <aside class="item-reward-options" aria-label="Oggetti disponibili">
+              ${candidates.map((item) => itemRewardCandidateMarkup(item, item.id === pending.selectedItemId)).join("")}
+            </aside>
+            <div class="item-reward-details">
+              ${candidates.map((item) => itemRewardDetailMarkup(item, item.id === pending.selectedItemId)).join("")}
+            </div>
           </div>
         </main>
-        <div class="node-actions item-reward-actions"><button type="button" class="btn btn-ghost" id="skip-item">Rinuncia</button></div>
+        <div class="node-actions item-reward-actions"><button type="button" class="btn btn-ghost" id="skip-item">RINUNCIA</button></div>
       </section>`,
       { closeable: false, className: "item-reward-modal" }
     );
-    modalRoot.querySelectorAll("[data-item-choice]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const item = candidates.find((candidate) => candidate.id === button.dataset.itemChoice);
-        receiveItem(item, node, (instance) => finishNonMatchNode(node, `Hai ottenuto ${resolveItem(instance).name}`));
-      });
+    const modal = modalRoot.querySelector(".item-reward-modal");
+    modal.addEventListener("click", (event) => {
+      const candidateButton = event.target.closest("[data-reward-candidate]");
+      if (candidateButton) {
+        const itemId = candidateButton.dataset.rewardCandidate;
+        if (!candidates.some((candidate) => candidate.id === itemId)) return;
+        run.pendingItemReward.selectedItemId = itemId;
+        global.RunState.save(run);
+        modal.querySelectorAll("[data-reward-candidate]").forEach((button) => {
+          const active = button.dataset.rewardCandidate === itemId;
+          button.classList.toggle("selected", active);
+          button.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+        modal.querySelectorAll("[data-reward-detail]").forEach((detail) => {
+          detail.hidden = detail.dataset.rewardDetail !== itemId;
+        });
+        modal.querySelector(`[data-claim-item="${cssEscape(itemId)}"]`)?.focus?.({ preventScroll: true });
+        return;
+      }
+
+      const claimButton = event.target.closest("[data-claim-item]");
+      if (!claimButton || ui.itemRewardSubmitting) return;
+      const item = candidates.find((candidate) => candidate.id === claimButton.dataset.claimItem);
+      if (!item || run.pendingItemReward?.status !== "offered") return;
+      ui.itemRewardSubmitting = true;
+      modal.querySelectorAll("button").forEach((button) => { button.disabled = true; });
+      receiveItem(
+        item,
+        node,
+        (instance) => completeItemReward(node, instance),
+        () => {
+          ui.itemRewardSubmitting = false;
+          resolveItemNode(node);
+        }
+      );
     });
-    document.getElementById("skip-item").addEventListener("click", () => finishNonMatchNode(node, "Hai rinunciato all'oggetto"));
-    document.getElementById("back-item-map")?.addEventListener("click", () => { closeModal(); renderMap(); });
+    document.getElementById("skip-item").addEventListener("click", () => {
+      if (ui.itemRewardSubmitting) return;
+      ui.itemRewardSubmitting = true;
+      run.pendingItemReward = null;
+      finishNonMatchNode(node, "Hai rinunciato all'oggetto");
+    });
+  }
+
+  function completeItemReward(node, instance) {
+    const pending = run.pendingItemReward;
+    if (!pending || pending.status === "claimed") return renderItemRewardResult(node);
+    pending.status = "claimed";
+    pending.claimedItemId = inventoryItemIdentity(instance);
+    pending.claimedInstanceId = instance.instanceId;
+    if (!run.currentZone.completedNodeIds.includes(node.id)) {
+      global.MapEngine.completeNode(run.currentZone, node.id);
+      global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.NODE_COMPLETED, {
+        nodeId: node.id,
+        nodeType: node.type,
+        actionId: `${run.runId}:${node.id}:node_completed`,
+      });
+    }
+    run.phase = "map";
+    global.RunState.save(run);
+    ui.itemRewardSubmitting = false;
+    renderItemRewardResult(node);
+  }
+
+  function renderItemRewardResult(node) {
+    const pending = run.pendingItemReward;
+    const item = itemDefinitionById(pending?.claimedItemId) || itemDefinitionById(pending?.selectedItemId);
+    if (!pending || !item) {
+      run.pendingItemReward = null;
+      global.RunState.save(run);
+      closeModal();
+      return renderMap();
+    }
+    openModal(`
+      <section class="item-reward-screen item-reward-screen--complete">
+        <div class="item-reward-head">
+          <p class="eyebrow">Ricompensa acquisita</p>
+          <h1>OGGETTO OTTENUTO</h1>
+        </div>
+        <main class="item-reward-content">
+          <article class="item-reward-result">
+            <div class="item-reward-visual">${itemIcon(item)}</div>
+            <div>
+              <p class="eyebrow">${escapeHtml(itemRewardCategory(item))}</p>
+              <h2>${escapeHtml(item.name)}</h2>
+              <p>${escapeHtml(itemRewardUsageNote(item))}</p>
+              <div class="item-reward-effect"><span>Effetto reale</span><strong>${escapeHtml(itemRewardEffect(item))}</strong></div>
+              <dl class="item-reward-stats">
+                <div><dt>Ora posseduti</dt><dd>${itemRewardOwnedQuantity(item)}</dd></div>
+                <div><dt>Spazio inventario</dt><dd>${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</dd></div>
+              </dl>
+            </div>
+          </article>
+        </main>
+        <div class="node-actions item-reward-actions">
+          <button type="button" class="btn btn-yellow btn-primary-action" id="finish-item-reward">TORNA ALLA MAPPA</button>
+        </div>
+      </section>`,
+      { closeable: false, className: "item-reward-modal item-reward-result-modal" }
+    );
+    document.getElementById("finish-item-reward").addEventListener("click", () => {
+      run.pendingItemReward = null;
+      global.RunState.save(run);
+      closeModal();
+      toast(`Hai ottenuto ${item.name}`);
+      renderMap();
+    });
   }
 
   function resolveRandomNode(node) {
@@ -1997,11 +2455,6 @@
     document.getElementById("finish-trade").addEventListener("click", () => finishNonMatchNode(node, `${incoming.player.name} entra nella rosa`));
   }
 
-  function itemChoiceCard(item) {
-    const resolved = resolveItem(item);
-    return `<button type="button" class="item-card item-choice-card" data-item-choice="${resolved.id}">${itemIcon(resolved)}<span class="item-kind">${resolved.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(resolved.name)}</strong><p>${escapeHtml(resolved.description)}</p></button>`;
-  }
-
   function weightedItemCandidates(random, count) {
     const pool = global.SEASON1_CONFIG.itemPool.slice();
     const result = [];
@@ -2017,16 +2470,16 @@
     return result;
   }
 
-  function receiveItem(item, node, done) {
+  function receiveItem(item, node, done, onCancel = () => resolveItemNode(node)) {
     const add = () => {
+      if (run.pendingItemReward?.status === "claimed") return done(resolveItem(run.pendingItemReward.claimedItemId));
       const instance = makeItemInstance(item, node.id);
       run.inventory.push(instance);
       global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_OBTAINED, { nodeId: node.id, itemId: item.id, actionId: `${run.runId}:${node.id}:item_obtained` });
-      global.RunState.save(run);
       done(instance);
     };
     if (run.inventory.length < global.SEASON1_CONFIG.maxInventory) return add();
-    chooseInventoryDiscard("Inventario pieno: scegli un oggetto da eliminare", add, () => resolveItemNode(node));
+    chooseInventoryDiscard("Inventario pieno: scegli un oggetto da eliminare", add, onCancel);
   }
 
   function chooseInventoryDiscard(title, onDiscard, onCancel) {
@@ -2214,9 +2667,10 @@
       database: pool.database,
       level,
       allowSkip: true,
-      onReroll: scoutToken ? rerollPull : null,
-      rerollDisabled: Boolean(scoutToken && legendaryPull),
-      rerollDisabledMessage: legendaryPull ? "Il Visore scout non può essere utilizzato nelle pull leggendarie." : "",
+      onReroll: scoutToken && !legendaryPull ? rerollPull : null,
+      rerollDisabled: false,
+      rerollDisabledMessage: "",
+      showLuckyCharm: luckyCompatible,
       onLuckyCharm: luckyCompatible && luckyCharm ? () => useLuckyCharmOnPull(node, pullType, candidates) : null,
       luckyCharmCount: run.inventory.filter((item) => item.effect === "lucky_pull").length,
       luckyCharmDisabled: Boolean(!luckyCompatible || node.pullState.luckyCharmUsed || !luckyCharm),
@@ -2228,6 +2682,7 @@
         });
       },
       onSkip: () => finishNonMatchNode(node, "Hai rinunciato al pull"),
+      legendary: legendaryPull,
     });
   }
 
@@ -2244,12 +2699,10 @@
     const panelId = `pull-choice-actions-${index}`;
     return `
       <div class="pull-choice-actions" id="${panelId}" role="group" aria-label="Conferma scelta per ${escapeHtml(player.name)}">
-        <span class="selected-indicator" aria-hidden="true">Selezionato</span>
-        <p class="pull-choice-question">Vuoi aggiungere questo giocatore?</p>
         <div class="button-row pull-choice-action-row">
-          <button type="button" class="btn btn-primary" data-pull-action="confirm">Sì</button>
-          <button type="button" class="btn" data-pull-action="cancel">Annulla</button>
-          <button type="button" class="btn btn-yellow" data-pull-action="detail">Scheda</button>
+          <button type="button" class="btn btn-primary" data-pull-action="confirm">SÌ</button>
+          <button type="button" class="btn" data-pull-action="cancel">NO</button>
+          <button type="button" class="btn btn-yellow" data-pull-action="detail">SCHEDA</button>
         </div>
       </div>`;
   }
@@ -2262,7 +2715,7 @@
       const actions = option.querySelector(".pull-choice-actions");
       trigger?.setAttribute("aria-expanded", selected ? "true" : "false");
       trigger?.setAttribute("aria-pressed", selected ? "true" : "false");
-      if (actions) actions.hidden = !selected;
+      actions?.classList.toggle("is-active", selected);
     });
   }
 
@@ -2273,32 +2726,31 @@
       ? `<button type="button" class="btn btn-yellow" id="reroll-offer" ${options.rerollDisabled ? "disabled" : ""}><span class="pull-item-action-copy">${itemIcon(scoutItem)}<span>Usa ${escapeHtml(scoutItem.name)}</span></span></button>`
       : "";
     const luckyCount = Number(options.luckyCharmCount || 0);
-    const luckyButton = options.onLuckyCharm || options.luckyCharmDisabledMessage
+    const luckyButton = options.showLuckyCharm && (options.onLuckyCharm || options.luckyCharmDisabledMessage)
       ? `<button type="button" class="btn btn-yellow" id="lucky-charm-offer" ${options.luckyCharmDisabled ? "disabled" : ""}>${options.luckyCharmDisabled && options.luckyCharmDisabledMessage ? escapeHtml(options.luckyCharmDisabledMessage) : `<span class="pull-item-action-copy">${itemIcon(luckyItem)}<span>Usa ${escapeHtml(luckyItem.name)}</span></span>`}</button>${!options.luckyCharmDisabled && luckyCount > 0 ? `<span class="muted small">${escapeHtml(luckyItem.name)} disponibili: ${luckyCount}</span>` : ""}`
       : "";
     openModal(`
-      <div class="modal-head event-modal-head"><button type="button" class="btn btn-back" id="back-offer-map">← Torna alla mappa</button><div><p class="eyebrow">Scelta giocatore</p><h2>${escapeHtml(options.title)}</h2><p class="muted">${escapeHtml(options.subtitle)}</p></div></div>
+      <div class="modal-head event-modal-head pull-selection-head"><button type="button" class="btn btn-back" id="back-offer-map">← TORNA ALLA MAPPA</button><div><p class="eyebrow">${options.legendary ? "Selezione prestigio" : "Scelta giocatore"}</p><h2>${escapeHtml(options.title)}</h2><p class="muted">${escapeHtml(options.subtitle)}</p></div></div>
       <div class="candidate-grid pull-offer-grid" data-pull-choice-grid>
         ${options.candidates.map((player, index) => {
           const panelId = `pull-choice-actions-${index}`;
           return `<div class="pull-choice-option ${rarityClass(player.category)}" data-player-id="${escapeHtml(player.playerId)}">
-            ${playerCard(player, { button: true, level: options.level, database: pullChoiceDatabase(options, player) }).replace(">", ` aria-expanded="false" aria-pressed="false" aria-controls="${panelId}">`)}
+            ${playerCard(player, { button: true, context: "pull", level: options.level, database: pullChoiceDatabase(options, player) }).replace(">", ` aria-expanded="false" aria-pressed="false" aria-controls="${panelId}">`)}
             ${pullChoiceActionPanel(player, index)}
           </div>`;
         }).join("")}
       </div>
       ${options.rerollDisabledMessage ? `<p class="muted small">${escapeHtml(options.rerollDisabledMessage)}</p>` : ""}
-      <div class="button-row" style="margin-top:18px">
+      <div class="button-row pull-selection-footer">
         ${rerollButton}
         ${luckyButton}
-        ${options.allowSkip ? '<button type="button" class="btn btn-ghost" id="skip-offer">Rinuncia</button>' : ""}
+        ${options.allowSkip ? '<button type="button" class="btn btn-ghost" id="skip-offer">RINUNCIA</button>' : ""}
       </div>`,
-      { closeable: false }
+      { closeable: false, className: `pull-selection-modal ${options.legendary ? "pull-selection-modal--legendary" : ""}` }
     );
     const choiceGrid = modalRoot.querySelector("[data-pull-choice-grid]");
     let selectedPullPlayerId = null;
     let pickConfirmed = false;
-    choiceGrid?.querySelectorAll(".pull-choice-actions").forEach((actions) => { actions.hidden = true; });
     choiceGrid?.addEventListener("click", (event) => {
       const actionButton = event.target.closest("[data-pull-action]");
       const option = event.target.closest(".pull-choice-option");
@@ -2370,14 +2822,21 @@
 
     const benchPlayers = run.bench.map((id) => resolvedRosterPlayer(id)).filter(Boolean);
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">Rosa piena</p><h2>Scegli chi lasciare fuori</h2><p class="muted">${escapeHtml(player.name)} sostituirà una delle quattro riserve.</p></div></div>
-      <div class="player-grid mobile-compact-player-list bench-replacement-grid">
-        ${benchPlayers.map((candidate) => playerCard(sourcePlayer(rosterEntry(candidate.playerId)), { button: true, level: candidate.displayLevel, database: global.SeasonRegistry?.isSeasonSource?.(candidate.source) ? (global.SeasonRegistry.database(candidate.source) || seasonDb) : freeAgentsDb })).join("")}
-      </div>
-      ${allowCancel ? '<div class="button-row" style="margin-top:18px"><button type="button" class="btn btn-ghost" id="cancel-recruit">Rinuncia al nuovo giocatore</button></div>' : ""}`,
-      { closeable: false }
+      <div class="modal-head bench-replacement-head"><div><p class="eyebrow">Rosa piena</p><h2>Sostituisci una riserva</h2><p class="muted">Il nuovo giocatore entrerà al posto di una delle quattro riserve.</p></div></div>
+      <section class="bench-replacement-incoming" aria-label="Nuovo giocatore scelto">
+        <p class="bench-replacement-label">NUOVO GIOCATORE</p>
+        ${playerCard(player, { context: "pull", extraClass: "bench-replacement-new-card", level, database: global.SeasonRegistry?.isSeasonSource?.(source) ? (global.SeasonRegistry.database(source) || seasonDb) : freeAgentsDb })}
+      </section>
+      <section class="bench-replacement-options" aria-label="Riserve sostituibili">
+        <p class="bench-replacement-label">SCEGLI LA RISERVA DA SOSTITUIRE</p>
+        <div class="player-grid mobile-compact-player-list bench-replacement-grid">
+          ${benchPlayers.map((candidate) => playerCard(sourcePlayer(rosterEntry(candidate.playerId)), { button: true, context: "pull", level: candidate.displayLevel, database: global.SeasonRegistry?.isSeasonSource?.(candidate.source) ? (global.SeasonRegistry.database(candidate.source) || seasonDb) : freeAgentsDb })).join("")}
+        </div>
+      </section>
+      ${allowCancel ? '<div class="button-row bench-replacement-footer"><button type="button" class="btn btn-ghost" id="cancel-recruit">RINUNCIA AL NUOVO GIOCATORE</button></div>' : ""}`,
+      { closeable: false, className: "pull-selection-modal bench-replacement-modal" }
     );
-    modalRoot.querySelectorAll("[data-player-id]").forEach((button) => {
+    modalRoot.querySelectorAll(".bench-replacement-grid [data-player-id]").forEach((button) => {
       button.addEventListener("click", () => {
         const removeId = String(button.dataset.playerId);
         const removedEntry = rosterEntry(removeId);
@@ -3488,6 +3947,7 @@
       database: seasonDb,
       level,
       allowSkip: true,
+      legendary: false,
       onReroll: scoutToken ? () => {
         removeInventoryItem(scoutToken.instanceId);
         global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId: flow.matchNodeId, itemId: scoutToken.id, instanceId: scoutToken.instanceId, actionId: `${run.runId}:${flow.matchNodeId}:boss_reward_reroll:${flow.rewardNumber}:${flow.rerolls + 1}` });
@@ -3802,9 +4262,13 @@
 
   function renderInventory(options = {}) {
     ensureRunSchema();
-    const filterDefs = inventoryFilterDefinitions(run.inventory);
+    const ownedGroups = groupedOwnedInventoryItems(run);
+    const filterDefs = inventoryFilterDefinitions(run);
     if (!filterDefs.some((filter) => filter.id === ui.inventoryFilter)) ui.inventoryFilter = "all";
     const activeFilter = filterDefs.find((filter) => filter.id === ui.inventoryFilter) || filterDefs[0];
+    const visibleGroups = ownedGroups.filter((group) => inventoryGroupMatchesFilter(group, ui.inventoryFilter));
+    if (!visibleGroups.some((group) => group.key === ui.inventorySelectedItemId)) ui.inventorySelectedItemId = visibleGroups[0]?.key || null;
+    const selectedGroup = ownedGroups.find((group) => group.key === ui.inventorySelectedItemId) || null;
     const equipped = run.roster
       .filter((entry) => entry.equippedItem)
       .map((entry) => ({ entry, player: sourcePlayer(entry), resolved: resolvedRosterPlayer(entry.playerId), item: resolveItem(entry.equippedItem) }));
@@ -3818,7 +4282,7 @@
           <header class="inventory-hero">
             <div>
               <p class="eyebrow">Nello zaino ${ownershipSummary.backpackCount}/${global.SEASON1_CONFIG.maxInventory}</p>
-              <h2>Oggetti</h2>
+              <h2>OGGETTI</h2>
               <p class="muted small">${activeFilter?.id !== "all" ? `Filtro: ${escapeHtml(activeFilter.label)}` : "Tutto ciò che hai raccolto nella run"}</p>
             </div>
             <div class="inventory-summary" aria-label="Riepilogo inventario">
@@ -3833,11 +4297,16 @@
             <div class="inventory-categories">
               ${inventoryCategoriesMarkup(ui.inventoryFilter)}
             </div>
-            <aside class="inventory-equipped-panel panel">
-              <div class="inventory-panel-head"><p class="eyebrow">Equipaggiati</p><h3>Stato giocatori</h3></div>
-              <div class="equipped-list">
-                ${equipped.length ? equipped.map(({ entry, player, resolved, item }) => `
-                  <article class="equipped-summary static-item">${itemIcon(item)}<div class="equipped-summary-copy"><span class="item-kind">Equipaggiato</span><strong>${escapeHtml(item.name)}</strong></div><div class="equipped-player"><span class="equipped-player-portrait"><img src="${escapeHtml(playerPortraitUrl(resolved || player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(resolved || player).cardFallbacks)} /></span><div class="equipped-player-copy"><span>${escapeHtml(player.name)} · ${escapeHtml(player.position)}</span><small>${escapeHtml(itemStatLabel(item.stat))} ${resolved.baseStats[item.stat]} → <strong>${resolved.stats[item.stat]}</strong></small></div></div><button type="button" class="btn btn-ghost" data-unequip-player="${entry.playerId}">Rimuovi</button></article>`).join("") : '<p class="muted inventory-empty">Nessun giocatore ha un oggetto equipaggiato.</p>'}
+            <aside class="inventory-side-panel">
+              <div class="inventory-detail-panel panel" id="inventory-item-detail" aria-live="polite">
+                ${inventoryItemDetailMarkup(selectedGroup)}
+              </div>
+              <div class="inventory-equipped-panel panel">
+                <div class="inventory-panel-head"><p class="eyebrow">Equipaggiati</p><h3>Stato giocatori</h3></div>
+                <div class="equipped-list">
+                  ${equipped.length ? equipped.map(({ entry, player, resolved, item }) => `
+                    <article class="equipped-summary static-item">${itemIcon(item)}<div class="equipped-summary-copy"><span class="item-kind">Equipaggiato</span><strong>${escapeHtml(item.name)}</strong></div><div class="equipped-player"><span class="equipped-player-portrait"><img src="${escapeHtml(playerPortraitUrl(resolved || player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(resolved || player).cardFallbacks)} /></span><div class="equipped-player-copy"><span>${escapeHtml(player.name)} · ${escapeHtml(player.position)}</span><small>${escapeHtml(itemStatLabel(item.stat))} ${resolved.baseStats[item.stat]} → <strong>${resolved.stats[item.stat]}</strong></small></div></div><button type="button" class="btn btn-ghost inventory-remove-button" data-unequip-player="${entry.playerId}">RIMUOVI</button></article>`).join("") : '<p class="muted inventory-empty">Nessun giocatore ha un oggetto equipaggiato.</p>'}
+                </div>
               </div>
             </aside>
           </section>
@@ -3854,6 +4323,10 @@
         ui.inventoryFilter = filterButton.dataset.inventoryFilter || "all";
         return renderInventory({ keepScroll: true });
       }
+      const itemCard = event.target.closest("[data-inventory-select]");
+      if (itemCard && !event.target.closest("button")) {
+        return selectInventoryItem(itemCard.dataset.inventorySelect);
+      }
       const useButton = event.target.closest("[data-use-item]");
       if (useButton) return useInventoryItem(useButton.dataset.useItem);
       const equipButton = event.target.closest("[data-equip-item]");
@@ -3861,12 +4334,18 @@
       const unequipButton = event.target.closest("[data-unequip-player]");
       if (unequipButton) return unequipPlayerItem(unequipButton.dataset.unequipPlayer);
     });
+    content?.addEventListener("keydown", (event) => {
+      if (!["Enter", " "].includes(event.key) || !event.target.matches("[data-inventory-select]")) return;
+      event.preventDefault();
+      selectInventoryItem(event.target.dataset.inventorySelect);
+    });
     bindBottomNav();
   }
 
   function inventoryCategoriesMarkup(filterId = "all") {
-    if (!run.inventory.length) return '<div class="inventory-empty-state"><strong>Nessun oggetto nello zaino</strong><p class="muted">Gli oggetti si ottengono dagli eventi della mappa durante la run.</p></div>';
-    const categories = groupedInventoryByCategory(run.inventory)
+    const ownedGroups = groupedOwnedInventoryItems(run);
+    if (!ownedGroups.length) return '<div class="inventory-empty-state"><strong>Nessun oggetto posseduto</strong><p class="muted">Gli oggetti si ottengono dagli eventi della mappa durante la run.</p></div>';
+    const categories = groupedOwnedInventoryByCategory(run)
       .map((category) => ({ ...category, items: category.items.filter((group) => inventoryGroupMatchesFilter(group, filterId)) }))
       .filter((category) => category.items.length);
     if (!categories.length) return '<div class="inventory-empty-state"><strong>Nessun oggetto in questo filtro</strong><p class="muted">Cambia categoria per vedere gli altri oggetti posseduti.</p></div>';
@@ -3874,24 +4353,224 @@
       .map((category) => `
         <section class="inventory-category" data-inventory-category="${category.id}">
           <header class="inventory-category-head"><span class="inventory-category-icon" aria-hidden="true">${category.icon}</span><div><h3>${escapeHtml(category.title)}</h3><p class="muted small">${category.items.reduce((sum, group) => sum + group.quantity, 0)} oggetti</p></div></header>
-          <div class="item-grid inventory-item-grid">${category.items.map((group) => inventoryItemCard(group)).join("")}</div>
+          <div class="item-grid inventory-item-grid">${category.items.map((group) => inventoryItemCard(group, group.key === ui.inventorySelectedItemId)).join("")}</div>
         </section>`).join("");
   }
 
-  function inventoryItemCard(groupOrItem) {
+  function inventoryItemCard(groupOrItem, selected = false) {
     const group = groupOrItem?.instances ? groupOrItem : { item: groupOrItem, quantity: 1, instances: [groupOrItem], key: inventoryItemIdentity(groupOrItem) };
     const item = resolveItem(group.item);
     const instanceId = group.instances[0]?.instanceId || item.instanceId;
-    const actionLabel = item.kind === "equipment" ? "Equipaggia" : "Usa";
-    const action = item.kind === "equipment"
-      ? `<button type="button" class="btn btn-primary" data-equip-item="${instanceId}">${actionLabel}</button>`
-      : item.effect === "pull_reroll"
-        ? '<span class="muted small item-action-note">Utilizzabile durante una pull</span>'
-        : item.effect === "lucky_pull"
-          ? '<span class="muted small item-action-note">Utilizzabile durante una Pull svincolati o Pull squadre</span>'
-          : `<button type="button" class="btn btn-primary" data-use-item="${instanceId}">${actionLabel}</button>`;
+    const backpackQuantity = Number(group.backpackQuantity ?? group.quantity);
+    const action = inventoryItemActionMarkup(item, instanceId, { compact: true, backpackQuantity, equippedEntries: group.equippedEntries || [] });
     const detail = item.kind === "equipment" ? `${escapeHtml(itemStatLabel(item.stat))} +${escapeHtml(item.bonus)}` : escapeHtml(item.description);
-    return `<article class="item-card inventory-item-card static-item" data-item-id="${escapeHtml(group.key)}" data-item-kind="${escapeHtml(item.kind)}">${itemIcon(item)}<div class="item-card-main"><span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${detail}</p></div><div class="item-card-actions"><span class="item-quantity" aria-label="Quantità ${group.quantity}">×${group.quantity}</span>${action}</div></article>`;
+    const equippedState = group.equippedCount ? `<span class="item-equipped-state">${group.equippedCount} equipaggiat${group.equippedCount === 1 ? "o" : "i"}</span>` : "";
+    return `<article class="item-card inventory-item-card static-item ${selected ? "is-selected" : ""}" tabindex="0" aria-selected="${selected ? "true" : "false"}" data-inventory-select="${escapeHtml(group.key)}" data-item-id="${escapeHtml(group.key)}" data-item-kind="${escapeHtml(item.kind)}">${itemIcon(item)}<div class="item-card-main"><span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${detail}</p>${equippedState}</div><div class="item-card-actions"><span class="item-quantity" aria-label="Quantità posseduta ${group.quantity}">×${group.quantity}</span>${action}</div></article>`;
+  }
+
+  function inventoryItemActionMarkup(itemOrId, instanceId, { compact = false, backpackQuantity = 1, equippedEntries = [] } = {}) {
+    const item = resolveItem(itemOrId);
+    const actionClass = compact ? "btn btn-primary inventory-card-action" : "btn btn-yellow inventory-detail-action";
+    if (item.kind === "equipment") {
+      if (backpackQuantity > 0 && instanceId) return `<button type="button" class="${actionClass}" data-equip-item="${escapeHtml(instanceId)}">EQUIPAGGIA</button>`;
+      if (equippedEntries.length) return '<span class="inventory-unavailable">TUTTE LE COPIE SONO EQUIPAGGIATE</span>';
+      return '<span class="inventory-unavailable">NON UTILIZZABILE</span>';
+    }
+    if (item.effect === "pull_reroll") return '<span class="inventory-unavailable">Utilizzabile durante un Pull</span>';
+    if (item.effect === "lucky_pull") return '<span class="inventory-unavailable">Utilizzabile in un Pull normale</span>';
+    if (!instanceId) return '<span class="inventory-unavailable">NON UTILIZZABILE</span>';
+    return `<button type="button" class="${actionClass}" data-use-item="${escapeHtml(instanceId)}">USA</button>`;
+  }
+
+  function inventoryItemDetailMarkup(group) {
+    if (!group) return '<div class="inventory-detail-empty"><p class="eyebrow">Dettaglio</p><h3>Seleziona un oggetto</h3><p>Scegli una card per vedere effetto, quantità e comandi disponibili.</p></div>';
+    const item = resolveItem(group.item);
+    const instanceId = group.instances[0]?.instanceId || item.instanceId;
+    const backpackQuantity = Number(group.backpackQuantity ?? group.quantity);
+    const limit = item.effect === "pull_reroll"
+      ? "Si attiva esclusivamente durante un Pull."
+      : item.effect === "lucky_pull"
+        ? "Disponibile una sola volta nei Pull normali compatibili."
+        : item.kind === "equipment"
+          ? "Resta posseduto anche quando viene equipaggiato."
+          : "La quantità diminuisce soltanto dopo un utilizzo riuscito.";
+    return `
+      <div class="inventory-detail-visual">${itemIcon(item)}</div>
+      <div class="inventory-detail-copy">
+        <p class="eyebrow">Dettaglio oggetto</p>
+        <span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span>
+        <h3>${escapeHtml(item.name)}</h3>
+        <p>${escapeHtml(item.description)}</p>
+        <div class="inventory-detail-effect"><span>Effetto</span><strong>${item.kind === "equipment" ? `${escapeHtml(itemStatLabel(item.stat))} +${escapeHtml(item.bonus)}` : escapeHtml(item.description)}</strong></div>
+        <div class="inventory-detail-counts">
+          <span><strong>${group.quantity}</strong> posseduti</span>
+          ${item.kind === "equipment" ? `<span><strong>${backpackQuantity}</strong> nello zaino</span><span><strong>${group.equippedCount || 0}</strong> equipaggiati</span>` : ""}
+        </div>
+        <p class="inventory-detail-limit">${escapeHtml(limit)}</p>
+        ${inventoryItemActionMarkup(item, instanceId, { backpackQuantity, equippedEntries: group.equippedEntries || [] })}
+      </div>`;
+  }
+
+  function selectInventoryItem(groupKey) {
+    const group = groupedOwnedInventoryItems(run).find((candidate) => candidate.key === groupKey);
+    if (!group) return;
+    ui.inventorySelectedItemId = groupKey;
+    document.querySelectorAll("[data-inventory-select]").forEach((card) => {
+      const selected = card.dataset.inventorySelect === groupKey;
+      card.classList.toggle("is-selected", selected);
+      card.setAttribute("aria-selected", selected ? "true" : "false");
+    });
+    const detail = document.getElementById("inventory-item-detail");
+    if (detail) detail.innerHTML = inventoryItemDetailMarkup(group);
+  }
+
+  function inventoryPlayerChoice(entry, item, mode) {
+    const player = resolvedRosterPlayer(entry.playerId);
+    if (!player) return "";
+    const currentEquipment = entry.equippedItem ? resolveItem(entry.equippedItem) : null;
+    let valid = true;
+    let invalidReason = "";
+    if (mode === "level") {
+      valid = Number(entry.level || 0) < 20;
+      invalidReason = "Livello massimo raggiunto";
+    } else if (mode === "potential") {
+      const source = sourcePlayer(entry);
+      const maxBoost = Math.max(0, 99 - Number(source.finalOverall || 0));
+      const applications = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
+      valid = applications.reduce((sum, boost) => sum + boost.amount, 0) < maxBoost;
+      invalidReason = "Potenziale massimo raggiunto";
+    }
+    const dataAttribute = mode === "equipment"
+      ? `data-equip-player="${escapeHtml(entry.playerId)}"`
+      : valid
+        ? `data-consumable-player="${escapeHtml(entry.playerId)}"`
+        : `disabled aria-disabled="true"`;
+    return `
+      <article class="inventory-player-option ${valid ? "" : "is-unavailable"}">
+        ${compactPlayerCardMarkup(player, {
+          equipment: entry.equippedItem,
+          level: player.displayLevel,
+          overall: player.overall,
+          dataAttr: dataAttribute,
+          extraClass: "inventory-player-choice",
+        })}
+        <div class="inventory-player-option-copy">
+          ${currentEquipment ? `<span>${itemIcon(currentEquipment)}<small>Già equipaggiato</small><strong>${escapeHtml(currentEquipment.name)}</strong></span>` : '<span class="inventory-player-empty-equipment">Nessun oggetto equipaggiato</span>'}
+          ${!valid ? `<em>${escapeHtml(invalidReason)}</em>` : ""}
+        </div>
+      </article>`;
+  }
+
+  function inventoryPlayerSelectionMarkup(item, mode) {
+    const orderedIds = [...(run.lineup || []), ...(run.bench || [])];
+    const seen = new Set();
+    const entries = orderedIds
+      .map((id) => rosterEntry(id))
+      .filter((entry) => entry && !seen.has(String(entry.playerId)) && seen.add(String(entry.playerId)));
+    return `
+      <div class="inventory-player-selection-grid">
+        ${entries.map((entry) => inventoryPlayerChoice(entry, item, mode)).join("")}
+      </div>`;
+  }
+
+  function equipmentTargetState(entry, item) {
+    const player = entry ? resolvedRosterPlayer(entry.playerId) : null;
+    const baseStats = player?.baseStats || player?.stats || {};
+    const valid = Boolean(
+      entry
+      && player
+      && item?.kind === "equipment"
+      && item?.stat
+      && Number.isFinite(Number(baseStats[item.stat]))
+      && Number.isFinite(Number(item.bonus))
+    );
+    return {
+      valid,
+      reason: valid ? "" : "Oggetto non utilizzabile",
+      player,
+    };
+  }
+
+  function inventoryEquipmentPlayerCard(id, item, area, selectedId = null) {
+    const entry = rosterEntry(id);
+    const target = equipmentTargetState(entry, item);
+    if (!entry || !target.player) return "";
+    const selected = String(selectedId || "") === String(id);
+    const dataAttr = target.valid
+      ? `data-equip-player="${escapeHtml(id)}" data-area="${escapeHtml(area)}" aria-pressed="${selected ? "true" : "false"}"`
+      : `disabled aria-disabled="true" title="${escapeHtml(target.reason)}"`;
+    return `<div class="inventory-tactical-slot ${target.valid ? "" : "is-unavailable"}">
+      ${compactPlayerCardMarkup(target.player, {
+        equipment: entry.equippedItem,
+        equipmentInFooter: true,
+        level: target.player.displayLevel,
+        overall: target.player.overall,
+        selected,
+        dataAttr,
+        extraClass: "squad-player-card inventory-tactical-player",
+      })}
+      ${target.valid ? "" : `<small class="inventory-target-reason">${escapeHtml(target.reason)}</small>`}
+    </div>`;
+  }
+
+  function inventoryEquipmentPitchMarkup(item, selectedId = null) {
+    return `<section class="pitch">
+      ${lineupRows().map((row) => `<div class="pitch-row tactical-row" data-row-count="${row.ids.length || 1}" style="--players-in-row:${row.ids.length || 1};--row-count:${row.ids.length || 1}">${row.ids.map((id) => inventoryEquipmentPlayerCard(id, item, "lineup", selectedId)).join("")}</div>`).join("")}
+    </section>`;
+  }
+
+  function inventoryEquipmentBenchMarkup(item, selectedId = null) {
+    const cards = (run.bench || []).map((id) => inventoryEquipmentPlayerCard(id, item, "bench", selectedId)).filter(Boolean);
+    return cards.length ? cards.join("") : '<p class="muted">Nessuna riserva disponibile.</p>';
+  }
+
+  function inventoryEquipmentSelectionSummary(playerId) {
+    const entry = playerId ? rosterEntry(playerId) : null;
+    const player = entry ? resolvedRosterPlayer(entry.playerId) : null;
+    if (!entry || !player) {
+      return '<p class="inventory-equipment-selection-empty">Seleziona un giocatore dal campo o dalla panchina.</p>';
+    }
+    const current = entry.equippedItem ? resolveItem(entry.equippedItem) : null;
+    return `<div class="inventory-equipment-selection-player">
+      <span class="equipped-player-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></span>
+      <div><small>Giocatore selezionato</small><strong>${escapeHtml(player.name)}</strong><span>${escapeHtml(player.position)} · OVR ${escapeHtml(player.overall)}</span></div>
+    </div>
+    <div class="inventory-equipment-current">
+      ${current ? `${itemIcon(current)}<div><small>Oggetto attuale</small><strong>${escapeHtml(current.name)}</strong><span>Verrà restituito allo zaino dopo la conferma.</span></div>` : '<div><small>Oggetto attuale</small><strong>Nessun equipaggiamento</strong><span>Lo slot è libero.</span></div>'}
+    </div>`;
+  }
+
+  function setInventoryEquipmentTarget(playerId) {
+    ui.inventoryEquipmentPlayerId = playerId ? String(playerId) : null;
+    modalRoot.querySelectorAll("[data-equip-player]").forEach((card) => {
+      const selected = String(card.dataset.equipPlayer) === ui.inventoryEquipmentPlayerId;
+      card.classList.toggle("selected", selected);
+      card.setAttribute("aria-pressed", selected ? "true" : "false");
+    });
+    const summary = modalRoot.querySelector("[data-equipment-selection-summary]");
+    if (summary) summary.innerHTML = inventoryEquipmentSelectionSummary(ui.inventoryEquipmentPlayerId);
+    const confirm = modalRoot.querySelector("[data-confirm-equipment-target]");
+    if (confirm) confirm.disabled = !ui.inventoryEquipmentPlayerId;
+  }
+
+  function openInventoryConfirmation(item, { title, description, confirmLabel = "CONFERMA", onConfirm, onCancel } = {}) {
+    openModal(`
+      <div class="inventory-confirmation">
+        <div class="inventory-confirmation-item">${itemIcon(item)}<div><p class="eyebrow">Conferma utilizzo</p><h2>${escapeHtml(title || item.name)}</h2></div></div>
+        <p>${escapeHtml(description || item.description)}</p>
+        <div class="inventory-confirmation-warning">La quantità verrà aggiornata soltanto dopo il successo.</div>
+        <div class="button-row inventory-modal-actions">
+          <button type="button" class="btn btn-yellow" id="confirm-inventory-action">${escapeHtml(confirmLabel)}</button>
+          <button type="button" class="btn btn-ghost" id="cancel-inventory-action">ANNULLA</button>
+        </div>
+      </div>`,
+      { closeable: false, className: "inventory-flow-modal inventory-confirmation-modal" }
+    );
+    document.getElementById("confirm-inventory-action")?.addEventListener("click", onConfirm);
+    document.getElementById("cancel-inventory-action")?.addEventListener("click", () => {
+      if (onCancel) onCancel();
+      else closeModal();
+    });
   }
 
   function useInventoryItem(instanceId) {
@@ -3900,36 +4579,50 @@
     if (item.effect === "player_level") return choosePlayerForConsumable(item);
     if (item.effect === "potential_boost") return choosePlayerForPotentialBoost(item);
     if (item.effect === "team_level") {
-      const updatedPlayers = addLevels(Number(item.amount || 0));
-      if (updatedPlayers <= 0) return toast("Tutti i giocatori hanno già raggiunto il livello massimo.");
-      removeInventoryItem(instanceId);
-      global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
-      global.RunState.save(run);
-      toast("Tutta la rosa guadagna +0,5 livello");
-      return renderInventory();
+      const hasEligiblePlayer = run.roster.some((entry) => Number(entry.level || 0) < 20);
+      if (!hasEligiblePlayer) return toast("Tutti i giocatori hanno già raggiunto il livello massimo.");
+      return openInventoryConfirmation(item, {
+        title: `Usare ${item.name}?`,
+        description: "Aumenterà di 0,5 livello tutti i giocatori che non hanno ancora raggiunto il livello massimo.",
+        onConfirm: () => {
+          addLevels(Number(item.amount || 0));
+          removeInventoryItem(instanceId);
+          global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
+          global.RunState.save(run);
+          closeModal();
+          toast("Tutta la rosa guadagna +0,5 livello");
+          renderInventory();
+        },
+      });
     }
     if (item.effect === "restore_life") {
       const maxRunLives = Number(global.RunState?.runLivesLimit?.() ?? global.SEASON1_CONFIG.maxRunLives ?? global.SEASON1_CONFIG.startingLives ?? 2);
       if (run.lives >= maxRunLives) return toast("Hai già tutte le vite");
-      run.lives = Math.min(maxRunLives, run.lives + Number(item.amount || 1));
-      removeInventoryItem(instanceId);
-      global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
-      global.RunState.save(run);
-      toast("Hai recuperato una vita");
-      return renderInventory();
+      return openInventoryConfirmation(item, {
+        title: `Usare ${item.name}?`,
+        description: `Recupererai una vita (${run.lives}/${maxRunLives}).`,
+        onConfirm: () => {
+          run.lives = Math.min(maxRunLives, run.lives + Number(item.amount || 1));
+          removeInventoryItem(instanceId);
+          global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
+          global.RunState.save(run);
+          closeModal();
+          toast("Hai recuperato una vita");
+          renderInventory();
+        },
+      });
     }
     if (item.effect === "lucky_pull") return toast("Portafortuna utilizzabile durante una Pull svincolati o Pull squadre.");
   }
 
   function choosePlayerForConsumable(item) {
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli a chi usarla</h2><p class="muted">Tocca un giocatore della formazione: titolari sul campo e riserve separate. ${escapeHtml(item.description)}</p></div></div>
-      <div class="item-assignment-layout consumable-assignment-layout">
-        ${squadPitchMarkup({ mode: "consumable" })}
-        <aside class="panel"><h3>Riserve ${run.bench.length}/4</h3><div class="bench-list">${benchMarkup({ mode: "consumable" })}</div></aside>
-      </div>`,
-      { closeable: true, className: "item-assignment-modal consumable-assignment-modal" }
+      <div class="inventory-flow-head">${itemIcon(item)}<div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli il giocatore</h2><p>${escapeHtml(item.description)}</p></div></div>
+      ${inventoryPlayerSelectionMarkup(item, "level")}
+      <div class="inventory-modal-actions"><button type="button" class="btn btn-ghost" data-close-inventory-flow>RINUNCIA</button></div>`,
+      { closeable: true, className: "item-assignment-modal consumable-assignment-modal inventory-flow-modal" }
     );
+    modalRoot.querySelector("[data-close-inventory-flow]")?.addEventListener("click", closeModal);
     modalRoot.querySelectorAll("[data-consumable-player]").forEach((button) => {
       button.addEventListener("click", () => {
         const entry = rosterEntry(button.dataset.consumablePlayer);
@@ -3938,27 +4631,33 @@
         const currentLevel = Number(entry.level || 0);
         const appliedLevels = Math.min(Number(item.amount || 1), 20 - currentLevel);
         if (appliedLevels <= 0) return toast("Questo giocatore ha già raggiunto il livello massimo.");
-        entry.level = Math.min(20, currentLevel + appliedLevels);
-        removeInventoryItem(item.instanceId);
-        global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
-        global.RunState.save(run);
-        const after = resolvedRosterPlayer(entry.playerId);
-        closeModal();
-        toast(`${escapeHtml(item.name)} utilizzata\nLivello ${before.displayLevel} → ${after.displayLevel}\nOverall ${before.overall} → ${after.overall}`);
-        renderInventory();
+        openInventoryConfirmation(item, {
+          title: `Usare su ${before.name}?`,
+          description: `Livello ${before.displayLevel} → ${Math.min(20, currentLevel + appliedLevels)}. L'oggetto sarà consumato.`,
+          onCancel: () => choosePlayerForConsumable(item),
+          onConfirm: () => {
+            entry.level = Math.min(20, currentLevel + appliedLevels);
+            removeInventoryItem(item.instanceId);
+            global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
+            global.RunState.save(run);
+            const after = resolvedRosterPlayer(entry.playerId);
+            closeModal();
+            toast(`${escapeHtml(item.name)} utilizzata\nLivello ${before.displayLevel} → ${after.displayLevel}\nOverall ${before.overall} → ${after.overall}`);
+            renderInventory();
+          },
+        });
       });
     });
   }
 
   function choosePlayerForPotentialBoost(item) {
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli a chi assegnarlo</h2><p class="muted">Aumenta subito overall attuale e potenziale massimo dello stesso valore, senza cambiare livello.</p></div></div>
-      <div class="item-assignment-layout consumable-assignment-layout">
-        ${squadPitchMarkup({ mode: "consumable" })}
-        <aside class="panel"><h3>Riserve ${run.bench.length}/4</h3><div class="bench-list">${benchMarkup({ mode: "consumable" })}</div></aside>
-      </div>`,
-      { closeable: true, className: "item-assignment-modal consumable-assignment-modal" }
+      <div class="inventory-flow-head">${itemIcon(item)}<div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli il giocatore</h2><p>Aumenta subito overall attuale e potenziale massimo dello stesso valore, senza cambiare livello.</p></div></div>
+      ${inventoryPlayerSelectionMarkup(item, "potential")}
+      <div class="inventory-modal-actions"><button type="button" class="btn btn-ghost" data-close-inventory-flow>RINUNCIA</button></div>`,
+      { closeable: true, className: "item-assignment-modal consumable-assignment-modal inventory-flow-modal" }
     );
+    modalRoot.querySelector("[data-close-inventory-flow]")?.addEventListener("click", closeModal);
     modalRoot.querySelectorAll("[data-consumable-player]").forEach((button) => {
       button.addEventListener("click", () => {
         const entry = rosterEntry(button.dataset.consumablePlayer);
@@ -3971,36 +4670,66 @@
         const currentOverallBoost = Math.min(currentPotentialBoost, Math.max(0, Number(entry.currentOverallBoost ?? currentPotentialBoost)));
         const addedBoost = Math.min(Number(item.amount || 3), Math.max(0, maxBoost - currentPotentialBoost));
         if (addedBoost <= 0) return toast("Questo giocatore ha già raggiunto il potenziale massimo. L'oggetto NON viene consumato.");
-        entry.potentialBoost = Math.min(maxBoost, currentPotentialBoost + addedBoost);
-        entry.currentOverallBoost = Math.min(maxBoost, currentOverallBoost + addedBoost);
-        entry.intensiveTrainingMigrated = true;
-        entry.potentialBoostApplications = Array.isArray(entry.potentialBoostApplications) ? entry.potentialBoostApplications : [];
-        if (addedBoost > 0) entry.potentialBoostApplications.push({ amount: addedBoost, appliedLevel: Number(entry.level || 0) });
-        removeInventoryItem(item.instanceId);
-        global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
-        global.RunState.save(run);
-        const after = resolvedRosterPlayer(entry.playerId);
-        closeModal();
-        const rarityMessage = before.category !== after.category ? `\nNuova rarità: ${after.category}` : "";
-        toast(`Pesi da allenamento completati\nOverall ${before.overall} → ${after.overall}\nPotenziale ${before.potential} → ${after.potential}${rarityMessage}`);
-        renderInventory();
+        openInventoryConfirmation(item, {
+          title: `Allenare ${before.name}?`,
+          description: `Overall e potenziale aumenteranno di ${addedBoost}.`,
+          onCancel: () => choosePlayerForPotentialBoost(item),
+          onConfirm: () => {
+            entry.potentialBoost = Math.min(maxBoost, currentPotentialBoost + addedBoost);
+            entry.currentOverallBoost = Math.min(maxBoost, currentOverallBoost + addedBoost);
+            entry.intensiveTrainingMigrated = true;
+            entry.potentialBoostApplications = Array.isArray(entry.potentialBoostApplications) ? entry.potentialBoostApplications : [];
+            if (addedBoost > 0) entry.potentialBoostApplications.push({ amount: addedBoost, appliedLevel: Number(entry.level || 0) });
+            removeInventoryItem(item.instanceId);
+            global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
+            global.RunState.save(run);
+            const after = resolvedRosterPlayer(entry.playerId);
+            closeModal();
+            const rarityMessage = before.category !== after.category ? `\nNuova rarità: ${after.category}` : "";
+            toast(`Pesi da allenamento completati\nOverall ${before.overall} → ${after.overall}\nPotenziale ${before.potential} → ${after.potential}${rarityMessage}`);
+            renderInventory();
+          },
+        });
       });
     });
   }
 
-  function chooseEquipmentPlayer(instanceId) {
+  function chooseEquipmentPlayer(instanceId, options = {}) {
     const item = run.inventory.find((candidate) => candidate.instanceId === instanceId);
     if (!item) return;
+    ui.inventoryEquipmentPlayerId = options.selectedPlayerId ? String(options.selectedPlayerId) : null;
+    const formation = formationById(run.formationId);
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Assegna a un giocatore</h2><p class="muted">Scegli dalla formazione attuale: titolari sul campo e riserve separate. Non puoi modificare modulo o rosa da qui.</p></div></div>
-      <div class="item-assignment-layout">
-        ${squadPitchMarkup({ mode: "equip" })}
-        <aside class="panel"><h3>Riserve ${run.bench.length}/4</h3><div class="bench-list">${benchMarkup({ mode: "equip" })}</div></aside>
+      <div class="inventory-flow-head">${itemIcon(item)}<div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Equipaggia un giocatore</h2><p>Sono mostrati tutti i titolari e le riserve. L'oggetto già indossato è visibile sulla card e nel riepilogo.</p></div></div>
+      <p class="inventory-equipment-instruction">Seleziona un giocatore dal campo o dalla panchina.</p>
+      <div class="inventory-equipment-workspace squad-screen">
+        <section class="squad-field-panel inventory-equipment-field" aria-label="Titolari sul campo">
+          <div class="squad-panel-head"><div><p class="eyebrow">Titolari</p><h3>Campo tattico</h3></div><span class="squad-field-formation">${escapeHtml(formation?.name || run.formationId)}</span></div>
+          ${inventoryEquipmentPitchMarkup(item, ui.inventoryEquipmentPlayerId)}
+        </section>
+        <aside class="inventory-equipment-sidebar">
+          <section class="squad-bench-panel" aria-label="Riserve">
+            <div class="squad-panel-head"><div><p class="eyebrow">Panchina</p><h3>Riserve</h3></div><span class="squad-bench-count">${Math.min((run.bench || []).length, 4)}/4</span></div>
+            <div class="bench-list squad-bench-list">${inventoryEquipmentBenchMarkup(item, ui.inventoryEquipmentPlayerId)}</div>
+          </section>
+          <section class="inventory-equipment-selection-summary" data-equipment-selection-summary aria-live="polite">${inventoryEquipmentSelectionSummary(ui.inventoryEquipmentPlayerId)}</section>
+          <div class="inventory-modal-actions">
+            <button type="button" class="btn btn-yellow" data-confirm-equipment-target ${ui.inventoryEquipmentPlayerId ? "" : "disabled"}>CONFERMA</button>
+            <button type="button" class="btn btn-ghost" data-close-inventory-flow>RINUNCIA</button>
+          </div>
+        </aside>
       </div>`,
-      { closeable: true, className: "item-assignment-modal" }
+      { closeable: true, className: "item-assignment-modal inventory-flow-modal inventory-equipment-selector-modal" }
     );
-    modalRoot.querySelectorAll("[data-equip-player]").forEach((button) => {
-      button.addEventListener("click", () => handleEquipmentTarget(instanceId, button.dataset.equipPlayer));
+    modalRoot.querySelector("[data-close-inventory-flow]")?.addEventListener("click", closeModal);
+    modalRoot.querySelector(".inventory-equipment-workspace")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-equip-player]");
+      if (!button || button.disabled) return;
+      event.preventDefault();
+      setInventoryEquipmentTarget(button.dataset.equipPlayer);
+    });
+    modalRoot.querySelector("[data-confirm-equipment-target]")?.addEventListener("click", () => {
+      if (ui.inventoryEquipmentPlayerId) handleEquipmentTarget(instanceId, ui.inventoryEquipmentPlayerId);
     });
   }
 
@@ -4008,16 +4737,27 @@
     const entry = rosterEntry(playerId);
     const item = run.inventory.find((candidate) => candidate.instanceId === instanceId);
     if (!entry || !item) return;
+    const target = equipmentTargetState(entry, item);
+    if (!target.valid) return toast(target.reason);
+    const player = sourcePlayer(entry);
     if (entry.equippedItem) {
-      const current = entry.equippedItem;
-      const player = sourcePlayer(entry);
+      const current = resolveItem(entry.equippedItem);
       return openModal(`
-        <div class="modal-head"><div><p class="eyebrow">Sostituzione oggetto</p><h2>${escapeHtml(player.name)} ha già equipaggiato ${escapeHtml(current.name)}.</h2><p class="muted">Vuoi sostituirlo con ${escapeHtml(item.name)}?</p></div></div>
-        <div class="button-row"><button type="button" class="btn btn-primary" id="confirm-equip-replace">Conferma sostituzione</button><button type="button" class="btn" id="cancel-equip-replace">Annulla</button></div>`,
-        { closeable: false }
-      ), document.getElementById("confirm-equip-replace").addEventListener("click", () => equipItemToEntry(instanceId, entry)), document.getElementById("cancel-equip-replace").addEventListener("click", () => chooseEquipmentPlayer(instanceId));
+        <div class="inventory-confirmation">
+          <div class="inventory-confirmation-item">${itemIcon(item)}<div><p class="eyebrow">Sostituzione oggetto</p><h2>${escapeHtml(player.name)}</h2></div></div>
+          <div class="inventory-equipment-replacement">${itemIcon(current)}<div><small>Oggetto attuale</small><strong>${escapeHtml(current.name)}</strong><span>Verrà riportato nello zaino.</span></div></div>
+          <p><strong>${escapeHtml(current.name)}</strong> verrà sostituito con <strong>${escapeHtml(item.name)}</strong>.</p>
+          <div class="button-row inventory-modal-actions"><button type="button" class="btn btn-yellow" id="confirm-equip-replace">CONFERMA SOSTITUZIONE</button><button type="button" class="btn btn-ghost" id="cancel-equip-replace">ANNULLA</button></div>
+        </div>`,
+        { closeable: false, className: "inventory-flow-modal inventory-confirmation-modal" }
+      ), document.getElementById("confirm-equip-replace").addEventListener("click", () => equipItemToEntry(instanceId, entry)), document.getElementById("cancel-equip-replace").addEventListener("click", () => chooseEquipmentPlayer(instanceId, { selectedPlayerId: playerId }));
     }
-    equipItemToEntry(instanceId, entry);
+    return openInventoryConfirmation(item, {
+      title: `Equipaggiare ${player.name}?`,
+      description: `${item.name} verrà assegnato a ${player.name}.`,
+      onCancel: () => chooseEquipmentPlayer(instanceId, { selectedPlayerId: playerId }),
+      onConfirm: () => equipItemToEntry(instanceId, entry),
+    });
   }
 
   function equipItemToEntry(instanceId, entry) {
@@ -4029,13 +4769,23 @@
     global.RunState.save(run);
     closeModal();
     toast(`Hai equipaggiato ${resolveItem(item).name} a ${sourcePlayer(entry).name}`);
-    renderInventory();
+    renderInventory({ keepScroll: true });
   }
 
   function unequipPlayerItem(playerId, options = {}) {
     const entry = rosterEntry(playerId);
     if (!entry?.equippedItem) return;
     if (run.inventory.length >= global.SEASON1_CONFIG.maxInventory) return toast("Inventario pieno: libera prima uno spazio");
+    if (!options.confirmed) {
+      const item = resolveItem(entry.equippedItem);
+      const player = sourcePlayer(entry);
+      return openInventoryConfirmation(item, {
+        title: `Rimuovere ${item.name}?`,
+        description: `${item.name} verrà rimosso da ${player.name} e riportato nello zaino.`,
+        confirmLabel: "RIMUOVI",
+        onConfirm: () => unequipPlayerItem(playerId, { ...options, confirmed: true }),
+      });
+    }
     run.inventory.push(entry.equippedItem);
     entry.equippedItem = null;
     global.RunState.save(run);

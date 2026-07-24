@@ -54,8 +54,11 @@ assert(css.includes(".player-card-compact, button.player-card-compact"), "compac
 assert(css.includes(".mini-player.selected") && css.includes("outline: 3px solid #05070b"), "selected trade players must have a clear dark outline");
 assert(appJs.includes("runKeepingScroll") && appJs.includes("preserveScroll: scrollSnapshot()"), "trade selection and provisional win flows must preserve scroll");
 assert(appJs.includes("function setSelectedSquadPlayer(playerId)"), "squad editing must update selection classes incrementally");
-assert(appJs.includes("function swapSquadPlayersInDom(starterId, benchId)"), "squad swaps must update only the affected starter and bench cards");
+assert(appJs.includes("function swapSquadPlayersInDom(firstId, secondId, firstArea, secondArea)"), "squad swaps must update only the two affected cards in any valid area");
 assert(!/function handleSquadSelection[\s\S]*?runKeepingScroll\(renderSquad\)[\s\S]*?function ensureCurrentZone/.test(appJs), "squad player selection must not rerender the squad screen");
+assert(appJs.includes("classList.toggle(\"is-compatible\"") && appJs.includes("classList.toggle(\"is-incompatible\""), "direct squad selection must mark compatible and incompatible destinations incrementally");
+assert(appJs.includes('id="squad-player-info" disabled') && appJs.includes("showPlayerDetails(ui.selectedSquadPlayerId)"), "Squad INFO must remain disabled until a selected player opens the existing detail");
+assert(appJs.includes("openSquadFormationSelector") && appJs.includes("autoArrangeFormation(next)"), "Squad module selector must preserve automatic formation arrangement");
 assert(appJs.includes("function setSelectedTradePlayer(playerId)"), "trade player selection must update selection classes incrementally");
 assert(appJs.includes("function updateTradeConfirmState()"), "trade player selection must update only confirm/summary state");
 assert(!/modalRoot\.querySelectorAll\(\"\[data-trade-player\]\"\)[\s\S]*?resolveTradeNode/.test(appJs), "trade player clicks must not rerender the trade modal");
@@ -82,7 +85,7 @@ assert(mobileMedia.includes(".pull-offer-grid .player-card-large .player-portrai
 assert(mobileMedia.includes("height: 100%") && mobileMedia.includes("object-fit: contain"), "mobile compact portraits must keep a visible non-deformed source inside the image column");
 assert(appJs.includes("function resolvePlayerVisual") && appJs.includes("function playerPortraitUrl(player)") && appJs.includes("cardImageUrl") && appJs.includes("frontFullbodyUrl"), "pull cards must resolve a valid portrait source from the shared visual resolver");
 assert(appJs.includes("data:image/svg+xml") && appJs.includes('src="${escapeHtml(playerPortraitUrl(player))}" alt="${escapeHtml(player.name)}"'), "pull cards must render a portrait fallback through the shared helper");
-assert(appJs.includes('data-pull-action="confirm">Sì</button>') && appJs.includes('data-pull-action="cancel">Annulla</button>') && appJs.includes('data-pull-action="detail">Scheda</button>'), "pull inline confirmation buttons and logic hooks must be present");
+assert(appJs.includes('data-pull-action="confirm">SÌ</button>') && appJs.includes('data-pull-action="cancel">NO</button>') && appJs.includes('data-pull-action="detail">SCHEDA</button>'), "pull inline candidate actions and logic hooks must be present");
 assert(!appJs.includes("data-confirm-replacement"), "bench replacement logic should keep using the existing data-player-id click path");
 assert(appJs.includes("Il Visore scout non può essere utilizzato nelle pull leggendarie."), "legendary pulls must block scout token rerolls in logic and UI");
 assert(css.includes("align-items: center"), "desktop fullbody visual must be vertically centered");
@@ -200,10 +203,12 @@ assert(appJs.includes("Questo giocatore ha già raggiunto il livello massimo."),
 assert(appJs.includes("Tutti i giocatori hanno già raggiunto il livello massimo."), "training manual all-max block message must be shown");
 assert(appJs.includes("const appliedLevels = Math.min(Number(item.amount || 1), 20 - currentLevel);"), "energy drink must cap applied levels before consuming the item");
 assert(appJs.includes("Overall ${before.overall} → ${after.overall}"), "energy drink summary must show recalculated overall before and after");
-assert(appJs.includes('mode === "equip"'), "equipment assignment must use tactical squad cards, not the old linear player list");
+assert(appJs.includes("inventoryEquipmentPitchMarkup(item") && appJs.includes("inventoryEquipmentBenchMarkup(item"), "equipment assignment must reuse the tactical pitch and bench");
+assert(appJs.includes("lineupRows().map") && appJs.includes('class="bench-list squad-bench-list"'), "equipment assignment must preserve the real formation order and compact reserve layout");
+assert(appJs.includes("setInventoryEquipmentTarget") && appJs.includes("data-confirm-equipment-target"), "equipment target selection must update locally and require explicit confirmation");
 assert(appJs.includes("handleEquipmentTarget"), "equipment assignment must route through replacement confirmation logic");
-assert(appJs.includes("Conferma sostituzione"), "replacing equipped items must ask for confirmation");
-assert(appJs.includes("item-assignment-layout"), "equipment assignment modal must show pitch and bench sections");
+assert(appJs.includes("CONFERMA SOSTITUZIONE"), "replacing equipped items must ask for confirmation");
+assert(appJs.includes("inventory-equipment-selector-modal"), "equipment assignment modal must use the dedicated tactical layout");
 assert(appJs.includes("data-detail-unequip"), "player details must expose a direct remove item button");
 assert(appJs.includes('luckyCompatible = ["pull_free_agents", "pull_unlocked_teams"].includes(pullType)'), "lucky charm must only be usable for eligible pull types");
 assert(appJs.includes("function useLuckyCharmOnPull") && appJs.includes("chooseLuckyUpgrade"), "lucky charm must reroll visible candidates with rarity upgrades during a pull");

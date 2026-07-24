@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1400" role="img" aria-labelledby="title desc">
+  <title id="title">Campo tattico stilizzato</title>
+  <desc id="desc">Campo da calcio visto dall'alto con linee chiare e profondità da videogioco.</desc>
+  <defs>
+    <linearGradient id="grass" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#1d9c58"/>
+      <stop offset=".52" stop-color="#087044"/>
+      <stop offset="1" stop-color="#06432f"/>
+    </linearGradient>
+    <radialGradient id="light" cx=".5" cy=".06" r=".92">
+      <stop offset="0" stop-color="#caff9c" stop-opacity=".28"/>
+      <stop offset=".5" stop-color="#72e899" stop-opacity=".04"/>
+      <stop offset="1" stop-color="#001c18" stop-opacity=".42"/>
+    </radialGradient>
+    <pattern id="stripes" width="250" height="1400" patternUnits="userSpaceOnUse">
+      <rect width="125" height="1400" fill="#fff" opacity=".025"/>
+      <rect x="125" width="125" height="1400" fill="#001b13" opacity=".05"/>
+    </pattern>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect width="1000" height="1400" rx="54" fill="url(#grass)"/>
+  <rect width="1000" height="1400" rx="54" fill="url(#stripes)"/>
+  <rect width="1000" height="1400" rx="54" fill="url(#light)"/>
+  <g fill="none" stroke="#efffe9" stroke-opacity=".72" stroke-width="9" filter="url(#glow)">
+    <rect x="58" y="58" width="884" height="1284" rx="12"/>
+    <path d="M58 700h884"/>
+    <circle cx="500" cy="700" r="126"/>
+    <circle cx="500" cy="700" r="7" fill="#efffe9"/>
+    <path d="M295 58v204h410V58M382 58v78h236V58"/>
+    <path d="M295 1342v-204h410v204M382 1342v-78h236v78"/>
+    <path d="M388 262a126 126 0 0 0 224 0M388 1138a126 126 0 0 1 224 0"/>
+    <circle cx="500" cy="210" r="7" fill="#efffe9"/>
+    <circle cx="500" cy="1190" r="7" fill="#efffe9"/>
+    <path d="M58 108a50 50 0 0 1 50-50M892 58a50 50 0 0 1 50 50M58 1292a50 50 0 0 0 50 50M892 1342a50 50 0 0 0 50-50"/>
+  </g>
+  <g opacity=".2" fill="none" stroke="#ffdd36" stroke-width="3">
+    <path d="M124 350 876 1050M876 350 124 1050"/>
+    <circle cx="500" cy="700" r="242"/>
+  </g>
+</svg>
