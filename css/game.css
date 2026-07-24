@@ -1787,11 +1787,11 @@ body { background: var(--gradient-app); }
   padding: 0;
   overflow: visible;
   border: 3px solid var(--rarity-border, #646464);
-  border-left-width: 5px;
+  border-left-width: 4px;
   border-radius: 4px;
   background: linear-gradient(165deg, #fff 0 70%, #eee9dc 70%);
   color: var(--squad-ink);
-  box-shadow: 4px 5px 0 rgba(5,18,12,.48), 0 0 12px var(--rarity-glow, transparent), inset 0 -3px 0 var(--rarity-border, #646464);
+  box-shadow: 4px 5px 0 rgba(5,18,12,.48), 0 0 13px var(--rarity-glow, transparent), inset 0 -4px 0 var(--rarity-border, #646464);
   transition: opacity .12s ease, filter .12s ease, transform .12s ease, box-shadow .12s ease;
 }
 .squad-screen .squad-player-card::before {
@@ -1830,7 +1830,24 @@ body { background: var(--gradient-app); }
 .squad-screen .rarity-elite { --rarity-border: #8254d1; --rarity-glow: rgba(130,84,209,.3); }
 .squad-screen .rarity-mondiale { --rarity-border: #d93842; --rarity-glow: rgba(217,56,66,.34); }
 .squad-screen .rarity-leggenda { --rarity-border: #d4a017; --rarity-glow: rgba(212,160,23,.36); }
+.squad-screen .squad-player-card.rarity-mondiale,
+.squad-screen .squad-player-card.rarity-leggenda {
+  box-shadow: 4px 5px 0 rgba(5,18,12,.48), 0 0 16px var(--rarity-glow, transparent), inset 0 -4px 0 var(--rarity-border, #646464);
+}
 .squad-screen .squad-player-card .player-portrait-wrap { position: relative; height: 70px; aspect-ratio: auto; padding: 7px 6px 0; overflow: hidden; background: linear-gradient(160deg, color-mix(in srgb, var(--rarity-border) 9%, #fff), #ddd7c8); }
+.squad-screen .squad-player-card .player-portrait-wrap::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 17px;
+  right: -1px;
+  width: 13px;
+  height: 51px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--rarity-border) 82%, white), var(--rarity-border));
+  clip-path: polygon(58% 0, 100% 0, 42% 100%, 0 100%);
+  filter: drop-shadow(-1px 1px 1px rgba(17,18,22,.18));
+  pointer-events: none;
+}
 .squad-screen .squad-player-card img.player-portrait { width: 100%; height: 100%; max-width: 100%; max-height: 100%; object-fit: contain; object-position: center bottom; }
 .squad-screen .squad-player-card .player-info { padding: 5px 4px 7px; }
 .squad-screen .squad-player-card .player-title { min-width: 0; display: flex; align-items: center; gap: 3px; }
@@ -1871,19 +1888,25 @@ body { background: var(--gradient-app); }
 .squad-screen .squad-player-card .player-equipment .item-icon { width: 15px; height: 15px; border: 0; background: transparent; }
 .squad-screen .squad-player-card .player-equipment--footer {
   position: static;
-  flex: 0 0 21px;
-  width: 21px;
-  min-width: 21px;
-  height: 21px;
-  min-height: 21px;
+  flex: 0 0 26px;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  min-height: 26px;
   display: grid;
   place-items: center;
   padding: 2px;
   transform: none;
 }
+.squad-screen .squad-player-card .player-equipment--footer .item-icon,
+.squad-screen .squad-player-card .player-equipment--footer .item-icon img {
+  width: 20px;
+  height: 20px;
+  object-fit: contain;
+}
 .squad-screen .squad-player-card .player-equipment--footer .item-icon svg {
-  width: 14px;
-  height: 14px;
+  width: 15px;
+  height: 15px;
   stroke-width: 3;
 }
 .squad-screen .squad-player-card .player-equipment--footer .item-icon { color: var(--squad-ink); }
@@ -2031,8 +2054,11 @@ body { background: var(--gradient-app); }
   .squad-screen .squad-player-card .player-overall { right: 2px; }
   .squad-screen .squad-player-card .player-equipment { bottom: 2px; left: 2px; min-width: 17px; min-height: 17px; border-width: 1px; }
   .squad-screen .squad-player-card .player-equipment .item-icon { width: 12px; height: 12px; }
-  .squad-screen .squad-player-card .player-equipment--footer { width: 17px; min-width: 17px; height: 17px; min-height: 17px; }
-  .squad-screen .squad-player-card .player-equipment--footer .item-icon svg { width: 12px; height: 12px; stroke-width: 3.3; }
+  .squad-screen .squad-player-card .player-portrait-wrap::after { top: 12px; width: 9px; height: 34px; }
+  .squad-screen .squad-player-card .player-equipment--footer { flex-basis: 22px; width: 22px; min-width: 22px; height: 22px; min-height: 22px; }
+  .squad-screen .squad-player-card .player-equipment--footer .item-icon,
+  .squad-screen .squad-player-card .player-equipment--footer .item-icon img { width: 18px; height: 18px; }
+  .squad-screen .squad-player-card .player-equipment--footer .item-icon svg { width: 13px; height: 13px; stroke-width: 3.3; }
   .squad-screen .squad-player-card.selected::after { bottom: -10px; padding: 2px 3px; border-width: 1px; font-size: .35rem; }
   .squad-bench-list { grid-template-columns: repeat(2, minmax(0, 92px)); gap: 13px 12px; }
   .squad-bench-list .squad-player-card { --pitch-card-size: 92px; width: 92px; max-width: 92px; min-height: 88px; }

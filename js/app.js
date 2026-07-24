@@ -187,11 +187,11 @@
     return `<span class="${classes}" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${itemIcon(resolvedEquipment)}</span>`;
   }
 
-  function itemIcon(itemOrId, { preferLocal = false } = {}) {
+  function itemIcon(itemOrId) {
     const item = resolveItem(itemOrId);
     const id = String(item?.id || "");
     const name = item?.name || "Oggetto";
-    if (item?.imageUrl && !preferLocal) {
+    if (item?.imageUrl) {
       return `<span class="item-icon item-icon--image" aria-label="${escapeHtml(name)}" title="${escapeHtml(name)}"><img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(name)}" loading="lazy" onerror="globalThis.handleItemImageError && globalThis.handleItemImageError(this)" />${itemImageFallbackSvg()}</span>`;
     }
     const icons = {
@@ -695,7 +695,7 @@
     const playerRole = player.position || player.normalizedRole || "-";
     const equipmentDefinition = equipment ? resolveItem(equipment) : null;
     const equipmentMarkup = equipmentDefinition
-      ? `<span class="player-corner player-equipment ${equipmentInFooter ? "player-equipment--footer" : ""}" aria-label="Oggetto equipaggiato: ${escapeHtml(equipmentDefinition.name)}" title="${escapeHtml(equipmentDefinition.name)}">${itemIcon(equipment, { preferLocal: equipmentInFooter })}</span>`
+      ? `<span class="player-corner player-equipment ${equipmentInFooter ? "player-equipment--footer" : ""}" aria-label="Oggetto equipaggiato: ${escapeHtml(equipmentDefinition.name)}" title="${escapeHtml(equipmentDefinition.name)}">${itemIcon(equipment)}</span>`
       : "";
     const detailMarkup = detailLayout === "stacked"
       ? `<div class="player-meta player-meta--stacked" aria-label="Dettagli giocatore"><div class="player-meta-line player-meta-line--role-overall"><span data-player-role>${escapeHtml(playerRole)}</span><span aria-hidden="true">•</span><span data-player-overall>${escapeHtml(overall)}</span></div><div class="player-meta-line player-meta-line--level"><span aria-hidden="true">•</span><span data-player-level>Lv ${escapeHtml(level)}</span></div></div>`

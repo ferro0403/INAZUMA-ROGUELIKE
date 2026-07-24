@@ -35,6 +35,8 @@ assert(appJs.includes('[firstList[firstIndex], firstList[secondIndex]] = [firstL
 assert(appJs.includes('firstList[firstIndex] = clickedId;') && appJs.includes('secondList[secondIndex] = selected;'), 'starter-reserve swaps preserve the existing lineup and bench arrays');
 assert(appJs.includes('equipment: player.equipment'), 'equipment remains sourced from the resolved player for compact cards');
 assert(appJs.includes('equipmentInFooter: mode === "squad"'), 'Squad cards reserve footer space for equipment without changing other card contexts');
+assert(appJs.includes('${itemIcon(equipment)}</span>'), 'Squad cards use the real item image path when imageUrl is available');
+assert(!compactRenderer.includes('preferLocal: equipmentInFooter'), 'Squad cards no longer force the recreated local equipment symbol');
 assert(appJs.includes('function reconcileSquadRosterState()'), 'legacy roster leftovers are reconciled through one idempotent Squad migration');
 assert(appJs.includes('formationValid: !formationIssue'), 'starting-eleven validity is independent from bench completeness');
 assert(appJs.includes('rosterComplete: benchCount === 4 && !rosterIssue'), 'bench completeness is reported separately from formation validity');
@@ -59,6 +61,10 @@ assert(css.includes('.squad-screen .squad-player-card.is-compatible'), 'compatib
 assert(css.includes('.squad-screen .squad-player-card.is-incompatible'), 'incompatible swap destinations are attenuated');
 assert(css.includes('assets/home/inazuma-stadium-mobile-light.jpeg') && css.includes('assets/home/inazuma-stadium-desktop-light.jpeg'), 'Squad reuses both existing responsive stadium assets');
 assert(css.includes('.squad-screen .squad-player-card .player-equipment--footer'), 'Squad equipment participates in the card footer layout');
+assert(css.includes('.squad-screen .squad-player-card .player-portrait-wrap::after'), 'Squad rarity accent includes a responsive diagonal blade');
+assert(css.includes('clip-path: polygon(58% 0, 100% 0, 42% 100%, 0 100%)'), 'Squad rarity diagonal is CSS-only');
+assert(css.includes('inset 0 -4px 0 var(--rarity-border'), 'Squad cards preserve a rarity-colored lower edge');
+assert(css.includes('.player-equipment--footer .item-icon img'), 'real equipment images are sized inside the Squad footer');
 assert(css.includes('.squad-bench-list { grid-template-columns: repeat(2'), 'bench stays in a compact two-column grid');
 assert(!css.includes('.squad-screen .player-card {'), 'squad CSS does not globally restyle shared player cards');
 assert(!css.includes('.squad-screen .player-portrait'), 'squad CSS does not alter shared portrait sizing/object-fit');
