@@ -308,6 +308,7 @@
     returnToMatchContext: null,
     inventoryFilter: "all",
     inventorySelectedItemId: null,
+    inventoryEquipmentPlayerId: null,
     albumCollectionId: null,
     albumTeamId: null,
   };
@@ -4145,8 +4146,8 @@
     const actionClass = compact ? "btn btn-primary inventory-card-action" : "btn btn-yellow inventory-detail-action";
     if (item.kind === "equipment") {
       if (backpackQuantity > 0 && instanceId) return `<button type="button" class="${actionClass}" data-equip-item="${escapeHtml(instanceId)}">EQUIPAGGIA</button>`;
-      if (equippedEntries.length === 1) return `<button type="button" class="${actionClass}" data-unequip-player="${escapeHtml(equippedEntries[0].playerId)}">RIMUOVI</button>`;
-      return '<span class="inventory-unavailable">Gestisci dagli equipaggiati</span>';
+      if (equippedEntries.length) return '<span class="inventory-unavailable">TUTTE LE COPIE SONO EQUIPAGGIATE</span>';
+      return '<span class="inventory-unavailable">NON UTILIZZABILE</span>';
     }
     if (item.effect === "pull_reroll") return '<span class="inventory-unavailable">Utilizzabile durante un Pull</span>';
     if (item.effect === "lucky_pull") return '<span class="inventory-unavailable">Utilizzabile in un Pull normale</span>';
@@ -4243,6 +4244,86 @@
       <div class="inventory-player-selection-grid">
         ${entries.map((entry) => inventoryPlayerChoice(entry, item, mode)).join("")}
       </div>`;
+  }
+
+  function equipmentTargetState(entry, item) {
+    const player = entry ? resolvedRosterPlayer(entry.playerId) : null;
+    const baseStats = player?.baseStats || player?.stats || {};
+    const valid = Boolean(
+      entry
+      && player
+      && item?.kind === "equipment"
+      && item?.stat
+      && Number.isFinite(Number(baseStats[item.stat]))
+      && Number.isFinite(Number(item.bonus))
+    );
+    return {
+      valid,
+      reason: valid ? "" : "Oggetto non utilizzabile",
+      player,
+    };
+  }
+
+  function inventoryEquipmentPlayerCard(id, item, area, selectedId = null) {
+    const entry = rosterEntry(id);
+    const target = equipmentTargetState(entry, item);
+    if (!entry || !target.player) return "";
+    const selected = String(selectedId || "") === String(id);
+    const dataAttr = target.valid
+      ? `data-equip-player="${escapeHtml(id)}" data-area="${escapeHtml(area)}" aria-pressed="${selected ? "true" : "false"}"`
+      : `disabled aria-disabled="true" title="${escapeHtml(target.reason)}"`;
+    return `<div class="inventory-tactical-slot ${target.valid ? "" : "is-unavailable"}">
+      ${compactPlayerCardMarkup(target.player, {
+        equipment: entry.equippedItem,
+        equipmentInFooter: true,
+        level: target.player.displayLevel,
+        overall: target.player.overall,
+        selected,
+        dataAttr,
+        extraClass: "squad-player-card inventory-tactical-player",
+      })}
+      ${target.valid ? "" : `<small class="inventory-target-reason">${escapeHtml(target.reason)}</small>`}
+    </div>`;
+  }
+
+  function inventoryEquipmentPitchMarkup(item, selectedId = null) {
+    return `<section class="pitch">
+      ${lineupRows().map((row) => `<div class="pitch-row tactical-row" data-row-count="${row.ids.length || 1}" style="--players-in-row:${row.ids.length || 1};--row-count:${row.ids.length || 1}">${row.ids.map((id) => inventoryEquipmentPlayerCard(id, item, "lineup", selectedId)).join("")}</div>`).join("")}
+    </section>`;
+  }
+
+  function inventoryEquipmentBenchMarkup(item, selectedId = null) {
+    const cards = (run.bench || []).map((id) => inventoryEquipmentPlayerCard(id, item, "bench", selectedId)).filter(Boolean);
+    return cards.length ? cards.join("") : '<p class="muted">Nessuna riserva disponibile.</p>';
+  }
+
+  function inventoryEquipmentSelectionSummary(playerId) {
+    const entry = playerId ? rosterEntry(playerId) : null;
+    const player = entry ? resolvedRosterPlayer(entry.playerId) : null;
+    if (!entry || !player) {
+      return '<p class="inventory-equipment-selection-empty">Seleziona un giocatore dal campo o dalla panchina.</p>';
+    }
+    const current = entry.equippedItem ? resolveItem(entry.equippedItem) : null;
+    return `<div class="inventory-equipment-selection-player">
+      <span class="equipped-player-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></span>
+      <div><small>Giocatore selezionato</small><strong>${escapeHtml(player.name)}</strong><span>${escapeHtml(player.position)} · OVR ${escapeHtml(player.overall)}</span></div>
+    </div>
+    <div class="inventory-equipment-current">
+      ${current ? `${itemIcon(current)}<div><small>Oggetto attuale</small><strong>${escapeHtml(current.name)}</strong><span>Verrà restituito allo zaino dopo la conferma.</span></div>` : '<div><small>Oggetto attuale</small><strong>Nessun equipaggiamento</strong><span>Lo slot è libero.</span></div>'}
+    </div>`;
+  }
+
+  function setInventoryEquipmentTarget(playerId) {
+    ui.inventoryEquipmentPlayerId = playerId ? String(playerId) : null;
+    modalRoot.querySelectorAll("[data-equip-player]").forEach((card) => {
+      const selected = String(card.dataset.equipPlayer) === ui.inventoryEquipmentPlayerId;
+      card.classList.toggle("selected", selected);
+      card.setAttribute("aria-pressed", selected ? "true" : "false");
+    });
+    const summary = modalRoot.querySelector("[data-equipment-selection-summary]");
+    if (summary) summary.innerHTML = inventoryEquipmentSelectionSummary(ui.inventoryEquipmentPlayerId);
+    const confirm = modalRoot.querySelector("[data-confirm-equipment-target]");
+    if (confirm) confirm.disabled = !ui.inventoryEquipmentPlayerId;
   }
 
   function openInventoryConfirmation(item, { title, description, confirmLabel = "CONFERMA", onConfirm, onCancel } = {}) {
@@ -4386,18 +4467,42 @@
     });
   }
 
-  function chooseEquipmentPlayer(instanceId) {
+  function chooseEquipmentPlayer(instanceId, options = {}) {
     const item = run.inventory.find((candidate) => candidate.instanceId === instanceId);
     if (!item) return;
+    ui.inventoryEquipmentPlayerId = options.selectedPlayerId ? String(options.selectedPlayerId) : null;
+    const formation = formationById(run.formationId);
     openModal(`
-      <div class="inventory-flow-head">${itemIcon(item)}<div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Equipaggia un giocatore</h2><p>Sono mostrati i giocatori compatibili della rosa. L'oggetto già indossato è indicato sotto ogni card.</p></div></div>
-      ${inventoryPlayerSelectionMarkup(item, "equipment")}
-      <div class="inventory-modal-actions"><button type="button" class="btn btn-ghost" data-close-inventory-flow>RINUNCIA</button></div>`,
-      { closeable: true, className: "item-assignment-modal inventory-flow-modal" }
+      <div class="inventory-flow-head">${itemIcon(item)}<div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Equipaggia un giocatore</h2><p>Sono mostrati tutti i titolari e le riserve. L'oggetto già indossato è visibile sulla card e nel riepilogo.</p></div></div>
+      <p class="inventory-equipment-instruction">Seleziona un giocatore dal campo o dalla panchina.</p>
+      <div class="inventory-equipment-workspace squad-screen">
+        <section class="squad-field-panel inventory-equipment-field" aria-label="Titolari sul campo">
+          <div class="squad-panel-head"><div><p class="eyebrow">Titolari</p><h3>Campo tattico</h3></div><span class="squad-field-formation">${escapeHtml(formation?.name || run.formationId)}</span></div>
+          ${inventoryEquipmentPitchMarkup(item, ui.inventoryEquipmentPlayerId)}
+        </section>
+        <aside class="inventory-equipment-sidebar">
+          <section class="squad-bench-panel" aria-label="Riserve">
+            <div class="squad-panel-head"><div><p class="eyebrow">Panchina</p><h3>Riserve</h3></div><span class="squad-bench-count">${Math.min((run.bench || []).length, 4)}/4</span></div>
+            <div class="bench-list squad-bench-list">${inventoryEquipmentBenchMarkup(item, ui.inventoryEquipmentPlayerId)}</div>
+          </section>
+          <section class="inventory-equipment-selection-summary" data-equipment-selection-summary aria-live="polite">${inventoryEquipmentSelectionSummary(ui.inventoryEquipmentPlayerId)}</section>
+          <div class="inventory-modal-actions">
+            <button type="button" class="btn btn-yellow" data-confirm-equipment-target ${ui.inventoryEquipmentPlayerId ? "" : "disabled"}>CONFERMA</button>
+            <button type="button" class="btn btn-ghost" data-close-inventory-flow>RINUNCIA</button>
+          </div>
+        </aside>
+      </div>`,
+      { closeable: true, className: "item-assignment-modal inventory-flow-modal inventory-equipment-selector-modal" }
     );
     modalRoot.querySelector("[data-close-inventory-flow]")?.addEventListener("click", closeModal);
-    modalRoot.querySelectorAll("[data-equip-player]").forEach((button) => {
-      button.addEventListener("click", () => handleEquipmentTarget(instanceId, button.dataset.equipPlayer));
+    modalRoot.querySelector(".inventory-equipment-workspace")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-equip-player]");
+      if (!button || button.disabled) return;
+      event.preventDefault();
+      setInventoryEquipmentTarget(button.dataset.equipPlayer);
+    });
+    modalRoot.querySelector("[data-confirm-equipment-target]")?.addEventListener("click", () => {
+      if (ui.inventoryEquipmentPlayerId) handleEquipmentTarget(instanceId, ui.inventoryEquipmentPlayerId);
     });
   }
 
@@ -4405,19 +4510,27 @@
     const entry = rosterEntry(playerId);
     const item = run.inventory.find((candidate) => candidate.instanceId === instanceId);
     if (!entry || !item) return;
+    const target = equipmentTargetState(entry, item);
+    if (!target.valid) return toast(target.reason);
+    const player = sourcePlayer(entry);
     if (entry.equippedItem) {
-      const current = entry.equippedItem;
-      const player = sourcePlayer(entry);
+      const current = resolveItem(entry.equippedItem);
       return openModal(`
         <div class="inventory-confirmation">
           <div class="inventory-confirmation-item">${itemIcon(item)}<div><p class="eyebrow">Sostituzione oggetto</p><h2>${escapeHtml(player.name)}</h2></div></div>
-          <p><strong>${escapeHtml(current.name)}</strong> verrà riportato nello zaino e sostituito con <strong>${escapeHtml(item.name)}</strong>.</p>
+          <div class="inventory-equipment-replacement">${itemIcon(current)}<div><small>Oggetto attuale</small><strong>${escapeHtml(current.name)}</strong><span>Verrà riportato nello zaino.</span></div></div>
+          <p><strong>${escapeHtml(current.name)}</strong> verrà sostituito con <strong>${escapeHtml(item.name)}</strong>.</p>
           <div class="button-row inventory-modal-actions"><button type="button" class="btn btn-yellow" id="confirm-equip-replace">CONFERMA SOSTITUZIONE</button><button type="button" class="btn btn-ghost" id="cancel-equip-replace">ANNULLA</button></div>
         </div>`,
         { closeable: false, className: "inventory-flow-modal inventory-confirmation-modal" }
-      ), document.getElementById("confirm-equip-replace").addEventListener("click", () => equipItemToEntry(instanceId, entry)), document.getElementById("cancel-equip-replace").addEventListener("click", () => chooseEquipmentPlayer(instanceId));
+      ), document.getElementById("confirm-equip-replace").addEventListener("click", () => equipItemToEntry(instanceId, entry)), document.getElementById("cancel-equip-replace").addEventListener("click", () => chooseEquipmentPlayer(instanceId, { selectedPlayerId: playerId }));
     }
-    equipItemToEntry(instanceId, entry);
+    return openInventoryConfirmation(item, {
+      title: `Equipaggiare ${player.name}?`,
+      description: `${item.name} verrà assegnato a ${player.name}.`,
+      onCancel: () => chooseEquipmentPlayer(instanceId, { selectedPlayerId: playerId }),
+      onConfirm: () => equipItemToEntry(instanceId, entry),
+    });
   }
 
   function equipItemToEntry(instanceId, entry) {
@@ -4429,7 +4542,7 @@
     global.RunState.save(run);
     closeModal();
     toast(`Hai equipaggiato ${resolveItem(item).name} a ${sourcePlayer(entry).name}`);
-    renderInventory();
+    renderInventory({ keepScroll: true });
   }
 
   function unequipPlayerItem(playerId, options = {}) {

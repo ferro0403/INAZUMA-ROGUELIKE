@@ -3401,6 +3401,59 @@ body { background: var(--gradient-app); }
 .inventory-confirmation { display: grid; gap: 14px; }
 .inventory-confirmation > p { margin: 0; color: #50555c; font-size: 1rem; line-height: 1.45; }
 .inventory-confirmation-warning { padding: 11px 13px; border-left: 6px solid #ffd21f; background: #f2eee3; color: #34373b; font-weight: 850; }
+.inventory-equipment-selector-modal { width: min(1180px, calc(100vw - 24px)); }
+.inventory-equipment-instruction { margin: 0 0 12px; padding: 8px 12px; border-left: 6px solid #ffd21f; background: #111216; color: #fff; font-size: .78rem; font-weight: 900; }
+.inventory-equipment-workspace.squad-screen {
+  min-height: 0;
+  height: auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1.5fr) minmax(300px, .65fr);
+  gap: 14px;
+  padding: 0;
+  overflow: visible;
+  background: none;
+}
+.inventory-equipment-field { min-width: 0; padding: 11px; }
+.inventory-equipment-field .squad-panel-head h3,
+.inventory-equipment-selector-modal .squad-bench-panel .squad-panel-head h3 { margin: 0; color: #111216; font-size: 1.05rem; text-transform: uppercase; }
+.inventory-equipment-field .pitch { min-height: 590px; height: 590px; padding: 24px 34px; }
+.inventory-equipment-sidebar { min-width: 0; display: grid; align-content: start; gap: 11px; }
+.inventory-equipment-selector-modal .squad-bench-panel { padding: 11px; }
+.inventory-equipment-selector-modal .squad-bench-list { grid-template-columns: repeat(2, minmax(0, 92px)); }
+.inventory-tactical-slot { min-width: 0; display: grid; place-items: center; gap: 4px; }
+.inventory-tactical-slot.is-unavailable { opacity: .38; filter: grayscale(.8); }
+.inventory-target-reason { max-width: 88px; color: #ffe68b; font-size: .52rem; font-weight: 900; line-height: 1.1; text-align: center; }
+.inventory-equipment-selector-modal .squad-player-card.selected {
+  z-index: 10;
+  border-color: #ffd21f;
+  outline: 3px solid #111216;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 6px #ffd21f, 5px 7px 0 rgba(5,18,12,.55);
+  transform: translateY(-3px) scale(1.03);
+}
+.inventory-equipment-selector-modal .squad-player-card.selected::after { display: block; }
+.inventory-equipment-selection-summary { min-height: 138px; display: grid; align-content: start; gap: 9px; padding: 11px; border: 3px solid #111216; background: #fff; box-shadow: 5px 6px 0 rgba(17,18,22,.16); }
+.inventory-equipment-selection-empty { margin: auto 0; color: #62676e; font-size: .78rem; font-weight: 850; text-align: center; }
+.inventory-equipment-selection-player,
+.inventory-equipment-current,
+.inventory-equipment-replacement { min-width: 0; display: flex; align-items: center; gap: 9px; color: #111216; }
+.inventory-equipment-selection-player > div,
+.inventory-equipment-current > div,
+.inventory-equipment-replacement > div { min-width: 0; display: grid; gap: 2px; }
+.inventory-equipment-selection-player small,
+.inventory-equipment-current small,
+.inventory-equipment-replacement small { color: #765c12; font-size: .55rem; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
+.inventory-equipment-selection-player strong,
+.inventory-equipment-current strong,
+.inventory-equipment-replacement strong { overflow: hidden; color: #111216; font-size: .78rem; text-overflow: ellipsis; white-space: nowrap; }
+.inventory-equipment-selection-player span,
+.inventory-equipment-current span,
+.inventory-equipment-replacement span { color: #666b71; font-size: .62rem; }
+.inventory-equipment-current { padding-top: 8px; border-top: 1px solid #aaa69c; }
+.inventory-equipment-current .item-icon,
+.inventory-equipment-replacement .item-icon { flex: 0 0 42px; width: 42px; height: 42px; border: 2px solid #111216; border-radius: 0; background: #f4f1e8; }
+.inventory-equipment-replacement { padding: 10px; border: 2px solid #111216; background: #f3efe4; }
+.inventory-equipment-selector-modal [data-confirm-equipment-target]:disabled { background: #d7d3ca; color: #77736b; opacity: 1; }
 
 @media (min-width: 1500px) {
   .inventory-screen .inventory-item-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
@@ -3465,6 +3518,30 @@ body { background: var(--gradient-app); }
   .inventory-flow-head h2,
   .inventory-confirmation-item h2 { font-size: 1.25rem; }
   .inventory-flow-head p:last-child { font-size: .7rem; line-height: 1.25; }
+  .inventory-equipment-selector-modal { align-self: stretch; max-height: calc(100dvh - 12px); }
+  .inventory-equipment-workspace.squad-screen {
+    min-height: 0;
+    height: auto;
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto;
+    gap: 9px;
+    padding: 0;
+    overflow: visible;
+    background: none;
+  }
+  .inventory-equipment-field { grid-row: 1; padding: 8px 5px; }
+  .inventory-equipment-field .pitch { min-height: 470px; height: 470px; padding: 18px 7px; }
+  .inventory-equipment-field .pitch-row { --pitch-card-size: clamp(54px, 16.5vw, 66px); gap: clamp(4px, 1.2vw, 8px); }
+  .inventory-equipment-sidebar { grid-row: 2; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; gap: 8px; }
+  .inventory-equipment-selector-modal .squad-bench-panel { padding: 8px; }
+  .inventory-equipment-selector-modal .squad-bench-list { grid-template-columns: repeat(2, minmax(0, 82px)); gap: 10px 8px; }
+  .inventory-equipment-selector-modal .squad-bench-list .squad-player-card { --pitch-card-size: 82px; width: 82px; max-width: 82px; min-height: 82px; }
+  .inventory-equipment-selector-modal .squad-player-card { max-width: var(--pitch-card-size, 66px); min-height: 74px; border-width: 2px; }
+  .inventory-equipment-selector-modal .squad-player-card .player-portrait-wrap { height: 47px; padding: 4px 3px 0; }
+  .inventory-equipment-selector-modal .squad-player-card .player-title strong { font-size: .52rem; }
+  .inventory-equipment-selection-summary { min-height: 0; padding: 8px; border-width: 2px; box-shadow: 3px 4px 0 rgba(17,18,22,.16); }
+  .inventory-equipment-sidebar .inventory-modal-actions { grid-column: 1 / -1; position: sticky; bottom: 0; margin-top: 0; padding: 8px 0 calc(2px + env(safe-area-inset-bottom)); background: #fffdf6; }
   .inventory-player-selection-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 7px; }
   .inventory-player-option { padding: 5px; border-width: 1px; box-shadow: 2px 3px 0 rgba(17,18,22,.12); }
   .inventory-player-option .inventory-player-choice { min-height: 96px; }

@@ -203,10 +203,12 @@ assert(appJs.includes("Questo giocatore ha già raggiunto il livello massimo."),
 assert(appJs.includes("Tutti i giocatori hanno già raggiunto il livello massimo."), "training manual all-max block message must be shown");
 assert(appJs.includes("const appliedLevels = Math.min(Number(item.amount || 1), 20 - currentLevel);"), "energy drink must cap applied levels before consuming the item");
 assert(appJs.includes("Overall ${before.overall} → ${after.overall}"), "energy drink summary must show recalculated overall before and after");
-assert(appJs.includes('inventoryPlayerSelectionMarkup(item, "equipment")'), "equipment assignment must use the compact shared inventory player selector");
+assert(appJs.includes("inventoryEquipmentPitchMarkup(item") && appJs.includes("inventoryEquipmentBenchMarkup(item"), "equipment assignment must reuse the tactical pitch and bench");
+assert(appJs.includes("lineupRows().map") && appJs.includes('class="bench-list squad-bench-list"'), "equipment assignment must preserve the real formation order and compact reserve layout");
+assert(appJs.includes("setInventoryEquipmentTarget") && appJs.includes("data-confirm-equipment-target"), "equipment target selection must update locally and require explicit confirmation");
 assert(appJs.includes("handleEquipmentTarget"), "equipment assignment must route through replacement confirmation logic");
 assert(appJs.includes("CONFERMA SOSTITUZIONE"), "replacing equipped items must ask for confirmation");
-assert(appJs.includes("inventory-player-selection-grid"), "equipment assignment modal must show the compact roster grid");
+assert(appJs.includes("inventory-equipment-selector-modal"), "equipment assignment modal must use the dedicated tactical layout");
 assert(appJs.includes("data-detail-unequip"), "player details must expose a direct remove item button");
 assert(appJs.includes('luckyCompatible = ["pull_free_agents", "pull_unlocked_teams"].includes(pullType)'), "lucky charm must only be usable for eligible pull types");
 assert(appJs.includes("function useLuckyCharmOnPull") && appJs.includes("chooseLuckyUpgrade"), "lucky charm must reroll visible candidates with rarity upgrades during a pull");

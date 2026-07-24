@@ -63,6 +63,10 @@ assert(appJs.includes("removeInventoryItem(instanceId);"), "consumables remove e
 assert(appJs.includes("const newEquipment = removeInventoryItem(instanceId);"), "equipment assignment removes exactly one inventory instance");
 assert(appJs.includes("run.inventory.push(entry.equippedItem);") && appJs.includes("if (run.inventory.length >= global.SEASON1_CONFIG.maxInventory)"), "unequipping returns one copy and preserves full-inventory guard");
 assert(appJs.includes("entry.equippedItem = newEquipment;"), "only the selected equipment instance is assigned");
+const inventoryRenderer = appJs.slice(appJs.indexOf("function renderInventory"), appJs.indexOf("function chooseEquipmentPlayer"));
+assert.equal((inventoryRenderer.match(/>RIMUOVI</g) || []).length, 1, "RIMUOVI is rendered only once in the equipped-player association row");
+assert(appJs.includes("TUTTE LE COPIE SONO EQUIPAGGIATE"), "equipment detail exposes a non-interactive state when the backpack has no copies");
+assert(!/function inventoryItemActionMarkup[\s\S]*?data-unequip-player/.test(appJs.slice(appJs.indexOf("function inventoryItemActionMarkup"), appJs.indexOf("function inventoryItemDetailMarkup"))), "item cards and detail never generate an unequip command");
 assert(css.includes(".inventory-categories") && css.includes(".inventory-category") && css.includes(".item-quantity"), "desktop inventory category and quantity styles exist");
 assert(appJs.includes("inventoryFilterDefinitions") && appJs.includes("data-inventory-filter") && appJs.includes("inventoryGroupMatchesFilter"), "inventory has real filter view model without changing item data");
 assert(appJs.includes("function selectInventoryItem(groupKey)") && appJs.includes('detail.innerHTML = inventoryItemDetailMarkup(group);'), "item selection updates only cards and the detail panel without rerendering the app");
