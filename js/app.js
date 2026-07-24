@@ -1045,12 +1045,18 @@
     return preview.length ? preview.join("") : `<p class="home-roster-empty">La rosa verrà mostrata dopo il draft iniziale.</p>`;
   }
 
-  function homeQuickActionsMarkup(hasRun) {
-    return `<nav class="home-quick-actions" aria-label="Sezioni principali">
-      <button type="button" class="home-quick-button" id="open-album-home"><span aria-hidden="true">▣</span><strong>Album</strong></button>
-      <button type="button" class="home-quick-button home-quick-button--gold" id="open-hall-home"><span aria-hidden="true">★</span><strong>${hasRun ? "Apri Albo d’Oro" : "Albo d’Oro"}</strong></button>
-      <button type="button" class="home-quick-button" id="select-run"><span aria-hidden="true">◎</span><strong>${hasRun ? "Seleziona run" : "Modalità"}</strong></button>
-    </nav>`;
+  const HOME_SECONDARY_ACTIONS = [
+    { id: "open-album-home", label: "Album", icon: "▤", className: "" },
+    { id: "open-hall-home", label: "Albo d’Oro", icon: "★", className: "home-quick-button--gold" },
+    { id: "open-modes-home", label: "Modalità", icon: "⚡", className: "" },
+  ];
+
+  function homeQuickActionsMarkup() {
+    const actions = HOME_SECONDARY_ACTIONS.map(({ id, label, icon, className }) => `
+      <button type="button" class="home-quick-button ${className}" id="${id}">
+        <span aria-hidden="true">${icon}</span><strong>${label}</strong>
+      </button>`).join("");
+    return `<nav class="home-quick-actions" aria-label="Sezioni principali">${actions}</nav>`;
   }
 
   function homeTeamCrestMarkup(identity) {
@@ -1090,7 +1096,7 @@
         </div>
       </article>
       <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="continue-run">Continua la run</strong><span class="home-cta-arrows" aria-hidden="true">»</span></button>
-      ${homeQuickActionsMarkup(true)}
+      ${homeQuickActionsMarkup()}
       <section class="home-roster-section" aria-label="La tua squadra">
         <div class="home-section-label"><span>⚡</span> La tua squadra</div>
         <div class="home-roster-preview">${homeRosterMarkup(savedRun)}</div>
@@ -1113,7 +1119,7 @@
         </ol>
         <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">◎</span><strong id="choose-run">Scegli una run</strong><span class="home-cta-arrows" aria-hidden="true">»</span></button>
       </article>
-      ${homeQuickActionsMarkup(false)}
+      ${homeQuickActionsMarkup()}
     </section>`;
   }
 
@@ -1144,7 +1150,7 @@
       </main>`;
     resetRenderedViewScroll();
 
-    document.getElementById("select-run")?.addEventListener("click", renderSeasonSelect);
+    document.getElementById("open-modes-home")?.addEventListener("click", renderSeasonSelect);
     document.getElementById("manage-team-home")?.addEventListener("click", resumeRun);
     document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : renderSeasonSelect());
     document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
