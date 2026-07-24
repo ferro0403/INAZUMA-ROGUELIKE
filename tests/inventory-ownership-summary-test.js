@@ -36,6 +36,7 @@ const context = {
   document: { getElementById: noopElement, querySelector: noopElement, querySelectorAll: () => [], addEventListener() {} },
   localStorage: { getItem: () => null, setItem() {}, removeItem() {} },
   SEASON1_CONFIG: global.SEASON1_CONFIG,
+  SeasonRegistry: { DEFAULT_SEASON_ID: "ie1", setActive: () => ({ id: "ie1" }), loadDatabase: () => new Promise(() => {}) },
   fetch: () => new Promise(() => {}),
 };
 context.window = context;
@@ -43,7 +44,7 @@ context.history = { scrollRestoration: "auto", replaceState() {} };
 context.globalThis = context;
 vm.runInNewContext(appJs, context, { filename: "js/app.js" });
 
-const { inventoryOwnershipSummary } = context.InventoryHelpers;
+const { inventoryOwnershipSummary, groupedOwnedInventoryItems } = context.InventoryHelpers;
 const equipment = (id, instanceId) => ({ id, itemId: id, instanceId, kind: "equipment", stat: "attack", bonus: 5 });
 const consumable = (id, instanceId) => ({ id, itemId: id, instanceId, kind: "consumable", effect: "player_level", amount: 1 });
 const runWith = (inventory, equippedItems) => ({
@@ -90,5 +91,17 @@ summary = inventoryOwnershipSummary(runWith([equipment("boots_attack", "copy-1")
 assert.equal(summary.ownedCount, 2, "two distinct copies of the same itemId are both owned");
 summary = inventoryOwnershipSummary(runWith([{ id: "boots_attack", itemId: "boots_attack", kind: "equipment" }, { id: "boots_attack", itemId: "boots_attack", kind: "equipment" }], []));
 assert.equal(summary.ownedCount, 2, "legacy copies without instanceId are not deduplicated by itemId");
+
+let ownedGroups = groupedOwnedInventoryItems(runWith(
+  [equipment("boots_attack", "copy-1")],
+  [equipment("boots_attack", "copy-2")]
+));
+assert.equal(ownedGroups[0].quantity, 2, "equipment card quantity includes backpack and equipped copies");
+assert.equal(ownedGroups[0].backpackQuantity, 1, "equipment card preserves actionable backpack quantity");
+assert.equal(ownedGroups[0].equippedCount, 1, "equipment card reports equipped copies separately");
+
+const duplicatedInstance = equipment("boots_attack", "same-instance");
+ownedGroups = groupedOwnedInventoryItems(runWith([duplicatedInstance], [duplicatedInstance]));
+assert.equal(ownedGroups[0].quantity, 1, "same equipment instance is never counted twice across backpack and player");
 
 console.log("inventory ownership summary tests passed");

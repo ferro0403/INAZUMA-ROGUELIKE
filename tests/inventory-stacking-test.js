@@ -35,7 +35,8 @@ function groups(inventory) {
 
 assert(appJs.includes("function inventoryItemIdentity(item)"), "inventory grouping must use one central stable identity helper");
 assert(!/run\.inventory\.map\(\(item\) => inventoryItemCard\(item\)\)/.test(appJs), "inventory renderer must not render one card per stored copy");
-assert(appJs.includes("groupedInventoryByCategory(run.inventory)"), "inventory renderer must group cards through the category helper");
+assert(appJs.includes("groupedOwnedInventoryByCategory(run)"), "inventory renderer must group backpack and equipped cards through the ownership category helper");
+assert(appJs.includes("groupedOwnedInventoryItems(run)"), "inventory renderer must include equipped instances in visible ownership");
 assert(appJs.includes("data-item-id") && appJs.includes("item-quantity") && appJs.includes("×${group.quantity}"), "stacked cards must expose item id and quantity badge");
 assert(appJs.includes("run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}"), "inventory total must keep counting stored copies, not visible cards");
 
@@ -64,9 +65,14 @@ assert(appJs.includes("run.inventory.push(entry.equippedItem);") && appJs.includ
 assert(appJs.includes("entry.equippedItem = newEquipment;"), "only the selected equipment instance is assigned");
 assert(css.includes(".inventory-categories") && css.includes(".inventory-category") && css.includes(".item-quantity"), "desktop inventory category and quantity styles exist");
 assert(appJs.includes("inventoryFilterDefinitions") && appJs.includes("data-inventory-filter") && appJs.includes("inventoryGroupMatchesFilter"), "inventory has real filter view model without changing item data");
+assert(appJs.includes("function selectInventoryItem(groupKey)") && appJs.includes('detail.innerHTML = inventoryItemDetailMarkup(group);'), "item selection updates only cards and the detail panel without rerendering the app");
+assert(appJs.includes("function openInventoryConfirmation(item") && appJs.includes("La quantità verrà aggiornata soltanto dopo il successo."), "consumable and removal flows use a shared success-only confirmation");
+assert(appJs.includes('inventoryPlayerSelectionMarkup(item, "level")') && appJs.includes('inventoryPlayerSelectionMarkup(item, "potential")'), "player consumables use compact validity-aware player cards");
+assert(appJs.includes("Livello massimo raggiunto") && appJs.includes("Potenziale massimo raggiunto"), "invalid consumable targets explain why they cannot receive the item");
+assert(appJs.includes("Utilizzabile durante un Pull") && appJs.includes("Utilizzabile in un Pull normale"), "pull-only items remain unavailable from inventory with clear messages");
 assert(appJs.includes("inventory-empty-state") && appJs.includes("Gli oggetti si ottengono dagli eventi della mappa"), "inventory empty state explains where items come from");
 assert(appJs.includes("Equipaggiabili") && appJs.includes("Consumabili") && appJs.includes("itemStatLabel"), "inventory filters use real item kinds and equipment stats");
 assert(css.includes(".inventory-layout") && css.includes(".inventory-summary") && css.includes(".inventory-equipped-panel"), "inventory has desktop layout, summary, and equipped panel styles");
-assert(/@media \(max-width: 780px\)[\s\S]*?\.inventory-item-card \{ grid-template-columns: 38px minmax\(0, 1fr\) auto/.test(css), "mobile inventory cards use compact horizontal layout without overflow");
+assert(/@media \(max-width: 780px\)[\s\S]*?\.inventory-screen \.inventory-item-card \{ grid-template-columns: 52px minmax\(0,1fr\) auto/.test(css), "mobile inventory cards use compact horizontal layout without overflow");
 
 console.log("inventory stacking tests passed");

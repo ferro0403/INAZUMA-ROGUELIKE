@@ -203,10 +203,10 @@ assert(appJs.includes("Questo giocatore ha già raggiunto il livello massimo."),
 assert(appJs.includes("Tutti i giocatori hanno già raggiunto il livello massimo."), "training manual all-max block message must be shown");
 assert(appJs.includes("const appliedLevels = Math.min(Number(item.amount || 1), 20 - currentLevel);"), "energy drink must cap applied levels before consuming the item");
 assert(appJs.includes("Overall ${before.overall} → ${after.overall}"), "energy drink summary must show recalculated overall before and after");
-assert(appJs.includes('mode === "equip"'), "equipment assignment must use tactical squad cards, not the old linear player list");
+assert(appJs.includes('inventoryPlayerSelectionMarkup(item, "equipment")'), "equipment assignment must use the compact shared inventory player selector");
 assert(appJs.includes("handleEquipmentTarget"), "equipment assignment must route through replacement confirmation logic");
-assert(appJs.includes("Conferma sostituzione"), "replacing equipped items must ask for confirmation");
-assert(appJs.includes("item-assignment-layout"), "equipment assignment modal must show pitch and bench sections");
+assert(appJs.includes("CONFERMA SOSTITUZIONE"), "replacing equipped items must ask for confirmation");
+assert(appJs.includes("inventory-player-selection-grid"), "equipment assignment modal must show the compact roster grid");
 assert(appJs.includes("data-detail-unequip"), "player details must expose a direct remove item button");
 assert(appJs.includes('luckyCompatible = ["pull_free_agents", "pull_unlocked_teams"].includes(pullType)'), "lucky charm must only be usable for eligible pull types");
 assert(appJs.includes("function useLuckyCharmOnPull") && appJs.includes("chooseLuckyUpgrade"), "lucky charm must reroll visible candidates with rarity upgrades during a pull");

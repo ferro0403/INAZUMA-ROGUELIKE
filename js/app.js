@@ -112,6 +112,50 @@
     }));
   }
 
+  function groupedOwnedInventoryItems(run) {
+    const backpack = Array.isArray(run?.inventory) ? run.inventory : [];
+    const groups = new Map(groupedInventoryItems(backpack).map((group) => [
+      group.key,
+      { ...group, backpackQuantity: group.quantity, equippedCount: 0, equippedEntries: [] },
+    ]));
+    const seenInstanceIds = new Set(backpack.map((item) => item?.instanceId).filter(Boolean).map(String));
+
+    (Array.isArray(run?.roster) ? run.roster : []).forEach((entry) => {
+      if (!entry?.equippedItem) return;
+      const item = entry.equippedItem;
+      const key = inventoryItemIdentity(item);
+      const instanceId = item.instanceId ? String(item.instanceId) : "";
+      const alreadyInBackpack = instanceId && seenInstanceIds.has(instanceId);
+      const existing = groups.get(key) || {
+        key,
+        item,
+        quantity: 0,
+        backpackQuantity: 0,
+        equippedCount: 0,
+        instances: [],
+        equippedEntries: [],
+        category: inventoryItemCategory(item),
+      };
+      existing.equippedCount += 1;
+      existing.equippedEntries.push(entry);
+      if (!alreadyInBackpack) {
+        existing.quantity += 1;
+        if (instanceId) seenInstanceIds.add(instanceId);
+      }
+      groups.set(key, existing);
+    });
+
+    return [...groups.values()];
+  }
+
+  function groupedOwnedInventoryByCategory(run) {
+    const groups = groupedOwnedInventoryItems(run);
+    return INVENTORY_CATEGORY_DEFINITIONS.map((category) => ({
+      ...category,
+      items: groups.filter((group) => group.category === category.id),
+    }));
+  }
+
   function inventoryOwnershipSummary(run) {
     const backpack = Array.isArray(run?.inventory) ? run.inventory : [];
     const equippedEntries = (Array.isArray(run?.roster) ? run.roster : []).filter((entry) => entry?.equippedItem);
@@ -143,8 +187,8 @@
     return ({ attack: "Attacco", control: "Controllo", defense: "Difesa", save: "Parata", grit: "Grinta", physical: "Fisico", speed: "Velocità", stamina: "Resistenza" })[stat] || stat || "Effetto";
   }
 
-  function inventoryFilterDefinitions(inventory) {
-    const groups = groupedInventoryItems(inventory);
+  function inventoryFilterDefinitions(run) {
+    const groups = groupedOwnedInventoryItems(run);
     const hasKind = (kind) => groups.some((group) => resolveItem(group.item).kind === kind);
     const hasStat = (stat) => groups.some((group) => resolveItem(group.item).stat === stat);
     return [
@@ -163,7 +207,7 @@
     return group.category === filterId;
   }
 
-  global.InventoryHelpers = { inventoryItemIdentity, inventoryItemCategory, groupedInventoryItems, groupedInventoryByCategory, inventoryOwnershipSummary, categories: INVENTORY_CATEGORY_DEFINITIONS };
+  global.InventoryHelpers = { inventoryItemIdentity, inventoryItemCategory, groupedInventoryItems, groupedInventoryByCategory, groupedOwnedInventoryItems, groupedOwnedInventoryByCategory, inventoryOwnershipSummary, categories: INVENTORY_CATEGORY_DEFINITIONS };
 
   function itemImageFallbackSvg() {
     return `<svg viewBox="0 0 32 32"><path d="M6 9h20v17H6z"/><path d="m9 23 5-6 4 4 3-3 2 5"/><circle cx="20" cy="14" r="2"/></svg>`;
@@ -263,6 +307,7 @@
     matchPlaybackTimer: null,
     returnToMatchContext: null,
     inventoryFilter: "all",
+    inventorySelectedItemId: null,
     albumCollectionId: null,
     albumTeamId: null,
   };
@@ -3989,9 +4034,13 @@
 
   function renderInventory(options = {}) {
     ensureRunSchema();
-    const filterDefs = inventoryFilterDefinitions(run.inventory);
+    const ownedGroups = groupedOwnedInventoryItems(run);
+    const filterDefs = inventoryFilterDefinitions(run);
     if (!filterDefs.some((filter) => filter.id === ui.inventoryFilter)) ui.inventoryFilter = "all";
     const activeFilter = filterDefs.find((filter) => filter.id === ui.inventoryFilter) || filterDefs[0];
+    const visibleGroups = ownedGroups.filter((group) => inventoryGroupMatchesFilter(group, ui.inventoryFilter));
+    if (!visibleGroups.some((group) => group.key === ui.inventorySelectedItemId)) ui.inventorySelectedItemId = visibleGroups[0]?.key || null;
+    const selectedGroup = ownedGroups.find((group) => group.key === ui.inventorySelectedItemId) || null;
     const equipped = run.roster
       .filter((entry) => entry.equippedItem)
       .map((entry) => ({ entry, player: sourcePlayer(entry), resolved: resolvedRosterPlayer(entry.playerId), item: resolveItem(entry.equippedItem) }));
@@ -4005,7 +4054,7 @@
           <header class="inventory-hero">
             <div>
               <p class="eyebrow">Nello zaino ${ownershipSummary.backpackCount}/${global.SEASON1_CONFIG.maxInventory}</p>
-              <h2>Oggetti</h2>
+              <h2>OGGETTI</h2>
               <p class="muted small">${activeFilter?.id !== "all" ? `Filtro: ${escapeHtml(activeFilter.label)}` : "Tutto ciò che hai raccolto nella run"}</p>
             </div>
             <div class="inventory-summary" aria-label="Riepilogo inventario">
@@ -4020,11 +4069,16 @@
             <div class="inventory-categories">
               ${inventoryCategoriesMarkup(ui.inventoryFilter)}
             </div>
-            <aside class="inventory-equipped-panel panel">
-              <div class="inventory-panel-head"><p class="eyebrow">Equipaggiati</p><h3>Stato giocatori</h3></div>
-              <div class="equipped-list">
-                ${equipped.length ? equipped.map(({ entry, player, resolved, item }) => `
-                  <article class="equipped-summary static-item">${itemIcon(item)}<div class="equipped-summary-copy"><span class="item-kind">Equipaggiato</span><strong>${escapeHtml(item.name)}</strong></div><div class="equipped-player"><span class="equipped-player-portrait"><img src="${escapeHtml(playerPortraitUrl(resolved || player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(resolved || player).cardFallbacks)} /></span><div class="equipped-player-copy"><span>${escapeHtml(player.name)} · ${escapeHtml(player.position)}</span><small>${escapeHtml(itemStatLabel(item.stat))} ${resolved.baseStats[item.stat]} → <strong>${resolved.stats[item.stat]}</strong></small></div></div><button type="button" class="btn btn-ghost" data-unequip-player="${entry.playerId}">Rimuovi</button></article>`).join("") : '<p class="muted inventory-empty">Nessun giocatore ha un oggetto equipaggiato.</p>'}
+            <aside class="inventory-side-panel">
+              <div class="inventory-detail-panel panel" id="inventory-item-detail" aria-live="polite">
+                ${inventoryItemDetailMarkup(selectedGroup)}
+              </div>
+              <div class="inventory-equipped-panel panel">
+                <div class="inventory-panel-head"><p class="eyebrow">Equipaggiati</p><h3>Stato giocatori</h3></div>
+                <div class="equipped-list">
+                  ${equipped.length ? equipped.map(({ entry, player, resolved, item }) => `
+                    <article class="equipped-summary static-item">${itemIcon(item)}<div class="equipped-summary-copy"><span class="item-kind">Equipaggiato</span><strong>${escapeHtml(item.name)}</strong></div><div class="equipped-player"><span class="equipped-player-portrait"><img src="${escapeHtml(playerPortraitUrl(resolved || player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(resolved || player).cardFallbacks)} /></span><div class="equipped-player-copy"><span>${escapeHtml(player.name)} · ${escapeHtml(player.position)}</span><small>${escapeHtml(itemStatLabel(item.stat))} ${resolved.baseStats[item.stat]} → <strong>${resolved.stats[item.stat]}</strong></small></div></div><button type="button" class="btn btn-ghost inventory-remove-button" data-unequip-player="${entry.playerId}">RIMUOVI</button></article>`).join("") : '<p class="muted inventory-empty">Nessun giocatore ha un oggetto equipaggiato.</p>'}
+                </div>
               </div>
             </aside>
           </section>
@@ -4041,6 +4095,10 @@
         ui.inventoryFilter = filterButton.dataset.inventoryFilter || "all";
         return renderInventory({ keepScroll: true });
       }
+      const itemCard = event.target.closest("[data-inventory-select]");
+      if (itemCard && !event.target.closest("button")) {
+        return selectInventoryItem(itemCard.dataset.inventorySelect);
+      }
       const useButton = event.target.closest("[data-use-item]");
       if (useButton) return useInventoryItem(useButton.dataset.useItem);
       const equipButton = event.target.closest("[data-equip-item]");
@@ -4048,12 +4106,18 @@
       const unequipButton = event.target.closest("[data-unequip-player]");
       if (unequipButton) return unequipPlayerItem(unequipButton.dataset.unequipPlayer);
     });
+    content?.addEventListener("keydown", (event) => {
+      if (!["Enter", " "].includes(event.key) || !event.target.matches("[data-inventory-select]")) return;
+      event.preventDefault();
+      selectInventoryItem(event.target.dataset.inventorySelect);
+    });
     bindBottomNav();
   }
 
   function inventoryCategoriesMarkup(filterId = "all") {
-    if (!run.inventory.length) return '<div class="inventory-empty-state"><strong>Nessun oggetto nello zaino</strong><p class="muted">Gli oggetti si ottengono dagli eventi della mappa durante la run.</p></div>';
-    const categories = groupedInventoryByCategory(run.inventory)
+    const ownedGroups = groupedOwnedInventoryItems(run);
+    if (!ownedGroups.length) return '<div class="inventory-empty-state"><strong>Nessun oggetto posseduto</strong><p class="muted">Gli oggetti si ottengono dagli eventi della mappa durante la run.</p></div>';
+    const categories = groupedOwnedInventoryByCategory(run)
       .map((category) => ({ ...category, items: category.items.filter((group) => inventoryGroupMatchesFilter(group, filterId)) }))
       .filter((category) => category.items.length);
     if (!categories.length) return '<div class="inventory-empty-state"><strong>Nessun oggetto in questo filtro</strong><p class="muted">Cambia categoria per vedere gli altri oggetti posseduti.</p></div>';
@@ -4061,24 +4125,144 @@
       .map((category) => `
         <section class="inventory-category" data-inventory-category="${category.id}">
           <header class="inventory-category-head"><span class="inventory-category-icon" aria-hidden="true">${category.icon}</span><div><h3>${escapeHtml(category.title)}</h3><p class="muted small">${category.items.reduce((sum, group) => sum + group.quantity, 0)} oggetti</p></div></header>
-          <div class="item-grid inventory-item-grid">${category.items.map((group) => inventoryItemCard(group)).join("")}</div>
+          <div class="item-grid inventory-item-grid">${category.items.map((group) => inventoryItemCard(group, group.key === ui.inventorySelectedItemId)).join("")}</div>
         </section>`).join("");
   }
 
-  function inventoryItemCard(groupOrItem) {
+  function inventoryItemCard(groupOrItem, selected = false) {
     const group = groupOrItem?.instances ? groupOrItem : { item: groupOrItem, quantity: 1, instances: [groupOrItem], key: inventoryItemIdentity(groupOrItem) };
     const item = resolveItem(group.item);
     const instanceId = group.instances[0]?.instanceId || item.instanceId;
-    const actionLabel = item.kind === "equipment" ? "Equipaggia" : "Usa";
-    const action = item.kind === "equipment"
-      ? `<button type="button" class="btn btn-primary" data-equip-item="${instanceId}">${actionLabel}</button>`
-      : item.effect === "pull_reroll"
-        ? '<span class="muted small item-action-note">Utilizzabile durante una pull</span>'
-        : item.effect === "lucky_pull"
-          ? '<span class="muted small item-action-note">Utilizzabile durante una Pull svincolati o Pull squadre</span>'
-          : `<button type="button" class="btn btn-primary" data-use-item="${instanceId}">${actionLabel}</button>`;
+    const backpackQuantity = Number(group.backpackQuantity ?? group.quantity);
+    const action = inventoryItemActionMarkup(item, instanceId, { compact: true, backpackQuantity, equippedEntries: group.equippedEntries || [] });
     const detail = item.kind === "equipment" ? `${escapeHtml(itemStatLabel(item.stat))} +${escapeHtml(item.bonus)}` : escapeHtml(item.description);
-    return `<article class="item-card inventory-item-card static-item" data-item-id="${escapeHtml(group.key)}" data-item-kind="${escapeHtml(item.kind)}">${itemIcon(item)}<div class="item-card-main"><span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${detail}</p></div><div class="item-card-actions"><span class="item-quantity" aria-label="Quantità ${group.quantity}">×${group.quantity}</span>${action}</div></article>`;
+    const equippedState = group.equippedCount ? `<span class="item-equipped-state">${group.equippedCount} equipaggiat${group.equippedCount === 1 ? "o" : "i"}</span>` : "";
+    return `<article class="item-card inventory-item-card static-item ${selected ? "is-selected" : ""}" tabindex="0" aria-selected="${selected ? "true" : "false"}" data-inventory-select="${escapeHtml(group.key)}" data-item-id="${escapeHtml(group.key)}" data-item-kind="${escapeHtml(item.kind)}">${itemIcon(item)}<div class="item-card-main"><span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${detail}</p>${equippedState}</div><div class="item-card-actions"><span class="item-quantity" aria-label="Quantità posseduta ${group.quantity}">×${group.quantity}</span>${action}</div></article>`;
+  }
+
+  function inventoryItemActionMarkup(itemOrId, instanceId, { compact = false, backpackQuantity = 1, equippedEntries = [] } = {}) {
+    const item = resolveItem(itemOrId);
+    const actionClass = compact ? "btn btn-primary inventory-card-action" : "btn btn-yellow inventory-detail-action";
+    if (item.kind === "equipment") {
+      if (backpackQuantity > 0 && instanceId) return `<button type="button" class="${actionClass}" data-equip-item="${escapeHtml(instanceId)}">EQUIPAGGIA</button>`;
+      if (equippedEntries.length === 1) return `<button type="button" class="${actionClass}" data-unequip-player="${escapeHtml(equippedEntries[0].playerId)}">RIMUOVI</button>`;
+      return '<span class="inventory-unavailable">Gestisci dagli equipaggiati</span>';
+    }
+    if (item.effect === "pull_reroll") return '<span class="inventory-unavailable">Utilizzabile durante un Pull</span>';
+    if (item.effect === "lucky_pull") return '<span class="inventory-unavailable">Utilizzabile in un Pull normale</span>';
+    if (!instanceId) return '<span class="inventory-unavailable">NON UTILIZZABILE</span>';
+    return `<button type="button" class="${actionClass}" data-use-item="${escapeHtml(instanceId)}">USA</button>`;
+  }
+
+  function inventoryItemDetailMarkup(group) {
+    if (!group) return '<div class="inventory-detail-empty"><p class="eyebrow">Dettaglio</p><h3>Seleziona un oggetto</h3><p>Scegli una card per vedere effetto, quantità e comandi disponibili.</p></div>';
+    const item = resolveItem(group.item);
+    const instanceId = group.instances[0]?.instanceId || item.instanceId;
+    const backpackQuantity = Number(group.backpackQuantity ?? group.quantity);
+    const limit = item.effect === "pull_reroll"
+      ? "Si attiva esclusivamente durante un Pull."
+      : item.effect === "lucky_pull"
+        ? "Disponibile una sola volta nei Pull normali compatibili."
+        : item.kind === "equipment"
+          ? "Resta posseduto anche quando viene equipaggiato."
+          : "La quantità diminuisce soltanto dopo un utilizzo riuscito.";
+    return `
+      <div class="inventory-detail-visual">${itemIcon(item)}</div>
+      <div class="inventory-detail-copy">
+        <p class="eyebrow">Dettaglio oggetto</p>
+        <span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span>
+        <h3>${escapeHtml(item.name)}</h3>
+        <p>${escapeHtml(item.description)}</p>
+        <div class="inventory-detail-effect"><span>Effetto</span><strong>${item.kind === "equipment" ? `${escapeHtml(itemStatLabel(item.stat))} +${escapeHtml(item.bonus)}` : escapeHtml(item.description)}</strong></div>
+        <div class="inventory-detail-counts">
+          <span><strong>${group.quantity}</strong> posseduti</span>
+          ${item.kind === "equipment" ? `<span><strong>${backpackQuantity}</strong> nello zaino</span><span><strong>${group.equippedCount || 0}</strong> equipaggiati</span>` : ""}
+        </div>
+        <p class="inventory-detail-limit">${escapeHtml(limit)}</p>
+        ${inventoryItemActionMarkup(item, instanceId, { backpackQuantity, equippedEntries: group.equippedEntries || [] })}
+      </div>`;
+  }
+
+  function selectInventoryItem(groupKey) {
+    const group = groupedOwnedInventoryItems(run).find((candidate) => candidate.key === groupKey);
+    if (!group) return;
+    ui.inventorySelectedItemId = groupKey;
+    document.querySelectorAll("[data-inventory-select]").forEach((card) => {
+      const selected = card.dataset.inventorySelect === groupKey;
+      card.classList.toggle("is-selected", selected);
+      card.setAttribute("aria-selected", selected ? "true" : "false");
+    });
+    const detail = document.getElementById("inventory-item-detail");
+    if (detail) detail.innerHTML = inventoryItemDetailMarkup(group);
+  }
+
+  function inventoryPlayerChoice(entry, item, mode) {
+    const player = resolvedRosterPlayer(entry.playerId);
+    if (!player) return "";
+    const currentEquipment = entry.equippedItem ? resolveItem(entry.equippedItem) : null;
+    let valid = true;
+    let invalidReason = "";
+    if (mode === "level") {
+      valid = Number(entry.level || 0) < 20;
+      invalidReason = "Livello massimo raggiunto";
+    } else if (mode === "potential") {
+      const source = sourcePlayer(entry);
+      const maxBoost = Math.max(0, 99 - Number(source.finalOverall || 0));
+      const applications = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
+      valid = applications.reduce((sum, boost) => sum + boost.amount, 0) < maxBoost;
+      invalidReason = "Potenziale massimo raggiunto";
+    }
+    const dataAttribute = mode === "equipment"
+      ? `data-equip-player="${escapeHtml(entry.playerId)}"`
+      : valid
+        ? `data-consumable-player="${escapeHtml(entry.playerId)}"`
+        : `disabled aria-disabled="true"`;
+    return `
+      <article class="inventory-player-option ${valid ? "" : "is-unavailable"}">
+        ${compactPlayerCardMarkup(player, {
+          equipment: entry.equippedItem,
+          level: player.displayLevel,
+          overall: player.overall,
+          dataAttr: dataAttribute,
+          extraClass: "inventory-player-choice",
+        })}
+        <div class="inventory-player-option-copy">
+          ${currentEquipment ? `<span>${itemIcon(currentEquipment)}<small>Già equipaggiato</small><strong>${escapeHtml(currentEquipment.name)}</strong></span>` : '<span class="inventory-player-empty-equipment">Nessun oggetto equipaggiato</span>'}
+          ${!valid ? `<em>${escapeHtml(invalidReason)}</em>` : ""}
+        </div>
+      </article>`;
+  }
+
+  function inventoryPlayerSelectionMarkup(item, mode) {
+    const orderedIds = [...(run.lineup || []), ...(run.bench || [])];
+    const seen = new Set();
+    const entries = orderedIds
+      .map((id) => rosterEntry(id))
+      .filter((entry) => entry && !seen.has(String(entry.playerId)) && seen.add(String(entry.playerId)));
+    return `
+      <div class="inventory-player-selection-grid">
+        ${entries.map((entry) => inventoryPlayerChoice(entry, item, mode)).join("")}
+      </div>`;
+  }
+
+  function openInventoryConfirmation(item, { title, description, confirmLabel = "CONFERMA", onConfirm, onCancel } = {}) {
+    openModal(`
+      <div class="inventory-confirmation">
+        <div class="inventory-confirmation-item">${itemIcon(item)}<div><p class="eyebrow">Conferma utilizzo</p><h2>${escapeHtml(title || item.name)}</h2></div></div>
+        <p>${escapeHtml(description || item.description)}</p>
+        <div class="inventory-confirmation-warning">La quantità verrà aggiornata soltanto dopo il successo.</div>
+        <div class="button-row inventory-modal-actions">
+          <button type="button" class="btn btn-yellow" id="confirm-inventory-action">${escapeHtml(confirmLabel)}</button>
+          <button type="button" class="btn btn-ghost" id="cancel-inventory-action">ANNULLA</button>
+        </div>
+      </div>`,
+      { closeable: false, className: "inventory-flow-modal inventory-confirmation-modal" }
+    );
+    document.getElementById("confirm-inventory-action")?.addEventListener("click", onConfirm);
+    document.getElementById("cancel-inventory-action")?.addEventListener("click", () => {
+      if (onCancel) onCancel();
+      else closeModal();
+    });
   }
 
   function useInventoryItem(instanceId) {
@@ -4087,36 +4271,50 @@
     if (item.effect === "player_level") return choosePlayerForConsumable(item);
     if (item.effect === "potential_boost") return choosePlayerForPotentialBoost(item);
     if (item.effect === "team_level") {
-      const updatedPlayers = addLevels(Number(item.amount || 0));
-      if (updatedPlayers <= 0) return toast("Tutti i giocatori hanno già raggiunto il livello massimo.");
-      removeInventoryItem(instanceId);
-      global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
-      global.RunState.save(run);
-      toast("Tutta la rosa guadagna +0,5 livello");
-      return renderInventory();
+      const hasEligiblePlayer = run.roster.some((entry) => Number(entry.level || 0) < 20);
+      if (!hasEligiblePlayer) return toast("Tutti i giocatori hanno già raggiunto il livello massimo.");
+      return openInventoryConfirmation(item, {
+        title: `Usare ${item.name}?`,
+        description: "Aumenterà di 0,5 livello tutti i giocatori che non hanno ancora raggiunto il livello massimo.",
+        onConfirm: () => {
+          addLevels(Number(item.amount || 0));
+          removeInventoryItem(instanceId);
+          global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
+          global.RunState.save(run);
+          closeModal();
+          toast("Tutta la rosa guadagna +0,5 livello");
+          renderInventory();
+        },
+      });
     }
     if (item.effect === "restore_life") {
       const maxRunLives = Number(global.RunState?.runLivesLimit?.() ?? global.SEASON1_CONFIG.maxRunLives ?? global.SEASON1_CONFIG.startingLives ?? 2);
       if (run.lives >= maxRunLives) return toast("Hai già tutte le vite");
-      run.lives = Math.min(maxRunLives, run.lives + Number(item.amount || 1));
-      removeInventoryItem(instanceId);
-      global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
-      global.RunState.save(run);
-      toast("Hai recuperato una vita");
-      return renderInventory();
+      return openInventoryConfirmation(item, {
+        title: `Usare ${item.name}?`,
+        description: `Recupererai una vita (${run.lives}/${maxRunLives}).`,
+        onConfirm: () => {
+          run.lives = Math.min(maxRunLives, run.lives + Number(item.amount || 1));
+          removeInventoryItem(instanceId);
+          global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
+          global.RunState.save(run);
+          closeModal();
+          toast("Hai recuperato una vita");
+          renderInventory();
+        },
+      });
     }
     if (item.effect === "lucky_pull") return toast("Portafortuna utilizzabile durante una Pull svincolati o Pull squadre.");
   }
 
   function choosePlayerForConsumable(item) {
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli a chi usarla</h2><p class="muted">Tocca un giocatore della formazione: titolari sul campo e riserve separate. ${escapeHtml(item.description)}</p></div></div>
-      <div class="item-assignment-layout consumable-assignment-layout">
-        ${squadPitchMarkup({ mode: "consumable" })}
-        <aside class="panel"><h3>Riserve ${run.bench.length}/4</h3><div class="bench-list">${benchMarkup({ mode: "consumable" })}</div></aside>
-      </div>`,
-      { closeable: true, className: "item-assignment-modal consumable-assignment-modal" }
+      <div class="inventory-flow-head">${itemIcon(item)}<div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli il giocatore</h2><p>${escapeHtml(item.description)}</p></div></div>
+      ${inventoryPlayerSelectionMarkup(item, "level")}
+      <div class="inventory-modal-actions"><button type="button" class="btn btn-ghost" data-close-inventory-flow>RINUNCIA</button></div>`,
+      { closeable: true, className: "item-assignment-modal consumable-assignment-modal inventory-flow-modal" }
     );
+    modalRoot.querySelector("[data-close-inventory-flow]")?.addEventListener("click", closeModal);
     modalRoot.querySelectorAll("[data-consumable-player]").forEach((button) => {
       button.addEventListener("click", () => {
         const entry = rosterEntry(button.dataset.consumablePlayer);
@@ -4125,27 +4323,33 @@
         const currentLevel = Number(entry.level || 0);
         const appliedLevels = Math.min(Number(item.amount || 1), 20 - currentLevel);
         if (appliedLevels <= 0) return toast("Questo giocatore ha già raggiunto il livello massimo.");
-        entry.level = Math.min(20, currentLevel + appliedLevels);
-        removeInventoryItem(item.instanceId);
-        global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
-        global.RunState.save(run);
-        const after = resolvedRosterPlayer(entry.playerId);
-        closeModal();
-        toast(`${escapeHtml(item.name)} utilizzata\nLivello ${before.displayLevel} → ${after.displayLevel}\nOverall ${before.overall} → ${after.overall}`);
-        renderInventory();
+        openInventoryConfirmation(item, {
+          title: `Usare su ${before.name}?`,
+          description: `Livello ${before.displayLevel} → ${Math.min(20, currentLevel + appliedLevels)}. L'oggetto sarà consumato.`,
+          onCancel: () => choosePlayerForConsumable(item),
+          onConfirm: () => {
+            entry.level = Math.min(20, currentLevel + appliedLevels);
+            removeInventoryItem(item.instanceId);
+            global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
+            global.RunState.save(run);
+            const after = resolvedRosterPlayer(entry.playerId);
+            closeModal();
+            toast(`${escapeHtml(item.name)} utilizzata\nLivello ${before.displayLevel} → ${after.displayLevel}\nOverall ${before.overall} → ${after.overall}`);
+            renderInventory();
+          },
+        });
       });
     });
   }
 
   function choosePlayerForPotentialBoost(item) {
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli a chi assegnarlo</h2><p class="muted">Aumenta subito overall attuale e potenziale massimo dello stesso valore, senza cambiare livello.</p></div></div>
-      <div class="item-assignment-layout consumable-assignment-layout">
-        ${squadPitchMarkup({ mode: "consumable" })}
-        <aside class="panel"><h3>Riserve ${run.bench.length}/4</h3><div class="bench-list">${benchMarkup({ mode: "consumable" })}</div></aside>
-      </div>`,
-      { closeable: true, className: "item-assignment-modal consumable-assignment-modal" }
+      <div class="inventory-flow-head">${itemIcon(item)}<div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli il giocatore</h2><p>Aumenta subito overall attuale e potenziale massimo dello stesso valore, senza cambiare livello.</p></div></div>
+      ${inventoryPlayerSelectionMarkup(item, "potential")}
+      <div class="inventory-modal-actions"><button type="button" class="btn btn-ghost" data-close-inventory-flow>RINUNCIA</button></div>`,
+      { closeable: true, className: "item-assignment-modal consumable-assignment-modal inventory-flow-modal" }
     );
+    modalRoot.querySelector("[data-close-inventory-flow]")?.addEventListener("click", closeModal);
     modalRoot.querySelectorAll("[data-consumable-player]").forEach((button) => {
       button.addEventListener("click", () => {
         const entry = rosterEntry(button.dataset.consumablePlayer);
@@ -4158,19 +4362,26 @@
         const currentOverallBoost = Math.min(currentPotentialBoost, Math.max(0, Number(entry.currentOverallBoost ?? currentPotentialBoost)));
         const addedBoost = Math.min(Number(item.amount || 3), Math.max(0, maxBoost - currentPotentialBoost));
         if (addedBoost <= 0) return toast("Questo giocatore ha già raggiunto il potenziale massimo. L'oggetto NON viene consumato.");
-        entry.potentialBoost = Math.min(maxBoost, currentPotentialBoost + addedBoost);
-        entry.currentOverallBoost = Math.min(maxBoost, currentOverallBoost + addedBoost);
-        entry.intensiveTrainingMigrated = true;
-        entry.potentialBoostApplications = Array.isArray(entry.potentialBoostApplications) ? entry.potentialBoostApplications : [];
-        if (addedBoost > 0) entry.potentialBoostApplications.push({ amount: addedBoost, appliedLevel: Number(entry.level || 0) });
-        removeInventoryItem(item.instanceId);
-        global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
-        global.RunState.save(run);
-        const after = resolvedRosterPlayer(entry.playerId);
-        closeModal();
-        const rarityMessage = before.category !== after.category ? `\nNuova rarità: ${after.category}` : "";
-        toast(`Pesi da allenamento completati\nOverall ${before.overall} → ${after.overall}\nPotenziale ${before.potential} → ${after.potential}${rarityMessage}`);
-        renderInventory();
+        openInventoryConfirmation(item, {
+          title: `Allenare ${before.name}?`,
+          description: `Overall e potenziale aumenteranno di ${addedBoost}.`,
+          onCancel: () => choosePlayerForPotentialBoost(item),
+          onConfirm: () => {
+            entry.potentialBoost = Math.min(maxBoost, currentPotentialBoost + addedBoost);
+            entry.currentOverallBoost = Math.min(maxBoost, currentOverallBoost + addedBoost);
+            entry.intensiveTrainingMigrated = true;
+            entry.potentialBoostApplications = Array.isArray(entry.potentialBoostApplications) ? entry.potentialBoostApplications : [];
+            if (addedBoost > 0) entry.potentialBoostApplications.push({ amount: addedBoost, appliedLevel: Number(entry.level || 0) });
+            removeInventoryItem(item.instanceId);
+            global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
+            global.RunState.save(run);
+            const after = resolvedRosterPlayer(entry.playerId);
+            closeModal();
+            const rarityMessage = before.category !== after.category ? `\nNuova rarità: ${after.category}` : "";
+            toast(`Pesi da allenamento completati\nOverall ${before.overall} → ${after.overall}\nPotenziale ${before.potential} → ${after.potential}${rarityMessage}`);
+            renderInventory();
+          },
+        });
       });
     });
   }
@@ -4179,13 +4390,12 @@
     const item = run.inventory.find((candidate) => candidate.instanceId === instanceId);
     if (!item) return;
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Assegna a un giocatore</h2><p class="muted">Scegli dalla formazione attuale: titolari sul campo e riserve separate. Non puoi modificare modulo o rosa da qui.</p></div></div>
-      <div class="item-assignment-layout">
-        ${squadPitchMarkup({ mode: "equip" })}
-        <aside class="panel"><h3>Riserve ${run.bench.length}/4</h3><div class="bench-list">${benchMarkup({ mode: "equip" })}</div></aside>
-      </div>`,
-      { closeable: true, className: "item-assignment-modal" }
+      <div class="inventory-flow-head">${itemIcon(item)}<div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Equipaggia un giocatore</h2><p>Sono mostrati i giocatori compatibili della rosa. L'oggetto già indossato è indicato sotto ogni card.</p></div></div>
+      ${inventoryPlayerSelectionMarkup(item, "equipment")}
+      <div class="inventory-modal-actions"><button type="button" class="btn btn-ghost" data-close-inventory-flow>RINUNCIA</button></div>`,
+      { closeable: true, className: "item-assignment-modal inventory-flow-modal" }
     );
+    modalRoot.querySelector("[data-close-inventory-flow]")?.addEventListener("click", closeModal);
     modalRoot.querySelectorAll("[data-equip-player]").forEach((button) => {
       button.addEventListener("click", () => handleEquipmentTarget(instanceId, button.dataset.equipPlayer));
     });
@@ -4199,9 +4409,12 @@
       const current = entry.equippedItem;
       const player = sourcePlayer(entry);
       return openModal(`
-        <div class="modal-head"><div><p class="eyebrow">Sostituzione oggetto</p><h2>${escapeHtml(player.name)} ha già equipaggiato ${escapeHtml(current.name)}.</h2><p class="muted">Vuoi sostituirlo con ${escapeHtml(item.name)}?</p></div></div>
-        <div class="button-row"><button type="button" class="btn btn-primary" id="confirm-equip-replace">Conferma sostituzione</button><button type="button" class="btn" id="cancel-equip-replace">Annulla</button></div>`,
-        { closeable: false }
+        <div class="inventory-confirmation">
+          <div class="inventory-confirmation-item">${itemIcon(item)}<div><p class="eyebrow">Sostituzione oggetto</p><h2>${escapeHtml(player.name)}</h2></div></div>
+          <p><strong>${escapeHtml(current.name)}</strong> verrà riportato nello zaino e sostituito con <strong>${escapeHtml(item.name)}</strong>.</p>
+          <div class="button-row inventory-modal-actions"><button type="button" class="btn btn-yellow" id="confirm-equip-replace">CONFERMA SOSTITUZIONE</button><button type="button" class="btn btn-ghost" id="cancel-equip-replace">ANNULLA</button></div>
+        </div>`,
+        { closeable: false, className: "inventory-flow-modal inventory-confirmation-modal" }
       ), document.getElementById("confirm-equip-replace").addEventListener("click", () => equipItemToEntry(instanceId, entry)), document.getElementById("cancel-equip-replace").addEventListener("click", () => chooseEquipmentPlayer(instanceId));
     }
     equipItemToEntry(instanceId, entry);
@@ -4223,6 +4436,16 @@
     const entry = rosterEntry(playerId);
     if (!entry?.equippedItem) return;
     if (run.inventory.length >= global.SEASON1_CONFIG.maxInventory) return toast("Inventario pieno: libera prima uno spazio");
+    if (!options.confirmed) {
+      const item = resolveItem(entry.equippedItem);
+      const player = sourcePlayer(entry);
+      return openInventoryConfirmation(item, {
+        title: `Rimuovere ${item.name}?`,
+        description: `${item.name} verrà rimosso da ${player.name} e riportato nello zaino.`,
+        confirmLabel: "RIMUOVI",
+        onConfirm: () => unequipPlayerItem(playerId, { ...options, confirmed: true }),
+      });
+    }
     run.inventory.push(entry.equippedItem);
     entry.equippedItem = null;
     global.RunState.save(run);
