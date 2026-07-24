@@ -431,8 +431,8 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .trade-result-card { width: min(320px, 100%); margin: 18px auto; }
 .trade-result-card .player-portrait { height: 210px; aspect-ratio: auto; }
 
-.trade-node-head, .random-event-head, .item-reward-head { margin-bottom: 14px; }
-.trade-node-head h2, .random-event-head h2, .item-reward-head h2 { margin-bottom: 6px; }
+.trade-node-head, .random-event-head { margin-bottom: 14px; }
+.trade-node-head h2, .random-event-head h2 { margin-bottom: 6px; }
 .trade-flow-summary, .trade-confirm-panel { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
 .trade-flow-summary > div, .trade-confirm-panel > div { min-width: 0; padding: 12px 14px; border: 1px solid rgba(92,130,177,.34); border-radius: 16px; background: rgba(7,23,44,.72); }
 .trade-flow-summary span, .trade-confirm-panel span { display: block; color: var(--muted); font-size: .72rem; font-weight: 950; letter-spacing: .05em; text-transform: uppercase; }
@@ -445,9 +445,82 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .exchange-actions, .item-reward-actions { position: static; width: 100%; margin-top: 24px; }
 .node-actions .btn { min-height: 42px; }
 .node-choice-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
-.item-reward-modal { width: min(860px, 100%); }
-.item-reward-grid .item-choice-card { min-height: 100%; text-align: left; }
-.item-reward-grid .item-choice-card:focus-visible, .random-event-modal .btn:focus-visible, .trade-modal [data-trade-player]:focus-visible, .trade-confirm-modal .btn:focus-visible, .trade-result-modal .btn:focus-visible { outline: 3px solid rgba(255,211,79,.72); outline-offset: 3px; }
+.item-reward-modal {
+  width: min(1120px, calc(100vw - 40px));
+  max-height: min(900px, calc(100dvh - 32px));
+  padding: clamp(18px, 2vw, 28px);
+  overflow-x: hidden;
+  border: 3px solid #111216;
+  border-radius: 0;
+  background:
+    linear-gradient(105deg, rgba(255,255,255,.98) 0 57%, rgba(255,255,255,.9) 100%),
+    url("../assets/home/inazuma-stadium-desktop-light.jpeg") center / cover no-repeat;
+  color: #111216;
+  box-shadow: 12px 14px 0 rgba(17,18,22,.34);
+}
+.item-reward-screen { min-width: 0; padding-bottom: 0; }
+.item-reward-head { position: relative; margin-bottom: 18px; padding: 0 0 14px 15px; border-bottom: 3px solid #111216; }
+.item-reward-head::before { content: ""; position: absolute; inset: 0 auto 13px 0; width: 6px; background: #f2c500; transform: skewX(-12deg); }
+.item-reward-head .eyebrow { margin: 0 0 4px; color: #826600; }
+.item-reward-head h1 { margin: 0; color: #111216; font-size: clamp(1.65rem, 3vw, 2.7rem); line-height: .95; letter-spacing: -.035em; }
+.item-reward-head > p:last-child { max-width: 680px; margin: 8px 0 0; color: #4c5159; font-weight: 750; }
+.item-reward-layout { display: grid; grid-template-columns: minmax(250px, .72fr) minmax(0, 1.55fr); gap: clamp(16px, 2.2vw, 28px); align-items: stretch; }
+.item-reward-options { display: grid; align-content: start; gap: 10px; min-width: 0; }
+.item-reward-candidate {
+  display: grid;
+  grid-template-columns: 58px minmax(0,1fr);
+  gap: 11px;
+  align-items: center;
+  min-width: 0;
+  padding: 10px;
+  border: 2px solid #111216;
+  border-radius: 0;
+  background: rgba(255,255,255,.9);
+  color: #111216;
+  text-align: left;
+  box-shadow: 4px 4px 0 rgba(17,18,22,.14);
+}
+.item-reward-candidate:hover, .item-reward-candidate:focus-visible, .item-reward-candidate.selected { outline: 0; border-color: #111216; background: #f7cf19; box-shadow: 6px 6px 0 #111216; transform: translate(-2px,-2px); }
+.item-reward-candidate .item-icon { width: 58px; height: 58px; border: 1px solid #918f88; border-radius: 0; background: #f4f1e8; }
+.item-reward-candidate > span { display: grid; gap: 2px; min-width: 0; }
+.item-reward-candidate small { color: #6d5b12; font-size: .66rem; font-weight: 950; letter-spacing: .04em; text-transform: uppercase; }
+.item-reward-candidate strong { overflow: hidden; color: #111216; white-space: nowrap; text-overflow: ellipsis; line-height: 1.15; }
+.item-reward-candidate em { overflow: hidden; color: #4c5159; white-space: nowrap; text-overflow: ellipsis; font-size: .75rem; font-style: normal; font-weight: 800; }
+.item-reward-details { min-width: 0; }
+.item-reward-detail, .item-reward-result {
+  display: grid;
+  grid-template-columns: minmax(150px, .72fr) minmax(0, 1.45fr);
+  gap: clamp(16px, 2vw, 24px);
+  min-height: 100%;
+  padding: clamp(16px, 2vw, 24px);
+  border: 3px solid #111216;
+  background: rgba(255,253,246,.94);
+  box-shadow: 8px 8px 0 rgba(17,18,22,.22);
+}
+.item-reward-visual { display: grid; place-items: center; min-width: 0; border: 1px solid #aaa69c; background: linear-gradient(145deg,#fff,#ece7d9); }
+.item-reward-visual .item-icon { width: min(180px, 82%); height: auto; aspect-ratio: 1; border: 0; border-radius: 0; background: transparent; }
+.item-reward-copy { display: flex; flex-direction: column; min-width: 0; }
+.item-reward-copy .eyebrow, .item-reward-result .eyebrow { margin: 0 0 4px; color: #826600; }
+.item-reward-copy h2, .item-reward-result h2 { margin: 0; color: #111216; font-size: clamp(1.35rem, 2.3vw, 2rem); line-height: 1; }
+.item-reward-copy > p:not(.eyebrow), .item-reward-result > div > p:not(.eyebrow) { margin: 10px 0 0; color: #4c5159; line-height: 1.42; }
+.item-reward-effect { margin-top: 14px; padding: 11px 13px; border: 2px solid #111216; border-left: 8px solid #d5a900; background: #fff; }
+.item-reward-effect span { display: block; color: #6d5b12; font-size: .68rem; font-weight: 950; letter-spacing: .05em; text-transform: uppercase; }
+.item-reward-effect strong { display: block; margin-top: 3px; color: #111216; line-height: 1.25; }
+.item-reward-note { font-size: .86rem; font-weight: 800; }
+.item-reward-stats { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 8px; margin: 14px 0 0; }
+.item-reward-stats > div { min-width: 0; padding: 9px 10px; border: 1px solid #aaa69c; background: #f4f1e8; }
+.item-reward-stats dt { color: #5c6169; font-size: .67rem; font-weight: 950; text-transform: uppercase; }
+.item-reward-stats dd { margin: 3px 0 0; color: #111216; font-size: 1.08rem; font-weight: 950; }
+.item-reward-capacity { padding: 9px 11px; border: 1px solid #a83e2f; background: #fff0ed; color: #7d281d !important; font-size: .8rem; font-weight: 900; }
+.item-reward-primary-action { margin-top: auto; padding-top: 16px; }
+.item-reward-primary-action .btn { width: 100%; min-height: 48px; border: 2px solid #111216; border-radius: 0; color: #111216; box-shadow: 4px 4px 0 #111216; }
+.item-reward-modal .item-reward-actions { margin-top: 18px; padding-top: 12px; border-top: 2px solid #111216; }
+.item-reward-modal .item-reward-actions .btn { min-width: 190px; border: 2px solid #111216; border-radius: 0; }
+.item-reward-screen--complete { max-width: 820px; margin-inline: auto; }
+.item-reward-result { min-height: 340px; }
+.item-reward-result-modal { width: min(900px, calc(100vw - 40px)); }
+.item-reward-result-modal .item-reward-actions .btn { min-width: min(320px,100%); color: #111216; box-shadow: 4px 4px 0 #111216; }
+.random-event-modal .btn:focus-visible, .trade-modal [data-trade-player]:focus-visible, .trade-confirm-modal .btn:focus-visible, .trade-result-modal .btn:focus-visible { outline: 3px solid rgba(255,211,79,.72); outline-offset: 3px; }
 .random-event-modal { width: min(560px, 100%); }
 .random-event-reveal { display: grid; place-items: center; gap: 7px; margin: 4px auto 16px; padding: 22px 16px; border: 1px solid color-mix(in srgb, var(--reveal-color, var(--yellow)) 52%, rgba(255,255,255,.18)); border-radius: 20px; background: radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--reveal-color, var(--yellow)) 24%, transparent), rgba(7,23,44,.9) 62%); text-align: center; }
 .random-event-reveal span { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 18px; background: color-mix(in srgb, var(--reveal-color, var(--yellow)) 18%, rgba(10,28,54,.92)); font-size: 2rem; box-shadow: inset 0 0 0 1px rgba(255,255,255,.14); }
@@ -475,7 +548,43 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .trade-flow-summary > div, .trade-confirm-panel > div { padding: 10px 12px; }
   .random-event-reveal { padding: 18px 12px; }
   .random-event-reveal span { width: 56px; height: 56px; }
-  .item-reward-grid .item-choice-card { min-height: 136px; }
+  .item-reward-modal {
+    width: calc(100vw - 16px);
+    max-height: calc(100dvh - 16px);
+    padding: max(14px,env(safe-area-inset-top)) max(12px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(12px,env(safe-area-inset-left));
+    background:
+      linear-gradient(180deg,rgba(255,255,255,.96),rgba(255,255,255,.9)),
+      url("../assets/home/inazuma-stadium-mobile-light.jpeg") center top / cover no-repeat;
+    box-shadow: 5px 6px 0 rgba(17,18,22,.34);
+  }
+  .item-reward-screen { padding-bottom: 0; }
+  .item-reward-head { margin-bottom: 12px; padding-bottom: 10px; }
+  .item-reward-head h1 { font-size: clamp(1.45rem,8vw,2rem); }
+  .item-reward-head > p:last-child { margin-top: 5px; font-size: .78rem; line-height: 1.3; }
+  .item-reward-layout { grid-template-columns: 1fr; gap: 12px; }
+  .item-reward-options { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+  .item-reward-candidate { grid-template-columns: 1fr; gap: 5px; justify-items: center; padding: 7px 5px; text-align: center; box-shadow: 2px 2px 0 rgba(17,18,22,.18); }
+  .item-reward-candidate:hover, .item-reward-candidate:focus-visible, .item-reward-candidate.selected { box-shadow: 3px 3px 0 #111216; transform: none; }
+  .item-reward-candidate .item-icon { width: 44px; height: 44px; }
+  .item-reward-candidate small, .item-reward-candidate em { display: none; }
+  .item-reward-candidate strong { width: 100%; font-size: .68rem; white-space: normal; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+  .item-reward-detail, .item-reward-result { grid-template-columns: 86px minmax(0,1fr); gap: 11px; min-height: 0; padding: 11px; border-width: 2px; box-shadow: 4px 4px 0 rgba(17,18,22,.22); }
+  .item-reward-visual { align-self: start; min-height: 106px; }
+  .item-reward-visual .item-icon { width: 78px; max-width: 92%; }
+  .item-reward-copy h2, .item-reward-result h2 { font-size: 1.15rem; }
+  .item-reward-copy > p:not(.eyebrow), .item-reward-result > div > p:not(.eyebrow) { margin-top: 6px; font-size: .76rem; line-height: 1.28; }
+  .item-reward-effect { margin-top: 8px; padding: 7px 8px; border-width: 1px; border-left-width: 5px; font-size: .78rem; }
+  .item-reward-note { font-size: .72rem !important; }
+  .item-reward-stats { gap: 5px; margin-top: 8px; }
+  .item-reward-stats > div { padding: 6px 7px; }
+  .item-reward-stats dt { font-size: .56rem; }
+  .item-reward-stats dd { font-size: .9rem; }
+  .item-reward-capacity { margin-top: 7px !important; padding: 6px 7px; font-size: .68rem !important; }
+  .item-reward-primary-action { padding-top: 10px; }
+  .item-reward-primary-action .btn { min-height: 43px; padding-inline: 8px; font-size: .76rem; }
+  .item-reward-modal .item-reward-actions { margin: 12px 0 0; padding: 9px 0 0; background: transparent; box-shadow: none; }
+  .item-reward-modal .item-reward-actions .btn { width: 100%; min-width: 0; }
+  .item-reward-result { min-height: 0; }
 }
 @media (max-width: 430px) {
   .exchange-actions { flex-direction: column; }

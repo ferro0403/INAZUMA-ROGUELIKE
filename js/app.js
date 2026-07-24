@@ -309,6 +309,7 @@
     inventoryFilter: "all",
     inventorySelectedItemId: null,
     inventoryEquipmentPlayerId: null,
+    itemRewardSubmitting: false,
     albumCollectionId: null,
     albumTeamId: null,
   };
@@ -515,6 +516,7 @@
     delete run.nextPullBoost;
     run.randomEventHistory = Array.isArray(run.randomEventHistory) ? run.randomEventHistory : [];
     run.activeMatch = run.activeMatch || null;
+    run.pendingItemReward = run.pendingItemReward || null;
     run.pendingBossVictory = run.pendingBossVictory || null;
     run.postBossFlow = run.postBossFlow || null;
     global.RunStatistics?.ensureRunStatistics?.(run);
@@ -1416,6 +1418,7 @@
       return renderMatch();
     }
     ensureCurrentZone();
+    if (resumePendingItemReward()) return;
     renderMap();
   }
 
@@ -2057,29 +2060,258 @@
     renderMap();
   }
 
-  function resolveItemNode(node) {
+  function pendingItemRewardNode() {
+    const pending = run?.pendingItemReward;
+    if (!pending || !run?.currentZone) return null;
+    return run.currentZone.nodes.find((node) => String(node.id) === String(pending.nodeId)) || null;
+  }
+
+  function resumePendingItemReward() {
+    const storedNode = pendingItemRewardNode();
+    if (storedNode) {
+      renderMap();
+      resolveItemNode(storedNode);
+      return true;
+    }
+
+    if (run?.pendingItemReward) {
+      run.pendingItemReward = null;
+      global.RunState.save(run);
+    }
+
+    const pendingNode = run?.currentZone?.nodes?.find(
+      (node) => String(node.id) === String(run.currentZone.pendingNodeId)
+    );
+    const pendingType = pendingNode?.type === "random" ? pendingNode.revealedType : pendingNode?.type;
+    if (pendingNode && pendingType === "item") {
+      renderMap();
+      resolveItemNode(pendingNode);
+      return true;
+    }
+    return false;
+  }
+
+  function itemRewardCandidates(node) {
+    const existing = run.pendingItemReward;
+    const sameNode = existing && String(existing.nodeId) === String(node.id);
+    const savedCandidates = sameNode
+      ? (existing.candidateIds || []).map(itemDefinitionById).filter(Boolean)
+      : [];
+    if (savedCandidates.length) return savedCandidates;
+
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}`);
-    const candidates = weightedItemCandidates(random, 3);
+    return weightedItemCandidates(random, 3);
+  }
+
+  function ensurePendingItemReward(node) {
+    const candidates = itemRewardCandidates(node);
+    const existing = run.pendingItemReward;
+    const sameNode = existing && String(existing.nodeId) === String(node.id);
+    const candidateIds = candidates.map((item) => item.id);
+    const selectedItemId = sameNode && candidateIds.includes(existing.selectedItemId)
+      ? existing.selectedItemId
+      : candidateIds[0];
+    run.pendingItemReward = {
+      nodeId: String(node.id),
+      sourceNodeType: node.type,
+      candidateIds,
+      selectedItemId,
+      status: sameNode && existing.status === "claimed" ? "claimed" : "offered",
+      claimedItemId: sameNode ? existing.claimedItemId || null : null,
+      claimedInstanceId: sameNode ? existing.claimedInstanceId || null : null,
+    };
+    global.RunState.save(run);
+    return { pending: run.pendingItemReward, candidates };
+  }
+
+  function itemRewardOwnedQuantity(item) {
+    const key = inventoryItemIdentity(item);
+    return groupedOwnedInventoryItems(run).find((group) => group.key === key)?.quantity || 0;
+  }
+
+  function itemRewardCategory(item) {
+    if (item.kind === "equipment") return "Equipaggiamento";
+    if (item.effect === "pull_reroll" || item.effect === "lucky_pull") return "Oggetto Pull";
+    if (item.effect === "player_level" || item.effect === "team_level" || item.effect === "potential_boost") return "Allenamento";
+    return "Consumabile";
+  }
+
+  function itemRewardEffect(item) {
+    if (item.kind === "equipment") return `+${Number(item.bonus || 0)} ${itemStatLabel(item.stat)}`;
+    return item.description || "Effetto disponibile dall’Inventario.";
+  }
+
+  function itemRewardUsageNote(item) {
+    if (item.effect === "pull_reroll" || item.effect === "lucky_pull") return "Utilizzabile durante un Pull previsto.";
+    if (item.kind === "equipment") return "Verrà aggiunto agli Oggetti. Potrai equipaggiarlo in seguito.";
+    return "Verrà aggiunto agli Oggetti e manterrà il suo utilizzo attuale.";
+  }
+
+  function itemRewardCandidateMarkup(item, selected) {
+    return `
+      <button type="button" class="item-reward-candidate ${selected ? "selected" : ""}" data-reward-candidate="${escapeHtml(item.id)}" aria-pressed="${selected ? "true" : "false"}">
+        ${itemIcon(item)}
+        <span><small>${escapeHtml(itemRewardCategory(item))}</small><strong>${escapeHtml(item.name)}</strong><em>${escapeHtml(itemRewardEffect(item))}</em></span>
+      </button>`;
+  }
+
+  function itemRewardDetailMarkup(item, selected) {
+    const owned = itemRewardOwnedQuantity(item);
+    const full = run.inventory.length >= global.SEASON1_CONFIG.maxInventory;
+    const actionLabel = item.kind === "equipment" ? "AGGIUNGI AGLI OGGETTI" : "PRENDI";
+    return `
+      <article class="item-reward-detail" data-reward-detail="${escapeHtml(item.id)}" ${selected ? "" : "hidden"}>
+        <div class="item-reward-visual">${itemIcon(item)}</div>
+        <div class="item-reward-copy">
+          <p class="eyebrow">${escapeHtml(itemRewardCategory(item))}</p>
+          <h2>${escapeHtml(item.name)}</h2>
+          <p>${escapeHtml(item.description)}</p>
+          <div class="item-reward-effect"><span>Effetto reale</span><strong>${escapeHtml(itemRewardEffect(item))}</strong></div>
+          <p class="item-reward-note">${escapeHtml(itemRewardUsageNote(item))}</p>
+          <dl class="item-reward-stats">
+            <div><dt>Già posseduti</dt><dd>${owned}</dd></div>
+            <div><dt>Spazio inventario</dt><dd>${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</dd></div>
+          </dl>
+          ${full ? '<p class="item-reward-capacity" role="status">Inventario pieno. Prima di prendere la ricompensa potrai scegliere un oggetto da rimuovere.</p>' : ""}
+          <div class="item-reward-primary-action">
+            <button type="button" class="btn btn-yellow btn-primary-action" data-claim-item="${escapeHtml(item.id)}">${actionLabel}</button>
+          </div>
+        </div>
+      </article>`;
+  }
+
+  function resolveItemNode(node) {
+    const { pending, candidates } = ensurePendingItemReward(node);
+    if (pending.status === "claimed") return renderItemRewardResult(node);
+    ui.itemRewardSubmitting = false;
     openModal(`
       <section class="item-reward-screen">
-        <div class="modal-head event-modal-head item-reward-head"><button type="button" class="btn btn-back" id="back-item-map">← Torna alla mappa</button><div><p class="eyebrow">Ricompensa oggetto · Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p><h2>Scegli un oggetto</h2><p class="muted">Guarda icona, categoria ed effetto prima di confermare. L’inventario verrà aggiornato dopo la scelta.</p></div></div>
+        <div class="item-reward-head">
+          <p class="eyebrow">${node.type === "random" ? "Ricompensa dal nodo ?" : "Ricompensa della run"}</p>
+          <h1>OGGETTO TROVATO</h1>
+          <p>Scegli una delle tre ricompense estratte. La scelta resta identica anche dopo un refresh.</p>
+        </div>
         <main class="item-reward-content">
-          <div class="node-choice-grid item-reward-grid" aria-label="Oggetti disponibili">
-            ${candidates.map((item) => itemChoiceCard(item)).join("")}
+          <div class="item-reward-layout">
+            <aside class="item-reward-options" aria-label="Oggetti disponibili">
+              ${candidates.map((item) => itemRewardCandidateMarkup(item, item.id === pending.selectedItemId)).join("")}
+            </aside>
+            <div class="item-reward-details">
+              ${candidates.map((item) => itemRewardDetailMarkup(item, item.id === pending.selectedItemId)).join("")}
+            </div>
           </div>
         </main>
-        <div class="node-actions item-reward-actions"><button type="button" class="btn btn-ghost" id="skip-item">Rinuncia</button></div>
+        <div class="node-actions item-reward-actions"><button type="button" class="btn btn-ghost" id="skip-item">RINUNCIA</button></div>
       </section>`,
       { closeable: false, className: "item-reward-modal" }
     );
-    modalRoot.querySelectorAll("[data-item-choice]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const item = candidates.find((candidate) => candidate.id === button.dataset.itemChoice);
-        receiveItem(item, node, (instance) => finishNonMatchNode(node, `Hai ottenuto ${resolveItem(instance).name}`));
-      });
+    const modal = modalRoot.querySelector(".item-reward-modal");
+    modal.addEventListener("click", (event) => {
+      const candidateButton = event.target.closest("[data-reward-candidate]");
+      if (candidateButton) {
+        const itemId = candidateButton.dataset.rewardCandidate;
+        if (!candidates.some((candidate) => candidate.id === itemId)) return;
+        run.pendingItemReward.selectedItemId = itemId;
+        global.RunState.save(run);
+        modal.querySelectorAll("[data-reward-candidate]").forEach((button) => {
+          const active = button.dataset.rewardCandidate === itemId;
+          button.classList.toggle("selected", active);
+          button.setAttribute("aria-pressed", active ? "true" : "false");
+        });
+        modal.querySelectorAll("[data-reward-detail]").forEach((detail) => {
+          detail.hidden = detail.dataset.rewardDetail !== itemId;
+        });
+        modal.querySelector(`[data-claim-item="${cssEscape(itemId)}"]`)?.focus?.({ preventScroll: true });
+        return;
+      }
+
+      const claimButton = event.target.closest("[data-claim-item]");
+      if (!claimButton || ui.itemRewardSubmitting) return;
+      const item = candidates.find((candidate) => candidate.id === claimButton.dataset.claimItem);
+      if (!item || run.pendingItemReward?.status !== "offered") return;
+      ui.itemRewardSubmitting = true;
+      modal.querySelectorAll("button").forEach((button) => { button.disabled = true; });
+      receiveItem(
+        item,
+        node,
+        (instance) => completeItemReward(node, instance),
+        () => {
+          ui.itemRewardSubmitting = false;
+          resolveItemNode(node);
+        }
+      );
     });
-    document.getElementById("skip-item").addEventListener("click", () => finishNonMatchNode(node, "Hai rinunciato all'oggetto"));
-    document.getElementById("back-item-map")?.addEventListener("click", () => { closeModal(); renderMap(); });
+    document.getElementById("skip-item").addEventListener("click", () => {
+      if (ui.itemRewardSubmitting) return;
+      ui.itemRewardSubmitting = true;
+      run.pendingItemReward = null;
+      finishNonMatchNode(node, "Hai rinunciato all'oggetto");
+    });
+  }
+
+  function completeItemReward(node, instance) {
+    const pending = run.pendingItemReward;
+    if (!pending || pending.status === "claimed") return renderItemRewardResult(node);
+    pending.status = "claimed";
+    pending.claimedItemId = inventoryItemIdentity(instance);
+    pending.claimedInstanceId = instance.instanceId;
+    if (!run.currentZone.completedNodeIds.includes(node.id)) {
+      global.MapEngine.completeNode(run.currentZone, node.id);
+      global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.NODE_COMPLETED, {
+        nodeId: node.id,
+        nodeType: node.type,
+        actionId: `${run.runId}:${node.id}:node_completed`,
+      });
+    }
+    run.phase = "map";
+    global.RunState.save(run);
+    ui.itemRewardSubmitting = false;
+    renderItemRewardResult(node);
+  }
+
+  function renderItemRewardResult(node) {
+    const pending = run.pendingItemReward;
+    const item = itemDefinitionById(pending?.claimedItemId) || itemDefinitionById(pending?.selectedItemId);
+    if (!pending || !item) {
+      run.pendingItemReward = null;
+      global.RunState.save(run);
+      closeModal();
+      return renderMap();
+    }
+    openModal(`
+      <section class="item-reward-screen item-reward-screen--complete">
+        <div class="item-reward-head">
+          <p class="eyebrow">Ricompensa acquisita</p>
+          <h1>OGGETTO OTTENUTO</h1>
+        </div>
+        <main class="item-reward-content">
+          <article class="item-reward-result">
+            <div class="item-reward-visual">${itemIcon(item)}</div>
+            <div>
+              <p class="eyebrow">${escapeHtml(itemRewardCategory(item))}</p>
+              <h2>${escapeHtml(item.name)}</h2>
+              <p>${escapeHtml(itemRewardUsageNote(item))}</p>
+              <div class="item-reward-effect"><span>Effetto reale</span><strong>${escapeHtml(itemRewardEffect(item))}</strong></div>
+              <dl class="item-reward-stats">
+                <div><dt>Ora posseduti</dt><dd>${itemRewardOwnedQuantity(item)}</dd></div>
+                <div><dt>Spazio inventario</dt><dd>${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</dd></div>
+              </dl>
+            </div>
+          </article>
+        </main>
+        <div class="node-actions item-reward-actions">
+          <button type="button" class="btn btn-yellow btn-primary-action" id="finish-item-reward">TORNA ALLA MAPPA</button>
+        </div>
+      </section>`,
+      { closeable: false, className: "item-reward-modal item-reward-result-modal" }
+    );
+    document.getElementById("finish-item-reward").addEventListener("click", () => {
+      run.pendingItemReward = null;
+      global.RunState.save(run);
+      closeModal();
+      toast(`Hai ottenuto ${item.name}`);
+      renderMap();
+    });
   }
 
   function resolveRandomNode(node) {
@@ -2223,11 +2455,6 @@
     document.getElementById("finish-trade").addEventListener("click", () => finishNonMatchNode(node, `${incoming.player.name} entra nella rosa`));
   }
 
-  function itemChoiceCard(item) {
-    const resolved = resolveItem(item);
-    return `<button type="button" class="item-card item-choice-card" data-item-choice="${resolved.id}">${itemIcon(resolved)}<span class="item-kind">${resolved.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(resolved.name)}</strong><p>${escapeHtml(resolved.description)}</p></button>`;
-  }
-
   function weightedItemCandidates(random, count) {
     const pool = global.SEASON1_CONFIG.itemPool.slice();
     const result = [];
@@ -2243,16 +2470,16 @@
     return result;
   }
 
-  function receiveItem(item, node, done) {
+  function receiveItem(item, node, done, onCancel = () => resolveItemNode(node)) {
     const add = () => {
+      if (run.pendingItemReward?.status === "claimed") return done(resolveItem(run.pendingItemReward.claimedItemId));
       const instance = makeItemInstance(item, node.id);
       run.inventory.push(instance);
       global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_OBTAINED, { nodeId: node.id, itemId: item.id, actionId: `${run.runId}:${node.id}:item_obtained` });
-      global.RunState.save(run);
       done(instance);
     };
     if (run.inventory.length < global.SEASON1_CONFIG.maxInventory) return add();
-    chooseInventoryDiscard("Inventario pieno: scegli un oggetto da eliminare", add, () => resolveItemNode(node));
+    chooseInventoryDiscard("Inventario pieno: scegli un oggetto da eliminare", add, onCancel);
   }
 
   function chooseInventoryDiscard(title, onDiscard, onCancel) {

@@ -42,7 +42,7 @@ for (const [id, [name, imageUrl, weight, effectOrStat, amountOrBonus]] of Object
 }
 assert(appJs.includes("function resolveItem(itemOrId)") && appJs.includes("...itemOrId, ...definition"), "legacy saved item names resolve through central config by ID");
 assert(appJs.includes("function itemIcon(itemOrId)") && appJs.includes("handleItemImageError") && appJs.includes("alt=\"${escapeHtml(name)}\""), "item images use shared renderer, alt text and fallback handler");
-assert(appJs.includes("itemChoiceCard") && appJs.includes("item-icon--image"), "item event cards render official item images");
+assert(appJs.includes("itemRewardCandidateMarkup") && appJs.includes("itemRewardDetailMarkup") && appJs.includes("itemIcon(item)"), "item reward candidates and detail render official item images");
 assert(appJs.includes("pull-item-action-copy") && appJs.includes(`const scoutItem = resolveItem("scout_token")`) && appJs.includes(`const luckyItem = resolveItem("lucky_charm")`), "pull item panels use resolved central item data instead of duplicated names");
 assert(css.includes(".item-icon--image img") && css.includes("object-fit: contain"), "official item images are contained without distortion");
 assert(css.includes(".item-icon--image.item-icon--fallback svg"), "fallback SVG keeps card dimensions when images fail");
