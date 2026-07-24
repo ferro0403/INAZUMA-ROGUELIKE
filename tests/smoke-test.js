@@ -54,8 +54,11 @@ assert(css.includes(".player-card-compact, button.player-card-compact"), "compac
 assert(css.includes(".mini-player.selected") && css.includes("outline: 3px solid #05070b"), "selected trade players must have a clear dark outline");
 assert(appJs.includes("runKeepingScroll") && appJs.includes("preserveScroll: scrollSnapshot()"), "trade selection and provisional win flows must preserve scroll");
 assert(appJs.includes("function setSelectedSquadPlayer(playerId)"), "squad editing must update selection classes incrementally");
-assert(appJs.includes("function swapSquadPlayersInDom(starterId, benchId)"), "squad swaps must update only the affected starter and bench cards");
+assert(appJs.includes("function swapSquadPlayersInDom(firstId, secondId, firstArea, secondArea)"), "squad swaps must update only the two affected cards in any valid area");
 assert(!/function handleSquadSelection[\s\S]*?runKeepingScroll\(renderSquad\)[\s\S]*?function ensureCurrentZone/.test(appJs), "squad player selection must not rerender the squad screen");
+assert(appJs.includes("classList.toggle(\"is-compatible\"") && appJs.includes("classList.toggle(\"is-incompatible\""), "direct squad selection must mark compatible and incompatible destinations incrementally");
+assert(appJs.includes('id="squad-player-info" disabled') && appJs.includes("showPlayerDetails(ui.selectedSquadPlayerId)"), "Squad INFO must remain disabled until a selected player opens the existing detail");
+assert(appJs.includes("openSquadFormationSelector") && appJs.includes("autoArrangeFormation(next)"), "Squad module selector must preserve automatic formation arrangement");
 assert(appJs.includes("function setSelectedTradePlayer(playerId)"), "trade player selection must update selection classes incrementally");
 assert(appJs.includes("function updateTradeConfirmState()"), "trade player selection must update only confirm/summary state");
 assert(!/modalRoot\.querySelectorAll\(\"\[data-trade-player\]\"\)[\s\S]*?resolveTradeNode/.test(appJs), "trade player clicks must not rerender the trade modal");

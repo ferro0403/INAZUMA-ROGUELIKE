@@ -707,7 +707,7 @@
           <div class="player-title"><strong>${escapeHtml(player.name)}</strong></div>
           ${detailMarkup}
         </div>
-        ${equipment ? `<span class="player-corner player-equipment" aria-label="Oggetto equipaggiato" title="${escapeHtml(equipment.name)}">${itemIcon(equipment)}</span>` : ""}
+        ${equipment ? `<span class="player-corner player-equipment" aria-label="Oggetto equipaggiato: ${escapeHtml(resolveItem(equipment).name)}" title="${escapeHtml(resolveItem(equipment).name)}">${itemIcon(equipment)}</span>` : ""}
         <span class="player-corner player-level" aria-label="Livello ${escapeHtml(level)}">Lv ${escapeHtml(level)}</span>
       </button>`;
   }
@@ -1509,13 +1509,14 @@
         ? `data-equip-player="${escapeHtml(id)}"`
         : mode === "consumable"
           ? `data-consumable-player="${escapeHtml(id)}"`
-          : `data-squad-player="${escapeHtml(id)}" data-area="${area}"`;
+          : `data-squad-player="${escapeHtml(id)}" data-area="${area}" aria-pressed="${selected ? "true" : "false"}" aria-label="Seleziona ${escapeHtml(player.name)}, ${escapeHtml(player.position)}"`;
     return compactPlayerCardMarkup(player, {
       equipment: player.equipment,
       level: player.displayLevel,
       overall: player.overall,
       selected,
       dataAttr,
+      extraClass: mode === "squad" ? "squad-player-card" : "",
     });
   }
 
@@ -1542,11 +1543,77 @@
     return { starters, bench, complete };
   }
 
-  function squadFormationTabsMarkup() {
-    return seasonDb.formations.eleven.map((item) => `
-      <button type="button" class="squad-formation-tab ${item.id === run.formationId ? "active" : ""}" data-formation-tab="${escapeHtml(item.id)}" ${canUseFormation(item) ? "" : "disabled"} aria-pressed="${item.id === run.formationId ? "true" : "false"}">
-        <span>${escapeHtml(item.name)}</span>
-      </button>`).join("");
+  function squadBackButtonMarkup() {
+    const destination = getSectionRootDestination("run");
+    return `<button type="button" class="squad-back-button" data-section-root="run" aria-label="${escapeHtml(destination.label)}" title="${escapeHtml(destination.label)}">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 5 8.5 12l7 7"/><path d="M9 12h11"/></svg>
+    </button>`;
+  }
+
+  function squadTacticSummaryMarkup(formationId) {
+    const tactic = tacticSummary(formationId);
+    const entries = Object.entries(tactic.modifiers || {});
+    const bonus = entries.find(([, value]) => Number(value) >= 0);
+    const penalty = entries.find(([, value]) => Number(value) < 0);
+    const compactChip = (entry, type) => {
+      if (!entry) return "";
+      const [key, value] = entry;
+      const percent = Math.round(Math.abs(Number(value) || 0) * 100);
+      return `<span class="squad-tactic-effect squad-tactic-effect--${type}">${type === "bonus" ? "+" : "−"}${percent}% ${escapeHtml(TACTIC_LABELS[key] || key)}</span>`;
+    };
+    return `<div class="squad-tactic-copy">
+      <strong>${escapeHtml(tactic.name)}</strong>
+      <p>${escapeHtml(tactic.description)}</p>
+      <div class="squad-tactic-effects">${compactChip(bonus, "bonus")}${compactChip(penalty, "penalty")}</div>
+    </div>`;
+  }
+
+  function squadFormationPreviewMarkup(formation) {
+    return `<div class="squad-formation-mini" aria-hidden="true">
+      ${["FW", "MF", "DF", "GK"].map((role) => {
+        const amount = Number(formation.requirements?.[role] || 0);
+        return `<span class="squad-formation-mini-row" style="--mini-count:${Math.max(1, amount)}">${Array.from({ length: amount }, () => `<i class="squad-formation-dot squad-formation-dot--${role.toLowerCase()}"></i>`).join("")}</span>`;
+      }).join("")}
+    </div>`;
+  }
+
+  function squadFormationOptionsMarkup() {
+    return seasonDb.formations.eleven.map((item) => {
+      const active = item.id === run.formationId;
+      const available = canUseFormation(item);
+      const tactic = tacticSummary(item.id);
+      return `<button type="button" class="squad-formation-option ${active ? "active" : ""}" data-squad-formation="${escapeHtml(item.id)}" ${available ? "" : "disabled"} aria-pressed="${active ? "true" : "false"}">
+        ${squadFormationPreviewMarkup(item)}
+        <span class="squad-formation-option-copy">
+          <strong>${escapeHtml(item.name)}</strong>
+          <small>${escapeHtml(tactic.name)}</small>
+          <em>${active ? "Modulo attivo" : (available ? "Seleziona" : "Rosa incompatibile")}</em>
+        </span>
+      </button>`;
+    }).join("");
+  }
+
+  function openSquadFormationSelector() {
+    openModal(`
+      <div class="modal-head squad-formation-modal-head">
+        <div><p class="eyebrow">Assetto tattico</p><h2>Modifica modulo</h2><p class="muted">Scegli una disposizione: i titolari verranno riordinati automaticamente usando le regole esistenti.</p></div>
+      </div>
+      <div class="squad-formation-options">${squadFormationOptionsMarkup()}</div>
+    `, { closeable: true, className: "squad-formation-modal", preserveScroll: scrollSnapshot() });
+
+    modalRoot.querySelector(".squad-formation-options")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-squad-formation]");
+      if (!button || button.disabled) return;
+      const formationId = button.dataset.squadFormation;
+      if (formationId === run.formationId) return closeModal();
+      const next = formationById(formationId);
+      if (!next || !canUseFormation(next)) return toast("La rosa non copre tutti i ruoli del modulo");
+      autoArrangeFormation(next);
+      global.RunState.save(run);
+      closeModal();
+      toast(`Modulo cambiato in ${next.name}`);
+      runKeepingScroll(renderSquad);
+    });
   }
 
   function renderSquad() {
@@ -1559,89 +1626,75 @@
 
     app.innerHTML = `
       <main class="screen squad-screen">
-        ${topbar("La tua squadra")}
+        <header class="squad-topbar">
+          <div class="squad-topbar-main">
+            ${squadBackButtonMarkup()}
+            <div class="squad-topbar-copy"><p>Gestione squadra</p><h1>${escapeHtml(teamIdentity.name)}</h1></div>
+          </div>
+          <div class="squad-topbar-stats" aria-label="Riepilogo squadra">
+            <span><small>OVR</small><strong>${escapeHtml(avgOverall)}</strong></span>
+            <span><small>LV</small><strong>${escapeHtml(run.teamLevel)}</strong></span>
+            <span class="squad-life-stat" aria-label="Vite">${hearts()}</span>
+          </div>
+        </header>
         <div class="content squad-content">
-          <section class="squad-hero panel" aria-label="Riepilogo squadra">
-            <div class="squad-hero-main">
-              <p class="eyebrow">Gestione squadra</p>
-              <h2>${escapeHtml(teamIdentity.name)}</h2>
-              <p class="muted small" data-squad-hint>${squadStatusText()}</p>
-            </div>
-            <div class="squad-hero-metrics" aria-label="Metriche rosa">
-              <span class="squad-metric"><small>Lv run</small><strong>${escapeHtml(run.teamLevel)}</strong></span>
-              <span class="squad-metric"><small>OVR medio</small><strong>${escapeHtml(avgOverall)}</strong></span>
-              <span class="squad-metric"><small>Rosa</small><strong>${run.roster.length}/${global.SEASON1_CONFIG.maxRoster}</strong></span>
-              <span class="squad-metric"><small>Modulo</small><strong>${escapeHtml(formation?.name || run.formationId)}</strong></span>
-            </div>
-          </section>
+          <div class="squad-command-deck ${squadSummary.complete ? "is-valid" : "is-invalid"}">
+            <span class="squad-readiness-mark" aria-hidden="true">${squadSummary.complete ? "✓" : "!"}</span>
+            <div><small>Stato formazione</small><strong>${squadSummary.complete ? "Pronta per la sfida" : "Formazione non valida"}</strong></div>
+            <span class="squad-command-count">${squadSummary.starters} titolari · ${Math.min(squadSummary.bench, 4)} riserve</span>
+          </div>
 
-          <section class="squad-quick-row" aria-label="Stato formazione">
-            <div class="squad-status-card ${squadSummary.complete ? "valid" : "invalid"}">
-              <strong>${squadSummary.complete ? "Formazione pronta" : "Controlla la rosa"}</strong>
-              <span>${squadSummary.starters}/11 titolari · ${Math.min(squadSummary.bench, 4)}/4 riserve · ${escapeHtml(run.formationId)}</span>
-            </div>
-          </section>
-
-          <section class="squad-formation-strip panel" aria-label="Selettore modulo 11v11">
-            <div class="squad-strip-head">
-              <div>
-                <p class="eyebrow">Modulo</p>
-                <h3>${escapeHtml(formation?.name || run.formationId)}</h3>
-              </div>
-              <button type="button" class="btn squad-edit-toggle ${ui.squadEditMode ? "btn-yellow" : ""}" id="toggle-squad-edit">${ui.squadEditMode ? "Termina modifiche" : "Modifica titolari"}</button>
-            </div>
-            <div class="squad-formation-tabs">${squadFormationTabsMarkup()}</div>
-          </section>
-
-          <div class="squad-layout squad-layout--polished">
-            <section class="squad-field-panel panel" aria-label="Campo 11v11">
-              <div class="squad-panel-head"><div><p class="eyebrow">Titolari</p><h3>Campo 11v11</h3></div><span class="role-chip">${squadSummary.starters}/11</span></div>
+          <div class="squad-workspace">
+            <section class="squad-field-panel" aria-label="Campo 11v11">
+              <div class="squad-panel-head"><div><p class="eyebrow">Formazione titolare</p><h2>Campo tattico</h2></div><span class="squad-field-formation">${escapeHtml(formation?.name || run.formationId)}</span></div>
               ${squadPitchMarkup()}
             </section>
-            <aside class="panel squad-bench-panel" aria-label="Riserve">
-              <div class="squad-panel-head"><div><p class="eyebrow">Cambio rapido</p><h3>Riserve</h3></div><span class="role-chip">${Math.min(squadSummary.bench, 4)}/4</span></div>
-              <div class="bench-list squad-bench-list">
-                ${benchMarkup()}
+            <aside class="squad-management-panel" aria-label="Gestione tattica">
+              <section class="squad-module-card">
+                <div class="squad-module-head">
+                  <div><small>Modulo corrente</small><strong>${escapeHtml(formation?.name || run.formationId)}</strong></div>
+                  ${squadFormationPreviewMarkup(formation)}
+                </div>
+                ${squadTacticSummaryMarkup(run.formationId)}
+              </section>
+              <div class="squad-management-actions">
+                <button type="button" class="btn squad-module-button" id="open-squad-formation">Modifica modulo</button>
+                <button type="button" class="btn btn-yellow squad-info-button" id="squad-player-info" disabled>Info</button>
               </div>
+              <p class="squad-selection-hint" data-squad-hint>Seleziona un giocatore</p>
+              <section class="squad-bench-panel" aria-label="Riserve">
+                <div class="squad-panel-head"><div><p class="eyebrow">Panchina</p><h2>Riserve</h2></div><span class="squad-bench-count">${Math.min(squadSummary.bench, 4)}/4</span></div>
+                <div class="bench-list squad-bench-list">
+                  ${benchMarkup()}
+                </div>
+              </section>
               <div class="squad-secondary-actions">
-                <button type="button" class="btn btn-yellow" id="go-map">${run.currentZone ? "Torna al percorso" : "Inizia il percorso"}</button>
+                <button type="button" class="btn btn-yellow squad-route-button" id="go-map">
+                  <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5 9 4l6 2.5 5-2.5v13.5l-5 2.5-6-2.5-5 2.5V6.5Z"/><path d="M9 4v13.5M15 6.5V20"/></svg>
+                  <span>${run.currentZone ? "Torna al percorso" : "Inizia il percorso"}</span>
+                </button>
               </div>
             </aside>
           </div>
-
-          ${tacticPanelMarkup(run.formationId, { className: "squad-tactic-panel", compact: true })}
         </div>
         ${bottomNav("squad")}
       </main>`;
     resetRenderedViewScroll();
     bindSectionRootNav();
 
-    const changeSquadFormation = (formationId) => {
-      const next = formationById(formationId);
-      if (!canUseFormation(next)) return toast("La rosa non copre tutti i ruoli del modulo");
-      autoArrangeFormation(next);
-      global.RunState.save(run);
-      toast(`Modulo cambiato in ${next.name}`);
-      runKeepingScroll(renderSquad);
-    };
-
-    document.querySelectorAll("[data-formation-tab]").forEach((button) => button.addEventListener("click", () => {
-      if (button.dataset.formationTab === run.formationId) return;
-      changeSquadFormation(button.dataset.formationTab);
-    }));
-
     const main = app.querySelector("main");
     main.addEventListener("click", (event) => {
       const squadPlayer = event.target.closest("[data-squad-player]");
-      if (!squadPlayer || !main.contains(squadPlayer)) return;
-      event.preventDefault();
-      ui.squadEditMode
-        ? handleSquadSelection(squadPlayer.dataset.squadPlayer)
-        : showPlayerDetails(squadPlayer.dataset.squadPlayer);
+      if (squadPlayer && main.contains(squadPlayer)) {
+        event.preventDefault();
+        handleSquadSelection(squadPlayer.dataset.squadPlayer);
+        return;
+      }
+      if (!event.target.closest("button, a, input, select, textarea, [role='button']")) setSelectedSquadPlayer(null);
     });
-    document.getElementById("toggle-squad-edit").addEventListener("click", (event) => {
-      event.preventDefault();
-      setSquadEditMode(!ui.squadEditMode);
+    document.getElementById("open-squad-formation").addEventListener("click", openSquadFormationSelector);
+    document.getElementById("squad-player-info").addEventListener("click", () => {
+      if (ui.selectedSquadPlayerId) showPlayerDetails(ui.selectedSquadPlayerId);
     });
     document.getElementById("go-map").addEventListener("click", () => {
       resumePostBossFlowOrMap();
@@ -1649,40 +1702,29 @@
     bindBottomNav();
   }
 
-  function squadStatusText() {
-    return ui.squadEditMode
-      ? "Seleziona un titolare e poi una riserva dello stesso ruolo per scambiarli."
-      : "Seleziona un giocatore per aprire la scheda con statistiche, overall e potenziale.";
+  function squadPlayerRole(playerId) {
+    return sourcePlayer(rosterEntry(playerId))?.position || null;
   }
 
   function setSelectedSquadPlayer(playerId) {
-    const previous = ui.selectedSquadPlayerId;
-    if (previous) document.querySelector(`[data-squad-player="${cssEscape(previous)}"]`)?.classList.remove("selected");
     ui.selectedSquadPlayerId = playerId ? String(playerId) : null;
-    if (ui.selectedSquadPlayerId) document.querySelector(`[data-squad-player="${cssEscape(ui.selectedSquadPlayerId)}"]`)?.classList.add("selected");
-  }
-
-  function setSquadEditMode(enabled) {
-    ui.squadEditMode = Boolean(enabled);
-    setSelectedSquadPlayer(null);
-    const button = document.getElementById("toggle-squad-edit");
-    if (button) {
-      button.textContent = ui.squadEditMode ? "Termina modifiche" : "Modifica titolari";
-      button.classList.toggle("btn-yellow", ui.squadEditMode);
+    const selectedRole = ui.selectedSquadPlayerId ? squadPlayerRole(ui.selectedSquadPlayerId) : null;
+    document.querySelectorAll("[data-squad-player]").forEach((card) => {
+      const cardId = String(card.dataset.squadPlayer);
+      const isSelected = cardId === ui.selectedSquadPlayerId;
+      const isCompatible = Boolean(ui.selectedSquadPlayerId && !isSelected && selectedRole && squadPlayerRole(cardId) === selectedRole);
+      card.classList.toggle("selected", isSelected);
+      card.classList.toggle("is-compatible", isCompatible);
+      card.classList.toggle("is-incompatible", Boolean(ui.selectedSquadPlayerId && !isSelected && !isCompatible));
+      card.setAttribute("aria-pressed", isSelected ? "true" : "false");
+    });
+    const infoButton = document.getElementById("squad-player-info");
+    if (infoButton) {
+      infoButton.disabled = !ui.selectedSquadPlayerId;
+      infoButton.setAttribute("aria-label", ui.selectedSquadPlayerId ? `Apri la scheda di ${resolvedRosterPlayer(ui.selectedSquadPlayerId)?.name || "giocatore selezionato"}` : "Seleziona un giocatore");
     }
     const hint = document.querySelector("[data-squad-hint]");
-    if (hint) hint.textContent = squadStatusText();
-    if (!ui.squadEditMode) global.RunState.save(run);
-  }
-
-  function updateSquadPlayerCard(playerId) {
-    const current = document.querySelector(`[data-squad-player="${cssEscape(playerId)}"]`);
-    if (!current) return;
-    const area = current.dataset.area || (run.lineup.includes(String(playerId)) ? "lineup" : "bench");
-    const wrapper = document.createElement("div");
-    wrapper.innerHTML = tacticalMiniPlayer(playerId, { mode: "squad", area }).trim();
-    const next = wrapper.firstElementChild;
-    if (next) current.replaceWith(next);
+    if (hint) hint.textContent = ui.selectedSquadPlayerId ? "Scegli un giocatore compatibile da scambiare" : "Seleziona un giocatore";
   }
 
   function replaceSquadPlayerCard(current, nextPlayerId, area) {
@@ -1693,36 +1735,42 @@
     if (next) current.replaceWith(next);
   }
 
-  function swapSquadPlayersInDom(starterId, benchId) {
-    const starterCard = document.querySelector(`[data-squad-player="${cssEscape(starterId)}"]`);
-    const benchCard = document.querySelector(`[data-squad-player="${cssEscape(benchId)}"]`);
-    replaceSquadPlayerCard(starterCard, benchId, "lineup");
-    replaceSquadPlayerCard(benchCard, starterId, "bench");
+  function swapSquadPlayersInDom(firstId, secondId, firstArea, secondArea) {
+    const firstCard = document.querySelector(`[data-squad-player="${cssEscape(firstId)}"]`);
+    const secondCard = document.querySelector(`[data-squad-player="${cssEscape(secondId)}"]`);
+    replaceSquadPlayerCard(firstCard, secondId, firstArea);
+    replaceSquadPlayerCard(secondCard, firstId, secondArea);
   }
 
   function handleSquadSelection(playerId) {
+    const clickedId = String(playerId);
     const selected = ui.selectedSquadPlayerId;
-    if (!selected) return setSelectedSquadPlayer(playerId);
-    if (selected === String(playerId)) return setSelectedSquadPlayer(null);
-
-    const selectedInLineup = run.lineup.includes(selected);
-    const clickedInLineup = run.lineup.includes(String(playerId));
-    if (selectedInLineup === clickedInLineup) return setSelectedSquadPlayer(playerId);
-
-    const starterId = selectedInLineup ? selected : String(playerId);
-    const benchId = selectedInLineup ? String(playerId) : selected;
-    const starter = sourcePlayer(rosterEntry(starterId));
-    const reserve = sourcePlayer(rosterEntry(benchId));
-    if (starter.position !== reserve.position) {
-      setSelectedSquadPlayer(null);
-      return toast("Il sostituto deve avere lo stesso ruolo del titolare");
+    if (!selected) return setSelectedSquadPlayer(clickedId);
+    if (selected === clickedId) return setSelectedSquadPlayer(null);
+    if (squadPlayerRole(selected) !== squadPlayerRole(clickedId)) {
+      return toast("Questa destinazione non è compatibile");
     }
-    run.lineup[run.lineup.indexOf(starterId)] = benchId;
-    run.bench[run.bench.indexOf(benchId)] = starterId;
+
+    const firstArea = run.lineup.includes(selected) ? "lineup" : "bench";
+    const secondArea = run.lineup.includes(clickedId) ? "lineup" : "bench";
+    const firstList = firstArea === "lineup" ? run.lineup : run.bench;
+    const secondList = secondArea === "lineup" ? run.lineup : run.bench;
+    const firstIndex = firstList.indexOf(selected);
+    const secondIndex = secondList.indexOf(clickedId);
+    if (firstIndex < 0 || secondIndex < 0) return setSelectedSquadPlayer(null);
+
+    if (firstList === secondList) {
+      [firstList[firstIndex], firstList[secondIndex]] = [firstList[secondIndex], firstList[firstIndex]];
+    } else {
+      firstList[firstIndex] = clickedId;
+      secondList[secondIndex] = selected;
+    }
+    const firstName = resolvedRosterPlayer(selected)?.name || selected;
+    const secondName = resolvedRosterPlayer(clickedId)?.name || clickedId;
+    swapSquadPlayersInDom(selected, clickedId, firstArea, secondArea);
     setSelectedSquadPlayer(null);
-    swapSquadPlayersInDom(starterId, benchId);
     global.RunState.save(run);
-    toast(`${reserve.name} entra tra i titolari`);
+    toast(`${firstName} e ${secondName} scambiati`);
   }
 
   function ensureCurrentZone() {
