@@ -2773,3 +2773,436 @@ body { background: var(--gradient-app); }
 @media (min-width: 1100px) and (min-height: 760px) {
   #clean-home { align-content: center; }
 }
+
+/* Pull selection restyle: shared by standard, team, legendary and boss-reward offers. */
+.modal-backdrop:has(.pull-selection-modal) {
+  padding: clamp(8px, 2vw, 22px);
+  background: rgba(8, 13, 19, .72);
+  backdrop-filter: blur(6px);
+}
+.pull-selection-modal {
+  --pull-ink: #101114;
+  --pull-paper: #fffef8;
+  --pull-yellow: #ffd52f;
+  position: relative;
+  width: min(1080px, 100%);
+  max-height: min(94dvh, 900px);
+  padding: clamp(16px, 2.2vw, 26px);
+  overflow-x: hidden;
+  border: 3px solid var(--pull-ink);
+  border-radius: 8px;
+  background:
+    linear-gradient(112deg, rgba(255,255,255,.94) 0 64%, rgba(255,213,47,.88) 64% 66%, rgba(255,255,255,.92) 66%),
+    url("../assets/home/inazuma-stadium-desktop-light.jpeg") center / cover;
+  color: var(--pull-ink);
+  box-shadow: 9px 10px 0 rgba(0,0,0,.38), 0 22px 60px rgba(0,0,0,.28);
+}
+.pull-selection-modal::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(145deg, rgba(255,255,255,.16), transparent 36%);
+}
+.pull-selection-modal > * { position: relative; }
+.pull-selection-modal .pull-selection-head {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 3px solid var(--pull-ink);
+}
+.pull-selection-modal .pull-selection-head > div { min-width: 0; }
+.pull-selection-modal .pull-selection-head h2 {
+  margin: 0;
+  color: var(--pull-ink);
+  font-size: clamp(1.55rem, 3vw, 2.55rem);
+  line-height: .94;
+  text-transform: uppercase;
+}
+.pull-selection-modal .pull-selection-head p { margin: 5px 0 0; color: #4c5057; }
+.pull-selection-modal .pull-selection-head .eyebrow { color: #8a6400; }
+.pull-selection-modal .btn-back,
+.pull-selection-modal .btn-ghost {
+  border: 2px solid var(--pull-ink);
+  border-radius: 3px;
+  background: rgba(255,255,255,.82);
+  color: var(--pull-ink);
+  box-shadow: 3px 4px 0 rgba(16,17,20,.2);
+}
+.pull-selection-modal .pull-offer-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(10px, 1.8vw, 18px);
+  align-items: start;
+}
+.pull-selection-modal .pull-choice-option {
+  min-width: 0;
+  gap: 7px;
+  border-radius: 5px;
+}
+.pull-selection-modal .pull-selection-card {
+  min-height: 240px;
+  overflow: hidden;
+  border: 3px solid var(--rarity-border, #656b73);
+  border-left-width: 5px;
+  border-radius: 5px;
+  background: linear-gradient(165deg, var(--pull-paper) 0 72%, #ece8dd 72%);
+  color: var(--pull-ink);
+  box-shadow: 5px 6px 0 rgba(16,17,20,.28), 0 0 15px var(--rarity-glow, transparent), inset 0 -6px 0 var(--rarity-border, #656b73);
+  transform: none;
+}
+.pull-selection-modal .pull-selection-card::before {
+  content: "";
+  position: absolute;
+  z-index: 3;
+  top: -1px;
+  left: -1px;
+  width: 58%;
+  height: 7px;
+  background: var(--rarity-border, #656b73);
+  clip-path: polygon(0 0, 100% 0, 91% 100%, 0 100%);
+  pointer-events: none;
+}
+.pull-selection-modal .pull-selection-card:hover {
+  border-color: var(--rarity-border, #656b73);
+  transform: translateY(-2px);
+  box-shadow: 5px 8px 0 rgba(16,17,20,.31), 0 0 19px var(--rarity-glow, transparent), inset 0 -6px 0 var(--rarity-border, #656b73);
+}
+.pull-selection-modal .pull-selection-card .player-portrait-wrap {
+  position: relative;
+  height: 164px;
+  aspect-ratio: auto;
+  padding: 22px 22px 0;
+  overflow: hidden;
+  background: linear-gradient(150deg, color-mix(in srgb, var(--rarity-border) 9%, white), rgba(223,225,221,.72));
+}
+.pull-selection-modal .pull-selection-card .player-portrait-wrap::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 22px;
+  right: -2px;
+  width: 24px;
+  height: 142px;
+  background: linear-gradient(180deg, color-mix(in srgb, var(--rarity-border) 78%, white), var(--rarity-border));
+  clip-path: polygon(62% 0, 100% 0, 38% 100%, 0 100%);
+  filter: drop-shadow(-2px 2px 1px rgba(16,17,20,.18));
+  pointer-events: none;
+}
+.pull-selection-modal .pull-selection-card .player-portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+}
+.pull-selection-modal .pull-selection-card .player-info {
+  min-width: 0;
+  padding: 11px 54px 18px 12px;
+  text-align: left;
+}
+.pull-selection-modal .pull-selection-card .player-title strong {
+  color: var(--pull-ink);
+  font-size: clamp(.94rem, 1.5vw, 1.12rem);
+  text-transform: uppercase;
+}
+.pull-selection-modal .pull-selection-card .player-meta {
+  justify-content: flex-start;
+  gap: 5px;
+  margin-top: 7px;
+  color: #4b5057;
+  font-size: .72rem;
+  font-weight: 900;
+}
+.pull-selection-modal .pull-selection-card .player-meta span {
+  padding: 3px 6px;
+  border: 1px solid #afb3b8;
+  border-radius: 2px;
+  background: rgba(255,255,255,.74);
+}
+.pull-selection-modal .pull-selection-card .player-role,
+.pull-selection-modal .pull-selection-card .player-level { display: none; }
+.pull-selection-modal .pull-selection-card .player-overall {
+  z-index: 5;
+  top: 12px;
+  right: 10px;
+  min-width: 52px;
+  min-height: 52px;
+  border: 3px solid var(--pull-ink);
+  border-radius: 3px;
+  background: var(--pull-yellow);
+  color: var(--pull-ink);
+  box-shadow: 3px 4px 0 rgba(16,17,20,.24);
+  font-size: 1.15rem;
+}
+.pull-selection-modal .rarity-scarso { --rarity-border: #343434; --rarity-glow: rgba(52,52,52,.18); }
+.pull-selection-modal .rarity-debole { --rarity-border: #53606f; --rarity-glow: rgba(83,96,111,.2); }
+.pull-selection-modal .rarity-normale { --rarity-border: #929ba8; --rarity-glow: rgba(146,155,168,.22); }
+.pull-selection-modal .rarity-buono { --rarity-border: #2fa866; --rarity-glow: rgba(47,168,102,.25); }
+.pull-selection-modal .rarity-forte { --rarity-border: #27a8e8; --rarity-glow: rgba(39,168,232,.28); }
+.pull-selection-modal .rarity-elite { --rarity-border: #8254d1; --rarity-glow: rgba(130,84,209,.3); }
+.pull-selection-modal .rarity-mondiale { --rarity-border: #d93842; --rarity-glow: rgba(217,56,66,.34); }
+.pull-selection-modal .rarity-leggenda { --rarity-border: #d4a017; --rarity-glow: rgba(212,160,23,.38); }
+.pull-selection-modal .pull-choice-option.is-selected {
+  transform: none;
+  filter: none;
+}
+.pull-selection-modal .pull-choice-option.is-selected > .pull-selection-card {
+  outline: 4px solid var(--pull-yellow);
+  outline-offset: 3px;
+  box-shadow: 5px 6px 0 rgba(16,17,20,.3), 0 0 0 7px rgba(255,255,255,.7), 0 0 22px var(--rarity-glow, transparent), inset 0 -6px 0 var(--rarity-border);
+}
+.pull-selection-modal .pull-choice-actions {
+  margin: 0;
+  padding: 6px;
+  border: 2px solid var(--pull-ink);
+  border-radius: 4px;
+  background: rgba(255,255,255,.9);
+  box-shadow: 3px 4px 0 rgba(16,17,20,.2);
+}
+.pull-selection-modal .pull-choice-actions.is-active { background: #fff8d4; }
+.pull-selection-modal .pull-choice-action-row {
+  display: grid;
+  grid-template-columns: .72fr .72fr 1.25fr;
+  gap: 5px;
+}
+.pull-selection-modal .pull-choice-action-row .btn {
+  min-width: 0;
+  min-height: 38px;
+  padding: 7px 5px;
+  border: 2px solid var(--pull-ink);
+  border-radius: 2px;
+  background: #fff;
+  color: var(--pull-ink);
+  box-shadow: none;
+  font-size: .75rem;
+  font-weight: 1000;
+}
+.pull-selection-modal .pull-choice-action-row [data-pull-action="confirm"],
+.pull-selection-modal .pull-choice-action-row [data-pull-action="detail"] { background: var(--pull-yellow); }
+.pull-selection-modal .pull-choice-action-row [data-pull-action="confirm"] { background: var(--pull-ink); color: #fff; }
+.pull-selection-modal .pull-selection-footer {
+  align-items: center;
+  justify-content: flex-start;
+  margin-top: 15px;
+  padding-top: 12px;
+  border-top: 2px solid rgba(16,17,20,.24);
+}
+.pull-selection-modal .pull-selection-footer .btn {
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 2px solid var(--pull-ink);
+  border-radius: 3px;
+  box-shadow: 3px 4px 0 rgba(16,17,20,.18);
+  font-size: .75rem;
+}
+.pull-selection-modal .pull-selection-footer .small { color: #4b5057; font-weight: 800; }
+.pull-selection-modal .pull-item-action-copy .item-icon { width: 25px; height: 25px; }
+.pull-selection-modal--legendary {
+  border-color: #1a1405;
+  background:
+    radial-gradient(circle at 14% 20%, rgba(212,160,23,.24) 0 2px, transparent 3px),
+    radial-gradient(circle at 83% 32%, rgba(212,160,23,.2) 0 2px, transparent 3px),
+    linear-gradient(112deg, rgba(255,253,241,.95) 0 63%, rgba(212,160,23,.88) 63% 66%, rgba(255,253,241,.93) 66%),
+    url("../assets/home/inazuma-stadium-desktop-light.jpeg") center / cover;
+  background-size: 74px 74px, 96px 96px, auto, cover;
+  box-shadow: 9px 10px 0 rgba(0,0,0,.46), 0 0 34px rgba(212,160,23,.34);
+}
+.pull-selection-modal--legendary .pull-selection-head { border-color: #8a6400; }
+.pull-selection-modal--legendary .pull-selection-head h2,
+.pull-selection-modal--legendary .pull-selection-head .eyebrow { color: #6f4e00; }
+
+.bench-replacement-modal { width: min(1040px, 100%); }
+.bench-replacement-modal .bench-replacement-head { margin-bottom: 12px; }
+.bench-replacement-modal .bench-replacement-head h2 { margin-bottom: 5px; color: var(--pull-ink); text-transform: uppercase; }
+.bench-replacement-modal .bench-replacement-head p { color: #4b5057; }
+.bench-replacement-label {
+  width: fit-content;
+  margin: 0 0 7px;
+  padding: 5px 12px;
+  border: 2px solid var(--pull-ink);
+  background: var(--pull-yellow);
+  color: var(--pull-ink);
+  font-size: .67rem;
+  font-weight: 1000;
+  letter-spacing: .06em;
+  transform: skew(-7deg);
+}
+.bench-replacement-incoming { margin-bottom: 14px; }
+.bench-replacement-incoming .bench-replacement-new-card { width: min(330px, 100%); min-height: 190px; }
+.bench-replacement-incoming .bench-replacement-new-card .player-portrait-wrap { height: 122px; }
+.bench-replacement-incoming .bench-replacement-new-card .player-portrait-wrap::after { height: 100px; }
+.bench-replacement-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.bench-replacement-grid .pull-selection-card { min-height: 180px; }
+.bench-replacement-grid .pull-selection-card .player-portrait-wrap { height: 112px; padding: 18px 12px 0; }
+.bench-replacement-grid .pull-selection-card .player-portrait-wrap::after { top: 17px; height: 95px; }
+.bench-replacement-grid .pull-selection-card .player-info { padding: 8px 44px 15px 8px; }
+.bench-replacement-grid .pull-selection-card .player-overall { top: 9px; right: 7px; min-width: 42px; min-height: 42px; font-size: .94rem; }
+.bench-replacement-footer { justify-content: flex-start; margin-top: 14px; }
+
+@media (max-width: 780px) {
+  .modal-backdrop:has(.pull-selection-modal) {
+    align-items: center;
+    padding: max(6px, env(safe-area-inset-top)) max(6px, env(safe-area-inset-right)) max(6px, env(safe-area-inset-bottom)) max(6px, env(safe-area-inset-left));
+  }
+  .pull-selection-modal {
+    width: 100%;
+    max-height: calc(100dvh - max(12px, env(safe-area-inset-top) + env(safe-area-inset-bottom)));
+    padding: 11px;
+    border-width: 2px;
+    background:
+      linear-gradient(180deg, rgba(255,255,255,.94), rgba(255,255,255,.88)),
+      url("../assets/home/inazuma-stadium-mobile-light.jpeg") center top / cover;
+    box-shadow: 5px 6px 0 rgba(0,0,0,.34);
+  }
+  .pull-selection-modal .pull-selection-head {
+    grid-template-columns: 1fr;
+    gap: 7px;
+    margin-bottom: 9px;
+    padding-bottom: 8px;
+  }
+  .pull-selection-modal .pull-selection-head .btn-back {
+    justify-self: start;
+    min-height: 34px;
+    padding: 6px 9px;
+    font-size: .68rem;
+  }
+  .pull-selection-modal .pull-selection-head h2 { font-size: clamp(1.2rem, 6vw, 1.55rem); }
+  .pull-selection-modal .pull-selection-head p { margin-top: 3px; font-size: .7rem; }
+  .pull-selection-modal .pull-selection-head .eyebrow { font-size: .58rem; }
+  .pull-selection-modal .pull-offer-grid {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
+  .pull-selection-modal .pull-choice-option { display: grid; grid-template-columns: minmax(0, 1fr) 118px; gap: 6px; }
+  .pull-selection-modal .pull-selection-card,
+  .pull-selection-modal .pull-offer-grid .pull-selection-card {
+    display: grid;
+    grid-template-columns: 72px minmax(0, 1fr) 46px;
+    align-items: center;
+    min-height: 96px;
+    height: 96px;
+    border-width: 2px 2px 2px 4px;
+    box-shadow: 3px 4px 0 rgba(16,17,20,.22), 0 0 11px var(--rarity-glow, transparent), inset 0 -4px 0 var(--rarity-border);
+  }
+  .pull-selection-modal .pull-selection-card::before { height: 5px; }
+  .pull-selection-modal .pull-selection-card .player-portrait-wrap,
+  .pull-selection-modal .pull-offer-grid .pull-selection-card .player-portrait-wrap {
+    grid-column: 1;
+    grid-row: 1;
+    width: 72px;
+    height: 92px;
+    min-height: 0;
+    padding: 17px 5px 3px;
+  }
+  .pull-selection-modal .pull-selection-card .player-portrait-wrap::after {
+    top: 18px;
+    width: 12px;
+    height: 74px;
+  }
+  .pull-selection-modal .pull-selection-card .player-info,
+  .pull-selection-modal .pull-offer-grid .pull-selection-card .player-info {
+    grid-column: 2 / 4;
+    grid-row: 1;
+    padding: 10px 45px 10px 8px;
+    text-align: left;
+  }
+  .pull-selection-modal .pull-selection-card .player-title strong {
+    font-size: clamp(.76rem, 3.5vw, .93rem);
+    line-height: 1.04;
+    white-space: nowrap;
+  }
+  .pull-selection-modal .pull-selection-card .player-meta {
+    display: flex;
+    gap: 3px;
+    margin-top: 5px;
+    font-size: .56rem;
+  }
+  .pull-selection-modal .pull-selection-card .player-meta span { padding: 2px 4px; }
+  .pull-selection-modal .pull-selection-card .player-overall {
+    top: 50%;
+    right: 7px;
+    min-width: 38px;
+    min-height: 38px;
+    border-width: 2px;
+    font-size: .88rem;
+    transform: translateY(-50%);
+  }
+  .pull-selection-modal .pull-choice-actions {
+    display: grid;
+    align-self: stretch;
+    padding: 4px;
+    border-width: 2px;
+    box-shadow: 2px 3px 0 rgba(16,17,20,.18);
+  }
+  .pull-selection-modal .pull-choice-action-row {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-content: center;
+    gap: 4px;
+  }
+  .pull-selection-modal .pull-choice-action-row .btn {
+    min-height: 34px;
+    padding: 4px 2px;
+    font-size: .58rem;
+  }
+  .pull-selection-modal .pull-choice-action-row [data-pull-action="detail"] { grid-column: 1 / -1; }
+  .pull-selection-modal .pull-choice-option.is-selected > .pull-selection-card {
+    outline-width: 3px;
+    outline-offset: 1px;
+    box-shadow: 3px 4px 0 rgba(16,17,20,.25), 0 0 0 4px rgba(255,255,255,.74), 0 0 14px var(--rarity-glow, transparent), inset 0 -4px 0 var(--rarity-border);
+  }
+  .pull-selection-modal .pull-selection-footer {
+    gap: 6px;
+    margin-top: 9px;
+    padding-top: 8px;
+  }
+  .pull-selection-modal .pull-selection-footer .btn {
+    min-height: 36px;
+    padding: 6px 8px;
+    font-size: .62rem;
+  }
+  .pull-selection-modal .pull-selection-footer .small { width: 100%; font-size: .62rem; }
+  .pull-selection-modal--legendary {
+    background:
+      radial-gradient(circle at 14% 20%, rgba(212,160,23,.18) 0 2px, transparent 3px),
+      linear-gradient(180deg, rgba(255,253,241,.94), rgba(255,248,216,.9)),
+      url("../assets/home/inazuma-stadium-mobile-light.jpeg") center top / cover;
+    background-size: 74px 74px, auto, cover;
+  }
+  .bench-replacement-modal .bench-replacement-head { margin-bottom: 8px; }
+  .bench-replacement-modal .bench-replacement-head h2 { font-size: 1.28rem; }
+  .bench-replacement-modal .bench-replacement-head p { margin-bottom: 0; font-size: .7rem; }
+  .bench-replacement-label { margin-bottom: 5px; padding: 4px 9px; font-size: .55rem; }
+  .bench-replacement-incoming { margin-bottom: 9px; }
+  .bench-replacement-incoming .bench-replacement-new-card {
+    width: 100%;
+    max-width: none;
+  }
+  .bench-replacement-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7px;
+  }
+  .bench-replacement-grid .pull-selection-card,
+  .bench-replacement-grid .player-card-large.pull-selection-card {
+    grid-template-columns: 48px minmax(0, 1fr) 34px;
+    min-height: 88px;
+    height: 88px;
+  }
+  .bench-replacement-grid .pull-selection-card .player-portrait-wrap {
+    width: 48px;
+    height: 84px;
+    padding: 17px 3px 2px;
+  }
+  .bench-replacement-grid .pull-selection-card .player-portrait-wrap::after { top: 18px; width: 9px; height: 66px; }
+  .bench-replacement-grid .pull-selection-card .player-info { padding: 8px 31px 8px 5px; }
+  .bench-replacement-grid .pull-selection-card .player-title strong { font-size: clamp(.62rem, 2.8vw, .78rem); }
+  .bench-replacement-grid .pull-selection-card .player-meta { gap: 2px; font-size: .48rem; }
+  .bench-replacement-grid .pull-selection-card .player-meta span { padding: 1px 2px; }
+  .bench-replacement-grid .pull-selection-card .player-overall { right: 4px; min-width: 30px; min-height: 30px; font-size: .7rem; }
+  .bench-replacement-footer { margin-top: 9px; }
+  .bench-replacement-footer .btn { min-height: 36px; padding: 6px 9px; font-size: .62rem; }
+}

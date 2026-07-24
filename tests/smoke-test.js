@@ -85,7 +85,7 @@ assert(mobileMedia.includes(".pull-offer-grid .player-card-large .player-portrai
 assert(mobileMedia.includes("height: 100%") && mobileMedia.includes("object-fit: contain"), "mobile compact portraits must keep a visible non-deformed source inside the image column");
 assert(appJs.includes("function resolvePlayerVisual") && appJs.includes("function playerPortraitUrl(player)") && appJs.includes("cardImageUrl") && appJs.includes("frontFullbodyUrl"), "pull cards must resolve a valid portrait source from the shared visual resolver");
 assert(appJs.includes("data:image/svg+xml") && appJs.includes('src="${escapeHtml(playerPortraitUrl(player))}" alt="${escapeHtml(player.name)}"'), "pull cards must render a portrait fallback through the shared helper");
-assert(appJs.includes('data-pull-action="confirm">Sì</button>') && appJs.includes('data-pull-action="cancel">Annulla</button>') && appJs.includes('data-pull-action="detail">Scheda</button>'), "pull inline confirmation buttons and logic hooks must be present");
+assert(appJs.includes('data-pull-action="confirm">SÌ</button>') && appJs.includes('data-pull-action="cancel">NO</button>') && appJs.includes('data-pull-action="detail">SCHEDA</button>'), "pull inline candidate actions and logic hooks must be present");
 assert(!appJs.includes("data-confirm-replacement"), "bench replacement logic should keep using the existing data-player-id click path");
 assert(appJs.includes("Il Visore scout non può essere utilizzato nelle pull leggendarie."), "legendary pulls must block scout token rerolls in logic and UI");
 assert(css.includes("align-items: center"), "desktop fullbody visual must be vertically centered");

@@ -719,6 +719,7 @@
   function playerCard(player, options = {}) {
     const database = options.database || freeAgentsDb;
     const level = Number(options.level ?? 0);
+    const pullSelection = options.context === "pull";
     const resolved = global.InazumaProgression.getPlayerAtLevel(
       player,
       Math.floor(level),
@@ -729,7 +730,7 @@
       ? `type="button" data-player-id="${escapeHtml(player.playerId)}"`
       : "";
     return `
-      <${tag} class="player-card player-card-large pull-player-card pull-player-card--desktop pull-player-card--mobile ${rarityClass(resolved.category)} ${options.selected ? "selected" : ""} ${options.equipment ? "has-equipment" : ""}" ${attributes}>
+      <${tag} class="player-card player-card-large pull-player-card pull-player-card--desktop pull-player-card--mobile ${pullSelection ? "pull-selection-card" : ""} ${escapeHtml(options.extraClass || "")} ${rarityClass(resolved.category)} ${options.selected ? "selected" : ""} ${options.equipment ? "has-equipment" : ""}" ${attributes}>
         <span class="player-corner player-role" aria-label="Ruolo ${escapeHtml(player.position)}">${escapeHtml(player.position)}</span>
         <span class="player-corner player-overall" aria-label="Overall ${resolved.overall}">${resolved.overall}</span>
         <div class="player-portrait-wrap">
@@ -740,8 +741,9 @@
             <strong>${escapeHtml(player.name)}</strong>
           </div>
           <div class="player-meta" aria-label="Dettagli giocatore">
-            <span>${escapeHtml(player.element || player.type)}</span>
+            ${pullSelection ? `<span class="pull-player-role">${escapeHtml(player.position)}</span>` : `<span>${escapeHtml(player.element || player.type)}</span>`}
             <span>${escapeHtml(resolved.category)}</span>
+            ${pullSelection ? `<span>Lv ${escapeHtml(level)}</span>` : ""}
           </div>
         </div>
         ${options.equipment ? `<span class="player-corner player-equipment" aria-label="Oggetto equipaggiato">${itemIcon(options.equipment)}</span>` : ""}
@@ -2392,9 +2394,10 @@
       database: pool.database,
       level,
       allowSkip: true,
-      onReroll: scoutToken ? rerollPull : null,
-      rerollDisabled: Boolean(scoutToken && legendaryPull),
-      rerollDisabledMessage: legendaryPull ? "Il Visore scout non può essere utilizzato nelle pull leggendarie." : "",
+      onReroll: scoutToken && !legendaryPull ? rerollPull : null,
+      rerollDisabled: false,
+      rerollDisabledMessage: "",
+      showLuckyCharm: luckyCompatible,
       onLuckyCharm: luckyCompatible && luckyCharm ? () => useLuckyCharmOnPull(node, pullType, candidates) : null,
       luckyCharmCount: run.inventory.filter((item) => item.effect === "lucky_pull").length,
       luckyCharmDisabled: Boolean(!luckyCompatible || node.pullState.luckyCharmUsed || !luckyCharm),
@@ -2406,6 +2409,7 @@
         });
       },
       onSkip: () => finishNonMatchNode(node, "Hai rinunciato al pull"),
+      legendary: legendaryPull,
     });
   }
 
@@ -2422,12 +2426,10 @@
     const panelId = `pull-choice-actions-${index}`;
     return `
       <div class="pull-choice-actions" id="${panelId}" role="group" aria-label="Conferma scelta per ${escapeHtml(player.name)}">
-        <span class="selected-indicator" aria-hidden="true">Selezionato</span>
-        <p class="pull-choice-question">Vuoi aggiungere questo giocatore?</p>
         <div class="button-row pull-choice-action-row">
-          <button type="button" class="btn btn-primary" data-pull-action="confirm">Sì</button>
-          <button type="button" class="btn" data-pull-action="cancel">Annulla</button>
-          <button type="button" class="btn btn-yellow" data-pull-action="detail">Scheda</button>
+          <button type="button" class="btn btn-primary" data-pull-action="confirm">SÌ</button>
+          <button type="button" class="btn" data-pull-action="cancel">NO</button>
+          <button type="button" class="btn btn-yellow" data-pull-action="detail">SCHEDA</button>
         </div>
       </div>`;
   }
@@ -2440,7 +2442,7 @@
       const actions = option.querySelector(".pull-choice-actions");
       trigger?.setAttribute("aria-expanded", selected ? "true" : "false");
       trigger?.setAttribute("aria-pressed", selected ? "true" : "false");
-      if (actions) actions.hidden = !selected;
+      actions?.classList.toggle("is-active", selected);
     });
   }
 
@@ -2451,32 +2453,31 @@
       ? `<button type="button" class="btn btn-yellow" id="reroll-offer" ${options.rerollDisabled ? "disabled" : ""}><span class="pull-item-action-copy">${itemIcon(scoutItem)}<span>Usa ${escapeHtml(scoutItem.name)}</span></span></button>`
       : "";
     const luckyCount = Number(options.luckyCharmCount || 0);
-    const luckyButton = options.onLuckyCharm || options.luckyCharmDisabledMessage
+    const luckyButton = options.showLuckyCharm && (options.onLuckyCharm || options.luckyCharmDisabledMessage)
       ? `<button type="button" class="btn btn-yellow" id="lucky-charm-offer" ${options.luckyCharmDisabled ? "disabled" : ""}>${options.luckyCharmDisabled && options.luckyCharmDisabledMessage ? escapeHtml(options.luckyCharmDisabledMessage) : `<span class="pull-item-action-copy">${itemIcon(luckyItem)}<span>Usa ${escapeHtml(luckyItem.name)}</span></span>`}</button>${!options.luckyCharmDisabled && luckyCount > 0 ? `<span class="muted small">${escapeHtml(luckyItem.name)} disponibili: ${luckyCount}</span>` : ""}`
       : "";
     openModal(`
-      <div class="modal-head event-modal-head"><button type="button" class="btn btn-back" id="back-offer-map">← Torna alla mappa</button><div><p class="eyebrow">Scelta giocatore</p><h2>${escapeHtml(options.title)}</h2><p class="muted">${escapeHtml(options.subtitle)}</p></div></div>
+      <div class="modal-head event-modal-head pull-selection-head"><button type="button" class="btn btn-back" id="back-offer-map">← TORNA ALLA MAPPA</button><div><p class="eyebrow">${options.legendary ? "Selezione prestigio" : "Scelta giocatore"}</p><h2>${escapeHtml(options.title)}</h2><p class="muted">${escapeHtml(options.subtitle)}</p></div></div>
       <div class="candidate-grid pull-offer-grid" data-pull-choice-grid>
         ${options.candidates.map((player, index) => {
           const panelId = `pull-choice-actions-${index}`;
           return `<div class="pull-choice-option ${rarityClass(player.category)}" data-player-id="${escapeHtml(player.playerId)}">
-            ${playerCard(player, { button: true, level: options.level, database: pullChoiceDatabase(options, player) }).replace(">", ` aria-expanded="false" aria-pressed="false" aria-controls="${panelId}">`)}
+            ${playerCard(player, { button: true, context: "pull", level: options.level, database: pullChoiceDatabase(options, player) }).replace(">", ` aria-expanded="false" aria-pressed="false" aria-controls="${panelId}">`)}
             ${pullChoiceActionPanel(player, index)}
           </div>`;
         }).join("")}
       </div>
       ${options.rerollDisabledMessage ? `<p class="muted small">${escapeHtml(options.rerollDisabledMessage)}</p>` : ""}
-      <div class="button-row" style="margin-top:18px">
+      <div class="button-row pull-selection-footer">
         ${rerollButton}
         ${luckyButton}
-        ${options.allowSkip ? '<button type="button" class="btn btn-ghost" id="skip-offer">Rinuncia</button>' : ""}
+        ${options.allowSkip ? '<button type="button" class="btn btn-ghost" id="skip-offer">RINUNCIA</button>' : ""}
       </div>`,
-      { closeable: false }
+      { closeable: false, className: `pull-selection-modal ${options.legendary ? "pull-selection-modal--legendary" : ""}` }
     );
     const choiceGrid = modalRoot.querySelector("[data-pull-choice-grid]");
     let selectedPullPlayerId = null;
     let pickConfirmed = false;
-    choiceGrid?.querySelectorAll(".pull-choice-actions").forEach((actions) => { actions.hidden = true; });
     choiceGrid?.addEventListener("click", (event) => {
       const actionButton = event.target.closest("[data-pull-action]");
       const option = event.target.closest(".pull-choice-option");
@@ -2548,14 +2549,21 @@
 
     const benchPlayers = run.bench.map((id) => resolvedRosterPlayer(id)).filter(Boolean);
     openModal(`
-      <div class="modal-head"><div><p class="eyebrow">Rosa piena</p><h2>Scegli chi lasciare fuori</h2><p class="muted">${escapeHtml(player.name)} sostituirà una delle quattro riserve.</p></div></div>
-      <div class="player-grid mobile-compact-player-list bench-replacement-grid">
-        ${benchPlayers.map((candidate) => playerCard(sourcePlayer(rosterEntry(candidate.playerId)), { button: true, level: candidate.displayLevel, database: global.SeasonRegistry?.isSeasonSource?.(candidate.source) ? (global.SeasonRegistry.database(candidate.source) || seasonDb) : freeAgentsDb })).join("")}
-      </div>
-      ${allowCancel ? '<div class="button-row" style="margin-top:18px"><button type="button" class="btn btn-ghost" id="cancel-recruit">Rinuncia al nuovo giocatore</button></div>' : ""}`,
-      { closeable: false }
+      <div class="modal-head bench-replacement-head"><div><p class="eyebrow">Rosa piena</p><h2>Sostituisci una riserva</h2><p class="muted">Il nuovo giocatore entrerà al posto di una delle quattro riserve.</p></div></div>
+      <section class="bench-replacement-incoming" aria-label="Nuovo giocatore scelto">
+        <p class="bench-replacement-label">NUOVO GIOCATORE</p>
+        ${playerCard(player, { context: "pull", extraClass: "bench-replacement-new-card", level, database: global.SeasonRegistry?.isSeasonSource?.(source) ? (global.SeasonRegistry.database(source) || seasonDb) : freeAgentsDb })}
+      </section>
+      <section class="bench-replacement-options" aria-label="Riserve sostituibili">
+        <p class="bench-replacement-label">SCEGLI LA RISERVA DA SOSTITUIRE</p>
+        <div class="player-grid mobile-compact-player-list bench-replacement-grid">
+          ${benchPlayers.map((candidate) => playerCard(sourcePlayer(rosterEntry(candidate.playerId)), { button: true, context: "pull", level: candidate.displayLevel, database: global.SeasonRegistry?.isSeasonSource?.(candidate.source) ? (global.SeasonRegistry.database(candidate.source) || seasonDb) : freeAgentsDb })).join("")}
+        </div>
+      </section>
+      ${allowCancel ? '<div class="button-row bench-replacement-footer"><button type="button" class="btn btn-ghost" id="cancel-recruit">RINUNCIA AL NUOVO GIOCATORE</button></div>' : ""}`,
+      { closeable: false, className: "pull-selection-modal bench-replacement-modal" }
     );
-    modalRoot.querySelectorAll("[data-player-id]").forEach((button) => {
+    modalRoot.querySelectorAll(".bench-replacement-grid [data-player-id]").forEach((button) => {
       button.addEventListener("click", () => {
         const removeId = String(button.dataset.playerId);
         const removedEntry = rosterEntry(removeId);
@@ -3666,6 +3674,7 @@
       database: seasonDb,
       level,
       allowSkip: true,
+      legendary: false,
       onReroll: scoutToken ? () => {
         removeInventoryItem(scoutToken.instanceId);
         global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId: flow.matchNodeId, itemId: scoutToken.id, instanceId: scoutToken.instanceId, actionId: `${run.runId}:${flow.matchNodeId}:boss_reward_reroll:${flow.rewardNumber}:${flow.rerolls + 1}` });
