@@ -187,11 +187,11 @@
     return `<span class="${classes}" aria-label="${escapeHtml(label)}" title="${escapeHtml(label)}">${itemIcon(resolvedEquipment)}</span>`;
   }
 
-  function itemIcon(itemOrId) {
+  function itemIcon(itemOrId, { preferLocal = false } = {}) {
     const item = resolveItem(itemOrId);
     const id = String(item?.id || "");
     const name = item?.name || "Oggetto";
-    if (item?.imageUrl) {
+    if (item?.imageUrl && !preferLocal) {
       return `<span class="item-icon item-icon--image" aria-label="${escapeHtml(name)}" title="${escapeHtml(name)}"><img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(name)}" loading="lazy" onerror="globalThis.handleItemImageError && globalThis.handleItemImageError(this)" />${itemImageFallbackSvg()}</span>`;
     }
     const icons = {
@@ -691,8 +691,12 @@
     return resolvePlayerVisual(player).cardImageUrl || PLAYER_IMAGE_PLACEHOLDER;
   }
 
-  function compactPlayerCardMarkup(player, { equipment = null, level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, selected = false, dataAttr = "", extraClass = "", detailLayout = "inline" } = {}) {
+  function compactPlayerCardMarkup(player, { equipment = null, equipmentInFooter = false, level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, selected = false, dataAttr = "", extraClass = "", detailLayout = "inline" } = {}) {
     const playerRole = player.position || player.normalizedRole || "-";
+    const equipmentDefinition = equipment ? resolveItem(equipment) : null;
+    const equipmentMarkup = equipmentDefinition
+      ? `<span class="player-corner player-equipment ${equipmentInFooter ? "player-equipment--footer" : ""}" aria-label="Oggetto equipaggiato: ${escapeHtml(equipmentDefinition.name)}" title="${escapeHtml(equipmentDefinition.name)}">${itemIcon(equipment, { preferLocal: equipmentInFooter })}</span>`
+      : "";
     const detailMarkup = detailLayout === "stacked"
       ? `<div class="player-meta player-meta--stacked" aria-label="Dettagli giocatore"><div class="player-meta-line player-meta-line--role-overall"><span data-player-role>${escapeHtml(playerRole)}</span><span aria-hidden="true">•</span><span data-player-overall>${escapeHtml(overall)}</span></div><div class="player-meta-line player-meta-line--level"><span aria-hidden="true">•</span><span data-player-level>Lv ${escapeHtml(level)}</span></div></div>`
       : `<div class="player-meta" aria-label="Dettagli giocatore"><span>${escapeHtml(playerRole)}</span><span>${escapeHtml(overall)}</span><span>Lv ${escapeHtml(level)}</span></div>`;
@@ -704,10 +708,10 @@
           <img class="player-portrait" src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} />
         </div>
         <div class="player-info">
-          <div class="player-title"><strong>${escapeHtml(player.name)}</strong></div>
+          <div class="player-title"><strong title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</strong>${equipmentInFooter ? equipmentMarkup : ""}</div>
           ${detailMarkup}
         </div>
-        ${equipment ? `<span class="player-corner player-equipment" aria-label="Oggetto equipaggiato: ${escapeHtml(resolveItem(equipment).name)}" title="${escapeHtml(resolveItem(equipment).name)}">${itemIcon(equipment)}</span>` : ""}
+        ${equipmentInFooter ? "" : equipmentMarkup}
         <span class="player-corner player-level" aria-label="Livello ${escapeHtml(level)}">Lv ${escapeHtml(level)}</span>
       </button>`;
   }
@@ -1500,6 +1504,8 @@
   }
 
   function tacticalMiniPlayer(id, { mode = "squad", area = "lineup", selectedId = null } = {}) {
+    const entry = rosterEntry(id);
+    if (!entry || !sourcePlayer(entry)) return "";
     const player = resolvedRosterPlayer(id);
     if (!player) return "";
     const selected = String(selectedId || ui.selectedSquadPlayerId) === String(id);
@@ -1509,9 +1515,10 @@
         ? `data-equip-player="${escapeHtml(id)}"`
         : mode === "consumable"
           ? `data-consumable-player="${escapeHtml(id)}"`
-          : `data-squad-player="${escapeHtml(id)}" data-area="${area}" aria-pressed="${selected ? "true" : "false"}" aria-label="Seleziona ${escapeHtml(player.name)}, ${escapeHtml(player.position)}"`;
+          : `data-squad-player="${escapeHtml(id)}" data-area="${area}" data-rarity="${escapeHtml(player.category || "Debole")}" aria-pressed="${selected ? "true" : "false"}" aria-label="Seleziona ${escapeHtml(player.name)}, ${escapeHtml(player.position)}, rarità ${escapeHtml(player.category || "Debole")}"`;
     return compactPlayerCardMarkup(player, {
       equipment: player.equipment,
+      equipmentInFooter: mode === "squad",
       level: player.displayLevel,
       overall: player.overall,
       selected,
@@ -1528,19 +1535,73 @@
   }
 
   function benchMarkup({ mode = "squad", selectedId = null } = {}) {
-    return run.bench.length ? run.bench.map((id) => tacticalMiniPlayer(id, { mode, area: "bench", selectedId })).join("") : '<p class="muted">Le riserve arriveranno con pull, scambi e ricompense.</p>';
+    const cards = (run.bench || []).map((id) => tacticalMiniPlayer(id, { mode, area: "bench", selectedId })).filter(Boolean);
+    return cards.length ? cards.join("") : '<p class="muted">Le riserve arriveranno con pull, scambi e ricompense.</p>';
   }
 
   function miniPlayer(id, area) {
     return tacticalMiniPlayer(id, { mode: "squad", area });
   }
 
+  function reconcileSquadRosterState() {
+    const rosterIds = (run.roster || []).map((entry) => String(entry.playerId || "")).filter(Boolean);
+    const rosterSet = new Set(rosterIds);
+    const lineupIds = (run.lineup || []).map(String).filter(Boolean);
+    const lineupSet = new Set(lineupIds);
+    const currentBench = (run.bench || []).map(String).filter((id) => rosterSet.has(id) && !lineupSet.has(id));
+    const canonicalBench = [...new Set(currentBench)];
+    const unassigned = rosterIds.filter((id) => !lineupSet.has(id) && !canonicalBench.includes(id));
+    unassigned.slice(0, Math.max(0, 4 - canonicalBench.length)).forEach((id) => canonicalBench.push(id));
+    const changed = JSON.stringify(canonicalBench) !== JSON.stringify((run.bench || []).map(String));
+    if (changed) run.bench = canonicalBench;
+    return changed;
+  }
+
   function squadValiditySummary() {
-    const starters = (run.lineup || []).filter(Boolean).length;
-    const bench = (run.bench || []).filter(Boolean).length;
-    const unique = new Set([...(run.lineup || []), ...(run.bench || [])].filter(Boolean).map(String));
-    const complete = starters === 11 && bench === 4 && unique.size === starters + bench;
-    return { starters, bench, complete };
+    const formation = formationById(run.formationId);
+    const lineupIds = (run.lineup || []).map(String).filter(Boolean);
+    const benchIds = (run.bench || []).map(String).filter(Boolean);
+    const lineupUnique = new Set(lineupIds);
+    const benchUnique = new Set(benchIds);
+    const unresolvedLineup = lineupIds.filter((id) => !rosterEntry(id) || !sourcePlayer(rosterEntry(id)));
+    const unresolvedBench = benchIds.filter((id) => !rosterEntry(id) || !sourcePlayer(rosterEntry(id)));
+    const overlap = benchIds.filter((id) => lineupUnique.has(id));
+    const roleCounts = { GK: 0, DF: 0, MF: 0, FW: 0 };
+    lineupIds.forEach((id) => {
+      const role = squadPlayerRole(id);
+      if (roleCounts[role] !== undefined) roleCounts[role] += 1;
+    });
+
+    let formationIssue = "";
+    if (!formation) formationIssue = "Modulo non disponibile";
+    else if (lineupIds.length !== 11) formationIssue = `${lineupIds.length}/11 titolari assegnati`;
+    else if (lineupUnique.size !== lineupIds.length) formationIssue = "Sono presenti titolari duplicati";
+    else if (unresolvedLineup.length) formationIssue = `${unresolvedLineup.length} titolari non risolvibili`;
+    else {
+      const mismatch = Object.entries(formation.requirements || {}).find(([role, amount]) => roleCounts[role] !== Number(amount));
+      if (mismatch) {
+        const [role, amount] = mismatch;
+        formationIssue = `Il modulo richiede ${amount} ${role} · presenti ${roleCounts[role]}`;
+      }
+    }
+
+    const resolvedBenchIds = benchIds.filter((id) => !unresolvedBench.includes(id) && !overlap.includes(id));
+    const benchCount = new Set(resolvedBenchIds).size;
+    let rosterIssue = "";
+    if (benchUnique.size !== benchIds.length) rosterIssue = "Riserve duplicate";
+    else if (overlap.length) rosterIssue = "Giocatori presenti sia in campo sia in panchina";
+    else if (unresolvedBench.length) rosterIssue = `${unresolvedBench.length} riserve non risolvibili`;
+    else if (benchCount < 4) rosterIssue = `Rosa incompleta · ${benchCount}/4 riserve`;
+
+    return {
+      starters: lineupIds.length,
+      bench: benchCount,
+      formationValid: !formationIssue,
+      formationIssue,
+      rosterComplete: benchCount === 4 && !rosterIssue,
+      rosterIssue,
+      roleCounts,
+    };
   }
 
   function squadBackButtonMarkup() {
@@ -1618,6 +1679,7 @@
 
   function renderSquad() {
     run.phase = "squad";
+    reconcileSquadRosterState();
     global.RunState.save(run);
     const formation = formationById(run.formationId);
     const squadSummary = squadValiditySummary();
@@ -1638,10 +1700,10 @@
           </div>
         </header>
         <div class="content squad-content">
-          <div class="squad-command-deck ${squadSummary.complete ? "is-valid" : "is-invalid"}">
-            <span class="squad-readiness-mark" aria-hidden="true">${squadSummary.complete ? "✓" : "!"}</span>
-            <div><small>Stato formazione</small><strong>${squadSummary.complete ? "Pronta per la sfida" : "Formazione non valida"}</strong></div>
-            <span class="squad-command-count">${squadSummary.starters} titolari · ${Math.min(squadSummary.bench, 4)} riserve</span>
+          <div class="squad-command-deck ${squadSummary.formationValid ? "is-valid" : "is-invalid"} ${squadSummary.rosterComplete ? "is-roster-complete" : "is-roster-incomplete"}">
+            <span class="squad-readiness-mark" aria-hidden="true">${squadSummary.formationValid ? "✓" : "!"}</span>
+            <div><small>Stato formazione</small><strong>${squadSummary.formationValid ? "Formazione valida" : "Formazione non valida"}</strong>${squadSummary.formationIssue ? `<em>${escapeHtml(squadSummary.formationIssue)}</em>` : ""}</div>
+            <span class="squad-command-count"><b>${squadSummary.starters}/11 titolari</b><b class="${squadSummary.rosterComplete ? "" : "is-warning"}">${squadSummary.rosterComplete ? `Rosa completa · ${squadSummary.bench}/4 riserve` : escapeHtml(squadSummary.rosterIssue || `Rosa incompleta · ${squadSummary.bench}/4 riserve`)}</b></span>
           </div>
 
           <div class="squad-workspace">

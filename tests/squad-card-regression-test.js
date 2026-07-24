@@ -34,6 +34,11 @@ assert(appJs.includes('swapSquadPlayersInDom(selected, clickedId, firstArea, sec
 assert(appJs.includes('[firstList[firstIndex], firstList[secondIndex]] = [firstList[secondIndex], firstList[firstIndex]];'), 'same-area swaps preserve the existing lineup or bench arrays');
 assert(appJs.includes('firstList[firstIndex] = clickedId;') && appJs.includes('secondList[secondIndex] = selected;'), 'starter-reserve swaps preserve the existing lineup and bench arrays');
 assert(appJs.includes('equipment: player.equipment'), 'equipment remains sourced from the resolved player for compact cards');
+assert(appJs.includes('equipmentInFooter: mode === "squad"'), 'Squad cards reserve footer space for equipment without changing other card contexts');
+assert(appJs.includes('function reconcileSquadRosterState()'), 'legacy roster leftovers are reconciled through one idempotent Squad migration');
+assert(appJs.includes('formationValid: !formationIssue'), 'starting-eleven validity is independent from bench completeness');
+assert(appJs.includes('rosterComplete: benchCount === 4 && !rosterIssue'), 'bench completeness is reported separately from formation validity');
+assert(appJs.includes('Il modulo richiede ${amount} ${role} · presenti ${roleCounts[role]}'), 'invalid formations expose the precise role mismatch');
 
 assert(appJs.includes('const squadSummary = squadValiditySummary();'), 'squad rework uses a view summary without changing gameplay state');
 assert(appJs.includes('${squadPitchMarkup()}'), 'squad screen still renders the shared 11v11 pitch markup once');
@@ -52,6 +57,9 @@ assert(css.includes('assets/squad/tactical-pitch.svg'), 'the Squad field uses th
 assert(css.includes('.squad-formation-options'), 'the dedicated formation grid is styled');
 assert(css.includes('.squad-screen .squad-player-card.is-compatible'), 'compatible swap destinations have a distinct state');
 assert(css.includes('.squad-screen .squad-player-card.is-incompatible'), 'incompatible swap destinations are attenuated');
+assert(css.includes('assets/home/inazuma-stadium-mobile-light.jpeg') && css.includes('assets/home/inazuma-stadium-desktop-light.jpeg'), 'Squad reuses both existing responsive stadium assets');
+assert(css.includes('.squad-screen .squad-player-card .player-equipment--footer'), 'Squad equipment participates in the card footer layout');
+assert(css.includes('.squad-bench-list { grid-template-columns: repeat(2'), 'bench stays in a compact two-column grid');
 assert(!css.includes('.squad-screen .player-card {'), 'squad CSS does not globally restyle shared player cards');
 assert(!css.includes('.squad-screen .player-portrait'), 'squad CSS does not alter shared portrait sizing/object-fit');
 
