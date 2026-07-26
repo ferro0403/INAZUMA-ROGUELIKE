@@ -19,6 +19,10 @@
 
 html, body { min-height: 100%; }
 
+#modal-root:empty { pointer-events: none; }
+html.modal-scroll-locked, body.modal-scroll-locked { overflow: hidden; overscroll-behavior: none; }
+#app.modal-scroll-locked { touch-action: none; }
+
 body {
   margin: 0;
   color: var(--text);
@@ -652,9 +656,9 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .player-detail-layout.rarity-normale { --detail-rarity-bg: #d7dde6; --detail-rarity-accent: #9aa7b8; --detail-rarity-text: #07172c; }
 .player-detail-layout.rarity-buono { --detail-rarity-bg: #aeeec6; --detail-rarity-accent: #4dbb7e; --detail-rarity-text: #061f18; }
 .player-detail-layout.rarity-forte { --detail-rarity-bg: #8fd6ff; --detail-rarity-accent: #1d93d2; --detail-rarity-text: #06192b; }
-.player-detail-layout.rarity-elite { --detail-rarity-bg: #7a4bd4; --detail-rarity-accent: #c3a7ff; --detail-rarity-text: #fff; }
-.player-detail-layout.rarity-mondiale { --detail-rarity-bg: #c83535; --detail-rarity-accent: #ff9a8f; --detail-rarity-text: #fff; }
-.player-detail-layout.rarity-leggenda { --detail-rarity-bg: #ffd34f; --detail-rarity-accent: #b87600; --detail-rarity-text: #1d1400; }
+.player-detail-layout.rarity-elite { --detail-rarity-bg: #6527c7; --detail-rarity-accent: #d0a7ff; --detail-rarity-text: #fff; }
+.player-detail-layout.rarity-mondiale { --detail-rarity-bg: #d4212f; --detail-rarity-accent: #ff786b; --detail-rarity-text: #fff; }
+.player-detail-layout.rarity-leggenda { --detail-rarity-bg: #e5a900; --detail-rarity-accent: #9b5c00; --detail-rarity-text: #1d1400; }
 .player-detail-visual {
   position: relative;
   isolation: isolate;
@@ -7383,6 +7387,7 @@ body { background: var(--gradient-app); }
 .album-player-entry .player-info { color: var(--album-ink); }
 .album-player-entry.is-locked > .player-card { filter: grayscale(1); opacity: .68; }
 .album-lock-overlay { border-radius: 0; background: linear-gradient(180deg,transparent 45%,rgba(17,18,22,.9)); text-shadow: none; }
+.album-player-lock { pointer-events: none; }
 .album-detail-badge { border: 2px solid var(--album-ink); border-radius: 0; background: var(--album-yellow); color: var(--album-ink); }
 .album-home-card { background: var(--album-paper); }
 .album-player-detail-modal { border: 3px solid #111216; border-radius: 0; box-shadow: 8px 9px 0 rgba(17,18,22,.35); }
@@ -7500,14 +7505,15 @@ body { background: var(--gradient-app); }
 @media (max-width: 780px) {
   .album-roster-action { width: 50px; min-width: 50px; min-height: 50px; height: 50px; padding: 0; }
   .album-roster-action .section-root-icon { width: 25px; height: 25px; }
-  .player-detail-modal { width: calc(100vw - 16px); max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); border-radius: 0; }
+  .modal-backdrop:has(.player-detail-modal) { overflow: hidden; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); }
+  .player-detail-modal { width: calc(100vw - 16px); max-width: calc(100vw - 16px); height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom))); max-height: calc(100dvh - 16px); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; border-radius: 0; }
   .player-detail-modal .modal-close { position: absolute; top: 10px; right: 10px; float: none; margin: 0; }
-  .player-detail-layout { display: flex; grid-template-columns: none; }
+  .player-detail-layout { display: flex; grid-template-columns: none; height: auto; min-height: 100%; }
   .player-detail-visual { min-height: 300px; padding: 14px 10px 0; border-right: 0; border-bottom: 3px solid var(--detail-ink); }
   .player-detail-team { align-self: flex-start; max-width: calc(100% - 62px); min-height: 48px; margin: 0 58px 0 0; padding: 5px 8px; box-shadow: 3px 3px 0 var(--detail-ink); }
   .player-detail-team img, .player-detail-team .team-logo-placeholder { width: 38px; height: 38px; }
   .player-fullbody { width: min(82%,300px); max-height: 250px; }
-  .player-detail-content { padding: 20px 13px 18px; }
+  .player-detail-content { overflow: visible; padding: 20px 13px 18px; }
   .player-detail-heading { min-height: 0; padding-right: 0; }
   .player-detail-name { margin-top: 10px; font-size: clamp(2rem,10.5vw,3.1rem); }
   .player-detail-tags { margin-bottom: 14px; }
@@ -7601,4 +7607,95 @@ body { background: var(--gradient-app); }
   .hall-stat { grid-template-columns: 1fr; gap: 2px; padding: 9px 6px; }
   .hall-stat-group--secondary .hall-stat-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
   .hall-award { margin: 0; border-radius: 0; background: var(--hall-paper); }
+}
+
+/* Victory and Hall archive — one light, structural component family. */
+.final-celebration-screen, .final-summary-screen {
+  --final-ink:#111216; --final-paper:#fffdf6; --final-cream:#f3eddd; --final-yellow:#ffd51f; --final-gold:#916b12;
+  color:var(--final-ink);
+  background:linear-gradient(rgba(255,253,246,.92),rgba(255,253,246,.97)),url("../assets/home/inazuma-stadium-desktop-light.jpeg") center/cover fixed;
+}
+.final-celebration-panel { width:min(1180px,100%); }
+.final-victory-hero { width:100%; display:grid; grid-template-columns:auto minmax(0,1fr); align-items:center; gap:clamp(18px,4vw,44px); padding:clamp(20px,4vw,42px); border:3px solid var(--final-ink); background:#fff; box-shadow:9px 9px 0 var(--final-ink); text-align:left; }
+.final-trophy { display:grid; place-items:center; width:clamp(92px,15vw,170px); aspect-ratio:1; border:3px solid var(--final-ink); background:var(--final-yellow); color:var(--final-ink); font-size:clamp(4rem,10vw,8rem); line-height:1; filter:none; box-shadow:7px 7px 0 var(--final-gold); }
+.final-victory-copy .eyebrow { margin:0 0 7px; color:var(--final-gold); letter-spacing:.16em; }
+.final-celebration-panel .final-victory-copy h1 { margin:0; color:var(--final-ink); font-size:clamp(2.5rem,7vw,5.8rem); line-height:.9; letter-spacing:-.05em; text-shadow:none; }
+.final-celebration-panel .final-victory-copy h2 { margin:10px 0 5px; color:var(--final-gold); font-size:clamp(1.15rem,2.8vw,2rem); letter-spacing:.08em; text-transform:uppercase; }
+.final-victory-copy > p:last-child { margin:0; color:#615c52; font-weight:800; }
+.final-victory-team { width:100%; padding:18px; border:3px solid var(--final-ink); background:var(--final-paper); box-shadow:7px 7px 0 #d4c79f; }
+.final-victory-section-head { display:flex; justify-content:space-between; gap:12px; margin-bottom:12px; padding-bottom:10px; border-bottom:2px solid var(--final-ink); text-align:left; }
+.final-victory-section-head span { color:var(--final-gold); font-size:.7rem; font-weight:950; letter-spacing:.14em; text-transform:uppercase; }
+.final-victory-section-head strong { color:var(--final-ink); }
+.final-actions .btn, .final-actions-panel .btn, .final-actions-panel .section-root-button { min-height:48px; border:2px solid var(--final-ink); border-radius:0; background:#fff; color:var(--final-ink); box-shadow:4px 4px 0 var(--final-ink); font-weight:950; text-transform:uppercase; }
+.final-actions .btn-yellow, .final-actions-panel .btn-yellow, .final-actions-panel .btn-primary { background:var(--final-yellow); }
+.final-actions .btn:hover, .final-actions .btn:focus-visible, .final-actions-panel :is(.btn,.section-root-button):hover, .final-actions-panel :is(.btn,.section-root-button):focus-visible { outline:3px solid var(--final-yellow); outline-offset:2px; transform:translate(-1px,-1px); }
+.final-summary-head { display:flex; justify-content:space-between; align-items:center; gap:20px; padding:clamp(20px,4vw,38px); border:3px solid var(--final-ink); background:#fff; box-shadow:8px 8px 0 var(--final-ink); }
+.final-summary-head h1 { color:var(--final-ink); font-size:clamp(2.2rem,6vw,4.8rem); line-height:.94; letter-spacing:-.045em; }
+.final-summary-head .eyebrow { color:var(--final-gold); }
+.final-summary-meta { margin:9px 0 0; color:#625e55; font-weight:800; }
+.final-summary-meta span + span::before { color:var(--final-gold); }
+.final-summary-star { color:var(--final-yellow); font-size:clamp(4rem,10vw,8rem); line-height:1; -webkit-text-stroke:3px var(--final-ink); }
+.final-summary-grid > .panel { border:3px solid var(--final-ink); border-radius:0; background:#fff; color:var(--final-ink); box-shadow:6px 6px 0 #d7caa8; }
+.final-summary-screen .final-tabs button { border:2px solid var(--final-ink); border-radius:0; background:#fff; color:var(--final-ink); }
+.final-summary-screen .final-tabs button.active { background:var(--final-yellow); }
+
+/* The Hall back control is the exact shared square-arrow component. */
+.hall-screen .section-root-button, .hall-detail-screen .section-root-button { width:48px; min-width:48px; min-height:48px; padding:0; border:3px solid var(--hall-ink); border-radius:0; background:var(--hall-yellow); color:var(--hall-ink); box-shadow:4px 4px 0 var(--hall-ink); line-height:0; }
+.hall-screen .section-root-button .section-root-icon, .hall-detail-screen .section-root-button .section-root-icon { width:25px; height:25px; margin:0; fill:none; stroke:currentColor; stroke-width:2.4; stroke-linecap:round; stroke-linejoin:round; }
+.hall-screen .section-root-button:hover, .hall-screen .section-root-button:focus-visible, .hall-detail-screen .section-root-button:hover, .hall-detail-screen .section-root-button:focus-visible { outline:3px solid var(--hall-yellow); outline-offset:3px; border-color:var(--hall-ink); background:#fff; transform:translate(-1px,-1px); }
+.hall-screen .section-root-button:active, .hall-detail-screen .section-root-button:active { box-shadow:1px 1px 0 var(--hall-ink); transform:translate(2px,2px); }
+
+/* Tactical identity: explicit high-contrast positive and negative states. */
+.hall-detail-screen .tactic-panel, .final-summary-screen .tactic-panel { gap:9px; padding:14px; border:2px solid currentColor; border-radius:0; background:#f3eddd; color:#111216; }
+.hall-detail-screen .tactic-heading, .final-summary-screen .tactic-heading { border-bottom:2px solid #111216; }
+.hall-detail-screen .tactic-heading span, .final-summary-screen .tactic-heading span { color:#765710; font-weight:900; }
+.hall-detail-screen .tactic-panel p, .final-summary-screen .tactic-panel p { color:#4f4b43; font-weight:650; line-height:1.45; }
+.hall-detail-screen .tactic-chip, .final-summary-screen .tactic-chip { min-height:32px; border:2px solid #111216; border-radius:0; background:#fff; color:#111216; box-shadow:2px 2px 0 rgba(17,18,22,.18); }
+.hall-detail-screen .tactic-chip--bonus, .final-summary-screen .tactic-chip--bonus { background:#bfe8ca; color:#123d22; border-color:#215f37; }
+.hall-detail-screen .tactic-chip--penalty, .final-summary-screen .tactic-chip--penalty { background:#f3c2c3; color:#67191d; border-color:#8b292e; }
+
+/* Historical cards reuse the Squad card anatomy in full, compact and mini contexts. */
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card { --squad-ink:#111216; --squad-yellow:#ffd51f; --rarity-border:#646464; position:relative; width:min(100%,96px); max-width:96px; min-height:108px; padding:0; overflow:visible; border:3px solid var(--squad-ink); border-radius:3px; background:#fffdf6; color:var(--squad-ink); box-shadow:4px 5px 0 rgba(5,18,12,.48),inset 0 -4px 0 var(--rarity-border); }
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card::before { content:""; position:absolute; z-index:3; left:-1px; top:-1px; width:54%; height:6px; background:var(--rarity-border); clip-path:polygon(0 0,100% 0,88% 100%,0 100%); }
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) :is(.rarity-scarso){--rarity-border:#343434}:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) :is(.rarity-debole){--rarity-border:#53606f}:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) :is(.rarity-normale){--rarity-border:#929ba8}:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) :is(.rarity-buono){--rarity-border:#2fa866}:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) :is(.rarity-forte){--rarity-border:#27a8e8}:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) :is(.rarity-elite){--rarity-border:#8254d1}:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) :is(.rarity-mondiale){--rarity-border:#d93842}:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) :is(.rarity-leggenda){--rarity-border:#d4a017}
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-portrait-wrap { position:relative; width:100%; height:70px; padding:7px 6px 0; overflow:hidden; background:linear-gradient(160deg,color-mix(in srgb,var(--rarity-border) 9%,#fff),#ddd7c8); }
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-portrait { width:100%; height:100%; object-fit:contain; object-position:center bottom; }
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-info { padding:5px 4px 7px; }
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-title { display:flex; align-items:center; gap:3px; min-width:0; }
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-title strong { min-width:0; flex:1; overflow:hidden; color:var(--squad-ink); font-size:.59rem; line-height:1.08; text-overflow:ellipsis; white-space:nowrap; }
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-meta { display:none; }
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-level { position:static; display:block; margin-top:3px; color:#5c574d; font-size:.5rem; font-weight:900; line-height:1; text-align:right; }
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card :is(.player-role,.player-overall) { display:grid; place-items:center; top:3px; min-width:25px; min-height:22px; padding:2px 4px; border:2px solid var(--squad-ink); border-radius:2px; color:var(--squad-ink); font-size:.62rem; font-weight:950; box-shadow:2px 2px 0 rgba(17,18,22,.28); }
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-role { left:3px; background:#fff; }
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-overall { right:3px; background:var(--squad-yellow); }
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-equipment--footer { position:static; flex:0 0 24px; width:24px; min-width:24px; height:24px; min-height:24px; display:grid; place-items:center; padding:2px; border:2px solid var(--squad-ink); border-radius:2px; background:var(--squad-yellow); color:var(--squad-ink); box-shadow:2px 2px 0 rgba(17,18,22,.24); transform:none; }
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-equipment--footer .item-icon { width:18px; height:18px; border:0; background:transparent; }
+:is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .bench-list { grid-template-columns:repeat(auto-fit,minmax(82px,96px)); justify-content:center; align-items:start; gap:14px 12px; }
+
+@media (max-width:760px) {
+  .final-celebration-screen, .final-summary-screen { background-image:linear-gradient(rgba(255,253,246,.93),rgba(255,253,246,.98)),url("../assets/home/inazuma-stadium-mobile-light.jpeg"); }
+  .final-celebration-panel { padding-top:0; }
+  .final-victory-hero { grid-template-columns:72px minmax(0,1fr); gap:13px; padding:14px; box-shadow:5px 5px 0 var(--final-ink); }
+  .final-trophy { width:72px; border-width:2px; font-size:3.4rem; box-shadow:4px 4px 0 var(--final-gold); }
+  .final-celebration-panel .final-victory-copy h1 { font-size:clamp(2rem,10vw,3rem); }
+  .final-celebration-panel .final-victory-copy h2 { margin-top:6px; font-size:.76rem; }
+  .final-victory-copy > p:last-child { font-size:.72rem; }
+  .final-victory-team { padding:10px 7px; box-shadow:4px 4px 0 #d4c79f; }
+  .final-victory-section-head { display:grid; gap:3px; padding-inline:4px; }
+  .final-celebration-panel .hall-pitch.pitch { min-height:460px; }
+  .final-summary-head { padding:16px; box-shadow:4px 4px 0 var(--final-ink); }
+  .final-summary-star { font-size:3.7rem; }
+  .final-summary-grid > .panel { box-shadow:4px 4px 0 #d7caa8; }
+  .final-actions-panel { grid-template-columns:1fr; }
+  .hall-screen .section-root-button, .hall-detail-screen .section-root-button { width:48px; min-width:48px; min-height:48px; }
+  :is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card { width:clamp(60px,18vw,70px); max-width:70px; min-height:78px; border-width:2px; box-shadow:3px 4px 0 rgba(5,18,12,.48),inset 0 -3px 0 var(--rarity-border); }
+  :is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-portrait-wrap { height:49px; padding:4px 3px 0; }
+  :is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-info { padding:3px 2px 5px; }
+  :is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-title strong { font-size:.5rem; }
+  :is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-level { margin-top:2px; font-size:.42rem; }
+  :is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card :is(.player-role,.player-overall) { top:2px; min-width:19px; min-height:17px; padding:1px 2px; border-width:1px; font-size:.48rem; }
+  :is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-role { left:2px; }
+  :is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-overall { right:2px; }
+  :is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-equipment--footer { flex-basis:18px; width:18px; min-width:18px; height:18px; min-height:18px; border-width:1px; }
+  :is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-equipment--footer .item-icon { width:13px; height:13px; }
 }

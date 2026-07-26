@@ -45,6 +45,7 @@
   }
 
   function navigateToSectionRoot(section, context = {}) {
+    closeModal({ invokeOnClose: false });
     const destination = getSectionRootDestination(section).destination;
     if (destination === "home") return renderHome();
     if (destination === "seasonSelection") {
@@ -333,16 +334,31 @@
     setTimeout(() => element.remove(), 3200);
   }
 
-  function closeModal() {
+  function closeModal({ invokeOnClose = true } = {}) {
     const restoreFocusTo = modalRoot._restoreFocusTo;
     const restoreScrollTo = modalRoot._restoreScrollTo;
+    const onClose = modalRoot._onClose;
     modalRoot.innerHTML = "";
     modalRoot._restoreFocusTo = null;
     modalRoot._restoreScrollTo = null;
-    if (restoreScrollTo) afterNextPaint(() => restorePageScroll(restoreScrollTo));
+    modalRoot._onClose = null;
+    modalRoot.removeAttribute("style");
+    modalRoot.classList.remove("has-open-modal");
+    [document.documentElement, document.body, app].forEach((element) => {
+      if (!element) return;
+      element.classList.remove("modal-scroll-locked");
+      const savedStyle = element._modalSavedStyle;
+      if (savedStyle !== undefined) {
+        if (savedStyle == null) element.removeAttribute("style");
+        else element.setAttribute("style", savedStyle);
+        delete element._modalSavedStyle;
+      }
+    });
+    if (restoreScrollTo) restorePageScroll(restoreScrollTo);
     if (restoreFocusTo && typeof restoreFocusTo.focus === "function" && document.contains(restoreFocusTo)) {
       try { restoreFocusTo.focus({ preventScroll: true }); } catch (_) { restoreFocusTo.focus(); }
     }
+    if (invokeOnClose && typeof onClose === "function") onClose();
   }
 
   if (window.history && "scrollRestoration" in window.history) {
@@ -448,8 +464,15 @@
   }
 
   function openModal(content, { closeable = true, className = "", onClose = null, preserveScroll = null } = {}) {
+    if (modalRoot.firstElementChild) closeModal({ invokeOnClose: false });
     modalRoot._restoreFocusTo = document.activeElement;
     modalRoot._restoreScrollTo = preserveScroll || scrollSnapshot();
+    modalRoot._onClose = onClose;
+    [document.documentElement, document.body, app].forEach((element) => {
+      element._modalSavedStyle = element.getAttribute("style");
+      element.classList.add("modal-scroll-locked");
+    });
+    modalRoot.classList.add("has-open-modal");
     modalRoot.innerHTML = `
       <div class="modal-backdrop">
         <section class="modal ${className}">
@@ -459,7 +482,6 @@
       </div>`;
     modalRoot.querySelector("[data-close-modal]")?.addEventListener("click", () => {
       closeModal();
-      if (onClose) onClose();
     });
     const modal = modalRoot.querySelector(".modal");
     resetRenderedViewScroll(modal);
@@ -670,6 +692,7 @@
   function bindBottomNav() {
     document.querySelectorAll("[data-nav]").forEach((button) => {
       button.addEventListener("click", () => {
+        closeModal({ invokeOnClose: false });
         const destination = button.dataset.nav;
         if (destination === "map") {
           return resumePostBossFlowOrMap();
@@ -785,8 +808,9 @@
       database
     );
     const tag = options.button ? "button" : "article";
+    const playerDataAttribute = options.dataAttribute || "data-player-id";
     const attributes = options.button
-      ? `type="button" data-player-id="${escapeHtml(player.playerId)}"`
+      ? `type="button" ${playerDataAttribute}="${escapeHtml(player.playerId)}"`
       : "";
     return `
       <${tag} class="player-card player-card-large pull-player-card pull-player-card--desktop pull-player-card--mobile ${pullSelection ? "pull-selection-card" : ""} ${escapeHtml(options.extraClass || "")} ${rarityClass(resolved.category)} ${options.selected ? "selected" : ""} ${options.equipment ? "has-equipment" : ""}" ${attributes}>
@@ -989,6 +1013,7 @@
   }
 
   async function renderAlbumTeams(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
+    closeModal({ invokeOnClose: false });
     await loadSeason(collectionId);
     ui.albumCollectionId = collectionId;
     const collection = global.AlbumProgress.ALBUM_COLLECTIONS[collectionId];
@@ -1000,6 +1025,7 @@
   }
 
   function renderAlbumRoster(collectionId, teamId) {
+    closeModal({ invokeOnClose: false });
     ui.albumCollectionId = collectionId; ui.albumTeamId = teamId;
     const team = albumTeamsView().find((candidate) => String(candidate.teamId) === String(teamId));
     if (!team) return renderAlbumTeams(collectionId);
@@ -1007,18 +1033,31 @@
     const players = rawPlayers.map((player) => albumPlayerView(player, team.freeAgents ? freeAgentsDb : seasonDb));
     const progress = albumProgressForPlayers(players, collectionId);
     const unlocked = global.AlbumProgress.unlockedSet(collectionId);
-    app.innerHTML = `<main class="album-screen album-roster-screen"><header class="topbar album-topbar album-roster-header"><div class="album-roster-title"><span class="album-team-logo album-team-logo--header album-roster-logo">${albumTeamLogoMarkup(team)}</span><div class="album-roster-heading"><p class="eyebrow album-roster-breadcrumb">Album → ${escapeHtml(global.AlbumProgress.ALBUM_COLLECTIONS[collectionId]?.name || collectionId)}</p><h1 class="album-roster-name">${escapeHtml(team.teamName)}</h1><p class="muted album-roster-progress">${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)} giocatori sbloccati</p></div></div>${sectionRootButton("albumRoster", "album-roster-action")}</header><section class="album-player-grid" data-album-roster>${players.map((player) => { const isUnlocked = unlocked.has(String(player.playerId)); return `<div class="album-player-entry ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${playerCard(player, { button: true, level: player.maxLevel || 20, database: player.albumDatabase }).replace('data-player-id=', 'data-album-player=')}${isUnlocked ? "" : `<span class="album-lock-overlay album-player-lock"><span aria-hidden="true">🔒</span>Non sbloccato</span>`}</div>`; }).join("")}</section></main>`;
+    app.innerHTML = `<main class="album-screen album-roster-screen"><header class="topbar album-topbar album-roster-header"><div class="album-roster-title"><span class="album-team-logo album-team-logo--header album-roster-logo">${albumTeamLogoMarkup(team)}</span><div class="album-roster-heading"><p class="eyebrow album-roster-breadcrumb">Album → ${escapeHtml(global.AlbumProgress.ALBUM_COLLECTIONS[collectionId]?.name || collectionId)}</p><h1 class="album-roster-name">${escapeHtml(team.teamName)}</h1><p class="muted album-roster-progress">${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)} giocatori sbloccati</p></div></div>${sectionRootButton("albumRoster", "album-roster-action")}</header><section class="album-player-grid" data-album-roster>${players.map((player) => { const isUnlocked = unlocked.has(String(player.playerId)); return `<div class="album-player-entry ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${playerCard(player, { button: true, dataAttribute: "data-album-player", level: player.maxLevel || 20, database: player.albumDatabase })}${isUnlocked ? "" : `<span class="album-lock-overlay album-player-lock"><span aria-hidden="true">🔒</span>Non sbloccato</span>`}</div>`; }).join("")}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav({ collectionId });
     const albumRoster = document.querySelector("[data-album-roster]");
-    albumRoster?.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-album-player]");
-      if (!button || !albumRoster.contains(button)) return;
-      event.preventDefault();
-      const player = players.find((candidate) => String(candidate.playerId) === String(button.dataset.albumPlayer));
-      if (!player) return;
+    bindAlbumRosterInteractions(albumRoster, ({ playerId, entry }) => {
+      const player = players.find((candidate) => String(candidate.playerId) === String(playerId));
+      if (!player) {
+        console.error("Album player not found", { collectionId, teamId, playerId });
+        return;
+      }
       const isUnlocked = unlocked.has(String(player.playerId));
       showPlayerDetailsFor(player, { mode: "album", readOnly: true, playerId: player.playerId, level: player.maxLevel || 20, database: player.albumDatabase, equipment: null, preserveScroll: scrollSnapshot(), albumUnlocked: isUnlocked });
+    });
+  }
+
+  function bindAlbumRosterInteractions(albumRoster, openPlayer) {
+    if (!albumRoster || albumRoster.dataset.albumInteractionBound === "true") return;
+    albumRoster.dataset.albumInteractionBound = "true";
+    albumRoster.addEventListener("click", (event) => {
+      const entry = event.target.closest("[data-album-player-entry]");
+      const button = event.target.closest("[data-album-player]");
+      const target = entry || button;
+      if (!target || !albumRoster.contains(target)) return;
+      event.preventDefault();
+      openPlayer({ playerId: String(entry?.dataset.albumPlayerEntry ?? button.dataset.albumPlayer), entry, button });
     });
   }
 
@@ -1204,6 +1243,7 @@
   }
 
   async function renderHome() {
+    closeModal({ invokeOnClose: false });
     const latest = global.RunState.latestActiveSave?.();
     if (latest?.run) {
       await loadSeason(latest.run.seasonId || latest.season.id);
@@ -1358,7 +1398,7 @@
     run = global.RunState.createRun(cleanIdentity, activeSeason?.id);
     global.run = run;
     global.RunState.save(run);
-    closeModal();
+    closeModal({ invokeOnClose: false });
     renderFormationChoice();
   }
 
@@ -1749,6 +1789,8 @@
   }
 
   function renderSquad() {
+    closeModal({ invokeOnClose: false });
+    ui.selectedSquadPlayerId = null;
     run.phase = "squad";
     reconcileSquadRosterState();
     global.RunState.save(run);
@@ -5079,7 +5121,7 @@
   }
 
   function snapshotCard(player) {
-    return compactPlayerCardMarkup({ ...player, position: player.role, category: player.finalRarity, overall: player.finalOverall, displayLevel: player.finalLevel, stats: player.finalStats }, { equipment: player.equippedItem, level: player.finalLevel, overall: player.finalOverall, dataAttr: `data-hall-player="${escapeHtml(player.playerId)}"`, extraClass: "hall-player-card" });
+    return compactPlayerCardMarkup({ ...player, position: player.role, category: player.finalRarity, overall: player.finalOverall, displayLevel: player.finalLevel, stats: player.finalStats }, { equipment: player.equippedItem, equipmentInFooter: true, level: player.finalLevel, overall: player.finalOverall, dataAttr: `data-hall-player="${escapeHtml(player.playerId)}"`, extraClass: "squad-player-card hall-player-card" });
   }
 
   function championFormationMarkup(team) {
@@ -5167,7 +5209,7 @@
     const team = championTeam(hallTeamId || run?.hallTeamId);
     if (!team) return renderHome();
     run.phase = "final-celebration"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
-    app.innerHTML = `<main class="final-celebration-screen"><section class="final-celebration-panel"><div class="final-trophy" aria-hidden="true">🏆</div><p class="eyebrow">SEASON 1 COMPLETATA</p><h1>${escapeHtml(team.teamName)}</h1><h2>CAMPIONE</h2><p class="muted">${escapeHtml(team.modeName)} · ${formatDate(team.victoryDate)} · ${escapeHtml(team.finalFormation || '-')}</p>${championFormationMarkup(team)}<div class="button-row final-actions"><button type="button" class="btn btn-yellow" id="final-continue">Continua</button><button type="button" class="btn" id="skip-final-animation">Salta animazione</button></div></section></main>`;
+    app.innerHTML = `<main class="final-celebration-screen"><section class="final-celebration-panel"><header class="final-victory-hero"><div class="final-trophy" aria-hidden="true">★</div><div class="final-victory-copy"><p class="eyebrow">SEASON 1 COMPLETATA</p><h1>${escapeHtml(team.teamName)}</h1><h2>Campioni della run</h2><p>${escapeHtml(team.modeName)} · ${formatDate(team.victoryDate)} · ${escapeHtml(team.finalFormation || '-')}</p></div></header><div class="final-victory-team"><div class="final-victory-section-head"><span>Squadra vincente</span><strong>La formazione che ha scritto la storia</strong></div>${championFormationMarkup(team)}</div><div class="button-row final-actions"><button type="button" class="btn btn-yellow" id="final-continue">Continua <span aria-hidden="true">→</span></button><button type="button" class="btn" id="skip-final-animation">Vai al riepilogo</button></div></section></main>`;
     resetRenderedViewScroll(); bindHallPlayerDetails(team);
     const go = () => { run.phase = "final-summary"; global.RunState.save(run); renderFinalSummary(team.hallTeamId); };
     document.getElementById("final-continue").addEventListener("click", go);
@@ -5180,7 +5222,7 @@
     const summaries = global.HallOfFameStorage.listSummaries();
     const ordinal = summaries.findIndex((item) => item.hallTeamId === team.hallTeamId) + 1;
     run.phase = "final-summary"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
-    app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><p class="eyebrow">CAMPIONI DELLA SEASON 1</p><h1>${escapeHtml(team.teamName)}</h1><p class="muted final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span><span>Seed ${escapeHtml(compactSeed(team.seed))}</span><span>#${escapeHtml(ordinal || '-')} Albo d’Oro</span></p></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3>${championFiveVFiveMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel"><button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn" id="review-team">Rivedi la squadra</button>${sectionRootButton("finalSummary")}<button class="btn btn-primary" id="final-new-run">Nuova run</button></aside></section></main>`;
+    app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><div><p class="eyebrow">CAMPIONI DELLA SEASON 1</p><h1>${escapeHtml(team.teamName)}</h1><p class="final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span><span>Seed ${escapeHtml(compactSeed(team.seed))}</span><span>#${escapeHtml(ordinal || '-')} Albo d’Oro</span></p></div><span class="final-summary-star" aria-hidden="true">★</span></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3>${championFiveVFiveMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel"><button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn" id="review-team">Rivedi la squadra</button>${sectionRootButton("finalSummary")}<button class="btn btn-primary" id="final-new-run">Nuova run</button></aside></section></main>`;
     resetRenderedViewScroll(); bindFinalTabs(); bindHallPlayerDetails(team);
     document.getElementById("open-current-hall").addEventListener("click", () => renderHallOfFameDetail(team.hallTeamId));
     document.getElementById("review-team").addEventListener("click", () => document.querySelector('[data-final-tab="team"]').click());
@@ -5272,5 +5314,6 @@
     }
   }
 
+  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions };
   init();
 })(globalThis);
