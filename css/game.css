@@ -7074,9 +7074,9 @@ body { background: var(--gradient-app); }
      same vertical anatomy and portrait visibility as the 5v5 match cards. */
   .boss-match-screen .boss-match-line[data-row-count="5"] { --boss-mobile-card-width: clamp(58px, 16.2vw, 66px); }
   .boss-match-screen .boss-match-line[data-row-count="4"] { --boss-mobile-card-width: clamp(70px, 20vw, 78px); }
-  .boss-match-screen .boss-match-line[data-row-count="3"] { --boss-mobile-card-width: clamp(78px, 24vw, 88px); }
-  .boss-match-screen .boss-match-line[data-row-count="2"] { --boss-mobile-card-width: clamp(86px, 28vw, 94px); }
-  .boss-match-screen .boss-match-line[data-row-count="1"] { --boss-mobile-card-width: 94px; }
+  .boss-match-screen .boss-match-line[data-row-count="3"],
+  .boss-match-screen .boss-match-line[data-row-count="2"],
+  .boss-match-screen .boss-match-line[data-row-count="1"] { --boss-mobile-card-width: clamp(70px, 20vw, 78px); }
   .boss-match-screen .boss-match-card.run-tactical-card {
     min-height: 90px;
   }
@@ -7202,6 +7202,9 @@ body { background: var(--gradient-app); }
     max-width: 86px;
   }
   .boss-match-screen .boss-match-line[data-row-count="4"] { --boss-mobile-card-width: clamp(65px, 19.2vw, 72px); }
+  .boss-match-screen .boss-match-line[data-row-count="3"],
+  .boss-match-screen .boss-match-line[data-row-count="2"],
+  .boss-match-screen .boss-match-line[data-row-count="1"] { --boss-mobile-card-width: clamp(65px, 19.2vw, 72px); }
   .boss-match-screen .boss-match-field,
   .boss-match-screen .boss-match-field-side--mobile { min-height: 600px; height: 600px; }
   .boss-match-screen .boss-match-summary > div:not(.boss-match-reward-note):not(.five-match-values) {
@@ -7440,11 +7443,28 @@ body { background: var(--gradient-app); }
 .player-detail-visual {
   justify-content: space-between;
   border-right: 3px solid var(--detail-ink);
-  background: linear-gradient(150deg,color-mix(in srgb,var(--detail-rarity-accent) 17%,#fff) 0 68%,var(--detail-cream) 68%);
+  background:
+    linear-gradient(150deg, color-mix(in srgb,var(--detail-rarity-accent) 42%,#fff) 0 66%, var(--detail-cream) 66%),
+    var(--detail-paper);
   color: var(--detail-ink);
 }
-.player-detail-visual::before { background: repeating-linear-gradient(115deg,rgba(17,18,22,.055) 0 2px,transparent 2px 25px); opacity: 1; }
-.player-detail-visual::after { border: 3px solid color-mix(in srgb,var(--detail-rarity-accent) 58%,transparent); border-radius: 0; transform: rotate(45deg); opacity: .28; }
+.player-detail-visual::before {
+  background:
+    linear-gradient(115deg, transparent 0 35%, color-mix(in srgb,var(--detail-rarity-accent) 72%,transparent) 35% 43%, transparent 43% 100%),
+    repeating-linear-gradient(115deg, color-mix(in srgb,var(--detail-rarity-accent) 28%,transparent) 0 3px, transparent 3px 24px),
+    radial-gradient(circle at 50% 56%, color-mix(in srgb,var(--detail-rarity-accent) 34%,transparent), transparent 48%);
+  opacity: 1;
+}
+.player-detail-visual::after {
+  width: 68%;
+  left: 16%;
+  bottom: 9%;
+  border: 5px solid color-mix(in srgb,var(--detail-rarity-accent) 82%,transparent);
+  border-radius: 0;
+  transform: rotate(45deg);
+  opacity: .62;
+  box-shadow: 0 0 0 12px color-mix(in srgb,var(--detail-rarity-accent) 14%,transparent);
+}
 .player-detail-team { border: 3px solid var(--detail-ink); border-radius: 0; background: rgba(255,253,246,.94); color: var(--detail-ink); box-shadow: 4px 5px 0 var(--detail-ink); backdrop-filter: none; }
 .player-detail-content { padding: 42px 38px 34px; background: var(--detail-paper); color: var(--detail-ink); }
 .player-detail-heading { min-height: 28px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-right: 58px; }
