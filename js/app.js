@@ -1437,7 +1437,7 @@
     run.phase = "formation";
     global.RunState.save(run);
     app.innerHTML = `
-      <main class="screen">
+      <main class="screen onboarding-screen formation-choice-screen">
         ${topbar("Scegli il modulo")}
         <div class="content narrow">
           <div class="section-head">
@@ -1445,7 +1445,7 @@
           </div>
           <div class="formation-grid">
             ${seasonDb.formations.eleven.map((formation) => `
-              <button type="button" class="formation-card" data-formation="${escapeHtml(formation.id)}">
+              <button type="button" class="formation-card ${run.formationId === formation.id ? "selected" : ""}" data-formation="${escapeHtml(formation.id)}" aria-pressed="${run.formationId === formation.id ? "true" : "false"}">
                 <strong>${escapeHtml(formation.name)}</strong>
                 <p class="muted small">Il draft proporrà esattamente i ruoli necessari.</p>
                 <div class="formation-roles">
@@ -1479,7 +1479,7 @@
     const candidates = draft.candidates.map((id) => freeAgentsById.get(String(id))).filter(Boolean);
     const progress = (draft.step / draft.roles.length) * 100;
     app.innerHTML = `
-      <main class="screen">
+      <main class="screen onboarding-screen initial-draft-screen">
         ${topbar("Draft iniziale")}
         <div class="content narrow">
           <p class="eyebrow">Scelta ${draft.step + 1} di ${draft.roles.length}</p>
@@ -1489,7 +1489,7 @@
           </div>
           <div class="progress-track"><div class="progress-bar" style="width:${progress}%"></div></div>
           <div class="candidate-grid pull-offer-grid initial-draft-grid">
-            ${candidates.map((player) => playerCard(player, { button: true })).join("")}
+            ${candidates.map((player) => playerCard(player, { button: true, extraClass: "initial-draft-card" })).join("")}
           </div>
         </div>
       </main>`;
@@ -1910,7 +1910,7 @@
   function bossNodeIconMarkup(boss) {
     const teamName = boss?.teamName || "Boss";
     const logoUrl = bossTeamLogoUrl(boss);
-    const fallback = escapeHtml((teamName.trim()[0] || "⚽").toUpperCase());
+    const fallback = "⚽";
     if (!logoUrl) return `<span class="boss-logo-fallback boss-logo-fallback--visible" aria-hidden="true">${fallback}</span>`;
     return `<img class="boss-node-logo" src="${escapeHtml(logoUrl)}" alt="Logo ${escapeHtml(teamName)}" loading="lazy" onerror="this.remove();this.parentElement?.classList.add('boss-logo-missing');" /><span class="boss-logo-fallback" aria-hidden="true">${fallback}</span>`;
   }

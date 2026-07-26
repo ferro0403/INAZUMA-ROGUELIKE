@@ -3685,6 +3685,100 @@ body { background: var(--gradient-app); }
   .inventory-screen .inventory-item-card .item-icon { width: 46px; height: 46px; }
 }
 
+/* Initial setup, challenge preview and random reveals — light restyle. */
+.onboarding-screen {
+  --setup-ink: #111216;
+  --setup-paper: #fffdf6;
+  --setup-cream: #f2eee3;
+  --setup-yellow: #ffd21f;
+  --setup-gold: #987116;
+  min-height: 100dvh;
+  overflow-x: clip;
+  color: var(--setup-ink);
+  background: linear-gradient(rgba(255,255,255,.12), rgba(17,18,22,.12)), url("../assets/home/inazuma-stadium-desktop-light.jpeg") center / cover fixed no-repeat;
+}
+.onboarding-screen .game-topbar {
+  min-height: 88px;
+  border-bottom: 4px solid var(--setup-ink);
+  background: rgba(255,253,246,.96);
+  color: var(--setup-ink);
+  box-shadow: 0 7px 0 rgba(17,18,22,.09);
+}
+.onboarding-screen .game-topbar::after { content: ""; position: absolute; right: 8%; bottom: -4px; width: 160px; height: 12px; background: var(--setup-yellow); transform: skewX(-32deg); }
+.onboarding-screen .section-root-button { border: 3px solid var(--setup-ink); border-radius: 0; background: var(--setup-yellow); color: var(--setup-ink); box-shadow: 4px 5px 0 var(--setup-ink); }
+.onboarding-screen .brand, .onboarding-screen h2 { color: var(--setup-ink); }
+.onboarding-screen .topbar-subtitle, .onboarding-screen .muted { color: #5b5952; }
+.onboarding-screen .status-pill { border: 2px solid var(--setup-ink); border-radius: 0; background: #fff; color: var(--setup-ink); box-shadow: 3px 4px 0 rgba(17,18,22,.18); }
+.onboarding-screen .content { padding-top: clamp(18px,4vw,32px); }
+.onboarding-screen .eyebrow { color: var(--setup-gold); }
+.onboarding-screen .section-head { align-items: center; margin-bottom: 14px; padding: 15px 17px; border: 3px solid var(--setup-ink); background: var(--setup-paper); box-shadow: 6px 7px 0 rgba(17,18,22,.18); }
+.onboarding-screen .section-head h2 { margin-bottom: 3px; line-height: 1; }
+.onboarding-screen .section-head p { font-weight: 750; }
+.onboarding-screen .role-chip { border: 2px solid var(--setup-ink); border-radius: 2px; background: var(--setup-cream); color: var(--setup-ink); }
+.onboarding-screen .progress-track { height: 12px; margin: 12px 0 20px; border: 2px solid var(--setup-ink); border-radius: 0; background: var(--setup-paper); }
+.onboarding-screen .progress-bar { background: var(--setup-yellow); }
+
+.formation-choice-screen .formation-grid { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+.formation-choice-screen .formation-card { position: relative; min-height: 154px; padding: 17px; border: 3px solid var(--setup-ink); border-radius: 2px; background: var(--setup-paper); color: var(--setup-ink); box-shadow: 5px 6px 0 rgba(17,18,22,.2); }
+.formation-choice-screen .formation-card::after { content: "SCEGLI"; position: absolute; top: 12px; right: 12px; color: var(--setup-gold); font-size: .58rem; font-weight: 950; letter-spacing: .1em; }
+.formation-choice-screen .formation-card strong { font-size: clamp(1.45rem,4vw,2rem); line-height: 1; }
+.formation-choice-screen .formation-card p { max-width: 34ch; margin-bottom: 13px; }
+.formation-choice-screen .formation-card:hover, .formation-choice-screen .formation-card:focus-visible, .formation-choice-screen .formation-card.selected { outline: 0; border-color: var(--setup-ink); background: var(--setup-yellow); box-shadow: 7px 8px 0 var(--setup-ink); transform: translate(-2px,-2px); }
+.formation-choice-screen .formation-card.selected::after { content: "ATTIVO"; color: var(--setup-ink); }
+.formation-choice-screen .formation-card.selected .role-chip, .formation-choice-screen .formation-card:hover .role-chip { background: #fff; }
+
+.initial-draft-grid { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 14px; }
+.initial-draft-screen .initial-draft-card { min-height: 260px; border: 3px solid var(--rarity-border,#686b70); border-left-width: 6px; border-radius: 3px; background: linear-gradient(165deg,var(--setup-paper) 0 73%,var(--setup-cream) 73%); color: var(--setup-ink); box-shadow: 5px 6px 0 rgba(17,18,22,.28), inset 0 -6px 0 var(--rarity-border,#686b70); }
+.initial-draft-screen .initial-draft-card::before { content: ""; position: absolute; z-index: 3; inset: 0 auto auto 0; width: 58%; height: 7px; background: var(--rarity-border,#686b70); clip-path: polygon(0 0,100% 0,91% 100%,0 100%); }
+.initial-draft-screen .initial-draft-card .player-portrait-wrap { height: 174px; aspect-ratio: auto; padding: 24px 20px 0; background: linear-gradient(150deg,color-mix(in srgb,var(--rarity-border,#777) 10%,white),#e5e3dc); }
+.initial-draft-screen .initial-draft-card .player-info { padding: 10px 34px 34px; color: var(--setup-ink); }
+.initial-draft-screen .initial-draft-card .player-title strong { font-size: 1rem; }
+.initial-draft-screen .initial-draft-card .player-meta { color: #5a574f; font-weight: 800; }
+.initial-draft-screen .initial-draft-card .player-role, .initial-draft-screen .initial-draft-card .player-level { border: 2px solid var(--setup-ink); background: #fff; color: var(--setup-ink); }
+.initial-draft-screen .initial-draft-card .player-overall { border: 2px solid var(--setup-ink); background: var(--setup-yellow); color: var(--setup-ink); }
+.initial-draft-screen .initial-draft-card:hover, .initial-draft-screen .initial-draft-card:focus-visible, .initial-draft-screen .initial-draft-card.selected { outline: 4px solid var(--setup-yellow); outline-offset: 3px; border-color: var(--rarity-border,#686b70); box-shadow: 7px 9px 0 var(--setup-ink), inset 0 -6px 0 var(--rarity-border,#686b70); transform: translateY(-2px); }
+
+.modal-backdrop:has(.route-boss-preview-modal), .modal-backdrop:has(.random-event-modal) { background: rgba(17,18,22,.68); backdrop-filter: blur(6px); }
+.modal.route-boss-preview-modal, .modal.random-event-modal { --overlay-ink:#111216; --overlay-paper:#fffdf6; --overlay-yellow:#ffd21f; --overlay-gold:#987116; border: 3px solid var(--overlay-ink); border-radius: 4px; background: var(--overlay-paper); color: var(--overlay-ink); box-shadow: 9px 11px 0 rgba(0,0,0,.42); }
+.route-boss-preview-modal .route-boss-preview-head { padding-bottom: 12px; border-bottom: 3px solid var(--overlay-ink); }
+.route-boss-preview-modal .route-boss-preview-head h2, .random-event-modal h2 { margin-bottom: 4px; color: var(--overlay-ink); }
+.route-boss-preview-modal .eyebrow, .random-event-modal .eyebrow { color: var(--overlay-gold); }
+.route-boss-preview-modal .muted, .random-event-modal .muted { color: #5b5952; }
+.route-boss-preview-logo { display: grid; place-items: center; width: 72px; height: 72px; padding: 7px; border: 3px solid var(--overlay-ink); border-radius: 0; background: var(--overlay-yellow); }
+.route-boss-preview-logo img { display: block; width: 100%; height: 100%; object-fit: contain; object-position: center; }
+.route-boss-preview-field { margin-top: 14px; border: 3px solid var(--overlay-ink); border-radius: 0; }
+.route-boss-preview-field .boss-match-card { border: 2px solid var(--rarity-border,#b43c43); border-radius: 3px; background: linear-gradient(165deg,#fff 0 74%,#eee9dc 74%); color: var(--overlay-ink); box-shadow: 3px 4px 0 rgba(17,18,22,.55); }
+.route-boss-preview-field .boss-match-card .player-title strong, .route-boss-preview-field .boss-match-card .player-meta--stacked, .route-boss-preview-field .boss-match-card .player-meta-line--level { color: var(--overlay-ink); text-shadow: none; }
+.route-boss-preview-field .boss-match-card .player-portrait-wrap { background: linear-gradient(150deg,#fff,#ddd9cf); }
+.route-boss-preview-field .boss-match-card .player-role, .route-boss-preview-field .boss-match-card .player-level { border-color: var(--overlay-ink); background:#fff; color:var(--overlay-ink); }
+.route-boss-preview-field .boss-match-card .player-overall { border-color:var(--overlay-ink); background:var(--overlay-yellow); color:var(--overlay-ink); }
+.route-boss-preview-modal .btn-yellow, .random-event-modal .btn-primary { border: 2px solid var(--overlay-ink); border-radius: 2px; background: var(--overlay-yellow); color: var(--overlay-ink); box-shadow: 4px 5px 0 var(--overlay-ink); }
+.route-target-card__logo .boss-logo-fallback:not(.boss-logo-fallback--visible) { display:none; }
+
+.random-event-modal { width:min(580px,calc(100vw - 20px)); }
+.random-event-modal .random-event-head { padding: 4px 4px 12px 14px; border-bottom: 3px solid var(--overlay-ink); border-left: 7px solid var(--overlay-yellow); }
+.random-event-reveal { margin: 16px 0; padding: 25px 16px; border: 3px solid var(--overlay-ink); border-radius: 2px; background: linear-gradient(145deg,color-mix(in srgb,var(--reveal-color,var(--overlay-yellow)) 18%,#fff),#f2eee3); color:var(--overlay-ink); box-shadow:5px 6px 0 rgba(17,18,22,.2); }
+.random-event-reveal span { border: 2px solid var(--overlay-ink); border-radius: 2px; background: var(--overlay-yellow); box-shadow:3px 4px 0 var(--overlay-ink); }
+.random-event-reveal small { color:#5b5952; }
+.random-event-modal .node-actions { padding-top:12px; border-top:2px solid var(--overlay-ink); }
+
+@media (max-width: 780px) {
+  .onboarding-screen { background-image: linear-gradient(rgba(255,255,255,.1),rgba(17,18,22,.1)),url("../assets/home/inazuma-stadium-mobile-light.jpeg"); }
+  .onboarding-screen .content { width:calc(100% - 20px); }
+  .formation-choice-screen .formation-grid { grid-template-columns:1fr; gap:9px; }
+  .formation-choice-screen .formation-card { min-height:0; padding:14px; }
+  .formation-choice-screen .formation-card p { margin-bottom:9px; }
+  .initial-draft-grid { grid-template-columns:1fr; gap:10px; }
+  .initial-draft-screen .initial-draft-card { display:grid; grid-template-columns:120px minmax(0,1fr); min-height:126px; }
+  .initial-draft-screen .initial-draft-card .player-portrait-wrap { width:120px; height:126px; padding:22px 8px 0; }
+  .initial-draft-screen .initial-draft-card .player-info { align-self:center; padding:22px 45px 25px 10px; text-align:left; }
+  .initial-draft-screen .initial-draft-card .player-meta { justify-content:flex-start; }
+  .route-boss-preview-modal .route-boss-preview-head { align-items:center; }
+  .route-boss-preview-logo { width:58px; height:58px; }
+  .modal.random-event-modal { padding:16px 14px; }
+  .random-event-modal .node-actions { margin-inline:0; padding-inline:0; }
+}
+
 /* Trade node restyle — scoped to the in-run exchange flow. */
 .modal-backdrop:has(.trade-modal),
 .modal-backdrop:has(.trade-confirm-modal),
