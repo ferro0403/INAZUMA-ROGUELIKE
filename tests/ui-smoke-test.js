@@ -41,4 +41,9 @@ assert.match(css, /modal-backdrop:has\(\.team-name-modal\) \{ align-items: start
 assert.match(css, /Player detail — light visual system shared by Album and run views/, 'player detail uses the approved light visual system');
 assert.match(css, /color-mix\(in srgb,var\(--detail-rarity-accent\) 42%,#fff\)/, 'player detail hero makes its rarity accent immediately visible');
 assert.match(css, /data-row-count="1"\] \{ --boss-mobile-card-width: clamp\(70px, 20vw, 78px\); \}/, 'sparse boss rows cannot grow beyond the defender card cap');
+assert.match(app, /class="hall-hero"/, 'Hall of Fame detail uses the celebratory hero');
+assert.match(app, /class="hall-roster-extra"/, 'Hall of Fame secondary formations stay compact');
+assert.match(app, /featuredAwardIds\.has\(award\.id\)/, 'Hall of Fame renders only featured awards');
+assert.doesNotMatch(app.slice(app.indexOf('function runStatsSections'), app.indexOf('function statsMarkup')), /label: "Seed"|Pull aperte|Reroll usati|Oggetti ottenuti/, 'Hall of Fame omits technical run data');
+assert.match(css, /Hall of Fame — ivory archive restyle/, 'Hall of Fame uses the ivory, ink and gold visual system');
 console.log('ui-smoke-test: ok');
