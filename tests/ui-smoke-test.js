@@ -15,4 +15,11 @@ assert.match(app, /if \(item\.effect === "restore_life"\)/);
 assert.match(app, /data-item-target-player/);
 assert.doesNotMatch(app.slice(app.indexOf('function setInventoryEquipmentTarget'), app.indexOf('function openInventoryConfirmation')), /renderApp\(/);
 assert.match(css, /#cancel-trade \{[^}]*color: #111216/s);
+for (const selector of ['.formation-choice-screen', '.initial-draft-screen', '.route-boss-preview-modal', '.random-event-modal']) {
+  assert.ok(css.includes(selector), `${selector} restyle missing`);
+}
+assert.match(app, /class="screen onboarding-screen formation-choice-screen"/);
+assert.match(app, /class="screen onboarding-screen initial-draft-screen"/);
+assert.match(app, /const fallback = "⚽";/);
+assert.doesNotMatch(app, /teamName\.trim\(\)\[0\]/);
 console.log('ui-smoke-test: ok');
