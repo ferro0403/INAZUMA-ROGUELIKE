@@ -1426,6 +1426,11 @@
       ui.match = run.activeMatch;
       ui.bossMatchState = run.activeMatch.state || "pre-match";
       ui.bossMatchLog = run.activeMatch.log || [];
+      if (run.activeMatch.type === "boss" && !run.activeMatch.simulation?.valid) {
+        const boss = seasonDb.bossOrder[Number(run.activeMatch.bossIndex ?? run.bossIndex)];
+        const repaired = ensureMatchPreview(run.activeMatch, { boss });
+        if (repaired.valid) global.RunState.save(run);
+      }
       return renderMatch();
     }
     ensureCurrentZone();
@@ -2967,7 +2972,7 @@
           <h2>${escapeHtml(meta.name)}</h2>
           <p class="muted">${escapeHtml(meta.formation)} · Boss ${run.bossIndex + 1}/${seasonDb.bossOrder.length}${average ? ` · OVR ${escapeHtml(average)}` : ""}</p>
         </div>
-        <span class="boss-match-logo route-boss-preview-logo">${meta.logoUrl ? `<img src="${escapeHtml(meta.logoUrl)}" alt="${escapeHtml(meta.name)}" />` : "⚽"}</span>
+        <span class="boss-match-logo route-boss-preview-logo">${bossNodeIconMarkup(boss)}</span>
       </div>
       <section class="route-boss-preview-field" aria-label="Formazione boss ${escapeHtml(meta.name)}">
         ${bossMatchField({ players: bossPlayers, formationId: boss.bossFormation }, "boss", true)}
@@ -3545,7 +3550,7 @@
     return Math.round(totals.reduce((sum, value) => sum + value, 0) / totals.length);
   }
 
-  function fiveMatchComparisonMarkup(userPlayers, opponentPlayers, summary) {
+  function fiveMatchComparisonMarkup(userPlayers, opponentPlayers, summary = {}) {
     const rows = [
       ["Attacco", ["attack"], ["attack"]],
       ["Controllo", ["control"], ["control"]],
@@ -3553,21 +3558,24 @@
       ["Velocità", ["speed"], ["speed"]],
       ["Portiere", ["save"], ["save"]],
     ];
-    return `<section class="five-match-values">
-      <button type="button" class="five-match-values-button" aria-expanded="false" aria-controls="five-match-values-content">
+    const opponentName = summary.opponentName || "Svincolati";
+    const contentId = summary.contentId || "five-match-values-content";
+    const value = (key) => summary[key] ?? "-";
+    return `<section class="five-match-values" data-values-panel>
+      <button type="button" class="five-match-values-button" aria-expanded="false" aria-controls="${escapeHtml(contentId)}">
         <span class="five-match-values-copy">
           <strong>Valori</strong>
           <small>Forza · Probabilità · Confronto · Statistiche</small>
         </span>
         <span class="five-match-values-toggle" aria-hidden="true"></span>
       </button>
-      <div class="five-match-values-content" id="five-match-values-content" hidden>
+      <div class="five-match-values-content" id="${escapeHtml(contentId)}" hidden>
         <div class="five-match-core-values">
-          <div><span>La tua forza</span><strong>${escapeHtml(summary.userStrength)}</strong><small>${escapeHtml(summary.userFormation)} · OVR ${escapeHtml(summary.userOverall)}</small></div>
-          <div class="five-match-probability"><span>Probabilità vittoria</span><strong>${escapeHtml(summary.probability)}%</strong><small>Dato usato dalla simulazione</small></div>
-          <div><span>Forza Svincolati</span><strong>${escapeHtml(summary.opponentStrength)}</strong><small>${escapeHtml(summary.opponentFormation)} · OVR ${escapeHtml(summary.opponentOverall)}</small></div>
+          <div><span>La tua forza</span><strong>${escapeHtml(value("userStrength"))}</strong><small>${escapeHtml(value("userFormation"))} · OVR ${escapeHtml(value("userOverall"))}</small></div>
+          <div class="five-match-probability"><span>Probabilità vittoria</span><strong>${escapeHtml(value("probability"))}%</strong><small>Dato usato dalla simulazione</small></div>
+          <div><span>Forza ${escapeHtml(opponentName)}</span><strong>${escapeHtml(value("opponentStrength"))}</strong><small>${escapeHtml(value("opponentFormation"))} · OVR ${escapeHtml(value("opponentOverall"))}</small></div>
         </div>
-        <div class="five-match-traits" aria-label="Valori tecnici, Tu e Svincolati">${rows.map(([label, userStats, opponentStats]) => {
+        <div class="five-match-traits" aria-label="Valori tecnici, Tu e ${escapeHtml(opponentName)}">${rows.map(([label, userStats, opponentStats]) => {
         const userValue = fiveMatchStatAverage(userPlayers, userStats);
         const opponentValue = fiveMatchStatAverage(opponentPlayers, opponentStats);
         return `<div class="five-match-trait"><span>${escapeHtml(label)}</span><strong>${escapeHtml(userValue)}</strong><small>${escapeHtml(opponentValue)}</small></div>`;
@@ -3585,7 +3593,7 @@
   }
 
   function renderMatch() {
-    const boss = seasonDb.bossOrder[run.bossIndex];
+    const boss = seasonDb.bossOrder[Number(ui.match?.bossIndex ?? run.bossIndex)];
     const isBoss = ui.match?.type === "boss";
     if (!isBoss) {
       const match = createOrLoadFiveMatch({ id: ui.match?.nodeId });
@@ -3752,10 +3760,7 @@
           </section>
 
           <section class="boss-match-summary" aria-label="Riepilogo essenziale della sfida Boss">
-            <div><span>La tua forza</span><strong>${escapeHtml(simPreview.userStrength?.final ?? "-")}</strong><small>${escapeHtml(meta.user.formation)} · OVR ${escapeHtml(userAverage || "-")}</small></div>
-            <div class="boss-match-probability"><span>Probabilità vittoria</span><strong>${escapeHtml(userProbability ?? "-")}%</strong><small>Dato usato dalla simulazione</small></div>
-            <div><span>Forza Boss</span><strong>${escapeHtml(simPreview.opponentStrength?.final ?? "-")}</strong><small>${escapeHtml(meta.boss.formation)} · OVR ${escapeHtml(bossAverage || "-")}</small></div>
-            ${fiveMatchComparisonMarkup(userPlayers, bossPlayers)}
+            ${fiveMatchComparisonMarkup(userPlayers, bossPlayers, { contentId: "boss-match-values-content", opponentName: meta.boss.name, userStrength: simPreview.userStrength?.final ?? "-", userFormation: meta.user.formation, userOverall: userAverage || "-", probability: userProbability ?? "-", opponentStrength: simPreview.opponentStrength?.final ?? "-", opponentFormation: meta.boss.formation, opponentOverall: bossAverage || "-" })}
             <div class="boss-match-reward-note"><span>Vittoria</span><strong>2 pick 1 di 3 dalla squadra battuta</strong></div>
           </section>
           ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
@@ -3786,6 +3791,13 @@
       const player = bossPlayers.find((candidate) => String(candidate.playerId) === String(id));
       showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: seasonDb, preserveScroll: scrollSnapshot() });
     }));
+    document.querySelector(".boss-match-summary .five-match-values-button")?.addEventListener("click", (event) => {
+      const button = event.currentTarget;
+      const content = document.getElementById(button.getAttribute("aria-controls"));
+      const expanded = button.getAttribute("aria-expanded") === "true";
+      button.setAttribute("aria-expanded", expanded ? "false" : "true");
+      if (content) content.hidden = expanded;
+    });
     document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("victory", { boss }); });
     document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("defeat", { boss }); });
     document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(ui.match, { boss }); });
