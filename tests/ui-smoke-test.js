@@ -30,7 +30,13 @@ assert.match(css, /\.season-select-card \{[^}]*background: #fffdf6/s, 'season ca
 assert.match(css, /\.team-name-input \{[^}]*background: #fff[^}]*color: #111216/s, 'team name input uses the light style');
 assert.match(app, /class="team-name-input-shell"/, 'team name field includes the new styled icon shell');
 assert.match(app, /album-player-detail-modal/, 'album player detail has a dedicated light-style hook');
+assert.match(app, /querySelectorAll\("\[data-album-player\]"\).*addEventListener\("click"/s, 'album cards bind their player-detail action directly');
+assert.match(app, /class="player-detail-section player-detail-equipment"/, 'player detail keeps a clear equipment section, including its empty state');
+assert.match(app, /<small>Rarità<\/small><strong>/, 'player detail exposes a labelled rarity badge');
 assert.match(css, /\.initial-draft-screen \.initial-draft-card \{ grid-template-columns: 100px minmax\(0,1fr\); min-height: 104px; \}/, 'mobile draft cards stay compact');
 assert.match(css, /\.album-screen \{[\s\S]*?--album-paper:#fffdf6/, 'album uses the ivory light-system palette');
 assert.match(css, /\.album-collection-card, \.album-team-card \{[^}]*border: 3px solid var\(--album-ink\)/s, 'album cards use structural black borders');
+assert.match(css, /\.album-roster-action \{[^}]*place-items: center;[^}]*padding: 0/s, 'album roster arrow is centered in its square action');
+assert.match(css, /modal-backdrop:has\(\.team-name-modal\) \{ align-items: start;/, 'mobile team-name panel starts at the top');
+assert.match(css, /Player detail — light visual system shared by Album and run views/, 'player detail uses the approved light visual system');
 console.log('ui-smoke-test: ok');

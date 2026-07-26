@@ -877,12 +877,13 @@
       <div class="player-detail-layout ${rarityClass(resolved.category)} ${historical ? "player-detail-historical" : ""}">
         <section class="player-detail-visual ${rarityClass(resolved.category)}">${teamBadge}${detailVisual.detailImageUrl ? `<img class="player-fullbody player-fullbody--${escapeHtml(detailVisual.detailImageKind)}" src="${escapeHtml(detailVisual.detailImageUrl)}" alt="${escapeHtml(resolved.name)}" loading="lazy" ${imageFallbackAttributes(detailVisual.detailFallbacks)} />` : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`}</section>
         <section class="player-detail-content">
-          <p class="eyebrow">${albumMode ? "Player detail · Album" : (historical ? "Player detail · Squadra campione" : "Player detail")}</p>${albumMode ? `<span class="role-chip album-detail-badge">${albumUnlocked ? "SBLOCCATO" : "NON SBLOCCATO"}</span>` : ""}
+          <div class="player-detail-heading"><p class="eyebrow">${albumMode ? "Scheda giocatore · Album" : (historical ? "Scheda giocatore · Squadra campione" : "Scheda giocatore")}</p>${albumMode ? `<span class="role-chip album-detail-badge">${albumUnlocked ? "SBLOCCATO" : "CONSULTABILE"}</span>` : ""}</div>
           <h2 class="player-detail-name">${escapeHtml(resolved.name)}</h2>
           <div class="player-detail-tags"><span class="role-chip">${escapeHtml(resolved.position)}</span><span class="role-chip detail-element-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4 3 7 6 7 10a7 7 0 0 1-14 0c0-4 3-7 7-10Z"/></svg>${escapeHtml(resolved.element || resolved.type || "-")}</span><span class="role-chip">Lv ${escapeHtml(historical ? (player.finalLevel ?? "N/D") : Number(level || 0))}</span></div>
           <div class="overall-comparison"><div><span>Overall attuale</span><strong>${escapeHtml(resolved.overall ?? "N/D")}</strong></div><div><span>Potenziale</span><strong>${escapeHtml(potential)}</strong></div></div>
-          <p class="detail-category"><span aria-hidden="true">★</span>${escapeHtml(resolved.category)}</p>
-          <div class="detail-stats">${stats}</div>${albumMode ? "" : equipmentMarkup}${historical ? playerStatsMarkup(team || {}, player, runStats) : ""}${origin}
+          <p class="detail-category"><span aria-hidden="true">★</span><small>Rarità</small><strong>${escapeHtml(resolved.category)}</strong></p>
+          <section class="player-detail-section"><h3>Statistiche</h3><div class="detail-stats">${stats}</div></section>
+          <section class="player-detail-section player-detail-equipment"><h3>Equipaggiamento</h3>${equipmentMarkup}</section>${historical ? playerStatsMarkup(team || {}, player, runStats) : ""}${origin}
         </section>
       </div>`;
   }
@@ -1009,7 +1010,12 @@
     app.innerHTML = `<main class="album-screen album-roster-screen"><header class="topbar album-topbar album-roster-header"><div class="album-roster-title"><span class="album-team-logo album-team-logo--header album-roster-logo">${albumTeamLogoMarkup(team)}</span><div class="album-roster-heading"><p class="eyebrow album-roster-breadcrumb">Album → ${escapeHtml(global.AlbumProgress.ALBUM_COLLECTIONS[collectionId]?.name || collectionId)}</p><h1 class="album-roster-name">${escapeHtml(team.teamName)}</h1><p class="muted album-roster-progress">${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)} giocatori sbloccati</p></div></div>${sectionRootButton("albumRoster", "album-roster-action")}</header><section class="album-player-grid" data-album-roster>${players.map((player) => { const isUnlocked = unlocked.has(String(player.playerId)); return `<div class="album-player-entry ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${playerCard(player, { button: true, level: player.maxLevel || 20, database: player.albumDatabase }).replace('data-player-id=', 'data-album-player=')}${isUnlocked ? "" : `<span class="album-lock-overlay album-player-lock"><span aria-hidden="true">🔒</span>Non sbloccato</span>`}</div>`; }).join("")}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav({ collectionId });
-    document.querySelector("[data-album-roster]").addEventListener("click", (event) => { const button = event.target.closest("[data-album-player]"); if (!button) return; const player = players.find((candidate) => String(candidate.playerId) === String(button.dataset.albumPlayer)); if (!player) return; const isUnlocked = unlocked.has(String(player.playerId)); showPlayerDetailsFor(player, { mode: "album", readOnly: true, playerId: player.playerId, level: player.maxLevel || 20, database: player.albumDatabase, equipment: null, preserveScroll: scrollSnapshot(), albumUnlocked: isUnlocked }); });
+    document.querySelectorAll("[data-album-player]").forEach((button) => button.addEventListener("click", () => {
+      const player = players.find((candidate) => String(candidate.playerId) === String(button.dataset.albumPlayer));
+      if (!player) return;
+      const isUnlocked = unlocked.has(String(player.playerId));
+      showPlayerDetailsFor(player, { mode: "album", readOnly: true, playerId: player.playerId, level: player.maxLevel || 20, database: player.albumDatabase, equipment: null, preserveScroll: scrollSnapshot(), albumUnlocked: isUnlocked });
+    }));
   }
 
   function inazumaLogoMarkup(className = "") {

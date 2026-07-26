@@ -7388,7 +7388,7 @@ body { background: var(--gradient-app); }
 .album-player-detail-modal .player-detail-tags .role-chip, .album-player-detail-modal .detail-stat { border-color: #111216; background: #f3eddd; color: #111216; }
 
 @media (max-width: 780px) {
-  .modal-backdrop:has(.team-name-modal) { align-items: end; padding: max(8px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom)); background-image: linear-gradient(rgba(17,18,22,.22),rgba(17,18,22,.22)),url("../assets/home/inazuma-stadium-mobile-light.jpeg"); }
+  .modal-backdrop:has(.team-name-modal) { align-items: start; padding: max(12px,env(safe-area-inset-top)) 8px max(8px,env(safe-area-inset-bottom)); overflow-y: auto; background-image: linear-gradient(rgba(17,18,22,.22),rgba(17,18,22,.22)),url("../assets/home/inazuma-stadium-mobile-light.jpeg"); }
   .modal.team-name-modal { width: 100%; max-height: min(92dvh,680px); padding: 16px; overscroll-behavior: contain; }
   .team-name-modal .modal-head { margin-bottom: 13px; }
   .team-name-modal .modal-head h2 { font-size: clamp(1.55rem,8vw,2.1rem); }
@@ -7409,4 +7409,91 @@ body { background: var(--gradient-app); }
   .album-collection-cover img { transform: none; }
   .album-topbar { padding: 12px; }
   .album-team-card { min-height: 132px; }
+}
+
+/* Player detail — light visual system shared by Album and run views. */
+.modal-backdrop:has(.player-detail-modal) {
+  background: rgba(17,18,22,.72);
+  backdrop-filter: blur(6px);
+}
+.player-detail-modal {
+  --detail-ink: #111216;
+  --detail-paper: #fffdf6;
+  --detail-cream: #f3eddd;
+  --detail-yellow: #ffd21f;
+  --detail-gold: #8a6812;
+  border: 3px solid var(--detail-ink);
+  border-radius: 0;
+  background: var(--detail-paper);
+  box-shadow: 9px 10px 0 rgba(17,18,22,.42);
+}
+.player-detail-modal .modal-close {
+  top: 14px; right: 14px; width: 48px; height: 48px;
+  border: 3px solid var(--detail-ink); border-radius: 0;
+  background: var(--detail-yellow); color: var(--detail-ink);
+  box-shadow: 4px 4px 0 var(--detail-ink); font-weight: 950;
+}
+.player-detail-layout {
+  grid-template-columns: minmax(300px,42%) minmax(0,58%);
+  background: var(--detail-paper); color: var(--detail-ink);
+}
+.player-detail-visual {
+  justify-content: space-between;
+  border-right: 3px solid var(--detail-ink);
+  background: linear-gradient(150deg,color-mix(in srgb,var(--detail-rarity-accent) 17%,#fff) 0 68%,var(--detail-cream) 68%);
+  color: var(--detail-ink);
+}
+.player-detail-visual::before { background: repeating-linear-gradient(115deg,rgba(17,18,22,.055) 0 2px,transparent 2px 25px); opacity: 1; }
+.player-detail-visual::after { border: 3px solid color-mix(in srgb,var(--detail-rarity-accent) 58%,transparent); border-radius: 0; transform: rotate(45deg); opacity: .28; }
+.player-detail-team { border: 3px solid var(--detail-ink); border-radius: 0; background: rgba(255,253,246,.94); color: var(--detail-ink); box-shadow: 4px 5px 0 var(--detail-ink); backdrop-filter: none; }
+.player-detail-content { padding: 42px 38px 34px; background: var(--detail-paper); color: var(--detail-ink); }
+.player-detail-heading { min-height: 28px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding-right: 58px; }
+.player-detail-content .eyebrow { margin: 0; color: var(--detail-gold); }
+.player-detail-name { margin-top: 12px; color: var(--detail-ink); }
+.player-detail-tags .role-chip { border: 2px solid var(--detail-ink); border-radius: 0; background: #fff; color: var(--detail-ink); }
+.overall-comparison > div { border: 3px solid var(--detail-ink); border-radius: 0; background: var(--detail-cream); box-shadow: 4px 5px 0 rgba(17,18,22,.18); }
+.overall-comparison > div:first-child { background: var(--detail-yellow); }
+.overall-comparison > div::after { display: none; }
+.overall-comparison span { color: #4e4b45; }
+.overall-comparison strong { color: var(--detail-ink); }
+.detail-category { width: fit-content; gap: 8px; margin: 18px 0; padding: 8px 12px; border: 3px solid var(--detail-ink); border-left: 10px solid var(--detail-rarity-accent); background: #fff; color: var(--detail-ink); box-shadow: 3px 4px 0 rgba(17,18,22,.2); letter-spacing: .04em; }
+.detail-category span { color: var(--detail-rarity-accent); }
+.detail-category small { color: var(--detail-gold); font-size: .62rem; letter-spacing: .1em; }
+.detail-category strong { font-size: .88rem; }
+.player-detail-section { margin-top: 18px; }
+.player-detail-section > h3 { margin: 0 0 9px; color: var(--detail-gold); font-size: .72rem; letter-spacing: .13em; text-transform: uppercase; }
+.detail-stat { border: 2px solid var(--detail-ink); border-radius: 0; background: var(--detail-cream); }
+.detail-stat-icon { color: var(--detail-gold); }
+.detail-stat-label, .detail-stat span { color: #4e4b45; }
+.detail-stat-value, .detail-stat strong { color: var(--detail-ink); }
+.detail-stat-bonus, .detail-stat em { color: #267446; }
+.equipped-detail { margin-top: 0; border: 2px solid var(--detail-ink); border-radius: 0; background: #fff; color: var(--detail-ink); }
+.equipped-detail span { color: var(--detail-gold); }
+.equipped-detail small, .equipped-detail-empty { color: #66625a; }
+.equipped-detail-empty { margin: 0; padding: 12px 14px; border: 2px dashed #8e897f; background: #f7f3e9; font-weight: 800; }
+.album-detail-badge { margin: 0; border: 2px solid var(--detail-ink); border-radius: 0; background: var(--detail-yellow); color: var(--detail-ink); }
+
+/* The square Album back action and its glyph share the exact same centre. */
+.album-roster-action { box-sizing: border-box; display: inline-grid; place-items: center; padding: 0; line-height: 0; }
+.album-roster-action .section-root-icon { display: block; margin: 0; transform: none; }
+
+@media (max-width: 780px) {
+  .album-roster-action { width: 50px; min-width: 50px; min-height: 50px; height: 50px; padding: 0; }
+  .album-roster-action .section-root-icon { width: 25px; height: 25px; }
+  .player-detail-modal { width: calc(100vw - 16px); max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); border-radius: 0; }
+  .player-detail-modal .modal-close { position: absolute; top: 10px; right: 10px; float: none; margin: 0; }
+  .player-detail-layout { display: flex; grid-template-columns: none; }
+  .player-detail-visual { min-height: 300px; padding: 14px 10px 0; border-right: 0; border-bottom: 3px solid var(--detail-ink); }
+  .player-detail-team { align-self: flex-start; max-width: calc(100% - 62px); min-height: 48px; margin: 0 58px 0 0; padding: 5px 8px; box-shadow: 3px 3px 0 var(--detail-ink); }
+  .player-detail-team img, .player-detail-team .team-logo-placeholder { width: 38px; height: 38px; }
+  .player-fullbody { width: min(82%,300px); max-height: 250px; }
+  .player-detail-content { padding: 20px 13px 18px; }
+  .player-detail-heading { min-height: 0; padding-right: 0; }
+  .player-detail-name { margin-top: 10px; font-size: clamp(2rem,10.5vw,3.1rem); }
+  .player-detail-tags { margin-bottom: 14px; }
+  .overall-comparison { margin-top: 12px; }
+  .overall-comparison > div { padding: 11px 10px; border-width: 2px; box-shadow: 3px 3px 0 rgba(17,18,22,.18); }
+  .detail-category { margin: 14px 0; padding: 7px 9px; border-width: 2px; border-left-width: 8px; }
+  .player-detail-section { margin-top: 14px; }
+  .detail-stat { min-height: 48px; padding: 8px; }
 }
