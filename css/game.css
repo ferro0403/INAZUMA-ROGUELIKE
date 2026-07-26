@@ -601,6 +601,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .item-reward-modal .item-reward-actions .btn { width: 100%; min-width: 0; }
   .item-reward-result { min-height: 0; }
 }
+
 @media (max-width: 430px) {
   .exchange-actions { flex-direction: column; }
   .exchange-actions .btn, .item-reward-actions .btn { width: 100%; flex-basis: auto; }
@@ -5972,7 +5973,7 @@ body { background: var(--gradient-app); }
   }
   .shared-game-header .status-pill small { font-size: .4rem; letter-spacing: .05em; }
   .shared-game-header .status-pill strong { font-size: .78rem; }
-  .shared-game-header .status-pill.lives { display: none; }
+  .shared-game-header .status-pill.lives { display: inline-flex; min-width: 44px; padding-inline: 5px; font-size: .62rem; letter-spacing: 0; }
 
   .screen { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
   .squad-screen { padding-bottom: 0; }
@@ -7266,4 +7267,33 @@ body { background: var(--gradient-app); }
   .boss-match-screen .five-match-core-values > div { grid-template-columns: minmax(0,1fr) auto minmax(90px,auto); padding: 7px 9px; }
   .boss-match-screen .five-match-core-values > div + div { border-left: 0; border-top: 1px solid #b7b1a5; }
   .boss-match-screen .five-match-core-values small { grid-column: auto; text-align: right; white-space: nowrap; }
+}
+
+/* Light pre-run surfaces: season selection and team naming share the approved
+   ivory / black / yellow visual language used throughout the run. */
+.season-select-screen {
+  background: linear-gradient(rgba(255,253,246,.91),rgba(255,253,246,.94)), url("../assets/home/inazuma-stadium-desktop-light.jpeg") center/cover fixed;
+  color: #111216;
+}
+.season-select-topbar { border: 3px solid #111216; border-radius: 0; background: #fffdf6; box-shadow: 5px 6px 0 rgba(17,18,22,.22); }
+.season-select-topbar h1 { color: #111216; }
+.season-select-card { border: 3px solid #111216; border-radius: 0; background: #fffdf6; color: #111216; box-shadow: 7px 8px 0 rgba(17,18,22,.22); }
+.season-select-card::before { background: linear-gradient(135deg,rgba(255,210,31,.2),transparent 42%); }
+.season-select-card--last { border-color: #111216; box-shadow: 8px 9px 0 #e5b815; }
+.season-select-card h2, .season-select-card strong { color: #111216; }
+.season-team-name, .season-run-summary small, .season-section-title { color: #8a6812; }
+.season-status-pill { border: 1px solid #111216; background: #ffd21f; color: #111216; }
+.season-run-summary > span, .season-roster-block { border-color: #111216; background: #f7f1df; }
+.season-select-card--empty { min-height: 190px; }
+
+.modal.team-name-modal { border: 3px solid #111216; border-radius: 0; background: #fffdf6; color: #111216; box-shadow: 8px 9px 0 rgba(17,18,22,.3); }
+.team-name-modal .modal-head h2, .team-name-modal .muted { color: #111216; }
+.team-name-modal .eyebrow, .team-name-field { color: #8a6812; }
+.team-name-input { border: 2px solid #111216; border-radius: 0; background: #fff; color: #111216; box-shadow: 3px 3px 0 rgba(17,18,22,.15); }
+.team-name-input:focus { border-color: #111216; outline: 3px solid #ffd21f; }
+.team-name-error { color: #9e251f; }
+.team-name-modal .home-overwrite-warning { border: 2px solid #111216; border-radius: 0; background: #fff3b8; color: #111216; }
+
+@media (max-width: 780px) {
+  .season-select-screen { background-image: linear-gradient(rgba(255,253,246,.91),rgba(255,253,246,.94)), url("../assets/home/inazuma-stadium-mobile-light.jpeg"); }
 }
