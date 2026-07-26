@@ -1380,7 +1380,7 @@
       <label class="team-name-field" for="team-name-input">Nome squadra</label>
       <input class="team-name-input" id="team-name-input" type="text" placeholder="La mia squadra" maxlength="24" autocomplete="off" inputmode="text" value="${escapeHtml(savedTeamIdentity()?.name || "")}" />
       <p class="team-name-error" id="team-name-error" aria-live="polite"></p>
-      <div class="button-row"><button type="button" class="btn btn-primary" id="confirm-team-name">Conferma</button><button type="button" class="btn" id="cancel-team-name">Indietro</button></div>`,
+      <div class="button-row"><button type="button" class="btn btn-yellow" id="confirm-team-name">Conferma</button><button type="button" class="btn btn-ghost" id="cancel-team-name">Indietro</button></div>`,
       { closeable: false, className: "team-name-modal" }
     );
     const input = document.getElementById("team-name-input");
@@ -1413,6 +1413,7 @@
   async function resumeRun() {
     await selectSeason(run?.seasonId || activeSeason?.id, { markPlayed: true });
     if (!run) return renderHome();
+    recoverInterruptedBossAccess();
     if (run.gameOver || run.phase === "gameover") return renderGameOver();
     if (run.phase === "formation") return renderFormationChoice();
     if (run.phase === "draft") return renderDraft();
@@ -1892,6 +1893,41 @@
     global.RunState.createCheckpoint(run);
   }
 
+  function bossMatchFromNode(node, previousNodeId = null) {
+    const match = {
+      nodeId: node.id,
+      previousNodeId: previousNodeId || run.currentZone?.currentNodeId || run.currentZone?.startNodeId || null,
+      type: "boss",
+      state: "pre-match",
+      log: [],
+      bossIndex: run.bossIndex,
+      attemptNumber: Object.keys(run.statistics?.processedMatchIds || {}).filter((id) => id.includes(`::${node.id}::boss::`)).length + 1,
+    };
+    match.matchId = global.RunStatistics?.createStableMatchId?.(run, match) || null;
+    return match;
+  }
+
+  // Older/interrupted saves can contain a selected boss node without the match
+  // snapshot, or a valid boss snapshot whose phase was written as `map`.
+  // Reconcile those fields instead of regenerating the zone or resetting the run.
+  function recoverInterruptedBossAccess() {
+    if (!run || run.postBossFlow || run.pendingBossVictory) return false;
+    const zone = run.currentZone;
+    const activeBoss = run.activeMatch?.type === "boss" ? run.activeMatch : null;
+    if (activeBoss && !String(activeBoss.state || "").startsWith("completed") && run.phase !== "match") {
+      run.phase = "match";
+      global.RunState.save(run);
+      return true;
+    }
+    if (!zone?.nodes?.length || run.activeMatch) return false;
+    const pending = zone.nodes.find((node) => String(node.id) === String(zone.pendingNodeId));
+    if (!pending || pending.type !== "boss") return false;
+    run.activeMatch = bossMatchFromNode(pending, zone.currentNodeId);
+    run.phase = "match";
+    global.RunState.save(run);
+    return true;
+  }
+
   function nodePositions(zone) {
     const maxLayer = Math.max(...zone.nodes.map((node) => node.layer));
     const result = {};
@@ -2032,6 +2068,7 @@
 
   function enterNode(nodeId) {
     let node;
+    const previousNodeId = run.currentZone?.currentNodeId || null;
     try {
       node = global.MapEngine.selectNode(run.currentZone, nodeId);
     } catch (error) {
@@ -2040,10 +2077,10 @@
     global.RunState.save(run);
 
     if (node.type === "random") return resolveRandomNode(node);
-    dispatchNode(node, node.type);
+    dispatchNode(node, node.type, { previousNodeId });
   }
 
-  function dispatchNode(node, eventType) {
+  function dispatchNode(node, eventType, context = {}) {
     if (eventType === "five_v_five") {
       const status = fiveVFiveStatus();
       if (!status.valid) {
@@ -2062,8 +2099,7 @@
       return renderMatch();
     }
     if (eventType === "boss") {
-      ui.match = { nodeId: node.id, previousNodeId: run.currentZone.currentNodeId, type: eventType, state: "pre-match", log: [], bossIndex: run.bossIndex, attemptNumber: Object.keys(run.statistics?.processedMatchIds || {}).filter((id) => id.includes(`::${node.id}::boss::`)).length + 1 };
-      ui.match.matchId = global.RunStatistics?.createStableMatchId?.(run, ui.match) || null;
+      ui.match = bossMatchFromNode(node, context.previousNodeId);
       ui.bossMatchState = "pre-match";
       ui.bossMatchLog = [];
       ui.bossMatchResolving = false;
@@ -2223,8 +2259,8 @@
             <aside class="item-reward-options" aria-label="Oggetti disponibili">
               ${candidates.map((item) => itemRewardCandidateMarkup(item, item.id === pending.selectedItemId)).join("")}
             </aside>
-            <div class="item-reward-details">
-              ${candidates.map((item) => itemRewardDetailMarkup(item, item.id === pending.selectedItemId)).join("")}
+            <div class="item-reward-details" aria-live="polite">
+              ${itemRewardDetailMarkup(candidates.find((item) => item.id === pending.selectedItemId) || candidates[0], true)}
             </div>
           </div>
         </main>
@@ -2245,9 +2281,9 @@
           button.classList.toggle("selected", active);
           button.setAttribute("aria-pressed", active ? "true" : "false");
         });
-        modal.querySelectorAll("[data-reward-detail]").forEach((detail) => {
-          detail.hidden = detail.dataset.rewardDetail !== itemId;
-        });
+        const selectedItem = candidates.find((candidate) => candidate.id === itemId);
+        const details = modal.querySelector(".item-reward-details");
+        if (selectedItem && details) details.innerHTML = itemRewardDetailMarkup(selectedItem, true);
         modal.querySelector(`[data-claim-item="${cssEscape(itemId)}"]`)?.focus?.({ preventScroll: true });
         return;
       }
