@@ -30,7 +30,7 @@ assert.match(css, /\.season-select-card \{[^}]*background: #fffdf6/s, 'season ca
 assert.match(css, /\.team-name-input \{[^}]*background: #fff[^}]*color: #111216/s, 'team name input uses the light style');
 assert.match(app, /class="team-name-input-shell"/, 'team name field includes the new styled icon shell');
 assert.match(app, /album-player-detail-modal/, 'album player detail has a dedicated light-style hook');
-assert.match(app, /albumRoster\?\.addEventListener\("click"[\s\S]*event\.target\.closest\("\[data-album-player\]"\)[\s\S]*showPlayerDetailsFor\(player/, 'album roster delegates card taps to the correct player detail');
+assert.match(app, /bindAlbumRosterInteractions\(albumRoster,[\s\S]*showPlayerDetailsFor\(player/, 'album roster delegates card taps to the correct player detail');
 assert.match(app, /class="player-detail-section player-detail-equipment"/, 'player detail keeps a clear equipment section, including its empty state');
 assert.match(app, /<small>Rarità<\/small><strong>/, 'player detail exposes a labelled rarity badge');
 assert.match(css, /\.initial-draft-screen \.initial-draft-card \{ grid-template-columns: 100px minmax\(0,1fr\); min-height: 104px; \}/, 'mobile draft cards stay compact');

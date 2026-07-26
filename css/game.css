@@ -19,6 +19,10 @@
 
 html, body { min-height: 100%; }
 
+#modal-root:empty { pointer-events: none; }
+html.modal-scroll-locked, body.modal-scroll-locked { overflow: hidden; overscroll-behavior: none; }
+#app.modal-scroll-locked { touch-action: none; }
+
 body {
   margin: 0;
   color: var(--text);
@@ -652,9 +656,9 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .player-detail-layout.rarity-normale { --detail-rarity-bg: #d7dde6; --detail-rarity-accent: #9aa7b8; --detail-rarity-text: #07172c; }
 .player-detail-layout.rarity-buono { --detail-rarity-bg: #aeeec6; --detail-rarity-accent: #4dbb7e; --detail-rarity-text: #061f18; }
 .player-detail-layout.rarity-forte { --detail-rarity-bg: #8fd6ff; --detail-rarity-accent: #1d93d2; --detail-rarity-text: #06192b; }
-.player-detail-layout.rarity-elite { --detail-rarity-bg: #7a4bd4; --detail-rarity-accent: #c3a7ff; --detail-rarity-text: #fff; }
-.player-detail-layout.rarity-mondiale { --detail-rarity-bg: #c83535; --detail-rarity-accent: #ff9a8f; --detail-rarity-text: #fff; }
-.player-detail-layout.rarity-leggenda { --detail-rarity-bg: #ffd34f; --detail-rarity-accent: #b87600; --detail-rarity-text: #1d1400; }
+.player-detail-layout.rarity-elite { --detail-rarity-bg: #6527c7; --detail-rarity-accent: #d0a7ff; --detail-rarity-text: #fff; }
+.player-detail-layout.rarity-mondiale { --detail-rarity-bg: #d4212f; --detail-rarity-accent: #ff786b; --detail-rarity-text: #fff; }
+.player-detail-layout.rarity-leggenda { --detail-rarity-bg: #e5a900; --detail-rarity-accent: #9b5c00; --detail-rarity-text: #1d1400; }
 .player-detail-visual {
   position: relative;
   isolation: isolate;
@@ -7383,6 +7387,7 @@ body { background: var(--gradient-app); }
 .album-player-entry .player-info { color: var(--album-ink); }
 .album-player-entry.is-locked > .player-card { filter: grayscale(1); opacity: .68; }
 .album-lock-overlay { border-radius: 0; background: linear-gradient(180deg,transparent 45%,rgba(17,18,22,.9)); text-shadow: none; }
+.album-player-lock { pointer-events: none; }
 .album-detail-badge { border: 2px solid var(--album-ink); border-radius: 0; background: var(--album-yellow); color: var(--album-ink); }
 .album-home-card { background: var(--album-paper); }
 .album-player-detail-modal { border: 3px solid #111216; border-radius: 0; box-shadow: 8px 9px 0 rgba(17,18,22,.35); }
@@ -7500,14 +7505,15 @@ body { background: var(--gradient-app); }
 @media (max-width: 780px) {
   .album-roster-action { width: 50px; min-width: 50px; min-height: 50px; height: 50px; padding: 0; }
   .album-roster-action .section-root-icon { width: 25px; height: 25px; }
-  .player-detail-modal { width: calc(100vw - 16px); max-width: calc(100vw - 16px); max-height: calc(100dvh - 16px); border-radius: 0; }
+  .modal-backdrop:has(.player-detail-modal) { overflow: hidden; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); }
+  .player-detail-modal { width: calc(100vw - 16px); max-width: calc(100vw - 16px); height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom))); max-height: calc(100dvh - 16px); overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; border-radius: 0; }
   .player-detail-modal .modal-close { position: absolute; top: 10px; right: 10px; float: none; margin: 0; }
-  .player-detail-layout { display: flex; grid-template-columns: none; }
+  .player-detail-layout { display: flex; grid-template-columns: none; height: auto; min-height: 100%; }
   .player-detail-visual { min-height: 300px; padding: 14px 10px 0; border-right: 0; border-bottom: 3px solid var(--detail-ink); }
   .player-detail-team { align-self: flex-start; max-width: calc(100% - 62px); min-height: 48px; margin: 0 58px 0 0; padding: 5px 8px; box-shadow: 3px 3px 0 var(--detail-ink); }
   .player-detail-team img, .player-detail-team .team-logo-placeholder { width: 38px; height: 38px; }
   .player-fullbody { width: min(82%,300px); max-height: 250px; }
-  .player-detail-content { padding: 20px 13px 18px; }
+  .player-detail-content { overflow: visible; padding: 20px 13px 18px; }
   .player-detail-heading { min-height: 0; padding-right: 0; }
   .player-detail-name { margin-top: 10px; font-size: clamp(2rem,10.5vw,3.1rem); }
   .player-detail-tags { margin-bottom: 14px; }
