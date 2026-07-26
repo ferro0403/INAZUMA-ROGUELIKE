@@ -52,4 +52,9 @@ assert.match(css, /Tactical identity: explicit high-contrast positive and negati
 assert.match(css, /\.hall-detail-screen \.tactic-chip--bonus[^}]*background:#bfe8ca[^}]*color:#123d22/s, 'Hall tactic bonuses use readable green contrast');
 assert.match(css, /\.hall-detail-screen \.tactic-chip--penalty[^}]*background:#f3c2c3[^}]*color:#67191d/s, 'Hall tactic penalties use readable red contrast');
 assert.match(css, /\.hall-screen \.section-root-button \.section-root-icon[^}]*stroke:currentColor/s, 'Hall back control uses the centered shared SVG arrow');
+assert.doesNotMatch(app.slice(app.indexOf('function awardsMarkup'), app.indexOf('function renderFinalCelebration')), /hall-player-card/, 'award rows do not inherit compact player-card sizing');
+assert.match(app, /<small>\$\{escapeHtml\(description\)\}<\/small>/, 'run awards include their descriptive result');
+assert.match(css, /\.five-editor-actions \.btn-secondary \{ background: #fff; color: var\(--five-editor-ink\); \}/, '5v5 return action uses the approved light button system');
+assert.match(css, /Mobile restyle consistency fixes: shared actions, feedback, awards and champion cards/, 'floating feedback uses the shared light system');
+assert.match(css, /\.route-target-card__logo \.boss-node-logo \{ display: block;[^}]*object-position: center;[^}]*margin: auto;/s, 'next challenge logo is centered in its frame');
 console.log('ui-smoke-test: ok');
