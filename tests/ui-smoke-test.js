@@ -46,4 +46,10 @@ assert.match(app, /class="hall-roster-extra"/, 'Hall of Fame secondary formation
 assert.match(app, /featuredAwardIds\.has\(award\.id\)/, 'Hall of Fame renders only featured awards');
 assert.doesNotMatch(app.slice(app.indexOf('function runStatsSections'), app.indexOf('function statsMarkup')), /label: "Seed"|Pull aperte|Reroll usati|Oggetti ottenuti/, 'Hall of Fame omits technical run data');
 assert.match(css, /Hall of Fame — ivory archive restyle/, 'Hall of Fame uses the ivory, ink and gold visual system');
+assert.match(app, /extraClass: "squad-player-card hall-player-card"/, 'historical player cards reuse the Squad card family');
+assert.match(app, /class="final-victory-hero"/, 'victory conclusion uses the unified light hero');
+assert.match(css, /Tactical identity: explicit high-contrast positive and negative states/, 'archived tactics have explicit accessible states');
+assert.match(css, /\.hall-detail-screen \.tactic-chip--bonus[^}]*background:#bfe8ca[^}]*color:#123d22/s, 'Hall tactic bonuses use readable green contrast');
+assert.match(css, /\.hall-detail-screen \.tactic-chip--penalty[^}]*background:#f3c2c3[^}]*color:#67191d/s, 'Hall tactic penalties use readable red contrast');
+assert.match(css, /\.hall-screen \.section-root-button \.section-root-icon[^}]*stroke:currentColor/s, 'Hall back control uses the centered shared SVG arrow');
 console.log('ui-smoke-test: ok');
