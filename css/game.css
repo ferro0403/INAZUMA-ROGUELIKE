@@ -7517,3 +7517,88 @@ body { background: var(--gradient-app); }
   .player-detail-section { margin-top: 14px; }
   .detail-stat { min-height: 48px; padding: 8px; }
 }
+
+/* Hall of Fame — ivory archive restyle */
+.hall-screen, .hall-detail-screen {
+  --hall-ink: #111216; --hall-paper: #fffdf6; --hall-cream: #f4efe2; --hall-gold: #9b7315; --hall-yellow: #ffd51f;
+  color: var(--hall-ink); background: var(--hall-paper);
+}
+.hall-archive-head, .hall-hero { max-width: 1280px; margin: 0 auto; border: 3px solid var(--hall-ink); background: #fff; box-shadow: 8px 8px 0 var(--hall-ink); }
+.hall-archive-head { display: flex; justify-content: space-between; align-items: center; gap: 20px; padding: clamp(20px,4vw,42px); }
+.hall-archive-head h1, .hall-hero h1 { margin: 2px 0 6px; color: var(--hall-ink); font-size: clamp(2.2rem,6vw,5rem); line-height: .94; letter-spacing: -.045em; }
+.hall-archive-head > div > p:last-child { margin: 0; color: #625e55; }
+.hall-screen .eyebrow, .hall-detail-screen .eyebrow { color: var(--hall-gold); letter-spacing: .16em; }
+.hall-screen .section-root-action, .hall-detail-screen .section-root-action { border: 2px solid var(--hall-ink); background: var(--hall-paper); color: var(--hall-ink); }
+.hall-grid { grid-template-columns: repeat(auto-fit,minmax(min(100%,360px),1fr)); gap: 22px; margin-top: 30px; }
+.hall-card { padding: 22px; border: 3px solid var(--hall-ink); background: #fff; color: var(--hall-ink); box-shadow: 6px 6px 0 #d7caa8; }
+.hall-card-rank { color: var(--hall-gold); font-size: .76rem; font-weight: 950; letter-spacing: .13em; }
+.hall-card-rank span { color: var(--hall-yellow); -webkit-text-stroke: 1px var(--hall-ink); }
+.hall-card h2 { margin: 0; font-size: clamp(1.65rem,4vw,2.35rem); line-height: 1; }
+.hall-card-meta { margin: 7px 0 0; color: #69645a; font-weight: 700; }
+.hall-card-highlights { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); border-block: 2px solid var(--hall-ink); }
+.hall-card-highlights span { min-width: 0; padding: 12px 8px; }
+.hall-card-highlights span + span { border-left: 1px solid #c9c2b4; }
+.hall-card-highlights small, .hall-card-highlights strong { display: block; overflow-wrap: anywhere; }
+.hall-card-highlights small { color: var(--hall-gold); font-size: .61rem; font-weight: 950; letter-spacing: .1em; }
+.hall-card-highlights strong { margin-top: 3px; }
+.hall-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.hall-screen .hall-portraits { flex-wrap: nowrap; }
+.hall-screen .hall-portraits img { width: 42px; height: 42px; margin-right: -12px; border: 2px solid var(--hall-ink); border-radius: 50%; background: var(--hall-cream); }
+.hall-screen .btn-yellow { border: 2px solid var(--hall-ink); background: var(--hall-yellow); color: var(--hall-ink); box-shadow: 3px 3px 0 var(--hall-ink); }
+.hall-hero { position: relative; display: grid; grid-template-columns: minmax(0,1fr) auto auto; align-items: center; gap: 24px; padding: clamp(22px,4vw,44px); overflow: hidden; }
+.hall-hero-copy { position: relative; z-index: 1; }
+.hall-hero-meta { display: flex; gap: 8px; color: #625e55; font-weight: 800; }
+.hall-hero-meta span + span::before { content: "·"; margin-right: 8px; color: var(--hall-gold); }
+.hall-boss-label { margin: 24px 0 2px; color: var(--hall-gold); font-size: .68rem; font-weight: 950; letter-spacing: .13em; }
+.hall-boss-name { font-size: 1.12rem; }
+.hall-hero-trophy { color: var(--hall-yellow); font-size: clamp(5rem,13vw,10rem); line-height: 1; -webkit-text-stroke: 3px var(--hall-ink); transform: rotate(7deg); }
+.hall-detail-grid { grid-template-columns: minmax(0,1.35fr) minmax(320px,.65fr); margin-top: 30px; gap: 24px; }
+.hall-champion-team, .hall-data-panel, .hall-awards-panel { min-width: 0; padding: clamp(16px,2.5vw,26px); border: 3px solid var(--hall-ink); background: #fff; color: var(--hall-ink); }
+.hall-champion-team { box-shadow: 7px 7px 0 #d7caa8; }
+.hall-achievement-column { display: grid; gap: 20px; align-content: start; }
+.hall-section-heading { margin-bottom: 16px; }
+.hall-section-heading h2 { margin: 2px 0 0; font-size: clamp(1.35rem,3vw,2rem); }
+.hall-detail-screen .tactic-panel { border: 2px solid var(--hall-ink); background: var(--hall-cream); color: var(--hall-ink); }
+.hall-detail-screen .tactic-panel :is(h2,h3,strong) { color: var(--hall-ink); }
+.hall-detail-screen .hall-pitch { border: 3px solid var(--hall-ink); }
+.hall-roster-extra { margin-top: 14px; border-top: 2px solid var(--hall-ink); }
+.hall-roster-extra summary { display: flex; justify-content: space-between; align-items: center; padding: 15px 2px; color: var(--hall-ink); font-weight: 950; cursor: pointer; }
+.hall-roster-extra summary span { min-width: 28px; padding: 3px 8px; text-align: center; background: var(--hall-yellow); border: 1px solid var(--hall-ink); }
+.hall-roster-extra[open] summary { color: var(--hall-gold); }
+.hall-stat-group { margin-bottom: 18px; }
+.hall-stat-group h3 { padding-bottom: 6px; border-bottom: 2px solid var(--hall-ink); color: var(--hall-gold); font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; }
+.hall-stat-list { grid-template-columns: repeat(2,minmax(0,1fr)); gap: 0; }
+.hall-stat { display: grid; align-content: start; gap: 3px; padding: 9px 8px; border: 0; border-bottom: 1px solid #d9d3c6; border-radius: 0; background: transparent; }
+.hall-stat span { color: #69645a; font-size: .72rem; }
+.hall-stat strong { color: var(--hall-ink); text-align: left; font-size: 1.05rem; }
+.hall-stat-group--secondary .hall-stat-list { display: flex; }
+.hall-stat-group--secondary .hall-stat { flex: 1; background: var(--hall-cream); }
+.hall-awards-list { display: grid; gap: 8px; }
+.hall-award { position: relative; grid-template-columns: 46px minmax(0,1fr); gap: 10px; padding: 9px; border: 1px solid #cfc8ba; background: var(--hall-paper); }
+.hall-award-mark { position: absolute; top: 5px; right: 7px; color: var(--hall-gold); font-size: .72rem; }
+.hall-award img { width: 46px; height: 46px; border: 1px solid var(--hall-ink); border-radius: 0; background: var(--hall-cream); }
+.hall-award-copy strong { color: var(--hall-gold); font-size: .68rem; letter-spacing: .06em; text-transform: uppercase; }
+.hall-award-copy span { color: var(--hall-ink); font-size: .92rem; }
+@media (max-width: 760px) {
+  .hall-screen, .hall-detail-screen { padding: 10px 10px 24px; }
+  .hall-archive-head, .hall-hero { box-shadow: 4px 4px 0 var(--hall-ink); }
+  .hall-archive-head { display: grid; padding: 18px; }
+  .hall-archive-head .section-root-action { width: 100%; }
+  .hall-grid { margin-top: 18px; gap: 16px; }
+  .hall-card { padding: 16px; box-shadow: 4px 4px 0 #d7caa8; }
+  .hall-card-footer { align-items: stretch; flex-direction: column; }
+  .hall-card-footer .btn { width: 100%; }
+  .hall-hero { grid-template-columns: 1fr auto; gap: 8px; padding: 18px; }
+  .hall-hero .section-root-action { grid-column: 1 / -1; width: 100%; }
+  .hall-hero-trophy { font-size: 4.5rem; }
+  .hall-hero-meta { display: grid; gap: 2px; }
+  .hall-hero-meta span + span::before { content: none; }
+  .hall-boss-label { margin-top: 16px; }
+  .hall-detail-grid { grid-template-columns: 1fr; margin-top: 18px; gap: 16px; }
+  .hall-champion-team, .hall-data-panel, .hall-awards-panel { padding: 14px; }
+  .hall-champion-team { box-shadow: 4px 4px 0 #d7caa8; }
+  .hall-detail-screen .hall-pitch.pitch { min-height: 460px; }
+  .hall-stat { grid-template-columns: 1fr; gap: 2px; padding: 9px 6px; }
+  .hall-stat-group--secondary .hall-stat-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .hall-award { margin: 0; border-radius: 0; background: var(--hall-paper); }
+}

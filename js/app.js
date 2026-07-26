@@ -5118,51 +5118,29 @@
   function runStatsSections(team) {
     const stats = team.runStatistics || {};
     return [
-      { title: "Esito run", items: [
-        { label: "Data vittoria", value: stats.victoryDate || team.victoryDate, type: "date" },
-        { label: "Modalità", value: stats.mode || team.modeName },
-        { label: "Season", value: normalizedHallSeasonName(team) },
-        { label: "Seed", value: compactSeed(stats.seed || team.seed) },
-      ] },
-      { title: "Squadra finale", items: [
+      { title: "Identità finale", className: "hall-stat-group--identity", items: [
         { label: "Livello finale squadra", value: stats.finalTeamLevel ?? team.finalTeamLevel },
         { label: "Overall medio finale", value: stats.finalAverageOverall ?? team.finalAverageOverall },
         { label: "Modulo finale", value: stats.finalFormation || team.finalFormation },
         { label: "Vite rimaste", value: stats.livesRemaining ?? team.livesRemaining },
-        { label: "Vite perse", value: stats.livesLost },
       ] },
-      { title: "Risultati", items: [
+      { title: "Bilancio della run", className: "hall-stat-group--results", items: [
         { label: "Partite", value: stats.matchesTotal },
         { label: "Vittorie", value: stats.winsTotal },
         { label: "Sconfitte", value: stats.lossesTotal },
-        { label: "Striscia migliore", value: stats.longestWinStreak },
-      ] },
-      { title: "Gol", items: [
         { label: "Gol fatti", value: stats.goalsFor },
         { label: "Gol subiti", value: stats.goalsAgainst },
         { label: "Differenza reti", value: stats.goalDifference },
         { label: "Clean sheet", value: stats.cleanSheets },
       ] },
-      { title: "Boss", items: [
+      { title: "Sfide boss", className: "hall-stat-group--boss", items: [
         { label: "Partite Boss", value: stats.bossMatches },
         { label: "Vittorie Boss", value: stats.bossWins },
         { label: "Sconfitte Boss", value: stats.bossLosses },
       ] },
-      { title: "Percorso", items: [
+      { title: "Percorso", className: "hall-stat-group--secondary", items: [
         { label: "Nodi completati", value: stats.nodesCompleted },
         { label: "Giocatori reclutati", value: stats.recruitedPlayers ?? stats.playersRecruited ?? team.fullRoster?.length },
-        { label: "Durata run", value: stats.durationMs, type: "duration" },
-      ] },
-      { title: "Reclutamento e oggetti", items: [
-        { label: "Pull aperte", value: stats.pullsOpened },
-        { label: "Reroll usati", value: stats.rerollsUsed },
-        { label: "Oggetti ottenuti", value: stats.itemsObtained },
-        { label: "Oggetti usati", value: stats.itemsUsed },
-        { label: "Allenamenti intensivi", value: stats.intensiveTrainingUsed },
-      ] },
-      { title: "Boss", items: [
-        { label: "Boss finale", value: team.finalBossName },
-        { label: "Boss superati", value: stats.bossesDefeated, type: "list" },
       ] },
     ];
   }
@@ -5171,16 +5149,17 @@
     const sections = runStatsSections(team).map((section) => {
       const items = section.items.map((item) => ({ ...item, formatted: formatStatValue(item.value, item.type) })).filter((item) => item.formatted != null);
       if (!items.length) return "";
-      return `<section class="hall-stat-group"><h3>${escapeHtml(section.title)}</h3><div class="hall-stat-list">${items.map((item) => item.type === "list" ? `<div class="hall-stat hall-stat-wide"><span>${escapeHtml(item.label)}</span><div class="hall-stat-chips">${item.formatted.map((value) => `<em>${escapeHtml(value)}</em>`).join("")}</div></div>` : `<div class="hall-stat"><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.formatted)}</strong></div>`).join("")}</div></section>`;
+      return `<section class="hall-stat-group ${escapeHtml(section.className || "")}"><h3>${escapeHtml(section.title)}</h3><div class="hall-stat-list">${items.map((item) => `<div class="hall-stat"><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.formatted)}</strong></div>`).join("")}</div></section>`;
     }).filter(Boolean).join("");
     return sections || '<p class="muted">Statistiche essenziali non disponibili per questa run.</p>';
   }
 
   function awardsMarkup(team) {
-    const awards = (team.awards || []).filter((award) => award && award.playerName);
+    const featuredAwardIds = new Set(["top_scorer", "best_goalkeeper", "defensive_pillar", "final_hero", "mvp"]);
+    const awards = (team.awards || []).filter((award) => award && award.playerName && featuredAwardIds.has(award.id));
     return awards.map((award) => {
       const playerAttr = award.playerId ? ` data-hall-player="${escapeHtml(award.playerId)}"` : "";
-      return `<article class="hall-award ${playerAttr ? "hall-player-card" : ""}"${playerAttr}><img src="${escapeHtml(award.portraitUrl || '')}" alt="" loading="lazy"/><div class="hall-award-copy"><strong>${escapeHtml(award.label || award.title)}</strong><span>${escapeHtml(award.playerName)}</span>${award.reason ? `<small>${escapeHtml(award.reason)}</small>` : ""}</div></article>`;
+      return `<article class="hall-award ${playerAttr ? "hall-player-card" : ""}"${playerAttr}><span class="hall-award-mark" aria-hidden="true">★</span><img src="${escapeHtml(award.portraitUrl || '')}" alt="" loading="lazy"/><div class="hall-award-copy"><strong>${escapeHtml(award.label || award.title)}</strong><span>${escapeHtml(award.playerName)}</span></div></article>`;
     }).join("") || '<p class="muted">Premi individuali disponibili solo quando i dati registrati sono affidabili.</p>';
   }
 
@@ -5239,7 +5218,7 @@
 
   function renderHallOfFame() {
     const teams = global.HallOfFameStorage.listSummaries();
-    app.innerHTML = `<main class="hall-screen"><header class="topbar"><div><p class="eyebrow">ALBO D’ORO</p><h1>Squadre campioni</h1></div>${sectionRootButton("hallRoot")}</header>${teams.length ? `<section class="hall-grid">${teams.map((team, index) => `<article class="panel hall-card"><div class="hall-card-trophy">🏆 #${index + 1}</div><h2>${escapeHtml(team.teamName)}</h2><p class="muted">${escapeHtml(normalizedHallSeasonName(team))} · ${formatDate(team.victoryDate)}</p><p>${escapeHtml(team.finalFormation || '-')} · OVR ${escapeHtml(team.finalAverageOverall ?? 'N/D')} · ${escapeHtml(team.wins ?? 'N/D')}-${escapeHtml(team.losses ?? 'N/D')}</p><p>MVP: ${escapeHtml(team.mvp?.name || 'Non disponibile')} · Vite ${escapeHtml(team.livesRemaining ?? 'N/D')}</p><div class="hall-portraits">${(team.portraits || []).map((src) => `<img src="${escapeHtml(src)}" alt="" loading="lazy"/>`).join('')}</div><button class="btn btn-yellow" data-open-hall-team="${escapeHtml(team.hallTeamId)}">Apri squadra</button></article>`).join('')}</section>` : `<section class="panel hall-empty"><h2>Nessuna squadra campione.</h2><p class="muted">Completa una run per lasciare il tuo segno.</p></section>`}</main>`;
+    app.innerHTML = `<main class="hall-screen"><header class="hall-archive-head"><div><p class="eyebrow">ALBO D’ORO</p><h1>Squadre campioni</h1><p>Le imprese che hanno scritto la storia.</p></div>${sectionRootButton("hallRoot")}</header>${teams.length ? `<section class="hall-grid">${teams.map((team, index) => `<article class="hall-card"><div class="hall-card-rank"><span>★</span> CAMPIONE #${index + 1}</div><div><h2>${escapeHtml(team.teamName)}</h2><p class="hall-card-meta">${escapeHtml(normalizedHallSeasonName(team))} · ${formatDate(team.victoryDate)}</p></div><div class="hall-card-highlights"><span><small>MODULO</small><strong>${escapeHtml(team.finalFormation || '-')}</strong></span><span><small>OVERALL</small><strong>${escapeHtml(team.finalAverageOverall ?? 'N/D')}</strong></span><span><small>MVP</small><strong>${escapeHtml(team.mvp?.name || 'N/D')}</strong></span></div><div class="hall-card-footer"><div class="hall-portraits">${(team.portraits || []).map((src) => `<img src="${escapeHtml(src)}" alt="" loading="lazy"/>`).join('')}</div><button class="btn btn-yellow" data-open-hall-team="${escapeHtml(team.hallTeamId)}">Rivivi l'impresa</button></div></article>`).join('')}</section>` : `<section class="panel hall-empty"><h2>Nessuna squadra campione.</h2><p class="muted">Completa una run per lasciare il tuo segno.</p></section>`}</main>`;
     resetRenderedViewScroll();
     bindSectionRootNav();
     document.querySelectorAll("[data-open-hall-team]").forEach((button) => button.addEventListener("click", () => renderHallOfFameDetail(button.dataset.openHallTeam)));
@@ -5248,7 +5227,7 @@
   function renderHallOfFameDetail(hallTeamId) {
     const team = global.HallOfFameStorage.getTeam(hallTeamId);
     if (!team) return renderHallOfFame();
-    app.innerHTML = `<main class="hall-detail-screen"><header class="topbar"><div><p class="eyebrow">Albo d’Oro</p><h1>${escapeHtml(team.teamName)}</h1><p class="muted final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>Boss finale: ${escapeHtml(team.finalBossName || 'N/D')}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span></p></div>${sectionRootButton("hallDetail")}</header><section class="hall-detail-grid"><article class="panel">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join('') || '<p class="muted">Non disponibili</p>'}</div><h3>5v5</h3>${championFiveVFiveMarkup(team)}</article><aside class="panel"> <h2>Statistiche</h2>${statsMarkup(team)}<h2>Premi</h2>${awardsMarkup(team)}</aside></section></main>`;
+    app.innerHTML = `<main class="hall-detail-screen"><header class="hall-hero"><div class="hall-hero-copy"><p class="eyebrow">ALBO D’ORO</p><h1>${escapeHtml(team.teamName)}</h1><div class="hall-hero-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span></div><p class="hall-boss-label">BOSS FINALE BATTUTO</p><strong class="hall-boss-name">${escapeHtml(team.finalBossName || 'N/D')}</strong></div><div class="hall-hero-trophy" aria-hidden="true">★</div>${sectionRootButton("hallDetail")}</header><section class="hall-detail-grid"><article class="hall-champion-team"><div class="hall-section-heading"><p class="eyebrow">SQUADRA VINCENTE</p><h2>Formazione finale</h2></div>${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<details class="hall-roster-extra"><summary>Riserve <span>${(team.bench || []).length}</span></summary><div class="bench-list">${(team.bench || []).map(snapshotCard).join('') || '<p class="muted">Non disponibili</p>'}</div></details><details class="hall-roster-extra"><summary>Formazione 5v5</summary>${championFiveVFiveMarkup(team)}</details></article><aside class="hall-achievement-column"><section class="hall-data-panel"><div class="hall-section-heading"><p class="eyebrow">LA RUN</p><h2>Statistiche essenziali</h2></div>${statsMarkup(team)}</section><section class="hall-awards-panel"><div class="hall-section-heading"><p class="eyebrow">RICONOSCIMENTI</p><h2>Premi della run</h2></div><div class="hall-awards-list">${awardsMarkup(team)}</div></section></aside></section></main>`;
     resetRenderedViewScroll(); bindHallPlayerDetails(team);
     bindSectionRootNav();
   }
