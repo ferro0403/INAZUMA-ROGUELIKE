@@ -890,7 +890,7 @@
   function showPlayerDetailsFor(player, options = {}) {
     if (!player) return toast("Giocatore non disponibile");
     const opts = { playerId: player.playerId, level: player.displayLevel ?? 0, database: freeAgentsDb, equipment: null, onClose: null, ...options };
-    openModal(playerDetailMarkup(player, opts), { closeable: true, className: "player-detail-modal", onClose: opts.onClose, preserveScroll: opts.preserveScroll });
+    openModal(playerDetailMarkup(player, opts), { closeable: true, className: `player-detail-modal${opts.mode === "album" ? " album-player-detail-modal" : ""}`, onClose: opts.onClose, preserveScroll: opts.preserveScroll });
     if (!opts.readOnly) modalRoot.querySelector("[data-detail-unequip]")?.addEventListener("click", () => unequipPlayerItem(opts.playerId, { render: () => { closeModal(); renderSquad(); } }));
   }
 
@@ -1378,7 +1378,7 @@
       <div class="modal-head"><div><p class="eyebrow">${mode === "edit" ? "Home" : "Nuova run"}</p><h2>${mode === "edit" ? "Modifica nome squadra" : "Nome della squadra"}</h2><p class="muted">${mode === "edit" ? "Aggiorna il nome permanente della tua squadra." : "Scegli il nome che rappresenterà la tua squadra."}</p></div>${inazumaLogoMarkup("inazuma-logo--modal")}</div>
       ${mode !== "edit" && run ? '<p class="home-overwrite-warning">Confermando sostituirai la run salvata.</p>' : ""}
       <label class="team-name-field" for="team-name-input">Nome squadra</label>
-      <input class="team-name-input" id="team-name-input" type="text" placeholder="La mia squadra" maxlength="24" autocomplete="off" inputmode="text" value="${escapeHtml(savedTeamIdentity()?.name || "")}" />
+      <div class="team-name-input-shell"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3.5 7.2v5.5c0 4.4 3.6 7 8.5 8.3 4.9-1.3 8.5-3.9 8.5-8.3V7.2L12 3Z"/><path d="m8.5 12 2.2 2.2 4.8-5"/></svg><input class="team-name-input" id="team-name-input" type="text" placeholder="La mia squadra" maxlength="24" autocomplete="off" inputmode="text" enterkeyhint="done" value="${escapeHtml(savedTeamIdentity()?.name || "")}" /></div>
       <p class="team-name-error" id="team-name-error" aria-live="polite"></p>
       <div class="button-row"><button type="button" class="btn btn-yellow" id="confirm-team-name">Conferma</button><button type="button" class="btn btn-ghost" id="cancel-team-name">Indietro</button></div>`,
       { closeable: false, className: "team-name-modal" }

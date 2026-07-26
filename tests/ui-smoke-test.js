@@ -28,4 +28,9 @@ assert.match(app, /details\.innerHTML = itemRewardDetailMarkup\(selectedItem, tr
 assert.match(css, /\.shared-game-header \.status-pill\.lives \{ display: inline-flex/, 'run lives stay visible on mobile');
 assert.match(css, /\.season-select-card \{[^}]*background: #fffdf6/s, 'season cards use the light style');
 assert.match(css, /\.team-name-input \{[^}]*background: #fff[^}]*color: #111216/s, 'team name input uses the light style');
+assert.match(app, /class="team-name-input-shell"/, 'team name field includes the new styled icon shell');
+assert.match(app, /album-player-detail-modal/, 'album player detail has a dedicated light-style hook');
+assert.match(css, /\.initial-draft-screen \.initial-draft-card \{ grid-template-columns: 100px minmax\(0,1fr\); min-height: 104px; \}/, 'mobile draft cards stay compact');
+assert.match(css, /\.album-screen \{[\s\S]*?--album-paper:#fffdf6/, 'album uses the ivory light-system palette');
+assert.match(css, /\.album-collection-card, \.album-team-card \{[^}]*border: 3px solid var\(--album-ink\)/s, 'album cards use structural black borders');
 console.log('ui-smoke-test: ok');
