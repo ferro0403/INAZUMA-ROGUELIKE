@@ -30,7 +30,7 @@ assert.match(css, /\.season-select-card \{[^}]*background: #fffdf6/s, 'season ca
 assert.match(css, /\.team-name-input \{[^}]*background: #fff[^}]*color: #111216/s, 'team name input uses the light style');
 assert.match(app, /class="team-name-input-shell"/, 'team name field includes the new styled icon shell');
 assert.match(app, /album-player-detail-modal/, 'album player detail has a dedicated light-style hook');
-assert.match(app, /querySelectorAll\("\[data-album-player\]"\).*addEventListener\("click"/s, 'album cards bind their player-detail action directly');
+assert.match(app, /albumRoster\?\.addEventListener\("click"[\s\S]*event\.target\.closest\("\[data-album-player\]"\)[\s\S]*showPlayerDetailsFor\(player/, 'album roster delegates card taps to the correct player detail');
 assert.match(app, /class="player-detail-section player-detail-equipment"/, 'player detail keeps a clear equipment section, including its empty state');
 assert.match(app, /<small>Rarità<\/small><strong>/, 'player detail exposes a labelled rarity badge');
 assert.match(css, /\.initial-draft-screen \.initial-draft-card \{ grid-template-columns: 100px minmax\(0,1fr\); min-height: 104px; \}/, 'mobile draft cards stay compact');
@@ -39,4 +39,6 @@ assert.match(css, /\.album-collection-card, \.album-team-card \{[^}]*border: 3px
 assert.match(css, /\.album-roster-action \{[^}]*place-items: center;[^}]*padding: 0/s, 'album roster arrow is centered in its square action');
 assert.match(css, /modal-backdrop:has\(\.team-name-modal\) \{ align-items: start;/, 'mobile team-name panel starts at the top');
 assert.match(css, /Player detail — light visual system shared by Album and run views/, 'player detail uses the approved light visual system');
+assert.match(css, /color-mix\(in srgb,var\(--detail-rarity-accent\) 42%,#fff\)/, 'player detail hero makes its rarity accent immediately visible');
+assert.match(css, /data-row-count="1"\] \{ --boss-mobile-card-width: clamp\(70px, 20vw, 78px\); \}/, 'sparse boss rows cannot grow beyond the defender card cap');
 console.log('ui-smoke-test: ok');
