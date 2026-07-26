@@ -329,7 +329,8 @@
   function toast(message) {
     const element = document.createElement("div");
     element.className = "toast";
-    element.textContent = message;
+    element.setAttribute("role", "status");
+    element.innerHTML = `<span class="toast-mark" aria-hidden="true">✓</span><span class="toast-copy">${escapeHtml(message)}</span>`;
     toastRoot.appendChild(element);
     setTimeout(() => element.remove(), 3200);
   }
@@ -5201,7 +5202,8 @@
     const awards = (team.awards || []).filter((award) => award && award.playerName && featuredAwardIds.has(award.id));
     return awards.map((award) => {
       const playerAttr = award.playerId ? ` data-hall-player="${escapeHtml(award.playerId)}"` : "";
-      return `<article class="hall-award ${playerAttr ? "hall-player-card" : ""}"${playerAttr}><span class="hall-award-mark" aria-hidden="true">★</span><img src="${escapeHtml(award.portraitUrl || '')}" alt="" loading="lazy"/><div class="hall-award-copy"><strong>${escapeHtml(award.label || award.title)}</strong><span>${escapeHtml(award.playerName)}</span></div></article>`;
+      const description = award.description || award.reason || (award.score != null ? `Punteggio ${award.score}` : "Riconoscimento della run");
+      return `<article class="hall-award ${playerAttr ? "hall-award--interactive" : ""}"${playerAttr}><span class="hall-award-mark" aria-hidden="true">★</span><img src="${escapeHtml(award.portraitUrl || '')}" alt="" loading="lazy"/><div class="hall-award-copy"><strong>${escapeHtml(award.label || award.title)}</strong><span>${escapeHtml(award.playerName)}</span><small>${escapeHtml(description)}</small></div></article>`;
     }).join("") || '<p class="muted">Premi individuali disponibili solo quando i dati registrati sono affidabili.</p>';
   }
 
