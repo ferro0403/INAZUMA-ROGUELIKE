@@ -1996,7 +1996,7 @@
                 const readableState = isCurrent ? "posizione attuale" : completed.has(node.id) ? "completato" : reachable.has(node.id) ? "selezionabile" : "bloccato";
                 const visibleState = isCurrent ? "SEI QUI" : completed.has(node.id) ? "FATTO" : reachable.has(node.id) ? "SCEGLI" : "";
                 return `
-                  <button type="button" class="map-node ${stateClass}${isCurrent ? " current" : ""}${isBoss ? " boss-node" : ""}" data-node-id="${node.id}" data-node-type="${escapeHtml(node.type)}" ${reachable.has(node.id) ? "" : "disabled"}
+                  <button type="button" class="map-node node-type-${escapeHtml(node.type)} ${stateClass}${isCurrent ? " current" : ""}${isBoss ? " boss-node" : ""}" data-node-id="${node.id}" data-node-type="${escapeHtml(node.type)}" ${reachable.has(node.id) ? "" : "disabled"}
                     aria-label="${escapeHtml((isBoss ? boss.teamName : meta.label) + ", " + readableState)}"
                     style="left:${positions[node.id].x / 10}%;top:${positions[node.id].y / 10}%;--node-color:${meta.color}">
                     ${isBoss ? '<span class="node-badge">BOSS</span>' : ""}
@@ -2356,7 +2356,7 @@
     if (!selected) {
       return `<div class="trade-selection-copy"><span>Scegli una card</span><strong>Nessun giocatore selezionato</strong><small>Puoi cedere un titolare oppure una riserva.</small></div><span class="trade-selection-state">IN ATTESA</span>`;
     }
-    return `<div class="trade-selection-copy"><span>Giocatore selezionato</span><strong>${escapeHtml(selected.name)}</strong><small>${escapeHtml(selected.position)} · OVR ${escapeHtml(selected.overall)} · Lv ${escapeHtml(selected.displayLevel)}</small></div><span class="trade-selection-state">PRONTO</span>`;
+    return `<span class="trade-selection-portrait"><img src="${escapeHtml(playerPortraitUrl(selected))}" alt="" loading="lazy" decoding="async" ${imageFallbackAttributes(resolvePlayerVisual(selected).cardFallbacks)} /></span><div class="trade-selection-copy"><span>GIOCATORE SELEZIONATO</span><strong>${escapeHtml(selected.name)}</strong><small>${escapeHtml(selected.position)} · OVR ${escapeHtml(selected.overall)} · LV ${escapeHtml(selected.displayLevel)}</small></div><span class="trade-selection-state">PRONTO</span>`;
   }
 
   function tradeStaticPlayerCardMarkup(player, { level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, equipment = null, extraClass = "" } = {}) {
@@ -3545,7 +3545,7 @@
     return Math.round(totals.reduce((sum, value) => sum + value, 0) / totals.length);
   }
 
-  function fiveMatchComparisonMarkup(userPlayers, opponentPlayers) {
+  function fiveMatchComparisonMarkup(userPlayers, opponentPlayers, summary) {
     const rows = [
       ["Attacco", ["attack"], ["attack"]],
       ["Controllo", ["control"], ["control"]],
@@ -3553,20 +3553,27 @@
       ["Velocità", ["speed"], ["speed"]],
       ["Portiere", ["save"], ["save"]],
     ];
-    return `<details class="five-match-values">
-      <summary aria-label="Apri o chiudi il confronto dei valori">
+    return `<section class="five-match-values">
+      <button type="button" class="five-match-values-button" aria-expanded="false" aria-controls="five-match-values-content">
         <span class="five-match-values-copy">
           <strong>Valori</strong>
-          <small>Attacco · Controllo · Difesa · Velocità · Portiere</small>
+          <small>Forza · Probabilità · Confronto · Statistiche</small>
         </span>
         <span class="five-match-values-toggle" aria-hidden="true"></span>
-      </summary>
-      <div class="five-match-traits" aria-label="Confronto sintetico valori reali">${rows.map(([label, userStats, opponentStats]) => {
+      </button>
+      <div class="five-match-values-content" id="five-match-values-content" hidden>
+        <div class="five-match-core-values">
+          <div><span>La tua forza</span><strong>${escapeHtml(summary.userStrength)}</strong><small>${escapeHtml(summary.userFormation)} · OVR ${escapeHtml(summary.userOverall)}</small></div>
+          <div class="five-match-probability"><span>Probabilità vittoria</span><strong>${escapeHtml(summary.probability)}%</strong><small>Dato usato dalla simulazione</small></div>
+          <div><span>Forza Svincolati</span><strong>${escapeHtml(summary.opponentStrength)}</strong><small>${escapeHtml(summary.opponentFormation)} · OVR ${escapeHtml(summary.opponentOverall)}</small></div>
+        </div>
+        <div class="five-match-traits" aria-label="Valori tecnici, Tu e Svincolati">${rows.map(([label, userStats, opponentStats]) => {
         const userValue = fiveMatchStatAverage(userPlayers, userStats);
         const opponentValue = fiveMatchStatAverage(opponentPlayers, opponentStats);
         return `<div class="five-match-trait"><span>${escapeHtml(label)}</span><strong>${escapeHtml(userValue)}</strong><small>${escapeHtml(opponentValue)}</small></div>`;
       }).join("")}</div>
-    </details>`;
+      </div>
+    </section>`;
   }
 
   function persistMatchState() {
@@ -3635,10 +3642,7 @@
               </div>
             </section>
             <section class="five-match-summary" aria-label="Riepilogo partita 5v5">
-              <div><span>La tua forza</span><strong>${escapeHtml(simPreview.userStrength?.final ?? "-")}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(userAverageOverall)}</small></div>
-              <div class="five-match-probability"><span>Probabilità vittoria</span><strong>${escapeHtml(simPreview.probabilities ? Math.round(simPreview.probabilities.user * 100) : "-")}%</strong><small>Dato usato dalla simulazione</small></div>
-              <div><span>Forza Svincolati</span><strong>${escapeHtml(simPreview.opponentStrength?.final ?? "-")}</strong><small>${escapeHtml(match.opponentFormation)} · OVR ${escapeHtml(opponentAverageOverall)}</small></div>
-              ${fiveMatchComparisonMarkup(userFivePlayers, opponentFivePlayers)}
+              ${fiveMatchComparisonMarkup(userFivePlayers, opponentFivePlayers, { userStrength: simPreview.userStrength?.final ?? "-", userFormation: run.fiveVFive.formation, userOverall: userAverageOverall, probability: simPreview.probabilities ? Math.round(simPreview.probabilities.user * 100) : "-", opponentStrength: simPreview.opponentStrength?.final ?? "-", opponentFormation: match.opponentFormation, opponentOverall: opponentAverageOverall })}
             </section>
             ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
             <div class="five-match-bottom-grid">
@@ -3675,6 +3679,13 @@
         });
       });
       bindFiveMatchPlayerButtons();
+      document.querySelector(".five-match-values-button")?.addEventListener("click", (event) => {
+        const button = event.currentTarget;
+        const content = document.getElementById(button.getAttribute("aria-controls"));
+        const expanded = button.getAttribute("aria-expanded") === "true";
+        button.setAttribute("aria-expanded", expanded ? "false" : "true");
+        if (content) content.hidden = expanded;
+      });
       document.getElementById("edit-five-team").addEventListener("click", () => { ui.returnToMatchContext = { type: match.type, nodeId: match.nodeId, scroll: scrollSnapshot() }; match.returnScroll = ui.returnToMatchContext.scroll; persistMatchState(); renderFiveVFive({ returnToMatch: true }); });
       document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("victory"); });
       document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("defeat"); });
@@ -4607,13 +4618,25 @@
     };
   }
 
-  function inventoryEquipmentPlayerCard(id, item, area, selectedId = null) {
+  function individualItemTargetState(entry, item, mode = "equipment") {
+    if (mode === "equipment") return equipmentTargetState(entry, item);
+    const player = entry ? resolvedRosterPlayer(entry.playerId) : null;
+    if (!entry || !player) return { valid: false, reason: "Non compatibile", player };
+    if (mode === "level") return { valid: Number(entry.level || 0) < 20, reason: "Livello massimo", player };
+    const source = sourcePlayer(entry);
+    const maxBoost = Math.max(0, 99 - Number(source.finalOverall || 0));
+    const boosts = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
+    const valid = boosts.reduce((sum, boost) => sum + boost.amount, 0) < maxBoost;
+    return { valid, reason: "Potenziale massimo", player };
+  }
+
+  function inventoryEquipmentPlayerCard(id, item, area, selectedId = null, mode = "equipment") {
     const entry = rosterEntry(id);
-    const target = equipmentTargetState(entry, item);
+    const target = individualItemTargetState(entry, item, mode);
     if (!entry || !target.player) return "";
     const selected = String(selectedId || "") === String(id);
     const dataAttr = target.valid
-      ? `data-equip-player="${escapeHtml(id)}" data-area="${escapeHtml(area)}" aria-pressed="${selected ? "true" : "false"}"`
+      ? `data-item-target-player="${escapeHtml(id)}" data-area="${escapeHtml(area)}" aria-pressed="${selected ? "true" : "false"}"`
       : `disabled aria-disabled="true" title="${escapeHtml(target.reason)}"`;
     return `<div class="inventory-tactical-slot ${target.valid ? "" : "is-unavailable"}">
       ${compactPlayerCardMarkup(target.player, {
@@ -4629,14 +4652,14 @@
     </div>`;
   }
 
-  function inventoryEquipmentPitchMarkup(item, selectedId = null) {
+  function inventoryEquipmentPitchMarkup(item, selectedId = null, mode = "equipment") {
     return `<section class="pitch">
-      ${lineupRows().map((row) => `<div class="pitch-row tactical-row" data-row-count="${row.ids.length || 1}" style="--players-in-row:${row.ids.length || 1};--row-count:${row.ids.length || 1}">${row.ids.map((id) => inventoryEquipmentPlayerCard(id, item, "lineup", selectedId)).join("")}</div>`).join("")}
+      ${lineupRows().map((row) => `<div class="pitch-row tactical-row" data-row-count="${row.ids.length || 1}" style="--players-in-row:${row.ids.length || 1};--row-count:${row.ids.length || 1}">${row.ids.map((id) => inventoryEquipmentPlayerCard(id, item, "lineup", selectedId, mode)).join("")}</div>`).join("")}
     </section>`;
   }
 
-  function inventoryEquipmentBenchMarkup(item, selectedId = null) {
-    const cards = (run.bench || []).map((id) => inventoryEquipmentPlayerCard(id, item, "bench", selectedId)).filter(Boolean);
+  function inventoryEquipmentBenchMarkup(item, selectedId = null, mode = "equipment") {
+    const cards = (run.bench || []).map((id) => inventoryEquipmentPlayerCard(id, item, "bench", selectedId, mode)).filter(Boolean);
     return cards.length ? cards.join("") : '<p class="muted">Nessuna riserva disponibile.</p>';
   }
 
@@ -4658,8 +4681,8 @@
 
   function setInventoryEquipmentTarget(playerId) {
     ui.inventoryEquipmentPlayerId = playerId ? String(playerId) : null;
-    modalRoot.querySelectorAll("[data-equip-player]").forEach((card) => {
-      const selected = String(card.dataset.equipPlayer) === ui.inventoryEquipmentPlayerId;
+    modalRoot.querySelectorAll("[data-item-target-player]").forEach((card) => {
+      const selected = String(card.dataset.itemTargetPlayer) === ui.inventoryEquipmentPlayerId;
       card.classList.toggle("selected", selected);
       card.setAttribute("aria-pressed", selected ? "true" : "false");
     });
@@ -4731,17 +4754,40 @@
     if (item.effect === "lucky_pull") return toast("Portafortuna utilizzabile durante una Pull svincolati o Pull squadre.");
   }
 
-  function choosePlayerForConsumable(item) {
+  function openIndividualItemSelector(item, mode, { title = "Scegli il giocatore", onConfirm } = {}) {
+    ui.inventoryEquipmentPlayerId = null;
+    const formation = formationById(run.formationId);
     openModal(`
-      <div class="inventory-flow-head">${itemIcon(item)}<div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli il giocatore</h2><p>${escapeHtml(item.description)}</p></div></div>
-      ${inventoryPlayerSelectionMarkup(item, "level")}
-      <div class="inventory-modal-actions"><button type="button" class="btn btn-ghost" data-close-inventory-flow>RINUNCIA</button></div>`,
-      { closeable: true, className: "item-assignment-modal consumable-assignment-modal inventory-flow-modal" }
+      <div class="inventory-flow-head">${itemIcon(item)}<div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>${escapeHtml(title)}</h2><p>${escapeHtml(item.description)}</p></div></div>
+      <p class="inventory-equipment-instruction">Seleziona soltanto il destinatario: formazione e modulo non cambieranno.</p>
+      <div class="inventory-equipment-workspace squad-screen">
+        <section class="squad-field-panel inventory-equipment-field" aria-label="Titolari sul campo">
+          <div class="squad-panel-head"><div><p class="eyebrow">Titolari</p><h3>Campo tattico</h3></div><span class="squad-field-formation">${escapeHtml(formation?.name || run.formationId)}</span></div>
+          ${inventoryEquipmentPitchMarkup(item, null, mode)}
+        </section>
+        <aside class="inventory-equipment-sidebar">
+          <section class="squad-bench-panel" aria-label="Riserve"><div class="squad-panel-head"><div><p class="eyebrow">Panchina</p><h3>Riserve</h3></div><span class="squad-bench-count">${Math.min((run.bench || []).length, 4)}/4</span></div><div class="bench-list squad-bench-list">${inventoryEquipmentBenchMarkup(item, null, mode)}</div></section>
+          <section class="inventory-equipment-selection-summary" data-equipment-selection-summary aria-live="polite">${inventoryEquipmentSelectionSummary(null)}</section>
+          <div class="inventory-modal-actions"><button type="button" class="btn btn-yellow" data-confirm-equipment-target disabled>CONFERMA</button><button type="button" class="btn btn-ghost" data-close-inventory-flow>ANNULLA</button></div>
+        </aside>
+      </div>`,
+      { closeable: true, className: "item-assignment-modal inventory-flow-modal inventory-equipment-selector-modal" }
     );
     modalRoot.querySelector("[data-close-inventory-flow]")?.addEventListener("click", closeModal);
-    modalRoot.querySelectorAll("[data-consumable-player]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const entry = rosterEntry(button.dataset.consumablePlayer);
+    modalRoot.querySelector(".inventory-equipment-workspace")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-item-target-player]");
+      if (!button || button.disabled) return;
+      event.preventDefault();
+      setInventoryEquipmentTarget(button.dataset.itemTargetPlayer);
+    });
+    modalRoot.querySelector("[data-confirm-equipment-target]")?.addEventListener("click", () => {
+      if (ui.inventoryEquipmentPlayerId) onConfirm(ui.inventoryEquipmentPlayerId);
+    });
+  }
+
+  function choosePlayerForConsumable(item) {
+    openIndividualItemSelector(item, "level", { onConfirm: (playerId) => {
+        const entry = rosterEntry(playerId);
         if (!entry) return;
         const before = resolvedRosterPlayer(entry.playerId);
         const currentLevel = Number(entry.level || 0);
@@ -4762,21 +4808,12 @@
             renderInventory();
           },
         });
-      });
-    });
+      }});
   }
 
   function choosePlayerForPotentialBoost(item) {
-    openModal(`
-      <div class="inventory-flow-head">${itemIcon(item)}<div><p class="eyebrow">${escapeHtml(item.name)}</p><h2>Scegli il giocatore</h2><p>Aumenta subito overall attuale e potenziale massimo dello stesso valore, senza cambiare livello.</p></div></div>
-      ${inventoryPlayerSelectionMarkup(item, "potential")}
-      <div class="inventory-modal-actions"><button type="button" class="btn btn-ghost" data-close-inventory-flow>RINUNCIA</button></div>`,
-      { closeable: true, className: "item-assignment-modal consumable-assignment-modal inventory-flow-modal" }
-    );
-    modalRoot.querySelector("[data-close-inventory-flow]")?.addEventListener("click", closeModal);
-    modalRoot.querySelectorAll("[data-consumable-player]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const entry = rosterEntry(button.dataset.consumablePlayer);
+    openIndividualItemSelector(item, "potential", { title: "Scegli chi allenare", onConfirm: (playerId) => {
+        const entry = rosterEntry(playerId);
         if (!entry) return;
         const player = sourcePlayer(entry);
         const before = resolvedRosterPlayer(entry.playerId);
@@ -4806,8 +4843,7 @@
             renderInventory();
           },
         });
-      });
-    });
+      }});
   }
 
   function chooseEquipmentPlayer(instanceId, options = {}) {
@@ -4821,12 +4857,12 @@
       <div class="inventory-equipment-workspace squad-screen">
         <section class="squad-field-panel inventory-equipment-field" aria-label="Titolari sul campo">
           <div class="squad-panel-head"><div><p class="eyebrow">Titolari</p><h3>Campo tattico</h3></div><span class="squad-field-formation">${escapeHtml(formation?.name || run.formationId)}</span></div>
-          ${inventoryEquipmentPitchMarkup(item, ui.inventoryEquipmentPlayerId)}
+          ${inventoryEquipmentPitchMarkup(item, ui.inventoryEquipmentPlayerId, "equipment")}
         </section>
         <aside class="inventory-equipment-sidebar">
           <section class="squad-bench-panel" aria-label="Riserve">
             <div class="squad-panel-head"><div><p class="eyebrow">Panchina</p><h3>Riserve</h3></div><span class="squad-bench-count">${Math.min((run.bench || []).length, 4)}/4</span></div>
-            <div class="bench-list squad-bench-list">${inventoryEquipmentBenchMarkup(item, ui.inventoryEquipmentPlayerId)}</div>
+            <div class="bench-list squad-bench-list">${inventoryEquipmentBenchMarkup(item, ui.inventoryEquipmentPlayerId, "equipment")}</div>
           </section>
           <section class="inventory-equipment-selection-summary" data-equipment-selection-summary aria-live="polite">${inventoryEquipmentSelectionSummary(ui.inventoryEquipmentPlayerId)}</section>
           <div class="inventory-modal-actions">
@@ -4839,10 +4875,10 @@
     );
     modalRoot.querySelector("[data-close-inventory-flow]")?.addEventListener("click", closeModal);
     modalRoot.querySelector(".inventory-equipment-workspace")?.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-equip-player]");
+      const button = event.target.closest("[data-item-target-player]");
       if (!button || button.disabled) return;
       event.preventDefault();
-      setInventoryEquipmentTarget(button.dataset.equipPlayer);
+      setInventoryEquipmentTarget(button.dataset.itemTargetPlayer);
     });
     modalRoot.querySelector("[data-confirm-equipment-target]")?.addEventListener("click", () => {
       if (ui.inventoryEquipmentPlayerId) handleEquipmentTarget(instanceId, ui.inventoryEquipmentPlayerId);
