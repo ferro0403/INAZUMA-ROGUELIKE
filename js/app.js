@@ -1423,6 +1423,9 @@
     if (run.phase === "five") return renderFiveVFive();
     if (run.phase === "inventory") return renderInventory();
     if (run.phase === "match" && run.activeMatch) {
+      const recovery = repairBossActiveMatch();
+      if (!recovery.valid) return renderBossMatchRecoveryError(recovery.message);
+      if (recovery.repaired) global.RunState.save(run);
       ui.match = run.activeMatch;
       ui.bossMatchState = run.activeMatch.state || "pre-match";
       ui.bossMatchLog = run.activeMatch.log || [];
@@ -1437,7 +1440,7 @@
     run.phase = "formation";
     global.RunState.save(run);
     app.innerHTML = `
-      <main class="screen">
+      <main class="screen onboarding-screen formation-choice-screen">
         ${topbar("Scegli il modulo")}
         <div class="content narrow">
           <div class="section-head">
@@ -1445,7 +1448,7 @@
           </div>
           <div class="formation-grid">
             ${seasonDb.formations.eleven.map((formation) => `
-              <button type="button" class="formation-card" data-formation="${escapeHtml(formation.id)}">
+              <button type="button" class="formation-card ${run.formationId === formation.id ? "selected" : ""}" data-formation="${escapeHtml(formation.id)}" aria-pressed="${run.formationId === formation.id ? "true" : "false"}">
                 <strong>${escapeHtml(formation.name)}</strong>
                 <p class="muted small">Il draft proporrà esattamente i ruoli necessari.</p>
                 <div class="formation-roles">
@@ -1479,7 +1482,7 @@
     const candidates = draft.candidates.map((id) => freeAgentsById.get(String(id))).filter(Boolean);
     const progress = (draft.step / draft.roles.length) * 100;
     app.innerHTML = `
-      <main class="screen">
+      <main class="screen onboarding-screen initial-draft-screen">
         ${topbar("Draft iniziale")}
         <div class="content narrow">
           <p class="eyebrow">Scelta ${draft.step + 1} di ${draft.roles.length}</p>
@@ -1489,7 +1492,7 @@
           </div>
           <div class="progress-track"><div class="progress-bar" style="width:${progress}%"></div></div>
           <div class="candidate-grid pull-offer-grid initial-draft-grid">
-            ${candidates.map((player) => playerCard(player, { button: true })).join("")}
+            ${candidates.map((player) => playerCard(player, { button: true, extraClass: "initial-draft-card" })).join("")}
           </div>
         </div>
       </main>`;
@@ -1910,7 +1913,7 @@
   function bossNodeIconMarkup(boss) {
     const teamName = boss?.teamName || "Boss";
     const logoUrl = bossTeamLogoUrl(boss);
-    const fallback = escapeHtml((teamName.trim()[0] || "⚽").toUpperCase());
+    const fallback = "⚽";
     if (!logoUrl) return `<span class="boss-logo-fallback boss-logo-fallback--visible" aria-hidden="true">${fallback}</span>`;
     return `<img class="boss-node-logo" src="${escapeHtml(logoUrl)}" alt="Logo ${escapeHtml(teamName)}" loading="lazy" onerror="this.remove();this.parentElement?.classList.add('boss-logo-missing');" /><span class="boss-logo-fallback" aria-hidden="true">${fallback}</span>`;
   }
@@ -2057,7 +2060,10 @@
       return renderMatch();
     }
     if (eventType === "boss") {
-      ui.match = { nodeId: node.id, previousNodeId: run.currentZone.currentNodeId, type: eventType, state: "pre-match", log: [], bossIndex: run.bossIndex, attemptNumber: Object.keys(run.statistics?.processedMatchIds || {}).filter((id) => id.includes(`::${node.id}::boss::`)).length + 1 };
+      const boss = seasonDb.bossOrder[run.bossIndex];
+      const bossPlayers = bossTeamPlayers(boss);
+      ui.match = { nodeId: node.id, previousNodeId: run.currentZone.currentNodeId, type: eventType, state: "pre-match", log: [], bossIndex: run.bossIndex, bossId: String(boss?.teamId || ""), bossFormation: boss?.bossFormation || null, bossPlayerIds: bossPlayers.map((player) => String(player.playerId)), attemptNumber: Object.keys(run.statistics?.processedMatchIds || {}).filter((id) => id.includes(`::${node.id}::boss::`)).length + 1 };
+      ui.match.seed = matchSeed(ui.match);
       ui.match.matchId = global.RunStatistics?.createStableMatchId?.(run, ui.match) || null;
       ui.bossMatchState = "pre-match";
       ui.bossMatchLog = [];
@@ -3009,6 +3015,56 @@
       .filter(Boolean);
   }
 
+  function bossPlayersForMatch(match, boss) {
+    const configured = bossTeamPlayers(boss);
+    const savedIds = Array.isArray(match?.bossPlayerIds) ? match.bossPlayerIds.map(String) : [];
+    if (savedIds.length !== 11) return configured;
+    const byId = new Map(configured.map((player) => [String(player.playerId), player]));
+    const saved = savedIds.map((id) => byId.get(id)).filter(Boolean);
+    return saved.length === 11 ? saved : configured;
+  }
+
+  function repairBossActiveMatch() {
+    const match = run?.activeMatch;
+    if (run?.phase !== "match" || !match) return { valid: true, repaired: false };
+    const zone = run.currentZone;
+    const pendingNode = zone?.nodes?.find((node) => [match.nodeId, zone.pendingNodeId].filter(Boolean).some((id) => String(node.id) === String(id)));
+    const looksLikeBoss = match.type === "boss" || pendingNode?.type === "boss";
+    if (!looksLikeBoss) return { valid: true, repaired: false };
+    const bossIndex = Number.isFinite(Number(match.bossIndex)) ? Number(match.bossIndex) : Number(run.bossIndex || 0);
+    const boss = seasonDb?.bossOrder?.[bossIndex];
+    if (!boss) return { valid: false, repaired: false, message: "La sfida Boss salvata non può essere riaperta: configurazione Boss non disponibile." };
+    const bossNode = pendingNode || zone?.nodes?.find((node) => node.type === "boss" && (!node.bossId || String(node.bossId) === String(boss.teamId)));
+    if (!bossNode) return { valid: false, repaired: false, message: "La sfida Boss salvata non può essere riaperta: nodo Boss non disponibile." };
+    if (!formationById(run.formationId) || !formationById(boss.bossFormation)) return { valid: false, repaired: false, message: "La sfida Boss salvata non può essere riaperta: formazione non valida." };
+    const configuredPlayers = bossTeamPlayers(boss);
+    if (configuredPlayers.length !== 11) return { valid: false, repaired: false, message: "La sfida Boss salvata non può essere riaperta: rosa Boss incompleta." };
+    let repaired = false;
+    const setDerived = (key, value) => { if (match[key] == null || match[key] === "") { match[key] = value; repaired = true; } };
+    setDerived("type", "boss");
+    setDerived("nodeId", bossNode.id);
+    setDerived("bossIndex", bossIndex);
+    setDerived("bossId", String(boss.teamId || ""));
+    setDerived("bossFormation", boss.bossFormation);
+    setDerived("attemptNumber", 1);
+    setDerived("state", "pre-match");
+    setDerived("seed", matchSeed(match));
+    if (!Array.isArray(match.log)) { match.log = []; repaired = true; }
+    if (!Array.isArray(match.score)) { match.score = [0, 0]; repaired = true; }
+    const configuredIds = configuredPlayers.map((player) => String(player.playerId));
+    const savedIds = Array.isArray(match.bossPlayerIds) ? match.bossPlayerIds.map(String) : [];
+    if (savedIds.length !== 11 || savedIds.some((id) => !configuredIds.includes(id))) { match.bossPlayerIds = configuredIds; repaired = true; }
+    if (!match.previousNodeId && zone.currentNodeId && String(zone.currentNodeId) !== String(bossNode.id)) { match.previousNodeId = zone.currentNodeId; repaired = true; }
+    if (!zone.pendingNodeId) { zone.pendingNodeId = bossNode.id; repaired = true; }
+    return { valid: true, repaired, boss };
+  }
+
+  function renderBossMatchRecoveryError(message) {
+    console.error("Unable to recover saved Boss match", { message, activeMatch: run?.activeMatch });
+    app.innerHTML = `<main class="screen"><div class="content narrow"><section class="panel"><p class="eyebrow">Recupero partita</p><h2>Impossibile aprire la sfida Boss</h2><p>${escapeHtml(message)}</p><p class="muted">Il salvataggio non è stato cancellato. Puoi tornare alla Home e riprovare.</p><div class="button-row"><button type="button" class="btn btn-yellow" id="boss-recovery-home">Torna alla Home</button></div></section></div></main>`;
+    document.getElementById("boss-recovery-home")?.addEventListener("click", renderHome);
+  }
+
   function userTeamPlayers() {
     return (run.lineup || []).slice(0, 11).map((id) => resolvedRosterPlayer(id)).filter(Boolean);
   }
@@ -3138,6 +3194,7 @@
 
   function matchSeed(match) {
     if (match.simulation?.seed && match.simulation?.state !== "pre-match") return match.simulation.seed;
+    if (match.seed) return match.seed;
     return `${run.runId}:${match.type}:${match.nodeId}:${match.attemptNumber || 1}`;
   }
 
@@ -3171,10 +3228,10 @@
         userSnapshot: matchSnapshotFromTeam({ name: normalizeTeamIdentity(run.teamIdentity).name || "La tua squadra", players: userPlayers }),
       };
     }
-    const boss = options.boss || seasonDb.bossOrder[run.bossIndex];
+    const boss = options.boss || seasonDb.bossOrder[Number(match.bossIndex ?? run.bossIndex)];
     const meta = bossMatchTeamMeta(boss);
     const userPlayers = userTeamPlayers().map(normalizedMatchPlayer).filter(Boolean);
-    const opponentPlayers = bossTeamPlayers(boss).map(normalizedMatchPlayer).filter(Boolean);
+    const opponentPlayers = bossPlayersForMatch(match, boss).map(normalizedMatchPlayer).filter(Boolean);
     return {
       type: "eleven",
       userTeam: { name: meta.user.name, players: userPlayers, formationId: meta.user.formation },
@@ -3553,6 +3610,15 @@
       ["Velocità", ["speed"], ["speed"]],
       ["Portiere", ["save"], ["save"]],
     ];
+    if (!summary || typeof summary !== "object") {
+      console.error("Match comparison unavailable: summary is required", { userCount: userPlayers?.length || 0, opponentCount: opponentPlayers?.length || 0 });
+      return `<section class="five-match-values five-match-values--unavailable" data-comparison-unavailable="true"><div class="five-match-values-button"><span class="five-match-values-copy"><strong>Valori non disponibili</strong><small>Il campo e i controlli della partita restano disponibili.</small></span></div></section>`;
+    }
+    const opponentLabel = summary.opponentLabel || "Svincolati";
+    const profileValue = (side, key, fallbackStats) => {
+      const value = summary[`${side}Profile`]?.[key];
+      return Number.isFinite(Number(value)) ? Math.round(Number(value)) : fiveMatchStatAverage(side === "user" ? userPlayers : opponentPlayers, fallbackStats);
+    };
     return `<section class="five-match-values">
       <button type="button" class="five-match-values-button" aria-expanded="false" aria-controls="five-match-values-content">
         <span class="five-match-values-copy">
@@ -3565,11 +3631,12 @@
         <div class="five-match-core-values">
           <div><span>La tua forza</span><strong>${escapeHtml(summary.userStrength)}</strong><small>${escapeHtml(summary.userFormation)} · OVR ${escapeHtml(summary.userOverall)}</small></div>
           <div class="five-match-probability"><span>Probabilità vittoria</span><strong>${escapeHtml(summary.probability)}%</strong><small>Dato usato dalla simulazione</small></div>
-          <div><span>Forza Svincolati</span><strong>${escapeHtml(summary.opponentStrength)}</strong><small>${escapeHtml(summary.opponentFormation)} · OVR ${escapeHtml(summary.opponentOverall)}</small></div>
+          <div><span>Forza ${escapeHtml(opponentLabel)}</span><strong>${escapeHtml(summary.opponentStrength)}</strong><small>${escapeHtml(summary.opponentFormation)} · OVR ${escapeHtml(summary.opponentOverall)}</small></div>
         </div>
-        <div class="five-match-traits" aria-label="Valori tecnici, Tu e Svincolati">${rows.map(([label, userStats, opponentStats]) => {
-        const userValue = fiveMatchStatAverage(userPlayers, userStats);
-        const opponentValue = fiveMatchStatAverage(opponentPlayers, opponentStats);
+        <div class="five-match-traits" aria-label="Valori tecnici, Tu e ${escapeHtml(opponentLabel)}">${rows.map(([label, userStats, opponentStats]) => {
+        const profileKey = ({ Attacco: "attack", Controllo: "control", Difesa: "defense", "Velocità": "speed", Portiere: "save" })[label];
+        const userValue = profileValue("user", profileKey, userStats);
+        const opponentValue = profileValue("opponent", profileKey, opponentStats);
         return `<div class="five-match-trait"><span>${escapeHtml(label)}</span><strong>${escapeHtml(userValue)}</strong><small>${escapeHtml(opponentValue)}</small></div>`;
       }).join("")}</div>
       </div>
@@ -3585,7 +3652,6 @@
   }
 
   function renderMatch() {
-    const boss = seasonDb.bossOrder[run.bossIndex];
     const isBoss = ui.match?.type === "boss";
     if (!isBoss) {
       const match = createOrLoadFiveMatch({ id: ui.match?.nodeId });
@@ -3697,8 +3763,12 @@
       return;
     }
 
+    const recovery = repairBossActiveMatch();
+    if (!recovery.valid) return renderBossMatchRecoveryError(recovery.message);
+    if (recovery.repaired) global.RunState.save(run);
+    const boss = recovery.boss || seasonDb.bossOrder[Number(ui.match?.bossIndex ?? run.bossIndex)];
     const userPlayers = userTeamPlayers();
-    const bossPlayers = bossTeamPlayers(boss);
+    const bossPlayers = bossPlayersForMatch(ui.match, boss);
     const meta = bossMatchTeamMeta(boss);
     const userAverage = bossMatchAverage(userPlayers);
     const bossAverage = bossMatchAverage(bossPlayers);
@@ -3709,6 +3779,18 @@
     const simError = !simPreview.valid ? simPreview.message : "";
     const userProbability = simPreview.probabilities ? Math.round(simPreview.probabilities.user * 100) : null;
     const bossProbability = simPreview.probabilities ? Math.round(simPreview.probabilities.opponent * 100) : null;
+    const bossComparisonSummary = simPreview.valid ? {
+      userStrength: simPreview.userStrength?.final ?? "-",
+      userFormation: meta.user.formation,
+      userOverall: simPreview.userStrength?.averageOverall ? Math.round(simPreview.userStrength.averageOverall) : userAverage || "-",
+      probability: userProbability ?? "-",
+      opponentStrength: simPreview.opponentStrength?.final ?? "-",
+      opponentFormation: meta.boss.formation,
+      opponentOverall: simPreview.opponentStrength?.averageOverall ? Math.round(simPreview.opponentStrength.averageOverall) : bossAverage || "-",
+      opponentLabel: "Boss",
+      userProfile: simPreview.userStrength?.effectiveComponents,
+      opponentProfile: simPreview.opponentStrength?.effectiveComponents,
+    } : null;
     ui.bossMatchLog = visibleTimeline(ui.match);
     const score = simulationScoreArray(ui.match, resolved);
     const scoreLabel = `${meta.user.name} ${score[0]} - ${score[1]} ${meta.boss.name}`;
@@ -3755,7 +3837,7 @@
             <div><span>La tua forza</span><strong>${escapeHtml(simPreview.userStrength?.final ?? "-")}</strong><small>${escapeHtml(meta.user.formation)} · OVR ${escapeHtml(userAverage || "-")}</small></div>
             <div class="boss-match-probability"><span>Probabilità vittoria</span><strong>${escapeHtml(userProbability ?? "-")}%</strong><small>Dato usato dalla simulazione</small></div>
             <div><span>Forza Boss</span><strong>${escapeHtml(simPreview.opponentStrength?.final ?? "-")}</strong><small>${escapeHtml(meta.boss.formation)} · OVR ${escapeHtml(bossAverage || "-")}</small></div>
-            ${fiveMatchComparisonMarkup(userPlayers, bossPlayers)}
+            ${fiveMatchComparisonMarkup(userPlayers, bossPlayers, bossComparisonSummary)}
             <div class="boss-match-reward-note"><span>Vittoria</span><strong>2 pick 1 di 3 dalla squadra battuta</strong></div>
           </section>
           ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
