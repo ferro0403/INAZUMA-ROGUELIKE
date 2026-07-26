@@ -7211,3 +7211,59 @@ body { background: var(--gradient-app); }
     text-align: left;
   }
 }
+
+/* Boss match values are a single closed-by-default drawer. The three primary
+   facts live inside it, never as permanent cards below the tactical pitch. */
+.boss-match-screen .boss-match-summary {
+  grid-template-columns: 1fr;
+  gap: 7px;
+}
+.boss-match-screen .boss-match-summary .five-match-values {
+  grid-column: 1;
+  border: 3px solid var(--boss-ink);
+  background: var(--boss-paper);
+  color: var(--boss-ink);
+}
+.boss-match-screen .five-match-values-button {
+  min-height: 54px;
+  padding: 8px 10px 8px 14px;
+}
+.boss-match-screen .five-match-values-content {
+  padding: 10px;
+  border-top: 2px solid var(--boss-ink);
+}
+.boss-match-screen .five-match-core-values {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 0;
+  border: 2px solid var(--boss-ink);
+}
+.boss-match-screen .five-match-core-values > div {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  align-items: center;
+  gap: 3px 8px;
+  min-width: 0;
+  padding: 9px 11px;
+  background: #fff;
+  text-align: left;
+}
+.boss-match-screen .five-match-core-values > div + div { border-left: 1px solid #b7b1a5; }
+.boss-match-screen .five-match-core-values span { color: var(--boss-gold); font-size: .62rem; font-weight: 950; text-transform: uppercase; }
+.boss-match-screen .five-match-core-values strong { color: var(--boss-ink); font-size: 1.22rem; }
+.boss-match-screen .five-match-core-values small { grid-column: 1 / -1; color: var(--boss-copy); font-size: .65rem; font-weight: 800; }
+.boss-match-screen .five-match-core-values .five-match-probability { background: var(--boss-yellow); }
+.boss-match-screen .boss-match-reward-note { grid-column: 1; }
+
+.route-target-card__logo.boss-logo-missing .boss-logo-fallback,
+.route-boss-preview-logo.boss-logo-missing .boss-logo-fallback { display: inline; }
+.route-target-card__logo.boss-logo-missing .boss-node-logo,
+.route-boss-preview-logo.boss-logo-missing .boss-node-logo { display: none; }
+.route-boss-preview-logo .boss-node-logo { width: 100%; height: 100%; object-fit: contain; object-position: center; }
+
+@media (max-width: 780px) {
+  .boss-match-screen .five-match-core-values { grid-template-columns: 1fr; }
+  .boss-match-screen .five-match-core-values > div { grid-template-columns: minmax(0,1fr) auto minmax(90px,auto); padding: 7px 9px; }
+  .boss-match-screen .five-match-core-values > div + div { border-left: 0; border-top: 1px solid #b7b1a5; }
+  .boss-match-screen .five-match-core-values small { grid-column: auto; text-align: right; white-space: nowrap; }
+}
