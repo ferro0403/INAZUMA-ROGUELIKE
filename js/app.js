@@ -772,7 +772,7 @@
     return resolvePlayerVisual(player).cardImageUrl || PLAYER_IMAGE_PLACEHOLDER;
   }
 
-  function compactPlayerCardMarkup(player, { equipment = null, equipmentInFooter = false, level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, selected = false, dataAttr = "", extraClass = "", detailLayout = "inline", tag = "button" } = {}) {
+  function compactPlayerCardMarkup(player, { equipment = null, equipmentInFooter = false, level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, selected = false, dataAttr = "", extraClass = "", detailLayout = "inline", tag = "button", trailingMarkup = "" } = {}) {
     const cardTag = tag === "article" ? "article" : "button";
     const cardAttributes = cardTag === "button" ? 'type="button"' : "";
     const playerRole = player.position || player.normalizedRole || "-";
@@ -796,6 +796,7 @@
         </div>
         ${equipmentInFooter ? "" : equipmentMarkup}
         <span class="player-corner player-level" aria-label="Livello ${escapeHtml(level)}">Lv ${escapeHtml(level)}</span>
+        ${trailingMarkup}
       </${cardTag}>`;
   }
 
@@ -3154,6 +3155,7 @@
     const equipment = showEquipment ? (player.equipment || rosterEntry(player.playerId)?.equippedItem || null) : null;
     return compactPlayerCardMarkup(player, {
       equipment,
+      equipmentInFooter: true,
       level: player.displayLevel ?? player.level ?? 0,
       overall: player.overall ?? player.finalOverall ?? "-",
       dataAttr: `data-boss-player="${escapeHtml(player.playerId)}" data-boss-side="${side}" ${readonly ? 'aria-label="Apri scheda ' + escapeHtml(player.name) + '"' : ""}`,
@@ -4245,19 +4247,23 @@
     const ariaLabel = player
       ? `Seleziona ${player.name}, ${slot.role}, overall ${player.overall}, livello ${player.displayLevel}`
       : `Seleziona slot vuoto ${slot.key}, ruolo ${slot.role}`;
+    if (player) {
+      return compactPlayerCardMarkup(player, {
+        equipment,
+        equipmentInFooter: true,
+        level: player.displayLevel,
+        overall: player.overall,
+        selected,
+        dataAttr: `data-five-slot="${escapeHtml(slot.key)}" aria-pressed="${selected ? "true" : "false"}" aria-label="${escapeHtml(ariaLabel)}"`,
+        extraClass: "five-slot run-tactical-card",
+        trailingMarkup: selected ? '<span class="five-slot-selected-label">SELEZIONATO</span>' : "",
+      });
+    }
     return `
-      <button type="button" class="five-slot run-tactical-card ${selected ? "selected" : ""} ${missing ? "missing" : ""} ${player ? rarityClass(player.category) : ""}" data-five-slot="${escapeHtml(slot.key)}" aria-pressed="${selected ? "true" : "false"}" aria-label="${escapeHtml(ariaLabel)}">
+      <button type="button" class="five-slot run-tactical-card missing" data-five-slot="${escapeHtml(slot.key)}" aria-pressed="${selected ? "true" : "false"}" aria-label="${escapeHtml(ariaLabel)}">
         <span class="five-slot-role">${escapeHtml(slot.role)}</span>
-        ${player ? `
-          <span class="five-slot-overall">${escapeHtml(player.overall)}</span>
-          <span class="five-slot-portrait"><img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" /></span>
-          <span class="five-slot-copy"><strong>${escapeHtml(player.name)}</strong><small>Lv ${escapeHtml(player.displayLevel)}</small></span>
-          ${fivePlayerEquipmentMarkup(equipment)}
-        ` : `
-          <span class="five-empty">+</span>
-          <span class="five-slot-copy"><strong>Slot vuoto</strong><small>Serve ${escapeHtml(slot.role)}</small></span>
-        `}
-        ${selected ? '<span class="five-slot-selected-label">SELEZIONATO</span>' : ""}
+        <span class="five-empty">+</span>
+        <span class="five-slot-copy"><strong>Slot vuoto</strong><small>Serve ${escapeHtml(slot.role)}</small></span>
       </button>`;
   }
 
