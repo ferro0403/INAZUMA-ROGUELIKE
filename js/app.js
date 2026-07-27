@@ -4877,10 +4877,10 @@
           ${inventoryEquipmentPitchMarkup(item, null, mode)}
         </section>
         <aside class="inventory-equipment-sidebar">
-          <section class="squad-bench-panel" aria-label="Riserve"><div class="squad-panel-head"><div><p class="eyebrow">Panchina</p><h3>Riserve</h3></div><span class="squad-bench-count">${Math.min((run.bench || []).length, 4)}/4</span></div><div class="bench-list squad-bench-list">${inventoryEquipmentBenchMarkup(item, null, mode)}</div></section>
           <section class="inventory-equipment-selection-summary" data-equipment-selection-summary aria-live="polite">${inventoryEquipmentSelectionSummary(null)}</section>
           <div class="inventory-modal-actions"><button type="button" class="btn btn-yellow" data-confirm-equipment-target disabled>CONFERMA</button><button type="button" class="btn btn-ghost" data-close-inventory-flow>ANNULLA</button></div>
         </aside>
+        <section class="squad-bench-panel inventory-equipment-bench" aria-label="Riserve"><div class="squad-panel-head"><div><p class="eyebrow">Panchina</p><h3>Riserve</h3></div><span class="squad-bench-count">${Math.min((run.bench || []).length, 4)}/4</span></div><div class="bench-list squad-bench-list">${inventoryEquipmentBenchMarkup(item, null, mode)}</div></section>
       </div>`,
       { closeable: true, className: "item-assignment-modal inventory-flow-modal inventory-equipment-selector-modal" }
     );
@@ -4971,16 +4971,16 @@
           ${inventoryEquipmentPitchMarkup(item, ui.inventoryEquipmentPlayerId, "equipment")}
         </section>
         <aside class="inventory-equipment-sidebar">
-          <section class="squad-bench-panel" aria-label="Riserve">
-            <div class="squad-panel-head"><div><p class="eyebrow">Panchina</p><h3>Riserve</h3></div><span class="squad-bench-count">${Math.min((run.bench || []).length, 4)}/4</span></div>
-            <div class="bench-list squad-bench-list">${inventoryEquipmentBenchMarkup(item, ui.inventoryEquipmentPlayerId, "equipment")}</div>
-          </section>
           <section class="inventory-equipment-selection-summary" data-equipment-selection-summary aria-live="polite">${inventoryEquipmentSelectionSummary(ui.inventoryEquipmentPlayerId)}</section>
           <div class="inventory-modal-actions">
             <button type="button" class="btn btn-yellow" data-confirm-equipment-target ${ui.inventoryEquipmentPlayerId ? "" : "disabled"}>CONFERMA</button>
             <button type="button" class="btn btn-ghost" data-close-inventory-flow>RINUNCIA</button>
           </div>
         </aside>
+        <section class="squad-bench-panel inventory-equipment-bench" aria-label="Riserve">
+          <div class="squad-panel-head"><div><p class="eyebrow">Panchina</p><h3>Riserve</h3></div><span class="squad-bench-count">${Math.min((run.bench || []).length, 4)}/4</span></div>
+          <div class="bench-list squad-bench-list">${inventoryEquipmentBenchMarkup(item, ui.inventoryEquipmentPlayerId, "equipment")}</div>
+        </section>
       </div>`,
       { closeable: true, className: "item-assignment-modal inventory-flow-modal inventory-equipment-selector-modal" }
     );
