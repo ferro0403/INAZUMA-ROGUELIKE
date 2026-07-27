@@ -31,5 +31,8 @@ assert.doesNotMatch(fiveRenderer, /fivePlayerEquipmentMarkup\(equipment\)/, '5v5
 
 assert.match(css, /:is\(\.five-screen,\.five-match-screen,\.boss-match-screen\) \.run-tactical-card\.tactical-player-card \.player-title strong \{[^}]*min-width: 0;[^}]*overflow: hidden;[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
 assert.match(css, /:is\(\.five-screen,\.five-match-screen,\.boss-match-screen\) \.run-tactical-card\.tactical-player-card \.player-equipment--footer \{[^}]*position: static;[^}]*flex: 0 0 22px;/s);
+assert.match(css, /\.five-match-screen \.five-match-card\.run-tactical-card \.player-equipment--footer \{[^}]*flex-basis: 26px;[^}]*width: 26px;[^}]*height: 26px;/s);
+assert.match(css, /\.five-match-screen \.five-match-card\.run-tactical-card \.player-equipment--footer \.item-icon,[^{]+\{[^}]*width: 20px;[^}]*height: 20px;/s);
+assert.match(css, /@media \(max-width: 780px\)[\s\S]*\.five-match-screen \.five-match-card\.run-tactical-card \.player-equipment--footer \{[^}]*flex-basis: 22px;[^}]*width: 22px;[^}]*height: 22px;/s);
 
 console.log('tactical-player-card-test: ok');

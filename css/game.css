@@ -7762,6 +7762,25 @@ body { background: var(--gradient-app); }
   background: transparent;
 }
 
+/* Keep the 5v5 field equipment badge at the exact Squad-card scale. */
+.five-match-screen .five-match-card.run-tactical-card .player-equipment--footer {
+  flex-basis: 26px;
+  width: 26px;
+  min-width: 26px;
+  height: 26px;
+  min-height: 26px;
+}
+.five-match-screen .five-match-card.run-tactical-card .player-equipment--footer .item-icon,
+.five-match-screen .five-match-card.run-tactical-card .player-equipment--footer .item-icon img {
+  width: 20px;
+  height: 20px;
+}
+.five-match-screen .five-match-card.run-tactical-card .player-equipment--footer .item-icon svg {
+  width: 15px;
+  height: 15px;
+  stroke-width: 3;
+}
+
 @media (max-width: 780px) {
   :is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-portrait-wrap {
     height: 64px;
@@ -7787,6 +7806,23 @@ body { background: var(--gradient-app); }
   :is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer .item-icon img {
     width: 13px;
     height: 13px;
+  }
+  .five-match-screen .five-match-card.run-tactical-card .player-equipment--footer {
+    flex-basis: 22px;
+    width: 22px;
+    min-width: 22px;
+    height: 22px;
+    min-height: 22px;
+  }
+  .five-match-screen .five-match-card.run-tactical-card .player-equipment--footer .item-icon,
+  .five-match-screen .five-match-card.run-tactical-card .player-equipment--footer .item-icon img {
+    width: 18px;
+    height: 18px;
+  }
+  .five-match-screen .five-match-card.run-tactical-card .player-equipment--footer .item-icon svg {
+    width: 13px;
+    height: 13px;
+    stroke-width: 3.3;
   }
 }
 :is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .bench-list { grid-template-columns:repeat(auto-fit,minmax(82px,96px)); justify-content:center; align-items:start; gap:14px 12px; }
