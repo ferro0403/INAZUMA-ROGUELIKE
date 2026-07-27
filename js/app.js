@@ -3603,15 +3603,14 @@
     const equipment = side === "user" ? (player.equipment || rosterEntry(player.playerId)?.equippedItem) : null;
     const equipmentKey = equipment ? `${equipment.instanceId || equipment.id || "item"}:${equipment.id || ""}` : "";
     const key = fiveMatchCacheKey("card", side, player.playerId, player.name, player.position, player.overall, player.displayLevel, player.category, playerPortraitUrl(player), equipmentKey);
-    return memoizedFiveMatchMarkup(key, () => `
-      <button type="button" class="five-match-card five-match-card--${side} ${rarityClass(player.category)}" data-five-match-player="${escapeHtml(player.playerId)}" data-five-match-side="${side}" aria-label="Apri scheda ${escapeHtml(player.name)}">
-        <span class="five-match-card-role">${escapeHtml(player.position)}</span>
-        <span class="five-match-card-overall">${escapeHtml(player.overall ?? "-")}</span>
-        <img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" decoding="async" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} />
-        <strong>${escapeHtml(shortName(player.name))}</strong>
-        <small>Lv ${escapeHtml(player.displayLevel ?? 0)}</small>
-        ${fivePlayerEquipmentMarkup(equipment)}
-      </button>`);
+    return memoizedFiveMatchMarkup(key, () => compactPlayerCardMarkup(player, {
+      equipment,
+      equipmentInFooter: true,
+      level: player.displayLevel ?? 0,
+      overall: player.overall ?? "-",
+      dataAttr: `data-five-match-player="${escapeHtml(player.playerId)}" data-five-match-side="${side}" aria-label="Apri scheda ${escapeHtml(player.name)}"`,
+      extraClass: `five-match-card five-match-card--${side} run-tactical-card`,
+    }));
   }
 
   function fiveMatchField(playersBySlot, formationId, side, mobile = false) {
@@ -3819,7 +3818,7 @@
             <div class="boss-match-vs" aria-label="Presentazione squadre">
               <div class="boss-match-team"><span class="boss-match-logo">${meta.user.logoUrl ? `<img src="${escapeHtml(meta.user.logoUrl)}" alt="${escapeHtml(meta.user.name)}" />` : "⚡"}</span><strong>${escapeHtml(meta.user.name)}</strong><small>${escapeHtml(meta.user.formation)} · Lv ${escapeHtml(meta.user.level)}${userAverage ? ` · OVR ${userAverage}` : ""}</small></div>
               <span class="boss-match-vs-badge">VS</span>
-              <div class="boss-match-team boss-match-team--boss"><span class="boss-match-logo">${meta.boss.logoUrl ? `<img src="${escapeHtml(meta.boss.logoUrl)}" alt="${escapeHtml(meta.boss.name)}" />` : "⚽"}</span><strong>${escapeHtml(meta.boss.name)}</strong><small>${escapeHtml(meta.boss.formation)} · Boss Lv ${escapeHtml(meta.boss.level)}${bossAverage ? ` · OVR ${bossAverage}` : ""}</small><em>${escapeHtml(bossStatusLabel)}</em></div>
+              <div class="boss-match-team boss-match-team--boss"><span class="boss-match-logo">${meta.boss.logoUrl ? `<img src="${escapeHtml(meta.boss.logoUrl)}" alt="${escapeHtml(meta.boss.name)}" />` : "⚽"}</span><strong>${escapeHtml(meta.boss.name)}</strong><small>${escapeHtml(meta.boss.formation)} · Boss Lv ${escapeHtml(meta.boss.level)}${bossAverage ? ` · OVR ${bossAverage}` : ""}</small></div>
             </div>
           </section>
 
@@ -4235,9 +4234,6 @@
   }
 
 
-  function fivePlayerEquipmentMarkup(equipment) {
-    return equipmentBadgeMarkup(equipment, "five-player-equipment");
-  }
 
   function fiveSlotCard(slot, playerId, status) {
     const player = playerId ? resolvedRosterPlayer(playerId) : null;

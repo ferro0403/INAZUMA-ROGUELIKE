@@ -29,7 +29,7 @@ assert.match(fiveRenderer, /compactPlayerCardMarkup\(player/);
 assert.match(fiveRenderer, /equipmentInFooter: true/);
 assert.doesNotMatch(fiveRenderer, /fivePlayerEquipmentMarkup\(equipment\)/, '5v5 must not inject a position-specific equipment badge');
 
-assert.match(css, /:is\(\.five-screen,\.boss-match-screen\) \.run-tactical-card\.tactical-player-card \.player-title strong \{[^}]*min-width: 0;[^}]*overflow: hidden;[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
-assert.match(css, /:is\(\.five-screen,\.boss-match-screen\) \.run-tactical-card\.tactical-player-card \.player-equipment--footer \{[^}]*position: static;[^}]*flex: 0 0 22px;/s);
+assert.match(css, /:is\(\.five-screen,\.five-match-screen,\.boss-match-screen\) \.run-tactical-card\.tactical-player-card \.player-title strong \{[^}]*min-width: 0;[^}]*overflow: hidden;[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
+assert.match(css, /:is\(\.five-screen,\.five-match-screen,\.boss-match-screen\) \.run-tactical-card\.tactical-player-card \.player-equipment--footer \{[^}]*position: static;[^}]*flex: 0 0 22px;/s);
 
 console.log('tactical-player-card-test: ok');
