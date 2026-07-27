@@ -1015,9 +1015,6 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .five-slot img { width: 58px; height: 58px; object-fit: contain; }
 .five-slot strong, .five-roster-card strong { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .five-slot-role { display: flex; justify-content: center; margin-bottom: 5px; }
-.five-player-equipment { position: absolute; left: 6px; bottom: 6px; z-index: 2; display: inline-grid; place-items: center; width: 28px; height: 28px; border: 1px solid rgba(255,255,255,.32); border-radius: 9px; background: rgba(5,7,11,.76); color: var(--yellow); box-shadow: 0 4px 10px rgba(0,0,0,.22); pointer-events: none; box-sizing: border-box; }
-.five-player-equipment .item-icon { width: 18px; height: 18px; border: 0; border-radius: 0; background: transparent; }
-.five-player-equipment .item-icon svg { width: 16px; height: 16px; stroke-width: 2.35; }
 .five-empty { display: grid; place-items: center; width: 58px; height: 58px; margin: 0 auto 5px; border: 2px dashed rgba(255,255,255,.45); border-radius: 50%; color: var(--yellow); font-size: 2rem; }
 .role-token { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border: 1px solid rgba(255,255,255,.15); border-radius: 999px; background: rgba(54,169,255,.12); color: #d9ecff; font-size: .72rem; font-weight: 950; }
 .role-GK { background: rgba(255,211,79,.14); color: #ffe28a; }
@@ -1050,10 +1047,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .five-pitch-line { gap: 8px; }
   .five-slot { width: clamp(96px, 28vw, 118px); min-height: 124px; padding: 8px 5px; }
   .five-slot img, .five-empty { width: 48px; height: 48px; }
-  .five-screen .five-slot > .five-player-equipment { top: 8px; left: 5px; bottom: auto; width: 22px; height: 22px; border-radius: 7px; }
-  .five-player-equipment .item-icon { width: 15px; height: 15px; }
-  .five-player-equipment .item-icon svg { width: 13px; height: 13px; }
-  .five-roster-list { max-height: none; }
+.five-roster-list { max-height: none; }
 }
 
 /* Shared rarity treatment for every player card variant. Debole keeps the original dark tone. */
@@ -1411,10 +1405,7 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
   .five-match-line[data-row-count="2"] { --five-mobile-card-width: 96px; }
   .five-match-card { box-sizing: border-box; width: var(--five-mobile-card-width, 96px); min-width: var(--five-mobile-card-width, 96px); max-width: var(--five-mobile-card-width, 96px); height: 92px; min-height: 92px; max-height: 92px; padding: 5px 3px 6px; border-radius: 11px; overflow: visible; }
   .five-match-card img { width: 38px; height: 38px; }
-  .five-match-screen .five-match-field-side--mobile.five-match-field-side--user .five-match-card .five-player-equipment { top: auto; right: auto; bottom: 8px; left: 8px; width: 22px; height: 22px; padding: 2px; border-radius: 7px; }
-  .five-match-card .five-player-equipment .item-icon { width: 15px; height: 15px; border: 0; background: transparent; }
-  .five-match-card .five-player-equipment .item-icon svg { width: 13px; height: 13px; }
-  .five-match-card strong { font-size: clamp(.56rem, 2.1vw, .64rem); }
+.five-match-card strong { font-size: clamp(.56rem, 2.1vw, .64rem); }
   .five-match-card small { box-sizing: border-box; width: 100%; padding-left: 26px; text-align: center; }
   .five-match-controls { display: grid; grid-template-columns: 1fr; width: 100%; max-width: 100%; box-sizing: border-box; gap: 6px; padding: 8px 10px 12px; }
   .five-match-controls > .btn-yellow { min-width: 0; width: 100%; min-height: 44px; font-size: .9rem; }
@@ -2363,41 +2354,7 @@ body { background: var(--gradient-app); }
     background-attachment: scroll;
   }
 
-  .five-match-screen .five-match-field-side--user .five-match-card .five-player-equipment {
-    top: auto;
-    right: auto;
-    bottom: 7px;
-    left: 7px;
-    width: 26px;
-    height: 26px;
-    min-width: 26px;
-    min-height: 26px;
-    padding: 2px;
-    border-radius: 8px;
-    z-index: 3;
-  }
-
-  .five-match-screen .five-match-field-side--user .five-match-card .five-player-equipment .item-icon {
-    width: 17px;
-    height: 17px;
-    border: 0;
-    background: transparent;
-  }
-
-  .five-match-screen .five-match-field-side--user .five-match-card .five-player-equipment .item-icon img {
-    width: 14px;
-    height: 14px;
-    max-width: 55%;
-    max-height: 55%;
-    object-fit: contain;
-  }
-
-  .five-match-screen .five-match-field-side--user .five-match-card .five-player-equipment .item-icon svg {
-    width: 14px;
-    height: 14px;
-  }
-
-  .boss-match-field [data-boss-team][hidden] {
+.boss-match-field [data-boss-team][hidden] {
     display: none;
   }
 
@@ -3544,6 +3501,7 @@ body { background: var(--gradient-app); }
   height: auto;
   display: grid;
   grid-template-columns: minmax(0, 1.5fr) minmax(300px, .65fr);
+  grid-template-rows: auto auto;
   gap: 14px;
   padding: 0;
   overflow: visible;
@@ -3554,8 +3512,10 @@ body { background: var(--gradient-app); }
 .inventory-equipment-selector-modal .squad-bench-panel .squad-panel-head h3 { margin: 0; color: #111216; font-size: 1.05rem; text-transform: uppercase; }
 .inventory-equipment-field .pitch { min-height: 590px; height: 590px; padding: 24px 34px; }
 .inventory-equipment-sidebar { min-width: 0; display: grid; align-content: start; gap: 11px; }
+.inventory-equipment-bench { grid-column: 1 / -1; width: 100%; min-width: 0; box-sizing: border-box; }
 .inventory-equipment-selector-modal .squad-bench-panel { padding: 11px; }
-.inventory-equipment-selector-modal .squad-bench-list { grid-template-columns: repeat(2, minmax(0, 92px)); }
+.inventory-equipment-selector-modal .inventory-equipment-bench .squad-bench-list { width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); justify-items: center; gap: 10px; }
+.inventory-equipment-selector-modal .inventory-equipment-bench .inventory-tactical-slot { width: 100%; max-width: 96px; }
 .inventory-tactical-slot { min-width: 0; display: grid; place-items: center; gap: 4px; }
 .inventory-tactical-slot.is-unavailable { opacity: .38; filter: grayscale(.8); }
 .inventory-target-reason { max-width: 88px; color: #ffe68b; font-size: .52rem; font-weight: 900; line-height: 1.1; text-align: center; }
@@ -3670,9 +3630,11 @@ body { background: var(--gradient-app); }
   .inventory-equipment-field .pitch { min-height: 470px; height: 470px; padding: 18px 7px; }
   .inventory-equipment-field .pitch-row { --pitch-card-size: clamp(54px, 16.5vw, 66px); gap: clamp(4px, 1.2vw, 8px); }
   .inventory-equipment-sidebar { grid-row: 2; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); align-items: stretch; gap: 8px; }
+  .inventory-equipment-bench { grid-row: 3; }
   .inventory-equipment-selector-modal .squad-bench-panel { padding: 8px; }
-  .inventory-equipment-selector-modal .squad-bench-list { grid-template-columns: repeat(2, minmax(0, 82px)); gap: 10px 8px; }
-  .inventory-equipment-selector-modal .squad-bench-list .squad-player-card { --pitch-card-size: 82px; width: 82px; max-width: 82px; min-height: 82px; }
+  .inventory-equipment-selector-modal .inventory-equipment-bench .squad-bench-list { width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(3px, 1.2vw, 7px); padding-inline: 0; }
+  .inventory-equipment-selector-modal .inventory-equipment-bench .inventory-tactical-slot { width: 100%; max-width: 82px; min-width: 0; }
+  .inventory-equipment-selector-modal .inventory-equipment-bench .squad-player-card { --pitch-card-size: 100%; width: 100%; max-width: 82px; min-height: 82px; }
   .inventory-equipment-selector-modal .squad-player-card { max-width: var(--pitch-card-size, 66px); min-height: 74px; border-width: 2px; }
   .inventory-equipment-selector-modal .squad-player-card .player-portrait-wrap { height: 47px; padding: 4px 3px 0; }
   .inventory-equipment-selector-modal .squad-player-card .player-title strong { font-size: .52rem; }
@@ -6344,21 +6306,6 @@ body { background: var(--gradient-app); }
   transform: translateX(-50%);
   white-space: nowrap;
 }
-.five-screen .five-player-equipment {
-  left: 3px;
-  bottom: 3px;
-  width: 21px;
-  height: 21px;
-  border: 2px solid var(--five-editor-ink);
-  border-radius: 0;
-  background: #fff;
-  color: var(--five-editor-ink);
-  box-shadow: none;
-}
-.five-screen .five-player-equipment .item-icon,
-.five-screen .five-player-equipment .item-icon img { width: 16px; height: 16px; object-fit: contain; }
-.five-screen .five-player-equipment .item-icon svg { width: 13px; height: 13px; }
-
 .five-screen .five-validation {
   min-height: 58px;
   display: grid;
@@ -6586,11 +6533,7 @@ body { background: var(--gradient-app); }
   .five-screen .five-slot-overall { right: 2px; }
   .five-screen .five-empty { width: 34px; height: 34px; margin-top: 11px; border-width: 1px; font-size: 1.25rem; }
   .five-slot-selected-label { bottom: -10px; padding: 2px 3px; border-width: 1px; font-size: .31rem; }
-  .five-screen .five-player-equipment { left: 2px; bottom: 2px; width: 18px; height: 18px; border-width: 1px; }
-  .five-screen .five-player-equipment .item-icon,
-  .five-screen .five-player-equipment .item-icon img { width: 14px; height: 14px; }
-  .five-screen .five-validation { min-height: 49px; grid-template-columns: 30px minmax(0,1fr); gap: 7px; padding: 6px 7px; border-width: 2px; box-shadow: 3px 3px 0 rgba(17,18,22,.14); }
-  .five-validation-mark { width: 28px; height: 28px; border-width: 1px; font-size: .8rem; }
+.five-validation-mark { width: 28px; height: 28px; border-width: 1px; font-size: .8rem; }
   .five-screen .five-validation strong { font-size: .67rem; }
   .five-screen .five-validation p { font-size: .53rem; }
   .five-editor-actions { display: grid; grid-template-columns: 1fr; }
@@ -6751,17 +6694,6 @@ body { background: var(--gradient-app); }
 }
 .five-screen .five-slot.run-tactical-card .five-slot-role { left: 3px; background: #fff; }
 .five-screen .five-slot.run-tactical-card .five-slot-overall { right: 3px; background: var(--unified-card-yellow); }
-.five-screen .five-slot.run-tactical-card .five-player-equipment {
-  z-index: 8;
-  left: 3px;
-  bottom: 3px;
-  width: 22px;
-  height: 22px;
-  border: 2px solid var(--unified-card-ink);
-  border-radius: 2px;
-  background: var(--unified-card-yellow);
-  box-shadow: 2px 2px 0 rgba(17,18,22,.24);
-}
 .five-screen .five-slot.run-tactical-card.selected {
   z-index: 10;
   border-color: var(--unified-card-yellow);
@@ -6898,17 +6830,7 @@ body { background: var(--gradient-app); }
   .boss-match-screen .boss-match-card.run-tactical-card .player-role { left: 2px; }
   .five-screen .five-slot.run-tactical-card .five-slot-overall,
   .boss-match-screen .boss-match-card.run-tactical-card .player-overall { right: 2px; }
-  .five-screen .five-slot.run-tactical-card .five-player-equipment,
-  .boss-match-screen .boss-match-card.run-tactical-card .player-equipment {
-    left: 2px;
-    bottom: 2px;
-    width: 17px;
-    min-width: 17px;
-    height: 17px;
-    min-height: 17px;
-    border-width: 1px;
-  }
-  .five-screen .five-slot.run-tactical-card.selected {
+.five-screen .five-slot.run-tactical-card.selected {
     outline-width: 2px;
     outline-offset: 1px;
     box-shadow: 0 0 0 4px var(--unified-card-yellow), 3px 5px 0 rgba(5,18,12,.55);
@@ -7738,6 +7660,8 @@ body { background: var(--gradient-app); }
 :is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-level { display: none; }
 :is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer {
   position: static;
+  box-sizing: border-box;
+  overflow: hidden;
   flex: 0 0 22px;
   width: 22px;
   min-width: 22px;
@@ -7760,25 +7684,6 @@ body { background: var(--gradient-app); }
   border: 0;
   object-fit: contain;
   background: transparent;
-}
-
-/* Keep the 5v5 field equipment badge at the exact Squad-card scale. */
-.five-match-screen .five-match-card.run-tactical-card .player-equipment--footer {
-  flex-basis: 26px;
-  width: 26px;
-  min-width: 26px;
-  height: 26px;
-  min-height: 26px;
-}
-.five-match-screen .five-match-card.run-tactical-card .player-equipment--footer .item-icon,
-.five-match-screen .five-match-card.run-tactical-card .player-equipment--footer .item-icon img {
-  width: 20px;
-  height: 20px;
-}
-.five-match-screen .five-match-card.run-tactical-card .player-equipment--footer .item-icon svg {
-  width: 15px;
-  height: 15px;
-  stroke-width: 3;
 }
 
 @media (max-width: 780px) {
@@ -7806,23 +7711,6 @@ body { background: var(--gradient-app); }
   :is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer .item-icon img {
     width: 13px;
     height: 13px;
-  }
-  .five-match-screen .five-match-card.run-tactical-card .player-equipment--footer {
-    flex-basis: 22px;
-    width: 22px;
-    min-width: 22px;
-    height: 22px;
-    min-height: 22px;
-  }
-  .five-match-screen .five-match-card.run-tactical-card .player-equipment--footer .item-icon,
-  .five-match-screen .five-match-card.run-tactical-card .player-equipment--footer .item-icon img {
-    width: 18px;
-    height: 18px;
-  }
-  .five-match-screen .five-match-card.run-tactical-card .player-equipment--footer .item-icon svg {
-    width: 13px;
-    height: 13px;
-    stroke-width: 3.3;
   }
 }
 :is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .bench-list { grid-template-columns:repeat(auto-fit,minmax(82px,96px)); justify-content:center; align-items:start; gap:14px 12px; }
