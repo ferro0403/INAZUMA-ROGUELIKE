@@ -326,11 +326,11 @@
       .replaceAll("'", "&#039;");
   }
 
-  function toast(message) {
+  function toast(message, type = "success") {
     const element = document.createElement("div");
-    element.className = "toast";
+    element.className = `toast toast--${type === "error" ? "error" : "success"}`;
     element.setAttribute("role", "status");
-    element.innerHTML = `<span class="toast-mark" aria-hidden="true">✓</span><span class="toast-copy">${escapeHtml(message)}</span>`;
+    element.innerHTML = `<span class="toast-mark" aria-hidden="true">${type === "error" ? "!" : "✓"}</span><span class="toast-copy">${escapeHtml(message)}</span>`;
     toastRoot.appendChild(element);
     setTimeout(() => element.remove(), 3200);
   }
@@ -2882,7 +2882,6 @@
       <div class="pull-choice-actions" id="${panelId}" role="group" aria-label="Conferma scelta per ${escapeHtml(player.name)}">
         <div class="button-row pull-choice-action-row">
           <button type="button" class="btn btn-primary" data-pull-action="confirm">SÌ</button>
-          <button type="button" class="btn" data-pull-action="cancel">NO</button>
           <button type="button" class="btn btn-yellow" data-pull-action="detail">SCHEDA</button>
         </div>
       </div>`;
@@ -2941,12 +2940,6 @@
       if (!actionButton) {
         selectedPullPlayerId = option.dataset.playerId;
         updateInlinePullSelection(choiceGrid, selectedPullPlayerId);
-        return;
-      }
-      if (actionButton.dataset.pullAction === "cancel") {
-        selectedPullPlayerId = null;
-        updateInlinePullSelection(choiceGrid, selectedPullPlayerId);
-        option.querySelector("[data-player-id]")?.focus({ preventScroll: true });
         return;
       }
       if (actionButton.dataset.pullAction === "detail") {
@@ -3960,7 +3953,7 @@
       match.pendingPostMatchAction = { type: "map", toast: "Vittoria: tutta la rosa guadagna 0,5 livelli" };
     } else {
       global.RunState.restoreAfterLoss(run, match.previousNodeId);
-      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: `Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Torni al nodo precedente.` };
+      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : `Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Torni al nodo precedente.` };
     }
     run.phase = "match";
     run.activeMatch = match;
@@ -4000,7 +3993,7 @@
       };
     } else {
       global.RunState.restoreAfterLoss(run, match.previousNodeId);
-      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: `Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Torni al nodo precedente.` };
+      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : `Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Torni al nodo precedente.` };
     }
     run.phase = "match";
     run.activeMatch = match;
@@ -4806,7 +4799,22 @@
       </div>`,
       { closeable: false, className: "inventory-flow-modal inventory-confirmation-modal" }
     );
-    document.getElementById("confirm-inventory-action")?.addEventListener("click", onConfirm);
+    const confirmButton = document.getElementById("confirm-inventory-action");
+    let submitting = false;
+    confirmButton?.addEventListener("click", async () => {
+      if (submitting) return;
+      submitting = true;
+      confirmButton.disabled = true;
+      confirmButton.setAttribute("aria-busy", "true");
+      try {
+        await onConfirm?.();
+      } catch (error) {
+        submitting = false;
+        confirmButton.disabled = false;
+        confirmButton.removeAttribute("aria-busy");
+        toast(error?.message || "Operazione non riuscita. Riprova.", "error");
+      }
+    });
     document.getElementById("cancel-inventory-action")?.addEventListener("click", () => {
       if (onCancel) onCancel();
       else closeModal();
@@ -5039,18 +5047,40 @@
         onConfirm: () => unequipPlayerItem(playerId, { ...options, confirmed: true }),
       });
     }
-    run.inventory.push(entry.equippedItem);
+    const equippedItem = entry.equippedItem;
+    run.inventory.push(equippedItem);
     entry.equippedItem = null;
-    global.RunState.save(run);
+    try {
+      global.RunState.save(run);
+      (options.render || renderInventory)({ keepScroll: true });
+    } catch (error) {
+      entry.equippedItem = equippedItem;
+      const restoredIndex = run.inventory.lastIndexOf(equippedItem);
+      if (restoredIndex >= 0) run.inventory.splice(restoredIndex, 1);
+      throw new Error("Impossibile rimuovere l'oggetto. Riprova.", { cause: error });
+    }
+    closeModal();
     toast("Oggetto riportato nell'inventario");
-    (options.render || renderInventory)();
   }
 
   function renderGameOver() {
+    const bossReached = Math.min(Number(run.bossIndex || 0) + 1, seasonDb.bossOrder.length);
+    const wins = Number(run.statistics?.winsTotal || 0);
     app.innerHTML = `
       <main class="gameover-screen">
-        <div><p class="eyebrow">0 vite rimaste</p><h1>Run terminata</h1><p class="muted">Per riprovare devi ricominciare dalla scelta del modulo.</p>
-        <div class="button-row"><button type="button" class="btn btn-yellow" id="restart-run">Nuova run</button><button type="button" class="btn" id="home">Menu</button></div></div>
+        <section class="gameover-card" aria-labelledby="gameover-title">
+          <div class="gameover-mark" aria-hidden="true">×</div>
+          <p class="eyebrow">0 VITE RIMASTE</p>
+          <h1 id="gameover-title">RUN TERMINATA</h1>
+          <p class="gameover-copy">La squadra non può più continuare questa run.</p>
+          <dl class="gameover-summary">
+            <div><dt>Boss raggiunto</dt><dd>${escapeHtml(bossReached)}/${escapeHtml(seasonDb.bossOrder.length)}</dd></div>
+            <div><dt>Livello</dt><dd>${escapeHtml(run.teamLevel)}</dd></div>
+            <div><dt>OVR</dt><dd>${escapeHtml(averageOverall())}</dd></div>
+            <div><dt>Partite vinte</dt><dd>${escapeHtml(wins)}</dd></div>
+          </dl>
+          <div class="gameover-actions"><button type="button" class="btn btn-yellow" id="restart-run">NUOVA RUN</button><button type="button" class="btn" id="home">MENU</button></div>
+        </section>
       </main>`;
     resetRenderedViewScroll();
     document.getElementById("restart-run").addEventListener("click", () => {
@@ -5224,10 +5254,9 @@
     const summaries = global.HallOfFameStorage.listSummaries();
     const ordinal = summaries.findIndex((item) => item.hallTeamId === team.hallTeamId) + 1;
     run.phase = "final-summary"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
-    app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><div><p class="eyebrow">CAMPIONI DELLA SEASON 1</p><h1>${escapeHtml(team.teamName)}</h1><p class="final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span><span>Seed ${escapeHtml(compactSeed(team.seed))}</span><span>#${escapeHtml(ordinal || '-')} Albo d’Oro</span></p></div><span class="final-summary-star" aria-hidden="true">★</span></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3>${championFiveVFiveMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel"><button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn" id="review-team">Rivedi la squadra</button>${sectionRootButton("finalSummary")}<button class="btn btn-primary" id="final-new-run">Nuova run</button></aside></section></main>`;
+    app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><div><p class="eyebrow">CAMPIONI DELLA SEASON 1</p><h1>${escapeHtml(team.teamName)}</h1><p class="final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span><span>Seed ${escapeHtml(compactSeed(team.seed))}</span><span>#${escapeHtml(ordinal || '-')} Albo d’Oro</span></p></div><span class="final-summary-star" aria-hidden="true">★</span></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3>${championFiveVFiveMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel"><button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn btn-primary" id="final-new-run">Nuova run</button>${sectionRootButton("finalSummary")}</aside></section></main>`;
     resetRenderedViewScroll(); bindFinalTabs(); bindHallPlayerDetails(team);
     document.getElementById("open-current-hall").addEventListener("click", () => renderHallOfFameDetail(team.hallTeamId));
-    document.getElementById("review-team").addEventListener("click", () => document.querySelector('[data-final-tab="team"]').click());
     bindSectionRootNav();
     document.getElementById("final-new-run").addEventListener("click", startNewRunFromHome);
   }
