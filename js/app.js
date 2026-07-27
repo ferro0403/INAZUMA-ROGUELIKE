@@ -4250,13 +4250,12 @@
         level: player.displayLevel,
         overall: player.overall,
         selected,
-        dataAttr: `data-five-slot="${escapeHtml(slot.key)}" aria-pressed="${selected ? "true" : "false"}" aria-label="${escapeHtml(ariaLabel)}"`,
+        dataAttr: `data-five-slot="${escapeHtml(slot.key)}" aria-pressed="${selected ? "true" : "false"}" aria-selected="${selected ? "true" : "false"}" aria-label="${escapeHtml(ariaLabel)}"`,
         extraClass: "five-slot run-tactical-card",
-        trailingMarkup: selected ? '<span class="five-slot-selected-label">SELEZIONATO</span>' : "",
       });
     }
     return `
-      <button type="button" class="five-slot run-tactical-card missing" data-five-slot="${escapeHtml(slot.key)}" aria-pressed="${selected ? "true" : "false"}" aria-label="${escapeHtml(ariaLabel)}">
+      <button type="button" class="five-slot run-tactical-card missing" data-five-slot="${escapeHtml(slot.key)}" aria-pressed="${selected ? "true" : "false"}" aria-selected="${selected ? "true" : "false"}" aria-label="${escapeHtml(ariaLabel)}">
         <span class="five-slot-role">${escapeHtml(slot.role)}</span>
         <span class="five-empty">+</span>
         <span class="five-slot-copy"><strong>Slot vuoto</strong><small>Serve ${escapeHtml(slot.role)}</small></span>
@@ -4275,6 +4274,23 @@
         <span class="five-roster-copy"><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(player.position)} · OVR ${escapeHtml(player.overall)} · Lv ${escapeHtml(player.displayLevel)}</small></span>
         <span class="five-roster-state">${assignedSlot ? escapeHtml(assignedSlot) : "SCEGLI"}</span>
       </button>`;
+  }
+
+  function syncFiveSlotSelection(root = document) {
+    const selectedSlot = ui.fiveVFiveSelectedSlot;
+    root.querySelectorAll("[data-five-slot]").forEach((slotButton) => {
+      const selected = Boolean(selectedSlot) && slotButton.dataset.fiveSlot === selectedSlot;
+      slotButton.classList.toggle("selected", selected);
+      slotButton.setAttribute("aria-pressed", selected ? "true" : "false");
+      slotButton.setAttribute("aria-selected", selected ? "true" : "false");
+      slotButton.querySelectorAll(".five-slot-selected-label").forEach((label) => label.remove());
+      if (selected) {
+        const label = document.createElement("span");
+        label.className = "five-slot-selected-label";
+        label.textContent = "SELEZIONATO";
+        slotButton.append(label);
+      }
+    });
   }
 
   function renderFiveVFive(options = {}) {
@@ -4353,6 +4369,7 @@
       </main>`;
     resetRenderedViewScroll();
     bindSectionRootNav();
+    syncFiveSlotSelection();
 
     document.querySelectorAll("[data-five-formation]").forEach((button) => button.addEventListener("click", () => {
       global.FiveVFive.changeFormation(run, button.dataset.fiveFormation, fiveRoleForPlayerId);
@@ -4363,9 +4380,7 @@
     const refreshFiveSelection = () => {
       const currentStatus = fiveVFiveStatus();
       const currentFormation = currentStatus.formation;
-      document.querySelectorAll("[data-five-slot]").forEach((slotButton) => {
-        slotButton.classList.toggle("selected", slotButton.dataset.fiveSlot === ui.fiveVFiveSelectedSlot);
-      });
+      syncFiveSlotSelection();
       document.querySelectorAll("[data-five-filter]").forEach((filterButton) => {
         const active = filterButton.dataset.fiveFilter === ui.fiveVFiveRoleFilter;
         filterButton.classList.toggle("active", active);
@@ -4423,7 +4438,7 @@
     const onFiveSlotClick = (event) => {
       event.preventDefault();
       const button = event.currentTarget;
-      ui.fiveVFiveSelectedSlot = button.dataset.fiveSlot;
+      ui.fiveVFiveSelectedSlot = ui.fiveVFiveSelectedSlot === button.dataset.fiveSlot ? null : button.dataset.fiveSlot;
       const role = formation.slots.find((slot) => slot.key === ui.fiveVFiveSelectedSlot)?.role;
       ui.fiveVFiveRoleFilter = role || "all";
       refreshFiveSelection();
@@ -4443,6 +4458,7 @@
       event.preventDefault();
       try {
         global.FiveVFive.assign(run, ui.fiveVFiveSelectedSlot, playerButton.dataset.fivePlayer, fiveRoleForPlayerId);
+        ui.fiveVFiveSelectedSlot = null;
         global.RunState.save(run);
         toast("Giocatore assegnato alla formazione 5v5");
         refreshFiveAfterAssignment();
@@ -4454,6 +4470,7 @@
     document.getElementById("clear-five-slot").addEventListener("click", (event) => {
       event.preventDefault();
       global.FiveVFive.clearSlot(run, ui.fiveVFiveSelectedSlot);
+      ui.fiveVFiveSelectedSlot = null;
       global.RunState.save(run);
       refreshFiveAfterAssignment();
     });
