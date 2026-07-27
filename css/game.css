@@ -38,7 +38,6 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
 
 .app-shell { min-height: 100vh; }
 
-.loading-screen,
 .hero-screen,
 .gameover-screen {
   min-height: 100vh;
@@ -48,8 +47,17 @@ button:disabled { cursor: not-allowed; opacity: 0.5; }
   padding: 28px;
 }
 
-.ball-loader { font-size: 58px; animation: bounce 1s ease-in-out infinite alternate; }
-@keyframes bounce { to { transform: translateY(-14px) rotate(18deg); } }
+.loading-screen { min-height: 100vh; display: grid; place-items: center; padding: 32px; overflow: hidden; color: #111216; text-align: center; background: linear-gradient(rgba(255,253,246,.88),rgba(255,250,232,.94)), url("../assets/home/inazuma-stadium-mobile-light.jpeg") center/cover no-repeat; }
+.loading-brand { width: min(82vw, 390px); display: grid; justify-items: center; }
+.loading-logo { display: block; width: min(58vw, 250px); aspect-ratio: 1; object-fit: cover; border: 3px solid #111216; border-radius: 22%; box-shadow: 9px 9px 0 rgba(17,18,22,.18); }
+.loading-accent { width: 74px; height: 7px; margin: 25px 0 13px; background: #ffd21f; transform: skewX(-28deg); }
+.loading-screen h1 { margin: 0; color: #111216; font-size: clamp(1.65rem,7vw,2.6rem); line-height: .95; letter-spacing: -.04em; }
+.loading-screen p { margin: 14px 0 17px; color: #69665f; font-size: .92rem; font-weight: 750; }
+.loading-indicator { width: min(220px,65vw); height: 9px; overflow: hidden; border: 2px solid #111216; background: #fffdf6; }
+.loading-indicator span { display: block; width: 42%; height: 100%; background: #ffd21f; animation: loading-sweep 1.15s ease-in-out infinite alternate; }
+@keyframes loading-sweep { from { transform: translateX(-10%); } to { transform: translateX(148%); } }
+@media (min-width: 700px) { .loading-screen { background-image: linear-gradient(rgba(255,253,246,.88),rgba(255,250,232,.94)),url("../assets/home/inazuma-stadium-desktop-light.jpeg"); } }
+@media (prefers-reduced-motion: reduce) { .loading-indicator span { animation-duration: 2.4s; } }
 
 h1, h2, h3, p { margin-top: 0; }
 h1 { font-size: clamp(2rem, 7vw, 4.5rem); letter-spacing: -0.04em; }
@@ -1122,7 +1130,6 @@ button.item-card:hover { border-color: var(--yellow); transform: translateY(-2px
 .boss-match-vs { position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); gap: 12px; align-items: center; }
 .boss-match-team { min-width: 0; display: grid; justify-items: center; gap: 5px; padding: 10px; border: 1px solid rgba(92,130,177,.24); border-radius: 18px; background: rgba(5,7,11,.22); text-align: center; }
 .boss-match-team--boss { border-color: rgba(255,91,98,.42); background: linear-gradient(180deg, rgba(255,91,98,.16), rgba(5,7,11,.22)); }
-.boss-match-team em { color: var(--yellow); font-size: .72rem; font-style: normal; font-weight: 950; text-transform: uppercase; }
 .boss-match-team strong { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .boss-match-team small { color: var(--muted); font-weight: 850; }
 .boss-match-logo { display: grid; place-items: center; width: 58px; height: 58px; border: 1px solid var(--line); border-radius: 16px; background: #07172c; font-size: 2rem; }
@@ -5001,15 +5008,6 @@ body { background: var(--gradient-app); }
 .boss-match-logo img { width: 40px; height: 40px; }
 .boss-match-team strong { grid-area: name; align-self: end; color: var(--boss-ink); }
 .boss-match-team small { grid-area: meta; align-self: start; color: var(--boss-copy); }
-.boss-match-team em {
-  position: absolute;
-  top: 5px;
-  right: 5px;
-  padding: 2px 5px;
-  border: 1px solid var(--boss-ink);
-  background: var(--boss-yellow);
-  color: var(--boss-ink);
-}
 .boss-match-team--boss { position: relative; }
 .boss-match-vs-badge {
   width: 40px;
@@ -5278,7 +5276,6 @@ body { background: var(--gradient-app); }
   .boss-match-logo img { width: 32px; height: 32px; }
   .boss-match-team strong { font-size: .7rem; }
   .boss-match-team small { font-size: .55rem; line-height: 1.15; }
-  .boss-match-team em { top: 3px; right: 3px; font-size: .47rem; }
   .boss-match-vs-badge { width: 32px; height: 32px; border-width: 2px; font-size: .72rem; box-shadow: 2px 2px 0 var(--boss-ink); }
   .boss-match-pitch-panel { padding: 8px; }
   .boss-match-section-head { margin-bottom: 6px; padding-bottom: 6px; border-bottom-width: 2px; }
@@ -7694,11 +7691,11 @@ body { background: var(--gradient-app); }
 :is(.hall-detail-screen,.final-summary-screen,.final-celebration-screen) .hall-player-card .player-equipment--footer .item-icon { width:18px; height:18px; border:0; background:transparent; }
 
 /* Tactical cards share the Squad renderer and its fixed internal anatomy. */
-:is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card {
+:is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card {
   display: block;
   padding: 0;
 }
-:is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-portrait-wrap {
+:is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-portrait-wrap {
   position: relative;
   width: 100%;
   height: 70px;
@@ -7707,7 +7704,7 @@ body { background: var(--gradient-app); }
   overflow: hidden;
   background: linear-gradient(160deg, color-mix(in srgb, var(--unified-card-border) 9%, #fff), #ddd7c8);
 }
-:is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card img.player-portrait {
+:is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card img.player-portrait {
   width: 100%;
   height: 100%;
   max-width: 100%;
@@ -7715,17 +7712,17 @@ body { background: var(--gradient-app); }
   object-fit: contain;
   object-position: center bottom;
 }
-:is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-info {
+:is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-info {
   min-width: 0;
   padding: 5px 4px 7px;
 }
-:is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-title {
+:is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-title {
   min-width: 0;
   display: flex;
   align-items: center;
   gap: 3px;
 }
-:is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-title strong {
+:is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-title strong {
   flex: 1 1 auto;
   min-width: 0;
   display: block;
@@ -7737,9 +7734,9 @@ body { background: var(--gradient-app); }
   text-shadow: none;
   white-space: nowrap;
 }
-:is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-meta,
-:is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-level { display: none; }
-:is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer {
+:is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-meta,
+:is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-level { display: none; }
+:is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer {
   position: static;
   flex: 0 0 22px;
   width: 22px;
@@ -7756,8 +7753,8 @@ body { background: var(--gradient-app); }
   box-shadow: 2px 2px 0 rgba(17,18,22,.24);
   transform: none;
 }
-:is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer .item-icon,
-:is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer .item-icon img {
+:is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer .item-icon,
+:is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer .item-icon img {
   width: 16px;
   height: 16px;
   border: 0;
@@ -7766,19 +7763,19 @@ body { background: var(--gradient-app); }
 }
 
 @media (max-width: 780px) {
-  :is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-portrait-wrap {
+  :is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-portrait-wrap {
     height: 64px;
     min-height: 64px;
     padding: 6px 4px 0;
   }
-  :is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-info {
+  :is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-info {
     min-height: 24px;
     padding: 4px 3px 6px;
   }
-  :is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-title strong {
+  :is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-title strong {
     font-size: clamp(.5rem, 1.9vw, .58rem);
   }
-  :is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer {
+  :is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer {
     flex-basis: 17px;
     width: 17px;
     min-width: 17px;
@@ -7786,8 +7783,8 @@ body { background: var(--gradient-app); }
     min-height: 17px;
     border-width: 1px;
   }
-  :is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer .item-icon,
-  :is(.five-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer .item-icon img {
+  :is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer .item-icon,
+  :is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer .item-icon img {
     width: 13px;
     height: 13px;
   }
