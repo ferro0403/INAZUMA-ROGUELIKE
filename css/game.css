@@ -7674,7 +7674,7 @@ body { background: var(--gradient-app); }
   border-radius: 2px;
   background: var(--unified-card-yellow);
   color: var(--unified-card-ink);
-  box-shadow: 2px 2px 0 rgba(17,18,22,.24);
+  box-shadow: none;
   transform: none;
 }
 :is(.five-screen,.five-match-screen,.boss-match-screen) .run-tactical-card.tactical-player-card .player-equipment--footer .item-icon,
