@@ -1379,7 +1379,6 @@
         <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">◎</span><strong id="choose-run">Scegli una run</strong><span class="home-cta-arrows" aria-hidden="true">»</span></button>
       </article>
       ${homeQuickActionsMarkup()}
-      ${developmentHomeCtaMarkup()}
     </section>`;
   }
 
@@ -1973,7 +1972,6 @@
               </section>
               <div class="squad-management-actions">
                 <button type="button" class="btn squad-module-button" id="open-squad-formation">Modifica modulo</button>
-                <button type="button" class="btn squad-project-button" id="open-squad-project">Progetto</button>
                 <button type="button" class="btn btn-yellow squad-info-button" id="squad-player-info" disabled>Info</button>
               </div>
               <p class="squad-selection-hint" data-squad-hint>Seleziona un giocatore</p>
@@ -2008,7 +2006,6 @@
       if (!event.target.closest("button, a, input, select, textarea, [role='button']")) setSelectedSquadPlayer(null);
     });
     document.getElementById("open-squad-formation").addEventListener("click", openSquadFormationSelector);
-    document.getElementById("open-squad-project").addEventListener("click", openProjectSelector);
     document.getElementById("squad-player-info").addEventListener("click", () => {
       if (ui.selectedSquadPlayerId) showPlayerDetails(ui.selectedSquadPlayerId);
     });
@@ -5536,7 +5533,25 @@
     }
   }
 
-  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions };
-  installDevToolsAccess();
-  init();
+  global.__INAZUMA_UI_TEST__ = {
+    bindAlbumRosterInteractions,
+    homeEmptyRunMarkup,
+    homeActiveRunMarkup,
+    renderHome,
+    renderSeasonSelect,
+    renderProjectPlayerPage,
+    renderDevelopmentCenter,
+    installDevToolsAccess,
+    setRuntimeState(state = {}) {
+      if (Object.hasOwn(state, "run")) run = state.run;
+      if (Object.hasOwn(state, "seasonDb")) seasonDb = state.seasonDb;
+      if (Object.hasOwn(state, "freeAgentsDb")) freeAgentsDb = state.freeAgentsDb;
+      if (Object.hasOwn(state, "freeAgentsById")) freeAgentsById = state.freeAgentsById;
+      if (Object.hasOwn(state, "developmentCenter")) developmentCenter = state.developmentCenter;
+    },
+  };
+  if (!global.__INAZUMA_DISABLE_AUTO_INIT__) {
+    installDevToolsAccess();
+    init();
+  }
 })(globalThis);
