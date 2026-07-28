@@ -2741,7 +2741,6 @@ body { background: var(--gradient-app); }
 .home-section-label { margin: 0 0 8px 12px; }
 #clean-home .home-roster-preview { min-width: 0; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: stretch; gap: 7px; }
 .home-player-card {
-  --rarity-border: #292d33;
   position: relative;
   min-width: 0;
   min-height: 196px;
@@ -2757,10 +2756,10 @@ body { background: var(--gradient-app); }
 .home-player-portrait { height: 130px; display: grid; place-items: end center; overflow: hidden; background: linear-gradient(160deg, color-mix(in srgb, var(--rarity-border) 15%, white), #eef1f3); }
 .home-player-portrait img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
 .home-player-role, .home-player-overall { position: absolute; z-index: 2; top: 8px; display: grid; place-items: center; min-width: 28px; min-height: 25px; padding: 3px 5px; border: 2px solid var(--home-ink); background: var(--home-paper); font-size: .65rem; font-weight: 1000; }
-.home-player-role { left: 6px; color: var(--rarity-border); }
-.home-player-overall { right: 6px; background: var(--home-yellow); font-size: .78rem; }
+.home-player-role { left: 6px; border-color: var(--home-ink); background: var(--home-paper); color: var(--home-ink); }
+.home-player-overall { right: 6px; border-color: var(--home-ink); background: var(--home-yellow); color: var(--home-ink); font-size: .78rem; }
 .home-player-copy { min-width: 0; padding: 8px 6px 10px; text-align: center; }
-.home-player-copy strong { display: block; overflow: hidden; font-size: .76rem; line-height: 1.05; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
+.home-player-copy strong { display: block; overflow: hidden; color: var(--home-ink); font-size: .76rem; line-height: 1.05; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
 .home-player-copy small { display: block; margin-top: 4px; color: #4f5358; font-size: .58rem; font-weight: 900; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .home-player-equipment { position: absolute; z-index: 3; left: 5px; bottom: 5px; width: 24px; height: 24px; display: grid; place-items: center; overflow: hidden; border: 2px solid var(--home-ink); border-radius: 5px; background: var(--home-yellow); }
 .home-player-equipment .item-icon { width: 18px; height: 18px; border: 0; background: transparent; }
