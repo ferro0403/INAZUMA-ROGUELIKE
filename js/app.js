@@ -6,6 +6,7 @@
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
   const toastRoot = document.getElementById("toast-root");
+  let developmentCenter = global.DevelopmentCenter?.load?.() || null;
 
   const CATEGORY_CLASS_BY_NAME = {
     Scarso: "rarity-scarso",
@@ -544,6 +545,9 @@
     run.pendingItemReward = run.pendingItemReward || null;
     run.pendingBossVictory = run.pendingBossVictory || null;
     run.postBossFlow = run.postBossFlow || null;
+    global.ProjectSystem?.migrateRun?.(run);
+    global.ProjectSystem?.reconcileRoster?.(run);
+    if (!run.developmentSnapshot && run.roster?.length) run.developmentSnapshot = global.DevelopmentCenter.snapshotForRun(developmentCenter);
     global.RunStatistics?.ensureRunStatistics?.(run);
     run.roster = (run.roster || []).map((entry) => {
       const source = sourcePlayer(entry);
@@ -601,11 +605,14 @@
     if (!entry) return null;
     const player = sourcePlayer(entry);
     const database = global.SeasonRegistry?.isSeasonSource?.(entry.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb;
+    const permanent = run.developmentSnapshot?.[String(playerId)] || {};
+    const projectBoost = global.ProjectSystem?.effectiveBoost?.(run, playerId) || 0;
+    const permanentBoost = Number(permanent.permanentPotentialBoost || 0);
     const resolved = global.InazumaProgression.getPlayerAtLevel(
       player,
       Math.floor(Number(entry.level || 0)),
       database,
-      { potentialBoost: entry.potentialBoost, currentOverallBoost: entry.currentOverallBoost, potentialBoostApplications: entry.potentialBoostApplications }
+      { potentialBoost: Number(entry.potentialBoost || 0) + permanentBoost + projectBoost, currentOverallBoost: Number(entry.currentOverallBoost || 0) + Number(permanent.permanentCurrentOverallBoost || 0) + projectBoost, potentialBoostApplications: [...(entry.potentialBoostApplications || []), ...(permanentBoost ? [{ amount: permanentBoost, appliedLevel: 0 }] : []), ...(projectBoost ? [{ amount: projectBoost, appliedLevel: 0 }] : [])] }
     );
     const effectiveStats = global.RoguelikeRules.applyEquipment(resolved.stats, entry.equippedItem);
     return {
@@ -1173,6 +1180,39 @@
     return `<nav class="home-quick-actions" aria-label="Sezioni principali">${actions}</nav>`;
   }
 
+  function coinIconMarkup() { return `<svg class="development-coin-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 20 6.5v11L12 22l-8-4.5v-11L12 2Z"/><path d="m9 8 6 8M15 8l-6 8"/></svg>`; }
+  function developmentHomeCtaMarkup() {
+    const players = Object.values(developmentCenter?.players || {}); const ready = players.filter((player) => player.pendingStage && developmentCenter.coins >= player.pendingStage.totalCost - player.pendingStage.investedCoins).length;
+    return `<button type="button" class="development-home-cta" id="open-development-home"><span>${coinIconMarkup()}</span><span><small>FUORI DAL CAMPO</small><strong>CENTRO DI SVILUPPO</strong><em>${escapeHtml(developmentCenter?.coins || 0)} monete · ${escapeHtml(players.filter((player) => player.pendingStage).length)} in sviluppo${ready ? ` · ${ready} pronto` : ""}</em></span><b aria-hidden="true">›</b></button>`;
+  }
+  function projectHomeMarkup(savedRun) {
+    const state = global.ProjectSystem.migrateRun(savedRun); const progress = state.players[state.activePlayerId]; const player = progress ? resolvedRosterPlayer(progress.playerId) : null; const bosses = Number(savedRun.completedBossIds?.length || 0); const pending = global.DevelopmentEconomy.pendingCoins(bosses); const redeemable = global.DevelopmentEconomy.redeemableCoins(bosses);
+    return `<section class="project-home-card anime-panel"><div><small>GIOCATORE PROGETTO</small>${player ? `<strong>${escapeHtml(player.name)}</strong><span>${escapeHtml(progress.permanentRarityAtRunStart)} → ${escapeHtml(progress.targetRarity)} · ${escapeHtml(progress.progressPercent)}% · Bonus +${escapeHtml(progress.projectBoost)}</span><i><b style="width:${progress.progressPercent}%"></b></i>` : `<strong>Nessun Progetto attivo</strong><span>Scegli uno svincolato della tua rosa.</span>`}</div><div class="project-home-economy"><span>Boss ${bosses}</span><span>${pending} monete ${redeemable ? "riscattabili" : "in sospeso"}</span></div><button type="button" class="btn btn-yellow" id="open-project-home">${player ? "Gestisci" : "Scegli progetto"}</button></section>`;
+  }
+
+  function projectSelectorMarkup() {
+    const rosterPlayers = (run?.roster || []).map((entry) => sourcePlayer(entry)).filter((player) => freeAgentsById.has(String(player?.playerId)));
+    return `<header class="project-modal-head"><p class="eyebrow">SVINCOLATI IN ROSA</p><h2>Giocatore Progetto</h2><p>Solo il Progetto attivo riceve il bonus. Il progresso degli altri resta conservato.</p></header><div class="project-selector-list">${rosterPlayers.map((player) => { const check = global.ProjectSystem.eligibility({ run, player, freeAgents: freeAgentsDb, developmentCenter }); const progress = run.projectSystem.players[String(player.playerId)]; const active = run.projectSystem.activePlayerId === String(player.playerId); const resolved = resolvedRosterPlayer(player.playerId); const status = active ? "Attivo" : !check.eligible ? check.reason : progress ? "Progresso conservato" : "Disponibile"; return `<button type="button" class="project-selector-card ${rarityClass(resolved?.category || player.category)} ${active ? "is-active" : ""}" data-project-select="${escapeHtml(player.playerId)}" ${check.eligible ? "" : "disabled"}><span class="project-selector-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" /></span><span class="role-chip">${escapeHtml(player.position)}</span><span class="player-overall">${escapeHtml(resolved?.overall || player.finalOverall)}</span><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(status)}${progress ? ` · ${progress.progressPercent}%` : ""}</small></button>`; }).join("") || `<div class="empty-state"><strong>Nessuno svincolato idoneo</strong><span>Recluta uno svincolato per iniziare.</span></div>`}</div>`;
+  }
+  function openProjectSelector() {
+    if (!run) return; openModal(projectSelectorMarkup(), { className: "project-selector-modal" });
+    modalRoot.querySelectorAll("[data-project-select]").forEach((button) => button.addEventListener("click", () => { const player = freeAgentsById.get(String(button.dataset.projectSelect)); const result = global.ProjectSystem.select(run, player, { freeAgents: freeAgentsDb, developmentCenter }); if (!result.eligible) return toast(result.reason, "error"); global.RunState.save(run); toast(result.previousPlayerId ? "Progetto cambiato: progresso precedente conservato" : "Giocatore Progetto selezionato"); closeModal(); }));
+  }
+  function developmentPlayerCard(player) { const stage = player.pendingStage; const percent = stage ? Math.round(stage.investedCoins / stage.totalCost * 100) : 100; return `<article class="development-player-card ${rarityClass(player.permanentRarity)}" data-development-player="${escapeHtml(player.playerId)}"><div class="development-card-main"><span class="role-chip">${escapeHtml(player.role)}</span><span class="player-overall">${escapeHtml(Math.min(99, player.originalOverall + player.permanentCurrentOverallBoost))}</span><strong>${escapeHtml(player.displayName || player.playerId)}</strong><small>${escapeHtml(player.permanentRarity)}${stage ? ` → ${escapeHtml(stage.certifiedRarity)}` : " · Completato"}</small></div><div><span>Potenziale ${escapeHtml(player.permanentPotential)}${stage ? ` / ${escapeHtml(stage.certifiedPotential)}` : ""}</span><i class="development-progress"><b style="width:${percent}%"></b></i><small>${stage ? `${stage.totalCost - stage.investedCoins} monete rimanenti` : `${player.history.length} stadi completati`}</small></div>${stage ? `<div class="development-invest-actions">${[10,50,100].map((amount) => `<button type="button" data-invest="${amount}" data-player="${escapeHtml(player.playerId)}">+${amount}</button>`).join("")}<button type="button" data-invest="max" data-player="${escapeHtml(player.playerId)}">MAX</button></div>` : ""}</article>`; }
+  function renderDevelopmentCenter() {
+    closeModal({ invokeOnClose: false }); developmentCenter = global.DevelopmentCenter.load(); const players = Object.values(developmentCenter.players);
+    app.innerHTML = `<main class="development-center-screen"><header class="development-center-head">${sectionRootButton("developmentCenter")}<div><p class="eyebrow">CRESCITA PERMANENTE</p><h1>Centro di sviluppo</h1></div><div class="development-balance">${coinIconMarkup()}<strong>${escapeHtml(developmentCenter.coins)}</strong><small>monete</small></div></header><section class="development-summary"><span><small>In sviluppo</small><strong>${players.filter((player) => player.pendingStage).length}</strong></span><span><small>Stadi completati</small><strong>${players.reduce((sum, player) => sum + player.history.length, 0)}</strong></span></section><section class="development-list">${players.map(developmentPlayerCard).join("") || `<div class="empty-state development-empty"><strong>Nessun giocatore certificato</strong><span>Vinci una run con un Giocatore Progetto per aprire il suo sviluppo.</span></div>`}</section></main>`;
+    resetRenderedViewScroll();
+    document.querySelector("[data-section-root]")?.addEventListener("click", renderHome);
+    app.querySelector(".development-list")?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-invest]"); if (!button) return;
+      const player = developmentCenter.players[button.dataset.player]; const remaining = player.pendingStage.totalCost - player.pendingStage.investedCoins;
+      const amount = button.dataset.invest === "max" ? Math.min(remaining, developmentCenter.coins) : Math.min(Number(button.dataset.invest), remaining);
+      if (!amount) return toast("Saldo insufficiente", "error");
+      try { const result = global.DevelopmentCenter.invest(developmentCenter, player.playerId, amount, `ui_${Date.now()}_${player.playerId}`); global.DevelopmentCenter.save(developmentCenter); button.closest(".development-player-card").outerHTML = developmentPlayerCard(developmentCenter.players[player.playerId]); toast(result.completed ? "Sviluppo completato. La rarità successiva è ora disponibile." : `Investite ${amount} monete`); } catch (error) { toast(error.message, "error"); }
+    });
+  }
+
   function homeTeamCrestMarkup(identity) {
     if (identity?.logoUrl) return `<img src="${escapeHtml(identity.logoUrl)}" alt="${escapeHtml(identity.name)}" loading="lazy" />`;
     return `<span class="home-crest-fallback" aria-hidden="true">IR</span>`;
@@ -1211,6 +1251,8 @@
       </article>
       <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="continue-run">Continua la run</strong><span class="home-cta-arrows" aria-hidden="true">»</span></button>
       ${homeQuickActionsMarkup()}
+      ${developmentHomeCtaMarkup()}
+      ${projectHomeMarkup(savedRun)}
       <section class="home-roster-section" aria-label="La tua squadra">
         <div class="home-section-label"><span>⚡</span> La tua squadra</div>
         <div class="home-roster-preview">${homeRosterMarkup(savedRun)}</div>
@@ -1234,6 +1276,7 @@
         <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">◎</span><strong id="choose-run">Scegli una run</strong><span class="home-cta-arrows" aria-hidden="true">»</span></button>
       </article>
       ${homeQuickActionsMarkup()}
+      ${developmentHomeCtaMarkup()}
     </section>`;
   }
 
@@ -1273,6 +1316,8 @@
     document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-hall-home-list")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-latest-hall-home")?.addEventListener("click", (event) => renderHallOfFameDetail(event.currentTarget.dataset.latestHall));
+    document.getElementById("open-development-home")?.addEventListener("click", renderDevelopmentCenter);
+    document.getElementById("open-project-home")?.addEventListener("click", openProjectSelector);
   }
 
 
@@ -1822,6 +1867,7 @@
               </section>
               <div class="squad-management-actions">
                 <button type="button" class="btn squad-module-button" id="open-squad-formation">Modifica modulo</button>
+                <button type="button" class="btn squad-project-button" id="open-squad-project">Progetto</button>
                 <button type="button" class="btn btn-yellow squad-info-button" id="squad-player-info" disabled>Info</button>
               </div>
               <p class="squad-selection-hint" data-squad-hint>Seleziona un giocatore</p>
@@ -1856,6 +1902,7 @@
       if (!event.target.closest("button, a, input, select, textarea, [role='button']")) setSelectedSquadPlayer(null);
     });
     document.getElementById("open-squad-formation").addEventListener("click", openSquadFormationSelector);
+    document.getElementById("open-squad-project").addEventListener("click", openProjectSelector);
     document.getElementById("squad-player-info").addEventListener("click", () => {
       if (ui.selectedSquadPlayerId) showPlayerDetails(ui.selectedSquadPlayerId);
     });
@@ -3290,6 +3337,7 @@
     };
     if (options.freeze) match.matchId = global.RunStatistics?.createStableMatchId?.(run, { ...match, simulation: { seed } }) || match.matchId;
     match.lineupSnapshot = teams.userSnapshot;
+    if (!match.projectSnapshot) match.projectSnapshot = global.ProjectSystem.snapshotMatch(run, { matchId: match.matchId || global.RunStatistics.createStableMatchId(run, match), matchType: match.type === "five_v_five" ? "five_v_five" : (Number(match.bossIndex ?? run.bossIndex) >= seasonDb.bossOrder.length - 1 ? "final" : "boss"), bossId: match.bossId || seasonDb.bossOrder[Number(match.bossIndex ?? run.bossIndex)]?.teamId, attempt: match.attemptNumber || 1, lineup: teams.userSnapshot.playerIds, test: false });
     match.userPlayerIds = teams.userSnapshot.playerIds.slice();
     match.userStrength = match.simulation.userStrength;
     match.probabilities = match.simulation.probabilities;
@@ -3501,6 +3549,7 @@
       }
       const winner = result === "victory" ? "user" : "opponent";
       sim.forcedOutcome = winner === "user" ? "win" : "loss";
+      global.ProjectSystem.migrateRun(run).testToolUsed = true;
       sim.testControl = true;
       sim.state = "completed";
       sim.winner = winner;
@@ -3933,6 +3982,10 @@
       completedAt: new Date().toISOString(),
       formation: match.type === "boss" ? run.formationId : run.fiveVFive?.formation,
     });
+    const score = match.simulation.score || { user: match.score?.[0] || 0, opponent: match.score?.[1] || 0 };
+    const structuredScorers = (match.simulation.timeline || []).filter((event) => event.type === "goal" && event.team === "user" && event.playerId != null).map((event) => String(event.playerId));
+    const projectResult = global.ProjectSystem.processMatch(run, match.projectSnapshot, { official: true, completed: true, won: result === "victory", forced: Boolean(match.simulation.forcedOutcome || match.forcedOutcome), test: Boolean(match.simulation.testControl || match.testControl), goalsFor: score.user, goalsAgainst: score.opponent, scorers: structuredScorers, role: sourcePlayer(match.projectSnapshot?.activeProjectPlayerId)?.position });
+    if (projectResult.processed) toast(`Progresso Progetto aggiornato · Bonus +${projectResult.progress.projectBoost}`);
   }
 
   function completeFiveMatch(result) {
@@ -5081,6 +5134,9 @@
   }
 
   function renderGameOver() {
+    global.ProjectSystem.markRunEnd(run, { won: false, livesRemaining: 0, finalRoster: run.roster, finalLineup: run.lineup });
+    const redemption = global.DevelopmentEconomy.redeem(developmentCenter, { runId: run.runId, bossWins: run.completedBossIds?.length || 0, reason: "lives-exhausted" });
+    if (redemption.redeemed) global.DevelopmentCenter.save(developmentCenter);
     const bossReached = Math.min(Number(run.bossIndex || 0) + 1, seasonDb.bossOrder.length);
     const wins = Number(run.statistics?.winsTotal || 0);
     app.innerHTML = `
@@ -5151,6 +5207,10 @@
   }
 
   function persistChampionBeforeFinalUi(finalBoss = null) {
+    const eligible = global.ProjectSystem.markRunEnd(run, { won: true, livesRemaining: run.lives, finalRoster: run.roster, finalLineup: run.lineup });
+    global.ProjectSystem.prepareCertification(run, eligible.map((player) => player.playerId));
+    const redemption = global.DevelopmentEconomy.redeem(developmentCenter, { runId: run.runId, bossWins: run.completedBossIds?.length || seasonDb.bossOrder.length, reason: "victory" });
+    if (redemption.redeemed) global.DevelopmentCenter.save(developmentCenter);
     const boss = finalBoss || seasonDb.bossOrder[Math.min(Number(run.bossIndex || 1) - 1, seasonDb.bossOrder.length - 1)] || seasonDb.bossOrder.at(-1);
     run.completedAt = run.completedAt || new Date().toISOString();
     const result = global.HallOfFameStorage.addChampion(buildChampionSnapshot(boss));
@@ -5255,6 +5315,8 @@
   }
 
   function renderFinalCelebration(hallTeamId) {
+    const pendingCertification = run.projectSystem?.pendingCertification;
+    if (pendingCertification?.status === "pending") return renderProjectCertification(() => renderFinalCelebration(hallTeamId));
     const team = championTeam(hallTeamId || run?.hallTeamId);
     if (!team) return renderHome();
     run.phase = "final-celebration"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
@@ -5263,6 +5325,12 @@
     const go = () => { run.phase = "final-summary"; global.RunState.save(run); renderFinalSummary(team.hallTeamId); };
     document.getElementById("final-continue").addEventListener("click", go);
     document.getElementById("skip-final-animation").addEventListener("click", go);
+  }
+
+  function renderProjectCertification(onComplete) {
+    const pending = run.projectSystem.pendingCertification; const candidates = pending.eligiblePlayerIds.map((id) => ({ id, player: sourcePlayer(id), progress: run.projectSystem.players[id] })).filter((entry) => entry.player);
+    app.innerHTML = `<main class="final-celebration-screen project-certification-screen"><section class="final-celebration-panel"><header class="final-victory-copy"><p class="eyebrow">SVILUPPO CONQUISTATO</p><h1>CERTIFICAZIONE PROGETTO</h1><p>La crescita diventerà permanente investendo monete nel Centro di sviluppo.</p></header><div class="project-certification-list">${candidates.map(({ id, player, progress }) => `<button type="button" class="project-selector-card ${rarityClass(progress.targetRarity)}" data-certify="${escapeHtml(id)}"><span class="project-selector-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" /></span><span class="role-chip">${escapeHtml(player.position)}</span><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(progress.permanentRarityAtRunStart)} → ${escapeHtml(progress.targetRarity)} · Potenziale ${escapeHtml(progress.permanentPotentialAtRunStart)} → ${escapeHtml(progress.targetPotential)}</small></button>`).join("")}</div><p>Puoi certificare un solo giocatore e una sola rarità.</p></section></main>`;
+    app.querySelectorAll("[data-certify]").forEach((button) => button.addEventListener("click", () => { const player = sourcePlayer(button.dataset.certify); const record = global.ProjectSystem.completeCertification(run, player.playerId, player, activeSeason?.id || "default"); if (!record) return; global.DevelopmentCenter.registerCertification(developmentCenter, record, player); global.DevelopmentCenter.save(developmentCenter); global.RunState.save(run); toast("Certificazione ottenuta"); onComplete(); }));
   }
 
   function renderFinalSummary(hallTeamId) {

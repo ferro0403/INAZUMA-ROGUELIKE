@@ -1,0 +1,13 @@
+const assert = require('node:assert/strict');
+global.InazumaProgression = require('../js/roguelike_progression.js');
+global.ProjectConfig = require('../js/project-config.js');
+const Economy = require('../js/development-economy.js');
+const center = { coins: 0, redeemedRunIds: [], coinLedger: [] };
+assert.equal(Economy.redeemableCoins(4), 0, 'four bosses redeem zero');
+assert.equal(Economy.redeemableCoins(5), 50, 'five bosses redeem fifty');
+assert.equal(Economy.redeemableCoins(10), 100, 'ten bosses redeem one hundred');
+assert.equal(Economy.redeemableCoins(11), 110, 'future eleven-boss mode scales without a final bonus');
+assert.equal(Economy.redeem(center, { runId: 'abandoned', bossWins: 8, reason: 'abandoned' }).redeemed, false, 'abandonment does not redeem');
+assert.equal(Economy.redeem(center, { runId: 'won', bossWins: 6, reason: 'victory' }).amount, 60);
+assert.equal(Economy.redeem(center, { runId: 'won', bossWins: 6, reason: 'victory' }).amount, 0, 'redemption is idempotent');
+console.log('development-economy-test: ok');
