@@ -1,0 +1,17 @@
+const assert = require('node:assert/strict'); const fs = require('node:fs');
+const app = fs.readFileSync('js/app.js', 'utf8'); const css = fs.readFileSync('css/game.css', 'utf8'); const html = fs.readFileSync('index.html', 'utf8');
+const homeActive = app.slice(app.indexOf('function homeActiveRunMarkup'), app.indexOf('function homeEmptyRunMarkup'));
+const homeEmpty = app.slice(app.indexOf('function homeEmptyRunMarkup'), app.indexOf('function homeRunCardMarkup'));
+const modes = app.slice(app.indexOf('async function renderSeasonSelect'), app.indexOf('function savedTeamSummaryMarkup'));
+const squad = app.slice(app.indexOf('function renderSquad()'), app.indexOf('function squadPlayerRole'));
+assert.doesNotMatch(homeActive + homeEmpty, /developmentModesSectionMarkup|open-development/, 'Center is absent from Home');
+assert.match(modes, /developmentModesSectionMarkup\(\)/); assert.match(modes, /open-development-modes/);
+assert.doesNotMatch(squad, /open-squad-project|>Progetto</i, 'Squad no longer owns the Project command');
+for (const text of ['project-player-view', 'GIOCATORE PROGETTO', 'OBIETTIVI DEL PROGETTO', 'UTILIZZO E VITTORIE', 'PRESTAZIONE DEL RUOLO', 'BOSS E CONTINUITÀ', 'FINALE DELLA RUN', 'ALTRI PROGETTI DELLA RUN']) assert.ok(app.includes(text), `dedicated view includes ${text}`);
+assert.match(app, /squadPitchMarkup\(\{ mode: "project"/); assert.match(app, /benchMarkup\(\{ mode: "project"/);
+assert.match(app, /data-project-eligible/); assert.match(app, /NON SVINCOLATO/); assert.match(app, /RARITÀ MASSIMA/); assert.match(app, /SVILUPPO CENTRO INCOMPLETO/);
+assert.match(app, /querySelectorAll\("\[data-project-candidate\]"\)/); assert.match(app, /CONFERMA PROGETTO/);
+assert.match(css, /\.project-tactical-card\.is-blocked/); assert.match(css, /\.project-tactical-card\.is-project-selected/);
+assert.match(css, /\.project-player-view/); assert.match(css, /@media\(max-width:700px\)/); assert.match(css, /\.project-selection-layout/);
+assert.ok(html.includes('project-dev-tools.js') && html.includes('development-center.js'));
+console.log('project-ui-test: ok');

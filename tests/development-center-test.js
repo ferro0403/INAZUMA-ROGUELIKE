@@ -1,0 +1,18 @@
+const assert = require('node:assert/strict');
+global.InazumaProgression = require('../js/roguelike_progression.js');
+const Center = require('../js/development-center.js');
+const state = Center.empty(); state.coins = 500;
+const record = { certificationId: 'c1', runId: 'r1', playerId: 'p1', displayName: 'Player', role: 'FW', initialPermanentPotential: 74, initialPermanentRarity: 'Normale', certifiedPotential: 75, certifiedRarity: 'Buono', totalCost: 400 };
+const source = { playerId: 'p1', position: 'FW', category: 'Normale', finalOverall: 74, ratings: { attack: 74, control: 74, speed: 74, grit: 74, physical: 74, stamina: 74, defense: 74, save: 10 } };
+Center.registerCertification(state, record, source);
+assert.throws(() => Center.registerCertification({ ...state, certificationLedger: [] }, { ...record, certificationId: 'c2' }, source), /incompleto/, 'one pending stage blocks another');
+let tx = Center.invest(state, 'p1', 10, 'tx1');
+assert.equal(state.players.p1.pendingStage.investedCoins, 10, 'coins below a point threshold remain invested');
+assert.equal(Center.invest(state, 'p1', 10, 'tx1').duplicate, true, 'investment transaction is idempotent');
+tx = Center.invest(state, 'p1', 390, 'tx2');
+assert.equal(tx.completed, true); assert.equal(state.players.p1.pendingStage, null); assert.equal(state.players.p1.permanentPotential, 75); assert.equal(state.players.p1.permanentRarity, 'Buono');
+const migrated = Center.migrate({ coins: 0 }); assert.deepEqual(migrated.players, {}, 'old saves migrate to an empty non-destructive center');
+const snapshot = Center.snapshotForRun(state); state.players.p1.permanentPotential = 80; assert.equal(snapshot.p1.permanentPotential, 75, 'active run snapshot does not change after center investment');
+const developed = Center.applyUserPermanentDevelopment(source, state, 0, { players: [source] }); assert.ok(developed.potential >= 75, 'future user player receives permanent development');
+const opponent = { ...source }; assert.equal(opponent.finalOverall, 74, 'opponent source data remains unchanged');
+console.log('development-center-test: ok');
