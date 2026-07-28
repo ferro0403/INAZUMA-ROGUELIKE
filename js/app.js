@@ -1145,13 +1145,11 @@
     const level = Number(entry.level ?? player.displayLevel ?? 0);
     const overall = player.overall ?? player.finalOverall ?? "-";
     const role = player.position || player.normalizedRole || "-";
-    const equipment = entry.equippedItem || null;
-    return `<article class="home-player-card ${rarityClass(player.category)} ${equipment ? "has-equipment" : ""}" aria-label="${escapeHtml(player.name)}, ${escapeHtml(role)}, overall ${escapeHtml(overall)}, livello ${escapeHtml(level)}">
+    return `<article class="home-player-card ${rarityClass(player.category)}" aria-label="${escapeHtml(player.name)}, ${escapeHtml(role)}, overall ${escapeHtml(overall)}, livello ${escapeHtml(level)}">
       <div class="home-player-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="${escapeHtml(player.name)}" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></div>
       <span class="home-player-role">${escapeHtml(role)}</span>
       <span class="home-player-overall">${escapeHtml(overall)}</span>
       <div class="home-player-copy"><strong title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</strong><small>${escapeHtml(player.category || "Debole")} · Lv ${escapeHtml(level)}</small></div>
-      ${equipment ? `<span class="home-player-equipment" aria-label="Equipaggiamento: ${escapeHtml(resolveItem(equipment).name)}" title="${escapeHtml(resolveItem(equipment).name)}">${itemIcon(equipment)}</span>` : ""}
     </article>`;
   }
 

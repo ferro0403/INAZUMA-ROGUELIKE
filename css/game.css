@@ -2741,7 +2741,6 @@ body { background: var(--gradient-app); }
 .home-section-label { margin: 0 0 8px 12px; }
 #clean-home .home-roster-preview { min-width: 0; min-height: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); align-items: stretch; gap: 7px; }
 .home-player-card {
-  --rarity-border: #292d33;
   position: relative;
   min-width: 0;
   min-height: 196px;
