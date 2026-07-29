@@ -7917,3 +7917,31 @@ body { background: var(--gradient-app); }
 
 .project-home-card.has-player{grid-template-columns:56px minmax(0,1fr) auto auto}.project-home-portrait{display:grid;place-items:end center;width:52px;height:58px;overflow:hidden;border:2px solid #111216;background:#eee8d9}.project-home-portrait img{width:100%;height:100%;object-fit:contain}
 @media(max-width:700px){.project-home-card.has-player{grid-template-columns:52px 1fr auto}.project-home-card.has-player .project-home-economy{grid-column:2}.project-home-card.has-player>.btn{grid-column:3;grid-row:1/3}}
+
+/* Project as the fifth run destination and focused Development Center. */
+.bottom-nav { grid-template-columns: repeat(5,minmax(0,1fr)); }
+.project-player-view { padding-bottom: calc(92px + env(safe-area-inset-bottom)); }
+.project-page-head { grid-template-columns: 1fr; }
+.project-page-head p { margin: 3px 0 0; }
+.project-status-badge { display:inline-flex; width:max-content; padding:4px 7px; border:2px solid #111216; background:#ffd51f; font-size:.65rem; font-weight:950; }
+.project-rarity-line { margin:4px 0 10px; font-weight:850; }
+.project-missing-panel { margin-top:16px; padding:14px; border:3px solid #111216; background:#fffdf6; box-shadow:5px 6px 0 rgba(17,18,22,.28); }
+.project-missing-panel ul { margin:8px 0; padding-left:20px; }
+.project-missing-panel li { margin:5px 0; }
+.project-missing-panel .is-failed,.project-objective.is-failed small { color:#9b1c24; font-weight:950; }
+.project-actions { position:sticky; z-index:35; bottom:12px; width:min(680px,calc(100% - 20px)); margin:16px auto 0; display:grid; grid-template-columns:1fr 1fr; gap:8px; padding:8px; border:3px solid #111216; background:#fffdf6; }
+.development-run-notice,.development-selector,.development-detail-host { width:min(1180px,100%); margin:14px auto; }
+.development-run-notice { padding:9px 12px; border:2px solid #111216; border-left:8px solid #ffd51f; background:#fffdf6; font-weight:850; }
+.development-selector { display:flex; gap:8px; overflow-x:auto; padding:4px; }
+.development-selector button { flex:0 0 190px; display:grid; padding:8px; border:2px solid #111216; background:#fffdf6; text-align:left; }
+.development-selector button.is-active { background:#ffd51f; }
+.development-player-detail { display:grid; grid-template-columns:minmax(300px,1fr) minmax(300px,1fr); gap:14px; padding:16px; border:3px solid #111216; border-left:9px solid var(--rarity-border,#646464); background:#fffdf6; box-shadow:5px 6px 0 rgba(17,18,22,.3); }
+.development-identity { display:grid; grid-template-columns:150px 1fr; gap:14px; align-items:start; }
+.development-identity .player-card { width:145px; }
+.development-identity h2 { margin:8px 0 2px; }
+.development-investment { display:grid; gap:7px; padding:12px; border:2px solid #111216; background:#fff; }
+.development-investment h3,.development-investment p { margin:0; }
+.development-history { grid-column:1/-1; border-top:2px solid #111216; }
+.development-complete { padding:16px; border:3px solid #111216; background:#fff1b8; }
+@media(max-width:780px){.bottom-nav{grid-template-columns:repeat(5,minmax(0,1fr));gap:1px}.bottom-nav button{padding:7px 2px;min-width:0}.bottom-nav .nav-icon,.bottom-nav svg{width:20px;height:20px}.bottom-nav .nav-label{font-size:.57rem;white-space:nowrap}.project-ovr-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.project-value-grid small{font-size:.55rem}.project-actions{bottom:calc(70px + env(safe-area-inset-bottom))}.development-player-detail{grid-template-columns:1fr;padding:10px}.development-identity{grid-template-columns:100px 1fr}.development-identity .player-card{width:96px}.development-history{grid-column:1}.development-invest-actions{display:grid;grid-template-columns:repeat(4,1fr);gap:4px}.development-invest-actions button{padding:5px 2px}.development-selector button{flex-basis:155px}}
+.dev-advanced,.dev-reset{border:2px solid #111216;background:#fff;padding:0}.dev-advanced>summary,.dev-reset>summary{padding:9px;font-weight:950;cursor:pointer}.dev-advanced>div,.dev-reset>.btn{margin:8px}.dev-reset{border-color:#9b1c24}.dev-reset>summary{color:#9b1c24}

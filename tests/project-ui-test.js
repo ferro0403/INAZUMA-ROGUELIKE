@@ -4,10 +4,10 @@ const homeActive = app.slice(app.indexOf('function homeActiveRunMarkup'), app.in
 const homeEmpty = app.slice(app.indexOf('function homeEmptyRunMarkup'), app.indexOf('function homeRunCardMarkup'));
 const modes = app.slice(app.indexOf('async function renderSeasonSelect'), app.indexOf('function savedTeamSummaryMarkup'));
 const squad = app.slice(app.indexOf('function renderSquad()'), app.indexOf('function squadPlayerRole'));
-assert.doesNotMatch(homeActive + homeEmpty, /developmentModesSectionMarkup|open-development/, 'Center is absent from Home');
+assert.doesNotMatch(homeActive + homeEmpty, /developmentModesSectionMarkup|open-development|projectHomeMarkup|open-project-home/, 'Center is absent from Home');
 assert.match(modes, /developmentModesSectionMarkup\(\)/); assert.match(modes, /open-development-modes/);
 assert.doesNotMatch(squad, /open-squad-project|>Progetto</i, 'Squad no longer owns the Project command');
-for (const text of ['project-player-view', 'GIOCATORE PROGETTO', 'OBIETTIVI DEL PROGETTO', 'UTILIZZO E VITTORIE', 'PRESTAZIONE DEL RUOLO', 'BOSS E CONTINUITÀ', 'FINALE DELLA RUN', 'ALTRI PROGETTI DELLA RUN']) assert.ok(app.includes(text), `dedicated view includes ${text}`);
+for (const text of ['project-player-view', 'GIOCATORE PROGETTO', 'OBIETTIVI', 'UTILIZZO E VITTORIE', 'PRESTAZIONE DEL RUOLO', 'BOSS E CONTINUITÀ', 'FINALE DELLA RUN']) assert.ok(app.includes(text), `dedicated view includes ${text}`);
 assert.match(app, /squadPitchMarkup\(\{ mode: "project"/); assert.match(app, /benchMarkup\(\{ mode: "project"/);
 assert.match(app, /data-project-eligible/); assert.match(app, /NON SVINCOLATO/); assert.match(app, /RARITÀ MASSIMA/); assert.match(app, /SVILUPPO CENTRO INCOMPLETO/);
 assert.match(app, /querySelectorAll\("\[data-project-candidate\]"\)/); assert.match(app, /CONFERMA PROGETTO/);

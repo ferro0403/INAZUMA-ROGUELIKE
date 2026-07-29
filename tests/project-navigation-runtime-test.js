@@ -109,7 +109,7 @@ assert.equal(toolsEnabled, true, '?dev=1 enables the test tools during initializ
   savedRun = activeRun;
   await ui.renderHome();
   assert.match(app.innerHTML, /Home con run attiva/);
-  assert.match(app.innerHTML, /GIOCATORE PROGETTO/);
+  assert.doesNotMatch(app.innerHTML, /GIOCATORE PROGETTO/, 'Project panel is removed from Home');
   assert.doesNotMatch(app.innerHTML, /development-home-cta|open-development-home/);
 
   await ui.renderSeasonSelect();
@@ -123,7 +123,7 @@ assert.equal(toolsEnabled, true, '?dev=1 enables the test tools during initializ
 
   ui.renderDevelopmentCenter();
   assert.match(app.innerHTML, /Centro di sviluppo/);
-  assert.match(app.innerHTML, /Nessun giocatore certificato/);
+  assert.match(app.innerHTML, /NESSUN GIOCATORE IN SVILUPPO/);
 
   ui.installDevToolsAccess();
   assert.equal(toolsEnabled, true, 'test-tool access initializes without missing globals');
@@ -138,8 +138,8 @@ assert.equal(toolsEnabled, true, '?dev=1 enables the test tools during initializ
   const drawerMarkup = ui.devToolsDrawerMarkup();
   assert.match(drawerMarkup, /data-dev-tab="quick"/);
   assert.match(drawerMarkup, /data-dev-panel="players"/);
-  assert.match(drawerMarkup, /VINCI SUBITO LA RUN/);
-  assert.doesNotMatch(drawerMarkup, /<details/);
+  assert.match(drawerMarkup, /VINCI LA RUN/);
+  assert.match(drawerMarkup, /<details[^>]*class="dev-advanced"/);
   assert.doesNotMatch(drawerMarkup, /class="dev-tools-overlay"[^>]*data-dev-close/);
 
   const ids = [
@@ -147,7 +147,7 @@ assert.equal(toolsEnabled, true, '?dev=1 enables the test tools during initializ
     ...[...source.matchAll(/\bid: "([\w-]+)"/g)].map((match) => match[1]),
   ];
   const listeners = [...source.matchAll(/getElementById\("([\w-]+)"\)\??\.addEventListener/g)].map((match) => match[1]);
-  for (const id of ['open-modes-home', 'home-primary-cta', 'open-project-home', 'open-development-modes']) {
+  for (const id of ['open-modes-home', 'home-primary-cta', 'open-development-modes']) {
     assert.ok(ids.includes(id), `navigation listener ${id} has corresponding markup`);
     assert.ok(listeners.includes(id), `navigation markup ${id} has a listener`);
   }

@@ -1,0 +1,9 @@
+'use strict';
+const assert=require('node:assert/strict');
+global.SEASON1_CONFIG={saveVersion:2}; require('../js/season1-config.js'); require('../js/draft.js'); require('../js/map-generator.js');
+function pathRange(zone){ const byId=new Map(zone.nodes.map(n=>[n.id,n])); const incoming=new Map(zone.nodes.map(n=>[n.id,[]])); for(const [a,b] of zone.edges) incoming.get(b).push(a); const min=new Map([[zone.startNodeId,0]]),max=new Map([[zone.startNodeId,0]]); for(const node of [...zone.nodes].sort((a,b)=>a.layer-b.layer)){ if(node.id===zone.startNodeId)continue; const parents=incoming.get(node.id).filter(id=>min.has(id)); const add=node.type==='five_v_five'?1:0; min.set(node.id,Math.min(...parents.map(id=>min.get(id)))+add); max.set(node.id,Math.max(...parents.map(id=>max.get(id)))+add); } const boss=zone.nodes.find(n=>n.type==='boss'); return {min:min.get(boss.id),max:max.get(boss.id)}; }
+const samples=[]; let possible=0;
+for(let seed=0;seed<1000;seed++){ let runMin=10,runMax=10; for(let bossIndex=0;bossIndex<10;bossIndex++){ const run={runId:`audit-${seed}`,bossIndex,unlockedTeamIds:['team'],randomEventHistory:[]}; const range=pathRange(global.MapEngine.generate(run,{teamId:`boss-${bossIndex}`})); runMin+=range.min; runMax+=range.max; } samples.push({min:runMin,max:runMax}); if(runMax>=15)possible++; }
+const result={runs:samples.length,min:Math.min(...samples.map(x=>x.min)),max:Math.max(...samples.map(x=>x.max)),mean:Number((samples.reduce((s,x)=>s+x.max,0)/samples.length).toFixed(2)),maximumWinsRequirement:15,possiblePercent:possible/samples.length*100};
+assert.equal(result.runs,1000); assert.ok(result.min>=10); assert.ok(result.max>=15); assert.equal(result.possiblePercent,100,'maximum Project win target is reachable on every audited map set');
+console.log(`project-map-feasibility-test: ok ${JSON.stringify(result)}`);

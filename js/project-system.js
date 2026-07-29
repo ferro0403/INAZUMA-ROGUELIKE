@@ -6,12 +6,13 @@
   const clamp01 = (value) => Math.max(0, Math.min(1, Number(value) || 0));
 
   function emptyState() {
-    return { schemaVersion: 1, activePlayerId: null, testToolUsed: false, certificationCompleted: false, certifiedPlayerId: null, processedMatchIds: [], players: {}, pendingCertification: null };
+    return { schemaVersion: 1, activePlayerId: null, testToolUsed: false, certificationCompleted: false, certifiedPlayerId: null, processedMatchIds: [], importantMatchParticipation: [], players: {}, pendingCertification: null };
   }
   function migrateRun(run) {
     if (!run.projectSystem || Number(run.projectSystem.schemaVersion) !== 1) run.projectSystem = emptyState();
     const state = run.projectSystem;
     state.processedMatchIds = Array.from(new Set((state.processedMatchIds || []).map(String)));
+    state.importantMatchParticipation = Array.isArray(state.importantMatchParticipation) ? state.importantMatchParticipation : [];
     state.players = state.players && typeof state.players === "object" ? state.players : {};
     state.activePlayerId = state.activePlayerId == null ? null : String(state.activePlayerId);
     return state;
@@ -60,7 +61,7 @@
     if (stage.finalStarter) final.push({ value: progress.finalConditions.finalStarter });
     if (stage.minLives != null) final.push({ value: progress.finalConditions.livesRemaining, target: stage.minLives });
     if (stage.allInitialLives) final.push({ value: progress.finalConditions.livesRemaining >= Number(run.initialLives ?? global.RunState?.initialRunLives?.() ?? 2) });
-    if (stage.importantStarts != null) final.push({ value: progress.importantMatchesStarted.length, target: stage.importantStarts });
+    if (stage.importantStarts != null) final.push({ value: importantStarts(run, progress.playerId, stage.importantStarts), target: stage.importantStarts });
     if (stage.noTestTools) final.push({ value: !run.projectSystem.testToolUsed });
     return { usage, role, boss, final };
   }
@@ -77,7 +78,12 @@
   }
   function snapshotMatch(run, match) {
     const state = reconcileRoster(run); const id = state.activePlayerId; const lineup = (match.lineup || run.lineup || []).map(idOf);
-    return { matchId: String(match.matchId), matchType: match.matchType || match.type, bossId: match.bossId || null, attempt: Number(match.attempt || 1), activeProjectPlayerId: id, lineup, projectStarted: Boolean(id && lineup.includes(id)), test: Boolean(match.test), runVersion: run.version };
+    return { matchId: String(match.matchId), matchType: match.matchType || match.type, bossId: match.bossId || null, bossIndex: match.bossIndex ?? run.bossIndex ?? null, attempt: Number(match.attempt || 1), activeProjectPlayerId: id, lineup, projectStarted: Boolean(id && lineup.includes(id)), test: Boolean(match.test), runVersion: run.version };
+  }
+  function importantStarts(run, playerId, count) {
+    const state = migrateRun(run); const wanted = Math.max(0, Number(count || 0));
+    const latest = state.importantMatchParticipation.filter((entry) => entry.completed).sort((a, b) => a.order - b.order).slice(-wanted);
+    return latest.length === wanted && latest.every((entry) => entry.playerId === String(playerId) && entry.started) ? wanted : 0;
   }
   function rolePoints(progress, result) {
     if (!result.won) return 0; const goals = Number(result.goalsFor || 0); const conceded = Number(result.goalsAgainst || 0); const boss = result.matchType === "boss" || result.matchType === "final";
@@ -92,6 +98,8 @@
     const state = migrateRun(run); const matchId = String(snapshot?.matchId || "");
     if (!matchId || state.processedMatchIds.includes(matchId)) return { processed: false, reason: "duplicate-or-missing" };
     state.processedMatchIds.push(matchId);
+    const mode = global.ProjectConfig.mode(modeOverrides);
+    if (mode.importantMatchTypes.includes(snapshot.matchType)) state.importantMatchParticipation.push({ matchId, matchType: snapshot.matchType, bossIndex: snapshot.bossIndex ?? null, activeProjectPlayerId: snapshot.activeProjectPlayerId || null, playerId: snapshot.activeProjectPlayerId || null, started: Boolean(snapshot.projectStarted), completed: Boolean(result.completed), order: state.importantMatchParticipation.length + 1 });
     if (!snapshot.projectStarted || !result.official || !result.completed || result.forced || snapshot.test || result.test) { if (result.forced || snapshot.test || result.test) state.testToolUsed = true; return { processed: false, reason: "not-qualifying" }; }
     const progress = state.players[snapshot.activeProjectPlayerId]; if (!progress) return { processed: false, reason: "not-selected" };
     progress.role = result.role || progress.role;
@@ -102,7 +110,6 @@
       const bossId = String(snapshot.bossId || snapshot.matchId); const previousAttempts = Number(progress.bossAttempts[bossId] || 0); progress.bossAttempts[bossId] = previousAttempts + 1;
       if (result.won) { progress.bossWins += 1; progress.currentBossWinStreak += 1; progress.maxBossWinStreak = Math.max(progress.maxBossWinStreak, progress.currentBossWinStreak); if (previousAttempts === 0) progress.firstAttemptBossWins += 1; }
     }
-    const mode = global.ProjectConfig.mode(modeOverrides);
     if (mode.importantMatchTypes.includes(snapshot.matchType)) progress.importantMatchesStarted = [...progress.importantMatchesStarted, matchId].slice(-mode.finalPhaseMatches);
     if (snapshot.matchType === "final") { progress.finalMatchStarted = true; progress.finalConditions.finalStarter = true; progress.finalConditions.finalRoster = true; }
     return { processed: true, progress: recalculate(run, progress) };
@@ -134,7 +141,7 @@
     return record;
   }
 
-  const api = { emptyState, migrateRun, eligibility, select, reconcileRoster, effectiveBoost, recalculate, snapshotMatch, processMatch, markRunEnd, rolePoints, prepareCertification, certificationRecord, completeCertification };
+  const api = { emptyState, migrateRun, eligibility, select, reconcileRoster, effectiveBoost, recalculate, snapshotMatch, processMatch, markRunEnd, rolePoints, importantStarts, objectiveEntries, prepareCertification, certificationRecord, completeCertification };
   global.ProjectSystem = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);

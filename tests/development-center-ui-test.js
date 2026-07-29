@@ -1,0 +1,4 @@
+'use strict'; const assert=require('node:assert/strict'); const fs=require('node:fs'); const source=fs.readFileSync('js/app.js','utf8');
+const center=source.slice(source.indexOf('function developmentPlayerStatus'),source.indexOf('function persistDevChanges'));
+assert.match(center,/developmentPlayerDetailMarkup\(selected\)/); assert.doesNotMatch(center,/players\.map\(developmentPlayerDetailMarkup\)/); assert.match(center,/data-center-player/); for(const amount of ['10','50','100']) assert.match(center,new RegExp(`\\[${amount === '10' ? '10,50,100' : '10,50,100'}\\]`)); assert.match(center,/data-invest="max"/); assert.match(center,/data-invest="custom"/); assert.match(center,/NESSUN GIOCATORE IN SVILUPPO/); assert.match(center,/prossima run/); assert.match(center,/player\.history/);
+console.log('development-center-ui-test: ok');
