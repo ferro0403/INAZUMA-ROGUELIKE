@@ -143,12 +143,16 @@
     const selectedByRole = { GK: [], DF: [], MF: [], FW: [] };
     draft.selectedIds.forEach((id, index) => selectedByRole[draft.roles[index]].push(id));
     const lineup = formation.slotRoles.map((role) => selectedByRole[role].shift());
-    run.roster = draft.selectedIds.map((id) => ({
+    run.roster = draft.selectedIds.map((id) => {
+      const source = players.find((player) => String(player.playerId) === String(id));
+      const permanent = global.DevelopmentV2?.optionsFromUpgrade?.(source, run.developmentPlayerSnapshot?.[String(id)]) || {};
+      return ({
       playerId: id,
       source: "free_agents",
       level: 0,
       equippedItem: null,
-    }));
+      ...permanent,
+    }); });
     run.lineup = lineup;
     run.bench = [];
     if (global.FiveVFive) {
