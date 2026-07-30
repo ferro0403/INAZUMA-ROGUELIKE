@@ -17,7 +17,7 @@ assert(app.includes('class="home-hub-card season-select-card season-select-card-
 assert(css.includes(".development-season-card"));
 assert.equal((app.match(/function renderDevelopmentCenter\(/g) || []).length, 1, "renderDevelopmentCenter must not be duplicated after conflict resolution");
 assert.equal((app.match(/function developmentPlayers\(/g) || []).length, 1, "developmentPlayers must not be duplicated after conflict resolution");
-assert.equal((app.match(/addEventListener\("click", renderDevelopmentCenter\)/g) || []).length, 1, "the Development Center entry listener must be bound once in the renderer");
+assert.equal((app.match(/addEventListener\(\"click\", renderDevelopmentCenter\)/g) || []).length, 1, "the Development Center entry listener must be bound once in the renderer");
 const index = fs.readFileSync("index.html", "utf8");
 assert.equal((index.match(/js\/development-v2\.js/g) || []).length, 1, "DevelopmentV2 must be loaded exactly once");
 for (const file of [app, css, index, fs.readFileSync("js/development-v2.js", "utf8")]) {
