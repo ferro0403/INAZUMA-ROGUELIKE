@@ -1,7 +1,7 @@
 (function (global) {
   "use strict";
 
-  const DEV_MODE = /(?:localhost|127\.0\.0\.1)/.test(global.location?.hostname || "") && global.location?.search?.includes("dev=1");
+  const DEV_MODE = new URLSearchParams(global.location?.search || "").get("dev") === "1";
   const TEST_MATCH_CONTROLS_ENABLED = true;
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
@@ -1494,6 +1494,68 @@
       toast(result.projectsCompleted ? `PROGETTO ${result.rarity.toUpperCase()} COMPLETATO · MAGAZZINO ×${result.projectsCompleted}` : `MODULO ${result.rarity.toUpperCase()} OTTENUTO · ${result.remainder}/${result.required}`);
       window.setTimeout(onComplete, 180);
     }));
+  }
+
+  function developmentRewardPresentation(defeatedBosses, endReason) {
+    const bosses = Math.max(0, Number(defeatedBosses) || 0);
+    return {
+      endReason,
+      coins: bosses >= 5 ? bosses * 10 + (endReason === "victory" ? 50 : 0) : 0,
+      cups: endReason === "victory" ? 1 : 0,
+      seen: false,
+    };
+  }
+
+  function renderDevelopmentRewardReveal(presentation, onContinue) {
+    const won = presentation.endReason === "victory";
+    app.innerHTML = `<main class="development-reward-screen" data-development-reward-reveal><section class="development-reward-panel">
+      <header><p class="eyebrow">RICOMPENSE RUN</p><h1>RICOMPENSE RUN</h1><p>${won ? "RUN COMPLETATA" : "RUN TERMINATA"}</p></header>
+      <div class="development-reward-list">
+        <article class="development-reward-item">${developmentCurrencyIcon("coins")}<span><small>MONETE</small><strong data-reward-count="${escapeHtml(presentation.coins)}">+0</strong></span></article>
+        ${won ? `<article class="development-reward-item development-reward-cup">${developmentCurrencyIcon("cups")}<span><small>COPPA CAMPIONE</small><strong>+${escapeHtml(presentation.cups)}</strong></span></article>` : ""}
+      </div>
+      <button type="button" class="btn btn-yellow development-reward-continue" id="development-reward-continue">CONTINUA</button>
+      <p class="development-reward-skip">Tocca per saltare l’animazione</p>
+    </section></main>`;
+    resetRenderedViewScroll();
+    const counter = document.querySelector("[data-reward-count]");
+    const target = Number(presentation.coins) || 0;
+    const startedAt = performance.now();
+    let finished = false;
+    const finishAnimation = () => {
+      if (finished) return;
+      finished = true;
+      if (counter) counter.textContent = `+${target}`;
+      document.querySelector(".development-reward-panel")?.classList.add("is-complete");
+    };
+    const tick = (now) => {
+      if (finished) return;
+      const progress = Math.min(1, (now - startedAt) / 900);
+      if (counter) counter.textContent = `+${Math.round(target * progress)}`;
+      if (progress < 1) requestAnimationFrame(tick); else finishAnimation();
+    };
+    requestAnimationFrame(tick);
+    document.querySelector("[data-development-reward-reveal]")?.addEventListener("click", finishAnimation);
+    document.getElementById("development-reward-continue")?.addEventListener("click", (event) => { event.stopPropagation(); finishAnimation(); onContinue(); });
+  }
+
+  function resolveDevelopmentEndRunFlow({ endReason, onComplete }) {
+    const defeatedBosses = Number(run.completedBossIds?.length || run.bossIndex || 0);
+    const result = global.DevelopmentV2.processRunEnd({ runId: run.runId, defeatedBosses, endReason });
+    if (!run.developmentRewardPresentation || run.developmentRewardPresentation.endReason !== endReason) {
+      run.developmentRewardPresentation = developmentRewardPresentation(defeatedBosses, endReason);
+      global.RunState.save(run);
+    }
+    const continueFlow = () => {
+      run.developmentRewardPresentation.seen = true;
+      global.RunState.save(run);
+      const pending = global.DevelopmentV2.read().projectPullLedger?.[run.runId] || result.pull;
+      if (pending && !pending.claimed) return renderProjectPull(pending, onComplete);
+      return onComplete();
+    };
+    if (!run.developmentRewardPresentation.seen) return renderDevelopmentRewardReveal(run.developmentRewardPresentation, continueFlow);
+    if (result.pull && !result.pull.claimed) return renderProjectPull(result.pull, onComplete);
+    return onComplete();
   }
 
   function developmentSelectedMarkup(player) {
@@ -4417,6 +4479,61 @@
     return { destination: "map" };
   }
 
+  function devSkipCurrentBoss({ renderResult = true } = {}) {
+    if (!DEV_MODE || !run || run.gameOver || run.phase === "complete") return false;
+    const bossIndex = Number(run.bossIndex || 0);
+    const boss = seasonDb.bossOrder[bossIndex];
+    if (!boss || run.completedBossIds.includes(String(boss.teamId))) return false;
+    run.postBossFlow = { bossIndex, status: "next-zone", remainingRewards: 0 };
+    run.pendingBossVictory = null;
+    run.activeMatch = null;
+    run.currentZone = null;
+    ui.match = null;
+    const destination = finishBossVictoryTransition();
+    global.RunState.save(run);
+    if (renderResult) navigateBossVictoryDestination(destination);
+    return true;
+  }
+
+  function devSkipToCompletedBosses(target) {
+    if (!DEV_MODE || !run) return;
+    const cappedTarget = Math.min(Math.max(0, target), Math.max(0, seasonDb.bossOrder.length - 1));
+    while (run.completedBossIds.length < cappedTarget && devSkipCurrentBoss({ renderResult: false })) { /* shared, progressive skip */ }
+    global.RunState.save(run);
+    renderMap();
+  }
+
+  function devGameOverNow() {
+    if (!DEV_MODE || !run || run.gameOver) return;
+    run.lives = 0;
+    run.gameOver = true;
+    run.phase = "gameover";
+    run.activeMatch = null;
+    run.pendingBossVictory = null;
+    run.postBossFlow = null;
+    ui.match = null;
+    global.RunState.save(run);
+    renderGameOver();
+  }
+
+  function mountRunDevQuickTools() {
+    document.getElementById("run-dev-quick-tools")?.remove();
+    if (!DEV_MODE || !run || run.gameOver || ["complete", "final-celebration", "final-summary"].includes(run.phase)) return;
+    const nextBoss = seasonDb?.bossOrder?.[run.bossIndex];
+    if (!nextBoss) return;
+    const panel = document.createElement("details");
+    panel.id = "run-dev-quick-tools";
+    panel.className = "run-dev-quick-tools";
+    panel.innerHTML = `<summary>DEV RUN</summary><div><p><b>Boss sconfitti: ${escapeHtml(run.completedBossIds.length)}</b><br>Prossimo Boss: ${escapeHtml(nextBoss.teamName || run.bossIndex + 1)}</p><button type="button" data-dev-run="skip">SALTA BOSS +1</button><button type="button" data-dev-run="five">PORTAMI A 5 BOSS SCONFITTI</button><button type="button" data-dev-run="final">PORTAMI AL BOSS FINALE</button><button type="button" class="danger" data-dev-run="gameover">GAME OVER ORA</button></div>`;
+    document.body.appendChild(panel);
+    panel.querySelector('[data-dev-run="skip"]')?.addEventListener("click", () => devSkipCurrentBoss());
+    panel.querySelector('[data-dev-run="five"]')?.addEventListener("click", () => devSkipToCompletedBosses(5));
+    panel.querySelector('[data-dev-run="final"]')?.addEventListener("click", () => devSkipToCompletedBosses(seasonDb.bossOrder.length - 1));
+    panel.querySelector('[data-dev-run="gameover"]')?.addEventListener("click", devGameOverNow);
+  }
+
+  if (DEV_MODE) new MutationObserver(() => mountRunDevQuickTools()).observe(app, { childList: true });
+
 
   function roleBadge(role) {
     const icons = { GK: "▣", DF: "◆", MF: "●", FW: "▲", all: "✦" };
@@ -5272,10 +5389,9 @@
     toast("Oggetto riportato nell'inventario");
   }
 
-  function renderGameOver() {
+  function renderGameOver({ developmentResolved = false } = {}) {
     const bossReached = Math.min(Number(run.bossIndex || 0) + 1, seasonDb.bossOrder.length);
-    const developmentReward = global.DevelopmentV2.processRunEnd({ runId: run.runId, defeatedBosses: Number(run.completedBossIds?.length || run.bossIndex || 0), endReason: "gameover" });
-    if (developmentReward.pull && !developmentReward.pull.claimed) return renderProjectPull(developmentReward.pull, renderGameOver);
+    if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "gameover", onComplete: () => renderGameOver({ developmentResolved: true }) });
     const wins = Number(run.statistics?.winsTotal || 0);
     app.innerHTML = `
       <main class="gameover-screen">
@@ -5448,11 +5564,10 @@
     }).join("") || '<p class="muted">Premi individuali disponibili solo quando i dati registrati sono affidabili.</p>';
   }
 
-  function renderFinalCelebration(hallTeamId) {
+  function renderFinalCelebration(hallTeamId, { developmentResolved = false } = {}) {
     const team = championTeam(hallTeamId || run?.hallTeamId);
     if (!team) return renderHome();
-    const developmentReward = global.DevelopmentV2.processRunEnd({ runId: run.runId, defeatedBosses: Number(run.completedBossIds?.length || seasonDb.bossOrder.length), endReason: "victory" });
-    if (developmentReward.pull && !developmentReward.pull.claimed) return renderProjectPull(developmentReward.pull, () => renderFinalCelebration(hallTeamId));
+    if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "victory", onComplete: () => renderFinalCelebration(hallTeamId, { developmentResolved: true }) });
     run.phase = "final-celebration"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
     app.innerHTML = `<main class="final-celebration-screen"><section class="final-celebration-panel"><header class="final-victory-hero"><div class="final-trophy" aria-hidden="true">★</div><div class="final-victory-copy"><p class="eyebrow">SEASON 1 COMPLETATA</p><h1>${escapeHtml(team.teamName)}</h1><h2>Campioni della run</h2><p>${escapeHtml(team.modeName)} · ${formatDate(team.victoryDate)} · ${escapeHtml(team.finalFormation || '-')}</p></div></header><div class="final-victory-team"><div class="final-victory-section-head"><span>Squadra vincente</span><strong>La formazione che ha scritto la storia</strong></div>${championFormationMarkup(team)}</div><div class="button-row final-actions"><button type="button" class="btn btn-yellow" id="final-continue">Continua <span aria-hidden="true">→</span></button><button type="button" class="btn" id="skip-final-animation">Vai al riepilogo</button></div></section></main>`;
     resetRenderedViewScroll(); bindHallPlayerDetails(team);
@@ -5461,14 +5576,13 @@
     document.getElementById("skip-final-animation").addEventListener("click", go);
   }
 
-  function renderFinalSummary(hallTeamId) {
+  function renderFinalSummary(hallTeamId, { developmentResolved = false } = {}) {
     const team = championTeam(hallTeamId || run?.hallTeamId);
     if (!team) return renderHome();
     const summaries = global.HallOfFameStorage.listSummaries();
     const ordinal = summaries.findIndex((item) => item.hallTeamId === team.hallTeamId) + 1;
     run.phase = "final-summary"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
-    const developmentReward = global.DevelopmentV2.processRunEnd({ runId: run.runId, defeatedBosses: Number(run.completedBossIds?.length || seasonDb.bossOrder.length), endReason: "victory" });
-    if (developmentReward.pull && !developmentReward.pull.claimed) return renderProjectPull(developmentReward.pull, () => renderFinalSummary(hallTeamId));
+    if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "victory", onComplete: () => renderFinalSummary(hallTeamId, { developmentResolved: true }) });
     app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><div><p class="eyebrow">CAMPIONI DELLA SEASON 1</p><h1>${escapeHtml(team.teamName)}</h1><p class="final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span><span>Seed ${escapeHtml(compactSeed(team.seed))}</span><span>#${escapeHtml(ordinal || '-')} Albo d’Oro</span></p></div><span class="final-summary-star" aria-hidden="true">★</span></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3>${championFiveVFiveMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel"><button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn btn-primary" id="final-new-run">Nuova run</button>${sectionRootButton("finalSummary")}</aside></section></main>`;
     resetRenderedViewScroll(); bindFinalTabs(); bindHallPlayerDetails(team);
     document.getElementById("open-current-hall").addEventListener("click", () => renderHallOfFameDetail(team.hallTeamId));
