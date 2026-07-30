@@ -1466,7 +1466,10 @@
     const state = global.DevelopmentV2.read();
     const status = global.DevelopmentV2.projectBuildStatus(rarity, state);
     const image = `<span class="project-image-frame"><img src="${escapeHtml(global.DevelopmentV2.ASSETS[rarity])}" width="80" height="80" alt="Progetto Evoluzione ${escapeHtml(rarity)}" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="project-image-fallback" hidden aria-hidden="true">◆</span></span>`;
-    if (selectable) return `<button type="button" class="development-project-card project-pull-card ${rarityClass(rarity)}" data-claim-project="${escapeHtml(rarity)}">${image}<strong>${escapeHtml(rarity)}</strong><small>Posseduti: ${escapeHtml(status.owned)}</small></button>`;
+    if (selectable) {
+      const buildState = ["Elite", "Mondiale", "Leggenda"].includes(rarity) ? `<span>BUILD ${escapeHtml(status.filled)}/${escapeHtml(status.required)}</span>` : "";
+      return `<button type="button" class="development-project-card project-pull-card ${rarityClass(rarity)}" data-claim-project="${escapeHtml(rarity)}"><span class="project-pull-label">SCELTA</span>${image}<strong>${escapeHtml(rarity)}</strong><small class="project-pull-status">${buildState}<span>MAGAZZINO ×${escapeHtml(status.owned)}</span></small><span class="project-pull-action">SCEGLI</span></button>`;
+    }
     const segments = Array.from({ length: status.required }, (_, index) => `<i class="${index < status.filled ? "is-filled" : ""}"></i>`).join("");
     return `<article class="development-project-card project-build-card ${rarityClass(rarity)}">${image}<div class="project-build-copy"><strong>${escapeHtml(rarity)}</strong><div class="project-segments" style="--segments:${escapeHtml(status.required)}" aria-label="${escapeHtml(status.filled)} parti su ${escapeHtml(status.required)}">${segments}</div><div class="project-build-status"><b>${escapeHtml(status.filled)} / ${escapeHtml(status.required)}</b></div></div></article>`;
   }
@@ -1477,9 +1480,20 @@
 
   function renderProjectPull(pull, onComplete = renderSeasonSelect) {
     if (!pull || pull.claimed) return renderSeasonSelect();
-    app.innerHTML = `<main class="project-pull-screen"><header><p class="eyebrow">RICOMPENSA RUN</p><h1>SCEGLI UN PROGETTO</h1><p>Una sola scelta. Il Progetto sarà subito disponibile nel Centro di sviluppo.</p></header><section class="project-pull-grid">${pull.choices.map((r, index) => projectCardMarkup(r, { selectable: true }).replace("<strong>", `<span class="project-pull-number">0${index + 1}</span><strong>`)).join("")}</section><p class="project-pull-hint">Tocca una carta per confermare la ricompensa e continuare.</p></main>`;
+    app.innerHTML = `<main class="project-pull-screen"><header><p class="eyebrow">RICOMPENSA RUN</p><h1>SCEGLI UN PROGETTO</h1><p>Una sola scelta. Il Progetto sarà subito disponibile nel Centro di sviluppo.</p></header><section class="project-pull-grid">${pull.choices.map((r, index) => projectCardMarkup(r, { selectable: true }).replace("SCELTA</span>", `SCELTA 0${index + 1}</span>`)).join("")}</section><p class="project-pull-hint">Tocca una carta per scegliere la ricompensa.</p></main>`;
     resetRenderedViewScroll();
-    document.querySelectorAll("[data-claim-project]").forEach((button) => button.addEventListener("click", () => { button.disabled = true; const result = global.DevelopmentV2.claimPull(pull.runId, button.dataset.claimProject); if (result) { toast(result.projectsCompleted ? `PROGETTO ${result.rarity.toUpperCase()} COMPLETATO · MAGAZZINO ×${result.projectsCompleted}` : `MODULO ${result.rarity.toUpperCase()} OTTENUTO · ${result.remainder}/${result.required}`); onComplete(); } }));
+    let claiming = false;
+    const choices = [...document.querySelectorAll("[data-claim-project]")];
+    choices.forEach((button) => button.addEventListener("click", () => {
+      if (claiming) return;
+      claiming = true;
+      choices.forEach((choice) => { choice.disabled = true; });
+      button.classList.add("is-selected");
+      const result = global.DevelopmentV2.claimPull(pull.runId, button.dataset.claimProject);
+      if (!result) return;
+      toast(result.projectsCompleted ? `PROGETTO ${result.rarity.toUpperCase()} COMPLETATO · MAGAZZINO ×${result.projectsCompleted}` : `MODULO ${result.rarity.toUpperCase()} OTTENUTO · ${result.remainder}/${result.required}`);
+      window.setTimeout(onComplete, 180);
+    }));
   }
 
   function developmentSelectedMarkup(player) {
