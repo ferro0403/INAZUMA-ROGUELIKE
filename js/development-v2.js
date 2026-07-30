@@ -21,6 +21,10 @@
     Mondiale: "https://dxi4wb638ujep.cloudfront.net/1/k/c/j/cj7t4wj1bx8.png",
     Leggenda: "https://dxi4wb638ujep.cloudfront.net/1/k/g/i/gibitioquoe.png",
   });
+  const DEVELOPMENT_RESOURCE_ASSETS = Object.freeze({
+    coins: "https://dxi4wb638ujep.cloudfront.net/1/k/r/e/rez8i1ppo0p8.webp",
+    cups: "https://dxi4wb638ujep.cloudfront.net/1/k/r/t/ttzf1b8nbe.webp",
+  });
   const TABLES = Object.freeze({
     5: { safe: { Buono: 100 }, advanced: { Buono: 85, Forte: 15 }, rare: { Buono: 70, Forte: 30 } },
     6: { safe: { Buono: 85, Forte: 15 }, advanced: { Buono: 60, Forte: 40 }, rare: { Buono: 50, Forte: 50 } },
@@ -72,6 +76,6 @@
   function evolve({ playerId, playerName, basePotential, unlocked, freeAgentEligible }) { if (!unlocked) return { ok: false, reason: "locked" }; if (!freeAgentEligible) return { ok: false, reason: "not_free_agent" }; const state = read(); const id = String(playerId); const currentPotential = Math.max(Number(basePotential) || 0, Number(state.players[id]?.permanentTargetPotential) || 0); const currentRarity = global.InazumaProgression?.categoryForPotential?.(currentPotential) || RARITIES.filter((r) => threshold(r) <= currentPotential).at(-1); const target = nextRarity(currentRarity); if (!target) return { ok: false, reason: "max" }; const cost = COSTS[target]; const missing = { coins: Math.max(0, cost.coins - state.coins), cups: Math.max(0, cost.cups - state.cups), projects: Math.max(0, cost.projects - (state.projects[target] || 0)) }; if (Object.values(missing).some(Boolean)) return { ok: false, reason: "resources", missing };
     const targetPotential = Math.max(currentPotential, threshold(target)); state.coins -= cost.coins; state.cups -= cost.cups; if (cost.projects) state.projects[target] -= cost.projects; state.players[id] = { permanentTargetPotential: targetPotential, permanentPotentialBoost: Math.max(0, targetPotential - Number(basePotential || 0)), currentPermanentRarity: target, evolutionCount: Number(state.players[id]?.evolutionCount || 0) + 1, updatedAt: new Date().toISOString() }; state.evolutionHistory.unshift({ id: `evo_${Date.now()}_${id}`, playerId: id, playerNameSnapshot: playerName || id, fromRarity: currentRarity, toRarity: target, fromPotential: currentPotential, toPotential: targetPotential, projectsConsumed: cost.projects, cupsConsumed: cost.cups, coinsConsumed: cost.coins, timestamp: new Date().toISOString() }); write(state); return { ok: true, state, target, targetPotential }; }
   function reset() { return write(empty()); }
-  global.DevelopmentV2 = { STORAGE_KEY, SCHEMA_VERSION, RARITIES, PROJECT_RARITIES, COSTS, BUILD_REQUIREMENTS, ASSETS, TABLES, read, write, reset, nextRarity, threshold, weighted, generateChoiceSlots, generateChoices, processRunEnd, claimPull, addProjectModules, addCompletedProject, projectBuildStatus, playerUpgrade, optionsFromUpgrade, permanentOptions, resolvePlayer, evolve };
+  global.DevelopmentV2 = { STORAGE_KEY, SCHEMA_VERSION, RARITIES, PROJECT_RARITIES, COSTS, BUILD_REQUIREMENTS, ASSETS, DEVELOPMENT_RESOURCE_ASSETS, TABLES, read, write, reset, nextRarity, threshold, weighted, generateChoiceSlots, generateChoices, processRunEnd, claimPull, addProjectModules, addCompletedProject, projectBuildStatus, playerUpgrade, optionsFromUpgrade, permanentOptions, resolvePlayer, evolve };
   if (typeof module !== "undefined" && module.exports) module.exports = global.DevelopmentV2;
 })(typeof globalThis !== "undefined" ? globalThis : window);
