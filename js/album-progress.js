@@ -20,6 +20,7 @@
       coverUrl: "https://static.wikia.nocookie.net/inazuma-eleven/images/4/45/Minodouzan_emblem.png/revision/latest?cb=20251118125410",
     },
   };
+  let freeAgentIds = new Set();
 
   function nowIso() { return new Date().toISOString(); }
   function emptyProgress() { return { schemaVersion: SCHEMA_VERSION, collections: {} }; }
@@ -32,7 +33,28 @@
       entry.unlockedPlayerIds = entry.unlockedPlayerIds && typeof entry.unlockedPlayerIds === "object" ? entry.unlockedPlayerIds : {};
       progress.collections[collection.id] = entry;
     });
+    syncFreeAgentUnlocks(progress);
     return progress;
+  }
+  function syncFreeAgentUnlocks(progress) {
+    if (!freeAgentIds.size) return 0;
+    const entries = Object.keys(ALBUM_COLLECTIONS).map((id) => collectionEntry(progress, id));
+    let changed = 0;
+    freeAgentIds.forEach((playerId) => {
+      const records = entries.map((entry) => entry.unlockedPlayerIds[playerId]).filter(Boolean);
+      if (!records.length) return;
+      const canonical = records.slice().sort((a, b) => String(a.firstUnlockedAt || "").localeCompare(String(b.firstUnlockedAt || "")))[0];
+      entries.forEach((entry) => {
+        if (!entry.unlockedPlayerIds[playerId]) { entry.unlockedPlayerIds[playerId] = { ...canonical }; changed += 1; }
+      });
+    });
+    return changed;
+  }
+  function configureFreeAgentIds(playerIds) {
+    freeAgentIds = new Set(Array.from(playerIds || [], (id) => String(id || "")).filter(Boolean));
+    const progress = readStorage();
+    writeStorage(progress);
+    return freeAgentIds.size;
   }
   function readStorage() {
     try { return normalizeProgress(JSON.parse(global.localStorage?.getItem(STORAGE_KEY) || "null")); }
@@ -51,13 +73,15 @@
     const progress = readStorage();
     const collection = collectionEntry(progress, collectionId);
     if (collection.unlockedPlayerIds[id]) return false;
-    collection.unlockedPlayerIds[id] = { firstUnlockedAt: metadata.firstUnlockedAt || nowIso(), firstSource: metadata.firstSource || metadata.source || "unknown" };
+    const record = { firstUnlockedAt: metadata.firstUnlockedAt || nowIso(), firstSource: metadata.firstSource || metadata.source || "unknown" };
+    const targets = freeAgentIds.has(id) ? Object.keys(ALBUM_COLLECTIONS) : [String(collectionId || DEFAULT_COLLECTION_ID)];
+    targets.forEach((targetId) => { collectionEntry(progress, targetId).unlockedPlayerIds[id] ||= { ...record }; });
     writeStorage(progress);
     return true;
   }
   function unlockAlbumPlayers(collectionId, playerIds, metadata = {}) {
     const progress = readStorage(); const collection = collectionEntry(progress, collectionId); let changed = 0; const unlockedAt = metadata.firstUnlockedAt || nowIso();
-    (Array.isArray(playerIds) ? playerIds : []).forEach((playerId) => { const id = String(playerId || ""); if (id && !collection.unlockedPlayerIds[id]) { collection.unlockedPlayerIds[id] = { firstUnlockedAt: unlockedAt, firstSource: metadata.firstSource || metadata.source || "unknown" }; changed += 1; } });
+    (Array.isArray(playerIds) ? playerIds : []).forEach((playerId) => { const id = String(playerId || ""); if (id && !collection.unlockedPlayerIds[id]) { const record = { firstUnlockedAt: unlockedAt, firstSource: metadata.firstSource || metadata.source || "unknown" }; const targets = freeAgentIds.has(id) ? Object.keys(ALBUM_COLLECTIONS) : [String(collectionId || DEFAULT_COLLECTION_ID)]; targets.forEach((targetId) => { collectionEntry(progress, targetId).unlockedPlayerIds[id] ||= { ...record }; }); changed += 1; } });
     if (changed) writeStorage(progress);
     return changed;
   }
@@ -85,5 +109,7 @@
     (Array.isArray(hallTeams) ? hallTeams : []).forEach((team) => { changed += unlockAlbumPlayers(team?.seasonId || DEFAULT_COLLECTION_ID, collectIdsFromHallTeam(team), { source: "backfill-hall-of-fame" }); });
     return changed;
   }
-  global.AlbumProgress = { STORAGE_KEY, SCHEMA_VERSION, DEFAULT_COLLECTION_ID, ALBUM_COLLECTIONS, read: readStorage, write: writeStorage, unlockAlbumPlayer, unlockAlbumPlayers, isAlbumPlayerUnlocked, unlockedSet, backfillAlbumProgress, collectIdsFromRun, collectIdsFromHallTeam };
+  const api = { STORAGE_KEY, SCHEMA_VERSION, DEFAULT_COLLECTION_ID, ALBUM_COLLECTIONS, read: readStorage, write: writeStorage, configureFreeAgentIds, unlockAlbumPlayer, unlockAlbumPlayers, isAlbumPlayerUnlocked, unlockedSet, backfillAlbumProgress, collectIdsFromRun, collectIdsFromHallTeam };
+  global.AlbumProgress = api;
+  if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(globalThis);

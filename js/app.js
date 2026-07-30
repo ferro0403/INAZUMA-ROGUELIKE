@@ -1453,7 +1453,9 @@
 
   function developmentCurrencyIcon(type, rarity = "") {
     if (type === "project") return `<span class="development-resource-icon project-image-frame"><img src="${escapeHtml(global.DevelopmentV2.ASSETS[rarity])}" alt="" loading="lazy" decoding="async"></span>`;
-    return itemIcon(DEVELOPMENT_RESOURCE_ITEMS[type]);
+    const resource = DEVELOPMENT_RESOURCE_ITEMS[type];
+    if (!resource?.imageUrl) return "";
+    return `<span class="item-icon item-icon--image development-resource-icon" aria-label="${escapeHtml(resource.name)}"><img src="${escapeHtml(resource.imageUrl)}" alt="${escapeHtml(resource.name)}" loading="eager" decoding="async" onerror="this.hidden=true;this.parentElement.classList.add('is-fallback')"></span>`;
   }
 
   function resourceCostMarkup({ type, rarity = "", label, current = null, required, satisfied = true, compact = false }) {
@@ -5664,6 +5666,7 @@
       if (!activeDb || !freeAgentsResponse.ok || !visualsResponse.ok) throw new Error("Database non raggiungibili");
       const visualsDb = await visualsResponse.json();
       freeAgentsDb = await freeAgentsResponse.json();
+      global.AlbumProgress.configureFreeAgentIds((freeAgentsDb.players || []).map((player) => player.playerId));
       freeAgentsById = new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player]));
       playerVisualsById = new Map(Object.entries(visualsDb.players || {}));
       renderHome();

@@ -13,12 +13,12 @@
   ];
 
 
-  const ROLE_PRIMARY_STATS = {
-    FW: ["attack"],
-    MF: ["control"],
-    DF: ["defense"],
-    GK: ["save"],
-  };
+  const ROLE_STAT_WEIGHTS = Object.freeze({
+    FW: Object.freeze({ attack: 50, control: 12, speed: 10, grit: 8, physical: 10, stamina: 8, defense: 2, save: 0 }),
+    MF: Object.freeze({ control: 40, stamina: 15, grit: 12, speed: 10, attack: 10, defense: 8, physical: 5, save: 0 }),
+    DF: Object.freeze({ defense: 50, physical: 15, grit: 10, stamina: 8, speed: 8, control: 5, attack: 4, save: 0 }),
+    GK: Object.freeze({ save: 70, grit: 10, physical: 8, defense: 5, control: 3, stamina: 2, speed: 2, attack: 0 }),
+  });
 
   function clampPotential(value) {
     const numeric = Number.isFinite(Number(value)) ? Math.round(Number(value)) : 0;
@@ -103,15 +103,29 @@
     return Math.min(progressed, maxAllowedBoost);
   }
 
-  function distributeStatBoosts(stats, player, boostPoints) {
+  function distributeWeightedStatBoosts(stats, player, overallBoost) {
     const result = { ...stats };
-    const points = Math.max(0, Math.round(Number(boostPoints || 0)));
-    if (!points) return result;
-    const primary = ROLE_PRIMARY_STATS[player?.position] || ROLE_PRIMARY_STATS[player?.normalizedRole] || [];
-    const order = [...primary, ...FALLBACK_STAT_ORDER.filter((stat) => !primary.includes(stat))];
-    for (let index = 0; index < points; index += 1) {
-      const stat = order[index % order.length];
-      result[stat] = Math.min(99, Number(result[stat] || 0) + 1);
+    const target = Math.max(0, Number(overallBoost || 0));
+    const role = player?.position || player?.normalizedRole;
+    const weights = ROLE_STAT_WEIGHTS[role];
+    if (!target || !weights) return result;
+
+    const allocated = Object.fromEntries(Object.keys(weights).map((stat) => [stat, 0]));
+    let contribution = 0;
+    while (contribution + Number.EPSILON < target) {
+      const eligible = Object.entries(weights)
+        .filter(([stat, weight]) => weight > 0 && Number(result[stat] || 0) < 99)
+        .sort(([statA, weightA], [statB, weightB]) => {
+          const priorityDifference = (weightB / (allocated[statB] + 1)) - (weightA / (allocated[statA] + 1));
+          return priorityDifference || FALLBACK_STAT_ORDER.indexOf(statA) - FALLBACK_STAT_ORDER.indexOf(statB);
+        });
+      if (!eligible.length) break;
+      const [stat, weight] = eligible[0];
+      const nextContribution = contribution + weight / 100;
+      if (nextContribution > target && Math.abs(target - contribution) <= Math.abs(target - nextContribution)) break;
+      result[stat] = Number(result[stat] || 0) + 1;
+      allocated[stat] += 1;
+      contribution = nextContribution;
     }
     return result;
   }
@@ -176,7 +190,7 @@
     const visibleBoost = effectiveCurrentOverallBoost(player, options);
     const potential = effectivePotential(player, options);
     const overall = Math.min(potential, baseOverall + visibleBoost, 99);
-    const boostedStats = distributeStatBoosts(stats, player, visibleBoost);
+    const boostedStats = distributeWeightedStatBoosts(stats, player, visibleBoost);
     const category = categoryForPotential(potential, player.category, database);
     return { ...player, ...boostedStats, level, overall, potential, category, stats: boostedStats };
   }
@@ -224,6 +238,8 @@
     categoryForPotential,
     normalizePotentialBoostApplications,
     normalizedPotentialBoost,
+    distributeWeightedStatBoosts,
+    ROLE_STAT_WEIGHTS,
     RARITY_THRESHOLDS,
   };
 
