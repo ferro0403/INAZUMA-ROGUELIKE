@@ -56,8 +56,9 @@
     return true;
   }
   function unlockAlbumPlayers(collectionId, playerIds, metadata = {}) {
-    let changed = 0;
-    (Array.isArray(playerIds) ? playerIds : []).forEach((id) => { if (unlockAlbumPlayer(collectionId, id, metadata)) changed += 1; });
+    const progress = readStorage(); const collection = collectionEntry(progress, collectionId); let changed = 0; const unlockedAt = metadata.firstUnlockedAt || nowIso();
+    (Array.isArray(playerIds) ? playerIds : []).forEach((playerId) => { const id = String(playerId || ""); if (id && !collection.unlockedPlayerIds[id]) { collection.unlockedPlayerIds[id] = { firstUnlockedAt: unlockedAt, firstSource: metadata.firstSource || metadata.source || "unknown" }; changed += 1; } });
+    if (changed) writeStorage(progress);
     return changed;
   }
   function isAlbumPlayerUnlocked(collectionId, playerId, progress = readStorage()) {
