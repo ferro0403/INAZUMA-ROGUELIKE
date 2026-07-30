@@ -804,11 +804,10 @@
     const database = options.database || freeAgentsDb;
     const level = Number(options.level ?? 0);
     const pullSelection = options.context === "pull";
-    const resolved = global.InazumaProgression.getPlayerAtLevel(
-      player,
-      Math.floor(level),
-      database
-    );
+    const snapshotOptions = global.DevelopmentV2.optionsFromUpgrade(player, run?.developmentPlayerSnapshot?.[String(player.playerId)]);
+    const resolved = options.applyPermanent
+      ? global.InazumaProgression.getPlayerAtLevel(player, Math.floor(level), database, snapshotOptions)
+      : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(level), database);
     const tag = options.button ? "button" : "article";
     const playerDataAttribute = options.dataAttribute || "data-player-id";
     const attributes = options.button
@@ -837,9 +836,7 @@
   }
 
   function permanentRosterFields(player) {
-    const upgrade = global.DevelopmentV2?.playerUpgrade?.(player?.playerId);
-    const boost = Math.max(0, Number(upgrade?.permanentTargetPotential || 0) - Number(player?.finalOverall || 0));
-    return { potentialBoost: boost, currentOverallBoost: boost, potentialBoostApplications: boost ? [{ amount: boost, appliedLevel: 0, permanent: true }] : [], intensiveTrainingMigrated: true };
+    return { ...global.DevelopmentV2.optionsFromUpgrade(player, run?.developmentPlayerSnapshot?.[String(player?.playerId)]), intensiveTrainingMigrated: true };
   }
 
   function teamLogoMarkup(teamIdentity) {
@@ -991,10 +988,9 @@
   }
 
   function albumPlayerView(player, database) {
-    const upgrade = global.DevelopmentV2?.playerUpgrade?.(player.playerId);
-    const boost = Math.max(0, Number(upgrade?.permanentTargetPotential || 0) - Number(player.finalOverall || 0));
-    const final = global.InazumaProgression.getPlayerAtLevel(player, Number(player.maxLevel || 20), database, { potentialBoost: boost, currentOverallBoost: boost });
-    return { ...player, overall: player.finalOverall ?? final.overall, finalOverall: player.finalOverall ?? final.overall, category: player.category || final.category, stats: player.finalStats || final.stats, baseStats: player.finalStats || final.stats, displayLevel: Number(player.maxLevel || 20), albumDatabase: database };
+    const basePotential = Number(player.basePotential ?? player.finalOverall ?? 0);
+    const final = global.DevelopmentV2.resolvePlayer(player, Number(player.maxLevel || 20), database);
+    return { ...player, basePotential, overall: final.overall, finalOverall: final.overall, potential: final.potential, category: final.category, stats: final.stats, baseStats: final.stats, displayLevel: Number(player.maxLevel || 20), albumDatabase: database };
   }
 
   function albumProgressPercent(progress) {
@@ -1381,7 +1377,8 @@
       isLastPlayed: Boolean(savedRun && latestTime && runTimestamp(savedRun) === latestTime),
     })).join("");
     const pending = Object.values(global.DevelopmentV2.read().projectPullLedger).find((pull) => !pull.claimed);
-    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="season-select-topbar">${sectionRootButton("seasonSelection", "season-select-home-button")}<h1>Seleziona Season</h1><span class="season-select-topbar-spacer" aria-hidden="true"></span></header><section class="development-entry anime-panel"><div><p class="eyebrow">CRESCITA PERMANENTE</p><h2>Centro di sviluppo</h2><p>Usa Monete, Coppe e Progetti per potenziare i giocatori dell’Album.</p></div><button class="btn btn-yellow" id="open-development">CENTRO DI SVILUPPO</button>${pending ? `<button class="btn" id="recover-project-pull">RISCATTA PROGETTO</button>` : ""}</section><section class="home-choice-grid season-choice-grid">${cards}</section></main>`;
+    const developmentCard = `<article class="home-hub-card season-select-card season-select-card--empty development-season-card"><div class="season-card-head"><div><p class="eyebrow">CRESCITA PERMANENTE</p><h2>CENTRO DI SVILUPPO</h2><p class="season-team-name">Usa Progetti, Coppe e Monete per evolvere i giocatori già sbloccati.</p></div><span class="season-status-pill">Album</span></div><div class="home-card-actions season-card-actions"><button class="btn btn-yellow" id="open-development">APRI CENTRO DI SVILUPPO</button>${pending ? `<button class="btn" id="recover-project-pull">RISCATTA PROGETTO</button>` : ""}</div></article>`;
+    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="season-select-topbar">${sectionRootButton("seasonSelection", "season-select-home-button")}<h1>Seleziona Season</h1><span class="season-select-topbar-spacer" aria-hidden="true"></span></header><section class="home-choice-grid season-choice-grid">${developmentCard}${cards}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav();
     document.getElementById("open-development")?.addEventListener("click", renderDevelopmentCenter);
@@ -1391,9 +1388,28 @@
   }
 
   function developmentPlayers() {
-    backfillAlbumProgress();
-    const unlocked = global.AlbumProgress.unlockedSet(global.AlbumProgress.DEFAULT_COLLECTION_ID);
-    return albumCollectionPlayers().filter((p) => unlocked.has(String(p.playerId))).map((p) => albumPlayerView(p, p.albumDatabase));
+    ensureAlbumBackfill();
+    const byId = new Map();
+    Object.keys(global.AlbumProgress.ALBUM_COLLECTIONS).forEach((collectionId) => {
+      const unlocked = global.AlbumProgress.unlockedSet(collectionId);
+      albumCollectionPlayers(collectionId).forEach((player) => {
+        const id = String(player.playerId);
+        if (!unlocked.has(id)) return;
+        const existing = byId.get(id);
+        if (existing) { existing.developmentCollections.push(collectionId); return; }
+        byId.set(id, { ...albumPlayerView(player, player.albumDatabase), developmentCollections: [collectionId] });
+      });
+    });
+    return [...byId.values()];
+  }
+
+  function filterDevelopmentPlayers(players, query = "", rarity = "Tutti") {
+    const needle = String(query).trim().toLocaleLowerCase("it");
+    return players.filter((player) => (!needle || player.name.toLocaleLowerCase("it").includes(needle)) && (rarity === "Tutti" || player.category === rarity));
+  }
+
+  function developmentPlayerGridMarkup(players) {
+    return players.map((player) => `<div data-development-player="${escapeHtml(player.playerId)}">${playerCard(player, { button: true, dataAttribute: "data-development-card", level: player.maxLevel || 20, database: player.albumDatabase })}${player.category === "Leggenda" ? '<span class="development-max">MAX</span>' : ""}</div>`).join("") || '<p class="empty-state">Nessun giocatore sbloccato corrisponde ai filtri.</p>';
   }
 
   function projectCardMarkup(rarity, { selectable = false } = {}) {
@@ -1409,25 +1425,58 @@
 
   function renderDevelopmentCenter(tab = "players", query = "", rarity = "Tutti") {
     const state = global.DevelopmentV2.read(); const players = developmentPlayers();
-    const filtered = players.filter((p) => (!query || p.name.toLocaleLowerCase("it").includes(query.toLocaleLowerCase("it"))) && (rarity === "Tutti" || p.category === rarity));
-    const body = tab === "projects" ? `<section class="development-project-grid">${global.DevelopmentV2.PROJECT_RARITIES.map((r) => projectCardMarkup(r)).join("")}</section>` : tab === "history" ? `<section class="development-history">${state.evolutionHistory.map((h) => `<article><strong>${escapeHtml(h.playerNameSnapshot)}</strong><span>${escapeHtml(h.fromRarity)} → ${escapeHtml(h.toRarity)}</span><time>${escapeHtml(new Intl.DateTimeFormat("it-IT").format(new Date(h.timestamp)))}</time><small>${h.coinsConsumed} monete · ${h.cupsConsumed} coppe · ${h.projectsConsumed} progetti</small></article>`).join("") || '<p class="empty-state">Nessuna evoluzione registrata.</p>'}</section>` : `<div class="development-filters"><input id="development-search" value="${escapeHtml(query)}" placeholder="Cerca giocatore…" aria-label="Cerca giocatore per nome"><select id="development-rarity" aria-label="Filtra rarità">${["Tutti", ...global.DevelopmentV2.RARITIES].map((r) => `<option ${r === rarity ? "selected" : ""}>${r}</option>`).join("")}</select></div><section class="album-player-grid development-player-grid">${filtered.map((p) => `<div data-development-player="${escapeHtml(p.playerId)}">${playerCard(p, { button: true, dataAttribute: "data-development-card", level: p.maxLevel || 20, database: p.albumDatabase })}${p.category === "Leggenda" ? '<span class="development-max">MAX</span>' : ""}</div>`).join("") || '<p class="empty-state">Nessun giocatore sbloccato corrisponde ai filtri.</p>'}</section>`;
+    const filtered = filterDevelopmentPlayers(players, query, rarity);
+    const body = tab === "projects" ? `<section class="development-project-grid">${global.DevelopmentV2.PROJECT_RARITIES.map((r) => projectCardMarkup(r)).join("")}</section>` : tab === "history" ? `<section class="development-history">${state.evolutionHistory.map((h) => `<article><strong>${escapeHtml(h.playerNameSnapshot)}</strong><span>${escapeHtml(h.fromRarity)} → ${escapeHtml(h.toRarity)}</span><time>${escapeHtml(new Intl.DateTimeFormat("it-IT").format(new Date(h.timestamp)))}</time><small>${h.coinsConsumed} monete · ${h.cupsConsumed} coppe · ${h.projectsConsumed} progetti</small></article>`).join("") || '<p class="empty-state">Nessuna evoluzione registrata.</p>'}</section>` : `<div class="development-filters"><input id="development-search" value="${escapeHtml(query)}" placeholder="Cerca giocatore…" aria-label="Cerca giocatore per nome" autocomplete="off"><select id="development-rarity" aria-label="Filtra rarità">${["Tutti", ...global.DevelopmentV2.RARITIES].map((r) => `<option ${r === rarity ? "selected" : ""}>${r}</option>`).join("")}</select></div><section class="album-player-grid development-player-grid" id="development-player-results">${developmentPlayerGridMarkup(filtered)}</section>`;
     app.innerHTML = `<main class="development-screen"><header class="topbar"><div><p class="eyebrow">CRESCITA PERMANENTE</p><h1>CENTRO DI SVILUPPO</h1></div><button class="btn" id="development-back">INDIETRO</button></header><section class="development-wallet"><span>MONETE <strong>${state.coins}</strong></span><span>COPPE <strong>${state.cups}</strong></span></section><nav class="development-tabs">${[["players","GIOCATORI"],["projects","PROGETTI"],["history","STORICO"]].map(([id,label]) => `<button class="${tab === id ? "active" : ""}" data-development-tab="${id}">${label}</button>`).join("")}</nav>${body}${new URLSearchParams(location.search).get("dev") === "1" ? developmentDevMarkup() : ""}</main>`;
     document.getElementById("development-back").onclick = renderSeasonSelect; document.querySelectorAll("[data-development-tab]").forEach((b) => b.onclick = () => renderDevelopmentCenter(b.dataset.developmentTab));
-    const search = document.getElementById("development-search"); if (search) search.addEventListener("input", () => renderDevelopmentCenter("players", search.value, document.getElementById("development-rarity").value));
-    document.getElementById("development-rarity")?.addEventListener("change", (e) => renderDevelopmentCenter("players", search?.value || "", e.target.value));
-    document.querySelectorAll("[data-development-player]").forEach((el) => el.onclick = () => renderDevelopmentDetail(players.find((p) => String(p.playerId) === el.dataset.developmentPlayer)));
+    const search = document.getElementById("development-search"), raritySelect = document.getElementById("development-rarity"), results = document.getElementById("development-player-results");
+    const updateResults = () => { if (results) results.innerHTML = developmentPlayerGridMarkup(filterDevelopmentPlayers(players, search?.value || "", raritySelect?.value || "Tutti")); };
+    search?.addEventListener("input", updateResults); raritySelect?.addEventListener("change", updateResults);
+    results?.addEventListener("click", (event) => { const element = event.target.closest("[data-development-player]"); if (element) renderDevelopmentDetail(players.find((player) => String(player.playerId) === element.dataset.developmentPlayer)); });
     bindDevelopmentDev();
   }
 
-  function renderDevelopmentDetail(player) {
-    const state = global.DevelopmentV2.read(); const target = global.DevelopmentV2.nextRarity(player.category); if (!target) return openModal(`<h2>${escapeHtml(player.name)}</h2><p class="development-max-copy">MAX · RARITÀ MASSIMA</p><button class="btn" id="dev-detail-close">CHIUDI</button>`), document.getElementById("dev-detail-close").onclick = closeModal;
-    const cost = global.DevelopmentV2.COSTS[target], have = state.projects[target] || 0; const missing = [Math.max(0,cost.projects-have) ? `MANC${cost.projects-have === 1 ? "A" : "ANO"} ${cost.projects-have} PROGETT${cost.projects-have === 1 ? "O" : "I"} ${target.toUpperCase()}` : "", Math.max(0,cost.cups-state.cups) ? `MANCANO ${cost.cups-state.cups} COPPE` : "", Math.max(0,cost.coins-state.coins) ? `MANCANO ${cost.coins-state.coins} MONETE` : ""].filter(Boolean); const unlocked = global.AlbumProgress.isAlbumPlayerUnlocked(global.AlbumProgress.DEFAULT_COLLECTION_ID, player.playerId);
-    openModal(`<div class="development-detail"><p class="eyebrow">EVOLUZIONE GIOCATORE</p><h2>${escapeHtml(player.name)}</h2><strong class="development-rarity-step">${escapeHtml(player.category)} → ${escapeHtml(target)}</strong><p>Potenziale ${escapeHtml(player.potential || player.finalOverall)} → ${escapeHtml(global.DevelopmentV2.threshold(target))}</p><ul><li>Progetto ${target} <b>${have}/${cost.projects}</b></li><li>Coppe <b>${state.cups}/${cost.cups}</b></li><li>Monete <b>${state.coins}/${cost.coins}</b></li></ul>${missing.map((m) => `<p class="development-missing">${m}</p>`).join("")}<div class="button-row"><button class="btn" id="cancel-evolution">ANNULLA</button><button class="btn btn-yellow" id="confirm-evolution" ${missing.length || !unlocked ? "disabled" : ""}>EVOLVI</button></div></div>`, { closeable: false });
-    document.getElementById("cancel-evolution").onclick = closeModal; document.getElementById("confirm-evolution")?.addEventListener("click", (e) => { e.currentTarget.disabled = true; const result = global.DevelopmentV2.evolve({ playerId: player.playerId, playerName: player.name, basePotential: player.finalOverall, unlocked }); if (result.ok) { closeModal(); toast(`${player.name}: ${result.target}`); renderDevelopmentCenter(); } });
+  function isDevelopmentPlayerUnlocked(player) {
+    return (player.developmentCollections || Object.keys(global.AlbumProgress.ALBUM_COLLECTIONS)).some((collectionId) => global.AlbumProgress.isAlbumPlayerUnlocked(collectionId, player.playerId));
   }
 
-  function developmentDevMarkup() { return `<section class="development-dev"><h2>SVILUPPO — HACK TEST</h2><div>${[100,500,1500].map((n)=>`<button data-dev-coins="${n}">+${n} MONETE</button>`).join("")}${[1,5,8].map((n)=>`<button data-dev-cups="${n}">+${n} COPPE</button>`).join("")}${global.DevelopmentV2.PROJECT_RARITIES.map((r)=>`<button data-dev-project="${r}">+1 ${r}</button>`).join("")}</div><button id="dev-all">DAI TUTTI I REQUISITI</button><button id="dev-sim">SIMULA 1000 PULL</button><button id="dev-reset">RESET SVILUPPO TEST</button><pre id="dev-output">${escapeHtml(JSON.stringify(global.DevelopmentV2.read(), null, 2))}</pre></section>`; }
-  function bindDevelopmentDev() { document.querySelectorAll("[data-dev-coins]").forEach((b)=>b.onclick=()=>{const s=global.DevelopmentV2.read();s.coins+=Number(b.dataset.devCoins);global.DevelopmentV2.write(s);renderDevelopmentCenter();}); document.querySelectorAll("[data-dev-cups]").forEach((b)=>b.onclick=()=>{const s=global.DevelopmentV2.read();s.cups+=Number(b.dataset.devCups);global.DevelopmentV2.write(s);renderDevelopmentCenter();}); document.querySelectorAll("[data-dev-project]").forEach((b)=>b.onclick=()=>{const s=global.DevelopmentV2.read();s.projects[b.dataset.devProject]++;global.DevelopmentV2.write(s);renderDevelopmentCenter("projects");}); const all=document.getElementById("dev-all");if(all)all.onclick=()=>{const s=global.DevelopmentV2.read();s.coins+=5000;s.cups+=20;global.DevelopmentV2.PROJECT_RARITIES.forEach(r=>s.projects[r]+=5);global.DevelopmentV2.write(s);renderDevelopmentCenter();}; const sim=document.getElementById("dev-sim");if(sim)sim.onclick=()=>{const counts=Object.fromEntries(global.DevelopmentV2.PROJECT_RARITIES.map(r=>[r,0]));for(let i=0;i<1000;i++)global.DevelopmentV2.generateChoices(10,true).forEach(r=>counts[r]++);document.getElementById("dev-output").textContent=JSON.stringify(counts,null,2);}; const reset=document.getElementById("dev-reset");if(reset)reset.onclick=()=>{if(confirm("Azzerare solo lo sviluppo?")){global.DevelopmentV2.reset();renderDevelopmentCenter();}}; }
+  function renderDevelopmentDetail(player) {
+    const state = global.DevelopmentV2.read();
+    const target = global.DevelopmentV2.nextRarity(player.category);
+    if (!target) { openModal(`<h2>${escapeHtml(player.name)}</h2><p class="development-max-copy">MAX · RARITÀ MASSIMA</p><button class="btn" id="dev-detail-close">CHIUDI</button>`); document.getElementById("dev-detail-close").onclick = closeModal; return; }
+    const cost = global.DevelopmentV2.COSTS[target], have = state.projects[target] || 0;
+    const missing = [Math.max(0, cost.projects - have) ? `MANC${cost.projects - have === 1 ? "A" : "ANO"} ${cost.projects - have} PROGETT${cost.projects - have === 1 ? "O" : "I"} ${target.toUpperCase()}` : "", Math.max(0, cost.cups - state.cups) ? `MANCANO ${cost.cups - state.cups} COPPE` : "", Math.max(0, cost.coins - state.coins) ? `MANCANO ${cost.coins - state.coins} MONETE` : ""].filter(Boolean);
+    const unlocked = isDevelopmentPlayerUnlocked(player);
+    openModal(`<div class="development-detail"><p class="eyebrow">EVOLUZIONE GIOCATORE</p><h2>${escapeHtml(player.name)}</h2><strong class="development-rarity-step">${escapeHtml(player.category)} → ${escapeHtml(target)}</strong><p>Overall / potenziale ${escapeHtml(player.overall)} / ${escapeHtml(player.potential)} → ${escapeHtml(global.DevelopmentV2.threshold(target))}</p><ul><li>Progetto ${target} <b>${have}/${cost.projects}</b></li><li>Coppe <b>${state.cups}/${cost.cups}</b></li><li>Monete <b>${state.coins}/${cost.coins}</b></li></ul>${missing.map((message) => `<p class="development-missing">${message}</p>`).join("")}<div class="button-row"><button class="btn" id="cancel-evolution">ANNULLA</button><button class="btn btn-yellow" id="prepare-evolution" ${missing.length || !unlocked ? "disabled" : ""}>EVOLVI A ${escapeHtml(target.toUpperCase())}</button></div></div>`, { closeable: false });
+    document.getElementById("cancel-evolution").onclick = closeModal;
+    document.getElementById("prepare-evolution")?.addEventListener("click", () => renderEvolutionConfirmation(player, target, cost));
+  }
+
+  function renderEvolutionConfirmation(player, target, cost) {
+    openModal(`<div class="development-detail development-confirm"><p class="eyebrow">CONFERMA EVOLUZIONE</p><h2>${escapeHtml(player.name)}</h2><strong class="development-rarity-step">${escapeHtml(player.category)} → ${escapeHtml(target)}</strong><p>Verranno consumati:</p><ul><li>Progetto ${escapeHtml(target)} ×${cost.projects}</li><li>Coppe ×${cost.cups}</li><li>Monete ×${cost.coins}</li></ul><div class="button-row"><button class="btn" id="back-evolution">ANNULLA</button><button class="btn btn-yellow" id="confirm-evolution">CONFERMA EVOLUZIONE</button></div></div>`, { closeable: false });
+    document.getElementById("back-evolution").onclick = () => renderDevelopmentDetail(player);
+    let submitting = false;
+    document.getElementById("confirm-evolution").onclick = (event) => {
+      if (submitting) return; submitting = true; event.currentTarget.disabled = true;
+      const result = global.DevelopmentV2.evolve({ playerId: player.playerId, playerName: player.name, basePotential: player.basePotential, unlocked: isDevelopmentPlayerUnlocked(player) });
+      if (!result.ok) { submitting = false; closeModal(); toast("Risorse cambiate: evoluzione non completata"); return renderDevelopmentCenter(); }
+      closeModal(); toast(`${player.name}: ${result.target}`); renderDevelopmentCenter();
+    };
+  }
+
+  function developmentDevMarkup() { return `<section class="development-dev"><h2>SVILUPPO — HACK TEST</h2><div>${[100,500,1500].map((n) => `<button data-dev-coins="${n}">+${n} MONETE</button>`).join("")}${[1,5,8].map((n) => `<button data-dev-cups="${n}">+${n} COPPE</button>`).join("")}${global.DevelopmentV2.PROJECT_RARITIES.map((rarity) => `<button data-dev-project="${rarity}">+1 ${rarity}</button>`).join("")}</div><button id="dev-all">DAI TUTTI I REQUISITI</button><label>Profondità pull <select id="dev-pull-depth"><option value="5">5 Boss</option><option value="6">6 Boss</option><option value="7">7 Boss</option><option value="8">8 Boss</option><option value="9">9 Boss</option><option value="10">10 Boss non vinta</option><option value="victory">Run vinta</option></select></label><button id="dev-sim-one">SIMULA 1 PULL</button><button id="dev-sim">SIMULA 1000 PULL</button><button id="dev-reset">RESET SVILUPPO TEST</button><div id="dev-pull-preview"></div><pre id="dev-output">${escapeHtml(JSON.stringify(global.DevelopmentV2.read(), null, 2))}</pre></section>`; }
+
+  function selectedDevPull() { const value = document.getElementById("dev-pull-depth")?.value || "5"; return { bosses: value === "victory" ? 10 : Number(value), won: value === "victory" }; }
+  function bindDevelopmentDev() {
+    document.querySelectorAll("[data-dev-coins]").forEach((button) => button.onclick = () => { const state = global.DevelopmentV2.read(); state.coins += Number(button.dataset.devCoins); global.DevelopmentV2.write(state); renderDevelopmentCenter(); });
+    document.querySelectorAll("[data-dev-cups]").forEach((button) => button.onclick = () => { const state = global.DevelopmentV2.read(); state.cups += Number(button.dataset.devCups); global.DevelopmentV2.write(state); renderDevelopmentCenter(); });
+    document.querySelectorAll("[data-dev-project]").forEach((button) => button.onclick = () => { const state = global.DevelopmentV2.read(); state.projects[button.dataset.devProject] += 1; global.DevelopmentV2.write(state); renderDevelopmentCenter("projects"); });
+    document.getElementById("dev-all")?.addEventListener("click", () => { const state = global.DevelopmentV2.read(); state.coins += 5000; state.cups += 20; global.DevelopmentV2.PROJECT_RARITIES.forEach((rarity) => state.projects[rarity] += 5); global.DevelopmentV2.write(state); renderDevelopmentCenter(); });
+    document.getElementById("dev-sim-one")?.addEventListener("click", () => { const config = selectedDevPull(); const choices = global.DevelopmentV2.generateChoices(config.bosses, config.won); document.getElementById("dev-pull-preview").innerHTML = `<div class="project-pull-grid dev-project-preview">${choices.map((rarity) => projectCardMarkup(rarity)).join("")}</div>`; });
+    document.getElementById("dev-sim")?.addEventListener("click", () => { const config = selectedDevPull(); const totals = Object.fromEntries(global.DevelopmentV2.PROJECT_RARITIES.map((rarity) => [rarity, 0])); const slots = { rare: {}, advanced: {}, safe: {} }; const pullsWith = { Elite: 0, Mondiale: 0, Leggenda: 0 }; for (let index = 0; index < 1000; index += 1) { const result = global.DevelopmentV2.generateChoiceSlots(config.bosses, config.won); Object.entries(result).forEach(([slot, rarity]) => { totals[rarity] += 1; slots[slot][rarity] = (slots[slot][rarity] || 0) + 1; }); Object.keys(pullsWith).forEach((rarity) => { if (Object.values(result).includes(rarity)) pullsWith[rarity] += 1; }); } document.getElementById("dev-output").textContent = JSON.stringify({ config, appearances: totals, bySlot: slots, pullsWith }, null, 2); });
+    document.getElementById("dev-reset")?.addEventListener("click", () => { if (confirm("Azzerare solo lo sviluppo?")) { global.DevelopmentV2.reset(); renderDevelopmentCenter(); } });
+  }
+
 
   function savedTeamSummaryMarkup() {
     const identity = savedTeamIdentity();
@@ -1595,7 +1644,7 @@
           </div>
           <div class="progress-track"><div class="progress-bar" style="width:${progress}%"></div></div>
           <div class="candidate-grid pull-offer-grid initial-draft-grid">
-            ${candidates.map((player) => playerCard(player, { button: true, extraClass: "initial-draft-card" })).join("")}
+            ${candidates.map((player) => playerCard(player, { button: true, extraClass: "initial-draft-card", applyPermanent: true })).join("")}
           </div>
         </div>
       </main>`;
@@ -2964,7 +3013,7 @@
         ${options.candidates.map((player, index) => {
           const panelId = `pull-choice-actions-${index}`;
           return `<div class="pull-choice-option ${rarityClass(player.category)}" data-player-id="${escapeHtml(player.playerId)}">
-            ${playerCard(player, { button: true, context: "pull", level: options.level, database: pullChoiceDatabase(options, player) }).replace(">", ` aria-expanded="false" aria-pressed="false" aria-controls="${panelId}">`)}
+            ${playerCard(player, { button: true, context: "pull", level: options.level, database: pullChoiceDatabase(options, player), applyPermanent: true }).replace(">", ` aria-expanded="false" aria-pressed="false" aria-controls="${panelId}">`)}
             ${pullChoiceActionPanel(player, index)}
           </div>`;
         }).join("")}
@@ -5323,10 +5372,11 @@
     const summaries = global.HallOfFameStorage.listSummaries();
     const ordinal = summaries.findIndex((item) => item.hallTeamId === team.hallTeamId) + 1;
     run.phase = "final-summary"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
-    global.DevelopmentV2.processRunEnd({ runId: run.runId, defeatedBosses: Number(run.completedBossIds?.length || seasonDb.bossOrder.length), endReason: "victory" });
-    app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><div><p class="eyebrow">CAMPIONI DELLA SEASON 1</p><h1>${escapeHtml(team.teamName)}</h1><p class="final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span><span>Seed ${escapeHtml(compactSeed(team.seed))}</span><span>#${escapeHtml(ordinal || '-')} Albo d’Oro</span></p></div><span class="final-summary-star" aria-hidden="true">★</span></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3>${championFiveVFiveMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel"><button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn btn-primary" id="final-new-run">Nuova run</button>${sectionRootButton("finalSummary")}</aside></section></main>`;
+    const developmentReward = global.DevelopmentV2.processRunEnd({ runId: run.runId, defeatedBosses: Number(run.completedBossIds?.length || seasonDb.bossOrder.length), endReason: "victory" });
+    app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><div><p class="eyebrow">CAMPIONI DELLA SEASON 1</p><h1>${escapeHtml(team.teamName)}</h1><p class="final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span><span>Seed ${escapeHtml(compactSeed(team.seed))}</span><span>#${escapeHtml(ordinal || '-')} Albo d’Oro</span></p></div><span class="final-summary-star" aria-hidden="true">★</span></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3>${championFiveVFiveMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel">${developmentReward.pull && !developmentReward.pull.claimed ? '<button class="btn btn-yellow" id="final-project-pull">SCEGLI PROGETTO EVOLUZIONE</button>' : ""}<button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn btn-primary" id="final-new-run">Nuova run</button>${sectionRootButton("finalSummary")}</aside></section></main>`;
     resetRenderedViewScroll(); bindFinalTabs(); bindHallPlayerDetails(team);
     document.getElementById("open-current-hall").addEventListener("click", () => renderHallOfFameDetail(team.hallTeamId));
+    document.getElementById("final-project-pull")?.addEventListener("click", () => renderProjectPull(developmentReward.pull));
     bindSectionRootNav();
     document.getElementById("final-new-run").addEventListener("click", startNewRunFromHome);
   }

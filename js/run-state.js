@@ -83,6 +83,7 @@
     run.bossIndex = Number.isFinite(Number(run.bossIndex)) ? Number(run.bossIndex) : 0;
     for (const key of ["roster", "lineup", "bench", "inventory", "completedBossIds", "unlockedTeamIds"]) run[key] = Array.isArray(run[key]) ? run[key] : [];
     run.activeMatch = run.activeMatch || null; run.currentZone = run.currentZone || null;
+    if (!run.developmentPlayerSnapshot) run.developmentPlayerSnapshot = clone(global.DevelopmentV2?.read?.().players || {});
     run.postBossFlow = normalizePostBossFlow(run);
     run.pendingBossVictory = run.pendingBossVictory || null;
     if (run.checkpoint) run.checkpoint.version = config().saveVersion;

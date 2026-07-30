@@ -145,16 +145,13 @@
     const lineup = formation.slotRoles.map((role) => selectedByRole[role].shift());
     run.roster = draft.selectedIds.map((id) => {
       const source = players.find((player) => String(player.playerId) === String(id));
-      const upgrade = global.DevelopmentV2?.playerUpgrade?.(id);
-      const boost = Math.max(0, Number(upgrade?.permanentTargetPotential || 0) - Number(source?.finalOverall || 0));
+      const permanent = global.DevelopmentV2?.optionsFromUpgrade?.(source, run.developmentPlayerSnapshot?.[String(id)]) || {};
       return ({
       playerId: id,
       source: "free_agents",
       level: 0,
       equippedItem: null,
-      potentialBoost: boost,
-      currentOverallBoost: boost,
-      potentialBoostApplications: boost ? [{ amount: boost, appliedLevel: 0, permanent: true }] : [],
+      ...permanent,
     }); });
     run.lineup = lineup;
     run.bench = [];
