@@ -23,7 +23,7 @@
   });
   const DEVELOPMENT_RESOURCE_ASSETS = Object.freeze({
     coins: "https://dxi4wb638ujep.cloudfront.net/1/k/r/e/rez8i1pp0p8.webp",
-    cups: "https://dxi4wb638ujep.cloudfront.net/1/k/g/t/ttzf1b8nbe.webp",
+    cups: "https://dxi4wb638ujep.cloudfront.net/1/k/t/t/ttzf1b8nbe.webp",
   });
   const TABLES = Object.freeze({
     5: { safe: { Buono: 100 }, advanced: { Buono: 85, Forte: 15 }, rare: { Buono: 70, Forte: 30 } },
