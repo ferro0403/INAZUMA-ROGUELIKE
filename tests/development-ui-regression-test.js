@@ -31,6 +31,11 @@ assert(app.includes('sectionRootButton("development", "development-back-button")
 assert(!app.includes('id="development-back">INDIETRO'));
 assert(app.includes('rarityClass(h.toRarity)'));
 assert(app.includes('resourceCostMarkup({ type: "coins"'));
+assert(app.includes('id: "development-coins", name: "Dragon Sticker", imageUrl: global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.coins'));
+assert(app.includes('id: "development-cups", name: "Coppa", imageUrl: global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.cups'));
+assert(app.includes('return itemIcon(DEVELOPMENT_RESOURCE_ITEMS[type])'));
+assert(!app.includes('development-resource-image'));
+assert(app.includes('globalThis.handleItemImageError && globalThis.handleItemImageError(this)'));
 assert(!/[🏆🪙💰🐉]/u.test(app.slice(app.indexOf('function developmentCurrencyIcon'), app.indexOf('function developmentDevMarkup'))));
 assert(!app.includes('<em>PRONTO</em>'));
 assert(app.includes('development-history-portrait'));
