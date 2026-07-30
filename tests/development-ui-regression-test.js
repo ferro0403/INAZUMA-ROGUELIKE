@@ -24,3 +24,15 @@ for (const file of [app, css, index, fs.readFileSync("js/development-v2.js", "ut
   assert(!file.includes("<<<<<<<") && !file.includes(">>>>>>>"), "unresolved conflict marker found");
 }
 console.log("development-ui-regression-test: center entry, navigation, live filtering and victory CTA OK");
+assert(app.includes('PROGETTI IN COSTRUZIONE'));
+assert(app.includes('MAGAZZINO PROGETTI'));
+assert(app.includes('id="dev-unlock-album"'));
+assert(app.includes('SBLOCCA TUTTO L’ALBUM'));
+assert(app.includes('AlbumProgress.unlockAlbumPlayers'));
+assert(app.includes('id="dev-project-plus-all"'));
+assert(app.includes('id="dev-project-set"'));
+assert(app.includes('projectBuildStatus(rarity, state)'));
+assert(!app.includes('ASSET UFFICIALE NON DISPONIBILE'));
+assert(!app.includes('localStorage.clear'));
+assert(css.includes('.project-segments i.is-filled'));
+assert(css.includes('.project-inventory-grid'));

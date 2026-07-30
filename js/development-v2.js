@@ -14,11 +14,11 @@
     Leggenda: { coins: 1500, cups: 8, projects: 4 },
   });
   const ASSETS = Object.freeze({
-    Buono: "assets/development/charged-cloud-charm.png",
-    Forte: "assets/development/caravan-keychain.png",
-    Elite: "assets/development/lightning-charm.png",
-    Mondiale: "assets/development/dragon-keychain.png",
-    Leggenda: "assets/development/wonderbot-keychain.png",
+    Buono: "https://static.wikia.nocookie.net/inazuma-eleven/images/7/71/Charged_Cloud_Charm.png/revision/latest",
+    Forte: "https://static.wikia.nocookie.net/inazuma-eleven/images/9/92/Caravan_Keychain.png/revision/latest",
+    Elite: "https://static.wikia.nocookie.net/inazuma-eleven/images/7/74/Lightning_Charm.png/revision/latest",
+    Mondiale: "https://static.wikia.nocookie.net/inazuma-eleven/images/c/cd/Dragon_Keychain.png/revision/latest",
+    Leggenda: "https://static.wikia.nocookie.net/inazuma-eleven/images/a/a0/Wonderbot_Keychain.png/revision/latest",
   });
   const TABLES = Object.freeze({
     5: { safe: { Buono: 100 }, advanced: { Buono: 85, Forte: 15 }, rare: { Buono: 70, Forte: 30 } },
@@ -55,6 +55,13 @@
     write(state); return { state, pull: state.projectPullLedger[runId] || null, awarded };
   }
   function claimPull(runId, rarity) { const state = read(); const pull = state.projectPullLedger[runId]; if (!pull || pull.claimed || !pull.choices.includes(rarity)) return false; pull.claimed = true; pull.selectedRarity = rarity; pull.claimedAt = new Date().toISOString(); state.projects[rarity] += 1; write(state); return true; }
+  function projectBuildStatus(rarity, state = read()) {
+    const required = Math.max(1, Number(COSTS[rarity]?.projects) || 1);
+    const owned = Math.max(0, Number(state?.projects?.[rarity]) || 0);
+    const complete = Math.floor(owned / required);
+    const remainder = owned % required;
+    return { rarity, required, owned, complete, remainder, filled: remainder || (complete ? required : 0), ready: complete > 0 };
+  }
   function playerUpgrade(playerId) { return read().players[String(playerId)] || null; }
   function optionsFromUpgrade(player, upgrade) { const boost = Math.max(0, Number(upgrade?.permanentTargetPotential || 0) - Number(player?.finalOverall || 0)); return { potentialBoost: boost, currentOverallBoost: boost, potentialBoostApplications: boost ? [{ amount: boost, appliedLevel: 0, permanent: true }] : [] }; }
   function permanentOptions(player) { return optionsFromUpgrade(player, playerUpgrade(player?.playerId)); }
@@ -62,6 +69,6 @@
   function evolve({ playerId, playerName, basePotential, unlocked }) { if (!unlocked) return { ok: false, reason: "locked" }; const state = read(); const id = String(playerId); const currentPotential = Math.max(Number(basePotential) || 0, Number(state.players[id]?.permanentTargetPotential) || 0); const currentRarity = global.InazumaProgression?.categoryForPotential?.(currentPotential) || RARITIES.filter((r) => threshold(r) <= currentPotential).at(-1); const target = nextRarity(currentRarity); if (!target) return { ok: false, reason: "max" }; const cost = COSTS[target]; const missing = { coins: Math.max(0, cost.coins - state.coins), cups: Math.max(0, cost.cups - state.cups), projects: Math.max(0, cost.projects - (state.projects[target] || 0)) }; if (Object.values(missing).some(Boolean)) return { ok: false, reason: "resources", missing };
     const targetPotential = Math.max(currentPotential, threshold(target)); state.coins -= cost.coins; state.cups -= cost.cups; if (cost.projects) state.projects[target] -= cost.projects; state.players[id] = { permanentTargetPotential: targetPotential, permanentPotentialBoost: Math.max(0, targetPotential - Number(basePotential || 0)), currentPermanentRarity: target, evolutionCount: Number(state.players[id]?.evolutionCount || 0) + 1, updatedAt: new Date().toISOString() }; state.evolutionHistory.unshift({ id: `evo_${Date.now()}_${id}`, playerId: id, playerNameSnapshot: playerName || id, fromRarity: currentRarity, toRarity: target, fromPotential: currentPotential, toPotential: targetPotential, projectsConsumed: cost.projects, cupsConsumed: cost.cups, coinsConsumed: cost.coins, timestamp: new Date().toISOString() }); write(state); return { ok: true, state, target, targetPotential }; }
   function reset() { return write(empty()); }
-  global.DevelopmentV2 = { STORAGE_KEY, SCHEMA_VERSION, RARITIES, PROJECT_RARITIES, COSTS, ASSETS, TABLES, read, write, reset, nextRarity, threshold, weighted, generateChoiceSlots, generateChoices, processRunEnd, claimPull, playerUpgrade, optionsFromUpgrade, permanentOptions, resolvePlayer, evolve };
+  global.DevelopmentV2 = { STORAGE_KEY, SCHEMA_VERSION, RARITIES, PROJECT_RARITIES, COSTS, ASSETS, TABLES, read, write, reset, nextRarity, threshold, weighted, generateChoiceSlots, generateChoices, processRunEnd, claimPull, projectBuildStatus, playerUpgrade, optionsFromUpgrade, permanentOptions, resolvePlayer, evolve };
   if (typeof module !== "undefined" && module.exports) module.exports = global.DevelopmentV2;
 })(typeof globalThis !== "undefined" ? globalThis : window);
