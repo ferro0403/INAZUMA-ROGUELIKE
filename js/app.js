@@ -1446,10 +1446,14 @@
     return `${cards}${remaining > 0 ? `<div class="development-load-more-wrap"><button class="btn" id="development-load-more">MOSTRA ALTRI <b>${escapeHtml(Math.min(DEVELOPMENT_PAGE_SIZE, remaining))}</b><small>${escapeHtml(visible.length)} di ${escapeHtml(players.length)}</small></button></div>` : ""}`;
   }
 
+  const DEVELOPMENT_RESOURCE_ITEMS = Object.freeze({
+    coins: Object.freeze({ id: "development-coins", name: "Dragon Sticker", imageUrl: global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.coins }),
+    cups: Object.freeze({ id: "development-cups", name: "Coppa", imageUrl: global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.cups }),
+  });
+
   function developmentCurrencyIcon(type, rarity = "") {
     if (type === "project") return `<span class="development-resource-icon project-image-frame"><img src="${escapeHtml(global.DevelopmentV2.ASSETS[rarity])}" alt="" loading="lazy" decoding="async"></span>`;
-    const src = global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS[type];
-    return `<span class="development-resource-icon development-resource-image" aria-hidden="true"><img src="${escapeHtml(src)}" alt="" loading="lazy" decoding="async"></span>`;
+    return itemIcon(DEVELOPMENT_RESOURCE_ITEMS[type]);
   }
 
   function resourceCostMarkup({ type, rarity = "", label, current = null, required, satisfied = true, compact = false }) {
