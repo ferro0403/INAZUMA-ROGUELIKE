@@ -15,15 +15,15 @@
   });
   const BUILD_REQUIREMENTS = Object.freeze({ Buono: 1, Forte: 1, Elite: 2, Mondiale: 3, Leggenda: 4 });
   const ASSETS = Object.freeze({
-    Buono: "https://dxi4wb638ujep.cloudfront.net/1/k/x/7/x7o7_6jjtfm.png",
+    Buono: "https://dxi4wb638ujep.cloudfront.net/1/k/i/m/im08lvscqau.webp",
     Forte: "https://dxi4wb638ujep.cloudfront.net/1/k/p/g/pgsrd8dyplu.png",
     Elite: "https://dxi4wb638ujep.cloudfront.net/1/k/a/n/anad1wjpht0.png",
     Mondiale: "https://dxi4wb638ujep.cloudfront.net/1/k/c/j/cj7t4wj1bx8.png",
     Leggenda: "https://dxi4wb638ujep.cloudfront.net/1/k/g/i/gibitioquoe.png",
   });
   const DEVELOPMENT_RESOURCE_ASSETS = Object.freeze({
-    coins: "https://dxi4wb638ujep.cloudfront.net/1/k/r/e/rez8i1ppo0p8.webp",
-    cups: "https://dxi4wb638ujep.cloudfront.net/1/k/r/t/ttzf1b8nbe.webp",
+    coins: "https://dxi4wb638ujep.cloudfront.net/1/k/r/e/rez8i1pp0p8.webp",
+    cups: "https://dxi4wb638ujep.cloudfront.net/1/k/g/t/ttzf1b8nbe.webp",
   });
   const TABLES = Object.freeze({
     5: { safe: { Buono: 100 }, advanced: { Buono: 85, Forte: 15 }, rare: { Buono: 70, Forte: 30 } },
