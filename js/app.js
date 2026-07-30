@@ -240,7 +240,7 @@
     const id = String(item?.id || "");
     const name = item?.name || "Oggetto";
     if (item?.imageUrl) {
-      return `<span class="item-icon item-icon--image" aria-label="${escapeHtml(name)}" title="${escapeHtml(name)}"><img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(name)}" loading="lazy" onerror="globalThis.handleItemImageError && globalThis.handleItemImageError(this)" />${itemImageFallbackSvg()}</span>`;
+      return `<span class="item-icon item-icon--image" aria-label="${escapeHtml(name)}" title="${escapeHtml(name)}"><img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(name)}" loading="lazy" referrerpolicy="no-referrer" onerror="globalThis.handleItemImageError && globalThis.handleItemImageError(this)" />${itemImageFallbackSvg()}</span>`;
     }
     const icons = {
       energy_drink: `<svg viewBox="0 0 32 32"><path d="M11 8h10l-1 18h-8L11 8Z"/><path d="M13 4h6v4h-6z"/><path d="m16 12-3 6h3l-1 6 5-8h-3l1-4z"/></svg>`,
@@ -1509,7 +1509,7 @@
   function renderDevelopmentRewardReveal(presentation, onContinue) {
     const won = presentation.endReason === "victory";
     app.innerHTML = `<main class="development-reward-screen" data-development-reward-reveal><section class="development-reward-panel">
-      <header><p class="eyebrow">RICOMPENSE RUN</p><h1>RICOMPENSE RUN</h1><p>${won ? "RUN COMPLETATA" : "RUN TERMINATA"}</p></header>
+      <header><h1>RICOMPENSE RUN</h1><p>${won ? "RUN COMPLETATA" : "RUN TERMINATA"}</p></header>
       <div class="development-reward-list">
         <article class="development-reward-item">${developmentCurrencyIcon("coins")}<span><small>MONETE</small><strong data-reward-count="${escapeHtml(presentation.coins)}">+0</strong></span></article>
         ${won ? `<article class="development-reward-item development-reward-cup">${developmentCurrencyIcon("cups")}<span><small>COPPA CAMPIONE</small><strong>+${escapeHtml(presentation.cups)}</strong></span></article>` : ""}
@@ -5410,9 +5410,7 @@
         </section>
       </main>`;
     resetRenderedViewScroll();
-    document.getElementById("restart-run").addEventListener("click", () => {
-      openTeamNameModal();
-    });
+    document.getElementById("restart-run").addEventListener("click", startNewRunFromHome);
     document.getElementById("home").addEventListener("click", renderHome);
   }
 

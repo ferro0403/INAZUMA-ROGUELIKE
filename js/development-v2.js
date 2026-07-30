@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "inazumaRoguelike.developmentV2";
-  const SCHEMA_VERSION = 3;
+  const SCHEMA_VERSION = 4;
   const RARITIES = ["Scarso", "Debole", "Normale", "Buono", "Forte", "Elite", "Mondiale", "Leggenda"];
   const PROJECT_RARITIES = RARITIES.slice(3);
   const COSTS = Object.freeze({
@@ -13,7 +13,8 @@
     Mondiale: { coins: 1000, cups: 5, projects: 1 },
     Leggenda: { coins: 1500, cups: 8, projects: 1 },
   });
-  const BUILD_REQUIREMENTS = Object.freeze({ Buono: 1, Forte: 1, Elite: 2, Mondiale: 3, Leggenda: 4 });
+  const BUILD_REQUIREMENTS = Object.freeze({ Buono: 1, Forte: 1, Elite: 4, Mondiale: 4, Leggenda: 4 });
+  const LEGACY_BUILD_REQUIREMENTS = Object.freeze({ Buono: 1, Forte: 1, Elite: 2, Mondiale: 3, Leggenda: 4 });
   const ASSETS = Object.freeze({
     Buono: "https://dxi4wb638ujep.cloudfront.net/1/k/i/m/im08lvscqau.webp",
     Forte: "https://dxi4wb638ujep.cloudfront.net/1/k/p/g/pgsrd8dyplu.png",
@@ -40,7 +41,7 @@
     const legacyV2 = Number(value.schemaVersion || 0) < SCHEMA_VERSION && !value.projectBuild;
     value.coins = Math.max(0, Number(value.coins) || 0); value.cups = Math.max(0, Number(value.cups) || 0);
     value.projects = { ...base.projects, ...(value.projects || {}) }; value.projectBuild = { ...base.projectBuild, ...(value.projectBuild || {}) };
-    PROJECT_RARITIES.forEach((r) => { const owned = Math.max(0, Math.floor(Number(value.projects[r]) || 0)); if (legacyV2) { value.projects[r] = Math.floor(owned / BUILD_REQUIREMENTS[r]); value.projectBuild[r] = owned % BUILD_REQUIREMENTS[r]; } else { value.projects[r] = owned; value.projectBuild[r] = Math.max(0, Math.floor(Number(value.projectBuild[r]) || 0)) % BUILD_REQUIREMENTS[r]; } });
+    PROJECT_RARITIES.forEach((r) => { const owned = Math.max(0, Math.floor(Number(value.projects[r]) || 0)); if (legacyV2) { const legacyRequired = LEGACY_BUILD_REQUIREMENTS[r]; value.projects[r] = Math.floor(owned / legacyRequired); value.projectBuild[r] = owned % legacyRequired; } else { value.projects[r] = owned; value.projectBuild[r] = Math.max(0, Math.floor(Number(value.projectBuild[r]) || 0)) % BUILD_REQUIREMENTS[r]; } });
     value.schemaVersion = SCHEMA_VERSION;
     value.players = value.players && typeof value.players === "object" ? value.players : {}; value.evolutionHistory = Array.isArray(value.evolutionHistory) ? value.evolutionHistory : [];
     value.redeemedRunIds = [...new Set(value.redeemedRunIds || [])]; value.victoryRewardRunIds = [...new Set(value.victoryRewardRunIds || [])]; value.projectPullLedger = value.projectPullLedger && typeof value.projectPullLedger === "object" ? value.projectPullLedger : {};
