@@ -7834,9 +7834,11 @@ body { background: var(--gradient-app); }
 }
 
 /* The final project pull mirrors the compact free-agent choice language. */
-.project-pull-screen { align-content: center; gap: 0; }
-.project-pull-screen > header { max-width: 720px; margin: 0 auto; }
-.project-pull-screen > header p { margin: 5px 0; }
+.modal-backdrop:has(.project-pull-modal) { padding: max(18px, env(safe-area-inset-top)) 4vw max(18px, env(safe-area-inset-bottom)); background: rgba(8, 13, 19, .7); backdrop-filter: blur(3px); }
+.modal.project-pull-modal { width: min(760px, 92vw); max-height: 88dvh; padding: 18px; overflow-x: hidden; overflow-y: auto; border: 4px solid #111; border-radius: 3px; background: #fffdf6; color: #111; box-shadow: 8px 9px 0 rgba(0, 0, 0, .55); }
+.project-pull-modal > header { max-width: 720px; margin: 0 auto; text-align: center; }
+.project-pull-modal > header h1 { margin: 2px 0; }
+.project-pull-modal > header p { margin: 5px 0; }
 .project-pull-grid { grid-template-columns: minmax(0, 760px); width: 100%; margin: 18px auto 10px; }
 .project-pull-option { --rarity-glow: color-mix(in srgb, var(--rarity-border, #ffd21f) 25%, transparent); display: grid; grid-template-columns: minmax(0, 1fr) 76px; min-height: 106px; border: 3px solid #111; border-top: 7px solid var(--rarity-border, #ffd21f); background: #fffdf6; box-shadow: 5px 6px 0 #111; }
 .project-pull-card {
@@ -7884,9 +7886,10 @@ body { background: var(--gradient-app); }
   .development-wallet { grid-template-columns: minmax(0, 1.18fr) minmax(0, 1fr) minmax(0, .82fr); padding: 7px; }
   .development-wallet > span { gap: 6px; padding: 7px 8px; }
   .development-wallet .item-icon { width: 32px; height: 32px; flex-basis: 32px; }
-  .project-pull-screen { align-content: start; padding: max(12px, env(safe-area-inset-top)) 10px 12px; }
-  .project-pull-screen > header h1 { margin: 1px 0; font-size: clamp(1.65rem, 8vw, 2.2rem); line-height: 1; }
-  .project-pull-screen > header p { margin: 3px auto; font-size: .72rem; line-height: 1.25; }
+  .modal-backdrop:has(.project-pull-modal) { padding-inline: 0; }
+  .modal.project-pull-modal { width: 92vw; max-height: 88dvh; padding: 12px 10px; }
+  .project-pull-modal > header h1 { margin: 1px 0; font-size: clamp(1.65rem, 8vw, 2.2rem); line-height: 1; }
+  .project-pull-modal > header p { margin: 3px auto; font-size: .72rem; line-height: 1.25; }
   .project-pull-grid { display: grid; grid-template-columns: 1fr; width: 100%; max-width: 520px; margin: 10px auto 7px; gap: 9px; }
   .project-pull-option { height: 104px; min-height: 0; grid-template-columns: minmax(0, 1fr) 82px; box-shadow: 4px 5px 0 #111; }
   .project-pull-card { grid-template-columns: 62px minmax(0, 1fr); min-height: 97px; height: 97px; padding: 18px 6px 5px; text-align: left; }
