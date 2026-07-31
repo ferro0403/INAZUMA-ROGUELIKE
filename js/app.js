@@ -1530,11 +1530,8 @@
 
   function showProjectPullInfo(rarity) {
     const status = global.DevelopmentV2.projectBuildStatus(rarity, global.DevelopmentV2.read());
-    const usesBuild = ["Elite", "Mondiale", "Leggenda"].includes(rarity);
-    const purpose = usesBuild
-      ? `Questo modulo contribuisce a completare il Progetto ${rarity} e consente l’evoluzione dei giocatori alla fascia corrispondente.`
-      : `Progetto utilizzato per evolvere i giocatori alla fascia ${rarity}.`;
-    openModal(`<div class="project-info-head ${rarityClass(rarity)}"><p class="eyebrow">DETTAGLI PROGETTO</p><h2>${escapeHtml(rarity)}</h2></div><div class="project-info-body ${rarityClass(rarity)}">${developmentCurrencyIcon("project", rarity)}<div><strong>PROGETTO ${escapeHtml(rarity)}</strong><p>${escapeHtml(purpose)}</p><div class="project-info-stats"><span>MAGAZZINO <b>×${escapeHtml(status.owned)}</b></span>${usesBuild ? `<span>BUILD <b>${escapeHtml(status.filled)}/${escapeHtml(status.required)}</b></span>` : ""}</div></div></div>`, { className: "project-info-modal" });
+    const purpose = `Questo progetto contribuisce al completamento del Progetto ${rarity} e consente l’evoluzione dei giocatori della fascia corrispondente.`;
+    openModal(`<header class="project-info-head ${rarityClass(rarity)}"><p>FASCIA PROGETTO</p><h2>${escapeHtml(rarity)}</h2></header><div class="project-info-body ${rarityClass(rarity)}">${developmentCurrencyIcon("project", rarity)}<div class="project-info-copy"><strong>PROGETTO ${escapeHtml(rarity)}</strong><p>${escapeHtml(purpose)}</p><div class="project-info-stats" aria-label="Stato del progetto"><span>MAGAZZINO <b>×${escapeHtml(status.owned)}</b></span><span>BUILD <b>${escapeHtml(status.filled)}/${escapeHtml(status.required)}</b></span></div></div></div>`, { className: "project-info-modal" });
   }
 
   function projectInventoryMarkup(state) {
