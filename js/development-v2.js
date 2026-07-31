@@ -24,7 +24,7 @@
   });
   const DEVELOPMENT_RESOURCE_ASSETS = Object.freeze({
     coins: "https://dxi4wb638ujep.cloudfront.net/1/k/r/e/rez8i1pp0p8.webp",
-    cups: "https://dxi4wb638ujep.cloudfront.net/1/k/t/t/ttzf1b8nbe.webp",
+    cups: "assets/development/cup.svg",
   });
   const TABLES = Object.freeze({
     5: { safe: { Buono: 100 }, advanced: { Buono: 85, Forte: 15 }, rare: { Buono: 70, Forte: 30 } },
@@ -50,6 +50,22 @@
   function read() { try { return normalize(JSON.parse(global.localStorage?.getItem(STORAGE_KEY) || "null")); } catch (_) { return empty(); } }
   function write(value) { const state = normalize(value); global.localStorage?.setItem(STORAGE_KEY, JSON.stringify(state)); return state; }
   function nextRarity(current) { const index = RARITIES.indexOf(current); if (index < 2) return "Normale"; return RARITIES[index + 1] || null; }
+  function groupEvolutionHistory(history = []) {
+    const groups = new Map();
+    history.forEach((entry) => {
+      const playerId = String(entry?.playerId || "");
+      if (!playerId) return;
+      const group = groups.get(playerId) || { playerId, entries: [] };
+      group.entries.push(entry);
+      groups.set(playerId, group);
+    });
+    return [...groups.values()].map((group) => {
+      group.entries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+      const first = group.entries[0];
+      const latest = group.entries[group.entries.length - 1];
+      return { ...group, playerNameSnapshot: latest.playerNameSnapshot || first.playerNameSnapshot || group.playerId, fromRarity: first.fromRarity, toRarity: latest.toRarity, timestamp: latest.timestamp, evolutionCount: group.entries.length };
+    }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+  }
   function threshold(rarity) { return global.InazumaProgression?.RARITY_THRESHOLDS?.find((x) => x.category === rarity)?.min ?? ({ Scarso: 0, Debole: 66, Normale: 70, Buono: 75, Forte: 80, Elite: 85, Mondiale: 90, Leggenda: 95 }[rarity]); }
   function weighted(pool, random = Math.random, excluded = []) { const entries = Object.entries(pool).filter(([r, w]) => w > 0 && !excluded.includes(r)); const total = entries.reduce((s, [, w]) => s + w, 0); let roll = random() * total; for (const [rarity, weight] of entries) { roll -= weight; if (roll < 0) return rarity; } return entries.at(-1)?.[0]; }
   function generateChoiceSlots(defeatedBosses, won, random = Math.random) {
@@ -77,6 +93,6 @@
   function evolve({ playerId, playerName, basePotential, unlocked, freeAgentEligible }) { if (!unlocked) return { ok: false, reason: "locked" }; if (!freeAgentEligible) return { ok: false, reason: "not_free_agent" }; const state = read(); const id = String(playerId); const currentPotential = Math.max(Number(basePotential) || 0, Number(state.players[id]?.permanentTargetPotential) || 0); const currentRarity = global.InazumaProgression?.categoryForPotential?.(currentPotential) || RARITIES.filter((r) => threshold(r) <= currentPotential).at(-1); const target = nextRarity(currentRarity); if (!target) return { ok: false, reason: "max" }; const cost = COSTS[target]; const missing = { coins: Math.max(0, cost.coins - state.coins), cups: Math.max(0, cost.cups - state.cups), projects: Math.max(0, cost.projects - (state.projects[target] || 0)) }; if (Object.values(missing).some(Boolean)) return { ok: false, reason: "resources", missing };
     const targetPotential = Math.max(currentPotential, threshold(target)); state.coins -= cost.coins; state.cups -= cost.cups; if (cost.projects) state.projects[target] -= cost.projects; state.players[id] = { permanentTargetPotential: targetPotential, permanentPotentialBoost: Math.max(0, targetPotential - Number(basePotential || 0)), currentPermanentRarity: target, evolutionCount: Number(state.players[id]?.evolutionCount || 0) + 1, updatedAt: new Date().toISOString() }; state.evolutionHistory.unshift({ id: `evo_${Date.now()}_${id}`, playerId: id, playerNameSnapshot: playerName || id, fromRarity: currentRarity, toRarity: target, fromPotential: currentPotential, toPotential: targetPotential, projectsConsumed: cost.projects, cupsConsumed: cost.cups, coinsConsumed: cost.coins, timestamp: new Date().toISOString() }); write(state); return { ok: true, state, target, targetPotential }; }
   function reset() { return write(empty()); }
-  global.DevelopmentV2 = { STORAGE_KEY, SCHEMA_VERSION, RARITIES, PROJECT_RARITIES, COSTS, BUILD_REQUIREMENTS, ASSETS, DEVELOPMENT_RESOURCE_ASSETS, TABLES, read, write, reset, nextRarity, threshold, weighted, generateChoiceSlots, generateChoices, processRunEnd, claimPull, addProjectModules, addCompletedProject, projectBuildStatus, playerUpgrade, optionsFromUpgrade, permanentOptions, resolvePlayer, evolve };
+  global.DevelopmentV2 = { STORAGE_KEY, SCHEMA_VERSION, RARITIES, PROJECT_RARITIES, COSTS, BUILD_REQUIREMENTS, ASSETS, DEVELOPMENT_RESOURCE_ASSETS, TABLES, read, write, reset, nextRarity, groupEvolutionHistory, threshold, weighted, generateChoiceSlots, generateChoices, processRunEnd, claimPull, addProjectModules, addCompletedProject, projectBuildStatus, playerUpgrade, optionsFromUpgrade, permanentOptions, resolvePlayer, evolve };
   if (typeof module !== "undefined" && module.exports) module.exports = global.DevelopmentV2;
 })(typeof globalThis !== "undefined" ? globalThis : window);
