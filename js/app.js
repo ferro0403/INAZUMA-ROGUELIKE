@@ -1062,8 +1062,9 @@
     if (!albumRoster || albumRoster.dataset.albumInteractionBound === "true") return;
     albumRoster.dataset.albumInteractionBound = "true";
     albumRoster.addEventListener("click", (event) => {
-      const entry = event.target.closest("[data-album-player-entry]");
-      const button = event.target.closest("[data-album-player]");
+      const origin = typeof event.target?.closest === "function" ? event.target : event.target?.parentElement;
+      const entry = origin?.closest("[data-album-player-entry]");
+      const button = origin?.closest("[data-album-player]");
       const target = entry || button;
       if (!target || !albumRoster.contains(target)) return;
       event.preventDefault();
@@ -1440,7 +1441,7 @@
 
   function developmentPlayerGridMarkup(players, visibleCount = developmentVisibleCount) {
     const visible = players.slice(0, visibleCount);
-    const cards = visible.map((player) => `<div data-development-player="${escapeHtml(player.playerId)}">${developmentSquadCardMarkup(player, `data-development-card="${escapeHtml(player.playerId)}"`)}${player.category === "Leggenda" ? '<span class="development-max">MAX</span>' : ""}</div>`).join("");
+    const cards = visible.map((player) => `<div data-development-player="${escapeHtml(player.playerId)}">${developmentSquadCardMarkup(player, `data-development-card="${escapeHtml(player.playerId)}"`)}${player.category === "Leggenda" ? '<span class="development-max" aria-label="Rarità massima">LV MAX</span>' : ""}</div>`).join("");
     if (!cards) return '<p class="empty-state">Nessuno svincolato sbloccato corrisponde ai filtri.</p>';
     const remaining = players.length - visible.length;
     return `${cards}${remaining > 0 ? `<div class="development-load-more-wrap"><button class="btn" id="development-load-more">MOSTRA ALTRI <b>${escapeHtml(Math.min(DEVELOPMENT_PAGE_SIZE, remaining))}</b><small>${escapeHtml(visible.length)} di ${escapeHtml(players.length)}</small></button></div>` : ""}`;
@@ -1455,7 +1456,7 @@
     if (type === "project") return `<span class="development-resource-icon project-image-frame"><img src="${escapeHtml(global.DevelopmentV2.ASSETS[rarity])}" alt="" loading="lazy" decoding="async"></span>`;
     const resource = DEVELOPMENT_RESOURCE_ITEMS[type];
     if (!resource?.imageUrl) return "";
-    return `<span class="item-icon item-icon--image development-resource-icon" aria-label="${escapeHtml(resource.name)}"><img src="${escapeHtml(resource.imageUrl)}" alt="${escapeHtml(resource.name)}" loading="eager" decoding="async" onerror="this.hidden=true;this.parentElement.classList.add('is-fallback')"></span>`;
+    return `<span class="item-icon item-icon--image development-resource-icon" aria-label="${escapeHtml(resource.name)}"><img src="${escapeHtml(resource.imageUrl)}" alt="${escapeHtml(resource.name)}" loading="eager" decoding="async" onerror="globalThis.handleItemImageError && globalThis.handleItemImageError(this)">${itemImageFallbackSvg()}</span>`;
   }
 
   function resourceCostMarkup({ type, rarity = "", label, current = null, required, satisfied = true, compact = false }) {
@@ -1580,7 +1581,13 @@
     const playerBody = selected ? developmentSelectedMarkup(selected) : `<div class="development-filters"><label class="development-search-field"><span aria-hidden="true">⌕</span><input class="development-search" id="development-search" value="${escapeHtml(ui.developmentQuery)}" placeholder="Cerca giocatore…" aria-label="Cerca giocatore per nome" autocomplete="off"></label><label class="development-rarity-field"><span>RARITÀ</span><select id="development-rarity">${rarityOptions}</select></label></div><section class="album-player-grid development-player-grid development-squad-card-scope" id="development-player-results">${developmentPlayerGridMarkup(filtered)}</section>`;
     const buildRarities = ["Elite", "Mondiale", "Leggenda"];
     const build = buildRarities.map((rarity) => projectCardMarkup(rarity)).join("");
-    const history = state.evolutionHistory.map((h) => { const player = players.find((item) => String(item.playerId) === String(h.playerId)) || (freeAgentsDb?.players || []).find((item) => String(item.playerId) === String(h.playerId)); const portrait = player ? playerPortraitUrl(player) : PLAYER_IMAGE_PLACEHOLDER; const fallbacks = player ? imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks) : ""; return `<article class="${rarityClass(h.toRarity)}" data-to-rarity="${escapeHtml(h.toRarity)}"><span class="development-history-portrait"><img src="${escapeHtml(portrait)}" alt="" loading="lazy" ${fallbacks}></span><div class="development-history-copy"><strong>${escapeHtml(h.playerNameSnapshot)}</strong><span class="development-history-step">${escapeHtml(h.fromRarity)} <b>→</b> ${escapeHtml(h.toRarity)}</span><time datetime="${escapeHtml(h.timestamp)}">${escapeHtml(new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(h.timestamp)))}</time><small>${resourceCostMarkup({ type: "coins", label: "Monete", required: h.coinsConsumed, compact: true })}${resourceCostMarkup({ type: "cups", label: "Coppe", required: h.cupsConsumed, compact: true })}${resourceCostMarkup({ type: "project", rarity: h.toRarity, label: `Progetto ${h.toRarity}`, required: h.projectsConsumed, compact: true })}</small></div></article>`; }).join("");
+    const history = global.DevelopmentV2.groupEvolutionHistory(state.evolutionHistory).map((group) => {
+      const player = players.find((item) => String(item.playerId) === group.playerId) || (freeAgentsDb?.players || []).find((item) => String(item.playerId) === group.playerId);
+      const portrait = player ? playerPortraitUrl(player) : PLAYER_IMAGE_PLACEHOLDER;
+      const fallbacks = player ? imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks) : "";
+      const timeline = group.entries.map((entry) => `<li><span>${escapeHtml(entry.fromRarity)} <b>→</b> ${escapeHtml(entry.toRarity)}</span><time datetime="${escapeHtml(entry.timestamp)}">${escapeHtml(new Intl.DateTimeFormat("it-IT", { dateStyle: "short", timeStyle: "short" }).format(new Date(entry.timestamp)))}</time></li>`).join("");
+      return `<article class="${rarityClass(group.toRarity)}" data-history-player="${escapeHtml(group.playerId)}" data-to-rarity="${escapeHtml(group.toRarity)}"><span class="development-history-portrait"><img src="${escapeHtml(portrait)}" alt="" loading="lazy" ${fallbacks}></span><div class="development-history-copy"><strong>${escapeHtml(group.playerNameSnapshot)}</strong><span class="development-history-step">${escapeHtml(group.fromRarity)} <b>→</b> ${escapeHtml(group.toRarity)}</span><time datetime="${escapeHtml(group.timestamp)}">Ultima evoluzione: ${escapeHtml(new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(group.timestamp)))}</time><span class="development-history-count">${escapeHtml(group.evolutionCount)} ${group.evolutionCount === 1 ? "evoluzione" : "evoluzioni"}</span>${group.evolutionCount > 1 ? `<details class="development-history-timeline"><summary>Mostra cronologia</summary><ol>${timeline}</ol></details>` : ""}</div></article>`;
+    }).join("");
     const body = tab === "projects" ? `<section class="development-projects"><div class="development-section-heading"><div><p class="eyebrow">BUILD</p><h2>PROGETTI IN COSTRUZIONE</h2></div><p>Progressi verso il prossimo Progetto.</p></div><div class="development-project-grid development-build-grid">${build}</div><div class="development-section-heading development-inventory-heading"><div><p class="eyebrow">INVENTARIO</p><h2>MAGAZZINO PROGETTI</h2></div><p>Progetti completi disponibili per le evoluzioni.</p></div><div class="project-inventory-grid">${projectInventoryMarkup(state)}</div></section>` : tab === "history" ? `<section class="development-history">${history || '<p class="empty-state">Nessuna evoluzione registrata.</p>'}</section>` : playerBody;
     const projectTotal = Object.values(state.projects).reduce((sum, value) => sum + Number(value || 0), 0);
     const existing = document.querySelector(".development-screen");
@@ -1607,14 +1614,20 @@
   }
 
   function renderEvolutionConfirmation(player, target, cost) {
-    openModal(`<div class="development-detail development-confirm"><p class="eyebrow">CONFERMA EVOLUZIONE</p><h2>${escapeHtml(player.name)}</h2><strong class="development-rarity-step">${escapeHtml(player.category)} → ${escapeHtml(target)}</strong><p>Le risorse saranno consumate definitivamente:</p><div class="development-confirm-costs">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, required: cost.projects, compact: true })}${resourceCostMarkup({ type: "cups", label: "Coppe", required: cost.cups, compact: true })}${resourceCostMarkup({ type: "coins", label: "Monete", required: cost.coins, compact: true })}</div><div class="button-row"><button class="btn btn-ghost" id="back-evolution">ANNULLA</button><button class="btn btn-yellow" id="confirm-evolution">CONFERMA EVOLUZIONE</button></div></div>`, { closeable: false, className: "development-confirm-modal" });
+    const targetPotential = Math.max(Number(player.potential || 0), Number(global.DevelopmentV2.threshold(target)));
+    const after = { ...player, category: target, potential: targetPotential, overall: Math.max(Number(player.overall || 0), targetPotential) };
+    openModal(`<div class="development-detail development-confirm"><p class="eyebrow">CONFERMA EVOLUZIONE</p><h2>${escapeHtml(player.name)}</h2><div class="development-evolution-preview"><div><small>CARTA ATTUALE</small>${developmentSquadCardMarkup(player)}</div><span class="development-evolution-arrow" aria-hidden="true">→</span><div><small>CARTA DOPO EVOLUZIONE</small>${developmentSquadCardMarkup(after)}</div></div><p>Le risorse saranno consumate definitivamente:</p><div class="development-confirm-costs">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, required: cost.projects, compact: true })}${resourceCostMarkup({ type: "cups", label: "Coppe", required: cost.cups, compact: true })}${resourceCostMarkup({ type: "coins", label: "Monete", required: cost.coins, compact: true })}</div><div class="button-row"><button class="btn btn-ghost" id="back-evolution">ANNULLA</button><button class="btn btn-yellow" id="confirm-evolution">CONFERMA EVOLUZIONE</button></div></div>`, { closeable: false, className: "development-confirm-modal" });
     document.getElementById("back-evolution").onclick = closeModal;
     let submitting = false;
     document.getElementById("confirm-evolution").onclick = (event) => {
       if (submitting) return; submitting = true; event.currentTarget.disabled = true;
       const result = global.DevelopmentV2.evolve({ playerId: player.playerId, playerName: player.name, basePotential: player.basePotential, unlocked: isDevelopmentPlayerUnlocked(player), freeAgentEligible: isDevelopmentFreeAgentEligible(player.playerId) });
       if (!result.ok) { submitting = false; closeModal(); toast(result.reason === "not_free_agent" ? "Giocatore non eleggibile: non è svincolato" : "Risorse cambiate: evoluzione non completata"); return renderDevelopmentCenter("players"); }
-      developmentPlayersCache = null; closeModal(); toast(`${player.name}: ${result.target}`); renderDevelopmentCenter("players");
+      developmentPlayersCache = null;
+      const updated = cachedDevelopmentPlayers({ refresh: true }).find((candidate) => String(candidate.playerId) === String(player.playerId));
+      closeModal(); toast(`${player.name}: ${result.target}`);
+      if (updated) showPlayerDetailsFor(updated, { playerId: updated.playerId, level: updated.displayLevel, database: updated.albumDatabase, equipment: null, preserveScroll: scrollSnapshot() });
+      else renderDevelopmentCenter("players");
     };
   }
 

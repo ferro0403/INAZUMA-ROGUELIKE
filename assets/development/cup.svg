@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96" role="img" aria-labelledby="title">
+  <title id="title">Coppa campione</title>
+  <path fill="#ffd21f" stroke="#111216" stroke-width="5" stroke-linejoin="round" d="M29 12h38v15c0 20-8 32-19 32S29 47 29 27V12Z"/>
+  <path fill="#fff3ad" stroke="#111216" stroke-width="5" stroke-linejoin="round" d="M29 20H15v8c0 15 8 23 21 23M67 20h14v8c0 15-8 23-21 23"/>
+  <path fill="#ffd21f" stroke="#111216" stroke-width="5" stroke-linejoin="round" d="M48 59v14M33 84h30l-4-11H37l-4 11Z"/>
+  <path fill="#fff" d="M38 18h9c-1 17-4 25-10 29-3-8-4-18-3-29h4Z" opacity=".72"/>
+</svg>
