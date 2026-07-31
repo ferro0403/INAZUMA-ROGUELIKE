@@ -36,26 +36,32 @@ class FakeNode {
   }
 }
 
+class MouseEvent { constructor(type, options = {}) { this.type = type; this.bubbles = options.bubbles; } }
 const roster = new FakeNode();
+const modalRoot = { innerHTML: '' };
 const opened = [];
 context.bind(roster, (detail) => opened.push(detail.playerId));
-context.bind(roster, (detail) => opened.push(`duplicate:${detail.playerId}`));
+context.bind(roster, (detail) => { opened.push(`duplicate:${detail.playerId}`); modalRoot.innerHTML = `<section class=\"album-player-detail-modal\">Harpo Kendrick · ${detail.playerId}</section>`; });
 assert.strictEqual(roster.listeners.get('click').length, 1, 'delegated listener is registered only once');
 
 const unlockedEntry = new FakeNode({ albumPlayerEntry: 'player-17', albumUnlocked: 'true' }, roster);
 const unlockedButton = new FakeNode({ albumPlayer: 'player-17' }, unlockedEntry);
 const unlockedImage = new FakeNode({}, unlockedButton);
 assert.strictEqual(roster.click(unlockedImage).defaultPrevented, true);
-assert.deepStrictEqual(opened, ['player-17'], 'an unlocked nested card tap resolves its wrapper player id');
+const click = new MouseEvent('click', { bubbles: true });
+assert.equal(click.bubbles, true);
+assert.deepStrictEqual(opened, ['duplicate:player-17'], 'an unlocked nested card tap resolves its wrapper player id');
+assert.match(modalRoot.innerHTML, /album-player-detail-modal/);
+assert.match(modalRoot.innerHTML, /Harpo Kendrick/);
 
 const lockedEntry = new FakeNode({ albumPlayerEntry: 'player-42', albumUnlocked: 'false' }, roster);
 const lockedButton = new FakeNode({ albumPlayer: 'player-42' }, lockedEntry);
 const lockOverlay = new FakeNode({}, lockedEntry);
 roster.click(lockOverlay);
-assert.deepStrictEqual(opened, ['player-17', 'player-42'], 'the NON SBLOCCATO overlay tap opens the correct player');
+assert.deepStrictEqual(opened, ['duplicate:player-17', 'duplicate:player-42'], 'the NON SBLOCCATO overlay tap opens the correct player');
 
 roster.click(unlockedButton);
-assert.deepStrictEqual(opened, ['player-17', 'player-42', 'player-17'], 'the card can be opened again after a prior detail flow');
+assert.deepStrictEqual(opened, ['duplicate:player-17', 'duplicate:player-42', 'duplicate:player-17'], 'the card can be opened again after a prior detail flow');
 
 for (const rarity of ['elite', 'mondiale', 'leggenda']) {
   assert.ok(source.includes(`rarity-${rarity}`), `${rarity} has a distinct detail class`);

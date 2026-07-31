@@ -24,7 +24,7 @@
   });
   const DEVELOPMENT_RESOURCE_ASSETS = Object.freeze({
     coins: "https://dxi4wb638ujep.cloudfront.net/1/k/r/e/rez8i1pp0p8.webp",
-    cups: "assets/development/cup.svg",
+    cups: "https://dxi4wb638ujep.cloudfront.net/1/k/t/t/ttzfl1b8nbe.png",
   });
   const TABLES = Object.freeze({
     5: { safe: { Buono: 100 }, advanced: { Buono: 85, Forte: 15 }, rare: { Buono: 70, Forte: 30 } },
@@ -63,7 +63,7 @@
       group.entries.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
       const first = group.entries[0];
       const latest = group.entries[group.entries.length - 1];
-      return { ...group, playerNameSnapshot: latest.playerNameSnapshot || first.playerNameSnapshot || group.playerId, fromRarity: first.fromRarity, toRarity: latest.toRarity, timestamp: latest.timestamp, evolutionCount: group.entries.length };
+      return { ...group, playerNameSnapshot: latest.playerNameSnapshot || first.playerNameSnapshot || group.playerId, fromRarity: first.fromRarity, toRarity: latest.toRarity, timestamp: latest.timestamp, evolutionCount: group.entries.length, coinsConsumed: group.entries.reduce((sum, entry) => sum + Number(entry.coinsConsumed || 0), 0), cupsConsumed: group.entries.reduce((sum, entry) => sum + Number(entry.cupsConsumed || 0), 0), projectsConsumed: group.entries.reduce((sum, entry) => sum + Number(entry.projectsConsumed || 0), 0) };
     }).sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
   }
   function threshold(rarity) { return global.InazumaProgression?.RARITY_THRESHOLDS?.find((x) => x.category === rarity)?.min ?? ({ Scarso: 0, Debole: 66, Normale: 70, Buono: 75, Forte: 80, Elite: 85, Mondiale: 90, Leggenda: 95 }[rarity]); }
