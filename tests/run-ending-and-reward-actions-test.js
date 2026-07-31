@@ -43,7 +43,8 @@ const gameOver = functionSource('renderGameOver', 'homeHallOfFameMarkup');
 for (const text of ['0 VITE RIMASTE', 'RUN TERMINATA', 'La squadra non può più continuare questa run.', 'NUOVA RUN', 'MENU']) {
   assert.ok(gameOver.includes(text), `game over includes ${text}`);
 }
-assert.match(gameOver, /restart-run[\s\S]*openTeamNameModal/, 'new run keeps its existing flow');
+assert.match(gameOver, /restart-run[\s\S]*startNewRunFromHome/, 'new run reuses the saved identity instead of reopening team-name creation');
+assert.doesNotMatch(gameOver, /restart-run[\s\S]*openTeamNameModal/, 'the game-over completion path cannot launch the team-name modal directly');
 assert.match(gameOver, /getElementById\("home"\)[\s\S]*renderHome/, 'menu keeps its existing flow');
 
 const finalSummary = functionSource('renderFinalSummary', 'playerStatsMarkup');

@@ -1,7 +1,7 @@
 (function (global) {
   "use strict";
 
-  const DEV_MODE = /(?:localhost|127\.0\.0\.1)/.test(global.location?.hostname || "") && global.location?.search?.includes("dev=1");
+  const DEV_MODE = new URLSearchParams(global.location?.search || "").get("dev") === "1";
   const TEST_MATCH_CONTROLS_ENABLED = true;
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
@@ -31,6 +31,7 @@
     hallRoot: { destination: "home", label: "Torna alla Home" },
     hallDetail: { destination: "hallRoot", label: "Torna all’Albo d’Oro" },
     finalSummary: { destination: "home", label: "Torna alla Home" },
+    development: { destination: "seasonSelection", label: "Torna alla selezione delle run" },
   };
 
   function getSectionRootDestination(section) {
@@ -239,7 +240,7 @@
     const id = String(item?.id || "");
     const name = item?.name || "Oggetto";
     if (item?.imageUrl) {
-      return `<span class="item-icon item-icon--image" aria-label="${escapeHtml(name)}" title="${escapeHtml(name)}"><img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(name)}" loading="lazy" onerror="globalThis.handleItemImageError && globalThis.handleItemImageError(this)" />${itemImageFallbackSvg()}</span>`;
+      return `<span class="item-icon item-icon--image" aria-label="${escapeHtml(name)}" title="${escapeHtml(name)}"><img src="${escapeHtml(item.imageUrl)}" alt="${escapeHtml(name)}" loading="lazy" referrerpolicy="no-referrer" onerror="globalThis.handleItemImageError && globalThis.handleItemImageError(this)" />${itemImageFallbackSvg()}</span>`;
     }
     const icons = {
       energy_drink: `<svg viewBox="0 0 32 32"><path d="M11 8h10l-1 18h-8L11 8Z"/><path d="M13 4h6v4h-6z"/><path d="m16 12-3 6h3l-1 6 5-8h-3l1-4z"/></svg>`,
@@ -315,6 +316,9 @@
     itemRewardSubmitting: false,
     albumCollectionId: null,
     albumTeamId: null,
+    selectedDevelopmentPlayerId: null,
+    developmentQuery: "",
+    developmentRarity: "Tutti",
   };
 
   function escapeHtml(value) {
@@ -804,11 +808,10 @@
     const database = options.database || freeAgentsDb;
     const level = Number(options.level ?? 0);
     const pullSelection = options.context === "pull";
-    const resolved = global.InazumaProgression.getPlayerAtLevel(
-      player,
-      Math.floor(level),
-      database
-    );
+    const snapshotOptions = global.DevelopmentV2.optionsFromUpgrade(player, run?.developmentPlayerSnapshot?.[String(player.playerId)]);
+    const resolved = options.resolvedPlayer || (options.applyPermanent
+      ? global.InazumaProgression.getPlayerAtLevel(player, Math.floor(level), database, snapshotOptions)
+      : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(level), database));
     const tag = options.button ? "button" : "article";
     const playerDataAttribute = options.dataAttribute || "data-player-id";
     const attributes = options.button
@@ -834,6 +837,10 @@
         ${options.equipment ? `<span class="player-corner player-equipment" aria-label="Oggetto equipaggiato">${itemIcon(options.equipment)}</span>` : ""}
         <span class="player-corner player-level" aria-label="Livello ${escapeHtml(level)}">Lv ${escapeHtml(level)}</span>
       </${tag}>`;
+  }
+
+  function permanentRosterFields(player) {
+    return { ...global.DevelopmentV2.optionsFromUpgrade(player, run?.developmentPlayerSnapshot?.[String(player?.playerId)]), intensiveTrainingMigrated: true };
   }
 
   function teamLogoMarkup(teamIdentity) {
@@ -901,7 +908,7 @@
     const equipmentMarkup = equipment ? `<div class="equipped-detail">${itemIcon(equipment)}<div class="equipped-detail-copy"><span>${historical ? "Equipaggiamento storico" : "Oggetto assegnato"}</span><strong>${escapeHtml(resolveItem(equipment).name)}</strong><small>${escapeHtml(resolveItem(equipment).description)}</small><em>+${Number(resolveItem(equipment).bonus || 0)} ${escapeHtml(STAT_LABELS[resolveItem(equipment).stat] || resolveItem(equipment).stat || "")}</em></div>${!readOnly && playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>` : `<p class="muted equipped-detail-empty">Nessun equipaggiamento.</p>`;
     return `
       <div class="player-detail-layout ${rarityClass(resolved.category)} ${historical ? "player-detail-historical" : ""}">
-        <section class="player-detail-visual ${rarityClass(resolved.category)}">${teamBadge}${detailVisual.detailImageUrl ? `<img class="player-fullbody player-fullbody--${escapeHtml(detailVisual.detailImageKind)}" src="${escapeHtml(detailVisual.detailImageUrl)}" alt="${escapeHtml(resolved.name)}" loading="lazy" ${imageFallbackAttributes(detailVisual.detailFallbacks)} />` : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`}</section>
+        <section class="player-detail-visual ${rarityClass(resolved.category)}">${teamBadge}${detailVisual.detailImageUrl ? `<img class="player-fullbody player-fullbody--${escapeHtml(detailVisual.detailImageKind)}" src="${escapeHtml(detailVisual.detailImageUrl)}" alt="${escapeHtml(resolved.name)}" loading="lazy" decoding="async" ${imageFallbackAttributes(detailVisual.detailFallbacks)} />` : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`}</section>
         <section class="player-detail-content">
           <div class="player-detail-heading"><p class="eyebrow">${albumMode ? "Scheda giocatore · Album" : (historical ? "Scheda giocatore · Squadra campione" : "Scheda giocatore")}</p>${albumMode ? `<span class="role-chip album-detail-badge">${albumUnlocked ? "SBLOCCATO" : "CONSULTABILE"}</span>` : ""}</div>
           <h2 class="player-detail-name">${escapeHtml(resolved.name)}</h2>
@@ -984,9 +991,12 @@
     return { unlocked: ids.filter((id) => unlocked.has(id)).length, total: ids.length };
   }
 
-  function albumPlayerView(player, database) {
-    const final = global.InazumaProgression.getPlayerAtLevel(player, Number(player.maxLevel || 20), database);
-    return { ...player, overall: player.finalOverall ?? final.overall, finalOverall: player.finalOverall ?? final.overall, category: player.category || final.category, stats: player.finalStats || final.stats, baseStats: player.finalStats || final.stats, displayLevel: Number(player.maxLevel || 20), albumDatabase: database };
+  function albumPlayerView(player, database, upgrade = undefined) {
+    const basePotential = Number(player.basePotential ?? player.finalOverall ?? 0);
+    const final = upgrade === undefined
+      ? global.DevelopmentV2.resolvePlayer(player, Number(player.maxLevel || 20), database)
+      : global.InazumaProgression.getPlayerAtLevel(player, Number(player.maxLevel || 20), database, global.DevelopmentV2.optionsFromUpgrade(player, upgrade));
+    return { ...player, basePotential, overall: final.overall, finalOverall: final.overall, potential: final.potential, category: final.category, stats: final.stats, baseStats: final.stats, displayLevel: Number(player.maxLevel || 20), albumDatabase: database };
   }
 
   function albumProgressPercent(progress) {
@@ -1032,15 +1042,37 @@
     const team = albumTeamsView().find((candidate) => String(candidate.teamId) === String(teamId));
     if (!team) return renderAlbumTeams(collectionId);
     const rawPlayers = team.freeAgents ? (freeAgentsDb?.players || []) : (team.playerIds || []).map((id) => seasonPlayersById.get(String(id))).filter(Boolean);
-    const players = rawPlayers.map((player) => albumPlayerView(player, team.freeAgents ? freeAgentsDb : seasonDb));
-    const progress = albumProgressForPlayers(players, collectionId);
-    const unlocked = global.AlbumProgress.unlockedSet(collectionId);
-    app.innerHTML = `<main class="album-screen album-roster-screen"><header class="topbar album-topbar album-roster-header"><div class="album-roster-title"><span class="album-team-logo album-team-logo--header album-roster-logo">${albumTeamLogoMarkup(team)}</span><div class="album-roster-heading"><p class="eyebrow album-roster-breadcrumb">Album → ${escapeHtml(global.AlbumProgress.ALBUM_COLLECTIONS[collectionId]?.name || collectionId)}</p><h1 class="album-roster-name">${escapeHtml(team.teamName)}</h1><p class="muted album-roster-progress">${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)} giocatori sbloccati</p></div></div>${sectionRootButton("albumRoster", "album-roster-action")}</header><section class="album-player-grid" data-album-roster>${players.map((player) => { const isUnlocked = unlocked.has(String(player.playerId)); return `<div class="album-player-entry ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${playerCard(player, { button: true, dataAttribute: "data-album-player", level: player.maxLevel || 20, database: player.albumDatabase })}${isUnlocked ? "" : `<span class="album-lock-overlay album-player-lock"><span aria-hidden="true">🔒</span>Non sbloccato</span>`}</div>`; }).join("")}</section></main>`;
+    const database = team.freeAgents ? freeAgentsDb : seasonDb;
+    const albumProgressState = global.AlbumProgress.read();
+    const unlocked = global.AlbumProgress.unlockedSet(collectionId, albumProgressState);
+    const developmentState = global.DevelopmentV2.read();
+    const rawById = new Map(rawPlayers.map((player) => [String(player.playerId), player]));
+    const resolvedById = new Map();
+    const progress = { unlocked: rawPlayers.filter((player) => unlocked.has(String(player.playerId))).length, total: rawPlayers.length };
+    const pageSize = 60;
+    let visibleCount = rawPlayers.length > 80 ? pageSize : rawPlayers.length;
+    const resolvedPlayer = (raw) => {
+      const id = String(raw.playerId);
+      if (!resolvedById.has(id)) resolvedById.set(id, albumPlayerView(raw, database, developmentState.players?.[id] || null));
+      return resolvedById.get(id);
+    };
+    const rosterMarkup = () => {
+      const visible = rawPlayers.slice(0, visibleCount);
+      const cards = visible.map((raw) => {
+        const player = resolvedPlayer(raw);
+        const isUnlocked = unlocked.has(String(player.playerId));
+        return `<div class="album-player-entry ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${playerCard(player, { button: true, dataAttribute: "data-album-player", level: player.maxLevel || 20, database: player.albumDatabase, resolvedPlayer: player })}${isUnlocked ? "" : `<span class="album-lock-overlay album-player-lock"><span aria-hidden="true">🔒</span>Non sbloccato</span>`}</div>`;
+      }).join("");
+      const remaining = rawPlayers.length - visible.length;
+      return `${cards}${remaining > 0 ? `<div class="album-load-more-wrap"><button type="button" class="btn btn-yellow album-load-more" data-album-load-more>MOSTRA ALTRI ${escapeHtml(Math.min(pageSize, remaining))}</button><small>${escapeHtml(visible.length)} di ${escapeHtml(rawPlayers.length)}</small></div>` : ""}`;
+    };
+    app.innerHTML = `<main class="album-screen album-roster-screen"><header class="topbar album-topbar album-roster-header"><div class="album-roster-title"><span class="album-team-logo album-team-logo--header album-roster-logo">${albumTeamLogoMarkup(team)}</span><div class="album-roster-heading"><p class="eyebrow album-roster-breadcrumb">Album → ${escapeHtml(global.AlbumProgress.ALBUM_COLLECTIONS[collectionId]?.name || collectionId)}</p><h1 class="album-roster-name">${escapeHtml(team.teamName)}</h1><p class="muted album-roster-progress">${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)} giocatori sbloccati</p></div></div>${sectionRootButton("albumRoster", "album-roster-action")}</header><section class="album-player-grid" data-album-roster>${rosterMarkup()}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav({ collectionId });
     const albumRoster = document.querySelector("[data-album-roster]");
-    bindAlbumRosterInteractions(albumRoster, ({ playerId, entry }) => {
-      const player = players.find((candidate) => String(candidate.playerId) === String(playerId));
+    bindAlbumRosterInteractions(albumRoster, ({ playerId }) => {
+      const raw = rawById.get(String(playerId));
+      const player = raw ? resolvedPlayer(raw) : null;
       if (!player) {
         console.error("Album player not found", { collectionId, teamId, playerId });
         return;
@@ -1048,18 +1080,27 @@
       const isUnlocked = unlocked.has(String(player.playerId));
       showPlayerDetailsFor(player, { mode: "album", readOnly: true, playerId: player.playerId, level: player.maxLevel || 20, database: player.albumDatabase, equipment: null, preserveScroll: scrollSnapshot(), albumUnlocked: isUnlocked });
     });
+    albumRoster?.addEventListener("click", (event) => {
+      if (!event.target.closest("[data-album-load-more]")) return;
+      visibleCount = Math.min(rawPlayers.length, visibleCount + pageSize);
+      albumRoster.innerHTML = rosterMarkup();
+    });
   }
 
   function bindAlbumRosterInteractions(albumRoster, openPlayer) {
-    if (!albumRoster || albumRoster.dataset.albumInteractionBound === "true") return;
+    if (!albumRoster) return;
+    // Keep one delegated listener while refreshing the resolver after every roster render.
+    albumRoster.albumOpenPlayer = openPlayer;
+    if (albumRoster.dataset.albumInteractionBound === "true") return;
     albumRoster.dataset.albumInteractionBound = "true";
     albumRoster.addEventListener("click", (event) => {
-      const entry = event.target.closest("[data-album-player-entry]");
-      const button = event.target.closest("[data-album-player]");
+      const origin = typeof event.target?.closest === "function" ? event.target : event.target?.parentElement;
+      const entry = origin?.closest("[data-album-player-entry]");
+      const button = origin?.closest("[data-album-player]");
       const target = entry || button;
       if (!target || !albumRoster.contains(target)) return;
       event.preventDefault();
-      openPlayer({ playerId: String(entry?.dataset.albumPlayerEntry ?? button.dataset.albumPlayer), entry, button });
+      albumRoster.albumOpenPlayer?.({ playerId: String(entry?.dataset.albumPlayerEntry ?? button.dataset.albumPlayer), entry, button });
     });
   }
 
@@ -1372,12 +1413,307 @@
       playersById: global.SeasonRegistry.playersIndex(season.id),
       isLastPlayed: Boolean(savedRun && latestTime && runTimestamp(savedRun) === latestTime),
     })).join("");
-    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="season-select-topbar">${sectionRootButton("seasonSelection", "season-select-home-button")}<h1>Seleziona Season</h1><span class="season-select-topbar-spacer" aria-hidden="true"></span></header><section class="home-choice-grid season-choice-grid">${cards}</section></main>`;
+    const pending = Object.values(global.DevelopmentV2.read().projectPullLedger).find((pull) => !pull.claimed);
+    const developmentCard = `<article class="home-hub-card season-select-card season-select-card--empty development-season-card"><div class="season-card-head"><div><p class="eyebrow">CRESCITA PERMANENTE</p><h2>CENTRO DI SVILUPPO</h2><p class="season-team-name">Usa Progetti, Coppe e Monete per evolvere i giocatori già sbloccati.</p></div><span class="season-status-pill">Album</span></div><div class="home-card-actions season-card-actions"><button class="btn btn-yellow" id="open-development">APRI CENTRO DI SVILUPPO</button>${pending ? `<button class="btn" id="recover-project-pull">RISCATTA PROGETTO</button>` : ""}</div></article>`;
+    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="season-select-topbar">${sectionRootButton("seasonSelection", "season-select-home-button")}<h1>Seleziona Season</h1><span class="season-select-topbar-spacer" aria-hidden="true"></span></header><section class="home-choice-grid season-choice-grid">${developmentCard}${cards}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav();
+    document.getElementById("open-development")?.addEventListener("click", renderDevelopmentCenter);
+    document.getElementById("recover-project-pull")?.addEventListener("click", () => renderProjectPull(pending));
     document.querySelectorAll("[data-season-continue]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonContinue, { markPlayed: true }); resumeRun(); }));
     document.querySelectorAll("[data-season-new]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonNew); startNewRunFromHome(); }));
   }
+
+  function eligibleFreeAgentIds() {
+    return new Set((freeAgentsDb?.players || []).map((player) => String(player.playerId)));
+  }
+
+  function isDevelopmentFreeAgentEligible(playerId) {
+    return eligibleFreeAgentIds().has(String(playerId));
+  }
+
+  function developmentPlayers() {
+    ensureAlbumBackfill();
+    const collections = Object.keys(global.AlbumProgress.ALBUM_COLLECTIONS);
+    const progress = global.AlbumProgress.read();
+    const unlockedByCollection = new Map(collections.map((collectionId) => [collectionId, global.AlbumProgress.unlockedSet(collectionId, progress)]));
+    const developmentState = global.DevelopmentV2.read();
+    const freeAgentIds = eligibleFreeAgentIds();
+    const seen = new Set();
+    return (freeAgentsDb?.players || []).flatMap((player) => {
+      const id = String(player.playerId);
+      if (!freeAgentIds.has(id) || seen.has(id)) return [];
+      const developmentCollections = collections.filter((collectionId) => unlockedByCollection.get(collectionId).has(id));
+      if (developmentCollections.length) seen.add(id);
+      const upgrade = developmentState.players?.[id];
+      const basePotential = Number(player.basePotential ?? player.finalOverall ?? 0);
+      const currentPotential = Math.max(basePotential, Number(upgrade?.permanentTargetPotential || 0));
+      return developmentCollections.length
+        ? [{ ...player, rawPlayer: player, developmentUpgrade: upgrade || null, basePotential, currentPotential, category: global.InazumaProgression.categoryForPotential(currentPotential), developmentCollections }]
+        : [];
+    });
+  }
+
+  const DEVELOPMENT_PAGE_SIZE = 60;
+  let developmentPlayersCache = null;
+  const developmentResolvedCache = new Map();
+  let developmentVisibleCount = DEVELOPMENT_PAGE_SIZE;
+
+  function cachedDevelopmentPlayers({ refresh = false } = {}) {
+    if (refresh || !developmentPlayersCache) developmentPlayersCache = developmentPlayers();
+    return developmentPlayersCache;
+  }
+
+  function filterDevelopmentPlayers(players, query = "", rarity = "Tutti") {
+    const needle = String(query).trim().toLocaleLowerCase("it");
+    return players.filter((player) => (!needle || player.name.toLocaleLowerCase("it").includes(needle)) && (rarity === "Tutti" || player.category === rarity));
+  }
+
+  function resolveDevelopmentPlayer(indexedPlayer) {
+    if (!indexedPlayer) return null;
+    const id = String(indexedPlayer.playerId);
+    const upgrade = indexedPlayer.developmentUpgrade || {};
+    const version = `${upgrade.permanentTargetPotential || 0}:${upgrade.updatedAt || ""}:${upgrade.evolutionCount || 0}`;
+    const cached = developmentResolvedCache.get(id);
+    if (cached?.version === version) return cached.player;
+    const player = { ...albumPlayerView(indexedPlayer.rawPlayer || indexedPlayer, freeAgentsDb, upgrade), developmentCollections: indexedPlayer.developmentCollections };
+    developmentResolvedCache.set(id, { version, player });
+    return player;
+  }
+
+  function developmentSquadCardMarkup(player, dataAttr = "") {
+    return compactPlayerCardMarkup(player, {
+      level: player.displayLevel ?? player.maxLevel ?? 20,
+      overall: player.overall,
+      dataAttr,
+      extraClass: "squad-player-card development-squad-card",
+    });
+  }
+
+  function developmentPlayerGridMarkup(players, visibleCount = developmentVisibleCount) {
+    const visible = players.slice(0, visibleCount).map(resolveDevelopmentPlayer);
+    const cards = visible.map((player) => `<div data-development-player="${escapeHtml(player.playerId)}">${developmentSquadCardMarkup(player, `data-development-card="${escapeHtml(player.playerId)}"`)}${player.category === "Leggenda" ? '<span class="development-max" aria-label="Rarità massima">MAX</span>' : ""}</div>`).join("");
+    if (!cards) return '<p class="empty-state">Nessuno svincolato sbloccato corrisponde ai filtri.</p>';
+    const remaining = players.length - visible.length;
+    return `${cards}${remaining > 0 ? `<div class="development-load-more-wrap"><button class="btn btn-yellow development-load-more" id="development-load-more"><span>MOSTRA ALTRI <b>${escapeHtml(Math.min(DEVELOPMENT_PAGE_SIZE, remaining))}</b></span><small>${escapeHtml(visible.length)} di ${escapeHtml(players.length)}</small></button></div>` : ""}`;
+  }
+
+  const DEVELOPMENT_RESOURCE_ITEMS = Object.freeze({
+    coins: Object.freeze({ id: "development-coins", name: "Dragon Sticker", imageUrl: global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.coins }),
+    cups: Object.freeze({ id: "development-cups", name: "Coppa", imageUrl: global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.cups }),
+  });
+
+  function developmentCurrencyIcon(type, rarity = "") {
+    if (type === "project") return `<span class="development-resource-icon project-image-frame"><img src="${escapeHtml(global.DevelopmentV2.ASSETS[rarity])}" alt="" loading="lazy" decoding="async"></span>`;
+    const resource = DEVELOPMENT_RESOURCE_ITEMS[type];
+    if (!resource?.imageUrl) return "";
+    return `<span class="item-icon item-icon--image development-resource-icon" aria-label="${escapeHtml(resource.name)}"><img src="${escapeHtml(resource.imageUrl)}" alt="${escapeHtml(resource.name)}" loading="eager" decoding="async" onerror="globalThis.handleItemImageError && globalThis.handleItemImageError(this)">${itemImageFallbackSvg()}</span>`;
+  }
+
+  function resourceCostMarkup({ type, rarity = "", label, current = null, required, satisfied = true, compact = false }) {
+    const values = current == null ? `×${escapeHtml(required)}` : `${escapeHtml(current)} / ${escapeHtml(required)}`;
+    const tag = compact ? "span" : "article";
+    return `<${tag} class="development-requirement ${satisfied ? "is-ready" : "is-missing"}">${developmentCurrencyIcon(type, rarity)}<span><small>${escapeHtml(label)}</small><strong>${values}</strong></span>${compact ? "" : `<b aria-label="${satisfied ? "Requisito soddisfatto" : "Requisito mancante"}">${satisfied ? "✓" : "!"}</b>`}</${tag}>`;
+  }
+
+  function projectCardMarkup(rarity, { selectable = false } = {}) {
+    const state = global.DevelopmentV2.read();
+    const status = global.DevelopmentV2.projectBuildStatus(rarity, state);
+    const image = `<span class="project-image-frame"><img src="${escapeHtml(global.DevelopmentV2.ASSETS[rarity])}" width="80" height="80" alt="Progetto Evoluzione ${escapeHtml(rarity)}" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="project-image-fallback" hidden aria-hidden="true">◆</span></span>`;
+    if (selectable) {
+      const buildState = ["Forte", "Elite", "Mondiale", "Leggenda"].includes(rarity) ? `<span>BUILD ${escapeHtml(status.filled)}/${escapeHtml(status.required)}</span>` : "";
+      return `<article class="project-pull-option ${rarityClass(rarity)}"><div class="development-project-card project-pull-card"><span class="project-pull-label">SCELTA</span>${image}<div class="project-pull-copy"><strong>${escapeHtml(rarity)}</strong><small class="project-pull-status">${buildState}<span>MAGAZZINO ×${escapeHtml(status.owned)}</span></small></div></div><div class="project-pull-actions" role="group" aria-label="Azioni Progetto ${escapeHtml(rarity)}"><button type="button" class="btn project-pull-confirm" data-claim-project="${escapeHtml(rarity)}">SÌ</button><button type="button" class="btn btn-yellow project-pull-info" data-project-info="${escapeHtml(rarity)}">INFO</button></div></article>`;
+    }
+    const segments = Array.from({ length: status.required }, (_, index) => `<i class="${index < status.filled ? "is-filled" : ""}"></i>`).join("");
+    return `<article class="development-project-card project-build-card ${rarityClass(rarity)}">${image}<div class="project-build-copy"><strong>${escapeHtml(rarity)}</strong><div class="project-segments" style="--segments:${escapeHtml(status.required)}" aria-label="${escapeHtml(status.filled)} parti su ${escapeHtml(status.required)}">${segments}</div><div class="project-build-status"><b>${escapeHtml(status.filled)} / ${escapeHtml(status.required)}</b></div></div></article>`;
+  }
+
+  function showProjectPullInfo(rarity, onClose = null) {
+    const status = global.DevelopmentV2.projectBuildStatus(rarity, global.DevelopmentV2.read());
+    const purpose = `Questo progetto contribuisce al completamento del Progetto ${rarity} e consente l’evoluzione dei giocatori della fascia corrispondente.`;
+    openModal(`<header class="project-info-head ${rarityClass(rarity)}"><p>FASCIA PROGETTO</p><h2>${escapeHtml(rarity)}</h2></header><div class="project-info-body ${rarityClass(rarity)}">${developmentCurrencyIcon("project", rarity)}<div class="project-info-copy"><strong>PROGETTO ${escapeHtml(rarity)}</strong><p>${escapeHtml(purpose)}</p><div class="project-info-stats" aria-label="Stato del progetto"><span>MAGAZZINO <b>×${escapeHtml(status.owned)}</b></span><span>BUILD <b>${escapeHtml(status.filled)}/${escapeHtml(status.required)}</b></span></div></div></div>`, { className: "project-info-modal", onClose });
+  }
+
+  function projectInventoryMarkup(state) {
+    return global.DevelopmentV2.PROJECT_RARITIES.map((rarity) => `<article class="project-inventory-item ${rarityClass(rarity)}"><span class="project-inventory-image"><img src="${escapeHtml(global.DevelopmentV2.ASSETS[rarity])}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true"></span><strong>${escapeHtml(rarity)}</strong><b>×${escapeHtml(state.projects[rarity] || 0)}</b></article>`).join("");
+  }
+
+  function renderProjectPull(pull, onComplete = renderSeasonSelect) {
+    if (!pull || pull.claimed) return onComplete();
+    const content = `<header><p class="eyebrow">RICOMPENSA RUN</p><h1>SCEGLI UN PROGETTO</h1><p>Una sola scelta. Il Progetto sarà subito disponibile nel Centro di Sviluppo.</p></header><section class="project-pull-grid">${pull.choices.map((r, index) => projectCardMarkup(r, { selectable: true }).replace("SCELTA</span>", `SCELTA 0${index + 1}</span>`)).join("")}</section><p class="project-pull-hint">Tocca una carta per scegliere la ricompensa.</p>`;
+    openModal(content, { closeable: false, className: "project-pull-modal" });
+    let claiming = false;
+    const choices = [...document.querySelectorAll("[data-claim-project]")];
+    document.querySelectorAll("[data-project-info]").forEach((button) => button.addEventListener("click", () => showProjectPullInfo(button.dataset.projectInfo, () => renderProjectPull(pull, onComplete))));
+    choices.forEach((button) => button.addEventListener("click", () => {
+      if (claiming) return;
+      claiming = true;
+      choices.forEach((choice) => { choice.disabled = true; });
+      button.closest(".project-pull-option")?.classList.add("is-selected");
+      const result = global.DevelopmentV2.claimPull(pull.runId, button.dataset.claimProject);
+      if (!result) { claiming = false; choices.forEach((choice) => { choice.disabled = false; }); return; }
+      toast(result.projectsCompleted ? `PROGETTO ${result.rarity.toUpperCase()} COMPLETATO · MAGAZZINO ×${result.projectsCompleted}` : `MODULO ${result.rarity.toUpperCase()} OTTENUTO · ${result.remainder}/${result.required}`);
+      window.setTimeout(() => { closeModal({ invokeOnClose: false }); onComplete(); }, 180);
+    }));
+  }
+
+  function developmentRewardPresentation(defeatedBosses, endReason) {
+    const bosses = Math.max(0, Number(defeatedBosses) || 0);
+    return {
+      endReason,
+      coins: bosses >= 5 ? bosses * 10 + (endReason === "victory" ? 50 : 0) : 0,
+      cups: endReason === "victory" ? 1 : 0,
+      seen: false,
+    };
+  }
+
+  function renderDevelopmentRewardReveal(presentation, onContinue) {
+    const won = presentation.endReason === "victory";
+    app.innerHTML = `<main class="development-reward-screen" data-development-reward-reveal><section class="development-reward-panel">
+      <header><h1>RICOMPENSE RUN</h1><p>${won ? "RUN COMPLETATA" : "RUN TERMINATA"}</p></header>
+      <div class="development-reward-list">
+        <article class="development-reward-item">${developmentCurrencyIcon("coins")}<span><small>MONETE</small><strong data-reward-count="${escapeHtml(presentation.coins)}">+0</strong></span></article>
+        ${won ? `<article class="development-reward-item development-reward-cup">${developmentCurrencyIcon("cups")}<span><small>COPPA CAMPIONE</small><strong>+${escapeHtml(presentation.cups)}</strong></span></article>` : ""}
+      </div>
+      <button type="button" class="btn btn-yellow development-reward-continue" id="development-reward-continue">CONTINUA</button>
+      <p class="development-reward-skip">Tocca per saltare l’animazione</p>
+    </section></main>`;
+    resetRenderedViewScroll();
+    const counter = document.querySelector("[data-reward-count]");
+    const target = Number(presentation.coins) || 0;
+    const startedAt = performance.now();
+    let finished = false;
+    const finishAnimation = () => {
+      if (finished) return;
+      finished = true;
+      if (counter) counter.textContent = `+${target}`;
+      document.querySelector(".development-reward-panel")?.classList.add("is-complete");
+    };
+    const tick = (now) => {
+      if (finished) return;
+      const progress = Math.min(1, (now - startedAt) / 900);
+      if (counter) counter.textContent = `+${Math.round(target * progress)}`;
+      if (progress < 1) requestAnimationFrame(tick); else finishAnimation();
+    };
+    requestAnimationFrame(tick);
+    document.querySelector("[data-development-reward-reveal]")?.addEventListener("click", finishAnimation);
+    document.getElementById("development-reward-continue")?.addEventListener("click", (event) => { event.stopPropagation(); finishAnimation(); onContinue(); });
+  }
+
+  function resolveDevelopmentEndRunFlow({ endReason, onComplete }) {
+    const defeatedBosses = Number(run.completedBossIds?.length || run.bossIndex || 0);
+    const result = global.DevelopmentV2.processRunEnd({ runId: run.runId, defeatedBosses, endReason });
+    if (!run.developmentRewardPresentation || run.developmentRewardPresentation.endReason !== endReason) {
+      run.developmentRewardPresentation = developmentRewardPresentation(defeatedBosses, endReason);
+      global.RunState.save(run);
+    }
+    const continueFlow = () => {
+      run.developmentRewardPresentation.seen = true;
+      global.RunState.save(run);
+      const pending = global.DevelopmentV2.read().projectPullLedger?.[run.runId] || result.pull;
+      if (pending && !pending.claimed) return renderProjectPull(pending, onComplete);
+      return onComplete();
+    };
+    if (!run.developmentRewardPresentation.seen) return renderDevelopmentRewardReveal(run.developmentRewardPresentation, continueFlow);
+    if (result.pull && !result.pull.claimed) return renderProjectPull(result.pull, onComplete);
+    return onComplete();
+  }
+
+  function developmentSelectedMarkup(player) {
+    const state = global.DevelopmentV2.read();
+    const target = global.DevelopmentV2.nextRarity(player.category);
+    if (!target) return `<section class="development-selected development-squad-card-scope"><p class="eyebrow">GIOCATORE SELEZIONATO</p><div class="development-selected-layout"><div class="development-selected-card">${developmentSquadCardMarkup(player)}</div><div class="development-selected-copy"><h2>${escapeHtml(player.name)}</h2><p class="development-max-copy">MAX · RARITÀ MASSIMA</p><button class="btn btn-ghost" id="change-development-player">CAMBIA GIOCATORE</button></div></div></section>`;
+    const cost = global.DevelopmentV2.COSTS[target];
+    const have = state.projects[target] || 0;
+    const nextOverall = Math.max(Number(player.overall || 0), Number(global.DevelopmentV2.threshold(target)));
+    const missing = [Math.max(0, cost.projects - have) ? `MANCA ${cost.projects - have} PROGETTO ${target.toUpperCase()}` : "", Math.max(0, cost.cups - state.cups) ? `MANCANO ${cost.cups - state.cups} COPPE` : "", Math.max(0, cost.coins - state.coins) ? `MANCANO ${cost.coins - state.coins} MONETE` : ""].filter(Boolean);
+    return `<section class="development-selected development-squad-card-scope"><p class="eyebrow">GIOCATORE SELEZIONATO</p><div class="development-selected-layout"><div class="development-selected-card">${developmentSquadCardMarkup(player)}</div><div class="development-selected-copy"><h2>${escapeHtml(player.name)}</h2><strong class="development-rarity-step">${escapeHtml(player.category)} <span>→</span> ${escapeHtml(target)}</strong><p class="development-potential">Overall / potenziale <b>${escapeHtml(player.overall)} / ${escapeHtml(player.potential)}</b> → <b>${escapeHtml(nextOverall)} / ${escapeHtml(global.DevelopmentV2.threshold(target))}</b></p><h3>REQUISITI EVOLUZIONE</h3><div class="development-requirements">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, current: have, required: cost.projects, satisfied: have >= cost.projects })}${resourceCostMarkup({ type: "cups", label: "Coppe", current: state.cups, required: cost.cups, satisfied: state.cups >= cost.cups })}${resourceCostMarkup({ type: "coins", label: "Monete", current: state.coins, required: cost.coins, satisfied: state.coins >= cost.coins })}</div>${missing.length ? `<p class="development-missing">${escapeHtml(missing.join(" · "))}</p>` : '<p class="development-ready-copy">Tutti i requisiti sono soddisfatti.</p>'}<div class="button-row"><button class="btn btn-ghost" id="change-development-player">CAMBIA GIOCATORE</button><button class="btn btn-yellow" id="prepare-evolution" ${missing.length ? "disabled" : ""}>EVOLVI A ${escapeHtml(target.toUpperCase())}</button></div></div></div></section>`;
+  }
+
+  function renderDevelopmentCenter(tab = "players") {
+    const state = global.DevelopmentV2.read(); const players = cachedDevelopmentPlayers();
+    const selectedIndex = players.find((player) => String(player.playerId) === String(ui.selectedDevelopmentPlayerId));
+    const selected = resolveDevelopmentPlayer(selectedIndex);
+    if (ui.selectedDevelopmentPlayerId && !selected) ui.selectedDevelopmentPlayerId = null;
+    let filtered = filterDevelopmentPlayers(players, ui.developmentQuery, ui.developmentRarity);
+    const rarityOptions = ["Tutti", ...global.DevelopmentV2.RARITIES].map((value) => `<option value="${escapeHtml(value)}" ${value === ui.developmentRarity ? "selected" : ""}>${value === "Tutti" ? "Tutte" : escapeHtml(value)}</option>`).join("");
+    const playerBody = selected ? developmentSelectedMarkup(selected) : `<div class="development-filters"><label class="development-search-field"><span aria-hidden="true">⌕</span><input class="development-search" id="development-search" value="${escapeHtml(ui.developmentQuery)}" placeholder="Cerca giocatore…" aria-label="Cerca giocatore per nome" autocomplete="off"></label><label class="development-rarity-field"><span>RARITÀ</span><select id="development-rarity">${rarityOptions}</select></label></div><section class="album-player-grid development-player-grid development-squad-card-scope" id="development-player-results">${developmentPlayerGridMarkup(filtered)}</section>`;
+    const buildRarities = ["Forte", "Elite", "Mondiale", "Leggenda"];
+    const build = buildRarities.map((rarity) => projectCardMarkup(rarity)).join("");
+    const history = global.DevelopmentV2.groupEvolutionHistory(state.evolutionHistory).map((group) => {
+      const player = players.find((item) => String(item.playerId) === group.playerId) || (freeAgentsDb?.players || []).find((item) => String(item.playerId) === group.playerId);
+      const portrait = player ? playerPortraitUrl(player) : PLAYER_IMAGE_PLACEHOLDER;
+      const fallbacks = player ? imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks) : "";
+      const timeline = group.entries.map((entry) => `<li><span>${escapeHtml(entry.fromRarity)} <b>→</b> ${escapeHtml(entry.toRarity)}</span><time datetime="${escapeHtml(entry.timestamp)}">${escapeHtml(new Intl.DateTimeFormat("it-IT", { dateStyle: "short", timeStyle: "short" }).format(new Date(entry.timestamp)))}</time></li>`).join("");
+      return `<article class="${rarityClass(group.toRarity)}" data-history-player="${escapeHtml(group.playerId)}" data-to-rarity="${escapeHtml(group.toRarity)}"><span class="development-history-portrait"><img src="${escapeHtml(portrait)}" alt="" loading="lazy" ${fallbacks}></span><div class="development-history-copy"><strong>${escapeHtml(group.playerNameSnapshot)}</strong><span class="development-history-step">${escapeHtml(group.fromRarity)} <b>→</b> ${escapeHtml(group.toRarity)}</span><time datetime="${escapeHtml(group.timestamp)}">Ultima evoluzione: ${escapeHtml(new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(group.timestamp)))}</time><span class="development-history-count">${escapeHtml(group.evolutionCount)} ${group.evolutionCount === 1 ? "evoluzione" : "evoluzioni"}</span><small class="development-history-costs">${developmentCurrencyIcon("coins")} Monete ×${escapeHtml(group.coinsConsumed)} ${developmentCurrencyIcon("cups")} Coppe ×${escapeHtml(group.cupsConsumed)} · Progetti ×${escapeHtml(group.projectsConsumed)}</small>${group.evolutionCount > 1 ? `<details class="development-history-timeline"><summary>Mostra passaggi</summary><ol>${timeline}</ol></details>` : ""}</div></article>`;
+    }).join("");
+    const body = tab === "projects" ? `<section class="development-projects"><div class="development-section-heading"><div><p class="eyebrow">BUILD</p><h2>PROGETTI IN COSTRUZIONE</h2></div><p>Progressi verso il prossimo Progetto.</p></div><div class="development-project-grid development-build-grid">${build}</div><div class="development-section-heading development-inventory-heading"><div><p class="eyebrow">INVENTARIO</p><h2>MAGAZZINO PROGETTI</h2></div><p>Progetti completi disponibili per le evoluzioni.</p></div><div class="project-inventory-grid">${projectInventoryMarkup(state)}</div></section>` : tab === "history" ? `<section class="development-history">${history || '<p class="empty-state">Nessuna evoluzione registrata.</p>'}</section>` : playerBody;
+    const projectTotal = Object.values(state.projects).reduce((sum, value) => sum + Number(value || 0), 0);
+    const existing = document.querySelector(".development-screen");
+    if (!existing) app.innerHTML = `<main class="development-screen"><header class="topbar">${sectionRootButton("development", "development-back-button")}<div><p class="eyebrow">CRESCITA PERMANENTE</p><h1>CENTRO DI SVILUPPO</h1></div></header><section class="development-wallet"><span>${developmentCurrencyIcon("coins")}<span>MONETE <strong data-wallet="coins">${state.coins}</strong></span></span><span>${developmentCurrencyIcon("cups")}<span>COPPE <strong data-wallet="cups">${state.cups}</strong></span></span><span><span>PROGETTI <strong data-wallet="projects">${projectTotal}</strong></span></span></section><nav class="development-tabs">${[["players","GIOCATORI"],["projects","PROGETTI"],["history","STORICO"]].map(([id,label]) => `<button class="${tab === id ? "active" : ""}" data-development-tab="${id}">${label}</button>`).join("")}</nav><div id="development-tab-content"></div><div id="development-dev-root"></div></main>`;
+    document.getElementById("development-tab-content").innerHTML = body;
+    document.querySelectorAll("[data-development-tab]").forEach((button) => { button.classList.toggle("active", button.dataset.developmentTab === tab); button.onclick = () => renderDevelopmentCenter(button.dataset.developmentTab); });
+    document.querySelector('[data-wallet="coins"]').textContent = state.coins; document.querySelector('[data-wallet="cups"]').textContent = state.cups; document.querySelector('[data-wallet="projects"]').textContent = projectTotal;
+    const devRoot = document.getElementById("development-dev-root"); if (devRoot) devRoot.innerHTML = new URLSearchParams(location.search).get("dev") === "1" ? developmentDevMarkup(players.length) : "";
+    document.querySelector(".development-back-button").onclick = () => { ui.selectedDevelopmentPlayerId = null; developmentPlayersCache = null; renderSeasonSelect(); };
+    const search = document.getElementById("development-search"), results = document.getElementById("development-player-results");
+    const bindLoadMore = () => document.getElementById("development-load-more")?.addEventListener("click", () => { developmentVisibleCount += DEVELOPMENT_PAGE_SIZE; filtered = filterDevelopmentPlayers(players, ui.developmentQuery, ui.developmentRarity); results.innerHTML = developmentPlayerGridMarkup(filtered); bindLoadMore(); });
+    const updateResults = () => { ui.developmentQuery = search?.value || ""; developmentVisibleCount = DEVELOPMENT_PAGE_SIZE; filtered = filterDevelopmentPlayers(players, ui.developmentQuery, ui.developmentRarity); if (results) { results.innerHTML = developmentPlayerGridMarkup(filtered); bindLoadMore(); } };
+    search?.addEventListener("input", updateResults);
+    document.getElementById("development-rarity")?.addEventListener("change", (event) => { ui.developmentRarity = event.currentTarget.value; updateResults(); });
+    results?.addEventListener("click", (event) => { const element = event.target.closest("[data-development-player]"); if (element) { ui.selectedDevelopmentPlayerId = element.dataset.developmentPlayer; renderDevelopmentCenter("players"); } });
+    bindLoadMore();
+    document.getElementById("change-development-player")?.addEventListener("click", () => { ui.selectedDevelopmentPlayerId = null; closeModal(); renderDevelopmentCenter("players"); });
+    document.getElementById("prepare-evolution")?.addEventListener("click", () => { const target = global.DevelopmentV2.nextRarity(selected.category); renderEvolutionConfirmation(selected, target, global.DevelopmentV2.COSTS[target]); });
+    bindDevelopmentDev();
+  }
+
+  function isDevelopmentPlayerUnlocked(player) {
+    return (player.developmentCollections || Object.keys(global.AlbumProgress.ALBUM_COLLECTIONS)).some((collectionId) => global.AlbumProgress.isAlbumPlayerUnlocked(collectionId, player.playerId));
+  }
+
+  function renderEvolutionConfirmation(player, target, cost) {
+    const rawPlayer = (freeAgentsDb?.players || []).find((candidate) => String(candidate.playerId) === String(player.playerId));
+    if (!rawPlayer) return toast("Giocatore non trovato nel database svincolati");
+    const basePotential = Number(rawPlayer.basePotential ?? rawPlayer.finalOverall ?? 0);
+    const targetPotential = Math.max(Number(player.potential || 0), Number(global.DevelopmentV2.threshold(target)));
+    const preview = global.InazumaProgression.getPlayerAtLevel(rawPlayer, Number(rawPlayer.maxLevel || 20), freeAgentsDb, global.DevelopmentV2.optionsFromUpgrade(rawPlayer, { permanentTargetPotential: targetPotential }));
+    const after = { ...rawPlayer, basePotential, ...preview, overall: preview.overall, finalOverall: preview.overall, displayLevel: Number(rawPlayer.maxLevel || 20), albumDatabase: freeAgentsDb };
+    openModal(`<div class="development-detail development-confirm"><p class="eyebrow">CONFERMA EVOLUZIONE</p><h2>${escapeHtml(player.name)}</h2><div class="development-evolution-preview development-squad-card-scope"><div><small>ATTUALE · ${escapeHtml(player.category)} · OVR ${escapeHtml(player.overall)}</small>${developmentSquadCardMarkup(player)}</div><span class="development-evolution-arrow" aria-hidden="true">→</span><div><small>NUOVA · ${escapeHtml(after.category)} · OVR ${escapeHtml(after.overall)}</small>${developmentSquadCardMarkup(after)}</div></div><h3 class="development-confirm-requirements-title">REQUISITI</h3><div class="development-confirm-costs">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, required: cost.projects, compact: true })}${resourceCostMarkup({ type: "cups", label: "Coppe", required: cost.cups, compact: true })}${resourceCostMarkup({ type: "coins", label: "Monete", required: cost.coins, compact: true })}</div><div class="button-row"><button class="btn btn-ghost" id="back-evolution">ANNULLA</button><button class="btn btn-yellow" id="confirm-evolution">CONFERMA EVOLUZIONE</button></div></div>`, { closeable: false, className: "development-confirm-modal" });
+    document.getElementById("back-evolution").onclick = closeModal;
+    let submitting = false;
+    document.getElementById("confirm-evolution").onclick = (event) => {
+      if (submitting) return; submitting = true; event.currentTarget.disabled = true;
+      const result = global.DevelopmentV2.evolve({ playerId: rawPlayer.playerId, playerName: rawPlayer.name, basePotential, unlocked: isDevelopmentPlayerUnlocked(player), freeAgentEligible: isDevelopmentFreeAgentEligible(player.playerId) });
+      if (!result.ok) { submitting = false; closeModal(); toast(result.reason === "not_free_agent" ? "Giocatore non eleggibile: non è svincolato" : "Risorse cambiate: evoluzione non completata"); return renderDevelopmentCenter("players"); }
+      const written = global.DevelopmentV2.playerUpgrade(rawPlayer.playerId);
+      const writeIsCurrent = written?.currentPermanentRarity === result.target && Number(written.permanentTargetPotential) >= Number(global.DevelopmentV2.threshold(result.target)) && Number(written.evolutionCount) > 0;
+      if (!writeIsCurrent) { submitting = false; closeModal(); toast("Evoluzione non salvata: stato non coerente"); return renderDevelopmentCenter("players"); }
+      developmentPlayersCache = null;
+      developmentResolvedCache.delete(String(rawPlayer.playerId));
+      const updated = albumPlayerView(rawPlayer, freeAgentsDb);
+      closeModal({ invokeOnClose: false }); toast(`${updated.name}: ${updated.category}`);
+      renderDevelopmentCenter("players");
+      showPlayerDetailsFor(updated, { playerId: updated.playerId, level: updated.displayLevel, database: freeAgentsDb, equipment: null, readOnly: true, preserveScroll: scrollSnapshot() });
+    };
+  }
+
+  function developmentDevMarkup(eligibleCount = developmentPlayers().length) { return `<section class="development-dev"><h2>SVILUPPO — HACK TEST</h2><p><strong>SVINCOLATI ELEGGIBILI: ${escapeHtml(eligibleCount)}</strong></p><div>${[100,500,1500].map((n) => `<button data-dev-coins="${n}">+${n} MONETE</button>`).join("")}${[1,5,8].map((n) => `<button data-dev-cups="${n}">+${n} COPPE</button>`).join("")}${global.DevelopmentV2.PROJECT_RARITIES.map((rarity) => `<button data-dev-module="${rarity}">+1 MODULO ${rarity.toUpperCase()}</button><button data-dev-complete-project="${rarity}">+1 PROGETTO COMPLETO ${rarity.toUpperCase()}</button>`).join("")}</div><button id="dev-build-visual">BUILD VISUAL TEST</button><button id="dev-unlock-free-agents">SBLOCCA TUTTI GLI SVINCOLATI</button><button id="dev-all">DAI TUTTI I REQUISITI</button><label>Profondità pull <select id="dev-pull-depth"><option value="5">5 Boss</option><option value="6">6 Boss</option><option value="7">7 Boss</option><option value="8">8 Boss</option><option value="9">9 Boss</option><option value="10">10 Boss non vinta</option><option value="victory">Run vinta</option></select></label><button id="dev-sim-one">SIMULA 1 PULL</button><button id="dev-sim">SIMULA 1000 PULL</button><button id="dev-reset">RESET SVILUPPO TEST</button><div id="dev-pull-preview"></div><pre id="dev-output">${escapeHtml(JSON.stringify(global.DevelopmentV2.read(), null, 2))}</pre></section>`; }
+
+  function selectedDevPull() { const value = document.getElementById("dev-pull-depth")?.value || "5"; return { bosses: value === "victory" ? 10 : Number(value), won: value === "victory" }; }
+  function bindDevelopmentDev() {
+    document.querySelectorAll("[data-dev-coins]").forEach((button) => button.onclick = () => { const state = global.DevelopmentV2.read(); state.coins += Number(button.dataset.devCoins); global.DevelopmentV2.write(state); renderDevelopmentCenter(); });
+    document.querySelectorAll("[data-dev-cups]").forEach((button) => button.onclick = () => { const state = global.DevelopmentV2.read(); state.cups += Number(button.dataset.devCups); global.DevelopmentV2.write(state); renderDevelopmentCenter(); });
+    document.querySelectorAll("[data-dev-module]").forEach((button) => button.onclick = () => { global.DevelopmentV2.addProjectModules(button.dataset.devModule, 1); renderDevelopmentCenter("projects"); });
+    document.querySelectorAll("[data-dev-complete-project]").forEach((button) => button.onclick = () => { global.DevelopmentV2.addCompletedProject(button.dataset.devCompleteProject); renderDevelopmentCenter("projects"); });
+    document.getElementById("dev-build-visual")?.addEventListener("click", () => { const state = global.DevelopmentV2.read(); Object.assign(state.projectBuild, { Buono: 0, Forte: 0, Elite: 1, Mondiale: 2, Leggenda: 3 }); global.DevelopmentV2.write(state); renderDevelopmentCenter("projects"); });
+    document.getElementById("dev-unlock-free-agents")?.addEventListener("click", () => { const ids = [...eligibleFreeAgentIds()]; Object.keys(global.AlbumProgress.ALBUM_COLLECTIONS).forEach((collectionId) => global.AlbumProgress.unlockAlbumPlayers(collectionId, ids, { source: "development-dev-free-agents" })); developmentPlayersCache = null; toast("SVINCOLATI SBLOCCATI — DEV"); renderDevelopmentCenter(); });
+    document.getElementById("dev-all")?.addEventListener("click", () => { const state = global.DevelopmentV2.read(); state.coins += 5000; state.cups += 20; global.DevelopmentV2.PROJECT_RARITIES.forEach((rarity) => state.projects[rarity] = Math.max(1, state.projects[rarity])); global.DevelopmentV2.write(state); renderDevelopmentCenter(); });
+    document.getElementById("dev-sim-one")?.addEventListener("click", () => { const config = selectedDevPull(); const choices = global.DevelopmentV2.generateChoices(config.bosses, config.won); document.getElementById("dev-pull-preview").innerHTML = `<div class="project-pull-grid dev-project-preview">${choices.map((rarity) => projectCardMarkup(rarity)).join("")}</div>`; });
+    document.getElementById("dev-sim")?.addEventListener("click", () => { const config = selectedDevPull(); const totals = Object.fromEntries(global.DevelopmentV2.PROJECT_RARITIES.map((rarity) => [rarity, 0])); const slots = { rare: {}, advanced: {}, safe: {} }; const pullsWith = { Elite: 0, Mondiale: 0, Leggenda: 0 }; for (let index = 0; index < 1000; index += 1) { const result = global.DevelopmentV2.generateChoiceSlots(config.bosses, config.won); Object.entries(result).forEach(([slot, rarity]) => { totals[rarity] += 1; slots[slot][rarity] = (slots[slot][rarity] || 0) + 1; }); Object.keys(pullsWith).forEach((rarity) => { if (Object.values(result).includes(rarity)) pullsWith[rarity] += 1; }); } document.getElementById("dev-output").textContent = JSON.stringify({ config, appearances: totals, bySlot: slots, pullsWith }, null, 2); });
+    document.getElementById("dev-reset")?.addEventListener("click", () => { if (confirm("Azzerare solo lo sviluppo?")) { global.DevelopmentV2.reset(); renderDevelopmentCenter(); } });
+  }
+
 
   function savedTeamSummaryMarkup() {
     const identity = savedTeamIdentity();
@@ -1545,7 +1881,7 @@
           </div>
           <div class="progress-track"><div class="progress-bar" style="width:${progress}%"></div></div>
           <div class="candidate-grid pull-offer-grid initial-draft-grid">
-            ${candidates.map((player) => playerCard(player, { button: true, extraClass: "initial-draft-card" })).join("")}
+            ${candidates.map((player) => playerCard(player, { button: true, extraClass: "initial-draft-card", applyPermanent: true })).join("")}
           </div>
         </div>
       </main>`;
@@ -2605,7 +2941,7 @@
     const incomingId = String(incoming.player.playerId);
     const rosterIndex = run.roster.findIndex((entry) => String(entry.playerId) === outgoingId);
     if (outgoingEntry.equippedItem) run.inventory.push(outgoingEntry.equippedItem);
-    run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], intensiveTrainingMigrated: true };
+    run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null, ...permanentRosterFields(incoming.player) };
     unlockAlbumRecruit(incomingId, "trade");
     run.lineup = run.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id));
     run.bench = run.bench.map((id) => String(id) === outgoingId ? incomingId : String(id));
@@ -2914,7 +3250,7 @@
         ${options.candidates.map((player, index) => {
           const panelId = `pull-choice-actions-${index}`;
           return `<div class="pull-choice-option ${rarityClass(player.category)}" data-player-id="${escapeHtml(player.playerId)}">
-            ${playerCard(player, { button: true, context: "pull", level: options.level, database: pullChoiceDatabase(options, player) }).replace(">", ` aria-expanded="false" aria-pressed="false" aria-controls="${panelId}">`)}
+            ${playerCard(player, { button: true, context: "pull", level: options.level, database: pullChoiceDatabase(options, player), applyPermanent: true }).replace(">", ` aria-expanded="false" aria-pressed="false" aria-controls="${panelId}">`)}
             ${pullChoiceActionPanel(player, index)}
           </div>`;
         }).join("")}
@@ -2984,7 +3320,7 @@
   function recruitPlayer(player, source, level, done, options = {}) {
     const allowCancel = options.allowCancel !== false;
     if (run.roster.length < global.SEASON1_CONFIG.maxRoster) {
-      run.roster.push({ playerId: String(player.playerId), source, level, recruitedAtLevel: level, recruitedOverall: player.overall ?? player.finalOverall ?? null, firstJoinedAt: new Date().toISOString(), recruitmentSource: options.recruitmentSource || source, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], intensiveTrainingMigrated: true });
+      run.roster.push({ playerId: String(player.playerId), source, level, recruitedAtLevel: level, recruitedOverall: player.overall ?? player.finalOverall ?? null, firstJoinedAt: new Date().toISOString(), recruitmentSource: options.recruitmentSource || source, equippedItem: null, ...permanentRosterFields(player) });
       run.bench.push(String(player.playerId));
       global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: player.playerId, source: options.recruitmentSource || source, level, overall: player.overall ?? player.finalOverall, actionId: options.actionId || `${run.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}` });
       unlockAlbumRecruit(player.playerId, options.recruitmentSource || source);
@@ -3017,7 +3353,7 @@
           if (removedEntry.equippedItem) run.inventory.push(removedEntry.equippedItem);
           run.roster = run.roster.filter((entry) => String(entry.playerId) !== removeId);
           run.bench = run.bench.filter((id) => String(id) !== removeId);
-          run.roster.push({ playerId: String(player.playerId), source, level, recruitedAtLevel: level, recruitedOverall: player.overall ?? player.finalOverall ?? null, firstJoinedAt: new Date().toISOString(), recruitmentSource: options.recruitmentSource || source, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], intensiveTrainingMigrated: true });
+          run.roster.push({ playerId: String(player.playerId), source, level, recruitedAtLevel: level, recruitedOverall: player.overall ?? player.finalOverall ?? null, firstJoinedAt: new Date().toISOString(), recruitmentSource: options.recruitmentSource || source, equippedItem: null, ...permanentRosterFields(player) });
           run.bench.push(String(player.playerId));
           global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: player.playerId, source: options.recruitmentSource || source, level, overall: player.overall ?? player.finalOverall, actionId: options.actionId || `${run.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}` });
           unlockAlbumRecruit(player.playerId, options.recruitmentSource || source);
@@ -4225,6 +4561,61 @@
     return { destination: "map" };
   }
 
+  function devSkipCurrentBoss({ renderResult = true } = {}) {
+    if (!DEV_MODE || !run || run.gameOver || run.phase === "complete") return false;
+    const bossIndex = Number(run.bossIndex || 0);
+    const boss = seasonDb.bossOrder[bossIndex];
+    if (!boss || run.completedBossIds.includes(String(boss.teamId))) return false;
+    run.postBossFlow = { bossIndex, status: "next-zone", remainingRewards: 0 };
+    run.pendingBossVictory = null;
+    run.activeMatch = null;
+    run.currentZone = null;
+    ui.match = null;
+    const destination = finishBossVictoryTransition();
+    global.RunState.save(run);
+    if (renderResult) navigateBossVictoryDestination(destination);
+    return true;
+  }
+
+  function devSkipToCompletedBosses(target) {
+    if (!DEV_MODE || !run) return;
+    const cappedTarget = Math.min(Math.max(0, target), Math.max(0, seasonDb.bossOrder.length - 1));
+    while (run.completedBossIds.length < cappedTarget && devSkipCurrentBoss({ renderResult: false })) { /* shared, progressive skip */ }
+    global.RunState.save(run);
+    renderMap();
+  }
+
+  function devGameOverNow() {
+    if (!DEV_MODE || !run || run.gameOver) return;
+    run.lives = 0;
+    run.gameOver = true;
+    run.phase = "gameover";
+    run.activeMatch = null;
+    run.pendingBossVictory = null;
+    run.postBossFlow = null;
+    ui.match = null;
+    global.RunState.save(run);
+    renderGameOver();
+  }
+
+  function mountRunDevQuickTools() {
+    document.getElementById("run-dev-quick-tools")?.remove();
+    if (!DEV_MODE || !run || run.gameOver || ["complete", "final-celebration", "final-summary"].includes(run.phase)) return;
+    const nextBoss = seasonDb?.bossOrder?.[run.bossIndex];
+    if (!nextBoss) return;
+    const panel = document.createElement("details");
+    panel.id = "run-dev-quick-tools";
+    panel.className = "run-dev-quick-tools";
+    panel.innerHTML = `<summary>DEV RUN</summary><div><p><b>Boss sconfitti: ${escapeHtml(run.completedBossIds.length)}</b><br>Prossimo Boss: ${escapeHtml(nextBoss.teamName || run.bossIndex + 1)}</p><button type="button" data-dev-run="skip">SALTA BOSS +1</button><button type="button" data-dev-run="five">PORTAMI A 5 BOSS SCONFITTI</button><button type="button" data-dev-run="final">PORTAMI AL BOSS FINALE</button><button type="button" class="danger" data-dev-run="gameover">GAME OVER ORA</button></div>`;
+    document.body.appendChild(panel);
+    panel.querySelector('[data-dev-run="skip"]')?.addEventListener("click", () => devSkipCurrentBoss());
+    panel.querySelector('[data-dev-run="five"]')?.addEventListener("click", () => devSkipToCompletedBosses(5));
+    panel.querySelector('[data-dev-run="final"]')?.addEventListener("click", () => devSkipToCompletedBosses(seasonDb.bossOrder.length - 1));
+    panel.querySelector('[data-dev-run="gameover"]')?.addEventListener("click", devGameOverNow);
+  }
+
+  if (DEV_MODE) new MutationObserver(() => mountRunDevQuickTools()).observe(app, { childList: true });
+
 
   function roleBadge(role) {
     const icons = { GK: "▣", DF: "◆", MF: "●", FW: "▲", all: "✦" };
@@ -5080,8 +5471,9 @@
     toast("Oggetto riportato nell'inventario");
   }
 
-  function renderGameOver() {
+  function renderGameOver({ developmentResolved = false } = {}) {
     const bossReached = Math.min(Number(run.bossIndex || 0) + 1, seasonDb.bossOrder.length);
+    if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "gameover", onComplete: () => renderGameOver({ developmentResolved: true }) });
     const wins = Number(run.statistics?.winsTotal || 0);
     app.innerHTML = `
       <main class="gameover-screen">
@@ -5100,9 +5492,7 @@
         </section>
       </main>`;
     resetRenderedViewScroll();
-    document.getElementById("restart-run").addEventListener("click", () => {
-      openTeamNameModal();
-    });
+    document.getElementById("restart-run").addEventListener("click", startNewRunFromHome);
     document.getElementById("home").addEventListener("click", renderHome);
   }
 
@@ -5254,9 +5644,10 @@
     }).join("") || '<p class="muted">Premi individuali disponibili solo quando i dati registrati sono affidabili.</p>';
   }
 
-  function renderFinalCelebration(hallTeamId) {
+  function renderFinalCelebration(hallTeamId, { developmentResolved = false } = {}) {
     const team = championTeam(hallTeamId || run?.hallTeamId);
     if (!team) return renderHome();
+    if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "victory", onComplete: () => renderFinalCelebration(hallTeamId, { developmentResolved: true }) });
     run.phase = "final-celebration"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
     app.innerHTML = `<main class="final-celebration-screen"><section class="final-celebration-panel"><header class="final-victory-hero"><div class="final-trophy" aria-hidden="true">★</div><div class="final-victory-copy"><p class="eyebrow">SEASON 1 COMPLETATA</p><h1>${escapeHtml(team.teamName)}</h1><h2>Campioni della run</h2><p>${escapeHtml(team.modeName)} · ${formatDate(team.victoryDate)} · ${escapeHtml(team.finalFormation || '-')}</p></div></header><div class="final-victory-team"><div class="final-victory-section-head"><span>Squadra vincente</span><strong>La formazione che ha scritto la storia</strong></div>${championFormationMarkup(team)}</div><div class="button-row final-actions"><button type="button" class="btn btn-yellow" id="final-continue">Continua <span aria-hidden="true">→</span></button><button type="button" class="btn" id="skip-final-animation">Vai al riepilogo</button></div></section></main>`;
     resetRenderedViewScroll(); bindHallPlayerDetails(team);
@@ -5265,12 +5656,13 @@
     document.getElementById("skip-final-animation").addEventListener("click", go);
   }
 
-  function renderFinalSummary(hallTeamId) {
+  function renderFinalSummary(hallTeamId, { developmentResolved = false } = {}) {
     const team = championTeam(hallTeamId || run?.hallTeamId);
     if (!team) return renderHome();
     const summaries = global.HallOfFameStorage.listSummaries();
     const ordinal = summaries.findIndex((item) => item.hallTeamId === team.hallTeamId) + 1;
     run.phase = "final-summary"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
+    if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "victory", onComplete: () => renderFinalSummary(hallTeamId, { developmentResolved: true }) });
     app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><div><p class="eyebrow">CAMPIONI DELLA SEASON 1</p><h1>${escapeHtml(team.teamName)}</h1><p class="final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span><span>Seed ${escapeHtml(compactSeed(team.seed))}</span><span>#${escapeHtml(ordinal || '-')} Albo d’Oro</span></p></div><span class="final-summary-star" aria-hidden="true">★</span></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3>${championFiveVFiveMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel"><button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn btn-primary" id="final-new-run">Nuova run</button>${sectionRootButton("finalSummary")}</aside></section></main>`;
     resetRenderedViewScroll(); bindFinalTabs(); bindHallPlayerDetails(team);
     document.getElementById("open-current-hall").addEventListener("click", () => renderHallOfFameDetail(team.hallTeamId));
@@ -5354,6 +5746,7 @@
       if (!activeDb || !freeAgentsResponse.ok || !visualsResponse.ok) throw new Error("Database non raggiungibili");
       const visualsDb = await visualsResponse.json();
       freeAgentsDb = await freeAgentsResponse.json();
+      global.AlbumProgress.configureFreeAgentIds((freeAgentsDb.players || []).map((player) => player.playerId));
       freeAgentsById = new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player]));
       playerVisualsById = new Map(Object.entries(visualsDb.players || {}));
       renderHome();
