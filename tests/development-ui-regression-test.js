@@ -49,6 +49,8 @@ assert(app.includes('button.closest(".project-pull-option")?.classList.add("is-s
 assert(app.includes('data-project-info="${escapeHtml(rarity)}"'));
 assert(app.includes('function showProjectPullInfo(rarity)'));
 assert(app.includes('className: "project-info-modal"'));
+assert(app.includes('Questo progetto contribuisce al completamento del Progetto ${rarity}'));
+assert(app.includes('<span>BUILD <b>${escapeHtml(status.filled)}/${escapeHtml(status.required)}</b></span>'));
 assert(app.includes('let claiming = false'));
 assert(!app.includes('development-resource-image'));
 assert(app.includes('globalThis.handleItemImageError && globalThis.handleItemImageError(this)'));
@@ -91,6 +93,9 @@ assert(css.includes('.project-pull-grid { display: grid; grid-template-columns: 
 assert(css.includes('.project-pull-option { height: 104px; min-height: 0;'));
 assert(css.includes('width: 56px; height: 56px;'));
 assert(css.includes('.project-pull-actions .btn { min-width: 0; min-height: 40px;'));
+assert(css.includes('.modal-backdrop:has(.project-info-modal)'));
+assert(css.includes('.project-info-modal .modal-close'));
+assert(css.includes('background: #ffd21f; color: #111216;'));
 assert(css.includes('.development-reward-item small { color: #a87400;'));
 assert(!app.includes('id="gameover-project"'));
 assert(!app.includes('id="final-project-pull"'));
