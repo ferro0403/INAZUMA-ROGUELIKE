@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "inazumaRoguelike.developmentV2";
-  const SCHEMA_VERSION = 4;
+  const SCHEMA_VERSION = 5;
   const RARITIES = ["Scarso", "Debole", "Normale", "Buono", "Forte", "Elite", "Mondiale", "Leggenda"];
   const PROJECT_RARITIES = RARITIES.slice(3);
   const COSTS = Object.freeze({
@@ -13,7 +13,7 @@
     Mondiale: { coins: 1000, cups: 5, projects: 1 },
     Leggenda: { coins: 1500, cups: 8, projects: 1 },
   });
-  const BUILD_REQUIREMENTS = Object.freeze({ Buono: 1, Forte: 1, Elite: 4, Mondiale: 4, Leggenda: 4 });
+  const BUILD_REQUIREMENTS = Object.freeze({ Buono: 1, Forte: 2, Elite: 4, Mondiale: 4, Leggenda: 4 });
   const LEGACY_BUILD_REQUIREMENTS = Object.freeze({ Buono: 1, Forte: 1, Elite: 2, Mondiale: 3, Leggenda: 4 });
   const ASSETS = Object.freeze({
     Buono: "https://dxi4wb638ujep.cloudfront.net/1/k/i/m/im08lvscqau.webp",
