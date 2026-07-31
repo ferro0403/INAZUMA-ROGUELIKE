@@ -809,9 +809,9 @@
     const level = Number(options.level ?? 0);
     const pullSelection = options.context === "pull";
     const snapshotOptions = global.DevelopmentV2.optionsFromUpgrade(player, run?.developmentPlayerSnapshot?.[String(player.playerId)]);
-    const resolved = options.applyPermanent
+    const resolved = options.resolvedPlayer || (options.applyPermanent
       ? global.InazumaProgression.getPlayerAtLevel(player, Math.floor(level), database, snapshotOptions)
-      : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(level), database);
+      : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(level), database));
     const tag = options.button ? "button" : "article";
     const playerDataAttribute = options.dataAttribute || "data-player-id";
     const attributes = options.button
@@ -908,7 +908,7 @@
     const equipmentMarkup = equipment ? `<div class="equipped-detail">${itemIcon(equipment)}<div class="equipped-detail-copy"><span>${historical ? "Equipaggiamento storico" : "Oggetto assegnato"}</span><strong>${escapeHtml(resolveItem(equipment).name)}</strong><small>${escapeHtml(resolveItem(equipment).description)}</small><em>+${Number(resolveItem(equipment).bonus || 0)} ${escapeHtml(STAT_LABELS[resolveItem(equipment).stat] || resolveItem(equipment).stat || "")}</em></div>${!readOnly && playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>` : `<p class="muted equipped-detail-empty">Nessun equipaggiamento.</p>`;
     return `
       <div class="player-detail-layout ${rarityClass(resolved.category)} ${historical ? "player-detail-historical" : ""}">
-        <section class="player-detail-visual ${rarityClass(resolved.category)}">${teamBadge}${detailVisual.detailImageUrl ? `<img class="player-fullbody player-fullbody--${escapeHtml(detailVisual.detailImageKind)}" src="${escapeHtml(detailVisual.detailImageUrl)}" alt="${escapeHtml(resolved.name)}" loading="lazy" ${imageFallbackAttributes(detailVisual.detailFallbacks)} />` : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`}</section>
+        <section class="player-detail-visual ${rarityClass(resolved.category)}">${teamBadge}${detailVisual.detailImageUrl ? `<img class="player-fullbody player-fullbody--${escapeHtml(detailVisual.detailImageKind)}" src="${escapeHtml(detailVisual.detailImageUrl)}" alt="${escapeHtml(resolved.name)}" loading="lazy" decoding="async" ${imageFallbackAttributes(detailVisual.detailFallbacks)} />` : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`}</section>
         <section class="player-detail-content">
           <div class="player-detail-heading"><p class="eyebrow">${albumMode ? "Scheda giocatore · Album" : (historical ? "Scheda giocatore · Squadra campione" : "Scheda giocatore")}</p>${albumMode ? `<span class="role-chip album-detail-badge">${albumUnlocked ? "SBLOCCATO" : "CONSULTABILE"}</span>` : ""}</div>
           <h2 class="player-detail-name">${escapeHtml(resolved.name)}</h2>
@@ -991,9 +991,11 @@
     return { unlocked: ids.filter((id) => unlocked.has(id)).length, total: ids.length };
   }
 
-  function albumPlayerView(player, database) {
+  function albumPlayerView(player, database, upgrade = undefined) {
     const basePotential = Number(player.basePotential ?? player.finalOverall ?? 0);
-    const final = global.DevelopmentV2.resolvePlayer(player, Number(player.maxLevel || 20), database);
+    const final = upgrade === undefined
+      ? global.DevelopmentV2.resolvePlayer(player, Number(player.maxLevel || 20), database)
+      : global.InazumaProgression.getPlayerAtLevel(player, Number(player.maxLevel || 20), database, global.DevelopmentV2.optionsFromUpgrade(player, upgrade));
     return { ...player, basePotential, overall: final.overall, finalOverall: final.overall, potential: final.potential, category: final.category, stats: final.stats, baseStats: final.stats, displayLevel: Number(player.maxLevel || 20), albumDatabase: database };
   }
 
@@ -1040,21 +1042,48 @@
     const team = albumTeamsView().find((candidate) => String(candidate.teamId) === String(teamId));
     if (!team) return renderAlbumTeams(collectionId);
     const rawPlayers = team.freeAgents ? (freeAgentsDb?.players || []) : (team.playerIds || []).map((id) => seasonPlayersById.get(String(id))).filter(Boolean);
-    const players = rawPlayers.map((player) => albumPlayerView(player, team.freeAgents ? freeAgentsDb : seasonDb));
-    const progress = albumProgressForPlayers(players, collectionId);
-    const unlocked = global.AlbumProgress.unlockedSet(collectionId);
-    app.innerHTML = `<main class="album-screen album-roster-screen"><header class="topbar album-topbar album-roster-header"><div class="album-roster-title"><span class="album-team-logo album-team-logo--header album-roster-logo">${albumTeamLogoMarkup(team)}</span><div class="album-roster-heading"><p class="eyebrow album-roster-breadcrumb">Album → ${escapeHtml(global.AlbumProgress.ALBUM_COLLECTIONS[collectionId]?.name || collectionId)}</p><h1 class="album-roster-name">${escapeHtml(team.teamName)}</h1><p class="muted album-roster-progress">${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)} giocatori sbloccati</p></div></div>${sectionRootButton("albumRoster", "album-roster-action")}</header><section class="album-player-grid" data-album-roster>${players.map((player) => { const isUnlocked = unlocked.has(String(player.playerId)); return `<div class="album-player-entry ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${playerCard(player, { button: true, dataAttribute: "data-album-player", level: player.maxLevel || 20, database: player.albumDatabase })}${isUnlocked ? "" : `<span class="album-lock-overlay album-player-lock"><span aria-hidden="true">🔒</span>Non sbloccato</span>`}</div>`; }).join("")}</section></main>`;
+    const database = team.freeAgents ? freeAgentsDb : seasonDb;
+    const albumProgressState = global.AlbumProgress.read();
+    const unlocked = global.AlbumProgress.unlockedSet(collectionId, albumProgressState);
+    const developmentState = global.DevelopmentV2.read();
+    const rawById = new Map(rawPlayers.map((player) => [String(player.playerId), player]));
+    const resolvedById = new Map();
+    const progress = { unlocked: rawPlayers.filter((player) => unlocked.has(String(player.playerId))).length, total: rawPlayers.length };
+    const pageSize = 60;
+    let visibleCount = rawPlayers.length > 80 ? pageSize : rawPlayers.length;
+    const resolvedPlayer = (raw) => {
+      const id = String(raw.playerId);
+      if (!resolvedById.has(id)) resolvedById.set(id, albumPlayerView(raw, database, developmentState.players?.[id] || null));
+      return resolvedById.get(id);
+    };
+    const rosterMarkup = () => {
+      const visible = rawPlayers.slice(0, visibleCount);
+      const cards = visible.map((raw) => {
+        const player = resolvedPlayer(raw);
+        const isUnlocked = unlocked.has(String(player.playerId));
+        return `<div class="album-player-entry ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${playerCard(player, { button: true, dataAttribute: "data-album-player", level: player.maxLevel || 20, database: player.albumDatabase, resolvedPlayer: player })}${isUnlocked ? "" : `<span class="album-lock-overlay album-player-lock"><span aria-hidden="true">🔒</span>Non sbloccato</span>`}</div>`;
+      }).join("");
+      const remaining = rawPlayers.length - visible.length;
+      return `${cards}${remaining > 0 ? `<div class="album-load-more-wrap"><button type="button" class="btn btn-yellow album-load-more" data-album-load-more>MOSTRA ALTRI ${escapeHtml(Math.min(pageSize, remaining))}</button><small>${escapeHtml(visible.length)} di ${escapeHtml(rawPlayers.length)}</small></div>` : ""}`;
+    };
+    app.innerHTML = `<main class="album-screen album-roster-screen"><header class="topbar album-topbar album-roster-header"><div class="album-roster-title"><span class="album-team-logo album-team-logo--header album-roster-logo">${albumTeamLogoMarkup(team)}</span><div class="album-roster-heading"><p class="eyebrow album-roster-breadcrumb">Album → ${escapeHtml(global.AlbumProgress.ALBUM_COLLECTIONS[collectionId]?.name || collectionId)}</p><h1 class="album-roster-name">${escapeHtml(team.teamName)}</h1><p class="muted album-roster-progress">${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)} giocatori sbloccati</p></div></div>${sectionRootButton("albumRoster", "album-roster-action")}</header><section class="album-player-grid" data-album-roster>${rosterMarkup()}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav({ collectionId });
     const albumRoster = document.querySelector("[data-album-roster]");
-    bindAlbumRosterInteractions(albumRoster, ({ playerId, entry }) => {
-      const player = players.find((candidate) => String(candidate.playerId) === String(playerId));
+    bindAlbumRosterInteractions(albumRoster, ({ playerId }) => {
+      const raw = rawById.get(String(playerId));
+      const player = raw ? resolvedPlayer(raw) : null;
       if (!player) {
         console.error("Album player not found", { collectionId, teamId, playerId });
         return;
       }
       const isUnlocked = unlocked.has(String(player.playerId));
       showPlayerDetailsFor(player, { mode: "album", readOnly: true, playerId: player.playerId, level: player.maxLevel || 20, database: player.albumDatabase, equipment: null, preserveScroll: scrollSnapshot(), albumUnlocked: isUnlocked });
+    });
+    albumRoster?.addEventListener("click", (event) => {
+      if (!event.target.closest("[data-album-load-more]")) return;
+      visibleCount = Math.min(rawPlayers.length, visibleCount + pageSize);
+      albumRoster.innerHTML = rosterMarkup();
     });
   }
 
@@ -1406,21 +1435,28 @@
   function developmentPlayers() {
     ensureAlbumBackfill();
     const collections = Object.keys(global.AlbumProgress.ALBUM_COLLECTIONS);
+    const progress = global.AlbumProgress.read();
+    const unlockedByCollection = new Map(collections.map((collectionId) => [collectionId, global.AlbumProgress.unlockedSet(collectionId, progress)]));
+    const developmentState = global.DevelopmentV2.read();
     const freeAgentIds = eligibleFreeAgentIds();
     const seen = new Set();
     return (freeAgentsDb?.players || []).flatMap((player) => {
       const id = String(player.playerId);
       if (!freeAgentIds.has(id) || seen.has(id)) return [];
-      const developmentCollections = collections.filter((collectionId) => global.AlbumProgress.unlockedSet(collectionId).has(id));
+      const developmentCollections = collections.filter((collectionId) => unlockedByCollection.get(collectionId).has(id));
       if (developmentCollections.length) seen.add(id);
+      const upgrade = developmentState.players?.[id];
+      const basePotential = Number(player.basePotential ?? player.finalOverall ?? 0);
+      const currentPotential = Math.max(basePotential, Number(upgrade?.permanentTargetPotential || 0));
       return developmentCollections.length
-        ? [{ ...albumPlayerView(player, freeAgentsDb), developmentCollections }]
+        ? [{ ...player, rawPlayer: player, developmentUpgrade: upgrade || null, basePotential, currentPotential, category: global.InazumaProgression.categoryForPotential(currentPotential), developmentCollections }]
         : [];
     });
   }
 
   const DEVELOPMENT_PAGE_SIZE = 60;
   let developmentPlayersCache = null;
+  const developmentResolvedCache = new Map();
   let developmentVisibleCount = DEVELOPMENT_PAGE_SIZE;
 
   function cachedDevelopmentPlayers({ refresh = false } = {}) {
@@ -1433,6 +1469,18 @@
     return players.filter((player) => (!needle || player.name.toLocaleLowerCase("it").includes(needle)) && (rarity === "Tutti" || player.category === rarity));
   }
 
+  function resolveDevelopmentPlayer(indexedPlayer) {
+    if (!indexedPlayer) return null;
+    const id = String(indexedPlayer.playerId);
+    const upgrade = indexedPlayer.developmentUpgrade || {};
+    const version = `${upgrade.permanentTargetPotential || 0}:${upgrade.updatedAt || ""}:${upgrade.evolutionCount || 0}`;
+    const cached = developmentResolvedCache.get(id);
+    if (cached?.version === version) return cached.player;
+    const player = { ...albumPlayerView(indexedPlayer.rawPlayer || indexedPlayer, freeAgentsDb, upgrade), developmentCollections: indexedPlayer.developmentCollections };
+    developmentResolvedCache.set(id, { version, player });
+    return player;
+  }
+
   function developmentSquadCardMarkup(player, dataAttr = "") {
     return compactPlayerCardMarkup(player, {
       level: player.displayLevel ?? player.maxLevel ?? 20,
@@ -1443,7 +1491,7 @@
   }
 
   function developmentPlayerGridMarkup(players, visibleCount = developmentVisibleCount) {
-    const visible = players.slice(0, visibleCount);
+    const visible = players.slice(0, visibleCount).map(resolveDevelopmentPlayer);
     const cards = visible.map((player) => `<div data-development-player="${escapeHtml(player.playerId)}">${developmentSquadCardMarkup(player, `data-development-card="${escapeHtml(player.playerId)}"`)}${player.category === "Leggenda" ? '<span class="development-max" aria-label="Rarità massima">MAX</span>' : ""}</div>`).join("");
     if (!cards) return '<p class="empty-state">Nessuno svincolato sbloccato corrisponde ai filtri.</p>';
     const remaining = players.length - visible.length;
@@ -1577,7 +1625,8 @@
 
   function renderDevelopmentCenter(tab = "players") {
     const state = global.DevelopmentV2.read(); const players = cachedDevelopmentPlayers();
-    const selected = players.find((player) => String(player.playerId) === String(ui.selectedDevelopmentPlayerId));
+    const selectedIndex = players.find((player) => String(player.playerId) === String(ui.selectedDevelopmentPlayerId));
+    const selected = resolveDevelopmentPlayer(selectedIndex);
     if (ui.selectedDevelopmentPlayerId && !selected) ui.selectedDevelopmentPlayerId = null;
     let filtered = filterDevelopmentPlayers(players, ui.developmentQuery, ui.developmentRarity);
     const rarityOptions = ["Tutti", ...global.DevelopmentV2.RARITIES].map((value) => `<option value="${escapeHtml(value)}" ${value === ui.developmentRarity ? "selected" : ""}>${value === "Tutti" ? "Tutte" : escapeHtml(value)}</option>`).join("");
@@ -1623,7 +1672,7 @@
     const targetPotential = Math.max(Number(player.potential || 0), Number(global.DevelopmentV2.threshold(target)));
     const preview = global.InazumaProgression.getPlayerAtLevel(rawPlayer, Number(rawPlayer.maxLevel || 20), freeAgentsDb, global.DevelopmentV2.optionsFromUpgrade(rawPlayer, { permanentTargetPotential: targetPotential }));
     const after = { ...rawPlayer, basePotential, ...preview, overall: preview.overall, finalOverall: preview.overall, displayLevel: Number(rawPlayer.maxLevel || 20), albumDatabase: freeAgentsDb };
-    openModal(`<div class="development-detail development-confirm"><p class="eyebrow">CONFERMA EVOLUZIONE</p><h2>${escapeHtml(player.name)}</h2><div class="development-evolution-preview"><div><small>CARTA ATTUALE</small>${developmentSquadCardMarkup(player)}</div><span class="development-evolution-arrow" aria-hidden="true">→</span><div><small>CARTA DOPO EVOLUZIONE</small>${developmentSquadCardMarkup(after)}</div></div><p>Le risorse saranno consumate definitivamente:</p><div class="development-confirm-costs">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, required: cost.projects, compact: true })}${resourceCostMarkup({ type: "cups", label: "Coppe", required: cost.cups, compact: true })}${resourceCostMarkup({ type: "coins", label: "Monete", required: cost.coins, compact: true })}</div><div class="button-row"><button class="btn btn-ghost" id="back-evolution">ANNULLA</button><button class="btn btn-yellow" id="confirm-evolution">CONFERMA EVOLUZIONE</button></div></div>`, { closeable: false, className: "development-confirm-modal" });
+    openModal(`<div class="development-detail development-confirm"><p class="eyebrow">CONFERMA EVOLUZIONE</p><h2>${escapeHtml(player.name)}</h2><div class="development-evolution-preview development-squad-card-scope"><div><small>ATTUALE · ${escapeHtml(player.category)} · OVR ${escapeHtml(player.overall)}</small>${developmentSquadCardMarkup(player)}</div><span class="development-evolution-arrow" aria-hidden="true">→</span><div><small>NUOVA · ${escapeHtml(after.category)} · OVR ${escapeHtml(after.overall)}</small>${developmentSquadCardMarkup(after)}</div></div><h3 class="development-confirm-requirements-title">REQUISITI</h3><div class="development-confirm-costs">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, required: cost.projects, compact: true })}${resourceCostMarkup({ type: "cups", label: "Coppe", required: cost.cups, compact: true })}${resourceCostMarkup({ type: "coins", label: "Monete", required: cost.coins, compact: true })}</div><div class="button-row"><button class="btn btn-ghost" id="back-evolution">ANNULLA</button><button class="btn btn-yellow" id="confirm-evolution">CONFERMA EVOLUZIONE</button></div></div>`, { closeable: false, className: "development-confirm-modal" });
     document.getElementById("back-evolution").onclick = closeModal;
     let submitting = false;
     document.getElementById("confirm-evolution").onclick = (event) => {
@@ -1634,6 +1683,7 @@
       const writeIsCurrent = written?.currentPermanentRarity === result.target && Number(written.permanentTargetPotential) >= Number(global.DevelopmentV2.threshold(result.target)) && Number(written.evolutionCount) > 0;
       if (!writeIsCurrent) { submitting = false; closeModal(); toast("Evoluzione non salvata: stato non coerente"); return renderDevelopmentCenter("players"); }
       developmentPlayersCache = null;
+      developmentResolvedCache.delete(String(rawPlayer.playerId));
       const updated = albumPlayerView(rawPlayer, freeAgentsDb);
       closeModal({ invokeOnClose: false }); toast(`${updated.name}: ${updated.category}`);
       renderDevelopmentCenter("players");
