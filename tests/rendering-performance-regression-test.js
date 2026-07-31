@@ -27,6 +27,6 @@ assert.match(album, /resolvedPlayer: player/, 'Album cards avoid a second progre
 assert.match(app, /loading="lazy" decoding="async" \$\{imageFallbackAttributes\(detailVisual\.detailFallbacks\)\}/, 'detail fullbody decodes asynchronously');
 
 assert.match(app, /development-evolution-preview development-squad-card-scope/, 'evolution preview receives the modern Squad card scope');
-assert.match(css, /height: 108px; min-height: 0/, 'mobile Project Pull cards are 108px tall');
+assert.match(css, /\.project-pull-option \{ height: 104px; min-height: 0/, 'mobile Project Pull choices are 104px tall');
 assert.doesNotMatch(css, /height:\s*1(?:74|80)px;\s*min-height:\s*0/, 'no later 174/180px mobile card height remains');
 console.log('rendering-performance-regression-test: bounded Development/Album rendering OK');

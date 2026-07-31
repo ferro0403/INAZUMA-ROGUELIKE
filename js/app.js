@@ -1522,10 +1522,19 @@
     const image = `<span class="project-image-frame"><img src="${escapeHtml(global.DevelopmentV2.ASSETS[rarity])}" width="80" height="80" alt="Progetto Evoluzione ${escapeHtml(rarity)}" loading="lazy" decoding="async" onerror="this.hidden=true;this.nextElementSibling.hidden=false"><span class="project-image-fallback" hidden aria-hidden="true">◆</span></span>`;
     if (selectable) {
       const buildState = ["Elite", "Mondiale", "Leggenda"].includes(rarity) ? `<span>BUILD ${escapeHtml(status.filled)}/${escapeHtml(status.required)}</span>` : "";
-      return `<button type="button" class="development-project-card project-pull-card ${rarityClass(rarity)}" data-claim-project="${escapeHtml(rarity)}"><span class="project-pull-label">SCELTA</span>${image}<strong>${escapeHtml(rarity)}</strong><small class="project-pull-status">${buildState}<span>MAGAZZINO ×${escapeHtml(status.owned)}</span></small><span class="project-pull-action">SCEGLI</span></button>`;
+      return `<article class="project-pull-option ${rarityClass(rarity)}"><div class="development-project-card project-pull-card"><span class="project-pull-label">SCELTA</span>${image}<div class="project-pull-copy"><strong>${escapeHtml(rarity)}</strong><small class="project-pull-status">${buildState}<span>MAGAZZINO ×${escapeHtml(status.owned)}</span></small></div></div><div class="project-pull-actions" role="group" aria-label="Azioni Progetto ${escapeHtml(rarity)}"><button type="button" class="btn project-pull-confirm" data-claim-project="${escapeHtml(rarity)}">SÌ</button><button type="button" class="btn btn-yellow project-pull-info" data-project-info="${escapeHtml(rarity)}">INFO</button></div></article>`;
     }
     const segments = Array.from({ length: status.required }, (_, index) => `<i class="${index < status.filled ? "is-filled" : ""}"></i>`).join("");
     return `<article class="development-project-card project-build-card ${rarityClass(rarity)}">${image}<div class="project-build-copy"><strong>${escapeHtml(rarity)}</strong><div class="project-segments" style="--segments:${escapeHtml(status.required)}" aria-label="${escapeHtml(status.filled)} parti su ${escapeHtml(status.required)}">${segments}</div><div class="project-build-status"><b>${escapeHtml(status.filled)} / ${escapeHtml(status.required)}</b></div></div></article>`;
+  }
+
+  function showProjectPullInfo(rarity) {
+    const status = global.DevelopmentV2.projectBuildStatus(rarity, global.DevelopmentV2.read());
+    const usesBuild = ["Elite", "Mondiale", "Leggenda"].includes(rarity);
+    const purpose = usesBuild
+      ? `Questo modulo contribuisce a completare il Progetto ${rarity} e consente l’evoluzione dei giocatori alla fascia corrispondente.`
+      : `Progetto utilizzato per evolvere i giocatori alla fascia ${rarity}.`;
+    openModal(`<div class="project-info-head ${rarityClass(rarity)}"><p class="eyebrow">DETTAGLI PROGETTO</p><h2>${escapeHtml(rarity)}</h2></div><div class="project-info-body ${rarityClass(rarity)}">${developmentCurrencyIcon("project", rarity)}<div><strong>PROGETTO ${escapeHtml(rarity)}</strong><p>${escapeHtml(purpose)}</p><div class="project-info-stats"><span>MAGAZZINO <b>×${escapeHtml(status.owned)}</b></span>${usesBuild ? `<span>BUILD <b>${escapeHtml(status.filled)}/${escapeHtml(status.required)}</b></span>` : ""}</div></div></div>`, { className: "project-info-modal" });
   }
 
   function projectInventoryMarkup(state) {
@@ -1538,11 +1547,12 @@
     resetRenderedViewScroll();
     let claiming = false;
     const choices = [...document.querySelectorAll("[data-claim-project]")];
+    document.querySelectorAll("[data-project-info]").forEach((button) => button.addEventListener("click", () => showProjectPullInfo(button.dataset.projectInfo)));
     choices.forEach((button) => button.addEventListener("click", () => {
       if (claiming) return;
       claiming = true;
       choices.forEach((choice) => { choice.disabled = true; });
-      button.classList.add("is-selected");
+      button.closest(".project-pull-option")?.classList.add("is-selected");
       const result = global.DevelopmentV2.claimPull(pull.runId, button.dataset.claimProject);
       if (!result) return;
       toast(result.projectsCompleted ? `PROGETTO ${result.rarity.toUpperCase()} COMPLETATO · MAGAZZINO ×${result.projectsCompleted}` : `MODULO ${result.rarity.toUpperCase()} OTTENUTO · ${result.remainder}/${result.required}`);
