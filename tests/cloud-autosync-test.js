@@ -1,0 +1,16 @@
+'use strict';
+const assert = require('assert'); const fs = require('fs');
+const cloud = fs.readFileSync('js/firebase-cloud-save.js', 'utf8');
+const rules = fs.readFileSync('firestore.rules', 'utf8');
+const ui = fs.readFileSync('js/account-ui.js', 'utf8');
+const sources = ['run-state','album-progress','development-v2','hall-of-fame'].map(n => fs.readFileSync(`js/${n}.js`,'utf8'));
+assert.equal((cloud.match(/getDoc\(/g)||[]).length, 1, 'all reads go through explicit readDocument');
+const sync = cloud.slice(cloud.indexOf('async function syncNow()'), cloud.indexOf('function retrySync'));
+assert.doesNotMatch(sync, /getDoc|getDocs|readDocument|runTransaction|onSnapshot|query\(/);
+assert.match(sync, /writeBatch/); assert.match(sync, /nextRevision = old\.revision \+ 1/);
+assert.match(cloud, /const DEBOUNCE_MS = 2000/); assert.match(cloud, /setTimeout/); assert.doesNotMatch(cloud, /setInterval|onSnapshot|runTransaction/);
+assert.match(cloud, /dirtySectors = new Set/); assert.match(cloud, /if \(syncInFlight\) return syncInFlight/);
+sources.forEach(source => assert.match(source, /inazuma:local-save-committed/));
+assert.match(cloud, /suppressCloudEvent: true/); assert.match(ui, /MODIFICHE IN ATTESA/); assert.match(ui, /AGGIORNAMENTO CLOUD DISPONIBILE/); assert.match(ui, /VERSIONE CLOUD PIÙ RECENTE/);
+assert.match(rules, /fresh\.revision == old\.revision \+ 1/); assert.match(rules, /manifestAfter\(uid\)/); assert.match(rules, /request\.auth\.uid == uid/);
+console.log('cloud-autosync-test: ok');
