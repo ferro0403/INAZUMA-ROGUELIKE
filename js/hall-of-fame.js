@@ -109,8 +109,8 @@
     localStorage.setItem(STORAGE_KEY, json);
     return parse(localStorage.getItem(STORAGE_KEY));
   }
-  function saveArchive(archive) {
-    const clean = sanitizeArchive({ ...archive, updatedAt: nowIso() });
+  function saveArchive(archive, options = {}) {
+    const clean = sanitizeArchive({ ...archive, updatedAt: options.preserveTimestamp ? archive?.updatedAt : nowIso() });
     try {
       return writePrimaryArchive(clean);
     } catch (error) {

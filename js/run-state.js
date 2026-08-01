@@ -38,6 +38,11 @@
     localStorage.setItem(PROFILE_KEY, JSON.stringify({ version: 1, teamIdentity: cleanIdentity }));
     return cleanIdentity;
   }
+  function restoreProfile(profile) {
+    if (!profile?.teamIdentity) { localStorage.removeItem(PROFILE_KEY); return { teamIdentity: null }; }
+    saveProfileTeamIdentity(profile.teamIdentity);
+    return loadProfile();
+  }
 
   function createRun(teamIdentity = {}, seasonId = null) {
     const now = new Date().toISOString();
@@ -94,7 +99,7 @@
   }
   function parseCandidate(raw) { if (!raw) return null; const parsed = JSON.parse(raw); const migrated = migrate(parsed); if (!validate(migrated)) throw new Error("Invalid run save"); return migrated; }
   function tryLoadKey(key) { try { return parseCandidate(localStorage.getItem(key)); } catch (error) { console.warn(`Unable to load run candidate ${key}`, error); return null; } }
-  function save(run) { return RunStorage.save(run); }
+  function save(run, options) { return RunStorage.save(run, options); }
   function load(seasonId = null) { return RunStorage.load(seasonId); }
   function hasSave(seasonId = null) { return !!RunStorage.load(seasonId); }
   function isActiveRun(run) { return validate(run) && !run.gameOver && !["complete", "final-summary", "final-celebration", "gameover"].includes(String(run.phase || "")); }
@@ -122,11 +127,11 @@
       this.save(best.loaded);
       return best.loaded;
     },
-    save(run) {
+    save(run, options = {}) {
       try {
         const normalized = normalize(run);
         const stamp = new Date().toISOString();
-        normalized.updatedAt = stamp;
+        if (!options.preserveTimestamps) normalized.updatedAt = stamp;
         normalized.lastPlayedAt = normalized.lastPlayedAt || stamp;
         const json = JSON.stringify(normalized);
         const reparsed = parseCandidate(json);
@@ -153,5 +158,5 @@
   function restoreAfterLoss(run, previousNodeId = null) { run.lives = Math.max(0, Math.min(runLivesLimit(), Number(run.lives) || 0) - 1); if (run.lives <= 0) { run.lives = 0; run.gameOver = true; run.phase = "gameover"; return save(run); } const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null; if (!targetNodeId) throw new Error("Previous match node unavailable"); if (run.currentZone) { run.currentZone.currentNodeId = targetNodeId; run.currentZone.pendingNodeId = null; } run.phase = "map"; run.gameOver = false; return save(run); }
 
   global.RunStorage = RunStorage;
-  global.RunState = { clone, createRun, save, load, hasSave, runLivesLimit, initialRunLives, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, remove, createCheckpoint, restoreAfterLoss, validate, isActiveRun, touch, activeSaves, latestActiveSave };
+  global.RunState = { clone, createRun, save, load, hasSave, runLivesLimit, initialRunLives, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, restoreProfile, remove, createCheckpoint, restoreAfterLoss, validate, isActiveRun, touch, activeSaves, latestActiveSave };
 })(globalThis);
