@@ -7,6 +7,8 @@
   let restoreFocus = null;
   let resendAvailableAt = 0;
   let cloudState = { status: "idle", error: null };
+  let modalView = null;
+  let loginSubmissionInFlight = false;
 
   function escapeHtml(value) {
     return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
@@ -59,27 +61,35 @@
   }
   function updateCloudSave() { const element = document.querySelector("[data-cloud-save-status]"); if (element) element.outerHTML = cloudSaveMarkup(); }
   function accountPanel() {
-    return `<div class="account-details"><p><small>USERNAME PUBBLICO</small><strong>@${escapeHtml(state.username || "Non disponibile")}</strong></p><p><small>EMAIL</small><strong>${escapeHtml(state.email || "Non disponibile")}</strong></p><p class="account-verification"><small>STATO EMAIL</small><strong>${state.emailVerified ? "EMAIL VERIFICATA" : "EMAIL DA VERIFICARE"}</strong></p>${state.profileComplete ? cloudSaveMarkup() : '<p class="account-warning"><strong>PROFILO INCOMPLETO</strong><span>Il profilo Firestore privato non è disponibile.</span></p>'}</div>
+    let profileMarkup = cloudSaveMarkup();
+    if (!state.profileComplete && state.error === "profile-incomplete") profileMarkup = '<p class="account-warning"><strong>PROFILO INCOMPLETO</strong><span>Il profilo Firestore privato non è disponibile.</span></p>';
+    else if (!state.profileComplete && state.error === "profile-unavailable") profileMarkup = '<p class="account-warning"><strong>PROFILO TEMPORANEAMENTE NON DISPONIBILE</strong><span>Riprova il caricamento.</span></p><button type="button" class="btn account-secondary" data-account-retry-profile>RIPROVA</button>';
+    else if (!state.profileComplete) profileMarkup = '<p class="account-warning"><strong>CARICAMENTO PROFILO...</strong></p>';
+    return `<div class="account-details"><p><small>USERNAME PUBBLICO</small><strong>@${escapeHtml(state.username || "Non disponibile")}</strong></p><p><small>EMAIL</small><strong>${escapeHtml(state.email || "Non disponibile")}</strong></p><p class="account-verification"><small>STATO EMAIL</small><strong>${state.emailVerified ? "EMAIL VERIFICATA" : "EMAIL DA VERIFICARE"}</strong></p>${profileMarkup}</div>
       ${state.emailVerified ? "" : '<button type="button" class="btn account-secondary" data-account-resend>RINVIA EMAIL</button>'}<button type="button" class="btn account-primary" data-account-logout>ESCI</button>`;
   }
   function open(mode) {
     const root = document.getElementById("modal-root"); if (!root) return;
     restoreFocus = document.activeElement;
-    if (mode) activeTab = mode;
+    if (mode) { activeTab = mode; modalView = "auth"; } else modalView = "account";
     document.documentElement.classList.add("account-modal-open"); document.body.classList.add("account-modal-open");
     root.innerHTML = `<div class="modal-backdrop account-modal-backdrop"><section class="modal account-modal" role="dialog" aria-modal="true" aria-labelledby="account-modal-title"><button type="button" class="modal-close" data-account-close aria-label="Chiudi">✕</button><header><p class="eyebrow">INAZUMA ROGUELIKE</p><h2 id="account-modal-title">${state.status === "authenticated" ? "IL TUO ACCOUNT" : "ACCOUNT"}</h2></header><div data-account-content>${state.status === "authenticated" ? accountPanel() : authForm()}</div><p class="account-feedback" data-account-feedback aria-live="polite"></p></section></div>`;
     root.querySelector("input, [data-account-resend], [data-account-logout], [data-account-close]")?.focus({ preventScroll: true });
   }
   function close() {
     if (busy) return; const root = document.getElementById("modal-root"); if (root) root.innerHTML = "";
+    modalView = null;
     document.documentElement.classList.remove("account-modal-open"); document.body.classList.remove("account-modal-open");
     if (restoreFocus?.isConnected) restoreFocus.focus({ preventScroll: true }); restoreFocus = null;
   }
   function setBusy(value, label = "ATTENDI...") { busy = value; document.querySelectorAll(".account-modal button, .account-modal input").forEach((el) => { el.disabled = value; }); const submit = document.querySelector(".account-form [type=submit]"); if (submit && value) submit.textContent = label; }
   async function submit(form) {
     if (busy || !global.InazumaAccount) return; const values = Object.fromEntries(new FormData(form)); setBusy(true);
-    try { if (form.dataset.accountForm === "register") { const result = global.InazumaAccountCore.validateRegistration(values); if (!result.valid) throw { code: "account/validation", userMessage: result.message }; const created = await global.InazumaAccount.register(values); setBusy(false); open(); feedback(created.verificationSent ? "Account creato. Controlla la tua email per verificarlo." : "Account creato, ma l’email di verifica non è partita. Usa RINVIA EMAIL.", created.verificationSent ? "success" : "error"); } else { await global.InazumaAccount.login(values.email, values.password); setBusy(false); close(); } }
+    const login = form.dataset.accountForm === "login";
+    if (login) loginSubmissionInFlight = true;
+    try { if (!login) { const result = global.InazumaAccountCore.validateRegistration(values); if (!result.valid) throw { code: "account/validation", userMessage: result.message }; const created = await global.InazumaAccount.register(values); setBusy(false); open(); feedback(created.verificationSent ? "Account creato. Controlla la tua email per verificarlo." : "Account creato, ma l’email di verifica non è partita. Usa RINVIA EMAIL.", created.verificationSent ? "success" : "error"); } else { await global.InazumaAccount.login(values.email, values.password); setBusy(false); close(); } }
     catch (error) { setBusy(false); feedback(error.userMessage || global.InazumaAccountCore.formatAuthError(error), "error"); }
+    finally { if (login) loginSubmissionInFlight = false; }
   }
   async function resetPassword() { const email = document.querySelector('.account-form input[name="email"]')?.value.trim(); if (!email) return feedback("Inserisci prima il tuo indirizzo email.", "error"); setBusy(true); try { await global.InazumaAccount.sendPasswordReset(email); setBusy(false); feedback("Se esiste un account associato, riceverai le istruzioni via email.", "success"); } catch (e) { setBusy(false); feedback(global.InazumaAccountCore.formatAuthError(e), "error"); } }
   async function resend() { if (Date.now() < resendAvailableAt) return feedback("Attendi prima di inviare una nuova email.", "error"); setBusy(true); try { await global.InazumaAccount.resendVerification(); resendAvailableAt = Date.now() + 60000; setBusy(false); feedback("Email di verifica inviata.", "success"); } catch (e) { setBusy(false); feedback(global.InazumaAccountCore.formatAuthError(e), "error"); } }
@@ -94,10 +104,10 @@
       feedback(global.InazumaAccountCore.formatAuthError(error), "error");
     }
   }
-  function onClick(event) { const target = event.target.closest?.("[data-account-trigger],[data-account-close],[data-account-tab],[data-account-reset],[data-account-logout],[data-account-resend],[data-cloud-save-retry],[data-cloud-save-restore],[data-cloud-save-open]"); if (!target) return; if (target.matches("[data-account-trigger]")) open(state.status === "authenticated" ? null : "login"); else if (target.matches("[data-account-close]")) close(); else if (target.dataset.accountTab) { activeTab = target.dataset.accountTab; open(activeTab); } else if (target.matches("[data-account-reset]")) resetPassword(); else if (target.matches("[data-account-resend]")) resend(); else if (target.matches("[data-account-logout]")) logout(); else if (target.matches("[data-cloud-save-retry]")) global.InazumaCloudSave?.retryAssociation(); else if (target.matches("[data-cloud-save-restore]")) global.InazumaCloudSave?.restoreCloudSave(); else if (target.matches("[data-cloud-save-open]")) global.InazumaCloudSave?.reloadAfterRestore(); }
+  function onClick(event) { const target = event.target.closest?.("[data-account-trigger],[data-account-close],[data-account-tab],[data-account-reset],[data-account-logout],[data-account-resend],[data-account-retry-profile],[data-cloud-save-retry],[data-cloud-save-restore],[data-cloud-save-open]"); if (!target) return; if (target.matches("[data-account-trigger]")) open(state.status === "authenticated" ? null : "login"); else if (target.matches("[data-account-close]")) close(); else if (target.dataset.accountTab) { activeTab = target.dataset.accountTab; open(activeTab); } else if (target.matches("[data-account-reset]")) resetPassword(); else if (target.matches("[data-account-resend]")) resend(); else if (target.matches("[data-account-retry-profile]")) global.InazumaAccount?.retryProfile(); else if (target.matches("[data-account-logout]")) logout(); else if (target.matches("[data-cloud-save-retry]")) global.InazumaCloudSave?.retryAssociation(); else if (target.matches("[data-cloud-save-restore]")) global.InazumaCloudSave?.restoreCloudSave(); else if (target.matches("[data-cloud-save-open]")) global.InazumaCloudSave?.reloadAfterRestore(); }
   function onKeydown(event) { const modal = document.querySelector(".account-modal"); if (!modal) return; if (event.key === "Escape") return close(); if (event.key !== "Tab") return; const focusable = [...modal.querySelectorAll("button:not(:disabled),input:not(:disabled)")]; if (!focusable.length) return; const first = focusable[0], last = focusable.at(-1); if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); } else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); } }
   document.addEventListener("click", onClick); document.addEventListener("submit", (event) => { if (event.target.matches?.("[data-account-form]")) { event.preventDefault(); submit(event.target); } }); document.addEventListener("keydown", onKeydown);
-  global.addEventListener("inazuma:auth-state-changed", (event) => { state = { ...initialState, ...event.detail }; updateButtons(); if (document.querySelector(".account-modal") && state.status === "authenticated") open(); });
+  global.addEventListener("inazuma:auth-state-changed", (event) => { state = { ...initialState, ...event.detail }; updateButtons(); if (modalView === "account" && document.querySelector(".account-modal")) open(); else if (modalView === "auth" && loginSubmissionInFlight) return; });
   global.addEventListener("inazuma:cloud-save-state-changed", (event) => { cloudState = { status: "idle", error: null, ...event.detail }; updateCloudSave(); });
   global.InazumaAccountUI = Object.freeze({ buttonMarkup, updateButtons, openAuthModal: () => open("login"), openAccountModal: () => open(), close, getState: () => ({ ...state }) });
 })(globalThis);
