@@ -12,6 +12,7 @@ const core = globalThis.InazumaAccountCore;
 let auth;
 let db;
 let registrationInProgress = false;
+let authStateRevision = 0;
 let state = { status: "initializing", uid: null, username: "", email: "", emailVerified: false, profileComplete: false, error: null };
 
 function publish(patch) {
@@ -44,9 +45,16 @@ const ready = (async () => {
     auth = getAuth(app); db = getFirestore(app);
     await setPersistence(auth, browserLocalPersistence);
     onAuthStateChanged(auth, async (user) => {
+      const revision = ++authStateRevision;
       if (registrationInProgress && user) return;
       if (!user) return publish({ status: "signed-out", uid: null, username: "", email: "", emailVerified: false, profileComplete: false, error: null });
-      publish(await profileState(user));
+      publish({
+        status: "authenticated", uid: user.uid, username: user.displayName || "",
+        email: user.email || "", emailVerified: Boolean(user.emailVerified),
+        profileComplete: false, error: null,
+      });
+      const profile = await profileState(user);
+      if (revision === authStateRevision) publish(profile);
     });
     return true;
   } catch (error) {
