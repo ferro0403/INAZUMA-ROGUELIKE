@@ -23,6 +23,27 @@ const core = require('../js/cloud-save-core.js');
   const hashA = await core.hash(original, crypto); const hashAgain = await core.hash({ list: [3, undefined, 1], a: { b: 2 }, z: 1 }, crypto);
   assert.strictEqual(hashA, hashAgain); assert.notStrictEqual(hashA, await core.hash({ z: 2 }, crypto));
 
+  const codecCases = [
+    ['a', 'b'],
+    [['a', 'b'], ['c', 'd']],
+    [[[['deep']]]],
+    [{ team: 'Raimon', players: ['Mark', 'Axel'] }],
+    { edges: [['a', 'b'], ['b', 'c']], map: { layers: [[1], [2]] } },
+    { __inazumaCloudArrayV1: ['game-value'], __inazumaCloudEscapedObjectV1: { preserved: true } },
+  ];
+  function assertFirestoreSafe(value, parentIsArray = false) {
+    if (Array.isArray(value)) { if (parentIsArray) assert.fail('encoded output contains a direct nested array'); value.forEach((item) => assertFirestoreSafe(item, true)); }
+    else if (value && typeof value === 'object') Object.values(value).forEach((item) => assertFirestoreSafe(item, false));
+  }
+  for (const value of codecCases) {
+    const before = JSON.stringify(value), encoded = core.encodeFirestorePayload(value);
+    assertFirestoreSafe(encoded); assert.deepStrictEqual(core.decodeFirestorePayload(encoded), value); assert.strictEqual(JSON.stringify(value), before, 'codec does not mutate input');
+  }
+  const realRun = { currentZone: { edges: [['a', 'b'], ['b', 'c']] } };
+  const encodedRun = core.encodeFirestorePayload(realRun);
+  assertFirestoreSafe(encodedRun); assert.deepStrictEqual(core.decodeFirestorePayload(encodedRun), realRun);
+  assert.strictEqual(await core.hash(core.decodeFirestorePayload(encodedRun), crypto), await core.hash(realRun, crypto), 'hash remains logical');
+
   const prepared = await core.prepareSnapshot(snapshot, crypto); core.preflight(prepared);
   assert.strictEqual(prepared.payloads.run_ie2, null); assert.strictEqual(prepared.payloads.hall_index.count, 1);
   assert.ok(!('fullRoster' in prepared.payloads.hall_index)); assert.strictEqual(prepared.hallEntries[0].hallTeamId, 'hall_1');
@@ -35,6 +56,9 @@ const core = require('../js/cloud-save-core.js');
   assert.throws(() => core.preflight(oversized), (error) => error.code === 'document-too-large' && error.problemSector === 'album');
   const hugeHall = await core.prepareSnapshot({ ...snapshot, hallOfFame: { ...snapshot.hallOfFame, teams: [{ hallTeamId: 'huge', archiveKey: 'huge', data: 'x'.repeat(core.DOCUMENT_LIMIT_BYTES) }] } }, crypto);
   assert.throws(() => core.preflight(hugeHall), (error) => error.code === 'document-too-large' && error.problemSector === 'hallOfFame/huge');
+  const inflated = await core.prepareSnapshot({ ...snapshot, album: { nested: Array.from({ length: 30000 }, () => ['a', 'b']) } }, crypto);
+  assert.ok(core.byteSize(inflated.payloads.album) < core.DOCUMENT_LIMIT_BYTES, 'logical payload remains below the limit');
+  assert.throws(() => core.preflight(inflated), (error) => error.code === 'document-too-large' && error.problemSector === 'album', 'encoded document inflation is measured');
 
   const empty = { profile: { teamIdentity: null }, runs: { ie1: null, ie2: null }, album: { schemaVersion: 1, collections: { ie1: { unlockedPlayerIds: {} } } }, development: { schemaVersion: 5, coins: 0, cups: 0, projects: { Buono: 0 }, projectBuild: { Buono: 0 }, players: {}, evolutionHistory: [], redeemedRunIds: [], victoryRewardRunIds: [], projectPullLedger: {} }, hallOfFame: { archiveSchemaVersion: 2, teams: [], index: [] } };
   const frozen = JSON.stringify(empty); const inspected = core.inspectLocalProgress(empty);
@@ -56,6 +80,9 @@ const core = require('../js/cloud-save-core.js');
   assert.throws(() => core.validateManifest({ ...validManifest, sectorHashes: { ...validManifest.sectorHashes, album: null } }, 'uid-1'), /invalid-manifest/);
   const sector = { schemaVersion: 1, revision: 1, sector: 'album', payload: prepared.payloads.album, payloadHash: prepared.hashes.album, sourceDeviceId: 'device-1' };
   assert.deepStrictEqual(await core.validateSectorDocument('album', sector, validManifest, crypto), prepared.payloads.album);
+  const encodedSector = { ...sector, payloadEncoding: core.PAYLOAD_ENCODING, payload: core.encodeFirestorePayload(prepared.payloads.album) };
+  assert.deepStrictEqual(await core.validateSectorDocument('album', encodedSector, validManifest, crypto), prepared.payloads.album);
+  await assert.rejects(() => core.validateSectorDocument('album', { ...encodedSector, payloadEncoding: 'future-v2' }, validManifest, crypto), (error) => error.code === 'unsupported-payload-encoding' && error.problemSector === 'album');
   await assert.rejects(() => core.validateSectorDocument('album', { ...sector, payloadHash: '0'.repeat(64) }, validManifest, crypto), /hash-mismatch/);
   const absentRun = { schemaVersion: 1, revision: 1, sector: 'run_ie2', payload: null, payloadHash: null };
   assert.strictEqual(await core.validateSectorDocument('run_ie2', absentRun, validManifest, crypto), null);
@@ -86,6 +113,9 @@ const core = require('../js/cloud-save-core.js');
   assert.throws(() => core.validateHallIndex({ ...hallPayload, teamIds: ['hall_1', 'hall_1'], count: 2 }, { ...validManifest, sectors: { ...validManifest.sectors, hallOfFameCount: 2 } }), /invalid-hall-index/);
   const hallDoc = { schemaVersion: 1, revision: 1, hallTeamId: 'hall_1', archiveKey: prepared.hallEntries[0].archiveKey, payload: prepared.hallEntries[0].payload, payloadHash: prepared.hallEntries[0].payloadHash };
   assert.deepStrictEqual(await core.validateHallDocument('hall_1', hallDoc, validManifest, crypto), prepared.hallEntries[0].payload);
+  const encodedHallDoc = { ...hallDoc, payloadEncoding: core.PAYLOAD_ENCODING, payload: core.encodeFirestorePayload(hallDoc.payload) };
+  assert.deepStrictEqual(await core.validateHallDocument('hall_1', encodedHallDoc, validManifest, crypto), prepared.hallEntries[0].payload);
+  await assert.rejects(() => core.validateHallDocument('hall_1', { ...encodedHallDoc, payloadEncoding: 'future-v2' }, validManifest, crypto), (error) => error.code === 'unsupported-payload-encoding' && error.problemSector === 'hallOfFame/hall_1');
   const rebuilt = core.reconstructSnapshot(prepared.payloads, [prepared.hallEntries[0].payload]);
   assert.strictEqual(rebuilt.hallOfFame.teams[0].hallTeamId, 'hall_1');
   assert.deepStrictEqual(await core.compareSnapshots(snapshot, snapshot, crypto), { equivalent: true, mismatches: [] });

@@ -2,7 +2,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.0/fireba
 import {
   browserLocalPersistence, createUserWithEmailAndPassword, deleteUser, getAuth,
   onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail,
-  setPersistence, signInWithEmailAndPassword, signOut, updateProfile,
+  reload, setPersistence, signInWithEmailAndPassword, signOut, updateProfile,
 } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-auth.js";
 import {
   doc, getDoc, getFirestore, runTransaction, serverTimestamp,
@@ -13,6 +13,8 @@ let auth;
 let db;
 let registrationInProgress = false;
 let authStateRevision = 0;
+let verificationRefreshInFlight = null;
+let lastVerificationRefreshAt = 0;
 let state = { status: "initializing", uid: null, username: "", email: "", emailVerified: false, profileComplete: false, error: null };
 
 function publish(patch) {
@@ -122,5 +124,21 @@ async function retryProfile() {
 async function logout() { await ensureReady(); await signOut(auth); }
 async function sendPasswordReset(email) { await ensureReady(); await sendPasswordResetEmail(auth, String(email || "").trim()); }
 async function resendVerification() { await ensureReady(); if (!auth.currentUser) throw { code: "auth/invalid-credential" }; await sendEmailVerification(auth.currentUser); }
+async function refreshEmailVerification() {
+  if (verificationRefreshInFlight) return verificationRefreshInFlight;
+  verificationRefreshInFlight = (async () => {
+    await ensureReady(); const user = auth.currentUser;
+    if (!user) throw { code: "auth/invalid-credential" };
+    await reload(user); lastVerificationRefreshAt = Date.now();
+    if (auth.currentUser?.uid === user.uid) publish({ emailVerified: Boolean(user.emailVerified) });
+    return Boolean(user.emailVerified);
+  })().finally(() => { verificationRefreshInFlight = null; });
+  return verificationRefreshInFlight;
+}
 
-globalThis.InazumaAccount = Object.freeze({ ready, getState: () => ({ ...state }), getCurrentUser: () => auth?.currentUser || null, getFirestoreInstance: () => db, register, login, retryProfile, logout, sendPasswordReset, resendVerification, openAuthModal: () => globalThis.InazumaAccountUI?.openAuthModal(), openAccountModal: () => globalThis.InazumaAccountUI?.openAccountModal() });
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || state.status !== "authenticated" || state.emailVerified || verificationRefreshInFlight || Date.now() - lastVerificationRefreshAt < 4000) return;
+  refreshEmailVerification().catch((error) => console.warn("[Account] Controllo verifica email non riuscito.", error?.code || "unknown"));
+});
+
+globalThis.InazumaAccount = Object.freeze({ ready, getState: () => ({ ...state }), getCurrentUser: () => auth?.currentUser || null, getFirestoreInstance: () => db, register, login, retryProfile, logout, sendPasswordReset, resendVerification, refreshEmailVerification, openAuthModal: () => globalThis.InazumaAccountUI?.openAuthModal(), openAccountModal: () => globalThis.InazumaAccountUI?.openAccountModal() });
