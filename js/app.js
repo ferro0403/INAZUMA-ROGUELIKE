@@ -660,8 +660,7 @@
         </div>
         <div class="status-strip" aria-label="Stato run">
           <span class="status-pill"><small>OVR</small><strong>${escapeHtml(averageOverall())}</strong></span>
-          <span class="status-pill"><small>LV</small><strong>${escapeHtml(run.teamLevel)}</strong></span>
-          <span class="status-pill lives" title="Vite" aria-label="Vite ${escapeHtml(run.lives)}">${hearts()}</span>
+          ${global.InazumaAccountUI?.buttonMarkup?.() || '<button type="button" class="account-header-button" data-account-trigger disabled><span>ACCOUNT</span></button>'}
         </div>
       </header>`;
   }

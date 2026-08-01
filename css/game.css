@@ -5810,6 +5810,45 @@ body { background: var(--gradient-app); }
   transform: skewX(-6deg);
 }
 
+.account-header-button {
+  width: min(172px, 31vw); min-width: 88px; min-height: 44px; padding: 8px 12px;
+  overflow: hidden; border: 2px solid #111216; border-radius: 0; background: #ffd21f;
+  color: #111216; box-shadow: 4px 4px 0 #111216; font: 950 .75rem/1 system-ui, sans-serif;
+  letter-spacing: .04em; text-transform: uppercase; cursor: pointer;
+}
+.account-header-button span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.account-header-button:disabled { background: #e7e2d5; color: #65625c; cursor: wait; }
+.account-header-button:focus-visible { outline: 3px solid #111216; outline-offset: 3px; }
+html.account-modal-open, body.account-modal-open { overflow: hidden; overscroll-behavior: none; }
+.account-modal-backdrop { z-index: 100; background: rgba(17,18,22,.76); padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom)); }
+.modal.account-modal { width: min(480px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 22px; overflow: auto; border: 3px solid #111216; border-radius: 2px; background: #fffdf6; color: #111216; box-shadow: 9px 11px 0 rgba(0,0,0,.48); }
+.account-modal .modal-close { position: sticky; z-index: 2; top: 0; float: right; width: 44px; height: 44px; border: 2px solid #111216; border-radius: 0; background: #ffd21f; color: #111216; font-weight: 950; }
+.account-modal header { padding: 4px 54px 14px 0; border-bottom: 3px solid #111216; }
+.account-modal header h2 { margin: 2px 0 0; color: #111216; font-size: clamp(1.65rem, 7vw, 2.35rem); }
+.account-tabs { display: grid; grid-template-columns: 1fr 1fr; margin: 18px 0 15px; border: 2px solid #111216; }
+.account-tabs button { min-height: 44px; border: 0; border-right: 2px solid #111216; border-radius: 0; background: #fff; color: #111216; font-weight: 950; }
+.account-tabs button:last-child { border-right: 0; }
+.account-tabs button[aria-selected="true"] { background: #ffd21f; }
+.account-form { display: grid; gap: 13px; }
+.account-form label { display: grid; gap: 5px; color: #111216; font-size: .7rem; font-weight: 950; letter-spacing: .08em; }
+.account-form input { width: 100%; min-height: 46px; padding: 10px 11px; border: 2px solid #111216; border-radius: 0; background: #fff; color: #111216; font-size: 16px; }
+.account-modal .btn { width: 100%; min-height: 46px; border: 2px solid #111216; border-radius: 0; color: #111216; font-weight: 950; }
+.account-modal .account-primary { background: #ffd21f; box-shadow: 4px 4px 0 #111216; }
+.account-modal .account-secondary { margin: 14px 0; background: #fff; }
+.account-text-action { min-height: 44px; border: 0; background: transparent; color: #111216; font-size: .7rem; font-weight: 950; text-decoration: underline; }
+.account-feedback { min-height: 2.5em; margin: 15px 0 0; color: #34322e; font-weight: 800; }
+.account-feedback[data-kind="error"] { color: #a51220; }
+.account-feedback[data-kind="success"] { color: #17652d; }
+.account-details { display: grid; gap: 10px; margin-top: 18px; }
+.account-details p { display: grid; gap: 3px; margin: 0; padding: 12px; border: 2px solid #111216; background: #fff; overflow-wrap: anywhere; }
+.account-details small { font-weight: 950; letter-spacing: .08em; }
+.account-warning { border-left: 8px solid #ffd21f !important; }
+@media (max-width: 390px) {
+  .shared-game-header .status-pill { min-width: 58px; padding-inline: 7px; }
+  .account-header-button { width: min(112px, 31vw); min-width: 76px; padding-inline: 8px; }
+  .modal.account-modal { padding: 15px 13px calc(15px + env(safe-area-inset-bottom)); }
+}
+
 /* Shared section navigation: desktop rail, mobile action bar */
 .bottom-nav {
   --nav-ink: #111216;
