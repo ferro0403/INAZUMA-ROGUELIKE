@@ -11,8 +11,9 @@ service cloud.firestore {
     function validSectorRevisionStep(old, fresh, name) { let previous = ('sectorRevisions' in old) ? old.sectorRevisions[name] : old.revision; return fresh.sectorRevisions[name] == previous || fresh.sectorRevisions[name] == fresh.revision; }
     function validManifestUpdate(uid) {
       let old = resource.data; let fresh = request.resource.data;
-      return fresh.accountUid == uid && fresh.accountUid == old.accountUid && fresh.schemaVersion == 1 && fresh.initialized == true
-        && old.initialized == true && fresh.createdAt == old.createdAt && fresh.updatedAt == request.time
+      return fresh.accountUid == uid && fresh.accountUid == old.accountUid && fresh.schemaVersion == old.schemaVersion && fresh.schemaVersion == 1
+        && fresh.initialized == old.initialized && fresh.initialized == true && fresh.source == old.source
+        && fresh.createdAt == old.createdAt && fresh.updatedAt == request.time
         && fresh.revision == old.revision + 1 && fresh.sectorHashes is map && fresh.sectorRevisions is map
         && fresh.hallTeamIds is list && fresh.hallTeamHashes is map && fresh.hallTeamRevisions is map
         && validSectorRevisionStep(old, fresh, 'profile') && validSectorRevisionStep(old, fresh, 'run_ie1')
