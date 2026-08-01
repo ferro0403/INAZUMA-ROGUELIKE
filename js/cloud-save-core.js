@@ -98,7 +98,12 @@
     if (manifest.hallTeamIds != null && (!Array.isArray(manifest.hallTeamIds) || new Set(manifest.hallTeamIds).size !== manifest.hallTeamIds.length)) throw cloudError("invalid-manifest", "hall_index");
     const count = manifest.sectors.hallOfFameCount;
     if (!Number.isInteger(count) || count < 0 || count > MAX_HALL_TEAMS) throw cloudError("invalid-manifest", "hall_index");
-    return normalize(manifest);
+    const validated = normalize(manifest);
+    // Firestore timestamps are opaque values; validation must not turn them
+    // into plain objects before the cloud manager caches them.
+    validated.createdAt = manifest.createdAt;
+    validated.updatedAt = manifest.updatedAt;
+    return validated;
   }
 
   async function validateSectorDocument(name, data, manifest, cryptoApi = global.crypto) {
