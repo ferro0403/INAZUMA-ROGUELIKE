@@ -35,5 +35,37 @@ const core = require('../js/cloud-save-core.js');
   assert.throws(() => core.preflight(oversized), (error) => error.code === 'document-too-large' && error.problemSector === 'album');
   const hugeHall = await core.prepareSnapshot({ ...snapshot, hallOfFame: { ...snapshot.hallOfFame, teams: [{ hallTeamId: 'huge', archiveKey: 'huge', data: 'x'.repeat(core.DOCUMENT_LIMIT_BYTES) }] } }, crypto);
   assert.throws(() => core.preflight(hugeHall), (error) => error.code === 'document-too-large' && error.problemSector === 'hallOfFame/huge');
+
+  const empty = { profile: { teamIdentity: null }, runs: { ie1: null, ie2: null }, album: { schemaVersion: 1, collections: { ie1: { unlockedPlayerIds: {} } } }, development: { schemaVersion: 5, coins: 0, cups: 0, projects: { Buono: 0 }, projectBuild: { Buono: 0 }, players: {}, evolutionHistory: [], redeemedRunIds: [], victoryRewardRunIds: [], projectPullLedger: {} }, hallOfFame: { archiveSchemaVersion: 2, teams: [], index: [] } };
+  const frozen = JSON.stringify(empty); const inspected = core.inspectLocalProgress(empty);
+  assert.strictEqual(inspected.empty, true); assert.strictEqual(inspected.meaningful, false); assert.deepStrictEqual(inspected.reasons, []); assert.strictEqual(JSON.stringify(empty), frozen, 'inspection does not mutate');
+  for (const [reason, change] of [
+    ['profile', { profile: { teamIdentity: { name: 'Raimon' } } }],
+    ['run_ie1', { runs: { ie1: { runId: 'one' }, ie2: null } }],
+    ['run_ie2', { runs: { ie1: null, ie2: { runId: 'two' } } }],
+    ['album', { album: { collections: { ie1: { unlockedPlayerIds: { 1: {} } } } } }],
+    ['development', { development: { coins: 1 } }],
+    ['hall_of_fame', { hallOfFame: { teams: [{ hallTeamId: 'h' }] } }],
+  ]) { const candidate = { ...empty, ...change }; const result = core.inspectLocalProgress(candidate); assert.strictEqual(result.meaningful, true); assert.ok(result.reasons.includes(reason)); }
+
+  const validManifest = core.buildManifest(prepared, 'uid-1', 'device-1', 'timestamp');
+  assert.strictEqual(core.validateManifest(validManifest, 'uid-1').revision, 1);
+  assert.throws(() => core.validateManifest({ ...validManifest, accountUid: 'other' }, 'uid-1'), /invalid-manifest/);
+  assert.throws(() => core.validateManifest({ ...validManifest, schemaVersion: 2 }, 'uid-1'), /unsupported-cloud-schema/);
+  assert.throws(() => core.validateManifest({ ...validManifest, revision: 0 }, 'uid-1'), /invalid-manifest/);
+  assert.throws(() => core.validateManifest({ ...validManifest, sectorHashes: { ...validManifest.sectorHashes, album: null } }, 'uid-1'), /invalid-manifest/);
+  const sector = { schemaVersion: 1, revision: 1, sector: 'album', payload: prepared.payloads.album, payloadHash: prepared.hashes.album, sourceDeviceId: 'device-1' };
+  assert.deepStrictEqual(await core.validateSectorDocument('album', sector, validManifest, crypto), prepared.payloads.album);
+  await assert.rejects(() => core.validateSectorDocument('album', { ...sector, payloadHash: '0'.repeat(64) }, validManifest, crypto), /hash-mismatch/);
+  const absentRun = { schemaVersion: 1, revision: 1, sector: 'run_ie2', payload: null, payloadHash: null };
+  assert.strictEqual(await core.validateSectorDocument('run_ie2', absentRun, validManifest, crypto), null);
+  await assert.rejects(() => core.validateSectorDocument('run_ie2', { ...absentRun, payload: {} }, validManifest, crypto), /invalid-sector/);
+  const hallPayload = core.validateHallIndex(prepared.payloads.hall_index, validManifest);
+  assert.deepStrictEqual(hallPayload.teamIds, ['hall_1']);
+  assert.throws(() => core.validateHallIndex({ ...hallPayload, teamIds: ['hall_1', 'hall_1'], count: 2 }, { ...validManifest, sectors: { ...validManifest.sectors, hallOfFameCount: 2 } }), /invalid-hall-index/);
+  const hallDoc = { schemaVersion: 1, revision: 1, hallTeamId: 'hall_1', archiveKey: prepared.hallEntries[0].archiveKey, payload: prepared.hallEntries[0].payload, payloadHash: prepared.hallEntries[0].payloadHash };
+  assert.deepStrictEqual(await core.validateHallDocument('hall_1', hallDoc, validManifest, crypto), prepared.hallEntries[0].payload);
+  const rebuilt = core.reconstructSnapshot(prepared.payloads, [prepared.hallEntries[0].payload]);
+  assert.strictEqual(rebuilt.hallOfFame.teams[0].hallTeamId, 'hall_1');
   console.log('cloud-save-core-test: ok');
 })().catch((error) => { console.error(error); process.exit(1); });
