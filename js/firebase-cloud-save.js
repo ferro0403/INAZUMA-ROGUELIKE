@@ -97,17 +97,10 @@ function applySnapshot(snapshot) {
   globalThis.DevelopmentV2.write(core.clone(snapshot.development));
   globalThis.HallOfFameStorage._saveArchive({ schemaVersion: snapshot.hallOfFame.archiveSchemaVersion, updatedAt: snapshot.hallOfFame.updatedAt, teams: core.clone(snapshot.hallOfFame.teams), index: core.clone(snapshot.hallOfFame.index) }, { preserveTimestamp: true });
 }
-async function snapshotsEquivalent(expected, actual) {
-  const expectedPrepared = await core.prepareSnapshot(expected);
-  const actualPrepared = await core.prepareSnapshot(actual);
-  for (const name of core.SECTOR_NAMES) if (expectedPrepared.hashes[name] !== actualPrepared.hashes[name]) return false;
-  if (expectedPrepared.hallEntries.length !== actualPrepared.hallEntries.length) return false;
-  for (let index = 0; index < expectedPrepared.hallEntries.length; index += 1) if (expectedPrepared.hallEntries[index].payloadHash !== actualPrepared.hallEntries[index].payloadHash) return false;
-  return true;
-}
 async function rollback(snapshot) {
   applySnapshot(snapshot);
-  if (!await snapshotsEquivalent(snapshot, core.readLocalSnapshot())) throw Object.assign(new Error("rollback-verification-failed"), { code: "rollback-verification-failed" });
+  const comparison = await core.compareSnapshots(snapshot, core.readLocalSnapshot());
+  if (!comparison.equivalent) throw Object.assign(new Error("rollback-verification-failed"), { code: "rollback-verification-failed", problemSector: comparison.mismatches[0], mismatchSectors: comparison.mismatches });
 }
 
 async function restoreCloudSave() {
@@ -146,15 +139,16 @@ async function restoreCloudSave() {
       publish({ status: "restoring" }, token);
       writesStarted = true;
       applySnapshot(restored);
-      if (!await snapshotsEquivalent(restored, core.readLocalSnapshot())) throw Object.assign(new Error("post-write-verification-failed"), { code: "post-write-verification-failed", problemSector: "local" });
+      const comparison = await core.compareSnapshots(restored, core.readLocalSnapshot());
+      if (!comparison.equivalent) throw Object.assign(new Error("post-write-verification-failed"), { code: "post-write-verification-failed", problemSector: comparison.mismatches[0], mismatchSectors: comparison.mismatches });
       if (!current(token, uid)) { await rollback(before); return; }
       const completed = new Date().toISOString();
       localStorage.setItem(`inazuma.cloud.association.${uid}`, JSON.stringify({ uid, revision: manifest.revision, associatedAt: completed, restoredAt: completed, deviceId: id, status: "associated" }));
       publish({ status: "restored", revision: manifest.revision, hallOfFameCount: hallPayloads.length, lastCompletedAt: completed, error: null, problemSector: null }, token);
     } catch (error) {
-      if (writesStarted) { try { await rollback(before); } catch (rollbackError) { console.warn("Cloud save:", rollbackError?.code || "rollback-failed"); } }
+      if (writesStarted) { try { await rollback(before); } catch (rollbackError) { console.warn("Cloud save:", { code: rollbackError?.code || "rollback-failed", problemSector: rollbackError?.problemSector || null, mismatchSectors: rollbackError?.mismatchSectors || [] }); } }
       localStorage.removeItem(`inazuma.cloud.association.${uid}`);
-      console.warn("Cloud save:", { code: error?.code || "restore-failed", problemSector: error?.problemSector || null });
+      console.warn("Cloud save:", { code: error?.code || "restore-failed", problemSector: error?.problemSector || null, mismatchSectors: error?.mismatchSectors || [] });
       publish({ status: "restore-error", error: error?.code || "restore-failed", problemSector: error?.problemSector || null }, token);
     } finally { restoreInFlight = null; }
   })();

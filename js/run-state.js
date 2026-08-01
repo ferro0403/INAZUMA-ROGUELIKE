@@ -100,7 +100,7 @@
   function parseCandidate(raw) { if (!raw) return null; const parsed = JSON.parse(raw); const migrated = migrate(parsed); if (!validate(migrated)) throw new Error("Invalid run save"); return migrated; }
   function tryLoadKey(key) { try { return parseCandidate(localStorage.getItem(key)); } catch (error) { console.warn(`Unable to load run candidate ${key}`, error); return null; } }
   function save(run, options) { return RunStorage.save(run, options); }
-  function load(seasonId = null) { return RunStorage.load(seasonId); }
+  function load(seasonId = null, options = {}) { return RunStorage.load(seasonId, options); }
   function hasSave(seasonId = null) { return !!RunStorage.load(seasonId); }
   function isActiveRun(run) { return validate(run) && !run.gameOver && !["complete", "final-summary", "final-celebration", "gameover"].includes(String(run.phase || "")); }
   function runSortTime(run, fallbackIndex = 0) { const value = run?.lastPlayedAt || run?.updatedAt || run?.savedAt || run?.timestamp || run?.createdAt || ""; const time = Date.parse(value); return Number.isFinite(time) ? time : fallbackIndex; }
@@ -117,13 +117,14 @@
     loadBackup,
     restoreBackup,
     isActiveRun, runSortTime, touch, activeSaves, latestActiveSave,
-    load(seasonId = null) {
+    load(seasonId = null, options = {}) {
       const sid = seasonId == null ? seasonIdOf(null) : seasonIdOf(seasonId);
       const order = sid === "ie1" ? [primaryKey(sid), backupKey(sid), tempKey(sid), config().saveKey, `${config().saveKey}_backup`, `${config().saveKey}_tmp`, ...legacyKeys()] : [primaryKey(sid), backupKey(sid), tempKey(sid)];
       const candidates = order.map((key, index) => { const loaded = tryLoadKey(key); const raw = key === config().saveKey ? localStorage.getItem(key) : ""; return { key, index, loaded, legacyGlobal: key === config().saveKey && loaded && !/"seasonId"\s*:/.test(raw || "") }; }).filter((entry) => entry.loaded);
       if (!candidates.length) return null;
       candidates.forEach((entry) => { entry.loaded.seasonId = entry.loaded.seasonId || sid; });
       const best = candidates.sort((a, b) => Number(b.legacyGlobal) - Number(a.legacyGlobal) || runSortTime(b.loaded, b.index) - runSortTime(a.loaded, a.index))[0];
+      if (options.readOnly) return best.loaded;
       this.save(best.loaded);
       return best.loaded;
     },

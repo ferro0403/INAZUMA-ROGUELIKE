@@ -6,13 +6,13 @@ const core = require('../js/cloud-save-core.js');
 (async () => {
   const calls = [];
   const apis = {
-    RunState: { loadProfile: () => (calls.push('profile'), { team: 'Raimon' }), load: (id) => (calls.push(`run:${id}`), id === 'ie1' ? { seasonId: id } : null) },
+    RunState: { loadProfile: () => (calls.push('profile'), { team: 'Raimon' }), load: (id, options) => (calls.push(`run:${id}:${options?.readOnly}`), id === 'ie1' ? { seasonId: id } : null) },
     AlbumProgress: { read: () => (calls.push('album'), { unlocked: { ie1: [2, 1] }, ignored: undefined }) },
     DevelopmentV2: { read: () => (calls.push('development'), { schemaVersion: 5, coins: 12 }) },
     HallOfFameStorage: { ARCHIVE_SCHEMA_VERSION: 2, _loadArchive: () => (calls.push('hall'), { schemaVersion: 2, updatedAt: 'now', teams: [{ hallTeamId: 'hall_1', archiveKey: 'run::1', fullRoster: [] }], index: [{ hallTeamId: 'hall_1', teamName: 'Raimon' }] }) },
   };
   const snapshot = core.readLocalSnapshot(apis);
-  assert.deepStrictEqual(calls, ['hall', 'profile', 'run:ie1', 'run:ie2', 'album', 'development']);
+  assert.deepStrictEqual(calls, ['hall', 'profile', 'run:ie1:true', 'run:ie2:true', 'album', 'development']);
   assert.strictEqual(snapshot.runs.ie1.seasonId, 'ie1'); assert.strictEqual(snapshot.runs.ie2, null);
   assert.strictEqual(snapshot.development.schemaVersion, 5); assert.strictEqual(snapshot.hallOfFame.teams.length, 1);
   assert.ok(!core.stableSerialize(snapshot).includes('backup')); assert.ok(!('ignored' in snapshot.album));
@@ -88,5 +88,12 @@ const core = require('../js/cloud-save-core.js');
   assert.deepStrictEqual(await core.validateHallDocument('hall_1', hallDoc, validManifest, crypto), prepared.hallEntries[0].payload);
   const rebuilt = core.reconstructSnapshot(prepared.payloads, [prepared.hallEntries[0].payload]);
   assert.strictEqual(rebuilt.hallOfFame.teams[0].hallTeamId, 'hall_1');
+  assert.deepStrictEqual(await core.compareSnapshots(snapshot, snapshot, crypto), { equivalent: true, mismatches: [] });
+  const runMismatch = await core.compareSnapshots(snapshot, { ...snapshot, runs: { ...snapshot.runs, ie1: { seasonId: 'ie1', updatedAt: 'changed' } } }, crypto);
+  assert.strictEqual(runMismatch.equivalent, false); assert.ok(runMismatch.mismatches.includes('run_ie1'));
+  const albumMismatch = await core.compareSnapshots(snapshot, { ...snapshot, album: { changed: true } }, crypto);
+  assert.ok(albumMismatch.mismatches.includes('album'));
+  const hallMismatch = await core.compareSnapshots(snapshot, { ...snapshot, hallOfFame: { ...snapshot.hallOfFame, teams: [{ ...snapshot.hallOfFame.teams[0], result: 'changed' }] } }, crypto);
+  assert.ok(hallMismatch.mismatches.includes('hallOfFame/hall_1'));
   console.log('cloud-save-core-test: ok');
 })().catch((error) => { console.error(error); process.exit(1); });

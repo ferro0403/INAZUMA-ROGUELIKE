@@ -34,7 +34,7 @@
     const teams = Array.isArray(archive?.teams) ? archive.teams.map(clone) : [];
     return normalize({
       profile: apis.RunState.loadProfile(),
-      runs: { ie1: apis.RunState.load("ie1"), ie2: apis.RunState.load("ie2") },
+      runs: { ie1: apis.RunState.load("ie1", { readOnly: true }), ie2: apis.RunState.load("ie2", { readOnly: true }) },
       album: apis.AlbumProgress.read(),
       development: apis.DevelopmentV2.read(),
       hallOfFame: {
@@ -154,6 +154,18 @@
     return { snapshot: clean, payloads, hashes, hallEntries };
   }
 
+  async function compareSnapshots(expected, actual, cryptoApi = global.crypto) {
+    const expectedPrepared = await prepareSnapshot(expected, cryptoApi);
+    const actualPrepared = await prepareSnapshot(actual, cryptoApi);
+    const mismatches = SECTOR_NAMES.filter((name) => expectedPrepared.hashes[name] !== actualPrepared.hashes[name]);
+    const expectedHalls = new Map(expectedPrepared.hallEntries.map((entry) => [entry.hallTeamId, entry.payloadHash]));
+    const actualHalls = new Map(actualPrepared.hallEntries.map((entry) => [entry.hallTeamId, entry.payloadHash]));
+    for (const id of new Set([...expectedHalls.keys(), ...actualHalls.keys()])) {
+      if (expectedHalls.get(id) !== actualHalls.get(id)) mismatches.push(`hallOfFame/${id}`);
+    }
+    return { equivalent: mismatches.length === 0, mismatches };
+  }
+
   function preflight(prepared, limit = DOCUMENT_LIMIT_BYTES) {
     for (const name of SECTOR_NAMES) if (byteSize(prepared.payloads[name]) > limit) throw Object.assign(new Error(`Documento ${name} troppo grande`), { code: "document-too-large", problemSector: name });
     for (const entry of prepared.hallEntries) if (byteSize(entry.payload) > limit) throw Object.assign(new Error(`Documento Hall of Fame ${entry.hallTeamId} troppo grande`), { code: "document-too-large", problemSector: `hallOfFame/${entry.hallTeamId}` });
@@ -166,6 +178,6 @@
       sectorHashes: { profile: prepared.hashes.profile, run_ie1: prepared.payloads.run_ie1 === null ? null : prepared.hashes.run_ie1, run_ie2: prepared.payloads.run_ie2 === null ? null : prepared.hashes.run_ie2, album: prepared.hashes.album, development: prepared.hashes.development, hall_index: prepared.hashes.hall_index } };
   }
 
-  global.InazumaCloudSaveCore = Object.freeze({ DOCUMENT_LIMIT_BYTES, CLOUD_SCHEMA_VERSION, MAX_HALL_TEAMS, SECTOR_NAMES, normalize, clone, stableSerialize, byteSize, hash, readLocalSnapshot, hallIndex, inspectLocalProgress, validateManifest, validateSectorDocument, validateHallIndex, validateHallDocument, reconstructSnapshot, prepareSnapshot, preflight, buildManifest });
+  global.InazumaCloudSaveCore = Object.freeze({ DOCUMENT_LIMIT_BYTES, CLOUD_SCHEMA_VERSION, MAX_HALL_TEAMS, SECTOR_NAMES, normalize, clone, stableSerialize, byteSize, hash, readLocalSnapshot, hallIndex, inspectLocalProgress, validateManifest, validateSectorDocument, validateHallIndex, validateHallDocument, reconstructSnapshot, prepareSnapshot, compareSnapshots, preflight, buildManifest });
   if (typeof module !== "undefined" && module.exports) module.exports = global.InazumaCloudSaveCore;
 })(globalThis);
