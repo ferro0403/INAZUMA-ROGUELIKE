@@ -93,7 +93,9 @@
       const hashValue = manifest.sectorHashes[name];
       const absentRun = (name === "run_ie1" || name === "run_ie2") && manifest.sectors[name] === false;
       if (absentRun ? hashValue !== null : !SHA256_REGEX.test(hashValue || "")) throw cloudError("invalid-manifest", name);
+      if (manifest.sectorRevisions != null && (!Number.isInteger(manifest.sectorRevisions[name]) || manifest.sectorRevisions[name] < 1 || manifest.sectorRevisions[name] > manifest.revision)) throw cloudError("invalid-manifest", name);
     }
+    if (manifest.hallTeamIds != null && (!Array.isArray(manifest.hallTeamIds) || new Set(manifest.hallTeamIds).size !== manifest.hallTeamIds.length)) throw cloudError("invalid-manifest", "hall_index");
     const count = manifest.sectors.hallOfFameCount;
     if (!Number.isInteger(count) || count < 0 || count > MAX_HALL_TEAMS) throw cloudError("invalid-manifest", "hall_index");
     return normalize(manifest);
@@ -101,7 +103,8 @@
 
   async function validateSectorDocument(name, data, manifest, cryptoApi = global.crypto) {
     if (!data || typeof data !== "object") throw cloudError("missing-sector", name);
-    if (data.schemaVersion !== CLOUD_SCHEMA_VERSION || data.revision !== manifest.revision || data.sector !== name || !own(data, "payload") || !own(data, "payloadHash")) throw cloudError("invalid-sector", name);
+    const expectedRevision = manifest.sectorRevisions?.[name] ?? manifest.revision;
+    if (data.schemaVersion !== CLOUD_SCHEMA_VERSION || data.revision !== expectedRevision || data.sector !== name || !own(data, "payload") || !own(data, "payloadHash")) throw cloudError("invalid-sector", name);
     if (data.sourceDeviceId != null && (typeof data.sourceDeviceId !== "string" || !data.sourceDeviceId.trim())) throw cloudError("invalid-sector", name);
     const isRun = name === "run_ie1" || name === "run_ie2";
     const present = isRun ? manifest.sectors[name] === true : true;
@@ -129,9 +132,10 @@
   async function validateHallDocument(id, data, manifest, cryptoApi = global.crypto) {
     const sector = `hallOfFame/${id}`;
     if (!data || typeof data !== "object") throw cloudError("missing-hall-team", sector);
-    if (data.hallTeamId !== id || data.schemaVersion !== CLOUD_SCHEMA_VERSION || data.revision !== manifest.revision || typeof data.archiveKey !== "string" || !data.archiveKey || !own(data, "payload") || data.payload == null) throw cloudError("invalid-hall-team", sector);
+    const expectedRevision = manifest.hallTeamRevisions?.[id] ?? manifest.revision;
+    if (data.hallTeamId !== id || data.schemaVersion !== CLOUD_SCHEMA_VERSION || data.revision !== expectedRevision || typeof data.archiveKey !== "string" || !data.archiveKey || !own(data, "payload") || data.payload == null) throw cloudError("invalid-hall-team", sector);
     const calculated = await hash(data.payload, cryptoApi);
-    if (calculated !== data.payloadHash) throw cloudError("hash-mismatch", sector);
+    if (calculated !== data.payloadHash || (manifest.hallTeamHashes && calculated !== manifest.hallTeamHashes[id]) || (manifest.hallTeamIds && !manifest.hallTeamIds.includes(id))) throw cloudError("hash-mismatch", sector);
     return normalize(data.payload);
   }
 
@@ -175,7 +179,9 @@
   function buildManifest(prepared, uid, deviceId, timestamp) {
     return { schemaVersion: 1, revision: 1, initialized: true, createdAt: timestamp, updatedAt: timestamp, source: "local-first-association", deviceId, accountUid: uid,
       sectors: { profile: true, run_ie1: prepared.payloads.run_ie1 !== null, run_ie2: prepared.payloads.run_ie2 !== null, album: true, development: true, hallOfFameCount: prepared.hallEntries.length },
-      sectorHashes: { profile: prepared.hashes.profile, run_ie1: prepared.payloads.run_ie1 === null ? null : prepared.hashes.run_ie1, run_ie2: prepared.payloads.run_ie2 === null ? null : prepared.hashes.run_ie2, album: prepared.hashes.album, development: prepared.hashes.development, hall_index: prepared.hashes.hall_index } };
+      sectorHashes: { profile: prepared.hashes.profile, run_ie1: prepared.payloads.run_ie1 === null ? null : prepared.hashes.run_ie1, run_ie2: prepared.payloads.run_ie2 === null ? null : prepared.hashes.run_ie2, album: prepared.hashes.album, development: prepared.hashes.development, hall_index: prepared.hashes.hall_index },
+      sectorRevisions: Object.fromEntries(SECTOR_NAMES.map((name) => [name, 1])), hallTeamIds: prepared.hallEntries.map((entry) => entry.hallTeamId),
+      hallTeamHashes: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, entry.payloadHash])), hallTeamRevisions: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, 1])) };
   }
 
   global.InazumaCloudSaveCore = Object.freeze({ DOCUMENT_LIMIT_BYTES, CLOUD_SCHEMA_VERSION, MAX_HALL_TEAMS, SECTOR_NAMES, normalize, clone, stableSerialize, byteSize, hash, readLocalSnapshot, hallIndex, inspectLocalProgress, validateManifest, validateSectorDocument, validateHallIndex, validateHallDocument, reconstructSnapshot, prepareSnapshot, compareSnapshots, preflight, buildManifest });

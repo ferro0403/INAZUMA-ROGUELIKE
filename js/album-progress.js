@@ -53,14 +53,14 @@
   function configureFreeAgentIds(playerIds) {
     freeAgentIds = new Set(Array.from(playerIds || [], (id) => String(id || "")).filter(Boolean));
     const progress = readStorage();
-    writeStorage(progress);
+    writeStorage(progress, { suppressCloudEvent: true });
     return freeAgentIds.size;
   }
   function readStorage() {
     try { return normalizeProgress(JSON.parse(global.localStorage?.getItem(STORAGE_KEY) || "null")); }
     catch (_) { return normalizeProgress(null); }
   }
-  function writeStorage(progress) { global.localStorage?.setItem(STORAGE_KEY, JSON.stringify(normalizeProgress(progress))); }
+  function writeStorage(progress, options = {}) { global.localStorage?.setItem(STORAGE_KEY, JSON.stringify(normalizeProgress(progress))); if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { sector: "album", seasonId: null, hallTeamId: null, operation: "write", source: "gameplay" } })); return progress; }
   function collectionEntry(progress, collectionId) {
     const id = String(collectionId || DEFAULT_COLLECTION_ID);
     progress.collections[id] = progress.collections[id] && typeof progress.collections[id] === "object" ? progress.collections[id] : { unlockedPlayerIds: {} };

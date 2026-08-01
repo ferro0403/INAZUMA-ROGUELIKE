@@ -33,14 +33,16 @@
       return { teamIdentity: name ? { name, logo: USER_TEAM_LOGO } : null };
     } catch (error) { console.error("Unable to load profile", error); return { teamIdentity: null }; }
   }
-  function saveProfileTeamIdentity(teamIdentity) {
+  function emitSave(sector, seasonId, operation, options = {}) { if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { sector, seasonId: seasonId || null, hallTeamId: null, operation, source: "gameplay" } })); }
+  function saveProfileTeamIdentity(teamIdentity, options = {}) {
     const cleanIdentity = normalizeTeamIdentity(teamIdentity);
     localStorage.setItem(PROFILE_KEY, JSON.stringify({ version: 1, teamIdentity: cleanIdentity }));
+    emitSave("profile", null, "write", options);
     return cleanIdentity;
   }
-  function restoreProfile(profile) {
-    if (!profile?.teamIdentity) { localStorage.removeItem(PROFILE_KEY); return { teamIdentity: null }; }
-    saveProfileTeamIdentity(profile.teamIdentity);
+  function restoreProfile(profile, options = {}) {
+    if (!profile?.teamIdentity) { localStorage.removeItem(PROFILE_KEY); emitSave("profile", null, "remove", options); return { teamIdentity: null }; }
+    saveProfileTeamIdentity(profile.teamIdentity, options);
     return loadProfile();
   }
 
@@ -107,7 +109,7 @@
   function touch(run) { if (!run) return run; run.lastPlayedAt = new Date().toISOString(); return save(run); }
   function activeSaves() { return (global.SeasonRegistry?.list?.() || [{ id: "ie1" }]).map((season, index) => ({ season, run: load(season.id), index })).filter((entry) => entry.run && isActiveRun(entry.run)).sort((a, b) => runSortTime(b.run, b.index) - runSortTime(a.run, a.index)); }
   function latestActiveSave() { return activeSaves()[0] || null; }
-  function remove(seasonId = null) { try { const sid = seasonIdOf(seasonId); localStorage.removeItem(primaryKey(sid)); localStorage.removeItem(backupKey(sid)); localStorage.removeItem(tempKey(sid)); if (sid === "ie1") { localStorage.removeItem(config().saveKey); localStorage.removeItem(`${config().saveKey}_backup`); localStorage.removeItem(`${config().saveKey}_tmp`); } } catch (error) { console.error("Unable to remove run", error); } }
+  function remove(seasonId = null, options = {}) { try { const sid = seasonIdOf(seasonId); localStorage.removeItem(primaryKey(sid)); localStorage.removeItem(backupKey(sid)); localStorage.removeItem(tempKey(sid)); if (sid === "ie1") { localStorage.removeItem(config().saveKey); localStorage.removeItem(`${config().saveKey}_backup`); localStorage.removeItem(`${config().saveKey}_tmp`); } emitSave(`run_${sid}`, sid, "remove", options); } catch (error) { console.error("Unable to remove run", error); } }
   function restoreBackup() { const backup = RunStorage.loadBackup(); if (!backup) return null; return save(backup); }
   function loadBackup() { return tryLoadKey(backupKey()); }
 
@@ -146,6 +148,7 @@
         if (sid === "ie1") localStorage.setItem(config().saveKey, json);
         localStorage.removeItem(tmp);
         Object.assign(run, reparsed);
+        emitSave(`run_${sid}`, sid, "write", options);
         return run;
       } catch (error) { console.error("Unable to save run", error); return run; }
     },
