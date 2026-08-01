@@ -47,8 +47,26 @@ assert.strictEqual(values.has('run:ie1_tmp'), false);
   assert.strictEqual(snapshotAfter.runs.ie1.updatedAt, timestamp);
   assert.strictEqual(JSON.stringify([...values]), storageBefore, 'consecutive cloud snapshots do not mutate storage');
 
+  for (let index = 0; index < 10; index += 1) context.RunStorage.load('ie1');
+  assert.strictEqual(saves, 0, 'canonical primary loads never save');
+  assert.strictEqual(context.RunStorage.load('ie1', { readOnly: true }).updatedAt, timestamp, 'normal load preserves updatedAt');
+  assert.strictEqual(JSON.stringify([...values]), storageBefore, 'repeated loads are byte-for-byte non-mutating');
+  assert.strictEqual(context.RunState.hasSave('ie1'), true);
+  assert.strictEqual(saves, 0, 'hasSave is read-only');
+
+  const canonical = values.get('run:ie1');
+  values.set('run:ie1_backup', canonical); values.delete('run:ie1');
   context.RunStorage.load('ie1');
-  assert.strictEqual(saves, 1, 'normal load retains repair/save behavior');
-  assert.notStrictEqual(context.RunStorage.load('ie1', { readOnly: true }).updatedAt, timestamp, 'normal load still refreshes updatedAt');
+  assert.strictEqual(saves, 1, 'backup recovery performs exactly one technical heal');
+  assert.strictEqual(JSON.parse(values.get('run:ie1')).updatedAt, timestamp, 'recovery preserves timestamps');
+  context.RunStorage.load('ie1');
+  assert.strictEqual(saves, 1, 'the healed primary is not rewritten again');
+
+  const legacy = JSON.parse(values.get('run:ie1'));
+  legacy.version = 1; delete legacy.postBossFlow;
+  values.set('run:ie1', JSON.stringify(legacy)); values.delete('run:ie1_backup');
+  context.RunStorage.load('ie1');
+  assert.strictEqual(saves, 2, 'schema migration is persisted once');
+  assert.strictEqual(JSON.parse(values.get('run:ie1')).updatedAt, timestamp, 'migration preserves timestamps');
   console.log('run-state-read-only-test: ok');
 })().catch((error) => { console.error(error); process.exit(1); });
