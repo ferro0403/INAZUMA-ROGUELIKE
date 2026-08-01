@@ -103,11 +103,11 @@
   function tryLoadKey(key) { try { return parseCandidate(localStorage.getItem(key)); } catch (error) { console.warn(`Unable to load run candidate ${key}`, error); return null; } }
   function save(run, options) { return RunStorage.save(run, options); }
   function load(seasonId = null, options = {}) { return RunStorage.load(seasonId, options); }
-  function hasSave(seasonId = null) { return !!RunStorage.load(seasonId); }
+  function hasSave(seasonId = null) { return !!RunStorage.load(seasonId, { readOnly: true }); }
   function isActiveRun(run) { return validate(run) && !run.gameOver && !["complete", "final-summary", "final-celebration", "gameover"].includes(String(run.phase || "")); }
   function runSortTime(run, fallbackIndex = 0) { const value = run?.lastPlayedAt || run?.updatedAt || run?.savedAt || run?.timestamp || run?.createdAt || ""; const time = Date.parse(value); return Number.isFinite(time) ? time : fallbackIndex; }
   function touch(run) { if (!run) return run; run.lastPlayedAt = new Date().toISOString(); return save(run); }
-  function activeSaves() { return (global.SeasonRegistry?.list?.() || [{ id: "ie1" }]).map((season, index) => ({ season, run: load(season.id), index })).filter((entry) => entry.run && isActiveRun(entry.run)).sort((a, b) => runSortTime(b.run, b.index) - runSortTime(a.run, a.index)); }
+  function activeSaves() { return (global.SeasonRegistry?.list?.() || [{ id: "ie1" }]).map((season, index) => ({ season, run: load(season.id, { readOnly: true }), index })).filter((entry) => entry.run && isActiveRun(entry.run)).sort((a, b) => runSortTime(b.run, b.index) - runSortTime(a.run, a.index)); }
   function latestActiveSave() { return activeSaves()[0] || null; }
   function remove(seasonId = null, options = {}) { try { const sid = seasonIdOf(seasonId); localStorage.removeItem(primaryKey(sid)); localStorage.removeItem(backupKey(sid)); localStorage.removeItem(tempKey(sid)); if (sid === "ie1") { localStorage.removeItem(config().saveKey); localStorage.removeItem(`${config().saveKey}_backup`); localStorage.removeItem(`${config().saveKey}_tmp`); } emitSave(`run_${sid}`, sid, "remove", options); } catch (error) { console.error("Unable to remove run", error); } }
   function restoreBackup() { const backup = RunStorage.loadBackup(); if (!backup) return null; return save(backup); }
@@ -122,12 +122,15 @@
     load(seasonId = null, options = {}) {
       const sid = seasonId == null ? seasonIdOf(null) : seasonIdOf(seasonId);
       const order = sid === "ie1" ? [primaryKey(sid), backupKey(sid), tempKey(sid), config().saveKey, `${config().saveKey}_backup`, `${config().saveKey}_tmp`, ...legacyKeys()] : [primaryKey(sid), backupKey(sid), tempKey(sid)];
-      const candidates = order.map((key, index) => { const loaded = tryLoadKey(key); const raw = key === config().saveKey ? localStorage.getItem(key) : ""; return { key, index, loaded, legacyGlobal: key === config().saveKey && loaded && !/"seasonId"\s*:/.test(raw || "") }; }).filter((entry) => entry.loaded);
+      const candidates = order.map((key, index) => { const raw = localStorage.getItem(key); const loaded = tryLoadKey(key); let parsed = null; try { parsed = raw ? JSON.parse(raw) : null; } catch (_) {} return { key, index, raw, parsed, loaded, legacyGlobal: key === config().saveKey && loaded && !Object.prototype.hasOwnProperty.call(parsed || {}, "seasonId") }; }).filter((entry) => entry.loaded);
       if (!candidates.length) return null;
       candidates.forEach((entry) => { entry.loaded.seasonId = entry.loaded.seasonId || sid; });
       const best = candidates.sort((a, b) => Number(b.legacyGlobal) - Number(a.legacyGlobal) || runSortTime(b.loaded, b.index) - runSortTime(a.loaded, a.index))[0];
       if (options.readOnly) return best.loaded;
-      this.save(best.loaded);
+      const canonicalPrimary = primaryKey(sid);
+      const rawIsCanonical = best.parsed && Object.prototype.hasOwnProperty.call(best.parsed, "seasonId") && seasonIdOf(best.parsed.seasonId) === sid && Number(best.parsed.version) === Number(config().saveVersion) && JSON.stringify(best.parsed) === JSON.stringify(best.loaded);
+      const needsHeal = best.key !== canonicalPrimary || !rawIsCanonical;
+      if (needsHeal) this.save(best.loaded, { preserveTimestamps: true, suppressCloudEvent: true, source: "storage-recovery" });
       return best.loaded;
     },
     save(run, options = {}) {
