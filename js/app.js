@@ -660,7 +660,8 @@
         </div>
         <div class="status-strip" aria-label="Stato run">
           <span class="status-pill"><small>OVR</small><strong>${escapeHtml(averageOverall())}</strong></span>
-          ${global.InazumaAccountUI?.buttonMarkup?.() || '<button type="button" class="account-header-button" data-account-trigger disabled><span>ACCOUNT</span></button>'}
+          <span class="status-pill"><small>LV</small><strong>${escapeHtml(run.teamLevel)}</strong></span>
+          <span class="status-pill lives" title="Vite" aria-label="Vite ${escapeHtml(run.lives)}">${hearts()}</span>
         </div>
       </header>`;
   }
@@ -1299,7 +1300,7 @@
       <main class="home-screen modern-home" id="clean-home" data-run-state="${run ? "active" : "empty"}">
         <header class="home-masthead">
           <div class="home-wordmark" aria-label="Inazuma Roguelike · Road to Raimon"><span>Ina<span>z</span>uma</span><small>Roguelike</small><i class="home-road-label">Road to Raimon</i></div>
-          ${run ? `<div class="home-status-badges"><span><i>⚡</i><strong>${escapeHtml(run.lives ?? "-")}/${escapeHtml(global.RunState?.runLivesLimit?.() ?? 2)}</strong><small>Vite</small></span><span><i>LV</i><strong>${escapeHtml(run.teamLevel || 0)}</strong><small>Livello team</small></span></div>` : ""}
+          ${global.InazumaAccountUI?.buttonMarkup?.() || '<button type="button" class="account-header-button" data-account-trigger disabled><span>ACCOUNT</span></button>'}
         </header>
         ${homeRunCardMarkup(run)}
       </main>`;
