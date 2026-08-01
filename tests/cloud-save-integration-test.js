@@ -1,0 +1,17 @@
+'use strict';
+const assert = require('assert');
+const fs = require('fs');
+const cloud = fs.readFileSync('js/firebase-cloud-save.js', 'utf8');
+const ui = fs.readFileSync('js/account-ui.js', 'utf8');
+const html = fs.readFileSync('index.html', 'utf8');
+assert.strictEqual((cloud.match(/getDoc\(/g) || []).length, 1, 'one manifest read site');
+assert.doesNotMatch(cloud, /onSnapshot|getDocs|setInterval|setTimeout|autosync/i);
+assert.match(cloud, /if \(manifest\.exists\(\)\)/); assert.match(cloud, /return;/);
+assert.match(cloud, /const finalOperations = \[\.\.\.sectors, \{ ref: doc\(db, "users", uid, "cloudSave", "manifest"\)/, 'manifest is the final logical operation');
+assert.match(cloud, /if \(inFlight\) return inFlight/); assert.match(cloud, /offset \+= 400/);
+assert.match(cloud, /status: "signed-out"/); assert.match(cloud, /token !== generation/);
+assert.doesNotMatch(cloud, /RunState\.save|AlbumProgress\.write|DevelopmentV2\.write|_saveArchive/);
+assert.match(ui, /CONTROLLO SALVATAGGIO/); assert.match(ui, /ASSOCIAZIONE SALVATAGGIO/); assert.match(ui, /SALVATAGGIO ASSOCIATO/);
+assert.match(ui, /ASSOCIAZIONE NON RIUSCITA/); assert.match(ui, /RIPROVA/); assert.doesNotMatch(ui, /sincronizzato ogni|scarica dal cloud|conflitto/i);
+assert.ok(html.indexOf('cloud-save-core.js') < html.indexOf('firebase-cloud-save.js'));
+console.log('cloud-save-integration-test: ok');

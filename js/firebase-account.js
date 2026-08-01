@@ -113,4 +113,4 @@ async function logout() { await ensureReady(); await signOut(auth); }
 async function sendPasswordReset(email) { await ensureReady(); await sendPasswordResetEmail(auth, String(email || "").trim()); }
 async function resendVerification() { await ensureReady(); if (!auth.currentUser) throw { code: "auth/invalid-credential" }; await sendEmailVerification(auth.currentUser); }
 
-globalThis.InazumaAccount = Object.freeze({ ready, getState: () => ({ ...state }), register, login, logout, sendPasswordReset, resendVerification, openAuthModal: () => globalThis.InazumaAccountUI?.openAuthModal(), openAccountModal: () => globalThis.InazumaAccountUI?.openAccountModal() });
+globalThis.InazumaAccount = Object.freeze({ ready, getState: () => ({ ...state }), getCurrentUser: () => auth?.currentUser || null, getFirestoreInstance: () => db, register, login, logout, sendPasswordReset, resendVerification, openAuthModal: () => globalThis.InazumaAccountUI?.openAuthModal(), openAccountModal: () => globalThis.InazumaAccountUI?.openAccountModal() });

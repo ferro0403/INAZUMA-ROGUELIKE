@@ -5843,6 +5843,10 @@ html.account-modal-open, body.account-modal-open { overflow: hidden; overscroll-
 .account-details p { display: grid; gap: 3px; margin: 0; padding: 12px; border: 2px solid #111216; background: #fff; overflow-wrap: anywhere; }
 .account-details small { font-weight: 950; letter-spacing: .08em; }
 .account-warning { border-left: 8px solid #ffd21f !important; }
+.account-cloud-save { display: grid; gap: 5px; margin: 0; padding: 12px; border: 2px solid #111216; border-left: 8px solid #ffd21f; background: #fff; }
+.account-cloud-save span { line-height: 1.35; }
+.account-cloud-save-error { border-left-color: #111216; }
+.account-cloud-save .btn { margin-top: 5px; }
 @media (max-width: 390px) {
   .shared-game-header .status-pill { min-width: 58px; padding-inline: 7px; }
   .account-header-button { width: min(112px, 31vw); min-width: 76px; padding-inline: 8px; }
