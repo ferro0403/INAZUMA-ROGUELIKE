@@ -6,6 +6,9 @@
   const MAX_HALL_TEAMS = 1000;
   const SECTOR_NAMES = ["profile", "run_ie1", "run_ie2", "album", "development", "hall_index"];
   const SHA256_REGEX = /^[a-f0-9]{64}$/;
+  const PAYLOAD_ENCODING = "firestore-safe-v1";
+  const ARRAY_WRAPPER = "__inazumaCloudArrayV1";
+  const ESCAPED_OBJECT_WRAPPER = "__inazumaCloudEscapedObjectV1";
 
   function normalize(value, inArray = false) {
     if (value === undefined) return inArray ? null : undefined;
@@ -27,6 +30,37 @@
     if (!cryptoApi?.subtle) throw new Error("Web Crypto SHA-256 non disponibile");
     const digest = await cryptoApi.subtle.digest("SHA-256", new TextEncoder().encode(stableSerialize(value)));
     return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+  }
+
+  // Firestore rejects arrays directly nested in arrays. Objects which use a
+  // codec sentinel are escaped so no game object can be mistaken for metadata.
+  function encodeFirestorePayload(value, inArray = false) {
+    if (Array.isArray(value)) {
+      const items = value.map((item) => encodeFirestorePayload(item, true));
+      return inArray ? { [ARRAY_WRAPPER]: items } : items;
+    }
+    if (value && typeof value === "object") {
+      const encoded = Object.fromEntries(Object.keys(value).map((key) => [key, encodeFirestorePayload(value[key], false)]));
+      return own(value, ARRAY_WRAPPER) || own(value, ESCAPED_OBJECT_WRAPPER) ? { [ESCAPED_OBJECT_WRAPPER]: encoded } : encoded;
+    }
+    return value;
+  }
+
+  function decodeFirestorePayload(value) {
+    if (Array.isArray(value)) return value.map(decodeFirestorePayload);
+    if (!value || typeof value !== "object") return value;
+    const keys = Object.keys(value);
+    if (keys.length === 1 && keys[0] === ARRAY_WRAPPER && Array.isArray(value[ARRAY_WRAPPER])) return value[ARRAY_WRAPPER].map(decodeFirestorePayload);
+    if (keys.length === 1 && keys[0] === ESCAPED_OBJECT_WRAPPER && value[ESCAPED_OBJECT_WRAPPER] && typeof value[ESCAPED_OBJECT_WRAPPER] === "object" && !Array.isArray(value[ESCAPED_OBJECT_WRAPPER])) {
+      return Object.fromEntries(Object.entries(value[ESCAPED_OBJECT_WRAPPER]).map(([key, item]) => [key, decodeFirestorePayload(item)]));
+    }
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, decodeFirestorePayload(item)]));
+  }
+
+  function logicalPayload(data, problemSector) {
+    if (data.payloadEncoding == null) return data.payload;
+    if (data.payloadEncoding !== PAYLOAD_ENCODING) throw cloudError("unsupported-payload-encoding", problemSector);
+    return decodeFirestorePayload(data.payload);
   }
 
   function readLocalSnapshot(apis = global) {
@@ -110,6 +144,7 @@
     if (!data || typeof data !== "object") throw cloudError("missing-sector", name);
     const expectedRevision = manifest.sectorRevisions?.[name] ?? manifest.revision;
     if (data.schemaVersion !== CLOUD_SCHEMA_VERSION || data.revision !== expectedRevision || data.sector !== name || !own(data, "payload") || !own(data, "payloadHash")) throw cloudError("invalid-sector", name);
+    if (data.payloadEncoding != null && data.payloadEncoding !== PAYLOAD_ENCODING) throw cloudError("unsupported-payload-encoding", name);
     if (data.sourceDeviceId != null && (typeof data.sourceDeviceId !== "string" || !data.sourceDeviceId.trim())) throw cloudError("invalid-sector", name);
     const isRun = name === "run_ie1" || name === "run_ie2";
     const present = isRun ? manifest.sectors[name] === true : true;
@@ -121,9 +156,10 @@
       return null;
     }
     if (data.payload === null || !SHA256_REGEX.test(data.payloadHash || "")) throw cloudError("invalid-sector", name);
-    const calculated = await hash(data.payload, cryptoApi);
+    const payload = logicalPayload(data, name);
+    const calculated = await hash(payload, cryptoApi);
     if (calculated !== data.payloadHash || calculated !== manifest.sectorHashes[name]) throw cloudError("hash-mismatch", name);
-    return normalize(data.payload);
+    return normalize(payload);
   }
 
   function validateHallIndex(payload, manifest, maxTeams = MAX_HALL_TEAMS) {
@@ -139,9 +175,11 @@
     if (!data || typeof data !== "object") throw cloudError("missing-hall-team", sector);
     const expectedRevision = manifest.hallTeamRevisions?.[id] ?? manifest.revision;
     if (data.hallTeamId !== id || data.schemaVersion !== CLOUD_SCHEMA_VERSION || data.revision !== expectedRevision || typeof data.archiveKey !== "string" || !data.archiveKey || !own(data, "payload") || data.payload == null) throw cloudError("invalid-hall-team", sector);
-    const calculated = await hash(data.payload, cryptoApi);
+    if (data.payloadEncoding != null && data.payloadEncoding !== PAYLOAD_ENCODING) throw cloudError("unsupported-payload-encoding", sector);
+    const payload = logicalPayload(data, sector);
+    const calculated = await hash(payload, cryptoApi);
     if (calculated !== data.payloadHash || (manifest.hallTeamHashes && calculated !== manifest.hallTeamHashes[id]) || (manifest.hallTeamIds && !manifest.hallTeamIds.includes(id))) throw cloudError("hash-mismatch", sector);
-    return normalize(data.payload);
+    return normalize(payload);
   }
 
   function reconstructSnapshot(payloads, hallPayloads) {
@@ -176,10 +214,17 @@
   }
 
   function preflight(prepared, limit = DOCUMENT_LIMIT_BYTES) {
-    for (const name of SECTOR_NAMES) if (byteSize(prepared.payloads[name]) > limit) throw Object.assign(new Error(`Documento ${name} troppo grande`), { code: "document-too-large", problemSector: name });
-    for (const entry of prepared.hallEntries) if (byteSize(entry.payload) > limit) throw Object.assign(new Error(`Documento Hall of Fame ${entry.hallTeamId} troppo grande`), { code: "document-too-large", problemSector: `hallOfFame/${entry.hallTeamId}` });
+    for (const name of SECTOR_NAMES) {
+      const document = { schemaVersion: 1, revision: 1, sector: name, payloadEncoding: PAYLOAD_ENCODING, payload: encodeFirestorePayload(prepared.payloads[name]), payloadHash: sectorLogicalHash(prepared, name), sourceDeviceId: "device" };
+      if (byteSize(document) > limit) throw Object.assign(new Error(`Documento ${name} troppo grande`), { code: "document-too-large", problemSector: name });
+    }
+    for (const entry of prepared.hallEntries) {
+      const document = { schemaVersion: 1, revision: 1, hallTeamId: entry.hallTeamId, archiveKey: entry.archiveKey, payloadEncoding: PAYLOAD_ENCODING, payload: encodeFirestorePayload(entry.payload), payloadHash: entry.payloadHash, sourceDeviceId: "device" };
+      if (byteSize(document) > limit) throw Object.assign(new Error(`Documento Hall of Fame ${entry.hallTeamId} troppo grande`), { code: "document-too-large", problemSector: `hallOfFame/${entry.hallTeamId}` });
+    }
     return true;
   }
+  function sectorLogicalHash(prepared, name) { return (name === "run_ie1" || name === "run_ie2") && prepared.payloads[name] === null ? null : prepared.hashes[name]; }
 
   function buildManifest(prepared, uid, deviceId, timestamp) {
     return { schemaVersion: 1, revision: 1, initialized: true, createdAt: timestamp, updatedAt: timestamp, source: "local-first-association", deviceId, accountUid: uid,
@@ -189,6 +234,6 @@
       hallTeamHashes: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, entry.payloadHash])), hallTeamRevisions: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, 1])) };
   }
 
-  global.InazumaCloudSaveCore = Object.freeze({ DOCUMENT_LIMIT_BYTES, CLOUD_SCHEMA_VERSION, MAX_HALL_TEAMS, SECTOR_NAMES, normalize, clone, stableSerialize, byteSize, hash, readLocalSnapshot, hallIndex, inspectLocalProgress, validateManifest, validateSectorDocument, validateHallIndex, validateHallDocument, reconstructSnapshot, prepareSnapshot, compareSnapshots, preflight, buildManifest });
+  global.InazumaCloudSaveCore = Object.freeze({ DOCUMENT_LIMIT_BYTES, CLOUD_SCHEMA_VERSION, MAX_HALL_TEAMS, SECTOR_NAMES, PAYLOAD_ENCODING, encodeFirestorePayload, decodeFirestorePayload, normalize, clone, stableSerialize, byteSize, hash, readLocalSnapshot, hallIndex, inspectLocalProgress, validateManifest, validateSectorDocument, validateHallIndex, validateHallDocument, reconstructSnapshot, prepareSnapshot, compareSnapshots, preflight, buildManifest });
   if (typeof module !== "undefined" && module.exports) module.exports = global.InazumaCloudSaveCore;
 })(globalThis);
