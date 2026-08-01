@@ -1,6 +1,8 @@
 'use strict';
 const assert = require('assert');
 const fs = require('fs');
+const crypto = require('crypto').webcrypto;
+const core = require('../js/cloud-save-core.js');
 const cloud = fs.readFileSync('js/firebase-cloud-save.js', 'utf8');
 const ui = fs.readFileSync('js/account-ui.js', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
@@ -12,7 +14,17 @@ assert.match(cloud, /if \(associationInFlight\) return associationInFlight/); as
 assert.match(cloud, /status: "signed-out"/); assert.match(cloud, /token !== generation/);
 assert.match(cloud, /RunState\.save/); assert.match(cloud, /AlbumProgress\.write/); assert.match(cloud, /DevelopmentV2\.write/); assert.match(cloud, /_saveArchive/);
 assert.match(cloud, /restoreCloudSave/); assert.match(cloud, /restoreInFlight/); assert.match(cloud, /restoreReadCount: 6 \+ hallDocuments\.length/);
+assert.match(cloud, /absent \? null : prepared\.hashes\[name\]/, 'current writer stores null hash for absent runs');
+const restoreBody = cloud.slice(cloud.indexOf('async function restoreCloudSave()'), cloud.indexOf('function reloadAfterRestore()'));
+assert.doesNotMatch(restoreBody, /writeBatch|\.set\(|\.commit\(/, 'restore performs no Firestore writes');
+assert.match(ui, /restoreCloudSave\(\)/, 'restore remains an explicit UI action');
 assert.match(ui, /CONTROLLO SALVATAGGIO/); assert.match(ui, /ASSOCIAZIONE SALVATAGGIO/); assert.match(ui, /SALVATAGGIO ASSOCIATO/);
 assert.match(ui, /ASSOCIAZIONE NON RIUSCITA/); assert.match(ui, /SALVATAGGIO CLOUD DISPONIBILE/); assert.match(ui, /SALVATAGGIO RIPRISTINATO/); assert.match(ui, /SALVATAGGIO LOCALE RILEVATO/); assert.match(ui, /APRI IL SALVATAGGIO/); assert.doesNotMatch(ui, /sincronizzato ogni|sostituisci/i);
 assert.ok(html.indexOf('cloud-save-core.js') < html.indexOf('firebase-cloud-save.js'));
-console.log('cloud-save-integration-test: ok');
+(async () => {
+  const nullHash = await core.hash(null, crypto);
+  const manifest = { revision: 1, sectors: { run_ie2: false }, sectorHashes: { run_ie2: null } };
+  const legacy = { schemaVersion: 1, revision: 1, sector: 'run_ie2', payload: null, payloadHash: nullHash };
+  assert.strictEqual(await core.validateSectorDocument('run_ie2', legacy, manifest, crypto), null, 'restore accepts Phase 2A absent-run documents');
+  console.log('cloud-save-integration-test: ok');
+})().catch((error) => { console.error(error); process.exit(1); });

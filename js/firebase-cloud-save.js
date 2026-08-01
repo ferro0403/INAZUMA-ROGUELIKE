@@ -154,7 +154,7 @@ async function restoreCloudSave() {
     } catch (error) {
       if (writesStarted) { try { await rollback(before); } catch (rollbackError) { console.warn("Cloud save:", rollbackError?.code || "rollback-failed"); } }
       localStorage.removeItem(`inazuma.cloud.association.${uid}`);
-      console.warn("Cloud save:", error?.code || "restore-failed");
+      console.warn("Cloud save:", { code: error?.code || "restore-failed", problemSector: error?.problemSector || null });
       publish({ status: "restore-error", error: error?.code || "restore-failed", problemSector: error?.problemSector || null }, token);
     } finally { restoreInFlight = null; }
   })();

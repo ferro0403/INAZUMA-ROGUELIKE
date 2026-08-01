@@ -5,6 +5,7 @@
   const CLOUD_SCHEMA_VERSION = 1;
   const MAX_HALL_TEAMS = 1000;
   const SECTOR_NAMES = ["profile", "run_ie1", "run_ie2", "album", "development", "hall_index"];
+  const SHA256_REGEX = /^[a-f0-9]{64}$/;
 
   function normalize(value, inArray = false) {
     if (value === undefined) return inArray ? null : undefined;
@@ -91,7 +92,7 @@
       if (!own(manifest.sectorHashes, name)) throw cloudError("invalid-manifest", "manifest");
       const hashValue = manifest.sectorHashes[name];
       const absentRun = (name === "run_ie1" || name === "run_ie2") && manifest.sectors[name] === false;
-      if (absentRun ? hashValue !== null : !/^[a-f0-9]{64}$/.test(hashValue || "")) throw cloudError("invalid-manifest", name);
+      if (absentRun ? hashValue !== null : !SHA256_REGEX.test(hashValue || "")) throw cloudError("invalid-manifest", name);
     }
     const count = manifest.sectors.hallOfFameCount;
     if (!Number.isInteger(count) || count < 0 || count > MAX_HALL_TEAMS) throw cloudError("invalid-manifest", "hall_index");
@@ -105,10 +106,13 @@
     const isRun = name === "run_ie1" || name === "run_ie2";
     const present = isRun ? manifest.sectors[name] === true : true;
     if (!present) {
-      if (data.payload !== null || data.payloadHash !== null || manifest.sectorHashes[name] !== null) throw cloudError("invalid-sector", name);
+      if (data.payload !== null || manifest.sectorHashes[name] !== null) throw cloudError("invalid-sector", name);
+      if (data.payloadHash === null) return null;
+      if (!SHA256_REGEX.test(data.payloadHash)) throw cloudError("invalid-sector", name);
+      if (data.payloadHash !== await hash(null, cryptoApi)) throw cloudError("hash-mismatch", name);
       return null;
     }
-    if (data.payload === null || !/^[a-f0-9]{64}$/.test(data.payloadHash || "")) throw cloudError("invalid-sector", name);
+    if (data.payload === null || !SHA256_REGEX.test(data.payloadHash || "")) throw cloudError("invalid-sector", name);
     const calculated = await hash(data.payload, cryptoApi);
     if (calculated !== data.payloadHash || calculated !== manifest.sectorHashes[name]) throw cloudError("hash-mismatch", name);
     return normalize(data.payload);

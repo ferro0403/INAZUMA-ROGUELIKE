@@ -59,7 +59,28 @@ const core = require('../js/cloud-save-core.js');
   await assert.rejects(() => core.validateSectorDocument('album', { ...sector, payloadHash: '0'.repeat(64) }, validManifest, crypto), /hash-mismatch/);
   const absentRun = { schemaVersion: 1, revision: 1, sector: 'run_ie2', payload: null, payloadHash: null };
   assert.strictEqual(await core.validateSectorDocument('run_ie2', absentRun, validManifest, crypto), null);
-  await assert.rejects(() => core.validateSectorDocument('run_ie2', { ...absentRun, payload: {} }, validManifest, crypto), /invalid-sector/);
+  const legacyNullHash = await core.hash(null, crypto);
+  assert.strictEqual(await core.validateSectorDocument('run_ie2', { ...absentRun, payloadHash: legacyNullHash }, validManifest, crypto), null);
+  await assert.rejects(
+    () => core.validateSectorDocument('run_ie2', { ...absentRun, payloadHash: '0'.repeat(64) }, validManifest, crypto),
+    (error) => error.code === 'hash-mismatch' && error.problemSector === 'run_ie2',
+  );
+  await assert.rejects(
+    () => core.validateSectorDocument('run_ie2', { ...absentRun, payloadHash: 'not-a-sha256' }, validManifest, crypto),
+    (error) => error.code === 'invalid-sector' && error.problemSector === 'run_ie2',
+  );
+  await assert.rejects(
+    () => core.validateSectorDocument('run_ie2', { ...absentRun, payload: {} }, validManifest, crypto),
+    (error) => error.code === 'invalid-sector' && error.problemSector === 'run_ie2',
+  );
+  await assert.rejects(
+    () => core.validateSectorDocument('run_ie1', { schemaVersion: 1, revision: 1, sector: 'run_ie1', payload: prepared.payloads.run_ie1, payloadHash: null }, validManifest, crypto),
+    (error) => error.code === 'invalid-sector' && error.problemSector === 'run_ie1',
+  );
+  await assert.rejects(
+    () => core.validateSectorDocument('album', { ...sector, payloadHash: null }, validManifest, crypto),
+    (error) => error.code === 'invalid-sector' && error.problemSector === 'album',
+  );
   const hallPayload = core.validateHallIndex(prepared.payloads.hall_index, validManifest);
   assert.deepStrictEqual(hallPayload.teamIds, ['hall_1']);
   assert.throws(() => core.validateHallIndex({ ...hallPayload, teamIds: ['hall_1', 'hall_1'], count: 2 }, { ...validManifest, sectors: { ...validManifest.sectors, hallOfFameCount: 2 } }), /invalid-hall-index/);
