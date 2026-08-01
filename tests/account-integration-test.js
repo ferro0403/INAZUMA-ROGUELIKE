@@ -1,0 +1,25 @@
+'use strict';
+const assert = require('assert');
+const fs = require('fs');
+const app = fs.readFileSync('js/app.js', 'utf8');
+const ui = fs.readFileSync('js/account-ui.js', 'utf8');
+const firebase = fs.readFileSync('js/firebase-account.js', 'utf8');
+const html = fs.readFileSync('index.html', 'utf8');
+
+const header = app.slice(app.indexOf('function topbar'), app.indexOf('function navIcon'));
+assert.match(header, /buttonMarkup/);
+assert.doesNotMatch(header, /<small>LV<\/small>|status-pill lives/);
+assert.match(app, /<small>Vite<\/small>/, 'run summaries retain lives');
+assert.match(app, /<small>Lv<\/small>/, 'run summaries retain level');
+assert.strictEqual((ui.match(/document\.addEventListener\("click", onClick\)/g) || []).length, 1);
+assert.match(ui, /data-account-tab/);
+assert.match(ui, /function close\(\)/);
+assert.match(firebase, /onAuthStateChanged/);
+assert.strictEqual((firebase.match(/onAuthStateChanged\(/g) || []).length, 1);
+assert.doesNotMatch(firebase, /onSnapshot|localStorage|inazuma_roguelike_profile|autosync/i);
+assert.match(firebase, /runTransaction/);
+assert.match(firebase, /deleteUser\(user\)/);
+assert.match(firebase, /sendEmailVerification/);
+assert.match(firebase, /sendPasswordResetEmail/);
+assert.match(html, /type="module" src="js\/firebase-account\.js/);
+console.log('account-integration-test: ok');
