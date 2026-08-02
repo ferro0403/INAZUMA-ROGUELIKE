@@ -24,5 +24,5 @@ assert.match(ui, /CONFERMA SOSTITUZIONE CLOUD/);
 assert.match(ui, /Il salvataggio locale di questo dispositivo verrà sostituito dalla versione cloud/);
 assert.match(ui, /data-cloud-conflict-local-confirm/);
 assert.match(ui, /data-cloud-conflict-cloud-confirm/);
-assert.doesNotMatch(cloud, /onSnapshot|setInterval|runTransaction/);
+assert.doesNotMatch(cloud, /setInterval|runTransaction/);
 console.log('cloud-conflict-resolution-test: ok');

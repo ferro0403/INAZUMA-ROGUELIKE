@@ -8,7 +8,7 @@ const ui = fs.readFileSync('js/account-ui.js', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
 const account = fs.readFileSync('js/firebase-account.js', 'utf8');
 assert.strictEqual((cloud.match(/getDoc\(/g) || []).length, 1, 'all explicit reads share one helper');
-assert.doesNotMatch(cloud, /onSnapshot|getDocs|setInterval|runTransaction/); assert.match(cloud, /setTimeout/);
+assert.doesNotMatch(cloud, /getDocs|setInterval|runTransaction/); assert.equal((cloud.match(/onSnapshot\(/g)||[]).length, 1); assert.match(cloud, /setTimeout/);
 assert.match(cloud, /if \(manifestDocument\.exists\(\)\)/); assert.match(cloud, /return;/);
 assert.match(cloud, /batch\.update\(doc\(globalThis\.InazumaAccount\.getFirestoreInstance\(\), "users", uid, "cloudSave", "manifest"\), manifestPatch\)/, 'autosync patches manifest after sector operations');
 assert.match(cloud, /if \(associationInFlight\) return associationInFlight/); assert.match(cloud, /if \(restoreInFlight\) return restoreInFlight/); assert.match(cloud, /writeBatch/);
