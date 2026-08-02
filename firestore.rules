@@ -1,0 +1,67 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function validUsernameKey(v) { return v is string && v.size() >= 3 && v.size() <= 16 && v.matches('^[a-z][a-z0-9_]{2,15}$'); }
+    function validVisibleUsername(v) { return v is string && v.size() >= 3 && v.size() <= 16 && v.matches('^[A-Za-z][A-Za-z0-9_]{2,15}$'); }
+    function manifestAfter(uid) { return getAfter(/databases/$(database)/documents/users/$(uid)/cloudSave/manifest).data; }
+    function allowedSector(name) { return name in ['profile','run_ie1','run_ie2','album','development','hall_index']; }
+    function revisionAfter(m, name) { return m.sectorRevisions[name]; }
+    function validSectorRevisionStep(old, fresh, name) { let previous = ('sectorRevisions' in old) ? old.sectorRevisions[name] : old.revision; return fresh.sectorRevisions[name] == previous || fresh.sectorRevisions[name] == fresh.revision; }
+    function validManifestUpdate(uid) {
+      let old = resource.data; let fresh = request.resource.data;
+      return fresh.accountUid == uid && fresh.accountUid == old.accountUid && fresh.schemaVersion == old.schemaVersion && fresh.schemaVersion == 1
+        && fresh.initialized == old.initialized && fresh.initialized == true && fresh.source == old.source
+        && fresh.createdAt == old.createdAt && fresh.updatedAt == request.time
+        && fresh.revision == old.revision + 1 && fresh.sectorHashes is map && fresh.sectorRevisions is map
+        && fresh.hallTeamIds is list && fresh.hallTeamHashes is map && fresh.hallTeamRevisions is map
+        && validSectorRevisionStep(old, fresh, 'profile') && validSectorRevisionStep(old, fresh, 'run_ie1')
+        && validSectorRevisionStep(old, fresh, 'run_ie2') && validSectorRevisionStep(old, fresh, 'album')
+        && validSectorRevisionStep(old, fresh, 'development') && validSectorRevisionStep(old, fresh, 'hall_index');
+    }
+    match /users/{uid} {
+      allow create: if isOwner(uid) && request.resource.data.keys().hasOnly(['username','usernameNormalized','createdAt','updatedAt','cloudSchemaVersion'])
+        && validVisibleUsername(request.resource.data.username) && validUsernameKey(request.resource.data.usernameNormalized)
+        && request.resource.data.cloudSchemaVersion == 1 && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time
+        && !exists(/databases/$(database)/documents/users/$(uid)) && existsAfter(/databases/$(database)/documents/usernames/$(request.resource.data.usernameNormalized))
+        && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.usernameNormalized)).data.uid == uid;
+      allow read, delete: if isOwner(uid);
+      allow update: if isOwner(uid) && request.resource.data.username == resource.data.username && request.resource.data.usernameNormalized == resource.data.usernameNormalized && request.resource.data.createdAt == resource.data.createdAt && request.resource.data.cloudSchemaVersion is int;
+      match /cloudSave/{documentId} {
+        allow read: if isOwner(uid);
+        allow create: if isOwner(uid) && documentId == 'manifest' && request.resource.data.accountUid == uid && request.resource.data.revision == 1 && request.resource.data.initialized == true && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time;
+        allow update: if isOwner(uid) && documentId == 'manifest' && validManifestUpdate(uid);
+        allow delete: if false;
+      }
+      match /saveSectors/{sectorId} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid) && allowedSector(sectorId) && request.resource.data.sector == sectorId && request.resource.data.schemaVersion == 1
+          && request.resource.data.updatedAt == request.time && request.resource.data.revision == revisionAfter(manifestAfter(uid), sectorId)
+          && request.resource.data.payloadHash == manifestAfter(uid).sectorHashes[sectorId]
+          && (!(sectorId in ['run_ie1','run_ie2']) || manifestAfter(uid).sectors[sectorId] == (request.resource.data.payload != null));
+        allow delete: if false;
+      }
+      match /hallOfFame/{hallTeamId} {
+        allow read: if isOwner(uid);
+        allow create, update: if isOwner(uid) && request.resource.data.hallTeamId == hallTeamId && request.resource.data.schemaVersion == 1
+          && request.resource.data.updatedAt == request.time && hallTeamId in manifestAfter(uid).hallTeamIds
+          && request.resource.data.payloadHash == manifestAfter(uid).hallTeamHashes[hallTeamId]
+          && request.resource.data.revision == manifestAfter(uid).hallTeamRevisions[hallTeamId];
+        allow delete: if isOwner(uid) && !(hallTeamId in manifestAfter(uid).hallTeamIds);
+      }
+    }
+    match /usernames/{usernameKey} {
+      allow get: if true; allow list: if false;
+      allow create: if signedIn() && validUsernameKey(usernameKey) && request.resource.data.keys().hasOnly(['uid','username','usernameNormalized','createdAt']) && request.resource.data.uid == request.auth.uid && validVisibleUsername(request.resource.data.username) && request.resource.data.usernameNormalized == usernameKey && request.resource.data.createdAt == request.time && !exists(/databases/$(database)/documents/users/$(request.auth.uid)) && existsAfter(/databases/$(database)/documents/users/$(request.auth.uid)) && getAfter(/databases/$(database)/documents/users/$(request.auth.uid)).data.usernameNormalized == usernameKey;
+      allow update, delete: if false;
+    }
+    match /publicProfiles/{uid} {
+      allow get: if true; allow list: if signedIn();
+      allow create: if isOwner(uid) && request.resource.data.keys().hasOnly(['uid','username','usernameNormalized','avatarId','createdAt','updatedAt']) && request.resource.data.uid == uid && validVisibleUsername(request.resource.data.username) && validUsernameKey(request.resource.data.usernameNormalized) && request.resource.data.avatarId == null && request.resource.data.createdAt == request.time && request.resource.data.updatedAt == request.time && existsAfter(/databases/$(database)/documents/usernames/$(request.resource.data.usernameNormalized)) && getAfter(/databases/$(database)/documents/usernames/$(request.resource.data.usernameNormalized)).data.uid == uid;
+      allow update: if isOwner(uid) && request.resource.data.keys().hasOnly(['uid','username','usernameNormalized','avatarId','createdAt','updatedAt']) && request.resource.data.uid == resource.data.uid && request.resource.data.username == resource.data.username && request.resource.data.usernameNormalized == resource.data.usernameNormalized;
+      allow delete: if false;
+    }
+    match /{document=**} { allow read, write: if false; }
+  }
+}

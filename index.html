@@ -10,7 +10,7 @@
     <title>Inazuma Roguelike — Season 1 Prototype</title>
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon-180.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="css/game.css?v=20260731-project-pull-info-1" />
+    <link rel="stylesheet" href="css/game.css?v=20260801-account-1" />
   </head>
   <body>
     <div id="app" class="app-shell">
@@ -28,13 +28,19 @@
     <div id="modal-root"></div>
     <div id="toast-root" class="toast-root" aria-live="polite"></div>
 
+    <script src="js/firebase-config.js?v=20260801-account-1"></script>
+    <script src="js/account-core.js?v=20260801-account-1"></script>
+    <script src="js/account-ui.js?v=20260801-phantom-revisions-1"></script>
+    <script type="module" src="js/firebase-account.js?v=20260801-firestore-safe-1"></script>
     <script src="js/season1-config.js?v=20260718-home-navigation-hotfix-1"></script>
     <script src="js/season-registry.js?v=20260721-seasons-1"></script>
-    <script src="js/run-state.js?v=20260718-home-navigation-hotfix-1"></script>
-    <script src="js/album-progress.js?v=20260718-album-1"></script>
-    <script src="js/development-v2.js?v=20260729-development-1"></script>
+    <script src="js/run-state.js?v=20260801-phantom-revisions-1"></script>
+    <script src="js/album-progress.js?v=20260801-cloud-sync-3"></script>
+    <script src="js/development-v2.js?v=20260801-cloud-sync-3"></script>
     <script src="js/run-statistics.js?v=20260718-home-navigation-hotfix-1"></script>
-    <script src="js/hall-of-fame.js?v=20260726-hall-quota-1"></script>
+    <script src="js/hall-of-fame.js?v=20260801-cloud-sync-3"></script>
+    <script src="js/cloud-save-core.js?v=20260801-firestore-safe-1"></script>
+    <script type="module" src="js/firebase-cloud-save.js?v=20260801-phantom-revisions-1"></script>
     <script src="js/draft.js?v=20260718-home-navigation-hotfix-1"></script>
     <script src="js/map-generator.js?v=20260718-home-navigation-hotfix-1"></script>
     <script src="js/roguelike_progression.js?v=20260718-home-navigation-hotfix-1"></script>

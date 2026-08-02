@@ -109,15 +109,16 @@
     localStorage.setItem(STORAGE_KEY, json);
     return parse(localStorage.getItem(STORAGE_KEY));
   }
-  function saveArchive(archive) {
-    const clean = sanitizeArchive({ ...archive, updatedAt: nowIso() });
+  function emitSave(options = {}, hallTeamId = options.hallTeamId || null, operation = options.operation || "write") { if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { sector: "hall_index", seasonId: null, hallTeamId, operation, source: "gameplay" } })); }
+  function saveArchive(archive, options = {}) {
+    const clean = sanitizeArchive({ ...archive, updatedAt: options.preserveTimestamp ? archive?.updatedAt : nowIso() });
     try {
-      return writePrimaryArchive(clean);
+      const saved = writePrimaryArchive(clean); emitSave(options); return saved;
     } catch (error) {
       if (!isQuotaError(error)) throw error;
       const emergency = sanitizeArchive(clean, { emergency: true });
       try {
-        return writePrimaryArchive(emergency);
+        const saved = writePrimaryArchive(emergency); emitSave(options); return saved;
       } catch (retryError) {
         retryError.hallOfFameSaveFailed = true;
         throw retryError;
@@ -141,7 +142,7 @@
     const team = compactTeam({ ...snapshot, archiveSchemaVersion: ARCHIVE_SCHEMA_VERSION, archiveKey, hallTeamId, createdAt: nowIso() });
     archive.teams.push(team);
     try {
-      const saved = saveArchive(archive);
+      const saved = saveArchive(archive, { hallTeamId, operation: "write" });
       return { team: clone(saved.teams.find((item) => item.archiveKey === archiveKey)), created: true, persisted: true };
     } catch (error) {
       console.error("Unable to save Hall of Fame archive", error);
@@ -151,7 +152,7 @@
   function listTeams() { return loadArchive().teams.map(lightSummary); }
   function listSummaries() { return loadArchive().index.map((item, index) => ({ ...item, ordinal: index + 1 })); }
   function getTeam(hallTeamId) { const team = loadArchive().teams.find((item) => item.hallTeamId === hallTeamId); return team ? clone(team) : null; }
-  function removeTeam(hallTeamId) { const archive = loadArchive(); const teams = archive.teams.filter((item) => item.hallTeamId !== hallTeamId); saveArchive({ ...archive, teams }); }
+  function removeTeam(hallTeamId, options = {}) { const archive = loadArchive(); const teams = archive.teams.filter((item) => item.hallTeamId !== hallTeamId); return saveArchive({ ...archive, teams }, { ...options, hallTeamId, operation: "remove" }); }
 
   global.HallOfFameStorage = { STORAGE_KEY, BACKUP_KEY, TEMP_KEY, ARCHIVE_SCHEMA_VERSION, archiveKeyFor, stableId, addChampion, listTeams, listSummaries, getTeam, removeTeam, calculateAwards, _loadArchive: loadArchive, _saveArchive: saveArchive, _compactTeam: compactTeam };
 })(globalThis);

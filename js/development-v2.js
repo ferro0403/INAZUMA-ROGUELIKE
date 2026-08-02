@@ -48,7 +48,7 @@
     return value;
   }
   function read() { try { return normalize(JSON.parse(global.localStorage?.getItem(STORAGE_KEY) || "null")); } catch (_) { return empty(); } }
-  function write(value) { const state = normalize(value); global.localStorage?.setItem(STORAGE_KEY, JSON.stringify(state)); return state; }
+  function write(value, options = {}) { const state = normalize(value); global.localStorage?.setItem(STORAGE_KEY, JSON.stringify(state)); if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { sector: "development", seasonId: null, hallTeamId: null, operation: "write", source: "gameplay" } })); return state; }
   function nextRarity(current) { const index = RARITIES.indexOf(current); if (index < 2) return "Normale"; return RARITIES[index + 1] || null; }
   function groupEvolutionHistory(history = []) {
     const groups = new Map();
