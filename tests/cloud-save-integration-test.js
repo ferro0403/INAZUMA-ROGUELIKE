@@ -14,7 +14,7 @@ assert.match(cloud, /batch\.update\(doc\(globalThis\.InazumaAccount\.getFirestor
 assert.match(cloud, /if \(associationInFlight\) return associationInFlight/); assert.match(cloud, /if \(restoreInFlight\) return restoreInFlight/); assert.match(cloud, /writeBatch/);
 assert.match(cloud, /status: "signed-out"/); assert.match(cloud, /token !== generation/);
 assert.match(cloud, /RunState\.save/); assert.match(cloud, /AlbumProgress\.write/); assert.match(cloud, /DevelopmentV2\.write/); assert.match(cloud, /_saveArchive/);
-assert.match(cloud, /restoreCloudSave/); assert.match(cloud, /restoreInFlight/); assert.match(cloud, /restoreReadCount: 6 \+ hallDocuments\.length/);
+assert.match(cloud, /restoreCloudSave/); assert.match(cloud, /restoreInFlight/); assert.match(cloud, /restoreReadCount: 8 \+ hallDocuments\.length/);
 assert.match(cloud, /function sectorHash/, 'current writer stores null hash for absent runs');
 assert.match(cloud, /payloadEncoding: core\.PAYLOAD_ENCODING/); assert.match(cloud, /core\.encodeFirestorePayload\(payload\)/);
 assert.match(cloud, /status: "awaiting-local-save"/); assert.match(cloud, /if \(!progress\.meaningful\)/);
@@ -22,7 +22,7 @@ assert.match(cloud, /state\.status === "awaiting-local-save"/); assert.match(ui,
 assert.match(cloud, /const sameUid/); assert.match(cloud, /if \(sameUid\)/);
 assert.match(account, /\breload\b/); assert.match(account, /function refreshEmailVerification/); assert.match(account, /visibilitychange/); assert.doesNotMatch(account, /setInterval|location\.reload/);
 assert.match(ui, /CONTROLLA VERIFICA/); assert.match(ui, /CONTROLLO VERIFICA\.\.\./); assert.match(ui, /EMAIL VERIFICATA/);
-const restoreBody = cloud.slice(cloud.indexOf('async function restoreCloudSave()'), cloud.indexOf('function reloadAfterRestore()'));
+const restoreBody = cloud.slice(cloud.indexOf('async function restoreCloudSave(options = {})'), cloud.indexOf('function requestConflictResolution'));
 assert.doesNotMatch(restoreBody, /writeBatch|\.set\(|\.commit\(/, 'restore performs no Firestore writes');
 assert.match(ui, /restoreCloudSave\(\)/, 'restore remains an explicit UI action');
 assert.match(ui, /CONTROLLO SALVATAGGIO/); assert.match(ui, /ASSOCIAZIONE SALVATAGGIO/); assert.match(ui, /SALVATAGGIO SINCRONIZZATO/);
