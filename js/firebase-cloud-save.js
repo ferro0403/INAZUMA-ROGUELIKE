@@ -1,11 +1,15 @@
-import { doc, getDoc, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
+import { doc, getDoc, onSnapshot, writeBatch, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.17.0/firebase-firestore.js";
 
 const core = globalThis.InazumaCloudSaveCore;
 const DEVICE_KEY = "inazuma.cloud.deviceId";
 const DEBOUNCE_MS = 2000;
-const initial = { status: "idle", uid: null, revision: null, deviceId: null, pendingSectors: [], lastSyncedAt: null, error: null, problemSector: null, cloudRevision: null, localRevision: null, hallOfFameCount: 0, lastCompletedAt: null, localProgressSummary: null, restoreReadCount: 0 };
+const AUTO_UPDATE_NOTICE_KEY = "inazuma.cloud.auto-update-notice";
+const initial = { status: "idle", uid: null, revision: null, deviceId: null, pendingSectors: [], lastSyncedAt: null, error: null, problemSector: null, cloudRevision: null, localRevision: null, hallOfFameCount: 0, lastCompletedAt: null, localProgressSummary: null, restoreReadCount: 0, realtimeStatus: "inactive", automaticUpdate: false };
 let state = { ...initial }, generation = 0, associationInFlight = null, restoreInFlight = null, syncInFlight = null, checkInFlight = null, conflictInFlight = null;
 let automaticUid = null, cachedManifest = null, reloadUsed = false, debounceTimer = null, dirtySectors = new Set();
+let manifestUnsubscribe = null, listenerUid = null, listenerGeneration = null, automaticUpdateInFlight = null, pendingRemoteManifest = null, localMutationVersion = 0;
+let deferredAutomaticRevision = null;
+const expectedLocalRevisions = new Set();
 
 function deviceId() { let value = localStorage.getItem(DEVICE_KEY); if (!value) { value = globalThis.crypto?.randomUUID?.() || `device-${Date.now().toString(36)}-${Array.from(globalThis.crypto.getRandomValues(new Uint8Array(16)), (byte) => byte.toString(16).padStart(2, "0")).join("")}`; localStorage.setItem(DEVICE_KEY, value); } return value; }
 function metadataKey(uid) { return `inazuma.cloud.association.${uid}`; }
@@ -20,6 +24,10 @@ function hashesMatchManifest(manifest, prepared) { const localIds = prepared.hal
 function sectorDocument(name, payload, payloadHash, id, timestamp, revision) { return { schemaVersion: 1, revision, sector: name, payloadEncoding: core.PAYLOAD_ENCODING, payload: core.encodeFirestorePayload(payload), payloadHash, updatedAt: timestamp, sourceDeviceId: id }; }
 function hallDocument(entry, id, timestamp, revision) { return { schemaVersion: 1, revision, hallTeamId: entry.hallTeamId, archiveKey: entry.archiveKey, payloadEncoding: core.PAYLOAD_ENCODING, payload: core.encodeFirestorePayload(entry.payload), payloadHash: entry.payloadHash, updatedAt: timestamp, sourceDeviceId: id }; }
 function clearTimer() { if (debounceTimer != null) { clearTimeout(debounceTimer); debounceTimer = null; } }
+function stopManifestListener() { if (manifestUnsubscribe) manifestUnsubscribe(); manifestUnsubscribe = null; listenerUid = null; listenerGeneration = null; publish({ realtimeStatus: "inactive" }); }
+function isSafeAutomaticUpdateContext() { return Boolean(globalThis.document?.querySelector?.("#clean-home")); }
+function baselineMatches(metadata, prepared) { if (!metadata?.sectorHashes || !metadata?.hallTeamIds || !metadata?.hallTeamHashes) return false; const ids = prepared.hallEntries.map((entry) => entry.hallTeamId).sort(); return core.SECTOR_NAMES.every((name) => sectorHash(prepared, name) === metadata.sectorHashes[name]) && JSON.stringify(ids) === JSON.stringify([...metadata.hallTeamIds].sort()) && prepared.hallEntries.every((entry) => metadata.hallTeamHashes[entry.hallTeamId] === entry.payloadHash); }
+function canAutoUpdateFromCloud(context) { return Boolean(context.metadata && context.serverConfirmed && context.manifest.revision > context.metadata.revision && context.baselineMatches && context.mutationVersion === localMutationVersion && dirtySectors.size === 0 && debounceTimer == null && !syncInFlight && (!associationInFlight || context.source === "associate") && !restoreInFlight && !conflictInFlight && !["local-conflict", "sync-conflict", "conflict-confirm-local", "conflict-confirm-cloud", "conflict-resolving-local", "conflict-resolving-cloud"].includes(state.status) && !context.ownWrite && context.safeContext); }
 function scheduleSync(token = generation) { clearTimer(); if (!dirtySectors.size || ["sync-conflict", "local-conflict", "cloud-update-available"].includes(state.status)) return; publish({ status: "sync-pending", pendingSectors: [...dirtySectors], error: null }, token); debounceTimer = setTimeout(() => { debounceTimer = null; syncNow(); }, DEBOUNCE_MS); }
 
 async function upload(uid, id, prepared, db) {
@@ -32,19 +40,47 @@ async function upload(uid, id, prepared, db) {
 }
 async function readDocument(db, ...path) { return getDoc(doc(db, ...path)); }
 
-async function reconcile(uid, id, manifest, prepared, token) {
+async function reconcileRemoteManifest({ uid, deviceId: id, manifest, rawManifest, source, allowAutomaticUpdate = false, serverConfirmed = true, prepared: suppliedPrepared }) {
+  const token = generation; if (token !== generation || globalThis.InazumaAccount?.getState()?.uid !== uid) return "stale";
+  if (cachedManifest?.data?.revision > manifest.revision) return "stale";
+  cachedManifest = { uid, token, raw: rawManifest, data: manifest };
+  const prepared = suppliedPrepared || await core.prepareSnapshot(core.readLocalSnapshot());
   const metadata = readMetadata(uid, id); const localHashes = Object.fromEntries(core.SECTOR_NAMES.map((name) => [name, sectorHash(prepared, name)]));
   const base = { revision: manifest.revision, cloudRevision: manifest.revision, localRevision: metadata?.revision ?? null, hallOfFameCount: manifest.sectors.hallOfFameCount, lastCompletedAt: new Date().toISOString(), localProgressSummary: core.inspectLocalProgress(prepared.snapshot).summary, error: null, problemSector: null };
   if (!metadata) { const progress = core.inspectLocalProgress(prepared.snapshot); if (hashesMatchManifest(manifest, prepared)) { const repaired = metadataFrom(uid, id, manifest, prepared); writeMetadata(uid, repaired); publish({ ...base, status: "synced", localRevision: manifest.revision, lastSyncedAt: repaired.lastSyncedAt }, token); } else publish({ ...base, status: progress.meaningful ? "local-conflict" : "cloud-available" }, token); return; }
   if (manifest.revision > metadata.revision) {
     if (!metadata.sectorHashes || !metadata.hallTeamHashes) { publish({ ...base, status: "local-conflict" }, token); return; }
-    const unchanged = core.SECTOR_NAMES.every((name) => localHashes[name] === metadata.sectorHashes[name]) && prepared.hallEntries.every((entry) => metadata.hallTeamHashes[entry.hallTeamId] === entry.payloadHash) && metadata.hallTeamIds.length === prepared.hallEntries.length;
-    publish({ ...base, status: unchanged ? "cloud-update-available" : "local-conflict" }, token); return;
+    const unchanged = baselineMatches(metadata, prepared), ownWrite = (manifest.sourceDeviceId === id || manifest.deviceId === id) && (expectedLocalRevisions.has(manifest.revision) || Boolean(syncInFlight));
+    if (ownWrite) { publish({ ...base, status: state.status === "syncing" ? "syncing" : "synced" }, token); return "own-write"; }
+    if (!unchanged || dirtySectors.size || debounceTimer != null) { publish({ ...base, status: "local-conflict" }, token); return "local-conflict"; }
+    const mutationVersion = localMutationVersion;
+    if (allowAutomaticUpdate && canAutoUpdateFromCloud({ metadata, manifest, baselineMatches: unchanged, mutationVersion, serverConfirmed, ownWrite, safeContext: isSafeAutomaticUpdateContext(), source })) {
+      publish({ ...base, status: "cloud-update-available", automaticUpdate: "checking" }, token);
+      queueAutomaticUpdate({ uid, token, revision: manifest.revision, mutationVersion, metadata }); return "auto-update";
+    }
+    if (allowAutomaticUpdate && !isSafeAutomaticUpdateContext() && deferredAutomaticRevision !== manifest.revision && globalThis.document?.readyState === "loading") { deferredAutomaticRevision = manifest.revision; globalThis.requestAnimationFrame?.(() => { if (cachedManifest?.data?.revision === manifest.revision) reconcileRemoteManifest({ uid, deviceId: id, manifest, rawManifest, source: "deferred", allowAutomaticUpdate: true, serverConfirmed: true }); }); }
+    publish({ ...base, status: "cloud-update-available", automaticUpdate: false }, token); return "cloud-update-available";
   }
   if (manifest.revision !== metadata.revision) { publish({ ...base, status: "local-conflict" }, token); return; }
   const divergent = core.SECTOR_NAMES.filter((name) => localHashes[name] !== manifest.sectorHashes[name]);
   if (!divergent.length) { const upgraded = metadataFrom(uid, id, manifest, prepared, metadata); writeMetadata(uid, upgraded); publish({ ...base, status: "synced", lastSyncedAt: upgraded.lastSyncedAt, localRevision: manifest.revision }, token); return; }
   divergent.forEach((name) => dirtySectors.add(name)); scheduleSync(token);
+}
+
+async function handleRemoteManifest(raw, context) { const manifest = core.validateManifest(raw, context.uid); return reconcileRemoteManifest({ ...context, manifest, rawManifest: raw }); }
+function handleManifestSnapshot(snapshot, uid, token) {
+  if (uid !== listenerUid || token !== listenerGeneration || token !== generation) return;
+  const serverConfirmed = !snapshot.metadata.fromCache && !snapshot.metadata.hasPendingWrites;
+  publish({ realtimeStatus: serverConfirmed ? "listening" : "connecting" }, token);
+  if (!snapshot.exists() || !serverConfirmed) return;
+  handleRemoteManifest(snapshot.data(), { uid, deviceId: deviceId(), source: "listener", allowAutomaticUpdate: true, serverConfirmed }).catch((error) => console.warn("Cloud manifest snapshot:", error?.code || "invalid-manifest"));
+}
+function startManifestListener(uid, token) {
+  if (manifestUnsubscribe && listenerUid === uid && listenerGeneration === token) return;
+  stopManifestListener(); if (token !== generation) return;
+  listenerUid = uid; listenerGeneration = token; publish({ realtimeStatus: "connecting" }, token);
+  const ref = doc(globalThis.InazumaAccount.getFirestoreInstance(), "users", uid, "cloudSave", "manifest");
+  manifestUnsubscribe = onSnapshot(ref, { includeMetadataChanges: true }, (snapshot) => handleManifestSnapshot(snapshot, uid, token), () => { if (uid === listenerUid && token === listenerGeneration) publish({ realtimeStatus: "error" }, token); });
 }
 
 async function associateLocalSave({ force = false } = {}) {
@@ -55,10 +91,10 @@ async function associateLocalSave({ force = false } = {}) {
   associationInFlight = (async () => { try { await globalThis.InazumaAccount.ready; const db = globalThis.InazumaAccount.getFirestoreInstance(); const manifestDocument = await readDocument(db, "users", uid, "cloudSave", "manifest");
     const prepared = await core.prepareSnapshot(core.readLocalSnapshot());
     progress = core.inspectLocalProgress(prepared.snapshot);
-    if (manifestDocument.exists()) { const raw = manifestDocument.data(), manifest = core.validateManifest(raw, uid); cachedManifest = { uid, token, raw, data: manifest }; await reconcile(uid, id, manifest, prepared, token); return; }
+    if (manifestDocument.exists()) { const raw = manifestDocument.data(), manifest = core.validateManifest(raw, uid); await reconcileRemoteManifest({ uid, deviceId: id, manifest, rawManifest: raw, source: "associate", allowAutomaticUpdate: true, serverConfirmed: true, prepared }); return; }
     if (!progress.meaningful) { automaticUid = null; publish({ status: "awaiting-local-save", localProgressSummary: progress.summary, error: null, problemSector: null }, token); return; }
     publish({ status: "uploading" }, token); const raw = await upload(uid, id, prepared, db), manifest = core.validateManifest(raw, uid); cachedManifest = { uid, token, raw, data: manifest }; const metadata = metadataFrom(uid, id, manifest, prepared); writeMetadata(uid, metadata); publish({ status: "synced", revision: 1, localRevision: 1, cloudRevision: 1, hallOfFameCount: prepared.hallEntries.length, lastSyncedAt: metadata.lastSyncedAt }, token);
-  } catch (error) { const manifestProblem = error?.problemSector === "manifest" || error?.code === "unsupported-cloud-schema"; console.warn("Cloud association:", { code: error?.code || "association-failed", problemSector: error?.problemSector || null, localProgressReasons: progress?.reasons || [] }); publish({ status: manifestProblem ? "restore-error" : "error", error: error?.code || "association-failed", problemSector: error?.problemSector || null }, token); } finally { associationInFlight = null; } })(); return associationInFlight;
+  } catch (error) { const manifestProblem = error?.problemSector === "manifest" || error?.code === "unsupported-cloud-schema"; console.warn("Cloud association:", { code: error?.code || "association-failed", problemSector: error?.problemSector || null, localProgressReasons: progress?.reasons || [] }); publish({ status: manifestProblem ? "restore-error" : "error", error: error?.code || "association-failed", problemSector: error?.problemSector || null }, token); } finally { associationInFlight = null; if (token === generation && globalThis.InazumaAccount?.getState()?.uid === uid) startManifestListener(uid, token); } })(); return associationInFlight;
 }
 
 async function syncNow() {
@@ -68,7 +104,7 @@ async function syncNow() {
     const changed = [...cycle].filter((name) => sectorHash(prepared, name) !== old.sectorHashes[name]);
     if (!changed.length) { publish({ status: "synced", pendingSectors: [...dirtySectors] }, token); return; }
     publish({ status: "syncing", pendingSectors: [...new Set([...changed, ...dirtySectors])], error: null }, token);
-    const nextRevision = old.revision + 1, timestamp = serverTimestamp(), revisions = sectorRevisions(old), hashes = { ...old.sectorHashes }, sectors = { ...old.sectors }; attemptedRevision = nextRevision;
+    const nextRevision = old.revision + 1, timestamp = serverTimestamp(), revisions = sectorRevisions(old), hashes = { ...old.sectorHashes }, sectors = { ...old.sectors }; attemptedRevision = nextRevision; expectedLocalRevisions.add(nextRevision);
     changed.forEach((name) => { revisions[name] = nextRevision; hashes[name] = sectorHash(prepared, name); if (name === "run_ie1" || name === "run_ie2") sectors[name] = prepared.payloads[name] !== null; });
     const oldIdsKnown = Array.isArray(old.hallTeamIds); const oldIds = old.hallTeamIds || []; let hallIds = oldIds, hallHashes = { ...(old.hallTeamHashes || {}) }, hallRevisions = { ...(old.hallTeamRevisions || {}) };
     const batch = writeBatch(globalThis.InazumaAccount.getFirestoreInstance());
@@ -82,10 +118,10 @@ async function syncNow() {
     batch.update(doc(globalThis.InazumaAccount.getFirestoreInstance(), "users", uid, "cloudSave", "manifest"), manifestPatch); await batch.commit();
     if (!current(token, uid)) return; const logicalPatch = { ...manifestPatch, updatedAt: new Date().toISOString() }; cachedManifest.raw = { ...cachedManifest.raw, ...logicalPatch }; cachedManifest.data = { ...old, ...logicalPatch }; const metadata = metadataFrom(uid, id, cachedManifest.data, prepared, readMetadata(uid, id) || {}); writeMetadata(uid, metadata); publish({ status: "synced", revision: nextRevision, localRevision: nextRevision, cloudRevision: nextRevision, pendingSectors: [...dirtySectors], lastSyncedAt: metadata.lastSyncedAt, error: null }, token);
   } catch (error) { cycle.forEach((name) => dirtySectors.add(name)); console.warn("Cloud autosync:", { code: error?.code || "sync-failed", attemptedRevision, pendingSectors: [...cycle] }); const conflict = error?.code === "permission-denied" || error?.code === "failed-precondition"; publish({ status: conflict ? "sync-conflict" : "sync-error", pendingSectors: [...dirtySectors], error: error?.code || "sync-failed", attemptedRevision, localRevision: cachedManifest?.data?.revision ?? null }, token); }
-  finally { syncInFlight = null; if (dirtySectors.size && !["sync-conflict", "sync-error", "local-conflict", "cloud-update-available"].includes(state.status)) scheduleSync(token); } })(); return syncInFlight;
+  finally { if (attemptedRevision != null) expectedLocalRevisions.delete(attemptedRevision); syncInFlight = null; if (dirtySectors.size && !["sync-conflict", "sync-error", "local-conflict", "cloud-update-available"].includes(state.status)) scheduleSync(token); } })(); return syncInFlight;
 }
 function retrySync() { if (state.status !== "sync-error") return null; return syncNow(); }
-function onLocalSave(event) { const sector = event?.detail?.sector; if (!core.SECTOR_NAMES.includes(sector)) return; if (state.status === "awaiting-local-save") { associateLocalSave({ force: true }); return; } if (!cachedManifest || state.uid !== cachedManifest.uid || ["sync-conflict", "local-conflict", "cloud-update-available"].includes(state.status)) return; dirtySectors.add(sector); scheduleSync(); }
+function onLocalSave(event) { localMutationVersion += 1; const sector = event?.detail?.sector; if (!core.SECTOR_NAMES.includes(sector)) return; if (state.status === "awaiting-local-save") { associateLocalSave({ force: true }); return; } if (!cachedManifest || state.uid !== cachedManifest.uid || ["sync-conflict", "local-conflict", "cloud-update-available"].includes(state.status)) return; dirtySectors.add(sector); scheduleSync(); }
 
 function applySnapshot(snapshot) { const options = { suppressCloudEvent: true }; globalThis.RunState.restoreProfile(snapshot.profile, options); for (const [seasonId, run] of Object.entries(snapshot.runs)) run === null ? globalThis.RunState.remove(seasonId, options) : globalThis.RunState.save(core.clone(run), { preserveTimestamps: true, ...options }); globalThis.AlbumProgress.write(core.clone(snapshot.album), options); globalThis.DevelopmentV2.write(core.clone(snapshot.development), options); globalThis.HallOfFameStorage._saveArchive({ schemaVersion: snapshot.hallOfFame.archiveSchemaVersion, updatedAt: snapshot.hallOfFame.updatedAt, teams: core.clone(snapshot.hallOfFame.teams), index: core.clone(snapshot.hallOfFame.index) }, { preserveTimestamp: true, ...options }); }
 async function rollback(snapshot) { applySnapshot(snapshot); const comparison = await core.compareSnapshots(snapshot, core.readLocalSnapshot()); if (!comparison.equivalent) throw Object.assign(new Error("rollback-verification-failed"), { code: "rollback-verification-failed", problemSector: comparison.mismatches[0] }); }
@@ -96,9 +132,18 @@ async function restoreCloudSave(options = {}) {
     for (let i = 0; i < core.SECTOR_NAMES.length; i += 1) { const name = core.SECTOR_NAMES[i]; payloads[name] = await core.validateSectorDocument(name, documents[i].exists() ? documents[i].data() : null, manifest); }
     const hallIndex = core.validateHallIndex(payloads.hall_index, manifest), hallDocuments = await Promise.all(hallIndex.teamIds.map((teamId) => readDocument(db, "users", uid, "hallOfFame", teamId))); publish({ status: "verifying", restoreReadCount: 6 + hallDocuments.length }, token); const hallPayloads = [];
     for (let i = 0; i < hallIndex.teamIds.length; i += 1) hallPayloads.push(await core.validateHallDocument(hallIndex.teamIds[i], hallDocuments[i].exists() ? hallDocuments[i].data() : null, manifest));
-    const restored = core.reconstructSnapshot(payloads, hallPayloads); if (!current(token, uid)) return; publish({ status: "restoring" }, token); writesStarted = true; applySnapshot(restored); const comparison = await core.compareSnapshots(restored, core.readLocalSnapshot()); if (!comparison.equivalent) throw Object.assign(new Error("post-write-verification-failed"), { code: "post-write-verification-failed", problemSector: comparison.mismatches[0] }); if (!current(token, uid)) { await rollback(before); return; }
-    const prepared = await core.prepareSnapshot(restored), metadata = metadataFrom(uid, id, manifest, prepared, readMetadata(uid, id) || {}); metadata.restoredAt = metadata.lastSyncedAt; writeMetadata(uid, metadata); publish({ status: "restored", revision: manifest.revision, localRevision: manifest.revision, cloudRevision: manifest.revision, hallOfFameCount: hallPayloads.length, lastSyncedAt: metadata.lastSyncedAt, error: null }, token);
+    const restored = core.reconstructSnapshot(payloads, hallPayloads); if (!current(token, uid)) return;
+    if (options.automatic) { const localNow = await core.prepareSnapshot(core.readLocalSnapshot()); const metadata = readMetadata(uid, id); const stale = cachedManifest.data.revision !== options.expectedRevision || localMutationVersion !== options.expectedLocalMutationVersion || dirtySectors.size !== 0 || !baselineMatches(metadata, localNow) || !isSafeAutomaticUpdateContext(); if (stale) { pendingRemoteManifest = cachedManifest; publish({ status: "local-conflict", automaticUpdate: false }, token); return; } }
+    publish({ status: "restoring", automaticUpdate: options.automatic ? "restoring" : false }, token); writesStarted = true; applySnapshot(restored); const comparison = await core.compareSnapshots(restored, core.readLocalSnapshot()); if (!comparison.equivalent) throw Object.assign(new Error("post-write-verification-failed"), { code: "post-write-verification-failed", problemSector: comparison.mismatches[0] }); if (!current(token, uid)) { await rollback(before); return; }
+    const prepared = await core.prepareSnapshot(restored), metadata = metadataFrom(uid, id, manifest, prepared, readMetadata(uid, id) || {}); metadata.restoredAt = metadata.lastSyncedAt; writeMetadata(uid, metadata); publish({ status: "restored", revision: manifest.revision, localRevision: manifest.revision, cloudRevision: manifest.revision, hallOfFameCount: hallPayloads.length, lastSyncedAt: metadata.lastSyncedAt, error: null, automaticUpdate: options.automatic ? "reloading" : false }, token);
+    if (options.automatic && !reloadUsed) { reloadUsed = true; sessionStorage.setItem(AUTO_UPDATE_NOTICE_KEY, JSON.stringify({ uid, revision: manifest.revision, timestamp: Date.now() })); globalThis.location.reload(); }
   } catch (error) { if (writesStarted) try { await rollback(before); } catch (_) {} console.warn("Cloud save:", error); publish({ status: "restore-error", error: error?.code || "restore-failed", problemSector: error?.problemSector || null }, token); } finally { restoreInFlight = null; } })(); return restoreInFlight;
+}
+function queueAutomaticUpdate(context) {
+  pendingRemoteManifest = cachedManifest;
+  if (automaticUpdateInFlight) return automaticUpdateInFlight;
+  automaticUpdateInFlight = (async () => { let next = context; while (next && current(next.token, next.uid)) { pendingRemoteManifest = null; await restoreCloudSave({ automatic: true, expectedRevision: next.revision, expectedLocalMutationVersion: next.mutationVersion }); const newer = pendingRemoteManifest; next = newer?.data?.revision > next.revision ? { uid: newer.uid, token: newer.token, revision: newer.data.revision, mutationVersion: localMutationVersion } : null; } })().finally(() => { automaticUpdateInFlight = null; });
+  return automaticUpdateInFlight;
 }
 function requestConflictResolution(choice) { if (state.status !== "local-conflict" || conflictInFlight) return false; if (choice === "local") return publish({ status: "conflict-confirm-local" }); if (choice === "cloud") return publish({ status: "conflict-confirm-cloud" }); return false; }
 async function resolveConflictUseLocal() {
@@ -128,13 +173,14 @@ function checkForCloudUpdate() {
   const token = generation, uid = cachedManifest.uid, id = deviceId();
   checkInFlight = (async () => { try {
     const db = globalThis.InazumaAccount.getFirestoreInstance(), manifestDocument = await readDocument(db, "users", uid, "cloudSave", "manifest");
-    if (!current(token, uid)) return; const raw = manifestDocument.exists() ? manifestDocument.data() : null, manifest = core.validateManifest(raw, uid), prepared = await core.prepareSnapshot(core.readLocalSnapshot());
-    cachedManifest = { uid, token, raw, data: manifest }; await reconcile(uid, id, manifest, prepared, token);
-  } catch (error) { console.warn("Cloud update check:", error?.code || "check-failed"); publish({ status: "sync-error", error: error?.code || "check-failed" }, token); }
+    if (!current(token, uid)) return; const raw = manifestDocument.exists() ? manifestDocument.data() : null, manifest = core.validateManifest(raw, uid);
+    if (manifest.revision <= (readMetadata(uid, id)?.revision ?? 0)) { publish({ status: "already-up-to-date", error: null }, token); return; }
+    await reconcileRemoteManifest({ uid, deviceId: id, manifest, rawManifest: raw, source: "manual", allowAutomaticUpdate: true, serverConfirmed: true });
+  } catch (error) { console.warn("Cloud update check:", error?.code || "check-failed"); publish({ status: state.status, error: error?.code || "check-failed" }, token); }
   finally { checkInFlight = null; } })(); return checkInFlight;
 }
 function reloadAfterRestore() { if (state.status !== "restored" || reloadUsed) return false; reloadUsed = true; globalThis.location.reload(); return true; }
-function authChanged(event) { const auth = event?.detail || globalThis.InazumaAccount?.getState(); const sameUid = auth?.status === "authenticated" && auth.uid && state.uid === auth.uid; if (sameUid) { if (auth.profileComplete && !associationInFlight && !cachedManifest && automaticUid !== auth.uid && state.status !== "awaiting-local-save") associateLocalSave(); return; } generation += 1; clearTimer(); associationInFlight = null; syncInFlight = null; checkInFlight = null; conflictInFlight = null; cachedManifest = null; dirtySectors = new Set(); reloadUsed = false; if (auth?.status === "authenticated" && auth.uid) { publish({ ...initial, uid: auth.uid }); if (auth.profileComplete) associateLocalSave(); } else if (auth?.status === "signed-out") { automaticUid = null; publish({ ...initial, status: "signed-out" }); } else publish({ ...initial, uid: auth?.uid || null }); }
-globalThis.addEventListener("inazuma:auth-state-changed", authChanged); globalThis.addEventListener("inazuma:local-save-committed", onLocalSave); globalThis.addEventListener("online", () => { if (state.status === "sync-error") scheduleSync(); }, { passive: true });
+function authChanged(event) { const auth = event?.detail || globalThis.InazumaAccount?.getState(); const sameUid = auth?.status === "authenticated" && auth.uid && state.uid === auth.uid; if (sameUid) { if (auth.profileComplete && !associationInFlight && !cachedManifest && automaticUid !== auth.uid && state.status !== "awaiting-local-save") associateLocalSave(); return; } stopManifestListener(); generation += 1; clearTimer(); associationInFlight = null; syncInFlight = null; checkInFlight = null; conflictInFlight = null; automaticUpdateInFlight = null; cachedManifest = null; pendingRemoteManifest = null; deferredAutomaticRevision = null; expectedLocalRevisions.clear(); dirtySectors = new Set(); reloadUsed = false; if (auth?.status === "authenticated" && auth.uid) { publish({ ...initial, uid: auth.uid }); if (auth.profileComplete) associateLocalSave(); } else if (auth?.status === "signed-out") { automaticUid = null; publish({ ...initial, status: "signed-out" }); } else publish({ ...initial, uid: auth?.uid || null }); }
+globalThis.addEventListener("inazuma:auth-state-changed", authChanged); globalThis.addEventListener("inazuma:local-save-committed", onLocalSave); globalThis.addEventListener("online", () => { if (state.status === "sync-error") scheduleSync(); if (state.realtimeStatus === "error" && state.uid) startManifestListener(state.uid, generation); }, { passive: true });
 const ready = Promise.resolve(globalThis.InazumaAccount?.ready).then(() => authChanged());
-globalThis.InazumaCloudSave = Object.freeze({ ready, getState: () => ({ ...state, pendingSectors: [...dirtySectors] }), associateLocalSave, retryAssociation: () => { automaticUid = null; return associateLocalSave({ force: true }); }, syncNow, retrySync, checkForCloudUpdate, updateFromCloud, restoreCloudSave, retryRestore: restoreCloudSave, requestConflictResolution, resolveConflictUseLocal, resolveConflictUseCloud, reloadAfterRestore });
+globalThis.InazumaCloudSave = Object.freeze({ ready, getState: () => ({ ...state, pendingSectors: [...dirtySectors] }), associateLocalSave, retryAssociation: () => { automaticUid = null; return associateLocalSave({ force: true }); }, syncNow, retrySync, checkForCloudUpdate, updateFromCloud, restoreCloudSave, retryRestore: restoreCloudSave, requestConflictResolution, resolveConflictUseLocal, resolveConflictUseCloud, reloadAfterRestore, canAutoUpdateFromCloud });

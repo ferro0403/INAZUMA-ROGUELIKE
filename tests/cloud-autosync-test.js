@@ -14,14 +14,14 @@ assert.match(sync, /batch\.update\([\s\S]*manifestPatch\)/, 'autosync updates th
 const patch = sync.slice(sync.indexOf('const manifestPatch'), sync.indexOf('batch.update'));
 ['revision', 'updatedAt', 'deviceId', 'sourceDeviceId', 'sectors', 'sectorHashes', 'sectorRevisions', 'hallTeamIds', 'hallTeamHashes', 'hallTeamRevisions'].forEach(field => assert.match(patch, new RegExp(`\\b${field}\\b`)));
 ['createdAt', 'accountUid', 'schemaVersion', 'initialized', 'source:'].forEach(field => assert.doesNotMatch(patch, new RegExp(field)));
-assert.match(cloud, /const DEBOUNCE_MS = 2000/); assert.match(cloud, /setTimeout/); assert.doesNotMatch(cloud, /setInterval|onSnapshot|runTransaction/);
+assert.match(cloud, /const DEBOUNCE_MS = 2000/); assert.match(cloud, /setTimeout/); assert.doesNotMatch(cloud, /setInterval|runTransaction/); assert.equal((cloud.match(/onSnapshot\(/g)||[]).length, 1);
 assert.match(cloud, /dirtySectors = new Set/); assert.match(cloud, /if \(syncInFlight\) return syncInFlight/);
 sources.forEach(source => assert.match(source, /inazuma:local-save-committed/));
 assert.match(cloud, /suppressCloudEvent: true/); assert.match(ui, /MODIFICHE IN ATTESA/); assert.match(ui, /AGGIORNAMENTO CLOUD DISPONIBILE/); assert.match(ui, /SINCRONIZZAZIONE BLOCCATA/);
 assert.match(cloud, /function checkForCloudUpdate/); assert.match(cloud, /if \(checkInFlight\) return checkInFlight/); assert.match(ui, /CONTROLLA AGGIORNAMENTI/);
 const check = cloud.slice(cloud.indexOf('function checkForCloudUpdate'), cloud.indexOf('function reloadAfterRestore'));
 assert.equal((check.match(/readDocument\(/g) || []).length, 1, 'manual check reads only the manifest once'); assert.doesNotMatch(check, /saveSectors|hallOfFame|setTimeout|setInterval/);
-for (const name of ['run-state','account-ui','firebase-cloud-save']) assert.match(html, new RegExp(`js/${name}\\.js\\?v=20260801-phantom-revisions-1`));
+for (const name of ['run-state','account-ui','firebase-cloud-save']) assert.match(html, new RegExp(`js/${name}\\.js\\?v=20260801-realtime-cloud-1`));
 for (const name of ['album-progress','development-v2','hall-of-fame']) assert.match(html, new RegExp(`js/${name}\\.js\\?v=20260801-cloud-sync-3`));
 for (const name of ['firebase-account','cloud-save-core']) assert.match(html, new RegExp(`js/${name}\\.js\\?v=20260801-firestore-safe-1`));
 const fakeTimestamp = { toDate() { return new Date(0); } }; const preparedManifest = { schemaVersion: 1, initialized: true, revision: 1, accountUid: 'u', createdAt: fakeTimestamp, updatedAt: fakeTimestamp, sectors: { profile: true, run_ie1: false, run_ie2: false, album: true, development: true, hallOfFameCount: 0 }, sectorHashes: { profile: 'a'.repeat(64), run_ie1: null, run_ie2: null, album: 'b'.repeat(64), development: 'c'.repeat(64), hall_index: 'd'.repeat(64) } };
