@@ -3612,7 +3612,7 @@
     const teams = simulationTeamsForCurrentMatch(match, options);
     if (match.simulation?.valid && existingState === "pre-match" && !options.forceRefresh && match.simulation.userSnapshot?.lineupSignature === teams.userSnapshot.lineupSignature) return match.simulation;
     const seed = options.freeze ? matchSeed(match) : (match.simulation?.seed || `${run.runId}:${match.type}:${match.nodeId}:preview`);
-    const preview = global.MatchSimulator.simulate({ type: teams.type, seed, userTeam: teams.userTeam, opponentTeam: teams.opponentTeam });
+    const preview = global.MatchSimulator.simulate({ type: teams.type, seed, userTeam: teams.userTeam, opponentTeam: teams.opponentTeam, consecutiveLosses: run.consecutiveLosses });
     if (!preview.valid) return preview;
     match.simulation = {
       ...preview,
@@ -4001,6 +4001,12 @@
     </section>`;
   }
 
+  function formatMatchProbability(value) {
+    const chance = Number(value);
+    if (!Number.isFinite(chance)) return "-";
+    return Number(chance.toFixed(1)).toLocaleString("it-IT", { maximumFractionDigits: 1 });
+  }
+
   function persistMatchState() {
     if (!ui.match) return;
     ui.match.state = ui.bossMatchState;
@@ -4067,7 +4073,7 @@
               </div>
             </section>
             <section class="five-match-summary" aria-label="Riepilogo partita 5v5">
-              ${fiveMatchComparisonMarkup(userFivePlayers, opponentFivePlayers, { userStrength: simPreview.userStrength?.final ?? "-", userFormation: run.fiveVFive.formation, userOverall: userAverageOverall, probability: simPreview.probabilities ? Math.round(simPreview.probabilities.user * 100) : "-", opponentStrength: simPreview.opponentStrength?.final ?? "-", opponentFormation: match.opponentFormation, opponentOverall: opponentAverageOverall })}
+              ${fiveMatchComparisonMarkup(userFivePlayers, opponentFivePlayers, { userStrength: simPreview.userStrength?.final ?? "-", userFormation: run.fiveVFive.formation, userOverall: userAverageOverall, probability: formatMatchProbability(simPreview.probabilities?.userChance), opponentStrength: simPreview.opponentStrength?.final ?? "-", opponentFormation: match.opponentFormation, opponentOverall: opponentAverageOverall })}
             </section>
             ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
             <div class="five-match-bottom-grid">
@@ -4132,8 +4138,8 @@
     const simulating = ui.bossMatchState === "simulating";
     const simPreview = ensureMatchPreview(ui.match, { boss });
     const simError = !simPreview.valid ? simPreview.message : "";
-    const userProbability = simPreview.probabilities ? Math.round(simPreview.probabilities.user * 100) : null;
-    const bossProbability = simPreview.probabilities ? Math.round(simPreview.probabilities.opponent * 100) : null;
+    const userProbability = simPreview.probabilities ? formatMatchProbability(simPreview.probabilities.userChance) : null;
+    const bossProbability = simPreview.probabilities ? formatMatchProbability(simPreview.probabilities.opponentChance) : null;
     ui.bossMatchLog = visibleTimeline(ui.match);
     const score = simulationScoreArray(ui.match, resolved);
     const scoreLabel = `${meta.user.name} ${score[0]} - ${score[1]} ${meta.boss.name}`;
@@ -4271,6 +4277,10 @@
     });
   }
 
+  function applyConsecutiveLossResult(result) {
+    run.consecutiveLosses = result === "victory" ? 0 : Math.min(2, run.consecutiveLosses + 1);
+  }
+
   function completeFiveMatch(result) {
     const match = ui.match;
     if (!match?.simulation || match.simulation.resolutionApplied) return;
@@ -4279,6 +4289,7 @@
     ui.bossMatchState = result === "victory" ? "completed-victory" : "completed-defeat";
     match.state = ui.bossMatchState;
     match.result = result;
+    applyConsecutiveLossResult(result);
     if (match.simulation?.score) match.score = [match.simulation.score.user, match.simulation.score.opponent];
     applyRealMatchStatistics(match, result);
     const node = run.currentZone.nodes.find((item) => item.id === match.nodeId);
@@ -4306,6 +4317,7 @@
     ui.bossMatchState = result === "victory" ? "completed-victory" : "completed-defeat";
     match.state = ui.bossMatchState;
     match.result = result;
+    applyConsecutiveLossResult(result);
     if (match.simulation?.score) match.score = [match.simulation.score.user, match.simulation.score.opponent];
     applyRealMatchStatistics(match, result);
     const node = run.currentZone.nodes.find((item) => item.id === match.nodeId);

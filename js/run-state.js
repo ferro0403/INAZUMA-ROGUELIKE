@@ -49,7 +49,7 @@
   function createRun(teamIdentity = {}, seasonId = null) {
     const now = new Date().toISOString();
     const normalizedSeasonId = seasonIdOf(seasonId || global.SeasonRegistry?.activeId?.());
-    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), createdAt: now, updatedAt: now, lastPlayedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: initialRunLives(), formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [] };
+    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), createdAt: now, updatedAt: now, lastPlayedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: initialRunLives(), consecutiveLosses: 0, formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [] };
   }
 
   function defaultPostBossFlowFromPending(run) {
@@ -87,6 +87,8 @@
     const rawLives = Number(run.lives);
     const fallbackLives = run.gameOver || ["gameover", "complete", "final-summary", "final-celebration"].includes(String(run.phase || "")) ? 0 : initialRunLives();
     run.lives = Math.max(0, Math.min(runLivesLimit(), Number.isFinite(rawLives) ? rawLives : fallbackLives));
+    const rawConsecutiveLosses = Number(run.consecutiveLosses);
+    run.consecutiveLosses = Math.max(0, Math.min(2, Math.floor(Number.isFinite(rawConsecutiveLosses) ? rawConsecutiveLosses : 0)));
     run.bossIndex = Number.isFinite(Number(run.bossIndex)) ? Number(run.bossIndex) : 0;
     for (const key of ["roster", "lineup", "bench", "inventory", "completedBossIds", "unlockedTeamIds"]) run[key] = Array.isArray(run[key]) ? run[key] : [];
     run.activeMatch = run.activeMatch || null; run.currentZone = run.currentZone || null;
