@@ -3,7 +3,7 @@
   "generatedAt": "2026-08-06T22:20:36.198860+00:00",
   "seasonId": "ie1_s2",
   "seasonName": "Inazuma Eleven 2",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "requiresProfileAwareRuntime": true,
   "progressionFormat": "dynamic_profile_role_variant_v1",
   "progressionDescription": {
@@ -64,7 +64,15 @@
       "profile_override",
       "global_player_visuals",
       "fallback"
-    ]
+    ],
+    "initialDraftPool": "free_agents_only",
+    "initialDraftDatabase": "data/FREE_AGENTS_compact.json",
+    "initialDraftCandidateCountPerSlot": 3,
+    "initialDraftExcludesSeasonPlayers": true,
+    "initialDraftExcludesSeasonProfiles": true,
+    "initialDraftRosterSource": "free_agents",
+    "specialMatchNodeType": "special_match",
+    "specialMatchNodePlacement": "fixed_intermediate_layer_3_center_column_1"
   },
   "formations": {
     "eleven": [
@@ -358,7 +366,7 @@
       }
     },
     {
-      "id": "team_special_match",
+      "id": "special_match",
       "name": "Partita speciale 11v11",
       "reward": {
         "type": "special_match_reward",
@@ -1773,7 +1781,7 @@
     {
       "specialMatchId": "special_secret_service",
       "zoneIndex": 1,
-      "nodePlacement": "campaign_zone_special_match",
+      "nodePlacement": "fixed_center",
       "teamId": "secret_service",
       "teamName": "Secret Service",
       "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/7/7b/SP_Fixers_emblem_%28VR%29.png/revision/latest/scale-to-width-down/200?cb=20251118144153",
@@ -1919,12 +1927,23 @@
           "1139@secret_service"
         ],
         "duplicatePolicy": "upgrade_existing_canonical_card_in_place"
+      },
+      "mapPlacement": {
+        "strategy": "replace_fixed_intermediate_node",
+        "layer": 3,
+        "column": 1,
+        "layerIndexing": "intermediate_layers_are_1_based",
+        "columnIndexing": "columns_are_0_based",
+        "mustBeReachable": true,
+        "mustHaveIncomingEdge": true,
+        "mustHaveOutgoingEdge": true,
+        "deterministic": true
       }
     },
     {
       "specialMatchId": "special_alpine_ie2",
       "zoneIndex": 2,
-      "nodePlacement": "campaign_zone_special_match",
+      "nodePlacement": "fixed_center",
       "teamId": "alpine_ie2",
       "teamName": "Alpine ie2",
       "logoUrl": "https://static.wikia.nocookie.net/inazumaeleven/images/f/fe/Hakuren_emblem_%25_28SD%25_29.webp/revision/latest?cb=20240405150233&path-prefix=pl",
@@ -2066,12 +2085,23 @@
           "1157@alpine_ie2"
         ],
         "duplicatePolicy": "upgrade_existing_canonical_card_in_place"
+      },
+      "mapPlacement": {
+        "strategy": "replace_fixed_intermediate_node",
+        "layer": 3,
+        "column": 1,
+        "layerIndexing": "intermediate_layers_are_1_based",
+        "columnIndexing": "columns_are_0_based",
+        "mustBeReachable": true,
+        "mustHaveIncomingEdge": true,
+        "mustHaveOutgoingEdge": true,
+        "deterministic": true
       }
     },
     {
       "specialMatchId": "special_cloister_divinity",
       "zoneIndex": 4,
-      "nodePlacement": "campaign_zone_special_match",
+      "nodePlacement": "fixed_center",
       "teamId": "cloister_divinity",
       "teamName": "Cloister Divinity",
       "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/9/97/Manyuuji_emblem_%28SD%29.png/revision/latest/scale-to-width-down/250?cb=20230801220212",
@@ -2217,12 +2247,23 @@
           "1184@cloister_divinity"
         ],
         "duplicatePolicy": "upgrade_existing_canonical_card_in_place"
+      },
+      "mapPlacement": {
+        "strategy": "replace_fixed_intermediate_node",
+        "layer": 3,
+        "column": 1,
+        "layerIndexing": "intermediate_layers_are_1_based",
+        "columnIndexing": "columns_are_0_based",
+        "mustBeReachable": true,
+        "mustHaveIncomingEdge": true,
+        "mustHaveOutgoingEdge": true,
+        "deterministic": true
       }
     },
     {
       "specialMatchId": "special_super_triple_c",
       "zoneIndex": 5,
-      "nodePlacement": "campaign_zone_special_match",
+      "nodePlacement": "fixed_center",
       "teamId": "super_triple_c",
       "teamName": "Super Triple C",
       "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/5/5b/Triple_C.png/revision/latest?cb=20240418082803&path-prefix=de",
@@ -2368,12 +2409,23 @@
           "1212@super_triple_c"
         ],
         "duplicatePolicy": "upgrade_existing_canonical_card_in_place"
+      },
+      "mapPlacement": {
+        "strategy": "replace_fixed_intermediate_node",
+        "layer": 3,
+        "column": 1,
+        "layerIndexing": "intermediate_layers_are_1_based",
+        "columnIndexing": "columns_are_0_based",
+        "mustBeReachable": true,
+        "mustHaveIncomingEdge": true,
+        "mustHaveOutgoingEdge": true,
+        "deterministic": true
       }
     },
     {
       "specialMatchId": "special_fauxshore",
       "zoneIndex": 6,
-      "nodePlacement": "campaign_zone_special_match",
+      "nodePlacement": "fixed_center",
       "teamId": "fauxshore",
       "teamName": "Fauxshore",
       "logoUrl": "https://inazuma-eleven-legends.vercel.app/images/emblems/fauxshore.png",
@@ -2523,12 +2575,23 @@
           "1237@fauxshore"
         ],
         "duplicatePolicy": "upgrade_existing_canonical_card_in_place"
+      },
+      "mapPlacement": {
+        "strategy": "replace_fixed_intermediate_node",
+        "layer": 3,
+        "column": 1,
+        "layerIndexing": "intermediate_layers_are_1_based",
+        "columnIndexing": "columns_are_0_based",
+        "mustBeReachable": true,
+        "mustHaveIncomingEdge": true,
+        "mustHaveOutgoingEdge": true,
+        "deterministic": true
       }
     },
     {
       "specialMatchId": "special_mary_times",
       "zoneIndex": 8,
-      "nodePlacement": "campaign_zone_special_match",
+      "nodePlacement": "fixed_center",
       "teamId": "mary_times",
       "teamName": "Mary Times",
       "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/e/ea/Mary_Times.png/revision/latest/scale-to-width/360?cb=20240417175946&path-prefix=de",
@@ -2674,12 +2737,23 @@
           "1247@mary_times"
         ],
         "duplicatePolicy": "upgrade_existing_canonical_card_in_place"
+      },
+      "mapPlacement": {
+        "strategy": "replace_fixed_intermediate_node",
+        "layer": 3,
+        "column": 1,
+        "layerIndexing": "intermediate_layers_are_1_based",
+        "columnIndexing": "columns_are_0_based",
+        "mustBeReachable": true,
+        "mustHaveIncomingEdge": true,
+        "mustHaveOutgoingEdge": true,
+        "deterministic": true
       }
     },
     {
       "specialMatchId": "special_zeus",
       "zoneIndex": 9,
-      "nodePlacement": "campaign_zone_special_match",
+      "nodePlacement": "fixed_center",
       "teamId": "zeus",
       "teamName": "Zeus",
       "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/5/56/Zeus_emblem_%28VR%29.png/revision/latest?cb=20260214134719",
@@ -2825,6 +2899,17 @@
           "183@zeus"
         ],
         "duplicatePolicy": "upgrade_existing_canonical_card_in_place"
+      },
+      "mapPlacement": {
+        "strategy": "replace_fixed_intermediate_node",
+        "layer": 3,
+        "column": 1,
+        "layerIndexing": "intermediate_layers_are_1_based",
+        "columnIndexing": "columns_are_0_based",
+        "mustBeReachable": true,
+        "mustHaveIncomingEdge": true,
+        "mustHaveOutgoingEdge": true,
+        "deterministic": true
       }
     }
   ],
@@ -24267,6 +24352,21 @@
       {
         "name": "profile-aware runtime required",
         "status": "passed"
+      },
+      {
+        "id": "draft_free_agents_only",
+        "passed": true,
+        "description": "Initial draft is configured for free agents only"
+      },
+      {
+        "id": "special_match_fixed_placement",
+        "passed": true,
+        "description": "All 7 special matches use layer 3, column 1"
+      },
+      {
+        "id": "special_match_event_id",
+        "passed": true,
+        "description": "Special match event id matches runtime type"
       }
     ],
     "counts": {
@@ -24280,5 +24380,18 @@
       "roleSwitchProfiles": 4,
       "warnings": 0
     }
+  },
+  "draftConfig": {
+    "poolId": "free_agents",
+    "source": "free_agents",
+    "databasePath": "data/FREE_AGENTS_compact.json",
+    "freeAgentsOnly": true,
+    "excludeSeasonPlayers": true,
+    "excludeSeasonProfiles": true,
+    "candidateCountPerSlot": 3,
+    "startingPlayers": 11,
+    "startingReserves": 0,
+    "rosterEntrySource": "free_agents",
+    "profileFieldsOnInitialDraft": false
   }
 }
