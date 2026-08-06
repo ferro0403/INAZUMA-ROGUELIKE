@@ -8007,3 +8007,7 @@ html.account-modal-open, body.account-modal-open { overflow: hidden; overscroll-
 @media(max-width:520px){.development-evolution-preview{grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:5px;padding:8px}.development-evolution-arrow{font-size:1.25rem}.development-evolution-preview .development-squad-card{width:100px;min-height:120px}.development-evolution-preview .development-squad-card .player-portrait-wrap{height:78px}.development-confirm h2{margin-bottom:5px}.development-history-count{grid-column:1}.development-history-timeline li{display:grid;gap:1px}.development-history-timeline li time{white-space:normal}}
 
 .album-load-more-wrap{grid-column:1/-1;display:grid;justify-items:center;gap:6px;width:100%;padding:12px}.album-load-more{border-radius:0}.development-confirm-requirements-title{margin:8px 0 5px;font-size:.82rem}.development-confirm-modal .development-confirm-costs{margin:6px 0 12px}.development-confirm-modal .button-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px}.development-confirm-modal .btn{border-radius:0}
+/* Profiled-season special matches reuse the route node geometry and palette. */
+.map-node.node-type-special_match { border-color: #b88912; box-shadow: 0 4px 0 #111, 0 0 0 3px #ffd21f; }
+.map-node.node-type-special_match .boss-node-logo { object-fit: contain; }
+.map-node .node-special-level { font-size: .62rem; font-weight: 900; color: #111; }

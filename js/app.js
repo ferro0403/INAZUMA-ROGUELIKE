@@ -500,7 +500,7 @@
 
   function fiveRoleForPlayerId(playerId) {
     const entry = rosterEntry(playerId);
-    return entry ? sourcePlayer(entry)?.position : null;
+    return entry ? (resolvedRosterPlayer(playerId)?.position || sourcePlayer(entry)?.position) : null;
   }
 
   function ensureFiveVFive() {
@@ -605,7 +605,9 @@
     if (!entry) return null;
     const player = sourcePlayer(entry);
     const database = global.SeasonRegistry?.isSeasonSource?.(entry.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb;
-    const resolved = global.InazumaProgression.getPlayerAtLevel(
+    const resolved = run?.seasonId === "ie1_s2" && entry.activeProfileId
+      ? global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(entry, { seasonId: run.seasonId, database })
+      : global.InazumaProgression.getPlayerAtLevel(
       player,
       Math.floor(Number(entry.level || 0)),
       database,
@@ -1857,7 +1859,10 @@
       button.addEventListener("click", () => {
         const formation = formationById(button.dataset.formation);
         run.formationId = formation.id;
-        global.DraftEngine.start(run, formation, freeAgentsDb.players);
+        const draftPlayers = run.seasonId === "ie1_s2"
+          ? seasonDb.profiles.filter((profile) => seasonPlayersById.get(String(profile.playerId))?.baseProfileId === profile.profileId)
+          : freeAgentsDb.players;
+        global.DraftEngine.start(run, formation, draftPlayers);
         global.RunState.save(run);
         renderDraft();
       });
@@ -1868,7 +1873,11 @@
     const draft = run.draft;
     if (!draft) return renderSquad();
     const role = draft.roles[draft.step];
-    const candidates = draft.candidates.map((id) => freeAgentsById.get(String(id))).filter(Boolean);
+    const draftPlayers = run.seasonId === "ie1_s2"
+      ? seasonDb.profiles.filter((profile) => seasonPlayersById.get(String(profile.playerId))?.baseProfileId === profile.profileId)
+      : freeAgentsDb.players;
+    const draftById = new Map(draftPlayers.map((player) => [String(player.playerId), player]));
+    const candidates = draft.candidates.map((id) => draftById.get(String(id))).filter(Boolean);
     const progress = (draft.step / draft.roles.length) * 100;
     app.innerHTML = `
       <main class="screen onboarding-screen initial-draft-screen">
@@ -1891,11 +1900,10 @@
     document.querySelectorAll("[data-player-id]").forEach((button) => {
       button.addEventListener("click", () => {
         const playerId = button.dataset.playerId;
-        const player = freeAgentsById.get(playerId);
         const completed = global.DraftEngine.choose(
           run,
           playerId,
-          freeAgentsDb.players,
+          draftPlayers,
           formationById(run.formationId)
         );
         if (completed) {
@@ -2418,7 +2426,7 @@
             <div class="route-map" aria-label="Mappa percorso verso ${escapeHtml(boss.teamName)}">
               <svg class="map-lines" viewBox="0 0 1000 1000" preserveAspectRatio="none" aria-hidden="true">${edgeMarkup}</svg>
               ${zone.nodes.map((node) => {
-                const meta = labels[node.type];
+                const meta = labels[node.type] || { label: node.teamName || node.type, icon: "◆", color: "#f6c85f" };
                 const stateClass = completed.has(node.id) ? "completed" : reachable.has(node.id) ? "reachable" : "locked";
                 const isBoss = node.type === "boss";
                 const isCurrent = node.id === currentNodeId;
@@ -2429,8 +2437,10 @@
                     aria-label="${escapeHtml((isBoss ? boss.teamName : meta.label) + ", " + readableState)}"
                     style="left:${positions[node.id].x / 10}%;top:${positions[node.id].y / 10}%;--node-color:${meta.color}">
                     ${isBoss ? '<span class="node-badge">BOSS</span>' : ""}
-                    <span class="node-icon">${isBoss ? bossNodeIconMarkup(boss) : routeNodeIconMarkup(node.type, meta.icon)}</span>
-                    <span class="node-label">${isBoss ? escapeHtml(boss.teamName) : escapeHtml(meta.label)}</span>
+                    ${node.type === "special_match" ? '<span class="node-badge">11v11</span>' : ""}
+                    <span class="node-icon">${isBoss ? bossNodeIconMarkup(boss) : node.type === "special_match" ? bossNodeIconMarkup(node) : routeNodeIconMarkup(node.type, meta.icon)}</span>
+                    <span class="node-label">${isBoss ? escapeHtml(boss.teamName) : escapeHtml(node.teamName || meta.label)}</span>
+                    ${node.type === "special_match" ? `<span class="node-special-level">LV ${escapeHtml(node.matchLevel)}</span>` : ""}
                     ${visibleState ? `<span class="node-state">${visibleState}</span>` : ""}
                   </button>`;
               }).join("")}
@@ -4231,6 +4241,12 @@
   }
 
   function addLevels(amount) {
+    if (run.seasonId === "ie1_s2") {
+      const units = Number(amount) === 0.5 ? 2 : Math.round(Number(amount || 0) * 6);
+      const before = run.roster.map((entry) => Number(entry.level || 0));
+      global.ProfiledSeasonRuntime.addLevelUnits(run, units);
+      return run.roster.filter((entry, index) => Number(entry.level || 0) > before[index]).length;
+    }
     let updatedPlayers = 0;
     const numericAmount = Number(amount || 0);
     run.teamLevel = Math.min(20, Number(run.teamLevel) + numericAmount);

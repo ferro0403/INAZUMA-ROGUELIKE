@@ -50,6 +50,7 @@
       trade: { label: "Scambio", icon: "⇄", color: "#31c48d" },
       random: { label: "Evento casuale", icon: "?", color: "#95a5a6" },
       boss: { label: "Boss", icon: "⚽", color: "#d63031" },
+      special_match: { label: "Partita speciale", icon: "11", color: "#f6c85f" },
     },
     legendaryCategories: ["Forte", "Elite", "Mondiale", "Leggenda"],
     categoryRanks: {

@@ -148,7 +148,10 @@
       const permanent = global.DevelopmentV2?.optionsFromUpgrade?.(source, run.developmentPlayerSnapshot?.[String(id)]) || {};
       return ({
       playerId: id,
-      source: "free_agents",
+      source: run.seasonId === "ie1_s2" ? run.seasonId : "free_agents",
+      activeProfileId: source?.profileId || null,
+      activeRoleVariantId: source?.defaultRoleVariantId || null,
+      levelUnits: 0,
       level: 0,
       equippedItem: null,
       ...permanent,
