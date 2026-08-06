@@ -111,6 +111,23 @@
       connectLayers(layers[layers.length - 2], layer, random, edges);
     });
 
+    const special = global.SeasonRegistry?.database?.(run.seasonId)?.specialMatches?.find(
+      (match) => Number(match.zoneIndex) === Number(run.bossIndex) + 1
+    );
+    if (special && layers.length > 3) {
+      const targetLayer = layers[Math.floor(layers.length / 2)];
+      const target = targetLayer[Math.floor(random() * targetLayer.length)];
+      Object.assign(target, {
+        type: "special_match",
+        specialMatchId: special.specialMatchId,
+        teamId: special.teamId,
+        teamName: special.teamName,
+        logoUrl: special.logoUrl,
+        matchLevel: special.matchLevel,
+        matchFormation: special.matchFormation,
+      });
+    }
+
     const bossNode = {
       id: `zone_${run.bossIndex}_boss`,
       type: "boss",
