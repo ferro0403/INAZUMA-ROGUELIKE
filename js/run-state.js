@@ -93,6 +93,7 @@
     for (const key of ["roster", "lineup", "bench", "inventory", "completedBossIds", "unlockedTeamIds"]) run[key] = Array.isArray(run[key]) ? run[key] : [];
     if (run.seasonId === "ie1_s2") global.ProfiledSeasonRuntime?.normalizeRun?.(run);
     run.activeMatch = run.activeMatch || null; run.currentZone = run.currentZone || null;
+    if (run.seasonId === "ie1_s2" && run.currentZone) global.MapEngine?.normalizeSpecialMatchNode?.(run, global.SeasonRegistry?.database?.(run.seasonId));
     if (!run.developmentPlayerSnapshot) run.developmentPlayerSnapshot = clone(global.DevelopmentV2?.read?.().players || {});
     run.postBossFlow = normalizePostBossFlow(run);
     run.pendingBossVictory = run.pendingBossVictory || null;

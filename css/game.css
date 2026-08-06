@@ -8011,3 +8011,11 @@ html.account-modal-open, body.account-modal-open { overflow: hidden; overscroll-
 .map-node.node-type-special_match { border-color: #b88912; box-shadow: 0 4px 0 #111, 0 0 0 3px #ffd21f; }
 .map-node.node-type-special_match .boss-node-logo { object-fit: contain; }
 .map-node .node-special-level { font-size: .62rem; font-weight: 900; color: #111; }
+
+/* IE1 S2 profile actions and guaranteed reward: scoped to existing modal/squad surfaces. */
+.squad-screen .squad-role-button { min-height: 44px; }
+.role-switch-modal .role-switch-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.role-switch-modal .role-switch-options .btn { min-height: 64px; display: grid; gap: 3px; place-content: center; }
+.special-reward-modal .special-reward-actions { margin-top: 16px; }
+.special-reward-modal .special-reward-actions .btn { min-height: 48px; width: 100%; }
+@media (max-width: 520px) { .role-switch-modal .role-switch-options { grid-template-columns: 1fr; } }
