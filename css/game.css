@@ -8013,9 +8013,17 @@ html.account-modal-open, body.account-modal-open { overflow: hidden; overscroll-
 .map-node .node-special-level { font-size: .62rem; font-weight: 900; color: #111; }
 
 /* IE1 S2 profile actions and guaranteed reward: scoped to existing modal/squad surfaces. */
-.squad-screen .squad-role-button { min-height: 44px; }
+.squad-screen .squad-role-button { min-height: 44px; border: 3px solid #111; background: #f7f0dc; color: #111; box-shadow: 4px 4px 0 #111; opacity: 1; }
+.squad-screen .squad-role-button.is-available { background: #ffd21f; }
+.squad-screen .squad-role-button:disabled { background: #d8d0bc; color: #514d44; box-shadow: 2px 2px 0 #111; }
+.squad-screen .squad-role-button.is-bench-required:disabled { background: #fffaf0; color: #111; }
+.role-switch-modal { width: min(520px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; border: 4px solid #111; border-radius: 4px; background: #fffaf0; color: #111; box-shadow: 8px 8px 0 #111; }
+.role-switch-modal .modal-close { min-width: 44px; min-height: 44px; border: 3px solid #111; background: #ffd21f; color: #111; }
+.role-switch-modal .role-switch-head h2 { color: #111; }
 .role-switch-modal .role-switch-options { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-.role-switch-modal .role-switch-options .btn { min-height: 64px; display: grid; gap: 3px; place-content: center; }
+.role-switch-modal .role-switch-option { min-height: 76px; display: grid; gap: 3px; place-content: center; border: 3px solid #111; border-radius: 2px; background: #fffdf6; color: #111; box-shadow: 4px 4px 0 #111; font: inherit; }
+.role-switch-modal .role-switch-option.active { background: #ffd21f; }
+.role-switch-modal .role-switch-option small { font-weight: 900; }
 .special-reward-modal .special-reward-actions { margin-top: 16px; }
 .special-reward-modal .special-reward-actions .btn { min-height: 48px; width: 100%; }
-@media (max-width: 520px) { .role-switch-modal .role-switch-options { grid-template-columns: 1fr; } }
+@media (max-width: 520px) { .role-switch-modal .role-switch-options { grid-template-columns: 1fr 1fr; gap: 8px; } .role-switch-modal .role-switch-option { min-height: 68px; } }

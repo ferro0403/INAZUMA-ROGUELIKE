@@ -10,6 +10,17 @@ context.ProfiledSeasonRuntime.register('ie1_s2', db);
 context.InazumaProgression = { getPlayerAtLevel(player, level) { return { ...player, level, displayLevel:level, overall: Number(player.finalOverall || player.overall || 0), stats: player.stats || {} }; } };
 context.SeasonRegistry = { database: () => db };
 vm.runInNewContext(fs.readFileSync('js/special-match.js','utf8'), context, { filename:'js/special-match.js' });
+for (const profileId of ['1146@secret_service','1064@gemini_storm','1068@gemini_storm']) {
+  const profile = context.ProfiledSeasonRuntime.resolveProfile('ie1_s2', profileId);
+  const effective = context.ProfiledSeasonRuntime.resolveEffectiveBase({ playerId: profile.playerId, activeProfileId: profileId, activeRoleVariantId: profile.defaultRoleVariantId }, 'ie1_s2');
+  assert.strictEqual(effective.portraitUrl, profile.portraitUrl, `${profileId} keeps its non-empty profile portrait`);
+}
+const shawnProfile=context.ProfiledSeasonRuntime.resolveProfile('ie1_s2','1162@alpine_ie2');
+const shawnRun={seasonId:'ie1_s2',roster:[{playerId:'1162',activeProfileId:shawnProfile.profileId,activeRoleVariantId:'df',level:0}],bench:['1162'],lineup:[]};
+assert.strictEqual(context.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(shawnRun.roster[0],{seasonId:'ie1_s2',database:db}).position,'DF');
+context.ProfiledSeasonRuntime.switchBenchRole(shawnRun,'1162','fw');
+const shawnFw=context.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(shawnRun.roster[0],{seasonId:'ie1_s2',database:db});
+assert.strictEqual(shawnFw.position,'FW'); assert.strictEqual(shawnFw.portraitUrl,shawnProfile.roleVariants.find(v=>v.roleVariantId==='fw').portraitUrl);
 const formation = db.formations.eleven[0];
 const run = { runId:'draft-real', seasonId:'ie1_s2' };
 context.DraftEngine.start(run, formation, free.players);
@@ -22,7 +33,8 @@ context.SEASON1_CONFIG={ nodeWeights:{five_v_five:1},stageNodeWeightTiers:[],dis
 const zone=context.MapEngine.generate(mapRun,db.bossOrder[0]); const special=zone.nodes.find(n=>n.type==='special_match');
 assert.deepStrictEqual([special.layer,special.column,special.id],[3,1,'zone_0_l3_n1']);
 const old=JSON.parse(JSON.stringify(zone)); const center=old.nodes.find(n=>n.id==='zone_0_l3_n1'); const side=old.nodes.find(n=>n.layer===3&&n.column===0); const oldType=side.type; side.type='special_match'; for(const k of ['specialMatchId','teamId','teamName','logoUrl','matchLevel','matchFormation']) { side[k]=center[k]; delete center[k]; } center.type=oldType;
-const migrateRun={seasonId:'ie1_s2',currentZone:old}; assert(context.MapEngine.normalizeSpecialMatchNode(migrateRun,db)); assert.strictEqual(center.type,'special_match'); assert.strictEqual(side.type,oldType); assert(!context.MapEngine.normalizeSpecialMatchNode(migrateRun,db));
+old.completedNodeIds=[old.startNodeId,side.id]; old.currentNodeId=side.id; old.pendingNodeId=center.id; old.path=[old.startNodeId,side.id];
+const migrateRun={seasonId:'ie1_s2',currentZone:old}; assert(context.MapEngine.normalizeSpecialMatchNode(migrateRun,db)); assert.strictEqual(center.type,'special_match'); assert.strictEqual(side.type,oldType); assert(migrateRun.currentZone.completedNodeIds.includes(center.id)); assert.strictEqual(migrateRun.currentZone.currentNodeId,center.id); assert.strictEqual(migrateRun.currentZone.pendingNodeId,side.id); assert(!context.MapEngine.normalizeSpecialMatchNode(migrateRun,db));
 const sr=context.SpecialMatchRuntime; const secret=db.specialMatches[0]; const opponents=sr.teamPlayers(db,secret); assert.strictEqual(opponents.length,11); assert(opponents.every(p=>p.profileId.endsWith('@secret_service')&&p.level===secret.matchLevel));
 const flowRun={runId:'special-real',seasonId:'ie1_s2',currentZone:zone,roster:[],bench:[],unlockedTeamIds:[],completedSpecialMatchIds:[],claimedSpecialMatchRewardIds:[],unlockedSpecialTeamIds:[],processedLevelUnitActionIds:[],teamLevel:0,teamLevelUnits:0};
 const match=sr.fromNode(flowRun,db,special,zone.startNodeId); assert.strictEqual(match.type,'special_match'); assert.strictEqual(match.previousNodeId,zone.startNodeId);

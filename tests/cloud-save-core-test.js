@@ -12,8 +12,8 @@ const core = require('../js/cloud-save-core.js');
     HallOfFameStorage: { ARCHIVE_SCHEMA_VERSION: 2, _loadArchive: () => (calls.push('hall'), { schemaVersion: 2, updatedAt: 'now', teams: [{ hallTeamId: 'hall_1', archiveKey: 'run::1', fullRoster: [] }], index: [{ hallTeamId: 'hall_1', teamName: 'Raimon' }] }) },
   };
   const snapshot = core.readLocalSnapshot(apis);
-  assert.deepStrictEqual(calls, ['hall', 'profile', 'run:ie1:true', 'run:ie2:true', 'album', 'development']);
-  assert.strictEqual(snapshot.runs.ie1.seasonId, 'ie1'); assert.strictEqual(snapshot.runs.ie2, null);
+  assert.deepStrictEqual(calls, ['hall', 'profile', 'run:ie1:true', 'run:ie2:true', 'run:ie1_s2:true', 'album', 'development']);
+  assert.strictEqual(snapshot.runs.ie1.seasonId, 'ie1'); assert.strictEqual(snapshot.runs.ie2, null); assert.strictEqual(snapshot.runs.ie1_s2, null);
   assert.strictEqual(snapshot.development.schemaVersion, 5); assert.strictEqual(snapshot.hallOfFame.teams.length, 1);
   assert.ok(!core.stableSerialize(snapshot).includes('backup')); assert.ok(!('ignored' in snapshot.album));
 
@@ -50,6 +50,7 @@ const core = require('../js/cloud-save-core.js');
   const manifest = core.buildManifest(prepared, 'uid-1', 'device-1', 'timestamp');
   assert.strictEqual(manifest.schemaVersion, 1); assert.strictEqual(manifest.revision, 1);
   assert.strictEqual(manifest.sectors.run_ie1, true); assert.strictEqual(manifest.sectors.run_ie2, false); assert.strictEqual(manifest.sectors.hallOfFameCount, 1);
+  assert.strictEqual(manifest.sectors.run_ie1_s2, false); assert.strictEqual(manifest.sectorHashes.run_ie1_s2, null);
   assert.strictEqual(manifest.sectorHashes.run_ie2, null); assert.strictEqual(manifest.sectorHashes.album, prepared.hashes.album);
 
   const oversized = await core.prepareSnapshot({ ...snapshot, album: { data: 'x'.repeat(core.DOCUMENT_LIMIT_BYTES) } }, crypto);
@@ -67,6 +68,7 @@ const core = require('../js/cloud-save-core.js');
     ['profile', { profile: { teamIdentity: { name: 'Raimon' } } }],
     ['run_ie1', { runs: { ie1: { runId: 'one' }, ie2: null } }],
     ['run_ie2', { runs: { ie1: null, ie2: { runId: 'two' } } }],
+    ['run_ie1_s2', { runs: { ie1: null, ie2: null, ie1_s2: { runId: 'season-two' } } }],
     ['album', { album: { collections: { ie1: { unlockedPlayerIds: { 1: {} } } } } }],
     ['development', { development: { coins: 1 } }],
     ['hall_of_fame', { hallOfFame: { teams: [{ hallTeamId: 'h' }] } }],
@@ -74,6 +76,8 @@ const core = require('../js/cloud-save-core.js');
 
   const validManifest = core.buildManifest(prepared, 'uid-1', 'device-1', 'timestamp');
   assert.strictEqual(core.validateManifest(validManifest, 'uid-1').revision, 1);
+  const legacyManifest = JSON.parse(JSON.stringify(validManifest)); delete legacyManifest.sectors.run_ie1_s2; delete legacyManifest.sectorHashes.run_ie1_s2; delete legacyManifest.sectorRevisions.run_ie1_s2;
+  assert.strictEqual(core.validateManifest(legacyManifest, 'uid-1').sectors.run_ie1_s2, false);
   assert.throws(() => core.validateManifest({ ...validManifest, accountUid: 'other' }, 'uid-1'), /invalid-manifest/);
   assert.throws(() => core.validateManifest({ ...validManifest, schemaVersion: 2 }, 'uid-1'), /unsupported-cloud-schema/);
   assert.throws(() => core.validateManifest({ ...validManifest, revision: 0 }, 'uid-1'), /invalid-manifest/);

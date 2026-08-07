@@ -5,6 +5,8 @@
   const indexes = new Map();
   const id = (value) => String(value ?? "");
   const clone = (value) => JSON.parse(JSON.stringify(value));
+  const VISUAL_FIELDS = ["portraitUrl", "frontFullbodyUrl", "fullbodyUrl", "cardImageUrl", "imageUrl", "logoUrl"];
+  const nonEmpty = (value) => value !== null && value !== undefined && (typeof value !== "string" || value.trim() !== "");
 
   function register(seasonId, database) {
     databases.set(id(seasonId), database);
@@ -40,7 +42,11 @@
     const canonical = resolveCanonicalPlayer(seasonId, runPlayer.playerId) || {};
     const profile = ownedProfile(runPlayer, seasonId) || canonical;
     const variant = activeVariant(runPlayer, profile);
-    return { ...canonical, ...profile, ...(variant || {}), playerId: id(runPlayer.playerId), profileId: profile.profileId, roleVariantId: variant?.roleVariantId || variant?.variantId || profile.defaultRoleVariantId || null };
+    const effective = { ...canonical, ...profile, ...(variant || {}), playerId: id(runPlayer.playerId), profileId: profile.profileId, roleVariantId: variant?.roleVariantId || variant?.variantId || profile.defaultRoleVariantId || null };
+    VISUAL_FIELDS.forEach((field) => {
+      effective[field] = [variant?.[field], profile?.[field], canonical?.[field]].find(nonEmpty) ?? null;
+    });
+    return effective;
   }
   function resolveEffectivePlayerAtLevel(runPlayer, context = {}) {
     const seasonId = context.seasonId || context.run?.seasonId || "ie1";
@@ -129,5 +135,5 @@
     return run;
   }
 
-  global.ProfiledSeasonRuntime = { register, resolveCanonicalPlayer, resolveProfile, resolveOwnedPlayerProfile: ownedProfile, resolveActiveRoleVariant: activeVariant, resolveEffectivePlayerAtLevel, compareProfileProgression, acquireOrUpgradeProfile, addLevelUnits, canSwitchRole, switchBenchRole, normalizeRun };
+  global.ProfiledSeasonRuntime = { register, resolveCanonicalPlayer, resolveProfile, resolveOwnedPlayerProfile: ownedProfile, resolveActiveRoleVariant: activeVariant, resolveEffectiveBase: effectiveBase, resolveEffectivePlayerAtLevel, compareProfileProgression, acquireOrUpgradeProfile, addLevelUnits, canSwitchRole, switchBenchRole, normalizeRun };
 })(globalThis);
