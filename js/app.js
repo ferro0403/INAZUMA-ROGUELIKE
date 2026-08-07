@@ -2260,7 +2260,7 @@
     const playerId = ui.selectedSquadPlayerId;
     if (!global.ProfiledSeasonRuntime.canSwitchRole(run, playerId)) return toast("SPOSTA IL GIOCATORE IN PANCHINA PER CAMBIARE RUOLO");
     const entry = rosterEntry(playerId); const profile = global.ProfiledSeasonRuntime.resolveOwnedPlayerProfile(entry, run.seasonId);
-    openModal(`<div class="modal-head role-switch-head"><div><p class="eyebrow">Panchina · ${escapeHtml(profile.name)}</p><h2>CAMBIA RUOLO</h2><p class="muted">Ruolo attuale: ${escapeHtml(resolvedRosterPlayer(playerId)?.position || "-")}</p></div></div><div class="role-switch-options">${profile.roleVariants.map((variant) => { const variantId = variant.roleVariantId || variant.variantId; const active = String(variantId) === String(entry.activeRoleVariantId); const preview = global.InazumaProgression.getPlayerAtLevel({ ...profile, ...variant }, Number(entry.level || 0), seasonDb); return `<button type="button" class="role-switch-option ${active ? "active" : ""}" data-role-variant="${escapeHtml(variantId)}" ${active ? "disabled" : ""}><strong>${escapeHtml(variant.position || variant.normalizedRole)}</strong><span>OVR ${escapeHtml(preview.overall || preview.finalOverall)}</span><small>${active ? "ATTIVO" : "SELEZIONA"}</small></button>`; }).join("")}</div>`, { closeable: true, className: "role-switch-modal" });
+    openModal(`<div class="modal-head role-switch-head"><div><p class="eyebrow">Panchina · ${escapeHtml(profile.name)}</p><h2>CAMBIA RUOLO</h2><p class="muted">Ruolo attuale: ${escapeHtml(resolvedRosterPlayer(playerId)?.position || "-")}</p></div></div><div class="role-switch-options">${profile.roleVariants.map((variant) => { const variantId = variant.roleVariantId || variant.variantId; const active = String(variantId) === String(entry.activeRoleVariantId); const previewEntry = { ...entry, activeRoleVariantId: variantId }; const preview = global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(previewEntry, { run, seasonId: run.seasonId, database: seasonDb }); return `<button type="button" class="role-switch-option ${active ? "active" : ""}" data-role-variant="${escapeHtml(variantId)}" ${active ? "disabled" : ""}><strong>${escapeHtml(variant.position || variant.normalizedRole)}</strong><span>OVR ${escapeHtml(preview.overall || preview.finalOverall)}</span><small>${active ? "ATTIVO" : "SELEZIONA"}</small></button>`; }).join("")}</div>`, { closeable: true, className: "role-switch-modal" });
     modalRoot.querySelectorAll("[data-role-variant]").forEach((button) => button.addEventListener("click", () => { global.ProfiledSeasonRuntime.switchBenchRole(run, playerId, button.dataset.roleVariant); global.FiveVFive?.removeUnavailable?.(run); global.RunState.save(run); closeModal(); toast("Ruolo aggiornato"); renderSquad(); }));
   }
 
@@ -2968,99 +2968,88 @@
     });
   }
 
+  function tradeCandidatePreview(incoming, entry) {
+    if (incoming.profileId) return global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(entry || { playerId: incoming.playerId, activeProfileId: incoming.profileId, activeRoleVariantId: incoming.activeRoleVariantId, level: 0, levelUnits: 0 }, { run, seasonId: run.seasonId, database: seasonDb });
+    const level = Number(entry?.level || 0);
+    return global.InazumaProgression.getPlayerAtLevel(incoming.player, Math.floor(level), freeAgentsDb, entry || {});
+  }
+
+  function roleVariantForTradeUpgrade(entry, profile) {
+    const currentRole = String(global.ProfiledSeasonRuntime.resolveEffectiveBase(entry, run.seasonId)?.position || "").toUpperCase();
+    const preserved = (profile?.roleVariants || []).find((variant) => String(variant.position || variant.normalizedRole || "").toUpperCase() === currentRole);
+    return String(preserved?.roleVariantId || preserved?.variantId || profile?.defaultRoleVariantId || entry.activeRoleVariantId || "") || null;
+  }
+
   function prepareTrade(node, outgoingId) {
     const outgoingEntry = rosterEntry(outgoingId);
-    const outgoingPlayer = sourcePlayer(outgoingEntry);
     const outgoingResolved = resolvedRosterPlayer(outgoingId);
-    const candidates = global.RoguelikeRules.getTradeCandidates({
-      outgoingPlayer,
-      rosterIds: run.roster.map((entry) => entry.playerId),
-      freeAgents: freeAgentsDb.players,
-      seasonPlayers: seasonDb.players,
-      unlockedTeamIds: run.unlockedTeamIds,
-      teams: seasonDb.teams,
-    });
+    const outgoingBase = run.seasonId === "ie1_s2" ? global.ProfiledSeasonRuntime.resolveEffectiveBase(outgoingEntry, run.seasonId) : sourcePlayer(outgoingEntry);
+    const candidates = run.seasonId === "ie1_s2"
+      ? global.RoguelikeRules.getProfileAwareTradeCandidates({
+          outgoingPlayer: outgoingBase,
+          rosterEntries: run.roster,
+          freeAgents: freeAgentsDb.players,
+          profiles: seasonDb.profiles,
+          unlockedTeamIds: [...(run.unlockedTeamIds || []), ...(run.unlockedSpecialTeamIds || [])],
+          teams: seasonDb.teams,
+          seasonId: run.seasonId,
+          compareProfileProgression: global.ProfiledSeasonRuntime.compareProfileProgression,
+        })
+      : global.RoguelikeRules.getTradeCandidates({ outgoingPlayer: outgoingBase, rosterIds: run.roster.map((entry) => entry.playerId), freeAgents: freeAgentsDb.players, seasonPlayers: seasonDb.players, unlockedTeamIds: run.unlockedTeamIds, teams: seasonDb.teams });
     if (!candidates.length) {
-      toast(`Nessun ${outgoingPlayer.position} con finalOverall ${outgoingPlayer.finalOverall} o superiore disponibile`);
+      toast(`Nessun ${outgoingBase.position} con finalOverall ${outgoingBase.finalOverall} o superiore disponibile`);
       return resolveTradeNode(node);
     }
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:trade:${outgoingId}`);
     const incoming = candidates[Math.floor(random() * candidates.length)];
     const nextLevel = Math.min(20, Number(outgoingEntry.level || 0) + 1);
-    const incomingDatabase = global.SeasonRegistry?.isSeasonSource?.(incoming.source) ? (global.SeasonRegistry.database(incoming.source) || seasonDb) : freeAgentsDb;
-    const incomingResolved = global.InazumaProgression.getPlayerAtLevel(incoming.player, Math.floor(nextLevel), incomingDatabase);
-    const incomingPreview = { ...incoming.player, ...incomingResolved, playerId: incoming.player.playerId };
-    const inventoryFull = Boolean(outgoingEntry.equippedItem && run.inventory.length >= global.SEASON1_CONFIG.maxInventory);
+    const incomingEntry = { playerId: incoming.playerId || incoming.player.playerId, activeProfileId: incoming.profileId || null, activeRoleVariantId: incoming.activeRoleVariantId || null, level: nextLevel, levelUnits: 0 };
+    const incomingResolved = tradeCandidatePreview(incoming, incomingEntry);
+    const sameCardUpgrade = String(incomingEntry.playerId) === String(outgoingId);
+    const inventoryFull = Boolean(!sameCardUpgrade && outgoingEntry.equippedItem && run.inventory.length >= global.SEASON1_CONFIG.maxInventory);
     openModal(`
       <section class="trade-confirm-screen">
-        <div class="modal-head trade-node-head trade-confirm-head">
-          <div><p class="eyebrow">Conferma scambio</p><h1>VALUTA L’OFFERTA</h1><p class="muted">Conferma per completare lo scambio oppure rinuncia definitivamente e torna alla mappa.</p></div>
-        </div>
+        <div class="modal-head trade-node-head trade-confirm-head"><div><p class="eyebrow">Conferma scambio</p><h1>VALUTA L’OFFERTA</h1><p class="muted">Conferma per completare lo scambio oppure rinuncia definitivamente e torna alla mappa.</p></div></div>
         <div class="trade-versus" aria-label="Confronto giocatori dello scambio">
-          <article class="trade-versus-side trade-versus-side--outgoing">
-            <div class="trade-side-label"><span>CEDI</span><small>Esce dalla rosa</small></div>
-            ${tradeStaticPlayerCardMarkup(outgoingResolved, { level: outgoingResolved.displayLevel, overall: outgoingResolved.overall, equipment: outgoingEntry.equippedItem, extraClass: "trade-preview-card--outgoing" })}
-            <dl class="trade-player-facts"><div><dt>Ruolo</dt><dd>${escapeHtml(outgoingResolved.position)}</dd></div><div><dt>OVR attuale</dt><dd>${escapeHtml(outgoingResolved.overall)}</dd></div><div><dt>Livello</dt><dd>${escapeHtml(outgoingResolved.displayLevel)}</dd></div></dl>
-          </article>
+          <article class="trade-versus-side trade-versus-side--outgoing"><div class="trade-side-label"><span>CEDI</span><small>Esce dalla rosa</small></div>${tradeStaticPlayerCardMarkup(outgoingResolved, { level: outgoingResolved.displayLevel, overall: outgoingResolved.overall, equipment: outgoingEntry.equippedItem, extraClass: "trade-preview-card--outgoing" })}<dl class="trade-player-facts"><div><dt>Ruolo</dt><dd>${escapeHtml(outgoingResolved.position)}</dd></div><div><dt>OVR attuale</dt><dd>${escapeHtml(outgoingResolved.overall)}</dd></div><div><dt>Livello</dt><dd>${escapeHtml(outgoingResolved.displayLevel)}</dd></div></dl></article>
           <div class="trade-versus-arrow" aria-hidden="true"><span>⇄</span><small>SCAMBIO</small></div>
-          <article class="trade-versus-side trade-versus-side--incoming">
-            <div class="trade-side-label"><span>RICEVI</span><small>Entra nella rosa</small></div>
-            ${tradeStaticPlayerCardMarkup(incomingPreview, { level: nextLevel, overall: incomingResolved.overall, extraClass: "trade-preview-card--incoming" })}
-            <dl class="trade-player-facts"><div><dt>Ruolo</dt><dd>${escapeHtml(incomingPreview.position)}</dd></div><div><dt>OVR attuale</dt><dd>${escapeHtml(incomingResolved.overall)}</dd></div><div><dt>Nuovo livello</dt><dd>${escapeHtml(nextLevel)}</dd></div></dl>
-          </article>
+          <article class="trade-versus-side trade-versus-side--incoming"><div class="trade-side-label"><span>RICEVI</span><small>${incoming.kind === "upgrade" ? "Profilo potenziato" : "Entra nella rosa"}</small></div>${tradeStaticPlayerCardMarkup(incomingResolved, { level: nextLevel, overall: incomingResolved.overall, extraClass: "trade-preview-card--incoming" })}<dl class="trade-player-facts"><div><dt>Ruolo</dt><dd>${escapeHtml(incomingResolved.position)}</dd></div><div><dt>OVR attuale</dt><dd>${escapeHtml(incomingResolved.overall)}</dd></div><div><dt>Nuovo livello</dt><dd>${escapeHtml(nextLevel)}</dd></div></dl></article>
         </div>
-        <div class="trade-contract-strip"><span>CONDIZIONI GARANTITE</span><strong>Stesso ruolo · finalOverall ≥ ${escapeHtml(outgoingPlayer.finalOverall)} · Livello +1</strong></div>
-        ${outgoingEntry.equippedItem ? `<p class="trade-note ${inventoryFull ? "trade-note--warning" : ""}"><strong>${inventoryFull ? "INVENTARIO PIENO" : "OGGETTO RECUPERATO"}</strong><span>${escapeHtml(outgoingEntry.equippedItem.name)} tornerà nell'inventario${inventoryFull ? ": prima dovrai liberare uno spazio." : "."}</span></p>` : ""}
+        <div class="trade-contract-strip"><span>CONDIZIONI GARANTITE</span><strong>Stesso ruolo · finalOverall ≥ ${escapeHtml(outgoingBase.finalOverall)} · Livello +1</strong></div>
+        ${outgoingEntry.equippedItem && !sameCardUpgrade ? `<p class="trade-note ${inventoryFull ? "trade-note--warning" : ""}"><strong>${inventoryFull ? "INVENTARIO PIENO" : "OGGETTO RECUPERATO"}</strong><span>${escapeHtml(outgoingEntry.equippedItem.name)} tornerà nell'inventario${inventoryFull ? ": prima dovrai liberare uno spazio." : "."}</span></p>` : ""}
         <div class="node-actions trade-confirm-actions"><button type="button" class="btn btn-yellow btn-primary-action" id="confirm-trade">CONFERMA SCAMBIO</button><button type="button" class="btn btn-ghost" id="cancel-trade">RINUNCIA ALLO SCAMBIO</button></div>
-      </section>`,
-      { closeable: false, className: "trade-confirm-modal" }
-    );
-    document.getElementById("cancel-trade").addEventListener("click", () => {
-      ui.tradeSelectedPlayerId = null;
-      finishNonMatchNode(node, "Hai rinunciato allo scambio");
-    });
+      </section>`, { closeable: false, className: "trade-confirm-modal" });
+    document.getElementById("cancel-trade").addEventListener("click", () => { ui.tradeSelectedPlayerId = null; finishNonMatchNode(node, "Hai rinunciato allo scambio"); });
     document.getElementById("confirm-trade").addEventListener("click", () => {
       const execute = () => executeTrade(node, outgoingEntry, incoming, nextLevel);
-      if (outgoingEntry.equippedItem && run.inventory.length >= global.SEASON1_CONFIG.maxInventory) {
-        return chooseInventoryDiscard("Libera uno spazio per recuperare l'oggetto equipaggiato", execute, () => prepareTrade(node, outgoingId));
-      }
+      if (inventoryFull) return chooseInventoryDiscard("Libera uno spazio per recuperare l'oggetto equipaggiato", execute, () => prepareTrade(node, outgoingId));
       execute();
     });
   }
 
   function executeTrade(node, outgoingEntry, incoming, nextLevel) {
-    const outgoingId = String(outgoingEntry.playerId);
-    const incomingId = String(incoming.player.playerId);
-    const rosterIndex = run.roster.findIndex((entry) => String(entry.playerId) === outgoingId);
-    if (outgoingEntry.equippedItem) run.inventory.push(outgoingEntry.equippedItem);
-    run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null, ...permanentRosterFields(incoming.player) };
-    unlockAlbumRecruit(incomingId, "trade");
-    run.lineup = run.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id));
-    run.bench = run.bench.map((id) => String(id) === outgoingId ? incomingId : String(id));
-    global.FiveVFive.removeUnavailable(run);
-    ui.tradeSelectedPlayerId = null;
-    global.RunState.save(run);
-    showTradeResult(node, incoming, nextLevel);
+    if (run.seasonId !== "ie1_s2") {
+      const outgoingId = String(outgoingEntry.playerId); const incomingId = String(incoming.player.playerId); const rosterIndex = run.roster.findIndex((entry) => String(entry.playerId) === outgoingId);
+      if (outgoingEntry.equippedItem) run.inventory.push(outgoingEntry.equippedItem);
+      run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null, ...permanentRosterFields(incoming.player) };
+      run.lineup = run.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id)); run.bench = run.bench.map((id) => String(id) === outgoingId ? incomingId : String(id));
+      global.FiveVFive.removeUnavailable(run); ui.tradeSelectedPlayerId = null; global.RunState.save(run); return showTradeResult(node, incoming, run.roster[rosterIndex], "acquired");
+    }
+    const result = global.RoguelikeRules.executeProfileAwareTrade(run, outgoingEntry.playerId, incoming, { roleVariantForUpgrade: roleVariantForTradeUpgrade });
+    if (result.recruited) {
+      Object.assign(result.player, { firstJoinedAt: new Date().toISOString(), recruitedOverall: tradeCandidatePreview(incoming, result.player)?.overall ?? incoming.player.finalOverall, ...permanentRosterFields(incoming.player) });
+      unlockAlbumRecruit(result.player.playerId, "trade");
+      global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player: incoming.player, playerId: result.player.playerId, source: "trade", level: result.player.level, overall: result.player.recruitedOverall, actionId: `${run.runId}:${node.id}:trade:${result.player.playerId}` });
+    }
+    global.FiveVFive.removeUnavailable(run); ui.tradeSelectedPlayerId = null; global.RunState.save(run); showTradeResult(node, incoming, result.player, result.status);
   }
 
-  function showTradeResult(node, incoming, nextLevel) {
-    const database = global.SeasonRegistry?.isSeasonSource?.(incoming.source) ? (global.SeasonRegistry.database(incoming.source) || seasonDb) : freeAgentsDb;
-    const resolved = global.InazumaProgression.getPlayerAtLevel(incoming.player, Math.floor(nextLevel), database);
-    const preview = { ...incoming.player, ...resolved, playerId: incoming.player.playerId };
-    openModal(`
-      <section class="trade-result-screen">
-        <div class="trade-result-badge" aria-hidden="true">✓</div>
-        <div class="modal-head trade-node-head trade-result-head"><div><p class="eyebrow">Scambio completato</p><h1>NUOVO GIOCATORE</h1><p class="muted">${escapeHtml(incoming.player.name)} è entrato nella rosa e ha già preso il posto del giocatore ceduto.</p></div></div>
-        <div class="trade-result-card mobile-compact-player-list">${tradeStaticPlayerCardMarkup(preview, { level: nextLevel, overall: resolved.overall, extraClass: "trade-preview-card--result" })}</div>
-        <div class="trade-result-summary"><span>ARRIVO CONFERMATO</span><strong>${escapeHtml(incoming.player.name)}</strong><small>${escapeHtml(preview.position)} · OVR ${escapeHtml(resolved.overall)} · Lv ${escapeHtml(nextLevel)}</small></div>
-        <div class="node-actions trade-result-actions"><button type="button" class="btn btn-ghost" id="trade-player-detail">APRI SCHEDA</button><button type="button" class="btn btn-yellow btn-primary-action" id="finish-trade">TORNA ALLA MAPPA</button></div>
-      </section>`,
-      { closeable: false, className: "trade-result-modal" }
-    );
-    document.getElementById("trade-player-detail").addEventListener("click", () => {
-      showPlayerDetails(incoming.player.playerId, () => showTradeResult(node, incoming, nextLevel));
-    });
-    document.getElementById("finish-trade").addEventListener("click", () => finishNonMatchNode(node, `${incoming.player.name} entra nella rosa`));
+  function showTradeResult(node, incoming, receivedEntry, status) {
+    const resolved = run.seasonId === "ie1_s2" ? resolvedRosterPlayer(receivedEntry.playerId) : tradeCandidatePreview(incoming, receivedEntry);
+    const upgraded = status === "upgraded" || status === "upgraded-self";
+    openModal(`<section class="trade-result-screen"><div class="trade-result-badge" aria-hidden="true">✓</div><div class="modal-head trade-node-head trade-result-head"><div><p class="eyebrow">Scambio completato</p><h1>${upgraded ? "PROFILO POTENZIATO" : "NUOVO GIOCATORE"}</h1><p class="muted">${escapeHtml(resolved.name)} ${upgraded ? "ha ottenuto un nuovo profilo." : "è entrato nella rosa e ha preso il posto del giocatore ceduto."}</p></div></div><div class="trade-result-card mobile-compact-player-list">${tradeStaticPlayerCardMarkup(resolved, { level: receivedEntry.level, overall: resolved.overall, extraClass: "trade-preview-card--result" })}</div><div class="trade-result-summary"><span>${upgraded ? "POTENZIAMENTO CONFERMATO" : "ARRIVO CONFERMATO"}</span><strong>${escapeHtml(resolved.name)}</strong><small>${escapeHtml(resolved.position)} · OVR ${escapeHtml(resolved.overall)} · Lv ${escapeHtml(receivedEntry.level)}</small></div><div class="node-actions trade-result-actions"><button type="button" class="btn btn-ghost" id="trade-player-detail">APRI SCHEDA</button><button type="button" class="btn btn-yellow btn-primary-action" id="finish-trade">TORNA ALLA MAPPA</button></div></section>`, { closeable: false, className: "trade-result-modal" });
+    document.getElementById("trade-player-detail").addEventListener("click", () => showPlayerDetails(receivedEntry.playerId, () => showTradeResult(node, incoming, receivedEntry, status)));
+    document.getElementById("finish-trade").addEventListener("click", () => finishNonMatchNode(node, upgraded ? `${resolved.name}: profilo potenziato` : `${resolved.name} entra nella rosa`));
   }
 
   function weightedItemCandidates(random, count) {
@@ -4328,7 +4317,7 @@
             </div>
           </section>
 
-          <section class="boss-match-summary" aria-label="Riepilogo essenziale della sfida Boss">
+          <section class="boss-match-summary" aria-label="${isSpecial ? "Riepilogo essenziale della partita speciale" : "Riepilogo essenziale della sfida Boss"}">
             ${fiveMatchComparisonMarkup(userPlayers, bossPlayers, { contentId: "boss-match-values-content", opponentName: meta.boss.name, userStrength: simPreview.userStrength?.final ?? "-", userFormation: meta.user.formation, userOverall: userAverage || "-", probability: userProbability ?? "-", opponentStrength: simPreview.opponentStrength?.final ?? "-", opponentFormation: meta.boss.formation, opponentOverall: bossAverage || "-" })}
             <div class="boss-match-reward-note"><span>Vittoria</span><strong>${isSpecial ? "+1 livello · ricompensa garantita" : "2 pick 1 di 3 dalla squadra battuta"}</strong></div>
           </section>
@@ -4395,10 +4384,12 @@
     return updatedPlayers;
   }
 
-  function appendFinalMatchMessage(result, boss = false) {
-    const text = boss
+  function appendFinalMatchMessage(result, matchType = "five_v_five") {
+    const text = matchType === "boss"
       ? (result === "victory" ? "Vittoria confermata: premi Continua per aprire le ricompense boss." : "Sconfitta confermata: premi Continua per tornare al nodo precedente.")
-      : (result === "victory" ? "Vittoria 5v5 confermata: premi Continua per tornare al percorso." : "Sconfitta 5v5 confermata: premi Continua per tornare al nodo precedente.");
+      : matchType === "special_match"
+        ? (result === "victory" ? "Vittoria confermata: premi Continua per ottenere la ricompensa garantita." : "Sconfitta confermata: premi Continua per tornare al nodo precedente.")
+        : (result === "victory" ? "Vittoria 5v5 confermata: premi Continua per tornare al percorso." : "Sconfitta 5v5 confermata: premi Continua per tornare al nodo precedente.");
     if (!ui.bossMatchLog.some((event) => event.minute === "FT")) {
       ui.bossMatchLog = [...ui.bossMatchLog, { minute: "FT", icon: result === "victory" ? "🏆" : "💔", text, side: null }];
       appendMatchLogEvent(ui.bossMatchLog.at(-1));
@@ -4425,7 +4416,7 @@
       bossId: boss?.teamId || null,
       isFinal: match.type === "boss" && bossIndex >= seasonDb.bossOrder.length - 1,
       completedAt: new Date().toISOString(),
-      formation: match.type === "boss" ? run.formationId : run.fiveVFive?.formation,
+      formation: match.lineupSnapshot?.formation || match.simulation?.userSnapshot?.formation || (match.type === "five_v_five" ? run.fiveVFive?.formation : run.formationId),
     });
   }
 
@@ -4455,7 +4446,7 @@
     }
     run.phase = "match";
     run.activeMatch = match;
-    appendFinalMatchMessage(result, false);
+    appendFinalMatchMessage(result, "five_v_five");
     persistMatchState();
     updateMatchScoreDom(match, true);
     updateMatchControlsDom();
@@ -4477,7 +4468,7 @@
       global.RunState.restoreAfterLoss(run, match.previousNodeId);
       match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : "Sconfitta: torni al nodo precedente." };
     }
-    run.phase = "match"; run.activeMatch = match; appendFinalMatchMessage(result, true); persistMatchState(); updateMatchScoreDom(match, true); updateMatchControlsDom();
+    run.phase = "match"; run.activeMatch = match; appendFinalMatchMessage(result, "special_match"); persistMatchState(); updateMatchScoreDom(match, true); updateMatchControlsDom();
   }
 
   function completeBossMatch(result) {
@@ -4515,7 +4506,7 @@
     }
     run.phase = "match";
     run.activeMatch = match;
-    appendFinalMatchMessage(result, true);
+    appendFinalMatchMessage(result, "boss");
     persistMatchState();
     updateMatchScoreDom(match, true);
     updateMatchControlsDom();
@@ -5859,7 +5850,7 @@
     if (!team) return renderHome();
     if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "victory", onComplete: () => renderFinalCelebration(hallTeamId, { developmentResolved: true }) });
     run.phase = "final-celebration"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
-    app.innerHTML = `<main class="final-celebration-screen"><section class="final-celebration-panel"><header class="final-victory-hero"><div class="final-trophy" aria-hidden="true">★</div><div class="final-victory-copy"><p class="eyebrow">SEASON 1 COMPLETATA</p><h1>${escapeHtml(team.teamName)}</h1><h2>Campioni della run</h2><p>${escapeHtml(team.modeName)} · ${formatDate(team.victoryDate)} · ${escapeHtml(team.finalFormation || '-')}</p></div></header><div class="final-victory-team"><div class="final-victory-section-head"><span>Squadra vincente</span><strong>La formazione che ha scritto la storia</strong></div>${championFormationMarkup(team)}</div><div class="button-row final-actions"><button type="button" class="btn btn-yellow" id="final-continue">Continua <span aria-hidden="true">→</span></button><button type="button" class="btn" id="skip-final-animation">Vai al riepilogo</button></div></section></main>`;
+    app.innerHTML = `<main class="final-celebration-screen"><section class="final-celebration-panel"><header class="final-victory-hero"><div class="final-trophy" aria-hidden="true">★</div><div class="final-victory-copy"><p class="eyebrow">${escapeHtml(normalizedHallSeasonName(team).toUpperCase())} COMPLETATA</p><h1>${escapeHtml(team.teamName)}</h1><h2>Campioni della run</h2><p>${escapeHtml(team.modeName)} · ${formatDate(team.victoryDate)} · ${escapeHtml(team.finalFormation || '-')}</p></div></header><div class="final-victory-team"><div class="final-victory-section-head"><span>Squadra vincente</span><strong>La formazione che ha scritto la storia</strong></div>${championFormationMarkup(team)}</div><div class="button-row final-actions"><button type="button" class="btn btn-yellow" id="final-continue">Continua <span aria-hidden="true">→</span></button><button type="button" class="btn" id="skip-final-animation">Vai al riepilogo</button></div></section></main>`;
     resetRenderedViewScroll(); bindHallPlayerDetails(team);
     const go = () => { run.phase = "final-summary"; global.RunState.save(run); renderFinalSummary(team.hallTeamId); };
     document.getElementById("final-continue").addEventListener("click", go);
@@ -5873,7 +5864,7 @@
     const ordinal = summaries.findIndex((item) => item.hallTeamId === team.hallTeamId) + 1;
     run.phase = "final-summary"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
     if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "victory", onComplete: () => renderFinalSummary(hallTeamId, { developmentResolved: true }) });
-    app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><div><p class="eyebrow">CAMPIONI DELLA SEASON 1</p><h1>${escapeHtml(team.teamName)}</h1><p class="final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span><span>Seed ${escapeHtml(compactSeed(team.seed))}</span><span>#${escapeHtml(ordinal || '-')} Albo d’Oro</span></p></div><span class="final-summary-star" aria-hidden="true">★</span></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3>${championFiveVFiveMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel"><button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn btn-primary" id="final-new-run">Nuova run</button>${sectionRootButton("finalSummary")}</aside></section></main>`;
+    app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><div><p class="eyebrow">CAMPIONI · ${escapeHtml(normalizedHallSeasonName(team).toUpperCase())}</p><h1>${escapeHtml(team.teamName)}</h1><p class="final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span><span>Seed ${escapeHtml(compactSeed(team.seed))}</span><span>#${escapeHtml(ordinal || '-')} Albo d’Oro</span></p></div><span class="final-summary-star" aria-hidden="true">★</span></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3>${championFiveVFiveMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel"><button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn btn-primary" id="final-new-run">Nuova run</button>${sectionRootButton("finalSummary")}</aside></section></main>`;
     resetRenderedViewScroll(); bindFinalTabs(); bindHallPlayerDetails(team);
     document.getElementById("open-current-hall").addEventListener("click", () => renderHallOfFameDetail(team.hallTeamId));
     bindSectionRootNav();
