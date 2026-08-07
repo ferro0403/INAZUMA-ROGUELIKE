@@ -23,7 +23,7 @@ assert.equal(cappedChanges.defense, 0); assert(Object.entries(cappedChanges).som
 assert(Math.abs(contribution("DF", cappedChanges) - 3) <= 0.5);
 
 const database = { compactFormat: { levelMax: 20, statOrder: Object.keys(stats()) } };
-const player = { playerId: "df", position: "DF", finalOverall: 83, maxLevel: 20, ratings: stats(), category: "Forte" };
+const player = { playerId: "df", position: "DF", finalOverall: 83, maxLevel: 20, ratings: Object.fromEntries(Object.keys(stats()).map((stat) => [stat, 2])), category: "Forte" };
 const resolve = (amount) => progression.getPlayerAtLevel(player, 20, database, { potentialBoost: amount, currentOverallBoost: amount, potentialBoostApplications: [{ amount, appliedLevel: 0 }] });
 const before = resolve(0), once = resolve(3), twice = resolve(6), permanent = resolve(12);
 assert.equal(once.overall, before.overall + 3); assert.equal(once.potential, before.potential + 3); assert.notDeepEqual(once.stats, before.stats); assert.equal(once.stats.save, before.stats.save);

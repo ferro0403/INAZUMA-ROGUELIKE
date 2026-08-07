@@ -152,12 +152,55 @@
     return parseInt(code.slice(offset, offset + codeWidth), 36);
   }
 
-  function statsFromRatings(player, overall, statOrder) {
-    const ratings = player?.ratings || {};
-    const values = statOrder.map((stat) => Number(ratings[stat] || 0));
-    const avg = values.reduce((sum, value) => sum + value, 0) / Math.max(1, values.length);
-    const targetAvg = Math.max(1, Math.min(99, Number(overall || 0)));
-    return Object.fromEntries(statOrder.map((stat) => [stat, Math.max(1, Math.min(99, Math.round(targetAvg + ((Number(ratings[stat] || 0) - avg) * 4))))]));
+  // Least-squares calibration on an 80% player-level split of the IE1 and
+  // Free Agents compact progressions. Inputs are normalized to keep the
+  // coefficients readable; the remaining player-specific legacy jitter is
+  // deliberately not reproduced. See scripts/analyze-legacy-progression.js.
+  const LEGACY_LEVEL_ZERO_MODEL = Object.freeze({
+    intercept: 0.13634777000187784,
+    finalStat: 65.20194123389791,
+    overall: -0.3383545296532767,
+    interaction: 6.658850793123839,
+    overallSquared: -0.7422114358370647,
+  });
+
+  function estimateLegacyLevel0Stat(finalStat, finalOverall) {
+    const normalizedStat = Number(finalStat) / 100;
+    const normalizedOverall = (Number(finalOverall) - 80) / 10;
+    const model = LEGACY_LEVEL_ZERO_MODEL;
+    return Math.round(
+      model.intercept
+      + (model.finalStat * normalizedStat)
+      + (model.overall * normalizedOverall)
+      + (model.interaction * normalizedStat * normalizedOverall)
+      + (model.overallSquared * normalizedOverall * normalizedOverall)
+    );
+  }
+
+  function interpolateLegacyStat(level0Stat, finalStat, level, maxLevel) {
+    if (level >= maxLevel || maxLevel <= 0) return finalStat;
+    return Math.round(level0Stat + ((finalStat - level0Stat) * level / maxLevel));
+  }
+
+  function statsFromRatings(player, level, maxLevel, statOrder) {
+    const ratings = player?.ratings;
+    const invalidStat = statOrder.find((stat) => {
+      const rating = Number(ratings?.[stat]);
+      return !Number.isFinite(rating) || !Number.isInteger(rating) || rating < 1 || rating > 10;
+    });
+    if (invalidStat) {
+      throw new Error(`Invalid InaCodex rating for ${invalidStat}: expected an integer from 1 to 10`);
+    }
+
+    return Object.fromEntries(statOrder.map((stat) => [
+      stat,
+      interpolateLegacyStat(
+        estimateLegacyLevel0Stat(Number(ratings[stat]) * 10, player.finalOverall),
+        Number(ratings[stat]) * 10,
+        level,
+        maxLevel
+      ),
+    ]));
   }
 
   function getPlayerAtLevel(player, requestedLevel, database, options = {}) {
@@ -183,7 +226,7 @@
         );
       });
     } else {
-      stats = statsFromRatings(player, Number(player.finalOverall) - (maxLevel - level), statOrder);
+      stats = statsFromRatings(player, level, maxLevel, statOrder);
     }
 
     const baseOverall = Number(player.finalOverall) - (maxLevel - level);
