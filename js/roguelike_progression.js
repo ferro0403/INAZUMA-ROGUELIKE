@@ -152,6 +152,36 @@
     return parseInt(code.slice(offset, offset + codeWidth), 36);
   }
 
+  // Least-squares calibration on an 80% player-level split of the IE1 and
+  // Free Agents compact progressions. Inputs are normalized to keep the
+  // coefficients readable; the remaining player-specific legacy jitter is
+  // deliberately not reproduced. See scripts/analyze-legacy-progression.js.
+  const LEGACY_LEVEL_ZERO_MODEL = Object.freeze({
+    intercept: 0.13634777000187784,
+    finalStat: 65.20194123389791,
+    overall: -0.3383545296532767,
+    interaction: 6.658850793123839,
+    overallSquared: -0.7422114358370647,
+  });
+
+  function estimateLegacyLevel0Stat(finalStat, finalOverall) {
+    const normalizedStat = Number(finalStat) / 100;
+    const normalizedOverall = (Number(finalOverall) - 80) / 10;
+    const model = LEGACY_LEVEL_ZERO_MODEL;
+    return Math.round(
+      model.intercept
+      + (model.finalStat * normalizedStat)
+      + (model.overall * normalizedOverall)
+      + (model.interaction * normalizedStat * normalizedOverall)
+      + (model.overallSquared * normalizedOverall * normalizedOverall)
+    );
+  }
+
+  function interpolateLegacyStat(level0Stat, finalStat, level, maxLevel) {
+    if (level >= maxLevel || maxLevel <= 0) return finalStat;
+    return Math.round(level0Stat + ((finalStat - level0Stat) * level / maxLevel));
+  }
+
   function statsFromRatings(player, level, maxLevel, statOrder) {
     const ratings = player?.ratings;
     const invalidStat = statOrder.find((stat) => {
@@ -162,15 +192,14 @@
       throw new Error(`Invalid InaCodex rating for ${invalidStat}: expected an integer from 1 to 10`);
     }
 
-    // Legacy compact progressions generally begin around 60% of the final
-    // technical stat and grow to its InaCodex endpoint. Their original
-    // per-player jitter cannot be reconstructed from ratings-only records, so
-    // dynamic records use the deterministic linear form of that same curve.
-    const progress = maxLevel > 0 ? level / maxLevel : 1;
-    const multiplier = 0.6 + (0.4 * progress);
     return Object.fromEntries(statOrder.map((stat) => [
       stat,
-      Math.round(Number(ratings[stat]) * 10 * multiplier),
+      interpolateLegacyStat(
+        estimateLegacyLevel0Stat(Number(ratings[stat]) * 10, player.finalOverall),
+        Number(ratings[stat]) * 10,
+        level,
+        maxLevel
+      ),
     ]));
   }
 
