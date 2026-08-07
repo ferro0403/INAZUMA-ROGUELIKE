@@ -503,6 +503,10 @@
     return entry ? (resolvedRosterPlayer(playerId)?.position || sourcePlayer(entry)?.position) : null;
   }
 
+  function effectiveRosterRole(playerId) {
+    return fiveRoleForPlayerId(playerId);
+  }
+
   function ensureFiveVFive() {
     if (!run || !run.roster?.length) return null;
     return global.FiveVFive.ensure(run, fiveRoleForPlayerId, fiveOverallForPlayerId);
@@ -551,7 +555,7 @@
     global.RunStatistics?.ensureRunStatistics?.(run);
     run.roster = (run.roster || []).map((entry) => {
       const source = sourcePlayer(entry);
-      const maxBoost = source ? Math.max(0, 99 - Number(source.finalOverall || 0)) : Number.POSITIVE_INFINITY;
+      const maxBoost = source ? Math.max(0, 99 - activeBasePotential(entry)) : Number.POSITIVE_INFINITY;
       const potentialBoostApplications = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
       const potentialBoost = potentialBoostApplications.reduce((sum, boost) => sum + boost.amount, 0);
       return {
@@ -598,6 +602,14 @@
     const index = run.inventory.findIndex((item) => item.instanceId === instanceId);
     if (index < 0) return null;
     return run.inventory.splice(index, 1)[0];
+  }
+
+  function activeBasePotential(entry) {
+    if (!entry) return 0;
+    if (run?.seasonId === "ie1_s2" && entry.activeProfileId) {
+      return Number(global.ProfiledSeasonRuntime.resolveEffectiveBase(entry, run.seasonId)?.finalOverall || 0);
+    }
+    return Number(sourcePlayer(entry)?.finalOverall || 0);
   }
 
   function resolvedRosterPlayer(playerId) {
@@ -1026,13 +1038,24 @@
     return [...teams, freeAgentsTeam];
   }
 
+  function albumTeamPlayers(team) {
+    if (team?.freeAgents) return freeAgentsDb?.players || [];
+    if (run?.seasonId === "ie1_s2" && team?.playerProfileIds?.length) {
+      return team.playerProfileIds.map((profileId) => {
+        const profile = global.ProfiledSeasonRuntime.resolveProfile("ie1_s2", profileId);
+        return profile ? { ...global.ProfiledSeasonRuntime.resolveEffectiveBase({ playerId: profile.playerId, activeProfileId: profile.profileId, activeRoleVariantId: profile.defaultRoleVariantId }, "ie1_s2"), albumProfileId: profile.profileId } : null;
+      }).filter(Boolean);
+    }
+    return (team?.playerIds || []).map((id) => seasonPlayersById.get(String(id))).filter(Boolean);
+  }
+
   async function renderAlbumTeams(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
     closeModal({ invokeOnClose: false });
     await loadSeason(collectionId);
     ui.albumCollectionId = collectionId;
     const collection = global.AlbumProgress.ALBUM_COLLECTIONS[collectionId];
     ensureAlbumBackfill();
-    app.innerHTML = `<main class="album-screen"><header class="topbar album-topbar"><div><p class="eyebrow">Album → ${escapeHtml(collection.name)}</p><h1>Squadre</h1></div>${sectionRootButton("albumCollection")}</header><section class="album-team-grid">${albumTeamsView().map((team) => { const players = team.freeAgents ? (freeAgentsDb?.players || []) : (team.playerIds || []).map((id) => seasonPlayersById.get(String(id))).filter(Boolean); const progress = albumProgressForPlayers(players, collectionId); const complete = progress.total > 0 && progress.unlocked === progress.total; return `<button type="button" class="panel album-team-card ${complete ? "album-complete" : ""}" data-album-team="${escapeHtml(team.teamId)}" aria-label="${escapeHtml(team.teamName)} ${progress.unlocked} su ${progress.total}"><span class="album-team-logo">${albumTeamLogoMarkup(team)}</span><strong>${escapeHtml(team.teamName)}</strong><span>${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)}</span>${complete ? `<em>Completato</em>` : ""}</button>`; }).join("")}</section></main>`;
+    app.innerHTML = `<main class="album-screen"><header class="topbar album-topbar"><div><p class="eyebrow">Album → ${escapeHtml(collection.name)}</p><h1>Squadre</h1></div>${sectionRootButton("albumCollection")}</header><section class="album-team-grid">${albumTeamsView().map((team) => { const players = albumTeamPlayers(team); const progress = albumProgressForPlayers(players, collectionId); const complete = progress.total > 0 && progress.unlocked === progress.total; return `<button type="button" class="panel album-team-card ${complete ? "album-complete" : ""}" data-album-team="${escapeHtml(team.teamId)}" aria-label="${escapeHtml(team.teamName)} ${progress.unlocked} su ${progress.total}"><span class="album-team-logo">${albumTeamLogoMarkup(team)}</span><strong>${escapeHtml(team.teamName)}</strong><span>${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)}</span>${complete ? `<em>Completato</em>` : ""}</button>`; }).join("")}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav({ collectionId });
     document.querySelectorAll("[data-album-team]").forEach((button) => button.addEventListener("click", () => renderAlbumRoster(collectionId, button.dataset.albumTeam)));
@@ -1043,7 +1066,7 @@
     ui.albumCollectionId = collectionId; ui.albumTeamId = teamId;
     const team = albumTeamsView().find((candidate) => String(candidate.teamId) === String(teamId));
     if (!team) return renderAlbumTeams(collectionId);
-    const rawPlayers = team.freeAgents ? (freeAgentsDb?.players || []) : (team.playerIds || []).map((id) => seasonPlayersById.get(String(id))).filter(Boolean);
+    const rawPlayers = albumTeamPlayers(team);
     const database = team.freeAgents ? freeAgentsDb : seasonDb;
     const albumProgressState = global.AlbumProgress.read();
     const unlocked = global.AlbumProgress.unlockedSet(collectionId, albumProgressState);
@@ -1938,8 +1961,8 @@
   function rosterCounts() {
     const counts = { GK: 0, DF: 0, MF: 0, FW: 0 };
     run.roster.forEach((entry) => {
-      const player = sourcePlayer(entry);
-      if (player && counts[player.position] !== undefined) counts[player.position] += 1;
+      const role = effectiveRosterRole(entry.playerId);
+      if (counts[role] !== undefined) counts[role] += 1;
     });
     return counts;
   }
@@ -1950,11 +1973,11 @@
   }
 
   function autoArrangeFormation(formation) {
-    const available = run.roster.map((entry) => ({ entry, player: sourcePlayer(entry) }));
+    const available = run.roster.map((entry) => ({ entry, role: effectiveRosterRole(entry.playerId) }));
     const used = new Set();
     const lineup = formation.slotRoles.map((role) => {
       const candidate = available.find(
-        ({ entry, player }) => player.position === role && !used.has(String(entry.playerId))
+        ({ entry, role: effectiveRole }) => effectiveRole === role && !used.has(String(entry.playerId))
       );
       if (!candidate) throw new Error(`Not enough ${role} players`);
       used.add(String(candidate.entry.playerId));
@@ -1972,7 +1995,7 @@
   function lineupRows() {
     return ["FW", "MF", "DF", "GK"].map((role) => ({
       role,
-      ids: run.lineup.filter((id) => sourcePlayer(rosterEntry(id)).position === role),
+      ids: run.lineup.filter((id) => effectiveRosterRole(id) === role),
     }));
   }
 
@@ -2178,7 +2201,7 @@
               <div class="squad-management-actions">
                 <button type="button" class="btn squad-module-button" id="open-squad-formation">Modifica modulo</button>
                 <button type="button" class="btn btn-yellow squad-info-button" id="squad-player-info" disabled>Info</button>
-                <button type="button" class="btn btn-ghost squad-role-button" id="squad-role-switch" disabled>CAMBIA RUOLO</button>
+                <button type="button" class="btn squad-role-button" id="squad-role-switch" disabled>CAMBIA RUOLO</button>
               </div>
               <p class="squad-selection-hint" data-squad-hint>Seleziona un giocatore</p>
               <section class="squad-bench-panel" aria-label="Riserve">
@@ -2223,14 +2246,14 @@
   }
 
   function squadPlayerRole(playerId) {
-    return sourcePlayer(rosterEntry(playerId))?.position || null;
+    return effectiveRosterRole(playerId);
   }
 
   function openBenchRoleSwitch() {
     const playerId = ui.selectedSquadPlayerId;
     if (!global.ProfiledSeasonRuntime.canSwitchRole(run, playerId)) return toast("SPOSTA IL GIOCATORE IN PANCHINA PER CAMBIARE RUOLO");
     const entry = rosterEntry(playerId); const profile = global.ProfiledSeasonRuntime.resolveOwnedPlayerProfile(entry, run.seasonId);
-    openModal(`<div class="modal-head role-switch-head"><div><p class="eyebrow">Panchina</p><h2>CAMBIA RUOLO</h2><p class="muted">Ruolo attuale: ${escapeHtml(resolvedRosterPlayer(playerId)?.position || "-")}</p></div></div><div class="role-switch-options">${profile.roleVariants.map((variant) => { const variantId = variant.roleVariantId || variant.variantId; const active = String(variantId) === String(entry.activeRoleVariantId); const preview = global.InazumaProgression.getPlayerAtLevel({ ...profile, ...variant }, Number(entry.level || 0), seasonDb); return `<button type="button" class="btn ${active ? "btn-yellow active" : "btn-ghost"}" data-role-variant="${escapeHtml(variantId)}" ${active ? "disabled" : ""}><strong>${escapeHtml(variant.position || variant.normalizedRole)}</strong><span>OVR ${escapeHtml(preview.overall || preview.finalOverall)}</span></button>`; }).join("")}</div>`, { closeable: true, className: "role-switch-modal" });
+    openModal(`<div class="modal-head role-switch-head"><div><p class="eyebrow">Panchina · ${escapeHtml(profile.name)}</p><h2>CAMBIA RUOLO</h2><p class="muted">Ruolo attuale: ${escapeHtml(resolvedRosterPlayer(playerId)?.position || "-")}</p></div></div><div class="role-switch-options">${profile.roleVariants.map((variant) => { const variantId = variant.roleVariantId || variant.variantId; const active = String(variantId) === String(entry.activeRoleVariantId); const preview = global.InazumaProgression.getPlayerAtLevel({ ...profile, ...variant }, Number(entry.level || 0), seasonDb); return `<button type="button" class="role-switch-option ${active ? "active" : ""}" data-role-variant="${escapeHtml(variantId)}" ${active ? "disabled" : ""}><strong>${escapeHtml(variant.position || variant.normalizedRole)}</strong><span>OVR ${escapeHtml(preview.overall || preview.finalOverall)}</span><small>${active ? "ATTIVO" : "SELEZIONA"}</small></button>`; }).join("")}</div>`, { closeable: true, className: "role-switch-modal" });
     modalRoot.querySelectorAll("[data-role-variant]").forEach((button) => button.addEventListener("click", () => { global.ProfiledSeasonRuntime.switchBenchRole(run, playerId, button.dataset.roleVariant); global.FiveVFive?.removeUnavailable?.(run); global.RunState.save(run); closeModal(); toast("Ruolo aggiornato"); renderSquad(); }));
   }
 
@@ -2252,6 +2275,8 @@
       const canSwitch = selected && global.ProfiledSeasonRuntime?.canSwitchRole?.(run, selected);
       const hasVariants = selected && (global.ProfiledSeasonRuntime?.resolveOwnedPlayerProfile?.(rosterEntry(selected), run.seasonId)?.roleVariants || []).length > 1;
       roleButton.disabled = !hasVariants;
+      roleButton.classList.toggle("is-available", Boolean(canSwitch));
+      roleButton.classList.toggle("is-bench-required", Boolean(hasVariants && !canSwitch));
       roleButton.textContent = canSwitch ? "CAMBIA RUOLO" : hasVariants ? "SPOSTA IN PANCHINA PER CAMBIARE RUOLO" : "CAMBIA RUOLO";
     }
     const infoButton = document.getElementById("squad-player-info");
@@ -3099,20 +3124,29 @@
         legendaryById.set(String(player.playerId), player);
         legendarySources.set(String(player.playerId), "free_agents");
       });
-    seasonDb.players
+    const seasonalLegendaryPlayers = run.seasonId === "ie1_s2"
+      ? (seasonDb.profiles || []).filter((profile) => global.SpecialMatchRuntime.eligibleProfile(run, profile.profileId))
+      : seasonDb.players;
+    seasonalLegendaryPlayers
       .filter((player) => global.SEASON1_CONFIG.legendaryCategories.includes(player.category))
       .forEach((player) => {
-        if (!legendaryById.has(String(player.playerId))) {
+        const previous = legendaryById.get(String(player.playerId));
+        if (!previous || Number(player.profileRank || 0) > Number(previous.profileRank || 0)) {
           legendaryById.set(String(player.playerId), player);
-          legendarySources.set(String(player.playerId), global.SeasonRegistry.sourceForSeason(run?.seasonId));
+          legendarySources.set(String(player.profileId || player.playerId), global.SeasonRegistry.sourceForSeason(run?.seasonId));
         }
       });
     return {
       players: [...legendaryById.values()],
       source: "mixed",
-      sourceForPlayer: (player) => legendarySources.get(String(player.playerId)),
+      sourceForPlayer: (player) => legendarySources.get(String(player.profileId || player.playerId)) || legendarySources.get(String(player.playerId)),
       database: freeAgentsDb,
+      profileAware: run.seasonId === "ie1_s2",
     };
+  }
+
+  function pullCandidateKey(player, pool = {}) {
+    return String(pool.profileAware && player?.profileId ? player.profileId : player?.playerId);
   }
 
   function selectWeightedCandidates(available, random, categoryWeights = null) {
@@ -3159,15 +3193,15 @@
 
   function luckyCharmPoolForPull(pullType) {
     if (pullType === "pull_free_agents") return pullPool(pullType);
-    if (pullType === "pull_unlocked_teams") return { players: seasonDb.players, source: global.SeasonRegistry.sourceForSeason(run?.seasonId), database: seasonDb };
+    if (pullType === "pull_unlocked_teams") return pullPool(pullType);
     return null;
   }
 
-  function chooseLuckyUpgrade(original, available, usedIds, random) {
+  function chooseLuckyUpgrade(original, available, usedIds, random, pool = {}) {
     const requiredCategory = improvedCategory(original.category);
     const role = original.position;
     const originalId = String(original.playerId);
-    const shuffled = global.DraftEngine.shuffle(available.filter((player) => !usedIds.has(String(player.playerId))), random);
+    const shuffled = global.DraftEngine.shuffle(available.filter((player) => !usedIds.has(pullCandidateKey(player, pool))), random);
     const exactUpgrade = shuffled.filter((player) => player.category === requiredCategory);
     const preferred = exactUpgrade.filter((player) => player.position === role && (requiredCategory !== original.category || String(player.playerId) !== originalId));
     if (preferred.length) return preferred[0];
@@ -3180,8 +3214,8 @@
     if (!Array.isArray(currentCandidates) || currentCandidates.length !== 3) return null;
     const usedIds = new Set();
     const upgradedCandidates = currentCandidates.map((candidate) => {
-      const selected = chooseLuckyUpgrade(candidate, available, usedIds, random);
-      if (selected) usedIds.add(String(selected.playerId));
+      const selected = chooseLuckyUpgrade(candidate, available, usedIds, random, { profileAware: run.seasonId === "ie1_s2" && available.some((player) => player.profileId) });
+      if (selected) usedIds.add(String(selected.profileId || selected.playerId));
       return selected;
     });
     if (upgradedCandidates.length !== 3 || upgradedCandidates.some((candidate) => !candidate)) return null;
@@ -3200,14 +3234,14 @@
     const pool = luckyCharmPoolForPull(pullType);
     if (!pool) return toast("Portafortuna non utilizzabile in questa selezione.");
     const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
-    const available = pool.players.filter((player) => !owned.has(String(player.playerId)));
+    const available = pool.players.filter((player) => pool.profileAware ? global.SpecialMatchRuntime.eligibleProfile(run, player.profileId) : !owned.has(String(player.playerId)));
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:lucky:${node.pullState.rerolls}`);
     const upgradedCandidates = buildLuckyCharmUpgrades(currentCandidates, available, random);
     if (!upgradedCandidates || upgradedCandidates.length !== 3) return toast("Non è stato possibile migliorare tutti i candidati.");
     removeInventoryItem(luckyCharm.instanceId);
     global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.LUCKY_CHARM_USED, { nodeId: node.id, itemId: luckyCharm.id, instanceId: luckyCharm.instanceId, actionId: `${run.runId}:${node.id}:lucky_charm` });
     node.pullState.luckyCharmUsed = true;
-    node.pullState.candidateIds = upgradedCandidates.map((player) => String(player.playerId));
+    node.pullState.candidateIds = upgradedCandidates.map((player) => pullCandidateKey(player, pool));
     global.RunState.save(run);
     openPull(node, pullType);
   }
@@ -3231,7 +3265,7 @@
       if (legendaryPull) return toast("Il Visore scout non può essere utilizzato nelle pull leggendarie.");
       removeInventoryItem(scoutToken.instanceId);
       global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId: node.id, itemId: scoutToken.id, instanceId: scoutToken.instanceId, actionId: `${run.runId}:${node.id}:reroll:${node.pullState.rerolls + 1}` });
-      node.pullState.excludedCandidateIds.push(...candidates.map((player) => String(player.playerId)));
+      node.pullState.excludedCandidateIds.push(...candidates.map((player) => pullCandidateKey(player, pool)));
       node.pullState.rerolls += 1;
       node.pullState.candidateIds = [];
       global.RunState.save(run);
@@ -3262,6 +3296,7 @@
       },
       onSkip: () => finishNonMatchNode(node, "Hai rinunciato al pull"),
       legendary: legendaryPull,
+      profileAware: pool.profileAware,
     });
   }
 
@@ -3287,7 +3322,7 @@
 
   function updateInlinePullSelection(grid, selectedId) {
     grid.querySelectorAll(".pull-choice-option").forEach((option) => {
-      const selected = option.dataset.playerId === selectedId;
+      const selected = (option.dataset.candidateKey || option.dataset.playerId) === selectedId;
       option.classList.toggle("is-selected", selected);
       const trigger = option.querySelector("[data-player-id]");
       const actions = option.querySelector(".pull-choice-actions");
@@ -3298,6 +3333,7 @@
   }
 
   function showPlayerOffer(options) {
+    const offerCandidateKey = (player) => String(options.profileAware && player.profileId ? player.profileId : player.playerId);
     const scoutItem = resolveItem("scout_token");
     const luckyItem = resolveItem("lucky_charm");
     const rerollButton = options.onReroll
@@ -3312,7 +3348,7 @@
       <div class="candidate-grid pull-offer-grid" data-pull-choice-grid>
         ${options.candidates.map((player, index) => {
           const panelId = `pull-choice-actions-${index}`;
-          return `<div class="pull-choice-option ${rarityClass(player.category)}" data-player-id="${escapeHtml(player.playerId)}">
+          return `<div class="pull-choice-option ${rarityClass(player.category)}" data-player-id="${escapeHtml(player.playerId)}" data-candidate-key="${escapeHtml(offerCandidateKey(player))}">
             ${playerCard(player, { button: true, context: "pull", level: options.level, database: pullChoiceDatabase(options, player), applyPermanent: true }).replace(">", ` aria-expanded="false" aria-pressed="false" aria-controls="${panelId}">`)}
             ${pullChoiceActionPanel(player, index)}
           </div>`;
@@ -3333,10 +3369,10 @@
       const actionButton = event.target.closest("[data-pull-action]");
       const option = event.target.closest(".pull-choice-option");
       if (!option) return;
-      const player = options.candidates.find((candidate) => String(candidate.playerId) === option.dataset.playerId);
+      const player = options.candidates.find((candidate) => offerCandidateKey(candidate) === option.dataset.candidateKey);
       if (!player) return;
       if (!actionButton) {
-        selectedPullPlayerId = option.dataset.playerId;
+        selectedPullPlayerId = option.dataset.candidateKey;
         updateInlinePullSelection(choiceGrid, selectedPullPlayerId);
         return;
       }
@@ -3352,10 +3388,10 @@
             afterNextPaint(() => {
               const restoredGrid = modalRoot.querySelector("[data-pull-choice-grid]");
               if (!restoredGrid) return;
-              selectedPullPlayerId = String(player.playerId);
+              selectedPullPlayerId = offerCandidateKey(player);
               updateInlinePullSelection(restoredGrid, selectedPullPlayerId);
               restoreScroll(pullScroll);
-              restoredGrid.querySelector(`.pull-choice-option[data-player-id="${cssEscape(player.playerId)}"] [data-pull-action="detail"]`)?.focus({ preventScroll: true });
+              restoredGrid.querySelector(`.pull-choice-option[data-candidate-key="${cssEscape(offerCandidateKey(player))}"] [data-pull-action="detail"]`)?.focus({ preventScroll: true });
             });
           },
         });
@@ -3385,7 +3421,12 @@
     if (run.seasonId === "ie1_s2" && player.profileId) {
       const result = global.ProfiledSeasonRuntime.acquireOrUpgradeProfile(run, player, { seasonId: run.seasonId, maxRoster: global.SEASON1_CONFIG.maxRoster, level });
       if (result.status === "upgraded" || result.status === "acquired") {
-        if (result.status === "acquired") run.bench.push(String(result.player.playerId));
+        if (result.status === "acquired") {
+          run.bench.push(String(result.player.playerId));
+          Object.assign(result.player, { firstJoinedAt: new Date().toISOString(), recruitmentSource: options.recruitmentSource || source, recruitedAtLevel: level, recruitedOverall: resolvedRosterPlayer(result.player.playerId)?.overall ?? player.finalOverall ?? null });
+          global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: result.player.playerId, source: options.recruitmentSource || source, level, overall: result.player.recruitedOverall, actionId: options.actionId || `${run.runId}:${player.profileId}:recruited` });
+          unlockAlbumRecruit(result.player.playerId, options.recruitmentSource || source);
+        }
         global.RunState.save(run); closeModal(); toast(result.status === "upgraded" ? "POTENZIAMENTO PROFILO" : "NUOVO GIOCATORE"); return done(true);
       }
       if (result.status === "ineligible") return done(false);
@@ -3424,7 +3465,8 @@
           if (removedEntry.equippedItem) run.inventory.push(removedEntry.equippedItem);
           run.roster = run.roster.filter((entry) => String(entry.playerId) !== removeId);
           run.bench = run.bench.filter((id) => String(id) !== removeId);
-          run.roster.push({ playerId: String(player.playerId), source, level, recruitedAtLevel: level, recruitedOverall: player.overall ?? player.finalOverall ?? null, firstJoinedAt: new Date().toISOString(), recruitmentSource: options.recruitmentSource || source, equippedItem: null, ...permanentRosterFields(player) });
+          const joinedAt = new Date().toISOString();
+          run.roster.push({ playerId: String(player.playerId), source, activeProfileId: player.profileId || null, activeRoleVariantId: player.defaultRoleVariantId || null, level, levelUnits: 0, recruitedAtLevel: level, recruitedOverall: player.overall ?? player.finalOverall ?? null, firstJoinedAt: joinedAt, recruitmentSource: options.recruitmentSource || source, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], ...permanentRosterFields(player) });
           run.bench.push(String(player.playerId));
           global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: player.playerId, source: options.recruitmentSource || source, level, overall: player.overall ?? player.finalOverall, actionId: options.actionId || `${run.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}` });
           unlockAlbumRecruit(player.playerId, options.recruitmentSource || source);
@@ -4241,7 +4283,7 @@
             <div class="boss-match-vs" aria-label="Presentazione squadre">
               <div class="boss-match-team"><span class="boss-match-logo">${meta.user.logoUrl ? `<img src="${escapeHtml(meta.user.logoUrl)}" alt="${escapeHtml(meta.user.name)}" />` : "⚡"}</span><strong>${escapeHtml(meta.user.name)}</strong><small>${escapeHtml(meta.user.formation)} · Lv ${escapeHtml(meta.user.level)}${userAverage ? ` · OVR ${userAverage}` : ""}</small></div>
               <span class="boss-match-vs-badge">VS</span>
-              <div class="boss-match-team boss-match-team--boss"><span class="boss-match-logo">${meta.boss.logoUrl ? `<img src="${escapeHtml(meta.boss.logoUrl)}" alt="${escapeHtml(meta.boss.name)}" />` : "⚽"}</span><strong>${escapeHtml(meta.boss.name)}</strong><small>${escapeHtml(meta.boss.formation)} · Boss Lv ${escapeHtml(meta.boss.level)}${bossAverage ? ` · OVR ${bossAverage}` : ""}</small></div>
+              <div class="boss-match-team boss-match-team--boss"><span class="boss-match-logo">${meta.boss.logoUrl ? `<img src="${escapeHtml(meta.boss.logoUrl)}" alt="${escapeHtml(meta.boss.name)}" />` : "⚽"}</span><strong>${escapeHtml(meta.boss.name)}</strong><small>${escapeHtml(meta.boss.formation)} · ${isSpecial ? "Livello partita" : "Boss Lv"} ${escapeHtml(meta.boss.level)}${bossAverage ? ` · OVR ${bossAverage}` : ""}</small></div>
             </div>
           </section>
 
@@ -4252,7 +4294,7 @@
             </div>
             <div class="boss-match-tabs" role="tablist" aria-label="Squadra visualizzata">
               <button type="button" class="boss-match-team-tab ${activeSide === "user" ? "active" : ""}" role="tab" aria-selected="${activeSide === "user"}" data-boss-tab="user">La tua squadra</button>
-              <button type="button" class="boss-match-team-tab ${activeSide === "boss" ? "active" : ""}" role="tab" aria-selected="${activeSide === "boss"}" data-boss-tab="boss">Boss</button>
+              <button type="button" class="boss-match-team-tab ${activeSide === "boss" ? "active" : ""}" role="tab" aria-selected="${activeSide === "boss"}" data-boss-tab="boss">${isSpecial ? "Avversari" : "Boss"}</button>
             </div>
             <div class="boss-match-field" aria-label="Campo boss match" data-active-boss-side="${escapeHtml(activeSide)}">
               <div class="boss-match-half-label boss-match-half-label--active">${escapeHtml(activeSide === "boss" ? meta.boss.name : meta.user.name)}</div>
@@ -4272,9 +4314,9 @@
           ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
           <div class="boss-match-bottom-grid">
             <section class="panel boss-match-log-panel"><div class="panel-title-row"><div><p class="eyebrow">90 minuti · eventi reali</p><h3>Cronaca</h3></div><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${bossMatchTimeline()}</ol></section>
-            <section class="panel boss-match-result-panel ${outcomeClass}"><p class="eyebrow">Esito Boss</p><h3>${escapeHtml(bossStatusLabel)}</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div><div class="result-badges"><span>${resolved && ui.bossMatchState.endsWith("victory") ? "+1 livello" : "Vite " + run.lives}</span><span>${resolved && ui.bossMatchState.endsWith("victory") ? "Doppia pick boss" : resolved ? "Ritorno al nodo precedente" : "Finalizzazione protetta"}</span></div></section>
+            <section class="panel boss-match-result-panel ${outcomeClass}"><p class="eyebrow">${isSpecial ? "Esito partita speciale" : "Esito Boss"}</p><h3>${escapeHtml(bossStatusLabel)}</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div><div class="result-badges"><span>${resolved && ui.bossMatchState.endsWith("victory") ? "+1 livello" : "Vite " + run.lives}</span><span>${resolved && ui.bossMatchState.endsWith("victory") ? (isSpecial ? "Ricompensa garantita" : "Doppia pick boss") : resolved ? "Ritorno al nodo precedente" : "Finalizzazione protetta"}</span></div></section>
           </div>
-          <section class="panel boss-match-controls" aria-label="Azioni partita Boss">
+          <section class="panel boss-match-controls" aria-label="${isSpecial ? "Azioni partita speciale" : "Azioni partita Boss"}">
             <div class="boss-match-control-copy"><span>Azioni partita</span><strong>${resolved ? "Partita conclusa" : simulating ? "Simulazione in corso" : "Pronti per la sfida"}</strong></div>
             <div class="boss-match-primary-actions"><button type="button" class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Continua</button></div>
             <div class="button-row">${TEST_MATCH_CONTROLS_ENABLED ? `<div class="match-test-tools"><span>Test</span><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div>` : ""}<button type="button" class="btn" data-nav="squad">Torna alla squadra</button></div>
@@ -4313,9 +4355,9 @@
     resumeMatchSimulationIfNeeded(ui.match);
   }
 
-  function addLevels(amount, actionId = null) {
+  function addLevels(amount, actionId = null, explicitUnits = null) {
     if (run.seasonId === "ie1_s2") {
-      const units = Number(amount) === 0.5 ? 2 : Math.round(Number(amount || 0) * 6);
+      const units = explicitUnits == null ? Math.round(Number(amount || 0) * 6) : Number(explicitUnits);
       const before = run.roster.map((entry) => Number(entry.level || 0));
       global.ProfiledSeasonRuntime.addLevelUnits(run, units, actionId);
       return run.roster.filter((entry, index) => Number(entry.level || 0) > before[index]).length;
@@ -4383,7 +4425,7 @@
     applyRealMatchStatistics(match, result);
     const node = run.currentZone.nodes.find((item) => item.id === match.nodeId);
     if (result === "victory") {
-      addLevels(1 / 3, `${run.runId}:${match.nodeId}:five_v_five:victory`);
+      addLevels(1 / 3, `${run.runId}:${match.nodeId}:five_v_five:victory`, 2);
       if (node) global.MapEngine.completeNode(run.currentZone, node.id);
       match.pendingPostMatchAction = { type: "map", toast: "Vittoria: tutta la rosa guadagna +1/3 livello" };
     } else {
@@ -4430,7 +4472,7 @@
     applyRealMatchStatistics(match, result);
     const node = run.currentZone.nodes.find((item) => item.id === match.nodeId);
     if (result === "victory") {
-      addLevels(1, `${run.runId}:${match.nodeId}:boss:victory`);
+      addLevels(1, `${run.runId}:${match.nodeId}:boss:victory`, 6);
       if (node) global.MapEngine.completeNode(run.currentZone, node.id);
       match.pendingPostMatchAction = { type: "boss-rewards" };
       run.pendingBossVictory = { bossIndex: Number(match.bossIndex ?? run.bossIndex), bossId: String(seasonDb.bossOrder[Number(match.bossIndex ?? run.bossIndex)]?.teamId || ""), nodeId: match.nodeId || null, rewardsRemaining: 2, excludedIds: [], rerolls: 0, candidateIds: [] };
@@ -4485,10 +4527,21 @@
     if (!pending) return renderMap();
     const profile = pending.selectedProfileId && global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, pending.selectedProfileId);
     openModal(`<div class="modal-head special-reward-head"><div><p class="eyebrow">RICOMPENSA GARANTITA</p><h2>${escapeHtml(profile?.name || "Pool completato")}</h2><p class="muted">${profile ? (pending.fallback ? "Profilo alternativo eleggibile" : "Giocatore garantito") : "Nessun altro profilo eleggibile: la ricompensa sarà registrata."}</p></div></div>${profile ? playerCard(profile, { context: "pull", level: Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), database: seasonDb }) : ""}<div class="button-row special-reward-actions"><button type="button" class="btn btn-yellow" id="claim-special-reward">${profile ? "ACQUISISCI O POTENZIA" : "CONTINUA"}</button></div>`, { closeable: false, className: "pull-selection-modal special-reward-modal" });
-    document.getElementById("claim-special-reward").addEventListener("click", () => {
-      const result = global.SpecialMatchRuntime.claim(run, pending, { maxRoster: global.SEASON1_CONFIG.maxRoster, level: Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0) });
-      if (result.status === "roster-full") return toast("Rosa piena: libera una riserva prima di acquisire il giocatore.");
-      global.RunState.save(run); closeModal(); toast(result.status === "upgraded" ? "POTENZIAMENTO PROFILO" : result.status === "acquired" ? "NUOVO GIOCATORE" : "Ricompensa completata"); run.phase = "map"; renderMap();
+    document.getElementById("claim-special-reward").addEventListener("click", (event) => {
+      const button = event.currentTarget;
+      if (button.disabled) return;
+      button.disabled = true;
+      const finish = () => {
+        pending.status = "claimed";
+        if (!run.claimedSpecialMatchRewardIds.includes(String(pending.specialMatchId))) run.claimedSpecialMatchRewardIds.push(String(pending.specialMatchId));
+        run.pendingSpecialMatchReward = null;
+        global.RunState.save(run); closeModal(); run.phase = "map"; renderMap();
+      };
+      if (!profile) return finish();
+      recruitPlayer(profile, global.SeasonRegistry.sourceForSeason(run.seasonId), Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), (completed) => {
+        if (completed) finish();
+        else { button.disabled = false; showSpecialMatchReward(); }
+      }, { allowCancel: false, recruitmentSource: "special_match_reward", actionId: pending.actionId });
     });
   }
 
@@ -4795,7 +4848,7 @@
     const assignedSlot = Object.entries(run.fiveVFive.slots).find(([, id]) => String(id) === String(entry.playerId))?.[0];
     return `
       <button type="button" class="five-roster-card ${compatible ? "" : "disabled"} ${assignedSlot ? "assigned" : ""} ${rarityClass(player.category)}" data-five-player="${escapeHtml(entry.playerId)}" ${compatible ? "" : "disabled"} aria-label="Assegna ${escapeHtml(player.name)}, ${escapeHtml(player.position)}, overall ${escapeHtml(player.overall)}">
-        <span class="five-roster-portrait"><img src="${escapeHtml(player.portraitUrl)}" alt="" loading="lazy" /></span>
+        <span class="five-roster-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></span>
         <span class="five-roster-copy"><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(player.position)} · OVR ${escapeHtml(player.overall)} · Lv ${escapeHtml(player.displayLevel)}</small></span>
         <span class="five-roster-state">${assignedSlot ? escapeHtml(assignedSlot) : "SCEGLI"}</span>
       </button>`;
@@ -5200,7 +5253,7 @@
       invalidReason = "Livello massimo raggiunto";
     } else if (mode === "potential") {
       const source = sourcePlayer(entry);
-      const maxBoost = Math.max(0, 99 - Number(source.finalOverall || 0));
+      const maxBoost = Math.max(0, 99 - activeBasePotential(entry));
       const applications = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
       valid = applications.reduce((sum, boost) => sum + boost.amount, 0) < maxBoost;
       invalidReason = "Potenziale massimo raggiunto";
@@ -5262,7 +5315,7 @@
     if (!entry || !player) return { valid: false, reason: "Non compatibile", player };
     if (mode === "level") return { valid: Number(entry.level || 0) < 20, reason: "Livello massimo", player };
     const source = sourcePlayer(entry);
-    const maxBoost = Math.max(0, 99 - Number(source.finalOverall || 0));
+    const maxBoost = Math.max(0, 99 - activeBasePotential(entry));
     const boosts = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
     const valid = boosts.reduce((sum, boost) => sum + boost.amount, 0) < maxBoost;
     return { valid, reason: "Potenziale massimo", player };
@@ -5377,7 +5430,7 @@
         title: `Usare ${item.name}?`,
         description: "Aumenterà di 0,5 livello tutti i giocatori che non hanno ancora raggiunto il livello massimo.",
         onConfirm: () => {
-          addLevels(Number(item.amount || 0));
+          addLevels(Number(item.amount || 0), `${run.runId}:${instanceId}:level-units`, run.seasonId === "ie1_s2" ? 3 : null);
           removeInventoryItem(instanceId);
           global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
           global.RunState.save(run);
@@ -5470,7 +5523,7 @@
         if (!entry) return;
         const player = sourcePlayer(entry);
         const before = resolvedRosterPlayer(entry.playerId);
-        const maxBoost = Math.max(0, 99 - Number(player.finalOverall || 0));
+        const maxBoost = Math.max(0, 99 - activeBasePotential(entry));
         entry.potentialBoostApplications = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
         const currentPotentialBoost = entry.potentialBoostApplications.reduce((sum, boost) => sum + boost.amount, 0);
         const currentOverallBoost = Math.min(currentPotentialBoost, Math.max(0, Number(entry.currentOverallBoost ?? currentPotentialBoost)));

@@ -13,7 +13,7 @@ function readMetadata(uid, id) { try { const value = JSON.parse(localStorage.get
 function writeMetadata(uid, value) { localStorage.setItem(metadataKey(uid), JSON.stringify(value)); }
 function publish(patch, token = generation) { if (token !== generation) return false; state = { ...state, ...patch }; globalThis.dispatchEvent(new CustomEvent("inazuma:cloud-save-state-changed", { detail: { ...state } })); return true; }
 function current(token, uid) { const auth = globalThis.InazumaAccount?.getState(); return token === generation && auth?.status === "authenticated" && auth.uid === uid && cachedManifest?.uid === uid && cachedManifest.token === token; }
-function sectorHash(prepared, name) { return (name === "run_ie1" || name === "run_ie2") && prepared.payloads[name] === null ? null : prepared.hashes[name]; }
+function sectorHash(prepared, name) { return core.isRunSector(name) && prepared.payloads[name] === null ? null : prepared.hashes[name]; }
 function sectorRevisions(manifest) { return Object.fromEntries(core.SECTOR_NAMES.map((name) => [name, manifest.sectorRevisions?.[name] ?? manifest.revision])); }
 function metadataFrom(uid, id, manifest, prepared, previous = {}) { const now = new Date().toISOString(); return { uid, deviceId: id, revision: manifest.revision, status: "associated", sectorHashes: Object.fromEntries(core.SECTOR_NAMES.map((name) => [name, sectorHash(prepared, name)])), sectorRevisions: sectorRevisions(manifest), hallTeamIds: prepared.hallEntries.map((entry) => entry.hallTeamId), hallTeamHashes: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, entry.payloadHash])), hallTeamRevisions: { ...(manifest.hallTeamRevisions || {}) }, associatedAt: previous.associatedAt || now, restoredAt: previous.restoredAt || null, lastSyncedAt: now }; }
 function hashesMatchManifest(manifest, prepared) { const localIds = prepared.hallEntries.map((entry) => entry.hallTeamId).sort(), cloudIds = [...(manifest.hallTeamIds || [])].sort(); return core.SECTOR_NAMES.every((name) => sectorHash(prepared, name) === (manifest.sectorHashes?.[name] ?? null)) && JSON.stringify(localIds) === JSON.stringify(cloudIds) && prepared.hallEntries.every((entry) => manifest.hallTeamHashes?.[entry.hallTeamId] === entry.payloadHash); }
@@ -100,7 +100,7 @@ async function syncNow() {
     if (!changed.length) { publish({ status: "synced", pendingSectors: [...dirtySectors] }, token); return; }
     publish({ status: "syncing", pendingSectors: [...new Set([...changed, ...dirtySectors])], error: null }, token);
     const nextRevision = old.revision + 1, timestamp = serverTimestamp(), revisions = sectorRevisions(old), hashes = { ...old.sectorHashes }, sectors = { ...old.sectors }; attemptedRevision = nextRevision;
-    changed.forEach((name) => { revisions[name] = nextRevision; hashes[name] = sectorHash(prepared, name); if (name === "run_ie1" || name === "run_ie2") sectors[name] = prepared.payloads[name] !== null; });
+    changed.forEach((name) => { revisions[name] = nextRevision; hashes[name] = sectorHash(prepared, name); if (core.isRunSector(name)) sectors[name] = prepared.payloads[name] !== null; });
     const oldIdsKnown = Array.isArray(old.hallTeamIds); const oldIds = old.hallTeamIds || []; let hallIds = oldIds, hallHashes = { ...(old.hallTeamHashes || {}) }, hallRevisions = { ...(old.hallTeamRevisions || {}) };
     const batch = writeBatch(globalThis.InazumaAccount.getFirestoreInstance());
     changed.forEach((name) => batch.set(doc(globalThis.InazumaAccount.getFirestoreInstance(), "users", uid, "saveSectors", name), sectorDocument(name, prepared.payloads[name], sectorHash(prepared, name), id, timestamp, nextRevision)));
@@ -126,7 +126,7 @@ async function restoreCloudSave(options = {}) {
   lastRestoreType = options.restoreType || (options.explicitConflict ? "explicit-conflict-cloud" : state.status === "cloud-update-available" ? "cloud-update" : "initial");
   restoreInFlight = (async () => { let writesStarted = false, restoreStage = "read-manifest-start"; try {
     const { manifest, payloads, hallPayloads } = await downloadStableCloudBundle({ uid, token });
-    restoreStage = "reconstruct"; publish({ restoreStage }, token); const restored = core.reconstructSnapshot(payloads, hallPayloads); if (!current(token, uid)) return;
+    restoreStage = "reconstruct"; publish({ restoreStage }, token); const restored = core.reconstructSnapshot(payloads, hallPayloads); (manifest.legacyMissingRunSectors || []).forEach((sector) => { const seasonId = sector.slice(4); if (before.runs?.[seasonId] != null) restored.runs[seasonId] = core.clone(before.runs[seasonId]); }); if (!current(token, uid)) return;
     restoreStage = "apply-local"; publish({ status: "restoring", restoreStage }, token); writesStarted = true; applySnapshot(restored);
     restoreStage = "verify-local"; publish({ restoreStage }, token); const comparison = await core.compareSnapshots(restored, core.readLocalSnapshot());
     if (!comparison.equivalent) throw Object.assign(new Error("post-write-verification-failed"), { code: "post-write-verification-failed", problemSector: comparison.mismatches[0] });
@@ -150,7 +150,7 @@ async function resolveConflictUseLocal() {
     const prepared = await core.prepareSnapshot(core.readLocalSnapshot()); core.preflight(prepared); if (!current(token, uid)) return;
     const old = cached.data, nextRevision = old.revision + 1, timestamp = serverTimestamp(), revisions = sectorRevisions(old), hashes = { ...old.sectorHashes }, sectors = { ...old.sectors }; attemptedRevision = nextRevision;
     const changed = core.SECTOR_NAMES.filter((name) => sectorHash(prepared, name) !== (old.sectorHashes?.[name] ?? null));
-    changed.forEach((name) => { revisions[name] = nextRevision; hashes[name] = sectorHash(prepared, name); if (name === "run_ie1" || name === "run_ie2") sectors[name] = prepared.payloads[name] !== null; });
+    changed.forEach((name) => { revisions[name] = nextRevision; hashes[name] = sectorHash(prepared, name); if (core.isRunSector(name)) sectors[name] = prepared.payloads[name] !== null; });
     const hallIds = prepared.hallEntries.map((entry) => entry.hallTeamId), hallHashes = {}, hallRevisions = { ...(old.hallTeamRevisions || {}) }, entries = new Map(prepared.hallEntries.map((entry) => [entry.hallTeamId, entry]));
     const db = globalThis.InazumaAccount.getFirestoreInstance(), batch = writeBatch(db);
     changed.forEach((name) => batch.set(doc(db, "users", uid, "saveSectors", name), sectorDocument(name, prepared.payloads[name], sectorHash(prepared, name), id, timestamp, nextRevision)));

@@ -167,8 +167,15 @@
     target.type = "special_match";
     SPECIAL_NODE_FIELDS.forEach((key) => { target[key] = special[key]; });
     if (current) {
+      const currentId = current.id;
+      const targetId = target.id;
       current.type = displaced.type;
       SPECIAL_NODE_FIELDS.forEach((key) => { if (key in displaced) current[key] = displaced[key]; else delete current[key]; });
+      const swapId = (value) => value === currentId ? targetId : value === targetId ? currentId : value;
+      zone.completedNodeIds = Array.from(new Set((zone.completedNodeIds || []).map(swapId)));
+      zone.currentNodeId = swapId(zone.currentNodeId);
+      zone.pendingNodeId = swapId(zone.pendingNodeId);
+      zone.path = Array.from(new Set((zone.path || []).map(swapId)));
     }
     return true;
   }

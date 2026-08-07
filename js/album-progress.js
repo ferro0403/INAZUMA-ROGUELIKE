@@ -19,6 +19,13 @@
       freeAgentsTeamId: "unaffiliated",
       coverUrl: "https://static.wikia.nocookie.net/inazuma-eleven/images/4/45/Minodouzan_emblem.png/revision/latest?cb=20251118125410",
     },
+    ie1_s2: {
+      id: "ie1_s2",
+      name: "Inazuma Eleven 2",
+      seasonId: "ie1_s2",
+      freeAgentsTeamId: "unaffiliated",
+      coverUrl: "/assets/icons/icon-512.png",
+    },
   };
   let freeAgentIds = new Set();
 
