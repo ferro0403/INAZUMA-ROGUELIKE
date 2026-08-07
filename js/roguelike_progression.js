@@ -152,12 +152,26 @@
     return parseInt(code.slice(offset, offset + codeWidth), 36);
   }
 
-  function statsFromRatings(player, overall, statOrder) {
-    const ratings = player?.ratings || {};
-    const values = statOrder.map((stat) => Number(ratings[stat] || 0));
-    const avg = values.reduce((sum, value) => sum + value, 0) / Math.max(1, values.length);
-    const targetAvg = Math.max(1, Math.min(99, Number(overall || 0)));
-    return Object.fromEntries(statOrder.map((stat) => [stat, Math.max(1, Math.min(99, Math.round(targetAvg + ((Number(ratings[stat] || 0) - avg) * 4))))]));
+  function statsFromRatings(player, level, maxLevel, statOrder) {
+    const ratings = player?.ratings;
+    const invalidStat = statOrder.find((stat) => {
+      const rating = Number(ratings?.[stat]);
+      return !Number.isFinite(rating) || !Number.isInteger(rating) || rating < 1 || rating > 10;
+    });
+    if (invalidStat) {
+      throw new Error(`Invalid InaCodex rating for ${invalidStat}: expected an integer from 1 to 10`);
+    }
+
+    // Legacy compact progressions generally begin around 60% of the final
+    // technical stat and grow to its InaCodex endpoint. Their original
+    // per-player jitter cannot be reconstructed from ratings-only records, so
+    // dynamic records use the deterministic linear form of that same curve.
+    const progress = maxLevel > 0 ? level / maxLevel : 1;
+    const multiplier = 0.6 + (0.4 * progress);
+    return Object.fromEntries(statOrder.map((stat) => [
+      stat,
+      Math.round(Number(ratings[stat]) * 10 * multiplier),
+    ]));
   }
 
   function getPlayerAtLevel(player, requestedLevel, database, options = {}) {
@@ -183,7 +197,7 @@
         );
       });
     } else {
-      stats = statsFromRatings(player, Number(player.finalOverall) - (maxLevel - level), statOrder);
+      stats = statsFromRatings(player, level, maxLevel, statOrder);
     }
 
     const baseOverall = Number(player.finalOverall) - (maxLevel - level);
