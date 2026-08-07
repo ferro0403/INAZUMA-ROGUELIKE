@@ -119,6 +119,9 @@ h2 { font-size: clamp(1.6rem, 4vw, 2.5rem); }
   font-size: 0.82rem;
 }
 .lives { color: #ff7178; letter-spacing: 0.08em; }
+.life-heart { display: inline-block; position: relative; width: 1em; line-height: 1; text-align: center; }
+.life-heart + .life-heart { margin-left: .22em; }
+.life-heart--half::before { content: "♥"; position: absolute; inset: 0; width: 50%; color: currentColor; overflow: hidden; }
 
 .content { width: min(1120px, calc(100% - 28px)); margin: 0 auto; padding-top: 28px; }
 .narrow { width: min(760px, calc(100% - 28px)); }

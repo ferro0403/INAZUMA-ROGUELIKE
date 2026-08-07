@@ -6,6 +6,7 @@
   const DEFAULT_TEAM_NAME = "La tua squadra";
   const runLivesLimit = () => Number(global.SEASON1_CONFIG?.maxRunLives ?? global.SEASON1_CONFIG?.startingLives ?? 2);
   const initialRunLives = () => Number(global.SEASON1_CONFIG?.startingLives ?? runLivesLimit());
+  const LIFE_DAMAGE_BY_MATCH_TYPE = Object.freeze({ five_v_five: 0.5, boss: 1, special_match: 1 });
   const USER_TEAM_LOGO = "inazuma-lightning";
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
@@ -166,8 +167,9 @@
     run.checkpoint = clone({ version: config().saveVersion, formationId: run.formationId, teamIdentity: run.teamIdentity, roster: run.roster, lineup: run.lineup, bench: run.bench, bossIndex: run.bossIndex, completedBossIds: run.completedBossIds, unlockedTeamIds: run.unlockedTeamIds, teamLevel: run.teamLevel, inventory: run.inventory, effects: run.effects, randomEventHistory: run.randomEventHistory, fiveVFive: run.fiveVFive, activeMatch: run.activeMatch || null, pendingBossVictory: run.pendingBossVictory || null, postBossFlow: run.postBossFlow || null, currentZone: run.currentZone });
     return save(run);
   }
-  function restoreAfterLoss(run, previousNodeId = null) { run.lives = Math.max(0, Math.min(runLivesLimit(), Number(run.lives) || 0) - 1); if (run.lives <= 0) { run.lives = 0; run.gameOver = true; run.phase = "gameover"; return save(run); } const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null; if (!targetNodeId) throw new Error("Previous match node unavailable"); if (run.currentZone) { run.currentZone.currentNodeId = targetNodeId; run.currentZone.pendingNodeId = null; } run.phase = "map"; run.gameOver = false; return save(run); }
+  function getLifeDamageForMatch(matchType) { return LIFE_DAMAGE_BY_MATCH_TYPE[matchType] ?? 1; }
+  function restoreAfterLoss(run, previousNodeId = null, matchType = run?.activeMatch?.type) { run.lives = Math.max(0, Math.min(runLivesLimit(), Number(run.lives) || 0) - getLifeDamageForMatch(matchType)); if (run.lives <= 0) { run.lives = 0; run.gameOver = true; run.phase = "gameover"; return save(run); } const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null; if (!targetNodeId) throw new Error("Previous match node unavailable"); if (run.currentZone) { run.currentZone.currentNodeId = targetNodeId; run.currentZone.pendingNodeId = null; } run.phase = "map"; run.gameOver = false; return save(run); }
 
   global.RunStorage = RunStorage;
-  global.RunState = { clone, createRun, save, load, hasSave, runLivesLimit, initialRunLives, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, restoreProfile, remove, createCheckpoint, restoreAfterLoss, validate, isActiveRun, touch, activeSaves, latestActiveSave };
+  global.RunState = { clone, createRun, save, load, hasSave, runLivesLimit, initialRunLives, getLifeDamageForMatch, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, restoreProfile, remove, createCheckpoint, restoreAfterLoss, validate, isActiveRun, touch, activeSaves, latestActiveSave };
 })(globalThis);
