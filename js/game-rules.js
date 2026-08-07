@@ -81,6 +81,76 @@
     return [...unique.values()];
   }
 
+  function getProfileAwareTradeCandidates({ outgoingPlayer, rosterEntries, freeAgents, profiles, unlockedTeamIds, teams, seasonId = "ie1_s2", compareProfileProgression }) {
+    if (!outgoingPlayer) return [];
+    const role = String(outgoingPlayer.position || outgoingPlayer.role || "").toUpperCase();
+    const potential = Number(outgoingPlayer.finalOverall || 0);
+    const ownedByPlayerId = new Map((rosterEntries || []).map((entry) => [String(entry.playerId), entry]));
+    const unlocked = new Set((unlockedTeamIds || []).map(String));
+    const unlockedProfileIds = new Set((teams || [])
+      .filter((team) => unlocked.has(String(team.teamId)))
+      .flatMap((team) => [...(team.playerProfileIds || []), ...(team.teamPullPoolProfileIds || [])].map(String)));
+    const candidates = [];
+    (freeAgents || []).forEach((player) => {
+      if (ownedByPlayerId.has(String(player.playerId))) return;
+      if (String(player.position || player.role || "").toUpperCase() !== role) return;
+      if (Number(player.finalOverall || 0) < potential) return;
+      candidates.push({ player, source: "free_agents", playerId: String(player.playerId), profileId: null, activeRoleVariantId: null, kind: "new" });
+    });
+    (profiles || []).forEach((profile) => {
+      if (!unlockedProfileIds.has(String(profile.profileId))) return;
+      const defaultVariant = (profile.roleVariants || []).find((variant) => String(variant.roleVariantId || variant.variantId) === String(profile.defaultRoleVariantId));
+      const player = { ...profile, ...(defaultVariant || {}), playerId: String(profile.playerId), profileId: String(profile.profileId) };
+      if (String(player.position || player.normalizedRole || "").toUpperCase() !== role) return;
+      if (Number(player.finalOverall || 0) < potential) return;
+      const owned = ownedByPlayerId.get(String(profile.playerId));
+      if (owned && compareProfileProgression(seasonId, owned.activeProfileId, profile.profileId) !== 1) return;
+      candidates.push({ player, profile, source: seasonId, playerId: String(profile.playerId), profileId: String(profile.profileId), activeRoleVariantId: String(profile.defaultRoleVariantId || "") || null, kind: owned ? "upgrade" : "new", profileRank: Number(profile.profileRank || 0) });
+    });
+    const bestByPlayerId = new Map();
+    candidates.forEach((candidate) => {
+      const current = bestByPlayerId.get(candidate.playerId);
+      if (!current || Number(candidate.profileRank || 0) > Number(current.profileRank || 0)) bestByPlayerId.set(candidate.playerId, candidate);
+    });
+    return [...bestByPlayerId.values()];
+  }
+
+  function executeProfileAwareTrade(run, outgoingId, incoming, options = {}) {
+    const roster = run.roster || [];
+    const outgoingIndex = roster.findIndex((entry) => String(entry.playerId) === String(outgoingId));
+    if (outgoingIndex < 0) return { status: "missing-outgoing" };
+    const outgoing = roster[outgoingIndex];
+    const incomingId = String(incoming.playerId || incoming.player?.playerId);
+    const existingIndex = roster.findIndex((entry) => String(entry.playerId) === incomingId);
+    const nextLevel = Math.min(20, Number(outgoing.level || 0) + 1);
+    if (existingIndex === outgoingIndex) {
+      const nextRoleVariantId = options.roleVariantForUpgrade?.(outgoing, incoming.profile) || incoming.activeRoleVariantId || outgoing.activeRoleVariantId;
+      outgoing.activeProfileId = incoming.profileId;
+      outgoing.activeRoleVariantId = nextRoleVariantId;
+      outgoing.level = nextLevel;
+      return { status: "upgraded-self", player: outgoing, recruited: false };
+    }
+    if (existingIndex >= 0) {
+      const existing = roster[existingIndex];
+      const nextRoleVariantId = options.roleVariantForUpgrade?.(existing, incoming.profile) || incoming.activeRoleVariantId || existing.activeRoleVariantId;
+      existing.activeProfileId = incoming.profileId;
+      existing.activeRoleVariantId = nextRoleVariantId;
+      if (outgoing.equippedItem) (run.inventory || (run.inventory = [])).push(outgoing.equippedItem);
+      roster.splice(outgoingIndex, 1);
+      run.lineup = (run.lineup || []).filter((id) => String(id) !== String(outgoingId));
+      run.bench = (run.bench || []).filter((id) => String(id) !== String(outgoingId));
+      return { status: "upgraded", player: existing, recruited: false };
+    }
+    if (outgoing.equippedItem) (run.inventory || (run.inventory = [])).push(outgoing.equippedItem);
+    const replacement = incoming.profileId
+      ? { playerId: incomingId, source: incoming.source, activeProfileId: incoming.profileId, activeRoleVariantId: incoming.activeRoleVariantId, level: nextLevel, levelUnits: 0, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], recruitedAtLevel: nextLevel, recruitmentSource: "trade" }
+      : { playerId: incomingId, source: incoming.source, level: nextLevel, levelUnits: 0, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], recruitedAtLevel: nextLevel, recruitmentSource: "trade" };
+    roster[outgoingIndex] = replacement;
+    run.lineup = (run.lineup || []).map((id) => String(id) === String(outgoingId) ? incomingId : String(id));
+    run.bench = (run.bench || []).map((id) => String(id) === String(outgoingId) ? incomingId : String(id));
+    return { status: "acquired", player: replacement, recruited: true };
+  }
+
   function applyEquipment(stats, equipment) {
     const result = { ...stats };
     if (equipment?.stat && Number.isFinite(Number(equipment.bonus))) {
@@ -95,6 +165,8 @@
     defeatedBossRewardLevel,
     migrateDefeatedBossPlayerLevels,
     getTradeCandidates,
+    getProfileAwareTradeCandidates,
+    executeProfileAwareTrade,
     applyEquipment,
   };
 })(globalThis);

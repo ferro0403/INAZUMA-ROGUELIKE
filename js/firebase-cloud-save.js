@@ -49,12 +49,12 @@ async function downloadStableCloudBundle({ uid, token, maxAttempts = 2 }) {
       for (let i = 0; i < core.SECTOR_NAMES.length; i += 1) { const name = core.SECTOR_NAMES[i]; payloads[name] = await core.validateSectorDocument(name, documents[i].exists() ? documents[i].data() : null, manifestStart); }
       publish({ restoreStage: "validate-hall-index" }, token); hallIndex = core.validateHallIndex(payloads.hall_index, manifestStart);
       publish({ restoreStage: "read-hall" }, token); const hallDocuments = await Promise.all(hallIndex.teamIds.map((teamId) => readServerDocument(db, "users", uid, "hallOfFame", teamId)));
-      publish({ status: "verifying", restoreStage: "validate-hall", restoreReadCount: 8 + hallDocuments.length }, token);
+      publish({ status: "verifying", restoreStage: "validate-hall", restoreReadCount: core.SECTOR_NAMES.length + 2 + hallDocuments.length }, token);
       for (let i = 0; i < hallIndex.teamIds.length; i += 1) hallPayloads.push(await core.validateHallDocument(hallIndex.teamIds[i], hallDocuments[i].exists() ? hallDocuments[i].data() : null, manifestStart));
     } catch (error) { error.restoreStage = state.restoreStage; validationError = error; }
     publish({ restoreStage: "read-manifest-end" }, token); const endDocument = await readServerDocument(db, "users", uid, "cloudSave", "manifest");
     const endRaw = endDocument.exists() ? endDocument.data() : null, manifestEnd = core.validateManifest(endRaw, uid), stable = manifestBundleIdentity(manifestStart) === manifestBundleIdentity(manifestEnd);
-    publish({ manifestRevisionEnd: manifestEnd.revision, restoreReadCount: 8 + (hallIndex?.teamIds.length || 0) }, token);
+    publish({ manifestRevisionEnd: manifestEnd.revision, restoreReadCount: core.SECTOR_NAMES.length + 2 + (hallIndex?.teamIds.length || 0) }, token);
     if (!stable) { if (attempt < maxAttempts) continue; throw restoreError("cloud-changed-during-download", "manifest"); }
     if (validationError) throw validationError;
     cachedManifest = { uid, token, raw: endRaw, data: manifestEnd };

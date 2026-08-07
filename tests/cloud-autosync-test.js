@@ -23,7 +23,7 @@ const check = cloud.slice(cloud.indexOf('function checkForCloudUpdate'), cloud.i
 assert.equal((check.match(/readServerDocument\(/g) || []).length, 1, 'manual check reads only the manifest once'); assert.doesNotMatch(check, /saveSectors|hallOfFame|setTimeout|setInterval/);
 assert.match(html, /js\/run-state\.js\?v=20260801-phantom-revisions-1/);
 assert.match(html, /js\/account-ui\.js\?v=20260802-cloud-restore-diagnostic-fix-1/);
-assert.match(html, /js\/firebase-cloud-save\.js\?v=20260807-ie1-s2-runtime-fix-1/);
+assert.match(html, /js\/firebase-cloud-save\.js\?v=20260807-ie1-s2-final-runtime-fix-2/);
 for (const name of ['development-v2','hall-of-fame']) assert.match(html, new RegExp(`js/${name}\\.js\\?v=20260801-cloud-sync-3`));
 for (const name of ['firebase-account']) assert.match(html, new RegExp(`js/${name}\\.js\\?v=20260801-firestore-safe-1`));
 const fakeTimestamp = { toDate() { return new Date(0); } }; const preparedManifest = { schemaVersion: 1, initialized: true, revision: 1, accountUid: 'u', createdAt: fakeTimestamp, updatedAt: fakeTimestamp, sectors: { profile: true, run_ie1: false, run_ie2: false, album: true, development: true, hallOfFameCount: 0 }, sectorHashes: { profile: 'a'.repeat(64), run_ie1: null, run_ie2: null, album: 'b'.repeat(64), development: 'c'.repeat(64), hall_index: 'd'.repeat(64) } };
