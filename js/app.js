@@ -642,6 +642,8 @@
       baseStats: resolved.stats,
       equipment: entry.equippedItem,
       displayLevel: Number(entry.level || 0),
+      displayLevelUnits: Number(entry.levelUnits || 0),
+      displayLevelText: global.LevelProgression.formatLevel(entry, run.seasonId),
       source: entry.source,
     };
   }
@@ -683,7 +685,7 @@
         </div>
         <div class="status-strip" aria-label="Stato run">
           <span class="status-pill"><small>OVR</small><strong>${escapeHtml(averageOverall())}</strong></span>
-          <span class="status-pill"><small>LV</small><strong>${escapeHtml(run.teamLevel)}</strong></span>
+          <span class="status-pill"><small>LV</small><strong>${escapeHtml(global.LevelProgression.formatLevel(run, run.seasonId))}</strong></span>
           <span class="status-pill lives" title="Vite" aria-label="Vite ${escapeHtml(run.lives)}">${hearts()}</span>
         </div>
       </header>`;
@@ -799,7 +801,7 @@
     return resolvePlayerVisual(player).cardImageUrl || PLAYER_IMAGE_PLACEHOLDER;
   }
 
-  function compactPlayerCardMarkup(player, { equipment = null, equipmentInFooter = false, level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, selected = false, dataAttr = "", extraClass = "", detailLayout = "inline", tag = "button", trailingMarkup = "" } = {}) {
+  function compactPlayerCardMarkup(player, { equipment = null, equipmentInFooter = false, level = player.displayLevelText ?? player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, selected = false, dataAttr = "", extraClass = "", detailLayout = "inline", tag = "button", trailingMarkup = "" } = {}) {
     const cardTag = tag === "article" ? "article" : "button";
     const cardAttributes = cardTag === "button" ? 'type="button"' : "";
     const playerRole = player.position || player.normalizedRole || "-";
@@ -935,7 +937,7 @@
         <section class="player-detail-content">
           <div class="player-detail-heading"><p class="eyebrow">${albumMode ? "Scheda giocatore · Album" : (historical ? "Scheda giocatore · Squadra campione" : "Scheda giocatore")}</p>${albumMode ? `<span class="role-chip album-detail-badge">${albumUnlocked ? "SBLOCCATO" : "CONSULTABILE"}</span>` : ""}</div>
           <h2 class="player-detail-name">${escapeHtml(resolved.name)}</h2>
-          <div class="player-detail-tags"><span class="role-chip">${escapeHtml(resolved.position)}</span><span class="role-chip detail-element-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4 3 7 6 7 10a7 7 0 0 1-14 0c0-4 3-7 7-10Z"/></svg>${escapeHtml(resolved.element || resolved.type || "-")}</span><span class="role-chip">Lv ${escapeHtml(historical ? (player.finalLevel ?? "N/D") : Number(level || 0))}</span></div>
+          <div class="player-detail-tags"><span class="role-chip">${escapeHtml(resolved.position)}</span><span class="role-chip detail-element-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4 3 7 6 7 10a7 7 0 0 1-14 0c0-4 3-7 7-10Z"/></svg>${escapeHtml(resolved.element || resolved.type || "-")}</span><span class="role-chip">Lv ${escapeHtml(historical ? global.LevelProgression.formatLevel(player.finalLevel ?? 0, player.seasonId || team?.seasonId || team?.modeId, player.finalLevelUnits) : (player.displayLevelText ?? global.LevelProgression.formatLevel(level, run?.seasonId, player.displayLevelUnits)))}</span></div>
           <div class="overall-comparison"><div><span>Overall attuale</span><strong>${escapeHtml(resolved.overall ?? "N/D")}</strong></div><div><span>Potenziale</span><strong>${escapeHtml(potential)}</strong></div></div>
           <p class="detail-category"><span aria-hidden="true">★</span><small>Rarità</small><strong>${escapeHtml(resolved.category)}</strong></p>
           <section class="player-detail-section"><h3>Statistiche</h3><div class="detail-stats">${stats}</div></section>
@@ -1223,7 +1225,7 @@
   function homePlayerCardMarkup(entry) {
     const player = resolvedRosterPlayer(entry.playerId || entry.id);
     if (!player) return "";
-    const level = Number(entry.level ?? player.displayLevel ?? 0);
+    const level = global.LevelProgression.formatLevel(entry, run?.seasonId);
     const overall = player.overall ?? player.finalOverall ?? "-";
     const role = player.position || player.normalizedRole || "-";
     return `<article class="home-player-card ${rarityClass(player.category)}" aria-label="${escapeHtml(player.name)}, ${escapeHtml(role)}, overall ${escapeHtml(overall)}, livello ${escapeHtml(level)}">
@@ -1420,7 +1422,7 @@
         console.warn("Season roster preview: giocatore non risolto", { seasonId: savedRun?.seasonId, playerId: entry.playerId });
         return "";
       }
-      const level = Number(entry.level ?? savedRun?.teamLevel ?? 0);
+      const level = global.LevelProgression.formatLevel(entry, savedRun.seasonId);
       return compactPlayerCardMarkup(resolved, { level, overall: resolved.overall, extraClass: "season-preview-player", detailLayout: "stacked" });
     }).filter(Boolean);
     return cards.length ? cards.join("") : `<div class="season-preview-state">Rosa non disponibile</div>`;
@@ -1447,7 +1449,7 @@
     const remainingMobilePlayers = Math.max(0, normalizedRoster.length - 4);
     const remainingDesktopPlayers = Math.max(0, normalizedRoster.length - 6);
     const remainingMarkup = `${remainingMobilePlayers ? `<small class="season-more-count season-more-count--mobile">+${escapeHtml(remainingMobilePlayers)} altri</small>` : ""}${remainingDesktopPlayers ? `<small class="season-more-count season-more-count--desktop">+${escapeHtml(remainingDesktopPlayers)} altri</small>` : ""}`;
-    return `<article class="home-hub-card season-select-card ${isLastPlayed ? "season-select-card--last" : ""}"><div class="season-card-head"><div><h2>${escapeHtml(season.name)}</h2><p class="season-team-name">${escapeHtml(identity.name || "La tua squadra")}</p></div><div class="season-card-badges"><span class="season-status-pill">Run attiva</span>${isLastPlayed ? `<span class="season-status-pill season-status-pill--last">Ultima giocata</span>` : ""}</div></div><div class="season-run-summary"><span><small>Boss</small><strong>${escapeHtml(boss?.teamName || "-")}</strong> <em>${escapeHtml(bossStep)}</em></span><span><small>Lv</small><strong>${escapeHtml(activeSaved.teamLevel || 0)}</strong></span><span><small>Vite</small><strong>${runHeartsMarkup(activeSaved)}</strong></span><span><small>OVR</small><strong>${escapeHtml(average)}</strong></span><span class="season-run-summary__wide"><small>Modulo</small><strong>${escapeHtml(formation?.name || activeSaved.formationId || "Da scegliere")}</strong></span></div><div class="season-roster-block"><div class="season-section-title"><span>Preview rosa · ${escapeHtml(normalizedRoster.length)} giocatori</span>${remainingMarkup}</div><div class="season-roster-preview">${seasonRosterPreviewMarkup(activeSaved, database, playersById, normalizedRoster)}</div></div><div class="home-card-actions season-card-actions">${actions}</div></article>`;
+    return `<article class="home-hub-card season-select-card ${isLastPlayed ? "season-select-card--last" : ""}"><div class="season-card-head"><div><h2>${escapeHtml(season.name)}</h2><p class="season-team-name">${escapeHtml(identity.name || "La tua squadra")}</p></div><div class="season-card-badges"><span class="season-status-pill">Run attiva</span>${isLastPlayed ? `<span class="season-status-pill season-status-pill--last">Ultima giocata</span>` : ""}</div></div><div class="season-run-summary"><span><small>Boss</small><strong>${escapeHtml(boss?.teamName || "-")}</strong> <em>${escapeHtml(bossStep)}</em></span><span><small>Lv</small><strong>${escapeHtml(global.LevelProgression.formatLevel(activeSaved, activeSaved.seasonId))}</strong></span><span><small>Vite</small><strong>${runHeartsMarkup(activeSaved)}</strong></span><span><small>OVR</small><strong>${escapeHtml(average)}</strong></span><span class="season-run-summary__wide"><small>Modulo</small><strong>${escapeHtml(formation?.name || activeSaved.formationId || "Da scegliere")}</strong></span></div><div class="season-roster-block"><div class="season-section-title"><span>Preview rosa · ${escapeHtml(normalizedRoster.length)} giocatori</span>${remainingMarkup}</div><div class="season-roster-preview">${seasonRosterPreviewMarkup(activeSaved, database, playersById, normalizedRoster)}</div></div><div class="home-card-actions season-card-actions">${actions}</div></article>`;
   }
 
   async function renderSeasonSelect() {
@@ -1798,7 +1800,7 @@
     };
     if (!run || !global.RunState.isActiveRun(run)) return identity ? startRunWithIdentity(identity) : openTeamNameModal({ mode: "create" });
     const seasonName = seasonDisplayName(activeSeason?.id);
-    const bossLine = `Boss ${Math.min(Number(run.bossIndex || 0) + 1, seasonDb?.bossOrder?.length || 99)} · Livello ${run.teamLevel || 0} · ${run.lives ?? "-"} vite`;
+    const bossLine = `Boss ${Math.min(Number(run.bossIndex || 0) + 1, seasonDb?.bossOrder?.length || 99)} · Livello ${global.LevelProgression.formatLevel(run, run.seasonId)} · ${run.lives ?? "-"} vite`;
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">Nuova run</p><h2>Inizia nuova run</h2><p class="muted">Hai già una run attiva in ${escapeHtml(seasonName)}.</p></div>${inazumaLogoMarkup("inazuma-logo--modal")}</div>
       <p class="home-overwrite-warning"><strong>${escapeHtml(bossLine)}</strong><br>Iniziando una nuova run, i progressi attuali di ${escapeHtml(seasonName)} verranno sostituiti. Le altre Season resteranno intatte. L’Albo d’Oro e le squadre campioni resteranno salvati.</p>
@@ -2895,10 +2897,10 @@
     if (!selected) {
       return `<div class="trade-selection-copy"><span>Scegli una card</span><strong>Nessun giocatore selezionato</strong><small>Puoi cedere un titolare oppure una riserva.</small></div><span class="trade-selection-state">IN ATTESA</span>`;
     }
-    return `<span class="trade-selection-portrait"><img src="${escapeHtml(playerPortraitUrl(selected))}" alt="" loading="lazy" decoding="async" ${imageFallbackAttributes(resolvePlayerVisual(selected).cardFallbacks)} /></span><div class="trade-selection-copy"><span>GIOCATORE SELEZIONATO</span><strong>${escapeHtml(selected.name)}</strong><small>${escapeHtml(selected.position)} · OVR ${escapeHtml(selected.overall)} · LV ${escapeHtml(selected.displayLevel)}</small></div><span class="trade-selection-state">PRONTO</span>`;
+    return `<span class="trade-selection-portrait"><img src="${escapeHtml(playerPortraitUrl(selected))}" alt="" loading="lazy" decoding="async" ${imageFallbackAttributes(resolvePlayerVisual(selected).cardFallbacks)} /></span><div class="trade-selection-copy"><span>GIOCATORE SELEZIONATO</span><strong>${escapeHtml(selected.name)}</strong><small>${escapeHtml(selected.position)} · OVR ${escapeHtml(selected.overall)} · LV ${escapeHtml(selected.displayLevelText ?? selected.displayLevel)}</small></div><span class="trade-selection-state">PRONTO</span>`;
   }
 
-  function tradeStaticPlayerCardMarkup(player, { level = player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, equipment = null, extraClass = "" } = {}) {
+  function tradeStaticPlayerCardMarkup(player, { level = player.displayLevelText ?? player.displayLevel ?? 0, overall = player.overall ?? player.finalOverall, equipment = null, extraClass = "" } = {}) {
     return compactPlayerCardMarkup(player, {
       equipment,
       equipmentInFooter: true,
@@ -3083,7 +3085,7 @@
   function showTradeResult(node, incoming, receivedEntry, status) {
     const resolved = run.seasonId === "ie1_s2" ? resolvedRosterPlayer(receivedEntry.playerId) : tradeCandidatePreview(incoming, receivedEntry);
     const upgraded = status === "upgraded" || status === "upgraded-self";
-    openModal(`<section class="trade-result-screen"><div class="trade-result-badge" aria-hidden="true">✓</div><div class="modal-head trade-node-head trade-result-head"><div><p class="eyebrow">Scambio completato</p><h1>${upgraded ? "PROFILO POTENZIATO" : "NUOVO GIOCATORE"}</h1><p class="muted">${escapeHtml(resolved.name)} ${upgraded ? "ha ottenuto un nuovo profilo." : "è entrato nella rosa e ha preso il posto del giocatore ceduto."}</p></div></div><div class="trade-result-card mobile-compact-player-list">${tradeStaticPlayerCardMarkup(resolved, { level: receivedEntry.level, overall: resolved.overall, extraClass: "trade-preview-card--result" })}</div><div class="trade-result-summary"><span>${upgraded ? "POTENZIAMENTO CONFERMATO" : "ARRIVO CONFERMATO"}</span><strong>${escapeHtml(resolved.name)}</strong><small>${escapeHtml(resolved.position)} · OVR ${escapeHtml(resolved.overall)} · Lv ${escapeHtml(receivedEntry.level)}</small></div><div class="node-actions trade-result-actions"><button type="button" class="btn btn-ghost" id="trade-player-detail">APRI SCHEDA</button><button type="button" class="btn btn-yellow btn-primary-action" id="finish-trade">TORNA ALLA MAPPA</button></div></section>`, { closeable: false, className: "trade-result-modal" });
+    openModal(`<section class="trade-result-screen"><div class="trade-result-badge" aria-hidden="true">✓</div><div class="modal-head trade-node-head trade-result-head"><div><p class="eyebrow">Scambio completato</p><h1>${upgraded ? "PROFILO POTENZIATO" : "NUOVO GIOCATORE"}</h1><p class="muted">${escapeHtml(resolved.name)} ${upgraded ? "ha ottenuto un nuovo profilo." : "è entrato nella rosa e ha preso il posto del giocatore ceduto."}</p></div></div><div class="trade-result-card mobile-compact-player-list">${tradeStaticPlayerCardMarkup(resolved, { level: global.LevelProgression.formatLevel(receivedEntry, run.seasonId), overall: resolved.overall, extraClass: "trade-preview-card--result" })}</div><div class="trade-result-summary"><span>${upgraded ? "POTENZIAMENTO CONFERMATO" : "ARRIVO CONFERMATO"}</span><strong>${escapeHtml(resolved.name)}</strong><small>${escapeHtml(resolved.position)} · OVR ${escapeHtml(resolved.overall)} · Lv ${escapeHtml(global.LevelProgression.formatLevel(receivedEntry, run.seasonId))}</small></div><div class="node-actions trade-result-actions"><button type="button" class="btn btn-ghost" id="trade-player-detail">APRI SCHEDA</button><button type="button" class="btn btn-yellow btn-primary-action" id="finish-trade">TORNA ALLA MAPPA</button></div></section>`, { closeable: false, className: "trade-result-modal" });
     document.getElementById("trade-player-detail").addEventListener("click", () => showPlayerDetails(receivedEntry.playerId, () => showTradeResult(node, incoming, receivedEntry, status)));
     document.getElementById("finish-trade").addEventListener("click", () => finishNonMatchNode(node, upgraded ? `${resolved.name}: profilo potenziato` : `${resolved.name} entra nella rosa`));
   }
@@ -4219,7 +4221,7 @@
           <div class="content five-match-content">
             <section class="panel five-match-hero">
               <button type="button" class="btn btn-back five-match-header-back" data-nav="map" aria-label="Torna alla mappa">← <span class="five-match-back-full">Torna al percorso</span><span class="five-match-back-short">Percorso</span></button>
-              <div class="five-match-header-main"><p class="eyebrow five-match-run-meta">Run Lv ${escapeHtml(run.teamLevel)} · ${hearts()}</p><h2>Partita 5v5</h2><span class="match-state-badge">${resolved ? "Completata" : simulating ? "In corso" : "Preparazione"}</span></div>
+              <div class="five-match-header-main"><p class="eyebrow five-match-run-meta">Run Lv ${escapeHtml(global.LevelProgression.formatLevel(run, run.seasonId))} · ${hearts()}</p><h2>Partita 5v5</h2><span class="match-state-badge">${resolved ? "Completata" : simulating ? "In corso" : "Preparazione"}</span></div>
               <div class="five-match-vs">
                 <div class="five-match-team"><span class="five-match-logo">⚡</span><strong>${escapeHtml(userName)}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(userAverageOverall)} · Forza ${escapeHtml(simPreview.userStrength?.final ?? "-")}</small></div>
                 <span class="five-match-vs-badge">VS</span>
@@ -4327,7 +4329,7 @@
               <h2>${isSpecial ? "Partita speciale · 11v11" : "Sfida Boss"}</h2>
             </div>
             <div class="boss-match-vs" aria-label="Presentazione squadre">
-              <div class="boss-match-team"><span class="boss-match-logo">${meta.user.logoUrl ? `<img src="${escapeHtml(meta.user.logoUrl)}" alt="${escapeHtml(meta.user.name)}" />` : "⚡"}</span><strong>${escapeHtml(meta.user.name)}</strong><small>${escapeHtml(meta.user.formation)} · Lv ${escapeHtml(meta.user.level)}${userAverage ? ` · OVR ${userAverage}` : ""}</small></div>
+              <div class="boss-match-team"><span class="boss-match-logo">${meta.user.logoUrl ? `<img src="${escapeHtml(meta.user.logoUrl)}" alt="${escapeHtml(meta.user.name)}" />` : "⚡"}</span><strong>${escapeHtml(meta.user.name)}</strong><small>${escapeHtml(meta.user.formation)} · Lv ${escapeHtml(global.LevelProgression.formatLevel(meta.user.level, run.seasonId, run.teamLevelUnits))}${userAverage ? ` · OVR ${userAverage}` : ""}</small></div>
               <span class="boss-match-vs-badge">VS</span>
               <div class="boss-match-team boss-match-team--boss"><span class="boss-match-logo">${meta.boss.logoUrl ? `<img src="${escapeHtml(meta.boss.logoUrl)}" alt="${escapeHtml(meta.boss.name)}" />` : "⚽"}</span><strong>${escapeHtml(meta.boss.name)}</strong><small>${escapeHtml(meta.boss.formation)} · ${isSpecial ? "Livello partita" : "Boss Lv"} ${escapeHtml(meta.boss.level)}${bossAverage ? ` · OVR ${bossAverage}` : ""}</small></div>
             </div>
@@ -4473,9 +4475,10 @@
     applyRealMatchStatistics(match, result);
     const node = run.currentZone.nodes.find((item) => item.id === match.nodeId);
     if (result === "victory") {
-      addLevels(1 / 3, `${run.runId}:${match.nodeId}:five_v_five:victory`, 2);
+      const reward = global.LevelProgression.fiveVFiveLevelReward(run.seasonId);
+      addLevels(reward.amount, `${run.runId}:${match.nodeId}:five_v_five:victory`, reward.units);
       if (node) global.MapEngine.completeNode(run.currentZone, node.id);
-      match.pendingPostMatchAction = { type: "map", toast: "Vittoria: tutta la rosa guadagna +1/3 livello" };
+      match.pendingPostMatchAction = { type: "map", toast: `Vittoria: tutta la rosa guadagna ${reward.text}` };
     } else {
       global.RunState.restoreAfterLoss(run, match.previousNodeId);
       match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : `Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Torni al nodo precedente.` };
@@ -4867,7 +4870,7 @@
     const missing = !player && !status.valid;
     const equipment = player ? rosterEntry(player.playerId)?.equippedItem : null;
     const ariaLabel = player
-      ? `Seleziona ${player.name}, ${slot.role}, overall ${player.overall}, livello ${player.displayLevel}`
+      ? `Seleziona ${player.name}, ${slot.role}, overall ${player.overall}, livello ${player.displayLevelText ?? player.displayLevel}`
       : `Seleziona slot vuoto ${slot.key}, ruolo ${slot.role}`;
     if (player) {
       return compactPlayerCardMarkup(player, {
@@ -4897,7 +4900,7 @@
     return `
       <button type="button" class="five-roster-card ${compatible ? "" : "disabled"} ${assignedSlot ? "assigned" : ""} ${rarityClass(player.category)}" data-five-player="${escapeHtml(entry.playerId)}" ${compatible ? "" : "disabled"} aria-label="Assegna ${escapeHtml(player.name)}, ${escapeHtml(player.position)}, overall ${escapeHtml(player.overall)}">
         <span class="five-roster-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></span>
-        <span class="five-roster-copy"><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(player.position)} · OVR ${escapeHtml(player.overall)} · Lv ${escapeHtml(player.displayLevel)}</small></span>
+        <span class="five-roster-copy"><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(player.position)} · OVR ${escapeHtml(player.overall)} · Lv ${escapeHtml(player.displayLevelText ?? player.displayLevel)}</small></span>
         <span class="five-roster-state">${assignedSlot ? escapeHtml(assignedSlot) : "SCEGLI"}</span>
       </button>`;
   }
@@ -5549,16 +5552,17 @@
         if (appliedLevels <= 0) return toast("Questo giocatore ha già raggiunto il livello massimo.");
         openInventoryConfirmation(item, {
           title: `Usare su ${before.name}?`,
-          description: `Livello ${before.displayLevel} → ${Math.min(20, currentLevel + appliedLevels)}. L'oggetto sarà consumato.`,
+          description: `Livello ${before.displayLevelText} → ${global.LevelProgression.formatLevel(Math.min(20, currentLevel + appliedLevels), run.seasonId, Math.min(20, currentLevel + appliedLevels) >= 20 ? 0 : entry.levelUnits)}. L'oggetto sarà consumato.`,
           onCancel: () => choosePlayerForConsumable(item),
           onConfirm: () => {
             entry.level = Math.min(20, currentLevel + appliedLevels);
+            if (run.seasonId === "ie1_s2" && entry.level >= 20) entry.levelUnits = 0;
             removeInventoryItem(item.instanceId);
             global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
             global.RunState.save(run);
             const after = resolvedRosterPlayer(entry.playerId);
             closeModal();
-            toast(`${escapeHtml(item.name)} utilizzata\nLivello ${before.displayLevel} → ${after.displayLevel}\nOverall ${before.overall} → ${after.overall}`);
+            toast(`${escapeHtml(item.name)} utilizzata\nLivello ${before.displayLevelText} → ${after.displayLevelText}\nOverall ${before.overall} → ${after.overall}`);
             renderInventory();
           },
         });
@@ -5721,7 +5725,7 @@
           <p class="gameover-copy">La squadra non può più continuare questa run.</p>
           <dl class="gameover-summary">
             <div><dt>Boss raggiunto</dt><dd>${escapeHtml(bossReached)}/${escapeHtml(seasonDb.bossOrder.length)}</dd></div>
-            <div><dt>Livello</dt><dd>${escapeHtml(run.teamLevel)}</dd></div>
+            <div><dt>Livello</dt><dd>${escapeHtml(global.LevelProgression.formatLevel(run, run.seasonId))}</dd></div>
             <div><dt>OVR</dt><dd>${escapeHtml(averageOverall())}</dd></div>
             <div><dt>Partite vinte</dt><dd>${escapeHtml(wins)}</dd></div>
           </dl>
@@ -5750,7 +5754,7 @@
   function snapshotPlayer(entry, area, slot) {
     const source = sourcePlayer(entry);
     const resolved = resolvedRosterPlayer(entry.playerId) || source || {};
-    return { playerId: String(entry.playerId), profileId: entry.activeProfileId || null, roleVariantId: entry.activeRoleVariantId || null, name: resolved.name || source?.name || String(entry.playerId), nickname: resolved.nickname || null, role: resolved.position || source?.position || null, element: resolved.element || resolved.type || source?.element || null, portraitUrl: playerPortraitUrl(resolved || source), fullbodyUrl: resolvePlayerVisual(resolved || source, { playerId: entry.playerId }).frontFullbodyUrl || null, teamId: entry.teamId || source?.teamId || null, teamName: entry.teamName || source?.teamName || null, originalRarity: source?.category || null, finalRarity: resolved.category || source?.category || null, recruitedAtLevel: entry.recruitedAtLevel ?? null, finalLevel: Number(entry.level || 0), recruitedOverall: entry.recruitedOverall ?? null, finalOverall: resolved.overall ?? source?.finalOverall ?? null, finalPotential: resolved.potential ?? null, finalStats: resolved.stats || null, equippedItem: entry.equippedItem ? { ...entry.equippedItem } : null, formationSlot: area === "lineup" ? slot : null, benchSlot: area === "bench" ? slot : null, recruitmentSource: entry.source || null, traits: Array.isArray(entry.traits) ? entry.traits.slice() : [] };
+    return { playerId: String(entry.playerId), profileId: entry.activeProfileId || null, roleVariantId: entry.activeRoleVariantId || null, name: resolved.name || source?.name || String(entry.playerId), nickname: resolved.nickname || null, role: resolved.position || source?.position || null, element: resolved.element || resolved.type || source?.element || null, portraitUrl: playerPortraitUrl(resolved || source), fullbodyUrl: resolvePlayerVisual(resolved || source, { playerId: entry.playerId }).frontFullbodyUrl || null, teamId: entry.teamId || source?.teamId || null, teamName: entry.teamName || source?.teamName || null, originalRarity: source?.category || null, finalRarity: resolved.category || source?.category || null, recruitedAtLevel: entry.recruitedAtLevel ?? null, finalLevel: Number(entry.level || 0), finalLevelUnits: Number(entry.levelUnits || 0), seasonId: run.seasonId, recruitedOverall: entry.recruitedOverall ?? null, finalOverall: resolved.overall ?? source?.finalOverall ?? null, finalPotential: resolved.potential ?? null, finalStats: resolved.stats || null, equippedItem: entry.equippedItem ? { ...entry.equippedItem } : null, formationSlot: area === "lineup" ? slot : null, benchSlot: area === "bench" ? slot : null, recruitmentSource: entry.source || null, traits: Array.isArray(entry.traits) ? entry.traits.slice() : [] };
   }
 
   function collectPlayerStatistics(players) {
@@ -5770,8 +5774,8 @@
     global.RunStatistics?.snapshotFinalPlayerStats?.(run, fullRoster);
     const statsSnapshot = global.RunStatistics?.buildHallOfFameStatisticsSnapshot?.(run) || { runStatistics: {}, playerStatistics: {}, matchHistory: [], awards: [] };
     const seasonMeta = global.SeasonRegistry.get(run?.seasonId);
-    const runStatistics = { ...statsSnapshot.runStatistics, mode: seasonMeta.name, season: seasonMeta.name, victoryDate: run.completedAt || new Date().toISOString(), seed: run.runId, durationMs: run.createdAt ? Date.now() - new Date(run.createdAt).getTime() : statsSnapshot.runStatistics.durationMs, finalTeamLevel: run.teamLevel ?? null, finalAverageOverall: avg, finalFormation: run.formationId, livesRemaining: run.lives ?? null, recruitedPlayers: run.roster.length, bossesDefeated: (run.completedBossIds || []).slice() };
-    const snapshot = { archiveSchemaVersion: 1, runId: run.runId, teamName: identity.name, teamLogo: identity.logo || "inazuma-lightning", modeId: seasonMeta.id, modeName: seasonMeta.name, seasonId: seasonMeta.id, seasonName: seasonMeta.name, difficultyId: null, victoryDate: run.completedAt || new Date().toISOString(), seed: run.runId, finalBossId: String(finalBoss?.teamId || "raimon"), finalBossName: finalBoss?.teamName || "Raimon", finalFormation: run.formationId, finalFormationTactics: global.MatchSimulator?.formationTactic?.(run.formationId) || null, finalStartingEleven: starters, fullRoster, bench, savedFiveVFiveFormation: run.fiveVFive ? JSON.parse(JSON.stringify(run.fiveVFive)) : null, finalTeamLevel: run.teamLevel ?? null, finalAverageOverall: avg, livesRemaining: run.lives ?? null, statisticsSchemaVersion: statsSnapshot.statisticsSchemaVersion || 1, statisticsComplete: statsSnapshot.statisticsComplete, statisticsStartedAt: statsSnapshot.statisticsStartedAt, runStatistics, playerStatistics: statsSnapshot.playerStatistics, matchHistory: statsSnapshot.matchHistory, awards: statsSnapshot.awards, rulesetVersion: "season1-config-v2", databaseVersion: seasonDb?.version || null, formationTacticsVersion: "match-simulator-config-v1", equipmentVersion: "season1-item-pool-v1", traitSystemVersion: null, sourceAppVersion: "hall-of-fame-v2-run-statistics" };
+    const runStatistics = { ...statsSnapshot.runStatistics, mode: seasonMeta.name, season: seasonMeta.name, victoryDate: run.completedAt || new Date().toISOString(), seed: run.runId, durationMs: run.createdAt ? Date.now() - new Date(run.createdAt).getTime() : statsSnapshot.runStatistics.durationMs, finalTeamLevel: run.teamLevel ?? null, finalTeamLevelUnits: run.teamLevelUnits ?? 0, finalAverageOverall: avg, finalFormation: run.formationId, livesRemaining: run.lives ?? null, recruitedPlayers: run.roster.length, bossesDefeated: (run.completedBossIds || []).slice() };
+    const snapshot = { archiveSchemaVersion: 1, runId: run.runId, teamName: identity.name, teamLogo: identity.logo || "inazuma-lightning", modeId: seasonMeta.id, modeName: seasonMeta.name, seasonId: seasonMeta.id, seasonName: seasonMeta.name, difficultyId: null, victoryDate: run.completedAt || new Date().toISOString(), seed: run.runId, finalBossId: String(finalBoss?.teamId || "raimon"), finalBossName: finalBoss?.teamName || "Raimon", finalFormation: run.formationId, finalFormationTactics: global.MatchSimulator?.formationTactic?.(run.formationId) || null, finalStartingEleven: starters, fullRoster, bench, savedFiveVFiveFormation: run.fiveVFive ? JSON.parse(JSON.stringify(run.fiveVFive)) : null, finalTeamLevel: run.teamLevel ?? null, finalTeamLevelUnits: run.teamLevelUnits ?? 0, finalAverageOverall: avg, livesRemaining: run.lives ?? null, statisticsSchemaVersion: statsSnapshot.statisticsSchemaVersion || 1, statisticsComplete: statsSnapshot.statisticsComplete, statisticsStartedAt: statsSnapshot.statisticsStartedAt, runStatistics, playerStatistics: statsSnapshot.playerStatistics, matchHistory: statsSnapshot.matchHistory, awards: statsSnapshot.awards, rulesetVersion: "season1-config-v2", databaseVersion: seasonDb?.version || null, formationTacticsVersion: "match-simulator-config-v1", equipmentVersion: "season1-item-pool-v1", traitSystemVersion: null, sourceAppVersion: "hall-of-fame-v2-run-statistics" };
     snapshot.archiveKey = global.HallOfFameStorage.archiveKeyFor(snapshot);
     snapshot.hallTeamId = global.HallOfFameStorage.stableId(snapshot.archiveKey);
     return snapshot;
@@ -5796,7 +5800,7 @@
   }
 
   function snapshotCard(player) {
-    return compactPlayerCardMarkup({ ...player, position: player.role, category: player.finalRarity, overall: player.finalOverall, displayLevel: player.finalLevel, stats: player.finalStats }, { equipment: player.equippedItem, equipmentInFooter: true, level: player.finalLevel, overall: player.finalOverall, dataAttr: `data-hall-player="${escapeHtml(player.playerId)}"`, extraClass: "squad-player-card hall-player-card" });
+    return compactPlayerCardMarkup({ ...player, position: player.role, category: player.finalRarity, overall: player.finalOverall, displayLevel: player.finalLevel, stats: player.finalStats }, { equipment: player.equippedItem, equipmentInFooter: true, level: global.LevelProgression.formatLevel(player.finalLevel, player.seasonId, player.finalLevelUnits), overall: player.finalOverall, dataAttr: `data-hall-player="${escapeHtml(player.playerId)}"`, extraClass: "squad-player-card hall-player-card" });
   }
 
   function championFormationMarkup(team) {
@@ -5836,7 +5840,7 @@
     const stats = team.runStatistics || {};
     return [
       { title: "Identità finale", className: "hall-stat-group--identity", items: [
-        { label: "Livello finale squadra", value: stats.finalTeamLevel ?? team.finalTeamLevel },
+        { label: "Livello finale squadra", value: global.LevelProgression.formatLevel(stats.finalTeamLevel ?? team.finalTeamLevel, team.seasonId || team.modeId, team.finalTeamLevelUnits ?? 0) },
         { label: "Overall medio finale", value: stats.finalAverageOverall ?? team.finalAverageOverall },
         { label: "Modulo finale", value: stats.finalFormation || team.finalFormation },
         { label: "Vite rimaste", value: stats.livesRemaining ?? team.livesRemaining },
