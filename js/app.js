@@ -1263,7 +1263,7 @@
     return `<section class="home-hero home-active-dashboard" aria-label="Home con run attiva">
       <div class="home-team-banner anime-panel">
         <div class="home-team-crest">${homeTeamCrestMarkup(identity)}</div>
-        <div class="home-team-copy"><p>${escapeHtml(seasonDisplayName(savedRun.seasonId))}</p><h1>${escapeHtml(identity.name)}</h1><span>Stagione ${escapeHtml((savedRun.seasonId || "1").match(/\d+/)?.[0] || "1")}</span></div>
+        <div class="home-team-copy"><p>${escapeHtml(seasonDisplayName(savedRun.seasonId))}</p><h1>${escapeHtml(identity.name)}</h1><span>Stagione ${escapeHtml(global.SeasonRegistry.get(savedRun.seasonId).displaySeasonNumber)}</span></div>
         <button type="button" class="home-team-manage" id="manage-team-home">Gestisci squadra</button>
       </div>
       <article class="home-hub-card home-run-card home-run-panel anime-panel">
@@ -1380,13 +1380,20 @@
     });
   }
 
+  function resolveSeasonPreviewRosterPlayer(savedRun, rosterEntry, database, playersById) {
+    if (savedRun?.seasonId === "ie1_s2") {
+      return global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(rosterEntry, { run: savedRun, seasonId: savedRun.seasonId, database });
+    }
+    const source = playersById.get(String(rosterEntry.playerId));
+    if (!source) return null;
+    const level = Math.floor(Number(rosterEntry.level ?? savedRun?.teamLevel ?? 0));
+    return { ...source, ...global.InazumaProgression.getPlayerAtLevel(source, level, database, rosterEntry), playerId: source.playerId };
+  }
+
   function seasonRunAverageOverall(savedRun, database, playersById) {
     const entries = savedRosterEntries(savedRun);
     const overalls = entries.map((entry) => {
-      const source = playersById.get(String(entry.playerId));
-      if (!source) return null;
-      const level = Math.floor(Number(entry.level ?? savedRun?.teamLevel ?? 0));
-      return Number(global.InazumaProgression.getPlayerAtLevel(source, level, database)?.overall);
+      return Number(resolveSeasonPreviewRosterPlayer(savedRun, entry, database, playersById)?.overall);
     }).filter(Number.isFinite);
     if (!overalls.length) return "-";
     return Math.round(overalls.reduce((sum, value) => sum + value, 0) / overalls.length);
@@ -1396,14 +1403,13 @@
     if (!database || !playersById) return `<div class="season-preview-state season-preview-state--loading">Caricamento rosa…</div>`;
     if (!normalizedEntries.length) return `<div class="season-preview-state">Rosa non disponibile</div>`;
     const cards = normalizedEntries.slice(0, 6).map((entry) => {
-      const source = playersById.get(String(entry.playerId));
-      if (!source) {
+      const resolved = resolveSeasonPreviewRosterPlayer(savedRun, entry, database, playersById);
+      if (!resolved) {
         console.warn("Season roster preview: giocatore non risolto", { seasonId: savedRun?.seasonId, playerId: entry.playerId });
         return "";
       }
       const level = Number(entry.level ?? savedRun?.teamLevel ?? 0);
-      const resolved = global.InazumaProgression.getPlayerAtLevel(source, Math.floor(level), database);
-      return compactPlayerCardMarkup({ ...source, ...resolved, playerId: source.playerId }, { level, overall: resolved.overall, extraClass: "season-preview-player", detailLayout: "stacked" });
+      return compactPlayerCardMarkup(resolved, { level, overall: resolved.overall, extraClass: "season-preview-player", detailLayout: "stacked" });
     }).filter(Boolean);
     return cards.length ? cards.join("") : `<div class="season-preview-state">Rosa non disponibile</div>`;
   }
@@ -2987,6 +2993,7 @@
     const candidates = run.seasonId === "ie1_s2"
       ? global.RoguelikeRules.getProfileAwareTradeCandidates({
           outgoingPlayer: outgoingBase,
+          outgoingPlayerId: outgoingEntry.playerId,
           rosterEntries: run.roster,
           freeAgents: freeAgentsDb.players,
           profiles: seasonDb.profiles,
@@ -3036,6 +3043,10 @@
       global.FiveVFive.removeUnavailable(run); ui.tradeSelectedPlayerId = null; global.RunState.save(run); return showTradeResult(node, incoming, run.roster[rosterIndex], "acquired");
     }
     const result = global.RoguelikeRules.executeProfileAwareTrade(run, outgoingEntry.playerId, incoming, { roleVariantForUpgrade: roleVariantForTradeUpgrade });
+    if (!result.player) {
+      toast("Offerta non più valida: la rosa non è stata modificata");
+      return resolveTradeNode(node);
+    }
     if (result.recruited) {
       Object.assign(result.player, { firstJoinedAt: new Date().toISOString(), recruitedOverall: tradeCandidatePreview(incoming, result.player)?.overall ?? incoming.player.finalOverall, ...permanentRosterFields(incoming.player) });
       unlockAlbumRecruit(result.player.playerId, "trade");
@@ -5819,6 +5830,11 @@
         { label: "Vittorie Boss", value: stats.bossWins },
         { label: "Sconfitte Boss", value: stats.bossLosses },
       ] },
+      ...(Number(stats.specialMatches || 0) > 0 ? [{ title: "Partite speciali", className: "hall-stat-group--special", items: [
+        { label: "Giocate", value: stats.specialMatches },
+        { label: "Vinte", value: stats.specialWins },
+        { label: "Perse", value: stats.specialLosses },
+      ] }] : []),
       { title: "Percorso", className: "hall-stat-group--secondary", items: [
         { label: "Nodi completati", value: stats.nodesCompleted },
         { label: "Giocatori reclutati", value: stats.recruitedPlayers ?? stats.playersRecruited ?? team.fullRoster?.length },

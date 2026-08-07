@@ -81,7 +81,28 @@
     return [...unique.values()];
   }
 
-  function getProfileAwareTradeCandidates({ outgoingPlayer, rosterEntries, freeAgents, profiles, unlockedTeamIds, teams, seasonId = "ie1_s2", compareProfileProgression }) {
+  function resolveTradeCandidateOutcome({ candidate, rosterEntries = [], outgoingPlayerId = null }) {
+    const candidatePlayer = candidate?.player || candidate;
+    const candidatePlayerId = String(candidate?.playerId || candidatePlayer?.playerId || "");
+    if (!candidatePlayerId) return null;
+    const owned = rosterEntries.find((entry) => String(entry.playerId) === candidatePlayerId);
+    // Trade deliberately excludes every owned player, including a self-upgrade: every
+    // accepted offer therefore replaces one roster slot with one different player.
+    if (owned) return { eligible: false, reason: String(outgoingPlayerId) === candidatePlayerId ? "self-upgrade" : "already-owned" };
+    const variantId = candidate?.activeRoleVariantId || candidate?.profile?.defaultRoleVariantId || null;
+    const variant = (candidate?.profile?.roleVariants || []).find((item) => String(item.roleVariantId || item.variantId) === String(variantId));
+    const outcome = { ...candidatePlayer, ...(variant || {}) };
+    return {
+      eligible: true,
+      resultingRole: String(outcome.position || outcome.normalizedRole || outcome.role || "").toUpperCase(),
+      resultingProfileId: candidate?.profileId || candidate?.profile?.profileId || null,
+      resultingRoleVariantId: variantId,
+      resultingBasePotential: Number(outcome.finalOverall || 0),
+      player: outcome,
+    };
+  }
+
+  function getProfileAwareTradeCandidates({ outgoingPlayer, outgoingPlayerId = null, rosterEntries, freeAgents, profiles, unlockedTeamIds, teams, seasonId = "ie1_s2", compareProfileProgression }) {
     if (!outgoingPlayer) return [];
     const role = String(outgoingPlayer.position || outgoingPlayer.role || "").toUpperCase();
     const potential = Number(outgoingPlayer.finalOverall || 0);
@@ -92,20 +113,20 @@
       .flatMap((team) => [...(team.playerProfileIds || []), ...(team.teamPullPoolProfileIds || [])].map(String)));
     const candidates = [];
     (freeAgents || []).forEach((player) => {
-      if (ownedByPlayerId.has(String(player.playerId))) return;
-      if (String(player.position || player.role || "").toUpperCase() !== role) return;
-      if (Number(player.finalOverall || 0) < potential) return;
-      candidates.push({ player, source: "free_agents", playerId: String(player.playerId), profileId: null, activeRoleVariantId: null, kind: "new" });
+      const candidate = { player, source: "free_agents", playerId: String(player.playerId), profileId: null, activeRoleVariantId: null, kind: "new" };
+      const outcome = resolveTradeCandidateOutcome({ candidate, rosterEntries, outgoingPlayerId });
+      if (!outcome?.eligible || outcome.resultingRole !== role || outcome.resultingBasePotential < potential) return;
+      candidates.push({ ...candidate, outcome, player: outcome.player });
     });
     (profiles || []).forEach((profile) => {
       if (!unlockedProfileIds.has(String(profile.profileId))) return;
       const defaultVariant = (profile.roleVariants || []).find((variant) => String(variant.roleVariantId || variant.variantId) === String(profile.defaultRoleVariantId));
       const player = { ...profile, ...(defaultVariant || {}), playerId: String(profile.playerId), profileId: String(profile.profileId) };
-      if (String(player.position || player.normalizedRole || "").toUpperCase() !== role) return;
-      if (Number(player.finalOverall || 0) < potential) return;
       const owned = ownedByPlayerId.get(String(profile.playerId));
-      if (owned && compareProfileProgression(seasonId, owned.activeProfileId, profile.profileId) !== 1) return;
-      candidates.push({ player, profile, source: seasonId, playerId: String(profile.playerId), profileId: String(profile.profileId), activeRoleVariantId: String(profile.defaultRoleVariantId || "") || null, kind: owned ? "upgrade" : "new", profileRank: Number(profile.profileRank || 0) });
+      const candidate = { player, profile, source: seasonId, playerId: String(profile.playerId), profileId: String(profile.profileId), activeRoleVariantId: String(profile.defaultRoleVariantId || "") || null, kind: owned ? "upgrade" : "new", profileRank: Number(profile.profileRank || 0) };
+      const outcome = resolveTradeCandidateOutcome({ candidate, rosterEntries, outgoingPlayerId });
+      if (!outcome?.eligible || outcome.resultingRole !== role || outcome.resultingBasePotential < potential) return;
+      candidates.push({ ...candidate, outcome, player: outcome.player });
     });
     const bestByPlayerId = new Map();
     candidates.forEach((candidate) => {
@@ -121,6 +142,8 @@
     if (outgoingIndex < 0) return { status: "missing-outgoing" };
     const outgoing = roster[outgoingIndex];
     const incomingId = String(incoming.playerId || incoming.player?.playerId);
+    const outcome = resolveTradeCandidateOutcome({ candidate: incoming, rosterEntries: roster, outgoingPlayerId: outgoingId });
+    if (!outcome?.eligible) return { status: "ineligible", reason: outcome?.reason || "invalid-candidate", player: null, recruited: false };
     const existingIndex = roster.findIndex((entry) => String(entry.playerId) === incomingId);
     const nextLevel = Math.min(20, Number(outgoing.level || 0) + 1);
     if (existingIndex === outgoingIndex) {
@@ -165,6 +188,7 @@
     defeatedBossRewardLevel,
     migrateDefeatedBossPlayerLevels,
     getTradeCandidates,
+    resolveTradeCandidateOutcome,
     getProfileAwareTradeCandidates,
     executeProfileAwareTrade,
     applyEquipment,
