@@ -1,6 +1,19 @@
 (function (global) {
   "use strict";
 
+  function isProfileAwareRosterEntry(entry, run) {
+    return run?.seasonId === "ie1_s2"
+      && entry?.source !== "free_agents"
+      && typeof entry?.activeProfileId === "string"
+      && entry.activeProfileId.length > 0;
+  }
+
+  function resolveRosterEntryBase(entry, run, resolvers = {}) {
+    return isProfileAwareRosterEntry(entry, run)
+      ? resolvers.profile?.(entry)
+      : resolvers.legacy?.(entry);
+  }
+
   function unlockedPullLevel(seasonDatabase, currentBossIndex) {
     if (currentBossIndex <= 0) return 0;
     return Number(seasonDatabase.bossOrder[currentBossIndex - 1]?.bossLevel || 0);
@@ -144,6 +157,16 @@
     const incomingId = String(incoming.playerId || incoming.player?.playerId);
     const outcome = resolveTradeCandidateOutcome({ candidate: incoming, rosterEntries: roster, outgoingPlayerId: outgoingId });
     if (!outcome?.eligible) return { status: "ineligible", reason: outcome?.reason || "invalid-candidate", player: null, recruited: false };
+    if (options.resolveOutgoingBase) {
+      const outgoingBase = options.resolveOutgoingBase(outgoing);
+      const outgoingRole = String(outgoingBase?.position || outgoingBase?.role || "").toUpperCase();
+      const outgoingPotential = Number(outgoingBase?.finalOverall);
+      if (!outgoingRole || !Number.isFinite(outgoingPotential)
+        || outcome.resultingRole !== outgoingRole
+        || outcome.resultingBasePotential < outgoingPotential) {
+        return { status: "ineligible", reason: "trade-conditions-changed", player: null, recruited: false };
+      }
+    }
     const existingIndex = roster.findIndex((entry) => String(entry.playerId) === incomingId);
     const nextLevel = Math.min(20, Number(outgoing.level || 0) + 1);
     if (existingIndex === outgoingIndex) {
@@ -183,6 +206,8 @@
   }
 
   global.RoguelikeRules = {
+    isProfileAwareRosterEntry,
+    resolveRosterEntryBase,
     unlockedPullLevel,
     unlockedTeamPullCategoryWeights,
     defeatedBossRewardLevel,

@@ -528,6 +528,11 @@
     return seasonPlayersById.get(id) || freeAgentsById.get(id);
   }
 
+  function legacyRosterPlayer(entry, currentRun = run) {
+    if (currentRun?.seasonId === "ie1_s2") return freeAgentsById.get(String(entry?.playerId));
+    return sourcePlayer(entry);
+  }
+
   function rosterEntry(playerId) {
     return run.roster.find((entry) => String(entry.playerId) === String(playerId));
   }
@@ -606,18 +611,22 @@
 
   function activeBasePotential(entry) {
     if (!entry) return 0;
-    if (run?.seasonId === "ie1_s2" && entry.activeProfileId) {
+    if (global.RoguelikeRules.isProfileAwareRosterEntry(entry, run)) {
       return Number(global.ProfiledSeasonRuntime.resolveEffectiveBase(entry, run.seasonId)?.finalOverall || 0);
     }
-    return Number(sourcePlayer(entry)?.finalOverall || 0);
+    return Number(legacyRosterPlayer(entry)?.finalOverall || 0);
   }
 
   function resolvedRosterPlayer(playerId) {
     const entry = rosterEntry(playerId);
     if (!entry) return null;
-    const player = sourcePlayer(entry);
-    const database = global.SeasonRegistry?.isSeasonSource?.(entry.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb;
-    const resolved = run?.seasonId === "ie1_s2" && entry.activeProfileId
+    const player = global.RoguelikeRules.isProfileAwareRosterEntry(entry, run)
+      ? sourcePlayer(entry)
+      : legacyRosterPlayer(entry);
+    const profileAware = global.RoguelikeRules.isProfileAwareRosterEntry(entry, run);
+    const database = profileAware ? seasonDb : (run?.seasonId === "ie1_s2" ? freeAgentsDb : (global.SeasonRegistry?.isSeasonSource?.(entry.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb));
+    if (!player && !profileAware) return null;
+    const resolved = profileAware
       ? global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(entry, { seasonId: run.seasonId, database })
       : global.InazumaProgression.getPlayerAtLevel(
       player,
@@ -989,12 +998,11 @@
   }
 
   function homeAlbumCardMarkup() {
-    const progress = albumCollectionProgress();
     return `<article class="home-hub-card album-home-card" aria-label="Album">
       <div class="home-card-kicker"><span>▣</span><strong>ALBUM</strong></div>
       <h2>Album</h2>
       <p class="muted">Completa la collezione dei giocatori.</p>
-      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>Inazuma Eleven 1</span><strong>${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)}</strong></div></div>
+      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>ALBUM</span><strong>3 COLLEZIONI</strong></div></div>
       <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="open-album-home">Apri Album</button></div>
     </article>`;
   }
@@ -1381,13 +1389,17 @@
   }
 
   function resolveSeasonPreviewRosterPlayer(savedRun, rosterEntry, database, playersById) {
-    if (savedRun?.seasonId === "ie1_s2") {
+    if (global.RoguelikeRules.isProfileAwareRosterEntry(rosterEntry, savedRun)) {
       return global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(rosterEntry, { run: savedRun, seasonId: savedRun.seasonId, database });
     }
-    const source = playersById.get(String(rosterEntry.playerId));
+    const usesFreeAgents = rosterEntry?.source === "free_agents" || savedRun?.seasonId === "ie1_s2";
+    const sourceDatabase = usesFreeAgents ? freeAgentsDb : database;
+    const source = usesFreeAgents
+      ? (freeAgentsDb?.players || []).find((player) => String(player.playerId) === String(rosterEntry.playerId))
+      : playersById.get(String(rosterEntry.playerId));
     if (!source) return null;
     const level = Math.floor(Number(rosterEntry.level ?? savedRun?.teamLevel ?? 0));
-    return { ...source, ...global.InazumaProgression.getPlayerAtLevel(source, level, database, rosterEntry), playerId: source.playerId };
+    return { ...source, ...global.InazumaProgression.getPlayerAtLevel(source, level, sourceDatabase, rosterEntry), playerId: source.playerId, source: rosterEntry.source };
   }
 
   function seasonRunAverageOverall(savedRun, database, playersById) {
@@ -2989,7 +3001,14 @@
   function prepareTrade(node, outgoingId) {
     const outgoingEntry = rosterEntry(outgoingId);
     const outgoingResolved = resolvedRosterPlayer(outgoingId);
-    const outgoingBase = run.seasonId === "ie1_s2" ? global.ProfiledSeasonRuntime.resolveEffectiveBase(outgoingEntry, run.seasonId) : sourcePlayer(outgoingEntry);
+    const outgoingBase = global.RoguelikeRules.resolveRosterEntryBase(outgoingEntry, run, {
+      profile: (entry) => global.ProfiledSeasonRuntime.resolveEffectiveBase(entry, run.seasonId),
+      legacy: (entry) => legacyRosterPlayer(entry),
+    });
+    if (!outgoingEntry || !outgoingResolved || !outgoingBase?.position || !Number.isFinite(Number(outgoingBase.finalOverall))) {
+      toast("Giocatore non disponibile per lo scambio");
+      return resolveTradeNode(node);
+    }
     const candidates = run.seasonId === "ie1_s2"
       ? global.RoguelikeRules.getProfileAwareTradeCandidates({
           outgoingPlayer: outgoingBase,
@@ -3042,7 +3061,13 @@
       run.lineup = run.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id)); run.bench = run.bench.map((id) => String(id) === outgoingId ? incomingId : String(id));
       global.FiveVFive.removeUnavailable(run); ui.tradeSelectedPlayerId = null; global.RunState.save(run); return showTradeResult(node, incoming, run.roster[rosterIndex], "acquired");
     }
-    const result = global.RoguelikeRules.executeProfileAwareTrade(run, outgoingEntry.playerId, incoming, { roleVariantForUpgrade: roleVariantForTradeUpgrade });
+    const result = global.RoguelikeRules.executeProfileAwareTrade(run, outgoingEntry.playerId, incoming, {
+      roleVariantForUpgrade: roleVariantForTradeUpgrade,
+      resolveOutgoingBase: (entry) => global.RoguelikeRules.resolveRosterEntryBase(entry, run, {
+        profile: (profileEntry) => global.ProfiledSeasonRuntime.resolveEffectiveBase(profileEntry, run.seasonId),
+        legacy: (legacyEntry) => legacyRosterPlayer(legacyEntry),
+      }),
+    });
     if (!result.player) {
       toast("Offerta non più valida: la rosa non è stata modificata");
       return resolveTradeNode(node);
