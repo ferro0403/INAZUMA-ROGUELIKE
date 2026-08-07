@@ -4,7 +4,10 @@
   const DOCUMENT_LIMIT_BYTES = 850 * 1024;
   const CLOUD_SCHEMA_VERSION = 1;
   const MAX_HALL_TEAMS = 1000;
-  const SECTOR_NAMES = ["profile", "run_ie1", "run_ie2", "album", "development", "hall_index"];
+  const RUN_SECTOR_NAMES = ["run_ie1", "run_ie2", "run_ie1_s2"];
+  const RUN_SECTORS = new Set(RUN_SECTOR_NAMES);
+  const SECTOR_NAMES = ["profile", ...RUN_SECTOR_NAMES, "album", "development", "hall_index"];
+  const isRunSector = (name) => RUN_SECTORS.has(name);
   const SHA256_REGEX = /^[a-f0-9]{64}$/;
   const PAYLOAD_ENCODING = "firestore-safe-v1";
   const ARRAY_WRAPPER = "__inazumaCloudArrayV1";
@@ -68,7 +71,7 @@
     const teams = Array.isArray(archive?.teams) ? archive.teams.map(clone) : [];
     return normalize({
       profile: apis.RunState.loadProfile(),
-      runs: { ie1: apis.RunState.load("ie1", { readOnly: true }), ie2: apis.RunState.load("ie2", { readOnly: true }) },
+      runs: { ie1: apis.RunState.load("ie1", { readOnly: true }), ie2: apis.RunState.load("ie2", { readOnly: true }), ie1_s2: apis.RunState.load("ie1_s2", { readOnly: true }) },
       album: apis.AlbumProgress.read(),
       development: apis.DevelopmentV2.read(),
       hallOfFame: {
@@ -101,6 +104,7 @@
       profile: !!value.profile?.teamIdentity,
       runIe1: value.runs?.ie1 != null,
       runIe2: value.runs?.ie2 != null,
+      runIe1S2: value.runs?.ie1_s2 != null,
       albumUnlocked,
       developmentProgress,
       hallOfFameCount: Array.isArray(value.hallOfFame?.teams) ? value.hallOfFame.teams.length : 0,
@@ -109,6 +113,7 @@
     if (summary.profile) reasons.push("profile");
     if (summary.runIe1) reasons.push("run_ie1");
     if (summary.runIe2) reasons.push("run_ie2");
+    if (summary.runIe1S2) reasons.push("run_ie1_s2");
     if (summary.albumUnlocked) reasons.push("album");
     if (summary.developmentProgress) reasons.push("development");
     if (summary.hallOfFameCount) reasons.push("hall_of_fame");
@@ -121,11 +126,14 @@
     if (manifest.schemaVersion !== CLOUD_SCHEMA_VERSION || manifest.initialized !== true) throw cloudError("invalid-manifest", "manifest");
     if (!Number.isInteger(manifest.revision) || manifest.revision < 1 || manifest.accountUid !== uid) throw cloudError("invalid-manifest", "manifest");
     if (!manifest.sectors || typeof manifest.sectors !== "object" || !manifest.sectorHashes || typeof manifest.sectorHashes !== "object") throw cloudError("invalid-manifest", "manifest");
+    const legacyMissingRunSectors = [];
     for (const name of SECTOR_NAMES) {
+      const legacyMissingRun = name === "run_ie1_s2" && !own(manifest.sectors, name) && !own(manifest.sectorHashes, name);
+      if (legacyMissingRun) { legacyMissingRunSectors.push(name); manifest.sectors[name] = false; manifest.sectorHashes[name] = null; if (manifest.sectorRevisions) manifest.sectorRevisions[name] = manifest.revision; }
       if (name !== "hall_index" && !own(manifest.sectors, name)) throw cloudError("invalid-manifest", "manifest");
       if (!own(manifest.sectorHashes, name)) throw cloudError("invalid-manifest", "manifest");
       const hashValue = manifest.sectorHashes[name];
-      const absentRun = (name === "run_ie1" || name === "run_ie2") && manifest.sectors[name] === false;
+      const absentRun = isRunSector(name) && manifest.sectors[name] === false;
       if (absentRun ? hashValue !== null : !SHA256_REGEX.test(hashValue || "")) throw cloudError("invalid-manifest", name);
       if (manifest.sectorRevisions != null && (!Number.isInteger(manifest.sectorRevisions[name]) || manifest.sectorRevisions[name] < 1 || manifest.sectorRevisions[name] > manifest.revision)) throw cloudError("invalid-manifest", name);
     }
@@ -137,16 +145,18 @@
     // into plain objects before the cloud manager caches them.
     validated.createdAt = manifest.createdAt;
     validated.updatedAt = manifest.updatedAt;
+    validated.legacyMissingRunSectors = legacyMissingRunSectors;
     return validated;
   }
 
   async function validateSectorDocument(name, data, manifest, cryptoApi = global.crypto) {
+    if ((!data || typeof data !== "object") && isRunSector(name) && manifest.sectors[name] === false) return null;
     if (!data || typeof data !== "object") throw cloudError("missing-sector", name);
     const expectedRevision = manifest.sectorRevisions?.[name] ?? manifest.revision;
     if (data.schemaVersion !== CLOUD_SCHEMA_VERSION || data.revision !== expectedRevision || data.sector !== name || !own(data, "payload") || !own(data, "payloadHash")) throw cloudError("invalid-sector", name);
     if (data.payloadEncoding != null && data.payloadEncoding !== PAYLOAD_ENCODING) throw cloudError("unsupported-payload-encoding", name);
     if (data.sourceDeviceId != null && (typeof data.sourceDeviceId !== "string" || !data.sourceDeviceId.trim())) throw cloudError("invalid-sector", name);
-    const isRun = name === "run_ie1" || name === "run_ie2";
+    const isRun = isRunSector(name);
     const present = isRun ? manifest.sectors[name] === true : true;
     if (!present) {
       if (data.payload !== null || manifest.sectorHashes[name] !== null) throw cloudError("invalid-sector", name);
@@ -184,14 +194,14 @@
 
   function reconstructSnapshot(payloads, hallPayloads) {
     const index = payloads.hall_index;
-    return normalize({ profile: payloads.profile, runs: { ie1: payloads.run_ie1, ie2: payloads.run_ie2 }, album: payloads.album, development: payloads.development,
+    return normalize({ profile: payloads.profile, runs: { ie1: payloads.run_ie1, ie2: payloads.run_ie2, ie1_s2: payloads.run_ie1_s2 }, album: payloads.album, development: payloads.development,
       hallOfFame: { archiveSchemaVersion: index.archiveSchemaVersion, updatedAt: index.updatedAt ?? null, teams: hallPayloads, index: index.index } });
   }
 
   async function prepareSnapshot(snapshot, cryptoApi = global.crypto) {
     const clean = normalize(snapshot);
     const payloads = {
-      profile: clean.profile ?? {}, run_ie1: clean.runs?.ie1 ?? null, run_ie2: clean.runs?.ie2 ?? null,
+      profile: clean.profile ?? {}, run_ie1: clean.runs?.ie1 ?? null, run_ie2: clean.runs?.ie2 ?? null, run_ie1_s2: clean.runs?.ie1_s2 ?? null,
       album: clean.album ?? {}, development: clean.development ?? {}, hall_index: hallIndex(clean),
     };
     const hashes = {};
@@ -224,16 +234,16 @@
     }
     return true;
   }
-  function sectorLogicalHash(prepared, name) { return (name === "run_ie1" || name === "run_ie2") && prepared.payloads[name] === null ? null : prepared.hashes[name]; }
+  function sectorLogicalHash(prepared, name) { return isRunSector(name) && prepared.payloads[name] === null ? null : prepared.hashes[name]; }
 
   function buildManifest(prepared, uid, deviceId, timestamp) {
     return { schemaVersion: 1, revision: 1, initialized: true, createdAt: timestamp, updatedAt: timestamp, source: "local-first-association", deviceId, accountUid: uid,
-      sectors: { profile: true, run_ie1: prepared.payloads.run_ie1 !== null, run_ie2: prepared.payloads.run_ie2 !== null, album: true, development: true, hallOfFameCount: prepared.hallEntries.length },
-      sectorHashes: { profile: prepared.hashes.profile, run_ie1: prepared.payloads.run_ie1 === null ? null : prepared.hashes.run_ie1, run_ie2: prepared.payloads.run_ie2 === null ? null : prepared.hashes.run_ie2, album: prepared.hashes.album, development: prepared.hashes.development, hall_index: prepared.hashes.hall_index },
+      sectors: { profile: true, run_ie1: prepared.payloads.run_ie1 !== null, run_ie2: prepared.payloads.run_ie2 !== null, run_ie1_s2: prepared.payloads.run_ie1_s2 !== null, album: true, development: true, hallOfFameCount: prepared.hallEntries.length },
+      sectorHashes: { profile: prepared.hashes.profile, run_ie1: prepared.payloads.run_ie1 === null ? null : prepared.hashes.run_ie1, run_ie2: prepared.payloads.run_ie2 === null ? null : prepared.hashes.run_ie2, run_ie1_s2: prepared.payloads.run_ie1_s2 === null ? null : prepared.hashes.run_ie1_s2, album: prepared.hashes.album, development: prepared.hashes.development, hall_index: prepared.hashes.hall_index },
       sectorRevisions: Object.fromEntries(SECTOR_NAMES.map((name) => [name, 1])), hallTeamIds: prepared.hallEntries.map((entry) => entry.hallTeamId),
       hallTeamHashes: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, entry.payloadHash])), hallTeamRevisions: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, 1])) };
   }
 
-  global.InazumaCloudSaveCore = Object.freeze({ DOCUMENT_LIMIT_BYTES, CLOUD_SCHEMA_VERSION, MAX_HALL_TEAMS, SECTOR_NAMES, PAYLOAD_ENCODING, encodeFirestorePayload, decodeFirestorePayload, normalize, clone, stableSerialize, byteSize, hash, readLocalSnapshot, hallIndex, inspectLocalProgress, validateManifest, validateSectorDocument, validateHallIndex, validateHallDocument, reconstructSnapshot, prepareSnapshot, compareSnapshots, preflight, buildManifest });
+  global.InazumaCloudSaveCore = Object.freeze({ DOCUMENT_LIMIT_BYTES, CLOUD_SCHEMA_VERSION, MAX_HALL_TEAMS, SECTOR_NAMES, RUN_SECTOR_NAMES, isRunSector, PAYLOAD_ENCODING, encodeFirestorePayload, decodeFirestorePayload, normalize, clone, stableSerialize, byteSize, hash, readLocalSnapshot, hallIndex, inspectLocalProgress, validateManifest, validateSectorDocument, validateHallIndex, validateHallDocument, reconstructSnapshot, prepareSnapshot, compareSnapshots, preflight, buildManifest });
   if (typeof module !== "undefined" && module.exports) module.exports = global.InazumaCloudSaveCore;
 })(globalThis);

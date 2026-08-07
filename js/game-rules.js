@@ -1,6 +1,19 @@
 (function (global) {
   "use strict";
 
+  function isProfileAwareRosterEntry(entry, run) {
+    return run?.seasonId === "ie1_s2"
+      && entry?.source !== "free_agents"
+      && typeof entry?.activeProfileId === "string"
+      && entry.activeProfileId.length > 0;
+  }
+
+  function resolveRosterEntryBase(entry, run, resolvers = {}) {
+    return isProfileAwareRosterEntry(entry, run)
+      ? resolvers.profile?.(entry)
+      : resolvers.legacy?.(entry);
+  }
+
   function unlockedPullLevel(seasonDatabase, currentBossIndex) {
     if (currentBossIndex <= 0) return 0;
     return Number(seasonDatabase.bossOrder[currentBossIndex - 1]?.bossLevel || 0);
@@ -81,6 +94,109 @@
     return [...unique.values()];
   }
 
+  function resolveTradeCandidateOutcome({ candidate, rosterEntries = [], outgoingPlayerId = null }) {
+    const candidatePlayer = candidate?.player || candidate;
+    const candidatePlayerId = String(candidate?.playerId || candidatePlayer?.playerId || "");
+    if (!candidatePlayerId) return null;
+    const owned = rosterEntries.find((entry) => String(entry.playerId) === candidatePlayerId);
+    // Trade deliberately excludes every owned player, including a self-upgrade: every
+    // accepted offer therefore replaces one roster slot with one different player.
+    if (owned) return { eligible: false, reason: String(outgoingPlayerId) === candidatePlayerId ? "self-upgrade" : "already-owned" };
+    const variantId = candidate?.activeRoleVariantId || candidate?.profile?.defaultRoleVariantId || null;
+    const variant = (candidate?.profile?.roleVariants || []).find((item) => String(item.roleVariantId || item.variantId) === String(variantId));
+    const outcome = { ...candidatePlayer, ...(variant || {}) };
+    return {
+      eligible: true,
+      resultingRole: String(outcome.position || outcome.normalizedRole || outcome.role || "").toUpperCase(),
+      resultingProfileId: candidate?.profileId || candidate?.profile?.profileId || null,
+      resultingRoleVariantId: variantId,
+      resultingBasePotential: Number(outcome.finalOverall || 0),
+      player: outcome,
+    };
+  }
+
+  function getProfileAwareTradeCandidates({ outgoingPlayer, outgoingPlayerId = null, rosterEntries, freeAgents, profiles, unlockedTeamIds, teams, seasonId = "ie1_s2", compareProfileProgression }) {
+    if (!outgoingPlayer) return [];
+    const role = String(outgoingPlayer.position || outgoingPlayer.role || "").toUpperCase();
+    const potential = Number(outgoingPlayer.finalOverall || 0);
+    const ownedByPlayerId = new Map((rosterEntries || []).map((entry) => [String(entry.playerId), entry]));
+    const unlocked = new Set((unlockedTeamIds || []).map(String));
+    const unlockedProfileIds = new Set((teams || [])
+      .filter((team) => unlocked.has(String(team.teamId)))
+      .flatMap((team) => [...(team.playerProfileIds || []), ...(team.teamPullPoolProfileIds || [])].map(String)));
+    const candidates = [];
+    (freeAgents || []).forEach((player) => {
+      const candidate = { player, source: "free_agents", playerId: String(player.playerId), profileId: null, activeRoleVariantId: null, kind: "new" };
+      const outcome = resolveTradeCandidateOutcome({ candidate, rosterEntries, outgoingPlayerId });
+      if (!outcome?.eligible || outcome.resultingRole !== role || outcome.resultingBasePotential < potential) return;
+      candidates.push({ ...candidate, outcome, player: outcome.player });
+    });
+    (profiles || []).forEach((profile) => {
+      if (!unlockedProfileIds.has(String(profile.profileId))) return;
+      const defaultVariant = (profile.roleVariants || []).find((variant) => String(variant.roleVariantId || variant.variantId) === String(profile.defaultRoleVariantId));
+      const player = { ...profile, ...(defaultVariant || {}), playerId: String(profile.playerId), profileId: String(profile.profileId) };
+      const owned = ownedByPlayerId.get(String(profile.playerId));
+      const candidate = { player, profile, source: seasonId, playerId: String(profile.playerId), profileId: String(profile.profileId), activeRoleVariantId: String(profile.defaultRoleVariantId || "") || null, kind: owned ? "upgrade" : "new", profileRank: Number(profile.profileRank || 0) };
+      const outcome = resolveTradeCandidateOutcome({ candidate, rosterEntries, outgoingPlayerId });
+      if (!outcome?.eligible || outcome.resultingRole !== role || outcome.resultingBasePotential < potential) return;
+      candidates.push({ ...candidate, outcome, player: outcome.player });
+    });
+    const bestByPlayerId = new Map();
+    candidates.forEach((candidate) => {
+      const current = bestByPlayerId.get(candidate.playerId);
+      if (!current || Number(candidate.profileRank || 0) > Number(current.profileRank || 0)) bestByPlayerId.set(candidate.playerId, candidate);
+    });
+    return [...bestByPlayerId.values()];
+  }
+
+  function executeProfileAwareTrade(run, outgoingId, incoming, options = {}) {
+    const roster = run.roster || [];
+    const outgoingIndex = roster.findIndex((entry) => String(entry.playerId) === String(outgoingId));
+    if (outgoingIndex < 0) return { status: "missing-outgoing" };
+    const outgoing = roster[outgoingIndex];
+    const incomingId = String(incoming.playerId || incoming.player?.playerId);
+    const outcome = resolveTradeCandidateOutcome({ candidate: incoming, rosterEntries: roster, outgoingPlayerId: outgoingId });
+    if (!outcome?.eligible) return { status: "ineligible", reason: outcome?.reason || "invalid-candidate", player: null, recruited: false };
+    if (options.resolveOutgoingBase) {
+      const outgoingBase = options.resolveOutgoingBase(outgoing);
+      const outgoingRole = String(outgoingBase?.position || outgoingBase?.role || "").toUpperCase();
+      const outgoingPotential = Number(outgoingBase?.finalOverall);
+      if (!outgoingRole || !Number.isFinite(outgoingPotential)
+        || outcome.resultingRole !== outgoingRole
+        || outcome.resultingBasePotential < outgoingPotential) {
+        return { status: "ineligible", reason: "trade-conditions-changed", player: null, recruited: false };
+      }
+    }
+    const existingIndex = roster.findIndex((entry) => String(entry.playerId) === incomingId);
+    const nextLevel = Math.min(20, Number(outgoing.level || 0) + 1);
+    if (existingIndex === outgoingIndex) {
+      const nextRoleVariantId = options.roleVariantForUpgrade?.(outgoing, incoming.profile) || incoming.activeRoleVariantId || outgoing.activeRoleVariantId;
+      outgoing.activeProfileId = incoming.profileId;
+      outgoing.activeRoleVariantId = nextRoleVariantId;
+      outgoing.level = nextLevel;
+      return { status: "upgraded-self", player: outgoing, recruited: false };
+    }
+    if (existingIndex >= 0) {
+      const existing = roster[existingIndex];
+      const nextRoleVariantId = options.roleVariantForUpgrade?.(existing, incoming.profile) || incoming.activeRoleVariantId || existing.activeRoleVariantId;
+      existing.activeProfileId = incoming.profileId;
+      existing.activeRoleVariantId = nextRoleVariantId;
+      if (outgoing.equippedItem) (run.inventory || (run.inventory = [])).push(outgoing.equippedItem);
+      roster.splice(outgoingIndex, 1);
+      run.lineup = (run.lineup || []).filter((id) => String(id) !== String(outgoingId));
+      run.bench = (run.bench || []).filter((id) => String(id) !== String(outgoingId));
+      return { status: "upgraded", player: existing, recruited: false };
+    }
+    if (outgoing.equippedItem) (run.inventory || (run.inventory = [])).push(outgoing.equippedItem);
+    const replacement = incoming.profileId
+      ? { playerId: incomingId, source: incoming.source, activeProfileId: incoming.profileId, activeRoleVariantId: incoming.activeRoleVariantId, level: nextLevel, levelUnits: 0, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], recruitedAtLevel: nextLevel, recruitmentSource: "trade" }
+      : { playerId: incomingId, source: incoming.source, level: nextLevel, levelUnits: 0, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], recruitedAtLevel: nextLevel, recruitmentSource: "trade" };
+    roster[outgoingIndex] = replacement;
+    run.lineup = (run.lineup || []).map((id) => String(id) === String(outgoingId) ? incomingId : String(id));
+    run.bench = (run.bench || []).map((id) => String(id) === String(outgoingId) ? incomingId : String(id));
+    return { status: "acquired", player: replacement, recruited: true };
+  }
+
   function applyEquipment(stats, equipment) {
     const result = { ...stats };
     if (equipment?.stat && Number.isFinite(Number(equipment.bonus))) {
@@ -90,11 +206,16 @@
   }
 
   global.RoguelikeRules = {
+    isProfileAwareRosterEntry,
+    resolveRosterEntryBase,
     unlockedPullLevel,
     unlockedTeamPullCategoryWeights,
     defeatedBossRewardLevel,
     migrateDefeatedBossPlayerLevels,
     getTradeCandidates,
+    resolveTradeCandidateOutcome,
+    getProfileAwareTradeCandidates,
+    executeProfileAwareTrade,
     applyEquipment,
   };
 })(globalThis);

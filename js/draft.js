@@ -149,6 +149,7 @@
       return ({
       playerId: id,
       source: "free_agents",
+      levelUnits: 0,
       level: 0,
       equippedItem: null,
       ...permanent,

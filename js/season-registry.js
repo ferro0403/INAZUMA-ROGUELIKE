@@ -3,8 +3,9 @@
 
   const DEFAULT_SEASON_ID = "ie1";
   const SEASONS = Object.freeze({
-    ie1: Object.freeze({ id: "ie1", name: "Inazuma Eleven 1", database: "data/IE1_season_compact.json", albumCollectionId: "ie1" }),
-    ie2: Object.freeze({ id: "ie2", name: "Inazuma Eleven Ares", database: "data/IE2_season_compact.json", albumCollectionId: "ie2" }),
+    ie1: Object.freeze({ id: "ie1", name: "Inazuma Eleven 1", displaySeasonNumber: "1", database: "data/IE1_season_compact.json", albumCollectionId: "ie1" }),
+    ie2: Object.freeze({ id: "ie2", name: "Inazuma Eleven Ares", displaySeasonNumber: "2", database: "data/IE2_season_compact.json", albumCollectionId: "ie2" }),
+    ie1_s2: Object.freeze({ id: "ie1_s2", name: "Inazuma Eleven 2", displaySeasonNumber: "2", database: "data/IE1_S2_season_compact.json", albumCollectionId: "ie1_s2" }),
   });
 
   const dbBySeason = new Map();
@@ -26,9 +27,19 @@
     const response = await fetch(season.database);
     if (!response.ok) throw new Error(`Database Season non raggiungibile: ${season.name}`);
     const database = await response.json();
+    if (database.seasonId && String(database.seasonId) !== season.id) throw new Error(`Database Season non valido: atteso ${season.id}`);
+    if (season.id === "ie1_s2") {
+      const counts = database.validation?.counts || {};
+      const formation253 = database.formations?.eleven?.some((formation) => formation.id === "2-5-3");
+      const genesis = database.bossOrder?.find((boss) => boss.teamId === "genesis");
+      const raimon = database.bossOrder?.find((boss) => boss.teamId === "raimon_inazuma_eleven_2");
+      const valid = database.requiresProfileAwareRuntime === true && database.teams?.length === 17 && database.bossOrder?.length === 10 && database.specialMatches?.length === 7 && database.players?.length === 203 && database.profiles?.length === 230 && counts.multiProfilePlayers === 27 && counts.roleSwitchProfiles === 4 && database.warnings?.length === 0 && formation253 && genesis?.bossLevel === 15 && raimon?.bossLevel === 19;
+      if (!valid) throw new Error("Database Inazuma Eleven 2 non supera la validazione runtime");
+    }
     dbBySeason.set(season.id, database);
     playersBySeason.set(season.id, new Map((database.players || []).map((player) => [String(player.playerId), player])));
     teamsBySeason.set(season.id, new Map((database.teams || []).map((team) => [String(team.teamId ?? team.id), team])));
+    global.ProfiledSeasonRuntime?.register?.(season.id, database);
     setActive(season.id);
     return database;
   }

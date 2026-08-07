@@ -49,7 +49,7 @@
   function createRun(teamIdentity = {}, seasonId = null) {
     const now = new Date().toISOString();
     const normalizedSeasonId = seasonIdOf(seasonId || global.SeasonRegistry?.activeId?.());
-    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), createdAt: now, updatedAt: now, lastPlayedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: initialRunLives(), consecutiveLosses: 0, formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [] };
+    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), createdAt: now, updatedAt: now, lastPlayedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: initialRunLives(), consecutiveLosses: 0, formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, teamLevelUnits: 0, completedSpecialMatchIds: [], claimedSpecialMatchRewardIds: [], unlockedSpecialTeamIds: [], pendingSpecialMatchReward: null, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [] };
   }
 
   function defaultPostBossFlowFromPending(run) {
@@ -91,7 +91,9 @@
     run.consecutiveLosses = Math.max(0, Math.min(2, Math.floor(Number.isFinite(rawConsecutiveLosses) ? rawConsecutiveLosses : 0)));
     run.bossIndex = Number.isFinite(Number(run.bossIndex)) ? Number(run.bossIndex) : 0;
     for (const key of ["roster", "lineup", "bench", "inventory", "completedBossIds", "unlockedTeamIds"]) run[key] = Array.isArray(run[key]) ? run[key] : [];
+    if (run.seasonId === "ie1_s2") global.ProfiledSeasonRuntime?.normalizeRun?.(run);
     run.activeMatch = run.activeMatch || null; run.currentZone = run.currentZone || null;
+    if (run.seasonId === "ie1_s2" && run.currentZone) global.MapEngine?.normalizeSpecialMatchNode?.(run, global.SeasonRegistry?.database?.(run.seasonId));
     if (!run.developmentPlayerSnapshot) run.developmentPlayerSnapshot = clone(global.DevelopmentV2?.read?.().players || {});
     run.postBossFlow = normalizePostBossFlow(run);
     run.pendingBossVictory = run.pendingBossVictory || null;

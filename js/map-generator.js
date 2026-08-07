@@ -111,6 +111,22 @@
       connectLayers(layers[layers.length - 2], layer, random, edges);
     });
 
+    const special = global.SeasonRegistry?.database?.(run.seasonId)?.specialMatches?.find(
+      (match) => Number(match.zoneIndex) === Number(run.bossIndex) + 1
+    );
+    if (special && layers.length > 3) {
+      const target = nodes.find((node) => node.layer === 3 && node.column === 1);
+      Object.assign(target, {
+        type: "special_match",
+        specialMatchId: special.specialMatchId,
+        teamId: special.teamId,
+        teamName: special.teamName,
+        logoUrl: special.logoUrl,
+        matchLevel: special.matchLevel,
+        matchFormation: special.matchFormation,
+      });
+    }
+
     const bossNode = {
       id: `zone_${run.bossIndex}_boss`,
       type: "boss",
@@ -134,6 +150,34 @@
       path: [start.id],
       pendingNodeId: null,
     };
+  }
+
+  const SPECIAL_NODE_FIELDS = ["specialMatchId", "teamId", "teamName", "logoUrl", "matchLevel", "matchFormation"];
+
+  function normalizeSpecialMatchNode(run, database = global.SeasonRegistry?.database?.(run?.seasonId)) {
+    const zone = run?.currentZone;
+    if (run?.seasonId !== "ie1_s2" || !zone?.nodes?.length) return false;
+    const special = database?.specialMatches?.find((match) => Number(match.zoneIndex) === Number(zone.bossIndex) + 1);
+    if (!special) return false;
+    const target = zone.nodes.find((node) => node.layer === 3 && node.column === 1);
+    const current = zone.nodes.find((node) => node.type === "special_match");
+    if (!target || current === target) return false;
+    const displaced = { type: target.type };
+    SPECIAL_NODE_FIELDS.forEach((key) => { if (target[key] !== undefined) displaced[key] = target[key]; });
+    target.type = "special_match";
+    SPECIAL_NODE_FIELDS.forEach((key) => { target[key] = special[key]; });
+    if (current) {
+      const currentId = current.id;
+      const targetId = target.id;
+      current.type = displaced.type;
+      SPECIAL_NODE_FIELDS.forEach((key) => { if (key in displaced) current[key] = displaced[key]; else delete current[key]; });
+      const swapId = (value) => value === currentId ? targetId : value === targetId ? currentId : value;
+      zone.completedNodeIds = Array.from(new Set((zone.completedNodeIds || []).map(swapId)));
+      zone.currentNodeId = swapId(zone.currentNodeId);
+      zone.pendingNodeId = swapId(zone.pendingNodeId);
+      zone.path = Array.from(new Set((zone.path || []).map(swapId)));
+    }
+    return true;
   }
 
   function reachableNodeIds(zone) {
@@ -162,5 +206,6 @@
     selectNode,
     completeNode,
     resolveRandomNodeType,
+    normalizeSpecialMatchNode,
   };
 })(globalThis);
