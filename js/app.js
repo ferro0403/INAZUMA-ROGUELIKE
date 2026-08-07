@@ -649,9 +649,25 @@
   }
 
   function hearts() {
-    return Array.from({ length: global.RunState?.runLivesLimit?.() ?? global.SEASON1_CONFIG.startingLives }, (_, index) =>
-      index < run.lives ? "♥" : "♡"
-    ).join(" ");
+    return lifeHeartsMarkup(run.lives);
+  }
+
+  function lifeHeartsMarkup(lives) {
+    const currentLives = Math.max(0, Number(lives) || 0);
+    const maxLives = Number(global.RunState?.runLivesLimit?.() ?? global.SEASON1_CONFIG.maxRunLives ?? global.SEASON1_CONFIG.startingLives ?? 2);
+    return Array.from({ length: maxLives }, (_, index) => {
+      const remaining = currentLives - index;
+      const state = remaining >= 1 ? "full" : remaining >= 0.5 ? "half" : "empty";
+      return `<span class="life-heart life-heart--${state}" aria-hidden="true">${state === "full" ? "♥" : "♡"}</span>`;
+    }).join("");
+  }
+
+  function remainingLivesText(lives) {
+    const value = Number(lives) || 0;
+    if (value === 0.5) return "resta mezza vita";
+    if (value === 1) return "resta 1 vita";
+    if (value === 1.5) return "restano 1 vita e mezza";
+    return `restano ${value} vite`;
   }
 
 
@@ -1205,8 +1221,7 @@
   }
 
   function runHeartsMarkup(savedRun) {
-    const maxLives = Number(global.RunState?.runLivesLimit?.() ?? global.SEASON1_CONFIG.maxRunLives ?? global.SEASON1_CONFIG.startingLives ?? 2);
-    return Array.from({ length: maxLives }, (_, index) => index < Number(savedRun?.lives || 0) ? "♥" : "♡").join(" ");
+    return lifeHeartsMarkup(savedRun?.lives);
   }
 
   function runAverageOverall(savedRun) {
@@ -4251,7 +4266,7 @@
             ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
             <div class="five-match-bottom-grid">
               <section class="panel boss-match-log-panel five-match-log-panel" id="five-match-log-panel"><div class="panel-title-row"><div><p class="eyebrow">30 minuti · 8-10 eventi</p><h3>Cronaca</h3></div><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${bossMatchTimeline()}</ol></section>
-              <section class="panel boss-match-result-panel five-match-result-panel five-match-result-panel--${resolved ? (ui.bossMatchState.endsWith("victory") ? "victory" : "defeat") : "pending"}" id="five-match-result-panel"><p class="eyebrow">Esito partita</p><h3>Risultato</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(userName)}</span><span>${opponentName}</span></div><div class="result-badges"><span>${resolved && ui.bossMatchState.endsWith("victory") ? (run.seasonId === "ie1_s2" ? "+1/3 livello" : "+0,5 livello") : "Vite " + run.lives}</span><span>${resolved ? "Nodo di ritorno salvato" : "Snapshot pronta"}</span></div></section>
+              <section class="panel boss-match-result-panel five-match-result-panel five-match-result-panel--${resolved ? (ui.bossMatchState.endsWith("victory") ? "victory" : "defeat") : "pending"}" id="five-match-result-panel"><p class="eyebrow">Esito partita</p><h3>Risultato</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(userName)}</span><span>${opponentName}</span></div><div class="result-badges"><span class="lives" aria-label="Vite ${escapeHtml(run.lives)}">${resolved && ui.bossMatchState.endsWith("victory") ? (run.seasonId === "ie1_s2" ? "+1/3 livello" : "+0,5 livello") : hearts()}</span><span>${resolved ? "Nodo di ritorno salvato" : "Snapshot pronta"}</span></div></section>
             </div>
           </div>
           <section class="panel five-match-controls five-v-five-mobile-actions" aria-label="Azioni partita 5v5">
@@ -4362,7 +4377,7 @@
           ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
           <div class="boss-match-bottom-grid">
             <section class="panel boss-match-log-panel"><div class="panel-title-row"><div><p class="eyebrow">90 minuti · eventi reali</p><h3>Cronaca</h3></div><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${bossMatchTimeline()}</ol></section>
-            <section class="panel boss-match-result-panel ${outcomeClass}"><p class="eyebrow">${isSpecial ? "Esito partita speciale" : "Esito Boss"}</p><h3>${escapeHtml(bossStatusLabel)}</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div><div class="result-badges"><span>${resolved && ui.bossMatchState.endsWith("victory") ? "+1 livello" : "Vite " + run.lives}</span><span>${resolved && ui.bossMatchState.endsWith("victory") ? (isSpecial ? "Ricompensa garantita" : "Doppia pick boss") : resolved ? "Ritorno al nodo precedente" : "Finalizzazione protetta"}</span></div></section>
+            <section class="panel boss-match-result-panel ${outcomeClass}"><p class="eyebrow">${isSpecial ? "Esito partita speciale" : "Esito Boss"}</p><h3>${escapeHtml(bossStatusLabel)}</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div><div class="result-badges"><span class="lives" aria-label="Vite ${escapeHtml(run.lives)}">${resolved && ui.bossMatchState.endsWith("victory") ? "+1 livello" : hearts()}</span><span>${resolved && ui.bossMatchState.endsWith("victory") ? (isSpecial ? "Ricompensa garantita" : "Doppia pick boss") : resolved ? "Ritorno al nodo precedente" : "Finalizzazione protetta"}</span></div></section>
           </div>
           <section class="panel boss-match-controls" aria-label="${isSpecial ? "Azioni partita speciale" : "Azioni partita Boss"}">
             <div class="boss-match-control-copy"><span>Azioni partita</span><strong>${resolved ? "Partita conclusa" : simulating ? "Simulazione in corso" : "Pronti per la sfida"}</strong></div>
@@ -4480,8 +4495,8 @@
       if (node) global.MapEngine.completeNode(run.currentZone, node.id);
       match.pendingPostMatchAction = { type: "map", toast: `Vittoria: tutta la rosa guadagna ${reward.text}` };
     } else {
-      global.RunState.restoreAfterLoss(run, match.previousNodeId);
-      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : `Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Torni al nodo precedente.` };
+      global.RunState.restoreAfterLoss(run, match.previousNodeId, match.type);
+      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : `Sconfitta: ${remainingLivesText(run.lives)}. Torni al nodo precedente.` };
     }
     run.phase = "match";
     run.activeMatch = match;
@@ -4504,7 +4519,7 @@
       if (node) global.MapEngine.completeNode(run.currentZone, node.id);
       match.pendingPostMatchAction = { type: "special-reward", toast: "Vittoria: +1 livello e ricompensa garantita" };
     } else {
-      global.RunState.restoreAfterLoss(run, match.previousNodeId);
+      global.RunState.restoreAfterLoss(run, match.previousNodeId, match.type);
       match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : "Sconfitta: torni al nodo precedente." };
     }
     run.phase = "match"; run.activeMatch = match; appendFinalMatchMessage(result, "special_match"); persistMatchState(); updateMatchScoreDom(match, true); updateMatchControlsDom();
@@ -4540,8 +4555,8 @@
         completed: false,
       };
     } else {
-      global.RunState.restoreAfterLoss(run, match.previousNodeId);
-      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : `Sconfitta: resta${run.lives === 1 ? "" : "no"} ${run.lives} vita${run.lives === 1 ? "" : "e"}. Torni al nodo precedente.` };
+      global.RunState.restoreAfterLoss(run, match.previousNodeId, match.type);
+      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : `Sconfitta: ${remainingLivesText(run.lives)}. Torni al nodo precedente.` };
     }
     run.phase = "match";
     run.activeMatch = match;
