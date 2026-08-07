@@ -1022,9 +1022,12 @@
     return Math.min(100, Math.max(0, (safeUnlocked / safeTotal) * 100));
   }
 
-  function renderAlbumCollections() {
+  async function renderAlbumCollections() {
     run = global.RunState.load();
     ensureRunSchema();
+    const currentSeasonId = activeSeason?.id || global.SeasonRegistry.activeId();
+    await Promise.all(Object.values(global.AlbumProgress.ALBUM_COLLECTIONS).map((collection) => global.SeasonRegistry.loadDatabase(collection.seasonId)));
+    global.SeasonRegistry.setActive(currentSeasonId);
     ensureAlbumBackfill();
     app.innerHTML = `<main class="album-screen"><header class="topbar album-topbar"><div><p class="eyebrow">Album</p><h1>Collezioni</h1><p class="muted">Progressi permanenti, separati dalla run attiva.</p></div>${sectionRootButton("albumRoot")}</header><section class="album-collection-grid">${Object.values(global.AlbumProgress.ALBUM_COLLECTIONS).map((collection) => { const progress = albumCollectionProgress(collection.id); const percent = albumProgressPercent(progress); const percentLabel = `${Math.round(percent)}%`; const coverUrl = collection.coverUrl || ""; return `<button type="button" class="panel album-collection-card" data-album-collection="${escapeHtml(collection.id)}" aria-label="Apri collezione ${escapeHtml(collection.name)}: ${escapeHtml(progress.unlocked)} su ${escapeHtml(progress.total)} giocatori sbloccati, ${escapeHtml(percentLabel)}"><span class="album-collection-cover"><img src="${escapeHtml(coverUrl)}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('is-fallback');" /></span><span class="album-collection-content"><span class="album-collection-kicker">COLLEZIONE</span><span class="album-collection-title">${escapeHtml(collection.name)}</span><span class="album-collection-subtitle">Collezione giocatori</span><span class="album-collection-progress-copy"><span>${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)} giocatori sbloccati</span><strong>${escapeHtml(percentLabel)}</strong></span><span class="album-collection-progress-bar" aria-hidden="true"><span style="width: ${percent}%"></span></span><span class="album-collection-action">Apri collezione <span aria-hidden="true">→</span></span></span></button>`; }).join("")}</section></main>`;
     resetRenderedViewScroll();
@@ -1032,15 +1035,19 @@
     document.querySelectorAll("[data-album-collection]").forEach((button) => button.addEventListener("click", () => renderAlbumTeams(button.dataset.albumCollection)));
   }
 
-  function albumTeamsView() {
-    const teams = (seasonDb?.bossOrder?.length ? seasonDb.bossOrder.map((boss) => seasonTeamsById.get(String(boss.teamId))).filter(Boolean) : (seasonDb?.teams || []));
+  function albumTeamsView(collectionId = ui.albumCollectionId, database = seasonDb) {
+    const teamsById = new Map((database?.teams || []).map((team) => [String(team.teamId), team]));
+    const bossTeams = database?.bossOrder?.map((boss) => teamsById.get(String(boss.teamId))).filter(Boolean) || [];
+    const specialTeams = collectionId === "ie1_s2" ? (database?.specialMatches || []).map((match) => teamsById.get(String(match.teamId))).filter(Boolean) : [];
+    const ordered = bossTeams.length ? [...bossTeams, ...specialTeams] : (database?.teams || []);
+    const teams = [...new Map(ordered.map((team) => [String(team.teamId), team])).values()];
     const freeAgentsTeam = { teamId: "__free_agents", teamName: "Svincolati", logoUrl: null, playerIds: (freeAgentsDb?.players || []).map((player) => String(player.playerId)), freeAgents: true };
     return [...teams, freeAgentsTeam];
   }
 
-  function albumTeamPlayers(team) {
+  function albumTeamPlayers(team, collectionId = ui.albumCollectionId) {
     if (team?.freeAgents) return freeAgentsDb?.players || [];
-    if (run?.seasonId === "ie1_s2" && team?.playerProfileIds?.length) {
+    if (collectionId === "ie1_s2" && team?.playerProfileIds?.length) {
       return team.playerProfileIds.map((profileId) => {
         const profile = global.ProfiledSeasonRuntime.resolveProfile("ie1_s2", profileId);
         return profile ? { ...global.ProfiledSeasonRuntime.resolveEffectiveBase({ playerId: profile.playerId, activeProfileId: profile.profileId, activeRoleVariantId: profile.defaultRoleVariantId }, "ie1_s2"), albumProfileId: profile.profileId } : null;
@@ -1055,7 +1062,7 @@
     ui.albumCollectionId = collectionId;
     const collection = global.AlbumProgress.ALBUM_COLLECTIONS[collectionId];
     ensureAlbumBackfill();
-    app.innerHTML = `<main class="album-screen"><header class="topbar album-topbar"><div><p class="eyebrow">Album → ${escapeHtml(collection.name)}</p><h1>Squadre</h1></div>${sectionRootButton("albumCollection")}</header><section class="album-team-grid">${albumTeamsView().map((team) => { const players = albumTeamPlayers(team); const progress = albumProgressForPlayers(players, collectionId); const complete = progress.total > 0 && progress.unlocked === progress.total; return `<button type="button" class="panel album-team-card ${complete ? "album-complete" : ""}" data-album-team="${escapeHtml(team.teamId)}" aria-label="${escapeHtml(team.teamName)} ${progress.unlocked} su ${progress.total}"><span class="album-team-logo">${albumTeamLogoMarkup(team)}</span><strong>${escapeHtml(team.teamName)}</strong><span>${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)}</span>${complete ? `<em>Completato</em>` : ""}</button>`; }).join("")}</section></main>`;
+    app.innerHTML = `<main class="album-screen"><header class="topbar album-topbar"><div><p class="eyebrow">Album → ${escapeHtml(collection.name)}</p><h1>Squadre</h1></div>${sectionRootButton("albumCollection")}</header><section class="album-team-grid">${albumTeamsView(collectionId).map((team) => { const players = albumTeamPlayers(team, collectionId); const progress = albumProgressForPlayers(players, collectionId); const complete = progress.total > 0 && progress.unlocked === progress.total; return `<button type="button" class="panel album-team-card ${complete ? "album-complete" : ""}" data-album-team="${escapeHtml(team.teamId)}" aria-label="${escapeHtml(team.teamName)} ${progress.unlocked} su ${escapeHtml(progress.total)}"><span class="album-team-logo">${albumTeamLogoMarkup(team)}</span><strong>${escapeHtml(team.teamName)}</strong><span>${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)}</span>${complete ? `<em>Completato</em>` : ""}</button>`; }).join("")}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav({ collectionId });
     document.querySelectorAll("[data-album-team]").forEach((button) => button.addEventListener("click", () => renderAlbumRoster(collectionId, button.dataset.albumTeam)));
@@ -1064,9 +1071,9 @@
   function renderAlbumRoster(collectionId, teamId) {
     closeModal({ invokeOnClose: false });
     ui.albumCollectionId = collectionId; ui.albumTeamId = teamId;
-    const team = albumTeamsView().find((candidate) => String(candidate.teamId) === String(teamId));
+    const team = albumTeamsView(collectionId).find((candidate) => String(candidate.teamId) === String(teamId));
     if (!team) return renderAlbumTeams(collectionId);
-    const rawPlayers = albumTeamPlayers(team);
+    const rawPlayers = albumTeamPlayers(team, collectionId);
     const database = team.freeAgents ? freeAgentsDb : seasonDb;
     const albumProgressState = global.AlbumProgress.read();
     const unlocked = global.AlbumProgress.unlockedSet(collectionId, albumProgressState);
@@ -3121,7 +3128,7 @@
     freeAgentsDb.players
       .filter((player) => global.SEASON1_CONFIG.legendaryCategories.includes(player.category))
       .forEach((player) => {
-        legendaryById.set(String(player.playerId), player);
+        legendaryById.set(String(player.playerId), { ...player, pullCandidateKind: "free_agent" });
         legendarySources.set(String(player.playerId), "free_agents");
       });
     const seasonalLegendaryPlayers = run.seasonId === "ie1_s2"
@@ -3132,7 +3139,7 @@
       .forEach((player) => {
         const previous = legendaryById.get(String(player.playerId));
         if (!previous || Number(player.profileRank || 0) > Number(previous.profileRank || 0)) {
-          legendaryById.set(String(player.playerId), player);
+          legendaryById.set(String(player.playerId), { ...player, pullCandidateKind: "season_profile" });
           legendarySources.set(String(player.profileId || player.playerId), global.SeasonRegistry.sourceForSeason(run?.seasonId));
         }
       });
@@ -3145,8 +3152,21 @@
     };
   }
 
-  function pullCandidateKey(player, pool = {}) {
-    return String(pool.profileAware && player?.profileId ? player.profileId : player?.playerId);
+  function canonicalCandidatePlayerId(player) {
+    return String(player?.playerId || "");
+  }
+
+  function isSeasonProfileCandidate(player) {
+    return player?.pullCandidateKind === "season_profile" || (player?.pullCandidateKind !== "free_agent" && Boolean(player?.profileId));
+  }
+
+  function pullCandidateKey(player) {
+    return String(isSeasonProfileCandidate(player) ? player.profileId : player?.playerId);
+  }
+
+  function isPullCandidateEligible(activeRun, player) {
+    if (isSeasonProfileCandidate(player)) return global.SpecialMatchRuntime.eligibleProfile(activeRun, player.profileId);
+    return !activeRun.roster.some((entry) => String(entry.playerId) === canonicalCandidatePlayerId(player));
   }
 
   function selectWeightedCandidates(available, random, categoryWeights = null) {
@@ -3172,11 +3192,11 @@
 
   function pullCandidates(pool, node) {
     if (node.pullState?.candidateIds?.length) {
-      return node.pullState.candidateIds.map((id) => pool.players.find((player) => String(pool.profileAware ? player.profileId : player.playerId) === String(id))).filter(Boolean);
+      return node.pullState.candidateIds.map((id) => pool.players.find((player) => pullCandidateKey(player) === String(id))).filter(Boolean);
     }
     const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
     const excluded = new Set(node.pullState.excludedCandidateIds || []);
-    const available = pool.players.filter((player) => pool.profileAware ? global.SpecialMatchRuntime.eligibleProfile(run, player.profileId) && !excluded.has(String(player.profileId)) : !owned.has(String(player.playerId)) && !excluded.has(String(player.playerId)));
+    const available = pool.players.filter((player) => (pool.profileAware ? isPullCandidateEligible(run, player) : !owned.has(canonicalCandidatePlayerId(player))) && !excluded.has(pullCandidateKey(player)));
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:pull:${node.pullState.rerolls}`);
     const candidates = node.pullState.pullType === "pull_legendary"
       ? selectLegendaryCandidates(available, random)
@@ -3187,8 +3207,9 @@
             ? global.RoguelikeRules.unlockedTeamPullCategoryWeights(run.bossIndex)
             : null
         );
-    node.pullState.candidateIds = candidates.map((player) => String(pool.profileAware ? player.profileId : player.playerId));
-    return candidates;
+    const deduplicated = [...new Map(candidates.map((player) => [canonicalCandidatePlayerId(player), player])).values()];
+    node.pullState.candidateIds = deduplicated.map(pullCandidateKey);
+    return deduplicated;
   }
 
   function luckyCharmPoolForPull(pullType) {
@@ -3451,7 +3472,7 @@
       <section class="bench-replacement-options" aria-label="Riserve sostituibili">
         <p class="bench-replacement-label">SCEGLI LA RISERVA DA SOSTITUIRE</p>
         <div class="player-grid mobile-compact-player-list bench-replacement-grid">
-          ${benchPlayers.map((candidate) => playerCard(sourcePlayer(rosterEntry(candidate.playerId)), { button: true, context: "pull", level: candidate.displayLevel, database: global.SeasonRegistry?.isSeasonSource?.(candidate.source) ? (global.SeasonRegistry.database(candidate.source) || seasonDb) : freeAgentsDb })).join("")}
+          ${benchPlayers.map((candidate) => playerCard(candidate, { button: true, context: "pull", level: candidate.displayLevel, database: global.SeasonRegistry?.isSeasonSource?.(candidate.source) ? (global.SeasonRegistry.database(candidate.source) || seasonDb) : freeAgentsDb, resolvedPlayer: candidate })).join("")}
         </div>
       </section>
       ${allowCancel ? '<div class="button-row bench-replacement-footer"><button type="button" class="btn btn-ghost" id="cancel-recruit">RINUNCIA AL NUOVO GIOCATORE</button></div>' : ""}`,

@@ -5,8 +5,12 @@ const album = require("../js/album-progress.js");
 album.configureFreeAgentIds(["free-a", "free-b"]);
 album.unlockAlbumPlayer("ie1", "free-a", { source: "ie1-pull", firstUnlockedAt: "2026-01-01T00:00:00.000Z" });
 assert(album.isAlbumPlayerUnlocked("ie2", "free-a"));
+assert(album.isAlbumPlayerUnlocked("ie1_s2", "free-a"));
 assert.deepEqual(album.read().collections.ie1.unlockedPlayerIds["free-a"], album.read().collections.ie2.unlockedPlayerIds["free-a"]);
-album.unlockAlbumPlayer("ie2", "free-b", { source: "ie2-pull" }); assert(album.isAlbumPlayerUnlocked("ie1", "free-b"));
+album.unlockAlbumPlayer("ie2", "free-b", { source: "ie2-pull" }); assert(album.isAlbumPlayerUnlocked("ie1", "free-b")); assert(album.isAlbumPlayerUnlocked("ie1_s2", "free-b"));
+album.unlockAlbumPlayer("ie1_s2", "free-c", { source: "ie1-s2-pull" });
+album.configureFreeAgentIds(["free-a", "free-b", "free-c"]);
+assert(album.isAlbumPlayerUnlocked("ie1", "free-c")); assert(album.isAlbumPlayerUnlocked("ie2", "free-c"));
 album.unlockAlbumPlayer("ie1", "team-only", { source: "team" }); assert(!album.isAlbumPlayerUnlocked("ie2", "team-only"));
 
 memory.set(album.STORAGE_KEY, JSON.stringify({ collections: {
@@ -15,7 +19,7 @@ memory.set(album.STORAGE_KEY, JSON.stringify({ collections: {
 } }));
 album.configureFreeAgentIds(["free-a", "free-b"]);
 const migrated = album.read();
-for (const id of ["free-a", "free-b"]) for (const collection of ["ie1", "ie2"]) assert(migrated.collections[collection].unlockedPlayerIds[id]);
+for (const id of ["free-a", "free-b"]) for (const collection of ["ie1", "ie2", "ie1_s2"]) assert(migrated.collections[collection].unlockedPlayerIds[id]);
 assert(!migrated.collections.ie2.unlockedPlayerIds["ie1-team"]); assert(!migrated.collections.ie1.unlockedPlayerIds["ie2-team"]);
 const serialized = JSON.stringify(migrated); album.configureFreeAgentIds(["free-a", "free-b"]); assert.equal(JSON.stringify(album.read()), serialized);
 console.log("album-free-agent-sync-test: bidirectional sync and idempotent migration OK");
