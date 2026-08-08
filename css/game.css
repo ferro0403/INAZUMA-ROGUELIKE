@@ -8030,3 +8030,95 @@ html.account-modal-open, body.account-modal-open { overflow: hidden; overscroll-
 .special-reward-modal .special-reward-actions { margin-top: 16px; }
 .special-reward-modal .special-reward-actions .btn { min-height: 48px; width: 100%; }
 @media (max-width: 520px) { .role-switch-modal .role-switch-options { grid-template-columns: 1fr 1fr; gap: 8px; } .role-switch-modal .role-switch-option { min-height: 68px; } }
+
+/* 5v5 match dashboard — final scoped composition. Gameplay views outside five-match-screen are untouched. */
+.five-match-screen .five-match-content { display:grid; gap:10px; }
+.five-match-screen .five-match-hero { grid-template-columns:minmax(0,1fr) auto; gap:10px; padding:14px 16px; }
+.five-match-screen .five-match-header-main { position:relative; align-self:stretch; display:grid; align-content:center; min-height:68px; padding:10px 34px 10px 16px; background:var(--five-ink); clip-path:polygon(0 0,100% 0,calc(100% - 24px) 100%,0 100%); }
+.five-match-screen .five-match-header-main h2 { color:var(--five-paper); }
+.five-match-screen .five-match-run-meta { margin:0 0 3px; color:var(--five-yellow); }
+.five-match-screen .five-match-duration { align-self:center; padding:8px 10px; border:2px solid var(--five-ink); background:var(--five-yellow); font-size:.68rem; font-weight:1000; letter-spacing:.08em; white-space:nowrap; }
+.five-match-screen .five-match-vs { grid-column:1/-1; }
+.five-match-screen .five-match-team { grid-template-columns:auto minmax(0,1fr); min-height:64px; padding:7px 9px; text-align:left; }
+.five-match-screen .five-match-team .five-match-logo { grid-row:1/3; width:42px; height:42px; }
+.five-match-screen .five-match-team strong,.five-match-screen .five-match-team small { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.five-match-screen .five-match-vs-badge { width:40px; height:40px; }
+.five-match-screen .five-match-pitch-panel { padding:10px; }
+.five-match-screen .five-match-section-head { margin-bottom:6px; padding-bottom:6px; }
+.five-match-screen .five-match-tabs { display:grid; grid-template-columns:1fr 1fr; gap:5px; margin-bottom:6px; }
+.five-match-screen .five-match-team-tab { min-height:40px; border:2px solid var(--five-ink); border-radius:0; background:#fff; color:var(--five-ink); font:inherit; font-size:.68rem; font-weight:950; text-transform:uppercase; cursor:pointer; }
+.five-match-screen .five-match-team-tab.active { background:var(--five-yellow); box-shadow:2px 2px 0 var(--five-ink); }
+.five-match-screen .five-match-field { height:clamp(300px,32vw,350px); min-height:0; overflow:hidden; }
+.five-match-screen .five-match-field > .five-match-field-side,.five-match-screen .five-match-half-label { display:none; }
+.five-match-screen .five-match-mobile-field { display:block; width:100%; height:100%; }
+.five-match-screen .five-match-field-side--mobile { box-sizing:border-box; height:100%; padding:10px 8px; gap:3px; direction:ltr; border:0; }
+.five-match-screen .five-match-line { grid-template-columns:repeat(var(--five-row-count,1),minmax(0,76px)); gap:clamp(14px,4vw,34px); }
+.five-match-screen .five-match-card { box-sizing:border-box; width:76px; min-width:76px; max-width:76px; height:70px; min-height:70px; max-height:70px; overflow:hidden; border-width:2px; box-shadow:3px 3px 0 rgba(5,18,12,.5); }
+.five-match-screen .five-match-card.run-tactical-card.tactical-player-card .player-portrait-wrap { height:45px; min-height:45px; padding:3px 3px 0; }
+.five-match-screen .five-match-card.run-tactical-card.tactical-player-card .player-info { min-height:20px; padding:3px; }
+.five-match-screen .five-match-card.run-tactical-card.tactical-player-card .player-title strong { font-size:.53rem; }
+.five-match-screen .five-match-card :is(.player-role,.player-overall) { min-width:20px; min-height:18px; padding:1px 3px; border-width:1px; font-size:.5rem; }
+.five-match-screen .five-match-card .player-equipment--footer { display:none; }
+.five-match-screen .five-match-summary { margin-top:-10px; }
+.five-match-screen .five-match-values { box-shadow:4px 4px 0 rgba(17,18,22,.16); }
+.five-match-screen .five-match-values-button { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)) 36px; gap:0; min-height:54px; padding:5px; }
+.five-match-screen .five-match-quick-stat,.five-match-screen .five-match-values-copy { display:grid; align-content:center; min-width:0; padding:3px 8px; border-right:1px solid #c8c0ae; }
+.five-match-screen .five-match-quick-stat small,.five-match-screen .five-match-values-copy small { color:var(--five-gold); font-size:.55rem; font-weight:950; letter-spacing:.05em; text-transform:uppercase; }
+.five-match-screen .five-match-quick-stat strong,.five-match-screen .five-match-values-copy strong { overflow:hidden; color:var(--five-ink); font-size:1rem; line-height:1; text-overflow:ellipsis; white-space:nowrap; }
+.five-match-screen .five-match-quick-stat--chance { background:var(--five-yellow); }
+.five-match-screen .five-match-values-toggle { width:32px; height:32px; margin:auto; }
+.five-match-screen .five-match-bottom-grid { grid-template-columns:minmax(0,1.25fr) minmax(260px,.75fr); }
+.five-match-screen .five-match-log-panel,.five-match-screen .five-match-result-panel { padding:10px; contain-intrinsic-size:auto; }
+.five-match-screen .five-match-log-panel .panel-title-row { align-items:center; padding:0; border:0; background:var(--five-ink); clip-path:polygon(0 0,100% 0,calc(100% - 14px) 100%,0 100%); }
+.five-match-screen .five-match-log-panel .panel-title-row h3 { margin:0; padding:7px 10px; color:#fff; font-size:.82rem; }
+.five-match-screen .five-match-log-panel .match-state-badge { margin-right:18px; padding:3px 6px; border-width:1px; font-size:.55rem; }
+.five-match-screen .boss-match-log { max-height:none; margin-top:6px; }
+.five-match-screen .boss-match-log li { grid-template-columns:32px 20px 1fr; min-height:38px; padding:5px 7px; font-size:.72rem; }
+.five-match-screen .five-match-result-panel > .eyebrow { margin:0; }
+.five-match-screen .five-match-scoreboard { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:8px; margin:4px 0; }
+.five-match-screen .five-match-scoreboard > strong { min-width:0; overflow:hidden; font-size:.7rem; text-overflow:ellipsis; text-transform:uppercase; white-space:nowrap; }
+.five-match-screen .five-match-scoreboard .boss-match-score { gap:5px; margin:0; font-size:2rem; line-height:1; }
+.five-match-screen .five-match-result-panel > p:last-child { margin:3px 0 0; color:var(--five-copy); font-size:.7rem; font-weight:850; }
+.five-match-screen .five-match-controls { margin-top:0; }
+.five-match-screen .match-test-tools { opacity:.78; }
+
+@media (max-width:780px) {
+  .five-match-screen .five-match-content { width:min(calc(100% - 12px),680px); gap:7px; padding-top:7px; }
+  .five-match-screen .five-match-hero { gap:6px; padding:7px; }
+  .five-match-screen .five-match-header-main { min-height:52px; padding:6px 24px 6px 10px; }
+  .five-match-screen .five-match-header-main h2 { font-size:clamp(1.3rem,6vw,1.7rem); }
+  .five-match-screen .five-match-duration { padding:6px; font-size:.54rem; }
+  .five-match-screen .five-match-team { min-height:52px; padding:4px 5px; }
+  .five-match-screen .five-match-team .five-match-logo { width:32px; height:32px; font-size:1.05rem; }
+  .five-match-screen .five-match-team strong { font-size:.68rem; }
+  .five-match-screen .five-match-team small { font-size:.51rem; }
+  .five-match-screen .five-match-vs-badge { width:32px; height:32px; font-size:.76rem; }
+  .five-match-screen .five-match-pitch-panel { padding:6px; }
+  .five-match-screen .five-match-section-head .eyebrow { display:none; }
+  .five-match-screen .five-match-section-head h3 { font-size:.85rem; }
+  .five-match-screen .five-match-team-tab { min-height:36px; }
+  .five-match-screen .five-match-field { height:292px; min-height:292px; }
+  .five-match-screen .five-match-field-side--mobile { height:100%; padding:8px 4px; }
+  .five-match-screen .five-match-line { grid-template-columns:repeat(var(--five-row-count,1),minmax(0,72px)); gap:clamp(12px,5vw,24px); }
+  .five-match-screen .five-match-card { width:72px; min-width:72px; max-width:72px; height:64px; min-height:64px; max-height:64px; }
+  .five-match-screen .five-match-card.run-tactical-card.tactical-player-card .player-portrait-wrap { height:40px; min-height:40px; }
+  .five-match-screen .five-match-card.run-tactical-card.tactical-player-card .player-info { min-height:19px; }
+  .five-match-screen .five-match-values-button { grid-template-columns:repeat(3,minmax(0,1fr)) 34px; min-height:48px; }
+  .five-match-screen .five-match-values-copy { display:none; }
+  .five-match-screen .five-match-quick-stat { padding-inline:5px; }
+  .five-match-screen .five-match-quick-stat strong { font-size:.85rem; }
+  .five-match-screen .five-match-bottom-grid { grid-template-columns:1fr; gap:7px; }
+  .five-match-screen .five-match-log-panel,.five-match-screen .five-match-result-panel { padding:7px; }
+  .five-match-screen .five-match-controls { margin:0 6px max(12px,env(safe-area-inset-bottom)); padding:7px; }
+  .five-match-screen .five-match-control-copy { display:none; }
+  .five-match-screen .five-match-controls .button-row { grid-template-columns:1fr; }
+  .five-match-screen .five-match-controls .button-row #edit-five-team { min-height:44px; }
+  .five-match-screen .five-match-controls .match-test-tools { grid-template-columns:1fr 1fr; }
+  .five-match-screen .five-match-controls .match-test-tools > span { grid-column:1/-1; }
+  .five-match-screen .five-match-controls .btn { min-height:44px; }
+}
+@media (max-width:370px) {
+  .five-match-screen .five-match-field { height:282px; min-height:282px; }
+  .five-match-screen .five-match-card { width:68px; min-width:68px; max-width:68px; }
+  .five-match-screen .five-match-line { grid-template-columns:repeat(var(--five-row-count,1),minmax(0,68px)); }
+}
