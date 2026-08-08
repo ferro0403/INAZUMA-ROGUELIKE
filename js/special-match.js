@@ -79,5 +79,15 @@
     run.pendingSpecialMatchReward = null;
     return result;
   }
-  global.SpecialMatchRuntime = { byId, forNode, teamPlayers, fromNode, eligibleProfile, rewardProfileId, complete, claim };
+  function decline(run, pending = run.pendingSpecialMatchReward) {
+    if (!pending) return { status: "no-pending-reward" };
+    const specialMatchId = id(pending.specialMatchId);
+    run.claimedSpecialMatchRewardIds = Array.isArray(run.claimedSpecialMatchRewardIds) ? run.claimedSpecialMatchRewardIds : [];
+    const alreadyResolved = run.claimedSpecialMatchRewardIds.includes(specialMatchId);
+    pending.status = "declined";
+    if (!alreadyResolved) run.claimedSpecialMatchRewardIds.push(specialMatchId);
+    if (run.pendingSpecialMatchReward && id(run.pendingSpecialMatchReward.specialMatchId) === specialMatchId) run.pendingSpecialMatchReward = null;
+    return { status: alreadyResolved ? "already-resolved" : "declined", specialMatchId, selectedProfileId: pending.selectedProfileId || null };
+  }
+  global.SpecialMatchRuntime = { byId, forNode, teamPlayers, fromNode, eligibleProfile, rewardProfileId, complete, claim, decline };
 })(globalThis);
