@@ -4589,27 +4589,43 @@
   }
 
   function showSpecialMatchReward() {
-    const pending = run.pendingSpecialMatchReward;
-    if (!pending) return renderMap();
-    const profile = pending.selectedProfileId && global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, pending.selectedProfileId);
-    openModal(`<div class="modal-head special-reward-head"><div><p class="eyebrow">RICOMPENSA GARANTITA</p><h2>${escapeHtml(profile?.name || "Pool completato")}</h2><p class="muted">${profile ? (pending.fallback ? "Profilo alternativo eleggibile" : "Giocatore garantito") : "Nessun altro profilo eleggibile: la ricompensa sarà registrata."}</p></div></div>${profile ? playerCard(profile, { context: "pull", level: Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), database: seasonDb }) : ""}<div class="button-row special-reward-actions"><button type="button" class="btn btn-yellow" id="claim-special-reward">${profile ? "ACQUISISCI O POTENZIA" : "CONTINUA"}</button></div>`, { closeable: false, className: "pull-selection-modal special-reward-modal" });
-    document.getElementById("claim-special-reward").addEventListener("click", (event) => {
-      const button = event.currentTarget;
-      if (button.disabled) return;
-      button.disabled = true;
-      const finish = () => {
-        pending.status = "claimed";
-        if (!run.claimedSpecialMatchRewardIds.includes(String(pending.specialMatchId))) run.claimedSpecialMatchRewardIds.push(String(pending.specialMatchId));
-        run.pendingSpecialMatchReward = null;
-        global.RunState.save(run); closeModal(); run.phase = "map"; renderMap();
-      };
-      if (!profile) return finish();
-      recruitPlayer(profile, global.SeasonRegistry.sourceForSeason(run.seasonId), Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), (completed) => {
-        if (completed) finish();
-        else { button.disabled = false; showSpecialMatchReward(); }
-      }, { allowCancel: false, recruitmentSource: "special_match_reward", actionId: pending.actionId });
-    });
-  }
+  const pending = run.pendingSpecialMatchReward;
+  if (!pending) return renderMap();
+  const profile = pending.selectedProfileId && global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, pending.selectedProfileId);
+  openModal(`<div class="modal-head special-reward-head"><div><p class="eyebrow">RICOMPENSA GARANTITA</p><h2>${escapeHtml(profile?.name || "Pool completato")}</h2><p class="muted">${profile ? (pending.fallback ? "Profilo alternativo eleggibile" : "Giocatore garantito") : "Nessun altro profilo eleggibile: la ricompensa sarà registrata."}</p></div></div>${profile ? playerCard(profile, { context: "pull", level: Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), database: seasonDb }) : ""}<div class="button-row special-reward-actions">${profile ? '<button type="button" class="btn btn-ghost" id="decline-special-reward">RIFIUTA</button>' : ""}<button type="button" class="btn btn-yellow" id="claim-special-reward">${profile ? "ACQUISISCI O POTENZIA" : "CONTINUA"}</button></div>`, { closeable: false, className: "pull-selection-modal special-reward-modal" });
+
+  document.getElementById("decline-special-reward")?.addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    if (button.disabled) return;
+    modalRoot.querySelectorAll(".special-reward-actions button").forEach((action) => { action.disabled = true; });
+    const result = global.SpecialMatchRuntime.decline(run, pending);
+    run.phase = "map";
+    global.RunState.save(run);
+    closeModal();
+    if (result.status === "declined") toast("Ricompensa rifiutata");
+    renderMap();
+  });
+
+  document.getElementById("claim-special-reward").addEventListener("click", (event) => {
+    const button = event.currentTarget;
+    if (button.disabled) return;
+    button.disabled = true;
+    const finish = () => {
+      pending.status = "claimed";
+      if (!run.claimedSpecialMatchRewardIds.includes(String(pending.specialMatchId))) run.claimedSpecialMatchRewardIds.push(String(pending.specialMatchId));
+      run.pendingSpecialMatchReward = null;
+      run.phase = "map";
+      global.RunState.save(run);
+      closeModal();
+      renderMap();
+    };
+    if (!profile) return finish();
+    recruitPlayer(profile, global.SeasonRegistry.sourceForSeason(run.seasonId), Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), (completed) => {
+      if (completed) finish();
+      else { button.disabled = false; showSpecialMatchReward(); }
+    }, { allowCancel: false, recruitmentSource: "special_match_reward", actionId: pending.actionId });
+  });
+}
 
   function resumePostBossFlowOrMap() {
     const flow = resolvePendingRunFlow({ clearMatch: true });
