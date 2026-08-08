@@ -1,0 +1,161 @@
+name: One-shot special reward decline patch
+
+on:
+  push:
+    branches:
+      - fix/decline-special-match-rewards
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    if: ${{ !contains(github.event.head_commit.message, '[special-reward-patch]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/decline-special-match-rewards
+          fetch-depth: 0
+
+      - name: Patch special reward UI and add regression test
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('js/app.js')
+          source = path.read_text(encoding='utf-8')
+          marker = '  function showSpecialMatchReward() {'
+          start = source.find(marker)
+          if start < 0:
+              raise SystemExit('showSpecialMatchReward() not found')
+          next_function = source.find('\n\n  function ', start + len(marker))
+          if next_function < 0:
+              raise SystemExit('Unable to find end of showSpecialMatchReward()')
+
+          replacement = r'''  function showSpecialMatchReward() {
+            const pending = run.pendingSpecialMatchReward;
+            if (!pending) return renderMap();
+            const profile = pending.selectedProfileId && global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, pending.selectedProfileId);
+            openModal(`<div class="modal-head special-reward-head"><div><p class="eyebrow">RICOMPENSA GARANTITA</p><h2>${escapeHtml(profile?.name || "Pool completato")}</h2><p class="muted">${profile ? (pending.fallback ? "Profilo alternativo eleggibile" : "Giocatore garantito") : "Nessun altro profilo eleggibile: la ricompensa sarà registrata."}</p></div></div>${profile ? playerCard(profile, { context: "pull", level: Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), database: seasonDb }) : ""}<div class="button-row special-reward-actions">${profile ? '<button type="button" class="btn btn-ghost" id="decline-special-reward">RIFIUTA</button>' : ""}<button type="button" class="btn btn-yellow" id="claim-special-reward">${profile ? "ACQUISISCI O POTENZIA" : "CONTINUA"}</button></div>`, { closeable: false, className: "pull-selection-modal special-reward-modal" });
+
+            document.getElementById("decline-special-reward")?.addEventListener("click", (event) => {
+              const button = event.currentTarget;
+              if (button.disabled) return;
+              modalRoot.querySelectorAll(".special-reward-actions button").forEach((action) => { action.disabled = true; });
+              const result = global.SpecialMatchRuntime.decline(run, pending);
+              run.phase = "map";
+              global.RunState.save(run);
+              closeModal();
+              if (result.status === "declined") toast("Ricompensa rifiutata");
+              renderMap();
+            });
+
+            document.getElementById("claim-special-reward").addEventListener("click", (event) => {
+              const button = event.currentTarget;
+              if (button.disabled) return;
+              button.disabled = true;
+              const finish = () => {
+                pending.status = "claimed";
+                if (!run.claimedSpecialMatchRewardIds.includes(String(pending.specialMatchId))) run.claimedSpecialMatchRewardIds.push(String(pending.specialMatchId));
+                run.pendingSpecialMatchReward = null;
+                run.phase = "map";
+                global.RunState.save(run);
+                closeModal();
+                renderMap();
+              };
+              if (!profile) return finish();
+              recruitPlayer(profile, global.SeasonRegistry.sourceForSeason(run.seasonId), Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), (completed) => {
+                if (completed) finish();
+                else { button.disabled = false; showSpecialMatchReward(); }
+              }, { allowCancel: false, recruitmentSource: "special_match_reward", actionId: pending.actionId });
+            });
+          }'''
+
+          updated = source[:start] + replacement + source[next_function:]
+          if updated == source:
+              raise SystemExit('Patch produced no change')
+          path.write_text(updated, encoding='utf-8')
+
+          test = Path('tests/special-match-reward-decline-test.js')
+          test.write_text(r'''"use strict";
+
+          const assert = require("assert");
+          const fs = require("fs");
+          const path = require("path");
+          const vm = require("vm");
+
+          const root = path.resolve(__dirname, "..");
+          const runtimeSource = fs.readFileSync(path.join(root, "js", "special-match.js"), "utf8");
+          const sandbox = { globalThis: {} };
+          vm.runInNewContext(runtimeSource, sandbox, { filename: "special-match.js" });
+          const runtime = sandbox.globalThis.SpecialMatchRuntime;
+          assert(runtime && typeof runtime.decline === "function", "SpecialMatchRuntime.decline must exist");
+
+          const pending = {
+            specialMatchId: "special_alpine_ie2",
+            selectedProfileId: "1166@alpine_ie2",
+            status: "pending",
+          };
+          const run = {
+            pendingSpecialMatchReward: pending,
+            claimedSpecialMatchRewardIds: [],
+            roster: [{ playerId: "1", activeProfileId: "1@raimon_inazuma_eleven_2" }],
+            bench: ["1"],
+          };
+          const rosterBefore = JSON.stringify(run.roster);
+          const benchBefore = JSON.stringify(run.bench);
+
+          const first = runtime.decline(run, pending);
+          assert.strictEqual(first.status, "declined");
+          assert.strictEqual(run.pendingSpecialMatchReward, null);
+          assert.deepStrictEqual(run.claimedSpecialMatchRewardIds, ["special_alpine_ie2"]);
+          assert.strictEqual(JSON.stringify(run.roster), rosterBefore, "Decline must not change roster");
+          assert.strictEqual(JSON.stringify(run.bench), benchBefore, "Decline must not change bench");
+
+          const second = runtime.decline(run, pending);
+          assert.strictEqual(second.status, "already-resolved");
+          assert.deepStrictEqual(run.claimedSpecialMatchRewardIds, ["special_alpine_ie2"], "Decline must be idempotent");
+
+          const appSource = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
+          assert(appSource.includes('id="decline-special-reward"'), "Special reward modal must expose decline action");
+          assert(appSource.includes('>RIFIUTA</button>'), "Decline action must be labeled RIFIUTA");
+          assert(appSource.includes('SpecialMatchRuntime.decline(run, pending)'), "UI must use runtime decline helper");
+          assert(appSource.includes('id="claim-special-reward"'), "Existing claim action must remain available");
+
+          console.log("special-match-reward-decline-test: OK");
+          ''', encoding='utf-8')
+          PY
+
+      - name: Syntax checks
+        run: |
+          node --check js/special-match.js
+          node --check js/app.js
+          node --check tests/special-match-reward-decline-test.js
+
+      - name: Regression test
+        run: node tests/special-match-reward-decline-test.js
+
+      - name: Existing test suite
+        run: |
+          for f in tests/*test.js; do
+            node "$f" || exit 1
+          done
+
+      - name: Diff check
+        run: git diff --check
+
+      - name: Commit tested patch
+        shell: bash
+        run: |
+          if git diff --quiet -- js/app.js tests/special-match-reward-decline-test.js; then
+            echo "No patch changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/app.js tests/special-match-reward-decline-test.js
+          git commit -m "[special-reward-patch] Add decline action to special match rewards"
+          git push origin HEAD:fix/decline-special-match-rewards
