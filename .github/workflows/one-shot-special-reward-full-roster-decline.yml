@@ -1,0 +1,111 @@
+name: One-shot full-roster special reward decline patch
+
+on:
+  push:
+    branches:
+      - fix/decline-special-match-rewards
+
+permissions:
+  contents: write
+
+jobs:
+  patch-and-test:
+    if: ${{ !contains(github.event.head_commit.message, '[full-roster-decline-patch]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/decline-special-match-rewards
+          fetch-depth: 0
+
+      - name: Patch full-roster decline flow
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+
+          app_path = Path('js/app.js')
+          source = app_path.read_text(encoding='utf-8')
+
+          old_footer = '''      ${allowCancel ? '<div class="button-row bench-replacement-footer"><button type="button" class="btn btn-ghost" id="cancel-recruit">RINUNCIA AL NUOVO GIOCATORE</button></div>' : ""},'''
+          new_footer = '''      ${allowCancel ? '<div class="button-row bench-replacement-footer"><button type="button" class="btn btn-ghost" id="cancel-recruit">' + escapeHtml(options.cancelLabel || "RINUNCIA AL NUOVO GIOCATORE") + '</button></div>' : ""},'''
+          if old_footer not in source:
+              raise SystemExit('bench replacement footer snippet not found')
+          source = source.replace(old_footer, new_footer, 1)
+
+          old_cancel = '''    document.getElementById("cancel-recruit")?.addEventListener("click", () => {
+      closeModal();
+      done(false);
+    });'''
+          new_cancel = '''    document.getElementById("cancel-recruit")?.addEventListener("click", () => {
+      closeModal();
+      if (typeof options.onCancel === "function") return options.onCancel();
+      done(false);
+    });'''
+          if old_cancel not in source:
+              raise SystemExit('cancel recruit listener snippet not found')
+          source = source.replace(old_cancel, new_cancel, 1)
+
+          old_options = '''    }, { allowCancel: false, recruitmentSource: "special_match_reward", actionId: pending.actionId });'''
+          new_options = '''    }, {
+      allowCancel: true,
+      cancelLabel: "RIFIUTA",
+      onCancel: () => {
+        const result = global.SpecialMatchRuntime.decline(run, pending);
+        run.phase = "map";
+        global.RunState.save(run);
+        if (result.status === "declined") toast("Ricompensa rifiutata");
+        renderMap();
+      },
+      recruitmentSource: "special_match_reward",
+      actionId: pending.actionId,
+    });'''
+          if old_options not in source:
+              raise SystemExit('special reward recruit options snippet not found')
+          source = source.replace(old_options, new_options, 1)
+          app_path.write_text(source, encoding='utf-8')
+
+          test_path = Path('tests/special-match-reward-decline-test.js')
+          test = test_path.read_text(encoding='utf-8')
+          anchor = '''assert(appSource.includes('id="claim-special-reward"'), "Existing claim action must remain available");'''
+          extra = '''assert(appSource.includes('id="claim-special-reward"'), "Existing claim action must remain available");
+assert(appSource.includes('cancelLabel: "RIFIUTA"'), "Full-roster replacement modal must expose RIFIUTA for special rewards");
+assert(appSource.includes('typeof options.onCancel === "function"'), "Recruit cancellation must support a special reward decline callback");
+assert(appSource.includes('allowCancel: true'), "Special reward recruitment must allow cancellation at full roster");'''
+          if anchor not in test:
+              raise SystemExit('test anchor not found')
+          test = test.replace(anchor, extra, 1)
+          test_path.write_text(test, encoding='utf-8')
+          PY
+
+      - name: Syntax checks
+        run: |
+          node --check js/app.js
+          node --check js/special-match.js
+          node --check tests/special-match-reward-decline-test.js
+
+      - name: Regression test
+        run: node tests/special-match-reward-decline-test.js
+
+      - name: Existing test suite
+        run: |
+          for f in tests/*test.js; do
+            node "$f" || exit 1
+          done
+
+      - name: Diff check
+        run: git diff --check
+
+      - name: Commit tested patch
+        shell: bash
+        run: |
+          if git diff --quiet -- js/app.js tests/special-match-reward-decline-test.js; then
+            echo "No patch changes to commit"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/app.js tests/special-match-reward-decline-test.js
+          git commit -m "[full-roster-decline-patch] Allow declining special reward from replacement modal"
+          git push origin HEAD:fix/decline-special-match-rewards
