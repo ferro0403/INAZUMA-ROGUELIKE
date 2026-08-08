@@ -3704,7 +3704,10 @@
   }
 
   function bossMatchTimeline() {
-    if (!ui.bossMatchLog.length) return `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>Formazioni pronte. Avvia la simulazione o usa i controlli provvisori.</p></li>`;
+    if (!ui.bossMatchLog.length) {
+      const emptyCopy = ui.match?.type === "five_v_five" ? "Formazioni pronte. Avvia la simulazione." : "Formazioni pronte. Avvia la simulazione o usa i controlli provvisori.";
+      return `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>${emptyCopy}</p></li>`;
+    }
     return ui.bossMatchLog.map((event) => `<li class="${matchEventSideClass(event.side)}"><span>${escapeHtml(event.minute)}</span><b>${event.icon}</b><p>${escapeHtml(event.text)}</p></li>`).join("");
   }
 
@@ -3932,7 +3935,6 @@
     appendMatchLogEvent(matchEventView(ev));
     updateMatchScoreDom(match);
     updateMatchControlsDom();
-    document.getElementById(match.type === "five_v_five" ? "five-match-log-panel" : "")?.scrollIntoView({ block: "nearest" });
     ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.eventDelayMs || global.MatchSimulatorConfig.playbackMs);
   }
 
@@ -3998,7 +4000,6 @@
     appendMissingMatchLogEvents(missing);
     updateMatchScoreDom(match, true);
     updateMatchControlsDom();
-    document.getElementById(match.type === "five_v_five" ? "five-match-result-panel" : "")?.scrollIntoView({ block: "nearest" });
     applySimulationResolution(match);
   }
 
@@ -4166,10 +4167,10 @@
     const value = (key) => summary[key] ?? "-";
     return `<section class="five-match-values" data-values-panel>
       <button type="button" class="five-match-values-button" aria-expanded="false" aria-controls="${escapeHtml(contentId)}">
-        <span class="five-match-values-copy">
-          <strong>Valori</strong>
-          <small>Forza · Probabilità · Confronto · Statistiche</small>
-        </span>
+        <span class="five-match-quick-stat"><small>Forza</small><strong>${escapeHtml(value("userStrength"))}</strong></span>
+        <span class="five-match-quick-stat five-match-quick-stat--chance"><small>Probabilità</small><strong>${escapeHtml(value("probability"))}%</strong></span>
+        <span class="five-match-quick-stat"><small>Confronto</small><strong>${escapeHtml(value("userStrength"))}–${escapeHtml(value("opponentStrength"))}</strong></span>
+        <span class="five-match-values-copy"><small>Statistiche</small><strong>Dettagli</strong></span>
         <span class="five-match-values-toggle" aria-hidden="true"></span>
       </button>
       <div class="five-match-values-content" id="${escapeHtml(contentId)}" hidden>
@@ -4235,8 +4236,8 @@
           ${topbar("Partita 5v5")}
           <div class="content five-match-content">
             <section class="panel five-match-hero">
-              <button type="button" class="btn btn-back five-match-header-back" data-nav="map" aria-label="Torna alla mappa">← <span class="five-match-back-full">Torna al percorso</span><span class="five-match-back-short">Percorso</span></button>
-              <div class="five-match-header-main"><p class="eyebrow five-match-run-meta">Run Lv ${escapeHtml(global.LevelProgression.formatLevel(run, run.seasonId))} · ${hearts()}</p><h2>Partita 5v5</h2><span class="match-state-badge">${resolved ? "Completata" : simulating ? "In corso" : "Preparazione"}</span></div>
+              <div class="five-match-header-main"><p class="eyebrow five-match-run-meta">${resolved ? "Completata" : simulating ? "In corso" : "Preparazione"}</p><h2>Partita 5v5</h2></div>
+              <span class="five-match-duration">30 MINUTI</span>
               <div class="five-match-vs">
                 <div class="five-match-team"><span class="five-match-logo">⚡</span><strong>${escapeHtml(userName)}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(userAverageOverall)} · Forza ${escapeHtml(simPreview.userStrength?.final ?? "-")}</small></div>
                 <span class="five-match-vs-badge">VS</span>
@@ -4246,11 +4247,11 @@
             <section class="panel five-match-pitch-panel">
               <div class="five-match-section-head">
                 <div><p class="eyebrow">Formazioni 5v5</p><h3>Campo tattico</h3></div>
-                <span>30 MINUTI</span>
+                <span id="five-match-formation-badge">${escapeHtml(activeSide === "opponent" ? match.opponentFormation : run.fiveVFive.formation)}</span>
               </div>
               <div class="five-match-tabs" role="tablist" aria-label="Squadra visualizzata">
-                <button type="button" class="five-match-team-tab ${activeSide === "user" ? "active" : ""}" data-five-match-tab="user">La tua squadra</button>
-                <button type="button" class="five-match-team-tab ${activeSide === "opponent" ? "active" : ""}" data-five-match-tab="opponent">Svincolati</button>
+                <button type="button" role="tab" aria-selected="${activeSide === "user"}" class="five-match-team-tab ${activeSide === "user" ? "active" : ""}" data-five-match-tab="user">La tua squadra</button>
+                <button type="button" role="tab" aria-selected="${activeSide === "opponent"}" class="five-match-team-tab ${activeSide === "opponent" ? "active" : ""}" data-five-match-tab="opponent">Svincolati</button>
               </div>
               <div class="five-match-field" aria-label="Campo partita 5v5">
                 <div class="five-match-half-label five-match-half-label--user">${escapeHtml(userName)}</div>
@@ -4265,8 +4266,8 @@
             </section>
             ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
             <div class="five-match-bottom-grid">
-              <section class="panel boss-match-log-panel five-match-log-panel" id="five-match-log-panel"><div class="panel-title-row"><div><p class="eyebrow">30 minuti · 8-10 eventi</p><h3>Cronaca</h3></div><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${bossMatchTimeline()}</ol></section>
-              <section class="panel boss-match-result-panel five-match-result-panel five-match-result-panel--${resolved ? (ui.bossMatchState.endsWith("victory") ? "victory" : "defeat") : "pending"}" id="five-match-result-panel"><p class="eyebrow">Esito partita</p><h3>Risultato</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(userName)}</span><span>${opponentName}</span></div><div class="result-badges"><span class="lives" aria-label="Vite ${escapeHtml(run.lives)}">${resolved && ui.bossMatchState.endsWith("victory") ? (run.seasonId === "ie1_s2" ? "+1/3 livello" : "+0,5 livello") : hearts()}</span><span>${resolved ? "Nodo di ritorno salvato" : "Snapshot pronta"}</span></div></section>
+              <section class="panel boss-match-log-panel five-match-log-panel" id="five-match-log-panel"><div class="panel-title-row"><h3>Cronaca</h3><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${bossMatchTimeline()}</ol></section>
+              <section class="panel boss-match-result-panel five-match-result-panel five-match-result-panel--${resolved ? (ui.bossMatchState.endsWith("victory") ? "victory" : "defeat") : "pending"}" id="five-match-result-panel"><p class="eyebrow">Esito partita</p><div class="five-match-scoreboard"><strong>${escapeHtml(userName)}</strong><div class="boss-match-score" aria-label="${escapeHtml(scoreLabel)}"><span>${score[0]}</span><small>–</small><span>${score[1]}</span></div><strong>${opponentName}</strong></div><p>${escapeHtml(bossMatchStatusText())}</p></section>
             </div>
           </div>
           <section class="panel five-match-controls five-v-five-mobile-actions" aria-label="Azioni partita 5v5">
@@ -4281,6 +4282,9 @@
       document.querySelectorAll("[data-five-match-tab]").forEach((button) => button.addEventListener("click", () => {
         ui.fiveMatchTab = button.dataset.fiveMatchTab;
         document.querySelectorAll("[data-five-match-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.fiveMatchTab === ui.fiveMatchTab));
+        document.querySelectorAll("[data-five-match-tab]").forEach((tab) => tab.setAttribute("aria-selected", tab.dataset.fiveMatchTab === ui.fiveMatchTab ? "true" : "false"));
+        const formationBadge = document.getElementById("five-match-formation-badge");
+        if (formationBadge) formationBadge.textContent = ui.fiveMatchTab === "opponent" ? match.opponentFormation : run.fiveVFive.formation;
         const mobileField = document.querySelector(".five-match-mobile-field");
         if (mobileField) mobileField.innerHTML = ui.fiveMatchTab === "opponent"
           ? fiveMatchField(opponentPlayersBySlot, match.opponentFormation, "opponent", true)
