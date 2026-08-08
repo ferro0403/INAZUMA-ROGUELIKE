@@ -8,6 +8,13 @@
     ie1_s2: Object.freeze({ id: "ie1_s2", name: "Inazuma Eleven 2", displaySeasonNumber: "2", database: "data/IE1_S2_season_compact.json", albumCollectionId: "ie1_s2" }),
   });
 
+  const DISPLAY_TEAM_NAME_OVERRIDES = Object.freeze({
+    ie1_s2: Object.freeze({
+      alpine_ie2: "Alpine",
+      raimon_inazuma_eleven_2: "Raimon",
+    }),
+  });
+
   const dbBySeason = new Map();
   const playersBySeason = new Map();
   const teamsBySeason = new Map();
@@ -20,6 +27,23 @@
   function activeId() { return activeSeasonId; }
   function isSeasonSource(source) { return !!SEASONS[String(source || "")]; }
   function sourceForSeason(seasonId = activeSeasonId) { return normalizeSeasonId(seasonId); }
+
+  function applyDisplayTeamNameOverrides(database, seasonId) {
+    const overrides = DISPLAY_TEAM_NAME_OVERRIDES[String(seasonId || "")];
+    if (!database || !overrides) return database;
+
+    const applyToEntry = (entry) => {
+      if (!entry) return;
+      const teamId = String(entry.teamId ?? entry.id ?? "");
+      if (overrides[teamId]) entry.teamName = overrides[teamId];
+    };
+
+    [database.teams, database.bossOrder, database.specialMatches, database.profiles]
+      .filter(Array.isArray)
+      .forEach((entries) => entries.forEach(applyToEntry));
+
+    return database;
+  }
 
   async function loadDatabase(seasonId = activeSeasonId) {
     const season = get(seasonId);
@@ -36,6 +60,7 @@
       const valid = database.requiresProfileAwareRuntime === true && database.teams?.length === 17 && database.bossOrder?.length === 10 && database.specialMatches?.length === 7 && database.players?.length === 203 && database.profiles?.length === 230 && counts.multiProfilePlayers === 27 && counts.roleSwitchProfiles === 4 && database.warnings?.length === 0 && formation253 && genesis?.bossLevel === 15 && raimon?.bossLevel === 19;
       if (!valid) throw new Error("Database Inazuma Eleven 2 non supera la validazione runtime");
     }
+    applyDisplayTeamNameOverrides(database, season.id);
     dbBySeason.set(season.id, database);
     playersBySeason.set(season.id, new Map((database.players || []).map((player) => [String(player.playerId), player])));
     teamsBySeason.set(season.id, new Map((database.teams || []).map((team) => [String(team.teamId ?? team.id), team])));
