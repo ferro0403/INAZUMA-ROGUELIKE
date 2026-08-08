@@ -43,4 +43,13 @@ assert(appSource.includes('>RIFIUTA</button>'), "Decline action must be labeled 
 assert(appSource.includes('SpecialMatchRuntime.decline(run, pending)'), "UI must use runtime decline helper");
 assert(appSource.includes('id="claim-special-reward"'), "Existing claim action must remain available");
 
+const bridgeSource = fs.readFileSync(path.join(root, "js", "special-reward-ui-bridge.js"), "utf8");
+assert(bridgeSource.includes('bench-replacement-modal'), "Full-roster replacement modal must be handled");
+assert(bridgeSource.includes('button.textContent = "RIFIUTA"'), "Full-roster replacement modal must expose RIFIUTA");
+assert(bridgeSource.includes('SpecialMatchRuntime?.decline?.'), "Full-roster decline must resolve through SpecialMatchRuntime.decline");
+assert(bridgeSource.includes('pendingSpecialMatchReward'), "Full-roster decline must only act on a pending special reward");
+
+const indexSource = fs.readFileSync(path.join(root, "index.html"), "utf8");
+assert(indexSource.includes('js/special-reward-ui-bridge.js'), "Special reward UI bridge must be loaded by index.html");
+
 console.log("special-match-reward-decline-test: OK");
