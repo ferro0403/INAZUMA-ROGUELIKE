@@ -4133,15 +4133,18 @@
     if (!player) return "";
     const stats = player.stats || player.finalStats || {};
     const essentials = player.position === "GK"
-      ? [["Parata", stats.save], ["Difesa", stats.defense], ["Grinta", stats.grit]]
-      : [["Attacco", stats.attack], ["Controllo", stats.control], ["Velocità", stats.speed]];
+      ? [["Parata", stats.save], ["Difesa", stats.defense], ["Grinta", stats.grit], ["Controllo", stats.control]]
+      : [["Attacco", stats.attack], ["Controllo", stats.control], ["Difesa", stats.defense], ["Velocità", stats.speed]];
     return `<div class="five-match-player-detail-copy ${rarityClass(player.category)}">
       <div class="five-match-detail-head">
-        <span class="five-match-detail-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></span>
-        <div class="five-match-detail-identity"><small>${side === "user" ? "Tua squadra" : "Avversario"}</small><strong>${escapeHtml(player.name)}</strong><span><b>${escapeHtml(player.position || player.normalizedRole || "-")}</b><i>${escapeHtml(player.element || player.type || "-")}</i></span></div>
+        <div class="five-match-detail-identity"><small>${side === "user" ? "Tua squadra" : "Avversario"}</small><strong>${escapeHtml(player.name)}</strong></div>
+        <b class="five-match-detail-role">${escapeHtml(player.position || player.normalizedRole || "-")}</b>
         <button type="button" class="five-match-detail-close" data-five-detail-close aria-label="Chiudi dettaglio">×</button>
       </div>
-      <div class="five-match-detail-meta"><span><small>Livello</small><strong>${escapeHtml(player.displayLevelText ?? player.displayLevel ?? 0)}</strong></span><span class="five-match-detail-overall"><small>Overall</small><strong>${escapeHtml(player.overall ?? player.finalOverall ?? "-")}</strong></span><span><small>Rarità</small><strong>${escapeHtml(player.category || "-")}</strong></span></div>
+      <div class="five-match-detail-scout">
+        <span class="five-match-detail-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></span>
+        <div class="five-match-detail-meta"><span><small>Livello</small><strong>LV ${escapeHtml(player.displayLevelText ?? player.displayLevel ?? 0)}</strong></span><span class="five-match-detail-overall"><small>OVR</small><strong>${escapeHtml(player.overall ?? player.finalOverall ?? "-")}</strong></span><span><small>Rarità</small><strong>${escapeHtml(player.category || "-")}</strong></span><span><small>Elemento / tipo</small><strong>${escapeHtml(player.element || player.type || "-")}</strong></span></div>
+      </div>
       <div class="five-match-detail-stats" aria-label="Statistiche chiave">${essentials.map(([label, value]) => `<span><small>${label}</small><strong>${escapeHtml(value ?? "-")}</strong></span>`).join("")}</div>
       <button type="button" class="five-match-detail-sheet" data-five-detail-sheet="${escapeHtml(player.playerId)}" data-five-detail-side="${side}">Scheda completa</button>
     </div>`;
@@ -4307,6 +4310,23 @@
         if (detail) { detail.hidden = true; detail.innerHTML = ""; }
         document.querySelectorAll("[data-five-match-player]").forEach((card) => { card.classList.remove("is-active"); card.setAttribute("aria-pressed", "false"); });
       };
+      const positionFiveMatchPlayerDetail = (button, detail) => {
+        const field = detail.closest(".five-match-field");
+        if (!field) return;
+        const fieldRect = field.getBoundingClientRect();
+        const cardRect = button.getBoundingClientRect();
+        const panelWidth = detail.offsetWidth;
+        const panelHeight = detail.offsetHeight;
+        const gap = 10;
+        const right = cardRect.right - fieldRect.left + gap;
+        const left = cardRect.left - fieldRect.left - panelWidth - gap;
+        const preferredLeft = right + panelWidth <= fieldRect.width - 6 ? right : left;
+        const maxLeft = Math.max(6, fieldRect.width - panelWidth - 6);
+        const top = Math.min(Math.max(6, cardRect.top - fieldRect.top + (cardRect.height - panelHeight) / 2), Math.max(6, fieldRect.height - panelHeight - 6));
+        detail.style.setProperty("--five-detail-left", `${Math.min(Math.max(6, preferredLeft), maxLeft)}px`);
+        detail.style.setProperty("--five-detail-top", `${top}px`);
+        detail.dataset.placement = preferredLeft === right ? "right" : "left";
+      };
       const bindFiveMatchPlayerButtons = () => document.querySelectorAll("[data-five-match-player]").forEach((button) => {
         if (button.dataset.boundFiveMatchPlayer === "1") return;
         button.dataset.boundFiveMatchPlayer = "1";
@@ -4320,6 +4340,7 @@
           document.querySelectorAll("[data-five-match-player]").forEach((card) => { card.classList.toggle("is-active", card === button); card.setAttribute("aria-pressed", card === button ? "true" : "false"); });
           detail.innerHTML = fiveMatchPlayerDetail(player, side);
           detail.hidden = false;
+          positionFiveMatchPlayerDetail(button, detail);
           detail.querySelector("[data-five-detail-close]")?.addEventListener("click", closeFiveMatchPlayerDetail);
           detail.querySelector("[data-five-detail-sheet]")?.addEventListener("click", () => side === "user"
             ? showPlayerDetails(id)

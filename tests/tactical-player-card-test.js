@@ -36,6 +36,8 @@ for (const token of ['five-match-card-portrait', 'five-match-card-role', 'aria-p
 }
 assert.doesNotMatch(matchRenderer, /compactPlayerCardMarkup/, 'the tactical pitch no longer miniaturizes a complete player card');
 assert.match(app, /function fiveMatchPlayerDetail[\s\S]*data-five-detail-close[\s\S]*Scheda completa/, 'the match exposes an in-pitch contextual player detail');
+assert.match(app, /const positionFiveMatchPlayerDetail[\s\S]*preferredLeft[\s\S]*--five-detail-left[\s\S]*--five-detail-top/, 'the contextual detail chooses right/left placement and clamps itself to the pitch');
+assert.match(app, /classList\.toggle\("is-active", card === button\)[\s\S]*aria-pressed/, 'quick selection updates only the tapped tactical card');
 assert.doesNotMatch(app, /fivePlayerEquipmentMarkup/, '5v5 has no position-specific equipment renderer');
 assert.doesNotMatch(css, /five-player-equipment/, 'obsolete free-floating 5v5 equipment CSS is removed');
 
@@ -43,6 +45,12 @@ assert.match(css, /:is\(\.five-screen,\.five-match-screen,\.boss-match-screen\) 
 assert.match(css, /:is\(\.five-screen,\.five-match-screen,\.boss-match-screen\) \.run-tactical-card\.tactical-player-card \.player-equipment--footer \{[^}]*position: static;[^}]*box-sizing: border-box;[^}]*overflow: hidden;[^}]*border: 2px solid var\(--unified-card-ink\);[^}]*background: var\(--unified-card-yellow\);[^}]*box-shadow: none;/s);
 assert.match(css, /\.player-equipment--footer \.item-icon img \{[^}]*object-fit: contain;/s, 'the image remains contained inside the shared badge');
 assert.doesNotMatch(css, /\.five-match-screen \.five-match-card\.run-tactical-card \.player-equipment--footer/, 'match cards have no divergent equipment badge override');
+for (const rarity of ['buono', 'forte', 'elite', 'mondiale', 'leggenda']) {
+  assert.match(css, new RegExp(`\\.five-match-screen :is\\(\\.rarity-${rarity}\\) \\{ --rarity-border:`), `${rarity} keeps its canonical pitch accent`);
+}
+assert.match(css, /\.five-match-screen \.five-match-card::before \{[\s\S]*background:var\(--rarity-border[\s\S]*clip-path:/, 'half cards expose a geometric rarity corner');
+assert.match(css, /\.five-match-screen \.five-match-card\.is-active \{[\s\S]*#ffd21f/, 'active state is communicated independently in yellow');
+assert.match(css, /\.five-match-screen \.five-match-player-detail \{[\s\S]*--five-detail-left[\s\S]*width:min\(218px,/, 'the quick player sheet remains a narrow positioned panel');
 
 for (const token of ['classList.toggle("selected", selected)', 'setAttribute("aria-selected", selected ? "true" : "false")', 'querySelectorAll(".five-slot-selected-label")', 'label.textContent = "SELEZIONATO"']) {
   assert.ok(selectionSync.includes(token), `selection synchronization is missing: ${token}`);

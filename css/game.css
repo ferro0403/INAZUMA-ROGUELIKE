@@ -8290,3 +8290,81 @@ html.account-modal-open, body.account-modal-open { overflow: hidden; overscroll-
   .five-match-screen .five-match-line { grid-template-columns:repeat(var(--five-row-count,1),minmax(0,109px)); gap:7px; }
   .five-match-screen .five-match-card,.five-match-screen .five-match-card[class*="rarity-"] { width:109px; min-width:109px; max-width:109px; }
 }
+
+/* Match-only tactical accents: rarity is the coloured edge, selection stays yellow. */
+.five-match-screen :is(.rarity-scarso) { --rarity-border:#343434; }
+.five-match-screen :is(.rarity-debole) { --rarity-border:#53606f; }
+.five-match-screen :is(.rarity-normale) { --rarity-border:#929ba8; }
+.five-match-screen :is(.rarity-buono) { --rarity-border:#2fa866; }
+.five-match-screen :is(.rarity-forte) { --rarity-border:#27a8e8; }
+.five-match-screen :is(.rarity-elite) { --rarity-border:#8254d1; }
+.five-match-screen :is(.rarity-mondiale) { --rarity-border:#d93842; }
+.five-match-screen :is(.rarity-leggenda) { --rarity-border:#d4a017; }
+.five-match-screen .five-match-card,
+.five-match-screen .five-match-card[class*="rarity-"] {
+  border-left-width:6px;
+  padding-left:2px;
+}
+.five-match-screen .five-match-card::before {
+  content:"";
+  position:absolute;
+  display:block;
+  z-index:2;
+  top:-1px;
+  left:-1px;
+  width:17px;
+  height:10px;
+  background:var(--rarity-border,#929ba8);
+  clip-path:polygon(0 0,100% 0,0 100%);
+  pointer-events:none;
+}
+.five-match-screen .five-match-card::after { inset:3px auto 3px -6px; width:4px; }
+
+/* The quick sheet is deliberately narrow and anchored to the selected pitch piece. */
+.five-match-screen .five-match-player-detail {
+  inset:var(--five-detail-top,8px) auto auto var(--five-detail-left,8px);
+  width:min(218px,calc(100% - 12px));
+  overflow:visible;
+  border:2px solid #111;
+  border-radius:3px;
+  background:#fffaf0;
+  box-shadow:5px 6px 0 rgba(0,0,0,.68),0 14px 24px rgba(0,0,0,.25);
+  backdrop-filter:none;
+}
+.five-match-screen .five-match-player-detail::before {
+  content:"";
+  position:absolute;
+  top:46%;
+  left:-10px;
+  width:16px;
+  height:16px;
+  border-left:2px solid #111;
+  border-bottom:2px solid #111;
+  background:#fffaf0;
+  transform:rotate(45deg);
+}
+.five-match-screen .five-match-player-detail[data-placement="left"]::before { left:auto; right:-10px; transform:rotate(225deg); }
+.five-match-screen .five-match-player-detail-copy { overflow:visible; padding:8px; border-top:5px solid var(--rarity-border,#929ba8); border-radius:1px; }
+.five-match-screen .five-match-detail-head { grid-template-columns:minmax(0,1fr) auto 24px; gap:5px; align-items:start; }
+.five-match-screen .five-match-detail-identity { gap:0; }
+.five-match-screen .five-match-detail-identity > small { font-size:.4rem; }
+.five-match-screen .five-match-detail-identity > strong { font-size:.79rem; white-space:normal; line-height:1; }
+.five-match-screen .five-match-detail-role { align-self:center; padding:3px 6px; border:1px solid #111; background:#111; color:#ffd21f; font-size:.48rem; line-height:1; }
+.five-match-screen .five-match-detail-close { position:relative; top:-15px; right:-15px; z-index:2; width:30px; height:30px; border:2px solid #111; border-radius:50%; background:#ffd21f; color:#111; box-shadow:2px 2px 0 #111; }
+.five-match-screen .five-match-detail-scout { display:grid; grid-template-columns:76px minmax(0,1fr); gap:7px; margin-top:5px; }
+.five-match-screen .five-match-detail-portrait { width:76px; height:94px; border-radius:2px; box-shadow:3px 3px 0 var(--rarity-border,#929ba8); }
+.five-match-screen .five-match-detail-meta { display:grid; grid-template-columns:1fr 1fr; align-content:start; gap:0; margin:0; padding:0; border-radius:0; background:transparent; }
+.five-match-screen .five-match-detail-meta > span { display:grid; align-content:center; min-height:44px; padding:3px; border:0; border-bottom:1px solid #c9bfa9; text-align:center; }
+.five-match-screen .five-match-detail-meta > span:nth-child(odd) { border-right:1px solid #c9bfa9; }
+.five-match-screen .five-match-detail-meta small { font-size:.37rem; }
+.five-match-screen .five-match-detail-meta strong { font-size:.55rem; white-space:normal; line-height:1; }
+.five-match-screen .five-match-detail-meta .five-match-detail-overall strong { font-size:1.05rem; line-height:.9; }
+.five-match-screen .five-match-detail-stats { grid-template-columns:repeat(2,minmax(0,1fr)); gap:3px; margin-top:8px; }
+.five-match-screen .five-match-detail-stats > span { padding:4px 6px; border-radius:2px; }
+.five-match-screen .five-match-detail-sheet { min-height:32px; margin-top:6px; border-radius:1px; background:#ffd21f; color:#111; box-shadow:0 3px 0 #111; }
+@media (max-width:780px) {
+  .five-match-screen .five-match-player-detail { width:min(204px,calc(100% - 12px)); }
+  .five-match-screen .five-match-detail-scout { grid-template-columns:68px minmax(0,1fr); }
+  .five-match-screen .five-match-detail-portrait { width:68px; height:86px; }
+  .five-match-screen .five-match-detail-meta > span { min-height:40px; }
+}
