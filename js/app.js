@@ -4137,12 +4137,12 @@
       : [["Attacco", stats.attack], ["Controllo", stats.control], ["Velocità", stats.speed]];
     return `<div class="five-match-player-detail-copy ${rarityClass(player.category)}">
       <div class="five-match-detail-head">
-        <img src="${escapeHtml(playerPortraitUrl(player))}" alt="" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} />
-        <div><small>${side === "user" ? "Tua squadra" : "Avversario"}</small><strong>${escapeHtml(player.name)}</strong><span>${escapeHtml(player.position || player.normalizedRole || "-")} · ${escapeHtml(player.element || player.type || "-")}</span></div>
+        <span class="five-match-detail-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></span>
+        <div class="five-match-detail-identity"><small>${side === "user" ? "Tua squadra" : "Avversario"}</small><strong>${escapeHtml(player.name)}</strong><span><b>${escapeHtml(player.position || player.normalizedRole || "-")}</b><i>${escapeHtml(player.element || player.type || "-")}</i></span></div>
         <button type="button" class="five-match-detail-close" data-five-detail-close aria-label="Chiudi dettaglio">×</button>
       </div>
-      <div class="five-match-detail-meta"><span><small>LV</small><strong>${escapeHtml(player.displayLevelText ?? player.displayLevel ?? 0)}</strong></span><span><small>OVR</small><strong>${escapeHtml(player.overall ?? player.finalOverall ?? "-")}</strong></span><span><small>RARITÀ</small><strong>${escapeHtml(player.category || "-")}</strong></span></div>
-      <div class="five-match-detail-stats">${essentials.map(([label, value]) => `<span><small>${label}</small><strong>${escapeHtml(value ?? "-")}</strong></span>`).join("")}</div>
+      <div class="five-match-detail-meta"><span><small>Livello</small><strong>${escapeHtml(player.displayLevelText ?? player.displayLevel ?? 0)}</strong></span><span class="five-match-detail-overall"><small>Overall</small><strong>${escapeHtml(player.overall ?? player.finalOverall ?? "-")}</strong></span><span><small>Rarità</small><strong>${escapeHtml(player.category || "-")}</strong></span></div>
+      <div class="five-match-detail-stats" aria-label="Statistiche chiave">${essentials.map(([label, value]) => `<span><small>${label}</small><strong>${escapeHtml(value ?? "-")}</strong></span>`).join("")}</div>
       <button type="button" class="five-match-detail-sheet" data-five-detail-sheet="${escapeHtml(player.playerId)}" data-five-detail-side="${side}">Scheda completa</button>
     </div>`;
   }
