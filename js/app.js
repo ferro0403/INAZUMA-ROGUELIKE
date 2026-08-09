@@ -4120,17 +4120,31 @@
   }
 
   function fiveMatchCard(player, side) {
-    const equipment = side === "user" ? (player.equipment || rosterEntry(player.playerId)?.equippedItem) : null;
-    const equipmentKey = equipment ? `${equipment.instanceId || equipment.id || "item"}:${equipment.id || ""}` : "";
-    const key = fiveMatchCacheKey("card", side, player.playerId, player.name, player.position, player.overall, player.displayLevel, player.category, playerPortraitUrl(player), equipmentKey);
-    return memoizedFiveMatchMarkup(key, () => compactPlayerCardMarkup(player, {
-      equipment,
-      equipmentInFooter: true,
-      level: player.displayLevel ?? 0,
-      overall: player.overall ?? "-",
-      dataAttr: `data-five-match-player="${escapeHtml(player.playerId)}" data-five-match-side="${side}" aria-label="Apri scheda ${escapeHtml(player.name)}"`,
-      extraClass: `five-match-card five-match-card--${side} run-tactical-card`,
-    }));
+    const role = player.position || player.normalizedRole || "-";
+    const key = fiveMatchCacheKey("half-card", side, player.playerId, player.name, role, player.category, playerPortraitUrl(player));
+    return memoizedFiveMatchMarkup(key, () => `<button type="button" class="five-match-card five-match-card--${side} ${rarityClass(player.category)}" data-five-match-player="${escapeHtml(player.playerId)}" data-five-match-side="${side}" aria-pressed="false" aria-label="Dettagli rapidi di ${escapeHtml(player.name)}">
+      <span class="five-match-card-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></span>
+      <strong title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</strong>
+      <span class="five-match-card-role" aria-label="Ruolo ${escapeHtml(role)}">${escapeHtml(role)}</span>
+    </button>`);
+  }
+
+  function fiveMatchPlayerDetail(player, side) {
+    if (!player) return "";
+    const stats = player.stats || player.finalStats || {};
+    const essentials = player.position === "GK"
+      ? [["Parata", stats.save], ["Difesa", stats.defense], ["Grinta", stats.grit]]
+      : [["Attacco", stats.attack], ["Controllo", stats.control], ["Velocità", stats.speed]];
+    return `<div class="five-match-player-detail-copy ${rarityClass(player.category)}">
+      <div class="five-match-detail-head">
+        <img src="${escapeHtml(playerPortraitUrl(player))}" alt="" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} />
+        <div><small>${side === "user" ? "Tua squadra" : "Avversario"}</small><strong>${escapeHtml(player.name)}</strong><span>${escapeHtml(player.position || player.normalizedRole || "-")} · ${escapeHtml(player.element || player.type || "-")}</span></div>
+        <button type="button" class="five-match-detail-close" data-five-detail-close aria-label="Chiudi dettaglio">×</button>
+      </div>
+      <div class="five-match-detail-meta"><span><small>LV</small><strong>${escapeHtml(player.displayLevelText ?? player.displayLevel ?? 0)}</strong></span><span><small>OVR</small><strong>${escapeHtml(player.overall ?? player.finalOverall ?? "-")}</strong></span><span><small>RARITÀ</small><strong>${escapeHtml(player.category || "-")}</strong></span></div>
+      <div class="five-match-detail-stats">${essentials.map(([label, value]) => `<span><small>${label}</small><strong>${escapeHtml(value ?? "-")}</strong></span>`).join("")}</div>
+      <button type="button" class="five-match-detail-sheet" data-five-detail-sheet="${escapeHtml(player.playerId)}" data-five-detail-side="${side}">Scheda completa</button>
+    </div>`;
   }
 
   function fiveMatchField(playersBySlot, formationId, side, mobile = false) {
@@ -4255,11 +4269,8 @@
                 <span class="five-match-formation-badge">${escapeHtml(activeSide === "opponent" ? match.opponentFormation : run.fiveVFive.formation)}</span>
               </div>
               <div class="five-match-field" aria-label="Campo partita 5v5">
-                <div class="five-match-half-label five-match-half-label--user">${escapeHtml(userName)}</div>
-                <div class="five-match-half-label five-match-half-label--opponent">${opponentName}</div>
-                ${fiveMatchField(userPlayersBySlot, run.fiveVFive.formation, "user")}
-                ${fiveMatchField(opponentPlayersBySlot, match.opponentFormation, "opponent")}
                 <div class="five-match-mobile-field">${fiveMatchField(activeSide === "opponent" ? opponentPlayersBySlot : userPlayersBySlot, activeSide === "opponent" ? match.opponentFormation : run.fiveVFive.formation, activeSide, true)}</div>
+                <aside class="five-match-player-detail" data-five-player-detail hidden aria-live="polite"></aside>
               </div>
             </section>
             <section class="five-match-summary" aria-label="Riepilogo partita 5v5">
@@ -4280,6 +4291,7 @@
       bindSectionRootNav();
       bindBottomNav();
       document.querySelectorAll("[data-five-match-tab]").forEach((button) => button.addEventListener("click", () => {
+        closeFiveMatchPlayerDetail();
         ui.fiveMatchTab = button.dataset.fiveMatchTab;
         document.querySelectorAll("[data-five-match-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.fiveMatchTab === ui.fiveMatchTab));
         const mobileField = document.querySelector(".five-match-mobile-field");
@@ -4290,14 +4302,28 @@
         if (formationBadge) formationBadge.textContent = ui.fiveMatchTab === "opponent" ? match.opponentFormation : run.fiveVFive.formation;
         bindFiveMatchPlayerButtons();
       }));
+      const closeFiveMatchPlayerDetail = () => {
+        const detail = document.querySelector("[data-five-player-detail]");
+        if (detail) { detail.hidden = true; detail.innerHTML = ""; }
+        document.querySelectorAll("[data-five-match-player]").forEach((card) => { card.classList.remove("is-active"); card.setAttribute("aria-pressed", "false"); });
+      };
       const bindFiveMatchPlayerButtons = () => document.querySelectorAll("[data-five-match-player]").forEach((button) => {
         if (button.dataset.boundFiveMatchPlayer === "1") return;
         button.dataset.boundFiveMatchPlayer = "1";
         button.addEventListener("click", () => {
           const id = button.dataset.fiveMatchPlayer;
-          if (button.dataset.fiveMatchSide === "user") return showPlayerDetails(id);
-          const player = Object.values(opponentPlayersBySlot).find((candidate) => String(candidate?.playerId) === String(id));
-          showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: freeAgentsDb, preserveScroll: scrollSnapshot() });
+          const side = button.dataset.fiveMatchSide;
+          const players = side === "user" ? userPlayersBySlot : opponentPlayersBySlot;
+          const player = Object.values(players).find((candidate) => String(candidate?.playerId) === String(id));
+          const detail = document.querySelector("[data-five-player-detail]");
+          if (!player || !detail) return;
+          document.querySelectorAll("[data-five-match-player]").forEach((card) => { card.classList.toggle("is-active", card === button); card.setAttribute("aria-pressed", card === button ? "true" : "false"); });
+          detail.innerHTML = fiveMatchPlayerDetail(player, side);
+          detail.hidden = false;
+          detail.querySelector("[data-five-detail-close]")?.addEventListener("click", closeFiveMatchPlayerDetail);
+          detail.querySelector("[data-five-detail-sheet]")?.addEventListener("click", () => side === "user"
+            ? showPlayerDetails(id)
+            : showPlayerDetailsFor(player, { playerId: id, level: player.displayLevel, database: freeAgentsDb, preserveScroll: scrollSnapshot() }));
         });
       });
       bindFiveMatchPlayerButtons();

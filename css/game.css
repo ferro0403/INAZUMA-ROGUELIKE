@@ -8110,3 +8110,74 @@ html.account-modal-open, body.account-modal-open { overflow: hidden; overscroll-
   .five-match-screen > .five-match-controls { grid-template-columns: 1fr; width: calc(100% - 12px); margin-top: 6px; padding: 5px; box-shadow: 3px 3px 0 #111; }.five-match-primary-actions { grid-auto-flow: row; grid-auto-columns: auto; }.five-match-screen .five-match-controls .button-row { display: grid; grid-template-columns: minmax(0,1fr) auto; }.five-match-screen .five-match-controls .button-row #edit-five-team { grid-column: auto; }.five-match-screen .match-test-tools { justify-content: end; }.five-match-screen .five-match-controls .btn { min-height: 36px; }.five-match-screen .five-match-controls .button-row .btn-back { display: none; }
 }
 @media (max-width: 370px) { .five-match-screen .topbar-kicker { display: none; }.five-match-screen .brand { font-size: .8rem; }.five-match-screen .five-match-team-tab { padding-inline: 3px; }.five-match-value:nth-child(4) { display: none; }.five-match-values-button { grid-template-columns: repeat(3,minmax(0,1fr)) 27px; } }
+
+/* 5v5 tactical half cards and in-pitch quick detail. */
+.five-match-screen .five-match-field { position: relative; display: block; overflow: hidden; }
+.five-match-screen .five-match-mobile-field { display: block; height: 300px; }
+.five-match-screen .five-match-field-side--mobile {
+  display: grid;
+  height: 300px;
+  padding: 12px 16px;
+  border: 0;
+  direction: ltr;
+}
+.five-match-screen .five-match-line {
+  display: grid;
+  grid-template-columns: repeat(var(--five-row-count, 1), minmax(0, 126px));
+  justify-content: center;
+  gap: clamp(12px, 4vw, 32px);
+}
+.five-match-screen .five-match-card,
+.five-match-screen .five-match-card[class*="rarity-"] {
+  position: relative;
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) 25px;
+  align-items: center;
+  width: 126px;
+  min-width: 126px;
+  max-width: 126px;
+  height: 43px;
+  min-height: 43px;
+  max-height: 43px;
+  padding: 2px 3px 2px 2px;
+  overflow: hidden;
+  border: 2px solid #111;
+  border-left: 5px solid var(--rarity-border, #d0a51a);
+  border-radius: 1px;
+  background: #fffdf6;
+  color: #111;
+  box-shadow: 3px 3px 0 rgba(0,0,0,.72);
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.five-match-screen .five-match-card::before { display: none; }
+.five-match-screen .five-match-card-portrait { align-self: stretch; overflow: hidden; background: #e6ddc7; clip-path: polygon(0 0,100% 0,88% 100%,0 100%); }
+.five-match-screen .five-match-card .five-match-card-portrait img { width: 36px; height: 39px; object-fit: cover; object-position: top center; }
+.five-match-screen .five-match-card > strong { overflow: hidden; padding-inline: 4px 2px; color: #111; font-size: .61rem; font-weight: 950; line-height: 1; text-align: left; text-overflow: ellipsis; white-space: nowrap; }
+.five-match-screen .five-match-card .five-match-card-role { position: static; display: grid; place-items: center; min-width: 23px; height: 23px; padding: 0; border: 2px solid #111; background: #ffd21f; color: #111; font-size: .52rem; font-weight: 1000; }
+.five-match-screen .five-match-card.is-active { z-index: 3; transform: translate(-2px,-2px); border-color: #ffd21f; box-shadow: 0 0 0 2px #111, 5px 5px 0 #ffd21f; }
+.five-match-player-detail { position: absolute; z-index: 8; inset: auto 8px 8px auto; width: min(310px, calc(100% - 16px)); border: 3px solid #111; background: #fffaf0; color: #111; box-shadow: 5px 5px 0 rgba(0,0,0,.72); }
+.five-match-player-detail[hidden] { display: none; }
+.five-match-player-detail-copy { padding: 7px; border-top: 5px solid var(--rarity-border, #d0a51a); }
+.five-match-detail-head { display: grid; grid-template-columns: 54px minmax(0,1fr) 30px; align-items: center; gap: 7px; }
+.five-match-detail-head > img { width: 54px; height: 54px; border: 2px solid #111; background: #e6ddc7; object-fit: cover; object-position: top center; }
+.five-match-detail-head > div { display: grid; min-width: 0; }.five-match-detail-head small { color: #8a650c; font-size: .48rem; font-weight: 950; text-transform: uppercase; }.five-match-detail-head strong { overflow: hidden; font-size: .82rem; text-overflow: ellipsis; white-space: nowrap; }.five-match-detail-head span { color: #625e55; font-size: .58rem; font-weight: 800; }
+.five-match-detail-close { align-self: start; width: 30px; height: 30px; border: 2px solid #111; background: #ffd21f; color: #111; font: 950 1.1rem/1 sans-serif; }
+.five-match-detail-meta, .five-match-detail-stats { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 4px; margin-top: 6px; }
+.five-match-detail-meta > span, .five-match-detail-stats > span { display: grid; justify-items: center; padding: 3px; border: 1px solid #111; background: #fff; }.five-match-detail-meta small, .five-match-detail-stats small { color: #625e55; font-size: .43rem; font-weight: 950; }.five-match-detail-meta strong, .five-match-detail-stats strong { overflow: hidden; max-width: 100%; font-size: .64rem; text-overflow: ellipsis; white-space: nowrap; }
+.five-match-detail-sheet { width: 100%; min-height: 30px; margin-top: 6px; border: 2px solid #111; background: #111; color: #ffd21f; font: 950 .58rem/1 sans-serif; text-transform: uppercase; }
+
+@media (max-width: 780px) {
+  .five-match-screen .five-match-mobile-field, .five-match-screen .five-match-field-side--mobile { height: 250px; }
+  .five-match-screen .five-match-field-side--mobile { padding: 5px 8px; }
+  .five-match-screen .five-match-line { grid-template-columns: repeat(var(--five-row-count, 1), minmax(0, 106px)); gap: 12px; }
+  .five-match-screen .five-match-card, .five-match-screen .five-match-card[class*="rarity-"] { grid-template-columns: 32px minmax(0,1fr) 23px; width: 106px; min-width: 106px; max-width: 106px; height: 38px; min-height: 38px; max-height: 38px; }
+  .five-match-screen .five-match-card .five-match-card-portrait img { width: 30px; height: 34px; }
+  .five-match-screen .five-match-card > strong { font-size: .53rem; }
+  .five-match-screen .five-match-card .five-match-card-role { min-width: 21px; height: 21px; font-size: .47rem; }
+  .five-match-player-detail { inset: auto 5px 5px 5px; width: auto; box-shadow: 3px 3px 0 rgba(0,0,0,.72); }
+  .five-match-player-detail-copy { padding: 5px; }.five-match-detail-head { grid-template-columns: 44px minmax(0,1fr) 28px; }.five-match-detail-head > img { width: 44px; height: 44px; }.five-match-detail-close { width: 28px; height: 28px; }
+}
+@media (max-width: 370px) {
+  .five-match-screen .five-match-line { grid-template-columns: repeat(var(--five-row-count, 1), minmax(0, 101px)); gap: 7px; }
+  .five-match-screen .five-match-card, .five-match-screen .five-match-card[class*="rarity-"] { width: 101px; min-width: 101px; max-width: 101px; }
+}

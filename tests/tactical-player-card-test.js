@@ -27,10 +27,15 @@ for (const token of ['player-role', 'player-overall', 'player-title', 'player-eq
 assert.match(helper, /equipmentDefinition\s*\?/, 'equipment is rendered only when present');
 assert.match(helper, /<span class="player-corner player-equipment \$\{equipmentInFooter \? "player-equipment--footer" : ""\}"[^>]*>\$\{itemIcon\(equipment\)\}<\/span>/, 'the item icon is a child of the complete equipment badge');
 assert.match(helper, /<div class="player-title"><strong[^>]*>[^<]*\$\{escapeHtml\(player\.name\)\}<\/strong>\$\{equipmentInFooter \? equipmentMarkup : ""\}<\/div>/, 'the shared footer reserves name space only when equipment is present');
-for (const renderer of [bossRenderer, matchRenderer, formationRenderer]) {
+for (const renderer of [bossRenderer, formationRenderer]) {
   assert.match(renderer, /compactPlayerCardMarkup\(player/, 'every 5v5 renderer reuses the shared tactical card');
   assert.match(renderer, /equipmentInFooter: true/, 'every 5v5 renderer places equipment in the shared footer');
 }
+for (const token of ['five-match-card-portrait', 'five-match-card-role', 'aria-pressed="false"', 'player.name']) {
+  assert.ok(matchRenderer.includes(token), `the dedicated match half card is missing ${token}`);
+}
+assert.doesNotMatch(matchRenderer, /compactPlayerCardMarkup/, 'the tactical pitch no longer miniaturizes a complete player card');
+assert.match(app, /function fiveMatchPlayerDetail[\s\S]*data-five-detail-close[\s\S]*Scheda completa/, 'the match exposes an in-pitch contextual player detail');
 assert.doesNotMatch(app, /fivePlayerEquipmentMarkup/, '5v5 has no position-specific equipment renderer');
 assert.doesNotMatch(css, /five-player-equipment/, 'obsolete free-floating 5v5 equipment CSS is removed');
 
