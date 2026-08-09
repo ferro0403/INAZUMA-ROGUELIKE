@@ -18,8 +18,9 @@ assert.strictEqual(manifest.background_color, '#fffdf6');
 function pngSize(path) { const b=fs.readFileSync(path); assert.strictEqual(b.toString('hex',0,8),'89504e470d0a1a0a'); return [b.readUInt32BE(16),b.readUInt32BE(20)]; }
 for (const [path,size] of [['assets/icons/apple-touch-icon-180.png',180],['assets/icons/icon-192.png',192],['assets/icons/icon-512.png',512],['assets/icons/icon-maskable-512.png',512]]) assert.deepStrictEqual(pngSize(path),[size,size]);
 const fiveMatch = app.slice(app.indexOf('function fiveMatchCard'), app.indexOf('function fiveMatchField'));
-assert.match(fiveMatch, /compactPlayerCardMarkup\(player/);
-assert.match(fiveMatch, /equipmentInFooter: true/);
+assert.match(fiveMatch, /five-match-card-portrait/);
+assert.match(fiveMatch, /five-match-card-role/);
+assert.doesNotMatch(fiveMatch, /compactPlayerCardMarkup\(player/, 'the match pitch uses its dedicated horizontal half card');
 assert.doesNotMatch(fiveMatch, /fivePlayerEquipmentMarkup/);
 assert.match(css, /:is\(\.five-screen,\.five-match-screen,\.boss-match-screen\) \.run-tactical-card\.tactical-player-card \.player-title strong \{[^}]*min-width: 0;[^}]*overflow: hidden;[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
 assert.match(css, /:is\(\.five-screen,\.five-match-screen,\.boss-match-screen\) \.run-tactical-card\.tactical-player-card \.player-equipment--footer \{[^}]*position: static;[^}]*background: var\(--unified-card-yellow\)/s);
