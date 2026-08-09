@@ -8030,3 +8030,83 @@ html.account-modal-open, body.account-modal-open { overflow: hidden; overscroll-
 .special-reward-modal .special-reward-actions { margin-top: 16px; }
 .special-reward-modal .special-reward-actions .btn { min-height: 48px; width: 100%; }
 @media (max-width: 520px) { .role-switch-modal .role-switch-options { grid-template-columns: 1fr 1fr; gap: 8px; } .role-switch-modal .role-switch-option { min-height: 68px; } }
+
+/* Compact match dashboard — deliberately scoped so the 11v11 and formation editors keep their layouts. */
+.five-match-screen { min-height: 100dvh; overflow-x: clip; padding-bottom: max(14px, env(safe-area-inset-bottom)); background: #f5efdf; color: #111; }
+.five-match-screen .game-topbar { margin-bottom: 0; border-bottom: 3px solid #111; background: #fffaf0; color: #111; box-shadow: none; }
+.five-match-screen .game-topbar .section-root-button { background: #ffd21f; color: #111; border-color: #111; border-radius: 2px; box-shadow: 3px 3px 0 #111; }
+.five-match-screen .topbar-kicker, .five-match-screen .status-pill small { color: #625e55; }
+.five-match-screen .status-pill { border: 2px solid #111; border-radius: 2px; background: #fff; color: #111; box-shadow: 2px 2px 0 #111; }
+.five-match-content { width: min(1180px, calc(100% - 24px)); margin: 12px auto 0; gap: 9px; padding: 0; }
+.five-match-screen .five-match-hero { display: grid; grid-template-columns: minmax(220px, .72fr) minmax(0, 1.28fr); gap: 0; padding: 0; overflow: hidden; border: 3px solid #111; border-radius: 2px; background: #fffaf0; color: #111; box-shadow: 5px 5px 0 #111; }
+.five-match-hero-band { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 92px; padding: 13px 20px; overflow: hidden; background: #111; color: #fffaf0; }
+.five-match-hero-band::after { content: ""; position: absolute; right: -28px; bottom: -45px; width: 100px; height: 100px; transform: rotate(35deg); background: #ffd21f; }
+.five-match-header-main { position: relative; z-index: 1; }
+.five-match-header-main .eyebrow { margin: 0; color: #ffd21f; font-size: .62rem; }
+.five-match-header-main h1 { margin: 1px 0 0; color: #fff; font-size: clamp(1.55rem, 3.2vw, 2.6rem); line-height: .9; text-transform: uppercase; letter-spacing: -.05em; }
+.five-match-header-main strong { display: block; margin-top: 5px; color: #d7d0bf; font-size: .74rem; text-transform: uppercase; }
+.five-match-duration { z-index: 1; display: grid; justify-items: center; min-width: 58px; padding: 5px; border: 2px solid #ffd21f; color: #ffd21f; font-size: 1.35rem; font-weight: 950; line-height: .8; text-transform: uppercase; }
+.five-match-duration small { margin-top: 5px; font-size: .48rem; letter-spacing: .08em; }
+.five-match-vs { padding: 8px 14px; gap: 8px; }
+.five-match-team { grid-template-columns: 38px minmax(0, 1fr); grid-template-rows: auto auto; justify-items: start; gap: 0 8px; text-align: left; }
+.five-match-team:last-child { grid-template-columns: minmax(0, 1fr) 38px; justify-items: end; text-align: right; }
+.five-match-team:last-child .five-match-logo { grid-column: 2; grid-row: 1 / 3; }
+.five-match-team:first-child .five-match-logo { grid-row: 1 / 3; }
+.five-match-logo { width: 34px; height: 34px; border: 2px solid #111; border-radius: 50%; background: #ffd21f; font-size: 1rem; }
+.five-match-team strong { color: #111; font-size: .86rem; }
+.five-match-team small { color: #625e55; font-size: .62rem; }
+.five-match-vs-badge { padding: 5px; background: #111; color: #ffd21f; font-size: .9rem; transform: skew(-8deg); }
+.five-match-pitch-panel { min-width: 0; padding: 8px; border: 3px solid #111; background: #fffaf0; box-shadow: 5px 5px 0 #111; }
+.five-match-section-head { display: grid; grid-template-columns: minmax(110px, 1fr) auto auto; align-items: center; gap: 8px; min-height: 34px; margin-bottom: 7px; }
+.five-match-section-head h2 { margin: 0; color: #111; font-size: .9rem; text-transform: uppercase; letter-spacing: .04em; }
+.five-match-screen .five-match-tabs { position: static; display: flex; gap: 3px; margin: 0; padding: 0; border: 0; border-radius: 0; background: transparent; }
+.five-match-screen .five-match-team-tab { min-height: 30px; padding: 4px 9px; border: 2px solid #111; border-radius: 0; background: #fff; color: #111; font-size: .62rem; font-weight: 950; text-transform: uppercase; }
+.five-match-screen .five-match-team-tab.active { background: #ffd21f; color: #111; }
+.five-match-formation-badge { padding: 5px 8px; border: 2px solid #111; background: #111; color: #ffd21f; font-size: .72rem; font-weight: 950; }
+.five-match-screen .five-match-field { min-height: 300px; border: 2px solid #111; border-radius: 0; background: radial-gradient(circle at center, transparent 0 38px, rgba(255,255,255,.65) 39px 41px, transparent 42px), linear-gradient(90deg, transparent calc(50% - 1px), rgba(255,255,255,.7) 50%, transparent calc(50% + 1px)), repeating-linear-gradient(90deg, #267d4a 0 12.5%, #2e8952 12.5% 25%); }
+.five-match-screen .five-match-field-side { grid-template-rows: repeat(4, minmax(0, 1fr)); gap: 3px; padding: 24px 8px 7px; }
+.five-match-screen .five-match-card { width: clamp(58px, 6vw, 76px); min-height: 66px; grid-template-rows: 1fr auto auto; padding: 3px; overflow: hidden; border: 2px solid #111; border-radius: 2px; box-shadow: 3px 3px 0 rgba(0,0,0,.7); }
+.five-match-screen .five-match-card img { width: 31px; height: 31px; }
+.five-match-screen .five-match-card strong { font-size: .55rem; }
+.five-match-screen .five-match-card small { font-size: .47rem; }
+.five-match-screen .five-match-card-role, .five-match-screen .five-match-card-overall { top: 2px; min-width: 17px; padding: 1px 2px; border-radius: 0; font-size: .45rem; }
+.five-match-screen .five-match-card-role { left: 2px; }.five-match-screen .five-match-card-overall { right: 2px; }
+.five-match-half-label { top: 4px; border-radius: 0; padding: 2px 6px; font-size: .55rem; }
+.five-match-summary { display: block; }
+.five-match-values { border: 3px solid #111; background: #fffaf0; box-shadow: 4px 4px 0 #111; }
+.five-match-values-button { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)) 30px; width: 100%; min-height: 47px; padding: 3px; border: 0; background: transparent; color: #111; }
+.five-match-value { display: grid; align-content: center; min-width: 0; padding: 2px 7px; border-right: 1px solid #b9b3a5; text-align: center; }
+.five-match-value small { color: #625e55; font-size: .52rem; font-weight: 950; text-transform: uppercase; }
+.five-match-value strong { overflow: hidden; color: #111; font-size: .76rem; text-overflow: ellipsis; white-space: nowrap; }
+.five-match-value--accent strong { color: #9b6900; }
+.five-match-values-toggle { display: grid; place-items: center; align-self: center; width: 25px; height: 25px; border: 2px solid #111; background: #ffd21f; color: #111; font-size: 1.1rem; font-weight: 950; }
+.five-match-values-button[aria-expanded="true"] .five-match-values-toggle { transform: rotate(45deg); }
+.five-match-values-content { border-top: 2px solid #111; padding: 8px; }
+.five-match-bottom-grid { grid-template-columns: minmax(0, 1.2fr) minmax(250px, .8fr); gap: 9px; }
+.five-match-log-panel, .five-match-result-panel { min-width: 0; padding: 8px 10px; border: 3px solid #111; background: #fffaf0; color: #111; box-shadow: 4px 4px 0 #111; }
+.five-match-log-panel .panel-title-row { align-items: center; margin-bottom: 3px; }.five-match-log-panel h3, .five-match-result-panel h3 { margin: 0; color: #111; font-size: .75rem; text-transform: uppercase; }
+.five-match-screen .match-state-badge { margin: 0; padding: 2px 5px; border: 1px solid #111; border-radius: 0; background: #e8e0ce; color: #111; font-size: .5rem; }
+.five-match-screen .boss-match-log { margin: 0; padding: 0; }.five-match-screen .boss-match-log li { grid-template-columns: 24px 16px minmax(0, 1fr); gap: 3px; min-height: 25px; padding: 3px 0; border: 0; color: #111; font-size: .65rem; }
+.five-match-screen .boss-match-log li p { margin: 0; color: #111; }.five-match-screen .boss-match-log.match-sim-log { max-height: 150px; }
+.five-match-result-row { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: 5px; margin-top: 4px; text-align: center; }
+.five-match-result-row > strong { overflow: hidden; color: #111; font-size: .65rem; text-overflow: ellipsis; white-space: nowrap; }
+.five-match-screen .boss-match-score { gap: 3px; margin: 0; }.five-match-screen .boss-match-score span { min-width: 24px; padding: 2px 5px; border: 2px solid #111; border-radius: 0; background: #111; color: #ffd21f; font-size: 1rem; }.five-match-screen .boss-match-score small { color: #111; }
+.five-match-result-panel > p { margin: 3px 0 0; color: #625e55; font-size: .58rem; text-align: center; }
+.five-match-screen > .five-match-controls { position: static; display: grid; grid-template-columns: minmax(0, 1fr) auto; width: min(1180px, calc(100% - 24px)); margin: 9px auto 0; padding: 7px; gap: 7px; border: 3px solid #111; border-radius: 2px; background: #fffaf0; box-shadow: 5px 5px 0 #111; }
+.five-match-primary-actions { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(150px, 1fr); gap: 6px; }.five-match-screen .five-match-controls .btn { min-height: 40px; border: 2px solid #111; border-radius: 0; box-shadow: 3px 3px 0 #111; font-size: .72rem; text-transform: uppercase; }
+.five-match-screen .five-match-controls .btn-yellow { background: #ffd21f; color: #111; }.five-match-screen .five-match-controls .btn-secondary { background: #fff; color: #111; }
+.five-match-screen .five-match-controls .button-row { display: flex; flex-wrap: wrap; gap: 6px; }.five-match-screen .match-test-tools { display: flex; align-items: center; gap: 4px; }.five-match-screen .match-test-tools span { color: #625e55; font-size: .52rem; font-weight: 950; text-transform: uppercase; }.five-match-screen .match-test-tools .btn { min-height: 32px; box-shadow: none; }
+
+@media (max-width: 780px) {
+  .five-match-screen .game-topbar { padding-top: max(7px, env(safe-area-inset-top)); }
+  .five-match-content { width: calc(100% - 12px); margin-top: 6px; gap: 6px; }
+  .five-match-screen .five-match-hero { grid-template-columns: 1fr; box-shadow: 3px 3px 0 #111; }
+  .five-match-hero-band { min-height: 48px; padding: 6px 10px; }.five-match-header-main .eyebrow { display: none; }.five-match-header-main h1 { font-size: 1.25rem; }.five-match-header-main strong { margin-top: 2px; font-size: .57rem; }.five-match-duration { min-width: 46px; font-size: 1rem; }
+  .five-match-vs { min-height: 48px; padding: 4px 8px; }.five-match-team { grid-template-columns: 28px minmax(0,1fr); gap: 0 5px; }.five-match-team:last-child { grid-template-columns: minmax(0,1fr) 28px; }.five-match-logo { width: 25px; height: 25px; font-size: .7rem; }.five-match-team strong { font-size: .7rem; }.five-match-team small { font-size: .5rem; }
+  .five-match-pitch-panel { padding: 5px; box-shadow: 3px 3px 0 #111; }.five-match-section-head { grid-template-columns: minmax(88px,1fr) auto auto; gap: 4px; min-height: 27px; margin-bottom: 4px; }.five-match-section-head h2 { font-size: .68rem; }.five-match-screen .five-match-team-tab { min-height: 26px; padding: 3px 5px; font-size: .5rem; }.five-match-formation-badge { padding: 4px 5px; font-size: .6rem; }
+  .five-match-screen .five-match-field { display: block; min-height: 250px; }.five-match-screen .five-match-field > .five-match-field-side, .five-match-screen .five-match-half-label { display: none; }.five-match-screen .five-match-mobile-field { display: block; height: 250px; }.five-match-screen .five-match-field-side--mobile { display: grid; height: 250px; gap: 1px; padding: 4px 7px; border: 0; direction: ltr; }.five-match-screen .five-match-line { grid-template-columns: repeat(var(--five-row-count, 1), 70px); gap: 10px; }.five-match-screen .five-match-card { width: 70px; min-width: 70px; max-width: 70px; height: 57px; min-height: 57px; max-height: 57px; padding: 2px; }.five-match-screen .five-match-card img { width: 25px; height: 25px; }.five-match-screen .five-match-card strong { font-size: .49rem; }.five-match-screen .five-match-card small { width: 100%; padding: 0; font-size: .42rem; }
+  .five-match-values-button { grid-template-columns: repeat(4, minmax(0,1fr)) 27px; min-height: 41px; }.five-match-value { padding: 1px 3px; }.five-match-value small { font-size: .43rem; }.five-match-value strong { font-size: .62rem; }
+  .five-match-bottom-grid { grid-template-columns: 1fr; gap: 6px; }.five-match-log-panel, .five-match-result-panel { padding: 5px 7px; box-shadow: 3px 3px 0 #111; }.five-match-screen .boss-match-log.match-sim-log { max-height: 112px; }
+  .five-match-screen > .five-match-controls { grid-template-columns: 1fr; width: calc(100% - 12px); margin-top: 6px; padding: 5px; box-shadow: 3px 3px 0 #111; }.five-match-primary-actions { grid-auto-flow: row; grid-auto-columns: auto; }.five-match-screen .five-match-controls .button-row { display: grid; grid-template-columns: minmax(0,1fr) auto; }.five-match-screen .five-match-controls .button-row #edit-five-team { grid-column: auto; }.five-match-screen .match-test-tools { justify-content: end; }.five-match-screen .five-match-controls .btn { min-height: 36px; }.five-match-screen .five-match-controls .button-row .btn-back { display: none; }
+}
+@media (max-width: 370px) { .five-match-screen .topbar-kicker { display: none; }.five-match-screen .brand { font-size: .8rem; }.five-match-screen .five-match-team-tab { padding-inline: 3px; }.five-match-value:nth-child(4) { display: none; }.five-match-values-button { grid-template-columns: repeat(3,minmax(0,1fr)) 27px; } }

@@ -4166,11 +4166,11 @@
     const value = (key) => summary[key] ?? "-";
     return `<section class="five-match-values" data-values-panel>
       <button type="button" class="five-match-values-button" aria-expanded="false" aria-controls="${escapeHtml(contentId)}">
-        <span class="five-match-values-copy">
-          <strong>Valori</strong>
-          <small>Forza · Probabilità · Confronto · Statistiche</small>
-        </span>
-        <span class="five-match-values-toggle" aria-hidden="true"></span>
+        <span class="five-match-value"><small>Forza</small><strong>${escapeHtml(value("userStrength"))}</strong></span>
+        <span class="five-match-value five-match-value--accent"><small>Probabilità</small><strong>${escapeHtml(value("probability"))}%</strong></span>
+        <span class="five-match-value"><small>Confronto</small><strong>${escapeHtml(value("userStrength"))}–${escapeHtml(value("opponentStrength"))}</strong></span>
+        <span class="five-match-value"><small>Statistiche</small><strong>Dettagli</strong></span>
+        <span class="five-match-values-toggle" aria-label="Apri statistiche" aria-hidden="true">+</span>
       </button>
       <div class="five-match-values-content" id="${escapeHtml(contentId)}" hidden>
         <div class="five-match-core-values">
@@ -4234,23 +4234,25 @@
         <main class="screen five-match-screen" data-match-state="${escapeHtml(ui.bossMatchState)}">
           ${topbar("Partita 5v5")}
           <div class="content five-match-content">
-            <section class="panel five-match-hero">
-              <button type="button" class="btn btn-back five-match-header-back" data-nav="map" aria-label="Torna alla mappa">← <span class="five-match-back-full">Torna al percorso</span><span class="five-match-back-short">Percorso</span></button>
-              <div class="five-match-header-main"><p class="eyebrow five-match-run-meta">Run Lv ${escapeHtml(global.LevelProgression.formatLevel(run, run.seasonId))} · ${hearts()}</p><h2>Partita 5v5</h2><span class="match-state-badge">${resolved ? "Completata" : simulating ? "In corso" : "Preparazione"}</span></div>
+            <section class="five-match-hero">
+              <div class="five-match-hero-band">
+                <div class="five-match-header-main"><p class="eyebrow">Match rapido</p><h1>Partita 5v5</h1><strong>${resolved ? "Completata" : simulating ? "In corso" : "Preparazione"}</strong></div>
+                <span class="five-match-duration">30 <small>minuti</small></span>
+              </div>
               <div class="five-match-vs">
                 <div class="five-match-team"><span class="five-match-logo">⚡</span><strong>${escapeHtml(userName)}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(userAverageOverall)} · Forza ${escapeHtml(simPreview.userStrength?.final ?? "-")}</small></div>
                 <span class="five-match-vs-badge">VS</span>
                 <div class="five-match-team"><span class="five-match-logo">⚽</span><strong>${opponentName}</strong><small>${escapeHtml(match.opponentFormation)} · OVR ${escapeHtml(opponentAverageOverall)} · Forza ${escapeHtml(simPreview.opponentStrength?.final ?? "-")}</small></div>
               </div>
             </section>
-            <section class="panel five-match-pitch-panel">
+            <section class="five-match-pitch-panel">
               <div class="five-match-section-head">
-                <div><p class="eyebrow">Formazioni 5v5</p><h3>Campo tattico</h3></div>
-                <span>30 MINUTI</span>
-              </div>
-              <div class="five-match-tabs" role="tablist" aria-label="Squadra visualizzata">
-                <button type="button" class="five-match-team-tab ${activeSide === "user" ? "active" : ""}" data-five-match-tab="user">La tua squadra</button>
-                <button type="button" class="five-match-team-tab ${activeSide === "opponent" ? "active" : ""}" data-five-match-tab="opponent">Svincolati</button>
+                <h2>Campo tattico</h2>
+                <div class="five-match-tabs" role="tablist" aria-label="Squadra visualizzata">
+                  <button type="button" class="five-match-team-tab ${activeSide === "user" ? "active" : ""}" data-five-match-tab="user">Tua squadra</button>
+                  <button type="button" class="five-match-team-tab ${activeSide === "opponent" ? "active" : ""}" data-five-match-tab="opponent">Avversario</button>
+                </div>
+                <span class="five-match-formation-badge">${escapeHtml(activeSide === "opponent" ? match.opponentFormation : run.fiveVFive.formation)}</span>
               </div>
               <div class="five-match-field" aria-label="Campo partita 5v5">
                 <div class="five-match-half-label five-match-half-label--user">${escapeHtml(userName)}</div>
@@ -4265,12 +4267,11 @@
             </section>
             ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
             <div class="five-match-bottom-grid">
-              <section class="panel boss-match-log-panel five-match-log-panel" id="five-match-log-panel"><div class="panel-title-row"><div><p class="eyebrow">30 minuti · 8-10 eventi</p><h3>Cronaca</h3></div><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${bossMatchTimeline()}</ol></section>
-              <section class="panel boss-match-result-panel five-match-result-panel five-match-result-panel--${resolved ? (ui.bossMatchState.endsWith("victory") ? "victory" : "defeat") : "pending"}" id="five-match-result-panel"><p class="eyebrow">Esito partita</p><h3>Risultato</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(userName)}</span><span>${opponentName}</span></div><div class="result-badges"><span class="lives" aria-label="Vite ${escapeHtml(run.lives)}">${resolved && ui.bossMatchState.endsWith("victory") ? (run.seasonId === "ie1_s2" ? "+1/3 livello" : "+0,5 livello") : hearts()}</span><span>${resolved ? "Nodo di ritorno salvato" : "Snapshot pronta"}</span></div></section>
+              <section class="five-match-log-panel" id="five-match-log-panel"><div class="panel-title-row"><h3>Cronaca</h3><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${ui.bossMatchLog.length ? bossMatchTimeline() : `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>Formazioni pronte. Avvia la simulazione.</p></li>`}</ol></section>
+              <section class="boss-match-result-panel five-match-result-panel five-match-result-panel--${resolved ? (ui.bossMatchState.endsWith("victory") ? "victory" : "defeat") : "pending"}" id="five-match-result-panel"><h3>Esito partita</h3><div class="five-match-result-row"><strong>${escapeHtml(userName)}</strong><div class="boss-match-score" aria-label="${escapeHtml(scoreLabel)}"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><strong>${opponentName}</strong></div><p>${escapeHtml(bossMatchStatusText())}</p></section>
             </div>
           </div>
           <section class="panel five-match-controls five-v-five-mobile-actions" aria-label="Azioni partita 5v5">
-            <div class="five-match-control-copy"><span>Azioni partita</span><strong>${resolved ? "Partita conclusa" : simulating ? "Simulazione in corso" : "Preparati al calcio d’inizio"}</strong></div>
             <div class="five-match-primary-actions"><button type="button" class="btn btn-yellow btn-primary-action" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn btn-secondary" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow btn-primary-action" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Torna alla mappa</button></div>
             <div class="button-row"><button type="button" class="btn btn-secondary" id="edit-five-team" ${resolved ? "disabled" : ""}>Modifica squadra</button>${TEST_MATCH_CONTROLS_ENABLED ? `<div class="match-test-tools"><span>Strumenti di test</span><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div>` : ""}<button type="button" class="btn btn-back" data-nav="map">← Torna al percorso</button></div>
           </section>
@@ -4285,6 +4286,8 @@
         if (mobileField) mobileField.innerHTML = ui.fiveMatchTab === "opponent"
           ? fiveMatchField(opponentPlayersBySlot, match.opponentFormation, "opponent", true)
           : fiveMatchField(userPlayersBySlot, run.fiveVFive.formation, "user", true);
+        const formationBadge = document.querySelector(".five-match-formation-badge");
+        if (formationBadge) formationBadge.textContent = ui.fiveMatchTab === "opponent" ? match.opponentFormation : run.fiveVFive.formation;
         bindFiveMatchPlayerButtons();
       }));
       const bindFiveMatchPlayerButtons = () => document.querySelectorAll("[data-five-match-player]").forEach((button) => {
