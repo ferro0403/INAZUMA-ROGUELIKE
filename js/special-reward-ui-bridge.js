@@ -1,20 +1,38 @@
 (function (global) {
   "use strict";
 
-  const RESUME_KEY = "inazuma:special-reward-decline-resume";
   const DECLINE_SELECTOR = "[data-decline-special-reward-full-roster]";
+  let liveRun = null;
 
-  function activeSpecialRewardRun({ readOnly = true } = {}) {
-    const seasonId = global.SeasonRegistry?.activeId?.();
-    if (seasonId !== "ie1_s2") return null;
-    const run = global.RunState?.load?.(seasonId, { readOnly });
-    if (!run?.pendingSpecialMatchReward) return null;
-    return { seasonId, run, pending: run.pendingSpecialMatchReward };
+  function installLiveRunCapture() {
+    const runState = global.RunState;
+    if (!runState?.save || runState.save.__specialRewardLiveRunCapture) return;
+
+    const originalSave = runState.save;
+    function trackedSave(activeRun, ...args) {
+      if (activeRun?.seasonId === "ie1_s2") liveRun = activeRun;
+      return originalSave.call(runState, activeRun, ...args);
+    }
+    trackedSave.__specialRewardLiveRunCapture = true;
+    trackedSave.__specialRewardOriginalSave = originalSave;
+    runState.save = trackedSave;
+  }
+
+  function activeLiveSpecialReward() {
+    if (liveRun?.seasonId !== "ie1_s2" || !liveRun.pendingSpecialMatchReward) return null;
+    return { run: liveRun, pending: liveRun.pendingSpecialMatchReward };
+  }
+
+  function returnToMapWithoutReload() {
+    const mapButton = document.querySelector("#app [data-nav='map']");
+    if (!mapButton) return false;
+    mapButton.click();
+    return true;
   }
 
   function declineFromFullRoster(button) {
     if (button?.disabled) return;
-    const context = activeSpecialRewardRun({ readOnly: false });
+    const context = activeLiveSpecialReward();
     if (!context) return;
 
     button.disabled = true;
@@ -27,14 +45,17 @@
     context.run.phase = "map";
     context.run.activeMatch = null;
     global.RunState.save(context.run);
-    global.sessionStorage?.setItem?.(RESUME_KEY, context.seasonId);
-    global.location.reload();
+
+    if (!returnToMapWithoutReload()) {
+      button.disabled = false;
+      console.error("Special reward decline: map navigation target unavailable");
+    }
   }
 
   function addDeclineToReplacementModal() {
     const modal = document.querySelector("#modal-root .bench-replacement-modal");
     if (!modal || modal.querySelector(DECLINE_SELECTOR)) return;
-    if (!activeSpecialRewardRun()) return;
+    if (!activeLiveSpecialReward()) return;
 
     let footer = modal.querySelector(".bench-replacement-footer");
     if (!footer) {
@@ -60,25 +81,6 @@
     addDeclineToReplacementModal();
   }
 
-  function resumeMapAfterDecline() {
-    const seasonId = global.sessionStorage?.getItem?.(RESUME_KEY);
-    if (!seasonId) return;
-
-    const startedAt = Date.now();
-    const observer = new MutationObserver(() => {
-      const continueLabel = document.getElementById("continue-run");
-      const continueButton = continueLabel?.closest?.("button");
-      if (continueButton) {
-        global.sessionStorage.removeItem(RESUME_KEY);
-        observer.disconnect();
-        continueButton.click();
-        return;
-      }
-      if (Date.now() - startedAt > 10000) observer.disconnect();
-    });
-    observer.observe(document.getElementById("app") || document.body, { childList: true, subtree: true });
-  }
-
+  installLiveRunCapture();
   installReplacementObserver();
-  resumeMapAfterDecline();
 })(globalThis);
