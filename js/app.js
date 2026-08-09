@@ -32,6 +32,7 @@
     hallDetail: { destination: "hallRoot", label: "Torna all’Albo d’Oro" },
     finalSummary: { destination: "home", label: "Torna alla Home" },
     development: { destination: "seasonSelection", label: "Torna alla selezione delle run" },
+    match: { destination: "map", label: "Torna alla mappa della run" },
   };
 
   function getSectionRootDestination(section) {
@@ -52,6 +53,10 @@
     if (destination === "seasonSelection") {
       if (run) global.RunState.save(run);
       return renderSeasonSelect();
+    }
+    if (destination === "map") {
+      if (run) { run.phase = "map"; global.RunState.save(run); }
+      return renderMap();
     }
     if (destination === "albumRoot") return renderAlbumCollections();
     if (destination === "albumTeams") return renderAlbumTeams(context.collectionId || ui.albumCollectionId || global.AlbumProgress.DEFAULT_COLLECTION_ID);
@@ -687,13 +692,13 @@
     return hours ? `${hours}h ${rest}m` : `${minutes} min`;
   }
 
-  function topbar(title, extraClass = "") {
+  function topbar(title, extraClass = "", rootSection = "run") {
     const identity = run ? normalizeTeamIdentity(run.teamIdentity) : null;
     const teamName = identity?.name || title || "Inazuma Roguelike";
     return `
       <header class="topbar game-topbar shared-game-header ${escapeHtml(extraClass)}">
         <div class="topbar-title-group">
-          ${sectionRootButton("run")}
+          ${sectionRootButton(rootSection)}
           <div class="topbar-brand-block">
             <span class="topbar-kicker">${escapeHtml(title || "Inazuma Roguelike")}</span>
             <strong class="brand">${escapeHtml(teamName)}</strong>
@@ -3726,6 +3731,24 @@
     if (label && team) label.textContent = team.textContent || "";
   }
 
+  function openFiveMatchSimulationModal(match, userName, opponentName) {
+    const resolved = ui.bossMatchState.startsWith("completed");
+    const simulating = ui.bossMatchState === "simulating";
+    const score = simulationScoreArray(match, resolved);
+    const resultLabel = resolved ? (ui.bossMatchState.endsWith("victory") ? "Vittoria" : "Sconfitta") : simulating ? "In corso" : "Pronta";
+    openModal(`<div class="five-simulation-cabin" data-five-simulation-modal data-match-state="${escapeHtml(ui.bossMatchState)}">
+      <header class="five-simulation-head"><p class="eyebrow">Cabina partita</p><h2>Simulazione 5v5</h2><strong class="five-simulation-state">${escapeHtml(resultLabel)}</strong></header>
+      <section class="boss-match-result-panel five-simulation-score" aria-live="polite">
+        <div class="five-match-result-row"><strong>${escapeHtml(userName)}</strong><div class="boss-match-score" aria-label="${escapeHtml(`${userName} ${score[0]} - ${score[1]} ${opponentName}`)}"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><strong>${escapeHtml(opponentName)}</strong></div>
+        <p>${escapeHtml(bossMatchStatusText())}</p>
+      </section>
+      <section class="five-simulation-events"><div class="panel-title-row"><h3>Cronaca eventi</h3><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${ui.bossMatchLog.length ? bossMatchTimeline() : `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>Calcio d'inizio.</p></li>`}</ol></section>
+      <footer class="five-simulation-actions"><button type="button" class="btn btn-secondary" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow btn-primary-action" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Torna alla mappa</button></footer>
+    </div>`, { closeable: false, className: "five-simulation-modal", preserveScroll: scrollSnapshot() });
+    document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
+    document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch);
+  }
+
   function bossMatchStatusText() {
     return {
       "pre-match": "Pre-partita",
@@ -3895,6 +3918,9 @@
     const skip = document.getElementById("skip-match-result");
     const cont = document.getElementById("continue-match-result");
     const status = document.querySelector(".boss-match-result-panel p");
+    const simulationModal = document.querySelector("[data-five-simulation-modal]");
+    const simulationState = simulationModal?.querySelector(".five-simulation-state");
+    const simulationBadge = simulationModal?.querySelector(".match-state-badge");
     if (simulate) {
       simulate.disabled = Boolean(ui.matchStartLocked) || simulating || resolved;
       simulate.textContent = ui.matchStartLocked ? "Avvio..." : simulating ? "Simulazione..." : "Simula partita";
@@ -3908,6 +3934,9 @@
       cont.disabled = !resolved || Boolean(ui.match?.postMatchNavigationApplied);
     }
     if (status) status.textContent = bossMatchStatusText();
+    if (simulationModal) simulationModal.dataset.matchState = state;
+    if (simulationState) simulationState.textContent = resolved ? (state.endsWith("victory") ? "Vittoria" : "Sconfitta") : simulating ? "In corso" : "Pronta";
+    if (simulationBadge) simulationBadge.textContent = simulating ? "Live" : resolved ? "Completa" : "In attesa";
   }
 
   function stepMatchPlayback() {
@@ -3943,7 +3972,7 @@
     updateMatchControlsDom();
     let sim;
     try {
-      sim = ensureMatchPreview(match, { ...options, forceRefresh: true, freeze: true });
+      sim = ensureMatchPreview(match, { ...options, forceRefresh: false, freeze: true });
       if (!sim.valid) {
         ui.matchStartLocked = false;
         updateMatchControlsDom();
@@ -4036,6 +4065,7 @@
       match.forcedOutcome = sim.forcedOutcome;
       match.testControl = true;
       ui.bossMatchLog = visibleTimeline(match);
+      appendMissingMatchLogEvents(ui.bossMatchLog);
       ui.bossMatchState = winner === "user" ? "completed-victory" : "completed-defeat";
       match.state = ui.bossMatchState;
       persistMatchState();
@@ -4245,11 +4275,9 @@
       const activeSide = ui.fiveMatchTab === "opponent" ? "opponent" : "user";
       const resolved = ui.bossMatchState.startsWith("completed");
       const simulating = ui.bossMatchState === "simulating";
-      const score = simulationScoreArray(match, resolved);
-      const scoreLabel = `${userName} ${score[0]} - ${score[1]} ${opponentName}`;
       app.innerHTML = `
         <main class="screen five-match-screen" data-match-state="${escapeHtml(ui.bossMatchState)}">
-          ${topbar("Partita 5v5")}
+          ${topbar("Partita 5v5", "", "match")}
           <div class="content five-match-content">
             <section class="five-match-hero">
               <div class="five-match-hero-band">
@@ -4280,14 +4308,10 @@
               ${fiveMatchComparisonMarkup(userFivePlayers, opponentFivePlayers, { userStrength: simPreview.userStrength?.final ?? "-", userFormation: run.fiveVFive.formation, userOverall: userAverageOverall, probability: formatMatchProbability(simPreview.probabilities?.userChance), opponentStrength: simPreview.opponentStrength?.final ?? "-", opponentFormation: match.opponentFormation, opponentOverall: opponentAverageOverall })}
             </section>
             ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
-            <div class="five-match-bottom-grid">
-              <section class="five-match-log-panel" id="five-match-log-panel"><div class="panel-title-row"><h3>Cronaca</h3><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${ui.bossMatchLog.length ? bossMatchTimeline() : `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>Formazioni pronte. Avvia la simulazione.</p></li>`}</ol></section>
-              <section class="boss-match-result-panel five-match-result-panel five-match-result-panel--${resolved ? (ui.bossMatchState.endsWith("victory") ? "victory" : "defeat") : "pending"}" id="five-match-result-panel"><h3>Esito partita</h3><div class="five-match-result-row"><strong>${escapeHtml(userName)}</strong><div class="boss-match-score" aria-label="${escapeHtml(scoreLabel)}"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><strong>${opponentName}</strong></div><p>${escapeHtml(bossMatchStatusText())}</p></section>
-            </div>
           </div>
           <section class="panel five-match-controls five-v-five-mobile-actions" aria-label="Azioni partita 5v5">
-            <div class="five-match-primary-actions"><button type="button" class="btn btn-yellow btn-primary-action" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn btn-secondary" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow btn-primary-action" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Torna alla mappa</button></div>
-            <div class="button-row"><button type="button" class="btn btn-secondary" id="edit-five-team" ${resolved ? "disabled" : ""}>Modifica squadra</button>${TEST_MATCH_CONTROLS_ENABLED ? `<div class="match-test-tools"><span>Strumenti di test</span><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div>` : ""}<button type="button" class="btn btn-back" data-nav="map">← Torna al percorso</button></div>
+            <div class="five-match-primary-actions"><button type="button" class="btn btn-yellow btn-primary-action" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>Simula partita</button></div>
+            <div class="button-row"><button type="button" class="btn btn-secondary" id="edit-five-team" ${resolved ? "disabled" : ""}>Modifica squadra</button>${TEST_MATCH_CONTROLS_ENABLED ? `<div class="match-test-tools"><span>Strumenti di test</span><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div>` : ""}</div>
           </section>
         </main>`;
       resetRenderedViewScroll();
@@ -4356,12 +4380,11 @@
         if (content) content.hidden = expanded;
       });
       document.getElementById("edit-five-team").addEventListener("click", () => { ui.returnToMatchContext = { type: match.type, nodeId: match.nodeId, scroll: scrollSnapshot() }; match.returnScroll = ui.returnToMatchContext.scroll; persistMatchState(); renderFiveVFive({ returnToMatch: true }); });
-      document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("victory"); });
-      document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("defeat"); });
-      document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(match); });
-      document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
-      document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch);
+      document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("victory"); });
+      document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("defeat"); });
+      document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); startMatchSimulation(match); });
       persistMatchState();
+      if (simulating || resolved) openFiveMatchSimulationModal(match, userName, opponentName);
       resumeMatchSimulationIfNeeded(match);
       return;
     }
