@@ -4310,8 +4310,20 @@
             ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
           </div>
           <section class="panel five-match-controls five-v-five-mobile-actions" aria-label="Azioni partita 5v5">
-            <div class="five-match-primary-actions"><button type="button" class="btn btn-yellow btn-primary-action" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>Simula partita</button></div>
-            <div class="button-row"><button type="button" class="btn btn-secondary" id="edit-five-team" ${resolved ? "disabled" : ""}>Modifica squadra</button>${TEST_MATCH_CONTROLS_ENABLED ? `<div class="match-test-tools"><span>Strumenti di test</span><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div>` : ""}</div>
+            <header class="five-match-actions-heading"><span>Azioni partita</span><i aria-hidden="true"></i></header>
+            <div class="five-match-primary-actions">
+              <button type="button" class="btn five-match-action-cta five-match-action-cta--primary" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>
+                <span class="five-match-action-icon" aria-hidden="true"><i class="five-match-play-icon"></i></span>
+                <span class="five-match-action-copy"><strong>Simula partita</strong><small>Avvia la simulazione</small></span>
+                <span class="five-match-action-mark" aria-hidden="true">›</span>
+              </button>
+              <button type="button" class="btn five-match-action-cta five-match-action-cta--secondary" id="edit-five-team" ${resolved ? "disabled" : ""}>
+                <span class="five-match-action-icon" aria-hidden="true"><i class="five-match-tactics-icon">×</i></span>
+                <span class="five-match-action-copy"><strong>Modifica squadra</strong><small>Gestisci titolari</small></span>
+                <span class="five-match-action-mark" aria-hidden="true">›</span>
+              </button>
+            </div>
+            ${TEST_MATCH_CONTROLS_ENABLED ? `<div class="match-test-tools"><span>Strumenti di test</span><div class="five-match-test-actions"><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div></div>` : ""}
           </section>
         </main>`;
       resetRenderedViewScroll();
