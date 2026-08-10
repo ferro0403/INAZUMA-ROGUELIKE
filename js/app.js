@@ -4284,10 +4284,10 @@
                 <div class="five-match-header-main"><p class="eyebrow">Match rapido</p><h1>Partita 5v5</h1><strong>${resolved ? "Completata" : simulating ? "In corso" : "Preparazione"}</strong></div>
                 <span class="five-match-duration">30 <small>minuti</small></span>
               </div>
-              <div class="five-match-vs">
-                <div class="five-match-team"><span class="five-match-logo">⚡</span><strong>${escapeHtml(userName)}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(userAverageOverall)} · Forza ${escapeHtml(simPreview.userStrength?.final ?? "-")}</small></div>
+              <div class="five-match-vs" aria-label="${escapeHtml(userName)} contro ${opponentName}">
+                <div class="five-match-team five-match-team--user"><span class="five-match-logo" aria-hidden="true"><svg viewBox="0 0 96 112" role="img"><path class="crest-outer" d="M48 3 88 18 82 73 48 108 14 73 8 18Z"/><path class="crest-inner" d="M48 13 77 24 72 67 48 92 24 67 19 24Z"/><path class="crest-bolt" d="m55 23-25 39h19L38 91l29-46H48Z"/></svg></span><strong>${escapeHtml(userName)}</strong></div>
                 <span class="five-match-vs-badge">VS</span>
-                <div class="five-match-team"><span class="five-match-logo">⚽</span><strong>${opponentName}</strong><small>${escapeHtml(match.opponentFormation)} · OVR ${escapeHtml(opponentAverageOverall)} · Forza ${escapeHtml(simPreview.opponentStrength?.final ?? "-")}</small></div>
+                <div class="five-match-team five-match-team--opponent"><strong>${opponentName}</strong><span class="five-match-logo" aria-hidden="true"><svg viewBox="0 0 96 112" role="img"><path class="crest-outer" d="M48 3 88 18 82 73 48 108 14 73 8 18Z"/><path class="crest-inner" d="M48 13 77 24 72 67 48 92 24 67 19 24Z"/><circle class="crest-ball" cx="48" cy="49" r="23"/><path class="crest-ball-ink" d="m48 35 10 7-4 12H42l-4-12Zm-10 7-12 3 1 12 11 6 4-9Zm20 0 12 3-1 12-11 6-4-9ZM38 63l-2 12 12 9 12-9-2-12ZM48 35l-8-8 8-4 8 4Z"/><path class="crest-post" d="M43 83v13h10V83"/></svg></span></div>
               </div>
             </section>
             <section class="five-match-pitch-panel">
@@ -4313,12 +4313,12 @@
             <header class="five-match-actions-heading"><span>Azioni partita</span><i aria-hidden="true"></i></header>
             <div class="five-match-primary-actions">
               <button type="button" class="btn five-match-action-cta five-match-action-cta--primary" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>
-                <span class="five-match-action-icon" aria-hidden="true"><i class="five-match-play-icon"></i></span>
+                <span class="five-match-action-icon" aria-hidden="true"><i class="five-match-play-icon"></i><b class="five-match-speed-detail"></b></span>
                 <span class="five-match-action-copy"><strong>Simula partita</strong><small>Avvia la simulazione</small></span>
                 <span class="five-match-action-mark" aria-hidden="true">›</span>
               </button>
               <button type="button" class="btn five-match-action-cta five-match-action-cta--secondary" id="edit-five-team" ${resolved ? "disabled" : ""}>
-                <span class="five-match-action-icon" aria-hidden="true"><i class="five-match-tactics-icon">×</i></span>
+                <span class="five-match-action-icon" aria-hidden="true"><i class="five-match-tactics-icon"><svg viewBox="0 0 58 68"><path class="board" d="M12 8h34l5 6v48H7V14Z"/><path class="clip" d="M21 9V4h16v5"/><circle cx="19" cy="25" r="3"/><circle cx="39" cy="44" r="3"/><circle cx="39" cy="22" r="2.5"/><path class="tactic" d="m15 48 11-9 9 7 9-14M16 21l9 6 7-7 11 6"/><path class="arrow" d="m40 28 4-2-1-5"/></svg></i></span>
                 <span class="five-match-action-copy"><strong>Modifica squadra</strong><small>Gestisci titolari</small></span>
                 <span class="five-match-action-mark" aria-hidden="true">›</span>
               </button>
