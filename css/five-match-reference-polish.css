@@ -1,13 +1,13 @@
 /* 5v5 reference polish: matchup banner + action-panel fidelity pass only. */
 
-/* Matchup banner: recreate the approved yellow/black/ivory hero without duplicating stats. */
+/* Dynamic matchup banner. Team names and uncropped emblem slots have independent space. */
 .five-match-screen .five-match-vs {
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 88px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) clamp(58px, 10vw, 88px) minmax(0, 1fr);
   align-items: stretch;
-  min-height: 112px;
+  min-height: 138px;
   padding: 0;
   gap: 0;
   overflow: hidden;
@@ -20,108 +20,72 @@
   position: relative;
   z-index: 1;
   display: grid;
-  align-items: center;
+  grid-template-rows: minmax(2.2em, auto) 82px;
+  place-items: center;
+  gap: 6px;
   min-width: 0;
-  min-height: 106px;
+  min-height: 132px;
   margin: 0;
-  padding: 12px 28px 12px 18px;
+  padding: 12px 24px 10px 12px;
   border: 0;
   border-radius: 0;
   background: #ffd21f;
   box-shadow: none;
   clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
-}
-
-.five-match-screen .five-match-vs .five-match-team:first-child {
-  grid-template-columns: 72px minmax(0, 1fr);
-  gap: 14px;
-  justify-items: start;
-  text-align: left;
+  text-align: center;
 }
 
 .five-match-screen .five-match-vs .five-match-team:last-child {
-  grid-template-columns: minmax(0, 1fr) 72px;
-  gap: 14px;
-  margin-left: -18px;
-  padding: 12px 18px 12px 38px;
+  margin-left: -14px;
+  padding: 12px 12px 10px 28px;
   background: #fffaf0;
   clip-path: polygon(12% 0, 100% 0, 100% 100%, 0 100%);
-  justify-items: end;
-  text-align: right;
 }
 
-.five-match-screen .five-match-vs .five-match-team small {
-  display: none;
-}
+.five-match-screen .five-match-vs .five-match-team small { display: none; }
 
 .five-match-screen .five-match-vs .five-match-team strong {
   align-self: center;
   max-width: 100%;
-  overflow: hidden;
+  overflow: visible;
   color: #111216;
-  font-size: clamp(1.12rem, 4vw, 1.5rem);
+  font-size: clamp(.9rem, 3.1vw, 1.35rem);
   font-weight: 1000;
-  letter-spacing: -.035em;
-  line-height: 1;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  letter-spacing: -.025em;
+  line-height: 1.05;
+  overflow-wrap: normal;
+  white-space: normal;
 }
 
-/* Temporary crests: real team crests can replace these later without changing the banner layout. */
 .five-match-screen .five-match-vs .five-match-logo {
-  position: relative;
-  display: block;
-  width: 68px;
-  height: 78px;
+  display: grid;
+  place-items: center;
+  width: 72px;
+  height: 80px;
   overflow: visible;
-  border: 0;
-  border-radius: 0;
   background: transparent;
-  box-shadow: none;
-  color: transparent;
-  font-size: 0;
   filter: drop-shadow(3px 4px 0 rgba(17, 18, 22, .18));
 }
 
-.five-match-screen .five-match-vs .five-match-logo::before {
-  content: "";
-  position: absolute;
-  inset: 0;
+.five-match-screen .five-match-vs .five-match-emblem {
   display: block;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: contain;
-}
-
-.five-match-screen .five-match-vs .five-match-logo::after {
-  display: none;
-}
-
-.five-match-screen .five-match-vs .five-match-team:first-child .five-match-logo::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 105'%3E%3Cpath d='M45 3 82 17 77 69 45 101 13 69 8 17Z' fill='%23111216' stroke='%23fffaf0' stroke-width='4'/%3E%3Cpath d='M45 11 73 22 69 64 45 89 21 64 17 22Z' fill='%23111216' stroke='%23ffd21f' stroke-width='3'/%3E%3Cpath d='M52 21 31 53h16l-9 30 24-39H47Z' fill='%23ffd21f'/%3E%3C/svg%3E");
-}
-
-.five-match-screen .five-match-vs .five-match-team:last-child .five-match-logo::before {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 90 105'%3E%3Cpath d='M45 3 82 17 77 69 45 101 13 69 8 17Z' fill='%23fffaf0' stroke='%23111216' stroke-width='5'/%3E%3Cpath d='M45 12 72 22 68 63 45 89 22 63 18 22Z' fill='%23111216'/%3E%3Ccircle cx='45' cy='45' r='18' fill='%23fffaf0'/%3E%3Cpath d='m45 31 9 7-4 11H40l-4-11Zm-9 7-10 2 2 11 9 5 3-7Zm18 0 10 2-2 11-9 5-3-7ZM37 56l-3 11 11 8 11-8-3-11Zm8-25-7-7 7-4 7 4Z' fill='%23111216'/%3E%3Cpath d='M28 51 17 64M62 51l11 13M34 67l-4 12M56 67l4 12' stroke='%23fffaf0' stroke-width='3'/%3E%3C/svg%3E");
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
 }
 
 .five-match-screen .five-match-vs .five-match-vs-badge {
   position: relative;
   z-index: 3;
-  align-self: stretch;
   display: grid;
   place-items: center;
-  width: auto;
-  height: auto;
-  margin: 0 -14px;
-  border: 0;
-  border-radius: 0;
+  margin: 0 -12px;
   background: #111216;
   color: #ffd21f;
   box-shadow: 5px 5px 0 rgba(17, 18, 22, .2);
   clip-path: polygon(18% 0, 100% 0, 82% 100%, 0 100%);
-  transform: none;
-  font-size: clamp(1.55rem, 5vw, 2.25rem);
+  font-size: clamp(1.5rem, 5vw, 2.25rem);
   font-style: italic;
   font-weight: 1000;
   letter-spacing: -.05em;
@@ -237,42 +201,6 @@
 
 /* Mobile fidelity pass. */
 @media (max-width: 780px) {
-  .five-match-screen .five-match-vs {
-    grid-template-columns: minmax(0, 1fr) 68px minmax(0, 1fr);
-    min-height: 96px;
-    box-shadow: 3px 3px 0 rgba(17, 18, 22, .18);
-  }
-
-  .five-match-screen .five-match-vs .five-match-team {
-    min-height: 90px;
-    padding: 9px 20px 9px 10px;
-  }
-
-  .five-match-screen .five-match-vs .five-match-team:first-child {
-    grid-template-columns: 54px minmax(0, 1fr);
-    gap: 9px;
-  }
-
-  .five-match-screen .five-match-vs .five-match-team:last-child {
-    grid-template-columns: minmax(0, 1fr) 54px;
-    gap: 9px;
-    margin-left: -12px;
-    padding: 9px 10px 9px 26px;
-  }
-
-  .five-match-screen .five-match-vs .five-match-logo {
-    width: 52px;
-    height: 62px;
-  }
-
-  .five-match-screen .five-match-vs .five-match-team strong {
-    font-size: clamp(.92rem, 4.4vw, 1.15rem);
-  }
-
-  .five-match-screen .five-match-vs .five-match-vs-badge {
-    margin-inline: -10px;
-    font-size: 1.5rem;
-  }
 
   .five-match-screen .five-match-controls .five-match-action-cta {
     grid-template-columns: 76px minmax(0, 1fr) 26px;
@@ -318,31 +246,23 @@
 }
 
 @media (max-width: 390px) {
-  .five-match-screen .five-match-vs {
-    grid-template-columns: minmax(0, 1fr) 60px minmax(0, 1fr);
-  }
-
-  .five-match-screen .five-match-vs .five-match-team:first-child {
-    grid-template-columns: 47px minmax(0, 1fr);
-    gap: 6px;
-  }
-
-  .five-match-screen .five-match-vs .five-match-team:last-child {
-    grid-template-columns: minmax(0, 1fr) 47px;
-    gap: 6px;
-    padding-left: 22px;
-  }
-
-  .five-match-screen .five-match-vs .five-match-logo {
-    width: 46px;
-    height: 56px;
-  }
-
-  .five-match-screen .five-match-vs .five-match-team strong {
-    font-size: .88rem;
-  }
 
   .five-match-screen .five-match-controls .five-match-action-cta {
     grid-template-columns: 70px minmax(0, 1fr) 22px;
   }
+}
+
+@media (max-width: 780px) {
+  .five-match-screen .five-match-vs { min-height: 126px; box-shadow: 3px 3px 0 rgba(17, 18, 22, .18); }
+  .five-match-screen .five-match-vs .five-match-team { grid-template-rows: minmax(2.2em, auto) 68px; min-height: 120px; padding: 9px 17px 8px 7px; }
+  .five-match-screen .five-match-vs .five-match-team:last-child { margin-left: -10px; padding: 9px 7px 8px 20px; }
+  .five-match-screen .five-match-vs .five-match-logo { width: 58px; height: 66px; }
+  .five-match-screen .five-match-vs .five-match-team strong { font-size: clamp(.78rem, 3.7vw, 1rem); }
+  .five-match-screen .five-match-vs .five-match-vs-badge { margin-inline: -8px; font-size: 1.45rem; }
+}
+
+@media (max-width: 390px) {
+  .five-match-screen .five-match-vs { grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr); }
+  .five-match-screen .five-match-vs .five-match-team strong { font-size: clamp(.72rem, 3.65vw, .9rem); }
+  .five-match-screen .five-match-vs .five-match-logo { width: 54px; height: 62px; }
 }

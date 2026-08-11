@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" role="img" aria-labelledby="title">
+  <title id="title">Stemma Svincolati</title>
+  <path d="M60 4 108 22l-7 72-41 41-41-41-7-72Z" fill="#f7f1e3" stroke="#111216" stroke-width="6"/>
+  <path d="M60 15 97 29l-5 59-32 34-32-34-5-59Z" fill="#34363b" stroke="#d5d0c5" stroke-width="3"/>
+  <path d="M34 35h52v12H34z" fill="#ffd21f"/><path d="M39 38h42" stroke="#111216" stroke-width="4"/>
+  <circle cx="60" cy="72" r="24" fill="#f7f1e3" stroke="#111216" stroke-width="3"/>
+  <path d="m60 55 10 7-4 12H54l-4-12Zm-10 7-10 2 2 12 10 6 2-8Zm20 0 10 2-2 12-10 6-2-8ZM52 82l-3 10 11 7 11-7-3-10Z" fill="#34363b"/>
+  <path d="M35 108h50" stroke="#ffd21f" stroke-width="5"/>
+</svg>

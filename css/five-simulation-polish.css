@@ -21,32 +21,17 @@
   text-overflow: ellipsis;
 }
 
-.five-simulation-score .five-match-result-row > strong::before {
+.five-simulation-score .five-simulation-emblem {
   flex: 0 0 auto;
-  display: inline-grid;
-  place-items: center;
+  display: block;
   width: 30px;
   height: 30px;
-  border: 2px solid #111216;
-  border-radius: 50%;
-  background: #ffd21f;
-  box-shadow: 2px 2px 0 rgba(17, 18, 22, .22);
-  font-size: .92rem;
-  line-height: 1;
-}
-
-.five-simulation-score .five-match-result-row > strong:first-child::before {
-  content: "⚡";
+  object-fit: contain;
 }
 
 .five-simulation-score .five-match-result-row > strong:last-child {
   justify-content: flex-end;
   text-align: right;
-}
-
-.five-simulation-score .five-match-result-row > strong:last-child::before {
-  content: "⚽";
-  order: 2;
 }
 
 .five-simulation-score .boss-match-score {
@@ -61,10 +46,9 @@
     font-size: .7rem;
   }
 
-  .five-simulation-score .five-match-result-row > strong::before {
+  .five-simulation-score .five-simulation-emblem {
     width: 27px;
     height: 27px;
-    font-size: .82rem;
   }
 
   .five-simulation-score .boss-match-score {

@@ -7,7 +7,7 @@
   const runLivesLimit = () => Number(global.SEASON1_CONFIG?.maxRunLives ?? global.SEASON1_CONFIG?.startingLives ?? 2);
   const initialRunLives = () => Number(global.SEASON1_CONFIG?.startingLives ?? runLivesLimit());
   const LIFE_DAMAGE_BY_MATCH_TYPE = Object.freeze({ five_v_five: 0.5, boss: 1, special_match: 1 });
-  const USER_TEAM_LOGO = "inazuma-lightning";
+  const DEFAULT_EMBLEM_ID = "default-lightning";
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
   function makeId(prefix) { return `${prefix}_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 9)}`; }
@@ -20,7 +20,8 @@
 
   function normalizeTeamIdentity(teamIdentity = {}) {
     const name = String(teamIdentity.name || DEFAULT_TEAM_NAME).trim() || DEFAULT_TEAM_NAME;
-    return { name, logo: USER_TEAM_LOGO };
+    const emblemId = String(teamIdentity.emblemId || "").trim() || DEFAULT_EMBLEM_ID;
+    return { name, emblemId };
   }
   function validTeamName(value) {
     const name = String(value || "").trim();
@@ -31,7 +32,7 @@
       const raw = localStorage.getItem(PROFILE_KEY);
       const parsed = raw ? JSON.parse(raw) : {};
       const name = validTeamName(parsed?.teamIdentity?.name || parsed?.teamName || parsed?.name);
-      return { teamIdentity: name ? { name, logo: USER_TEAM_LOGO } : null };
+      return { teamIdentity: name ? normalizeTeamIdentity({ ...parsed?.teamIdentity, name }) : null };
     } catch (error) { console.error("Unable to load profile", error); return { teamIdentity: null }; }
   }
   function emitSave(sector, seasonId, operation, options = {}) { if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { sector, seasonId: seasonId || null, hallTeamId: null, operation, source: "gameplay" } })); }
@@ -82,6 +83,7 @@
   function normalize(run) {
     run.seasonId = seasonIdOf(run.seasonId);
     run.version = config().saveVersion;
+    run.teamIdentity = normalizeTeamIdentity(run.teamIdentity);
     run.runId = run.runId || makeId("run");
     run.phase = run.phase || "formation";
     run.lastPlayedAt = run.lastPlayedAt || run.updatedAt || run.savedAt || run.timestamp || run.createdAt || null;
@@ -98,7 +100,7 @@
     if (!run.developmentPlayerSnapshot) run.developmentPlayerSnapshot = clone(global.DevelopmentV2?.read?.().players || {});
     run.postBossFlow = normalizePostBossFlow(run);
     run.pendingBossVictory = run.pendingBossVictory || null;
-    if (run.checkpoint) run.checkpoint.version = config().saveVersion;
+    if (run.checkpoint) { run.checkpoint.version = config().saveVersion; run.checkpoint.teamIdentity = normalizeTeamIdentity(run.checkpoint.teamIdentity || run.teamIdentity); }
     return run;
   }
   function validate(run) {

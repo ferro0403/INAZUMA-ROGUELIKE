@@ -1186,7 +1186,7 @@
   function syncRunTeamIdentity(identity = savedTeamIdentity()) {
     if (!run || !identity) return false;
     const cleanIdentity = normalizeTeamIdentity(identity);
-    if (run.teamIdentity?.name === cleanIdentity.name && run.teamIdentity?.logo === cleanIdentity.logo) return false;
+    if (run.teamIdentity?.name === cleanIdentity.name && run.teamIdentity?.emblemId === cleanIdentity.emblemId) return false;
     run.teamIdentity = cleanIdentity;
     return true;
   }
@@ -1199,7 +1199,7 @@
     }
     const legacyName = run ? global.RunState.validTeamName(run.teamIdentity?.name) : "";
     if (!legacyName) return null;
-    const migrated = global.RunState.saveProfileTeamIdentity({ name: legacyName, logo: "inazuma-lightning" });
+    const migrated = global.RunState.saveProfileTeamIdentity({ name: legacyName, emblemId: "default-lightning" });
     if (syncRunTeamIdentity(migrated)) global.RunState.save(run);
     return migrated;
   }
@@ -3736,10 +3736,12 @@
     const simulating = ui.bossMatchState === "simulating";
     const score = simulationScoreArray(match, resolved);
     const resultLabel = resolved ? (ui.bossMatchState.endsWith("victory") ? "Vittoria" : "Sconfitta") : simulating ? "In corso" : "Pronta";
+    const scoreUserEmblem = global.TeamEmblems.teamEmblemMarkup(global.TeamEmblems.resolveTeamEmblem({ teamIdentity: normalizeTeamIdentity(run.teamIdentity), seasonId: run.seasonId, fallbackKind: "user" }), { escape: escapeHtml, className: "five-simulation-emblem" });
+    const scoreOpponentEmblem = global.TeamEmblems.teamEmblemMarkup(global.TeamEmblems.resolveTeamEmblem({ specialType: "free-agents", fallbackKind: "free-agents" }), { escape: escapeHtml, className: "five-simulation-emblem" });
     openModal(`<div class="five-simulation-cabin" data-five-simulation-modal data-match-state="${escapeHtml(ui.bossMatchState)}">
       <header class="five-simulation-head"><p class="eyebrow">Cabina partita</p><h2>Simulazione 5v5</h2><strong class="five-simulation-state">${escapeHtml(resultLabel)}</strong></header>
       <section class="boss-match-result-panel five-simulation-score" aria-live="polite">
-        <div class="five-match-result-row"><strong>${escapeHtml(userName)}</strong><div class="boss-match-score" aria-label="${escapeHtml(`${userName} ${score[0]} - ${score[1]} ${opponentName}`)}"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><strong>${escapeHtml(opponentName)}</strong></div>
+        <div class="five-match-result-row"><strong>${scoreUserEmblem}${escapeHtml(userName)}</strong><div class="boss-match-score" aria-label="${escapeHtml(`${userName} ${score[0]} - ${score[1]} ${opponentName}`)}"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><strong>${escapeHtml(opponentName)}${scoreOpponentEmblem}</strong></div>
         <p>${escapeHtml(bossMatchStatusText())}</p>
       </section>
       <section class="five-simulation-events"><div class="panel-title-row"><h3>Cronaca eventi</h3><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${ui.bossMatchLog.length ? bossMatchTimeline() : `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>Calcio d'inizio.</p></li>`}</ol></section>
@@ -4264,7 +4266,15 @@
       const opponentPlayersBySlot = fiveOpponentPlayersBySlot(match);
       const identity = normalizeTeamIdentity(run.teamIdentity);
       const userName = identity.name || "La tua squadra";
-      const opponentName = "Svincolati";
+      const opponentTeamId = match.opponentTeamId || null;
+      const opponentTeam = opponentTeamId ? teamById(opponentTeamId) : null;
+      const opponentName = opponentTeam?.teamName || opponentTeam?.name || "Svincolati";
+      const userEmblem = global.TeamEmblems.resolveTeamEmblem({ teamIdentity: identity, seasonId: run.seasonId, fallbackKind: "user" });
+      const opponentEmblem = global.TeamEmblems.resolveTeamEmblem(opponentTeamId
+        ? { teamId: opponentTeamId, team: opponentTeam, seasonId: run.seasonId, fallbackKind: "neutral" }
+        : { specialType: "free-agents", fallbackKind: "free-agents" });
+      const userEmblemMarkup = global.TeamEmblems.teamEmblemMarkup(userEmblem, { escape: escapeHtml, className: "five-match-emblem" });
+      const opponentEmblemMarkup = global.TeamEmblems.teamEmblemMarkup(opponentEmblem, { escape: escapeHtml, className: "five-match-emblem" });
       const simPreview = ensureMatchPreview(match);
       const userFivePlayers = Object.values(userPlayersBySlot).filter(Boolean);
       const opponentFivePlayers = Object.values(opponentPlayersBySlot).filter(Boolean);
@@ -4285,9 +4295,9 @@
                 <span class="five-match-duration">30 <small>minuti</small></span>
               </div>
               <div class="five-match-vs">
-                <div class="five-match-team"><span class="five-match-logo">⚡</span><strong>${escapeHtml(userName)}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(userAverageOverall)} · Forza ${escapeHtml(simPreview.userStrength?.final ?? "-")}</small></div>
+                <div class="five-match-team"><strong>${escapeHtml(userName)}</strong><span class="five-match-logo">${userEmblemMarkup}</span><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(userAverageOverall)} · Forza ${escapeHtml(simPreview.userStrength?.final ?? "-")}</small></div>
                 <span class="five-match-vs-badge">VS</span>
-                <div class="five-match-team"><span class="five-match-logo">⚽</span><strong>${opponentName}</strong><small>${escapeHtml(match.opponentFormation)} · OVR ${escapeHtml(opponentAverageOverall)} · Forza ${escapeHtml(simPreview.opponentStrength?.final ?? "-")}</small></div>
+                <div class="five-match-team"><strong>${escapeHtml(opponentName)}</strong><span class="five-match-logo">${opponentEmblemMarkup}</span><small>${escapeHtml(match.opponentFormation)} · OVR ${escapeHtml(opponentAverageOverall)} · Forza ${escapeHtml(simPreview.opponentStrength?.final ?? "-")}</small></div>
               </div>
             </section>
             <section class="five-match-pitch-panel">
