@@ -19,7 +19,7 @@ assert.strictEqual(sandbox.RunState.normalizeTeamIdentity({ name: 'ferro' }).emb
 assert.strictEqual(sandbox.RunState.normalizeTeamIdentity({ name: 'ferro', emblemId: 'free-agents' }).emblemId, 'free-agents');
 
 const free = sandbox.TeamEmblems.resolveTeamEmblem({ specialType: 'free-agents' });
-assert.strictEqual(free.src, 'assets/emblems/free-agents.svg');
+assert.strictEqual(free.src, 'assets/emblems/free-agents.svg?v=20260811-no-yellow-accent-1');
 const zeus = sandbox.TeamEmblems.resolveTeamEmblem({ teamId: 'zeus', seasonId: 'ie1' });
 assert.strictEqual(zeus.src, 'https://cdn.example/zeus.webp');
 assert.strictEqual(zeus.fallbackSrc, 'assets/emblems/neutral-team.svg');
