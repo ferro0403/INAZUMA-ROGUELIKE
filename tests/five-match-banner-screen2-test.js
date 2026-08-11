@@ -21,5 +21,6 @@ assert.match(css, /@media \(max-width: 390px\)[\s\S]*minmax\(0, 1fr\) 94px minma
 const actionIndex = index.indexOf("css/five-match-action-assets.css");
 const bannerIndex = index.indexOf("css/five-match-banner-screen2.css");
 assert(actionIndex >= 0 && bannerIndex > actionIndex, "screen-2 banner stylesheet must load last so legacy banner rules cannot regress it");
+assert(index.includes("screen2-restored-2"), "screen-2 cache key must be bumped after the restored layout");
 
 console.log("five-match-banner-screen2-test: restored screen-2 geometry with dynamic emblems OK");
