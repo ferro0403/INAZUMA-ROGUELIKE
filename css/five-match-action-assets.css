@@ -4,7 +4,7 @@
   isolation: isolate;
 }
 
-/* SIMULA PARTITA: real vector artwork instead of CSS-drawn football geometry. */
+/* SIMULA PARTITA: professional ball geometry, customised as a quiet watermark. */
 .five-match-screen .five-match-controls .five-match-action-cta--primary {
   grid-template-columns: 104px minmax(0, 1fr) 34px;
   min-height: 94px;
@@ -22,21 +22,22 @@
 
 .five-match-screen .five-match-controls .five-match-action-cta--primary::before {
   top: 50%;
-  right: -28px;
-  width: 188px;
-  height: 154px;
-  transform: translateY(-50%) rotate(-4deg);
-  background: center / contain no-repeat url("../assets/ui/5v5/simulate-ball.svg");
+  right: -43px;
+  width: 178px;
+  height: 178px;
+  opacity: .72;
+  transform: translateY(-50%) rotate(-8deg);
+  background: center / contain no-repeat url("../assets/ui/5v5/action-soccer-ball.svg");
 }
 
 .five-match-screen .five-match-controls .five-match-action-cta--primary::after {
-  inset: 10px 94px 10px 126px;
+  inset: 9px 100px 9px 132px;
   border: 0;
   border-radius: 0;
   box-shadow: none;
   opacity: 1;
   transform: none;
-  background: center right / 300px 100% no-repeat url("../assets/ui/5v5/simulate-motion.svg");
+  background: center right / 330px 100% no-repeat url("../assets/ui/5v5/action-motion-lines.svg");
 }
 
 .five-match-screen .five-match-controls .five-match-action-cta--primary .five-match-action-icon {
@@ -88,7 +89,7 @@
   left: 54%;
   opacity: 1;
   clip-path: none;
-  background: center right / 250px auto no-repeat url("../assets/ui/5v5/tactics-pitch.svg");
+  background: center right / 260px auto no-repeat url("../assets/ui/5v5/action-tactics-pitch.svg");
   pointer-events: none;
 }
 
@@ -103,13 +104,13 @@
 }
 
 .five-match-screen .five-match-controls .five-match-tactics-icon {
-  width: 58px;
-  height: 64px;
+  width: 62px;
+  height: 68px;
   border: 0;
   color: transparent;
   font-size: 0;
   transform: rotate(-4deg);
-  background: center / contain no-repeat url("../assets/ui/5v5/tactics-board.svg");
+  background: center / contain no-repeat url("../assets/ui/5v5/action-tactics-board.svg");
 }
 
 .five-match-screen .five-match-controls .five-match-action-cta--secondary .five-match-action-copy,
@@ -141,14 +142,14 @@
   }
 
   .five-match-screen .five-match-controls .five-match-action-cta--primary::before {
-    right: -32px;
-    width: 158px;
-    height: 130px;
+    right: -38px;
+    width: 146px;
+    height: 146px;
   }
 
   .five-match-screen .five-match-controls .five-match-action-cta--primary::after {
     inset: 8px 68px 8px 98px;
-    background-size: 240px 100%;
+    background-size: 250px 100%;
   }
 
   .five-match-screen .five-match-controls .five-match-action-cta--secondary::after {
@@ -157,8 +158,8 @@
   }
 
   .five-match-screen .five-match-controls .five-match-tactics-icon {
-    width: 48px;
-    height: 54px;
+    width: 52px;
+    height: 58px;
   }
 
   .five-match-screen .five-match-controls .five-match-action-cta--primary .five-match-play-icon {
@@ -186,9 +187,9 @@
   }
 
   .five-match-screen .five-match-controls .five-match-action-cta--primary::before {
-    right: -38px;
-    width: 146px;
-    height: 120px;
+    right: -42px;
+    width: 136px;
+    height: 136px;
   }
 
   .five-match-screen .five-match-controls .five-match-action-cta--primary::after {

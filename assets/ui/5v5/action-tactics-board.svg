@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 104 112" fill="none">
+  <!-- Clipboard silhouette adapted from Phosphor Icons' ClipboardText (MIT); tactical marks are original. -->
+  <g stroke="#FFFDF7" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M25 13H15a5 5 0 0 0-5 5v84h84V18a5 5 0 0 0-5-5H79" fill="#15161A" stroke-width="6"/>
+    <path d="M35 13a9 9 0 0 1 9-9h16a9 9 0 0 1 9 9v5H35v-5Z" fill="#15161A" stroke-width="5"/>
+    <rect x="23" y="31" width="58" height="56" rx="2" stroke-width="4"/>
+    <path d="M52 31v56M23 59h58" stroke-width="2.5" opacity=".65"/>
+    <path d="m31 42 8 8m0-8-8 8M65 68l8 8m0-8-8 8" stroke-width="3.5"/>
+    <circle cx="68" cy="44" r="5" stroke-width="3.5"/>
+    <circle cx="36" cy="73" r="5" stroke-width="3.5"/>
+    <path d="M38 62c8-9 18-12 29-10l-5-5m5 5-5 5" stroke-width="3.5"/>
+  </g>
+  <g fill="#FFD21F"><circle cx="52" cy="45" r="4"/><circle cx="53" cy="74" r="4"/></g>
+</svg>
