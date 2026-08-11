@@ -1,0 +1,78 @@
+/* Boss / special 11v11 preparation, phase 1. Every rule is scoped to this screen. */
+.boss-match-screen {
+  --boss-pre-ink: #111216;
+  --boss-pre-paper: #fffdf7;
+  --boss-pre-cream: #f1eadc;
+  --boss-pre-yellow: #ffd21f;
+  --boss-pre-gold: #8b6814;
+}
+.boss-match-screen .boss-match-content { gap: 12px; }
+.boss-match-screen .boss-match-hero {
+  display: grid; grid-template-columns: minmax(0, 1fr); gap: 9px; padding: 12px;
+  overflow: hidden; border: 3px solid var(--boss-pre-ink); border-radius: 2px;
+  background: var(--boss-pre-paper); color: var(--boss-pre-ink); box-shadow: 6px 7px 0 rgba(17,18,22,.2);
+}
+.boss-match-screen .boss-match-hero-band { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 8px; border-bottom: 3px solid var(--boss-pre-ink); }
+.boss-match-screen .boss-match-heading { display: block; }
+.boss-match-screen .boss-match-heading .eyebrow { margin: 0 0 2px; color: var(--boss-pre-gold); }
+.boss-match-screen .boss-match-heading h2 { margin: 0; color: var(--boss-pre-ink); font-size: clamp(1.35rem, 5vw, 2rem); line-height: .95; text-transform: uppercase; }
+.boss-match-screen .boss-match-duration { display: inline-flex; align-items: baseline; gap: 4px; flex: 0 0 auto; padding: 5px 8px; border: 2px solid var(--boss-pre-ink); background: var(--boss-pre-yellow); font-weight: 1000; }
+.boss-match-screen .boss-match-duration small { font-size: .57rem; letter-spacing: .06em; text-transform: uppercase; }
+.boss-match-screen .boss-match-vs { display: grid; grid-template-columns: minmax(0,1fr) auto minmax(0,1fr); align-items: center; gap: 7px; }
+.boss-match-screen .boss-match-team { display: grid; grid-template-columns: 48px minmax(0,1fr); grid-template-areas: "logo name" "logo meta"; align-items: center; gap: 0 8px; min-width: 0; padding: 4px; }
+.boss-match-screen .boss-match-team--boss { grid-template-columns: minmax(0,1fr) 48px; grid-template-areas: "name logo" "meta logo"; text-align: right; }
+.boss-match-screen .boss-match-logo { grid-area: logo; display: grid; place-items: center; width: 46px; height: 46px; padding: 3px; overflow: hidden; border: 2px solid var(--boss-pre-ink); border-radius: 50%; background: #fff; }
+.boss-match-screen .boss-match-logo img,
+.boss-match-screen .boss-match-logo .team-emblem,
+.boss-match-screen .boss-match-logo .boss-match-emblem { width: 100%; height: 100%; object-fit: contain; }
+.boss-match-screen .boss-match-team strong { grid-area: name; min-width: 0; overflow-wrap: anywhere; color: var(--boss-pre-ink); font-size: clamp(.8rem, 3.4vw, 1.05rem); line-height: 1; }
+.boss-match-screen .boss-match-team small { grid-area: meta; color: #625c52; font-size: .62rem; }
+.boss-match-screen .boss-match-vs-badge { display: grid; place-items: center; width: 36px; height: 36px; border: 2px solid var(--boss-pre-ink); border-radius: 1px; background: var(--boss-pre-yellow); color: var(--boss-pre-ink); box-shadow: 3px 3px 0 var(--boss-pre-ink); font-size: .85rem; transform: rotate(-3deg); }
+.boss-match-screen .boss-match-pitch-panel { padding: 11px; }
+.boss-match-screen .boss-match-section-head { margin-bottom: 8px; }
+.boss-match-screen .boss-match-summary { gap: 8px; }
+.boss-match-screen .boss-match-summary .five-match-comparison { margin: 0; }
+.boss-match-screen .boss-match-reward-note { display: flex; align-items: center; gap: 10px; min-height: 38px; padding: 7px 10px; border: 2px solid var(--boss-pre-ink); border-radius: 1px; background: var(--boss-pre-yellow); color: var(--boss-pre-ink); }
+.boss-match-screen .boss-match-reward-note span { flex: 0 0 auto; color: var(--boss-pre-ink); font-size: .67rem; font-weight: 1000; letter-spacing: .06em; text-transform: uppercase; }
+.boss-match-screen .boss-match-reward-note span::after { content: " →"; }
+.boss-match-screen .boss-match-reward-note strong { color: var(--boss-pre-ink); font-size: .78rem; line-height: 1.15; text-transform: uppercase; }
+.boss-match-screen [hidden] { display: none !important; }
+.boss-match-screen .boss-match-controls { position: relative; display: grid; grid-template-columns: 1fr; gap: 10px; padding: 12px; overflow: hidden; border: 3px solid var(--boss-pre-ink); border-radius: 1px; background: linear-gradient(145deg,#17191b,#090a0c 72%); box-shadow: 7px 8px 0 rgba(17,18,22,.28); }
+.boss-match-screen .boss-match-controls::before { content: ""; position: absolute; inset: 5px; border: 1px solid rgba(255,210,31,.82); pointer-events: none; }
+.boss-match-screen .boss-match-actions-heading { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; color: #f5efe3; }
+.boss-match-screen .boss-match-actions-heading span { font-size: .76rem; font-weight: 950; letter-spacing: .06em; text-transform: uppercase; }
+.boss-match-screen .boss-match-actions-heading i { width: 92px; height: 7px; background: repeating-linear-gradient(120deg,var(--boss-pre-yellow) 0 9px,transparent 10px 14px); transform: skewX(-10deg); }
+.boss-match-screen .boss-match-primary-actions { position: relative; z-index: 1; display: grid; gap: 10px; }
+.boss-match-screen .boss-match-action-cta { position: relative; display: grid; grid-template-columns: 88px minmax(0,1fr) 28px; align-items: center; width: 100%; min-height: 82px; padding: 0 10px 0 0; overflow: hidden; border: 3px solid var(--boss-pre-ink); border-radius: 2px; color: var(--boss-pre-ink); text-align: left; text-transform: none; box-shadow: 4px 5px 0 rgba(255,255,255,.16); }
+.boss-match-screen .boss-match-action-cta--primary { background: linear-gradient(105deg,#ffc91b,#ffdd43 62%,#e6ac00); }
+.boss-match-screen .boss-match-action-cta--primary::after { content: ""; position: absolute; right: -32px; width: 135px; height: 135px; opacity: .62; background: center/contain no-repeat url("../assets/ui/5v5/action-soccer-ball.svg"); pointer-events: none; }
+.boss-match-screen .boss-match-action-cta--secondary { background: linear-gradient(108deg,#fffdf7 0 67%,#eee8dc 100%); }
+.boss-match-screen .boss-match-action-cta--secondary::after { content: ""; position: absolute; inset: 5px 7px 5px 55%; background: center right/205px auto no-repeat url("../assets/ui/5v5/action-tactics-pitch.svg"); pointer-events: none; }
+.boss-match-screen .boss-match-action-icon { z-index: 1; display: grid; place-items: center; align-self: stretch; min-height: 76px; margin-right: 12px; background: var(--boss-pre-ink); color: var(--boss-pre-yellow); clip-path: polygon(0 0,74% 0,100% 50%,74% 100%,0 100%); }
+.boss-match-screen .boss-match-play-icon { width: 0; height: 0; margin-left: -7px; border-top: 13px solid transparent; border-bottom: 13px solid transparent; border-left: 21px solid var(--boss-pre-yellow); }
+.boss-match-screen .boss-match-tactics-icon { width: 52px; height: 58px; background: center/contain no-repeat url("../assets/ui/5v5/action-tactics-board.svg"); }
+.boss-match-screen .boss-match-action-copy { z-index: 1; display: grid; min-width: 0; gap: 3px; }
+.boss-match-screen .boss-match-action-copy strong { color: var(--boss-pre-ink); font-size: clamp(1rem,4.6vw,1.3rem); font-weight: 1000; font-style: italic; line-height: 1; text-transform: uppercase; }
+.boss-match-screen .boss-match-action-copy small { color: #4f493f; font-size: .68rem; }
+.boss-match-screen .boss-match-action-mark { z-index: 1; justify-self: end; font: 950 2rem/1 sans-serif; }
+.boss-match-screen .boss-match-action-cta:focus-visible { outline: 3px solid var(--boss-pre-yellow); outline-offset: 2px; }
+.boss-match-screen .boss-match-test-tools { position: relative; z-index: 1; display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 7px 9px; border: 1px dashed #8b877e; color: #d8d2c7; }
+.boss-match-screen .boss-match-test-tools > span { font-size: .65rem; font-weight: 900; letter-spacing: .07em; text-transform: uppercase; }
+.boss-match-screen .boss-match-test-tools > div { display: flex; gap: 7px; }
+.boss-match-screen .boss-match-test-tools .btn { min-height: 34px; padding: 6px 10px; border-color: #77736b; background: #25272a; color: #eee8dc; font-size: .68rem; }
+@media (max-width: 780px) {
+  .boss-match-screen { padding-bottom: calc(18px + env(safe-area-inset-bottom)); }
+  .boss-match-screen .boss-match-content { padding-inline: 8px; }
+  .boss-match-screen .boss-match-hero { padding: 9px; }
+  .boss-match-screen .boss-match-pitch-panel { padding: 8px; }
+  .boss-match-screen .boss-match-controls { padding: 11px; }
+  .boss-match-screen .boss-match-test-tools { align-items: stretch; flex-direction: column; }
+  .boss-match-screen .boss-match-test-tools > div { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); }
+  .boss-match-screen .boss-match-test-tools > div .btn:only-child { grid-column: 1/-1; }
+}
+@media (max-width: 370px) {
+  .boss-match-screen .boss-match-team { grid-template-columns: 40px minmax(0,1fr); }
+  .boss-match-screen .boss-match-team--boss { grid-template-columns: minmax(0,1fr) 40px; }
+  .boss-match-screen .boss-match-logo { width: 38px; height: 38px; }
+  .boss-match-screen .boss-match-action-cta { grid-template-columns: 72px minmax(0,1fr) 22px; }
+}
