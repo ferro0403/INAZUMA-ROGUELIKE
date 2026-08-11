@@ -4416,6 +4416,8 @@
     const meta = isSpecial ? { user: { name: normalizeTeamIdentity(run.teamIdentity).name, logoUrl: "", formation: run.formationId, level: run.teamLevel }, boss: { name: boss.teamName, logoUrl: boss.logoUrl, formation: boss.matchFormation, level: boss.matchLevel } } : bossMatchTeamMeta(boss);
     const userAverage = bossMatchAverage(userPlayers);
     const bossAverage = bossMatchAverage(bossPlayers);
+    const userEmblem = global.TeamEmblems.resolveTeamEmblem({ teamIdentity: normalizeTeamIdentity(run.teamIdentity), seasonId: run.seasonId, fallbackKind: "user" });
+    const userEmblemMarkup = global.TeamEmblems.teamEmblemMarkup(userEmblem, { escape: escapeHtml, className: "boss-match-emblem" });
     const activeSide = ui.bossMatchTab === "boss" ? "boss" : "user";
     const resolved = ui.bossMatchState.startsWith("completed");
     const simulating = ui.bossMatchState === "simulating";
@@ -4431,24 +4433,24 @@
 
     app.innerHTML = `
       <main class="screen boss-match-screen" data-match-state="${ui.bossMatchState}">
-        ${topbar(isSpecial ? "Partita speciale" : "Sfida Boss")}
+        ${topbar(isSpecial ? "Partita speciale" : "Sfida Boss", "", "match")}
         <div class="content boss-match-content">
           <section class="boss-match-hero panel">
-            <button type="button" class="btn btn-back" data-nav="map" aria-label="Torna alla mappa">← Torna alla mappa</button>
-            <div class="boss-match-heading">
-              <h2>${isSpecial ? "Partita speciale · 11v11" : "Sfida Boss"}</h2>
+            <div class="boss-match-hero-band">
+              <div class="boss-match-heading"><p class="eyebrow">Match 11v11</p><h2>${isSpecial ? "Partita speciale" : "Sfida Boss"}</h2></div>
+              <span class="boss-match-duration">90 <small>minuti</small></span>
             </div>
             <div class="boss-match-vs" aria-label="Presentazione squadre">
-              <div class="boss-match-team"><span class="boss-match-logo">${meta.user.logoUrl ? `<img src="${escapeHtml(meta.user.logoUrl)}" alt="${escapeHtml(meta.user.name)}" />` : "⚡"}</span><strong>${escapeHtml(meta.user.name)}</strong><small>${escapeHtml(meta.user.formation)} · Lv ${escapeHtml(global.LevelProgression.formatLevel(meta.user.level, run.seasonId, run.teamLevelUnits))}${userAverage ? ` · OVR ${userAverage}` : ""}</small></div>
+              <div class="boss-match-team"><span class="boss-match-logo">${userEmblemMarkup}</span><strong>${escapeHtml(meta.user.name)}</strong></div>
               <span class="boss-match-vs-badge">VS</span>
-              <div class="boss-match-team boss-match-team--boss"><span class="boss-match-logo">${meta.boss.logoUrl ? `<img src="${escapeHtml(meta.boss.logoUrl)}" alt="${escapeHtml(meta.boss.name)}" />` : "⚽"}</span><strong>${escapeHtml(meta.boss.name)}</strong><small>${escapeHtml(meta.boss.formation)} · ${isSpecial ? "Livello partita" : "Boss Lv"} ${escapeHtml(meta.boss.level)}${bossAverage ? ` · OVR ${bossAverage}` : ""}</small></div>
+              <div class="boss-match-team boss-match-team--boss"><span class="boss-match-logo">${meta.boss.logoUrl ? `<img src="${escapeHtml(meta.boss.logoUrl)}" alt="Stemma ${escapeHtml(meta.boss.name)}" />` : ""}</span><strong>${escapeHtml(meta.boss.name)}</strong><small>${isSpecial ? "Livello" : "Boss Lv"} ${escapeHtml(meta.boss.level)}</small></div>
             </div>
           </section>
 
           <section class="panel boss-match-pitch-panel" aria-label="Formazioni 11v11">
             <div class="boss-match-section-head">
               <div><p class="eyebrow">Formazioni 11v11</p><h3>Campo tattico</h3></div>
-              <span>90 MINUTI</span>
+              <span>11 CONTRO 11</span>
             </div>
             <div class="boss-match-tabs" role="tablist" aria-label="Squadra visualizzata">
               <button type="button" class="boss-match-team-tab ${activeSide === "user" ? "active" : ""}" role="tab" aria-selected="${activeSide === "user"}" data-boss-tab="user">La tua squadra</button>
@@ -4470,14 +4472,18 @@
             <div class="boss-match-reward-note"><span>Vittoria</span><strong>${isSpecial ? "+1 livello · ricompensa garantita" : "2 pick 1 di 3 dalla squadra battuta"}</strong></div>
           </section>
           ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
-          <div class="boss-match-bottom-grid">
-            <section class="panel boss-match-log-panel"><div class="panel-title-row"><div><p class="eyebrow">90 minuti · eventi reali</p><h3>Cronaca</h3></div><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${bossMatchTimeline()}</ol></section>
-            <section class="panel boss-match-result-panel ${outcomeClass}"><p class="eyebrow">${isSpecial ? "Esito partita speciale" : "Esito Boss"}</p><h3>${escapeHtml(bossStatusLabel)}</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div><div class="result-badges"><span class="lives" aria-label="Vite ${escapeHtml(run.lives)}">${resolved && ui.bossMatchState.endsWith("victory") ? "+1 livello" : hearts()}</span><span>${resolved && ui.bossMatchState.endsWith("victory") ? (isSpecial ? "Ricompensa garantita" : "Doppia pick boss") : resolved ? "Ritorno al nodo precedente" : "Finalizzazione protetta"}</span></div></section>
+          <div class="boss-match-bottom-grid" ${simulating || resolved ? "" : "hidden"}>
+            <section class="panel boss-match-log-panel" ${simulating || resolved ? "" : "hidden"}><div class="panel-title-row"><div><p class="eyebrow">90 minuti · eventi reali</p><h3>Cronaca</h3></div><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${bossMatchTimeline()}</ol></section>
+            <section class="panel boss-match-result-panel ${outcomeClass}" ${simulating || resolved ? "" : "hidden"}><p class="eyebrow">${isSpecial ? "Esito partita speciale" : "Esito Boss"}</p><h3>${escapeHtml(bossStatusLabel)}</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div><div class="result-badges"><span class="lives" aria-label="Vite ${escapeHtml(run.lives)}">${resolved && ui.bossMatchState.endsWith("victory") ? "+1 livello" : hearts()}</span><span>${resolved && ui.bossMatchState.endsWith("victory") ? (isSpecial ? "Ricompensa garantita" : "Doppia pick boss") : resolved ? "Ritorno al nodo precedente" : "Finalizzazione protetta"}</span></div></section>
           </div>
           <section class="panel boss-match-controls" aria-label="${isSpecial ? "Azioni partita speciale" : "Azioni partita Boss"}">
-            <div class="boss-match-control-copy"><span>Azioni partita</span><strong>${resolved ? "Partita conclusa" : simulating ? "Simulazione in corso" : "Pronti per la sfida"}</strong></div>
-            <div class="boss-match-primary-actions"><button type="button" class="btn btn-yellow" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Continua</button></div>
-            <div class="button-row">${TEST_MATCH_CONTROLS_ENABLED ? `<div class="match-test-tools"><span>Test</span><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div>` : ""}<button type="button" class="btn" data-nav="squad">Torna alla squadra</button></div>
+            <header class="five-match-actions-heading"><span>Azioni partita</span><i aria-hidden="true"></i></header>
+            <div class="five-match-primary-actions">
+              <button type="button" class="btn five-match-action-cta five-match-action-cta--primary" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}><span class="five-match-action-icon" aria-hidden="true"><i class="five-match-play-icon"></i></span><span class="five-match-action-copy"><strong>${simulating ? "Simulazione..." : "Simula partita"}</strong><small>Avvia la simulazione</small></span><span class="five-match-action-mark" aria-hidden="true">›</span></button>
+              <button type="button" class="btn five-match-action-cta five-match-action-cta--secondary" id="edit-boss-team" data-nav="squad" ${resolved ? "disabled" : ""}><span class="five-match-action-icon" aria-hidden="true"><i class="five-match-tactics-icon">×</i></span><span class="five-match-action-copy"><strong>Modifica squadra</strong><small>Gestisci titolari</small></span><span class="five-match-action-mark" aria-hidden="true">›</span></button>
+              <button type="button" class="btn" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Continua</button>
+            </div>
+            ${TEST_MATCH_CONTROLS_ENABLED ? `<div class="boss-match-test-tools"><span>Strumenti di test</span><div><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div></div>` : ""}
           </section>
         </div>
       </main>`;

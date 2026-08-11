@@ -1,0 +1,19 @@
+/* Boss 11v11 simulation uses the existing 5v5 cabin component.
+   Keep the old inline playback/result regions out of the page: the runtime
+   bridge moves their live DOM nodes into .five-simulation-modal. */
+.boss-match-screen .boss-match-reward-note,
+.boss-match-screen .boss-match-bottom-grid {
+  display: none !important;
+}
+
+/* No alternate visual language here: the 11v11 modal deliberately inherits
+   the exact .five-simulation-* presentation already used by Partita 5v5. */
+.boss-simulation-modal .five-simulation-head h2 {
+  white-space: nowrap;
+}
+
+@media (max-width: 390px) {
+  .boss-simulation-modal .five-simulation-head h2 {
+    font-size: 1.05rem;
+  }
+}
