@@ -32,6 +32,7 @@
     hallDetail: { destination: "hallRoot", label: "Torna all’Albo d’Oro" },
     finalSummary: { destination: "home", label: "Torna alla Home" },
     development: { destination: "seasonSelection", label: "Torna alla selezione delle run" },
+    match: { destination: "map", label: "Torna alla mappa della run" },
   };
 
   function getSectionRootDestination(section) {
@@ -52,6 +53,10 @@
     if (destination === "seasonSelection") {
       if (run) global.RunState.save(run);
       return renderSeasonSelect();
+    }
+    if (destination === "map") {
+      if (run) { run.phase = "map"; global.RunState.save(run); }
+      return renderMap();
     }
     if (destination === "albumRoot") return renderAlbumCollections();
     if (destination === "albumTeams") return renderAlbumTeams(context.collectionId || ui.albumCollectionId || global.AlbumProgress.DEFAULT_COLLECTION_ID);
@@ -687,13 +692,13 @@
     return hours ? `${hours}h ${rest}m` : `${minutes} min`;
   }
 
-  function topbar(title, extraClass = "") {
+  function topbar(title, extraClass = "", rootSection = "run") {
     const identity = run ? normalizeTeamIdentity(run.teamIdentity) : null;
     const teamName = identity?.name || title || "Inazuma Roguelike";
     return `
       <header class="topbar game-topbar shared-game-header ${escapeHtml(extraClass)}">
         <div class="topbar-title-group">
-          ${sectionRootButton("run")}
+          ${sectionRootButton(rootSection)}
           <div class="topbar-brand-block">
             <span class="topbar-kicker">${escapeHtml(title || "Inazuma Roguelike")}</span>
             <strong class="brand">${escapeHtml(teamName)}</strong>
@@ -1181,7 +1186,7 @@
   function syncRunTeamIdentity(identity = savedTeamIdentity()) {
     if (!run || !identity) return false;
     const cleanIdentity = normalizeTeamIdentity(identity);
-    if (run.teamIdentity?.name === cleanIdentity.name && run.teamIdentity?.logo === cleanIdentity.logo) return false;
+    if (run.teamIdentity?.name === cleanIdentity.name && run.teamIdentity?.emblemId === cleanIdentity.emblemId) return false;
     run.teamIdentity = cleanIdentity;
     return true;
   }
@@ -1194,7 +1199,7 @@
     }
     const legacyName = run ? global.RunState.validTeamName(run.teamIdentity?.name) : "";
     if (!legacyName) return null;
-    const migrated = global.RunState.saveProfileTeamIdentity({ name: legacyName, logo: "inazuma-lightning" });
+    const migrated = global.RunState.saveProfileTeamIdentity({ name: legacyName, emblemId: "default-lightning" });
     if (syncRunTeamIdentity(migrated)) global.RunState.save(run);
     return migrated;
   }
@@ -3726,6 +3731,26 @@
     if (label && team) label.textContent = team.textContent || "";
   }
 
+  function openFiveMatchSimulationModal(match, userName, opponentName) {
+    const resolved = ui.bossMatchState.startsWith("completed");
+    const simulating = ui.bossMatchState === "simulating";
+    const score = simulationScoreArray(match, resolved);
+    const resultLabel = resolved ? (ui.bossMatchState.endsWith("victory") ? "Vittoria" : "Sconfitta") : simulating ? "In corso" : "Pronta";
+    const scoreUserEmblem = global.TeamEmblems.teamEmblemMarkup(global.TeamEmblems.resolveTeamEmblem({ teamIdentity: normalizeTeamIdentity(run.teamIdentity), seasonId: run.seasonId, fallbackKind: "user" }), { escape: escapeHtml, className: "five-simulation-emblem" });
+    const scoreOpponentEmblem = global.TeamEmblems.teamEmblemMarkup(global.TeamEmblems.resolveTeamEmblem({ specialType: "free-agents", fallbackKind: "free-agents" }), { escape: escapeHtml, className: "five-simulation-emblem" });
+    openModal(`<div class="five-simulation-cabin" data-five-simulation-modal data-match-state="${escapeHtml(ui.bossMatchState)}">
+      <header class="five-simulation-head"><p class="eyebrow">Cabina partita</p><h2>Simulazione 5v5</h2><strong class="five-simulation-state">${escapeHtml(resultLabel)}</strong></header>
+      <section class="boss-match-result-panel five-simulation-score" aria-live="polite">
+        <div class="five-match-result-row"><strong>${scoreUserEmblem}${escapeHtml(userName)}</strong><div class="boss-match-score" aria-label="${escapeHtml(`${userName} ${score[0]} - ${score[1]} ${opponentName}`)}"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><strong>${escapeHtml(opponentName)}${scoreOpponentEmblem}</strong></div>
+        <p>${escapeHtml(bossMatchStatusText())}</p>
+      </section>
+      <section class="five-simulation-events"><div class="panel-title-row"><h3>Cronaca eventi</h3><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${ui.bossMatchLog.length ? bossMatchTimeline() : `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>Calcio d'inizio.</p></li>`}</ol></section>
+      <footer class="five-simulation-actions"><button type="button" class="btn btn-secondary" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow btn-primary-action" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Torna alla mappa</button></footer>
+    </div>`, { closeable: false, className: "five-simulation-modal", preserveScroll: scrollSnapshot() });
+    document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
+    document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch);
+  }
+
   function bossMatchStatusText() {
     return {
       "pre-match": "Pre-partita",
@@ -3895,6 +3920,9 @@
     const skip = document.getElementById("skip-match-result");
     const cont = document.getElementById("continue-match-result");
     const status = document.querySelector(".boss-match-result-panel p");
+    const simulationModal = document.querySelector("[data-five-simulation-modal]");
+    const simulationState = simulationModal?.querySelector(".five-simulation-state");
+    const simulationBadge = simulationModal?.querySelector(".match-state-badge");
     if (simulate) {
       simulate.disabled = Boolean(ui.matchStartLocked) || simulating || resolved;
       simulate.textContent = ui.matchStartLocked ? "Avvio..." : simulating ? "Simulazione..." : "Simula partita";
@@ -3908,6 +3936,9 @@
       cont.disabled = !resolved || Boolean(ui.match?.postMatchNavigationApplied);
     }
     if (status) status.textContent = bossMatchStatusText();
+    if (simulationModal) simulationModal.dataset.matchState = state;
+    if (simulationState) simulationState.textContent = resolved ? (state.endsWith("victory") ? "Vittoria" : "Sconfitta") : simulating ? "In corso" : "Pronta";
+    if (simulationBadge) simulationBadge.textContent = simulating ? "Live" : resolved ? "Completa" : "In attesa";
   }
 
   function stepMatchPlayback() {
@@ -3943,7 +3974,7 @@
     updateMatchControlsDom();
     let sim;
     try {
-      sim = ensureMatchPreview(match, { ...options, forceRefresh: true, freeze: true });
+      sim = ensureMatchPreview(match, { ...options, forceRefresh: false, freeze: true });
       if (!sim.valid) {
         ui.matchStartLocked = false;
         updateMatchControlsDom();
@@ -4036,6 +4067,7 @@
       match.forcedOutcome = sim.forcedOutcome;
       match.testControl = true;
       ui.bossMatchLog = visibleTimeline(match);
+      appendMissingMatchLogEvents(ui.bossMatchLog);
       ui.bossMatchState = winner === "user" ? "completed-victory" : "completed-defeat";
       match.state = ui.bossMatchState;
       persistMatchState();
@@ -4120,17 +4152,34 @@
   }
 
   function fiveMatchCard(player, side) {
-    const equipment = side === "user" ? (player.equipment || rosterEntry(player.playerId)?.equippedItem) : null;
-    const equipmentKey = equipment ? `${equipment.instanceId || equipment.id || "item"}:${equipment.id || ""}` : "";
-    const key = fiveMatchCacheKey("card", side, player.playerId, player.name, player.position, player.overall, player.displayLevel, player.category, playerPortraitUrl(player), equipmentKey);
-    return memoizedFiveMatchMarkup(key, () => compactPlayerCardMarkup(player, {
-      equipment,
-      equipmentInFooter: true,
-      level: player.displayLevel ?? 0,
-      overall: player.overall ?? "-",
-      dataAttr: `data-five-match-player="${escapeHtml(player.playerId)}" data-five-match-side="${side}" aria-label="Apri scheda ${escapeHtml(player.name)}"`,
-      extraClass: `five-match-card five-match-card--${side} run-tactical-card`,
-    }));
+    const role = player.position || player.normalizedRole || "-";
+    const key = fiveMatchCacheKey("half-card", side, player.playerId, player.name, role, player.category, playerPortraitUrl(player));
+    return memoizedFiveMatchMarkup(key, () => `<button type="button" class="five-match-card five-match-card--${side} ${rarityClass(player.category)}" data-five-match-player="${escapeHtml(player.playerId)}" data-five-match-side="${side}" aria-pressed="false" aria-label="Dettagli rapidi di ${escapeHtml(player.name)}">
+      <span class="five-match-card-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></span>
+      <strong title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</strong>
+      <span class="five-match-card-role" aria-label="Ruolo ${escapeHtml(role)}">${escapeHtml(role)}</span>
+    </button>`);
+  }
+
+  function fiveMatchPlayerDetail(player, side) {
+    if (!player) return "";
+    const stats = player.stats || player.finalStats || {};
+    const essentials = player.position === "GK"
+      ? [["Parata", stats.save], ["Difesa", stats.defense], ["Grinta", stats.grit], ["Controllo", stats.control]]
+      : [["Attacco", stats.attack], ["Controllo", stats.control], ["Difesa", stats.defense], ["Velocità", stats.speed]];
+    return `<div class="five-match-player-detail-copy ${rarityClass(player.category)}">
+      <div class="five-match-detail-head">
+        <div class="five-match-detail-identity"><small>${side === "user" ? "Tua squadra" : "Avversario"}</small><strong>${escapeHtml(player.name)}</strong></div>
+        <b class="five-match-detail-role">${escapeHtml(player.position || player.normalizedRole || "-")}</b>
+        <button type="button" class="five-match-detail-close" data-five-detail-close aria-label="Chiudi dettaglio">×</button>
+      </div>
+      <div class="five-match-detail-scout">
+        <span class="five-match-detail-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></span>
+        <div class="five-match-detail-meta"><span><small>Livello</small><strong>LV ${escapeHtml(player.displayLevelText ?? player.displayLevel ?? 0)}</strong></span><span class="five-match-detail-overall"><small>OVR</small><strong>${escapeHtml(player.overall ?? player.finalOverall ?? "-")}</strong></span><span><small>Rarità</small><strong>${escapeHtml(player.category || "-")}</strong></span><span><small>Elemento / tipo</small><strong>${escapeHtml(player.element || player.type || "-")}</strong></span></div>
+      </div>
+      <div class="five-match-detail-stats" aria-label="Statistiche chiave">${essentials.map(([label, value]) => `<span><small>${label}</small><strong>${escapeHtml(value ?? "-")}</strong></span>`).join("")}</div>
+      <button type="button" class="five-match-detail-sheet" data-five-detail-sheet="${escapeHtml(player.playerId)}" data-five-detail-side="${side}">Scheda completa</button>
+    </div>`;
   }
 
   function fiveMatchField(playersBySlot, formationId, side, mobile = false) {
@@ -4166,11 +4215,11 @@
     const value = (key) => summary[key] ?? "-";
     return `<section class="five-match-values" data-values-panel>
       <button type="button" class="five-match-values-button" aria-expanded="false" aria-controls="${escapeHtml(contentId)}">
-        <span class="five-match-values-copy">
-          <strong>Valori</strong>
-          <small>Forza · Probabilità · Confronto · Statistiche</small>
-        </span>
-        <span class="five-match-values-toggle" aria-hidden="true"></span>
+        <span class="five-match-value"><small>Forza</small><strong>${escapeHtml(value("userStrength"))}</strong></span>
+        <span class="five-match-value five-match-value--accent"><small>Probabilità</small><strong>${escapeHtml(value("probability"))}%</strong></span>
+        <span class="five-match-value"><small>Confronto</small><strong>${escapeHtml(value("userStrength"))}–${escapeHtml(value("opponentStrength"))}</strong></span>
+        <span class="five-match-value"><small>Statistiche</small><strong>Dettagli</strong></span>
+        <span class="five-match-values-toggle" aria-label="Apri statistiche" aria-hidden="true">+</span>
       </button>
       <div class="five-match-values-content" id="${escapeHtml(contentId)}" hidden>
         <div class="five-match-core-values">
@@ -4217,7 +4266,15 @@
       const opponentPlayersBySlot = fiveOpponentPlayersBySlot(match);
       const identity = normalizeTeamIdentity(run.teamIdentity);
       const userName = identity.name || "La tua squadra";
-      const opponentName = "Svincolati";
+      const opponentTeamId = match.opponentTeamId || null;
+      const opponentTeam = opponentTeamId ? teamById(opponentTeamId) : null;
+      const opponentName = opponentTeam?.teamName || opponentTeam?.name || "Svincolati";
+      const userEmblem = global.TeamEmblems.resolveTeamEmblem({ teamIdentity: identity, seasonId: run.seasonId, fallbackKind: "user" });
+      const opponentEmblem = global.TeamEmblems.resolveTeamEmblem(opponentTeamId
+        ? { teamId: opponentTeamId, team: opponentTeam, seasonId: run.seasonId, fallbackKind: "neutral" }
+        : { specialType: "free-agents", fallbackKind: "free-agents" });
+      const userEmblemMarkup = global.TeamEmblems.teamEmblemMarkup(userEmblem, { escape: escapeHtml, className: "five-match-emblem" });
+      const opponentEmblemMarkup = global.TeamEmblems.teamEmblemMarkup(opponentEmblem, { escape: escapeHtml, className: "five-match-emblem" });
       const simPreview = ensureMatchPreview(match);
       const userFivePlayers = Object.values(userPlayersBySlot).filter(Boolean);
       const opponentFivePlayers = Object.values(opponentPlayersBySlot).filter(Boolean);
@@ -4228,73 +4285,112 @@
       const activeSide = ui.fiveMatchTab === "opponent" ? "opponent" : "user";
       const resolved = ui.bossMatchState.startsWith("completed");
       const simulating = ui.bossMatchState === "simulating";
-      const score = simulationScoreArray(match, resolved);
-      const scoreLabel = `${userName} ${score[0]} - ${score[1]} ${opponentName}`;
       app.innerHTML = `
         <main class="screen five-match-screen" data-match-state="${escapeHtml(ui.bossMatchState)}">
-          ${topbar("Partita 5v5")}
+          ${topbar("Partita 5v5", "", "match")}
           <div class="content five-match-content">
-            <section class="panel five-match-hero">
-              <button type="button" class="btn btn-back five-match-header-back" data-nav="map" aria-label="Torna alla mappa">← <span class="five-match-back-full">Torna al percorso</span><span class="five-match-back-short">Percorso</span></button>
-              <div class="five-match-header-main"><p class="eyebrow five-match-run-meta">Run Lv ${escapeHtml(global.LevelProgression.formatLevel(run, run.seasonId))} · ${hearts()}</p><h2>Partita 5v5</h2><span class="match-state-badge">${resolved ? "Completata" : simulating ? "In corso" : "Preparazione"}</span></div>
+            <section class="five-match-hero">
+              <div class="five-match-hero-band">
+                <div class="five-match-header-main"><p class="eyebrow">Match rapido</p><h1>Partita 5v5</h1><strong>${resolved ? "Completata" : simulating ? "In corso" : "Preparazione"}</strong></div>
+                <span class="five-match-duration">30 <small>minuti</small></span>
+              </div>
               <div class="five-match-vs">
-                <div class="five-match-team"><span class="five-match-logo">⚡</span><strong>${escapeHtml(userName)}</strong><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(userAverageOverall)} · Forza ${escapeHtml(simPreview.userStrength?.final ?? "-")}</small></div>
+                <div class="five-match-team"><strong>${escapeHtml(userName)}</strong><span class="five-match-logo">${userEmblemMarkup}</span><small>${escapeHtml(run.fiveVFive.formation)} · OVR ${escapeHtml(userAverageOverall)} · Forza ${escapeHtml(simPreview.userStrength?.final ?? "-")}</small></div>
                 <span class="five-match-vs-badge">VS</span>
-                <div class="five-match-team"><span class="five-match-logo">⚽</span><strong>${opponentName}</strong><small>${escapeHtml(match.opponentFormation)} · OVR ${escapeHtml(opponentAverageOverall)} · Forza ${escapeHtml(simPreview.opponentStrength?.final ?? "-")}</small></div>
+                <div class="five-match-team"><strong>${escapeHtml(opponentName)}</strong><span class="five-match-logo">${opponentEmblemMarkup}</span><small>${escapeHtml(match.opponentFormation)} · OVR ${escapeHtml(opponentAverageOverall)} · Forza ${escapeHtml(simPreview.opponentStrength?.final ?? "-")}</small></div>
               </div>
             </section>
-            <section class="panel five-match-pitch-panel">
+            <section class="five-match-pitch-panel">
               <div class="five-match-section-head">
-                <div><p class="eyebrow">Formazioni 5v5</p><h3>Campo tattico</h3></div>
-                <span>30 MINUTI</span>
-              </div>
-              <div class="five-match-tabs" role="tablist" aria-label="Squadra visualizzata">
-                <button type="button" class="five-match-team-tab ${activeSide === "user" ? "active" : ""}" data-five-match-tab="user">La tua squadra</button>
-                <button type="button" class="five-match-team-tab ${activeSide === "opponent" ? "active" : ""}" data-five-match-tab="opponent">Svincolati</button>
+                <h2>Campo tattico</h2>
+                <div class="five-match-tabs" role="tablist" aria-label="Squadra visualizzata">
+                  <button type="button" class="five-match-team-tab ${activeSide === "user" ? "active" : ""}" data-five-match-tab="user">Tua squadra</button>
+                  <button type="button" class="five-match-team-tab ${activeSide === "opponent" ? "active" : ""}" data-five-match-tab="opponent">Avversario</button>
+                </div>
+                <span class="five-match-formation-badge">${escapeHtml(activeSide === "opponent" ? match.opponentFormation : run.fiveVFive.formation)}</span>
               </div>
               <div class="five-match-field" aria-label="Campo partita 5v5">
-                <div class="five-match-half-label five-match-half-label--user">${escapeHtml(userName)}</div>
-                <div class="five-match-half-label five-match-half-label--opponent">${opponentName}</div>
-                ${fiveMatchField(userPlayersBySlot, run.fiveVFive.formation, "user")}
-                ${fiveMatchField(opponentPlayersBySlot, match.opponentFormation, "opponent")}
                 <div class="five-match-mobile-field">${fiveMatchField(activeSide === "opponent" ? opponentPlayersBySlot : userPlayersBySlot, activeSide === "opponent" ? match.opponentFormation : run.fiveVFive.formation, activeSide, true)}</div>
+                <aside class="five-match-player-detail" data-five-player-detail hidden aria-live="polite"></aside>
               </div>
             </section>
             <section class="five-match-summary" aria-label="Riepilogo partita 5v5">
               ${fiveMatchComparisonMarkup(userFivePlayers, opponentFivePlayers, { userStrength: simPreview.userStrength?.final ?? "-", userFormation: run.fiveVFive.formation, userOverall: userAverageOverall, probability: formatMatchProbability(simPreview.probabilities?.userChance), opponentStrength: simPreview.opponentStrength?.final ?? "-", opponentFormation: match.opponentFormation, opponentOverall: opponentAverageOverall })}
             </section>
             ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
-            <div class="five-match-bottom-grid">
-              <section class="panel boss-match-log-panel five-match-log-panel" id="five-match-log-panel"><div class="panel-title-row"><div><p class="eyebrow">30 minuti · 8-10 eventi</p><h3>Cronaca</h3></div><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${bossMatchTimeline()}</ol></section>
-              <section class="panel boss-match-result-panel five-match-result-panel five-match-result-panel--${resolved ? (ui.bossMatchState.endsWith("victory") ? "victory" : "defeat") : "pending"}" id="five-match-result-panel"><p class="eyebrow">Esito partita</p><h3>Risultato</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(userName)}</span><span>${opponentName}</span></div><div class="result-badges"><span class="lives" aria-label="Vite ${escapeHtml(run.lives)}">${resolved && ui.bossMatchState.endsWith("victory") ? (run.seasonId === "ie1_s2" ? "+1/3 livello" : "+0,5 livello") : hearts()}</span><span>${resolved ? "Nodo di ritorno salvato" : "Snapshot pronta"}</span></div></section>
-            </div>
           </div>
           <section class="panel five-match-controls five-v-five-mobile-actions" aria-label="Azioni partita 5v5">
-            <div class="five-match-control-copy"><span>Azioni partita</span><strong>${resolved ? "Partita conclusa" : simulating ? "Simulazione in corso" : "Preparati al calcio d’inizio"}</strong></div>
-            <div class="five-match-primary-actions"><button type="button" class="btn btn-yellow btn-primary-action" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>${simulating ? "Simulazione..." : "Simula partita"}</button><button type="button" class="btn btn-secondary" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow btn-primary-action" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Torna alla mappa</button></div>
-            <div class="button-row"><button type="button" class="btn btn-secondary" id="edit-five-team" ${resolved ? "disabled" : ""}>Modifica squadra</button>${TEST_MATCH_CONTROLS_ENABLED ? `<div class="match-test-tools"><span>Strumenti di test</span><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div>` : ""}<button type="button" class="btn btn-back" data-nav="map">← Torna al percorso</button></div>
+            <header class="five-match-actions-heading"><span>Azioni partita</span><i aria-hidden="true"></i></header>
+            <div class="five-match-primary-actions">
+              <button type="button" class="btn five-match-action-cta five-match-action-cta--primary" id="simulate-boss-match" ${simulating || resolved ? "disabled" : ""}>
+                <span class="five-match-action-icon" aria-hidden="true"><i class="five-match-play-icon"></i></span>
+                <span class="five-match-action-copy"><strong>Simula partita</strong><small>Avvia la simulazione</small></span>
+                <span class="five-match-action-mark" aria-hidden="true">›</span>
+              </button>
+              <button type="button" class="btn five-match-action-cta five-match-action-cta--secondary" id="edit-five-team" ${resolved ? "disabled" : ""}>
+                <span class="five-match-action-icon" aria-hidden="true"><i class="five-match-tactics-icon">×</i></span>
+                <span class="five-match-action-copy"><strong>Modifica squadra</strong><small>Gestisci titolari</small></span>
+                <span class="five-match-action-mark" aria-hidden="true">›</span>
+              </button>
+            </div>
+            ${TEST_MATCH_CONTROLS_ENABLED ? `<div class="match-test-tools"><span>Strumenti di test</span><div class="five-match-test-actions"><button type="button" class="btn btn-tool" id="test-win" ${resolved ? "disabled" : ""}>Vittoria sicura</button>${DEV_MODE ? `<button type="button" class="btn btn-danger" id="test-loss" ${resolved ? "disabled" : ""}>Sconfitta forzata</button>` : ""}</div></div>` : ""}
           </section>
         </main>`;
       resetRenderedViewScroll();
       bindSectionRootNav();
       bindBottomNav();
       document.querySelectorAll("[data-five-match-tab]").forEach((button) => button.addEventListener("click", () => {
+        closeFiveMatchPlayerDetail();
         ui.fiveMatchTab = button.dataset.fiveMatchTab;
         document.querySelectorAll("[data-five-match-tab]").forEach((tab) => tab.classList.toggle("active", tab.dataset.fiveMatchTab === ui.fiveMatchTab));
         const mobileField = document.querySelector(".five-match-mobile-field");
         if (mobileField) mobileField.innerHTML = ui.fiveMatchTab === "opponent"
           ? fiveMatchField(opponentPlayersBySlot, match.opponentFormation, "opponent", true)
           : fiveMatchField(userPlayersBySlot, run.fiveVFive.formation, "user", true);
+        const formationBadge = document.querySelector(".five-match-formation-badge");
+        if (formationBadge) formationBadge.textContent = ui.fiveMatchTab === "opponent" ? match.opponentFormation : run.fiveVFive.formation;
         bindFiveMatchPlayerButtons();
       }));
+      const closeFiveMatchPlayerDetail = () => {
+        const detail = document.querySelector("[data-five-player-detail]");
+        if (detail) { detail.hidden = true; detail.innerHTML = ""; }
+        document.querySelectorAll("[data-five-match-player]").forEach((card) => { card.classList.remove("is-active"); card.setAttribute("aria-pressed", "false"); });
+      };
+      const positionFiveMatchPlayerDetail = (button, detail) => {
+        const field = detail.closest(".five-match-field");
+        if (!field) return;
+        const fieldRect = field.getBoundingClientRect();
+        const cardRect = button.getBoundingClientRect();
+        const panelWidth = detail.offsetWidth;
+        const panelHeight = detail.offsetHeight;
+        const gap = 10;
+        const right = cardRect.right - fieldRect.left + gap;
+        const left = cardRect.left - fieldRect.left - panelWidth - gap;
+        const preferredLeft = right + panelWidth <= fieldRect.width - 6 ? right : left;
+        const maxLeft = Math.max(6, fieldRect.width - panelWidth - 6);
+        const top = Math.min(Math.max(6, cardRect.top - fieldRect.top + (cardRect.height - panelHeight) / 2), Math.max(6, fieldRect.height - panelHeight - 6));
+        detail.style.setProperty("--five-detail-left", `${Math.min(Math.max(6, preferredLeft), maxLeft)}px`);
+        detail.style.setProperty("--five-detail-top", `${top}px`);
+        detail.dataset.placement = preferredLeft === right ? "right" : "left";
+      };
       const bindFiveMatchPlayerButtons = () => document.querySelectorAll("[data-five-match-player]").forEach((button) => {
         if (button.dataset.boundFiveMatchPlayer === "1") return;
         button.dataset.boundFiveMatchPlayer = "1";
         button.addEventListener("click", () => {
           const id = button.dataset.fiveMatchPlayer;
-          if (button.dataset.fiveMatchSide === "user") return showPlayerDetails(id);
-          const player = Object.values(opponentPlayersBySlot).find((candidate) => String(candidate?.playerId) === String(id));
-          showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: freeAgentsDb, preserveScroll: scrollSnapshot() });
+          const side = button.dataset.fiveMatchSide;
+          const players = side === "user" ? userPlayersBySlot : opponentPlayersBySlot;
+          const player = Object.values(players).find((candidate) => String(candidate?.playerId) === String(id));
+          const detail = document.querySelector("[data-five-player-detail]");
+          if (!player || !detail) return;
+          document.querySelectorAll("[data-five-match-player]").forEach((card) => { card.classList.toggle("is-active", card === button); card.setAttribute("aria-pressed", card === button ? "true" : "false"); });
+          detail.innerHTML = fiveMatchPlayerDetail(player, side);
+          detail.hidden = false;
+          positionFiveMatchPlayerDetail(button, detail);
+          detail.querySelector("[data-five-detail-close]")?.addEventListener("click", closeFiveMatchPlayerDetail);
+          detail.querySelector("[data-five-detail-sheet]")?.addEventListener("click", () => side === "user"
+            ? showPlayerDetails(id)
+            : showPlayerDetailsFor(player, { playerId: id, level: player.displayLevel, database: freeAgentsDb, preserveScroll: scrollSnapshot() }));
         });
       });
       bindFiveMatchPlayerButtons();
@@ -4306,12 +4402,11 @@
         if (content) content.hidden = expanded;
       });
       document.getElementById("edit-five-team").addEventListener("click", () => { ui.returnToMatchContext = { type: match.type, nodeId: match.nodeId, scroll: scrollSnapshot() }; match.returnScroll = ui.returnToMatchContext.scroll; persistMatchState(); renderFiveVFive({ returnToMatch: true }); });
-      document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("victory"); });
-      document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("defeat"); });
-      document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(match); });
-      document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
-      document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch);
+      document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("victory"); });
+      document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("defeat"); });
+      document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); startMatchSimulation(match); });
       persistMatchState();
+      if (simulating || resolved) openFiveMatchSimulationModal(match, userName, opponentName);
       resumeMatchSimulationIfNeeded(match);
       return;
     }
