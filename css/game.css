@@ -8040,7 +8040,7 @@ html.account-modal-open, body.account-modal-open { overflow: hidden; overscroll-
 .five-match-content { width: min(1180px, calc(100% - 24px)); margin: 12px auto 0; gap: 9px; padding: 0; }
 .five-match-screen .five-match-hero { display: grid; grid-template-columns: minmax(220px, .72fr) minmax(0, 1.28fr); gap: 0; padding: 0; overflow: hidden; border: 3px solid #111; border-radius: 2px; background: #fffaf0; color: #111; box-shadow: 5px 5px 0 #111; }
 .five-match-hero-band { position: relative; display: flex; align-items: center; justify-content: space-between; gap: 10px; min-height: 92px; padding: 13px 20px; overflow: hidden; background: #111; color: #fffaf0; }
-.five-match-hero-band::after { content: ""; position: absolute; right: -28px; bottom: -45px; width: 100px; height: 100px; transform: rotate(35deg); background: #ffd21f; }
+.five-match-hero-band::after { content: none; display: none; }
 .five-match-header-main { position: relative; z-index: 1; }
 .five-match-header-main .eyebrow { margin: 0; color: #ffd21f; font-size: .62rem; }
 .five-match-header-main h1 { margin: 1px 0 0; color: #fff; font-size: clamp(1.55rem, 3.2vw, 2.6rem); line-height: .9; text-transform: uppercase; letter-spacing: -.05em; }
