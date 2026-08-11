@@ -120,8 +120,7 @@
   filter: drop-shadow(3px 4px 0 rgba(17, 18, 22, .16));
 }
 
-/* The centre is intentionally much wider than the regressed version.
-   The trapezoid itself creates the angled yellow/ivory wedges visible in screen 2. */
+/* Wide centre like the pre-dynamic reference; angled shape lives inside this fixed column. */
 .five-match-screen .five-match-vs .five-match-vs-badge {
   position: relative;
   z-index: 4;
