@@ -4,7 +4,7 @@
   const ASSET_ROOT = "assets/emblems/";
   const DEFINITIONS = Object.freeze({
     "default-lightning": Object.freeze({ id: "default-lightning", type: "local", src: `${ASSET_ROOT}default-lightning.svg` }),
-    "free-agents": Object.freeze({ id: "free-agents", type: "local", src: `${ASSET_ROOT}free-agents.svg` }),
+    "free-agents": Object.freeze({ id: "free-agents", type: "local", src: `${ASSET_ROOT}free-agents.svg?v=20260811-no-yellow-accent-1` }),
     "neutral-team": Object.freeze({ id: "neutral-team", type: "fallback", src: `${ASSET_ROOT}neutral-team.svg` }),
   });
 
