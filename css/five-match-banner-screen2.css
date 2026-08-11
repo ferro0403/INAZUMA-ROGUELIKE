@@ -1,13 +1,13 @@
-/* 5v5 matchup banner — screen 2 reference layout.
-   This stylesheet only owns the matchup strip. Dynamic emblem resolution stays in JS. */
+/* 5v5 matchup banner — restore the pre-dynamic screen-2 geometry.
+   Dynamic emblem resolution stays in JS; this file owns presentation only. */
 
 .five-match-screen .five-match-vs {
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 92px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 124px minmax(0, 1fr);
   align-items: stretch;
-  min-height: 104px;
+  min-height: 116px;
   padding: 0;
   gap: 0;
   overflow: hidden;
@@ -20,13 +20,13 @@
   position: relative;
   z-index: 1;
   display: grid;
-  grid-template-rows: 1fr;
-  align-items: center;
+  grid-template-rows: 30px minmax(0, 1fr);
+  align-items: start;
   min-width: 0;
-  min-height: 98px;
+  min-height: 110px;
   margin: 0;
-  padding: 10px 14px;
-  gap: 10px;
+  padding: 12px 14px 8px;
+  gap: 0 9px;
   border: 0;
   border-radius: 0;
   box-shadow: none;
@@ -34,7 +34,7 @@
 
 .five-match-screen .five-match-vs .five-match-team:first-child {
   grid-template-columns: 68px minmax(0, 1fr);
-  background: #ffd21f;
+  background: linear-gradient(112deg, #ffc91b 0%, #ffdd46 100%);
   text-align: left;
 }
 
@@ -44,29 +44,34 @@
   text-align: right;
 }
 
-/* The existing DOM is name -> emblem on both sides. Explicit grid placement recreates
-   the reference: emblem/name | VS | name/emblem without changing the emblem system. */
+/* Reference composition: name sits high; crest sits lower toward the outer edge. */
 .five-match-screen .five-match-vs .five-match-team:first-child > strong {
   grid-column: 2;
   grid-row: 1;
+  align-self: start;
   justify-self: start;
+  padding-top: 1px;
 }
 
 .five-match-screen .five-match-vs .five-match-team:first-child > .five-match-logo {
   grid-column: 1;
-  grid-row: 1;
+  grid-row: 2;
+  align-self: start;
   justify-self: start;
 }
 
 .five-match-screen .five-match-vs .five-match-team:last-child > strong {
   grid-column: 1;
   grid-row: 1;
+  align-self: start;
   justify-self: end;
+  padding-top: 1px;
 }
 
 .five-match-screen .five-match-vs .five-match-team:last-child > .five-match-logo {
   grid-column: 2;
-  grid-row: 1;
+  grid-row: 2;
+  align-self: start;
   justify-self: end;
 }
 
@@ -75,18 +80,17 @@
 }
 
 .five-match-screen .five-match-vs .five-match-team strong {
-  align-self: center;
   min-width: 0;
   max-width: 100%;
   overflow: visible;
   color: #111216;
-  font-size: clamp(1rem, 3.25vw, 1.42rem);
+  font-size: clamp(1.05rem, 3.25vw, 1.48rem);
   font-weight: 1000;
-  letter-spacing: -.035em;
-  line-height: .98;
+  letter-spacing: -.04em;
+  line-height: 1;
   overflow-wrap: normal;
   word-break: normal;
-  white-space: normal;
+  white-space: nowrap;
   text-overflow: clip;
 }
 
@@ -94,9 +98,9 @@
   display: grid;
   place-items: center;
   width: 68px;
-  height: 78px;
+  height: 72px;
   min-width: 68px;
-  min-height: 78px;
+  min-height: 72px;
   overflow: visible;
   border: 0;
   border-radius: 0;
@@ -116,6 +120,8 @@
   filter: drop-shadow(3px 4px 0 rgba(17, 18, 22, .16));
 }
 
+/* The centre is intentionally much wider than the regressed version.
+   The trapezoid itself creates the angled yellow/ivory wedges visible in screen 2. */
 .five-match-screen .five-match-vs .five-match-vs-badge {
   position: relative;
   z-index: 4;
@@ -123,17 +129,17 @@
   display: grid;
   place-items: center;
   min-width: 0;
-  min-height: 98px;
-  margin: 0 -15px;
+  min-height: 110px;
+  margin: 0;
   overflow: hidden;
   border: 0;
   border-radius: 0;
-  background: #111216;
+  background: linear-gradient(145deg, #181a1c, #08090a);
   color: #ffd21f;
   box-shadow: none;
-  clip-path: polygon(19% 0, 100% 0, 81% 100%, 0 100%);
+  clip-path: polygon(30% 0, 100% 0, 72% 100%, 0 100%);
   transform: none;
-  font-size: clamp(1.72rem, 5.2vw, 2.45rem);
+  font-size: clamp(2rem, 5.6vw, 2.8rem);
   font-style: italic;
   font-weight: 1000;
   letter-spacing: -.07em;
@@ -141,32 +147,33 @@
   text-shadow: 1px 1px 0 rgba(255,255,255,.08);
 }
 
-/* Retire the old pseudo-element shape; the real VS element is now the trapezoid. */
-.five-match-screen .five-match-vs .five-match-vs-badge::before {
-  content: none;
-}
-
+.five-match-screen .five-match-vs .five-match-vs-badge::before,
 .five-match-screen .five-match-vs .five-match-vs-badge::after {
   content: "";
   position: absolute;
-  inset: 0 12px;
-  border-left: 2px solid rgba(255, 250, 240, .94);
-  border-right: 2px solid rgba(255, 250, 240, .94);
-  transform: skewX(-10deg);
+  top: -8px;
+  bottom: -8px;
+  width: 3px;
+  background: rgba(255, 250, 240, .96);
+  transform: skewX(-14deg);
   pointer-events: none;
 }
 
+.five-match-screen .five-match-vs .five-match-vs-badge::before { left: 25px; }
+.five-match-screen .five-match-vs .five-match-vs-badge::after { right: 22px; opacity: .8; }
+
 @media (max-width: 780px) {
   .five-match-screen .five-match-vs {
-    grid-template-columns: minmax(0, 1fr) 76px minmax(0, 1fr);
-    min-height: 92px;
+    grid-template-columns: minmax(0, 1fr) 98px minmax(0, 1fr);
+    min-height: 104px;
     box-shadow: 3px 3px 0 rgba(17, 18, 22, .18);
   }
 
   .five-match-screen .five-match-vs .five-match-team {
-    min-height: 86px;
-    padding: 8px 10px;
-    gap: 7px;
+    grid-template-rows: 27px minmax(0, 1fr);
+    min-height: 98px;
+    padding: 9px 8px 7px;
+    gap: 0 6px;
   }
 
   .five-match-screen .five-match-vs .five-match-team:first-child {
@@ -179,60 +186,58 @@
 
   .five-match-screen .five-match-vs .five-match-logo {
     width: 56px;
-    height: 64px;
+    height: 62px;
     min-width: 56px;
-    min-height: 64px;
+    min-height: 62px;
   }
 
   .five-match-screen .five-match-vs .five-match-team strong {
-    font-size: clamp(.88rem, 4vw, 1.08rem);
+    font-size: clamp(.9rem, 4.2vw, 1.08rem);
   }
 
   .five-match-screen .five-match-vs .five-match-vs-badge {
-    min-height: 86px;
-    margin-inline: -12px;
-    font-size: 1.78rem;
+    min-height: 98px;
+    font-size: 2rem;
+    clip-path: polygon(30% 0, 100% 0, 72% 100%, 0 100%);
   }
 
-  .five-match-screen .five-match-vs .five-match-vs-badge::after {
-    inset-inline: 10px;
-  }
+  .five-match-screen .five-match-vs .five-match-vs-badge::before { left: 20px; }
+  .five-match-screen .five-match-vs .five-match-vs-badge::after { right: 18px; }
 }
 
 @media (max-width: 390px) {
   .five-match-screen .five-match-vs {
-    grid-template-columns: minmax(0, 1fr) 70px minmax(0, 1fr);
-    min-height: 88px;
+    grid-template-columns: minmax(0, 1fr) 94px minmax(0, 1fr);
+    min-height: 102px;
   }
 
   .five-match-screen .five-match-vs .five-match-team {
-    min-height: 82px;
-    padding-inline: 8px;
-    gap: 6px;
+    min-height: 96px;
+    padding-inline: 7px;
+    gap: 0 5px;
   }
 
   .five-match-screen .five-match-vs .five-match-team:first-child {
-    grid-template-columns: 52px minmax(0, 1fr);
+    grid-template-columns: 53px minmax(0, 1fr);
   }
 
   .five-match-screen .five-match-vs .five-match-team:last-child {
-    grid-template-columns: minmax(0, 1fr) 52px;
+    grid-template-columns: minmax(0, 1fr) 53px;
   }
 
   .five-match-screen .five-match-vs .five-match-logo {
-    width: 52px;
+    width: 53px;
     height: 60px;
-    min-width: 52px;
+    min-width: 53px;
     min-height: 60px;
   }
 
   .five-match-screen .five-match-vs .five-match-team strong {
-    font-size: clamp(.82rem, 3.85vw, .96rem);
+    font-size: clamp(.84rem, 3.9vw, .98rem);
   }
 
   .five-match-screen .five-match-vs .five-match-vs-badge {
-    min-height: 82px;
-    margin-inline: -10px;
-    font-size: 1.62rem;
+    min-height: 96px;
+    font-size: 1.9rem;
   }
 }
