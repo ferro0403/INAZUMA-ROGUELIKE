@@ -1,0 +1,22 @@
+const assert = require('assert');
+const fs = require('fs');
+const app = fs.readFileSync('js/app.js', 'utf8');
+const html = fs.readFileSync('index.html', 'utf8');
+const css = fs.readFileSync('css/boss-match-prematch-restyle.css', 'utf8');
+
+assert.match(app, /boss-match-bottom-grid" \$\{simulating \|\| resolved \? "" : "hidden"\}/, 'pre-match collapses result region');
+assert.match(app, /boss-match-log-panel" \$\{simulating \|\| resolved \? "" : "hidden"\}/, 'timeline markup remains but is hidden before simulation');
+assert.match(app, /boss-match-result-panel \$\{outcomeClass\}" \$\{simulating \|\| resolved \? "" : "hidden"\}/, 'result markup remains but is hidden before simulation');
+assert.match(app, /id="simulate-boss-match"[\s\S]{0,300}Avvia la simulazione/, 'simulation CTA retains its established id');
+assert.match(app, /getElementById\("simulate-boss-match"\)\.addEventListener\("click"[\s\S]{0,160}startMatchSimulation\(ui\.match, \{ boss \}\)/, '11v11 simulator handler is unchanged');
+assert.match(app, /id="edit-boss-team" data-nav="squad"/, 'team CTA uses existing squad navigation');
+assert.match(app, /id="test-win"[\s\S]{0,160}Vittoria sicura/, 'development victory control remains');
+assert.match(app, /getElementById\("test-win"\)\?\.addEventListener\("click"[\s\S]{0,140}forceMatchOutcome\("victory", \{ boss \}\)/, 'development handler remains');
+assert.match(app, /2 pick 1 di 3 dalla squadra battuta/, 'boss reward copy and logic remain');
+assert.match(app, /teamEmblemMarkup\(userEmblem[\s\S]{0,120}boss-match-emblem/, 'dynamic TeamEmblems renderer is reused');
+assert.doesNotMatch(app.slice(app.indexOf('const userPlayers = userTeamPlayers();'), app.indexOf('resetRenderedViewScroll();', app.indexOf('const userPlayers = userTeamPlayers();'))), /data-nav="map"/, 'duplicate in-content map action is removed');
+assert.match(app, /topbar\(isSpecial \? "Partita speciale" : "Sfida Boss", "", "match"\)/, 'sticky header back action uses the existing match-to-map route');
+assert.match(html, /css\/boss-match-prematch-restyle\.css/, 'dedicated stylesheet is loaded');
+assert.doesNotMatch(css, /(?:^|\})\s*(?:body|button|\.panel|\.card|img)(?:[\s,{.:#])/m, 'stylesheet has no unscoped global selectors');
+assert.doesNotMatch(css, /\.five-match-screen/, '5v5 screen is not modified by the new stylesheet');
+console.log('boss-match prematch restyle regression checks passed');
