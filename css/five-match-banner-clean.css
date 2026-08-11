@@ -113,20 +113,6 @@
   transform: translateY(1px);
 }
 
-/* Small visual echoes from the approved reference; decorative only. */
-.five-match-screen .five-match-versus-card::after {
-  content: "";
-  position: absolute;
-  right: 18px;
-  bottom: 0;
-  width: 56px;
-  height: 7px;
-  z-index: 7;
-  background: #ffd21f;
-  transform: skewX(-28deg);
-  pointer-events: none;
-}
-
 @media (max-width: 780px) {
   .five-match-screen .five-match-versus-card {
     grid-template-columns: minmax(0, 1fr) 86px minmax(0, 1fr);
