@@ -20,6 +20,13 @@
   min-height: 96px;
 }
 
+/* The clean opponent panel must not inherit decorative trims from older banners. */
+.five-match-screen .five-match-versus-side--opponent::before,
+.five-match-screen .five-match-versus-side--opponent::after {
+  content: none;
+  display: none;
+}
+
 .five-match-screen .five-match-versus-name {
   position: absolute;
   top: 16px;
