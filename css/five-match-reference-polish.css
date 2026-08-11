@@ -1,11 +1,11 @@
 /* 5v5 reference polish: matchup banner + action-panel fidelity pass only. */
 
-/* Dynamic matchup banner. Team names and uncropped emblem slots have independent space. */
+/* Dynamic matchup banner: equal team columns around one fixed-width separator. */
 .five-match-screen .five-match-vs {
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(58px, 10vw, 88px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 72px minmax(0, 1fr);
   align-items: stretch;
   min-height: 138px;
   padding: 0;
@@ -26,20 +26,16 @@
   min-width: 0;
   min-height: 132px;
   margin: 0;
-  padding: 12px 24px 10px 12px;
+  padding: 12px 10px 10px;
   border: 0;
   border-radius: 0;
   background: #ffd21f;
   box-shadow: none;
-  clip-path: polygon(0 0, 100% 0, 88% 100%, 0 100%);
   text-align: center;
 }
 
 .five-match-screen .five-match-vs .five-match-team:last-child {
-  margin-left: -14px;
-  padding: 12px 12px 10px 28px;
   background: #fffaf0;
-  clip-path: polygon(12% 0, 100% 0, 100% 100%, 0 100%);
 }
 
 .five-match-screen .five-match-vs .five-match-team small { display: none; }
@@ -47,7 +43,7 @@
 .five-match-screen .five-match-vs .five-match-team strong {
   align-self: center;
   max-width: 100%;
-  overflow: visible;
+  overflow: hidden;
   color: #111216;
   font-size: clamp(.9rem, 3.1vw, 1.35rem);
   font-weight: 1000;
@@ -62,8 +58,10 @@
   place-items: center;
   width: 72px;
   height: 80px;
-  overflow: visible;
-  background: transparent;
+  flex: none;
+  overflow: hidden;
+  border: 1px solid rgba(17, 18, 22, .14);
+  background: rgba(255, 255, 255, .38);
   filter: drop-shadow(3px 4px 0 rgba(17, 18, 22, .18));
 }
 
@@ -73,6 +71,8 @@
   height: 100%;
   object-fit: contain;
   object-position: center;
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .five-match-screen .five-match-vs .five-match-vs-badge {
@@ -80,15 +80,23 @@
   z-index: 3;
   display: grid;
   place-items: center;
-  margin: 0 -12px;
-  background: #111216;
+  overflow: hidden;
+  background: transparent;
   color: #ffd21f;
   box-shadow: 5px 5px 0 rgba(17, 18, 22, .2);
-  clip-path: polygon(18% 0, 100% 0, 82% 100%, 0 100%);
   font-size: clamp(1.5rem, 5vw, 2.25rem);
   font-style: italic;
   font-weight: 1000;
   letter-spacing: -.05em;
+}
+
+.five-match-screen .five-match-vs .five-match-vs-badge::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: -8px 7px;
+  background: #111216;
+  transform: skew(-8deg);
 }
 
 /* ACTION PANEL ------------------------------------------------------- */
@@ -253,16 +261,14 @@
 }
 
 @media (max-width: 780px) {
-  .five-match-screen .five-match-vs { min-height: 126px; box-shadow: 3px 3px 0 rgba(17, 18, 22, .18); }
-  .five-match-screen .five-match-vs .five-match-team { grid-template-rows: minmax(2.2em, auto) 68px; min-height: 120px; padding: 9px 17px 8px 7px; }
-  .five-match-screen .five-match-vs .five-match-team:last-child { margin-left: -10px; padding: 9px 7px 8px 20px; }
+  .five-match-screen .five-match-vs { grid-template-columns: minmax(0, 1fr) 56px minmax(0, 1fr); min-height: 126px; box-shadow: 3px 3px 0 rgba(17, 18, 22, .18); }
+  .five-match-screen .five-match-vs .five-match-team { grid-template-rows: minmax(2.2em, auto) 68px; min-height: 120px; padding: 9px 6px 8px; }
   .five-match-screen .five-match-vs .five-match-logo { width: 58px; height: 66px; }
   .five-match-screen .five-match-vs .five-match-team strong { font-size: clamp(.78rem, 3.7vw, 1rem); }
-  .five-match-screen .five-match-vs .five-match-vs-badge { margin-inline: -8px; font-size: 1.45rem; }
+  .five-match-screen .five-match-vs .five-match-vs-badge { font-size: 1.45rem; }
 }
 
 @media (max-width: 390px) {
-  .five-match-screen .five-match-vs { grid-template-columns: minmax(0, 1fr) 54px minmax(0, 1fr); }
   .five-match-screen .five-match-vs .five-match-team strong { font-size: clamp(.72rem, 3.65vw, .9rem); }
   .five-match-screen .five-match-vs .five-match-logo { width: 54px; height: 62px; }
 }
