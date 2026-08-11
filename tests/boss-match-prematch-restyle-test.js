@@ -3,6 +3,8 @@ const fs = require('fs');
 const app = fs.readFileSync('js/app.js', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
 const css = fs.readFileSync('css/boss-match-prematch-restyle.css', 'utf8');
+const actionCss = fs.readFileSync('css/five-match-action-assets.css', 'utf8');
+const pitch = fs.readFileSync('assets/ui/11v11/boss-tactical-pitch.svg', 'utf8');
 
 assert.match(app, /boss-match-bottom-grid" \$\{simulating \|\| resolved \? "" : "hidden"\}/, 'pre-match collapses result region');
 assert.match(app, /boss-match-log-panel" \$\{simulating \|\| resolved \? "" : "hidden"\}/, 'timeline markup remains but is hidden before simulation');
@@ -10,6 +12,8 @@ assert.match(app, /boss-match-result-panel \$\{outcomeClass\}" \$\{simulating \|
 assert.match(app, /id="simulate-boss-match"[\s\S]{0,300}Avvia la simulazione/, 'simulation CTA retains its established id');
 assert.match(app, /getElementById\("simulate-boss-match"\)\.addEventListener\("click"[\s\S]{0,160}startMatchSimulation\(ui\.match, \{ boss \}\)/, '11v11 simulator handler is unchanged');
 assert.match(app, /id="edit-boss-team" data-nav="squad"/, 'team CTA uses existing squad navigation');
+assert.match(app, /boss-match-controls[\s\S]{0,500}five-match-action-cta five-match-action-cta--primary/, '11v11 simulation reuses the exact 5v5 action component classes');
+assert.match(app, /id="edit-boss-team"[\s\S]{0,180}five-match-tactics-icon/, '11v11 squad action reuses the exact 5v5 tactical-board icon');
 assert.match(app, /id="test-win"[\s\S]{0,160}Vittoria sicura/, 'development victory control remains');
 assert.match(app, /getElementById\("test-win"\)\?\.addEventListener\("click"[\s\S]{0,140}forceMatchOutcome\("victory", \{ boss \}\)/, 'development handler remains');
 assert.match(app, /2 pick 1 di 3 dalla squadra battuta/, 'boss reward copy and logic remain');
@@ -19,4 +23,8 @@ assert.match(app, /topbar\(isSpecial \? "Partita speciale" : "Sfida Boss", "", "
 assert.match(html, /css\/boss-match-prematch-restyle\.css/, 'dedicated stylesheet is loaded');
 assert.doesNotMatch(css, /(?:^|\})\s*(?:body|button|\.panel|\.card|img)(?:[\s,{.:#])/m, 'stylesheet has no unscoped global selectors');
 assert.doesNotMatch(css, /\.five-match-screen/, '5v5 screen is not modified by the new stylesheet');
+assert.match(css, /boss-tactical-pitch\.svg/, '11v11 uses its dedicated portrait pitch artwork');
+assert.match(css, /height: 660px/, 'mobile pitch gives four formation rows sufficient vertical space');
+assert.match(actionCss, /:is\(\.five-match-screen \.five-match-controls, \.boss-match-screen \.boss-match-controls\)/, '5v5 action artwork stylesheet is shared with 11v11');
+assert.match(pitch, /viewBox="0 0 360 640"/, 'pitch artwork is composed for a mobile portrait container');
 console.log('boss-match prematch restyle regression checks passed');

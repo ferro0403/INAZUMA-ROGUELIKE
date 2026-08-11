@@ -76,3 +76,29 @@
   .boss-match-screen .boss-match-logo { width: 38px; height: 38px; }
   .boss-match-screen .boss-match-action-cta { grid-template-columns: 72px minmax(0,1fr) 22px; }
 }
+
+/* 11v11-only portrait field: generous four-line spacing on narrow phones. */
+.boss-match-screen .boss-match-field {
+  min-height: clamp(660px, 112vw, 760px);
+  background: #087044 url("../assets/ui/11v11/boss-tactical-pitch.svg") center / 100% 100% no-repeat;
+}
+.boss-match-screen .boss-match-field > .boss-match-field-side {
+  min-height: clamp(598px, 102vw, 700px);
+  padding-block: 16px;
+}
+.boss-match-screen .boss-match-line { padding-inline: clamp(3px, 1.4vw, 10px); }
+
+@media (max-width: 780px) {
+  .boss-match-screen .boss-match-field { min-height: 660px; }
+  .boss-match-screen .boss-match-field-side--mobile {
+    height: 660px;
+    padding: 34px 7px 30px;
+    gap: 12px;
+  }
+  .boss-match-screen .boss-match-line { gap: clamp(7px, 2vw, 11px); }
+}
+
+@media (max-width: 370px) {
+  .boss-match-screen .boss-match-field { min-height: 640px; }
+  .boss-match-screen .boss-match-field-side--mobile { height: 640px; padding-inline: 5px; }
+}
