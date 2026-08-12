@@ -1,0 +1,177 @@
+/* Player Detail: equipped-item polish + canonical element badges.
+   Scoped to the shared Player Detail only. No gameplay/data changes. */
+
+.player-detail-modal .detail-element-chip {
+  --element-color: #4d535b;
+  --element-bg: #f3f1e9;
+  --element-border: #4d535b;
+  gap: 5px;
+  border-color: var(--element-border);
+  background: var(--element-bg);
+  color: var(--element-color);
+}
+
+.player-detail-modal .detail-element-chip svg {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.player-detail-modal .detail-element-chip[data-element="fire"] {
+  --element-color: #b82323;
+  --element-bg: #fff0ec;
+  --element-border: #b82323;
+}
+
+.player-detail-modal .detail-element-chip[data-element="mountain"] {
+  --element-color: #76502f;
+  --element-bg: #f3e6d6;
+  --element-border: #76502f;
+}
+
+.player-detail-modal .detail-element-chip[data-element="forest"] {
+  --element-color: #23713f;
+  --element-bg: #e6f5e9;
+  --element-border: #23713f;
+}
+
+.player-detail-modal .detail-element-chip[data-element="wind"] {
+  --element-color: #197ca9;
+  --element-bg: #e8f6fb;
+  --element-border: #197ca9;
+}
+
+/* Equipped item: remove the stray yellow wedge around the product art.
+   Keep the asset itself untouched and give the whole block the same compact
+   premium rhythm as the reference sheet. */
+.player-detail-modal .equipped-detail:not(.equipped-detail-empty) {
+  grid-template-columns: 92px minmax(0, 1fr);
+  min-height: 108px;
+  overflow: hidden;
+  background: #fffef9;
+}
+
+.player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-art {
+  min-height: 108px;
+  padding: 8px;
+  border-right: 3px solid var(--pd-ink);
+  background:
+    linear-gradient(145deg, rgba(255,255,255,.88), rgba(238,233,220,.96));
+}
+
+.player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-art::before,
+.player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-art::after {
+  content: none;
+  display: none;
+}
+
+.player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-art .item-icon {
+  width: 74px;
+  height: 74px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  filter: drop-shadow(3px 4px 0 rgba(17,18,22,.14));
+}
+
+.player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-art .item-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-copy {
+  min-width: 0;
+  padding: 10px 10px 6px 11px;
+  gap: 2px;
+}
+
+.player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-copy span {
+  font-size: .48rem;
+  letter-spacing: .12em;
+}
+
+.player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-copy strong {
+  margin: 1px 0;
+  font-size: .88rem;
+  line-height: .98;
+  overflow-wrap: normal;
+  word-break: normal;
+}
+
+.player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-copy small {
+  font-size: .61rem;
+  line-height: 1.15;
+}
+
+.player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-copy em {
+  margin-top: 3px;
+  font-size: .68rem;
+}
+
+.player-detail-modal .equipped-detail:not(.equipped-detail-empty) > button[data-detail-unequip] {
+  grid-column: 2;
+  justify-self: start;
+  width: auto;
+  min-width: 0;
+  min-height: 32px;
+  margin: 0 10px 9px 11px;
+  padding: 5px 11px;
+  border: 2px solid var(--pd-ink);
+  background: #fffef9;
+  color: var(--pd-ink);
+  box-shadow: 2px 2px 0 var(--pd-ink);
+  font-size: .64rem;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .player-detail-modal .detail-element-chip svg {
+    width: 13px;
+    height: 13px;
+  }
+
+  .player-detail-modal .equipped-detail:not(.equipped-detail-empty) {
+    grid-template-columns: 82px minmax(0, 1fr);
+    min-height: 96px;
+  }
+
+  .player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-art {
+    min-height: 96px;
+    padding: 6px;
+  }
+
+  .player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-art .item-icon {
+    width: 66px;
+    height: 66px;
+  }
+
+  .player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-copy {
+    padding: 8px 8px 4px 9px;
+  }
+
+  .player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-copy strong {
+    font-size: .8rem;
+  }
+
+  .player-detail-modal .equipped-detail:not(.equipped-detail-empty) .equipped-detail-copy small {
+    font-size: .56rem;
+  }
+
+  .player-detail-modal .equipped-detail:not(.equipped-detail-empty) > button[data-detail-unequip] {
+    min-height: 29px;
+    margin: 0 8px 7px 9px;
+    padding: 4px 9px;
+    font-size: .58rem;
+  }
+}
