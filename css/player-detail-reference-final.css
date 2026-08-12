@@ -1,17 +1,19 @@
-/* Final reference pass for Player Detail.
-   Goal: match the approved collectible-card reference without touching player data/logic. */
+/* Reference-accurate Player Detail pass.
+   Keep all existing data/logic; only reshape the shared modal to the approved compact card. */
 
 .modal-backdrop:has(.player-detail-modal) {
   align-items: flex-start;
-  padding: max(10px, env(safe-area-inset-top)) 10px max(14px, env(safe-area-inset-bottom));
+  padding: max(8px, env(safe-area-inset-top)) 8px max(10px, env(safe-area-inset-bottom));
 }
 
 .player-detail-modal {
-  width: min(820px, calc(100vw - 20px));
-  height: min(930px, calc(100dvh - 20px));
-  padding: 7px;
+  width: min(760px, calc(100vw - 16px));
+  height: min(900px, calc(100dvh - 16px));
+  padding: 6px;
+  overflow-y: auto;
+  overflow-x: hidden;
   border: 4px solid var(--pd-ink);
-  box-shadow: 9px 10px 0 var(--pd-ink);
+  box-shadow: 8px 9px 0 var(--pd-ink);
 }
 
 .player-detail-layout {
@@ -20,189 +22,176 @@
 }
 
 /* =========================
-   HERO — rebuild proportions
+   HERO — compact reference composition
    ========================= */
 .player-detail-hero {
   position: relative;
   isolation: isolate;
   display: block;
-  min-height: 700px;
+  min-height: 510px;
   overflow: hidden;
   border-bottom: 3px solid var(--pd-ink);
   background:
-    radial-gradient(circle at 14% 23%, rgba(138,104,18,.05) 0 1.2px, transparent 1.6px) 0 0/12px 12px,
+    radial-gradient(circle at 14% 23%, rgba(138,104,18,.045) 0 1.1px, transparent 1.5px) 0 0/11px 11px,
     var(--pd-paper);
 }
 
 .player-detail-identity {
   position: relative;
   z-index: 5;
-  width: 53%;
+  width: 55%;
   min-width: 0;
-  padding: 24px 0 24px 26px;
+  padding: 18px 0 18px 20px;
 }
 
 .player-detail-team {
-  min-height: 58px;
-  max-width: 92%;
-  padding: 6px 16px 6px 9px;
+  min-height: 48px;
+  max-width: 90%;
+  padding: 5px 12px 5px 7px;
   border: 3px solid var(--pd-ink);
-  box-shadow: 5px 5px 0 var(--pd-ink);
+  box-shadow: 4px 4px 0 var(--pd-ink);
   transform: skew(-4deg);
 }
-
 .player-detail-team > * { transform: skew(4deg); }
 .player-detail-team img,
-.player-detail-team .team-logo-placeholder { width: 42px; height: 42px; }
-.player-detail-team strong { font-size: 1rem; }
+.player-detail-team .team-logo-placeholder { width: 34px; height: 34px; }
+.player-detail-team strong { font-size: .82rem; }
 
-.player-detail-heading {
-  margin-top: 42px;
-}
-
+.player-detail-heading { margin-top: 28px; }
 .player-detail-content .eyebrow,
 .player-detail-heading .eyebrow {
-  font-size: .78rem;
-  letter-spacing: .18em;
+  font-size: .62rem;
+  letter-spacing: .17em;
 }
 
 .player-detail-name {
   max-width: 96%;
-  margin: 8px 0 18px;
-  font-size: clamp(4rem, 7.8vw, 5.8rem);
-  line-height: .78;
-  letter-spacing: -.075em;
+  margin: 7px 0 13px;
+  overflow: hidden;
+  font-size: clamp(3rem, 7vw, 4.35rem);
+  line-height: .79;
+  letter-spacing: -.07em;
   -webkit-line-clamp: 3;
 }
-
 .player-detail-hero--long-name .player-detail-name {
-  font-size: clamp(3.35rem, 6.7vw, 4.9rem);
+  font-size: clamp(2.55rem, 6.1vw, 3.65rem);
 }
-
 .player-detail-hero--extra-long-name .player-detail-name {
-  font-size: clamp(2.9rem, 5.9vw, 4.1rem);
-  line-height: .81;
+  font-size: clamp(2.15rem, 5.2vw, 3.05rem);
+  line-height: .82;
 }
 
 .player-detail-tags {
   display: flex;
   flex-wrap: nowrap;
-  gap: 8px;
-  margin-bottom: 18px;
+  gap: 6px;
+  margin-bottom: 12px;
 }
-
 .player-detail-tags .role-chip {
-  min-height: 42px;
-  padding: 8px 12px;
+  min-height: 32px;
+  padding: 5px 8px;
   border: 2px solid var(--pd-ink);
-  box-shadow: 3px 3px 0 rgba(17,18,22,.55);
-  font-size: .8rem;
+  box-shadow: 2px 2px 0 rgba(17,18,22,.55);
+  font-size: .67rem;
 }
-
-.detail-element-chip svg { width: 16px; height: 16px; }
+.detail-element-chip svg { width: 13px; height: 13px; }
 
 .overall-comparison {
-  width: 94%;
+  width: 92%;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 16px;
+  gap: 7px;
+  margin-bottom: 11px;
 }
-
 .overall-comparison > div {
-  min-height: 170px;
-  padding: 16px 14px 12px;
+  min-height: 112px;
+  padding: 9px 10px 7px;
   border: 3px solid var(--pd-ink);
-  box-shadow: 4px 5px 0 rgba(17,18,22,.28);
+  box-shadow: 3px 3px 0 rgba(17,18,22,.25);
 }
-
 .overall-comparison span {
-  font-size: .72rem;
-  letter-spacing: .1em;
+  font-size: .58rem;
+  letter-spacing: .09em;
 }
-
 .overall-comparison strong {
-  font-size: clamp(4rem, 7.6vw, 5.7rem);
+  font-size: clamp(3.05rem, 6.7vw, 4.15rem);
   line-height: .78;
 }
 
 .detail-category {
-  width: 100%;
-  min-height: 66px;
+  width: 96%;
+  min-height: 48px;
   grid-template-columns: auto auto minmax(0,1fr);
-  gap: 10px;
-  padding: 12px 14px 12px 12px;
+  gap: 7px;
+  padding: 7px 10px 7px 8px;
   border: 3px solid var(--pd-ink);
-  border-left: 12px solid var(--detail-rarity-accent);
-  box-shadow: 4px 4px 0 rgba(17,18,22,.26);
+  border-left: 9px solid var(--detail-rarity-accent);
+  box-shadow: 3px 3px 0 rgba(17,18,22,.24);
 }
-
-.detail-category span { font-size: 1.35rem; }
-.detail-category small { font-size: .7rem; }
+.detail-category span { font-size: 1.08rem; }
+.detail-category small { font-size: .56rem; }
 .detail-category strong {
   min-width: 0;
   justify-self: end;
-  font-size: 1.05rem;
+  font-size: .78rem;
   white-space: nowrap;
 }
 
-/* Right-side visual is an independent reserved zone: no text is allowed into it. */
+/* Visual occupies only the upper-right area, as in the approved mockup. */
 .player-detail-visual {
   position: absolute;
   z-index: 1;
   top: 0;
   right: 0;
   bottom: 0;
-  left: 49%;
+  left: 50%;
   overflow: hidden;
   isolation: isolate;
   pointer-events: none;
 }
-
 .player-detail-visual::before {
-  inset: 1% -8% 1% -2%;
+  inset: 0 -5% 0 -6%;
   z-index: 0;
   background:
-    linear-gradient(128deg,
-      transparent 0 12%,
-      color-mix(in srgb,var(--detail-rarity-bg) 20%,white) 12% 25%,
-      transparent 25% 31%,
-      color-mix(in srgb,var(--detail-rarity-bg) 68%,white) 31% 68%,
-      color-mix(in srgb,var(--detail-rarity-accent) 88%,black) 68% 100%);
-  clip-path: polygon(26% 0,100% 0,100% 100%,10% 92%,0 45%);
+    linear-gradient(126deg,
+      transparent 0 13%,
+      color-mix(in srgb,var(--detail-rarity-bg) 18%,white) 13% 27%,
+      transparent 27% 31%,
+      color-mix(in srgb,var(--detail-rarity-bg) 64%,white) 31% 73%,
+      color-mix(in srgb,var(--detail-rarity-accent) 86%,black) 73% 100%);
+  clip-path: polygon(30% 0,100% 0,100% 100%,18% 94%,0 43%);
 }
-
 .player-detail-visual::after {
-  inset: 6% -8% 4% 7%;
+  inset: 4% -6% 4% 4%;
   z-index: 1;
-  opacity: .72;
+  opacity: .68;
   background:
-    radial-gradient(circle at 75% 65%,rgba(255,255,255,.28) 0 2px,transparent 2.5px) 0 0/13px 13px,
-    repeating-linear-gradient(116deg,transparent 0 22px,rgba(255,255,255,.21) 23px 27px),
-    linear-gradient(52deg,transparent 0 44%,rgba(255,255,255,.27) 44% 48%,transparent 48%);
-  clip-path: polygon(23% 0,100% 5%,100% 100%,0 89%,14% 48%);
+    radial-gradient(circle at 75% 65%,rgba(255,255,255,.24) 0 2px,transparent 2.5px) 0 0/13px 13px,
+    repeating-linear-gradient(116deg,transparent 0 20px,rgba(255,255,255,.18) 21px 25px),
+    linear-gradient(52deg,transparent 0 44%,rgba(255,255,255,.24) 44% 48%,transparent 48%);
+  clip-path: polygon(25% 0,100% 4%,100% 100%,3% 91%,15% 47%);
 }
 
-/* Fullbody is deliberately oversized like the approved reference. */
+/* Scale the transparent fullbody canvas itself, not the wrapper, so the character is dominant. */
 .player-fullbody--fullbody {
   position: absolute;
   z-index: 3;
-  left: 50%;
+  left: 55%;
   right: auto;
-  bottom: 18px;
-  width: 138%;
-  height: 92%;
+  bottom: 3%;
+  width: 100%;
+  height: 87%;
   max-width: none;
   max-height: none;
-  transform: translateX(-50%);
+  transform: translateX(-50%) scale(1.48);
+  transform-origin: center bottom;
   object-fit: contain;
   object-position: center bottom;
-  filter: drop-shadow(8px 10px 0 rgba(17,18,22,.24));
+  filter: drop-shadow(6px 7px 0 rgba(17,18,22,.22));
 }
-
 .player-fullbody--portrait {
-  left: 50%;
+  left: 52%;
   right: auto;
-  bottom: 13%;
+  bottom: 10%;
   width: 72%;
   height: auto;
   transform: translateX(-50%);
@@ -210,207 +199,242 @@
   object-fit: cover;
   object-position: center top;
 }
-
 .player-fullbody-placeholder {
-  left: 50%;
+  left: 52%;
   right: auto;
-  bottom: 27%;
-  width: 54%;
+  bottom: 22%;
+  width: 52%;
   transform: translateX(-50%);
 }
 
 /* =========================
-   STATS / EQUIPMENT
+   STATS / EQUIPMENT — compact like the reference
    ========================= */
 .player-detail-content {
   position: relative;
   z-index: 7;
-  padding: 24px 26px 28px;
+  padding: 17px 20px 20px;
   background: var(--pd-paper);
 }
-
-.player-detail-section + .player-detail-section { margin-top: 28px; }
-.player-detail-section > h3 { margin-bottom: 14px; font-size: .9rem; }
+.player-detail-section + .player-detail-section { margin-top: 18px; }
+.player-detail-section > h3 {
+  margin-bottom: 9px;
+  font-size: .72rem;
+}
 
 .detail-stats {
   grid-template-columns: repeat(4,minmax(0,1fr));
-  gap: 10px;
+  gap: 6px;
 }
-
 .detail-stat {
-  min-height: 92px;
-  padding: 10px 11px 9px;
-  grid-template-columns: 27px 1fr;
-  grid-template-rows: auto auto 5px;
-  gap: 3px 7px;
+  min-height: 72px;
+  padding: 7px 7px 6px;
+  grid-template-columns: 20px 1fr;
+  grid-template-rows: auto auto 4px;
+  gap: 2px 4px;
   overflow: hidden;
 }
-
-.detail-stat-icon { width: 27px; height: 27px; }
-.detail-stat-icon svg { width: 24px; height: 24px; }
-.detail-stat-label { font-size: .63rem; }
-.detail-stat-value { font-size: 1.75rem; }
-.detail-stat-track { height: 5px; }
+.detail-stat-icon { width: 21px; height: 21px; }
+.detail-stat-icon svg { width: 19px; height: 19px; }
+.detail-stat-label {
+  min-width: 0;
+  font-size: .49rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.detail-stat-value {
+  grid-column: 1/3;
+  justify-self: start;
+  font-size: 1.35rem;
+}
+.detail-stat-track { height: 4px; }
+.detail-stat-bonus { right: 6px; bottom: 11px; font-size: .5rem; }
 
 .equipped-detail {
-  min-height: 145px;
-  grid-template-columns: 145px minmax(0,1fr);
+  min-height: 112px;
+  grid-template-columns: 108px minmax(0,1fr);
 }
-
-.equipped-detail-art { min-height: 145px; }
-.equipped-detail-art .item-icon { width: 96px; height: 96px; }
-.equipped-detail-copy { padding: 18px; }
-.equipped-detail-copy strong { font-size: 1.4rem; }
+.equipped-detail-art { min-height: 112px; }
+.equipped-detail-art .item-icon { width: 74px; height: 74px; }
+.equipped-detail-copy { padding: 12px; }
+.equipped-detail-copy strong { font-size: 1.05rem; }
+.equipped-detail-copy small { font-size: .72rem; }
+.equipped-detail-copy em { font-size: .75rem; }
 
 /* =========================
-   MOBILE — preserve the same composition, not a different design
+   MOBILE — same design and same density as the reference
    ========================= */
 @media (max-width: 520px) {
   .player-detail-modal {
-    width: calc(100vw - 18px);
-    height: calc(100dvh - 18px);
-    padding: 6px;
+    width: calc(100vw - 14px);
+    height: calc(100dvh - 14px);
+    padding: 5px;
   }
 
   .player-detail-modal .modal-close {
-    top: 14px;
-    right: 14px;
-    width: 52px;
-    height: 52px;
+    top: 11px;
+    right: 11px;
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
   }
 
   .player-detail-hero {
-    min-height: 620px;
+    min-height: 430px;
   }
 
   .player-detail-identity {
-    width: 54%;
-    padding: 20px 0 20px 16px;
+    width: 57%;
+    padding: 14px 0 14px 12px;
   }
 
   .player-detail-team {
-    max-width: 96%;
-    min-height: 48px;
-    padding: 5px 10px 5px 7px;
+    max-width: 92%;
+    min-height: 42px;
+    padding: 4px 8px 4px 6px;
   }
   .player-detail-team img,
-  .player-detail-team .team-logo-placeholder { width: 34px; height: 34px; }
-  .player-detail-team strong { font-size: .77rem; }
+  .player-detail-team .team-logo-placeholder { width: 29px; height: 29px; }
+  .player-detail-team strong { font-size: .67rem; }
 
-  .player-detail-heading { margin-top: 42px; }
+  .player-detail-heading { margin-top: 26px; }
   .player-detail-content .eyebrow,
-  .player-detail-heading .eyebrow { font-size: .59rem; }
+  .player-detail-heading .eyebrow { font-size: .51rem; }
 
   .player-detail-name {
-    max-width: 96%;
-    font-size: clamp(3.05rem, 13vw, 4rem);
+    max-width: 97%;
+    margin: 6px 0 11px;
+    font-size: clamp(2.55rem, 10.8vw, 3.25rem);
     line-height: .78;
-    margin-bottom: 16px;
   }
   .player-detail-hero--long-name .player-detail-name {
-    font-size: clamp(2.55rem, 10.8vw, 3.3rem);
+    font-size: clamp(2.15rem, 9.2vw, 2.75rem);
   }
   .player-detail-hero--extra-long-name .player-detail-name {
-    font-size: clamp(2.2rem, 9.4vw, 2.9rem);
+    font-size: clamp(1.85rem, 7.9vw, 2.35rem);
     line-height: .82;
   }
 
   .player-detail-tags {
-    gap: 5px;
-    margin-bottom: 14px;
+    gap: 4px;
+    margin-bottom: 10px;
   }
   .player-detail-tags .role-chip {
-    min-height: 34px;
-    padding: 6px 7px;
-    font-size: .67rem;
+    min-height: 29px;
+    padding: 4px 6px;
+    font-size: .58rem;
   }
+  .detail-element-chip svg { width: 11px; height: 11px; }
 
   .overall-comparison {
-    width: 96%;
-    gap: 7px;
-    margin-bottom: 12px;
+    width: 93%;
+    gap: 5px;
+    margin-bottom: 9px;
   }
   .overall-comparison > div {
-    min-height: 118px;
-    padding: 11px 9px 8px;
+    min-height: 91px;
+    padding: 7px 7px 6px;
     border-width: 2px;
-    box-shadow: 3px 4px 0 rgba(17,18,22,.24);
+    box-shadow: 2px 3px 0 rgba(17,18,22,.24);
   }
-  .overall-comparison span { font-size: .57rem; }
-  .overall-comparison strong { font-size: clamp(3rem, 12.5vw, 3.8rem); }
+  .overall-comparison span { font-size: .47rem; }
+  .overall-comparison strong {
+    font-size: clamp(2.55rem, 10.6vw, 3.15rem);
+  }
 
   .detail-category {
-    width: 98%;
-    min-height: 52px;
-    gap: 6px;
-    padding: 8px 8px 8px 7px;
+    width: 94%;
+    min-height: 40px;
+    gap: 5px;
+    padding: 6px 7px 6px 6px;
     border-width: 2px;
-    border-left-width: 9px;
+    border-left-width: 7px;
   }
-  .detail-category span { font-size: 1.1rem; }
-  .detail-category small { font-size: .55rem; }
+  .detail-category span { font-size: .9rem; }
+  .detail-category small { font-size: .48rem; }
   .detail-category strong {
-    font-size: .77rem;
+    font-size: .66rem;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
-  .player-detail-visual {
-    left: 49%;
-  }
-
+  .player-detail-visual { left: 51%; }
   .player-fullbody--fullbody {
-    left: 52%;
-    bottom: 12px;
-    width: 165%;
-    height: 93%;
+    left: 55%;
+    bottom: 2%;
+    width: 100%;
+    height: 82%;
+    transform: translateX(-50%) scale(1.62);
   }
-
   .player-fullbody--portrait {
-    width: 84%;
-    bottom: 15%;
+    width: 76%;
+    bottom: 11%;
   }
 
   .player-detail-content {
-    padding: 20px 14px 22px;
+    padding: 14px 12px 17px;
   }
-
-  .detail-stats {
-    grid-template-columns: repeat(2,minmax(0,1fr));
+  .player-detail-section + .player-detail-section { margin-top: 15px; }
+  .player-detail-section > h3 {
+    margin-bottom: 8px;
+    font-size: .63rem;
     gap: 8px;
   }
 
-  .detail-stat {
-    min-height: 88px;
-    padding: 9px 10px 8px;
+  /* Critical: the approved reference is 4 cards across, not 2. */
+  .detail-stats {
+    grid-template-columns: repeat(4,minmax(0,1fr));
+    gap: 4px;
   }
-  .detail-stat-label { font-size: .62rem; }
-  .detail-stat-value { font-size: 1.55rem; }
+  .detail-stat {
+    min-height: 65px;
+    padding: 5px 4px 5px;
+    grid-template-columns: 16px 1fr;
+    grid-template-rows: auto auto 3px;
+    gap: 1px 3px;
+  }
+  .detail-stat-icon { width: 16px; height: 16px; }
+  .detail-stat-icon svg { width: 15px; height: 15px; }
+  .detail-stat-label {
+    font-size: .39rem;
+    letter-spacing: -.01em;
+  }
+  .detail-stat-value {
+    font-size: 1.08rem;
+    line-height: .9;
+  }
+  .detail-stat-track { height: 3px; }
+  .detail-stat-bonus { display: none; }
 
   .equipped-detail {
-    grid-template-columns: 92px minmax(0,1fr);
-    min-height: 118px;
+    grid-template-columns: 78px minmax(0,1fr);
+    min-height: 90px;
   }
-  .equipped-detail-art { min-height: 118px; }
-  .equipped-detail-art .item-icon { width: 70px; height: 70px; }
-  .equipped-detail-copy { padding: 12px; }
-  .equipped-detail-copy strong { font-size: 1.05rem; }
-  .equipped-detail-copy small { font-size: .75rem; }
+  .equipped-detail-art { min-height: 90px; }
+  .equipped-detail-art .item-icon { width: 58px; height: 58px; }
+  .equipped-detail-copy { padding: 9px; }
+  .equipped-detail-copy span { font-size: .48rem; }
+  .equipped-detail-copy strong { font-size: .86rem; }
+  .equipped-detail-copy small { font-size: .62rem; line-height: 1.15; }
+  .equipped-detail-copy em { font-size: .67rem; }
 
   .equipped-detail-empty {
     grid-template-columns: 1fr;
+    min-height: 78px;
   }
   .equipped-detail-empty .equipped-detail-copy {
-    padding: 14px 14px 14px 58px;
+    padding: 10px 10px 10px 48px;
   }
 }
 
 @media (max-width: 370px) {
-  .player-detail-hero { min-height: 600px; }
-  .player-detail-identity { width: 55%; padding-left: 13px; }
-  .player-detail-visual { left: 50%; }
-  .player-detail-name { font-size: 2.85rem; }
-  .player-detail-hero--long-name .player-detail-name { font-size: 2.4rem; }
-  .player-detail-hero--extra-long-name .player-detail-name { font-size: 2.08rem; }
-  .player-fullbody--fullbody { width: 170%; left: 53%; }
+  .player-detail-hero { min-height: 410px; }
+  .player-detail-identity { width: 58%; padding-left: 10px; }
+  .player-detail-visual { left: 52%; }
+  .player-detail-name { font-size: 2.35rem; }
+  .player-detail-hero--long-name .player-detail-name { font-size: 2rem; }
+  .player-detail-hero--extra-long-name .player-detail-name { font-size: 1.72rem; }
+  .player-fullbody--fullbody { transform: translateX(-50%) scale(1.68); }
+  .detail-stat-label { font-size: .36rem; }
 }
