@@ -1,0 +1,416 @@
+/* Final reference pass for Player Detail.
+   Goal: match the approved collectible-card reference without touching player data/logic. */
+
+.modal-backdrop:has(.player-detail-modal) {
+  align-items: flex-start;
+  padding: max(10px, env(safe-area-inset-top)) 10px max(14px, env(safe-area-inset-bottom));
+}
+
+.player-detail-modal {
+  width: min(820px, calc(100vw - 20px));
+  height: min(930px, calc(100dvh - 20px));
+  padding: 7px;
+  border: 4px solid var(--pd-ink);
+  box-shadow: 9px 10px 0 var(--pd-ink);
+}
+
+.player-detail-layout {
+  border: 1px solid var(--pd-ink);
+  background: var(--pd-paper);
+}
+
+/* =========================
+   HERO — rebuild proportions
+   ========================= */
+.player-detail-hero {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  min-height: 700px;
+  overflow: hidden;
+  border-bottom: 3px solid var(--pd-ink);
+  background:
+    radial-gradient(circle at 14% 23%, rgba(138,104,18,.05) 0 1.2px, transparent 1.6px) 0 0/12px 12px,
+    var(--pd-paper);
+}
+
+.player-detail-identity {
+  position: relative;
+  z-index: 5;
+  width: 53%;
+  min-width: 0;
+  padding: 24px 0 24px 26px;
+}
+
+.player-detail-team {
+  min-height: 58px;
+  max-width: 92%;
+  padding: 6px 16px 6px 9px;
+  border: 3px solid var(--pd-ink);
+  box-shadow: 5px 5px 0 var(--pd-ink);
+  transform: skew(-4deg);
+}
+
+.player-detail-team > * { transform: skew(4deg); }
+.player-detail-team img,
+.player-detail-team .team-logo-placeholder { width: 42px; height: 42px; }
+.player-detail-team strong { font-size: 1rem; }
+
+.player-detail-heading {
+  margin-top: 42px;
+}
+
+.player-detail-content .eyebrow,
+.player-detail-heading .eyebrow {
+  font-size: .78rem;
+  letter-spacing: .18em;
+}
+
+.player-detail-name {
+  max-width: 96%;
+  margin: 8px 0 18px;
+  font-size: clamp(4rem, 7.8vw, 5.8rem);
+  line-height: .78;
+  letter-spacing: -.075em;
+  -webkit-line-clamp: 3;
+}
+
+.player-detail-hero--long-name .player-detail-name {
+  font-size: clamp(3.35rem, 6.7vw, 4.9rem);
+}
+
+.player-detail-hero--extra-long-name .player-detail-name {
+  font-size: clamp(2.9rem, 5.9vw, 4.1rem);
+  line-height: .81;
+}
+
+.player-detail-tags {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.player-detail-tags .role-chip {
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 2px solid var(--pd-ink);
+  box-shadow: 3px 3px 0 rgba(17,18,22,.55);
+  font-size: .8rem;
+}
+
+.detail-element-chip svg { width: 16px; height: 16px; }
+
+.overall-comparison {
+  width: 94%;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.overall-comparison > div {
+  min-height: 170px;
+  padding: 16px 14px 12px;
+  border: 3px solid var(--pd-ink);
+  box-shadow: 4px 5px 0 rgba(17,18,22,.28);
+}
+
+.overall-comparison span {
+  font-size: .72rem;
+  letter-spacing: .1em;
+}
+
+.overall-comparison strong {
+  font-size: clamp(4rem, 7.6vw, 5.7rem);
+  line-height: .78;
+}
+
+.detail-category {
+  width: 100%;
+  min-height: 66px;
+  grid-template-columns: auto auto minmax(0,1fr);
+  gap: 10px;
+  padding: 12px 14px 12px 12px;
+  border: 3px solid var(--pd-ink);
+  border-left: 12px solid var(--detail-rarity-accent);
+  box-shadow: 4px 4px 0 rgba(17,18,22,.26);
+}
+
+.detail-category span { font-size: 1.35rem; }
+.detail-category small { font-size: .7rem; }
+.detail-category strong {
+  min-width: 0;
+  justify-self: end;
+  font-size: 1.05rem;
+  white-space: nowrap;
+}
+
+/* Right-side visual is an independent reserved zone: no text is allowed into it. */
+.player-detail-visual {
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 49%;
+  overflow: hidden;
+  isolation: isolate;
+  pointer-events: none;
+}
+
+.player-detail-visual::before {
+  inset: 1% -8% 1% -2%;
+  z-index: 0;
+  background:
+    linear-gradient(128deg,
+      transparent 0 12%,
+      color-mix(in srgb,var(--detail-rarity-bg) 20%,white) 12% 25%,
+      transparent 25% 31%,
+      color-mix(in srgb,var(--detail-rarity-bg) 68%,white) 31% 68%,
+      color-mix(in srgb,var(--detail-rarity-accent) 88%,black) 68% 100%);
+  clip-path: polygon(26% 0,100% 0,100% 100%,10% 92%,0 45%);
+}
+
+.player-detail-visual::after {
+  inset: 6% -8% 4% 7%;
+  z-index: 1;
+  opacity: .72;
+  background:
+    radial-gradient(circle at 75% 65%,rgba(255,255,255,.28) 0 2px,transparent 2.5px) 0 0/13px 13px,
+    repeating-linear-gradient(116deg,transparent 0 22px,rgba(255,255,255,.21) 23px 27px),
+    linear-gradient(52deg,transparent 0 44%,rgba(255,255,255,.27) 44% 48%,transparent 48%);
+  clip-path: polygon(23% 0,100% 5%,100% 100%,0 89%,14% 48%);
+}
+
+/* Fullbody is deliberately oversized like the approved reference. */
+.player-fullbody--fullbody {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  right: auto;
+  bottom: 18px;
+  width: 138%;
+  height: 92%;
+  max-width: none;
+  max-height: none;
+  transform: translateX(-50%);
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(8px 10px 0 rgba(17,18,22,.24));
+}
+
+.player-fullbody--portrait {
+  left: 50%;
+  right: auto;
+  bottom: 13%;
+  width: 72%;
+  height: auto;
+  transform: translateX(-50%);
+  aspect-ratio: 3/4;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.player-fullbody-placeholder {
+  left: 50%;
+  right: auto;
+  bottom: 27%;
+  width: 54%;
+  transform: translateX(-50%);
+}
+
+/* =========================
+   STATS / EQUIPMENT
+   ========================= */
+.player-detail-content {
+  position: relative;
+  z-index: 7;
+  padding: 24px 26px 28px;
+  background: var(--pd-paper);
+}
+
+.player-detail-section + .player-detail-section { margin-top: 28px; }
+.player-detail-section > h3 { margin-bottom: 14px; font-size: .9rem; }
+
+.detail-stats {
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 10px;
+}
+
+.detail-stat {
+  min-height: 92px;
+  padding: 10px 11px 9px;
+  grid-template-columns: 27px 1fr;
+  grid-template-rows: auto auto 5px;
+  gap: 3px 7px;
+  overflow: hidden;
+}
+
+.detail-stat-icon { width: 27px; height: 27px; }
+.detail-stat-icon svg { width: 24px; height: 24px; }
+.detail-stat-label { font-size: .63rem; }
+.detail-stat-value { font-size: 1.75rem; }
+.detail-stat-track { height: 5px; }
+
+.equipped-detail {
+  min-height: 145px;
+  grid-template-columns: 145px minmax(0,1fr);
+}
+
+.equipped-detail-art { min-height: 145px; }
+.equipped-detail-art .item-icon { width: 96px; height: 96px; }
+.equipped-detail-copy { padding: 18px; }
+.equipped-detail-copy strong { font-size: 1.4rem; }
+
+/* =========================
+   MOBILE — preserve the same composition, not a different design
+   ========================= */
+@media (max-width: 520px) {
+  .player-detail-modal {
+    width: calc(100vw - 18px);
+    height: calc(100dvh - 18px);
+    padding: 6px;
+  }
+
+  .player-detail-modal .modal-close {
+    top: 14px;
+    right: 14px;
+    width: 52px;
+    height: 52px;
+  }
+
+  .player-detail-hero {
+    min-height: 620px;
+  }
+
+  .player-detail-identity {
+    width: 54%;
+    padding: 20px 0 20px 16px;
+  }
+
+  .player-detail-team {
+    max-width: 96%;
+    min-height: 48px;
+    padding: 5px 10px 5px 7px;
+  }
+  .player-detail-team img,
+  .player-detail-team .team-logo-placeholder { width: 34px; height: 34px; }
+  .player-detail-team strong { font-size: .77rem; }
+
+  .player-detail-heading { margin-top: 42px; }
+  .player-detail-content .eyebrow,
+  .player-detail-heading .eyebrow { font-size: .59rem; }
+
+  .player-detail-name {
+    max-width: 96%;
+    font-size: clamp(3.05rem, 13vw, 4rem);
+    line-height: .78;
+    margin-bottom: 16px;
+  }
+  .player-detail-hero--long-name .player-detail-name {
+    font-size: clamp(2.55rem, 10.8vw, 3.3rem);
+  }
+  .player-detail-hero--extra-long-name .player-detail-name {
+    font-size: clamp(2.2rem, 9.4vw, 2.9rem);
+    line-height: .82;
+  }
+
+  .player-detail-tags {
+    gap: 5px;
+    margin-bottom: 14px;
+  }
+  .player-detail-tags .role-chip {
+    min-height: 34px;
+    padding: 6px 7px;
+    font-size: .67rem;
+  }
+
+  .overall-comparison {
+    width: 96%;
+    gap: 7px;
+    margin-bottom: 12px;
+  }
+  .overall-comparison > div {
+    min-height: 118px;
+    padding: 11px 9px 8px;
+    border-width: 2px;
+    box-shadow: 3px 4px 0 rgba(17,18,22,.24);
+  }
+  .overall-comparison span { font-size: .57rem; }
+  .overall-comparison strong { font-size: clamp(3rem, 12.5vw, 3.8rem); }
+
+  .detail-category {
+    width: 98%;
+    min-height: 52px;
+    gap: 6px;
+    padding: 8px 8px 8px 7px;
+    border-width: 2px;
+    border-left-width: 9px;
+  }
+  .detail-category span { font-size: 1.1rem; }
+  .detail-category small { font-size: .55rem; }
+  .detail-category strong {
+    font-size: .77rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .player-detail-visual {
+    left: 49%;
+  }
+
+  .player-fullbody--fullbody {
+    left: 52%;
+    bottom: 12px;
+    width: 165%;
+    height: 93%;
+  }
+
+  .player-fullbody--portrait {
+    width: 84%;
+    bottom: 15%;
+  }
+
+  .player-detail-content {
+    padding: 20px 14px 22px;
+  }
+
+  .detail-stats {
+    grid-template-columns: repeat(2,minmax(0,1fr));
+    gap: 8px;
+  }
+
+  .detail-stat {
+    min-height: 88px;
+    padding: 9px 10px 8px;
+  }
+  .detail-stat-label { font-size: .62rem; }
+  .detail-stat-value { font-size: 1.55rem; }
+
+  .equipped-detail {
+    grid-template-columns: 92px minmax(0,1fr);
+    min-height: 118px;
+  }
+  .equipped-detail-art { min-height: 118px; }
+  .equipped-detail-art .item-icon { width: 70px; height: 70px; }
+  .equipped-detail-copy { padding: 12px; }
+  .equipped-detail-copy strong { font-size: 1.05rem; }
+  .equipped-detail-copy small { font-size: .75rem; }
+
+  .equipped-detail-empty {
+    grid-template-columns: 1fr;
+  }
+  .equipped-detail-empty .equipped-detail-copy {
+    padding: 14px 14px 14px 58px;
+  }
+}
+
+@media (max-width: 370px) {
+  .player-detail-hero { min-height: 600px; }
+  .player-detail-identity { width: 55%; padding-left: 13px; }
+  .player-detail-visual { left: 50%; }
+  .player-detail-name { font-size: 2.85rem; }
+  .player-detail-hero--long-name .player-detail-name { font-size: 2.4rem; }
+  .player-detail-hero--extra-long-name .player-detail-name { font-size: 2.08rem; }
+  .player-fullbody--fullbody { width: 170%; left: 53%; }
+}
