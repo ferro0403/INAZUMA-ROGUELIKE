@@ -141,6 +141,26 @@
     font-size: .62rem;
     line-height: 1.2;
   }
+
+  /* Let the sheet end naturally after the equipment block instead of keeping
+     a fixed-height empty tail below the last section. */
+  .player-detail-modal {
+    height: auto;
+    max-height: calc(100dvh - 32px);
+  }
+
+  .player-detail-layout {
+    min-height: 0;
+  }
+
+  .player-detail-content {
+    padding-bottom: 10px;
+  }
+
+  .player-detail-content .player-detail-section:last-child,
+  .player-detail-content .equipped-detail:last-child {
+    margin-bottom: 0;
+  }
 }
 
 @media (max-width: 370px) {
