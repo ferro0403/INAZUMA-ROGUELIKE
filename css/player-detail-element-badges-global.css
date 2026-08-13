@@ -1,0 +1,51 @@
+.detail-element-chip {
+  --element-color: #4d535b;
+  --element-bg: #f3f1e9;
+  --element-border: #4d535b;
+  gap: 5px;
+  border-color: var(--element-border) !important;
+  background: var(--element-bg) !important;
+  color: var(--element-color) !important;
+}
+
+.detail-element-chip svg {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.detail-element-chip[data-element="fire"] {
+  --element-color: #b82323;
+  --element-bg: #fff0ec;
+  --element-border: #b82323;
+}
+
+.detail-element-chip[data-element="mountain"] {
+  --element-color: #76502f;
+  --element-bg: #f3e6d6;
+  --element-border: #76502f;
+}
+
+.detail-element-chip[data-element="forest"] {
+  --element-color: #23713f;
+  --element-bg: #e6f5e9;
+  --element-border: #23713f;
+}
+
+.detail-element-chip[data-element="wind"] {
+  --element-color: #197ca9;
+  --element-bg: #e8f6fb;
+  --element-border: #197ca9;
+}
+
+@media (max-width: 520px) {
+  .detail-element-chip svg {
+    width: 13px;
+    height: 13px;
+  }
+}
