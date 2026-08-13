@@ -1,0 +1,469 @@
+/* Final reference lock for the shared Player Detail.
+   This file intentionally overrides the premium base without changing any player data or logic. */
+
+.modal-backdrop:has(.player-detail-modal) {
+  align-items: flex-start;
+  padding: max(7px, env(safe-area-inset-top)) 7px max(9px, env(safe-area-inset-bottom));
+}
+
+.player-detail-modal {
+  width: min(760px, calc(100vw - 14px));
+  height: min(900px, calc(100dvh - 14px));
+  padding: 5px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  border: 4px solid var(--pd-ink);
+  box-shadow: 8px 9px 0 var(--pd-ink);
+}
+
+.player-detail-layout {
+  border: 1px solid var(--pd-ink);
+  background: var(--pd-paper);
+}
+
+/* =========================================================
+   HERO — reference composition: information left, hero art right
+   ========================================================= */
+.player-detail-hero {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  min-height: 500px;
+  overflow: hidden;
+  border-bottom: 3px solid var(--pd-ink);
+  background:
+    radial-gradient(circle at 14% 23%, rgba(138,104,18,.045) 0 1.1px, transparent 1.5px) 0 0/11px 11px,
+    var(--pd-paper);
+}
+
+.player-detail-identity {
+  position: relative;
+  z-index: 6;
+  width: 55%;
+  min-width: 0;
+  padding: 18px 0 17px 20px;
+}
+
+.player-detail-team {
+  min-height: 48px;
+  max-width: 90%;
+  padding: 5px 12px 5px 7px;
+  border: 3px solid var(--pd-ink);
+  box-shadow: 4px 4px 0 var(--pd-ink);
+  transform: skew(-4deg);
+}
+.player-detail-team > * { transform: skew(4deg); }
+.player-detail-team img,
+.player-detail-team .team-logo-placeholder { width: 34px; height: 34px; }
+.player-detail-team strong { font-size: .82rem; }
+
+.player-detail-heading { margin-top: 28px; }
+.player-detail-content .eyebrow,
+.player-detail-heading .eyebrow {
+  font-size: .62rem;
+  letter-spacing: .17em;
+}
+
+/* Never split a surname/name inside the word. Fit the font instead. */
+.player-detail-name,
+.player-detail-hero--long-name .player-detail-name,
+.player-detail-hero--extra-long-name .player-detail-name {
+  display: block;
+  max-width: 100%;
+  margin: 7px 0 13px;
+  overflow: visible;
+  line-height: .81;
+  letter-spacing: -.07em;
+  text-transform: uppercase;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+  text-wrap: wrap;
+  -webkit-line-clamp: unset;
+}
+.player-detail-name { font-size: clamp(3rem, 7vw, 4.35rem); }
+.player-detail-hero--long-name .player-detail-name {
+  font-size: clamp(2.45rem, 5.8vw, 3.45rem);
+  letter-spacing: -.062em;
+}
+.player-detail-hero--extra-long-name .player-detail-name {
+  font-size: clamp(2rem, 4.9vw, 2.85rem);
+  line-height: .84;
+  letter-spacing: -.052em;
+}
+
+.player-detail-tags {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.player-detail-tags .role-chip {
+  min-height: 32px;
+  padding: 5px 8px;
+  border: 2px solid var(--pd-ink);
+  box-shadow: 2px 2px 0 rgba(17,18,22,.55);
+  font-size: .67rem;
+}
+.detail-element-chip svg { width: 13px; height: 13px; }
+
+.overall-comparison {
+  position: relative;
+  z-index: 7;
+  width: 92%;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+  margin-bottom: 11px;
+}
+.overall-comparison > div {
+  min-height: 112px;
+  padding: 9px 10px 7px;
+  border: 3px solid var(--pd-ink);
+  box-shadow: 3px 3px 0 rgba(17,18,22,.25);
+}
+.overall-comparison span {
+  font-size: .58rem;
+  letter-spacing: .09em;
+}
+.overall-comparison strong {
+  font-size: clamp(3.05rem, 6.7vw, 4.15rem);
+  line-height: .78;
+}
+
+.detail-category {
+  position: relative;
+  z-index: 7;
+  width: 96%;
+  min-height: 48px;
+  grid-template-columns: auto auto minmax(0,1fr);
+  gap: 7px;
+  padding: 7px 10px 7px 8px;
+  border: 3px solid var(--pd-ink);
+  border-left: 9px solid var(--detail-rarity-accent);
+  box-shadow: 3px 3px 0 rgba(17,18,22,.24);
+}
+.detail-category span { font-size: 1.08rem; }
+.detail-category small { font-size: .56rem; }
+.detail-category strong {
+  min-width: 0;
+  justify-self: end;
+  font-size: .78rem;
+  white-space: nowrap;
+}
+
+/* The art may enter the left half exactly like the reference, but stays UNDER the information panels. */
+.player-detail-visual {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 44%;
+  overflow: visible;
+  isolation: isolate;
+  pointer-events: none;
+}
+.player-detail-visual::before {
+  inset: 0 -5% 0 -8%;
+  z-index: 0;
+  background:
+    linear-gradient(126deg,
+      transparent 0 13%,
+      color-mix(in srgb,var(--detail-rarity-bg) 18%,white) 13% 27%,
+      transparent 27% 31%,
+      color-mix(in srgb,var(--detail-rarity-bg) 64%,white) 31% 73%,
+      color-mix(in srgb,var(--detail-rarity-accent) 86%,black) 73% 100%);
+  clip-path: polygon(30% 0,100% 0,100% 100%,18% 94%,0 43%);
+}
+.player-detail-visual::after {
+  inset: 4% -6% 4% 4%;
+  z-index: 1;
+  opacity: .68;
+  background:
+    radial-gradient(circle at 75% 65%,rgba(255,255,255,.24) 0 2px,transparent 2.5px) 0 0/13px 13px,
+    repeating-linear-gradient(116deg,transparent 0 20px,rgba(255,255,255,.18) 21px 25px),
+    linear-gradient(52deg,transparent 0 44%,rgba(255,255,255,.24) 44% 48%,transparent 48%);
+  clip-path: polygon(25% 0,100% 4%,100% 100%,3% 91%,15% 47%);
+}
+
+/* Deliberately oversized: the mockup treats the character as hero art, not a small contained thumbnail. */
+.player-fullbody--fullbody {
+  position: absolute;
+  z-index: 3;
+  left: 57%;
+  right: auto;
+  bottom: 2%;
+  width: 108%;
+  height: 96%;
+  max-width: none;
+  max-height: none;
+  transform: translateX(-50%) scale(1.9);
+  transform-origin: center bottom;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(6px 7px 0 rgba(17,18,22,.22));
+}
+.player-fullbody--portrait {
+  left: 55%;
+  right: auto;
+  bottom: 9%;
+  width: 76%;
+  height: auto;
+  transform: translateX(-50%);
+  aspect-ratio: 3/4;
+  object-fit: cover;
+  object-position: center top;
+}
+.player-fullbody-placeholder {
+  left: 55%;
+  right: auto;
+  bottom: 20%;
+  width: 52%;
+  transform: translateX(-50%);
+}
+
+/* =========================================================
+   STATS / EQUIPMENT — same density and information as mockup
+   ========================================================= */
+.player-detail-content {
+  position: relative;
+  z-index: 9;
+  padding: 17px 20px 20px;
+  background: var(--pd-paper);
+}
+.player-detail-section + .player-detail-section { margin-top: 18px; }
+.player-detail-section > h3 {
+  margin-bottom: 9px;
+  font-size: .72rem;
+}
+
+.detail-stats {
+  grid-template-columns: repeat(4,minmax(0,1fr));
+  gap: 6px;
+}
+.detail-stat {
+  min-height: 72px;
+  padding: 7px 7px 6px;
+  grid-template-columns: 20px minmax(0,1fr);
+  grid-template-rows: auto auto 4px;
+  gap: 2px 4px;
+  overflow: hidden;
+}
+.detail-stat-icon { width: 21px; height: 21px; }
+.detail-stat-icon svg { width: 19px; height: 19px; }
+.detail-stat-label {
+  min-width: 0;
+  font-size: .49rem;
+  white-space: nowrap;
+  overflow: visible;
+  text-overflow: clip;
+}
+.detail-stat-value {
+  grid-column: 1/3;
+  justify-self: start;
+  font-size: 1.35rem;
+}
+.detail-stat-track { height: 4px; }
+.detail-stat-bonus { right: 6px; bottom: 11px; font-size: .5rem; }
+
+.equipped-detail {
+  min-height: 112px;
+  grid-template-columns: 108px minmax(0,1fr);
+}
+.equipped-detail-art { min-height: 112px; }
+.equipped-detail-art .item-icon { width: 74px; height: 74px; }
+.equipped-detail-copy { padding: 12px; }
+.equipped-detail-copy strong { font-size: 1.05rem; }
+.equipped-detail-copy small { font-size: .72rem; }
+.equipped-detail-copy em { font-size: .75rem; }
+
+/* =========================================================
+   MOBILE — preserve the desktop-like 4x2 reference composition
+   ========================================================= */
+@media (max-width: 520px) {
+  .player-detail-modal {
+    width: calc(100vw - 14px);
+    height: calc(100dvh - 14px);
+    padding: 5px;
+  }
+
+  .player-detail-modal .modal-close {
+    top: 11px;
+    right: 11px;
+    width: 48px;
+    height: 48px;
+    font-size: 1.2rem;
+  }
+
+  .player-detail-hero { min-height: 425px; }
+
+  .player-detail-identity {
+    width: 58%;
+    padding: 14px 0 13px 12px;
+  }
+
+  .player-detail-team {
+    max-width: 92%;
+    min-height: 42px;
+    padding: 4px 8px 4px 6px;
+  }
+  .player-detail-team img,
+  .player-detail-team .team-logo-placeholder { width: 29px; height: 29px; }
+  .player-detail-team strong { font-size: .67rem; }
+
+  .player-detail-heading { margin-top: 24px; }
+  .player-detail-content .eyebrow,
+  .player-detail-heading .eyebrow { font-size: .51rem; }
+
+  .player-detail-name,
+  .player-detail-hero--long-name .player-detail-name,
+  .player-detail-hero--extra-long-name .player-detail-name {
+    max-width: 100%;
+    margin: 6px 0 10px;
+    overflow-wrap: normal;
+    word-break: normal;
+    hyphens: none;
+    -webkit-line-clamp: unset;
+  }
+  .player-detail-name { font-size: clamp(2.5rem,10.5vw,3.15rem); }
+  .player-detail-hero--long-name .player-detail-name {
+    font-size: clamp(2.08rem,8.8vw,2.65rem);
+  }
+  .player-detail-hero--extra-long-name .player-detail-name {
+    font-size: clamp(1.68rem,7.15vw,2.15rem);
+    line-height: .86;
+    letter-spacing: -.045em;
+  }
+
+  .player-detail-tags {
+    gap: 4px;
+    margin-bottom: 9px;
+  }
+  .player-detail-tags .role-chip {
+    min-height: 29px;
+    padding: 4px 6px;
+    font-size: .58rem;
+  }
+  .detail-element-chip svg { width: 11px; height: 11px; }
+
+  .overall-comparison {
+    width: 94%;
+    gap: 5px;
+    margin-bottom: 9px;
+  }
+  .overall-comparison > div {
+    min-height: 89px;
+    padding: 7px 7px 6px;
+    border-width: 2px;
+    box-shadow: 2px 3px 0 rgba(17,18,22,.24);
+  }
+  .overall-comparison span { font-size: .47rem; }
+  .overall-comparison strong {
+    font-size: clamp(2.5rem,10.2vw,3.05rem);
+  }
+
+  .detail-category {
+    width: 95%;
+    min-height: 40px;
+    gap: 5px;
+    padding: 6px 7px 6px 6px;
+    border-width: 2px;
+    border-left-width: 7px;
+  }
+  .detail-category span { font-size: .9rem; }
+  .detail-category small { font-size: .48rem; }
+  .detail-category strong {
+    font-size: .66rem;
+    overflow: visible;
+    text-overflow: clip;
+  }
+
+  .player-detail-visual {
+    left: 43%;
+    overflow: visible;
+  }
+  .player-fullbody--fullbody {
+    left: 60%;
+    bottom: 1%;
+    width: 114%;
+    height: 96%;
+    transform: translateX(-50%) scale(2.18);
+  }
+  .player-fullbody--portrait {
+    left: 59%;
+    width: 80%;
+    bottom: 9%;
+  }
+
+  .player-detail-content { padding: 13px 11px 16px; }
+  .player-detail-section + .player-detail-section { margin-top: 14px; }
+  .player-detail-section > h3 {
+    margin-bottom: 7px;
+    font-size: .62rem;
+    gap: 8px;
+  }
+
+  /* 4 x 2 exactly like the approved model; full labels, no ellipsis. */
+  .detail-stats {
+    grid-template-columns: repeat(4,minmax(0,1fr));
+    gap: 4px;
+  }
+  .detail-stat {
+    min-height: 62px;
+    padding: 5px 3px 4px;
+    grid-template-columns: 14px minmax(0,1fr);
+    grid-template-rows: auto auto 3px;
+    gap: 1px 2px;
+  }
+  .detail-stat-icon { width: 14px; height: 14px; }
+  .detail-stat-icon svg { width: 13px; height: 13px; }
+  .detail-stat-label {
+    min-width: 0;
+    font-size: .335rem;
+    line-height: 1;
+    letter-spacing: -.018em;
+    white-space: nowrap;
+    overflow: visible;
+    text-overflow: clip;
+  }
+  .detail-stat-value {
+    font-size: 1.02rem;
+    line-height: .9;
+  }
+  .detail-stat-track { height: 3px; }
+  .detail-stat-bonus { display: none; }
+
+  .equipped-detail {
+    grid-template-columns: 78px minmax(0,1fr);
+    min-height: 88px;
+  }
+  .equipped-detail-art { min-height: 88px; }
+  .equipped-detail-art .item-icon { width: 58px; height: 58px; }
+  .equipped-detail-copy { padding: 8px 9px; }
+  .equipped-detail-copy span { font-size: .48rem; }
+  .equipped-detail-copy strong { font-size: .84rem; }
+  .equipped-detail-copy small { font-size: .6rem; line-height: 1.13; }
+  .equipped-detail-copy em { font-size: .66rem; }
+
+  .equipped-detail-empty {
+    grid-template-columns: 1fr;
+    min-height: 76px;
+  }
+  .equipped-detail-empty .equipped-detail-copy {
+    padding: 9px 9px 9px 46px;
+  }
+}
+
+@media (max-width: 370px) {
+  .player-detail-hero { min-height: 410px; }
+  .player-detail-identity { width: 59%; padding-left: 10px; }
+  .player-detail-visual { left: 42%; }
+  .player-detail-name { font-size: 2.3rem; }
+  .player-detail-hero--long-name .player-detail-name { font-size: 1.95rem; }
+  .player-detail-hero--extra-long-name .player-detail-name { font-size: 1.58rem; }
+  .player-fullbody--fullbody {
+    left: 61%;
+    transform: translateX(-50%) scale(2.2);
+  }
+  .detail-stat-label { font-size: .31rem; }
+}
