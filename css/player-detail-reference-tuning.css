@@ -10,7 +10,7 @@
     height: 95%;
     max-width: none;
     max-height: none;
-    transform: translateX(-50%) scale(1.80);
+    transform: translateX(-50%) scale(1.72);
     transform-origin: center bottom;
     object-fit: contain;
     object-position: center bottom;
@@ -145,7 +145,7 @@
 
 @media (max-width: 370px) {
   .player-detail-hero .player-fullbody--fullbody {
-    transform: translateX(-50%) scale(1.74);
+    transform: translateX(-50%) scale(1.66);
   }
 
   .player-detail-content .detail-stats { gap: 4px; }
