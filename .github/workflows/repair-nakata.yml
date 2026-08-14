@@ -4,7 +4,7 @@ on:
   push:
     branches: [season3]
     paths:
-      - '.nakata_repair/**'
+      - '.nakata_hq/**'
       - '.github/workflows/repair-nakata.yml'
 
 permissions:
@@ -27,15 +27,19 @@ jobs:
           python - <<'PY'
           from pathlib import Path
           import hashlib, base64, os
-          chunks = [
-              ('part1', '.nakata_repair/fullbody.b64.part1', 9657, '4261a5d5b1214c7964546e2c4523e55afa284cda05c434013b559bb3f0e0ef3e'),
-              ('gap', '.nakata_repair/fullbody.b64.gap', 843, '1faac801c1d5c9b23f3802a5761f5e382d7e01392edc449065e37a93719ae033'),
-              ('part2', '.nakata_repair/fullbody.b64.part2', 10500, 'a244a7ad64f24f2bac9307f8e76245633e31a8472293a4181081fff3578319e7'),
-              ('part3', '.nakata_repair/fullbody.b64.part3', 9584, '01d32770777a73fee0e398c9961bb13b9321a887f1aeebb801227898d3b9a19f'),
+          expected_chunks = [
+              ('chunk00',4000,'6c59e12bc22a4e6087c10182d3a97e8333b3c7439a619327187856dc3e7e3d7a'),
+              ('chunk01',4000,'9cc5943061bbe719df256d527717239e5f277c7597ece2e331244bd4f583a5da'),
+              ('chunk02',4000,'8f98cde3b12461a46f558ba1bf71a3267dc10856e9a02ca68be3004b0e9e52cf'),
+              ('chunk03',4000,'61e8bb7411564c69f703dde846cef939b40a324e182440e77c9582b1f88826d1'),
+              ('chunk04',4000,'52a71cb8068404d52465d50b56d8e834104c46b1f79e33533fad24e64e28e7a8'),
+              ('chunk05',4000,'b170227667a7ceb3975d1b66039499454648f4708c5c8e057a204005ed05f449'),
+              ('chunk06',4000,'1d60baef213db3f06b88580bf8b41df538c0d39b81f1cdb8e6190e019ad47b6b'),
+              ('chunk07',2584,'52f7dded2eeff9ffb1b23918b93acb6c0f522db26696598d84ce1e689918b030'),
           ]
           encoded = ''
-          for name, path, expected_len, expected_sha in chunks:
-              text = ''.join(Path(path).read_text().split())
+          for name, expected_len, expected_sha in expected_chunks:
+              text = ''.join(Path('.nakata_hq', name).read_text().split())
               actual_sha = hashlib.sha256(text.encode()).hexdigest()
               print(name, len(text), actual_sha)
               assert len(text) == expected_len, (name, len(text), expected_len)
@@ -57,7 +61,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          rm -rf .nakata_repair
+          rm -rf .nakata_hq .nakata_repair
           rm -f .github/workflows/repair-nakata.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
