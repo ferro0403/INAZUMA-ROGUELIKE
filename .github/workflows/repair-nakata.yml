@@ -24,24 +24,33 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          cat .nakata_repair/fullbody.b64.part1 \
-              .nakata_repair/fullbody.b64.gap \
-              .nakata_repair/fullbody.b64.part2 \
-              .nakata_repair/fullbody.b64.part3 \
-            | tr -d '\r\n' \
-            | base64 --decode \
-            > assets/players/season3/custom_0001_nakata_fullbody.webp.tmp
           python - <<'PY'
           from pathlib import Path
-          import hashlib, os
-          p = Path('assets/players/season3/custom_0001_nakata_fullbody.webp.tmp')
-          data = p.read_bytes()
+          import hashlib, base64, os
+          chunks = [
+              ('part1', '.nakata_repair/fullbody.b64.part1', 9657, '4261a5d5b1214c7964546e2c4523e55afa284cda05c434013b559bb3f0e0ef3e'),
+              ('gap', '.nakata_repair/fullbody.b64.gap', 843, '1faac801c1d5c9b23f3802a5761f5e382d7e01392edc449065e37a93719ae033'),
+              ('part2', '.nakata_repair/fullbody.b64.part2', 10500, 'a244a7ad64f24f2bac9307f8e76245633e31a8472293a4181081fff3578319e7'),
+              ('part3', '.nakata_repair/fullbody.b64.part3', 9584, '01d32770777a73fee0e398c9961bb13b9321a887f1aeebb801227898d3b9a19f'),
+          ]
+          encoded = ''
+          for name, path, expected_len, expected_sha in chunks:
+              text = ''.join(Path(path).read_text().split())
+              actual_sha = hashlib.sha256(text.encode()).hexdigest()
+              print(name, len(text), actual_sha)
+              assert len(text) == expected_len, (name, len(text), expected_len)
+              assert actual_sha == expected_sha, (name, actual_sha, expected_sha)
+              encoded += text
+          data = base64.b64decode(encoded, validate=True)
           expected_size = 22936
           expected_sha = '382f9d9fb46ab69e65bc56302dd491624b616ada4cff5133d4856371d09cd1ab'
           assert len(data) == expected_size, (len(data), expected_size)
           assert data[:4] == b'RIFF' and data[8:12] == b'WEBP', data[:12]
           assert hashlib.sha256(data).hexdigest() == expected_sha
-          os.replace(p, 'assets/players/season3/custom_0001_nakata_fullbody.webp')
+          target = Path('assets/players/season3/custom_0001_nakata_fullbody.webp')
+          tmp = target.with_suffix('.webp.tmp')
+          tmp.write_bytes(data)
+          os.replace(tmp, target)
           PY
 
       - name: Commit repaired asset and remove staging files
