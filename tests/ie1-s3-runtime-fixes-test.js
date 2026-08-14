@@ -37,15 +37,20 @@ assert.strictEqual(byId.get(String(sentinel.playerId)).progressionCode, sentinel
 
 const minimums = season.recruitmentRules.pullFreeAgents.minimumFinalOverallByBossIndex;
 assert.deepStrictEqual(Array.from(minimums), [72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82]);
-const pullAt = (index) => effective.filter((player) => Number(player.finalOverall) >= minimums[index]);
-assert(pullAt(0).every((player) => player.finalOverall >= 72));
-assert(pullAt(7).every((player) => player.finalOverall >= 79));
-assert(pullAt(10).every((player) => player.finalOverall >= 82));
+const pullEligible = (player, index) => runtime.eligibleForSeason3FreeAgentPull(player, index, season);
+const pullAt = (index) => effective.filter((player) => pullEligible(player, index));
+assert(pullEligible({ sourceKind: "season3_recruitment_profile", profileId: "low@team", finalOverall: 72 }, 10));
+assert(!pullEligible({ sourceKind: "global_free_agent", finalOverall: 74 }, 0));
+for (const index of [0, 1, 2, 3]) assert(pullEligible({ sourceKind: "global_free_agent", finalOverall: 75 }, index));
+assert(!pullEligible({ sourceKind: "global_free_agent", finalOverall: 75 }, 4));
+assert(pullEligible({ sourceKind: "global_free_agent", finalOverall: 79 }, 7));
+assert(pullEligible({ sourceKind: "global_free_agent", finalOverall: 89 }, 0));
+assert(pullEligible({ sourceKind: "global_free_agent", finalOverall: 89 }, 7));
 const topOverall = Math.max(...effective.map((player) => Number(player.finalOverall)));
 assert(topOverall >= 82 && pullAt(0).some((player) => Number(player.finalOverall) === topOverall), "early pulls must retain top players without a maximum");
-assert(89 >= minimums[0] && 89 >= minimums[7], "the minimum-only rule must allow a synthetic 89 at every relevant tier");
-assert(!pullAt(7).some((player) => player.finalOverall === 74));
-if (sentinel.finalOverall >= 72) assert(pullAt(0).some((player) => String(player.playerId) === String(sentinel.playerId)));
+assert(pullEligible({ sourceKind: "global_free_agent", finalOverall: 89 }, 10), "the minimum-only rule must have no upper cap");
+assert(!pullAt(7).some((player) => player.sourceKind === "global_free_agent" && player.finalOverall === 74));
+if (sentinel.finalOverall >= 75) assert(pullAt(0).some((player) => String(player.playerId) === String(sentinel.playerId)));
 
 const mixed = [byId.get(String(sentinel.playerId)), effective.find((player) => player.sourceKind === "season3_recruitment_profile")];
 const profileCalls = [];
