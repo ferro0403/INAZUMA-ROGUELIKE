@@ -25,6 +25,7 @@ jobs:
         run: |
           set -euo pipefail
           cat .nakata_repair/fullbody.b64.part1 \
+              .nakata_repair/fullbody.b64.gap \
               .nakata_repair/fullbody.b64.part2 \
               .nakata_repair/fullbody.b64.part3 \
             | tr -d '\r\n' \
