@@ -72,7 +72,7 @@ const appSource = fs.readFileSync("js/app.js", "utf8");
 const htmlSource = fs.readFileSync("index.html", "utf8");
 const cloudSource = fs.readFileSync("js/firebase-cloud-save.js", "utf8");
 const firestoreRules = fs.readFileSync("firestore.rules", "utf8");
-assert(appSource.includes("Vittoria confermata: premi Continua per ottenere la ricompensa garantita."));
+assert(appSource.includes("Vittoria confermata: premi Continua per aprire la scelta giocatore."));
 assert(appSource.includes("Vittoria confermata: premi Continua per aprire le ricompense boss."));
 assert(appSource.includes('isSpecial ? "Riepilogo essenziale della partita speciale" : "Riepilogo essenziale della sfida Boss"'));
 assert(appSource.includes('match.type === "five_v_five" ? run.fiveVFive?.formation : run.formationId'));

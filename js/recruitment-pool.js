@@ -32,6 +32,21 @@
     return [...byPlayerId.values()];
   }
 
+  function eligibleForSeason3InitialDraft(candidate) {
+    if (candidate?.eligibleInitialDraft === false) return false;
+    return isSeasonProfileCandidate(candidate) || Number(candidate?.finalOverall || 0) >= 75;
+  }
+
+  function eligibleForSeason3FreeAgentPull(candidate, bossIndex, seasonDb) {
+    if (candidate?.eligiblePullFreeAgents === false) return false;
+    if (isSeasonProfileCandidate(candidate)) return true;
+    const minimums = seasonDb?.recruitmentRules?.pullFreeAgents?.minimumFinalOverallByBossIndex
+      || seasonDb?.rules?.pullFreeAgentsMinimumFinalOverallByBossIndex || [];
+    const index = Math.max(0, Math.min(Number(bossIndex || 0), Math.max(0, minimums.length - 1)));
+    const minimum = Math.max(75, Number(minimums[index] || 0));
+    return Number(candidate?.finalOverall || 0) >= minimum;
+  }
+
   function eligible(run, player, eligibleProfile = global.SpecialMatchRuntime?.eligibleProfile) {
     if (isSeasonProfileCandidate(player)) return Boolean(player.profileId && eligibleProfile?.(run, player.profileId));
     return !(run?.roster || []).some((entry) => id(entry.playerId) === canonicalPlayerId(player));
@@ -50,5 +65,5 @@
     return [...new Map(ordered.map((team) => [id(team.teamId), team])).values()];
   }
 
-  global.RecruitmentPoolRuntime = { effectiveSeason3Players, canonicalPlayerId, isSeasonProfileCandidate, candidateKey, candidateSource, eligible, choiceDatabase, orderedAlbumTeams };
+  global.RecruitmentPoolRuntime = { effectiveSeason3Players, eligibleForSeason3InitialDraft, eligibleForSeason3FreeAgentPull, canonicalPlayerId, isSeasonProfileCandidate, candidateKey, candidateSource, eligible, choiceDatabase, orderedAlbumTeams };
 })(globalThis);

@@ -2,7 +2,7 @@
   "use strict";
 
   const DEV_MODE = new URLSearchParams(global.location?.search || "").get("dev") === "1";
-  const TEST_MATCH_CONTROLS_ENABLED = true;
+  const TEST_MATCH_CONTROLS_ENABLED = DEV_MODE;
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
   const toastRoot = document.getElementById("toast-root");
@@ -1900,7 +1900,7 @@
   function initialDraftPlayers() {
     if (run?.seasonId === "ie1_s3") {
       return global.RecruitmentPoolRuntime.effectiveSeason3Players(seasonDb, freeAgentsDb)
-        .filter((entry) => entry.eligibleInitialDraft !== false);
+        .filter(global.RecruitmentPoolRuntime.eligibleForSeason3InitialDraft);
     }
     const config = seasonDb?.draftConfig;
     if (config?.freeAgentsOnly && !Array.isArray(freeAgentsDb?.players)) {
@@ -2166,10 +2166,11 @@
   }
 
   function squadFormationPreviewMarkup(formation) {
-    return `<div class="squad-formation-mini" aria-hidden="true">
-      ${["FW", "MF", "DF", "GK"].map((role) => {
-        const amount = Number(formation.requirements?.[role] || 0);
-        return `<span class="squad-formation-mini-row" style="--mini-count:${Math.max(1, amount)}">${Array.from({ length: amount }, () => `<i class="squad-formation-dot squad-formation-dot--${role.toLowerCase()}"></i>`).join("")}</span>`;
+    const rows = global.FormationLayout.displayRows(formation);
+    return `<div class="squad-formation-mini" style="--mini-rows:${rows.length}" aria-hidden="true">
+      ${rows.map((row) => {
+        const amount = Number(row.count || 0);
+        return `<span class="squad-formation-mini-row" data-display-role="${escapeHtml(row.displayRole || row.role)}" style="--mini-count:${Math.max(1, amount)}">${Array.from({ length: amount }, () => `<i class="squad-formation-dot squad-formation-dot--${row.role.toLowerCase()}"></i>`).join("")}</span>`;
       }).join("")}
     </div>`;
   }
@@ -3161,7 +3162,8 @@
     if (type === "pull_free_agents" && run.seasonId === "ie1_s3") {
       const minimums = seasonDb.recruitmentRules?.pullFreeAgents?.minimumFinalOverallByBossIndex || seasonDb.rules?.pullFreeAgentsMinimumFinalOverallByBossIndex || [];
       const minimum = Number(minimums[Math.min(Number(run.bossIndex || 0), minimums.length - 1)] || 0);
-      return { players: initialDraftPlayers().filter((player) => player.eligiblePullFreeAgents !== false && Number(player.finalOverall || 0) >= minimum), source: "mixed", sourceForPlayer: (player) => global.RecruitmentPoolRuntime.candidateSource(player, run.seasonId), database: seasonDb, profileAware: true, minimumFinalOverall: minimum };
+      const effectivePool = global.RecruitmentPoolRuntime.effectiveSeason3Players(seasonDb, freeAgentsDb);
+      return { players: effectivePool.filter((player) => global.RecruitmentPoolRuntime.eligibleForSeason3FreeAgentPull(player, run.bossIndex, seasonDb)), source: "mixed", sourceForPlayer: (player) => global.RecruitmentPoolRuntime.candidateSource(player, run.seasonId), database: seasonDb, profileAware: true, minimumFinalOverall: minimum };
     }
     if (type === "pull_free_agents") return { players: freeAgentsDb.players, source: "free_agents", database: freeAgentsDb };
     if (type === "pull_unlocked_teams") {
@@ -4470,12 +4472,12 @@
 
           <section class="boss-match-summary" aria-label="${isSpecial ? "Riepilogo essenziale della partita speciale" : "Riepilogo essenziale della sfida Boss"}">
             ${fiveMatchComparisonMarkup(userPlayers, bossPlayers, { contentId: "boss-match-values-content", opponentName: meta.boss.name, userStrength: simPreview.userStrength?.final ?? "-", userFormation: meta.user.formation, userOverall: userAverage || "-", probability: userProbability ?? "-", opponentStrength: simPreview.opponentStrength?.final ?? "-", opponentFormation: meta.boss.formation, opponentOverall: bossAverage || "-" })}
-            <div class="boss-match-reward-note"><span>Vittoria</span><strong>${isSpecial ? "+1 livello · ricompensa garantita" : "2 pick 1 di 3 dalla squadra battuta"}</strong></div>
+            <div class="boss-match-reward-note"><span>Vittoria</span><strong>${isSpecial ? "+1 livello · scelta 1 su 3" : "2 pick 1 di 3 dalla squadra battuta"}</strong></div>
           </section>
           ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
-          <div class="boss-match-bottom-grid" ${simulating || resolved ? "" : "hidden"}>
+            <div class="boss-match-bottom-grid" ${simulating || resolved ? "" : "hidden"}>
             <section class="panel boss-match-log-panel" ${simulating || resolved ? "" : "hidden"}><div class="panel-title-row"><div><p class="eyebrow">90 minuti · eventi reali</p><h3>Cronaca</h3></div><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${bossMatchTimeline()}</ol></section>
-            <section class="panel boss-match-result-panel ${outcomeClass}" ${simulating || resolved ? "" : "hidden"}><p class="eyebrow">${isSpecial ? "Esito partita speciale" : "Esito Boss"}</p><h3>${escapeHtml(bossStatusLabel)}</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div><div class="result-badges"><span class="lives" aria-label="Vite ${escapeHtml(run.lives)}">${resolved && ui.bossMatchState.endsWith("victory") ? "+1 livello" : hearts()}</span><span>${resolved && ui.bossMatchState.endsWith("victory") ? (isSpecial ? "Ricompensa garantita" : "Doppia pick boss") : resolved ? "Ritorno al nodo precedente" : "Finalizzazione protetta"}</span></div></section>
+            <section class="panel boss-match-result-panel ${outcomeClass}" ${simulating || resolved ? "" : "hidden"}><p class="eyebrow">${isSpecial ? "Esito partita speciale" : "Esito Boss"}</p><h3>${escapeHtml(bossStatusLabel)}</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div><div class="result-badges"><span class="lives" aria-label="Vite ${escapeHtml(run.lives)}">${resolved && ui.bossMatchState.endsWith("victory") ? "+1 livello" : hearts()}</span><span>${resolved && ui.bossMatchState.endsWith("victory") ? (isSpecial ? "Scelta giocatore disponibile" : "Doppia pick boss") : resolved ? "Ritorno al nodo precedente" : "Finalizzazione protetta"}</span></div></section>
           </div>
           <section class="panel boss-match-controls" aria-label="${isSpecial ? "Azioni partita speciale" : "Azioni partita Boss"}">
             <header class="five-match-actions-heading"><span>Azioni partita</span><i aria-hidden="true"></i></header>
@@ -4543,7 +4545,7 @@
     const text = matchType === "boss"
       ? (result === "victory" ? "Vittoria confermata: premi Continua per aprire le ricompense boss." : "Sconfitta confermata: premi Continua per tornare al nodo precedente.")
       : matchType === "special_match"
-        ? (result === "victory" ? "Vittoria confermata: premi Continua per ottenere la ricompensa garantita." : "Sconfitta confermata: premi Continua per tornare al nodo precedente.")
+        ? (result === "victory" ? "Vittoria confermata: premi Continua per aprire la scelta giocatore." : "Sconfitta confermata: premi Continua per tornare al nodo precedente.")
         : (result === "victory" ? "Vittoria 5v5 confermata: premi Continua per tornare al percorso." : "Sconfitta 5v5 confermata: premi Continua per tornare al nodo precedente.");
     if (!ui.bossMatchLog.some((event) => event.minute === "FT")) {
       ui.bossMatchLog = [...ui.bossMatchLog, { minute: "FT", icon: result === "victory" ? "🏆" : "💔", text, side: null }];
@@ -4619,7 +4621,7 @@
     if (result === "victory") {
       global.SpecialMatchRuntime.complete(run, seasonDb, match, result);
       if (node) global.MapEngine.completeNode(run.currentZone, node.id);
-      match.pendingPostMatchAction = { type: "special-reward", toast: "Vittoria: +1 livello e ricompensa garantita" };
+      match.pendingPostMatchAction = { type: "special-reward", toast: "Vittoria: +1 livello e scelta giocatore" };
     } else {
       global.RunState.restoreAfterLoss(run, match.previousNodeId, match.type);
       match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : "Sconfitta: torni al nodo precedente." };
@@ -4696,7 +4698,7 @@
   const candidateIds = pending.candidateProfileIds?.length ? pending.candidateProfileIds : [pending.selectedProfileId].filter(Boolean);
   const candidates = candidateIds.map((profileId) => global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, profileId)).filter(Boolean);
   const profile = pending.selectedProfileId && global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, pending.selectedProfileId);
-  openModal(`<div class="modal-head special-reward-head"><div><p class="eyebrow">RICOMPENSA SECONDARIA</p><h2>${candidates.length ? "Scegli 1 giocatore su 3" : "Pool completato"}</h2><p class="muted">I candidati provengono esclusivamente dalla squadra appena battuta.</p></div></div><div class="candidate-grid pull-offer-grid">${candidates.map((candidate) => playerCard(candidate, { button: true, context: "pull", level: Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), database: seasonDb })).join("")}</div><div class="button-row special-reward-actions">${candidates.length ? '<button type="button" class="btn btn-ghost" id="decline-special-reward">RIFIUTA</button>' : ""}<button type="button" class="btn btn-yellow" id="claim-special-reward" ${candidates.length && !profile ? "disabled" : ""}>${candidates.length ? "ACQUISISCI O POTENZIA" : "CONTINUA"}</button></div>`, { closeable: false, className: "pull-selection-modal special-reward-modal" });
+  openModal(`<div class="modal-head special-reward-head"><div><p class="eyebrow">SCELTA GIOCATORE DISPONIBILE</p><h2>${candidates.length ? "Scegli 1 giocatore su 3" : "Pool completato"}</h2><p class="muted">I candidati provengono esclusivamente dalla squadra appena battuta.</p></div></div><div class="candidate-grid pull-offer-grid">${candidates.map((candidate) => playerCard(candidate, { button: true, context: "pull", level: Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), database: seasonDb })).join("")}</div><div class="button-row special-reward-actions">${candidates.length ? '<button type="button" class="btn btn-ghost" id="decline-special-reward">RIFIUTA</button>' : ""}<button type="button" class="btn btn-yellow" id="claim-special-reward" ${candidates.length && !profile ? "disabled" : ""}>${candidates.length ? "ACQUISISCI O POTENZIA" : "CONTINUA"}</button></div>`, { closeable: false, className: "pull-selection-modal special-reward-modal" });
 
   modalRoot.querySelectorAll("[data-player-id]").forEach((card) => card.addEventListener("click", () => {
     global.SpecialMatchRuntime.selectRewardCandidate(run, card.dataset.playerId ? candidates.find((candidate) => String(candidate.playerId) === String(card.dataset.playerId))?.profileId : null, pending);
@@ -5946,8 +5948,12 @@
 
   function championFormationMarkup(team) {
     const starters = Array.isArray(team.finalStartingEleven) ? team.finalStartingEleven : [];
-    const rows = ["FW", "MF", "DF", "GK"].map((role) => starters.filter((p) => p.role === role));
-    return `<section class="pitch hall-pitch">${rows.map((players) => `<div class="pitch-row tactical-row" data-row-count="${players.length || 1}" style="--players-in-row:${players.length || 1}">${players.map(snapshotCard).join("")}</div>`).join("")}</section>`;
+    const database = global.SeasonRegistry?.database?.(team.seasonId || team.modeId) || seasonDb;
+    const formation = database?.formations?.eleven?.find((item) => item.id === team.finalFormation);
+    const playersByRole = new Map(["FW", "MF", "DF", "GK"].map((role) => [role, starters.filter((player) => player.role === role)]));
+    const layouts = global.FormationLayout.displayRows(formation || { requirements: { FW: 3, MF: 3, DF: 4, GK: 1 } });
+    const rows = layouts.map((layout) => ({ ...layout, players: (playersByRole.get(layout.role) || []).splice(0, layout.count) }));
+    return `<section class="pitch hall-pitch">${rows.map((row) => `<div class="pitch-row tactical-row" data-display-role="${escapeHtml(row.displayRole || row.role)}" data-row-count="${row.players.length || 1}" style="--players-in-row:${row.players.length || 1}">${row.players.map(snapshotCard).join("")}</div>`).join("")}</section>`;
   }
 
   function championFiveVFiveMarkup(team) {

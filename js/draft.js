@@ -41,22 +41,12 @@
     ];
   }
 
-  function draftHighOverallCount(run, players) {
-    const byId = new Map((players || []).map((player) => [String(player.playerId), player]));
-    return (run?.draft?.selectedIds || []).filter((playerId) => Number(byId.get(String(playerId))?.finalOverall || 0) >= 81).length;
-  }
-
-  function canSelectInitialDraftCandidate(run, player, players) {
-    if (run?.seasonId !== "ie1_s3" || Number(player?.finalOverall || 0) < 81) return true;
-    return draftHighOverallCount(run, players) < 3;
-  }
-
-  function makeCandidates(players, role, excludedIds, seed, run = null) {
+  function makeCandidates(players, role, excludedIds, seed) {
     const random = randomFromSeed(seed);
     const pool = players.filter(
       (player) =>
         String(player.position || player.normalizedRole).toUpperCase() === role &&
-        !excludedIds.includes(String(player.playerId)) && canSelectInitialDraftCandidate(run, player, players)
+        !excludedIds.includes(String(player.playerId))
     );
     return shuffle(pool, random).slice(0, 3).map((player) => String(player.playerId));
   }
@@ -130,8 +120,7 @@
       players,
       role,
       draft.excludedIds,
-      `${run.runId}:draft:${draft.step}:${role}`,
-      run
+      `${run.runId}:draft:${draft.step}:${role}`
     );
     draft.candidates = candidates;
     draft.excludedIds.push(...candidates);
@@ -143,8 +132,6 @@
     if (!draft.candidates.includes(String(playerId))) {
       throw new Error("This player is not part of the current draft choice");
     }
-    const selectedCandidate = players.find((player) => String(player.playerId) === String(playerId));
-    if (!canSelectInitialDraftCandidate(run, selectedCandidate, players)) throw new Error("Il Draft Inazuma Eleven 3 consente al massimo 3 giocatori con potenziale 81+");
     draft.selectedIds.push(String(playerId));
     draft.step += 1;
 
@@ -185,8 +172,6 @@
     shuffle,
     makeRoleSequence,
     makeCandidates,
-    draftHighOverallCount,
-    canSelectInitialDraftCandidate,
     selectCandidates,
     selectWeightedCandidates,
     selectLegendaryCandidates,

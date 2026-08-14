@@ -2087,7 +2087,7 @@ body { background: var(--gradient-app); }
 .squad-secondary-actions { display: grid; }
 .squad-route-button { min-height: 48px; display: flex; align-items: center; justify-content: center; gap: 8px; border: 3px solid var(--squad-ink); border-radius: 0; background: var(--squad-yellow); color: var(--squad-ink); box-shadow: 5px 5px 0 var(--squad-ink); text-transform: uppercase; clip-path: polygon(0 0, 100% 0, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0 100%); }
 .squad-route-button svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
-.squad-formation-mini { min-height: 64px; display: grid; grid-template-rows: repeat(4, 1fr); gap: 3px; padding: 5px 8px; border: 2px solid var(--squad-ink); background: linear-gradient(145deg, #148a50, #075e3b); }
+.squad-formation-mini { min-height: 64px; display: grid; grid-template-rows: repeat(var(--mini-rows, 4), 1fr); gap: 3px; padding: 5px 8px; border: 2px solid var(--squad-ink); background: linear-gradient(145deg, #148a50, #075e3b); }
 .squad-formation-mini-row { display: grid; grid-template-columns: repeat(var(--mini-count), 1fr); place-items: center; gap: 3px; }
 .squad-formation-dot { width: 7px; height: 7px; border: 1px solid #fff; border-radius: 50%; background: var(--squad-yellow); box-shadow: 1px 1px 0 rgba(0,0,0,.45); }
 .squad-formation-dot--gk { background: #ff676d; }
@@ -3518,7 +3518,8 @@ body { background: var(--gradient-app); }
 .inventory-equipment-selector-modal .squad-bench-panel { padding: 11px; }
 .inventory-equipment-selector-modal .inventory-equipment-bench .squad-bench-list { width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); justify-items: center; gap: 10px; }
 .inventory-equipment-selector-modal .inventory-equipment-bench .inventory-tactical-slot { width: 100%; max-width: 96px; }
-.inventory-tactical-slot { min-width: 0; display: grid; place-items: center; gap: 4px; }
+.inventory-tactical-slot { width: min(100%, var(--pitch-card-size, 96px)); min-width: 0; max-width: var(--pitch-card-size, 96px); display: grid; place-items: center; gap: 4px; }
+.inventory-tactical-slot > .squad-player-card { width: 100%; min-width: 0; max-width: none; }
 .inventory-tactical-slot.is-unavailable { opacity: .38; filter: grayscale(.8); }
 .inventory-target-reason { max-width: 88px; color: #ffe68b; font-size: .52rem; font-weight: 900; line-height: 1.1; text-align: center; }
 .inventory-equipment-selector-modal .squad-player-card.selected {
