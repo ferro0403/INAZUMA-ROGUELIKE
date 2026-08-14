@@ -26,6 +26,13 @@
       freeAgentsTeamId: "unaffiliated",
       coverUrl: "/assets/icons/icon-512.png",
     },
+    ie1_s3: {
+      id: "ie1_s3",
+      name: "Inazuma Eleven 3",
+      seasonId: "ie1_s3",
+      freeAgentsTeamId: "unaffiliated",
+      coverUrl: "/assets/icons/icon-512.png",
+    },
   };
   let freeAgentIds = new Set();
 

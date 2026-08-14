@@ -6,6 +6,7 @@
     ie1: Object.freeze({ id: "ie1", name: "Inazuma Eleven 1", displaySeasonNumber: "1", database: "data/IE1_season_compact.json", albumCollectionId: "ie1" }),
     ie2: Object.freeze({ id: "ie2", name: "Inazuma Eleven Ares", displaySeasonNumber: "2", database: "data/IE2_season_compact.json", albumCollectionId: "ie2" }),
     ie1_s2: Object.freeze({ id: "ie1_s2", name: "Inazuma Eleven 2", displaySeasonNumber: "2", database: "data/IE1_S2_season_compact.json", albumCollectionId: "ie1_s2" }),
+    ie1_s3: Object.freeze({ id: "ie1_s3", name: "Inazuma Eleven 3", displaySeasonNumber: "3", database: "data/IE1_S3_season_compact.json", albumCollectionId: "ie1_s3" }),
   });
 
   const DISPLAY_TEAM_NAME_OVERRIDES = Object.freeze({
@@ -59,6 +60,17 @@
       const raimon = database.bossOrder?.find((boss) => boss.teamId === "raimon_inazuma_eleven_2");
       const valid = database.requiresProfileAwareRuntime === true && database.teams?.length === 17 && database.bossOrder?.length === 10 && database.specialMatches?.length === 7 && database.players?.length === 203 && database.profiles?.length === 230 && counts.multiProfilePlayers === 27 && counts.roleSwitchProfiles === 4 && database.warnings?.length === 0 && formation253 && genesis?.bossLevel === 15 && raimon?.bossLevel === 19;
       if (!valid) throw new Error("Database Inazuma Eleven 2 non supera la validazione runtime");
+    }
+    if (season.id === "ie1_s3") {
+      const counts = database.validation?.counts || {};
+      const valid = database.requiresProfileAwareRuntime === true
+        && database.teams?.length === 40 && database.bossOrder?.length === 11
+        && database.specialMatches?.length === 7 && database.players?.length === 573
+        && database.profiles?.length === 573 && database.recruitmentPool?.entries?.length === 291
+        && database.globalFreeAgentPatch?.players?.length === 3
+        && counts.combinedUniqueGameplayPlayers === 576 && counts.roleSwitchProfiles === 4
+        && database.warnings?.length === 0 && database.validation?.status === "passed";
+      if (!valid) throw new Error("Database Inazuma Eleven 3 non supera la validazione runtime");
     }
     applyDisplayTeamNameOverrides(database, season.id);
     dbBySeason.set(season.id, database);

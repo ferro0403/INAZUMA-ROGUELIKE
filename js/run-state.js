@@ -94,9 +94,9 @@
     run.consecutiveLosses = Math.max(0, Math.min(2, Math.floor(Number.isFinite(rawConsecutiveLosses) ? rawConsecutiveLosses : 0)));
     run.bossIndex = Number.isFinite(Number(run.bossIndex)) ? Number(run.bossIndex) : 0;
     for (const key of ["roster", "lineup", "bench", "inventory", "completedBossIds", "unlockedTeamIds"]) run[key] = Array.isArray(run[key]) ? run[key] : [];
-    if (run.seasonId === "ie1_s2") global.ProfiledSeasonRuntime?.normalizeRun?.(run);
+    if (global.SeasonRegistry?.database?.(run.seasonId)?.requiresProfileAwareRuntime) global.ProfiledSeasonRuntime?.normalizeRun?.(run);
     run.activeMatch = run.activeMatch || null; run.currentZone = run.currentZone || null;
-    if (run.seasonId === "ie1_s2" && run.currentZone) global.MapEngine?.normalizeSpecialMatchNode?.(run, global.SeasonRegistry?.database?.(run.seasonId));
+    if (global.SeasonRegistry?.database?.(run.seasonId)?.requiresProfileAwareRuntime && run.currentZone) global.MapEngine?.normalizeSpecialMatchNode?.(run, global.SeasonRegistry?.database?.(run.seasonId));
     if (!run.developmentPlayerSnapshot) run.developmentPlayerSnapshot = clone(global.DevelopmentV2?.read?.().players || {});
     run.postBossFlow = normalizePostBossFlow(run);
     run.pendingBossVictory = run.pendingBossVictory || null;

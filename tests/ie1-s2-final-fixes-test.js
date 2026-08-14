@@ -6,7 +6,7 @@ const rules = fs.readFileSync("firestore.rules", "utf8");
 const app = fs.readFileSync("js/app.js", "utf8");
 const db = JSON.parse(fs.readFileSync("data/IE1_S2_season_compact.json", "utf8"));
 
-assert.match(rules, /function isRunSector\(name\) \{ return name in \['run_ie1','run_ie2','run_ie1_s2'\]; \}/);
+assert.match(rules, /function isRunSector\(name\) \{ return name in \['run_ie1','run_ie2','run_ie1_s2','run_ie1_s3'\]; \}/);
 assert.match(rules, /allowedSector\(sectorId\)/);
 assert.match(rules, /validSectorRevisionStep\(old, fresh, 'run_ie1_s2'\)/);
 assert.match(rules, /!isRunSector\(sectorId\)/);
@@ -25,7 +25,7 @@ assert.deepStrictEqual(ordered.slice(10).map((team) => team.teamId), db.specialM
 for (const name of ["Secret Service", "Alpine ie2", "Cloister Divinity", "Super Triple C", "Fauxshore", "Mary Times", "Zeus"]) {
   assert(ordered.some((team) => team.teamName === name), `${name} is visible in the Album`);
 }
-assert.match(app, /collectionId === "ie1_s2" && team\?\.playerProfileIds\?\.length/);
+assert.match(app, /isProfileAwareSeason\(collectionId\) && team\?\.playerProfileIds\?\.length/);
 assert.doesNotMatch(app, /run\?\.seasonId === "ie1_s2" && team\?\.playerProfileIds/);
 assert.match(app, /Promise\.all\(Object\.values\(global\.AlbumProgress\.ALBUM_COLLECTIONS\)/);
 assert.match(app, /albumTeamsView\(collectionId\)/);

@@ -121,5 +121,5 @@ const eligible=()=>freeAgents.filter(p=>canonical.has(String(p.playerId)) && Obj
 assert(!eligible().some(p=>String(p.playerId)===realId));
 AlbumProgress.unlockAlbumPlayer("ie1",realId,{source:"test"}); assert(eligible().some(p=>String(p.playerId)===realId));
 AlbumProgress.unlockAlbumPlayer("ie1","club-only",{source:"test"}); assert(!eligible().some(p=>String(p.playerId)==="club-only"));
-AlbumProgress.unlockAlbumPlayers("ie2",[...canonical],{source:"development-dev-free-agents"}); assert.equal(eligible().length,canonical.size); assert.equal(eligible().length,1560);
-console.log("development-ui-regression-test: real ie1 unlock and 1560-player DEV bulk unlock OK");
+AlbumProgress.unlockAlbumPlayers("ie2",[...canonical],{source:"development-dev-free-agents"}); assert.equal(eligible().length,canonical.size); assert.equal(eligible().length,1563);
+console.log("development-ui-regression-test: real ie1 unlock and 1563-player DEV bulk unlock OK");
