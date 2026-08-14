@@ -2,7 +2,7 @@
   "use strict";
 
   function isProfileAwareRosterEntry(entry, run) {
-    return run?.seasonId === "ie1_s2"
+    return (["ie1_s2", "ie1_s3"].includes(String(run?.seasonId)) || global.SeasonRegistry?.database?.(run?.seasonId)?.requiresProfileAwareRuntime === true)
       && entry?.source !== "free_agents"
       && typeof entry?.activeProfileId === "string"
       && entry.activeProfileId.length > 0;

@@ -10,7 +10,7 @@
 
     const originalSave = runState.save;
     function trackedSave(activeRun, ...args) {
-      if (activeRun?.seasonId === "ie1_s2") liveRun = activeRun;
+      if (["ie1_s2", "ie1_s3"].includes(activeRun?.seasonId)) liveRun = activeRun;
       return originalSave.call(runState, activeRun, ...args);
     }
     trackedSave.__specialRewardLiveRunCapture = true;
@@ -19,7 +19,7 @@
   }
 
   function activeLiveSpecialReward() {
-    if (liveRun?.seasonId !== "ie1_s2" || !liveRun.pendingSpecialMatchReward) return null;
+    if (!["ie1_s2", "ie1_s3"].includes(liveRun?.seasonId) || !liveRun.pendingSpecialMatchReward) return null;
     return { run: liveRun, pending: liveRun.pendingSpecialMatchReward };
   }
 

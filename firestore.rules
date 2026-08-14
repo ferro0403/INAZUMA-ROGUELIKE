@@ -6,7 +6,7 @@ service cloud.firestore {
     function validUsernameKey(v) { return v is string && v.size() >= 3 && v.size() <= 16 && v.matches('^[a-z][a-z0-9_]{2,15}$'); }
     function validVisibleUsername(v) { return v is string && v.size() >= 3 && v.size() <= 16 && v.matches('^[A-Za-z][A-Za-z0-9_]{2,15}$'); }
     function manifestAfter(uid) { return getAfter(/databases/$(database)/documents/users/$(uid)/cloudSave/manifest).data; }
-    function isRunSector(name) { return name in ['run_ie1','run_ie2','run_ie1_s2']; }
+    function isRunSector(name) { return name in ['run_ie1','run_ie2','run_ie1_s2','run_ie1_s3']; }
     function allowedSector(name) { return name in ['profile','album','development','hall_index'] || isRunSector(name); }
     function revisionAfter(m, name) { return m.sectorRevisions[name]; }
     function validSectorRevisionStep(old, fresh, name) { let previous = ('sectorRevisions' in old && name in old.sectorRevisions) ? old.sectorRevisions[name] : old.revision; return fresh.sectorRevisions[name] == previous || fresh.sectorRevisions[name] == fresh.revision; }
@@ -18,7 +18,7 @@ service cloud.firestore {
         && fresh.revision == old.revision + 1 && fresh.sectorHashes is map && fresh.sectorRevisions is map
         && fresh.hallTeamIds is list && fresh.hallTeamHashes is map && fresh.hallTeamRevisions is map
         && validSectorRevisionStep(old, fresh, 'profile') && validSectorRevisionStep(old, fresh, 'run_ie1')
-        && validSectorRevisionStep(old, fresh, 'run_ie2') && validSectorRevisionStep(old, fresh, 'run_ie1_s2') && validSectorRevisionStep(old, fresh, 'album')
+        && validSectorRevisionStep(old, fresh, 'run_ie2') && validSectorRevisionStep(old, fresh, 'run_ie1_s2') && validSectorRevisionStep(old, fresh, 'run_ie1_s3') && validSectorRevisionStep(old, fresh, 'album')
         && validSectorRevisionStep(old, fresh, 'development') && validSectorRevisionStep(old, fresh, 'hall_index');
     }
     match /users/{uid} {

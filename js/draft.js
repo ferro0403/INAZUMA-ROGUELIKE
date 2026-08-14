@@ -41,12 +41,22 @@
     ];
   }
 
-  function makeCandidates(players, role, excludedIds, seed) {
+  function draftHighOverallCount(run, players) {
+    const byId = new Map((players || []).map((player) => [String(player.playerId), player]));
+    return (run?.draft?.selectedIds || []).filter((playerId) => Number(byId.get(String(playerId))?.finalOverall || 0) >= 81).length;
+  }
+
+  function canSelectInitialDraftCandidate(run, player, players) {
+    if (run?.seasonId !== "ie1_s3" || Number(player?.finalOverall || 0) < 81) return true;
+    return draftHighOverallCount(run, players) < 3;
+  }
+
+  function makeCandidates(players, role, excludedIds, seed, run = null) {
     const random = randomFromSeed(seed);
     const pool = players.filter(
       (player) =>
         String(player.position || player.normalizedRole).toUpperCase() === role &&
-        !excludedIds.includes(String(player.playerId))
+        !excludedIds.includes(String(player.playerId)) && canSelectInitialDraftCandidate(run, player, players)
     );
     return shuffle(pool, random).slice(0, 3).map((player) => String(player.playerId));
   }
@@ -120,7 +130,8 @@
       players,
       role,
       draft.excludedIds,
-      `${run.runId}:draft:${draft.step}:${role}`
+      `${run.runId}:draft:${draft.step}:${role}`,
+      run
     );
     draft.candidates = candidates;
     draft.excludedIds.push(...candidates);
@@ -132,6 +143,8 @@
     if (!draft.candidates.includes(String(playerId))) {
       throw new Error("This player is not part of the current draft choice");
     }
+    const selectedCandidate = players.find((player) => String(player.playerId) === String(playerId));
+    if (!canSelectInitialDraftCandidate(run, selectedCandidate, players)) throw new Error("Il Draft Inazuma Eleven 3 consente al massimo 3 giocatori con potenziale 81+");
     draft.selectedIds.push(String(playerId));
     draft.step += 1;
 
@@ -146,9 +159,11 @@
     run.roster = draft.selectedIds.map((id) => {
       const source = players.find((player) => String(player.playerId) === String(id));
       const permanent = global.DevelopmentV2?.optionsFromUpgrade?.(source, run.developmentPlayerSnapshot?.[String(id)]) || {};
+      const isProfile = source?.sourceKind === "season3_recruitment_profile" && source?.profileId;
       return ({
       playerId: id,
-      source: "free_agents",
+      source: isProfile ? run.seasonId : "free_agents",
+      ...(isProfile ? { activeProfileId: source.profileId, activeRoleVariantId: source.defaultRoleVariantId || null, sourceKind: source.sourceKind, sourceTeamId: source.sourceTeamId } : { sourceKind: source?.sourceKind || "global_free_agent" }),
       levelUnits: 0,
       level: 0,
       equippedItem: null,
@@ -170,6 +185,8 @@
     shuffle,
     makeRoleSequence,
     makeCandidates,
+    draftHighOverallCount,
+    canSelectInitialDraftCandidate,
     selectCandidates,
     selectWeightedCandidates,
     selectLegendaryCandidates,
