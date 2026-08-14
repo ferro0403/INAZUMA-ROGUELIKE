@@ -1068,11 +1068,7 @@
   }
 
   function albumTeamsView(collectionId = ui.albumCollectionId, database = seasonDb) {
-    const teamsById = new Map((database?.teams || []).map((team) => [String(team.teamId), team]));
-    const bossTeams = database?.bossOrder?.map((boss) => teamsById.get(String(boss.teamId))).filter(Boolean) || [];
-    const specialTeams = isProfileAwareSeason(collectionId) ? (database?.specialMatches || []).map((match) => teamsById.get(String(match.teamId))).filter(Boolean) : [];
-    const ordered = bossTeams.length ? [...bossTeams, ...specialTeams] : (database?.teams || []);
-    const teams = [...new Map(ordered.map((team) => [String(team.teamId), team])).values()];
+    const teams = global.RecruitmentPoolRuntime.orderedAlbumTeams(database, collectionId === "ie1_s3", isProfileAwareSeason(collectionId));
     const freeAgentsTeam = { teamId: "__free_agents", teamName: "Svincolati", logoUrl: null, playerIds: (freeAgentsDb?.players || []).map((player) => String(player.playerId)), freeAgents: true };
     return [...teams, freeAgentsTeam];
   }
@@ -1903,12 +1899,8 @@
 
   function initialDraftPlayers() {
     if (run?.seasonId === "ie1_s3") {
-      return (seasonDb.recruitmentPool?.entries || []).filter((entry) => entry.eligibleInitialDraft !== false).map((entry) => {
-        if (entry.sourceKind === "global_free_agent") return { ...freeAgentsById.get(String(entry.playerId)), ...entry };
-        const profile = global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, entry.profileId);
-        const base = profile && global.ProfiledSeasonRuntime.resolveEffectiveBase({ playerId: entry.playerId, activeProfileId: entry.profileId, activeRoleVariantId: profile.defaultRoleVariantId }, run.seasonId);
-        return { ...base, ...entry, defaultRoleVariantId: profile?.defaultRoleVariantId || null };
-      }).filter(Boolean);
+      return global.RecruitmentPoolRuntime.effectiveSeason3Players(seasonDb, freeAgentsDb)
+        .filter((entry) => entry.eligibleInitialDraft !== false);
     }
     const config = seasonDb?.draftConfig;
     if (config?.freeAgentsOnly && !Array.isArray(freeAgentsDb?.players)) {
@@ -2049,10 +2041,9 @@
 
 
   function lineupRows() {
-    return ["FW", "MF", "DF", "GK"].map((role) => ({
-      role,
-      ids: run.lineup.filter((id) => effectiveRosterRole(id) === role),
-    }));
+    const formation = formationById(run.formationId) || formationById("4-3-3");
+    const idsByRole = new Map(["FW", "MF", "DF", "GK"].map((role) => [role, run.lineup.filter((id) => effectiveRosterRole(id) === role)]));
+    return global.FormationLayout.displayRows(formation).map((row) => ({ ...row, ids: idsByRole.get(row.role).splice(0, row.count) }));
   }
 
   function tacticalMiniPlayer(id, { mode = "squad", area = "lineup", selectedId = null } = {}) {
@@ -3170,7 +3161,7 @@
     if (type === "pull_free_agents" && run.seasonId === "ie1_s3") {
       const minimums = seasonDb.recruitmentRules?.pullFreeAgents?.minimumFinalOverallByBossIndex || seasonDb.rules?.pullFreeAgentsMinimumFinalOverallByBossIndex || [];
       const minimum = Number(minimums[Math.min(Number(run.bossIndex || 0), minimums.length - 1)] || 0);
-      return { players: initialDraftPlayers().filter((player) => player.eligiblePullFreeAgents !== false && Number(player.finalOverall || 0) >= minimum), source: "mixed", sourceForPlayer: (player) => player.sourceKind === "global_free_agent" ? "free_agents" : run.seasonId, database: seasonDb, profileAware: true, minimumFinalOverall: minimum };
+      return { players: initialDraftPlayers().filter((player) => player.eligiblePullFreeAgents !== false && Number(player.finalOverall || 0) >= minimum), source: "mixed", sourceForPlayer: (player) => global.RecruitmentPoolRuntime.candidateSource(player, run.seasonId), database: seasonDb, profileAware: true, minimumFinalOverall: minimum };
     }
     if (type === "pull_free_agents") return { players: freeAgentsDb.players, source: "free_agents", database: freeAgentsDb };
     if (type === "pull_unlocked_teams") {
@@ -3214,20 +3205,19 @@
   }
 
   function canonicalCandidatePlayerId(player) {
-    return String(player?.playerId || "");
+    return global.RecruitmentPoolRuntime.canonicalPlayerId(player);
   }
 
   function isSeasonProfileCandidate(player) {
-    return player?.pullCandidateKind === "season_profile" || (player?.pullCandidateKind !== "free_agent" && Boolean(player?.profileId));
+    return global.RecruitmentPoolRuntime.isSeasonProfileCandidate(player);
   }
 
   function pullCandidateKey(player) {
-    return String(isSeasonProfileCandidate(player) ? player.profileId : player?.playerId);
+    return global.RecruitmentPoolRuntime.candidateKey(player);
   }
 
   function isPullCandidateEligible(activeRun, player) {
-    if (isSeasonProfileCandidate(player)) return global.SpecialMatchRuntime.eligibleProfile(activeRun, player.profileId);
-    return !activeRun.roster.some((entry) => String(entry.playerId) === canonicalCandidatePlayerId(player));
+    return global.RecruitmentPoolRuntime.eligible(activeRun, player);
   }
 
   function selectWeightedCandidates(available, random, categoryWeights = null) {
@@ -3316,7 +3306,7 @@
     const pool = luckyCharmPoolForPull(pullType);
     if (!pool) return toast("Portafortuna non utilizzabile in questa selezione.");
     const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
-    const available = pool.players.filter((player) => pool.profileAware ? global.SpecialMatchRuntime.eligibleProfile(run, player.profileId) : !owned.has(String(player.playerId)));
+    const available = pool.players.filter((player) => pool.profileAware ? isPullCandidateEligible(run, player) : !owned.has(String(player.playerId)));
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:lucky:${node.pullState.rerolls}`);
     const upgradedCandidates = buildLuckyCharmUpgrades(currentCandidates, available, random);
     if (!upgradedCandidates || upgradedCandidates.length !== 3) return toast("Non è stato possibile migliorare tutti i candidati.");
@@ -3388,7 +3378,7 @@
 
   function pullChoiceDatabase(options, player) {
     const src = pullChoiceSource(options, player);
-    return global.SeasonRegistry?.isSeasonSource?.(src) ? (global.SeasonRegistry.database(src) || seasonDb) : options.database;
+    return global.RecruitmentPoolRuntime.choiceDatabase(src, seasonDb, freeAgentsDb);
   }
 
   function pullChoiceActionPanel(player, index) {
@@ -3641,12 +3631,9 @@
 
   function formationRows(formationId, players) {
     const formation = formationById(formationId) || formationById("4-3-3") || { requirements: { FW: 3, MF: 3, DF: 4, GK: 1 } };
-    let cursor = 0;
-    return ["FW", "MF", "DF", "GK"].map((role) => {
-      const count = Number(formation.requirements?.[role] || 0);
-      const row = { role, players: players.slice(cursor, cursor + count) };
-      cursor += count;
-      return row;
+    const playersByRole = new Map(["FW", "MF", "DF", "GK"].map((role) => [role, players.filter((player) => String(player.position || player.normalizedRole || "").toUpperCase() === role)]));
+    return global.FormationLayout.displayRows(formation).map((layout) => {
+      return { ...layout, players: (playersByRole.get(layout.role) || []).splice(0, layout.count) };
     }).filter((row) => row.players.length);
   }
 
