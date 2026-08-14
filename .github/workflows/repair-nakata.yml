@@ -1,0 +1,56 @@
+name: Repair Nakata HQ asset
+
+on:
+  push:
+    branches: [season3]
+    paths:
+      - '.nakata_repair/**'
+      - '.github/workflows/repair-nakata.yml'
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: season3
+          fetch-depth: 0
+
+      - name: Rebuild and validate Nakata fullbody
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat .nakata_repair/fullbody.b64.part1 \
+              .nakata_repair/fullbody.b64.part2 \
+              .nakata_repair/fullbody.b64.part3 \
+            | tr -d '\r\n' \
+            | base64 --decode \
+            > assets/players/season3/custom_0001_nakata_fullbody.webp.tmp
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib, os
+          p = Path('assets/players/season3/custom_0001_nakata_fullbody.webp.tmp')
+          data = p.read_bytes()
+          expected_size = 22936
+          expected_sha = '382f9d9fb46ab69e65bc56302dd491624b616ada4cff5133d4856371d09cd1ab'
+          assert len(data) == expected_size, (len(data), expected_size)
+          assert data[:4] == b'RIFF' and data[8:12] == b'WEBP', data[:12]
+          assert hashlib.sha256(data).hexdigest() == expected_sha
+          os.replace(p, 'assets/players/season3/custom_0001_nakata_fullbody.webp')
+          PY
+
+      - name: Commit repaired asset and remove staging files
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf .nakata_repair
+          rm -f .github/workflows/repair-nakata.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -A
+          git commit -m 'Replace Nakata fullbody with high-quality asset'
+          git push origin HEAD:season3
