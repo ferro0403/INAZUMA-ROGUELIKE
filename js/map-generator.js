@@ -156,7 +156,7 @@
 
   function normalizeSpecialMatchNode(run, database = global.SeasonRegistry?.database?.(run?.seasonId)) {
     const zone = run?.currentZone;
-    if (run?.seasonId !== "ie1_s2" || !zone?.nodes?.length) return false;
+    if (!database?.requiresProfileAwareRuntime || !zone?.nodes?.length) return false;
     const special = database?.specialMatches?.find((match) => Number(match.zoneIndex) === Number(zone.bossIndex) + 1);
     if (!special) return false;
     const target = zone.nodes.find((node) => node.layer === 3 && node.column === 1);

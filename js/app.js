@@ -2,7 +2,7 @@
   "use strict";
 
   const DEV_MODE = new URLSearchParams(global.location?.search || "").get("dev") === "1";
-  const TEST_MATCH_CONTROLS_ENABLED = true;
+  const TEST_MATCH_CONTROLS_ENABLED = DEV_MODE;
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
   const toastRoot = document.getElementById("toast-root");
@@ -297,6 +297,9 @@
   let seasonPlayersById = new Map();
   let seasonTeamsById = new Map();
   let playerVisualsById = new Map();
+  function isProfileAwareSeason(seasonId = run?.seasonId) {
+    return global.SeasonRegistry?.database?.(seasonId)?.requiresProfileAwareRuntime === true;
+  }
   const PLAYER_IMAGE_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='22' fill='%2311213f'/%3E%3Ccircle cx='60' cy='42' r='22' fill='%23ffd34f'/%3E%3Cpath d='M22 108c6-28 24-42 38-42s32 14 38 42' fill='%2385cdf5'/%3E%3C/svg%3E";
   let run = null;
   const ui = {
@@ -534,7 +537,7 @@
   }
 
   function legacyRosterPlayer(entry, currentRun = run) {
-    if (currentRun?.seasonId === "ie1_s2") return freeAgentsById.get(String(entry?.playerId));
+    if (isProfileAwareSeason(currentRun?.seasonId)) return freeAgentsById.get(String(entry?.playerId));
     return sourcePlayer(entry);
   }
 
@@ -629,7 +632,7 @@
       ? sourcePlayer(entry)
       : legacyRosterPlayer(entry);
     const profileAware = global.RoguelikeRules.isProfileAwareRosterEntry(entry, run);
-    const database = profileAware ? seasonDb : (run?.seasonId === "ie1_s2" ? freeAgentsDb : (global.SeasonRegistry?.isSeasonSource?.(entry.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb));
+    const database = profileAware ? seasonDb : (isProfileAwareSeason(run?.seasonId) ? freeAgentsDb : (global.SeasonRegistry?.isSeasonSource?.(entry.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb));
     if (!player && !profileAware) return null;
     const resolved = profileAware
       ? global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(entry, { seasonId: run.seasonId, database })
@@ -998,11 +1001,15 @@
     return global.AlbumProgress?.unlockAlbumPlayer?.(run?.seasonId || global.AlbumProgress.DEFAULT_COLLECTION_ID, playerId, { source }) || false;
   }
 
+  function albumFreeAgentPlayers(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
+    return global.AlbumCatalog.freeAgentPlayers(freeAgentsDb?.players, collectionId);
+  }
+
   function albumCollectionPlayers(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
     const db = global.SeasonRegistry.database(collectionId) || seasonDb;
     const byId = new Map();
     (db?.players || []).forEach((player) => byId.set(String(player.playerId), { ...player, albumDatabase: db }));
-    (freeAgentsDb?.players || []).forEach((player) => { if (!byId.has(String(player.playerId))) byId.set(String(player.playerId), { ...player, albumDatabase: freeAgentsDb }); });
+    albumFreeAgentPlayers(collectionId).forEach((player) => { if (!byId.has(String(player.playerId))) byId.set(String(player.playerId), { ...player, albumDatabase: freeAgentsDb }); });
     return [...byId.values()];
   }
 
@@ -1065,21 +1072,17 @@
   }
 
   function albumTeamsView(collectionId = ui.albumCollectionId, database = seasonDb) {
-    const teamsById = new Map((database?.teams || []).map((team) => [String(team.teamId), team]));
-    const bossTeams = database?.bossOrder?.map((boss) => teamsById.get(String(boss.teamId))).filter(Boolean) || [];
-    const specialTeams = collectionId === "ie1_s2" ? (database?.specialMatches || []).map((match) => teamsById.get(String(match.teamId))).filter(Boolean) : [];
-    const ordered = bossTeams.length ? [...bossTeams, ...specialTeams] : (database?.teams || []);
-    const teams = [...new Map(ordered.map((team) => [String(team.teamId), team])).values()];
-    const freeAgentsTeam = { teamId: "__free_agents", teamName: "Svincolati", logoUrl: null, playerIds: (freeAgentsDb?.players || []).map((player) => String(player.playerId)), freeAgents: true };
+    const teams = global.RecruitmentPoolRuntime.orderedAlbumTeams(database, collectionId === "ie1_s3", isProfileAwareSeason(collectionId));
+    const freeAgentsTeam = { teamId: "__free_agents", teamName: "Svincolati", logoUrl: null, playerIds: albumFreeAgentPlayers(collectionId).map((player) => String(player.playerId)), freeAgents: true };
     return [...teams, freeAgentsTeam];
   }
 
   function albumTeamPlayers(team, collectionId = ui.albumCollectionId) {
-    if (team?.freeAgents) return freeAgentsDb?.players || [];
-    if (collectionId === "ie1_s2" && team?.playerProfileIds?.length) {
+    if (team?.freeAgents) return albumFreeAgentPlayers(collectionId);
+    if (isProfileAwareSeason(collectionId) && team?.playerProfileIds?.length) {
       return team.playerProfileIds.map((profileId) => {
-        const profile = global.ProfiledSeasonRuntime.resolveProfile("ie1_s2", profileId);
-        return profile ? { ...global.ProfiledSeasonRuntime.resolveEffectiveBase({ playerId: profile.playerId, activeProfileId: profile.profileId, activeRoleVariantId: profile.defaultRoleVariantId }, "ie1_s2"), albumProfileId: profile.profileId } : null;
+        const profile = global.ProfiledSeasonRuntime.resolveProfile(collectionId, profileId);
+        return profile ? { ...global.ProfiledSeasonRuntime.resolveEffectiveBase({ playerId: profile.playerId, activeProfileId: profile.profileId, activeRoleVariantId: profile.defaultRoleVariantId }, collectionId), albumProfileId: profile.profileId } : null;
       }).filter(Boolean);
     }
     return (team?.playerIds || []).map((id) => seasonPlayersById.get(String(id))).filter(Boolean);
@@ -1412,7 +1415,7 @@
     if (global.RoguelikeRules.isProfileAwareRosterEntry(rosterEntry, savedRun)) {
       return global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(rosterEntry, { run: savedRun, seasonId: savedRun.seasonId, database });
     }
-    const usesFreeAgents = rosterEntry?.source === "free_agents" || savedRun?.seasonId === "ie1_s2";
+    const usesFreeAgents = rosterEntry?.source === "free_agents" || isProfileAwareSeason(savedRun?.seasonId);
     const sourceDatabase = usesFreeAgents ? freeAgentsDb : database;
     const source = usesFreeAgents
       ? (freeAgentsDb?.players || []).find((player) => String(player.playerId) === String(rosterEntry.playerId))
@@ -1899,6 +1902,10 @@
   }
 
   function initialDraftPlayers() {
+    if (run?.seasonId === "ie1_s3") {
+      return global.RecruitmentPoolRuntime.effectiveSeason3Players(seasonDb, freeAgentsDb)
+        .filter(global.RecruitmentPoolRuntime.eligibleForSeason3InitialDraft);
+    }
     const config = seasonDb?.draftConfig;
     if (config?.freeAgentsOnly && !Array.isArray(freeAgentsDb?.players)) {
       throw new Error(`Draft ${run?.seasonId}: database svincolati non disponibile (${config.databasePath || "data/FREE_AGENTS_compact.json"})`);
@@ -2038,10 +2045,9 @@
 
 
   function lineupRows() {
-    return ["FW", "MF", "DF", "GK"].map((role) => ({
-      role,
-      ids: run.lineup.filter((id) => effectiveRosterRole(id) === role),
-    }));
+    const formation = formationById(run.formationId) || formationById("4-3-3");
+    const idsByRole = new Map(["FW", "MF", "DF", "GK"].map((role) => [role, run.lineup.filter((id) => effectiveRosterRole(id) === role)]));
+    return global.FormationLayout.displayRows(formation).map((row) => ({ ...row, ids: idsByRole.get(row.role).splice(0, row.count) }));
   }
 
   function tacticalMiniPlayer(id, { mode = "squad", area = "lineup", selectedId = null } = {}) {
@@ -2164,10 +2170,11 @@
   }
 
   function squadFormationPreviewMarkup(formation) {
-    return `<div class="squad-formation-mini" aria-hidden="true">
-      ${["FW", "MF", "DF", "GK"].map((role) => {
-        const amount = Number(formation.requirements?.[role] || 0);
-        return `<span class="squad-formation-mini-row" style="--mini-count:${Math.max(1, amount)}">${Array.from({ length: amount }, () => `<i class="squad-formation-dot squad-formation-dot--${role.toLowerCase()}"></i>`).join("")}</span>`;
+    const rows = global.FormationLayout.displayRows(formation);
+    return `<div class="squad-formation-mini" style="--mini-rows:${rows.length}" aria-hidden="true">
+      ${rows.map((row) => {
+        const amount = Number(row.count || 0);
+        return `<span class="squad-formation-mini-row" data-display-role="${escapeHtml(row.displayRole || row.role)}" style="--mini-count:${Math.max(1, amount)}">${Array.from({ length: amount }, () => `<i class="squad-formation-dot squad-formation-dot--${row.role.toLowerCase()}"></i>`).join("")}</span>`;
       }).join("")}
     </div>`;
   }
@@ -3029,7 +3036,7 @@
       toast("Giocatore non disponibile per lo scambio");
       return resolveTradeNode(node);
     }
-    const candidates = run.seasonId === "ie1_s2"
+    const candidates = isProfileAwareSeason()
       ? global.RoguelikeRules.getProfileAwareTradeCandidates({
           outgoingPlayer: outgoingBase,
           outgoingPlayerId: outgoingEntry.playerId,
@@ -3074,7 +3081,7 @@
   }
 
   function executeTrade(node, outgoingEntry, incoming, nextLevel) {
-    if (run.seasonId !== "ie1_s2") {
+    if (!isProfileAwareSeason()) {
       const outgoingId = String(outgoingEntry.playerId); const incomingId = String(incoming.player.playerId); const rosterIndex = run.roster.findIndex((entry) => String(entry.playerId) === outgoingId);
       if (outgoingEntry.equippedItem) run.inventory.push(outgoingEntry.equippedItem);
       run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null, ...permanentRosterFields(incoming.player) };
@@ -3101,7 +3108,7 @@
   }
 
   function showTradeResult(node, incoming, receivedEntry, status) {
-    const resolved = run.seasonId === "ie1_s2" ? resolvedRosterPlayer(receivedEntry.playerId) : tradeCandidatePreview(incoming, receivedEntry);
+    const resolved = isProfileAwareSeason() ? resolvedRosterPlayer(receivedEntry.playerId) : tradeCandidatePreview(incoming, receivedEntry);
     const upgraded = status === "upgraded" || status === "upgraded-self";
     openModal(`<section class="trade-result-screen"><div class="trade-result-badge" aria-hidden="true">✓</div><div class="modal-head trade-node-head trade-result-head"><div><p class="eyebrow">Scambio completato</p><h1>${upgraded ? "PROFILO POTENZIATO" : "NUOVO GIOCATORE"}</h1><p class="muted">${escapeHtml(resolved.name)} ${upgraded ? "ha ottenuto un nuovo profilo." : "è entrato nella rosa e ha preso il posto del giocatore ceduto."}</p></div></div><div class="trade-result-card mobile-compact-player-list">${tradeStaticPlayerCardMarkup(resolved, { level: global.LevelProgression.formatLevel(receivedEntry, run.seasonId), overall: resolved.overall, extraClass: "trade-preview-card--result" })}</div><div class="trade-result-summary"><span>${upgraded ? "POTENZIAMENTO CONFERMATO" : "ARRIVO CONFERMATO"}</span><strong>${escapeHtml(resolved.name)}</strong><small>${escapeHtml(resolved.position)} · OVR ${escapeHtml(resolved.overall)} · Lv ${escapeHtml(global.LevelProgression.formatLevel(receivedEntry, run.seasonId))}</small></div><div class="node-actions trade-result-actions"><button type="button" class="btn btn-ghost" id="trade-player-detail">APRI SCHEDA</button><button type="button" class="btn btn-yellow btn-primary-action" id="finish-trade">TORNA ALLA MAPPA</button></div></section>`, { closeable: false, className: "trade-result-modal" });
     document.getElementById("trade-player-detail").addEventListener("click", () => showPlayerDetails(receivedEntry.playerId, () => showTradeResult(node, incoming, receivedEntry, status)));
@@ -3156,11 +3163,17 @@
   }
 
   function pullPool(type) {
+    if (type === "pull_free_agents" && run.seasonId === "ie1_s3") {
+      const minimums = seasonDb.recruitmentRules?.pullFreeAgents?.minimumFinalOverallByBossIndex || seasonDb.rules?.pullFreeAgentsMinimumFinalOverallByBossIndex || [];
+      const minimum = Number(minimums[Math.min(Number(run.bossIndex || 0), minimums.length - 1)] || 0);
+      const effectivePool = global.RecruitmentPoolRuntime.effectiveSeason3Players(seasonDb, freeAgentsDb);
+      return { players: effectivePool.filter((player) => global.RecruitmentPoolRuntime.eligibleForSeason3FreeAgentPull(player, run.bossIndex, seasonDb)), source: "mixed", sourceForPlayer: (player) => global.RecruitmentPoolRuntime.candidateSource(player, run.seasonId), database: seasonDb, profileAware: true, minimumFinalOverall: minimum };
+    }
     if (type === "pull_free_agents") return { players: freeAgentsDb.players, source: "free_agents", database: freeAgentsDb };
     if (type === "pull_unlocked_teams") {
       const unlocked = new Set([...(run.unlockedTeamIds || []), ...(run.unlockedSpecialTeamIds || [])].map(String));
       const teams = seasonDb.teams.filter((team) => unlocked.has(String(team.teamId)));
-      if (run.seasonId === "ie1_s2") {
+      if (isProfileAwareSeason()) {
         const specialPool = new Map((seasonDb.specialMatches || []).map((match) => [String(match.teamId), match.reward?.teamPullPoolProfileIds || []]));
         const profileIds = teams.flatMap((team) => specialPool.get(String(team.teamId)) || team.playerProfileIds || []);
         return { players: profileIds.map((profileId) => global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, profileId)).filter((profile) => profile && global.SpecialMatchRuntime.eligibleProfile(run, profile.profileId)), source: global.SeasonRegistry.sourceForSeason(run.seasonId), database: seasonDb, profileAware: true };
@@ -3176,7 +3189,7 @@
         legendaryById.set(String(player.playerId), { ...player, pullCandidateKind: "free_agent" });
         legendarySources.set(String(player.playerId), "free_agents");
       });
-    const seasonalLegendaryPlayers = run.seasonId === "ie1_s2"
+    const seasonalLegendaryPlayers = isProfileAwareSeason()
       ? (seasonDb.profiles || []).filter((profile) => global.SpecialMatchRuntime.eligibleProfile(run, profile.profileId))
       : seasonDb.players;
     seasonalLegendaryPlayers
@@ -3193,25 +3206,24 @@
       source: "mixed",
       sourceForPlayer: (player) => legendarySources.get(String(player.profileId || player.playerId)) || legendarySources.get(String(player.playerId)),
       database: freeAgentsDb,
-      profileAware: run.seasonId === "ie1_s2",
+      profileAware: isProfileAwareSeason(),
     };
   }
 
   function canonicalCandidatePlayerId(player) {
-    return String(player?.playerId || "");
+    return global.RecruitmentPoolRuntime.canonicalPlayerId(player);
   }
 
   function isSeasonProfileCandidate(player) {
-    return player?.pullCandidateKind === "season_profile" || (player?.pullCandidateKind !== "free_agent" && Boolean(player?.profileId));
+    return global.RecruitmentPoolRuntime.isSeasonProfileCandidate(player);
   }
 
   function pullCandidateKey(player) {
-    return String(isSeasonProfileCandidate(player) ? player.profileId : player?.playerId);
+    return global.RecruitmentPoolRuntime.candidateKey(player);
   }
 
   function isPullCandidateEligible(activeRun, player) {
-    if (isSeasonProfileCandidate(player)) return global.SpecialMatchRuntime.eligibleProfile(activeRun, player.profileId);
-    return !activeRun.roster.some((entry) => String(entry.playerId) === canonicalCandidatePlayerId(player));
+    return global.RecruitmentPoolRuntime.eligible(activeRun, player);
   }
 
   function selectWeightedCandidates(available, random, categoryWeights = null) {
@@ -3280,7 +3292,7 @@
     if (!Array.isArray(currentCandidates) || currentCandidates.length !== 3) return null;
     const usedIds = new Set();
     const upgradedCandidates = currentCandidates.map((candidate) => {
-      const selected = chooseLuckyUpgrade(candidate, available, usedIds, random, { profileAware: run.seasonId === "ie1_s2" && available.some((player) => player.profileId) });
+      const selected = chooseLuckyUpgrade(candidate, available, usedIds, random, { profileAware: isProfileAwareSeason() && available.some((player) => player.profileId) });
       if (selected) usedIds.add(String(selected.profileId || selected.playerId));
       return selected;
     });
@@ -3300,7 +3312,7 @@
     const pool = luckyCharmPoolForPull(pullType);
     if (!pool) return toast("Portafortuna non utilizzabile in questa selezione.");
     const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
-    const available = pool.players.filter((player) => pool.profileAware ? global.SpecialMatchRuntime.eligibleProfile(run, player.profileId) : !owned.has(String(player.playerId)));
+    const available = pool.players.filter((player) => pool.profileAware ? isPullCandidateEligible(run, player) : !owned.has(String(player.playerId)));
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:lucky:${node.pullState.rerolls}`);
     const upgradedCandidates = buildLuckyCharmUpgrades(currentCandidates, available, random);
     if (!upgradedCandidates || upgradedCandidates.length !== 3) return toast("Non è stato possibile migliorare tutti i candidati.");
@@ -3372,7 +3384,7 @@
 
   function pullChoiceDatabase(options, player) {
     const src = pullChoiceSource(options, player);
-    return global.SeasonRegistry?.isSeasonSource?.(src) ? (global.SeasonRegistry.database(src) || seasonDb) : options.database;
+    return global.RecruitmentPoolRuntime.choiceDatabase(src, seasonDb, freeAgentsDb);
   }
 
   function pullChoiceActionPanel(player, index) {
@@ -3484,7 +3496,7 @@
 
   function recruitPlayer(player, source, level, done, options = {}) {
     const allowCancel = options.allowCancel !== false;
-    if (run.seasonId === "ie1_s2" && player.profileId) {
+    if (isProfileAwareSeason() && player.profileId) {
       const result = global.ProfiledSeasonRuntime.acquireOrUpgradeProfile(run, player, { seasonId: run.seasonId, maxRoster: global.SEASON1_CONFIG.maxRoster, level });
       if (result.status === "upgraded" || result.status === "acquired") {
         if (result.status === "acquired") {
@@ -3604,7 +3616,7 @@
       .map((slot) => {
         let source = seasonPlayersById.get(String(slot.playerId));
         let profileId = slot.profileId;
-        if (run?.seasonId === "ie1_s2") {
+        if (isProfileAwareSeason(run?.seasonId)) {
           profileId = profileId || boss.startingXIProfileIds?.[Number(slot.slot || 1) - 1];
           const profile = global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, profileId);
           if (profile) {
@@ -3625,12 +3637,9 @@
 
   function formationRows(formationId, players) {
     const formation = formationById(formationId) || formationById("4-3-3") || { requirements: { FW: 3, MF: 3, DF: 4, GK: 1 } };
-    let cursor = 0;
-    return ["FW", "MF", "DF", "GK"].map((role) => {
-      const count = Number(formation.requirements?.[role] || 0);
-      const row = { role, players: players.slice(cursor, cursor + count) };
-      cursor += count;
-      return row;
+    const playersByRole = new Map(["FW", "MF", "DF", "GK"].map((role) => [role, players.filter((player) => String(player.position || player.normalizedRole || "").toUpperCase() === role)]));
+    return global.FormationLayout.displayRows(formation).map((layout) => {
+      return { ...layout, players: (playersByRole.get(layout.role) || []).splice(0, layout.count) };
     }).filter((row) => row.players.length);
   }
 
@@ -4467,12 +4476,12 @@
 
           <section class="boss-match-summary" aria-label="${isSpecial ? "Riepilogo essenziale della partita speciale" : "Riepilogo essenziale della sfida Boss"}">
             ${fiveMatchComparisonMarkup(userPlayers, bossPlayers, { contentId: "boss-match-values-content", opponentName: meta.boss.name, userStrength: simPreview.userStrength?.final ?? "-", userFormation: meta.user.formation, userOverall: userAverage || "-", probability: userProbability ?? "-", opponentStrength: simPreview.opponentStrength?.final ?? "-", opponentFormation: meta.boss.formation, opponentOverall: bossAverage || "-" })}
-            <div class="boss-match-reward-note"><span>Vittoria</span><strong>${isSpecial ? "+1 livello · ricompensa garantita" : "2 pick 1 di 3 dalla squadra battuta"}</strong></div>
+            <div class="boss-match-reward-note"><span>Vittoria</span><strong>${isSpecial ? "+1 livello · scelta 1 su 3" : "2 pick 1 di 3 dalla squadra battuta"}</strong></div>
           </section>
           ${simError ? `<div class="match-sim-error">${escapeHtml(simError)}</div>` : ""}
-          <div class="boss-match-bottom-grid" ${simulating || resolved ? "" : "hidden"}>
+            <div class="boss-match-bottom-grid" ${simulating || resolved ? "" : "hidden"}>
             <section class="panel boss-match-log-panel" ${simulating || resolved ? "" : "hidden"}><div class="panel-title-row"><div><p class="eyebrow">90 minuti · eventi reali</p><h3>Cronaca</h3></div><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${bossMatchTimeline()}</ol></section>
-            <section class="panel boss-match-result-panel ${outcomeClass}" ${simulating || resolved ? "" : "hidden"}><p class="eyebrow">${isSpecial ? "Esito partita speciale" : "Esito Boss"}</p><h3>${escapeHtml(bossStatusLabel)}</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div><div class="result-badges"><span class="lives" aria-label="Vite ${escapeHtml(run.lives)}">${resolved && ui.bossMatchState.endsWith("victory") ? "+1 livello" : hearts()}</span><span>${resolved && ui.bossMatchState.endsWith("victory") ? (isSpecial ? "Ricompensa garantita" : "Doppia pick boss") : resolved ? "Ritorno al nodo precedente" : "Finalizzazione protetta"}</span></div></section>
+            <section class="panel boss-match-result-panel ${outcomeClass}" ${simulating || resolved ? "" : "hidden"}><p class="eyebrow">${isSpecial ? "Esito partita speciale" : "Esito Boss"}</p><h3>${escapeHtml(bossStatusLabel)}</h3><div class="five-match-scoreline" aria-live="polite">${escapeHtml(scoreLabel)}</div><div class="boss-match-score" aria-hidden="true"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><p>${escapeHtml(bossMatchStatusText())}</p><div class="boss-match-score-teams"><span>${escapeHtml(meta.user.name)}</span><span>${escapeHtml(meta.boss.name)}</span></div><div class="result-badges"><span class="lives" aria-label="Vite ${escapeHtml(run.lives)}">${resolved && ui.bossMatchState.endsWith("victory") ? "+1 livello" : hearts()}</span><span>${resolved && ui.bossMatchState.endsWith("victory") ? (isSpecial ? "Scelta giocatore disponibile" : "Doppia pick boss") : resolved ? "Ritorno al nodo precedente" : "Finalizzazione protetta"}</span></div></section>
           </div>
           <section class="panel boss-match-controls" aria-label="${isSpecial ? "Azioni partita speciale" : "Azioni partita Boss"}">
             <header class="five-match-actions-heading"><span>Azioni partita</span><i aria-hidden="true"></i></header>
@@ -4518,7 +4527,7 @@
   }
 
   function addLevels(amount, actionId = null, explicitUnits = null) {
-    if (run.seasonId === "ie1_s2") {
+    if (isProfileAwareSeason()) {
       const units = explicitUnits == null ? Math.round(Number(amount || 0) * 6) : Number(explicitUnits);
       const before = run.roster.map((entry) => Number(entry.level || 0));
       global.ProfiledSeasonRuntime.addLevelUnits(run, units, actionId);
@@ -4540,7 +4549,7 @@
     const text = matchType === "boss"
       ? (result === "victory" ? "Vittoria confermata: premi Continua per aprire le ricompense boss." : "Sconfitta confermata: premi Continua per tornare al nodo precedente.")
       : matchType === "special_match"
-        ? (result === "victory" ? "Vittoria confermata: premi Continua per ottenere la ricompensa garantita." : "Sconfitta confermata: premi Continua per tornare al nodo precedente.")
+        ? (result === "victory" ? "Vittoria confermata: premi Continua per aprire la scelta giocatore." : "Sconfitta confermata: premi Continua per tornare al nodo precedente.")
         : (result === "victory" ? "Vittoria 5v5 confermata: premi Continua per tornare al percorso." : "Sconfitta 5v5 confermata: premi Continua per tornare al nodo precedente.");
     if (!ui.bossMatchLog.some((event) => event.minute === "FT")) {
       ui.bossMatchLog = [...ui.bossMatchLog, { minute: "FT", icon: result === "victory" ? "🏆" : "💔", text, side: null }];
@@ -4616,7 +4625,7 @@
     if (result === "victory") {
       global.SpecialMatchRuntime.complete(run, seasonDb, match, result);
       if (node) global.MapEngine.completeNode(run.currentZone, node.id);
-      match.pendingPostMatchAction = { type: "special-reward", toast: "Vittoria: +1 livello e ricompensa garantita" };
+      match.pendingPostMatchAction = { type: "special-reward", toast: "Vittoria: +1 livello e scelta giocatore" };
     } else {
       global.RunState.restoreAfterLoss(run, match.previousNodeId, match.type);
       match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : "Sconfitta: torni al nodo precedente." };
@@ -4690,8 +4699,16 @@
   function showSpecialMatchReward() {
   const pending = run.pendingSpecialMatchReward;
   if (!pending) return renderMap();
+  const candidateIds = pending.candidateProfileIds?.length ? pending.candidateProfileIds : [pending.selectedProfileId].filter(Boolean);
+  const candidates = candidateIds.map((profileId) => global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, profileId)).filter(Boolean);
   const profile = pending.selectedProfileId && global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, pending.selectedProfileId);
-  openModal(`<div class="modal-head special-reward-head"><div><p class="eyebrow">RICOMPENSA GARANTITA</p><h2>${escapeHtml(profile?.name || "Pool completato")}</h2><p class="muted">${profile ? (pending.fallback ? "Profilo alternativo eleggibile" : "Giocatore garantito") : "Nessun altro profilo eleggibile: la ricompensa sarà registrata."}</p></div></div>${profile ? playerCard(profile, { context: "pull", level: Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), database: seasonDb }) : ""}<div class="button-row special-reward-actions">${profile ? '<button type="button" class="btn btn-ghost" id="decline-special-reward">RIFIUTA</button>' : ""}<button type="button" class="btn btn-yellow" id="claim-special-reward">${profile ? "ACQUISISCI O POTENZIA" : "CONTINUA"}</button></div>`, { closeable: false, className: "pull-selection-modal special-reward-modal" });
+  openModal(`<div class="modal-head special-reward-head"><div><p class="eyebrow">SCELTA GIOCATORE DISPONIBILE</p><h2>${candidates.length ? "Scegli 1 giocatore su 3" : "Pool completato"}</h2><p class="muted">I candidati provengono esclusivamente dalla squadra appena battuta.</p></div></div><div class="candidate-grid pull-offer-grid">${candidates.map((candidate) => playerCard(candidate, { button: true, context: "pull", level: Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), database: seasonDb })).join("")}</div><div class="button-row special-reward-actions">${candidates.length ? '<button type="button" class="btn btn-ghost" id="decline-special-reward">RIFIUTA</button>' : ""}<button type="button" class="btn btn-yellow" id="claim-special-reward" ${candidates.length && !profile ? "disabled" : ""}>${candidates.length ? "ACQUISISCI O POTENZIA" : "CONTINUA"}</button></div>`, { closeable: false, className: "pull-selection-modal special-reward-modal" });
+
+  modalRoot.querySelectorAll("[data-player-id]").forEach((card) => card.addEventListener("click", () => {
+    global.SpecialMatchRuntime.selectRewardCandidate(run, card.dataset.playerId ? candidates.find((candidate) => String(candidate.playerId) === String(card.dataset.playerId))?.profileId : null, pending);
+    global.RunState.save(run);
+    showSpecialMatchReward();
+  }));
 
   document.getElementById("decline-special-reward")?.addEventListener("click", (event) => {
     const button = event.currentTarget;
@@ -4806,7 +4823,7 @@
     const team = seasonDb.teams.find((candidate) => String(candidate.teamId) === String(boss.teamId));
     const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
     const random = global.DraftEngine.randomFromSeed(`${run.runId}:bossReward:${flow.bossIndex}:${flow.rewardNumber}:${flow.rerolls}`);
-    const profileAware = run.seasonId === "ie1_s2";
+    const profileAware = isProfileAwareSeason();
     const available = profileAware
       ? (boss.rewardPoolProfileIds || team?.playerProfileIds || []).map((profileId) => global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, profileId)).filter((profile) => profile && global.SpecialMatchRuntime.eligibleProfile(run, profile.profileId) && !flow.excludedIds.includes(String(profile.profileId)))
       : (team?.playerIds || []).map((id) => seasonPlayersById.get(String(id))).filter((player) => player && !owned.has(String(player.playerId)) && !flow.excludedIds.includes(String(player.playerId)));
@@ -4839,7 +4856,7 @@
     const flow = run.postBossFlow;
     const boss = seasonDb.bossOrder[Number(flow?.bossIndex ?? run.bossIndex)];
     if (!flow || !boss) return renderMap();
-    let candidates = (flow.candidateIds || []).map((id) => run.seasonId === "ie1_s2" ? global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, id) : seasonPlayersById.get(String(id))).filter(Boolean);
+    let candidates = (flow.candidateIds || []).map((id) => isProfileAwareSeason() ? global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, id) : seasonPlayersById.get(String(id))).filter(Boolean);
     if (!candidates.length) {
       candidates = bossRewardCandidates(flow, boss);
       flow.candidateIds = candidates.map((player) => String(player.profileId || player.playerId));
@@ -5611,7 +5628,7 @@
         title: `Usare ${item.name}?`,
         description: "Aumenterà di 0,5 livello tutti i giocatori che non hanno ancora raggiunto il livello massimo.",
         onConfirm: () => {
-          addLevels(Number(item.amount || 0), `${run.runId}:${instanceId}:level-units`, run.seasonId === "ie1_s2" ? 3 : null);
+          addLevels(Number(item.amount || 0), `${run.runId}:${instanceId}:level-units`, isProfileAwareSeason() ? 3 : null);
           removeInventoryItem(instanceId);
           global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
           global.RunState.save(run);
@@ -5686,7 +5703,7 @@
           onCancel: () => choosePlayerForConsumable(item),
           onConfirm: () => {
             entry.level = Math.min(20, currentLevel + appliedLevels);
-            if (run.seasonId === "ie1_s2" && entry.level >= 20) entry.levelUnits = 0;
+            if (isProfileAwareSeason() && entry.level >= 20) entry.levelUnits = 0;
             removeInventoryItem(item.instanceId);
             global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
             global.RunState.save(run);
@@ -5935,8 +5952,12 @@
 
   function championFormationMarkup(team) {
     const starters = Array.isArray(team.finalStartingEleven) ? team.finalStartingEleven : [];
-    const rows = ["FW", "MF", "DF", "GK"].map((role) => starters.filter((p) => p.role === role));
-    return `<section class="pitch hall-pitch">${rows.map((players) => `<div class="pitch-row tactical-row" data-row-count="${players.length || 1}" style="--players-in-row:${players.length || 1}">${players.map(snapshotCard).join("")}</div>`).join("")}</section>`;
+    const database = global.SeasonRegistry?.database?.(team.seasonId || team.modeId) || seasonDb;
+    const formation = database?.formations?.eleven?.find((item) => item.id === team.finalFormation);
+    const playersByRole = new Map(["FW", "MF", "DF", "GK"].map((role) => [role, starters.filter((player) => player.role === role)]));
+    const layouts = global.FormationLayout.displayRows(formation || { requirements: { FW: 3, MF: 3, DF: 4, GK: 1 } });
+    const rows = layouts.map((layout) => ({ ...layout, players: (playersByRole.get(layout.role) || []).splice(0, layout.count) }));
+    return `<section class="pitch hall-pitch">${rows.map((row) => `<div class="pitch-row tactical-row" data-display-role="${escapeHtml(row.displayRole || row.role)}" data-row-count="${row.players.length || 1}" style="--players-in-row:${row.players.length || 1}">${row.players.map(snapshotCard).join("")}</div>`).join("")}</section>`;
   }
 
   function championFiveVFiveMarkup(team) {

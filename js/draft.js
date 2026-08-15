@@ -146,9 +146,11 @@
     run.roster = draft.selectedIds.map((id) => {
       const source = players.find((player) => String(player.playerId) === String(id));
       const permanent = global.DevelopmentV2?.optionsFromUpgrade?.(source, run.developmentPlayerSnapshot?.[String(id)]) || {};
+      const isProfile = source?.sourceKind === "season3_recruitment_profile" && source?.profileId;
       return ({
       playerId: id,
-      source: "free_agents",
+      source: isProfile ? run.seasonId : "free_agents",
+      ...(isProfile ? { activeProfileId: source.profileId, activeRoleVariantId: source.defaultRoleVariantId || null, sourceKind: source.sourceKind, sourceTeamId: source.sourceTeamId } : { sourceKind: source?.sourceKind || "global_free_agent" }),
       levelUnits: 0,
       level: 0,
       equippedItem: null,

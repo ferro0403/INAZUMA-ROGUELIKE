@@ -93,7 +93,7 @@
     return { status: "acquired", player: entry, profile };
   }
   function addLevelUnits(run, units, actionId = null) {
-    if (run.seasonId !== "ie1_s2") return false;
+    if (!databaseFor(run.seasonId)?.requiresProfileAwareRuntime) return false;
     run.processedLevelUnitActionIds = run.processedLevelUnitActionIds || [];
     if (actionId && run.processedLevelUnitActionIds.includes(id(actionId))) return false;
     const apply = (target, levelKey, unitKey) => {
