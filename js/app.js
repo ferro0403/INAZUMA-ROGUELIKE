@@ -1001,11 +1001,15 @@
     return global.AlbumProgress?.unlockAlbumPlayer?.(run?.seasonId || global.AlbumProgress.DEFAULT_COLLECTION_ID, playerId, { source }) || false;
   }
 
+  function albumFreeAgentPlayers(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
+    return global.AlbumCatalog.freeAgentPlayers(freeAgentsDb?.players, collectionId);
+  }
+
   function albumCollectionPlayers(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
     const db = global.SeasonRegistry.database(collectionId) || seasonDb;
     const byId = new Map();
     (db?.players || []).forEach((player) => byId.set(String(player.playerId), { ...player, albumDatabase: db }));
-    (freeAgentsDb?.players || []).forEach((player) => { if (!byId.has(String(player.playerId))) byId.set(String(player.playerId), { ...player, albumDatabase: freeAgentsDb }); });
+    albumFreeAgentPlayers(collectionId).forEach((player) => { if (!byId.has(String(player.playerId))) byId.set(String(player.playerId), { ...player, albumDatabase: freeAgentsDb }); });
     return [...byId.values()];
   }
 
@@ -1069,12 +1073,12 @@
 
   function albumTeamsView(collectionId = ui.albumCollectionId, database = seasonDb) {
     const teams = global.RecruitmentPoolRuntime.orderedAlbumTeams(database, collectionId === "ie1_s3", isProfileAwareSeason(collectionId));
-    const freeAgentsTeam = { teamId: "__free_agents", teamName: "Svincolati", logoUrl: null, playerIds: (freeAgentsDb?.players || []).map((player) => String(player.playerId)), freeAgents: true };
+    const freeAgentsTeam = { teamId: "__free_agents", teamName: "Svincolati", logoUrl: null, playerIds: albumFreeAgentPlayers(collectionId).map((player) => String(player.playerId)), freeAgents: true };
     return [...teams, freeAgentsTeam];
   }
 
   function albumTeamPlayers(team, collectionId = ui.albumCollectionId) {
-    if (team?.freeAgents) return freeAgentsDb?.players || [];
+    if (team?.freeAgents) return albumFreeAgentPlayers(collectionId);
     if (isProfileAwareSeason(collectionId) && team?.playerProfileIds?.length) {
       return team.playerProfileIds.map((profileId) => {
         const profile = global.ProfiledSeasonRuntime.resolveProfile(collectionId, profileId);
