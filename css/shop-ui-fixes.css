@@ -7,8 +7,7 @@
 
 /*
  * Dragon Sticker wallet icon.
- * Use a compact dedicated badge: the artwork has internal transparent padding,
- * so it needs to fill more of its badge instead of being shrunk further.
+ * Keep the badge stable and size/offset only the artwork for optical centering.
  */
 .shop-screen .shop-coins > .development-currency-icon {
   position: relative;
@@ -28,11 +27,11 @@
 
 .shop-screen .shop-coins > .development-currency-icon > img {
   position: absolute;
-  left: 50%;
+  left: 51%;
   top: 50%;
   display: block;
-  width: 34px;
-  height: 34px;
+  width: 31px;
+  height: 31px;
   max-width: none;
   margin: 0;
   padding: 0;
@@ -64,7 +63,8 @@
   }
 
   .shop-screen .shop-coins > .development-currency-icon > img {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
+    left: 51%;
   }
 }
