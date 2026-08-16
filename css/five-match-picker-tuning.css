@@ -1,0 +1,51 @@
+/* Prematch-only tuning for the shared 5v5 player picker.
+   Keep the formation editor untouched: this file only scopes to .five-match-screen. */
+
+/* A touch narrower than the formation editor version, while keeping the same component. */
+.five-match-screen .five-selector.five-selector-floating {
+  width: min(390px, calc(100% - 48px));
+  left: 18px;
+}
+
+/* The shared markup already carries rarity-* classes. In the formation editor,
+   game.css applies the rarity variables to .five-roster-card under .five-screen.
+   Mirror that exact treatment in the prematch context instead of inventing new colors. */
+.five-match-screen .five-selector.five-selector-floating .five-roster-card {
+  --five-roster-bg: var(--rarity-bg, #fff);
+  --five-roster-border: var(--rarity-border, #747474);
+  --five-roster-text: var(--rarity-text, #111216);
+  background: var(--five-roster-bg);
+  border-color: var(--five-roster-border);
+  color: var(--five-roster-text);
+}
+
+.five-match-screen .five-selector.five-selector-floating .five-roster-card .five-roster-copy strong,
+.five-match-screen .five-selector.five-selector-floating .five-roster-card .five-roster-copy small {
+  color: var(--five-roster-text);
+}
+
+/* Preserve the special visual state for the player occupying the selected slot. */
+.five-match-screen .five-selector.five-selector-floating .five-roster-card.current-starter {
+  background: #fff3b5;
+  border-color: #111216;
+  color: #111216;
+}
+
+.five-match-screen .five-selector.five-selector-floating .five-roster-card.current-starter .five-roster-copy strong,
+.five-match-screen .five-selector.five-selector-floating .five-roster-card.current-starter .five-roster-copy small {
+  color: #111216;
+}
+
+@media (max-width: 780px) {
+  .five-match-screen .five-selector.five-selector-floating {
+    left: 16px;
+    width: calc(100% - 46px);
+  }
+}
+
+@media (max-width: 390px) {
+  .five-match-screen .five-selector.five-selector-floating {
+    left: 14px;
+    width: calc(100% - 40px);
+  }
+}
