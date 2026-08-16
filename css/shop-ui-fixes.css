@@ -7,41 +7,40 @@
 
 /*
  * Dragon Sticker wallet icon.
- * Keep the badge stable and size/offset only the artwork for optical centering.
+ * IMPORTANT: developmentCurrencyIcon() renders `.development-resource-icon`,
+ * not `.development-currency-icon`. Keep the 42px item badge and shrink only
+ * the artwork inside it so the sticker has even breathing room in the circle.
  */
-.shop-screen .shop-coins > .development-currency-icon {
-  position: relative;
-  flex: 0 0 38px;
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
+.shop-screen .shop-coins > .development-resource-icon {
+  flex: 0 0 42px;
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
   margin: 0;
   padding: 0;
-  display: block;
+  display: grid;
+  place-items: center;
   align-self: center;
-  justify-self: center;
   line-height: 0;
   overflow: hidden;
-  border-radius: 50%;
 }
 
-.shop-screen .shop-coins > .development-currency-icon > img {
-  position: absolute;
-  left: 51%;
-  top: 50%;
+.shop-screen .shop-coins > .development-resource-icon > img {
+  position: static;
   display: block;
-  width: 31px;
-  height: 31px;
-  max-width: none;
+  width: 30px;
+  height: 30px;
+  max-width: 30px;
+  max-height: 30px;
   margin: 0;
   padding: 0;
   object-fit: contain;
   object-position: center;
-  transform: translate(-50%, -50%);
+  transform: none;
 }
 
-/* Only the copy span should use the wallet text grid. */
-.shop-screen .shop-coins > span:not(.development-currency-icon) {
+/* Only the MONETE/value copy uses the text grid. */
+.shop-screen .shop-coins > span:not(.development-resource-icon) {
   display: grid;
   align-content: center;
   line-height: 1;
@@ -54,17 +53,17 @@
 }
 
 @media (max-width: 430px) {
-  .shop-screen .shop-coins > .development-currency-icon {
-    flex-basis: 36px;
-    width: 36px;
-    height: 36px;
-    min-width: 36px;
-    margin: 0;
+  .shop-screen .shop-coins > .development-resource-icon {
+    flex-basis: 40px;
+    width: 40px;
+    height: 40px;
+    min-width: 40px;
   }
 
-  .shop-screen .shop-coins > .development-currency-icon > img {
-    width: 28px;
-    height: 28px;
-    left: 51%;
+  .shop-screen .shop-coins > .development-resource-icon > img {
+    width: 27px;
+    height: 27px;
+    max-width: 27px;
+    max-height: 27px;
   }
 }
