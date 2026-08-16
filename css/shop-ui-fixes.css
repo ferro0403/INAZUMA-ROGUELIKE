@@ -7,17 +7,16 @@
 
 /*
  * Dragon Sticker wallet icon.
- * The base shop rule applies grid styling to every span inside .shop-coins,
- * including the item-icon wrapper. Give the icon its own fixed positioning
- * context and center the actual image independently from the text block.
+ * Keep the wrapper independent from the wallet-copy span rules and center the
+ * visible artwork optically against the MONETE/value block (not just by box math).
  */
 .shop-screen .shop-coins > .development-currency-icon {
   position: relative;
-  flex: 0 0 42px;
-  width: 42px;
-  height: 42px;
-  min-width: 42px;
-  margin: 0;
+  flex: 0 0 40px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
+  margin: 8px 0 0;
   padding: 0;
   display: block;
   align-self: center;
@@ -31,8 +30,8 @@
   left: 50%;
   top: 50%;
   display: block;
-  width: 29px;
-  height: 29px;
+  width: 26px;
+  height: 26px;
   max-width: none;
   margin: 0;
   padding: 0;
@@ -56,14 +55,15 @@
 
 @media (max-width: 430px) {
   .shop-screen .shop-coins > .development-currency-icon {
-    flex-basis: 38px;
-    width: 38px;
-    height: 38px;
-    min-width: 38px;
+    flex-basis: 36px;
+    width: 36px;
+    height: 36px;
+    min-width: 36px;
+    margin-top: 9px;
   }
 
   .shop-screen .shop-coins > .development-currency-icon > img {
-    width: 25px;
-    height: 25px;
+    width: 22px;
+    height: 22px;
   }
 }
