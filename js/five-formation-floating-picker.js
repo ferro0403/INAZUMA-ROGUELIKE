@@ -16,8 +16,11 @@
     picker.dataset.floatingPickerReady = "1";
     picker.classList.add("five-selector-floating", "is-open");
     picker.setAttribute("aria-hidden", "false");
+    picker.closest(".five-screen, .five-match-screen")?.classList.add("five-player-picker-open");
     picker.querySelector(".role-filter-bar")?.setAttribute("hidden", "");
     picker.querySelector("#clear-five-slot")?.setAttribute("hidden", "");
+    const rosterList = picker.querySelector(".five-roster-list");
+    if (rosterList) rosterList.scrollTop = 0;
     if (!picker.querySelector(".five-floating-picker-close")) {
       const close = document.createElement("button");
       close.type = "button";
@@ -49,6 +52,10 @@
     picker.classList.toggle("is-open", open);
     picker.setAttribute("aria-hidden", open ? "false" : "true");
     screen.classList.toggle("five-player-picker-open", open);
+    if (open) {
+      const rosterList = picker.querySelector(".five-roster-list");
+      if (rosterList) rosterList.scrollTop = 0;
+    }
   }
 
   function clearVisualSelection(screen) {
@@ -108,6 +115,7 @@
     preparePicker(picker, { onClose: () => clearVisualSelection(screen) });
     picker.classList.remove("is-open");
     picker.setAttribute("aria-hidden", "true");
+    screen.classList.remove("five-player-picker-open");
 
     const roleFilters = picker.querySelector(".role-filter-bar");
     if (roleFilters) roleFilters.hidden = true;
