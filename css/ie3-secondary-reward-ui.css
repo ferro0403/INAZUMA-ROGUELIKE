@@ -1,0 +1,113 @@
+/* IE3 secondary 11v11 reward parity with the standard post-match player offer. */
+
+.ie3-secondary-standard-reward-modal .ie3-secondary-reward-native {
+  display: none !important;
+}
+
+.ie3-secondary-standard-reward-modal .ie3-secondary-standard-reward {
+  display: grid;
+  gap: 12px;
+}
+
+.ie3-secondary-standard-reward-modal .ie3-secondary-choice-grid {
+  display: grid;
+  gap: 8px;
+}
+
+.ie3-secondary-standard-reward-modal .pull-choice-option {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 150px;
+  gap: 8px;
+  align-items: stretch;
+}
+
+.ie3-secondary-standard-reward-modal .pull-choice-option > [data-player-id] {
+  min-width: 0;
+  width: 100%;
+}
+
+.ie3-secondary-standard-reward-modal .pull-choice-actions {
+  display: grid;
+  align-items: center;
+  border: 2px solid #111318;
+  background: #fffef7;
+  box-shadow: 4px 4px 0 rgba(17, 19, 24, .18);
+  padding: 8px;
+}
+
+.ie3-secondary-standard-reward-modal .pull-choice-action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px;
+}
+
+.ie3-secondary-standard-reward-modal .pull-choice-action-row .btn {
+  min-width: 0;
+  padding-inline: 8px;
+}
+
+.ie3-secondary-standard-reward-modal .ie3-secondary-reward-footer {
+  justify-content: flex-start;
+  padding-top: 2px;
+}
+
+.ie3-secondary-reward-detail {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(17, 19, 24, .72);
+}
+
+.ie3-secondary-reward-detail-panel {
+  width: min(100%, 420px);
+  background: #fffef7;
+  border: 3px solid #111318;
+  box-shadow: 8px 8px 0 #111318;
+  padding: 18px;
+}
+
+.ie3-secondary-reward-detail-panel h2 {
+  margin: 4px 0 12px;
+}
+
+.ie3-secondary-reward-detail-card > * {
+  width: 100%;
+}
+
+.ie3-secondary-reward-detail-panel .muted {
+  margin: 12px 0;
+}
+
+@media (max-width: 560px) {
+  .ie3-secondary-standard-reward-modal .pull-choice-option {
+    grid-template-columns: minmax(0, 1fr) 128px;
+    gap: 6px;
+  }
+
+  .ie3-secondary-standard-reward-modal .pull-choice-actions {
+    padding: 6px;
+  }
+
+  .ie3-secondary-standard-reward-modal .pull-choice-action-row {
+    gap: 5px;
+  }
+
+  .ie3-secondary-standard-reward-modal .pull-choice-action-row .btn {
+    font-size: 12px;
+    padding: 9px 5px;
+  }
+}
+
+@media (max-width: 390px) {
+  .ie3-secondary-standard-reward-modal .pull-choice-option {
+    grid-template-columns: minmax(0, 1fr) 116px;
+  }
+
+  .ie3-secondary-standard-reward-modal .pull-choice-action-row .btn {
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+}
