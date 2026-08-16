@@ -3,8 +3,28 @@
 
   const DECLINE_SELECTOR = "[data-decline-special-reward-full-roster]";
   const IE3_SEASON_ID = "ie1_s3";
+  const STAT_LABELS = Object.freeze({
+    attack: "Attacco",
+    physical: "Fisico",
+    stamina: "Resistenza",
+    control: "Controllo",
+    defense: "Difesa",
+    speed: "Velocità",
+    grit: "Grinta",
+    save: "Parata",
+  });
   let liveRun = null;
   let autoClaimProfileId = null;
+
+  function escapeHtml(value) {
+    return String(value ?? "").replace(/[&<>'"]/g, (char) => ({
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      "'": "&#39;",
+      '"': "&quot;",
+    })[char]);
+  }
 
   function installLiveRunCapture() {
     const runState = global.RunState;
@@ -92,26 +112,82 @@
     return {
       database,
       special,
+      team,
       teamName: String(team?.teamName || team?.name || special?.teamName || "Squadra"),
       level: Number(special?.matchLevel || 0),
     };
   }
 
-  function showIe3BridgeDetail(modal, card, candidate, level) {
-    modal.querySelector(".ie3-secondary-reward-detail")?.remove();
+  function resolveRewardDetailPlayer(candidate, meta) {
+    const entry = {
+      playerId: String(candidate?.playerId || ""),
+      activeProfileId: String(candidate?.profileId || candidate?.activeProfileId || ""),
+      activeRoleVariantId: String(candidate?.defaultRoleVariantId || candidate?.activeRoleVariantId || ""),
+      level: Math.max(0, Math.floor(Number(meta.level || 0))),
+      levelUnits: 0,
+    };
+    const base = global.ProfiledSeasonRuntime?.resolveEffectiveBase?.(entry, IE3_SEASON_ID) || candidate || {};
+    const resolved = global.InazumaProgression?.getPlayerAtLevel
+      ? global.InazumaProgression.getPlayerAtLevel(base, entry.level, meta.database, entry)
+      : base;
+    return { ...base, ...resolved, playerId: entry.playerId, profileId: entry.activeProfileId };
+  }
+
+  function rewardDetailImage(player) {
+    return player?.frontFullbodyUrl || player?.fullbodyUrl || player?.cardImageUrl || player?.imageUrl || player?.portraitUrl || "";
+  }
+
+  function rewardDetailStatsMarkup(player) {
+    const stats = player?.stats || {};
+    return Object.entries(STAT_LABELS).map(([stat, label]) => {
+      const value = Math.max(0, Number(stats[stat] || 0));
+      const width = Math.max(0, Math.min(100, value));
+      return `<div class="detail-stat player-stat-card" style="--stat-value:${width}%"><span class="detail-stat-label">${escapeHtml(label)}</span><strong class="detail-stat-value">${escapeHtml(value)}</strong><span class="detail-stat-track" aria-hidden="true"><i></i></span></div>`;
+    }).join("");
+  }
+
+  function showIe3PlayerDetail(modal, candidate, meta) {
+    modal.querySelector(".ie3-secondary-full-player-detail")?.remove();
+    const player = resolveRewardDetailPlayer(candidate, meta);
+    const category = String(player.category || candidate?.category || "Debole");
+    const role = String(player.position || player.normalizedRole || candidate?.position || "-");
+    const element = String(player.element || player.type || candidate?.element || candidate?.type || "-");
+    const overall = Number(player.overall ?? player.finalOverall ?? 0);
+    const potential = Number(player.potential ?? player.finalOverall ?? overall);
+    const image = rewardDetailImage(player);
+    const teamLogo = meta.team?.logoUrl || "";
+
     const detail = document.createElement("section");
-    detail.className = "ie3-secondary-reward-detail";
+    detail.className = "ie3-secondary-full-player-detail";
     detail.innerHTML = `
-      <div class="ie3-secondary-reward-detail-panel">
-        <p class="eyebrow">SCHEDA GIOCATORE</p>
-        <h2>${String(candidate?.name || "Giocatore")}</h2>
-        <div class="ie3-secondary-reward-detail-card"></div>
-        <p class="muted">${String(candidate?.position || "")} · ${String(candidate?.category || "")} · Livello ${level}</p>
-        <button type="button" class="btn btn-yellow" data-ie3-detail-close>TORNA ALLA SCELTA</button>
+      <div class="ie3-secondary-full-player-detail-shell player-detail-modal">
+        <div class="ie3-secondary-detail-toolbar">
+          <button type="button" class="btn btn-back" data-ie3-detail-close>← TORNA ALLA SCELTA</button>
+        </div>
+        <div class="player-detail-layout ${rarityClass(category)}">
+          <section class="player-detail-hero ${String(player.name || "").length > 18 ? "player-detail-hero--extra-long-name" : (String(player.name || "").length > 12 ? "player-detail-hero--long-name" : "")}">
+            <div class="player-detail-identity">
+              <div class="player-detail-team" aria-label="Squadra ${escapeHtml(meta.teamName)}">
+                ${teamLogo ? `<img src="${escapeHtml(teamLogo)}" alt="" loading="lazy" decoding="async">` : ""}
+                <strong>${escapeHtml(meta.teamName)}</strong>
+              </div>
+              <div class="player-detail-heading"><p class="eyebrow">Scheda giocatore</p></div>
+              <h2 class="player-detail-name">${escapeHtml(player.name || candidate?.name || "Giocatore")}</h2>
+              <div class="player-detail-tags"><span class="role-chip"><b>${escapeHtml(role)}</b></span><span class="role-chip detail-element-chip">${escapeHtml(element)}</span><span class="role-chip">Lv ${escapeHtml(meta.level)}</span></div>
+              <div class="overall-comparison"><div><span>Overall<br><b>attuale</b></span><strong>${escapeHtml(overall)}</strong></div><div><span>Potenziale</span><strong>${escapeHtml(potential)}</strong></div></div>
+              <p class="detail-category"><span aria-hidden="true">★</span><small>Rarità</small><strong>${escapeHtml(category)}</strong></p>
+            </div>
+            <div class="player-detail-visual ${rarityClass(category)}">${image ? `<img class="player-fullbody" src="${escapeHtml(image)}" alt="${escapeHtml(player.name || candidate?.name || "Giocatore")}" loading="eager" decoding="async">` : '<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>'}</div>
+          </section>
+          <section class="player-detail-content">
+            <section class="player-detail-section"><h3><span>Statistiche</span></h3><div class="detail-stats">${rewardDetailStatsMarkup(player)}</div></section>
+            <section class="player-detail-section player-detail-equipment"><h3><span>Equipaggiamento</span></h3><div class="equipped-detail equipped-detail-empty"><div class="equipped-detail-copy"><span>Slot disponibile</span><strong>Nessun equipaggiamento</strong><small>Il giocatore non è ancora stato acquisito.</small></div></div></section>
+          </section>
+        </div>
       </div>`;
-    detail.querySelector(".ie3-secondary-reward-detail-card")?.append(card.cloneNode(true));
     detail.querySelector("[data-ie3-detail-close]")?.addEventListener("click", () => detail.remove());
     modal.append(detail);
+    detail.scrollTop = 0;
   }
 
   function patchIe3SpecialRewardModal() {
@@ -149,8 +225,8 @@
         <button type="button" class="btn btn-back" data-ie3-secondary-back>← TORNA ALLA MAPPA</button>
         <div>
           <p class="eyebrow">SCELTA GIOCATORE</p>
-          <h2>RICOMPENSA · ${meta.teamName}</h2>
-          <p class="muted">Scegli 1 giocatore su 3 · Livello ${meta.level}</p>
+          <h2>RICOMPENSA · ${escapeHtml(meta.teamName)}</h2>
+          <p class="muted">Scegli 1 giocatore su 3 · Livello ${escapeHtml(meta.level)}</p>
         </div>
       </div>
       <div class="candidate-grid pull-offer-grid ie3-secondary-choice-grid" data-ie3-secondary-choice-grid></div>
@@ -172,7 +248,7 @@
 
       const actions = document.createElement("div");
       actions.className = "pull-choice-actions";
-      actions.innerHTML = `<div class="button-row pull-choice-action-row"><button type="button" class="btn btn-primary" data-ie3-secondary-confirm>SÌ</button><button type="button" class="btn btn-yellow" data-ie3-secondary-detail>SCHEDA</button></div>`;
+      actions.innerHTML = `<div class="button-row pull-choice-action-row"><button type="button" class="btn" data-ie3-secondary-confirm>SÌ</button><button type="button" class="btn" data-ie3-secondary-detail>SCHEDA</button></div>`;
       actions.querySelector("[data-ie3-secondary-confirm]")?.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -182,7 +258,7 @@
       actions.querySelector("[data-ie3-secondary-detail]")?.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        showIe3BridgeDetail(modal, cardClone, candidate, meta.level);
+        showIe3PlayerDetail(modal, candidate, meta);
       });
       option.append(actions);
       grid.append(option);
