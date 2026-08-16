@@ -7,9 +7,8 @@
 
 /*
  * Dragon Sticker wallet icon.
- * IMPORTANT: developmentCurrencyIcon() renders `.development-resource-icon`,
- * not `.development-currency-icon`. Keep the 42px item badge and shrink only
- * the artwork inside it so the sticker has even breathing room in the circle.
+ * developmentCurrencyIcon() renders `.development-resource-icon`.
+ * Keep the badge compact and center the artwork inside it.
  */
 .shop-screen .shop-coins > .development-resource-icon {
   flex: 0 0 42px;
@@ -41,9 +40,14 @@
 
 /* Only the MONETE/value copy uses the text grid. */
 .shop-screen .shop-coins > span:not(.development-resource-icon) {
+  min-width: 0;
   display: grid;
   align-content: center;
   line-height: 1;
+}
+
+.shop-screen .shop-coins > span:not(.development-resource-icon) small {
+  white-space: nowrap;
 }
 
 /* Purchase modal stays clean: no rarity-colored corner beside the title. */
@@ -52,12 +56,27 @@
   content: none;
 }
 
+/*
+ * Mobile wallet architecture:
+ * row 1 stays Coins + four Season cups. Coins receives a fixed readable lane,
+ * while the cup group shares the remaining width. Future medal families can be
+ * added as a second wallet row instead of squeezing this row further.
+ */
 @media (max-width: 430px) {
+  .shop-screen .shop-wallet {
+    grid-template-columns: 128px minmax(0, 1fr);
+  }
+
+  .shop-screen .shop-coins {
+    gap: 7px;
+    padding: 8px 7px;
+  }
+
   .shop-screen .shop-coins > .development-resource-icon {
-    flex-basis: 40px;
-    width: 40px;
-    height: 40px;
-    min-width: 40px;
+    flex-basis: 38px;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
   }
 
   .shop-screen .shop-coins > .development-resource-icon > img {
@@ -65,5 +84,27 @@
     height: 27px;
     max-width: 27px;
     max-height: 27px;
+  }
+
+  .shop-screen .shop-coins small {
+    font-size: 9px;
+    letter-spacing: .035em;
+  }
+
+  .shop-screen .shop-coins b {
+    margin-top: 3px;
+    font-size: 26px;
+  }
+}
+
+@media (max-width: 380px) {
+  .shop-screen .shop-wallet {
+    grid-template-columns: 124px minmax(0, 1fr);
+  }
+
+  .shop-screen .shop-coins {
+    gap: 6px;
+    padding-left: 6px;
+    padding-right: 6px;
   }
 }
