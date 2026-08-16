@@ -133,6 +133,21 @@
   min-height: 76px;
 }
 
+.five-screen .five-selector.five-selector-floating .five-roster-card.current-starter {
+  border-color: #111216;
+  background: #fff3b5;
+}
+
+.five-screen .five-selector.five-selector-floating .five-roster-card.current-starter:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+.five-screen .five-selector.five-selector-floating .five-roster-card.current-starter .five-roster-state {
+  background: #111216;
+  color: #fffdf6;
+}
+
 @media (max-width: 780px) {
   .five-screen .five-selector.five-selector-floating {
     top: 56px;

@@ -33,19 +33,28 @@
       const parsed = raw ? JSON.parse(raw) : {};
       const name = validTeamName(parsed?.teamIdentity?.name || parsed?.teamName || parsed?.name);
       const emblemId = parsed?.teamIdentity?.emblemId || parsed?.emblemId || parsed?.emblem || DEFAULT_EMBLEM_ID;
-      return { teamIdentity: name ? normalizeTeamIdentity({ ...parsed?.teamIdentity, name, emblemId }) : null };
-    } catch (error) { console.error("Unable to load profile", error); return { teamIdentity: null }; }
+      return { teamIdentity: name ? normalizeTeamIdentity({ ...parsed?.teamIdentity, name, emblemId }) : null, preferences: { smartAutoLineup: parsed?.preferences?.smartAutoLineup === true } };
+    } catch (error) { console.error("Unable to load profile", error); return { teamIdentity: null, preferences: { smartAutoLineup: false } }; }
   }
   function emitSave(sector, seasonId, operation, options = {}) { if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { sector, seasonId: seasonId || null, hallTeamId: null, operation, source: "gameplay" } })); }
   function saveProfileTeamIdentity(teamIdentity, options = {}) {
     const cleanIdentity = normalizeTeamIdentity(teamIdentity);
-    localStorage.setItem(PROFILE_KEY, JSON.stringify({ version: 1, teamIdentity: cleanIdentity }));
+    const current = loadProfile();
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ version: 1, teamIdentity: cleanIdentity, preferences: current.preferences }));
     emitSave("profile", null, "write", options);
     return cleanIdentity;
   }
+  function saveProfilePreferences(preferences = {}, options = {}) {
+    const current = loadProfile();
+    const cleanPreferences = { smartAutoLineup: preferences.smartAutoLineup === true };
+    localStorage.setItem(PROFILE_KEY, JSON.stringify({ version: 1, teamIdentity: current.teamIdentity, preferences: cleanPreferences }));
+    emitSave("profile", null, "write", options);
+    return cleanPreferences;
+  }
   function restoreProfile(profile, options = {}) {
-    if (!profile?.teamIdentity) { localStorage.removeItem(PROFILE_KEY); emitSave("profile", null, "remove", options); return { teamIdentity: null }; }
-    saveProfileTeamIdentity(profile.teamIdentity, options);
+    if (!profile?.teamIdentity && !profile?.preferences) { localStorage.removeItem(PROFILE_KEY); emitSave("profile", null, "remove", options); return { teamIdentity: null, preferences: { smartAutoLineup: false } }; }
+    if (profile.teamIdentity) saveProfileTeamIdentity(profile.teamIdentity, { ...options, suppressCloudEvent: true });
+    saveProfilePreferences(profile.preferences, options);
     return loadProfile();
   }
 
@@ -176,5 +185,5 @@
   function restoreAfterLoss(run, previousNodeId = null, matchType = run?.activeMatch?.type) { run.lives = Math.max(0, Math.min(runLivesLimit(), Number(run.lives) || 0) - getLifeDamageForMatch(matchType)); if (run.lives <= 0) { run.lives = 0; run.gameOver = true; run.phase = "gameover"; return save(run); } const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null; if (!targetNodeId) throw new Error("Previous match node unavailable"); if (run.currentZone) { run.currentZone.currentNodeId = targetNodeId; run.currentZone.pendingNodeId = null; } run.phase = "map"; run.gameOver = false; return save(run); }
 
   global.RunStorage = RunStorage;
-  global.RunState = { clone, createRun, save, load, hasSave, runLivesLimit, initialRunLives, getLifeDamageForMatch, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, restoreProfile, remove, createCheckpoint, restoreAfterLoss, validate, isActiveRun, touch, activeSaves, latestActiveSave };
+  global.RunState = { clone, createRun, save, load, hasSave, runLivesLimit, initialRunLives, getLifeDamageForMatch, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, saveProfilePreferences, restoreProfile, remove, createCheckpoint, restoreAfterLoss, validate, isActiveRun, touch, activeSaves, latestActiveSave };
 })(globalThis);
