@@ -2,7 +2,7 @@
   "use strict";
 
   const STORAGE_KEY = "inazumaRoguelike.developmentV2";
-  const SCHEMA_VERSION = 6;
+  const SCHEMA_VERSION = 7;
   const SEASON_IDS = Object.freeze(["ie1", "ie1_s2", "ie1_s3", "ie2"]);
   const RARITIES = ["Scarso", "Debole", "Normale", "Buono", "Forte", "Elite", "Mondiale", "Leggenda"];
   const PROJECT_RARITIES = RARITIES.slice(3);
@@ -28,9 +28,13 @@
   function normalize(raw) {
     const source = raw && typeof raw === "object" ? raw : {}; const value = { ...empty(), ...source };
     value.coins = Math.max(0, Math.floor(Number(source.coins) || 0));
-    value.legacyCups = Math.max(0, Math.floor(Number(source.legacyCups ?? source.cups) || 0));
+    const legacyBalance = Math.max(0, Math.floor(Number(source.legacyCups ?? source.cups) || 0));
     value.cupsBySeason = { ...counters(SEASON_IDS), ...(source.cupsBySeason || {}) };
     Object.keys(value.cupsBySeason).forEach((id) => { value.cupsBySeason[id] = Math.max(0, Math.floor(Number(value.cupsBySeason[id]) || 0)); });
+    // Pre-season-specific cups had no reliable run/season attribution. Migrate
+    // the remaining legacy balance to IE1 once, as the canonical legacy season.
+    if (legacyBalance > 0) value.cupsBySeason.ie1 = Math.max(0, Number(value.cupsBySeason.ie1) || 0) + legacyBalance;
+    value.legacyCups = 0;
     value.projects = { ...counters(PROJECT_RARITIES), ...(source.projects || {}) };
     value.legacyProjectBuild = { ...counters(PROJECT_RARITIES), ...(source.legacyProjectBuild || source.projectBuild || {}) };
     PROJECT_RARITIES.forEach((rarity) => { value.projects[rarity] = Math.max(0, Math.floor(Number(value.projects[rarity]) || 0)); value.legacyProjectBuild[rarity] = Math.max(0, Math.floor(Number(value.legacyProjectBuild[rarity]) || 0)); });
@@ -40,7 +44,17 @@
     value.redeemedRunIds = [...new Set(source.redeemedRunIds || [])]; value.victoryRewardRunIds = [...new Set(source.victoryRewardRunIds || [])];
     value.schemaVersion = SCHEMA_VERSION; delete value.cups; delete value.projectBuild; delete value.projectPullLedger; return value;
   }
-  function read() { try { return normalize(JSON.parse(global.localStorage?.getItem(STORAGE_KEY) || "null")); } catch (_) { return empty(); } }
+  function read() {
+    try {
+      const rawText = global.localStorage?.getItem(STORAGE_KEY) || "null";
+      const parsed = JSON.parse(rawText);
+      const state = normalize(parsed);
+      const legacyBalance = parsed && typeof parsed === "object" ? Math.max(0, Math.floor(Number(parsed.legacyCups ?? parsed.cups) || 0)) : 0;
+      const needsMigration = !!parsed && (Number(parsed.schemaVersion) !== SCHEMA_VERSION || legacyBalance > 0 || Object.prototype.hasOwnProperty.call(parsed, "cups"));
+      if (needsMigration) global.localStorage?.setItem(STORAGE_KEY, JSON.stringify(state));
+      return state;
+    } catch (_) { return empty(); }
+  }
   function write(value, options = {}) { const state = normalize(value); global.localStorage?.setItem(STORAGE_KEY, JSON.stringify(state)); if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { sector: "development", operation: "write", source: "gameplay" } })); return state; }
   function totalCups(state = read()) { return Number(state.legacyCups || 0) + Object.values(state.cupsBySeason || {}).reduce((sum, count) => sum + Number(count || 0), 0); }
   function consumeCups(state, amount) { let remaining = Math.max(0, Number(amount) || 0); const order = Object.entries(state.cupsBySeason || {}).sort((a, b) => Number(b[1]) - Number(a[1]) || SEASON_IDS.indexOf(a[0]) - SEASON_IDS.indexOf(b[0]) || a[0].localeCompare(b[0])); for (const [id, count] of order) { const used = Math.min(remaining, count); state.cupsBySeason[id] -= used; remaining -= used; } const legacyUsed = Math.min(remaining, state.legacyCups); state.legacyCups -= legacyUsed; remaining -= legacyUsed; return remaining === 0; }
