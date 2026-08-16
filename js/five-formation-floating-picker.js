@@ -11,6 +11,38 @@
     return screen?.querySelector(".five-selector.five-selector-floating") || null;
   }
 
+  function preparePicker(picker, options = {}) {
+    if (!picker) return null;
+    picker.dataset.floatingPickerReady = "1";
+    picker.classList.add("five-selector-floating", "is-open");
+    picker.setAttribute("aria-hidden", "false");
+    picker.querySelector(".role-filter-bar")?.setAttribute("hidden", "");
+    picker.querySelector("#clear-five-slot")?.setAttribute("hidden", "");
+    if (!picker.querySelector(".five-floating-picker-close")) {
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "five-floating-picker-close";
+      close.setAttribute("aria-label", "Chiudi selezione giocatore");
+      close.textContent = "×";
+      close.addEventListener("click", (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        closePreparedPicker(picker);
+      });
+      picker.prepend(close);
+    }
+    if (options.onClose) picker.fivePickerOnClose = options.onClose;
+    return picker;
+  }
+
+  function closePreparedPicker(picker) {
+    if (!picker) return;
+    picker.classList.remove("is-open");
+    picker.setAttribute("aria-hidden", "true");
+    picker.closest(".five-screen, .five-match-screen")?.classList.remove("five-player-picker-open");
+    picker.fivePickerOnClose?.();
+  }
+
   function setPickerOpen(screen, open) {
     const picker = currentPicker(screen);
     if (!screen || !picker) return;
@@ -73,8 +105,7 @@
     const fieldPanel = screen.querySelector(".five-field-panel");
     if (!fieldPanel) return;
 
-    picker.dataset.floatingPickerReady = "1";
-    picker.classList.add("five-selector-floating");
+    preparePicker(picker, { onClose: () => clearVisualSelection(screen) });
     picker.classList.remove("is-open");
     picker.setAttribute("aria-hidden", "true");
 
@@ -82,20 +113,6 @@
     if (roleFilters) roleFilters.hidden = true;
     const clearButton = picker.querySelector("#clear-five-slot");
     if (clearButton) clearButton.hidden = true;
-
-    if (!picker.querySelector(".five-floating-picker-close")) {
-      const close = document.createElement("button");
-      close.type = "button";
-      close.className = "five-floating-picker-close";
-      close.setAttribute("aria-label", "Chiudi selezione giocatore");
-      close.textContent = "×";
-      close.addEventListener("click", (event) => {
-        event.preventDefault();
-        event.stopPropagation();
-        closePicker({ clearSelection: true });
-      });
-      picker.prepend(close);
-    }
 
     /* Moving the existing selector preserves app.js listeners and assignment logic,
        while removing the long selector block from the normal document flow. */
@@ -122,6 +139,11 @@
 
   document.addEventListener("keydown", (event) => {
     if (event.key !== "Escape") return;
+    const matchPicker = document.querySelector(".five-match-screen .five-selector.five-selector-floating.is-open");
+    if (matchPicker) {
+      closePreparedPicker(matchPicker);
+      return;
+    }
     const picker = currentPicker();
     if (!picker?.classList.contains("is-open")) return;
     closePicker({ clearSelection: true });
@@ -136,4 +158,9 @@
   } else {
     ensureFloatingPicker();
   }
+
+  global.FiveFormationFloatingPicker = Object.freeze({
+    prepare: preparePicker,
+    close: closePreparedPicker,
+  });
 })(globalThis);
