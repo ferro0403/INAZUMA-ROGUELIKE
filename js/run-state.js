@@ -32,7 +32,8 @@
       const raw = localStorage.getItem(PROFILE_KEY);
       const parsed = raw ? JSON.parse(raw) : {};
       const name = validTeamName(parsed?.teamIdentity?.name || parsed?.teamName || parsed?.name);
-      return { teamIdentity: name ? normalizeTeamIdentity({ ...parsed?.teamIdentity, name }) : null };
+      const emblemId = parsed?.teamIdentity?.emblemId || parsed?.emblemId || parsed?.emblem || DEFAULT_EMBLEM_ID;
+      return { teamIdentity: name ? normalizeTeamIdentity({ ...parsed?.teamIdentity, name, emblemId }) : null };
     } catch (error) { console.error("Unable to load profile", error); return { teamIdentity: null }; }
   }
   function emitSave(sector, seasonId, operation, options = {}) { if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { sector, seasonId: seasonId || null, hallTeamId: null, operation, source: "gameplay" } })); }

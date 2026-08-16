@@ -13,7 +13,16 @@
     Mondiale: { coins: 1000, cups: 5, projects: 1 }, Leggenda: { coins: 1500, cups: 8, projects: 1 },
   });
   const ASSETS = Object.freeze({ Buono: "https://dxi4wb638ujep.cloudfront.net/1/k/i/m/im08lvscqau.webp", Forte: "https://dxi4wb638ujep.cloudfront.net/1/k/p/g/pgsrd8dyplu.png", Elite: "https://dxi4wb638ujep.cloudfront.net/1/k/a/n/anad1wjpht0.png", Mondiale: "https://dxi4wb638ujep.cloudfront.net/1/k/c/j/cj7t4wj1bx8.png", Leggenda: "https://dxi4wb638ujep.cloudfront.net/1/k/g/i/gibitioquoe.png" });
-  const DEVELOPMENT_RESOURCE_ASSETS = Object.freeze({ coins: "https://dxi4wb638ujep.cloudfront.net/1/k/r/e/rez8i1pp0p8.webp", cups: "https://dxi4wb638ujep.cloudfront.net/1/k/t/t/ttzfl1b8nbe.png" });
+  const DEVELOPMENT_RESOURCE_ASSETS = Object.freeze({
+    coins: "https://dxi4wb638ujep.cloudfront.net/1/k/r/e/rez8i1pp0p8.webp",
+    cups: "https://dxi4wb638ujep.cloudfront.net/1/k/t/t/ttzfl1b8nbe.png",
+    cupsBySeason: Object.freeze({
+      ie1: "https://dxi4wb638ujep.cloudfront.net/1/k/t/t/ttzfl1b8nbe.png",
+      ie1_s2: "https://dxi4wb638ujep.cloudfront.net/1/k/a/m/1/am1r5xc99es.png",
+      ie1_s3: "https://dxi4wb638ujep.cloudfront.net/1/k/8/k/a/8kamtdks40c.png",
+      ie2: "https://dxi4wb638ujep.cloudfront.net/1/k/r/a/d/radfiq7yd5u.png",
+    }),
+  });
   const counters = (keys) => Object.fromEntries(keys.map((key) => [key, 0]));
   function empty() { return { schemaVersion: SCHEMA_VERSION, coins: 0, legacyCups: 0, cupsBySeason: counters(SEASON_IDS), projects: counters(PROJECT_RARITIES), legacyProjectBuild: counters(PROJECT_RARITIES), unlockedEmblems: [], players: {}, evolutionHistory: [], redeemedRunIds: [], victoryRewardRunIds: [] }; }
   function normalize(raw) {
