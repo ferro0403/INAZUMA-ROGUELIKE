@@ -1,0 +1,64 @@
+.five-match-player-swap-modal {
+  box-sizing: border-box;
+  width: min(1080px, calc(100vw - 32px));
+  max-height: min(860px, calc(100dvh - 32px));
+  padding: 0;
+  overflow: hidden;
+  border: 3px solid #111216;
+  border-radius: 0;
+  background: #fffaf0;
+  box-shadow: 8px 8px 0 #111216;
+  color: #111216;
+}
+
+.five-match-player-swap-modal > .modal-close {
+  z-index: 3;
+  width: 46px;
+  height: 46px;
+  border: 2px solid #111216;
+  border-radius: 0;
+  background: #ffd21f;
+  color: #111216;
+  box-shadow: 3px 3px 0 #111216;
+}
+
+.five-match-swap-dialog { min-width: 0; }
+.five-match-swap-head { padding: 24px 76px 18px 24px; border-bottom: 3px solid #111216; background: #ffd21f; }
+.five-match-swap-head .eyebrow { margin: 0 0 3px; color: #111216; }
+.five-match-swap-head h2 { margin: 0; font-size: clamp(1.55rem, 4vw, 2.35rem); line-height: .95; }
+.five-match-swap-head p:last-child { margin: 8px 0 0; font-weight: 900; text-transform: uppercase; }
+.five-match-swap-layout { display: grid; grid-template-columns: minmax(260px, .75fr) minmax(0, 1.25fr); gap: 20px; padding: 20px 24px 24px; }
+.five-match-swap-layout section { min-width: 0; }
+.five-match-swap-layout h3 { margin: 0 0 10px; font-size: .78rem; letter-spacing: .09em; }
+.five-match-swap-list { display: grid; gap: 10px; max-height: min(570px, calc(100dvh - 230px)); padding: 1px 6px 6px 1px; overflow-y: auto; overscroll-behavior: contain; }
+.five-match-swap-player { --swap-rarity: var(--rarity-border, #111216); display: grid; grid-template-columns: 58px minmax(0, 1fr) 48px auto; align-items: center; gap: 10px; min-width: 0; padding: 9px; border: 2px solid #111216; border-left: 7px solid var(--swap-rarity); background: #fffdf7; box-shadow: 4px 4px 0 #111216; }
+.five-match-swap-portrait { width: 58px; height: 58px; overflow: hidden; border: 2px solid #111216; background: #eee8dc; }
+.five-match-swap-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.five-match-swap-identity { min-width: 0; display: grid; gap: 2px; }
+.five-match-swap-identity strong { overflow: hidden; font-size: .9rem; text-overflow: ellipsis; white-space: nowrap; }
+.five-match-swap-identity small { font-weight: 800; }
+.five-match-swap-identity em { display: flex; align-items: center; gap: 4px; min-width: 0; overflow: hidden; font-size: .68rem; font-style: normal; text-overflow: ellipsis; white-space: nowrap; }
+.five-match-swap-identity .item-icon { width: 20px; height: 20px; flex: 0 0 20px; }
+.five-match-swap-overall { display: grid; text-align: center; }
+.five-match-swap-overall small { font-size: .58rem; font-weight: 900; }
+.five-match-swap-overall strong { font-size: 1.25rem; }
+.five-match-swap-player .btn { min-height: 44px; padding: 8px 10px; border: 2px solid #111216; border-radius: 0; box-shadow: 3px 3px 0 #111216; }
+.five-match-swap-empty { padding: 18px; border: 2px dashed #111216; font-weight: 800; }
+.five-match-card--empty { border-style: dashed !important; background: #fffaf0 !important; }
+.five-match-card-empty-mark { font-size: 2rem; font-weight: 1000; line-height: 1; }
+
+@media (max-width: 700px) {
+  .five-match-player-swap-modal { width: calc(100vw - 12px); max-height: calc(100dvh - 12px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); margin-top: env(safe-area-inset-top); box-shadow: 4px 4px 0 #111216; }
+  .five-match-swap-head { padding: 18px 62px 14px 14px; }
+  .five-match-swap-layout { display: flex; flex-direction: column; gap: 16px; padding: 14px max(12px, env(safe-area-inset-right)) max(16px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left)); }
+  .five-match-swap-list { max-height: calc(100dvh - 370px - env(safe-area-inset-top) - env(safe-area-inset-bottom)); min-height: 120px; }
+  .five-match-swap-player { grid-template-columns: 48px minmax(0, 1fr) 42px; gap: 7px; padding: 7px; box-shadow: 3px 3px 0 #111216; }
+  .five-match-swap-portrait { width: 48px; height: 52px; }
+  .five-match-swap-player .btn { grid-column: 2 / -1; width: 100%; }
+}
+
+@media (max-width: 370px) {
+  .five-match-swap-head h2 { font-size: 1.35rem; }
+  .five-match-swap-layout { padding-inline: 9px; }
+  .five-match-swap-identity strong { font-size: .8rem; }
+}
