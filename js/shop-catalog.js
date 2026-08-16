@@ -5,7 +5,7 @@
   const SPECIAL = Object.freeze({
     ie1: { royal: "rare", zeus: "epic" },
     ie1_s2: { genesis: "epic", chaos: "epic", diamond_dust: "rare", prominence: "rare", epsilon_plus: "rare", royal_academy_redux: "rare", dark_emperors: "rare" },
-    ie1_s3: { team_ogre: "iconic", inazuma_national: "iconic", orpheus: "epic", the_kingdom: "epic", little_gigantes: "epic", big_waves: "epic", desert_lions: "epic", fire_dragon: "epic", queen_s_knights: "epic", the_empire: "rare", unicorn: "rare" },
+    ie1_s3: { team_ogre: "iconic", inazuma_national: "iconic", orpheus: "epic", the_kingdom: "epic", little_gigantes: "epic", big_waves: "rare", desert_lions: "rare", fire_dragon: "rare", queen_s_knights: "rare", the_empire: "rare", unicorn: "rare" },
     ie2: { alia_academy: "rare", royal_academy_ares: "rare", zeus_ares: "epic", polestar_academy: "epic", lunar_prime_academy: "epic", barcelona_orb: "iconic" },
   });
   const EXCLUDED = Object.freeze({ ie1_s2: new Set(["zeus"]), ie2: new Set(["alpine", "kirkwood"]) });
