@@ -84,7 +84,9 @@
   function normalize(run) {
     run.seasonId = seasonIdOf(run.seasonId);
     run.version = config().saveVersion;
-    run.teamIdentity = normalizeTeamIdentity(run.teamIdentity);
+    const profileIdentity = loadProfile().teamIdentity;
+    const followsProfile = !run.gameOver && !["complete", "final-summary", "final-celebration", "gameover"].includes(String(run.phase || ""));
+    run.teamIdentity = normalizeTeamIdentity(followsProfile && profileIdentity ? profileIdentity : run.teamIdentity);
     run.runId = run.runId || makeId("run");
     run.phase = run.phase || "formation";
     run.lastPlayedAt = run.lastPlayedAt || run.updatedAt || run.savedAt || run.timestamp || run.createdAt || null;
@@ -101,7 +103,7 @@
     if (!run.developmentPlayerSnapshot) run.developmentPlayerSnapshot = clone(global.DevelopmentV2?.read?.().players || {});
     run.postBossFlow = normalizePostBossFlow(run);
     run.pendingBossVictory = run.pendingBossVictory || null;
-    if (run.checkpoint) { run.checkpoint.version = config().saveVersion; run.checkpoint.teamIdentity = normalizeTeamIdentity(run.checkpoint.teamIdentity || run.teamIdentity); }
+    if (run.checkpoint) { run.checkpoint.version = config().saveVersion; run.checkpoint.teamIdentity = normalizeTeamIdentity(run.teamIdentity); }
     return run;
   }
   function validate(run) {
@@ -136,7 +138,7 @@
       const best = candidates.sort((a, b) => Number(b.legacyGlobal) - Number(a.legacyGlobal) || runSortTime(b.loaded, b.index) - runSortTime(a.loaded, a.index))[0];
       if (options.readOnly) return best.loaded;
       const canonicalPrimary = primaryKey(sid);
-      const rawIsCanonical = best.parsed && Object.prototype.hasOwnProperty.call(best.parsed, "seasonId") && seasonIdOf(best.parsed.seasonId) === sid && Number(best.parsed.version) === Number(config().saveVersion) && JSON.stringify(best.parsed) === JSON.stringify(best.loaded);
+      const rawIsCanonical = best.parsed && Object.prototype.hasOwnProperty.call(best.parsed || {}, "seasonId") && seasonIdOf(best.parsed.seasonId) === sid && Number(best.parsed.version) === Number(config().saveVersion) && JSON.stringify(best.parsed) === JSON.stringify(best.loaded);
       const needsHeal = best.key !== canonicalPrimary || !rawIsCanonical;
       if (needsHeal) this.save(best.loaded, { preserveTimestamps: true, suppressCloudEvent: true, source: "storage-recovery" });
       return best.loaded;
