@@ -1,0 +1,91 @@
+/* Dedicated 5v5 player-swap dialog. This intentionally lives in modal-root,
+   never over or inside the pitch. */
+.modal-backdrop:has(.five-player-swap-modal) {
+  padding: max(12px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right)) max(12px, env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-left));
+  background: rgba(17, 18, 22, .84);
+  backdrop-filter: blur(5px);
+}
+
+.five-player-swap-modal.modal {
+  --swap-ink: #111216;
+  --swap-paper: #fffdf6;
+  --swap-paper-muted: #f1ede1;
+  --swap-yellow: #ffd21f;
+  width: min(960px, 100%);
+  height: min(760px, calc(100dvh - 24px));
+  max-height: calc(100dvh - 24px);
+  position: relative;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  padding: 22px;
+  overflow: hidden;
+  border: 3px solid var(--swap-ink);
+  border-radius: 0;
+  background: var(--swap-paper);
+  color: var(--swap-ink);
+  box-shadow: 9px 9px 0 var(--swap-ink);
+}
+
+.five-player-swap-modal .modal-close {
+  position: absolute;
+  z-index: 3;
+  top: 14px;
+  right: 14px;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 3px solid var(--swap-ink);
+  border-radius: 0;
+  background: var(--swap-yellow);
+  color: var(--swap-ink);
+  box-shadow: 3px 3px 0 var(--swap-ink);
+  font-size: 1.25rem;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.five-player-swap-modal .modal-close:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+.five-swap-header { padding: 0 66px 15px 0; border-bottom: 3px solid var(--swap-ink); }
+.five-swap-header .eyebrow { margin: 0 0 3px; color: #8f6b06; font-size: .68rem; font-weight: 950; letter-spacing: .12em; }
+.five-swap-header h2 { margin: 0; color: var(--swap-ink); font-size: clamp(1.55rem, 4vw, 2.45rem); line-height: .95; }
+.five-swap-header > p:last-child { margin: 7px 0 0; font-size: .78rem; font-weight: 850; text-transform: uppercase; }
+.five-swap-layout { min-height: 0; display: grid; grid-template-columns: minmax(250px, .72fr) minmax(0, 1.45fr); gap: 20px; padding-top: 18px; }
+.five-swap-current, .five-swap-candidates { min-width: 0; min-height: 0; display: grid; align-content: start; gap: 10px; }
+.five-swap-candidates { grid-template-rows: auto minmax(0, 1fr); }
+.five-swap-current h3, .five-swap-section-head h3 { margin: 0; color: var(--swap-ink); font-size: .77rem; letter-spacing: .08em; }
+.five-swap-section-head { display: flex; justify-content: space-between; gap: 12px; align-items: baseline; }
+.five-swap-section-head small { color: #625d54; font-size: .58rem; font-weight: 850; text-transform: uppercase; }
+.five-player-swap-modal .five-roster-list { min-height: 0; display: grid; align-content: start; gap: 9px; overflow-y: auto; overscroll-behavior: contain; padding: 2px 6px 6px 2px; }
+.five-player-swap-modal .five-roster-card { min-height: 72px; display: grid; grid-template-columns: 58px minmax(0,1fr) auto; gap: 10px; align-items: center; width: 100%; padding: 6px 8px; border: 2px solid var(--swap-ink); border-radius: 0; background: #fff; color: var(--swap-ink); box-shadow: 3px 3px 0 rgba(17,18,22,.22); text-align: left; cursor: pointer; }
+.five-player-swap-modal .five-roster-card:not(:disabled):hover, .five-player-swap-modal .five-roster-card:not(:disabled):focus-visible { transform: translate(1px,1px); box-shadow: 2px 2px 0 var(--swap-ink); outline: 3px solid var(--swap-yellow); outline-offset: 2px; }
+.five-player-swap-modal .five-roster-card.current-starter { background: #fff3b5; cursor: default; opacity: 1; }
+.five-player-swap-modal .five-roster-portrait { width: 56px; height: 56px; display: grid; place-items: end center; overflow: hidden; border: 1px solid var(--swap-ink); background: var(--swap-paper-muted); }
+.five-player-swap-modal .five-roster-portrait img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
+.five-player-swap-modal .five-roster-copy { min-width: 0; }
+.five-player-swap-modal .five-roster-copy strong { display: block; overflow: hidden; color: var(--swap-ink); font-size: .76rem; text-overflow: ellipsis; white-space: nowrap; }
+.five-player-swap-modal .five-roster-copy small { display: block; overflow: hidden; color: #514d46; font-size: .61rem; font-weight: 850; text-overflow: ellipsis; white-space: nowrap; }
+.five-player-swap-modal .five-roster-state { min-width: 58px; padding: 5px; border: 2px solid var(--swap-ink); background: var(--swap-yellow); color: var(--swap-ink); font-size: .48rem; font-weight: 950; text-align: center; }
+.five-player-swap-modal .current-starter .five-roster-state { background: var(--swap-ink); color: var(--swap-paper); }
+.five-swap-clear { min-height: 44px; border: 2px solid var(--swap-ink) !important; border-radius: 0 !important; background: var(--swap-paper) !important; color: var(--swap-ink) !important; box-shadow: 3px 3px 0 var(--swap-ink) !important; }
+.five-swap-empty, .five-player-swap-modal .five-roster-empty { display: grid; gap: 4px; padding: 20px 12px; border: 2px dashed var(--swap-ink); background: var(--swap-paper-muted); color: var(--swap-ink); text-align: center; }
+.five-swap-empty span { color: #625d54; font-size: .68rem; font-weight: 800; }
+
+@media (max-width: 680px) {
+  .modal-backdrop:has(.five-player-swap-modal) { align-items: end; padding: max(8px, env(safe-area-inset-top)) 8px max(8px, env(safe-area-inset-bottom)); }
+  .five-player-swap-modal.modal { width: 100%; height: calc(100dvh - max(16px, env(safe-area-inset-top) + env(safe-area-inset-bottom))); max-height: none; padding: 14px; border-width: 2px; box-shadow: 5px 5px 0 var(--swap-ink); }
+  .five-player-swap-modal .modal-close { top: 10px; right: 10px; width: 44px; height: 44px; border-width: 2px; box-shadow: 2px 2px 0 var(--swap-ink); }
+  .five-swap-header { padding: 0 52px 10px 0; border-bottom-width: 2px; }
+  .five-swap-header h2 { font-size: 1.55rem; }
+  .five-swap-header > p:last-child { margin-top: 4px; }
+  .five-swap-layout { grid-template-columns: 1fr; grid-template-rows: auto minmax(0,1fr); gap: 13px; padding-top: 12px; }
+  .five-swap-current { gap: 6px; }
+  .five-swap-current .five-roster-card { min-height: 60px; }
+  .five-swap-current .five-roster-portrait { width: 46px; height: 46px; }
+  .five-swap-current .five-swap-clear { justify-self: start; min-height: 44px; padding-inline: 14px; }
+  .five-swap-section-head { align-items: end; }
+  .five-player-swap-modal .five-roster-card { min-height: 66px; grid-template-columns: 50px minmax(0,1fr) auto; gap: 7px; padding: 5px 6px; }
+  .five-player-swap-modal .five-roster-portrait { width: 48px; height: 52px; }
+  .five-player-swap-modal .five-roster-state { min-width: 52px; min-height: 34px; display: grid; place-items: center; }
+}

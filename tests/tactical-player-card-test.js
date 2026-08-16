@@ -55,7 +55,7 @@ assert.match(css, /\.five-match-screen \.five-match-player-detail \{[\s\S]*--fiv
 for (const token of ['classList.toggle("selected", selected)', 'setAttribute("aria-selected", selected ? "true" : "false")', 'querySelectorAll(".five-slot-selected-label")', 'label.textContent = "SELEZIONATO"']) {
   assert.ok(selectionSync.includes(token), `selection synchronization is missing: ${token}`);
 }
-assert.match(fiveEditor, /ui\.fiveVFiveSelectedSlot === button\.dataset\.fiveSlot \? null : button\.dataset\.fiveSlot/, 'tapping the selected slot clears selection');
+assert.match(fiveEditor, /openFivePlayerSwap\(event\.currentTarget\.dataset\.fiveSlot, event\.currentTarget\)/, 'tapping a slot directly opens the dedicated player swap');
 assert.match(fiveEditor, /FiveVFive\.assign[\s\S]*ui\.fiveVFiveSelectedSlot = null;[\s\S]*refreshFiveAfterAssignment/, 'an assignment or swap clears stale selection before the partial refresh');
 assert.match(fiveEditor, /FiveVFive\.clearSlot[\s\S]*ui\.fiveVFiveSelectedSlot = null;[\s\S]*refreshFiveAfterAssignment/, 'clearing a slot clears its selection label');
 assert.strictEqual((fiveEditor.match(/addEventListener\("click", onFiveSlotClick\)/g) || []).length, 2, 'slot listeners are bound once initially and once to replacement cards');
