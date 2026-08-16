@@ -7,22 +7,23 @@
 
 /*
  * Dragon Sticker wallet icon.
- * Keep the wrapper independent from the wallet-copy span rules and center the
- * visible artwork optically against the MONETE/value block (not just by box math).
+ * Use a compact dedicated badge: the artwork has internal transparent padding,
+ * so it needs to fill more of its badge instead of being shrunk further.
  */
 .shop-screen .shop-coins > .development-currency-icon {
   position: relative;
-  flex: 0 0 40px;
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  margin: 8px 0 0;
+  flex: 0 0 38px;
+  width: 38px;
+  height: 38px;
+  min-width: 38px;
+  margin: 0;
   padding: 0;
   display: block;
   align-self: center;
   justify-self: center;
   line-height: 0;
   overflow: hidden;
+  border-radius: 50%;
 }
 
 .shop-screen .shop-coins > .development-currency-icon > img {
@@ -30,8 +31,8 @@
   left: 50%;
   top: 50%;
   display: block;
-  width: 26px;
-  height: 26px;
+  width: 34px;
+  height: 34px;
   max-width: none;
   margin: 0;
   padding: 0;
@@ -59,11 +60,11 @@
     width: 36px;
     height: 36px;
     min-width: 36px;
-    margin-top: 9px;
+    margin: 0;
   }
 
   .shop-screen .shop-coins > .development-currency-icon > img {
-    width: 22px;
-    height: 22px;
+    width: 32px;
+    height: 32px;
   }
 }
