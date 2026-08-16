@@ -17,6 +17,21 @@
 
   let liveRun = null;
   let autoClaimProfileId = null;
+  let playerVisualsById = new Map();
+
+  const playerVisualsReady = fetch("data/PLAYER_VISUALS.json")
+    .then((response) => {
+      if (!response.ok) throw new Error(`PLAYER_VISUALS non raggiungibile (${response.status})`);
+      return response.json();
+    })
+    .then((visualsDb) => {
+      playerVisualsById = new Map(Object.entries(visualsDb?.players || {}));
+      return playerVisualsById;
+    })
+    .catch((error) => {
+      console.warn("IE3 secondary reward: fallback visual database unavailable", error);
+      return playerVisualsById;
+    });
 
   function escapeHtml(value) {
     return String(value ?? "")
@@ -117,24 +132,38 @@
     return `data-image-fallbacks="${escapeHtml(JSON.stringify(unique))}" data-image-fallback-index="0" onerror="globalThis.handlePlayerImageError && globalThis.handlePlayerImageError(this)"`;
   }
 
-  function playerImageCandidates(player) {
+  // Keep this resolver byte-for-byte equivalent in behaviour to app.js.
+  // The normal player sheet does not rely only on the seasonal profile: it also
+  // resolves PLAYER_VISUALS.json by playerId. Missing this global fallback was
+  // the reason IE3 secondary rewards showed the framed portrait instead of the
+  // same full-body visual used by the native player sheet.
+  function playerImageCandidates(player, playerId = player?.playerId) {
+    const id = playerId != null ? String(playerId) : "";
+    const globalVisual = id ? (playerVisualsById.get(id) || {}) : {};
     const seasonalFront = player?.frontFullbodyUrl || player?.fullbodyUrl || null;
+    const globalFront = globalVisual.frontFullbodyUrl || globalVisual.fullbodyUrl || null;
     const seasonalPortrait = player?.portraitUrl || null;
-    const compatibleImage = player?.image || player?.imageUrl || null;
-    const portraitUrl = seasonalPortrait || compatibleImage || null;
-    const frontFullbodyUrl = seasonalFront || null;
-    return { portraitUrl, frontFullbodyUrl };
+    const globalPortrait = globalVisual.portraitUrl || globalVisual.imageUrl || null;
+    const compatibleImage = player?.image || player?.imageUrl || globalVisual.image || globalVisual.imageUrl || null;
+    const portraitUrl = seasonalPortrait || globalPortrait || compatibleImage || null;
+    const frontFullbodyUrl = seasonalFront || globalFront || null;
+    return { playerId: id, portraitUrl, frontFullbodyUrl, seasonalPortrait, globalPortrait, compatibleImage, seasonalFront, globalFront };
   }
 
-  function resolvePlayerVisual(player) {
-    const visual = playerImageCandidates(player);
-    const detailFallbacks = [visual.frontFullbodyUrl, visual.portraitUrl, PLAYER_IMAGE_PLACEHOLDER].filter(Boolean);
+  function resolvePlayerVisual(player, { playerId = player?.playerId, placeholder = PLAYER_IMAGE_PLACEHOLDER } = {}) {
+    const visual = playerImageCandidates(player, playerId);
+    const detailFallbacks = [visual.frontFullbodyUrl, visual.portraitUrl, placeholder].filter(Boolean);
+    const cardFallbacks = [visual.portraitUrl, visual.frontFullbodyUrl, placeholder].filter(Boolean);
     return {
+      playerId: visual.playerId,
       portraitUrl: visual.portraitUrl,
       frontFullbodyUrl: visual.frontFullbodyUrl,
       detailImageUrl: detailFallbacks[0] || null,
+      cardImageUrl: cardFallbacks[0] || null,
       detailFallbacks,
+      cardFallbacks,
       detailImageKind: visual.frontFullbodyUrl ? "fullbody" : (visual.portraitUrl ? "portrait" : "placeholder"),
+      cardImageKind: visual.portraitUrl ? "portrait" : (visual.frontFullbodyUrl ? "fullbody" : "placeholder"),
     };
   }
 
@@ -152,7 +181,7 @@
   }
 
   function nativeDetailMarkup(player, meta) {
-    const detailVisual = resolvePlayerVisual(player);
+    const detailVisual = resolvePlayerVisual(player, { playerId: player?.playerId });
     const resolved = player.stats && player.baseStats
       ? player
       : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(Number(meta.level || 0)), meta.database);
@@ -180,7 +209,8 @@
     </div>`;
   }
 
-  function showIe3PlayerDetail(player, meta) {
+  async function showIe3PlayerDetail(player, meta) {
+    await playerVisualsReady;
     const modalRoot = document.getElementById("modal-root");
     const rewardBackdrop = modalRoot?.firstElementChild;
     if (!modalRoot || !rewardBackdrop) return;
