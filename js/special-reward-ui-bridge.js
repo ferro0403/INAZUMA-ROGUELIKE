@@ -146,8 +146,7 @@
     }).join("");
   }
 
-  function showIe3PlayerDetail(modal, candidate, meta) {
-    modal.querySelector(".ie3-secondary-full-player-detail")?.remove();
+  function nativePlayerDetailMarkup(candidate, meta) {
     const player = resolveRewardDetailPlayer(candidate, meta);
     const category = String(player.category || candidate?.category || "Debole");
     const role = String(player.position || player.normalizedRole || candidate?.position || "-");
@@ -156,38 +155,64 @@
     const potential = Number(player.potential ?? player.finalOverall ?? overall);
     const image = rewardDetailImage(player);
     const teamLogo = meta.team?.logoUrl || "";
+    const longNameClass = String(player.name || "").length > 18 ? "player-detail-hero--extra-long-name" : (String(player.name || "").length > 12 ? "player-detail-hero--long-name" : "");
 
-    const detail = document.createElement("section");
-    detail.className = "ie3-secondary-full-player-detail";
-    detail.innerHTML = `
-      <div class="ie3-secondary-full-player-detail-shell player-detail-modal">
-        <div class="ie3-secondary-detail-toolbar">
-          <button type="button" class="btn btn-back" data-ie3-detail-close>← TORNA ALLA SCELTA</button>
-        </div>
-        <div class="player-detail-layout ${rarityClass(category)}">
-          <section class="player-detail-hero ${String(player.name || "").length > 18 ? "player-detail-hero--extra-long-name" : (String(player.name || "").length > 12 ? "player-detail-hero--long-name" : "")}">
-            <div class="player-detail-identity">
-              <div class="player-detail-team" aria-label="Squadra ${escapeHtml(meta.teamName)}">
-                ${teamLogo ? `<img src="${escapeHtml(teamLogo)}" alt="" loading="lazy" decoding="async">` : ""}
-                <strong>${escapeHtml(meta.teamName)}</strong>
-              </div>
-              <div class="player-detail-heading"><p class="eyebrow">Scheda giocatore</p></div>
-              <h2 class="player-detail-name">${escapeHtml(player.name || candidate?.name || "Giocatore")}</h2>
-              <div class="player-detail-tags"><span class="role-chip"><b>${escapeHtml(role)}</b></span><span class="role-chip detail-element-chip">${escapeHtml(element)}</span><span class="role-chip">Lv ${escapeHtml(meta.level)}</span></div>
-              <div class="overall-comparison"><div><span>Overall<br><b>attuale</b></span><strong>${escapeHtml(overall)}</strong></div><div><span>Potenziale</span><strong>${escapeHtml(potential)}</strong></div></div>
-              <p class="detail-category"><span aria-hidden="true">★</span><small>Rarità</small><strong>${escapeHtml(category)}</strong></p>
+    return `
+      <div class="player-detail-layout ${rarityClass(category)}">
+        <section class="player-detail-hero ${longNameClass}">
+          <div class="player-detail-identity">
+            <div class="player-detail-team" aria-label="Squadra ${escapeHtml(meta.teamName)}">
+              ${teamLogo ? `<img src="${escapeHtml(teamLogo)}" alt="" loading="lazy" decoding="async">` : ""}
+              <strong>${escapeHtml(meta.teamName)}</strong>
             </div>
-            <div class="player-detail-visual ${rarityClass(category)}">${image ? `<img class="player-fullbody" src="${escapeHtml(image)}" alt="${escapeHtml(player.name || candidate?.name || "Giocatore")}" loading="eager" decoding="async">` : '<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>'}</div>
-          </section>
-          <section class="player-detail-content">
-            <section class="player-detail-section"><h3><span>Statistiche</span></h3><div class="detail-stats">${rewardDetailStatsMarkup(player)}</div></section>
-            <section class="player-detail-section player-detail-equipment"><h3><span>Equipaggiamento</span></h3><div class="equipped-detail equipped-detail-empty"><div class="equipped-detail-copy"><span>Slot disponibile</span><strong>Nessun equipaggiamento</strong><small>Il giocatore non è ancora stato acquisito.</small></div></div></section>
-          </section>
-        </div>
+            <div class="player-detail-heading"><p class="eyebrow">Scheda giocatore</p></div>
+            <h2 class="player-detail-name">${escapeHtml(player.name || candidate?.name || "Giocatore")}</h2>
+            <div class="player-detail-tags">
+              <span class="role-chip"><b>${escapeHtml(role)}</b></span>
+              <span class="role-chip detail-element-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4 3 7 6 7 10a7 7 0 0 1-14 0c0-4 3-7 7-10Z"/></svg>${escapeHtml(element)}</span>
+              <span class="role-chip">Lv ${escapeHtml(meta.level)}</span>
+            </div>
+            <div class="overall-comparison">
+              <div><span>Overall<br><b>attuale</b></span><strong>${escapeHtml(overall)}</strong></div>
+              <div><span>Potenziale</span><strong>${escapeHtml(potential)}</strong></div>
+            </div>
+            <p class="detail-category"><span aria-hidden="true">★</span><small>Rarità</small><strong>${escapeHtml(category)}</strong></p>
+          </div>
+          <div class="player-detail-visual ${rarityClass(category)}">${image ? `<img class="player-fullbody player-fullbody--fullbody" src="${escapeHtml(image)}" alt="${escapeHtml(player.name || candidate?.name || "Giocatore")}" loading="lazy" decoding="async">` : '<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>'}</div>
+        </section>
+        <section class="player-detail-content">
+          <section class="player-detail-section"><h3><span>Statistiche</span></h3><div class="detail-stats">${rewardDetailStatsMarkup(player)}</div></section>
+          <section class="player-detail-section player-detail-equipment"><h3><span>Equipaggiamento</span></h3><div class="equipped-detail equipped-detail-empty"><div class="equipped-detail-copy"><span>Slot disponibile</span><strong>Nessun equipaggiamento</strong><small>Questo giocatore non ha ancora un oggetto assegnato.</small></div></div></section>
+        </section>
       </div>`;
-    detail.querySelector("[data-ie3-detail-close]")?.addEventListener("click", () => detail.remove());
-    modal.append(detail);
-    detail.scrollTop = 0;
+  }
+
+  function showNativeIe3PlayerDetail(candidate, meta) {
+    const modalRoot = document.getElementById("modal-root");
+    const rewardBackdrop = modalRoot?.firstElementChild;
+    if (!modalRoot || !rewardBackdrop) return;
+
+    rewardBackdrop.remove();
+    const backdrop = document.createElement("div");
+    backdrop.className = "modal-backdrop";
+    const modal = document.createElement("section");
+    modal.className = "modal player-detail-modal";
+    modal.innerHTML = `<button type="button" class="modal-close" data-close-modal aria-label="Chiudi">✕</button>${nativePlayerDetailMarkup(candidate, meta)}`;
+    backdrop.append(modal);
+    modalRoot.append(backdrop);
+    modalRoot.classList.add("has-open-modal");
+
+    const restoreReward = () => {
+      if (modalRoot.firstElementChild !== backdrop) return;
+      backdrop.remove();
+      modalRoot.append(rewardBackdrop);
+      modalRoot.classList.add("has-open-modal");
+      rewardBackdrop.querySelector("[data-ie3-secondary-detail]")?.focus?.({ preventScroll: true });
+    };
+
+    modal.querySelector("[data-close-modal]")?.addEventListener("click", restoreReward);
+    backdrop.addEventListener("click", (event) => { if (event.target === backdrop) restoreReward(); });
+    modal.scrollTop = 0;
   }
 
   function patchIe3SpecialRewardModal() {
@@ -258,7 +283,7 @@
       actions.querySelector("[data-ie3-secondary-detail]")?.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        showIe3PlayerDetail(modal, candidate, meta);
+        showNativeIe3PlayerDetail(candidate, meta);
       });
       option.append(actions);
       grid.append(option);
