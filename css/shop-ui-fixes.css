@@ -5,6 +5,11 @@
   --shop-tier-accent: #f09e92;
 }
 
+/* Final shop header: keep only NEGOZIO. */
+.shop-screen .shop-header .eyebrow {
+  display: none;
+}
+
 /* Purchase modal stays clean: no rarity-colored corner beside the title. */
 .shop-buy-modal::after {
   display: none;
