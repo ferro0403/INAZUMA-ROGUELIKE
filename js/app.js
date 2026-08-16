@@ -4113,8 +4113,8 @@
     const formation = global.FiveVFive.formationById(formationId);
     return ["attack", "midfield", "defense", "goal"].map((line) => ({
       line,
-      players: formation.slots.filter((slot) => slot.line === line).map((slot) => playersBySlot[slot.key]).filter(Boolean),
-    })).filter((row) => row.players.length);
+      slots: formation.slots.filter((slot) => slot.line === line).map((slot) => ({ ...slot, player: playersBySlot[slot.key] || null })),
+    })).filter((row) => row.slots.length);
   }
 
   function fiveUserPlayersBySlot() {
@@ -4170,10 +4170,12 @@
     }));
   }
 
-  function fiveMatchCard(player, side) {
+  function fiveMatchCard(player, side, slot) {
+    if (!player) return `<button type="button" class="five-match-card five-match-card--${side} five-match-card--empty" data-five-match-slot="${escapeHtml(slot.key)}" data-five-match-side="${side}" aria-label="Riempi slot ${escapeHtml(slot.key)}, ruolo ${escapeHtml(slot.role)}"><span class="five-match-card-empty-mark" aria-hidden="true">+</span><strong>Slot ${escapeHtml(slot.key)}</strong><span class="five-match-card-role">${escapeHtml(slot.role)}</span></button>`;
     const role = player.position || player.normalizedRole || "-";
-    const key = fiveMatchCacheKey("half-card", side, player.playerId, player.name, role, player.category, playerPortraitUrl(player));
-    return memoizedFiveMatchMarkup(key, () => `<button type="button" class="five-match-card five-match-card--${side} ${rarityClass(player.category)}" data-five-match-player="${escapeHtml(player.playerId)}" data-five-match-side="${side}" aria-pressed="false" aria-label="Dettagli rapidi di ${escapeHtml(player.name)}">
+    const key = fiveMatchCacheKey("half-card", side, slot.key, player.playerId, player.name, role, player.category, playerPortraitUrl(player));
+    const label = side === "user" ? `Cambia ${player.name}, slot ${slot.key}` : `Dettagli rapidi di ${player.name}`;
+    return memoizedFiveMatchMarkup(key, () => `<button type="button" class="five-match-card five-match-card--${side} ${rarityClass(player.category)}" data-five-match-player="${escapeHtml(player.playerId)}" data-five-match-slot="${escapeHtml(slot.key)}" data-five-match-side="${side}" aria-pressed="false" aria-label="${escapeHtml(label)}">
       <span class="five-match-card-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></span>
       <strong title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</strong>
       <span class="five-match-card-role" aria-label="Ruolo ${escapeHtml(role)}">${escapeHtml(role)}</span>
@@ -4205,8 +4207,57 @@
     const slotKey = Object.entries(playersBySlot || {}).map(([slot, player]) => `${slot}:${player?.playerId || ""}:${player?.overall || ""}:${player?.displayLevel || ""}`).join(",");
     const key = fiveMatchCacheKey("field", formationId, side, mobile ? "mobile" : "desktop", slotKey);
     return memoizedFiveMatchMarkup(key, () => `<div class="five-match-field-side five-match-field-side--${side} ${mobile ? "five-match-field-side--mobile" : ""}" data-five-field-side="${side}" ${mobile ? "" : ""}>
-      ${fiveFormationRows(formationId, playersBySlot).map((row) => `<div class="five-match-line five-match-line--${row.line}" data-row-count="${row.players.length}" style="--five-row-count:${row.players.length || 1}">${row.players.map((player) => fiveMatchCard(player, side)).join("")}</div>`).join("")}
+      ${fiveFormationRows(formationId, playersBySlot).map((row) => `<div class="five-match-line five-match-line--${row.line}" data-row-count="${row.slots.length}" style="--five-row-count:${row.slots.length || 1}">${row.slots.map((slot) => fiveMatchCard(slot.player, side, slot)).join("")}</div>`).join("")}
     </div>`);
+  }
+
+  function fiveMatchSwapCandidates(slotKey) {
+    const slot = global.FiveVFive.formationById(run.fiveVFive?.formation).slots.find((item) => item.key === slotKey);
+    if (!slot) return [];
+    const currentId = String(run.fiveVFive.slots[slotKey] || "");
+    return (run.roster || []).map((entry) => ({ entry, player: resolvedRosterPlayer(entry.playerId) }))
+      .filter(({ entry, player }) => player && String(entry.playerId) !== currentId && effectiveRosterRole(entry.playerId) === slot.role)
+      .sort((a, b) => Number(b.player.overall || 0) - Number(a.player.overall || 0) || String(a.player.name || "").localeCompare(String(b.player.name || ""), "it") || String(a.entry.playerId).localeCompare(String(b.entry.playerId)));
+  }
+
+  function fiveMatchSwapPlayerMarkup(player, entry, { current = false } = {}) {
+    const level = player.displayLevelText ?? player.displayLevel ?? global.LevelProgression.formatLevel(entry, run.seasonId);
+    const equipment = resolveItem(entry?.equippedItem);
+    return `<article class="five-match-swap-player ${rarityClass(player.category)}">
+      <span class="five-match-swap-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></span>
+      <span class="five-match-swap-identity"><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(effectiveRosterRole(entry.playerId) || player.position || "-")} · LV ${escapeHtml(level)}</small>${equipment ? `<em>${itemIcon(equipment)} ${escapeHtml(equipment.name || "Equipaggiamento")}</em>` : ""}</span>
+      <span class="five-match-swap-overall"><small>OVR</small><strong>${escapeHtml(player.overall ?? "-")}</strong></span>
+      ${current ? "" : `<button type="button" class="btn btn-yellow" data-five-match-swap-player="${escapeHtml(entry.playerId)}">SOSTITUISCI</button>`}
+    </article>`;
+  }
+
+  function openFiveMatchPlayerSwap(slotKey, match) {
+    const editable = match?.state === "pre-match" && ui.bossMatchState === "pre-match" && (!match.simulation || match.simulation.state === "pre-match");
+    const slot = global.FiveVFive.formationById(run.fiveVFive?.formation).slots.find((item) => item.key === slotKey);
+    if (!editable || !slot) return false;
+    const currentId = run.fiveVFive.slots[slotKey];
+    const currentEntry = currentId ? rosterEntry(currentId) : null;
+    const current = currentEntry ? resolvedRosterPlayer(currentId) : null;
+    const candidates = fiveMatchSwapCandidates(slotKey);
+    const pageScroll = scrollSnapshot();
+    let escapeHandler = null;
+    openModal(`<section class="five-match-swap-dialog" role="dialog" aria-modal="true" aria-labelledby="five-match-swap-title">
+      <header class="five-match-swap-head"><p class="eyebrow">Formazione partita 5v5</p><h2 id="five-match-swap-title">CAMBIA GIOCATORE</h2><p>Slot ${escapeHtml(slot.key)} · ${escapeHtml(slot.role)}</p></header>
+      <div class="five-match-swap-layout"><section><h3>TITOLARE ATTUALE</h3>${current ? fiveMatchSwapPlayerMarkup(current, currentEntry, { current: true }) : '<p class="five-match-swap-empty">Slot vuoto</p>'}</section>
+      <section class="five-match-swap-options"><h3>SOSTITUISCI CON</h3><div class="five-match-swap-list">${candidates.length ? candidates.map(({ entry, player }) => fiveMatchSwapPlayerMarkup(player, entry)).join("") : '<p class="five-match-swap-empty">Nessun giocatore compatibile disponibile.</p>'}</div></section></div>
+    </section>`, { closeable: true, className: "five-match-player-swap-modal", preserveScroll: pageScroll, onClose: () => { if (escapeHandler) document.removeEventListener("keydown", escapeHandler); } });
+    escapeHandler = (event) => { if (event.key === "Escape" && modalRoot.querySelector(".five-match-player-swap-modal")) closeModal(); };
+    document.addEventListener("keydown", escapeHandler);
+    modalRoot.querySelectorAll("[data-five-match-swap-player]").forEach((button) => button.addEventListener("click", () => {
+      if (!(match.state === "pre-match" && ui.bossMatchState === "pre-match" && (!match.simulation || match.simulation.state === "pre-match"))) return;
+      global.FiveVFive.assign(run, slotKey, button.dataset.fiveMatchSwapPlayer, fiveRoleForPlayerId);
+      global.RunState.save(run);
+      document.removeEventListener("keydown", escapeHandler);
+      closeModal({ invokeOnClose: false });
+      renderMatch();
+      afterNextPaint(() => { restorePageScroll(pageScroll); document.querySelector(`[data-five-match-side="user"][data-five-match-slot="${cssEscape(slotKey)}"]`)?.focus?.({ preventScroll: true }); });
+    }));
+    return true;
   }
 
 
@@ -4392,12 +4443,14 @@
         detail.style.setProperty("--five-detail-top", `${top}px`);
         detail.dataset.placement = preferredLeft === right ? "right" : "left";
       };
-      const bindFiveMatchPlayerButtons = () => document.querySelectorAll("[data-five-match-player]").forEach((button) => {
+      const bindFiveMatchPlayerButtons = () => document.querySelectorAll("[data-five-match-slot]").forEach((button) => {
         if (button.dataset.boundFiveMatchPlayer === "1") return;
         button.dataset.boundFiveMatchPlayer = "1";
         button.addEventListener("click", () => {
           const id = button.dataset.fiveMatchPlayer;
+          const slotKey = button.dataset.fiveMatchSlot;
           const side = button.dataset.fiveMatchSide;
+          if (side === "user" && openFiveMatchPlayerSwap(slotKey, match)) return;
           const players = side === "user" ? userPlayersBySlot : opponentPlayersBySlot;
           const player = Object.values(players).find((candidate) => String(candidate?.playerId) === String(id));
           const detail = document.querySelector("[data-five-player-detail]");
