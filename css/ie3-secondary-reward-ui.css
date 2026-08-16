@@ -34,7 +34,6 @@
   gap: 7px;
 }
 
-/* Player card keeps the majority of the row, matching the established reward selector. */
 .ie3-secondary-standard-reward-modal .pull-choice-option {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 118px;
@@ -76,7 +75,6 @@
   box-shadow: none;
 }
 
-/* Exact action treatment from the normal player reward UI. */
 .ie3-secondary-standard-reward-modal [data-ie3-secondary-confirm] {
   background: #111318 !important;
   color: #ffffff !important;
@@ -103,61 +101,8 @@
   padding: 8px 14px;
 }
 
-/* Full player sheet: uses the game's real player-detail layout/classes instead of the old mini popup. */
-.ie3-secondary-full-player-detail {
-  position: absolute;
-  inset: 0;
-  z-index: 30;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  background: rgba(17, 19, 24, .78);
-  padding: 10px;
-}
-
-.ie3-secondary-full-player-detail-shell {
-  position: relative;
-  width: min(100%, 760px);
-  min-height: 100%;
-  margin: 0 auto;
-  padding: 10px;
-  background: #fffef7;
-  border: 3px solid #111318;
-  box-shadow: 7px 7px 0 #111318;
-}
-
-.ie3-secondary-detail-toolbar {
-  position: sticky;
-  top: 0;
-  z-index: 4;
-  padding-bottom: 8px;
-  background: #fffef7;
-}
-
-.ie3-secondary-detail-toolbar .btn-back {
-  width: 100%;
-  min-height: 42px;
-  border: 2px solid #111318;
-  background: #ffffff;
-  color: #111318;
-  font-weight: 900;
-}
-
-.ie3-secondary-full-player-detail .player-detail-layout {
-  margin: 0;
-}
-
-.ie3-secondary-full-player-detail .player-detail-team img {
-  width: 34px;
-  height: 34px;
-  object-fit: contain;
-}
-
-.ie3-secondary-full-player-detail .player-fullbody {
-  max-width: 100%;
-  max-height: 100%;
-  object-fit: contain;
-  object-position: center bottom;
-}
+/* No player-detail rules live here on purpose.
+ * The SCHEDA action must inherit only the game's native player-detail CSS. */
 
 @media (max-width: 560px) {
   .ie3-secondary-standard-reward-modal {
@@ -185,15 +130,6 @@
     min-height: 39px;
     font-size: 10px;
     padding: 6px 2px;
-  }
-
-  .ie3-secondary-full-player-detail {
-    padding: 7px;
-  }
-
-  .ie3-secondary-full-player-detail-shell {
-    padding: 7px;
-    box-shadow: 5px 5px 0 #111318;
   }
 }
 
