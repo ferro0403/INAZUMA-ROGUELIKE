@@ -1266,6 +1266,7 @@
   const HOME_SECONDARY_ACTIONS = [
     { id: "open-album-home", label: "Album", icon: "▤", className: "" },
     { id: "open-hall-home", label: "Albo d’Oro", icon: "★", className: "home-quick-button--gold" },
+    { id: "open-shop-home", label: "Negozio", icon: "◆", className: "" },
     { id: "open-modes-home", label: "Modalità", icon: "⚡", className: "" },
   ];
 
@@ -1278,8 +1279,8 @@
   }
 
   function homeTeamCrestMarkup(identity) {
-    if (identity?.logoUrl) return `<img src="${escapeHtml(identity.logoUrl)}" alt="${escapeHtml(identity.name)}" loading="lazy" />`;
-    return `<span class="home-crest-fallback" aria-hidden="true">IR</span>`;
+    const emblem = global.TeamEmblems.resolveTeamEmblem({ teamIdentity: identity, fallbackKind: "user" });
+    return global.TeamEmblems.teamEmblemMarkup(emblem, { escape: escapeHtml, className: "home-team-emblem" });
   }
 
   function homeActiveRunMarkup(savedRun) {
@@ -1363,7 +1364,7 @@
       <main class="home-screen modern-home" id="clean-home" data-run-state="${run ? "active" : "empty"}">
         <header class="home-masthead">
           <div class="home-wordmark" aria-label="Inazuma Roguelike · Road to Raimon"><span>Ina<span>z</span>uma</span><small>Roguelike</small><i class="home-road-label">Road to Raimon</i></div>
-          ${global.InazumaAccountUI?.buttonMarkup?.() || '<button type="button" class="account-header-button" data-account-trigger disabled><span>ACCOUNT</span></button>'}
+          <div class="home-profile-actions">${global.InazumaAccountUI?.buttonMarkup?.() || '<button type="button" class="account-header-button" data-account-trigger disabled><span>ACCOUNT</span></button>'}<button type="button" class="home-settings-button" id="open-settings-home" aria-label="Impostazioni"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 3h4.8l.6 2.3 2 .9 2.1-1.2 2.4 4.1-1.8 1.6.2 2.2 1.8 1.6-2.4 4.1-2.3-.7-1.8 1.3-.5 2.3H9.6L9 18.3l-2-.9-2.1 1.2-2.4-4.1 1.8-1.6-.2-2.2-1.8-1.6L4.7 5l2.3.7 2-1.3L9.6 3Zm2.4 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg></button></div>
         </header>
         ${homeRunCardMarkup(run)}
       </main>`;
@@ -1374,6 +1375,8 @@
     document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : renderSeasonSelect());
     document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-album-home")?.addEventListener("click", renderAlbumCollections);
+    document.getElementById("open-shop-home")?.addEventListener("click", () => renderShop());
+    document.getElementById("open-settings-home")?.addEventListener("click", renderSettings);
     document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-hall-home-list")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-latest-hall-home")?.addEventListener("click", (event) => renderHallOfFameDetail(event.currentTarget.dataset.latestHall));
@@ -1486,12 +1489,11 @@
       playersById: global.SeasonRegistry.playersIndex(season.id),
       isLastPlayed: Boolean(savedRun && latestTime && runTimestamp(savedRun) === latestTime),
     })).join("");
-    const developmentCard = `<article class="home-hub-card season-select-card season-select-card--empty development-season-card"><div class="season-card-head"><div><p class="eyebrow">CRESCITA PERMANENTE</p><h2>CENTRO DI SVILUPPO</h2><p class="season-team-name">Usa Progetti, Coppe e Monete per evolvere i giocatori.</p></div></div><div class="home-card-actions season-card-actions"><button class="btn btn-yellow" id="open-development">CENTRO DI SVILUPPO</button><button class="btn" id="open-shop">NEGOZIO</button></div></article>`;
+    const developmentCard = `<article class="home-hub-card season-select-card season-select-card--empty development-season-card"><div class="season-card-head"><div><p class="eyebrow">CRESCITA PERMANENTE</p><h2>CENTRO DI SVILUPPO</h2><p class="season-team-name">Usa Progetti, Coppe e Monete per evolvere i giocatori.</p></div></div><div class="home-card-actions season-card-actions"><button class="btn btn-yellow" id="open-development">CENTRO DI SVILUPPO</button></div></article>`;
     app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="season-select-topbar">${sectionRootButton("seasonSelection", "season-select-home-button")}<h1>Seleziona Season</h1><span class="season-select-topbar-spacer" aria-hidden="true"></span></header><section class="home-choice-grid season-choice-grid">${developmentCard}${cards}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav();
     document.getElementById("open-development")?.addEventListener("click", renderDevelopmentCenter);
-    document.getElementById("open-shop")?.addEventListener("click", () => renderShop());
     document.querySelectorAll("[data-season-continue]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonContinue, { markPlayed: true }); resumeRun(); }));
     document.querySelectorAll("[data-season-new]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonNew); startNewRunFromHome(); }));
   }
@@ -1727,13 +1729,30 @@
     await Promise.all(global.SeasonRegistry.list().map((season) => global.SeasonRegistry.loadDatabase(season.id)));
     const state = global.DevelopmentV2.read(), catalog = global.ShopCatalog.build();
     const tabs = [["general","GENERALE"],["ie1","IE1"],["ie1_s2","IE2"],["ie1_s3","IE3"],["ie2","ARES"]];
-    const wallet = global.DevelopmentV2.SEASON_IDS.map(id=>`<span><small>${escapeHtml(global.SeasonRegistry.get(id).displaySeasonNumber === "2" && id === "ie2" ? "ARES" : id.toUpperCase())}</small><b>${escapeHtml(state.cupsBySeason[id]||0)}</b></span>`).join("");
-    const products = section === "general" ? global.DevelopmentV2.PROJECT_RARITIES.map(r=>`<article class="shop-product"><img src="${escapeHtml(global.DevelopmentV2.ASSETS[r])}" alt=""><h3>PROGETTO ${escapeHtml(r.toUpperCase())}</h3><p>Posseduti <b>×${escapeHtml(state.projects[r]||0)}</b></p><strong>${escapeHtml(global.DevelopmentV2.PROJECT_PRICES[r])} MONETE</strong><button class="btn btn-yellow" data-buy-project="${escapeHtml(r)}" ${state.coins<global.DevelopmentV2.PROJECT_PRICES[r]?"disabled":""}>ACQUISTA</button></article>`).join("") : catalog.filter(p=>p.shopSection===section).map(p=>{const owned=state.unlockedEmblems.includes(p.emblemId), emblem=global.TeamEmblems.resolveTeamById(p.teamId,p.seasonId);return `<article class="shop-product shop-emblem-card">${global.TeamEmblems.teamEmblemMarkup(emblem,{escape:escapeHtml,className:"shop-emblem"})}<h3>${escapeHtml(p.name)}</h3><span class="shop-tier shop-tier--${p.rarity}">${p.label}</span><strong>${p.coins} MONETE${p.cups?` + ${p.cups} COPPA`:""}</strong><button class="btn ${owned?"":"btn-yellow"}" data-buy-emblem="${escapeHtml(p.emblemId)}" ${owned?"disabled":""}>${owned?"POSSEDUTO":"ACQUISTA"}</button>${owned?`<button class="btn" data-equip-emblem="${escapeHtml(p.emblemId)}">SELEZIONA</button>`:""}</article>`;}).join("");
-    app.innerHTML=`<main class="shop-screen"><header class="topbar"><button class="btn btn-yellow shop-back">←</button><div><p class="eyebrow">RICOMPENSE PERMANENTI</p><h1>NEGOZIO</h1></div></header><section class="shop-wallet"><div>${developmentCurrencyIcon("coins")}<b>${state.coins}</b> MONETE</div><div class="shop-cups">${wallet}${state.legacyCups?`<span><small>LEGACY</small><b>${state.legacyCups}</b></span>`:""}</div></section><nav class="shop-tabs">${tabs.map(([id,label])=>`<button class="${id===section?"active":""}" data-shop-tab="${id}">${label}</button>`).join("")}</nav><section class="shop-grid">${products}</section></main>`;
-    document.querySelector(".shop-back").onclick=renderSeasonSelect; document.querySelectorAll("[data-shop-tab]").forEach(b=>b.onclick=()=>renderShop(b.dataset.shopTab));
-    document.querySelectorAll("[data-buy-project]").forEach(b=>b.onclick=()=>{const r=global.DevelopmentV2.purchaseProject(b.dataset.buyProject);toast(r.ok?"PROGETTO ACQUISTATO":r.reason==="coins"?"MONETE INSUFFICIENTI":"ACQUISTO NON SALVATO");renderShop(section);});
-    document.querySelectorAll("[data-buy-emblem]").forEach(b=>b.onclick=()=>{const p=catalog.find(x=>x.emblemId===b.dataset.buyEmblem),r=global.DevelopmentV2.purchaseEmblem(p);toast(r.ok?"STEMMA SBLOCCATO":r.reason==="cups"?"COPPE SEASON INSUFFICIENTI":r.reason==="coins"?"MONETE INSUFFICIENTI":"STEMMA GIÀ POSSEDUTO");renderShop(section);});
-    document.querySelectorAll("[data-equip-emblem]").forEach(b=>b.onclick=()=>{const profile=global.RunState.loadProfile(), identity=global.RunState.saveProfileTeamIdentity({name:profile.teamIdentity?.name||"La tua squadra",emblemId:b.dataset.equipEmblem});toast(`STEMMA SELEZIONATO PER ${identity.name.toUpperCase()}`);renderShop(section);});
+    const cupLabels = { ie1: "COPPA IE1", ie1_s2: "COPPA IE2", ie1_s3: "COPPA IE3", ie2: "COPPA ARES" };
+    const cupAssets = global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.cupsBySeason;
+    const wallet = global.DevelopmentV2.SEASON_IDS.map((id) => `<span><img src="${escapeHtml(cupAssets[id])}" alt="" data-cup-fallback="${escapeHtml(global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.cups)}"><small>${cupLabels[id]}</small><b>${escapeHtml(state.cupsBySeason[id] || 0)}</b></span>`).join("");
+    const products = section === "general" ? global.DevelopmentV2.PROJECT_RARITIES.map((rarity) => `<article class="shop-product"><img src="${escapeHtml(global.DevelopmentV2.ASSETS[rarity])}" alt=""><h3>PROGETTO ${escapeHtml(rarity.toUpperCase())}</h3><p>Posseduti <b>×${escapeHtml(state.projects[rarity] || 0)}</b></p><strong>${escapeHtml(global.DevelopmentV2.PROJECT_PRICES[rarity])} MONETE</strong><button class="btn btn-yellow" data-buy-project="${escapeHtml(rarity)}" ${state.coins < global.DevelopmentV2.PROJECT_PRICES[rarity] ? "disabled" : ""}>ACQUISTA</button></article>`).join("") : catalog.filter((product) => product.shopSection === section).map((product) => { const owned = state.unlockedEmblems.includes(product.emblemId), emblem = global.TeamEmblems.resolveTeamById(product.teamId, product.seasonId); return `<article class="shop-product shop-emblem-card shop-tier--${product.rarity}">${global.TeamEmblems.teamEmblemMarkup(emblem, { escape: escapeHtml, className: "shop-emblem" })}<h3>${escapeHtml(product.name)}</h3><span class="shop-tier">${product.label}</span><strong>${product.coins} MONETE${product.cups ? ` + ${product.cups} <img class="shop-price-cup" src="${escapeHtml(cupAssets[product.seasonId])}" alt="Coppa">` : ""}</strong><button class="btn ${owned ? "shop-owned" : "btn-yellow"}" data-buy-emblem="${escapeHtml(product.emblemId)}" ${owned ? "disabled" : ""}>${owned ? "POSSEDUTO" : "ACQUISTA"}</button></article>`; }).join("");
+    app.innerHTML = `<main class="shop-screen"><header class="shop-header"><button class="shop-back" aria-label="Torna alla Home">←</button><div><p class="eyebrow">RICOMPENSE PERMANENTI</p><h1>NEGOZIO</h1></div></header><section class="shop-wallet"><div class="shop-coins">${developmentCurrencyIcon("coins")}<span><small>MONETE</small><b>${state.coins}</b></span></div><div class="shop-cups">${wallet}${state.legacyCups ? `<span><small>COPPE LEGACY</small><b>${state.legacyCups}</b></span>` : ""}</div></section><nav class="shop-tabs">${tabs.map(([id,label]) => `<button class="${id === section ? "active" : ""}" data-shop-tab="${id}">${label}</button>`).join("")}</nav><section class="shop-grid">${products}</section></main>`;
+    document.querySelector(".shop-back").onclick = renderHome;
+    document.querySelectorAll("[data-shop-tab]").forEach((button) => button.onclick = () => renderShop(button.dataset.shopTab));
+    document.querySelectorAll("[data-cup-fallback]").forEach((image) => image.addEventListener("error", () => { if (image.src !== image.dataset.cupFallback) image.src = image.dataset.cupFallback; }));
+    document.querySelectorAll("[data-buy-project]").forEach((button) => button.onclick = () => { const result = global.DevelopmentV2.purchaseProject(button.dataset.buyProject); toast(result.ok ? "PROGETTO ACQUISTATO" : result.reason === "coins" ? "MONETE INSUFFICIENTI" : "ACQUISTO NON SALVATO"); renderShop(section); });
+    document.querySelectorAll("[data-buy-emblem]").forEach((button) => button.onclick = () => { const product = catalog.find((item) => item.emblemId === button.dataset.buyEmblem), result = global.DevelopmentV2.purchaseEmblem(product); toast(result.ok ? "STEMMA SBLOCCATO" : result.reason === "cups" ? "COPPE SEASON INSUFFICIENTI" : result.reason === "coins" ? "MONETE INSUFFICIENTI" : "STEMMA GIÀ POSSEDUTO"); renderShop(section); });
+  }
+
+  function renderSettings(selectingEmblem = false) {
+    const identity = savedTeamIdentity() || normalizeTeamIdentity({});
+    const owned = new Set(global.DevelopmentV2.read().unlockedEmblems || []);
+    const catalog = global.ShopCatalog.build().filter((item) => owned.has(item.emblemId));
+    const choices = [{ emblemId: "default-lightning", name: "Inazuma Lightning", seasonId: "default" }, ...catalog];
+    const current = global.TeamEmblems.resolveTeamEmblem({ teamIdentity: identity, fallbackKind: "user" });
+    const choiceMarkup = choices.map((item) => { const selected = item.emblemId === identity.emblemId; const emblem = global.TeamEmblems.resolveTeamEmblem({ teamIdentity: { emblemId: item.emblemId }, seasonId: item.seasonId, fallbackKind: "user" }); return `<button type="button" class="settings-emblem-choice ${selected ? "is-selected" : ""}" data-settings-emblem="${escapeHtml(item.emblemId)}">${global.TeamEmblems.teamEmblemMarkup(emblem, { escape: escapeHtml, className: "settings-choice-logo" })}<strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.seasonId.toUpperCase())}</small>${selected ? "<span>SELEZIONATO</span>" : ""}</button>`; }).join("");
+    app.innerHTML = `<main class="settings-screen"><header class="settings-header"><button class="settings-back" aria-label="${selectingEmblem ? "Torna alle Impostazioni" : "Torna alla Home"}">←</button><div><p class="eyebrow">PROFILO PERMANENTE</p><h1>${selectingEmblem ? "CAMBIA STEMMA" : "IMPOSTAZIONI"}</h1></div></header>${selectingEmblem ? `<section class="settings-panel"><p class="eyebrow">STEMMI DISPONIBILI</p><div class="settings-emblem-grid">${choiceMarkup}</div></section>` : `<section class="settings-panel"><p class="eyebrow">PROFILO SQUADRA</p><div class="settings-name-row"><div><small>NOME SQUADRA</small><h2>${escapeHtml(savedTeamIdentity()?.name || "Non impostato")}</h2></div><button class="btn btn-yellow" id="settings-edit-name">MODIFICA</button></div><div class="settings-crest-row">${global.TeamEmblems.teamEmblemMarkup(current, { escape: escapeHtml, className: "settings-current-logo" })}<div><small>STEMMA SQUADRA</small><strong>${escapeHtml(choices.find((item) => item.emblemId === identity.emblemId)?.name || "Inazuma Lightning")}</strong></div><button class="btn btn-yellow" id="settings-change-emblem">CAMBIA STEMMA</button></div></section>`}</main>`;
+    document.querySelector(".settings-back").onclick = () => selectingEmblem ? renderSettings() : renderHome();
+    document.getElementById("settings-edit-name")?.addEventListener("click", openEditTeamNameModal);
+    document.getElementById("settings-change-emblem")?.addEventListener("click", () => renderSettings(true));
+    document.querySelectorAll("[data-settings-emblem]").forEach((button) => button.onclick = () => { const saved = savedTeamIdentity(); if (!saved) { toast("IMPOSTA PRIMA IL NOME SQUADRA"); return; } const updated = global.RunState.saveProfileTeamIdentity({ ...saved, emblemId: button.dataset.settingsEmblem }); if (syncRunTeamIdentity(updated)) global.RunState.save(run); toast("STEMMA SALVATO"); renderSettings(true); });
   }
 
   function developmentDevMarkup(eligibleCount = developmentPlayers().length) { return `<section class="development-dev"><h2>SVILUPPO — HACK TEST</h2><p><strong>SVINCOLATI ELEGGIBILI: ${escapeHtml(eligibleCount)}</strong></p><div>${[100,500,1500].map(n=>`<button data-dev-coins="${n}">+${n} MONETE</button>`).join("")}${global.DevelopmentV2.SEASON_IDS.map(id=>`<button data-dev-season-cup="${id}">+1 COPPA ${id.toUpperCase()}</button>`).join("")}${global.DevelopmentV2.PROJECT_RARITIES.map(r=>`<button data-dev-complete-project="${r}">+1 PROGETTO ${r.toUpperCase()}</button>`).join("")}</div><button id="dev-reset">RESET SVILUPPO TEST</button></section>`; }
@@ -1807,11 +1826,11 @@
       if (!result.valid) { error.textContent = result.message; return; }
       if (mode === "edit") {
         const before = run ? JSON.stringify({ roster: run.roster, lineup: run.lineup, bench: run.bench, bossIndex: run.bossIndex, currentZone: run.currentZone }) : null;
-        const identity = global.RunState.saveProfileTeamIdentity({ name: result.name, logo: "inazuma-lightning" });
+        const identity = global.RunState.saveProfileTeamIdentity({ name: result.name, emblemId: savedTeamIdentity()?.emblemId || "default-lightning" });
         if (syncRunTeamIdentity(identity)) global.RunState.save(run);
         if (before && before !== JSON.stringify({ roster: run.roster, lineup: run.lineup, bench: run.bench, bossIndex: run.bossIndex, currentZone: run.currentZone })) throw new Error("Team name edit changed run progress");
         closeModal();
-        renderHome();
+        renderSettings();
         return;
       }
       startRunWithIdentity({ name: result.name, logo: "inazuma-lightning" });
