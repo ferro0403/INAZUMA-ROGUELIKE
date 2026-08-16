@@ -18,9 +18,9 @@
     cups: "https://dxi4wb638ujep.cloudfront.net/1/k/t/t/ttzfl1b8nbe.png",
     cupsBySeason: Object.freeze({
       ie1: "https://dxi4wb638ujep.cloudfront.net/1/k/t/t/ttzfl1b8nbe.png",
-      ie1_s2: "https://dxi4wb638ujep.cloudfront.net/1/k/a/m/1/am1r5xc99es.png",
-      ie1_s3: "https://dxi4wb638ujep.cloudfront.net/1/k/8/k/a/8kamtdks40c.png",
-      ie2: "https://dxi4wb638ujep.cloudfront.net/1/k/r/a/d/radfiq7yd5u.png",
+      ie1_s2: "https://dxi4wb638ujep.cloudfront.net/1/k/a/m/am1r5xc99es.png",
+      ie1_s3: "https://dxi4wb638ujep.cloudfront.net/1/k/8/k/8kamtdks40c.png",
+      ie2: "https://dxi4wb638ujep.cloudfront.net/1/k/r/a/radfiq7yd5u.png",
     }),
   });
   const counters = (keys) => Object.fromEntries(keys.map((key) => [key, 0]));
