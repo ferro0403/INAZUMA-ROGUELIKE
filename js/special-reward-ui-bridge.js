@@ -3,33 +3,33 @@
 
   const DECLINE_SELECTOR = "[data-decline-special-reward-full-roster]";
   const IE3_SEASON_ID = "ie1_s3";
+  const PLAYER_IMAGE_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='22' fill='%2311213f'/%3E%3Ccircle cx='60' cy='42' r='22' fill='%23ffd34f'/%3E%3Cpath d='M22 108c6-28 24-42 38-42s32 14 38 42' fill='%2385cdf5'/%3E%3C/svg%3E";
   const STAT_LABELS = Object.freeze({
     attack: "Attacco",
-    physical: "Fisico",
-    stamina: "Resistenza",
     control: "Controllo",
-    defense: "Difesa",
     speed: "Velocità",
     grit: "Grinta",
+    physical: "Fisico",
+    stamina: "Resistenza",
+    defense: "Difesa",
     save: "Parata",
   });
+
   let liveRun = null;
   let autoClaimProfileId = null;
 
   function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>'"]/g, (char) => ({
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      "'": "&#39;",
-      '"': "&quot;",
-    })[char]);
+    return String(value ?? "")
+      .replaceAll("&", "&amp;")
+      .replaceAll("<", "&lt;")
+      .replaceAll(">", "&gt;")
+      .replaceAll('"', "&quot;")
+      .replaceAll("'", "&#039;");
   }
 
   function installLiveRunCapture() {
     const runState = global.RunState;
     if (!runState?.save || runState.save.__specialRewardLiveRunCapture) return;
-
     const originalSave = runState.save;
     function trackedSave(activeRun, ...args) {
       if (["ie1_s2", IE3_SEASON_ID].includes(activeRun?.seasonId)) liveRun = activeRun;
@@ -61,18 +61,15 @@
     if (button?.disabled) return;
     const context = activeLiveSpecialReward();
     if (!context) return;
-
     button.disabled = true;
     const result = global.SpecialMatchRuntime?.decline?.(context.run, context.pending);
     if (!result || result.status === "no-pending-reward") {
       button.disabled = false;
       return;
     }
-
     context.run.phase = "map";
     context.run.activeMatch = null;
     global.RunState.save(context.run);
-
     if (!returnToMapWithoutReload()) {
       button.disabled = false;
       console.error("Special reward decline: map navigation target unavailable");
@@ -81,16 +78,13 @@
 
   function addDeclineToReplacementModal() {
     const modal = document.querySelector("#modal-root .bench-replacement-modal");
-    if (!modal || modal.querySelector(DECLINE_SELECTOR)) return;
-    if (!activeLiveSpecialReward()) return;
-
+    if (!modal || modal.querySelector(DECLINE_SELECTOR) || !activeLiveSpecialReward()) return;
     let footer = modal.querySelector(".bench-replacement-footer");
     if (!footer) {
       footer = document.createElement("div");
       footer.className = "button-row bench-replacement-footer";
       modal.appendChild(footer);
     }
-
     const button = document.createElement("button");
     button.type = "button";
     button.className = "btn btn-ghost";
@@ -101,8 +95,47 @@
   }
 
   function rarityClass(category) {
-    const key = String(category || "").toLocaleLowerCase("it");
-    return ({ scarso: "rarity-scarso", debole: "rarity-debole", normale: "rarity-normale", buono: "rarity-buono", forte: "rarity-forte", elite: "rarity-elite", mondiale: "rarity-mondiale", leggenda: "rarity-leggenda" })[key] || "rarity-debole";
+    return ({ Scarso: "rarity-scarso", Debole: "rarity-debole", Normale: "rarity-normale", Buono: "rarity-buono", Forte: "rarity-forte", Elite: "rarity-elite", Mondiale: "rarity-mondiale", Leggenda: "rarity-leggenda" })[category] || "rarity-debole";
+  }
+
+  function statIcon(stat) {
+    const icons = {
+      attack: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4M9 12h6"/></svg>`,
+      control: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 4v16M4 12h16M7 7l10 10M17 7 7 17"/></svg>`,
+      speed: `<svg viewBox="0 0 24 24"><path d="m13 2-7 11h6l-1 9 7-12h-6l1-8Z"/></svg>`,
+      grit: `<svg viewBox="0 0 24 24"><path d="M12 21c4-2 7-5 7-9 0-3-2-5-4-7 0 3-2 4-3 5-1-2-1-4-1-6-3 2-6 5-6 9 0 4 3 7 7 8Z"/></svg>`,
+      physical: `<svg viewBox="0 0 24 24"><path d="M7 13c1-5 4-8 8-7 2 1 3 3 2 5l3 1-2 4-4-1-2 4H7v-6Z"/><path d="M5 14h7"/></svg>`,
+      stamina: `<svg viewBox="0 0 24 24"><path d="M12 21S4 16 4 9a4 4 0 0 1 7-3 4 4 0 0 1 7 3c0 7-6 10-6 12Z"/><path d="M7 12h3l1-3 2 6 1-3h3"/></svg>`,
+      defense: `<svg viewBox="0 0 24 24"><path d="M12 3 19 6v6c0 5-3 8-7 9-4-1-7-4-7-9V6l7-3Z"/><path d="M12 7v10"/></svg>`,
+      save: `<svg viewBox="0 0 24 24"><path d="M7 20V8a2 2 0 0 1 4 0v5-7a2 2 0 0 1 4 0v7-4a2 2 0 0 1 4 0v11H7Z"/><path d="M7 14 4 12"/></svg>`,
+    };
+    return `<span class="detail-stat-icon" aria-hidden="true">${icons[stat] || icons.control}</span>`;
+  }
+
+  function imageFallbackAttributes(urls) {
+    const unique = [...new Set((urls || []).filter(Boolean))];
+    return `data-image-fallbacks="${escapeHtml(JSON.stringify(unique))}" data-image-fallback-index="0" onerror="globalThis.handlePlayerImageError && globalThis.handlePlayerImageError(this)"`;
+  }
+
+  function playerImageCandidates(player) {
+    const seasonalFront = player?.frontFullbodyUrl || player?.fullbodyUrl || null;
+    const seasonalPortrait = player?.portraitUrl || null;
+    const compatibleImage = player?.image || player?.imageUrl || null;
+    const portraitUrl = seasonalPortrait || compatibleImage || null;
+    const frontFullbodyUrl = seasonalFront || null;
+    return { portraitUrl, frontFullbodyUrl };
+  }
+
+  function resolvePlayerVisual(player) {
+    const visual = playerImageCandidates(player);
+    const detailFallbacks = [visual.frontFullbodyUrl, visual.portraitUrl, PLAYER_IMAGE_PLACEHOLDER].filter(Boolean);
+    return {
+      portraitUrl: visual.portraitUrl,
+      frontFullbodyUrl: visual.frontFullbodyUrl,
+      detailImageUrl: detailFallbacks[0] || null,
+      detailFallbacks,
+      detailImageKind: visual.frontFullbodyUrl ? "fullbody" : (visual.portraitUrl ? "portrait" : "placeholder"),
+    };
   }
 
   function ie3RewardMeta(context) {
@@ -118,101 +151,63 @@
     };
   }
 
-  function resolveRewardDetailPlayer(candidate, meta) {
-    const entry = {
-      playerId: String(candidate?.playerId || ""),
-      activeProfileId: String(candidate?.profileId || candidate?.activeProfileId || ""),
-      activeRoleVariantId: String(candidate?.defaultRoleVariantId || candidate?.activeRoleVariantId || ""),
-      level: Math.max(0, Math.floor(Number(meta.level || 0))),
-      levelUnits: 0,
-    };
-    const base = global.ProfiledSeasonRuntime?.resolveEffectiveBase?.(entry, IE3_SEASON_ID) || candidate || {};
-    const resolved = global.InazumaProgression?.getPlayerAtLevel
-      ? global.InazumaProgression.getPlayerAtLevel(base, entry.level, meta.database, entry)
-      : base;
-    return { ...base, ...resolved, playerId: entry.playerId, profileId: entry.activeProfileId };
-  }
-
-  function rewardDetailImage(player) {
-    return player?.frontFullbodyUrl || player?.fullbodyUrl || player?.cardImageUrl || player?.imageUrl || player?.portraitUrl || "";
-  }
-
-  function rewardDetailStatsMarkup(player) {
-    const stats = player?.stats || {};
-    return Object.entries(STAT_LABELS).map(([stat, label]) => {
-      const value = Math.max(0, Number(stats[stat] || 0));
-      const width = Math.max(0, Math.min(100, value));
-      return `<div class="detail-stat player-stat-card" style="--stat-value:${width}%"><span class="detail-stat-label">${escapeHtml(label)}</span><strong class="detail-stat-value">${escapeHtml(value)}</strong><span class="detail-stat-track" aria-hidden="true"><i></i></span></div>`;
+  function nativeDetailMarkup(player, meta) {
+    const detailVisual = resolvePlayerVisual(player);
+    const resolved = player.stats && player.baseStats
+      ? player
+      : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(Number(meta.level || 0)), meta.database);
+    const baseStats = resolved.baseStats || resolved.stats || {};
+    const effectiveStats = resolved.baseStats ? resolved.stats : resolved.stats;
+    const stats = Object.entries(STAT_LABELS).map(([stat, label]) => {
+      const base = Number(baseStats[stat] || 0);
+      const effective = Number(effectiveStats?.[stat] || 0);
+      const bonus = effective - base;
+      const barValue = Math.max(0, Math.min(100, effective));
+      return `<div class="detail-stat player-stat-card" style="--stat-value:${barValue}%">${statIcon(stat)}<span class="detail-stat-label">${label}</span><strong class="detail-stat-value">${effective}</strong>${bonus > 0 ? `<em class="detail-stat-bonus">+${bonus}</em>` : ""}<span class="detail-stat-track" aria-hidden="true"><i></i></span></div>`;
     }).join("");
-  }
-
-  function nativePlayerDetailMarkup(candidate, meta) {
-    const player = resolveRewardDetailPlayer(candidate, meta);
-    const category = String(player.category || candidate?.category || "Debole");
-    const role = String(player.position || player.normalizedRole || candidate?.position || "-");
-    const element = String(player.element || player.type || candidate?.element || candidate?.type || "-");
-    const overall = Number(player.overall ?? player.finalOverall ?? 0);
-    const potential = Number(player.potential ?? player.finalOverall ?? overall);
-    const image = rewardDetailImage(player);
+    const potential = resolved.potential ?? player.finalOverall;
+    const displayLevel = global.LevelProgression?.formatLevel?.(meta.level, liveRun?.seasonId) ?? meta.level;
     const teamLogo = meta.team?.logoUrl || "";
-    const longNameClass = String(player.name || "").length > 18 ? "player-detail-hero--extra-long-name" : (String(player.name || "").length > 12 ? "player-detail-hero--long-name" : "");
+    const teamBadge = `<div class="player-detail-team" aria-label="Squadra ${escapeHtml(meta.teamName)}">${teamLogo ? `<img src="${escapeHtml(teamLogo)}" alt="${escapeHtml(meta.teamName)}" loading="lazy" />` : ""}<strong>${escapeHtml(meta.teamName)}</strong></div>`;
+    const equipmentMarkup = `<div class="equipped-detail equipped-detail-empty"><div class="equipped-detail-copy"><span>Slot disponibile</span><strong>Nessun equipaggiamento</strong><small>Questo giocatore non ha ancora un oggetto assegnato.</small></div></div>`;
 
-    return `
-      <div class="player-detail-layout ${rarityClass(category)}">
-        <section class="player-detail-hero ${longNameClass}">
-          <div class="player-detail-identity">
-            <div class="player-detail-team" aria-label="Squadra ${escapeHtml(meta.teamName)}">
-              ${teamLogo ? `<img src="${escapeHtml(teamLogo)}" alt="" loading="lazy" decoding="async">` : ""}
-              <strong>${escapeHtml(meta.teamName)}</strong>
-            </div>
-            <div class="player-detail-heading"><p class="eyebrow">Scheda giocatore</p></div>
-            <h2 class="player-detail-name">${escapeHtml(player.name || candidate?.name || "Giocatore")}</h2>
-            <div class="player-detail-tags">
-              <span class="role-chip"><b>${escapeHtml(role)}</b></span>
-              <span class="role-chip detail-element-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4 3 7 6 7 10a7 7 0 0 1-14 0c0-4 3-7 7-10Z"/></svg>${escapeHtml(element)}</span>
-              <span class="role-chip">Lv ${escapeHtml(meta.level)}</span>
-            </div>
-            <div class="overall-comparison">
-              <div><span>Overall<br><b>attuale</b></span><strong>${escapeHtml(overall)}</strong></div>
-              <div><span>Potenziale</span><strong>${escapeHtml(potential)}</strong></div>
-            </div>
-            <p class="detail-category"><span aria-hidden="true">★</span><small>Rarità</small><strong>${escapeHtml(category)}</strong></p>
-          </div>
-          <div class="player-detail-visual ${rarityClass(category)}">${image ? `<img class="player-fullbody player-fullbody--fullbody" src="${escapeHtml(image)}" alt="${escapeHtml(player.name || candidate?.name || "Giocatore")}" loading="lazy" decoding="async">` : '<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>'}</div>
-        </section>
-        <section class="player-detail-content">
-          <section class="player-detail-section"><h3><span>Statistiche</span></h3><div class="detail-stats">${rewardDetailStatsMarkup(player)}</div></section>
-          <section class="player-detail-section player-detail-equipment"><h3><span>Equipaggiamento</span></h3><div class="equipped-detail equipped-detail-empty"><div class="equipped-detail-copy"><span>Slot disponibile</span><strong>Nessun equipaggiamento</strong><small>Questo giocatore non ha ancora un oggetto assegnato.</small></div></div></section>
-        </section>
-      </div>`;
+    return `<div class="player-detail-layout ${rarityClass(resolved.category)}">
+      <section class="player-detail-hero ${String(resolved.name || "").length > 18 ? "player-detail-hero--extra-long-name" : (String(resolved.name || "").length > 12 ? "player-detail-hero--long-name" : "")}">
+        <div class="player-detail-identity">${teamBadge}<div class="player-detail-heading"><p class="eyebrow">Scheda giocatore</p></div><h2 class="player-detail-name">${escapeHtml(resolved.name)}</h2><div class="player-detail-tags"><span class="role-chip"><b>${escapeHtml(resolved.position)}</b></span><span class="role-chip detail-element-chip"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c4 3 7 6 7 10a7 7 0 0 1-14 0c0-4 3-7 7-10Z"/></svg>${escapeHtml(resolved.element || resolved.type || "-")}</span><span class="role-chip">Lv ${escapeHtml(displayLevel)}</span></div><div class="overall-comparison"><div><span>Overall<br><b>attuale</b></span><strong>${escapeHtml(resolved.overall ?? "N/D")}</strong></div><div><span>Potenziale</span><strong>${escapeHtml(potential)}</strong></div></div><p class="detail-category"><span aria-hidden="true">★</span><small>Rarità</small><strong>${escapeHtml(resolved.category)}</strong></p></div>
+        <div class="player-detail-visual ${rarityClass(resolved.category)}">${detailVisual.detailImageUrl ? `<img class="player-fullbody player-fullbody--${escapeHtml(detailVisual.detailImageKind)}" src="${escapeHtml(detailVisual.detailImageUrl)}" alt="${escapeHtml(resolved.name)}" loading="lazy" decoding="async" ${imageFallbackAttributes(detailVisual.detailFallbacks)} />` : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`}</div>
+      </section>
+      <section class="player-detail-content"><section class="player-detail-section"><h3><span>Statistiche</span></h3><div class="detail-stats">${stats}</div></section><section class="player-detail-section player-detail-equipment"><h3><span>Equipaggiamento</span></h3>${equipmentMarkup}</section></section>
+    </div>`;
   }
 
-  function showNativeIe3PlayerDetail(candidate, meta) {
+  function showIe3PlayerDetail(player, meta) {
     const modalRoot = document.getElementById("modal-root");
     const rewardBackdrop = modalRoot?.firstElementChild;
     if (!modalRoot || !rewardBackdrop) return;
-
+    const rewardScrollTop = rewardBackdrop.querySelector(".modal")?.scrollTop || 0;
     rewardBackdrop.remove();
+
     const backdrop = document.createElement("div");
     backdrop.className = "modal-backdrop";
     const modal = document.createElement("section");
     modal.className = "modal player-detail-modal";
-    modal.innerHTML = `<button type="button" class="modal-close" data-close-modal aria-label="Chiudi">✕</button>${nativePlayerDetailMarkup(candidate, meta)}`;
+    modal.innerHTML = `<button type="button" class="modal-close" data-close-modal aria-label="Chiudi">✕</button>${nativeDetailMarkup(player, meta)}`;
     backdrop.append(modal);
     modalRoot.append(backdrop);
     modalRoot.classList.add("has-open-modal");
+    modal.scrollTop = 0;
 
     const restoreReward = () => {
       if (modalRoot.firstElementChild !== backdrop) return;
       backdrop.remove();
       modalRoot.append(rewardBackdrop);
       modalRoot.classList.add("has-open-modal");
+      const rewardModal = rewardBackdrop.querySelector(".modal");
+      if (rewardModal) rewardModal.scrollTop = rewardScrollTop;
       rewardBackdrop.querySelector("[data-ie3-secondary-detail]")?.focus?.({ preventScroll: true });
     };
-
     modal.querySelector("[data-close-modal]")?.addEventListener("click", restoreReward);
     backdrop.addEventListener("click", (event) => { if (event.target === backdrop) restoreReward(); });
-    modal.scrollTop = 0;
   }
 
   function patchIe3SpecialRewardModal() {
@@ -245,19 +240,7 @@
 
     const standard = document.createElement("section");
     standard.className = "ie3-secondary-standard-reward";
-    standard.innerHTML = `
-      <div class="modal-head event-modal-head pull-selection-head">
-        <button type="button" class="btn btn-back" data-ie3-secondary-back>← TORNA ALLA MAPPA</button>
-        <div>
-          <p class="eyebrow">SCELTA GIOCATORE</p>
-          <h2>RICOMPENSA · ${escapeHtml(meta.teamName)}</h2>
-          <p class="muted">Scegli 1 giocatore su 3 · Livello ${escapeHtml(meta.level)}</p>
-        </div>
-      </div>
-      <div class="candidate-grid pull-offer-grid ie3-secondary-choice-grid" data-ie3-secondary-choice-grid></div>
-      <div class="button-row pull-selection-footer ie3-secondary-reward-footer">
-        <button type="button" class="btn btn-ghost" data-ie3-secondary-decline>RINUNCIA</button>
-      </div>`;
+    standard.innerHTML = `<div class="modal-head event-modal-head pull-selection-head"><button type="button" class="btn btn-back" data-ie3-secondary-back>← TORNA ALLA MAPPA</button><div><p class="eyebrow">SCELTA GIOCATORE</p><h2>RICOMPENSA · ${escapeHtml(meta.teamName)}</h2><p class="muted">Scegli 1 giocatore su 3 · Livello ${escapeHtml(meta.level)}</p></div></div><div class="candidate-grid pull-offer-grid ie3-secondary-choice-grid" data-ie3-secondary-choice-grid></div><div class="button-row pull-selection-footer ie3-secondary-reward-footer"><button type="button" class="btn btn-ghost" data-ie3-secondary-decline>RINUNCIA</button></div>`;
 
     const grid = standard.querySelector("[data-ie3-secondary-choice-grid]");
     nativeCards.forEach((nativeCard, index) => {
@@ -270,10 +253,9 @@
       const cardClone = nativeCard.cloneNode(true);
       cardClone.removeAttribute("id");
       option.append(cardClone);
-
       const actions = document.createElement("div");
       actions.className = "pull-choice-actions";
-      actions.innerHTML = `<div class="button-row pull-choice-action-row"><button type="button" class="btn" data-ie3-secondary-confirm>SÌ</button><button type="button" class="btn" data-ie3-secondary-detail>SCHEDA</button></div>`;
+      actions.innerHTML = `<div class="button-row pull-choice-action-row"><button type="button" class="btn btn-primary" data-ie3-secondary-confirm>SÌ</button><button type="button" class="btn btn-yellow" data-ie3-secondary-detail>SCHEDA</button></div>`;
       actions.querySelector("[data-ie3-secondary-confirm]")?.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
@@ -283,7 +265,7 @@
       actions.querySelector("[data-ie3-secondary-detail]")?.addEventListener("click", (event) => {
         event.preventDefault();
         event.stopPropagation();
-        showNativeIe3PlayerDetail(candidate, meta);
+        showIe3PlayerDetail(candidate, meta);
       });
       option.append(actions);
       grid.append(option);
