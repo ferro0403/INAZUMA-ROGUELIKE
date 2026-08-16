@@ -1,15 +1,15 @@
 /* Targeted permanent shop fixes — 2026-08-16 */
 
-/* Mondiale uses the canonical red rarity accent, matching Development. */
+/* Match the exact Mondiale/salmon band already used in Development. */
 .shop-screen .shop-project--mondiale {
-  --shop-tier-accent: #d93842;
+  --shop-tier-accent: #f09e92;
 }
 
-/* Keep the Dragon Sticker optically centered inside its currency frame. */
+/* Keep the Dragon Sticker smaller and optically centered inside its currency frame. */
 .shop-screen .shop-coins > .development-currency-icon {
-  flex: 0 0 52px;
-  width: 52px;
-  height: 52px;
+  flex: 0 0 46px;
+  width: 46px;
+  height: 46px;
   display: grid;
   place-items: center;
   align-self: center;
@@ -19,8 +19,8 @@
 
 .shop-screen .shop-coins > .development-currency-icon > img {
   display: block;
-  width: 100%;
-  height: 100%;
+  width: 38px;
+  height: 38px;
   margin: 0;
   padding: 0;
   object-fit: contain;
@@ -28,10 +28,21 @@
   transform: none;
 }
 
+/* Purchase modal stays clean: no rarity-colored corner beside the title. */
+.shop-buy-modal::after {
+  display: none;
+  content: none;
+}
+
 @media (max-width: 430px) {
   .shop-screen .shop-coins > .development-currency-icon {
-    flex-basis: 42px;
-    width: 42px;
-    height: 42px;
+    flex-basis: 40px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .shop-screen .shop-coins > .development-currency-icon > img {
+    width: 33px;
+    height: 33px;
   }
 }
