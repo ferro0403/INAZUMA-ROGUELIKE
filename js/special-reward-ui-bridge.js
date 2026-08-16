@@ -126,41 +126,6 @@
     if (label) label.textContent = CUP_LABELS[seasonId] || "COPPA SEASON";
   }
 
-  function purchaseSummary(button) {
-    if (button.matches("[data-buy-project]")) {
-      const rarity = String(button.dataset.buyProject || "");
-      const price = Number(global.DevelopmentV2?.PROJECT_PRICES?.[rarity] || 0);
-      return { name: `PROGETTO ${rarity.toUpperCase()}`, cost: `${price} MONETE` };
-    }
-    const emblemId = String(button.dataset.buyEmblem || "");
-    const product = global.ShopCatalog?.build?.().find((item) => String(item.emblemId) === emblemId);
-    if (!product) return { name: "QUESTO STEMMA", cost: "il costo indicato" };
-    const seasonId = normalizeSeasonId(product.seasonId);
-    const cups = Number(product.cups || 0);
-    return {
-      name: `STEMMA ${String(product.name || "").toUpperCase()}`,
-      cost: `${Number(product.coins || 0)} MONETE${cups ? ` + ${cups} ${CUP_LABELS[seasonId] || "COPPA SEASON"}` : ""}`,
-    };
-  }
-
-  function installPurchaseConfirmation() {
-    document.addEventListener("click", (event) => {
-      const button = event.target?.closest?.("[data-buy-project], [data-buy-emblem]");
-      if (!button || button.disabled) return;
-      if (button.dataset.purchaseConfirmed === "1") {
-        delete button.dataset.purchaseConfirmed;
-        return;
-      }
-      event.preventDefault();
-      event.stopImmediatePropagation();
-      const summary = purchaseSummary(button);
-      const accepted = global.confirm(`Stai acquistando ${summary.name}.\nCosto: ${summary.cost}.\n\nConfermi l'acquisto?`);
-      if (!accepted) return;
-      button.dataset.purchaseConfirmed = "1";
-      button.click();
-    }, true);
-  }
-
   function installRewardObserver() {
     const observer = new MutationObserver((records) => {
       for (const record of records) {
@@ -178,6 +143,5 @@
   }
 
   installRewardSeasonGuard();
-  installPurchaseConfirmation();
   installRewardObserver();
 })(globalThis);
