@@ -1,13 +1,13 @@
 /* Prematch-only tuning for the shared 5v5 player picker.
    Keep the formation editor untouched: this file only scopes to .five-match-screen. */
 
-/* Prematch picker: slightly narrower than the formation editor, but substantially taller
-   so mobile users can see multiple replacement candidates at once. */
+/* Prematch picker: keep it compact in width but use almost all of the tactical pitch height
+   so several replacement candidates remain visible on mobile. */
 .five-match-screen .five-selector.five-selector-floating {
-  top: 24px;
+  top: 14px;
   left: 26px;
   width: min(350px, calc(100% - 82px));
-  max-height: min(620px, calc(100% - 30px));
+  max-height: min(690px, calc(100% - 18px));
   padding: 12px;
   grid-template-rows: auto minmax(0, 1fr);
 }
@@ -17,7 +17,7 @@
 }
 
 .five-match-screen .five-selector.five-selector-floating .five-roster-list {
-  max-height: min(470px, 58vh);
+  max-height: min(540px, 65vh);
   gap: 7px;
   padding: 2px 4px 7px 1px;
 }
@@ -30,15 +30,21 @@
   --five-roster-text: var(--rarity-text, #111216);
   min-height: 68px;
   display: grid;
-  grid-template-columns: 50px minmax(0, 1fr) auto;
+  grid-template-columns: 50px minmax(0, 1fr);
   grid-template-rows: 1fr;
   align-items: center;
   gap: 8px;
-  padding: 6px 7px;
+  padding: 6px 9px 6px 7px;
   background: var(--five-roster-bg) !important;
   border-color: var(--five-roster-border) !important;
   color: var(--five-roster-text) !important;
   box-shadow: 3px 4px 0 rgba(17, 18, 22, .15);
+}
+
+/* In prematch the entire player card is already the tap target. The inherited SCEGLI
+   badge is redundant and was appearing as a stray white strip between cards. */
+.five-match-screen .five-selector.five-selector-floating .five-roster-state {
+  display: none !important;
 }
 
 /* Explicit rarity fallbacks for the prematch context. These mirror the game's
@@ -95,12 +101,6 @@
   font-size: .63rem;
 }
 
-.five-match-screen .five-selector.five-selector-floating .five-roster-state {
-  min-width: 60px;
-  padding: 5px 6px;
-  font-size: .5rem;
-}
-
 /* Preserve the special visual state for the player occupying the selected slot. */
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.current-starter {
   background: #fff3b5 !important;
@@ -115,10 +115,10 @@
 
 @media (max-width: 780px) {
   .five-match-screen .five-selector.five-selector-floating {
-    top: 20px;
+    top: 12px;
     left: 24px;
     width: calc(100% - 78px);
-    max-height: calc(100% - 26px);
+    max-height: calc(100% - 16px);
     padding: 10px;
   }
 
@@ -129,15 +129,15 @@
 
   .five-match-screen .five-selector.five-selector-floating .five-roster-list {
     grid-template-columns: 1fr;
-    max-height: min(455px, 57vh);
+    max-height: min(525px, 64vh);
     gap: 7px;
   }
 
   .five-match-screen .five-selector.five-selector-floating .five-roster-card {
     min-height: 66px;
-    grid-template-columns: 46px minmax(0, 1fr) auto;
+    grid-template-columns: 46px minmax(0, 1fr);
     gap: 7px;
-    padding: 5px 6px;
+    padding: 5px 8px 5px 6px;
   }
 
   .five-match-screen .five-selector.five-selector-floating .five-roster-portrait {
@@ -148,30 +148,24 @@
 
 @media (max-width: 390px) {
   .five-match-screen .five-selector.five-selector-floating {
-    top: 18px;
+    top: 10px;
     left: 22px;
     width: calc(100% - 72px);
-    max-height: calc(100% - 24px);
+    max-height: calc(100% - 14px);
     padding: 9px;
   }
 
   .five-match-screen .five-selector.five-selector-floating .five-roster-list {
-    max-height: min(430px, 56vh);
+    max-height: min(500px, 63vh);
   }
 
   .five-match-screen .five-selector.five-selector-floating .five-roster-card {
     min-height: 64px;
-    grid-template-columns: 42px minmax(0, 1fr) auto;
+    grid-template-columns: 42px minmax(0, 1fr);
   }
 
   .five-match-screen .five-selector.five-selector-floating .five-roster-portrait {
     width: 40px;
     height: 46px;
-  }
-
-  .five-match-screen .five-selector.five-selector-floating .five-roster-state {
-    min-width: 54px;
-    padding-inline: 4px;
-    font-size: .46rem;
   }
 }
