@@ -1,13 +1,11 @@
 /* Prematch-only tuning for the shared 5v5 player picker.
    Keep the formation editor untouched: this file only scopes to .five-match-screen. */
 
-/* Prematch picker: keep it compact in width but use almost all of the tactical pitch height
-   so several replacement candidates remain visible on mobile. */
 .five-match-screen .five-selector.five-selector-floating {
-  top: 14px;
-  left: 26px;
-  width: min(350px, calc(100% - 82px));
-  max-height: min(690px, calc(100% - 18px));
+  top: 8px;
+  left: 18px;
+  width: calc(100% - 54px);
+  max-height: calc(100% - 12px);
   padding: 12px;
   grid-template-rows: auto minmax(0, 1fr);
 }
@@ -17,66 +15,57 @@
 }
 
 .five-match-screen .five-selector.five-selector-floating .five-roster-list {
-  max-height: min(540px, 65vh);
-  gap: 7px;
-  padding: 2px 4px 7px 1px;
+  max-height: min(590px, 70vh);
+  gap: 8px;
+  padding: 2px 4px 8px 1px;
 }
 
-/* The shared markup already carries rarity-* classes. Keep the exact rarity palette
-   and make it visually stronger in the prematch picker instead of falling back to navy. */
 .five-match-screen .five-selector.five-selector-floating .five-roster-card {
   --five-roster-bg: var(--rarity-bg, #fff);
   --five-roster-border: var(--rarity-border, #747474);
   --five-roster-text: var(--rarity-text, #111216);
-  min-height: 68px;
+  min-height: 76px;
   display: grid;
-  grid-template-columns: 50px minmax(0, 1fr);
+  grid-template-columns: 58px minmax(0, 1fr);
   grid-template-rows: 1fr;
   align-items: center;
-  gap: 8px;
-  padding: 6px 9px 6px 7px;
+  gap: 9px;
+  padding: 6px 10px 6px 7px;
+  overflow: visible;
   background: var(--five-roster-bg) !important;
   border-color: var(--five-roster-border) !important;
   color: var(--five-roster-text) !important;
   box-shadow: 3px 4px 0 rgba(17, 18, 22, .15);
 }
 
-/* In prematch the entire player card is already the tap target. The inherited SCEGLI
-   badge is redundant and was appearing as a stray white strip between cards. */
+/* The whole candidate card is the tap target: never render the inherited white SCEGLI strip. */
 .five-match-screen .five-selector.five-selector-floating .five-roster-state {
   display: none !important;
 }
 
-/* Explicit rarity fallbacks for the prematch context. These mirror the game's
-   existing rarity language and guarantee the candidate cards never collapse
-   to the generic dark card styling. */
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-common,
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-base {
   --five-roster-bg: #f4f4ef;
   --five-roster-border: #8d9499;
   --five-roster-text: #111216;
 }
-
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-uncommon,
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-pregiato {
   --five-roster-bg: #e4f6e8;
   --five-roster-border: #46b96f;
   --five-roster-text: #111216;
 }
-
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-rare,
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-prestigio {
   --five-roster-bg: #e6f0ff;
   --five-roster-border: #4d8fd8;
   --five-roster-text: #111216;
 }
-
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-epic {
   --five-roster-bg: #f0e7ff;
   --five-roster-border: #8b61d4;
   --five-roster-text: #111216;
 }
-
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.rarity-legendary {
   --five-roster-bg: #fff0c8;
   --five-roster-border: #d99a16;
@@ -84,30 +73,25 @@
 }
 
 .five-match-screen .five-selector.five-selector-floating .five-roster-portrait {
-  width: 48px;
-  height: 54px;
+  width: 56px;
+  height: 64px;
+  object-fit: contain;
+  object-position: center bottom;
+  overflow: visible;
 }
 
 .five-match-screen .five-selector.five-selector-floating .five-roster-copy strong,
 .five-match-screen .five-selector.five-selector-floating .five-roster-copy small {
   color: var(--five-roster-text) !important;
 }
+.five-match-screen .five-selector.five-selector-floating .five-roster-copy strong { font-size: .82rem; }
+.five-match-screen .five-selector.five-selector-floating .five-roster-copy small { font-size: .64rem; }
 
-.five-match-screen .five-selector.five-selector-floating .five-roster-copy strong {
-  font-size: .8rem;
-}
-
-.five-match-screen .five-selector.five-selector-floating .five-roster-copy small {
-  font-size: .63rem;
-}
-
-/* Preserve the special visual state for the player occupying the selected slot. */
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.current-starter {
   background: #fff3b5 !important;
   border-color: #111216 !important;
   color: #111216 !important;
 }
-
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.current-starter .five-roster-copy strong,
 .five-match-screen .five-selector.five-selector-floating .five-roster-card.current-starter .five-roster-copy small {
   color: #111216 !important;
@@ -115,57 +99,50 @@
 
 @media (max-width: 780px) {
   .five-match-screen .five-selector.five-selector-floating {
-    top: 12px;
-    left: 24px;
-    width: calc(100% - 78px);
-    max-height: calc(100% - 16px);
+    top: 7px;
+    left: 16px;
+    width: calc(100% - 48px);
+    max-height: calc(100% - 10px);
     padding: 10px;
   }
-
   .five-match-screen .five-selector.five-selector-floating .section-head.compact {
     padding-right: 38px;
     padding-bottom: 6px;
   }
-
   .five-match-screen .five-selector.five-selector-floating .five-roster-list {
     grid-template-columns: 1fr;
-    max-height: min(525px, 64vh);
-    gap: 7px;
+    max-height: min(570px, 69vh);
+    gap: 8px;
   }
-
   .five-match-screen .five-selector.five-selector-floating .five-roster-card {
-    min-height: 66px;
-    grid-template-columns: 46px minmax(0, 1fr);
-    gap: 7px;
-    padding: 5px 8px 5px 6px;
+    min-height: 74px;
+    grid-template-columns: 56px minmax(0, 1fr);
+    gap: 8px;
+    padding: 5px 9px 5px 6px;
   }
-
   .five-match-screen .five-selector.five-selector-floating .five-roster-portrait {
-    width: 44px;
-    height: 50px;
+    width: 54px;
+    height: 62px;
   }
 }
 
 @media (max-width: 390px) {
   .five-match-screen .five-selector.five-selector-floating {
-    top: 10px;
-    left: 22px;
-    width: calc(100% - 72px);
-    max-height: calc(100% - 14px);
+    top: 6px;
+    left: 14px;
+    width: calc(100% - 42px);
+    max-height: calc(100% - 8px);
     padding: 9px;
   }
-
   .five-match-screen .five-selector.five-selector-floating .five-roster-list {
-    max-height: min(500px, 63vh);
+    max-height: min(550px, 68vh);
   }
-
   .five-match-screen .five-selector.five-selector-floating .five-roster-card {
-    min-height: 64px;
-    grid-template-columns: 42px minmax(0, 1fr);
+    min-height: 72px;
+    grid-template-columns: 54px minmax(0, 1fr);
   }
-
   .five-match-screen .five-selector.five-selector-floating .five-roster-portrait {
-    width: 40px;
-    height: 46px;
+    width: 52px;
+    height: 60px;
   }
 }
