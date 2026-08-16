@@ -30,7 +30,11 @@
     const identityId = options.teamIdentity?.emblemId;
     const encodedTeam = parseTeamEmblemId(identityId);
     const teamId = options.teamId || encodedTeam?.teamId;
-    const seasonId = options.seasonId || encodedTeam?.seasonId || global.SeasonRegistry?.activeId?.() || "ie1";
+    // If the selected emblem encodes its source season (team:<seasonId>:<teamId>),
+    // that source season must win over the current run season. Otherwise a crest
+    // bought in IE1 and used in IE2/IE3/Ares is looked up in the wrong database
+    // and falls back to the default lightning emblem.
+    const seasonId = encodedTeam?.seasonId || options.seasonId || global.SeasonRegistry?.activeId?.() || "ie1";
     if (teamId) return resolveTeamById(teamId, seasonId, { team: options.team, fallbackKind: options.fallbackKind });
     const definition = getDefinition(identityId);
     if (definition) {

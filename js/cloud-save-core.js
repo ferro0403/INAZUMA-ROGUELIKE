@@ -97,9 +97,9 @@
     const value = normalize(snapshot || {});
     const albumUnlocked = Object.values(value.album?.collections || {}).reduce((total, collection) => total + Object.keys(collection?.unlockedPlayerIds || {}).length, 0);
     const development = value.development || {};
-    const developmentProgress = Number(development.coins) > 0 || Number(development.cups) > 0 || positiveValues(development.projects) || positiveValues(development.projectBuild)
+    const developmentProgress = Number(development.coins) > 0 || Number(development.legacyCups) > 0 || positiveValues(development.cupsBySeason) || positiveValues(development.projects) || positiveValues(development.legacyProjectBuild)
       || nonEmptyObject(development.players) || (development.evolutionHistory || []).length > 0 || (development.redeemedRunIds || []).length > 0
-      || (development.victoryRewardRunIds || []).length > 0 || nonEmptyObject(development.projectPullLedger);
+      || (development.victoryRewardRunIds || []).length > 0 || (development.unlockedEmblems || []).length > 0;
     const summary = {
       profile: !!value.profile?.teamIdentity,
       runIe1: value.runs?.ie1 != null,

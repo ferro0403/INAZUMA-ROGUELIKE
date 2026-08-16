@@ -1,0 +1,35 @@
+const assert = require("assert");
+const fs = require("fs");
+
+const app = fs.readFileSync(require.resolve("../js/app.js"), "utf8");
+const css = fs.readFileSync(require.resolve("../css/game.css"), "utf8");
+const development = fs.readFileSync(require.resolve("../js/development-v2.js"), "utf8");
+
+assert.match(app, /id: "open-shop-home", label: "Negozio"/);
+assert.match(app, /id="open-settings-home" aria-label="Impostazioni"/);
+assert.doesNotMatch(app.match(/const developmentCard = `[^`]+`/)[0], /NEGOZIO/);
+assert.match(app, /document\.querySelector\("\.shop-back"\)\.onclick = renderHome/);
+assert.match(app, /addEventListener\("click", \(\) => renderSettings\(\{ view: "main" \}\)\)/);
+assert.doesNotMatch(app, /addEventListener\("click", renderSettings\)/);
+assert.match(app, /const selectingEmblem = options\?\.view === "emblems"/);
+assert.match(app, /selectingEmblem \? renderSettings\(\{ view: "main" \}\) : renderHome\(\)/);
+assert.doesNotMatch(app.slice(app.indexOf("async function renderShop"), app.indexOf("function renderSettings")), /data-equip-emblem|>SELEZIONA</);
+assert.match(app, /const choices = \[\{ emblemId: "default-lightning"/);
+assert.match(app, /ShopCatalog\.build\(\)\.filter\(\(item\) => owned\.has\(item\.emblemId\)\)/);
+assert.match(development, /ie1: .*ttzfl1b8nbe\.png/);
+assert.match(development, /ie1_s2: .*am1r5xc99es\.png/);
+assert.match(development, /ie1_s3: .*8kamtdks40c\.png/);
+assert.match(development, /ie2: .*radfiq7yd5u\.png/);
+const assetUrls = [...development.matchAll(/(?:ie1|ie1_s2|ie1_s3|ie2): "(https:[^"]+)"/g)].map((match) => match[1]);
+assert.equal(assetUrls.length, 4);
+assert.equal(new Set(assetUrls).size, 4, "every Season cup must use a distinct official asset");
+assert.match(app, /data-cup-season=/);
+assert.match(app, /cupIcon\(product\.seasonId, "shop-price-cup"\)/);
+assert.doesNotMatch(app, /data-cup-fallback/);
+assert.match(app, /const tierOrder = \{ base: 0, rare: 1, epic: 2, iconic: 3 \}/);
+assert.match(app, /tierOrder\[a\.rarity\] - tierOrder\[b\.rarity\] \|\| a\.name\.localeCompare/);
+assert.match(app, /DEV_MODE \? shopDevMarkup\(\) : ""/);
+assert.match(app, /Math\.max\(state\.coins, 10000\)/);
+assert.match(css, /\.shop-product \.btn\{[^}]*background:var\(--yellow\)!important[^}]*background-image:none!important/);
+assert.match(css, /\.settings-screen \.settings-panel \.btn-yellow\{[^}]*background:#ffd21f!important[^}]*background-image:none!important/);
+console.log("shop-settings-integration-test: navigation, ownership, cup assets and scoped visuals OK");
