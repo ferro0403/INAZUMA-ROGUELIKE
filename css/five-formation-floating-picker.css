@@ -15,7 +15,7 @@
   position: relative;
 }
 
-.five-screen .five-selector.five-selector-floating {
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating {
   position: absolute !important;
   z-index: 28;
   top: 62px;
@@ -35,11 +35,11 @@
   box-shadow: 8px 9px 0 rgba(17, 18, 22, .22);
 }
 
-.five-screen .five-selector.five-selector-floating.is-open {
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating.is-open {
   display: grid !important;
 }
 
-.five-screen .five-selector.five-selector-floating::after {
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating::after {
   content: "";
   position: absolute;
   z-index: 1;
@@ -52,7 +52,7 @@
   border-left: 19px solid #111216;
 }
 
-.five-screen .five-selector.five-selector-floating::before {
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating::before {
   content: "";
   position: absolute;
   z-index: 2;
@@ -65,17 +65,17 @@
   border-left: 14px solid #fffdf6;
 }
 
-.five-screen .five-selector.five-selector-floating .section-head.compact {
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact {
   margin: 0;
   padding: 0 52px 10px 0;
   border-bottom: 2px solid #111216;
 }
 
-.five-screen .five-selector.five-selector-floating .section-head.compact .eyebrow {
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact .eyebrow {
   color: #8f6b06;
 }
 
-.five-screen .five-selector.five-selector-floating .section-head.compact h3 {
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact h3 {
   margin: 2px 0 2px;
   color: #111216;
   font-size: clamp(1rem, 4vw, 1.28rem);
@@ -83,7 +83,7 @@
   text-transform: uppercase;
 }
 
-.five-screen .five-selector.five-selector-floating .section-head.compact .muted {
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact .muted {
   margin: 0;
   color: #68645c;
 }
@@ -115,12 +115,12 @@
 
 /* The slot already determines compatibility: these legacy controls are redundant
    in the contextual picker and removal is intentionally not exposed here. */
-.five-screen .five-selector.five-selector-floating .role-filter-bar,
-.five-screen .five-selector.five-selector-floating #clear-five-slot {
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .role-filter-bar,
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating #clear-five-slot {
   display: none !important;
 }
 
-.five-screen .five-selector.five-selector-floating .five-roster-list {
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-list {
   min-height: 0;
   max-height: min(360px, 46vh);
   padding: 1px 4px 4px 1px;
@@ -129,12 +129,27 @@
   scrollbar-gutter: stable;
 }
 
-.five-screen .five-selector.five-selector-floating .five-roster-card {
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-card {
   min-height: 76px;
 }
 
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-card.current-starter {
+  border-color: #111216;
+  background: #fff3b5;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-card.current-starter:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-card.current-starter .five-roster-state {
+  background: #111216;
+  color: #fffdf6;
+}
+
 @media (max-width: 780px) {
-  .five-screen .five-selector.five-selector-floating {
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating {
     top: 56px;
     left: 10px;
     width: calc(100% - 30px);
@@ -144,7 +159,7 @@
     box-shadow: 5px 6px 0 rgba(17, 18, 22, .2);
   }
 
-  .five-screen .five-selector.five-selector-floating::after {
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating::after {
     top: 76px;
     right: -16px;
     border-top-width: 13px;
@@ -152,7 +167,7 @@
     border-left-width: 16px;
   }
 
-  .five-screen .five-selector.five-selector-floating::before {
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating::before {
     top: 79px;
     right: -11px;
     border-top-width: 10px;
@@ -169,29 +184,29 @@
     font-size: 1.55rem;
   }
 
-  .five-screen .five-selector.five-selector-floating .section-head.compact {
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact {
     padding-right: 42px;
   }
 
-  .five-screen .five-selector.five-selector-floating .section-head.compact .muted {
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact .muted {
     font-size: .62rem;
   }
 
-  .five-screen .five-selector.five-selector-floating .five-roster-list {
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-list {
     grid-template-columns: 1fr;
     max-height: min(300px, 38vh);
   }
 }
 
 @media (max-width: 390px) {
-  .five-screen .five-selector.five-selector-floating {
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating {
     top: 52px;
     left: 8px;
     width: calc(100% - 25px);
     padding: 10px;
   }
 
-  .five-screen .five-selector.five-selector-floating .five-roster-list {
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-list {
     max-height: min(280px, 36vh);
   }
 }

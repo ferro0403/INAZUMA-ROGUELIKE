@@ -524,6 +524,23 @@
     return resolvedRosterPlayer(playerId)?.overall || 0;
   }
 
+  function optimizeLineupsForNewPlayer(playerId) {
+    const formation = formationById(run?.formationId) || formationById("4-3-3");
+    const result = global.SmartLineup.optimizeLineupsForNewPlayer(run, playerId, {
+      enabled: global.RunState.loadProfile().preferences.smartAutoLineup,
+      getRole: effectiveRosterRole,
+      getOverall: fiveOverallForPlayerId,
+      elevenSlotRoles: formation.slotRoles,
+      fiveFormation: run?.fiveVFive ? global.FiveVFive.formationById(run.fiveVFive.formation) : null,
+      assignFive: (slotKey, id) => global.FiveVFive.assign(run, slotKey, id, fiveRoleForPlayerId),
+    });
+    if (result.elevenChanged || result.fiveChanged) {
+      const areas = [result.elevenChanged ? "11v11" : null, result.fiveChanged ? "5v5" : null].filter(Boolean).join(" e ");
+      toast(`AUTO-FORMAZIONE — aggiornata ${areas}`);
+    }
+    return result;
+  }
+
   function fiveVFiveStatus() {
     ensureFiveVFive();
     return global.FiveVFive.validate(run, fiveRoleForPlayerId);
@@ -1754,11 +1771,16 @@
     const choices = [{ emblemId: "default-lightning", name: "Inazuma Lightning", seasonId: "default" }, ...catalog];
     const current = global.TeamEmblems.resolveTeamEmblem({ teamIdentity: identity, fallbackKind: "user" });
     const choiceMarkup = choices.map((item) => { const selected = item.emblemId === identity.emblemId; const emblem = global.TeamEmblems.resolveTeamEmblem({ teamIdentity: { emblemId: item.emblemId }, seasonId: item.seasonId, fallbackKind: "user" }); return `<button type="button" class="settings-emblem-choice ${selected ? "is-selected" : ""}" data-settings-emblem="${escapeHtml(item.emblemId)}">${global.TeamEmblems.teamEmblemMarkup(emblem, { escape: escapeHtml, className: "settings-choice-logo" })}<strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.seasonId.toUpperCase())}</small>${selected ? "<span>SELEZIONATO</span>" : ""}</button>`; }).join("");
-    app.innerHTML = `<main class="settings-screen"><header class="settings-header"><button class="settings-back" aria-label="${selectingEmblem ? "Torna alle Impostazioni" : "Torna alla Home"}">←</button><div><p class="eyebrow">PROFILO PERMANENTE</p><h1>${selectingEmblem ? "CAMBIA STEMMA" : "IMPOSTAZIONI"}</h1></div></header>${selectingEmblem ? `<section class="settings-panel settings-emblems-panel"><div class="settings-panel-title"><p class="eyebrow">STEMMI DISPONIBILI</p><strong>${choices.length} SBLOCCAT${choices.length === 1 ? "O" : "I"}</strong></div><div class="settings-emblem-grid">${choiceMarkup}</div>${choices.length === 1 ? '<div class="settings-empty-hint"><p>Acquista nuovi stemmi nel Negozio per renderli disponibili qui.</p><button class="btn settings-shop-link" id="settings-open-shop">VAI AL NEGOZIO</button></div>' : ""}</section>` : `<section class="settings-panel"><p class="eyebrow">PROFILO SQUADRA</p><div class="settings-name-row"><div><small>NOME SQUADRA</small><h2>${escapeHtml(savedTeamIdentity()?.name || "Non impostato")}</h2></div><button class="btn btn-yellow" id="settings-edit-name">MODIFICA</button></div><div class="settings-crest-row">${global.TeamEmblems.teamEmblemMarkup(current, { escape: escapeHtml, className: "settings-current-logo" })}<div><small>STEMMA SQUADRA</small><strong>${escapeHtml(choices.find((item) => item.emblemId === identity.emblemId)?.name || "Inazuma Lightning")}</strong></div><button class="btn btn-yellow" id="settings-change-emblem">CAMBIA STEMMA</button></div></section>`}</main>`;
+    const smartAutoLineup = global.RunState.loadProfile().preferences.smartAutoLineup;
+    app.innerHTML = `<main class="settings-screen"><header class="settings-header"><button class="settings-back" aria-label="${selectingEmblem ? "Torna alle Impostazioni" : "Torna alla Home"}">←</button><div><p class="eyebrow">PROFILO PERMANENTE</p><h1>${selectingEmblem ? "CAMBIA STEMMA" : "IMPOSTAZIONI"}</h1></div></header>${selectingEmblem ? `<section class="settings-panel settings-emblems-panel"><div class="settings-panel-title"><p class="eyebrow">STEMMI DISPONIBILI</p><strong>${choices.length} SBLOCCAT${choices.length === 1 ? "O" : "I"}</strong></div><div class="settings-emblem-grid">${choiceMarkup}</div>${choices.length === 1 ? '<div class="settings-empty-hint"><p>Acquista nuovi stemmi nel Negozio per renderli disponibili qui.</p><button class="btn settings-shop-link" id="settings-open-shop">VAI AL NEGOZIO</button></div>' : ""}</section>` : `<section class="settings-panel"><p class="eyebrow">PROFILO SQUADRA</p><div class="settings-name-row"><div><small>NOME SQUADRA</small><h2>${escapeHtml(savedTeamIdentity()?.name || "Non impostato")}</h2></div><button class="btn btn-yellow" id="settings-edit-name">MODIFICA</button></div><div class="settings-crest-row">${global.TeamEmblems.teamEmblemMarkup(current, { escape: escapeHtml, className: "settings-current-logo" })}<div><small>STEMMA SQUADRA</small><strong>${escapeHtml(choices.find((item) => item.emblemId === identity.emblemId)?.name || "Inazuma Lightning")}</strong></div><button class="btn btn-yellow" id="settings-change-emblem">CAMBIA STEMMA</button></div></section><section class="settings-panel settings-preferences-panel"><p class="eyebrow">PREFERENZE</p><label class="settings-toggle-row" for="settings-smart-lineup"><span><strong>AUTO-FORMAZIONE INTELLIGENTE</strong><small>Inserisce automaticamente i nuovi giocatori più forti nelle formazioni 11v11 e 5v5.</small></span><input type="checkbox" id="settings-smart-lineup" ${smartAutoLineup ? "checked" : ""} aria-describedby="settings-smart-lineup-description"><span class="settings-toggle" aria-hidden="true"></span></label><span id="settings-smart-lineup-description" class="sr-only">Preferenza persistente, disattivata per impostazione predefinita.</span></section>`}</main>`;
     document.querySelector(".settings-back").onclick = () => selectingEmblem ? renderSettings({ view: "main" }) : renderHome();
     document.getElementById("settings-edit-name")?.addEventListener("click", openEditTeamNameModal);
     document.getElementById("settings-change-emblem")?.addEventListener("click", () => renderSettings({ view: "emblems" }));
     document.getElementById("settings-open-shop")?.addEventListener("click", () => renderShop());
+    document.getElementById("settings-smart-lineup")?.addEventListener("change", (event) => {
+      global.RunState.saveProfilePreferences({ smartAutoLineup: event.currentTarget.checked });
+      toast(event.currentTarget.checked ? "AUTO-FORMAZIONE ATTIVATA" : "AUTO-FORMAZIONE DISATTIVATA");
+    });
     document.querySelectorAll("[data-settings-emblem]").forEach((button) => button.onclick = () => { const saved = savedTeamIdentity(); if (!saved) { toast("IMPOSTA PRIMA IL NOME SQUADRA"); return; } const updated = global.RunState.saveProfileTeamIdentity({ ...saved, emblemId: button.dataset.settingsEmblem }); if (syncRunTeamIdentity(updated)) global.RunState.save(run); toast("STEMMA SALVATO"); renderSettings({ view: "emblems" }); });
   }
 
@@ -3072,7 +3094,7 @@
       if (outgoingEntry.equippedItem) run.inventory.push(outgoingEntry.equippedItem);
       run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null, ...permanentRosterFields(incoming.player) };
       run.lineup = run.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id)); run.bench = run.bench.map((id) => String(id) === outgoingId ? incomingId : String(id));
-      global.FiveVFive.removeUnavailable(run); ui.tradeSelectedPlayerId = null; global.RunState.save(run); return showTradeResult(node, incoming, run.roster[rosterIndex], "acquired");
+      global.FiveVFive.removeUnavailable(run); optimizeLineupsForNewPlayer(incomingId); ui.tradeSelectedPlayerId = null; global.RunState.save(run); return showTradeResult(node, incoming, run.roster[rosterIndex], "acquired");
     }
     const result = global.RoguelikeRules.executeProfileAwareTrade(run, outgoingEntry.playerId, incoming, {
       roleVariantForUpgrade: roleVariantForTradeUpgrade,
@@ -3089,6 +3111,7 @@
       Object.assign(result.player, { firstJoinedAt: new Date().toISOString(), recruitedOverall: tradeCandidatePreview(incoming, result.player)?.overall ?? incoming.player.finalOverall, ...permanentRosterFields(incoming.player) });
       unlockAlbumRecruit(result.player.playerId, "trade");
       global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player: incoming.player, playerId: result.player.playerId, source: "trade", level: result.player.level, overall: result.player.recruitedOverall, actionId: `${run.runId}:${node.id}:trade:${result.player.playerId}` });
+      optimizeLineupsForNewPlayer(result.player.playerId);
     }
     global.FiveVFive.removeUnavailable(run); ui.tradeSelectedPlayerId = null; global.RunState.save(run); showTradeResult(node, incoming, result.player, result.status);
   }
@@ -3490,6 +3513,7 @@
           Object.assign(result.player, { firstJoinedAt: new Date().toISOString(), recruitmentSource: options.recruitmentSource || source, recruitedAtLevel: level, recruitedOverall: resolvedRosterPlayer(result.player.playerId)?.overall ?? player.finalOverall ?? null });
           global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: result.player.playerId, source: options.recruitmentSource || source, level, overall: result.player.recruitedOverall, actionId: options.actionId || `${run.runId}:${player.profileId}:recruited` });
           unlockAlbumRecruit(result.player.playerId, options.recruitmentSource || source);
+          optimizeLineupsForNewPlayer(result.player.playerId);
         }
         global.RunState.save(run); closeModal(); toast(result.status === "upgraded" ? "POTENZIAMENTO PROFILO" : "NUOVO GIOCATORE"); return done(true);
       }
@@ -3500,6 +3524,7 @@
       run.bench.push(String(player.playerId));
       global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: player.playerId, source: options.recruitmentSource || source, level, overall: player.overall ?? player.finalOverall, actionId: options.actionId || `${run.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}` });
       unlockAlbumRecruit(player.playerId, options.recruitmentSource || source);
+      optimizeLineupsForNewPlayer(player.playerId);
       global.RunState.save(run);
       closeModal();
       return done(true);
@@ -3535,6 +3560,7 @@
           global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: player.playerId, source: options.recruitmentSource || source, level, overall: player.overall ?? player.finalOverall, actionId: options.actionId || `${run.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}` });
           unlockAlbumRecruit(player.playerId, options.recruitmentSource || source);
           global.FiveVFive.removeUnavailable(run);
+          optimizeLineupsForNewPlayer(player.playerId);
           global.RunState.save(run);
           closeModal();
           done(true);
@@ -4087,8 +4113,8 @@
     const formation = global.FiveVFive.formationById(formationId);
     return ["attack", "midfield", "defense", "goal"].map((line) => ({
       line,
-      players: formation.slots.filter((slot) => slot.line === line).map((slot) => playersBySlot[slot.key]).filter(Boolean),
-    })).filter((row) => row.players.length);
+      slots: formation.slots.filter((slot) => slot.line === line).map((slot) => ({ ...slot, player: playersBySlot[slot.key] || null })),
+    })).filter((row) => row.slots.length);
   }
 
   function fiveUserPlayersBySlot() {
@@ -4144,10 +4170,12 @@
     }));
   }
 
-  function fiveMatchCard(player, side) {
+  function fiveMatchCard(player, side, slot) {
+    if (!player) return `<button type="button" class="five-match-card five-match-card--${side} five-match-card--empty" data-five-match-slot="${escapeHtml(slot.key)}" data-five-match-side="${side}" aria-label="Riempi slot ${escapeHtml(slot.key)}, ruolo ${escapeHtml(slot.role)}"><span class="five-match-card-empty-mark" aria-hidden="true">+</span><strong>Slot ${escapeHtml(slot.key)}</strong><span class="five-match-card-role">${escapeHtml(slot.role)}</span></button>`;
     const role = player.position || player.normalizedRole || "-";
-    const key = fiveMatchCacheKey("half-card", side, player.playerId, player.name, role, player.category, playerPortraitUrl(player));
-    return memoizedFiveMatchMarkup(key, () => `<button type="button" class="five-match-card five-match-card--${side} ${rarityClass(player.category)}" data-five-match-player="${escapeHtml(player.playerId)}" data-five-match-side="${side}" aria-pressed="false" aria-label="Dettagli rapidi di ${escapeHtml(player.name)}">
+    const key = fiveMatchCacheKey("half-card", side, slot.key, player.playerId, player.name, role, player.category, playerPortraitUrl(player));
+    const label = side === "user" ? `Cambia ${player.name}, slot ${slot.key}` : `Dettagli rapidi di ${player.name}`;
+    return memoizedFiveMatchMarkup(key, () => `<button type="button" class="five-match-card five-match-card--${side} ${rarityClass(player.category)}" data-five-match-player="${escapeHtml(player.playerId)}" data-five-match-slot="${escapeHtml(slot.key)}" data-five-match-side="${side}" aria-pressed="false" aria-label="${escapeHtml(label)}">
       <span class="five-match-card-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></span>
       <strong title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</strong>
       <span class="five-match-card-role" aria-label="Ruolo ${escapeHtml(role)}">${escapeHtml(role)}</span>
@@ -4179,8 +4207,33 @@
     const slotKey = Object.entries(playersBySlot || {}).map(([slot, player]) => `${slot}:${player?.playerId || ""}:${player?.overall || ""}:${player?.displayLevel || ""}`).join(",");
     const key = fiveMatchCacheKey("field", formationId, side, mobile ? "mobile" : "desktop", slotKey);
     return memoizedFiveMatchMarkup(key, () => `<div class="five-match-field-side five-match-field-side--${side} ${mobile ? "five-match-field-side--mobile" : ""}" data-five-field-side="${side}" ${mobile ? "" : ""}>
-      ${fiveFormationRows(formationId, playersBySlot).map((row) => `<div class="five-match-line five-match-line--${row.line}" data-row-count="${row.players.length}" style="--five-row-count:${row.players.length || 1}">${row.players.map((player) => fiveMatchCard(player, side)).join("")}</div>`).join("")}
+      ${fiveFormationRows(formationId, playersBySlot).map((row) => `<div class="five-match-line five-match-line--${row.line}" data-row-count="${row.slots.length}" style="--five-row-count:${row.slots.length || 1}">${row.slots.map((slot) => fiveMatchCard(slot.player, side, slot)).join("")}</div>`).join("")}
     </div>`);
+  }
+
+  function openFiveMatchPlayerSwap(slotKey, match) {
+    const editable = match?.state === "pre-match" && ui.bossMatchState === "pre-match" && (!match.simulation || match.simulation.state === "pre-match");
+    const slot = global.FiveVFive.formationById(run.fiveVFive?.formation).slots.find((item) => item.key === slotKey);
+    if (!editable || !slot) return false;
+    const pageScroll = scrollSnapshot();
+    const field = document.querySelector(".five-match-mobile-field");
+    if (!field) return false;
+    field.querySelector(".five-selector")?.remove();
+    field.insertAdjacentHTML("beforeend", renderFivePlayerPicker({ selectedSlot: slotKey, selectedRole: slot.role }));
+    const picker = field.querySelector(".five-selector");
+    const closePicker = () => global.FiveFormationFloatingPicker?.close(picker);
+    global.FiveFormationFloatingPicker?.prepare(picker, { onClose: () => restorePageScroll(pageScroll) });
+    picker?.addEventListener("click", (event) => {
+      const button = event.target.closest("[data-five-player]");
+      if (!button || !picker.contains(button) || button.disabled) return;
+      if (!(match.state === "pre-match" && ui.bossMatchState === "pre-match" && (!match.simulation || match.simulation.state === "pre-match"))) return;
+      global.FiveVFive.assign(run, slotKey, button.dataset.fivePlayer, fiveRoleForPlayerId);
+      global.RunState.save(run);
+      closePicker();
+      renderMatch();
+      afterNextPaint(() => { restorePageScroll(pageScroll); document.querySelector(`[data-five-match-side="user"][data-five-match-slot="${cssEscape(slotKey)}"]`)?.focus?.({ preventScroll: true }); });
+    });
+    return true;
   }
 
 
@@ -4366,12 +4419,14 @@
         detail.style.setProperty("--five-detail-top", `${top}px`);
         detail.dataset.placement = preferredLeft === right ? "right" : "left";
       };
-      const bindFiveMatchPlayerButtons = () => document.querySelectorAll("[data-five-match-player]").forEach((button) => {
+      const bindFiveMatchPlayerButtons = () => document.querySelectorAll("[data-five-match-slot]").forEach((button) => {
         if (button.dataset.boundFiveMatchPlayer === "1") return;
         button.dataset.boundFiveMatchPlayer = "1";
         button.addEventListener("click", () => {
           const id = button.dataset.fiveMatchPlayer;
+          const slotKey = button.dataset.fiveMatchSlot;
           const side = button.dataset.fiveMatchSide;
+          if (side === "user" && openFiveMatchPlayerSwap(slotKey, match)) return;
           const players = side === "user" ? userPlayersBySlot : opponentPlayersBySlot;
           const player = Object.values(players).find((candidate) => String(candidate?.playerId) === String(id));
           const detail = document.querySelector("[data-five-player-detail]");
@@ -5030,12 +5085,31 @@
     const slot = selectedSlot ? global.FiveVFive.formationById(run.fiveVFive.formation).slots.find((item) => item.key === selectedSlot) : null;
     const compatible = !slot || player.position === slot.role;
     const assignedSlot = Object.entries(run.fiveVFive.slots).find(([, id]) => String(id) === String(entry.playerId))?.[0];
+    const currentStarter = assignedSlot === selectedSlot;
     return `
-      <button type="button" class="five-roster-card ${compatible ? "" : "disabled"} ${assignedSlot ? "assigned" : ""} ${rarityClass(player.category)}" data-five-player="${escapeHtml(entry.playerId)}" ${compatible ? "" : "disabled"} aria-label="Assegna ${escapeHtml(player.name)}, ${escapeHtml(player.position)}, overall ${escapeHtml(player.overall)}">
+      <button type="button" class="five-roster-card ${compatible ? "" : "disabled"} ${assignedSlot ? "assigned" : ""} ${currentStarter ? "current-starter" : ""} ${rarityClass(player.category)}" data-five-player="${escapeHtml(entry.playerId)}" ${compatible && !currentStarter ? "" : "disabled"} aria-current="${currentStarter ? "true" : "false"}" aria-label="${currentStarter ? "Titolare attuale" : "Sostituisci con"} ${escapeHtml(player.name)}, ${escapeHtml(player.position)}, overall ${escapeHtml(player.overall)}">
         <span class="five-roster-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></span>
         <span class="five-roster-copy"><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(player.position)} · OVR ${escapeHtml(player.overall)} · Lv ${escapeHtml(player.displayLevelText ?? player.displayLevel)}</small></span>
-        <span class="five-roster-state">${assignedSlot ? escapeHtml(assignedSlot) : "SCEGLI"}</span>
+        <span class="five-roster-state">${currentStarter ? "TITOLARE" : (assignedSlot ? `IN CAMPO · ${escapeHtml(assignedSlot)}` : "SCEGLI")}</span>
       </button>`;
+  }
+
+  function renderFivePlayerPicker({ selectedSlot, selectedRole, filter = "all" }) {
+    const rosterEntries = run.roster.filter((entry) => {
+      const role = fiveRoleForPlayerId(entry.playerId);
+      if (filter !== "all" && role !== filter) return false;
+      return !selectedRole || filter !== "all" || role === selectedRole;
+    }).sort((a, b) => fiveOverallForPlayerId(b.playerId) - fiveOverallForPlayerId(a.playerId) || String(a.playerId).localeCompare(String(b.playerId)));
+    return `<aside class="panel five-selector" role="dialog" aria-modal="true" aria-label="Cambia giocatore">
+      <div class="section-head compact"><div><p class="eyebrow">CAMBIA GIOCATORE · SLOT ${escapeHtml(selectedSlot)}</p><h3>GIOCATORE ATTUALE</h3><p class="muted small">SOSTITUISCI CON · solo ${escapeHtml(selectedRole)} compatibili, ordinati per Overall attuale.</p></div></div>
+      <div class="role-filter-bar" aria-label="Filtra rosa per ruolo">
+        ${["all", "GK", "DF", "MF", "FW"].map((role) => `<button type="button" class="role-filter ${filter === role ? "active" : ""}" data-five-filter="${role}" aria-selected="${filter === role ? "true" : "false"}">${role === "all" ? "VALIDI" : role}</button>`).join("")}
+      </div>
+      <div class="five-roster-list">
+        ${rosterEntries.length ? rosterEntries.map((entry) => fiveRosterCard(entry, selectedSlot)).join("") : '<p class="five-roster-empty">Nessun giocatore compatibile con questo filtro.</p>'}
+      </div>
+      <button type="button" class="btn btn-ghost five-clear-slot" id="clear-five-slot">SVUOTA SLOT</button>
+    </aside>`;
   }
 
   function syncFiveSlotSelection(root = document) {
@@ -5068,12 +5142,6 @@
     ui.fiveVFiveSelectedSlot = selectedSlot;
     const selectedRole = formation.slots.find((slot) => slot.key === selectedSlot)?.role;
     const filter = ui.fiveVFiveRoleFilter || "all";
-    const rosterEntries = run.roster.filter((entry) => {
-      const role = fiveRoleForPlayerId(entry.playerId);
-      if (filter !== "all" && role !== filter) return false;
-      if (selectedRole && filter === "all") return role === selectedRole;
-      return true;
-    });
     const rows = ["attack", "midfield", "defense", "goal"];
     app.innerHTML = `
       <main class="screen five-screen">
@@ -5115,16 +5183,7 @@
               </div>
               <div class="button-row five-editor-actions"><button type="button" class="btn btn-yellow btn-primary-action" id="save-five" ${status.valid ? "" : "disabled"}>SALVA FORMAZIONE</button>${options.returnToMatch ? '<button type="button" class="btn btn-secondary" id="back-five-match">TORNA ALLA PARTITA</button><button type="button" class="btn btn-ghost" id="cancel-five-edit">ANNULLA</button>' : ""}</div>
             </div>
-            <aside class="panel five-selector" aria-label="Selezione giocatore">
-              <div class="section-head compact"><div><p class="eyebrow">SLOT ${escapeHtml(selectedSlot)}</p><h3>Scegli un ${escapeHtml(selectedRole)}</h3><p class="muted small">Giocatori compatibili con lo slot selezionato.</p></div></div>
-              <div class="role-filter-bar" aria-label="Filtra rosa per ruolo">
-                ${["all", "GK", "DF", "MF", "FW"].map((role) => `<button type="button" class="role-filter ${filter === role ? "active" : ""}" data-five-filter="${role}" aria-selected="${filter === role ? "true" : "false"}">${role === "all" ? "VALIDI" : role}</button>`).join("")}
-              </div>
-              <div class="five-roster-list">
-                ${rosterEntries.length ? rosterEntries.map((entry) => fiveRosterCard(entry, selectedSlot)).join("") : '<p class="five-roster-empty">Nessun giocatore compatibile con questo filtro.</p>'}
-              </div>
-              <button type="button" class="btn btn-ghost five-clear-slot" id="clear-five-slot">SVUOTA SLOT</button>
-            </aside>
+            ${renderFivePlayerPicker({ selectedSlot, selectedRole, filter })}
           </section>
         </div>
         ${bottomNav("five")}
@@ -5156,9 +5215,9 @@
         if (currentFilter !== "all" && role !== currentFilter) return false;
         if (selectedRoleNow && currentFilter === "all") return role === selectedRoleNow;
         return true;
-      });
+      }).sort((a, b) => fiveOverallForPlayerId(b.playerId) - fiveOverallForPlayerId(a.playerId) || String(a.playerId).localeCompare(String(b.playerId)));
       const selectorHead = document.querySelector(".five-selector .section-head.compact");
-      if (selectorHead && currentSlot) selectorHead.innerHTML = `<div><p class="eyebrow">SLOT ${escapeHtml(currentSlot.key)}</p><h3>Scegli un ${escapeHtml(selectedRoleNow)}</h3><p class="muted small">Giocatori compatibili con lo slot selezionato.</p></div>`;
+      if (selectorHead && currentSlot) selectorHead.innerHTML = `<div><p class="eyebrow">CAMBIA GIOCATORE · SLOT ${escapeHtml(currentSlot.key)}</p><h3>GIOCATORE ATTUALE</h3><p class="muted small">SOSTITUISCI CON · solo ${escapeHtml(selectedRoleNow)} compatibili, ordinati per Overall attuale.</p></div>`;
       const list = document.querySelector(".five-roster-list");
       if (list) {
         const fragment = document.createDocumentFragment();
