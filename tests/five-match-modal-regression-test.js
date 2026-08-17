@@ -23,7 +23,7 @@ assert.match(fiveRenderer, /openFiveMatchSimulationModal\(match, userName, oppon
 assert.match(fiveRenderer, /openFiveMatchSimulationModal[\s\S]*forceMatchOutcome\("victory"\)/, 'safe victory uses the same modal and existing forced-outcome control');
 
 const startSimulation = app.slice(app.indexOf('function startMatchSimulation'), app.indexOf('function resumeMatchSimulationIfNeeded'));
-assert.match(startSimulation, /ensureMatchPreview\(match, \{ \.\.\.options, forceRefresh: false, freeze: true \}\)/, 'start reuses the prepared simulation instead of drawing another outcome');
+assert.match(startSimulation, /ensureMatchPreview\(match, \{ \.\.\.options, forceRefresh: false, freeze: true \}\)/, 'start freezes an attempt-specific simulation before playback');
 assert.strictEqual((startSimulation.match(/MatchSimulator\.simulate/g) || []).length, 0, 'playback does not invoke the simulator directly');
 assert.match(css, /\.five-simulation-modal\.modal[\s\S]*max-height: calc\(100dvh/, 'compact modal is bounded by the viewport');
 console.log('five-match-modal-regression-test: preparation, modal, navigation and single-outcome wiring OK');

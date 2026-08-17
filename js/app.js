@@ -3835,7 +3835,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const existingState = match.simulation?.state || match.state || "pre-match";
     if (match.simulation?.valid && existingState !== "pre-match" && !options.forceRefresh) return match.simulation;
     const teams = simulationTeamsForCurrentMatch(match, options);
-    if (match.simulation?.valid && existingState === "pre-match" && !options.forceRefresh && match.simulation.userSnapshot?.lineupSignature === teams.userSnapshot.lineupSignature) return match.simulation;
+    if (!options.freeze && match.simulation?.valid && existingState === "pre-match" && !options.forceRefresh && match.simulation.userSnapshot?.lineupSignature === teams.userSnapshot.lineupSignature) return match.simulation;
     const seed = options.freeze ? matchSeed(match) : (match.simulation?.seed || `${run.runId}:${match.type}:${match.nodeId}:preview`);
     const preview = global.MatchSimulator.simulate({ type: teams.type, seed, userTeam: teams.userTeam, opponentTeam: teams.opponentTeam, consecutiveLosses: run.consecutiveLosses });
     if (!preview.valid) return preview;
