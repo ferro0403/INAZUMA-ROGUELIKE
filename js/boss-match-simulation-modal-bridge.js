@@ -32,13 +32,16 @@
   function teamLockup(teamNode, opponent = false) {
     const name = teamNode?.querySelector("strong")?.textContent?.trim() || (opponent ? "Avversari" : "La tua squadra");
     const node = document.createElement("strong");
+    const nameNode = document.createElement("span");
+    nameNode.className = "five-simulation-team-name";
+    nameNode.textContent = name;
     const emblem = cloneSimulationEmblem(teamNode);
     if (opponent) {
-      node.append(document.createTextNode(name));
+      node.append(nameNode);
       if (emblem) node.append(emblem);
     } else {
       if (emblem) node.append(emblem);
-      node.append(document.createTextNode(name));
+      node.append(nameNode);
     }
     return { name, node };
   }
