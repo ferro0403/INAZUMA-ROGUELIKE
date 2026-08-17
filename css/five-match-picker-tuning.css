@@ -1,24 +1,24 @@
 /* Prematch-only tuning for the shared 5v5 player picker.
    The formation editor remains untouched: every rule here is scoped to .five-match-screen. */
 
-/* Give the prematch picker more room than the normal 250px tactical field, but do not let
-   the roster cards stretch to fill that room. */
+/* The JS bridge writes --five-picker-panel-height from the number of candidates.
+   One/two cards keep the panel compact; three cards are the visible cap; extra cards scroll. */
 .five-match-screen.five-player-picker-open .five-match-field {
-  min-height: 430px;
+  min-height: calc(var(--five-picker-panel-height, 260px) + 16px);
   overflow: visible;
 }
 
 .five-match-screen.five-player-picker-open .five-match-mobile-field {
-  height: 430px;
-  min-height: 430px;
+  height: calc(var(--five-picker-panel-height, 260px) + 16px);
+  min-height: calc(var(--five-picker-panel-height, 260px) + 16px);
 }
 
 .five-match-screen .five-selector.five-selector-floating {
   top: 8px;
   left: 18px;
   width: calc(100% - 42px);
-  height: calc(100% - 16px);
-  max-height: none;
+  height: var(--five-picker-panel-height, 260px);
+  max-height: var(--five-picker-panel-height, 260px);
   padding: 12px;
   grid-template-rows: auto minmax(0, 1fr);
 }
@@ -43,6 +43,8 @@
   gap: 8px;
   padding: 4px 5px 10px 1px;
   overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 
 .five-match-screen .five-selector.five-selector-floating .five-roster-card {
@@ -63,7 +65,15 @@
   background: var(--five-roster-bg) !important;
   border-color: var(--five-roster-border) !important;
   color: var(--five-roster-text) !important;
+  border-radius: 0 !important;
+  overflow: hidden;
   box-shadow: 3px 4px 0 rgba(17, 18, 22, .15);
+}
+
+/* Keep rarity accents rectangular too: no inherited rounded corners from shared roster styles. */
+.five-match-screen .five-selector.five-selector-floating .five-roster-card::before,
+.five-match-screen .five-selector.five-selector-floating .five-roster-card::after {
+  border-radius: 0 !important;
 }
 
 /* The whole candidate card is the tap target. */
@@ -139,20 +149,20 @@
 
 @media (max-width: 780px) {
   .five-match-screen.five-player-picker-open .five-match-field {
-    min-height: 410px;
+    min-height: calc(var(--five-picker-panel-height, 250px) + 14px);
   }
 
   .five-match-screen.five-player-picker-open .five-match-mobile-field {
-    height: 410px;
-    min-height: 410px;
+    height: calc(var(--five-picker-panel-height, 250px) + 14px);
+    min-height: calc(var(--five-picker-panel-height, 250px) + 14px);
   }
 
   .five-match-screen .five-selector.five-selector-floating {
     top: 7px;
     left: 12px;
     width: calc(100% - 30px);
-    height: calc(100% - 14px);
-    max-height: none;
+    height: var(--five-picker-panel-height, 250px);
+    max-height: var(--five-picker-panel-height, 250px);
     padding: 10px;
   }
 
@@ -174,6 +184,7 @@
     grid-template-columns: 54px minmax(0, 1fr);
     gap: 8px;
     padding: 5px 9px 5px 6px;
+    border-radius: 0 !important;
   }
 
   .five-match-screen .five-selector.five-selector-floating .five-roster-portrait {
@@ -186,19 +197,20 @@
 
 @media (max-width: 390px) {
   .five-match-screen.five-player-picker-open .five-match-field {
-    min-height: 395px;
+    min-height: calc(var(--five-picker-panel-height, 244px) + 12px);
   }
 
   .five-match-screen.five-player-picker-open .five-match-mobile-field {
-    height: 395px;
-    min-height: 395px;
+    height: calc(var(--five-picker-panel-height, 244px) + 12px);
+    min-height: calc(var(--five-picker-panel-height, 244px) + 12px);
   }
 
   .five-match-screen .five-selector.five-selector-floating {
     top: 6px;
     left: 10px;
     width: calc(100% - 24px);
-    height: calc(100% - 12px);
+    height: var(--five-picker-panel-height, 244px);
+    max-height: var(--five-picker-panel-height, 244px);
     padding: 9px;
   }
 
@@ -207,6 +219,7 @@
     height: 70px;
     max-height: 70px;
     grid-template-columns: 52px minmax(0, 1fr);
+    border-radius: 0 !important;
   }
 
   .five-match-screen .five-selector.five-selector-floating .five-roster-portrait {

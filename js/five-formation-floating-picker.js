@@ -11,6 +11,67 @@
     return screen?.querySelector(".five-selector.five-selector-floating") || null;
   }
 
+  function visibleRosterCards(picker) {
+    return Array.from(picker?.querySelectorAll(".five-roster-list .five-roster-card") || []).filter((card) => {
+      if (card.hidden) return false;
+      const style = global.getComputedStyle?.(card);
+      return !style || style.display !== "none";
+    });
+  }
+
+  function syncPrematchPickerHeight(picker) {
+    const matchScreen = picker?.closest(".five-match-screen");
+    if (!picker || !matchScreen) return;
+
+    global.requestAnimationFrame(() => {
+      const list = picker.querySelector(".five-roster-list");
+      const head = picker.querySelector(".section-head.compact");
+      if (!list) return;
+
+      const cards = visibleRosterCards(picker);
+      const visibleCount = Math.max(1, Math.min(3, cards.length));
+      const pickerStyle = global.getComputedStyle(picker);
+      const listStyle = global.getComputedStyle(list);
+      const fallbackCardHeight = global.innerWidth <= 390 ? 70 : global.innerWidth <= 780 ? 72 : 74;
+      const cardHeight = Math.round(cards[0]?.getBoundingClientRect().height || fallbackCardHeight);
+      const gap = parseFloat(listStyle.rowGap || listStyle.gap) || 8;
+      const listPaddingTop = parseFloat(listStyle.paddingTop) || 0;
+      const listPaddingBottom = parseFloat(listStyle.paddingBottom) || 0;
+      const pickerPaddingTop = parseFloat(pickerStyle.paddingTop) || 0;
+      const pickerPaddingBottom = parseFloat(pickerStyle.paddingBottom) || 0;
+      const headHeight = Math.ceil(head?.getBoundingClientRect().height || 78);
+      const cardsHeight = visibleCount * cardHeight + Math.max(0, visibleCount - 1) * gap;
+      const panelHeight = Math.ceil(
+        pickerPaddingTop +
+          headHeight +
+          listPaddingTop +
+          cardsHeight +
+          listPaddingBottom +
+          pickerPaddingBottom
+      );
+
+      matchScreen.style.setProperty("--five-picker-panel-height", `${panelHeight}px`);
+      picker.dataset.visibleCards = String(visibleCount);
+      picker.dataset.totalCards = String(cards.length);
+    });
+  }
+
+  function observePrematchRoster(picker) {
+    if (!picker || picker.dataset.dynamicHeightObserver === "1") return;
+    const list = picker.querySelector(".five-roster-list");
+    if (!list) return;
+
+    picker.dataset.dynamicHeightObserver = "1";
+    const observer = new MutationObserver(() => syncPrematchPickerHeight(picker));
+    observer.observe(list, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ["class", "hidden", "style"],
+    });
+    picker.fivePickerHeightObserver = observer;
+  }
+
   function preparePicker(picker, options = {}) {
     if (!picker) return null;
     picker.dataset.floatingPickerReady = "1";
@@ -21,6 +82,8 @@
     picker.querySelector("#clear-five-slot")?.setAttribute("hidden", "");
     const rosterList = picker.querySelector(".five-roster-list");
     if (rosterList) rosterList.scrollTop = 0;
+    observePrematchRoster(picker);
+    syncPrematchPickerHeight(picker);
     if (!picker.querySelector(".five-floating-picker-close")) {
       const close = document.createElement("button");
       close.type = "button";
@@ -55,6 +118,7 @@
     if (open) {
       const rosterList = picker.querySelector(".five-roster-list");
       if (rosterList) rosterList.scrollTop = 0;
+      syncPrematchPickerHeight(picker);
     }
   }
 
@@ -157,6 +221,11 @@
     closePicker({ clearSelection: true });
   });
 
+  global.addEventListener?.("resize", () => {
+    const matchPicker = document.querySelector(".five-match-screen .five-selector.five-selector-floating.is-open");
+    if (matchPicker) syncPrematchPickerHeight(matchPicker);
+  });
+
   const observer = new MutationObserver(() => ensureFloatingPicker());
   const app = document.getElementById("app");
   if (app) observer.observe(app, { childList: true, subtree: true });
@@ -170,5 +239,6 @@
   global.FiveFormationFloatingPicker = Object.freeze({
     prepare: preparePicker,
     close: closePreparedPicker,
+    syncHeight: syncPrematchPickerHeight,
   });
 })(globalThis);
