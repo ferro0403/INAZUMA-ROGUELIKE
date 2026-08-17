@@ -5,9 +5,10 @@ const app = fs.readFileSync(require.resolve("../js/app.js"), "utf8");
 const css = fs.readFileSync(require.resolve("../css/game.css"), "utf8");
 const development = fs.readFileSync(require.resolve("../js/development-v2.js"), "utf8");
 
-assert.match(app, /id: "open-shop-home", label: "Negozio"/);
+assert.match(app, /id: "open-development-home", label: "Centro di Sviluppo"/);
+assert.match(app, /getElementById\("open-development-home"\).*renderDevelopmentCenter/);
 assert.match(app, /id="open-settings-home" aria-label="Impostazioni"/);
-assert.doesNotMatch(app.match(/const developmentCard = `[^`]+`/)[0], /NEGOZIO/);
+assert.doesNotMatch(app, /const developmentCard =/);
 assert.match(app, /document\.querySelector\("\.shop-back"\)\.onclick = renderHome/);
 assert.match(app, /addEventListener\("click", \(\) => renderSettings\(\{ view: "main" \}\)\)/);
 assert.doesNotMatch(app, /addEventListener\("click", renderSettings\)/);
