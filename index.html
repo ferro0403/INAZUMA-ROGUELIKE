@@ -11,7 +11,13 @@
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon-180.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="stylesheet" href="css/game.css?v=20260816-smart-lineup-1" />
-    <link rel="stylesheet" href="css/squad-formation-picker-restyle.css?v=20260817-moduli-1" />
+    <link rel="stylesheet" href="css/squad-formation-picker-restyle.css?v=20260817-moduli-2" />
+    <style>
+      @media (max-width: 780px) {
+        .modal-backdrop:has(.squad-formation-modal) { align-items: start; }
+        .modal.squad-formation-modal { align-self: start; }
+      }
+    </style>
     <link rel="stylesheet" href="css/match-ui-cleanup.css?v=20260808-match-cleanup-1" />
     <link rel="stylesheet" href="css/five-simulation-polish.css?v=20260811-dynamic-team-emblems-1" />
     <link rel="stylesheet" href="css/five-match-reference-polish.css?v=20260811-banner-layout-1" />
