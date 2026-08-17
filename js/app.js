@@ -3250,11 +3250,12 @@
   }
 
   function improvedCategory(category) {
-    const ranks = global.SEASON1_CONFIG.categoryRanks;
-    const ordered = Object.keys(ranks).sort((left, right) => ranks[left] - ranks[right]);
-    const index = ordered.indexOf(category);
-    return ordered[Math.min(index < 0 ? 0 : index + 1, ordered.length - 1)] || category;
-  }
+  const ranks = global.SEASON1_CONFIG.categoryRanks;
+  const ordered = Object.keys(ranks).sort((left, right) => ranks[left] - ranks[right]);
+  const index = ordered.indexOf(category);
+  if (index < 0 || index >= ordered.length - 1) return null;
+  return ordered[index + 1] || null;
+}
 
   function pullCandidates(pool, node) {
     if (node.pullState?.candidateIds?.length) {
@@ -3279,56 +3280,72 @@
   }
 
   function luckyCharmPoolForPull(pullType) {
-    if (pullType === "pull_free_agents") return pullPool(pullType);
-    if (pullType === "pull_unlocked_teams") return pullPool(pullType);
-    return null;
-  }
+  if (pullType === "pull_free_agents") return pullPool(pullType);
+  if (pullType !== "pull_unlocked_teams") return null;
 
-  function chooseLuckyUpgrade(original, available, usedIds, random, pool = {}) {
-    const requiredCategory = improvedCategory(original.category);
-    const role = original.position;
-    const originalId = String(original.playerId);
-    const shuffled = global.DraftEngine.shuffle(available.filter((player) => !usedIds.has(pullCandidateKey(player, pool))), random);
-    const exactUpgrade = shuffled.filter((player) => player.category === requiredCategory);
-    const preferred = exactUpgrade.filter((player) => player.position === role && (requiredCategory !== original.category || String(player.playerId) !== originalId));
-    if (preferred.length) return preferred[0];
-    const alternatives = exactUpgrade.filter((player) => requiredCategory !== original.category || String(player.playerId) !== originalId);
-    if (alternatives.length) return alternatives[0];
-    return requiredCategory === original.category && !usedIds.has(originalId) ? original : null;
+  const source = global.SeasonRegistry.sourceForSeason(run?.seasonId);
+  if (isProfileAwareSeason()) {
+    const players = (seasonDb.profiles || [])
+      .map((profile) => global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, profile.profileId))
+      .filter((profile) => profile && global.SpecialMatchRuntime.eligibleProfile(run, profile.profileId));
+    return { players, source, database: seasonDb, profileAware: true };
   }
+  return { players: seasonDb.players || [], source, database: seasonDb };
+}
 
-  function buildLuckyCharmUpgrades(currentCandidates, available, random) {
-    if (!Array.isArray(currentCandidates) || currentCandidates.length !== 3) return null;
-    const usedIds = new Set();
-    const upgradedCandidates = currentCandidates.map((candidate) => {
-      const selected = chooseLuckyUpgrade(candidate, available, usedIds, random, { profileAware: isProfileAwareSeason() && available.some((player) => player.profileId) });
-      if (selected) usedIds.add(String(selected.profileId || selected.playerId));
-      return selected;
-    });
-    if (upgradedCandidates.length !== 3 || upgradedCandidates.some((candidate) => !candidate)) return null;
-    const uniqueIds = new Set(upgradedCandidates.map((candidate) => String(candidate.playerId)));
-    if (uniqueIds.size !== 3) return null;
-    const validExactRarity = upgradedCandidates.every((candidate, index) => candidate.category === improvedCategory(currentCandidates[index].category));
-    return validExactRarity ? upgradedCandidates : null;
-  }
+  function chooseLuckyUpgrade(original, available, usedIds, random) {
+  const requiredCategory = improvedCategory(original.category);
+  if (!requiredCategory) return null;
+  const role = original.position;
+  const shuffled = global.DraftEngine.shuffle(
+    available.filter((player) => !usedIds.has(canonicalCandidatePlayerId(player))),
+    random
+  );
+  const exactUpgrade = shuffled.filter((player) => player.category === requiredCategory);
+  const preferred = exactUpgrade.filter((player) => player.position === role);
+  return preferred[0] || exactUpgrade[0] || null;
+}
+
+function buildLuckyCharmUpgrades(currentCandidates, available, random) {
+  if (!Array.isArray(currentCandidates) || currentCandidates.length !== 3) return null;
+  const usedIds = new Set(currentCandidates.map((candidate) => canonicalCandidatePlayerId(candidate)));
+  const upgradedCandidates = [];
+  let upgradedCount = 0;
+
+  currentCandidates.forEach((candidate) => {
+    const selected = chooseLuckyUpgrade(candidate, available, usedIds, random);
+    if (!selected) {
+      upgradedCandidates.push(candidate);
+      return;
+    }
+    usedIds.add(canonicalCandidatePlayerId(selected));
+    upgradedCandidates.push(selected);
+    upgradedCount += 1;
+  });
+
+  const uniqueIds = new Set(upgradedCandidates.map((candidate) => canonicalCandidatePlayerId(candidate)));
+  if (uniqueIds.size !== upgradedCandidates.length) return null;
+  return { candidates: upgradedCandidates, upgradedCount };
+}
 
   function useLuckyCharmOnPull(node, pullType, currentCandidates) {
     if (!["pull_free_agents", "pull_unlocked_teams"].includes(pullType)) return toast("Portafortuna non utilizzabile in questa selezione.");
     if (node.pullState.luckyCharmUsed) return toast("Portafortuna già utilizzato in questa pull.");
     const luckyCharm = run.inventory.find((item) => item.effect === "lucky_pull");
     if (!luckyCharm) return toast("Nessun Portafortuna disponibile.");
-    if (!Array.isArray(currentCandidates) || currentCandidates.length !== 3) return toast("Non è stato possibile migliorare tutti i candidati.");
+    if (!Array.isArray(currentCandidates) || currentCandidates.length !== 3) return toast("Il Portafortuna richiede una selezione completa di 3 candidati.");
     const pool = luckyCharmPoolForPull(pullType);
     if (!pool) return toast("Portafortuna non utilizzabile in questa selezione.");
     const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
     const available = pool.players.filter((player) => pool.profileAware ? isPullCandidateEligible(run, player) : !owned.has(String(player.playerId)));
     const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:lucky:${node.pullState.rerolls}`);
-    const upgradedCandidates = buildLuckyCharmUpgrades(currentCandidates, available, random);
-    if (!upgradedCandidates || upgradedCandidates.length !== 3) return toast("Non è stato possibile migliorare tutti i candidati.");
-    removeInventoryItem(luckyCharm.instanceId);
-    global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.LUCKY_CHARM_USED, { nodeId: node.id, itemId: luckyCharm.id, instanceId: luckyCharm.instanceId, actionId: `${run.runId}:${node.id}:lucky_charm` });
-    node.pullState.luckyCharmUsed = true;
-    node.pullState.candidateIds = upgradedCandidates.map((player) => pullCandidateKey(player, pool));
+    const upgradeResult = buildLuckyCharmUpgrades(currentCandidates, available, random);
+  if (!upgradeResult || upgradeResult.upgradedCount < 1) return toast("Nessun candidato può salire di rarità con il Portafortuna.");
+  const upgradedCandidates = upgradeResult.candidates;
+  removeInventoryItem(luckyCharm.instanceId);
+  global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.LUCKY_CHARM_USED, { nodeId: node.id, itemId: luckyCharm.id, instanceId: luckyCharm.instanceId, upgradedCount: upgradeResult.upgradedCount, actionId: `${run.runId}:${node.id}:lucky_charm` });
+  node.pullState.luckyCharmUsed = true;
+  node.pullState.candidateIds = upgradedCandidates.map((player) => pullCandidateKey(player, pool));
     global.RunState.save(run);
     openPull(node, pullType);
   }
