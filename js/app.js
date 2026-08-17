@@ -1283,8 +1283,8 @@
   const HOME_SECONDARY_ACTIONS = [
     { id: "open-album-home", label: "Album", icon: "▤", className: "" },
     { id: "open-hall-home", label: "Albo d’Oro", icon: "★", className: "home-quick-button--gold" },
-    { id: "open-shop-home", label: "Negozio", icon: "◆", className: "" },
     { id: "open-modes-home", label: "Modalità", icon: "⚡", className: "" },
+    { id: "open-development-home", label: "Centro di Sviluppo", icon: "◆", className: "" },
   ];
 
   function homeQuickActionsMarkup() {
@@ -1392,7 +1392,7 @@
     document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : renderSeasonSelect());
     document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-album-home")?.addEventListener("click", renderAlbumCollections);
-    document.getElementById("open-shop-home")?.addEventListener("click", () => renderShop());
+    document.getElementById("open-development-home")?.addEventListener("click", () => renderDevelopmentCenter());
     document.getElementById("open-settings-home")?.addEventListener("click", () => renderSettings({ view: "main" }));
     document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-hall-home-list")?.addEventListener("click", renderHallOfFame);
@@ -1431,69 +1431,34 @@
     });
   }
 
-  function resolveSeasonPreviewRosterPlayer(savedRun, rosterEntry, database, playersById) {
-    if (global.RoguelikeRules.isProfileAwareRosterEntry(rosterEntry, savedRun)) {
-      return global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(rosterEntry, { run: savedRun, seasonId: savedRun.seasonId, database });
-    }
-    const usesFreeAgents = rosterEntry?.source === "free_agents" || isProfileAwareSeason(savedRun?.seasonId);
-    const sourceDatabase = usesFreeAgents ? freeAgentsDb : database;
-    const source = usesFreeAgents
-      ? (freeAgentsDb?.players || []).find((player) => String(player.playerId) === String(rosterEntry.playerId))
-      : playersById.get(String(rosterEntry.playerId));
-    if (!source) return null;
-    const level = Math.floor(Number(rosterEntry.level ?? savedRun?.teamLevel ?? 0));
-    return { ...source, ...global.InazumaProgression.getPlayerAtLevel(source, level, sourceDatabase, rosterEntry), playerId: source.playerId, source: rosterEntry.source };
-  }
+  // Artwork is keyed by registry id so additions/reordering in SeasonRegistry do not
+  // accidentally associate a cover with the wrong playable season.
+  const SEASON_CARD_PRESENTATION = Object.freeze({
+    ie1: Object.freeze({ coverUrl: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiTljpQy0-8hZqy9NP7BmOZwijtzN9VGYbXEN4bR2bPW8GiaccWADFA3RAlYclPfO8HSr9aEgR8H_NWF-al-1MLXlH6ToD-mMNUKwTsaSKlKvUCEY1xzg_2auQvhA3usKf5qPwV8Iawi6pm/s1600/wallpapers_inazuma11_1_1024x768.jpg", focalPoint: "center" }),
+    ie1_s2: Object.freeze({ coverUrl: "https://static.wikia.nocookie.net/inazuma-eleven/images/9/9b/%28Artwork%29_Aliea_Gakuen_captains.jpg/revision/latest?cb=20120722223451", focalPoint: "center 42%" }),
+    ie1_s3: Object.freeze({ coverUrl: "https://static.wikia.nocookie.net/inazuma-eleven-fanon/images/6/67/Inazuma-boys-inazuma-eleven-35597232-1600-1200_%281%29.jpg/revision/latest?cb=20140310150638", focalPoint: "center" }),
+    ie2: Object.freeze({ coverUrl: "https://www.akibagamers.it/wp-content/uploads/2019/12/inazuma-eleven-great-road-of-heroes-cover.jpg", focalPoint: "center 38%" }),
+  });
 
-  function seasonRunAverageOverall(savedRun, database, playersById) {
-    const entries = savedRosterEntries(savedRun);
-    const overalls = entries.map((entry) => {
-      return Number(resolveSeasonPreviewRosterPlayer(savedRun, entry, database, playersById)?.overall);
-    }).filter(Number.isFinite);
-    if (!overalls.length) return "-";
-    return Math.round(overalls.reduce((sum, value) => sum + value, 0) / overalls.length);
-  }
-
-  function seasonRosterPreviewMarkup(savedRun, database, playersById, normalizedEntries = savedRosterEntries(savedRun)) {
-    if (!database || !playersById) return `<div class="season-preview-state season-preview-state--loading">Caricamento rosa…</div>`;
-    if (!normalizedEntries.length) return `<div class="season-preview-state">Rosa non disponibile</div>`;
-    const cards = normalizedEntries.slice(0, 6).map((entry) => {
-      const resolved = resolveSeasonPreviewRosterPlayer(savedRun, entry, database, playersById);
-      if (!resolved) {
-        console.warn("Season roster preview: giocatore non risolto", { seasonId: savedRun?.seasonId, playerId: entry.playerId });
-        return "";
-      }
-      const level = global.LevelProgression.formatLevel(entry, savedRun.seasonId);
-      return compactPlayerCardMarkup(resolved, { level, overall: resolved.overall, extraClass: "season-preview-player", detailLayout: "stacked" });
-    }).filter(Boolean);
-    return cards.length ? cards.join("") : `<div class="season-preview-state">Rosa non disponibile</div>`;
+  function seasonCoverMarkup(season) {
+    const presentation = SEASON_CARD_PRESENTATION[season.id];
+    return presentation ? `<img class="season-cover-art" src="${escapeHtml(presentation.coverUrl)}" alt="" style="object-position:${escapeHtml(presentation.focalPoint)}" loading="lazy" decoding="async" onerror="this.hidden=true;this.closest('.season-select-card').classList.add('season-cover-fallback')">` : "";
   }
 
   function seasonSelectCardMarkup({ season, savedRun, database, playersById, isLastPlayed }) {
     const activeSaved = savedRun && global.RunState.isActiveRun(savedRun) ? savedRun : null;
-    const identity = activeSaved ? normalizeTeamIdentity(activeSaved.teamIdentity) : null;
-    const totalBosses = database?.bossOrder?.length || 0;
-    const bossIndex = Math.min(Number(activeSaved?.bossIndex || 0), Math.max(totalBosses - 1, 0));
-    const boss = activeSaved ? database?.bossOrder?.[bossIndex] : null;
-    const formation = activeSaved ? database?.formations?.eleven?.find((item) => item.id === activeSaved.formationId) : null;
-    const normalizedRoster = activeSaved ? savedRosterEntries(activeSaved) : [];
-    const average = activeSaved ? seasonRunAverageOverall(activeSaved, database, playersById) : "-";
-    const bossStep = activeSaved ? `${Math.min(Number(activeSaved.bossIndex || 0) + 1, totalBosses || 99)}/${totalBosses || "?"}` : "-";
     const actions = activeSaved
-      ? `<button type="button" class="btn btn-yellow" data-season-continue="${escapeHtml(season.id)}">Continua run</button><button type="button" class="btn btn-ghost" data-season-new="${escapeHtml(season.id)}">Inizia nuova run</button>`
-      : `<button type="button" class="btn btn-yellow" data-season-new="${escapeHtml(season.id)}">Inizia nuova run</button>`;
+      ? `<button type="button" class="btn btn-yellow" data-season-continue="${escapeHtml(season.id)}">CONTINUA</button><button type="button" class="btn btn-ghost" data-season-new="${escapeHtml(season.id)}">INIZIA</button><button type="button" class="btn season-delete-button" data-season-delete="${escapeHtml(season.id)}">ELIMINA</button>`
+      : `<button type="button" class="btn btn-yellow" data-season-new="${escapeHtml(season.id)}">INIZIA NUOVA RUN</button>`;
 
     if (!activeSaved) {
-      return `<article class="home-hub-card season-select-card season-select-card--empty"><div class="season-card-head"><div><h2>${escapeHtml(season.name)}</h2></div><span class="season-status-pill">Nessuna run attiva</span></div><div class="home-card-actions season-card-actions">${actions}</div></article>`;
+      return `<article class="home-hub-card season-select-card season-select-card--empty">${seasonCoverMarkup(season)}<div class="season-card-content"><div class="season-card-head"><div><p class="season-card-kicker">SEASON ${escapeHtml(season.displaySeasonNumber)}</p><h2>${escapeHtml(season.name)}</h2><p class="season-card-subtitle">Costruisci la squadra e affronta la scalata.</p></div></div><div class="home-card-actions season-card-actions">${actions}</div></div></article>`;
     }
 
-    const remainingMobilePlayers = Math.max(0, normalizedRoster.length - 4);
-    const remainingDesktopPlayers = Math.max(0, normalizedRoster.length - 6);
-    const remainingMarkup = `${remainingMobilePlayers ? `<small class="season-more-count season-more-count--mobile">+${escapeHtml(remainingMobilePlayers)} altri</small>` : ""}${remainingDesktopPlayers ? `<small class="season-more-count season-more-count--desktop">+${escapeHtml(remainingDesktopPlayers)} altri</small>` : ""}`;
-    return `<article class="home-hub-card season-select-card ${isLastPlayed ? "season-select-card--last" : ""}"><div class="season-card-head"><div><h2>${escapeHtml(season.name)}</h2><p class="season-team-name">${escapeHtml(identity.name || "La tua squadra")}</p></div><div class="season-card-badges"><span class="season-status-pill">Run attiva</span>${isLastPlayed ? `<span class="season-status-pill season-status-pill--last">Ultima giocata</span>` : ""}</div></div><div class="season-run-summary"><span><small>Boss</small><strong>${escapeHtml(boss?.teamName || "-")}</strong> <em>${escapeHtml(bossStep)}</em></span><span><small>Lv</small><strong>${escapeHtml(global.LevelProgression.formatLevel(activeSaved, activeSaved.seasonId))}</strong></span><span><small>Vite</small><strong>${runHeartsMarkup(activeSaved)}</strong></span><span><small>OVR</small><strong>${escapeHtml(average)}</strong></span><span class="season-run-summary__wide"><small>Modulo</small><strong>${escapeHtml(formation?.name || activeSaved.formationId || "Da scegliere")}</strong></span></div><div class="season-roster-block"><div class="season-section-title"><span>Preview rosa · ${escapeHtml(normalizedRoster.length)} giocatori</span>${remainingMarkup}</div><div class="season-roster-preview">${seasonRosterPreviewMarkup(activeSaved, database, playersById, normalizedRoster)}</div></div><div class="home-card-actions season-card-actions">${actions}</div></article>`;
+    return `<article class="home-hub-card season-select-card season-select-card--active ${isLastPlayed ? "season-select-card--last" : ""}">${seasonCoverMarkup(season)}<div class="season-card-content"><div class="season-card-head"><div><p class="season-card-kicker">SEASON ${escapeHtml(season.displaySeasonNumber)}</p><h2>${escapeHtml(season.name)}</h2></div></div><div class="home-card-actions season-card-actions">${actions}</div></div></article>`;
   }
 
-  async function renderSeasonSelect() {
+  async function renderSeasonSelect({ preserveScroll = null } = {}) {
     await loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID);
     const seasons = global.SeasonRegistry.list();
     await Promise.all(seasons.map((season) => global.SeasonRegistry.loadDatabase(season.id)));
@@ -1506,13 +1471,26 @@
       playersById: global.SeasonRegistry.playersIndex(season.id),
       isLastPlayed: Boolean(savedRun && latestTime && runTimestamp(savedRun) === latestTime),
     })).join("");
-    const developmentCard = `<article class="home-hub-card season-select-card season-select-card--empty development-season-card"><div class="season-card-head"><div><p class="eyebrow">CRESCITA PERMANENTE</p><h2>CENTRO DI SVILUPPO</h2><p class="season-team-name">Usa Progetti, Coppe e Monete per evolvere i giocatori.</p></div></div><div class="home-card-actions season-card-actions"><button class="btn btn-yellow" id="open-development">CENTRO DI SVILUPPO</button></div></article>`;
-    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="season-select-topbar">${sectionRootButton("seasonSelection", "season-select-home-button")}<h1>Seleziona Season</h1><span class="season-select-topbar-spacer" aria-hidden="true"></span></header><section class="home-choice-grid season-choice-grid">${developmentCard}${cards}</section></main>`;
-    resetRenderedViewScroll();
+    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="season-select-topbar">${sectionRootButton("seasonSelection", "season-select-home-button")}<div><p class="eyebrow">MODALITÀ</p><h1>SELEZIONA SEASON</h1><p class="season-select-subtitle">Scegli la tua storia e riprendi la scalata.</p></div><span class="season-select-topbar-spacer" aria-hidden="true"></span></header><section class="home-choice-grid season-choice-grid">${cards}</section></main>`;
+    if (preserveScroll) afterNextPaint(() => restorePageScroll(preserveScroll));
+    else resetRenderedViewScroll();
     bindSectionRootNav();
-    document.getElementById("open-development")?.addEventListener("click", renderDevelopmentCenter);
     document.querySelectorAll("[data-season-continue]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonContinue, { markPlayed: true }); resumeRun(); }));
     document.querySelectorAll("[data-season-new]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonNew); startNewRunFromHome(); }));
+    document.querySelectorAll("[data-season-delete]").forEach((button) => button.addEventListener("click", () => openDeleteSeasonRunModal(button.dataset.seasonDelete)));
+  }
+
+  function openDeleteSeasonRunModal(seasonId) {
+    const season = global.SeasonRegistry.get(seasonId);
+    const preservedScroll = scrollSnapshot();
+    openModal(`<div class="modal-head"><div><p class="eyebrow">${escapeHtml(season.name)}</p><h2>ELIMINA RUN</h2><p class="muted">Vuoi eliminare la run di questa Season? I progressi della run verranno cancellati.</p></div></div><div class="button-row"><button type="button" class="btn btn-ghost" data-cancel-delete-run>ANNULLA</button><button type="button" class="btn season-delete-button" data-confirm-delete-run>ELIMINA</button></div>`, { closeable: false, className: "season-delete-modal", preserveScroll: preservedScroll });
+    modalRoot.querySelector("[data-cancel-delete-run]")?.addEventListener("click", closeModal);
+    modalRoot.querySelector("[data-confirm-delete-run]")?.addEventListener("click", async () => {
+      global.RunState.remove(season.id);
+      if (run?.seasonId === season.id) { run = null; global.run = null; }
+      closeModal({ invokeOnClose: false });
+      await renderSeasonSelect({ preserveScroll: preservedScroll });
+    });
   }
 
   function eligibleFreeAgentIds() {
@@ -1699,7 +1677,7 @@
     document.querySelector('[data-wallet="coins"]').textContent = state.coins; document.querySelector('[data-wallet="cups"]').textContent = global.DevelopmentV2.totalCups(state); document.querySelector('[data-wallet="projects"]').textContent = projectTotal;
     const devRoot = document.getElementById("development-dev-root"); if (devRoot) devRoot.innerHTML = new URLSearchParams(location.search).get("dev") === "1" ? developmentDevMarkup(players.length) : "";
     document.getElementById("development-open-shop")?.addEventListener("click", () => renderShop());
-    document.querySelector(".development-back-button").onclick = () => { ui.selectedDevelopmentPlayerId = null; developmentPlayersCache = null; renderSeasonSelect(); };
+    document.querySelector(".development-back-button").onclick = () => { ui.selectedDevelopmentPlayerId = null; developmentPlayersCache = null; renderHome(); };
     const search = document.getElementById("development-search"), results = document.getElementById("development-player-results");
     const bindLoadMore = () => document.getElementById("development-load-more")?.addEventListener("click", () => { developmentVisibleCount += DEVELOPMENT_PAGE_SIZE; filtered = filterDevelopmentPlayers(players, ui.developmentQuery, ui.developmentRarity); results.innerHTML = developmentPlayerGridMarkup(filtered); bindLoadMore(); });
     const updateResults = () => { ui.developmentQuery = search?.value || ""; developmentVisibleCount = DEVELOPMENT_PAGE_SIZE; filtered = filterDevelopmentPlayers(players, ui.developmentQuery, ui.developmentRarity); if (results) { results.innerHTML = developmentPlayerGridMarkup(filtered); bindLoadMore(); } };

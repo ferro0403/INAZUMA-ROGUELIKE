@@ -4,10 +4,12 @@
   const DEFAULT_SEASON_ID = "ie1";
   const SEASONS = Object.freeze({
     ie1: Object.freeze({ id: "ie1", name: "Inazuma Eleven 1", displaySeasonNumber: "1", database: "data/IE1_season_compact.json", albumCollectionId: "ie1" }),
-    ie2: Object.freeze({ id: "ie2", name: "Inazuma Eleven Ares", displaySeasonNumber: "2", database: "data/IE2_season_compact.json", albumCollectionId: "ie2" }),
     ie1_s2: Object.freeze({ id: "ie1_s2", name: "Inazuma Eleven 2", displaySeasonNumber: "2", database: "data/IE1_S2_season_compact.json", albumCollectionId: "ie1_s2" }),
     ie1_s3: Object.freeze({ id: "ie1_s3", name: "Inazuma Eleven 3", displaySeasonNumber: "3", database: "data/IE1_S3_season_compact.json", albumCollectionId: "ie1_s3" }),
+    ie2: Object.freeze({ id: "ie2", name: "Inazuma Eleven Ares", displaySeasonNumber: "1", database: "data/IE2_season_compact.json", albumCollectionId: "ie2" }),
   });
+
+  const DISPLAY_ORDER = Object.freeze(["ie1", "ie1_s2", "ie1_s3", "ie2"]);
 
   const DISPLAY_TEAM_NAME_OVERRIDES = Object.freeze({
     ie1_s2: Object.freeze({
@@ -22,7 +24,7 @@
   let activeSeasonId = DEFAULT_SEASON_ID;
 
   function normalizeSeasonId(seasonId) { return SEASONS[String(seasonId || "")] ? String(seasonId) : DEFAULT_SEASON_ID; }
-  function list() { return Object.values(SEASONS); }
+  function list() { return DISPLAY_ORDER.map((seasonId) => SEASONS[seasonId]).filter(Boolean); }
   function get(seasonId = activeSeasonId) { return SEASONS[normalizeSeasonId(seasonId)]; }
   function setActive(seasonId) { activeSeasonId = normalizeSeasonId(seasonId); return get(activeSeasonId); }
   function activeId() { return activeSeasonId; }
