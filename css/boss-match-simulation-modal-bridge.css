@@ -12,6 +12,18 @@
   white-space: nowrap;
 }
 
+/* Keep team names anchored from their first character. Long names shrink
+   inside their lockup and are truncated only at the end, before the emblem. */
+.boss-simulation-modal .five-simulation-team-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  direction: ltr;
+  text-align: left;
+}
+
 @media (max-width: 390px) {
   .boss-simulation-modal .five-simulation-head h2 {
     font-size: 1.05rem;
