@@ -1283,8 +1283,8 @@
   const HOME_SECONDARY_ACTIONS = [
     { id: "open-album-home", label: "Album", icon: "▤", className: "" },
     { id: "open-hall-home", label: "Albo d’Oro", icon: "★", className: "home-quick-button--gold" },
-    { id: "open-shop-home", label: "Negozio", icon: "◆", className: "" },
     { id: "open-modes-home", label: "Modalità", icon: "⚡", className: "" },
+    { id: "open-development-home", label: "Centro di Sviluppo", icon: "◆", className: "" },
   ];
 
   function homeQuickActionsMarkup() {
@@ -1392,7 +1392,7 @@
     document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : renderSeasonSelect());
     document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-album-home")?.addEventListener("click", renderAlbumCollections);
-    document.getElementById("open-shop-home")?.addEventListener("click", () => renderShop());
+    document.getElementById("open-development-home")?.addEventListener("click", () => renderDevelopmentCenter());
     document.getElementById("open-settings-home")?.addEventListener("click", () => renderSettings({ view: "main" }));
     document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-hall-home-list")?.addEventListener("click", renderHallOfFame);
@@ -1457,7 +1457,7 @@
   function seasonRosterPreviewMarkup(savedRun, database, playersById, normalizedEntries = savedRosterEntries(savedRun)) {
     if (!database || !playersById) return `<div class="season-preview-state season-preview-state--loading">Caricamento rosa…</div>`;
     if (!normalizedEntries.length) return `<div class="season-preview-state">Rosa non disponibile</div>`;
-    const cards = normalizedEntries.slice(0, 6).map((entry) => {
+    const cards = normalizedEntries.slice(0, 3).map((entry) => {
       const resolved = resolveSeasonPreviewRosterPlayer(savedRun, entry, database, playersById);
       if (!resolved) {
         console.warn("Season roster preview: giocatore non risolto", { seasonId: savedRun?.seasonId, playerId: entry.playerId });
@@ -1467,6 +1467,20 @@
       return compactPlayerCardMarkup(resolved, { level, overall: resolved.overall, extraClass: "season-preview-player", detailLayout: "stacked" });
     }).filter(Boolean);
     return cards.length ? cards.join("") : `<div class="season-preview-state">Rosa non disponibile</div>`;
+  }
+
+  // Artwork is keyed by registry id so additions/reordering in SeasonRegistry do not
+  // accidentally associate a cover with the wrong playable season.
+  const SEASON_COVER_URLS = Object.freeze({
+    ie1: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiTljpQy0-8hZqy9NP7BmOZwijtzN9VGYbXEN4bR2bPW8GiaccWADFA3RAlYclPfO8HSr9aEgR8H_NWF-al-1MLXlH6ToD-mMNUKwTsaSKlKvUCEY1xzg_2auQvhA3usKf5qPwV8Iawi6pm/s1600/wallpapers_inazuma11_1_1024x768.jpg",
+    ie1_s2: "https://static.wikia.nocookie.net/inazuma-eleven/images/9/9b/%28Artwork%29_Aliea_Gakuen_captains.jpg/revision/latest?cb=20120722223451",
+    ie1_s3: "https://static.wikia.nocookie.net/inazuma-eleven-fanon/images/6/67/Inazuma-boys-inazuma-eleven-35597232-1600-1200_%281%29.jpg/revision/latest?cb=20140310150638",
+    ie2: "https://www.akibagamers.it/wp-content/uploads/2019/12/inazuma-eleven-great-road-of-heroes-cover.jpg",
+  });
+
+  function seasonCoverMarkup(season) {
+    const url = SEASON_COVER_URLS[season.id];
+    return url ? `<img class="season-cover-art" src="${escapeHtml(url)}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true;this.closest('.season-select-card').classList.add('season-cover-fallback')">` : "";
   }
 
   function seasonSelectCardMarkup({ season, savedRun, database, playersById, isLastPlayed }) {
@@ -1480,17 +1494,16 @@
     const average = activeSaved ? seasonRunAverageOverall(activeSaved, database, playersById) : "-";
     const bossStep = activeSaved ? `${Math.min(Number(activeSaved.bossIndex || 0) + 1, totalBosses || 99)}/${totalBosses || "?"}` : "-";
     const actions = activeSaved
-      ? `<button type="button" class="btn btn-yellow" data-season-continue="${escapeHtml(season.id)}">Continua run</button><button type="button" class="btn btn-ghost" data-season-new="${escapeHtml(season.id)}">Inizia nuova run</button>`
-      : `<button type="button" class="btn btn-yellow" data-season-new="${escapeHtml(season.id)}">Inizia nuova run</button>`;
+      ? `<button type="button" class="btn btn-yellow" data-season-continue="${escapeHtml(season.id)}">CONTINUA RUN</button><button type="button" class="btn btn-ghost" data-season-new="${escapeHtml(season.id)}">INIZIA NUOVA RUN</button>`
+      : `<button type="button" class="btn btn-yellow" data-season-new="${escapeHtml(season.id)}">INIZIA NUOVA RUN</button>`;
 
     if (!activeSaved) {
-      return `<article class="home-hub-card season-select-card season-select-card--empty"><div class="season-card-head"><div><h2>${escapeHtml(season.name)}</h2></div><span class="season-status-pill">Nessuna run attiva</span></div><div class="home-card-actions season-card-actions">${actions}</div></article>`;
+      return `<article class="home-hub-card season-select-card season-select-card--empty">${seasonCoverMarkup(season)}<div class="season-card-content"><div class="season-card-head"><div><p class="season-card-kicker">SEASON ${escapeHtml(season.displaySeasonNumber)}</p><h2>${escapeHtml(season.name)}</h2><p class="season-card-subtitle">Costruisci la squadra e affronta la scalata.</p></div><span class="season-status-pill">NESSUNA RUN ATTIVA</span></div><div class="home-card-actions season-card-actions">${actions}</div></div></article>`;
     }
 
-    const remainingMobilePlayers = Math.max(0, normalizedRoster.length - 4);
-    const remainingDesktopPlayers = Math.max(0, normalizedRoster.length - 6);
-    const remainingMarkup = `${remainingMobilePlayers ? `<small class="season-more-count season-more-count--mobile">+${escapeHtml(remainingMobilePlayers)} altri</small>` : ""}${remainingDesktopPlayers ? `<small class="season-more-count season-more-count--desktop">+${escapeHtml(remainingDesktopPlayers)} altri</small>` : ""}`;
-    return `<article class="home-hub-card season-select-card ${isLastPlayed ? "season-select-card--last" : ""}"><div class="season-card-head"><div><h2>${escapeHtml(season.name)}</h2><p class="season-team-name">${escapeHtml(identity.name || "La tua squadra")}</p></div><div class="season-card-badges"><span class="season-status-pill">Run attiva</span>${isLastPlayed ? `<span class="season-status-pill season-status-pill--last">Ultima giocata</span>` : ""}</div></div><div class="season-run-summary"><span><small>Boss</small><strong>${escapeHtml(boss?.teamName || "-")}</strong> <em>${escapeHtml(bossStep)}</em></span><span><small>Lv</small><strong>${escapeHtml(global.LevelProgression.formatLevel(activeSaved, activeSaved.seasonId))}</strong></span><span><small>Vite</small><strong>${runHeartsMarkup(activeSaved)}</strong></span><span><small>OVR</small><strong>${escapeHtml(average)}</strong></span><span class="season-run-summary__wide"><small>Modulo</small><strong>${escapeHtml(formation?.name || activeSaved.formationId || "Da scegliere")}</strong></span></div><div class="season-roster-block"><div class="season-section-title"><span>Preview rosa · ${escapeHtml(normalizedRoster.length)} giocatori</span>${remainingMarkup}</div><div class="season-roster-preview">${seasonRosterPreviewMarkup(activeSaved, database, playersById, normalizedRoster)}</div></div><div class="home-card-actions season-card-actions">${actions}</div></article>`;
+    const remainingPlayers = Math.max(0, normalizedRoster.length - 3);
+    const zoneProgress = homeZoneProgress(activeSaved);
+    return `<article class="home-hub-card season-select-card season-select-card--active ${isLastPlayed ? "season-select-card--last" : ""}">${seasonCoverMarkup(season)}<div class="season-card-content"><div class="season-card-head"><div><p class="season-card-kicker">${escapeHtml(season.name)}</p><h2>${escapeHtml(identity.name || "La tua squadra")}</h2></div><div class="season-card-badges"><span class="season-status-pill">Run attiva</span>${isLastPlayed ? `<span class="season-status-pill season-status-pill--last">Ultima giocata</span>` : ""}</div></div><div class="season-run-summary"><span class="season-run-summary__boss"><small>Prossimo boss</small><strong>${escapeHtml(boss?.teamName || "-")}</strong><em>Stage ${escapeHtml(bossStep)} · Zona ${escapeHtml(zoneProgress)}%</em></span><span><small>Lv</small><strong>${escapeHtml(global.LevelProgression.formatLevel(activeSaved, activeSaved.seasonId))}</strong></span><span><small>Vite</small><strong>${runHeartsMarkup(activeSaved)}</strong></span><span><small>OVR</small><strong>${escapeHtml(average)}</strong></span><span><small>Modulo</small><strong>${escapeHtml(formation?.name || activeSaved.formationId || "Da scegliere")}</strong></span></div><div class="season-roster-block"><div class="season-section-title"><span>Preview rosa</span>${remainingPlayers ? `<small class="season-more-count">+${escapeHtml(remainingPlayers)}</small>` : ""}</div><div class="season-roster-preview">${seasonRosterPreviewMarkup(activeSaved, database, playersById, normalizedRoster)}</div></div><div class="home-card-actions season-card-actions">${actions}</div></div></article>`;
   }
 
   async function renderSeasonSelect() {
@@ -1506,11 +1519,9 @@
       playersById: global.SeasonRegistry.playersIndex(season.id),
       isLastPlayed: Boolean(savedRun && latestTime && runTimestamp(savedRun) === latestTime),
     })).join("");
-    const developmentCard = `<article class="home-hub-card season-select-card season-select-card--empty development-season-card"><div class="season-card-head"><div><p class="eyebrow">CRESCITA PERMANENTE</p><h2>CENTRO DI SVILUPPO</h2><p class="season-team-name">Usa Progetti, Coppe e Monete per evolvere i giocatori.</p></div></div><div class="home-card-actions season-card-actions"><button class="btn btn-yellow" id="open-development">CENTRO DI SVILUPPO</button></div></article>`;
-    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="season-select-topbar">${sectionRootButton("seasonSelection", "season-select-home-button")}<h1>Seleziona Season</h1><span class="season-select-topbar-spacer" aria-hidden="true"></span></header><section class="home-choice-grid season-choice-grid">${developmentCard}${cards}</section></main>`;
+    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="season-select-topbar">${sectionRootButton("seasonSelection", "season-select-home-button")}<div><p class="eyebrow">MODALITÀ</p><h1>SELEZIONA SEASON</h1><p class="season-select-subtitle">Scegli la tua storia e riprendi la scalata.</p></div><span class="season-select-topbar-spacer" aria-hidden="true"></span></header><section class="home-choice-grid season-choice-grid">${cards}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav();
-    document.getElementById("open-development")?.addEventListener("click", renderDevelopmentCenter);
     document.querySelectorAll("[data-season-continue]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonContinue, { markPlayed: true }); resumeRun(); }));
     document.querySelectorAll("[data-season-new]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonNew); startNewRunFromHome(); }));
   }
@@ -1699,7 +1710,7 @@
     document.querySelector('[data-wallet="coins"]').textContent = state.coins; document.querySelector('[data-wallet="cups"]').textContent = global.DevelopmentV2.totalCups(state); document.querySelector('[data-wallet="projects"]').textContent = projectTotal;
     const devRoot = document.getElementById("development-dev-root"); if (devRoot) devRoot.innerHTML = new URLSearchParams(location.search).get("dev") === "1" ? developmentDevMarkup(players.length) : "";
     document.getElementById("development-open-shop")?.addEventListener("click", () => renderShop());
-    document.querySelector(".development-back-button").onclick = () => { ui.selectedDevelopmentPlayerId = null; developmentPlayersCache = null; renderSeasonSelect(); };
+    document.querySelector(".development-back-button").onclick = () => { ui.selectedDevelopmentPlayerId = null; developmentPlayersCache = null; renderHome(); };
     const search = document.getElementById("development-search"), results = document.getElementById("development-player-results");
     const bindLoadMore = () => document.getElementById("development-load-more")?.addEventListener("click", () => { developmentVisibleCount += DEVELOPMENT_PAGE_SIZE; filtered = filterDevelopmentPlayers(players, ui.developmentQuery, ui.developmentRarity); results.innerHTML = developmentPlayerGridMarkup(filtered); bindLoadMore(); });
     const updateResults = () => { ui.developmentQuery = search?.value || ""; developmentVisibleCount = DEVELOPMENT_PAGE_SIZE; filtered = filterDevelopmentPlayers(players, ui.developmentQuery, ui.developmentRarity); if (results) { results.innerHTML = developmentPlayerGridMarkup(filtered); bindLoadMore(); } };
