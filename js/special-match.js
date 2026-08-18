@@ -88,8 +88,14 @@
     }
     return { status: first ? "completed" : "already-completed", pendingReward: run.pendingSpecialMatchReward };
   }
-  function completeCurrentReward(run, database, pending = run.pendingSpecialMatchReward) {
-    if (!pending || pending !== run.pendingSpecialMatchReward || pending.status !== "pending") return { status: "already-resolved" };
+  function completeCurrentReward(run, database, expected = null) {
+    const pending = run.pendingSpecialMatchReward;
+    if (!pending || pending.status !== "pending") return { status: "already-resolved" };
+    if (expected && (
+      id(expected.specialMatchId) !== id(pending.specialMatchId)
+      || Math.max(1, Number(expected.currentReward || 1)) !== Math.max(1, Number(pending.currentReward || 1))
+      || (expected.actionId && pending.actionId && id(expected.actionId) !== id(pending.actionId))
+    )) return { status: "stale-reward" };
     const selectedProfile = pending.selectedProfileId && global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, pending.selectedProfileId);
     if (selectedProfile) pending.excludedPlayerIds = Array.from(new Set([...(pending.excludedPlayerIds || []).map(id), id(selectedProfile.playerId)]));
     pending.replacementPendingProfileId = null;
@@ -128,7 +134,6 @@
     if (!pending || !pending.candidateProfileIds?.map(id).includes(id(profileId))) throw new Error("Candidato ricompensa non valido");
     if (!eligibleProfile(run, profileId)) throw new Error("Profilo ricompensa non più eleggibile");
     pending.selectedProfileId = id(profileId);
-    pending.replacementPendingProfileId = id(profileId);
     return pending;
   }
   function decline(run, pending = run.pendingSpecialMatchReward, database) {
