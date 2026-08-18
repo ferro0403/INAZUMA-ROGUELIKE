@@ -96,7 +96,10 @@
     if (!modal || modal.querySelector(DECLINE_SELECTOR) || !activeLiveSpecialReward()) return;
     const nativeCancel = modal.querySelector("#cancel-recruit");
     if (nativeCancel) {
-      nativeCancel.textContent = "RIFIUTA";
+      if (nativeCancel.dataset.specialRewardDeclinePatched !== "1") {
+        nativeCancel.textContent = "RIFIUTA";
+        nativeCancel.dataset.specialRewardDeclinePatched = "1";
+      }
       return;
     }
     let footer = modal.querySelector(".bench-replacement-footer");
@@ -117,7 +120,6 @@
   function rarityClass(category) {
     return ({ Scarso: "rarity-scarso", Debole: "rarity-debole", Normale: "rarity-normale", Buono: "rarity-buono", Forte: "rarity-forte", Elite: "rarity-elite", Mondiale: "rarity-mondiale", Leggenda: "rarity-leggenda" })[category] || "rarity-debole";
   }
-
   function statIcon(stat) {
     const icons = {
       attack: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><path d="M12 3v4M12 17v4M3 12h4M17 12h4M9 12h6"/></svg>`,
