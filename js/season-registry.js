@@ -66,11 +66,15 @@
     if (season.id === "ie1_s3") {
       const counts = database.validation?.counts || {};
       const valid = database.requiresProfileAwareRuntime === true
-        && database.teams?.length === 40 && database.bossOrder?.length === 11
-        && database.specialMatches?.length === 7 && database.players?.length === 573
-        && database.profiles?.length === 573 && database.recruitmentPool?.entries?.length === 291
+        && database.teams?.length === 41 && database.bossOrder?.length === 12
+        && database.specialMatches?.length === 7 && database.players?.length === 584
+        && database.profiles?.length === 584 && database.recruitmentPool?.entries?.length === 291
         && database.globalFreeAgentPatch?.players?.length === 3
-        && counts.combinedUniqueGameplayPlayers === 576 && counts.roleSwitchProfiles === 4
+        && counts.teams === 41 && counts.bosses === 12 && counts.specialMatches === 7
+        && counts.canonicalPlayers === 584 && counts.profiles === 584
+        && counts.recruitmentPoolPlayers === 291 && counts.newGlobalFreeAgents === 3
+        && counts.combinedUniqueGameplayPlayers === 587 && counts.roleSwitchProfiles === 4
+        && counts.warnings === 0 && counts.sourceValidationBossPlayers === 184
         && database.warnings?.length === 0 && database.validation?.status === "passed";
       if (!valid) throw new Error("Database Inazuma Eleven 3 non supera la validazione runtime");
     }

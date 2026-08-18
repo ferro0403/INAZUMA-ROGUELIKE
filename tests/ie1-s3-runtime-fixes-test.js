@@ -68,8 +68,8 @@ assert.strictEqual(runtime.choiceDatabase("free_agents", season, free, registry)
 assert.strictEqual(runtime.choiceDatabase("ie1_s3", null, free, registry), season);
 
 const albumTeams = runtime.orderedAlbumTeams(season, true);
-assert.strictEqual(albumTeams.length, 40);
-assert.strictEqual(new Set(albumTeams.map((team) => String(team.teamId))).size, 40);
+assert.strictEqual(albumTeams.length, 41);
+assert.strictEqual(new Set(albumTeams.map((team) => String(team.teamId))).size, 41);
 for (const boss of season.bossOrder) assert(albumTeams.some((team) => team.teamId === boss.teamId));
 for (const special of season.specialMatches) assert(albumTeams.some((team) => team.teamId === special.teamId));
 assert(albumTeams.some((team) => !season.bossOrder.some((boss) => boss.teamId === team.teamId) && !season.specialMatches.some((special) => special.teamId === team.teamId)), "source-only teams must be visible");
