@@ -4767,7 +4767,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (button.disabled) return;
     button.disabled = true;
     const finish = () => {
-      const transition = global.SpecialMatchRuntime.completeCurrentReward(run, seasonDb, pending);
+      const transition = global.SpecialMatchRuntime.completeCurrentReward(run, seasonDb, run.pendingSpecialMatchReward);
       global.RunState.save(run);
       closeModal();
       if (transition.status === "next-reward") return showSpecialMatchReward();
