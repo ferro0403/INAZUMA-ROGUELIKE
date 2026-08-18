@@ -112,12 +112,29 @@
     const currentReward = Math.max(1, Number(pending.currentReward || 1));
     const currentCandidateProfileIds = Array.isArray(pending.candidateProfileIds) ? pending.candidateProfileIds.map(id) : [];
     const currentCandidatePlayerIds = currentCandidateProfileIds.map((profileId) => playerIdForProfile(run, profileId)).filter(Boolean);
+    const selectedProfileId = pending.selectedProfileId ? id(pending.selectedProfileId) : "";
+    const selectedPlayerId = selectedProfileId ? playerIdForProfile(run, selectedProfileId) : "";
+
     pending.selectedProfileId = null;
     pending.replacementPendingProfileId = null;
-    pending.excludedProfileIds = Array.from(new Set([...(pending.excludedProfileIds || []), ...currentCandidateProfileIds].map(id)));
-    pending.excludedPlayerIds = Array.from(new Set([...(pending.excludedPlayerIds || []), ...currentCandidatePlayerIds].map(id)));
+
+    // Same rule used by boss rewards: completing a normal pull excludes only the
+    // player actually chosen (also when the user cancels during full-roster
+    // replacement). The other two displayed candidates remain eligible for the
+    // next pull. A direct "RINUNCIA" without selecting anyone excludes nobody.
+    if (selectedProfileId) {
+      pending.excludedProfileIds = Array.from(new Set([...(pending.excludedProfileIds || []), selectedProfileId].map(id)));
+      if (selectedPlayerId) pending.excludedPlayerIds = Array.from(new Set([...(pending.excludedPlayerIds || []), selectedPlayerId].map(id)));
+    } else {
+      pending.excludedProfileIds = Array.from(new Set((pending.excludedProfileIds || []).map(id)));
+      pending.excludedPlayerIds = Array.from(new Set((pending.excludedPlayerIds || []).map(id)));
+    }
+
     pending.previousCandidateProfileIds = currentCandidateProfileIds;
     pending.previousCandidatePlayerIds = currentCandidatePlayerIds;
+    pending.previousSelectedProfileId = selectedProfileId || null;
+    pending.previousSelectedPlayerId = selectedPlayerId || null;
+
     if (currentReward < totalRewards) {
       const database = global.SeasonRegistry?.database?.(run.seasonId);
       const special = byId(database, pending.specialMatchId);
@@ -152,7 +169,7 @@
     if (!run.claimedSpecialMatchRewardIds.includes(id(special.specialMatchId))) {
       const candidateProfileIds = rewardProfileIds(run, special, global.ProfiledSeasonRuntime, 1);
       const totalRewards = totalRewardsFor(run);
-      run.pendingSpecialMatchReward = { specialMatchId: id(special.specialMatchId), nodeId: match.nodeId, teamId: id(special.teamId), guaranteedProfileId: special.reward?.guaranteedProfileId || null, totalRewards, currentReward: 1, excludedProfileIds: [], excludedPlayerIds: [], previousCandidateProfileIds: [], previousCandidatePlayerIds: [], candidateProfileIds, selectedProfileId: candidateProfileIds.length === 1 ? candidateProfileIds[0] : null, replacementPendingProfileId: null, status: "pending", actionId: `${run.runId}:${special.specialMatchId}:reward:1` };
+      run.pendingSpecialMatchReward = { specialMatchId: id(special.specialMatchId), nodeId: match.nodeId, teamId: id(special.teamId), guaranteedProfileId: special.reward?.guaranteedProfileId || null, totalRewards, currentReward: 1, excludedProfileIds: [], excludedPlayerIds: [], previousCandidateProfileIds: [], previousCandidatePlayerIds: [], previousSelectedProfileId: null, previousSelectedPlayerId: null, candidateProfileIds, selectedProfileId: candidateProfileIds.length === 1 ? candidateProfileIds[0] : null, replacementPendingProfileId: null, status: "pending", actionId: `${run.runId}:${special.specialMatchId}:reward:1` };
     }
     return { status: first ? "completed" : "already-completed", pendingReward: run.pendingSpecialMatchReward };
   }
