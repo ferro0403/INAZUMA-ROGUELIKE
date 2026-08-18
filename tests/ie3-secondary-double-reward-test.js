@@ -63,7 +63,6 @@ assert.strictEqual(completion.pendingReward.totalRewards, 2, "IE3 secondary vict
 assert.strictEqual(completion.pendingReward.currentReward, 1);
 assert.strictEqual(completion.pendingReward.candidateProfileIds.length, 3, "each pull keeps three candidates");
 const firstCandidates = [...completion.pendingReward.candidateProfileIds];
-const firstCandidatePlayerIds = firstCandidates.map((profileId) => runtime.playerIdForProfile(run, profileId));
 
 const refreshedFirst = JSON.parse(JSON.stringify(run));
 assert.deepStrictEqual(refreshedFirst.pendingSpecialMatchReward.candidateProfileIds, firstCandidates, "refresh keeps Pull 1 candidates");
@@ -71,11 +70,23 @@ const firstDecline = runtime.decline(run);
 assert.strictEqual(firstDecline.status, "next-reward", "declining Pull 1 advances to Pull 2");
 assert.strictEqual(run.pendingSpecialMatchReward.currentReward, 2);
 assert.strictEqual(run.pendingSpecialMatchReward.candidateProfileIds.length, 3);
-assert(run.pendingSpecialMatchReward.candidateProfileIds.every((id) => !firstCandidates.includes(id)), "Pull 2 excludes every profile shown in Pull 1");
-const secondCandidatePlayerIds = run.pendingSpecialMatchReward.candidateProfileIds.map((profileId) => runtime.playerIdForProfile(run, profileId));
-assert(secondCandidatePlayerIds.every((playerId) => !firstCandidatePlayerIds.includes(playerId)), "Pull 2 excludes every player shown in Pull 1, including alternate profiles");
-assert.deepStrictEqual([...run.pendingSpecialMatchReward.excludedPlayerIds].sort(), [...new Set(firstCandidatePlayerIds)].sort(), "player exclusions are persisted explicitly");
+assert.deepStrictEqual(run.pendingSpecialMatchReward.excludedProfileIds, [], "direct decline excludes none of the three displayed candidates, matching boss pulls");
+assert.deepStrictEqual(run.pendingSpecialMatchReward.excludedPlayerIds, [], "direct decline keeps all displayed players eligible for Pull 2");
 assert.strictEqual(run.pendingSpecialMatchReward.actionId, `${run.runId}:${special.specialMatchId}:reward:2`, "Pull 2 receives its own action id");
+
+const chosenRun = makeRun();
+runtime.complete(chosenRun, database, { specialMatchId: special.specialMatchId, nodeId: "node-chosen" }, "victory");
+const chosenProfileId = chosenRun.pendingSpecialMatchReward.candidateProfileIds[0];
+const chosenPlayerId = runtime.playerIdForProfile(chosenRun, chosenProfileId);
+runtime.selectRewardCandidate(chosenRun, chosenProfileId);
+const cancelAfterSelection = runtime.decline(chosenRun);
+assert.strictEqual(cancelAfterSelection.status, "next-reward", "cancelling a selected Pull 1 player still advances to Pull 2");
+assert.deepStrictEqual(chosenRun.pendingSpecialMatchReward.excludedProfileIds, [chosenProfileId], "only the selected profile is explicitly excluded");
+assert.deepStrictEqual(chosenRun.pendingSpecialMatchReward.excludedPlayerIds, [chosenPlayerId], "only the selected canonical player is explicitly excluded");
+assert(!chosenRun.pendingSpecialMatchReward.candidateProfileIds.includes(chosenProfileId), "selected profile cannot return in Pull 2");
+assert(chosenRun.pendingSpecialMatchReward.candidateProfileIds.every((profileId) => runtime.playerIdForProfile(chosenRun, profileId) !== chosenPlayerId), "alternate profiles of the selected player cannot return in Pull 2");
+const unselectedFirstPlayers = firstCandidates.slice(1).map((profileId) => runtime.playerIdForProfile(chosenRun, profileId));
+assert(unselectedFirstPlayers.every((playerId) => !chosenRun.pendingSpecialMatchReward.excludedPlayerIds.includes(playerId)), "the two unselected Pull 1 players remain eligible, matching boss reward behavior");
 
 const pullTwoSnapshot = JSON.parse(JSON.stringify(run.pendingSpecialMatchReward));
 const refreshedSecond = JSON.parse(JSON.stringify(run));
