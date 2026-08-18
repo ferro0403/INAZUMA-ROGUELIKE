@@ -132,6 +132,14 @@
       pending.currentReward = Math.max(1, Math.min(pending.totalRewards, Number(pending.currentReward || 1)));
       pending.candidateProfileIds = Array.isArray(pending.candidateProfileIds) ? pending.candidateProfileIds.map(id) : [];
       pending.excludedProfileIds = Array.isArray(pending.excludedProfileIds) ? Array.from(new Set(pending.excludedProfileIds.map(id))) : [];
+      const derivedExcludedPlayerIds = pending.excludedProfileIds
+        .map((profileId) => resolveProfile(run.seasonId, profileId)?.playerId)
+        .filter((playerId) => playerId !== null && playerId !== undefined)
+        .map(id);
+      pending.excludedPlayerIds = Array.from(new Set([
+        ...(Array.isArray(pending.excludedPlayerIds) ? pending.excludedPlayerIds.map(id) : []),
+        ...derivedExcludedPlayerIds,
+      ]));
       pending.selectedProfileId = pending.selectedProfileId ? id(pending.selectedProfileId) : null;
       pending.replacementPendingProfileId = pending.replacementPendingProfileId ? id(pending.replacementPendingProfileId) : null;
     }
