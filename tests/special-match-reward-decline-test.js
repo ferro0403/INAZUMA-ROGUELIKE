@@ -40,16 +40,17 @@ assert.deepStrictEqual(run.claimedSpecialMatchRewardIds, ["special_alpine_ie2"],
 const appSource = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
 assert(appSource.includes('id="decline-special-reward"'), "Special reward modal must expose decline action");
 assert(appSource.includes('>RIFIUTA</button>'), "Decline action must be labeled RIFIUTA");
-assert(appSource.includes('SpecialMatchRuntime.decline(run, pending)'), "UI must use runtime decline helper");
+assert(appSource.includes('SpecialMatchRuntime.decline(run, pending, seasonDb)'), "UI must use runtime decline helper");
 assert(appSource.includes('id="claim-special-reward"'), "Existing claim action must remain available");
 assert(appSource.includes('global.RunState.save(run);\n    if (action.toast)'), "Special reward flow must save the live run before opening the reward modal");
 
 const bridgeSource = fs.readFileSync(path.join(root, "js", "special-reward-ui-bridge.js"), "utf8");
-assert(bridgeSource.includes('bench-replacement-modal'), "Full-roster replacement modal must be handled");
-assert(bridgeSource.includes('button.textContent = "RIFIUTA"'), "Full-roster replacement modal must expose RIFIUTA");
-assert(bridgeSource.includes('SpecialMatchRuntime?.decline?.'), "Full-roster decline must resolve through SpecialMatchRuntime.decline");
+assert(bridgeSource.includes('bench-replacement-modal'), "Full-roster replacement modal may be styled");
+assert(bridgeSource.includes('button.textContent = "RIFIUTA"'), "Native full-roster cancel may be relabeled RIFIUTA");
+assert(!bridgeSource.includes('SpecialMatchRuntime?.decline?.'), "Bridge must not resolve full-roster decline");
+assert(!bridgeSource.includes('phase = "map"'), "Bridge must not force map navigation");
+assert(!bridgeSource.includes('returnToMapWithoutReload'), "Bridge must not own replacement navigation");
 assert(bridgeSource.includes('__specialRewardLiveRunCapture'), "Bridge must capture the live app run through RunState.save");
-assert(bridgeSource.includes("#app [data-nav='map']"), "Full-roster decline must use the app's existing map navigation");
 assert(!bridgeSource.includes('location.reload('), "Full-roster decline must not hard reload the app");
 assert(!bridgeSource.includes('sessionStorage'), "Full-roster decline must not require reload-resume session state");
 
