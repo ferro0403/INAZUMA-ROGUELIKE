@@ -2373,13 +2373,11 @@
   }
 
   function ensureCurrentZone() {
-    if (run.currentZone && run.currentZone.bossIndex === run.bossIndex) {
-      if (global.MapEngine.normalizeSpecialMatchNode(run, seasonDb)) global.RunState.save(run);
+    const result = global.MapEngine.ensureCurrentZone(run, seasonDb);
+    if (!result.generated) {
+      if (result.changed) global.RunState.save(run);
       return;
     }
-    const boss = seasonDb.bossOrder[run.bossIndex];
-    if (!boss) return;
-    run.currentZone = global.MapEngine.generate(run, boss);
     run.phase = "map";
     global.RunState.createCheckpoint(run);
   }

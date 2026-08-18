@@ -1,0 +1,34 @@
+{
+  "exportType": "inazuma_roguelike_lineup_config",
+  "version": 2,
+  "selectionMode": {
+    "bossFormation": "manual",
+    "startingXI": "manual",
+    "bossLevel": "manual",
+    "rewardPool": "all_team_players"
+  },
+  "teams": [
+    {
+      "teamId": "dark_angels",
+      "teamName": "Dark Angels",
+      "sourceFile": "DARK_ANGELS_team.json",
+      "bossFormation": "4-2-4",
+      "bossLevel": 16,
+      "startingXI": [
+        "2059",
+        "2060",
+        "2049",
+        "2048",
+        "2055",
+        "2045",
+        "2043",
+        "2051",
+        "2053",
+        "2040",
+        "2050"
+      ],
+      "rewardPool": "all_team_players"
+    }
+  ],
+  "warnings": []
+}

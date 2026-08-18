@@ -36,7 +36,7 @@ assert.strictEqual(byId.get(String(sentinel.playerId)).profileId, undefined);
 assert.strictEqual(byId.get(String(sentinel.playerId)).progressionCode, sentinel.progressionCode);
 
 const minimums = season.recruitmentRules.pullFreeAgents.minimumFinalOverallByBossIndex;
-assert.deepStrictEqual(Array.from(minimums), [72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82]);
+assert.deepStrictEqual(Array.from(minimums), [72, 73, 74, 75, 76, 77, 78, 79, 80, 80, 81, 82]);
 const pullEligible = (player, index) => runtime.eligibleForSeason3FreeAgentPull(player, index, season);
 const pullAt = (index) => effective.filter((player) => pullEligible(player, index));
 assert(pullEligible({ sourceKind: "season3_recruitment_profile", profileId: "low@team", finalOverall: 72 }, 10));
@@ -68,8 +68,8 @@ assert.strictEqual(runtime.choiceDatabase("free_agents", season, free, registry)
 assert.strictEqual(runtime.choiceDatabase("ie1_s3", null, free, registry), season);
 
 const albumTeams = runtime.orderedAlbumTeams(season, true);
-assert.strictEqual(albumTeams.length, 40);
-assert.strictEqual(new Set(albumTeams.map((team) => String(team.teamId))).size, 40);
+assert.strictEqual(albumTeams.length, 41);
+assert.strictEqual(new Set(albumTeams.map((team) => String(team.teamId))).size, 41);
 for (const boss of season.bossOrder) assert(albumTeams.some((team) => team.teamId === boss.teamId));
 for (const special of season.specialMatches) assert(albumTeams.some((team) => team.teamId === special.teamId));
 assert(albumTeams.some((team) => !season.bossOrder.some((boss) => boss.teamId === team.teamId) && !season.specialMatches.some((special) => special.teamId === team.teamId)), "source-only teams must be visible");
