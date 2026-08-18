@@ -42,6 +42,8 @@ assert(!recruitment.some(e => String(e.playerId) === '1196'));
 for (const id of ['2083','258','2411']) { assert(recruitment.some(e => String(e.playerId) === id)); assert.strictEqual(free.players.filter(p => String(p.playerId) === id).length,1); }
 assert(season.profiles.some(p => p.profileId === '1196@neo_national')); assert(!recruitment.some(e => String(e.playerId)==='1196' && e.sourceTeamId==='royal_academy_redux'));
 const minimums = season.recruitmentRules.pullFreeAgents.minimumFinalOverallByBossIndex;
+assert.deepStrictEqual(season.rules.pullFreeAgentsMinimumFinalOverallByBossIndex, minimums);
+assert.deepStrictEqual(season.rules.pullFreeAgentsMinimumFinalOverallByBossIndex,[72,73,74,75,76,77,78,79,80,80,81,82]);
 assert.deepStrictEqual(minimums,[72,73,74,75,76,77,78,79,80,80,81,82]); assert.strictEqual(season.recruitmentRules.pullFreeAgents.maximumFinalOverall,null); assert.strictEqual(season.recruitmentRules.pullFreeAgents.noMaximumPotential,true);
 const effectiveFloor = (index) => Math.max(75, minimums[index]); const eligible = (overall,index) => overall >= effectiveFloor(index); assert(eligible(89,0)); assert(!eligible(72,0)); assert(!eligible(74,7)); assert(eligible(79,7)); assert(eligible(89,7));
 const formation = season.formations.eleven.find(f => f.id === '4-3-1-2'); assert.deepStrictEqual(formation.requirements,{GK:1,DF:4,MF:4,FW:2}); assert.strictEqual(formation.displayRoleMap.TQ,'MF'); assert(!season.players.some(p => p.position === 'TQ'));
