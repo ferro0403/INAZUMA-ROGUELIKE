@@ -3536,7 +3536,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
           ${benchPlayers.map((candidate) => playerCard(candidate, { button: true, context: "pull", level: candidate.displayLevel, database: global.SeasonRegistry?.isSeasonSource?.(candidate.source) ? (global.SeasonRegistry.database(candidate.source) || seasonDb) : freeAgentsDb, resolvedPlayer: candidate })).join("")}
         </div>
       </section>
-      ${allowCancel ? '<div class="button-row bench-replacement-footer"><button type="button" class="btn btn-ghost" id="cancel-recruit">RINUNCIA AL NUOVO GIOCATORE</button></div>' : ""}`,
+      ${allowCancel ? `<div class="button-row bench-replacement-footer"><button type="button" class="btn btn-ghost" id="cancel-recruit">${escapeHtml(options.cancelLabel || "RINUNCIA AL NUOVO GIOCATORE")}</button></div>` : ""}`,
       { closeable: false, className: "pull-selection-modal bench-replacement-modal" }
     );
     modalRoot.querySelectorAll(".bench-replacement-grid [data-player-id]").forEach((button) => {
@@ -4739,7 +4739,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   const candidateIds = pending.candidateProfileIds?.length ? pending.candidateProfileIds : [pending.selectedProfileId].filter(Boolean);
   const candidates = candidateIds.map((profileId) => global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, profileId)).filter(Boolean);
   const profile = pending.selectedProfileId && global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, pending.selectedProfileId);
-  openModal(`<div class="modal-head special-reward-head"><div><p class="eyebrow">SCELTA GIOCATORE DISPONIBILE</p><h2>${candidates.length ? "Scegli 1 giocatore su 3" : "Pool completato"}</h2><p class="muted">I candidati provengono esclusivamente dalla squadra appena battuta.</p></div></div><div class="candidate-grid pull-offer-grid">${candidates.map((candidate) => playerCard(candidate, { button: true, context: "pull", level: Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), database: seasonDb })).join("")}</div><div class="button-row special-reward-actions">${candidates.length ? '<button type="button" class="btn btn-ghost" id="decline-special-reward">RIFIUTA</button>' : ""}<button type="button" class="btn btn-yellow" id="claim-special-reward" ${candidates.length && !profile ? "disabled" : ""}>${candidates.length ? "ACQUISISCI O POTENZIA" : "CONTINUA"}</button></div>`, { closeable: false, className: "pull-selection-modal special-reward-modal" });
+  const pullLabel = Number(pending.totalRewards || 1) > 1 ? ` · PULL ${Number(pending.currentReward || 1)}/${Number(pending.totalRewards)}` : "";
+  openModal(`<div class="modal-head special-reward-head"><div><p class="eyebrow">SCELTA GIOCATORE DISPONIBILE${pullLabel}</p><h2>${candidates.length ? "Scegli 1 giocatore su 3" : "Pool completato"}</h2><p class="muted">I candidati provengono esclusivamente dalla squadra appena battuta.</p></div></div><div class="candidate-grid pull-offer-grid">${candidates.map((candidate) => playerCard(candidate, { button: true, context: "pull", level: Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), database: seasonDb })).join("")}</div><div class="button-row special-reward-actions">${candidates.length ? '<button type="button" class="btn btn-ghost" id="decline-special-reward">RIFIUTA</button>' : ""}<button type="button" class="btn btn-yellow" id="claim-special-reward" ${candidates.length && !profile ? "disabled" : ""}>${candidates.length ? "ACQUISISCI O POTENZIA" : "CONTINUA"}</button></div>`, { closeable: false, className: "pull-selection-modal special-reward-modal" });
 
   modalRoot.querySelectorAll("[data-player-id]").forEach((card) => card.addEventListener("click", () => {
     global.SpecialMatchRuntime.selectRewardCandidate(run, card.dataset.playerId ? candidates.find((candidate) => String(candidate.playerId) === String(card.dataset.playerId))?.profileId : null, pending);
@@ -4751,11 +4752,13 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const button = event.currentTarget;
     if (button.disabled) return;
     modalRoot.querySelectorAll(".special-reward-actions button").forEach((action) => { action.disabled = true; });
-    const result = global.SpecialMatchRuntime.decline(run, pending);
-    run.phase = "map";
+    const result = global.SpecialMatchRuntime.decline(run, pending, seasonDb);
     global.RunState.save(run);
     closeModal();
     if (result.status === "declined") toast("Ricompensa rifiutata");
+    if (result.transition?.status === "next-reward") return showSpecialMatchReward();
+    run.phase = "map";
+    global.RunState.save(run);
     renderMap();
   });
 
@@ -4764,19 +4767,18 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (button.disabled) return;
     button.disabled = true;
     const finish = () => {
-      pending.status = "claimed";
-      if (!run.claimedSpecialMatchRewardIds.includes(String(pending.specialMatchId))) run.claimedSpecialMatchRewardIds.push(String(pending.specialMatchId));
-      run.pendingSpecialMatchReward = null;
-      run.phase = "map";
+      const transition = global.SpecialMatchRuntime.completeCurrentReward(run, seasonDb, run.pendingSpecialMatchReward);
       global.RunState.save(run);
       closeModal();
+      if (transition.status === "next-reward") return showSpecialMatchReward();
+      run.phase = "map";
+      global.RunState.save(run);
       renderMap();
     };
     if (!profile) return finish();
     recruitPlayer(profile, global.SeasonRegistry.sourceForSeason(run.seasonId), Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), (completed) => {
-      if (completed) finish();
-      else { button.disabled = false; showSpecialMatchReward(); }
-    }, { allowCancel: false, recruitmentSource: "special_match_reward", actionId: pending.actionId });
+      finish();
+    }, { allowCancel: true, cancelLabel: "RIFIUTA", recruitmentSource: "special_match_reward", actionId: pending.actionId });
   });
 }
 

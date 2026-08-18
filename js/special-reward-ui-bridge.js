@@ -1,7 +1,6 @@
 (function (global) {
   "use strict";
 
-  const DECLINE_SELECTOR = "[data-decline-special-reward-full-roster]";
   const IE3_SEASON_ID = "ie1_s3";
   const PLAYER_IMAGE_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='22' fill='%2311213f'/%3E%3Ccircle cx='60' cy='42' r='22' fill='%23ffd34f'/%3E%3Cpath d='M22 108c6-28 24-42 38-42s32 14 38 42' fill='%2385cdf5'/%3E%3C/svg%3E";
   const STAT_LABELS = Object.freeze({
@@ -65,48 +64,12 @@
     return context?.run?.seasonId === IE3_SEASON_ID ? context : null;
   }
 
-  function returnToMapWithoutReload() {
-    const mapButton = document.querySelector("#app [data-nav='map']");
-    if (!mapButton) return false;
-    mapButton.click();
-    return true;
-  }
-
-  function declineFromFullRoster(button) {
-    if (button?.disabled) return;
-    const context = activeLiveSpecialReward();
-    if (!context) return;
-    button.disabled = true;
-    const result = global.SpecialMatchRuntime?.decline?.(context.run, context.pending);
-    if (!result || result.status === "no-pending-reward") {
-      button.disabled = false;
-      return;
-    }
-    context.run.phase = "map";
-    context.run.activeMatch = null;
-    global.RunState.save(context.run);
-    if (!returnToMapWithoutReload()) {
-      button.disabled = false;
-      console.error("Special reward decline: map navigation target unavailable");
-    }
-  }
-
-  function addDeclineToReplacementModal() {
+  function adaptReplacementCancel() {
     const modal = document.querySelector("#modal-root .bench-replacement-modal");
-    if (!modal || modal.querySelector(DECLINE_SELECTOR) || !activeLiveSpecialReward()) return;
-    let footer = modal.querySelector(".bench-replacement-footer");
-    if (!footer) {
-      footer = document.createElement("div");
-      footer.className = "button-row bench-replacement-footer";
-      modal.appendChild(footer);
-    }
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "btn btn-ghost";
-    button.dataset.declineSpecialRewardFullRoster = "true";
+    const button = modal?.querySelector("#cancel-recruit");
+    if (!button || !activeLiveSpecialReward() || button.dataset.specialRewardCancelAdapted === "1") return;
     button.textContent = "RIFIUTA";
-    button.addEventListener("click", () => declineFromFullRoster(button));
-    footer.prepend(button);
+    button.dataset.specialRewardCancelAdapted = "1";
   }
 
   function rarityClass(category) {
@@ -270,7 +233,10 @@
 
     const standard = document.createElement("section");
     standard.className = "ie3-secondary-standard-reward";
-    standard.innerHTML = `<div class="modal-head event-modal-head pull-selection-head"><button type="button" class="btn btn-back" data-ie3-secondary-back>← TORNA ALLA MAPPA</button><div><p class="eyebrow">SCELTA GIOCATORE</p><h2>RICOMPENSA · ${escapeHtml(meta.teamName)}</h2><p class="muted">Scegli 1 giocatore su 3 · Livello ${escapeHtml(meta.level)}</p></div></div><div class="candidate-grid pull-offer-grid ie3-secondary-choice-grid" data-ie3-secondary-choice-grid></div><div class="button-row pull-selection-footer ie3-secondary-reward-footer"><button type="button" class="btn btn-ghost" data-ie3-secondary-decline>RINUNCIA</button></div>`;
+    const pullProgress = Number(context.pending.totalRewards || 1) > 1
+      ? ` · PULL ${Number(context.pending.currentReward || 1)}/${Number(context.pending.totalRewards)}`
+      : "";
+    standard.innerHTML = `<div class="modal-head event-modal-head pull-selection-head"><div><p class="eyebrow">SCELTA GIOCATORE${pullProgress}</p><h2>RICOMPENSA · ${escapeHtml(meta.teamName)}</h2><p class="muted">Scegli 1 giocatore su 3 · Livello ${escapeHtml(meta.level)}</p></div></div><div class="candidate-grid pull-offer-grid ie3-secondary-choice-grid" data-ie3-secondary-choice-grid></div><div class="button-row pull-selection-footer ie3-secondary-reward-footer"><button type="button" class="btn btn-ghost" data-ie3-secondary-decline>RINUNCIA</button></div>`;
 
     const grid = standard.querySelector("[data-ie3-secondary-choice-grid]");
     nativeCards.forEach((nativeCard, index) => {
@@ -301,12 +267,8 @@
       grid.append(option);
     });
 
-    const decline = () => {
-      if (nativeDecline && !nativeDecline.disabled) nativeDecline.click();
-      else declineFromFullRoster(standard.querySelector("[data-ie3-secondary-decline]"));
-    };
+    const decline = () => { if (nativeDecline && !nativeDecline.disabled) nativeDecline.click(); };
     standard.querySelector("[data-ie3-secondary-decline]")?.addEventListener("click", decline);
-    standard.querySelector("[data-ie3-secondary-back]")?.addEventListener("click", decline);
 
     modal.prepend(standard);
     modal.append(nativeHolder);
@@ -318,11 +280,11 @@
     const modalRoot = document.getElementById("modal-root");
     if (!modalRoot) return;
     const observer = new MutationObserver(() => {
-      addDeclineToReplacementModal();
+      adaptReplacementCancel();
       patchIe3SpecialRewardModal();
     });
     observer.observe(modalRoot, { childList: true, subtree: true });
-    addDeclineToReplacementModal();
+    adaptReplacementCancel();
     patchIe3SpecialRewardModal();
   }
 
