@@ -7,14 +7,31 @@ const free = read('data/FREE_AGENTS_compact.json');
 
 assert.strictEqual(season.seasonId, 'ie1_s3');
 assert.strictEqual(season.requiresProfileAwareRuntime, true);
-assert.strictEqual(season.teams.length, 40); assert.strictEqual(season.bossOrder.length, 11); assert.strictEqual(season.specialMatches.length, 7);
-assert.strictEqual(season.players.length, 573); assert.strictEqual(season.profiles.length, 573); assert.strictEqual(season.recruitmentPool.entries.length, 291);
-assert.strictEqual(season.globalFreeAgentPatch.players.length, 3); assert.strictEqual(season.validation.counts.combinedUniqueGameplayPlayers, 576);
+assert.strictEqual(season.teams.length, 41); assert.strictEqual(season.bossOrder.length, 12); assert.strictEqual(season.specialMatches.length, 7);
+assert.strictEqual(season.players.length, 584); assert.strictEqual(season.profiles.length, 584); assert.strictEqual(season.recruitmentPool.entries.length, 291);
+assert.strictEqual(season.globalFreeAgentPatch.players.length, 3); assert.strictEqual(season.validation.counts.combinedUniqueGameplayPlayers, 587);
 assert.strictEqual(season.validation.counts.roleSwitchProfiles, 4); assert.strictEqual(season.warnings.length, 0); assert.strictEqual(season.validation.status, 'passed');
 const bosses = [
- ['big_waves',1,80,'4-4-2'],['desert_lions',3,82,'4-4-2'],['fire_dragon',5,84,'4-3-1-2'],['queen_s_knights',7,85,'4-4-2'],['the_empire',9,86,'4-4-2'],['unicorn',11,87,'4-3-1-2'],['orpheus',13,88,'4-3-1-2'],['the_kingdom',15,88,'4-3-1-2'],['little_gigantes',17,90,'4-4-2'],['team_ogre',19,92,'4-3-3'],['inazuma_national',20,94,'4-3-3']
+ ['big_waves',1,80,'4-4-2'],['desert_lions',3,82,'4-4-2'],['fire_dragon',5,84,'4-3-1-2'],['queen_s_knights',7,85,'4-4-2'],['the_empire',9,86,'4-4-2'],['unicorn',11,87,'4-3-1-2'],['orpheus',13,88,'4-3-1-2'],['the_kingdom',15,88,'4-3-1-2'],['dark_angels',16,89,'4-2-4'],['little_gigantes',17,90,'4-4-2'],['team_ogre',19,92,'4-3-3'],['inazuma_national',20,94,'4-3-3']
 ];
 assert.deepStrictEqual(season.bossOrder.map(b => [b.teamId,b.bossLevel,b.teamOverall,b.bossFormation]), bosses);
+assert.deepStrictEqual(season.bossOrder.map(b => b.order), Array.from({length:12}, (_, index) => index + 1));
+const darkAngels = season.bossOrder[8];
+const darkTeam = season.teams.find(team => team.teamId === 'dark_angels');
+assert(darkTeam); assert.strictEqual(darkTeam.teamStars, 4.5); assert.strictEqual(darkTeam.playerIds.length, 11);
+assert.strictEqual(darkAngels.startingXI.length, 11); assert(darkAngels.startingXI.every(entry => entry.level === 16));
+assert(darkAngels.startingXIProfileIds.every(id => id.endsWith('@dark_angels')));
+const profilesById = new Map(season.profiles.map(profile => [profile.profileId, profile]));
+const roles = darkAngels.startingXIProfileIds.map(id => profilesById.get(id).normalizedRole).sort();
+assert.deepStrictEqual(roles, ['DF','DF','DF','DF','FW','FW','FW','FW','GK','MF','MF']);
+assert.strictEqual(darkAngels.rewardPool, 'all_exported_team_players'); assert.strictEqual(darkAngels.unlocksTeamPool, true);
+assert.strictEqual(darkAngels.rewardPoolProfileIds.length, 11); assert(darkAngels.rewardPoolProfileIds.every(id => profilesById.has(id) && id.endsWith('@dark_angels')));
+assert.strictEqual(season.bossOrder.at(-1).teamId, 'inazuma_national'); assert.strictEqual(season.bossOrder.at(-1).order, 12);
+assert.strictEqual(new Set(season.players.map(player => player.playerId)).size, season.players.length);
+assert.strictEqual(new Set(season.profiles.map(profile => profile.profileId)).size, season.profiles.length);
+const playersById = new Map(season.players.map(player => [player.playerId, player]));
+assert(darkTeam.playerIds.every(id => playersById.has(id))); assert(darkTeam.playerProfileIds.every(id => profilesById.has(id)));
+for (const key of ['teamFiles','teams','bosses','canonicalPlayers','profiles','combinedUniqueGameplayPlayers','warnings']) assert.strictEqual(season.validation.counts[key], season.summary[key]);
 const specials = [[2,'neo_national',3,82],[4,'brocken_brigade',7,84],[5,'the_cape_crusaders',9,83],[6,'rose_griffons',11,84],[7,'team_d',14,84],[8,'team_zoolan',16,85],[9,'red_matador',17,85]];
 assert.deepStrictEqual(season.specialMatches.map(s => [s.zoneIndex,s.teamId,s.matchLevel,s.teamOverall]), specials);
 for (const match of season.specialMatches) { assert.strictEqual(match.reward.candidateCount,3); assert.strictEqual(match.reward.pickCount,1); assert.strictEqual(match.reward.guaranteedPlayerId,null); assert.strictEqual(match.reward.unlocksTeamPullPool,true); assert.deepStrictEqual([match.mapPlacement.layer,match.mapPlacement.column],[3,1]); }

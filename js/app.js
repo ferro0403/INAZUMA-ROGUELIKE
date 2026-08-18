@@ -2373,11 +2373,17 @@
   }
 
   function ensureCurrentZone() {
-    if (run.currentZone && run.currentZone.bossIndex === run.bossIndex) {
+    const completedBossIds = new Set((run.completedBossIds || []).map(String));
+    if (completedBossIds.has(String(seasonDb.bossOrder[run.bossIndex]?.teamId || ""))) {
+      const firstIncompleteBoss = seasonDb.bossOrder.findIndex((boss) => !completedBossIds.has(String(boss.teamId)));
+      if (firstIncompleteBoss >= 0) run.bossIndex = firstIncompleteBoss;
+    }
+    const currentBoss = seasonDb.bossOrder[run.bossIndex];
+    if (run.currentZone && run.currentZone.bossIndex === run.bossIndex && String(run.currentZone.bossId || "") === String(currentBoss?.teamId || "")) {
       if (global.MapEngine.normalizeSpecialMatchNode(run, seasonDb)) global.RunState.save(run);
       return;
     }
-    const boss = seasonDb.bossOrder[run.bossIndex];
+    const boss = currentBoss;
     if (!boss) return;
     run.currentZone = global.MapEngine.generate(run, boss);
     run.phase = "map";
