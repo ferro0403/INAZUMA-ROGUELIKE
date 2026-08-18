@@ -41,11 +41,25 @@
     const owned = run.roster?.find((entry) => id(entry.playerId) === id(profile.playerId));
     return !owned || profiles.compareProfileProgression(run.seasonId, owned.activeProfileId, profile.profileId) === 1;
   }
-  function rewardProfileIds(run, special, profiles = global.ProfiledSeasonRuntime) {
+  function isIe3SecondaryTeamReward(database, special) {
+    return id(database?.seasonId) === "ie1_s3"
+      && special?.reward?.rewardFlow === "choose_one_of_three_from_defeated_secondary_team";
+  }
+  function rewardProfileIds(run, special, profiles = global.ProfiledSeasonRuntime, options = {}) {
     const count = Math.max(1, Number(special.reward?.candidateCount || 1));
     if (!special.reward?.guaranteedProfileId) {
-      const random = global.DraftEngine?.randomFromSeed?.(`${run.runId}:${special.specialMatchId}:reward`) || Math.random;
-      const available = (special.reward?.teamPullPoolProfileIds || []).filter((profileId) => eligibleProfile(run, profileId, profiles));
+      const rewardNumber = Math.max(1, Number(options.rewardNumber || 1));
+      const seed = `${run.runId}:${special.specialMatchId}:reward${options.indexedSeed ? `:${rewardNumber}` : ""}`;
+      const random = global.DraftEngine?.randomFromSeed?.(seed) || Math.random;
+      const excludedPlayerIds = new Set((options.excludedPlayerIds || []).map(id));
+      const seenPlayerIds = new Set();
+      const available = (special.reward?.teamPullPoolProfileIds || []).filter((profileId) => {
+        const profile = profiles.resolveProfile(run.seasonId, profileId);
+        const playerId = id(profile?.playerId);
+        if (!profile || !eligibleProfile(run, profileId, profiles) || excludedPlayerIds.has(playerId) || seenPlayerIds.has(playerId)) return false;
+        seenPlayerIds.add(playerId);
+        return true;
+      });
       return (global.DraftEngine?.shuffle?.(available, random) || available).slice(0, count);
     }
     const guaranteed = special.reward?.guaranteedProfileId;
@@ -64,42 +78,65 @@
     if (!run.unlockedSpecialTeamIds.includes(id(special.teamId))) run.unlockedSpecialTeamIds.push(id(special.teamId));
     if (!run.unlockedTeamIds.includes(id(special.teamId))) run.unlockedTeamIds.push(id(special.teamId));
     if (!run.claimedSpecialMatchRewardIds.includes(id(special.specialMatchId))) {
-      const candidateProfileIds = rewardProfileIds(run, special);
-      run.pendingSpecialMatchReward = { specialMatchId: id(special.specialMatchId), nodeId: match.nodeId, teamId: id(special.teamId), guaranteedProfileId: special.reward?.guaranteedProfileId || null, candidateProfileIds, selectedProfileId: candidateProfileIds.length === 1 ? candidateProfileIds[0] : null, status: "pending", actionId: `${run.runId}:${special.specialMatchId}:reward` };
+      if (id(run.pendingSpecialMatchReward?.specialMatchId) === id(special.specialMatchId)) {
+        return { status: first ? "completed" : "already-completed", pendingReward: run.pendingSpecialMatchReward };
+      }
+      const totalRewards = isIe3SecondaryTeamReward(database, special) ? 2 : 1;
+      const indexedSeed = totalRewards > 1;
+      const candidateProfileIds = rewardProfileIds(run, special, global.ProfiledSeasonRuntime, { rewardNumber: 1, indexedSeed });
+      run.pendingSpecialMatchReward = { specialMatchId: id(special.specialMatchId), nodeId: match.nodeId, teamId: id(special.teamId), guaranteedProfileId: special.reward?.guaranteedProfileId || null, totalRewards, currentReward: 1, indexedSeed, candidateProfileIds, selectedProfileId: candidateProfileIds.length === 1 ? candidateProfileIds[0] : null, excludedPlayerIds: [], replacementPendingProfileId: null, status: "pending", actionId: `${run.runId}:${special.specialMatchId}:reward${indexedSeed ? ":1" : ""}` };
     }
     return { status: first ? "completed" : "already-completed", pendingReward: run.pendingSpecialMatchReward };
+  }
+  function completeCurrentReward(run, database, pending = run.pendingSpecialMatchReward) {
+    if (!pending || pending !== run.pendingSpecialMatchReward || pending.status !== "pending") return { status: "already-resolved" };
+    const selectedProfile = pending.selectedProfileId && global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, pending.selectedProfileId);
+    if (selectedProfile) pending.excludedPlayerIds = Array.from(new Set([...(pending.excludedPlayerIds || []).map(id), id(selectedProfile.playerId)]));
+    pending.replacementPendingProfileId = null;
+    const currentReward = Math.max(1, Number(pending.currentReward || 1));
+    const totalRewards = Math.max(1, Number(pending.totalRewards || 1));
+    if (currentReward < totalRewards) {
+      const special = byId(database, pending.specialMatchId);
+      if (!special) throw new Error("Ricompensa speciale non configurata");
+      pending.currentReward = currentReward + 1;
+      pending.candidateProfileIds = rewardProfileIds(run, special, global.ProfiledSeasonRuntime, { rewardNumber: pending.currentReward, excludedPlayerIds: pending.excludedPlayerIds, indexedSeed: pending.indexedSeed });
+      pending.selectedProfileId = pending.candidateProfileIds.length === 1 ? pending.candidateProfileIds[0] : null;
+      pending.actionId = `${run.runId}:${special.specialMatchId}:reward:${pending.currentReward}`;
+      return { status: "next-reward", pendingReward: pending };
+    }
+    pending.status = "resolved";
+    run.claimedSpecialMatchRewardIds = Array.isArray(run.claimedSpecialMatchRewardIds) ? run.claimedSpecialMatchRewardIds : [];
+    if (!run.claimedSpecialMatchRewardIds.includes(id(pending.specialMatchId))) run.claimedSpecialMatchRewardIds.push(id(pending.specialMatchId));
+    run.pendingSpecialMatchReward = null;
+    return { status: "completed", specialMatchId: id(pending.specialMatchId) };
   }
   function claim(run, pending = run.pendingSpecialMatchReward, options = {}) {
     if (!pending || pending.status === "claimed" || run.claimedSpecialMatchRewardIds.includes(id(pending.specialMatchId))) return { status: "already-claimed" };
     if (!pending.selectedProfileId) {
-      pending.status = "claimed-no-eligible-profile"; run.claimedSpecialMatchRewardIds.push(id(pending.specialMatchId)); run.pendingSpecialMatchReward = null;
-      return { status: "no-eligible-profile", reason: pending.reason };
+      const transition = completeCurrentReward(run, options.database, pending);
+      return { status: "no-eligible-profile", reason: pending.reason, transition };
     }
     const profile = global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, pending.selectedProfileId);
     const result = global.ProfiledSeasonRuntime.acquireOrUpgradeProfile(run, profile, { seasonId: run.seasonId, maxRoster: options.maxRoster || 15, level: options.level || 0 });
     if (result.status === "acquired") run.bench.push(id(result.player.playerId));
     if (result.status === "roster-full") return result;
     if (!["acquired", "upgraded"].includes(result.status)) return result;
-    pending.status = "claimed";
-    if (!run.claimedSpecialMatchRewardIds.includes(id(pending.specialMatchId))) run.claimedSpecialMatchRewardIds.push(id(pending.specialMatchId));
-    run.pendingSpecialMatchReward = null;
+    result.transition = completeCurrentReward(run, options.database, pending);
     return result;
   }
   function selectRewardCandidate(run, profileId, pending = run.pendingSpecialMatchReward) {
     if (!pending || !pending.candidateProfileIds?.map(id).includes(id(profileId))) throw new Error("Candidato ricompensa non valido");
     if (!eligibleProfile(run, profileId)) throw new Error("Profilo ricompensa non più eleggibile");
     pending.selectedProfileId = id(profileId);
+    pending.replacementPendingProfileId = id(profileId);
     return pending;
   }
-  function decline(run, pending = run.pendingSpecialMatchReward) {
+  function decline(run, pending = run.pendingSpecialMatchReward, database) {
     if (!pending) return { status: "no-pending-reward" };
-    const specialMatchId = id(pending.specialMatchId);
-    run.claimedSpecialMatchRewardIds = Array.isArray(run.claimedSpecialMatchRewardIds) ? run.claimedSpecialMatchRewardIds : [];
-    const alreadyResolved = run.claimedSpecialMatchRewardIds.includes(specialMatchId);
-    pending.status = "declined";
-    if (!alreadyResolved) run.claimedSpecialMatchRewardIds.push(specialMatchId);
-    if (run.pendingSpecialMatchReward && id(run.pendingSpecialMatchReward.specialMatchId) === specialMatchId) run.pendingSpecialMatchReward = null;
-    return { status: alreadyResolved ? "already-resolved" : "declined", specialMatchId, selectedProfileId: pending.selectedProfileId || null };
+    pending.selectedProfileId = null;
+    pending.replacementPendingProfileId = null;
+    const transition = completeCurrentReward(run, database, pending);
+    return { status: transition.status === "already-resolved" ? "already-resolved" : "declined", specialMatchId: id(pending.specialMatchId), selectedProfileId: null, transition };
   }
-  global.SpecialMatchRuntime = { byId, forNode, teamPlayers, fromNode, eligibleProfile, rewardProfileIds, selectRewardCandidate, complete, claim, decline };
+  global.SpecialMatchRuntime = { byId, forNode, teamPlayers, fromNode, eligibleProfile, isIe3SecondaryTeamReward, rewardProfileIds, selectRewardCandidate, completeCurrentReward, complete, claim, decline };
 })(globalThis);
