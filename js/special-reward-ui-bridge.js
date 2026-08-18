@@ -1,7 +1,6 @@
 (function (global) {
   "use strict";
 
-  const DECLINE_SELECTOR = "[data-decline-special-reward-full-roster]";
   const IE3_SEASON_ID = "ie1_s3";
   const PLAYER_IMAGE_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='22' fill='%2311213f'/%3E%3Ccircle cx='60' cy='42' r='22' fill='%23ffd34f'/%3E%3Cpath d='M22 108c6-28 24-42 38-42s32 14 38 42' fill='%2385cdf5'/%3E%3C/svg%3E";
   const STAT_LABELS = Object.freeze({
@@ -65,56 +64,15 @@
     return context?.run?.seasonId === IE3_SEASON_ID ? context : null;
   }
 
-  function returnToMapWithoutReload() {
-    const mapButton = document.querySelector("#app [data-nav='map']");
-    if (!mapButton) return false;
-    mapButton.click();
-    return true;
-  }
-
-  function declineFromFullRoster(button) {
-    if (button?.disabled) return;
-    const context = activeLiveSpecialReward();
-    if (!context) return;
-    button.disabled = true;
-    const result = global.SpecialMatchRuntime?.decline?.(context.run, context.pending);
-    if (!result || result.status === "no-pending-reward") {
-      button.disabled = false;
-      return;
-    }
-    context.run.phase = "map";
-    context.run.activeMatch = null;
-    global.RunState.save(context.run);
-    if (!returnToMapWithoutReload()) {
-      button.disabled = false;
-      console.error("Special reward decline: map navigation target unavailable");
-    }
-  }
-
   function addDeclineToReplacementModal() {
     const modal = document.querySelector("#modal-root .bench-replacement-modal");
-    if (!modal || modal.querySelector(DECLINE_SELECTOR) || !activeLiveSpecialReward()) return;
+    if (!modal || !activeLiveSpecialReward()) return;
     const nativeCancel = modal.querySelector("#cancel-recruit");
-    if (nativeCancel) {
-      if (nativeCancel.dataset.specialRewardDeclinePatched !== "1") {
-        nativeCancel.textContent = "RIFIUTA";
-        nativeCancel.dataset.specialRewardDeclinePatched = "1";
-      }
-      return;
+    if (!nativeCancel) return;
+    if (nativeCancel.dataset.specialRewardDeclinePatched !== "1") {
+      nativeCancel.textContent = "RIFIUTA";
+      nativeCancel.dataset.specialRewardDeclinePatched = "1";
     }
-    let footer = modal.querySelector(".bench-replacement-footer");
-    if (!footer) {
-      footer = document.createElement("div");
-      footer.className = "button-row bench-replacement-footer";
-      modal.appendChild(footer);
-    }
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "btn btn-ghost";
-    button.dataset.declineSpecialRewardFullRoster = "true";
-    button.textContent = "RIFIUTA";
-    button.addEventListener("click", () => declineFromFullRoster(button));
-    footer.prepend(button);
   }
 
   function rarityClass(category) {
@@ -139,11 +97,6 @@
     return `data-image-fallbacks="${escapeHtml(JSON.stringify(unique))}" data-image-fallback-index="0" onerror="globalThis.handlePlayerImageError && globalThis.handlePlayerImageError(this)"`;
   }
 
-  // Keep this resolver byte-for-byte equivalent in behaviour to app.js.
-  // The normal player sheet does not rely only on the seasonal profile: it also
-  // resolves PLAYER_VISUALS.json by playerId. Missing this global fallback was
-  // the reason IE3 secondary rewards showed the framed portrait instead of the
-  // same full-body visual used by the native player sheet.
   function playerImageCandidates(player, playerId = player?.playerId) {
     const id = playerId != null ? String(playerId) : "";
     const globalVisual = id ? (playerVisualsById.get(id) || {}) : {};
@@ -252,6 +205,9 @@
     const modal = document.querySelector("#modal-root .special-reward-modal");
     if (!context || !modal || modal.dataset.ie3StandardReward === "1") return;
 
+    const repair = global.SpecialMatchRuntime?.ensurePendingRewardCandidates?.(context.run, context.pending);
+    if (repair?.changed) global.RunState.save(context.run);
+
     const nativeClaim = modal.querySelector("#claim-special-reward");
     if (autoClaimProfileId && String(context.pending.selectedProfileId || "") === String(autoClaimProfileId)) {
       autoClaimProfileId = null;
@@ -269,6 +225,8 @@
     const candidateProfileIds = context.pending.candidateProfileIds || [];
     const candidates = candidateProfileIds.map((profileId) => global.ProfiledSeasonRuntime?.resolveProfile?.(IE3_SEASON_ID, profileId)).filter(Boolean);
     const meta = ie3RewardMeta(context);
+    const currentReward = Math.max(1, Number(context.pending.currentReward || 1));
+    const totalRewards = Math.max(1, Number(context.pending.totalRewards || 1));
 
     const nativeHolder = document.createElement("div");
     nativeHolder.className = "ie3-secondary-reward-native";
@@ -277,7 +235,7 @@
 
     const standard = document.createElement("section");
     standard.className = "ie3-secondary-standard-reward";
-    standard.innerHTML = `<div class="modal-head event-modal-head pull-selection-head"><button type="button" class="btn btn-back" data-ie3-secondary-back>← TORNA ALLA MAPPA</button><div><p class="eyebrow">SCELTA GIOCATORE</p><h2>RICOMPENSA · ${escapeHtml(meta.teamName)}</h2><p class="muted">Scegli 1 giocatore su 3 · Livello ${escapeHtml(meta.level)}</p></div></div><div class="candidate-grid pull-offer-grid ie3-secondary-choice-grid" data-ie3-secondary-choice-grid></div><div class="button-row pull-selection-footer ie3-secondary-reward-footer"><button type="button" class="btn btn-ghost" data-ie3-secondary-decline>RINUNCIA</button></div>`;
+    standard.innerHTML = `<div class="modal-head event-modal-head pull-selection-head"><button type="button" class="btn btn-back" data-ie3-secondary-back>← TORNA ALLA MAPPA</button><div><p class="eyebrow">SCELTA GIOCATORE · PULL ${escapeHtml(currentReward)}/${escapeHtml(totalRewards)}</p><h2>RICOMPENSA · ${escapeHtml(meta.teamName)}</h2><p class="muted">Scegli 1 giocatore su 3 · Livello ${escapeHtml(meta.level)}</p></div></div><div class="candidate-grid pull-offer-grid ie3-secondary-choice-grid" data-ie3-secondary-choice-grid></div><div class="button-row pull-selection-footer ie3-secondary-reward-footer"><button type="button" class="btn btn-ghost" data-ie3-secondary-decline>RINUNCIA</button></div>`;
 
     const grid = standard.querySelector("[data-ie3-secondary-choice-grid]");
     nativeCards.forEach((nativeCard, index) => {
@@ -310,7 +268,6 @@
 
     const decline = () => {
       if (nativeDecline && !nativeDecline.disabled) nativeDecline.click();
-      else declineFromFullRoster(standard.querySelector("[data-ie3-secondary-decline]"));
     };
     standard.querySelector("[data-ie3-secondary-decline]")?.addEventListener("click", decline);
     standard.querySelector("[data-ie3-secondary-back]")?.addEventListener("click", decline);
