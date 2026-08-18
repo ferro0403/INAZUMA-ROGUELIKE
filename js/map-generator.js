@@ -15,9 +15,18 @@
     return Number(run?.bossIndex || 0) + 1;
   }
 
+  function effectiveNodeWeightStage(run) {
+    const stage = currentStage(run);
+    if (run?.seasonId !== "ie1_s3") return stage;
+    const bossId = global.SeasonRegistry?.database?.(run.seasonId)?.bossOrder?.[run.bossIndex]?.teamId;
+    if (bossId === "team_ogre") return 10;
+    if (bossId === "inazuma_national") return 11;
+    return stage;
+  }
+
   function nodeWeightsForStage(run) {
     const config = global.SEASON1_CONFIG;
-    const stage = currentStage(run);
+    const stage = effectiveNodeWeightStage(run);
     const tier = (config.stageNodeWeightTiers || []).find(
       (entry) => stage >= entry.minStage && stage <= entry.maxStage
     );
@@ -180,6 +189,23 @@
     return true;
   }
 
+  function ensureCurrentZone(run, database) {
+    const completedBossIds = new Set((run?.completedBossIds || []).map(String));
+    const indexedBossId = String(database?.bossOrder?.[run?.bossIndex]?.teamId || "");
+    if (run?.seasonId === "ie1_s3" || completedBossIds.has(indexedBossId)) {
+      const firstIncompleteBoss = database?.bossOrder?.findIndex((boss) => !completedBossIds.has(String(boss.teamId))) ?? -1;
+      if (firstIncompleteBoss >= 0) run.bossIndex = firstIncompleteBoss;
+    }
+    const boss = database?.bossOrder?.[run.bossIndex];
+    if (!boss) return { changed: false, generated: false, boss: null };
+    if (run.currentZone && Number(run.currentZone.bossIndex) === Number(run.bossIndex)
+      && String(run.currentZone.bossId || "") === String(boss.teamId)) {
+      return { changed: normalizeSpecialMatchNode(run, database), generated: false, boss };
+    }
+    run.currentZone = generate(run, boss);
+    return { changed: true, generated: true, boss };
+  }
+
   function reachableNodeIds(zone) {
     return zone.edges
       .filter((edge) => edge[0] === zone.currentNodeId)
@@ -201,6 +227,8 @@
 
   global.MapEngine = {
     generate,
+    ensureCurrentZone,
+    effectiveNodeWeightStage,
     nodeWeightsForStage,
     reachableNodeIds,
     selectNode,

@@ -48,6 +48,7 @@ const lineup = read('data/DARK_ANGELS_lineup.json').teams[0];
   const app = fs.readFileSync('js/app.js', 'utf8');
   assert.match(app, /bossIndex >= seasonDb\.bossOrder\.length - 1/);
   assert.match(app, /run\.bossIndex >= seasonDb\.bossOrder\.length/);
-  assert.match(app, /firstIncompleteBoss = seasonDb\.bossOrder\.findIndex/);
+  assert.match(app, /global\.MapEngine\.ensureCurrentZone\(run, seasonDb\)/);
+  assert.match(fs.readFileSync('js/map-generator.js', 'utf8'), /firstIncompleteBoss = database\?\.bossOrder\?\.findIndex/);
   console.log('ie1-s3-dark-angels-regression-test: campaign, rewards, maps, completion and saves OK');
 })().catch(error => { console.error(error); process.exitCode = 1; });
