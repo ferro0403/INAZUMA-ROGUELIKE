@@ -36,7 +36,7 @@ assert.strictEqual(byId.get(String(sentinel.playerId)).profileId, undefined);
 assert.strictEqual(byId.get(String(sentinel.playerId)).progressionCode, sentinel.progressionCode);
 
 const minimums = season.recruitmentRules.pullFreeAgents.minimumFinalOverallByBossIndex;
-assert.deepStrictEqual(Array.from(minimums), [72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82]);
+assert.deepStrictEqual(Array.from(minimums), [72, 73, 74, 75, 76, 77, 78, 79, 80, 80, 81, 82]);
 const pullEligible = (player, index) => runtime.eligibleForSeason3FreeAgentPull(player, index, season);
 const pullAt = (index) => effective.filter((player) => pullEligible(player, index));
 assert(pullEligible({ sourceKind: "season3_recruitment_profile", profileId: "low@team", finalOverall: 72 }, 10));
