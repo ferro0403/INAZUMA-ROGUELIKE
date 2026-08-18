@@ -4752,10 +4752,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (button.disabled) return;
     modalRoot.querySelectorAll(".special-reward-actions button").forEach((action) => { action.disabled = true; });
     const result = global.SpecialMatchRuntime.decline(run, pending);
-    run.phase = "map";
     global.RunState.save(run);
     closeModal();
-    if (result.status === "declined") toast("Ricompensa rifiutata");
+    if (result.status === "next-reward") return showSpecialMatchReward();
+    run.phase = "map";
+    global.RunState.save(run);
+    toast("Ricompensa rifiutata");
     renderMap();
   });
 
@@ -4764,20 +4766,37 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (button.disabled) return;
     button.disabled = true;
     const finish = () => {
-      pending.status = "claimed";
-      if (!run.claimedSpecialMatchRewardIds.includes(String(pending.specialMatchId))) run.claimedSpecialMatchRewardIds.push(String(pending.specialMatchId));
-      run.pendingSpecialMatchReward = null;
-      run.phase = "map";
+      const result = global.SpecialMatchRuntime.completeCurrentReward(run, pending);
       global.RunState.save(run);
       closeModal();
+      if (result.status === "next-reward") return showSpecialMatchReward();
+      run.phase = "map";
+      global.RunState.save(run);
       renderMap();
     };
     if (!profile) return finish();
+    const requiresReplacement = run.roster.length >= global.SEASON1_CONFIG.maxRoster
+      && !run.roster.some((entry) => String(entry.playerId) === String(profile.playerId));
+    pending.replacementPendingProfileId = requiresReplacement ? String(profile.profileId) : null;
+    global.RunState.save(run);
     recruitPlayer(profile, global.SeasonRegistry.sourceForSeason(run.seasonId), Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), (completed) => {
       if (completed) finish();
-      else { button.disabled = false; showSpecialMatchReward(); }
-    }, { allowCancel: false, recruitmentSource: "special_match_reward", actionId: pending.actionId });
+      else {
+        const result = global.SpecialMatchRuntime.decline(run, pending);
+        global.RunState.save(run);
+        closeModal();
+        if (result.status === "next-reward") return showSpecialMatchReward();
+        run.phase = "map";
+        global.RunState.save(run);
+        renderMap();
+      }
+    }, { allowCancel: true, recruitmentSource: "special_match_reward", actionId: `${pending.actionId}:${pending.currentReward || 1}` });
   });
+
+  if (pending.replacementPendingProfileId && profile
+      && String(pending.replacementPendingProfileId) === String(profile.profileId)) {
+    queueMicrotask(() => document.getElementById("claim-special-reward")?.click());
+  }
 }
 
   function resumePostBossFlowOrMap() {

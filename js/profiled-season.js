@@ -126,6 +126,15 @@
     run.teamLevelUnits = Math.max(0, Math.min(5, Math.floor(Number(run.teamLevelUnits || 0))));
     for (const key of ["completedSpecialMatchIds", "claimedSpecialMatchRewardIds", "unlockedSpecialTeamIds", "processedLevelUnitActionIds"]) run[key] = Array.isArray(run[key]) ? Array.from(new Set(run[key].map(id))) : [];
     run.pendingSpecialMatchReward = run.pendingSpecialMatchReward || null;
+    if (run.pendingSpecialMatchReward) {
+      const pending = run.pendingSpecialMatchReward;
+      pending.totalRewards = Math.max(1, Number(pending.totalRewards || (id(run.seasonId) === "ie1_s3" ? 2 : 1)));
+      pending.currentReward = Math.max(1, Math.min(pending.totalRewards, Number(pending.currentReward || 1)));
+      pending.candidateProfileIds = Array.isArray(pending.candidateProfileIds) ? pending.candidateProfileIds.map(id) : [];
+      pending.excludedProfileIds = Array.isArray(pending.excludedProfileIds) ? Array.from(new Set(pending.excludedProfileIds.map(id))) : [];
+      pending.selectedProfileId = pending.selectedProfileId ? id(pending.selectedProfileId) : null;
+      pending.replacementPendingProfileId = pending.replacementPendingProfileId ? id(pending.replacementPendingProfileId) : null;
+    }
     run.roster = (run.roster || []).filter((entry, index, all) => all.findIndex((item) => id(item.playerId) === id(entry.playerId)) === index).map((entry) => {
       const canonical = resolveCanonicalPlayer(run.seasonId, entry.playerId);
       const profileId = entry.activeProfileId || canonical?.baseProfileId;

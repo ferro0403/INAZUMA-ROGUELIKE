@@ -94,6 +94,11 @@
   function addDeclineToReplacementModal() {
     const modal = document.querySelector("#modal-root .bench-replacement-modal");
     if (!modal || modal.querySelector(DECLINE_SELECTOR) || !activeLiveSpecialReward()) return;
+    const nativeCancel = modal.querySelector("#cancel-recruit");
+    if (nativeCancel) {
+      nativeCancel.textContent = "RIFIUTA";
+      return;
+    }
     let footer = modal.querySelector(".bench-replacement-footer");
     if (!footer) {
       footer = document.createElement("div");
