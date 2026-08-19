@@ -63,9 +63,9 @@
     return roles.every(Boolean) ? roles : [];
   }
 
-  function optimizeRun(run, context = contexts.get(run)) {
+  function optimizeRun(run, context = contexts.get(run), { elevenOnly = false } = {}) {
     if (!run || !context || !smartEnabled() || !global.SmartLineup?.optimizeAllLineups) return null;
-    const formation = run.fiveVFive && global.FiveVFive?.formationById
+    const formation = !elevenOnly && run.fiveVFive && global.FiveVFive?.formationById
       ? global.FiveVFive.formationById(run.fiveVFive.formation)
       : null;
     return global.SmartLineup.optimizeAllLineups(run, {
@@ -78,7 +78,7 @@
     });
   }
 
-  function runSignature(run) {
+  function rosterSignature(run) {
     return JSON.stringify((run?.roster || []).map((entry) => ({
       id: String(entry.playerId),
       level: Number(entry.level || 0),
@@ -88,6 +88,13 @@
       potentialBoost: Number(entry.potentialBoost || 0),
       currentOverallBoost: Number(entry.currentOverallBoost || 0),
     })));
+  }
+
+  function runSnapshot(run) {
+    return {
+      roster: rosterSignature(run),
+      formationId: String(run?.formationId || ""),
+    };
   }
 
   function installDraftHook() {
@@ -114,7 +121,7 @@
         pendingDraftOptimization.delete(run);
         optimizeRun(run, context);
       }
-      snapshots.set(run, runSignature(run));
+      snapshots.set(run, runSnapshot(run));
       return state;
     };
     wrapped.__smartLineupWrapped = true;
@@ -143,10 +150,13 @@
     const original = state.save.bind(state);
     const wrapped = function saveWithSmartLineup(run, ...args) {
       const before = snapshots.get(run);
-      const current = runSignature(run);
-      if (before != null && before !== current) optimizeRun(run);
+      const current = runSnapshot(run);
+      if (before) {
+        if (before.roster !== current.roster) optimizeRun(run);
+        else if (before.formationId !== current.formationId) optimizeRun(run, contexts.get(run), { elevenOnly: true });
+      }
       const result = original(run, ...args);
-      snapshots.set(run, runSignature(run));
+      snapshots.set(run, runSnapshot(run));
       return result;
     };
     wrapped.__smartLineupWrapped = true;
