@@ -52,6 +52,7 @@ require("../js/smart-lineup-runtime.js");
 
 const run = {
   runId: "smart-runtime-test",
+  formationId: "old",
   draft: {},
   roster: Object.keys(roles).map((playerId) => ({ playerId, level: 0, levelUnits: 0 })),
   lineup: ["blue", "mf83", "gk", "df"],
@@ -72,5 +73,16 @@ run.roster.find((entry) => entry.playerId === "purple").level = 1;
 globalThis.RunState.save(run);
 assert.strictEqual(run.lineup[0], "purple", "A level/Overall change must trigger full 11v11 reevaluation");
 assert.strictEqual(run.fiveVFive.slots.FW, "purple", "A level/Overall change must trigger full 5v5 reevaluation");
+
+run.lineup = ["blue", "mf83", "gk", "df"];
+run.bench = ["purple", "mf84"];
+run.fiveVFive.slots.FW = "blue";
+run.fiveVFive.slots.MF = "mf83";
+run.formationId = "new";
+globalThis.RunState.save(run);
+assert.strictEqual(run.lineup[0], "purple", "Changing 11v11 formation must restore the strongest FW");
+assert.strictEqual(run.lineup[1], "mf84", "Changing 11v11 formation must use potential to break equal-Overall ties");
+assert.strictEqual(run.fiveVFive.slots.FW, "blue", "Changing only the 11v11 formation must not rewrite the 5v5 lineup");
+assert.strictEqual(run.fiveVFive.slots.MF, "mf83", "Changing only the 11v11 formation must leave 5v5 untouched");
 
 console.log("smart-lineup-runtime-test: ok");
