@@ -62,22 +62,33 @@
 
   function installToastFilter() {
     const root = global.document?.getElementById?.("toast-root");
-    if (!root || typeof global.MutationObserver !== "function") return;
+    if (!root) return;
+
+    const nativeAppendChild = root.appendChild.bind(root);
+    root.appendChild = function appendNotification(node) {
+      if (shouldSuppressToast(node)) return node;
+      return nativeAppendChild(node);
+    };
+
     removeSuppressedToasts(root);
-    new global.MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (shouldSuppressToast(node)) node.remove();
+    if (typeof global.MutationObserver === "function") {
+      new global.MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          mutation.addedNodes.forEach((node) => {
+            if (shouldSuppressToast(node)) node.remove();
+          });
         });
-      });
-    }).observe(root, { childList: true });
+      }).observe(root, { childList: true });
+    }
   }
 
   function installSettingsObserver() {
     const app = global.document?.getElementById?.("app");
-    if (!app || typeof global.MutationObserver !== "function") return;
+    if (!app) return;
     ensureSettingsToggle();
-    new global.MutationObserver(() => ensureSettingsToggle()).observe(app, { childList: true, subtree: true });
+    if (typeof global.MutationObserver === "function") {
+      new global.MutationObserver(() => ensureSettingsToggle()).observe(app, { childList: true, subtree: true });
+    }
   }
 
   global.NotificationPreferences = Object.freeze({
