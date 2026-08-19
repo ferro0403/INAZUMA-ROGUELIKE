@@ -1637,7 +1637,7 @@ body { background: var(--gradient-app); }
 .stat-card { min-width: 0; padding: 13px; border: 1px solid rgba(255,255,255,.12); border-radius: 16px; background: rgba(3,9,20,.45); }
 .stat-card span { display: block; color: var(--muted); font-size: .74rem; font-weight: 900; text-transform: uppercase; letter-spacing: .08em; }
 .stat-card strong { display: block; margin-top: 5px; color: var(--text); font-size: clamp(1.1rem, 2.6vw, 1.55rem); line-height: 1; overflow-wrap: anywhere; }
-.home-roster-preview, .home-hall-portraits { display: flex; flex-wrap: wrap; gap: 8px; min-height: 52px; align-items: center; }
+.home-hall-portraits { display: flex; flex-wrap: wrap; gap: 8px; min-height: 52px; align-items: center; }
 .home-avatar { width: 52px; height: 52px; border: 1px solid rgba(255,255,255,.18); border-radius: 16px; background: rgba(255,255,255,.06); overflow: hidden; position: relative; }
 .home-avatar img { width: 100%; height: 100%; object-fit: contain; }
 .home-avatar small { position: absolute; right: 2px; bottom: 2px; padding: 1px 4px; border-radius: 6px; background: rgba(3,9,20,.8); color: var(--yellow); font-size: .58rem; font-weight: 950; }
@@ -2653,7 +2653,7 @@ body { background: var(--gradient-app); }
 #clean-home .home-zone-stat b { display: block; height: 100%; background: var(--home-yellow); }
 #clean-home .home-main-cta { width: 100%; min-width: 0; min-height: 58px; display: flex; align-items: center; justify-content: center; gap: 9px; padding: 11px 15px; border: 2px solid var(--home-ink); border-radius: 2px; background: var(--home-yellow); box-shadow: 5px 6px 0 rgba(16,17,20,.26); font-size: clamp(1.02rem, 5vw, 1.3rem); font-style: italic; font-weight: 1000; text-transform: uppercase; }
 #clean-home .home-main-cta > span { color: white; font-size: 1.25em; text-shadow: 2px 2px 0 rgba(16,17,20,.22); }
-#clean-home .home-club-section, #clean-home .home-roster-section { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
+#clean-home .home-club-section { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 #clean-home .home-club-actions { min-width: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }
 #clean-home .home-club-action { position: relative; min-width: 0; min-height: 72px; display: grid; grid-template-columns: 34px minmax(0, 1fr) auto; align-items: center; gap: 8px; padding: 10px 9px 10px 12px; border: 2px solid var(--home-ink); border-radius: 2px; background: var(--home-paper); box-shadow: 4px 5px 0 var(--home-ink); text-align: left; }
 #clean-home .home-club-action::before { content: ""; position: absolute; left: 0; top: 10px; bottom: 10px; width: 5px; background: var(--home-yellow); }
@@ -2664,20 +2664,6 @@ body { background: var(--gradient-app); }
 #clean-home .home-club-copy small { color: #555960; font-size: clamp(.5rem, 2.35vw, .63rem); font-style: normal; line-height: 1.15; overflow-wrap: normal; word-break: normal; }
 #clean-home .home-club-arrow { font-size: 1.25rem; font-weight: 1000; }
 #clean-home .home-club-action--gold .home-club-icon { color: var(--home-gold); }
-#clean-home .home-roster-heading { min-width: 0; display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-#clean-home .home-team-manage { flex: 0 1 auto; border: 0; border-bottom: 2px solid var(--home-ink); background: rgba(255,253,246,.88); font-size: .58rem; font-weight: 950; white-space: nowrap; text-transform: uppercase; }
-#clean-home .home-roster-preview { width: 100%; min-width: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
-#clean-home .home-player-card { position: relative; min-width: 0; min-height: 137px; overflow: hidden; border: 2px solid var(--rarity-border); background: var(--home-paper); box-shadow: 2px 3px 0 rgba(16,17,20,.22); color: var(--home-ink); font-style: normal; }
-#clean-home .home-player-card::before { content: ""; position: absolute; z-index: 1; left: 0; top: 0; width: 42%; height: 5px; background: var(--rarity-border); }
-#clean-home .home-player-portrait { height: 88px; display: grid; place-items: end center; overflow: hidden; background: linear-gradient(160deg, color-mix(in srgb, var(--rarity-border) 15%, white), #eef1f3); }
-#clean-home .home-player-portrait img { width: 100%; height: 100%; object-fit: contain; object-position: center bottom; }
-#clean-home .home-player-role, #clean-home .home-player-overall { position: absolute; z-index: 2; top: 5px; display: grid; place-items: center; min-width: 22px; min-height: 20px; padding: 2px 3px; border: 1px solid var(--home-ink); background: var(--home-paper); font-size: .51rem; font-weight: 1000; }
-#clean-home .home-player-role { left: 3px; border-color: var(--home-ink); background: var(--home-paper); color: var(--home-ink); }
-#clean-home .home-player-overall { right: 3px; border-color: var(--home-ink); background: var(--home-yellow); color: var(--home-ink); font-size: .62rem; }
-#clean-home .home-player-copy { min-width: 0; padding: 6px 3px 7px; text-align: center; }
-#clean-home .home-player-copy strong { display: block; overflow: hidden; color: var(--home-ink); font-size: .57rem; line-height: 1.05; text-overflow: ellipsis; white-space: nowrap; text-transform: uppercase; }
-#clean-home .home-player-copy small { display: block; margin-top: 3px; overflow: hidden; color: #4f5358; font-size: .44rem; font-weight: 900; text-overflow: ellipsis; white-space: nowrap; }
-#clean-home .home-roster-empty { grid-column: 1 / -1; margin: 0; padding: 20px; border: 2px dashed var(--home-ink); background: rgba(255,253,246,.92); font-weight: 900; text-align: center; }
 @media (max-width: 370px) {
   #clean-home .home-wordmark > span { font-size: 1.65rem; }
   #clean-home .home-wordmark small { font-size: .47rem; }
@@ -2698,8 +2684,6 @@ body { background: var(--gradient-app); }
   #clean-home .home-club-action--wide { grid-column: auto; }
   #clean-home .home-club-action:first-child { grid-column: span 2; }
   #clean-home .home-club-action:last-child { grid-column: span 2; }
-  #clean-home .home-player-portrait { height: 125px; }
-  #clean-home .home-player-card { min-height: 188px; }
 }
 /* Pull selection restyle: shared by standard, team, legendary and boss-reward offers. */
 .modal-backdrop:has(.pull-selection-modal) {

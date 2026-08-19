@@ -8,6 +8,7 @@ const home = app.slice(app.indexOf('const HOME_SECONDARY_ACTIONS'), app.indexOf(
 
 for (const required of ['Nessuna run attiva', 'Scrivi la tua leggenda', 'Entra nel torneo', 'Run in corso', 'Continua la run', 'Il tuo club']) assert.match(home, new RegExp(required, 'i'));
 for (const absent of ['Scegli la run', 'Crea la squadra', 'Affronta i boss', 'home-empty-steps']) assert.doesNotMatch(home, new RegExp(absent, 'i'));
+for (const absent of ['La tua squadra', 'Gestisci squadra', 'manage-team-home', 'home-roster-section']) assert.doesNotMatch(home, new RegExp(absent, 'i'), `${absent} is absent from Home`);
 for (const [id, handler] of [
   ['open-shop-home', 'renderShop'], ['open-development-home', 'renderDevelopmentCenter'],
   ['open-album-home', 'renderAlbumCollections'], ['open-hall-home', 'renderHallOfFame'],
@@ -21,6 +22,6 @@ assert.match(home, /HOME_SECONDARY_ACTIONS = \[[\s\S]*?Negozio[\s\S]*?Centro di 
 assert.match(css, /#clean-home \{[\s\S]*inazuma-stadium-mobile-light\.jpeg/);
 assert.match(css, /@media \(min-width: 781px\)[\s\S]*inazuma-stadium-desktop-light\.jpeg/);
 assert.match(css, /#clean-home \.home-club-actions \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
-assert.match(index, /#clean-home \.home-roster-section \{ display: none; \}/, 'squad preview and manage-team access stay hidden on Home');
+assert.doesNotMatch(index, /#clean-home \.home-roster-section \{ display: none; \}/, 'the temporary roster preview workaround is removed');
 assert.doesNotMatch(home, /bottom-nav|SCEGLI STAGIONE/i);
 console.log('home-layout-regression-test: ok');

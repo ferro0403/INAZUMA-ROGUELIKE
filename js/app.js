@@ -1260,26 +1260,6 @@
     return Math.max(0, Math.min(100, Math.round((Number(currentNode?.layer || 0) / finalLayer) * 100)));
   }
 
-  function homePlayerCardMarkup(entry) {
-    const player = resolvedRosterPlayer(entry.playerId || entry.id);
-    if (!player) return "";
-    const level = global.LevelProgression.formatLevel(entry, run?.seasonId);
-    const overall = player.overall ?? player.finalOverall ?? "-";
-    const role = player.position || player.normalizedRole || "-";
-    return `<article class="home-player-card ${rarityClass(player.category)}" aria-label="${escapeHtml(player.name)}, ${escapeHtml(role)}, overall ${escapeHtml(overall)}, livello ${escapeHtml(level)}">
-      <div class="home-player-portrait"><img src="${escapeHtml(playerPortraitUrl(player))}" alt="${escapeHtml(player.name)}" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(player).cardFallbacks)} /></div>
-      <span class="home-player-role">${escapeHtml(role)}</span>
-      <span class="home-player-overall">${escapeHtml(overall)}</span>
-      <div class="home-player-copy"><strong title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</strong><small>${escapeHtml(player.category || "Debole")} · Lv ${escapeHtml(level)}</small></div>
-    </article>`;
-  }
-
-  function homeRosterMarkup(savedRun) {
-    // Historical selector retained for the repository smoke contract: class="home-avatar"
-    const preview = savedRosterEntries(savedRun).slice(0, 5).map(homePlayerCardMarkup).filter(Boolean);
-    return preview.length ? preview.join("") : `<p class="home-roster-empty">La rosa verrà mostrata dopo il draft iniziale.</p>`;
-  }
-
   const HOME_SECONDARY_ACTIONS = [
     { id: "open-shop-home", label: "Negozio", description: "Oggetti e potenziamenti", icon: "◆", className: "home-club-action--wide" },
     { id: "open-development-home", label: "Centro di Sviluppo", description: "Potenzia il tuo club", icon: "↗", className: "home-club-action--wide" },
@@ -1338,10 +1318,6 @@
       </article>
       <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="continue-run">Continua la run »</strong></button>
       ${homeQuickActionsMarkup()}
-      <section class="home-roster-section" aria-label="La tua squadra">
-        <div class="home-roster-heading"><div class="home-section-label"><span>⚡</span> La tua squadra</div><button type="button" class="home-team-manage" id="manage-team-home">Gestisci squadra »</button></div>
-        <div class="home-roster-preview">${homeRosterMarkup(savedRun)}</div>
-      </section>
     </section></div>`;
   }
 
@@ -1390,7 +1366,6 @@
 
     document.getElementById("open-modes-home")?.addEventListener("click", renderSeasonSelect);
     document.getElementById("open-shop-home")?.addEventListener("click", () => renderShop());
-    document.getElementById("manage-team-home")?.addEventListener("click", resumeRun);
     document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : renderSeasonSelect());
     document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
     document.getElementById("open-album-home")?.addEventListener("click", renderAlbumCollections);
