@@ -43,14 +43,19 @@
     const checked = readEnabled() ? "checked" : "";
     return `<label class="settings-toggle-row" for="settings-game-notifications" data-notification-preferences-toggle>
       <span><strong>NOTIFICHE DI GIOCO</strong><small>Mostra i messaggi di conferma e aggiornamento durante il gioco.</small></span>
-      <input type="checkbox" id="settings-game-notifications" ${checked} aria-describedby="settings-game-notifications-description">
+      <input type="checkbox" id="settings-game-notifications" ${checked}>
       <span class="settings-toggle" aria-hidden="true"></span>
-    </label><span id="settings-game-notifications-description" class="sr-only">Preferenza persistente, attivata per impostazione predefinita.</span>`;
+    </label>`;
   }
 
   function ensureSettingsToggle() {
     const panel = global.document?.querySelector?.(".settings-preferences-panel");
-    if (!panel || panel.querySelector("[data-notification-preferences-toggle]")) return;
+    if (!panel) return;
+
+    panel.querySelector("#settings-smart-lineup-description")?.remove();
+    panel.querySelector("#settings-smart-lineup")?.removeAttribute("aria-describedby");
+
+    if (panel.querySelector("[data-notification-preferences-toggle]")) return;
     panel.insertAdjacentHTML("beforeend", notificationToggleMarkup());
     panel.querySelector("#settings-game-notifications")?.addEventListener("change", (event) => {
       writeEnabled(event.currentTarget.checked);
