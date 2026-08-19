@@ -1281,6 +1281,17 @@
     return global.TeamEmblems.teamEmblemMarkup(emblem, { escape: escapeHtml, className: "home-team-emblem" });
   }
 
+  async function ensureHomeTeamEmblemSeasonLoaded(identity) {
+    const encoded = global.TeamEmblems?.parseTeamEmblemId?.(identity?.emblemId);
+    if (!encoded || !global.SeasonRegistry?.isSeasonSource?.(encoded.seasonId) || global.SeasonRegistry.database(encoded.seasonId)) return;
+    const previousSeasonId = global.SeasonRegistry.activeId();
+    try {
+      await global.SeasonRegistry.loadDatabase(encoded.seasonId);
+    } finally {
+      global.SeasonRegistry.setActive(previousSeasonId);
+    }
+  }
+
   function homeIdentityMarkup(savedRun, profileIdentity = savedTeamIdentity()) {
     const identity = normalizeTeamIdentity(savedRun?.teamIdentity || profileIdentity || {});
     const season = savedRun ? global.SeasonRegistry?.get?.(savedRun.seasonId) : null;
@@ -1352,8 +1363,10 @@
       run = null;
     }
     ensureRunSchema();
-    migrateTeamIdentityProfile();
+    const profileIdentity = migrateTeamIdentityProfile();
     if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
+    const homeIdentity = normalizeTeamIdentity(run?.teamIdentity || profileIdentity || {});
+    await ensureHomeTeamEmblemSeasonLoaded(homeIdentity);
     app.innerHTML = `
       <main class="home-screen modern-home" id="clean-home" data-run-state="${run ? "active" : "empty"}">
         <header class="home-masthead">
