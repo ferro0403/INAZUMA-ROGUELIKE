@@ -5329,7 +5329,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
             <div class="inventory-equipped-item"><span class="item-kind">Equipaggiamento</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(itemStatLabel(item.stat))} +${escapeHtml(item.bonus)}</p></div>
             <div class="equipped-player"><span class="equipped-player-portrait"><img src="${escapeHtml(playerPortraitUrl(resolved || player))}" alt="Ritratto di ${escapeHtml(player.name)}" loading="lazy" ${imageFallbackAttributes(resolvePlayerVisual(resolved || player).cardFallbacks)} /></span><div class="equipped-player-copy"><strong>${escapeHtml(player.name)}</strong><small>${escapeHtml(player.position)} · OVR ${escapeHtml(resolved.overall)}</small></div></div>
             <button type="button" class="btn inventory-remove-button" data-unequip-player="${escapeHtml(entry.playerId)}">RIMUOVI</button>
-          </article>`).join("")}</div><p class="inventory-equipment-note">Ogni giocatore può avere un solo equipaggiamento attivo.</p>`
+          </article>`).join("")}</div>`
       : '<div class="inventory-empty-state"><strong>Nessun equipaggiamento assegnato.</strong></div>';
     app.innerHTML = `
       <main class="screen inventory-screen inventory-v2-screen">
@@ -5386,7 +5386,9 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const backpackQuantity = Number(group.backpackQuantity ?? group.quantity);
     const action = inventoryItemActionMarkup(item, instanceId, { compact: true, backpackQuantity, equippedEntries: group.equippedEntries || [] });
     const detail = inventoryItemEffect(item);
-    return `<article class="item-card inventory-item-card static-item" tabindex="0" data-inventory-select="${escapeHtml(group.key)}" data-item-id="${escapeHtml(group.key)}" data-item-kind="${escapeHtml(item.kind)}">${itemIcon(item)}<div class="item-card-main"><span class="item-kind">${item.kind === "equipment" ? "Equipaggiamento" : "Consumabile"}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(detail)}</p></div><div class="item-card-actions"><span class="item-quantity" aria-label="Quantità nello zaino ${group.quantity}">×${group.quantity}</span>${action}</div></article>`;
+    const category = group.category || inventoryItemCategory(item);
+    const categoryLabel = category === "equipment" ? "Equipaggiamento" : category === "consumable" ? "Consumabile" : "Speciale";
+    return `<article class="item-card inventory-item-card static-item" tabindex="0" data-inventory-select="${escapeHtml(group.key)}" data-item-id="${escapeHtml(group.key)}" data-item-kind="${escapeHtml(item.kind)}" data-item-category="${escapeHtml(category)}">${itemIcon(item)}<div class="item-card-main"><span class="item-kind">${categoryLabel}</span><strong>${escapeHtml(item.name)}</strong><p>${escapeHtml(detail)}</p></div><div class="item-card-actions"><span class="item-quantity" aria-label="Quantità nello zaino ${group.quantity}">×${group.quantity}</span>${action}</div></article>`;
   }
 
   function inventoryItemActionMarkup(itemOrId, instanceId, { compact = false, backpackQuantity = 1, equippedEntries = [] } = {}) {
@@ -5838,8 +5840,14 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     entry.equippedItem = newEquipment;
     global.RunState.save(run);
     closeModal();
-    toast(`${resolveItem(item).name}\nequipaggiata su ${sourcePlayer(entry).name}`);
     renderInventory({ keepScroll: true });
+    const itemName = resolveItem(item).name;
+    const playerName = sourcePlayer(entry).name;
+    openModal(`<div class="inventory-success-feedback" role="status"><span class="inventory-success-mark" aria-hidden="true">✓</span><div><strong>${escapeHtml(itemName)}</strong><p>equipaggiati su ${escapeHtml(playerName)}!</p></div><button type="button" class="btn btn-yellow" data-inventory-success-done>FATTO</button></div>`, {
+      closeable: false,
+      className: "inventory-flow-modal inventory-success-modal",
+    });
+    modalRoot.querySelector("[data-inventory-success-done]")?.addEventListener("click", closeModal);
   }
 
   function unequipPlayerItem(playerId, options = {}) {
