@@ -1281,18 +1281,19 @@
   }
 
   const HOME_SECONDARY_ACTIONS = [
-    { id: "open-album-home", label: "Album", icon: "▤", className: "" },
-    { id: "open-hall-home", label: "Albo d’Oro", icon: "★", className: "home-quick-button--gold" },
-    { id: "open-modes-home", label: "Modalità", icon: "⚡", className: "" },
-    { id: "open-development-home", label: "Centro di Sviluppo", icon: "◆", className: "" },
+    { id: "open-shop-home", label: "Negozio", description: "Oggetti e potenziamenti", icon: "◆", className: "home-club-action--wide" },
+    { id: "open-development-home", label: "Centro di Sviluppo", description: "Potenzia il tuo club", icon: "↗", className: "home-club-action--wide" },
+    { id: "open-album-home", label: "Album", description: "Le tue collezioni", icon: "▤", className: "" },
+    { id: "open-hall-home", label: "Albo d’Oro", description: "Le squadre campioni", icon: "★", className: "home-club-action--gold" },
+    { id: "open-modes-home", label: "Modalità", description: "Altre modalità di gioco", icon: "⚡", className: "home-club-action--wide" },
   ];
 
   function homeQuickActionsMarkup() {
-    const actions = HOME_SECONDARY_ACTIONS.map(({ id, label, icon, className }) => `
-      <button type="button" class="home-quick-button ${className}" id="${id}">
-        <span aria-hidden="true">${icon}</span><strong>${label}</strong>
+    const actions = HOME_SECONDARY_ACTIONS.map(({ id, label, description, icon, className }) => `
+      <button type="button" class="home-club-action ${className}" id="${id}">
+        <span class="home-club-icon" aria-hidden="true">${icon}</span><span class="home-club-copy"><strong>${label}</strong><small>${description}</small></span><span class="home-club-arrow" aria-hidden="true">»</span>
       </button>`).join("");
-    return `<nav class="home-quick-actions" aria-label="Sezioni principali">${actions}</nav>`;
+    return `<section class="home-club-section" aria-label="Il tuo club"><div class="home-section-label"><span>⚡</span> Il tuo club</div><nav class="home-club-actions" aria-label="Sezioni principali">${actions}</nav></section>`;
   }
 
   function homeTeamCrestMarkup(identity) {
@@ -1300,21 +1301,25 @@
     return global.TeamEmblems.teamEmblemMarkup(emblem, { escape: escapeHtml, className: "home-team-emblem" });
   }
 
+  function homeIdentityMarkup(savedRun, profileIdentity = savedTeamIdentity()) {
+    const identity = normalizeTeamIdentity(savedRun?.teamIdentity || profileIdentity || {});
+    const season = savedRun ? global.SeasonRegistry?.get?.(savedRun.seasonId) : null;
+    return `<section class="home-team-banner anime-panel" aria-label="Identità squadra">
+      <div class="home-team-crest">${homeTeamCrestMarkup(identity)}</div>
+      <div class="home-team-copy"><h1>${escapeHtml(identity.name)}</h1>${savedRun ? `<p>${escapeHtml(seasonDisplayName(savedRun.seasonId))}</p>${season?.displaySeasonNumber != null ? `<span>Stagione ${escapeHtml(season.displaySeasonNumber)}</span>` : ""}` : ""}</div>
+    </section>`;
+  }
+
   function homeActiveRunMarkup(savedRun) {
     // Historical smoke-test signature: class="home-hub-card home-run-card"
-    const identity = normalizeTeamIdentity(savedRun.teamIdentity);
     const bossIndex = Number(savedRun.bossIndex || 0);
     const boss = seasonDb?.bossOrder?.[bossIndex];
     const bossNumber = bossIndex + 1;
     const totalBosses = seasonDb?.bossOrder?.length || 10;
     const zoneProgress = homeZoneProgress(savedRun);
     const bossLogo = bossTeamLogoUrl(boss);
-    return `<section class="home-hero home-active-dashboard" aria-label="Home con run attiva">
-      <div class="home-team-banner anime-panel">
-        <div class="home-team-crest">${homeTeamCrestMarkup(identity)}</div>
-        <div class="home-team-copy"><p>${escapeHtml(seasonDisplayName(savedRun.seasonId))}</p><h1>${escapeHtml(identity.name)}</h1><span>Stagione ${escapeHtml(global.SeasonRegistry.get(savedRun.seasonId).displaySeasonNumber)}</span></div>
-        <button type="button" class="home-team-manage" id="manage-team-home">Gestisci squadra</button>
-      </div>
+    return `<div class="home-content"><section class="home-hero home-active-dashboard" aria-label="Home con run attiva">
+      ${homeIdentityMarkup(savedRun)}
       <article class="home-hub-card home-run-card home-run-panel anime-panel">
         <div class="home-panel-kicker"><span>⚡</span> Run in corso</div>
         <div class="home-next-boss">
@@ -1331,32 +1336,28 @@
           <span class="home-zone-stat"><small>Progresso zona</small><strong>${escapeHtml(zoneProgress)}%</strong><i><b style="width:${zoneProgress}%"></b></i></span>
         </div>
       </article>
-      <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="continue-run">Continua la run</strong><span class="home-cta-arrows" aria-hidden="true">»</span></button>
+      <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="continue-run">Continua la run »</strong></button>
       ${homeQuickActionsMarkup()}
       <section class="home-roster-section" aria-label="La tua squadra">
-        <div class="home-section-label"><span>⚡</span> La tua squadra</div>
+        <div class="home-roster-heading"><div class="home-section-label"><span>⚡</span> La tua squadra</div><button type="button" class="home-team-manage" id="manage-team-home">Gestisci squadra »</button></div>
         <div class="home-roster-preview">${homeRosterMarkup(savedRun)}</div>
       </section>
-    </section>`;
+    </section></div>`;
   }
 
   function homeEmptyRunMarkup() {
-    return `<section class="home-hero home-empty-dashboard" aria-label="Home senza run attiva">
+    return `<div class="home-content"><section class="home-hero home-empty-dashboard" aria-label="Home senza run attiva">
+      ${homeIdentityMarkup(null)}
       <article class="home-empty-panel anime-panel">
-        <div class="home-empty-kicker">Nessuna run attiva</div>
+        <div class="home-panel-kicker"><span>⚡</span> Nessuna run attiva</div>
         <div class="home-empty-copy">
-          <h1>Scegli la tua prossima sfida</h1>
-          <p>Seleziona una run, costruisci la tua squadra e inizia una nuova scalata verso la vittoria.</p>
+          <h1>Scrivi la tua leggenda</h1>
+          <p>Una nuova avventura ti aspetta.</p>
         </div>
-        <ol class="home-empty-steps" aria-label="Come iniziare">
-          <li><span>1</span><strong>Scegli la run</strong></li>
-          <li><span>2</span><strong>Crea la squadra</strong></li>
-          <li><span>3</span><strong>Affronta i boss</strong></li>
-        </ol>
-        <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">◎</span><strong id="choose-run">Scegli una run</strong><span class="home-cta-arrows" aria-hidden="true">»</span></button>
+        <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="choose-run">Entra nel torneo »</strong></button>
       </article>
       ${homeQuickActionsMarkup()}
-    </section>`;
+    </section></div>`;
   }
 
   function homeRunCardMarkup(savedRun) {
@@ -1388,6 +1389,7 @@
     resetRenderedViewScroll();
 
     document.getElementById("open-modes-home")?.addEventListener("click", renderSeasonSelect);
+    document.getElementById("open-shop-home")?.addEventListener("click", () => renderShop());
     document.getElementById("manage-team-home")?.addEventListener("click", resumeRun);
     document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : renderSeasonSelect());
     document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
