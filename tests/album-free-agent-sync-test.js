@@ -22,4 +22,7 @@ const migrated = album.read();
 for (const id of ["free-a", "free-b"]) for (const collection of ["ie1", "ie2", "ie1_s2"]) assert(migrated.collections[collection].unlockedPlayerIds[id]);
 assert(!migrated.collections.ie2.unlockedPlayerIds["ie1-team"]); assert(!migrated.collections.ie1.unlockedPlayerIds["ie2-team"]);
 const serialized = JSON.stringify(migrated); album.configureFreeAgentIds(["free-a", "free-b"]); assert.equal(JSON.stringify(album.read()), serialized);
+const beforeBatch = album.read().collections.ie1.unlockedPlayerIds["free-a"];
+assert.equal(album.unlockAlbumPlayers("ie1", ["free-a", "free-b"], { source: "development-dev-unlock" }), 0);
+assert.deepEqual(album.read().collections.ie1.unlockedPlayerIds["free-a"], beforeBatch, "batch re-run preserves original unlock metadata");
 console.log("album-free-agent-sync-test: bidirectional sync and idempotent migration OK");
