@@ -1,6 +1,13 @@
 (function () {
   "use strict";
 
+  const TEXT_REPLACEMENTS = new Map([
+    ["Utilizzabile durante un Pull", "Rigenera Pull"],
+    ["Utilizzabile durante un Pull previsto.", "Rigenera Pull"],
+    ["Utilizzabile in un Pull normale", "Migliora Pull"],
+    ["Utilizzabile in un Pull normale.", "Migliora Pull"],
+  ]);
+
   const LABELS_BY_ID = {
     scout_token: "Rigenera Pull",
     pull_reroll: "Rigenera Pull",
@@ -13,8 +20,15 @@
     "Talismano portafortuna": "Migliora Pull",
   };
 
-  function replacementForCard(card) {
+  function replacementForLabel(label) {
+    if (!label) return "";
+
+    const currentText = String(label.textContent || "").trim();
+    if (TEXT_REPLACEMENTS.has(currentText)) return TEXT_REPLACEMENTS.get(currentText);
+
+    const card = label.closest(".inventory-item-card");
     if (!card) return "";
+
     const itemId = String(card.dataset?.itemId || "").trim();
     if (LABELS_BY_ID[itemId]) return LABELS_BY_ID[itemId];
 
@@ -25,9 +39,8 @@
   function applyPullItemLabels(root = document) {
     if (!root || typeof root.querySelectorAll !== "function") return;
 
-    root.querySelectorAll(".inventory-item-card .inventory-unavailable").forEach((label) => {
-      const card = label.closest(".inventory-item-card");
-      const replacement = replacementForCard(card);
+    root.querySelectorAll(".inventory-unavailable").forEach((label) => {
+      const replacement = replacementForLabel(label);
       if (replacement && label.textContent.trim() !== replacement) {
         label.textContent = replacement;
       }
@@ -35,8 +48,7 @@
   }
 
   function scheduleApply(root) {
-    if (typeof queueMicrotask === "function") queueMicrotask(() => applyPullItemLabels(root));
-    else setTimeout(() => applyPullItemLabels(root), 0);
+    requestAnimationFrame(() => applyPullItemLabels(root));
   }
 
   applyPullItemLabels(document);
@@ -46,8 +58,10 @@
     new MutationObserver(() => scheduleApply(app)).observe(app, {
       childList: true,
       subtree: true,
+      characterData: true,
     });
   }
 
   document.addEventListener("click", () => scheduleApply(document), true);
+  window.addEventListener("pageshow", () => scheduleApply(document));
 })();
