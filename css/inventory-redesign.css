@@ -30,7 +30,7 @@ body:has(.inventory-v2-screen),
 .inventory-v2-screen [data-item-category="equipment"] .item-kind { color: #792b87; }
 .inventory-v2-screen [data-item-category="special"] .item-kind { color: #216db5; }
 .inventory-v2-screen .item-card-actions { display: flex; align-items: stretch; width: 100%; min-width: 0; min-height: 36px; margin-top: auto; }
-.inventory-v2-screen .item-quantity { position: absolute; top: -2px; right: -2px; z-index: 2; min-width: 32px; min-height: 26px; display: grid; place-items: center; padding: 2px 6px; border: 2px solid #111216; border-radius: 0; background: #ffd21f; color: #111216; font-size: .76rem; font-weight: 950; }
+.inventory-v2-screen .item-quantity { position: absolute; top: -2px; right: -2px; z-index: 2; min-width: 28px; min-height: 22px; display: grid; place-items: center; padding: 1px 5px; border: 2px solid #111216; border-radius: 0; background: #ffd21f; color: #111216; font-size: .68rem; font-weight: 950; }
 .inventory-v2-screen .inventory-card-action { flex: 1; min-height: 36px; padding: 6px 8px; border: 2px solid #111216; border-radius: 1px; background: #111216; color: #fffaf0; box-shadow: none; font-size: .68rem; }
 .inventory-v2-screen .inventory-unavailable { display: flex; align-items: center; justify-content: center; width: 100%; min-width: 0; min-height: 36px; padding: 5px 6px; border: 1px solid #8b877d; background: #ece8de; color: #4a4842; font-size: .61rem; font-weight: 850; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
 .inventory-empty-state { padding: 18px; border: 2px solid #111216; border-radius: 2px; background: #fffaf0; color: #333; }
