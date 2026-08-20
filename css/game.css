@@ -17,7 +17,7 @@
 
 * { box-sizing: border-box; }
 
-html, body { min-height: 100%; }
+html, body { min-height: 100%; touch-action: manipulation; }
 
 #modal-root:empty { pointer-events: none; }
 html.modal-scroll-locked, body.modal-scroll-locked { overflow: hidden; overscroll-behavior: none; }
