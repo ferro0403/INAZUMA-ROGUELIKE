@@ -164,8 +164,27 @@
     else if (target >= 90 && original[primary] >= 9) primaryMinimum = 10;
     else if (target >= 90 && original[primary] >= 8) primaryMinimum = 9;
     const eligible = FALLBACK_STAT_ORDER.filter((stat) => weights[stat] > 0);
+    const minimums = Object.fromEntries(eligible.map((stat) => [stat, stat === primary ? Math.max(current[stat], primaryMinimum) : current[stat]]));
+    const eligibleIndex = Object.fromEntries(eligible.map((stat, index) => [stat, index]));
+    const weightEntries = Object.entries(weights);
+    function boundOverall(index, candidate, maximize) {
+      let roleScore = 0;
+      for (const [stat, weight] of weightEntries) {
+        const position = eligibleIndex[stat];
+        const value = weight > 0 && position >= index ? (maximize ? 10 : minimums[stat]) : candidate[stat];
+        roleScore += Number(value || 0) * weight / 100;
+      }
+      return Math.max(1, Math.min(99, Math.round(30 + ((roleScore - 1) * 69 / 9))));
+    }
     let best = null;
     function visit(index, candidate) {
+      const minOverall = boundOverall(index, candidate, false);
+      const maxOverall = boundOverall(index, candidate, true);
+      if (maxOverall < target) return;
+      if (best) {
+        if (best.rank[0] === 0 && minOverall > target) return;
+        if (best.rank[0] === 1 && minOverall - target > best.rank[1]) return;
+      }
       if (index === eligible.length) {
         const overall = overallForRole(role, candidate);
         if (overall < target) return;
@@ -175,8 +194,16 @@
         return;
       }
       const stat = eligible[index];
-      const minimum = stat === primary ? Math.max(current[stat], primaryMinimum) : current[stat];
-      for (let value = minimum; value <= 10; value += 1) { candidate[stat] = value; visit(index + 1, candidate); }
+      const minimum = minimums[stat];
+      for (let value = minimum; value <= 10; value += 1) {
+        candidate[stat] = value;
+        const branchMin = boundOverall(index + 1, candidate, false);
+        if (best) {
+          if (best.rank[0] === 0 && branchMin > target) break;
+          if (best.rank[0] === 1 && branchMin - target > best.rank[1]) break;
+        }
+        visit(index + 1, candidate);
+      }
     }
     visit(0, { ...current });
     return best?.ratings || current;
