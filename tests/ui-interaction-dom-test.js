@@ -18,23 +18,33 @@ function extractFunction(name) {
 }
 
 const context = {};
-vm.runInNewContext(`${extractFunction('bindAlbumRosterInteractions')}; this.bind = bindAlbumRosterInteractions;`, context);
+vm.runInNewContext(`${extractFunction('bindAlbumRosterInteractions')}; ${extractFunction('bindDevelopmentSelectedCardInteractions')}; this.bind = bindAlbumRosterInteractions; this.bindDevelopment = bindDevelopmentSelectedCardInteractions;`, context);
 
 class FakeNode {
   constructor(dataset = {}, parent = null) { this.dataset = dataset; this.parent = parent; this.listeners = new Map(); }
   addEventListener(type, listener) { const list = this.listeners.get(type) || []; list.push(listener); this.listeners.set(type, list); }
   contains(node) { for (let current = node; current; current = current.parent) if (current === this) return true; return false; }
   closest(selector) {
-    const key = selector === '[data-album-player-entry]' ? 'albumPlayerEntry' : selector === '[data-album-player]' ? 'albumPlayer' : null;
+    const key = selector === '[data-album-player-entry]' ? 'albumPlayerEntry' : selector === '[data-album-player]' ? 'albumPlayer' : selector === '[data-development-selected-card]' ? 'developmentSelectedCard' : null;
     for (let current = this; current; current = current.parent) if (key && current.dataset[key] != null) return current;
     return null;
   }
   click(target = this) {
-    const event = { target, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
+    const event = { target, defaultPrevented: false, propagationStopped: false, preventDefault() { this.defaultPrevented = true; }, stopPropagation() { this.propagationStopped = true; } };
     (this.listeners.get('click') || []).forEach((listener) => listener(event));
     return event;
   }
 }
+
+const developmentRoot = new FakeNode();
+const selectedCard = new FakeNode({ developmentSelectedCard: '' }, developmentRoot);
+const selectedPortrait = new FakeNode({}, selectedCard);
+let developmentDetailsOpened = 0;
+context.bindDevelopment(developmentRoot, () => { developmentDetailsOpened += 1; });
+context.bindDevelopment(developmentRoot, () => { developmentDetailsOpened += 100; });
+const developmentTap = developmentRoot.click(selectedPortrait);
+assert.equal(developmentTap.defaultPrevented, true, 'selected Development card owns the mobile tap');
+assert.equal(developmentDetailsOpened, 1, 'delegated binding survives card rerenders and is installed once');
 
 class MouseEvent { constructor(type, options = {}) { this.type = type; this.bubbles = options.bubbles; } }
 const roster = new FakeNode();

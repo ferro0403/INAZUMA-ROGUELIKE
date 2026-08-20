@@ -109,56 +109,85 @@
     return Object.entries(weights).reduce((sum, [stat, weight]) => sum + Number(stats?.[stat] || 0) * weight / 100, 0);
   }
 
-  // InaCodex overalls are authored independently from the rounded 1-10 ratings.
-  // Consequently the raw player's overall is the calibration point, while all
-  // growth is measured with the canonical role weights from that point.
-  function calculateCanonicalOverall(stats, role, originalStats = stats, originalOverall = 0) {
-    const delta = weightedStatValue(stats, role) - weightedStatValue(originalStats, role);
-    return clampPotential(Number(originalOverall || 0) + Math.round(delta));
+  function toCodexRatings(stats) {
+    return Object.fromEntries(FALLBACK_STAT_ORDER.map((stat) => {
+      const value = Number(stats?.[stat] || 0);
+      return [stat, Math.max(1, Math.min(10, Math.round(value > 10 ? value / 10 : value)))];
+    }));
   }
 
-  function growthPriority(stat, weight, roleWeights, result, originalStats, allocated, targetOverall) {
-    const original = Number(originalStats[stat] || 0);
-    const current = Number(result[stat] || 0);
-    const profileValues = Object.entries(roleWeights).filter(([, candidateWeight]) => candidateWeight > 0).map(([key]) => Number(originalStats[key] || 0));
-    const profileAverage = profileValues.reduce((sum, value) => sum + value, 0) / Math.max(1, profileValues.length);
-    const predisposition = Math.max(0.55, 1 + (original - profileAverage) / 100);
-    const weakStatPenalty = original + 20 < profileAverage ? 0.58 : 1;
-    const growthFatigue = 1 / (1 + allocated * 0.22);
-    const expectedTop = targetOverall >= 95 ? 100 : targetOverall >= 90 ? 95 : targetOverall >= 85 ? 90 : targetOverall >= 80 ? 85 : targetOverall >= 75 ? 80 : 75;
-    // Bands guide ordering only. They never make a stat ineligible.
-    const bandPenalty = current >= Math.max(original, expectedTop) ? 0.72 : 1;
-    return weight * predisposition * weakStatPenalty * growthFatigue * bandPenalty;
+  // Exact manual-rating formula from InaCodex player-ratings.js. Ratings are
+  // integers from 1 to 10; this function is deliberately unrelated to its
+  // automatic/random profile generator.
+  function overallForRole(role, ratings) {
+    if (!ROLE_STAT_WEIGHTS[role]) return 1;
+    const roleScore = weightedStatValue(toCodexRatings(ratings), role);
+    return Math.max(1, Math.min(99, Math.round(30 + ((roleScore - 1) * 69 / 9))));
   }
 
-  function growPlayerStatsToTargetOverall({ role, originalStats, currentStats, originalOverall, currentOverall, targetOverall }) {
-    const result = { ...(currentStats || {}) };
-    const baselineStats = { ...(originalStats || currentStats || {}) };
+  function calculateCanonicalOverall(stats, role) {
+    return overallForRole(role, toCodexRatings(stats));
+  }
+
+  function coherenceScore(candidate, original, current, role, target) {
     const weights = ROLE_STAT_WEIGHTS[role];
-    const target = clampPotential(targetOverall);
-    if (!weights) return result;
+    const eligible = FALLBACK_STAT_ORDER.filter((stat) => weights[stat] > 0);
+    const average = eligible.reduce((sum, stat) => sum + original[stat], 0) / eligible.length;
+    let score = 0, totalGrowth = 0, squaredGrowth = 0;
+    for (const stat of eligible) {
+      const growth = candidate[stat] - current[stat];
+      totalGrowth += growth; squaredGrowth += growth * growth;
+      const strength = original[stat] - average;
+      score += growth * (weights[stat] * 0.34 + strength * 3);
+      if (original[stat] <= average - 2) score -= growth * growth * 24;
+      const desired = target >= 95 ? 10 : target >= 90 ? 9 : target >= 85 ? 8.5 : target >= 80 ? 8 : 7;
+      score -= Math.max(0, candidate[stat] - Math.max(original[stat], desired)) * 5;
+    }
+    score -= squaredGrowth * 5 + Math.max(0, squaredGrowth - totalGrowth * totalGrowth / eligible.length) * 4;
+    for (const stronger of eligible) for (const weaker of eligible) {
+      if (original[stronger] >= original[weaker] + 2 && candidate[stronger] < candidate[weaker]) score -= 90;
+    }
+    return score;
+  }
 
-    const calibratedOriginalOverall = Number(originalOverall || 0);
-    let calculated = calculateCanonicalOverall(result, role, baselineStats, calibratedOriginalOverall);
-    // currentOverall is authoritative for level progression, but the stat delta
-    // remains calibrated against the exact raw stats at that level.
-    const calibration = Number(currentOverall || calculated) - calculated;
-    const calculate = () => calculateCanonicalOverall(result, role, baselineStats, calibratedOriginalOverall) + calibration;
-    const allocated = Object.fromEntries(Object.keys(weights).map((stat) => [stat, Math.max(0, Number(result[stat] || 0) - Number(baselineStats[stat] || 0))]));
-    calculated = calculate();
-    while (calculated < target) {
-      const eligible = Object.entries(weights)
-        .filter(([stat, weight]) => weight > 0 && Number(result[stat] || 0) < 100)
-        .sort(([statA, weightA], [statB, weightB]) => {
-          const difference = growthPriority(statB, weightB, weights, result, baselineStats, allocated[statB], target)
-            - growthPriority(statA, weightA, weights, result, baselineStats, allocated[statA], target);
-          return difference || FALLBACK_STAT_ORDER.indexOf(statA) - FALLBACK_STAT_ORDER.indexOf(statB);
-        });
-      if (!eligible.length) break;
-      const stat = eligible[0][0];
-      result[stat] = Number(result[stat] || 0) + 1;
-      allocated[stat] += 1;
-      calculated = calculate();
+  function findBestCodexGrowthProfile({ role, originalRatings, currentRatings, targetOverall }) {
+    const weights = ROLE_STAT_WEIGHTS[role];
+    const original = toCodexRatings(originalRatings);
+    const current = toCodexRatings(currentRatings);
+    if (!weights) return current;
+    const target = clampPotential(targetOverall);
+    const primary = { FW: "attack", MF: "control", DF: "defense", GK: "save" }[role];
+    let primaryMinimum = current[primary];
+    if (target >= 95) primaryMinimum = 10;
+    else if (target >= 90 && original[primary] >= 9) primaryMinimum = 10;
+    else if (target >= 90 && original[primary] >= 8) primaryMinimum = 9;
+    const eligible = FALLBACK_STAT_ORDER.filter((stat) => weights[stat] > 0);
+    let best = null;
+    function visit(index, candidate) {
+      if (index === eligible.length) {
+        const overall = overallForRole(role, candidate);
+        if (overall < target) return;
+        const score = coherenceScore(candidate, original, current, role, target);
+        const rank = [overall === target ? 0 : 1, overall - target, -score, eligible.map((stat) => candidate[stat]).join("")];
+        if (!best || rank[0] < best.rank[0] || (rank[0] === best.rank[0] && (rank[1] < best.rank[1] || (rank[1] === best.rank[1] && (rank[2] < best.rank[2] || (rank[2] === best.rank[2] && rank[3] < best.rank[3])))))) best = { ratings: { ...candidate }, rank };
+        return;
+      }
+      const stat = eligible[index];
+      const minimum = stat === primary ? Math.max(current[stat], primaryMinimum) : current[stat];
+      for (let value = minimum; value <= 10; value += 1) { candidate[stat] = value; visit(index + 1, candidate); }
+    }
+    visit(0, { ...current });
+    return best?.ratings || current;
+  }
+
+  function growPlayerStatsToTargetOverall({ role, originalStats, currentStats, currentOverall, targetOverall }) {
+    if (Number(targetOverall) <= Number(currentOverall)) return { ...(currentStats || {}) };
+    const originalRatings = toCodexRatings(originalStats || currentStats);
+    const currentRatings = toCodexRatings(currentStats);
+    const ratings = findBestCodexGrowthProfile({ role, originalRatings, currentRatings, targetOverall });
+    const result = { ...(currentStats || {}) };
+    for (const stat of FALLBACK_STAT_ORDER) {
+      if (ratings[stat] > currentRatings[stat]) result[stat] = Number(result[stat] || 0) + ((ratings[stat] - currentRatings[stat]) * 10);
     }
     return result;
   }
@@ -331,6 +360,9 @@
     normalizedPotentialBoost,
     distributeWeightedStatBoosts,
     growPlayerStatsToTargetOverall,
+    findBestCodexGrowthProfile,
+    overallForRole,
+    toCodexRatings,
     calculateCanonicalOverall,
     weightedStatValue,
     ROLE_STAT_WEIGHTS,
