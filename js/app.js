@@ -1637,7 +1637,7 @@
   function developmentSelectedMarkup(player) {
     const state = global.DevelopmentV2.read();
     const target = global.DevelopmentV2.nextRarity(player.category);
-    const selectedCard = `<div class="development-selected-card">${developmentSquadCardMarkup(player, `data-development-selected-card aria-label="Apri la scheda di ${escapeHtml(player.name)}"`)}</div>`;
+    const selectedCard = `<div class="development-selected-card">${developmentSquadCardMarkup(player, `data-development-selected-card="${escapeHtml(player.playerId)}" aria-label="Apri la scheda di ${escapeHtml(player.name)}"`)}</div>`;
     if (!target) return `<section class="development-selected development-squad-card-scope"><p class="eyebrow">GIOCATORE SELEZIONATO</p><div class="development-selected-layout">${selectedCard}<div class="development-selected-copy"><h2>${escapeHtml(player.name)}</h2><p class="development-max-copy">MAX · RARITÀ MASSIMA</p><button class="btn btn-ghost" id="change-development-player">CAMBIA GIOCATORE</button></div></div></section>`;
     const cost = global.DevelopmentV2.COSTS[target];
     const have = state.projects[target] || 0;
@@ -1646,16 +1646,10 @@
     return `<section class="development-selected development-squad-card-scope"><p class="eyebrow">GIOCATORE SELEZIONATO</p><div class="development-selected-layout">${selectedCard}<div class="development-selected-copy"><h2>${escapeHtml(player.name)}</h2><strong class="development-rarity-step">${escapeHtml(player.category)} <span>→</span> ${escapeHtml(target)}</strong><p class="development-potential">Overall / potenziale <b>${escapeHtml(player.overall)} / ${escapeHtml(player.potential)}</b> → <b>${escapeHtml(nextOverall)} / ${escapeHtml(global.DevelopmentV2.threshold(target))}</b></p><h3>REQUISITI EVOLUZIONE</h3><div class="development-requirements">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, current: have, required: cost.projects, satisfied: have >= cost.projects })}${resourceCostMarkup({ type: "cups", label: "Coppe", current: global.DevelopmentV2.totalCups(state), required: cost.cups, satisfied: global.DevelopmentV2.totalCups(state) >= cost.cups })}${resourceCostMarkup({ type: "coins", label: "Monete", current: state.coins, required: cost.coins, satisfied: state.coins >= cost.coins })}</div>${missing.length ? `<p class="development-missing">${escapeHtml(missing.join(" · "))}</p>` : '<p class="development-ready-copy">Tutti i requisiti sono soddisfatti.</p>'}<div class="button-row"><button class="btn btn-ghost" id="change-development-player">CAMBIA GIOCATORE</button><button class="btn btn-yellow" id="prepare-evolution" ${missing.length ? "disabled" : ""}>EVOLVI A ${escapeHtml(target.toUpperCase())}</button></div></div></div></section>`;
   }
 
-  function bindDevelopmentSelectedCardInteractions(root, openDetails) {
-    if (!root || root.dataset.developmentSelectedCardBound === "true") return;
-    root.dataset.developmentSelectedCardBound = "true";
-    root.addEventListener("click", (event) => {
-      const card = event.target.closest("[data-development-selected-card]");
-      if (!card || !root.contains(card)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      openDetails();
-    });
+  function bindDevelopmentSelectedCardInteraction(card, openDetails) {
+    if (!card) return;
+    const playerId = card.dataset.developmentSelectedCard;
+    card.addEventListener("click", () => openDetails(playerId));
   }
 
   function renderDevelopmentCenter(tab = "players") {
@@ -1691,8 +1685,8 @@
     results?.addEventListener("click", (event) => { const element = event.target.closest("[data-development-player]"); if (element) { ui.selectedDevelopmentPlayerId = element.dataset.developmentPlayer; renderDevelopmentCenter("players"); } });
     bindLoadMore();
     document.getElementById("change-development-player")?.addEventListener("click", () => { ui.selectedDevelopmentPlayerId = null; closeModal(); renderDevelopmentCenter("players"); });
-    bindDevelopmentSelectedCardInteractions(document.getElementById("development-tab-content"), () => {
-      const current = resolveDevelopmentPlayer(cachedDevelopmentPlayers().find((candidate) => String(candidate.playerId) === String(ui.selectedDevelopmentPlayerId)));
+    bindDevelopmentSelectedCardInteraction(document.querySelector("[data-development-selected-card]"), (playerId) => {
+      const current = resolveDevelopmentPlayer(cachedDevelopmentPlayers().find((candidate) => String(candidate.playerId) === String(playerId)));
       if (current) showPlayerDetailsFor(current, { playerId: current.playerId, level: current.displayLevel, database: freeAgentsDb, equipment: null, readOnly: true, preserveScroll: scrollSnapshot() });
     });
     document.getElementById("prepare-evolution")?.addEventListener("click", () => { const target = global.DevelopmentV2.nextRarity(selected.category); renderEvolutionConfirmation(selected, target, global.DevelopmentV2.COSTS[target]); });
@@ -1712,7 +1706,7 @@
     const after = { ...rawPlayer, basePotential, ...preview, overall: preview.overall, finalOverall: preview.overall, displayLevel: Number(rawPlayer.maxLevel || 20), albumDatabase: freeAgentsDb };
     const statChanges = Object.entries(STAT_LABELS).flatMap(([stat, label]) => { const before = Number(player.stats?.[stat] || 0), next = Number(after.stats?.[stat] || 0), delta = next - before; return delta > 0 ? [{ label, before, next, delta }] : []; });
     const statsMarkup = statChanges.map(({ label, before, next, delta }) => `<li><strong>${escapeHtml(label)}</strong><span>${escapeHtml(before)} <b aria-hidden="true">→</b> ${escapeHtml(next)}</span><em>+${escapeHtml(delta)}</em></li>`).join("");
-    openModal(`<div class="development-detail development-confirm"><p class="eyebrow">CONFERMA EVOLUZIONE</p><h2>${escapeHtml(player.name)}</h2><div class="development-evolution-preview development-squad-card-scope"><div><small>ATTUALE · ${escapeHtml(player.category)} · OVR ${escapeHtml(player.overall)}</small>${developmentSquadCardMarkup(player)}</div><span class="development-evolution-arrow" aria-hidden="true">→</span><div><small>NUOVA · ${escapeHtml(after.category)} · OVR ${escapeHtml(after.overall)}</small>${developmentSquadCardMarkup(after)}</div></div><div class="development-evolution-summary"><span><small>OVERALL</small><b>${escapeHtml(player.overall)} → ${escapeHtml(after.overall)}</b></span><span><small>POTENZIALE</small><b>${escapeHtml(player.potential)} → ${escapeHtml(after.potential)}</b></span></div><section class="development-stat-increases"><h3>AUMENTO STATISTICHE</h3><ul>${statsMarkup || "<li><span>Nessuna statistica cambia.</span></li>"}</ul></section><h3 class="development-confirm-requirements-title">REQUISITI</h3><div class="development-confirm-costs">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, required: cost.projects, compact: true })}${resourceCostMarkup({ type: "cups", label: "Coppe", required: cost.cups, compact: true })}${resourceCostMarkup({ type: "coins", label: "Monete", required: cost.coins, compact: true })}</div><div class="button-row"><button class="btn btn-ghost" id="back-evolution">ANNULLA</button><button class="btn btn-yellow" id="confirm-evolution">CONFERMA EVOLUZIONE</button></div></div>`, { closeable: false, className: "development-confirm-modal" });
+    openModal(`<div class="development-detail development-confirm"><p class="eyebrow">CONFERMA EVOLUZIONE</p><h2>${escapeHtml(player.name)}</h2><div class="development-evolution-preview development-squad-card-scope"><div><small>ATTUALE · ${escapeHtml(player.category)} · OVR ${escapeHtml(player.overall)}</small>${developmentSquadCardMarkup(player)}</div><span class="development-evolution-arrow" aria-hidden="true">→</span><div><small>NUOVA · ${escapeHtml(after.category)} · OVR ${escapeHtml(after.overall)}</small>${developmentSquadCardMarkup(after)}</div></div><section class="development-stat-increases"><h3>AUMENTO STATISTICHE</h3><ul>${statsMarkup || "<li><span>Nessuna statistica cambia.</span></li>"}</ul></section><h3 class="development-confirm-requirements-title">REQUISITI</h3><div class="development-confirm-costs">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, required: cost.projects, compact: true })}${resourceCostMarkup({ type: "cups", label: "Coppe", required: cost.cups, compact: true })}${resourceCostMarkup({ type: "coins", label: "Monete", required: cost.coins, compact: true })}</div><div class="button-row"><button class="btn btn-ghost" id="back-evolution">ANNULLA</button><button class="btn btn-yellow" id="confirm-evolution">CONFERMA EVOLUZIONE</button></div></div>`, { closeable: false, className: "development-confirm-modal" });
     document.getElementById("back-evolution").onclick = closeModal;
     let submitting = false;
     document.getElementById("confirm-evolution").onclick = (event) => {
