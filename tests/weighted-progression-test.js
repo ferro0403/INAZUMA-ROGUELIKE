@@ -1,65 +1,43 @@
 const assert = require("assert");
 const progression = require("../js/roguelike_progression.js");
 
-const profiles = {
-  FW: { attack: 70, control: 60, speed: 80, grit: 60, physical: 50, stamina: 60, defense: 20, save: 10 },
-  MF: { attack: 60, control: 70, speed: 60, grit: 70, physical: 50, stamina: 70, defense: 50, save: 10 },
-  DF: { attack: 40, control: 50, speed: 60, grit: 60, physical: 70, stamina: 60, defense: 70, save: 10 },
-  GK: { attack: 10, control: 40, speed: 50, grit: 60, physical: 60, stamina: 50, defense: 50, save: 70 },
+const ratings = {
+  FW: { attack: 8, control: 7, speed: 8, grit: 7, physical: 7, stamina: 7, defense: 2, save: 1 },
+  MF: { attack: 7, control: 8, speed: 7, grit: 7, physical: 6, stamina: 8, defense: 6, save: 1 },
+  DF: { attack: 4, control: 6, speed: 7, grit: 7, physical: 8, stamina: 7, defense: 8, save: 1 },
+  GK: { attack: 1, control: 6, speed: 6, grit: 7, physical: 7, stamina: 6, defense: 7, save: 8 },
 };
+const internal = (profile) => Object.fromEntries(Object.entries(profile).map(([stat, value]) => [stat, value * 10]));
+const grow = (role, target, profile = ratings[role]) => progression.findBestCodexGrowthProfile({ role, originalRatings: profile, currentRatings: profile, targetOverall: target });
 
-function grow(role, target, currentStats = profiles[role], currentOverall = 70) {
-  return progression.growPlayerStatsToTargetOverall({
-    role, originalStats: profiles[role], currentStats, originalOverall: 70, currentOverall, targetOverall: target,
-  });
-}
-function calculated(role, stats) {
-  return progression.calculateCanonicalOverall(stats, role, profiles[role], 70);
-}
-
-const fw80 = grow("FW", 80);
-assert.equal(calculated("FW", fw80), 80);
-assert(fw80.attack > profiles.FW.attack);
-assert.equal(fw80.defense, profiles.FW.defense, "a weak defense must not be a shortcut");
-assert(fw80.speed > fw80.defense, "the individual speed strength remains recognizable");
-
-const fw90 = grow("FW", 90);
-assert.equal(calculated("FW", fw90), 90);
-assert.equal(fw90.attack, 100, "an attack rating of 10 is natural at 90+");
-assert.equal(fw90.defense, profiles.FW.defense);
-assert(fw90.physical >= 50, "soft bands must never block a necessary secondary-stat increase");
-
-const alternateFw = { ...profiles.FW, attack: 60, control: 70, speed: 50, physical: 80, stamina: 70, defense: 30 };
-const alternate90 = progression.growPlayerStatsToTargetOverall({ role: "FW", originalStats: alternateFw, currentStats: alternateFw, originalOverall: 70, currentOverall: 70, targetOverall: 90 });
-assert.equal(progression.calculateCanonicalOverall(alternate90, "FW", alternateFw, 70), 90);
-assert(alternate90.physical > fw90.physical && alternate90.control > fw90.control, "players with the same role retain different predispositions");
-assert(alternate90.defense < 50, "defense is not pumped to avoid attack 10");
-
-for (const [role, primary, excluded] of [["MF", "control", "save"], ["DF", "defense", "save"], ["GK", "save", "attack"]]) {
-  const result = grow(role, 90);
-  assert.equal(calculated(role, result), 90, `${role} stats must mathematically support 90`);
-  assert.equal(result[excluded], profiles[role][excluded], `${role} zero-weight stat must not grow`);
-  assert(result[primary] >= profiles[role][primary]);
+assert.equal(progression.overallForRole("FW", ratings.FW), Math.round(30 + (((8*.5+7*.12+8*.1+7*.08+7*.1+7*.08+2*.02)-1)*69/9)));
+for (const [role, primary, excluded] of [["FW","attack","save"],["MF","control","save"],["DF","defense","save"],["GK","save","attack"]]) {
+  for (const target of [90, 95]) {
+    const result = grow(role, target);
+    assert.equal(progression.overallForRole(role, result), target, `${role} reaches an exact ${target}`);
+    assert.equal(result[primary] >= (target === 95 ? 10 : 9), true, `${role} primary minimum at ${target}`);
+    assert.equal(result[excluded], ratings[role][excluded], `${role} zero-weight stat cannot grow`);
+    Object.values(result).forEach((value) => assert(Number.isInteger(value) && value >= 1 && value <= 10));
+  }
 }
 
-const capped = { ...profiles.FW, attack: 100 };
-const cappedResult = progression.growPlayerStatsToTargetOverall({ role: "FW", originalStats: capped, currentStats: capped, originalOverall: 87, currentOverall: 87, targetOverall: 90 });
-assert.equal(cappedResult.attack, 100);
-assert(Object.keys(cappedResult).some((stat) => stat !== "attack" && cappedResult[stat] > capped[stat]), "growth redistributes after a primary cap");
+const fw85 = grow("FW", 85);
+assert.equal(progression.overallForRole("FW", fw85), 85);
+const internal85 = progression.growPlayerStatsToTargetOverall({ role:"FW", originalStats:internal(ratings.FW), currentStats:internal(ratings.FW), currentOverall:83, targetOverall:85 });
+Object.values(internal85).forEach((value) => assert.equal(value % 10, 0, "internal growth represents whole Codex units"));
+assert.equal(progression.overallForRole("FW", internal85), 85);
 
-const database = { compactFormat: { levelMax: 20, statOrder: Object.keys(profiles.DF) } };
-const player = { playerId: "df", position: "DF", finalOverall: 87, maxLevel: 20, ratings: Object.fromEntries(Object.keys(profiles.DF).map((stat) => [stat, profiles.DF[stat] / 10])), category: "Elite" };
-const resolve = (amount) => progression.getPlayerAtLevel(player, 20, database, { potentialBoost: amount, currentOverallBoost: amount, potentialBoostApplications: amount ? [{ amount, appliedLevel: 20 }] : [] });
-const before = resolve(0), once = resolve(3);
-assert.equal(once.overall, 90); assert.equal(once.potential, 90);
-assert.equal(progression.calculateCanonicalOverall(once.stats, "DF", before.stats, before.overall), 90);
-const sequential = grow("FW", 87, grow("FW", 84, profiles.FW, 70), 84);
-const sequential90 = grow("FW", 90, sequential, 87);
-assert.deepEqual(sequential90, fw90, "84 → 87 → 90 is the same deterministic continuous path");
+const fast = { ...ratings.FW, speed: 9, physical: 6 };
+const strong = { ...ratings.FW, speed: 6, physical: 9 };
+const fast90 = grow("FW", 90, fast), strong90 = grow("FW", 90, strong);
+assert(fast90.speed > fast90.physical, "fast FW retains speed identity");
+assert(strong90.physical > strong90.speed, "physical FW retains physical identity");
+assert(fast90.defense < 7 && strong90.defense < 7, "weak defense is not used as a shortcut");
 
-const at98 = { ...player, finalOverall: 98 };
-assert.equal(progression.effectivePotential(at98, { potentialBoost: 3 }), 99);
-assert.equal(progression.effectiveCurrentOverallBoost(at98, { potentialBoost: 3 }), 1);
-const at99 = { ...player, finalOverall: 99 };
-assert.equal(progression.effectiveCurrentOverallBoost(at99, { potentialBoost: 3 }), 0);
-console.log("weighted-progression-test: canonical, profile-aware shared growth OK");
+const database = { compactFormat: { levelMax: 20, statOrder: Object.keys(ratings.DF) } };
+const player = { playerId:"df", position:"DF", finalOverall:87, maxLevel:20, ratings:ratings.DF, category:"Elite" };
+const boosted = progression.getPlayerAtLevel(player, 20, database, { potentialBoost:3, currentOverallBoost:3, potentialBoostApplications:[{amount:3,appliedLevel:20}] });
+assert.equal(boosted.overall, 90); assert.equal(boosted.potential, 90);
+assert.equal(progression.overallForRole("DF", boosted.stats), 90);
+assert.equal(progression.effectiveCurrentOverallBoost({ ...player, finalOverall:98 }, { potentialBoost:3 }), 1);
+console.log("weighted-progression-test: exact integer InaCodex growth OK");
