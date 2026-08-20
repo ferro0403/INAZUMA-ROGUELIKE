@@ -18,7 +18,7 @@ function extractFunction(name) {
 }
 
 const context = {};
-vm.runInNewContext(`${extractFunction('bindAlbumRosterInteractions')}; ${extractFunction('bindDevelopmentSelectedCardInteractions')}; this.bind = bindAlbumRosterInteractions; this.bindDevelopment = bindDevelopmentSelectedCardInteractions;`, context);
+vm.runInNewContext(`${extractFunction('bindAlbumRosterInteractions')}; ${extractFunction('bindDevelopmentSelectedCardInteraction')}; this.bind = bindAlbumRosterInteractions; this.bindDevelopment = bindDevelopmentSelectedCardInteraction;`, context);
 
 class FakeNode {
   constructor(dataset = {}, parent = null) { this.dataset = dataset; this.parent = parent; this.listeners = new Map(); }
@@ -36,15 +36,32 @@ class FakeNode {
   }
 }
 
-const developmentRoot = new FakeNode();
-const selectedCard = new FakeNode({ developmentSelectedCard: '' }, developmentRoot);
-const selectedPortrait = new FakeNode({}, selectedCard);
-let developmentDetailsOpened = 0;
-context.bindDevelopment(developmentRoot, () => { developmentDetailsOpened += 1; });
-context.bindDevelopment(developmentRoot, () => { developmentDetailsOpened += 100; });
-const developmentTap = developmentRoot.click(selectedPortrait);
-assert.equal(developmentTap.defaultPrevented, true, 'selected Development card owns the mobile tap');
-assert.equal(developmentDetailsOpened, 1, 'delegated binding survives card rerenders and is installed once');
+const developmentSelection = { playerId: 'adam-montayne' };
+const developmentPlayers = new Map([[developmentSelection.playerId, { playerId: developmentSelection.playerId, name: 'Adam Montayne', stats: { attack: 90, control: 90, speed: 70 } }]]);
+const developmentModalRoot = { innerHTML: '' };
+const renderSelectedDevelopmentCard = () => {
+  const card = new FakeNode({ developmentSelectedCard: developmentSelection.playerId });
+  context.bindDevelopment(card, (playerId) => {
+    const current = developmentPlayers.get(playerId);
+    developmentModalRoot.innerHTML = `<section class="player-detail-modal"><h2>${current.name}</h2><div class="detail-stats">${Object.entries(current.stats).map(([stat, value]) => `<span>${stat}: ${value}</span>`).join('')}</div><button data-close-modal>Chiudi</button></section>`;
+  });
+  return card;
+};
+let selectedCard = renderSelectedDevelopmentCard();
+assert.equal(selectedCard.dataset.developmentSelectedCard, developmentSelection.playerId, 'the rendered selected card carries the current player id');
+assert.equal(selectedCard.listeners.get('click').length, 1, 'the freshly rendered card receives one direct handler');
+selectedCard.click();
+assert.match(developmentModalRoot.innerHTML, /player-detail-modal/);
+assert.match(developmentModalRoot.innerHTML, /Adam Montayne/);
+assert.match(developmentModalRoot.innerHTML, /attack: 90/);
+developmentModalRoot.innerHTML = '';
+assert.equal(developmentSelection.playerId, 'adam-montayne', 'closing Player Detail preserves the Development selection');
+developmentPlayers.set(developmentSelection.playerId, { playerId: developmentSelection.playerId, name: 'Adam Montayne', stats: { attack: 100, control: 100, speed: 80 } });
+selectedCard = renderSelectedDevelopmentCard();
+selectedCard.click();
+assert.match(developmentModalRoot.innerHTML, /attack: 100/);
+assert.match(developmentModalRoot.innerHTML, /control: 100/);
+assert.match(developmentModalRoot.innerHTML, /speed: 80/, 'a rerendered card resolves evolved stats at click time');
 
 class MouseEvent { constructor(type, options = {}) { this.type = type; this.bubbles = options.bubbles; } }
 const roster = new FakeNode();
