@@ -1,34 +1,65 @@
 const assert = require("assert");
 const progression = require("../js/roguelike_progression.js");
 
-const stats = () => ({ attack: 20, control: 20, speed: 20, grit: 20, physical: 20, stamina: 20, defense: 20, save: 20 });
-const delta = (before, after) => Object.fromEntries(Object.keys(before).map((stat) => [stat, after[stat] - before[stat]]));
-const contribution = (role, changes) => Object.entries(changes).reduce((sum, [stat, amount]) => sum + amount * progression.ROLE_STAT_WEIGHTS[role][stat] / 100, 0);
-const boosted = (role, amount, base = stats()) => progression.distributeWeightedStatBoosts(base, { position: role }, amount);
+const profiles = {
+  FW: { attack: 70, control: 60, speed: 80, grit: 60, physical: 50, stamina: 60, defense: 20, save: 10 },
+  MF: { attack: 60, control: 70, speed: 60, grit: 70, physical: 50, stamina: 70, defense: 50, save: 10 },
+  DF: { attack: 40, control: 50, speed: 60, grit: 60, physical: 70, stamina: 60, defense: 70, save: 10 },
+  GK: { attack: 10, control: 40, speed: 50, grit: 60, physical: 60, stamina: 50, defense: 50, save: 70 },
+};
 
-for (const amount of [3, 12]) {
-  const before = stats(); const changes = delta(before, boosted("DF", amount, before));
-  assert.equal(changes.save, 0); assert(changes.defense > changes.attack); assert(changes.defense > changes.control);
-  assert(Math.abs(contribution("DF", changes) - amount) <= 0.5);
-  if (amount === 12) assert(changes.defense >= 15);
+function grow(role, target, currentStats = profiles[role], currentOverall = 70) {
+  return progression.growPlayerStatsToTargetOverall({
+    role, originalStats: profiles[role], currentStats, originalOverall: 70, currentOverall, targetOverall: target,
+  });
 }
-for (const [role, primary, excluded] of [["GK", "save", "attack"], ["FW", "attack", "save"], ["MF", "control", "save"]]) {
-  const before = stats(); const changes = delta(before, boosted(role, 3, before));
-  assert.equal(changes[excluded], 0); assert.equal(changes[primary], Math.max(...Object.values(changes)));
-  assert(Math.abs(contribution(role, changes) - 3) <= 0.5);
+function calculated(role, stats) {
+  return progression.calculateCanonicalOverall(stats, role, profiles[role], 70);
 }
-const capped = stats(); capped.defense = 99;
-const cappedChanges = delta(capped, boosted("DF", 3, capped));
-assert.equal(cappedChanges.defense, 0); assert(Object.entries(cappedChanges).some(([stat, amount]) => stat !== "defense" && amount > 0));
-assert(Math.abs(contribution("DF", cappedChanges) - 3) <= 0.5);
 
-const database = { compactFormat: { levelMax: 20, statOrder: Object.keys(stats()) } };
-const player = { playerId: "df", position: "DF", finalOverall: 83, maxLevel: 20, ratings: Object.fromEntries(Object.keys(stats()).map((stat) => [stat, 2])), category: "Forte" };
-const resolve = (amount) => progression.getPlayerAtLevel(player, 20, database, { potentialBoost: amount, currentOverallBoost: amount, potentialBoostApplications: [{ amount, appliedLevel: 0 }] });
-const before = resolve(0), once = resolve(3), twice = resolve(6), permanent = resolve(12);
-assert.equal(once.overall, before.overall + 3); assert.equal(once.potential, before.potential + 3); assert.notDeepEqual(once.stats, before.stats); assert.equal(once.stats.save, before.stats.save);
-assert.equal(twice.overall, before.overall + 6); assert.equal(twice.potential, before.potential + 6);
-assert.equal(permanent.potential, 95); assert.equal(permanent.category, "Leggenda"); assert(permanent.stats.defense - before.stats.defense >= 15); assert.equal(permanent.stats.save, before.stats.save);
-const at98 = { ...player, finalOverall: 98 }; assert.equal(progression.effectivePotential(at98, { potentialBoost: 3 }), 99);
-const at99 = { ...player, finalOverall: 99 }; assert.equal(progression.effectivePotential(at99, { potentialBoost: 3 }), 99); assert.equal(progression.effectiveCurrentOverallBoost(at99, { potentialBoost: 3 }), 0);
-console.log("weighted-progression-test: role weights, caps, intensive and permanent boosts OK");
+const fw80 = grow("FW", 80);
+assert.equal(calculated("FW", fw80), 80);
+assert(fw80.attack > profiles.FW.attack);
+assert.equal(fw80.defense, profiles.FW.defense, "a weak defense must not be a shortcut");
+assert(fw80.speed > fw80.defense, "the individual speed strength remains recognizable");
+
+const fw90 = grow("FW", 90);
+assert.equal(calculated("FW", fw90), 90);
+assert.equal(fw90.attack, 100, "an attack rating of 10 is natural at 90+");
+assert.equal(fw90.defense, profiles.FW.defense);
+assert(fw90.physical >= 50, "soft bands must never block a necessary secondary-stat increase");
+
+const alternateFw = { ...profiles.FW, attack: 60, control: 70, speed: 50, physical: 80, stamina: 70, defense: 30 };
+const alternate90 = progression.growPlayerStatsToTargetOverall({ role: "FW", originalStats: alternateFw, currentStats: alternateFw, originalOverall: 70, currentOverall: 70, targetOverall: 90 });
+assert.equal(progression.calculateCanonicalOverall(alternate90, "FW", alternateFw, 70), 90);
+assert(alternate90.physical > fw90.physical && alternate90.control > fw90.control, "players with the same role retain different predispositions");
+assert(alternate90.defense < 50, "defense is not pumped to avoid attack 10");
+
+for (const [role, primary, excluded] of [["MF", "control", "save"], ["DF", "defense", "save"], ["GK", "save", "attack"]]) {
+  const result = grow(role, 90);
+  assert.equal(calculated(role, result), 90, `${role} stats must mathematically support 90`);
+  assert.equal(result[excluded], profiles[role][excluded], `${role} zero-weight stat must not grow`);
+  assert(result[primary] >= profiles[role][primary]);
+}
+
+const capped = { ...profiles.FW, attack: 100 };
+const cappedResult = progression.growPlayerStatsToTargetOverall({ role: "FW", originalStats: capped, currentStats: capped, originalOverall: 87, currentOverall: 87, targetOverall: 90 });
+assert.equal(cappedResult.attack, 100);
+assert(Object.keys(cappedResult).some((stat) => stat !== "attack" && cappedResult[stat] > capped[stat]), "growth redistributes after a primary cap");
+
+const database = { compactFormat: { levelMax: 20, statOrder: Object.keys(profiles.DF) } };
+const player = { playerId: "df", position: "DF", finalOverall: 87, maxLevel: 20, ratings: Object.fromEntries(Object.keys(profiles.DF).map((stat) => [stat, profiles.DF[stat] / 10])), category: "Elite" };
+const resolve = (amount) => progression.getPlayerAtLevel(player, 20, database, { potentialBoost: amount, currentOverallBoost: amount, potentialBoostApplications: amount ? [{ amount, appliedLevel: 20 }] : [] });
+const before = resolve(0), once = resolve(3);
+assert.equal(once.overall, 90); assert.equal(once.potential, 90);
+assert.equal(progression.calculateCanonicalOverall(once.stats, "DF", before.stats, before.overall), 90);
+const sequential = grow("FW", 87, grow("FW", 84, profiles.FW, 70), 84);
+const sequential90 = grow("FW", 90, sequential, 87);
+assert.deepEqual(sequential90, fw90, "84 → 87 → 90 is the same deterministic continuous path");
+
+const at98 = { ...player, finalOverall: 98 };
+assert.equal(progression.effectivePotential(at98, { potentialBoost: 3 }), 99);
+assert.equal(progression.effectiveCurrentOverallBoost(at98, { potentialBoost: 3 }), 1);
+const at99 = { ...player, finalOverall: 99 };
+assert.equal(progression.effectiveCurrentOverallBoost(at99, { potentialBoost: 3 }), 0);
+console.log("weighted-progression-test: canonical, profile-aware shared growth OK");

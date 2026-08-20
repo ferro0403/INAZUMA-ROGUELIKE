@@ -103,31 +103,72 @@
     return Math.min(progressed, maxAllowedBoost);
   }
 
+  function weightedStatValue(stats, role) {
+    const weights = ROLE_STAT_WEIGHTS[role];
+    if (!weights) return 0;
+    return Object.entries(weights).reduce((sum, [stat, weight]) => sum + Number(stats?.[stat] || 0) * weight / 100, 0);
+  }
+
+  // InaCodex overalls are authored independently from the rounded 1-10 ratings.
+  // Consequently the raw player's overall is the calibration point, while all
+  // growth is measured with the canonical role weights from that point.
+  function calculateCanonicalOverall(stats, role, originalStats = stats, originalOverall = 0) {
+    const delta = weightedStatValue(stats, role) - weightedStatValue(originalStats, role);
+    return clampPotential(Number(originalOverall || 0) + Math.round(delta));
+  }
+
+  function growthPriority(stat, weight, roleWeights, result, originalStats, allocated, targetOverall) {
+    const original = Number(originalStats[stat] || 0);
+    const current = Number(result[stat] || 0);
+    const profileValues = Object.entries(roleWeights).filter(([, candidateWeight]) => candidateWeight > 0).map(([key]) => Number(originalStats[key] || 0));
+    const profileAverage = profileValues.reduce((sum, value) => sum + value, 0) / Math.max(1, profileValues.length);
+    const predisposition = Math.max(0.55, 1 + (original - profileAverage) / 100);
+    const weakStatPenalty = original + 20 < profileAverage ? 0.58 : 1;
+    const growthFatigue = 1 / (1 + allocated * 0.22);
+    const expectedTop = targetOverall >= 95 ? 100 : targetOverall >= 90 ? 95 : targetOverall >= 85 ? 90 : targetOverall >= 80 ? 85 : targetOverall >= 75 ? 80 : 75;
+    // Bands guide ordering only. They never make a stat ineligible.
+    const bandPenalty = current >= Math.max(original, expectedTop) ? 0.72 : 1;
+    return weight * predisposition * weakStatPenalty * growthFatigue * bandPenalty;
+  }
+
+  function growPlayerStatsToTargetOverall({ role, originalStats, currentStats, originalOverall, currentOverall, targetOverall }) {
+    const result = { ...(currentStats || {}) };
+    const baselineStats = { ...(originalStats || currentStats || {}) };
+    const weights = ROLE_STAT_WEIGHTS[role];
+    const target = clampPotential(targetOverall);
+    if (!weights) return result;
+
+    const calibratedOriginalOverall = Number(originalOverall || 0);
+    let calculated = calculateCanonicalOverall(result, role, baselineStats, calibratedOriginalOverall);
+    // currentOverall is authoritative for level progression, but the stat delta
+    // remains calibrated against the exact raw stats at that level.
+    const calibration = Number(currentOverall || calculated) - calculated;
+    const calculate = () => calculateCanonicalOverall(result, role, baselineStats, calibratedOriginalOverall) + calibration;
+    const allocated = Object.fromEntries(Object.keys(weights).map((stat) => [stat, Math.max(0, Number(result[stat] || 0) - Number(baselineStats[stat] || 0))]));
+    calculated = calculate();
+    while (calculated < target) {
+      const eligible = Object.entries(weights)
+        .filter(([stat, weight]) => weight > 0 && Number(result[stat] || 0) < 100)
+        .sort(([statA, weightA], [statB, weightB]) => {
+          const difference = growthPriority(statB, weightB, weights, result, baselineStats, allocated[statB], target)
+            - growthPriority(statA, weightA, weights, result, baselineStats, allocated[statA], target);
+          return difference || FALLBACK_STAT_ORDER.indexOf(statA) - FALLBACK_STAT_ORDER.indexOf(statB);
+        });
+      if (!eligible.length) break;
+      const stat = eligible[0][0];
+      result[stat] = Number(result[stat] || 0) + 1;
+      allocated[stat] += 1;
+      calculated = calculate();
+    }
+    return result;
+  }
+
   function distributeWeightedStatBoosts(stats, player, overallBoost) {
-    const result = { ...stats };
     const target = Math.max(0, Number(overallBoost || 0));
     const role = player?.position || player?.normalizedRole;
     const weights = ROLE_STAT_WEIGHTS[role];
-    if (!target || !weights) return result;
-
-    const allocated = Object.fromEntries(Object.keys(weights).map((stat) => [stat, 0]));
-    let contribution = 0;
-    while (contribution + Number.EPSILON < target) {
-      const eligible = Object.entries(weights)
-        .filter(([stat, weight]) => weight > 0 && Number(result[stat] || 0) < 99)
-        .sort(([statA, weightA], [statB, weightB]) => {
-          const priorityDifference = (weightB / (allocated[statB] + 1)) - (weightA / (allocated[statA] + 1));
-          return priorityDifference || FALLBACK_STAT_ORDER.indexOf(statA) - FALLBACK_STAT_ORDER.indexOf(statB);
-        });
-      if (!eligible.length) break;
-      const [stat, weight] = eligible[0];
-      const nextContribution = contribution + weight / 100;
-      if (nextContribution > target && Math.abs(target - contribution) <= Math.abs(target - nextContribution)) break;
-      result[stat] = Number(result[stat] || 0) + 1;
-      allocated[stat] += 1;
-      contribution = nextContribution;
-    }
-    return result;
+    if (!target || !weights) return { ...stats };
+    return growPlayerStatsToTargetOverall({ role, originalStats: stats, currentStats: stats, originalOverall: 0, currentOverall: 0, targetOverall: target });
   }
 
   function categoryForPotential(potential, fallbackCategory, _database) {
@@ -233,7 +274,14 @@
     const visibleBoost = effectiveCurrentOverallBoost(player, options);
     const potential = effectivePotential(player, options);
     const overall = Math.min(potential, baseOverall + visibleBoost, 99);
-    const boostedStats = distributeWeightedStatBoosts(stats, player, visibleBoost);
+    const boostedStats = growPlayerStatsToTargetOverall({
+      role: player.position || player.normalizedRole,
+      originalStats: stats,
+      currentStats: stats,
+      originalOverall: baseOverall,
+      currentOverall: baseOverall,
+      targetOverall: overall,
+    });
     const category = categoryForPotential(potential, player.category, database);
     return { ...player, ...boostedStats, level, overall, potential, category, stats: boostedStats };
   }
@@ -282,6 +330,9 @@
     normalizePotentialBoostApplications,
     normalizedPotentialBoost,
     distributeWeightedStatBoosts,
+    growPlayerStatsToTargetOverall,
+    calculateCanonicalOverall,
+    weightedStatValue,
     ROLE_STAT_WEIGHTS,
     RARITY_THRESHOLDS,
   };
