@@ -33,6 +33,10 @@ body:has(.inventory-v2-screen),
 .inventory-v2-screen .item-quantity { position: absolute; top: -2px; right: -2px; z-index: 2; min-width: 28px; min-height: 22px; display: grid; place-items: center; padding: 1px 5px; border: 2px solid #111216; border-radius: 0; background: #ffd21f; color: #111216; font-size: .68rem; font-weight: 950; }
 .inventory-v2-screen .inventory-card-action { flex: 1; min-height: 36px; padding: 6px 8px; border: 2px solid #111216; border-radius: 1px; background: #111216; color: #fffaf0; box-shadow: none; font-size: .68rem; }
 .inventory-v2-screen .inventory-unavailable { display: flex; align-items: center; justify-content: center; width: 100%; min-width: 0; min-height: 36px; padding: 5px 6px; border: 1px solid #8b877d; background: #ece8de; color: #4a4842; font-size: .61rem; font-weight: 850; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
+.inventory-v2-screen [data-item-id="scout_token"] .inventory-unavailable,
+.inventory-v2-screen [data-item-id="lucky_charm"] .inventory-unavailable { font-size: 0; }
+.inventory-v2-screen [data-item-id="scout_token"] .inventory-unavailable::before { content: "Rigenera Pull"; font-size: .61rem; }
+.inventory-v2-screen [data-item-id="lucky_charm"] .inventory-unavailable::before { content: "Migliora Pull"; font-size: .61rem; }
 .inventory-empty-state { padding: 18px; border: 2px solid #111216; border-radius: 2px; background: #fffaf0; color: #333; }
 .inventory-equipped-list { grid-template-columns: 1fr; }
 .inventory-equipped-row { display: grid; grid-template-columns: 52px minmax(150px,1fr) minmax(175px,1fr) auto; align-items: center; gap: 10px; min-height: 76px; padding: 9px 10px; border: 2px solid #111216; background: #fffaf0; color: #111216; box-shadow: 4px 4px 0 rgba(17,18,22,.7); }
