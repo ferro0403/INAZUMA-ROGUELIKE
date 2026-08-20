@@ -45,6 +45,8 @@
             amount: Math.max(0, Number(boost.amount || 0)),
             appliedLevel: Math.max(0, Number(boost.appliedLevel || 0)),
             ...(boost.legacy ? { legacy: true } : {}),
+            ...(boost.permanent ? { permanent: true } : {}),
+            ...(boost.codexDeltas && typeof boost.codexDeltas === "object" ? { codexDeltas: Object.fromEntries(FALLBACK_STAT_ORDER.map((stat) => [stat, Math.max(0, Math.floor(Number(boost.codexDeltas[stat]) || 0))]).filter(([, value]) => value > 0)) } : {}),
           }))
           .filter((boost) => boost.amount > 0)
       : [];
@@ -192,6 +194,17 @@
     return result;
   }
 
+  function planCodexTrainingGrowth(player, options = {}, addedBoost = 3) {
+    const role=player?.position||player?.normalizedRole, original=toCodexRatings(player?.ratings||player?.stats||player);
+    const applications=normalizePotentialBoostApplications(options,Math.max(0,99-clampPotential(player?.finalOverall)));
+    const permanentBoost=applications.filter((entry)=>entry.permanent).reduce((sum,entry)=>sum+entry.amount,0);
+    let current=findBestCodexGrowthProfile({role,originalRatings:original,currentRatings:original,targetOverall:clampPotential(Number(player?.finalOverall||0)+permanentBoost)});
+    for(const application of applications)for(const[stat,delta]of Object.entries(application.codexDeltas||{}))current[stat]=Math.min(10,current[stat]+Number(delta||0));
+    const targetOverall=clampPotential(Number(player?.finalOverall||0)+applications.reduce((sum,entry)=>sum+entry.amount,0)+Number(addedBoost||0));
+    const next=findBestCodexGrowthProfile({role,originalRatings:original,currentRatings:current,targetOverall});
+    return { currentRatings:current, ratings:next, targetOverall, codexDeltas:Object.fromEntries(FALLBACK_STAT_ORDER.map((stat)=>[stat,Math.max(0,next[stat]-current[stat])]).filter(([,delta])=>delta>0)) };
+  }
+
   function distributeWeightedStatBoosts(stats, player, overallBoost) {
     const target = Math.max(0, Number(overallBoost || 0));
     const role = player?.position || player?.normalizedRole;
@@ -303,14 +316,18 @@
     const visibleBoost = effectiveCurrentOverallBoost(player, options);
     const potential = effectivePotential(player, options);
     const overall = Math.min(potential, baseOverall + visibleBoost, 99);
+    const applications=normalizePotentialBoostApplications(options,Math.max(0,99-clampPotential(player.finalOverall)));
+    const trainingApplications=applications.filter((entry)=>entry.codexDeltas);
+    const trainingBoost=trainingApplications.reduce((sum,entry)=>sum+entry.amount,0);
     const boostedStats = growPlayerStatsToTargetOverall({
       role: player.position || player.normalizedRole,
       originalStats: stats,
       currentStats: stats,
       originalOverall: baseOverall,
       currentOverall: baseOverall,
-      targetOverall: overall,
+      targetOverall: Math.max(baseOverall,overall-trainingBoost),
     });
+    for(const application of trainingApplications)for(const[stat,delta]of Object.entries(application.codexDeltas))boostedStats[stat]=Math.min(99,Number(boostedStats[stat]||0)+(Number(delta)||0)*10);
     const category = categoryForPotential(potential, player.category, database);
     return { ...player, ...boostedStats, level, overall, potential, category, stats: boostedStats };
   }
@@ -361,6 +378,7 @@
     distributeWeightedStatBoosts,
     growPlayerStatsToTargetOverall,
     findBestCodexGrowthProfile,
+    planCodexTrainingGrowth,
     overallForRole,
     toCodexRatings,
     calculateCanonicalOverall,
