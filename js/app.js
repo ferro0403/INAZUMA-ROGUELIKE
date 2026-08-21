@@ -3024,10 +3024,11 @@
   function prepareTrade(node, outgoingId) {
     const outgoingEntry = rosterEntry(outgoingId);
     const outgoingResolved = resolvedRosterPlayer(outgoingId);
-    const outgoingBase = global.RoguelikeRules.resolveRosterEntryBase(outgoingEntry, run, {
+    const outgoingRawBase = global.RoguelikeRules.resolveRosterEntryBase(outgoingEntry, run, {
       profile: (entry) => global.ProfiledSeasonRuntime.resolveEffectiveBase(entry, run.seasonId),
       legacy: (entry) => legacyRosterPlayer(entry),
     });
+    const outgoingBase = outgoingRawBase ? { ...outgoingRawBase, finalOverall: global.InazumaProgression.effectivePotential(outgoingRawBase, outgoingEntry) } : null;
     if (!outgoingEntry || !outgoingResolved || !outgoingBase?.position || !Number.isFinite(Number(outgoingBase.finalOverall))) {
       toast("Giocatore non disponibile per lo scambio");
       return resolveTradeNode(node);
@@ -3043,8 +3044,11 @@
           teams: seasonDb.teams,
           seasonId: run.seasonId,
           compareProfileProgression: global.ProfiledSeasonRuntime.compareProfileProgression,
+          resolveCandidate: (player, source) => source === "free_agents"
+            ? global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, run.developmentPlayerSnapshot)
+            : player,
         })
-      : global.RoguelikeRules.getTradeCandidates({ outgoingPlayer: outgoingBase, rosterIds: run.roster.map((entry) => entry.playerId), freeAgents: freeAgentsDb.players, seasonPlayers: seasonDb.players, unlockedTeamIds: run.unlockedTeamIds, teams: seasonDb.teams });
+      : global.RoguelikeRules.getTradeCandidates({ outgoingPlayer: outgoingBase, rosterIds: run.roster.map((entry) => entry.playerId), freeAgents: freeAgentsDb.players, seasonPlayers: seasonDb.players, unlockedTeamIds: run.unlockedTeamIds, teams: seasonDb.teams, resolveCandidate: (player, source) => source === "free_agents" ? global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, run.developmentPlayerSnapshot) : player });
     if (!candidates.length) {
       toast(`Nessun ${outgoingBase.position} con finalOverall ${outgoingBase.finalOverall} o superiore disponibile`);
       return resolveTradeNode(node);
@@ -3086,10 +3090,16 @@
     }
     const result = global.RoguelikeRules.executeProfileAwareTrade(run, outgoingEntry.playerId, incoming, {
       roleVariantForUpgrade: roleVariantForTradeUpgrade,
-      resolveOutgoingBase: (entry) => global.RoguelikeRules.resolveRosterEntryBase(entry, run, {
-        profile: (profileEntry) => global.ProfiledSeasonRuntime.resolveEffectiveBase(profileEntry, run.seasonId),
-        legacy: (legacyEntry) => legacyRosterPlayer(legacyEntry),
-      }),
+      resolveOutgoingBase: (entry) => {
+        const base = global.RoguelikeRules.resolveRosterEntryBase(entry, run, {
+          profile: (profileEntry) => global.ProfiledSeasonRuntime.resolveEffectiveBase(profileEntry, run.seasonId),
+          legacy: (legacyEntry) => legacyRosterPlayer(legacyEntry),
+        });
+        return base ? { ...base, finalOverall: global.InazumaProgression.effectivePotential(base, entry) } : null;
+      },
+      resolveIncomingCandidate: (player, source) => source === "free_agents"
+        ? global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, run.developmentPlayerSnapshot)
+        : player,
     });
     if (!result.player) {
       toast("Offerta non più valida: la rosa non è stata modificata");
@@ -3181,7 +3191,7 @@
     const legendaryById = new Map();
     const legendarySources = new Map();
     freeAgentsDb.players
-      .filter((player) => global.SEASON1_CONFIG.legendaryCategories.includes(player.category))
+      .filter((player) => global.RoguelikeRules.isLegendaryEffectivePlayer(player, global.SEASON1_CONFIG.legendaryCategories, run.developmentPlayerSnapshot))
       .forEach((player) => {
         legendaryById.set(String(player.playerId), { ...player, pullCandidateKind: "free_agent" });
         legendarySources.set(String(player.playerId), "free_agents");
