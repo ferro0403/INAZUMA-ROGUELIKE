@@ -329,6 +329,7 @@
     selectedDevelopmentPlayerId: null,
     developmentQuery: "",
     developmentRarity: "Tutti",
+    devLegendaryPullSequence: 0,
   };
 
   function escapeHtml(value) {
@@ -2501,6 +2502,20 @@
     const currentNodeId = zone.currentNodeId;
     const pathSet = new Set(zone.path || []);
     const selectableCount = reachable.size;
+    const devTransformableNodeIds = [...reachable].filter((nodeId) => zone.nodes.find((node) => String(node.id) === String(nodeId))?.type !== "boss");
+    const devNodeTools = DEV_MODE ? `
+      <section class="shop-dev route-dev-tools" aria-label="Strumenti DEV nodi">
+        <h2>MAPPA — HACK TEST</h2>
+        <div class="shop-dev-grid">
+          <button type="button" data-dev-open-legendary>APRI PULL LEGGENDARIO</button>
+          <label>NODO <select data-dev-node>${devTransformableNodeIds.map((nodeId) => {
+            const candidate = zone.nodes.find((node) => String(node.id) === String(nodeId));
+            return `<option value="${escapeHtml(nodeId)}">${escapeHtml(candidate?.teamName || labels[candidate?.type]?.label || nodeId)} · ${escapeHtml(nodeId)}</option>`;
+          }).join("")}</select></label>
+          <button type="button" data-dev-transform-node="pull_legendary" ${devTransformableNodeIds.length ? "" : "disabled"}>TRASFORMA NODO IN PULL LEGGENDARIO</button>
+          <button type="button" data-dev-transform-node="trade" ${devTransformableNodeIds.length ? "" : "disabled"}>TRASFORMA NODO IN SCAMBIO</button>
+        </div>
+      </section>` : "";
     const edgeMarkup = zone.edges.map(([from, to]) => {
       const available = from === currentNodeId && reachable.has(to);
       const done = completed.has(from) && (completed.has(to) || pathSet.has(to));
@@ -2563,6 +2578,7 @@
               }).join("")}
             </div>
           </section>
+          ${devNodeTools}
         </div>
         ${bottomNav("map")}
       </main>`;
@@ -2573,12 +2589,28 @@
     document.querySelectorAll("[data-node-id]").forEach((button) => {
       button.addEventListener("click", () => enterNode(button.dataset.nodeId));
     });
+    if (DEV_MODE) bindMapDevTools();
     bindBottomNav();
     requestAnimationFrame(() => {
       const scroll = document.getElementById("map-scroll");
       if (zone.path.length <= 1 && scroll && !window.matchMedia("(max-width: 780px)").matches) scroll.scrollLeft = Math.max(0, (scroll.scrollWidth - scroll.clientWidth) / 2);
       if (scroll && window.matchMedia("(max-width: 780px)").matches) scroll.scrollLeft = 0;
     });
+  }
+
+  function bindMapDevTools() {
+    document.querySelector("[data-dev-open-legendary]")?.addEventListener("click", openDevLegendaryPull);
+    document.querySelectorAll("[data-dev-transform-node]").forEach((button) => button.addEventListener("click", () => {
+      const nodeId = document.querySelector("[data-dev-node]")?.value;
+      const node = run.currentZone?.nodes?.find((candidate) => String(candidate.id) === String(nodeId));
+      if (!node || node.type === "boss" || !global.MapEngine.reachableNodeIds(run.currentZone).map(String).includes(String(node.id))) return toast("Seleziona un nodo disponibile");
+      node.type = button.dataset.devTransformNode;
+      delete node.revealedType;
+      delete node.pullState;
+      global.RunState.save(run);
+      toast(node.type === "trade" ? "Nodo trasformato in Scambio" : "Nodo trasformato in Pull Leggendario");
+      renderMap();
+    }));
   }
 
   function enterNode(nodeId) {
@@ -3012,7 +3044,10 @@
   function tradeCandidatePreview(incoming, entry) {
     if (incoming.profileId) return global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(entry || { playerId: incoming.playerId, activeProfileId: incoming.profileId, activeRoleVariantId: incoming.activeRoleVariantId, level: 0, levelUnits: 0 }, { run, seasonId: run.seasonId, database: seasonDb });
     const level = Number(entry?.level || 0);
-    return global.InazumaProgression.getPlayerAtLevel(incoming.player, Math.floor(level), freeAgentsDb, entry || {});
+    const effectiveEntry = incoming.source === "free_agents"
+      ? { ...permanentRosterFields(incoming.player), ...(entry || {}) }
+      : (entry || {});
+    return global.InazumaProgression.getPlayerAtLevel(incoming.player, Math.floor(level), freeAgentsDb, effectiveEntry);
   }
 
   function roleVariantForTradeUpgrade(entry, profile) {
@@ -3348,7 +3383,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     openPull(node, pullType);
   }
 
-  function openPull(node, pullType = node.type) {
+  function openPull(node, pullType = node.type, options = {}) {
     const pool = node.pullState?.luckyCharmUsed && ["pull_free_agents", "pull_unlocked_teams"].includes(pullType)
       ? luckyCharmPoolForPull(pullType)
       : pullPool(pullType);
@@ -3373,6 +3408,14 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       global.RunState.save(run);
       openPull(node, pullType);
     };
+    const devReroll = DEV_MODE && options.dev ? () => {
+      node.pullState.rerolls += 1;
+      node.pullState.candidateIds = [];
+      openPull(node, pullType, options);
+    } : null;
+    const finishPull = (message) => options.dev
+      ? (closeModal(), toast(message), renderMap())
+      : finishNonMatchNode(node, message);
     showPlayerOffer({
       title: global.SEASON1_CONFIG.nodeLabels[pullType].label,
       subtitle: `Scegli 1 giocatore su 3 · Livello ${level}${node.pullState.luckyCharmUsed ? " · Portafortuna già utilizzato" : ""}`,
@@ -3382,7 +3425,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       database: pool.database,
       level,
       allowSkip: true,
-      onReroll: scoutToken && !legendaryPull ? rerollPull : null,
+      onReroll: devReroll || (scoutToken && !legendaryPull ? rerollPull : null),
+      rerollLabel: devReroll ? "RIGENERA PULL LEGGENDARIO" : null,
       rerollDisabled: false,
       rerollDisabledMessage: "",
       showLuckyCharm: luckyCompatible,
@@ -3393,13 +3437,24 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       onPick: (player) => {
         const playerSource = pool.sourceForPlayer ? pool.sourceForPlayer(player) : pool.source;
         recruitPlayer(player, playerSource, level, (added) => {
-          finishNonMatchNode(node, added ? `${player.name} entra nella rosa` : "Hai rinunciato al nuovo giocatore");
+          finishPull(added ? `${player.name} entra nella rosa` : "Hai rinunciato al nuovo giocatore");
         });
       },
-      onSkip: () => finishNonMatchNode(node, "Hai rinunciato al pull"),
+      onSkip: () => finishPull("Hai rinunciato al pull"),
       legendary: legendaryPull,
       profileAware: pool.profileAware,
     });
+  }
+
+  function openDevLegendaryPull() {
+    if (!DEV_MODE || !run?.currentZone) return;
+    ui.devLegendaryPullSequence += 1;
+    const node = {
+      id: `dev-legendary-${ui.devLegendaryPullSequence}`,
+      type: "pull_legendary",
+      pullState: { pullType: "pull_legendary", rerolls: 0, excludedCandidateIds: [], luckyCharmUsed: false, candidateIds: [] },
+    };
+    openPull(node, "pull_legendary", { dev: true });
   }
 
   function pullChoiceSource(options, player) {
@@ -3439,7 +3494,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const scoutItem = resolveItem("scout_token");
     const luckyItem = resolveItem("lucky_charm");
     const rerollButton = options.onReroll
-      ? `<button type="button" class="btn btn-yellow" id="reroll-offer" ${options.rerollDisabled ? "disabled" : ""}><span class="pull-item-action-copy">${itemIcon(scoutItem)}<span>Usa ${escapeHtml(scoutItem.name)}</span></span></button>`
+      ? `<button type="button" class="btn btn-yellow" id="reroll-offer" ${options.rerollDisabled ? "disabled" : ""}>${options.rerollLabel ? escapeHtml(options.rerollLabel) : `<span class="pull-item-action-copy">${itemIcon(scoutItem)}<span>Usa ${escapeHtml(scoutItem.name)}</span></span>`}</button>`
       : "";
     const luckyCount = Number(options.luckyCharmCount || 0);
     const luckyButton = options.showLuckyCharm && (options.onLuckyCharm || options.luckyCharmDisabledMessage)
