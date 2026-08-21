@@ -165,27 +165,44 @@
     else if (target >= 90 && original[primary] >= 8) primaryMinimum = 9;
     const eligible = FALLBACK_STAT_ORDER.filter((stat) => weights[stat] > 0);
     const minimums = Object.fromEntries(eligible.map((stat) => [stat, stat === primary ? Math.max(current[stat], primaryMinimum) : current[stat]]));
-    const eligibleIndex = Object.fromEntries(eligible.map((stat, index) => [stat, index]));
-    const weightEntries = Object.entries(weights);
-    function boundOverall(index, candidate, maximize) {
-      let roleScore = 0;
-      for (const [stat, weight] of weightEntries) {
-        const position = eligibleIndex[stat];
-        const value = weight > 0 && position >= index ? (maximize ? 10 : minimums[stat]) : candidate[stat];
-        roleScore += Number(value || 0) * weight / 100;
+    const fixedWeighted = FALLBACK_STAT_ORDER.reduce((sum, stat) => weights[stat] > 0 ? sum : sum + current[stat] * weights[stat], 0);
+    const reachable = new Set([fixedWeighted]);
+    for (const stat of eligible) {
+      const next = new Set();
+      for (const sum of reachable) {
+        for (let value = minimums[stat]; value <= 10; value += 1) next.add(sum + value * weights[stat]);
       }
-      return Math.max(1, Math.min(99, Math.round(30 + ((roleScore - 1) * 69 / 9))));
+      reachable.clear();
+      for (const sum of next) reachable.add(sum);
     }
+    const overallFromWeighted = (weighted) => Math.max(1, Math.min(99, Math.round(30 + (((weighted / 100) - 1) * 69 / 9))));
+    const firstReachableOverall = [...new Set([...reachable].map(overallFromWeighted))]
+      .filter((overall) => overall >= target)
+      .sort((left, right) => left - right)[0];
+    const winningSums = new Set();
+    for (const sum of reachable) {
+      const overall = overallFromWeighted(sum);
+      const rawOverall = 30 + (((sum / 100) - 1) * 69 / 9);
+      const isNextBucketBoundary = overall === firstReachableOverall + 1
+        && Math.abs((rawOverall - Math.floor(rawOverall)) - 0.5) < 1e-12;
+      if (overall === firstReachableOverall || isNextBucketBoundary) winningSums.add(sum);
+    }
+    if (!winningSums.size) return current;
+
+    const suffixMinimum = Array(eligible.length + 1).fill(0);
+    const suffixMaximum = Array(eligible.length + 1).fill(0);
+    for (let index = eligible.length - 1; index >= 0; index -= 1) {
+      const stat = eligible[index];
+      suffixMinimum[index] = suffixMinimum[index + 1] + minimums[stat] * weights[stat];
+      suffixMaximum[index] = suffixMaximum[index + 1] + 10 * weights[stat];
+    }
+    const lowestWinningSum = Math.min(...winningSums);
+    const highestWinningSum = Math.max(...winningSums);
     let best = null;
-    function visit(index, candidate) {
-      const minOverall = boundOverall(index, candidate, false);
-      const maxOverall = boundOverall(index, candidate, true);
-      if (maxOverall < target) return;
-      if (best) {
-        if (best.rank[0] === 0 && minOverall > target) return;
-        if (best.rank[0] === 1 && minOverall - target > best.rank[1]) return;
-      }
+    function visit(index, candidate, weighted) {
+      if (weighted + suffixMaximum[index] < lowestWinningSum || weighted + suffixMinimum[index] > highestWinningSum) return;
       if (index === eligible.length) {
+        if (!winningSums.has(weighted)) return;
         const overall = overallForRole(role, candidate);
         if (overall < target) return;
         const score = coherenceScore(candidate, original, current, role, target);
@@ -197,15 +214,10 @@
       const minimum = minimums[stat];
       for (let value = minimum; value <= 10; value += 1) {
         candidate[stat] = value;
-        const branchMin = boundOverall(index + 1, candidate, false);
-        if (best) {
-          if (best.rank[0] === 0 && branchMin > target) break;
-          if (best.rank[0] === 1 && branchMin - target > best.rank[1]) break;
-        }
-        visit(index + 1, candidate);
+        visit(index + 1, candidate, weighted + value * weights[stat]);
       }
     }
-    visit(0, { ...current });
+    visit(0, { ...current }, fixedWeighted);
     return best?.ratings || current;
   }
 
