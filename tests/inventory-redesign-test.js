@@ -33,12 +33,12 @@ assert.match(equipment, /inventoryEquipmentBenchMarkup/, 'equipment flow keeps t
 assert.match(summary, /inventory-stat-preview/, 'selected-player summary has stat preview');
 assert.match(equipment, /SOSTITUIRE L’EQUIPAGGIAMENTO\?/, 'existing equipment triggers replacement confirmation');
 assert.match(equipment, /removeInventoryItem\(instanceId\)[\s\S]*run\.inventory\.push\(entry\.equippedItem\)[\s\S]*entry\.equippedItem = newEquipment/, 'replacement moves old/new instances without duplication');
-assert.match(equipment, /RunState\.save\(run\)/, 'equip and replace persist');
+assert.match(equipment, /persistGameplayMutation\(\{[\s\S]*label: "equipment-equip"/, 'equip and replace use the canonical gameplay transaction');
 assert.match(equipment, /if \(entry\.equippedItem\)[\s\S]*SOSTITUIRE L’EQUIPAGGIAMENTO\?/, 'only an occupied slot asks for an extra confirmation');
 assert.match(equipment, /return equipItemToEntry\(instanceId, entry\)/, 'a free slot equips immediately from the tactical confirmation');
 assert.doesNotMatch(equipment, /openInventoryConfirmation\(item/, 'equipment no longer opens the redundant use confirmation');
 assert.doesNotMatch(equipment, /inventory-success-feedback|data-inventory-success-done|>FATTO</, 'equipment no longer opens blocking success feedback');
-assert.match(unequip, /run\.inventory\.push\(equippedItem\)[\s\S]*entry\.equippedItem = null[\s\S]*RunState\.save\(run\)/, 'remove restores backpack state and persists');
+assert.match(unequip, /label: "equipment-unequip"[\s\S]*run\.inventory\.push\(entry\.equippedItem\)[\s\S]*entry\.equippedItem = null/, 'remove restores backpack state inside the canonical transaction');
 assert.match(css, /grid-template-columns: 1fr 1fr/, 'tabs remain fully visible');
 assert.match(css, /min-height: 44px/, 'compact actions retain touch targets');
 assert.match(css, /max-width: 700px/, 'mobile layout is explicit');

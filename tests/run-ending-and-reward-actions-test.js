@@ -21,9 +21,9 @@ assert.match(confirmation, /confirmButton\.disabled = true/, 'confirmation is di
 assert.match(confirmation, /catch \(error\)[\s\S]*confirmButton\.disabled = false[\s\S]*toast\([^;]+, "error"\)/, 'failure keeps the modal usable and reports an error');
 
 const unequip = functionSource('unequipPlayerItem', 'renderGameOver');
-assert.match(unequip, /run\.inventory\.push\(equippedItem\)[\s\S]*entry\.equippedItem = null[\s\S]*RunState\.save\(run\)/, 'equipment returns to inventory before the saved update');
-assert.match(unequip, /catch \(error\)[\s\S]*entry\.equippedItem = equippedItem[\s\S]*run\.inventory\.splice/, 'a failed save rolls inventory and player state back');
-assert.match(unequip, /RunState\.save\(run\)[\s\S]*renderInventory[\s\S]*closeModal\(\)[\s\S]*toast\("Oggetto riportato nell'inventario"\)/, 'successful removal updates locally, closes, then toasts');
+assert.match(unequip, /label: "equipment-unequip"[\s\S]*mutate:[\s\S]*run\.inventory\.push\(entry\.equippedItem\)[\s\S]*entry\.equippedItem = null/, 'equipment returns to inventory inside the saved transaction');
+assert.match(unequip, /rerender: \(\{ ok \}\) => \{ if \(!ok\)/, 'a failed save rerenders the recovered canonical inventory');
+assert.match(unequip, /onCommitted:[\s\S]*renderInventory[\s\S]*closeModal\(\)[\s\S]*toast\("Oggetto riportato nell'inventario"\)/, 'successful removal renders, closes, then toasts only after commit');
 
 const pullActions = functionSource('pullChoiceActionPanel', 'updateInlinePullSelection');
 assert.match(pullActions, />SÌ<\/button>/, 'candidate keeps the confirm action');
