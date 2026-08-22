@@ -21,7 +21,7 @@ assert.match(cloud, /suppressCloudEvent: true/); assert.match(ui, /MODIFICHE IN 
 assert.match(cloud, /function checkForCloudUpdate/); assert.match(cloud, /if \(checkInFlight\) return checkInFlight/); assert.match(ui, /CONTROLLA AGGIORNAMENTI/);
 const check = cloud.slice(cloud.indexOf('function checkForCloudUpdate'), cloud.indexOf('function reloadAfterRestore'));
 assert.equal((check.match(/readServerDocument\(/g) || []).length, 1, 'manual check reads only the manifest once'); assert.doesNotMatch(check, /saveSectors|hallOfFame|setTimeout|setInterval/);
-assert.match(html, /js\/run-state\.js\?v=20260823-run-storage-4/);
+assert.match(html, /js\/run-state\.js\?v=20260823-run-storage-5/);
 assert.match(html, /js\/account-ui\.js\?v=20260802-cloud-restore-diagnostic-fix-1/);
 assert.match(html, /js\/firebase-cloud-save\.js\?v=20260823-run-storage-4/);
 assert.match(html, /js\/development-v2\.js\?v=20260816-legacy-cups-ie1-migration-1/);
