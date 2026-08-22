@@ -4,7 +4,7 @@ const app = fs.readFileSync(require.resolve("../js/app.js"), "utf8");
 const css = fs.readFileSync(require.resolve("../css/game.css"), "utf8");
 
 assert.match(app, /data-development-selected-card="\$\{escapeHtml\(player\.playerId\)\}" aria-label="Apri la scheda di/);
-assert.match(app, /bindDevelopmentSelectedCardInteraction\(document\.querySelector\("\[data-development-selected-card\]"\)[\s\S]*resolveDevelopmentPlayer[\s\S]*showPlayerDetailsFor\(current,[\s\S]*preserveScroll: scrollSnapshot\(\)/);
+assert.match(app, /bindDevelopmentSelectedCardInteraction\(document\.querySelector\("\[data-development-selected-card\]"\), selected,[\s\S]*selectedPlayer \|\| resolveDevelopmentPlayer[\s\S]*toast\("Giocatore non disponibile"\)[\s\S]*showPlayerDetailsFor\(current,[\s\S]*preserveScroll: scrollSnapshot\(\)/);
 assert.match(app, /const preview = global\.InazumaProgression\.getPlayerAtLevel[\s\S]*optionsFromUpgrade/);
 assert.match(app, /const statChanges = Object\.entries\(STAT_LABELS\)[\s\S]*delta = next - before/);
 assert.match(app, /AUMENTO STATISTICHE/);

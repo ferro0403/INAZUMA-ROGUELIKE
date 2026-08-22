@@ -1647,10 +1647,10 @@
     return `<section class="development-selected development-squad-card-scope"><p class="eyebrow">GIOCATORE SELEZIONATO</p><div class="development-selected-layout">${selectedCard}<div class="development-selected-copy"><h2>${escapeHtml(player.name)}</h2><strong class="development-rarity-step">${escapeHtml(player.category)} <span>→</span> ${escapeHtml(target)}</strong><p class="development-potential">Overall / potenziale <b>${escapeHtml(player.overall)} / ${escapeHtml(player.potential)}</b> → <b>${escapeHtml(nextOverall)} / ${escapeHtml(global.DevelopmentV2.threshold(target))}</b></p><h3>REQUISITI EVOLUZIONE</h3><div class="development-requirements">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, current: have, required: cost.projects, satisfied: have >= cost.projects })}${resourceCostMarkup({ type: "cups", label: "Coppe", current: global.DevelopmentV2.totalCups(state), required: cost.cups, satisfied: global.DevelopmentV2.totalCups(state) >= cost.cups })}${resourceCostMarkup({ type: "coins", label: "Monete", current: state.coins, required: cost.coins, satisfied: state.coins >= cost.coins })}</div>${missing.length ? `<p class="development-missing">${escapeHtml(missing.join(" · "))}</p>` : '<p class="development-ready-copy">Tutti i requisiti sono soddisfatti.</p>'}<div class="button-row"><button class="btn btn-ghost" id="change-development-player">CAMBIA GIOCATORE</button><button class="btn btn-yellow" id="prepare-evolution" ${missing.length ? "disabled" : ""}>EVOLVI A ${escapeHtml(target.toUpperCase())}</button></div></div></div></section>`;
   }
 
-  function bindDevelopmentSelectedCardInteraction(card, openDetails) {
+  function bindDevelopmentSelectedCardInteraction(card, selectedPlayer, openDetails) {
     if (!card) return;
     const playerId = card.dataset.developmentSelectedCard;
-    card.addEventListener("click", () => openDetails(playerId));
+    card.addEventListener("click", () => openDetails(selectedPlayer, playerId));
   }
 
   function renderDevelopmentCenter(tab = "players") {
@@ -1686,9 +1686,10 @@
     results?.addEventListener("click", (event) => { const element = event.target.closest("[data-development-player]"); if (element) { ui.selectedDevelopmentPlayerId = element.dataset.developmentPlayer; renderDevelopmentCenter("players"); } });
     bindLoadMore();
     document.getElementById("change-development-player")?.addEventListener("click", () => { ui.selectedDevelopmentPlayerId = null; closeModal(); renderDevelopmentCenter("players"); });
-    bindDevelopmentSelectedCardInteraction(document.querySelector("[data-development-selected-card]"), (playerId) => {
-      const current = resolveDevelopmentPlayer(cachedDevelopmentPlayers().find((candidate) => String(candidate.playerId) === String(playerId)));
-      if (current) showPlayerDetailsFor(current, { playerId: current.playerId, level: current.displayLevel, database: freeAgentsDb, equipment: null, readOnly: true, preserveScroll: scrollSnapshot() });
+    bindDevelopmentSelectedCardInteraction(document.querySelector("[data-development-selected-card]"), selected, (selectedPlayer, playerId) => {
+      const current = selectedPlayer || resolveDevelopmentPlayer(cachedDevelopmentPlayers().find((candidate) => String(candidate.playerId) === String(playerId)));
+      if (!current) return toast("Giocatore non disponibile");
+      showPlayerDetailsFor(current, { playerId: current.playerId, level: current.displayLevel, database: freeAgentsDb, equipment: null, readOnly: true, preserveScroll: scrollSnapshot() });
     });
     document.getElementById("prepare-evolution")?.addEventListener("click", () => { const target = global.DevelopmentV2.nextRarity(selected.category); renderEvolutionConfirmation(selected, target, global.DevelopmentV2.COSTS[target]); });
     bindDevelopmentDev();
@@ -3466,6 +3467,16 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     return global.RecruitmentPoolRuntime.choiceDatabase(src, seasonDb, freeAgentsDb);
   }
 
+  function resolvePullChoicePlayer(options, player) {
+    const level = Math.floor(Number(options.level || 0));
+    const database = pullChoiceDatabase(options, player);
+    const developmentSnapshot = run?.developmentPlayerSnapshot || {};
+    const developmentOptions = global.DevelopmentV2.optionsFromUpgrade(player, developmentSnapshot[String(player.playerId)]);
+    const resolved = global.InazumaProgression.getPlayerAtLevel(player, level, database, developmentOptions);
+    const effectiveMetadata = global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, developmentSnapshot);
+    return { ...resolved, category: effectiveMetadata.category, baseStats: resolved.stats };
+  }
+
   function pullChoiceActionPanel(player, index) {
     const panelId = `pull-choice-actions-${index}`;
     return `
@@ -3505,8 +3516,9 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       <div class="candidate-grid pull-offer-grid" data-pull-choice-grid>
         ${options.candidates.map((player, index) => {
           const panelId = `pull-choice-actions-${index}`;
-          return `<div class="pull-choice-option ${rarityClass(player.category)}" data-player-id="${escapeHtml(player.playerId)}" data-candidate-key="${escapeHtml(offerCandidateKey(player))}">
-            ${playerCard(player, { button: true, context: "pull", level: options.level, database: pullChoiceDatabase(options, player), applyPermanent: true }).replace(">", ` aria-expanded="false" aria-pressed="false" aria-controls="${panelId}">`)}
+          const effectivePlayer = resolvePullChoicePlayer(options, player);
+          return `<div class="pull-choice-option ${rarityClass(effectivePlayer.category)}" data-player-id="${escapeHtml(player.playerId)}" data-candidate-key="${escapeHtml(offerCandidateKey(player))}">
+            ${playerCard(player, { button: true, context: "pull", level: options.level, database: pullChoiceDatabase(options, player), resolvedPlayer: effectivePlayer }).replace(">", ` aria-expanded="false" aria-pressed="false" aria-controls="${panelId}">`)}
             ${pullChoiceActionPanel(player, index)}
           </div>`;
         }).join("")}
@@ -3535,8 +3547,9 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       }
       if (actionButton.dataset.pullAction === "detail") {
         const playerDatabase = pullChoiceDatabase(options, player);
+        const effectivePlayer = resolvePullChoicePlayer(options, player);
         const pullScroll = scrollSnapshot();
-        showPlayerDetailsFor(player, {
+        showPlayerDetailsFor(effectivePlayer, {
           playerId: player.playerId,
           level: options.level,
           database: playerDatabase,
