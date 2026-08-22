@@ -329,6 +329,7 @@
     selectedDevelopmentPlayerId: null,
     developmentQuery: "",
     developmentRarity: "Tutti",
+    devLegendaryPullSequence: 0,
   };
 
   function escapeHtml(value) {
@@ -1637,12 +1638,19 @@
   function developmentSelectedMarkup(player) {
     const state = global.DevelopmentV2.read();
     const target = global.DevelopmentV2.nextRarity(player.category);
-    if (!target) return `<section class="development-selected development-squad-card-scope"><p class="eyebrow">GIOCATORE SELEZIONATO</p><div class="development-selected-layout"><div class="development-selected-card">${developmentSquadCardMarkup(player)}</div><div class="development-selected-copy"><h2>${escapeHtml(player.name)}</h2><p class="development-max-copy">MAX · RARITÀ MASSIMA</p><button class="btn btn-ghost" id="change-development-player">CAMBIA GIOCATORE</button></div></div></section>`;
+    const selectedCard = `<div class="development-selected-card">${developmentSquadCardMarkup(player, `data-development-selected-card="${escapeHtml(player.playerId)}" aria-label="Apri la scheda di ${escapeHtml(player.name)}"`)}</div>`;
+    if (!target) return `<section class="development-selected development-squad-card-scope"><p class="eyebrow">GIOCATORE SELEZIONATO</p><div class="development-selected-layout">${selectedCard}<div class="development-selected-copy"><h2>${escapeHtml(player.name)}</h2><p class="development-max-copy">MAX · RARITÀ MASSIMA</p><button class="btn btn-ghost" id="change-development-player">CAMBIA GIOCATORE</button></div></div></section>`;
     const cost = global.DevelopmentV2.COSTS[target];
     const have = state.projects[target] || 0;
     const nextOverall = Math.max(Number(player.overall || 0), Number(global.DevelopmentV2.threshold(target)));
     const missing = [Math.max(0, cost.projects - have) ? `MANCA ${cost.projects - have} PROGETTO ${target.toUpperCase()}` : "", Math.max(0, cost.cups - global.DevelopmentV2.totalCups(state)) ? `MANCANO ${cost.cups - global.DevelopmentV2.totalCups(state)} COPPE` : "", Math.max(0, cost.coins - state.coins) ? `MANCANO ${cost.coins - state.coins} MONETE` : ""].filter(Boolean);
-    return `<section class="development-selected development-squad-card-scope"><p class="eyebrow">GIOCATORE SELEZIONATO</p><div class="development-selected-layout"><div class="development-selected-card">${developmentSquadCardMarkup(player)}</div><div class="development-selected-copy"><h2>${escapeHtml(player.name)}</h2><strong class="development-rarity-step">${escapeHtml(player.category)} <span>→</span> ${escapeHtml(target)}</strong><p class="development-potential">Overall / potenziale <b>${escapeHtml(player.overall)} / ${escapeHtml(player.potential)}</b> → <b>${escapeHtml(nextOverall)} / ${escapeHtml(global.DevelopmentV2.threshold(target))}</b></p><h3>REQUISITI EVOLUZIONE</h3><div class="development-requirements">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, current: have, required: cost.projects, satisfied: have >= cost.projects })}${resourceCostMarkup({ type: "cups", label: "Coppe", current: global.DevelopmentV2.totalCups(state), required: cost.cups, satisfied: global.DevelopmentV2.totalCups(state) >= cost.cups })}${resourceCostMarkup({ type: "coins", label: "Monete", current: state.coins, required: cost.coins, satisfied: state.coins >= cost.coins })}</div>${missing.length ? `<p class="development-missing">${escapeHtml(missing.join(" · "))}</p>` : '<p class="development-ready-copy">Tutti i requisiti sono soddisfatti.</p>'}<div class="button-row"><button class="btn btn-ghost" id="change-development-player">CAMBIA GIOCATORE</button><button class="btn btn-yellow" id="prepare-evolution" ${missing.length ? "disabled" : ""}>EVOLVI A ${escapeHtml(target.toUpperCase())}</button></div></div></div></section>`;
+    return `<section class="development-selected development-squad-card-scope"><p class="eyebrow">GIOCATORE SELEZIONATO</p><div class="development-selected-layout">${selectedCard}<div class="development-selected-copy"><h2>${escapeHtml(player.name)}</h2><strong class="development-rarity-step">${escapeHtml(player.category)} <span>→</span> ${escapeHtml(target)}</strong><p class="development-potential">Overall / potenziale <b>${escapeHtml(player.overall)} / ${escapeHtml(player.potential)}</b> → <b>${escapeHtml(nextOverall)} / ${escapeHtml(global.DevelopmentV2.threshold(target))}</b></p><h3>REQUISITI EVOLUZIONE</h3><div class="development-requirements">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, current: have, required: cost.projects, satisfied: have >= cost.projects })}${resourceCostMarkup({ type: "cups", label: "Coppe", current: global.DevelopmentV2.totalCups(state), required: cost.cups, satisfied: global.DevelopmentV2.totalCups(state) >= cost.cups })}${resourceCostMarkup({ type: "coins", label: "Monete", current: state.coins, required: cost.coins, satisfied: state.coins >= cost.coins })}</div>${missing.length ? `<p class="development-missing">${escapeHtml(missing.join(" · "))}</p>` : '<p class="development-ready-copy">Tutti i requisiti sono soddisfatti.</p>'}<div class="button-row"><button class="btn btn-ghost" id="change-development-player">CAMBIA GIOCATORE</button><button class="btn btn-yellow" id="prepare-evolution" ${missing.length ? "disabled" : ""}>EVOLVI A ${escapeHtml(target.toUpperCase())}</button></div></div></div></section>`;
+  }
+
+  function bindDevelopmentSelectedCardInteraction(card, selectedPlayer, openDetails) {
+    if (!card) return;
+    const playerId = card.dataset.developmentSelectedCard;
+    card.addEventListener("click", () => openDetails(selectedPlayer, playerId));
   }
 
   function renderDevelopmentCenter(tab = "players") {
@@ -1678,6 +1686,11 @@
     results?.addEventListener("click", (event) => { const element = event.target.closest("[data-development-player]"); if (element) { ui.selectedDevelopmentPlayerId = element.dataset.developmentPlayer; renderDevelopmentCenter("players"); } });
     bindLoadMore();
     document.getElementById("change-development-player")?.addEventListener("click", () => { ui.selectedDevelopmentPlayerId = null; closeModal(); renderDevelopmentCenter("players"); });
+    bindDevelopmentSelectedCardInteraction(document.querySelector("[data-development-selected-card]"), selected, (selectedPlayer, playerId) => {
+      const current = selectedPlayer || resolveDevelopmentPlayer(cachedDevelopmentPlayers().find((candidate) => String(candidate.playerId) === String(playerId)));
+      if (!current) return toast("Giocatore non disponibile");
+      showPlayerDetailsFor(current, { playerId: current.playerId, level: current.displayLevel, database: freeAgentsDb, equipment: null, readOnly: true, preserveScroll: scrollSnapshot() });
+    });
     document.getElementById("prepare-evolution")?.addEventListener("click", () => { const target = global.DevelopmentV2.nextRarity(selected.category); renderEvolutionConfirmation(selected, target, global.DevelopmentV2.COSTS[target]); });
     bindDevelopmentDev();
   }
@@ -1693,12 +1706,20 @@
     const targetPotential = Math.max(Number(player.potential || 0), Number(global.DevelopmentV2.threshold(target)));
     const preview = global.InazumaProgression.getPlayerAtLevel(rawPlayer, Number(rawPlayer.maxLevel || 20), freeAgentsDb, global.DevelopmentV2.optionsFromUpgrade(rawPlayer, { permanentTargetPotential: targetPotential }));
     const after = { ...rawPlayer, basePotential, ...preview, overall: preview.overall, finalOverall: preview.overall, displayLevel: Number(rawPlayer.maxLevel || 20), albumDatabase: freeAgentsDb };
-    openModal(`<div class="development-detail development-confirm"><p class="eyebrow">CONFERMA EVOLUZIONE</p><h2>${escapeHtml(player.name)}</h2><div class="development-evolution-preview development-squad-card-scope"><div><small>ATTUALE · ${escapeHtml(player.category)} · OVR ${escapeHtml(player.overall)}</small>${developmentSquadCardMarkup(player)}</div><span class="development-evolution-arrow" aria-hidden="true">→</span><div><small>NUOVA · ${escapeHtml(after.category)} · OVR ${escapeHtml(after.overall)}</small>${developmentSquadCardMarkup(after)}</div></div><h3 class="development-confirm-requirements-title">REQUISITI</h3><div class="development-confirm-costs">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, required: cost.projects, compact: true })}${resourceCostMarkup({ type: "cups", label: "Coppe", required: cost.cups, compact: true })}${resourceCostMarkup({ type: "coins", label: "Monete", required: cost.coins, compact: true })}</div><div class="button-row"><button class="btn btn-ghost" id="back-evolution">ANNULLA</button><button class="btn btn-yellow" id="confirm-evolution">CONFERMA EVOLUZIONE</button></div></div>`, { closeable: false, className: "development-confirm-modal" });
+    const statChanges = Object.entries(STAT_LABELS).flatMap(([stat, label]) => { const before = Number(player.stats?.[stat] || 0), next = Number(after.stats?.[stat] || 0), delta = next - before; return delta > 0 ? [{ label, before, next, delta }] : []; });
+    const statsMarkup = statChanges.map(({ label, before, next, delta }) => `<li><strong>${escapeHtml(label)}</strong><span>${escapeHtml(before)} <b aria-hidden="true">→</b> ${escapeHtml(next)}</span><em>+${escapeHtml(delta)}</em></li>`).join("");
+    const wallet=global.DevelopmentV2.read(), cupLabels={ie1:"IE1",ie1_s2:"IE2",ie1_s3:"IE3",ie2:"ARES"}, cupSelection=global.DevelopmentV2.defaultCupSelection(wallet,cost.cups);
+    const cupRows=global.DevelopmentV2.SEASON_IDS.filter((id)=>Number(wallet.cupsBySeason[id]||0)>0).map((id)=>`<div class="development-cup-row"><img src="${escapeHtml(global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.cupsBySeason[id])}" alt=""><strong>${escapeHtml(cupLabels[id]||id)}</strong><button type="button" data-cup-minus="${escapeHtml(id)}" aria-label="Rimuovi Coppa ${escapeHtml(cupLabels[id]||id)}">−</button><b data-cup-count="${escapeHtml(id)}">${escapeHtml(cupSelection[id]||0)}</b><button type="button" data-cup-plus="${escapeHtml(id)}" aria-label="Aggiungi Coppa ${escapeHtml(cupLabels[id]||id)}">+</button></div>`).join("");
+    openModal(`<div class="development-detail development-confirm"><p class="eyebrow">CONFERMA EVOLUZIONE</p><h2>${escapeHtml(player.name)}</h2><div class="development-evolution-preview development-squad-card-scope"><div><small>ATTUALE · ${escapeHtml(player.category)} · OVR ${escapeHtml(player.overall)}</small>${developmentSquadCardMarkup(player)}</div><span class="development-evolution-arrow" aria-hidden="true">→</span><div><small>NUOVA · ${escapeHtml(after.category)} · OVR ${escapeHtml(after.overall)}</small>${developmentSquadCardMarkup(after)}</div></div><section class="development-stat-increases"><h3>AUMENTO STATISTICHE</h3><ul>${statsMarkup || "<li><span>Nessuna statistica cambia.</span></li>"}</ul></section><h3 class="development-confirm-requirements-title">REQUISITI</h3><div class="development-confirm-costs">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, required: cost.projects, compact: true })}<section class="development-cup-selector"><h4>COPPE RICHIESTE: ${escapeHtml(cost.cups)}</h4>${cupRows}<p data-cup-total></p></section>${resourceCostMarkup({ type: "coins", label: "Monete", required: cost.coins, compact: true })}</div><div class="button-row"><button class="btn btn-ghost" id="back-evolution">ANNULLA</button><button class="btn btn-yellow" id="confirm-evolution">CONFERMA EVOLUZIONE</button></div></div>`, { closeable: false, className: "development-confirm-modal" });
     document.getElementById("back-evolution").onclick = closeModal;
+    const confirmButton=document.getElementById("confirm-evolution");
+    const refreshCupSelection=()=>{const selected=Object.values(cupSelection).reduce((sum,n)=>sum+Number(n||0),0),complete=selected===cost.cups; document.querySelector("[data-cup-total]").textContent=`COPPE SELEZIONATE ${selected} / ${cost.cups}`;document.querySelector("[data-cup-total]").classList.toggle("complete",complete);document.querySelectorAll("[data-cup-plus]").forEach((button)=>button.disabled=selected>=cost.cups||cupSelection[button.dataset.cupPlus]>=Number(wallet.cupsBySeason[button.dataset.cupPlus]||0));document.querySelectorAll("[data-cup-minus]").forEach((button)=>button.disabled=!cupSelection[button.dataset.cupMinus]);confirmButton.disabled=!complete;};
+    document.querySelectorAll("[data-cup-plus]").forEach((button)=>button.onclick=()=>{const id=button.dataset.cupPlus,total=Object.values(cupSelection).reduce((sum,n)=>sum+Number(n||0),0);if(total<cost.cups&&cupSelection[id]<wallet.cupsBySeason[id]){cupSelection[id]+=1;document.querySelector(`[data-cup-count="${id}"]`).textContent=cupSelection[id];refreshCupSelection();}});
+    document.querySelectorAll("[data-cup-minus]").forEach((button)=>button.onclick=()=>{const id=button.dataset.cupMinus;if(cupSelection[id]>0){cupSelection[id]-=1;document.querySelector(`[data-cup-count="${id}"]`).textContent=cupSelection[id];refreshCupSelection();}}); refreshCupSelection();
     let submitting = false;
-    document.getElementById("confirm-evolution").onclick = (event) => {
+    confirmButton.onclick = (event) => {
       if (submitting) return; submitting = true; event.currentTarget.disabled = true;
-      const result = global.DevelopmentV2.evolve({ playerId: rawPlayer.playerId, playerName: rawPlayer.name, basePotential, unlocked: isDevelopmentPlayerUnlocked(player), freeAgentEligible: isDevelopmentFreeAgentEligible(player.playerId) });
+      const result = global.DevelopmentV2.evolve({ playerId: rawPlayer.playerId, playerName: rawPlayer.name, basePotential, unlocked: isDevelopmentPlayerUnlocked(player), freeAgentEligible: isDevelopmentFreeAgentEligible(player.playerId), cupSelection });
       if (!result.ok) { submitting = false; closeModal(); toast(result.reason === "not_free_agent" ? "Giocatore non eleggibile: non è svincolato" : "Risorse cambiate: evoluzione non completata"); return renderDevelopmentCenter("players"); }
       const written = global.DevelopmentV2.playerUpgrade(rawPlayer.playerId);
       const writeIsCurrent = written?.currentPermanentRarity === result.target && Number(written.permanentTargetPotential) >= Number(global.DevelopmentV2.threshold(result.target)) && Number(written.evolutionCount) > 0;
@@ -1757,11 +1778,12 @@
   function shopDevMarkup() { const cupLabels = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES" }; return `<section class="shop-dev"><h2>NEGOZIO — HACK TEST</h2><button data-shop-prepare>PREPARA TEST NEGOZIO</button><div class="shop-dev-grid">${[1000,5000].map((n) => `<button data-shop-coins="${n}">+${n} MONETE</button>`).join("")}${global.DevelopmentV2.SEASON_IDS.flatMap((id) => [1,5].map((n) => `<button data-shop-cups="${id}" data-amount="${n}">+${n} COPPA ${cupLabels[id]}</button>`)).join("")}${global.DevelopmentV2.PROJECT_RARITIES.map((rarity) => `<button data-shop-project="${rarity}">+1 PROGETTO ${rarity.toUpperCase()}</button>`).join("")}</div><div class="shop-dev-danger"><button data-shop-unlock>SBLOCCA TUTTI GLI STEMMI</button><button data-shop-remove>RIMUOVI TUTTI GLI STEMMI ACQUISTATI</button><button data-shop-reset>RESET RISORSE SHOP</button></div></section>`; }
   function bindShopDev(section, catalog) { const mutate = (callback) => { const state = global.DevelopmentV2.read(); callback(state); global.DevelopmentV2.write(state); renderShop(section); }; document.querySelectorAll("[data-shop-coins]").forEach((button) => button.onclick = () => mutate((state) => { state.coins += Number(button.dataset.shopCoins); })); document.querySelectorAll("[data-shop-cups]").forEach((button) => button.onclick = () => mutate((state) => { const id = button.dataset.shopCups; state.cupsBySeason[id] += Number(button.dataset.amount); })); document.querySelectorAll("[data-shop-project]").forEach((button) => button.onclick = () => mutate((state) => { state.projects[button.dataset.shopProject] += 1; })); document.querySelector("[data-shop-prepare]")?.addEventListener("click", () => mutate((state) => { state.coins = Math.max(state.coins, 10000); global.DevelopmentV2.SEASON_IDS.forEach((id) => { state.cupsBySeason[id] = Math.max(state.cupsBySeason[id], 5); }); })); document.querySelector("[data-shop-unlock]")?.addEventListener("click", () => mutate((state) => { state.unlockedEmblems = [...new Set([...state.unlockedEmblems, ...catalog.map((item) => item.emblemId)])]; })); document.querySelector("[data-shop-remove]")?.addEventListener("click", () => mutate((state) => { state.unlockedEmblems = []; })); document.querySelector("[data-shop-reset]")?.addEventListener("click", () => mutate((state) => { state.coins = 0; state.legacyCups = 0; global.DevelopmentV2.SEASON_IDS.forEach((id) => { state.cupsBySeason[id] = 0; }); state.unlockedEmblems = []; })); }
 
-  function developmentDevMarkup(eligibleCount = developmentPlayers().length) { return `<section class="development-dev"><h2>SVILUPPO — HACK TEST</h2><p><strong>SVINCOLATI ELEGGIBILI: ${escapeHtml(eligibleCount)}</strong></p><div>${[100,500,1500].map(n=>`<button data-dev-coins="${n}">+${n} MONETE</button>`).join("")}${global.DevelopmentV2.SEASON_IDS.map(id=>`<button data-dev-season-cup="${id}">+1 COPPA ${id.toUpperCase()}</button>`).join("")}${global.DevelopmentV2.PROJECT_RARITIES.map(r=>`<button data-dev-complete-project="${r}">+1 PROGETTO ${r.toUpperCase()}</button>`).join("")}</div><button id="dev-reset">RESET SVILUPPO TEST</button></section>`; }
+  function developmentDevMarkup(eligibleCount = developmentPlayers().length) { return `<section class="development-dev"><h2>SVILUPPO — HACK TEST</h2><p><strong>SVINCOLATI ELEGGIBILI: ${escapeHtml(eligibleCount)}</strong></p><div>${[100,500,1500].map(n=>`<button data-dev-coins="${n}">+${n} MONETE</button>`).join("")}${global.DevelopmentV2.SEASON_IDS.map(id=>`<button data-dev-season-cup="${id}">+1 COPPA ${id.toUpperCase()}</button>`).join("")}${global.DevelopmentV2.PROJECT_RARITIES.map(r=>`<button data-dev-complete-project="${r}">+1 PROGETTO ${r.toUpperCase()}</button>`).join("")}</div><button id="dev-unlock-free-agents">SBLOCCA TUTTI GLI SVINCOLATI</button><button id="dev-reset">RESET SVILUPPO TEST</button></section>`; }
   function bindDevelopmentDev() {
     document.querySelectorAll("[data-dev-coins]").forEach(b=>b.onclick=()=>{const s=global.DevelopmentV2.read();s.coins+=Number(b.dataset.devCoins);global.DevelopmentV2.write(s);renderDevelopmentCenter();});
     document.querySelectorAll("[data-dev-season-cup]").forEach(b=>b.onclick=()=>{const s=global.DevelopmentV2.read(),id=b.dataset.devSeasonCup;s.cupsBySeason[id]=(s.cupsBySeason[id]||0)+1;global.DevelopmentV2.write(s);renderDevelopmentCenter();});
     document.querySelectorAll("[data-dev-complete-project]").forEach(b=>b.onclick=()=>{global.DevelopmentV2.addCompletedProject(b.dataset.devCompleteProject);renderDevelopmentCenter("projects");});
+    document.getElementById("dev-unlock-free-agents")?.addEventListener("click",()=>{const ids=[...eligibleFreeAgentIds()];global.AlbumProgress.unlockAlbumPlayers(global.AlbumProgress.DEFAULT_COLLECTION_ID,ids,{source:"development-dev-unlock"});developmentPlayersCache=null;developmentResolvedCache.clear();toast(`${ids.length} svincolati disponibili.`);renderDevelopmentCenter("players");});
     document.getElementById("dev-reset")?.addEventListener("click",()=>{if(confirm("Azzerare solo lo sviluppo?")){global.DevelopmentV2.reset();renderDevelopmentCenter();}});
   }
 
@@ -2481,6 +2503,20 @@
     const currentNodeId = zone.currentNodeId;
     const pathSet = new Set(zone.path || []);
     const selectableCount = reachable.size;
+    const devTransformableNodeIds = [...reachable].filter((nodeId) => zone.nodes.find((node) => String(node.id) === String(nodeId))?.type !== "boss");
+    const devNodeTools = DEV_MODE ? `
+      <section class="shop-dev route-dev-tools" aria-label="Strumenti DEV nodi">
+        <h2>MAPPA — HACK TEST</h2>
+        <div class="shop-dev-grid">
+          <button type="button" data-dev-open-legendary>APRI PULL LEGGENDARIO</button>
+          <label>NODO <select data-dev-node>${devTransformableNodeIds.map((nodeId) => {
+            const candidate = zone.nodes.find((node) => String(node.id) === String(nodeId));
+            return `<option value="${escapeHtml(nodeId)}">${escapeHtml(candidate?.teamName || labels[candidate?.type]?.label || nodeId)} · ${escapeHtml(nodeId)}</option>`;
+          }).join("")}</select></label>
+          <button type="button" data-dev-transform-node="pull_legendary" ${devTransformableNodeIds.length ? "" : "disabled"}>TRASFORMA NODO IN PULL LEGGENDARIO</button>
+          <button type="button" data-dev-transform-node="trade" ${devTransformableNodeIds.length ? "" : "disabled"}>TRASFORMA NODO IN SCAMBIO</button>
+        </div>
+      </section>` : "";
     const edgeMarkup = zone.edges.map(([from, to]) => {
       const available = from === currentNodeId && reachable.has(to);
       const done = completed.has(from) && (completed.has(to) || pathSet.has(to));
@@ -2543,6 +2579,7 @@
               }).join("")}
             </div>
           </section>
+          ${devNodeTools}
         </div>
         ${bottomNav("map")}
       </main>`;
@@ -2553,12 +2590,28 @@
     document.querySelectorAll("[data-node-id]").forEach((button) => {
       button.addEventListener("click", () => enterNode(button.dataset.nodeId));
     });
+    if (DEV_MODE) bindMapDevTools();
     bindBottomNav();
     requestAnimationFrame(() => {
       const scroll = document.getElementById("map-scroll");
       if (zone.path.length <= 1 && scroll && !window.matchMedia("(max-width: 780px)").matches) scroll.scrollLeft = Math.max(0, (scroll.scrollWidth - scroll.clientWidth) / 2);
       if (scroll && window.matchMedia("(max-width: 780px)").matches) scroll.scrollLeft = 0;
     });
+  }
+
+  function bindMapDevTools() {
+    document.querySelector("[data-dev-open-legendary]")?.addEventListener("click", openDevLegendaryPull);
+    document.querySelectorAll("[data-dev-transform-node]").forEach((button) => button.addEventListener("click", () => {
+      const nodeId = document.querySelector("[data-dev-node]")?.value;
+      const node = run.currentZone?.nodes?.find((candidate) => String(candidate.id) === String(nodeId));
+      if (!node || node.type === "boss" || !global.MapEngine.reachableNodeIds(run.currentZone).map(String).includes(String(node.id))) return toast("Seleziona un nodo disponibile");
+      node.type = button.dataset.devTransformNode;
+      delete node.revealedType;
+      delete node.pullState;
+      global.RunState.save(run);
+      toast(node.type === "trade" ? "Nodo trasformato in Scambio" : "Nodo trasformato in Pull Leggendario");
+      renderMap();
+    }));
   }
 
   function enterNode(nodeId) {
@@ -2992,7 +3045,10 @@
   function tradeCandidatePreview(incoming, entry) {
     if (incoming.profileId) return global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(entry || { playerId: incoming.playerId, activeProfileId: incoming.profileId, activeRoleVariantId: incoming.activeRoleVariantId, level: 0, levelUnits: 0 }, { run, seasonId: run.seasonId, database: seasonDb });
     const level = Number(entry?.level || 0);
-    return global.InazumaProgression.getPlayerAtLevel(incoming.player, Math.floor(level), freeAgentsDb, entry || {});
+    const effectiveEntry = incoming.source === "free_agents"
+      ? { ...permanentRosterFields(incoming.player), ...(entry || {}) }
+      : (entry || {});
+    return global.InazumaProgression.getPlayerAtLevel(incoming.player, Math.floor(level), freeAgentsDb, effectiveEntry);
   }
 
   function roleVariantForTradeUpgrade(entry, profile) {
@@ -3004,10 +3060,11 @@
   function prepareTrade(node, outgoingId) {
     const outgoingEntry = rosterEntry(outgoingId);
     const outgoingResolved = resolvedRosterPlayer(outgoingId);
-    const outgoingBase = global.RoguelikeRules.resolveRosterEntryBase(outgoingEntry, run, {
+    const outgoingRawBase = global.RoguelikeRules.resolveRosterEntryBase(outgoingEntry, run, {
       profile: (entry) => global.ProfiledSeasonRuntime.resolveEffectiveBase(entry, run.seasonId),
       legacy: (entry) => legacyRosterPlayer(entry),
     });
+    const outgoingBase = outgoingRawBase ? { ...outgoingRawBase, finalOverall: global.InazumaProgression.effectivePotential(outgoingRawBase, outgoingEntry) } : null;
     if (!outgoingEntry || !outgoingResolved || !outgoingBase?.position || !Number.isFinite(Number(outgoingBase.finalOverall))) {
       toast("Giocatore non disponibile per lo scambio");
       return resolveTradeNode(node);
@@ -3023,8 +3080,11 @@
           teams: seasonDb.teams,
           seasonId: run.seasonId,
           compareProfileProgression: global.ProfiledSeasonRuntime.compareProfileProgression,
+          resolveCandidate: (player, source) => source === "free_agents"
+            ? global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, run.developmentPlayerSnapshot)
+            : player,
         })
-      : global.RoguelikeRules.getTradeCandidates({ outgoingPlayer: outgoingBase, rosterIds: run.roster.map((entry) => entry.playerId), freeAgents: freeAgentsDb.players, seasonPlayers: seasonDb.players, unlockedTeamIds: run.unlockedTeamIds, teams: seasonDb.teams });
+      : global.RoguelikeRules.getTradeCandidates({ outgoingPlayer: outgoingBase, rosterIds: run.roster.map((entry) => entry.playerId), freeAgents: freeAgentsDb.players, seasonPlayers: seasonDb.players, unlockedTeamIds: run.unlockedTeamIds, teams: seasonDb.teams, resolveCandidate: (player, source) => source === "free_agents" ? global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, run.developmentPlayerSnapshot) : player });
     if (!candidates.length) {
       toast(`Nessun ${outgoingBase.position} con finalOverall ${outgoingBase.finalOverall} o superiore disponibile`);
       return resolveTradeNode(node);
@@ -3066,10 +3126,16 @@
     }
     const result = global.RoguelikeRules.executeProfileAwareTrade(run, outgoingEntry.playerId, incoming, {
       roleVariantForUpgrade: roleVariantForTradeUpgrade,
-      resolveOutgoingBase: (entry) => global.RoguelikeRules.resolveRosterEntryBase(entry, run, {
-        profile: (profileEntry) => global.ProfiledSeasonRuntime.resolveEffectiveBase(profileEntry, run.seasonId),
-        legacy: (legacyEntry) => legacyRosterPlayer(legacyEntry),
-      }),
+      resolveOutgoingBase: (entry) => {
+        const base = global.RoguelikeRules.resolveRosterEntryBase(entry, run, {
+          profile: (profileEntry) => global.ProfiledSeasonRuntime.resolveEffectiveBase(profileEntry, run.seasonId),
+          legacy: (legacyEntry) => legacyRosterPlayer(legacyEntry),
+        });
+        return base ? { ...base, finalOverall: global.InazumaProgression.effectivePotential(base, entry) } : null;
+      },
+      resolveIncomingCandidate: (player, source) => source === "free_agents"
+        ? global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, run.developmentPlayerSnapshot)
+        : player,
     });
     if (!result.player) {
       toast("Offerta non più valida: la rosa non è stata modificata");
@@ -3161,7 +3227,7 @@
     const legendaryById = new Map();
     const legendarySources = new Map();
     freeAgentsDb.players
-      .filter((player) => global.SEASON1_CONFIG.legendaryCategories.includes(player.category))
+      .filter((player) => global.RoguelikeRules.isLegendaryEffectivePlayer(player, global.SEASON1_CONFIG.legendaryCategories, run.developmentPlayerSnapshot))
       .forEach((player) => {
         legendaryById.set(String(player.playerId), { ...player, pullCandidateKind: "free_agent" });
         legendarySources.set(String(player.playerId), "free_agents");
@@ -3318,7 +3384,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     openPull(node, pullType);
   }
 
-  function openPull(node, pullType = node.type) {
+  function openPull(node, pullType = node.type, options = {}) {
     const pool = node.pullState?.luckyCharmUsed && ["pull_free_agents", "pull_unlocked_teams"].includes(pullType)
       ? luckyCharmPoolForPull(pullType)
       : pullPool(pullType);
@@ -3343,6 +3409,14 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       global.RunState.save(run);
       openPull(node, pullType);
     };
+    const devReroll = DEV_MODE && options.dev ? () => {
+      node.pullState.rerolls += 1;
+      node.pullState.candidateIds = [];
+      openPull(node, pullType, options);
+    } : null;
+    const finishPull = (message) => options.dev
+      ? (closeModal(), toast(message), renderMap())
+      : finishNonMatchNode(node, message);
     showPlayerOffer({
       title: global.SEASON1_CONFIG.nodeLabels[pullType].label,
       subtitle: `Scegli 1 giocatore su 3 · Livello ${level}${node.pullState.luckyCharmUsed ? " · Portafortuna già utilizzato" : ""}`,
@@ -3352,7 +3426,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       database: pool.database,
       level,
       allowSkip: true,
-      onReroll: scoutToken && !legendaryPull ? rerollPull : null,
+      onReroll: devReroll || (scoutToken && !legendaryPull ? rerollPull : null),
+      rerollLabel: devReroll ? "RIGENERA PULL LEGGENDARIO" : null,
       rerollDisabled: false,
       rerollDisabledMessage: "",
       showLuckyCharm: luckyCompatible,
@@ -3363,13 +3438,24 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       onPick: (player) => {
         const playerSource = pool.sourceForPlayer ? pool.sourceForPlayer(player) : pool.source;
         recruitPlayer(player, playerSource, level, (added) => {
-          finishNonMatchNode(node, added ? `${player.name} entra nella rosa` : "Hai rinunciato al nuovo giocatore");
+          finishPull(added ? `${player.name} entra nella rosa` : "Hai rinunciato al nuovo giocatore");
         });
       },
-      onSkip: () => finishNonMatchNode(node, "Hai rinunciato al pull"),
+      onSkip: () => finishPull("Hai rinunciato al pull"),
       legendary: legendaryPull,
       profileAware: pool.profileAware,
     });
+  }
+
+  function openDevLegendaryPull() {
+    if (!DEV_MODE || !run?.currentZone) return;
+    ui.devLegendaryPullSequence += 1;
+    const node = {
+      id: `dev-legendary-${ui.devLegendaryPullSequence}`,
+      type: "pull_legendary",
+      pullState: { pullType: "pull_legendary", rerolls: 0, excludedCandidateIds: [], luckyCharmUsed: false, candidateIds: [] },
+    };
+    openPull(node, "pull_legendary", { dev: true });
   }
 
   function pullChoiceSource(options, player) {
@@ -3379,6 +3465,16 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   function pullChoiceDatabase(options, player) {
     const src = pullChoiceSource(options, player);
     return global.RecruitmentPoolRuntime.choiceDatabase(src, seasonDb, freeAgentsDb);
+  }
+
+  function resolvePullChoicePlayer(options, player) {
+    const level = Math.floor(Number(options.level || 0));
+    const database = pullChoiceDatabase(options, player);
+    const developmentSnapshot = run?.developmentPlayerSnapshot || {};
+    const developmentOptions = global.DevelopmentV2.optionsFromUpgrade(player, developmentSnapshot[String(player.playerId)]);
+    const resolved = global.InazumaProgression.getPlayerAtLevel(player, level, database, developmentOptions);
+    const effectiveMetadata = global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, developmentSnapshot);
+    return { ...resolved, category: effectiveMetadata.category, baseStats: resolved.stats };
   }
 
   function pullChoiceActionPanel(player, index) {
@@ -3409,7 +3505,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const scoutItem = resolveItem("scout_token");
     const luckyItem = resolveItem("lucky_charm");
     const rerollButton = options.onReroll
-      ? `<button type="button" class="btn btn-yellow" id="reroll-offer" ${options.rerollDisabled ? "disabled" : ""}><span class="pull-item-action-copy">${itemIcon(scoutItem)}<span>Usa ${escapeHtml(scoutItem.name)}</span></span></button>`
+      ? `<button type="button" class="btn btn-yellow" id="reroll-offer" ${options.rerollDisabled ? "disabled" : ""}>${options.rerollLabel ? escapeHtml(options.rerollLabel) : `<span class="pull-item-action-copy">${itemIcon(scoutItem)}<span>Usa ${escapeHtml(scoutItem.name)}</span></span>`}</button>`
       : "";
     const luckyCount = Number(options.luckyCharmCount || 0);
     const luckyButton = options.showLuckyCharm && (options.onLuckyCharm || options.luckyCharmDisabledMessage)
@@ -3420,8 +3516,9 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       <div class="candidate-grid pull-offer-grid" data-pull-choice-grid>
         ${options.candidates.map((player, index) => {
           const panelId = `pull-choice-actions-${index}`;
-          return `<div class="pull-choice-option ${rarityClass(player.category)}" data-player-id="${escapeHtml(player.playerId)}" data-candidate-key="${escapeHtml(offerCandidateKey(player))}">
-            ${playerCard(player, { button: true, context: "pull", level: options.level, database: pullChoiceDatabase(options, player), applyPermanent: true }).replace(">", ` aria-expanded="false" aria-pressed="false" aria-controls="${panelId}">`)}
+          const effectivePlayer = resolvePullChoicePlayer(options, player);
+          return `<div class="pull-choice-option ${rarityClass(effectivePlayer.category)}" data-player-id="${escapeHtml(player.playerId)}" data-candidate-key="${escapeHtml(offerCandidateKey(player))}">
+            ${playerCard(player, { button: true, context: "pull", level: options.level, database: pullChoiceDatabase(options, player), resolvedPlayer: effectivePlayer }).replace(">", ` aria-expanded="false" aria-pressed="false" aria-controls="${panelId}">`)}
             ${pullChoiceActionPanel(player, index)}
           </div>`;
         }).join("")}
@@ -3450,8 +3547,9 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       }
       if (actionButton.dataset.pullAction === "detail") {
         const playerDatabase = pullChoiceDatabase(options, player);
+        const effectivePlayer = resolvePullChoicePlayer(options, player);
         const pullScroll = scrollSnapshot();
-        showPlayerDetailsFor(player, {
+        showPlayerDetailsFor(effectivePlayer, {
           playerId: player.playerId,
           level: options.level,
           database: playerDatabase,
@@ -5745,11 +5843,13 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
           description: `Overall e potenziale aumenteranno di ${addedBoost}.`,
           onCancel: () => choosePlayerForPotentialBoost(item),
           onConfirm: () => {
+            const trainingBase=global.RoguelikeRules.isProfileAwareRosterEntry(entry,run)?global.ProfiledSeasonRuntime.resolveEffectiveBase(entry,run.seasonId):player;
+            const trainingPlan=global.InazumaProgression.planCodexTrainingGrowth(trainingBase,entry,addedBoost);
             entry.potentialBoost = Math.min(maxBoost, currentPotentialBoost + addedBoost);
             entry.currentOverallBoost = Math.min(maxBoost, currentOverallBoost + addedBoost);
             entry.intensiveTrainingMigrated = true;
             entry.potentialBoostApplications = Array.isArray(entry.potentialBoostApplications) ? entry.potentialBoostApplications : [];
-            if (addedBoost > 0) entry.potentialBoostApplications.push({ amount: addedBoost, appliedLevel: Number(entry.level || 0) });
+            if (addedBoost > 0) entry.potentialBoostApplications.push({ amount: addedBoost, appliedLevel: Number(entry.level || 0), codexDeltas: trainingPlan.codexDeltas });
             removeInventoryItem(item.instanceId);
             global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
             global.RunState.save(run);

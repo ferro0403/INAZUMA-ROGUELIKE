@@ -68,7 +68,23 @@
     return { ...base, Buono: 1.04, Forte: 1.35, Elite: 1.2, Mondiale: 1.05 };
   }
 
-  function getTradeCandidates({ outgoingPlayer, rosterIds, freeAgents, seasonPlayers, unlockedTeamIds, teams }) {
+  function resolveDevelopmentEffectiveMetadata(player, developmentSnapshot = {}) {
+    if (!player) return null;
+    const upgrade = developmentSnapshot?.[String(player.playerId)];
+    const target = Number(upgrade?.permanentTargetPotential);
+    return {
+      ...player,
+      finalOverall: Number.isFinite(target) ? Math.max(Number(player.finalOverall || 0), target) : Number(player.finalOverall || 0),
+      category: upgrade?.currentPermanentRarity || player.category,
+    };
+  }
+
+  function isLegendaryEffectivePlayer(player, legendaryCategories, developmentSnapshot = {}) {
+    const effective = resolveDevelopmentEffectiveMetadata(player, developmentSnapshot);
+    return !!effective && (legendaryCategories || []).includes(effective.category);
+  }
+
+  function getTradeCandidates({ outgoingPlayer, rosterIds, freeAgents, seasonPlayers, unlockedTeamIds, teams, resolveCandidate = (player) => player }) {
     if (!outgoingPlayer) return [];
     const owned = new Set((rosterIds || []).map(String));
     const unlocked = new Set((unlockedTeamIds || []).map(String));
@@ -86,9 +102,10 @@
     const unique = new Map();
     combined.forEach((candidate) => {
       const id = String(candidate.player.playerId);
+      const effective = resolveCandidate(candidate.player, candidate.source) || candidate.player;
       if (owned.has(id)) return;
-      if (candidate.player.position !== outgoingPlayer.position) return;
-      if (Number(candidate.player.finalOverall) < Number(outgoingPlayer.finalOverall)) return;
+      if (effective.position !== outgoingPlayer.position) return;
+      if (Number(effective.finalOverall) < Number(outgoingPlayer.finalOverall)) return;
       if (!unique.has(id)) unique.set(id, candidate);
     });
     return [...unique.values()];
@@ -115,7 +132,7 @@
     };
   }
 
-  function getProfileAwareTradeCandidates({ outgoingPlayer, outgoingPlayerId = null, rosterEntries, freeAgents, profiles, unlockedTeamIds, teams, seasonId = "ie1_s2", compareProfileProgression }) {
+  function getProfileAwareTradeCandidates({ outgoingPlayer, outgoingPlayerId = null, rosterEntries, freeAgents, profiles, unlockedTeamIds, teams, seasonId = "ie1_s2", compareProfileProgression, resolveCandidate = (player) => player }) {
     if (!outgoingPlayer) return [];
     const role = String(outgoingPlayer.position || outgoingPlayer.role || "").toUpperCase();
     const potential = Number(outgoingPlayer.finalOverall || 0);
@@ -128,7 +145,8 @@
     (freeAgents || []).forEach((player) => {
       const candidate = { player, source: "free_agents", playerId: String(player.playerId), profileId: null, activeRoleVariantId: null, kind: "new" };
       const outcome = resolveTradeCandidateOutcome({ candidate, rosterEntries, outgoingPlayerId });
-      if (!outcome?.eligible || outcome.resultingRole !== role || outcome.resultingBasePotential < potential) return;
+      const effective = resolveCandidate(player, candidate.source) || player;
+      if (!outcome?.eligible || outcome.resultingRole !== role || Number(effective.finalOverall) < potential) return;
       candidates.push({ ...candidate, outcome, player: outcome.player });
     });
     (profiles || []).forEach((profile) => {
@@ -161,9 +179,11 @@
       const outgoingBase = options.resolveOutgoingBase(outgoing);
       const outgoingRole = String(outgoingBase?.position || outgoingBase?.role || "").toUpperCase();
       const outgoingPotential = Number(outgoingBase?.finalOverall);
+      const incomingEffective = options.resolveIncomingCandidate?.(incoming.player, incoming.source) || outcome.player;
+      const incomingPotential = Number(incomingEffective?.finalOverall || 0);
       if (!outgoingRole || !Number.isFinite(outgoingPotential)
         || outcome.resultingRole !== outgoingRole
-        || outcome.resultingBasePotential < outgoingPotential) {
+        || incomingPotential < outgoingPotential) {
         return { status: "ineligible", reason: "trade-conditions-changed", player: null, recruited: false };
       }
     }
@@ -213,6 +233,8 @@
     defeatedBossRewardLevel,
     migrateDefeatedBossPlayerLevels,
     getTradeCandidates,
+    resolveDevelopmentEffectiveMetadata,
+    isLegendaryEffectivePlayer,
     resolveTradeCandidateOutcome,
     getProfileAwareTradeCandidates,
     executeProfileAwareTrade,

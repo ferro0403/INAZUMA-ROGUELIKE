@@ -18,23 +18,51 @@ function extractFunction(name) {
 }
 
 const context = {};
-vm.runInNewContext(`${extractFunction('bindAlbumRosterInteractions')}; this.bind = bindAlbumRosterInteractions;`, context);
+vm.runInNewContext(`${extractFunction('bindAlbumRosterInteractions')}; ${extractFunction('bindDevelopmentSelectedCardInteraction')}; this.bind = bindAlbumRosterInteractions; this.bindDevelopment = bindDevelopmentSelectedCardInteraction;`, context);
 
 class FakeNode {
   constructor(dataset = {}, parent = null) { this.dataset = dataset; this.parent = parent; this.listeners = new Map(); }
   addEventListener(type, listener) { const list = this.listeners.get(type) || []; list.push(listener); this.listeners.set(type, list); }
   contains(node) { for (let current = node; current; current = current.parent) if (current === this) return true; return false; }
   closest(selector) {
-    const key = selector === '[data-album-player-entry]' ? 'albumPlayerEntry' : selector === '[data-album-player]' ? 'albumPlayer' : null;
+    const key = selector === '[data-album-player-entry]' ? 'albumPlayerEntry' : selector === '[data-album-player]' ? 'albumPlayer' : selector === '[data-development-selected-card]' ? 'developmentSelectedCard' : null;
     for (let current = this; current; current = current.parent) if (key && current.dataset[key] != null) return current;
     return null;
   }
   click(target = this) {
-    const event = { target, defaultPrevented: false, preventDefault() { this.defaultPrevented = true; } };
+    const event = { target, defaultPrevented: false, propagationStopped: false, preventDefault() { this.defaultPrevented = true; }, stopPropagation() { this.propagationStopped = true; } };
     (this.listeners.get('click') || []).forEach((listener) => listener(event));
     return event;
   }
 }
+
+const developmentSelection = { playerId: 'adam-montayne' };
+let selectedDevelopmentPlayer = { playerId: developmentSelection.playerId, name: 'Adam Montayne', stats: { attack: 90, control: 90, speed: 70 } };
+const developmentModalRoot = { innerHTML: '' };
+const renderSelectedDevelopmentCard = () => {
+  const card = new FakeNode({ developmentSelectedCard: developmentSelection.playerId });
+  context.bindDevelopment(card, selectedDevelopmentPlayer, (current) => {
+    developmentModalRoot.innerHTML = `<section class="player-detail-modal"><h2>${current.name}</h2><div class="detail-stats">${Object.entries(current.stats).map(([stat, value]) => `<span>${stat}: ${value}</span>`).join('')}</div><button data-close-modal>Chiudi</button></section>`;
+  });
+  return card;
+};
+let selectedCard = renderSelectedDevelopmentCard();
+assert.equal(selectedCard.dataset.developmentSelectedCard, developmentSelection.playerId, 'the rendered selected card carries the current player id');
+assert.equal(selectedCard.listeners.get('click').length, 1, 'the freshly rendered card receives one direct handler');
+selectedCard.click();
+assert.match(developmentModalRoot.innerHTML, /player-detail-modal/);
+assert.match(developmentModalRoot.innerHTML, /Adam Montayne/);
+assert.match(developmentModalRoot.innerHTML, /attack: 90/);
+assert.match(developmentModalRoot.innerHTML, /control: 90/);
+assert.match(developmentModalRoot.innerHTML, /speed: 70/);
+developmentModalRoot.innerHTML = '';
+assert.equal(developmentSelection.playerId, 'adam-montayne', 'closing Player Detail preserves the Development selection');
+selectedDevelopmentPlayer = { playerId: developmentSelection.playerId, name: 'Adam Montayne', stats: { attack: 100, control: 100, speed: 80 } };
+selectedCard = renderSelectedDevelopmentCard();
+selectedCard.click();
+assert.match(developmentModalRoot.innerHTML, /attack: 100/);
+assert.match(developmentModalRoot.innerHTML, /control: 100/);
+assert.match(developmentModalRoot.innerHTML, /speed: 80/, 'a rerendered card opens the evolved player captured while rendering');
 
 class MouseEvent { constructor(type, options = {}) { this.type = type; this.bubbles = options.bubbles; } }
 const roster = new FakeNode();
