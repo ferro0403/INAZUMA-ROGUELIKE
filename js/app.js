@@ -919,7 +919,7 @@
   }
 
   function playerTeamIdentity(player, playerId) {
-    const entry = playerId ? rosterEntry(playerId) : null;
+    const entry = playerId && Array.isArray(run?.roster) ? rosterEntry(playerId) : null;
     const ids = [entry?.teamId, player.teamId, ...(player.teamIds || [])].filter(Boolean);
     let team = ids.map((id) => seasonTeamsById.get(String(id))).find(Boolean);
     let teamName = team?.teamName || entry?.teamName || player.teamName || (player.teams || []).find((name) => name && name !== "Unaffiliated") || (player.teamId === "unaffiliated" ? "Svincolato" : "");
