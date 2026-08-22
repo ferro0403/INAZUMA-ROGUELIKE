@@ -19,7 +19,7 @@ for (const file of ['season1-config.js', 'season-registry.js', 'run-state.js', '
 function apply(snapshot) {
   const options = { suppressCloudEvent: true };
   sandbox.RunState.restoreProfile(snapshot.profile, options);
-  for (const [seasonId, run] of Object.entries(snapshot.runs)) { sandbox.RunState.remove(seasonId, options); if (run !== null) sandbox.RunState.save(core.clone(run), { preserveTimestamps: true, replaceRun: true, ...options }); }
+  for (const [seasonId, run] of Object.entries(snapshot.runs)) { if (run === null) sandbox.RunState.forceDeleteForRestore(seasonId, options); else sandbox.RunState.forceReplaceCanonicalFromSnapshot(core.clone(run), { preserveTimestamps: true, ...options }); }
   sandbox.AlbumProgress.write(core.clone(snapshot.album), options);
   sandbox.DevelopmentV2.write(core.clone(snapshot.development), options);
   sandbox.HallOfFameStorage._saveArchive({ schemaVersion: snapshot.hallOfFame.archiveSchemaVersion, updatedAt: snapshot.hallOfFame.updatedAt, teams: core.clone(snapshot.hallOfFame.teams), index: core.clone(snapshot.hallOfFame.index) }, { preserveTimestamp: true, ...options });

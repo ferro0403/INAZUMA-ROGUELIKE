@@ -37,7 +37,7 @@ a.RunState.save(run); assert.strictEqual(a.RunState.load('ie1').bossIndex, 11, '
 storage.failSet = 'run:ie1_backup'; run.bossIndex = 12; a.RunState.save(run); storage.failSet = null;
 assert.strictEqual(a.RunState.load('ie1').bossIndex, 12, 'optional backup failure does not fail canonical commit');
 
-const deletedGeneration = run.storageGeneration + 1; storage.failRemove = true; a.RunState.remove('ie1'); storage.failRemove = false;
+const deletedGeneration = run.storageGeneration + 1; storage.failRemove = true; a.RunState.remove('ie1', { expectedGeneration: run.storageGeneration }); storage.failRemove = false;
 assert.strictEqual(JSON.parse(shared.get('run:ie1_head')).generation, deletedGeneration);
 shared.set('old-v1', JSON.stringify({ ...run, storageGeneration: undefined, storageCommitId: undefined }));
 assert.strictEqual(runtime(new FaultStorage(shared)).RunState.load('ie1'), null, 'tombstone defeats leftover legacy data');
@@ -47,6 +47,24 @@ const replacement = a.RunState.createRun({ name: 'Royal' }, 'ie1');
 a.RunState.save(replacement, { replaceRun: true });
 assert.notStrictEqual(replacement.runId, run.runId); assert.strictEqual(replacement.storageGeneration, deletedGeneration + 1);
 assert.throws(() => a.RunState.save(run), (error) => error.code === 'stale-write', 'old lineage cannot overwrite replacement run');
+
+// The primary envelope is authoritative; head is only a fallible witness.
+const headFailureStorage = new FaultStorage(shared); const headRuntime = runtime(headFailureStorage);
+const latest = headRuntime.RunState.load('ie1'); latest.bossIndex = 13;
+headFailureStorage.failSet = 'run:ie1_head'; headRuntime.RunState.save(latest); headFailureStorage.failSet = null;
+assert.strictEqual(runtime(new FaultStorage(shared)).RunState.load('ie1').bossIndex, 13, 'verified primary survives stale head in a fresh VM');
+const staleAfterHeadFailure = { ...replacement, bossIndex: 1 };
+assert.throws(() => runtime(new FaultStorage(shared)).RunState.save(staleAfterHeadFailure, { replaceRun: true }), (error) => error.code === 'stale-write', 'replaceRun does not bypass generation checks');
+
+shared.delete('run:ie1_head');
+const withoutHead = runtime(new FaultStorage(shared)).RunState.load('ie1'); withoutHead.bossIndex = 14;
+runtime(new FaultStorage(shared)).RunState.save(withoutHead);
+assert.strictEqual(runtime(new FaultStorage(shared)).RunState.load('ie1').bossIndex, 14, 'a valid primary remains saveable without head');
+
+const staleDeleteGeneration = withoutHead.storageGeneration;
+const advanced = runtime(new FaultStorage(shared)).RunState.load('ie1'); advanced.bossIndex = 15; runtime(new FaultStorage(shared)).RunState.save(advanced);
+assert.throws(() => runtime(new FaultStorage(shared)).RunState.remove('ie1', { expectedGeneration: staleDeleteGeneration }), (error) => error.code === 'stale-write', 'stale delete cannot remove a newer commit');
+assert.throws(() => runtime(new FaultStorage(shared)).RunState.remove('ie1'), (error) => error.code === 'missing-expected-generation');
 
 const other = a.RunState.createRun({ name: 'Zeus' }, 'ie2'); a.RunState.save(other);
 assert.strictEqual(other.storageGeneration, 1, 'generations are independent by season');
