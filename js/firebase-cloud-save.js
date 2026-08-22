@@ -118,17 +118,28 @@ async function syncNow() {
 function retrySync() { if (state.status !== "sync-error") return null; return syncNow(); }
 function onLocalSave(event) { const sector = event?.detail?.sector; if (!core.SECTOR_NAMES.includes(sector)) return; if (state.status === "awaiting-local-save") { associateLocalSave({ force: true }); return; } if (!cachedManifest || state.uid !== cachedManifest.uid || ["sync-conflict", "local-conflict", "cloud-update-available"].includes(state.status)) return; dirtySectors.add(sector); scheduleSync(); }
 
-function logicalRunJson(run) { if (run === null) return "null"; const logical = core.clone(run); delete logical.storageGeneration; delete logical.storageCommitId; return JSON.stringify(logical); }
+function logicalRunJson(run) { if (run === null) return "null"; const logical = core.clone(run); delete logical.storageGeneration; delete logical.storageCommitId; return core.stableSerialize(logical); }
+function captureRunProvenance() {
+  return Object.fromEntries(["ie1", "ie2", "ie1_s2", "ie1_s3"].map((seasonId) => {
+    const diagnostic = globalThis.RunStorage?.diagnostics?.(seasonId) || {};
+    return [seasonId, core.stableSerialize({ generation: diagnostic.canonicalGeneration || 0, state: diagnostic.canonicalState || "empty-or-corrupt", runId: diagnostic.canonicalRunId || null })];
+  }));
+}
+function assertRunProvenanceUnchanged(expected) {
+  const current = captureRunProvenance();
+  const changed = Object.keys(expected).find((seasonId) => expected[seasonId] !== current[seasonId]);
+  if (changed) throw Object.assign(new Error("local-changed-during-restore"), { code: "local-changed-during-restore", problemSector: `run_${changed}` });
+}
 function applySnapshot(snapshot) { const options = { suppressCloudEvent: true }; globalThis.RunState.restoreProfile(snapshot.profile, options); for (const [seasonId, run] of Object.entries(snapshot.runs)) { if (run === null) globalThis.RunState.forceDeleteForRestore(seasonId, options); else globalThis.RunState.forceReplaceCanonicalFromSnapshot(core.clone(run), { preserveTimestamps: true, ...options }); const applied = globalThis.RunState.load(seasonId, { readOnly: true }); if (logicalRunJson(applied) !== logicalRunJson(run)) throw Object.assign(new Error("run-restore-verification-failed"), { code: "run-restore-verification-failed", problemSector: `run_${seasonId}` }); } globalThis.AlbumProgress.write(core.clone(snapshot.album), options); globalThis.DevelopmentV2.write(core.clone(snapshot.development), options); globalThis.HallOfFameStorage._saveArchive({ schemaVersion: snapshot.hallOfFame.archiveSchemaVersion, updatedAt: snapshot.hallOfFame.updatedAt, teams: core.clone(snapshot.hallOfFame.teams), index: core.clone(snapshot.hallOfFame.index) }, { preserveTimestamp: true, ...options }); }
 async function rollback(snapshot) { applySnapshot(snapshot); const comparison = await core.compareSnapshots(snapshot, core.readLocalSnapshot()); if (!comparison.equivalent) throw Object.assign(new Error("rollback-verification-failed"), { code: "rollback-verification-failed", problemSector: comparison.mismatches[0] }); }
 async function restoreCloudSave(options = {}) {
   if (restoreInFlight) return restoreInFlight; if (!options.explicitConflict && !["cloud-available", "cloud-update-available", "restore-error"].includes(state.status)) return null; const auth = globalThis.InazumaAccount?.getState(), uid = auth?.uid, token = generation, cached = cachedManifest; if (!uid || !cached || cached.uid !== uid || cached.token !== token) return null;
-  const id = deviceId(), before = core.readLocalSnapshot(); if (!options.explicitConflict && state.status !== "cloud-update-available" && core.inspectLocalProgress(before).meaningful) { publish({ status: "local-conflict" }, token); return null; }
+  const id = deviceId(), before = core.readLocalSnapshot(), beforeRunProvenance = captureRunProvenance(); if (!options.explicitConflict && state.status !== "cloud-update-available" && core.inspectLocalProgress(before).meaningful) { publish({ status: "local-conflict" }, token); return null; }
   lastRestoreType = options.restoreType || (options.explicitConflict ? "explicit-conflict-cloud" : state.status === "cloud-update-available" ? "cloud-update" : "initial");
   restoreInFlight = (async () => { let writesStarted = false, restoreStage = "read-manifest-start"; try {
     const { manifest, payloads, hallPayloads } = await downloadStableCloudBundle({ uid, token });
     restoreStage = "reconstruct"; publish({ restoreStage }, token); const restored = core.reconstructSnapshot(payloads, hallPayloads); (manifest.legacyMissingRunSectors || []).forEach((sector) => { const seasonId = sector.slice(4); if (before.runs?.[seasonId] != null) restored.runs[seasonId] = core.clone(before.runs[seasonId]); }); if (!current(token, uid)) return;
-    restoreStage = "apply-local"; publish({ status: "restoring", restoreStage }, token); writesStarted = true; applySnapshot(restored);
+    restoreStage = "apply-local"; publish({ status: "restoring", restoreStage }, token); if (!options.explicitConflict) assertRunProvenanceUnchanged(beforeRunProvenance); writesStarted = true; applySnapshot(restored);
     restoreStage = "verify-local"; publish({ restoreStage }, token); const comparison = await core.compareSnapshots(restored, core.readLocalSnapshot());
     if (!comparison.equivalent) throw Object.assign(new Error("post-write-verification-failed"), { code: "post-write-verification-failed", problemSector: comparison.mismatches[0] });
     if (!current(token, uid)) { restoreStage = "rollback"; publish({ restoreStage }, token); await rollback(before); return; }

@@ -21,6 +21,7 @@ vm.runInNewContext(fs.readFileSync('js/run-state.js', 'utf8'), context);
 vm.runInNewContext(fs.readFileSync('js/run-statistics.js', 'utf8'), context);
 
 function lose(lives, type) {
+  values.clear();
   const run = context.RunState.createRun({}, 'ie1');
   run.lives = lives;
   run.currentZone = { currentNodeId: 'return-node', pendingNodeId: 'match-node' };
@@ -60,7 +61,7 @@ for (const seasonId of ['ie1', 'ie2', 'ie1_s2']) {
   for (const lives of [1.5, 0.5]) {
     const run = context.RunState.createRun({}, seasonId);
     run.lives = lives;
-    context.RunState.save(run);
+    context.RunState.save(run, { replaceRun: true });
     assert.strictEqual(context.RunState.load(seasonId, { readOnly: true }).lives, lives, `${seasonId} persists ${lives}`);
   }
 }
