@@ -14,7 +14,7 @@ const cardRenderer = app.slice(app.indexOf("function seasonSelectCardMarkup"), a
 assert.match(cardRenderer, />CONTINUA<.*>INIZIA<.*>ELIMINA</s);
 assert.match(cardRenderer, />INIZIA NUOVA RUN</);
 for (const recap of ["NESSUNA RUN ATTIVA", "PROSSIMO BOSS", "STAGE", "ZONA", "LV", "VITE", "OVR", "MODULO", "PREVIEW ROSA", "RUN ATTIVA", "ULTIMA GIOCATA"]) assert.doesNotMatch(cardRenderer.toUpperCase(), new RegExp(recap));
-assert.match(app, /global\.RunState\.remove\(season\.id\)/);
+assert.match(app, /global\.RunState\.remove\(season\.id, \{ expectedGeneration: observedGeneration \}\)/);
 assert.match(app, /Vuoi eliminare la run di questa Season\? I progressi della run verranno cancellati\./);
 assert.match(app, /data-cancel-delete-run>ANNULLA/);
 console.log("season-select-simplified-test: order, labels, clean cards and isolated delete OK");
