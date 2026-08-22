@@ -1475,11 +1475,13 @@
 
   function openDeleteSeasonRunModal(seasonId) {
     const season = global.SeasonRegistry.get(seasonId);
+    const observedGeneration = global.RunState.load(season.id, { readOnly: true })?.storageGeneration;
     const preservedScroll = scrollSnapshot();
     openModal(`<div class="modal-head"><div><p class="eyebrow">${escapeHtml(season.name)}</p><h2>ELIMINA RUN</h2><p class="muted">Vuoi eliminare la run di questa Season? I progressi della run verranno cancellati.</p></div></div><div class="button-row"><button type="button" class="btn btn-ghost" data-cancel-delete-run>ANNULLA</button><button type="button" class="btn season-delete-button" data-confirm-delete-run>ELIMINA</button></div>`, { closeable: false, className: "season-delete-modal", preserveScroll: preservedScroll });
     modalRoot.querySelector("[data-cancel-delete-run]")?.addEventListener("click", closeModal);
     modalRoot.querySelector("[data-confirm-delete-run]")?.addEventListener("click", async () => {
-      global.RunState.remove(season.id);
+      try { global.RunState.remove(season.id, { expectedGeneration: observedGeneration }); }
+      catch (error) { closeModal({ invokeOnClose: false }); if (error?.code === "stale-write") { run = global.RunState.load(season.id, { readOnly: true }); global.run = run; global.alert?.("La run è stata aggiornata in un'altra scheda. Ho ricaricato l'ultima versione salvata."); return renderSeasonSelect({ preserveScroll: preservedScroll }); } global.alert?.("Salvataggio non riuscito. L'azione non è stata registrata."); return; }
       if (run?.seasonId === season.id) { run = null; global.run = null; }
       closeModal({ invokeOnClose: false });
       await renderSeasonSelect({ preserveScroll: preservedScroll });

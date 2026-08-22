@@ -13,7 +13,7 @@ assert.match(cloud, /if \(manifestDocument\.exists\(\)\)/); assert.match(cloud, 
 assert.match(cloud, /batch\.update\(doc\(globalThis\.InazumaAccount\.getFirestoreInstance\(\), "users", uid, "cloudSave", "manifest"\), manifestPatch\)/, 'autosync patches manifest after sector operations');
 assert.match(cloud, /if \(associationInFlight\) return associationInFlight/); assert.match(cloud, /if \(restoreInFlight\) return restoreInFlight/); assert.match(cloud, /writeBatch/);
 assert.match(cloud, /status: "signed-out"/); assert.match(cloud, /token !== generation/);
-assert.match(cloud, /RunState\.save/); assert.match(cloud, /AlbumProgress\.write/); assert.match(cloud, /DevelopmentV2\.write/); assert.match(cloud, /_saveArchive/);
+assert.match(cloud, /forceReplaceCanonicalFromSnapshot/); assert.match(cloud, /AlbumProgress\.write/); assert.match(cloud, /DevelopmentV2\.write/); assert.match(cloud, /_saveArchive/);
 assert.match(cloud, /restoreCloudSave/); assert.match(cloud, /restoreInFlight/); assert.match(cloud, /restoreReadCount: core\.SECTOR_NAMES\.length \+ 2 \+ hallDocuments\.length/);
 assert.match(cloud, /function sectorHash/, 'current writer stores null hash for absent runs');
 assert.match(cloud, /payloadEncoding: core\.PAYLOAD_ENCODING/); assert.match(cloud, /core\.encodeFirestorePayload\(payload\)/);
