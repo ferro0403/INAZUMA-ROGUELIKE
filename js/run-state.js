@@ -144,7 +144,14 @@
   }
   function parseLegacy(raw, sid) { const parsed = JSON.parse(raw); if (looksLikeStorageEnvelope(parsed)) throw persistenceError(Number(parsed.storageSchemaVersion) > STORAGE_SCHEMA_VERSION ? "unsupported-storage-schema" : "corrupt-storage-envelope", "legacy-guard", { seasonId: sid }); if (!rawSanity(parsed)) throw new Error("Invalid raw run save"); const explicit = rawSeasonId(parsed.seasonId); if (explicit && explicit !== sid) throw new Error("Wrong run season"); const migrated = migrate(parsed, { storageRead: true, requestedSeasonId: sid, stableRunId: stableLegacyId(raw, sid) }); if (!validate(migrated)) throw new Error("Invalid run save"); return migrated; }
   function parseEnvelope(raw, sid) { const envelope = JSON.parse(raw); if (Number(envelope?.storageSchemaVersion) > STORAGE_SCHEMA_VERSION) throw persistenceError("unsupported-storage-schema", "envelope-parse", { seasonId: sid }); if (!envelope || envelope.storageSchemaVersion !== STORAGE_SCHEMA_VERSION || envelope.seasonId !== sid || !Number.isInteger(envelope.generation) || envelope.generation < 1 || typeof envelope.commitId !== "string" || !["active", "deleted"].includes(envelope.state)) throw persistenceError("corrupt-storage-envelope", "envelope-parse", { seasonId: sid }); if (envelope.state === "active") { if (!rawSanity(envelope.payload)) throw persistenceError("corrupt-storage-envelope", "payload-parse", { seasonId: sid }); const run = migrate(envelope.payload, { storageRead: true, requestedSeasonId: sid }); if (run.seasonId !== sid || run.runId !== envelope.runId || !validate(run)) throw persistenceError("corrupt-storage-envelope", "payload-validate", { seasonId: sid }); run.storageGeneration = envelope.generation; run.storageCommitId = envelope.commitId; envelope.payload = run; } else if (envelope.payload !== null || envelope.runId !== null) throw persistenceError("corrupt-storage-envelope", "tombstone-validate", { seasonId: sid }); return envelope; }
-  function semanticLegacyFingerprint(run) { const value = clone(run); for (const key of ["runId", "storageGeneration", "storageCommitId", "updatedAt", "lastPlayedAt"]) delete value[key]; return JSON.stringify(value, Object.keys(value).sort()); }
+  function stableSerializeForStorage(value) {
+    if (value === null || typeof value === "string" || typeof value === "boolean") return JSON.stringify(value);
+    if (typeof value === "number") return JSON.stringify(Number.isFinite(value) ? value : null);
+    if (Array.isArray(value)) return `[${value.map(stableSerializeForStorage).join(",")}]`;
+    if (value && typeof value === "object") return `{${Object.keys(value).sort().filter((key) => value[key] !== undefined).map((key) => `${JSON.stringify(key)}:${stableSerializeForStorage(value[key])}`).join(",")}}`;
+    return "null";
+  }
+  function semanticLegacyFingerprint(run) { const value = clone(run); for (const key of ["runId", "storageGeneration", "storageCommitId", "updatedAt", "lastPlayedAt"]) delete value[key]; return stableSerializeForStorage(value); }
   function withStorageLease(sid, operation) {
     const key = lockKey(sid), ownerId = makeId("writer"), now = Date.now(); let existing = null;
     try { const raw = localStorage.getItem(key); existing = raw ? JSON.parse(raw) : null; } catch (error) { throw persistenceError("storage-read-failed", "lock-read", { seasonId: sid }, error); }
@@ -152,7 +159,7 @@
     const lease = { ownerId, fence: Math.max(Number(existing?.fence || 0) + 1, now), expiresAt: now + 5000 };
     try { localStorage.setItem(key, JSON.stringify(lease)); const verified = JSON.parse(localStorage.getItem(key)); if (verified.ownerId !== ownerId || verified.fence !== lease.fence) throw new Error("lease ownership lost"); } catch (error) { throw persistenceError("storage-unavailable", "lock-acquire", { seasonId: sid, recoverable: true }, error); }
     try { return operation(() => { const current = JSON.parse(localStorage.getItem(key) || "null"); return current?.ownerId === ownerId && current?.fence === lease.fence && Number(current.expiresAt) > Date.now(); }); }
-    finally { try { const current = JSON.parse(localStorage.getItem(key) || "null"); if (current?.ownerId === ownerId) localStorage.removeItem(key); } catch (_) {} }
+    finally { try { const current = JSON.parse(localStorage.getItem(key) || "null"); if (current?.ownerId === ownerId) { localStorage.setItem(key, JSON.stringify({ ...current, expiresAt: 0 })); localStorage.removeItem(key); } } catch (_) {} }
   }
   function save(run, options) { return RunStorage.save(run, options); }
   function load(seasonId = null, options = {}) { return RunStorage.load(seasonId, options); }
@@ -160,18 +167,13 @@
   function isActiveRun(run) { return validate(run) && !run.gameOver && !["complete", "final-summary", "final-celebration", "gameover"].includes(String(run.phase || "")); }
   function runSortTime(run, fallbackIndex = 0) { const value = run?.lastPlayedAt || run?.updatedAt || run?.savedAt || run?.timestamp || run?.createdAt || ""; const time = Date.parse(value); return Number.isFinite(time) ? time : fallbackIndex; }
   function touch(run) { if (!run) return run; run.lastPlayedAt = new Date().toISOString(); return save(run); }
-  function activeSaves() { return (global.SeasonRegistry?.list?.() || [{ id: "ie1" }]).map((season, index) => ({ season, run: load(season.id, { readOnly: true }), index })).filter((entry) => entry.run && isActiveRun(entry.run)).sort((a, b) => runSortTime(b.run, b.index) - runSortTime(a.run, a.index)); }
+  function activeSaves() { return (global.SeasonRegistry?.list?.() || [{ id: "ie1" }]).map((season, index) => { try { return { season, run: load(season.id, { readOnly: true }), index }; } catch (error) { return { season, run: null, index, recovery: { code: error?.code || "storage-read-failed", recoverable: error?.recoverable === true } }; } }).filter((entry) => (entry.run && isActiveRun(entry.run)) || entry.recovery).sort((a, b) => runSortTime(b.run, b.index) - runSortTime(a.run, a.index)); }
   function latestActiveSave() { return activeSaves()[0] || null; }
   function remove(seasonId = null, options = {}) {
-    const sid = seasonIdOf(seasonId); let primary = null;
-    try { const raw = localStorage.getItem(primaryKey(sid)); primary = raw ? parseEnvelope(raw, sid) : null; } catch (error) { throw persistenceError("canonical-unrecoverable", "delete-read", { seasonId: sid }, error); }
-    if (options.expectedGeneration == null) throw persistenceError("missing-expected-generation", "delete-concurrency", { seasonId: sid, generation: primary?.generation || 0, recoverable: true });
-    const expected = Number(options.expectedGeneration), currentGeneration = Number(primary?.generation || 0);
-    if (expected !== currentGeneration) throw persistenceError("stale-write", "delete-concurrency", { seasonId: sid, generation: currentGeneration, recoverable: true });
-    const generation = currentGeneration + 1, commitId = makeCommitId(generation);
-    const envelope = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "deleted", runId: null, payload: null };
-    const headValue = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "deleted", runId: null };
-    try { localStorage.setItem(primaryKey(sid), JSON.stringify(envelope)); const verified = parseEnvelope(localStorage.getItem(primaryKey(sid)), sid); if (verified.commitId !== commitId) throw new Error("delete readback mismatch"); } catch (error) { throw persistenceError("delete-write-failed", "delete-primary", { seasonId: sid, generation }, error); }
+    const sid = seasonIdOf(seasonId);
+    if (options.expectedGeneration == null) throw persistenceError("missing-expected-generation", "delete-concurrency", { seasonId: sid, recoverable: true });
+    const expected = Number(options.expectedGeneration); let generation, commitId, envelope, headValue;
+    try { withStorageLease(sid, (ownsLease) => { let primary = null; const raw = localStorage.getItem(primaryKey(sid)); if (raw) primary = parseEnvelope(raw, sid); const currentGeneration = Number(primary?.generation || 0); if (expected !== currentGeneration) throw persistenceError("stale-write", "delete-locked-recheck", { seasonId: sid, generation: currentGeneration, recoverable: true }); generation = currentGeneration + 1; commitId = makeCommitId(generation); envelope = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "deleted", runId: null, payload: null }; headValue = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "deleted", runId: null }; if (!ownsLease()) throw persistenceError("write-locked", "delete-fence", { seasonId: sid, recoverable: true }); localStorage.setItem(primaryKey(sid), JSON.stringify(envelope)); const verified = parseEnvelope(localStorage.getItem(primaryKey(sid)), sid); if (verified.commitId !== commitId) throw new Error("delete readback mismatch"); }); } catch (error) { if (error instanceof RunPersistenceError) throw error; throw persistenceError("delete-write-failed", "delete-primary", { seasonId: sid, generation }, error); }
     try { localStorage.setItem(headKey(sid), JSON.stringify(headValue)); const verified = JSON.parse(localStorage.getItem(headKey(sid))); if (verified.commitId !== commitId) throw new Error("delete head mismatch"); } catch (error) { console.warn("Run head witness unavailable", { code: "head-write-failed", seasonId: sid, generation, canonicalCommitted: true }); }
     try { localStorage.setItem(backupKey(sid), JSON.stringify(envelope)); } catch (_) {}
     try { localStorage.removeItem(tempKey(sid)); if (sid === "ie1") [config().saveKey, `${config().saveKey}_backup`, `${config().saveKey}_tmp`, ...legacyKeys()].forEach((key) => localStorage.removeItem(key)); } catch (error) { console.warn("Run delete cleanup unavailable", { code: "cleanup-failed", seasonId: sid, generation }); }
@@ -179,8 +181,8 @@
   }
   function restoreBackup(seasonId = null) { return RunStorage.repairCanonicalFromExactBackup(seasonId); }
   function loadBackup(seasonId = null) { const sid = seasonIdOf(seasonId); try { const envelope = parseEnvelope(localStorage.getItem(backupKey(sid)), sid); return envelope.state === "active" ? envelope.payload : null; } catch (_) { return null; } }
-  function forceDeleteForRestore(seasonId = null, options = {}) { const current = load(seasonId, { readOnly: true }); const expectedGeneration = current?.storageGeneration ?? (() => { try { const raw = localStorage.getItem(primaryKey(seasonId)); return raw ? parseEnvelope(raw, seasonIdOf(seasonId)).generation : 0; } catch (_) { return 0; } })(); return remove(seasonId, { ...options, expectedGeneration }); }
-  function forceReplaceCanonicalFromSnapshot(run, options = {}) { const sid = seasonIdOf(run); let expectedGeneration = 0; try { const raw = localStorage.getItem(primaryKey(sid)); expectedGeneration = raw ? parseEnvelope(raw, sid).generation : 0; } catch (error) { throw persistenceError("canonical-unrecoverable", "force-replace-read", { seasonId: sid }, error); } const candidate = clone(run); candidate.storageGeneration = expectedGeneration; return save(candidate, { ...options, expectedGeneration, replaceRun: true }); }
+  function forceDeleteForRestore(seasonId = null, options = {}) { if (options.expectedGeneration == null) throw persistenceError("missing-expected-generation", "restore-delete", { seasonId: seasonIdOf(seasonId), recoverable: true }); return remove(seasonId, options); }
+  function forceReplaceCanonicalFromSnapshot(run, options = {}) { const sid = seasonIdOf(run); if (options.expectedGeneration == null) throw persistenceError("missing-expected-generation", "restore-replace", { seasonId: sid, recoverable: true }); const candidate = clone(run); candidate.storageGeneration = Number(options.expectedGeneration); return save(candidate, { ...options, replaceRun: true }); }
   function persistMutationOrRecover(run, mutate, options = {}) {
     const sid = seasonIdOf(run), before = clone(run);
     try { mutate(run); return { ok: true, run: save(run, options) }; }
@@ -200,11 +202,13 @@
     loadBackup,
     restoreBackup,
     repairCanonicalFromExactBackup(seasonId = null) {
-      const sid = seasonIdOf(seasonId); let head, backup;
-      try { head = JSON.parse(localStorage.getItem(headKey(sid)) || "null"); backup = parseEnvelope(localStorage.getItem(backupKey(sid)), sid); } catch (error) { throw persistenceError("recovery-proof-invalid", "backup-repair-read", { seasonId: sid }, error); }
-      if (!head || head.generation !== backup.generation || head.commitId !== backup.commitId || head.state !== backup.state || head.runId !== backup.runId) throw persistenceError("recovery-proof-invalid", "backup-repair-proof", { seasonId: sid, recoverable: true });
-      const raw = JSON.stringify(backup); try { localStorage.setItem(primaryKey(sid), raw); const verified = parseEnvelope(localStorage.getItem(primaryKey(sid)), sid); if (verified.commitId !== backup.commitId || verified.generation !== backup.generation) throw new Error("repair readback mismatch"); } catch (error) { throw persistenceError("canonical-write-failed", "backup-repair-write", { seasonId: sid, generation: backup.generation }, error); }
-      return backup.state === "deleted" ? null : parseEnvelope(raw, sid).payload;
+      const sid = seasonIdOf(seasonId); let result = null;
+      withStorageLease(sid, (ownsLease) => { let primaryRaw = null; try { primaryRaw = localStorage.getItem(primaryKey(sid)); if (primaryRaw) { parseEnvelope(primaryRaw, sid); throw persistenceError("canonical-primary-already-valid", "backup-repair-guard", { seasonId: sid }); } } catch (error) { if (error instanceof RunPersistenceError && error.code === "canonical-primary-already-valid") throw error; }
+        let head, backup, backupRaw; try { head = JSON.parse(localStorage.getItem(headKey(sid)) || "null"); backupRaw = localStorage.getItem(backupKey(sid)); backup = parseEnvelope(backupRaw, sid); } catch (error) { throw persistenceError("recovery-proof-invalid", "backup-repair-read", { seasonId: sid }, error); }
+        if (!head || head.generation !== backup.generation || head.commitId !== backup.commitId || head.state !== backup.state || head.runId !== backup.runId) throw persistenceError("recovery-proof-invalid", "backup-repair-proof", { seasonId: sid, recoverable: true });
+        if (!ownsLease()) throw persistenceError("write-locked", "backup-repair-fence", { seasonId: sid, recoverable: true });
+        try { localStorage.setItem(primaryKey(sid), backupRaw); if (localStorage.getItem(primaryKey(sid)) !== backupRaw) throw new Error("repair exact readback mismatch"); const verified = parseEnvelope(backupRaw, sid); result = verified.state === "deleted" ? null : verified.payload; } catch (error) { throw persistenceError("canonical-write-failed", "backup-repair-write", { seasonId: sid, generation: backup.generation }, error); }
+      }); return result;
     },
     isActiveRun, runSortTime, touch, activeSaves, latestActiveSave,
     load(seasonId = null, options = {}) {
@@ -273,7 +277,7 @@
     try { head = JSON.parse(localStorage.getItem(headKey(sid))); } catch (_) {}
     try { primary = parseEnvelope(localStorage.getItem(primaryKey(sid)), sid); } catch (_) {}
     try { backup = parseEnvelope(localStorage.getItem(backupKey(sid)), sid); } catch (_) {}
-    return { seasonId: sid, canonicalGeneration: primary?.generation || 0, canonicalState: primary?.state || "empty-or-corrupt", canonicalRunId: primary?.runId || null, headGeneration: head?.generation || 0, headMatchesCanonical: !!(primary && head && primary.generation === head.generation && primary.commitId === head.commitId), backupGeneration: backup?.generation || 0, recoveryStatus: primary ? "canonical" : (head && backup && head.commitId === backup.commitId ? "exact-backup-available" : "unavailable"), bytes: sizes, totalKnownBytes: Object.values(sizes).reduce((sum, value) => sum + value, 0) };
+    return { seasonId: sid, canonicalGeneration: primary?.generation || 0, canonicalCommitId: primary?.commitId || null, canonicalState: primary?.state || "empty-or-corrupt", canonicalRunId: primary?.runId || null, headGeneration: head?.generation || 0, headMatchesCanonical: !!(primary && head && primary.generation === head.generation && primary.commitId === head.commitId), backupGeneration: backup?.generation || 0, recoveryStatus: primary ? "canonical" : (head && backup && head.commitId === backup.commitId ? "exact-backup-available" : "unavailable"), bytes: sizes, totalKnownBytes: Object.values(sizes).reduce((sum, value) => sum + value, 0) };
   }
 
   function createCheckpoint(run) {
