@@ -69,9 +69,10 @@
   function readLocalSnapshot(apis = global) {
     const archive = apis.HallOfFameStorage._loadArchive();
     const teams = Array.isArray(archive?.teams) ? archive.teams.map(clone) : [];
+    const runSnapshot = (seasonId) => { const run = apis.RunState.load(seasonId, { readOnly: true }); if (!run) return null; const clean = clone(run); delete clean.storageGeneration; delete clean.storageCommitId; return clean; };
     return normalize({
       profile: apis.RunState.loadProfile(),
-      runs: { ie1: apis.RunState.load("ie1", { readOnly: true }), ie2: apis.RunState.load("ie2", { readOnly: true }), ie1_s2: apis.RunState.load("ie1_s2", { readOnly: true }), ie1_s3: apis.RunState.load("ie1_s3", { readOnly: true }) },
+      runs: { ie1: runSnapshot("ie1"), ie2: runSnapshot("ie2"), ie1_s2: runSnapshot("ie1_s2"), ie1_s3: runSnapshot("ie1_s3") },
       album: apis.AlbumProgress.read(),
       development: apis.DevelopmentV2.read(),
       hallOfFame: {

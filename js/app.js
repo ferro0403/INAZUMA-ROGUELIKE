@@ -1455,7 +1455,7 @@
     await loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID);
     const seasons = global.SeasonRegistry.list();
     await Promise.all(seasons.map((season) => global.SeasonRegistry.loadDatabase(season.id)));
-    const runs = seasons.map((season) => ({ season, savedRun: global.RunState.load(season.id) }));
+    const runs = seasons.map((season) => ({ season, savedRun: global.RunState.load(season.id, { readOnly: true }) }));
     const latestTime = Math.max(0, ...runs.filter((entry) => entry.savedRun && global.RunState.isActiveRun(entry.savedRun)).map((entry) => runTimestamp(entry.savedRun)));
     const cards = runs.map(({ season, savedRun }) => seasonSelectCardMarkup({
       season,
@@ -1806,7 +1806,7 @@
     const cleanIdentity = global.RunState.saveProfileTeamIdentity(identity);
     run = global.RunState.createRun(cleanIdentity, activeSeason?.id);
     global.run = run;
-    global.RunState.save(run);
+    global.RunState.save(run, { replaceRun: true });
     closeModal({ invokeOnClose: false });
     renderFormationChoice();
   }
