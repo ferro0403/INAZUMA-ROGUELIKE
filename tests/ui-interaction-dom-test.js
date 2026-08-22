@@ -37,12 +37,11 @@ class FakeNode {
 }
 
 const developmentSelection = { playerId: 'adam-montayne' };
-const developmentPlayers = new Map([[developmentSelection.playerId, { playerId: developmentSelection.playerId, name: 'Adam Montayne', stats: { attack: 90, control: 90, speed: 70 } }]]);
+let selectedDevelopmentPlayer = { playerId: developmentSelection.playerId, name: 'Adam Montayne', stats: { attack: 90, control: 90, speed: 70 } };
 const developmentModalRoot = { innerHTML: '' };
 const renderSelectedDevelopmentCard = () => {
   const card = new FakeNode({ developmentSelectedCard: developmentSelection.playerId });
-  context.bindDevelopment(card, (playerId) => {
-    const current = developmentPlayers.get(playerId);
+  context.bindDevelopment(card, selectedDevelopmentPlayer, (current) => {
     developmentModalRoot.innerHTML = `<section class="player-detail-modal"><h2>${current.name}</h2><div class="detail-stats">${Object.entries(current.stats).map(([stat, value]) => `<span>${stat}: ${value}</span>`).join('')}</div><button data-close-modal>Chiudi</button></section>`;
   });
   return card;
@@ -54,14 +53,16 @@ selectedCard.click();
 assert.match(developmentModalRoot.innerHTML, /player-detail-modal/);
 assert.match(developmentModalRoot.innerHTML, /Adam Montayne/);
 assert.match(developmentModalRoot.innerHTML, /attack: 90/);
+assert.match(developmentModalRoot.innerHTML, /control: 90/);
+assert.match(developmentModalRoot.innerHTML, /speed: 70/);
 developmentModalRoot.innerHTML = '';
 assert.equal(developmentSelection.playerId, 'adam-montayne', 'closing Player Detail preserves the Development selection');
-developmentPlayers.set(developmentSelection.playerId, { playerId: developmentSelection.playerId, name: 'Adam Montayne', stats: { attack: 100, control: 100, speed: 80 } });
+selectedDevelopmentPlayer = { playerId: developmentSelection.playerId, name: 'Adam Montayne', stats: { attack: 100, control: 100, speed: 80 } };
 selectedCard = renderSelectedDevelopmentCard();
 selectedCard.click();
 assert.match(developmentModalRoot.innerHTML, /attack: 100/);
 assert.match(developmentModalRoot.innerHTML, /control: 100/);
-assert.match(developmentModalRoot.innerHTML, /speed: 80/, 'a rerendered card resolves evolved stats at click time');
+assert.match(developmentModalRoot.innerHTML, /speed: 80/, 'a rerendered card opens the evolved player captured while rendering');
 
 class MouseEvent { constructor(type, options = {}) { this.type = type; this.bubbles = options.bubbles; } }
 const roster = new FakeNode();
