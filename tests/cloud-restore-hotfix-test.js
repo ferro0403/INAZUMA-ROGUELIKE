@@ -41,7 +41,7 @@ function hallDocument(entry, revision = 1) { return { schemaVersion: 1, revision
   for (const id of hallIndex.teamIds) halls.push(await core.validateHallDocument(id, hallDocs[id], manifest, crypto));
   const downloaded = core.reconstructSnapshot(payloads, halls);
 
-  sandbox.RunState.restoreProfile({ teamIdentity: { name: 'Royal' } }, { suppressCloudEvent: true }); const runB = sandbox.RunState.createRun({ name: 'Royal' }, 'ie1'); runB.bossIndex = 1; sandbox.RunState.save(runB, { preserveTimestamps: true, suppressCloudEvent: true });
+  sandbox.RunState.restoreProfile({ teamIdentity: { name: 'Royal' } }, { suppressCloudEvent: true }); const runB = sandbox.RunState.createRun({ name: 'Royal' }, 'ie1'); runB.bossIndex = 1; sandbox.RunState.save(runB, { preserveTimestamps: true, suppressCloudEvent: true, replaceRun: true });
   sandbox.AlbumProgress.write({ schemaVersion: 1, collections: { ie1: { unlockedPlayerIds: { jude: true } } } }, { suppressCloudEvent: true }); sandbox.DevelopmentV2.write({ coins: 2 }, { suppressCloudEvent: true }); sandbox.HallOfFameStorage._saveArchive({ schemaVersion: 2, updatedAt: null, teams: [], index: [] }, { preserveTimestamp: true, suppressCloudEvent: true });
   assert.strictEqual((await core.compareSnapshots(snapshotA, localSnapshot(), crypto)).equivalent, false, 'Snapshot B really differs');
   apply(downloaded); const comparison = await core.compareSnapshots(snapshotA, localSnapshot(), crypto); assert.deepStrictEqual(comparison, { equivalent: true, mismatches: [] }, 'runtime writers restore Snapshot A exactly over Snapshot B');

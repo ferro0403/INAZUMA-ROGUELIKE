@@ -18,6 +18,7 @@
   function backupKey(seasonId = null) { return `${primaryKey(seasonId)}_backup`; }
   function tempKey(seasonId = null) { return `${primaryKey(seasonId)}_tmp`; }
   function headKey(seasonId = null) { return `${primaryKey(seasonId)}_head`; }
+  function lockKey(seasonId = null) { return `${primaryKey(seasonId)}_lock`; }
   const STORAGE_SCHEMA_VERSION = 1;
 
   class RunPersistenceError extends Error {
@@ -138,8 +139,21 @@
     return !!(run && typeof run === "object" && Number(run.version) === Number(config().saveVersion) && run.runId && run.phase && Number.isFinite(Number(run.lives)) && Number.isFinite(Number(run.bossIndex)) && Array.isArray(run.roster) && Array.isArray(run.lineup) && Array.isArray(run.bench) && Array.isArray(run.inventory) && Array.isArray(run.completedBossIds) && Array.isArray(run.unlockedTeamIds) && (run.activeMatch === null || typeof run.activeMatch === "object") && (run.currentZone === null || typeof run.currentZone === "object") && (run.postBossFlow === null || typeof run.postBossFlow === "object"));
   }
   function rawSanity(parsed) { return !!parsed && typeof parsed === "object" && !Array.isArray(parsed) && (parsed.version == null || Number.isInteger(Number(parsed.version))); }
-  function parseLegacy(raw, sid) { const parsed = JSON.parse(raw); if (!rawSanity(parsed)) throw new Error("Invalid raw run save"); const explicit = rawSeasonId(parsed.seasonId); if (explicit && explicit !== sid) throw new Error("Wrong run season"); const migrated = migrate(parsed, { storageRead: true, requestedSeasonId: sid, stableRunId: stableLegacyId(raw, sid) }); if (!validate(migrated)) throw new Error("Invalid run save"); return migrated; }
-  function parseEnvelope(raw, sid) { const envelope = JSON.parse(raw); if (!envelope || envelope.storageSchemaVersion !== STORAGE_SCHEMA_VERSION || envelope.seasonId !== sid || !Number.isInteger(envelope.generation) || envelope.generation < 1 || typeof envelope.commitId !== "string" || !["active", "deleted"].includes(envelope.state)) throw new Error("Invalid storage envelope"); if (envelope.state === "active") { if (!rawSanity(envelope.payload)) throw new Error("Invalid raw run save"); const run = migrate(envelope.payload, { storageRead: true, requestedSeasonId: sid }); if (run.seasonId !== sid || run.runId !== envelope.runId || !validate(run)) throw new Error("Envelope payload mismatch"); run.storageGeneration = envelope.generation; run.storageCommitId = envelope.commitId; envelope.payload = run; } else if (envelope.payload !== null || envelope.runId !== null) throw new Error("Invalid deletion envelope"); return envelope; }
+  function looksLikeStorageEnvelope(value) {
+    return !!value && typeof value === "object" && !Array.isArray(value) && ["storageSchemaVersion", "generation", "commitId", "state", "payload"].some((key) => Object.prototype.hasOwnProperty.call(value, key));
+  }
+  function parseLegacy(raw, sid) { const parsed = JSON.parse(raw); if (looksLikeStorageEnvelope(parsed)) throw persistenceError(Number(parsed.storageSchemaVersion) > STORAGE_SCHEMA_VERSION ? "unsupported-storage-schema" : "corrupt-storage-envelope", "legacy-guard", { seasonId: sid }); if (!rawSanity(parsed)) throw new Error("Invalid raw run save"); const explicit = rawSeasonId(parsed.seasonId); if (explicit && explicit !== sid) throw new Error("Wrong run season"); const migrated = migrate(parsed, { storageRead: true, requestedSeasonId: sid, stableRunId: stableLegacyId(raw, sid) }); if (!validate(migrated)) throw new Error("Invalid run save"); return migrated; }
+  function parseEnvelope(raw, sid) { const envelope = JSON.parse(raw); if (Number(envelope?.storageSchemaVersion) > STORAGE_SCHEMA_VERSION) throw persistenceError("unsupported-storage-schema", "envelope-parse", { seasonId: sid }); if (!envelope || envelope.storageSchemaVersion !== STORAGE_SCHEMA_VERSION || envelope.seasonId !== sid || !Number.isInteger(envelope.generation) || envelope.generation < 1 || typeof envelope.commitId !== "string" || !["active", "deleted"].includes(envelope.state)) throw persistenceError("corrupt-storage-envelope", "envelope-parse", { seasonId: sid }); if (envelope.state === "active") { if (!rawSanity(envelope.payload)) throw persistenceError("corrupt-storage-envelope", "payload-parse", { seasonId: sid }); const run = migrate(envelope.payload, { storageRead: true, requestedSeasonId: sid }); if (run.seasonId !== sid || run.runId !== envelope.runId || !validate(run)) throw persistenceError("corrupt-storage-envelope", "payload-validate", { seasonId: sid }); run.storageGeneration = envelope.generation; run.storageCommitId = envelope.commitId; envelope.payload = run; } else if (envelope.payload !== null || envelope.runId !== null) throw persistenceError("corrupt-storage-envelope", "tombstone-validate", { seasonId: sid }); return envelope; }
+  function semanticLegacyFingerprint(run) { const value = clone(run); for (const key of ["runId", "storageGeneration", "storageCommitId", "updatedAt", "lastPlayedAt"]) delete value[key]; return JSON.stringify(value, Object.keys(value).sort()); }
+  function withStorageLease(sid, operation) {
+    const key = lockKey(sid), ownerId = makeId("writer"), now = Date.now(); let existing = null;
+    try { const raw = localStorage.getItem(key); existing = raw ? JSON.parse(raw) : null; } catch (error) { throw persistenceError("storage-read-failed", "lock-read", { seasonId: sid }, error); }
+    if (existing && Number(existing.expiresAt) > now) throw persistenceError("write-locked", "lock-acquire", { seasonId: sid, recoverable: true });
+    const lease = { ownerId, fence: Math.max(Number(existing?.fence || 0) + 1, now), expiresAt: now + 5000 };
+    try { localStorage.setItem(key, JSON.stringify(lease)); const verified = JSON.parse(localStorage.getItem(key)); if (verified.ownerId !== ownerId || verified.fence !== lease.fence) throw new Error("lease ownership lost"); } catch (error) { throw persistenceError("storage-unavailable", "lock-acquire", { seasonId: sid, recoverable: true }, error); }
+    try { return operation(() => { const current = JSON.parse(localStorage.getItem(key) || "null"); return current?.ownerId === ownerId && current?.fence === lease.fence && Number(current.expiresAt) > Date.now(); }); }
+    finally { try { const current = JSON.parse(localStorage.getItem(key) || "null"); if (current?.ownerId === ownerId) localStorage.removeItem(key); } catch (_) {} }
+  }
   function save(run, options) { return RunStorage.save(run, options); }
   function load(seasonId = null, options = {}) { return RunStorage.load(seasonId, options); }
   function hasSave(seasonId = null) { return !!RunStorage.load(seasonId, { readOnly: true }); }
@@ -163,21 +177,40 @@
     try { localStorage.removeItem(tempKey(sid)); if (sid === "ie1") [config().saveKey, `${config().saveKey}_backup`, `${config().saveKey}_tmp`, ...legacyKeys()].forEach((key) => localStorage.removeItem(key)); } catch (error) { console.warn("Run delete cleanup unavailable", { code: "cleanup-failed", seasonId: sid, generation }); }
     emitSave(`run_${sid}`, sid, "remove", { ...options, generation, commitId }); return { seasonId: sid, generation, commitId, deleted: true };
   }
-  function restoreBackup(seasonId = null) { const backup = RunStorage.loadBackup(seasonId); if (!backup) return null; return save(backup, { expectedGeneration: backup.storageGeneration }); }
+  function restoreBackup(seasonId = null) { return RunStorage.repairCanonicalFromExactBackup(seasonId); }
   function loadBackup(seasonId = null) { const sid = seasonIdOf(seasonId); try { const envelope = parseEnvelope(localStorage.getItem(backupKey(sid)), sid); return envelope.state === "active" ? envelope.payload : null; } catch (_) { return null; } }
   function forceDeleteForRestore(seasonId = null, options = {}) { const current = load(seasonId, { readOnly: true }); const expectedGeneration = current?.storageGeneration ?? (() => { try { const raw = localStorage.getItem(primaryKey(seasonId)); return raw ? parseEnvelope(raw, seasonIdOf(seasonId)).generation : 0; } catch (_) { return 0; } })(); return remove(seasonId, { ...options, expectedGeneration }); }
   function forceReplaceCanonicalFromSnapshot(run, options = {}) { const sid = seasonIdOf(run); let expectedGeneration = 0; try { const raw = localStorage.getItem(primaryKey(sid)); expectedGeneration = raw ? parseEnvelope(raw, sid).generation : 0; } catch (error) { throw persistenceError("canonical-unrecoverable", "force-replace-read", { seasonId: sid }, error); } const candidate = clone(run); candidate.storageGeneration = expectedGeneration; return save(candidate, { ...options, expectedGeneration, replaceRun: true }); }
+  function persistMutationOrRecover(run, mutate, options = {}) {
+    const sid = seasonIdOf(run), before = clone(run);
+    try { mutate(run); return { ok: true, run: save(run, options) }; }
+    catch (error) {
+      let canonical = null;
+      try { canonical = load(sid, { readOnly: true }); } catch (_) {}
+      const recovered = canonical || before;
+      for (const key of Object.keys(run)) delete run[key]; Object.assign(run, clone(recovered));
+      if (typeof options.onRecover === "function") options.onRecover(run, error);
+      return { ok: false, stale: error?.code === "stale-write" || error?.code === "lineage-mismatch", run, error, message: error?.code === "stale-write" ? "La run è stata aggiornata in un'altra scheda. Ho ricaricato l'ultima versione salvata." : "Salvataggio non riuscito. L'azione non è stata registrata." };
+    }
+  }
 
   const RunStorage = {
-    keys: (seasonId = null) => ({ primary: primaryKey(seasonId), head: headKey(seasonId), backup: backupKey(seasonId), temp: tempKey(seasonId), legacy: legacyKeys() }),
+    keys: (seasonId = null) => ({ primary: primaryKey(seasonId), head: headKey(seasonId), backup: backupKey(seasonId), temp: tempKey(seasonId), lock: lockKey(seasonId), legacy: legacyKeys() }),
     validate, migrate,
     loadBackup,
     restoreBackup,
+    repairCanonicalFromExactBackup(seasonId = null) {
+      const sid = seasonIdOf(seasonId); let head, backup;
+      try { head = JSON.parse(localStorage.getItem(headKey(sid)) || "null"); backup = parseEnvelope(localStorage.getItem(backupKey(sid)), sid); } catch (error) { throw persistenceError("recovery-proof-invalid", "backup-repair-read", { seasonId: sid }, error); }
+      if (!head || head.generation !== backup.generation || head.commitId !== backup.commitId || head.state !== backup.state || head.runId !== backup.runId) throw persistenceError("recovery-proof-invalid", "backup-repair-proof", { seasonId: sid, recoverable: true });
+      const raw = JSON.stringify(backup); try { localStorage.setItem(primaryKey(sid), raw); const verified = parseEnvelope(localStorage.getItem(primaryKey(sid)), sid); if (verified.commitId !== backup.commitId || verified.generation !== backup.generation) throw new Error("repair readback mismatch"); } catch (error) { throw persistenceError("canonical-write-failed", "backup-repair-write", { seasonId: sid, generation: backup.generation }, error); }
+      return backup.state === "deleted" ? null : parseEnvelope(raw, sid).payload;
+    },
     isActiveRun, runSortTime, touch, activeSaves, latestActiveSave,
     load(seasonId = null, options = {}) {
-      const sid = seasonId == null ? seasonIdOf(null) : seasonIdOf(seasonId); let head = null; let primary = null;
+      const sid = seasonId == null ? seasonIdOf(null) : seasonIdOf(seasonId); let head = null; let primary = null; let primaryError = null; let primaryLooksEnvelope = false;
       try { const raw = localStorage.getItem(headKey(sid)); head = raw ? JSON.parse(raw) : null; } catch (error) { throw persistenceError("storage-read-failed", "head-read", { seasonId: sid }, error); }
-      try { const raw = localStorage.getItem(primaryKey(sid)); if (raw) primary = parseEnvelope(raw, sid); } catch (error) { primary = null; }
+      try { const raw = localStorage.getItem(primaryKey(sid)); if (raw) { try { primaryLooksEnvelope = looksLikeStorageEnvelope(JSON.parse(raw)); } catch (_) {} primary = parseEnvelope(raw, sid); } } catch (error) { primary = null; primaryError = error; }
       if (primary) {
         if (head && (!Number.isInteger(head.generation) || head.storageSchemaVersion !== STORAGE_SCHEMA_VERSION || head.seasonId !== sid)) throw persistenceError("invalid-head", "head-validate", { seasonId: sid });
         if (head && head.generation > primary.generation) throw persistenceError("canonical-unrecoverable", "recovery", { seasonId: sid, generation: head.generation, recoverable: false });
@@ -190,10 +223,12 @@
         if (backup && backup.generation === head.generation && backup.commitId === head.commitId && backup.state === head.state) return backup.state === "deleted" ? null : backup.payload;
         throw persistenceError("canonical-unrecoverable", "recovery", { seasonId: sid, generation: head.generation, recoverable: false });
       }
-      const legacyOrder = [primaryKey(sid), ...(sid === "ie1" ? [config().saveKey, ...legacyKeys(), `${config().saveKey}_backup`, `${config().saveKey}_tmp`] : [])];
-      const candidates = legacyOrder.map((key) => { try { const raw = localStorage.getItem(key); return raw ? { key, raw, run: parseLegacy(raw, sid) } : null; } catch (_) { return null; } }).filter(Boolean);
+      if (primaryLooksEnvelope && primaryError) throw primaryError;
+      const scopedPrimary = primaryKey(sid), recoveryKeys = [tempKey(sid), backupKey(sid), ...(sid === "ie1" ? [config().saveKey, `${config().saveKey}_tmp`, `${config().saveKey}_backup`, ...legacyKeys()] : [])];
+      let authoritative = null; try { const raw = localStorage.getItem(scopedPrimary); if (raw) authoritative = { key: scopedPrimary, raw, run: parseLegacy(raw, sid) }; } catch (_) {}
+      const candidates = authoritative ? [authoritative] : recoveryKeys.map((key) => { try { const raw = localStorage.getItem(key); return raw ? { key, raw, run: parseLegacy(raw, sid) } : null; } catch (_) { return null; } }).filter(Boolean);
       if (!candidates.length) return null;
-      if (candidates.length > 1 && new Set(candidates.map((item) => JSON.stringify(item.run))).size > 1) throw persistenceError("ambiguous-legacy-recovery", "migration", { seasonId: sid, recoverable: true });
+      if (!authoritative && candidates.length > 1 && new Set(candidates.map((item) => semanticLegacyFingerprint(item.run))).size > 1) throw persistenceError("legacy-recovery-required", "migration", { seasonId: sid, recoverable: true });
       if (options.readOnly) return candidates[0].run;
       return this.save(candidates[0].run, { preserveTimestamps: true, suppressCloudEvent: true, source: "legacy-migration", expectedGeneration: 0 });
     },
@@ -211,10 +246,12 @@
       const currentGeneration = Number(primary?.generation || 0);
       const expected = options.expectedGeneration ?? run.storageGeneration ?? (primary ? null : 0);
       if (expected == null || Number(expected) !== currentGeneration) throw persistenceError("stale-write", "concurrency", { seasonId: sid, runId: normalized.runId, generation: currentGeneration, recoverable: true });
+      if (primary?.state === "active" && primary.runId !== normalized.runId && !options.replaceRun) throw persistenceError("lineage-mismatch", "concurrency", { seasonId: sid, runId: normalized.runId, generation: currentGeneration, recoverable: true });
+      if (primary?.state === "deleted" && !options.replaceRun) throw persistenceError("lineage-mismatch", "concurrency", { seasonId: sid, runId: normalized.runId, generation: currentGeneration, recoverable: true });
       const generation = currentGeneration + 1, commitId = makeCommitId(generation);
       const envelope = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "active", runId: normalized.runId, payload: JSON.parse(json) };
       const rawEnvelope = JSON.stringify(envelope), headValue = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "active", runId: normalized.runId };
-      try { localStorage.setItem(primaryKey(sid), rawEnvelope); } catch (error) { throw persistenceError("canonical-write-failed", "primary-write", { seasonId: sid, runId: normalized.runId, generation }, error); }
+      try { withStorageLease(sid, (ownsLease) => { const latestRaw = localStorage.getItem(primaryKey(sid)); let latest = null; if (latestRaw) { try { latest = parseEnvelope(latestRaw, sid); } catch (error) { if (options.source !== "legacy-migration") throw error; } } if (Number(latest?.generation || 0) !== currentGeneration) throw persistenceError("stale-write", "locked-recheck", { seasonId: sid, runId: normalized.runId, generation: Number(latest?.generation || 0), recoverable: true }); if (!ownsLease()) throw persistenceError("write-locked", "lock-fence", { seasonId: sid, recoverable: true }); localStorage.setItem(primaryKey(sid), rawEnvelope); }); } catch (error) { if (error instanceof RunPersistenceError) throw error; throw persistenceError("canonical-write-failed", "primary-write", { seasonId: sid, runId: normalized.runId, generation }, error); }
       try { const verified = parseEnvelope(localStorage.getItem(primaryKey(sid)), sid); if (verified.commitId !== commitId || verified.generation !== generation) throw new Error("readback mismatch"); } catch (error) { throw persistenceError("canonical-verification-failed", "primary-readback", { seasonId: sid, runId: normalized.runId, generation }, error); }
       try { localStorage.setItem(headKey(sid), JSON.stringify(headValue)); const verifiedHead = JSON.parse(localStorage.getItem(headKey(sid))); if (verifiedHead.commitId !== commitId || verifiedHead.generation !== generation) throw new Error("head mismatch"); } catch (error) { console.warn("Run head witness unavailable", { code: "head-write-failed", seasonId: sid, generation, canonicalCommitted: true }); }
       try { localStorage.setItem(backupKey(sid), rawEnvelope); } catch (error) { console.warn("Run backup unavailable", { code: "backup-write-failed", seasonId: sid, generation }); }
@@ -224,17 +261,19 @@
       emitSave(`run_${sid}`, sid, "write", { ...options, generation, commitId });
       return run;
     },
-    remove, forceDeleteForRestore, forceReplaceCanonicalFromSnapshot,
+    remove, forceDeleteForRestore, forceReplaceCanonicalFromSnapshot, looksLikeStorageEnvelope,
   };
 
   function diagnostics(seasonId = null) {
-    const sid = seasonIdOf(seasonId), sizes = {}; let head = null;
+    const sid = seasonIdOf(seasonId), sizes = {}; let head = null, primary = null, backup = null;
     for (const [name, key] of Object.entries(RunStorage.keys(sid))) {
       if (Array.isArray(key)) { sizes[name] = key.reduce((sum, item) => sum + String(localStorage.getItem(item) || "").length * 2, 0); continue; }
       sizes[name] = String(localStorage.getItem(key) || "").length * 2;
     }
     try { head = JSON.parse(localStorage.getItem(headKey(sid))); } catch (_) {}
-    return { seasonId: sid, generation: head?.generation || 0, state: head?.state || "legacy-or-empty", runId: head?.runId || null, bytes: sizes, totalKnownBytes: Object.values(sizes).reduce((sum, value) => sum + value, 0) };
+    try { primary = parseEnvelope(localStorage.getItem(primaryKey(sid)), sid); } catch (_) {}
+    try { backup = parseEnvelope(localStorage.getItem(backupKey(sid)), sid); } catch (_) {}
+    return { seasonId: sid, canonicalGeneration: primary?.generation || 0, canonicalState: primary?.state || "empty-or-corrupt", canonicalRunId: primary?.runId || null, headGeneration: head?.generation || 0, headMatchesCanonical: !!(primary && head && primary.generation === head.generation && primary.commitId === head.commitId), backupGeneration: backup?.generation || 0, recoveryStatus: primary ? "canonical" : (head && backup && head.commitId === backup.commitId ? "exact-backup-available" : "unavailable"), bytes: sizes, totalKnownBytes: Object.values(sizes).reduce((sum, value) => sum + value, 0) };
   }
 
   function createCheckpoint(run) {
@@ -246,5 +285,5 @@
 
   global.RunPersistenceError = RunPersistenceError;
   global.RunStorage = Object.assign(RunStorage, { STORAGE_SCHEMA_VERSION, diagnostics });
-  global.RunState = { clone, createRun, save, load, hasSave, runLivesLimit, initialRunLives, getLifeDamageForMatch, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, saveProfilePreferences, restoreProfile, remove, forceDeleteForRestore, forceReplaceCanonicalFromSnapshot, createCheckpoint, restoreAfterLoss, validate, isActiveRun, touch, activeSaves, latestActiveSave };
+  global.RunState = { clone, createRun, save, load, hasSave, runLivesLimit, initialRunLives, getLifeDamageForMatch, normalizeTeamIdentity, validTeamName, loadProfile, saveProfileTeamIdentity, saveProfilePreferences, restoreProfile, remove, forceDeleteForRestore, forceReplaceCanonicalFromSnapshot, persistMutationOrRecover, createCheckpoint, restoreAfterLoss, validate, isActiveRun, touch, activeSaves, latestActiveSave };
 })(globalThis);
