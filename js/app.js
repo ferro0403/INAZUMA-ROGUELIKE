@@ -332,6 +332,29 @@
     devLegendaryPullSequence: 0,
   };
 
+  function stopGameplayRuntime() {
+    if (ui.matchPlaybackTimer) clearTimeout(ui.matchPlaybackTimer);
+    ui.matchPlaybackTimer = null;
+    ui.bossMatchResolving = false;
+    ui.itemRewardSubmitting = false;
+  }
+
+  const persistGameplayMutation = global.GameplayPersistence.create({
+    save: (current, options) => global.RunState.save(current, options),
+    load: (seasonId, options) => global.RunState.load(seasonId, options),
+    getRun: () => run,
+    replaceRun: (canonical) => {
+      run = canonical;
+      global.run = canonical;
+      ui.match = canonical.activeMatch || null;
+      ui.pendingReward = canonical.pendingReward || null;
+      ui.tradeSelectedPlayerId = null;
+      ui.selectedSquadPlayerId = null;
+    },
+    stopRuntime: stopGameplayRuntime,
+    reportFailure: (message) => toast(message, "error"),
+  });
+
   function escapeHtml(value) {
     return String(value ?? "")
       .replaceAll("&", "&amp;")
@@ -2212,11 +2235,12 @@
       if (formationId === run.formationId) return closeModal();
       const next = formationById(formationId);
       if (!next || !canUseFormation(next)) return toast("La rosa non copre tutti i ruoli del modulo");
-      autoArrangeFormation(next);
-      global.RunState.save(run);
-      closeModal();
-      toast(`Modulo cambiato in ${next.name}`);
-      runKeepingScroll(renderSquad);
+      persistGameplayMutation({
+        label: "formation-change",
+        mutate: () => autoArrangeFormation(next),
+        onCommitted: () => { closeModal(); toast(`Modulo cambiato in ${next.name}`); runKeepingScroll(renderSquad); },
+        rerender: ({ ok }) => { if (!ok) openSquadFormationSelector(); },
+      });
     });
   }
 
@@ -2308,7 +2332,7 @@
     if (!global.ProfiledSeasonRuntime.canSwitchRole(run, playerId)) return toast("SPOSTA IL GIOCATORE IN PANCHINA PER CAMBIARE RUOLO");
     const entry = rosterEntry(playerId); const profile = global.ProfiledSeasonRuntime.resolveOwnedPlayerProfile(entry, run.seasonId);
     openModal(`<div class="modal-head role-switch-head"><div><p class="eyebrow">Panchina · ${escapeHtml(profile.name)}</p><h2>CAMBIA RUOLO</h2><p class="muted">Ruolo attuale: ${escapeHtml(resolvedRosterPlayer(playerId)?.position || "-")}</p></div></div><div class="role-switch-options">${profile.roleVariants.map((variant) => { const variantId = variant.roleVariantId || variant.variantId; const active = String(variantId) === String(entry.activeRoleVariantId); const previewEntry = { ...entry, activeRoleVariantId: variantId }; const preview = global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(previewEntry, { run, seasonId: run.seasonId, database: seasonDb }); return `<button type="button" class="role-switch-option ${active ? "active" : ""}" data-role-variant="${escapeHtml(variantId)}" ${active ? "disabled" : ""}><strong>${escapeHtml(variant.position || variant.normalizedRole)}</strong><span>OVR ${escapeHtml(preview.overall || preview.finalOverall)}</span><small>${active ? "ATTIVO" : "SELEZIONA"}</small></button>`; }).join("")}</div>`, { closeable: true, className: "role-switch-modal" });
-    modalRoot.querySelectorAll("[data-role-variant]").forEach((button) => button.addEventListener("click", () => { global.ProfiledSeasonRuntime.switchBenchRole(run, playerId, button.dataset.roleVariant); global.FiveVFive?.removeUnavailable?.(run); global.RunState.save(run); closeModal(); toast("Ruolo aggiornato"); renderSquad(); }));
+    modalRoot.querySelectorAll("[data-role-variant]").forEach((button) => button.addEventListener("click", () => persistGameplayMutation({ label: "bench-role", mutate: () => { global.ProfiledSeasonRuntime.switchBenchRole(run, playerId, button.dataset.roleVariant); global.FiveVFive?.removeUnavailable?.(run); }, onCommitted: () => { closeModal(); toast("Ruolo aggiornato"); renderSquad(); }, rerender: ({ ok }) => { if (!ok) renderSquad(); } })));
   }
 
   function setSelectedSquadPlayer(playerId) {
@@ -2382,10 +2406,12 @@
     }
     const firstName = resolvedRosterPlayer(selected)?.name || selected;
     const secondName = resolvedRosterPlayer(clickedId)?.name || clickedId;
-    swapSquadPlayersInDom(selected, clickedId, firstArea, secondArea);
-    setSelectedSquadPlayer(null);
-    global.RunState.save(run);
-    toast(`${firstName} e ${secondName} scambiati`);
+    persistGameplayMutation({
+      label: "lineup-swap",
+      mutate: () => {},
+      onCommitted: () => { swapSquadPlayersInDom(selected, clickedId, firstArea, secondArea); setSelectedSquadPlayer(null); toast(`${firstName} e ${secondName} scambiati`); },
+      rerender: ({ ok }) => { if (!ok) renderSquad(); },
+    });
   }
 
   function ensureCurrentZone() {
@@ -2670,13 +2696,16 @@
   }
 
   function finishNonMatchNode(node, message) {
-    global.MapEngine.completeNode(run.currentZone, node.id);
-    global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.NODE_COMPLETED, { nodeId: node.id, nodeType: node.type, actionId: `${run.runId}:${node.id}:node_completed` });
-    run.phase = "map";
-    global.RunState.save(run);
-    closeModal();
-    toast(message);
-    renderMap();
+    persistGameplayMutation({
+      label: "map-node-complete",
+      mutate: () => {
+        global.MapEngine.completeNode(run.currentZone, node.id);
+        global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.NODE_COMPLETED, { nodeId: node.id, nodeType: node.type, actionId: `${run.runId}:${node.id}:node_completed` });
+        run.phase = "map";
+      },
+      onCommitted: () => { closeModal(); toast(message); renderMap(); },
+      rerender: ({ ok }) => { if (!ok) renderMap(); },
+    });
   }
 
   function pendingItemRewardNode() {
@@ -3124,7 +3153,7 @@
       if (outgoingEntry.equippedItem) run.inventory.push(outgoingEntry.equippedItem);
       run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null, ...permanentRosterFields(incoming.player) };
       run.lineup = run.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id)); run.bench = run.bench.map((id) => String(id) === outgoingId ? incomingId : String(id));
-      global.FiveVFive.removeUnavailable(run); optimizeLineupsForNewPlayer(incomingId); ui.tradeSelectedPlayerId = null; global.RunState.save(run); return showTradeResult(node, incoming, run.roster[rosterIndex], "acquired");
+      global.FiveVFive.removeUnavailable(run); optimizeLineupsForNewPlayer(incomingId); ui.tradeSelectedPlayerId = null; return persistGameplayMutation({ label: "trade", mutate: () => {}, onCommitted: () => showTradeResult(node, incoming, run.roster[rosterIndex], "acquired"), rerender: ({ ok }) => { if (!ok) resolveTradeNode(node); } });
     }
     const result = global.RoguelikeRules.executeProfileAwareTrade(run, outgoingEntry.playerId, incoming, {
       roleVariantForUpgrade: roleVariantForTradeUpgrade,
@@ -3149,7 +3178,7 @@
       global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player: incoming.player, playerId: result.player.playerId, source: "trade", level: result.player.level, overall: result.player.recruitedOverall, actionId: `${run.runId}:${node.id}:trade:${result.player.playerId}` });
       optimizeLineupsForNewPlayer(result.player.playerId);
     }
-    global.FiveVFive.removeUnavailable(run); ui.tradeSelectedPlayerId = null; global.RunState.save(run); showTradeResult(node, incoming, result.player, result.status);
+    global.FiveVFive.removeUnavailable(run); ui.tradeSelectedPlayerId = null; persistGameplayMutation({ label: "trade-profile", mutate: () => {}, onCommitted: () => showTradeResult(node, incoming, result.player, result.status), rerender: ({ ok }) => { if (!ok) resolveTradeNode(node); } });
   }
 
   function showTradeResult(node, incoming, receivedEntry, status) {
@@ -3600,7 +3629,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
           unlockAlbumRecruit(result.player.playerId, options.recruitmentSource || source);
           optimizeLineupsForNewPlayer(result.player.playerId);
         }
-        global.RunState.save(run); closeModal(); toast(result.status === "upgraded" ? "POTENZIAMENTO PROFILO" : "NUOVO GIOCATORE"); return done(true);
+        return persistGameplayMutation({ label: "recruit-profile", mutate: () => {}, onCommitted: () => { closeModal(); toast(result.status === "upgraded" ? "POTENZIAMENTO PROFILO" : "NUOVO GIOCATORE"); done(true); } });
       }
       if (result.status === "ineligible") return done(false);
     }
@@ -3610,9 +3639,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: player.playerId, source: options.recruitmentSource || source, level, overall: player.overall ?? player.finalOverall, actionId: options.actionId || `${run.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}` });
       unlockAlbumRecruit(player.playerId, options.recruitmentSource || source);
       optimizeLineupsForNewPlayer(player.playerId);
-      global.RunState.save(run);
-      closeModal();
-      return done(true);
+      return persistGameplayMutation({ label: "recruit", mutate: () => {}, onCommitted: () => { closeModal(); done(true); } });
     }
 
     const benchPlayers = run.bench.map((id) => resolvedRosterPlayer(id)).filter(Boolean);
@@ -3646,9 +3673,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
           unlockAlbumRecruit(player.playerId, options.recruitmentSource || source);
           global.FiveVFive.removeUnavailable(run);
           optimizeLineupsForNewPlayer(player.playerId);
-          global.RunState.save(run);
-          closeModal();
-          done(true);
+          persistGameplayMutation({ label: "recruit-replacement", mutate: () => {}, onCommitted: () => { closeModal(); done(true); } });
         };
         if (removedEntry.equippedItem && run.inventory.length >= global.SEASON1_CONFIG.maxInventory) {
           return chooseInventoryDiscard(
@@ -4377,11 +4402,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function persistMatchState() {
-    if (!ui.match) return;
-    ui.match.state = ui.bossMatchState;
-    ui.match.log = ui.bossMatchLog;
-    run.activeMatch = ui.match;
-    global.RunState.save(run);
+    if (!ui.match) return { ok: false };
+    return persistGameplayMutation({
+      label: "match-state",
+      mutate: () => { ui.match.state = ui.bossMatchState; ui.match.log = ui.bossMatchLog; run.activeMatch = ui.match; },
+      rerender: ({ ok }) => { if (!ok) ui.match = run?.activeMatch || null; },
+    });
   }
 
   function renderMatch() {
@@ -4738,7 +4764,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     run.phase = "match";
     run.activeMatch = match;
     appendFinalMatchMessage(result, "five_v_five");
-    persistMatchState();
+    if (!persistMatchState().ok) return renderMatch();
     updateMatchScoreDom(match, true);
     updateMatchControlsDom();
   }
@@ -4759,7 +4785,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       global.RunState.restoreAfterLoss(run, match.previousNodeId, match.type);
       match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : "Sconfitta: torni al nodo precedente." };
     }
-    run.phase = "match"; run.activeMatch = match; appendFinalMatchMessage(result, "special_match"); persistMatchState(); updateMatchScoreDom(match, true); updateMatchControlsDom();
+    run.phase = "match"; run.activeMatch = match; appendFinalMatchMessage(result, "special_match"); if (!persistMatchState().ok) return renderMatch(); updateMatchScoreDom(match, true); updateMatchControlsDom();
   }
 
   function completeBossMatch(result) {
@@ -4798,7 +4824,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     run.phase = "match";
     run.activeMatch = match;
     appendFinalMatchMessage(result, "boss");
-    persistMatchState();
+    if (!persistMatchState().ok) return renderMatch();
     updateMatchScoreDom(match, true);
     updateMatchControlsDom();
   }
@@ -5368,11 +5394,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       if (!playerButton || !selector.contains(playerButton)) return;
       event.preventDefault();
       try {
-        global.FiveVFive.assign(run, ui.fiveVFiveSelectedSlot, playerButton.dataset.fivePlayer, fiveRoleForPlayerId);
-        ui.fiveVFiveSelectedSlot = null;
-        global.RunState.save(run);
-        toast("Giocatore assegnato alla formazione 5v5");
-        refreshFiveAfterAssignment();
+        const assigned = persistGameplayMutation({ label: "five-lineup-assign", mutate: () => global.FiveVFive.assign(run, ui.fiveVFiveSelectedSlot, playerButton.dataset.fivePlayer, fiveRoleForPlayerId), onCommitted: () => { ui.fiveVFiveSelectedSlot = null; toast("Giocatore assegnato alla formazione 5v5"); refreshFiveAfterAssignment(); }, rerender: ({ ok }) => { if (!ok) renderFiveVFive(options); } });
+        if (!assigned.ok) return;
       } catch (error) {
         toast(error.message);
       }
@@ -5743,10 +5766,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
           addLevels(Number(item.amount || 0), `${run.runId}:${instanceId}:level-units`, isProfileAwareSeason() ? 3 : null);
           removeInventoryItem(instanceId);
           global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
-          global.RunState.save(run);
-          closeModal();
-          toast("Tutta la rosa guadagna +0,5 livello");
-          renderInventory();
+          persistGameplayMutation({ label: "consumable-team-level", mutate: () => {}, onCommitted: () => { closeModal(); toast("Tutta la rosa guadagna +0,5 livello"); renderInventory(); }, rerender: ({ ok }) => { if (!ok) renderInventory(); } });
         },
       });
     }
@@ -5760,10 +5780,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
           run.lives = Math.min(maxRunLives, run.lives + Number(item.amount || 1));
           removeInventoryItem(instanceId);
           global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
-          global.RunState.save(run);
-          closeModal();
-          toast("Hai recuperato una vita");
-          renderInventory();
+          persistGameplayMutation({ label: "consumable-restore-life", mutate: () => {}, onCommitted: () => { closeModal(); toast("Hai recuperato una vita"); renderInventory(); }, rerender: ({ ok }) => { if (!ok) renderInventory(); } });
         },
       });
     }
@@ -5818,7 +5835,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
             if (isProfileAwareSeason() && entry.level >= 20) entry.levelUnits = 0;
             removeInventoryItem(item.instanceId);
             global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
-            global.RunState.save(run);
+            const committed = persistGameplayMutation({ label: "consumable-player-level", mutate: () => {}, onCommitted: () => {} });
+            if (!committed.ok) return renderInventory();
             const after = resolvedRosterPlayer(entry.playerId);
             closeModal();
             toast(`${escapeHtml(item.name)} utilizzata\nLivello ${before.displayLevelText} → ${after.displayLevelText}\nOverall ${before.overall} → ${after.overall}`);
@@ -5854,7 +5872,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
             if (addedBoost > 0) entry.potentialBoostApplications.push({ amount: addedBoost, appliedLevel: Number(entry.level || 0), codexDeltas: trainingPlan.codexDeltas });
             removeInventoryItem(item.instanceId);
             global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
-            global.RunState.save(run);
+            const committed = persistGameplayMutation({ label: "consumable-potential", mutate: () => {}, onCommitted: () => {} });
+            if (!committed.ok) return renderInventory();
             const after = resolvedRosterPlayer(entry.playerId);
             closeModal();
             const rarityMessage = before.category !== after.category ? `\nNuova rarità: ${after.category}` : "";
@@ -5932,12 +5951,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   function equipItemToEntry(instanceId, entry) {
     const item = run.inventory.find((candidate) => candidate.instanceId === instanceId);
     if (!item) return;
-    const newEquipment = removeInventoryItem(instanceId);
-    if (entry.equippedItem) run.inventory.push(entry.equippedItem);
-    entry.equippedItem = newEquipment;
-    global.RunState.save(run);
-    closeModal();
-    renderInventory({ keepScroll: true });
+    persistGameplayMutation({
+      label: "equipment-equip",
+      mutate: () => { const newEquipment = removeInventoryItem(instanceId); if (entry.equippedItem) run.inventory.push(entry.equippedItem); entry.equippedItem = newEquipment; },
+      onCommitted: () => { closeModal(); renderInventory({ keepScroll: true }); },
+      rerender: ({ ok }) => { if (!ok) renderInventory({ keepScroll: true }); },
+    });
   }
 
   function unequipPlayerItem(playerId, options = {}) {
@@ -5954,20 +5973,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         onConfirm: () => unequipPlayerItem(playerId, { ...options, confirmed: true }),
       });
     }
-    const equippedItem = entry.equippedItem;
-    run.inventory.push(equippedItem);
-    entry.equippedItem = null;
-    try {
-      global.RunState.save(run);
-      (options.render || renderInventory)({ keepScroll: true });
-    } catch (error) {
-      entry.equippedItem = equippedItem;
-      const restoredIndex = run.inventory.lastIndexOf(equippedItem);
-      if (restoredIndex >= 0) run.inventory.splice(restoredIndex, 1);
-      throw new Error("Impossibile rimuovere l'oggetto. Riprova.", { cause: error });
-    }
-    closeModal();
-    toast("Oggetto riportato nell'inventario");
+    persistGameplayMutation({
+      label: "equipment-unequip",
+      mutate: () => { run.inventory.push(entry.equippedItem); entry.equippedItem = null; },
+      onCommitted: () => { (options.render || renderInventory)({ keepScroll: true }); closeModal(); toast("Oggetto riportato nell'inventario"); },
+      rerender: ({ ok }) => { if (!ok) (options.render || renderInventory)({ keepScroll: true }); },
+    });
   }
 
   function renderGameOver({ developmentResolved = false } = {}) {
