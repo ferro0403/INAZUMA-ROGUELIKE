@@ -1052,6 +1052,19 @@
     return result;
   }
 
+  function resumeRunFinalization({ render = true } = {}) {
+    const result = global.PermanentEffects.resumeFinalization(run);
+    if (!result.completed) {
+      if (result.error) {
+        console.error("Finalization remains resumable", result.error);
+        toast("Finalizzazione non completata. Riprova con Continua.");
+      }
+      return result;
+    }
+    if (render) renderFinalCelebration(run.hallTeamId, { developmentResolved: true });
+    return result;
+  }
+
   function enqueueAlbumRecruit(current, playerId, source, actionId) {
     return global.PermanentEffects.enqueueAlbum(current, { playerId, source, actionId });
   }
@@ -1400,7 +1413,7 @@
     if (latest?.run) {
       await loadSeason(latest.run.seasonId || latest.season.id);
       run = global.RunState.load(activeSeason.id);
-      if (run?.permanentEffectOutbox?.some((effect) => effect.status === "pending")) drainPermanentEffects();
+      if ((!run?.finalization || run.finalization.status === "complete") && run?.permanentEffectOutbox?.some((effect) => effect.status === "pending")) drainPermanentEffects();
     } else {
       await loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID);
       run = null;
@@ -1436,8 +1449,10 @@
   async function selectSeason(seasonId, { markPlayed = false } = {}) {
     await loadSeason(seasonId);
     run = global.RunState.load(activeSeason.id);
-    if (run?.permanentEffectOutbox?.some((effect) => effect.status === "pending")) drainPermanentEffects();
     ensureRunSchema();
+    if (!run?.finalization || run.finalization.status === "complete") {
+      if (run?.permanentEffectOutbox?.some((effect) => effect.status === "pending")) drainPermanentEffects();
+    }
     if (run && markPlayed) global.RunState.touch(run);
     if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
   }
@@ -1925,6 +1940,7 @@
   async function resumeRun() {
     await selectSeason(run?.seasonId || activeSeason?.id, { markPlayed: true });
     if (!run) return renderHome();
+    if (run.phase === "finalization" || (run.finalization && run.finalization.status !== "complete")) return resumeRunFinalization();
     if (global.MapEngine.normalizeSpecialMatchNode(run, seasonDb)) global.RunState.save(run);
     recoverInterruptedSpecialMatchAccess();
     recoverInterruptedBossAccess();
@@ -1933,8 +1949,8 @@
     if (run.phase === "draft") return renderDraft();
     if (run.pendingSpecialMatchReward) return showSpecialMatchReward();
     if (run.postBossFlow) return resumePostBossFlow();
-    if (run.phase === "final-summary") return renderFinalSummary(run.hallTeamId);
-    if (run.phase === "final-celebration" || run.phase === "complete") return renderFinalCelebration(run.hallTeamId);
+    if (run.phase === "final-summary") return renderFinalSummary(run.hallTeamId, { developmentResolved: true });
+    if (run.phase === "final-celebration" || run.phase === "complete") return renderFinalCelebration(run.hallTeamId, { developmentResolved: true });
     if (run.phase === "squad") return renderSquad();
     if (run.phase === "five") return renderFiveVFive();
     if (run.phase === "inventory") return renderInventory();
@@ -5183,8 +5199,10 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       run.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId };
       global.PermanentEffects.enqueueHall(run, snapshot);
       global.RunState.save(run);
-      drainPermanentEffects();
-      return { destination: "season-complete" };
+      const finalization = resumeRunFinalization({ render: false });
+      return finalization.completed
+        ? { destination: "season-complete", finalization }
+        : { destination: "finalization-pending", finalization };
     }
     ensureCurrentZone();
     run.postBossFlow = null;
@@ -6259,25 +6277,23 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function renderFinalCelebration(hallTeamId, { developmentResolved = false } = {}) {
+    if (!developmentResolved || run.finalization?.status !== "complete") return resumeRunFinalization();
     const team = championTeam(hallTeamId || run?.hallTeamId);
     if (!team) return renderHome();
-    if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "victory", onComplete: () => renderFinalCelebration(hallTeamId, { developmentResolved: true }) });
-    run.finalization = { ...(run.finalization || {}), status: "complete", hallTeamId: team.hallTeamId };
-    run.phase = "final-celebration"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
     app.innerHTML = `<main class="final-celebration-screen"><section class="final-celebration-panel"><header class="final-victory-hero"><div class="final-trophy" aria-hidden="true">★</div><div class="final-victory-copy"><p class="eyebrow">${escapeHtml(normalizedHallSeasonName(team).toUpperCase())} COMPLETATA</p><h1>${escapeHtml(team.teamName)}</h1><h2>Campioni della run</h2><p>${escapeHtml(team.modeName)} · ${formatDate(team.victoryDate)} · ${escapeHtml(team.finalFormation || '-')}</p></div></header><div class="final-victory-team"><div class="final-victory-section-head"><span>Squadra vincente</span><strong>La formazione che ha scritto la storia</strong></div>${championFormationMarkup(team)}</div><div class="button-row final-actions"><button type="button" class="btn btn-yellow" id="final-continue">Continua <span aria-hidden="true">→</span></button><button type="button" class="btn" id="skip-final-animation">Vai al riepilogo</button></div></section></main>`;
     resetRenderedViewScroll(); bindHallPlayerDetails(team);
-    const go = () => { run.phase = "final-summary"; global.RunState.save(run); renderFinalSummary(team.hallTeamId); };
+    const go = () => { run.phase = "final-summary"; global.RunState.save(run); renderFinalSummary(team.hallTeamId, { developmentResolved: true }); };
     document.getElementById("final-continue").addEventListener("click", go);
     document.getElementById("skip-final-animation").addEventListener("click", go);
   }
 
   function renderFinalSummary(hallTeamId, { developmentResolved = false } = {}) {
+    if (!developmentResolved || run.finalization?.status !== "complete") return resumeRunFinalization();
     const team = championTeam(hallTeamId || run?.hallTeamId);
     if (!team) return renderHome();
     const summaries = global.HallOfFameStorage.listSummaries();
     const ordinal = summaries.findIndex((item) => item.hallTeamId === team.hallTeamId) + 1;
     run.phase = "final-summary"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
-    if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "victory", onComplete: () => renderFinalSummary(hallTeamId, { developmentResolved: true }) });
     app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><div><p class="eyebrow">CAMPIONI · ${escapeHtml(normalizedHallSeasonName(team).toUpperCase())}</p><h1>${escapeHtml(team.teamName)}</h1><p class="final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span><span>Seed ${escapeHtml(compactSeed(team.seed))}</span><span>#${escapeHtml(ordinal || '-')} Albo d’Oro</span></p></div><span class="final-summary-star" aria-hidden="true">★</span></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3>${championFiveVFiveMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel"><button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn btn-primary" id="final-new-run">Nuova run</button>${sectionRootButton("finalSummary")}</aside></section></main>`;
     resetRenderedViewScroll(); bindFinalTabs(); bindHallPlayerDetails(team);
     document.getElementById("open-current-hall").addEventListener("click", () => renderHallOfFameDetail(team.hallTeamId));
@@ -6330,7 +6346,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function renderSeasonComplete() {
-    return renderFinalCelebration(run?.hallTeamId);
+    return renderFinalCelebration(run?.hallTeamId, { developmentResolved: true });
   }
 
 

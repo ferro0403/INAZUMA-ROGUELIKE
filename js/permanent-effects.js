@@ -46,24 +46,98 @@
     if (effect.type === TYPES.HALL) { const result = apis.HallOfFameStorage.addChampion(effect.payload.snapshot); return { ok: result?.persisted === true, result }; }
     return { ok: false };
   }
+  function snapshotMarkerState(run, effect) {
+    return {
+      effectStatus: effect.status,
+      effectAppliedAt: effect.appliedAt,
+      hasHallTeamId: Object.prototype.hasOwnProperty.call(run, "hallTeamId"),
+      hallTeamId: run.hallTeamId,
+      hasFinalization: Boolean(run.finalization),
+      finalizationStatus: run.finalization?.status,
+      finalizationHallTeamId: run.finalization?.hallTeamId,
+    };
+  }
+  function restoreMarkerState(run, effect, before) {
+    effect.status = before.effectStatus;
+    effect.appliedAt = before.effectAppliedAt;
+    if (before.hasHallTeamId) run.hallTeamId = before.hallTeamId; else delete run.hallTeamId;
+    if (before.hasFinalization && run.finalization) {
+      run.finalization.status = before.finalizationStatus;
+      if (before.finalizationHallTeamId === undefined) delete run.finalization.hallTeamId;
+      else run.finalization.hallTeamId = before.finalizationHallTeamId;
+    }
+  }
   function drain(run, options = {}) {
     if (options.readOnly) return { run, applied: [], pending: outbox(run).filter((item) => item.status === "pending"), readOnly: true };
     const apis = options.apis || global;
     const save = options.save || ((current) => apis.RunState.save(current));
     const applied = [];
-    for (const effect of outbox(run).filter((item) => item.status === "pending")) {
+    const allowedTypes = options.types ? new Set(options.types) : null;
+    for (const effect of outbox(run).filter((item) => item.status === "pending" && (!allowedTypes || allowedTypes.has(item.type)))) {
       try {
         const outcome = apply(effect, apis);
         if (!outcome.ok) break;
+        const markerBefore = snapshotMarkerState(run, effect);
         effect.status = "applied"; effect.appliedAt = now();
-        if (effect.type === TYPES.HALL) { run.hallTeamId = outcome.result.team.hallTeamId; if (run.finalization) run.finalization.status = "hall-written"; }
+        if (effect.type === TYPES.HALL) {
+          run.hallTeamId = outcome.result?.team?.hallTeamId || effect.payload.snapshot?.hallTeamId;
+          if (run.finalization) { run.finalization.status = "hall-written"; run.finalization.hallTeamId = run.hallTeamId; }
+        }
         if (effect.type === TYPES.DEVELOPMENT && run.finalization) run.finalization.status = "development-written";
-        save(run, { effectMarker: effect.id });
+        try { save(run, { effectMarker: effect.id }); }
+        catch (error) { restoreMarkerState(run, effect, markerBefore); throw error; }
         applied.push(effect.id);
       } catch (error) { return { run, applied, pending: outbox(run).filter((item) => item.status === "pending"), error }; }
     }
     return { run, applied, pending: outbox(run).filter((item) => item.status === "pending") };
   }
 
-  global.PermanentEffects = Object.freeze({ TYPES, outbox, enqueue, enqueueAlbum, enqueueDevelopment, enqueueHall, assertCanonicalTerminal, albumId, developmentId, hallId, drain, resume: drain });
+  function resumeFinalization(run, options = {}) {
+    if (options.readOnly) return { run, status: "read-only", completed: false };
+    const apis = options.apis || global;
+    const save = options.save || ((current, metadata) => apis.RunState.save(current, metadata));
+    while (true) {
+      const status = run.finalization?.status;
+      if (status === "complete") return { run, status, completed: true };
+      if (status === "pending") {
+        const result = drain(run, { apis, save, types: [TYPES.HALL] });
+        if (result.error || run.finalization?.status !== "hall-written") return { run, status: "pending", completed: false, error: result.error || new Error("Hall effect remains pending") };
+        continue;
+      }
+      if (status === "hall-written") {
+        const id = developmentId(run, "victory");
+        let effect = outbox(run).find((entry) => entry.id === id);
+        if (!effect) {
+          const lengthBefore = outbox(run).length;
+          try {
+            effect = enqueueDevelopment(run, { endReason: "victory", defeatedBosses: Number(run.completedBossIds?.length || run.bossIndex || 0) });
+            save(run, { effectEnqueue: effect.id });
+          } catch (error) {
+            outbox(run).splice(lengthBefore);
+            return { run, status: "hall-written", completed: false, error };
+          }
+        }
+        const result = drain(run, { apis, save, types: [TYPES.DEVELOPMENT] });
+        if (result.error || run.finalization?.status !== "development-written") return { run, status: "hall-written", completed: false, error: result.error || new Error("Development effect remains pending") };
+        continue;
+      }
+      if (status === "development-written") {
+        const before = { phase: run.phase, status, hasHallTeamId: Object.prototype.hasOwnProperty.call(run, "hallTeamId"), hallTeamId: run.hallTeamId };
+        run.finalization.status = "complete";
+        run.phase = "final-celebration";
+        run.hallTeamId = run.finalization.hallTeamId || run.hallTeamId;
+        try { save(run, { finalizationComplete: true }); }
+        catch (error) {
+          run.phase = before.phase;
+          run.finalization.status = before.status;
+          if (before.hasHallTeamId) run.hallTeamId = before.hallTeamId; else delete run.hallTeamId;
+          return { run, status: "development-written", completed: false, error };
+        }
+        return { run, status: "complete", completed: true };
+      }
+      return { run, status: status || "missing", completed: false, error: new Error("Invalid finalization state") };
+    }
+  }
+
+  global.PermanentEffects = Object.freeze({ TYPES, outbox, enqueue, enqueueAlbum, enqueueDevelopment, enqueueHall, assertCanonicalTerminal, albumId, developmentId, hallId, drain, resume: drain, resumeFinalization });
 })(typeof window !== "undefined" ? window : globalThis);
