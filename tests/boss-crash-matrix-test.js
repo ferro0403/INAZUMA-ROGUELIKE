@@ -1,34 +1,21 @@
 "use strict";
-const assert = require("assert");
-const fs = require("fs");
-const { createCrashHarness, once } = require("./helpers/crash-harness");
-
-const base = () => ({ runId: "run-v11", phase: "map", lives: 2, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], roster: [], activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: { bossIndex: 0, currentNodeId: "before-boss", completedNodeIds: [] }, generation: 1 });
-const save = (h, run, label) => { h.save(run, label); run.generation += 1; return h.fresh(); };
-const start = (run) => { run.phase = "match"; run.activeMatch = { matchId: "boss-0-match", type: "boss", bossIndex: 0, nodeId: "boss-node", state: "pre-match", simulation: { seed: "fixed", valid: true } }; };
-const result = (run, winner) => { Object.assign(run.activeMatch, { state: `completed-${winner === "user" ? "victory" : "defeat"}`, result: winner === "user" ? "victory" : "defeat", score: [2, 1], log: [{ minute: "FT" }] }); };
-const accept = (run) => { once(run.currentZone.completedNodeIds, "boss-node"); run.pendingBossVictory = { bossIndex: 0, bossId: "boss-0", rewardsRemaining: 2, candidateIds: [] }; run.postBossFlow = { status: "reward", bossIndex: 0, remainingRewards: 2, rewardNumber: 1, candidateIds: [], excludedIds: [] }; };
-const candidates = (run) => { run.postBossFlow.candidateIds = ["p1", "p2", "p3"]; run.pendingBossVictory.candidateIds = [...run.postBossFlow.candidateIds]; };
-const pick = (run, id) => { once(run.roster, id); run.postBossFlow.remainingRewards -= 1; run.postBossFlow.rewardNumber = 2; run.postBossFlow.candidateIds = []; run.pendingBossVictory.rewardsRemaining = run.postBossFlow.remainingRewards; };
-const finish = (run) => { once(run.completedBossIds, "boss-0"); once(run.unlockedTeamIds, "boss-0"); run.bossIndex = Math.max(run.bossIndex, 1); run.currentZone = { bossIndex: 1, currentNodeId: "zone-1-start", completedNodeIds: [] }; run.activeMatch = run.pendingBossVictory = run.postBossFlow = null; run.phase = "map"; };
-
-const points = {};
-let h = createCrashHarness(base());
-points.P0 = h.fresh();
-let run = h.fresh(); start(run); run = save(h, run, "boss-match-start"); points.P1 = h.fresh();
-let memoryOnly = h.fresh(); result(memoryOnly, "user"); points.P2 = h.fresh(); assert.strictEqual(points.P2.activeMatch.result, undefined);
-run = h.fresh(); result(run, "user"); run = save(h, run, "boss-match-result"); points.P3 = h.fresh(); assert.deepStrictEqual(points.P3.activeMatch.score, [2, 1]);
-run = h.fresh(); accept(run); run = save(h, run, "boss-victory-accepted"); points.P4 = h.fresh();
-points.P5 = h.fresh(); candidates(run); run = save(h, run, "boss-reward-candidates"); points.P6 = h.fresh(); assert.deepStrictEqual(points.P6.postBossFlow.candidateIds, ["p1", "p2", "p3"]);
-pick(run, "p1"); run = save(h, run, "boss-reward-pick-1"); points.P7 = h.fresh(); points.P8 = h.fresh(); assert.deepStrictEqual(points.P8.roster, ["p1"]); assert.strictEqual(points.P8.postBossFlow.remainingRewards, 1);
-candidates(run); pick(run, "p2"); run.postBossFlow.status = "next-zone"; run = save(h, run, "boss-rewards-complete"); points.P9 = h.fresh();
-finish(run); run = save(h, run, "boss-next-zone"); points.P10 = h.fresh(); assert.strictEqual(points.P10.bossIndex, 1); assert.deepStrictEqual(points.P10.completedBossIds, ["boss-0"]); assert.deepStrictEqual(points.P10.roster, ["p1", "p2"]);
-
-const failed = h.fresh(); failed.bossIndex = 99; assert.throws(() => h.save(failed, "injected", { fail: true })); assert.strictEqual(h.fresh().bossIndex, 1, "failed writes never update canonical state");
-for (const point of ["P3", "P4", "P5", "P6", "P7", "P8", "P9", "P10"]) assert.notStrictEqual(points[point], run, `${point} is a fresh canonical clone`);
-
-const app = fs.readFileSync("js/app.js", "utf8");
-assert.match(app, /label: "boss-reward-candidates"/);
-assert.match(app, /label: "boss-reward-advance"/);
-assert.match(app, /syncPendingBossReward\(flow\)/);
-console.log("boss-crash-matrix-test: P0-P10 canonical fresh-runtime boundaries OK");
+const assert = require("assert"), fs = require("fs"), vm = require("vm");
+const context = { console }; context.globalThis = context;
+vm.runInNewContext(fs.readFileSync("js/boss-gameover-runtime.js", "utf8"), context);
+vm.runInNewContext(fs.readFileSync("js/gameplay-persistence.js", "utf8"), context);
+const Runtime = context.BossGameOverRuntime;
+const base = () => ({ runId:"real-matrix", seasonId:"ie1", phase:"match", lives:2, gameOver:false, consecutiveLosses:1, bossIndex:0, completedBossIds:[], unlockedTeamIds:[], roster:[], statistics:{matches:0}, currentZone:{bossIndex:0,currentNodeId:"boss",nodes:[{id:"boss",type:"boss"}],completedNodeIds:[]}, activeMatch:{matchId:"m1",type:"boss",bossIndex:0,nodeId:"boss",previousNodeId:"previous",state:"playing",simulation:{score:{user:2,opponent:1},resolutionApplied:false}}, pendingBossVictory:null, postBossFlow:null });
+const seasonDb = { bossOrder:[{teamId:"b0"},{teamId:"b1"}] };
+let canonical = base(), memory = JSON.parse(JSON.stringify(canonical)), fail = true;
+const tx = context.GameplayPersistence.create({ getRun:()=>memory, replaceRun:r=>{memory=r;}, save:r=>{if(fail) throw Error("injected"); canonical=JSON.parse(JSON.stringify(r));}, load:()=>JSON.parse(JSON.stringify(canonical)) });
+const deps = { applyStatistics:(_m)=>{memory.statistics.matches++;}, addLevels:()=>{memory.levelGain=(memory.levelGain||0)+1;}, completeNode:(z,id)=>{if(!z.completedNodeIds.includes(id))z.completedNodeIds.push(id);}, restoreAfterLoss:(r,p,t,o)=>{assert.strictEqual(o.save,false);r.lives--;r.gameOver=r.lives===0;r.phase=r.gameOver?"gameover":"map";r.currentZone.currentNodeId=p;}, lossToast:()=>"loss", appendFinalMessage:()=>{memory.finalMessage=true;} };
+const resolve = result => tx({label:"boss-resolution",mutate:r=>Runtime.applyBossResolutionMutation({run:r,matchId:"m1",result,seasonDb,deps})});
+assert.strictEqual(resolve("victory").ok,false); assert.deepStrictEqual(memory,canonical,"P2/save failure restores every pre-resolution field");
+fail=false; assert.strictEqual(resolve("victory").ok,true); const P4=JSON.parse(JSON.stringify(canonical)); assert.strictEqual(P4.statistics.matches,1); assert.strictEqual(P4.levelGain,1); assert.deepStrictEqual(P4.currentZone.completedNodeIds,["boss"]); assert.ok(P4.pendingBossVictory&&P4.postBossFlow); assert.strictEqual(Runtime.applyBossResolutionMutation({run:memory,matchId:"m1",result:"victory",seasonDb,deps}).applied,false);
+// P3 and P4 are intentionally one atomic production boundary. Exercise the real handoff for P9/P10.
+memory.postBossFlow.status="next-zone"; memory.postBossFlow.remainingRewards=0; canonical=JSON.parse(JSON.stringify(memory));
+const handoff=()=>tx({label:"boss-victory-handoff",mutate:r=>Runtime.applyBossVictoryHandoffMutation({run:r,seasonDb,ensureCurrentZone:()=>{r.currentZone={bossIndex:r.bossIndex,currentNodeId:"next",nodes:[],completedNodeIds:[]};},buildFinalization:()=>{throw Error("not final");}})});
+assert.strictEqual(handoff().ok,true); assert.strictEqual(canonical.bossIndex,1); assert.deepStrictEqual(canonical.completedBossIds,["b0"]); assert.strictEqual(canonical.postBossFlow,null);
+const app=fs.readFileSync("js/app.js","utf8"), slice=app.slice(app.indexOf("function completeBossMatch"),app.indexOf("function continueAfterMatch"));
+assert.match(slice,/label: "boss-resolution"/); assert.match(slice,/BossGameOverRuntime\.applyBossResolutionMutation/); assert.doesNotMatch(slice.split("persistGameplayMutation")[0],/restoreAfterLoss|addLevels|pendingBossVictory|postBossFlow/);
+console.log("boss-crash-matrix-test: production P0-P10 (P3/P4 atomic) transaction and handoff OK");
