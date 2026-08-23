@@ -51,7 +51,7 @@ async function stageBundle(uid, id, prepared, db, revision, commitId) {
   prepared.hallEntries.forEach((entry) => writes.push((batch) => batch.set(doc(db, "users", uid, "saveCommits", commitId, "hallOfFame", entry.hallTeamId), hallDocument(entry, id, timestamp, revision, commitId))));
   // Staging is intentionally chunked. It is invisible until the manifest CAS
   // publishes cloudCommitId, so an interrupted large Hall upload is harmless.
-  for (let offset = 0; offset < writes.length; offset += 400) { const batch = writeBatch(db); writes.slice(offset, offset + 400).forEach((write) => write(batch)); await batch.commit(); }
+  for (const chunk of globalThis.InazumaCloudSyncProtocol.chunks(writes, 400)) { const batch = writeBatch(db); chunk.forEach((write) => write(batch)); await batch.commit(); }
 }
 async function commitBundle(uid, id, prepared, db, expectedManifest, commitId) {
   core.preflight(prepared); const expectedRevision = expectedManifest?.revision ?? 0, targetRevision = expectedRevision + 1;
@@ -60,7 +60,7 @@ async function commitBundle(uid, id, prepared, db, expectedManifest, commitId) {
   await runTransaction(db, async (transaction) => {
     const ref = doc(db, "users", uid, "cloudSave", "manifest"), snapshot = await transaction.get(ref);
     const actual = snapshot.exists() ? snapshot.data() : null;
-    if (!core.manifestMatchesExpected(actual, expectedManifest)) throw Object.assign(new Error("cloud-cas-conflict"), { code: "cloud-cas-conflict" });
+    if (!globalThis.InazumaCloudSyncProtocol.casMatches(actual, expectedManifest, (value) => manifestBundleIdentity(value))) throw Object.assign(new Error("cloud-cas-conflict"), { code: "cloud-cas-conflict" });
     transaction.set(ref, manifest);
   });
   return manifest;
@@ -108,6 +108,7 @@ async function reconcile(uid, id, manifest, prepared, token) {
   const base = { revision: manifest.revision, cloudRevision: manifest.revision, localRevision: metadata?.revision ?? null, hallOfFameCount: manifest.sectors.hallOfFameCount, lastCompletedAt: new Date().toISOString(), localProgressSummary: core.inspectLocalProgress(prepared.snapshot).summary, error: null, problemSector: null };
   if (!metadata) { const progress = core.inspectLocalProgress(prepared.snapshot); if (hashesMatchManifest(manifest, prepared)) { const repaired = metadataFrom(uid, id, manifest, prepared); writeMetadata(uid, repaired); publish({ ...base, status: "synced", localRevision: manifest.revision, lastSyncedAt: repaired.lastSyncedAt }, token); } else publish({ ...base, status: progress.meaningful ? "local-conflict" : "cloud-available" }, token); return; }
   if (manifest.revision > metadata.revision) {
+    if (hashesMatchManifest(manifest, prepared)) { const result = await globalThis.InazumaCloudMetadataProtocol.repair({ manifest, prepared, metadata, matches: hashesMatchManifest, build: (m, p, old) => metadataFrom(uid, id, m, p, old), write: (value) => writeMetadata(uid, value), read: () => readMetadata(uid, id), publish: (patch) => publish({ ...base, ...patch, lastSyncedAt: patch.status === "synced" ? new Date().toISOString() : null }, token) }); if (result.status !== "synced") publish({ ...base, status: "sync-error", error: "metadata-repair-needed", localRevision: metadata.revision }, token); return; }
     if (!metadata.sectorHashes || !metadata.hallTeamHashes) { publish({ ...base, status: "local-conflict" }, token); return; }
     const unchanged = core.SECTOR_NAMES.every((name) => localHashes[name] === metadata.sectorHashes[name]) && prepared.hallEntries.every((entry) => metadata.hallTeamHashes[entry.hallTeamId] === entry.payloadHash) && metadata.hallTeamIds.length === prepared.hallEntries.length;
     publish({ ...base, status: unchanged ? "cloud-update-available" : "local-conflict" }, token); return;
@@ -119,6 +120,7 @@ async function reconcile(uid, id, manifest, prepared, token) {
 }
 
 async function associateLocalSave({ force = false } = {}) {
+  if (guard()?.isBlocked()) return null;
   if (associationInFlight) return associationInFlight; const auth = globalThis.InazumaAccount?.getState();
   if (auth?.status !== "authenticated" || !auth.uid || !auth.profileComplete) return null; const uid = auth.uid;
   if (!force && automaticUid === uid) return null; automaticUid = uid; const token = generation, id = deviceId(); publish({ ...initial, status: "checking", uid, deviceId: id }, token);
@@ -136,6 +138,7 @@ async function associateLocalSave({ force = false } = {}) {
 }
 
 async function syncNow() {
+  if (guard()?.isBlocked()) return null;
   if (syncInFlight) return syncInFlight; if (!dirtySectors.size || !cachedManifest || ["sync-conflict", "local-conflict", "cloud-update-available"].includes(state.status)) return null;
   clearTimer(); const token = generation, uid = cachedManifest.uid, id = deviceId(), cycle = new Set(dirtySectors); let attemptedRevision = null; cycle.forEach((name) => dirtySectors.delete(name));
   syncInFlight = (async () => { try { if (!current(token, uid)) return; const prepared = await prepareStableLocalSnapshot(); core.preflight(prepared); const old = cachedManifest.data;
@@ -150,7 +153,7 @@ async function syncNow() {
   finally { syncInFlight = null; if (dirtySectors.size && !["sync-conflict", "sync-error", "local-conflict", "cloud-update-available"].includes(state.status)) scheduleSync(token); } })(); return syncInFlight;
 }
 function retrySync() { if (state.status !== "sync-error") return null; return syncNow(); }
-function onLocalSave(event) { const sector = event?.detail?.sector; if (!core.SECTOR_NAMES.includes(sector)) return; if (state.status === "awaiting-local-save") { associateLocalSave({ force: true }); return; } if (!cachedManifest || state.uid !== cachedManifest.uid || ["sync-conflict", "local-conflict", "cloud-update-available"].includes(state.status)) return; dirtySectors.add(sector); scheduleSync(); }
+function onLocalSave(event) { if (guard()?.isBlocked()) return; const sector = event?.detail?.sector; if (!core.SECTOR_NAMES.includes(sector)) return; if (state.status === "awaiting-local-save") { associateLocalSave({ force: true }); return; } if (!cachedManifest || state.uid !== cachedManifest.uid || ["sync-conflict", "local-conflict", "cloud-update-available"].includes(state.status)) return; dirtySectors.add(sector); scheduleSync(); }
 
 function logicalRunJson(run) { if (run === null) return "null"; const logical = core.clone(run); delete logical.storageGeneration; delete logical.storageCommitId; return core.stableSerialize(logical); }
 function captureRunProvenance() {
@@ -167,14 +170,14 @@ function assertRunProvenanceUnchanged(expected) {
 function applySnapshot(snapshot, provenance, journal, onStage = () => {}) { const options = { suppressCloudEvent: true, restoreOwnershipToken: journal.operationId }; const owned = () => { if (guard()?.readEpoch() !== journal.expectedLocalEpoch) throw Object.assign(new Error("restore-ownership-lost"), { code: "restore-ownership-lost" }); guard()?.assertWritable(options); }; owned(); onStage("applying-profile"); globalThis.RunState.restoreProfile(snapshot.profile, options); owned(); onStage("applying-runs"); for (const [seasonId, run] of Object.entries(snapshot.runs)) { owned(); const expectedGeneration = Number(provenance?.[seasonId]?.generation || 0); if (run === null) globalThis.RunState.forceDeleteForRestore(seasonId, { ...options, expectedGeneration }); else globalThis.RunState.forceReplaceCanonicalFromSnapshot(core.clone(run), { preserveTimestamps: true, ...options, expectedGeneration }); const applied = globalThis.RunState.load(seasonId, { readOnly: true }); if (logicalRunJson(applied) !== logicalRunJson(run)) throw Object.assign(new Error("run-restore-verification-failed"), { code: "run-restore-verification-failed", problemSector: `run_${seasonId}` }); provenance[seasonId] = captureRunProvenance()[seasonId]; } owned(); onStage("applying-album"); globalThis.AlbumProgress.write(core.clone(snapshot.album), options); owned(); onStage("applying-development"); globalThis.DevelopmentV2.write(core.clone(snapshot.development), options); owned(); onStage("applying-hall"); globalThis.HallOfFameStorage._saveArchive({ schemaVersion: snapshot.hallOfFame.archiveSchemaVersion, updatedAt: snapshot.hallOfFame.updatedAt, teams: core.clone(snapshot.hallOfFame.teams), index: core.clone(snapshot.hallOfFame.index) }, { preserveTimestamp: true, ...options }); }
 async function restoreCloudSave(options = {}) {
   if (restoreInFlight) return restoreInFlight; if (!options.explicitConflict && !["cloud-available", "cloud-update-available", "restore-error"].includes(state.status)) return null; const auth = globalThis.InazumaAccount?.getState(), uid = auth?.uid, token = generation, cached = cachedManifest; if (!uid || !cached || cached.uid !== uid || cached.token !== token) return null;
-  const id = deviceId(), before = core.readLocalSnapshot(), beforeRunProvenance = captureRunProvenance(); if (!options.explicitConflict && state.status !== "cloud-update-available" && core.inspectLocalProgress(before).meaningful) { publish({ status: "local-conflict" }, token); return null; }
+  const id = deviceId(), interruptedJournal = readRestoreJournal(uid), before = core.readLocalSnapshot(), beforeRunProvenance = interruptedJournal?.sourceRunProvenance || captureRunProvenance(); if (!interruptedJournal && !options.explicitConflict && state.status !== "cloud-update-available" && core.inspectLocalProgress(before).meaningful) { publish({ status: "local-conflict" }, token); return null; }
   lastRestoreType = options.restoreType || (options.explicitConflict ? "explicit-conflict-cloud" : state.status === "cloud-update-available" ? "cloud-update" : "initial");
   restoreInFlight = (async () => { let writesStarted = false, restoreStage = "read-manifest-start"; try {
-    const { manifest, payloads, hallPayloads } = await downloadStableCloudBundle({ uid, token });
-    restoreStage = "reconstruct"; publish({ restoreStage }, token); const restored = core.reconstructSnapshot(payloads, hallPayloads); (manifest.legacyMissingRunSectors || []).forEach((sector) => { const seasonId = sector.slice(4); if (before.runs?.[seasonId] != null) restored.runs[seasonId] = core.clone(before.runs[seasonId]); }); if (!current(token, uid)) return;
-    restoreStage = "prepared"; assertRunProvenanceUnchanged(beforeRunProvenance);
-    let journal = { schemaVersion: 1, operationId: globalThis.crypto?.randomUUID?.() || `restore-${Date.now()}`, uid, restoreType: lastRestoreType, targetCloudRevision: manifest.revision, targetManifestIdentity: manifestBundleIdentity(manifest), startedAt: new Date().toISOString(), sourceRunProvenance: core.clone(beforeRunProvenance), sourceLocalEpoch: guard()?.readEpoch() || 0, expectedLocalEpoch: guard()?.readEpoch() || 0, ownershipToken: globalThis.crypto?.randomUUID?.() || `owner-${Date.now()}` };
-    try { journal = writeRestoreJournal(journal, "prepared"); } catch (error) { throw Object.assign(error, { code: "restore-journal-unavailable", restoreStage: "prepared" }); }
+    let manifest, hallPayloads, restored, journal = interruptedJournal;
+    if (journal?.targetSnapshot && journal?.targetManifest) { manifest = journal.targetManifest; restored = core.clone(journal.targetSnapshot); hallPayloads = restored.hallOfFame?.teams || []; if (journal.targetCloudCommitId !== (manifest.cloudCommitId || null)) throw restoreError("restore-journal-repair-needed", "manifest"); }
+    else { const bundle = await downloadStableCloudBundle({ uid, token }); manifest = bundle.manifest; hallPayloads = bundle.hallPayloads; restoreStage = "reconstruct"; publish({ restoreStage }, token); restored = core.reconstructSnapshot(bundle.payloads, hallPayloads); (manifest.legacyMissingRunSectors || []).forEach((sector) => { const seasonId = sector.slice(4); if (before.runs?.[seasonId] != null) restored.runs[seasonId] = core.clone(before.runs[seasonId]); }); }
+    if (!current(token, uid)) return; restoreStage = "prepared";
+    if (!journal) { assertRunProvenanceUnchanged(beforeRunProvenance); journal = globalThis.InazumaCloudRestoreProtocol.createJournal({ operationId: globalThis.crypto?.randomUUID?.() || `restore-${Date.now()}`, uid, restoreType: lastRestoreType, targetCloudRevision: manifest.revision, targetCloudCommitId: manifest.cloudCommitId || null, targetManifestIdentity: manifestBundleIdentity(manifest), targetManifest: manifest, targetSnapshot: restored, startedAt: new Date().toISOString(), sourceRunProvenance: core.clone(beforeRunProvenance), sourceLocalEpoch: guard()?.readEpoch() || 0, expectedLocalEpoch: guard()?.readEpoch() || 0, ownershipToken: globalThis.crypto?.randomUUID?.() || `owner-${Date.now()}` }); try { journal = writeRestoreJournal(journal, "prepared"); } catch (error) { throw Object.assign(error, { code: "restore-journal-unavailable", restoreStage: "prepared" }); } }
     guard()?.setBlocked({ uid, operationId: journal.operationId, stage: "prepared", status: "running" }); publish({ status: "restoring", restoreStage }, token); const applyProvenance = journal.sourceRunProvenance; writesStarted = true;
     applySnapshot(restored, applyProvenance, journal, (stage) => { restoreStage = stage; journal.sourceRunProvenance = core.clone(applyProvenance); journal = writeRestoreJournal(journal, stage); guard()?.setBlocked({ uid, operationId: journal.operationId, stage, status: "running" }); publish({ restoreStage }, token); });
     restoreStage = "verifying"; journal = writeRestoreJournal(journal, restoreStage); publish({ restoreStage }, token); const comparison = await core.compareSnapshots(restored, core.readLocalSnapshot());
@@ -206,6 +209,7 @@ async function resolveConflictUseLocal() {
 async function resolveConflictUseCloud() { if (conflictInFlight) return conflictInFlight; if (state.status !== "conflict-confirm-cloud") return null; const token = generation; publish({ status: "conflict-resolving-cloud", error: null }, token); conflictInFlight = restoreCloudSave({ explicitConflict: true }); try { return await conflictInFlight; } finally { conflictInFlight = null; } }
 function updateFromCloud() { return state.status === "cloud-update-available" ? restoreCloudSave() : null; }
 function checkForCloudUpdate() {
+  if (guard()?.isBlocked()) return null;
   if (checkInFlight) return checkInFlight;
   if (!["synced", "associated", "sync-conflict"].includes(state.status) || !cachedManifest) return null;
   const token = generation, uid = cachedManifest.uid, id = deviceId();

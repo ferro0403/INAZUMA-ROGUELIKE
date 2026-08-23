@@ -112,14 +112,15 @@
   function emitSave(options = {}, hallTeamId = options.hallTeamId || null, operation = options.operation || "write") { if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { sector: "hall_index", seasonId: null, hallTeamId, operation, source: "gameplay" } })); }
   function saveArchive(archive, options = {}) {
     global.PersistenceRecoveryGuard?.assertWritable(options);
+    global.PersistenceRecoveryGuard?.reserve(options);
     const clean = sanitizeArchive({ ...archive, updatedAt: options.preserveTimestamp ? archive?.updatedAt : nowIso() });
     try {
-      const saved = writePrimaryArchive(clean); global.PersistenceRecoveryGuard?.bump(options); emitSave(options); return saved;
+      const saved = writePrimaryArchive(clean); emitSave(options); return saved;
     } catch (error) {
       if (!isQuotaError(error)) throw error;
       const emergency = sanitizeArchive(clean, { emergency: true });
       try {
-        const saved = writePrimaryArchive(emergency); global.PersistenceRecoveryGuard?.bump(options); emitSave(options); return saved;
+        const saved = writePrimaryArchive(emergency); emitSave(options); return saved;
       } catch (retryError) {
         retryError.hallOfFameSaveFailed = true;
         throw retryError;

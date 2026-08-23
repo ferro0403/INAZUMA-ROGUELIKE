@@ -1053,6 +1053,7 @@
   }
 
   function resumeRunFinalization({ render = true } = {}) {
+    if (!global.RestoreGameplayRoutingGate?.enter("finalization")) return { completed: false, blocked: true };
     const result = global.PermanentEffects.resumeFinalization(run);
     if (!result.completed) {
       if (result.error) {
@@ -1741,6 +1742,7 @@
   }
 
   function renderDevelopmentCenter(tab = "players") {
+    if (!global.RestoreGameplayRoutingGate?.enter("development")) return false;
     const state = global.DevelopmentV2.read(); const players = cachedDevelopmentPlayers();
     const selectedIndex = players.find((player) => String(player.playerId) === String(ui.selectedDevelopmentPlayerId));
     const selected = resolveDevelopmentPlayer(selectedIndex);
@@ -1890,6 +1892,7 @@
   }
 
   function startRunWithIdentity(identity) {
+    if (!global.RestoreGameplayRoutingGate?.enter("new-run")) return false;
     const cleanIdentity = global.RunState.saveProfileTeamIdentity(identity);
     run = global.RunState.createRun(cleanIdentity, activeSeason?.id);
     global.run = run;
@@ -1899,6 +1902,7 @@
   }
 
   function startNewRunFromHome() {
+    if (!global.RestoreGameplayRoutingGate?.enter("new-run")) return false;
     const identity = savedTeamIdentity();
     run = global.RunState.load(activeSeason?.id);
     const startConfirmedRun = () => {
@@ -1957,6 +1961,7 @@
   }
 
   async function resumeRun() {
+    if (!global.RestoreGameplayRoutingGate?.enter("resume-run")) return false;
     await selectSeason(run?.seasonId || activeSeason?.id, { markPlayed: true });
     if (!run) return renderHome();
     if (run.phase === "finalization" || (run.finalization && run.finalization.status !== "complete")) return resumeRunFinalization();
@@ -6301,6 +6306,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function renderHallOfFame() {
+    if (!global.RestoreGameplayRoutingGate?.enter("hall")) return false;
     const teams = global.HallOfFameStorage.listSummaries();
     app.innerHTML = `<main class="hall-screen"><header class="hall-archive-head"><div><p class="eyebrow">ALBO D’ORO</p><h1>Squadre campioni</h1><p>Le imprese che hanno scritto la storia.</p></div>${sectionRootButton("hallRoot")}</header>${teams.length ? `<section class="hall-grid">${teams.map((team, index) => `<article class="hall-card"><div class="hall-card-rank"><span>★</span> CAMPIONE #${index + 1}</div><div><h2>${escapeHtml(team.teamName)}</h2><p class="hall-card-meta">${escapeHtml(normalizedHallSeasonName(team))} · ${formatDate(team.victoryDate)}</p></div><div class="hall-card-highlights"><span><small>MODULO</small><strong>${escapeHtml(team.finalFormation || '-')}</strong></span><span><small>OVERALL</small><strong>${escapeHtml(team.finalAverageOverall ?? 'N/D')}</strong></span><span><small>MVP</small><strong>${escapeHtml(team.mvp?.name || 'N/D')}</strong></span></div><div class="hall-card-footer"><div class="hall-portraits">${(team.portraits || []).map((src) => `<img src="${escapeHtml(src)}" alt="" loading="lazy"/>`).join('')}</div><button class="btn btn-yellow" data-open-hall-team="${escapeHtml(team.hallTeamId)}">Rivivi l'impresa</button></div></article>`).join('')}</section>` : `<section class="panel hall-empty"><h2>Nessuna squadra campione.</h2><p class="muted">Completa una run per lasciare il tuo segno.</p></section>`}</main>`;
     resetRenderedViewScroll();
