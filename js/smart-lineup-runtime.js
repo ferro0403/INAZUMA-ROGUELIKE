@@ -151,13 +151,26 @@
     const wrapped = function saveWithSmartLineup(run, ...args) {
       const before = snapshots.get(run);
       const current = runSnapshot(run);
-      if (before) {
-        if (before.roster !== current.roster) optimizeRun(run);
-        else if (before.formationId !== current.formationId) optimizeRun(run, contexts.get(run), { elevenOnly: true });
+      let rollback = null;
+      try {
+        if (before && (before.roster !== current.roster || before.formationId !== current.formationId)) {
+          // SmartLineup is a pre-save derived mutation.  Keep the caller's
+          // changes, but make every field touched by the optimizer atomic with
+          // the canonical RunState commit.
+          rollback = structuredClone(run);
+          if (before.roster !== current.roster) optimizeRun(run);
+          else optimizeRun(run, contexts.get(run), { elevenOnly: true });
+        }
+        const result = original(run, ...args);
+        snapshots.set(run, runSnapshot(run));
+        return result;
+      } catch (error) {
+        if (rollback) {
+          Object.keys(run).forEach((key) => delete run[key]);
+          Object.assign(run, rollback);
+        }
+        throw error;
       }
-      const result = original(run, ...args);
-      snapshots.set(run, runSnapshot(run));
-      return result;
     };
     wrapped.__smartLineupWrapped = true;
     state.save = wrapped;

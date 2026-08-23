@@ -1,0 +1,11 @@
+const assert = require("assert");
+const core = require("../js/cloud-save-core.js");
+const hash = "a".repeat(64);
+const base = { schemaVersion: 1, initialized: true, accountUid: "u", revision: 1, cloudCommitId: "c1", sectorHashes: { profile: hash }, hallTeamHashes: {} };
+assert(core.manifestMatchesExpected(null, null), "initial create must accept an absent manifest");
+assert(!core.manifestMatchesExpected(base, null), "initial create must reject a concurrent winner");
+assert(core.manifestMatchesExpected({ ...base }, base), "unchanged expected identity must pass");
+assert(!core.manifestMatchesExpected({ ...base, revision: 2, cloudCommitId: "c2" }, base), "stale revision must fail");
+assert(!core.manifestMatchesExpected({ ...base, cloudCommitId: "other" }, base), "same revision with another owner must fail");
+assert(!core.manifestMatchesExpected({ ...base, sectorHashes: { profile: "b".repeat(64) } }, base), "mixed bundle identity must fail");
+console.log("cloud-concurrency-cas-test: ok");
