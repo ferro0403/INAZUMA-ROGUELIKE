@@ -6346,18 +6346,26 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
 
   async function init() {
     try {
-      const [activeDb, freeAgentsResponse, visualsResponse] = await Promise.all([
+      const dataReady = Promise.all([
         loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID),
         fetch("data/FREE_AGENTS_compact.json"),
         fetch("data/PLAYER_VISUALS.json"),
       ]);
+      await (global.PersistenceBootstrapGate?.recoveryReady || Promise.resolve());
+      const [activeDb, freeAgentsResponse, visualsResponse] = await dataReady;
       if (!activeDb || !freeAgentsResponse.ok || !visualsResponse.ok) throw new Error("Database non raggiungibili");
       const visualsDb = await visualsResponse.json();
       freeAgentsDb = await freeAgentsResponse.json();
-      global.AlbumProgress.configureFreeAgentIds((freeAgentsDb.players || []).map((player) => player.playerId));
-      freeAgentsById = new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player]));
-      playerVisualsById = new Map(Object.entries(visualsDb.players || {}));
-      renderHome();
+      const finishBootstrap = () => {
+        global.AlbumProgress.configureFreeAgentIds((freeAgentsDb.players || []).map((player) => player.playerId));
+        freeAgentsById = new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player]));
+        playerVisualsById = new Map(Object.entries(visualsDb.players || {}));
+        renderHome();
+      };
+      if (global.PersistenceBootstrapGate?.gameplayReady?.() === false) {
+        app.innerHTML = '<main class="hero-screen persistence-recovery-screen"><section class="panel"><p class="eyebrow">RECOVERY</p><h2>Ripristino cloud da completare</h2><p class="muted">Completa il ripristino dall’area Account prima di continuare.</p><button type="button" class="btn btn-yellow" data-account-trigger>Apri Account</button></section></main>';
+        global.PersistenceBootstrapGate.whenWritable(finishBootstrap);
+      } else finishBootstrap();
     } catch (error) {
       showLoadError(error);
     }

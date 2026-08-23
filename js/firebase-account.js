@@ -19,6 +19,7 @@ let state = { status: "initializing", uid: null, username: "", email: "", emailV
 
 function publish(patch) {
   state = { ...state, ...patch };
+  globalThis.PersistenceBootstrapGate?.markAuth(state);
   globalThis.dispatchEvent(new CustomEvent("inazuma:auth-state-changed", { detail: { ...state } }));
 }
 

@@ -20,10 +20,11 @@
     return next;
   }
   const bump = reserve;
-  function setBlocked(value = {}) { state = { ...state, ...value, blocked: true, status: value.status || "required" }; return getState(); }
+  function notify() { if (typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:persistence-recovery-state-changed", { detail: getState() })); }
+  function setBlocked(value = {}) { state = { ...state, ...value, blocked: true, status: value.status || "required" }; notify(); return getState(); }
   function clearBlocked(operationId = null) {
     if (operationId && state.operationId && operationId !== state.operationId) throw Object.assign(new Error("restore-ownership-lost"), { code: "restore-ownership-lost" });
-    state = { blocked: false, uid: state.uid, operationId: null, stage: "complete", status: "complete", error: null }; return getState();
+    state = { blocked: false, uid: state.uid, operationId: null, stage: "complete", status: "complete", error: null }; notify(); return getState();
   }
   function getState() { return { ...state }; }
   function isBlocked() { return state.blocked; }
@@ -43,11 +44,11 @@
   }
   function bindUid(uid) {
     state = { blocked: false, uid: uid || null, operationId: null, stage: null, status: "complete", error: null };
-    if (!uid) return getState();
+    if (!uid) { notify(); return getState(); }
     let raw;
     try { raw = global.localStorage.getItem(`inazuma.cloud.restoreJournal.${uid}`); }
     catch (error) { return setBlocked({ uid, status: "safety", stage: "journal-read", error: failure(error, "storage-access-error", "restore-journal-read").code }); }
-    if (!raw) return getState();
+    if (!raw) { notify(); return getState(); }
     try { const journal = JSON.parse(raw); return setBlocked({ uid, operationId: journal.operationId, stage: journal.stage, status: journal.stage === "complete" ? "repair" : "required" }); }
     catch (_) { return setBlocked({ uid, stage: "journal-parse", status: "safety", error: "restore-journal-repair-needed" }); }
   }
