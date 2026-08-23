@@ -1059,9 +1059,28 @@
         console.error("Finalization remains resumable", result.error);
         toast("Finalizzazione non completata. Riprova con Continua.");
       }
+      if (render) renderFinalizationPending(result);
       return result;
     }
     if (render) renderFinalCelebration(run.hallTeamId, { developmentResolved: true });
+    return result;
+  }
+
+  function renderFinalizationPending(result = {}) {
+    app.innerHTML = `<main class="hero-screen finalization-pending-screen" data-finalization-pending>
+      <section class="panel"><p class="eyebrow">SALVATAGGIO CAMPIONI</p><h1>Finalizzazione in sospeso</h1>
+      <p class="muted">La vittoria è al sicuro. Completa il salvataggio permanente prima di continuare.</p>
+      <button type="button" class="btn btn-yellow" id="retry-run-finalization">RIPROVA / CONTINUA</button></section>
+    </main>`;
+    resetRenderedViewScroll();
+    const retry = document.getElementById("retry-run-finalization");
+    retry?.addEventListener("click", () => {
+      retry.disabled = true;
+      const resumed = resumeRunFinalization({ render: false });
+      if (resumed.completed) return renderFinalCelebration(run.hallTeamId, { developmentResolved: true });
+      toast("Finalizzazione ancora in sospeso. Puoi riprovare senza perdere la vittoria.", "error");
+      renderFinalizationPending(resumed);
+    });
     return result;
   }
 
@@ -5072,6 +5091,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     }
     if (flow.destination === "boss-rewards") return startBossRewards();
     if (flow.destination === "season-complete") return renderSeasonComplete();
+    if (flow.destination === "finalization-pending") return renderFinalizationPending(flow.finalization);
     if (flow.destination === "map") return renderMap();
     return null;
   }
@@ -5095,10 +5115,25 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const flow = run.postBossFlow;
     const boss = seasonDb.bossOrder[Number(flow?.bossIndex ?? run.bossIndex)];
     if (!flow || !boss) return renderMap();
-    flow.status = "reward";
-    if (!flow.candidateIds?.length) flow.candidateIds = bossRewardCandidates(flow, boss).map((player) => String(player.profileId || player.playerId));
-    global.RunState.save(run);
-    showNextBossReward();
+    const committed = persistGameplayMutation({
+      label: "boss-reward-candidates",
+      mutate: () => {
+        flow.status = "reward";
+        if (!flow.candidateIds?.length) flow.candidateIds = bossRewardCandidates(flow, boss).map((player) => String(player.profileId || player.playerId));
+        syncPendingBossReward(flow);
+      },
+      rerender: ({ ok }) => { if (!ok && run?.postBossFlow) renderPostBossRecovery(); },
+    });
+    if (committed.ok) showNextBossReward();
+  }
+
+  function renderPostBossRecovery() {
+    app.innerHTML = `<main class="hero-screen post-boss-recovery-screen" data-post-boss-recovery><section class="panel">
+      <p class="eyebrow">PROGRESSO BOSS</p><h1>Ripresa ricompense</h1><p class="muted">Il progresso salvato non è stato modificato.</p>
+      <button type="button" class="btn btn-yellow" id="retry-post-boss-flow">RIPROVA / CONTINUA</button>
+    </section></main>`;
+    resetRenderedViewScroll();
+    document.getElementById("retry-post-boss-flow")?.addEventListener("click", resumePostBossFlow);
   }
 
   function syncPendingBossReward(flow) {
@@ -5156,14 +5191,20 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   function advanceBossReward() {
     const flow = run.postBossFlow;
     if (!flow) return renderMap();
-    flow.remainingRewards = Math.max(0, Number(flow.remainingRewards || 0) - 1);
-    flow.rewardNumber = Math.min(2, Number(flow.rewardNumber || 1) + 1);
-    flow.rerolls = 0;
-    flow.candidateIds = [];
-    if (flow.remainingRewards <= 0) flow.status = "next-zone";
-    syncPendingBossReward(flow);
-    global.RunState.save(run);
-    flow.remainingRewards > 0 ? showNextBossReward() : navigateBossVictoryDestination(finishBossVictoryTransition());
+    const committed = persistGameplayMutation({
+      label: "boss-reward-advance",
+      mutate: () => {
+        flow.remainingRewards = Math.max(0, Number(flow.remainingRewards || 0) - 1);
+        flow.rewardNumber = Math.min(2, Number(flow.rewardNumber || 1) + 1);
+        flow.rerolls = 0;
+        flow.candidateIds = [];
+        if (flow.remainingRewards <= 0) flow.status = "next-zone";
+        syncPendingBossReward(flow);
+      },
+      rerender: ({ ok }) => { if (!ok && run?.postBossFlow) renderPostBossRecovery(); },
+    });
+    if (!committed.ok) return;
+    run.postBossFlow.remainingRewards > 0 ? showNextBossReward() : navigateBossVictoryDestination(finishBossVictoryTransition());
   }
 
   function finalizeBossVictoryTransition(options = {}) {
