@@ -1,0 +1,3 @@
+const assert=require('assert'), vm=require('vm'), fs=require('fs'); const BudgetStorage=require('./helpers/budget-storage');
+for(const store of ['Run','Profile','Album','Development','Hall']) { const c={localStorage:new BudgetStorage(),module:{exports:{}},globalThis:null};c.globalThis=c;vm.runInNewContext(fs.readFileSync('js/persistence-recovery-guard.js','utf8'),c);const g=c.module.exports; const source=g.readEpoch(); g.bump(); assert.notEqual(g.readEpoch(),source,store); const journal={expectedLocalEpoch:source}; assert.throws(()=>{if(g.readEpoch()!==journal.expectedLocalEpoch)throw Object.assign(Error(),{code:'restore-ownership-lost'});},e=>e.code==='restore-ownership-lost'); }
+console.log('cloud restore local interleaving I0-I4: ok');

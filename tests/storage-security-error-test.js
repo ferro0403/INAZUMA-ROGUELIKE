@@ -1,0 +1,3 @@
+const assert=require('assert'),vm=require('vm'),fs=require('fs');const BudgetStorage=require('./helpers/budget-storage');
+for(const [i,method] of ['getItem','setItem','getItem','setItem','setItem','getItem','setItem','setItem'].entries()){const s=new BudgetStorage();s.fail={method};const c={localStorage:s,module:{exports:{}},globalThis:null};c.globalThis=c;vm.runInNewContext(fs.readFileSync('js/persistence-recovery-guard.js','utf8'),c);const g=c.module.exports;if(method==='getItem'){ if(i===5) assert.equal(g.bindUid('u').blocked,true); else assert.throws(()=>g.readEpoch(),e=>e.code==='storage-access-error'); }else assert.throws(()=>g.bump(),e=>e.code==='storage-access-error');}
+console.log('storage SecurityError S0-S7: ok');
