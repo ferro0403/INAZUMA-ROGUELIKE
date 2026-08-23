@@ -133,6 +133,7 @@
     if (!run.developmentPlayerSnapshot) run.developmentPlayerSnapshot = options.storageRead ? {} : clone(global.DevelopmentV2?.read?.().players || {});
     run.postBossFlow = normalizePostBossFlow(run);
     run.pendingBossVictory = run.pendingBossVictory || null;
+    run.permanentEffectOutbox = Array.isArray(run.permanentEffectOutbox) ? run.permanentEffectOutbox : [];
     if (run.checkpoint) { run.checkpoint.version = config().saveVersion; run.checkpoint.teamIdentity = normalizeTeamIdentity(run.teamIdentity); }
     return run;
   }

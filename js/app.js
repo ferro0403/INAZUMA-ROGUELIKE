@@ -1046,8 +1046,18 @@
     return global.AlbumProgress?.backfillAlbumProgress?.({ run, hallTeams: albumHallTeams() }) || 0;
   }
 
-  function unlockAlbumRecruit(playerId, source) {
-    return global.AlbumProgress?.unlockAlbumPlayer?.(run?.seasonId || global.AlbumProgress.DEFAULT_COLLECTION_ID, playerId, { source }) || false;
+  function drainPermanentEffects() {
+    const result = global.PermanentEffects.drain(run);
+    if (result.error) console.error("Permanent effect remains pending", result.error);
+    return result;
+  }
+
+  function enqueueAlbumRecruit(current, playerId, source, actionId) {
+    return global.PermanentEffects.enqueueAlbum(current, { playerId, source, actionId });
+  }
+
+  function unlockAlbumRecruit() {
+    return drainPermanentEffects();
   }
 
   function albumFreeAgentPlayers(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
@@ -1390,6 +1400,7 @@
     if (latest?.run) {
       await loadSeason(latest.run.seasonId || latest.season.id);
       run = global.RunState.load(activeSeason.id);
+      if (run?.permanentEffectOutbox?.some((effect) => effect.status === "pending")) drainPermanentEffects();
     } else {
       await loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID);
       run = null;
@@ -1425,6 +1436,7 @@
   async function selectSeason(seasonId, { markPlayed = false } = {}) {
     await loadSeason(seasonId);
     run = global.RunState.load(activeSeason.id);
+    if (run?.permanentEffectOutbox?.some((effect) => effect.status === "pending")) drainPermanentEffects();
     ensureRunSchema();
     if (run && markPlayed) global.RunState.touch(run);
     if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
@@ -1656,7 +1668,17 @@
 
   function resolveDevelopmentEndRunFlow({ endReason, onComplete }) {
     const defeatedBosses = Number(run.completedBossIds?.length || run.bossIndex || 0);
-    const result = global.DevelopmentV2.processRunEnd({ runId: run.runId, seasonId: run.seasonId, defeatedBosses, endReason });
+    try {
+      global.PermanentEffects.assertCanonicalTerminal(run, endReason);
+      global.PermanentEffects.enqueueDevelopment(run, { endReason, defeatedBosses });
+      global.RunState.save(run);
+    } catch (error) {
+      console.error("Unable to persist terminal effect", error);
+      return renderHome();
+    }
+    const drained = drainPermanentEffects();
+    const effect = run.permanentEffectOutbox.find((entry) => entry.id === global.PermanentEffects.developmentId(run, endReason));
+    if (drained.error || effect?.status !== "applied") return renderHome();
     if (!run.developmentRewardPresentation || run.developmentRewardPresentation.endReason !== endReason) {
       run.developmentRewardPresentation = developmentRewardPresentation(defeatedBosses, endReason);
       global.RunState.save(run);
@@ -2038,6 +2060,7 @@
               entry.recruitedAtLevel = entry.recruitedAtLevel ?? entry.level ?? 0;
               entry.recruitedOverall = entry.recruitedOverall ?? source?.finalOverall ?? null;
               global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player: source || entry, playerId: entry.playerId, source: "initial_draft", level: entry.level || 0, overall: entry.recruitedOverall, actionId: `${current.runId}:initial_draft:${entry.playerId}` });
+              enqueueAlbumRecruit(current, entry.playerId, "initial_draft", `${current.runId}:initial_draft:${entry.playerId}`);
             });
             current.phase = "squad";
             reconcileSquadRosterState(current);
@@ -3201,6 +3224,7 @@
         if (result.recruited) {
           Object.assign(result.player, { firstJoinedAt: new Date().toISOString(), recruitedOverall: tradeCandidatePreview(incoming, result.player)?.overall ?? incoming.player.finalOverall, ...permanentRosterFields(incoming.player) });
           global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player: incoming.player, playerId: result.player.playerId, source: "trade", level: result.player.level, overall: result.player.recruitedOverall, actionId: `${current.runId}:${node.id}:trade:${result.player.playerId}` });
+          enqueueAlbumRecruit(current, result.player.playerId, "trade", `${current.runId}:${node.id}:trade:${result.player.playerId}`);
           optimizeLineupsForNewPlayer(result.player.playerId);
         }
         global.FiveVFive.removeUnavailable(current);
@@ -3669,6 +3693,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
             current.bench.push(String(result.player.playerId));
             Object.assign(result.player, { firstJoinedAt: new Date().toISOString(), recruitmentSource: options.recruitmentSource || source, recruitedAtLevel: level, recruitedOverall: resolvedRosterPlayer(result.player.playerId)?.overall ?? player.finalOverall ?? null });
             global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: result.player.playerId, source: options.recruitmentSource || source, level, overall: result.player.recruitedOverall, actionId: options.actionId || `${current.runId}:${player.profileId}:recruited` });
+            enqueueAlbumRecruit(current, result.player.playerId, options.recruitmentSource || source, options.actionId || `${current.runId}:${player.profileId}:recruited`);
             optimizeLineupsForNewPlayer(result.player.playerId);
           }
         },
@@ -3691,6 +3716,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
           current.roster.push({ playerId: String(player.playerId), source, level, recruitedAtLevel: level, recruitedOverall: player.overall ?? player.finalOverall ?? null, firstJoinedAt: new Date().toISOString(), recruitmentSource: options.recruitmentSource || source, equippedItem: null, ...permanentRosterFields(player) });
           current.bench.push(String(player.playerId));
           global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: player.playerId, source: options.recruitmentSource || source, level, overall: player.overall ?? player.finalOverall, actionId: options.actionId || `${current.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}` });
+          enqueueAlbumRecruit(current, player.playerId, options.recruitmentSource || source, options.actionId || `${current.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}`);
           optimizeLineupsForNewPlayer(player.playerId);
         },
         onCommitted: () => { unlockAlbumRecruit(player.playerId, options.recruitmentSource || source); closeModal(); done(true); },
@@ -3727,6 +3753,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
             current.roster.push({ playerId: String(player.playerId), source, activeProfileId: player.profileId || null, activeRoleVariantId: player.defaultRoleVariantId || null, level, levelUnits: 0, recruitedAtLevel: level, recruitedOverall: player.overall ?? player.finalOverall ?? null, firstJoinedAt: new Date().toISOString(), recruitmentSource: options.recruitmentSource || source, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], ...permanentRosterFields(player) });
             current.bench.push(String(player.playerId));
             global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: player.playerId, source: options.recruitmentSource || source, level, overall: player.overall ?? player.finalOverall, actionId: options.actionId || `${current.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}` });
+          enqueueAlbumRecruit(current, player.playerId, options.recruitmentSource || source, options.actionId || `${current.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}`);
             global.FiveVFive.removeUnavailable(current);
             optimizeLineupsForNewPlayer(player.playerId);
           },
@@ -5149,11 +5176,14 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     ui.match = null;
     if (run.bossIndex >= seasonDb.bossOrder.length) {
       run.postBossFlow = null;
-      run.phase = "complete";
-      run.statistics.completedAt = run.completedAt || new Date().toISOString();
+      run.completedAt = run.completedAt || new Date().toISOString();
+      run.statistics.completedAt = run.completedAt;
+      run.phase = "finalization";
+      const snapshot = buildChampionSnapshot(boss);
+      run.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId };
+      global.PermanentEffects.enqueueHall(run, snapshot);
       global.RunState.save(run);
-      persistChampionBeforeFinalUi(boss);
-      global.RunState.save(run);
+      drainPermanentEffects();
       return { destination: "season-complete" };
     }
     ensureCurrentZone();
@@ -6115,19 +6145,21 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
 
   function persistChampionBeforeFinalUi(finalBoss = null) {
     const boss = finalBoss || seasonDb.bossOrder[Math.min(Number(run.bossIndex || 1) - 1, seasonDb.bossOrder.length - 1)] || seasonDb.bossOrder.at(-1);
-    run.completedAt = run.completedAt || new Date().toISOString();
-    const result = global.HallOfFameStorage.addChampion(buildChampionSnapshot(boss));
-    const team = result?.team || buildChampionSnapshot(boss);
-    run.hallTeamId = team.hallTeamId;
-    run.hallOfFamePending = result?.persisted === false;
-    run.phase = run.phase === "final-summary" ? "final-summary" : "final-celebration";
-    global.RunState.save(run);
-    return team;
+    if (!run.finalization) {
+      run.completedAt = run.completedAt || new Date().toISOString();
+      const snapshot = buildChampionSnapshot(boss);
+      run.phase = "finalization";
+      run.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId };
+      global.PermanentEffects.enqueueHall(run, snapshot);
+      global.RunState.save(run);
+    }
+    drainPermanentEffects();
+    return run.hallTeamId ? global.HallOfFameStorage.getTeam(run.hallTeamId) : null;
   }
 
   function championTeam(hallTeamId) {
     let team = hallTeamId ? global.HallOfFameStorage.getTeam(hallTeamId) : null;
-    if (!team && ["complete", "final-celebration", "final-summary"].includes(String(run?.phase || ""))) team = persistChampionBeforeFinalUi();
+    if (!team && ["complete", "finalization", "final-celebration", "final-summary"].includes(String(run?.phase || ""))) team = persistChampionBeforeFinalUi();
     return team;
   }
 
@@ -6230,6 +6262,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const team = championTeam(hallTeamId || run?.hallTeamId);
     if (!team) return renderHome();
     if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "victory", onComplete: () => renderFinalCelebration(hallTeamId, { developmentResolved: true }) });
+    run.finalization = { ...(run.finalization || {}), status: "complete", hallTeamId: team.hallTeamId };
     run.phase = "final-celebration"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
     app.innerHTML = `<main class="final-celebration-screen"><section class="final-celebration-panel"><header class="final-victory-hero"><div class="final-trophy" aria-hidden="true">★</div><div class="final-victory-copy"><p class="eyebrow">${escapeHtml(normalizedHallSeasonName(team).toUpperCase())} COMPLETATA</p><h1>${escapeHtml(team.teamName)}</h1><h2>Campioni della run</h2><p>${escapeHtml(team.modeName)} · ${formatDate(team.victoryDate)} · ${escapeHtml(team.finalFormation || '-')}</p></div></header><div class="final-victory-team"><div class="final-victory-section-head"><span>Squadra vincente</span><strong>La formazione che ha scritto la storia</strong></div>${championFormationMarkup(team)}</div><div class="button-row final-actions"><button type="button" class="btn btn-yellow" id="final-continue">Continua <span aria-hidden="true">→</span></button><button type="button" class="btn" id="skip-final-animation">Vai al riepilogo</button></div></section></main>`;
     resetRenderedViewScroll(); bindHallPlayerDetails(team);
