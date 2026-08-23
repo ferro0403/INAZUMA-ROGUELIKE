@@ -3731,6 +3731,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
             enqueueAlbumRecruit(current, result.player.playerId, options.recruitmentSource || source, options.actionId || `${current.runId}:${player.profileId}:recruited`);
             optimizeLineupsForNewPlayer(result.player.playerId);
           }
+          options.transactionMutate?.(current, result.player);
         },
         onCommitted: () => {
           if (result.status === "acquired") unlockAlbumRecruit(result.player.playerId, options.recruitmentSource || source);
@@ -3753,6 +3754,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
           global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: player.playerId, source: options.recruitmentSource || source, level, overall: player.overall ?? player.finalOverall, actionId: options.actionId || `${current.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}` });
           enqueueAlbumRecruit(current, player.playerId, options.recruitmentSource || source, options.actionId || `${current.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}`);
           optimizeLineupsForNewPlayer(player.playerId);
+          options.transactionMutate?.(current, current.roster.find((entry) => String(entry.playerId) === String(player.playerId)));
         },
         onCommitted: () => { unlockAlbumRecruit(player.playerId, options.recruitmentSource || source); closeModal(); done(true); },
       });
@@ -3791,6 +3793,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
           enqueueAlbumRecruit(current, player.playerId, options.recruitmentSource || source, options.actionId || `${current.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}`);
             global.FiveVFive.removeUnavailable(current);
             optimizeLineupsForNewPlayer(player.playerId);
+            options.transactionMutate?.(current, current.roster.find((entry) => String(entry.playerId) === String(player.playerId)));
           },
           onCommitted: () => { unlockAlbumRecruit(player.playerId, options.recruitmentSource || source); closeModal(); done(true); },
         });
@@ -5014,50 +5017,20 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function ensurePostBossFlow(options = {}) {
-    const match = bossVictoryMatch();
-    if (!run.postBossFlow && run.pendingBossVictory) {
-      const pending = run.pendingBossVictory;
-      const remaining = Math.max(0, Number(pending.rewardsRemaining ?? pending.remainingRewards ?? 2));
-      run.postBossFlow = { status: remaining > 0 ? "reward" : "next-zone", bossIndex: Number(pending.bossIndex ?? run.bossIndex), bossTeamId: String(pending.bossId || pending.bossTeamId || ""), matchNodeId: pending.nodeId || pending.matchNodeId || null, remainingRewards: remaining, rewardNumber: Math.max(1, 3 - remaining), excludedIds: (pending.excludedIds || []).map(String), rerolls: Number(pending.rerolls || 0), candidateIds: (pending.candidateIds || []).map(String), completed: false };
-    }
-    if (!run.postBossFlow && match) {
-      run.postBossFlow = { status: "result", bossIndex: Number(match.bossIndex ?? run.bossIndex), bossTeamId: String(seasonDb.bossOrder[Number(match.bossIndex ?? run.bossIndex)]?.teamId || ""), matchNodeId: match.nodeId || null, remainingRewards: 2, rewardNumber: 1, excludedIds: [], rerolls: 0, candidateIds: [], completed: false };
-    }
-    const flow = run.postBossFlow;
-    if (!flow) return null;
-    flow.remainingRewards = Math.max(0, Math.min(2, Number(flow.remainingRewards ?? flow.rewardsRemaining ?? 2)));
-    flow.rewardNumber = Math.max(1, Math.min(2, Number(flow.rewardNumber ?? (3 - flow.remainingRewards))));
-    flow.excludedIds = Array.isArray(flow.excludedIds) ? Array.from(new Set(flow.excludedIds.map(String))) : [];
-    flow.candidateIds = Array.isArray(flow.candidateIds) ? flow.candidateIds.map(String) : [];
-    flow.rerolls = Math.max(0, Number(flow.rerolls || 0));
-    flow.bossIndex = Number(flow.bossIndex ?? run.bossIndex);
-    const boss = seasonDb.bossOrder[flow.bossIndex];
-    if (boss && !flow.bossTeamId) flow.bossTeamId = String(boss.teamId);
-    if (match && run.currentZone?.bossIndex === flow.bossIndex) {
-      const node = run.currentZone.nodes.find((item) => item.id === match.nodeId || item.type === "boss");
-      if (node) global.MapEngine.completeNode(run.currentZone, node.id);
-    }
-    if (options.clearMatch && match) {
-      match.postMatchNavigationApplied = true;
-      ui.match = null;
-      run.activeMatch = null;
-      ui.bossMatchResolving = false;
-      if (flow.status === "result") flow.status = "reward";
-    }
-    return flow;
+    return global.BossGameOverRuntime.derivePostBossFlow(run, seasonDb, options);
   }
 
   function resolvePendingRunFlow(options = {}) {
-    const flow = ensurePostBossFlow(options);
-    if (!flow) return { destination: "none" };
-    const boss = seasonDb.bossOrder[flow.bossIndex];
-    if (!boss && flow.status !== "season-complete") flow.status = "season-complete";
-    if (flow.status === "result") { global.RunState.save(run); return { destination: "boss-result" }; }
-    if (flow.status === "reward" && flow.remainingRewards > 0) { global.RunState.save(run); return { destination: "boss-rewards" }; }
-    if (flow.status === "season-complete") return finishBossVictoryTransition();
-    flow.status = "next-zone";
-    global.RunState.save(run);
-    return finishBossVictoryTransition();
+    if (!ensurePostBossFlow(options)) return { destination: "none" };
+    const committed = persistGameplayMutation({
+      label: "post-boss-resume",
+      mutate: (current) => global.BossGameOverRuntime.applyPostBossResumeMutation({ run: current, seasonDb, clearMatch: Boolean(options.clearMatch) }),
+      onCommitted: () => { if (options.clearMatch) { ui.match = null; ui.bossMatchResolving = false; } },
+      rerender: ({ ok }) => { if (!ok) renderPostBossRecovery(); },
+    });
+    if (!committed.ok) return { destination: "post-boss-recovery", error: committed.error };
+    if (committed.value.destination === "next-zone" || committed.value.destination === "season-complete") return finishBossVictoryTransition();
+    return committed.value;
   }
 
   function resumePostBossFlow() {
@@ -5072,6 +5045,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (flow.destination === "boss-rewards") return startBossRewards();
     if (flow.destination === "season-complete") return renderSeasonComplete();
     if (flow.destination === "finalization-pending") return renderFinalizationPending(flow.finalization);
+    if (flow.destination === "post-boss-recovery") return renderPostBossRecovery();
     if (flow.destination === "map") return renderMap();
     return null;
   }
@@ -5097,11 +5071,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (!flow || !boss) return renderMap();
     const committed = persistGameplayMutation({
       label: "boss-reward-candidates",
-      mutate: () => {
-        flow.status = "reward";
-        if (!flow.candidateIds?.length) flow.candidateIds = bossRewardCandidates(flow, boss).map((player) => String(player.profileId || player.playerId));
-        syncPendingBossReward(flow);
-      },
+      mutate: (current) => global.BossGameOverRuntime.prepareBossRewardCandidatesMutation({ run: current, seasonDb, candidateIds: flow.candidateIds?.length ? flow.candidateIds : bossRewardCandidates(flow, boss).map((player) => String(player.profileId || player.playerId)) }),
       rerender: ({ ok }) => { if (!ok && run?.postBossFlow) renderPostBossRecovery(); },
     });
     if (committed.ok) showNextBossReward();
@@ -5128,12 +5098,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const flow = run.postBossFlow;
     const boss = seasonDb.bossOrder[Number(flow?.bossIndex ?? run.bossIndex)];
     if (!flow || !boss) return renderMap();
-    let candidates = (flow.candidateIds || []).map((id) => isProfileAwareSeason() ? global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, id) : seasonPlayersById.get(String(id))).filter(Boolean);
-    if (!candidates.length) {
-      candidates = bossRewardCandidates(flow, boss);
-      flow.candidateIds = candidates.map((player) => String(player.profileId || player.playerId));
-      global.RunState.save(run);
-    }
+    const candidates = (flow.candidateIds || []).map((id) => isProfileAwareSeason() ? global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, id) : seasonPlayersById.get(String(id))).filter(Boolean);
+    if (!candidates.length) return startBossRewards();
     const level = global.RoguelikeRules.defeatedBossRewardLevel(boss);
     const scoutToken = run.inventory.find((item) => item.effect === "pull_reroll");
     showPlayerOffer({
@@ -5146,41 +5112,22 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       allowSkip: true,
       legendary: false,
       onReroll: scoutToken ? () => {
-        removeInventoryItem(scoutToken.instanceId);
-        global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId: flow.matchNodeId, itemId: scoutToken.id, instanceId: scoutToken.instanceId, actionId: `${run.runId}:${flow.matchNodeId}:boss_reward_reroll:${flow.rewardNumber}:${flow.rerolls + 1}` });
-        flow.excludedIds.push(...candidates.map((player) => String(player.profileId || player.playerId)));
-        flow.excludedIds = Array.from(new Set(flow.excludedIds));
-        flow.rerolls += 1;
-        flow.candidateIds = bossRewardCandidates(flow, boss).map((player) => String(player.profileId || player.playerId));
-        syncPendingBossReward(flow);
-        global.RunState.save(run);
-        showNextBossReward();
+        const committed = persistGameplayMutation({ label: "boss-reward-reroll", mutate: (current) => global.BossGameOverRuntime.applyBossRewardRerollMutation({ run: current, tokenInstanceId: scoutToken.instanceId, nextCandidateIds: (nextFlow) => bossRewardCandidates(nextFlow, boss).map((candidate) => String(candidate.profileId || candidate.playerId)), recordAction: (current, nextFlow, token) => global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId: nextFlow.matchNodeId, itemId: token.id, instanceId: token.instanceId, actionId: `${current.runId}:${nextFlow.matchNodeId}:boss_reward_reroll:${nextFlow.rewardNumber}:${nextFlow.rerolls}` }) }), rerender: ({ ok }) => { if (!ok) renderPostBossRecovery(); } });
+        if (committed.ok) showNextBossReward();
       } : null,
       onPick: (player) => {
-        flow.excludedIds.push(String(player.playerId));
-        flow.excludedIds = Array.from(new Set(flow.excludedIds));
-        syncPendingBossReward(flow);
-        global.RunState.save(run);
-        global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.BOSS_REWARD_CHOSEN, { nodeId: flow.matchNodeId, playerId: player.playerId, actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:chosen` });
-        recruitPlayer(player, global.SeasonRegistry.sourceForSeason(run?.seasonId), level, () => advanceBossReward(), { allowCancel: true, recruitmentSource: "boss_reward", actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:recruit:${player.profileId || player.playerId}` });
+        recruitPlayer(player, global.SeasonRegistry.sourceForSeason(run?.seasonId), level, (completed) => { if (completed) advanceBossReward(); }, { allowCancel: true, recruitmentSource: "boss_reward", actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:recruit:${player.profileId || player.playerId}`, transactionMutate: (current) => global.BossGameOverRuntime.applyBossRewardPickMutation({ run: current, playerId: player.profileId || player.playerId, recordAction: (target, currentFlow) => global.RunStatistics?.recordRunAction?.(target, global.RunStatistics.ACTIONS.BOSS_REWARD_CHOSEN, { nodeId: currentFlow.matchNodeId, playerId: player.playerId, actionId: `${target.runId}:${currentFlow.matchNodeId}:boss_reward:${currentFlow.rewardNumber}:chosen` }) }) });
       },
-      onSkip: () => { global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.BOSS_REWARD_DECLINED, { nodeId: flow.matchNodeId, actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:declined` }); advanceBossReward(); },
+      onSkip: () => advanceBossReward((current, currentFlow) => global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.BOSS_REWARD_DECLINED, { nodeId: currentFlow.matchNodeId, actionId: `${current.runId}:${currentFlow.matchNodeId}:boss_reward:${currentFlow.rewardNumber}:declined` })),
     });
   }
 
-  function advanceBossReward() {
+  function advanceBossReward(recordAction) {
     const flow = run.postBossFlow;
     if (!flow) return renderMap();
     const committed = persistGameplayMutation({
       label: "boss-reward-advance",
-      mutate: () => {
-        flow.remainingRewards = Math.max(0, Number(flow.remainingRewards || 0) - 1);
-        flow.rewardNumber = Math.min(2, Number(flow.rewardNumber || 1) + 1);
-        flow.rerolls = 0;
-        flow.candidateIds = [];
-        if (flow.remainingRewards <= 0) flow.status = "next-zone";
-        syncPendingBossReward(flow);
-      },
+      mutate: (current) => global.BossGameOverRuntime.advanceBossRewardMutation({ run: current, recordAction }),
       rerender: ({ ok }) => { if (!ok && run?.postBossFlow) renderPostBossRecovery(); },
     });
     if (!committed.ok) return;
@@ -5192,7 +5139,6 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function finishBossVictoryTransition() {
-    ensurePostBossFlow();
     const committed = persistGameplayMutation({
       label: "boss-victory-handoff",
       mutate: (current) => global.BossGameOverRuntime.applyBossVictoryHandoffMutation({
@@ -5202,7 +5148,11 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       onCommitted: () => { ui.pendingReward = null; ui.match = null; closeModal(); },
       rerender: ({ ok }) => { if (!ok) renderPostBossRecovery(); },
     });
-    if (!committed.ok) return { destination: "finalization-pending", error: committed.error };
+    if (!committed.ok) {
+      const recovered = committed.run;
+      const canonicalFinalization = recovered?.phase === "finalization" || (recovered?.finalization && recovered.finalization.status !== "applied");
+      return { destination: canonicalFinalization ? "finalization-pending" : "post-boss-recovery", error: committed.error, finalization: recovered?.finalization };
+    }
     if (committed.value.destination === "finalization-pending") {
       const finalization = resumeRunFinalization({ render: false });
       return finalization.completed
