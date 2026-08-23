@@ -98,7 +98,7 @@
   function parse(raw) { return sanitizeArchive(raw ? JSON.parse(raw) : emptyArchive()); }
   function loadArchive() {
     for (const key of [STORAGE_KEY, BACKUP_KEY, TEMP_KEY]) {
-      try { const raw = localStorage.getItem(key); if (raw) return parse(raw); } catch (_) {}
+      try { const raw = localStorage.getItem(key); if (raw) return parse(raw); } catch (error) { if (error?.name === "SecurityError") throw Object.assign(new Error("storage-access-error"), { code: "storage-access-error", stage: "hall-read", cause: error }); }
     }
     return emptyArchive();
   }

@@ -72,7 +72,7 @@
   }
   function readStorage() {
     try { return normalizeProgress(JSON.parse(global.localStorage?.getItem(STORAGE_KEY) || "null")); }
-    catch (_) { return normalizeProgress(null); }
+    catch (error) { if (error?.name === "SecurityError") throw Object.assign(new Error("storage-access-error"), { code: "storage-access-error", stage: "album-read", cause: error }); return normalizeProgress(null); }
   }
   function writeStorage(progress, options = {}) { global.PersistenceRecoveryGuard?.assertWritable(options); global.PersistenceRecoveryGuard?.reserve(options); global.PersistenceRecoveryGuard?.assertWritable(options); global.localStorage?.setItem(STORAGE_KEY, JSON.stringify(normalizeProgress(progress))); if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { sector: "album", seasonId: null, hallTeamId: null, operation: "write", source: "gameplay" } })); return progress; }
   function collectionEntry(progress, collectionId) {

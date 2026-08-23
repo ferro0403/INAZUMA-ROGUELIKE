@@ -14,8 +14,8 @@ function readRestoreJournal(uid) { try { const raw = localStorage.getItem(journa
 function writeRestoreJournal(journal, stage) { const next = { ...journal, stage, updatedAt: new Date().toISOString() }; localStorage.setItem(journalKey(journal.uid), JSON.stringify(next)); return next; }
 function clearRestoreJournal(uid) { localStorage.removeItem(journalKey(uid)); }
 function guard() { return globalThis.PersistenceRecoveryGuard; }
-function readMetadata(uid, id) { try { const value = JSON.parse(localStorage.getItem(metadataKey(uid)) || "null"); return value?.uid === uid && value.deviceId === id && value.status === "associated" ? value : null; } catch (_) { return null; } }
-function writeMetadata(uid, value) { localStorage.setItem(metadataKey(uid), JSON.stringify(value)); }
+function readMetadata(uid, id) { return globalThis.InazumaCloudLocalMetadata.read(localStorage, metadataKey(uid), uid, id); }
+function writeMetadata(uid, value) { globalThis.InazumaCloudLocalMetadata.write(localStorage, metadataKey(uid), value); }
 function publish(patch, token = generation) { if (token !== generation) return false; state = { ...state, ...patch }; globalThis.dispatchEvent(new CustomEvent("inazuma:cloud-save-state-changed", { detail: { ...state } })); return true; }
 function current(token, uid) { const auth = globalThis.InazumaAccount?.getState(); return token === generation && auth?.status === "authenticated" && auth.uid === uid && cachedManifest?.uid === uid && cachedManifest.token === token; }
 function sectorHash(prepared, name) { return core.isRunSector(name) && prepared.payloads[name] === null ? null : prepared.hashes[name]; }
