@@ -355,6 +355,10 @@
     },
     stopRuntime: stopGameplayRuntime,
     reportFailure: (message) => toast(message, "error"),
+    reportMutationFailure: (message, error) => {
+      console.error("Gameplay mutation failed", error);
+      toast(message, "error");
+    },
   });
 
   function escapeHtml(value) {
@@ -2035,6 +2039,8 @@
               entry.recruitedOverall = entry.recruitedOverall ?? source?.finalOverall ?? null;
               global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player: source || entry, playerId: entry.playerId, source: "initial_draft", level: entry.level || 0, overall: entry.recruitedOverall, actionId: `${current.runId}:initial_draft:${entry.playerId}` });
             });
+            current.phase = "squad";
+            reconcileSquadRosterState(current);
           },
           onCommitted: () => {
             if (completed) run.roster.forEach((entry) => unlockAlbumRecruit(entry.playerId, "initial_draft"));
@@ -2127,17 +2133,17 @@
     return tacticalMiniPlayer(id, { mode: "squad", area });
   }
 
-  function reconcileSquadRosterState() {
-    const rosterIds = (run.roster || []).map((entry) => String(entry.playerId || "")).filter(Boolean);
+  function reconcileSquadRosterState(current = run) {
+    const rosterIds = (current.roster || []).map((entry) => String(entry.playerId || "")).filter(Boolean);
     const rosterSet = new Set(rosterIds);
-    const lineupIds = (run.lineup || []).map(String).filter(Boolean);
+    const lineupIds = (current.lineup || []).map(String).filter(Boolean);
     const lineupSet = new Set(lineupIds);
-    const currentBench = (run.bench || []).map(String).filter((id) => rosterSet.has(id) && !lineupSet.has(id));
+    const currentBench = (current.bench || []).map(String).filter((id) => rosterSet.has(id) && !lineupSet.has(id));
     const canonicalBench = [...new Set(currentBench)];
     const unassigned = rosterIds.filter((id) => !lineupSet.has(id) && !canonicalBench.includes(id));
     unassigned.slice(0, Math.max(0, 4 - canonicalBench.length)).forEach((id) => canonicalBench.push(id));
-    const changed = JSON.stringify(canonicalBench) !== JSON.stringify((run.bench || []).map(String));
-    if (changed) run.bench = canonicalBench;
+    const changed = JSON.stringify(canonicalBench) !== JSON.stringify((current.bench || []).map(String));
+    if (changed) current.bench = canonicalBench;
     return changed;
   }
 
@@ -2259,9 +2265,6 @@
   function renderSquad() {
     closeModal({ invokeOnClose: false });
     ui.selectedSquadPlayerId = null;
-    run.phase = "squad";
-    reconcileSquadRosterState();
-    global.RunState.save(run);
     const formation = formationById(run.formationId);
     const squadSummary = squadValiditySummary();
 
@@ -3207,7 +3210,12 @@
         if (result.recruited) unlockAlbumRecruit(result.player.playerId, "trade");
         showTradeResult(node, incoming, receivedEntry, result.status);
       },
-      rerender: ({ ok }) => { if (!ok) resolveTradeNode(node); },
+      onMutationError: ({ error }) => {
+        console.error("Trade mutation failed", error);
+        toast(error?.code === "trade-invalid" ? "Offerta non più valida: la rosa non è stata modificata" : "L'azione non è stata completata.", "error");
+        resolveTradeNode(node);
+      },
+      rerender: ({ ok, stage }) => { if (!ok && stage === "persistence") resolveTradeNode(node); },
     });
     return committed;
   }
@@ -3668,8 +3676,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
           if (result.status === "acquired") unlockAlbumRecruit(result.player.playerId, options.recruitmentSource || source);
           closeModal(); toast(result.status === "upgraded" ? "POTENZIAMENTO PROFILO" : "NUOVO GIOCATORE"); done(true);
         },
+        onMutationError: ({ error }) => {
+          if (error?.code !== "recruit-ineligible") console.error("Recruit mutation failed", error);
+          if (error?.code !== "recruit-ineligible") toast("L'azione non è stata completata.", "error");
+          done(false);
+        },
       });
-      if (!committed.ok && result?.status === "ineligible") done(false);
       return committed;
     }
     if (run.roster.length < global.SEASON1_CONFIG.maxRoster) {
