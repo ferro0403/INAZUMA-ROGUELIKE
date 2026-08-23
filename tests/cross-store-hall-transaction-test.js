@@ -1,0 +1,8 @@
+const assert=require('assert'),fs=require('fs'),vm=require('vm');const s={console,structuredClone};s.globalThis=s;vm.runInNewContext(fs.readFileSync('js/permanent-effects.js','utf8'),s);
+const run={runId:'win',seasonId:'ie1',phase:'finalization',finalization:{status:'pending'},permanentEffectOutbox:[]}, snapshot={runId:'win',seasonId:'ie1',archiveKey:'ie1:win',hallTeamId:'hall_win'};s.PermanentEffects.enqueueHall(run,snapshot);
+let fail=true,halls=new Map(),devCalls=0;const hall={addChampion(x){if(fail)return{persisted:false};if(!halls.has(x.archiveKey))halls.set(x.archiveKey,x);return{persisted:true,team:halls.get(x.archiveKey)}}};
+let result=s.PermanentEffects.drain(run,{apis:{HallOfFameStorage:hall},save(){}});assert.strictEqual(result.pending.length,1);assert.strictEqual(devCalls,0);
+fail=false;result=s.PermanentEffects.drain(run,{apis:{HallOfFameStorage:hall},save(){throw Error('marker')}});assert(result.error);assert.strictEqual(halls.size,1);
+const fresh=JSON.parse(JSON.stringify(run));fresh.permanentEffectOutbox[0].status='pending';s.PermanentEffects.drain(fresh,{apis:{HallOfFameStorage:hall},save(){}});assert.strictEqual(halls.size,1);assert.strictEqual(fresh.finalization.status,'hall-written');s.PermanentEffects.drain(fresh,{apis:{HallOfFameStorage:hall},save(){}});assert.strictEqual(halls.size,1);
+const ro=JSON.parse(JSON.stringify(run));ro.permanentEffectOutbox[0].status='pending';s.PermanentEffects.drain(ro,{readOnly:true,apis:{HallOfFameStorage:{addChampion(){throw Error('write')}}},save(){throw Error('save')}});assert.strictEqual(ro.permanentEffectOutbox[0].status,'pending');
+console.log('cross-store hall transaction tests passed');
