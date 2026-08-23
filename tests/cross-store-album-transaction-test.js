@@ -6,6 +6,9 @@ assert.throws(()=>{acquire();throw Error('run-save');}); assert.strictEqual(albu
 let failAlbum=true,saves=0; const apis={AlbumProgress:{unlockAlbumPlayer(c,id){if(failAlbum)throw Error('album');album.add(`${c}:${id}`);return true;}},DevelopmentV2:{},HallOfFameStorage:{}};
 let result=g.PermanentEffects.drain(run,{apis,save(){saves++;}}); assert(result.error); assert.strictEqual(run.permanentEffectOutbox[0].status,'pending');
 failAlbum=false; result=g.PermanentEffects.drain(run,{apis,save(){saves++;}}); assert.deepStrictEqual([...album],['ie1:mark']); assert.strictEqual(run.permanentEffectOutbox[0].status,'applied');
-const copy=JSON.parse(JSON.stringify(run)); copy.permanentEffectOutbox[0].status='pending'; g.PermanentEffects.drain(copy,{apis,save(){}}); assert.strictEqual(album.size,1,'stable retry is set-idempotent');
+run.permanentEffectOutbox[0].status='pending'; run.permanentEffectOutbox[0].appliedAt=null; let markerFails=true;
+apis.AlbumProgress.unlockAlbumPlayer=()=>false;
+result=g.PermanentEffects.drain(run,{apis,save(){if(markerFails)throw Error('marker')}}); assert(result.error); assert.strictEqual(run.permanentEffectOutbox[0].status,'pending'); assert.strictEqual(album.size,1);
+markerFails=false; result=g.PermanentEffects.drain(run,{apis,save(){}}); assert.ifError(result.error); assert.strictEqual(run.permanentEffectOutbox[0].status,'applied'); assert.strictEqual(album.size,1,'already-unlocked is idempotent success');
 const draft={runId:'draft',seasonId:'ie1',permanentEffectOutbox:[]}; ['a','b','c'].forEach(id=>g.PermanentEffects.enqueueAlbum(draft,{playerId:id,source:'initial_draft',actionId:`draft:${id}`})); assert.strictEqual(new Set(draft.permanentEffectOutbox.map(x=>x.id)).size,3); g.PermanentEffects.enqueueAlbum(draft,{playerId:'a',source:'initial_draft',actionId:'draft:a'}); assert.strictEqual(draft.permanentEffectOutbox.length,3);
 console.log('cross-store album transaction tests passed');
