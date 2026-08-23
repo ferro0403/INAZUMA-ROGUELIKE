@@ -5,6 +5,7 @@
     generic: "Salvataggio non riuscito. L'azione non è stata registrata.",
     stale: "La run è stata aggiornata in un'altra scheda. Ho ricaricato l'ultima versione salvata.",
     unreadable: "Il salvataggio locale più recente non è leggibile. L'azione è stata bloccata.",
+    mutation: "L'azione non è stata completata.",
   };
 
   function failureKind(error) {
@@ -18,7 +19,7 @@
     return JSON.parse(JSON.stringify(run));
   }
 
-  function create({ save, load, getRun, replaceRun, stopRuntime, reportFailure, cloneRun = defaultCloneRun }) {
+  function create({ save, load, getRun, replaceRun, stopRuntime, reportFailure, reportMutationFailure, cloneRun = defaultCloneRun }) {
     if (![save, load, getRun, replaceRun].every((value) => typeof value === "function")) throw new TypeError("GameplayPersistence requires save, load, getRun and replaceRun");
     return function persistGameplayMutation(options = {}) {
       const current = getRun();
@@ -28,6 +29,15 @@
       let value;
       try {
         value = options.mutate?.(current);
+      } catch (error) {
+        replaceRun(before);
+        const failure = { error, kind: "mutation", stage: "mutation", run: before, before, canonical: undefined };
+        if (options.onMutationError) options.onMutationError(failure);
+        else reportMutationFailure?.(MESSAGES.mutation, error, options);
+        options.rerender?.({ ok: false, ...failure });
+        return { ok: false, ...failure };
+      }
+      try {
         save(current, options.saveOptions);
       } catch (error) {
         stopRuntime?.(error, options);
@@ -38,9 +48,9 @@
         replaceRun(recovered);
         const message = MESSAGES[kind];
         reportFailure?.(message, kind, error, options);
-        options.onFailure?.({ error, kind, message, canonical, run: recovered });
-        options.rerender?.({ ok: false, kind, canonical, run: recovered });
-        return { ok: false, kind, error, run: recovered, canonical };
+        options.onFailure?.({ error, kind, stage: "persistence", message, canonical, run: recovered });
+        options.rerender?.({ ok: false, kind, stage: "persistence", canonical, run: recovered });
+        return { ok: false, kind, stage: "persistence", error, run: recovered, canonical };
       }
       options.onCommitted?.(value, current);
       options.rerender?.({ ok: true, run: current, value });

@@ -14,6 +14,7 @@ function harness({ failure = null, unreadable = false } = {}) {
   let runtime = structuredClone(canonical);
   let saveAttempts = 0;
   let loadAttempts = 0;
+  let mutationFailures = 0;
   const events = [];
   const persist = context.GameplayPersistence.create({
     cloneRun: structuredClone,
@@ -32,6 +33,7 @@ function harness({ failure = null, unreadable = false } = {}) {
     },
     stopRuntime: () => events.push("stopped"),
     reportFailure: (message, kind) => events.push([kind, message]),
+    reportMutationFailure: () => { mutationFailures += 1; },
   });
   return {
     persist, events,
@@ -39,6 +41,7 @@ function harness({ failure = null, unreadable = false } = {}) {
     setUnreadable: (next) => { unreadableMode = next; },
     get runtime() { return runtime; }, get canonical() { return canonical; },
     get saveAttempts() { return saveAttempts; }, get loadAttempts() { return loadAttempts; },
+    get mutationFailures() { return mutationFailures; },
   };
 }
 
@@ -78,5 +81,38 @@ assert.strictEqual(committed, 0);
 assert.strictEqual(unreadable.saveAttempts, 1, "fallback is not written back");
 assert.strictEqual(unreadable.loadAttempts, 1, "only read-only recovery is attempted");
 assert.match(unreadable.events[1][1], /non è leggibile/);
+
+const mutation = harness();
+let mutationErrorCalls = 0;
+let mutationCommits = 0;
+const domainError = Object.assign(new Error("not eligible"), { code: "recruit-ineligible" });
+const mutationResult = mutation.persist({
+  mutate: (run) => { run.value = 99; run.inventory.pop(); throw domainError; },
+  onMutationError: ({ error, stage, run, canonical }) => {
+    mutationErrorCalls += 1;
+    assert.strictEqual(error, domainError);
+    assert.strictEqual(stage, "mutation");
+    assert.strictEqual(run.value, 0);
+    assert.strictEqual(canonical, undefined);
+  },
+  onCommitted: () => { mutationCommits += 1; },
+});
+assert.strictEqual(mutationResult.kind, "mutation");
+assert.strictEqual(mutationResult.stage, "mutation");
+assert.strictEqual(mutationResult.error, domainError, "the original diagnostic is preserved");
+assert.strictEqual(mutation.saveAttempts, 0, "mutation failure never reaches save");
+assert.strictEqual(mutation.loadAttempts, 0, "mutation failure does not load canonical storage");
+assert.strictEqual(mutation.runtime.value, 0, "partial mutation is rolled back to before");
+assert.deepStrictEqual(mutation.runtime.inventory, ["item-1"]);
+assert.strictEqual(context.run, mutation.runtime, "global/runtime reference is realigned");
+assert.strictEqual(mutationErrorCalls, 1);
+assert.strictEqual(mutationCommits, 0);
+assert.strictEqual(mutation.events.length, 0, "persistence failure reporting is reserved for save errors");
+assert.strictEqual(mutation.mutationFailures, 0, "callsite callback owns an expected domain outcome");
+
+const unexpected = harness();
+unexpected.persist({ mutate: (run) => { run.value += 1; throw new Error("bug"); } });
+assert.strictEqual(unexpected.mutationFailures, 1, "unexpected mutation errors use the mutation reporter");
+assert.strictEqual(unexpected.saveAttempts, 0);
 
 console.log("app gameplay persistence transactions: ok");
