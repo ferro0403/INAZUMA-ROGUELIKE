@@ -24,5 +24,15 @@ const handoff = app.slice(app.indexOf("function finishBossVictoryTransition"), a
 assert.match(navigate, /flow\.destination === "post-boss-recovery"/);
 assert.match(navigate, /renderPostBossRecovery\(\)/);
 assert.match(handoff, /canonicalFinalization/);
+assert.match(handoff, /hasPendingCanonicalFinalization\(recovered\)/);
 assert.match(handoff, /destination: canonicalFinalization \? "finalization-pending" : "post-boss-recovery"/);
 assert.doesNotMatch(handoff.split("persistGameplayMutation")[0], /ensurePostBossFlow/);
+
+const classifierSource = app.slice(app.indexOf("function hasPendingCanonicalFinalization"), app.indexOf("function createPostBossCheckpoint"));
+const classify = new Function(`${classifierSource}; return hasPendingCanonicalFinalization;`)();
+for (const status of ["pending", "hall-written", "development-written"]) {
+  assert.strictEqual(classify({ phase: "finalization", finalization: { status } }), true, `${status} remains pending`);
+}
+assert.strictEqual(classify({ phase: "final-celebration", finalization: { status: "complete" } }), false);
+assert.strictEqual(classify({ phase: "final-summary", finalization: { status: "complete" } }), false);
+assert.strictEqual(classify({ phase: "match", postBossFlow: { status: "next-zone" } }), false, "ordinary boss recovery is not finalization pending");

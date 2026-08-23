@@ -123,7 +123,13 @@
     return { applied: true, match };
   }
 
-  function applyBossVictoryHandoffMutation({ run, seasonDb, ensureCurrentZone, buildFinalization }) {
+  function ensureCurrentZoneMutation({ run, seasonDb, mapEngine = global.MapEngine }) {
+    const result = mapEngine.ensureCurrentZone(run, seasonDb);
+    if (result.generated) run.phase = "map";
+    return result;
+  }
+
+  function applyBossVictoryHandoffMutation({ run, seasonDb, ensureCurrentZoneMutation: ensureZone, buildFinalization }) {
     const flow = run.postBossFlow;
     const bossIndex = Number(flow?.bossIndex ?? run.bossIndex);
     const boss = seasonDb.bossOrder[bossIndex];
@@ -139,9 +145,9 @@
       buildFinalization(boss);
       return { destination: "finalization-pending" };
     }
-    ensureCurrentZone(); run.postBossFlow = null; run.phase = "map";
+    ensureZone(run); run.postBossFlow = null; run.phase = "map";
     return { destination: "map" };
   }
 
-  global.BossGameOverRuntime = Object.freeze({ derivePostBossFlow, applyPostBossResumeMutation, prepareBossRewardCandidatesMutation, applyBossRewardRerollMutation, applyBossRewardPickMetadataMutation, applyBossRewardPickMutation, advanceBossRewardMutation, applyBossResolutionMutation, applyBossVictoryHandoffMutation });
+  global.BossGameOverRuntime = Object.freeze({ derivePostBossFlow, applyPostBossResumeMutation, prepareBossRewardCandidatesMutation, applyBossRewardRerollMutation, applyBossRewardPickMetadataMutation, applyBossRewardPickMutation, advanceBossRewardMutation, applyBossResolutionMutation, ensureCurrentZoneMutation, applyBossVictoryHandoffMutation });
 })(typeof window !== "undefined" ? window : globalThis);

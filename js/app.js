@@ -2498,6 +2498,10 @@
     global.RunState.createCheckpoint(run);
   }
 
+  function ensureCurrentZoneMutation(current) {
+    return global.BossGameOverRuntime.ensureCurrentZoneMutation({ run: current, seasonDb, mapEngine: global.MapEngine });
+  }
+
   function specialMatchById(specialMatchId) { return global.SpecialMatchRuntime.byId(seasonDb, specialMatchId); }
   function specialMatchForNode(node) { return global.SpecialMatchRuntime.forNode(seasonDb, node); }
   function specialMatchTeamPlayers(specialMatch) { return global.SpecialMatchRuntime.teamPlayers(seasonDb, specialMatch); }
@@ -5138,11 +5142,24 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     return finishBossVictoryTransition(options);
   }
 
+  function hasPendingCanonicalFinalization(current) {
+    const status = String(current?.finalization?.status || "");
+    return current?.phase === "finalization" || ["pending", "hall-written", "development-written"].includes(status);
+  }
+
+  function createPostBossCheckpoint(current) {
+    try { global.RunState.createCheckpoint(current); }
+    catch (error) {
+      console.error("Post-boss checkpoint creation failed after canonical commit", error);
+      toast("Progresso Boss salvato; il checkpoint di recupero verrà ricreato più tardi.", "warning");
+    }
+  }
+
   function finishBossVictoryTransition() {
     const committed = persistGameplayMutation({
       label: "boss-victory-handoff",
       mutate: (current) => global.BossGameOverRuntime.applyBossVictoryHandoffMutation({
-        run: current, seasonDb, ensureCurrentZone,
+        run: current, seasonDb, ensureCurrentZoneMutation,
         buildFinalization: (boss) => { const snapshot = buildChampionSnapshot(boss); current.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId }; global.PermanentEffects.enqueueHall(current, snapshot); },
       }),
       onCommitted: () => { ui.pendingReward = null; ui.match = null; closeModal(); },
@@ -5150,7 +5167,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     });
     if (!committed.ok) {
       const recovered = committed.run;
-      const canonicalFinalization = recovered?.phase === "finalization" || (recovered?.finalization && recovered.finalization.status !== "applied");
+      const canonicalFinalization = hasPendingCanonicalFinalization(recovered);
       return { destination: canonicalFinalization ? "finalization-pending" : "post-boss-recovery", error: committed.error, finalization: recovered?.finalization };
     }
     if (committed.value.destination === "finalization-pending") {
@@ -5160,7 +5177,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         : { destination: "finalization-pending", finalization };
     }
     // Final-boss boundary is owned by the production helper: run.bossIndex >= seasonDb.bossOrder.length
-    if (committed.value.destination === "map") global.RunState.createCheckpoint(run);
+    if (committed.value.destination === "map") createPostBossCheckpoint(run);
     return committed.value;
   }
 
