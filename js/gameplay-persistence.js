@@ -13,11 +13,17 @@
     return "generic";
   }
 
-  function create({ save, load, getRun, replaceRun, stopRuntime, reportFailure }) {
+  function defaultCloneRun(run) {
+    if (typeof structuredClone === "function") return structuredClone(run);
+    return JSON.parse(JSON.stringify(run));
+  }
+
+  function create({ save, load, getRun, replaceRun, stopRuntime, reportFailure, cloneRun = defaultCloneRun }) {
     if (![save, load, getRun, replaceRun].every((value) => typeof value === "function")) throw new TypeError("GameplayPersistence requires save, load, getRun and replaceRun");
     return function persistGameplayMutation(options = {}) {
       const current = getRun();
       if (!current) return { ok: false, kind: "unreadable", error: new Error("No active run") };
+      const before = cloneRun(current);
       const seasonId = current.seasonId;
       let value;
       try {
@@ -28,12 +34,13 @@
         let canonical = null;
         try { canonical = load(seasonId, { readOnly: true }); } catch (_) { canonical = null; }
         const kind = canonical ? failureKind(error) : "unreadable";
-        if (canonical) replaceRun(canonical);
+        const recovered = canonical || before;
+        replaceRun(recovered);
         const message = MESSAGES[kind];
         reportFailure?.(message, kind, error, options);
-        options.onFailure?.({ error, kind, message, canonical });
-        options.rerender?.({ ok: false, kind, canonical });
-        return { ok: false, kind, error, run: canonical };
+        options.onFailure?.({ error, kind, message, canonical, run: recovered });
+        options.rerender?.({ ok: false, kind, canonical, run: recovered });
+        return { ok: false, kind, error, run: recovered, canonical };
       }
       options.onCommitted?.(value, current);
       options.rerender?.({ ok: true, run: current, value });
