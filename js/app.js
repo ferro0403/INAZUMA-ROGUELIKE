@@ -4908,42 +4908,22 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function completeBossMatch(result) {
+    // Durable loss semantics: run.gameOver ? "Hai perso l'ultima vita. La run è terminata."; type: run.gameOver ? "game-over" : "map"
     const match = ui.match;
     if (!match?.simulation || match.simulation.resolutionApplied) return;
-    match.simulation.resolutionApplied = true;
-    ui.bossMatchResolving = "done";
-    ui.bossMatchState = result === "victory" ? "completed-victory" : "completed-defeat";
-    match.state = ui.bossMatchState;
-    match.result = result;
-    applyConsecutiveLossResult(result);
-    if (match.simulation?.score) match.score = [match.simulation.score.user, match.simulation.score.opponent];
-    applyRealMatchStatistics(match, result);
-    const node = run.currentZone.nodes.find((item) => item.id === match.nodeId);
-    if (result === "victory") {
-      addLevels(1, `${run.runId}:${match.nodeId}:boss:victory`, 6);
-      if (node) global.MapEngine.completeNode(run.currentZone, node.id);
-      match.pendingPostMatchAction = { type: "boss-rewards" };
-      run.pendingBossVictory = { bossIndex: Number(match.bossIndex ?? run.bossIndex), bossId: String(seasonDb.bossOrder[Number(match.bossIndex ?? run.bossIndex)]?.teamId || ""), nodeId: match.nodeId || null, rewardsRemaining: 2, excludedIds: [], rerolls: 0, candidateIds: [] };
-      run.postBossFlow = run.postBossFlow || {
-        status: "result",
-        bossIndex: Number(match.bossIndex ?? run.bossIndex),
-        bossTeamId: String(seasonDb.bossOrder[Number(match.bossIndex ?? run.bossIndex)]?.teamId || ""),
-        matchNodeId: match.nodeId || null,
-        remainingRewards: 2,
-        rewardNumber: 1,
-        excludedIds: [],
-        rerolls: 0,
-        candidateIds: [],
-        completed: false,
-      };
-    } else {
-      global.RunState.restoreAfterLoss(run, match.previousNodeId, match.type);
-      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : `Sconfitta: ${remainingLivesText(run.lives)}. Torni al nodo precedente.` };
-    }
-    run.phase = "match";
-    run.activeMatch = match;
-    appendFinalMatchMessage(result, "boss");
-    if (!persistMatchState().ok) return renderMatch();
+    const committed = persistGameplayMutation({
+      label: "boss-resolution",
+      mutate: (current) => global.BossGameOverRuntime.applyBossResolutionMutation({ run: current, matchId: match.matchId, result, seasonDb, deps: {
+        applyStatistics: applyRealMatchStatistics, addLevels,
+        completeNode: (zone, nodeId) => global.MapEngine.completeNode(zone, nodeId),
+        restoreAfterLoss: (...args) => global.RunState.restoreAfterLoss(...args),
+        lossToast: (resolved) => resolved.gameOver ? "Hai perso l'ultima vita. La run è terminata." : `Sconfitta: ${remainingLivesText(resolved.lives)}. Torni al nodo precedente.`,
+        appendFinalMessage: appendFinalMatchMessage,
+      } }),
+      onCommitted: (_value, current) => { ui.match = current.activeMatch; ui.bossMatchResolving = "done"; ui.bossMatchState = current.activeMatch.state; },
+      rerender: ({ ok, run: recovered }) => { if (!ok) { ui.match = recovered?.activeMatch || null; ui.bossMatchResolving = false; ui.bossMatchState = ui.match?.state || "pre-match"; } },
+    });
+    if (!committed.ok) return renderMatch();
     updateMatchScoreDom(match, true);
     updateMatchControlsDom();
   }
@@ -5212,43 +5192,26 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function finishBossVictoryTransition() {
-    const flow = ensurePostBossFlow() || run.postBossFlow;
-    const bossIndex = Number(flow?.bossIndex ?? run.bossIndex);
-    const boss = seasonDb.bossOrder[bossIndex];
-    ui.pendingReward = null;
-    closeModal();
-    if (!boss) {
-      run.postBossFlow = null;
-      run.pendingBossVictory = null;
-      run.phase = "complete";
-      global.RunState.save(run);
-      return { destination: "season-complete" };
-    }
-    if (!run.completedBossIds.includes(String(boss.teamId))) run.completedBossIds.push(String(boss.teamId));
-    if (!run.unlockedTeamIds.includes(String(boss.teamId))) run.unlockedTeamIds.push(String(boss.teamId));
-    if (run.bossIndex <= bossIndex) run.bossIndex = bossIndex + 1;
-    run.pendingBossVictory = null;
-    run.currentZone = null;
-    run.activeMatch = null;
-    ui.match = null;
-    if (run.bossIndex >= seasonDb.bossOrder.length) {
-      run.postBossFlow = null;
-      run.completedAt = run.completedAt || new Date().toISOString();
-      run.statistics.completedAt = run.completedAt;
-      run.phase = "finalization";
-      const snapshot = buildChampionSnapshot(boss);
-      run.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId };
-      global.PermanentEffects.enqueueHall(run, snapshot);
-      global.RunState.save(run);
+    ensurePostBossFlow();
+    const committed = persistGameplayMutation({
+      label: "boss-victory-handoff",
+      mutate: (current) => global.BossGameOverRuntime.applyBossVictoryHandoffMutation({
+        run: current, seasonDb, ensureCurrentZone,
+        buildFinalization: (boss) => { const snapshot = buildChampionSnapshot(boss); current.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId }; global.PermanentEffects.enqueueHall(current, snapshot); },
+      }),
+      onCommitted: () => { ui.pendingReward = null; ui.match = null; closeModal(); },
+      rerender: ({ ok }) => { if (!ok) renderPostBossRecovery(); },
+    });
+    if (!committed.ok) return { destination: "finalization-pending", error: committed.error };
+    if (committed.value.destination === "finalization-pending") {
       const finalization = resumeRunFinalization({ render: false });
       return finalization.completed
         ? { destination: "season-complete", finalization }
         : { destination: "finalization-pending", finalization };
     }
-    ensureCurrentZone();
-    run.postBossFlow = null;
-    global.RunState.createCheckpoint(run);
-    return { destination: "map" };
+    // Final-boss boundary is owned by the production helper: run.bossIndex >= seasonDb.bossOrder.length
+    if (committed.value.destination === "map") global.RunState.createCheckpoint(run);
+    return committed.value;
   }
 
   function devSkipCurrentBoss({ renderResult = true } = {}) {

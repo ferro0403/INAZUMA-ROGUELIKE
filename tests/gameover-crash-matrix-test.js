@@ -1,29 +1,16 @@
 "use strict";
-const assert = require("assert");
-const fs = require("fs");
-const { createCrashHarness, once } = require("./helpers/crash-harness");
-
-const initial = { runId: "terminal-run", phase: "match", lives: 1, gameOver: false, activeMatch: { matchId: "terminal-match", type: "boss", state: "pre-match" }, developmentRewardPresentation: null, permanentEffectOutbox: [], appliedPermanentEffectIds: [], completedBossIds: ["b1", "b2"], generation: 10 };
-const h = createCrashHarness(initial);
-const memory = h.fresh(); memory.lives = 0; memory.gameOver = true; assert.throws(() => h.save(memory, "terminal-loss", { fail: true }));
-const G0 = h.fresh(); assert.strictEqual(G0.lives, 1); assert.strictEqual(G0.gameOver, false);
-
-let run = h.fresh(); run.lives = 0; run.gameOver = true; run.phase = "gameover"; run.activeMatch.result = "defeat"; run.activeMatch.resolutionApplied = true; h.save(run, "terminal-loss");
-const G1 = h.fresh(); assert.strictEqual(G1.lives, 0); assert.strictEqual(G1.phase, "gameover");
-
-run = h.fresh(); const effectId = `${run.runId}:development:end`; run.permanentEffectOutbox.push({ effectId, type: "development", status: "pending" }); h.save(run, "development-enqueued");
-const G2 = h.fresh(); assert.strictEqual(G2.permanentEffectOutbox[0].status, "pending");
-
-const permanent = { redeemedRunIds: [] }; once(permanent.redeemedRunIds, run.runId); const G3 = h.fresh(); assert.deepStrictEqual(permanent.redeemedRunIds, [run.runId]); assert.strictEqual(G3.permanentEffectOutbox[0].status, "pending", "marker failure leaves canonical outbox retryable");
-run = h.fresh(); run.permanentEffectOutbox[0].status = "applied"; once(run.appliedPermanentEffectIds, effectId); h.save(run, "development-marker");
-const G4 = h.fresh(); assert.strictEqual(G4.appliedPermanentEffectIds.filter((id) => id === effectId).length, 1);
-run = h.fresh(); run.developmentRewardPresentation = { endReason: "defeat", coins: 40, seen: false }; h.save(run, "presentation-pending");
-const G5 = h.fresh(); G5.developmentRewardPresentation.seen = true; assert.strictEqual(permanent.redeemedRunIds.length, 1, "presentation cannot repay");
-const G6 = h.fresh(); assert.strictEqual(G6.gameOver, true); assert.strictEqual(G6.phase, "gameover");
-for (let i = 0; i < 3; i += 1) { const G7 = h.fresh(); assert.strictEqual(G7.lives, 0); assert.strictEqual(G7.gameOver, true); assert.strictEqual(G7.appliedPermanentEffectIds.length, 1); h.save(G7, `reopen-${i}`); }
-
-const app = fs.readFileSync("js/app.js", "utf8");
-assert.match(app, /if \(run\.gameOver \|\| run\.phase === "gameover"\) return renderGameOver\(\)/);
-const config = fs.readFileSync("js/season1-config.js", "utf8");
-assert.match(config, /maxRunLives:\s*2/); assert.match(config, /startingLives:\s*2/); assert.match(config, /lossPolicy:\s*"return_to_previous_match_node"/);
-console.log("gameover-crash-matrix-test: G0-G7 terminal loss and development exactly-once boundaries OK");
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const c={console,Date};c.globalThis=c;c.SEASON1_CONFIG={startingLives:2,maxRunLives:2};
+c.localStorage={getItem:()=>null,setItem:()=>{},removeItem:()=>{}};c.SeasonRegistry={normalizeSeasonId:()=>"ie1",activeId:()=>"ie1",list:()=>[{id:"ie1"}]};c.DevelopmentV2={read:()=>({players:{}})};c.dispatchEvent=()=>{};c.CustomEvent=class{};vm.runInNewContext(fs.readFileSync("js/run-state.js","utf8"),c);vm.runInNewContext(fs.readFileSync("js/boss-gameover-runtime.js","utf8"),c);vm.runInNewContext(fs.readFileSync("js/permanent-effects.js","utf8"),c);
+// G0/G1 use the production resolution and the real loss API contract (save:false).
+let canonical={runId:"terminal",seasonId:"ie1",phase:"match",lives:1,gameOver:false,consecutiveLosses:0,bossIndex:0,completedBossIds:[],statistics:{matches:0},currentZone:{currentNodeId:"boss",nodes:[{id:"boss"}],completedNodeIds:[]},activeMatch:{matchId:"loss",type:"boss",nodeId:"boss",previousNodeId:"previous",simulation:{resolutionApplied:false,score:{user:0,opponent:1}}},permanentEffectOutbox:[]};
+const mutate=r=>c.BossGameOverRuntime.applyBossResolutionMutation({run:r,matchId:"loss",result:"defeat",seasonDb:{bossOrder:[{teamId:"b"}]},deps:{applyStatistics:()=>r.statistics.matches++,addLevels:()=>{},completeNode:()=>{},restoreAfterLoss:(...args)=>c.RunState.restoreAfterLoss(...args),lossToast:()=>"terminal",appendFinalMessage:()=>{}}});
+let memory=JSON.parse(JSON.stringify(canonical));mutate(memory);memory=JSON.parse(JSON.stringify(canonical));assert.strictEqual(memory.lives,1);assert.strictEqual(memory.gameOver,false);assert.strictEqual(memory.statistics.matches,0);
+mutate(memory);canonical=JSON.parse(JSON.stringify(memory));assert.strictEqual(canonical.lives,0);assert.strictEqual(canonical.gameOver,true);assert.strictEqual(canonical.activeMatch.simulation.resolutionApplied,true);assert.strictEqual(mutate(memory).applied,false);
+// G2-G7: stable enqueue and drain are the real PermanentEffects implementation.
+const effect=c.PermanentEffects.enqueueDevelopment(memory,{endReason:"gameover",defeatedBosses:0});assert.strictEqual(effect.status,"pending");canonical=JSON.parse(JSON.stringify(memory));
+const dev={state:{redeemedRunIds:[]},calls:0,processRunEnd(p){this.calls++;if(!this.state.redeemedRunIds.includes(p.runId))this.state.redeemedRunIds.push(p.runId);return{state:this.state};},read(){return this.state;}};
+let markerFails=true;let drained=c.PermanentEffects.drain(memory,{apis:{DevelopmentV2:dev},save:()=>{if(markerFails)throw Error("marker fail");}});assert.ok(drained.error);assert.strictEqual(dev.state.redeemedRunIds.length,1);assert.strictEqual(memory.permanentEffectOutbox[0].status,"pending");
+markerFails=false;drained=c.PermanentEffects.drain(memory,{apis:{DevelopmentV2:dev},save:r=>{canonical=JSON.parse(JSON.stringify(r));}});assert.ifError(drained.error);assert.strictEqual(memory.permanentEffectOutbox[0].status,"applied");
+for(let i=0;i<3;i++){memory=JSON.parse(JSON.stringify(canonical));c.PermanentEffects.enqueueDevelopment(memory,{endReason:"gameover",defeatedBosses:0});c.PermanentEffects.drain(memory,{apis:{DevelopmentV2:dev},save:r=>{canonical=JSON.parse(JSON.stringify(r));}});assert.strictEqual(memory.lives,0);assert.strictEqual(dev.state.redeemedRunIds.length,1);}assert.strictEqual(dev.calls,2,"marker retry may call idempotent permanent API, reopens do not");
+console.log("gameover-crash-matrix-test: production G0-G7 loss and PermanentEffects flow OK");

@@ -288,7 +288,7 @@
     return save(run);
   }
   function getLifeDamageForMatch(matchType) { return LIFE_DAMAGE_BY_MATCH_TYPE[matchType] ?? 1; }
-  function restoreAfterLoss(run, previousNodeId = null, matchType = run?.activeMatch?.type) { run.lives = Math.max(0, Math.min(runLivesLimit(), Number(run.lives) || 0) - getLifeDamageForMatch(matchType)); if (run.lives <= 0) { run.lives = 0; run.gameOver = true; run.phase = "gameover"; return save(run); } const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null; if (!targetNodeId) throw new Error("Previous match node unavailable"); if (run.currentZone) { run.currentZone.currentNodeId = targetNodeId; run.currentZone.pendingNodeId = null; } run.phase = "map"; run.gameOver = false; return save(run); }
+  function restoreAfterLoss(run, previousNodeId = null, matchType = run?.activeMatch?.type, options = {}) { run.lives = Math.max(0, Math.min(runLivesLimit(), Number(run.lives) || 0) - getLifeDamageForMatch(matchType)); if (run.lives <= 0) { run.lives = 0; run.gameOver = true; run.phase = "gameover"; return options.save === false ? run : save(run); } const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null; if (!targetNodeId) throw new Error("Previous match node unavailable"); if (run.currentZone) { run.currentZone.currentNodeId = targetNodeId; run.currentZone.pendingNodeId = null; } run.phase = "map"; run.gameOver = false; return options.save === false ? run : save(run); }
 
   global.RunPersistenceError = RunPersistenceError;
   global.RunStorage = Object.assign(RunStorage, { STORAGE_SCHEMA_VERSION, diagnostics });
