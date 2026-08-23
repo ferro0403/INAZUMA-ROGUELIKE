@@ -56,6 +56,7 @@
   function saveProfileTeamIdentity(teamIdentity, options = {}) {
     global.PersistenceRecoveryGuard?.assertWritable(options);
     global.PersistenceRecoveryGuard?.reserve(options);
+    global.PersistenceRecoveryGuard?.assertWritable(options);
     const cleanIdentity = normalizeTeamIdentity(teamIdentity);
     const current = loadProfile();
     localStorage.setItem(PROFILE_KEY, JSON.stringify({ version: 1, teamIdentity: cleanIdentity, preferences: current.preferences }));
@@ -65,6 +66,7 @@
   function saveProfilePreferences(preferences = {}, options = {}) {
     global.PersistenceRecoveryGuard?.assertWritable(options);
     global.PersistenceRecoveryGuard?.reserve(options);
+    global.PersistenceRecoveryGuard?.assertWritable(options);
     const current = loadProfile();
     const cleanPreferences = { smartAutoLineup: preferences.smartAutoLineup === true };
     localStorage.setItem(PROFILE_KEY, JSON.stringify({ version: 1, teamIdentity: current.teamIdentity, preferences: cleanPreferences }));
@@ -180,6 +182,7 @@
   function remove(seasonId = null, options = {}) {
     global.PersistenceRecoveryGuard?.assertWritable(options);
     global.PersistenceRecoveryGuard?.reserve(options);
+    global.PersistenceRecoveryGuard?.assertWritable(options);
     const sid = seasonIdOf(seasonId);
     if (options.expectedGeneration == null) throw persistenceError("missing-expected-generation", "delete-concurrency", { seasonId: sid, recoverable: true });
     const expected = Number(options.expectedGeneration); let generation, commitId, envelope, headValue;
@@ -264,6 +267,7 @@
       if (primary?.state === "active" && primary.runId !== normalized.runId && !options.replaceRun) throw persistenceError("lineage-mismatch", "concurrency", { seasonId: sid, runId: normalized.runId, generation: currentGeneration, recoverable: true });
       if (primary?.state === "deleted" && !options.replaceRun) throw persistenceError("lineage-mismatch", "concurrency", { seasonId: sid, runId: normalized.runId, generation: currentGeneration, recoverable: true });
       global.PersistenceRecoveryGuard?.reserve(options);
+      global.PersistenceRecoveryGuard?.assertWritable(options);
       const generation = currentGeneration + 1, commitId = makeCommitId(generation);
       const envelope = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "active", runId: normalized.runId, payload: JSON.parse(json) };
       const rawEnvelope = JSON.stringify(envelope), headValue = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "active", runId: normalized.runId };

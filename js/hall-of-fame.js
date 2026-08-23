@@ -113,6 +113,7 @@
   function saveArchive(archive, options = {}) {
     global.PersistenceRecoveryGuard?.assertWritable(options);
     global.PersistenceRecoveryGuard?.reserve(options);
+    global.PersistenceRecoveryGuard?.assertWritable(options);
     const clean = sanitizeArchive({ ...archive, updatedAt: options.preserveTimestamp ? archive?.updatedAt : nowIso() });
     try {
       const saved = writePrimaryArchive(clean); emitSave(options); return saved;

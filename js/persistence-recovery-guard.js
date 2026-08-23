@@ -27,9 +27,19 @@
   }
   function getState() { return { ...state }; }
   function isBlocked() { return state.blocked; }
+  function persistentJournal() {
+    if (!state.uid) return null;
+    try { const raw = global.localStorage.getItem(`inazuma.cloud.restoreJournal.${state.uid}`); return raw ? JSON.parse(raw) : null; }
+    catch (error) { throw failure(error, "storage-access-error", "restore-fence-read"); }
+  }
   function assertWritable(options = {}) {
-    if (!state.blocked || (options.restoreOwnershipToken && options.restoreOwnershipToken === state.operationId)) return true;
-    throw Object.assign(new Error("restore-recovery-required"), { code: "restore-recovery-required", stage: state.stage, operationId: state.operationId });
+    const journal = persistentJournal();
+    if (options.restoreOwnershipToken) {
+      if (journal?.uid === state.uid && journal.operationId === options.restoreOwnershipToken && journal.stage !== "complete") return true;
+      throw Object.assign(new Error("restore-ownership-lost"), { code: "restore-ownership-lost", operationId: options.restoreOwnershipToken });
+    }
+    if (!journal && !state.blocked) return true;
+    throw Object.assign(new Error("restore-recovery-required"), { code: "restore-recovery-required", stage: journal?.stage || state.stage, operationId: journal?.operationId || state.operationId });
   }
   function bindUid(uid) {
     state = { blocked: false, uid: uid || null, operationId: null, stage: null, status: "complete", error: null };
@@ -42,7 +52,7 @@
     catch (_) { return setBlocked({ uid, stage: "journal-parse", status: "safety", error: "restore-journal-repair-needed" }); }
   }
 
-  const api = Object.freeze({ EPOCH_KEY, isBlocked, getState, assertWritable, setBlocked, clearBlocked, bindUid, readEpoch, reserve, bump, classifyStorageError: failure });
+  const api = Object.freeze({ EPOCH_KEY, isBlocked, getState, assertWritable, setBlocked, clearBlocked, bindUid, readEpoch, reserve, bump, persistentJournal, classifyStorageError: failure });
   global.PersistenceRecoveryGuard = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(globalThis);
