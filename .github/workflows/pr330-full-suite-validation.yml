@@ -1,0 +1,68 @@
+name: PR330 Full Suite Validation
+
+on:
+  push:
+    branches:
+      - codex/fix-recruitment-full-roster-issues-mu5bva
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Syntax check
+        run: node --check js/app.js
+
+      - name: Full test suite
+        shell: bash
+        run: |
+          set -euo pipefail
+          total=0
+          passed=0
+          for f in tests/*-test.js; do
+            total=$((total+1))
+            echo "=== RUN $f ==="
+            node "$f"
+            passed=$((passed+1))
+          done
+          echo "FULL_SUITE_TOTAL=$total"
+          echo "FULL_SUITE_PASS=$passed"
+          echo "FULL_SUITE_FAIL=0"
+
+      - name: Explicit critical regression tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          tests=(
+            tests/recruitment-production-path-e2e-test.js
+            tests/recruitment-full-roster-e2e-test.js
+            tests/boss-reward-production-crash-test.js
+            tests/boss-crash-matrix-test.js
+            tests/boss-handoff-no-nested-save-test.js
+            tests/boss9-reopen-regression-test.js
+            tests/gameover-crash-matrix-test.js
+            tests/app-gameplay-persistence-transactions-test.js
+            tests/app-gameplay-persistence-callsite-ownership-test.js
+            tests/smart-lineup-save-failure-test.js
+            tests/storage-security-error-test.js
+            tests/storage-quota-budget-test.js
+          )
+          for f in "${tests[@]}"; do
+            echo "=== CRITICAL $f ==="
+            node "$f"
+          done
+
+      - name: Diff and status checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check
+          git status --short
