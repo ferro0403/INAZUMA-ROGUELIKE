@@ -171,13 +171,13 @@ assert.strictEqual(pending.totalRewards, 1);
 runtime.completeCurrentReward(otherRun, db, pending);
 assert.strictEqual(otherRun.pendingSpecialMatchReward, null);
 
-// Integration/source contract for the actual native full-roster cancel wiring (no jsdom in this repository).
+// Integration/source contract: recruitment and reward completion share one canonical transaction.
 const appSource = fs.readFileSync("js/app.js", "utf8");
 const bridgeSource = fs.readFileSync("js/special-reward-ui-bridge.js", "utf8");
-assert(appSource.includes('{ allowCancel: true, cancelLabel: "RIFIUTA", recruitmentSource: "special_match_reward"'), "special reward must request recruitPlayer's native cancel");
-assert(appSource.includes("completeCurrentReward(run, seasonDb, run.pendingSpecialMatchReward)"), "recruit callback must complete the live post-save pending reward");
+assert(appSource.includes('allowCancel: true,'), "special reward must request recruitPlayer's native cancel");
+assert(appSource.includes('transactionMutate: (current) => { transition = global.SpecialMatchRuntime.completeCurrentReward(current'), "recruit and special reward completion must be atomic");
 assert(appSource.includes('id="cancel-recruit"'), "recruitPlayer must render its native cancel control");
-assert(appSource.includes('document.getElementById("cancel-recruit")?.addEventListener("click", () => {\n      closeModal();\n      done(false);'), "native cancel must call done(false)");
+assert(appSource.includes('complete("cancelled")'), "native cancel must expose the structured cancelled result");
 assert(!bridgeSource.includes("SpecialMatchRuntime?.decline?."), "bridge must not resolve replacement rewards");
 assert(!bridgeSource.includes('phase = "map"'), "bridge must not force map phase");
 assert(!bridgeSource.includes("returnToMapWithoutReload"), "bridge must not navigate replacement cancellation");
