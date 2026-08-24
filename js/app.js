@@ -6429,5 +6429,16 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions };
+  if (global.__INAZUMA_TEST_MODE__ === true) {
+    global.__INAZUMA_RECRUITMENT_TEST__ = {
+      recruitPlayer, showPlayerOffer, showNextBossReward, showSpecialMatchReward, openPull,
+      setContext: (context = {}) => {
+        if (context.run) { run = context.run; global.run = run; }
+        if (context.seasonDb) { seasonDb = context.seasonDb; activeSeason = { id: seasonDb.seasonId }; seasonPlayersById = new Map((seasonDb.players || []).map((player) => [String(player.playerId), player])); }
+        if (context.freeAgentsDb) { freeAgentsDb = context.freeAgentsDb; freeAgentsById = new Map((freeAgentsDb.players || []).map((player) => [String(player.playerId), player])); }
+      },
+      getRun: () => run,
+    };
+  }
   init();
 })(globalThis);
