@@ -1,0 +1,387 @@
+AUDIT A — MAIN vs REROLL — GLOBAL BEHAVIORAL DIFF
+=================================================
+
+A. EXECUTIVE SUMMARY
+--------------------
+
+Ho confrontato la baseline main attesa con il target reroll atteso, esaminando:
+- i 38 commit intercorrenti;
+- tutti i file runtime modificati;
+- le trasformazioni da salvataggi diretti a persistGameplayMutation;
+- i callback e gli handoff successivi alle mutazioni;
+- i nuovi runtime di boss, game over, cloud restore e permanent effects;
+- la copertura dei 114 test automatici;
+- i percorsi condivisi fra boss reward, pull normali e ricompense speciali.
+
+Risultato complessivo:
+- 12 aree PASS/equivalenti o intenzionalmente hardenizzate;
+- 2 aree suspicious autonome;
+- 2 famiglie di regressione confermate;
+- 4 aree HIGH;
+- 2 famiglie di rischio CRITICAL.
+
+Le regressioni concrete sono riconducibili allo stesso cambiamento nel percorso
+condiviso di reclutamento profile-aware:
+
+1. Un roster profile-aware pieno viene ora trattato come errore transazionale,
+   anziché proseguire verso la selezione della riserva da sostituire.
+2. Il fallimento del reclutamento lascia l'offerta in uno stato one-shot non
+   recuperabile, con conferma già disabilitata e nessun rerender/reopen.
+
+L'impatto attraversa almeno boss reward IE2/IE3, pull normali profile-aware,
+potenzialmente special-match reward e ogni stagione profile-aware presente o
+futura con roster pieno.
+
+La suite verde non contraddice il risultato: i test di boss persistence
+esercitano soprattutto mutation/runtime isolate, ma non il flusso browser reale
+completo click -> recruitPlayer -> commit -> callback -> reward advance -> reload.
+
+
+1. BASELINE E WORKTREE
+----------------------
+
+Baseline attesa:
+16eb570e212f2935afef80f518e4ab6f0818d1dc
+
+Target/HEAD atteso e verificato:
+d7bf196d142a8d13c89c91833bcd6c548ce7e978
+
+Branch/worktree locale: work
+Merge-base: 16eb570e212f2935afef80f518e4ab6f0818d1dc
+Commit avanti: 38
+Working tree durante l'audit: pulito
+
+Nel clone non erano presenti refs locali chiamati main o reroll; entrambi gli
+oggetti SHA richiesti erano disponibili e il merge-base coincideva con la
+baseline attesa.
+
+
+B. REGRESSIONI CONFERMATE
+-------------------------
+
+B1. ROSTER PIENO PROFILE-AWARE: SOSTITUZIONE PANCHINA NON PIU' RAGGIUNGIBILE
+
+Aree:
+- F — Boss / post-boss
+- G — Pull normali
+- H — Special match rewards
+- N — Stagioni / profiled runtime
+
+Main behavior:
+Su main, acquireOrUpgradeProfile poteva restituire acquired, upgraded,
+ineligible o roster-full. Il chiamante completava acquired/upgraded, ritornava
+solo per ineligible e, per roster-full, proseguiva nel codice comune sottostante
+aprendo la UI “Rosa piena — Sostituisci una riserva”.
+
+Reroll behavior:
+Su reroll, recruitPlayer accetta esclusivamente upgraded e acquired; qualsiasi
+altro stato, compreso roster-full, genera recruit-ineligible. Il runtime
+profile-aware continua correttamente a restituire roster-full quando la rosa ha
+raggiunto la capacità massima. Poiché l'eccezione viene gestita nello stesso ramo
+profile-aware, l'esecuzione non raggiunge più la UI generica di bench replacement.
+
+Evidenza principale:
+- js/app.js, recruitPlayer, circa righe 3727-3787;
+- js/profiled-season.js, acquireOrUpgradeProfile, circa righe 79-93.
+
+Perché è concreta:
+1. IE2/IE3 arriva al primo boss con roster pieno;
+2. si sceglie Shawn o un altro candidato nuovo;
+3. acquireOrUpgradeProfile restituisce roster-full;
+4. reroll lo converte in recruit-ineligible;
+5. nessun giocatore viene aggiunto;
+6. non si apre la selezione della riserva;
+7. il boss reward non avanza.
+
+Rischio: CRITICAL.
+
+Test gap:
+Manca un test production-real/browser che attraversi click candidato con roster
+pieno -> roster-full -> scelta riserva -> commit combinato recruit+reward ->
+callback -> reward successivo -> reload.
+
+
+B2. DEADLOCK UI DOPO RECLUTAMENTO RIFIUTATO O FALLITO
+
+Aree:
+- Q — Error handling / UX deadlock
+- impatto su F, G e H
+
+Reroll behavior:
+Nel modal dell'offerta, il primo click su conferma imposta pickConfirmed=true,
+disabilita immediatamente il pulsante e invoca options.onPick(player).
+
+Se il reclutamento profile-aware fallisce o viene rifiutato:
+- viene chiamato done(false);
+- non viene eseguito closeModal;
+- non viene riaperta l'offerta;
+- non viene azzerato pickConfirmed;
+- non viene riabilitato il pulsante;
+- non è configurato un rerender per recruit-profile.
+
+Nel boss reward il callback avanza solo se completed è true; sul false non viene
+eseguita recovery UI. Per recruit-ineligible anche il messaggio d'errore è
+soppresso.
+
+Evidenza principale:
+- js/app.js, showPlayerOffer, circa righe 3708-3713;
+- js/app.js, recruitPlayer, circa righe 3731-3754;
+- js/app.js, showNextBossReward, circa righe 5127-5130.
+
+Rischio: CRITICAL.
+
+Questo materializza il pattern:
+pickConfirmed=true -> button.disabled=true -> mutation -> failure -> nessun reset,
+rerender o retry.
+
+
+C. AREE SOSPETTE
+----------------
+
+C1. MUTAZIONI TRANSAZIONALI CHE USANO ANCORA run E RIFERIMENTI ESTERNI
+
+Rischio: HIGH.
+
+Casi principali:
+- cambio ruolo panchina muta run invece del parametro current;
+- completamento nodo usa run.currentZone, run.phase e statistiche su run;
+- stato match copia ui.match dentro run.activeMatch;
+- assegnazione 5v5 muta run dentro la transaction;
+- consumabili e statistiche usano helper/global run;
+- equip/unequip catturano entry esterne e usano helper che mutano run.inventory.
+
+All'ingresso della transaction current e run sono oggi lo stesso oggetto, quindi
+questi casi non sono automaticamente regressioni. Diventano fragili quando un
+fallimento provoca replaceRun con un clone/canonico mentre closure DOM, entry e
+array restano legati all'oggetto precedente.
+
+Classificazione: suspicious, non regressione provata.
+Deep dive: sì, transaction closure ownership.
+
+C2. FAILURE RECOVERY NON UNIFORME FRA LE TRANSACTION
+
+Rischio: HIGH.
+
+Il wrapper supporta onMutationError, onFailure, rerender e onCommitted, ma non
+tutti i callsite usano rerender o una recovery route. In particolare:
+- recruit non-profile senza roster pieno non ha rerender;
+- bench replacement non ha rerender;
+- alcune consumable transaction hanno onCommitted vuoto e avanzano la UI dopo il
+  ritorno;
+- callback esterni possono conservare riferimenti appartenenti allo stato
+  pre-rollback.
+
+Classificazione: suspicious. Il problema è provato per recruit-profile; per gli
+altri callsite serve fault injection E2E reale.
+
+
+D. MAPPA COMPLETA PER AREA
+--------------------------
+
+A. Bootstrap/Home/Nav
+Main: bootstrap e route locali.
+Reroll: bootstrap subordinato a recovery/restore gate con retry.
+Classificazione: intentional change.
+Rischio: MEDIUM.
+Copertura: harness/integration cloud e home; manca browser E2E completo.
+Deep dive: sì, dopo recruitment.
+
+B. Run/Onboarding/Draft
+Main: mutazioni e save diretti.
+Reroll: formazione e final draft transazionali, advance post-commit.
+Classificazione: PASS.
+Rischio: LOW.
+Copertura: harness transaction e draft-to-squad persistence.
+Deep dive: no.
+
+C. Squad/Smart Lineup
+Main: modifiche salvate direttamente.
+Reroll: mutazioni atomiche e Smart Lineup pre-save con rollback.
+Classificazione: PASS.
+Rischio: MEDIUM.
+Copertura: unit/runtime/failure; non browser E2E completo.
+Deep dive: facoltativo.
+
+D. Map/Progression
+Main: completeNode e save.
+Reroll: stessa sequenza dentro transaction.
+Classificazione: PASS.
+Rischio: MEDIUM.
+Copertura: map/season tests e persistence stress.
+Deep dive: no.
+
+E. Match/5v5/Special
+Main: stato match salvato direttamente.
+Reroll: stato e risoluzione transazionali.
+Classificazione: PASS.
+Rischio: MEDIUM.
+Copertura: simulator, retry e 5v5 UI harness.
+Deep dive: E2E refresh utile.
+
+F. Boss/Post-boss/Game over
+Main: reward recruit con rosa piena conduce a sostituzione riserva.
+Reroll: roster-full diventa errore e reward non avanza.
+Classificazione: REGRESSION CONFIRMED.
+Rischio: CRITICAL.
+Copertura: forte sul runtime/crash, manca click-to-roster-to-reload.
+Deep dive: sì, Audit B.
+
+G. Pull normali
+Main: recruit condiviso inclusa sostituzione rosa piena.
+Reroll: condivide il blocco profile-aware.
+Classificazione: REGRESSION CONFIRMED.
+Rischio: CRITICAL.
+Copertura: pull value/detail, non acquisition E2E full-roster.
+Deep dive: sì.
+
+H. Special rewards
+Main: claim/decline e ritorno mappa.
+Reroll: decline coperto; claim profile-aware esposto al recruit condiviso.
+Classificazione: SUSPICIOUS.
+Rischio: HIGH.
+Copertura: harness decline e season integration.
+Deep dive: sì.
+
+I. Trade
+Main: sostituzione diretta e save.
+Reroll: trade e profile upgrade atomici.
+Classificazione: PASS.
+Rischio: MEDIUM.
+Copertura: integration profile-aware, preview e transaction/static.
+Deep dive: no.
+
+J. Inventory/Equipment
+Main: mutazioni dirette.
+Reroll: transaction con rollback; alcuni helper globali.
+Classificazione: SUSPICIOUS.
+Rischio: HIGH.
+Copertura: unit/static/harness, manca fault-injection UI E2E.
+Deep dive: sì.
+
+K. Development Center
+Main: write diretto e alcuni errori storage degradati a empty.
+Reroll: guarded writes, SecurityError fail-closed, permanent effects resumable.
+Classificazione: PASS / intentional hardening.
+Rischio: MEDIUM.
+Copertura: unit, UI regression e cross-store transaction.
+Deep dive: no.
+
+L. Album
+Main: unlock cross-store immediato.
+Reroll: effect enqueue/commit e replay idempotente.
+Classificazione: PASS.
+Rischio: MEDIUM.
+Copertura: cross-store transaction e migration.
+Deep dive: no.
+
+M. Hall of Fame
+Main: archive scritto durante finalizzazione.
+Reroll: finalizzazione pending/resumable e guarded write.
+Classificazione: PASS.
+Rischio: MEDIUM.
+Copertura: cross-store hall/finalization tests.
+Deep dive: no.
+
+N. Seasons/Profiled runtime
+Main: roster-full conservato come ramo sostituzione.
+Reroll: caller lo classifica come ineligible.
+Classificazione: REGRESSION CONFIRMED.
+Rischio: CRITICAL.
+Copertura: numerosi harness IE1 S2/S3/IE3; manca browser boss acquisition.
+Deep dive: sì.
+
+O. Statistics/History/Summary
+Main: side effect prima del save, possibile parziale.
+Reroll: statistiche nella mutation e finalization resumable.
+Classificazione: PASS.
+Rischio: MEDIUM.
+Copertura: unit/integration/finalization crash matrix.
+Deep dive: facoltativo.
+
+P. Account/Cloud/Local
+Main: restore meno fenced.
+Reroll: restore journal, account fencing e retry repair state.
+Classificazione: intentional change.
+Rischio: HIGH.
+Copertura: forte protocol/harness; niente Firebase/browser E2E reale.
+Deep dive: sì, separato.
+
+Q. Error handling/deadlock
+Main: nessun nuovo intervallo click-to-transaction failure.
+Reroll: conferma disabilitata prima del commit; failure senza recovery.
+Classificazione: REGRESSION CONFIRMED.
+Rischio: CRITICAL.
+Copertura: static/harness; manca DOM production-real con fault injection.
+Deep dive: sì.
+
+
+E. TOP 10 TEST E2E MANCANTI
+---------------------------
+
+1. IE2 Alpine -> Shawn -> confirm -> roster contains Shawn -> reward advances ->
+   reload -> Shawn ancora presente, partendo da roster pieno e attraversando la
+   scelta della riserva.
+2. IE3 primo boss -> acquisizione reward -> roster update -> advance -> reload,
+   con roster pieno e candidato nuovo.
+3. IE2 pull normale profile-aware con roster pieno -> selezione riserva ->
+   oggetto equipaggiato recuperato -> commit -> reload.
+4. Boss reward con RunState.save che lancia stale-write dopo il click -> modal
+   recuperabile -> retry riuscito -> un solo recruit e un solo reward advance.
+5. Boss reward con quota/storage failure -> pulsante riabilitato o recovery
+   screen -> reload -> reward ancora pending e roster invariato.
+6. Special-match reward profile-aware con roster pieno -> sostituzione riserva ->
+   claim completo -> ritorno mappa -> reload.
+7. Equip replacement con save failure -> entry e inventario DOM/canonico
+   ripristinati -> retry -> reload senza item duplicati o persi.
+8. Intensive training con save failure -> nessuna crescita/consumo -> retry ->
+   crescita singola -> reload.
+9. Boss reward 1/2 recruit -> refresh immediato -> reward 2/2 -> skip/recruit ->
+   next zone -> secondo reload.
+10. Cloud restore interrotto durante bootstrap -> account reopen -> repair retry
+    dalla UI -> Continue abilitato -> run corretta senza routing deadlock.
+
+
+F. TOP 10 DEEP DIVE
+-------------------
+
+1. Post-boss IE2/IE3 e recruitment full-roster.
+2. Recruitment shared path nei pull normali.
+3. Failure recovery dei modal one-shot.
+4. Special-match reward acquisition.
+5. Inventory/equipment transaction closure ownership.
+6. Consumabili/training transaction closure ownership.
+7. Squad/Smart Lineup sotto save failure e stale tab.
+8. Match result -> reward -> refresh/reopen.
+9. Cloud/bootstrap UI gating reale.
+10. Finalization/Hall/Development/Album browser handoff.
+
+
+G. VERIFICHE ESEGUITE DURANTE L'AUDIT
+-------------------------------------
+
+Comandi principali:
+- git cat-file -t 16eb570e212f2935afef80f518e4ab6f0818d1dc
+- git merge-base 16eb570e212f2935afef80f518e4ab6f0818d1dc d7bf196d142a8d13c89c91833bcd6c548ce7e978
+- git rev-list --count 16eb570e212f2935afef80f518e4ab6f0818d1dc..d7bf196d142a8d13c89c91833bcd6c548ce7e978
+- git diff --stat 16eb570e..d7bf196
+- git diff --name-status 16eb570e..d7bf196
+- git diff --unified=40 16eb570e..d7bf196 -- js/app.js
+- git show 16eb570e:js/app.js
+- ricerca sistematica di persistGameplayMutation, mutate, onCommitted, done,
+  closeModal, disabled, pendingBossVictory, postBossFlow, advanceBossReward,
+  recruit e acquireOrUpgrade.
+- node --test tests/boss-reward-production-crash-test.js tests/boss-flow-test.js tests/ie3-secondary-double-pull-clean-test.js tests/app-gameplay-persistence-transactions-test.js
+  Risultato: 4/4 superati.
+- node --test tests/*.js
+  Risultato: 114 test superati, 0 falliti.
+- git diff --check
+- git status --short --branch
+
+
+VERDETTO FINALE
+---------------
+
+MAIN->REROLL GLOBAL BEHAVIORAL AUDIT — REGRESSIONI PRESENTI.
+MAPPA COMPLETA DELLE AREE A RISCHIO PRODOTTA.
+NESSUNA MODIFICA AL CODICE APPLICATA.
+PRONTO PER DEEP DIVE MIRATI.
