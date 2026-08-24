@@ -69,9 +69,10 @@
   function readLocalSnapshot(apis = global) {
     const archive = apis.HallOfFameStorage._loadArchive();
     const teams = Array.isArray(archive?.teams) ? archive.teams.map(clone) : [];
-    return normalize({
+    const runSnapshot = (seasonId) => { const run = apis.RunState.load(seasonId, { readOnly: true }); if (!run) return null; const clean = clone(run); delete clean.storageGeneration; delete clean.storageCommitId; return clean; };
+    const snapshot = normalize({
       profile: apis.RunState.loadProfile(),
-      runs: { ie1: apis.RunState.load("ie1", { readOnly: true }), ie2: apis.RunState.load("ie2", { readOnly: true }), ie1_s2: apis.RunState.load("ie1_s2", { readOnly: true }), ie1_s3: apis.RunState.load("ie1_s3", { readOnly: true }) },
+      runs: { ie1: runSnapshot("ie1"), ie2: runSnapshot("ie2"), ie1_s2: runSnapshot("ie1_s2"), ie1_s3: runSnapshot("ie1_s3") },
       album: apis.AlbumProgress.read(),
       development: apis.DevelopmentV2.read(),
       hallOfFame: {
@@ -81,6 +82,11 @@
         index: Array.isArray(archive?.index) ? archive.index : [],
       },
     });
+    snapshot.runProvenance = Object.fromEntries(Object.entries(snapshot.runs).map(([seasonId, run]) => {
+      const diagnostic = apis.RunStorage?.diagnostics?.(seasonId) || {};
+      return [seasonId, { runId: run?.runId || null, sourceLocalGeneration: Number(diagnostic.canonicalGeneration || 0), sourceLocalCommitId: diagnostic.canonicalCommitId || null }];
+    }));
+    return snapshot;
   }
 
   function hallIndex(snapshot) {
@@ -213,6 +219,17 @@
     return { snapshot: clean, payloads, hashes, hallEntries };
   }
 
+  // Transaction adapters use this exact identity predicate inside their
+  // server-side transaction. A missing expected manifest means create-only.
+  function manifestMatchesExpected(actual, expected) {
+    if (!expected) return !actual;
+    if (!actual || actual.accountUid !== expected.accountUid) return false;
+    return actual.revision === expected.revision
+      && (actual.cloudCommitId ?? null) === (expected.cloudCommitId ?? null)
+      && stableSerialize(actual.sectorHashes) === stableSerialize(expected.sectorHashes)
+      && stableSerialize(actual.hallTeamHashes || {}) === stableSerialize(expected.hallTeamHashes || {});
+  }
+
   async function compareSnapshots(expected, actual, cryptoApi = global.crypto) {
     const expectedPrepared = await prepareSnapshot(expected, cryptoApi);
     const actualPrepared = await prepareSnapshot(actual, cryptoApi);
@@ -238,14 +255,20 @@
   }
   function sectorLogicalHash(prepared, name) { return isRunSector(name) && prepared.payloads[name] === null ? null : prepared.hashes[name]; }
 
-  function buildManifest(prepared, uid, deviceId, timestamp) {
-    return { schemaVersion: 1, revision: 1, initialized: true, createdAt: timestamp, updatedAt: timestamp, source: "local-first-association", deviceId, accountUid: uid,
+  function buildManifest(prepared, uid, deviceId, timestamp, commit = {}) {
+    const revision = Number(commit.revision || 1), cloudCommitId = commit.cloudCommitId || null;
+    const runProvenance = Object.fromEntries(RUN_SECTOR_NAMES.flatMap((name) => {
+      const run = prepared.payloads[name], seasonId = name.slice(4); if (!run) return [];
+      const source = prepared.snapshot.runProvenance?.[seasonId] || {};
+      return [[seasonId, { runId: run.runId || source.runId || null, sourceLocalGeneration: Number(source.sourceLocalGeneration || 0), sourceLocalCommitId: source.sourceLocalCommitId || null, logicalHash: sectorLogicalHash(prepared, name), sourceDeviceId: deviceId, cloudRevision: revision, cloudCommitId }]];
+    }));
+    return { schemaVersion: 1, revision, baseRevision: Number(commit.baseRevision || 0), cloudCommitId, initialized: true, createdAt: timestamp, updatedAt: timestamp, source: "local-first-association", deviceId, sourceDeviceId: deviceId, accountUid: uid, runProvenance,
       sectors: { profile: true, run_ie1: prepared.payloads.run_ie1 !== null, run_ie2: prepared.payloads.run_ie2 !== null, run_ie1_s2: prepared.payloads.run_ie1_s2 !== null, run_ie1_s3: prepared.payloads.run_ie1_s3 !== null, album: true, development: true, hallOfFameCount: prepared.hallEntries.length },
       sectorHashes: { profile: prepared.hashes.profile, run_ie1: prepared.payloads.run_ie1 === null ? null : prepared.hashes.run_ie1, run_ie2: prepared.payloads.run_ie2 === null ? null : prepared.hashes.run_ie2, run_ie1_s2: prepared.payloads.run_ie1_s2 === null ? null : prepared.hashes.run_ie1_s2, run_ie1_s3: prepared.payloads.run_ie1_s3 === null ? null : prepared.hashes.run_ie1_s3, album: prepared.hashes.album, development: prepared.hashes.development, hall_index: prepared.hashes.hall_index },
-      sectorRevisions: Object.fromEntries(SECTOR_NAMES.map((name) => [name, 1])), hallTeamIds: prepared.hallEntries.map((entry) => entry.hallTeamId),
-      hallTeamHashes: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, entry.payloadHash])), hallTeamRevisions: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, 1])) };
+      sectorRevisions: Object.fromEntries(SECTOR_NAMES.map((name) => [name, revision])), hallTeamIds: prepared.hallEntries.map((entry) => entry.hallTeamId),
+      hallTeamHashes: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, entry.payloadHash])), hallTeamRevisions: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, revision])) };
   }
 
-  global.InazumaCloudSaveCore = Object.freeze({ DOCUMENT_LIMIT_BYTES, CLOUD_SCHEMA_VERSION, MAX_HALL_TEAMS, SECTOR_NAMES, RUN_SECTOR_NAMES, isRunSector, PAYLOAD_ENCODING, encodeFirestorePayload, decodeFirestorePayload, normalize, clone, stableSerialize, byteSize, hash, readLocalSnapshot, hallIndex, inspectLocalProgress, validateManifest, validateSectorDocument, validateHallIndex, validateHallDocument, reconstructSnapshot, prepareSnapshot, compareSnapshots, preflight, buildManifest });
+  global.InazumaCloudSaveCore = Object.freeze({ DOCUMENT_LIMIT_BYTES, CLOUD_SCHEMA_VERSION, MAX_HALL_TEAMS, SECTOR_NAMES, RUN_SECTOR_NAMES, isRunSector, PAYLOAD_ENCODING, encodeFirestorePayload, decodeFirestorePayload, normalize, clone, stableSerialize, byteSize, hash, readLocalSnapshot, hallIndex, inspectLocalProgress, validateManifest, validateSectorDocument, validateHallIndex, validateHallDocument, reconstructSnapshot, prepareSnapshot, compareSnapshots, preflight, manifestMatchesExpected, buildManifest });
   if (typeof module !== "undefined" && module.exports) module.exports = global.InazumaCloudSaveCore;
 })(globalThis);

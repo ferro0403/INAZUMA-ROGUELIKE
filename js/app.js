@@ -332,6 +332,35 @@
     devLegendaryPullSequence: 0,
   };
 
+  function stopGameplayRuntime() {
+    if (ui.matchPlaybackTimer) clearTimeout(ui.matchPlaybackTimer);
+    ui.matchPlaybackTimer = null;
+    ui.bossMatchResolving = false;
+    ui.itemRewardSubmitting = false;
+  }
+
+  const persistGameplayMutation = global.GameplayPersistence.create({
+    save: (current, options) => global.RunState.save(current, options),
+    load: (seasonId, options) => global.RunState.load(seasonId, options),
+    getRun: () => run,
+    replaceRun: (canonical) => {
+      run = canonical;
+      global.run = canonical;
+      ui.match = canonical.activeMatch || null;
+      ui.pendingReward = canonical.pendingReward || null;
+      ui.tradeSelectedPlayerId = null;
+      ui.selectedSquadPlayerId = null;
+      ui.fiveVFiveSelectedSlot = null;
+      ui.returnToMatchContext = null;
+    },
+    stopRuntime: stopGameplayRuntime,
+    reportFailure: (message) => toast(message, "error"),
+    reportMutationFailure: (message, error) => {
+      console.error("Gameplay mutation failed", error);
+      toast(message, "error");
+    },
+  });
+
   function escapeHtml(value) {
     return String(value ?? "")
       .replaceAll("&", "&amp;")
@@ -509,13 +538,13 @@
     return seasonDb.formations.eleven.find((formation) => formation.id === id);
   }
 
-  function fiveRoleForPlayerId(playerId) {
-    const entry = rosterEntry(playerId);
-    return entry ? (resolvedRosterPlayer(playerId)?.position || sourcePlayer(entry)?.position) : null;
+  function fiveRoleForPlayerId(playerId, currentRun = run) {
+    const entry = rosterEntry(playerId, currentRun);
+    return entry ? (resolvedRosterPlayer(playerId, currentRun)?.position || sourcePlayer(entry)?.position) : null;
   }
 
-  function effectiveRosterRole(playerId) {
-    return fiveRoleForPlayerId(playerId);
+  function effectiveRosterRole(playerId, currentRun = run) {
+    return fiveRoleForPlayerId(playerId, currentRun);
   }
 
   function ensureFiveVFive() {
@@ -523,21 +552,21 @@
     return global.FiveVFive.ensure(run, fiveRoleForPlayerId, fiveOverallForPlayerId);
   }
 
-  function fiveOverallForPlayerId(playerId) {
-    return resolvedRosterPlayer(playerId)?.overall || 0;
+  function fiveOverallForPlayerId(playerId, currentRun = run) {
+    return resolvedRosterPlayer(playerId, currentRun)?.overall || 0;
   }
 
-  function optimizeLineupsForNewPlayer(playerId) {
-    const formation = formationById(run?.formationId) || formationById("4-3-3");
-    const result = global.SmartLineup.optimizeLineupsForNewPlayer(run, playerId, {
+  function optimizeLineupsForNewPlayer(playerId, currentRun = run, announce = true) {
+    const formation = formationById(currentRun?.formationId) || formationById("4-3-3");
+    const result = global.SmartLineup.optimizeLineupsForNewPlayer(currentRun, playerId, {
       enabled: global.RunState.loadProfile().preferences.smartAutoLineup,
-      getRole: effectiveRosterRole,
-      getOverall: fiveOverallForPlayerId,
+      getRole: (id) => effectiveRosterRole(id, currentRun),
+      getOverall: (id) => fiveOverallForPlayerId(id, currentRun),
       elevenSlotRoles: formation.slotRoles,
-      fiveFormation: run?.fiveVFive ? global.FiveVFive.formationById(run.fiveVFive.formation) : null,
-      assignFive: (slotKey, id) => global.FiveVFive.assign(run, slotKey, id, fiveRoleForPlayerId),
+      fiveFormation: currentRun?.fiveVFive ? global.FiveVFive.formationById(currentRun.fiveVFive.formation) : null,
+      assignFive: (slotKey, id) => global.FiveVFive.assign(currentRun, slotKey, id, (candidateId) => fiveRoleForPlayerId(candidateId, currentRun)),
     });
-    if (result.elevenChanged || result.fiveChanged) {
+    if (announce && (result.elevenChanged || result.fiveChanged)) {
       const areas = [result.elevenChanged ? "11v11" : null, result.fiveChanged ? "5v5" : null].filter(Boolean).join(" e ");
       toast(`AUTO-FORMAZIONE — aggiornata ${areas}`);
     }
@@ -561,8 +590,8 @@
     return sourcePlayer(entry);
   }
 
-  function rosterEntry(playerId) {
-    return run.roster.find((entry) => String(entry.playerId) === String(playerId));
+  function rosterEntry(playerId, currentRun = run) {
+    return currentRun?.roster?.find((entry) => String(entry.playerId) === String(playerId));
   }
 
   function ensureRunSchema() {
@@ -645,17 +674,17 @@
     return Number(legacyRosterPlayer(entry)?.finalOverall || 0);
   }
 
-  function resolvedRosterPlayer(playerId) {
-    const entry = rosterEntry(playerId);
+  function resolvedRosterPlayer(playerId, currentRun = run) {
+    const entry = rosterEntry(playerId, currentRun);
     if (!entry) return null;
-    const player = global.RoguelikeRules.isProfileAwareRosterEntry(entry, run)
+    const player = global.RoguelikeRules.isProfileAwareRosterEntry(entry, currentRun)
       ? sourcePlayer(entry)
-      : legacyRosterPlayer(entry);
-    const profileAware = global.RoguelikeRules.isProfileAwareRosterEntry(entry, run);
-    const database = profileAware ? seasonDb : (isProfileAwareSeason(run?.seasonId) ? freeAgentsDb : (global.SeasonRegistry?.isSeasonSource?.(entry.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb));
+      : legacyRosterPlayer(entry, currentRun);
+    const profileAware = global.RoguelikeRules.isProfileAwareRosterEntry(entry, currentRun);
+    const database = profileAware ? seasonDb : (isProfileAwareSeason(currentRun?.seasonId) ? freeAgentsDb : (global.SeasonRegistry?.isSeasonSource?.(entry.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb));
     if (!player && !profileAware) return null;
     const resolved = profileAware
-      ? global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(entry, { seasonId: run.seasonId, database })
+      ? global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(entry, { seasonId: currentRun.seasonId, database })
       : global.InazumaProgression.getPlayerAtLevel(
       player,
       Math.floor(Number(entry.level || 0)),
@@ -671,7 +700,7 @@
       equipment: entry.equippedItem,
       displayLevel: Number(entry.level || 0),
       displayLevelUnits: Number(entry.levelUnits || 0),
-      displayLevelText: global.LevelProgression.formatLevel(entry, run.seasonId),
+      displayLevelText: global.LevelProgression.formatLevel(entry, currentRun.seasonId),
       source: entry.source,
     };
   }
@@ -1017,8 +1046,51 @@
     return global.AlbumProgress?.backfillAlbumProgress?.({ run, hallTeams: albumHallTeams() }) || 0;
   }
 
-  function unlockAlbumRecruit(playerId, source) {
-    return global.AlbumProgress?.unlockAlbumPlayer?.(run?.seasonId || global.AlbumProgress.DEFAULT_COLLECTION_ID, playerId, { source }) || false;
+  function drainPermanentEffects() {
+    const result = global.PermanentEffects.drain(run);
+    if (result.error) console.error("Permanent effect remains pending", result.error);
+    return result;
+  }
+
+  function resumeRunFinalization({ render = true } = {}) {
+    if (!global.RestoreGameplayRoutingGate?.enter("finalization")) return { completed: false, blocked: true };
+    const result = global.PermanentEffects.resumeFinalization(run);
+    if (!result.completed) {
+      if (result.error) {
+        console.error("Finalization remains resumable", result.error);
+        toast("Finalizzazione non completata. Riprova con Continua.");
+      }
+      if (render) renderFinalizationPending(result);
+      return result;
+    }
+    if (render) renderFinalCelebration(run.hallTeamId, { developmentResolved: true });
+    return result;
+  }
+
+  function renderFinalizationPending(result = {}) {
+    app.innerHTML = `<main class="hero-screen finalization-pending-screen" data-finalization-pending>
+      <section class="panel"><p class="eyebrow">SALVATAGGIO CAMPIONI</p><h1>Finalizzazione in sospeso</h1>
+      <p class="muted">La vittoria è al sicuro. Completa il salvataggio permanente prima di continuare.</p>
+      <button type="button" class="btn btn-yellow" id="retry-run-finalization">RIPROVA / CONTINUA</button></section>
+    </main>`;
+    resetRenderedViewScroll();
+    const retry = document.getElementById("retry-run-finalization");
+    retry?.addEventListener("click", () => {
+      retry.disabled = true;
+      const resumed = resumeRunFinalization({ render: false });
+      if (resumed.completed) return renderFinalCelebration(run.hallTeamId, { developmentResolved: true });
+      toast("Finalizzazione ancora in sospeso. Puoi riprovare senza perdere la vittoria.", "error");
+      renderFinalizationPending(resumed);
+    });
+    return result;
+  }
+
+  function enqueueAlbumRecruit(current, playerId, source, actionId) {
+    return global.PermanentEffects.enqueueAlbum(current, { playerId, source, actionId });
+  }
+
+  function unlockAlbumRecruit() {
+    return drainPermanentEffects();
   }
 
   function albumFreeAgentPlayers(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
@@ -1361,6 +1433,7 @@
     if (latest?.run) {
       await loadSeason(latest.run.seasonId || latest.season.id);
       run = global.RunState.load(activeSeason.id);
+      if ((!run?.finalization || run.finalization.status === "complete") && run?.permanentEffectOutbox?.some((effect) => effect.status === "pending")) drainPermanentEffects();
     } else {
       await loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID);
       run = null;
@@ -1397,6 +1470,9 @@
     await loadSeason(seasonId);
     run = global.RunState.load(activeSeason.id);
     ensureRunSchema();
+    if (!run?.finalization || run.finalization.status === "complete") {
+      if (run?.permanentEffectOutbox?.some((effect) => effect.status === "pending")) drainPermanentEffects();
+    }
     if (run && markPlayed) global.RunState.touch(run);
     if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
   }
@@ -1455,7 +1531,7 @@
     await loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID);
     const seasons = global.SeasonRegistry.list();
     await Promise.all(seasons.map((season) => global.SeasonRegistry.loadDatabase(season.id)));
-    const runs = seasons.map((season) => ({ season, savedRun: global.RunState.load(season.id) }));
+    const runs = seasons.map((season) => ({ season, savedRun: global.RunState.load(season.id, { readOnly: true }) }));
     const latestTime = Math.max(0, ...runs.filter((entry) => entry.savedRun && global.RunState.isActiveRun(entry.savedRun)).map((entry) => runTimestamp(entry.savedRun)));
     const cards = runs.map(({ season, savedRun }) => seasonSelectCardMarkup({
       season,
@@ -1475,11 +1551,13 @@
 
   function openDeleteSeasonRunModal(seasonId) {
     const season = global.SeasonRegistry.get(seasonId);
+    const observedGeneration = global.RunState.load(season.id, { readOnly: true })?.storageGeneration;
     const preservedScroll = scrollSnapshot();
     openModal(`<div class="modal-head"><div><p class="eyebrow">${escapeHtml(season.name)}</p><h2>ELIMINA RUN</h2><p class="muted">Vuoi eliminare la run di questa Season? I progressi della run verranno cancellati.</p></div></div><div class="button-row"><button type="button" class="btn btn-ghost" data-cancel-delete-run>ANNULLA</button><button type="button" class="btn season-delete-button" data-confirm-delete-run>ELIMINA</button></div>`, { closeable: false, className: "season-delete-modal", preserveScroll: preservedScroll });
     modalRoot.querySelector("[data-cancel-delete-run]")?.addEventListener("click", closeModal);
     modalRoot.querySelector("[data-confirm-delete-run]")?.addEventListener("click", async () => {
-      global.RunState.remove(season.id);
+      try { global.RunState.remove(season.id, { expectedGeneration: observedGeneration }); }
+      catch (error) { closeModal({ invokeOnClose: false }); if (error?.code === "stale-write") { run = global.RunState.load(season.id, { readOnly: true }); global.run = run; global.alert?.("La run è stata aggiornata in un'altra scheda. Ho ricaricato l'ultima versione salvata."); return renderSeasonSelect({ preserveScroll: preservedScroll }); } global.alert?.("Salvataggio non riuscito. L'azione non è stata registrata."); return; }
       if (run?.seasonId === season.id) { run = null; global.run = null; }
       closeModal({ invokeOnClose: false });
       await renderSeasonSelect({ preserveScroll: preservedScroll });
@@ -1625,7 +1703,17 @@
 
   function resolveDevelopmentEndRunFlow({ endReason, onComplete }) {
     const defeatedBosses = Number(run.completedBossIds?.length || run.bossIndex || 0);
-    const result = global.DevelopmentV2.processRunEnd({ runId: run.runId, seasonId: run.seasonId, defeatedBosses, endReason });
+    try {
+      global.PermanentEffects.assertCanonicalTerminal(run, endReason);
+      global.PermanentEffects.enqueueDevelopment(run, { endReason, defeatedBosses });
+      global.RunState.save(run);
+    } catch (error) {
+      console.error("Unable to persist terminal effect", error);
+      return renderHome();
+    }
+    const drained = drainPermanentEffects();
+    const effect = run.permanentEffectOutbox.find((entry) => entry.id === global.PermanentEffects.developmentId(run, endReason));
+    if (drained.error || effect?.status !== "applied") return renderHome();
     if (!run.developmentRewardPresentation || run.developmentRewardPresentation.endReason !== endReason) {
       run.developmentRewardPresentation = developmentRewardPresentation(defeatedBosses, endReason);
       global.RunState.save(run);
@@ -1654,6 +1742,7 @@
   }
 
   function renderDevelopmentCenter(tab = "players") {
+    if (!global.RestoreGameplayRoutingGate?.enter("development")) return false;
     const state = global.DevelopmentV2.read(); const players = cachedDevelopmentPlayers();
     const selectedIndex = players.find((player) => String(player.playerId) === String(ui.selectedDevelopmentPlayerId));
     const selected = resolveDevelopmentPlayer(selectedIndex);
@@ -1803,15 +1892,17 @@
   }
 
   function startRunWithIdentity(identity) {
+    if (!global.RestoreGameplayRoutingGate?.enter("new-run")) return false;
     const cleanIdentity = global.RunState.saveProfileTeamIdentity(identity);
     run = global.RunState.createRun(cleanIdentity, activeSeason?.id);
     global.run = run;
-    global.RunState.save(run);
+    global.RunState.save(run, { replaceRun: true });
     closeModal({ invokeOnClose: false });
     renderFormationChoice();
   }
 
   function startNewRunFromHome() {
+    if (!global.RestoreGameplayRoutingGate?.enter("new-run")) return false;
     const identity = savedTeamIdentity();
     run = global.RunState.load(activeSeason?.id);
     const startConfirmedRun = () => {
@@ -1870,8 +1961,10 @@
   }
 
   async function resumeRun() {
+    if (!global.RestoreGameplayRoutingGate?.enter("resume-run")) return false;
     await selectSeason(run?.seasonId || activeSeason?.id, { markPlayed: true });
     if (!run) return renderHome();
+    if (run.phase === "finalization" || (run.finalization && run.finalization.status !== "complete")) return resumeRunFinalization();
     if (global.MapEngine.normalizeSpecialMatchNode(run, seasonDb)) global.RunState.save(run);
     recoverInterruptedSpecialMatchAccess();
     recoverInterruptedBossAccess();
@@ -1880,8 +1973,8 @@
     if (run.phase === "draft") return renderDraft();
     if (run.pendingSpecialMatchReward) return showSpecialMatchReward();
     if (run.postBossFlow) return resumePostBossFlow();
-    if (run.phase === "final-summary") return renderFinalSummary(run.hallTeamId);
-    if (run.phase === "final-celebration" || run.phase === "complete") return renderFinalCelebration(run.hallTeamId);
+    if (run.phase === "final-summary") return renderFinalSummary(run.hallTeamId, { developmentResolved: true });
+    if (run.phase === "final-celebration" || run.phase === "complete") return renderFinalCelebration(run.hallTeamId, { developmentResolved: true });
     if (run.phase === "squad") return renderSquad();
     if (run.phase === "five") return renderFiveVFive();
     if (run.phase === "inventory") return renderInventory();
@@ -1918,8 +2011,10 @@
   }
 
   function renderFormationChoice() {
-    run.phase = "formation";
-    global.RunState.save(run);
+    if (run.phase !== "formation") {
+      const transition = persistGameplayMutation({ label: "initial-formation-phase", mutate: (current) => { current.phase = "formation"; } });
+      if (!transition.ok) return renderHome();
+    }
     app.innerHTML = `
       <main class="screen onboarding-screen formation-choice-screen">
         ${topbar("Scegli il modulo")}
@@ -1948,11 +2043,16 @@
     document.querySelectorAll("[data-formation]").forEach((button) => {
       button.addEventListener("click", () => {
         const formation = formationById(button.dataset.formation);
-        run.formationId = formation.id;
         const draftPlayers = initialDraftPlayers();
-        global.DraftEngine.start(run, formation, draftPlayers);
-        global.RunState.save(run);
-        renderDraft();
+        persistGameplayMutation({
+          label: "initial-draft-start",
+          mutate: (current) => {
+            current.formationId = formation.id;
+            global.DraftEngine.start(current, formation, draftPlayers);
+          },
+          onCommitted: () => renderDraft(),
+          rerender: ({ ok }) => { if (!ok) renderFormationChoice(); },
+        });
       });
     });
   }
@@ -1986,26 +2086,32 @@
     document.querySelectorAll("[data-player-id]").forEach((button) => {
       button.addEventListener("click", () => {
         const playerId = button.dataset.playerId;
-        const completed = global.DraftEngine.choose(
-          run,
-          playerId,
-          draftPlayers,
-          formationById(run.formationId)
-        );
-        if (completed) {
-          ensureFiveVFive();
-          run.roster.forEach((entry) => {
-            const source = sourcePlayer(entry);
-            entry.firstJoinedAt = entry.firstJoinedAt || new Date().toISOString();
-            entry.recruitmentSource = entry.recruitmentSource || "initial_draft";
-            entry.recruitedAtLevel = entry.recruitedAtLevel ?? entry.level ?? 0;
-            entry.recruitedOverall = entry.recruitedOverall ?? source?.finalOverall ?? null;
-            global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player: source || entry, playerId: entry.playerId, source: "initial_draft", level: entry.level || 0, overall: entry.recruitedOverall, actionId: `${run.runId}:initial_draft:${entry.playerId}` });
-            unlockAlbumRecruit(entry.playerId, "initial_draft");
-          });
-        }
-        global.RunState.save(run);
-        completed ? renderSquad() : renderDraft();
+        let completed = false;
+        const committed = persistGameplayMutation({
+          label: "initial-draft-pick",
+          mutate: (current) => {
+            completed = global.DraftEngine.choose(current, playerId, draftPlayers, formationById(current.formationId));
+            if (!completed) return;
+            ensureFiveVFive();
+            current.roster.forEach((entry) => {
+              const source = sourcePlayer(entry);
+              entry.firstJoinedAt = entry.firstJoinedAt || new Date().toISOString();
+              entry.recruitmentSource = entry.recruitmentSource || "initial_draft";
+              entry.recruitedAtLevel = entry.recruitedAtLevel ?? entry.level ?? 0;
+              entry.recruitedOverall = entry.recruitedOverall ?? source?.finalOverall ?? null;
+              global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player: source || entry, playerId: entry.playerId, source: "initial_draft", level: entry.level || 0, overall: entry.recruitedOverall, actionId: `${current.runId}:initial_draft:${entry.playerId}` });
+              enqueueAlbumRecruit(current, entry.playerId, "initial_draft", `${current.runId}:initial_draft:${entry.playerId}`);
+            });
+            current.phase = "squad";
+            reconcileSquadRosterState(current);
+          },
+          onCommitted: () => {
+            if (completed) run.roster.forEach((entry) => unlockAlbumRecruit(entry.playerId, "initial_draft"));
+            completed ? renderSquad() : renderDraft();
+          },
+          rerender: ({ ok }) => { if (!ok) renderDraft(); },
+        });
+        return committed;
       });
     });
   }
@@ -2090,17 +2196,17 @@
     return tacticalMiniPlayer(id, { mode: "squad", area });
   }
 
-  function reconcileSquadRosterState() {
-    const rosterIds = (run.roster || []).map((entry) => String(entry.playerId || "")).filter(Boolean);
+  function reconcileSquadRosterState(current = run) {
+    const rosterIds = (current.roster || []).map((entry) => String(entry.playerId || "")).filter(Boolean);
     const rosterSet = new Set(rosterIds);
-    const lineupIds = (run.lineup || []).map(String).filter(Boolean);
+    const lineupIds = (current.lineup || []).map(String).filter(Boolean);
     const lineupSet = new Set(lineupIds);
-    const currentBench = (run.bench || []).map(String).filter((id) => rosterSet.has(id) && !lineupSet.has(id));
+    const currentBench = (current.bench || []).map(String).filter((id) => rosterSet.has(id) && !lineupSet.has(id));
     const canonicalBench = [...new Set(currentBench)];
     const unassigned = rosterIds.filter((id) => !lineupSet.has(id) && !canonicalBench.includes(id));
     unassigned.slice(0, Math.max(0, 4 - canonicalBench.length)).forEach((id) => canonicalBench.push(id));
-    const changed = JSON.stringify(canonicalBench) !== JSON.stringify((run.bench || []).map(String));
-    if (changed) run.bench = canonicalBench;
+    const changed = JSON.stringify(canonicalBench) !== JSON.stringify((current.bench || []).map(String));
+    if (changed) current.bench = canonicalBench;
     return changed;
   }
 
@@ -2210,20 +2316,18 @@
       if (formationId === run.formationId) return closeModal();
       const next = formationById(formationId);
       if (!next || !canUseFormation(next)) return toast("La rosa non copre tutti i ruoli del modulo");
-      autoArrangeFormation(next);
-      global.RunState.save(run);
-      closeModal();
-      toast(`Modulo cambiato in ${next.name}`);
-      runKeepingScroll(renderSquad);
+      persistGameplayMutation({
+        label: "formation-change",
+        mutate: () => autoArrangeFormation(next),
+        onCommitted: () => { closeModal(); toast(`Modulo cambiato in ${next.name}`); runKeepingScroll(renderSquad); },
+        rerender: ({ ok }) => { if (!ok) openSquadFormationSelector(); },
+      });
     });
   }
 
   function renderSquad() {
     closeModal({ invokeOnClose: false });
     ui.selectedSquadPlayerId = null;
-    run.phase = "squad";
-    reconcileSquadRosterState();
-    global.RunState.save(run);
     const formation = formationById(run.formationId);
     const squadSummary = squadValiditySummary();
 
@@ -2306,7 +2410,7 @@
     if (!global.ProfiledSeasonRuntime.canSwitchRole(run, playerId)) return toast("SPOSTA IL GIOCATORE IN PANCHINA PER CAMBIARE RUOLO");
     const entry = rosterEntry(playerId); const profile = global.ProfiledSeasonRuntime.resolveOwnedPlayerProfile(entry, run.seasonId);
     openModal(`<div class="modal-head role-switch-head"><div><p class="eyebrow">Panchina · ${escapeHtml(profile.name)}</p><h2>CAMBIA RUOLO</h2><p class="muted">Ruolo attuale: ${escapeHtml(resolvedRosterPlayer(playerId)?.position || "-")}</p></div></div><div class="role-switch-options">${profile.roleVariants.map((variant) => { const variantId = variant.roleVariantId || variant.variantId; const active = String(variantId) === String(entry.activeRoleVariantId); const previewEntry = { ...entry, activeRoleVariantId: variantId }; const preview = global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(previewEntry, { run, seasonId: run.seasonId, database: seasonDb }); return `<button type="button" class="role-switch-option ${active ? "active" : ""}" data-role-variant="${escapeHtml(variantId)}" ${active ? "disabled" : ""}><strong>${escapeHtml(variant.position || variant.normalizedRole)}</strong><span>OVR ${escapeHtml(preview.overall || preview.finalOverall)}</span><small>${active ? "ATTIVO" : "SELEZIONA"}</small></button>`; }).join("")}</div>`, { closeable: true, className: "role-switch-modal" });
-    modalRoot.querySelectorAll("[data-role-variant]").forEach((button) => button.addEventListener("click", () => { global.ProfiledSeasonRuntime.switchBenchRole(run, playerId, button.dataset.roleVariant); global.FiveVFive?.removeUnavailable?.(run); global.RunState.save(run); closeModal(); toast("Ruolo aggiornato"); renderSquad(); }));
+    modalRoot.querySelectorAll("[data-role-variant]").forEach((button) => button.addEventListener("click", () => persistGameplayMutation({ label: "bench-role", mutate: () => { global.ProfiledSeasonRuntime.switchBenchRole(run, playerId, button.dataset.roleVariant); global.FiveVFive?.removeUnavailable?.(run); }, onCommitted: () => { closeModal(); toast("Ruolo aggiornato"); renderSquad(); }, rerender: ({ ok }) => { if (!ok) renderSquad(); } })));
   }
 
   function setSelectedSquadPlayer(playerId) {
@@ -2372,18 +2476,21 @@
     const secondIndex = secondList.indexOf(clickedId);
     if (firstIndex < 0 || secondIndex < 0) return setSelectedSquadPlayer(null);
 
-    if (firstList === secondList) {
-      [firstList[firstIndex], firstList[secondIndex]] = [firstList[secondIndex], firstList[firstIndex]];
-    } else {
-      firstList[firstIndex] = clickedId;
-      secondList[secondIndex] = selected;
-    }
     const firstName = resolvedRosterPlayer(selected)?.name || selected;
     const secondName = resolvedRosterPlayer(clickedId)?.name || clickedId;
-    swapSquadPlayersInDom(selected, clickedId, firstArea, secondArea);
-    setSelectedSquadPlayer(null);
-    global.RunState.save(run);
-    toast(`${firstName} e ${secondName} scambiati`);
+    persistGameplayMutation({
+      label: "lineup-swap",
+      mutate: () => {
+        if (firstList === secondList) {
+          [firstList[firstIndex], firstList[secondIndex]] = [firstList[secondIndex], firstList[firstIndex]];
+        } else {
+          firstList[firstIndex] = clickedId;
+          secondList[secondIndex] = selected;
+        }
+      },
+      onCommitted: () => { swapSquadPlayersInDom(selected, clickedId, firstArea, secondArea); setSelectedSquadPlayer(null); toast(`${firstName} e ${secondName} scambiati`); },
+      rerender: ({ ok }) => { if (!ok) renderSquad(); },
+    });
   }
 
   function ensureCurrentZone() {
@@ -2394,6 +2501,10 @@
     }
     run.phase = "map";
     global.RunState.createCheckpoint(run);
+  }
+
+  function ensureCurrentZoneMutation(current) {
+    return global.BossGameOverRuntime.ensureCurrentZoneMutation({ run: current, seasonDb, mapEngine: global.MapEngine });
   }
 
   function specialMatchById(specialMatchId) { return global.SpecialMatchRuntime.byId(seasonDb, specialMatchId); }
@@ -2668,13 +2779,16 @@
   }
 
   function finishNonMatchNode(node, message) {
-    global.MapEngine.completeNode(run.currentZone, node.id);
-    global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.NODE_COMPLETED, { nodeId: node.id, nodeType: node.type, actionId: `${run.runId}:${node.id}:node_completed` });
-    run.phase = "map";
-    global.RunState.save(run);
-    closeModal();
-    toast(message);
-    renderMap();
+    persistGameplayMutation({
+      label: "map-node-complete",
+      mutate: () => {
+        global.MapEngine.completeNode(run.currentZone, node.id);
+        global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.NODE_COMPLETED, { nodeId: node.id, nodeType: node.type, actionId: `${run.runId}:${node.id}:node_completed` });
+        run.phase = "map";
+      },
+      onCommitted: () => { closeModal(); toast(message); renderMap(); },
+      rerender: ({ ok }) => { if (!ok) renderMap(); },
+    });
   }
 
   function pendingItemRewardNode() {
@@ -3117,37 +3231,61 @@
   }
 
   function executeTrade(node, outgoingEntry, incoming, nextLevel) {
-    if (!isProfileAwareSeason()) {
-      const outgoingId = String(outgoingEntry.playerId); const incomingId = String(incoming.player.playerId); const rosterIndex = run.roster.findIndex((entry) => String(entry.playerId) === outgoingId);
-      if (outgoingEntry.equippedItem) run.inventory.push(outgoingEntry.equippedItem);
-      run.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null, ...permanentRosterFields(incoming.player) };
-      run.lineup = run.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id)); run.bench = run.bench.map((id) => String(id) === outgoingId ? incomingId : String(id));
-      global.FiveVFive.removeUnavailable(run); optimizeLineupsForNewPlayer(incomingId); ui.tradeSelectedPlayerId = null; global.RunState.save(run); return showTradeResult(node, incoming, run.roster[rosterIndex], "acquired");
-    }
-    const result = global.RoguelikeRules.executeProfileAwareTrade(run, outgoingEntry.playerId, incoming, {
-      roleVariantForUpgrade: roleVariantForTradeUpgrade,
-      resolveOutgoingBase: (entry) => {
-        const base = global.RoguelikeRules.resolveRosterEntryBase(entry, run, {
-          profile: (profileEntry) => global.ProfiledSeasonRuntime.resolveEffectiveBase(profileEntry, run.seasonId),
-          legacy: (legacyEntry) => legacyRosterPlayer(legacyEntry),
+    let result;
+    let receivedEntry;
+    const committed = persistGameplayMutation({
+      label: isProfileAwareSeason() ? "trade-profile" : "trade",
+      mutate: (current) => {
+        const outgoingId = String(outgoingEntry.playerId);
+        if (!isProfileAwareSeason()) {
+          const incomingId = String(incoming.player.playerId);
+          const rosterIndex = current.roster.findIndex((entry) => String(entry.playerId) === outgoingId);
+          if (outgoingEntry.equippedItem) current.inventory.push(outgoingEntry.equippedItem);
+          current.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null, ...permanentRosterFields(incoming.player) };
+          current.lineup = current.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id));
+          current.bench = current.bench.map((id) => String(id) === outgoingId ? incomingId : String(id));
+          global.FiveVFive.removeUnavailable(current);
+          optimizeLineupsForNewPlayer(incomingId);
+          receivedEntry = current.roster[rosterIndex];
+          result = { player: receivedEntry, status: "acquired", recruited: true };
+          return;
+        }
+        result = global.RoguelikeRules.executeProfileAwareTrade(current, outgoingEntry.playerId, incoming, {
+          roleVariantForUpgrade: roleVariantForTradeUpgrade,
+          resolveOutgoingBase: (entry) => {
+            const base = global.RoguelikeRules.resolveRosterEntryBase(entry, current, {
+              profile: (profileEntry) => global.ProfiledSeasonRuntime.resolveEffectiveBase(profileEntry, current.seasonId),
+              legacy: (legacyEntry) => legacyRosterPlayer(legacyEntry),
+            });
+            return base ? { ...base, finalOverall: global.InazumaProgression.effectivePotential(base, entry) } : null;
+          },
+          resolveIncomingCandidate: (player, source) => source === "free_agents"
+            ? global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, current.developmentPlayerSnapshot)
+            : player,
         });
-        return base ? { ...base, finalOverall: global.InazumaProgression.effectivePotential(base, entry) } : null;
+        if (!result.player) throw Object.assign(new Error("Offerta non più valida"), { code: "trade-invalid" });
+        receivedEntry = result.player;
+        if (result.recruited) {
+          Object.assign(result.player, { firstJoinedAt: new Date().toISOString(), recruitedOverall: tradeCandidatePreview(incoming, result.player)?.overall ?? incoming.player.finalOverall, ...permanentRosterFields(incoming.player) });
+          global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player: incoming.player, playerId: result.player.playerId, source: "trade", level: result.player.level, overall: result.player.recruitedOverall, actionId: `${current.runId}:${node.id}:trade:${result.player.playerId}` });
+          enqueueAlbumRecruit(current, result.player.playerId, "trade", `${current.runId}:${node.id}:trade:${result.player.playerId}`);
+          optimizeLineupsForNewPlayer(result.player.playerId);
+        }
+        global.FiveVFive.removeUnavailable(current);
       },
-      resolveIncomingCandidate: (player, source) => source === "free_agents"
-        ? global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, run.developmentPlayerSnapshot)
-        : player,
+      onCommitted: () => {
+        ui.tradeSelectedPlayerId = null;
+        if (result.recruited) unlockAlbumRecruit(result.player.playerId, "trade");
+        showTradeResult(node, incoming, receivedEntry, result.status);
+      },
+      onMutationError: ({ error }) => {
+        console.error("Trade mutation failed", error);
+        toast(error?.code === "trade-invalid" ? "Offerta non più valida: la rosa non è stata modificata" : "L'azione non è stata completata.", "error");
+        resolveTradeNode(node);
+      },
+      rerender: ({ ok, stage }) => { if (!ok && stage === "persistence") resolveTradeNode(node); },
     });
-    if (!result.player) {
-      toast("Offerta non più valida: la rosa non è stata modificata");
-      return resolveTradeNode(node);
-    }
-    if (result.recruited) {
-      Object.assign(result.player, { firstJoinedAt: new Date().toISOString(), recruitedOverall: tradeCandidatePreview(incoming, result.player)?.overall ?? incoming.player.finalOverall, ...permanentRosterFields(incoming.player) });
-      unlockAlbumRecruit(result.player.playerId, "trade");
-      global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player: incoming.player, playerId: result.player.playerId, source: "trade", level: result.player.level, overall: result.player.recruitedOverall, actionId: `${run.runId}:${node.id}:trade:${result.player.playerId}` });
-      optimizeLineupsForNewPlayer(result.player.playerId);
-    }
-    global.FiveVFive.removeUnavailable(run); ui.tradeSelectedPlayerId = null; global.RunState.save(run); showTradeResult(node, incoming, result.player, result.status);
+    return committed;
   }
 
   function showTradeResult(node, incoming, receivedEntry, status) {
@@ -3183,6 +3321,15 @@
     };
     if (run.inventory.length < global.SEASON1_CONFIG.maxInventory) return add();
     chooseInventoryDiscard("Inventario pieno: scegli un oggetto da eliminare", add, onCancel);
+  }
+
+  function chooseInventoryDiscardSelection(title, onSelect, onCancel) {
+    openModal(`
+      <div class="modal-head"><div><p class="eyebrow">Inventario ${run.inventory.length}/${global.SEASON1_CONFIG.maxInventory}</p><h2>${escapeHtml(title)}</h2></div></div>
+      <div class="item-grid">${run.inventory.map((item) => { const resolved = resolveItem(item); return `<button type="button" class="item-card danger-card" data-discard-item="${item.instanceId}">${itemIcon(resolved)}<strong>${escapeHtml(resolved.name)}</strong><p>${escapeHtml(resolved.description)}</p></button>`; }).join("")}</div>
+      <div class="button-row" style="margin-top:18px"><button type="button" class="btn" id="cancel-discard">Annulla</button></div>`, { closeable: false });
+    modalRoot.querySelectorAll("[data-discard-item]").forEach((button) => button.addEventListener("click", () => onSelect(button.dataset.discardItem)));
+    document.getElementById("cancel-discard").addEventListener("click", onCancel);
   }
 
   function chooseInventoryDiscard(title, onDiscard, onCancel) {
@@ -3437,9 +3584,10 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       luckyCharmDisabledMessage: !luckyCompatible ? "Portafortuna non utilizzabile in questa selezione." : node.pullState.luckyCharmUsed ? "Portafortuna già utilizzato" : !luckyCharm ? "Nessun Portafortuna disponibile" : "",
       onPick: (player) => {
         const playerSource = pool.sourceForPlayer ? pool.sourceForPlayer(player) : pool.source;
-        recruitPlayer(player, playerSource, level, (added) => {
-          finishPull(added ? `${player.name} entra nella rosa` : "Hai rinunciato al nuovo giocatore");
-        });
+        recruitPlayer(player, playerSource, level, (result) => {
+          if (result.status.startsWith("committed-")) return finishPull(`${player.name} entra nella rosa`);
+          if (result.status === "cancelled") return finishPull("Hai rinunciato al nuovo giocatore");
+        }, { onRecover: () => openPull(node, pullType, options), onRecoveryBlocked: () => renderMap() });
       },
       onSkip: () => finishPull("Hai rinunciato al pull"),
       legendary: legendaryPull,
@@ -3587,83 +3735,143 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function recruitPlayer(player, source, level, done, options = {}) {
+    let smartLineupResult = null;
     const allowCancel = options.allowCancel !== false;
-    if (isProfileAwareSeason() && player.profileId) {
-      const result = global.ProfiledSeasonRuntime.acquireOrUpgradeProfile(run, player, { seasonId: run.seasonId, maxRoster: global.SEASON1_CONFIG.maxRoster, level });
-      if (result.status === "upgraded" || result.status === "acquired") {
-        if (result.status === "acquired") {
-          run.bench.push(String(result.player.playerId));
-          Object.assign(result.player, { firstJoinedAt: new Date().toISOString(), recruitmentSource: options.recruitmentSource || source, recruitedAtLevel: level, recruitedOverall: resolvedRosterPlayer(result.player.playerId)?.overall ?? player.finalOverall ?? null });
-          global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: result.player.playerId, source: options.recruitmentSource || source, level, overall: result.player.recruitedOverall, actionId: options.actionId || `${run.runId}:${player.profileId}:recruited` });
-          unlockAlbumRecruit(result.player.playerId, options.recruitmentSource || source);
-          optimizeLineupsForNewPlayer(result.player.playerId);
-        }
-        global.RunState.save(run); closeModal(); toast(result.status === "upgraded" ? "POTENZIAMENTO PROFILO" : "NUOVO GIOCATORE"); return done(true);
+    const profileAware = isProfileAwareSeason() && Boolean(player.profileId);
+    const complete = (status, extra = {}) => done?.({ status, committed: status.startsWith("committed-"), ...extra });
+    const recover = (status, failure = {}) => {
+      complete(status, failure);
+      if (status === "recovery-blocked") {
+        closeModal();
+        return options.onRecoveryBlocked?.(failure) || renderMap();
       }
-      if (result.status === "ineligible") return done(false);
+      options.onRecover?.(status, failure);
+    };
+    const recruitmentSource = options.recruitmentSource || source;
+    const actionId = options.actionId || `${run.runId}:${player.profileId || player.playerId}:recruited:${recruitmentSource}`;
+    const decorateRecruit = (current, entry) => {
+      const overall = resolvedRosterPlayer(entry.playerId, current)?.overall ?? player.overall ?? player.finalOverall ?? null;
+      Object.assign(entry, { firstJoinedAt: new Date().toISOString(), recruitmentSource, recruitedAtLevel: level, recruitedOverall: overall });
+      global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: entry.playerId, source: recruitmentSource, level, overall, actionId });
+      enqueueAlbumRecruit(current, entry.playerId, recruitmentSource, actionId);
+      smartLineupResult = optimizeLineupsForNewPlayer(entry.playerId, current, false);
+    };
+    const announceCommittedSmartLineup = () => {
+      if (!smartLineupResult?.elevenChanged && !smartLineupResult?.fiveChanged) return;
+      const areas = [smartLineupResult.elevenChanged ? "11v11" : null, smartLineupResult.fiveChanged ? "5v5" : null].filter(Boolean).join(" e ");
+      toast(`AUTO-FORMAZIONE — aggiornata ${areas}`);
+    };
+    const committedSideEffects = (entry, status) => {
+      if (status === "committed-acquired") unlockAlbumRecruit(entry.playerId, recruitmentSource);
+      closeModal();
+      toast(status === "committed-upgraded" ? "POTENZIAMENTO PROFILO" : "NUOVO GIOCATORE");
+      announceCommittedSmartLineup();
+      complete(status, { player: entry });
+    };
+    const persistenceFailure = ({ kind, ...failure }) => recover(kind === "unreadable" ? "recovery-blocked" : "persistence-failed", { kind, ...failure });
+
+    if (profileAware) {
+      let result;
+      const committed = persistGameplayMutation({
+        label: "recruit-profile",
+        mutate: (current) => {
+          smartLineupResult = null;
+          result = global.ProfiledSeasonRuntime.acquireOrUpgradeProfile(current, player, { seasonId: current.seasonId, maxRoster: global.SEASON1_CONFIG.maxRoster, level });
+          if (result.status === "roster-full") throw Object.assign(new Error("Roster full"), { code: "recruit-needs-replacement" });
+          if (!["upgraded", "acquired"].includes(result.status)) throw Object.assign(new Error("Recruit not eligible"), { code: "recruit-ineligible" });
+          if (result.status === "acquired") { current.bench.push(String(result.player.playerId)); decorateRecruit(current, result.player); }
+          options.transactionMutate?.(current, result.player);
+        },
+        onCommitted: () => committedSideEffects(result.player, result.status === "upgraded" ? "committed-upgraded" : "committed-acquired"),
+        onMutationError: ({ error }) => {
+          if (error?.code === "recruit-needs-replacement") return showRecruitReplacement();
+          if (error?.code === "recruit-ineligible") return recover("ineligible", { error });
+          console.error("Recruit mutation failed", error); recover("persistence-failed", { error });
+        },
+        onFailure: persistenceFailure,
+      });
+      return committed;
     }
     if (run.roster.length < global.SEASON1_CONFIG.maxRoster) {
-      run.roster.push({ playerId: String(player.playerId), source, level, recruitedAtLevel: level, recruitedOverall: player.overall ?? player.finalOverall ?? null, firstJoinedAt: new Date().toISOString(), recruitmentSource: options.recruitmentSource || source, equippedItem: null, ...permanentRosterFields(player) });
-      run.bench.push(String(player.playerId));
-      global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: player.playerId, source: options.recruitmentSource || source, level, overall: player.overall ?? player.finalOverall, actionId: options.actionId || `${run.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}` });
-      unlockAlbumRecruit(player.playerId, options.recruitmentSource || source);
-      optimizeLineupsForNewPlayer(player.playerId);
-      global.RunState.save(run);
-      closeModal();
-      return done(true);
+      let entry;
+      return persistGameplayMutation({
+        label: "recruit",
+        mutate: (current) => {
+          smartLineupResult = null;
+          if (current.roster.some((item) => String(item.playerId) === String(player.playerId))) throw Object.assign(new Error("Recruit not eligible"), { code: "recruit-ineligible" });
+          entry = { playerId: String(player.playerId), source, level, equippedItem: null, ...permanentRosterFields(player) };
+          current.roster.push(entry); current.bench.push(entry.playerId); decorateRecruit(current, entry);
+          options.transactionMutate?.(current, entry);
+        },
+        onCommitted: () => committedSideEffects(entry, "committed-acquired"),
+        onMutationError: ({ error }) => recover(error?.code === "recruit-ineligible" ? "ineligible" : "persistence-failed", { error }),
+        onFailure: persistenceFailure,
+      });
+    }
+    return showRecruitReplacement();
+
+    function showRecruitReplacement() {
+      const benchPlayers = (run.bench || []).map((id) => resolvedRosterPlayer(id, run)).filter(Boolean);
+      openModal(`
+        <div class="modal-head bench-replacement-head"><div><p class="eyebrow">Rosa piena</p><h2>Sostituisci una riserva</h2><p class="muted">Il nuovo giocatore entrerà al posto di una delle quattro riserve.</p></div></div>
+        <section class="bench-replacement-incoming" aria-label="Nuovo giocatore scelto"><p class="bench-replacement-label">NUOVO GIOCATORE</p>${playerCard(player, { context: "pull", extraClass: "bench-replacement-new-card", level, database: global.SeasonRegistry?.isSeasonSource?.(source) ? (global.SeasonRegistry.database(source) || seasonDb) : freeAgentsDb })}</section>
+        <section class="bench-replacement-options" aria-label="Riserve sostituibili"><p class="bench-replacement-label">SCEGLI LA RISERVA DA SOSTITUIRE</p><div class="player-grid mobile-compact-player-list bench-replacement-grid">${benchPlayers.map((candidate) => playerCard(candidate, { button: true, context: "pull", level: candidate.displayLevel, database: global.SeasonRegistry?.isSeasonSource?.(candidate.source) ? (global.SeasonRegistry.database(candidate.source) || seasonDb) : freeAgentsDb, resolvedPlayer: candidate })).join("")}</div></section>
+        ${allowCancel ? `<div class="button-row bench-replacement-footer"><button type="button" class="btn btn-ghost" id="cancel-recruit">${escapeHtml(options.cancelLabel || "RINUNCIA AL NUOVO GIOCATORE")}</button></div>` : ""}`,
+        { closeable: false, className: "pull-selection-modal bench-replacement-modal" });
+      complete("needs-replacement");
+      modalRoot.querySelectorAll(".bench-replacement-grid [data-player-id]").forEach((button) => button.addEventListener("click", () => prepareReplacement(String(button.dataset.playerId))));
+      document.getElementById("cancel-recruit")?.addEventListener("click", () => { closeModal(); complete("cancelled"); });
+      return { ok: false, kind: "needs-replacement" };
     }
 
-    const benchPlayers = run.bench.map((id) => resolvedRosterPlayer(id)).filter(Boolean);
-    openModal(`
-      <div class="modal-head bench-replacement-head"><div><p class="eyebrow">Rosa piena</p><h2>Sostituisci una riserva</h2><p class="muted">Il nuovo giocatore entrerà al posto di una delle quattro riserve.</p></div></div>
-      <section class="bench-replacement-incoming" aria-label="Nuovo giocatore scelto">
-        <p class="bench-replacement-label">NUOVO GIOCATORE</p>
-        ${playerCard(player, { context: "pull", extraClass: "bench-replacement-new-card", level, database: global.SeasonRegistry?.isSeasonSource?.(source) ? (global.SeasonRegistry.database(source) || seasonDb) : freeAgentsDb })}
-      </section>
-      <section class="bench-replacement-options" aria-label="Riserve sostituibili">
-        <p class="bench-replacement-label">SCEGLI LA RISERVA DA SOSTITUIRE</p>
-        <div class="player-grid mobile-compact-player-list bench-replacement-grid">
-          ${benchPlayers.map((candidate) => playerCard(candidate, { button: true, context: "pull", level: candidate.displayLevel, database: global.SeasonRegistry?.isSeasonSource?.(candidate.source) ? (global.SeasonRegistry.database(candidate.source) || seasonDb) : freeAgentsDb, resolvedPlayer: candidate })).join("")}
-        </div>
-      </section>
-      ${allowCancel ? `<div class="button-row bench-replacement-footer"><button type="button" class="btn btn-ghost" id="cancel-recruit">${escapeHtml(options.cancelLabel || "RINUNCIA AL NUOVO GIOCATORE")}</button></div>` : ""}`,
-      { closeable: false, className: "pull-selection-modal bench-replacement-modal" }
-    );
-    modalRoot.querySelectorAll(".bench-replacement-grid [data-player-id]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const removeId = String(button.dataset.playerId);
-        const removedEntry = rosterEntry(removeId);
-        const replace = () => {
-          if (removedEntry.equippedItem) run.inventory.push(removedEntry.equippedItem);
-          run.roster = run.roster.filter((entry) => String(entry.playerId) !== removeId);
-          run.bench = run.bench.filter((id) => String(id) !== removeId);
-          const joinedAt = new Date().toISOString();
-          run.roster.push({ playerId: String(player.playerId), source, activeProfileId: player.profileId || null, activeRoleVariantId: player.defaultRoleVariantId || null, level, levelUnits: 0, recruitedAtLevel: level, recruitedOverall: player.overall ?? player.finalOverall ?? null, firstJoinedAt: joinedAt, recruitmentSource: options.recruitmentSource || source, equippedItem: null, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], ...permanentRosterFields(player) });
-          run.bench.push(String(player.playerId));
-          global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: player.playerId, source: options.recruitmentSource || source, level, overall: player.overall ?? player.finalOverall, actionId: options.actionId || `${run.runId}:${player.playerId}:recruited:${options.recruitmentSource || source}` });
-          unlockAlbumRecruit(player.playerId, options.recruitmentSource || source);
-          global.FiveVFive.removeUnavailable(run);
-          optimizeLineupsForNewPlayer(player.playerId);
-          global.RunState.save(run);
-          closeModal();
-          done(true);
-        };
-        if (removedEntry.equippedItem && run.inventory.length >= global.SEASON1_CONFIG.maxInventory) {
-          return chooseInventoryDiscard(
-            "Libera uno spazio per recuperare l'oggetto equipaggiato",
-            replace,
-            () => recruitPlayer(player, source, level, done, options)
-          );
-        }
-        replace();
-      });
-    });
-    document.getElementById("cancel-recruit")?.addEventListener("click", () => {
-      closeModal();
-      done(false);
-    });
-  }
+    function prepareReplacement(removeId) {
+      const selected = rosterEntry(removeId, run);
+      if (!selected || !(run.bench || []).some((id) => String(id) === removeId)) return showRecruitReplacement();
+      if (selected.equippedItem && run.inventory.length >= global.SEASON1_CONFIG.maxInventory) {
+        return chooseInventoryDiscardSelection("Libera uno spazio per recuperare l'oggetto equipaggiato", (discardId) => replace(removeId, discardId), showRecruitReplacement);
+      }
+      return replace(removeId, null);
+    }
 
+    function replace(removeId, discardInstanceId) {
+      let entry;
+      return persistGameplayMutation({
+        label: "recruit-replacement",
+        mutate: (current) => {
+          smartLineupResult = null;
+          const removed = rosterEntry(removeId, current);
+          if (!removed || !(current.bench || []).some((id) => String(id) === removeId)) throw Object.assign(new Error("Replacement no longer valid"), { code: "replacement-invalid" });
+          if (discardInstanceId) {
+            const discardIndex = current.inventory.findIndex((item) => String(item.instanceId) === String(discardInstanceId));
+            if (discardIndex < 0) throw Object.assign(new Error("Discard no longer valid"), { code: "replacement-invalid" });
+            current.inventory.splice(discardIndex, 1);
+          }
+          if (removed.equippedItem) {
+            if (current.inventory.length >= global.SEASON1_CONFIG.maxInventory) throw Object.assign(new Error("Inventory still full"), { code: "replacement-invalid" });
+            current.inventory.push(removed.equippedItem);
+          }
+          current.roster = current.roster.filter((item) => String(item.playerId) !== removeId);
+          current.bench = current.bench.filter((id) => String(id) !== removeId);
+          current.lineup = (current.lineup || []).filter((id) => String(id) !== removeId);
+          global.FiveVFive.removeUnavailable(current);
+          if (profileAware) {
+            const acquired = global.ProfiledSeasonRuntime.acquireOrUpgradeProfile(current, player, { seasonId: current.seasonId, maxRoster: global.SEASON1_CONFIG.maxRoster, level });
+            if (acquired.status !== "acquired" || !acquired.player) throw Object.assign(new Error("Replacement recruit invalid"), { code: "replacement-invalid" });
+            entry = acquired.player;
+          } else {
+            entry = { playerId: String(player.playerId), source, level, equippedItem: null, ...permanentRosterFields(player) };
+            current.roster.push(entry);
+          }
+          current.bench.push(String(entry.playerId)); decorateRecruit(current, entry);
+          global.FiveVFive.removeUnavailable(current);
+          options.transactionMutate?.(current, entry);
+        },
+        onCommitted: () => committedSideEffects(entry, "committed-acquired"),
+        onMutationError: ({ error }) => { toast("Sostituzione non più valida", "error"); recover("ineligible", { error }); },
+        onFailure: persistenceFailure,
+      });
+    }
+  }
   function openBossPreviewModal(boss) {
     const bossPlayers = bossTeamPlayers(boss);
     const meta = bossMatchTeamMeta(boss).boss;
@@ -4375,11 +4583,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function persistMatchState() {
-    if (!ui.match) return;
-    ui.match.state = ui.bossMatchState;
-    ui.match.log = ui.bossMatchLog;
-    run.activeMatch = ui.match;
-    global.RunState.save(run);
+    if (!ui.match) return { ok: false };
+    return persistGameplayMutation({
+      label: "match-state",
+      mutate: () => { ui.match.state = ui.bossMatchState; ui.match.log = ui.bossMatchLog; run.activeMatch = ui.match; },
+      rerender: ({ ok }) => { if (!ok) ui.match = run?.activeMatch || null; },
+    });
   }
 
   function renderMatch() {
@@ -4736,7 +4945,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     run.phase = "match";
     run.activeMatch = match;
     appendFinalMatchMessage(result, "five_v_five");
-    persistMatchState();
+    if (!persistMatchState().ok) return renderMatch();
     updateMatchScoreDom(match, true);
     updateMatchControlsDom();
   }
@@ -4757,46 +4966,26 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       global.RunState.restoreAfterLoss(run, match.previousNodeId, match.type);
       match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : "Sconfitta: torni al nodo precedente." };
     }
-    run.phase = "match"; run.activeMatch = match; appendFinalMatchMessage(result, "special_match"); persistMatchState(); updateMatchScoreDom(match, true); updateMatchControlsDom();
+    run.phase = "match"; run.activeMatch = match; appendFinalMatchMessage(result, "special_match"); if (!persistMatchState().ok) return renderMatch(); updateMatchScoreDom(match, true); updateMatchControlsDom();
   }
 
   function completeBossMatch(result) {
+    // Durable loss semantics: run.gameOver ? "Hai perso l'ultima vita. La run è terminata."; type: run.gameOver ? "game-over" : "map"
     const match = ui.match;
     if (!match?.simulation || match.simulation.resolutionApplied) return;
-    match.simulation.resolutionApplied = true;
-    ui.bossMatchResolving = "done";
-    ui.bossMatchState = result === "victory" ? "completed-victory" : "completed-defeat";
-    match.state = ui.bossMatchState;
-    match.result = result;
-    applyConsecutiveLossResult(result);
-    if (match.simulation?.score) match.score = [match.simulation.score.user, match.simulation.score.opponent];
-    applyRealMatchStatistics(match, result);
-    const node = run.currentZone.nodes.find((item) => item.id === match.nodeId);
-    if (result === "victory") {
-      addLevels(1, `${run.runId}:${match.nodeId}:boss:victory`, 6);
-      if (node) global.MapEngine.completeNode(run.currentZone, node.id);
-      match.pendingPostMatchAction = { type: "boss-rewards" };
-      run.pendingBossVictory = { bossIndex: Number(match.bossIndex ?? run.bossIndex), bossId: String(seasonDb.bossOrder[Number(match.bossIndex ?? run.bossIndex)]?.teamId || ""), nodeId: match.nodeId || null, rewardsRemaining: 2, excludedIds: [], rerolls: 0, candidateIds: [] };
-      run.postBossFlow = run.postBossFlow || {
-        status: "result",
-        bossIndex: Number(match.bossIndex ?? run.bossIndex),
-        bossTeamId: String(seasonDb.bossOrder[Number(match.bossIndex ?? run.bossIndex)]?.teamId || ""),
-        matchNodeId: match.nodeId || null,
-        remainingRewards: 2,
-        rewardNumber: 1,
-        excludedIds: [],
-        rerolls: 0,
-        candidateIds: [],
-        completed: false,
-      };
-    } else {
-      global.RunState.restoreAfterLoss(run, match.previousNodeId, match.type);
-      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : `Sconfitta: ${remainingLivesText(run.lives)}. Torni al nodo precedente.` };
-    }
-    run.phase = "match";
-    run.activeMatch = match;
-    appendFinalMatchMessage(result, "boss");
-    persistMatchState();
+    const committed = persistGameplayMutation({
+      label: "boss-resolution",
+      mutate: (current) => global.BossGameOverRuntime.applyBossResolutionMutation({ run: current, matchId: match.matchId, result, seasonDb, deps: {
+        applyStatistics: applyRealMatchStatistics, addLevels,
+        completeNode: (zone, nodeId) => global.MapEngine.completeNode(zone, nodeId),
+        restoreAfterLoss: (...args) => global.RunState.restoreAfterLoss(...args),
+        lossToast: (resolved) => resolved.gameOver ? "Hai perso l'ultima vita. La run è terminata." : `Sconfitta: ${remainingLivesText(resolved.lives)}. Torni al nodo precedente.`,
+        appendFinalMessage: appendFinalMatchMessage,
+      } }),
+      onCommitted: (_value, current) => { ui.match = current.activeMatch; ui.bossMatchResolving = "done"; ui.bossMatchState = current.activeMatch.state; },
+      rerender: ({ ok, run: recovered }) => { if (!ok) { ui.match = recovered?.activeMatch || null; ui.bossMatchResolving = false; ui.bossMatchState = ui.match?.state || "pre-match"; } },
+    });
+    if (!committed.ok) return renderMatch();
     updateMatchScoreDom(match, true);
     updateMatchControlsDom();
   }
@@ -4856,19 +5045,32 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const button = event.currentTarget;
     if (button.disabled) return;
     button.disabled = true;
-    const finish = () => {
-      const transition = global.SpecialMatchRuntime.completeCurrentReward(run, seasonDb, run.pendingSpecialMatchReward);
-      global.RunState.save(run);
+    const finishCommitted = (transition) => {
       closeModal();
-      if (transition.status === "next-reward") return showSpecialMatchReward();
-      run.phase = "map";
-      global.RunState.save(run);
+      if (transition?.status === "next-reward") return showSpecialMatchReward();
       renderMap();
     };
-    if (!profile) return finish();
-    recruitPlayer(profile, global.SeasonRegistry.sourceForSeason(run.seasonId), Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), (completed) => {
-      finish();
-    }, { allowCancel: true, cancelLabel: "RIFIUTA", recruitmentSource: "special_match_reward", actionId: pending.actionId });
+    if (!profile) {
+      let transition;
+      return persistGameplayMutation({
+        label: "special-reward-empty",
+        mutate: (current) => { transition = global.SpecialMatchRuntime.completeCurrentReward(current, seasonDb, current.pendingSpecialMatchReward); if (transition.status !== "next-reward") current.phase = "map"; },
+        onCommitted: () => finishCommitted(transition),
+        rerender: ({ ok }) => { if (!ok) showSpecialMatchReward(); },
+      });
+    }
+    let transition;
+    recruitPlayer(profile, global.SeasonRegistry.sourceForSeason(run.seasonId), Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), (result) => {
+      if (result.status.startsWith("committed-")) finishCommitted(transition);
+      if (result.status === "cancelled") showSpecialMatchReward();
+    }, {
+      allowCancel: true,
+      cancelLabel: "RIFIUTA",
+      recruitmentSource: "special_match_reward",
+      actionId: pending.actionId,
+      transactionMutate: (current) => { transition = global.SpecialMatchRuntime.completeCurrentReward(current, seasonDb, current.pendingSpecialMatchReward); if (transition.status !== "next-reward") current.phase = "map"; },
+      onRecover: () => showSpecialMatchReward(),
+    });
   });
 }
 
@@ -4887,50 +5089,20 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function ensurePostBossFlow(options = {}) {
-    const match = bossVictoryMatch();
-    if (!run.postBossFlow && run.pendingBossVictory) {
-      const pending = run.pendingBossVictory;
-      const remaining = Math.max(0, Number(pending.rewardsRemaining ?? pending.remainingRewards ?? 2));
-      run.postBossFlow = { status: remaining > 0 ? "reward" : "next-zone", bossIndex: Number(pending.bossIndex ?? run.bossIndex), bossTeamId: String(pending.bossId || pending.bossTeamId || ""), matchNodeId: pending.nodeId || pending.matchNodeId || null, remainingRewards: remaining, rewardNumber: Math.max(1, 3 - remaining), excludedIds: (pending.excludedIds || []).map(String), rerolls: Number(pending.rerolls || 0), candidateIds: (pending.candidateIds || []).map(String), completed: false };
-    }
-    if (!run.postBossFlow && match) {
-      run.postBossFlow = { status: "result", bossIndex: Number(match.bossIndex ?? run.bossIndex), bossTeamId: String(seasonDb.bossOrder[Number(match.bossIndex ?? run.bossIndex)]?.teamId || ""), matchNodeId: match.nodeId || null, remainingRewards: 2, rewardNumber: 1, excludedIds: [], rerolls: 0, candidateIds: [], completed: false };
-    }
-    const flow = run.postBossFlow;
-    if (!flow) return null;
-    flow.remainingRewards = Math.max(0, Math.min(2, Number(flow.remainingRewards ?? flow.rewardsRemaining ?? 2)));
-    flow.rewardNumber = Math.max(1, Math.min(2, Number(flow.rewardNumber ?? (3 - flow.remainingRewards))));
-    flow.excludedIds = Array.isArray(flow.excludedIds) ? Array.from(new Set(flow.excludedIds.map(String))) : [];
-    flow.candidateIds = Array.isArray(flow.candidateIds) ? flow.candidateIds.map(String) : [];
-    flow.rerolls = Math.max(0, Number(flow.rerolls || 0));
-    flow.bossIndex = Number(flow.bossIndex ?? run.bossIndex);
-    const boss = seasonDb.bossOrder[flow.bossIndex];
-    if (boss && !flow.bossTeamId) flow.bossTeamId = String(boss.teamId);
-    if (match && run.currentZone?.bossIndex === flow.bossIndex) {
-      const node = run.currentZone.nodes.find((item) => item.id === match.nodeId || item.type === "boss");
-      if (node) global.MapEngine.completeNode(run.currentZone, node.id);
-    }
-    if (options.clearMatch && match) {
-      match.postMatchNavigationApplied = true;
-      ui.match = null;
-      run.activeMatch = null;
-      ui.bossMatchResolving = false;
-      if (flow.status === "result") flow.status = "reward";
-    }
-    return flow;
+    return global.BossGameOverRuntime.derivePostBossFlow(run, seasonDb, options);
   }
 
   function resolvePendingRunFlow(options = {}) {
-    const flow = ensurePostBossFlow(options);
-    if (!flow) return { destination: "none" };
-    const boss = seasonDb.bossOrder[flow.bossIndex];
-    if (!boss && flow.status !== "season-complete") flow.status = "season-complete";
-    if (flow.status === "result") { global.RunState.save(run); return { destination: "boss-result" }; }
-    if (flow.status === "reward" && flow.remainingRewards > 0) { global.RunState.save(run); return { destination: "boss-rewards" }; }
-    if (flow.status === "season-complete") return finishBossVictoryTransition();
-    flow.status = "next-zone";
-    global.RunState.save(run);
-    return finishBossVictoryTransition();
+    if (!ensurePostBossFlow(options)) return { destination: "none" };
+    const committed = persistGameplayMutation({
+      label: "post-boss-resume",
+      mutate: (current) => global.BossGameOverRuntime.applyPostBossResumeMutation({ run: current, seasonDb, clearMatch: Boolean(options.clearMatch) }),
+      onCommitted: () => { if (options.clearMatch) { ui.match = null; ui.bossMatchResolving = false; } },
+      rerender: ({ ok }) => { if (!ok) renderPostBossRecovery(); },
+    });
+    if (!committed.ok) return { destination: "post-boss-recovery", error: committed.error };
+    if (committed.value.destination === "next-zone" || committed.value.destination === "season-complete") return finishBossVictoryTransition();
+    return committed.value;
   }
 
   function resumePostBossFlow() {
@@ -4944,6 +5116,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     }
     if (flow.destination === "boss-rewards") return startBossRewards();
     if (flow.destination === "season-complete") return renderSeasonComplete();
+    if (flow.destination === "finalization-pending") return renderFinalizationPending(flow.finalization);
+    if (flow.destination === "post-boss-recovery") return renderPostBossRecovery();
     if (flow.destination === "map") return renderMap();
     return null;
   }
@@ -4967,10 +5141,21 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const flow = run.postBossFlow;
     const boss = seasonDb.bossOrder[Number(flow?.bossIndex ?? run.bossIndex)];
     if (!flow || !boss) return renderMap();
-    flow.status = "reward";
-    if (!flow.candidateIds?.length) flow.candidateIds = bossRewardCandidates(flow, boss).map((player) => String(player.profileId || player.playerId));
-    global.RunState.save(run);
-    showNextBossReward();
+    const committed = persistGameplayMutation({
+      label: "boss-reward-candidates",
+      mutate: (current) => global.BossGameOverRuntime.prepareBossRewardCandidatesMutation({ run: current, seasonDb, candidateIds: flow.candidateIds?.length ? flow.candidateIds : bossRewardCandidates(flow, boss).map((player) => String(player.profileId || player.playerId)) }),
+      rerender: ({ ok }) => { if (!ok && run?.postBossFlow) renderPostBossRecovery(); },
+    });
+    if (committed.ok) showNextBossReward();
+  }
+
+  function renderPostBossRecovery() {
+    app.innerHTML = `<main class="hero-screen post-boss-recovery-screen" data-post-boss-recovery><section class="panel">
+      <p class="eyebrow">PROGRESSO BOSS</p><h1>Ripresa ricompense</h1><p class="muted">Il progresso salvato non è stato modificato.</p>
+      <button type="button" class="btn btn-yellow" id="retry-post-boss-flow">RIPROVA / CONTINUA</button>
+    </section></main>`;
+    resetRenderedViewScroll();
+    document.getElementById("retry-post-boss-flow")?.addEventListener("click", resumePostBossFlow);
   }
 
   function syncPendingBossReward(flow) {
@@ -4985,12 +5170,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const flow = run.postBossFlow;
     const boss = seasonDb.bossOrder[Number(flow?.bossIndex ?? run.bossIndex)];
     if (!flow || !boss) return renderMap();
-    let candidates = (flow.candidateIds || []).map((id) => isProfileAwareSeason() ? global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, id) : seasonPlayersById.get(String(id))).filter(Boolean);
-    if (!candidates.length) {
-      candidates = bossRewardCandidates(flow, boss);
-      flow.candidateIds = candidates.map((player) => String(player.profileId || player.playerId));
-      global.RunState.save(run);
-    }
+    const candidates = (flow.candidateIds || []).map((id) => isProfileAwareSeason() ? global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, id) : seasonPlayersById.get(String(id))).filter(Boolean);
+    if (!candidates.length) return startBossRewards();
     const level = global.RoguelikeRules.defeatedBossRewardLevel(boss);
     const scoutToken = run.inventory.find((item) => item.effect === "pull_reroll");
     showPlayerOffer({
@@ -5003,78 +5184,69 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       allowSkip: true,
       legendary: false,
       onReroll: scoutToken ? () => {
-        removeInventoryItem(scoutToken.instanceId);
-        global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId: flow.matchNodeId, itemId: scoutToken.id, instanceId: scoutToken.instanceId, actionId: `${run.runId}:${flow.matchNodeId}:boss_reward_reroll:${flow.rewardNumber}:${flow.rerolls + 1}` });
-        flow.excludedIds.push(...candidates.map((player) => String(player.profileId || player.playerId)));
-        flow.excludedIds = Array.from(new Set(flow.excludedIds));
-        flow.rerolls += 1;
-        flow.candidateIds = bossRewardCandidates(flow, boss).map((player) => String(player.profileId || player.playerId));
-        syncPendingBossReward(flow);
-        global.RunState.save(run);
-        showNextBossReward();
+        const committed = persistGameplayMutation({ label: "boss-reward-reroll", mutate: (current) => global.BossGameOverRuntime.applyBossRewardRerollMutation({ run: current, tokenInstanceId: scoutToken.instanceId, nextCandidateIds: (nextFlow) => bossRewardCandidates(nextFlow, boss).map((candidate) => String(candidate.profileId || candidate.playerId)), recordAction: (current, nextFlow, token) => global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId: nextFlow.matchNodeId, itemId: token.id, instanceId: token.instanceId, actionId: `${current.runId}:${nextFlow.matchNodeId}:boss_reward_reroll:${nextFlow.rewardNumber}:${nextFlow.rerolls}` }) }), rerender: ({ ok }) => { if (!ok) renderPostBossRecovery(); } });
+        if (committed.ok) showNextBossReward();
       } : null,
       onPick: (player) => {
-        flow.excludedIds.push(String(player.playerId));
-        flow.excludedIds = Array.from(new Set(flow.excludedIds));
-        syncPendingBossReward(flow);
-        global.RunState.save(run);
-        global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.BOSS_REWARD_CHOSEN, { nodeId: flow.matchNodeId, playerId: player.playerId, actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:chosen` });
-        recruitPlayer(player, global.SeasonRegistry.sourceForSeason(run?.seasonId), level, () => advanceBossReward(), { allowCancel: true, recruitmentSource: "boss_reward", actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:recruit:${player.profileId || player.playerId}` });
+        recruitPlayer(player, global.SeasonRegistry.sourceForSeason(run?.seasonId), level, (result) => { if (result.status.startsWith("committed-")) advanceBossReward(); else if (result.status === "cancelled") showNextBossReward(); }, { allowCancel: true, recruitmentSource: "boss_reward", actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:recruit:${player.profileId || player.playerId}`, transactionMutate: (current) => global.BossGameOverRuntime.applyBossRewardPickMutation({ run: current, playerId: player.profileId || player.playerId, recordAction: (target, currentFlow) => global.RunStatistics?.recordRunAction?.(target, global.RunStatistics.ACTIONS.BOSS_REWARD_CHOSEN, { nodeId: currentFlow.matchNodeId, playerId: player.playerId, actionId: `${target.runId}:${currentFlow.matchNodeId}:boss_reward:${currentFlow.rewardNumber}:chosen` }) }), onRecover: () => showNextBossReward(), onRecoveryBlocked: () => renderPostBossRecovery() });
       },
-      onSkip: () => { global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.BOSS_REWARD_DECLINED, { nodeId: flow.matchNodeId, actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:declined` }); advanceBossReward(); },
+      onSkip: () => advanceBossReward((current, currentFlow) => global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.BOSS_REWARD_DECLINED, { nodeId: currentFlow.matchNodeId, actionId: `${current.runId}:${currentFlow.matchNodeId}:boss_reward:${currentFlow.rewardNumber}:declined` })),
     });
   }
 
-  function advanceBossReward() {
+  function advanceBossReward(recordAction) {
     const flow = run.postBossFlow;
     if (!flow) return renderMap();
-    flow.remainingRewards = Math.max(0, Number(flow.remainingRewards || 0) - 1);
-    flow.rewardNumber = Math.min(2, Number(flow.rewardNumber || 1) + 1);
-    flow.rerolls = 0;
-    flow.candidateIds = [];
-    if (flow.remainingRewards <= 0) flow.status = "next-zone";
-    syncPendingBossReward(flow);
-    global.RunState.save(run);
-    flow.remainingRewards > 0 ? showNextBossReward() : navigateBossVictoryDestination(finishBossVictoryTransition());
+    const committed = persistGameplayMutation({
+      label: "boss-reward-advance",
+      mutate: (current) => global.BossGameOverRuntime.advanceBossRewardMutation({ run: current, recordAction }),
+      rerender: ({ ok }) => { if (!ok && run?.postBossFlow) renderPostBossRecovery(); },
+    });
+    if (!committed.ok) return;
+    run.postBossFlow.remainingRewards > 0 ? showNextBossReward() : navigateBossVictoryDestination(finishBossVictoryTransition());
   }
 
   function finalizeBossVictoryTransition(options = {}) {
     return finishBossVictoryTransition(options);
   }
 
+  function hasPendingCanonicalFinalization(current) {
+    const status = String(current?.finalization?.status || "");
+    return current?.phase === "finalization" || ["pending", "hall-written", "development-written"].includes(status);
+  }
+
+  function createPostBossCheckpoint(current) {
+    try { global.RunState.createCheckpoint(current); }
+    catch (error) {
+      console.error("Post-boss checkpoint creation failed after canonical commit", error);
+      toast("Progresso Boss salvato; il checkpoint di recupero verrà ricreato più tardi.", "warning");
+    }
+  }
+
   function finishBossVictoryTransition() {
-    const flow = ensurePostBossFlow() || run.postBossFlow;
-    const bossIndex = Number(flow?.bossIndex ?? run.bossIndex);
-    const boss = seasonDb.bossOrder[bossIndex];
-    ui.pendingReward = null;
-    closeModal();
-    if (!boss) {
-      run.postBossFlow = null;
-      run.pendingBossVictory = null;
-      run.phase = "complete";
-      global.RunState.save(run);
-      return { destination: "season-complete" };
+    const committed = persistGameplayMutation({
+      label: "boss-victory-handoff",
+      mutate: (current) => global.BossGameOverRuntime.applyBossVictoryHandoffMutation({
+        run: current, seasonDb, ensureCurrentZoneMutation,
+        buildFinalization: (boss) => { const snapshot = buildChampionSnapshot(boss); current.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId }; global.PermanentEffects.enqueueHall(current, snapshot); },
+      }),
+      onCommitted: () => { ui.pendingReward = null; ui.match = null; closeModal(); },
+      rerender: ({ ok }) => { if (!ok) renderPostBossRecovery(); },
+    });
+    if (!committed.ok) {
+      const recovered = committed.run;
+      const canonicalFinalization = hasPendingCanonicalFinalization(recovered);
+      return { destination: canonicalFinalization ? "finalization-pending" : "post-boss-recovery", error: committed.error, finalization: recovered?.finalization };
     }
-    if (!run.completedBossIds.includes(String(boss.teamId))) run.completedBossIds.push(String(boss.teamId));
-    if (!run.unlockedTeamIds.includes(String(boss.teamId))) run.unlockedTeamIds.push(String(boss.teamId));
-    if (run.bossIndex <= bossIndex) run.bossIndex = bossIndex + 1;
-    run.pendingBossVictory = null;
-    run.currentZone = null;
-    run.activeMatch = null;
-    ui.match = null;
-    if (run.bossIndex >= seasonDb.bossOrder.length) {
-      run.postBossFlow = null;
-      run.phase = "complete";
-      run.statistics.completedAt = run.completedAt || new Date().toISOString();
-      global.RunState.save(run);
-      persistChampionBeforeFinalUi(boss);
-      global.RunState.save(run);
-      return { destination: "season-complete" };
+    if (committed.value.destination === "finalization-pending") {
+      const finalization = resumeRunFinalization({ render: false });
+      return finalization.completed
+        ? { destination: "season-complete", finalization }
+        : { destination: "finalization-pending", finalization };
     }
-    ensureCurrentZone();
-    run.postBossFlow = null;
-    global.RunState.createCheckpoint(run);
-    return { destination: "map" };
+    // Final-boss boundary is owned by the production helper: run.bossIndex >= seasonDb.bossOrder.length
+    if (committed.value.destination === "map") createPostBossCheckpoint(run);
+    return committed.value;
   }
 
   function devSkipCurrentBoss({ renderResult = true } = {}) {
@@ -5366,11 +5538,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       if (!playerButton || !selector.contains(playerButton)) return;
       event.preventDefault();
       try {
-        global.FiveVFive.assign(run, ui.fiveVFiveSelectedSlot, playerButton.dataset.fivePlayer, fiveRoleForPlayerId);
-        ui.fiveVFiveSelectedSlot = null;
-        global.RunState.save(run);
-        toast("Giocatore assegnato alla formazione 5v5");
-        refreshFiveAfterAssignment();
+        const assigned = persistGameplayMutation({ label: "five-lineup-assign", mutate: () => global.FiveVFive.assign(run, ui.fiveVFiveSelectedSlot, playerButton.dataset.fivePlayer, fiveRoleForPlayerId), onCommitted: () => { ui.fiveVFiveSelectedSlot = null; toast("Giocatore assegnato alla formazione 5v5"); refreshFiveAfterAssignment(); }, rerender: ({ ok }) => { if (!ok) renderFiveVFive(options); } });
+        if (!assigned.ok) return;
       } catch (error) {
         toast(error.message);
       }
@@ -5738,13 +5907,11 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         title: `Usare ${item.name}?`,
         description: "Aumenterà di 0,5 livello tutti i giocatori che non hanno ancora raggiunto il livello massimo.",
         onConfirm: () => {
-          addLevels(Number(item.amount || 0), `${run.runId}:${instanceId}:level-units`, isProfileAwareSeason() ? 3 : null);
-          removeInventoryItem(instanceId);
-          global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
-          global.RunState.save(run);
-          closeModal();
-          toast("Tutta la rosa guadagna +0,5 livello");
-          renderInventory();
+          persistGameplayMutation({ label: "consumable-team-level", mutate: () => {
+            addLevels(Number(item.amount || 0), `${run.runId}:${instanceId}:level-units`, isProfileAwareSeason() ? 3 : null);
+            removeInventoryItem(instanceId);
+            global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
+          }, onCommitted: () => { closeModal(); toast("Tutta la rosa guadagna +0,5 livello"); renderInventory(); }, rerender: ({ ok }) => { if (!ok) renderInventory(); } });
         },
       });
     }
@@ -5755,13 +5922,11 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         title: `Usare ${item.name}?`,
         description: `Recupererai una vita (${run.lives}/${maxRunLives}).`,
         onConfirm: () => {
-          run.lives = Math.min(maxRunLives, run.lives + Number(item.amount || 1));
-          removeInventoryItem(instanceId);
-          global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
-          global.RunState.save(run);
-          closeModal();
-          toast("Hai recuperato una vita");
-          renderInventory();
+          persistGameplayMutation({ label: "consumable-restore-life", mutate: () => {
+            run.lives = Math.min(maxRunLives, run.lives + Number(item.amount || 1));
+            removeInventoryItem(instanceId);
+            global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId, actionId: `${run.runId}:${instanceId}:used` });
+          }, onCommitted: () => { closeModal(); toast("Hai recuperato una vita"); renderInventory(); }, rerender: ({ ok }) => { if (!ok) renderInventory(); } });
         },
       });
     }
@@ -5812,11 +5977,14 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
           description: `Livello ${before.displayLevelText} → ${global.LevelProgression.formatLevel(Math.min(20, currentLevel + appliedLevels), run.seasonId, Math.min(20, currentLevel + appliedLevels) >= 20 ? 0 : entry.levelUnits)}. L'oggetto sarà consumato.`,
           onCancel: () => choosePlayerForConsumable(item),
           onConfirm: () => {
-            entry.level = Math.min(20, currentLevel + appliedLevels);
-            if (isProfileAwareSeason() && entry.level >= 20) entry.levelUnits = 0;
-            removeInventoryItem(item.instanceId);
-            global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
-            global.RunState.save(run);
+            const committed = persistGameplayMutation({ label: "consumable-player-level", mutate: () => {
+              const currentEntry = rosterEntry(entry.playerId);
+              currentEntry.level = Math.min(20, currentLevel + appliedLevels);
+              if (isProfileAwareSeason() && currentEntry.level >= 20) currentEntry.levelUnits = 0;
+              removeInventoryItem(item.instanceId);
+              global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
+            }, onCommitted: () => {} });
+            if (!committed.ok) return renderInventory();
             const after = resolvedRosterPlayer(entry.playerId);
             closeModal();
             toast(`${escapeHtml(item.name)} utilizzata\nLivello ${before.displayLevelText} → ${after.displayLevelText}\nOverall ${before.overall} → ${after.overall}`);
@@ -5844,15 +6012,18 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
           onCancel: () => choosePlayerForPotentialBoost(item),
           onConfirm: () => {
             const trainingBase=global.RoguelikeRules.isProfileAwareRosterEntry(entry,run)?global.ProfiledSeasonRuntime.resolveEffectiveBase(entry,run.seasonId):player;
-            const trainingPlan=global.InazumaProgression.planCodexTrainingGrowth(trainingBase,entry,addedBoost);
-            entry.potentialBoost = Math.min(maxBoost, currentPotentialBoost + addedBoost);
-            entry.currentOverallBoost = Math.min(maxBoost, currentOverallBoost + addedBoost);
-            entry.intensiveTrainingMigrated = true;
-            entry.potentialBoostApplications = Array.isArray(entry.potentialBoostApplications) ? entry.potentialBoostApplications : [];
-            if (addedBoost > 0) entry.potentialBoostApplications.push({ amount: addedBoost, appliedLevel: Number(entry.level || 0), codexDeltas: trainingPlan.codexDeltas });
+            const committed = persistGameplayMutation({ label: "consumable-potential", mutate: () => {
+            const currentEntry = rosterEntry(entry.playerId);
+            const trainingPlan=global.InazumaProgression.planCodexTrainingGrowth(trainingBase,currentEntry,addedBoost);
+            currentEntry.potentialBoost = Math.min(maxBoost, currentPotentialBoost + addedBoost);
+            currentEntry.currentOverallBoost = Math.min(maxBoost, currentOverallBoost + addedBoost);
+            currentEntry.intensiveTrainingMigrated = true;
+            currentEntry.potentialBoostApplications = Array.isArray(currentEntry.potentialBoostApplications) ? currentEntry.potentialBoostApplications : [];
+            if (addedBoost > 0) currentEntry.potentialBoostApplications.push({ amount: addedBoost, appliedLevel: Number(currentEntry.level || 0), codexDeltas: trainingPlan.codexDeltas });
             removeInventoryItem(item.instanceId);
             global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_USED, { itemId: item.id, effect: item.effect, instanceId: item.instanceId, actionId: `${run.runId}:${item.instanceId}:used` });
-            global.RunState.save(run);
+            }, onCommitted: () => {} });
+            if (!committed.ok) return renderInventory();
             const after = resolvedRosterPlayer(entry.playerId);
             closeModal();
             const rarityMessage = before.category !== after.category ? `\nNuova rarità: ${after.category}` : "";
@@ -5930,12 +6101,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   function equipItemToEntry(instanceId, entry) {
     const item = run.inventory.find((candidate) => candidate.instanceId === instanceId);
     if (!item) return;
-    const newEquipment = removeInventoryItem(instanceId);
-    if (entry.equippedItem) run.inventory.push(entry.equippedItem);
-    entry.equippedItem = newEquipment;
-    global.RunState.save(run);
-    closeModal();
-    renderInventory({ keepScroll: true });
+    persistGameplayMutation({
+      label: "equipment-equip",
+      mutate: () => { const newEquipment = removeInventoryItem(instanceId); if (entry.equippedItem) run.inventory.push(entry.equippedItem); entry.equippedItem = newEquipment; },
+      onCommitted: () => { closeModal(); renderInventory({ keepScroll: true }); },
+      rerender: ({ ok }) => { if (!ok) renderInventory({ keepScroll: true }); },
+    });
   }
 
   function unequipPlayerItem(playerId, options = {}) {
@@ -5952,20 +6123,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         onConfirm: () => unequipPlayerItem(playerId, { ...options, confirmed: true }),
       });
     }
-    const equippedItem = entry.equippedItem;
-    run.inventory.push(equippedItem);
-    entry.equippedItem = null;
-    try {
-      global.RunState.save(run);
-      (options.render || renderInventory)({ keepScroll: true });
-    } catch (error) {
-      entry.equippedItem = equippedItem;
-      const restoredIndex = run.inventory.lastIndexOf(equippedItem);
-      if (restoredIndex >= 0) run.inventory.splice(restoredIndex, 1);
-      throw new Error("Impossibile rimuovere l'oggetto. Riprova.", { cause: error });
-    }
-    closeModal();
-    toast("Oggetto riportato nell'inventario");
+    persistGameplayMutation({
+      label: "equipment-unequip",
+      mutate: () => { run.inventory.push(entry.equippedItem); entry.equippedItem = null; },
+      onCommitted: () => { (options.render || renderInventory)({ keepScroll: true }); closeModal(); toast("Oggetto riportato nell'inventario"); },
+      rerender: ({ ok }) => { if (!ok) (options.render || renderInventory)({ keepScroll: true }); },
+    });
   }
 
   function renderGameOver({ developmentResolved = false } = {}) {
@@ -6039,19 +6202,21 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
 
   function persistChampionBeforeFinalUi(finalBoss = null) {
     const boss = finalBoss || seasonDb.bossOrder[Math.min(Number(run.bossIndex || 1) - 1, seasonDb.bossOrder.length - 1)] || seasonDb.bossOrder.at(-1);
-    run.completedAt = run.completedAt || new Date().toISOString();
-    const result = global.HallOfFameStorage.addChampion(buildChampionSnapshot(boss));
-    const team = result?.team || buildChampionSnapshot(boss);
-    run.hallTeamId = team.hallTeamId;
-    run.hallOfFamePending = result?.persisted === false;
-    run.phase = run.phase === "final-summary" ? "final-summary" : "final-celebration";
-    global.RunState.save(run);
-    return team;
+    if (!run.finalization) {
+      run.completedAt = run.completedAt || new Date().toISOString();
+      const snapshot = buildChampionSnapshot(boss);
+      run.phase = "finalization";
+      run.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId };
+      global.PermanentEffects.enqueueHall(run, snapshot);
+      global.RunState.save(run);
+    }
+    drainPermanentEffects();
+    return run.hallTeamId ? global.HallOfFameStorage.getTeam(run.hallTeamId) : null;
   }
 
   function championTeam(hallTeamId) {
     let team = hallTeamId ? global.HallOfFameStorage.getTeam(hallTeamId) : null;
-    if (!team && ["complete", "final-celebration", "final-summary"].includes(String(run?.phase || ""))) team = persistChampionBeforeFinalUi();
+    if (!team && ["complete", "finalization", "final-celebration", "final-summary"].includes(String(run?.phase || ""))) team = persistChampionBeforeFinalUi();
     return team;
   }
 
@@ -6151,24 +6316,23 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function renderFinalCelebration(hallTeamId, { developmentResolved = false } = {}) {
+    if (!developmentResolved || run.finalization?.status !== "complete") return resumeRunFinalization();
     const team = championTeam(hallTeamId || run?.hallTeamId);
     if (!team) return renderHome();
-    if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "victory", onComplete: () => renderFinalCelebration(hallTeamId, { developmentResolved: true }) });
-    run.phase = "final-celebration"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
     app.innerHTML = `<main class="final-celebration-screen"><section class="final-celebration-panel"><header class="final-victory-hero"><div class="final-trophy" aria-hidden="true">★</div><div class="final-victory-copy"><p class="eyebrow">${escapeHtml(normalizedHallSeasonName(team).toUpperCase())} COMPLETATA</p><h1>${escapeHtml(team.teamName)}</h1><h2>Campioni della run</h2><p>${escapeHtml(team.modeName)} · ${formatDate(team.victoryDate)} · ${escapeHtml(team.finalFormation || '-')}</p></div></header><div class="final-victory-team"><div class="final-victory-section-head"><span>Squadra vincente</span><strong>La formazione che ha scritto la storia</strong></div>${championFormationMarkup(team)}</div><div class="button-row final-actions"><button type="button" class="btn btn-yellow" id="final-continue">Continua <span aria-hidden="true">→</span></button><button type="button" class="btn" id="skip-final-animation">Vai al riepilogo</button></div></section></main>`;
     resetRenderedViewScroll(); bindHallPlayerDetails(team);
-    const go = () => { run.phase = "final-summary"; global.RunState.save(run); renderFinalSummary(team.hallTeamId); };
+    const go = () => { run.phase = "final-summary"; global.RunState.save(run); renderFinalSummary(team.hallTeamId, { developmentResolved: true }); };
     document.getElementById("final-continue").addEventListener("click", go);
     document.getElementById("skip-final-animation").addEventListener("click", go);
   }
 
   function renderFinalSummary(hallTeamId, { developmentResolved = false } = {}) {
+    if (!developmentResolved || run.finalization?.status !== "complete") return resumeRunFinalization();
     const team = championTeam(hallTeamId || run?.hallTeamId);
     if (!team) return renderHome();
     const summaries = global.HallOfFameStorage.listSummaries();
     const ordinal = summaries.findIndex((item) => item.hallTeamId === team.hallTeamId) + 1;
     run.phase = "final-summary"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
-    if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "victory", onComplete: () => renderFinalSummary(hallTeamId, { developmentResolved: true }) });
     app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><div><p class="eyebrow">CAMPIONI · ${escapeHtml(normalizedHallSeasonName(team).toUpperCase())}</p><h1>${escapeHtml(team.teamName)}</h1><p class="final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span><span>Seed ${escapeHtml(compactSeed(team.seed))}</span><span>#${escapeHtml(ordinal || '-')} Albo d’Oro</span></p></div><span class="final-summary-star" aria-hidden="true">★</span></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3>${championFiveVFiveMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel"><button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn btn-primary" id="final-new-run">Nuova run</button>${sectionRootButton("finalSummary")}</aside></section></main>`;
     resetRenderedViewScroll(); bindFinalTabs(); bindHallPlayerDetails(team);
     document.getElementById("open-current-hall").addEventListener("click", () => renderHallOfFameDetail(team.hallTeamId));
@@ -6205,6 +6369,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function renderHallOfFame() {
+    if (!global.RestoreGameplayRoutingGate?.enter("hall")) return false;
     const teams = global.HallOfFameStorage.listSummaries();
     app.innerHTML = `<main class="hall-screen"><header class="hall-archive-head"><div><p class="eyebrow">ALBO D’ORO</p><h1>Squadre campioni</h1><p>Le imprese che hanno scritto la storia.</p></div>${sectionRootButton("hallRoot")}</header>${teams.length ? `<section class="hall-grid">${teams.map((team, index) => `<article class="hall-card"><div class="hall-card-rank"><span>★</span> CAMPIONE #${index + 1}</div><div><h2>${escapeHtml(team.teamName)}</h2><p class="hall-card-meta">${escapeHtml(normalizedHallSeasonName(team))} · ${formatDate(team.victoryDate)}</p></div><div class="hall-card-highlights"><span><small>MODULO</small><strong>${escapeHtml(team.finalFormation || '-')}</strong></span><span><small>OVERALL</small><strong>${escapeHtml(team.finalAverageOverall ?? 'N/D')}</strong></span><span><small>MVP</small><strong>${escapeHtml(team.mvp?.name || 'N/D')}</strong></span></div><div class="hall-card-footer"><div class="hall-portraits">${(team.portraits || []).map((src) => `<img src="${escapeHtml(src)}" alt="" loading="lazy"/>`).join('')}</div><button class="btn btn-yellow" data-open-hall-team="${escapeHtml(team.hallTeamId)}">Rivivi l'impresa</button></div></article>`).join('')}</section>` : `<section class="panel hall-empty"><h2>Nessuna squadra campione.</h2><p class="muted">Completa una run per lasciare il tuo segno.</p></section>`}</main>`;
     resetRenderedViewScroll();
@@ -6221,7 +6386,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function renderSeasonComplete() {
-    return renderFinalCelebration(run?.hallTeamId);
+    return renderFinalCelebration(run?.hallTeamId, { developmentResolved: true });
   }
 
 
@@ -6252,6 +6417,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       if (!activeDb || !freeAgentsResponse.ok || !visualsResponse.ok) throw new Error("Database non raggiungibili");
       const visualsDb = await visualsResponse.json();
       freeAgentsDb = await freeAgentsResponse.json();
+      await global.PersistenceBootstrapGate?.ready;
+      await global.PersistenceBootstrapGate?.whenWritable?.();
       global.AlbumProgress.configureFreeAgentIds((freeAgentsDb.players || []).map((player) => player.playerId));
       freeAgentsById = new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player]));
       playerVisualsById = new Map(Object.entries(visualsDb.players || {}));
@@ -6262,5 +6429,16 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions };
+  if (global.__INAZUMA_TEST_MODE__ === true) {
+    global.__INAZUMA_RECRUITMENT_TEST__ = {
+      recruitPlayer, showPlayerOffer, showNextBossReward, showSpecialMatchReward, openPull,
+      setContext: (context = {}) => {
+        if (context.run) { run = context.run; global.run = run; }
+        if (context.seasonDb) { seasonDb = context.seasonDb; activeSeason = { id: seasonDb.seasonId }; seasonPlayersById = new Map((seasonDb.players || []).map((player) => [String(player.playerId), player])); }
+        if (context.freeAgentsDb) { freeAgentsDb = context.freeAgentsDb; freeAgentsById = new Map((freeAgentsDb.players || []).map((player) => [String(player.playerId), player])); }
+      },
+      getRun: () => run,
+    };
+  }
   init();
 })(globalThis);

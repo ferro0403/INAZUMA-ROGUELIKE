@@ -19,7 +19,7 @@ for (const file of ['season1-config.js', 'season-registry.js', 'run-state.js', '
 function apply(snapshot) {
   const options = { suppressCloudEvent: true };
   sandbox.RunState.restoreProfile(snapshot.profile, options);
-  for (const [seasonId, run] of Object.entries(snapshot.runs)) { sandbox.RunState.remove(seasonId, options); if (run !== null) sandbox.RunState.save(core.clone(run), { preserveTimestamps: true, ...options }); }
+  for (const [seasonId, run] of Object.entries(snapshot.runs)) { const expectedGeneration = sandbox.RunStorage.diagnostics(seasonId).canonicalGeneration; if (run === null) sandbox.RunState.forceDeleteForRestore(seasonId, { ...options, expectedGeneration }); else sandbox.RunState.forceReplaceCanonicalFromSnapshot(core.clone(run), { preserveTimestamps: true, ...options, expectedGeneration }); }
   sandbox.AlbumProgress.write(core.clone(snapshot.album), options);
   sandbox.DevelopmentV2.write(core.clone(snapshot.development), options);
   sandbox.HallOfFameStorage._saveArchive({ schemaVersion: snapshot.hallOfFame.archiveSchemaVersion, updatedAt: snapshot.hallOfFame.updatedAt, teams: core.clone(snapshot.hallOfFame.teams), index: core.clone(snapshot.hallOfFame.index) }, { preserveTimestamp: true, ...options });
@@ -41,14 +41,14 @@ function hallDocument(entry, revision = 1) { return { schemaVersion: 1, revision
   for (const id of hallIndex.teamIds) halls.push(await core.validateHallDocument(id, hallDocs[id], manifest, crypto));
   const downloaded = core.reconstructSnapshot(payloads, halls);
 
-  sandbox.RunState.restoreProfile({ teamIdentity: { name: 'Royal' } }, { suppressCloudEvent: true }); const runB = sandbox.RunState.createRun({ name: 'Royal' }, 'ie1'); runB.bossIndex = 1; sandbox.RunState.save(runB, { preserveTimestamps: true, suppressCloudEvent: true });
+  sandbox.RunState.restoreProfile({ teamIdentity: { name: 'Royal' } }, { suppressCloudEvent: true }); const runB = sandbox.RunState.createRun({ name: 'Royal' }, 'ie1'); runB.bossIndex = 1; sandbox.RunState.save(runB, { preserveTimestamps: true, suppressCloudEvent: true, replaceRun: true });
   sandbox.AlbumProgress.write({ schemaVersion: 1, collections: { ie1: { unlockedPlayerIds: { jude: true } } } }, { suppressCloudEvent: true }); sandbox.DevelopmentV2.write({ coins: 2 }, { suppressCloudEvent: true }); sandbox.HallOfFameStorage._saveArchive({ schemaVersion: 2, updatedAt: null, teams: [], index: [] }, { preserveTimestamp: true, suppressCloudEvent: true });
   assert.strictEqual((await core.compareSnapshots(snapshotA, localSnapshot(), crypto)).equivalent, false, 'Snapshot B really differs');
   apply(downloaded); const comparison = await core.compareSnapshots(snapshotA, localSnapshot(), crypto); assert.deepStrictEqual(comparison, { equivalent: true, mismatches: [] }, 'runtime writers restore Snapshot A exactly over Snapshot B');
   assert.deepStrictEqual(localSnapshot().runs.ie1.currentZone.edges, [['n1', 'n2'], ['n2', 'n3']], 'nested arrays survive codec and runtime writers'); assert.strictEqual(localSnapshot().runs.ie2, null); assert.strictEqual(localSnapshot().hallOfFame.teams.length, 1);
 
   const cloud = fs.readFileSync('js/firebase-cloud-save.js', 'utf8'), ui = fs.readFileSync('js/account-ui.js', 'utf8'); const restore = cloud.slice(cloud.indexOf('async function restoreCloudSave'), cloud.indexOf('function requestConflictResolution'));
-  assert.match(cloud, /getDocFromServer/); assert.match(cloud, /maxAttempts = 2/); assert.match(cloud, /cloud-changed-during-download/); assert.match(cloud, /manifestBundleIdentity/); assert.match(cloud, /lastRestoreType === "explicit-conflict-cloud"/);
+  assert.match(cloud, /getDocFromServer/); assert.match(cloud, /maxAttempts = 2/); assert.match(cloud, /cloud-changed-during-download/); assert.match(cloud, /manifestBundleIdentity/); assert.match(cloud, /targetCloudCommitId/); assert.match(cloud, /InazumaCloudRestoreProtocol\.createJournal/);
   assert.doesNotMatch(restore, /writeBatch|batch\.set|batch\.update|batch\.commit/, 'restore has zero cloud writes'); assert.doesNotMatch(cloud, /onSnapshot|setInterval/); assert.match(ui, /Dettaglio:/); assert.match(ui, /Settore:/); assert.match(ui, /Fase:/);
   console.log('cloud-restore-hotfix-test: Snapshot A -> Snapshot B and stable restore checks ok');
 })().catch(error => { console.error(error); process.exit(1); });

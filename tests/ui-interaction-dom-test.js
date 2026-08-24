@@ -95,5 +95,6 @@ for (const rarity of ['elite', 'mondiale', 'leggenda']) {
   assert.ok(source.includes(`rarity-${rarity}`), `${rarity} has a distinct detail class`);
 }
 assert.ok(!source.includes(".replace('data-player-id=', 'data-album-player=')"), 'Album markup no longer mutates attributes with string replacement');
-assert.match(source, /ui\.selectedSquadPlayerId = null;\s*run\.phase = "squad";/, 'Squad entry resets transient selection before rendering');
+assert.match(source, /function renderSquad\(\) \{\s*closeModal\([^;]+;\s*ui\.selectedSquadPlayerId = null;/, 'Squad view resets transient selection before rendering');
+assert.doesNotMatch(source, /function renderSquad\(\) \{[\s\S]{0,250}run\.phase = "squad";/, 'Squad view does not mutate the canonical phase');
 console.log('ui-interaction-dom-test: ok');
