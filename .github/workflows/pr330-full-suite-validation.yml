@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - codex/fix-recruitment-full-roster-issues-mu5bva
+  pull_request:
+    branches:
+      - reroll
 
 jobs:
   validate:
