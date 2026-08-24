@@ -103,7 +103,7 @@ async function downloadStableCloudBundle({ uid, token, maxAttempts = 2 }) {
   throw restoreError("cloud-changed-during-download", "manifest");
 }
 async function downloadCloudBundleForJournal(journal, token) {
-  if (!journal.targetCloudCommitId) return downloadStableCloudBundle({ uid: journal.uid, token });
+  if (!journal.targetCloudCommitId) throw restoreError("restore-journal-repair-needed", "manifest");
   const db = globalThis.InazumaAccount.getFirestoreInstance(), uid = journal.uid, commitId = journal.targetCloudCommitId;
   const manifestDoc = await readServerDocument(db, "users", uid, "saveCommits", commitId, "metadata", "manifest");
   if (!manifestDoc.exists()) throw restoreError("restore-journal-repair-needed", "manifest");
