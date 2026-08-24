@@ -9,7 +9,7 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
-assert(index.includes('boss-match-action-parity-fit.css?v=20260811-action-parity-fit-1'), '11v11 parity stylesheet must be loaded');
+assert(/href=["']css\/boss-match-action-parity-fit\.css(?:\?[^"']*)?["']/.test(index), '11v11 parity stylesheet must be loaded');
 assert(css.includes('.boss-match-screen .boss-match-controls .five-match-action-cta'), 'Boss actions must use the five-match CTA structure');
 assert(css.includes('display: grid;'), 'Shared boss CTA must explicitly restore the 5v5 grid structure');
 assert(css.includes('.boss-match-line[data-row-count="5"]'), 'Five-player rows need dedicated fit rules');

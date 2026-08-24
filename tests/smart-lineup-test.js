@@ -24,19 +24,25 @@ let result = invoke(run, "new85", false);
 expect(!result.elevenChanged && !result.fiveChanged && run.lineup.includes("fw81"), "OFF must leave both lineups unchanged");
 run = makeRun(); result = invoke(run, "new85");
 expect(result.elevenChanged && result.elevenReplacedPlayerId === "fw81", "85 must replace weakest 81 FW in 11v11");
+expect(run.lineup.includes("fw87"), "87 FW must remain a starter in 11v11");
+expect(run.lineup.includes("new85") && !run.lineup.includes("fw81"), "85 FW must replace 81 FW in 11v11");
+expect(run.lineup.includes("fw84"), "84 FW must remain a starter in 11v11");
 expect(result.fiveChanged && run.fiveVFive.slots.FW2 === "new85", "1-1-2 must promote the stronger FW");
 expect(run.bench.includes("fw81") && !run.bench.includes("new85") && new Set([...run.lineup, ...run.bench]).size === run.roster.length, "bench must remain complete and duplicate-free");
 run = makeRun("1-2-1"); result = invoke(run, "new85");
-expect(result.elevenChanged && !result.fiveChanged && run.fiveVFive.slots.FW === "fw87", "1-2-1 must keep its stronger sole FW");
+expect(result.elevenChanged && result.elevenReplacedPlayerId === "fw81", "11v11 optimization must remain independent of the 5v5 formation");
+expect(result.fiveChanged && run.fiveVFive.slots.MF1 === "mf3", "1-2-1 must independently promote its stronger midfielder");
+expect(run.fiveVFive.slots.FW === "fw87", "1-2-1 must keep its stronger sole FW");
 overall.new85 = 81; run = makeRun(); result = invoke(run, "new85");
-expect(!result.elevenChanged && !result.fiveChanged, "equal Overall must never replace a starter");
+expect(!result.elevenChanged && !run.lineup.includes("new85") && !Object.values(run.fiveVFive.slots).includes("new85"), "equal Overall must never replace an incumbent");
 overall.new85 = 70; run = makeRun(); result = invoke(run, "new85");
-expect(!result.elevenChanged && !result.fiveChanged, "weaker player must not replace a starter");
+expect(!result.elevenChanged && !run.lineup.includes("new85") && !Object.values(run.fiveVFive.slots).includes("new85"), "weaker player must not replace an incumbent");
 overall.new85 = 85; run = makeRun(); run.lineup[10] = null; run.fiveVFive.slots.FW2 = null; result = invoke(run, "new85");
-expect(result.elevenChanged && result.fiveChanged && !result.elevenReplacedPlayerId && !result.fiveReplacedPlayerId, "compatible empty slots must be filled");
+expect(result.elevenChanged && !result.elevenReplacedPlayerId && run.lineup.includes("new85"), "compatible empty 11v11 slots must be filled without replacing a starter");
+expect(result.fiveChanged && run.fiveVFive.slots.FW2 === "new85", "compatible empty 5v5 slots must be filled independently");
 
 for (const role of ["GK", "DF", "MF", "FW"]) {
-  const id = `new-${role}`; add(id, role, 99); run = makeRun(); run.roster.push({ playerId: id });
+  const id = `new-${role}`; add(id, role, 99); run = makeRun();
   result = invoke(run, id);
   expect(result.elevenChanged && result.fiveChanged, `${role} must be supported independently in both lineups`);
 }
