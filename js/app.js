@@ -3587,7 +3587,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         recruitPlayer(player, playerSource, level, (result) => {
           if (result.status.startsWith("committed-")) return finishPull(`${player.name} entra nella rosa`);
           if (result.status === "cancelled") return finishPull("Hai rinunciato al nuovo giocatore");
-        }, { onRecover: () => showPlayerOffer(options) });
+        }, { onRecover: () => openPull(node, pullType, options), onRecoveryBlocked: () => renderMap() });
       },
       onSkip: () => finishPull("Hai rinunciato al pull"),
       legendary: legendaryPull,
@@ -3735,6 +3735,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function recruitPlayer(player, source, level, done, options = {}) {
+    let smartLineupResult = null;
     const allowCancel = options.allowCancel !== false;
     const profileAware = isProfileAwareSeason() && Boolean(player.profileId);
     const complete = (status, extra = {}) => done?.({ status, committed: status.startsWith("committed-"), ...extra });
@@ -3753,12 +3754,18 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       Object.assign(entry, { firstJoinedAt: new Date().toISOString(), recruitmentSource, recruitedAtLevel: level, recruitedOverall: overall });
       global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: entry.playerId, source: recruitmentSource, level, overall, actionId });
       enqueueAlbumRecruit(current, entry.playerId, recruitmentSource, actionId);
-      optimizeLineupsForNewPlayer(entry.playerId, current, false);
+      smartLineupResult = optimizeLineupsForNewPlayer(entry.playerId, current, false);
+    };
+    const announceCommittedSmartLineup = () => {
+      if (!smartLineupResult?.elevenChanged && !smartLineupResult?.fiveChanged) return;
+      const areas = [smartLineupResult.elevenChanged ? "11v11" : null, smartLineupResult.fiveChanged ? "5v5" : null].filter(Boolean).join(" e ");
+      toast(`AUTO-FORMAZIONE — aggiornata ${areas}`);
     };
     const committedSideEffects = (entry, status) => {
       if (status === "committed-acquired") unlockAlbumRecruit(entry.playerId, recruitmentSource);
       closeModal();
       toast(status === "committed-upgraded" ? "POTENZIAMENTO PROFILO" : "NUOVO GIOCATORE");
+      announceCommittedSmartLineup();
       complete(status, { player: entry });
     };
     const persistenceFailure = ({ kind, ...failure }) => recover(kind === "unreadable" ? "recovery-blocked" : "persistence-failed", { kind, ...failure });
@@ -3768,6 +3775,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       const committed = persistGameplayMutation({
         label: "recruit-profile",
         mutate: (current) => {
+          smartLineupResult = null;
           result = global.ProfiledSeasonRuntime.acquireOrUpgradeProfile(current, player, { seasonId: current.seasonId, maxRoster: global.SEASON1_CONFIG.maxRoster, level });
           if (result.status === "roster-full") throw Object.assign(new Error("Roster full"), { code: "recruit-needs-replacement" });
           if (!["upgraded", "acquired"].includes(result.status)) throw Object.assign(new Error("Recruit not eligible"), { code: "recruit-ineligible" });
@@ -3789,6 +3797,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       return persistGameplayMutation({
         label: "recruit",
         mutate: (current) => {
+          smartLineupResult = null;
           if (current.roster.some((item) => String(item.playerId) === String(player.playerId))) throw Object.assign(new Error("Recruit not eligible"), { code: "recruit-ineligible" });
           entry = { playerId: String(player.playerId), source, level, equippedItem: null, ...permanentRosterFields(player) };
           current.roster.push(entry); current.bench.push(entry.playerId); decorateRecruit(current, entry);
@@ -3829,6 +3838,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       return persistGameplayMutation({
         label: "recruit-replacement",
         mutate: (current) => {
+          smartLineupResult = null;
           const removed = rosterEntry(removeId, current);
           if (!removed || !(current.bench || []).some((id) => String(id) === removeId)) throw Object.assign(new Error("Replacement no longer valid"), { code: "replacement-invalid" });
           if (discardInstanceId) {
@@ -5178,7 +5188,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         if (committed.ok) showNextBossReward();
       } : null,
       onPick: (player) => {
-        recruitPlayer(player, global.SeasonRegistry.sourceForSeason(run?.seasonId), level, (result) => { if (result.status.startsWith("committed-")) advanceBossReward(); }, { allowCancel: true, recruitmentSource: "boss_reward", actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:recruit:${player.profileId || player.playerId}`, transactionMutate: (current) => global.BossGameOverRuntime.applyBossRewardPickMutation({ run: current, playerId: player.profileId || player.playerId, recordAction: (target, currentFlow) => global.RunStatistics?.recordRunAction?.(target, global.RunStatistics.ACTIONS.BOSS_REWARD_CHOSEN, { nodeId: currentFlow.matchNodeId, playerId: player.playerId, actionId: `${target.runId}:${currentFlow.matchNodeId}:boss_reward:${currentFlow.rewardNumber}:chosen` }) }), onRecover: () => showNextBossReward(), onRecoveryBlocked: () => renderPostBossRecovery() });
+        recruitPlayer(player, global.SeasonRegistry.sourceForSeason(run?.seasonId), level, (result) => { if (result.status.startsWith("committed-")) advanceBossReward(); else if (result.status === "cancelled") showNextBossReward(); }, { allowCancel: true, recruitmentSource: "boss_reward", actionId: `${run.runId}:${flow.matchNodeId}:boss_reward:${flow.rewardNumber}:recruit:${player.profileId || player.playerId}`, transactionMutate: (current) => global.BossGameOverRuntime.applyBossRewardPickMutation({ run: current, playerId: player.profileId || player.playerId, recordAction: (target, currentFlow) => global.RunStatistics?.recordRunAction?.(target, global.RunStatistics.ACTIONS.BOSS_REWARD_CHOSEN, { nodeId: currentFlow.matchNodeId, playerId: player.playerId, actionId: `${target.runId}:${currentFlow.matchNodeId}:boss_reward:${currentFlow.rewardNumber}:chosen` }) }), onRecover: () => showNextBossReward(), onRecoveryBlocked: () => renderPostBossRecovery() });
       },
       onSkip: () => advanceBossReward((current, currentFlow) => global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.BOSS_REWARD_DECLINED, { nodeId: currentFlow.matchNodeId, actionId: `${current.runId}:${currentFlow.matchNodeId}:boss_reward:${currentFlow.rewardNumber}:declined` })),
     });

@@ -29,6 +29,14 @@ assert.match(recruit, /recruit-needs-replacement[\s\S]*showRecruitReplacement/);
 assert.match(recruit, /committed-acquired[\s\S]*committed-upgraded[\s\S]*needs-replacement/);
 assert.match(recruit, /chooseInventoryDiscardSelection[\s\S]*discardInstanceId[\s\S]*mutate: \(current\)/);
 assert.doesNotMatch(recruit, /removeInventoryItem\(/);
+
+const pull = bodyBetween("function openPull", "function openDevLegendaryPull");
+assert.match(pull, /onRecover: \(\) => openPull\(node, pullType, options\)/, "normal/dev pull recovery rebuilds the authoritative flow");
+assert.doesNotMatch(pull, /onRecover: \(\) => showPlayerOffer\(options\)/, "recovery must not reuse incomplete openPull options as an offer config");
+const bossRewards = bodyBetween("function showNextBossReward", "function advanceBossReward");
+assert.match(bossRewards, /result\.status === "cancelled"\) showNextBossReward\(\)/, "boss replacement cancel reopens the pending reward");
+assert.doesNotMatch(bossRewards, /result\.status === "cancelled"\) advanceBossReward/, "boss replacement cancel never consumes a reward");
+assert.match(recruit, /smartLineupResult = optimizeLineupsForNewPlayer[\s\S]*onCommitted:[\s\S]*committedSideEffects/);
 const persistence = fs.readFileSync("js/gameplay-persistence.js", "utf8");
 assert.match(persistence, /catch \(error\)[\s\S]*kind: "mutation"[\s\S]*onMutationError/);
 assert.doesNotMatch(persistence, /kind: "mutation"[\s\S]{0,500}reportFailure\?/);
