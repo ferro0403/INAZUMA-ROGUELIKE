@@ -50,10 +50,13 @@
       const name = validTeamName(parsed?.teamIdentity?.name || parsed?.teamName || parsed?.name);
       const emblemId = parsed?.teamIdentity?.emblemId || parsed?.emblemId || parsed?.emblem || DEFAULT_EMBLEM_ID;
       return { teamIdentity: name ? normalizeTeamIdentity({ ...parsed?.teamIdentity, name, emblemId }) : null, preferences: { smartAutoLineup: parsed?.preferences?.smartAutoLineup === true } };
-    } catch (error) { console.error("Unable to load profile", error); return { teamIdentity: null, preferences: { smartAutoLineup: false } }; }
+    } catch (error) { if (error?.name === "SecurityError") throw persistenceError("storage-access-error", "profile-read", {}, error); console.error("Unable to load profile", error); return { teamIdentity: null, preferences: { smartAutoLineup: false } }; }
   }
   function emitSave(sector, seasonId, operation, options = {}) { if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { sector, seasonId: seasonId || null, hallTeamId: null, operation, generation: options.generation ?? null, commitId: options.commitId || null, source: "gameplay" } })); }
   function saveProfileTeamIdentity(teamIdentity, options = {}) {
+    global.PersistenceRecoveryGuard?.assertWritable(options);
+    global.PersistenceRecoveryGuard?.reserve(options);
+    global.PersistenceRecoveryGuard?.assertWritable(options);
     const cleanIdentity = normalizeTeamIdentity(teamIdentity);
     const current = loadProfile();
     localStorage.setItem(PROFILE_KEY, JSON.stringify({ version: 1, teamIdentity: cleanIdentity, preferences: current.preferences }));
@@ -61,6 +64,9 @@
     return cleanIdentity;
   }
   function saveProfilePreferences(preferences = {}, options = {}) {
+    global.PersistenceRecoveryGuard?.assertWritable(options);
+    global.PersistenceRecoveryGuard?.reserve(options);
+    global.PersistenceRecoveryGuard?.assertWritable(options);
     const current = loadProfile();
     const cleanPreferences = { smartAutoLineup: preferences.smartAutoLineup === true };
     localStorage.setItem(PROFILE_KEY, JSON.stringify({ version: 1, teamIdentity: current.teamIdentity, preferences: cleanPreferences }));
@@ -68,6 +74,7 @@
     return cleanPreferences;
   }
   function restoreProfile(profile, options = {}) {
+    global.PersistenceRecoveryGuard?.assertWritable(options);
     if (!profile?.teamIdentity && !profile?.preferences) { localStorage.removeItem(PROFILE_KEY); emitSave("profile", null, "remove", options); return { teamIdentity: null, preferences: { smartAutoLineup: false } }; }
     if (profile.teamIdentity) saveProfileTeamIdentity(profile.teamIdentity, { ...options, suppressCloudEvent: true });
     saveProfilePreferences(profile.preferences, options);
@@ -173,6 +180,9 @@
   function recoverySaves() { return activeSaves().filter((entry) => entry.recovery); }
   function latestActiveSave() { return activeSaves().find((entry) => entry.run && isActiveRun(entry.run)) || null; }
   function remove(seasonId = null, options = {}) {
+    global.PersistenceRecoveryGuard?.assertWritable(options);
+    global.PersistenceRecoveryGuard?.reserve(options);
+    global.PersistenceRecoveryGuard?.assertWritable(options);
     const sid = seasonIdOf(seasonId);
     if (options.expectedGeneration == null) throw persistenceError("missing-expected-generation", "delete-concurrency", { seasonId: sid, recoverable: true });
     const expected = Number(options.expectedGeneration); let generation, commitId, envelope, headValue;
@@ -240,6 +250,7 @@
       return this.save(candidates[0].run, { preserveTimestamps: true, suppressCloudEvent: true, source: "legacy-migration", expectedGeneration: 0 });
     },
     save(run, options = {}) {
+      global.PersistenceRecoveryGuard?.assertWritable(options);
       const sidHint = rawSeasonId(run?.seasonId) || seasonIdOf(null); let normalized; let json;
       try {
         normalized = normalize(clone(run));
@@ -255,6 +266,8 @@
       if (expected == null || Number(expected) !== currentGeneration) throw persistenceError("stale-write", "concurrency", { seasonId: sid, runId: normalized.runId, generation: currentGeneration, recoverable: true });
       if (primary?.state === "active" && primary.runId !== normalized.runId && !options.replaceRun) throw persistenceError("lineage-mismatch", "concurrency", { seasonId: sid, runId: normalized.runId, generation: currentGeneration, recoverable: true });
       if (primary?.state === "deleted" && !options.replaceRun) throw persistenceError("lineage-mismatch", "concurrency", { seasonId: sid, runId: normalized.runId, generation: currentGeneration, recoverable: true });
+      global.PersistenceRecoveryGuard?.reserve(options);
+      global.PersistenceRecoveryGuard?.assertWritable(options);
       const generation = currentGeneration + 1, commitId = makeCommitId(generation);
       const envelope = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "active", runId: normalized.runId, payload: JSON.parse(json) };
       const rawEnvelope = JSON.stringify(envelope), headValue = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "active", runId: normalized.runId };
@@ -266,7 +279,7 @@
       const reparsed = parseEnvelope(rawEnvelope, sid).payload;
       Object.assign(run, reparsed);
       emitSave(`run_${sid}`, sid, "write", { ...options, generation, commitId });
-      return run;
+        return run;
     },
     remove, forceDeleteForRestore, forceReplaceCanonicalFromSnapshot, looksLikeStorageEnvelope,
   };
