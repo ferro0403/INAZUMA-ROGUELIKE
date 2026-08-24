@@ -56,3 +56,44 @@ for(const failure of ["stale-write","QuotaExceededError"]){ const h=makeContext(
   const option=h.modal.children.find(x=>x.dataset.playerId==="new"); const confirm=h.modal.children.find(x=>x.dataset.pullAction==="confirm"); option.dataset.candidateKey="new"; confirm.option=option; h.modal.fire(confirm); h.modal.fire(confirm); assert.strictEqual(picks,1);
 }
 console.log("recruitment production path E2E: gated hook, replacement, cancel, stale/quota rollback passed");
+
+// Profile-aware production wiring: real showNextBossReward -> showPlayerOffer ->
+// recruitPlayer -> replacement -> BossGameOverRuntime metadata -> reward advance.
+function profileHarness() {
+  const h = makeContext();
+  for (const file of ["js/profiled-season.js", "js/boss-gameover-runtime.js", "js/special-match.js"]) vm.runInContext(fs.readFileSync(file, "utf8"), h.c);
+  h.db.seasonId = "ie1_s2"; h.db.requiresProfileAwareRuntime = true;
+  h.db.bossOrder = [{ teamId: "alpine", teamName: "Alpine", rewardLevel: 2 }];
+  h.db.profiles = h.db.players.map((player) => ({ profileId: `${player.playerId}-profile`, playerId: player.playerId, profileRank: 1, defaultRoleVariantId: "df", roleVariants: [] }));
+  h.c.ProfiledSeasonRuntime.register(h.db.seasonId, h.db);
+  h.run.seasonId = h.db.seasonId;
+  h.run.roster.forEach((entry) => { entry.source = h.db.seasonId; entry.activeProfileId = `${entry.playerId}-profile`; entry.activeRoleVariantId = "df"; entry.levelUnits = 0; });
+  h.run.postBossFlow = { status: "reward", bossIndex: 0, matchNodeId: "boss-1", remainingRewards: 2, rewardNumber: 1, excludedIds: [], candidateIds: ["new-profile"], rerolls: 0 };
+  h.run.pendingBossVictory = { rewardsRemaining: 2, excludedIds: [], candidateIds: ["new-profile"], rerolls: 0 };
+  h.c.RoguelikeRules.defeatedBossRewardLevel = () => 2;
+  h.c.RunStatistics.ACTIONS.BOSS_REWARD_CHOSEN = "BOSS_REWARD_CHOSEN";
+  h.c.BossGameOverRuntime = h.c.BossGameOverRuntime;
+  h.c.__INAZUMA_RECRUITMENT_TEST__.setContext({ run: h.run, seasonDb: h.db, freeAgentsDb: { players: h.db.players } });
+  return h;
+}
+function confirmCurrentOffer(h, candidateKey = "new") {
+  const option = h.modal.children.find((item) => item.dataset.playerId === "new");
+  const confirm = h.modal.children.find((item) => item.dataset.pullAction === "confirm");
+  assert(option && confirm, "production offer controls available");
+  option.dataset.candidateKey = candidateKey; confirm.option = option; h.modal.fire(confirm);
+}
+{
+  const h = profileHarness(); h.c.__INAZUMA_RECRUITMENT_TEST__.showNextBossReward(); confirmCurrentOffer(h, "new");
+  assert(h.document.getElementById("cancel-recruit"), "profile-aware roster-full opened real replacement modal");
+  assert(h.run.roster.some((entry) => entry.playerId === "out")); assert.strictEqual(h.run.postBossFlow.remainingRewards, 2);
+  const reserve = h.modal.querySelectorAll(".bench-replacement-grid [data-player-id]").find((item) => item.dataset.playerId === "out"); reserve.click();
+  const loaded = h.c.RunState.load(); assert(loaded.roster.some((entry) => entry.playerId === "new")); assert(!loaded.roster.some((entry) => entry.playerId === "out"));
+  assert.strictEqual(loaded.postBossFlow.remainingRewards, 1); assert.strictEqual(loaded.statistics.actions.filter((a) => a.type === "PLAYER_RECRUITED").length, 1); assert.strictEqual(loaded.statistics.actions.filter((a) => a.type === "BOSS_REWARD_CHOSEN").length, 1); assert.strictEqual(loaded.permanentEffectOutbox.length, 1);
+}
+// Real boss cancel callback re-enters showNextBossReward; a subsequent real attempt succeeds.
+{
+  const h = profileHarness(), before = structuredClone(h.run.roster); h.c.__INAZUMA_RECRUITMENT_TEST__.showNextBossReward(); confirmCurrentOffer(h, "new"); h.document.getElementById("cancel-recruit").click();
+  assert.deepStrictEqual(h.run.roster, before); assert.strictEqual(h.run.postBossFlow.remainingRewards, 2); assert(h.modal.children.some((item) => item.dataset.playerId === "new"), "same reward offer reopened");
+  confirmCurrentOffer(h, "new"); h.modal.querySelectorAll(".bench-replacement-grid [data-player-id]").find((item) => item.dataset.playerId === "out").click(); assert(h.c.RunState.load().roster.some((entry) => entry.playerId === "new"));
+}
+console.log("recruitment production path profile-aware boss P1/P1b passed");
