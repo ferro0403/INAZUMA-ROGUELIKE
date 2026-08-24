@@ -98,7 +98,7 @@
   function parse(raw) { return sanitizeArchive(raw ? JSON.parse(raw) : emptyArchive()); }
   function loadArchive() {
     for (const key of [STORAGE_KEY, BACKUP_KEY, TEMP_KEY]) {
-      try { const raw = localStorage.getItem(key); if (raw) return parse(raw); } catch (_) {}
+      try { const raw = localStorage.getItem(key); if (raw) return parse(raw); } catch (error) { if (error?.name === "SecurityError") throw Object.assign(new Error("storage-access-error"), { code: "storage-access-error", stage: "hall-read", cause: error }); }
     }
     return emptyArchive();
   }
@@ -111,6 +111,9 @@
   }
   function emitSave(options = {}, hallTeamId = options.hallTeamId || null, operation = options.operation || "write") { if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { sector: "hall_index", seasonId: null, hallTeamId, operation, source: "gameplay" } })); }
   function saveArchive(archive, options = {}) {
+    global.PersistenceRecoveryGuard?.assertWritable(options);
+    global.PersistenceRecoveryGuard?.reserve(options);
+    global.PersistenceRecoveryGuard?.assertWritable(options);
     const clean = sanitizeArchive({ ...archive, updatedAt: options.preserveTimestamp ? archive?.updatedAt : nowIso() });
     try {
       const saved = writePrimaryArchive(clean); emitSave(options); return saved;

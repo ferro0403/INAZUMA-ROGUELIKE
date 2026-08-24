@@ -48,7 +48,7 @@ function hallDocument(entry, revision = 1) { return { schemaVersion: 1, revision
   assert.deepStrictEqual(localSnapshot().runs.ie1.currentZone.edges, [['n1', 'n2'], ['n2', 'n3']], 'nested arrays survive codec and runtime writers'); assert.strictEqual(localSnapshot().runs.ie2, null); assert.strictEqual(localSnapshot().hallOfFame.teams.length, 1);
 
   const cloud = fs.readFileSync('js/firebase-cloud-save.js', 'utf8'), ui = fs.readFileSync('js/account-ui.js', 'utf8'); const restore = cloud.slice(cloud.indexOf('async function restoreCloudSave'), cloud.indexOf('function requestConflictResolution'));
-  assert.match(cloud, /getDocFromServer/); assert.match(cloud, /maxAttempts = 2/); assert.match(cloud, /cloud-changed-during-download/); assert.match(cloud, /manifestBundleIdentity/); assert.match(cloud, /lastRestoreType === "explicit-conflict-cloud"/);
+  assert.match(cloud, /getDocFromServer/); assert.match(cloud, /maxAttempts = 2/); assert.match(cloud, /cloud-changed-during-download/); assert.match(cloud, /manifestBundleIdentity/); assert.match(cloud, /targetCloudCommitId/); assert.match(cloud, /InazumaCloudRestoreProtocol\.createJournal/);
   assert.doesNotMatch(restore, /writeBatch|batch\.set|batch\.update|batch\.commit/, 'restore has zero cloud writes'); assert.doesNotMatch(cloud, /onSnapshot|setInterval/); assert.match(ui, /Dettaglio:/); assert.match(ui, /Settore:/); assert.match(ui, /Fase:/);
   console.log('cloud-restore-hotfix-test: Snapshot A -> Snapshot B and stable restore checks ok');
 })().catch(error => { console.error(error); process.exit(1); });
