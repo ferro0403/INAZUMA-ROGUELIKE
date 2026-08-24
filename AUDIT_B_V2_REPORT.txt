@@ -1,0 +1,398 @@
+AUDIT B v2 — SHARED RECRUITMENT / FULL ROSTER / UI RECOVERY
+================================================================
+
+Baseline main: 16eb570e212f2935afef80f518e4ab6f0818d1dc
+Target reroll: d7bf196d142a8d13c89c91833bcd6c548ce7e978
+
+A. ROOT CAUSE DEFINITIVA
+-----------------------
+
+B1 — roster-full trasformato erroneamente in ineligible
+
+ProfiledSeasonRuntime.acquireOrUpgradeProfile() restituisce quattro risultati
+distinti: acquired, upgraded, ineligible e roster-full. Nel target reroll,
+recruitPlayer() accetta soltanto acquired/upgraded; ogni altro risultato genera
+la stessa eccezione recruit-ineligible. In main, invece, soltanto ineligible
+terminava il ramo profile-aware: roster-full proseguiva intenzionalmente verso
+la UI comune “Rosa piena — Sostituisci una riserva”.
+
+roster-full non è un errore di persistence e non è ineligible. Deve produrre una
+transizione di dominio verso la bench replacement, senza alcun commit preliminare.
+
+B2 — contratto UI one-shot incompatibile con un recruit fallibile
+
+showPlayerOffer(), alla conferma, imposta pickConfirmed=true, disabilita il
+bottone e invoca onPick. Non attende un risultato strutturato e non ha reset,
+rerender o recovery. Quando recruitPlayer() chiama done(false), il boss callback
+non avanza la reward e il modal resta aperto con bottone disabilitato e closure
+ormai one-shot.
+
+Trace deterministico:
+
+showPlayerOffer
+  -> pickConfirmed=true; button.disabled=true
+  -> onPick
+  -> recruitPlayer
+  -> persistGameplayMutation
+  -> acquireOrUpgradeProfile
+  -> roster-full
+  -> throw recruit-ineligible
+  -> rollback
+  -> done(false)
+  -> nessun advanceBossReward
+  -> modal e bottone morti
+
+IE2 Alpine/Shawn e IE3 primo boss usano entrambi season profile-aware, lo stesso
+showPlayerOffer(), lo stesso recruitPlayer() e lo stesso callback boss reward.
+Sono quindi due manifestazioni dello stesso difetto.
+
+B. CALL GRAPH MAIN E REROLL
+---------------------------
+
+Main:
+
+showPlayerOffer -> onPick -> recruitPlayer
+  profile-aware:
+    acquired -> bench, metadata, statistics, Album, smart lineup, save,
+                closeModal, done(true)
+    upgraded -> save, closeModal, done(true)
+    ineligible -> done(false)
+    roster-full -> fall-through verso replacement comune
+  roster con spazio:
+    insert, bench, statistics, Album, smart lineup, save, done(true)
+  roster pieno:
+    scelta riserva
+    -> eventuale discard se equipped item e inventory pieno
+    -> equipped item in inventory
+    -> old out, new in
+    -> bench/statistics/Album/5v5/smart lineup
+    -> save, closeModal, done(true)
+
+Reroll:
+
+showPlayerOffer -> onPick -> recruitPlayer
+  profile-aware:
+    persistGameplayMutation("recruit-profile")
+    -> acquired/upgraded: canonical commit + onCommitted
+    -> roster-full/ineligible: entrambi recruit-ineligible + rollback + done(false)
+  legacy con spazio:
+    persistGameplayMutation("recruit")
+  full-roster comune:
+    modal replacement
+    -> eventuale discard
+    -> persistGameplayMutation("recruit-replacement")
+
+V12 ha correttamente portato roster mutation, statistics, Album outbox e
+transactionMutate dentro la transaction, lasciando i permanent effects in
+onCommitted. Non va revertita: va completata la conversione di roster-full.
+
+C. FIX DESIGN CONSIGLIATO
+-------------------------
+
+1. Introdurre risultati distinti per il recruitment:
+   committed-acquired, committed-upgraded, needs-replacement, ineligible,
+   persistence-failed, recovery-blocked e cancelled. done(boolean) non è
+   sufficiente perché false oggi rappresenta cancel, domain failure e storage
+   failure contemporaneamente.
+
+2. Mantenere la prima operazione profile-aware dentro persistGameplayMutation.
+   acquired/upgraded seguono il commit normale. ineligible e roster-full devono
+   abortire prima di save con sentinel distinti, per esempio
+   recruit-ineligible e recruit-roster-full. GameplayPersistence ripristina lo
+   snapshot before senza canonical save.
+
+3. Gestire recruit-roster-full come domain transition: dopo il rollback aprire
+   la replacement UI sulla run ripristinata, senza done(false), senza toast di
+   persistence e senza reward metadata.
+
+4. Dopo la scelta della riserva eseguire un solo commit atomico che:
+   - rivalida outgoing player e bench membership su current;
+   - rivalida candidato e, se presente, discard instanceId;
+   - applica il discard su current;
+   - recupera l’equipped item su current;
+   - rimuove outgoing da roster/bench/lineup/5v5;
+   - chiama acquireOrUpgradeProfile(current, candidate) dopo aver liberato il
+     posto e richiede status acquired;
+   - completa metadata e bench del nuovo entry;
+   - registra PLAYER_RECRUITED una sola volta;
+   - enqueue Album una sola volta;
+   - aggiorna FiveVFive e smart lineup usando current;
+   - applica options.transactionMutate(current, newEntry);
+   - salva una sola volta.
+
+5. Non costruire manualmente il profile-aware roster entry. Dopo la rimozione
+   dell’outgoing, usare acquireOrUpgradeProfile nello stesso working object. Non
+   è recruit prima del replacement: entrambe le mutazioni diventano visibili
+   soltanto con il commit finale.
+
+6. onCommitted deve soltanto drenare permanent effects, mostrare toast,
+   chiudere/avanzare UI e invocare la continuation. Nessuna mutation canonica e
+   nessun nested save devono avvenire in onCommitted.
+
+D. BOSS REWARD ATOMICITY
+------------------------
+
+Il commit full-roster finale deve contenere atomicamente:
+
+OLD PLAYER OUT
++ equipped item recuperato / discard applicato
++ NEW PLAYER IN
++ bench, 11v11 e 5v5 consistenti
++ PLAYER_RECRUITED
++ Album outbox
++ BOSS_REWARD_CHOSEN
++ reward pick/excluded metadata
+
+showNextBossReward passa già transactionMutate con
+applyBossRewardPickMutation(). La replacement deve riusare la stessa callback.
+advanceBossReward può restare una seconda transaction post-commit, purché un
+fallimento dell’advance riprenda dalla reward già scelta senza acquisire di
+nuovo il giocatore.
+
+Se il commit replacement fallisce, la canonical run deve mantenere outgoing,
+equipped item, inventory e reward pending; incoming, actions e Album unlock
+devono essere assenti. Il retry deve produrre una sola acquisizione e un solo
+reward chosen.
+
+E. EQUIPPED ITEM / INVENTORY FULL
+---------------------------------
+
+Con spazio disponibile, il ritorno dell’equipped item deve essere parte dello
+stesso mutate(current) della sostituzione.
+
+Con inventory pieno, nessuna mutazione deve avvenire prima della scelta discard.
+chooseInventoryDiscard oggi rimuove subito l’item dal run globale: per questo
+flow deve poter restituire soltanto l’instanceId scelto. Il commit finale deve
+rivalidare e rimuovere quel discard, recuperare l’equipped item e completare la
+sostituzione/reward in una singola transaction.
+
+F. UPGRADE / INELIGIBLE
+-----------------------
+
+Un upgrade valido non deve aprire replacement. Deve aggiornare il profilo già
+posseduto e applicare il boss reward transactionMutate nello stesso commit. Il
+reload deve mantenere l’upgrade.
+
+Un vero ineligible non deve avanzare o consumare la reward. Deve mostrare un
+messaggio di dominio e ricostruire l’offerta/caller dalla run valida, consentendo
+un’altra scelta o skip. Non deve essere confuso con roster-full.
+
+G. NON PROFILE-AWARE
+--------------------
+
+La replacement transaction deve essere condivisa, con strategia di acquisizione:
+
+profile-aware: remove outgoing -> acquireOrUpgradeProfile -> assert acquired
+legacy:        remove outgoing -> create legacy entry
+
+Inventory, bench, statistics, Album, FiveVFive, smart lineup,
+transactionMutate, commit e recovery devono restare comuni. Questo evita di
+correggere profile-aware rompendo legacy.
+
+H. CALLSITE IMPACT MATRIX
+-------------------------
+
+Free-agent pull / team pull / legendary pull / dev legendary:
+- options di recruit sostanzialmente default;
+- full-roster profile-aware rotto;
+- done(false) viene interpretato come rinuncia/completamento nodo;
+- richiedono shared fix più adapter che distingua cancel da failure.
+
+Boss reward:
+- allowCancel=true;
+- recruitmentSource="boss_reward";
+- actionId stabile;
+- transactionMutate con boss pick metadata;
+- richiede shared replacement e recovery adapter boss.
+
+Special match reward:
+- allowCancel=true, cancelLabel, recruitmentSource e actionId;
+- non passa transactionMutate;
+- il callback ignora completed e chiama sempre finish();
+- può consumare la reward anche senza recruit;
+- richiede adapter specifico: completeCurrentReward deve entrare nella stessa
+  transaction del recruit.
+
+Conclusione: uno shared fix è necessario ma non sufficiente. Servono shared
+state machine/replacement e adapter per pull, boss e special reward.
+
+I. FAILURE RECOVERY POLICY
+--------------------------
+
+roster-full:
+- nessun save;
+- passaggio alla replacement UI sulla run rollbackata.
+
+ineligible:
+- toast informativo;
+- rerender del caller;
+- altra scelta/skip.
+
+mutation exception inattesa:
+- log e toast;
+- rerender; mai riusare la closure precedente.
+
+stale-write:
+- GameplayPersistence ricarica canonical read-only;
+- render recovery pertinente dalla canonical run.
+
+SecurityError / QuotaExceeded:
+- trattare come persistence failure;
+- tentare canonical read-only reload;
+- rerender recovery se leggibile, recovery/read-only screen altrimenti.
+
+recovery/read-only blocked:
+- uscire dal modal stale;
+- mostrare recovery screen;
+- nessun retry inline finché il guard resta blocked.
+
+Non basta riabilitare il bottone dopo un persistence failure: replaceRun può
+aver sostituito l’identità della run, rendendo stale nodo, flow, entry e DOM.
+
+J. GLOBAL RUN VS CURRENT
+------------------------
+
+Safe oggi:
+- acquireOrUpgradeProfile(current)
+- recordRunAction(current)
+- enqueueAlbumRecruit(current)
+- transactionMutate(current)
+- FiveVFive.removeUnavailable(current)
+- replaceRun riallinea run e global.run.
+
+Fragile:
+- decisione full roster su run.roster prima della transaction;
+- benchPlayers derivati dal run globale;
+- removedEntry catturato prima della transaction;
+- inventory capacity verificata sul run globale;
+- flow, node e scoutToken catturati da closure UI.
+
+Bug al boundary transazionale:
+- optimizeLineupsForNewPlayer usa sempre run;
+- rosterEntry/resolvedRosterPlayer/fiveRole/fiveOverall usano run implicito;
+- recruitedOverall dentro mutate usa resolvedRosterPlayer globale;
+- chooseInventoryDiscard/removeInventoryItem mutano run prima della transaction;
+- special reward finish usa run e save diretti dopo il callback recruit.
+
+Refactor minimo:
+- rendere rosterEntry, resolvedRosterPlayer, fiveRoleForPlayerId,
+  fiveOverallForPlayerId, effectiveRosterRole e
+  optimizeLineupsForNewPlayer parametrizzabili con currentRun=run;
+- dentro i boundary transazionali passare sempre current;
+- spostare il toast smart-lineup in onCommitted.
+
+K. FILE/FUNZIONI DA TOCCARE NEL FUTURO FIX
+------------------------------------------
+
+js/app.js:
+- showPlayerOffer
+- recruitPlayer e replacement modal
+- chooseInventoryDiscard o helper selection-only dedicato
+- rosterEntry / resolvedRosterPlayer / five-role/overall helpers
+- optimizeLineupsForNewPlayer
+- openPull
+- showNextBossReward
+- showSpecialMatchReward
+
+Test production-real/harness sotto tests/ per shared recruitment, boss full
+roster, failure recovery e special reward atomicity.
+
+L. FILE/FUNZIONI DA NON TOCCARE
+-------------------------------
+
+Salvo test che dimostri una necessità, non modificare:
+- js/run-state.js
+- js/gameplay-persistence.js
+- js/boss-gameover-runtime.js
+- storage/cloud restore/recovery journal
+- permanent-effect storage
+- ProfiledSeasonRuntime.acquireOrUpgradeProfile
+- SpecialMatchRuntime.completeCurrentReward
+
+Questi primitive espongono già status, rollback, expectedGeneration, canonical
+reload e mutation helper necessari. Il difetto è nel consumer/orchestratore.
+
+M. TEST PLAN T1-T12
+-------------------
+
+T1 IE2 Alpine full roster -> Shawn -> replacement -> commit -> reward advance
+   -> reload. Assert old out, Shawn in, roster size, bench/lineup/5v5,
+   statistics, reward metadata e Album esattamente una volta.
+
+T2 IE3 primo boss con la stessa matrice e lo stesso shared path.
+
+T3 Pull normale profile-aware full roster: replacement, cancel distinto da
+   failure, nodo completato soltanto post-commit, reload coerente.
+
+T4 Special reward full roster: reward pending durante replacement/discard;
+   recruit e completeCurrentReward nello stesso commit; failure non consuma.
+
+T5 Boss reward stale-write: canonical rollback, vecchio modal non riusato,
+   recovery boss, retry dalla canonical, un solo recruit/chosen.
+
+T6 QuotaExceeded durante replacement: outgoing/inventory/reward invariati,
+   incoming/actions/Album assenti, retry riuscito una volta.
+
+T7 Outgoing con equipped item e inventory disponibile: item esattamente una
+   volta in inventory, old out e new in dopo reload.
+
+T8 Equipped item e inventory full: nessuna mutation prima del discard; commit
+   atomico dopo la scelta; su failure discard ed equipped item invariati.
+
+T9 Already-owned valid upgrade: nessuna replacement, roster size invariata,
+   upgrade e reward metadata atomici, reload persistente. Subcase ineligible
+   senza commit e con UI recuperabile.
+
+T10 Non-profile-aware full-roster: fields legacy, inventory/equipment,
+    11v11/5v5, statistics, Album e transactionMutate preservati.
+
+T11 Reward 1/2 recruit + reward 2/2 recruit/skip + next zone + reload:
+    remaining 2->1->0, nessuna reward riproposta.
+
+T12 Duplicate click/repeated retry: singolo attempt attivo; roster entry,
+    PLAYER_RECRUITED, BOSS_REWARD_CHOSEN, Album e advance tutti unici.
+
+Ogni test deve verificare lo stato canonico ricaricato, non soltanto stringhe
+nel sorgente.
+
+N. REGRESSION V12 OBBLIGATORIA
+------------------------------
+
+Rieseguire:
+- full suite
+- boss crash matrix
+- boss reward production crash
+- boss handoff no nested save
+- gameover crash matrix
+- gameplay persistence transaction tests
+- cross-store finalization
+- storage stale/quota/security
+- read-only/future schema
+- cloud/restore focus
+
+Invarianti:
+- persistGameplayMutation unico owner del canonical save;
+- nessun RunState.save(run) diretto nel nuovo recruit/replacement/reward path;
+- expectedGeneration e rollback preservati;
+- nessun nested save;
+- onCommitted post-canonical only;
+- nessun reward metadata senza recruit e nessun recruit senza metadata caller;
+- retry idempotente con actionId stabile.
+
+O. BLOCKER AGGIUNTIVO
+---------------------
+
+La special match reward è un blocker indipendente dalla UI showPlayerOffer:
+il callback ignora completed e chiama sempre finish(), che completa e salva la
+reward separatamente. Deve passare completeCurrentReward come transactionMutate
+del recruit e navigare soltanto in onCommitted. Cancel/decline resta una
+transaction separata e non deve essere confuso con recruit failure.
+
+VERDETTO FINALE
+---------------
+
+AUDIT B — ROOT CAUSE CONFERMATA.
+FIX TRANSAZIONALE MINIMO PROGETTATO.
+SEMANTICA MAIN RECUPERABILE SENZA REVERT V12.
+PRONTO PER TASK DI IMPLEMENTAZIONE.
+
