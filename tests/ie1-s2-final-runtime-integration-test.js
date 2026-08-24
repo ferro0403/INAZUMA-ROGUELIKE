@@ -77,7 +77,7 @@ assert(appSource.includes("Vittoria confermata: premi Continua per aprire le ric
 assert(appSource.includes('isSpecial ? "Riepilogo essenziale della partita speciale" : "Riepilogo essenziale della sfida Boss"'));
 assert(appSource.includes('match.type === "five_v_five" ? run.fiveVFive?.formation : run.formationId'));
 assert(appSource.includes("ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(previewEntry"));
-assert(appSource.includes("function resolveSeasonPreviewRosterPlayer")); assert(appSource.includes("displaySeasonNumber")); assert(!appSource.includes('seasonId || "1").match(/\\d+/')); assert(appSource.includes('title: "Partite speciali"'));
+assert(/const preview = global\.ProfiledSeasonRuntime\.resolveEffectivePlayerAtLevel\(previewEntry, \{ run, seasonId: run\.seasonId, database: seasonDb \}\)/.test(appSource), "role previews must resolve the preview entry through the profiled season runtime"); assert(appSource.includes("displaySeasonNumber")); assert(!appSource.includes('seasonId || "1").match(/\\d+/')); assert(appSource.includes('title: "Partite speciali"'));
 assert(!appSource.includes("SEASON 1 COMPLETATA")); assert(!appSource.includes("CAMPIONI DELLA SEASON 1"));
 assert.strictEqual((htmlSource.match(/<title>(.*?)<\/title>/) || [])[1], "Inazuma Roguelike");
 assert(cloudSource.includes("core.SECTOR_NAMES.length + 2 + hallDocuments.length")); assert(!cloudSource.includes("restoreReadCount: 8"));
