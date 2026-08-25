@@ -67,12 +67,22 @@
       else run.finalization.hallTeamId = before.finalizationHallTeamId;
     }
   }
+  function compactAppliedHallEffect(run, effect, save) {
+    if (effect.type !== TYPES.HALL || effect.status !== "applied" || !Object.prototype.hasOwnProperty.call(effect, "payload")) return false;
+    const payload = effect.payload, createdAt = effect.createdAt;
+    delete effect.payload; delete effect.createdAt;
+    try { save(run, { effectCompaction: effect.id }); return true; }
+    catch (error) { effect.payload = payload; if (createdAt !== undefined) effect.createdAt = createdAt; throw error; }
+  }
   function drain(run, options = {}) {
     if (options.readOnly) return { run, applied: [], pending: outbox(run).filter((item) => item.status === "pending"), readOnly: true };
     const apis = options.apis || global;
     const save = options.save || ((current) => apis.RunState.save(current));
     const applied = [];
     const allowedTypes = options.types ? new Set(options.types) : null;
+    for (const receipt of outbox(run).filter((item) => item.status === "applied" && (!allowedTypes || allowedTypes.has(item.type)))) {
+      try { compactAppliedHallEffect(run, receipt, save); } catch (error) { return { run, applied, pending: outbox(run).filter((item) => item.status === "pending"), error }; }
+    }
     for (const effect of outbox(run).filter((item) => item.status === "pending" && (!allowedTypes || allowedTypes.has(item.type)))) {
       try {
         const outcome = apply(effect, apis);
@@ -86,6 +96,7 @@
         if (effect.type === TYPES.DEVELOPMENT && run.finalization) run.finalization.status = "development-written";
         try { save(run, { effectMarker: effect.id }); }
         catch (error) { restoreMarkerState(run, effect, markerBefore); throw error; }
+        if (effect.type === TYPES.HALL) compactAppliedHallEffect(run, effect, save);
         applied.push(effect.id);
       } catch (error) { return { run, applied, pending: outbox(run).filter((item) => item.status === "pending"), error }; }
     }

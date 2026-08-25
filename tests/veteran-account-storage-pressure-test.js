@@ -1,10 +1,14 @@
 "use strict";
 const assert = require("assert"), BudgetStorage = require("./helpers/budget-storage"), { load } = require("./helpers/production-runtime");
-const storage = new BudgetStorage(900000), runtime = load(storage, ["persistence-recovery-guard.js", "run-state.js", "album-progress.js", "development-v2.js", "hall-of-fame.js", "persistence-diagnostics.js"]);
+const storage = new BudgetStorage(Infinity), runtime = load(storage, ["persistence-recovery-guard.js", "run-state.js", "album-progress.js", "development-v2.js", "hall-of-fame.js", "persistence-diagnostics.js"]);
 const development = runtime.DevelopmentV2.read();
 development.evolutionHistory = Array.from({ length: 1000 }, (_, index) => ({ id: `e${index}`, playerId: `p${index % 180}`, playerNameSnapshot: `Veteran ${index}`, fromRarity: "Normale", toRarity: "Buono", timestamp: new Date(1700000000000 + index).toISOString() }));
 development.redeemedRunIds = Array.from({ length: 500 }, (_, index) => `old-run-${index}`);
 runtime.DevelopmentV2.write(development);
+runtime.AlbumProgress.unlockAlbumPlayers("ie1", Array.from({ length: 200 }, (_, index) => `album-${index}`), { source: "veteran-fixture" });
+const players = Array.from({ length: 18 }, (_, index) => ({ playerId: `p${index}`, name: `Player ${index}`, portraitUrl: `https://assets.test/${"portrait".repeat(20)}/${index}.png`, finalOverall: 80 + index }));
+for (let index = 0; index < 100; index++) runtime.HallOfFameStorage.addChampion({ archiveKey: `veteran-${index}::mode::ie1::boss`, hallTeamId: `hall-${index}`, runId: `champion-run-${index}`, seasonId: "ie1", finalBossId: "boss", teamName: `Champion ${index}`, victoryDate: new Date(1700000000000 + index).toISOString(), finalStartingEleven: players.slice(0, 11), fullRoster: players, bench: players.slice(11), playerStatistics: Object.fromEntries(players.map((player) => [player.playerId, { appearances: 12, goals: index, processedActionIds: Array.from({ length: 20 }, (_, n) => `${index}-${n}`) }])) });
+storage.setItem("inazuma.cloud.association.veteran", JSON.stringify({ uid: "veteran", revision: 500, sectorRevisions: Object.fromEntries(Array.from({ length: 50 }, (_, index) => [`technical-${index}`, index])) }));
 for (const id of ["ie1", "ie2", "ie1_s2", "ie1_s3", "orion"]) { const run = runtime.RunState.createRun({ name: "Veteran" }, id); run.bossIndex = 4; runtime.RunState.save(run); }
 const measured = storage.bytes(); assert(measured > 200000, `fixture must exert realistic pressure, got ${measured}`);
 storage.budget = Math.ceil(measured / 0.9);

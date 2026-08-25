@@ -2,6 +2,7 @@
 const assert = require("assert"), BudgetStorage = require("./helpers/budget-storage"), { load } = require("./helpers/production-runtime");
 (async () => {
   const storage = new BudgetStorage(), runtime = load(storage, ["persistence-recovery-guard.js", "run-state.js", "album-progress.js", "development-v2.js", "hall-of-fame.js", "persistence-diagnostics.js"]);
+  runtime.InazumaAccount = { getState: () => ({ status: "authenticated", uid: "veteran" }) };
   let barcelona = runtime.RunState.createRun({ name: "Veteran" }, "ie2"); runtime.RunState.save(barcelona); barcelona.bossIndex = 9; barcelona.phase = "final-summary"; barcelona.finalization = { status: "pending" };
   const epoch = runtime.PersistenceRecoveryGuard.readEpoch(), journalKey = "inazuma.cloud.restoreJournal.veteran";
   storage.setItem(journalKey, JSON.stringify({ uid: "veteran", operationId: "stuck", stage: "prepared", sourceLocalEpoch: epoch, expectedLocalEpoch: epoch, targetCloudRevision: 77, targetCloudCommitId: null })); runtime.PersistenceRecoveryGuard.bindUid("veteran");

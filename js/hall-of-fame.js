@@ -115,6 +115,9 @@
     global.PersistenceRecoveryGuard?.reserve(options);
     global.PersistenceRecoveryGuard?.assertWritable(options);
     const clean = sanitizeArchive({ ...archive, updatedAt: options.preserveTimestamp ? archive?.updatedAt : nowIso() });
+    // Terminal writes may be the largest local transaction. Reclaim only
+    // byte-identical/expired technical records; permanent stores are never GC'd.
+    global.InazumaPersistenceDiagnostics?.removeExactTechnicalDuplicates?.();
     try {
       const saved = writePrimaryArchive(clean); emitSave(options); return saved;
     } catch (error) {
@@ -124,6 +127,9 @@
         const saved = writePrimaryArchive(emergency); emitSave(options); return saved;
       } catch (retryError) {
         retryError.hallOfFameSaveFailed = true;
+        retryError.code = "storage-quota-exceeded";
+        retryError.stage = "hall-finalization";
+        retryError.problemSector = "hall_index";
         throw retryError;
       }
     }
