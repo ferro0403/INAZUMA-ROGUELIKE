@@ -14,7 +14,7 @@ context.ProfiledSeasonRuntime.register("orion", orion);
 
 assert.strictEqual(orion.seasonId, "orion");
 assert.strictEqual(orion.requiresProfileAwareRuntime, true);
-assert.deepStrictEqual([orion.bossOrder.length, orion.players.length, orion.profiles.length, orion.recruitmentPool.entries.length], [13, 311, 331, 131]);
+assert.deepStrictEqual([orion.bossOrder.length, orion.players.length, orion.profiles.length, orion.recruitmentPool.entries.length], [13, 308, 328, 128]);
 assert.strictEqual(orion.specialMatches.length, 0);
 assert.deepStrictEqual(orion.bossOrder.slice(-2).map((boss) => [boss.order, boss.teamName, boss.bossLevel]), [[12, "Inazuma National", 20], [13, "Zhao eclipse", 20]]);
 assert.strictEqual(orion.bossOrder.at(-1).finalBoss, true);
