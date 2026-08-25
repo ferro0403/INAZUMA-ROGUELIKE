@@ -76,7 +76,7 @@
     for (const effect of outbox(run).filter((item) => item.status === "pending" && (!allowedTypes || allowedTypes.has(item.type)))) {
       try {
         const outcome = apply(effect, apis);
-        if (!outcome.ok) break;
+        if (!outcome.ok) throw Object.assign(new Error(outcome.result?.error?.message || "Permanent effect persistence failed"), outcome.result?.error || {}, { permanentEffectId: effect.id, permanentEffectType: effect.type });
         const markerBefore = snapshotMarkerState(run, effect);
         effect.status = "applied"; effect.appliedAt = now();
         if (effect.type === TYPES.HALL) {
@@ -87,6 +87,15 @@
         try { save(run, { effectMarker: effect.id }); }
         catch (error) { restoreMarkerState(run, effect, markerBefore); throw error; }
         applied.push(effect.id);
+        // The Hall snapshot is only retry material. Compact it strictly after
+        // the applied marker is durable; a failed compaction cannot duplicate
+        // or forget the already-persisted champion.
+        if (effect.type === TYPES.HALL && effect.payload?.snapshot) {
+          const snapshot = effect.payload.snapshot;
+          effect.payload = { archiveKey: effect.payload.archiveKey || snapshot.archiveKey, hallTeamId: outcome.result?.team?.hallTeamId || snapshot.hallTeamId, compacted: true };
+          try { save(run, { effectCompaction: effect.id }); }
+          catch (error) { console.warn("Hall outbox compaction deferred", { code: error?.code || "compaction-save-failed", effectId: effect.id }); }
+        }
       } catch (error) { return { run, applied, pending: outbox(run).filter((item) => item.status === "pending"), error }; }
     }
     return { run, applied, pending: outbox(run).filter((item) => item.status === "pending") };

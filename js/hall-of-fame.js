@@ -124,6 +124,9 @@
         const saved = writePrimaryArchive(emergency); emitSave(options); return saved;
       } catch (retryError) {
         retryError.hallOfFameSaveFailed = true;
+        retryError.code = "storage-quota-exceeded";
+        retryError.stage = "hall-finalization";
+        retryError.problemSector = "hall_index";
         throw retryError;
       }
     }
@@ -149,7 +152,12 @@
       return { team: clone(saved.teams.find((item) => item.archiveKey === archiveKey)), created: true, persisted: true };
     } catch (error) {
       console.error("Unable to save Hall of Fame archive", error);
-      return { team: clone(compactTeam(team, { emergency: true })), created: true, persisted: false, error: { name: error?.name || "Error", message: error?.message || String(error) } };
+      if (isQuotaError(error) || error?.code === "storage-quota-exceeded") {
+        error.code = "storage-quota-exceeded";
+        error.stage = "hall-finalization";
+        error.problemSector = "hall_index";
+      }
+      return { team: clone(compactTeam(team, { emergency: true })), created: true, persisted: false, error: { name: error?.name || "Error", message: error?.message || String(error), code: error?.code || null, stage: error?.stage || null, problemSector: error?.problemSector || null } };
     }
   }
   function listTeams() { return loadArchive().teams.map(lightSummary); }

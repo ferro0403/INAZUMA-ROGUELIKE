@@ -1,0 +1,14 @@
+"use strict";
+const assert = require("assert"), BudgetStorage = require("./helpers/budget-storage"), { load } = require("./helpers/production-runtime");
+const storage = new BudgetStorage(), runtime = load(storage, ["persistence-recovery-guard.js", "run-state.js", "album-progress.js", "development-v2.js", "hall-of-fame.js", "permanent-effects.js"]);
+const snapshot = { runId: "quota-victory", seasonId: "ie2", modeId: "roguelike", finalBossId: "barcelona-orb", finalStartingEleven: [], fullRoster: [], bench: [], teamName: "Veteran" };
+storage.budget = storage.bytes() + 64;
+const direct = runtime.HallOfFameStorage.addChampion(snapshot);
+assert.equal(direct.persisted, false); assert.equal(direct.error.code, "storage-quota-exceeded"); assert.equal(direct.error.stage, "hall-finalization"); assert.equal(direct.error.problemSector, "hall_index");
+storage.budget = Infinity;
+const run = runtime.RunState.createRun({ name: "Veteran" }, "ie2"); run.phase = "finalization"; run.finalization = { status: "pending" }; runtime.PermanentEffects.enqueueHall(run, { ...snapshot, runId: run.runId }); runtime.RunState.save(run);
+storage.budget = storage.bytes() + 64;
+const result = runtime.PermanentEffects.resumeFinalization(run);
+assert.equal(result.completed, false); assert.equal(result.error.code, "storage-quota-exceeded"); assert.equal(result.error.problemSector, "hall_index");
+assert.equal(runtime.RunState.load("ie2", { readOnly: true }).finalization.status, "pending", "canonical victory remains reloadable");
+console.log("Hall quota propagation through finalization with recoverable canonical victory: ok");

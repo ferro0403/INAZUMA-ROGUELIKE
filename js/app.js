@@ -3,6 +3,16 @@
 
   const DEV_MODE = new URLSearchParams(global.location?.search || "").get("dev") === "1";
   const TEST_MATCH_CONTROLS_ENABLED = DEV_MODE;
+  if (DEV_MODE) global.addEventListener("DOMContentLoaded", () => {
+    const tools = document.createElement("aside");
+    tools.className = "persistence-dev-tools";
+    tools.style.cssText = "position:fixed;right:8px;bottom:8px;z-index:10000;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100vw - 16px)";
+    tools.innerHTML = '<button type="button" data-persistence-diagnostic>COPIA DIAGNOSTICA SALVATAGGIO</button><button type="button" data-persistence-repair>RIPARA SALVATAGGIO</button>';
+    const copy = async (value) => { const text = JSON.stringify(value, null, 2); await navigator.clipboard?.writeText?.(text); console.info("Inazuma persistence report", value); };
+    tools.querySelector("[data-persistence-diagnostic]").onclick = async () => copy(await global.InazumaPersistenceDiagnostics.snapshot());
+    tools.querySelector("[data-persistence-repair]").onclick = async () => { const result = await global.InazumaPersistenceDiagnostics.repair(); await copy(result); alert(result.blocker ? `Riparazione non applicata: ${result.blocker}` : "Riparazione salvataggio completata. Report copiato."); };
+    document.body.appendChild(tools);
+  });
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
   const toastRoot = document.getElementById("toast-root");
@@ -1058,7 +1068,9 @@
     if (!result.completed) {
       if (result.error) {
         console.error("Finalization remains resumable", result.error);
-        toast("Finalizzazione non completata. Riprova con Continua.");
+        toast(result.error.code === "storage-quota-exceeded"
+          ? "Spazio salvataggio insufficiente durante la finalizzazione. La vittoria è al sicuro: libera spazio e riprova con Continua."
+          : "Finalizzazione non completata. Riprova con Continua.");
       }
       if (render) renderFinalizationPending(result);
       return result;
@@ -6440,6 +6452,15 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         if (context.seasonDb) { seasonDb = context.seasonDb; activeSeason = { id: seasonDb.seasonId }; seasonPlayersById = new Map((seasonDb.players || []).map((player) => [String(player.playerId), player])); }
         if (context.freeAgentsDb) { freeAgentsDb = context.freeAgentsDb; freeAgentsById = new Map((freeAgentsDb.players || []).map((player) => [String(player.playerId), player])); }
       },
+      getRun: () => run,
+    };
+    // These hooks deliberately call the private production routes rather than
+    // reproducing their mutations in tests.
+    global.__INAZUMA_PRODUCTION_FLOW_TEST__ = {
+      completeBossMatch, continueAfterMatch, resolvePendingRunFlow, advanceBossReward,
+      finishBossVictoryTransition, resumeRunFinalization, resolveDevelopmentEndRunFlow,
+      ensureCurrentZone, renderGameOver,
+      setContext: global.__INAZUMA_RECRUITMENT_TEST__.setContext,
       getRun: () => run,
     };
   }

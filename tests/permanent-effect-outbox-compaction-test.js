@@ -1,0 +1,10 @@
+"use strict";
+const assert = require("assert"), fs = require("fs"), vm = require("vm");
+const c = { console, Date, JSON, structuredClone }; c.globalThis = c; vm.createContext(c); vm.runInContext(fs.readFileSync("js/permanent-effects.js", "utf8"), c);
+const run = { runId: "winner", seasonId: "ie2", phase: "finalization", finalization: { status: "pending" }, permanentEffectOutbox: [] };
+c.PermanentEffects.enqueueHall(run, { archiveKey: "winner::ie2", hallTeamId: "hall-winner", fullRoster: Array.from({ length: 30 }, (_, i) => ({ playerId: i, payload: "x".repeat(1000) })) });
+const before = JSON.stringify(run).length, durable = [];
+const result = c.PermanentEffects.drain(run, { apis: { HallOfFameStorage: { addChampion: () => ({ persisted: true, team: { hallTeamId: "hall-winner" } }) } }, save: (current, metadata) => durable.push({ metadata, state: JSON.parse(JSON.stringify(current)) }), types: [c.PermanentEffects.TYPES.HALL] });
+assert.equal(result.error, undefined); assert.equal(run.permanentEffectOutbox[0].status, "applied"); assert.equal(run.permanentEffectOutbox[0].payload.snapshot, undefined); assert(JSON.stringify(run).length < before / 4);
+assert.equal(durable[0].state.permanentEffectOutbox[0].status, "applied"); assert(durable[0].state.permanentEffectOutbox[0].payload.snapshot, "marker is durable before compaction");
+console.log("Hall permanent-effect payload compacts only after durable applied marker: ok");
