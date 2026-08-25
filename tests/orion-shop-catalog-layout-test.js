@@ -9,10 +9,10 @@ const orionDb = JSON.parse(fs.readFileSync(path.join(root, "data/ORION_season_co
 assert.match(css, /main\.shop-screen \.shop-cups\{display:grid;grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:4px\}/, "desktop cup grid must keep five columns");
 assert.match(css, /main\.shop-screen \.shop-tabs\{[^}]*grid-template-columns:1\.45fr repeat\(5,1fr\)/, "desktop tabs must keep six entries on one row");
 assert.match(css, /@media\(max-width:620px\)\{/);
-assert.match(css, /main\.shop-screen \.shop-cups\{grid-template-columns:repeat\(6,minmax\(0,1fr\)\);gap:0;background:var\(--paper\)\}/, "mobile cup grid must use six tracks for a centered 3+2 layout");
-assert.match(css, /\.shop-cups span\{grid-column:span 2;/, "each mobile cup must have the same two-track width");
-assert.match(css, /\.shop-cups span:nth-child\(4\)\{grid-column:2\/4\}/, "Ares cup must start on track two of the second row");
-assert.match(css, /\.shop-cups span:nth-child\(5\)\{grid-column:4\/6\}/, "Orion cup must end on track six without becoming full-width");
+assert.match(css, /main\.shop-screen \.shop-cups\{grid-template-columns:repeat\(6,minmax\(0,1fr\)\);gap:0;background:var\(--paper\)\}/, "mobile cup grid must use six tracks for a 3+2 layout");
+assert.match(css, /\.shop-cups span\{grid-column:span 2;/, "each top-row mobile cup must have the same two-track width");
+assert.match(polish, /span:nth-child\(4\)\{grid-column:1\/4\}/, "Ares must occupy the full left half of the second row");
+assert.match(polish, /span:nth-child\(5\)\{grid-column:4\/7\}/, "Orion must occupy the full right half of the second row");
 assert.match(css, /\.shop-cups span\{[^}]*align-content:center;justify-items:center;[^}]*text-align:center\}/, "mobile cup contents must be centered consistently");
 assert.match(css, /\.shop-cups img\{[^}]*display:block;justify-self:center;[^}]*margin:0\}/, "mobile cup images must be centered without inherited margins");
 assert.match(css, /\.shop-cups span:nth-child\(-n\+3\)\{border-bottom:4px solid var\(--ink\)\}/, "the first row must have a continuous lower divider");
