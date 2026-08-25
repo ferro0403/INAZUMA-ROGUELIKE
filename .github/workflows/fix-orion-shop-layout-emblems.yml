@@ -1,0 +1,217 @@
+name: Apply Orion shop layout and emblem rules
+
+on:
+  push:
+    branches:
+      - fix/orion-album-assets
+
+permissions:
+  contents: write
+
+jobs:
+  apply-and-verify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout fix branch
+        uses: actions/checkout@v4
+        with:
+          ref: fix/orion-album-assets
+          fetch-depth: 0
+
+      - name: Apply shop layout and Orion emblem rules
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const assert = require('assert');
+
+          function replaceOnce(path, before, after, label) {
+            const source = fs.readFileSync(path, 'utf8');
+            assert.strictEqual(source.split(before).length - 1, 1, `${label}: expected exactly one match`);
+            fs.writeFileSync(path, source.replace(before, after));
+          }
+
+          replaceOnce(
+            'css/game.css',
+            '.shop-cups{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px}',
+            '.shop-cups{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:4px}',
+            'desktop/mobile base cup grid'
+          );
+          replaceOnce(
+            'css/game.css',
+            '.shop-tabs{max-width:1100px;margin:0 auto 13px;padding:3px;display:grid;grid-template-columns:1.45fr repeat(4,1fr);gap:3px',
+            '.shop-tabs{max-width:1100px;margin:0 auto 13px;padding:3px;display:grid;grid-template-columns:1.45fr repeat(5,1fr);gap:3px',
+            'shop tab grid'
+          );
+          replaceOnce(
+            'css/game.css',
+            '.shop-cups{grid-template-columns:repeat(4,minmax(0,1fr))}',
+            '.shop-cups{grid-template-columns:repeat(5,minmax(0,1fr))}',
+            'mobile cup grid override'
+          );
+          replaceOnce(
+            'js/app.js',
+            'orion: "Orion Cup"',
+            'orion: "Comet Pendant"',
+            'Orion cup accessible name'
+          );
+          replaceOnce(
+            'js/shop-ui-polish.js',
+            'const CUP_NAMES = { ie1: "Sun Pendant", ie1_s2: "Alius Crystal", ie1_s3: "Meteor Necklace", ie2: "Challenger\'s Necklace" };',
+            'const CUP_NAMES = { ie1: "Sun Pendant", ie1_s2: "Alius Crystal", ie1_s3: "Meteor Necklace", ie2: "Challenger\'s Necklace", orion: "Comet Pendant" };',
+            'purchase modal Orion cup name'
+          );
+          replaceOnce(
+            'js/shop-ui-polish.js',
+            'const CUP_LABELS = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES" };',
+            'const CUP_LABELS = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES", orion: "ORION" };',
+            'purchase modal Orion cup label'
+          );
+          NODE
+
+          cat > js/shop-catalog.js <<'EOF'
+          (function (global) {
+            "use strict";
+            const EMBLEM_TIERS = Object.freeze({ base: Object.freeze({ label: "BASE", coins: 200, cups: 0 }), rare: Object.freeze({ label: "RARO", coins: 400, cups: 0 }), epic: Object.freeze({ label: "EPICO", coins: 600, cups: 1 }), iconic: Object.freeze({ label: "ICONICO", coins: 600, cups: 2 }) });
+            const SECTION_ORDER = Object.freeze(["general", "ie1", "ie1_s2", "ie1_s3", "ie2", "orion"]);
+            const SPECIAL = Object.freeze({
+              ie1: { royal: "rare", zeus: "epic" },
+              ie1_s2: { genesis: "epic", chaos: "epic", diamond_dust: "rare", prominence: "rare", epsilon_plus: "rare", royal_academy_redux: "rare", dark_emperors: "rare" },
+              ie1_s3: { team_ogre: "iconic", inazuma_national: "iconic", orpheus: "epic", the_kingdom: "epic", little_gigantes: "epic", big_waves: "rare", desert_lions: "rare", fire_dragon: "rare", queen_s_knights: "rare", the_empire: "rare", unicorn: "rare" },
+              ie2: { alia_academy: "rare", royal_academy_ares: "rare", zeus_ares: "epic", polestar_academy: "epic", lunar_prime_academy: "epic", barcelona_orb: "iconic" },
+              orion: {
+                raging_bulls: "base",
+                eternal_dancers: "base",
+                arabian_firebirds: "base",
+                ace_invaders: "rare",
+                avenging_acrobats: "rare",
+                fallen_angels: "rare",
+                pitch_perfectionists: "epic",
+                guardians_of_the_queen: "epic",
+                los_invencibles: "epic",
+                the_sambassadors: "epic",
+                inazuma_national_2: "iconic",
+                orion_eclipse: "iconic",
+                zhao_eclipse: "iconic",
+              },
+            });
+            const EXCLUDED = Object.freeze({ ie1_s2: new Set(["zeus"]), ie2: new Set(["alpine", "kirkwood"]) });
+            const BOSS_ONLY_SEASONS = Object.freeze(new Set(["orion"]));
+            const canonicalName = (name) => String(name || "").toLocaleLowerCase("en").replace(/\bie2\b|\bares\b|\binazuma eleven 2\b/g, "").replace(/academy/g, "").replace(/[^a-z0-9]+/g, "");
+            const bossTeamIds = (database) => new Set((database?.bossOrder || []).map((boss) => String(boss?.teamId || boss?.id || "")).filter(Boolean));
+            function build() {
+              const seen = new Set(), catalog = [];
+              for (const seasonId of SECTION_ORDER.slice(1)) {
+                const database = global.SeasonRegistry?.database?.(seasonId);
+                const allowedBosses = BOSS_ONLY_SEASONS.has(seasonId) ? bossTeamIds(database) : null;
+                for (const team of database?.teams || []) {
+                  const teamId = String(team.teamId || team.id), name = String(team.teamName || team.name || teamId), key = canonicalName(name);
+                  if (allowedBosses && !allowedBosses.has(teamId)) continue;
+                  if (EXCLUDED[seasonId]?.has(teamId) || (seasonId === "ie1_s3" && seen.has(key))) continue;
+                  if (seasonId !== "ie2") seen.add(key);
+                  const rarity = SPECIAL[seasonId]?.[teamId] || "base", tier = EMBLEM_TIERS[rarity];
+                  catalog.push(Object.freeze({ teamId, name, seasonId, shopSection: seasonId, emblemId: `team:${seasonId}:${teamId}`, rarity, ...tier }));
+                }
+              }
+              return Object.freeze(catalog);
+            }
+            global.ShopCatalog = { EMBLEM_TIERS, SECTION_ORDER, build };
+            if (typeof module !== "undefined" && module.exports) module.exports = global.ShopCatalog;
+          })(typeof globalThis !== "undefined" ? globalThis : window);
+          EOF
+
+          cat > tests/orion-shop-catalog-layout-test.js <<'EOF'
+          const assert = require("assert");
+          const fs = require("fs");
+          const path = require("path");
+
+          const root = path.join(__dirname, "..");
+          const css = fs.readFileSync(path.join(root, "css/game.css"), "utf8");
+          const app = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
+          const polish = fs.readFileSync(path.join(root, "js/shop-ui-polish.js"), "utf8");
+          const orionDb = JSON.parse(fs.readFileSync(path.join(root, "data/ORION_season_compact.json"), "utf8"));
+
+          assert.match(css, /\.shop-cups\{display:grid;grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:4px\}/);
+          assert.match(css, /\.shop-tabs\{[^}]*grid-template-columns:1\.45fr repeat\(5,1fr\)/);
+          assert.match(css, /@media\(max-width:620px\)\{[^}]*\.shop-cups\{grid-template-columns:repeat\(5,minmax\(0,1fr\)\)\}/);
+          assert.doesNotMatch(css, /\.shop-cups\{(?:display:grid;)?grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
+          assert.match(app, /orion: "Comet Pendant"/);
+          assert.match(polish, /orion: "Comet Pendant"/);
+          assert.match(polish, /orion: "ORION"/);
+
+          const emptyDb = { teams: [], bossOrder: [] };
+          global.SeasonRegistry = { database: (seasonId) => seasonId === "orion" ? orionDb : emptyDb };
+          delete require.cache[require.resolve("../js/shop-catalog.js")];
+          const ShopCatalog = require("../js/shop-catalog.js");
+          const products = ShopCatalog.build().filter((item) => item.seasonId === "orion");
+
+          const expected = {
+            raging_bulls: "base",
+            eternal_dancers: "base",
+            arabian_firebirds: "base",
+            ace_invaders: "rare",
+            avenging_acrobats: "rare",
+            fallen_angels: "rare",
+            pitch_perfectionists: "epic",
+            guardians_of_the_queen: "epic",
+            los_invencibles: "epic",
+            the_sambassadors: "epic",
+            inazuma_national_2: "iconic",
+            orion_eclipse: "iconic",
+            zhao_eclipse: "iconic",
+          };
+          const excluded = ["alia_academy", "alpine", "backwater_island", "barcelona_orb", "everytown", "kirkwood", "lunar_prime_academy", "polestar_academy", "rampart_junior_high", "royal_academy_ares", "zeus_ares"];
+          const bossIds = new Set(orionDb.bossOrder.map((boss) => String(boss.teamId)));
+
+          assert.equal(products.length, 13, "Orion shop must expose exactly the 13 boss emblems");
+          assert.deepStrictEqual(new Set(products.map((item) => item.teamId)), bossIds, "Orion shop must match bossOrder exactly");
+          for (const product of products) assert.equal(product.rarity, expected[product.teamId], `wrong rarity for ${product.teamId}`);
+          for (const teamId of excluded) assert(!products.some((item) => item.teamId === teamId), `${teamId} must not be sold as an Orion emblem`);
+          assert.deepStrictEqual(
+            Object.fromEntries(Object.entries(expected).map(([teamId, rarity]) => [teamId, products.find((item) => item.teamId === teamId)?.rarity])),
+            expected
+          );
+
+          console.log("orion-shop-catalog-layout-test: 5 cups, 6 tabs, 13 boss-only emblems and exact rarities OK");
+          EOF
+
+      - name: Static checks
+        run: |
+          git diff --check
+          node --check js/app.js
+          node --check js/shop-catalog.js
+          node --check js/shop-ui-polish.js
+          node --check tests/orion-shop-catalog-layout-test.js
+
+      - name: Run targeted shop and Orion tests
+        run: |
+          node tests/orion-shop-catalog-layout-test.js
+          node tests/shop-settings-integration-test.js
+          node tests/orion-season-integration-test.js
+          node tests/orion-season-registry-test.js
+          node tests/team-emblems-test.js
+          node tests/development-v2-test.js
+
+      - name: Run complete repository test suite
+        run: |
+          passed=0
+          failed=0
+          for f in tests/*-test.js; do
+            echo "=== $f ==="
+            if node "$f"; then
+              passed=$((passed+1))
+            else
+              failed=$((failed+1))
+            fi
+          done
+          echo "TEST_FILES_PASSED=$passed"
+          echo "TEST_FILES_FAILED=$failed"
+          test "$failed" -eq 0
+
+      - name: Commit fixes
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add css/game.css js/app.js js/shop-catalog.js js/shop-ui-polish.js tests/orion-shop-catalog-layout-test.js
+          git diff --cached --quiet && { echo "No changes to commit"; exit 1; }
+          git commit -m "fix: refine Orion shop layout and emblem tiers"
+          git push origin HEAD:fix/orion-album-assets
