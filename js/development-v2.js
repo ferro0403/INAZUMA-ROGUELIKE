@@ -3,7 +3,7 @@
 
   const STORAGE_KEY = "inazumaRoguelike.developmentV2";
   const SCHEMA_VERSION = 7;
-  const SEASON_IDS = Object.freeze(["ie1", "ie1_s2", "ie1_s3", "ie2"]);
+  const SEASON_IDS = Object.freeze(["ie1", "ie1_s2", "ie1_s3", "ie2", "orion"]);
   const RARITIES = ["Scarso", "Debole", "Normale", "Buono", "Forte", "Elite", "Mondiale", "Leggenda"];
   const PROJECT_RARITIES = RARITIES.slice(3);
   const PROJECT_PRICES = Object.freeze({ Buono: 250, Forte: 500, Elite: 1000, Mondiale: 1600, Leggenda: 2500 });
@@ -21,6 +21,7 @@
       ie1_s2: "https://dxi4wb638ujep.cloudfront.net/1/k/a/m/am1r5xc99es.png",
       ie1_s3: "https://dxi4wb638ujep.cloudfront.net/1/k/8/k/8kamtdks40c.png",
       ie2: "https://dxi4wb638ujep.cloudfront.net/1/k/r/a/radfiq7yd5u.png",
+      orion: "https://dxi4wb638ujep.cloudfront.net/1/k/h/7/h7qfo5ydzhc.png",
     }),
   });
   const counters = (keys) => Object.fromEntries(keys.map((key) => [key, 0]));

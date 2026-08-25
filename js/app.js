@@ -1122,7 +1122,7 @@
       <div class="home-card-kicker"><span>▣</span><strong>ALBUM</strong></div>
       <h2>Album</h2>
       <p class="muted">Completa la collezione dei giocatori.</p>
-      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>ALBUM</span><strong>3 COLLEZIONI</strong></div></div>
+      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>ALBUM</span><strong>${Object.keys(global.AlbumProgress?.ALBUM_COLLECTIONS || {}).length} COLLEZIONI</strong></div></div>
       <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="open-album-home">Apri Album</button></div>
     </article>`;
   }
@@ -1164,7 +1164,7 @@
   }
 
   function albumTeamsView(collectionId = ui.albumCollectionId, database = seasonDb) {
-    const teams = global.RecruitmentPoolRuntime.orderedAlbumTeams(database, collectionId === "ie1_s3", isProfileAwareSeason(collectionId));
+    const teams = global.RecruitmentPoolRuntime.orderedAlbumTeams(database, Boolean(database?.recruitmentPool?.entries), isProfileAwareSeason(collectionId));
     const freeAgentsTeam = { teamId: "__free_agents", teamName: "Svincolati", logoUrl: null, playerIds: albumFreeAgentPlayers(collectionId).map((player) => String(player.playerId)), freeAgents: true };
     return [...teams, freeAgentsTeam];
   }
@@ -1510,7 +1510,10 @@
   });
 
   function seasonCoverMarkup(season) {
-    const presentation = SEASON_CARD_PRESENTATION[season.id];
+    const databasePresentation = global.SeasonRegistry?.database?.(season.id)?.presentation;
+    const presentation = databasePresentation?.menuImageUrl
+      ? { coverUrl: databasePresentation.menuImageUrl, focalPoint: databasePresentation.menuImageFocalPoint || "center" }
+      : SEASON_CARD_PRESENTATION[season.id];
     return presentation ? `<img class="season-cover-art" src="${escapeHtml(presentation.coverUrl)}" alt="" style="object-position:${escapeHtml(presentation.focalPoint)}" loading="lazy" decoding="async" onerror="this.hidden=true;this.closest('.season-select-card').classList.add('season-cover-fallback')">` : "";
   }
 
@@ -1797,7 +1800,7 @@
     const after = { ...rawPlayer, basePotential, ...preview, overall: preview.overall, finalOverall: preview.overall, displayLevel: Number(rawPlayer.maxLevel || 20), albumDatabase: freeAgentsDb };
     const statChanges = Object.entries(STAT_LABELS).flatMap(([stat, label]) => { const before = Number(player.stats?.[stat] || 0), next = Number(after.stats?.[stat] || 0), delta = next - before; return delta > 0 ? [{ label, before, next, delta }] : []; });
     const statsMarkup = statChanges.map(({ label, before, next, delta }) => `<li><strong>${escapeHtml(label)}</strong><span>${escapeHtml(before)} <b aria-hidden="true">→</b> ${escapeHtml(next)}</span><em>+${escapeHtml(delta)}</em></li>`).join("");
-    const wallet=global.DevelopmentV2.read(), cupLabels={ie1:"IE1",ie1_s2:"IE2",ie1_s3:"IE3",ie2:"ARES"}, cupSelection=global.DevelopmentV2.defaultCupSelection(wallet,cost.cups);
+    const wallet=global.DevelopmentV2.read(), cupLabels={ie1:"IE1",ie1_s2:"IE2",ie1_s3:"IE3",ie2:"ARES",orion:"ORION"}, cupSelection=global.DevelopmentV2.defaultCupSelection(wallet,cost.cups);
     const cupRows=global.DevelopmentV2.SEASON_IDS.filter((id)=>Number(wallet.cupsBySeason[id]||0)>0).map((id)=>`<div class="development-cup-row"><img src="${escapeHtml(global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.cupsBySeason[id])}" alt=""><strong>${escapeHtml(cupLabels[id]||id)}</strong><button type="button" data-cup-minus="${escapeHtml(id)}" aria-label="Rimuovi Coppa ${escapeHtml(cupLabels[id]||id)}">−</button><b data-cup-count="${escapeHtml(id)}">${escapeHtml(cupSelection[id]||0)}</b><button type="button" data-cup-plus="${escapeHtml(id)}" aria-label="Aggiungi Coppa ${escapeHtml(cupLabels[id]||id)}">+</button></div>`).join("");
     openModal(`<div class="development-detail development-confirm"><p class="eyebrow">CONFERMA EVOLUZIONE</p><h2>${escapeHtml(player.name)}</h2><div class="development-evolution-preview development-squad-card-scope"><div><small>ATTUALE · ${escapeHtml(player.category)} · OVR ${escapeHtml(player.overall)}</small>${developmentSquadCardMarkup(player)}</div><span class="development-evolution-arrow" aria-hidden="true">→</span><div><small>NUOVA · ${escapeHtml(after.category)} · OVR ${escapeHtml(after.overall)}</small>${developmentSquadCardMarkup(after)}</div></div><section class="development-stat-increases"><h3>AUMENTO STATISTICHE</h3><ul>${statsMarkup || "<li><span>Nessuna statistica cambia.</span></li>"}</ul></section><h3 class="development-confirm-requirements-title">REQUISITI</h3><div class="development-confirm-costs">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, required: cost.projects, compact: true })}<section class="development-cup-selector"><h4>COPPE RICHIESTE: ${escapeHtml(cost.cups)}</h4>${cupRows}<p data-cup-total></p></section>${resourceCostMarkup({ type: "coins", label: "Monete", required: cost.coins, compact: true })}</div><div class="button-row"><button class="btn btn-ghost" id="back-evolution">ANNULLA</button><button class="btn btn-yellow" id="confirm-evolution">CONFERMA EVOLUZIONE</button></div></div>`, { closeable: false, className: "development-confirm-modal" });
     document.getElementById("back-evolution").onclick = closeModal;
@@ -1825,9 +1828,9 @@
   async function renderShop(section = "general") {
     await Promise.all(global.SeasonRegistry.list().map((season) => global.SeasonRegistry.loadDatabase(season.id)));
     const state = global.DevelopmentV2.read(), catalog = global.ShopCatalog.build();
-    const tabs = [["general","GENERALE"],["ie1","IE1"],["ie1_s2","IE2"],["ie1_s3","IE3"],["ie2","ARES"]];
-    const cupLabels = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES" };
-    const cupNames = { ie1: "Sun Pendant", ie1_s2: "Alius Crystal", ie1_s3: "Meteor Necklace", ie2: "Challenger's Necklace" };
+    const tabs = [["general","GENERALE"],["ie1","IE1"],["ie1_s2","IE2"],["ie1_s3","IE3"],["ie2","ARES"],["orion","ORION"]];
+    const cupLabels = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES", orion: "ORION" };
+    const cupNames = { ie1: "Sun Pendant", ie1_s2: "Alius Crystal", ie1_s3: "Meteor Necklace", ie2: "Challenger's Necklace", orion: "Comet Pendant" };
     const cupAssets = global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.cupsBySeason;
     const cupIcon = (id, className = "shop-cup-icon") => `<img class="${className}" src="${escapeHtml(cupAssets[id])}" alt="${escapeHtml(cupNames[id])}" title="${escapeHtml(cupNames[id])}" data-cup-season="${escapeHtml(id)}">`;
     const wallet = global.DevelopmentV2.SEASON_IDS.map((id) => `<span>${cupIcon(id)}<small>${cupLabels[id]}</small><b>${escapeHtml(state.cupsBySeason[id] || 0)}</b></span>`).join("");
@@ -1864,7 +1867,7 @@
     document.querySelectorAll("[data-settings-emblem]").forEach((button) => button.onclick = () => { const saved = savedTeamIdentity(); if (!saved) { toast("IMPOSTA PRIMA IL NOME SQUADRA"); return; } const updated = global.RunState.saveProfileTeamIdentity({ ...saved, emblemId: button.dataset.settingsEmblem }); if (syncRunTeamIdentity(updated)) global.RunState.save(run); toast("STEMMA SALVATO"); renderSettings({ view: "emblems" }); });
   }
 
-  function shopDevMarkup() { const cupLabels = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES" }; return `<section class="shop-dev"><h2>NEGOZIO — HACK TEST</h2><button data-shop-prepare>PREPARA TEST NEGOZIO</button><div class="shop-dev-grid">${[1000,5000].map((n) => `<button data-shop-coins="${n}">+${n} MONETE</button>`).join("")}${global.DevelopmentV2.SEASON_IDS.flatMap((id) => [1,5].map((n) => `<button data-shop-cups="${id}" data-amount="${n}">+${n} COPPA ${cupLabels[id]}</button>`)).join("")}${global.DevelopmentV2.PROJECT_RARITIES.map((rarity) => `<button data-shop-project="${rarity}">+1 PROGETTO ${rarity.toUpperCase()}</button>`).join("")}</div><div class="shop-dev-danger"><button data-shop-unlock>SBLOCCA TUTTI GLI STEMMI</button><button data-shop-remove>RIMUOVI TUTTI GLI STEMMI ACQUISTATI</button><button data-shop-reset>RESET RISORSE SHOP</button></div></section>`; }
+  function shopDevMarkup() { const cupLabels = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES", orion: "ORION" }; return `<section class="shop-dev"><h2>NEGOZIO — HACK TEST</h2><button data-shop-prepare>PREPARA TEST NEGOZIO</button><div class="shop-dev-grid">${[1000,5000].map((n) => `<button data-shop-coins="${n}">+${n} MONETE</button>`).join("")}${global.DevelopmentV2.SEASON_IDS.flatMap((id) => [1,5].map((n) => `<button data-shop-cups="${id}" data-amount="${n}">+${n} COPPA ${cupLabels[id]}</button>`)).join("")}${global.DevelopmentV2.PROJECT_RARITIES.map((rarity) => `<button data-shop-project="${rarity}">+1 PROGETTO ${rarity.toUpperCase()}</button>`).join("")}</div><div class="shop-dev-danger"><button data-shop-unlock>SBLOCCA TUTTI GLI STEMMI</button><button data-shop-remove>RIMUOVI TUTTI GLI STEMMI ACQUISTATI</button><button data-shop-reset>RESET RISORSE SHOP</button></div></section>`; }
   function bindShopDev(section, catalog) { const mutate = (callback) => { const state = global.DevelopmentV2.read(); callback(state); global.DevelopmentV2.write(state); renderShop(section); }; document.querySelectorAll("[data-shop-coins]").forEach((button) => button.onclick = () => mutate((state) => { state.coins += Number(button.dataset.shopCoins); })); document.querySelectorAll("[data-shop-cups]").forEach((button) => button.onclick = () => mutate((state) => { const id = button.dataset.shopCups; state.cupsBySeason[id] += Number(button.dataset.amount); })); document.querySelectorAll("[data-shop-project]").forEach((button) => button.onclick = () => mutate((state) => { state.projects[button.dataset.shopProject] += 1; })); document.querySelector("[data-shop-prepare]")?.addEventListener("click", () => mutate((state) => { state.coins = Math.max(state.coins, 10000); global.DevelopmentV2.SEASON_IDS.forEach((id) => { state.cupsBySeason[id] = Math.max(state.cupsBySeason[id], 5); }); })); document.querySelector("[data-shop-unlock]")?.addEventListener("click", () => mutate((state) => { state.unlockedEmblems = [...new Set([...state.unlockedEmblems, ...catalog.map((item) => item.emblemId)])]; })); document.querySelector("[data-shop-remove]")?.addEventListener("click", () => mutate((state) => { state.unlockedEmblems = []; })); document.querySelector("[data-shop-reset]")?.addEventListener("click", () => mutate((state) => { state.coins = 0; state.legacyCups = 0; global.DevelopmentV2.SEASON_IDS.forEach((id) => { state.cupsBySeason[id] = 0; }); state.unlockedEmblems = []; })); }
 
   function developmentDevMarkup(eligibleCount = developmentPlayers().length) { return `<section class="development-dev"><h2>SVILUPPO — HACK TEST</h2><p><strong>SVINCOLATI ELEGGIBILI: ${escapeHtml(eligibleCount)}</strong></p><div>${[100,500,1500].map(n=>`<button data-dev-coins="${n}">+${n} MONETE</button>`).join("")}${global.DevelopmentV2.SEASON_IDS.map(id=>`<button data-dev-season-cup="${id}">+1 COPPA ${id.toUpperCase()}</button>`).join("")}${global.DevelopmentV2.PROJECT_RARITIES.map(r=>`<button data-dev-complete-project="${r}">+1 PROGETTO ${r.toUpperCase()}</button>`).join("")}</div><button id="dev-unlock-free-agents">SBLOCCA TUTTI GLI SVINCOLATI</button><button id="dev-reset">RESET SVILUPPO TEST</button></section>`; }
@@ -1995,9 +1998,9 @@
   }
 
   function initialDraftPlayers() {
-    if (run?.seasonId === "ie1_s3") {
-      return global.RecruitmentPoolRuntime.effectiveSeason3Players(seasonDb, freeAgentsDb)
-        .filter(global.RecruitmentPoolRuntime.eligibleForSeason3InitialDraft);
+    if (seasonDb?.recruitmentPool?.entries && isProfileAwareSeason()) {
+      return global.RecruitmentPoolRuntime.effectiveProfiledPlayers(seasonDb, freeAgentsDb)
+        .filter(global.RecruitmentPoolRuntime.eligibleForProfiledInitialDraft);
     }
     const config = seasonDb?.draftConfig;
     if (config?.freeAgentsOnly && !Array.isArray(freeAgentsDb?.players)) {
@@ -3353,11 +3356,11 @@
   }
 
   function pullPool(type) {
-    if (type === "pull_free_agents" && run.seasonId === "ie1_s3") {
+    if (type === "pull_free_agents" && seasonDb?.recruitmentPool?.entries && isProfileAwareSeason()) {
       const minimums = seasonDb.recruitmentRules?.pullFreeAgents?.minimumFinalOverallByBossIndex || seasonDb.rules?.pullFreeAgentsMinimumFinalOverallByBossIndex || [];
       const minimum = Number(minimums[Math.min(Number(run.bossIndex || 0), minimums.length - 1)] || 0);
-      const effectivePool = global.RecruitmentPoolRuntime.effectiveSeason3Players(seasonDb, freeAgentsDb);
-      return { players: effectivePool.filter((player) => global.RecruitmentPoolRuntime.eligibleForSeason3FreeAgentPull(player, run.bossIndex, seasonDb)), source: "mixed", sourceForPlayer: (player) => global.RecruitmentPoolRuntime.candidateSource(player, run.seasonId), database: seasonDb, profileAware: true, minimumFinalOverall: minimum };
+      const effectivePool = global.RecruitmentPoolRuntime.effectiveProfiledPlayers(seasonDb, freeAgentsDb);
+      return { players: effectivePool.filter((player) => global.RecruitmentPoolRuntime.eligibleForProfiledFreeAgentPull(player, run.bossIndex, seasonDb)), source: "mixed", sourceForPlayer: (player) => global.RecruitmentPoolRuntime.candidateSource(player, run.seasonId), database: seasonDb, profileAware: true, minimumFinalOverall: minimum };
     }
     if (type === "pull_free_agents") return { players: freeAgentsDb.players, source: "free_agents", database: freeAgentsDb };
     if (type === "pull_unlocked_teams") {

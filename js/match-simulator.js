@@ -23,6 +23,7 @@
     "2-5-3": { id: "total_midfield", name: "Centrocampo totale", description: "Identità tattica neutra, senza modificatori.", modifiers: {} },
     "2-4-4": { id: "all_out_attack", name: "Assalto totale", description: "Quattro attaccanti alzano pressione e finalizzazione, ma la retroguardia resta esposta.", modifiers: { attack: 0.09, speed: 0.04, control: 0.01, defense: -0.09, save: -0.02 } },
     "3-3-4": { id: "vertical_charge", name: "Carica verticale", description: "Tanti uomini sopra la linea della palla e transizioni rapide.", modifiers: { attack: 0.07, speed: 0.05, grit: 0.02, defense: -0.05, control: -0.02 } },
+    "3-5-2": { id: "midfield_wingbacks", name: "Dominio sulle fasce", description: "Cinque centrocampisti controllano ritmo e ampiezza, sostenendo le due punte ma lasciando più esposta la linea a tre.", modifiers: { control: 0.05, stamina: 0.04, attack: 0.02, speed: 0.02, defense: -0.04, save: -0.02 } },
   });
   const FALLBACK_TACTIC = Object.freeze({ id: "balanced", name: "Bilanciato", description: "Nessun modificatore.", modifiers: Object.freeze({}) });
   const COMPONENT_KEYS = Object.freeze(["attack", "control", "defense", "save", "speed", "physical", "stamina"]);

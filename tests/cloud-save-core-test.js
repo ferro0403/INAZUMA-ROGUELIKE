@@ -12,8 +12,8 @@ const core = require('../js/cloud-save-core.js');
     HallOfFameStorage: { ARCHIVE_SCHEMA_VERSION: 2, _loadArchive: () => (calls.push('hall'), { schemaVersion: 2, updatedAt: 'now', teams: [{ hallTeamId: 'hall_1', archiveKey: 'run::1', fullRoster: [] }], index: [{ hallTeamId: 'hall_1', teamName: 'Raimon' }] }) },
   };
   const snapshot = core.readLocalSnapshot(apis);
-  assert.deepStrictEqual(calls, ['hall', 'profile', 'run:ie1:true', 'run:ie2:true', 'run:ie1_s2:true', 'run:ie1_s3:true', 'album', 'development']);
-  assert.strictEqual(snapshot.runs.ie1.seasonId, 'ie1'); assert.strictEqual(snapshot.runs.ie2, null); assert.strictEqual(snapshot.runs.ie1_s2, null); assert.strictEqual(snapshot.runs.ie1_s3, null);
+  assert.deepStrictEqual(calls, ['hall', 'profile', 'run:ie1:true', 'run:ie2:true', 'run:ie1_s2:true', 'run:ie1_s3:true', 'run:orion:true', 'album', 'development']);
+  assert.strictEqual(snapshot.runs.ie1.seasonId, 'ie1'); assert.strictEqual(snapshot.runs.ie2, null); assert.strictEqual(snapshot.runs.ie1_s2, null); assert.strictEqual(snapshot.runs.ie1_s3, null); assert.strictEqual(snapshot.runs.orion, null);
   assert.strictEqual(snapshot.development.schemaVersion, 5); assert.strictEqual(snapshot.hallOfFame.teams.length, 1);
   assert.ok(!core.stableSerialize(snapshot).includes('backup')); assert.ok(!('ignored' in snapshot.album));
 

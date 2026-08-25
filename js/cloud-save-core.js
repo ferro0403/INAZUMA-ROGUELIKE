@@ -4,7 +4,7 @@
   const DOCUMENT_LIMIT_BYTES = 850 * 1024;
   const CLOUD_SCHEMA_VERSION = 1;
   const MAX_HALL_TEAMS = 1000;
-  const RUN_SECTOR_NAMES = ["run_ie1", "run_ie2", "run_ie1_s2", "run_ie1_s3"];
+  const RUN_SECTOR_NAMES = ["run_ie1", "run_ie2", "run_ie1_s2", "run_ie1_s3", "run_orion"];
   const RUN_SECTORS = new Set(RUN_SECTOR_NAMES);
   const SECTOR_NAMES = ["profile", ...RUN_SECTOR_NAMES, "album", "development", "hall_index"];
   const isRunSector = (name) => RUN_SECTORS.has(name);
@@ -72,7 +72,7 @@
     const runSnapshot = (seasonId) => { const run = apis.RunState.load(seasonId, { readOnly: true }); if (!run) return null; const clean = clone(run); delete clean.storageGeneration; delete clean.storageCommitId; return clean; };
     const snapshot = normalize({
       profile: apis.RunState.loadProfile(),
-      runs: { ie1: runSnapshot("ie1"), ie2: runSnapshot("ie2"), ie1_s2: runSnapshot("ie1_s2"), ie1_s3: runSnapshot("ie1_s3") },
+      runs: { ie1: runSnapshot("ie1"), ie2: runSnapshot("ie2"), ie1_s2: runSnapshot("ie1_s2"), ie1_s3: runSnapshot("ie1_s3"), orion: runSnapshot("orion") },
       album: apis.AlbumProgress.read(),
       development: apis.DevelopmentV2.read(),
       hallOfFame: {
@@ -112,6 +112,7 @@
       runIe2: value.runs?.ie2 != null,
       runIe1S2: value.runs?.ie1_s2 != null,
       runIe1S3: value.runs?.ie1_s3 != null,
+      runOrion: value.runs?.orion != null,
       albumUnlocked,
       developmentProgress,
       hallOfFameCount: Array.isArray(value.hallOfFame?.teams) ? value.hallOfFame.teams.length : 0,
@@ -122,6 +123,7 @@
     if (summary.runIe2) reasons.push("run_ie2");
     if (summary.runIe1S2) reasons.push("run_ie1_s2");
     if (summary.runIe1S3) reasons.push("run_ie1_s3");
+    if (summary.runOrion) reasons.push("run_orion");
     if (summary.albumUnlocked) reasons.push("album");
     if (summary.developmentProgress) reasons.push("development");
     if (summary.hallOfFameCount) reasons.push("hall_of_fame");
@@ -136,7 +138,7 @@
     if (!manifest.sectors || typeof manifest.sectors !== "object" || !manifest.sectorHashes || typeof manifest.sectorHashes !== "object") throw cloudError("invalid-manifest", "manifest");
     const legacyMissingRunSectors = [];
     for (const name of SECTOR_NAMES) {
-      const legacyMissingRun = ["run_ie1_s2", "run_ie1_s3"].includes(name) && !own(manifest.sectors, name) && !own(manifest.sectorHashes, name);
+      const legacyMissingRun = ["run_ie1_s2", "run_ie1_s3", "run_orion"].includes(name) && !own(manifest.sectors, name) && !own(manifest.sectorHashes, name);
       if (legacyMissingRun) { legacyMissingRunSectors.push(name); manifest.sectors[name] = false; manifest.sectorHashes[name] = null; if (manifest.sectorRevisions) manifest.sectorRevisions[name] = manifest.revision; }
       if (name !== "hall_index" && !own(manifest.sectors, name)) throw cloudError("invalid-manifest", "manifest");
       if (!own(manifest.sectorHashes, name)) throw cloudError("invalid-manifest", "manifest");
@@ -202,14 +204,14 @@
 
   function reconstructSnapshot(payloads, hallPayloads) {
     const index = payloads.hall_index;
-    return normalize({ profile: payloads.profile, runs: { ie1: payloads.run_ie1, ie2: payloads.run_ie2, ie1_s2: payloads.run_ie1_s2, ie1_s3: payloads.run_ie1_s3 }, album: payloads.album, development: payloads.development,
+    return normalize({ profile: payloads.profile, runs: { ie1: payloads.run_ie1, ie2: payloads.run_ie2, ie1_s2: payloads.run_ie1_s2, ie1_s3: payloads.run_ie1_s3, orion: payloads.run_orion }, album: payloads.album, development: payloads.development,
       hallOfFame: { archiveSchemaVersion: index.archiveSchemaVersion, updatedAt: index.updatedAt ?? null, teams: hallPayloads, index: index.index } });
   }
 
   async function prepareSnapshot(snapshot, cryptoApi = global.crypto) {
     const clean = normalize(snapshot);
     const payloads = {
-      profile: clean.profile ?? {}, run_ie1: clean.runs?.ie1 ?? null, run_ie2: clean.runs?.ie2 ?? null, run_ie1_s2: clean.runs?.ie1_s2 ?? null, run_ie1_s3: clean.runs?.ie1_s3 ?? null,
+      profile: clean.profile ?? {}, run_ie1: clean.runs?.ie1 ?? null, run_ie2: clean.runs?.ie2 ?? null, run_ie1_s2: clean.runs?.ie1_s2 ?? null, run_ie1_s3: clean.runs?.ie1_s3 ?? null, run_orion: clean.runs?.orion ?? null,
       album: clean.album ?? {}, development: clean.development ?? {}, hall_index: hallIndex(clean),
     };
     const hashes = {};
@@ -263,8 +265,8 @@
       return [[seasonId, { runId: run.runId || source.runId || null, sourceLocalGeneration: Number(source.sourceLocalGeneration || 0), sourceLocalCommitId: source.sourceLocalCommitId || null, logicalHash: sectorLogicalHash(prepared, name), sourceDeviceId: deviceId, cloudRevision: revision, cloudCommitId }]];
     }));
     return { schemaVersion: 1, revision, baseRevision: Number(commit.baseRevision || 0), cloudCommitId, initialized: true, createdAt: timestamp, updatedAt: timestamp, source: "local-first-association", deviceId, sourceDeviceId: deviceId, accountUid: uid, runProvenance,
-      sectors: { profile: true, run_ie1: prepared.payloads.run_ie1 !== null, run_ie2: prepared.payloads.run_ie2 !== null, run_ie1_s2: prepared.payloads.run_ie1_s2 !== null, run_ie1_s3: prepared.payloads.run_ie1_s3 !== null, album: true, development: true, hallOfFameCount: prepared.hallEntries.length },
-      sectorHashes: { profile: prepared.hashes.profile, run_ie1: prepared.payloads.run_ie1 === null ? null : prepared.hashes.run_ie1, run_ie2: prepared.payloads.run_ie2 === null ? null : prepared.hashes.run_ie2, run_ie1_s2: prepared.payloads.run_ie1_s2 === null ? null : prepared.hashes.run_ie1_s2, run_ie1_s3: prepared.payloads.run_ie1_s3 === null ? null : prepared.hashes.run_ie1_s3, album: prepared.hashes.album, development: prepared.hashes.development, hall_index: prepared.hashes.hall_index },
+      sectors: { profile: true, run_ie1: prepared.payloads.run_ie1 !== null, run_ie2: prepared.payloads.run_ie2 !== null, run_ie1_s2: prepared.payloads.run_ie1_s2 !== null, run_ie1_s3: prepared.payloads.run_ie1_s3 !== null, run_orion: prepared.payloads.run_orion !== null, album: true, development: true, hallOfFameCount: prepared.hallEntries.length },
+      sectorHashes: { profile: prepared.hashes.profile, run_ie1: prepared.payloads.run_ie1 === null ? null : prepared.hashes.run_ie1, run_ie2: prepared.payloads.run_ie2 === null ? null : prepared.hashes.run_ie2, run_ie1_s2: prepared.payloads.run_ie1_s2 === null ? null : prepared.hashes.run_ie1_s2, run_ie1_s3: prepared.payloads.run_ie1_s3 === null ? null : prepared.hashes.run_ie1_s3, run_orion: prepared.payloads.run_orion === null ? null : prepared.hashes.run_orion, album: prepared.hashes.album, development: prepared.hashes.development, hall_index: prepared.hashes.hall_index },
       sectorRevisions: Object.fromEntries(SECTOR_NAMES.map((name) => [name, revision])), hallTeamIds: prepared.hallEntries.map((entry) => entry.hallTeamId),
       hallTeamHashes: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, entry.payloadHash])), hallTeamRevisions: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, revision])) };
   }

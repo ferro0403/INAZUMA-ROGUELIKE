@@ -7,8 +7,8 @@ const registrySource = fs.readFileSync(require.resolve("../js/season-registry.js
 const context = { globalThis: {} };
 vm.runInNewContext(registrySource, context);
 const seasons = context.globalThis.SeasonRegistry.list();
-assert.deepStrictEqual(Array.from(seasons, ({ id }) => id), ["ie1", "ie1_s2", "ie1_s3", "ie2"]);
-assert.deepStrictEqual(Array.from(seasons, ({ displaySeasonNumber }) => displaySeasonNumber), ["1", "2", "3", "1"]);
+assert.deepStrictEqual(Array.from(seasons, ({ id }) => id), ["ie1", "ie1_s2", "ie1_s3", "ie2", "orion"]);
+assert.deepStrictEqual(Array.from(seasons, ({ displaySeasonNumber }) => displaySeasonNumber), ["1", "2", "3", "1", "1"]);
 
 const cardRenderer = app.slice(app.indexOf("function seasonSelectCardMarkup"), app.indexOf("async function renderSeasonSelect"));
 assert.match(cardRenderer, />CONTINUA<.*>INIZIA<.*>ELIMINA</s);

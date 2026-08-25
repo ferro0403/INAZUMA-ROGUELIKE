@@ -4,7 +4,7 @@
   const id = (value) => String(value ?? "");
 
   function isSeasonProfileCandidate(player) {
-    return player?.sourceKind === "season3_recruitment_profile"
+    return /_recruitment_profile$/.test(String(player?.sourceKind || ""))
       || player?.pullCandidateKind === "season_profile"
       || (player?.pullCandidateKind !== "free_agent" && Boolean(player?.profileId));
   }
@@ -20,7 +20,8 @@
     return Math.max(base, permanent);
   }
 
-  function effectiveSeason3Players(seasonDb, freeAgentsDb, profiles = global.ProfiledSeasonRuntime) {
+  function effectiveProfiledPlayers(seasonDb, freeAgentsDb, profiles = global.ProfiledSeasonRuntime) {
+    const seasonId = id(seasonDb?.seasonId || "ie1_s3");
     const excluded = new Set(["1196"]);
     const byPlayerId = new Map();
     (freeAgentsDb?.players || []).forEach((player) => {
@@ -29,15 +30,17 @@
       byPlayerId.set(playerId, { ...player, playerId, sourceKind: "global_free_agent", source: "free_agents", pullCandidateKind: "free_agent" });
     });
     (seasonDb?.recruitmentPool?.entries || [])
-      .filter((entry) => entry.sourceKind === "season3_recruitment_profile" && !excluded.has(canonicalPlayerId(entry)))
+      .filter((entry) => isSeasonProfileCandidate(entry) && !excluded.has(canonicalPlayerId(entry)))
       .forEach((entry) => {
-        const profile = profiles?.resolveProfile?.("ie1_s3", entry.profileId);
-        const base = profile && profiles?.resolveEffectiveBase?.({ playerId: entry.playerId, activeProfileId: entry.profileId, activeRoleVariantId: profile.defaultRoleVariantId }, "ie1_s3");
-        const candidate = { ...(base || profile || {}), ...entry, playerId: canonicalPlayerId(entry), source: "ie1_s3", pullCandidateKind: "season_profile", defaultRoleVariantId: profile?.defaultRoleVariantId || null };
+        const profile = profiles?.resolveProfile?.(seasonId, entry.profileId);
+        const base = profile && profiles?.resolveEffectiveBase?.({ playerId: entry.playerId, activeProfileId: entry.profileId, activeRoleVariantId: profile.defaultRoleVariantId }, seasonId);
+        const candidate = { ...(base || profile || {}), ...entry, playerId: canonicalPlayerId(entry), source: seasonId, pullCandidateKind: "season_profile", defaultRoleVariantId: profile?.defaultRoleVariantId || null };
         if (candidate.playerId && candidate.profileId) byPlayerId.set(candidate.playerId, candidate);
       });
     return [...byPlayerId.values()];
   }
+
+  function effectiveSeason3Players(seasonDb, freeAgentsDb, profiles) { return effectiveProfiledPlayers(seasonDb, freeAgentsDb, profiles); }
 
   function eligibleForSeason3InitialDraft(candidate) {
     if (candidate?.eligibleInitialDraft === false) return false;
@@ -53,6 +56,9 @@
     const minimum = Math.max(75, Number(minimums[index] || 0));
     return effectiveFinalOverall(candidate) >= minimum;
   }
+
+  const eligibleForProfiledInitialDraft = eligibleForSeason3InitialDraft;
+  const eligibleForProfiledFreeAgentPull = eligibleForSeason3FreeAgentPull;
 
   function eligible(run, player, eligibleProfile = global.SpecialMatchRuntime?.eligibleProfile) {
     if (isSeasonProfileCandidate(player)) return Boolean(player.profileId && eligibleProfile?.(run, player.profileId));
@@ -72,5 +78,5 @@
     return [...new Map(ordered.map((team) => [id(team.teamId), team])).values()];
   }
 
-  global.RecruitmentPoolRuntime = { effectiveSeason3Players, eligibleForSeason3InitialDraft, eligibleForSeason3FreeAgentPull, effectiveFinalOverall, canonicalPlayerId, isSeasonProfileCandidate, candidateKey, candidateSource, eligible, choiceDatabase, orderedAlbumTeams };
+  global.RecruitmentPoolRuntime = { effectiveProfiledPlayers, effectiveSeason3Players, eligibleForProfiledInitialDraft, eligibleForProfiledFreeAgentPull, eligibleForSeason3InitialDraft, eligibleForSeason3FreeAgentPull, effectiveFinalOverall, canonicalPlayerId, isSeasonProfileCandidate, candidateKey, candidateSource, eligible, choiceDatabase, orderedAlbumTeams };
 })(globalThis);
