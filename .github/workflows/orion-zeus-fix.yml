@@ -1,0 +1,26 @@
+name: Apply Orion Zeus Ares correction
+on:
+  push:
+    branches: [orion]
+    paths:
+      - '.orion-zeus-fix.py'
+      - '.github/workflows/orion-zeus-fix.yml'
+permissions:
+  contents: write
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: orion
+      - name: Patch and validate Orion database
+        run: python .orion-zeus-fix.py
+      - name: Commit corrected database and remove temporary files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/ORION_season_compact.json
+          git rm .orion-zeus-fix.py .github/workflows/orion-zeus-fix.yml
+          git commit -m "fix: replace obsolete Zeus data with Zeus Ares in Orion"
+          git push origin HEAD:orion
