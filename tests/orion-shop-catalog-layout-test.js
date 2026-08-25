@@ -9,8 +9,10 @@ const orionDb = JSON.parse(fs.readFileSync(path.join(root, "data/ORION_season_co
 assert.match(css, /main\.shop-screen \.shop-cups\{display:grid;grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:4px\}/, "desktop cup grid must keep five columns");
 assert.match(css, /main\.shop-screen \.shop-tabs\{[^}]*grid-template-columns:1\.45fr repeat\(5,1fr\)/, "desktop tabs must keep six entries on one row");
 assert.match(css, /@media\(max-width:620px\)\{/);
-assert.match(css, /main\.shop-screen \.shop-cups\{grid-template-columns:repeat\(4,minmax\(0,1fr\)\)\}/, "mobile cup grid must use four columns");
-assert.match(css, /\.shop-cups span:nth-child\(5\)\{grid-column:1\/-1;/, "Orion cup must occupy the full second row on mobile");
+assert.match(css, /main\.shop-screen \.shop-cups\{grid-template-columns:repeat\(6,minmax\(0,1fr\)\)\}/, "mobile cup grid must use six tracks for a centered 3+2 layout");
+assert.match(css, /\.shop-cups span\{grid-column:span 2;/, "each mobile cup must have the same two-track width");
+assert.match(css, /\.shop-cups span:nth-child\(4\)\{grid-column:2\/4\}/, "Ares cup must start on track two of the second row");
+assert.match(css, /\.shop-cups span:nth-child\(5\)\{grid-column:4\/6\}/, "Orion cup must end on track six without becoming full-width");
 assert.match(css, /main\.shop-screen \.shop-tabs\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)\}/, "mobile tabs must render as a 3x2 grid");
 assert.match(app, /orion: "Comet Pendant"/);
 assert.match(polish, /orion: "Comet Pendant"/);
@@ -32,4 +34,4 @@ assert.equal(products.length, 13, "Orion shop must expose exactly the 13 boss em
 assert.deepStrictEqual(new Set(products.map((item) => item.teamId)), bossIds, "Orion shop must match bossOrder exactly");
 for (const product of products) assert.equal(product.rarity, expected[product.teamId], `wrong rarity for ${product.teamId}`);
 for (const teamId of excluded) assert(!products.some((item) => item.teamId === teamId), `${teamId} must not be sold as an Orion emblem`);
-console.log("orion-shop-catalog-layout-test: desktop 5/6, mobile 4+1 cups and 3x2 tabs, 13 boss-only emblems and exact rarities OK");
+console.log("orion-shop-catalog-layout-test: desktop 5/6, mobile centered 3+2 cups and 3x2 tabs, 13 boss-only emblems and exact rarities OK");
