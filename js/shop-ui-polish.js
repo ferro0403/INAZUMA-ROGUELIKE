@@ -4,8 +4,8 @@
   const OVERLAY_ID = "shop-buy-overlay";
   const TIER_LABELS = { base: "BASE", rare: "RARO", epic: "EPICO", iconic: "ICONICO" };
   const TIER_ACCENTS = { base: "#4a4b4f", rare: "#3487bd", epic: "#8b48bd", iconic: "#a87714" };
-  const CUP_NAMES = { ie1: "Sun Pendant", ie1_s2: "Alius Crystal", ie1_s3: "Meteor Necklace", ie2: "Challenger's Necklace" };
-  const CUP_LABELS = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES" };
+  const CUP_NAMES = { ie1: "Sun Pendant", ie1_s2: "Alius Crystal", ie1_s3: "Meteor Necklace", ie2: "Challenger's Necklace", orion: "Comet Pendant" };
+  const CUP_LABELS = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES", orion: "ORION" };
 
   function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
