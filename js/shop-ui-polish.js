@@ -2,19 +2,10 @@
   "use strict";
 
   const OVERLAY_ID = "shop-buy-overlay";
-  const MOBILE_LAYOUT_STYLE_ID = "shop-responsive-season-layout";
   const TIER_LABELS = { base: "BASE", rare: "RARO", epic: "EPICO", iconic: "ICONICO" };
   const TIER_ACCENTS = { base: "#4a4b4f", rare: "#3487bd", epic: "#8b48bd", iconic: "#a87714" };
   const CUP_NAMES = { ie1: "Sun Pendant", ie1_s2: "Alius Crystal", ie1_s3: "Meteor Necklace", ie2: "Challenger's Necklace", orion: "Comet Pendant" };
   const CUP_LABELS = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES", orion: "ORION" };
-
-  function ensureResponsiveShopLayout() {
-    if (document.getElementById(MOBILE_LAYOUT_STYLE_ID)) return;
-    const style = document.createElement("style");
-    style.id = MOBILE_LAYOUT_STYLE_ID;
-    style.textContent = `@media(max-width:620px){.shop-cups{grid-template-columns:repeat(4,minmax(0,1fr))}.shop-cups span:nth-child(5){grid-column:1/-1;grid-template-columns:27px auto;justify-content:center;justify-items:start;column-gap:6px;padding:5px 8px}.shop-cups span:nth-child(5) img{grid-row:1/3;width:24px;height:24px}.shop-tabs{grid-template-columns:repeat(3,minmax(0,1fr))}}`;
-    document.head.appendChild(style);
-  }
 
   function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
@@ -165,7 +156,6 @@
     openPurchaseModal(descriptor);
   }
 
-  ensureResponsiveShopLayout();
   document.addEventListener("click", interceptPurchase, true);
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape" && document.getElementById(OVERLAY_ID)) closePurchaseModal();
