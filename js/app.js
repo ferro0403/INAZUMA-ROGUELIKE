@@ -3,6 +3,16 @@
 
   const DEV_MODE = new URLSearchParams(global.location?.search || "").get("dev") === "1";
   const TEST_MATCH_CONTROLS_ENABLED = DEV_MODE;
+  if (DEV_MODE) global.addEventListener("DOMContentLoaded", () => {
+    const tools = document.createElement("aside");
+    tools.className = "persistence-dev-tools";
+    tools.style.cssText = "position:fixed;right:8px;bottom:8px;z-index:10000;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100vw - 16px)";
+    tools.innerHTML = '<button type="button" data-persistence-diagnostic>COPIA DIAGNOSTICA SALVATAGGIO</button><button type="button" data-persistence-repair>RIPARA SALVATAGGIO</button>';
+    const copy = async (value) => { const text = JSON.stringify(value, null, 2); await navigator.clipboard?.writeText?.(text); console.info("Inazuma persistence report", value); };
+    tools.querySelector("[data-persistence-diagnostic]").onclick = async () => copy(await global.InazumaPersistenceDiagnostics.snapshot());
+    tools.querySelector("[data-persistence-repair]").onclick = async () => { const result = await global.InazumaPersistenceDiagnostics.repair(); await copy(result); alert(result.blocker ? `Riparazione non applicata: ${result.blocker}` : "Riparazione salvataggio completata. Report copiato."); };
+    document.body.appendChild(tools);
+  });
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
   const toastRoot = document.getElementById("toast-root");
