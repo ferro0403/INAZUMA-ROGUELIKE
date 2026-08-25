@@ -2,14 +2,14 @@ name: Apply Orion shop layout and emblem rules
 
 on:
   push:
-    branches: [fix/orion-album-assets]
+    branches:
+      - fix/orion-album-assets
 
 permissions:
   contents: write
 
 jobs:
   apply-and-verify:
-    if: ${{ !contains(github.event.head_commit.message, 'fix: refine Orion shop layout and emblem tiers') }}
     runs-on: ubuntu-latest
     steps:
       - name: Checkout fix branch
@@ -100,14 +100,12 @@ jobs:
           const app = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
           const polish = fs.readFileSync(path.join(root, "js/shop-ui-polish.js"), "utf8");
           const orionDb = JSON.parse(fs.readFileSync(path.join(root, "data/ORION_season_compact.json"), "utf8"));
-
           assert.equal((css.match(/\.shop-cups\{(?:display:grid;)?grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/g) || []).length, 2, "base and mobile cup grids must both use five columns");
           assert.match(css, /\.shop-tabs\{[^}]*grid-template-columns:1\.45fr repeat\(5,1fr\)/);
           assert.doesNotMatch(css, /\.shop-cups\{(?:display:grid;)?grid-template-columns:repeat\(4,minmax\(0,1fr\)\)/);
           assert.match(app, /orion: "Comet Pendant"/);
           assert.match(polish, /orion: "Comet Pendant"/);
           assert.match(polish, /orion: "ORION"/);
-
           const emptyDb = { teams: [], bossOrder: [] };
           global.SeasonRegistry = { database: (seasonId) => seasonId === "orion" ? orionDb : emptyDb };
           delete require.cache[require.resolve("../js/shop-catalog.js")];
@@ -144,7 +142,8 @@ jobs:
 
       - name: Run complete repository test suite
         run: |
-          passed=0; failed=0
+          passed=0
+          failed=0
           for f in tests/*-test.js; do
             if node "$f"; then passed=$((passed+1)); else failed=$((failed+1)); fi
           done
@@ -152,10 +151,11 @@ jobs:
           echo "TEST_FILES_FAILED=$failed"
           test "$failed" -eq 0
 
-      - name: Commit fixes
+      - name: Commit fixes and remove temporary workflow
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/fix-orion-shop-layout-emblems.yml
           git add css/game.css js/app.js js/shop-catalog.js js/shop-ui-polish.js tests/orion-shop-catalog-layout-test.js
           git commit -m "fix: refine Orion shop layout and emblem tiers"
           git push origin HEAD:fix/orion-album-assets
