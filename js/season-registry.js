@@ -81,8 +81,8 @@
     }
     if (season.id === "orion") {
       const valid = database.requiresProfileAwareRuntime === true
-        && database.bossOrder?.length === 13 && database.players?.length === 311
-        && database.profiles?.length === 331 && database.recruitmentPool?.entries?.length === 131
+        && database.bossOrder?.length === 13 && database.players?.length === 308
+        && database.profiles?.length === 328 && database.recruitmentPool?.entries?.length === 128
         && database.specialMatches?.length === 0 && database.validation?.status === "passed"
         && database.warnings?.length === 0;
       if (!valid) throw new Error("Database Inazuma Eleven Orion non supera la validazione runtime");
