@@ -1122,7 +1122,7 @@
       <div class="home-card-kicker"><span>▣</span><strong>ALBUM</strong></div>
       <h2>Album</h2>
       <p class="muted">Completa la collezione dei giocatori.</p>
-      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>ALBUM</span><strong>3 COLLEZIONI</strong></div></div>
+      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>ALBUM</span><strong>${Object.keys(global.AlbumProgress?.ALBUM_COLLECTIONS || {}).length} COLLEZIONI</strong></div></div>
       <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="open-album-home">Apri Album</button></div>
     </article>`;
   }
