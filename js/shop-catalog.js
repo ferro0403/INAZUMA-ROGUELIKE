@@ -1,7 +1,7 @@
 (function (global) {
   "use strict";
   const EMBLEM_TIERS = Object.freeze({ base: Object.freeze({ label: "BASE", coins: 200, cups: 0 }), rare: Object.freeze({ label: "RARO", coins: 400, cups: 0 }), epic: Object.freeze({ label: "EPICO", coins: 600, cups: 1 }), iconic: Object.freeze({ label: "ICONICO", coins: 600, cups: 2 }) });
-  const SECTION_ORDER = Object.freeze(["general", "ie1", "ie1_s2", "ie1_s3", "ie2"]);
+  const SECTION_ORDER = Object.freeze(["general", "ie1", "ie1_s2", "ie1_s3", "ie2", "orion"]);
   const SPECIAL = Object.freeze({
     ie1: { royal: "rare", zeus: "epic" },
     ie1_s2: { genesis: "epic", chaos: "epic", diamond_dust: "rare", prominence: "rare", epsilon_plus: "rare", royal_academy_redux: "rare", dark_emperors: "rare" },

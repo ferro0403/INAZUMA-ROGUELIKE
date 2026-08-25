@@ -8,6 +8,7 @@
     ie2: Object.freeze({ amount: 0.5, units: null, text: "+0,5 livello" }),
     ie1_s2: Object.freeze({ amount: 1 / 3, units: 2, text: "+1/3 livello" }),
     ie1_s3: Object.freeze({ amount: 1 / 3, units: 2, text: "+1/3 livello" }),
+    orion: Object.freeze({ amount: 1 / 3, units: 2, text: "+1/3 livello" }),
   });
 
   function fiveVFiveLevelReward(seasonId) {
@@ -33,7 +34,7 @@
     const entry = levelOrEntry && typeof levelOrEntry === "object" ? levelOrEntry : null;
     const level = entry ? (entry.level ?? entry.teamLevel ?? 0) : levelOrEntry;
     const resolvedSeason = seasonId || entry?.seasonId;
-    if (!["ie1_s2", "ie1_s3"].includes(resolvedSeason)) return formatLegacyLevel(level);
+    if (!["ie1_s2", "ie1_s3", "orion"].includes(resolvedSeason)) return formatLegacyLevel(level);
     const units = explicitUnits == null ? (entry?.levelUnits ?? entry?.teamLevelUnits ?? 0) : explicitUnits;
     const parts = normalizedLevelParts(level, units);
     if (!parts.units) return String(parts.level);
@@ -42,7 +43,7 @@
   }
 
   function applyRewardToRun(run, reward) {
-    if (["ie1_s2", "ie1_s3"].includes(run.seasonId)) {
+    if (["ie1_s2", "ie1_s3", "orion"].includes(run.seasonId)) {
       const units = Number(reward.units ?? Math.round(Number(reward.amount || 0) * LEVEL_UNITS_PER_LEVEL));
       const apply = (target, levelKey, unitsKey) => {
         const parts = normalizedLevelParts(target[levelKey], Number(target[unitsKey] || 0) + units);

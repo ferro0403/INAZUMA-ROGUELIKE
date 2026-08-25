@@ -1,6 +1,6 @@
 (function (global) {
   "use strict";
-  const RUN_IDS = ["ie1", "ie2", "ie1_s2", "ie1_s3"];
+  const RUN_IDS = ["ie1", "ie2", "ie1_s2", "ie1_s3", "orion"];
   const STAGES = ["profile", ...RUN_IDS.map((id) => `run-${id}`), "album", "development", "hall", "verify", "metadata", "complete"];
   const clone = (value) => JSON.parse(JSON.stringify(value));
   function createJournal(value) {
