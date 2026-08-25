@@ -1122,7 +1122,7 @@
       <div class="home-card-kicker"><span>▣</span><strong>ALBUM</strong></div>
       <h2>Album</h2>
       <p class="muted">Completa la collezione dei giocatori.</p>
-      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>ALBUM</span><strong>3 COLLEZIONI</strong></div></div>
+      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>ALBUM</span><strong>${Object.keys(global.AlbumProgress?.ALBUM_COLLECTIONS || {}).length} COLLEZIONI</strong></div></div>
       <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="open-album-home">Apri Album</button></div>
     </article>`;
   }
@@ -1830,7 +1830,7 @@
     const state = global.DevelopmentV2.read(), catalog = global.ShopCatalog.build();
     const tabs = [["general","GENERALE"],["ie1","IE1"],["ie1_s2","IE2"],["ie1_s3","IE3"],["ie2","ARES"],["orion","ORION"]];
     const cupLabels = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES", orion: "ORION" };
-    const cupNames = { ie1: "Sun Pendant", ie1_s2: "Alius Crystal", ie1_s3: "Meteor Necklace", ie2: "Challenger's Necklace", orion: "Orion Cup" };
+    const cupNames = { ie1: "Sun Pendant", ie1_s2: "Alius Crystal", ie1_s3: "Meteor Necklace", ie2: "Challenger's Necklace", orion: "Comet Pendant" };
     const cupAssets = global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.cupsBySeason;
     const cupIcon = (id, className = "shop-cup-icon") => `<img class="${className}" src="${escapeHtml(cupAssets[id])}" alt="${escapeHtml(cupNames[id])}" title="${escapeHtml(cupNames[id])}" data-cup-season="${escapeHtml(id)}">`;
     const wallet = global.DevelopmentV2.SEASON_IDS.map((id) => `<span>${cupIcon(id)}<small>${cupLabels[id]}</small><b>${escapeHtml(state.cupsBySeason[id] || 0)}</b></span>`).join("");
