@@ -43,7 +43,19 @@
       const redeemed = result?.state?.redeemedRunIds?.includes(effect.payload.runId) || apis.DevelopmentV2.read().redeemedRunIds.includes(effect.payload.runId);
       return { ok: redeemed, result };
     }
-    if (effect.type === TYPES.HALL) { const result = apis.HallOfFameStorage.addChampion(effect.payload.snapshot); return { ok: result?.persisted === true, result }; }
+    if (effect.type === TYPES.HALL) {
+      const result = apis.HallOfFameStorage.addChampion(effect.payload.snapshot);
+      if (result?.persisted !== true) {
+        const details = result?.error || {};
+        throw Object.assign(new Error(details.message || "Hall effect remains pending"), {
+          name: details.name || "Error",
+          code: details.code || "hall-finalization-failed",
+          stage: details.stage || "hall-finalization",
+          problemSector: details.problemSector || "hall_index",
+        });
+      }
+      return { ok: true, result };
+    }
     return { ok: false };
   }
   function snapshotMarkerState(run, effect) {

@@ -6452,6 +6452,30 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       },
       getRun: () => run,
     };
+    // Deliberately thin test seam: every entry delegates to the same private
+    // production function used by the UI. Keep orchestration out of tests and
+    // do not duplicate terminal-run persistence semantics here.
+    global.__INAZUMA_TERMINAL_FLOW_TEST__ = Object.freeze({
+      completeBossMatch,
+      continueAfterMatch,
+      resolvePendingRunFlow,
+      showNextBossReward,
+      advanceBossReward,
+      finishBossVictoryTransition,
+      navigateBossVictoryDestination,
+      resumeRunFinalization,
+      renderGameOver,
+      ensureCurrentZoneMutation,
+      setContext: (context = {}) => {
+        if (context.run) { run = context.run; global.run = run; ui.match = run.activeMatch || null; }
+        if (context.seasonDb) {
+          seasonDb = context.seasonDb;
+          activeSeason = { id: seasonDb.seasonId || context.run?.seasonId };
+          seasonPlayersById = new Map((seasonDb.players || []).map((player) => [String(player.playerId), player]));
+        }
+      },
+      getRun: () => run,
+    });
   }
   init();
 })(globalThis);
