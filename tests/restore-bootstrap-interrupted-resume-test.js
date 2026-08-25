@@ -3,7 +3,7 @@ const fs = require('fs');
 const vm = require('vm');
 const BudgetStorage = require('./helpers/budget-storage');
 
-const RUN_IDS = ['ie1', 'ie2', 'ie1_s2', 'ie1_s3'];
+const RUN_IDS = ['ie1', 'ie2', 'ie1_s2', 'ie1_s3', 'orion'];
 const clone = (value) => JSON.parse(JSON.stringify(value));
 const equal = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 

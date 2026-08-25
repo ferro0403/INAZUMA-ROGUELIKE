@@ -33,6 +33,13 @@
       freeAgentsTeamId: "unaffiliated",
       coverUrl: "/assets/icons/icon-512.png",
     },
+    orion: {
+      id: "orion",
+      name: "Inazuma Eleven Orion",
+      seasonId: "orion",
+      freeAgentsTeamId: "unaffiliated",
+      coverUrl: "https://i0.wp.com/nicolaraccasceneggiature.altervista.org/wp-content/uploads/2019/05/Dlhck3sVAAA2Lgd-1.jpg?fit=1200%2C896&ssl=1",
+    },
   };
   let freeAgentIds = new Set();
 

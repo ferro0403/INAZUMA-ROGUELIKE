@@ -7,9 +7,10 @@
     ie1_s2: Object.freeze({ id: "ie1_s2", name: "Inazuma Eleven 2", displaySeasonNumber: "2", database: "data/IE1_S2_season_compact.json", albumCollectionId: "ie1_s2" }),
     ie1_s3: Object.freeze({ id: "ie1_s3", name: "Inazuma Eleven 3", displaySeasonNumber: "3", database: "data/IE1_S3_season_compact.json", albumCollectionId: "ie1_s3" }),
     ie2: Object.freeze({ id: "ie2", name: "Inazuma Eleven Ares", displaySeasonNumber: "1", database: "data/IE2_season_compact.json", albumCollectionId: "ie2" }),
+    orion: Object.freeze({ id: "orion", name: "Inazuma Eleven Orion", displaySeasonNumber: "1", database: "data/ORION_season_compact.json", albumCollectionId: "orion" }),
   });
 
-  const DISPLAY_ORDER = Object.freeze(["ie1", "ie1_s2", "ie1_s3", "ie2"]);
+  const DISPLAY_ORDER = Object.freeze(["ie1", "ie1_s2", "ie1_s3", "ie2", "orion"]);
 
   const DISPLAY_TEAM_NAME_OVERRIDES = Object.freeze({
     ie1_s2: Object.freeze({
@@ -77,6 +78,14 @@
         && counts.warnings === 0 && counts.sourceValidationBossPlayers === 184
         && database.warnings?.length === 0 && database.validation?.status === "passed";
       if (!valid) throw new Error("Database Inazuma Eleven 3 non supera la validazione runtime");
+    }
+    if (season.id === "orion") {
+      const valid = database.requiresProfileAwareRuntime === true
+        && database.bossOrder?.length === 13 && database.players?.length === 311
+        && database.profiles?.length === 331 && database.recruitmentPool?.entries?.length === 131
+        && database.specialMatches?.length === 0 && database.validation?.status === "passed"
+        && database.warnings?.length === 0;
+      if (!valid) throw new Error("Database Inazuma Eleven Orion non supera la validazione runtime");
     }
     applyDisplayTeamNameOverrides(database, season.id);
     dbBySeason.set(season.id, database);

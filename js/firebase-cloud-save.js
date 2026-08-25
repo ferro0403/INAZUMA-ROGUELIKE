@@ -169,7 +169,7 @@ function retrySync() { if (state.status !== "sync-error") return null; return sy
 function onLocalSave(event) { if (guard()?.isBlocked()) return; const sector = event?.detail?.sector; if (!core.SECTOR_NAMES.includes(sector)) return; if (state.status === "awaiting-local-save") { associateLocalSave({ force: true }); return; } if (!cachedManifest || state.uid !== cachedManifest.uid || ["sync-conflict", "local-conflict", "cloud-update-available"].includes(state.status)) return; dirtySectors.add(sector); scheduleSync(); }
 
 function logicalRunJson(run) { if (run === null) return "null"; const logical = core.clone(run); delete logical.storageGeneration; delete logical.storageCommitId; return core.stableSerialize(logical); }
-function captureRunProvenance() { return Object.fromEntries(["ie1", "ie2", "ie1_s2", "ie1_s3"].map((seasonId) => { const d = globalThis.RunStorage?.diagnostics?.(seasonId) || {}; return [seasonId, { generation: d.canonicalGeneration || 0, commitId: d.canonicalCommitId || null, state: d.canonicalState || "empty-or-corrupt", runId: d.canonicalRunId || null }]; })); }
+function captureRunProvenance() { return Object.fromEntries(globalThis.InazumaCloudRestoreProtocol.RUN_IDS.map((seasonId) => { const d = globalThis.RunStorage?.diagnostics?.(seasonId) || {}; return [seasonId, { generation: d.canonicalGeneration || 0, commitId: d.canonicalCommitId || null, state: d.canonicalState || "empty-or-corrupt", runId: d.canonicalRunId || null }]; })); }
 function restoreAdapters(uid, id, token, journal) {
   const options = { suppressCloudEvent: true, restoreOwnershipToken: journal.operationId };
   const snapshotNow = () => core.readLocalSnapshot();

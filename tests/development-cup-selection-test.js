@@ -10,7 +10,7 @@ assert(development.validateCupSelection(wallet,selection,8));
 assert(!development.validateCupSelection(wallet,{...selection,ie1:1},8),"9/8 is rejected");
 assert(!development.validateCupSelection(wallet,{ie1_s2:6,ie1_s3:2},8),"source overdraft is rejected");
 const result=development.evolve({playerId:"hauser",playerName:"Hauser",basePotential:90,unlocked:true,freeAgentEligible:true,cupSelection:selection});
-assert(result.ok); assert.deepStrictEqual(result.state.cupsBySeason,{ie1:6,ie1_s2:4,ie1_s3:1,ie2:3});
+assert(result.ok); assert.deepStrictEqual(result.state.cupsBySeason,{ie1:6,ie1_s2:4,ie1_s3:1,ie2:3,orion:0});
 assert.deepStrictEqual(result.state.evolutionHistory[0].cupsConsumedBySource,{ie1_s2:1,ie1_s3:3,ie2:4});
 const after=result.state;
 const duplicate=development.evolve({playerId:"hauser",playerName:"Hauser",basePotential:90,unlocked:true,freeAgentEligible:true,cupSelection:selection});
