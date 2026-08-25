@@ -6,9 +6,17 @@
   const TIER_ACCENTS = { base: "#4a4b4f", rare: "#3487bd", epic: "#8b48bd", iconic: "#a87714" };
   const CUP_NAMES = { ie1: "Sun Pendant", ie1_s2: "Alius Crystal", ie1_s3: "Meteor Necklace", ie2: "Challenger's Necklace", orion: "Comet Pendant" };
   const CUP_LABELS = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES", orion: "ORION" };
+  const CUP_LAYOUT_STYLE_ID = "shop-cup-layout-final-fix";
+
+  if (typeof document !== "undefined" && !document.getElementById(CUP_LAYOUT_STYLE_ID)) {
+    const style = document.createElement("style");
+    style.id = CUP_LAYOUT_STYLE_ID;
+    style.textContent = "@media(max-width:620px){main.shop-screen .shop-cups span:nth-child(4){grid-column:1/4}main.shop-screen .shop-cups span:nth-child(5){grid-column:4/7}}";
+    document.head.appendChild(style);
+  }
 
   function escapeHtml(value) {
-    return String(value ?? "").replace(/[&<>'"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;" })[char]);
+    return String(value ?? "").replace(/[&<>'\"]/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '\"': "&quot;" })[char]);
   }
 
   function currentShopSection() {
