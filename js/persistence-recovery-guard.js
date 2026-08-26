@@ -14,6 +14,9 @@
   }
   function reserve(options = {}) {
     if (options.restoreOwnershipToken || options.readOnly) return readEpoch();
+    // A rejected gameplay write is not a local mutation. Fence before bumping
+    // so an already-present journal cannot poison its own safe-abort proof.
+    assertWritable(options);
     const next = readEpoch() + 1;
     try { global.localStorage.setItem(EPOCH_KEY, String(next)); }
     catch (error) { throw failure(error, "storage-access-error", "mutation-epoch-write"); }

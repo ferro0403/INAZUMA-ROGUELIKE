@@ -43,7 +43,19 @@
       const redeemed = result?.state?.redeemedRunIds?.includes(effect.payload.runId) || apis.DevelopmentV2.read().redeemedRunIds.includes(effect.payload.runId);
       return { ok: redeemed, result };
     }
-    if (effect.type === TYPES.HALL) { const result = apis.HallOfFameStorage.addChampion(effect.payload.snapshot); return { ok: result?.persisted === true, result }; }
+    if (effect.type === TYPES.HALL) {
+      const result = apis.HallOfFameStorage.addChampion(effect.payload.snapshot);
+      if (result?.persisted !== true) {
+        const details = result?.error || {};
+        throw Object.assign(new Error(details.message || "Hall effect remains pending"), {
+          name: details.name || "Error",
+          code: details.code || "hall-finalization-failed",
+          stage: details.stage || "hall-finalization",
+          problemSector: details.problemSector || "hall_index",
+        });
+      }
+      return { ok: true, result };
+    }
     return { ok: false };
   }
   function snapshotMarkerState(run, effect) {
@@ -67,12 +79,22 @@
       else run.finalization.hallTeamId = before.finalizationHallTeamId;
     }
   }
+  function compactAppliedHallEffect(run, effect, save) {
+    if (effect.type !== TYPES.HALL || effect.status !== "applied" || !Object.prototype.hasOwnProperty.call(effect, "payload")) return false;
+    const payload = effect.payload, createdAt = effect.createdAt;
+    delete effect.payload; delete effect.createdAt;
+    try { save(run, { effectCompaction: effect.id }); return true; }
+    catch (error) { effect.payload = payload; if (createdAt !== undefined) effect.createdAt = createdAt; throw error; }
+  }
   function drain(run, options = {}) {
     if (options.readOnly) return { run, applied: [], pending: outbox(run).filter((item) => item.status === "pending"), readOnly: true };
     const apis = options.apis || global;
     const save = options.save || ((current) => apis.RunState.save(current));
     const applied = [];
     const allowedTypes = options.types ? new Set(options.types) : null;
+    for (const receipt of outbox(run).filter((item) => item.status === "applied" && (!allowedTypes || allowedTypes.has(item.type)))) {
+      try { compactAppliedHallEffect(run, receipt, save); } catch (error) { return { run, applied, pending: outbox(run).filter((item) => item.status === "pending"), error }; }
+    }
     for (const effect of outbox(run).filter((item) => item.status === "pending" && (!allowedTypes || allowedTypes.has(item.type)))) {
       try {
         const outcome = apply(effect, apis);
@@ -86,6 +108,7 @@
         if (effect.type === TYPES.DEVELOPMENT && run.finalization) run.finalization.status = "development-written";
         try { save(run, { effectMarker: effect.id }); }
         catch (error) { restoreMarkerState(run, effect, markerBefore); throw error; }
+        if (effect.type === TYPES.HALL) compactAppliedHallEffect(run, effect, save);
         applied.push(effect.id);
       } catch (error) { return { run, applied, pending: outbox(run).filter((item) => item.status === "pending"), error }; }
     }

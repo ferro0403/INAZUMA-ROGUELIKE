@@ -3,6 +3,16 @@
 
   const DEV_MODE = new URLSearchParams(global.location?.search || "").get("dev") === "1";
   const TEST_MATCH_CONTROLS_ENABLED = DEV_MODE;
+  if (DEV_MODE) global.addEventListener("DOMContentLoaded", () => {
+    const tools = document.createElement("aside");
+    tools.className = "persistence-dev-tools";
+    tools.style.cssText = "position:fixed;right:8px;bottom:8px;z-index:10000;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100vw - 16px)";
+    tools.innerHTML = '<button type="button" data-persistence-diagnostic>COPIA DIAGNOSTICA SALVATAGGIO</button><button type="button" data-persistence-repair>RIPARA SALVATAGGIO</button>';
+    const copy = async (value) => { const text = JSON.stringify(value, null, 2); await navigator.clipboard?.writeText?.(text); console.info("Inazuma persistence report", value); };
+    tools.querySelector("[data-persistence-diagnostic]").onclick = async () => copy(await global.InazumaPersistenceDiagnostics.snapshot());
+    tools.querySelector("[data-persistence-repair]").onclick = async () => { const result = await global.InazumaPersistenceDiagnostics.repair(); await copy(result); alert(result.blocker ? `Riparazione non applicata: ${result.blocker}` : "Riparazione salvataggio completata. Report copiato."); };
+    document.body.appendChild(tools);
+  });
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
   const toastRoot = document.getElementById("toast-root");
@@ -6135,6 +6145,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function renderGameOver({ developmentResolved = false } = {}) {
+    // The terminal route itself owns the canonical phase. This keeps a reload
+    // between navigation and the permanent-effect drain on the game-over path.
+    if (run.phase !== "gameover") {
+      run.phase = "gameover";
+      global.RunState.save(run);
+    }
     const bossReached = Math.min(Number(run.bossIndex || 0) + 1, seasonDb.bossOrder.length);
     if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "gameover", onComplete: () => renderGameOver({ developmentResolved: true }) });
     const wins = Number(run.statistics?.winsTotal || 0);
@@ -6442,6 +6458,30 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       },
       getRun: () => run,
     };
+    // Deliberately thin test seam: every entry delegates to the same private
+    // production function used by the UI. Keep orchestration out of tests and
+    // do not duplicate terminal-run persistence semantics here.
+    global.__INAZUMA_TERMINAL_FLOW_TEST__ = Object.freeze({
+      completeBossMatch,
+      continueAfterMatch,
+      resolvePendingRunFlow,
+      showNextBossReward,
+      advanceBossReward,
+      finishBossVictoryTransition,
+      navigateBossVictoryDestination,
+      resumeRunFinalization,
+      renderGameOver,
+      ensureCurrentZoneMutation,
+      setContext: (context = {}) => {
+        if (context.run) { run = context.run; global.run = run; ui.match = run.activeMatch || null; }
+        if (context.seasonDb) {
+          seasonDb = context.seasonDb;
+          activeSeason = { id: seasonDb.seasonId || context.run?.seasonId };
+          seasonPlayersById = new Map((seasonDb.players || []).map((player) => [String(player.playerId), player]));
+        }
+      },
+      getRun: () => run,
+    });
   }
   init();
 })(globalThis);
