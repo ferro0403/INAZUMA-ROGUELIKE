@@ -47,18 +47,26 @@ async function repairCommittedMetadata(uid, id, manifest, token) {
 }
 
 function newCloudCommitId() { return globalThis.crypto?.randomUUID?.() || `cloud-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`; }
-async function stageBundle(uid, id, prepared, db, revision, commitId, manifest) {
-  const timestamp = serverTimestamp(), writes = [(batch) => batch.set(doc(db, "users", uid, "saveCommits", commitId, "metadata", "manifest"), manifest)];
-  core.SECTOR_NAMES.forEach((name) => writes.push((batch) => batch.set(doc(db, "users", uid, "saveCommits", commitId, "sectors", name), sectorDocument(name, prepared.payloads[name], sectorHash(prepared, name), id, timestamp, revision, commitId))));
-  prepared.hallEntries.forEach((entry) => writes.push((batch) => batch.set(doc(db, "users", uid, "saveCommits", commitId, "hallOfFame", entry.hallTeamId), hallDocument(entry, id, timestamp, revision, commitId))));
+async function stageBundle(uid, id, prepared, db, revision, commitId, manifest, onStage = () => {}) {
+  const timestamp = serverTimestamp();
+  const groups = [
+    ["staging-manifest", "manifest", [(batch) => batch.set(doc(db, "users", uid, "saveCommits", commitId, "metadata", "manifest"), manifest)]],
+    ["staging-sectors", "sectors", core.SECTOR_NAMES.map((name) => (batch) => batch.set(doc(db, "users", uid, "saveCommits", commitId, "sectors", name), sectorDocument(name, prepared.payloads[name], sectorHash(prepared, name), id, timestamp, revision, commitId)))],
+    ["staging-hall", "hallOfFame", prepared.hallEntries.map((entry) => (batch) => batch.set(doc(db, "users", uid, "saveCommits", commitId, "hallOfFame", entry.hallTeamId), hallDocument(entry, id, timestamp, revision, commitId)))],
+  ];
   // Staging is intentionally chunked. It is invisible until the manifest CAS
   // publishes cloudCommitId, so an interrupted large Hall upload is harmless.
-  for (const chunk of globalThis.InazumaCloudSyncProtocol.chunks(writes, 400)) { const batch = writeBatch(db); chunk.forEach((write) => write(batch)); await batch.commit(); }
+  for (const [stage, problemSector, writes] of groups) {
+    onStage(stage, problemSector);
+    try { for (const chunk of globalThis.InazumaCloudSyncProtocol.chunks(writes, 400)) { const batch = writeBatch(db); chunk.forEach((write) => write(batch)); await batch.commit(); } }
+    catch (error) { if (!error.problemSector) error.problemSector = problemSector; throw error; }
+  }
 }
-async function commitBundle(uid, id, prepared, db, expectedManifest, commitId) {
+async function commitBundle(uid, id, prepared, db, expectedManifest, commitId, onStage = () => {}) {
   core.preflight(prepared); const expectedRevision = expectedManifest?.revision ?? 0, targetRevision = expectedRevision + 1;
-  const timestamp = serverTimestamp(), manifest = core.buildManifest(prepared, uid, id, timestamp, { revision: targetRevision, baseRevision: expectedRevision, cloudCommitId: commitId });
-  await stageBundle(uid, id, prepared, db, targetRevision, commitId, manifest);
+  const timestamp = serverTimestamp(), manifest = core.buildManifest(prepared, uid, id, timestamp, { revision: targetRevision, baseRevision: expectedRevision, cloudCommitId: commitId, expectedManifest });
+  await stageBundle(uid, id, prepared, db, targetRevision, commitId, manifest, onStage);
+  onStage("publishing-manifest", "manifest");
   await runTransaction(db, async (transaction) => {
     const ref = doc(db, "users", uid, "cloudSave", "manifest"), snapshot = await transaction.get(ref);
     const actual = snapshot.exists() ? snapshot.data() : null;
@@ -235,7 +243,7 @@ async function upgradeLegacyCloudBundle(uid, id, token, bundle) {
   if (bundle.manifest.cloudCommitId) return bundle;
   publish({ status: "checking", legacyCloudUpgradeStatus: "staging-immutable-copy" }, token);
   const cloudSnapshot = core.reconstructSnapshot(bundle.payloads, bundle.hallPayloads), prepared = await core.prepareSnapshot(cloudSnapshot); core.preflight(prepared);
-  const committed = await commitBundle(uid, id, prepared, globalThis.InazumaAccount.getFirestoreInstance(), bundle.manifest, newCloudCommitId());
+  const committed = await commitBundle(uid, id, prepared, globalThis.InazumaAccount.getFirestoreInstance(), bundle.manifest, newCloudCommitId(), (stage, problemSector) => publish({ legacyCloudUpgradeStatus: stage, restoreStage: stage, problemSector }, token));
   const upgraded = await downloadStableCloudBundle({ uid, token });
   if (!upgraded.manifest.cloudCommitId || upgraded.manifest.cloudCommitId !== committed.cloudCommitId) throw restoreError("legacy-cloud-upgrade-verification-failed", "manifest");
   const verification = await core.compareSnapshots(cloudSnapshot, core.reconstructSnapshot(upgraded.payloads, upgraded.hallPayloads));
