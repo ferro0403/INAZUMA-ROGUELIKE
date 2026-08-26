@@ -71,8 +71,10 @@
     });
     return changed;
   }
-  function configureFreeAgentIds(playerIds) {
+  function configureFreeAgentIds(playerIds, options = {}) {
     freeAgentIds = new Set(Array.from(playerIds || [], (id) => String(id || "")).filter(Boolean));
+    const persist = options.persist ?? !global.PersistenceRecoveryGuard?.isBlocked?.();
+    if (!persist) return freeAgentIds.size;
     const progress = readStorage();
     writeStorage(progress, { suppressCloudEvent: true });
     return freeAgentIds.size;
