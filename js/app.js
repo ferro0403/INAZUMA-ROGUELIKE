@@ -6145,6 +6145,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function renderGameOver({ developmentResolved = false } = {}) {
+    // The terminal route itself owns the canonical phase. This keeps a reload
+    // between navigation and the permanent-effect drain on the game-over path.
+    if (run.phase !== "gameover") {
+      run.phase = "gameover";
+      global.RunState.save(run);
+    }
     const bossReached = Math.min(Number(run.bossIndex || 0) + 1, seasonDb.bossOrder.length);
     if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "gameover", onComplete: () => renderGameOver({ developmentResolved: true }) });
     const wins = Number(run.statistics?.winsTotal || 0);
