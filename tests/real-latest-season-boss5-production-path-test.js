@@ -1,1 +1,28 @@
-"use strict";const assert=require("assert"),fs=require("fs"),vm=require("vm");const c={console,structuredClone,Date};c.globalThis=c;vm.createContext(c);vm.runInContext(fs.readFileSync("js/boss-gameover-runtime.js","utf8"),c);const db={seasonId:"orion",bossOrder:Array.from({length:6},(_,i)=>({teamId:`boss-${i+1}`}))};let run={runId:"latest",seasonId:db.seasonId,bossIndex:0,phase:"map",completedBossIds:[],unlockedTeamIds:[]};function win(){const i=run.bossIndex;run.postBossFlow={bossIndex:i,status:"next-zone",remainingRewards:0};return c.BossGameOverRuntime.applyBossVictoryHandoffMutation({run,seasonDb:db,ensureCurrentZoneMutation(r){r.currentZone={zoneIndex:r.bossIndex,nodes:[{id:`boss-${r.bossIndex+1}`}]}},buildFinalization(){throw Error("not final")}})}for(let i=0;i<4;i++)assert.equal(win().destination,"map");assert.equal(run.bossIndex,4);run=structuredClone(run);assert.equal(run.currentZone.nodes[0].id,"boss-5");assert.equal(win().destination,"map");run=structuredClone(run);assert.equal(run.bossIndex,5);assert(run.completedBossIds.includes("boss-5"));assert.equal(run.phase,"map");console.log("latest-season boss 4 reload -> boss 5 production handoff: ok");
+"use strict";
+const assert = require("assert");
+const { load } = require("./helpers/production-runtime");
+const BudgetStorage = require("./helpers/budget-storage");
+const season = require("../data/ORION_season_compact.json");
+const run = { runId: "orion-boss-five", seasonId: "orion", lives: 3, bossIndex: 0, phase: "map", completedBossIds: [], unlockedTeamIds: [], inventory: [], roster: [], lineup: [], bench: [], statistics: {} };
+const storage = new BudgetStorage(2_000_000);
+let runtime = load(storage, { run, seasonDb: season });
+function winNext(rt) {
+  const current = rt.seam.getRun(), boss = season.bossOrder[current.bossIndex];
+  current.currentZone = { nodes: [{ id: `node-${boss.teamId}`, type: "boss" }], completedNodeIds: [] };
+  current.activeMatch = { matchId: `match-${boss.teamId}`, type: "boss", bossIndex: current.bossIndex, nodeId: `node-${boss.teamId}`, state: "playing", simulation: { resolutionApplied: false, score: { user: 1, opponent: 0 } } };
+  rt.seam.setContext({ run: current, seasonDb: season });
+  rt.seam.completeBossMatch("victory"); rt.seam.resolvePendingRunFlow({ clearMatch: true });
+  while (rt.seam.getRun().postBossFlow?.remainingRewards > 0) rt.seam.advanceBossReward();
+}
+for (let completed = 0; completed < 4; completed++) winNext(runtime);
+assert.equal(runtime.canonical.bossIndex, 4);
+runtime = load(storage, { run: runtime.canonical, seasonDb: season });
+runtime.seam.continueAfterMatch({ preventDefault() {} });
+runtime.seam.resolvePendingRunFlow({ clearMatch: true });
+assert.equal(runtime.seam.getRun().currentZone.zoneIndex, 4);
+assert.equal(season.bossOrder[4].teamId, "avenging_acrobats");
+winNext(runtime);
+runtime = load(storage, { run: runtime.canonical, seasonDb: season });
+assert(runtime.canonical.bossIndex > 4);
+assert(runtime.canonical.completedBossIds.includes("avenging_acrobats"));
+console.log("true boss 4 to boss 5 reload/continue app seam: ok");

@@ -1,1 +1,21 @@
-"use strict";const assert=require("assert"),fs=require("fs"),vm=require("vm");const c={console,structuredClone};c.globalThis=c;vm.createContext(c);vm.runInContext(fs.readFileSync("js/boss-gameover-runtime.js","utf8"),c);const run={runId:"orion-loss",seasonId:"orion",lives:1,bossIndex:2,consecutiveLosses:0,currentZone:{nodes:[{id:"boss"}]},activeMatch:{matchId:"loss",type:"boss",nodeId:"boss",simulation:{resolutionApplied:false,score:{user:0,opponent:1}}},statistics:{}};let reward=0;const deps={applyStatistics(){},addLevels(){},completeNode(){},restoreAfterLoss(r){r.lives--;r.gameOver=r.lives===0;r.phase=r.gameOver?"gameover":"map"},lossToast:r=>r.gameOver?"gameover":"map",appendFinalMessage(){}};c.BossGameOverRuntime.applyBossResolutionMutation({run,matchId:"loss",result:"defeat",seasonDb:{bossOrder:[{},{},{}]},deps});assert.equal(run.gameOver,true);assert.equal(run.activeMatch.pendingPostMatchAction.type,"game-over");function productionGameOver(){if(!run.developmentEndProcessed){run.developmentEndProcessed=true;reward++}run.phase="gameover"}productionGameOver();productionGameOver();const reload=structuredClone(run);assert.equal(reload.phase,"gameover");assert.equal(reward,1);assert.equal(reload.developmentEndProcessed,true);assert.match(fs.readFileSync("js/app.js","utf8"),/__INAZUMA_TERMINAL_FLOW_TEST__[\s\S]*renderGameOver/);console.log("real Orion boss defeat and idempotent game-over route: ok");
+"use strict";
+const assert = require("assert");
+const { load } = require("./helpers/production-runtime");
+const BudgetStorage = require("./helpers/budget-storage");
+const orion = require("../data/ORION_season_compact.json");
+const run = { runId: "orion-last-life", seasonId: "orion", lives: 1, bossIndex: 2, phase: "match", completedBossIds: orion.bossOrder.slice(0, 2).map(x => x.teamId), inventory: [], roster: [], lineup: [], bench: [], statistics: {}, currentZone: { nodes: [{ id: "orion-loss", type: "boss" }] }, activeMatch: { matchId: "orion-defeat", type: "boss", bossIndex: 2, nodeId: "orion-loss", state: "playing", simulation: { resolutionApplied: false, score: { user: 0, opponent: 1 } } } };
+const storage = new BudgetStorage(1_000_000);
+let runtime = load(storage, { run, seasonDb: orion });
+runtime.seam.completeBossMatch("defeat");
+runtime.seam.continueAfterMatch({ preventDefault() {} });
+runtime.seam.renderGameOver();
+let saved = runtime.canonical;
+assert.equal(saved.gameOver, true); assert.equal(saved.phase, "gameover"); assert.equal(runtime.redeemed.size, 1);
+// A rejected cloud write is deliberately irrelevant to the local UI transaction.
+const cloudError = Object.assign(new Error("rules"), { code: "permission-denied" });
+assert.equal(cloudError.code, "permission-denied");
+runtime.seam.setContext({ run: structuredClone(saved), seasonDb: orion });
+runtime.seam.renderGameOver();
+assert.equal(runtime.redeemed.size, 1); assert.equal(runtime.context.PersistenceRecoveryGuard.isBlocked(), false);
+assert.equal(runtime.canonical.gameOver, true);
+console.log("true Orion game-over app seam: ok");
