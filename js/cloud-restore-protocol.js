@@ -5,7 +5,7 @@
   const clone = (value) => JSON.parse(JSON.stringify(value));
   function createJournal(value) {
     const runProgress = Object.fromEntries(RUN_IDS.map((id) => [id, { status: "pending", sourceGeneration: Number(value.sourceRunProvenance?.[id]?.generation || 0), appliedGeneration: null, targetLogicalHash: value.targetRunHashes?.[id] ?? null }]));
-    return { schemaVersion: 3, operationId: value.operationId, uid: value.uid, restoreType: value.restoreType, targetCloudRevision: value.targetCloudRevision, targetCloudCommitId: value.targetCloudCommitId || null, targetManifestIdentity: value.targetManifestIdentity, sourceLocalEpoch: value.sourceLocalEpoch, expectedLocalEpoch: value.expectedLocalEpoch, sourceRunProvenance: clone(value.sourceRunProvenance || {}), runProgress, stage: "prepared", startedAt: value.startedAt };
+    return { schemaVersion: 3, operationId: value.operationId, uid: value.uid, restoreType: value.restoreType, safeAutomaticReplace: value.safeAutomaticReplace === true, targetCloudRevision: value.targetCloudRevision, targetCloudCommitId: value.targetCloudCommitId || null, targetManifestIdentity: value.targetManifestIdentity, sourceLocalEpoch: value.sourceLocalEpoch, expectedLocalEpoch: value.expectedLocalEpoch, sourceRunProvenance: clone(value.sourceRunProvenance || {}), runProgress, stage: "prepared", startedAt: value.startedAt };
   }
   async function recover({ journal, loadTarget, writeJournal, clearJournal, adapters, onBlocked = () => {}, onComplete = () => {}, crash = () => {} }) {
     onBlocked(journal); const target = await loadTarget(journal); if (!target?.snapshot || !target?.manifest) throw Object.assign(new Error("restore-journal-repair-needed"), { code: "restore-journal-repair-needed" });

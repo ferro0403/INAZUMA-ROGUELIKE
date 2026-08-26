@@ -6440,7 +6440,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       const visualsDb = await visualsResponse.json();
       freeAgentsDb = await freeAgentsResponse.json();
       await global.PersistenceBootstrapGate?.ready;
-      await global.PersistenceBootstrapGate?.whenWritable?.();
+      await global.PersistenceBootstrapGate?.whenAccessible?.();
       global.AlbumProgress.configureFreeAgentIds((freeAgentsDb.players || []).map((player) => player.playerId));
       freeAgentsById = new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player]));
       playerVisualsById = new Map(Object.entries(visualsDb.players || {}));

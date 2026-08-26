@@ -29,6 +29,7 @@ async function attachAuthenticatedCloud(context, options = {}) {
   const doc = (_db, ...path) => ({ path });
   const read = async ref => {
     if (pathOf(ref) === manifestPath) records.manifestReads += 1;
+    if (backend.readBarrier) await backend.readBarrier(pathOf(ref));
     return snapshot(documents.get(pathOf(ref)));
   };
   const writeBatch = () => {
@@ -77,8 +78,9 @@ async function attachAuthenticatedCloud(context, options = {}) {
     InazumaCloudSyncProtocol: require("../../js/cloud-sync-protocol"),
     InazumaCloudMetadataProtocol: require("../../js/cloud-metadata-protocol"),
     InazumaCloudRestoreProtocol: require("../../js/cloud-restore-protocol"),
+    InazumaRestoreRunReplacementPolicy: require("../../js/restore-run-replacement-policy"),
     InazumaCloudWriteFailurePolicy: require("../../js/cloud-write-failure-policy"),
-    CloudRestoreResumeCoordinator: { route: ({ normalAssociate }) => normalAssociate(), retry: () => null },
+    CloudRestoreResumeCoordinator: require("../../js/cloud-restore-resume-coordinator"),
     PersistenceBootstrapGate: { markAuth() {}, notify() {} },
     InazumaAccount: {
       ready: Promise.resolve(),

@@ -135,14 +135,14 @@
     const all = entries(), cloud = global.InazumaCloudSave?.getState?.() || {};
     const guard = global.PersistenceRecoveryGuard?.getState?.() || {};
     const active = account(), journalEntry = active ? all.find((entry) => entry.key === `inazuma.cloud.restoreJournal.${active.uid}`) : null;
-    const journal = safeJson(journalEntry?.value);
+    const journal = safeJson(journalEntry?.value), terminal = active ? safeJson(global.localStorage.getItem(`inazuma.cloud.restoreTerminal.${active.uid}`)) : null;
     const hall = safeJson(global.localStorage.getItem(HALL_KEY), {}), development = safeJson(global.localStorage.getItem(DEVELOPMENT_KEY), {});
     const storageEstimate = await global.navigator?.storage?.estimate?.().catch?.(() => null) || null;
     const bytesFor = (keys) => all.filter((entry) => keys.some((key) => entry.key === key || entry.key.startsWith(key))).reduce((sum, entry) => sum + entry.bytes, 0);
     return {
       schemaVersion: 1, capturedAt: new Date().toISOString(),
       cloud: { status: cloud.status || "unavailable", errorCode: cloud.error || null, localRevision: cloud.localRevision ?? null, cloudRevision: cloud.cloudRevision ?? cloud.revision ?? null, attemptedRevision: cloud.attemptedRevision ?? null, pendingSectors: cloud.pendingSectors || [], restoreStage: cloud.restoreStage || null, restoreReadCount: cloud.restoreReadCount || 0, hasCommitId: !!cloud.cloudCommitId, deviceId: shortHash(cloud.deviceId) },
-      guard: { state: { ...guard, uid: guard.uid ? "[redacted]" : null, operationId: shortHash(guard.operationId), error: guard.error || null }, isBlocked: !!global.PersistenceRecoveryGuard?.isBlocked?.(), authenticated: !!active, storedJournalCount: all.filter((entry) => entry.key.startsWith("inazuma.cloud.restoreJournal.")).length, journalPresent: !!journal, journalStage: journal?.stage || null, operationId: shortHash(journal?.operationId), targetCloudRevision: journal?.targetCloudRevision ?? null, hasTargetCloudCommitId: !!journal?.targetCloudCommitId, journalAgeMs: journal?.startedAt ? Math.max(0, Date.now() - Date.parse(journal.startedAt)) : null, localMutationEpoch: global.PersistenceRecoveryGuard?.readEpoch?.() ?? null },
+      guard: { state: { ...guard, uid: guard.uid ? "[redacted]" : null, operationId: shortHash(guard.operationId), error: guard.error || null }, isBlocked: !!global.PersistenceRecoveryGuard?.isBlocked?.(), authenticated: !!active, storedJournalCount: all.filter((entry) => entry.key.startsWith("inazuma.cloud.restoreJournal.")).length, journalPresent: !!journal, journalStage: journal?.stage || null, operationId: shortHash(journal?.operationId), targetCloudRevision: journal?.targetCloudRevision ?? null, hasTargetCloudCommitId: !!journal?.targetCloudCommitId, cloudTargetImmutable: !!journal?.targetCloudCommitId, journalTerminalReason: guard.status === "terminal-recovery" ? guard.error : null, restoreResumeEligibility: journal?.targetCloudCommitId ? "immutable-target" : journal ? "fresh-comparison-only" : "none", repairEligibility: journal && !journal.targetCloudCommitId ? "abort-non-resumable" : "canonicalize-primary", terminalMarkerPresent: !!terminal, terminalOperationId: shortHash(terminal?.operationId), freshComparisonStatus: cloud.freshComparisonStatus || null, legacyCloudUpgradeStatus: cloud.legacyCloudUpgradeStatus || null, automaticMutationBlocked: !!global.PersistenceRecoveryGuard?.isBlocked?.(), recoveryUiAccessible: guard.status === "terminal-recovery", journalAgeMs: journal?.startedAt ? Math.max(0, Date.now() - Date.parse(journal.startedAt)) : null, localMutationEpoch: global.PersistenceRecoveryGuard?.readEpoch?.() ?? null },
       runs: RUN_IDS.map(runDiagnostic),
       permanentStores: { hall: { count: hall.teams?.length || 0, bytes: bytesFor([HALL_KEY]) }, development: { bytes: bytesFor([DEVELOPMENT_KEY]), redeemedRunIds: development.redeemedRunIds?.length || 0, victoryRewardRunIds: development.victoryRewardRunIds?.length || 0 }, album: { bytes: bytesFor([ALBUM_KEY]) }, profile: { bytes: bytesFor(PROFILE_KEYS) }, localStorageBytes: all.reduce((sum, entry) => sum + entry.bytes, 0), topInazumaKeys: all.filter((entry) => /inazuma|^run:/i.test(entry.key)).sort((a, b) => b.bytes - a.bytes).slice(0, 15).map(({ key, bytes }) => ({ key: sanitizedKey(key), bytes })) },
       browser: { storageEstimate: storageEstimate && { usage: storageEstimate.usage ?? null, quota: storageEstimate.quota ?? null }, localStorageMeasuredBytes: all.reduce((sum, entry) => sum + entry.bytes, 0), family: /iP(?:hone|ad|od)/.test(global.navigator?.userAgent || "") ? "iOS WebKit" : /Firefox/i.test(global.navigator?.userAgent || "") ? "Firefox" : /Chrome|Chromium/i.test(global.navigator?.userAgent || "") ? "Chromium" : "Other" }
@@ -212,7 +212,7 @@
     if (!active) return { repaired: false, action: "none", removedTechnicalKeys: [], blocker: "account-scope-unavailable", before, after: before };
     const journalKey = `inazuma.cloud.restoreJournal.${active.uid}`;
     const journal = journalKey ? safeJson(global.localStorage.getItem(journalKey)) : null;
-    let action = "none", blocker = null;
+    let action = "none", blocker = null, legacyMigrationResult = [];
     if (journal) {
       if (journal.uid !== active.uid) return { repaired: false, action, removedTechnicalKeys: [], blocker: "journal-account-mismatch", before, after: before };
       const epoch = global.PersistenceRecoveryGuard?.readEpoch?.();
@@ -248,11 +248,22 @@
           && identityMatches;
         if (metadataProvesTarget) { global.PersistenceRecoveryGuard?.clearBlocked?.(journal.operationId); global.localStorage.removeItem(journalKey); action = "cleared-verified-complete-journal"; }
         else blocker = "complete-journal-target-not-locally-proven";
+      } else if (!journal.targetCloudCommitId && typeof global.InazumaCloudSave?.abandonNonResumableRestore === "function") {
+        try { await global.InazumaCloudSave.abandonNonResumableRestore(journal); action = "aborted-non-resumable-legacy-target"; }
+        catch (error) { blocker = error?.code || "legacy-target-abort-failed"; }
       } else blocker = journal.targetCloudCommitId ? "immutable-target-resume-required" : "partial-restore-without-immutable-target";
+    }
+    const recoveryState = global.PersistenceRecoveryGuard?.getState?.() || {};
+    if (!blocker && (!global.PersistenceRecoveryGuard?.isBlocked?.() || recoveryState.status === "terminal-recovery")) {
+      for (const seasonId of RUN_IDS) {
+        try { const migrated = global.RunStorage?.canonicalizeLegacyPrimary?.(seasonId, { suppressCloudEvent: true }); if (migrated?.migrated) legacyMigrationResult.push(migrated); }
+        catch (error) { if (error?.code !== "legacy-primary-invalid") { blocker = error?.code || "legacy-canonicalization-failed"; break; } }
+      }
+      if (legacyMigrationResult.length && action === "none") action = "canonicalized-legacy-primary";
     }
     const removedTechnicalKeys = blocker ? [] : removeExactTechnicalDuplicates();
     const after = await snapshot();
-    return { repaired: !!(action !== "none" || removedTechnicalKeys.length), action, removedTechnicalKeys, blocker, before, after };
+    return { repaired: !!(action !== "none" || removedTechnicalKeys.length), action, legacyMigrationResult, removedTechnicalKeys, blocker, before, after };
   }
   global.InazumaPersistenceDiagnostics = Object.freeze({ snapshot, exportRawLegacySaves, repair, removeExactTechnicalDuplicates });
   if (typeof module !== "undefined" && module.exports) module.exports = global.InazumaPersistenceDiagnostics;

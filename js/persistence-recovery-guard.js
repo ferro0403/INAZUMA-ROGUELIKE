@@ -44,18 +44,34 @@
     if (!journal && !state.blocked) return true;
     throw Object.assign(new Error("restore-recovery-required"), { code: "restore-recovery-required", stage: journal?.stage || state.stage, operationId: journal?.operationId || state.operationId });
   }
+  function assertLegacyCanonicalizationWritable(seasonId) {
+    const journal = persistentJournal();
+    if (!journal && state.blocked && state.status === "terminal-recovery" && typeof seasonId === "string" && seasonId) return true;
+    return assertWritable();
+  }
+  function reserveLegacyCanonicalization(seasonId) {
+    assertLegacyCanonicalizationWritable(seasonId);
+    const next = readEpoch() + 1;
+    try { global.localStorage.setItem(EPOCH_KEY, String(next)); }
+    catch (error) { throw failure(error, "storage-access-error", "mutation-epoch-write"); }
+    return next;
+  }
   function bindUid(uid) {
     state = { blocked: false, uid: uid || null, operationId: null, stage: null, status: "complete", error: null };
     if (!uid) return getState();
     let raw;
     try { raw = global.localStorage.getItem(`inazuma.cloud.restoreJournal.${uid}`); }
     catch (error) { return setBlocked({ uid, status: "safety", stage: "journal-read", error: failure(error, "storage-access-error", "restore-journal-read").code }); }
-    if (!raw) return getState();
+    if (!raw) {
+      try { if (global.localStorage.getItem(`inazuma.cloud.restoreTerminal.${uid}`)) return setBlocked({ uid, status: "terminal-recovery", stage: "fresh-comparison", error: "legacy-cloud-target-not-immutable" }); }
+      catch (error) { return setBlocked({ uid, status: "safety", stage: "terminal-read", error: failure(error, "storage-access-error", "restore-terminal-read").code }); }
+      return getState();
+    }
     try { const journal = JSON.parse(raw); return setBlocked({ uid, operationId: journal.operationId, stage: journal.stage, status: journal.stage === "complete" ? "repair" : "required" }); }
     catch (_) { return setBlocked({ uid, stage: "journal-parse", status: "safety", error: "restore-journal-repair-needed" }); }
   }
 
-  const api = Object.freeze({ EPOCH_KEY, isBlocked, getState, assertWritable, setBlocked, clearBlocked, bindUid, readEpoch, reserve, bump, persistentJournal, classifyStorageError: failure });
+  const api = Object.freeze({ EPOCH_KEY, isBlocked, getState, assertWritable, assertLegacyCanonicalizationWritable, reserveLegacyCanonicalization, setBlocked, clearBlocked, bindUid, readEpoch, reserve, bump, persistentJournal, classifyStorageError: failure });
   global.PersistenceRecoveryGuard = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(globalThis);
