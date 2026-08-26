@@ -35,12 +35,24 @@ async function transient(code) {
   await transient("permission-denied"); await transient("unavailable");
   const value = await runtime(); dirty(value); value.backend.conflictOnce = true; await value.api.syncNow();
   assert.equal(value.api.getState().status, "sync-conflict"); assert(value.api.getState().pendingSectors.includes("run_orion"));
-  value.context.dispatchEvent(new value.context.CustomEvent("inazuma:local-save-committed", { detail: { sector: "development" } }));
+  const developmentBefore = value.context.DevelopmentV2.read();
+  const changedDevelopment = structuredClone(developmentBefore); changedDevelopment.coins += 7;
+  const developmentAfter = value.context.DevelopmentV2.write(changedDevelopment);
+  assert.notDeepEqual(developmentAfter, developmentBefore, "DevelopmentV2.write must make a real local change during conflict");
+  const developmentHash = await value.context.InazumaCloudSaveCore.hash(developmentAfter, value.context.crypto);
   assert(value.api.getState().pendingSectors.includes("development"));
   await value.api.checkForCloudUpdate(); assert.equal(value.api.getState().status, "local-conflict");
   assert.equal(value.api.requestConflictResolution("local"), true); await value.api.resolveConflictUseLocal();
   assert.equal(value.api.getState().status, "synced"); assert.deepEqual(value.api.getState().pendingSectors, []);
-  assert(value.records.uploadedSectors.includes("run_orion")); assert(value.records.uploadedSectors.includes("development")); assert.deepEqual(value.blocked, []);
+  const finalManifest = value.documents.get(value.manifestPath);
+  const finalDevelopmentDocument = value.documents.get(`users/test-user/saveCommits/${finalManifest.cloudCommitId}/sectors/development`);
+  const finalDevelopment = value.context.InazumaCloudSaveCore.decodeFirestorePayload(finalDevelopmentDocument.payload);
+  assert(value.records.uploadedSectors.includes("run_orion"));
+  assert(value.api.getState().pendingSectors.length === 0, "development must remain represented through successful conflict resolution");
+  assert.equal(finalManifest.sectorHashes.development, developmentHash, "published Development hash must describe the new local state");
+  assert.equal(finalDevelopmentDocument.payloadHash, developmentHash, "staged Development hash must describe the new local state");
+  assert.deepEqual(finalDevelopment, developmentAfter, "uploaded Development payload must contain the mutation made during conflict");
+  assert.equal(finalDevelopment.coins, developmentBefore.coins + 7); assert.deepEqual(value.blocked, []);
 
   const repair = await runtime(); dirty(repair); const originalSet = repair.storage.setItem.bind(repair.storage); let failMetadata = true;
   repair.storage.setItem = (key, data) => { if (failMetadata && key.startsWith("inazuma.cloud.association.")) { failMetadata = false; throw Object.assign(new Error("quota"), { name: "QuotaExceededError" }); } return originalSet(key, data); };
