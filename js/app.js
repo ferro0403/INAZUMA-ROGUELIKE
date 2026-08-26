@@ -7,9 +7,12 @@
     const tools = document.createElement("aside");
     tools.className = "persistence-dev-tools";
     tools.style.cssText = "position:fixed;right:8px;bottom:8px;z-index:10000;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100vw - 16px)";
-    tools.innerHTML = '<button type="button" data-persistence-diagnostic>COPIA DIAGNOSTICA SALVATAGGIO</button><button type="button" data-persistence-repair>RIPARA SALVATAGGIO</button>';
-    const copy = async (value) => { const text = JSON.stringify(value, null, 2); await navigator.clipboard?.writeText?.(text); console.info("Inazuma persistence report", value); };
+    tools.innerHTML = '<button type="button" data-persistence-diagnostic>COPIA DIAGNOSTICA SALVATAGGIO</button><button type="button" data-raw-save-diagnostic>COPIA RAW SAVE IE1/IE2</button><button type="button" data-persistence-repair>RIPARA SALVATAGGIO</button><span data-persistence-feedback role="status" aria-live="polite" style="color:#fff;font:700 11px sans-serif;align-self:center"></span>';
+    const feedback = tools.querySelector("[data-persistence-feedback]");
+    const download = (text) => { const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([text], { type: "application/json" })); link.download = `inazuma-raw-save-diagnostic-${new Date().toISOString().replace(/[:.]/g, "-")}.json`; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(link.href), 0); };
+    const copy = async (value, fallback = false) => { const text = JSON.stringify(value, null, 2); try { if (!navigator.clipboard?.writeText) throw new Error("clipboard-unavailable"); await navigator.clipboard.writeText(text); return true; } catch (error) { if (fallback) download(text); else throw error; return false; } finally { console.info("Inazuma persistence report", value); } };
     tools.querySelector("[data-persistence-diagnostic]").onclick = async () => copy(await global.InazumaPersistenceDiagnostics.snapshot());
+    tools.querySelector("[data-raw-save-diagnostic]").onclick = async () => { const copied = await copy(await global.InazumaPersistenceDiagnostics.exportRawLegacySaves(), true); feedback.textContent = copied ? "DIAGNOSTICA RAW COPIATA" : "CLIPBOARD NON DISPONIBILE: JSON SCARICATO"; };
     tools.querySelector("[data-persistence-repair]").onclick = async () => { const result = await global.InazumaPersistenceDiagnostics.repair(); await copy(result); alert(result.blocker ? `Riparazione non applicata: ${result.blocker}` : "Riparazione salvataggio completata. Report copiato."); };
     document.body.appendChild(tools);
   });
