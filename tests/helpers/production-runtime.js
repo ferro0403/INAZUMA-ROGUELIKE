@@ -35,12 +35,15 @@ function load(storage, options = {}) {
   const runtimeSeasonId = options.seasonId || options.run?.seasonId;
   const document = { body: element(), documentElement: element(), scrollingElement: element(), createElement: element,
     getElementById: () => element(), querySelector: () => element(), querySelectorAll: () => [] };
-  const c = { console, structuredClone, Date, Math, JSON, Object, Array, String, Number, Boolean, RegExp, Error, TypeError, Promise, Map, Set, WeakMap, WeakSet, Symbol, Intl, parseInt, parseFloat, isNaN, TextEncoder, crypto: global.crypto, URLSearchParams,
+  const listeners = new Map();
+  const c = { console, structuredClone, Date, Math, JSON, Object, Array, String, Number, Boolean, RegExp, Error, TypeError, Promise, Map, Set, WeakMap, WeakSet, Symbol, Intl, parseInt, parseFloat, isNaN, TextEncoder, Uint8Array, crypto: global.crypto, URLSearchParams,
     location: { search: "" }, document, window: null, localStorage: storage, performance: { now: () => 1000 },
     requestAnimationFrame: fn => { fn(2000); return 1; }, cancelAnimationFrame() {}, setTimeout, clearTimeout,
     matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }),
     CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },
-    addEventListener() {}, dispatchEvent() {}, fetch: async () => ({ ok: false, json: async () => ({}) }),
+    addEventListener(type, listener) { const values = listeners.get(type) || []; values.push(listener); listeners.set(type, values); },
+    dispatchEvent(event) { for (const listener of listeners.get(event.type) || []) listener(event); return true; },
+    fetch: async () => ({ ok: false, json: async () => ({}) }),
     __INAZUMA_TEST_MODE__: true, alert() {}, MutationObserver: class { observe() {} } };
   c.window = c; c.globalThis = c;
   const noop = () => null;
