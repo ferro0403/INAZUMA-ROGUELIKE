@@ -219,8 +219,15 @@
       const terminalRecovery = global.PersistenceRecoveryGuard?.getState?.().status === "terminal-recovery";
       if (terminalRecovery) global.PersistenceRecoveryGuard?.assertLegacyCanonicalizationWritable?.(sid); else global.PersistenceRecoveryGuard?.assertWritable(options);
       withStorageLease(sid, (ownsLease) => {
-        const primaryRaw = localStorage.getItem(primaryKey(sid));
-        if (!primaryRaw) return;
+        let primaryRaw = localStorage.getItem(primaryKey(sid));
+        let sourceKey = primaryKey(sid);
+        if (!primaryRaw) {
+          const recoveryKeys = sid === "ie1" ? [config().saveKey, `${config().saveKey}_backup`, ...legacyKeys(), backupKey(sid), tempKey(sid)] : [backupKey(sid), tempKey(sid)];
+          const candidates = Array.from(new Set(recoveryKeys)).map((key) => { try { const raw = localStorage.getItem(key); return raw ? { key, raw, run: parseLegacy(raw, sid) } : null; } catch (_) { return null; } }).filter(Boolean);
+          if (!candidates.length) return;
+          if (new Set(candidates.map((candidate) => semanticLegacyFingerprint(candidate.run))).size > 1) throw persistenceError("legacy-recovery-required", "legacy-migration-candidates", { seasonId: sid, recoverable: true });
+          sourceKey = candidates[0].key; primaryRaw = candidates[0].raw;
+        }
         let existing = null;
         try { existing = parseEnvelope(primaryRaw, sid); }
         catch (error) { if (error instanceof RunPersistenceError && ["unsupported-storage-schema", "unsupported-run-save-version"].includes(error.code)) throw error; }
@@ -243,9 +250,10 @@
         let source, parsed;
         try { parsed = JSON.parse(primaryRaw); source = parseLegacy(primaryRaw, sid); }
         catch (error) { throw persistenceError("legacy-primary-invalid", "legacy-migration-validate", { seasonId: sid }, error); }
-        if (!rawSeasonId(parsed.seasonId) || parsed.seasonId !== sid || typeof parsed.runId !== "string" || !parsed.runId) throw persistenceError("legacy-primary-invalid", "legacy-migration-identity", { seasonId: sid });
+        if (rawSeasonId(parsed.seasonId) && parsed.seasonId !== sid) throw persistenceError("legacy-primary-invalid", "legacy-migration-identity", { seasonId: sid });
+        const canonicalPayload = clone(parsed); canonicalPayload.seasonId = sid; canonicalPayload.runId = source.runId;
         const generation = 1, commitId = makeCommitId(generation);
-        const envelope = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "active", runId: source.runId, payload: clone(parsed) };
+        const envelope = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "active", runId: source.runId, payload: canonicalPayload };
         const rawEnvelope = JSON.stringify(envelope), head = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "active", runId: source.runId };
         try {
           localStorage.setItem(tempKey(sid), rawEnvelope);
@@ -254,7 +262,7 @@
           options.crash?.("after-candidate");
           if (terminalRecovery) global.PersistenceRecoveryGuard?.reserveLegacyCanonicalization?.(sid); else global.PersistenceRecoveryGuard?.reserve(options);
           if (terminalRecovery) global.PersistenceRecoveryGuard?.assertLegacyCanonicalizationWritable?.(sid); else global.PersistenceRecoveryGuard?.assertWritable(options);
-          if (!ownsLease() || localStorage.getItem(primaryKey(sid)) !== primaryRaw) throw persistenceError("stale-write", "legacy-migration-fence", { seasonId: sid, recoverable: true });
+          if (!ownsLease() || localStorage.getItem(sourceKey) !== primaryRaw || (sourceKey !== primaryKey(sid) && localStorage.getItem(primaryKey(sid)) !== null)) throw persistenceError("stale-write", "legacy-migration-fence", { seasonId: sid, recoverable: true });
           localStorage.setItem(primaryKey(sid), rawEnvelope);
           if (parseEnvelope(localStorage.getItem(primaryKey(sid)), sid).commitId !== commitId) throw new Error("legacy primary readback mismatch");
           options.crash?.("before-head");
@@ -268,7 +276,7 @@
           throw persistenceError("legacy-canonicalization-failed", "legacy-migration-commit", { seasonId: sid, runId: source.runId, generation }, error);
         }
         emitSave(`run_${sid}`, sid, "legacy-migration", { ...options, generation, commitId });
-        result = { migrated: true, seasonId: sid, runId: source.runId, generation, commitId, headCreated: true, backupPreserved: true, cloudApplied: false, canonicalizationSource: "primary" };
+        result = { migrated: true, seasonId: sid, runId: source.runId, generation, commitId, headCreated: true, backupPreserved: true, cloudApplied: false, canonicalizationSource: sourceKey === primaryKey(sid) ? "primary" : "legacy-equivalent-candidate", legacySourceKey: sourceKey };
       });
       return result || { migrated: false, seasonId: sid, canonicalizationSource: "none" };
     },

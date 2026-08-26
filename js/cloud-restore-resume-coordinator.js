@@ -1,14 +1,26 @@
 (function (global) {
   "use strict";
   const inFlightByUid = new Map();
-  async function route({ auth, readJournal, resumeInterrupted, normalAssociate, freshComparison, abandonNonResumable, publish = () => {}, onWritable = () => {} }) {
+  async function route({ auth, readJournal, resumeInterrupted, normalAssociate, freshComparison, abandonNonResumable, terminalRecoveryActive = () => false, publish = () => {}, onWritable = () => {} }) {
     if (auth?.status !== "authenticated" || !auth.uid) return null;
     let journal; try { journal = readJournal(auth.uid); } catch (error) { publish({ status: "restore-error", error: error?.code || "restore-journal-unavailable" }); return null; }
-    if (!journal) return normalAssociate?.() ?? null;
+    if (!journal && !terminalRecoveryActive()) return normalAssociate?.() ?? null;
+    if (!journal) {
+      const existing = inFlightByUid.get(auth.uid);
+      if (existing) return existing;
+      const recovery = Promise.resolve().then(() => freshComparison?.()).catch((error) => {
+        publish({ status: "restore-terminal-error", error: error?.code || "fresh-comparison-failed", freshComparisonStatus: "retry-required" });
+        return { status: "restore-terminal-error", resumable: true, retryRequired: true };
+      });
+      inFlightByUid.set(auth.uid, recovery);
+      try { return await recovery; }
+      finally { if (inFlightByUid.get(auth.uid) === recovery) inFlightByUid.delete(auth.uid); }
+    }
     if (!journal.targetCloudCommitId) {
       await abandonNonResumable?.(journal);
       publish({ status: "restore-terminal-error", error: "legacy-cloud-target-not-immutable", journalTerminalReason: "missing-target-cloud-commit-id", restoreResumeEligibility: "fresh-comparison-only" });
-      await freshComparison?.();
+      try { await freshComparison?.(); }
+      catch (error) { publish({ status: "restore-terminal-error", error: error?.code || "fresh-comparison-failed", freshComparisonStatus: "retry-required" }); }
       return { status: "restore-terminal-error", resumable: false, freshComparisonRequired: true };
     }
     const existing = inFlightByUid.get(auth.uid);

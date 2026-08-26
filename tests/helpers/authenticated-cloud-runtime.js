@@ -79,7 +79,7 @@ async function attachAuthenticatedCloud(context, options = {}) {
     InazumaCloudRestoreProtocol: require("../../js/cloud-restore-protocol"),
     InazumaRestoreRunReplacementPolicy: require("../../js/restore-run-replacement-policy"),
     InazumaCloudWriteFailurePolicy: require("../../js/cloud-write-failure-policy"),
-    CloudRestoreResumeCoordinator: { route: ({ normalAssociate }) => normalAssociate(), retry: () => null },
+    CloudRestoreResumeCoordinator: require("../../js/cloud-restore-resume-coordinator"),
     PersistenceBootstrapGate: { markAuth() {}, notify() {} },
     InazumaAccount: {
       ready: Promise.resolve(),
