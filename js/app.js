@@ -13,12 +13,21 @@
     const copy = async (value, fallback = false) => { const text = JSON.stringify(value, null, 2); try { if (!navigator.clipboard?.writeText) throw new Error("clipboard-unavailable"); await navigator.clipboard.writeText(text); return true; } catch (error) { if (fallback) download(text); else throw error; return false; } finally { console.info("Inazuma persistence report", value); } };
     tools.querySelector("[data-persistence-diagnostic]").onclick = async () => copy(await global.InazumaPersistenceDiagnostics.snapshot());
     tools.querySelector("[data-raw-save-diagnostic]").onclick = async () => { const copied = await copy(await global.InazumaPersistenceDiagnostics.exportRawLegacySaves(), true); feedback.textContent = copied ? "DIAGNOSTICA RAW COPIATA" : "CLIPBOARD NON DISPONIBILE: JSON SCARICATO"; };
-    tools.querySelector("[data-persistence-repair]").onclick = async () => { const result = await global.InazumaPersistenceDiagnostics.repair(); await copy(result); alert(result.blocker ? `Riparazione non applicata: ${result.blocker}` : "Riparazione salvataggio completata. Report copiato."); };
+    tools.querySelector("[data-persistence-repair]").onclick = async () => { const result = await global.InazumaPersistenceDiagnostics.repair(); await copy(result); alert(repairResultMessage(result)); };
     document.body.appendChild(tools);
   });
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
   const toastRoot = document.getElementById("toast-root");
+
+  function repairResultMessage(result = {}) {
+    if (result.blocker) return `Riparazione non applicata: ${result.blocker}`;
+    return result.repaired === true ? "Riparazione salvataggio completata. Report copiato." : "Nessuna modifica necessaria. Report copiato.";
+  }
+
+  function persistenceWritesAllowed() {
+    return !global.PersistenceRecoveryGuard?.isBlocked?.();
+  }
 
   const CATEGORY_CLASS_BY_NAME = {
     Scarso: "rarity-scarso",
@@ -1300,11 +1309,12 @@
   function migrateTeamIdentityProfile() {
     const profileIdentity = savedTeamIdentity();
     if (profileIdentity) {
-      if (syncRunTeamIdentity(profileIdentity)) global.RunState.save(run);
+      if (syncRunTeamIdentity(profileIdentity) && persistenceWritesAllowed()) global.RunState.save(run);
       return profileIdentity;
     }
     const legacyName = run ? global.RunState.validTeamName(run.teamIdentity?.name) : "";
     if (!legacyName) return null;
+    if (!persistenceWritesAllowed()) return normalizeTeamIdentity({ name: legacyName, emblemId: "default-lightning" });
     const migrated = global.RunState.saveProfileTeamIdentity({ name: legacyName, emblemId: "default-lightning" });
     if (syncRunTeamIdentity(migrated)) global.RunState.save(run);
     return migrated;
@@ -1446,14 +1456,14 @@
     if (latest?.run) {
       await loadSeason(latest.run.seasonId || latest.season.id);
       run = global.RunState.load(activeSeason.id);
-      if ((!run?.finalization || run.finalization.status === "complete") && run?.permanentEffectOutbox?.some((effect) => effect.status === "pending")) drainPermanentEffects();
+      if (persistenceWritesAllowed() && (!run?.finalization || run.finalization.status === "complete") && run?.permanentEffectOutbox?.some((effect) => effect.status === "pending")) drainPermanentEffects();
     } else {
       await loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID);
       run = null;
     }
     ensureRunSchema();
     const profileIdentity = migrateTeamIdentityProfile();
-    if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
+    if (persistenceWritesAllowed() && run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
     const homeIdentity = normalizeTeamIdentity(run?.teamIdentity || profileIdentity || {});
     await ensureHomeTeamEmblemSeasonLoaded(homeIdentity);
     app.innerHTML = `
@@ -6423,10 +6433,23 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
 
   function showLoadError(error) {
     console.error(error);
+    const code = String(error?.code || error?.message || "unknown-load-error");
+    const persistenceError = /restore-recovery-required|restore-repair-needed|canonical-unrecoverable|storage-access-error|legacy-cloud-target-not-immutable|restore-terminal-error/i.test(code);
+    const databaseError = !persistenceError && (global.location?.protocol === "file:" || /database|fetch|network|json|load failed|failed to fetch/i.test(code));
+    const heading = databaseError ? "Caricamento database non riuscito" : "Avvio temporaneamente non disponibile";
+    const guidance = databaseError
+      ? "I browser possono bloccare i database JSON quando index.html viene aperto direttamente. Usa Live Server oppure il file AVVIA_GIOCO.bat."
+      : "Apri Account per controllare lo stato del salvataggio o usare le operazioni di recupero disponibili.";
+    const accountEntry = databaseError ? "" : `<div class="button-row">${global.InazumaAccountUI?.buttonMarkup?.() || ""}</div>`;
     app.innerHTML = `
-      <main class="hero-screen"><div><p class="eyebrow">Caricamento non riuscito</p><h2>Apri il progetto tramite un server locale</h2>
-      <p class="muted">I browser bloccano i database JSON quando index.html viene aperto direttamente. Usa Live Server oppure il file AVVIA_GIOCO.bat.</p>
-      <pre class="panel">${escapeHtml(error.message)}</pre></div></main>`;
+      <main class="hero-screen"><div><p class="eyebrow">Caricamento non riuscito</p><h2>${heading}</h2>
+      <p class="muted">${guidance}</p>
+      <pre class="panel">${escapeHtml(code)}</pre>${accountEntry}</div></main>`;
+    return app.innerHTML;
+  }
+
+  function configureAlbumForBootstrap(playerIds) {
+    return global.AlbumProgress.configureFreeAgentIds(playerIds, { persist: persistenceWritesAllowed() });
   }
 
   async function init() {
@@ -6441,16 +6464,16 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       freeAgentsDb = await freeAgentsResponse.json();
       await global.PersistenceBootstrapGate?.ready;
       await global.PersistenceBootstrapGate?.whenAccessible?.();
-      global.AlbumProgress.configureFreeAgentIds((freeAgentsDb.players || []).map((player) => player.playerId));
+      configureAlbumForBootstrap((freeAgentsDb.players || []).map((player) => player.playerId));
       freeAgentsById = new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player]));
       playerVisualsById = new Map(Object.entries(visualsDb.players || {}));
-      renderHome();
+      await renderHome();
     } catch (error) {
       showLoadError(error);
     }
   }
 
-  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions };
+  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome };
   if (global.__INAZUMA_TEST_MODE__ === true) {
     global.__INAZUMA_RECRUITMENT_TEST__ = {
       recruitPlayer, showPlayerOffer, showNextBossReward, showSpecialMatchReward, openPull,
