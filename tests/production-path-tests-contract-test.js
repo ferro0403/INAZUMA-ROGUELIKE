@@ -8,4 +8,10 @@ const orion = fs.readFileSync("tests/real-orion-gameover-production-path-test.js
 assert(!finalBoss.includes("PermanentEffects.resumeFinalization(")); assert(!orion.includes("DevelopmentV2.processRunEnd("));
 for (const call of ["completeBossMatch", "continueAfterMatch", "resolvePendingRunFlow", "advanceBossReward", "finishBossVictoryTransition", "navigateBossVictoryDestination", "resumeRunFinalization"]) assert(finalBoss.includes(`.${call}(`), `missing real ${call} call`);
 assert(orion.includes(".renderGameOver("));
+const helper = fs.readFileSync("tests/helpers/production-runtime.js", "utf8");
+for (const token of ["c.PersistenceRecoveryGuard =", "c.RunState =", "c.GameplayPersistence =", "c.PermanentEffects =", "c.HallOfFameStorage =", "c.DevelopmentV2 =", "new Proxy("])
+  assert(!helper.includes(token), `production helper must not fabricate ${token}`);
+for (const moduleName of ["persistence-recovery-guard.js", "run-state.js", "gameplay-persistence.js", "permanent-effects.js", "hall-of-fame.js", "development-v2.js", "album-progress.js", "map-generator.js", "boss-gameover-runtime.js", "app.js"])
+  assert(helper.includes(`\"${moduleName}\"`), `production helper must load ${moduleName}`);
+for (const file of files.slice(0, 3)) assert(fs.readFileSync(`tests/${file}`, "utf8").includes(".reopen("), `${file} must destroy/reopen from storage`);
 console.log("production path anti-fake contract: ok");
