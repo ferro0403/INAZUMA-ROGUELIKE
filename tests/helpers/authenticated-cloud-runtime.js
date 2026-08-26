@@ -9,11 +9,17 @@ function snapshot(value) {
 
 function pathOf(ref) { return ref.path.join("/"); }
 
-async function attachAuthenticatedCloud(context) {
+function createAuthenticatedFirestoreBackend() {
   const records = { stagedCommits: [], manifestReads: 0, casAttempts: 0, uploadedSectors: [], failures: [] };
   const documents = new Map();
   const backend = { failure: null, conflictOnce: false };
   const manifestPath = "users/test-user/cloudSave/manifest";
+  return { backend, records, documents, manifestPath };
+}
+
+async function attachAuthenticatedCloud(context, options = {}) {
+  const backendState = options.backendState || createAuthenticatedFirestoreBackend();
+  const { backend, records, documents, manifestPath } = backendState;
   const maybeFail = stage => {
     if (!backend.failure) return;
     const error = Object.assign(new Error(backend.failure), { code: backend.failure });
@@ -88,7 +94,7 @@ async function attachAuthenticatedCloud(context) {
   const cloud = new vm.SourceTextModule(fs.readFileSync("js/firebase-cloud-save.js", "utf8"), { context, identifier: "firebase-cloud-save.js" });
   await cloud.link(() => firebase); await firebase.evaluate(); await cloud.evaluate(); await context.InazumaCloudSave.ready;
   await context.InazumaCloudSave.retryAssociation();
-  return { backend, records, documents, manifestPath, api: context.InazumaCloudSave };
+  return { ...backendState, api: context.InazumaCloudSave };
 }
 
-module.exports = { attachAuthenticatedCloud };
+module.exports = { createAuthenticatedFirestoreBackend, attachAuthenticatedCloud };
