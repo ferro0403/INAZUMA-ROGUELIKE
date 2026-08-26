@@ -214,6 +214,51 @@
     validate, migrate,
     loadBackup,
     restoreBackup,
+    canonicalizeLegacyPrimary(seasonId = null, options = {}) {
+      const sid = seasonIdOf(seasonId); let result;
+      global.PersistenceRecoveryGuard?.assertWritable(options);
+      withStorageLease(sid, (ownsLease) => {
+        const primaryRaw = localStorage.getItem(primaryKey(sid));
+        if (!primaryRaw) return;
+        try {
+          const existing = parseEnvelope(primaryRaw, sid);
+          result = { migrated: false, seasonId: sid, runId: existing.runId, generation: existing.generation, commitId: existing.commitId, headCreated: false, backupPreserved: true, canonicalizationSource: "none" };
+          return;
+        } catch (error) {
+          if (error instanceof RunPersistenceError && ["unsupported-storage-schema", "unsupported-run-save-version"].includes(error.code)) throw error;
+        }
+        let source, parsed;
+        try { parsed = JSON.parse(primaryRaw); source = parseLegacy(primaryRaw, sid); }
+        catch (error) { throw persistenceError("legacy-primary-invalid", "legacy-migration-validate", { seasonId: sid }, error); }
+        if (!rawSeasonId(parsed.seasonId) || parsed.seasonId !== sid || typeof parsed.runId !== "string" || !parsed.runId) throw persistenceError("legacy-primary-invalid", "legacy-migration-identity", { seasonId: sid });
+        const generation = 1, commitId = makeCommitId(generation);
+        const envelope = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "active", runId: source.runId, payload: clone(parsed) };
+        const rawEnvelope = JSON.stringify(envelope), head = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "active", runId: source.runId };
+        try {
+          localStorage.setItem(tempKey(sid), rawEnvelope);
+          const verified = parseEnvelope(localStorage.getItem(tempKey(sid)), sid);
+          if (verified.commitId !== commitId || verified.runId !== source.runId) throw new Error("legacy candidate mismatch");
+          options.crash?.("after-candidate");
+          global.PersistenceRecoveryGuard?.reserve(options);
+          global.PersistenceRecoveryGuard?.assertWritable(options);
+          if (!ownsLease() || localStorage.getItem(primaryKey(sid)) !== primaryRaw) throw persistenceError("stale-write", "legacy-migration-fence", { seasonId: sid, recoverable: true });
+          localStorage.setItem(primaryKey(sid), rawEnvelope);
+          if (parseEnvelope(localStorage.getItem(primaryKey(sid)), sid).commitId !== commitId) throw new Error("legacy primary readback mismatch");
+          options.crash?.("before-head");
+          localStorage.setItem(headKey(sid), JSON.stringify(head));
+          const verifiedHead = JSON.parse(localStorage.getItem(headKey(sid)) || "null");
+          if (verifiedHead.commitId !== commitId || verifiedHead.generation !== generation) throw new Error("legacy head mismatch");
+          options.crash?.("after-head");
+          localStorage.removeItem(tempKey(sid));
+        } catch (error) {
+          if (error instanceof RunPersistenceError) throw error;
+          throw persistenceError("legacy-canonicalization-failed", "legacy-migration-commit", { seasonId: sid, runId: source.runId, generation }, error);
+        }
+        emitSave(`run_${sid}`, sid, "legacy-migration", { ...options, generation, commitId });
+        result = { migrated: true, seasonId: sid, runId: source.runId, generation, commitId, headCreated: true, backupPreserved: true, cloudApplied: false, canonicalizationSource: "primary" };
+      });
+      return result || { migrated: false, seasonId: sid, canonicalizationSource: "none" };
+    },
     repairCanonicalFromExactBackup(seasonId = null) {
       const sid = seasonIdOf(seasonId); let result = null;
       withStorageLease(sid, (ownsLease) => { let primaryRaw = null; try { primaryRaw = localStorage.getItem(primaryKey(sid)); if (primaryRaw) { parseEnvelope(primaryRaw, sid); throw persistenceError("canonical-primary-already-valid", "backup-repair-guard", { seasonId: sid }); } } catch (error) { if (error instanceof RunPersistenceError && ["canonical-primary-already-valid", "unsupported-storage-schema", "unsupported-run-save-version"].includes(error.code)) throw error; }
@@ -247,7 +292,8 @@
       if (!candidates.length) return null;
       if (!authoritative && candidates.length > 1 && new Set(candidates.map((item) => semanticLegacyFingerprint(item.run))).size > 1) throw persistenceError("legacy-recovery-required", "migration", { seasonId: sid, recoverable: true });
       if (options.readOnly) return candidates[0].run;
-      return this.save(candidates[0].run, { preserveTimestamps: true, suppressCloudEvent: true, source: "legacy-migration", expectedGeneration: 0 });
+      this.canonicalizeLegacyPrimary(sid, { ...options, preserveTimestamps: true, suppressCloudEvent: true });
+      return this.load(sid, { readOnly: true });
     },
     save(run, options = {}) {
       global.PersistenceRecoveryGuard?.assertWritable(options);

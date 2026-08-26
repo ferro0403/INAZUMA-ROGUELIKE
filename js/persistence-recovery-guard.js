@@ -50,7 +50,11 @@
     let raw;
     try { raw = global.localStorage.getItem(`inazuma.cloud.restoreJournal.${uid}`); }
     catch (error) { return setBlocked({ uid, status: "safety", stage: "journal-read", error: failure(error, "storage-access-error", "restore-journal-read").code }); }
-    if (!raw) return getState();
+    if (!raw) {
+      try { if (global.localStorage.getItem(`inazuma.cloud.restoreTerminal.${uid}`)) return setBlocked({ uid, status: "terminal-recovery", stage: "fresh-comparison", error: "legacy-cloud-target-not-immutable" }); }
+      catch (error) { return setBlocked({ uid, status: "safety", stage: "terminal-read", error: failure(error, "storage-access-error", "restore-terminal-read").code }); }
+      return getState();
+    }
     try { const journal = JSON.parse(raw); return setBlocked({ uid, operationId: journal.operationId, stage: journal.stage, status: journal.stage === "complete" ? "repair" : "required" }); }
     catch (_) { return setBlocked({ uid, stage: "journal-parse", status: "safety", error: "restore-journal-repair-needed" }); }
   }
