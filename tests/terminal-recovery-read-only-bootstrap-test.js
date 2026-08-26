@@ -39,6 +39,8 @@ const { load } = require("./helpers/production-runtime");
   // accessible gate and memory-only configuration; audit its automatic Home
   // migrations so none can write while the fence is active.
   const app = fs.readFileSync("js/app.js", "utf8");
+  const accountUi = fs.readFileSync("js/account-ui.js", "utf8");
+  const index = fs.readFileSync("index.html", "utf8");
   assert.match(app, /configureAlbumForBootstrap[\s\S]*persist: persistenceWritesAllowed\(\)/);
   assert.match(app, /persistenceWritesAllowed\(\) && \(!run\?\.finalization/);
   assert.match(app, /persistenceWritesAllowed\(\) && run && global\.RoguelikeRules\.migrateDefeatedBossPlayerLevels/);
@@ -58,6 +60,16 @@ const { load } = require("./helpers/production-runtime");
   assert.equal(homeRuntime.context.PersistenceRecoveryGuard.readEpoch(), homeEpoch);
   assert.equal(homeRuntime.context.PersistenceRecoveryGuard.isBlocked(), true);
 
+  homeRuntime.context.InazumaAccountUI = { buttonMarkup: () => '<button type="button" data-account-trigger><span>ACCOUNT</span></button>' };
+  const persistenceFallback = homeRuntime.context.__INAZUMA_UI_TEST__.showLoadError({ code: "restore-recovery-required" });
+  assert.match(persistenceFallback, /restore-recovery-required/);
+  assert.match(persistenceFallback, /data-account-trigger/);
+  assert.doesNotMatch(persistenceFallback, /Live Server|AVVIA_GIOCO\.bat/);
+  const databaseFallback = homeRuntime.context.__INAZUMA_UI_TEST__.showLoadError(new Error("Database non raggiungibili"));
+  assert.match(databaseFallback, /Live Server/);
+  assert.match(databaseFallback, /AVVIA_GIOCO\.bat/);
+  assert.doesNotMatch(databaseFallback, /data-account-trigger/);
+
   runtime.PersistenceRecoveryGuard.bindUid(null);
   storage.setItem(albumKey, albumBefore);
   const epochBeforeWritable = runtime.PersistenceRecoveryGuard.readEpoch();
@@ -67,7 +79,12 @@ const { load } = require("./helpers/production-runtime");
   assert.equal(runtime.PersistenceRecoveryGuard.readEpoch(), epochBeforeWritable + 1);
 
   assert.match(app, /result\.repaired === true \? "Riparazione salvataggio completata\. Report copiato\." : "Nessuna modifica necessaria\. Report copiato\."/);
-  assert.match(app, /const databaseError = global\.location\?\.protocol === "file:"/);
+  assert.match(index, /js\/album-progress\.js\?v=20260826-terminal-recovery-bootstrap-1/);
+  assert.match(index, /js\/app\.js\?v=20260826-terminal-recovery-bootstrap-1/);
+  assert.match(app, /const databaseError = !persistenceError && \(global\.location\?\.protocol === "file:"/);
+  assert.match(app, /InazumaAccountUI\?\.buttonMarkup\?\.\(\)/, "the persistence fallback renders the production Account trigger");
+  assert.match(accountUi, /document\.addEventListener\("click", onClick\)/, "Account uses a global delegated click binding for dynamically rendered triggers");
+  assert.match(accountUi, /target\.matches\("\[data-account-trigger\]"\)\) open\(/, "clicking the fallback trigger opens Account");
   assert.match(app, /Apri Account per controllare lo stato del salvataggio/);
   console.log("terminal recovery bootstrap is memory-only, keeps gameplay fenced, and writable Album sync is preserved: ok");
 })().catch(error => { console.error(error); process.exit(1); });

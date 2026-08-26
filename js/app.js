@@ -6434,15 +6434,18 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   function showLoadError(error) {
     console.error(error);
     const code = String(error?.code || error?.message || "unknown-load-error");
-    const databaseError = global.location?.protocol === "file:" || /database|fetch|network|json|load failed|failed to fetch/i.test(code);
+    const persistenceError = /restore-recovery-required|restore-repair-needed|canonical-unrecoverable|storage-access-error|legacy-cloud-target-not-immutable|restore-terminal-error/i.test(code);
+    const databaseError = !persistenceError && (global.location?.protocol === "file:" || /database|fetch|network|json|load failed|failed to fetch/i.test(code));
     const heading = databaseError ? "Caricamento database non riuscito" : "Avvio temporaneamente non disponibile";
     const guidance = databaseError
       ? "I browser possono bloccare i database JSON quando index.html viene aperto direttamente. Usa Live Server oppure il file AVVIA_GIOCO.bat."
       : "Apri Account per controllare lo stato del salvataggio o usare le operazioni di recupero disponibili.";
+    const accountEntry = databaseError ? "" : `<div class="button-row">${global.InazumaAccountUI?.buttonMarkup?.() || ""}</div>`;
     app.innerHTML = `
       <main class="hero-screen"><div><p class="eyebrow">Caricamento non riuscito</p><h2>${heading}</h2>
       <p class="muted">${guidance}</p>
-      <pre class="panel">${escapeHtml(code)}</pre></div></main>`;
+      <pre class="panel">${escapeHtml(code)}</pre>${accountEntry}</div></main>`;
+    return app.innerHTML;
   }
 
   function configureAlbumForBootstrap(playerIds) {
