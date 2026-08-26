@@ -9,6 +9,13 @@ const { attachAuthenticatedCloud, createAuthenticatedFirestoreBackend } = requir
 async function waitFor(predicate) { for (let i = 0; i < 100; i += 1) { if (predicate()) return; await new Promise(resolve => setTimeout(resolve, 5)); } throw new Error("timeout"); }
 
 (async () => {
+  {
+    const storage = new BudgetStorage(), c = load(storage), backendState = createAuthenticatedFirestoreBackend(); let releaseRead; const barrier = new Promise(resolve => { releaseRead = resolve; }); backendState.backend.readBarrier = path => path === backendState.manifestPath ? barrier : null;
+    storage.setItem("inazuma.cloud.restoreTerminal.test-user", JSON.stringify({ operationId: "tap", reason: "missing-target-cloud-commit-id" })); c.PersistenceRecoveryGuard.bindUid("test-user");
+    const cloud = await attachAuthenticatedCloud(c, { backendState }); await waitFor(() => backendState.records.manifestReads === 1);
+    const retry = cloud.api.retryRestore(); await new Promise(resolve => setTimeout(resolve, 10)); assert.equal(backendState.records.manifestReads, 1, "bootstrap and user retry share one manifest download"); assert.equal(c.CloudRestoreResumeCoordinator.isRunning("test-user"), true);
+    releaseRead(); const result = await retry; assert.equal(result.status, "restore-terminal-error"); assert.equal(backendState.records.manifestReads, 1); assert.equal(c.PersistenceRecoveryGuard.isBlocked(), true); assert(storage.getItem("inazuma.cloud.restoreTerminal.test-user"));
+  }
   const storage = new BudgetStorage(), c = load(storage), backendState = createAuthenticatedFirestoreBackend();
   storage.setItem("inazuma.cloud.restoreTerminal.test-user", JSON.stringify({ operationId: "hfb5b3aa3", reason: "missing-target-cloud-commit-id" }));
   c.PersistenceRecoveryGuard.bindUid("test-user");

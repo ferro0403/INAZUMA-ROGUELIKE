@@ -26,11 +26,11 @@ function legacy(id, overrides = {}) {
   const loaded = runtime.RunState.load("ie2", { readOnly: true }); assert.equal(loaded.teamIdentity.emblemId, "default-lightning"); assert.equal(loaded.consecutiveLosses, 0); assert.equal(loaded.runId, primary.runId); assert.equal(storage.getItem("run:ie2_backup"), JSON.stringify(backup));
 }
 
-for (const point of ["after-candidate", "before-head"]) {
+for (const point of ["after-candidate", "before-head", "after-head"]) {
   const storage = new BudgetStorage(), runtime = load(storage), raw = JSON.stringify(legacy("ie1")), backup = JSON.stringify(legacy("ie1", { updatedAt: "old" })); storage.setItem("run:ie1", raw); storage.setItem("run:ie1_backup", backup);
   assert.throws(() => runtime.RunStorage.canonicalizeLegacyPrimary("ie1", { crash: at => { if (at === point) throw new Error("crash"); } }), /legacy-canonicalization-failed/);
   assert.equal(storage.getItem("run:ie1_backup"), backup); assert(runtime.RunState.load("ie1", { readOnly: true }));
-  if (point === "after-candidate") { assert.equal(storage.getItem("run:ie1"), raw); assert.equal(storage.getItem("run:ie1_head"), null); } else { assert.equal(storage.getItem("run:ie1_head"), null); const envelope = storage.getItem("run:ie1"); const repaired = runtime.RunStorage.canonicalizeLegacyPrimary("ie1"); assert.equal(repaired.repairedHead, true); assert.equal(storage.getItem("run:ie1"), envelope); assert.equal(runtime.RunStorage.canonicalizeLegacyPrimary("ie1").repairedHead, false); }
+  if (point === "after-candidate") { assert.equal(storage.getItem("run:ie1"), raw); assert.equal(storage.getItem("run:ie1_head"), null); } else if (point === "before-head") { assert.equal(storage.getItem("run:ie1_head"), null); const envelope = storage.getItem("run:ie1"); const repaired = runtime.RunStorage.canonicalizeLegacyPrimary("ie1"); assert.equal(repaired.repairedHead, true); assert.equal(storage.getItem("run:ie1"), envelope); assert.equal(runtime.RunStorage.canonicalizeLegacyPrimary("ie1").repairedHead, false); } else { const envelope = storage.getItem("run:ie1"), head = storage.getItem("run:ie1_head"); assert(storage.getItem("run:ie1_tmp")); const repaired = runtime.RunStorage.canonicalizeLegacyPrimary("ie1"); assert.equal(repaired.migrated, false); assert.equal(storage.getItem("run:ie1"), envelope); assert.equal(storage.getItem("run:ie1_head"), head); assert.equal(storage.getItem("run:ie1_tmp"), null); assert.equal(storage.getItem("run:ie1_backup"), backup); assert.equal(runtime.RunStorage.canonicalizeLegacyPrimary("ie1").migrated, false); }
 }
 
 {
@@ -52,7 +52,7 @@ for (const point of ["after-candidate", "before-head"]) {
 
 (async () => {
   const coordinator = require("../js/cloud-restore-resume-coordinator"); let resumed = 0, abandoned = 0, fresh = 0; const journal = { uid: "u", operationId: "old", stage: "run-ie1", targetCloudRevision: 9428, targetCloudCommitId: null, sourceLocalEpoch: 166, expectedLocalEpoch: 166 };
-  const result = await coordinator.retry({ auth: { status: "authenticated", uid: "u" }, readJournal: () => journal, resumeInterrupted: () => resumed++, abandonNonResumable: () => abandoned++, freshComparison: () => fresh++ });
-  assert.equal(result.resumable, false); assert.equal(resumed, 0); assert.equal(abandoned, 1); assert.equal(fresh, 1);
+  const result = await coordinator.retry({ auth: { status: "authenticated", uid: "u" }, readJournal: () => journal, resumeInterrupted: () => resumed++, abandonNonResumable: () => abandoned++, freshComparison: () => { fresh += 1; return { classification: "conflict" }; } });
+  assert.equal(result.classification, "conflict"); assert.equal(resumed, 0); assert.equal(abandoned, 1); assert.equal(fresh, 1);
   console.log("legacy primary canonicalization, crash recovery, idempotence and non-resumable journal: ok");
 })().catch(error => { throw error; });

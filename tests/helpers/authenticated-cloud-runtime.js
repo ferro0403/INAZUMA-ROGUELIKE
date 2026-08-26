@@ -29,6 +29,7 @@ async function attachAuthenticatedCloud(context, options = {}) {
   const doc = (_db, ...path) => ({ path });
   const read = async ref => {
     if (pathOf(ref) === manifestPath) records.manifestReads += 1;
+    if (backend.readBarrier) await backend.readBarrier(pathOf(ref));
     return snapshot(documents.get(pathOf(ref)));
   };
   const writeBatch = () => {

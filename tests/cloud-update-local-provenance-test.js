@@ -32,6 +32,9 @@ async function setup() {
     const { client, clientStorage, clientCloud } = await setup(); clientStorage.setItem("inazuma.persistence.localMutationEpoch", String(client.PersistenceRecoveryGuard.readEpoch() + 1)); const result = await clientCloud.api.updateFromCloud(); assert.equal(result.status, "restore-conflict-required");
   }
   {
+    const { client, clientCloud } = await setup(), created = client.RunState.createRun({ name: "Local IE2" }, "ie2"); client.RunState.save(created); const runId = created.runId; const result = await clientCloud.api.updateFromCloud(); assert.equal(result.status, "restore-conflict-required"); assert.equal(client.RunState.load("ie2", { readOnly: true }).runId, runId); assert.equal(client.PersistenceRecoveryGuard.persistentJournal(), null);
+  }
+  {
     const { client, clientCloud } = await setup(), local = client.RunState.load("orion", { readOnly: true }); local.currentZone.currentNodeId = "local-explicit"; client.RunState.save(local); await clientCloud.api.updateFromCloud(); assert.equal(clientCloud.api.requestConflictResolution("cloud"), true); await clientCloud.api.resolveConflictUseCloud(); assert.equal(client.RunState.load("orion", { readOnly: true }).currentZone.currentNodeId, "zone_1_l1_n1");
   }
   console.log("cloud update replacement requires a current snapshot provenance proof: ok");
