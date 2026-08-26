@@ -5,28 +5,29 @@
     if (auth?.status !== "authenticated" || !auth.uid) return null;
     let journal; try { journal = readJournal(auth.uid); } catch (error) { publish({ status: "restore-error", error: error?.code || "restore-journal-unavailable" }); return null; }
     if (!journal && !terminalRecoveryActive()) return normalAssociate?.() ?? null;
-    if (!journal) {
-      const existing = inFlightByUid.get(auth.uid);
-      if (existing) return existing;
-      const recovery = Promise.resolve().then(() => freshComparison?.()).catch((error) => {
-        publish({ status: "restore-terminal-error", error: error?.code || "fresh-comparison-failed", freshComparisonStatus: "retry-required" });
-        return { status: "restore-terminal-error", resumable: true, retryRequired: true };
-      });
-      inFlightByUid.set(auth.uid, recovery);
-      try { return await recovery; }
-      finally { if (inFlightByUid.get(auth.uid) === recovery) inFlightByUid.delete(auth.uid); }
-    }
-    if (!journal.targetCloudCommitId) {
-      await abandonNonResumable?.(journal);
-      publish({ status: "restore-terminal-error", error: "legacy-cloud-target-not-immutable", journalTerminalReason: "missing-target-cloud-commit-id", restoreResumeEligibility: "fresh-comparison-only" });
-      try { await freshComparison?.(); }
-      catch (error) { publish({ status: "restore-terminal-error", error: error?.code || "fresh-comparison-failed", freshComparisonStatus: "retry-required" }); }
-      return { status: "restore-terminal-error", resumable: false, freshComparisonRequired: true };
-    }
     const existing = inFlightByUid.get(auth.uid);
     if (existing) return existing;
     const uid = auth.uid;
-    const recovery = Promise.resolve().then(() => resumeInterrupted(journal)).then((result) => { if (result?.status === "restored") onWritable(); return result; }).catch((error) => { publish({ status: error?.code === "restore-journal-repair-needed" ? "restore-repair-needed" : "restore-error", error: error?.code || "restore-failed" }); throw error; });
+    let recovery;
+    if (!journal) {
+      recovery = Promise.resolve().then(() => freshComparison?.()).catch((error) => {
+        publish({ status: "restore-terminal-error", error: error?.code || "fresh-comparison-failed", freshComparisonStatus: "retry-required" });
+        return { status: "restore-terminal-error", resumable: true, retryRequired: true };
+      });
+    } else if (!journal.targetCloudCommitId) {
+      recovery = Promise.resolve().then(async () => {
+        await abandonNonResumable?.(journal);
+        publish({ status: "restore-terminal-error", error: "legacy-cloud-target-not-immutable", journalTerminalReason: "missing-target-cloud-commit-id", restoreResumeEligibility: "fresh-comparison-only" });
+        try { await freshComparison?.(); }
+        catch (error) { publish({ status: "restore-terminal-error", error: error?.code || "fresh-comparison-failed", freshComparisonStatus: "retry-required" }); }
+        return { status: "restore-terminal-error", resumable: false, freshComparisonRequired: true };
+      }).catch((error) => {
+        publish({ status: "restore-terminal-error", error: error?.code || "restore-terminal-transition-failed", journalTerminalReason: "missing-target-cloud-commit-id", restoreResumeEligibility: "fresh-comparison-only", freshComparisonStatus: "retry-required" });
+        return { status: "restore-terminal-error", resumable: false, retryRequired: true };
+      });
+    } else {
+      recovery = Promise.resolve().then(() => resumeInterrupted(journal)).then((result) => { if (result?.status === "restored") onWritable(); return result; }).catch((error) => { publish({ status: error?.code === "restore-journal-repair-needed" ? "restore-repair-needed" : "restore-error", error: error?.code || "restore-failed" }); throw error; });
+    }
     inFlightByUid.set(uid, recovery);
     try { return await recovery; }
     finally { if (inFlightByUid.get(uid) === recovery) inFlightByUid.delete(uid); }

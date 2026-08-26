@@ -31,5 +31,31 @@ const coordinator = require("../js/cloud-restore-resume-coordinator");
   assert.equal(fresh, 2, "a later reload gets exactly one new retry");
   terminal = false; await coordinator.route(options);
   assert.equal(normal, 1, "normal association resumes only after terminal recovery is cleared");
-  console.log("terminal marker resumes fresh comparison after reload without duplicate attempts: ok");
+
+  const legacyAuth = { status: "authenticated", uid: "legacy-u" };
+  let legacyJournal = { uid: legacyAuth.uid, operationId: "hfb5b3aa3", targetCloudRevision: 9428, targetCloudCommitId: null };
+  let legacyTerminal = false, abandon = 0, legacyFresh = 0, releaseLegacy, markAbandoned;
+  const abandoned = new Promise(resolve => { markAbandoned = resolve; });
+  const legacyOptions = {
+    auth: legacyAuth,
+    readJournal: () => legacyJournal,
+    terminalRecoveryActive: () => legacyTerminal,
+    normalAssociate: () => { throw new Error("normal association must stay fenced"); },
+    abandonNonResumable: async () => { abandon += 1; legacyJournal = null; legacyTerminal = true; markAbandoned(); },
+    freshComparison: () => { legacyFresh += 1; return new Promise(resolve => { releaseLegacy = resolve; }); },
+    publish: () => {},
+  };
+  const legacyA = coordinator.route(legacyOptions);
+  const legacyB = coordinator.route(legacyOptions);
+  await abandoned;
+  const legacyRetry = coordinator.retry(legacyOptions);
+  await Promise.resolve();
+  assert.equal(abandon, 1, "concurrent legacy routes abandon the non-resumable journal once");
+  assert.equal(legacyFresh, 1, "bootstrap plus retry share the same terminal fresh comparison");
+  assert.equal(coordinator.isRunning(legacyAuth.uid), true, "legacy terminal transition stays registered as in-flight");
+  releaseLegacy({ classification: "conflict" });
+  await Promise.all([legacyA, legacyB, legacyRetry]);
+  assert.equal(coordinator.isRunning(legacyAuth.uid), false, "single-flight lock is released after terminal comparison");
+
+  console.log("terminal recovery routes journal abandonment and reload/retry through one single-flight: ok");
 })().catch(error => { console.error(error); process.exit(1); });
