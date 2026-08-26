@@ -6,7 +6,7 @@ const rules = fs.readFileSync("firestore.rules", "utf8");
 const app = fs.readFileSync("js/app.js", "utf8");
 const db = JSON.parse(fs.readFileSync("data/IE1_S2_season_compact.json", "utf8"));
 
-assert.match(rules, /function isRunSector\(name\) \{ return name in \['run_ie1','run_ie2','run_ie1_s2','run_ie1_s3'\]; \}/);
+assert.match(rules, /function isRunSector\(name\)\s*\{\s*return name in \[\s*'run_ie1',\s*'run_ie2',\s*'run_ie1_s2',\s*'run_ie1_s3'\s*\];\s*\}/);
 assert.match(rules, /allowedSector\(sectorId\)/);
 assert.match(rules, /validSectorRevisionStep\(old, fresh, 'run_ie1_s2'\)/);
 assert.match(rules, /!isRunSector\(sectorId\)/);

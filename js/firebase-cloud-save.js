@@ -47,22 +47,30 @@ async function repairCommittedMetadata(uid, id, manifest, token) {
 }
 
 function newCloudCommitId() { return globalThis.crypto?.randomUUID?.() || `cloud-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`; }
-async function stageBundle(uid, id, prepared, db, revision, commitId, manifest) {
-  const timestamp = serverTimestamp(), writes = [(batch) => batch.set(doc(db, "users", uid, "saveCommits", commitId, "metadata", "manifest"), manifest)];
-  core.SECTOR_NAMES.forEach((name) => writes.push((batch) => batch.set(doc(db, "users", uid, "saveCommits", commitId, "sectors", name), sectorDocument(name, prepared.payloads[name], sectorHash(prepared, name), id, timestamp, revision, commitId))));
-  prepared.hallEntries.forEach((entry) => writes.push((batch) => batch.set(doc(db, "users", uid, "saveCommits", commitId, "hallOfFame", entry.hallTeamId), hallDocument(entry, id, timestamp, revision, commitId))));
+async function stageBundle(uid, id, prepared, db, revision, commitId, manifest, onStage = () => {}) {
+  const timestamp = serverTimestamp();
+  const groups = [
+    ["staging-manifest", "manifest", [(batch) => batch.set(doc(db, "users", uid, "saveCommits", commitId, "metadata", "manifest"), manifest)]],
+    ["staging-sectors", "sectors", core.SECTOR_NAMES.map((name) => (batch) => batch.set(doc(db, "users", uid, "saveCommits", commitId, "sectors", name), sectorDocument(name, prepared.payloads[name], sectorHash(prepared, name), id, timestamp, revision, commitId)))],
+    ["staging-hall", "hallOfFame", prepared.hallEntries.map((entry) => (batch) => batch.set(doc(db, "users", uid, "saveCommits", commitId, "hallOfFame", entry.hallTeamId), hallDocument(entry, id, timestamp, revision, commitId)))],
+  ];
   // Staging is intentionally chunked. It is invisible until the manifest CAS
   // publishes cloudCommitId, so an interrupted large Hall upload is harmless.
-  for (const chunk of globalThis.InazumaCloudSyncProtocol.chunks(writes, 400)) { const batch = writeBatch(db); chunk.forEach((write) => write(batch)); await batch.commit(); }
+  for (const [stage, problemSector, writes] of groups) {
+    onStage(stage, problemSector);
+    try { for (const chunk of globalThis.InazumaCloudSyncProtocol.chunks(writes, 400)) { const batch = writeBatch(db); chunk.forEach((write) => write(batch)); await batch.commit(); } }
+    catch (error) { if (!error.problemSector) error.problemSector = problemSector; throw error; }
+  }
 }
-async function commitBundle(uid, id, prepared, db, expectedManifest, commitId) {
+async function commitBundle(uid, id, prepared, db, expectedManifest, commitId, onStage = () => {}) {
   core.preflight(prepared); const expectedRevision = expectedManifest?.revision ?? 0, targetRevision = expectedRevision + 1;
-  const timestamp = serverTimestamp(), manifest = core.buildManifest(prepared, uid, id, timestamp, { revision: targetRevision, baseRevision: expectedRevision, cloudCommitId: commitId });
-  await stageBundle(uid, id, prepared, db, targetRevision, commitId, manifest);
+  const timestamp = serverTimestamp(), manifest = core.buildManifest(prepared, uid, id, timestamp, { revision: targetRevision, baseRevision: expectedRevision, cloudCommitId: commitId, expectedManifest });
+  await stageBundle(uid, id, prepared, db, targetRevision, commitId, manifest, onStage);
+  onStage("publishing-manifest", "manifest");
   await runTransaction(db, async (transaction) => {
     const ref = doc(db, "users", uid, "cloudSave", "manifest"), snapshot = await transaction.get(ref);
     const actual = snapshot.exists() ? snapshot.data() : null;
-    if (!globalThis.InazumaCloudSyncProtocol.casMatches(actual, expectedManifest, (value) => manifestBundleIdentity(value))) throw Object.assign(new Error("cloud-cas-conflict"), { code: "cloud-cas-conflict" });
+    if (!globalThis.InazumaCloudSyncProtocol.casMatches(actual, expectedManifest, (value) => canonicalManifestBundleIdentity(value, uid))) throw Object.assign(new Error("cloud-cas-conflict"), { code: "cloud-cas-conflict" });
     transaction.set(ref, manifest);
   });
   return manifest;
@@ -74,6 +82,7 @@ async function readDocument(db, ...path) { return getDoc(doc(db, ...path)); }
 async function readServerDocument(db, ...path) { return getDocFromServer(doc(db, ...path)); }
 
 function manifestBundleIdentity(manifest) { return core.stableSerialize(Object.fromEntries(["revision", "cloudCommitId", "sectorHashes", "sectorRevisions", "hallTeamIds", "hallTeamHashes", "hallTeamRevisions", "sectors"].map((key) => [key, manifest[key]]))); }
+function canonicalManifestBundleIdentity(manifest, uid) { return manifestBundleIdentity(core.validateManifest(core.clone(manifest), uid)); }
 function restoreError(code, problemSector = null) { return Object.assign(new Error(code), { code, problemSector }); }
 async function downloadStableCloudBundle({ uid, token, maxAttempts = 2 }) {
   const db = globalThis.InazumaAccount.getFirestoreInstance();
@@ -174,6 +183,10 @@ function onLocalSave(event) { if (guard()?.isBlocked()) return; const sector = e
 
 function logicalRunJson(run) { if (run === null) return "null"; const logical = core.clone(run); delete logical.storageGeneration; delete logical.storageCommitId; return core.stableSerialize(logical); }
 function captureRunProvenance() { return Object.fromEntries(globalThis.InazumaCloudRestoreProtocol.RUN_IDS.map((seasonId) => { const d = globalThis.RunStorage?.diagnostics?.(seasonId) || {}; return [seasonId, { generation: d.canonicalGeneration || 0, commitId: d.canonicalCommitId || null, state: d.canonicalState || "empty-or-corrupt", runId: d.canonicalRunId || null }]; })); }
+function materializeLocalHall(snapshot) {
+  const hall = snapshot.hallOfFame, entries = Array.isArray(hall.cloudEntries) ? hall.cloudEntries : [];
+  return { ...snapshot, hallOfFame: { ...hall, teams: hall.teams.map((team, index) => globalThis.HallOfFameStorage._compactTeam({ ...core.clone(team), hallTeamId: entries[index]?.hallTeamId ?? team.hallTeamId, archiveKey: entries[index]?.archiveKey ?? team.archiveKey })) } };
+}
 function restoreAdapters(uid, id, token, journal) {
   const options = { suppressCloudEvent: true, restoreOwnershipToken: journal.operationId };
   const snapshotNow = () => core.readLocalSnapshot();
@@ -184,9 +197,9 @@ function restoreAdapters(uid, id, token, journal) {
     runEquals: (actual, wanted) => logicalRunJson(actual) === logicalRunJson(wanted),
     assertOwnership: (activeJournal) => { assertActive(); if (guard().readEpoch() !== activeJournal.expectedLocalEpoch) throw restoreError("restore-ownership-lost"); guard().assertWritable(options); },
     applyRun: (seasonId, wanted) => { let current = globalThis.RunState.load(seasonId, { readOnly: true }); let expectedGeneration = Number(globalThis.RunStorage.diagnostics(seasonId).canonicalGeneration || 0); if (current && expectedGeneration === 0) { globalThis.RunStorage.canonicalizeLegacyPrimary(seasonId, options); current = globalThis.RunState.load(seasonId, { readOnly: true }); expectedGeneration = Number(globalThis.RunStorage.diagnostics(seasonId).canonicalGeneration || 0); } const decision = globalThis.InazumaRestoreRunReplacementPolicy.decide(current, wanted, { explicitConflictCloud: journal.restoreType === "explicit-conflict-cloud", safeAutomaticReplace: journal.safeAutomaticReplace }); if (!decision.allowed) throw restoreError("restore-conflict-required", `run_${seasonId}`); if (wanted === null) return globalThis.RunState.forceDeleteForRestore(seasonId, { ...options, expectedGeneration }); return globalThis.RunState.forceReplaceCanonicalFromSnapshot(core.clone(wanted), { ...options, preserveTimestamps: true, expectedGeneration }); },
-    storeEquals: async (name, target) => { const current = snapshotNow(); if (name === "profile") return core.stableSerialize(current.profile) === core.stableSerialize(target.profile); if (name === "album") return core.stableSerialize(current.album) === core.stableSerialize(target.album); if (name === "development") return core.stableSerialize(current.development) === core.stableSerialize(target.development); return core.stableSerialize(current.hallOfFame) === core.stableSerialize(target.hallOfFame); },
-    applyStore: (name, target) => { if (name === "profile") return globalThis.RunState.restoreProfile(target.profile, options); if (name === "album") return globalThis.AlbumProgress.write(core.clone(target.album), options); if (name === "development") return globalThis.DevelopmentV2.write(core.clone(target.development), options); return globalThis.HallOfFameStorage._saveArchive({ schemaVersion: target.hallOfFame.archiveSchemaVersion, updatedAt: target.hallOfFame.updatedAt, teams: core.clone(target.hallOfFame.teams), index: core.clone(target.hallOfFame.index) }, { ...options, preserveTimestamp: true }); },
-    verify: async (target) => (await core.compareSnapshots(target, snapshotNow())).equivalent,
+    storeEquals: async (name, target) => { const current = snapshotNow(), localTarget = materializeLocalHall(target); if (name === "profile") return core.stableSerialize(current.profile) === core.stableSerialize(target.profile); if (name === "album") return core.stableSerialize(current.album) === core.stableSerialize(target.album); if (name === "development") return core.stableSerialize(current.development) === core.stableSerialize(target.development); return core.stableSerialize(current.hallOfFame) === core.stableSerialize(localTarget.hallOfFame); },
+    applyStore: (name, target) => { if (name === "profile") return globalThis.RunState.restoreProfile(target.profile, options); if (name === "album") return globalThis.AlbumProgress.write(core.clone(target.album), options); if (name === "development") return globalThis.DevelopmentV2.write(core.clone(target.development), options); const localHall = materializeLocalHall(target).hallOfFame; return globalThis.HallOfFameStorage._saveArchive({ schemaVersion: localHall.archiveSchemaVersion, updatedAt: localHall.updatedAt, teams: core.clone(localHall.teams), index: core.clone(localHall.index) }, { ...options, preserveTimestamp: true }); },
+    verify: async (target) => (await core.compareSnapshots(materializeLocalHall(target), snapshotNow())).equivalent,
     writeMetadata: async (manifest, target) => { assertActive(); const prepared = await core.prepareSnapshot(target), metadata = metadataFrom(uid, id, manifest, prepared, readMetadata(uid, id) || {}); metadata.restoredAt = metadata.lastSyncedAt; writeMetadata(uid, metadata); if (readMetadata(uid, id)?.revision !== manifest.revision) throw restoreError("metadata-repair-needed"); }
   };
 }
@@ -235,7 +248,7 @@ async function upgradeLegacyCloudBundle(uid, id, token, bundle) {
   if (bundle.manifest.cloudCommitId) return bundle;
   publish({ status: "checking", legacyCloudUpgradeStatus: "staging-immutable-copy" }, token);
   const cloudSnapshot = core.reconstructSnapshot(bundle.payloads, bundle.hallPayloads), prepared = await core.prepareSnapshot(cloudSnapshot); core.preflight(prepared);
-  const committed = await commitBundle(uid, id, prepared, globalThis.InazumaAccount.getFirestoreInstance(), bundle.manifest, newCloudCommitId());
+  const committed = await commitBundle(uid, id, prepared, globalThis.InazumaAccount.getFirestoreInstance(), bundle.manifest, newCloudCommitId(), (stage, problemSector) => publish({ legacyCloudUpgradeStatus: stage, restoreStage: stage, problemSector }, token));
   const upgraded = await downloadStableCloudBundle({ uid, token });
   if (!upgraded.manifest.cloudCommitId || upgraded.manifest.cloudCommitId !== committed.cloudCommitId) throw restoreError("legacy-cloud-upgrade-verification-failed", "manifest");
   const verification = await core.compareSnapshots(cloudSnapshot, core.reconstructSnapshot(upgraded.payloads, upgraded.hallPayloads));

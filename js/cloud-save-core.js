@@ -91,7 +91,8 @@
 
   function hallIndex(snapshot) {
     const hall = snapshot.hallOfFame;
-    return normalize({ archiveSchemaVersion: hall.archiveSchemaVersion, updatedAt: hall.updatedAt, teamIds: hall.teams.map((team) => team.hallTeamId), index: hall.index, count: hall.teams.length });
+    const preserved = Array.isArray(hall.cloudEntries) ? hall.cloudEntries : [];
+    return normalize({ archiveSchemaVersion: hall.archiveSchemaVersion, updatedAt: hall.updatedAt, teamIds: hall.teams.map((team, index) => preserved[index]?.hallTeamId ?? team.hallTeamId), index: hall.index, count: hall.teams.length });
   }
 
   function own(object, key) { return Object.prototype.hasOwnProperty.call(object || {}, key); }
@@ -199,13 +200,14 @@
     const payload = logicalPayload(data, sector);
     const calculated = await hash(payload, cryptoApi);
     if (calculated !== data.payloadHash || (manifest.hallTeamHashes && calculated !== manifest.hallTeamHashes[id]) || (manifest.hallTeamIds && !manifest.hallTeamIds.includes(id))) throw cloudError("hash-mismatch", sector);
-    return normalize(payload);
+    return { hallTeamId: id, archiveKey: data.archiveKey, payload: normalize(payload), payloadHash: data.payloadHash };
   }
 
   function reconstructSnapshot(payloads, hallPayloads) {
     const index = payloads.hall_index;
+    const entries = hallPayloads.map((entry) => own(entry, "payload") ? entry : { hallTeamId: entry?.hallTeamId, archiveKey: entry?.archiveKey, payload: entry, payloadHash: null });
     return normalize({ profile: payloads.profile, runs: { ie1: payloads.run_ie1, ie2: payloads.run_ie2, ie1_s2: payloads.run_ie1_s2, ie1_s3: payloads.run_ie1_s3, orion: payloads.run_orion }, album: payloads.album, development: payloads.development,
-      hallOfFame: { archiveSchemaVersion: index.archiveSchemaVersion, updatedAt: index.updatedAt ?? null, teams: hallPayloads, index: index.index } });
+      hallOfFame: { archiveSchemaVersion: index.archiveSchemaVersion, updatedAt: index.updatedAt ?? null, teams: entries.map((entry) => entry.payload), index: index.index, cloudEntries: entries } });
   }
 
   async function prepareSnapshot(snapshot, cryptoApi = global.crypto) {
@@ -217,7 +219,14 @@
     const hashes = {};
     for (const name of SECTOR_NAMES) hashes[name] = await hash(payloads[name], cryptoApi);
     const hallEntries = [];
-    for (const team of clean.hallOfFame.teams) hallEntries.push({ hallTeamId: team.hallTeamId, archiveKey: team.archiveKey, payload: team, payloadHash: await hash(team, cryptoApi) });
+    const preserved = Array.isArray(clean.hallOfFame.cloudEntries) ? clean.hallOfFame.cloudEntries : [];
+    for (let i = 0; i < clean.hallOfFame.teams.length; i += 1) {
+      const team = clean.hallOfFame.teams[i], metadata = preserved[i], payloadHash = await hash(team, cryptoApi);
+      const useMetadata = metadata && stableSerialize(metadata.payload) === stableSerialize(team) && metadata.payloadHash === payloadHash;
+      const hallTeamId = useMetadata ? metadata.hallTeamId : team.hallTeamId, archiveKey = useMetadata ? metadata.archiveKey : team.archiveKey;
+      if (typeof hallTeamId !== "string" || !hallTeamId.trim() || typeof archiveKey !== "string" || !archiveKey) throw cloudError("invalid-hall-team", `hallOfFame/${hallTeamId || "unknown"}`);
+      hallEntries.push({ hallTeamId, archiveKey, payload: team, payloadHash: useMetadata ? metadata.payloadHash : payloadHash });
+    }
     return { snapshot: clean, payloads, hashes, hallEntries };
   }
 
@@ -259,12 +268,13 @@
 
   function buildManifest(prepared, uid, deviceId, timestamp, commit = {}) {
     const revision = Number(commit.revision || 1), cloudCommitId = commit.cloudCommitId || null;
+    const previous = commit.expectedManifest || null;
     const runProvenance = Object.fromEntries(RUN_SECTOR_NAMES.flatMap((name) => {
       const run = prepared.payloads[name], seasonId = name.slice(4); if (!run) return [];
       const source = prepared.snapshot.runProvenance?.[seasonId] || {};
       return [[seasonId, { runId: run.runId || source.runId || null, sourceLocalGeneration: Number(source.sourceLocalGeneration || 0), sourceLocalCommitId: source.sourceLocalCommitId || null, logicalHash: sectorLogicalHash(prepared, name), sourceDeviceId: deviceId, cloudRevision: revision, cloudCommitId }]];
     }));
-    return { schemaVersion: 1, revision, baseRevision: Number(commit.baseRevision || 0), cloudCommitId, initialized: true, createdAt: timestamp, updatedAt: timestamp, source: "local-first-association", deviceId, sourceDeviceId: deviceId, accountUid: uid, runProvenance,
+    return { schemaVersion: previous?.schemaVersion ?? 1, revision, baseRevision: Number(commit.baseRevision || 0), cloudCommitId, initialized: previous?.initialized ?? true, createdAt: previous ? previous.createdAt : timestamp, updatedAt: timestamp, source: previous ? previous.source : "local-first-association", deviceId, sourceDeviceId: deviceId, accountUid: previous?.accountUid ?? uid, runProvenance,
       sectors: { profile: true, run_ie1: prepared.payloads.run_ie1 !== null, run_ie2: prepared.payloads.run_ie2 !== null, run_ie1_s2: prepared.payloads.run_ie1_s2 !== null, run_ie1_s3: prepared.payloads.run_ie1_s3 !== null, run_orion: prepared.payloads.run_orion !== null, album: true, development: true, hallOfFameCount: prepared.hallEntries.length },
       sectorHashes: { profile: prepared.hashes.profile, run_ie1: prepared.payloads.run_ie1 === null ? null : prepared.hashes.run_ie1, run_ie2: prepared.payloads.run_ie2 === null ? null : prepared.hashes.run_ie2, run_ie1_s2: prepared.payloads.run_ie1_s2 === null ? null : prepared.hashes.run_ie1_s2, run_ie1_s3: prepared.payloads.run_ie1_s3 === null ? null : prepared.hashes.run_ie1_s3, run_orion: prepared.payloads.run_orion === null ? null : prepared.hashes.run_orion, album: prepared.hashes.album, development: prepared.hashes.development, hall_index: prepared.hashes.hall_index },
       sectorRevisions: Object.fromEntries(SECTOR_NAMES.map((name) => [name, revision])), hallTeamIds: prepared.hallEntries.map((entry) => entry.hallTeamId),
