@@ -1,32 +1,50 @@
 "use strict";
-const assert = require("assert"), fs = require("fs"), vm = require("vm"), cp = require("child_process");
-if (typeof vm.SourceTextModule !== "function") {
+const assert = require("assert"), cp = require("child_process");
+if (typeof require("vm").SourceTextModule !== "function") {
   const result = cp.spawnSync(process.execPath, ["--experimental-vm-modules", __filename], { stdio: "inherit" });
   process.exit(result.status ?? 1);
 }
+const BudgetStorage = require("./helpers/budget-storage");
+const { load } = require("./helpers/production-runtime");
+const { attachAuthenticatedCloud } = require("./helpers/authenticated-cloud-runtime");
+
+async function runtime() {
+  const storage = new BudgetStorage(1_000_000), context = load(storage, { fullRuntime: true, seasonId: "orion" }).context;
+  const blocked = [], guard = context.PersistenceRecoveryGuard;
+  context.PersistenceRecoveryGuard = new Proxy(guard, { get(target, key) { if (key === "setBlocked") return value => { blocked.push(value); return target.setBlocked(value); }; return target[key]; } });
+  context.HallOfFameStorage._saveArchive(context.HallOfFameStorage._loadArchive(), { preserveTimestamp: true });
+  const run = context.RunState.createRun({ name: "Cloud" }, "orion"); context.RunState.save(run);
+  const cloud = await attachAuthenticatedCloud(context);
+  assert.equal(cloud.api.getState().status, "synced", "authenticated baseline association must upload");
+  cloud.records.uploadedSectors.length = 0;
+  return { storage, context, blocked, ...cloud };
+}
+function dirty(value, sector = "run_orion") {
+  const run = value.context.RunState.load("orion"); run.bossIndex += 1; value.context.RunState.save(run, { suppressCloudEvent: true });
+  value.context.dispatchEvent(new value.context.CustomEvent("inazuma:local-save-committed", { detail: { sector } }));
+  assert(value.api.getState().pendingSectors.includes(sector));
+}
+async function transient(code) {
+  const value = await runtime(); dirty(value); value.backend.failure = code; await value.api.syncNow();
+  assert.equal(value.api.getState().status, "sync-error"); assert.notEqual(value.api.getState().status, "sync-conflict");
+  assert(value.api.getState().pendingSectors.includes("run_orion")); assert.deepEqual(value.blocked, []);
+  value.backend.failure = null; await value.api.retrySync(); assert.equal(value.api.getState().status, "synced");
+  assert.deepEqual(value.api.getState().pendingSectors, []); assert(value.records.stagedCommits.length); assert(value.records.uploadedSectors.includes("run_orion"));
+}
 (async () => {
-  const listeners = {}, blocked = [];
-  const storage = new Map();
-  const c = { console, structuredClone, Date, Math, JSON, Object, Array, String, Number, Boolean, Promise, Map, Set, TextEncoder, Uint8Array,
-    crypto: global.crypto, localStorage: { getItem: k => storage.get(k) ?? null, setItem: (k,v) => storage.set(k,String(v)), removeItem: k => storage.delete(k) },
-    setTimeout: () => 1, clearTimeout() {}, location: { reload() {} }, CustomEvent: class { constructor(t,o){this.type=t;this.detail=o?.detail;} },
-    addEventListener: (n,f) => { listeners[n] = f; }, dispatchEvent() {},
-    PersistenceRecoveryGuard: { isBlocked: () => false, setBlocked: x => blocked.push(x) },
-    InazumaAccount: { ready: Promise.resolve(), getState: () => ({ status: "signed-out" }) },
-    InazumaCloudSaveCore: { SECTOR_NAMES: ["run_orion"] }, InazumaCloudRestoreProtocol: { RUN_IDS: [] }, CloudRestoreResumeCoordinator: {},
-    InazumaCloudWriteFailurePolicy: require("../js/cloud-write-failure-policy") };
-  c.globalThis = c; vm.createContext(c);
-  const firebase = new vm.SyntheticModule(["doc","getDoc","getDocFromServer","writeBatch","runTransaction","serverTimestamp"], function () {
-    this.setExport("doc", (...path) => path); this.setExport("getDoc", async () => ({ exists: () => false })); this.setExport("getDocFromServer", async () => ({ exists: () => false }));
-    this.setExport("writeBatch", () => ({ set() {}, delete() {}, commit: async () => {} })); this.setExport("runTransaction", async (_db, fn) => fn({ get: async () => ({ exists: () => false }), set() {} })); this.setExport("serverTimestamp", () => "server-time");
-  }, { context: c });
-  const module = new vm.SourceTextModule(fs.readFileSync("js/firebase-cloud-save.js", "utf8"), { context: c, identifier: "firebase-cloud-save.js" });
-  await module.link(() => firebase); await firebase.evaluate(); await module.evaluate(); await c.InazumaCloudSave.ready;
-  assert.equal(typeof c.InazumaCloudSave.syncNow, "function"); assert.equal(typeof listeners["inazuma:local-save-committed"], "function");
-  for (const code of ["permission-denied", "unavailable"]) { const state = c.InazumaCloudSave.classifyCloudWriteFailure({ code }); assert.equal(state.status, "sync-error"); assert.notEqual(state.status, "sync-conflict"); }
-  const conflict = c.InazumaCloudSave.classifyCloudWriteFailure({ code: "cloud-cas-conflict" }); assert.equal(conflict.status, "sync-conflict"); assert.equal(conflict.needsManifestRefresh, true);
-  const repair = c.InazumaCloudSave.classifyCloudWriteFailure({ code: "metadata-repair-needed", serverCommitted: true }); assert.equal(repair.status, "metadata-repair-needed");
-  listeners["inazuma:local-save-committed"]({ detail: { sector: "run_orion" } });
-  assert.deepEqual(blocked, []); assert.equal(c.InazumaCloudSave.getState().status, "signed-out");
-  console.log("real firebase cloud-save module/public state machine: ok");
+  await transient("permission-denied"); await transient("unavailable");
+  const value = await runtime(); dirty(value); value.backend.conflictOnce = true; await value.api.syncNow();
+  assert.equal(value.api.getState().status, "sync-conflict"); assert(value.api.getState().pendingSectors.includes("run_orion"));
+  value.context.dispatchEvent(new value.context.CustomEvent("inazuma:local-save-committed", { detail: { sector: "development" } }));
+  assert(value.api.getState().pendingSectors.includes("development"));
+  await value.api.checkForCloudUpdate(); assert.equal(value.api.getState().status, "local-conflict");
+  assert.equal(value.api.requestConflictResolution("local"), true); await value.api.resolveConflictUseLocal();
+  assert.equal(value.api.getState().status, "synced"); assert.deepEqual(value.api.getState().pendingSectors, []);
+  assert(value.records.uploadedSectors.includes("run_orion")); assert(value.records.uploadedSectors.includes("development")); assert.deepEqual(value.blocked, []);
+
+  const repair = await runtime(); dirty(repair); const originalSet = repair.storage.setItem.bind(repair.storage); let failMetadata = true;
+  repair.storage.setItem = (key, data) => { if (failMetadata && key.startsWith("inazuma.cloud.association.")) { failMetadata = false; throw Object.assign(new Error("quota"), { name: "QuotaExceededError" }); } return originalSet(key, data); };
+  await repair.api.syncNow(); assert.equal(repair.api.getState().status, "metadata-repair-needed");
+  await repair.api.retrySync(); assert.equal(repair.api.getState().status, "synced"); assert.deepEqual(repair.api.getState().pendingSectors, []); assert.deepEqual(repair.blocked, []);
+  console.log("authenticated firebase cloud-save state machine: permission/unavailable/CAS/new-dirty/metadata-repair ok");
 })().catch(error => { console.error(error); process.exitCode = 1; });
