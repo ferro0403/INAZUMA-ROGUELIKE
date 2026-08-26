@@ -6145,6 +6145,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function renderGameOver({ developmentResolved = false } = {}) {
+    // The terminal route itself owns the canonical phase. This keeps a reload
+    // between navigation and the permanent-effect drain on the game-over path.
+    if (run.phase !== "gameover") {
+      run.phase = "gameover";
+      global.RunState.save(run);
+    }
     const bossReached = Math.min(Number(run.bossIndex || 0) + 1, seasonDb.bossOrder.length);
     if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "gameover", onComplete: () => renderGameOver({ developmentResolved: true }) });
     const wins = Number(run.statistics?.winsTotal || 0);
@@ -6452,6 +6458,30 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       },
       getRun: () => run,
     };
+    // Deliberately thin test seam: every entry delegates to the same private
+    // production function used by the UI. Keep orchestration out of tests and
+    // do not duplicate terminal-run persistence semantics here.
+    global.__INAZUMA_TERMINAL_FLOW_TEST__ = Object.freeze({
+      completeBossMatch,
+      continueAfterMatch,
+      resolvePendingRunFlow,
+      showNextBossReward,
+      advanceBossReward,
+      finishBossVictoryTransition,
+      navigateBossVictoryDestination,
+      resumeRunFinalization,
+      renderGameOver,
+      ensureCurrentZoneMutation,
+      setContext: (context = {}) => {
+        if (context.run) { run = context.run; global.run = run; ui.match = run.activeMatch || null; }
+        if (context.seasonDb) {
+          seasonDb = context.seasonDb;
+          activeSeason = { id: seasonDb.seasonId || context.run?.seasonId };
+          seasonPlayersById = new Map((seasonDb.players || []).map((player) => [String(player.playerId), player]));
+        }
+      },
+      getRun: () => run,
+    });
   }
   init();
 })(globalThis);

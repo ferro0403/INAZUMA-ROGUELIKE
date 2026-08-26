@@ -155,7 +155,16 @@
       return { team: clone(saved.teams.find((item) => item.archiveKey === archiveKey)), created: true, persisted: true };
     } catch (error) {
       console.error("Unable to save Hall of Fame archive", error);
-      return { team: clone(compactTeam(team, { emergency: true })), created: true, persisted: false, error: { name: error?.name || "Error", message: error?.message || String(error) } };
+      return {
+        team: clone(compactTeam(team, { emergency: true })), created: true, persisted: false,
+        error: {
+          name: error?.name || "Error",
+          message: error?.message || String(error),
+          code: error?.code || null,
+          stage: error?.stage || null,
+          problemSector: error?.problemSector || null,
+        },
+      };
     }
   }
   function listTeams() { return loadArchive().teams.map(lightSummary); }

@@ -106,8 +106,16 @@
           global.PersistenceRecoveryGuard?.assertWritable?.({ readOnly: true }); action = "aborted-unmodified-restore";
         }
       } else if (journal.stage === "complete") {
-        const metadata = entries().map((entry) => entry.key.startsWith("inazuma.cloud.association.") ? safeJson(entry.value) : null).find((item) => item?.revision === journal.targetCloudRevision);
-        if (metadata) { global.PersistenceRecoveryGuard?.clearBlocked?.(journal.operationId); global.localStorage.removeItem(journalKey); action = "cleared-verified-complete-journal"; }
+        // A matching revision from another account is not proof that this
+        // account's restore committed. Read only the active account binding.
+        const metadata = safeJson(global.localStorage.getItem(`inazuma.cloud.association.${active.uid}`));
+        const identityMatches = !journal.targetCloudCommitId
+          || metadata?.cloudCommitId === journal.targetCloudCommitId
+          || metadata?.targetCloudCommitId === journal.targetCloudCommitId;
+        const metadataProvesTarget = metadata?.uid === active.uid
+          && Number(metadata?.revision) === Number(journal.targetCloudRevision)
+          && identityMatches;
+        if (metadataProvesTarget) { global.PersistenceRecoveryGuard?.clearBlocked?.(journal.operationId); global.localStorage.removeItem(journalKey); action = "cleared-verified-complete-journal"; }
         else blocker = "complete-journal-target-not-locally-proven";
       } else blocker = journal.targetCloudCommitId ? "immutable-target-resume-required" : "partial-restore-without-immutable-target";
     }
