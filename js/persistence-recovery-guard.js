@@ -44,6 +44,18 @@
     if (!journal && !state.blocked) return true;
     throw Object.assign(new Error("restore-recovery-required"), { code: "restore-recovery-required", stage: journal?.stage || state.stage, operationId: journal?.operationId || state.operationId });
   }
+  function assertLegacyCanonicalizationWritable(seasonId) {
+    const journal = persistentJournal();
+    if (!journal && state.blocked && state.status === "terminal-recovery" && typeof seasonId === "string" && seasonId) return true;
+    return assertWritable();
+  }
+  function reserveLegacyCanonicalization(seasonId) {
+    assertLegacyCanonicalizationWritable(seasonId);
+    const next = readEpoch() + 1;
+    try { global.localStorage.setItem(EPOCH_KEY, String(next)); }
+    catch (error) { throw failure(error, "storage-access-error", "mutation-epoch-write"); }
+    return next;
+  }
   function bindUid(uid) {
     state = { blocked: false, uid: uid || null, operationId: null, stage: null, status: "complete", error: null };
     if (!uid) return getState();
@@ -59,7 +71,7 @@
     catch (_) { return setBlocked({ uid, stage: "journal-parse", status: "safety", error: "restore-journal-repair-needed" }); }
   }
 
-  const api = Object.freeze({ EPOCH_KEY, isBlocked, getState, assertWritable, setBlocked, clearBlocked, bindUid, readEpoch, reserve, bump, persistentJournal, classifyStorageError: failure });
+  const api = Object.freeze({ EPOCH_KEY, isBlocked, getState, assertWritable, assertLegacyCanonicalizationWritable, reserveLegacyCanonicalization, setBlocked, clearBlocked, bindUid, readEpoch, reserve, bump, persistentJournal, classifyStorageError: failure });
   global.PersistenceRecoveryGuard = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(globalThis);

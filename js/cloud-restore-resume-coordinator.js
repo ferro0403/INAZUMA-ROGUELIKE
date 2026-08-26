@@ -1,14 +1,14 @@
 (function (global) {
   "use strict";
   const inFlightByUid = new Map();
-  async function route({ auth, readJournal, resumeInterrupted, normalAssociate, abandonNonResumable, publish = () => {}, onWritable = () => {} }) {
+  async function route({ auth, readJournal, resumeInterrupted, normalAssociate, freshComparison, abandonNonResumable, publish = () => {}, onWritable = () => {} }) {
     if (auth?.status !== "authenticated" || !auth.uid) return null;
     let journal; try { journal = readJournal(auth.uid); } catch (error) { publish({ status: "restore-error", error: error?.code || "restore-journal-unavailable" }); return null; }
     if (!journal) return normalAssociate?.() ?? null;
     if (!journal.targetCloudCommitId) {
       await abandonNonResumable?.(journal);
       publish({ status: "restore-terminal-error", error: "legacy-cloud-target-not-immutable", journalTerminalReason: "missing-target-cloud-commit-id", restoreResumeEligibility: "fresh-comparison-only" });
-      await normalAssociate?.();
+      await freshComparison?.();
       return { status: "restore-terminal-error", resumable: false, freshComparisonRequired: true };
     }
     const existing = inFlightByUid.get(auth.uid);

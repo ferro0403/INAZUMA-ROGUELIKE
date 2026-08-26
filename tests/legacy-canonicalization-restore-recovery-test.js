@@ -30,7 +30,7 @@ for (const point of ["after-candidate", "before-head"]) {
   const storage = new BudgetStorage(), runtime = load(storage), raw = JSON.stringify(legacy("ie1")), backup = JSON.stringify(legacy("ie1", { updatedAt: "old" })); storage.setItem("run:ie1", raw); storage.setItem("run:ie1_backup", backup);
   assert.throws(() => runtime.RunStorage.canonicalizeLegacyPrimary("ie1", { crash: at => { if (at === point) throw new Error("crash"); } }), /legacy-canonicalization-failed/);
   assert.equal(storage.getItem("run:ie1_backup"), backup); assert(runtime.RunState.load("ie1", { readOnly: true }));
-  if (point === "after-candidate") { assert.equal(storage.getItem("run:ie1"), raw); assert.equal(storage.getItem("run:ie1_head"), null); }
+  if (point === "after-candidate") { assert.equal(storage.getItem("run:ie1"), raw); assert.equal(storage.getItem("run:ie1_head"), null); } else { assert.equal(storage.getItem("run:ie1_head"), null); const envelope = storage.getItem("run:ie1"); const repaired = runtime.RunStorage.canonicalizeLegacyPrimary("ie1"); assert.equal(repaired.repairedHead, true); assert.equal(storage.getItem("run:ie1"), envelope); assert.equal(runtime.RunStorage.canonicalizeLegacyPrimary("ie1").repairedHead, false); }
 }
 
 {
@@ -38,9 +38,21 @@ for (const point of ["after-candidate", "before-head"]) {
   runtime.RunStorage.canonicalizeLegacyPrimary("orion"); for (const [key, value] of before) assert.equal(storage.getItem(key), value, key);
 }
 
+{
+  const storage = new BudgetStorage(), runtime = load(storage); storage.setItem("run:ie1", JSON.stringify(legacy("ie1"))); runtime.RunStorage.canonicalizeLegacyPrimary("ie1");
+  const primary = JSON.parse(storage.getItem("run:ie1")); storage.setItem("run:ie1_head", JSON.stringify({ ...JSON.parse(storage.getItem("run:ie1_head")), generation: primary.generation + 1, commitId: "newer" }));
+  assert.throws(() => runtime.RunStorage.canonicalizeLegacyPrimary("ie1"), error => error.code === "canonical-unrecoverable");
+}
+
+{
+  const storage = new BudgetStorage(), runtime = load(storage); storage.setItem("inazuma.persistence.localMutationEpoch", "166"); storage.setItem("run:ie1", JSON.stringify(legacy("ie1"))); storage.setItem("inazuma.cloud.restoreTerminal.u", JSON.stringify({ operationId: "hfb5b3aa3" })); runtime.PersistenceRecoveryGuard.bindUid("u");
+  assert.throws(() => runtime.RunState.save(legacy("ie1")), error => error.code === "restore-recovery-required");
+  assert.equal(runtime.RunStorage.canonicalizeLegacyPrimary("ie1").migrated, true); assert.equal(runtime.PersistenceRecoveryGuard.isBlocked(), true); assert.equal(runtime.PersistenceRecoveryGuard.readEpoch(), 167);
+}
+
 (async () => {
   const coordinator = require("../js/cloud-restore-resume-coordinator"); let resumed = 0, abandoned = 0, fresh = 0; const journal = { uid: "u", operationId: "old", stage: "run-ie1", targetCloudRevision: 9428, targetCloudCommitId: null, sourceLocalEpoch: 166, expectedLocalEpoch: 166 };
-  const result = await coordinator.retry({ auth: { status: "authenticated", uid: "u" }, readJournal: () => journal, resumeInterrupted: () => resumed++, abandonNonResumable: () => abandoned++, normalAssociate: () => fresh++ });
+  const result = await coordinator.retry({ auth: { status: "authenticated", uid: "u" }, readJournal: () => journal, resumeInterrupted: () => resumed++, abandonNonResumable: () => abandoned++, freshComparison: () => fresh++ });
   assert.equal(result.resumable, false); assert.equal(resumed, 0); assert.equal(abandoned, 1); assert.equal(fresh, 1);
   console.log("legacy primary canonicalization, crash recovery, idempotence and non-resumable journal: ok");
 })().catch(error => { throw error; });

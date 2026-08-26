@@ -216,16 +216,29 @@
     restoreBackup,
     canonicalizeLegacyPrimary(seasonId = null, options = {}) {
       const sid = seasonIdOf(seasonId); let result;
-      global.PersistenceRecoveryGuard?.assertWritable(options);
+      const terminalRecovery = global.PersistenceRecoveryGuard?.getState?.().status === "terminal-recovery";
+      if (terminalRecovery) global.PersistenceRecoveryGuard?.assertLegacyCanonicalizationWritable?.(sid); else global.PersistenceRecoveryGuard?.assertWritable(options);
       withStorageLease(sid, (ownsLease) => {
         const primaryRaw = localStorage.getItem(primaryKey(sid));
         if (!primaryRaw) return;
-        try {
-          const existing = parseEnvelope(primaryRaw, sid);
-          result = { migrated: false, seasonId: sid, runId: existing.runId, generation: existing.generation, commitId: existing.commitId, headCreated: false, backupPreserved: true, canonicalizationSource: "none" };
+        let existing = null;
+        try { existing = parseEnvelope(primaryRaw, sid); }
+        catch (error) { if (error instanceof RunPersistenceError && ["unsupported-storage-schema", "unsupported-run-save-version"].includes(error.code)) throw error; }
+        if (existing) {
+          let head = null; try { head = JSON.parse(localStorage.getItem(headKey(sid)) || "null"); } catch (error) { throw persistenceError("invalid-head", "head-repair-read", { seasonId: sid }, error); }
+          const matching = head && head.storageSchemaVersion === STORAGE_SCHEMA_VERSION && head.seasonId === sid && head.generation === existing.generation && head.commitId === existing.commitId && head.state === existing.state && head.runId === existing.runId;
+          if (head && !matching) throw persistenceError(head.generation > existing.generation ? "canonical-unrecoverable" : "recovery-proof-invalid", "head-repair-proof", { seasonId: sid, generation: head.generation, recoverable: false });
+          let headCreated = false;
+          if (!head) {
+            const witness = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation: existing.generation, commitId: existing.commitId, state: existing.state, runId: existing.runId };
+            localStorage.setItem(headKey(sid), JSON.stringify(witness));
+            const verified = JSON.parse(localStorage.getItem(headKey(sid)) || "null");
+            if (verified.commitId !== existing.commitId || verified.generation !== existing.generation) throw persistenceError("head-write-failed", "head-repair-write", { seasonId: sid, generation: existing.generation });
+            headCreated = true;
+          }
+          try { const temp = parseEnvelope(localStorage.getItem(tempKey(sid)), sid); if (temp.commitId === existing.commitId) localStorage.removeItem(tempKey(sid)); } catch (_) {}
+          result = { migrated: false, repairedHead: headCreated, seasonId: sid, runId: existing.runId, generation: existing.generation, commitId: existing.commitId, headCreated, backupPreserved: true, canonicalizationSource: "none" };
           return;
-        } catch (error) {
-          if (error instanceof RunPersistenceError && ["unsupported-storage-schema", "unsupported-run-save-version"].includes(error.code)) throw error;
         }
         let source, parsed;
         try { parsed = JSON.parse(primaryRaw); source = parseLegacy(primaryRaw, sid); }
@@ -239,8 +252,8 @@
           const verified = parseEnvelope(localStorage.getItem(tempKey(sid)), sid);
           if (verified.commitId !== commitId || verified.runId !== source.runId) throw new Error("legacy candidate mismatch");
           options.crash?.("after-candidate");
-          global.PersistenceRecoveryGuard?.reserve(options);
-          global.PersistenceRecoveryGuard?.assertWritable(options);
+          if (terminalRecovery) global.PersistenceRecoveryGuard?.reserveLegacyCanonicalization?.(sid); else global.PersistenceRecoveryGuard?.reserve(options);
+          if (terminalRecovery) global.PersistenceRecoveryGuard?.assertLegacyCanonicalizationWritable?.(sid); else global.PersistenceRecoveryGuard?.assertWritable(options);
           if (!ownsLease() || localStorage.getItem(primaryKey(sid)) !== primaryRaw) throw persistenceError("stale-write", "legacy-migration-fence", { seasonId: sid, recoverable: true });
           localStorage.setItem(primaryKey(sid), rawEnvelope);
           if (parseEnvelope(localStorage.getItem(primaryKey(sid)), sid).commitId !== commitId) throw new Error("legacy primary readback mismatch");
