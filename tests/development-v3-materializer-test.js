@@ -3,6 +3,7 @@
 const assert = require("assert");
 const progression = require("../js/roguelike_progression.js");
 const DevelopmentV3 = require("../js/development-v3.js");
+const compactDatabase = require("../data/FREE_AGENTS_compact.json");
 
 const database = { compactFormat: { levelMax: 20, codeWidth: 2, statOrder: [...DevelopmentV3.STAT_ORDER] } };
 const ratings = {
@@ -70,6 +71,24 @@ for (const [role, baseOverall, target] of cases) {
   }
 }
 
+// Exercise the other production resolver branch with real, deterministic
+// compact database records (rather than ratings fallback fixtures).
+const compactCases = [
+  ["GK", "2214", 80], // Aaron Gossamer
+  ["DF", "1047", 85], // Ace Breaker
+  ["MF", "680", 90], // Abe Seiler
+  ["FW", "2202", 95], // Adam Venturus
+];
+for (const [role, playerId, target] of compactCases) {
+  const basePlayer = compactDatabase.players.find((candidate) => String(candidate.playerId) === playerId);
+  assert(basePlayer && basePlayer.position === role && typeof basePlayer.progressionCode === "string");
+  const expected = Array.from({ length: 21 }, (_, level) => progression.getPlayerAtLevel(basePlayer, level, compactDatabase, optionsFor(basePlayer, target)));
+  const profile = DevelopmentV3.materializeProfile({ basePlayer, targetPotential: target, database: compactDatabase, progression });
+  for (let level = 0; level <= 20; level += 1) {
+    assert.deepStrictEqual(gameplayOutput(DevelopmentV3.resolveMaterializedPlayer(basePlayer, profile, level)), gameplayOutput(expected[level]), `compact ${role}/${playerId}/${target}/Lv${level}: exact gameplay parity`);
+  }
+}
+
 // Resolution is a decoder only: disable every production progression entry
 // point after materialization and prove all 21 levels remain available.
 {
@@ -114,6 +133,29 @@ for (const [role, baseOverall, target] of cases) {
   assert.throws(() => DevelopmentV3.resolveMaterializedPlayer(player("FW", 74, "bad"), {}, 0), /Invalid Development V3 profile/);
 }
 
+// Correct-length, base36-safe corruption must be rejected semantically before
+// any decoded data can reach gameplay.
+{
+  const basePlayer = player("DF", 72, "corrupt-code");
+  const profile = DevelopmentV3.materializeProfile({ basePlayer, targetPotential: 85, database, progression });
+  for (const field of ["stats", "overalls", "potentials"]) {
+    const corrupt = DevelopmentV3.clone(profile);
+    corrupt.progressionCode[field] = `zz${corrupt.progressionCode[field].slice(2)}`;
+    const state = DevelopmentV3.empty();
+    state.players[basePlayer.playerId] = { steps: [{
+      stepId: `corrupt-${field}`, rarity: "Elite", fromRarity: "Normale", fromPotential: 72, toPotential: 85, profile: corrupt,
+      receipt: { coinsConsumed: 0, cupsConsumed: 0, cupsConsumedBySource: {}, projectsConsumed: 0 },
+    }] };
+    assert.equal(DevelopmentV3.validate(state).valid, false, `${field} value 1295 is rejected`);
+    assert.throws(() => DevelopmentV3.resolveMaterializedPlayer(basePlayer, corrupt, 0), /out-of-range/);
+  }
+  for (const field of ["overalls", "potentials"]) {
+    const corrupt = DevelopmentV3.clone(profile);
+    corrupt.progressionCode[field] = `${corrupt.progressionCode[field].slice(0, -2)}00`;
+    assert.throws(() => DevelopmentV3.resolveMaterializedPlayer(basePlayer, corrupt, 20), /mismatch/);
+  }
+}
+
 {
   const basePlayer = player("MF", 74, "bounds");
   const profile = DevelopmentV3.materializeProfile({ basePlayer, targetPotential: 85, database, progression });
@@ -124,8 +166,8 @@ for (const [role, baseOverall, target] of cases) {
 
   const state = DevelopmentV3.empty();
   state.players[basePlayer.playerId] = { steps: [{
-    stepId: "mf-buono-1",
-    rarity: "Buono",
+    stepId: "mf-elite-1",
+    rarity: "Elite",
     fromRarity: "Normale",
     fromPotential: 74,
     toPotential: 85,
@@ -136,6 +178,26 @@ for (const [role, baseOverall, target] of cases) {
   for (const forbidden of ["name", "portraitUrl", "frontFullbodyUrl", "description", "element", "position", "teams"]) {
     assert(!Object.prototype.hasOwnProperty.call(state.players[basePlayer.playerId].steps[0], forbidden), `step does not duplicate ${forbidden}`);
   }
+
+
+  const receipt = { coinsConsumed: 0, cupsConsumed: 0, cupsConsumedBySource: {}, projectsConsumed: 0 };
+  const forteProfile = DevelopmentV3.materializeProfile({ basePlayer, targetPotential: 80, database, progression });
+  const mondialeProfile = DevelopmentV3.materializeProfile({ basePlayer, targetPotential: 90, database, progression });
+  const coherent = DevelopmentV3.empty();
+  coherent.players[basePlayer.playerId] = { steps: [
+    { stepId: "forte", rarity: "Forte", fromRarity: "Normale", fromPotential: 74, toPotential: 80, profile: forteProfile, receipt },
+    { stepId: "mondiale", rarity: "Mondiale", fromRarity: "Forte", fromPotential: 80, toPotential: 90, profile: mondialeProfile, receipt },
+  ] };
+  assert.equal(DevelopmentV3.validate(coherent).valid, true, "a forward, continuous colored chain validates");
+  const corruptChain = (mutate) => { const value = DevelopmentV3.clone(coherent); mutate(value.players[basePlayer.playerId].steps); return DevelopmentV3.validate(value); };
+  assert.equal(corruptChain((steps) => { steps[0].profile.category = "Elite"; }).valid, false, "step category must equal rarity");
+  assert.equal(corruptChain((steps) => { steps[0].profile.finalOverall = 81; }).valid, false, "profile finalOverall must equal toPotential");
+  assert.equal(corruptChain((steps) => { steps[1].fromPotential = 79; }).valid, false, "potentials must be continuous");
+  assert.equal(corruptChain((steps) => { steps[1].fromRarity = "Elite"; }).valid, false, "rarities must be continuous");
+  assert.equal(corruptChain((steps) => { steps[1].stepId = "forte"; }).valid, false, "step IDs must be unique");
+  assert.equal(corruptChain((steps) => { steps[1].rarity = "Forte"; steps[1].profile.category = "Forte"; }).valid, false, "rarities cannot repeat");
+  assert.equal(corruptChain((steps) => { steps.reverse(); }).valid, false, "colored rarity cannot go backwards");
+  assert.equal(corruptChain((steps) => { while (steps.length < 6) steps.push(DevelopmentV3.clone(steps[1])); }).valid, false, "chains cannot exceed five steps");
 }
 
 console.log("development-v3-materializer-test: exact Lv0..20 parity and zero-solver decoding OK");

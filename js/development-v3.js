@@ -15,6 +15,12 @@
   const PROJECT_RARITIES = COLORED_RARITIES;
   const SEASON_IDS = Object.freeze(["ie1", "ie1_s2", "ie1_s3", "ie2", "orion"]);
   const CODEC = "base36-fixed2-stat-major-v1";
+  // Production stats start in the 0..100 compact/rating range. Permanent
+  // Codex growth can add one final 10-point unit to a 94 stat (rounded rating
+  // 9), so the production solver's actual output ceiling is 104.
+  const STAT_RANGE = Object.freeze({ min: 0, max: 104 });
+  const OVERALL_RANGE = Object.freeze({ min: 0, max: 99 });
+  const POTENTIAL_RANGE = Object.freeze({ min: 0, max: 99 });
 
   const own = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
   const record = (value) => value && typeof value === "object" && !Array.isArray(value);
@@ -116,7 +122,20 @@
     if (!record(code) || code.codec !== CODEC || code.statOrder !== STAT_ORDER.join(",") || code.codeWidth !== 2 ||
         typeof code.stats !== "string" || code.stats.length !== expectedChars || !/^[0-9a-z]+$/.test(code.stats) ||
         typeof code.overalls !== "string" || code.overalls.length !== (MAX_LEVEL + 1) * 2 || !/^[0-9a-z]+$/.test(code.overalls) ||
-        typeof code.potentials !== "string" || code.potentials.length !== (MAX_LEVEL + 1) * 2 || !/^[0-9a-z]+$/.test(code.potentials)) errors.push(`${path}.progressionCode:invalid`);
+        typeof code.potentials !== "string" || code.potentials.length !== (MAX_LEVEL + 1) * 2 || !/^[0-9a-z]+$/.test(code.potentials)) {
+      errors.push(`${path}.progressionCode:invalid`);
+      return errors;
+    }
+    const decodeTokens = (encoded) => Array.from({ length: encoded.length / 2 }, (_, index) => parseInt(encoded.slice(index * 2, index * 2 + 2), 36));
+    const stats = decodeTokens(code.stats);
+    const overalls = decodeTokens(code.overalls);
+    const potentials = decodeTokens(code.potentials);
+    const outside = (values, range) => values.some((value) => !Number.isInteger(value) || value < range.min || value > range.max);
+    if (outside(stats, STAT_RANGE)) errors.push(`${path}.progressionCode.stats:out-of-range`);
+    if (outside(overalls, OVERALL_RANGE)) errors.push(`${path}.progressionCode.overalls:out-of-range`);
+    if (outside(potentials, POTENTIAL_RANGE)) errors.push(`${path}.progressionCode.potentials:out-of-range`);
+    if (overalls.at(-1) !== profile.finalOverall) errors.push(`${path}.progressionCode.finalOverall:mismatch`);
+    if (potentials.at(-1) !== profile.finalOverall) errors.push(`${path}.progressionCode.finalPotential:mismatch`);
     return errors;
   }
 
@@ -131,10 +150,24 @@
     else Object.entries(raw.players).forEach(([playerId, chain]) => {
       if (!playerId || !record(chain) || !Array.isArray(chain.steps)) { errors.push(`players.${playerId}:invalid`); return; }
       if (chain.steps.length > COLORED_RARITIES.length) errors.push(`players.${playerId}.steps:too-many`);
+      const stepIds = new Set();
+      const rarities = new Set();
       chain.steps.forEach((step, index) => {
         const path = `players.${playerId}.steps.${index}`;
         if (!record(step) || !step.stepId || !COLORED_RARITIES.includes(step.rarity) || !integer(step.fromPotential) || !integer(step.toPotential) || step.toPotential < step.fromPotential || step.toPotential > 99) errors.push(`${path}:invalid`);
         errors.push(...profileErrors(step?.profile, `${path}.profile`));
+        if (record(step)) {
+          if (stepIds.has(step.stepId)) errors.push(`${path}.stepId:duplicate`);
+          stepIds.add(step.stepId);
+          if (rarities.has(step.rarity)) errors.push(`${path}.rarity:duplicate`);
+          rarities.add(step.rarity);
+          if (step.profile?.finalOverall !== step.toPotential) errors.push(`${path}.profile.finalOverall:mismatch`);
+          if (step.profile?.category !== step.rarity) errors.push(`${path}.profile.category:mismatch`);
+          const previous = chain.steps[index - 1];
+          if (index > 0 && step.fromPotential !== previous?.toPotential) errors.push(`${path}.fromPotential:discontinuous`);
+          if (index > 0 && step.fromRarity !== previous?.rarity) errors.push(`${path}.fromRarity:discontinuous`);
+          if (index > 0 && COLORED_RARITIES.indexOf(step.rarity) <= COLORED_RARITIES.indexOf(previous?.rarity)) errors.push(`${path}.rarity:not-forward`);
+        }
         const receipt = step?.receipt;
         if (!record(receipt) || !integer(receipt.coinsConsumed) || !integer(receipt.cupsConsumed) || !integer(receipt.projectsConsumed) || !record(receipt.cupsConsumedBySource) || Object.values(receipt.cupsConsumedBySource).some((value) => !integer(value)) || Object.values(receipt.cupsConsumedBySource || {}).reduce((sum, value) => sum + value, 0) !== receipt?.cupsConsumed) errors.push(`${path}.receipt:invalid`);
       });
@@ -191,7 +224,7 @@
     return { ...basePlayer, ...stats, level, overall, potential, category: profile.category, stats };
   }
 
-  const api = { SCHEMA_VERSION, PROFILE_FORMAT_VERSION, GROWTH_ALGORITHM_VERSION, MAX_LEVEL, STAT_ORDER, COLORED_RARITIES, PROJECT_RARITIES, SEASON_IDS, CODEC, empty, normalize, validate, clone, materializeProfile, resolveMaterializedPlayer };
+  const api = { SCHEMA_VERSION, PROFILE_FORMAT_VERSION, GROWTH_ALGORITHM_VERSION, MAX_LEVEL, STAT_ORDER, STAT_RANGE, OVERALL_RANGE, POTENTIAL_RANGE, COLORED_RARITIES, PROJECT_RARITIES, SEASON_IDS, CODEC, empty, normalize, validate, clone, materializeProfile, resolveMaterializedPlayer };
   global.DevelopmentV3 = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);
