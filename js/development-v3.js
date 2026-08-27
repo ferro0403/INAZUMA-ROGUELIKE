@@ -8,9 +8,8 @@
   const GROWTH_ALGORITHM_VERSION = "development-v2-production-v1";
   const MAX_LEVEL = 20;
   const STAT_ORDER = Object.freeze(["attack", "control", "speed", "grit", "physical", "stamina", "defense", "save"]);
-  // Only colored upgrades are V3 steps. Migration of a V2 chain that includes
-  // a Normale upgrade (for example Debole -> Normale -> Buono) is intentionally
-  // unresolved and must be decided by the later migration PR.
+  // Only colored upgrades are V3 steps. A paid legacy Normale upgrade is an
+  // optional migration baseline and never consumes a colored slot.
   const COLORED_RARITIES = Object.freeze(["Buono", "Forte", "Elite", "Mondiale", "Leggenda"]);
   const RARITY_POTENTIAL_BANDS = Object.freeze({
     Buono: Object.freeze({ min: 75, max: 79 }),
@@ -102,6 +101,20 @@
     return step;
   }
 
+  function normalizeLegacyNormale(source) {
+    if (!record(source)) return null;
+    const value = {
+      migrationId: String(source.migrationId || ""),
+      fromRarity: String(source.fromRarity || ""),
+      fromPotential: Number(source.fromPotential),
+      toPotential: Number(source.toPotential),
+      profile: normalizeProfile(source.profile),
+      receipt: normalizeReceipt(source.receipt),
+    };
+    if (own(source, "createdAt") && source.createdAt != null) value.createdAt = String(source.createdAt);
+    return value;
+  }
+
   function normalize(raw) {
     const source = record(raw) ? raw : {};
     const state = empty();
@@ -115,8 +128,13 @@
     state.victoryRewardRunIds = [...new Set(Array.isArray(source.victoryRewardRunIds) ? source.victoryRewardRunIds.map(String) : [])];
     if (record(source.players)) Object.keys(source.players).sort().forEach((playerId) => {
       const steps = Array.isArray(source.players[playerId]?.steps) ? source.players[playerId].steps.map(normalizeStep).filter(Boolean) : [];
-      state.players[String(playerId)] = { steps };
+      const legacyNormale = normalizeLegacyNormale(source.players[playerId]?.legacyNormale);
+      state.players[String(playerId)] = { legacyNormale, steps };
     });
+    if (record(source.migrationLegacy?.projectBuild)) {
+      const projectBuild = cleanCounter(source.migrationLegacy.projectBuild, PROJECT_RARITIES);
+      if (Object.values(projectBuild).some(Boolean)) state.migrationLegacy = { projectBuild };
+    }
     return state;
   }
 
@@ -163,6 +181,22 @@
       if (chain.steps.length > COLORED_RARITIES.length) errors.push(`players.${playerId}.steps:too-many`);
       const stepIds = new Set();
       const rarities = new Set();
+      const legacy = chain.legacyNormale;
+      if (legacy != null) {
+        const path = `players.${playerId}.legacyNormale`;
+        const forbidden = ["playerId", "id", "name", "playerName", "playerNameSnapshot", "portraitUrl", "frontFullbodyUrl", "description", "element", "position", "teams", "ratings"];
+        const validOrigin = legacy?.fromRarity === "Scarso" ? integer(legacy.fromPotential) && legacy.fromPotential <= 65 : legacy?.fromRarity === "Debole" ? integer(legacy.fromPotential) && legacy.fromPotential >= 66 && legacy.fromPotential <= 69 : false;
+        if (!record(legacy) || typeof legacy.migrationId !== "string" || !legacy.migrationId || !validOrigin ||
+            !integer(legacy.toPotential) || legacy.toPotential < legacy.fromPotential || legacy.toPotential < 70 || legacy.toPotential > 74 ||
+            (own(legacy, "createdAt") && typeof legacy.createdAt !== "string")) errors.push(`${path}:invalid`);
+        errors.push(...profileErrors(legacy?.profile, `${path}.profile`));
+        if (legacy?.profile?.category !== "Normale") errors.push(`${path}.profile.category:mismatch`);
+        if (legacy?.profile?.finalOverall !== legacy?.toPotential) errors.push(`${path}.profile.finalOverall:mismatch`);
+        if (record(legacy) && forbidden.some((key) => own(legacy, key) || own(legacy.profile, key))) errors.push(`${path}:duplicated-identity`);
+        const receipt = legacy?.receipt;
+        if (!record(receipt) || !integer(receipt.coinsConsumed) || !integer(receipt.cupsConsumed) || !integer(receipt.projectsConsumed) || !record(receipt.cupsConsumedBySource) || Object.values(receipt.cupsConsumedBySource).some((value) => !integer(value)) || Object.values(receipt.cupsConsumedBySource || {}).reduce((sum, value) => sum + value, 0) !== receipt?.cupsConsumed) errors.push(`${path}.receipt:invalid`);
+        if (chain.steps[0] && (chain.steps[0].fromRarity !== "Normale" || chain.steps[0].fromPotential !== legacy?.toPotential)) errors.push(`${path}:first-step-discontinuous`);
+      }
       chain.steps.forEach((step, index) => {
         const path = `players.${playerId}.steps.${index}`;
         if (!record(step) || !step.stepId || !COLORED_RARITIES.includes(step.rarity) || !integer(step.fromPotential) || !integer(step.toPotential) || step.toPotential < step.fromPotential || step.toPotential > 99) errors.push(`${path}:invalid`);
@@ -184,6 +218,11 @@
         if (!record(receipt) || !integer(receipt.coinsConsumed) || !integer(receipt.cupsConsumed) || !integer(receipt.projectsConsumed) || !record(receipt.cupsConsumedBySource) || Object.values(receipt.cupsConsumedBySource).some((value) => !integer(value)) || Object.values(receipt.cupsConsumedBySource || {}).reduce((sum, value) => sum + value, 0) !== receipt?.cupsConsumed) errors.push(`${path}.receipt:invalid`);
       });
     });
+    if (raw.migrationLegacy != null) {
+      const projectBuild = raw.migrationLegacy?.projectBuild;
+      if (!record(raw.migrationLegacy) || !record(projectBuild) || Object.keys(raw.migrationLegacy).some((key) => key !== "projectBuild") ||
+          Object.keys(projectBuild || {}).sort().join(",") !== [...PROJECT_RARITIES].sort().join(",") || Object.values(projectBuild || {}).some((value) => !integer(value))) errors.push("migrationLegacy:invalid");
+    }
     return { valid: errors.length === 0, errors };
   }
 
