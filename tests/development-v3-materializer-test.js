@@ -156,6 +156,40 @@ for (const [role, playerId, target] of compactCases) {
   }
 }
 
+// Lock every colored rarity's exact production potential band. These schema
+// cases alter only the materialized final tokens; no migration assumptions are
+// made about the first colored step's fromRarity.
+{
+  const basePlayer = player("MF", 74, "rarity-bands");
+  const template = DevelopmentV3.materializeProfile({ basePlayer, targetPotential: 85, database, progression });
+  const receipt = { coinsConsumed: 0, cupsConsumed: 0, cupsConsumedBySource: {}, projectsConsumed: 0 };
+  const stateFor = (rarity, potential) => {
+    const profile = DevelopmentV3.clone(template);
+    const token = potential.toString(36).padStart(2, "0");
+    profile.finalOverall = potential;
+    profile.category = rarity;
+    profile.progressionCode.overalls = `${profile.progressionCode.overalls.slice(0, -2)}${token}`;
+    profile.progressionCode.potentials = `${profile.progressionCode.potentials.slice(0, -2)}${token}`;
+    const state = DevelopmentV3.empty();
+    state.players[basePlayer.playerId] = { steps: [{ stepId: `${rarity}-${potential}`, rarity, fromRarity: "Normale", fromPotential: 74, toPotential: potential, profile, receipt }] };
+    return state;
+  };
+  const bands = [
+    ["Buono", 75, 79, 90],
+    ["Forte", 80, 84, 75],
+    ["Elite", 85, 89, 80],
+    ["Mondiale", 90, 94, 85],
+    ["Leggenda", 95, 99, 94],
+  ];
+  for (const [rarity, minimum, maximum, invalid] of bands) {
+    assert.equal(DevelopmentV3.validate(stateFor(rarity, minimum)).valid, true, `${rarity} accepts lower boundary ${minimum}`);
+    assert.equal(DevelopmentV3.validate(stateFor(rarity, maximum)).valid, true, `${rarity} accepts upper boundary ${maximum}`);
+    const result = DevelopmentV3.validate(stateFor(rarity, invalid));
+    assert.equal(result.valid, false, `${rarity} rejects potential ${invalid}`);
+    assert(result.errors.some((error) => error.endsWith("toPotential:rarity-band-mismatch")));
+  }
+}
+
 {
   const basePlayer = player("MF", 74, "bounds");
   const profile = DevelopmentV3.materializeProfile({ basePlayer, targetPotential: 85, database, progression });

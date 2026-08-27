@@ -12,6 +12,13 @@
   // a Normale upgrade (for example Debole -> Normale -> Buono) is intentionally
   // unresolved and must be decided by the later migration PR.
   const COLORED_RARITIES = Object.freeze(["Buono", "Forte", "Elite", "Mondiale", "Leggenda"]);
+  const RARITY_POTENTIAL_BANDS = Object.freeze({
+    Buono: Object.freeze({ min: 75, max: 79 }),
+    Forte: Object.freeze({ min: 80, max: 84 }),
+    Elite: Object.freeze({ min: 85, max: 89 }),
+    Mondiale: Object.freeze({ min: 90, max: 94 }),
+    Leggenda: Object.freeze({ min: 95, max: 99 }),
+  });
   const PROJECT_RARITIES = COLORED_RARITIES;
   const SEASON_IDS = Object.freeze(["ie1", "ie1_s2", "ie1_s3", "ie2", "orion"]);
   const CODEC = "base36-fixed2-stat-major-v1";
@@ -26,6 +33,10 @@
   const record = (value) => value && typeof value === "object" && !Array.isArray(value);
   const integer = (value, minimum = 0) => Number.isInteger(value) && value >= minimum;
   const counters = (keys) => Object.fromEntries(keys.map((key) => [key, 0]));
+  const potentialMatchesRarity = (rarity, potential) => {
+    const band = RARITY_POTENTIAL_BANDS[rarity];
+    return Boolean(band && integer(potential) && potential >= band.min && potential <= band.max);
+  };
   const cleanCounter = (source, keys) => Object.fromEntries(keys.map((key) => [key, integer(Number(source?.[key])) ? Number(source[key]) : 0]));
   function cleanOpenCounter(source, requiredKeys) {
     const keys = [...new Set([...requiredKeys, ...(record(source) ? Object.keys(source) : [])])].sort();
@@ -163,6 +174,7 @@
           rarities.add(step.rarity);
           if (step.profile?.finalOverall !== step.toPotential) errors.push(`${path}.profile.finalOverall:mismatch`);
           if (step.profile?.category !== step.rarity) errors.push(`${path}.profile.category:mismatch`);
+          if (!potentialMatchesRarity(step.rarity, step.toPotential)) errors.push(`${path}.toPotential:rarity-band-mismatch`);
           const previous = chain.steps[index - 1];
           if (index > 0 && step.fromPotential !== previous?.toPotential) errors.push(`${path}.fromPotential:discontinuous`);
           if (index > 0 && step.fromRarity !== previous?.rarity) errors.push(`${path}.fromRarity:discontinuous`);
@@ -224,7 +236,7 @@
     return { ...basePlayer, ...stats, level, overall, potential, category: profile.category, stats };
   }
 
-  const api = { SCHEMA_VERSION, PROFILE_FORMAT_VERSION, GROWTH_ALGORITHM_VERSION, MAX_LEVEL, STAT_ORDER, STAT_RANGE, OVERALL_RANGE, POTENTIAL_RANGE, COLORED_RARITIES, PROJECT_RARITIES, SEASON_IDS, CODEC, empty, normalize, validate, clone, materializeProfile, resolveMaterializedPlayer };
+  const api = { SCHEMA_VERSION, PROFILE_FORMAT_VERSION, GROWTH_ALGORITHM_VERSION, MAX_LEVEL, STAT_ORDER, STAT_RANGE, OVERALL_RANGE, POTENTIAL_RANGE, COLORED_RARITIES, RARITY_POTENTIAL_BANDS, PROJECT_RARITIES, SEASON_IDS, CODEC, empty, normalize, validate, clone, materializeProfile, resolveMaterializedPlayer };
   global.DevelopmentV3 = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);
