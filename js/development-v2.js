@@ -45,18 +45,54 @@
     value.redeemedRunIds = [...new Set(source.redeemedRunIds || [])]; value.victoryRewardRunIds = [...new Set(source.victoryRewardRunIds || [])];
     value.schemaVersion = SCHEMA_VERSION; delete value.cups; delete value.projectBuild; delete value.projectPullLedger; return value;
   }
+  function storageReadError(error) { return Object.assign(new Error("storage-access-error"), { code: "storage-access-error", stage: "development-read", cause: error }); }
+  function inspectStoredState() {
+    let rawText;
+    try { rawText = global.localStorage?.getItem(STORAGE_KEY); }
+    catch (error) { if (error?.name === "SecurityError") throw storageReadError(error); throw error; }
+    if (rawText == null || rawText === "") return { valid: true, needed: false, reasons: [], rawText, state: empty() };
+    let parsed;
+    try { parsed = JSON.parse(rawText); }
+    catch (_) { return { valid: false, needed: false, reasons: ["invalid-json"], rawText, state: null, error: "invalid-json" }; }
+    if (parsed == null) return { valid: true, needed: false, reasons: [], rawText, state: empty() };
+    if (typeof parsed !== "object" || Array.isArray(parsed)) return { valid: false, needed: false, reasons: ["invalid-state"], rawText, state: null, error: "invalid-state" };
+    const legacyBalance = Math.max(0, Math.floor(Number(parsed.legacyCups ?? parsed.cups) || 0));
+    const reasons = [];
+    if (Number(parsed.schemaVersion) !== SCHEMA_VERSION) reasons.push("schema-version");
+    if (legacyBalance > 0) reasons.push("legacy-cups-balance");
+    if (Object.prototype.hasOwnProperty.call(parsed, "cups")) reasons.push("legacy-cups-field");
+    if (Object.prototype.hasOwnProperty.call(parsed, "projectBuild")) reasons.push("legacy-project-build-field");
+    if (Object.prototype.hasOwnProperty.call(parsed, "projectPullLedger")) reasons.push("legacy-project-pull-ledger-field");
+    return { valid: true, needed: reasons.length > 0, reasons, rawText, state: normalize(parsed) };
+  }
   function read() {
     try {
       const rawText = global.localStorage?.getItem(STORAGE_KEY) || "null";
-      const parsed = JSON.parse(rawText);
-      const state = normalize(parsed);
-      const legacyBalance = parsed && typeof parsed === "object" ? Math.max(0, Math.floor(Number(parsed.legacyCups ?? parsed.cups) || 0)) : 0;
-      const needsMigration = !!parsed && (Number(parsed.schemaVersion) !== SCHEMA_VERSION || legacyBalance > 0 || Object.prototype.hasOwnProperty.call(parsed, "cups"));
-      if (needsMigration) global.localStorage?.setItem(STORAGE_KEY, JSON.stringify(state));
-      return state;
-    } catch (error) { if (error?.name === "SecurityError") throw Object.assign(new Error("storage-access-error"), { code: "storage-access-error", stage: "development-read", cause: error }); return empty(); }
+      return normalize(JSON.parse(rawText));
+    } catch (error) { if (error?.name === "SecurityError") throw storageReadError(error); return empty(); }
+  }
+  function migrationStatus() {
+    const status = inspectStoredState();
+    return { valid: status.valid, needed: status.needed, reasons: [...status.reasons], error: status.error || null };
   }
   function write(value, options = {}) { global.PersistenceRecoveryGuard?.assertWritable(options); global.PersistenceRecoveryGuard?.reserve(options); global.PersistenceRecoveryGuard?.assertWritable(options); const state = normalize(value); global.localStorage?.setItem(STORAGE_KEY, JSON.stringify(state)); if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { sector: "development", operation: "write", source: "gameplay" } })); return state; }
+  function migrateStoredState(options = {}) {
+    const inspected = inspectStoredState();
+    if (!inspected.valid) return { ok: false, migrated: false, deferred: false, reason: inspected.error, reasons: [...inspected.reasons], state: null };
+    if (!inspected.needed) return { ok: true, migrated: false, deferred: false, reason: null, reasons: [], state: inspected.state };
+    if (global.PersistenceRecoveryGuard?.isBlocked?.()) return { ok: false, migrated: false, deferred: true, reason: "restore-recovery-required", reasons: [...inspected.reasons], state: inspected.state };
+    let currentRaw;
+    try { currentRaw = global.localStorage?.getItem(STORAGE_KEY); }
+    catch (error) { if (error?.name === "SecurityError") throw storageReadError(error); throw error; }
+    if (currentRaw !== inspected.rawText) return { ok: false, migrated: false, deferred: true, reason: "development-migration-stale", reasons: [...inspected.reasons], state: inspected.state };
+    try {
+      const state = write(inspected.state, options);
+      return { ok: true, migrated: true, deferred: false, reason: null, reasons: [...inspected.reasons], state };
+    } catch (error) {
+      if (error?.code === "restore-recovery-required" || error?.code === "restore-ownership-lost") return { ok: false, migrated: false, deferred: true, reason: error.code, reasons: [...inspected.reasons], state: inspected.state };
+      throw error;
+    }
+  }
   function totalCups(state = read()) { return Number(state.legacyCups || 0) + Object.values(state.cupsBySeason || {}).reduce((sum, count) => sum + Number(count || 0), 0); }
   function defaultCupSelection(state, amount) { let remaining=Math.max(0,Math.floor(Number(amount)||0)); const selection={}; const order=Object.entries(state.cupsBySeason||{}).sort((a,b)=>Number(b[1])-Number(a[1])||SEASON_IDS.indexOf(a[0])-SEASON_IDS.indexOf(b[0])||a[0].localeCompare(b[0])); for(const[id,count]of order){const used=Math.min(remaining,Math.max(0,Math.floor(Number(count)||0)));selection[id]=used;remaining-=used;} return selection; }
   function validateCupSelection(state, selection, required) { if(!selection||typeof selection!=="object"||Array.isArray(selection))return false; let total=0; for(const[id,raw]of Object.entries(selection)){const amount=Number(raw); if(!Object.prototype.hasOwnProperty.call(state.cupsBySeason||{},id)||!Number.isInteger(amount)||amount<0||amount>Number(state.cupsBySeason[id]||0))return false; total+=amount;} return total===Math.max(0,Math.floor(Number(required)||0)); }
@@ -74,6 +110,6 @@
   function resolvePlayer(player, level, database) { return global.InazumaProgression.getPlayerAtLevel(player, level, database, permanentOptions(player)); }
   function evolve({ playerId, playerName, basePotential, unlocked, freeAgentEligible, cupSelection }) { if (!unlocked) return {ok:false,reason:"locked"}; if (!freeAgentEligible) return {ok:false,reason:"not_free_agent"}; const state=read(), id=String(playerId), currentPotential=Math.max(Number(basePotential)||0,Number(state.players[id]?.permanentTargetPotential)||0), currentRarity=global.InazumaProgression?.categoryForPotential?.(currentPotential)||RARITIES.filter(r=>threshold(r)<=currentPotential).at(-1), target=nextRarity(currentRarity); if(!target)return{ok:false,reason:"max"}; const cost=COSTS[target], missing={coins:Math.max(0,cost.coins-state.coins),cups:Math.max(0,cost.cups-totalCups(state)),projects:Math.max(0,cost.projects-(state.projects[target]||0))}; if(Object.values(missing).some(Boolean))return{ok:false,reason:"resources",missing}; if(!validateCupSelection(state,cupSelection,cost.cups))return{ok:false,reason:"cup_selection"}; const next=normalize(state); next.coins-=cost.coins; consumeSelectedCups(next,cupSelection,cost.cups); if(cost.projects)next.projects[target]-=cost.projects; const targetPotential=Math.max(currentPotential,threshold(target)), timestamp=new Date().toISOString(); next.players[id]={permanentTargetPotential:targetPotential,permanentPotentialBoost:Math.max(0,targetPotential-Number(basePotential||0)),currentPermanentRarity:target,evolutionCount:Number(next.players[id]?.evolutionCount||0)+1,updatedAt:timestamp}; next.evolutionHistory.unshift({id:`evo_${Date.now()}_${id}`,playerId:id,playerNameSnapshot:playerName||id,fromRarity:currentRarity,toRarity:target,fromPotential:currentPotential,toPotential:targetPotential,projectsConsumed:cost.projects,cupsConsumed:cost.cups,cupsConsumedBySource:Object.fromEntries(Object.entries(cupSelection).filter(([,n])=>n>0)),coinsConsumed:cost.coins,timestamp}); return {ok:true,state:write(next),target,targetPotential}; }
   function reset(){return write(empty());}
-  global.DevelopmentV2={STORAGE_KEY,SCHEMA_VERSION,SEASON_IDS,RARITIES,PROJECT_RARITIES,PROJECT_PRICES,COSTS,ASSETS,DEVELOPMENT_RESOURCE_ASSETS,read,write,reset,totalCups,defaultCupSelection,validateCupSelection,consumeSelectedCups,processRunEnd,purchaseProject,purchaseEmblem,addCompletedProject,nextRarity,threshold,groupEvolutionHistory,playerUpgrade,optionsFromUpgrade,permanentOptions,resolvePlayer,evolve};
+  global.DevelopmentV2={STORAGE_KEY,SCHEMA_VERSION,SEASON_IDS,RARITIES,PROJECT_RARITIES,PROJECT_PRICES,COSTS,ASSETS,DEVELOPMENT_RESOURCE_ASSETS,read,migrationStatus,migrateStoredState,write,reset,totalCups,defaultCupSelection,validateCupSelection,consumeSelectedCups,processRunEnd,purchaseProject,purchaseEmblem,addCompletedProject,nextRarity,threshold,groupEvolutionHistory,playerUpgrade,optionsFromUpgrade,permanentOptions,resolvePlayer,evolve};
   if(typeof module!=="undefined"&&module.exports)module.exports=global.DevelopmentV2;
 })(typeof globalThis!=="undefined"?globalThis:window);
