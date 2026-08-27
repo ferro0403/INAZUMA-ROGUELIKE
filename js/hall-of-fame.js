@@ -10,7 +10,7 @@
   function nowIso() { return new Date().toISOString(); }
   function stableId(key) { return `hall_${String(key || "unknown").replace(/[^a-zA-Z0-9_-]+/g, "_").replace(/^_+|_+$/g, "")}`; }
   function archiveKeyFor(snapshot) { return [snapshot.runId, snapshot.modeId, snapshot.seasonId, snapshot.finalBossId].map((part) => String(part || "unknown")).join("::"); }
-  function emptyArchive() { return { schemaVersion: ARCHIVE_SCHEMA_VERSION, updatedAt: nowIso(), teams: [], index: [] }; }
+  function emptyArchive() { return { schemaVersion: ARCHIVE_SCHEMA_VERSION, updatedAt: null, teams: [], index: [] }; }
   function isQuotaError(error) {
     return !!error && (error.name === "QuotaExceededError" || error.name === "NS_ERROR_DOM_QUOTA_REACHED" || Number(error.code) === 22 || Number(error.code) === 1014);
   }
@@ -93,7 +93,7 @@
       return true;
     });
     teams.sort((a, b) => String(b.victoryDate || "").localeCompare(String(a.victoryDate || "")));
-    return { schemaVersion: ARCHIVE_SCHEMA_VERSION, updatedAt: archive.updatedAt || nowIso(), teams, index: teams.map(lightSummary) };
+    return { schemaVersion: ARCHIVE_SCHEMA_VERSION, updatedAt: archive.updatedAt ?? null, teams, index: teams.map(lightSummary) };
   }
   function parse(raw) { return sanitizeArchive(raw ? JSON.parse(raw) : emptyArchive()); }
   function loadArchive() {
