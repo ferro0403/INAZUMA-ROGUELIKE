@@ -1224,7 +1224,7 @@
     const database = team.freeAgents ? freeAgentsDb : seasonDb;
     const albumProgressState = global.AlbumProgress.read();
     const unlocked = global.AlbumProgress.unlockedSet(collectionId, albumProgressState);
-    const developmentState = global.DevelopmentV2.read();
+    const developmentState = global.DevelopmentAccountV3.readCompatibility();
     const rawById = new Map(rawPlayers.map((player) => [String(player.playerId), player]));
     const resolvedById = new Map();
     const progress = { unlocked: rawPlayers.filter((player) => unlocked.has(String(player.playerId))).length, total: rawPlayers.length };
@@ -1604,7 +1604,7 @@
     const collections = Object.keys(global.AlbumProgress.ALBUM_COLLECTIONS);
     const progress = global.AlbumProgress.read();
     const unlockedByCollection = new Map(collections.map((collectionId) => [collectionId, global.AlbumProgress.unlockedSet(collectionId, progress)]));
-    const developmentState = global.DevelopmentV2.read();
+    const developmentState = global.DevelopmentAccountV3.readCompatibility();
     const freeAgentIds = eligibleFreeAgentIds();
     const seen = new Set();
     return (freeAgentsDb?.players || []).flatMap((player) => {
@@ -1751,7 +1751,7 @@
   }
 
   function developmentSelectedMarkup(player) {
-    const state = global.DevelopmentV2.read();
+    const state = global.DevelopmentAccountV3.read();
     const target = global.DevelopmentV2.nextRarity(player.category);
     const selectedCard = `<div class="development-selected-card">${developmentSquadCardMarkup(player, `data-development-selected-card="${escapeHtml(player.playerId)}" aria-label="Apri la scheda di ${escapeHtml(player.name)}"`)}</div>`;
     if (!target) return `<section class="development-selected development-squad-card-scope"><p class="eyebrow">GIOCATORE SELEZIONATO</p><div class="development-selected-layout">${selectedCard}<div class="development-selected-copy"><h2>${escapeHtml(player.name)}</h2><p class="development-max-copy">MAX · RARITÀ MASSIMA</p><button class="btn btn-ghost" id="change-development-player">CAMBIA GIOCATORE</button></div></div></section>`;
@@ -1770,7 +1770,7 @@
 
   function renderDevelopmentCenter(tab = "players") {
     if (!global.RestoreGameplayRoutingGate?.enter("development")) return false;
-    const state = global.DevelopmentV2.read(); const players = cachedDevelopmentPlayers();
+    const state = global.DevelopmentAccountV3.readCompatibility(); const players = cachedDevelopmentPlayers();
     const selectedIndex = players.find((player) => String(player.playerId) === String(ui.selectedDevelopmentPlayerId));
     const selected = resolveDevelopmentPlayer(selectedIndex);
     if (ui.selectedDevelopmentPlayerId && !selected) ui.selectedDevelopmentPlayerId = null;
@@ -1824,7 +1824,7 @@
     const after = { ...rawPlayer, basePotential, ...preview, overall: preview.overall, finalOverall: preview.overall, displayLevel: Number(rawPlayer.maxLevel || 20), albumDatabase: freeAgentsDb };
     const statChanges = Object.entries(STAT_LABELS).flatMap(([stat, label]) => { const before = Number(player.stats?.[stat] || 0), next = Number(after.stats?.[stat] || 0), delta = next - before; return delta > 0 ? [{ label, before, next, delta }] : []; });
     const statsMarkup = statChanges.map(({ label, before, next, delta }) => `<li><strong>${escapeHtml(label)}</strong><span>${escapeHtml(before)} <b aria-hidden="true">→</b> ${escapeHtml(next)}</span><em>+${escapeHtml(delta)}</em></li>`).join("");
-    const wallet=global.DevelopmentV2.read(), cupLabels={ie1:"IE1",ie1_s2:"IE2",ie1_s3:"IE3",ie2:"ARES",orion:"ORION"}, cupSelection=global.DevelopmentV2.defaultCupSelection(wallet,cost.cups);
+    const wallet=global.DevelopmentAccountV3.read(), cupLabels={ie1:"IE1",ie1_s2:"IE2",ie1_s3:"IE3",ie2:"ARES",orion:"ORION"}, cupSelection=global.DevelopmentV2.defaultCupSelection(wallet,cost.cups);
     const cupRows=global.DevelopmentV2.SEASON_IDS.filter((id)=>Number(wallet.cupsBySeason[id]||0)>0).map((id)=>`<div class="development-cup-row"><img src="${escapeHtml(global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.cupsBySeason[id])}" alt=""><strong>${escapeHtml(cupLabels[id]||id)}</strong><button type="button" data-cup-minus="${escapeHtml(id)}" aria-label="Rimuovi Coppa ${escapeHtml(cupLabels[id]||id)}">−</button><b data-cup-count="${escapeHtml(id)}">${escapeHtml(cupSelection[id]||0)}</b><button type="button" data-cup-plus="${escapeHtml(id)}" aria-label="Aggiungi Coppa ${escapeHtml(cupLabels[id]||id)}">+</button></div>`).join("");
     openModal(`<div class="development-detail development-confirm"><p class="eyebrow">CONFERMA EVOLUZIONE</p><h2>${escapeHtml(player.name)}</h2><div class="development-evolution-preview development-squad-card-scope"><div><small>ATTUALE · ${escapeHtml(player.category)} · OVR ${escapeHtml(player.overall)}</small>${developmentSquadCardMarkup(player)}</div><span class="development-evolution-arrow" aria-hidden="true">→</span><div><small>NUOVA · ${escapeHtml(after.category)} · OVR ${escapeHtml(after.overall)}</small>${developmentSquadCardMarkup(after)}</div></div><section class="development-stat-increases"><h3>AUMENTO STATISTICHE</h3><ul>${statsMarkup || "<li><span>Nessuna statistica cambia.</span></li>"}</ul></section><h3 class="development-confirm-requirements-title">REQUISITI</h3><div class="development-confirm-costs">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, required: cost.projects, compact: true })}<section class="development-cup-selector"><h4>COPPE RICHIESTE: ${escapeHtml(cost.cups)}</h4>${cupRows}<p data-cup-total></p></section>${resourceCostMarkup({ type: "coins", label: "Monete", required: cost.coins, compact: true })}</div><div class="button-row"><button class="btn btn-ghost" id="back-evolution">ANNULLA</button><button class="btn btn-yellow" id="confirm-evolution">CONFERMA EVOLUZIONE</button></div></div>`, { closeable: false, className: "development-confirm-modal" });
     document.getElementById("back-evolution").onclick = closeModal;
@@ -1835,9 +1835,9 @@
     let submitting = false;
     confirmButton.onclick = (event) => {
       if (submitting) return; submitting = true; event.currentTarget.disabled = true;
-      const result = global.DevelopmentV2.evolve({ playerId: rawPlayer.playerId, playerName: rawPlayer.name, basePotential, unlocked: isDevelopmentPlayerUnlocked(player), freeAgentEligible: isDevelopmentFreeAgentEligible(player.playerId), cupSelection });
-      if (!result.ok) { submitting = false; closeModal(); toast(result.reason === "not_free_agent" ? "Giocatore non eleggibile: non è svincolato" : "Risorse cambiate: evoluzione non completata"); return renderDevelopmentCenter("players"); }
-      const written = global.DevelopmentV2.playerUpgrade(rawPlayer.playerId);
+      const result = global.DevelopmentAccountV3.evolve({ playerId: rawPlayer.playerId, basePlayer: rawPlayer, unlocked: isDevelopmentPlayerUnlocked(player), freeAgentEligible: isDevelopmentFreeAgentEligible(player.playerId), cupSelection }, { database: freeAgentsDb });
+      if (!result.ok) { submitting = false; closeModal(); toast(result.reason === "not_free_agent" ? "Giocatore non eleggibile: non è svincolato" : result.reason === "rarity-capacity-full" ? `Slot ${result.rarity} esauriti (${result.used}/${result.capacity}).` : "Risorse cambiate: evoluzione non completata"); return renderDevelopmentCenter("players"); }
+      const written = global.DevelopmentAccountV3.readCompatibility().players[String(rawPlayer.playerId)];
       const writeIsCurrent = written?.currentPermanentRarity === result.target && Number(written.permanentTargetPotential) >= Number(global.DevelopmentV2.threshold(result.target)) && Number(written.evolutionCount) > 0;
       if (!writeIsCurrent) { submitting = false; closeModal(); toast("Evoluzione non salvata: stato non coerente"); return renderDevelopmentCenter("players"); }
       developmentPlayersCache = null;
@@ -1851,7 +1851,7 @@
 
   async function renderShop(section = "general") {
     await Promise.all(global.SeasonRegistry.list().map((season) => global.SeasonRegistry.loadDatabase(season.id)));
-    const state = global.DevelopmentV2.read(), catalog = global.ShopCatalog.build();
+    const state = global.DevelopmentAccountV3.read(), catalog = global.ShopCatalog.build();
     const tabs = [["general","GENERALE"],["ie1","IE1"],["ie1_s2","IE2"],["ie1_s3","IE3"],["ie2","ARES"],["orion","ORION"]];
     const cupLabels = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES", orion: "ORION" };
     const cupNames = { ie1: "Sun Pendant", ie1_s2: "Alius Crystal", ie1_s3: "Meteor Necklace", ie2: "Challenger's Necklace", orion: "Comet Pendant" };
@@ -1865,15 +1865,15 @@
     app.innerHTML = `<main class="shop-screen"><header class="shop-header"><button class="shop-back" aria-label="Torna alla Home">←</button><div><p class="eyebrow">RICOMPENSE PERMANENTI</p><h1>NEGOZIO</h1></div></header><section class="shop-wallet"><div class="shop-coins">${developmentCurrencyIcon("coins")}<span><small>MONETE</small><b>${state.coins}</b></span></div><div class="shop-cups">${wallet}${state.legacyCups ? `<span><small>LEGACY</small><b>${state.legacyCups}</b></span>` : ""}</div></section><nav class="shop-tabs" aria-label="Seleziona Season">${tabs.map(([id,label]) => `<button class="${id === section ? "active" : ""}" data-shop-tab="${id}" aria-current="${id === section ? "page" : "false"}">${label}</button>`).join("")}</nav>${section === "general" ? `<section class="shop-grid">${products}</section>` : `<div class="shop-catalog">${products}</div>`}${DEV_MODE ? shopDevMarkup() : ""}</main>`;
     document.querySelector(".shop-back").onclick = renderHome;
     document.querySelectorAll("[data-shop-tab]").forEach((button) => button.onclick = () => renderShop(button.dataset.shopTab));
-    document.querySelectorAll("[data-buy-project]").forEach((button) => button.onclick = () => { const result = global.DevelopmentV2.purchaseProject(button.dataset.buyProject); toast(result.ok ? "PROGETTO ACQUISTATO" : result.reason === "coins" ? "MONETE INSUFFICIENTI" : "ACQUISTO NON SALVATO"); renderShop(section); });
-    document.querySelectorAll("[data-buy-emblem]").forEach((button) => button.onclick = () => { const product = catalog.find((item) => item.emblemId === button.dataset.buyEmblem), result = global.DevelopmentV2.purchaseEmblem(product); toast(result.ok ? "STEMMA SBLOCCATO" : result.reason === "cups" ? "COPPE SEASON INSUFFICIENTI" : result.reason === "coins" ? "MONETE INSUFFICIENTI" : "STEMMA GIÀ POSSEDUTO"); renderShop(section); });
+    document.querySelectorAll("[data-buy-project]").forEach((button) => button.onclick = () => { const result = global.DevelopmentAccountV3.purchaseProject(button.dataset.buyProject); toast(result.ok ? "PROGETTO ACQUISTATO" : result.reason === "coins" ? "MONETE INSUFFICIENTI" : "ACQUISTO NON SALVATO"); renderShop(section); });
+    document.querySelectorAll("[data-buy-emblem]").forEach((button) => button.onclick = () => { const product = catalog.find((item) => item.emblemId === button.dataset.buyEmblem), result = global.DevelopmentAccountV3.purchaseEmblem(product); toast(result.ok ? "STEMMA SBLOCCATO" : result.reason === "cups" ? "COPPE SEASON INSUFFICIENTI" : result.reason === "coins" ? "MONETE INSUFFICIENTI" : "STEMMA GIÀ POSSEDUTO"); renderShop(section); });
     if (DEV_MODE) bindShopDev(section, catalog);
   }
 
   function renderSettings(options = {}) {
     const selectingEmblem = options?.view === "emblems";
     const identity = savedTeamIdentity() || normalizeTeamIdentity({});
-    const owned = new Set(global.DevelopmentV2.read().unlockedEmblems || []);
+    const owned = new Set(global.DevelopmentAccountV3.read().unlockedEmblems || []);
     const catalog = global.ShopCatalog.build().filter((item) => owned.has(item.emblemId));
     const choices = [{ emblemId: "default-lightning", name: "Inazuma Lightning", seasonId: "default" }, ...catalog];
     const current = global.TeamEmblems.resolveTeamEmblem({ teamIdentity: identity, fallbackKind: "user" });
@@ -1892,13 +1892,13 @@
   }
 
   function shopDevMarkup() { const cupLabels = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES", orion: "ORION" }; return `<section class="shop-dev"><h2>NEGOZIO — HACK TEST</h2><button data-shop-prepare>PREPARA TEST NEGOZIO</button><div class="shop-dev-grid">${[1000,5000].map((n) => `<button data-shop-coins="${n}">+${n} MONETE</button>`).join("")}${global.DevelopmentV2.SEASON_IDS.flatMap((id) => [1,5].map((n) => `<button data-shop-cups="${id}" data-amount="${n}">+${n} COPPA ${cupLabels[id]}</button>`)).join("")}${global.DevelopmentV2.PROJECT_RARITIES.map((rarity) => `<button data-shop-project="${rarity}">+1 PROGETTO ${rarity.toUpperCase()}</button>`).join("")}</div><div class="shop-dev-danger"><button data-shop-unlock>SBLOCCA TUTTI GLI STEMMI</button><button data-shop-remove>RIMUOVI TUTTI GLI STEMMI ACQUISTATI</button><button data-shop-reset>RESET RISORSE SHOP</button></div></section>`; }
-  function bindShopDev(section, catalog) { const mutate = (callback) => { const state = global.DevelopmentV2.read(); callback(state); global.DevelopmentV2.write(state); renderShop(section); }; document.querySelectorAll("[data-shop-coins]").forEach((button) => button.onclick = () => mutate((state) => { state.coins += Number(button.dataset.shopCoins); })); document.querySelectorAll("[data-shop-cups]").forEach((button) => button.onclick = () => mutate((state) => { const id = button.dataset.shopCups; state.cupsBySeason[id] += Number(button.dataset.amount); })); document.querySelectorAll("[data-shop-project]").forEach((button) => button.onclick = () => mutate((state) => { state.projects[button.dataset.shopProject] += 1; })); document.querySelector("[data-shop-prepare]")?.addEventListener("click", () => mutate((state) => { state.coins = Math.max(state.coins, 10000); global.DevelopmentV2.SEASON_IDS.forEach((id) => { state.cupsBySeason[id] = Math.max(state.cupsBySeason[id], 5); }); })); document.querySelector("[data-shop-unlock]")?.addEventListener("click", () => mutate((state) => { state.unlockedEmblems = [...new Set([...state.unlockedEmblems, ...catalog.map((item) => item.emblemId)])]; })); document.querySelector("[data-shop-remove]")?.addEventListener("click", () => mutate((state) => { state.unlockedEmblems = []; })); document.querySelector("[data-shop-reset]")?.addEventListener("click", () => mutate((state) => { state.coins = 0; state.legacyCups = 0; global.DevelopmentV2.SEASON_IDS.forEach((id) => { state.cupsBySeason[id] = 0; }); state.unlockedEmblems = []; })); }
+  function bindShopDev(section, catalog) { const mutate = (callback) => { global.DevelopmentAccountV3.mutate(callback); renderShop(section); }; document.querySelectorAll("[data-shop-coins]").forEach((button) => button.onclick = () => mutate((state) => { state.coins += Number(button.dataset.shopCoins); })); document.querySelectorAll("[data-shop-cups]").forEach((button) => button.onclick = () => mutate((state) => { const id = button.dataset.shopCups; state.cupsBySeason[id] += Number(button.dataset.amount); })); document.querySelectorAll("[data-shop-project]").forEach((button) => button.onclick = () => mutate((state) => { state.projects[button.dataset.shopProject] += 1; })); document.querySelector("[data-shop-prepare]")?.addEventListener("click", () => mutate((state) => { state.coins = Math.max(state.coins, 10000); global.DevelopmentV2.SEASON_IDS.forEach((id) => { state.cupsBySeason[id] = Math.max(state.cupsBySeason[id], 5); }); })); document.querySelector("[data-shop-unlock]")?.addEventListener("click", () => mutate((state) => { state.unlockedEmblems = [...new Set([...state.unlockedEmblems, ...catalog.map((item) => item.emblemId)])]; })); document.querySelector("[data-shop-remove]")?.addEventListener("click", () => mutate((state) => { state.unlockedEmblems = []; })); document.querySelector("[data-shop-reset]")?.addEventListener("click", () => mutate((state) => { state.coins = 0; global.DevelopmentV2.SEASON_IDS.forEach((id) => { state.cupsBySeason[id] = 0; }); state.unlockedEmblems = []; })); }
 
   function developmentDevMarkup(eligibleCount = developmentPlayers().length) { return `<section class="development-dev"><h2>SVILUPPO — HACK TEST</h2><p><strong>SVINCOLATI ELEGGIBILI: ${escapeHtml(eligibleCount)}</strong></p><div>${[100,500,1500].map(n=>`<button data-dev-coins="${n}">+${n} MONETE</button>`).join("")}${global.DevelopmentV2.SEASON_IDS.map(id=>`<button data-dev-season-cup="${id}">+1 COPPA ${id.toUpperCase()}</button>`).join("")}${global.DevelopmentV2.PROJECT_RARITIES.map(r=>`<button data-dev-complete-project="${r}">+1 PROGETTO ${r.toUpperCase()}</button>`).join("")}</div><button id="dev-unlock-free-agents">SBLOCCA TUTTI GLI SVINCOLATI</button><button id="dev-reset">RESET SVILUPPO TEST</button></section>`; }
   function bindDevelopmentDev() {
-    document.querySelectorAll("[data-dev-coins]").forEach(b=>b.onclick=()=>{const s=global.DevelopmentV2.read();s.coins+=Number(b.dataset.devCoins);global.DevelopmentV2.write(s);renderDevelopmentCenter();});
-    document.querySelectorAll("[data-dev-season-cup]").forEach(b=>b.onclick=()=>{const s=global.DevelopmentV2.read(),id=b.dataset.devSeasonCup;s.cupsBySeason[id]=(s.cupsBySeason[id]||0)+1;global.DevelopmentV2.write(s);renderDevelopmentCenter();});
-    document.querySelectorAll("[data-dev-complete-project]").forEach(b=>b.onclick=()=>{global.DevelopmentV2.addCompletedProject(b.dataset.devCompleteProject);renderDevelopmentCenter("projects");});
+    document.querySelectorAll("[data-dev-coins]").forEach(b=>b.onclick=()=>{global.DevelopmentAccountV3.mutate(s=>{s.coins+=Number(b.dataset.devCoins);});renderDevelopmentCenter();});
+    document.querySelectorAll("[data-dev-season-cup]").forEach(b=>b.onclick=()=>{const id=b.dataset.devSeasonCup;global.DevelopmentAccountV3.mutate(s=>{s.cupsBySeason[id]=(s.cupsBySeason[id]||0)+1;});renderDevelopmentCenter();});
+    document.querySelectorAll("[data-dev-complete-project]").forEach(b=>b.onclick=()=>{global.DevelopmentAccountV3.addCompletedProject(b.dataset.devCompleteProject);renderDevelopmentCenter("projects");});
     document.getElementById("dev-unlock-free-agents")?.addEventListener("click",()=>{const ids=[...eligibleFreeAgentIds()];global.AlbumProgress.unlockAlbumPlayers(global.AlbumProgress.DEFAULT_COLLECTION_ID,ids,{source:"development-dev-unlock"});developmentPlayersCache=null;developmentResolvedCache.clear();toast(`${ids.length} svincolati disponibili.`);renderDevelopmentCenter("players");});
     document.getElementById("dev-reset")?.addEventListener("click",()=>{if(confirm("Azzerare solo lo sviluppo?")){global.DevelopmentV2.reset();renderDevelopmentCenter();}});
   }

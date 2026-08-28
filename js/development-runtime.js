@@ -68,6 +68,22 @@
   }
 
   function buildRunSnapshot(options = {}) {
+    const canonical = options.v3State || (!options.v2State && global.DevelopmentAccountV3?.read?.(options.accountOptions));
+    if (record(canonical)) {
+      const validation = global.DevelopmentV3.validate(canonical);
+      if (!validation.valid) throw new DevelopmentSnapshotError("development-v3-snapshot-invalid", validation.errors);
+      const players = {};
+      for (const playerId of Object.keys(canonical.players).sort()) {
+        const chain = canonical.players[playerId], profile = chain.steps.at(-1)?.profile || chain.legacyNormale?.profile;
+        if (!profile) throw new DevelopmentSnapshotError("development-v3-active-profile-missing", [playerId]);
+        players[playerId] = { profile: clone(profile) };
+      }
+      const developmentV3PlayerSnapshot = { schemaVersion: SNAPSHOT_SCHEMA_VERSION, profileFormatVersion: global.DevelopmentV3.PROFILE_FORMAT_VERSION, players };
+      const snapshotValidation = validateSnapshot(developmentV3PlayerSnapshot);
+      if (!snapshotValidation.valid) throw new DevelopmentSnapshotError("development-v3-snapshot-invalid", snapshotValidation.errors);
+      const legacyEnvelope = options.v2Compatibility || global.DevelopmentAccountV3?.projectV2Compatibility?.(canonical, resolveBasePlayer) || { players: {} };
+      return { developmentV3PlayerSnapshot, developmentPlayerSnapshot: clone(legacyEnvelope.players || {}) };
+    }
     const v2State = options.v2State || global.DevelopmentV2?.read?.();
     if (!record(v2State)) throw new DevelopmentSnapshotError("development-v2-read-failed");
     const legacy = clone(record(v2State.players) ? v2State.players : {});
