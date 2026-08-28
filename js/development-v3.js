@@ -192,7 +192,7 @@
         errors.push(...profileErrors(legacy?.profile, `${path}.profile`));
         if (legacy?.profile?.category !== "Normale") errors.push(`${path}.profile.category:mismatch`);
         if (legacy?.profile?.finalOverall !== legacy?.toPotential) errors.push(`${path}.profile.finalOverall:mismatch`);
-        if (record(legacy) && forbidden.some((key) => own(legacy, key) || own(legacy.profile, key))) errors.push(`${path}:duplicated-identity`);
+        if (record(legacy) && forbidden.some((key) => own(legacy, key) || (record(legacy.profile) && own(legacy.profile, key)))) errors.push(`${path}:duplicated-identity`);
         const receipt = legacy?.receipt;
         if (!record(receipt) || !integer(receipt.coinsConsumed) || !integer(receipt.cupsConsumed) || !integer(receipt.projectsConsumed) || !record(receipt.cupsConsumedBySource) || Object.values(receipt.cupsConsumedBySource).some((value) => !integer(value)) || Object.values(receipt.cupsConsumedBySource || {}).reduce((sum, value) => sum + value, 0) !== receipt?.cupsConsumed) errors.push(`${path}.receipt:invalid`);
         if (chain.steps[0] && (chain.steps[0].fromRarity !== "Normale" || chain.steps[0].fromPotential !== legacy?.toPotential)) errors.push(`${path}:first-step-discontinuous`);

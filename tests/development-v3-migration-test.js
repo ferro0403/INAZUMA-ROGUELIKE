@@ -117,6 +117,32 @@ function gameplay(resolved) { return { level: resolved.level, overall: resolved.
   const state = canonical(); addChain(state, "normale", [["Normale", "Buono", 70, 75]]); assert.equal(Migration.convertState({ v2State: state, resolveBasePlayer: () => null, database, progression, DevelopmentV2, DevelopmentV3 }).ok, false);
 }
 
+// Persisted/cloud validation is total: malformed legacyNormale children are
+// validation errors, never exceptions, and normalize/validate remain pure and
+// deterministic for the same malformed input.
+{
+  const malformedValues = [
+    { profile: null },
+    { profile: 7 },
+    { receipt: null },
+    { profile: null, name: "duplicated identity shape" },
+  ];
+  for (const overrides of malformedValues) {
+    const raw = DevelopmentV3.empty();
+    raw.players.malformed = { legacyNormale: {
+      migrationId: "legacy-malformed", fromRarity: "Debole", fromPotential: 66, toPotential: 70,
+      profile: {}, receipt: { coinsConsumed: 0, cupsConsumed: 0, cupsConsumedBySource: {}, projectsConsumed: 0 }, ...overrides,
+    }, steps: [] };
+    const before = JSON.stringify(raw);
+    let first, second;
+    assert.doesNotThrow(() => { first = DevelopmentV3.validate(raw); second = DevelopmentV3.validate(raw); });
+    assert.equal(first.valid, false); assert.deepStrictEqual(first, second); assert.equal(JSON.stringify(raw), before);
+    const normalizedOne = DevelopmentV3.normalize(raw), normalizedTwo = DevelopmentV3.normalize(raw);
+    assert.deepStrictEqual(normalizedOne, normalizedTwo); assert.equal(JSON.stringify(raw), before);
+    assert.doesNotThrow(() => DevelopmentV3.validate(normalizedOne));
+  }
+}
+
 class Storage {
   constructor() { this.map = new Map(); this.writes = 0; this.onRead = null; }
   getItem(key) { const value = this.map.has(key) ? this.map.get(key) : null; if (this.onRead) this.onRead(key); return value; }
@@ -153,6 +179,32 @@ withStored(JSON.stringify(canonical()), ({ storage, counts }) => {
   const result = Migration.migrateStoredState({ ...storedOptions, resolveBasePlayer: resolver }); assert.equal(result.reason, "development-v3-migration-stale"); assert.deepStrictEqual(counts(), { reserves: 0, events: 0 });
 });
 
+function shadowedSource({ conflicting = false, malformed = false } = {}) {
+  const source = canonical();
+  const candidate = convert(source).state;
+  if (conflicting) candidate.coins += 1;
+  if (malformed) candidate.players.bad = { legacyNormale: { migrationId: "bad", fromRarity: "Debole", fromPotential: 66, toPotential: 70, profile: null, receipt: null }, steps: [] };
+  source.developmentV3 = candidate;
+  return source;
+}
+
+// The immutable-source proof precedes every existing-shadow decision: stale
+// wins over both idempotence and conflict/future/malformed shadow handling.
+for (const source of [shadowedSource(), shadowedSource({ conflicting: true })]) withStored(JSON.stringify(source), ({ storage, counts }) => {
+  let reads = 0;
+  storage.onRead = (key) => { if (key === DevelopmentV2.STORAGE_KEY && ++reads === 2) storage.map.set(key, `${storage.map.get(key)} `); };
+  const writes = storage.writes, result = Migration.migrateStoredState(storedOptions);
+  assert.equal(result.reason, "development-v3-migration-stale"); assert.equal(storage.writes, writes); assert.deepStrictEqual(counts(), { reserves: 0, events: 0 });
+});
+
+// A malformed existing V3 shadow is rejected normally rather than escaping
+// validate() as an exception.
+withStored(JSON.stringify(shadowedSource({ malformed: true })), ({ storage, counts }) => {
+  const writes = storage.writes; let result;
+  assert.doesNotThrow(() => { result = Migration.migrateStoredState(storedOptions); });
+  assert.equal(result.reason, "development-v3-migration-conflict"); assert.equal(storage.writes, writes); assert.deepStrictEqual(counts(), { reserves: 0, events: 0 });
+});
+
 // P/Q/R and successful single-write semantics, including a raw legacy V2 payload.
 withStored(JSON.stringify({ schemaVersion: 4, coins: 9, cups: 2, projectBuild: { Elite: 3 } }), ({ storage, counts }) => {
   const beforeWrites = storage.writes; const first = Migration.migrateStoredState(storedOptions); assert(first.ok && first.migrated);
@@ -162,6 +214,14 @@ withStored(JSON.stringify({ schemaVersion: 4, coins: 9, cups: 2, projectBuild: {
   const writes = storage.writes, again = Migration.migrateStoredState(storedOptions); assert(again.ok && !again.migrated); assert.equal(storage.writes, writes); assert.deepStrictEqual(counts(), { reserves: 1, events: 1 });
   parsed.developmentV3.coins += 1; storage.map.set(DevelopmentV2.STORAGE_KEY, JSON.stringify(parsed)); assert.equal(Migration.migrateStoredState(storedOptions).reason, "development-v3-migration-conflict");
   parsed.developmentV3.schemaVersion = 99; storage.map.set(DevelopmentV2.STORAGE_KEY, JSON.stringify(parsed)); assert.equal(Migration.migrateStoredState(storedOptions).reason, "development-v3-schema-conflict");
+});
+
+// Caller-provided writeOptions are intentionally ignored: neither readOnly nor
+// suppressCloudEvent can weaken the normal guarded Development write contract.
+for (const writeOptions of [{ readOnly: true }, { restoreOwnershipToken: "foreign", suppressCloudEvent: true }]) withStored(JSON.stringify(canonical()), ({ storage, counts }) => {
+  const writes = storage.writes;
+  const result = Migration.migrateStoredState({ ...storedOptions, writeOptions });
+  assert(result.ok && result.migrated); assert.equal(storage.writes - writes, 1); assert.deepStrictEqual(counts(), { reserves: 1, events: 1 });
 });
 
 // Invalid bytes and missing active base/history perform no Development write.

@@ -141,6 +141,7 @@
     const v2State = DevelopmentV2.read();
     const planned = convertState({ ...options, DevelopmentV2, DevelopmentV3, v2State });
     if (!planned.ok) return { ...planned, migrated: false, deferred: false, reason: planned.blockers[0]?.code || "migration-blocked" };
+    if (global.localStorage?.getItem(DevelopmentV2.STORAGE_KEY) !== sourceRaw) return { ...planned, ok: false, state: null, migrated: false, deferred: true, reason: "development-v3-migration-stale", blockers: [{ code: "development-v3-migration-stale" }] };
     const existing = parsed?.[SHADOW_FIELD];
     if (existing != null) {
       if (!record(existing) || existing.schemaVersion !== DevelopmentV3.SCHEMA_VERSION) return { ...planned, ok: false, state: null, migrated: false, deferred: false, reason: "development-v3-schema-conflict", blockers: [{ code: "development-v3-schema-conflict" }] };
@@ -148,10 +149,9 @@
       if (!validation.valid || stable(DevelopmentV3.normalize(existing)) !== stable(planned.state)) return { ...planned, ok: false, state: null, migrated: false, deferred: false, reason: "development-v3-migration-conflict", blockers: [{ code: "development-v3-migration-conflict" }] };
       return { ...planned, migrated: false, deferred: false, reason: null };
     }
-    if (global.localStorage?.getItem(DevelopmentV2.STORAGE_KEY) !== sourceRaw) return { ...planned, ok: false, state: null, migrated: false, deferred: true, reason: "development-v3-migration-stale", blockers: [{ code: "development-v3-migration-stale" }] };
     const payload = clone(v2State); payload[SHADOW_FIELD] = clone(planned.state);
     try {
-      const committed = DevelopmentV2.write(payload, options.writeOptions || {});
+      const committed = DevelopmentV2.write(payload);
       return { ...planned, migrated: true, deferred: false, reason: null, developmentState: committed };
     } catch (error) {
       if (["restore-recovery-required", "restore-ownership-lost"].includes(error?.code)) return { ...planned, ok: false, state: null, migrated: false, deferred: true, reason: error.code, blockers: [{ code: error.code }] };
