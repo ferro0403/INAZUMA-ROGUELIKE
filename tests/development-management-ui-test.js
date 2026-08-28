@@ -1,0 +1,16 @@
+"use strict";
+const assert = require("assert"), fs = require("fs");
+const app = fs.readFileSync("js/app.js", "utf8"), css = fs.readFileSync("css/game.css", "utf8"), html = fs.readFileSync("index.html", "utf8");
+assert.match(app, /\[\["players","GIOCATORI"\],\["projects","PROGETTI"\],\["management","EVOLUZIONI"\]\]/);
+assert.doesNotMatch(app, /\["history","STORICO"\]/);
+assert.match(app, /const v3State = global\.DevelopmentAccountV3\.read\(\)/);
+assert.match(app, /DevelopmentManagementV3\.buildModel\(\{ state: v3State/);
+assert.doesNotMatch(app, /groupEvolutionHistory/);
+assert.match(app, /GESTIONE EVOLUZIONI/);
+assert.match(app, /data-open-management-player/);
+assert.match(app, /readOnly: true/);
+assert.match(css, /\.development-slot-grid\{display:grid;grid-template-columns:repeat\(5,minmax\(0,1fr\)\)/);
+assert.match(css, /@media\(max-width:700px\)\{\.development-slot-grid\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+assert.match(css, /\.development-management-path>div\{display:flex;align-items:center;flex-wrap:wrap/);
+assert.match(html, /development-management-v3\.js\?v=20260828-development-v3-pr5b-1/);
+console.log("development-management-ui-test: Evoluzioni tab, canonical wiring, action and responsive layout OK");
