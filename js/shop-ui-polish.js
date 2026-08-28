@@ -56,7 +56,7 @@
       cups: 0,
       seasonId: null,
       accent: ({ Buono: "#5a7a69", Forte: "#3487bd", Elite: "#8b48bd", Mondiale: "#a87714", Leggenda: "#c39a1c" })[rarity] || "#4a4b4f",
-      execute() { return global.DevelopmentV2.purchaseProject(rarity); },
+      execute() { return global.DevelopmentAccountV3.purchaseProject(rarity); },
     };
   }
 
@@ -76,7 +76,7 @@
       cups: Number(product.cups || 0),
       seasonId: product.seasonId,
       accent: TIER_ACCENTS[product.rarity] || "#4a4b4f",
-      execute() { return global.DevelopmentV2.purchaseEmblem(product); },
+      execute() { return global.DevelopmentAccountV3.purchaseEmblem(product); },
     };
   }
 

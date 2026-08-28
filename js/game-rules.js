@@ -132,6 +132,16 @@
     };
   }
 
+  // Trade consumes the fully resolved roster player. Potential is the
+  // contract value; current overall is level-dependent presentation only.
+  function tradeOutgoingEffectiveMetadata(resolvedPlayer) {
+    if (!resolvedPlayer) return null;
+    const finalOverall = Number(resolvedPlayer.potential);
+    const position = String(resolvedPlayer.position || resolvedPlayer.normalizedRole || resolvedPlayer.role || "").toUpperCase();
+    if (!String(resolvedPlayer.playerId || "") || !position || !Number.isFinite(finalOverall)) return null;
+    return { playerId: String(resolvedPlayer.playerId), position, finalOverall };
+  }
+
   function getProfileAwareTradeCandidates({ outgoingPlayer, outgoingPlayerId = null, rosterEntries, freeAgents, profiles, unlockedTeamIds, teams, seasonId = "ie1_s2", compareProfileProgression, resolveCandidate = (player) => player }) {
     if (!outgoingPlayer) return [];
     const role = String(outgoingPlayer.position || outgoingPlayer.role || "").toUpperCase();
@@ -236,6 +246,7 @@
     resolveDevelopmentEffectiveMetadata,
     isLegendaryEffectivePlayer,
     resolveTradeCandidateOutcome,
+    tradeOutgoingEffectiveMetadata,
     getProfileAwareTradeCandidates,
     executeProfileAwareTrade,
     applyEquipment,

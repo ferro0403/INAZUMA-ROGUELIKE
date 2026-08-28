@@ -39,8 +39,9 @@
   function apply(effect, apis) {
     if (effect.type === TYPES.ALBUM) return { ok: apis.AlbumProgress.unlockAlbumPlayer(effect.payload.collectionId, effect.payload.playerId, { source: effect.payload.source, applicationKey: effect.id }) !== undefined };
     if (effect.type === TYPES.DEVELOPMENT) {
-      const result = apis.DevelopmentV2.processRunEnd(effect.payload);
-      const redeemed = result?.state?.redeemedRunIds?.includes(effect.payload.runId) || apis.DevelopmentV2.read().redeemedRunIds.includes(effect.payload.runId);
+      const account = apis.DevelopmentAccountV3 || global.DevelopmentAccountV3 || apis.DevelopmentV2;
+      const result = account.processRunEnd(effect.payload);
+      const redeemed = result?.state?.redeemedRunIds?.includes(effect.payload.runId) || account.read().redeemedRunIds.includes(effect.payload.runId);
       return { ok: redeemed, result };
     }
     if (effect.type === TYPES.HALL) {
