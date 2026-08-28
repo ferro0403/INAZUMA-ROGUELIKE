@@ -118,7 +118,7 @@ for (const [role, playerId, target] of compactCases) {
     const second = DevelopmentV3.normalize(raw);
     assert.equal(JSON.stringify(raw), before, "normalization does not mutate its input");
     assert.deepStrictEqual(first, second, "normalization is deterministic");
-    assert.deepStrictEqual(first.players.adam, { steps: [] });
+    assert.deepStrictEqual(first.players.adam, { legacyNormale: null, steps: [] });
     assert(!JSON.stringify(first).includes("createdAt"));
   } finally {
     if (previous === undefined) delete global.localStorage;
