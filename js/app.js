@@ -707,12 +707,7 @@
     if (!player && !profileAware) return null;
     const resolved = profileAware
       ? global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(entry, { seasonId: currentRun.seasonId, database })
-      : global.InazumaProgression.getPlayerAtLevel(
-      player,
-      Math.floor(Number(entry.level || 0)),
-      database,
-      { potentialBoost: entry.potentialBoost, currentOverallBoost: entry.currentOverallBoost, potentialBoostApplications: entry.potentialBoostApplications }
-    );
+      : global.DevelopmentRuntime.resolveRosterPlayer(currentRun, player, entry, database);
     const effectiveStats = global.RoguelikeRules.applyEquipment(resolved.stats, entry.equippedItem);
     return {
       ...resolved,
@@ -928,9 +923,8 @@
     const database = options.database || freeAgentsDb;
     const level = Number(options.level ?? 0);
     const pullSelection = options.context === "pull";
-    const snapshotOptions = global.DevelopmentV2.optionsFromUpgrade(player, run?.developmentPlayerSnapshot?.[String(player.playerId)]);
     const resolved = options.resolvedPlayer || (options.applyPermanent
-      ? global.InazumaProgression.getPlayerAtLevel(player, Math.floor(level), database, snapshotOptions)
+      ? global.DevelopmentRuntime.resolvePlayer(run, player, Math.floor(level), database)
       : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(level), database));
     const tag = options.button ? "button" : "article";
     const playerDataAttribute = options.dataAttribute || "data-player-id";
@@ -960,7 +954,7 @@
   }
 
   function permanentRosterFields(player) {
-    return { ...global.DevelopmentV2.optionsFromUpgrade(player, run?.developmentPlayerSnapshot?.[String(player?.playerId)]), intensiveTrainingMigrated: true };
+    return global.DevelopmentRuntime.rosterEntryPermanentFields(run, player);
   }
 
   function teamLogoMarkup(teamIdentity) {
@@ -3197,10 +3191,9 @@
   function tradeCandidatePreview(incoming, entry) {
     if (incoming.profileId) return global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(entry || { playerId: incoming.playerId, activeProfileId: incoming.profileId, activeRoleVariantId: incoming.activeRoleVariantId, level: 0, levelUnits: 0 }, { run, seasonId: run.seasonId, database: seasonDb });
     const level = Number(entry?.level || 0);
-    const effectiveEntry = incoming.source === "free_agents"
-      ? { ...permanentRosterFields(incoming.player), ...(entry || {}) }
-      : (entry || {});
-    return global.InazumaProgression.getPlayerAtLevel(incoming.player, Math.floor(level), freeAgentsDb, effectiveEntry);
+    return incoming.source === "free_agents"
+      ? global.DevelopmentRuntime.resolveRosterPlayer(run, incoming.player, { ...permanentRosterFields(incoming.player), ...(entry || {}) }, freeAgentsDb)
+      : global.InazumaProgression.getPlayerAtLevel(incoming.player, Math.floor(level), freeAgentsDb, entry || {});
   }
 
   function roleVariantForTradeUpgrade(entry, profile) {
@@ -3233,10 +3226,10 @@
           seasonId: run.seasonId,
           compareProfileProgression: global.ProfiledSeasonRuntime.compareProfileProgression,
           resolveCandidate: (player, source) => source === "free_agents"
-            ? global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, run.developmentPlayerSnapshot)
+            ? global.DevelopmentRuntime.resolveEffectiveMetadata(run, player, freeAgentsDb)
             : player,
         })
-      : global.RoguelikeRules.getTradeCandidates({ outgoingPlayer: outgoingBase, rosterIds: run.roster.map((entry) => entry.playerId), freeAgents: freeAgentsDb.players, seasonPlayers: seasonDb.players, unlockedTeamIds: run.unlockedTeamIds, teams: seasonDb.teams, resolveCandidate: (player, source) => source === "free_agents" ? global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, run.developmentPlayerSnapshot) : player });
+      : global.RoguelikeRules.getTradeCandidates({ outgoingPlayer: outgoingBase, rosterIds: run.roster.map((entry) => entry.playerId), freeAgents: freeAgentsDb.players, seasonPlayers: seasonDb.players, unlockedTeamIds: run.unlockedTeamIds, teams: seasonDb.teams, resolveCandidate: (player, source) => source === "free_agents" ? global.DevelopmentRuntime.resolveEffectiveMetadata(run, player, freeAgentsDb) : player });
     if (!candidates.length) {
       toast(`Nessun ${outgoingBase.position} con finalOverall ${outgoingBase.finalOverall} o superiore disponibile`);
       return resolveTradeNode(node);
@@ -3298,7 +3291,7 @@
             return base ? { ...base, finalOverall: global.InazumaProgression.effectivePotential(base, entry) } : null;
           },
           resolveIncomingCandidate: (player, source) => source === "free_agents"
-            ? global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, current.developmentPlayerSnapshot)
+            ? global.DevelopmentRuntime.resolveEffectiveMetadata(current, player, freeAgentsDb)
             : player,
         });
         if (!result.player) throw Object.assign(new Error("Offerta non più valida"), { code: "trade-invalid" });
@@ -3412,7 +3405,7 @@
     const legendaryById = new Map();
     const legendarySources = new Map();
     freeAgentsDb.players
-      .filter((player) => global.RoguelikeRules.isLegendaryEffectivePlayer(player, global.SEASON1_CONFIG.legendaryCategories, run.developmentPlayerSnapshot))
+      .filter((player) => global.SEASON1_CONFIG.legendaryCategories.includes(global.DevelopmentRuntime.resolveEffectiveMetadata(run, player, freeAgentsDb).category))
       .forEach((player) => {
         legendaryById.set(String(player.playerId), { ...player, pullCandidateKind: "free_agent" });
         legendarySources.set(String(player.playerId), "free_agents");
@@ -3656,10 +3649,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   function resolvePullChoicePlayer(options, player) {
     const level = Math.floor(Number(options.level || 0));
     const database = pullChoiceDatabase(options, player);
-    const developmentSnapshot = run?.developmentPlayerSnapshot || {};
-    const developmentOptions = global.DevelopmentV2.optionsFromUpgrade(player, developmentSnapshot[String(player.playerId)]);
-    const resolved = global.InazumaProgression.getPlayerAtLevel(player, level, database, developmentOptions);
-    const effectiveMetadata = global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, developmentSnapshot);
+    const resolved = global.DevelopmentRuntime.resolvePlayer(run, player, level, database);
+    const effectiveMetadata = global.DevelopmentRuntime.resolveEffectiveMetadata(run, player, database);
     return { ...resolved, category: effectiveMetadata.category, baseStats: resolved.stats };
   }
 

@@ -54,6 +54,12 @@ function load(storage, options = {}) {
   c.RoguelikeRules = { defeatedBossRewardLevel: boss => Number(boss?.bossLevel || 1), resolveDevelopmentEffectiveMetadata: () => ({}), applyEquipment: stats => stats };
   c.RecruitmentPoolRuntime = { choiceDatabase: (_source, db) => db };
   c.InazumaProgression = { getPlayerAtLevel: player => ({ ...player, stats: player?.stats || {}, baseStats: player?.stats || {}, category: player?.category || "Normale", overall: player?.overall || 50 }) };
+  c.DevelopmentRuntime = {
+    resolvePlayer: (_run, player) => c.InazumaProgression.getPlayerAtLevel(player),
+    resolveRosterPlayer: (_run, player) => c.InazumaProgression.getPlayerAtLevel(player),
+    resolveEffectiveMetadata: (_run, player) => ({ ...player, potential: player?.finalOverall, finalOverall: player?.finalOverall }),
+    rosterEntryPermanentFields: () => ({ potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], intensiveTrainingMigrated: true }),
+  };
   c.ProfiledSeasonRuntime = { resolveProfile: (_season, id) => ({ profileId: String(id), playerId: String(id), name: String(id), position: "MF", category: "Normale", overall: 50, stats: {} }), addLevelUnits: player => player };
   c.MatchSimulator = { simulate: () => ({ score: { user: 1, opponent: 0 }, events: [] }) };
   c.SpecialMatchRuntime = { eligibleProfile: () => true };

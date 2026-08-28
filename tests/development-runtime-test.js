@@ -161,8 +161,11 @@ const fixtureRatings = { attack: 4, control: 6, speed: 6, grit: 7, physical: 7, 
   assert.equal(candidates.length, 100);
   const state = empty();
   for (const base of candidates) { const target = DevelopmentV2.nextRarity(base.category), potential = DevelopmentV2.threshold(target); addEvolution(state, base, [[target, potential]]); }
-  const bytes = Buffer.byteLength(JSON.stringify(Runtime.buildRunSnapshot({ v2State: state }).developmentV3PlayerSnapshot));
-  assert(bytes > 0); console.log(`development-runtime-test: 100-player snapshot ${bytes} bytes`);
+  const snapshots = Runtime.buildRunSnapshot({ v2State: state });
+  const bytes = Buffer.byteLength(JSON.stringify(snapshots.developmentV3PlayerSnapshot));
+  const compatibilityBytes = Buffer.byteLength(JSON.stringify(snapshots.developmentPlayerSnapshot));
+  const combinedBytes = Buffer.byteLength(JSON.stringify(snapshots));
+  assert(bytes > 0); console.log(`development-runtime-test: 100-player snapshot ${bytes} bytes; V2 compatibility ${compatibilityBytes} bytes; combined ${combinedBytes} bytes`);
 }
 
 // Incompatible duplicate immutable records are never guessed.
