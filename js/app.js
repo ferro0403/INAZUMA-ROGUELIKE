@@ -1919,12 +1919,24 @@
 
   function startRunWithIdentity(identity) {
     if (!global.RestoreGameplayRoutingGate?.enter("new-run")) return false;
+    let candidate;
+    try {
+      candidate = global.RunState.createRun(normalizeTeamIdentity(identity), activeSeason?.id);
+    } catch (error) {
+      const SnapshotError = global.DevelopmentRuntime?.DevelopmentSnapshotError;
+      if (!SnapshotError || !(error instanceof SnapshotError)) throw error;
+      console.error("New run Development snapshot rejected", { code: error.code, details: error.details });
+      toast("Impossibile avviare la run: i dati del Centro di sviluppo richiedono una verifica.");
+      return false;
+    }
     const cleanIdentity = global.RunState.saveProfileTeamIdentity(identity);
-    run = global.RunState.createRun(cleanIdentity, activeSeason?.id);
-    global.run = run;
-    global.RunState.save(run, { replaceRun: true });
+    candidate.teamIdentity = cleanIdentity;
+    global.RunState.save(candidate, { replaceRun: true });
+    run = candidate;
+    global.run = candidate;
     closeModal({ invokeOnClose: false });
     renderFormationChoice();
+    return true;
   }
 
   function startNewRunFromHome() {
@@ -6475,7 +6487,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     }
   }
 
-  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome };
+  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, startRunWithIdentity, getRun: () => run };
   if (global.__INAZUMA_TEST_MODE__ === true) {
     global.__INAZUMA_RECRUITMENT_TEST__ = {
       recruitPlayer, showPlayerOffer, showNextBossReward, showSpecialMatchReward, openPull,
