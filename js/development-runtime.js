@@ -102,7 +102,7 @@
 
   function resolvePlayer(run, basePlayer, level, database) {
     const kind = activeSnapshotKind(run, basePlayer?.playerId);
-    if (kind === "v3") return global.DevelopmentV3.resolveMaterializedPlayer(basePlayer, run.developmentV3PlayerSnapshot.players[String(basePlayer.playerId)].profile, level);
+    if (kind === "v3") return global.DevelopmentV3.resolveValidatedMaterializedPlayer(basePlayer, run.developmentV3PlayerSnapshot.players[String(basePlayer.playerId)].profile, level);
     const options = kind === "v2" ? global.DevelopmentV2.optionsFromUpgrade(basePlayer, run.developmentPlayerSnapshot[String(basePlayer.playerId)]) : undefined;
     return global.InazumaProgression.getPlayerAtLevel(basePlayer, level, database, options);
   }
