@@ -115,10 +115,80 @@
 
   function resolveEffectiveMetadata(run, basePlayer, database) {
     const resolved = resolvePlayer(run, basePlayer, Number(basePlayer?.maxLevel || 20), database);
-    return { potential: resolved.potential, category: resolved.category };
+    return { ...basePlayer, finalOverall: resolved.potential, potential: resolved.potential, category: resolved.category };
   }
 
-  const api = { SNAPSHOT_SCHEMA_VERSION, registerDatabase, resolveBasePlayer, validateSnapshot, buildRunSnapshot, activeSnapshotKind, resolvePlayer, resolvePermanentPlayer, resolveEffectiveMetadata, DevelopmentSnapshotError };
+  function rosterEntryPermanentFields(run, basePlayer) {
+    if (activeSnapshotKind(run, basePlayer?.playerId) !== "v2") return { potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], intensiveTrainingMigrated: true };
+    return { ...global.DevelopmentV2.optionsFromUpgrade(basePlayer, run.developmentPlayerSnapshot[String(basePlayer.playerId)]), intensiveTrainingMigrated: true };
+  }
+
+  function trainingState(run, basePlayer, entry, database, options = {}) {
+    const providedBase = options.permanentMode === "provided-base";
+    const kind = providedBase ? "provided-base" : activeSnapshotKind(run, basePlayer?.playerId);
+    if (kind !== "v3") {
+      const permanentPotential = Number(basePlayer?.finalOverall || 0);
+      const maxLocalBoost = Math.max(0, 99 - permanentPotential);
+      const applications = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxLocalBoost);
+      const currentLocalBoost = applications.reduce((sum, application) => sum + Number(application.amount || 0), 0);
+      return { kind, permanentPotential, maxLocalBoost, applications, currentLocalBoost, currentOverallBoost: Math.min(currentLocalBoost, Math.max(0, Number(entry?.currentOverallBoost ?? currentLocalBoost))), remainingBoost: Math.max(0, maxLocalBoost - currentLocalBoost) };
+    }
+    const permanent = resolvePlayer(run, basePlayer, Number(basePlayer?.maxLevel || 20), database);
+    const maxLocalBoost = Math.max(0, 99 - Number(permanent.potential || 0));
+    const savedApplications = Array.isArray(entry?.potentialBoostApplications) ? entry.potentialBoostApplications : [];
+    const localApplications = savedApplications.filter((application) => !application?.permanent);
+    const savedLocalBoost = savedApplications.some((application) => application?.permanent)
+      ? localApplications.reduce((sum, application) => sum + Math.max(0, Number(application?.amount || 0)), 0)
+      : Math.max(0, Number(entry?.potentialBoost || 0));
+    const applications = global.InazumaProgression.normalizePotentialBoostApplications({ ...entry, potentialBoost: savedLocalBoost, potentialBoostApplications: localApplications }, maxLocalBoost);
+    const currentLocalBoost = applications.reduce((sum, application) => sum + Number(application.amount || 0), 0);
+    return { kind, permanentPotential: permanent.potential, maxLocalBoost, applications, currentLocalBoost, currentOverallBoost: Math.min(currentLocalBoost, Math.max(0, Number(entry?.currentOverallBoost ?? currentLocalBoost))), remainingBoost: Math.max(0, maxLocalBoost - currentLocalBoost) };
+  }
+
+  function resolveRosterPlayer(run, basePlayer, entry, database) {
+    const level = Math.floor(Number(entry?.level || 0));
+    const kind = activeSnapshotKind(run, basePlayer?.playerId);
+    if (kind !== "v3") return global.InazumaProgression.getPlayerAtLevel(basePlayer, level, database, {
+      potentialBoost: entry?.potentialBoost, currentOverallBoost: entry?.currentOverallBoost, potentialBoostApplications: entry?.potentialBoostApplications,
+    });
+    const permanent = resolvePlayer(run, basePlayer, level, database);
+    const state = trainingState(run, basePlayer, entry, database);
+    const applications = state.applications;
+    const trainingBoost = state.currentLocalBoost;
+    const visibleBoost = state.currentOverallBoost;
+    const stats = { ...(permanent.stats || {}) };
+    for (const application of applications) for (const [stat, delta] of Object.entries(application.codexDeltas || {})) {
+      stats[stat] = Math.min(99, Number(stats[stat] || 0) + Number(delta || 0) * 10);
+    }
+    const potential = Math.min(99, Number(permanent.potential || 0) + trainingBoost);
+    const overall = Math.min(potential, Number(permanent.overall || 0) + visibleBoost);
+    return { ...permanent, ...stats, stats, potential, overall, category: global.InazumaProgression.categoryForPotential(potential, permanent.category, database) };
+  }
+
+  function planIntensiveTraining(run, basePlayer, entry, addedBoost, database, options = {}) {
+    if (options.permanentMode === "provided-base") {
+      const state = trainingState(run, basePlayer, entry, database, options);
+      const appliedBoost = Math.min(Math.max(0, Number(addedBoost || 0)), state.remainingBoost);
+      return { ...global.InazumaProgression.planCodexTrainingGrowth(basePlayer, { ...entry, potentialBoost: state.currentLocalBoost, currentOverallBoost: state.currentOverallBoost, potentialBoostApplications: state.applications }, appliedBoost), permanentPotential: state.permanentPotential, existingTrainingBoost: state.currentLocalBoost, appliedBoost, remainingBoost: state.remainingBoost };
+    }
+    if (activeSnapshotKind(run, basePlayer?.playerId) !== "v3") {
+      return global.InazumaProgression.planCodexTrainingGrowth(basePlayer, entry, addedBoost);
+    }
+    const state = trainingState(run, basePlayer, entry, database, options);
+    const permanent = resolvePlayer(run, basePlayer, Number(basePlayer?.maxLevel || 20), database);
+    const applications = state.applications;
+    const localBoost = state.currentLocalBoost;
+    const appliedBoost = Math.min(Math.max(0, Number(addedBoost || 0)), state.remainingBoost);
+    const trainingBase = { ...basePlayer, finalOverall: permanent.potential, ratings: global.InazumaProgression.toCodexRatings(permanent.stats), stats: permanent.stats };
+    const plan = global.InazumaProgression.planCodexTrainingGrowth(trainingBase, {
+      potentialBoost: localBoost,
+      currentOverallBoost: Math.min(localBoost, Math.max(0, Number(entry?.currentOverallBoost ?? localBoost))),
+      potentialBoostApplications: applications,
+    }, appliedBoost);
+    return { ...plan, permanentPotential: permanent.potential, existingTrainingBoost: localBoost, appliedBoost, remainingBoost: state.remainingBoost };
+  }
+
+  const api = { SNAPSHOT_SCHEMA_VERSION, registerDatabase, resolveBasePlayer, validateSnapshot, buildRunSnapshot, activeSnapshotKind, resolvePlayer, resolvePermanentPlayer, resolveEffectiveMetadata, rosterEntryPermanentFields, trainingState, resolveRosterPlayer, planIntensiveTraining, DevelopmentSnapshotError };
   global.DevelopmentRuntime = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);

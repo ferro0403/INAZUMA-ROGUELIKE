@@ -639,9 +639,9 @@
     global.RunStatistics?.ensureRunStatistics?.(run);
     run.roster = (run.roster || []).map((entry) => {
       const source = sourcePlayer(entry);
-      const maxBoost = source ? Math.max(0, 99 - activeBasePotential(entry)) : Number.POSITIVE_INFINITY;
-      const potentialBoostApplications = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
-      const potentialBoost = potentialBoostApplications.reduce((sum, boost) => sum + boost.amount, 0);
+      const training = source ? runtimeTrainingState(entry, run) : null;
+      const potentialBoostApplications = training?.applications || global.InazumaProgression.normalizePotentialBoostApplications(entry, Number.POSITIVE_INFINITY);
+      const potentialBoost = training?.currentLocalBoost ?? potentialBoostApplications.reduce((sum, boost) => sum + boost.amount, 0);
       return {
         ...entry,
         equippedItem: entry.equippedItem || null,
@@ -696,6 +696,13 @@
     return Number(legacyRosterPlayer(entry)?.finalOverall || 0);
   }
 
+  function runtimeTrainingState(entry, currentRun = run) {
+    const profileAware = global.RoguelikeRules.isProfileAwareRosterEntry(entry, currentRun);
+    const player = profileAware ? global.ProfiledSeasonRuntime.resolveEffectiveBase(entry, currentRun.seasonId) : sourcePlayer(entry);
+    const database = profileAware ? seasonDb : (global.SeasonRegistry?.isSeasonSource?.(entry?.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb);
+    return global.DevelopmentRuntime.trainingState(currentRun, player, entry, database, profileAware ? { permanentMode: "provided-base" } : undefined);
+  }
+
   function resolvedRosterPlayer(playerId, currentRun = run) {
     const entry = rosterEntry(playerId, currentRun);
     if (!entry) return null;
@@ -707,12 +714,7 @@
     if (!player && !profileAware) return null;
     const resolved = profileAware
       ? global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(entry, { seasonId: currentRun.seasonId, database })
-      : global.InazumaProgression.getPlayerAtLevel(
-      player,
-      Math.floor(Number(entry.level || 0)),
-      database,
-      { potentialBoost: entry.potentialBoost, currentOverallBoost: entry.currentOverallBoost, potentialBoostApplications: entry.potentialBoostApplications }
-    );
+      : global.DevelopmentRuntime.resolveRosterPlayer(currentRun, player, entry, database);
     const effectiveStats = global.RoguelikeRules.applyEquipment(resolved.stats, entry.equippedItem);
     return {
       ...resolved,
@@ -928,9 +930,8 @@
     const database = options.database || freeAgentsDb;
     const level = Number(options.level ?? 0);
     const pullSelection = options.context === "pull";
-    const snapshotOptions = global.DevelopmentV2.optionsFromUpgrade(player, run?.developmentPlayerSnapshot?.[String(player.playerId)]);
     const resolved = options.resolvedPlayer || (options.applyPermanent
-      ? global.InazumaProgression.getPlayerAtLevel(player, Math.floor(level), database, snapshotOptions)
+      ? global.DevelopmentRuntime.resolvePlayer(run, player, Math.floor(level), database)
       : global.InazumaProgression.getPlayerAtLevel(player, Math.floor(level), database));
     const tag = options.button ? "button" : "article";
     const playerDataAttribute = options.dataAttribute || "data-player-id";
@@ -960,7 +961,7 @@
   }
 
   function permanentRosterFields(player) {
-    return { ...global.DevelopmentV2.optionsFromUpgrade(player, run?.developmentPlayerSnapshot?.[String(player?.playerId)]), intensiveTrainingMigrated: true };
+    return global.DevelopmentRuntime.rosterEntryPermanentFields(run, player);
   }
 
   function teamLogoMarkup(teamIdentity) {
@@ -3197,10 +3198,9 @@
   function tradeCandidatePreview(incoming, entry) {
     if (incoming.profileId) return global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(entry || { playerId: incoming.playerId, activeProfileId: incoming.profileId, activeRoleVariantId: incoming.activeRoleVariantId, level: 0, levelUnits: 0 }, { run, seasonId: run.seasonId, database: seasonDb });
     const level = Number(entry?.level || 0);
-    const effectiveEntry = incoming.source === "free_agents"
-      ? { ...permanentRosterFields(incoming.player), ...(entry || {}) }
-      : (entry || {});
-    return global.InazumaProgression.getPlayerAtLevel(incoming.player, Math.floor(level), freeAgentsDb, effectiveEntry);
+    return incoming.source === "free_agents"
+      ? global.DevelopmentRuntime.resolveRosterPlayer(run, incoming.player, { ...permanentRosterFields(incoming.player), ...(entry || {}) }, freeAgentsDb)
+      : global.InazumaProgression.getPlayerAtLevel(incoming.player, Math.floor(level), freeAgentsDb, entry || {});
   }
 
   function roleVariantForTradeUpgrade(entry, profile) {
@@ -3233,10 +3233,10 @@
           seasonId: run.seasonId,
           compareProfileProgression: global.ProfiledSeasonRuntime.compareProfileProgression,
           resolveCandidate: (player, source) => source === "free_agents"
-            ? global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, run.developmentPlayerSnapshot)
+            ? global.DevelopmentRuntime.resolveEffectiveMetadata(run, player, freeAgentsDb)
             : player,
         })
-      : global.RoguelikeRules.getTradeCandidates({ outgoingPlayer: outgoingBase, rosterIds: run.roster.map((entry) => entry.playerId), freeAgents: freeAgentsDb.players, seasonPlayers: seasonDb.players, unlockedTeamIds: run.unlockedTeamIds, teams: seasonDb.teams, resolveCandidate: (player, source) => source === "free_agents" ? global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, run.developmentPlayerSnapshot) : player });
+      : global.RoguelikeRules.getTradeCandidates({ outgoingPlayer: outgoingBase, rosterIds: run.roster.map((entry) => entry.playerId), freeAgents: freeAgentsDb.players, seasonPlayers: seasonDb.players, unlockedTeamIds: run.unlockedTeamIds, teams: seasonDb.teams, resolveCandidate: (player, source) => source === "free_agents" ? global.DevelopmentRuntime.resolveEffectiveMetadata(run, player, freeAgentsDb) : player });
     if (!candidates.length) {
       toast(`Nessun ${outgoingBase.position} con finalOverall ${outgoingBase.finalOverall} o superiore disponibile`);
       return resolveTradeNode(node);
@@ -3298,7 +3298,7 @@
             return base ? { ...base, finalOverall: global.InazumaProgression.effectivePotential(base, entry) } : null;
           },
           resolveIncomingCandidate: (player, source) => source === "free_agents"
-            ? global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, current.developmentPlayerSnapshot)
+            ? global.DevelopmentRuntime.resolveEffectiveMetadata(current, player, freeAgentsDb)
             : player,
         });
         if (!result.player) throw Object.assign(new Error("Offerta non più valida"), { code: "trade-invalid" });
@@ -3412,7 +3412,7 @@
     const legendaryById = new Map();
     const legendarySources = new Map();
     freeAgentsDb.players
-      .filter((player) => global.RoguelikeRules.isLegendaryEffectivePlayer(player, global.SEASON1_CONFIG.legendaryCategories, run.developmentPlayerSnapshot))
+      .filter((player) => global.SEASON1_CONFIG.legendaryCategories.includes(global.DevelopmentRuntime.resolveEffectiveMetadata(run, player, freeAgentsDb).category))
       .forEach((player) => {
         legendaryById.set(String(player.playerId), { ...player, pullCandidateKind: "free_agent" });
         legendarySources.set(String(player.playerId), "free_agents");
@@ -3656,10 +3656,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   function resolvePullChoicePlayer(options, player) {
     const level = Math.floor(Number(options.level || 0));
     const database = pullChoiceDatabase(options, player);
-    const developmentSnapshot = run?.developmentPlayerSnapshot || {};
-    const developmentOptions = global.DevelopmentV2.optionsFromUpgrade(player, developmentSnapshot[String(player.playerId)]);
-    const resolved = global.InazumaProgression.getPlayerAtLevel(player, level, database, developmentOptions);
-    const effectiveMetadata = global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, developmentSnapshot);
+    const resolved = global.DevelopmentRuntime.resolvePlayer(run, player, level, database);
+    const effectiveMetadata = global.DevelopmentRuntime.resolveEffectiveMetadata(run, player, database);
     return { ...resolved, category: effectiveMetadata.category, baseStats: resolved.stats };
   }
 
@@ -5762,10 +5760,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       valid = Number(entry.level || 0) < 20;
       invalidReason = "Livello massimo raggiunto";
     } else if (mode === "potential") {
-      const source = sourcePlayer(entry);
-      const maxBoost = Math.max(0, 99 - activeBasePotential(entry));
-      const applications = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
-      valid = applications.reduce((sum, boost) => sum + boost.amount, 0) < maxBoost;
+      valid = runtimeTrainingState(entry).remainingBoost > 0;
       invalidReason = "Potenziale massimo raggiunto";
     }
     const dataAttribute = mode === "equipment"
@@ -5824,10 +5819,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const player = entry ? resolvedRosterPlayer(entry.playerId) : null;
     if (!entry || !player) return { valid: false, reason: "Non compatibile", player };
     if (mode === "level") return { valid: Number(entry.level || 0) < 20, reason: "Livello massimo", player };
-    const source = sourcePlayer(entry);
-    const maxBoost = Math.max(0, 99 - activeBasePotential(entry));
-    const boosts = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
-    const valid = boosts.reduce((sum, boost) => sum + boost.amount, 0) < maxBoost;
+    const valid = runtimeTrainingState(entry).remainingBoost > 0;
     return { valid, reason: "Potenziale massimo", player };
   }
 
@@ -6038,11 +6030,11 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         if (!entry) return;
         const player = sourcePlayer(entry);
         const before = resolvedRosterPlayer(entry.playerId);
-        const maxBoost = Math.max(0, 99 - activeBasePotential(entry));
-        entry.potentialBoostApplications = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
-        const currentPotentialBoost = entry.potentialBoostApplications.reduce((sum, boost) => sum + boost.amount, 0);
-        const currentOverallBoost = Math.min(currentPotentialBoost, Math.max(0, Number(entry.currentOverallBoost ?? currentPotentialBoost)));
-        const addedBoost = Math.min(Number(item.amount || 3), Math.max(0, maxBoost - currentPotentialBoost));
+        const training = runtimeTrainingState(entry);
+        entry.potentialBoostApplications = training.applications;
+        const currentPotentialBoost = training.currentLocalBoost;
+        const currentOverallBoost = training.currentOverallBoost;
+        const addedBoost = Math.min(Number(item.amount || 3), training.remainingBoost);
         if (addedBoost <= 0) return toast("Questo giocatore ha già raggiunto il potenziale massimo. L'oggetto NON viene consumato.");
         openInventoryConfirmation(item, {
           title: `Allenare ${before.name}?`,
@@ -6050,11 +6042,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
           onCancel: () => choosePlayerForPotentialBoost(item),
           onConfirm: () => {
             const trainingBase=global.RoguelikeRules.isProfileAwareRosterEntry(entry,run)?global.ProfiledSeasonRuntime.resolveEffectiveBase(entry,run.seasonId):player;
-            const committed = persistGameplayMutation({ label: "consumable-potential", mutate: () => {
+            const committed = persistGameplayMutation({ label: "consumable-potential", mutate: (current) => {
             const currentEntry = rosterEntry(entry.playerId);
-            const trainingPlan=global.InazumaProgression.planCodexTrainingGrowth(trainingBase,currentEntry,addedBoost);
-            currentEntry.potentialBoost = Math.min(maxBoost, currentPotentialBoost + addedBoost);
-            currentEntry.currentOverallBoost = Math.min(maxBoost, currentOverallBoost + addedBoost);
+            const currentProfileAware=global.RoguelikeRules.isProfileAwareRosterEntry(currentEntry,current);
+            const trainingPlan=global.DevelopmentRuntime.planIntensiveTraining(current,trainingBase,currentEntry,addedBoost,currentProfileAware?seasonDb:freeAgentsDb,currentProfileAware?{permanentMode:"provided-base"}:undefined);
+            currentEntry.potentialBoost = Math.min(training.maxLocalBoost, currentPotentialBoost + addedBoost);
+            currentEntry.currentOverallBoost = Math.min(training.maxLocalBoost, currentOverallBoost + addedBoost);
             currentEntry.intensiveTrainingMigrated = true;
             currentEntry.potentialBoostApplications = Array.isArray(currentEntry.potentialBoostApplications) ? currentEntry.potentialBoostApplications : [];
             if (addedBoost > 0) currentEntry.potentialBoostApplications.push({ amount: addedBoost, appliedLevel: Number(currentEntry.level || 0), codexDeltas: trainingPlan.codexDeltas });

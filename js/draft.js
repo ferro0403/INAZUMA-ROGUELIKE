@@ -145,7 +145,7 @@
     const lineup = formation.slotRoles.map((role) => selectedByRole[role].shift());
     run.roster = draft.selectedIds.map((id) => {
       const source = players.find((player) => String(player.playerId) === String(id));
-      const permanent = global.DevelopmentV2?.optionsFromUpgrade?.(source, run.developmentPlayerSnapshot?.[String(id)]) || {};
+      const permanent = global.DevelopmentRuntime?.rosterEntryPermanentFields?.(run, source) || {};
       const isProfile = global.RecruitmentPoolRuntime?.isSeasonProfileCandidate?.(source) && source?.profileId;
       return ({
       playerId: id,

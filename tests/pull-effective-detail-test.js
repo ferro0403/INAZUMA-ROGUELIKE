@@ -38,6 +38,10 @@ const context = {
     InazumaProgression: global.InazumaProgression,
     RoguelikeRules: global.RoguelikeRules,
     RecruitmentPoolRuntime: { choiceDatabase: () => database },
+    DevelopmentRuntime: {
+      resolvePlayer: (run, player, level, db) => global.InazumaProgression.getPlayerAtLevel(player, level, db, global.DevelopmentV2.optionsFromUpgrade(player, run.developmentPlayerSnapshot?.[String(player.playerId)])),
+      resolveEffectiveMetadata: (run, player) => global.RoguelikeRules.resolveDevelopmentEffectiveMetadata(player, run.developmentPlayerSnapshot),
+    },
   },
   run: { developmentPlayerSnapshot: snapshot },
   seasonDb: database,
