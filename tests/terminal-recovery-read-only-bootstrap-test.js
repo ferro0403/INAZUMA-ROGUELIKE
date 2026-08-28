@@ -80,7 +80,7 @@ const { load } = require("./helpers/production-runtime");
 
   assert.match(app, /result\.repaired === true \? "Riparazione salvataggio completata\. Report copiato\." : "Nessuna modifica necessaria\. Report copiato\."/);
   assert.match(index, /js\/album-progress\.js\?v=20260826-terminal-recovery-bootstrap-1/);
-  assert.match(index, /js\/app\.js\?v=20260828-development-v3-pr4-2/);
+  assert.match(index, /js\/app\.js\?v=20260828-development-v3-pr4-3/);
   assert.match(app, /const databaseError = !persistenceError && \(global\.location\?\.protocol === "file:"/);
   assert.match(app, /InazumaAccountUI\?\.buttonMarkup\?\.\(\)/, "the persistence fallback renders the production Account trigger");
   assert.match(accountUi, /document\.addEventListener\("click", onClick\)/, "Account uses a global delegated click binding for dynamically rendered triggers");

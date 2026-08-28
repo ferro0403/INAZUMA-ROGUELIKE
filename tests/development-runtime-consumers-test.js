@@ -88,6 +88,38 @@ assert.deepStrictEqual(Runtime.resolveRosterPlayer(v3TrainingRun, v3TrainingPlay
 const serializedRun = JSON.parse(JSON.stringify({ ...v3TrainingRun, roster: [trainedEntry], checkpoint: { developmentV3PlayerSnapshot: v3TrainingRun.developmentV3PlayerSnapshot, roster: [trainedEntry] } }));
 assert.deepStrictEqual(Runtime.resolveRosterPlayer(serializedRun, v3TrainingPlayer, serializedRun.roster[0], database), trained, "save/refresh/load preserves V3 runtime playback");
 assert.deepStrictEqual(Runtime.resolveRosterPlayer(serializedRun.checkpoint, v3TrainingPlayer, serializedRun.checkpoint.roster[0], database), trained, "checkpoint restoration preserves V3 runtime playback");
+
+function runAtPermanent(target) {
+  const category = progression.categoryForPotential(target, v3TrainingPlayer.category, database);
+  const profile = DevelopmentV3.materializeProfile({ basePlayer: v3TrainingPlayer, targetPotential: target, database, category, progression });
+  return { developmentV3PlayerSnapshot: { schemaVersion: 1, profileFormatVersion: DevelopmentV3.PROFILE_FORMAT_VERSION, players: { [v3TrainingPlayer.playerId]: { profile } } } };
+}
+const nearCapRun = runAtPermanent(98);
+const oversizedEntry = { playerId: v3TrainingPlayer.playerId, level: 20, potentialBoost: 3, currentOverallBoost: 3, potentialBoostApplications: [{ amount: 3, appliedLevel: 20, codexDeltas: { attack: 1 } }] };
+const oversizedBefore = JSON.stringify(oversizedEntry);
+const nearCapState = Runtime.trainingState(nearCapRun, v3TrainingPlayer, oversizedEntry, database);
+assert.strictEqual(nearCapState.permanentPotential, 98);
+assert.strictEqual(nearCapState.maxLocalBoost, 1);
+assert.strictEqual(nearCapState.currentLocalBoost, 1);
+assert.strictEqual(nearCapState.applications[0].amount, 1, "oversized saved local application canonicalizes in memory to the one available point");
+assert.strictEqual(JSON.stringify(oversizedEntry), oversizedBefore, "runtime normalization does not mutate saved bytes or the frozen snapshot");
+const nearCapPlan = Runtime.planIntensiveTraining(nearCapRun, v3TrainingPlayer, { potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [] }, 3, database);
+assert.strictEqual(nearCapPlan.appliedBoost, 1);
+assert.strictEqual(nearCapPlan.targetOverall, 99, "BASE 74 -> permanent 98 -> requested +3 plans only +1");
+const appliedNearCap = { playerId: v3TrainingPlayer.playerId, level: 20, potentialBoost: nearCapPlan.appliedBoost, currentOverallBoost: nearCapPlan.appliedBoost, potentialBoostApplications: [{ amount: nearCapPlan.appliedBoost, appliedLevel: 20, codexDeltas: nearCapPlan.codexDeltas }] };
+assert.strictEqual(appliedNearCap.potentialBoostApplications[0].amount, 1, "stored application records the applied +1, never requested +3");
+assert.strictEqual(Runtime.resolveRosterPlayer(nearCapRun, v3TrainingPlayer, appliedNearCap, database).potential, 99);
+const maxedState = Runtime.trainingState(nearCapRun, v3TrainingPlayer, appliedNearCap, database);
+assert.strictEqual(maxedState.remainingBoost, 0);
+assert.strictEqual(Runtime.planIntensiveTraining(nearCapRun, v3TrainingPlayer, appliedNearCap, 3, database).appliedBoost, 0, "second item at 99 is rejected before mutation/consumption");
+
+const ninetyFiveRun = runAtPermanent(95);
+const existingTwo = { potentialBoost: 2, currentOverallBoost: 2, potentialBoostApplications: [{ amount: 2, appliedLevel: 10, codexDeltas: { attack: 1 } }] };
+const ninetyFiveState = Runtime.trainingState(ninetyFiveRun, v3TrainingPlayer, existingTwo, database);
+assert.strictEqual(ninetyFiveState.remainingBoost, 2);
+const ninetyFivePlan = Runtime.planIntensiveTraining(ninetyFiveRun, v3TrainingPlayer, existingTwo, 3, database);
+assert.strictEqual(ninetyFivePlan.appliedBoost, 2);
+assert.strictEqual(ninetyFivePlan.targetOverall, 99, "permanent 95 + existing 2 + requested 3 applies only remaining 2");
 const incompatible = Runtime.buildRunSnapshot({ v2State: state, database });
 incompatible.developmentPlayerSnapshot[legacyPlayer.playerId].permanentTargetPotential = 99;
 assert.strictEqual(Runtime.resolvePlayer(incompatible, legacyPlayer, 20, database).potential, 80, "V3 has precedence over incompatible V2 compatibility data");
@@ -103,5 +135,8 @@ assert.match(app, /DevelopmentRuntime\.resolvePlayer\(run, player/, "cards and p
 assert.match(app, /DevelopmentRuntime\.resolveRosterPlayer/, "roster, lineup and match inputs share the runtime boundary");
 assert.match(app, /DevelopmentRuntime\.resolveEffectiveMetadata/, "pull, legendary and trade eligibility use runtime metadata");
 assert.match(app, /DevelopmentRuntime\.planIntensiveTraining\(current,trainingBase,currentEntry,addedBoost/, "production Intensive Training uses the real centralized runtime planner boundary");
+assert.match(app, /runtimeTrainingState\(entry, run\)/, "roster normalization uses Runtime-derived training capacity");
+assert.match(app, /const training = runtimeTrainingState\(entry\)/, "item application uses the same Runtime-derived capacity");
+assert.doesNotMatch(app, /99\s*-\s*activeBasePotential\(entry\)/, "V3 training capacity is never derived from immutable BASE in app.js");
 
 console.log("development-runtime-consumers-test: V3/V2/base, roles, zero-solver, roster/training, pull/trade/legendary static guard OK");

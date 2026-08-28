@@ -639,9 +639,9 @@
     global.RunStatistics?.ensureRunStatistics?.(run);
     run.roster = (run.roster || []).map((entry) => {
       const source = sourcePlayer(entry);
-      const maxBoost = source ? Math.max(0, 99 - activeBasePotential(entry)) : Number.POSITIVE_INFINITY;
-      const potentialBoostApplications = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
-      const potentialBoost = potentialBoostApplications.reduce((sum, boost) => sum + boost.amount, 0);
+      const training = source ? runtimeTrainingState(entry, run) : null;
+      const potentialBoostApplications = training?.applications || global.InazumaProgression.normalizePotentialBoostApplications(entry, Number.POSITIVE_INFINITY);
+      const potentialBoost = training?.currentLocalBoost ?? potentialBoostApplications.reduce((sum, boost) => sum + boost.amount, 0);
       return {
         ...entry,
         equippedItem: entry.equippedItem || null,
@@ -694,6 +694,13 @@
       return Number(global.ProfiledSeasonRuntime.resolveEffectiveBase(entry, run.seasonId)?.finalOverall || 0);
     }
     return Number(legacyRosterPlayer(entry)?.finalOverall || 0);
+  }
+
+  function runtimeTrainingState(entry, currentRun = run) {
+    const profileAware = global.RoguelikeRules.isProfileAwareRosterEntry(entry, currentRun);
+    const player = profileAware ? global.ProfiledSeasonRuntime.resolveEffectiveBase(entry, currentRun.seasonId) : sourcePlayer(entry);
+    const database = profileAware ? seasonDb : (global.SeasonRegistry?.isSeasonSource?.(entry?.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb);
+    return global.DevelopmentRuntime.trainingState(currentRun, player, entry, database);
   }
 
   function resolvedRosterPlayer(playerId, currentRun = run) {
@@ -5753,10 +5760,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       valid = Number(entry.level || 0) < 20;
       invalidReason = "Livello massimo raggiunto";
     } else if (mode === "potential") {
-      const source = sourcePlayer(entry);
-      const maxBoost = Math.max(0, 99 - activeBasePotential(entry));
-      const applications = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
-      valid = applications.reduce((sum, boost) => sum + boost.amount, 0) < maxBoost;
+      valid = runtimeTrainingState(entry).remainingBoost > 0;
       invalidReason = "Potenziale massimo raggiunto";
     }
     const dataAttribute = mode === "equipment"
@@ -5815,10 +5819,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const player = entry ? resolvedRosterPlayer(entry.playerId) : null;
     if (!entry || !player) return { valid: false, reason: "Non compatibile", player };
     if (mode === "level") return { valid: Number(entry.level || 0) < 20, reason: "Livello massimo", player };
-    const source = sourcePlayer(entry);
-    const maxBoost = Math.max(0, 99 - activeBasePotential(entry));
-    const boosts = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
-    const valid = boosts.reduce((sum, boost) => sum + boost.amount, 0) < maxBoost;
+    const valid = runtimeTrainingState(entry).remainingBoost > 0;
     return { valid, reason: "Potenziale massimo", player };
   }
 
@@ -6029,11 +6030,11 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         if (!entry) return;
         const player = sourcePlayer(entry);
         const before = resolvedRosterPlayer(entry.playerId);
-        const maxBoost = Math.max(0, 99 - activeBasePotential(entry));
-        entry.potentialBoostApplications = global.InazumaProgression.normalizePotentialBoostApplications(entry, maxBoost);
-        const currentPotentialBoost = entry.potentialBoostApplications.reduce((sum, boost) => sum + boost.amount, 0);
-        const currentOverallBoost = Math.min(currentPotentialBoost, Math.max(0, Number(entry.currentOverallBoost ?? currentPotentialBoost)));
-        const addedBoost = Math.min(Number(item.amount || 3), Math.max(0, maxBoost - currentPotentialBoost));
+        const training = runtimeTrainingState(entry);
+        entry.potentialBoostApplications = training.applications;
+        const currentPotentialBoost = training.currentLocalBoost;
+        const currentOverallBoost = training.currentOverallBoost;
+        const addedBoost = Math.min(Number(item.amount || 3), training.remainingBoost);
         if (addedBoost <= 0) return toast("Questo giocatore ha già raggiunto il potenziale massimo. L'oggetto NON viene consumato.");
         openInventoryConfirmation(item, {
           title: `Allenare ${before.name}?`,
@@ -6044,8 +6045,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
             const committed = persistGameplayMutation({ label: "consumable-potential", mutate: (current) => {
             const currentEntry = rosterEntry(entry.playerId);
             const trainingPlan=global.DevelopmentRuntime.planIntensiveTraining(current,trainingBase,currentEntry,addedBoost,global.RoguelikeRules.isProfileAwareRosterEntry(currentEntry,current)?seasonDb:freeAgentsDb);
-            currentEntry.potentialBoost = Math.min(maxBoost, currentPotentialBoost + addedBoost);
-            currentEntry.currentOverallBoost = Math.min(maxBoost, currentOverallBoost + addedBoost);
+            currentEntry.potentialBoost = Math.min(training.maxLocalBoost, currentPotentialBoost + addedBoost);
+            currentEntry.currentOverallBoost = Math.min(training.maxLocalBoost, currentOverallBoost + addedBoost);
             currentEntry.intensiveTrainingMigrated = true;
             currentEntry.potentialBoostApplications = Array.isArray(currentEntry.potentialBoostApplications) ? currentEntry.potentialBoostApplications : [];
             if (addedBoost > 0) currentEntry.potentialBoostApplications.push({ amount: addedBoost, appliedLevel: Number(currentEntry.level || 0), codexDeltas: trainingPlan.codexDeltas });
