@@ -2,6 +2,8 @@
   "use strict";
 
   const SHADOW_FIELD = "developmentV3";
+  const AUTHORITY_FIELD = "developmentV3AuthorityVersion";
+  const AUTHORITY_VERSION = 1;
   const SLOT_CAPACITIES = Object.freeze({ Buono: 50, Forte: 20, Elite: 15, Mondiale: 10, Leggenda: 5 });
   const clone = (value) => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
   const record = (value) => value && typeof value === "object" && !Array.isArray(value);
@@ -63,6 +65,7 @@
     const d = deps(options);
     const mirror = projectV2Compatibility(state, d.resolveBasePlayer, options);
     mirror[SHADOW_FIELD] = clone(state);
+    mirror[AUTHORITY_FIELD] = AUTHORITY_VERSION;
     return mirror;
   }
 
@@ -77,11 +80,34 @@
     try { parsed = raw == null || raw === "" ? {} : JSON.parse(raw); }
     catch (_) { return failure("invalid-json"); }
     if (!record(parsed)) return failure("invalid-state");
-    if (Object.prototype.hasOwnProperty.call(parsed, SHADOW_FIELD)) {
+    const hasShadow = Object.prototype.hasOwnProperty.call(parsed, SHADOW_FIELD);
+    const hasAuthority = Object.prototype.hasOwnProperty.call(parsed, AUTHORITY_FIELD);
+    if (hasAuthority && parsed[AUTHORITY_FIELD] !== AUTHORITY_VERSION) return failure("development-v3-authority-version-conflict");
+    if (hasAuthority && !hasShadow) return failure("development-v3-authority-without-state");
+    if (hasShadow) {
       const validation = d.V3.validate(parsed[SHADOW_FIELD]);
       if (!validation.valid) return failure("development-v3-schema-conflict", { blockers: validation.errors.map((detail) => ({ code: "development-v3-schema-conflict", detail })) });
-      ensuredRaw = raw; ensuredState = d.V3.normalize(parsed[SHADOW_FIELD]);
-      return { ok: true, migrated: false, deferred: false, reason: null, state: clone(ensuredState) };
+      const shadow = d.V3.normalize(parsed[SHADOW_FIELD]);
+      if (hasAuthority) {
+        ensuredRaw = raw; ensuredState = shadow;
+        return { ok: true, migrated: false, deferred: false, reason: null, state: clone(ensuredState) };
+      }
+      // Before PR5A the mirror was authoritative. An unmarked V3 value is only
+      // a pre-cutover shadow and may be adopted iff it still describes the
+      // independently converted current V2 bytes exactly.
+      const v2State = d.V2.normalize(parsed);
+      const planned = d.Migration.convertState({ ...options, v2State, DevelopmentV2: d.V2, DevelopmentV3: d.V3, resolveBasePlayer: d.resolveBasePlayer, progression: d.progression, database: d.database });
+      if (!planned.ok) return { ...failure(planned.blockers?.[0]?.code || "migration-blocked"), blockers: planned.blockers || [] };
+      if (JSON.stringify(d.V3.normalize(planned.state)) !== JSON.stringify(shadow)) return failure("development-v3-migration-conflict");
+      if ((global.localStorage?.getItem(d.V2.STORAGE_KEY) ?? null) !== raw) return { ...failure("development-v3-migration-stale"), deferred: true };
+      try {
+        const committed = d.V2.write(envelopeFor(shadow, options));
+        ensuredRaw = JSON.stringify(committed); ensuredState = clone(shadow);
+        return { ok: true, migrated: true, adopted: true, deferred: false, reason: null, state: clone(shadow), developmentState: committed };
+      } catch (error) {
+        if (["restore-recovery-required", "restore-ownership-lost"].includes(error?.code)) return { ...failure(error.code), deferred: true };
+        return failure("persistence", { error });
+      }
     }
     const v2State = d.V2.normalize(parsed);
     const plan = d.Migration.convertState({ ...options, v2State, DevelopmentV2: d.V2, DevelopmentV3: d.V3, resolveBasePlayer: d.resolveBasePlayer, progression: d.progression, database: d.database });
@@ -113,6 +139,7 @@
   }
 
   function mutate(mutator, options = {}) { const state = read(options); const candidate = clone(state); mutator(candidate); return commit(candidate, options); }
+  function reset(options = {}) { return commit(deps(options).V3.empty(), options).state; }
   function slotUsage(state) {
     const usage = Object.fromEntries(Object.keys(SLOT_CAPACITIES).map((rarity) => [rarity, 0]));
     for (const chain of Object.values(state?.players || {})) { const rarity = chain?.steps?.at?.(-1)?.rarity; if (rarity in usage) usage[rarity] += 1; }
@@ -127,7 +154,7 @@
     if (!input?.unlocked) return { ok: false, reason: "locked" };
     if (!input?.freeAgentEligible) return { ok: false, reason: "not_free_agent" };
     let state; try { state = read(options); } catch (error) { return { ok: false, reason: error.code || "migration" }; }
-    const d = deps(options), id = String(input.playerId || ""), base = input.basePlayer || d.resolveBasePlayer?.(id);
+    const d = deps(options), id = String(input.playerId || ""), base = d.resolveBasePlayer?.(id);
     if (!record(base) || String(base.playerId) !== id) return { ok: false, reason: "base-player-missing" };
     const current = activeState(state, base), target = d.V2.nextRarity(current.rarity);
     if (!target) return { ok: false, reason: "max" };
@@ -161,12 +188,13 @@
     if (won) { const sid = String(payload.seasonId || global.SeasonRegistry?.activeId?.() || "ie1"); candidate.cupsBySeason[sid] = Number(candidate.cupsBySeason[sid] || 0) + 1; candidate.victoryRewardRunIds.push(payload.runId); }
     candidate.redeemedRunIds.push(payload.runId); try { return { state: commit(candidate, options).state, pull: null, awarded: true }; } catch (error) { return { state, pull: null, awarded: false, reason: "persistence", error }; }
   }
-  function purchaseProject(rarity, options = {}) { const price = deps(options).V2.PROJECT_PRICES[rarity]; if (!price) return { ok: false, reason: "invalid" }; let state; try { state = read(options); } catch (error) { return { ok: false, reason: error.code }; } if (state.coins < price) return { ok: false, reason: "coins", state }; state.coins -= price; state.projects[rarity] += 1; try { return { ok: true, state: commit(state, options).state, rarity, price }; } catch (_) { return { ok: false, reason: "persistence", state }; } }
-  function purchaseEmblem(product, options = {}) { let state; try { state = read(options); } catch (error) { return { ok: false, reason: error.code }; } const emblemId = String(product?.emblemId || ""); if (!emblemId) return { ok: false, reason: "invalid" }; if (state.unlockedEmblems.includes(emblemId)) return { ok: false, reason: "owned", state }; const coins = Number(product.coins || 0), cups = Number(product.cups || 0), sid = String(product.seasonId || ""); if (state.coins < coins) return { ok: false, reason: "coins", state }; if (Number(state.cupsBySeason[sid] || 0) < cups) return { ok: false, reason: "cups", state }; state.coins -= coins; state.cupsBySeason[sid] -= cups; state.unlockedEmblems.push(emblemId); try { return { ok: true, state: commit(state, options).state, emblemId }; } catch (_) { return { ok: false, reason: "persistence", state }; } }
+  function persistedAfterFailure(options, fallback) { try { resetSessionCache(); return read(options); } catch (_) { return fallback; } }
+  function purchaseProject(rarity, options = {}) { const price = deps(options).V2.PROJECT_PRICES[rarity]; if (!price) return { ok: false, reason: "invalid" }; let state; try { state = read(options); } catch (error) { return { ok: false, reason: error.code }; } if (state.coins < price) return { ok: false, reason: "coins", state }; const before = clone(state); state.coins -= price; state.projects[rarity] += 1; try { return { ok: true, state: commit(state, options).state, rarity, price }; } catch (_) { return { ok: false, reason: "persistence", state: persistedAfterFailure(options, before) }; } }
+  function purchaseEmblem(product, options = {}) { let state; try { state = read(options); } catch (error) { return { ok: false, reason: error.code }; } const emblemId = String(product?.emblemId || ""); if (!emblemId) return { ok: false, reason: "invalid" }; if (state.unlockedEmblems.includes(emblemId)) return { ok: false, reason: "owned", state }; const coins = Number(product.coins || 0), cups = Number(product.cups || 0), sid = String(product.seasonId || ""); if (state.coins < coins) return { ok: false, reason: "coins", state }; if (Number(state.cupsBySeason[sid] || 0) < cups) return { ok: false, reason: "cups", state }; const before = clone(state); state.coins -= coins; state.cupsBySeason[sid] -= cups; state.unlockedEmblems.push(emblemId); try { return { ok: true, state: commit(state, options).state, emblemId }; } catch (_) { return { ok: false, reason: "persistence", state: persistedAfterFailure(options, before) }; } }
   function addCompletedProject(rarity, amount = 1, options = {}) { if (!deps(options).V3.PROJECT_RARITIES.includes(rarity)) return false; try { mutate((state) => { state.projects[rarity] += Math.max(0, Math.floor(Number(amount) || 0)); }, options); return true; } catch (_) { return false; } }
   function resetSessionCache() { ensuredRaw = null; ensuredState = null; }
 
-  const api = { SHADOW_FIELD, SLOT_CAPACITIES, ensureMigrated, read, readCompatibility, commit, mutate, projectV2Compatibility, envelopeFor, evolve, processRunEnd, purchaseProject, purchaseEmblem, addCompletedProject, slotUsage, slotCapacity, slotRemaining, canOccupyRarity, activeState, resetSessionCache };
+  const api = { SHADOW_FIELD, AUTHORITY_FIELD, AUTHORITY_VERSION, SLOT_CAPACITIES, ensureMigrated, read, readCompatibility, commit, mutate, reset, projectV2Compatibility, envelopeFor, evolve, processRunEnd, purchaseProject, purchaseEmblem, addCompletedProject, slotUsage, slotCapacity, slotRemaining, canOccupyRarity, activeState, resetSessionCache };
   global.DevelopmentAccountV3 = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);

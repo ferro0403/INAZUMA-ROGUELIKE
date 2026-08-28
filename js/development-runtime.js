@@ -68,7 +68,9 @@
   }
 
   function buildRunSnapshot(options = {}) {
-    const canonical = options.v3State || (!options.v2State && global.DevelopmentAccountV3?.read?.(options.accountOptions));
+    let canonical;
+    try { canonical = options.v3State || (!options.v2State && global.DevelopmentAccountV3?.read?.(options.accountOptions)); }
+    catch (error) { throw new DevelopmentSnapshotError("development-v3-account-unavailable", [{ code: error?.code || "development-v3-account-error", details: error?.details || error?.result?.blockers || [] }]); }
     if (record(canonical)) {
       const validation = global.DevelopmentV3.validate(canonical);
       if (!validation.valid) throw new DevelopmentSnapshotError("development-v3-snapshot-invalid", validation.errors);
@@ -81,7 +83,9 @@
       const developmentV3PlayerSnapshot = { schemaVersion: SNAPSHOT_SCHEMA_VERSION, profileFormatVersion: global.DevelopmentV3.PROFILE_FORMAT_VERSION, players };
       const snapshotValidation = validateSnapshot(developmentV3PlayerSnapshot);
       if (!snapshotValidation.valid) throw new DevelopmentSnapshotError("development-v3-snapshot-invalid", snapshotValidation.errors);
-      const legacyEnvelope = options.v2Compatibility || global.DevelopmentAccountV3?.projectV2Compatibility?.(canonical, resolveBasePlayer) || { players: {} };
+      let legacyEnvelope;
+      try { legacyEnvelope = options.v2Compatibility || global.DevelopmentAccountV3?.projectV2Compatibility?.(canonical, resolveBasePlayer) || { players: {} }; }
+      catch (error) { throw new DevelopmentSnapshotError("development-v3-account-unavailable", [{ code: error?.code || "development-v3-compatibility-error", details: error?.details || [] }]); }
       return { developmentV3PlayerSnapshot, developmentPlayerSnapshot: clone(legacyEnvelope.players || {}) };
     }
     const v2State = options.v2State || global.DevelopmentV2?.read?.();

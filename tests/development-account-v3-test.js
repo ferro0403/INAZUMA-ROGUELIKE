@@ -34,6 +34,15 @@ function environment(raw, body) {
 const options = { DevelopmentV2: V2, DevelopmentV3: V3, DevelopmentV3Migration: Migration, progression, database, resolveBasePlayer: resolve };
 function legacy(wallet = {}) { return V2.normalize({ ...V2.empty(), ...wallet }); }
 function input(player) { return { playerId: String(player.playerId), basePlayer: player, unlocked: true, freeAgentEligible: true, cupSelection: {} }; }
+function canonicalChain(player, rarities) {
+  const state = V3.empty(); let fromRarity = player.category, fromPotential = Number(player.finalOverall);
+  state.players[String(player.playerId)] = { legacyNormale: null, steps: rarities.map((rarity, index) => {
+    const toPotential = V2.threshold(rarity), profile = V3.materializeProfile({ basePlayer: player, targetPotential: toPotential, category: rarity, database, progression });
+    const step = { stepId: `authority-${index}-${rarity}`, rarity, fromRarity, fromPotential, toPotential, profile, receipt: { coinsConsumed: V2.COSTS[rarity].coins, cupsConsumed: V2.COSTS[rarity].cups, cupsConsumedBySource: V2.COSTS[rarity].cups ? { ie1: V2.COSTS[rarity].cups } : {}, projectsConsumed: V2.COSTS[rarity].projects }, createdAt: `2026-08-28T01:00:0${index}.000Z` };
+    fromRarity = rarity; fromPotential = toPotential; return step;
+  }) };
+  return state;
+}
 
 // Empty/V2-only initialization is guarded, one-write, one-event and idempotent.
 environment(null, ({ storage, counts }) => {
@@ -44,10 +53,30 @@ environment(null, ({ storage, counts }) => {
 });
 environment(JSON.stringify(legacy({ coins: 321 })), () => { const result = Account.ensureMigrated(options); assert(result.ok && result.migrated); assert.equal(result.state.coins, 321); });
 
+// An unmarked shadow is pre-cutover evidence, never authority. A stale Forte
+// shadow conflicts with the current Elite V2 mirror without changing either;
+// an equivalent shadow is adopted once and receives the authority marker.
+{
+  const player = base("Normale"), elite = canonicalChain(player, ["Buono", "Forte", "Elite"]), forte = canonicalChain(player, ["Buono", "Forte"]);
+  const currentMirror = Account.projectV2Compatibility(elite, resolve, options), conflicting = { ...currentMirror, developmentV3: forte };
+  environment(JSON.stringify(conflicting), ({ storage, counts }) => {
+    const before = storage.value, result = Account.ensureMigrated(options); assert.equal(result.ok, false); assert.equal(result.reason, "development-v3-migration-conflict");
+    assert.deepStrictEqual(counts(), { reserves: 0, events: 0 }); assert.equal(storage.value, before); const persisted = JSON.parse(storage.value);
+    assert.equal(persisted.players[player.playerId].currentPermanentRarity, "Elite"); assert.equal(persisted.developmentV3.players[player.playerId].steps.at(-1).rarity, "Forte");
+  });
+  const equivalent = { ...currentMirror, developmentV3: elite };
+  environment(JSON.stringify(equivalent), ({ storage, counts }) => {
+    const first = Account.ensureMigrated(options); assert(first.ok && first.migrated && first.adopted); assert.deepStrictEqual(first.state, elite);
+    assert.equal(JSON.parse(storage.value)[Account.AUTHORITY_FIELD], Account.AUTHORITY_VERSION); assert.deepStrictEqual(counts(), { reserves: 1, events: 1 }); const writes = storage.writes;
+    const second = Account.ensureMigrated(options); assert(second.ok && !second.migrated); assert.equal(storage.writes, writes); assert.deepStrictEqual(counts(), { reserves: 1, events: 1 });
+  });
+}
+
 // Recovery, stale bytes, malformed/future shadows and write failures never partially commit.
 environment(JSON.stringify(legacy()), ({ storage, block, counts }) => { block(true); const before = storage.value; const result = Account.ensureMigrated(options); assert(result.deferred); assert.equal(storage.value, before); assert.deepStrictEqual(counts(), { reserves: 0, events: 0 }); });
 environment(JSON.stringify(legacy()), ({ storage, counts }) => { const staleOptions = { ...options, resolveBasePlayer(id) { storage.value += " "; return Runtime.resolveBasePlayer(id); } }; const source = legacy(); const player = base("Normale"); source.players[player.playerId] = { permanentTargetPotential: 75, currentPermanentRarity: "Buono" }; source.evolutionHistory = [{ id: "stale", playerId: String(player.playerId), fromRarity: "Normale", toRarity: "Buono", fromPotential: Number(player.finalOverall), toPotential: 75, projectsConsumed: 1, cupsConsumed: 1, cupsConsumedBySource: { ie1: 1 }, coinsConsumed: 200 }]; storage.value = JSON.stringify(source); const result = Account.ensureMigrated(staleOptions); assert.equal(result.reason, "development-v3-migration-stale"); assert.deepStrictEqual(counts(), { reserves: 0, events: 0 }); });
 for (const shadow of [{ schemaVersion: 999 }, { schemaVersion: 1, players: "bad" }]) environment(JSON.stringify({ ...legacy(), developmentV3: shadow }), ({ storage, counts }) => { const before = storage.value; const result = Account.ensureMigrated(options); assert.equal(result.reason, "development-v3-schema-conflict"); assert.equal(storage.value, before); assert.deepStrictEqual(counts(), { reserves: 0, events: 0 }); });
+for (const marker of [0, 2, "1", null]) environment(JSON.stringify({ ...legacy(), developmentV3: V3.empty(), [Account.AUTHORITY_FIELD]: marker }), ({ storage, counts }) => { const before = storage.value, result = Account.ensureMigrated(options); assert.equal(result.reason, "development-v3-authority-version-conflict"); assert.equal(storage.value, before); assert.deepStrictEqual(counts(), { reserves: 0, events: 0 }); });
 environment(JSON.stringify(legacy()), ({ storage, counts }) => { storage.fail = true; const result = Account.ensureMigrated(options); assert.equal(result.reason, "persistence"); assert.deepStrictEqual(counts(), { reserves: 1, events: 0 }); });
 
 // Unknown-field preservation is the generic cloud/restore contract: normalize,
@@ -86,6 +115,21 @@ for (const rarity of ["Debole", "Buono"]) environment(JSON.stringify(legacy({ co
   if (target === "Normale") assert(chain.legacyNormale && chain.steps.length === 0); else assert.deepStrictEqual(chain.steps.map((step) => step.rarity), ["Forte"]);
 });
 
+// Caller-supplied player data cannot override the canonical immutable BASE.
+environment(JSON.stringify(legacy({ coins: 1000, cupsBySeason: { ie1: 2 }, projects: { Buono: 1 } })), () => {
+  Account.ensureMigrated(options); const player = base("Normale"), fake = { ...player, finalOverall: 90, category: "Mondiale", ratings: Object.fromEntries(Object.keys(player.ratings || {}).map((key) => [key, 9])) };
+  const result = Account.evolve({ ...input(player), basePlayer: fake, cupSelection: { ie1: 1 } }, options); assert(result.ok); assert.equal(result.target, "Buono"); assert.equal(result.targetPotential, 75);
+  const profile = Account.read(options).players[player.playerId].steps[0].profile;
+  const expected = V3.materializeProfile({ basePlayer: player, targetPotential: 75, category: "Buono", database, progression }); assert.deepStrictEqual(profile, expected);
+});
+
+// DEV reset is a single canonical commit, not a V2 reset followed by migration.
+environment(JSON.stringify(legacy({ coins: 999 })), ({ storage, counts }) => {
+  Account.ensureMigrated(options); const beforeWrites = storage.writes, beforeEvents = counts().events, reset = Account.reset(options), envelope = JSON.parse(storage.value);
+  assert.deepStrictEqual(reset, V3.empty()); assert.deepStrictEqual(envelope.developmentV3, V3.empty()); assert.equal(envelope[Account.AUTHORITY_FIELD], Account.AUTHORITY_VERSION);
+  assert.equal(storage.writes, beforeWrites + 1); assert.equal(counts().events, beforeEvents + 1);
+});
+
 // Capacity is derived solely from each chain's last coloured step. Full target
 // capacity rejects before solver/resource/persistence; over-cap states read.
 assert.deepStrictEqual(Account.SLOT_CAPACITIES, { Buono: 50, Forte: 20, Elite: 15, Mondiale: 10, Leggenda: 5 });
@@ -113,7 +157,15 @@ environment(JSON.stringify(legacy({ coins: 5000, cupsBySeason: { ie1: 10 }, proj
   const runB = Runtime.buildRunSnapshot({ v3State: Account.read(options), v2Compatibility: envelope });
   assert.equal(runA.developmentV3PlayerSnapshot.players[player.playerId].profile.finalOverall, 80); assert.equal(runB.developmentV3PlayerSnapshot.players[player.playerId].profile.finalOverall, 85);
   assert.equal(Runtime.resolvePlayer(runB, player, 20, database).potential, 85);
+  assert.equal(Account.read(options).players[player.playerId].steps.at(-1).toPotential, 85, "a marked V3 remains canonical over a corrupt mirror");
 });
+
+// Account failures are normalized into the controlled run-snapshot boundary.
+{
+  const original = global.DevelopmentAccountV3; global.DevelopmentAccountV3 = { read() { throw Object.assign(new Error("conflict"), { code: "development-v3-migration-conflict", details: ["stale-shadow"] }); } };
+  try { assert.throws(() => Runtime.buildRunSnapshot(), (error) => error instanceof Runtime.DevelopmentSnapshotError && error.code === "development-v3-account-unavailable" && error.details[0].code === "development-v3-migration-conflict" && error.details[0].details[0] === "stale-shadow"); }
+  finally { global.DevelopmentAccountV3 = original; }
+}
 
 // Representative 100x5 canonical+mirror envelope remains well under 850 KiB.
 {

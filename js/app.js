@@ -1900,7 +1900,7 @@
     document.querySelectorAll("[data-dev-season-cup]").forEach(b=>b.onclick=()=>{const id=b.dataset.devSeasonCup;global.DevelopmentAccountV3.mutate(s=>{s.cupsBySeason[id]=(s.cupsBySeason[id]||0)+1;});renderDevelopmentCenter();});
     document.querySelectorAll("[data-dev-complete-project]").forEach(b=>b.onclick=()=>{global.DevelopmentAccountV3.addCompletedProject(b.dataset.devCompleteProject);renderDevelopmentCenter("projects");});
     document.getElementById("dev-unlock-free-agents")?.addEventListener("click",()=>{const ids=[...eligibleFreeAgentIds()];global.AlbumProgress.unlockAlbumPlayers(global.AlbumProgress.DEFAULT_COLLECTION_ID,ids,{source:"development-dev-unlock"});developmentPlayersCache=null;developmentResolvedCache.clear();toast(`${ids.length} svincolati disponibili.`);renderDevelopmentCenter("players");});
-    document.getElementById("dev-reset")?.addEventListener("click",()=>{if(confirm("Azzerare solo lo sviluppo?")){global.DevelopmentV2.reset();renderDevelopmentCenter();}});
+    document.getElementById("dev-reset")?.addEventListener("click",()=>{if(confirm("Azzerare solo lo sviluppo?")){global.DevelopmentAccountV3.reset();renderDevelopmentCenter();}});
   }
 
 
