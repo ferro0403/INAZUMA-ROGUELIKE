@@ -6425,6 +6425,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   async function loadSeason(seasonId) {
     activeSeason = global.SeasonRegistry.setActive(seasonId);
     seasonDb = await global.SeasonRegistry.loadDatabase(activeSeason.id);
+    global.DevelopmentRuntime?.registerDatabase?.(activeSeason.id, seasonDb);
     activeSeason = global.SeasonRegistry.get(activeSeason.id);
     seasonPlayersById = global.SeasonRegistry.playersIndex(activeSeason.id);
     seasonTeamsById = global.SeasonRegistry.teamsIndex(activeSeason.id);
@@ -6462,6 +6463,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       if (!activeDb || !freeAgentsResponse.ok || !visualsResponse.ok) throw new Error("Database non raggiungibili");
       const visualsDb = await visualsResponse.json();
       freeAgentsDb = await freeAgentsResponse.json();
+      global.DevelopmentRuntime?.registerDatabase?.("free-agents", freeAgentsDb);
       await global.PersistenceBootstrapGate?.ready;
       await global.PersistenceBootstrapGate?.whenAccessible?.();
       configureAlbumForBootstrap((freeAgentsDb.players || []).map((player) => player.playerId));

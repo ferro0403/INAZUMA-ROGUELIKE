@@ -275,7 +275,12 @@
     return { ...basePlayer, ...stats, level, overall, potential, category: profile.category, stats };
   }
 
-  const api = { SCHEMA_VERSION, PROFILE_FORMAT_VERSION, GROWTH_ALGORITHM_VERSION, MAX_LEVEL, STAT_ORDER, STAT_RANGE, OVERALL_RANGE, POTENTIAL_RANGE, COLORED_RARITIES, RARITY_POTENTIAL_BANDS, PROJECT_RARITIES, SEASON_IDS, CODEC, empty, normalize, validate, clone, materializeProfile, resolveMaterializedPlayer };
+  function validateProfile(profile) {
+    const errors = profileErrors(profile);
+    return { valid: errors.length === 0, errors };
+  }
+
+  const api = { SCHEMA_VERSION, PROFILE_FORMAT_VERSION, GROWTH_ALGORITHM_VERSION, MAX_LEVEL, STAT_ORDER, STAT_RANGE, OVERALL_RANGE, POTENTIAL_RANGE, COLORED_RARITIES, RARITY_POTENTIAL_BANDS, PROJECT_RARITIES, SEASON_IDS, CODEC, empty, normalize, validate, validateProfile, clone, materializeProfile, resolveMaterializedPlayer };
   global.DevelopmentV3 = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);
