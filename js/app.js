@@ -6,14 +6,19 @@
   if (DEV_MODE) global.addEventListener("DOMContentLoaded", () => {
     const tools = document.createElement("aside");
     tools.className = "persistence-dev-tools";
-    tools.style.cssText = "position:fixed;right:8px;bottom:8px;z-index:10000;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100vw - 16px)";
-    tools.innerHTML = '<button type="button" data-persistence-diagnostic>COPIA DIAGNOSTICA SALVATAGGIO</button><button type="button" data-raw-save-diagnostic>COPIA RAW SAVE IE1/IE2</button><button type="button" data-persistence-repair>RIPARA SALVATAGGIO</button><span data-persistence-feedback role="status" aria-live="polite" style="color:#fff;font:700 11px sans-serif;align-self:center"></span>';
+    tools.style.cssText = "position:fixed;top:calc(env(safe-area-inset-top, 0px) + 8px);right:calc(env(safe-area-inset-right, 0px) + 8px);z-index:10000;display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-width:min(300px,calc(100vw - 16px));pointer-events:none";
+    tools.innerHTML = '<button type="button" data-dev-diagnostics-trigger aria-expanded="false" aria-controls="dev-diagnostics-menu" style="pointer-events:auto;min-width:44px;min-height:36px;padding:6px 10px">DEV</button><div id="dev-diagnostics-menu" data-dev-diagnostics-menu hidden style="pointer-events:auto;background:#05080f;border:1px solid #52627a;border-radius:10px;padding:8px;box-shadow:0 10px 28px #000a;max-width:100%"><button type="button" data-persistence-diagnostic>COPIA DIAGNOSTICA SALVATAGGIO</button><button type="button" data-raw-save-diagnostic>COPIA RAW SAVE IE1/IE2</button><button type="button" data-persistence-repair>RIPARA SALVATAGGIO</button><span data-persistence-feedback role="status" aria-live="polite" style="display:block;color:#fff;font:700 11px sans-serif;margin-top:6px"></span></div>';
+    const trigger = tools.querySelector("[data-dev-diagnostics-trigger]");
+    const menu = tools.querySelector("[data-dev-diagnostics-menu]");
+    const setOpen = (open) => { menu.hidden = !open; trigger.setAttribute("aria-expanded", String(open)); };
+    trigger.onclick = () => setOpen(menu.hidden);
+    document.addEventListener("click", (event) => { if (!menu.hidden && !tools.contains(event.target)) setOpen(false); });
     const feedback = tools.querySelector("[data-persistence-feedback]");
     const download = (text) => { const link = document.createElement("a"); link.href = URL.createObjectURL(new Blob([text], { type: "application/json" })); link.download = `inazuma-raw-save-diagnostic-${new Date().toISOString().replace(/[:.]/g, "-")}.json`; document.body.appendChild(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(link.href), 0); };
     const copy = async (value, fallback = false) => { const text = JSON.stringify(value, null, 2); try { if (!navigator.clipboard?.writeText) throw new Error("clipboard-unavailable"); await navigator.clipboard.writeText(text); return true; } catch (error) { if (fallback) download(text); else throw error; return false; } finally { console.info("Inazuma persistence report", value); } };
-    tools.querySelector("[data-persistence-diagnostic]").onclick = async () => copy(await global.InazumaPersistenceDiagnostics.snapshot());
-    tools.querySelector("[data-raw-save-diagnostic]").onclick = async () => { const copied = await copy(await global.InazumaPersistenceDiagnostics.exportRawLegacySaves(), true); feedback.textContent = copied ? "DIAGNOSTICA RAW COPIATA" : "CLIPBOARD NON DISPONIBILE: JSON SCARICATO"; };
-    tools.querySelector("[data-persistence-repair]").onclick = async () => { const result = await global.InazumaPersistenceDiagnostics.repair(); await copy(result); alert(repairResultMessage(result)); };
+    tools.querySelector("[data-persistence-diagnostic]").onclick = async () => { try { await copy(await global.InazumaPersistenceDiagnostics.snapshot()); } finally { setOpen(false); } };
+    tools.querySelector("[data-raw-save-diagnostic]").onclick = async () => { try { const copied = await copy(await global.InazumaPersistenceDiagnostics.exportRawLegacySaves(), true); feedback.textContent = copied ? "DIAGNOSTICA RAW COPIATA" : "CLIPBOARD NON DISPONIBILE: JSON SCARICATO"; } finally { setOpen(false); } };
+    tools.querySelector("[data-persistence-repair]").onclick = async () => { try { const result = await global.InazumaPersistenceDiagnostics.repair(); await copy(result); alert(repairResultMessage(result)); } finally { setOpen(false); } };
     document.body.appendChild(tools);
   });
   const app = document.getElementById("app");
@@ -3212,11 +3217,7 @@
   function prepareTrade(node, outgoingId) {
     const outgoingEntry = rosterEntry(outgoingId);
     const outgoingResolved = resolvedRosterPlayer(outgoingId);
-    const outgoingRawBase = global.RoguelikeRules.resolveRosterEntryBase(outgoingEntry, run, {
-      profile: (entry) => global.ProfiledSeasonRuntime.resolveEffectiveBase(entry, run.seasonId),
-      legacy: (entry) => legacyRosterPlayer(entry),
-    });
-    const outgoingBase = outgoingRawBase ? { ...outgoingRawBase, finalOverall: global.InazumaProgression.effectivePotential(outgoingRawBase, outgoingEntry) } : null;
+    const outgoingBase = global.RoguelikeRules.tradeOutgoingEffectiveMetadata(outgoingResolved);
     if (!outgoingEntry || !outgoingResolved || !outgoingBase?.position || !Number.isFinite(Number(outgoingBase.finalOverall))) {
       toast("Giocatore non disponibile per lo scambio");
       return resolveTradeNode(node);
@@ -3278,6 +3279,9 @@
         if (!isProfileAwareSeason()) {
           const incomingId = String(incoming.player.playerId);
           const rosterIndex = current.roster.findIndex((entry) => String(entry.playerId) === outgoingId);
+          const currentOutgoing = global.RoguelikeRules.tradeOutgoingEffectiveMetadata(resolvedRosterPlayer(outgoingId, current));
+          const incomingEffective = incoming.source === "free_agents" ? global.DevelopmentRuntime.resolveEffectiveMetadata(current, incoming.player, freeAgentsDb) : incoming.player;
+          if (!currentOutgoing || String(incomingEffective?.position || "").toUpperCase() !== currentOutgoing.position || Number(incomingEffective?.finalOverall) < currentOutgoing.finalOverall) throw Object.assign(new Error("Offerta non più valida"), { code: "trade-invalid" });
           if (outgoingEntry.equippedItem) current.inventory.push(outgoingEntry.equippedItem);
           current.roster[rosterIndex] = { playerId: incomingId, source: incoming.source, level: nextLevel, equippedItem: null, ...permanentRosterFields(incoming.player) };
           current.lineup = current.lineup.map((id) => String(id) === outgoingId ? incomingId : String(id));
@@ -3290,13 +3294,7 @@
         }
         result = global.RoguelikeRules.executeProfileAwareTrade(current, outgoingEntry.playerId, incoming, {
           roleVariantForUpgrade: roleVariantForTradeUpgrade,
-          resolveOutgoingBase: (entry) => {
-            const base = global.RoguelikeRules.resolveRosterEntryBase(entry, current, {
-              profile: (profileEntry) => global.ProfiledSeasonRuntime.resolveEffectiveBase(profileEntry, current.seasonId),
-              legacy: (legacyEntry) => legacyRosterPlayer(legacyEntry),
-            });
-            return base ? { ...base, finalOverall: global.InazumaProgression.effectivePotential(base, entry) } : null;
-          },
+          resolveOutgoingBase: (entry) => global.RoguelikeRules.tradeOutgoingEffectiveMetadata(resolvedRosterPlayer(entry.playerId, current)),
           resolveIncomingCandidate: (player, source) => source === "free_agents"
             ? global.DevelopmentRuntime.resolveEffectiveMetadata(current, player, freeAgentsDb)
             : player,

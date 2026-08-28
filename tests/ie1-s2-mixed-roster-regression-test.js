@@ -50,6 +50,11 @@ assert(mixedResolved[2].portraitUrl && mixedResolved[3].portraitUrl, "profile an
 const average = Math.round(mixedResolved.reduce((sum, player) => sum + player.overall, 0) / mixedResolved.length);
 assert(Number.isFinite(average) && average > 0, "mixed average includes every entry");
 assert.deepStrictEqual(profileCalls.slice(-2), ["1226", "1070"]);
+const trainedProfileEntry = { ...dvalin, potentialBoost: 3, currentOverallBoost: 3, potentialBoostApplications: [{ amount: 3, appliedLevel: 0, legacy: true }] };
+const trainedProfileResolved = resolved(trainedProfileEntry, { ...mixedRun, roster: [trainedProfileEntry] });
+const trainedProfileTrade = rules.tradeOutgoingEffectiveMetadata(trainedProfileResolved);
+assert.equal(trainedProfileTrade.finalOverall, Number(runtime.resolveEffectiveBase(trainedProfileEntry, mixedRun.seasonId).finalOverall) + 3, "profile-aware Trade uses active profile plus run-local Training");
+assert.equal(trainedProfileTrade.position, String(trainedProfileResolved.position).toUpperCase());
 
 const adamBase = base(boostedFree, mixedRun);
 const lower = free.players.find((player) => player.position === "FW" && player.finalOverall < 83);

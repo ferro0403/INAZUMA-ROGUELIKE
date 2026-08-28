@@ -46,5 +46,10 @@ assert.match(appSource, /openPull\(node, "pull_legendary", \{ dev: true \}\)/, "
 assert.match(appSource, /RIGENERA PULL LEGGENDARIO/, "DEV Legendary reroll is available without a scout token");
 assert.match(appSource, /data-dev-transform-node="pull_legendary"/);
 assert.match(appSource, /data-dev-transform-node="trade"/);
+const prepareTradeSource = appSource.slice(appSource.indexOf("function prepareTrade"), appSource.indexOf("function showTradeResult"));
+assert(!prepareTradeSource.includes("InazumaProgression.effectivePotential"), "Trade never reconstructs V3 permanent potential from BASE plus roster fields");
+assert.match(prepareTradeSource, /tradeOutgoingEffectiveMetadata\(outgoingResolved\)/, "preview uses the resolved roster player");
+assert.match(prepareTradeSource, /resolveOutgoingBase: \(entry\) => global\.RoguelikeRules\.tradeOutgoingEffectiveMetadata\(resolvedRosterPlayer\(entry\.playerId, current\)\)/, "final profile-aware validation uses the same resolved metadata boundary");
+assert.match(prepareTradeSource, /finalOverall ≥ \$\{escapeHtml\(outgoingBase\.finalOverall\)\}/, "contract renders the exact filtering threshold");
 
 console.log("trade-preview-dev-tools-test: Development preview parity and DEV map tools OK");
