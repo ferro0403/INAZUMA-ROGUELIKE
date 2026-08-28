@@ -123,8 +123,9 @@
     return { ...global.DevelopmentV2.optionsFromUpgrade(basePlayer, run.developmentPlayerSnapshot[String(basePlayer.playerId)]), intensiveTrainingMigrated: true };
   }
 
-  function trainingState(run, basePlayer, entry, database) {
-    const kind = activeSnapshotKind(run, basePlayer?.playerId);
+  function trainingState(run, basePlayer, entry, database, options = {}) {
+    const providedBase = options.permanentMode === "provided-base";
+    const kind = providedBase ? "provided-base" : activeSnapshotKind(run, basePlayer?.playerId);
     if (kind !== "v3") {
       const permanentPotential = Number(basePlayer?.finalOverall || 0);
       const maxLocalBoost = Math.max(0, 99 - permanentPotential);
@@ -164,11 +165,16 @@
     return { ...permanent, ...stats, stats, potential, overall, category: global.InazumaProgression.categoryForPotential(potential, permanent.category, database) };
   }
 
-  function planIntensiveTraining(run, basePlayer, entry, addedBoost, database) {
+  function planIntensiveTraining(run, basePlayer, entry, addedBoost, database, options = {}) {
+    if (options.permanentMode === "provided-base") {
+      const state = trainingState(run, basePlayer, entry, database, options);
+      const appliedBoost = Math.min(Math.max(0, Number(addedBoost || 0)), state.remainingBoost);
+      return { ...global.InazumaProgression.planCodexTrainingGrowth(basePlayer, { ...entry, potentialBoost: state.currentLocalBoost, currentOverallBoost: state.currentOverallBoost, potentialBoostApplications: state.applications }, appliedBoost), permanentPotential: state.permanentPotential, existingTrainingBoost: state.currentLocalBoost, appliedBoost, remainingBoost: state.remainingBoost };
+    }
     if (activeSnapshotKind(run, basePlayer?.playerId) !== "v3") {
       return global.InazumaProgression.planCodexTrainingGrowth(basePlayer, entry, addedBoost);
     }
-    const state = trainingState(run, basePlayer, entry, database);
+    const state = trainingState(run, basePlayer, entry, database, options);
     const permanent = resolvePlayer(run, basePlayer, Number(basePlayer?.maxLevel || 20), database);
     const applications = state.applications;
     const localBoost = state.currentLocalBoost;

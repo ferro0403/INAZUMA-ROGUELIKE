@@ -700,7 +700,7 @@
     const profileAware = global.RoguelikeRules.isProfileAwareRosterEntry(entry, currentRun);
     const player = profileAware ? global.ProfiledSeasonRuntime.resolveEffectiveBase(entry, currentRun.seasonId) : sourcePlayer(entry);
     const database = profileAware ? seasonDb : (global.SeasonRegistry?.isSeasonSource?.(entry?.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb);
-    return global.DevelopmentRuntime.trainingState(currentRun, player, entry, database);
+    return global.DevelopmentRuntime.trainingState(currentRun, player, entry, database, profileAware ? { permanentMode: "provided-base" } : undefined);
   }
 
   function resolvedRosterPlayer(playerId, currentRun = run) {
@@ -6044,7 +6044,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
             const trainingBase=global.RoguelikeRules.isProfileAwareRosterEntry(entry,run)?global.ProfiledSeasonRuntime.resolveEffectiveBase(entry,run.seasonId):player;
             const committed = persistGameplayMutation({ label: "consumable-potential", mutate: (current) => {
             const currentEntry = rosterEntry(entry.playerId);
-            const trainingPlan=global.DevelopmentRuntime.planIntensiveTraining(current,trainingBase,currentEntry,addedBoost,global.RoguelikeRules.isProfileAwareRosterEntry(currentEntry,current)?seasonDb:freeAgentsDb);
+            const currentProfileAware=global.RoguelikeRules.isProfileAwareRosterEntry(currentEntry,current);
+            const trainingPlan=global.DevelopmentRuntime.planIntensiveTraining(current,trainingBase,currentEntry,addedBoost,currentProfileAware?seasonDb:freeAgentsDb,currentProfileAware?{permanentMode:"provided-base"}:undefined);
             currentEntry.potentialBoost = Math.min(training.maxLocalBoost, currentPotentialBoost + addedBoost);
             currentEntry.currentOverallBoost = Math.min(training.maxLocalBoost, currentOverallBoost + addedBoost);
             currentEntry.intensiveTrainingMigrated = true;

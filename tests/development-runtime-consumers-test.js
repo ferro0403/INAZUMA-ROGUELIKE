@@ -120,6 +120,32 @@ assert.strictEqual(ninetyFiveState.remainingBoost, 2);
 const ninetyFivePlan = Runtime.planIntensiveTraining(ninetyFiveRun, v3TrainingPlayer, existingTwo, 3, database);
 assert.strictEqual(ninetyFivePlan.appliedBoost, 2);
 assert.strictEqual(ninetyFivePlan.targetOverall, 99, "permanent 95 + existing 2 + requested 3 applies only remaining 2");
+
+const collisionV3High = runAtPermanent(95);
+const profileEighty = { ...v3TrainingPlayer, position: "MF", normalizedRole: "MF", finalOverall: 80, category: "Forte", ratings: { attack: 5, control: 8, speed: 7, grit: 7, physical: 5, stamina: 8, defense: 6, save: 1 }, activeProfileId: "same-player@profile-80", activeRoleVariantId: "mf" };
+const profileEntry = { playerId: v3TrainingPlayer.playerId, activeProfileId: profileEighty.activeProfileId, activeRoleVariantId: "mf", potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [] };
+const providedMode = { permanentMode: "provided-base" };
+const collisionState = Runtime.trainingState(collisionV3High, profileEighty, profileEntry, database, providedMode);
+assert.strictEqual(collisionState.permanentPotential, 80, "profile-aware baseline wins over same-playerId V3 95");
+assert.strictEqual(collisionState.maxLocalBoost, 19);
+const collisionPlan = Runtime.planIntensiveTraining(collisionV3High, profileEighty, profileEntry, 3, database, providedMode);
+assert.strictEqual(collisionPlan.targetOverall, 83);
+assert.strictEqual(collisionPlan.appliedBoost, 3);
+assert.strictEqual(profileEighty.position, "MF");
+assert.strictEqual(profileEighty.activeProfileId, "same-player@profile-80", "profile role and identity remain the supplied permanent baseline");
+
+const collisionV3Low = runAtPermanent(80);
+const profileNinetyFive = { ...profileEighty, finalOverall: 95, category: "Leggenda", activeProfileId: "same-player@profile-95" };
+const reverseState = Runtime.trainingState(collisionV3Low, profileNinetyFive, profileEntry, database, providedMode);
+assert.strictEqual(reverseState.permanentPotential, 95, "profile-aware baseline wins over same-playerId V3 80");
+assert.strictEqual(reverseState.maxLocalBoost, 4);
+assert.strictEqual(Runtime.planIntensiveTraining(collisionV3Low, profileNinetyFive, profileEntry, 3, database, providedMode).targetOverall, 98);
+
+const collisionOversized = { ...profileEntry, potentialBoost: 10, currentOverallBoost: 10, potentialBoostApplications: [{ amount: 10, appliedLevel: 0, legacy: true }] };
+const collisionReloaded = JSON.parse(JSON.stringify(collisionOversized));
+const collisionReloadedState = Runtime.trainingState(JSON.parse(JSON.stringify(collisionV3High)), profileEighty, collisionReloaded, database, providedMode);
+assert.strictEqual(collisionReloadedState.currentLocalBoost, 10, "save/load normalization uses profile capacity 19, not colliding V3 capacity 4");
+assert.deepStrictEqual(collisionReloaded, collisionOversized, "profile-aware normalization is read-only");
 const incompatible = Runtime.buildRunSnapshot({ v2State: state, database });
 incompatible.developmentPlayerSnapshot[legacyPlayer.playerId].permanentTargetPotential = 99;
 assert.strictEqual(Runtime.resolvePlayer(incompatible, legacyPlayer, 20, database).potential, 80, "V3 has precedence over incompatible V2 compatibility data");
@@ -134,9 +160,10 @@ for (const [file, source] of [["js/app.js", app], ["js/draft.js", draft]]) {
 assert.match(app, /DevelopmentRuntime\.resolvePlayer\(run, player/, "cards and pull choices use DevelopmentRuntime");
 assert.match(app, /DevelopmentRuntime\.resolveRosterPlayer/, "roster, lineup and match inputs share the runtime boundary");
 assert.match(app, /DevelopmentRuntime\.resolveEffectiveMetadata/, "pull, legendary and trade eligibility use runtime metadata");
-assert.match(app, /DevelopmentRuntime\.planIntensiveTraining\(current,trainingBase,currentEntry,addedBoost/, "production Intensive Training uses the real centralized runtime planner boundary");
+assert.match(app, /DevelopmentRuntime\.planIntensiveTraining\(current,trainingBase,currentEntry,addedBoost,currentProfileAware\?seasonDb:freeAgentsDb,currentProfileAware\?\{permanentMode:"provided-base"\}:undefined\)/, "production Intensive Training uses the real centralized runtime planner and profile-aware mode");
 assert.match(app, /runtimeTrainingState\(entry, run\)/, "roster normalization uses Runtime-derived training capacity");
 assert.match(app, /const training = runtimeTrainingState\(entry\)/, "item application uses the same Runtime-derived capacity");
 assert.doesNotMatch(app, /99\s*-\s*activeBasePotential\(entry\)/, "V3 training capacity is never derived from immutable BASE in app.js");
+assert.match(app, /profileAware \? \{ permanentMode: "provided-base" \} : undefined/, "profile-aware normalization bypasses colliding Development snapshots");
 
 console.log("development-runtime-consumers-test: V3/V2/base, roles, zero-solver, roster/training, pull/trade/legendary static guard OK");
