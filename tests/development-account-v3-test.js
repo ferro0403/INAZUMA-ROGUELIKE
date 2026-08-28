@@ -123,6 +123,59 @@ environment(JSON.stringify(legacy({ coins: 1000, cupsBySeason: { ie1: 2 }, proje
   const expected = V3.materializeProfile({ basePlayer: player, targetPotential: 75, category: "Buono", database, progression }); assert.deepStrictEqual(profile, expected);
 });
 
+
+// Regression removes one canonical node, refunds only its stored receipt, never
+// refunds projects, never invokes either materializer, and rejects stale IDs.
+environment(null, ({ storage, counts }) => {
+  const player = base("Normale"), state = canonicalChain(player, ["Buono", "Forte", "Elite"]), id = String(player.playerId);
+  state.coins = 10; state.cupsBySeason.ie2 = 4; state.cupsBySeason.ie1_s3 = 5; state.projects.Elite = 0;
+  state.players[id].steps[2].receipt = { coinsConsumed: 800, cupsConsumed: 3, cupsConsumedBySource: { ie2: 1, ie1_s3: 2 }, projectsConsumed: 1 };
+  state.players[id].steps[1].receipt = { coinsConsumed: 400, cupsConsumed: 2, cupsConsumedBySource: { ie1: 2 }, projectsConsumed: 1 };
+  storage.value = JSON.stringify(Account.envelopeFor(state, options)); Account.resetSessionCache();
+  const beforeWrites = storage.writes, preview = Account.previewRegression({ playerId: id }, options); assert(preview.ok); assert.equal(storage.writes, beforeWrites);
+  const first = Account.regress({ playerId: id, expectedActiveId: preview.removedId }, options); assert(first.ok); assert.deepStrictEqual(first.from, { rarity: "Elite", potential: 85, isBase: false, isBaseline: false }); assert.equal(first.to.rarity, "Forte");
+  assert.deepStrictEqual(first.refund, { coins: 800, cups: 3, cupsBySource: { ie2: 1, ie1_s3: 2 }, projects: 0 });
+  assert.equal(first.state.coins, 810); assert.equal(first.state.cupsBySeason.ie2, 5); assert.equal(first.state.cupsBySeason.ie1_s3, 7); assert.equal(first.state.projects.Elite, 0); assert.equal(storage.writes, beforeWrites + 1);
+  const stale = Account.regress({ playerId: id, expectedActiveId: preview.removedId }, options); assert.equal(stale.reason, "stale-regression"); assert.equal(storage.writes, beforeWrites + 1);
+  const secondId = first.state.players[id].steps.at(-1).stepId, second = Account.regress({ playerId: id, expectedActiveId: secondId }, options); assert(second.ok); assert.equal(second.to.rarity, "Buono"); assert.deepStrictEqual(second.refund, { coins: 400, cups: 2, cupsBySource: { ie1: 2 }, projects: 0 });
+  const withoutProject = Account.evolve({ ...input(player), cupSelection: { ie1: 2 } }, options); assert.equal(withoutProject.reason, "resources"); assert.equal(withoutProject.missing.projects, 1);
+  Account.mutate((candidate) => { candidate.projects.Forte += 1; }, options); const paidAgain = Account.evolve({ ...input(player), cupSelection: { ie1: 2 } }, options); assert(paidAgain.ok); assert.equal(paidAgain.receipt.projectsConsumed, 1); assert.notEqual(paidAgain.state.players[id].steps.at(-1).stepId, secondId);
+});
+
+// A first coloured node returns to the actual preceding baseline or immutable
+// BASE, without synthesizing intermediate rarity nodes; empty chains disappear.
+for (const [rarity, colored] of [["Buono", "Forte"], ["Forte", "Elite"]]) environment(null, ({ storage }) => {
+  const player = base(rarity), state = canonicalChain(player, [colored]), id = String(player.playerId);
+  storage.value = JSON.stringify(Account.envelopeFor(state, options)); Account.resetSessionCache();
+  const result = Account.regress({ playerId: id, expectedActiveId: state.players[id].steps[0].stepId }, options);
+  assert(result.ok); assert.equal(result.to.isBase, true); assert.equal(result.to.rarity, rarity); assert.equal(result.to.potential, Number(player.finalOverall)); assert.equal(result.state.players[id], undefined);
+});
+environment(null, ({ storage }) => {
+  const player = base("Debole"), state = canonicalChain(player, ["Buono"]), id = String(player.playerId), profile = V3.materializeProfile({ basePlayer: player, targetPotential: 70, category: "Normale", database, progression });
+  state.players[id].steps[0].fromRarity = "Normale"; state.players[id].steps[0].fromPotential = 70;
+  state.players[id].legacyNormale = { migrationId: "legacy-normal", fromRarity: "Debole", fromPotential: Number(player.finalOverall), toPotential: 70, profile, receipt: { coinsConsumed: 100, cupsConsumed: 0, cupsConsumedBySource: {}, projectsConsumed: 0 } };
+  storage.value = JSON.stringify(Account.envelopeFor(state, options)); Account.resetSessionCache();
+  const colored = Account.regress({ playerId: id, expectedActiveId: state.players[id].steps[0].stepId }, options); assert(colored.ok); assert(colored.to.isBaseline); assert.equal(colored.to.rarity, "Normale");
+  const baseline = Account.regress({ playerId: id, expectedActiveId: "legacy-normal" }, options); assert(baseline.ok); assert(baseline.to.isBase); assert.equal(baseline.to.rarity, "Debole"); assert.equal(baseline.state.players[id], undefined);
+});
+
+// Regression ignores target capacity, permitting temporary overflow. Normal
+// evolve still blocks entry while the destination is full/overfull.
+environment(null, ({ storage }) => {
+  const player = base("Normale"), state = canonicalChain(player, ["Buono", "Forte", "Elite"]), profile = state.players[player.playerId].steps[1].profile;
+  for (let i = 0; i < 20; i += 1) state.players[`full-forte-${i}`] = { legacyNormale: null, steps: [{ ...state.players[player.playerId].steps[1], stepId: `full-${i}`, profile }] };
+  const resolveFull = (id) => String(id).startsWith("full-forte-") ? { ...player, playerId: String(id) } : resolve(id);
+  const fullOptions = { ...options, resolveBasePlayer: resolveFull }; storage.value = JSON.stringify(Account.envelopeFor(state, fullOptions)); Account.resetSessionCache();
+  const result = Account.regress({ playerId: String(player.playerId), expectedActiveId: state.players[player.playerId].steps.at(-1).stepId }, fullOptions); assert(result.ok); assert.equal(Account.slotUsage(result.state).Forte, 21); assert.equal(Account.slotUsage(result.state).Elite, 0);
+  const blocked = Account.evolve({ ...input(base("Buono")), cupSelection: { ie1: 2 } }, fullOptions); assert.equal(blocked.reason, "rarity-capacity-full"); assert.equal(blocked.used, 21);
+});
+
+// A failed canonical commit reports failure and leaves the persisted account.
+environment(null, ({ storage }) => {
+  const player = base("Buono"), state = canonicalChain(player, ["Forte"]), id = String(player.playerId); storage.value = JSON.stringify(Account.envelopeFor(state, options)); Account.resetSessionCache();
+  const before = storage.value; storage.fail = true; const result = Account.regress({ playerId: id, expectedActiveId: state.players[id].steps[0].stepId }, options); assert.equal(result.reason, "persistence"); assert.equal(storage.value, before);
+});
+
 // DEV reset is a single canonical commit, not a V2 reset followed by migration.
 environment(JSON.stringify(legacy({ coins: 999 })), ({ storage, counts }) => {
   Account.ensureMigrated(options); const beforeWrites = storage.writes, beforeEvents = counts().events, reset = Account.reset(options), envelope = JSON.parse(storage.value);
@@ -153,11 +206,13 @@ environment(JSON.stringify(legacy({ coins: 5000, cupsBySeason: { ie1: 10 }, proj
   for (const target of ["Buono", "Forte"]) { const cups = V2.COSTS[target].cups; assert(Account.evolve({ ...input(player), cupSelection: { ie1: cups } }, options).ok); }
   const runA = Runtime.buildRunSnapshot({ v3State: Account.read(options), v2Compatibility: Account.readCompatibility(options) }); assert.equal(runA.developmentV3PlayerSnapshot.players[player.playerId].profile.finalOverall, 80);
   assert(Account.evolve({ ...input(player), cupSelection: { ie1: 3 } }, options).ok);
-  const envelope = JSON.parse(storage.value); envelope.players[player.playerId].permanentTargetPotential = 99; storage.value = JSON.stringify(envelope); Account.resetSessionCache();
+  const eliteState = Account.read(options), runElite = Runtime.buildRunSnapshot({ v3State: eliteState, v2Compatibility: Account.readCompatibility(options) });
+  const eliteId = eliteState.players[player.playerId].steps.at(-1).stepId; assert(Account.regress({ playerId: String(player.playerId), expectedActiveId: eliteId }, options).ok);
+  const envelope = JSON.parse(storage.value); envelope.players[player.playerId].permanentTargetPotential = 99;
   const runB = Runtime.buildRunSnapshot({ v3State: Account.read(options), v2Compatibility: envelope });
-  assert.equal(runA.developmentV3PlayerSnapshot.players[player.playerId].profile.finalOverall, 80); assert.equal(runB.developmentV3PlayerSnapshot.players[player.playerId].profile.finalOverall, 85);
-  assert.equal(Runtime.resolvePlayer(runB, player, 20, database).potential, 85);
-  assert.equal(Account.read(options).players[player.playerId].steps.at(-1).toPotential, 85, "a marked V3 remains canonical over a corrupt mirror");
+  assert.equal(runElite.developmentV3PlayerSnapshot.players[player.playerId].profile.finalOverall, 85, "existing run remains frozen"); assert.equal(runB.developmentV3PlayerSnapshot.players[player.playerId].profile.finalOverall, 80);
+  assert.equal(Runtime.resolvePlayer(runB, player, 20, database).potential, 80);
+  assert.equal(Account.read(options).players[player.playerId].steps.at(-1).toPotential, 80, "regressed marked V3 remains canonical over a corrupt mirror");
 });
 
 // Account failures are normalized into the controlled run-snapshot boundary.
