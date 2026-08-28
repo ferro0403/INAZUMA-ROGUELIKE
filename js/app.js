@@ -6041,9 +6041,9 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
           onCancel: () => choosePlayerForPotentialBoost(item),
           onConfirm: () => {
             const trainingBase=global.RoguelikeRules.isProfileAwareRosterEntry(entry,run)?global.ProfiledSeasonRuntime.resolveEffectiveBase(entry,run.seasonId):player;
-            const committed = persistGameplayMutation({ label: "consumable-potential", mutate: () => {
+            const committed = persistGameplayMutation({ label: "consumable-potential", mutate: (current) => {
             const currentEntry = rosterEntry(entry.playerId);
-            const trainingPlan=global.InazumaProgression.planCodexTrainingGrowth(trainingBase,currentEntry,addedBoost);
+            const trainingPlan=global.DevelopmentRuntime.planIntensiveTraining(current,trainingBase,currentEntry,addedBoost,global.RoguelikeRules.isProfileAwareRosterEntry(currentEntry,current)?seasonDb:freeAgentsDb);
             currentEntry.potentialBoost = Math.min(maxBoost, currentPotentialBoost + addedBoost);
             currentEntry.currentOverallBoost = Math.min(maxBoost, currentOverallBoost + addedBoost);
             currentEntry.intensiveTrainingMigrated = true;

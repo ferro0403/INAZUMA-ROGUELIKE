@@ -126,7 +126,7 @@
   function resolveRosterPlayer(run, basePlayer, entry, database) {
     const level = Math.floor(Number(entry?.level || 0));
     const kind = activeSnapshotKind(run, basePlayer?.playerId);
-    if (kind === "base") return global.InazumaProgression.getPlayerAtLevel(basePlayer, level, database, {
+    if (kind !== "v3") return global.InazumaProgression.getPlayerAtLevel(basePlayer, level, database, {
       potentialBoost: entry?.potentialBoost, currentOverallBoost: entry?.currentOverallBoost, potentialBoostApplications: entry?.potentialBoostApplications,
     });
     const permanent = resolvePlayer(run, basePlayer, level, database);
@@ -143,7 +143,24 @@
     return { ...permanent, ...stats, stats, potential, overall, category: global.InazumaProgression.categoryForPotential(potential, permanent.category, database) };
   }
 
-  const api = { SNAPSHOT_SCHEMA_VERSION, registerDatabase, resolveBasePlayer, validateSnapshot, buildRunSnapshot, activeSnapshotKind, resolvePlayer, resolvePermanentPlayer, resolveEffectiveMetadata, rosterEntryPermanentFields, resolveRosterPlayer, DevelopmentSnapshotError };
+  function planIntensiveTraining(run, basePlayer, entry, addedBoost, database) {
+    if (activeSnapshotKind(run, basePlayer?.playerId) !== "v3") {
+      return global.InazumaProgression.planCodexTrainingGrowth(basePlayer, entry, addedBoost);
+    }
+    const permanent = resolvePlayer(run, basePlayer, Number(basePlayer?.maxLevel || 20), database);
+    const applications = global.InazumaProgression.normalizePotentialBoostApplications(entry, Math.max(0, 99 - Number(permanent.potential || 0)))
+      .filter((application) => !application.permanent);
+    const localBoost = applications.reduce((sum, application) => sum + Number(application.amount || 0), 0);
+    const trainingBase = { ...basePlayer, finalOverall: permanent.potential, ratings: global.InazumaProgression.toCodexRatings(permanent.stats), stats: permanent.stats };
+    const plan = global.InazumaProgression.planCodexTrainingGrowth(trainingBase, {
+      potentialBoost: localBoost,
+      currentOverallBoost: Math.min(localBoost, Math.max(0, Number(entry?.currentOverallBoost ?? localBoost))),
+      potentialBoostApplications: applications,
+    }, addedBoost);
+    return { ...plan, permanentPotential: permanent.potential, existingTrainingBoost: localBoost };
+  }
+
+  const api = { SNAPSHOT_SCHEMA_VERSION, registerDatabase, resolveBasePlayer, validateSnapshot, buildRunSnapshot, activeSnapshotKind, resolvePlayer, resolvePermanentPlayer, resolveEffectiveMetadata, rosterEntryPermanentFields, resolveRosterPlayer, planIntensiveTraining, DevelopmentSnapshotError };
   global.DevelopmentRuntime = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);

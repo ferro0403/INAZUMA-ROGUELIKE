@@ -56,6 +56,38 @@ assert.deepStrictEqual(
   progression.getPlayerAtLevel(legacyPlayer, 7, database, DevelopmentV2.optionsFromUpgrade(legacyPlayer, state.players[legacyPlayer.playerId])),
   "V2-only frozen runs retain exact playback"
 );
+const legacyEntries = [
+  { name: "aggregate-only", entry: { potentialBoost: 6, currentOverallBoost: 6 } },
+  { name: "normalized-legacy", entry: { potentialBoost: 6, currentOverallBoost: 6, potentialBoostApplications: [{ amount: 6, appliedLevel: 0, legacy: true }] } },
+  { name: "permanent-plus-codex-training", entry: { potentialBoost: 9, currentOverallBoost: 9, potentialBoostApplications: [{ amount: 6, appliedLevel: 0, permanent: true }, { amount: 3, appliedLevel: 4, codexDeltas: { defense: 1 } }] } },
+  { name: "run-local-without-codex", entry: { potentialBoost: 9, currentOverallBoost: 9, potentialBoostApplications: [{ amount: 6, appliedLevel: 0, permanent: true }, { amount: 3, appliedLevel: 4 }] } },
+];
+for (const { name, entry } of legacyEntries) for (let level = 0; level <= 20; level += 1) {
+  const expectedLegacy = progression.getPlayerAtLevel(legacyPlayer, level, database, entry);
+  assert.deepStrictEqual(Runtime.resolveRosterPlayer(legacyRun, legacyPlayer, { ...entry, level }, database), expectedLegacy, `${name}/Lv${level} preserves pre-PR4 roster playback`);
+}
+
+const v3TrainingPlayer = database.players[0];
+const v3TrainingRun = Runtime.buildRunSnapshot({ v2State: state, database });
+const emptyTrainingEntry = { playerId: v3TrainingPlayer.playerId, level: 20, potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [] };
+const trainingPlan = Runtime.planIntensiveTraining(v3TrainingRun, v3TrainingPlayer, emptyTrainingEntry, 3, database);
+assert.strictEqual(v3TrainingPlayer.finalOverall, 74, "training fixture starts at immutable BASE 74");
+assert.strictEqual(trainingPlan.permanentPotential, 80, "planner starts from frozen V3 permanent 80");
+assert.strictEqual(trainingPlan.targetOverall, 83, "V3 Intensive Training targets permanent 80 + 3, never BASE 74 + 3");
+const trainedEntry = { ...emptyTrainingEntry, potentialBoost: 3, currentOverallBoost: 3, potentialBoostApplications: [{ amount: 3, appliedLevel: 20, codexDeltas: trainingPlan.codexDeltas }] };
+const trained = Runtime.resolveRosterPlayer(v3TrainingRun, v3TrainingPlayer, trainedEntry, database);
+const permanentAtMax = Runtime.resolvePlayer(v3TrainingRun, v3TrainingPlayer, 20, database);
+const expectedRatings = { ...progression.toCodexRatings(permanentAtMax.stats) };
+for (const [stat, delta] of Object.entries(trainingPlan.codexDeltas)) expectedRatings[stat] += delta;
+assert.strictEqual(trained.potential, 83);
+assert.strictEqual(trained.overall, 83);
+assert.deepStrictEqual(progression.toCodexRatings(trained.stats), expectedRatings, "resolved stats are the exact Codex 80 -> 83 run-local delta");
+
+const pr3CopiedEntry = { playerId: v3TrainingPlayer.playerId, level: 20, potentialBoost: 9, currentOverallBoost: 9, potentialBoostApplications: [{ amount: 6, appliedLevel: 0, permanent: true }, { amount: 3, appliedLevel: 20, codexDeltas: trainingPlan.codexDeltas }] };
+assert.deepStrictEqual(Runtime.resolveRosterPlayer(v3TrainingRun, v3TrainingPlayer, pr3CopiedEntry, database), trained, "PR3 copied permanent fields are ignored while run-local training layers once");
+const serializedRun = JSON.parse(JSON.stringify({ ...v3TrainingRun, roster: [trainedEntry], checkpoint: { developmentV3PlayerSnapshot: v3TrainingRun.developmentV3PlayerSnapshot, roster: [trainedEntry] } }));
+assert.deepStrictEqual(Runtime.resolveRosterPlayer(serializedRun, v3TrainingPlayer, serializedRun.roster[0], database), trained, "save/refresh/load preserves V3 runtime playback");
+assert.deepStrictEqual(Runtime.resolveRosterPlayer(serializedRun.checkpoint, v3TrainingPlayer, serializedRun.checkpoint.roster[0], database), trained, "checkpoint restoration preserves V3 runtime playback");
 const incompatible = Runtime.buildRunSnapshot({ v2State: state, database });
 incompatible.developmentPlayerSnapshot[legacyPlayer.playerId].permanentTargetPotential = 99;
 assert.strictEqual(Runtime.resolvePlayer(incompatible, legacyPlayer, 20, database).potential, 80, "V3 has precedence over incompatible V2 compatibility data");
@@ -70,5 +102,6 @@ for (const [file, source] of [["js/app.js", app], ["js/draft.js", draft]]) {
 assert.match(app, /DevelopmentRuntime\.resolvePlayer\(run, player/, "cards and pull choices use DevelopmentRuntime");
 assert.match(app, /DevelopmentRuntime\.resolveRosterPlayer/, "roster, lineup and match inputs share the runtime boundary");
 assert.match(app, /DevelopmentRuntime\.resolveEffectiveMetadata/, "pull, legendary and trade eligibility use runtime metadata");
+assert.match(app, /DevelopmentRuntime\.planIntensiveTraining\(current,trainingBase,currentEntry,addedBoost/, "production Intensive Training uses the real centralized runtime planner boundary");
 
 console.log("development-runtime-consumers-test: V3/V2/base, roles, zero-solver, roster/training, pull/trade/legendary static guard OK");

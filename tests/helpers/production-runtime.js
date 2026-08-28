@@ -59,6 +59,7 @@ function load(storage, options = {}) {
     resolveRosterPlayer: (_run, player) => c.InazumaProgression.getPlayerAtLevel(player),
     resolveEffectiveMetadata: (_run, player) => ({ ...player, potential: player?.finalOverall, finalOverall: player?.finalOverall }),
     rosterEntryPermanentFields: () => ({ potentialBoost: 0, currentOverallBoost: 0, potentialBoostApplications: [], intensiveTrainingMigrated: true }),
+    planIntensiveTraining: (_run, player, entry, amount) => c.InazumaProgression.planCodexTrainingGrowth?.(player, entry, amount) || { codexDeltas: {} },
   };
   c.ProfiledSeasonRuntime = { resolveProfile: (_season, id) => ({ profileId: String(id), playerId: String(id), name: String(id), position: "MF", category: "Normale", overall: 50, stats: {} }), addLevelUnits: player => player };
   c.MatchSimulator = { simulate: () => ({ score: { user: 1, opponent: 0 }, events: [] }) };
