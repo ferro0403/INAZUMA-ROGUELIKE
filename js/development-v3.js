@@ -263,9 +263,7 @@
     return parseInt(code.slice(index * 2, index * 2 + 2), 36);
   }
 
-  function resolveMaterializedPlayer(basePlayer, profile, requestedLevel) {
-    const errors = profileErrors(profile);
-    if (errors.length) throw new TypeError(`Invalid Development V3 profile: ${errors.join(", ")}`);
+  function resolveValidatedMaterializedPlayer(basePlayer, profile, requestedLevel) {
     if (!record(basePlayer) || !String(basePlayer.playerId || "")) throw new TypeError("basePlayer with playerId is required");
     const numericLevel = Number.isFinite(Number(requestedLevel)) ? Math.round(Number(requestedLevel)) : 0;
     const level = Math.max(0, Math.min(profile.maxLevel, numericLevel));
@@ -275,7 +273,18 @@
     return { ...basePlayer, ...stats, level, overall, potential, category: profile.category, stats };
   }
 
-  const api = { SCHEMA_VERSION, PROFILE_FORMAT_VERSION, GROWTH_ALGORITHM_VERSION, MAX_LEVEL, STAT_ORDER, STAT_RANGE, OVERALL_RANGE, POTENTIAL_RANGE, COLORED_RARITIES, RARITY_POTENTIAL_BANDS, PROJECT_RARITIES, SEASON_IDS, CODEC, empty, normalize, validate, clone, materializeProfile, resolveMaterializedPlayer };
+  function resolveMaterializedPlayer(basePlayer, profile, requestedLevel) {
+    const errors = profileErrors(profile);
+    if (errors.length) throw new TypeError(`Invalid Development V3 profile: ${errors.join(", ")}`);
+    return resolveValidatedMaterializedPlayer(basePlayer, profile, requestedLevel);
+  }
+
+  function validateProfile(profile) {
+    const errors = profileErrors(profile);
+    return { valid: errors.length === 0, errors };
+  }
+
+  const api = { SCHEMA_VERSION, PROFILE_FORMAT_VERSION, GROWTH_ALGORITHM_VERSION, MAX_LEVEL, STAT_ORDER, STAT_RANGE, OVERALL_RANGE, POTENTIAL_RANGE, COLORED_RARITIES, RARITY_POTENTIAL_BANDS, PROJECT_RARITIES, SEASON_IDS, CODEC, empty, normalize, validate, validateProfile, clone, materializeProfile, resolveMaterializedPlayer, resolveValidatedMaterializedPlayer };
   global.DevelopmentV3 = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);

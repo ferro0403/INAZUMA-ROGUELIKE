@@ -85,7 +85,8 @@
     const now = new Date().toISOString();
     const normalizedSeasonId = seasonIdOf(seasonId || global.SeasonRegistry?.activeId?.());
     let storageGeneration = 0; try { const raw = localStorage.getItem(primaryKey(normalizedSeasonId)); storageGeneration = raw ? Number(parseEnvelope(raw, normalizedSeasonId).generation) : 0; } catch (_) {}
-    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), storageGeneration, createdAt: now, updatedAt: now, lastPlayedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: initialRunLives(), consecutiveLosses: 0, formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, teamLevelUnits: 0, completedSpecialMatchIds: [], claimedSpecialMatchRewardIds: [], unlockedSpecialTeamIds: [], pendingSpecialMatchReward: null, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [] };
+    const snapshots = global.DevelopmentRuntime?.buildRunSnapshot?.() || { developmentPlayerSnapshot: clone(global.DevelopmentV2?.read?.().players || {}) };
+    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), storageGeneration, createdAt: now, updatedAt: now, lastPlayedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: initialRunLives(), consecutiveLosses: 0, formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, teamLevelUnits: 0, completedSpecialMatchIds: [], claimedSpecialMatchRewardIds: [], unlockedSpecialTeamIds: [], pendingSpecialMatchReward: null, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [], ...snapshots };
   }
 
   function defaultPostBossFlowFromPending(run) {
@@ -137,7 +138,7 @@
     if (!options.storageRead && global.SeasonRegistry?.database?.(run.seasonId)?.requiresProfileAwareRuntime) global.ProfiledSeasonRuntime?.normalizeRun?.(run);
     run.activeMatch = run.activeMatch || null; run.currentZone = run.currentZone || null;
     if (!options.storageRead && global.SeasonRegistry?.database?.(run.seasonId)?.requiresProfileAwareRuntime && run.currentZone) global.MapEngine?.normalizeSpecialMatchNode?.(run, global.SeasonRegistry?.database?.(run.seasonId));
-    if (!run.developmentPlayerSnapshot) run.developmentPlayerSnapshot = options.storageRead ? {} : clone(global.DevelopmentV2?.read?.().players || {});
+    if (!run.developmentPlayerSnapshot) run.developmentPlayerSnapshot = {};
     run.postBossFlow = normalizePostBossFlow(run);
     run.pendingBossVictory = run.pendingBossVictory || null;
     run.permanentEffectOutbox = Array.isArray(run.permanentEffectOutbox) ? run.permanentEffectOutbox : [];

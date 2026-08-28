@@ -1,8 +1,9 @@
 (function (global) {
   "use strict";
 
-  // Explicit-only V2 -> V3 migration planner. This file is deliberately not
-  // loaded by index.html; PR 3 must choose the production activation point.
+  // Loaded for pure in-memory V2 -> V3 conversion at the run boundary.
+  // Persisted migrateStoredState() remains explicit-only: account migration is
+  // never activated automatically here.
   const SHADOW_FIELD = "developmentV3";
   const LEGACY_CUP_SEASON = "ie1";
   const record = (value) => value && typeof value === "object" && !Array.isArray(value);
