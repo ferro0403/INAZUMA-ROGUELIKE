@@ -1804,6 +1804,8 @@
       confirm.disabled = true;
       const result = global.DevelopmentAccountV3.regress({ playerId: row.playerId, expectedActiveId: preview.activeId }, { database: freeAgentsDb });
       if (!result.ok) { closeModal({ invokeOnClose: false }); toast(result.reason === "stale-regression" ? "Evoluzione già cambiata: aggiornata la lista" : "Regressione non salvata", "error"); return renderDevelopmentCenter("management"); }
+      developmentPlayersCache = null;
+      developmentResolvedCache.delete(String(row.playerId));
       closeModal({ invokeOnClose: false }); toast(`${row.name}: ${result.to.rarity} ${result.to.potential}`); renderDevelopmentCenter("management");
     });
   }
