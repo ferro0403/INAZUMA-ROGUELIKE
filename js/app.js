@@ -4379,7 +4379,10 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
 
   function updateMatchControlsDom() {
     const state = ui.bossMatchState;
-    const resolved = state.startsWith("completed");
+    const completed = ui.match?.simulation?.state === "completed" || state.startsWith("completed");
+    const resolutionApplied = ui.match?.simulation?.resolutionApplied === true;
+    const resolved = completed && resolutionApplied;
+    const unresolved = completed && !resolutionApplied;
     const simulating = state === "simulating";
     const simulate = document.getElementById("simulate-boss-match");
     const skip = document.getElementById("skip-match-result");
@@ -4389,21 +4392,23 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const simulationState = simulationModal?.querySelector(".five-simulation-state");
     const simulationBadge = simulationModal?.querySelector(".match-state-badge");
     if (simulate) {
-      simulate.disabled = Boolean(ui.matchStartLocked) || simulating || resolved;
-      simulate.textContent = ui.matchStartLocked ? "Avvio..." : simulating ? "Simulazione..." : "Simula partita";
+      simulate.disabled = Boolean(ui.matchStartLocked) || simulating || completed;
+      simulate.textContent = ui.matchStartLocked ? "Avvio..." : simulating ? "Simulazione..." : completed ? "Risultato definitivo" : "Simula partita";
     }
     if (skip) {
       skip.hidden = !simulating;
       skip.disabled = !simulating;
     }
     if (cont) {
-      cont.hidden = !resolved;
-      cont.disabled = !resolved || Boolean(ui.match?.postMatchNavigationApplied);
+      cont.dataset.resolvedLabel ||= cont.textContent;
+      cont.hidden = !completed;
+      cont.disabled = !completed || (resolved && Boolean(ui.match?.postMatchNavigationApplied));
+      cont.textContent = unresolved ? "Riprova finalizzazione" : cont.dataset.resolvedLabel;
     }
     if (status) status.textContent = bossMatchStatusText();
     if (simulationModal) simulationModal.dataset.matchState = state;
-    if (simulationState) simulationState.textContent = resolved ? (state.endsWith("victory") ? "Vittoria" : "Sconfitta") : simulating ? "In corso" : "Pronta";
-    if (simulationBadge) simulationBadge.textContent = simulating ? "Live" : resolved ? "Completa" : "In attesa";
+    if (simulationState) simulationState.textContent = completed ? (state.endsWith("victory") ? "Vittoria" : "Sconfitta") : simulating ? "In corso" : "Pronta";
+    if (simulationBadge) simulationBadge.textContent = simulating ? "Live" : completed ? "Completa" : "In attesa";
   }
 
   function stepMatchPlayback() {
@@ -5236,8 +5241,10 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
 
   function continueAfterMatch(event) {
     event?.preventDefault();
-    const match = ui.match || run.activeMatch;
+    const match = run?.activeMatch || ui.match;
     if (!match || match.postMatchNavigationApplied) return;
+    const completed = match.simulation?.state === "completed" || String(match.state || "").startsWith("completed");
+    if (completed && match.simulation?.resolutionApplied !== true) return applySimulationResolution(run?.activeMatch || match);
     if (match.type === "boss" && match.result === "victory") {
       const flow = resolvePendingRunFlow({ clearMatch: true });
       return navigateBossVictoryDestination(flow);
@@ -6719,6 +6726,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       stepMatchPlayback,
       skipMatchToResult,
       resumeMatchSimulationIfNeeded,
+      updateMatchControlsDom,
       recoverLegacyResolvedMatchRoutingIfNeeded,
       continueAfterMatch,
       resolvePendingRunFlow,

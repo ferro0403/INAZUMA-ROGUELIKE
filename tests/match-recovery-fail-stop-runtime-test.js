@@ -93,10 +93,39 @@ for (const type of ["five_v_five", "special_match", "boss"]) {
   assert.strictEqual(h.runtime.seam.getUi().matchPlaybackTimer, null, `${type}: no playback timer`);
   assert.strictEqual(h.runtime.canonical.activeMatch.simulation.resolutionApplied, false);
   assert.strictEqual(h.runtime.canonical.lives, before.lives); assert.deepStrictEqual(h.runtime.canonical.statistics, before.statistics);
-  h.recover(); h.runtime.seam.resumeMatchSimulationIfNeeded(h.runtime.seam.getRun().activeMatch);
+  for (let click = 0; click < 2; click += 1) {
+    const retry = h.runtime.seam.continueAfterMatch();
+    assert.strictEqual(retry.suspended, true, `${type}: stale/double Continue remains fail-stopped`);
+    assert(h.runtime.canonical.activeMatch, `${type}: unresolved match cannot be cleared`);
+    assert.strictEqual(h.runtime.canonical.activeMatch.postMatchNavigationApplied, undefined);
+    assert.strictEqual(h.runtime.canonical.phase, "match"); assert.strictEqual(h.runtime.canonical.lives, before.lives);
+    assert.deepStrictEqual(h.runtime.canonical.statistics, before.statistics); assert.strictEqual(h.runtime.canonical.activeMatch.simulation.resolutionApplied, false);
+  }
+  h.recover(); h.runtime.seam.continueAfterMatch();
   assert.strictEqual(h.runtime.canonical.activeMatch.simulation.resolutionApplied, true, `${type}: explicit retry commits`);
   assert.strictEqual(h.runtime.canonical.lives, 1 - h.context.RunState.getLifeDamageForMatch(type), `${type}: configured life damage is consumed once`);
   assert.strictEqual(h.runtime.canonical.statistics.matches, 1, `${type}: statistics apply once`);
+  assert(h.runtime.canonical.activeMatch, `${type}: the resolution retry itself does not navigate`);
+  assert.strictEqual(h.runtime.canonical.activeMatch.postMatchNavigationApplied, undefined);
+  if (type === "boss") {
+    assert.strictEqual(h.runtime.canonical.gameOver, true, "last-life retry reaches game over once");
+    assert.strictEqual(h.runtime.canonical.permanentEffectOutbox.filter(effect => effect.type === "development-run-end").length, 1);
+  }
+  h.runtime.seam.continueAfterMatch();
+  assert.strictEqual(h.runtime.canonical.activeMatch, null, `${type}: only a later Continue may navigate`);
+}
+
+// The mounted control distinguishes a definitive timeline from a durable resolution.
+{
+  const h = runtimeFor(match("boss", "completed"));
+  const button = { hidden: true, disabled: false, textContent: "Continua", dataset: {} };
+  h.context.document.getElementById = id => id === "continue-match-result" ? button : null;
+  h.context.document.querySelector = () => null; h.context.document.querySelectorAll = () => [];
+  h.runtime.seam.updateMatchControlsDom();
+  assert.strictEqual(button.hidden, false); assert.strictEqual(button.disabled, false); assert.strictEqual(button.textContent, "Riprova finalizzazione");
+  h.runtime.seam.getRun().activeMatch.simulation.resolutionApplied = true;
+  h.runtime.seam.updateMatchControlsDom();
+  assert.strictEqual(button.textContent, "Continua");
 }
 
 // DEV forced defeat uses the same frozen checkpoint and does not resolve after a failed checkpoint save.
