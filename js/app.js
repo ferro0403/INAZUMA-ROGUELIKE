@@ -2636,7 +2636,7 @@
   function specialMatchById(specialMatchId) { return global.SpecialMatchRuntime.byId(seasonDb, specialMatchId); }
   function specialMatchForNode(node) { return global.SpecialMatchRuntime.forNode(seasonDb, node); }
   function specialMatchTeamPlayers(specialMatch) { return global.SpecialMatchRuntime.teamPlayers(seasonDb, specialMatch); }
-  function specialMatchFromNode(node, previousNodeId = null) { return global.SpecialMatchRuntime.fromNode(run, seasonDb, node, previousNodeId); }
+  function specialMatchFromNode(node, previousNodeId = null, activeRun = run) { return global.SpecialMatchRuntime.fromNode(activeRun, seasonDb, node, previousNodeId); }
   function recoverInterruptedSpecialMatchAccess() {
     if (!run || run.pendingSpecialMatchReward) return false;
     if (run.activeMatch?.type === "special_match") { if (run.phase !== "match") { run.phase = "match"; global.RunState.save(run); } return true; }
@@ -2645,17 +2645,17 @@
     run.activeMatch = specialMatchFromNode(pending, run.currentZone.currentNodeId); run.phase = "match"; global.RunState.save(run); return true;
   }
 
-  function bossMatchFromNode(node, previousNodeId = null) {
+  function bossMatchFromNode(node, previousNodeId = null, activeRun = run) {
     const match = {
       nodeId: node.id,
-      previousNodeId: previousNodeId || run.currentZone?.currentNodeId || run.currentZone?.startNodeId || null,
+      previousNodeId: previousNodeId || activeRun.currentZone?.currentNodeId || activeRun.currentZone?.startNodeId || null,
       type: "boss",
       state: "pre-match",
       log: [],
-      bossIndex: run.bossIndex,
-      attemptNumber: Object.keys(run.statistics?.processedMatchIds || {}).filter((id) => id.includes(`::${node.id}::boss::`)).length + 1,
+      bossIndex: activeRun.bossIndex,
+      attemptNumber: Object.keys(activeRun.statistics?.processedMatchIds || {}).filter((id) => id.includes(`::${node.id}::boss::`)).length + 1,
     };
-    match.matchId = global.RunStatistics?.createStableMatchId?.(run, match) || null;
+    match.matchId = global.RunStatistics?.createStableMatchId?.(activeRun, match) || null;
     return match;
   }
 
@@ -2851,18 +2851,22 @@
     }));
   }
 
-  function enterNode(nodeId) {
-    const previousNodeId = run.currentZone?.currentNodeId || null;
-    const candidate = run.currentZone?.nodes?.find((item) => String(item.id) === String(nodeId));
-    if (candidate && ["five_v_five", "special_match", "boss"].includes(candidate.type)) {
+  function canonicalNodeById(nodeId) {
+    return run?.currentZone?.nodes?.find((item) => String(item.id) === String(nodeId)) || null;
+  }
+
+  function enterMatchFromNode(nodeId, previousNodeId = null, { alreadySelected = false, matchType = null } = {}) {
       const committed = persistGameplayMutation({
         label: "map-match-entry",
         mutate: (current) => {
-          const selectedNode = global.MapEngine.selectNode(current.currentZone, nodeId);
+          const currentNode = current.currentZone?.nodes?.find((item) => String(item.id) === String(nodeId));
+          if (!currentNode) throw new Error("Match node changed");
+          const selectedNode = alreadySelected ? { ...currentNode, type: matchType || currentNode.type } : global.MapEngine.selectNode(current.currentZone, nodeId);
           let created;
-          if (selectedNode.type === "five_v_five") created = createOrLoadFiveMatch(selectedNode);
-          else if (selectedNode.type === "special_match") created = current.activeMatch?.type === "special_match" && current.activeMatch.nodeId === selectedNode.id ? current.activeMatch : specialMatchFromNode(selectedNode, previousNodeId);
-          else created = bossMatchFromNode(selectedNode, previousNodeId);
+          if (selectedNode.type === "five_v_five") created = createOrLoadFiveMatch(selectedNode, current);
+          else if (selectedNode.type === "special_match") created = current.activeMatch?.type === "special_match" && current.activeMatch.nodeId === selectedNode.id ? current.activeMatch : specialMatchFromNode(selectedNode, previousNodeId, current);
+          else if (selectedNode.type === "boss") created = bossMatchFromNode(selectedNode, previousNodeId, current);
+          else throw new Error("Node is not a match");
           current.phase = "match"; current.activeMatch = created; return created;
         },
         onCommitted: (created) => { ui.match = created; ui.bossMatchState = created.state || "pre-match"; ui.bossMatchLog = created.log || []; ui.bossMatchResolving = false; },
@@ -2870,7 +2874,12 @@
       });
       if (!committed.ok) return;
       return renderMatch();
-    }
+  }
+
+  function enterNode(nodeId) {
+    const previousNodeId = run.currentZone?.currentNodeId || null;
+    const candidate = canonicalNodeById(nodeId);
+    if (candidate && ["five_v_five", "special_match", "boss"].includes(candidate.type)) return enterMatchFromNode(nodeId, previousNodeId);
     let node;
     try {
       node = global.MapEngine.selectNode(run.currentZone, nodeId);
@@ -2884,38 +2893,8 @@
   }
 
   function dispatchNode(node, eventType, context = {}) {
-    if (eventType === "five_v_five") {
-      const status = fiveVFiveStatus();
-      if (!status.valid) {
-        toast("Completa la Formazione 5v5 prima di avviare la partitella.");
-        run.phase = "five";
-        global.RunState.save(run);
-        return renderFiveVFive();
-      }
-      ui.match = createOrLoadFiveMatch(node);
-      ui.bossMatchState = ui.match.state || "pre-match";
-      ui.bossMatchLog = ui.match.log || [];
-      ui.bossMatchResolving = false;
-      run.phase = "match";
-      run.activeMatch = ui.match;
-      global.RunState.save(run);
-      return renderMatch();
-    }
-    if (eventType === "special_match") {
-      try { ui.match = run.activeMatch?.type === "special_match" && run.activeMatch.nodeId === node.id ? run.activeMatch : specialMatchFromNode(node, context.previousNodeId); }
-      catch (error) { console.error("Special match validation failed", error); return toast(`Errore tecnico partita speciale: ${error.message}`); }
-      ui.bossMatchState = ui.match.state || "pre-match"; ui.bossMatchLog = ui.match.log || []; ui.bossMatchResolving = false;
-      run.phase = "match"; run.activeMatch = ui.match; global.RunState.save(run); return renderMatch();
-    }
-    if (eventType === "boss") {
-      ui.match = bossMatchFromNode(node, context.previousNodeId);
-      ui.bossMatchState = "pre-match";
-      ui.bossMatchLog = [];
-      ui.bossMatchResolving = false;
-      run.phase = "match";
-      run.activeMatch = ui.match;
-      global.RunState.save(run);
-      return renderMatch();
+    if (["five_v_five", "special_match", "boss"].includes(eventType)) {
+      return enterMatchFromNode(node.id, context.previousNodeId, { alreadySelected: true, matchType: eventType });
     }
     if (eventType.startsWith("pull_")) return openPull(node, eventType);
     if (eventType === "item") return resolveItemNode(node);
@@ -2923,12 +2902,15 @@
   }
 
   function finishNonMatchNode(node, message) {
+    const nodeId = node.id;
     persistGameplayMutation({
       label: "map-node-complete",
-      mutate: () => {
-        global.MapEngine.completeNode(run.currentZone, node.id);
-        global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.NODE_COMPLETED, { nodeId: node.id, nodeType: node.type, actionId: `${run.runId}:${node.id}:node_completed` });
-        run.phase = "map";
+      mutate: (current) => {
+        const currentNode = current.currentZone?.nodes?.find((item) => String(item.id) === String(nodeId));
+        if (!currentNode) throw new Error("Node state changed");
+        global.MapEngine.completeNode(current.currentZone, currentNode.id);
+        global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.NODE_COMPLETED, { nodeId: currentNode.id, nodeType: currentNode.type, actionId: `${current.runId}:${currentNode.id}:node_completed` });
+        current.phase = "map";
       },
       onCommitted: () => { closeModal(); toast(message); renderMap(); },
       rerender: ({ ok }) => { if (!ok) renderMap(); },
@@ -2986,7 +2968,7 @@
     const selectedItemId = sameNode && candidateIds.includes(existing.selectedItemId)
       ? existing.selectedItemId
       : candidateIds[0];
-    run.pendingItemReward = {
+    const offered = {
       nodeId: String(node.id),
       sourceNodeType: node.type,
       candidateIds,
@@ -2995,7 +2977,17 @@
       claimedItemId: sameNode ? existing.claimedItemId || null : null,
       claimedInstanceId: sameNode ? existing.claimedInstanceId || null : null,
     };
-    global.RunState.save(run);
+    if (sameNode && existing.candidateIds?.length) return { pending: existing, candidates };
+    const committed = persistGameplayMutation({
+      label: "item-reward-offer",
+      mutate: (current) => {
+        const currentNode = current.currentZone?.nodes?.find((item) => String(item.id) === String(node.id));
+        if (!currentNode) throw new Error("Item reward node changed");
+        if (!current.pendingItemReward || String(current.pendingItemReward.nodeId) !== String(node.id)) current.pendingItemReward = offered;
+      },
+      rerender: ({ ok }) => { if (!ok) renderMap(); },
+    });
+    if (!committed.ok) return null;
     return { pending: run.pendingItemReward, candidates };
   }
 
@@ -3056,7 +3048,9 @@
   }
 
   function resolveItemNode(node) {
-    const { pending, candidates } = ensurePendingItemReward(node);
+    const prepared = ensurePendingItemReward(node);
+    if (!prepared) return;
+    const { pending, candidates } = prepared;
     if (pending.status === "claimed") return renderItemRewardResult(node);
     ui.itemRewardSubmitting = false;
     openModal(`
@@ -3086,8 +3080,13 @@
       if (candidateButton) {
         const itemId = candidateButton.dataset.rewardCandidate;
         if (!candidates.some((candidate) => candidate.id === itemId)) return;
-        run.pendingItemReward.selectedItemId = itemId;
-        global.RunState.save(run);
+        const nodeId = String(node.id);
+        const committed = persistGameplayMutation({ label: "item-reward-select", mutate: (current) => {
+          const currentPending = current.pendingItemReward;
+          if (!currentPending || String(currentPending.nodeId) !== nodeId || !currentPending.candidateIds?.includes(itemId)) throw new Error("Item reward selection changed");
+          currentPending.selectedItemId = itemId;
+        }, rerender: ({ ok }) => { if (!ok) { const currentNode = canonicalNodeById(nodeId); currentNode ? resolveItemNode(currentNode) : renderMap(); } } });
+        if (!committed.ok) return;
         modal.querySelectorAll("[data-reward-candidate]").forEach((button) => {
           const active = button.dataset.rewardCandidate === itemId;
           button.classList.toggle("selected", active);
@@ -3112,46 +3111,35 @@
         (instance) => completeItemReward(node, instance),
         () => {
           ui.itemRewardSubmitting = false;
-          resolveItemNode(node);
+          const currentNode = canonicalNodeById(node.id); currentNode ? resolveItemNode(currentNode) : renderMap();
         }
       );
     });
     document.getElementById("skip-item").addEventListener("click", () => {
       if (ui.itemRewardSubmitting) return;
       ui.itemRewardSubmitting = true;
-      run.pendingItemReward = null;
-      finishNonMatchNode(node, "Hai rinunciato all'oggetto");
+      const nodeId = String(node.id);
+      persistGameplayMutation({ label: "item-reward-skip", mutate: (current) => {
+        const currentNode = current.currentZone?.nodes?.find((item) => String(item.id) === nodeId);
+        if (!currentNode || String(current.pendingItemReward?.nodeId) !== nodeId) throw new Error("Item reward state changed");
+        current.pendingItemReward = null;
+        global.MapEngine.completeNode(current.currentZone, currentNode.id);
+        global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.NODE_COMPLETED, { nodeId: currentNode.id, nodeType: currentNode.type, actionId: `${current.runId}:${currentNode.id}:node_completed` });
+        current.phase = "map";
+      }, onCommitted: () => { closeModal(); toast("Hai rinunciato all'oggetto"); renderMap(); }, rerender: ({ ok }) => { if (!ok) { ui.itemRewardSubmitting = false; const currentNode = canonicalNodeById(nodeId); currentNode ? resolveItemNode(currentNode) : renderMap(); } } });
     });
   }
 
   function completeItemReward(node, instance) {
-    const pending = run.pendingItemReward;
-    if (!pending || pending.status === "claimed") return renderItemRewardResult(node);
-    pending.status = "claimed";
-    pending.claimedItemId = inventoryItemIdentity(instance);
-    pending.claimedInstanceId = instance.instanceId;
-    if (!run.currentZone.completedNodeIds.includes(node.id)) {
-      global.MapEngine.completeNode(run.currentZone, node.id);
-      global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.NODE_COMPLETED, {
-        nodeId: node.id,
-        nodeType: node.type,
-        actionId: `${run.runId}:${node.id}:node_completed`,
-      });
-    }
-    run.phase = "map";
-    global.RunState.save(run);
     ui.itemRewardSubmitting = false;
-    renderItemRewardResult(node);
+    { const currentNode = canonicalNodeById(node.id); currentNode ? renderItemRewardResult(currentNode) : renderMap(); }
   }
 
   function renderItemRewardResult(node) {
     const pending = run.pendingItemReward;
     const item = itemDefinitionById(pending?.claimedItemId) || itemDefinitionById(pending?.selectedItemId);
     if (!pending || !item) {
-      run.pendingItemReward = null;
-      global.RunState.save(run);
-      closeModal();
-      return renderMap();
+      return persistGameplayMutation({ label: "item-reward-invalid-cleanup", mutate: (current) => { current.pendingItemReward = null; }, onCommitted: () => { closeModal(); renderMap(); }, rerender: ({ ok }) => { if (!ok) renderMap(); } });
     }
     openModal(`
       <section class="item-reward-screen item-reward-screen--complete">
@@ -3181,11 +3169,10 @@
       { closeable: false, className: "item-reward-modal item-reward-result-modal" }
     );
     document.getElementById("finish-item-reward").addEventListener("click", () => {
-      run.pendingItemReward = null;
-      global.RunState.save(run);
-      closeModal();
-      toast(`Hai ottenuto ${item.name}`);
-      renderMap();
+      persistGameplayMutation({ label: "item-reward-cleanup", mutate: (current) => {
+        if (current.pendingItemReward?.status !== "claimed") throw new Error("Item reward result changed");
+        current.pendingItemReward = null;
+      }, onCommitted: () => { closeModal(); toast(`Hai ottenuto ${item.name}`); renderMap(); }, rerender: ({ ok }) => { if (!ok) { const currentNode = canonicalNodeById(node.id); currentNode ? renderItemRewardResult(currentNode) : renderMap(); } } });
     });
   }
 
@@ -3453,13 +3440,15 @@
       let instance;
       return persistGameplayMutation({ label: "item-reward-claim", mutate: (current) => {
         const pending = current.pendingItemReward; if (!pending || pending.status !== "offered") throw new Error("Item reward state changed");
+        const currentNode = current.currentZone?.nodes?.find((entry) => String(entry.id) === String(node.id));
+        if (!currentNode || String(pending.nodeId) !== String(currentNode.id) || !pending.candidateIds?.includes(item.id)) throw new Error("Item reward state changed");
         if (discardInstanceId) { const index = current.inventory.findIndex((entry) => String(entry.instanceId) === String(discardInstanceId)); if (index < 0) throw new Error("Discard unavailable"); current.inventory.splice(index, 1); }
         instance = makeItemInstance(item, node.id); current.inventory.push(instance);
         global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.ITEM_OBTAINED, { nodeId: node.id, itemId: item.id, actionId: `${current.runId}:${node.id}:item_obtained` });
         pending.status = "claimed"; pending.claimedItemId = inventoryItemIdentity(instance); pending.claimedInstanceId = instance.instanceId;
-        if (!current.currentZone.completedNodeIds.includes(node.id)) { global.MapEngine.completeNode(current.currentZone, node.id); global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.NODE_COMPLETED, { nodeId: node.id, nodeType: node.type, actionId: `${current.runId}:${node.id}:node_completed` }); }
+        if (!current.currentZone.completedNodeIds.includes(currentNode.id)) { global.MapEngine.completeNode(current.currentZone, currentNode.id); global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.NODE_COMPLETED, { nodeId: currentNode.id, nodeType: currentNode.type, actionId: `${current.runId}:${currentNode.id}:node_completed` }); }
         current.phase = "map";
-      }, onCommitted: () => done(instance), rerender: ({ ok }) => { if (!ok) { ui.itemRewardSubmitting = false; resolveItemNode(node); } } });
+      }, onCommitted: () => done(instance), rerender: ({ ok }) => { if (!ok) { ui.itemRewardSubmitting = false; const currentNode = canonicalNodeById(node.id); currentNode ? resolveItemNode(currentNode) : renderMap(); } } });
     };
     if (run.inventory.length < global.SEASON1_CONFIG.maxInventory) return add();
     chooseInventoryDiscardSelection("Inventario pieno: scegli un oggetto da eliminare", add, onCancel);
@@ -3652,6 +3641,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
 }
 
   function useLuckyCharmOnPull(node, pullType, currentCandidates) {
+    const nodeId = String(node.id);
+    const expectedCandidateIds = currentCandidates.map((player) => pullCandidateKey(player));
     if (!["pull_free_agents", "pull_unlocked_teams"].includes(pullType)) return toast("Portafortuna non utilizzabile in questa selezione.");
     if (node.pullState.luckyCharmUsed) return toast("Portafortuna già utilizzato in questa pull.");
     const luckyCharm = run.inventory.find((item) => item.effect === "lucky_pull");
@@ -3668,16 +3659,17 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const committed = persistGameplayMutation({
       label: "lucky-charm-reroll",
       mutate: (current) => {
-        const currentNode = current.currentZone.nodes.find((item) => String(item.id) === String(node.id));
+        const currentNode = current.currentZone.nodes.find((item) => String(item.id) === nodeId);
         const index = current.inventory.findIndex((item) => String(item.instanceId) === String(luckyCharm.instanceId));
-        if (!currentNode?.pullState || currentNode.pullState.luckyCharmUsed || index < 0) throw new Error("Lucky Charm state changed");
+        const canonicalIds = (currentNode?.pullState?.candidateIds || []).map(String);
+        if (!currentNode?.pullState || currentNode.pullState.pullType !== pullType || currentNode.pullState.luckyCharmUsed || index < 0 || canonicalIds.length !== expectedCandidateIds.length || canonicalIds.some((id, index) => id !== expectedCandidateIds[index])) throw new Error("Lucky Charm state changed");
         current.inventory.splice(index, 1);
         global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.LUCKY_CHARM_USED, { nodeId: node.id, itemId: luckyCharm.id, instanceId: luckyCharm.instanceId, upgradedCount: upgradeResult.upgradedCount, actionId: `${current.runId}:${node.id}:lucky_charm` });
         currentNode.pullState.luckyCharmUsed = true;
         currentNode.pullState.candidateIds = upgradedCandidates.map((player) => pullCandidateKey(player, pool));
       },
-      onCommitted: () => openPull(run.currentZone.nodes.find((item) => String(item.id) === String(node.id)), pullType),
-      rerender: ({ ok }) => { if (!ok) openPull(node, pullType); },
+      onCommitted: () => { const currentNode = canonicalNodeById(nodeId); currentNode ? openPull(currentNode, pullType) : renderMap(); },
+      rerender: ({ ok }) => { if (!ok) { const currentNode = canonicalNodeById(nodeId); currentNode ? openPull(currentNode, pullType) : renderMap(); } },
     });
     return committed;
   }
@@ -3699,19 +3691,22 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const luckyCompatible = ["pull_free_agents", "pull_unlocked_teams"].includes(pullType);
     const rerollPull = () => {
       if (legendaryPull) return toast("Il Visore scout non può essere utilizzato nelle pull leggendarie.");
+      const nodeId = String(node.id);
+      const expectedCandidateIds = candidates.map((player) => pullCandidateKey(player));
       return persistGameplayMutation({
         label: "scout-token-reroll",
         mutate: (current) => {
-          const currentNode = current.currentZone.nodes.find((item) => String(item.id) === String(node.id));
+          const currentNode = current.currentZone.nodes.find((item) => String(item.id) === nodeId);
           const index = current.inventory.findIndex((item) => String(item.instanceId) === String(scoutToken.instanceId));
-          if (!currentNode?.pullState || index < 0) throw new Error("Scout Token state changed");
+          const canonicalIds = (currentNode?.pullState?.candidateIds || []).map(String);
+          if (!currentNode?.pullState || currentNode.pullState.pullType !== pullType || index < 0 || canonicalIds.length !== expectedCandidateIds.length || canonicalIds.some((id, index) => id !== expectedCandidateIds[index])) throw new Error("Scout Token state changed");
           current.inventory.splice(index, 1);
           global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId: node.id, itemId: scoutToken.id, instanceId: scoutToken.instanceId, actionId: `${current.runId}:${node.id}:reroll:${currentNode.pullState.rerolls + 1}` });
           currentNode.pullState.excludedCandidateIds.push(...candidates.map((player) => pullCandidateKey(player, pool)));
           currentNode.pullState.rerolls += 1; currentNode.pullState.candidateIds = [];
         },
-        onCommitted: () => openPull(run.currentZone.nodes.find((item) => String(item.id) === String(node.id)), pullType),
-        rerender: ({ ok }) => { if (!ok) openPull(node, pullType); },
+        onCommitted: () => { const currentNode = canonicalNodeById(nodeId); currentNode ? openPull(currentNode, pullType) : renderMap(); },
+        rerender: ({ ok }) => { if (!ok) { const currentNode = canonicalNodeById(nodeId); currentNode ? openPull(currentNode, pullType) : renderMap(); } },
       });
     };
     const devReroll = DEV_MODE && options.dev ? () => {
@@ -4675,12 +4670,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     return Math.max(0, Math.floor(Number(run.teamLevel || 0)));
   }
 
-  function createOrLoadFiveMatch(node) {
-    if (run.activeMatch?.type === "five_v_five" && run.activeMatch.nodeId === node.id && run.activeMatch.opponents?.length === 5) return run.activeMatch;
-    const opponentRandom = global.DraftEngine.randomFromSeed(`${run.runId}:${node.id}:fiveOpponents`);
+  function createOrLoadFiveMatch(node, activeRun = run) {
+    if (activeRun.activeMatch?.type === "five_v_five" && activeRun.activeMatch.nodeId === node.id && activeRun.activeMatch.opponents?.length === 5) return activeRun.activeMatch;
+    const opponentRandom = global.DraftEngine.randomFromSeed(`${activeRun.runId}:${node.id}:fiveOpponents`);
     const formation = opponentRandom() < 0.5 ? "1-2-1" : "1-1-2";
     const slots = global.FiveVFive.formationById(formation).slots;
-    const userIds = new Set((run.roster || []).map((entry) => String(entry.playerId)));
+    const userIds = new Set((activeRun.roster || []).map((entry) => String(entry.playerId)));
     const used = new Set();
     const opponents = slots.map((slot) => {
       const pool = (freeAgentsDb.players || []).filter((player) => !used.has(String(player.playerId)) && !userIds.has(String(player.playerId)) && player.position === slot.role);
@@ -4691,21 +4686,21 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       used.add(String(source.playerId));
       return { slotKey: slot.key, playerId: String(source.playerId) };
     }).filter(Boolean);
-    const attempts = Object.keys(run.statistics?.processedMatchIds || {}).filter((id) => id.includes(`::${node.id}::five_v_five::`)).length + 1;
+    const attempts = Object.keys(activeRun.statistics?.processedMatchIds || {}).filter((id) => id.includes(`::${node.id}::five_v_five::`)).length + 1;
     const match = {
       nodeId: node.id,
-      previousNodeId: run.currentZone?.currentNodeId || run.activeMatch?.previousNodeId || null,
+      previousNodeId: activeRun.currentZone?.currentNodeId || activeRun.activeMatch?.previousNodeId || null,
       type: "five_v_five",
       state: "pre-match",
       result: null,
-      level: fiveOpponentLevel(),
+      level: Math.max(0, Math.floor(Number(activeRun.teamLevel || 0))),
       opponentFormation: formation,
       opponents,
       log: [],
       score: [0, 0],
       attemptNumber: attempts,
     };
-    match.matchId = global.RunStatistics?.createStableMatchId?.(run, match) || null;
+    match.matchId = global.RunStatistics?.createStableMatchId?.(activeRun, match) || null;
     return match;
   }
 
@@ -6788,6 +6783,10 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       updateMatchControlsDom,
       leaveMatchViaSectionRoot,
       enterNode,
+      dispatchNode,
+      enterMatchFromNode,
+      ensurePendingItemReward,
+      finishNonMatchNode,
       recoverLegacyResolvedMatchRoutingIfNeeded,
       continueAfterMatch,
       resolvePendingRunFlow,
