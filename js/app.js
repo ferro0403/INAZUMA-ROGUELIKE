@@ -2723,14 +2723,16 @@
     return `${icons[type] || `<span aria-hidden="true">${escapeHtml(fallback)}</span>`}<span class="node-icon-text">${escapeHtml(fallback)}</span>`;
   }
 
-  function renderMap() {
+  function renderMap(options = {}) {
     if (run) global.RunState.touch(run);
     const bossFlow = resolvePendingRunFlow();
     if (bossFlow.destination !== "none") return navigateBossVictoryDestination(bossFlow);
     ensureCurrentZone();
     if (!run.currentZone) return renderSeasonComplete();
-    run.phase = "map";
-    global.RunState.save(run);
+    if (options.persist !== false) {
+      run.phase = "map";
+      global.RunState.save(run);
+    }
     const zone = run.currentZone;
     const boss = seasonDb.bossOrder[run.bossIndex];
     const positions = nodePositions(zone);
@@ -2855,6 +2857,24 @@
     return run?.currentZone?.nodes?.find((item) => String(item.id) === String(nodeId)) || null;
   }
 
+  function activePullNodeById(activeRun, nodeId, pullType, { requireCandidates = true } = {}) {
+    const zone = activeRun?.currentZone;
+    const node = zone?.nodes?.find((item) => String(item.id) === String(nodeId));
+    if (!node || zone.completedNodeIds?.map(String).includes(String(nodeId)) || node.completed === true) return null;
+    if (String(zone.pendingNodeId) !== String(nodeId) || !node.pullState || node.pullState.pullType !== pullType) return null;
+    if (!Array.isArray(node.pullState.candidateIds) || (requireCandidates && !node.pullState.candidateIds.length)) return null;
+    return node;
+  }
+
+  function canonicalActivePullNodeById(nodeId, pullType) {
+    return activePullNodeById(run, nodeId, pullType);
+  }
+
+  function rerenderCanonicalPull(nodeId, pullType, options = {}, activeOptions = {}) {
+    const currentNode = activePullNodeById(run, nodeId, pullType, activeOptions);
+    return currentNode ? openPull(currentNode, pullType, options) : renderMap();
+  }
+
   function enterMatchFromNode(nodeId, previousNodeId = null, { alreadySelected = false, matchType = null } = {}) {
       const committed = persistGameplayMutation({
         label: "map-match-entry",
@@ -2863,16 +2883,24 @@
           if (!currentNode) throw new Error("Match node changed");
           const selectedNode = alreadySelected ? { ...currentNode, type: matchType || currentNode.type } : global.MapEngine.selectNode(current.currentZone, nodeId);
           let created;
-          if (selectedNode.type === "five_v_five") created = createOrLoadFiveMatch(selectedNode, current);
+          if (selectedNode.type === "five_v_five") {
+            const status = global.FiveVFive.validate(current, (id) => fiveRoleForPlayerId(id, current));
+            if (!status.valid) { current.phase = "five"; current.activeMatch = null; return { formationRequired: true }; }
+            created = createOrLoadFiveMatch(selectedNode, current);
+          }
           else if (selectedNode.type === "special_match") created = current.activeMatch?.type === "special_match" && current.activeMatch.nodeId === selectedNode.id ? current.activeMatch : specialMatchFromNode(selectedNode, previousNodeId, current);
           else if (selectedNode.type === "boss") created = bossMatchFromNode(selectedNode, previousNodeId, current);
           else throw new Error("Node is not a match");
           current.phase = "match"; current.activeMatch = created; return created;
         },
-        onCommitted: (created) => { ui.match = created; ui.bossMatchState = created.state || "pre-match"; ui.bossMatchLog = created.log || []; ui.bossMatchResolving = false; },
-        rerender: ({ ok }) => { if (!ok) renderMap(); },
+        onCommitted: (created) => {
+          if (created?.formationRequired) return toast("Completa la Formazione 5v5 prima di avviare la partitella.");
+          ui.match = created; ui.bossMatchState = created.state || "pre-match"; ui.bossMatchLog = created.log || []; ui.bossMatchResolving = false;
+        },
+        rerender: ({ ok }) => { if (!ok) renderMap({ persist: false }); },
       });
       if (!committed.ok) return;
+      if (committed.value?.formationRequired) return renderFiveVFive({ persist: false });
       return renderMatch();
   }
 
@@ -2880,6 +2908,18 @@
     const previousNodeId = run.currentZone?.currentNodeId || null;
     const candidate = canonicalNodeById(nodeId);
     if (candidate && ["five_v_five", "special_match", "boss"].includes(candidate.type)) return enterMatchFromNode(nodeId, previousNodeId);
+    if (candidate?.type === "random") {
+      const committed = persistGameplayMutation({
+        label: "random-node-select-reveal",
+        mutate: (current) => {
+          const currentNode = global.MapEngine.selectNode(current.currentZone, nodeId);
+          return { nodeId: currentNode.id, revealedType: global.MapEngine.resolveRandomNodeType(current, currentNode) };
+        },
+        rerender: ({ ok }) => { if (!ok) renderMap({ persist: false }); },
+      });
+      if (!committed.ok) return committed;
+      return resolveRandomNode(canonicalNodeById(committed.value?.nodeId || nodeId));
+    }
     let node;
     try {
       node = global.MapEngine.selectNode(run.currentZone, nodeId);
@@ -2888,7 +2928,6 @@
     }
     global.RunState.save(run);
 
-    if (node.type === "random") return resolveRandomNode(node);
     dispatchNode(node, node.type, { previousNodeId });
   }
 
@@ -3135,11 +3174,23 @@
     { const currentNode = canonicalNodeById(node.id); currentNode ? renderItemRewardResult(currentNode) : renderMap(); }
   }
 
+  function rerenderCanonicalItemReward(expectedNodeId) {
+    const pendingNodeId = run?.pendingItemReward?.nodeId;
+    if (pendingNodeId == null || String(pendingNodeId) !== String(expectedNodeId)) return renderMap();
+    const currentNode = canonicalNodeById(pendingNodeId);
+    return currentNode ? renderItemRewardResult(currentNode) : renderMap();
+  }
+
   function renderItemRewardResult(node) {
+    const expectedNodeId = String(node.id);
     const pending = run.pendingItemReward;
+    if (pending && String(pending.nodeId) !== expectedNodeId) return rerenderCanonicalItemReward(pending.nodeId);
     const item = itemDefinitionById(pending?.claimedItemId) || itemDefinitionById(pending?.selectedItemId);
     if (!pending || !item) {
-      return persistGameplayMutation({ label: "item-reward-invalid-cleanup", mutate: (current) => { current.pendingItemReward = null; }, onCommitted: () => { closeModal(); renderMap(); }, rerender: ({ ok }) => { if (!ok) renderMap(); } });
+      return persistGameplayMutation({ label: "item-reward-invalid-cleanup", mutate: (current) => {
+        if (current.pendingItemReward && String(current.pendingItemReward.nodeId) !== expectedNodeId) throw new Error("Item reward result changed");
+        current.pendingItemReward = null;
+      }, onCommitted: () => { closeModal(); renderMap(); }, rerender: ({ ok }) => { if (!ok) renderMap(); } });
     }
     openModal(`
       <section class="item-reward-screen item-reward-screen--complete">
@@ -3170,15 +3221,15 @@
     );
     document.getElementById("finish-item-reward").addEventListener("click", () => {
       persistGameplayMutation({ label: "item-reward-cleanup", mutate: (current) => {
-        if (current.pendingItemReward?.status !== "claimed") throw new Error("Item reward result changed");
+        if (current.pendingItemReward?.status !== "claimed" || String(current.pendingItemReward.nodeId) !== expectedNodeId) throw new Error("Item reward result changed");
         current.pendingItemReward = null;
-      }, onCommitted: () => { closeModal(); toast(`Hai ottenuto ${item.name}`); renderMap(); }, rerender: ({ ok }) => { if (!ok) { const currentNode = canonicalNodeById(node.id); currentNode ? renderItemRewardResult(currentNode) : renderMap(); } } });
+      }, onCommitted: () => { closeModal(); toast(`Hai ottenuto ${item.name}`); renderMap(); }, rerender: ({ ok }) => { if (!ok) rerenderCanonicalItemReward(expectedNodeId); } });
     });
   }
 
   function resolveRandomNode(node) {
-    const revealedType = global.MapEngine.resolveRandomNodeType(run, node);
-    global.RunState.save(run);
+    const revealedType = node?.revealedType;
+    if (!revealedType) return renderMap();
     const meta = global.SEASON1_CONFIG.nodeLabels[revealedType];
     openModal(`
       <div class="modal-head random-event-head"><div><p class="eyebrow">Evento casuale</p><h2>${escapeHtml(meta.label)}</h2><p class="muted">Il contenuto è stato rivelato e non cambierà ricaricando la pagina.</p></div></div>
@@ -3188,7 +3239,8 @@
     );
     document.getElementById("open-hidden-event").addEventListener("click", () => {
       closeModal();
-      dispatchNode(node, revealedType);
+      const currentNode = canonicalNodeById(node.id);
+      currentNode ? dispatchNode(currentNode, revealedType, { previousNodeId: run.currentZone?.currentNodeId }) : renderMap();
     });
   }
 
@@ -3659,7 +3711,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const committed = persistGameplayMutation({
       label: "lucky-charm-reroll",
       mutate: (current) => {
-        const currentNode = current.currentZone.nodes.find((item) => String(item.id) === nodeId);
+        const currentNode = activePullNodeById(current, nodeId, pullType);
         const index = current.inventory.findIndex((item) => String(item.instanceId) === String(luckyCharm.instanceId));
         const canonicalIds = (currentNode?.pullState?.candidateIds || []).map(String);
         if (!currentNode?.pullState || currentNode.pullState.pullType !== pullType || currentNode.pullState.luckyCharmUsed || index < 0 || canonicalIds.length !== expectedCandidateIds.length || canonicalIds.some((id, index) => id !== expectedCandidateIds[index])) throw new Error("Lucky Charm state changed");
@@ -3668,10 +3720,31 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         currentNode.pullState.luckyCharmUsed = true;
         currentNode.pullState.candidateIds = upgradedCandidates.map((player) => pullCandidateKey(player, pool));
       },
-      onCommitted: () => { const currentNode = canonicalNodeById(nodeId); currentNode ? openPull(currentNode, pullType) : renderMap(); },
-      rerender: ({ ok }) => { if (!ok) { const currentNode = canonicalNodeById(nodeId); currentNode ? openPull(currentNode, pullType) : renderMap(); } },
+      onCommitted: () => rerenderCanonicalPull(nodeId, pullType),
+      rerender: ({ ok }) => { if (!ok) rerenderCanonicalPull(nodeId, pullType); },
     });
     return committed;
+  }
+
+  function useScoutTokenOnPull(node, pullType, candidates, scoutToken, pool, options = {}) {
+    const nodeId = String(node.id);
+    const expectedCandidateIds = candidates.map((player) => pullCandidateKey(player));
+    return persistGameplayMutation({
+      label: "scout-token-reroll",
+      mutate: (current) => {
+        const currentNode = activePullNodeById(current, nodeId, pullType);
+        const index = current.inventory.findIndex((item) => String(item.instanceId) === String(scoutToken.instanceId));
+        const canonicalIds = (currentNode?.pullState?.candidateIds || []).map(String);
+        if (!currentNode || index < 0 || canonicalIds.length !== expectedCandidateIds.length || canonicalIds.some((id, candidateIndex) => id !== expectedCandidateIds[candidateIndex])) throw new Error("Scout Token state changed");
+        current.inventory.splice(index, 1);
+        global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId, itemId: scoutToken.id, instanceId: scoutToken.instanceId, actionId: `${current.runId}:${nodeId}:reroll:${currentNode.pullState.rerolls + 1}` });
+        currentNode.pullState.excludedCandidateIds.push(...candidates.map((player) => pullCandidateKey(player, pool)));
+        currentNode.pullState.rerolls += 1;
+        currentNode.pullState.candidateIds = [];
+      },
+      onCommitted: () => rerenderCanonicalPull(nodeId, pullType, options, { requireCandidates: false }),
+      rerender: ({ ok }) => { if (!ok) rerenderCanonicalPull(nodeId, pullType, options); },
+    });
   }
 
   function openPull(node, pullType = node.type, options = {}) {
@@ -3691,23 +3764,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const luckyCompatible = ["pull_free_agents", "pull_unlocked_teams"].includes(pullType);
     const rerollPull = () => {
       if (legendaryPull) return toast("Il Visore scout non può essere utilizzato nelle pull leggendarie.");
-      const nodeId = String(node.id);
-      const expectedCandidateIds = candidates.map((player) => pullCandidateKey(player));
-      return persistGameplayMutation({
-        label: "scout-token-reroll",
-        mutate: (current) => {
-          const currentNode = current.currentZone.nodes.find((item) => String(item.id) === nodeId);
-          const index = current.inventory.findIndex((item) => String(item.instanceId) === String(scoutToken.instanceId));
-          const canonicalIds = (currentNode?.pullState?.candidateIds || []).map(String);
-          if (!currentNode?.pullState || currentNode.pullState.pullType !== pullType || index < 0 || canonicalIds.length !== expectedCandidateIds.length || canonicalIds.some((id, index) => id !== expectedCandidateIds[index])) throw new Error("Scout Token state changed");
-          current.inventory.splice(index, 1);
-          global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId: node.id, itemId: scoutToken.id, instanceId: scoutToken.instanceId, actionId: `${current.runId}:${node.id}:reroll:${currentNode.pullState.rerolls + 1}` });
-          currentNode.pullState.excludedCandidateIds.push(...candidates.map((player) => pullCandidateKey(player, pool)));
-          currentNode.pullState.rerolls += 1; currentNode.pullState.candidateIds = [];
-        },
-        onCommitted: () => { const currentNode = canonicalNodeById(nodeId); currentNode ? openPull(currentNode, pullType) : renderMap(); },
-        rerender: ({ ok }) => { if (!ok) { const currentNode = canonicalNodeById(nodeId); currentNode ? openPull(currentNode, pullType) : renderMap(); } },
-      });
+      return useScoutTokenOnPull(node, pullType, candidates, scoutToken, pool, options);
     };
     const devReroll = DEV_MODE && options.dev ? () => {
       node.pullState.rerolls += 1;
@@ -3740,7 +3797,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         recruitPlayer(player, playerSource, level, (result) => {
           if (result.status.startsWith("committed-")) return finishPull(`${player.name} entra nella rosa`);
           if (result.status === "cancelled") return finishPull("Hai rinunciato al nuovo giocatore");
-        }, { onRecover: () => openPull(node, pullType, options), onRecoveryBlocked: () => renderMap() });
+        }, { onRecover: () => rerenderCanonicalPull(String(node.id), pullType, options), onRecoveryBlocked: () => renderMap() });
       },
       onSkip: () => finishPull("Hai rinunciato al pull"),
       legendary: legendaryPull,
@@ -5694,7 +5751,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     run.phase = "five";
     ensureRunSchema();
     ensureFiveVFive();
-    global.RunState.save(run);
+    if (options.persist !== false) global.RunState.save(run);
     const status = fiveVFiveStatus();
     const formation = status.formation;
     const selectedSlot = ui.fiveVFiveSelectedSlot && formation.slots.some((slot) => slot.key === ui.fiveVFiveSelectedSlot)
@@ -6785,6 +6842,10 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       enterNode,
       dispatchNode,
       enterMatchFromNode,
+      activePullNodeById,
+      useScoutTokenOnPull,
+      useLuckyCharmOnPull,
+      renderItemRewardResult,
       ensurePendingItemReward,
       finishNonMatchNode,
       recoverLegacyResolvedMatchRoutingIfNeeded,
