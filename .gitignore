@@ -1,2 +1,5 @@
 *.zip
 .DS_Store
+tools/inazumo_moves/output/
+__pycache__/
+*.pyc
