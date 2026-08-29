@@ -1734,16 +1734,18 @@
 
   function resolveDevelopmentEndRunFlow({ endReason, onComplete }) {
     const defeatedBosses = Number(run.completedBossIds?.length || run.bossIndex || 0);
-    try {
-      global.PermanentEffects.assertCanonicalTerminal(run, endReason);
-      global.PermanentEffects.enqueueDevelopment(run, { endReason, defeatedBosses });
-      global.RunState.save(run);
-    } catch (error) {
-      console.error("Unable to persist terminal effect", error);
-      return renderHome();
-    }
+    const effectId = global.PermanentEffects.developmentId(run, endReason);
+    const existingEffect = run.permanentEffectOutbox?.find((entry) => entry.id === effectId);
+    const prepared = existingEffect ? { ok: true } : persistGameplayMutation({
+      label: "terminal-development-effect",
+      mutate: (current) => {
+        global.PermanentEffects.assertCanonicalTerminal(current, endReason);
+        return global.PermanentEffects.enqueueDevelopment(current, { endReason, defeatedBosses });
+      },
+    });
+    if (!prepared.ok) return renderGameOver({ developmentResolved: true });
     const drained = drainPermanentEffects();
-    const effect = run.permanentEffectOutbox.find((entry) => entry.id === global.PermanentEffects.developmentId(run, endReason));
+    const effect = run.permanentEffectOutbox.find((entry) => entry.id === effectId);
     if (drained.error || effect?.status !== "applied") return renderHome();
     if (!run.developmentRewardPresentation || run.developmentRewardPresentation.endReason !== endReason) {
       run.developmentRewardPresentation = developmentRewardPresentation(defeatedBosses, endReason);
@@ -4164,6 +4166,48 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     }
   }
 
+  function matchTransactionIdentity(match) {
+    return { runId: String(run?.runId || ""), matchId: String(match?.matchId || ""), type: String(match?.type || "") };
+  }
+
+  function canonicalMatchFor(current, identity) {
+    const currentMatch = current?.activeMatch;
+    if (!identity.runId || !identity.matchId || !identity.type
+      || String(current?.runId || "") !== identity.runId
+      || String(currentMatch?.matchId || "") !== identity.matchId
+      || String(currentMatch?.type || "") !== identity.type) {
+      throw Object.assign(new Error("Canonical match identity mismatch"), { code: "match-identity-mismatch" });
+    }
+    return currentMatch;
+  }
+
+  function cloneMatchState(match) {
+    return typeof structuredClone === "function" ? structuredClone(match) : JSON.parse(JSON.stringify(match));
+  }
+
+  function commitMatchMutation(label, identity, mutate, options = {}) {
+    return persistGameplayMutation({
+      label,
+      mutate: (current) => mutate(canonicalMatchFor(current, identity), current),
+      onCommitted: (value, current) => {
+        ui.match = current.activeMatch;
+        ui.bossMatchState = ui.match?.state || "pre-match";
+        ui.bossMatchLog = ui.match?.log || [];
+        options.onCommitted?.(value, current);
+      },
+      onMutationError: ({ error }) => {
+        if (error?.code !== "match-identity-mismatch") console.error(`${label} mutation failed`, error);
+      },
+      rerender: ({ ok, run: recovered }) => {
+        if (!ok) {
+          ui.match = recovered?.activeMatch || null;
+          ui.bossMatchState = ui.match?.state || "pre-match";
+          ui.bossMatchLog = ui.match?.log || [];
+        }
+      },
+    });
+  }
+
   function matchSeed(match) {
     if (match.simulation?.seed && match.simulation?.state !== "pre-match") return match.simulation.seed;
     return `${run.runId}:${match.type}:${match.nodeId}:${match.attemptNumber || 1}`;
@@ -4340,28 +4384,41 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function stepMatchPlayback() {
-    const match = ui.match;
+    ui.matchPlaybackTimer = null;
+    const match = run?.activeMatch;
     const sim = match?.simulation;
     if (!sim || sim.state !== "simulating" || sim.manuallyResolved) return;
+    const identity = matchTransactionIdentity(match);
     if (sim.revealedCount >= sim.timeline.length) {
-      sim.state = "completed";
-      sim.displayedScore = { ...sim.score };
-      match.score = [sim.score.user, sim.score.opponent];
-      ui.bossMatchState = sim.winner === "user" ? "completed-victory" : "completed-defeat";
-      match.state = ui.bossMatchState;
-      persistMatchState();
-      return applySimulationResolution(match);
+      const completed = commitMatchMutation("match-playback-completed", identity, (currentMatch) => {
+        const currentSim = currentMatch.simulation;
+        if (currentSim?.state !== "simulating" || currentSim.revealedCount < currentSim.timeline.length) throw new Error("Match is not ready for completion");
+        currentSim.state = "completed";
+        currentSim.displayedScore = { ...currentSim.score };
+        currentMatch.score = [currentSim.score.user, currentSim.score.opponent];
+        currentMatch.state = currentSim.winner === "user" ? "completed-victory" : "completed-defeat";
+      });
+      if (!completed.ok) return renderMatch();
+      updateMatchScoreDom(ui.match, true);
+      updateMatchControlsDom();
+      return applySimulationResolution(ui.match);
     }
-    const ev = sim.timeline[sim.revealedCount];
-    sim.revealedCount += 1;
-    if (ev.type === "goal") sim.displayedScore[ev.team] += 1;
-    match.score = [sim.displayedScore.user, sim.displayedScore.opponent];
-    ui.bossMatchLog = [...(ui.bossMatchLog || []), matchEventView(ev)];
-    persistMatchState();
-    appendMatchLogEvent(matchEventView(ev));
-    updateMatchScoreDom(match);
+    const committed = commitMatchMutation("match-playback-event", identity, (currentMatch) => {
+      const currentSim = currentMatch.simulation;
+      if (currentSim?.state !== "simulating" || currentSim.revealedCount >= currentSim.timeline.length) throw new Error("Match playback cursor changed");
+      const event = currentSim.timeline[currentSim.revealedCount];
+      currentSim.revealedCount += 1;
+      if (event.type === "goal") currentSim.displayedScore[event.team] += 1;
+      currentMatch.score = [currentSim.displayedScore.user, currentSim.displayedScore.opponent];
+      const view = matchEventView(event);
+      currentMatch.log = [...(currentMatch.log || []), view];
+      return view;
+    });
+    if (!committed.ok) return renderMatch();
+    appendMatchLogEvent(committed.value);
+    updateMatchScoreDom(ui.match);
     updateMatchControlsDom();
-    document.getElementById(match.type === "five_v_five" ? "five-match-log-panel" : "")?.scrollIntoView({ block: "nearest" });
+    document.getElementById(ui.match.type === "five_v_five" ? "five-match-log-panel" : "")?.scrollIntoView({ block: "nearest" });
     ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.eventDelayMs || global.MatchSimulatorConfig.playbackMs);
   }
 
@@ -4370,9 +4427,10 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (match.simulation?.state && match.simulation.state !== "pre-match") return;
     ui.matchStartLocked = true;
     updateMatchControlsDom();
-    let sim;
+    let frozenMatch;
     try {
-      sim = ensureMatchPreview(match, { ...options, forceRefresh: false, freeze: true });
+      frozenMatch = cloneMatchState(match);
+      const sim = ensureMatchPreview(frozenMatch, { ...options, forceRefresh: false, freeze: true });
       if (!sim.valid) {
         ui.matchStartLocked = false;
         updateMatchControlsDom();
@@ -4385,16 +4443,26 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       toast("Errore tecnico: impossibile avviare la simulazione.");
       return;
     }
-    sim.seed = sim.seed || matchSeed(match);
+    const sim = frozenMatch.simulation;
+    sim.seed = sim.seed || matchSeed(frozenMatch);
     sim.state = "simulating";
     sim.revealedCount = 0;
     sim.displayedScore = { user: 0, opponent: 0 };
     sim.resolutionApplied = false;
-    match.state = "simulating";
-    ui.bossMatchState = "simulating";
-    ui.bossMatchLog = [];
-    match.score = [0, 0];
-    persistMatchState();
+    frozenMatch.state = "simulating";
+    frozenMatch.log = [];
+    frozenMatch.score = [0, 0];
+    const identity = matchTransactionIdentity(match);
+    const committed = commitMatchMutation("match-simulation-start", identity, (currentMatch) => {
+      Object.keys(currentMatch).forEach((key) => { delete currentMatch[key]; });
+      Object.assign(currentMatch, cloneMatchState(frozenMatch));
+    });
+    if (!committed.ok) {
+      clearMatchPlaybackTimer();
+      ui.matchStartLocked = false;
+      updateMatchControlsDom();
+      return renderMatch();
+    }
     clearMatchPlaybackTimer();
     ui.matchStartLocked = false;
     updateMatchControlsDom();
@@ -4404,31 +4472,40 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
 
   function resumeMatchSimulationIfNeeded(match) {
     const sim = match?.simulation;
-    if (!sim || sim.state !== "simulating") return;
+    if (!sim) return;
+    if (sim.state === "completed" && sim.resolutionApplied !== true) {
+      clearMatchPlaybackTimer();
+      return applySimulationResolution(run?.activeMatch);
+    }
+    if (sim.state !== "simulating") return;
     clearMatchPlaybackTimer();
     ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.eventDelayMs || global.MatchSimulatorConfig.playbackMs);
   }
 
   function skipMatchToResult(event) {
     event?.preventDefault();
-    const match = ui.match;
+    const match = run?.activeMatch;
     const sim = match?.simulation;
     if (!sim || sim.state !== "simulating" || sim.manuallyResolved) return;
     clearMatchPlaybackTimer();
     const missing = sim.timeline.slice(sim.revealedCount).map(matchEventView);
-    sim.revealedCount = sim.timeline.length;
-    sim.displayedScore = { ...sim.score };
-    sim.state = "completed";
-    match.score = [sim.score.user, sim.score.opponent];
-    ui.bossMatchState = sim.winner === "user" ? "completed-victory" : "completed-defeat";
-    match.state = ui.bossMatchState;
-    ui.bossMatchLog = visibleTimeline(match);
-    persistMatchState();
+    const identity = matchTransactionIdentity(match);
+    const committed = commitMatchMutation("match-playback-skip", identity, (currentMatch) => {
+      const currentSim = currentMatch.simulation;
+      if (currentSim?.state !== "simulating") throw new Error("Match is not simulating");
+      currentSim.revealedCount = currentSim.timeline.length;
+      currentSim.displayedScore = { ...currentSim.score };
+      currentSim.state = "completed";
+      currentMatch.score = [currentSim.score.user, currentSim.score.opponent];
+      currentMatch.state = currentSim.winner === "user" ? "completed-victory" : "completed-defeat";
+      currentMatch.log = currentSim.timeline.map(matchEventView);
+    });
+    if (!committed.ok) return renderMatch();
     appendMissingMatchLogEvents(missing);
-    updateMatchScoreDom(match, true);
+    updateMatchScoreDom(ui.match, true);
     updateMatchControlsDom();
-    document.getElementById(match.type === "five_v_five" ? "five-match-result-panel" : "")?.scrollIntoView({ block: "nearest" });
-    applySimulationResolution(match);
+    document.getElementById(ui.match.type === "five_v_five" ? "five-match-result-panel" : "")?.scrollIntoView({ block: "nearest" });
+    applySimulationResolution(ui.match);
   }
 
   function applySimulationResolution(match) {
@@ -4833,9 +4910,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("victory"); });
       document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("defeat"); });
       document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); startMatchSimulation(match); });
-      persistMatchState();
       if (simulating || resolved) openFiveMatchSimulationModal(match, userName, opponentName);
-      resumeMatchSimulationIfNeeded(match);
+      resumeMatchSimulationIfNeeded(run?.activeMatch);
       return;
     }
 
@@ -4943,21 +5019,20 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(ui.match, { boss }); });
     document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
     document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch);
-    persistMatchState();
-    resumeMatchSimulationIfNeeded(ui.match);
+    resumeMatchSimulationIfNeeded(run?.activeMatch);
   }
 
-  function addLevels(amount, actionId = null, explicitUnits = null) {
-    if (isProfileAwareSeason()) {
+  function addLevels(amount, actionId = null, explicitUnits = null, currentRun = run) {
+    if (isProfileAwareSeason(currentRun?.seasonId)) {
       const units = explicitUnits == null ? Math.round(Number(amount || 0) * 6) : Number(explicitUnits);
-      const before = run.roster.map((entry) => Number(entry.level || 0));
-      global.ProfiledSeasonRuntime.addLevelUnits(run, units, actionId);
-      return run.roster.filter((entry, index) => Number(entry.level || 0) > before[index]).length;
+      const before = currentRun.roster.map((entry) => Number(entry.level || 0));
+      global.ProfiledSeasonRuntime.addLevelUnits(currentRun, units, actionId);
+      return currentRun.roster.filter((entry, index) => Number(entry.level || 0) > before[index]).length;
     }
     let updatedPlayers = 0;
     const numericAmount = Number(amount || 0);
-    run.teamLevel = Math.min(20, Number(run.teamLevel) + numericAmount);
-    run.roster.forEach((entry) => {
+    currentRun.teamLevel = Math.min(20, Number(currentRun.teamLevel) + numericAmount);
+    currentRun.roster.forEach((entry) => {
       const currentLevel = Number(entry.level || 0);
       const nextLevel = Math.min(20, currentLevel + numericAmount);
       if (nextLevel > currentLevel) updatedPlayers += 1;
@@ -4966,25 +5041,24 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     return updatedPlayers;
   }
 
-  function appendFinalMatchMessage(result, matchType = "five_v_five") {
+  function appendFinalMatchMessage(result, matchType = "five_v_five", match = run?.activeMatch) {
     const text = matchType === "boss"
       ? (result === "victory" ? "Vittoria confermata: premi Continua per aprire le ricompense boss." : "Sconfitta confermata: premi Continua per tornare al nodo precedente.")
       : matchType === "special_match"
         ? (result === "victory" ? "Vittoria confermata: premi Continua per aprire la scelta giocatore." : "Sconfitta confermata: premi Continua per tornare al nodo precedente.")
         : (result === "victory" ? "Vittoria 5v5 confermata: premi Continua per tornare al percorso." : "Sconfitta 5v5 confermata: premi Continua per tornare al nodo precedente.");
-    if (!ui.bossMatchLog.some((event) => event.minute === "FT")) {
-      ui.bossMatchLog = [...ui.bossMatchLog, { minute: "FT", icon: result === "victory" ? "🏆" : "💔", text, side: null }];
-      appendMatchLogEvent(ui.bossMatchLog.at(-1));
+    if (match && !(match.log || []).some((event) => event.minute === "FT")) {
+      match.log = [...(match.log || []), { minute: "FT", icon: result === "victory" ? "🏆" : "💔", text, side: null }];
     }
   }
 
-  function applyRealMatchStatistics(match, result) {
+  function applyRealMatchStatistics(match, result, currentRun = run) {
     if (!match?.simulation?.valid) return;
-    const bossIndex = Number(match.bossIndex ?? run.bossIndex);
+    const bossIndex = Number(match.bossIndex ?? currentRun.bossIndex);
     const boss = match.type === "boss" ? seasonDb.bossOrder[bossIndex] : null;
-    global.RunStatistics?.applyCompletedMatchStatistics?.(run, {
+    global.RunStatistics?.applyCompletedMatchStatistics?.(currentRun, {
       ...match,
-      matchId: match.matchId || global.RunStatistics.createStableMatchId(run, match),
+      matchId: match.matchId || global.RunStatistics.createStableMatchId(currentRun, match),
       matchType: match.type,
       result,
       score: match.simulation.score || { user: match.score?.[0] || 0, opponent: match.score?.[1] || 0 },
@@ -4998,75 +5072,107 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       bossId: boss?.teamId || null,
       isFinal: match.type === "boss" && bossIndex >= seasonDb.bossOrder.length - 1,
       completedAt: new Date().toISOString(),
-      formation: match.lineupSnapshot?.formation || match.simulation?.userSnapshot?.formation || (match.type === "five_v_five" ? run.fiveVFive?.formation : run.formationId),
+      formation: match.lineupSnapshot?.formation || match.simulation?.userSnapshot?.formation || (match.type === "five_v_five" ? currentRun.fiveVFive?.formation : currentRun.formationId),
     });
   }
 
-  function applyConsecutiveLossResult(result) {
-    run.consecutiveLosses = result === "victory" ? 0 : Math.min(2, run.consecutiveLosses + 1);
+  function applyConsecutiveLossResult(result, currentRun = run) {
+    currentRun.consecutiveLosses = result === "victory" ? 0 : Math.min(2, Number(currentRun.consecutiveLosses || 0) + 1);
+  }
+
+  function enqueueGameOverDevelopmentEffect(current) {
+    if (!current?.gameOver) return null;
+    return global.PermanentEffects.enqueueDevelopment(current, {
+      endReason: "gameover",
+      defeatedBosses: Number(current.completedBossIds?.length || current.bossIndex || 0),
+    });
   }
 
   function completeFiveMatch(result) {
-    const match = ui.match;
+    const match = run?.activeMatch;
     if (!match?.simulation || match.simulation.resolutionApplied) return;
-    match.simulation.resolutionApplied = true;
-    ui.bossMatchResolving = "done";
-    ui.bossMatchState = result === "victory" ? "completed-victory" : "completed-defeat";
-    match.state = ui.bossMatchState;
-    match.result = result;
-    applyConsecutiveLossResult(result);
-    if (match.simulation?.score) match.score = [match.simulation.score.user, match.simulation.score.opponent];
-    applyRealMatchStatistics(match, result);
-    const node = run.currentZone.nodes.find((item) => item.id === match.nodeId);
-    if (result === "victory") {
-      const reward = global.LevelProgression.fiveVFiveLevelReward(run.seasonId);
-      addLevels(reward.amount, `${run.runId}:${match.nodeId}:five_v_five:victory`, reward.units);
-      if (node) global.MapEngine.completeNode(run.currentZone, node.id);
-      match.pendingPostMatchAction = { type: "map", toast: `Vittoria: tutta la rosa guadagna ${reward.text}` };
-    } else {
-      global.RunState.restoreAfterLoss(run, match.previousNodeId, match.type);
-      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : `Sconfitta: ${remainingLivesText(run.lives)}. Torni al nodo precedente.` };
-    }
-    run.phase = "match";
-    run.activeMatch = match;
-    appendFinalMatchMessage(result, "five_v_five");
-    if (!persistMatchState().ok) return renderMatch();
-    updateMatchScoreDom(match, true);
+    const identity = matchTransactionIdentity(match);
+    const committed = commitMatchMutation("five-match-resolution", identity, (currentMatch, current) => {
+      if (currentMatch.simulation.resolutionApplied) return { applied: false };
+      currentMatch.simulation.resolutionApplied = true;
+      currentMatch.state = result === "victory" ? "completed-victory" : "completed-defeat";
+      currentMatch.result = result;
+      applyConsecutiveLossResult(result, current);
+      if (currentMatch.simulation.score) currentMatch.score = [currentMatch.simulation.score.user, currentMatch.simulation.score.opponent];
+      applyRealMatchStatistics(currentMatch, result, current);
+      const node = current.currentZone?.nodes?.find((item) => item.id === currentMatch.nodeId);
+      if (result === "victory") {
+        const reward = global.LevelProgression.fiveVFiveLevelReward(current.seasonId);
+        addLevels(reward.amount, `${current.runId}:${currentMatch.nodeId}:five_v_five:victory`, reward.units, current);
+        if (node) global.MapEngine.completeNode(current.currentZone, node.id);
+        currentMatch.pendingPostMatchAction = { type: "map", toast: `Vittoria: tutta la rosa guadagna ${reward.text}` };
+      } else {
+        global.RunState.restoreAfterLoss(current, currentMatch.previousNodeId, currentMatch.type, { save: false });
+        enqueueGameOverDevelopmentEffect(current);
+        currentMatch.pendingPostMatchAction = { type: current.gameOver ? "game-over" : "map", toast: current.gameOver ? "Hai perso l'ultima vita. La run è terminata." : `Sconfitta: ${remainingLivesText(current.lives)}. Torni al nodo precedente.` };
+      }
+      current.phase = "match";
+      current.activeMatch = currentMatch;
+      appendFinalMatchMessage(result, "five_v_five", currentMatch);
+      return { applied: true };
+    }, { onCommitted: () => { ui.bossMatchResolving = "done"; } });
+    if (!committed.ok) return renderMatch();
+    updateMatchScoreDom(ui.match, true);
     updateMatchControlsDom();
   }
 
   function completeSpecialMatch(result) {
-    const match = ui.match;
+    const match = run?.activeMatch;
     if (!match?.simulation || match.simulation.resolutionApplied) return;
-    match.simulation.resolutionApplied = true; match.result = result; match.state = result === "victory" ? "completed-victory" : "completed-defeat";
-    ui.bossMatchState = match.state; ui.bossMatchResolving = "done"; applyConsecutiveLossResult(result);
-    if (match.simulation.score) match.score = [match.simulation.score.user, match.simulation.score.opponent];
-    applyRealMatchStatistics(match, result);
-    const node = run.currentZone?.nodes?.find((item) => item.id === match.nodeId);
-    if (result === "victory") {
-      global.SpecialMatchRuntime.complete(run, seasonDb, match, result);
-      if (node) global.MapEngine.completeNode(run.currentZone, node.id);
-      match.pendingPostMatchAction = { type: "special-reward", toast: "Vittoria: +1 livello e scelta giocatore" };
-    } else {
-      global.RunState.restoreAfterLoss(run, match.previousNodeId, match.type);
-      match.pendingPostMatchAction = { type: run.gameOver ? "game-over" : "map", toast: run.gameOver ? "Hai perso l'ultima vita. La run è terminata." : "Sconfitta: torni al nodo precedente." };
-    }
-    run.phase = "match"; run.activeMatch = match; appendFinalMatchMessage(result, "special_match"); if (!persistMatchState().ok) return renderMatch(); updateMatchScoreDom(match, true); updateMatchControlsDom();
+    const identity = matchTransactionIdentity(match);
+    const committed = commitMatchMutation("special-match-resolution", identity, (currentMatch, current) => {
+      if (currentMatch.simulation.resolutionApplied) return { applied: false };
+      currentMatch.simulation.resolutionApplied = true;
+      currentMatch.result = result;
+      currentMatch.state = result === "victory" ? "completed-victory" : "completed-defeat";
+      applyConsecutiveLossResult(result, current);
+      if (currentMatch.simulation.score) currentMatch.score = [currentMatch.simulation.score.user, currentMatch.simulation.score.opponent];
+      applyRealMatchStatistics(currentMatch, result, current);
+      const node = current.currentZone?.nodes?.find((item) => item.id === currentMatch.nodeId);
+      if (result === "victory") {
+        global.SpecialMatchRuntime.complete(current, seasonDb, currentMatch, result);
+        if (node) global.MapEngine.completeNode(current.currentZone, node.id);
+        currentMatch.pendingPostMatchAction = { type: "special-reward", toast: "Vittoria: +1 livello e scelta giocatore" };
+      } else {
+        global.RunState.restoreAfterLoss(current, currentMatch.previousNodeId, currentMatch.type, { save: false });
+        enqueueGameOverDevelopmentEffect(current);
+        currentMatch.pendingPostMatchAction = { type: current.gameOver ? "game-over" : "map", toast: current.gameOver ? "Hai perso l'ultima vita. La run è terminata." : "Sconfitta: torni al nodo precedente." };
+      }
+      current.phase = "match";
+      current.activeMatch = currentMatch;
+      appendFinalMatchMessage(result, "special_match", currentMatch);
+      return { applied: true };
+    }, { onCommitted: () => { ui.bossMatchResolving = "done"; } });
+    if (!committed.ok) return renderMatch();
+    updateMatchScoreDom(ui.match, true);
+    updateMatchControlsDom();
   }
 
   function completeBossMatch(result) {
     // Durable loss semantics: run.gameOver ? "Hai perso l'ultima vita. La run è terminata."; type: run.gameOver ? "game-over" : "map"
-    const match = ui.match;
+    const match = run?.activeMatch;
     if (!match?.simulation || match.simulation.resolutionApplied) return;
+    const identity = matchTransactionIdentity(match);
     const committed = persistGameplayMutation({
       label: "boss-resolution",
-      mutate: (current) => global.BossGameOverRuntime.applyBossResolutionMutation({ run: current, matchId: match.matchId, result, seasonDb, deps: {
-        applyStatistics: applyRealMatchStatistics, addLevels,
+      mutate: (current) => {
+        canonicalMatchFor(current, identity);
+        const resolution = global.BossGameOverRuntime.applyBossResolutionMutation({ run: current, matchId: identity.matchId, result, seasonDb, deps: {
+        applyStatistics: (currentMatch, currentResult) => applyRealMatchStatistics(currentMatch, currentResult, current),
+        addLevels: (amount, actionId, units) => addLevels(amount, actionId, units, current),
         completeNode: (zone, nodeId) => global.MapEngine.completeNode(zone, nodeId),
         restoreAfterLoss: (...args) => global.RunState.restoreAfterLoss(...args),
         lossToast: (resolved) => resolved.gameOver ? "Hai perso l'ultima vita. La run è terminata." : `Sconfitta: ${remainingLivesText(resolved.lives)}. Torni al nodo precedente.`,
-        appendFinalMessage: appendFinalMatchMessage,
-      } }),
+        appendFinalMessage: (currentResult, type) => appendFinalMatchMessage(currentResult, type, current.activeMatch),
+      } });
+        enqueueGameOverDevelopmentEffect(current);
+        return resolution;
+      },
       onCommitted: (_value, current) => { ui.match = current.activeMatch; ui.bossMatchResolving = "done"; ui.bossMatchState = current.activeMatch.state; },
       rerender: ({ ok, run: recovered }) => { if (!ok) { ui.match = recovered?.activeMatch || null; ui.bossMatchResolving = false; ui.bossMatchState = ui.match?.state || "pre-match"; } },
     });
@@ -6215,8 +6321,16 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     // The terminal route itself owns the canonical phase. This keeps a reload
     // between navigation and the permanent-effect drain on the game-over path.
     if (run.phase !== "gameover") {
-      run.phase = "gameover";
-      global.RunState.save(run);
+      const committed = persistGameplayMutation({
+        label: "gameover-route",
+        mutate: (current) => {
+          if (!current.gameOver && Number(current.lives || 0) > 0) throw new Error("Game over route requires a terminal run");
+          current.gameOver = true;
+          current.phase = "gameover";
+          enqueueGameOverDevelopmentEffect(current);
+        },
+      });
+      if (!committed.ok) return;
     }
     const bossReached = Math.min(Number(run.bossIndex || 0) + 1, seasonDb.bossOrder.length);
     if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "gameover", onComplete: () => renderGameOver({ developmentResolved: true }) });

@@ -81,6 +81,6 @@ assert.strictEqual(levels.formatLevel({ level: 0, levelUnits: 2 }, "ie1_s2"), "0
 assert.strictEqual(levels.formatLevel({ level: 0, levelUnits: 3 }, "ie1_s2"), "0 + 0,5");
 
 const app = fs.readFileSync("js/app.js", "utf8");
-assert(app.includes("fiveVFiveLevelReward(run.seasonId)"), "completeFiveMatch consumes the tested season-aware source of truth");
+assert(app.includes("fiveVFiveLevelReward(current.seasonId)"), "completeFiveMatch consumes the transaction-owned season-aware source of truth");
 
 console.log("level-reward-regression-test: season rewards, items, caps and finite Italian formatting OK");

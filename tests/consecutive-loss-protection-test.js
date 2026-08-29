@@ -65,8 +65,8 @@ assert.strictEqual(ie1.consecutiveLosses, 2);
 assert.strictEqual(runContext.RunState.createRun({}, 'ie1').consecutiveLosses, 0, 'a replacement run starts clean');
 
 const app = fs.readFileSync('js/app.js', 'utf8');
-assert.match(app, /function applyConsecutiveLossResult\(result\) \{\s*run\.consecutiveLosses = result === "victory" \? 0 : Math\.min\(2, run\.consecutiveLosses \+ 1\)/, 'completed results must update the streak centrally');
-assert.match(app, /simulation\.resolutionApplied = true;[\s\S]{0,400}applyConsecutiveLossResult\(result\)/, 'the idempotent resolution guard must precede streak updates');
+assert.match(app, /function applyConsecutiveLossResult\(result, currentRun = run\) \{\s*currentRun\.consecutiveLosses = result === "victory" \? 0 : Math\.min\(2, Number\(currentRun\.consecutiveLosses \|\| 0\) \+ 1\)/, 'completed results must update the transaction-owned run centrally');
+assert.match(app, /currentMatch\.simulation\.resolutionApplied = true;[\s\S]{0,400}applyConsecutiveLossResult\(result, current\)/, 'the idempotent resolution guard must precede streak updates');
 assert.match(app, /simulate\(\{[^}]*consecutiveLosses: run\.consecutiveLosses/, 'real match snapshots must pass the saved streak into the simulator');
 assert.match(app, /formatMatchProbability\(simPreview\.probabilities\?\.userChance\)/, '5v5 UI must show the effective chance');
 assert.match(app, /formatMatchProbability\(simPreview\.probabilities\.userChance\)/, 'boss UI must show the effective chance');

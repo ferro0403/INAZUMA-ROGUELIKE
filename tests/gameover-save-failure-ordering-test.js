@@ -7,7 +7,7 @@ const storage = new BudgetStorage(Infinity);
 const run = { runId: "gameover-quota-order", seasonId: "orion", lives: 0, gameOver: true, phase: "map", bossIndex: 2, completedBossIds: orion.bossOrder.slice(0, 2).map(x => x.teamId), roster: [], lineup: [], bench: [], inventory: [], statistics: {}, teamIdentity: { name: "Raimon" } };
 let runtime = load(storage, { run, seasonDb: orion });
 storage.budget = storage.bytes();
-assert.throws(() => runtime.seam.renderGameOver(), error => ["storage-quota-exceeded", "storage-unavailable"].includes(error.code) || error.name === "QuotaExceededError");
+assert.doesNotThrow(() => runtime.seam.renderGameOver(), "the fail-stop boundary owns and reports the persistence failure");
 assert.equal(runtime.context.RunState.load("orion").phase, "map");
 assert(!runtime.context.DevelopmentV2.read().redeemedRunIds.includes(run.runId));
 storage.budget = Infinity;
