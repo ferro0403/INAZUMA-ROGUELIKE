@@ -19,4 +19,18 @@ assert.equal(runtime.canonical.phase, "gameover");
 assert.equal(runtime.context.DevelopmentV2.read().redeemedRunIds.filter(id => id === run.runId).length, 1);
 runtime.seam.renderGameOver();
 assert.equal(runtime.context.DevelopmentV2.read().redeemedRunIds.filter(id => id === run.runId).length, 1);
+
+// A legacy canonical game-over without an outbox entry must remain visibly pending
+// when the terminal enqueue cannot be saved; it cannot expose New Run/Menu as if paid.
+const legacyStorage = new BudgetStorage(Infinity);
+const legacyRun = { ...run, runId: "legacy-gameover-missing-effect", phase: "gameover", permanentEffectOutbox: [] };
+let legacyRuntime = load(legacyStorage, { run: legacyRun, seasonDb: orion });
+legacyStorage.budget = legacyStorage.bytes();
+legacyRuntime.seam.renderGameOver();
+assert.match(legacyRuntime.seam.getAppMarkup(), /FINALIZZAZIONE NON SALVATA/);
+assert.doesNotMatch(legacyRuntime.seam.getAppMarkup(), /NUOVA RUN|id="home"/);
+assert(!legacyRuntime.context.DevelopmentV2.read().redeemedRunIds.includes(legacyRun.runId));
+legacyStorage.budget = Infinity;
+legacyRuntime.seam.renderGameOver();
+assert.equal(legacyRuntime.context.DevelopmentV2.read().redeemedRunIds.filter(id => id === legacyRun.runId).length, 1);
 console.log("gameover canonical-save ordering and retry: ok");

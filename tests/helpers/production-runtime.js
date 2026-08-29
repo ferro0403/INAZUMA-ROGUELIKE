@@ -33,7 +33,7 @@ function load(storage, options = {}) {
   if (Array.isArray(options) || (!options.run && !options.fullRuntime)) return loadModules(storage, Array.isArray(options) ? options : undefined);
   const blockedCalls = [];
   const runtimeSeasonId = options.seasonId || options.run?.seasonId;
-  const document = { body: element(), documentElement: element(), scrollingElement: element(), createElement: element,
+  const document = { body: element(), documentElement: element(), scrollingElement: element(), createElement: element, createDocumentFragment: element,
     getElementById: () => element(), querySelector: () => element(), querySelectorAll: () => [] };
   const listeners = new Map();
   const c = { console, structuredClone, Date, Math, JSON, Object, Array, String, Number, Boolean, RegExp, Error, TypeError, Promise, Map, Set, WeakMap, WeakSet, Symbol, Intl, parseInt, parseFloat, isNaN, TextEncoder, Uint8Array, crypto: global.crypto, URLSearchParams,

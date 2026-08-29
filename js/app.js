@@ -1743,10 +1743,10 @@
         return global.PermanentEffects.enqueueDevelopment(current, { endReason, defeatedBosses });
       },
     });
-    if (!prepared.ok) return renderGameOver({ developmentResolved: true });
+    if (!prepared.ok) return renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
     const drained = drainPermanentEffects();
     const effect = run.permanentEffectOutbox.find((entry) => entry.id === effectId);
-    if (drained.error || effect?.status !== "applied") return renderHome();
+    if (drained.error || effect?.status !== "applied") return renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
     if (!run.developmentRewardPresentation || run.developmentRewardPresentation.endReason !== endReason) {
       run.developmentRewardPresentation = developmentRewardPresentation(defeatedBosses, endReason);
       global.RunState.save(run);
@@ -1754,6 +1754,17 @@
     const continueFlow = () => { run.developmentRewardPresentation.seen = true; global.RunState.save(run); return onComplete(); };
     if (!run.developmentRewardPresentation.seen) return renderDevelopmentRewardReveal(run.developmentRewardPresentation, continueFlow);
     return onComplete();
+  }
+
+  function renderTerminalEffectPending(retry) {
+    app.innerHTML = `<main class="gameover-screen"><section class="gameover-card" aria-labelledby="terminal-pending-title">
+      <div class="gameover-mark" aria-hidden="true">!</div><p class="eyebrow">RICOMPENSA IN ATTESA</p>
+      <h1 id="terminal-pending-title">FINALIZZAZIONE NON SALVATA</h1>
+      <p class="gameover-copy">La run è al sicuro, ma la ricompensa permanente non è ancora stata registrata. Riprova senza creare una nuova run.</p>
+      <div class="gameover-actions"><button type="button" class="btn btn-yellow" id="retry-terminal-effect">RIPROVA</button></div>
+    </section></main>`;
+    resetRenderedViewScroll();
+    document.getElementById("retry-terminal-effect")?.addEventListener("click", retry);
   }
 
   function developmentSelectedMarkup(player) {
@@ -4208,6 +4219,18 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     });
   }
 
+  function stopMatchAfterPersistenceFailure() {
+    clearMatchPlaybackTimer();
+    ui.match = run?.activeMatch || null;
+    ui.bossMatchState = ui.match?.state || "pre-match";
+    ui.bossMatchLog = ui.match?.log || [];
+    ui.matchStartLocked = false;
+    ui.bossMatchResolving = false;
+    updateMatchScoreDom(ui.match, ui.match?.simulation?.state === "completed");
+    updateMatchControlsDom();
+    return { ok: false, suspended: true };
+  }
+
   function matchSeed(match) {
     if (match.simulation?.seed && match.simulation?.state !== "pre-match") return match.simulation.seed;
     return `${run.runId}:${match.type}:${match.nodeId}:${match.attemptNumber || 1}`;
@@ -4398,7 +4421,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         currentMatch.score = [currentSim.score.user, currentSim.score.opponent];
         currentMatch.state = currentSim.winner === "user" ? "completed-victory" : "completed-defeat";
       });
-      if (!completed.ok) return renderMatch();
+      if (!completed.ok) return stopMatchAfterPersistenceFailure();
       updateMatchScoreDom(ui.match, true);
       updateMatchControlsDom();
       return applySimulationResolution(ui.match);
@@ -4414,7 +4437,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       currentMatch.log = [...(currentMatch.log || []), view];
       return view;
     });
-    if (!committed.ok) return renderMatch();
+    if (!committed.ok) return stopMatchAfterPersistenceFailure();
     appendMatchLogEvent(committed.value);
     updateMatchScoreDom(ui.match);
     updateMatchControlsDom();
@@ -4461,7 +4484,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       clearMatchPlaybackTimer();
       ui.matchStartLocked = false;
       updateMatchControlsDom();
-      return renderMatch();
+      return stopMatchAfterPersistenceFailure();
     }
     clearMatchPlaybackTimer();
     ui.matchStartLocked = false;
@@ -4500,7 +4523,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       currentMatch.state = currentSim.winner === "user" ? "completed-victory" : "completed-defeat";
       currentMatch.log = currentSim.timeline.map(matchEventView);
     });
-    if (!committed.ok) return renderMatch();
+    if (!committed.ok) return stopMatchAfterPersistenceFailure();
     appendMissingMatchLogEvents(missing);
     updateMatchScoreDom(ui.match, true);
     updateMatchControlsDom();
@@ -4511,17 +4534,18 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   function applySimulationResolution(match) {
     const sim = match?.simulation;
     if (!sim || sim.resolutionApplied || sim.manuallyResolved) return;
-    sim.winner === "user" ? (match.type === "five_v_five" ? completeFiveMatch("victory") : match.type === "special_match" ? completeSpecialMatch("victory") : completeBossMatch("victory")) : (match.type === "five_v_five" ? completeFiveMatch("defeat") : match.type === "special_match" ? completeSpecialMatch("defeat") : completeBossMatch("defeat"));
+    return sim.winner === "user" ? (match.type === "five_v_five" ? completeFiveMatch("victory") : match.type === "special_match" ? completeSpecialMatch("victory") : completeBossMatch("victory")) : (match.type === "five_v_five" ? completeFiveMatch("defeat") : match.type === "special_match" ? completeSpecialMatch("defeat") : completeBossMatch("defeat"));
   }
 
   function forceMatchOutcome(result, options = {}) {
-    const match = ui.match;
+    const match = run?.activeMatch;
     if (!match || ui.matchStartLocked || match.simulation?.resolutionApplied) return;
     ui.matchStartLocked = true;
     updateMatchControlsDom();
     try {
       clearMatchPlaybackTimer();
-      const sim = ensureMatchPreview(match, { ...options, forceRefresh: !match.simulation?.valid, freeze: true });
+      const frozenMatch = cloneMatchState(match);
+      const sim = ensureMatchPreview(frozenMatch, { ...options, forceRefresh: !frozenMatch.simulation?.valid, freeze: true });
       if (!sim.valid) {
         ui.matchStartLocked = false;
         updateMatchControlsDom();
@@ -4538,15 +4562,21 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       if (winner === "user" && currentUser <= currentOpponent) sim.score = { user: currentOpponent + 1, opponent: currentOpponent };
       if (winner === "opponent" && currentOpponent <= currentUser) sim.score = { user: currentUser, opponent: currentUser + 1 };
       sim.displayedScore = { ...sim.score };
-      match.score = [sim.score.user, sim.score.opponent];
-      match.forcedOutcome = sim.forcedOutcome;
-      match.testControl = true;
-      ui.bossMatchLog = visibleTimeline(match);
+      frozenMatch.score = [sim.score.user, sim.score.opponent];
+      frozenMatch.forcedOutcome = sim.forcedOutcome;
+      frozenMatch.testControl = true;
+      frozenMatch.log = visibleTimeline(frozenMatch);
+      frozenMatch.state = winner === "user" ? "completed-victory" : "completed-defeat";
+      const identity = matchTransactionIdentity(match);
+      const committed = commitMatchMutation("match-forced-outcome", identity, (currentMatch) => {
+        Object.keys(currentMatch).forEach((key) => { delete currentMatch[key]; });
+        Object.assign(currentMatch, cloneMatchState(frozenMatch));
+      });
+      if (!committed.ok) return stopMatchAfterPersistenceFailure();
       appendMissingMatchLogEvents(ui.bossMatchLog);
-      ui.bossMatchState = winner === "user" ? "completed-victory" : "completed-defeat";
-      match.state = ui.bossMatchState;
-      persistMatchState();
-      winner === "user" ? (match.type === "five_v_five" ? completeFiveMatch("victory") : match.type === "special_match" ? completeSpecialMatch("victory") : completeBossMatch("victory")) : (match.type === "five_v_five" ? completeFiveMatch("defeat") : match.type === "special_match" ? completeSpecialMatch("defeat") : completeBossMatch("defeat"));
+      updateMatchScoreDom(ui.match, true);
+      updateMatchControlsDom();
+      return applySimulationResolution(ui.match);
     } catch (error) {
       console.error("Forced match outcome failed", error);
       toast("Errore tecnico: impossibile forzare il risultato.");
@@ -4753,7 +4783,30 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     });
   }
 
-  function renderMatch() {
+  function recoverLegacyResolvedMatchRoutingIfNeeded(match) {
+    const legacyPartialDefeat = ["five_v_five", "special_match"].includes(match?.type)
+      && match?.simulation?.resolutionApplied === true
+      && match?.result === "defeat"
+      && !match.pendingPostMatchAction
+      && (run?.gameOver === true || ["map", "gameover"].includes(String(run?.phase || "")));
+    if (!legacyPartialDefeat) return { ok: true, recovered: false };
+    const identity = matchTransactionIdentity(match);
+    return commitMatchMutation("legacy-match-routing-recovery", identity, (currentMatch, current) => {
+      if (currentMatch.simulation?.resolutionApplied !== true || currentMatch.result !== "defeat" || currentMatch.pendingPostMatchAction) return { recovered: false };
+      currentMatch.pendingPostMatchAction = {
+        type: current.gameOver ? "game-over" : "map",
+        toast: current.gameOver ? "Hai perso l'ultima vita. La run è terminata." : "Sconfitta già registrata: torni al nodo precedente.",
+      };
+      current.phase = "match";
+      appendFinalMatchMessage("defeat", currentMatch.type, currentMatch);
+      return { recovered: true };
+    });
+  }
+
+  function renderMatch(options = {}) {
+    const legacyRecovery = recoverLegacyResolvedMatchRoutingIfNeeded(run?.activeMatch);
+    const allowAutomaticResume = options.allowAutomaticResume !== false && legacyRecovery.ok;
+    ui.match = run?.activeMatch || ui.match;
     // Legacy boss resume identity: const boss = seasonDb.bossOrder[Number(ui.match?.bossIndex ?? run.bossIndex)];
     const isSpecial = ui.match?.type === "special_match";
     const boss = isSpecial ? specialMatchById(ui.match.specialMatchId) : seasonDb.bossOrder[Number(ui.match?.bossIndex ?? run.bossIndex)];
@@ -4784,7 +4837,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       const userAverageOverall = simPreview.userStrength?.averageOverall ? Math.round(simPreview.userStrength.averageOverall) : bossMatchAverage(userFivePlayers) || "-";
       const opponentAverageOverall = simPreview.opponentStrength?.averageOverall ? Math.round(simPreview.opponentStrength.averageOverall) : bossMatchAverage(opponentFivePlayers) || "-";
       const simError = !simPreview.valid ? simPreview.message : "";
-      ui.bossMatchLog = visibleTimeline(match);
+      ui.bossMatchLog = match.log?.length ? match.log : visibleTimeline(match);
       const activeSide = ui.fiveMatchTab === "opponent" ? "opponent" : "user";
       const resolved = ui.bossMatchState.startsWith("completed");
       const simulating = ui.bossMatchState === "simulating";
@@ -4911,7 +4964,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("defeat"); });
       document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); startMatchSimulation(match); });
       if (simulating || resolved) openFiveMatchSimulationModal(match, userName, opponentName);
-      resumeMatchSimulationIfNeeded(run?.activeMatch);
+      if (allowAutomaticResume) resumeMatchSimulationIfNeeded(run?.activeMatch);
       return;
     }
 
@@ -4929,7 +4982,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const simError = !simPreview.valid ? simPreview.message : "";
     const userProbability = simPreview.probabilities ? formatMatchProbability(simPreview.probabilities.userChance) : null;
     const bossProbability = simPreview.probabilities ? formatMatchProbability(simPreview.probabilities.opponentChance) : null;
-    ui.bossMatchLog = visibleTimeline(ui.match);
+    ui.bossMatchLog = ui.match.log?.length ? ui.match.log : visibleTimeline(ui.match);
     const score = simulationScoreArray(ui.match, resolved);
     const scoreLabel = `${meta.user.name} ${score[0]} - ${score[1]} ${meta.boss.name}`;
     const bossStatusLabel = resolved ? (ui.bossMatchState.endsWith("victory") ? "Vittoria" : "Sconfitta") : simulating ? "In corso" : "Preparazione";
@@ -5019,7 +5072,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(ui.match, { boss }); });
     document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
     document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch);
-    resumeMatchSimulationIfNeeded(run?.activeMatch);
+    if (allowAutomaticResume) resumeMatchSimulationIfNeeded(run?.activeMatch);
   }
 
   function addLevels(amount, actionId = null, explicitUnits = null, currentRun = run) {
@@ -5116,7 +5169,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       appendFinalMatchMessage(result, "five_v_five", currentMatch);
       return { applied: true };
     }, { onCommitted: () => { ui.bossMatchResolving = "done"; } });
-    if (!committed.ok) return renderMatch();
+    if (!committed.ok) return stopMatchAfterPersistenceFailure();
     updateMatchScoreDom(ui.match, true);
     updateMatchControlsDom();
   }
@@ -5148,7 +5201,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       appendFinalMatchMessage(result, "special_match", currentMatch);
       return { applied: true };
     }, { onCommitted: () => { ui.bossMatchResolving = "done"; } });
-    if (!committed.ok) return renderMatch();
+    if (!committed.ok) return stopMatchAfterPersistenceFailure();
     updateMatchScoreDom(ui.match, true);
     updateMatchControlsDom();
   }
@@ -5176,7 +5229,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       onCommitted: (_value, current) => { ui.match = current.activeMatch; ui.bossMatchResolving = "done"; ui.bossMatchState = current.activeMatch.state; },
       rerender: ({ ok, run: recovered }) => { if (!ok) { ui.match = recovered?.activeMatch || null; ui.bossMatchResolving = false; ui.bossMatchState = ui.match?.state || "pre-match"; } },
     });
-    if (!committed.ok) return renderMatch();
+    if (!committed.ok) return stopMatchAfterPersistenceFailure();
     updateMatchScoreDom(match, true);
     updateMatchControlsDom();
   }
@@ -6659,6 +6712,14 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     // do not duplicate terminal-run persistence semantics here.
     global.__INAZUMA_TERMINAL_FLOW_TEST__ = Object.freeze({
       completeBossMatch,
+      completeFiveMatch,
+      completeSpecialMatch,
+      forceMatchOutcome,
+      startMatchSimulation,
+      stepMatchPlayback,
+      skipMatchToResult,
+      resumeMatchSimulationIfNeeded,
+      recoverLegacyResolvedMatchRoutingIfNeeded,
       continueAfterMatch,
       resolvePendingRunFlow,
       showNextBossReward,
@@ -6667,6 +6728,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       navigateBossVictoryDestination,
       resumeRunFinalization,
       renderGameOver,
+      renderMatch,
       ensureCurrentZoneMutation,
       setContext: (context = {}) => {
         if (context.run) { run = context.run; global.run = run; ui.match = run.activeMatch || null; }
@@ -6677,6 +6739,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         }
       },
       getRun: () => run,
+      getUi: () => ui,
+      getAppMarkup: () => app.innerHTML,
     });
   }
   init();
