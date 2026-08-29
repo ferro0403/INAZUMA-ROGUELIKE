@@ -25,17 +25,11 @@ jobs:
           from pathlib import Path
           path = Path('js/app.js')
           text = path.read_text()
-          old = '''      if (!result.ok) { closeModal({ invokeOnClose: false }); toast(result.reason === "stale-regression" ? "Evoluzione già cambiata: aggiornata la lista" : "Regressione non salvata", "error"); return renderDevelopmentCenter("management"); }
-          closeModal({ invokeOnClose: false }); toast(`${row.name}: ${result.to.rarity} ${result.to.potential}`); renderDevelopmentCenter("management");'''
-          new = '''      if (!result.ok) { closeModal({ invokeOnClose: false }); toast(result.reason === "stale-regression" ? "Evoluzione già cambiata: aggiornata la lista" : "Regressione non salvata", "error"); return renderDevelopmentCenter("management"); }
-          developmentPlayersCache = null;
-          developmentResolvedCache.delete(String(row.playerId));
-          closeModal({ invokeOnClose: false }); toast(`${row.name}: ${result.to.rarity} ${result.to.potential}`); renderDevelopmentCenter("management");'''
-          if old not in text:
-              raise SystemExit('Expected regression success block not found; refusing to edit')
-          if text.count(old) != 1:
-              raise SystemExit(f'Expected exactly one success block, found {text.count(old)}')
-          path.write_text(text.replace(old, new, 1))
+          needle = '      closeModal({ invokeOnClose: false }); toast(`${row.name}: ${result.to.rarity} ${result.to.potential}`); renderDevelopmentCenter("management");'
+          if text.count(needle) != 1:
+              raise SystemExit(f'Expected exactly one regression success line, found {text.count(needle)}')
+          replacement = '      developmentPlayersCache = null;\n      developmentResolvedCache.delete(String(row.playerId));\n' + needle
+          path.write_text(text.replace(needle, replacement, 1))
           PY
           git diff --check
           node --check js/app.js
