@@ -8453,4 +8453,273 @@ html.account-modal-open, body.account-modal-open { overflow: hidden; overscroll-
 @media(max-width:520px){.development-stat-increases ul{grid-template-columns:1fr}.development-stat-increases li{padding:5px 7px}.modal.development-confirm-modal{padding-bottom:max(16px,env(safe-area-inset-bottom))}}
 .development-cup-selector{display:grid;gap:5px;padding:8px;border:2px solid #111;background:#f7f1df}.development-cup-selector h4,.development-cup-selector p{margin:0;font-size:.75rem;font-weight:950}.development-cup-row{display:grid;grid-template-columns:28px minmax(0,1fr) 30px 24px 30px;align-items:center;gap:5px}.development-cup-row img{width:26px;height:26px;object-fit:contain}.development-cup-row button{width:30px;height:28px;padding:0;border:2px solid #111;border-radius:0;background:#ffd21f;color:#111;font-weight:950}.development-cup-row button:disabled{background:#ddd;color:#777}.development-cup-row b{text-align:center}.development-cup-selector p{padding:5px;background:#fff;border:2px solid #111}.development-cup-selector p.complete{background:#ffd21f}
 
-.development-regression{display:grid;gap:18px}.development-regression-transition{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center}.development-regression-transition>div{display:grid;gap:5px;padding:14px;border:3px solid #111;background:#fff}.development-regression-transition small,.development-regression-refund dt{font-size:.7rem;font-weight:950;letter-spacing:.1em}.development-regression-transition strong{font-size:1.15rem}.development-regression-transition em{font-size:.65rem;font-style:normal;font-weight:950;color:#7d1812}.development-regression-transition>b{font-size:1.8rem}.development-regression-refund{padding:15px;border:3px solid #111;background:#fff8d8}.development-regression-refund h2{margin:0 0 10px}.development-regression-refund dl{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin:0}.development-regression-refund dl>div{display:grid;gap:4px;padding:10px;background:#fff;border:2px solid #111}.development-regression-refund dd{margin:0;font-weight:950}.development-regression-refund .is-project dd{color:#a21b12}.development-regression-refund ul{display:grid;gap:5px;margin:12px 0 0;padding:0;list-style:none}.development-regression-refund li{display:flex;justify-content:space-between;font-weight:900}.development-regression-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:10px}@media(max-width:600px){.development-regression-transition{grid-template-columns:1fr}.development-regression-transition>b{transform:rotate(90deg);justify-self:center}.development-regression-refund dl,.development-regression-actions{grid-template-columns:1fr}.development-regression-actions button{min-height:48px}}
+.modal-backdrop:has(.development-regression-modal) {
+  padding: max(12px, env(safe-area-inset-top)) 12px max(12px, env(safe-area-inset-bottom));
+  background: rgba(17, 18, 22, .72);
+  backdrop-filter: blur(5px);
+}
+
+.modal.development-regression-modal {
+  width: min(520px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 18px;
+  border: 3px solid #111;
+  border-radius: 0;
+  background: #fffdf6;
+  color: #111;
+  box-shadow: 8px 9px 0 #111;
+}
+
+.development-regression-modal .modal-close {
+  z-index: 2;
+  color: #111;
+}
+
+.development-regression {
+  display: grid;
+  gap: 12px;
+  color: #111;
+}
+
+.development-regression-head {
+  padding-right: 34px;
+  border-bottom: 3px solid #111;
+}
+
+.development-regression-head .eyebrow {
+  margin: 0 0 3px;
+  color: #9b6b00;
+}
+
+.development-regression-head h1 {
+  margin: 0 0 9px;
+  color: #111;
+  font-size: clamp(1.55rem, 7vw, 2.25rem);
+  line-height: 1;
+}
+
+.development-regression-transition {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+  padding: 9px;
+  border: 3px solid #111;
+  background: #f7f1df;
+}
+
+.development-regression-state {
+  display: grid;
+  align-content: center;
+  gap: 2px;
+  min-width: 0;
+  min-height: 105px;
+  padding: 9px;
+  border: 3px solid #111;
+  border-top: 8px solid var(--rarity-border, #929ba8);
+  background: linear-gradient(150deg, color-mix(in srgb, var(--rarity-border, #929ba8) 13%, #fff), #fff 65%);
+  box-shadow: 3px 4px 0 #111;
+}
+
+.development-regression-state small,
+.development-regression-resources small {
+  color: #57524a;
+  font-size: .66rem;
+  font-weight: 950;
+  letter-spacing: .1em;
+}
+
+.development-regression-state strong {
+  overflow-wrap: anywhere;
+  color: #111;
+  font-size: 1.08rem;
+  line-height: 1.05;
+}
+
+.development-regression-state span {
+  font-size: .84rem;
+  font-weight: 950;
+}
+
+.development-regression-state em {
+  justify-self: start;
+  margin-top: 3px;
+  padding: 2px 5px;
+  border: 2px solid #111;
+  background: #ffd21f;
+  color: #111;
+  font-size: .58rem;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.development-regression-transition > b {
+  color: #9b6b00;
+  font-size: 1.45rem;
+}
+
+.development-regression-refund {
+  padding: 10px;
+  border: 3px solid #111;
+  background: #fff8d8;
+}
+
+.development-regression-refund h2 {
+  margin: 0 0 7px;
+  color: #111;
+  font-size: .85rem;
+  letter-spacing: .08em;
+}
+
+.development-regression-resources {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.development-regression-resources > article {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 7px;
+  border: 2px solid #111;
+  background: #fff;
+}
+
+.development-regression-resources .development-resource-icon,
+.development-regression-project-mark {
+  width: 32px;
+  height: 32px;
+  border: 2px solid #111;
+  border-radius: 0;
+  background: #f7f1df;
+}
+
+.development-regression-resources > article > span:last-child {
+  display: grid;
+  min-width: 0;
+}
+
+.development-regression-resources strong {
+  color: #111;
+  font-size: .9rem;
+  overflow-wrap: anywhere;
+}
+
+.development-regression-resources .is-project strong {
+  color: #8d211a;
+  font-size: .67rem;
+  line-height: 1.05;
+}
+
+.development-regression-project-mark {
+  display: grid;
+  place-items: center;
+  color: #8d211a;
+  font-size: 1rem;
+  font-weight: 1000;
+}
+
+.development-regression-cup-sources {
+  display: grid;
+  gap: 3px;
+  margin: 8px 0 0;
+  padding: 6px 8px;
+  border: 2px solid #111;
+  background: #fff;
+  list-style: none;
+}
+
+.development-regression-cup-sources li {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #111;
+  font-size: .75rem;
+  font-weight: 900;
+}
+
+.development-regression-actions {
+  display: grid;
+  grid-template-columns: 1fr 1.5fr;
+  gap: 8px;
+}
+
+.development-regression-actions .btn {
+  min-height: 46px;
+  border: 3px solid #111;
+  border-radius: 0;
+  box-shadow: 3px 4px 0 #111;
+  font-weight: 950;
+}
+
+.development-regression-actions .btn-ghost {
+  background: #fff;
+  color: #111;
+}
+
+.development-regression-actions .btn-yellow {
+  background: #ffd21f;
+  color: #111;
+}
+
+body:has(#modal-root.has-open-modal) .run-dev-quick-tools {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .modal-backdrop:has(.development-regression-modal) {
+    align-items: start;
+    padding-inline: 8px;
+  }
+
+  .modal.development-regression-modal {
+    width: min(100%, calc(100vw - 16px));
+    max-height: calc(100dvh - 16px);
+    padding: 13px;
+    padding-bottom: max(13px, env(safe-area-inset-bottom));
+    box-shadow: 5px 6px 0 #111;
+  }
+
+  .development-regression {
+    gap: 9px;
+  }
+
+  .development-regression-transition {
+    grid-template-columns: 1fr;
+    padding: 7px;
+  }
+
+  .development-regression-state {
+    min-height: 0;
+    padding: 7px 9px;
+  }
+
+  .development-regression-transition > b {
+    justify-self: center;
+    line-height: .7;
+    transform: rotate(90deg);
+  }
+
+  .development-regression-resources {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .development-regression-resources .is-project {
+    grid-column: 1 / -1;
+  }
+
+  .development-regression-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .development-regression-actions .btn {
+    width: 100%;
+    min-height: 48px;
+  }
+}
