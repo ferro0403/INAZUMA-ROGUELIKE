@@ -2091,8 +2091,8 @@
 
   function initialDraftPlayers() {
     if (seasonDb?.recruitmentPool?.entries && isProfileAwareSeason()) {
-      return global.RecruitmentPoolRuntime.effectiveProfiledPlayers(seasonDb, freeAgentsDb)
-        .filter(global.RecruitmentPoolRuntime.eligibleForProfiledInitialDraft);
+      const candidates = global.RecruitmentPoolRuntime.effectiveProfiledPlayers(seasonDb, freeAgentsDb);
+      return global.RecruitmentPoolRuntime.eligibleInitialDraftPlayers(candidates);
     }
     const config = seasonDb?.draftConfig;
     if (config?.freeAgentsOnly && !Array.isArray(freeAgentsDb?.players)) {
@@ -3444,7 +3444,7 @@
       const minimums = seasonDb.recruitmentRules?.pullFreeAgents?.minimumFinalOverallByBossIndex || seasonDb.rules?.pullFreeAgentsMinimumFinalOverallByBossIndex || [];
       const minimum = Number(minimums[Math.min(Number(run.bossIndex || 0), minimums.length - 1)] || 0);
       const effectivePool = global.RecruitmentPoolRuntime.effectiveProfiledPlayers(seasonDb, freeAgentsDb);
-      return { players: effectivePool.filter((player) => global.RecruitmentPoolRuntime.eligibleForProfiledFreeAgentPull(player, run.bossIndex, seasonDb)), source: "mixed", sourceForPlayer: (player) => global.RecruitmentPoolRuntime.candidateSource(player, run.seasonId), database: seasonDb, profileAware: true, minimumFinalOverall: minimum };
+      return { players: global.RecruitmentPoolRuntime.eligibleFreeAgentPullPlayers(effectivePool, run.bossIndex, seasonDb), source: "mixed", sourceForPlayer: (player) => global.RecruitmentPoolRuntime.candidateSource(player, run.seasonId), database: seasonDb, profileAware: true, minimumFinalOverall: minimum };
     }
     if (type === "pull_free_agents") return { players: freeAgentsDb.players, source: "free_agents", database: freeAgentsDb };
     if (type === "pull_unlocked_teams") {

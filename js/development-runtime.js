@@ -139,6 +139,13 @@
     return global.InazumaProgression.getPlayerAtLevel(basePlayer, level, database);
   }
 
+  function effectiveAccountPotential(basePlayer, state = undefined) {
+    const canonical = state || global.DevelopmentAccountV3?.read?.();
+    const chain = canonical?.players?.[String(basePlayer?.playerId)];
+    const active = chain?.steps?.at(-1) || chain?.legacyNormale;
+    return Number(active?.toPotential ?? basePlayer?.finalOverall ?? 0);
+  }
+
   function resolvePermanentPlayer(run, playerId, level, database) {
     const base = resolveBasePlayer(playerId);
     if (!base) throw new DevelopmentSnapshotError("base-player-missing", [String(playerId)]);
@@ -220,7 +227,7 @@
     return { ...plan, permanentPotential: permanent.potential, existingTrainingBoost: localBoost, appliedBoost, remainingBoost: state.remainingBoost };
   }
 
-  const api = { SNAPSHOT_SCHEMA_VERSION, registerDatabase, resolveBasePlayer, validateSnapshot, buildRunSnapshot, activeSnapshotKind, resolvePlayer, resolveAccountPlayer, resolvePermanentPlayer, resolveEffectiveMetadata, rosterEntryPermanentFields, trainingState, resolveRosterPlayer, planIntensiveTraining, DevelopmentSnapshotError };
+  const api = { SNAPSHOT_SCHEMA_VERSION, registerDatabase, resolveBasePlayer, validateSnapshot, buildRunSnapshot, activeSnapshotKind, resolvePlayer, resolveAccountPlayer, effectiveAccountPotential, resolvePermanentPlayer, resolveEffectiveMetadata, rosterEntryPermanentFields, trainingState, resolveRosterPlayer, planIntensiveTraining, DevelopmentSnapshotError };
   global.DevelopmentRuntime = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);
