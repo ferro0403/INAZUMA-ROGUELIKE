@@ -24,6 +24,6 @@ assert(!bridge.includes('RunState.save'), 'Bridge must not introduce persistence
 assert(!bridge.includes('forceMatchOutcome('), 'Bridge must not duplicate force-result logic');
 assert(!bridge.includes('startMatchSimulation('), 'Bridge must not duplicate simulation-start logic');
 assert(index.includes('boss-match-simulation-modal-bridge.css?v=20260811-boss-simulation-modal-1'), 'Bridge stylesheet must be loaded');
-assert(index.includes('boss-match-simulation-modal-bridge.js?v=20260811-boss-simulation-modal-1'), 'Bridge script must be loaded');
+assert(index.includes('boss-match-simulation-modal-bridge.js?v=20260829-match-hardening-pr363-1'), 'Hardened bridge script must be loaded with the current cache key');
 
 console.log('boss 11v11 reuses 5v5 simulation cabin: OK');

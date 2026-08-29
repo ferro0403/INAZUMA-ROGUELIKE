@@ -74,8 +74,9 @@
   }
 
   function navigateToSectionRoot(section, context = {}) {
-    closeModal({ invokeOnClose: false });
     const destination = getSectionRootDestination(section).destination;
+    if (destination === "map" && run?.activeMatch) return leaveMatchViaSectionRoot();
+    closeModal({ invokeOnClose: false });
     if (destination === "home") return renderHome();
     if (destination === "seasonSelection") {
       if (run) global.RunState.save(run);
@@ -89,6 +90,23 @@
     if (destination === "albumTeams") return renderAlbumTeams(context.collectionId || ui.albumCollectionId || global.AlbumProgress.DEFAULT_COLLECTION_ID);
     if (destination === "hallRoot") return renderHallOfFame();
     return renderHome();
+  }
+
+  function leaveMatchViaSectionRoot() {
+    const match = run?.activeMatch;
+    if (!match) return renderMap();
+    const sim = match.simulation;
+    if (sim?.state === "simulating") return renderMatch();
+    if ((sim?.state === "completed" || String(match.state || "").startsWith("completed")) && sim?.resolutionApplied !== true) return applySimulationResolution(match);
+    if (sim?.resolutionApplied === true) return continueAfterMatch();
+    const identity = matchTransactionIdentity(match);
+    const committed = commitMatchMutation("match-prematch-back", identity, (currentMatch, current) => {
+      currentMatch.postMatchNavigationApplied = true;
+      current.activeMatch = null;
+      current.phase = "map";
+    });
+    if (!committed.ok) return stopMatchAfterPersistenceFailure();
+    ui.match = null; closeModal({ invokeOnClose: false }); return renderMap();
   }
 
   function bindSectionRootNav(context = {}) {
@@ -2834,8 +2852,26 @@
   }
 
   function enterNode(nodeId) {
-    let node;
     const previousNodeId = run.currentZone?.currentNodeId || null;
+    const candidate = run.currentZone?.nodes?.find((item) => String(item.id) === String(nodeId));
+    if (candidate && ["five_v_five", "special_match", "boss"].includes(candidate.type)) {
+      const committed = persistGameplayMutation({
+        label: "map-match-entry",
+        mutate: (current) => {
+          const selectedNode = global.MapEngine.selectNode(current.currentZone, nodeId);
+          let created;
+          if (selectedNode.type === "five_v_five") created = createOrLoadFiveMatch(selectedNode);
+          else if (selectedNode.type === "special_match") created = current.activeMatch?.type === "special_match" && current.activeMatch.nodeId === selectedNode.id ? current.activeMatch : specialMatchFromNode(selectedNode, previousNodeId);
+          else created = bossMatchFromNode(selectedNode, previousNodeId);
+          current.phase = "match"; current.activeMatch = created; return created;
+        },
+        onCommitted: (created) => { ui.match = created; ui.bossMatchState = created.state || "pre-match"; ui.bossMatchLog = created.log || []; ui.bossMatchResolving = false; },
+        rerender: ({ ok }) => { if (!ok) renderMap(); },
+      });
+      if (!committed.ok) return;
+      return renderMatch();
+    }
+    let node;
     try {
       node = global.MapEngine.selectNode(run.currentZone, nodeId);
     } catch (error) {
@@ -3412,15 +3448,21 @@
   }
 
   function receiveItem(item, node, done, onCancel = () => resolveItemNode(node)) {
-    const add = () => {
+    const add = (discardInstanceId = null) => {
       if (run.pendingItemReward?.status === "claimed") return done(resolveItem(run.pendingItemReward.claimedItemId));
-      const instance = makeItemInstance(item, node.id);
-      run.inventory.push(instance);
-      global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.ITEM_OBTAINED, { nodeId: node.id, itemId: item.id, actionId: `${run.runId}:${node.id}:item_obtained` });
-      done(instance);
+      let instance;
+      return persistGameplayMutation({ label: "item-reward-claim", mutate: (current) => {
+        const pending = current.pendingItemReward; if (!pending || pending.status !== "offered") throw new Error("Item reward state changed");
+        if (discardInstanceId) { const index = current.inventory.findIndex((entry) => String(entry.instanceId) === String(discardInstanceId)); if (index < 0) throw new Error("Discard unavailable"); current.inventory.splice(index, 1); }
+        instance = makeItemInstance(item, node.id); current.inventory.push(instance);
+        global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.ITEM_OBTAINED, { nodeId: node.id, itemId: item.id, actionId: `${current.runId}:${node.id}:item_obtained` });
+        pending.status = "claimed"; pending.claimedItemId = inventoryItemIdentity(instance); pending.claimedInstanceId = instance.instanceId;
+        if (!current.currentZone.completedNodeIds.includes(node.id)) { global.MapEngine.completeNode(current.currentZone, node.id); global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.NODE_COMPLETED, { nodeId: node.id, nodeType: node.type, actionId: `${current.runId}:${node.id}:node_completed` }); }
+        current.phase = "map";
+      }, onCommitted: () => done(instance), rerender: ({ ok }) => { if (!ok) { ui.itemRewardSubmitting = false; resolveItemNode(node); } } });
     };
     if (run.inventory.length < global.SEASON1_CONFIG.maxInventory) return add();
-    chooseInventoryDiscard("Inventario pieno: scegli un oggetto da eliminare", add, onCancel);
+    chooseInventoryDiscardSelection("Inventario pieno: scegli un oggetto da eliminare", add, onCancel);
   }
 
   function chooseInventoryDiscardSelection(title, onSelect, onCancel) {
@@ -3623,12 +3665,21 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const upgradeResult = buildLuckyCharmUpgrades(currentCandidates, available, random);
   if (!upgradeResult || upgradeResult.upgradedCount < 1) return toast("Nessun candidato può salire di rarità con il Portafortuna.");
   const upgradedCandidates = upgradeResult.candidates;
-  removeInventoryItem(luckyCharm.instanceId);
-  global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.LUCKY_CHARM_USED, { nodeId: node.id, itemId: luckyCharm.id, instanceId: luckyCharm.instanceId, upgradedCount: upgradeResult.upgradedCount, actionId: `${run.runId}:${node.id}:lucky_charm` });
-  node.pullState.luckyCharmUsed = true;
-  node.pullState.candidateIds = upgradedCandidates.map((player) => pullCandidateKey(player, pool));
-    global.RunState.save(run);
-    openPull(node, pullType);
+    const committed = persistGameplayMutation({
+      label: "lucky-charm-reroll",
+      mutate: (current) => {
+        const currentNode = current.currentZone.nodes.find((item) => String(item.id) === String(node.id));
+        const index = current.inventory.findIndex((item) => String(item.instanceId) === String(luckyCharm.instanceId));
+        if (!currentNode?.pullState || currentNode.pullState.luckyCharmUsed || index < 0) throw new Error("Lucky Charm state changed");
+        current.inventory.splice(index, 1);
+        global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.LUCKY_CHARM_USED, { nodeId: node.id, itemId: luckyCharm.id, instanceId: luckyCharm.instanceId, upgradedCount: upgradeResult.upgradedCount, actionId: `${current.runId}:${node.id}:lucky_charm` });
+        currentNode.pullState.luckyCharmUsed = true;
+        currentNode.pullState.candidateIds = upgradedCandidates.map((player) => pullCandidateKey(player, pool));
+      },
+      onCommitted: () => openPull(run.currentZone.nodes.find((item) => String(item.id) === String(node.id)), pullType),
+      rerender: ({ ok }) => { if (!ok) openPull(node, pullType); },
+    });
+    return committed;
   }
 
   function openPull(node, pullType = node.type, options = {}) {
@@ -3648,13 +3699,20 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const luckyCompatible = ["pull_free_agents", "pull_unlocked_teams"].includes(pullType);
     const rerollPull = () => {
       if (legendaryPull) return toast("Il Visore scout non può essere utilizzato nelle pull leggendarie.");
-      removeInventoryItem(scoutToken.instanceId);
-      global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId: node.id, itemId: scoutToken.id, instanceId: scoutToken.instanceId, actionId: `${run.runId}:${node.id}:reroll:${node.pullState.rerolls + 1}` });
-      node.pullState.excludedCandidateIds.push(...candidates.map((player) => pullCandidateKey(player, pool)));
-      node.pullState.rerolls += 1;
-      node.pullState.candidateIds = [];
-      global.RunState.save(run);
-      openPull(node, pullType);
+      return persistGameplayMutation({
+        label: "scout-token-reroll",
+        mutate: (current) => {
+          const currentNode = current.currentZone.nodes.find((item) => String(item.id) === String(node.id));
+          const index = current.inventory.findIndex((item) => String(item.instanceId) === String(scoutToken.instanceId));
+          if (!currentNode?.pullState || index < 0) throw new Error("Scout Token state changed");
+          current.inventory.splice(index, 1);
+          global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId: node.id, itemId: scoutToken.id, instanceId: scoutToken.instanceId, actionId: `${current.runId}:${node.id}:reroll:${currentNode.pullState.rerolls + 1}` });
+          currentNode.pullState.excludedCandidateIds.push(...candidates.map((player) => pullCandidateKey(player, pool)));
+          currentNode.pullState.rerolls += 1; currentNode.pullState.candidateIds = [];
+        },
+        onCommitted: () => openPull(run.currentZone.nodes.find((item) => String(item.id) === String(node.id)), pullType),
+        rerender: ({ ok }) => { if (!ok) openPull(node, pullType); },
+      });
     };
     const devReroll = DEV_MODE && options.dev ? () => {
       node.pullState.rerolls += 1;
@@ -4406,7 +4464,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       cont.textContent = unresolved ? "Riprova finalizzazione" : cont.dataset.resolvedLabel;
     }
     if (status) status.textContent = bossMatchStatusText();
-    if (simulationModal) simulationModal.dataset.matchState = state;
+    if (simulationModal) { simulationModal.dataset.matchState = state; simulationModal.dataset.resolutionApplied = String(resolutionApplied); }
     if (simulationState) simulationState.textContent = completed ? (state.endsWith("victory") ? "Vittoria" : "Sconfitta") : simulating ? "In corso" : "Pronta";
     if (simulationBadge) simulationBadge.textContent = simulating ? "Live" : completed ? "Completa" : "In attesa";
   }
@@ -5249,17 +5307,21 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       const flow = resolvePendingRunFlow({ clearMatch: true });
       return navigateBossVictoryDestination(flow);
     }
-    match.postMatchNavigationApplied = true;
-    const action = match.pendingPostMatchAction || { type: "map" };
-    ui.match = null;
-    run.activeMatch = null;
-    ui.bossMatchResolving = false;
-    global.RunState.save(run);
+    const identity = matchTransactionIdentity(match);
+    const committed = commitMatchMutation("match-post-navigation", identity, (currentMatch, current) => {
+      if (currentMatch.simulation?.resolutionApplied !== true) throw new Error("Match resolution is not durable");
+      const action = { ...(currentMatch.pendingPostMatchAction || { type: "map" }) };
+      currentMatch.postMatchNavigationApplied = true;
+      current.activeMatch = null;
+      current.phase = action.type === "game-over" ? "gameover" : action.type === "special-reward" ? "special-reward" : "map";
+      return action;
+    });
+    if (!committed.ok) return stopMatchAfterPersistenceFailure();
+    const action = committed.value;
+    ui.match = null; ui.bossMatchResolving = false; closeModal({ invokeOnClose: false });
     if (action.toast) toast(action.toast);
     if (action.type === "special-reward") return showSpecialMatchReward();
     if (action.type === "game-over") return renderGameOver();
-    run.phase = "map";
-    global.RunState.save(run);
     return renderMap();
   }
 
@@ -5273,23 +5335,16 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   openModal(`<div class="modal-head special-reward-head"><div><p class="eyebrow">SCELTA GIOCATORE DISPONIBILE${pullLabel}</p><h2>${candidates.length ? "Scegli 1 giocatore su 3" : "Pool completato"}</h2><p class="muted">I candidati provengono esclusivamente dalla squadra appena battuta.</p></div></div><div class="candidate-grid pull-offer-grid">${candidates.map((candidate) => playerCard(candidate, { button: true, context: "pull", level: Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), database: seasonDb })).join("")}</div><div class="button-row special-reward-actions">${candidates.length ? '<button type="button" class="btn btn-ghost" id="decline-special-reward">RIFIUTA</button>' : ""}<button type="button" class="btn btn-yellow" id="claim-special-reward" ${candidates.length && !profile ? "disabled" : ""}>${candidates.length ? "ACQUISISCI O POTENZIA" : "CONTINUA"}</button></div>`, { closeable: false, className: "pull-selection-modal special-reward-modal" });
 
   modalRoot.querySelectorAll("[data-player-id]").forEach((card) => card.addEventListener("click", () => {
-    global.SpecialMatchRuntime.selectRewardCandidate(run, card.dataset.playerId ? candidates.find((candidate) => String(candidate.playerId) === String(card.dataset.playerId))?.profileId : null, pending);
-    global.RunState.save(run);
-    showSpecialMatchReward();
+    const profileId = card.dataset.playerId ? candidates.find((candidate) => String(candidate.playerId) === String(card.dataset.playerId))?.profileId : null;
+    persistGameplayMutation({ label: "special-reward-select", mutate: (current) => global.SpecialMatchRuntime.selectRewardCandidate(current, profileId, current.pendingSpecialMatchReward), onCommitted: showSpecialMatchReward, rerender: ({ ok }) => { if (!ok) showSpecialMatchReward(); } });
   }));
 
   document.getElementById("decline-special-reward")?.addEventListener("click", (event) => {
     const button = event.currentTarget;
     if (button.disabled) return;
     modalRoot.querySelectorAll(".special-reward-actions button").forEach((action) => { action.disabled = true; });
-    const result = global.SpecialMatchRuntime.decline(run, pending, seasonDb);
-    global.RunState.save(run);
-    closeModal();
-    if (result.status === "declined") toast("Ricompensa rifiutata");
-    if (result.transition?.status === "next-reward") return showSpecialMatchReward();
-    run.phase = "map";
-    global.RunState.save(run);
-    renderMap();
+    let result;
+    persistGameplayMutation({ label: "special-reward-decline", mutate: (current) => { result = global.SpecialMatchRuntime.decline(current, current.pendingSpecialMatchReward, seasonDb); if (result.transition?.status !== "next-reward") current.phase = "map"; }, onCommitted: () => { closeModal(); if (result.status === "declined") toast("Ricompensa rifiutata"); if (result.transition?.status === "next-reward") return showSpecialMatchReward(); renderMap(); }, rerender: ({ ok }) => { if (!ok) showSpecialMatchReward(); } });
   });
 
   document.getElementById("claim-special-reward").addEventListener("click", (event) => {
@@ -6704,6 +6759,10 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, startRunWithIdentity, getRun: () => run };
+  if (DEV_MODE) global.__INAZUMA_MATCH_DIAGNOSTICS__ = () => {
+    const match = run?.activeMatch, effects = run?.permanentEffectOutbox || [];
+    return { runId: run?.runId, matchId: match?.matchId, matchType: match?.type, phase: run?.phase, simulationState: match?.simulation?.state, resolutionApplied: match?.simulation?.resolutionApplied === true, result: match?.result, winner: match?.simulation?.winner, revealedCount: match?.simulation?.revealedCount, timelineLength: match?.simulation?.timeline?.length, pendingPostMatchAction: match?.pendingPostMatchAction || null, lives: run?.lives, gameOver: run?.gameOver, finalization: run?.finalization?.status || null, permanentEffects: { pending: effects.filter((effect) => effect.status === "pending").length, applied: effects.filter((effect) => effect.status === "applied").length }, postBossFlow: run?.postBossFlow?.status || null };
+  };
   if (global.__INAZUMA_TEST_MODE__ === true) {
     global.__INAZUMA_RECRUITMENT_TEST__ = {
       recruitPlayer, showPlayerOffer, showNextBossReward, showSpecialMatchReward, openPull,
@@ -6727,6 +6786,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       skipMatchToResult,
       resumeMatchSimulationIfNeeded,
       updateMatchControlsDom,
+      leaveMatchViaSectionRoot,
+      enterNode,
       recoverLegacyResolvedMatchRoutingIfNeeded,
       continueAfterMatch,
       resolvePendingRunFlow,

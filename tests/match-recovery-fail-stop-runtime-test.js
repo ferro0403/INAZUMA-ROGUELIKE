@@ -128,6 +128,25 @@ for (const type of ["five_v_five", "special_match", "boss"]) {
   assert.strictEqual(button.textContent, "Continua");
 }
 
+// Durable post-match navigation rolls back as one unit and remains retryable.
+{
+  const resolved = match("five_v_five", "completed"); resolved.result = "defeat"; resolved.simulation.resolutionApplied = true;
+  resolved.pendingPostMatchAction = { type: "map", toast: "done" };
+  const h = runtimeFor(resolved); h.fail();
+  const failed = h.runtime.seam.continueAfterMatch();
+  assert.strictEqual(failed.suspended, true); assert(h.runtime.canonical.activeMatch); assert.strictEqual(h.runtime.canonical.phase, "match");
+  assert.strictEqual(h.runtime.canonical.activeMatch.postMatchNavigationApplied, undefined);
+  h.recover(); h.runtime.seam.continueAfterMatch(); assert.strictEqual(h.runtime.canonical.activeMatch, null); assert.strictEqual(h.runtime.canonical.phase, "map");
+}
+
+// Back cannot orphan an active simulation or bypass completed-unresolved recovery.
+{
+  const h = runtimeFor(match("boss", "simulating")); h.runtime.seam.leaveMatchViaSectionRoot(); assert(h.runtime.canonical.activeMatch); assert.strictEqual(h.runtime.canonical.phase, "match");
+}
+{
+  const h = runtimeFor(match("boss", "completed")); h.fail(); h.runtime.seam.leaveMatchViaSectionRoot(); assert(h.runtime.canonical.activeMatch); assert.strictEqual(h.runtime.canonical.activeMatch.simulation.resolutionApplied, false);
+}
+
 // DEV forced defeat uses the same frozen checkpoint and does not resolve after a failed checkpoint save.
 {
   const forced = match("boss");
