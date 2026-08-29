@@ -7,6 +7,9 @@ const DevelopmentV2 = require("../js/development-v2.js");
 const DevelopmentV3 = require("../js/development-v3.js");
 require("../js/development-v3-migration.js");
 const Runtime = require("../js/development-runtime.js");
+const AlbumCatalog = require("../js/album-catalog.js");
+require("../js/recruitment-pool.js");
+const RecruitmentPool = global.RecruitmentPoolRuntime;
 const database = require("../data/FREE_AGENTS_compact.json");
 Runtime.registerDatabase("free-agents", database);
 
@@ -132,6 +135,57 @@ const fixtureRatings = { attack: 4, control: 6, speed: 6, grit: 7, physical: 7, 
   assert.equal(calls, 1);
   const corrupt = { ...legacy, developmentV3PlayerSnapshot: { schemaVersion: 1, profileFormatVersion: 1, players: { [base.playerId]: { profile: {} } } } };
   assert.throws(() => Runtime.resolvePlayer(corrupt, base, 0, database), (error) => error instanceof Runtime.DevelopmentSnapshotError && error.code === "development-v3-snapshot-invalid");
+}
+
+// The production permanent-account resolver decodes a large canonical roster
+// without entering either materialization or the progression solver. A stale
+// V2 mirror is intentionally unavailable at this seam.
+{
+  const template = fixture("MF");
+  const players = Array.from({ length: 100 }, (_, index) => ({ ...template, playerId: `runtime-hot-${index}` }));
+  const state = DevelopmentV3.empty();
+  const materializedTemplate = DevelopmentV3.materializeProfile({ basePlayer: template, targetPotential: 85, category: "Elite", database, progression });
+  for (const player of players) {
+    const profile = JSON.parse(JSON.stringify(materializedTemplate));
+    state.players[player.playerId] = { legacyNormale: null, steps: [{ stepId: `hot-${player.playerId}`, rarity: "Elite", fromRarity: player.category, fromPotential: player.finalOverall, toPotential: 85, profile, receipt: { coinsConsumed: 0, cupsConsumed: 0, cupsConsumedBySource: {}, projectsConsumed: 0 }, createdAt: "2026-08-29T00:00:00.000Z" }] };
+  }
+  const originalMaterialize = DevelopmentV3.materializeProfile, originalSolver = progression.getPlayerAtLevel;
+  let materializerCalls = 0, solverCalls = 0;
+  DevelopmentV3.materializeProfile = (...args) => { materializerCalls += 1; return originalMaterialize(...args); };
+  progression.getPlayerAtLevel = (...args) => { solverCalls += 1; return originalSolver(...args); };
+  try {
+    for (let pass = 0; pass < 5; pass += 1) for (const player of players) {
+      assert.equal(Runtime.resolveAccountPlayer(player, 20, database, { state }).category, "Elite");
+    }
+  } finally { DevelopmentV3.materializeProfile = originalMaterialize; progression.getPlayerAtLevel = originalSolver; }
+  assert.equal(materializerCalls, 0, "runtime materializer call count");
+  assert.equal(solverCalls, 0, "runtime solver call count");
+}
+
+// Collection eligibility reads canonical metadata once, including base-only
+// and mixed rosters, and never enters profile decoding or progression work.
+{
+  const template = fixture("MF");
+  const basePlayers = Array.from({ length: 100 }, (_, index) => ({ ...template, playerId: `eligibility-base-${index}`, finalOverall: 70 }));
+  const mixed = basePlayers.map((player, index) => ({ ...player, playerId: `eligibility-mixed-${index}` }));
+  const state = DevelopmentV3.empty();
+  for (const player of mixed.slice(0, 50)) state.players[player.playerId] = { legacyNormale: null, steps: [{ toPotential: 85 }] };
+  const originalRead = global.DevelopmentAccountV3, originalMaterialize = DevelopmentV3.materializeProfile, originalSolver = progression.getPlayerAtLevel;
+  let accountReads = 0, materializerCalls = 0, solverCalls = 0;
+  global.DevelopmentAccountV3 = { read: () => { accountReads += 1; return state; } };
+  DevelopmentV3.materializeProfile = (...args) => { materializerCalls += 1; return originalMaterialize(...args); };
+  progression.getPlayerAtLevel = (...args) => { solverCalls += 1; return originalSolver(...args); };
+  try {
+    assert.equal(AlbumCatalog.freeAgentPlayers(basePlayers, "ie1_s3").length, 0);
+    assert.equal(accountReads, 1, "Album collection uses one canonical account read for 100 base players");
+    assert.equal(RecruitmentPool.eligibleInitialDraftPlayers(basePlayers).length, 0);
+    assert.equal(accountReads, 2, "recruitment operation adds one canonical account read for 100 base players");
+    assert.equal(RecruitmentPool.eligibleInitialDraftPlayers(mixed).length, 50, "mixed eligibility uses active V3 potential for exactly the evolved half");
+    assert.equal(accountReads, 3, "mixed recruitment operation adds one canonical account read");
+    assert.deepStrictEqual(mixed.map((player) => Runtime.effectiveAccountPotential(player, state)), [...Array(50).fill(85), ...Array(50).fill(70)]);
+  } finally { global.DevelopmentAccountV3 = originalRead; DevelopmentV3.materializeProfile = originalMaterialize; progression.getPlayerAtLevel = originalSolver; }
+  assert.equal(materializerCalls, 0, "eligibility materializer call count");
+  assert.equal(solverCalls, 0, "eligibility solver call count");
 }
 
 // A single frozen source read makes both snapshots. Later account replacement

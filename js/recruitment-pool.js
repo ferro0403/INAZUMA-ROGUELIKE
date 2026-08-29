@@ -13,11 +13,8 @@
   function candidateKey(player) { return id(isSeasonProfileCandidate(player) ? player.profileId : player?.playerId); }
   function candidateSource(player, seasonId = "ie1_s3") { return isSeasonProfileCandidate(player) ? seasonId : "free_agents"; }
 
-  function effectiveFinalOverall(candidate) {
-    const base = Number(candidate?.finalOverall || 0);
-    const playerId = canonicalPlayerId(candidate);
-    const permanent = Number(global.DevelopmentV2?.playerUpgrade?.(playerId)?.permanentTargetPotential || 0);
-    return Math.max(base, permanent);
+  function effectiveFinalOverall(candidate, state) {
+    return Number(global.DevelopmentRuntime?.effectiveAccountPotential?.(candidate, state) ?? candidate?.finalOverall ?? 0);
   }
 
   function effectiveProfiledPlayers(seasonDb, freeAgentsDb, profiles = global.ProfiledSeasonRuntime) {
@@ -42,19 +39,29 @@
 
   function effectiveSeason3Players(seasonDb, freeAgentsDb, profiles) { return effectiveProfiledPlayers(seasonDb, freeAgentsDb, profiles); }
 
-  function eligibleForSeason3InitialDraft(candidate) {
+  function eligibleForSeason3InitialDraft(candidate, state = undefined) {
     if (candidate?.eligibleInitialDraft === false) return false;
-    return isSeasonProfileCandidate(candidate) || effectiveFinalOverall(candidate) >= 75;
+    return isSeasonProfileCandidate(candidate) || effectiveFinalOverall(candidate, state) >= 75;
   }
 
-  function eligibleForSeason3FreeAgentPull(candidate, bossIndex, seasonDb) {
+  function eligibleForSeason3FreeAgentPull(candidate, bossIndex, seasonDb, state = undefined) {
     if (candidate?.eligiblePullFreeAgents === false) return false;
     if (isSeasonProfileCandidate(candidate)) return true;
     const minimums = seasonDb?.recruitmentRules?.pullFreeAgents?.minimumFinalOverallByBossIndex
       || seasonDb?.rules?.pullFreeAgentsMinimumFinalOverallByBossIndex || [];
     const index = Math.max(0, Math.min(Number(bossIndex || 0), Math.max(0, minimums.length - 1)));
     const minimum = Math.max(75, Number(minimums[index] || 0));
-    return effectiveFinalOverall(candidate) >= minimum;
+    return effectiveFinalOverall(candidate, state) >= minimum;
+  }
+
+  function eligibleInitialDraftPlayers(candidates) {
+    const state = global.DevelopmentAccountV3?.read?.();
+    return (candidates || []).filter((candidate) => eligibleForSeason3InitialDraft(candidate, state));
+  }
+
+  function eligibleFreeAgentPullPlayers(candidates, bossIndex, seasonDb) {
+    const state = global.DevelopmentAccountV3?.read?.();
+    return (candidates || []).filter((candidate) => eligibleForSeason3FreeAgentPull(candidate, bossIndex, seasonDb, state));
   }
 
   const eligibleForProfiledInitialDraft = eligibleForSeason3InitialDraft;
@@ -78,5 +85,5 @@
     return [...new Map(ordered.map((team) => [id(team.teamId), team])).values()];
   }
 
-  global.RecruitmentPoolRuntime = { effectiveProfiledPlayers, effectiveSeason3Players, eligibleForProfiledInitialDraft, eligibleForProfiledFreeAgentPull, eligibleForSeason3InitialDraft, eligibleForSeason3FreeAgentPull, effectiveFinalOverall, canonicalPlayerId, isSeasonProfileCandidate, candidateKey, candidateSource, eligible, choiceDatabase, orderedAlbumTeams };
+  global.RecruitmentPoolRuntime = { effectiveProfiledPlayers, effectiveSeason3Players, eligibleForProfiledInitialDraft, eligibleForProfiledFreeAgentPull, eligibleForSeason3InitialDraft, eligibleForSeason3FreeAgentPull, eligibleInitialDraftPlayers, eligibleFreeAgentPullPlayers, effectiveFinalOverall, canonicalPlayerId, isSeasonProfileCandidate, candidateKey, candidateSource, eligible, choiceDatabase, orderedAlbumTeams };
 })(globalThis);

@@ -85,6 +85,9 @@
     const now = new Date().toISOString();
     const normalizedSeasonId = seasonIdOf(seasonId || global.SeasonRegistry?.activeId?.());
     let storageGeneration = 0; try { const raw = localStorage.getItem(primaryKey(normalizedSeasonId)); storageGeneration = raw ? Number(parseEnvelope(raw, normalizedSeasonId).generation) : 0; } catch (_) {}
+    // The fallback is retained only for isolated legacy embedders that do not
+    // load the V3 modules. The production bundle always supplies the canonical
+    // runtime before app code can create a run.
     const snapshots = global.DevelopmentRuntime?.buildRunSnapshot?.() || { developmentPlayerSnapshot: clone(global.DevelopmentV2?.read?.().players || {}) };
     return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), storageGeneration, createdAt: now, updatedAt: now, lastPlayedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: initialRunLives(), consecutiveLosses: 0, formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, teamLevelUnits: 0, completedSpecialMatchIds: [], claimedSpecialMatchRewardIds: [], unlockedSpecialTeamIds: [], pendingSpecialMatchReward: null, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [], ...snapshots };
   }
