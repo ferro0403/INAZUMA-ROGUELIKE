@@ -1783,8 +1783,31 @@
     return rows.map((row) => {
       if (row.missingIdentity) return `<article class="development-management-card is-missing" data-management-player="${escapeHtml(row.playerId)}"><div class="development-management-missing-icon" aria-hidden="true">!</div><div class="development-management-copy"><p class="eyebrow">IDENTITÀ NON DISPONIBILE</p><h3>${escapeHtml(row.name)}</h3><p>La catena canonica è stata conservata. ID: <code>${escapeHtml(row.playerId)}</code></p><strong>${escapeHtml(row.activeRarity)} · ${escapeHtml(row.activePotential)}</strong></div><div class="development-management-actions"><button type="button" class="btn btn-ghost" disabled>APRI SCHEDA</button></div></article>`;
       const portrait = playerPortraitUrl(row.base), fallbacks = imageFallbackAttributes(resolvePlayerVisual(row.base).cardFallbacks);
-      return `<article class="development-management-card ${rarityClass(row.activeRarity)}" data-management-player="${escapeHtml(row.playerId)}"><span class="development-management-portrait"><img src="${escapeHtml(portrait)}" alt="" loading="lazy" ${fallbacks}></span><div class="development-management-copy"><div class="development-management-title"><div><h3>${escapeHtml(row.name)}</h3><span>${escapeHtml(row.role)}</span></div><strong>${escapeHtml(row.activeRarity)} · ${escapeHtml(row.activePotential)}</strong></div><p class="development-management-origin"><small>ORIGINE</small> BASE · ${escapeHtml(row.base.category)} ${escapeHtml(row.base.finalOverall)}</p><div class="development-management-path" aria-label="Percorso evolutivo di ${escapeHtml(row.name)}"><small>PERCORSO</small><div>${developmentManagementPathMarkup(row.path)}</div></div></div><div class="development-management-actions"><button type="button" class="btn btn-yellow development-management-open" data-open-management-player="${escapeHtml(row.playerId)}" ${row.detailPlayer ? "" : "disabled"}>APRI SCHEDA</button></div></article>`;
+      return `<article class="development-management-card ${rarityClass(row.activeRarity)}" data-management-player="${escapeHtml(row.playerId)}"><span class="development-management-portrait"><img src="${escapeHtml(portrait)}" alt="" loading="lazy" ${fallbacks}></span><div class="development-management-copy"><div class="development-management-title"><div><h3>${escapeHtml(row.name)}</h3><span>${escapeHtml(row.role)}</span></div><strong>${escapeHtml(row.activeRarity)} · ${escapeHtml(row.activePotential)}</strong></div><p class="development-management-origin"><small>ORIGINE</small> BASE · ${escapeHtml(row.base.category)} ${escapeHtml(row.base.finalOverall)}</p><div class="development-management-path" aria-label="Percorso evolutivo di ${escapeHtml(row.name)}"><small>PERCORSO</small><div>${developmentManagementPathMarkup(row.path)}</div></div></div><div class="development-management-actions"><button type="button" class="btn btn-yellow development-management-open" data-open-management-player="${escapeHtml(row.playerId)}" ${row.detailPlayer ? "" : "disabled"}>APRI SCHEDA</button><button type="button" class="btn btn-ghost development-management-regress" data-regress-management-player="${escapeHtml(row.playerId)}">REGREDISCI</button></div></article>`;
     }).join("");
+  }
+
+  function regressionCupLabel(sourceId) {
+    const labels = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES", orion: "ORION" };
+    return labels[sourceId] || String(sourceId).replace(/_/g, " ").toUpperCase();
+  }
+
+  function openDevelopmentRegression(row) {
+    const preview = row.regression;
+    const destinationFlag = preview.to.isBase ? "<em>BASE ORIGINALE</em>" : preview.to.isBaseline ? "<em>BASELINE</em>" : "";
+    const cupSources = Object.entries(preview.refund.cupsBySource).map(([sourceId, amount]) => `<li><span>${escapeHtml(regressionCupLabel(sourceId))}</span><strong>+${escapeHtml(amount)}</strong></li>`).join("");
+    openModal(`<section class="development-regression"><header class="development-regression-head"><p class="eyebrow">REGRESSIONE EVOLUZIONE</p><h1>${escapeHtml(row.name)}</h1></header><div class="development-regression-transition"><article class="development-regression-state ${rarityClass(preview.from.rarity)}"><small>PRIMA</small><strong>${escapeHtml(preview.from.rarity)}</strong><span>OVR ${escapeHtml(preview.from.potential)}</span></article><b aria-hidden="true">→</b><article class="development-regression-state ${rarityClass(preview.to.rarity)}"><small>DOPO</small>${preview.to.isBase ? "<strong>BASE</strong>" : ""}<strong>${escapeHtml(preview.to.rarity)}</strong><span>OVR ${escapeHtml(preview.to.potential)}</span>${destinationFlag}</article></div><section class="development-regression-refund"><h2>RIMBORSO</h2><div class="development-regression-resources"><article>${developmentCurrencyIcon("coins")}<span><small>MONETE</small><strong>+${escapeHtml(preview.refund.coins)}</strong></span></article><article>${developmentCurrencyIcon("cups")}<span><small>COPPE</small><strong>+${escapeHtml(preview.refund.cups)}</strong></span></article><article class="is-project"><span class="development-regression-project-mark" aria-hidden="true">!</span><span><small>PROGETTI</small><strong>NON RIMBORSATI</strong></span></article></div>${cupSources ? `<ul class="development-regression-cup-sources">${cupSources}</ul>` : ""}</section><div class="node-actions development-regression-actions"><button type="button" class="btn btn-ghost" data-cancel-regression>ANNULLA</button><button type="button" class="btn btn-yellow" data-confirm-regression>CONFERMA REGRESSIONE</button></div></section>`, { closeable: true, className: "development-regression-modal" });
+    modalRoot.querySelector("[data-cancel-regression]")?.addEventListener("click", () => closeModal());
+    const confirm = modalRoot.querySelector("[data-confirm-regression]");
+    confirm?.addEventListener("click", () => {
+      if (confirm.disabled) return;
+      confirm.disabled = true;
+      const result = global.DevelopmentAccountV3.regress({ playerId: row.playerId, expectedActiveId: preview.activeId }, { database: freeAgentsDb });
+      if (!result.ok) { closeModal({ invokeOnClose: false }); toast(result.reason === "stale-regression" ? "Evoluzione già cambiata: aggiornata la lista" : "Regressione non salvata", "error"); return renderDevelopmentCenter("management"); }
+      developmentPlayersCache = null;
+      developmentResolvedCache.delete(String(row.playerId));
+      closeModal({ invokeOnClose: false }); toast(`${row.name}: ${result.to.rarity} ${result.to.potential}`); renderDevelopmentCenter("management");
+    });
   }
 
   function developmentManagementMarkup(model) {
@@ -1825,7 +1848,10 @@
     document.getElementById("development-rarity")?.addEventListener("change", (event) => { ui.developmentRarity = event.currentTarget.value; updateResults(); });
     document.getElementById("development-management-rarity")?.addEventListener("change", (event) => { ui.developmentManagementRarity = event.currentTarget.value; renderDevelopmentCenter("management"); });
     document.getElementById("development-management-results")?.addEventListener("click", (event) => {
-      const button = event.target.closest("[data-open-management-player]"); if (!button || !managementModel) return;
+      if (!managementModel) return;
+      const regressButton = event.target.closest("[data-regress-management-player]");
+      if (regressButton) { const regressionRow = managementModel.rows.find((candidate) => candidate.playerId === regressButton.dataset.regressManagementPlayer); if (regressionRow?.regression) openDevelopmentRegression(regressionRow); return; }
+      const button = event.target.closest("[data-open-management-player]"); if (!button) return;
       const row = managementModel.rows.find((candidate) => candidate.playerId === button.dataset.openManagementPlayer);
       if (!row?.detailPlayer) return toast("Scheda giocatore non disponibile");
       showPlayerDetailsFor(row.detailPlayer, { playerId: row.playerId, level: row.detailPlayer.displayLevel, database: freeAgentsDb, equipment: null, readOnly: true, preserveScroll: scrollSnapshot() });

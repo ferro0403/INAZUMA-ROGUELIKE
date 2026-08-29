@@ -180,6 +180,45 @@
     catch (error) { return { ok: false, reason: "persistence", error }; }
   }
 
+  function regressionDescriptor(state, playerId, options = {}) {
+    const d = deps(options), id = String(playerId || ""), base = d.resolveBasePlayer?.(id), chain = state.players[id];
+    if (!record(base) || String(base.playerId) !== id) return { ok: false, reason: "base-player-missing" };
+    if (!chain) return { ok: false, reason: "no-development-state" };
+    const colored = chain.steps.at(-1), active = colored || chain.legacyNormale;
+    if (!active) return { ok: false, reason: "no-development-state" };
+    const previousColored = colored && chain.steps.length > 1 ? chain.steps.at(-2) : null;
+    const previous = previousColored || (colored ? chain.legacyNormale : null);
+    const removedId = String(colored?.stepId || active.migrationId);
+    const fromRarity = colored?.rarity || "Normale";
+    const toRarity = previousColored?.rarity || (previous ? "Normale" : String(base.category));
+    const receipt = active.receipt;
+    return {
+      ok: true, playerId: id, removedId,
+      from: { rarity: fromRarity, potential: Number(active.toPotential), isBase: false, isBaseline: !colored },
+      to: { rarity: toRarity, potential: Number(previous?.toPotential ?? base.finalOverall), isBase: !previous, isBaseline: Boolean(previous && !previousColored) },
+      refund: { coins: Number(receipt.coinsConsumed), cups: Number(receipt.cupsConsumed), cupsBySource: clone(receipt.cupsConsumedBySource), projects: 0 },
+    };
+  }
+
+  function previewRegression(input, options = {}) {
+    let state; try { state = read(options); } catch (error) { return { ok: false, reason: error.code || "migration" }; }
+    return regressionDescriptor(state, input?.playerId, options);
+  }
+
+  function regress(input, options = {}) {
+    let state; try { state = read(options); } catch (error) { return { ok: false, reason: error.code || "migration" }; }
+    const descriptor = regressionDescriptor(state, input?.playerId, options);
+    if (!descriptor.ok) return descriptor;
+    if (input?.expectedActiveId != null && String(input.expectedActiveId) !== descriptor.removedId) return { ok: false, reason: "stale-regression", playerId: descriptor.playerId, state };
+    const candidate = clone(state), chain = candidate.players[descriptor.playerId];
+    if (chain.steps.length) chain.steps.pop(); else chain.legacyNormale = null;
+    candidate.coins += descriptor.refund.coins;
+    for (const [sourceId, amount] of Object.entries(descriptor.refund.cupsBySource)) candidate.cupsBySeason[sourceId] = Number(candidate.cupsBySeason[sourceId] || 0) + Number(amount);
+    if (!chain.legacyNormale && chain.steps.length === 0) delete candidate.players[descriptor.playerId];
+    try { return { ...descriptor, state: commit(candidate, options).state }; }
+    catch (error) { return { ok: false, reason: "persistence", error, state: persistedAfterFailure(options, state) }; }
+  }
+
   function processRunEnd(payload, options = {}) {
     let state; try { state = read(options); } catch (error) { return { state: null, pull: null, awarded: false, reason: error.code }; }
     if (!payload?.runId || !["victory", "gameover"].includes(payload.endReason) || state.redeemedRunIds.includes(payload.runId)) return { state, pull: null, awarded: false };
@@ -194,7 +233,7 @@
   function addCompletedProject(rarity, amount = 1, options = {}) { if (!deps(options).V3.PROJECT_RARITIES.includes(rarity)) return false; try { mutate((state) => { state.projects[rarity] += Math.max(0, Math.floor(Number(amount) || 0)); }, options); return true; } catch (_) { return false; } }
   function resetSessionCache() { ensuredRaw = null; ensuredState = null; }
 
-  const api = { SHADOW_FIELD, AUTHORITY_FIELD, AUTHORITY_VERSION, SLOT_CAPACITIES, ensureMigrated, read, readCompatibility, commit, mutate, reset, projectV2Compatibility, envelopeFor, evolve, processRunEnd, purchaseProject, purchaseEmblem, addCompletedProject, slotUsage, slotCapacity, slotRemaining, canOccupyRarity, activeState, resetSessionCache };
+  const api = { SHADOW_FIELD, AUTHORITY_FIELD, AUTHORITY_VERSION, SLOT_CAPACITIES, ensureMigrated, read, readCompatibility, commit, mutate, reset, projectV2Compatibility, envelopeFor, evolve, previewRegression, regress, processRunEnd, purchaseProject, purchaseEmblem, addCompletedProject, slotUsage, slotCapacity, slotRemaining, canOccupyRarity, activeState, resetSessionCache };
   global.DevelopmentAccountV3 = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);
