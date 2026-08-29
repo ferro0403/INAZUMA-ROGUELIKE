@@ -15,8 +15,7 @@
 
   function effectiveFinalOverall(candidate) {
     const base = Number(candidate?.finalOverall || 0);
-    const playerId = canonicalPlayerId(candidate);
-    const permanent = Number(global.DevelopmentV2?.playerUpgrade?.(playerId)?.permanentTargetPotential || 0);
+    const permanent = Number(global.DevelopmentRuntime?.resolveAccountPlayer?.(candidate, Number(candidate?.maxLevel || 20))?.potential || 0);
     return Math.max(base, permanent);
   }
 

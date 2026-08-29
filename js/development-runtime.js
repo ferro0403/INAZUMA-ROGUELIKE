@@ -127,6 +127,18 @@
     return global.InazumaProgression.getPlayerAtLevel(basePlayer, level, database, options);
   }
 
+  // Permanent account reads use the same materialized-profile decoder as run
+  // playback.  The V2 envelope is deliberately not consulted here: once the
+  // account authority marker exists it is only a persistence compatibility
+  // mirror and cannot override the canonical V3 chain.
+  function resolveAccountPlayer(basePlayer, level, database, options = {}) {
+    const state = options.state || global.DevelopmentAccountV3?.read?.(options.accountOptions);
+    const chain = state?.players?.[String(basePlayer?.playerId)];
+    const profile = chain?.steps?.at(-1)?.profile || chain?.legacyNormale?.profile;
+    if (profile) return global.DevelopmentV3.resolveValidatedMaterializedPlayer(basePlayer, profile, level);
+    return global.InazumaProgression.getPlayerAtLevel(basePlayer, level, database);
+  }
+
   function resolvePermanentPlayer(run, playerId, level, database) {
     const base = resolveBasePlayer(playerId);
     if (!base) throw new DevelopmentSnapshotError("base-player-missing", [String(playerId)]);
@@ -208,7 +220,7 @@
     return { ...plan, permanentPotential: permanent.potential, existingTrainingBoost: localBoost, appliedBoost, remainingBoost: state.remainingBoost };
   }
 
-  const api = { SNAPSHOT_SCHEMA_VERSION, registerDatabase, resolveBasePlayer, validateSnapshot, buildRunSnapshot, activeSnapshotKind, resolvePlayer, resolvePermanentPlayer, resolveEffectiveMetadata, rosterEntryPermanentFields, trainingState, resolveRosterPlayer, planIntensiveTraining, DevelopmentSnapshotError };
+  const api = { SNAPSHOT_SCHEMA_VERSION, registerDatabase, resolveBasePlayer, validateSnapshot, buildRunSnapshot, activeSnapshotKind, resolvePlayer, resolveAccountPlayer, resolvePermanentPlayer, resolveEffectiveMetadata, rosterEntryPermanentFields, trainingState, resolveRosterPlayer, planIntensiveTraining, DevelopmentSnapshotError };
   global.DevelopmentRuntime = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);

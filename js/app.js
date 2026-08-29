@@ -1162,11 +1162,9 @@
     return { unlocked: ids.filter((id) => unlocked.has(id)).length, total: ids.length };
   }
 
-  function albumPlayerView(player, database, upgrade = undefined) {
+  function albumPlayerView(player, database, state = undefined) {
     const basePotential = Number(player.basePotential ?? player.finalOverall ?? 0);
-    const final = upgrade === undefined
-      ? global.DevelopmentV2.resolvePlayer(player, Number(player.maxLevel || 20), database)
-      : global.InazumaProgression.getPlayerAtLevel(player, Number(player.maxLevel || 20), database, global.DevelopmentV2.optionsFromUpgrade(player, upgrade));
+    const final = global.DevelopmentRuntime.resolveAccountPlayer(player, Number(player.maxLevel || 20), database, state ? { state } : undefined);
     return { ...player, basePotential, overall: final.overall, finalOverall: final.overall, potential: final.potential, category: final.category, stats: final.stats, baseStats: final.stats, displayLevel: Number(player.maxLevel || 20), albumDatabase: database };
   }
 
@@ -1230,7 +1228,7 @@
     const database = team.freeAgents ? freeAgentsDb : seasonDb;
     const albumProgressState = global.AlbumProgress.read();
     const unlocked = global.AlbumProgress.unlockedSet(collectionId, albumProgressState);
-    const developmentState = global.DevelopmentAccountV3.readCompatibility();
+    const developmentState = global.DevelopmentAccountV3.read();
     const rawById = new Map(rawPlayers.map((player) => [String(player.playerId), player]));
     const resolvedById = new Map();
     const progress = { unlocked: rawPlayers.filter((player) => unlocked.has(String(player.playerId))).length, total: rawPlayers.length };
@@ -1238,7 +1236,7 @@
     let visibleCount = rawPlayers.length > 80 ? pageSize : rawPlayers.length;
     const resolvedPlayer = (raw) => {
       const id = String(raw.playerId);
-      if (!resolvedById.has(id)) resolvedById.set(id, albumPlayerView(raw, database, developmentState.players?.[id] || null));
+      if (!resolvedById.has(id)) resolvedById.set(id, albumPlayerView(raw, database, developmentState));
       return resolvedById.get(id);
     };
     const rosterMarkup = () => {
@@ -1610,7 +1608,7 @@
     const collections = Object.keys(global.AlbumProgress.ALBUM_COLLECTIONS);
     const progress = global.AlbumProgress.read();
     const unlockedByCollection = new Map(collections.map((collectionId) => [collectionId, global.AlbumProgress.unlockedSet(collectionId, progress)]));
-    const developmentState = global.DevelopmentAccountV3.readCompatibility();
+    const developmentState = global.DevelopmentAccountV3.read();
     const freeAgentIds = eligibleFreeAgentIds();
     const seen = new Set();
     return (freeAgentsDb?.players || []).flatMap((player) => {
@@ -1618,11 +1616,12 @@
       if (!freeAgentIds.has(id) || seen.has(id)) return [];
       const developmentCollections = collections.filter((collectionId) => unlockedByCollection.get(collectionId).has(id));
       if (developmentCollections.length) seen.add(id);
-      const upgrade = developmentState.players?.[id];
+      const chain = developmentState.players?.[id];
+      const active = chain?.steps?.at(-1) || chain?.legacyNormale;
       const basePotential = Number(player.basePotential ?? player.finalOverall ?? 0);
-      const currentPotential = Math.max(basePotential, Number(upgrade?.permanentTargetPotential || 0));
+      const currentPotential = Math.max(basePotential, Number(active?.toPotential || 0));
       return developmentCollections.length
-        ? [{ ...player, rawPlayer: player, developmentUpgrade: upgrade || null, basePotential, currentPotential, category: global.InazumaProgression.categoryForPotential(currentPotential), developmentCollections }]
+        ? [{ ...player, rawPlayer: player, developmentState, developmentVersion: String(active?.stepId || active?.migrationId || "base"), basePotential, currentPotential, category: active?.profile?.category || global.InazumaProgression.categoryForPotential(currentPotential), developmentCollections }]
         : [];
     });
   }
@@ -1645,11 +1644,10 @@
   function resolveDevelopmentPlayer(indexedPlayer) {
     if (!indexedPlayer) return null;
     const id = String(indexedPlayer.playerId);
-    const upgrade = indexedPlayer.developmentUpgrade || {};
-    const version = `${upgrade.permanentTargetPotential || 0}:${upgrade.updatedAt || ""}:${upgrade.evolutionCount || 0}`;
+    const version = indexedPlayer.developmentVersion;
     const cached = developmentResolvedCache.get(id);
     if (cached?.version === version) return cached.player;
-    const player = { ...albumPlayerView(indexedPlayer.rawPlayer || indexedPlayer, freeAgentsDb, upgrade), developmentCollections: indexedPlayer.developmentCollections };
+    const player = { ...albumPlayerView(indexedPlayer.rawPlayer || indexedPlayer, freeAgentsDb, indexedPlayer.developmentState), developmentCollections: indexedPlayer.developmentCollections };
     developmentResolvedCache.set(id, { version, player });
     return player;
   }
@@ -1894,8 +1892,9 @@
       if (submitting) return; submitting = true; event.currentTarget.disabled = true;
       const result = global.DevelopmentAccountV3.evolve({ playerId: rawPlayer.playerId, basePlayer: rawPlayer, unlocked: isDevelopmentPlayerUnlocked(player), freeAgentEligible: isDevelopmentFreeAgentEligible(player.playerId), cupSelection }, { database: freeAgentsDb });
       if (!result.ok) { submitting = false; closeModal(); toast(result.reason === "not_free_agent" ? "Giocatore non eleggibile: non è svincolato" : result.reason === "rarity-capacity-full" ? `Slot ${result.rarity} esauriti (${result.used}/${result.capacity}).` : "Risorse cambiate: evoluzione non completata"); return renderDevelopmentCenter("players"); }
-      const written = global.DevelopmentAccountV3.readCompatibility().players[String(rawPlayer.playerId)];
-      const writeIsCurrent = written?.currentPermanentRarity === result.target && Number(written.permanentTargetPotential) >= Number(global.DevelopmentV2.threshold(result.target)) && Number(written.evolutionCount) > 0;
+      const written = global.DevelopmentAccountV3.read().players[String(rawPlayer.playerId)];
+      const activeWritten = written?.steps?.at(-1) || written?.legacyNormale;
+      const writeIsCurrent = (activeWritten?.rarity || activeWritten?.profile?.category) === result.target && Number(activeWritten?.toPotential) >= Number(global.DevelopmentV2.threshold(result.target));
       if (!writeIsCurrent) { submitting = false; closeModal(); toast("Evoluzione non salvata: stato non coerente"); return renderDevelopmentCenter("players"); }
       developmentPlayersCache = null;
       developmentResolvedCache.delete(String(rawPlayer.playerId));

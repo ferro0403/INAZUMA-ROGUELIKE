@@ -7,8 +7,7 @@
 
   function effectiveFinalOverall(player) {
     const base = Number(player?.finalOverall || 0);
-    const playerId = String(player?.playerId || player?.id || "");
-    const permanent = Number(global.DevelopmentV2?.playerUpgrade?.(playerId)?.permanentTargetPotential || 0);
+    const permanent = Number(global.DevelopmentRuntime?.resolveAccountPlayer?.(player, Number(player?.maxLevel || 20))?.potential || 0);
     return Math.max(base, permanent);
   }
 

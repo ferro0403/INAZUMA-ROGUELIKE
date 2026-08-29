@@ -134,6 +134,31 @@ const fixtureRatings = { attack: 4, control: 6, speed: 6, grit: 7, physical: 7, 
   assert.throws(() => Runtime.resolvePlayer(corrupt, base, 0, database), (error) => error instanceof Runtime.DevelopmentSnapshotError && error.code === "development-v3-snapshot-invalid");
 }
 
+// The production permanent-account resolver decodes a large canonical roster
+// without entering either materialization or the progression solver. A stale
+// V2 mirror is intentionally unavailable at this seam.
+{
+  const template = fixture("MF");
+  const players = Array.from({ length: 100 }, (_, index) => ({ ...template, playerId: `runtime-hot-${index}` }));
+  const state = DevelopmentV3.empty();
+  const materializedTemplate = DevelopmentV3.materializeProfile({ basePlayer: template, targetPotential: 85, category: "Elite", database, progression });
+  for (const player of players) {
+    const profile = JSON.parse(JSON.stringify(materializedTemplate));
+    state.players[player.playerId] = { legacyNormale: null, steps: [{ stepId: `hot-${player.playerId}`, rarity: "Elite", fromRarity: player.category, fromPotential: player.finalOverall, toPotential: 85, profile, receipt: { coinsConsumed: 0, cupsConsumed: 0, cupsConsumedBySource: {}, projectsConsumed: 0 }, createdAt: "2026-08-29T00:00:00.000Z" }] };
+  }
+  const originalMaterialize = DevelopmentV3.materializeProfile, originalSolver = progression.getPlayerAtLevel;
+  let materializerCalls = 0, solverCalls = 0;
+  DevelopmentV3.materializeProfile = (...args) => { materializerCalls += 1; return originalMaterialize(...args); };
+  progression.getPlayerAtLevel = (...args) => { solverCalls += 1; return originalSolver(...args); };
+  try {
+    for (let pass = 0; pass < 5; pass += 1) for (const player of players) {
+      assert.equal(Runtime.resolveAccountPlayer(player, 20, database, { state }).category, "Elite");
+    }
+  } finally { DevelopmentV3.materializeProfile = originalMaterialize; progression.getPlayerAtLevel = originalSolver; }
+  assert.equal(materializerCalls, 0, "runtime materializer call count");
+  assert.equal(solverCalls, 0, "runtime solver call count");
+}
+
 // A single frozen source read makes both snapshots. Later account replacement
 // cannot affect Run A; Run B captures the later evolution.
 {
