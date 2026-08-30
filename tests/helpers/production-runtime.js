@@ -68,6 +68,7 @@ function load(storage, options = {}) {
   c.RunStatistics = { createStableMatchId: () => "match", buildHallOfFameStatisticsSnapshot: () => ({ runStatistics: {}, playerStatistics: {}, matchHistory: [], awards: [] }), snapshotFinalPlayerStats: noop, recordRunAction: noop };
   const seasonIds = ["ie1", "ie2", "ie1_s2", "ie1_s3", "orion"];
   c.SeasonRegistry = { DEFAULT_SEASON_ID: "ie2", normalizeSeasonId: id => seasonIds.includes(id) ? id : "ie1", activeId: () => options.seasonId || options.run?.seasonId || "ie2", list: () => seasonIds.map(id => ({ id })), database: () => options.seasonDb || {}, get: id => ({ id, name: id }), sourceForSeason: id => id, isSeasonSource: () => true, setActive: id => ({ id }), loadDatabase: async () => options.seasonDb, playersIndex: () => new Map(), teamsIndex: () => new Map() };
+  Object.assign(c, options.contextOverrides || {});
   vm.createContext(c);
   for (const file of PRODUCTION_MODULES) runModule(c, file);
   if (options.run) c.RunState.save(structuredClone(options.run));
