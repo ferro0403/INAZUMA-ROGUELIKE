@@ -103,4 +103,19 @@ for (const node of [{ id: "five", type: "five_v_five", layer: 1 }, { id: "random
   const recovered = rt.seam.ensurePendingItemReward(rt.seam.getRun().currentZone.nodes[1]); assert.equal(recovered.pending.status, "claimed"); assert.deepEqual(recovered.pending.candidateIds, ["energy_drink"]); assert.equal(rt.canonical.inventory.length, 0);
 }
 
+// Interrupted Special/Boss access commits phase repair or match creation atomically.
+for (const type of ["special_match", "boss"]) {
+  const node = { id: `${type}-node`, type, layer: 1 };
+  const { rt, c } = harness(node, true);
+  if (type === "special_match") c.SpecialMatchRuntime.fromNode = (_run, _db, currentNode, previousNodeId) => ({ matchId: "stable-special", type, nodeId: currentNode.id, previousNodeId, state: "pre-match", log: [] });
+  let current = rt.seam.getRun(); current.currentZone.pendingNodeId = node.id; c.RunState.save(current);
+  const recover = type === "special_match" ? rt.seam.recoverInterruptedSpecialMatchAccess : rt.seam.recoverInterruptedBossAccess;
+  const save = c.RunState.save.bind(c.RunState); c.RunState.save = () => { throw Object.assign(new Error("quota"), { name: "QuotaExceededError" }); };
+  assert.equal(recover(), false, `${type}: failed creation stays canonical`); assert.equal(rt.canonical.activeMatch, null); assert.equal(rt.canonical.phase, "map");
+  c.RunState.save = save; assert.equal(recover(), true); const matchId = rt.canonical.activeMatch.matchId; assert.equal(rt.canonical.phase, "match");
+  current = rt.seam.getRun(); current.phase = "map"; c.RunState.save(current); c.RunState.save = () => { throw Object.assign(new Error("stale"), { code: "stale-write" }); };
+  assert.equal(recover(), false, `${type}: failed phase repair rolls back`); assert.equal(rt.canonical.phase, "map"); assert.equal(rt.canonical.activeMatch.matchId, matchId);
+  c.RunState.save = save; assert.equal(recover(), true); assert.equal(rt.canonical.phase, "match"); assert.equal(rt.canonical.activeMatch.matchId, matchId, `${type}: retry preserves match identity`);
+}
+
 console.log("transactional entry, 5v5 guard, Random rollback and active-pull fencing: ok");

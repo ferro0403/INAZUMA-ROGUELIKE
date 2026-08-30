@@ -106,7 +106,7 @@
       current.phase = "map";
     });
     if (!committed.ok) return stopMatchAfterPersistenceFailure();
-    ui.match = null; closeModal({ invokeOnClose: false }); return renderMap();
+    ui.match = null; closeModal({ invokeOnClose: false }); return renderMap({ persist: false });
   }
 
   function bindSectionRootNav(context = {}) {
@@ -2639,10 +2639,25 @@
   function specialMatchFromNode(node, previousNodeId = null, activeRun = run) { return global.SpecialMatchRuntime.fromNode(activeRun, seasonDb, node, previousNodeId); }
   function recoverInterruptedSpecialMatchAccess() {
     if (!run || run.pendingSpecialMatchReward) return false;
-    if (run.activeMatch?.type === "special_match") { if (run.phase !== "match") { run.phase = "match"; global.RunState.save(run); } return true; }
+    if (run.activeMatch?.type === "special_match") {
+      if (run.phase === "match") return true;
+      const identity = matchTransactionIdentity(run.activeMatch);
+      return commitMatchMutation("special-match-access-recovery", identity, (_match, current) => { current.phase = "match"; }).ok;
+    }
     const pending = run.currentZone?.nodes?.find((node) => String(node.id) === String(run.currentZone?.pendingNodeId));
     if (pending?.type !== "special_match") return false;
-    run.activeMatch = specialMatchFromNode(pending, run.currentZone.currentNodeId); run.phase = "match"; global.RunState.save(run); return true;
+    const nodeId = pending.id;
+    return persistGameplayMutation({
+      label: "special-match-entry-recovery",
+      mutate: (current) => {
+        if (current.activeMatch || String(current.currentZone?.pendingNodeId) !== String(nodeId)) throw new Error("Special match recovery state changed");
+        const currentNode = current.currentZone?.nodes?.find((node) => String(node.id) === String(nodeId));
+        if (currentNode?.type !== "special_match") throw new Error("Special match recovery node changed");
+        current.activeMatch = specialMatchFromNode(currentNode, current.currentZone.currentNodeId, current);
+        current.phase = "match";
+      },
+      onCommitted: (_value, current) => { ui.match = current.activeMatch; ui.bossMatchState = ui.match?.state || "pre-match"; ui.bossMatchLog = ui.match?.log || []; },
+    }).ok;
   }
 
   function bossMatchFromNode(node, previousNodeId = null, activeRun = run) {
@@ -2667,17 +2682,24 @@
     const zone = run.currentZone;
     const activeBoss = run.activeMatch?.type === "boss" ? run.activeMatch : null;
     if (activeBoss && !String(activeBoss.state || "").startsWith("completed") && run.phase !== "match") {
-      run.phase = "match";
-      global.RunState.save(run);
-      return true;
+      const identity = matchTransactionIdentity(activeBoss);
+      return commitMatchMutation("boss-match-access-recovery", identity, (_match, current) => { current.phase = "match"; }).ok;
     }
     if (!zone?.nodes?.length || run.activeMatch) return false;
     const pending = zone.nodes.find((node) => String(node.id) === String(zone.pendingNodeId));
     if (!pending || pending.type !== "boss") return false;
-    run.activeMatch = bossMatchFromNode(pending, zone.currentNodeId);
-    run.phase = "match";
-    global.RunState.save(run);
-    return true;
+    const nodeId = pending.id;
+    return persistGameplayMutation({
+      label: "boss-match-entry-recovery",
+      mutate: (current) => {
+        if (current.activeMatch || String(current.currentZone?.pendingNodeId) !== String(nodeId)) throw new Error("Boss match recovery state changed");
+        const currentNode = current.currentZone?.nodes?.find((node) => String(node.id) === String(nodeId));
+        if (currentNode?.type !== "boss") throw new Error("Boss match recovery node changed");
+        current.activeMatch = bossMatchFromNode(currentNode, current.currentZone.currentNodeId, current);
+        current.phase = "match";
+      },
+      onCommitted: (_value, current) => { ui.match = current.activeMatch; ui.bossMatchState = ui.match?.state || "pre-match"; ui.bossMatchLog = ui.match?.log || []; },
+    }).ok;
   }
 
   function nodePositions(zone) {
@@ -2889,7 +2911,7 @@
 
   function rerenderCanonicalPull(nodeId, pullType, options = {}, activeOptions = {}) {
     const currentNode = activePullNodeById(run, nodeId, pullType, activeOptions);
-    return currentNode ? openPull(currentNode, pullType, options) : renderMap();
+    return currentNode ? openPull(currentNode, pullType, options) : renderMap({ persist: false });
   }
 
   function enterMatchFromNode(nodeId, previousNodeId = null, { alreadySelected = false, matchType = null } = {}) {
@@ -2968,8 +2990,8 @@
         global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.NODE_COMPLETED, { nodeId: currentNode.id, nodeType: currentNode.type, actionId: `${current.runId}:${currentNode.id}:node_completed` });
         current.phase = "map";
       },
-      onCommitted: () => { closeModal(); toast(message); renderMap(); },
-      rerender: ({ ok }) => { if (!ok) renderMap(); },
+      onCommitted: () => { closeModal(); toast(message); renderMap({ persist: false }); },
+      rerender: ({ ok }) => { if (!ok) renderMap({ persist: false }); },
     });
   }
 
@@ -2991,7 +3013,7 @@
   function resumePendingItemReward() {
     const storedNode = pendingItemRewardNode();
     if (storedNode) {
-      renderMap();
+      renderMap({ persist: false });
       resolveItemNode(storedNode);
       return true;
     }
@@ -3004,7 +3026,7 @@
           if (current.pendingItemReward && String(current.pendingItemReward.nodeId) !== expectedNodeId) throw new Error("Item reward recovery changed");
           current.pendingItemReward = null;
         },
-        rerender: ({ ok }) => { if (!ok) renderMap(); },
+        rerender: ({ ok }) => { if (!ok) renderMap({ persist: false }); },
       });
       if (!cleared.ok) return true;
     }
@@ -3014,7 +3036,7 @@
     );
     const pendingType = pendingNode?.type === "random" ? pendingNode.revealedType : pendingNode?.type;
     if (pendingNode && pendingType === "item") {
-      renderMap();
+      renderMap({ persist: false });
       resolveItemNode(pendingNode);
       return true;
     }
@@ -3062,7 +3084,7 @@
         if (!currentNode) throw new Error("Item reward node changed");
         if (!current.pendingItemReward || String(current.pendingItemReward.nodeId) !== nodeId) current.pendingItemReward = offered;
       },
-      rerender: ({ ok }) => { if (!ok) renderMap(); },
+      rerender: ({ ok }) => { if (!ok) renderMap({ persist: false }); },
     });
     if (!committed.ok) return null;
     return { pending: run.pendingItemReward, candidates };
@@ -3209,21 +3231,21 @@
 
   function completeItemReward(node, instance) {
     ui.itemRewardSubmitting = false;
-    { const currentNode = canonicalNodeById(node.id); currentNode ? renderItemRewardResult(currentNode) : renderMap(); }
+    { const currentNode = canonicalNodeById(node.id); currentNode ? renderItemRewardResult(currentNode) : renderMap({ persist: false }); }
   }
 
   function recoverCanonicalItemReward(nodeId) {
     const pending = run?.pendingItemReward;
     if (pending?.status === "claimed" && String(pending.nodeId) === String(nodeId)) return rerenderCanonicalItemReward(nodeId);
     const currentNode = activeItemRewardNodeById(run, nodeId);
-    return currentNode ? resolveItemNode(currentNode) : renderMap();
+    return currentNode ? resolveItemNode(currentNode) : renderMap({ persist: false });
   }
 
   function rerenderCanonicalItemReward(expectedNodeId) {
     const pendingNodeId = run?.pendingItemReward?.nodeId;
-    if (pendingNodeId == null || String(pendingNodeId) !== String(expectedNodeId)) return renderMap();
+    if (pendingNodeId == null || String(pendingNodeId) !== String(expectedNodeId)) return renderMap({ persist: false });
     const currentNode = canonicalNodeById(pendingNodeId);
-    return currentNode ? renderItemRewardResult(currentNode) : renderMap();
+    return currentNode ? renderItemRewardResult(currentNode) : renderMap({ persist: false });
   }
 
   function renderItemRewardResult(node) {
@@ -3235,7 +3257,7 @@
       return persistGameplayMutation({ label: "item-reward-invalid-cleanup", mutate: (current) => {
         if (current.pendingItemReward && String(current.pendingItemReward.nodeId) !== expectedNodeId) throw new Error("Item reward result changed");
         current.pendingItemReward = null;
-      }, onCommitted: () => { closeModal(); renderMap({ persist: false }); }, rerender: ({ ok }) => { if (!ok) renderMap(); } });
+      }, onCommitted: () => { closeModal(); renderMap({ persist: false }); }, rerender: ({ ok }) => { if (!ok) renderMap({ persist: false }); } });
     }
     openModal(`
       <section class="item-reward-screen item-reward-screen--complete">
@@ -3803,7 +3825,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (!options.dev) {
       const nodeId = String(node.id);
       const canonicalNode = pendingPullNodeById(run, nodeId, pullType);
-      if (!canonicalNode) return renderMap();
+      if (!canonicalNode) return renderMap({ persist: false });
       if (!canonicalNode.pullState?.candidateIds?.length) {
         const committed = persistGameplayMutation({
           label: "pull-offer",
@@ -3874,7 +3896,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         }, {
           transactionMutate: options.dev ? undefined : (current) => completePullNodeMutation(current, nodeId, pullType, candidateId),
           onRecover: () => rerenderCanonicalPull(nodeId, pullType, options),
-          onRecoveryBlocked: () => renderMap(),
+          onRecoveryBlocked: () => renderMap({ persist: false }),
         });
       },
       onSkip: () => finishPull("Hai rinunciato al pull"),
@@ -4029,7 +4051,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       complete(status, failure);
       if (status === "recovery-blocked") {
         closeModal();
-        return options.onRecoveryBlocked?.(failure) || renderMap();
+        return options.onRecoveryBlocked?.(failure) || renderMap({ persist: false });
       }
       options.onRecover?.(status, failure);
     };
@@ -4556,6 +4578,14 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     log.appendChild(fragment);
     requestAnimationFrame(() => { log.scrollTop = log.scrollHeight; });
     return true;
+  }
+
+  function syncCommittedFinalMatchLog() {
+    const event = ui.bossMatchLog?.[ui.bossMatchLog.length - 1];
+    if (event?.minute !== "FT") return false;
+    const last = document.querySelector(".match-sim-log li:last-child");
+    if (last?.querySelector("span")?.textContent === event.minute && last?.querySelector("p")?.textContent === event.text) return true;
+    return appendMatchLogEvent(event);
   }
 
   function updateMatchScoreDom(match, completed = false) {
@@ -5364,6 +5394,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     }, { onCommitted: () => { ui.bossMatchResolving = "done"; } });
     if (!committed.ok) return stopMatchAfterPersistenceFailure();
     updateMatchScoreDom(ui.match, true);
+    syncCommittedFinalMatchLog();
     updateMatchControlsDom();
   }
 
@@ -5396,6 +5427,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     }, { onCommitted: () => { ui.bossMatchResolving = "done"; } });
     if (!committed.ok) return stopMatchAfterPersistenceFailure();
     updateMatchScoreDom(ui.match, true);
+    syncCommittedFinalMatchLog();
     updateMatchControlsDom();
   }
 
@@ -5423,7 +5455,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       rerender: ({ ok, run: recovered }) => { if (!ok) { ui.match = recovered?.activeMatch || null; ui.bossMatchResolving = false; ui.bossMatchState = ui.match?.state || "pre-match"; } },
     });
     if (!committed.ok) return stopMatchAfterPersistenceFailure();
-    updateMatchScoreDom(match, true);
+    updateMatchScoreDom(ui.match, true);
+    syncCommittedFinalMatchLog();
     updateMatchControlsDom();
   }
 
@@ -5452,12 +5485,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (action.toast) toast(action.toast);
     if (action.type === "special-reward") return showSpecialMatchReward();
     if (action.type === "game-over") return renderGameOver();
-    return renderMap();
+    return renderMap({ persist: false });
   }
 
   function showSpecialMatchReward() {
   const pending = run.pendingSpecialMatchReward;
-  if (!pending) return renderMap();
+  if (!pending) return renderMap({ persist: false });
   const candidateIds = pending.candidateProfileIds?.length ? pending.candidateProfileIds : [pending.selectedProfileId].filter(Boolean);
   const candidates = candidateIds.map((profileId) => global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, profileId)).filter(Boolean);
   const profile = pending.selectedProfileId && global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, pending.selectedProfileId);
@@ -5474,7 +5507,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (button.disabled) return;
     modalRoot.querySelectorAll(".special-reward-actions button").forEach((action) => { action.disabled = true; });
     let result;
-    persistGameplayMutation({ label: "special-reward-decline", mutate: (current) => { result = global.SpecialMatchRuntime.decline(current, current.pendingSpecialMatchReward, seasonDb); if (result.transition?.status !== "next-reward") current.phase = "map"; }, onCommitted: () => { closeModal(); if (result.status === "declined") toast("Ricompensa rifiutata"); if (result.transition?.status === "next-reward") return showSpecialMatchReward(); renderMap(); }, rerender: ({ ok }) => { if (!ok) showSpecialMatchReward(); } });
+    persistGameplayMutation({ label: "special-reward-decline", mutate: (current) => { result = global.SpecialMatchRuntime.decline(current, current.pendingSpecialMatchReward, seasonDb); if (result.transition?.status !== "next-reward") current.phase = "map"; }, onCommitted: () => { closeModal(); if (result.status === "declined") toast("Ricompensa rifiutata"); if (result.transition?.status === "next-reward") return showSpecialMatchReward(); renderMap({ persist: false }); }, rerender: ({ ok }) => { if (!ok) showSpecialMatchReward(); } });
   });
 
   document.getElementById("claim-special-reward").addEventListener("click", (event) => {
@@ -5484,7 +5517,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const finishCommitted = (transition) => {
       closeModal();
       if (transition?.status === "next-reward") return showSpecialMatchReward();
-      renderMap();
+      renderMap({ persist: false });
     };
     if (!profile) {
       let transition;
@@ -6915,6 +6948,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       stepMatchPlayback,
       skipMatchToResult,
       resumeMatchSimulationIfNeeded,
+      recoverInterruptedSpecialMatchAccess,
+      recoverInterruptedBossAccess,
       updateMatchControlsDom,
       leaveMatchViaSectionRoot,
       enterNode,

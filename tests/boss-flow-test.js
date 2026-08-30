@@ -24,7 +24,7 @@ assert.match(app, /route-boss-preview-logo">\$\{bossNodeIconMarkup\(boss\)\}/, '
 assert.match(css, /\.route-boss-preview-logo\.boss-logo-missing \.boss-logo-fallback \{ display: inline; \}/, 'fallback must appear only after image failure');
 assert.match(css, /\.route-boss-preview-logo \.boss-node-logo \{[^}]*object-fit: contain[^}]*object-position: center/s, 'real boss logo must remain centered');
 assert.match(app, /function recoverInterruptedBossAccess\(\)/, 'resume must reconcile interrupted boss saves');
-assert.match(app, /run\.activeMatch = bossMatchFromNode\(pending, zone\.currentNodeId\)/, 'a pending boss node must recover its match snapshot');
+assert.match(app, /current\.activeMatch = bossMatchFromNode\(currentNode, current\.currentZone\.currentNodeId, current\)/, 'a pending boss node must recover its match snapshot transactionally');
 assert.match(app, /dispatchNode\(node, node\.type, \{ previousNodeId \}\)/, 'boss entry must preserve the node before selection');
 
 console.log('boss-flow-test: ok');
