@@ -18,7 +18,7 @@ assert.doesNotMatch(bossRender, /<div><span>Forza Boss<\/span>/, 'boss strength 
 assert.match(app, /function fiveMatchComparisonMarkup\(userPlayers, opponentPlayers, summary = \{\}\)/, 'shared drawer must tolerate missing presentation data');
 assert.match(app, /const opponentName = summary\.opponentName \|\| "Svincolati"/, 'opponent label must be dynamic');
 assert.match(app, /aria-expanded="false" aria-controls="\$\{escapeHtml\(contentId\)\}"/, 'drawer must be closed by default and accessible');
-assert.match(app, /if \(run\.activeMatch\.type === "boss" && !run\.activeMatch\.simulation\?\.valid\)/, 'legacy boss matches must rebuild missing derived data');
+assert.match(app, /const simPreview = ensureMatchPreview\(ui\.match, \{ boss \}\)/, 'the Boss renderer must rebuild disposable preview data without a resume save');
 assert.match(app, /const boss = seasonDb\.bossOrder\[Number\(ui\.match\?\.bossIndex \?\? run\.bossIndex\)\]/, 'saved boss identity must drive resume');
 assert.match(app, /route-boss-preview-logo">\$\{bossNodeIconMarkup\(boss\)\}/, 'preview must share the real-logo fallback helper');
 assert.match(css, /\.route-boss-preview-logo\.boss-logo-missing \.boss-logo-fallback \{ display: inline; \}/, 'fallback must appear only after image failure');

@@ -2108,11 +2108,6 @@
       ui.match = run.activeMatch;
       ui.bossMatchState = run.activeMatch.state || "pre-match";
       ui.bossMatchLog = run.activeMatch.log || [];
-      if (run.activeMatch.type === "boss" && !run.activeMatch.simulation?.valid) {
-        const boss = seasonDb.bossOrder[Number(run.activeMatch.bossIndex ?? run.bossIndex)];
-        const repaired = ensureMatchPreview(run.activeMatch, { boss });
-        if (repaired.valid) global.RunState.save(run);
-      }
       return renderMatch();
     }
     ensureCurrentZone();
