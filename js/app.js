@@ -2092,8 +2092,8 @@
     if (!run) return renderHome();
     if (run.phase === "finalization" || (run.finalization && run.finalization.status !== "complete")) return resumeRunFinalization();
     if (global.MapEngine.normalizeSpecialMatchNode(run, seasonDb)) global.RunState.save(run);
-    recoverInterruptedSpecialMatchAccess();
-    recoverInterruptedBossAccess();
+    const matchRecovery = recoverInterruptedMatchAccess();
+    if (!matchRecovery.ok) return renderMap({ persist: false });
     if (run.gameOver || run.phase === "gameover") return renderGameOver();
     if (run.phase === "formation") return renderFormationChoice();
     if (run.phase === "draft") return renderDraft();
@@ -2637,6 +2637,16 @@
   function specialMatchForNode(node) { return global.SpecialMatchRuntime.forNode(seasonDb, node); }
   function specialMatchTeamPlayers(specialMatch) { return global.SpecialMatchRuntime.teamPlayers(seasonDb, specialMatch); }
   function specialMatchFromNode(node, previousNodeId = null, activeRun = run) { return global.SpecialMatchRuntime.fromNode(activeRun, seasonDb, node, previousNodeId); }
+  function recoverInterruptedMatchAccess() {
+    const zone = run?.currentZone;
+    const pending = zone?.nodes?.find((node) => String(node.id) === String(zone.pendingNodeId));
+    const specialNeeded = !run?.pendingSpecialMatchReward && ((run?.activeMatch?.type === "special_match" && run.phase !== "match") || (!run?.activeMatch && pending?.type === "special_match"));
+    if (specialNeeded && !recoverInterruptedSpecialMatchAccess()) return { needed: true, ok: false, type: "special_match" };
+    const bossNeeded = !run?.postBossFlow && !run?.pendingBossVictory && ((run?.activeMatch?.type === "boss" && !String(run.activeMatch.state || "").startsWith("completed") && run.phase !== "match") || (!run?.activeMatch && pending?.type === "boss"));
+    if (bossNeeded && !recoverInterruptedBossAccess()) return { needed: true, ok: false, type: "boss" };
+    return { needed: specialNeeded || bossNeeded, ok: true };
+  }
+
   function recoverInterruptedSpecialMatchAccess() {
     if (!run || run.pendingSpecialMatchReward) return false;
     if (run.activeMatch?.type === "special_match") {
@@ -3148,7 +3158,7 @@
 
   function resolveItemNode(node) {
     const prepared = ensurePendingItemReward(node);
-    if (!prepared) return renderMap();
+    if (!prepared) return renderMap({ persist: false });
     const { pending, candidates } = prepared;
     if (pending.status === "claimed") return renderItemRewardResult(node);
     ui.itemRewardSubmitting = false;
@@ -4581,7 +4591,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function syncCommittedFinalMatchLog() {
-    const event = ui.bossMatchLog?.[ui.bossMatchLog.length - 1];
+    const canonicalLog = ui.match?.log || ui.bossMatchLog || [];
+    const event = canonicalLog[canonicalLog.length - 1];
     if (event?.minute !== "FT") return false;
     const last = document.querySelector(".match-sim-log li:last-child");
     if (last?.querySelector("span")?.textContent === event.minute && last?.querySelector("p")?.textContent === event.text) return true;
@@ -5587,7 +5598,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (flow.destination === "season-complete") return renderSeasonComplete();
     if (flow.destination === "finalization-pending") return renderFinalizationPending(flow.finalization);
     if (flow.destination === "post-boss-recovery") return renderPostBossRecovery();
-    if (flow.destination === "map") return renderMap();
+    if (flow.destination === "map") return renderMap({ persist: false });
     return null;
   }
 
@@ -5606,7 +5617,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   function startBossRewards() {
     const flowResult = resolvePendingRunFlow({ clearMatch: true });
     if (flowResult.destination === "season-complete") return renderSeasonComplete();
-    if (flowResult.destination === "map") return renderMap();
+    if (flowResult.destination === "map") return renderMap({ persist: false });
     const flow = run.postBossFlow;
     const boss = seasonDb.bossOrder[Number(flow?.bossIndex ?? run.bossIndex)];
     if (!flow || !boss) return renderMap();
@@ -6948,8 +6959,10 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       stepMatchPlayback,
       skipMatchToResult,
       resumeMatchSimulationIfNeeded,
+      recoverInterruptedMatchAccess,
       recoverInterruptedSpecialMatchAccess,
       recoverInterruptedBossAccess,
+      resumeRun,
       updateMatchControlsDom,
       leaveMatchViaSectionRoot,
       enterNode,

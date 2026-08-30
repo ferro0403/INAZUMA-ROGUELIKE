@@ -171,4 +171,21 @@ for (const type of ["five_v_five", "special_match", "boss"]) {
   assert.strictEqual(runtime.canonical.activeMatch.log.filter(event => event.minute === "FT").length, 1);
 }
 
+// A committed resolution appends the canonical FT event to the mounted log immediately and only once.
+for (const type of ["five_v_five", "special_match", "boss"]) {
+  const h = runtimeFor(match(type, "completed"));
+  const rows = [];
+  const log = { innerHTML: "", scrollTop: 0, scrollHeight: 0, querySelector: () => null, appendChild: row => rows.push(row) };
+  const makeElement = () => ({ textContent: "", children: [], className: "", append(...children) { this.children.push(...children); }, querySelector(selector) { return selector === "span" ? this.children[0] : selector === "p" ? this.children[2] : null; } });
+  h.context.document.createElement = makeElement;
+  h.context.document.querySelector = selector => selector === ".match-sim-log" ? log : selector === ".match-sim-log li:last-child" ? rows.at(-1) || null : null;
+  h.context.document.querySelectorAll = () => [];
+  if (type === "special_match") h.runtime.seam.getRun().activeMatch.specialMatchId = "special";
+  ({ five_v_five: h.runtime.seam.completeFiveMatch, special_match: h.runtime.seam.completeSpecialMatch, boss: h.runtime.seam.completeBossMatch })[type]("defeat");
+  assert.equal(h.runtime.canonical.activeMatch.log.filter(event => event.minute === "FT").length, 1, `${type}: canonical FT once`);
+  assert.equal(rows.filter(row => row.children[0]?.textContent === "FT").length, 1, `${type}: FT immediately mounted`);
+  ({ five_v_five: h.runtime.seam.completeFiveMatch, special_match: h.runtime.seam.completeSpecialMatch, boss: h.runtime.seam.completeBossMatch })[type]("defeat");
+  assert.equal(rows.filter(row => row.children[0]?.textContent === "FT").length, 1, `${type}: repeated resolution does not duplicate FT`);
+}
+
 console.log("match recovery fail-stop runtime: playback, completed recovery, forced outcome and legacy routing OK");
