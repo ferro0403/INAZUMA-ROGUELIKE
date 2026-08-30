@@ -33,8 +33,9 @@ function load(storage, options = {}) {
   if (Array.isArray(options) || (!options.run && !options.fullRuntime)) return loadModules(storage, Array.isArray(options) ? options : undefined);
   const blockedCalls = [];
   const runtimeSeasonId = options.seasonId || options.run?.seasonId;
+  const elementsById = new Map();
   const document = { body: element(), documentElement: element(), scrollingElement: element(), createElement: element, createDocumentFragment: element,
-    getElementById: () => element(), querySelector: () => element(), querySelectorAll: () => [] };
+    getElementById: id => { if (!elementsById.has(id)) elementsById.set(id, element()); return elementsById.get(id); }, querySelector: () => element(), querySelectorAll: () => [] };
   const listeners = new Map();
   const c = { console, structuredClone, Date, Math, JSON, Object, Array, String, Number, Boolean, RegExp, Error, TypeError, Promise, Map, Set, WeakMap, WeakSet, Symbol, Intl, parseInt, parseFloat, isNaN, TextEncoder, Uint8Array, crypto: global.crypto, URLSearchParams,
     location: { search: "" }, document, window: null, localStorage: storage, performance: { now: () => 1000 },
@@ -67,7 +68,7 @@ function load(storage, options = {}) {
   c.SpecialMatchRuntime = { eligibleProfile: () => true };
   c.RunStatistics = { createStableMatchId: () => "match", buildHallOfFameStatisticsSnapshot: () => ({ runStatistics: {}, playerStatistics: {}, matchHistory: [], awards: [] }), snapshotFinalPlayerStats: noop, recordRunAction: noop };
   const seasonIds = ["ie1", "ie2", "ie1_s2", "ie1_s3", "orion"];
-  c.SeasonRegistry = { DEFAULT_SEASON_ID: "ie2", normalizeSeasonId: id => seasonIds.includes(id) ? id : "ie1", activeId: () => options.seasonId || options.run?.seasonId || "ie2", list: () => seasonIds.map(id => ({ id })), database: () => options.seasonDb || {}, get: id => ({ id, name: id }), sourceForSeason: id => id, isSeasonSource: () => true, setActive: id => ({ id }), loadDatabase: async () => options.seasonDb, playersIndex: () => new Map(), teamsIndex: () => new Map() };
+  c.SeasonRegistry = { DEFAULT_SEASON_ID: runtimeSeasonId || "ie2", normalizeSeasonId: id => seasonIds.includes(id) ? id : "ie1", activeId: () => options.seasonId || options.run?.seasonId || "ie2", list: () => seasonIds.map(id => ({ id })), database: () => options.seasonDb || {}, get: id => ({ id, name: id }), sourceForSeason: id => id, isSeasonSource: () => true, setActive: id => ({ id }), loadDatabase: async () => options.seasonDb, playersIndex: () => new Map(), teamsIndex: () => new Map() };
   Object.assign(c, options.contextOverrides || {});
   vm.createContext(c);
   for (const file of PRODUCTION_MODULES) runModule(c, file);
@@ -76,6 +77,7 @@ function load(storage, options = {}) {
   if (restored) c.__INAZUMA_TERMINAL_FLOW_TEST__.setContext({ run: restored, seasonDb: options.seasonDb });
   return {
     context: c, seam: c.__INAZUMA_TERMINAL_FLOW_TEST__, blockedCalls,
+    get modalMarkup() { return elementsById.get("modal-root")?.innerHTML || ""; },
     get canonical() { const value = c.RunState.load(runtimeSeasonId); return value && structuredClone(value); },
     get hall() { return c.HallOfFameStorage.listTeams(); },
     get redeemed() { return new Set(c.DevelopmentV2.read().redeemedRunIds); },
