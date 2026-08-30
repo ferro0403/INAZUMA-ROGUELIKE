@@ -2632,12 +2632,30 @@
   function specialMatchForNode(node) { return global.SpecialMatchRuntime.forNode(seasonDb, node); }
   function specialMatchTeamPlayers(specialMatch) { return global.SpecialMatchRuntime.teamPlayers(seasonDb, specialMatch); }
   function specialMatchFromNode(node, previousNodeId = null, activeRun = run) { return global.SpecialMatchRuntime.fromNode(activeRun, seasonDb, node, previousNodeId); }
+  function activeMatchNeedsPhaseRecovery(activeRun, match) {
+    return Boolean(
+      match &&
+      ["five_v_five", "special_match", "boss"].includes(match.type) &&
+      activeRun?.phase !== "match" &&
+      match.postMatchNavigationApplied !== true
+    );
+  }
+
   function recoverInterruptedMatchAccess() {
+    if (activeMatchNeedsPhaseRecovery(run, run?.activeMatch)) {
+      const identity = matchTransactionIdentity(run.activeMatch);
+      const type = run.activeMatch.type;
+      const committed = commitMatchMutation("match-access-recovery", identity, (match, current) => {
+        if (!activeMatchNeedsPhaseRecovery(current, match)) throw new Error("Match access recovery state changed");
+        current.phase = "match";
+      });
+      return { needed: true, ok: committed.ok, type };
+    }
     const zone = run?.currentZone;
     const pending = zone?.nodes?.find((node) => String(node.id) === String(zone.pendingNodeId));
-    const specialNeeded = !run?.pendingSpecialMatchReward && ((run?.activeMatch?.type === "special_match" && run.phase !== "match") || (!run?.activeMatch && pending?.type === "special_match"));
+    const specialNeeded = !run?.pendingSpecialMatchReward && !run?.activeMatch && pending?.type === "special_match";
     if (specialNeeded && !recoverInterruptedSpecialMatchAccess()) return { needed: true, ok: false, type: "special_match" };
-    const bossNeeded = !run?.postBossFlow && !run?.pendingBossVictory && ((run?.activeMatch?.type === "boss" && !String(run.activeMatch.state || "").startsWith("completed") && run.phase !== "match") || (!run?.activeMatch && pending?.type === "boss"));
+    const bossNeeded = !run?.postBossFlow && !run?.pendingBossVictory && !run?.activeMatch && pending?.type === "boss";
     if (bossNeeded && !recoverInterruptedBossAccess()) return { needed: true, ok: false, type: "boss" };
     return { needed: specialNeeded || bossNeeded, ok: true };
   }
@@ -2751,12 +2769,23 @@
   }
 
   function renderMap(options = {}) {
-    if (run) global.RunState.touch(run);
-    const bossFlow = resolvePendingRunFlow();
-    if (bossFlow.destination !== "none") return navigateBossVictoryDestination(bossFlow);
-    ensureCurrentZone();
-    if (!run.currentZone) return renderSeasonComplete();
-    if (options.persist !== false) {
+    const readOnly = options.persist === false;
+    if (!readOnly) {
+      if (run) global.RunState.touch(run);
+      const bossFlow = resolvePendingRunFlow();
+      if (bossFlow.destination !== "none") return navigateBossVictoryDestination(bossFlow);
+      ensureCurrentZone();
+    } else if (run?.postBossFlow || run?.pendingBossVictory) {
+      return renderPostBossRecovery();
+    }
+    const readOnlyZoneUnavailable = readOnly && (!run?.currentZone || !Array.isArray(run.currentZone.nodes) || !Array.isArray(run.currentZone.edges) || !Array.isArray(run.currentZone.path));
+    if (!run?.currentZone || readOnlyZoneUnavailable) {
+      if (!readOnly) return renderSeasonComplete();
+      app.innerHTML = `<main class="screen"><div class="content"><section class="panel"><h1>PERCORSO NON DISPONIBILE</h1><p>Lo stato salvato non è stato modificato. Riprova quando il salvataggio è disponibile.</p><button type="button" id="retry-map-render">RIPROVA</button></section></div></main>`;
+      document.getElementById("retry-map-render")?.addEventListener("click", () => renderMap());
+      return app.innerHTML;
+    }
+    if (!readOnly) {
       run.phase = "map";
       global.RunState.save(run);
     }
@@ -6982,6 +7011,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       resumeRunFinalization,
       renderGameOver,
       renderMatch,
+      renderMap,
       ensureCurrentZoneMutation,
       setContext: (context = {}) => {
         if (context.run) { run = context.run; global.run = run; ui.match = run.activeMatch || null; }
