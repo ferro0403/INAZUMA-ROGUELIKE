@@ -2857,13 +2857,30 @@
     return run?.currentZone?.nodes?.find((item) => String(item.id) === String(nodeId)) || null;
   }
 
-  function activePullNodeById(activeRun, nodeId, pullType, { requireCandidates = true } = {}) {
+  function pendingPullNodeById(activeRun, nodeId, pullType) {
     const zone = activeRun?.currentZone;
     const node = zone?.nodes?.find((item) => String(item.id) === String(nodeId));
     if (!node || zone.completedNodeIds?.map(String).includes(String(nodeId)) || node.completed === true) return null;
-    if (String(zone.pendingNodeId) !== String(nodeId) || !node.pullState || node.pullState.pullType !== pullType) return null;
+    const effectiveType = node.type === "random" ? node.revealedType : node.type;
+    return String(zone.pendingNodeId) === String(nodeId) && effectiveType === pullType ? node : null;
+  }
+
+  function activePullNodeById(activeRun, nodeId, pullType, { requireCandidates = true } = {}) {
+    const node = pendingPullNodeById(activeRun, nodeId, pullType);
+    if (!node || !node.pullState || node.pullState.pullType !== pullType) return null;
     if (!Array.isArray(node.pullState.candidateIds) || (requireCandidates && !node.pullState.candidateIds.length)) return null;
     return node;
+  }
+
+  function activeItemRewardNodeById(activeRun, nodeId, { allowClaimed = false } = {}) {
+    const zone = activeRun?.currentZone;
+    const node = zone?.nodes?.find((item) => String(item.id) === String(nodeId));
+    const pending = activeRun?.pendingItemReward;
+    if (!node) return null;
+    if (allowClaimed && pending?.status === "claimed" && String(pending.nodeId) === String(nodeId)) return node;
+    const effectiveType = node.type === "random" ? node.revealedType : node.type;
+    if (effectiveType !== "item" || node.completed === true || zone.completedNodeIds?.map(String).includes(String(nodeId))) return null;
+    return String(zone.pendingNodeId) === String(nodeId) ? node : null;
   }
 
   function canonicalActivePullNodeById(nodeId, pullType) {
@@ -2956,10 +2973,19 @@
     });
   }
 
+  function completePullNodeMutation(current, nodeId, pullType, candidateId) {
+    const currentNode = activePullNodeById(current, nodeId, pullType);
+    const candidateIds = (currentNode?.pullState?.candidateIds || []).map(String);
+    if (!currentNode || !candidateIds.includes(String(candidateId))) throw new Error("Pull reward state changed");
+    global.MapEngine.completeNode(current.currentZone, currentNode.id);
+    global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.NODE_COMPLETED, { nodeId: currentNode.id, nodeType: currentNode.type, actionId: `${current.runId}:${currentNode.id}:node_completed` });
+    current.phase = "map";
+  }
+
   function pendingItemRewardNode() {
     const pending = run?.pendingItemReward;
     if (!pending || !run?.currentZone) return null;
-    return run.currentZone.nodes.find((node) => String(node.id) === String(pending.nodeId)) || null;
+    return activeItemRewardNodeById(run, pending.nodeId, { allowClaimed: pending.status === "claimed" });
   }
 
   function resumePendingItemReward() {
@@ -2971,8 +2997,16 @@
     }
 
     if (run?.pendingItemReward) {
-      run.pendingItemReward = null;
-      global.RunState.save(run);
+      const expectedNodeId = String(run.pendingItemReward.nodeId);
+      const cleared = persistGameplayMutation({
+        label: "item-reward-invalid-resume",
+        mutate: (current) => {
+          if (current.pendingItemReward && String(current.pendingItemReward.nodeId) !== expectedNodeId) throw new Error("Item reward recovery changed");
+          current.pendingItemReward = null;
+        },
+        rerender: ({ ok }) => { if (!ok) renderMap(); },
+      });
+      if (!cleared.ok) return true;
     }
 
     const pendingNode = run?.currentZone?.nodes?.find(
@@ -3000,9 +3034,13 @@
   }
 
   function ensurePendingItemReward(node) {
-    const candidates = itemRewardCandidates(node);
+    const nodeId = String(node.id);
     const existing = run.pendingItemReward;
-    const sameNode = existing && String(existing.nodeId) === String(node.id);
+    const sameNode = existing && String(existing.nodeId) === nodeId;
+    const canonicalNode = activeItemRewardNodeById(run, nodeId, { allowClaimed: sameNode && existing.status === "claimed" });
+    if (!canonicalNode) return null;
+    node = canonicalNode;
+    const candidates = itemRewardCandidates(node);
     const candidateIds = candidates.map((item) => item.id);
     const selectedItemId = sameNode && candidateIds.includes(existing.selectedItemId)
       ? existing.selectedItemId
@@ -3020,9 +3058,9 @@
     const committed = persistGameplayMutation({
       label: "item-reward-offer",
       mutate: (current) => {
-        const currentNode = current.currentZone?.nodes?.find((item) => String(item.id) === String(node.id));
+        const currentNode = activeItemRewardNodeById(current, nodeId);
         if (!currentNode) throw new Error("Item reward node changed");
-        if (!current.pendingItemReward || String(current.pendingItemReward.nodeId) !== String(node.id)) current.pendingItemReward = offered;
+        if (!current.pendingItemReward || String(current.pendingItemReward.nodeId) !== nodeId) current.pendingItemReward = offered;
       },
       rerender: ({ ok }) => { if (!ok) renderMap(); },
     });
@@ -3088,7 +3126,7 @@
 
   function resolveItemNode(node) {
     const prepared = ensurePendingItemReward(node);
-    if (!prepared) return;
+    if (!prepared) return renderMap();
     const { pending, candidates } = prepared;
     if (pending.status === "claimed") return renderItemRewardResult(node);
     ui.itemRewardSubmitting = false;
@@ -3122,9 +3160,9 @@
         const nodeId = String(node.id);
         const committed = persistGameplayMutation({ label: "item-reward-select", mutate: (current) => {
           const currentPending = current.pendingItemReward;
-          if (!currentPending || String(currentPending.nodeId) !== nodeId || !currentPending.candidateIds?.includes(itemId)) throw new Error("Item reward selection changed");
+          if (!activeItemRewardNodeById(current, nodeId) || !currentPending || String(currentPending.nodeId) !== nodeId || currentPending.status !== "offered" || !currentPending.candidateIds?.includes(itemId)) throw new Error("Item reward selection changed");
           currentPending.selectedItemId = itemId;
-        }, rerender: ({ ok }) => { if (!ok) { const currentNode = canonicalNodeById(nodeId); currentNode ? resolveItemNode(currentNode) : renderMap(); } } });
+        }, rerender: ({ ok }) => { if (!ok) recoverCanonicalItemReward(nodeId); } });
         if (!committed.ok) return;
         modal.querySelectorAll("[data-reward-candidate]").forEach((button) => {
           const active = button.dataset.rewardCandidate === itemId;
@@ -3150,7 +3188,7 @@
         (instance) => completeItemReward(node, instance),
         () => {
           ui.itemRewardSubmitting = false;
-          const currentNode = canonicalNodeById(node.id); currentNode ? resolveItemNode(currentNode) : renderMap();
+          recoverCanonicalItemReward(node.id);
         }
       );
     });
@@ -3159,19 +3197,26 @@
       ui.itemRewardSubmitting = true;
       const nodeId = String(node.id);
       persistGameplayMutation({ label: "item-reward-skip", mutate: (current) => {
-        const currentNode = current.currentZone?.nodes?.find((item) => String(item.id) === nodeId);
+        const currentNode = activeItemRewardNodeById(current, nodeId);
         if (!currentNode || String(current.pendingItemReward?.nodeId) !== nodeId) throw new Error("Item reward state changed");
         current.pendingItemReward = null;
         global.MapEngine.completeNode(current.currentZone, currentNode.id);
         global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.NODE_COMPLETED, { nodeId: currentNode.id, nodeType: currentNode.type, actionId: `${current.runId}:${currentNode.id}:node_completed` });
         current.phase = "map";
-      }, onCommitted: () => { closeModal(); toast("Hai rinunciato all'oggetto"); renderMap(); }, rerender: ({ ok }) => { if (!ok) { ui.itemRewardSubmitting = false; const currentNode = canonicalNodeById(nodeId); currentNode ? resolveItemNode(currentNode) : renderMap(); } } });
+      }, onCommitted: () => { closeModal(); toast("Hai rinunciato all'oggetto"); renderMap({ persist: false }); }, rerender: ({ ok }) => { if (!ok) { ui.itemRewardSubmitting = false; recoverCanonicalItemReward(nodeId); } } });
     });
   }
 
   function completeItemReward(node, instance) {
     ui.itemRewardSubmitting = false;
     { const currentNode = canonicalNodeById(node.id); currentNode ? renderItemRewardResult(currentNode) : renderMap(); }
+  }
+
+  function recoverCanonicalItemReward(nodeId) {
+    const pending = run?.pendingItemReward;
+    if (pending?.status === "claimed" && String(pending.nodeId) === String(nodeId)) return rerenderCanonicalItemReward(nodeId);
+    const currentNode = activeItemRewardNodeById(run, nodeId);
+    return currentNode ? resolveItemNode(currentNode) : renderMap();
   }
 
   function rerenderCanonicalItemReward(expectedNodeId) {
@@ -3190,7 +3235,7 @@
       return persistGameplayMutation({ label: "item-reward-invalid-cleanup", mutate: (current) => {
         if (current.pendingItemReward && String(current.pendingItemReward.nodeId) !== expectedNodeId) throw new Error("Item reward result changed");
         current.pendingItemReward = null;
-      }, onCommitted: () => { closeModal(); renderMap(); }, rerender: ({ ok }) => { if (!ok) renderMap(); } });
+      }, onCommitted: () => { closeModal(); renderMap({ persist: false }); }, rerender: ({ ok }) => { if (!ok) renderMap(); } });
     }
     openModal(`
       <section class="item-reward-screen item-reward-screen--complete">
@@ -3223,7 +3268,7 @@
       persistGameplayMutation({ label: "item-reward-cleanup", mutate: (current) => {
         if (current.pendingItemReward?.status !== "claimed" || String(current.pendingItemReward.nodeId) !== expectedNodeId) throw new Error("Item reward result changed");
         current.pendingItemReward = null;
-      }, onCommitted: () => { closeModal(); toast(`Hai ottenuto ${item.name}`); renderMap(); }, rerender: ({ ok }) => { if (!ok) rerenderCanonicalItemReward(expectedNodeId); } });
+      }, onCommitted: () => { closeModal(); toast(`Hai ottenuto ${item.name}`); renderMap({ persist: false }); }, rerender: ({ ok }) => { if (!ok) rerenderCanonicalItemReward(expectedNodeId); } });
     });
   }
 
@@ -3492,7 +3537,7 @@
       let instance;
       return persistGameplayMutation({ label: "item-reward-claim", mutate: (current) => {
         const pending = current.pendingItemReward; if (!pending || pending.status !== "offered") throw new Error("Item reward state changed");
-        const currentNode = current.currentZone?.nodes?.find((entry) => String(entry.id) === String(node.id));
+        const currentNode = activeItemRewardNodeById(current, node.id);
         if (!currentNode || String(pending.nodeId) !== String(currentNode.id) || !pending.candidateIds?.includes(item.id)) throw new Error("Item reward state changed");
         if (discardInstanceId) { const index = current.inventory.findIndex((entry) => String(entry.instanceId) === String(discardInstanceId)); if (index < 0) throw new Error("Discard unavailable"); current.inventory.splice(index, 1); }
         instance = makeItemInstance(item, node.id); current.inventory.push(instance);
@@ -3500,7 +3545,7 @@
         pending.status = "claimed"; pending.claimedItemId = inventoryItemIdentity(instance); pending.claimedInstanceId = instance.instanceId;
         if (!current.currentZone.completedNodeIds.includes(currentNode.id)) { global.MapEngine.completeNode(current.currentZone, currentNode.id); global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.NODE_COMPLETED, { nodeId: currentNode.id, nodeType: currentNode.type, actionId: `${current.runId}:${currentNode.id}:node_completed` }); }
         current.phase = "map";
-      }, onCommitted: () => done(instance), rerender: ({ ok }) => { if (!ok) { ui.itemRewardSubmitting = false; const currentNode = canonicalNodeById(node.id); currentNode ? resolveItemNode(currentNode) : renderMap(); } } });
+      }, onCommitted: () => done(instance), rerender: ({ ok }) => { if (!ok) { ui.itemRewardSubmitting = false; recoverCanonicalItemReward(node.id); } } });
     };
     if (run.inventory.length < global.SEASON1_CONFIG.maxInventory) return add();
     chooseInventoryDiscardSelection("Inventario pieno: scegli un oggetto da eliminare", add, onCancel);
@@ -3621,24 +3666,28 @@
   return ordered[index + 1] || null;
 }
 
-  function pullCandidates(pool, node) {
-    if (node.pullState?.candidateIds?.length) {
-      return node.pullState.candidateIds.map((id) => pool.players.find((player) => pullCandidateKey(player) === String(id))).filter(Boolean);
-    }
-    const owned = new Set(run.roster.map((entry) => String(entry.playerId)));
+  function generatedPullCandidates(activeRun, pool, node) {
+    const owned = new Set(activeRun.roster.map((entry) => String(entry.playerId)));
     const excluded = new Set(node.pullState.excludedCandidateIds || []);
-    const available = pool.players.filter((player) => (pool.profileAware ? isPullCandidateEligible(run, player) : !owned.has(canonicalCandidatePlayerId(player))) && !excluded.has(pullCandidateKey(player)));
-    const random = global.DraftEngine.randomFromSeed(`${run.currentZone.seed}:${node.id}:pull:${node.pullState.rerolls}`);
+    const available = pool.players.filter((player) => (pool.profileAware ? isPullCandidateEligible(activeRun, player) : !owned.has(canonicalCandidatePlayerId(player))) && !excluded.has(pullCandidateKey(player)));
+    const random = global.DraftEngine.randomFromSeed(`${activeRun.currentZone.seed}:${node.id}:pull:${node.pullState.rerolls}`);
     const candidates = node.pullState.pullType === "pull_legendary"
       ? selectLegendaryCandidates(available, random)
       : selectWeightedCandidates(
           available,
           random,
           node.pullState.pullType === "pull_unlocked_teams"
-            ? global.RoguelikeRules.unlockedTeamPullCategoryWeights(run.bossIndex)
+            ? global.RoguelikeRules.unlockedTeamPullCategoryWeights(activeRun.bossIndex)
             : null
         );
-    const deduplicated = [...new Map(candidates.map((player) => [canonicalCandidatePlayerId(player), player])).values()];
+    return [...new Map(candidates.map((player) => [canonicalCandidatePlayerId(player), player])).values()];
+  }
+
+  function pullCandidates(pool, node, activeRun = run) {
+    if (node.pullState?.candidateIds?.length) {
+      return node.pullState.candidateIds.map((id) => pool.players.find((player) => pullCandidateKey(player) === String(id))).filter(Boolean);
+    }
+    const deduplicated = generatedPullCandidates(activeRun, pool, node);
     node.pullState.candidateIds = deduplicated.map(pullCandidateKey);
     return deduplicated;
   }
@@ -3740,9 +3789,9 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId, itemId: scoutToken.id, instanceId: scoutToken.instanceId, actionId: `${current.runId}:${nodeId}:reroll:${currentNode.pullState.rerolls + 1}` });
         currentNode.pullState.excludedCandidateIds.push(...candidates.map((player) => pullCandidateKey(player, pool)));
         currentNode.pullState.rerolls += 1;
-        currentNode.pullState.candidateIds = [];
+        currentNode.pullState.candidateIds = generatedPullCandidates(current, pool, currentNode).map(pullCandidateKey);
       },
-      onCommitted: () => rerenderCanonicalPull(nodeId, pullType, options, { requireCandidates: false }),
+      onCommitted: () => rerenderCanonicalPull(nodeId, pullType, options),
       rerender: ({ ok }) => { if (!ok) rerenderCanonicalPull(nodeId, pullType, options); },
     });
   }
@@ -3751,12 +3800,34 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const pool = node.pullState?.luckyCharmUsed && ["pull_free_agents", "pull_unlocked_teams"].includes(pullType)
       ? luckyCharmPoolForPull(pullType)
       : pullPool(pullType);
-    if (!node.pullState) {
+    if (!options.dev) {
+      const nodeId = String(node.id);
+      const canonicalNode = pendingPullNodeById(run, nodeId, pullType);
+      if (!canonicalNode) return renderMap();
+      if (!canonicalNode.pullState?.candidateIds?.length) {
+        const committed = persistGameplayMutation({
+          label: "pull-offer",
+          mutate: (current) => {
+            const currentNode = pendingPullNodeById(current, nodeId, pullType);
+            if (!currentNode) throw new Error("Pull state changed");
+            if (!currentNode.pullState) {
+              currentNode.pullState = { pullType, rerolls: 0, excludedCandidateIds: [], luckyCharmUsed: false, candidateIds: [] };
+              global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PULL_OPENED, { nodeId, pullType, actionId: `${current.runId}:${nodeId}:pull_opened` });
+            }
+            if (currentNode.pullState.pullType !== pullType) throw new Error("Pull state changed");
+            if (!currentNode.pullState.candidateIds.length) currentNode.pullState.candidateIds = generatedPullCandidates(current, pool, currentNode).map(pullCandidateKey);
+          },
+          rerender: ({ ok }) => { if (!ok) rerenderCanonicalPull(nodeId, pullType); },
+        });
+        if (!committed.ok) return committed;
+        return openPull(canonicalNodeById(nodeId), pullType, options);
+      }
+      node = canonicalNode;
+    } else if (!node.pullState) {
       node.pullState = { pullType, rerolls: 0, excludedCandidateIds: [], luckyCharmUsed: false, candidateIds: [] };
-      global.RunStatistics?.recordRunAction?.(run, global.RunStatistics.ACTIONS.PULL_OPENED, { nodeId: node.id, pullType, actionId: `${run.runId}:${node.id}:pull_opened` });
     }
     const candidates = pullCandidates(pool, node);
-    global.RunState.save(run);
+    if (options.dev) global.RunState.save(run);
     const level = previousBossLevel();
     const scoutToken = run.inventory.find((item) => item.effect === "pull_reroll");
     const luckyCharm = run.inventory.find((item) => item.effect === "lucky_pull");
@@ -3774,6 +3845,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const finishPull = (message) => options.dev
       ? (closeModal(), toast(message), renderMap())
       : finishNonMatchNode(node, message);
+    const finishCommittedPull = (message) => { toast(message); renderMap({ persist: false }); };
     showPlayerOffer({
       title: global.SEASON1_CONFIG.nodeLabels[pullType].label,
       subtitle: `Scegli 1 giocatore su 3 · Livello ${level}${node.pullState.luckyCharmUsed ? " · Portafortuna già utilizzato" : ""}`,
@@ -3794,10 +3866,16 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       luckyCharmDisabledMessage: !luckyCompatible ? "Portafortuna non utilizzabile in questa selezione." : node.pullState.luckyCharmUsed ? "Portafortuna già utilizzato" : !luckyCharm ? "Nessun Portafortuna disponibile" : "",
       onPick: (player) => {
         const playerSource = pool.sourceForPlayer ? pool.sourceForPlayer(player) : pool.source;
+        const nodeId = String(node.id);
+        const candidateId = pullCandidateKey(player);
         recruitPlayer(player, playerSource, level, (result) => {
-          if (result.status.startsWith("committed-")) return finishPull(`${player.name} entra nella rosa`);
+          if (result.status.startsWith("committed-")) return finishCommittedPull(`${player.name} entra nella rosa`);
           if (result.status === "cancelled") return finishPull("Hai rinunciato al nuovo giocatore");
-        }, { onRecover: () => rerenderCanonicalPull(String(node.id), pullType, options), onRecoveryBlocked: () => renderMap() });
+        }, {
+          transactionMutate: options.dev ? undefined : (current) => completePullNodeMutation(current, nodeId, pullType, candidateId),
+          onRecover: () => rerenderCanonicalPull(nodeId, pullType, options),
+          onRecoveryBlocked: () => renderMap(),
+        });
       },
       onSkip: () => finishPull("Hai rinunciato al pull"),
       legendary: legendaryPull,
@@ -6845,7 +6923,10 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       activePullNodeById,
       useScoutTokenOnPull,
       useLuckyCharmOnPull,
+      completePullNodeMutation,
       renderItemRewardResult,
+      resolveItemNode,
+      resumePendingItemReward,
       ensurePendingItemReward,
       finishNonMatchNode,
       recoverLegacyResolvedMatchRoutingIfNeeded,

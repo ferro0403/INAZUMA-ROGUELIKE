@@ -5,6 +5,7 @@ const { load } = require("./helpers/production-runtime");
 
 const formation = { id: "1-2-1", slots: [{ key: "g", role: "GK" }, { key: "d", role: "DF" }, { key: "m1", role: "MF" }, { key: "m2", role: "MF" }, { key: "f", role: "FW" }] };
 const seasonDb = { seasonId: "ie1", players: [], bossOrder: [{ teamId: "b", teamName: "B" }], formations: { eleven: [] } };
+const pullPlayers = [...formation.slots.map((slot, index) => ({ playerId: `opponent-${index}`, name: `opponent-${index}`, position: slot.role, category: "Normale" })), ...["a", "b", "c", "x", "y", "z"].map(playerId => ({ playerId, name: playerId, position: "MF", category: "Normale" })), ...["ua", "ub", "uc"].map(playerId => ({ playerId, name: playerId, position: "MF", category: "Buono" }))];
 function baseRun(node) {
   return { runId: "entry", seasonId: "ie1", phase: "map", bossIndex: 0, teamLevel: 0, lives: 2,
     fiveVFive: { formation: "1-2-1", slots: {} }, roster: [], lineup: [], bench: [], inventory: [], statistics: {},
@@ -13,12 +14,15 @@ function baseRun(node) {
 }
 function harness(node, valid = true) {
   const storage = new BudgetStorage(Infinity); const rt = load(storage, { run: baseRun(node), seasonDb }); const c = rt.context;
-  c.__INAZUMA_RECRUITMENT_TEST__.setContext({ freeAgentsDb: { players: [...formation.slots.map((slot, index) => ({ playerId: `opponent-${index}`, position: slot.role })), ...["a", "b", "c", "x", "y", "z"].map(playerId => ({ playerId, name: playerId, position: "MF", category: "Normale" }))] } });
+  c.__INAZUMA_RECRUITMENT_TEST__.setContext({ freeAgentsDb: { players: pullPlayers } });
   c.RecruitmentPoolRuntime.candidateKey = player => String(player.profileId || player.playerId);
   c.RecruitmentPoolRuntime.canonicalPlayerId = player => String(player.profileId || player.playerId);
+  c.RecruitmentPoolRuntime.eligible = () => true;
+  c.DraftEngine.shuffle = values => values.slice();
   c.RoguelikeRules.unlockedPullLevel = () => 1;
   c.FiveVFive = { formations: [formation], formationById: () => formation, ensure: () => {}, validate: () => ({ valid, formation, assignedCount: valid ? 5 : 0, messages: valid ? [] : ["incomplete"] }) };
   c.RunStatistics.createStableMatchId = () => "stable";
+  c.RunStatistics.ACTIONS = { REROLL_USED: "REROLL_USED", LUCKY_CHARM_USED: "LUCKY_CHARM_USED" };
   return { rt, c, storage };
 }
 
@@ -69,6 +73,34 @@ for (const node of [{ id: "five", type: "five_v_five", layer: 1 }, { id: "random
   const canonical = rt.seam.getRun(); canonical.currentZone.completedNodeIds = []; canonical.currentZone.nodes[1].pullState.candidateIds = ["x", "y", "z"]; c.RunState.save(canonical);
   const mismatch = rt.seam.useScoutTokenOnPull(pull, "pull_free_agents", candidates, canonical.inventory[0], { source: "free_agents" });
   assert.equal(mismatch.ok, false); assert.equal(rt.canonical.inventory.length, 1); assert.deepEqual(rt.canonical.currentZone.nodes[1].pullState.candidateIds, ["x", "y", "z"]);
+}
+
+// Scout consumes the token and persists the deterministic replacement offer in one write.
+{
+  const pull = { id: "scout-pull", type: "pull_free_agents", layer: 1, pullState: { pullType: "pull_free_agents", rerolls: 0, excludedCandidateIds: [], luckyCharmUsed: false, candidateIds: ["a", "b", "c"] } };
+  const { rt, c } = harness(pull, true); const current = rt.seam.getRun(); current.currentZone.pendingNodeId = pull.id; current.inventory = [{ id: "scout", instanceId: "scout-token", effect: "pull_reroll" }]; c.RunState.save(current);
+  const candidates = ["a", "b", "c"].map(playerId => ({ playerId, name: playerId, position: "MF", category: "Normale" })); const pool = { players: pullPlayers, source: "free_agents" };
+  const save = c.RunState.save.bind(c.RunState); let fail = true, writes = 0; c.RunState.save = value => { writes += 1; if (fail) { fail = false; throw Object.assign(new Error("quota"), { name: "QuotaExceededError" }); } return save(value); };
+  const failed = rt.seam.useScoutTokenOnPull(pull, "pull_free_agents", candidates, current.inventory[0], pool); assert.equal(failed.ok, false); assert.equal(writes, 1); assert.equal(rt.canonical.inventory.length, 1); assert.deepEqual(rt.canonical.currentZone.nodes[1].pullState.candidateIds, ["a", "b", "c"]); assert.equal(rt.canonical.currentZone.nodes[1].pullState.rerolls, 0);
+  writes = 0; const canonical = rt.seam.getRun(); const committed = rt.seam.useScoutTokenOnPull(canonical.currentZone.nodes[1], "pull_free_agents", candidates, canonical.inventory[0], pool); assert.equal(committed.ok, true); assert.equal(writes, 1, "rendering the committed offer requires no second save");
+  assert.equal(rt.canonical.inventory.length, 0); assert.equal(rt.canonical.currentZone.nodes[1].pullState.rerolls, 1); assert.deepEqual(rt.canonical.currentZone.nodes[1].pullState.excludedCandidateIds, ["a", "b", "c"]); assert.equal(rt.canonical.currentZone.nodes[1].pullState.candidateIds.length, 3); assert.notDeepEqual(rt.canonical.currentZone.nodes[1].pullState.candidateIds, ["a", "b", "c"]);
+}
+
+// Lucky Charm rollback preserves the old offer; success persists upgraded IDs without a render save.
+{
+  const pull = { id: "lucky-pull", type: "pull_free_agents", layer: 1, pullState: { pullType: "pull_free_agents", rerolls: 0, excludedCandidateIds: [], luckyCharmUsed: false, candidateIds: ["a", "b", "c"] } };
+  const { rt, c } = harness(pull, true); const current = rt.seam.getRun(); current.currentZone.pendingNodeId = pull.id; current.inventory = [{ id: "lucky_charm", instanceId: "lucky-token", effect: "lucky_pull" }]; c.RunState.save(current);
+  const candidates = ["a", "b", "c"].map(playerId => pullPlayers.find(player => player.playerId === playerId)); const save = c.RunState.save.bind(c.RunState); let fail = true, writes = 0; c.RunState.save = value => { writes += 1; if (fail) { fail = false; throw Object.assign(new Error("security"), { name: "SecurityError" }); } return save(value); };
+  const failed = rt.seam.useLuckyCharmOnPull(pull, "pull_free_agents", candidates); assert.equal(failed.ok, false); assert.equal(writes, 1); assert.equal(rt.canonical.inventory.length, 1); assert.equal(rt.canonical.currentZone.nodes[1].pullState.luckyCharmUsed, false); assert.deepEqual(rt.canonical.currentZone.nodes[1].pullState.candidateIds, ["a", "b", "c"]);
+  writes = 0; const canonical = rt.seam.getRun(); const committed = rt.seam.useLuckyCharmOnPull(canonical.currentZone.nodes[1], "pull_free_agents", candidates); assert.equal(committed.ok, true); assert.equal(writes, 1); assert.equal(rt.canonical.inventory.length, 0); assert.equal(rt.canonical.currentZone.nodes[1].pullState.luckyCharmUsed, true); assert.equal(rt.canonical.currentZone.nodes[1].pullState.candidateIds.length, 3); assert.notDeepEqual(rt.canonical.currentZone.nodes[1].pullState.candidateIds, ["a", "b", "c"]);
+}
+
+// A completed item node cannot resurrect an offer, while an existing claimed result remains recoverable.
+{
+  const itemNode = { id: "item", type: "item", layer: 1, completed: true }; const { rt, c } = harness(itemNode, true); const current = rt.seam.getRun(); current.currentZone.pendingNodeId = null; current.currentZone.completedNodeIds = ["item"]; current.pendingItemReward = null; c.RunState.save(current);
+  const staleNode = itemNode; assert.equal(rt.seam.ensurePendingItemReward(staleNode), null); assert.equal(rt.seam.ensurePendingItemReward(staleNode), null); assert.equal(rt.canonical.pendingItemReward, null); assert.equal(rt.canonical.inventory.length, 0);
+  const canonical = rt.seam.getRun(); canonical.pendingItemReward = { nodeId: "item", sourceNodeType: "item", candidateIds: ["energy_drink"], selectedItemId: "energy_drink", status: "claimed", claimedItemId: "energy_drink", claimedInstanceId: "claimed-instance" }; c.RunState.save(canonical);
+  const recovered = rt.seam.ensurePendingItemReward(rt.seam.getRun().currentZone.nodes[1]); assert.equal(recovered.pending.status, "claimed"); assert.deepEqual(recovered.pending.candidateIds, ["energy_drink"]); assert.equal(rt.canonical.inventory.length, 0);
 }
 
 console.log("transactional entry, 5v5 guard, Random rollback and active-pull fencing: ok");
