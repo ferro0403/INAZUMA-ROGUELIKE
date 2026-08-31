@@ -49,6 +49,7 @@ jobs:
         run: |
           set -euo pipefail
           node tests/five-edit-transaction-final-gate-test.js
+          node tests/five-match-action-panel-test.js
           node tests/special-node-normalize-resume-final-gate-test.js
           node tests/failure-lock-five-edit-flow-test.js
           node tests/read-only-map-orphan-match-recovery-test.js
@@ -61,7 +62,7 @@ jobs:
           node tests/gameover-save-failure-ordering-test.js
           node tests/gameover-v3-coins-exactly-once-test.js
           node tests/terminal-recovery-read-only-bootstrap-test.js
-          echo "TARGETED TOTAL=13 PASSED=13 FAILED=0 SKIPPED=0"
+          echo "TARGETED TOTAL=14 PASSED=14 FAILED=0 SKIPPED=0"
 
       - name: Remove temporary verification machinery
         shell: bash
@@ -95,7 +96,7 @@ jobs:
           node --check js/boss-match-simulation-modal-bridge.js
           git diff "$baseline" --check
           test -z "$(git diff "$baseline" --name-only | grep -E '^js/(gameplay-persistence|run-state|map-generator|boss-gameover-runtime|permanent-effects)\.js$' || true)"
-          allowed='^(js/app\.js|index\.html|tests/failure-lock-five-edit-flow-test\.js|tests/terminal-recovery-read-only-bootstrap-test\.js|tests/five-edit-transaction-final-gate-test\.js|tests/special-node-normalize-resume-final-gate-test\.js)$'
+          allowed='^(js/app\.js|index\.html|tests/failure-lock-five-edit-flow-test\.js|tests/five-match-action-panel-test\.js|tests/terminal-recovery-read-only-bootstrap-test\.js|tests/five-edit-transaction-final-gate-test\.js|tests/special-node-normalize-resume-final-gate-test\.js)$'
           unexpected="$(git diff "$baseline" --name-only | grep -Ev "$allowed" || true)"
           if [ -n "$unexpected" ]; then
             echo "Unexpected final-tree files:" >&2
