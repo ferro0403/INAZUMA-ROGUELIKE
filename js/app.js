@@ -385,6 +385,32 @@
     ui.itemRewardSubmitting = false;
   }
 
+  const gameplayFailureDiagnostics = [];
+  function recordGameplayFailure(label, stage, error, kind = null) {
+    if (!DEV_MODE) return null;
+    const current = run;
+    const seasonId = current?.seasonId || activeSeason?.id || null;
+    let canonical = null; let storage = null;
+    try { canonical = seasonId ? global.RunState.load(seasonId, { readOnly: true }) : null; } catch (_) {}
+    try { storage = seasonId ? global.RunStorage?.diagnostics?.(seasonId) : null; } catch (_) {}
+    const match = current?.activeMatch || ui.match || null;
+    const entry = {
+      at: new Date().toISOString(), label: label || "unknown", stage, kind,
+      seasonId, runId: current?.runId || null, phase: current?.phase || null,
+      error: { name: error?.name || null, code: error?.code || null, stage: error?.stage || null, message: error?.message || String(error || ""), recoverable: error?.recoverable === true },
+      generation: { memory: current?.storageGeneration ?? null, canonical: canonical?.storageGeneration ?? storage?.canonicalGeneration ?? null, expected: error?.generation ?? current?.storageGeneration ?? null },
+      commitId: { memory: current?.storageCommitId || null, canonical: canonical?.storageCommitId || storage?.canonicalCommitId || null },
+      canonicalRunId: canonical?.runId || storage?.canonicalRunId || null,
+      match: match ? { matchId: match.matchId || null, type: match.type || null, state: match.state || null, simulationState: match.simulation?.state || null, resolutionApplied: match.simulation?.resolutionApplied === true } : null,
+      node: { currentNodeId: current?.currentZone?.currentNodeId || null, pendingNodeId: current?.currentZone?.pendingNodeId || null },
+      storage: storage ? { bytes: storage.bytes, totalKnownBytes: storage.totalKnownBytes, headGeneration: storage.headGeneration, backupGeneration: storage.backupGeneration, headMatchesCanonical: storage.headMatchesCanonical } : null,
+    };
+    gameplayFailureDiagnostics.push(entry);
+    if (gameplayFailureDiagnostics.length > 20) gameplayFailureDiagnostics.shift();
+    console.error("Gameplay persistence diagnostic", entry);
+    return entry;
+  }
+
   const persistGameplayMutation = global.GameplayPersistence.create({
     save: (current, options) => global.RunState.save(current, options),
     load: (seasonId, options) => global.RunState.load(seasonId, options),
@@ -400,8 +426,9 @@
       ui.returnToMatchContext = null;
     },
     stopRuntime: stopGameplayRuntime,
-    reportFailure: (message) => toast(message, "error"),
-    reportMutationFailure: (message, error) => {
+    reportFailure: (message, kind, error, options) => { recordGameplayFailure(options?.label, "persistence", error, kind); toast(message, "error"); },
+    reportMutationFailure: (message, error, options) => {
+      recordGameplayFailure(options?.label, "mutation", error, "mutation");
       console.error("Gameplay mutation failed", error);
       toast(message, "error");
     },
@@ -4500,6 +4527,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         options.onCommitted?.(value, current);
       },
       onMutationError: ({ error }) => {
+        recordGameplayFailure(label, "mutation", error, "mutation");
         if (error?.code !== "match-identity-mismatch") console.error(`${label} mutation failed`, error);
       },
       rerender: ({ ok, run: recovered }) => {
@@ -7125,6 +7153,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, startNewRunFromHome, startRunWithIdentity, getRun: () => run };
+  if (DEV_MODE) global.__INAZUMA_GAMEPLAY_FAILURE_DIAGNOSTICS__ = () => global.RunState.clone(gameplayFailureDiagnostics);
   if (DEV_MODE) global.__INAZUMA_MATCH_DIAGNOSTICS__ = () => {
     const match = run?.activeMatch, effects = run?.permanentEffectOutbox || [];
     return { runId: run?.runId, matchId: match?.matchId, matchType: match?.type, phase: run?.phase, simulationState: match?.simulation?.state, resolutionApplied: match?.simulation?.resolutionApplied === true, result: match?.result, winner: match?.simulation?.winner, revealedCount: match?.simulation?.revealedCount, timelineLength: match?.simulation?.timeline?.length, pendingPostMatchAction: match?.pendingPostMatchAction || null, lives: run?.lives, gameOver: run?.gameOver, finalization: run?.finalization?.status || null, permanentEffects: { pending: effects.filter((effect) => effect.status === "pending").length, applied: effects.filter((effect) => effect.status === "applied").length }, postBossFlow: run?.postBossFlow?.status || null };
