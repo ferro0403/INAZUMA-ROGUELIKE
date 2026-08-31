@@ -26,7 +26,7 @@ jobs:
           git status --short
       - name: Apply surgical hardening patch
         run: python .github/pr363-final-hardening.py
-      - name: Make synthetic DOM browser-compatible
+      - name: Make test harness browser-compatible
         shell: bash
         run: |
           python - <<'PY'
@@ -43,6 +43,13 @@ jobs:
           if s.count(old_anchor) != 1:
               raise SystemExit(f'document lifecycle anchor mismatch: {s.count(old_anchor)}')
           p.write_text(s.replace(old_anchor, new_anchor, 1))
+          legacy = Path('tests/legacy-matchid-compatibility-final-test.js')
+          ls = legacy.read_text()
+          old_legacy = 'assert.match(app,/match\\.matchId = global\\.RunStatistics\\?\\.createStableMatchId\\?\\.\\(run, match\\) \\|\\| null;/,"Boss/5v5 constructors must retain stable matchId creation");'
+          new_legacy = 'assert.ok((app.match(/match\\.matchId = global\\.RunStatistics\\?\\.createStableMatchId\\?\\.\\(activeRun, match\\) \\|\\| null;/g)||[]).length >= 2,"Boss/5v5 constructors must retain stable matchId creation");'
+          if ls.count(old_legacy) != 1:
+              raise SystemExit(f'legacy matchId test anchor mismatch: {ls.count(old_legacy)}')
+          legacy.write_text(ls.replace(old_legacy, new_legacy, 1))
           PY
       - name: Targeted final hardening tests
         shell: bash
