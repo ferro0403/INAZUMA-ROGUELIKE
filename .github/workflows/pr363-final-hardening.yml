@@ -54,9 +54,10 @@ jobs:
           ts = terminal.read_text()
           old_cache = 'js/app.js?v=20260831-match-hardening-pr363-9'
           new_cache = 'js/app.js?v=20260831-match-hardening-pr363-10'
-          if ts.count(old_cache) != 1:
-              raise SystemExit(f'terminal cache token baseline mismatch: {ts.count(old_cache)}')
-          terminal.write_text(ts.replace(old_cache, new_cache, 1))
+          if old_cache in ts:
+              terminal.write_text(ts.replace(old_cache, new_cache, 1))
+          elif new_cache not in ts:
+              raise SystemExit('terminal cache token is neither approved old nor final value')
           PY
       - name: Targeted final hardening tests
         shell: bash
