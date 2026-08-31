@@ -21,11 +21,24 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          test "$(git rev-parse HEAD~2)" = "8e2324914d75571282a6dea628caf8f10c6e5460"
+          git merge-base --is-ancestor 8e2324914d75571282a6dea628caf8f10c6e5460 HEAD
           test "$(git hash-object js/app.js)" = "6312636fa4fd9a9392536b2a2f0e65205ff2768b"
           git status --short
       - name: Apply surgical hardening patch
         run: python .github/pr363-final-hardening.py
+      - name: Make synthetic click browser-compatible
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('tests/helpers/production-runtime.js')
+          s = p.read_text()
+          old = 'click() { const event = { currentTarget: this, target: this, preventDefault() {} }; for (const listener of listeners.get("click") || []) listener(event); },'
+          new = 'click() { const event = { currentTarget: this, target: this, preventDefault() {}, stopPropagation() {} }; for (const listener of listeners.get("click") || []) listener(event); },'
+          if s.count(old) != 1:
+              raise SystemExit(f'synthetic click baseline mismatch: {s.count(old)}')
+          p.write_text(s.replace(old, new, 1))
+          PY
       - name: Targeted final hardening tests
         shell: bash
         run: |
