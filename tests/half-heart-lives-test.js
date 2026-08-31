@@ -70,6 +70,6 @@ const app = fs.readFileSync('js/app.js', 'utf8');
 const css = fs.readFileSync('css/game.css', 'utf8');
 assert.match(app, /remaining >= 0\.5 \? "half"/, 'UI selects a half-heart state');
 assert.match(css, /\.life-heart--half::before[^}]*width: 50%/s, 'half heart is visually clipped');
-assert.match(app, /restoreAfterLoss\(run, match\.previousNodeId, match\.type\)/, 'real matches use their type for centralized damage');
+assert.match(app, /restoreAfterLoss\(current, currentMatch\.previousNodeId, currentMatch\.type, \{ save: false \}\)/, 'real match resolution uses its canonical type without a nested save');
 
 console.log('half-heart-lives-test: damage, game over, bandage, persistence and UI OK');

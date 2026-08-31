@@ -40,9 +40,9 @@ assert.deepStrictEqual(run.claimedSpecialMatchRewardIds, ["special_alpine_ie2"],
 const appSource = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
 assert(appSource.includes('id="decline-special-reward"'), "Special reward modal must expose decline action");
 assert(appSource.includes('>RIFIUTA</button>'), "Decline action must be labeled RIFIUTA");
-assert(appSource.includes('SpecialMatchRuntime.decline(run, pending, seasonDb)'), "UI must use runtime decline helper");
+assert(appSource.includes('SpecialMatchRuntime.decline(current, current.pendingSpecialMatchReward, seasonDb)'), "UI must use runtime decline helper on transaction-owned state");
 assert(appSource.includes('id="claim-special-reward"'), "Existing claim action must remain available");
-assert(appSource.includes('global.RunState.save(run);\n    if (action.toast)'), "Special reward flow must save the live run before opening the reward modal");
+assert(appSource.includes('commitMatchMutation("match-post-navigation"'), "Special reward handoff must use the durable post-match transaction");
 
 const bridgeSource = fs.readFileSync(path.join(root, "js", "special-reward-ui-bridge.js"), "utf8");
 assert(bridgeSource.includes('bench-replacement-modal'), "Full-roster replacement modal may be styled");

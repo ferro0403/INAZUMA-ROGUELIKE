@@ -55,7 +55,7 @@ const rewardSource = app.slice(
 );
 assert.match(rewardSource, /existing\.candidateIds[\s\S]*if \(savedCandidates\.length\) return savedCandidates;/, 'saved candidates are reused after refresh');
 assert.match(rewardSource, /weightedItemCandidates\(random, 3\)/, 'new item rewards still draw three candidates');
-assert.match(rewardSource, /run\.pendingItemReward = \{[\s\S]*candidateIds,[\s\S]*\};[\s\S]*global\.RunState\.save\(run\)/, 'candidate IDs remain persisted');
+assert.match(rewardSource, /label: "item-reward-offer"[\s\S]*current\.pendingItemReward = offered/, 'candidate IDs are persisted through the canonical gameplay transaction');
 
 const restoreLifeSource = app.slice(
   app.indexOf('if (item.effect === "restore_life")'),
