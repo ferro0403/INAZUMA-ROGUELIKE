@@ -84,12 +84,14 @@
   function createRun(teamIdentity = {}, seasonId = null) {
     const now = new Date().toISOString();
     const normalizedSeasonId = seasonIdOf(seasonId || global.SeasonRegistry?.activeId?.());
+    const suppliedIdentity = !!(teamIdentity && typeof teamIdentity === "object" && (String(teamIdentity.name || "").trim() || String(teamIdentity.emblemId || "").trim()));
+    const initialTeamIdentity = suppliedIdentity ? teamIdentity : (loadProfile().teamIdentity || teamIdentity);
     let storageGeneration = 0; try { const raw = localStorage.getItem(primaryKey(normalizedSeasonId)); storageGeneration = raw ? Number(parseEnvelope(raw, normalizedSeasonId).generation) : 0; } catch (_) {}
     // The fallback is retained only for isolated legacy embedders that do not
     // load the V3 modules. The production bundle always supplies the canonical
     // runtime before app code can create a run.
     const snapshots = global.DevelopmentRuntime?.buildRunSnapshot?.() || { developmentPlayerSnapshot: clone(global.DevelopmentV2?.read?.().players || {}) };
-    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), storageGeneration, createdAt: now, updatedAt: now, lastPlayedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(teamIdentity), lives: initialRunLives(), consecutiveLosses: 0, formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, teamLevelUnits: 0, completedSpecialMatchIds: [], claimedSpecialMatchRewardIds: [], unlockedSpecialTeamIds: [], pendingSpecialMatchReward: null, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [], ...snapshots };
+    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), storageGeneration, createdAt: now, updatedAt: now, lastPlayedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(initialTeamIdentity), lives: initialRunLives(), consecutiveLosses: 0, formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, teamLevelUnits: 0, completedSpecialMatchIds: [], claimedSpecialMatchRewardIds: [], unlockedSpecialTeamIds: [], pendingSpecialMatchReward: null, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [], ...snapshots };
   }
 
   function defaultPostBossFlowFromPending(run) {
@@ -125,9 +127,10 @@
     if (explicitSeason && !knownSeasonId(explicitSeason)) throw new Error("Invalid run season");
     run.seasonId = explicitSeason || options.requestedSeasonId || seasonIdOf(null);
     run.version = config().saveVersion;
-    const profileIdentity = options.storageRead ? null : loadProfile().teamIdentity;
-    const followsProfile = !run.gameOver && !["complete", "final-summary", "final-celebration", "gameover"].includes(String(run.phase || ""));
-    run.teamIdentity = normalizeTeamIdentity(followsProfile && profileIdentity ? profileIdentity : run.teamIdentity);
+    // Identity is copied into a run at creation and belongs to that run from
+    // then on. Legacy saves may fall back to their checkpoint, never to the
+    // mutable account profile during an ordinary save.
+    run.teamIdentity = normalizeTeamIdentity(run.teamIdentity || run.checkpoint?.teamIdentity || {});
     run.runId = run.runId || options.stableRunId || makeId("run");
     run.phase = run.phase || "formation";
     run.lastPlayedAt = run.lastPlayedAt || run.updatedAt || run.savedAt || run.timestamp || run.createdAt || null;
@@ -145,7 +148,7 @@
     run.postBossFlow = normalizePostBossFlow(run);
     run.pendingBossVictory = run.pendingBossVictory || null;
     run.permanentEffectOutbox = Array.isArray(run.permanentEffectOutbox) ? run.permanentEffectOutbox : [];
-    if (run.checkpoint) { run.checkpoint.version = config().saveVersion; run.checkpoint.teamIdentity = normalizeTeamIdentity(run.teamIdentity); }
+    if (run.checkpoint) { run.checkpoint.version = config().saveVersion; run.checkpoint.teamIdentity = normalizeTeamIdentity(run.checkpoint.teamIdentity || run.teamIdentity); }
     return run;
   }
   function validate(run) {

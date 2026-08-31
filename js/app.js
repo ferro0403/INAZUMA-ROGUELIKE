@@ -650,7 +650,6 @@
     if (!run) return;
     run.inventory = Array.isArray(run.inventory) ? run.inventory : [];
     run.teamIdentity = normalizeTeamIdentity(run.teamIdentity);
-    syncRunTeamIdentity();
     run.effects = run.effects || {};
     const legacyLuckyPulls = Number(run.effects.luckyPulls || run.luckyCharmActive || run.nextPullBoost || 0);
     if (legacyLuckyPulls > 0 && !run.effects.luckyPullsMigrated) {
@@ -1327,25 +1326,13 @@
     return loadTeamProfile().teamIdentity;
   }
 
-  function syncRunTeamIdentity(identity = savedTeamIdentity()) {
-    if (!run || !identity) return false;
-    const cleanIdentity = normalizeTeamIdentity(identity);
-    if (run.teamIdentity?.name === cleanIdentity.name && run.teamIdentity?.emblemId === cleanIdentity.emblemId) return false;
-    run.teamIdentity = cleanIdentity;
-    return true;
-  }
-
   function migrateTeamIdentityProfile() {
     const profileIdentity = savedTeamIdentity();
-    if (profileIdentity) {
-      if (syncRunTeamIdentity(profileIdentity) && persistenceWritesAllowed()) global.RunState.save(run);
-      return profileIdentity;
-    }
+    if (profileIdentity) return profileIdentity;
     const legacyName = run ? global.RunState.validTeamName(run.teamIdentity?.name) : "";
     if (!legacyName) return null;
     if (!persistenceWritesAllowed()) return normalizeTeamIdentity({ name: legacyName, emblemId: "default-lightning" });
     const migrated = global.RunState.saveProfileTeamIdentity({ name: legacyName, emblemId: "default-lightning" });
-    if (syncRunTeamIdentity(migrated)) global.RunState.save(run);
     return migrated;
   }
 
@@ -2003,7 +1990,7 @@
       global.RunState.saveProfilePreferences({ smartAutoLineup: event.currentTarget.checked });
       toast(event.currentTarget.checked ? "AUTO-FORMAZIONE ATTIVATA" : "AUTO-FORMAZIONE DISATTIVATA");
     });
-    document.querySelectorAll("[data-settings-emblem]").forEach((button) => button.onclick = () => { const saved = savedTeamIdentity(); if (!saved) { toast("IMPOSTA PRIMA IL NOME SQUADRA"); return; } const updated = global.RunState.saveProfileTeamIdentity({ ...saved, emblemId: button.dataset.settingsEmblem }); if (syncRunTeamIdentity(updated)) global.RunState.save(run); toast("STEMMA SALVATO"); renderSettings({ view: "emblems" }); });
+    document.querySelectorAll("[data-settings-emblem]").forEach((button) => button.onclick = () => { const saved = savedTeamIdentity(); if (!saved) { toast("IMPOSTA PRIMA IL NOME SQUADRA"); return; } global.RunState.saveProfileTeamIdentity({ ...saved, emblemId: button.dataset.settingsEmblem }); toast("STEMMA SALVATO"); renderSettings({ view: "emblems" }); });
   }
 
   function shopDevMarkup() { const cupLabels = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES", orion: "ORION" }; return `<section class="shop-dev"><h2>NEGOZIO — HACK TEST</h2><button data-shop-prepare>PREPARA TEST NEGOZIO</button><div class="shop-dev-grid">${[1000,5000].map((n) => `<button data-shop-coins="${n}">+${n} MONETE</button>`).join("")}${global.DevelopmentV2.SEASON_IDS.flatMap((id) => [1,5].map((n) => `<button data-shop-cups="${id}" data-amount="${n}">+${n} COPPA ${cupLabels[id]}</button>`)).join("")}${global.DevelopmentV2.PROJECT_RARITIES.map((rarity) => `<button data-shop-project="${rarity}">+1 PROGETTO ${rarity.toUpperCase()}</button>`).join("")}</div><div class="shop-dev-danger"><button data-shop-unlock>SBLOCCA TUTTI GLI STEMMI</button><button data-shop-remove>RIMUOVI TUTTI GLI STEMMI ACQUISTATI</button><button data-shop-reset>RESET RISORSE SHOP</button></div></section>`; }
@@ -2095,8 +2082,7 @@
       if (!result.valid) { error.textContent = result.message; return; }
       if (mode === "edit") {
         const before = run ? JSON.stringify({ roster: run.roster, lineup: run.lineup, bench: run.bench, bossIndex: run.bossIndex, currentZone: run.currentZone }) : null;
-        const identity = global.RunState.saveProfileTeamIdentity({ name: result.name, emblemId: savedTeamIdentity()?.emblemId || "default-lightning" });
-        if (syncRunTeamIdentity(identity)) global.RunState.save(run);
+        global.RunState.saveProfileTeamIdentity({ name: result.name, emblemId: savedTeamIdentity()?.emblemId || "default-lightning" });
         if (before && before !== JSON.stringify({ roster: run.roster, lineup: run.lineup, bench: run.bench, bossIndex: run.bossIndex, currentZone: run.currentZone })) throw new Error("Team name edit changed run progress");
         closeModal();
         renderSettings();
