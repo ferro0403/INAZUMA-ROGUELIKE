@@ -26,18 +26,39 @@ jobs:
           git status --short
       - name: Apply surgical hardening patch
         run: python .github/pr363-final-hardening.py
-      - name: Make synthetic click browser-compatible
+      - name: Make synthetic DOM browser-compatible
         shell: bash
         run: |
           python - <<'PY'
           from pathlib import Path
           p = Path('tests/helpers/production-runtime.js')
           s = p.read_text()
-          old = 'click() { const event = { currentTarget: this, target: this, preventDefault() {} }; for (const listener of listeners.get("click") || []) listener(event); },'
-          new = 'click() { const event = { currentTarget: this, target: this, preventDefault() {}, stopPropagation() {} }; for (const listener of listeners.get("click") || []) listener(event); },'
-          if s.count(old) != 1:
-              raise SystemExit(f'synthetic click baseline mismatch: {s.count(old)}')
-          p.write_text(s.replace(old, new, 1))
+          old_click = 'click() { const event = { currentTarget: this, target: this, preventDefault() {} }; for (const listener of listeners.get("click") || []) listener(event); },'
+          new_click = 'click() { const event = { currentTarget: this, target: this, preventDefault() {}, stopPropagation() {} }; for (const listener of listeners.get("click") || []) listener(event); },'
+          if s.count(old_click) != 1:
+              raise SystemExit(f'synthetic click baseline mismatch: {s.count(old_click)}')
+          s = s.replace(old_click, new_click, 1)
+          old_document = '''  const document = { body: element(), documentElement: element(), scrollingElement: element(), createElement: element, createDocumentFragment: element,
+            getElementById: id => { if (!elementsById.has(id)) elementsById.set(id, element()); return elementsById.get(id); }, querySelector: () => element(), querySelectorAll: () => [] };
+          const listeners = new Map();'''
+          new_document = '''  const document = { body: element(), documentElement: element(), scrollingElement: element(), createElement: element, createDocumentFragment: element,
+            getElementById: id => { if (!elementsById.has(id)) elementsById.set(id, element()); return elementsById.get(id); }, querySelector: () => element(), querySelectorAll: () => [] };
+          const appElement = document.getElementById("app");
+          let appMarkup = "";
+          Object.defineProperty(appElement, "innerHTML", {
+            configurable: true,
+            get() { return appMarkup; },
+            set(value) {
+              appMarkup = String(value ?? "");
+              for (const id of [...elementsById.keys()]) {
+                if (!["app", "modal-root", "toast-root"].includes(id)) elementsById.delete(id);
+              }
+            },
+          });
+          const listeners = new Map();'''
+          if s.count(old_document) != 1:
+              raise SystemExit(f'document lifecycle baseline mismatch: {s.count(old_document)}')
+          p.write_text(s.replace(old_document, new_document, 1))
           PY
       - name: Targeted final hardening tests
         shell: bash
