@@ -6,4 +6,5 @@ assert(order.every((x,i)=>x>=0&&(i===0||x>order[i-1])));
 for(const token of ['runTransaction','saveCommits','targetCloudCommitId','InazumaCloudRestoreProtocol.recover','restoreProfile','AlbumProgress.write','DevelopmentV2.write','_saveArchive','token !== generation'])assert(cloud.includes(token),token);
 for(const forbidden of ['forceReplaceCanonicalFromSnapshot','forceDeleteForRestore','RunStorage','RunState.load('])assert.ok(!cloud.includes(forbidden),forbidden);
 assert.match(cloud,/domain === "run"/);
+const cacheToken='20260831-run-local-only-pr366-2';for(const script of ['account-ui','app','cloud-restore-protocol','cloud-save-core','firebase-cloud-save','run-state'])assert.ok(html.includes(`js/${script}.js?v=${cacheToken}`),`${script} cache-buster`);assert.ok(!html.includes('restore-run-replacement-policy.js'));assert.ok(!cloud.includes('InazumaRestoreRunReplacementPolicy'));
 console.log('cloud-save-integration-test: Firebase is wired only to permanent account stores');
