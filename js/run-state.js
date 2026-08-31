@@ -52,7 +52,7 @@
       return { teamIdentity: name ? normalizeTeamIdentity({ ...parsed?.teamIdentity, name, emblemId }) : null, preferences: { smartAutoLineup: parsed?.preferences?.smartAutoLineup === true } };
     } catch (error) { if (error?.name === "SecurityError") throw persistenceError("storage-access-error", "profile-read", {}, error); console.error("Unable to load profile", error); return { teamIdentity: null, preferences: { smartAutoLineup: false } }; }
   }
-  function emitSave(sector, seasonId, operation, options = {}) { if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { sector, seasonId: seasonId || null, hallTeamId: null, operation, generation: options.generation ?? null, commitId: options.commitId || null, source: "gameplay" } })); }
+  function emitSave(sector, seasonId, operation, options = {}) { if (!options.suppressCloudEvent && typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") global.dispatchEvent(new global.CustomEvent("inazuma:local-save-committed", { detail: { domain: seasonId ? "run" : "account-permanent", sector, seasonId: seasonId || null, hallTeamId: null, operation, generation: options.generation ?? null, commitId: options.commitId || null, source: "gameplay" } })); }
   function saveProfileTeamIdentity(teamIdentity, options = {}) {
     global.PersistenceRecoveryGuard?.assertWritable(options);
     global.PersistenceRecoveryGuard?.reserve(options);
@@ -184,9 +184,6 @@
   function recoverySaves() { return activeSaves().filter((entry) => entry.recovery); }
   function latestActiveSave() { return activeSaves().find((entry) => entry.run && isActiveRun(entry.run)) || null; }
   function remove(seasonId = null, options = {}) {
-    global.PersistenceRecoveryGuard?.assertWritable(options);
-    global.PersistenceRecoveryGuard?.reserve(options);
-    global.PersistenceRecoveryGuard?.assertWritable(options);
     const sid = seasonIdOf(seasonId);
     if (options.expectedGeneration == null) throw persistenceError("missing-expected-generation", "delete-concurrency", { seasonId: sid, recoverable: true });
     const expected = Number(options.expectedGeneration); let generation, commitId, envelope, headValue;
@@ -220,8 +217,6 @@
     restoreBackup,
     canonicalizeLegacyPrimary(seasonId = null, options = {}) {
       const sid = seasonIdOf(seasonId); let result;
-      const terminalRecovery = global.PersistenceRecoveryGuard?.getState?.().status === "terminal-recovery";
-      if (terminalRecovery) global.PersistenceRecoveryGuard?.assertLegacyCanonicalizationWritable?.(sid); else global.PersistenceRecoveryGuard?.assertWritable(options);
       withStorageLease(sid, (ownsLease) => {
         let primaryRaw = localStorage.getItem(primaryKey(sid));
         let sourceKey = primaryKey(sid);
@@ -264,8 +259,6 @@
           const verified = parseEnvelope(localStorage.getItem(tempKey(sid)), sid);
           if (verified.commitId !== commitId || verified.runId !== source.runId) throw new Error("legacy candidate mismatch");
           options.crash?.("after-candidate");
-          if (terminalRecovery) global.PersistenceRecoveryGuard?.reserveLegacyCanonicalization?.(sid); else global.PersistenceRecoveryGuard?.reserve(options);
-          if (terminalRecovery) global.PersistenceRecoveryGuard?.assertLegacyCanonicalizationWritable?.(sid); else global.PersistenceRecoveryGuard?.assertWritable(options);
           if (!ownsLease() || localStorage.getItem(sourceKey) !== primaryRaw || (sourceKey !== primaryKey(sid) && localStorage.getItem(primaryKey(sid)) !== null)) throw persistenceError("stale-write", "legacy-migration-fence", { seasonId: sid, recoverable: true });
           localStorage.setItem(primaryKey(sid), rawEnvelope);
           if (parseEnvelope(localStorage.getItem(primaryKey(sid)), sid).commitId !== commitId) throw new Error("legacy primary readback mismatch");
@@ -321,7 +314,6 @@
       return this.load(sid, { readOnly: true });
     },
     save(run, options = {}) {
-      global.PersistenceRecoveryGuard?.assertWritable(options);
       const sidHint = rawSeasonId(run?.seasonId) || seasonIdOf(null); let normalized; let json;
       try {
         normalized = normalize(clone(run));
@@ -337,8 +329,6 @@
       if (expected == null || Number(expected) !== currentGeneration) throw persistenceError("stale-write", "concurrency", { seasonId: sid, runId: normalized.runId, generation: currentGeneration, recoverable: true });
       if (primary?.state === "active" && primary.runId !== normalized.runId && !options.replaceRun) throw persistenceError("lineage-mismatch", "concurrency", { seasonId: sid, runId: normalized.runId, generation: currentGeneration, recoverable: true });
       if (primary?.state === "deleted" && !options.replaceRun) throw persistenceError("lineage-mismatch", "concurrency", { seasonId: sid, runId: normalized.runId, generation: currentGeneration, recoverable: true });
-      global.PersistenceRecoveryGuard?.reserve(options);
-      global.PersistenceRecoveryGuard?.assertWritable(options);
       const generation = currentGeneration + 1, commitId = makeCommitId(generation);
       const envelope = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "active", runId: normalized.runId, payload: JSON.parse(json) };
       const rawEnvelope = JSON.stringify(envelope), headValue = { storageSchemaVersion: STORAGE_SCHEMA_VERSION, seasonId: sid, generation, commitId, state: "active", runId: normalized.runId };

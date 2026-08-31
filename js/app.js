@@ -7129,8 +7129,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       const visualsDb = await visualsResponse.json();
       freeAgentsDb = await freeAgentsResponse.json();
       global.DevelopmentRuntime?.registerDatabase?.("free-agents", freeAgentsDb);
-      await global.PersistenceBootstrapGate?.ready;
-      await global.PersistenceBootstrapGate?.whenAccessible?.();
+      // Run gameplay is a device-local domain. Account authentication and
+      // cloud recovery continue independently and must not gate app startup.
       configureAlbumForBootstrap((freeAgentsDb.players || []).map((player) => player.playerId));
       freeAgentsById = new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player]));
       playerVisualsById = new Map(Object.entries(visualsDb.players || {}));
