@@ -23,6 +23,17 @@ const SpecialMatchRuntime = {
   eligibleProfile: () => true,
 };
 
+const FiveVFive = {
+  formations: [],
+  ensure: run => {
+    run.fiveVFive ||= { formation: "test-five", slots: {} };
+    return run.fiveVFive;
+  },
+  validate: () => ({ valid: true, messages: [], assignedCount: 0, slots: {} }),
+  formationById: () => ({ id: "test-five", slots: [] }),
+  assign() {}, clearSlot() {}, changeFormation() {}, removeUnavailable() {},
+};
+
 function legacyZone() {
   return {
     bossIndex: 0, bossId: "boss", seed: "legacy-zone", currentNodeId: "start", startNodeId: "start", pendingNodeId: "legacy-special", completedNodeIds: ["start"], path: ["start", "legacy-special"],
@@ -54,7 +65,7 @@ async function runtime() {
   seasonDb.requiresProfileAwareRuntime = false;
   const storage = new BudgetStorage(Infinity);
   const fetch = async url => ({ ok: true, json: async () => String(url).includes("FREE_AGENTS") ? { players: [] } : { players: {} } });
-  const rt = load(storage, { run: runState(), seasonDb, contextOverrides: { fetch, SpecialMatchRuntime } });
+  const rt = load(storage, { run: runState(), seasonDb, contextOverrides: { fetch, SpecialMatchRuntime, FiveVFive } });
   rt.context.MatchSimulatorConfig = { eventDelayMs: 1, playbackMs: 1 };
   rt.context.setTimeout = () => 1;
   rt.context.clearTimeout = () => {};
