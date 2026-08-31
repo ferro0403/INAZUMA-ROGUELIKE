@@ -39,21 +39,7 @@ jobs:
               raise SystemExit(f'synthetic click baseline mismatch: {s.count(old_click)}')
           s = s.replace(old_click, new_click, 1)
           old_anchor = 'querySelector: () => element(), querySelectorAll: () => [] };\n  const listeners = new Map();\n  const c ='
-          new_anchor = '''querySelector: () => element(), querySelectorAll: () => [] };
-  const appElement = document.getElementById("app");
-  let appMarkup = "";
-  Object.defineProperty(appElement, "innerHTML", {
-    configurable: true,
-    get() { return appMarkup; },
-    set(value) {
-      appMarkup = String(value ?? "");
-      for (const id of [...elementsById.keys()]) {
-        if (!["app", "modal-root", "toast-root"].includes(id)) elementsById.delete(id);
-      }
-    },
-  });
-  const listeners = new Map();
-  const c ='''
+          new_anchor = 'querySelector: () => element(), querySelectorAll: () => [] };\n  const appElement = document.getElementById("app");\n  let appMarkup = "";\n  Object.defineProperty(appElement, "innerHTML", {\n    configurable: true,\n    get() { return appMarkup; },\n    set(value) {\n      appMarkup = String(value ?? "");\n      for (const id of [...elementsById.keys()]) {\n        if (!["app", "modal-root", "toast-root"].includes(id)) elementsById.delete(id);\n      }\n    },\n  });\n  const listeners = new Map();\n  const c ='
           if s.count(old_anchor) != 1:
               raise SystemExit(f'document lifecycle anchor mismatch: {s.count(old_anchor)}')
           p.write_text(s.replace(old_anchor, new_anchor, 1))
