@@ -2021,10 +2021,10 @@
   }
 
   function startRunWithIdentity(identity) {
-    if (!global.RestoreGameplayRoutingGate?.enter("new-run")) return false;
+    const localIdentity = normalizeTeamIdentity(identity);
     let candidate;
     try {
-      candidate = global.RunState.createRun(normalizeTeamIdentity(identity), activeSeason?.id);
+      candidate = global.RunState.createRun(localIdentity, activeSeason?.id);
     } catch (error) {
       const SnapshotError = global.DevelopmentRuntime?.DevelopmentSnapshotError;
       if (!SnapshotError || !(error instanceof SnapshotError)) throw error;
@@ -2032,18 +2032,17 @@
       toast("Impossibile avviare la run: i dati del Centro di sviluppo richiedono una verifica.");
       return false;
     }
-    const cleanIdentity = global.RunState.saveProfileTeamIdentity(identity);
-    candidate.teamIdentity = cleanIdentity;
     global.RunState.save(candidate, { replaceRun: true });
     run = candidate;
     global.run = candidate;
+    try { global.RunState.saveProfileTeamIdentity(localIdentity); }
+    catch (error) { console.warn("Account profile update deferred; local run is already saved", { code: error?.code || "profile-write-failed" }); }
     closeModal({ invokeOnClose: false });
     renderFormationChoice();
     return true;
   }
 
   function startNewRunFromHome() {
-    if (!global.RestoreGameplayRoutingGate?.enter("new-run")) return false;
     const identity = savedTeamIdentity();
     run = global.RunState.load(activeSeason?.id);
     const startConfirmedRun = () => {
@@ -2101,7 +2100,6 @@
   }
 
   async function resumeRun() {
-    if (!global.RestoreGameplayRoutingGate?.enter("resume-run")) return false;
     await selectSeason(run?.seasonId || activeSeason?.id, { markPlayed: true });
     if (!run) return renderHome();
     if (run.phase === "finalization" || (run.finalization && run.finalization.status !== "complete")) return resumeRunFinalization();
@@ -7126,7 +7124,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     }
   }
 
-  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, startRunWithIdentity, getRun: () => run };
+  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, startNewRunFromHome, startRunWithIdentity, getRun: () => run };
   if (DEV_MODE) global.__INAZUMA_MATCH_DIAGNOSTICS__ = () => {
     const match = run?.activeMatch, effects = run?.permanentEffectOutbox || [];
     return { runId: run?.runId, matchId: match?.matchId, matchType: match?.type, phase: run?.phase, simulationState: match?.simulation?.state, resolutionApplied: match?.simulation?.resolutionApplied === true, result: match?.result, winner: match?.simulation?.winner, revealedCount: match?.simulation?.revealedCount, timelineLength: match?.simulation?.timeline?.length, pendingPostMatchAction: match?.pendingPostMatchAction || null, lives: run?.lives, gameOver: run?.gameOver, finalization: run?.finalization?.status || null, permanentEffects: { pending: effects.filter((effect) => effect.status === "pending").length, applied: effects.filter((effect) => effect.status === "applied").length }, postBossFlow: run?.postBossFlow?.status || null };
