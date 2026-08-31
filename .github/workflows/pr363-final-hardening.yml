@@ -38,27 +38,25 @@ jobs:
           if s.count(old_click) != 1:
               raise SystemExit(f'synthetic click baseline mismatch: {s.count(old_click)}')
           s = s.replace(old_click, new_click, 1)
-          old_document = '''  const document = { body: element(), documentElement: element(), scrollingElement: element(), createElement: element, createDocumentFragment: element,
-            getElementById: id => { if (!elementsById.has(id)) elementsById.set(id, element()); return elementsById.get(id); }, querySelector: () => element(), querySelectorAll: () => [] };
-          const listeners = new Map();'''
-          new_document = '''  const document = { body: element(), documentElement: element(), scrollingElement: element(), createElement: element, createDocumentFragment: element,
-            getElementById: id => { if (!elementsById.has(id)) elementsById.set(id, element()); return elementsById.get(id); }, querySelector: () => element(), querySelectorAll: () => [] };
-          const appElement = document.getElementById("app");
-          let appMarkup = "";
-          Object.defineProperty(appElement, "innerHTML", {
-            configurable: true,
-            get() { return appMarkup; },
-            set(value) {
-              appMarkup = String(value ?? "");
-              for (const id of [...elementsById.keys()]) {
-                if (!["app", "modal-root", "toast-root"].includes(id)) elementsById.delete(id);
-              }
-            },
-          });
-          const listeners = new Map();'''
-          if s.count(old_document) != 1:
-              raise SystemExit(f'document lifecycle baseline mismatch: {s.count(old_document)}')
-          p.write_text(s.replace(old_document, new_document, 1))
+          old_anchor = 'querySelector: () => element(), querySelectorAll: () => [] };\n  const listeners = new Map();\n  const c ='
+          new_anchor = '''querySelector: () => element(), querySelectorAll: () => [] };
+  const appElement = document.getElementById("app");
+  let appMarkup = "";
+  Object.defineProperty(appElement, "innerHTML", {
+    configurable: true,
+    get() { return appMarkup; },
+    set(value) {
+      appMarkup = String(value ?? "");
+      for (const id of [...elementsById.keys()]) {
+        if (!["app", "modal-root", "toast-root"].includes(id)) elementsById.delete(id);
+      }
+    },
+  });
+  const listeners = new Map();
+  const c ='''
+          if s.count(old_anchor) != 1:
+              raise SystemExit(f'document lifecycle anchor mismatch: {s.count(old_anchor)}')
+          p.write_text(s.replace(old_anchor, new_anchor, 1))
           PY
       - name: Targeted final hardening tests
         shell: bash
