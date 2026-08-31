@@ -1,0 +1,93 @@
+name: PR363 final hardening
+
+on:
+  push:
+    branches:
+      - codex/fix-match-recovery-and-game-over-rewards
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    if: ${{ !contains(github.event.head_commit.message, '[pr363-final]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Verify production baseline
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD~2)" = "8e2324914d75571282a6dea628caf8f10c6e5460"
+          test "$(git hash-object js/app.js)" = "6312636fa4fd9a9392536b2a2f0e65205ff2768b"
+          git status --short
+      - name: Apply surgical hardening patch
+        run: python .github/pr363-final-hardening.py
+      - name: Targeted final hardening tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/five-cycle-final-hardening-test.js
+          node tests/development-presentation-transaction-final-test.js
+          node tests/legacy-matchid-compatibility-final-test.js
+          node tests/five-edit-transaction-final-gate-test.js
+          node tests/failure-lock-five-edit-flow-test.js
+          node tests/read-only-map-orphan-match-recovery-test.js
+          node tests/terminal-recovery-read-only-bootstrap-test.js
+          node tests/match-recovery-fail-stop-runtime-test.js
+          node tests/transactional-entry-stale-recovery-test.js
+          node tests/match-retry-seed-regression-test.js
+          node tests/five-match-modal-regression-test.js
+          node tests/gameover-crash-matrix-test.js
+          node tests/gameover-save-failure-ordering-test.js
+          node tests/gameover-v3-coins-exactly-once-test.js
+      - name: Remove temporary runner before final gate
+        shell: bash
+        run: |
+          rm -f .github/pr363-final-hardening.py .github/workflows/pr363-final-hardening.yml
+      - name: Full repository test suite on final tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          total=0
+          for f in tests/*test.js; do
+            total=$((total+1))
+            echo "=== $f ==="
+            node "$f"
+          done
+          echo "FULL_TEST_FILES=$total"
+      - name: Static and scope gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node --check js/app.js
+          node --check js/boss-match-simulation-modal-bridge.js
+          git diff --check
+          echo '--- changed since approved head 8e232 ---'
+          git diff --name-only 8e2324914d75571282a6dea628caf8f10c6e5460 --
+          protected='js/gameplay-persistence.js|js/run-state.js|js/map-generator.js|js/boss-gameover-runtime.js|js/permanent-effects.js|js/development-account-v3.js|js/development-runtime.js|js/development-v3.js|js/firebase-cloud-save.js|js/cloud-save-core.js|js/cloud-restore-protocol.js|js/persistence-recovery-guard.js'
+          if git diff --name-only 8e2324914d75571282a6dea628caf8f10c6e5460 -- | grep -E "$protected"; then
+            echo 'Protected file changed' >&2
+            exit 1
+          fi
+          echo '--- direct RunState saves remaining in app.js (audit only) ---'
+          grep -n 'RunState\.save(run)' js/app.js || true
+          echo '--- gameplay parity protected files vs base main ---'
+          git diff --exit-code 57f2bd36f66883bc9ceef483f69df1cad357d7ad -- js/match-simulator.js js/match-simulator-config.js js/level-progression.js js/game-rules.js js/season1-config.js
+      - name: Commit final verified tree
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'OpenAI PR363 hardening'
+          git config user.email 'actions@users.noreply.github.com'
+          git add -A
+          git status --short
+          git commit -m 'Harden final 5v5 editor and reward presentation [pr363-final]'
+          FINAL_SHA=$(git rev-parse HEAD)
+          FINAL_TREE=$(git rev-parse 'HEAD^{tree}')
+          echo "FINAL_SHA=$FINAL_SHA"
+          echo "FINAL_TREE=$FINAL_TREE"
+          git push origin HEAD:codex/fix-match-recovery-and-game-over-rewards
