@@ -2093,7 +2093,7 @@
     if (run.phase === "finalization" || (run.finalization && run.finalization.status !== "complete")) return resumeRunFinalization();
     if (global.MapEngine.normalizeSpecialMatchNode(run, seasonDb)) global.RunState.save(run);
     const matchRecovery = recoverInterruptedMatchAccess();
-    if (!matchRecovery.ok) return renderMap({ persist: false });
+    if (!matchRecovery.ok) return renderMapFailureRecovery();
     if (run.gameOver || run.phase === "gameover") return renderGameOver();
     if (run.phase === "formation") return renderFormationChoice();
     if (run.phase === "draft") return renderDraft();
@@ -2102,7 +2102,7 @@
     if (run.phase === "final-summary") return renderFinalSummary(run.hallTeamId, { developmentResolved: true });
     if (run.phase === "final-celebration" || run.phase === "complete") return renderFinalCelebration(run.hallTeamId, { developmentResolved: true });
     if (run.phase === "squad") return renderSquad();
-    if (run.phase === "five") return renderFiveVFive();
+    if (run.phase === "five") return renderFiveVFive({ returnToMatch: run.activeMatch?.type === "five_v_five" });
     if (run.phase === "inventory") return renderInventory();
     if (run.phase === "match" && run.activeMatch) {
       ui.match = run.activeMatch;
@@ -2637,6 +2637,7 @@
       match &&
       ["five_v_five", "special_match", "boss"].includes(match.type) &&
       activeRun?.phase !== "match" &&
+      !(match.type === "five_v_five" && activeRun?.phase === "five") &&
       match.postMatchNavigationApplied !== true
     );
   }
@@ -2770,6 +2771,16 @@
 
   function renderMap(options = {}) {
     const readOnly = options.persist === false;
+    if (readOnly && options.failureLocked === true) {
+      app.innerHTML = `<main class="screen"><div class="content"><section class="panel"><h1>SALVATAGGIO NON RIUSCITO</h1><p>Lo stato salvato non è stato modificato. Riprova per riprendere dal checkpoint canonico.</p><button type="button" class="btn btn-yellow" id="retry-failed-gameplay">RIPROVA</button></section></div></main>`;
+      document.getElementById("retry-failed-gameplay")?.addEventListener("click", async (event) => {
+        const button = event.currentTarget;
+        if (button.disabled) return;
+        button.disabled = true;
+        await resumeRun();
+      });
+      return app.innerHTML;
+    }
     if (!readOnly) {
       if (run) global.RunState.touch(run);
       const bossFlow = resolvePendingRunFlow();
@@ -2894,6 +2905,10 @@
     });
   }
 
+  function renderMapFailureRecovery() {
+    return renderMap({ persist: false, failureLocked: true });
+  }
+
   function bindMapDevTools() {
     document.querySelector("[data-dev-open-legendary]")?.addEventListener("click", openDevLegendaryPull);
     document.querySelectorAll("[data-dev-transform-node]").forEach((button) => button.addEventListener("click", () => {
@@ -2970,7 +2985,7 @@
           if (created?.formationRequired) return toast("Completa la Formazione 5v5 prima di avviare la partitella.");
           ui.match = created; ui.bossMatchState = created.state || "pre-match"; ui.bossMatchLog = created.log || []; ui.bossMatchResolving = false;
         },
-        rerender: ({ ok }) => { if (!ok) renderMap({ persist: false }); },
+        rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
       });
       if (!committed.ok) return;
       if (committed.value?.formationRequired) return renderFiveVFive({ persist: false });
@@ -2988,7 +3003,7 @@
           const currentNode = global.MapEngine.selectNode(current.currentZone, nodeId);
           return { nodeId: currentNode.id, revealedType: global.MapEngine.resolveRandomNodeType(current, currentNode) };
         },
-        rerender: ({ ok }) => { if (!ok) renderMap({ persist: false }); },
+        rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
       });
       if (!committed.ok) return committed;
       return resolveRandomNode(canonicalNodeById(committed.value?.nodeId || nodeId));
@@ -3025,7 +3040,7 @@
         current.phase = "map";
       },
       onCommitted: () => { closeModal(); toast(message); renderMap({ persist: false }); },
-      rerender: ({ ok }) => { if (!ok) renderMap({ persist: false }); },
+      rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
     });
   }
 
@@ -3060,7 +3075,7 @@
           if (current.pendingItemReward && String(current.pendingItemReward.nodeId) !== expectedNodeId) throw new Error("Item reward recovery changed");
           current.pendingItemReward = null;
         },
-        rerender: ({ ok }) => { if (!ok) renderMap({ persist: false }); },
+        rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
       });
       if (!cleared.ok) return true;
     }
@@ -3118,9 +3133,9 @@
         if (!currentNode) throw new Error("Item reward node changed");
         if (!current.pendingItemReward || String(current.pendingItemReward.nodeId) !== nodeId) current.pendingItemReward = offered;
       },
-      rerender: ({ ok }) => { if (!ok) renderMap({ persist: false }); },
+      rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
     });
-    if (!committed.ok) return null;
+    if (!committed.ok) return false;
     return { pending: run.pendingItemReward, candidates };
   }
 
@@ -3182,6 +3197,7 @@
 
   function resolveItemNode(node) {
     const prepared = ensurePendingItemReward(node);
+    if (prepared === false) return;
     if (!prepared) return renderMap({ persist: false });
     const { pending, candidates } = prepared;
     if (pending.status === "claimed") return renderItemRewardResult(node);
@@ -3291,7 +3307,7 @@
       return persistGameplayMutation({ label: "item-reward-invalid-cleanup", mutate: (current) => {
         if (current.pendingItemReward && String(current.pendingItemReward.nodeId) !== expectedNodeId) throw new Error("Item reward result changed");
         current.pendingItemReward = null;
-      }, onCommitted: () => { closeModal(); renderMap({ persist: false }); }, rerender: ({ ok }) => { if (!ok) renderMap({ persist: false }); } });
+      }, onCommitted: () => { closeModal(); renderMap({ persist: false }); }, rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); } });
     }
     openModal(`
       <section class="item-reward-screen item-reward-screen--complete">
@@ -3826,7 +3842,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         currentNode.pullState.candidateIds = upgradedCandidates.map((player) => pullCandidateKey(player, pool));
       },
       onCommitted: () => rerenderCanonicalPull(nodeId, pullType),
-      rerender: ({ ok }) => { if (!ok) rerenderCanonicalPull(nodeId, pullType); },
+      rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
     });
     return committed;
   }
@@ -3848,7 +3864,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         currentNode.pullState.candidateIds = generatedPullCandidates(current, pool, currentNode).map(pullCandidateKey);
       },
       onCommitted: () => rerenderCanonicalPull(nodeId, pullType, options),
-      rerender: ({ ok }) => { if (!ok) rerenderCanonicalPull(nodeId, pullType, options); },
+      rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
     });
   }
 
@@ -3873,7 +3889,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
             if (currentNode.pullState.pullType !== pullType) throw new Error("Pull state changed");
             if (!currentNode.pullState.candidateIds.length) currentNode.pullState.candidateIds = generatedPullCandidates(current, pool, currentNode).map(pullCandidateKey);
           },
-          rerender: ({ ok }) => { if (!ok) rerenderCanonicalPull(nodeId, pullType); },
+          rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
         });
         if (!committed.ok) return committed;
         return openPull(canonicalNodeById(nodeId), pullType, options);
@@ -3930,7 +3946,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         }, {
           transactionMutate: options.dev ? undefined : (current) => completePullNodeMutation(current, nodeId, pullType, candidateId),
           onRecover: () => rerenderCanonicalPull(nodeId, pullType, options),
-          onRecoveryBlocked: () => renderMap({ persist: false }),
+          onRecoveryBlocked: () => renderMapFailureRecovery(),
         });
       },
       onSkip: () => finishPull("Hai rinunciato al pull"),
@@ -4085,7 +4101,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       complete(status, failure);
       if (status === "recovery-blocked") {
         closeModal();
-        return options.onRecoveryBlocked?.(failure) || renderMap({ persist: false });
+        return options.onRecoveryBlocked?.(failure) || renderMapFailureRecovery();
       }
       options.onRecover?.(status, failure);
     };
@@ -6071,11 +6087,11 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       const context = ui.returnToMatchContext || run.activeMatch;
       const match = run.activeMatch?.type === "five_v_five" ? run.activeMatch : null;
       if (!context || !match) return toast("Nessuna partita da riprendere.");
+      run.phase = "match";
       global.RunState.save(run);
       ui.match = match;
       ui.bossMatchState = match.state || "pre-match";
       ui.bossMatchLog = match.log || visibleTimeline(match);
-      run.phase = "match";
       renderMatch();
       restoreScroll(match.returnScroll || context.scroll || scrollSnapshot());
     });
@@ -7012,6 +7028,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       renderGameOver,
       renderMatch,
       renderMap,
+      renderMapFailureRecovery,
       ensureCurrentZoneMutation,
       setContext: (context = {}) => {
         if (context.run) { run = context.run; global.run = run; ui.match = run.activeMatch || null; }

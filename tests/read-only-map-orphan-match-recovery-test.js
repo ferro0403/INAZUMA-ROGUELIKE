@@ -74,6 +74,9 @@ for (const scenario of ["changed", "generated"]) {
 {
   const h = harness();
   let writes = 0, ensures = 0, checkpoints = 0;
+  const siblingListeners = [];
+  const sibling = { dataset: { nodeId: "start" }, addEventListener(type, listener) { if (type === "click") siblingListeners.push(listener); }, click() { siblingListeners.forEach(listener => listener({ currentTarget: this, target: this, preventDefault() {} })); } };
+  h.c.document.querySelectorAll = selector => selector === "[data-node-id]" ? [sibling] : [];
   h.c.MapEngine.ensureCurrentZone = () => { ensures += 1; return { generated: false, changed: true }; };
   h.c.RunState.createCheckpoint = () => { checkpoints += 1; };
   h.c.RunState.save = () => { writes += 1; throw Object.assign(new Error("quota"), { name: "QuotaExceededError" }); };
@@ -83,6 +86,10 @@ for (const scenario of ["changed", "generated"]) {
   assert.equal(ensures, 0, "failure rerender does not normalize the zone");
   assert.equal(checkpoints, 0, "failure rerender does not checkpoint");
   assert.equal(rawStorage(h.storage), before, "rollback canonical storage remains unchanged");
+  assert.match(h.rt.seam.getAppMarkup(), /SALVATAGGIO NON RIUSCITO/);
+  assert.equal(siblingListeners.length, 0, "failed Item offer does not bind another map node");
+  sibling.click();
+  assert.equal(writes, 1, "clicking another node after Item failure cannot start a mutation");
 }
 
 // Existing matches of every supported family use one generic phase repair and

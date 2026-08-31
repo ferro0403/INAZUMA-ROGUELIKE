@@ -24,8 +24,11 @@ function loadModules(storage, files = ["persistence-recovery-guard.js", "run-sta
 }
 
 function element() {
+  const listeners = new Map();
   return { innerHTML: "", textContent: "", disabled: false, dataset: {}, style: {}, classList: { add() {}, remove() {}, toggle() {} },
-    addEventListener() {}, removeEventListener() {}, appendChild() {}, append() {}, remove() {}, removeAttribute() {}, setAttribute() {}, getAttribute() { return null; }, scrollTo() {},
+    addEventListener(type, listener) { const current = listeners.get(type) || []; current.push(listener); listeners.set(type, current); }, removeEventListener() {},
+    click() { const event = { currentTarget: this, target: this, preventDefault() {} }; for (const listener of listeners.get("click") || []) listener(event); },
+    appendChild() {}, append() {}, remove() {}, removeAttribute() {}, setAttribute() {}, getAttribute() { return null; }, scrollTo() {},
     querySelector() { return element(); }, querySelectorAll() { return []; }, firstElementChild: null };
 }
 
