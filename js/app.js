@@ -593,9 +593,13 @@
     return fiveRoleForPlayerId(playerId, currentRun);
   }
 
-  function ensureFiveVFive() {
-    if (!run || !run.roster?.length) return null;
-    return global.FiveVFive.ensure(run, fiveRoleForPlayerId, fiveOverallForPlayerId);
+  function ensureFiveVFive(currentRun = run) {
+    if (!currentRun || !currentRun.roster?.length) return null;
+    return global.FiveVFive.ensure(
+      currentRun,
+      (id) => fiveRoleForPlayerId(id, currentRun),
+      (id) => fiveOverallForPlayerId(id, currentRun)
+    );
   }
 
   function fiveOverallForPlayerId(playerId, currentRun = run) {
@@ -619,9 +623,11 @@
     return result;
   }
 
-  function fiveVFiveStatus() {
-    ensureFiveVFive();
-    return global.FiveVFive.validate(run, fiveRoleForPlayerId);
+  function fiveVFiveStatus(currentRun = run, { autoFill = false } = {}) {
+    if (!currentRun) return { valid: false, messages: ["Run non disponibile"], assignedCount: 0, formation: global.FiveVFive.formationById(null) };
+    const snapshot = typeof structuredClone === "function" ? structuredClone(currentRun) : JSON.parse(JSON.stringify(currentRun));
+    if (autoFill) ensureFiveVFive(snapshot);
+    return global.FiveVFive.validate(snapshot, (id) => fiveRoleForPlayerId(id, snapshot));
   }
 
   function sourcePlayer(entryOrId, preferredSource) {
@@ -855,7 +861,7 @@
         } else if (destination === "inventory") {
           renderInventory();
         } else if (destination === "five") {
-          renderFiveVFive();
+          openFiveVFiveEditor();
         }
       });
     });
@@ -1766,10 +1772,32 @@
     const effect = run.permanentEffectOutbox.find((entry) => entry.id === effectId);
     if (drained.error || effect?.status !== "applied") return renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
     if (!run.developmentRewardPresentation || run.developmentRewardPresentation.endReason !== endReason) {
-      run.developmentRewardPresentation = developmentRewardPresentation(defeatedBosses, endReason);
-      global.RunState.save(run);
+      const presentation = persistGameplayMutation({
+        label: "development-reward-presentation-create",
+        mutate: (current) => {
+          const currentEffect = current.permanentEffectOutbox?.find((entry) => entry.id === effectId);
+          if (currentEffect?.status !== "applied") throw new Error("Development effect must be applied before reward presentation");
+          if (!current.developmentRewardPresentation || current.developmentRewardPresentation.endReason !== endReason) {
+            current.developmentRewardPresentation = developmentRewardPresentation(defeatedBosses, endReason);
+          }
+          return current.developmentRewardPresentation;
+        },
+      });
+      if (!presentation.ok) return renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
     }
-    const continueFlow = () => { run.developmentRewardPresentation.seen = true; global.RunState.save(run); return onComplete(); };
+    const continueFlow = () => {
+      const committed = persistGameplayMutation({
+        label: "development-reward-presentation-seen",
+        mutate: (current) => {
+          const currentPresentation = current.developmentRewardPresentation;
+          if (!currentPresentation || currentPresentation.endReason !== endReason) throw new Error("Development reward presentation changed");
+          currentPresentation.seen = true;
+        },
+        onCommitted: () => onComplete(),
+        rerender: ({ ok }) => { if (!ok) renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete })); },
+      });
+      return committed;
+    };
     if (!run.developmentRewardPresentation.seen) return renderDevelopmentRewardReveal(run.developmentRewardPresentation, continueFlow);
     return onComplete();
   }
@@ -2122,7 +2150,7 @@
     if (run.phase === "final-summary") return renderFinalSummary(run.hallTeamId, { developmentResolved: true });
     if (run.phase === "final-celebration" || run.phase === "complete") return renderFinalCelebration(run.hallTeamId, { developmentResolved: true });
     if (run.phase === "squad") return renderSquad();
-    if (run.phase === "five") return renderFiveVFive({ returnToMatch: run.activeMatch?.type === "five_v_five" });
+    if (run.phase === "five") return renderFiveVFive({ persist: false, returnToMatch: run.activeMatch?.type === "five_v_five" });
     if (run.phase === "inventory") return renderInventory();
     if (run.phase === "match" && run.activeMatch) {
       ui.match = run.activeMatch;
@@ -2992,6 +3020,7 @@
           const selectedNode = alreadySelected ? { ...currentNode, type: matchType || currentNode.type } : global.MapEngine.selectNode(current.currentZone, nodeId);
           let created;
           if (selectedNode.type === "five_v_five") {
+            ensureFiveVFive(current);
             const status = global.FiveVFive.validate(current, (id) => fiveRoleForPlayerId(id, current));
             if (!status.valid) { current.phase = "five"; current.activeMatch = null; return { formationRequired: true }; }
             created = createOrLoadFiveMatch(selectedNode, current);
@@ -5014,12 +5043,27 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     picker?.addEventListener("click", (event) => {
       const button = event.target.closest("[data-five-player]");
       if (!button || !picker.contains(button) || button.disabled) return;
-      if (!(match.state === "pre-match" && ui.bossMatchState === "pre-match" && (!match.simulation || match.simulation.state === "pre-match"))) return;
-      global.FiveVFive.assign(run, slotKey, button.dataset.fivePlayer, fiveRoleForPlayerId);
-      global.RunState.save(run);
-      closePicker();
-      renderMatch();
-      afterNextPaint(() => { restorePageScroll(pageScroll); document.querySelector(`[data-five-match-side="user"][data-five-match-slot="${cssEscape(slotKey)}"]`)?.focus?.({ preventScroll: true }); });
+      const liveMatch = run?.activeMatch;
+      if (!(liveMatch?.type === "five_v_five" && liveMatch.state === "pre-match" && ui.bossMatchState === "pre-match" && (!liveMatch.simulation || liveMatch.simulation.state === "pre-match"))) return;
+      const playerId = button.dataset.fivePlayer;
+      button.disabled = true;
+      const committed = commitFiveEditorMutation("five-match-quick-swap", (current) => {
+        const currentMatch = current.activeMatch;
+        if (!(currentMatch?.type === "five_v_five" && currentMatch.state === "pre-match" && (!currentMatch.simulation || currentMatch.simulation.state === "pre-match"))) {
+          throw new Error("La formazione 5v5 non è più modificabile");
+        }
+        return global.FiveVFive.assign(current, slotKey, playerId, (id) => fiveRoleForPlayerId(id, current));
+      }, {
+        onCommitted: (_value, current) => {
+          ui.match = current.activeMatch;
+          ui.bossMatchState = current.activeMatch?.state || "pre-match";
+          ui.bossMatchLog = current.activeMatch?.log || [];
+          closePicker();
+          renderMatch();
+          afterNextPaint(() => { restorePageScroll(pageScroll); document.querySelector(`[data-five-match-side="user"][data-five-match-slot="${cssEscape(slotKey)}"]`)?.focus?.({ preventScroll: true }); });
+        },
+      });
+      if (!committed.ok) return;
     });
     return true;
   }
@@ -5917,9 +5961,10 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   function fiveRosterCard(entry, selectedSlot) {
     const player = resolvedRosterPlayer(entry.playerId);
     if (!player) return "";
-    const slot = selectedSlot ? global.FiveVFive.formationById(run.fiveVFive.formation).slots.find((item) => item.key === selectedSlot) : null;
+    const fiveState = run.fiveVFive || { formation: global.FiveVFive.formationById(null).id, slots: {} };
+    const slot = selectedSlot ? global.FiveVFive.formationById(fiveState.formation).slots.find((item) => item.key === selectedSlot) : null;
     const compatible = !slot || player.position === slot.role;
-    const assignedSlot = Object.entries(run.fiveVFive.slots).find(([, id]) => String(id) === String(entry.playerId))?.[0];
+    const assignedSlot = Object.entries(fiveState.slots || {}).find(([, id]) => String(id) === String(entry.playerId))?.[0];
     const currentStarter = assignedSlot === selectedSlot;
     return `
       <button type="button" class="five-roster-card ${compatible ? "" : "disabled"} ${assignedSlot ? "assigned" : ""} ${currentStarter ? "current-starter" : ""} ${rarityClass(player.category)}" data-five-player="${escapeHtml(entry.playerId)}" ${compatible && !currentStarter ? "" : "disabled"} aria-current="${currentStarter ? "true" : "false"}" aria-label="${currentStarter ? "Titolare attuale" : "Sostituisci con"} ${escapeHtml(player.name)}, ${escapeHtml(player.position)}, overall ${escapeHtml(player.overall)}">
@@ -5964,16 +6009,41 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     });
   }
 
+  function openFiveVFiveEditor(options = {}) {
+    const returnToMatch = options.returnToMatch === true;
+    const expectedIdentity = returnToMatch && run?.activeMatch?.type === "five_v_five" ? matchTransactionIdentity(run.activeMatch) : null;
+    return persistGameplayMutation({
+      label: options.label || "five-editor-entry",
+      mutate: (current) => {
+        if (expectedIdentity) canonicalMatchFor(current, expectedIdentity);
+        ensureFiveVFive(current);
+        current.phase = "five";
+      },
+      onCommitted: () => renderFiveVFive({ persist: false, returnToMatch }),
+      rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
+    });
+  }
+
+  function commitFiveEditorMutation(label, mutate, options = {}) {
+    const expectedIdentity = run?.activeMatch?.type === "five_v_five" ? matchTransactionIdentity(run.activeMatch) : null;
+    return persistGameplayMutation({
+      label,
+      mutate: (current) => {
+        if (expectedIdentity) canonicalMatchFor(current, expectedIdentity);
+        return mutate(current);
+      },
+      onCommitted: options.onCommitted,
+      rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
+    });
+  }
+
   function renderFiveVFive(options = {}) {
-    run.phase = "five";
-    ensureRunSchema();
-    ensureFiveVFive();
-    if (options.persist !== false) global.RunState.save(run);
-    const status = fiveVFiveStatus();
+    const status = fiveVFiveStatus(run);
     const formation = status.formation;
+    const fiveState = run.fiveVFive || { formation: formation.id, slots: global.FiveVFive.emptySlots(formation.id) };
     const selectedSlot = ui.fiveVFiveSelectedSlot && formation.slots.some((slot) => slot.key === ui.fiveVFiveSelectedSlot)
       ? ui.fiveVFiveSelectedSlot
-      : formation.slots.find((slot) => !run.fiveVFive.slots[slot.key])?.key || formation.slots[0].key;
+      : formation.slots.find((slot) => !fiveState.slots[slot.key])?.key || formation.slots[0].key;
     ui.fiveVFiveSelectedSlot = selectedSlot;
     const selectedRole = formation.slots.find((slot) => slot.key === selectedSlot)?.role;
     const filter = ui.fiveVFiveRoleFilter || "all";
@@ -6009,7 +6079,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
                   <small>TOCCA UNA CARD</small>
                 </div>
                 <div class="five-pitch formation-${escapeHtml(formation.id)}">
-                  ${rows.map((line) => `<div class="five-pitch-line line-${line}">${formation.slots.filter((slot) => slot.line === line).map((slot) => fiveSlotCard(slot, run.fiveVFive.slots[slot.key], status)).join("")}</div>`).join("")}
+                  ${rows.map((line) => `<div class="five-pitch-line line-${line}">${formation.slots.filter((slot) => slot.line === line).map((slot) => fiveSlotCard(slot, fiveState.slots[slot.key], status)).join("")}</div>`).join("")}
                 </div>
               </section>
               <div class="five-validation ${status.valid ? "valid" : "invalid"}" aria-live="polite">
@@ -6028,10 +6098,17 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     syncFiveSlotSelection();
 
     document.querySelectorAll("[data-five-formation]").forEach((button) => button.addEventListener("click", () => {
-      global.FiveVFive.changeFormation(run, button.dataset.fiveFormation, fiveRoleForPlayerId);
-      ui.fiveVFiveSelectedSlot = null;
-      global.RunState.save(run);
-      runKeepingScroll(() => renderFiveVFive(options));
+      if (button.disabled) return;
+      button.disabled = true;
+      const nextFormation = button.dataset.fiveFormation;
+      const committed = commitFiveEditorMutation("five-lineup-formation-change", (current) =>
+        global.FiveVFive.changeFormation(current, nextFormation, (id) => fiveRoleForPlayerId(id, current)), {
+          onCommitted: () => {
+            ui.fiveVFiveSelectedSlot = null;
+            runKeepingScroll(() => renderFiveVFive({ ...options, persist: false }));
+          },
+        });
+      if (!committed.ok) return;
     }));
     const refreshFiveSelection = () => {
       const currentStatus = fiveVFiveStatus();
@@ -6113,7 +6190,13 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       if (!playerButton || !selector.contains(playerButton)) return;
       event.preventDefault();
       try {
-        const assigned = persistGameplayMutation({ label: "five-lineup-assign", mutate: () => global.FiveVFive.assign(run, ui.fiveVFiveSelectedSlot, playerButton.dataset.fivePlayer, fiveRoleForPlayerId), onCommitted: () => { ui.fiveVFiveSelectedSlot = null; toast("Giocatore assegnato alla formazione 5v5"); refreshFiveAfterAssignment(); }, rerender: ({ ok }) => { if (!ok) renderFiveVFive(options); } });
+        const selectedSlotKey = ui.fiveVFiveSelectedSlot;
+        const selectedPlayerId = playerButton.dataset.fivePlayer;
+        playerButton.disabled = true;
+        const assigned = commitFiveEditorMutation("five-lineup-assign", (current) =>
+          global.FiveVFive.assign(current, selectedSlotKey, selectedPlayerId, (id) => fiveRoleForPlayerId(id, current)), {
+            onCommitted: () => { ui.fiveVFiveSelectedSlot = null; toast("Giocatore assegnato alla formazione 5v5"); refreshFiveAfterAssignment(); },
+          });
         if (!assigned.ok) return;
       } catch (error) {
         toast(error.message);
@@ -6122,33 +6205,63 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     document.querySelectorAll("[data-five-slot]").forEach((button) => button.addEventListener("click", onFiveSlotClick));
     document.getElementById("clear-five-slot").addEventListener("click", (event) => {
       event.preventDefault();
-      global.FiveVFive.clearSlot(run, ui.fiveVFiveSelectedSlot);
-      ui.fiveVFiveSelectedSlot = null;
-      global.RunState.save(run);
-      refreshFiveAfterAssignment();
+      const button = event.currentTarget;
+      if (button.disabled) return;
+      const selectedSlotKey = ui.fiveVFiveSelectedSlot;
+      if (!selectedSlotKey) return;
+      button.disabled = true;
+      const committed = commitFiveEditorMutation("five-lineup-clear", (current) => global.FiveVFive.clearSlot(current, selectedSlotKey), {
+        onCommitted: () => { ui.fiveVFiveSelectedSlot = null; refreshFiveAfterAssignment(); },
+      });
+      if (!committed.ok) return;
     });
-    document.getElementById("save-five").addEventListener("click", () => {
-      const nextStatus = fiveVFiveStatus();
-      if (!nextStatus.valid) return toast("Completa tutti e cinque gli slot prima di salvare.");
-      global.RunState.save(run);
-      toast("Formazione 5v5 salvata");
+    document.getElementById("save-five").addEventListener("click", (event) => {
+      const button = event.currentTarget;
+      if (button.disabled) return;
+      const preview = fiveVFiveStatus(run, { autoFill: true });
+      if (!preview.valid) return toast("Completa tutti e cinque gli slot prima di salvare.");
+      button.disabled = true;
+      const committed = commitFiveEditorMutation("five-lineup-save", (current) => {
+        ensureFiveVFive(current);
+        const currentStatus = global.FiveVFive.validate(current, (id) => fiveRoleForPlayerId(id, current));
+        if (!currentStatus.valid) throw new Error(currentStatus.messages?.[0] || "Formazione 5v5 non valida");
+        return currentStatus;
+      }, {
+        onCommitted: () => { toast("Formazione 5v5 salvata"); refreshFiveAfterAssignment(); },
+      });
+      if (!committed.ok) return;
     });
     document.getElementById("back-five-match-head")?.addEventListener("click", () => document.getElementById("back-five-match")?.click());
     document.getElementById("cancel-five-edit")?.addEventListener("click", () => document.getElementById("back-five-match")?.click());
     document.getElementById("back-five-match")?.addEventListener("click", (event) => {
       event.preventDefault();
-      const nextStatus = fiveVFiveStatus();
-      if (!nextStatus.valid) return toast(nextStatus.messages?.[0] || "Formazione non valida: completa tutti gli slot prima di tornare alla partita.");
+      const button = event.currentTarget;
+      if (button.disabled) return;
+      const preview = fiveVFiveStatus(run, { autoFill: true });
+      if (!preview.valid) return toast(preview.messages?.[0] || "Formazione non valida: completa tutti gli slot prima di tornare alla partita.");
       const context = ui.returnToMatchContext || run.activeMatch;
       const match = run.activeMatch?.type === "five_v_five" ? run.activeMatch : null;
       if (!context || !match) return toast("Nessuna partita da riprendere.");
-      run.phase = "match";
-      global.RunState.save(run);
-      ui.match = match;
-      ui.bossMatchState = match.state || "pre-match";
-      ui.bossMatchLog = match.log || visibleTimeline(match);
-      renderMatch();
-      restoreScroll(match.returnScroll || context.scroll || scrollSnapshot());
+      const fallbackScroll = match.returnScroll || context.scroll || scrollSnapshot();
+      button.disabled = true;
+      const committed = commitFiveEditorMutation("five-match-edit-exit", (current) => {
+        const currentMatch = current.activeMatch;
+        ensureFiveVFive(current);
+        const currentStatus = global.FiveVFive.validate(current, (id) => fiveRoleForPlayerId(id, current));
+        if (!currentStatus.valid) throw new Error(currentStatus.messages?.[0] || "Formazione 5v5 non valida");
+        current.phase = "match";
+        return { scroll: currentMatch?.returnScroll || fallbackScroll };
+      }, {
+        onCommitted: (value, current) => {
+          const currentMatch = current.activeMatch;
+          ui.match = currentMatch;
+          ui.bossMatchState = currentMatch?.state || "pre-match";
+          ui.bossMatchLog = currentMatch?.log || visibleTimeline(currentMatch);
+          renderMatch();
+          restoreScroll(value?.scroll || fallbackScroll);
+        },
+      });
+      if (!committed.ok) return;
     });
     bindBottomNav();
   }
@@ -7082,6 +7195,10 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       resumeRunFinalization,
       renderGameOver,
       renderMatch,
+      renderFiveVFive,
+      openFiveVFiveEditor,
+      openFiveMatchPlayerSwap,
+      resolveDevelopmentEndRunFlow,
       renderMap,
       renderMapFailureRecovery,
       ensureCurrentZoneMutation,

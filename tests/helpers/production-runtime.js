@@ -27,7 +27,7 @@ function element() {
   const listeners = new Map();
   return { innerHTML: "", textContent: "", disabled: false, dataset: {}, style: {}, classList: { add() {}, remove() {}, toggle() {} },
     addEventListener(type, listener) { const current = listeners.get(type) || []; current.push(listener); listeners.set(type, current); }, removeEventListener() {},
-    click() { const event = { currentTarget: this, target: this, preventDefault() {} }; for (const listener of listeners.get("click") || []) listener(event); },
+    click() { const event = { currentTarget: this, target: this, preventDefault() {}, stopPropagation() {} }; for (const listener of listeners.get("click") || []) listener(event); },
     appendChild() {}, append() {}, remove() {}, removeAttribute() {}, setAttribute() {}, getAttribute() { return null; }, scrollTo() {},
     querySelector() { return element(); }, querySelectorAll() { return []; }, firstElementChild: null };
 }
@@ -39,6 +39,18 @@ function load(storage, options = {}) {
   const elementsById = new Map();
   const document = { body: element(), documentElement: element(), scrollingElement: element(), createElement: element, createDocumentFragment: element,
     getElementById: id => { if (!elementsById.has(id)) elementsById.set(id, element()); return elementsById.get(id); }, querySelector: () => element(), querySelectorAll: () => [] };
+  const appElement = document.getElementById("app");
+  let appMarkup = "";
+  Object.defineProperty(appElement, "innerHTML", {
+    configurable: true,
+    get() { return appMarkup; },
+    set(value) {
+      appMarkup = String(value ?? "");
+      for (const id of [...elementsById.keys()]) {
+        if (!["app", "modal-root", "toast-root"].includes(id)) elementsById.delete(id);
+      }
+    },
+  });
   const listeners = new Map();
   const c = { console, structuredClone, Date, Math, JSON, Object, Array, String, Number, Boolean, RegExp, Error, TypeError, Promise, Map, Set, WeakMap, WeakSet, Symbol, Intl, parseInt, parseFloat, isNaN, TextEncoder, Uint8Array, crypto: global.crypto, URLSearchParams,
     location: { search: "" }, document, window: null, localStorage: storage, performance: { now: () => 1000 },
