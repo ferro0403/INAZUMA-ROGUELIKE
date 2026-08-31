@@ -50,6 +50,13 @@ jobs:
           if ls.count(old_legacy) != 1:
               raise SystemExit(f'legacy matchId test anchor mismatch: {ls.count(old_legacy)}')
           legacy.write_text(ls.replace(old_legacy, new_legacy, 1))
+          terminal = Path('tests/terminal-recovery-read-only-bootstrap-test.js')
+          ts = terminal.read_text()
+          old_cache = 'js/app.js?v=20260831-match-hardening-pr363-9'
+          new_cache = 'js/app.js?v=20260831-match-hardening-pr363-10'
+          if ts.count(old_cache) != 1:
+              raise SystemExit(f'terminal cache token baseline mismatch: {ts.count(old_cache)}')
+          terminal.write_text(ts.replace(old_cache, new_cache, 1))
           PY
       - name: Targeted final hardening tests
         shell: bash
