@@ -61,8 +61,40 @@ function runState() {
     formationId: "4-3-3", fiveVFive: null, teamIdentity: { name: "Raimon" }, statistics: {}, teamLevel: 0, currentZone: legacyZone(), activeMatch: activeSpecialMatch() };
 }
 
+// Mirrors the relevant MapEngine.normalizeSpecialMatchNode behavior: move the
+// configured Special Match to the canonical layer-3/column-1 node and swap
+// route identifiers. Deliberately does NOT rewrite activeMatch.nodeId: that is
+// the caller-level identity gap this regression test protects.
+function forcedSpecialNormalizer(activeRun) {
+  const zone = activeRun?.currentZone;
+  const target = zone?.nodes?.find(node => node.layer === 3 && node.column === 1);
+  const current = zone?.nodes?.find(node => node.type === "special_match");
+  if (!target || !current || current === target) return false;
+  const currentId = current.id;
+  const targetId = target.id;
+  const displacedType = target.type;
+  target.type = "special_match";
+  target.specialMatchId = "special-1";
+  target.teamId = "special-team";
+  target.teamName = "Special Team";
+  target.matchLevel = 1;
+  target.matchFormation = "4-3-3";
+  current.type = displacedType;
+  delete current.specialMatchId;
+  delete current.teamId;
+  delete current.teamName;
+  delete current.logoUrl;
+  delete current.matchLevel;
+  delete current.matchFormation;
+  const swapId = value => value === currentId ? targetId : value === targetId ? currentId : value;
+  zone.completedNodeIds = Array.from(new Set((zone.completedNodeIds || []).map(swapId)));
+  zone.currentNodeId = swapId(zone.currentNodeId);
+  zone.pendingNodeId = swapId(zone.pendingNodeId);
+  zone.path = Array.from(new Set((zone.path || []).map(swapId)));
+  return true;
+}
+
 async function runtime() {
-  seasonDb.requiresProfileAwareRuntime = false;
   const storage = new BudgetStorage(Infinity);
   const fetch = async url => ({ ok: true, json: async () => String(url).includes("FREE_AGENTS") ? { players: [] } : { players: {} } });
   const rt = load(storage, { run: runState(), seasonDb, contextOverrides: { fetch, SpecialMatchRuntime, FiveVFive } });
@@ -73,9 +105,8 @@ async function runtime() {
   rt.context.RoguelikeRules.migrateDefeatedBossPlayerLevels = () => false;
   rt.context.SeasonRegistry.player = id => players.find(player => player.playerId === String(id));
   await new Promise(resolve => setImmediate(resolve));
-  seasonDb.requiresProfileAwareRuntime = true;
-  const canonical = rt.canonical;
-  rt.seam.setContext({ run: canonical, seasonDb });
+  rt.context.MapEngine.normalizeSpecialMatchNode = forcedSpecialNormalizer;
+  rt.seam.setContext({ run: rt.canonical, seasonDb });
   return { storage, rt };
 }
 
@@ -98,9 +129,10 @@ async function failureScenario(kind) {
   assert.equal(thrown, null, `${kind}: normalization persistence failure must be handled by fail-stop`);
   assert.equal(writes, 1, `${kind}: exactly one normalization write attempt`);
   assert.equal(JSON.stringify([...h.storage.map.entries()]), rawBefore, `${kind}: raw canonical storage unchanged`);
-  assert.deepEqual(h.rt.canonical, canonicalBefore, `${kind}: canonical run unchanged`);
-  assert.equal(h.rt.canonical.activeMatch.matchId, canonicalBefore.activeMatch.matchId);
-  assert.equal(h.rt.canonical.activeMatch.nodeId, "legacy-special");
+  assert.deepEqual(h.rt.canonical, canonicalBefore, `${kind}: stored canonical run unchanged`);
+  assert.deepEqual(h.rt.seam.getRun(), canonicalBefore, `${kind}: live runtime rolled back to canonical state`);
+  assert.equal(h.rt.seam.getRun().activeMatch.matchId, canonicalBefore.activeMatch.matchId);
+  assert.equal(h.rt.seam.getRun().activeMatch.nodeId, "legacy-special");
   assert.match(h.rt.seam.getAppMarkup(), /SALVATAGGIO NON RIUSCITO/);
 
   h.rt.context.RunState.save = realSave;
