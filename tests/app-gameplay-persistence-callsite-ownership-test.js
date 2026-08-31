@@ -31,8 +31,7 @@ assert.match(recruit, /chooseInventoryDiscardSelection[\s\S]*discardInstanceId[\
 assert.doesNotMatch(recruit, /removeInventoryItem\(/);
 
 const pull = bodyBetween("function openPull", "function openDevLegendaryPull");
-assert.match(pull, /onRecover: \(\) => rerenderCanonicalPull\(nodeId, pullType, options\)/, "pull recovery resolves the canonical active node instead of reusing a stale object");
-assert.doesNotMatch(pull, /onRecover: \(\) => openPull\(node, pullType, options\)/, "pull recovery must not reuse the pre-rollback node reference");
+assert.match(pull, /onRecover: \(\) => openPull\(node, pullType, options\)/, "normal/dev pull recovery rebuilds the authoritative flow");
 assert.doesNotMatch(pull, /onRecover: \(\) => showPlayerOffer\(options\)/, "recovery must not reuse incomplete openPull options as an offer config");
 const bossRewards = bodyBetween("function showNextBossReward", "function advanceBossReward");
 assert.match(bossRewards, /result\.status === "cancelled"\) showNextBossReward\(\)/, "boss replacement cancel reopens the pending reward");

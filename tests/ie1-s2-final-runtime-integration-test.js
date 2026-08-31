@@ -75,7 +75,7 @@ const firestoreRules = fs.readFileSync("firestore.rules", "utf8");
 assert(appSource.includes("Vittoria confermata: premi Continua per aprire la scelta giocatore."));
 assert(appSource.includes("Vittoria confermata: premi Continua per aprire le ricompense boss."));
 assert(appSource.includes('isSpecial ? "Riepilogo essenziale della partita speciale" : "Riepilogo essenziale della sfida Boss"'));
-assert(appSource.includes('match.type === "five_v_five" ? currentRun.fiveVFive?.formation : currentRun.formationId'));
+assert(appSource.includes('match.type === "five_v_five" ? run.fiveVFive?.formation : run.formationId'));
 assert(appSource.includes("ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(previewEntry"));
 assert(/const preview = global\.ProfiledSeasonRuntime\.resolveEffectivePlayerAtLevel\(previewEntry, \{ run, seasonId: run\.seasonId, database: seasonDb \}\)/.test(appSource), "role previews must resolve the preview entry through the profiled season runtime"); assert(appSource.includes("displaySeasonNumber")); assert(!appSource.includes('seasonId || "1").match(/\\d+/')); assert(appSource.includes('title: "Partite speciali"'));
 assert(!appSource.includes("SEASON 1 COMPLETATA")); assert(!appSource.includes("CAMPIONI DELLA SEASON 1"));

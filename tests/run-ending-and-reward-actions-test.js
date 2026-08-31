@@ -34,10 +34,10 @@ assert.match(app, /id="skip-offer">RINUNCIA/, 'the whole-reward refusal remains 
 
 const fiveLoss = functionSource('completeFiveMatch', 'completeBossMatch');
 const bossLoss = functionSource('completeBossMatch', 'continueAfterMatch');
-assert.match(fiveLoss, /current\.gameOver \? "Hai perso l'ultima vita\. La run è terminata\."/, 'zero-life non-boss defeat has final wording');
-assert.match(fiveLoss, /type: current\.gameOver \? "game-over" : "map"/, 'zero-life non-boss defeat routes to game over');
-assert.match(bossLoss, /resolved\.gameOver \? "Hai perso l'ultima vita\. La run è terminata\."/, 'zero-life boss defeat has final wording');
-assert.match(bossLoss, /type: run\.gameOver \? "game-over" : "map"/, 'boss runtime preserves the terminal route contract');
+for (const flow of [fiveLoss, bossLoss]) {
+  assert.match(flow, /run\.gameOver \? "Hai perso l'ultima vita\. La run è terminata\."/, 'zero-life defeat has final wording');
+  assert.match(flow, /type: run\.gameOver \? "game-over" : "map"/, 'zero lives still route to game over');
+}
 
 const gameOver = functionSource('renderGameOver', 'homeHallOfFameMarkup');
 for (const text of ['0 VITE RIMASTE', 'RUN TERMINATA', 'La squadra non può più continuare questa run.', 'NUOVA RUN', 'MENU']) {

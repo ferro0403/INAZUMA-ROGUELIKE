@@ -74,7 +74,7 @@
     if (!cabin || !screen) return;
     const state = cabin.dataset.matchState || screen.dataset.matchState || "pre-match";
     const button = cabin.querySelector("#continue-match-result");
-    if (button) button.textContent = state.startsWith("completed") && cabin.dataset.resolutionApplied === "false" ? "Riprova finalizzazione" : continueButtonText(screen, state);
+    if (button) button.textContent = continueButtonText(screen, state);
   }
 
   function openBossSimulationModal(screen) {

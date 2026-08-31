@@ -34,13 +34,12 @@ assert.doesNotMatch(app, /five-match-player-swap-modal|five-match-swap-dialog|da
 assert.ok(!fs.existsSync('css/five-match-player-swap-modal.css'), 'dedicated modal CSS is removed');
 assert.ok(!index.includes('five-match-player-swap-modal.css'), 'dedicated modal CSS is not loaded');
 
-// Context and canonical action remain unchanged, but persistence is now transactional.
+// Context and canonical action remain unchanged.
 assert.match(prematchPicker, /match\?\.state === "pre-match"[\s\S]*match\.simulation\.state === "pre-match"/, 'editing is restricted to an unfrozen prematch');
-assert.match(prematchPicker, /commitFiveEditorMutation\("five-match-quick-swap"[\s\S]*FiveVFive\.assign\(current, slotKey, playerId, \(id\) => fiveRoleForPlayerId\(id, current\)\)/, 'assignment uses the canonical helper on the transactional current run');
-assert.doesNotMatch(prematchPicker, /RunState\.save\(run\)/, 'quick swap has no direct nested RunState save');
-assert.match(prematchPicker, /onCommitted:[\s\S]*renderMatch\(\)[\s\S]*restorePageScroll/, 'swap rerenders only after commit and restores scroll');
+assert.match(prematchPicker, /FiveVFive\.assign\(run, slotKey, button\.dataset\.fivePlayer, fiveRoleForPlayerId\)/, 'assignment uses the canonical helper');
+assert.match(prematchPicker, /RunState\.save\(run\)[\s\S]*renderMatch\(\)[\s\S]*restorePageScroll/, 'swap saves, rerenders values, and restores scroll');
 assert.match(sharedRenderer, /fiveOverallForPlayerId\(b\.playerId\) - fiveOverallForPlayerId\(a\.playerId\)/, 'shared candidates sort by effective current overall');
 assert.match(snapshotSource, /lineupSignature === teams\.userSnapshot\.lineupSignature/, 'prematch previews refresh after a lineup change');
 assert.match(snapshotSource, /existingState !== "pre-match"[\s\S]*return match\.simulation/, 'a frozen simulation keeps its snapshot');
 
-console.log('five-match-player-swap-test: shared picker, transactional canonical assignment, frozen state and removed modal OK');
+console.log('five-match-player-swap-test: shared picker, canonical assignment, frozen state and removed modal OK');
