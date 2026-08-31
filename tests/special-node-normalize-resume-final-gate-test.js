@@ -103,8 +103,11 @@ async function runtime() {
   rt.context.clearTimeout = () => {};
   rt.context.RoguelikeRules.isProfileAwareRosterEntry = () => false;
   rt.context.RoguelikeRules.migrateDefeatedBossPlayerLevels = () => false;
-  rt.context.SeasonRegistry.player = id => players.find(player => player.playerId === String(id));
   await new Promise(resolve => setImmediate(resolve));
+  // resumeRun marks a run as played before normalization. That write is not
+  // under test here, so neutralize it to isolate the normalization transaction.
+  rt.context.RunState.touch = value => value;
+  rt.context.SeasonRegistry.player = id => players.find(player => player.playerId === String(id));
   rt.context.MapEngine.normalizeSpecialMatchNode = forcedSpecialNormalizer;
   rt.seam.setContext({ run: rt.canonical, seasonDb });
   return { storage, rt };
