@@ -115,8 +115,11 @@ function mapButton(nodeId) {
   // frozen match while durably restoring phase=match.
   {
     const original = frozenMatch();
+    original.state = "pre-match";
+    original.simulation.state = "pre-match";
     const h = runtime(runFor({ phase: "match", activeMatch: original }));
     h.rt.seam.renderMatch();
+    const preEditSimulation = structuredClone(h.rt.seam.getRun().activeMatch.simulation);
     h.rt.context.document.getElementById("edit-five-team").click();
     assert.equal(h.rt.canonical.phase, "five", "production edit action persists the legitimate five phase");
     assert.equal(h.rt.canonical.activeMatch.matchId, original.matchId);
@@ -133,13 +136,13 @@ function mapButton(nodeId) {
     await reopened.seam.resumeRun();
     assert.equal(reopened.canonical.phase, "five");
     assert.equal(reopened.canonical.activeMatch.matchId, original.matchId);
-    assert.equal(reopened.canonical.activeMatch.simulation.seed, original.simulation.seed);
+    assert.equal(reopened.canonical.activeMatch.simulation.seed, preEditSimulation.seed);
     assert.match(reopened.seam.getAppMarkup(), /FORMAZIONE 5V5/);
     assert.match(reopened.seam.getAppMarkup(), /TORNA ALLA PARTITA/);
     reopened.context.document.getElementById("back-five-match").click();
     assert.equal(reopened.canonical.phase, "match");
     assert.equal(reopened.canonical.activeMatch.matchId, original.matchId);
-    assert.deepEqual(reopened.canonical.activeMatch.simulation, original.simulation);
+    assert.deepEqual(reopened.canonical.activeMatch.simulation, preEditSimulation);
   }
 
   console.log("failure lock and legitimate 5v5 edit: blocked failure actions, interactive success map and stable return OK");

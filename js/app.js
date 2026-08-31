@@ -2091,7 +2091,27 @@
     await selectSeason(run?.seasonId || activeSeason?.id, { markPlayed: true });
     if (!run) return renderHome();
     if (run.phase === "finalization" || (run.finalization && run.finalization.status !== "complete")) return resumeRunFinalization();
-    if (global.MapEngine.normalizeSpecialMatchNode(run, seasonDb)) global.RunState.save(run);
+    const specialNormalizationProbe = global.RunState.clone(run);
+    if (global.MapEngine.normalizeSpecialMatchNode(specialNormalizationProbe, seasonDb)) {
+      const normalized = persistGameplayMutation({
+        label: "special-node-normalize-resume",
+        mutate: (current) => {
+          const previousSpecialNode = current.currentZone?.nodes?.find((node) => node.type === "special_match") || null;
+          const activeSpecial = current.activeMatch?.type === "special_match" ? current.activeMatch : null;
+          const activeSpecialNodeId = activeSpecial?.nodeId == null ? null : String(activeSpecial.nodeId);
+          const changed = global.MapEngine.normalizeSpecialMatchNode(current, seasonDb);
+          if (!changed) return { changed: false };
+          if (activeSpecial && previousSpecialNode && activeSpecialNodeId === String(previousSpecialNode.id)) {
+            const normalizedSpecialNode = current.currentZone?.nodes?.find((node) => node.type === "special_match"
+              && (!activeSpecial.specialMatchId || String(node.specialMatchId) === String(activeSpecial.specialMatchId)));
+            if (!normalizedSpecialNode) throw Object.assign(new Error("Normalized special match node unavailable"), { code: "special-node-normalization-mismatch" });
+            activeSpecial.nodeId = normalizedSpecialNode.id;
+          }
+          return { changed: true };
+        },
+      });
+      if (!normalized.ok) return renderMapFailureRecovery();
+    }
     const matchRecovery = recoverInterruptedMatchAccess();
     if (!matchRecovery.ok) return renderMapFailureRecovery();
     if (run.gameOver || run.phase === "gameover") return renderGameOver();
@@ -4656,6 +4676,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const simulate = document.getElementById("simulate-boss-match");
     const skip = document.getElementById("skip-match-result");
     const cont = document.getElementById("continue-match-result");
+    const editFive = document.getElementById("edit-five-team");
     const status = document.querySelector(".boss-match-result-panel p");
     const simulationModal = document.querySelector("[data-five-simulation-modal]");
     const simulationState = simulationModal?.querySelector(".five-simulation-state");
@@ -4663,6 +4684,13 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (simulate) {
       simulate.disabled = Boolean(ui.matchStartLocked) || simulating || completed;
       simulate.textContent = ui.matchStartLocked ? "Avvio..." : simulating ? "Simulazione..." : completed ? "Risultato definitivo" : "Simula partita";
+    }
+    if (editFive) {
+      const activeFiveMatch = ui.match?.type === "five_v_five" ? ui.match : null;
+      const canEditFiveMatch = activeFiveMatch?.state === "pre-match"
+        && ui.bossMatchState === "pre-match"
+        && (!activeFiveMatch.simulation || activeFiveMatch.simulation.state === "pre-match");
+      editFive.disabled = !canEditFiveMatch;
     }
     if (skip) {
       skip.hidden = !simulating;
@@ -5115,6 +5143,9 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       const activeSide = ui.fiveMatchTab === "opponent" ? "opponent" : "user";
       const resolved = ui.bossMatchState.startsWith("completed");
       const simulating = ui.bossMatchState === "simulating";
+      const canEditFiveMatch = match.state === "pre-match"
+        && ui.bossMatchState === "pre-match"
+        && (!match.simulation || match.simulation.state === "pre-match");
       app.innerHTML = `
         <main class="screen five-match-screen" data-match-state="${escapeHtml(ui.bossMatchState)}">
           ${topbar("Partita 5v5", "", "match")}
@@ -5157,7 +5188,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
                 <span class="five-match-action-copy"><strong>Simula partita</strong><small>Avvia la simulazione</small></span>
                 <span class="five-match-action-mark" aria-hidden="true">›</span>
               </button>
-              <button type="button" class="btn five-match-action-cta five-match-action-cta--secondary" id="edit-five-team" ${resolved ? "disabled" : ""}>
+              <button type="button" class="btn five-match-action-cta five-match-action-cta--secondary" id="edit-five-team" ${canEditFiveMatch ? "" : "disabled"}>
                 <span class="five-match-action-icon" aria-hidden="true"><i class="five-match-tactics-icon">×</i></span>
                 <span class="five-match-action-copy"><strong>Modifica squadra</strong><small>Gestisci titolari</small></span>
                 <span class="five-match-action-mark" aria-hidden="true">›</span>
@@ -5233,7 +5264,31 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         button.setAttribute("aria-expanded", expanded ? "false" : "true");
         if (content) content.hidden = expanded;
       });
-      document.getElementById("edit-five-team").addEventListener("click", () => { ui.returnToMatchContext = { type: match.type, nodeId: match.nodeId, scroll: scrollSnapshot() }; match.returnScroll = ui.returnToMatchContext.scroll; persistMatchState(); renderFiveVFive({ returnToMatch: true }); });
+      document.getElementById("edit-five-team").addEventListener("click", (event) => {
+        event.preventDefault();
+        const button = event.currentTarget;
+        if (button.disabled) return;
+        const activeMatch = run?.activeMatch;
+        const editable = activeMatch?.type === "five_v_five"
+          && activeMatch.state === "pre-match"
+          && ui.bossMatchState === "pre-match"
+          && (!activeMatch.simulation || activeMatch.simulation.state === "pre-match");
+        if (!editable) { button.disabled = true; return; }
+        button.disabled = true;
+        const capturedScroll = scrollSnapshot();
+        const identity = matchTransactionIdentity(activeMatch);
+        const committed = commitMatchMutation("five-match-edit-entry", identity, (currentMatch, current) => {
+          if (currentMatch.state !== "pre-match" || (currentMatch.simulation && currentMatch.simulation.state !== "pre-match")) {
+            throw Object.assign(new Error("5v5 match is no longer editable"), { code: "five-match-edit-locked" });
+          }
+          currentMatch.returnScroll = capturedScroll;
+          current.phase = "five";
+          return { type: currentMatch.type, nodeId: currentMatch.nodeId, scroll: capturedScroll };
+        });
+        if (!committed.ok) return renderMapFailureRecovery();
+        ui.returnToMatchContext = committed.value;
+        return renderFiveVFive({ persist: false, returnToMatch: true });
+      });
       document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("victory"); });
       document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("defeat"); });
       document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); startMatchSimulation(match); });
