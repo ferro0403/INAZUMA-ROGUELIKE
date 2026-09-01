@@ -27,7 +27,7 @@
     }
     function commit(label, mutate, options = {}) {
       const active = getRun()?.activeMatch;
-      const expectedIdentity = active?.type === "five_v_five" ? matchIdentity(active) : null;
+      const expectedIdentity = options.guardActiveFiveMatch !== false && active?.type === "five_v_five" ? matchIdentity(active) : null;
       return persistMutation({ label, mutate: (current) => { if (expectedIdentity) canonicalMatch(current, expectedIdentity); return mutate(current); }, onCommitted: options.onCommitted, rerender: options.rerender || ((result) => { if (!result.ok) onPersistenceFailure?.(); }) });
     }
     return { ensure, status, optimizeForNewPlayer, commit };

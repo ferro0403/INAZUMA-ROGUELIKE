@@ -86,6 +86,7 @@
       controller.ensure(current);
       current.phase = "five";
     }, {
+      guardActiveFiveMatch: returnToMatch,
       onCommitted: () => renderFiveVFive({ persist: false, returnToMatch }),
       rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
     });

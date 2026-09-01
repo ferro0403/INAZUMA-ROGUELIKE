@@ -1,8 +1,7 @@
 (function (global) {
   "use strict";
   function create(deps) {
-    const { getRun, getUi, controller, seasonFormations, formationById, effectiveRosterRole, rosterEntry, sourcePlayer, resolvedRosterPlayer, compactPlayerCardMarkup, escapeHtml, tacticSummary, tacticLabels: TACTIC_LABELS, formationLayout, openModal, closeModal, modalRoot, scrollSnapshot, toast, runKeepingScroll, app, topbar, bottomNav, resetRenderedViewScroll, bindSectionRootNav, bindBottomNav, showPlayerDetails, resumePostBossFlowOrMap, profiledSeasonRuntime, persistGameplayMutation, fiveVFive, cssEscape } = deps;
-    const seasonDb = { formations: { eleven: seasonFormations() } };
+    const { getRun, getUi, controller, getSeasonDb, seasonFormations, formationById, effectiveRosterRole, rosterEntry, sourcePlayer, resolvedRosterPlayer, compactPlayerCardMarkup, escapeHtml, tacticSummary, tacticLabels: TACTIC_LABELS, formationLayout, openModal, closeModal, modalRoot, scrollSnapshot, toast, runKeepingScroll, app, topbar, bottomNav, resetRenderedViewScroll, bindSectionRootNav, bindBottomNav, showPlayerDetails, resumePostBossFlowOrMap, profiledSeasonRuntime, persistGameplayMutation, fiveVFive, cssEscape } = deps;
     const document = global.document;
   function lineupRows() {
     const formation = formationById(getRun().formationId) || formationById("4-3-3");
@@ -79,7 +78,7 @@
   }
 
   function squadFormationOptionsMarkup() {
-    return seasonDb.formations.eleven.map((item) => {
+    return seasonFormations().map((item) => {
       const active = item.id === getRun().formationId;
       const available = controller.canUseFormation(item);
       const tactic = tacticSummary(item.id);
@@ -200,7 +199,7 @@
     const playerId = getUi().selectedSquadPlayerId;
     if (!profiledSeasonRuntime.canSwitchRole(getRun(), playerId)) return toast("SPOSTA IL GIOCATORE IN PANCHINA PER CAMBIARE RUOLO");
     const entry = rosterEntry(playerId); const profile = profiledSeasonRuntime.resolveOwnedPlayerProfile(entry, getRun().seasonId);
-    openModal(`<div class="modal-head role-switch-head"><div><p class="eyebrow">Panchina · ${escapeHtml(profile.name)}</p><h2>CAMBIA RUOLO</h2><p class="muted">Ruolo attuale: ${escapeHtml(resolvedRosterPlayer(playerId)?.position || "-")}</p></div></div><div class="role-switch-options">${profile.roleVariants.map((variant) => { const variantId = variant.roleVariantId || variant.variantId; const active = String(variantId) === String(entry.activeRoleVariantId); const previewEntry = { ...entry, activeRoleVariantId: variantId }; const preview = profiledSeasonRuntime.resolveEffectivePlayerAtLevel(previewEntry, { run: getRun(), seasonId: getRun().seasonId, database: seasonDb }); return `<button type="button" class="role-switch-option ${active ? "active" : ""}" data-role-variant="${escapeHtml(variantId)}" ${active ? "disabled" : ""}><strong>${escapeHtml(variant.position || variant.normalizedRole)}</strong><span>OVR ${escapeHtml(preview.overall || preview.finalOverall)}</span><small>${active ? "ATTIVO" : "SELEZIONA"}</small></button>`; }).join("")}</div>`, { closeable: true, className: "role-switch-modal" });
+    openModal(`<div class="modal-head role-switch-head"><div><p class="eyebrow">Panchina · ${escapeHtml(profile.name)}</p><h2>CAMBIA RUOLO</h2><p class="muted">Ruolo attuale: ${escapeHtml(resolvedRosterPlayer(playerId)?.position || "-")}</p></div></div><div class="role-switch-options">${profile.roleVariants.map((variant) => { const variantId = variant.roleVariantId || variant.variantId; const active = String(variantId) === String(entry.activeRoleVariantId); const previewEntry = { ...entry, activeRoleVariantId: variantId }; const preview = profiledSeasonRuntime.resolveEffectivePlayerAtLevel(previewEntry, { run: getRun(), seasonId: getRun().seasonId, database: getSeasonDb() }); return `<button type="button" class="role-switch-option ${active ? "active" : ""}" data-role-variant="${escapeHtml(variantId)}" ${active ? "disabled" : ""}><strong>${escapeHtml(variant.position || variant.normalizedRole)}</strong><span>OVR ${escapeHtml(preview.overall || preview.finalOverall)}</span><small>${active ? "ATTIVO" : "SELEZIONA"}</small></button>`; }).join("")}</div>`, { closeable: true, className: "role-switch-modal" });
     modalRoot.querySelectorAll("[data-role-variant]").forEach((button) => button.addEventListener("click", () => persistGameplayMutation({ label: "bench-role", mutate: (current) => { profiledSeasonRuntime.switchBenchRole(current, playerId, button.dataset.roleVariant); fiveVFive?.removeUnavailable?.(current); }, onCommitted: () => { closeModal(); toast("Ruolo aggiornato"); renderSquad(); }, rerender: ({ ok }) => { if (!ok) renderSquad(); } })));
   }
 
@@ -269,7 +268,7 @@
     });
   }
 
-    return { render: renderSquad, tacticalPlayer: tacticalMiniPlayer, pitchMarkup: squadPitchMarkup, benchMarkup, miniPlayer, openFormationSelector: openSquadFormationSelector, setSelectedPlayer: setSelectedSquadPlayer };
+    return { render: renderSquad, tacticalPlayer: tacticalMiniPlayer, pitchMarkup: squadPitchMarkup, benchMarkup, miniPlayer, openFormationSelector: openSquadFormationSelector, setSelectedPlayer: setSelectedSquadPlayer, ...(global.__INAZUMA_TEST_MODE__ === true ? { openRoleSwitch: openBenchRoleSwitch } : {}) };
   }
   global.SquadViewRuntime = { create };
 })(globalThis);

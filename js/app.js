@@ -2287,7 +2287,7 @@
     resolveSource: sourcePlayer, persistMutation: persistGameplayMutation, rosterInvariants: global.RosterInvariants,
   });
   const squadView = global.SquadViewRuntime.create({
-    getRun: () => run, getUi: () => ui, controller: squadController,
+    getRun: () => run, getUi: () => ui, controller: squadController, getSeasonDb: () => seasonDb,
     seasonFormations: () => seasonDb?.formations?.eleven || [], formationById,
     effectiveRosterRole, rosterEntry, sourcePlayer, resolvedRosterPlayer, compactPlayerCardMarkup,
     escapeHtml, tacticSummary, tacticLabels: { attack: "Attacco", control: "Controllo", defense: "Difesa", save: "Parata", speed: "Velocità", physical: "Fisico", stamina: "Resistenza" }, formationLayout: global.FormationLayout,
