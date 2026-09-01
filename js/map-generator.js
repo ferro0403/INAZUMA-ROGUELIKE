@@ -1,0 +1,239 @@
+(function (global) {
+  "use strict";
+
+  function weightedChoice(entries, random) {
+    const total = entries.reduce((sum, entry) => sum + entry.weight, 0);
+    let cursor = random() * total;
+    for (const entry of entries) {
+      cursor -= entry.weight;
+      if (cursor <= 0) return entry.type;
+    }
+    return entries[entries.length - 1].type;
+  }
+
+  function currentStage(run) {
+    return Number(run?.bossIndex || 0) + 1;
+  }
+
+  function effectiveNodeWeightStage(run) {
+    const stage = currentStage(run);
+    if (run?.seasonId !== "ie1_s3") return stage;
+    const bossId = global.SeasonRegistry?.database?.(run.seasonId)?.bossOrder?.[run.bossIndex]?.teamId;
+    if (bossId === "team_ogre") return 10;
+    if (bossId === "inazuma_national") return 11;
+    return stage;
+  }
+
+  function nodeWeightsForStage(run) {
+    const config = global.SEASON1_CONFIG;
+    const stage = effectiveNodeWeightStage(run);
+    const tier = (config.stageNodeWeightTiers || []).find(
+      (entry) => stage >= entry.minStage && stage <= entry.maxStage
+    );
+    return {
+      ...config.nodeWeights,
+      ...(tier
+        ? Object.fromEntries(
+            ["pull_free_agents", "pull_unlocked_teams", "pull_legendary"]
+              .filter((type) => Number.isFinite(Number(tier[type])))
+              .map((type) => [type, Number(tier[type])])
+          )
+        : {}),
+    };
+  }
+
+  function availableTypes(run, options = {}) {
+    const config = global.SEASON1_CONFIG;
+    return Object.entries(nodeWeightsForStage(run))
+      .filter(([type, weight]) => {
+        if (weight <= 0 || config.disabledNodeTypes.includes(type)) return false;
+        if (options.excludeRandom && type === "random") return false;
+        if (type === "pull_unlocked_teams" && run.unlockedTeamIds.length === 0) return false;
+        if (type === "pull_legendary" && run.bossIndex < config.legendaryUnlockBossIndex) return false;
+        return true;
+      })
+      .map(([type, weight]) => ({ type, weight }));
+  }
+
+  function resolveRandomNodeType(run, node) {
+    if (node.revealedType) return node.revealedType;
+    const configuredWeights = global.SEASON1_CONFIG.hiddenNodeWeights;
+    let choices = availableTypes(run, { excludeRandom: true }).map((entry) => ({
+      type: entry.type,
+      weight: Number(configuredWeights[entry.type] || entry.weight),
+    }));
+    const lastType = (run.randomEventHistory || []).at(-1);
+    if (choices.length > 1 && lastType) {
+      choices = choices.filter((entry) => entry.type !== lastType);
+    }
+    const random = global.DraftEngine.randomFromSeed(
+      `${run.currentZone.seed}:${node.id}:hidden-event`
+    );
+    node.revealedType = weightedChoice(choices, random);
+    run.randomEventHistory = [...(run.randomEventHistory || []), node.revealedType].slice(-3);
+    return node.revealedType;
+  }
+
+  function connectLayers(previous, next, random, edges) {
+    previous.forEach((source, sourceIndex) => {
+      const targetIndex = Math.min(
+        next.length - 1,
+        Math.round((sourceIndex / Math.max(1, previous.length - 1)) * (next.length - 1))
+      );
+      edges.push([source.id, next[targetIndex].id]);
+      if (next.length > 1 && random() < 0.58) {
+        const alternate = targetIndex + (random() < 0.5 ? -1 : 1);
+        if (alternate >= 0 && alternate < next.length) edges.push([source.id, next[alternate].id]);
+      }
+    });
+
+    next.forEach((target) => {
+      if (!edges.some((edge) => edge[1] === target.id)) {
+        const source = previous[Math.floor(random() * previous.length)];
+        edges.push([source.id, target.id]);
+      }
+    });
+  }
+
+  function generate(run, boss) {
+    const config = global.SEASON1_CONFIG;
+    const seed = `${run.runId}:zone:${run.bossIndex}:${boss.teamId}`;
+    const random = global.DraftEngine.randomFromSeed(seed);
+    const types = availableTypes(run);
+    const layers = [];
+    const nodes = [];
+    const edges = [];
+
+    const start = { id: `zone_${run.bossIndex}_start`, type: "start", layer: 0, column: 0 };
+    nodes.push(start);
+    layers.push([start]);
+
+    config.nodeCounts.forEach((count, layerIndex) => {
+      const layer = Array.from({ length: count }, (_, column) => ({
+        id: `zone_${run.bossIndex}_l${layerIndex + 1}_n${column}`,
+        type: weightedChoice(types, random),
+        layer: layerIndex + 1,
+        column,
+      }));
+      nodes.push(...layer);
+      layers.push(layer);
+      connectLayers(layers[layers.length - 2], layer, random, edges);
+    });
+
+    const special = global.SeasonRegistry?.database?.(run.seasonId)?.specialMatches?.find(
+      (match) => Number(match.zoneIndex) === Number(run.bossIndex) + 1
+    );
+    if (special && layers.length > 3) {
+      const target = nodes.find((node) => node.layer === 3 && node.column === 1);
+      Object.assign(target, {
+        type: "special_match",
+        specialMatchId: special.specialMatchId,
+        teamId: special.teamId,
+        teamName: special.teamName,
+        logoUrl: special.logoUrl,
+        matchLevel: special.matchLevel,
+        matchFormation: special.matchFormation,
+      });
+    }
+
+    const bossNode = {
+      id: `zone_${run.bossIndex}_boss`,
+      type: "boss",
+      layer: layers.length,
+      column: 0,
+      bossId: boss.teamId,
+    };
+    nodes.push(bossNode);
+    connectLayers(layers[layers.length - 1], [bossNode], random, edges);
+    layers.push([bossNode]);
+
+    return {
+      bossIndex: run.bossIndex,
+      bossId: boss.teamId,
+      seed,
+      nodes,
+      edges,
+      startNodeId: start.id,
+      currentNodeId: start.id,
+      completedNodeIds: [start.id],
+      path: [start.id],
+      pendingNodeId: null,
+    };
+  }
+
+  const SPECIAL_NODE_FIELDS = ["specialMatchId", "teamId", "teamName", "logoUrl", "matchLevel", "matchFormation"];
+
+  function normalizeSpecialMatchNode(run, database = global.SeasonRegistry?.database?.(run?.seasonId)) {
+    const zone = run?.currentZone;
+    if (!database?.requiresProfileAwareRuntime || !zone?.nodes?.length) return false;
+    const special = database?.specialMatches?.find((match) => Number(match.zoneIndex) === Number(zone.bossIndex) + 1);
+    if (!special) return false;
+    const target = zone.nodes.find((node) => node.layer === 3 && node.column === 1);
+    const current = zone.nodes.find((node) => node.type === "special_match");
+    if (!target || current === target) return false;
+    const displaced = { type: target.type };
+    SPECIAL_NODE_FIELDS.forEach((key) => { if (target[key] !== undefined) displaced[key] = target[key]; });
+    target.type = "special_match";
+    SPECIAL_NODE_FIELDS.forEach((key) => { target[key] = special[key]; });
+    if (current) {
+      const currentId = current.id;
+      const targetId = target.id;
+      current.type = displaced.type;
+      SPECIAL_NODE_FIELDS.forEach((key) => { if (key in displaced) current[key] = displaced[key]; else delete current[key]; });
+      const swapId = (value) => value === currentId ? targetId : value === targetId ? currentId : value;
+      zone.completedNodeIds = Array.from(new Set((zone.completedNodeIds || []).map(swapId)));
+      zone.currentNodeId = swapId(zone.currentNodeId);
+      zone.pendingNodeId = swapId(zone.pendingNodeId);
+      zone.path = Array.from(new Set((zone.path || []).map(swapId)));
+    }
+    return true;
+  }
+
+  function ensureCurrentZone(run, database) {
+    const completedBossIds = new Set((run?.completedBossIds || []).map(String));
+    const indexedBossId = String(database?.bossOrder?.[run?.bossIndex]?.teamId || "");
+    if (run?.seasonId === "ie1_s3" || completedBossIds.has(indexedBossId)) {
+      const firstIncompleteBoss = database?.bossOrder?.findIndex((boss) => !completedBossIds.has(String(boss.teamId))) ?? -1;
+      if (firstIncompleteBoss >= 0) run.bossIndex = firstIncompleteBoss;
+    }
+    const boss = database?.bossOrder?.[run.bossIndex];
+    if (!boss) return { changed: false, generated: false, boss: null };
+    if (run.currentZone && Number(run.currentZone.bossIndex) === Number(run.bossIndex)
+      && String(run.currentZone.bossId || "") === String(boss.teamId)) {
+      return { changed: normalizeSpecialMatchNode(run, database), generated: false, boss };
+    }
+    run.currentZone = generate(run, boss);
+    return { changed: true, generated: true, boss };
+  }
+
+  function reachableNodeIds(zone) {
+    return zone.edges
+      .filter((edge) => edge[0] === zone.currentNodeId)
+      .map((edge) => edge[1]);
+  }
+
+  function selectNode(zone, nodeId) {
+    if (!reachableNodeIds(zone).includes(nodeId)) throw new Error("Node is not reachable");
+    zone.pendingNodeId = nodeId;
+    return zone.nodes.find((node) => node.id === nodeId);
+  }
+
+  function completeNode(zone, nodeId) {
+    if (!zone.completedNodeIds.includes(nodeId)) zone.completedNodeIds.push(nodeId);
+    zone.currentNodeId = nodeId;
+    zone.pendingNodeId = null;
+    zone.path.push(nodeId);
+  }
+
+  global.MapEngine = {
+    generate,
+    ensureCurrentZone,
+    effectiveNodeWeightStage,
+    nodeWeightsForStage,
+    reachableNodeIds,
+    selectNode,
+    completeNode,
+    resolveRandomNodeType,
+    normalizeSpecialMatchNode,
+  };
+})(globalThis);

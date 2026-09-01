@@ -1,0 +1,212 @@
+/* 5v5 formation editor: contextual player picker.
+   The existing .five-selector is moved over the pitch by JS so the page no longer
+   grows below SALVA FORMAZIONE. Keep this file scoped to .five-screen. */
+
+.five-screen.five-floating-picker-enabled .five-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+/* Hide the legacy in-flow selector before the bridge moves it into the field. */
+.five-screen.five-floating-picker-enabled .five-layout > .five-selector {
+  display: none !important;
+}
+
+.five-screen.five-floating-picker-enabled .five-field-panel {
+  position: relative;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating {
+  position: absolute !important;
+  z-index: 28;
+  top: 62px;
+  left: 14px;
+  width: min(420px, calc(100% - 28px));
+  max-height: min(520px, calc(100% - 82px));
+  margin: 0;
+  padding: 16px;
+  display: none !important;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 11px;
+  overflow: visible;
+  border: 3px solid #111216;
+  border-radius: 0;
+  background: #fffdf6;
+  color: #111216;
+  box-shadow: 8px 9px 0 rgba(17, 18, 22, .22);
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating.is-open {
+  display: grid !important;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 84px;
+  right: -19px;
+  width: 0;
+  height: 0;
+  border-top: 16px solid transparent;
+  border-bottom: 16px solid transparent;
+  border-left: 19px solid #111216;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating::before {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  top: 88px;
+  right: -13px;
+  width: 0;
+  height: 0;
+  border-top: 12px solid transparent;
+  border-bottom: 12px solid transparent;
+  border-left: 14px solid #fffdf6;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact {
+  margin: 0;
+  padding: 0 52px 10px 0;
+  border-bottom: 2px solid #111216;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact .eyebrow {
+  color: #8f6b06;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact h3 {
+  margin: 2px 0 2px;
+  color: #111216;
+  font-size: clamp(1rem, 4vw, 1.28rem);
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact .muted {
+  margin: 0;
+  color: #68645c;
+}
+
+.five-floating-picker-close {
+  position: absolute;
+  z-index: 4;
+  top: -13px;
+  right: -13px;
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: 3px solid #111216;
+  border-radius: 50%;
+  background: #ffd21f;
+  color: #111216;
+  box-shadow: 3px 4px 0 rgba(17, 18, 22, .18);
+  font-size: 1.75rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.five-floating-picker-close:active {
+  transform: translate(1px, 1px);
+  box-shadow: 1px 2px 0 rgba(17, 18, 22, .18);
+}
+
+/* The slot already determines compatibility: these legacy controls are redundant
+   in the contextual picker and removal is intentionally not exposed here. */
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .role-filter-bar,
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating #clear-five-slot {
+  display: none !important;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-list {
+  min-height: 0;
+  max-height: min(360px, 46vh);
+  padding: 1px 4px 4px 1px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-card {
+  min-height: 76px;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-card.current-starter {
+  border-color: #111216;
+  background: #fff3b5;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-card.current-starter:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+:is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-card.current-starter .five-roster-state {
+  background: #111216;
+  color: #fffdf6;
+}
+
+@media (max-width: 780px) {
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating {
+    top: 56px;
+    left: 10px;
+    width: calc(100% - 30px);
+    max-height: min(440px, calc(100% - 72px));
+    padding: 12px;
+    border-width: 2px;
+    box-shadow: 5px 6px 0 rgba(17, 18, 22, .2);
+  }
+
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating::after {
+    top: 76px;
+    right: -16px;
+    border-top-width: 13px;
+    border-bottom-width: 13px;
+    border-left-width: 16px;
+  }
+
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating::before {
+    top: 79px;
+    right: -11px;
+    border-top-width: 10px;
+    border-bottom-width: 10px;
+    border-left-width: 12px;
+  }
+
+  .five-floating-picker-close {
+    top: -12px;
+    right: -11px;
+    width: 43px;
+    height: 43px;
+    border-width: 2px;
+    font-size: 1.55rem;
+  }
+
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact {
+    padding-right: 42px;
+  }
+
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .section-head.compact .muted {
+    font-size: .62rem;
+  }
+
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-list {
+    grid-template-columns: 1fr;
+    max-height: min(300px, 38vh);
+  }
+}
+
+@media (max-width: 390px) {
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating {
+    top: 52px;
+    left: 8px;
+    width: calc(100% - 25px);
+    padding: 10px;
+  }
+
+  :is(.five-screen, .five-match-screen) .five-selector.five-selector-floating .five-roster-list {
+    max-height: min(280px, 36vh);
+  }
+}

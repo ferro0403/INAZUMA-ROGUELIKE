@@ -1,0 +1,115 @@
+/* Compact inventory — ivory, black and Inazuma yellow. */
+html,
+body,
+#app.app-shell { min-height: 100%; background-color: #d7e0d3; overscroll-behavior-y: none; }
+body:has(.inventory-v2-screen),
+#app.app-shell:has(.inventory-v2-screen) {
+  min-height: 100dvh;
+  background: linear-gradient(rgba(255,253,246,.38),rgba(255,250,232,.5)), url("../assets/home/inazuma-stadium-desktop-light.jpeg") center / cover fixed no-repeat;
+}
+.inventory-v2-screen { min-height: 100dvh; background: transparent; }
+.inventory-v2-content { width: min(100% - 24px, 1080px); display: grid; gap: 12px; padding-top: 18px; padding-bottom: 110px; }
+.inventory-v2-heading { display: flex; align-items: baseline; gap: 10px; padding: 3px 2px; color: #111216; }
+.inventory-v2-heading h2 { margin: 0; font-size: clamp(1.35rem, 4vw, 2rem); }
+.inventory-v2-heading strong { font-size: .9rem; }
+.inventory-tabs { display: grid; grid-template-columns: 1fr 1fr; }
+.inventory-tab { min-height: 44px; border: 2px solid #111216; background: #fffaf0; color: #111216; font-weight: 950; letter-spacing: .04em; }
+.inventory-tab + .inventory-tab { border-left: 0; }
+.inventory-tab.active { background: #ffd21f; box-shadow: inset 0 -4px #111216; }
+.inventory-tab:focus-visible, .inventory-item-card:focus-visible, .inventory-v2-screen .btn:focus-visible { outline: 3px solid #2369d8; outline-offset: 2px; }
+.inventory-tab-panel { min-height: 180px; }
+.inventory-v2-list { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.inventory-v2-screen .inventory-item-card { position: relative; display: flex; flex-direction: column; gap: 7px; min-width: 0; min-height: 190px; padding: 10px; overflow: hidden; border: 2px solid #111216; border-radius: 2px; clip-path: polygon(0 0,100% 0,100% calc(100% - 10px),calc(100% - 10px) 100%,0 100%); background: #fffaf0; color: #111216; box-shadow: 4px 4px 0 rgba(17,18,22,.75); cursor: pointer; }
+.inventory-v2-screen .inventory-item-card::after { display: none; }
+.inventory-v2-screen .item-card-visual { position: relative; display: grid; place-items: center; align-self: flex-start; flex: 0 0 76px; width: 76px; height: 76px; min-width: 76px; padding: 5px; border: 2px solid #111216; background: #f4f1e8; box-shadow: 3px 3px 0 rgba(17,18,22,.16); }
+.inventory-v2-screen .inventory-item-card .item-icon { width: 64px; height: 64px; border: 0; background: transparent; object-fit: contain; }
+.inventory-v2-screen .item-card-main { min-width: 0; }
+.inventory-v2-screen .item-card-main strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; color: #111216; font-size: .9rem; line-height: 1.12; overflow-wrap: anywhere; }
+.inventory-v2-screen .item-card-main p { margin: 4px 0 0; overflow: hidden; color: #3b3b38; font-size: .72rem; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.inventory-v2-screen .item-kind { display: block; margin-bottom: 3px; color: #27814b; font-size: .57rem; font-weight: 950; letter-spacing: .08em; text-transform: uppercase; }
+.inventory-v2-screen [data-item-category="equipment"] .item-kind { color: #792b87; }
+.inventory-v2-screen [data-item-category="special"] .item-kind { color: #216db5; }
+.inventory-v2-screen .item-card-actions { display: flex; align-items: stretch; width: 100%; min-width: 0; min-height: 36px; margin-top: auto; }
+.inventory-v2-screen .item-quantity { position: absolute; top: -2px; right: -2px; z-index: 2; min-width: 28px; min-height: 22px; display: grid; place-items: center; padding: 1px 5px; border: 2px solid #111216; border-radius: 0; background: #ffd21f; color: #111216; font-size: .68rem; font-weight: 950; }
+.inventory-v2-screen .inventory-card-action { flex: 1; min-height: 36px; padding: 6px 8px; border: 2px solid #111216; border-radius: 1px; background: #111216; color: #fffaf0; box-shadow: none; font-size: .68rem; }
+.inventory-v2-screen .inventory-unavailable { display: flex; align-items: center; justify-content: center; width: 100%; min-width: 0; min-height: 36px; padding: 5px 6px; border: 1px solid #8b877d; background: #ece8de; color: #4a4842; font-size: .61rem; font-weight: 850; line-height: 1.15; text-align: center; overflow-wrap: anywhere; }
+.inventory-v2-screen [data-item-id="scout_token"] .inventory-unavailable,
+.inventory-v2-screen [data-item-id="lucky_charm"] .inventory-unavailable { font-size: 0; }
+.inventory-v2-screen [data-item-id="scout_token"] .inventory-unavailable::before { content: "Rigenera Pull"; font-size: .61rem; }
+.inventory-v2-screen [data-item-id="lucky_charm"] .inventory-unavailable::before { content: "Migliora Pull"; font-size: .61rem; }
+.inventory-empty-state { padding: 18px; border: 2px solid #111216; border-radius: 2px; background: #fffaf0; color: #333; }
+.inventory-equipped-list { grid-template-columns: 1fr; }
+.inventory-equipped-row { display: grid; grid-template-columns: 52px minmax(150px,1fr) minmax(175px,1fr) auto; align-items: center; gap: 10px; min-height: 76px; padding: 9px 10px; border: 2px solid #111216; background: #fffaf0; color: #111216; box-shadow: 4px 4px 0 rgba(17,18,22,.7); }
+.inventory-equipped-row > .item-icon { width: 50px; height: 50px; border: 0; background: transparent; }
+.inventory-equipped-item { display: grid; gap: 2px; min-width: 0; }
+.inventory-equipped-item p { margin: 0; color: #3b3b38; font-size: .72rem; }
+.inventory-equipped-row .equipped-player { display: flex; align-items: center; gap: 8px; color: #111216; }
+.inventory-equipped-row .equipped-player-copy { display: grid; min-width: 0; }
+.inventory-equipped-row .equipped-player-copy strong { overflow-wrap: anywhere; font-size: .78rem; }
+.inventory-equipped-row .equipped-player-copy small { color: #4b4b47; font-size: .66rem; }
+.inventory-equipped-row .equipped-player-portrait { flex: 0 0 42px; width: 42px; height: 42px; border: 2px solid #111216; border-radius: 2px; background: #e9e3d7; overflow: hidden; }
+.inventory-equipped-row .equipped-player-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.inventory-v2-screen .inventory-remove-button { min-height: 36px; padding: 6px 9px; border: 2px solid #111216; border-radius: 1px; background: #fffaf0; color: #111216; box-shadow: none; font-size: .65rem; }
+.modal-backdrop:has(.inventory-detail-modal), .modal-backdrop:has(.inventory-flow-modal) { background: rgba(17,18,22,.76); backdrop-filter: none; }
+.inventory-detail-modal { width: min(480px, 100%); border: 3px solid #111216; border-radius: 3px; background: #fffaf0; color: #111216; box-shadow: 8px 8px 0 #111216; }
+.inventory-detail-modal .modal-close { position: sticky; top: 0; float: right; z-index: 2; width: 42px; height: 42px; border: 2px solid #111216; background: #ffd21f; color: #111216; }
+.inventory-detail-modal-content { clear: both; }
+.inventory-detail-modal .inventory-detail-visual { display: grid; place-items: center; }
+.inventory-detail-modal .inventory-detail-visual .item-icon { width: 88px; height: 88px; border: 0; background: transparent; }
+.inventory-detail-modal .inventory-detail-copy { color: #111216; }
+.inventory-detail-modal .inventory-detail-copy > p { color: #3b3b38; }
+.inventory-detail-modal .inventory-detail-effect, .inventory-detail-modal .inventory-detail-counts span { border: 2px solid #111216; background: #fff; color: #111216; }
+.inventory-flow-modal { border-radius: 2px; background: #fffaf0; }
+.inventory-flow-head { gap: 10px; margin-bottom: 9px; padding-bottom: 9px; }
+.inventory-flow-head .item-icon { width: 52px; height: 52px; }
+.inventory-flow-head h2 { font-size: 1.2rem; }
+.inventory-flow-head .eyebrow { margin-bottom: 2px; }
+.inventory-equipment-instruction { margin-bottom: 9px; }
+.inventory-equipment-selection-summary { min-height: 0; gap: 7px; padding: 9px; border-width: 2px; box-shadow: 3px 3px 0 rgba(17,18,22,.2); }
+.inventory-equipment-selection-player .equipped-player-portrait { flex: 0 0 40px; width: 40px; height: 40px; overflow: hidden; }
+.inventory-equipment-selection-player .equipped-player-portrait img { width: 100%; height: 100%; object-fit: cover; }
+.inventory-stat-preview { display: flex; justify-content: space-between; gap: 8px; padding: 7px 9px; border: 2px solid #111216; border-left: 6px solid #ffd21f; background: #fff; color: #111216; font-size: .72rem; }
+.inventory-equipment-current { padding-top: 6px; }
+.inventory-equipment-current .item-icon { flex-basis: 32px; width: 32px; height: 32px; }
+.inventory-equipment-current span { display: none; }
+.inventory-modal-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 8px; padding-top: 8px; }
+.inventory-equipment-sidebar .inventory-modal-actions { position: static; bottom: auto; background: transparent; }
+.inventory-flow-modal .inventory-modal-actions .btn { min-height: 40px; padding: 7px 9px; }
+.inventory-replacement-confirmation { width: min(100%, 390px); margin: auto; color: #111216; }
+.inventory-replacement-confirmation h2 { margin: 2px 0 10px; font-size: 1.45rem; line-height: .95; text-align: center; }
+.inventory-replacement-confirmation > .eyebrow { margin-bottom: 3px; text-align: center; }
+.inventory-equipment-replacement { padding: 8px; }
+.inventory-equipment-replacement .item-icon { flex: 0 0 44px; width: 44px; height: 44px; }
+.inventory-replacement-arrow { line-height: 1; text-align: center; color: #111216; font-size: 1.25rem; font-weight: 950; }
+.inventory-replacement-player { display: flex; align-items: center; gap: 9px; padding: 8px; border: 2px solid #111216; background: #fff; }
+.inventory-replacement-player .equipped-player-portrait { flex: 0 0 42px; width: 42px; height: 42px; overflow: hidden; }
+.inventory-replacement-player img { width: 100%; height: 100%; object-fit: cover; }
+.inventory-replacement-player > div { display: grid; gap: 1px; }
+@media (max-width: 700px) {
+  body:has(.inventory-v2-screen), #app.app-shell:has(.inventory-v2-screen) { background-image: linear-gradient(rgba(255,253,246,.38),rgba(255,250,232,.5)), url("../assets/home/inazuma-stadium-mobile-light.jpeg"); }
+  .inventory-v2-content { width: calc(100% - 16px); padding-top: 12px; }
+  .inventory-v2-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+  .inventory-v2-screen .inventory-item-card { gap: 6px; min-height: 184px; padding: 8px; }
+  .inventory-v2-screen .item-card-visual { flex-basis: 68px; width: 68px; height: 68px; min-width: 68px; padding: 4px; }
+  .inventory-v2-screen .inventory-item-card .item-icon { width: 56px; height: 56px; }
+  .inventory-v2-screen .inventory-card-action { width: 100%; }
+  .inventory-equipped-list { grid-template-columns: 1fr; }
+  .inventory-equipped-row { grid-template-columns: 42px minmax(0,1fr) auto; gap: 7px; min-height: 96px; padding: 8px; }
+  .inventory-equipped-row > .item-icon { width: 40px; height: 40px; }
+  .inventory-equipped-row .equipped-player { grid-column: 1 / 3; padding-top: 6px; border-top: 1px solid #bbb5a8; }
+  .inventory-equipped-row .inventory-remove-button { grid-column: 3; grid-row: 2; }
+  .inventory-detail-modal { max-height: calc(100dvh - 20px); padding: 12px; }
+  .inventory-equipment-selector-modal { width: calc(100vw - 10px); max-height: calc(100dvh - 10px); padding: 9px; }
+  .inventory-equipment-workspace.squad-screen { grid-template-columns: 1fr; gap: 9px; }
+  .inventory-equipment-sidebar { grid-row: 2; }
+  .inventory-equipment-sidebar .inventory-modal-actions { grid-column: 1 / -1; position: static; bottom: auto; margin-top: 8px; padding: 8px 0 0; background: transparent; }
+  .inventory-equipment-bench { grid-column: 1; grid-row: 3; padding-bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .inventory-equipment-field .pitch { min-height: 480px; height: 480px; padding: 14px 8px; }
+  .inventory-equipment-selector-modal .inventory-equipment-bench .squad-bench-list { width: 100%; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+  .inventory-equipment-selector-modal .inventory-equipment-bench .inventory-tactical-slot { max-width: 82px; }
+}
+@media (min-width: 1100px) {
+  .inventory-v2-list { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .inventory-equipped-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .inventory-equipped-row { grid-template-columns: 48px minmax(130px,1fr) minmax(155px,1fr) auto; }
+}

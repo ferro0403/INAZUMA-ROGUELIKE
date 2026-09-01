@@ -1,0 +1,414 @@
+/* Squad formation picker — modern ivory/black/yellow restyle.
+   Scoped to the existing formation modal only: no gameplay or formation logic changes. */
+
+.modal-backdrop:has(.squad-formation-modal) {
+  padding: clamp(10px, 2vw, 24px);
+  background: rgba(17, 18, 22, .68);
+  backdrop-filter: blur(5px);
+}
+
+.modal.squad-formation-modal {
+  --formation-ink: #111216;
+  --formation-paper: #fffdf6;
+  --formation-paper-2: #f5f0df;
+  --formation-yellow: #ffd21f;
+  --formation-gold: #9a7113;
+  --formation-copy: #514e47;
+  position: relative;
+  isolation: isolate;
+  width: min(900px, calc(100vw - 32px));
+  max-height: min(86dvh, 760px);
+  overflow: auto;
+  padding: 22px;
+  border: 4px solid var(--formation-ink);
+  border-radius: 4px;
+  background: var(--formation-paper);
+  color: var(--formation-ink);
+  box-shadow: 10px 12px 0 rgba(0, 0, 0, .42);
+  scrollbar-gutter: stable;
+}
+
+.modal.squad-formation-modal::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  right: 56px;
+  width: 108px;
+  height: 10px;
+  background: var(--formation-yellow);
+  transform: skewX(-28deg);
+}
+
+.modal.squad-formation-modal::after {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  right: 22px;
+  width: 30px;
+  height: 10px;
+  background: var(--formation-gold);
+  transform: skewX(-28deg);
+}
+
+.squad-formation-modal .modal-close {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  float: right;
+  width: 44px;
+  height: 44px;
+  margin: -2px -2px 0 12px;
+  border: 3px solid var(--formation-ink);
+  border-radius: 0;
+  background: var(--formation-yellow);
+  color: var(--formation-ink);
+  box-shadow: 4px 4px 0 var(--formation-ink);
+  font-size: 1.35rem;
+  font-weight: 950;
+  line-height: 1;
+}
+
+.squad-formation-modal .modal-close:hover,
+.squad-formation-modal .modal-close:focus-visible {
+  transform: translate(-1px, -1px);
+  outline: 3px solid var(--formation-paper);
+  outline-offset: 2px;
+}
+
+.squad-formation-modal-head {
+  position: relative;
+  margin: 0 0 18px;
+  padding: 2px 54px 16px 0;
+  border-bottom: 4px solid var(--formation-ink);
+}
+
+.squad-formation-modal-head::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: -4px;
+  width: 86px;
+  height: 4px;
+  background: var(--formation-yellow);
+}
+
+.squad-formation-modal-head .eyebrow {
+  margin-bottom: 7px;
+  color: var(--formation-gold);
+  font-size: .72rem;
+  font-weight: 950;
+  letter-spacing: .2em;
+}
+
+.squad-formation-modal-head h2 {
+  margin-bottom: 7px;
+  color: var(--formation-ink);
+  font-size: clamp(1.7rem, 4vw, 2.35rem);
+  line-height: .96;
+  letter-spacing: -.035em;
+}
+
+.squad-formation-modal-head .muted {
+  max-width: 670px;
+  margin-bottom: 0;
+  color: var(--formation-copy);
+  font-size: .9rem;
+  font-weight: 750;
+  line-height: 1.38;
+}
+
+.squad-formation-options {
+  clear: both;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.squad-formation-option {
+  position: relative;
+  min-width: 0;
+  min-height: 112px;
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+  padding: 11px;
+  overflow: hidden;
+  border: 3px solid var(--formation-ink);
+  border-radius: 0;
+  background: #fff;
+  color: var(--formation-ink);
+  text-align: left;
+  box-shadow: 5px 6px 0 rgba(17, 18, 22, .22);
+  transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+}
+
+.squad-formation-option::after {
+  content: "";
+  position: absolute;
+  right: -18px;
+  bottom: -22px;
+  width: 54px;
+  height: 54px;
+  border: 8px solid var(--formation-paper-2);
+  transform: rotate(28deg);
+  pointer-events: none;
+}
+
+.squad-formation-option:hover:not(:disabled),
+.squad-formation-option:focus-visible {
+  z-index: 1;
+  border-color: var(--formation-ink);
+  outline: 4px solid var(--formation-yellow);
+  outline-offset: 2px;
+  transform: translateY(-2px);
+  box-shadow: 6px 8px 0 var(--formation-ink);
+}
+
+.squad-formation-option.active {
+  background: var(--formation-paper);
+  color: var(--formation-ink);
+  box-shadow: 6px 7px 0 var(--formation-ink), inset 0 -8px 0 var(--formation-yellow);
+}
+
+.squad-formation-option.active::before {
+  content: "ATTIVO";
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  right: 0;
+  padding: 5px 8px 4px;
+  background: var(--formation-yellow);
+  color: var(--formation-ink);
+  border-left: 2px solid var(--formation-ink);
+  border-bottom: 2px solid var(--formation-ink);
+  font-size: .56rem;
+  font-style: normal;
+  font-weight: 950;
+  letter-spacing: .1em;
+}
+
+.squad-formation-option:disabled {
+  opacity: 1;
+  filter: none;
+  cursor: not-allowed;
+  background: #e9e6dd;
+  color: #5c5952;
+  border-color: #4b4a46;
+  box-shadow: 3px 4px 0 rgba(17, 18, 22, .15);
+}
+
+.squad-formation-option:disabled .squad-formation-mini {
+  opacity: .64;
+  filter: saturate(.45) contrast(.92);
+}
+
+.squad-formation-option-copy {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+}
+
+.squad-formation-option-copy strong {
+  display: block;
+  margin: 0;
+  color: inherit;
+  font-size: 1.08rem;
+  font-weight: 950;
+  line-height: 1;
+  letter-spacing: -.02em;
+}
+
+.squad-formation-option-copy small {
+  display: block;
+  color: #4f4c45;
+  font-size: .72rem;
+  font-weight: 800;
+  line-height: 1.12;
+}
+
+.squad-formation-option-copy em {
+  display: block;
+  margin-top: 3px;
+  color: #73580d;
+  font-size: .6rem;
+  font-style: normal;
+  font-weight: 950;
+  line-height: 1.1;
+  letter-spacing: .075em;
+  text-transform: uppercase;
+}
+
+.squad-formation-option.active .squad-formation-option-copy em {
+  color: #6e5204;
+}
+
+.squad-formation-option:disabled .squad-formation-option-copy small {
+  color: #66635d;
+}
+
+.squad-formation-option:disabled .squad-formation-option-copy em {
+  color: #7a3030;
+}
+
+/* Preserve the existing pitch drawings exactly as the tactical visual language. */
+.squad-formation-option .squad-formation-mini {
+  position: relative;
+  z-index: 1;
+  width: 88px;
+  min-height: 72px;
+  margin: 0;
+}
+
+@media (max-width: 780px) {
+  .modal-backdrop:has(.squad-formation-modal) {
+    align-items: end;
+    padding: max(8px, env(safe-area-inset-top)) 6px max(6px, env(safe-area-inset-bottom));
+    background: rgba(17, 18, 22, .62);
+    backdrop-filter: blur(4px);
+  }
+
+  .modal.squad-formation-modal {
+    align-self: end;
+    width: calc(100vw - 12px);
+    max-width: none;
+    max-height: min(88dvh, 760px);
+    margin: 0;
+    padding: 17px 13px max(18px, env(safe-area-inset-bottom));
+    border: 3px solid var(--formation-ink);
+    border-bottom: 0;
+    box-shadow: 0 -8px 0 rgba(0, 0, 0, .28);
+  }
+
+  .modal.squad-formation-modal::before {
+    right: 58px;
+    width: 84px;
+    height: 8px;
+  }
+
+  .modal.squad-formation-modal::after {
+    right: 24px;
+    height: 8px;
+  }
+
+  .squad-formation-modal .modal-close {
+    width: 42px;
+    height: 42px;
+    margin-right: 0;
+    border-width: 2px;
+    box-shadow: 3px 3px 0 var(--formation-ink);
+  }
+
+  .squad-formation-modal-head {
+    margin-bottom: 13px;
+    padding-right: 50px;
+    padding-bottom: 12px;
+    border-bottom-width: 3px;
+  }
+
+  .squad-formation-modal-head::after {
+    bottom: -3px;
+    height: 3px;
+    width: 64px;
+  }
+
+  .squad-formation-modal-head .eyebrow {
+    margin-bottom: 5px;
+    font-size: .65rem;
+  }
+
+  .squad-formation-modal-head h2 {
+    margin-bottom: 6px;
+    font-size: 1.72rem;
+  }
+
+  .squad-formation-modal-head .muted {
+    max-width: 95%;
+    font-size: .78rem;
+    line-height: 1.32;
+  }
+
+  .squad-formation-options {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+
+  .squad-formation-option {
+    min-height: 98px;
+    grid-template-columns: 66px minmax(0, 1fr);
+    gap: 8px;
+    padding: 8px;
+    border-width: 2px;
+    box-shadow: 3px 4px 0 rgba(17, 18, 22, .2);
+  }
+
+  .squad-formation-option.active {
+    box-shadow: 4px 5px 0 var(--formation-ink), inset 0 -6px 0 var(--formation-yellow);
+  }
+
+  .squad-formation-option.active::before {
+    padding: 4px 6px 3px;
+    font-size: .49rem;
+  }
+
+  .squad-formation-option .squad-formation-mini {
+    width: 66px;
+    min-height: 58px;
+  }
+
+  .squad-formation-option-copy {
+    gap: 3px;
+  }
+
+  .squad-formation-option-copy strong {
+    font-size: .9rem;
+  }
+
+  .squad-formation-option-copy small {
+    font-size: .61rem;
+    line-height: 1.08;
+  }
+
+  .squad-formation-option-copy em {
+    margin-top: 2px;
+    font-size: .52rem;
+    letter-spacing: .055em;
+  }
+}
+
+@media (max-width: 370px) {
+  .modal.squad-formation-modal {
+    padding-inline: 10px;
+  }
+
+  .squad-formation-options {
+    gap: 7px;
+  }
+
+  .squad-formation-option {
+    min-height: 92px;
+    grid-template-columns: 58px minmax(0, 1fr);
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .squad-formation-option .squad-formation-mini {
+    width: 58px;
+    min-height: 52px;
+  }
+
+  .squad-formation-option-copy strong { font-size: .82rem; }
+  .squad-formation-option-copy small { font-size: .56rem; }
+  .squad-formation-option-copy em { font-size: .48rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .squad-formation-option {
+    transition: none;
+  }
+}

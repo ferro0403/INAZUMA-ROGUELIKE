@@ -1,0 +1,122 @@
+(function (global) {
+  "use strict";
+  const cfg = () => global.MatchSimulatorConfig;
+  const stat = (p, key) => Number((p.stats && p.stats[key]) ?? p[key] ?? 0);
+  const role = (p) => String(p.position || p.role || "").toUpperCase();
+  const name = (p) => p.name || p.playerName || `Giocatore ${p.playerId || ""}`.trim();
+  function hashSeed(seed) { let h = 2166136261; for (const ch of String(seed)) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return h >>> 0; }
+  function createRng(seed) { let a = hashSeed(seed) || 1; return function rng() { a += 0x6D2B79F5; let t = a; t = Math.imul(t ^ t >>> 15, t | 1); t ^= t + Math.imul(t ^ t >>> 7, t | 61); return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+  function weightedPick(items, rng, weightFn) { const weighted = items.map((item) => ({ item, weight: Math.max(0, Number(weightFn(item)) || 0) })); const total = weighted.reduce((s, x) => s + x.weight, 0); if (!total) return items[Math.floor(rng() * items.length)]; let roll = rng() * total; for (const x of weighted) { roll -= x.weight; if (roll <= 0) return x.item; } return weighted.at(-1).item; }
+  function statValue(p, weights) { return Object.entries(weights).reduce((sum, [k, w]) => sum + stat(p, k) * w, 0); }
+  function phaseQuality(players, phase) { const def = cfg().phases[phase]; const eligible = players.filter((p) => (def.roles?.[role(p)] || 0) > 0); const denom = eligible.reduce((s, p) => s + (def.roles[role(p)] || 0), 0); if (!denom) return 0; return eligible.reduce((s, p) => s + statValue(p, def.stats) * def.roles[role(p)], 0) / denom; }
+  function goalkeeperQuality(players) { const gk = players.find((p) => role(p) === "GK"); return gk ? statValue(gk, cfg().phases.goalkeeper.stats) : 0; }
+  function validateTeam(team, type) { const players = team.players || []; const expected = type === "five" ? 5 : 11; const ids = new Set(players.map((p) => String(p.playerId ?? p.id ?? name(p)))); if (players.length !== expected || ids.size !== expected) return { valid:false, message:`Servono ${expected} giocatori schierati senza duplicati.` }; if (!players.some((p) => role(p) === "GK")) return { valid:false, message:"Serve un portiere schierato per simulare." }; return { valid:true }; }
+  const FORMATION_TACTICS = Object.freeze({
+    "4-3-3": { id: "balanced_attack", name: "Equilibrato offensivo", description: "Più attacco e velocità, con una lieve esposizione difensiva.", modifiers: { attack: 0.04, speed: 0.03, control: 0.02, defense: -0.02 } },
+    "4-3-1-2": { id: "narrow_playmaker", name: "Trequarti stretta", description: "Più controllo e creazione centrale tra le linee, con meno ampiezza e copertura laterale.", modifiers: { attack: 0.04, control: 0.04, defense: -0.03, speed: -0.02 } },
+    "4-4-2": { id: "solid_compact", name: "Solido e compatto", description: "Più fisico, resistenza e stabilità difensiva.", modifiers: { physical: 0.04, stamina: 0.03, defense: 0.02, control: -0.02 } },
+    "3-4-3": { id: "constant_assault", name: "Assalto continuo", description: "Grande potenziale offensivo, ma forte esposizione difensiva.", modifiers: { attack: 0.06, speed: 0.04, control: 0.02, defense: -0.06, save: -0.02 } },
+    "5-4-1": { id: "defensive_block", name: "Blocco difensivo", description: "Protegge porta e difesa, sacrificando attacco e velocità.", modifiers: { defense: 0.06, save: 0.04, physical: 0.02, attack: -0.06, speed: -0.02 } },
+    "4-5-1": { id: "possession_control", name: "Possesso e controllo", description: "Domina il centrocampo e il ritmo, ma dipende dall’unica punta.", modifiers: { control: 0.06, stamina: 0.04, defense: 0.02, attack: -0.04 } },
+    "4-2-4": { id: "ultra_offensive", name: "Ultra offensivo", description: "Massimizza attacco e velocità, ma lascia grandi spazi.", modifiers: { attack: 0.08, speed: 0.04, defense: -0.07, control: -0.03 } },
+    "5-3-2": { id: "low_block", name: "Blocco basso", description: "Difesa folta e ripartenze controllate, con meno presenza offensiva.", modifiers: { defense: 0.07, physical: 0.03, save: 0.02, attack: -0.04, speed: -0.01 } },
+    "2-5-3": { id: "total_midfield", name: "Centrocampo totale", description: "Identità tattica neutra, senza modificatori.", modifiers: {} },
+    "2-4-4": { id: "all_out_attack", name: "Assalto totale", description: "Quattro attaccanti alzano pressione e finalizzazione, ma la retroguardia resta esposta.", modifiers: { attack: 0.09, speed: 0.04, control: 0.01, defense: -0.09, save: -0.02 } },
+    "3-3-4": { id: "vertical_charge", name: "Carica verticale", description: "Tanti uomini sopra la linea della palla e transizioni rapide.", modifiers: { attack: 0.07, speed: 0.05, grit: 0.02, defense: -0.05, control: -0.02 } },
+    "3-5-2": { id: "midfield_wingbacks", name: "Dominio sulle fasce", description: "Cinque centrocampisti controllano ritmo e ampiezza, sostenendo le due punte ma lasciando più esposta la linea a tre.", modifiers: { control: 0.05, stamina: 0.04, attack: 0.02, speed: 0.02, defense: -0.04, save: -0.02 } },
+  });
+  const FALLBACK_TACTIC = Object.freeze({ id: "balanced", name: "Bilanciato", description: "Nessun modificatore.", modifiers: Object.freeze({}) });
+  const COMPONENT_KEYS = Object.freeze(["attack", "control", "defense", "save", "speed", "physical", "stamina"]);
+  function averageStat(players, key) { return players.reduce((s, p) => s + stat(p, key), 0) / players.length; }
+  function cloneTactic(tactic, formationId) { return { formationId: formationId || null, id: tactic.id, name: tactic.name, description: tactic.description, modifiers: { ...(tactic.modifiers || {}) } }; }
+  function formationTactic(formationId) { return cloneTactic(FORMATION_TACTICS[String(formationId || "")] || FALLBACK_TACTIC, formationId); }
+  function applyFormationTactics(baseComponents, formationId) {
+    const tactic = formationTactic(formationId);
+    const base = {};
+    const effective = {};
+    COMPONENT_KEYS.forEach((key) => {
+      base[key] = Number(baseComponents?.[key] || 0);
+      effective[key] = base[key] * (1 + Number(tactic.modifiers[key] || 0));
+    });
+    return { base, modifiers: { ...tactic.modifiers }, effective, tactic };
+  }
+  function teamStrength(team, type) {
+    const validation = validateTeam(team, type); if (!validation.valid) return { ...validation };
+    const players = team.players;
+    const averageOverall = players.reduce((s, p) => s + Number(p.overall || p.finalOverall || 0), 0) / players.length;
+    const offense = phaseQuality(players, "offense"); const midfield = phaseQuality(players, "midfield"); const defense = phaseQuality(players, "defense"); const goalkeeper = goalkeeperQuality(players);
+    if (normalizeMatchMode(type) === "five") { const w = cfg().profileWeights; const statisticalProfile = offense*w.offense + midfield*w.midfield + defense*w.defense + goalkeeper*w.goalkeeper; const finalRaw = averageOverall*cfg().forceWeights.overall + statisticalProfile*cfg().forceWeights.profile; return { valid:true, averageOverall, offense, midfield, defense, goalkeeper, statisticalProfile, finalRaw, final: Math.round(finalRaw) }; }
+    const baseComponents = { attack: offense, control: midfield, defense, save: goalkeeper, speed: averageStat(players, "speed"), physical: averageStat(players, "physical"), stamina: averageStat(players, "stamina") };
+    const tactics = applyFormationTactics(baseComponents, team.formationId || team.formation || team.tacticFormationId);
+    const w = cfg().tacticalComponentWeights || { attack:.28, control:.20, defense:.22, save:.12, speed:.07, physical:.06, stamina:.05 };
+    const statisticalProfile = COMPONENT_KEYS.reduce((sum, key) => sum + tactics.effective[key] * Number(w[key] || 0), 0);
+    const finalRaw = averageOverall*cfg().forceWeights.overall + statisticalProfile*cfg().forceWeights.profile;
+    return { valid:true, averageOverall, offense: tactics.effective.attack, midfield: tactics.effective.control, defense: tactics.effective.defense, goalkeeper: tactics.effective.save, statisticalProfile, finalRaw, final: Math.round(finalRaw), baseComponents: tactics.base, effectiveComponents: tactics.effective, formationModifiers: tactics.modifiers, tacticalIdentity: tactics.tactic };
+  }
+  function normalizeMatchMode(mode) { return mode === "five" || mode === "five_v_five" ? "five" : "eleven"; }
+  function getMatchWinProbabilities(mode, userStrength, opponentStrength) {
+    if (arguments.length === 2) {
+      opponentStrength = userStrength;
+      userStrength = mode;
+      mode = "eleven";
+    }
+    const normalizedMode = normalizeMatchMode(mode);
+    const roundedUserStrength = Math.round(Number(userStrength));
+    const roundedOpponentStrength = Math.round(Number(opponentStrength));
+    const difference = Math.abs(roundedUserStrength - roundedOpponentStrength);
+    const userIsStronger = roundedUserStrength > roundedOpponentStrength;
+    const userIsWeaker = roundedUserStrength < roundedOpponentStrength;
+    let userChance;
+    if (normalizedMode === "five") {
+      if (userIsWeaker || difference <= 4) userChance = 80;
+      else if (difference <= 9) userChance = 85;
+      else if (difference <= 14) userChance = 90;
+      else userChance = 95;
+    } else if (difference <= 4) {
+      userChance = 70;
+    } else if (userIsStronger) {
+      if (difference <= 9) userChance = 80;
+      else if (difference <= 14) userChance = 88;
+      else if (difference <= 19) userChance = 94;
+      else userChance = 97;
+    } else if (difference <= 9) {
+      userChance = 60;
+    } else if (difference <= 14) {
+      userChance = 55;
+    } else if (difference <= 19) {
+      userChance = 50;
+    } else if (difference <= 24) {
+      userChance = 45;
+    } else {
+      userChance = 40;
+    }
+    const opponentChance = 100 - userChance;
+    const bandStart = Math.min(40, Math.floor(difference / 5) * 5);
+    const band = difference <= 4 ? "0-4" : `${bandStart}${bandStart >= 40 ? "+" : `-${bandStart + 4}`}`;
+    return { mode: normalizedMode, user: userChance / 100, opponent: opponentChance / 100, diff: difference, difference, band, userChance, opponentChance };
+  }
+  function probabilities(mode, aForce, bForce) { return getMatchWinProbabilities(mode, aForce, bForce); }
+  function applyConsecutiveLossProtection(baseWinChance, consecutiveLosses) {
+    const numericChance = Number(baseWinChance);
+    const chance = Math.max(0, Math.min(100, Number.isFinite(numericChance) ? numericChance : 0));
+    const numericStreak = Number(consecutiveLosses);
+    const streak = Math.max(0, Math.min(2, Math.floor(Number.isFinite(numericStreak) ? numericStreak : 0)));
+    if (streak >= 2) return 100;
+    if (streak === 1) return 100 - ((100 - chance) * 0.25);
+    return chance;
+  }
+  function determineUserWins(userChance, rng) { return rng() < userChance / 100; }
+  function pickScore(type, band, rng) { let dist = cfg().scores[type].map((x) => ({...x})); if (band === "0-4") dist = dist.map((x) => ({...x, weight: x.weight * (x.score[0]-x.score[1] === 1 ? 1.35 : .8)})); if (band === "10-14" || band === "15-19" || band === "20-24" || band === "25-29" || band === "30-34" || band === "35-39" || band === "40+") dist = dist.map((x) => ({...x, weight: x.weight * (x.score[0]-x.score[1] >= 2 ? 1.25 : .8)})); return weightedPick(dist, rng, (x) => x.weight).score.slice(); }
+  function byRoleWeight(players, roleWeights, statWeights, rng) { const eligible = players.filter((p) => (roleWeights[role(p)] || 0) > 0); return weightedPick(eligible, rng, (p) => (roleWeights[role(p)] || 0) * Math.max(1, statValue(p, statWeights))); }
+  function protagonist(team, kind, rng) { const players = team.players || []; if (kind === "save") return players.find((p) => role(p) === "GK"); const maps = { goal:[{FW:.65,MF:.28,DF:.07,GK:0},{attack:.4,control:.25,speed:.2,grit:.15}], shot:[{FW:.65,MF:.28,DF:.07,GK:0},{attack:.4,control:.25,speed:.2,grit:.15}], long_shot:[{MF:.55,FW:.30,DF:.15,GK:0},{attack:.35,control:.35,grit:.3}], counter:[{FW:.45,MF:.40,DF:.15,GK:0},{speed:.35,control:.25,attack:.25,stamina:.15}], defensive_stop:[{DF:.65,MF:.30,FW:.05,GK:0},{defense:.45,physical:.25,grit:.2,speed:.1}] }; const m = maps[kind] || maps.shot; return byRoleWeight(players, m[0], m[1], rng); }
+  function eventText(ev, teams, score) { const team = teams[ev.team]; const opponentKey = ev.team === "user" ? "opponent" : "user"; const n = ev.playerName; if (ev.type === "first_half_start") return "Inizio primo tempo."; if (ev.type === "second_half_start") return "Inizio secondo tempo."; if (ev.type === "goal") return `GOL! ${n} segna per ${team.name}: ${score.user}-${score.opponent}.`; if (ev.type === "save") return `Grande parata di ${n} per ${team.name}.`; if (ev.type === "counter") return `Contropiede di ${team.name} guidato da ${n}.`; if (ev.type === "long_shot") return `Tiro da fuori di ${n}.`; if (ev.type === "post") return `Palo colpito da ${n}!`; if (ev.type === "crossbar") return `Traversa colpita da ${n}!`; if (ev.type === "defensive_stop") return `Chiusura difensiva importante di ${n} per ${team.name}.`; return `${n} prova il tiro per ${team.name}.`;
+  }
+  function minutePool(type, count, rng) { const max = type === "five" ? 30 : 90; const mins = []; while (mins.length < count) { const m = 1 + Math.floor(rng() * max); if (type === "eleven" && (m === 1 || m === 46)) continue; if (mins.filter((x) => x === m).length < 2) mins.push(m); } return mins.sort((a,b)=>a-b); }
+  function validateUserTimeline(timeline, userTeam) { const ids = new Set((userTeam.players || []).map((p) => String(p.playerId ?? p.id ?? name(p)))); const gk = (userTeam.players || []).find((p) => role(p) === "GK"); const invalid = (timeline || []).filter((ev) => ev.team === "user" && ev.playerId != null && !ids.has(String(ev.playerId))); if (invalid.length) return { valid:false, message:"La cronaca contiene protagonisti non schierati.", invalidEvents: invalid }; const badSave = (timeline || []).find((ev) => ev.team === "user" && ev.type === "save" && gk && String(ev.playerId) !== String(gk.playerId ?? gk.id ?? name(gk))); if (badSave) return { valid:false, message:"La cronaca contiene una parata di un portiere non schierato.", invalidEvents:[badSave] }; return { valid:true }; }
+  function generateTimeline(type, teams, score, winner, rng) { const totalGoals = score.user + score.opponent; const limits = cfg().events[type]; const target = Math.max(limits.min, Math.min(limits.max, totalGoals + (type === "eleven" ? 6 : 3) + Math.floor(rng()*4))); const events = []; if (type === "eleven") events.push({ minute:1, type:"first_half_start", team:null, text:"Inizio primo tempo." }); const normalCount = target - events.length - (type === "eleven" ? 1 : 0); const minutes = minutePool(type, normalCount, rng); const goalSides = [...Array(score.user).fill("user"), ...Array(score.opponent).fill("opponent")].sort(() => rng() - .5); let displayed = { user:0, opponent:0 }; for (let i=0;i<normalCount;i++) { let side = rng() < .5 ? "user" : "opponent"; let kind = goalSides.length && (i >= normalCount - goalSides.length || rng() < .42) ? "goal" : weightedPick(["save","counter","long_shot","post","crossbar","shot","defensive_stop"], rng, (k)=>({save:18,counter:16,long_shot:14,post:type==="five"?5:3,crossbar:type==="five"?5:3,shot:28,defensive_stop:16}[k])); if (kind === "goal") side = goalSides.shift(); const actingTeam = kind === "save" || kind === "defensive_stop" ? teams[side] : teams[side]; const p = protagonist(actingTeam, kind, rng); const ev = { minute: minutes[i], type: kind, team: side, playerId:p?.playerId, playerName:name(p) }; if (kind === "goal") displayed[side] += 1; ev.text = eventText(ev, teams, displayed); events.push(ev); }
+    while (goalSides.length) { const side = goalSides.shift(); const p = protagonist(teams[side], "goal", rng); displayed[side] += 1; events.push({ minute: 1 + Math.floor(rng()*limits.duration), type:"goal", team:side, playerId:p?.playerId, playerName:name(p), text:"" }); }
+    if (type === "eleven") events.push({ minute:46, type:"second_half_start", team:null, text:"Inizio secondo tempo." });
+    events.sort((a,b)=>a.minute-b.minute || (a.type.includes("start") ? -1 : 1)); displayed={user:0,opponent:0}; events.forEach((ev)=>{ if (ev.type === "goal") displayed[ev.team]+=1; ev.text = ev.text && ev.type !== "goal" ? ev.text : eventText(ev, teams, displayed); }); return events.slice(0, limits.max); }
+  function simulate({ type, seed, userTeam, opponentTeam, consecutiveLosses = 0 }) { type = normalizeMatchMode(type); const userStrength = teamStrength(userTeam, type); const opponentStrength = teamStrength(opponentTeam, type); if (!userStrength.valid) return { valid:false, message:userStrength.message }; if (!opponentStrength.valid) return { valid:false, message:opponentStrength.message }; const baseProbabilities = probabilities(type, userStrength.final, opponentStrength.final); const userChance = applyConsecutiveLossProtection(baseProbabilities.userChance, consecutiveLosses); const probs = { ...baseProbabilities, baseUserChance: baseProbabilities.userChance, userChance, opponentChance: 100 - userChance, user: userChance / 100, opponent: (100 - userChance) / 100 }; const rng = createRng(seed); const userWins = determineUserWins(probs.userChance, rng); const winner = userWins ? "user" : "opponent"; const picked = pickScore(type, probs.band, rng); const score = winner === "user" ? { user:picked[0], opponent:picked[1] } : { user:picked[1], opponent:picked[0] }; if (score.user === score.opponent) score[winner] += 1; const teams = { user: { name:userTeam.name || "La tua squadra", players:userTeam.players }, opponent:{ name:opponentTeam.name || "Avversari", players:opponentTeam.players } }; const timeline = generateTimeline(type, teams, score, winner, rng); const timelineValidation = validateUserTimeline(timeline, teams.user); if (!timelineValidation.valid) return { valid:false, message:timelineValidation.message, timelineValidation }; return { valid:true, type, seed, userStrength, opponentStrength, probabilities: probs, winner, score, timeline, userPlayerIds: teams.user.players.map((p) => String(p.playerId ?? p.id ?? name(p))) } }
+  global.MatchSimulator = { createRng, teamStrength, probabilities, getMatchWinProbabilities, getFinalWinProbabilities: getMatchWinProbabilities, applyConsecutiveLossProtection, determineUserWins, simulate, validateTeam, normalizeMatchMode, validateUserTimeline, FORMATION_TACTICS, formationTactic, applyFormationTactics };
+})(globalThis);

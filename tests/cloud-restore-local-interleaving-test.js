@@ -1,0 +1,3 @@
+'use strict';
+const assert=require('assert'),B=require('./helpers/budget-storage'),{load}=require('./helpers/production-runtime');
+const s=new B(),c=load(s),run=c.RunState.createRun({name:'local'},'ie1');c.RunState.save(run);const epoch=c.PersistenceRecoveryGuard.readEpoch();c.PersistenceRecoveryGuard.setBlocked({uid:'u',operationId:'restore',stage:'profile'});run.bossIndex=7;c.RunState.save(run);assert.equal(c.RunState.load('ie1').bossIndex,7);assert.equal(c.PersistenceRecoveryGuard.readEpoch(),epoch,'run writes are outside account restore fencing');assert.throws(()=>c.RunState.saveProfileTeamIdentity({name:'blocked'}),e=>e.code==='restore-recovery-required');console.log('cloud restore fencing excludes RunStorage but retains permanent-store protection: ok');

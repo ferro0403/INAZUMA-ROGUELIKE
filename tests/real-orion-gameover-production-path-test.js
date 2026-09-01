@@ -1,0 +1,51 @@
+"use strict";
+const assert = require("assert"), cp = require("child_process"), vm = require("vm");
+if (typeof vm.SourceTextModule !== "function") {
+  const result = cp.spawnSync(process.execPath, ["--experimental-vm-modules", __filename], { stdio: "inherit" });
+  process.exit(result.status ?? 1);
+}
+const { load } = require("./helpers/production-runtime");
+const { createAuthenticatedFirestoreBackend, attachAuthenticatedCloud } = require("./helpers/authenticated-cloud-runtime");
+const BudgetStorage = require("./helpers/budget-storage");
+const orion = require("../data/ORION_season_compact.json");
+const run = { runId: "orion-last-life", seasonId: "orion", lives: 1, bossIndex: 2, phase: "match", completedBossIds: orion.bossOrder.slice(0, 2).map(x => x.teamId), inventory: [], roster: [], lineup: [], bench: [], statistics: {}, currentZone: { nodes: [{ id: "orion-loss", type: "boss" }], path: [], completedNodeIds: [] }, activeMatch: { matchId: "orion-defeat", type: "boss", bossIndex: 2, nodeId: "orion-loss", state: "playing", simulation: { resolutionApplied: false, score: { user: 0, opponent: 1 } } } };
+
+(async () => {
+  const storage = new BudgetStorage(1_000_000);
+  const backendState = createAuthenticatedFirestoreBackend();
+  let runtime = load(storage, { run, seasonDb: orion });
+  runtime.context.HallOfFameStorage._saveArchive(runtime.context.HallOfFameStorage._loadArchive(), { preserveTimestamp: true });
+  runtime.context.RunState.saveProfileTeamIdentity({ name: 'Account Team' });
+  const cloud = await attachAuthenticatedCloud(runtime.context, { backendState });
+  assert.equal(cloud.api.getState().status, "synced"); cloud.backend.failure = "permission-denied";
+  runtime.seam.completeBossMatch("defeat"); runtime.seam.continueAfterMatch({ preventDefault() {} }); runtime.seam.renderGameOver();
+  const saved = runtime.canonical;
+  assert.equal(saved.gameOver, true); assert.equal(saved.phase, "gameover"); assert.equal(runtime.redeemed.size, 1);
+  assert(!cloud.api.getState().pendingSectors.some(name => name.startsWith('run_')), 'terminal run save stays local');
+  assert(cloud.api.getState().pendingSectors.includes('development'), 'permanent redemption reaches cloud module');
+  await cloud.api.syncNow(); assert.equal(cloud.api.getState().status, "sync-error");
+  assert.equal(runtime.context.PersistenceRecoveryGuard.isBlocked(), false);
+  const oldCloudApi = cloud.api;
+  runtime.destroy(); runtime = runtime.reopen({ seasonDb: orion }); runtime.seam.renderGameOver();
+  assert.equal(runtime.redeemed.size, 1); assert.equal(runtime.context.PersistenceRecoveryGuard.isBlocked(), false);
+  assert.equal(runtime.canonical.gameOver, true); assert.equal(runtime.canonical.phase, "gameover");
+  const newCloud = await attachAuthenticatedCloud(runtime.context, { backendState });
+  assert.notStrictEqual(newCloud.api, oldCloudApi, "a page reload must instantiate a new firebase-cloud-save API");
+  assert.equal(newCloud.api.getState().status, "sync-pending", "fresh cloud runtime must schedule its divergent local state");
+  assert(!newCloud.api.getState().pendingSectors.some(name => name.startsWith('run_')));
+  assert(newCloud.api.getState().pendingSectors.includes("development"));
+  newCloud.backend.failure = null;
+  await newCloud.api.syncNow();
+  assert.equal(newCloud.api.getState().status, "synced"); assert.deepEqual(newCloud.api.getState().pendingSectors, []);
+  assert.equal(runtime.canonical.gameOver, true); assert.equal(runtime.canonical.phase, "gameover");
+  assert.equal(runtime.redeemed.size, 1, "reopen/render must not duplicate Development redemption");
+  const core = runtime.context.InazumaCloudSaveCore, finalManifest = newCloud.documents.get(newCloud.manifestPath);
+  const sector = name => newCloud.documents.get(`users/test-user/saveCommits/${finalManifest.cloudCommitId}/sectors/${name}`);
+  const cloudDevelopment = core.decodeFirestorePayload(sector("development").payload), localDevelopment = runtime.context.DevelopmentV2.read();
+  assert.equal(sector("run_orion"), undefined, "new client writes no run document");
+  assert.equal(Object.prototype.hasOwnProperty.call(core.readLocalSnapshot(runtime.context), "runs"), false);
+  assert.deepEqual(cloudDevelopment, localDevelopment); assert.equal(cloudDevelopment.redeemedRunIds.filter(id => id === run.runId).length, 1);
+  assert.equal(finalManifest.sectorHashes.development, await core.hash(localDevelopment, runtime.context.crypto));
+  assert.equal(runtime.context.PersistenceRecoveryGuard.isBlocked(), false);
+  console.log("true Orion game-over + authenticated cloud failure + fresh production reopen: ok");
+})().catch(error => { console.error(error); process.exitCode = 1; });

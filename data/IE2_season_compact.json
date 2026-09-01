@@ -1,0 +1,6289 @@
+{
+  "exportType": "inazuma_roguelike_compact_season_v2",
+  "generatedAt": "2026-07-21T23:38:38.761823+00:00",
+  "seasonId": "ie2",
+  "seasonName": "Inazuma Eleven 2",
+  "version": "2.0.0",
+  "progressionFormat": "dynamic_final_profile_v1",
+  "source": {
+    "teamFiles": [
+      "/mnt/data/database2_extracted/barcelona.json",
+      "/mnt/data/database2_extracted/rampart.json",
+      "/mnt/data/database2_extracted/zeus.json",
+      "/mnt/data/database2_extracted/royal.json",
+      "/mnt/data/database2_extracted/Backwater Island.json",
+      "/mnt/data/database2_extracted/alpine.json",
+      "/mnt/data/database2_extracted/polestar.json",
+      "/mnt/data/database2_extracted/everytown.json",
+      "/mnt/data/database2_extracted/kirkwood.json",
+      "/mnt/data/database2_extracted/alia academy.json",
+      "/mnt/data/database2_extracted/lunar prime.json"
+    ],
+    "lineupConfigFile": "/mnt/data/database2_extracted/lineup_config.json",
+    "orderFile": "/mnt/data/database2_extracted/season_order.json",
+    "generator": "build_universal_season_database.py",
+    "displayNameOverrides": {
+      "rampart_junior_high": "Rampart",
+      "kirkwood": "Kirkwood",
+      "everytown": "Everytown",
+      "royal_academy_ares": "Royal Academy",
+      "alpine": "Alpine",
+      "polestar_academy": "Polestar Academy",
+      "zeus_ares": "Zeus Ares",
+      "alia_academy": "Alia Academy",
+      "lunar_prime_academy": "Lunar Prime",
+      "raimon_2": "Raimon",
+      "barcelona_orb": "Barcelona Orb"
+    }
+  },
+  "rules": {
+    "squadMaxPlayers": 15,
+    "startingPlayers": 11,
+    "startingReserves": 0,
+    "maxReserves": 4,
+    "matchSubstitutions": false,
+    "canChangeFormationBetweenNodes": true,
+    "startingLevel": 0,
+    "maxLevel": 20,
+    "fiveVFiveRewardLevel": 0.5,
+    "elevenVElevenRewardLevel": 1,
+    "bossLevelRule": "bossLevel is stored in bossOrder and resolved dynamically at runtime",
+    "playerProgressionRule": "runtime_dynamic_from_final_profile"
+  },
+  "formations": {
+    "eleven": [
+      {
+        "id": "4-3-3",
+        "name": "4-3-3",
+        "type": "11v11",
+        "requirements": {
+          "GK": 1,
+          "DF": 4,
+          "MF": 3,
+          "FW": 3
+        },
+        "slotRoles": [
+          "FW",
+          "FW",
+          "FW",
+          "MF",
+          "MF",
+          "MF",
+          "DF",
+          "DF",
+          "DF",
+          "DF",
+          "GK"
+        ]
+      },
+      {
+        "id": "4-4-2",
+        "name": "4-4-2",
+        "type": "11v11",
+        "requirements": {
+          "GK": 1,
+          "DF": 4,
+          "MF": 4,
+          "FW": 2
+        },
+        "slotRoles": [
+          "FW",
+          "FW",
+          "MF",
+          "MF",
+          "MF",
+          "MF",
+          "DF",
+          "DF",
+          "DF",
+          "DF",
+          "GK"
+        ]
+      },
+      {
+        "id": "4-2-4",
+        "name": "4-2-4",
+        "type": "11v11",
+        "requirements": {
+          "GK": 1,
+          "DF": 4,
+          "MF": 2,
+          "FW": 4
+        },
+        "slotRoles": [
+          "FW",
+          "FW",
+          "FW",
+          "FW",
+          "MF",
+          "MF",
+          "DF",
+          "DF",
+          "DF",
+          "DF",
+          "GK"
+        ]
+      },
+      {
+        "id": "3-4-3",
+        "name": "3-4-3",
+        "type": "11v11",
+        "requirements": {
+          "GK": 1,
+          "DF": 3,
+          "MF": 4,
+          "FW": 3
+        },
+        "slotRoles": [
+          "FW",
+          "FW",
+          "FW",
+          "MF",
+          "MF",
+          "MF",
+          "MF",
+          "DF",
+          "DF",
+          "DF",
+          "GK"
+        ]
+      },
+      {
+        "id": "5-4-1",
+        "name": "5-4-1",
+        "type": "11v11",
+        "requirements": {
+          "GK": 1,
+          "DF": 5,
+          "MF": 4,
+          "FW": 1
+        },
+        "slotRoles": [
+          "FW",
+          "MF",
+          "MF",
+          "MF",
+          "MF",
+          "DF",
+          "DF",
+          "DF",
+          "DF",
+          "DF",
+          "GK"
+        ]
+      },
+      {
+        "id": "4-5-1",
+        "name": "4-5-1",
+        "type": "11v11",
+        "requirements": {
+          "GK": 1,
+          "DF": 4,
+          "MF": 5,
+          "FW": 1
+        },
+        "slotRoles": [
+          "FW",
+          "MF",
+          "MF",
+          "MF",
+          "MF",
+          "MF",
+          "DF",
+          "DF",
+          "DF",
+          "DF",
+          "GK"
+        ]
+      },
+      {
+        "id": "5-3-2",
+        "name": "5-3-2",
+        "type": "11v11",
+        "requirements": {
+          "GK": 1,
+          "DF": 5,
+          "MF": 3,
+          "FW": 2
+        },
+        "slotRoles": [
+          "FW",
+          "FW",
+          "MF",
+          "MF",
+          "MF",
+          "DF",
+          "DF",
+          "DF",
+          "DF",
+          "DF",
+          "GK"
+        ]
+      },
+      {
+        "id": "2-4-4",
+        "name": "2-4-4",
+        "type": "11v11",
+        "requirements": {
+          "GK": 1,
+          "DF": 2,
+          "MF": 4,
+          "FW": 4
+        },
+        "slotRoles": [
+          "FW",
+          "FW",
+          "FW",
+          "FW",
+          "MF",
+          "MF",
+          "MF",
+          "MF",
+          "DF",
+          "DF",
+          "GK"
+        ]
+      },
+      {
+        "id": "3-3-4",
+        "name": "3-3-4",
+        "type": "11v11",
+        "requirements": {
+          "GK": 1,
+          "DF": 3,
+          "MF": 3,
+          "FW": 4
+        },
+        "slotRoles": [
+          "FW",
+          "FW",
+          "FW",
+          "FW",
+          "MF",
+          "MF",
+          "MF",
+          "DF",
+          "DF",
+          "DF",
+          "GK"
+        ]
+      }
+    ],
+    "five": [
+      {
+        "id": "1-2-1",
+        "name": "1-2-1",
+        "type": "5v5",
+        "requirements": {
+          "GK": 1,
+          "DF": 1,
+          "MF": 2,
+          "FW": 1
+        },
+        "slotRoles": [
+          "FW",
+          "MF",
+          "MF",
+          "DF",
+          "GK"
+        ]
+      },
+      {
+        "id": "1-1-2",
+        "name": "1-1-2",
+        "type": "5v5",
+        "requirements": {
+          "GK": 1,
+          "DF": 1,
+          "MF": 1,
+          "FW": 2
+        },
+        "slotRoles": [
+          "FW",
+          "FW",
+          "MF",
+          "DF",
+          "GK"
+        ]
+      }
+    ]
+  },
+  "eventTypes": [
+    {
+      "id": "five_v_five",
+      "name": "Partitella 5v5",
+      "reward": {
+        "type": "level",
+        "amount": 0.5
+      }
+    },
+    {
+      "id": "secondary_match",
+      "name": "Partita 11v11 secondaria",
+      "reward": {
+        "type": "level",
+        "amount": 1
+      }
+    },
+    {
+      "id": "item",
+      "name": "Oggetto",
+      "reward": {
+        "type": "item"
+      }
+    },
+    {
+      "id": "coach",
+      "name": "Allenatore",
+      "reward": {
+        "type": "coach"
+      }
+    },
+    {
+      "id": "pull_free_agents",
+      "name": "Pull svincoli",
+      "reward": {
+        "type": "player_pull",
+        "pool": "free_agents"
+      }
+    },
+    {
+      "id": "pull_unlocked_teams",
+      "name": "Pull squadre battute",
+      "reward": {
+        "type": "player_pull",
+        "pool": "unlocked_boss_teams"
+      }
+    },
+    {
+      "id": "pull_legendary",
+      "name": "Pull leggendario",
+      "reward": {
+        "type": "player_pull",
+        "pool": "legendary"
+      }
+    },
+    {
+      "id": "trade",
+      "name": "Scambio",
+      "reward": {
+        "type": "trade",
+        "rule": "same_role_only"
+      }
+    },
+    {
+      "id": "random",
+      "name": "Punto interrogativo",
+      "reward": {
+        "type": "random_event"
+      }
+    },
+    {
+      "id": "boss",
+      "name": "Boss",
+      "reward": {
+        "type": "boss_reward",
+        "choiceCount": 3,
+        "choose": 1
+      }
+    }
+  ],
+  "bossOrder": [
+    {
+      "order": 1,
+      "teamId": "rampart_junior_high",
+      "teamName": "Rampart",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/4/45/Minodouzan_emblem.png/revision/latest?cb=20251118125410",
+      "teamOverall": 76,
+      "teamStars": 4,
+      "bossFormation": "4-4-2",
+      "bossLevel": 1,
+      "startingXIPlayerIds": [
+        "4452",
+        "4456",
+        "4448",
+        "4449",
+        "4451",
+        "4457",
+        "4453",
+        "4446",
+        "4445",
+        "4443",
+        "4442"
+      ],
+      "startingXI": [
+        {
+          "slot": 1,
+          "playerId": "4452",
+          "level": 1
+        },
+        {
+          "slot": 2,
+          "playerId": "4456",
+          "level": 1
+        },
+        {
+          "slot": 3,
+          "playerId": "4448",
+          "level": 1
+        },
+        {
+          "slot": 4,
+          "playerId": "4449",
+          "level": 1
+        },
+        {
+          "slot": 5,
+          "playerId": "4451",
+          "level": 1
+        },
+        {
+          "slot": 6,
+          "playerId": "4457",
+          "level": 1
+        },
+        {
+          "slot": 7,
+          "playerId": "4453",
+          "level": 1
+        },
+        {
+          "slot": 8,
+          "playerId": "4446",
+          "level": 1
+        },
+        {
+          "slot": 9,
+          "playerId": "4445",
+          "level": 1
+        },
+        {
+          "slot": 10,
+          "playerId": "4443",
+          "level": 1
+        },
+        {
+          "slot": 11,
+          "playerId": "4442",
+          "level": 1
+        }
+      ],
+      "rewardPool": "all_team_players",
+      "rewardPoolPlayerIds": [
+        "4446",
+        "4460",
+        "4443",
+        "4454",
+        "4456",
+        "4445",
+        "4455",
+        "4452",
+        "4448",
+        "4453",
+        "4442",
+        "4444",
+        "4447",
+        "4449",
+        "4451",
+        "4450",
+        "4457"
+      ],
+      "unlocksTeamPool": true
+    },
+    {
+      "order": 2,
+      "teamId": "kirkwood",
+      "teamName": "Kirkwood",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/e/ea/Kidokawa_Seishuu_%28GO%29_emblem_%28VR%29.png/revision/latest/scale-to-width-down/200?cb=20251119113313",
+      "teamOverall": 78,
+      "teamStars": 4,
+      "bossFormation": "4-2-4",
+      "bossLevel": 3,
+      "startingXIPlayerIds": [
+        "4472",
+        "169",
+        "167",
+        "168",
+        "4468",
+        "171",
+        "4462",
+        "4463",
+        "4474",
+        "174",
+        "159"
+      ],
+      "startingXI": [
+        {
+          "slot": 1,
+          "playerId": "4472",
+          "level": 3
+        },
+        {
+          "slot": 2,
+          "playerId": "169",
+          "level": 3
+        },
+        {
+          "slot": 3,
+          "playerId": "167",
+          "level": 3
+        },
+        {
+          "slot": 4,
+          "playerId": "168",
+          "level": 3
+        },
+        {
+          "slot": 5,
+          "playerId": "4468",
+          "level": 3
+        },
+        {
+          "slot": 6,
+          "playerId": "171",
+          "level": 3
+        },
+        {
+          "slot": 7,
+          "playerId": "4462",
+          "level": 3
+        },
+        {
+          "slot": 8,
+          "playerId": "4463",
+          "level": 3
+        },
+        {
+          "slot": 9,
+          "playerId": "4474",
+          "level": 3
+        },
+        {
+          "slot": 10,
+          "playerId": "174",
+          "level": 3
+        },
+        {
+          "slot": 11,
+          "playerId": "159",
+          "level": 3
+        }
+      ],
+      "rewardPool": "all_team_players",
+      "rewardPoolPlayerIds": [
+        "4463",
+        "4472",
+        "171",
+        "4464",
+        "173",
+        "4473",
+        "4474",
+        "159",
+        "4462",
+        "167",
+        "174",
+        "163",
+        "170",
+        "168",
+        "4466",
+        "4461",
+        "169",
+        "172",
+        "165",
+        "4468"
+      ],
+      "unlocksTeamPool": true
+    },
+    {
+      "order": 3,
+      "teamId": "everytown",
+      "teamName": "Everytown",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/9/9a/Tonegawa_Tousen_emblem.png/revision/latest/scale-to-width-down/200?cb=20251118125413",
+      "teamOverall": 80,
+      "teamStars": 4,
+      "bossFormation": "4-4-2",
+      "bossLevel": 5,
+      "startingXIPlayerIds": [
+        "4574",
+        "4570",
+        "4572",
+        "4563",
+        "4576",
+        "4575",
+        "4562",
+        "4577",
+        "4565",
+        "4568",
+        "4561"
+      ],
+      "startingXI": [
+        {
+          "slot": 1,
+          "playerId": "4574",
+          "level": 5
+        },
+        {
+          "slot": 2,
+          "playerId": "4570",
+          "level": 5
+        },
+        {
+          "slot": 3,
+          "playerId": "4572",
+          "level": 5
+        },
+        {
+          "slot": 4,
+          "playerId": "4563",
+          "level": 5
+        },
+        {
+          "slot": 5,
+          "playerId": "4576",
+          "level": 5
+        },
+        {
+          "slot": 6,
+          "playerId": "4575",
+          "level": 5
+        },
+        {
+          "slot": 7,
+          "playerId": "4562",
+          "level": 5
+        },
+        {
+          "slot": 8,
+          "playerId": "4577",
+          "level": 5
+        },
+        {
+          "slot": 9,
+          "playerId": "4565",
+          "level": 5
+        },
+        {
+          "slot": 10,
+          "playerId": "4568",
+          "level": 5
+        },
+        {
+          "slot": 11,
+          "playerId": "4561",
+          "level": 5
+        }
+      ],
+      "rewardPool": "all_team_players",
+      "rewardPoolPlayerIds": [
+        "4562",
+        "4565",
+        "4568",
+        "4574",
+        "4577",
+        "4575",
+        "4567",
+        "4569",
+        "4563",
+        "4572",
+        "4566",
+        "4561",
+        "4564",
+        "4571",
+        "4570",
+        "4576"
+      ],
+      "unlocksTeamPool": true
+    },
+    {
+      "order": 4,
+      "teamId": "royal_academy_ares",
+      "teamName": "Royal Academy",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/2/28/Teikoku_Gakuen_%28Ares%29_emblem.png/revision/latest?cb=20251118125411",
+      "teamOverall": 82,
+      "teamStars": 4.5,
+      "bossFormation": "4-4-2",
+      "bossLevel": 7,
+      "startingXIPlayerIds": [
+        "30",
+        "28",
+        "4511",
+        "27",
+        "25",
+        "26",
+        "4508",
+        "16",
+        "24",
+        "21",
+        "4510"
+      ],
+      "startingXI": [
+        {
+          "slot": 1,
+          "playerId": "30",
+          "level": 7
+        },
+        {
+          "slot": 2,
+          "playerId": "28",
+          "level": 7
+        },
+        {
+          "slot": 3,
+          "playerId": "4511",
+          "level": 7
+        },
+        {
+          "slot": 4,
+          "playerId": "27",
+          "level": 7
+        },
+        {
+          "slot": 5,
+          "playerId": "25",
+          "level": 7
+        },
+        {
+          "slot": 6,
+          "playerId": "26",
+          "level": 7
+        },
+        {
+          "slot": 7,
+          "playerId": "4508",
+          "level": 7
+        },
+        {
+          "slot": 8,
+          "playerId": "16",
+          "level": 7
+        },
+        {
+          "slot": 9,
+          "playerId": "24",
+          "level": 7
+        },
+        {
+          "slot": 10,
+          "playerId": "21",
+          "level": 7
+        },
+        {
+          "slot": 11,
+          "playerId": "4510",
+          "level": 7
+        }
+      ],
+      "rewardPool": "all_team_players",
+      "rewardPoolPlayerIds": [
+        "22",
+        "16",
+        "4511",
+        "28",
+        "30",
+        "27",
+        "4510",
+        "24",
+        "25",
+        "26",
+        "4498",
+        "4508",
+        "21"
+      ],
+      "unlocksTeamPool": true
+    },
+    {
+      "order": 5,
+      "teamId": "alpine",
+      "teamName": "Alpine",
+      "logoUrl": "https://static.wikia.nocookie.net/inazumaeleven/images/f/fe/Hakuren_emblem_%25_28SD%25_29.webp/revision/latest?cb=20240405150233&path-prefix=pl",
+      "teamOverall": 83,
+      "teamStars": 4.5,
+      "bossFormation": "4-2-4",
+      "bossLevel": 8,
+      "startingXIPlayerIds": [
+        "4539",
+        "4538",
+        "4543",
+        "4542",
+        "1159",
+        "4536",
+        "4531",
+        "1172",
+        "1170",
+        "4532",
+        "4530"
+      ],
+      "startingXI": [
+        {
+          "slot": 1,
+          "playerId": "4539",
+          "level": 8
+        },
+        {
+          "slot": 2,
+          "playerId": "4538",
+          "level": 8
+        },
+        {
+          "slot": 3,
+          "playerId": "4543",
+          "level": 8
+        },
+        {
+          "slot": 4,
+          "playerId": "4542",
+          "level": 8
+        },
+        {
+          "slot": 5,
+          "playerId": "1159",
+          "level": 8
+        },
+        {
+          "slot": 6,
+          "playerId": "4536",
+          "level": 8
+        },
+        {
+          "slot": 7,
+          "playerId": "4531",
+          "level": 8
+        },
+        {
+          "slot": 8,
+          "playerId": "1172",
+          "level": 8
+        },
+        {
+          "slot": 9,
+          "playerId": "1170",
+          "level": 8
+        },
+        {
+          "slot": 10,
+          "playerId": "4532",
+          "level": 8
+        },
+        {
+          "slot": 11,
+          "playerId": "4530",
+          "level": 8
+        }
+      ],
+      "rewardPool": "all_team_players",
+      "rewardPoolPlayerIds": [
+        "4530",
+        "4539",
+        "4542",
+        "1172",
+        "4531",
+        "1159",
+        "4543",
+        "4536",
+        "1170",
+        "4532",
+        "1171",
+        "1168",
+        "4537",
+        "4534",
+        "4538",
+        "1157",
+        "1169"
+      ],
+      "unlocksTeamPool": true
+    },
+    {
+      "order": 6,
+      "teamId": "polestar_academy",
+      "teamName": "Polestar Academy",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/2/23/Seishou_Gakuen_emblem.png/revision/latest?cb=20240331224724",
+      "teamOverall": 84,
+      "teamStars": 4.5,
+      "bossFormation": "4-5-1",
+      "bossLevel": 9,
+      "startingXIPlayerIds": [
+        "4416",
+        "4417",
+        "4415",
+        "4421",
+        "4411",
+        "4414",
+        "4410",
+        "4409",
+        "4407",
+        "4418",
+        "4406"
+      ],
+      "startingXI": [
+        {
+          "slot": 1,
+          "playerId": "4416",
+          "level": 9
+        },
+        {
+          "slot": 2,
+          "playerId": "4417",
+          "level": 9
+        },
+        {
+          "slot": 3,
+          "playerId": "4415",
+          "level": 9
+        },
+        {
+          "slot": 4,
+          "playerId": "4421",
+          "level": 9
+        },
+        {
+          "slot": 5,
+          "playerId": "4411",
+          "level": 9
+        },
+        {
+          "slot": 6,
+          "playerId": "4414",
+          "level": 9
+        },
+        {
+          "slot": 7,
+          "playerId": "4410",
+          "level": 9
+        },
+        {
+          "slot": 8,
+          "playerId": "4409",
+          "level": 9
+        },
+        {
+          "slot": 9,
+          "playerId": "4407",
+          "level": 9
+        },
+        {
+          "slot": 10,
+          "playerId": "4418",
+          "level": 9
+        },
+        {
+          "slot": 11,
+          "playerId": "4406",
+          "level": 9
+        }
+      ],
+      "rewardPool": "all_team_players",
+      "rewardPoolPlayerIds": [
+        "4410",
+        "4421",
+        "4409",
+        "4419",
+        "4412",
+        "4408",
+        "4415",
+        "4416",
+        "4418",
+        "4411",
+        "4417",
+        "4420",
+        "4407",
+        "4406",
+        "4413",
+        "4414"
+      ],
+      "unlocksTeamPool": true
+    },
+    {
+      "order": 7,
+      "teamId": "zeus_ares",
+      "teamName": "Zeus Ares",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/6/63/Zeus_%28Asuto-hen%29_emblem_%28SD%29.png/revision/latest?cb=20230802094850",
+      "teamOverall": 85,
+      "teamStars": 4.5,
+      "bossFormation": "4-4-2",
+      "bossLevel": 11,
+      "startingXIPlayerIds": [
+        "4527",
+        "4525",
+        "4526",
+        "4524",
+        "4523",
+        "4522",
+        "4519",
+        "4521",
+        "4518",
+        "4520",
+        "4517"
+      ],
+      "startingXI": [
+        {
+          "slot": 1,
+          "playerId": "4527",
+          "level": 11
+        },
+        {
+          "slot": 2,
+          "playerId": "4525",
+          "level": 11
+        },
+        {
+          "slot": 3,
+          "playerId": "4526",
+          "level": 11
+        },
+        {
+          "slot": 4,
+          "playerId": "4524",
+          "level": 11
+        },
+        {
+          "slot": 5,
+          "playerId": "4523",
+          "level": 11
+        },
+        {
+          "slot": 6,
+          "playerId": "4522",
+          "level": 11
+        },
+        {
+          "slot": 7,
+          "playerId": "4519",
+          "level": 11
+        },
+        {
+          "slot": 8,
+          "playerId": "4521",
+          "level": 11
+        },
+        {
+          "slot": 9,
+          "playerId": "4518",
+          "level": 11
+        },
+        {
+          "slot": 10,
+          "playerId": "4520",
+          "level": 11
+        },
+        {
+          "slot": 11,
+          "playerId": "4517",
+          "level": 11
+        }
+      ],
+      "rewardPool": "all_team_players",
+      "rewardPoolPlayerIds": [
+        "4518",
+        "4523",
+        "4522",
+        "4526",
+        "4521",
+        "4519",
+        "4525",
+        "4520",
+        "4527",
+        "4517",
+        "4524"
+      ],
+      "unlocksTeamPool": true
+    },
+    {
+      "order": 8,
+      "teamId": "alia_academy",
+      "teamName": "Alia Academy",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/a/aa/Eisei_Gakuen_emblem.png/revision/latest?cb=20251118125404",
+      "teamOverall": 86,
+      "teamStars": 4.5,
+      "bossFormation": "3-3-4",
+      "bossLevel": 13,
+      "startingXIPlayerIds": [
+        "4554",
+        "4556",
+        "4555",
+        "4553",
+        "4549",
+        "4550",
+        "4551",
+        "4559",
+        "4548",
+        "4547",
+        "4546"
+      ],
+      "startingXI": [
+        {
+          "slot": 1,
+          "playerId": "4554",
+          "level": 13
+        },
+        {
+          "slot": 2,
+          "playerId": "4556",
+          "level": 13
+        },
+        {
+          "slot": 3,
+          "playerId": "4555",
+          "level": 13
+        },
+        {
+          "slot": 4,
+          "playerId": "4553",
+          "level": 13
+        },
+        {
+          "slot": 5,
+          "playerId": "4549",
+          "level": 13
+        },
+        {
+          "slot": 6,
+          "playerId": "4550",
+          "level": 13
+        },
+        {
+          "slot": 7,
+          "playerId": "4551",
+          "level": 13
+        },
+        {
+          "slot": 8,
+          "playerId": "4559",
+          "level": 13
+        },
+        {
+          "slot": 9,
+          "playerId": "4548",
+          "level": 13
+        },
+        {
+          "slot": 10,
+          "playerId": "4547",
+          "level": 13
+        },
+        {
+          "slot": 11,
+          "playerId": "4546",
+          "level": 13
+        }
+      ],
+      "rewardPool": "all_team_players",
+      "rewardPoolPlayerIds": [
+        "4550",
+        "4559",
+        "4554",
+        "4548",
+        "4553",
+        "4546",
+        "4547",
+        "4555",
+        "4551",
+        "4549",
+        "4552",
+        "4557",
+        "4556",
+        "4558"
+      ],
+      "unlocksTeamPool": true
+    },
+    {
+      "order": 9,
+      "teamId": "lunar_prime_academy",
+      "teamName": "Lunar Prime",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/6/6b/Outei_Tsukinomiya_emblem.png/revision/latest?cb=20240331224724",
+      "teamOverall": 87,
+      "teamStars": 4.5,
+      "bossFormation": "5-3-2",
+      "bossLevel": 15,
+      "startingXIPlayerIds": [
+        "4434",
+        "4435",
+        "4432",
+        "4431",
+        "4439",
+        "4429",
+        "4438",
+        "4427",
+        "4428",
+        "4426",
+        "4425"
+      ],
+      "startingXI": [
+        {
+          "slot": 1,
+          "playerId": "4434",
+          "level": 15
+        },
+        {
+          "slot": 2,
+          "playerId": "4435",
+          "level": 15
+        },
+        {
+          "slot": 3,
+          "playerId": "4432",
+          "level": 15
+        },
+        {
+          "slot": 4,
+          "playerId": "4431",
+          "level": 15
+        },
+        {
+          "slot": 5,
+          "playerId": "4439",
+          "level": 15
+        },
+        {
+          "slot": 6,
+          "playerId": "4429",
+          "level": 15
+        },
+        {
+          "slot": 7,
+          "playerId": "4438",
+          "level": 15
+        },
+        {
+          "slot": 8,
+          "playerId": "4427",
+          "level": 15
+        },
+        {
+          "slot": 9,
+          "playerId": "4428",
+          "level": 15
+        },
+        {
+          "slot": 10,
+          "playerId": "4426",
+          "level": 15
+        },
+        {
+          "slot": 11,
+          "playerId": "4425",
+          "level": 15
+        }
+      ],
+      "rewardPool": "all_team_players",
+      "rewardPoolPlayerIds": [
+        "4429",
+        "4441",
+        "4425",
+        "4438",
+        "4440",
+        "4434",
+        "4435",
+        "4436",
+        "4427",
+        "4428",
+        "4433",
+        "4439",
+        "4430",
+        "4426",
+        "4437",
+        "4431",
+        "4432"
+      ],
+      "unlocksTeamPool": true
+    },
+    {
+      "order": 10,
+      "teamId": "raimon_2",
+      "teamName": "Raimon",
+      "logoUrl": "https://static.wikia.nocookie.net/inazumaelevenwiki-italia/images/3/3e/Raimon_Go_simbolo.png/revision/latest?cb=20130411084426&path-prefix=it",
+      "teamOverall": 88,
+      "teamStars": 4.5,
+      "bossFormation": "3-3-4",
+      "bossLevel": 17,
+      "startingXIPlayerIds": [
+        "4416",
+        "4390",
+        "4391",
+        "4392",
+        "4395",
+        "4396",
+        "4399",
+        "4398",
+        "4397",
+        "4394",
+        "4393"
+      ],
+      "startingXI": [
+        {
+          "slot": 1,
+          "playerId": "4416",
+          "level": 17
+        },
+        {
+          "slot": 2,
+          "playerId": "4390",
+          "level": 17
+        },
+        {
+          "slot": 3,
+          "playerId": "4391",
+          "level": 17
+        },
+        {
+          "slot": 4,
+          "playerId": "4392",
+          "level": 17
+        },
+        {
+          "slot": 5,
+          "playerId": "4395",
+          "level": 17
+        },
+        {
+          "slot": 6,
+          "playerId": "4396",
+          "level": 17
+        },
+        {
+          "slot": 7,
+          "playerId": "4399",
+          "level": 17
+        },
+        {
+          "slot": 8,
+          "playerId": "4398",
+          "level": 17
+        },
+        {
+          "slot": 9,
+          "playerId": "4397",
+          "level": 17
+        },
+        {
+          "slot": 10,
+          "playerId": "4394",
+          "level": 17
+        },
+        {
+          "slot": 11,
+          "playerId": "4393",
+          "level": 17
+        }
+      ],
+      "rewardPool": "all_team_players",
+      "rewardPoolPlayerIds": [
+        "4392",
+        "4391",
+        "4395",
+        "4398",
+        "4416",
+        "4394",
+        "4396",
+        "4400",
+        "4638",
+        "4393",
+        "4390",
+        "4397",
+        "4399"
+      ],
+      "unlocksTeamPool": true
+    },
+    {
+      "order": 11,
+      "teamId": "barcelona_orb",
+      "teamName": "Barcelona Orb",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/8/84/Barcelona_Orb_emblem.png/revision/latest?cb=20251118125403",
+      "teamOverall": 90,
+      "teamStars": 5,
+      "bossFormation": "4-4-2",
+      "bossLevel": 18,
+      "startingXIPlayerIds": [
+        "4599",
+        "4597",
+        "4600",
+        "4598",
+        "4595",
+        "4596",
+        "4590",
+        "4593",
+        "4592",
+        "4591",
+        "4589"
+      ],
+      "startingXI": [
+        {
+          "slot": 1,
+          "playerId": "4599",
+          "level": 18
+        },
+        {
+          "slot": 2,
+          "playerId": "4597",
+          "level": 18
+        },
+        {
+          "slot": 3,
+          "playerId": "4600",
+          "level": 18
+        },
+        {
+          "slot": 4,
+          "playerId": "4598",
+          "level": 18
+        },
+        {
+          "slot": 5,
+          "playerId": "4595",
+          "level": 18
+        },
+        {
+          "slot": 6,
+          "playerId": "4596",
+          "level": 18
+        },
+        {
+          "slot": 7,
+          "playerId": "4590",
+          "level": 18
+        },
+        {
+          "slot": 8,
+          "playerId": "4593",
+          "level": 18
+        },
+        {
+          "slot": 9,
+          "playerId": "4592",
+          "level": 18
+        },
+        {
+          "slot": 10,
+          "playerId": "4591",
+          "level": 18
+        },
+        {
+          "slot": 11,
+          "playerId": "4589",
+          "level": 18
+        }
+      ],
+      "rewardPool": "all_team_players",
+      "rewardPoolPlayerIds": [
+        "4590",
+        "4600",
+        "4593",
+        "4601",
+        "4592",
+        "4599",
+        "4591",
+        "4594",
+        "4597",
+        "4596",
+        "4589",
+        "4598",
+        "4595"
+      ],
+      "unlocksTeamPool": true
+    }
+  ],
+  "teams": [
+    {
+      "teamId": "rampart_junior_high",
+      "id": "rampart_junior_high",
+      "teamName": "Rampart",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/4/45/Minodouzan_emblem.png/revision/latest?cb=20251118125410",
+      "teamOverall": 76,
+      "teamStars": 4,
+      "ratedPlayers": 17,
+      "totalPlayers": 19,
+      "playerIds": [
+        "4446",
+        "4460",
+        "4443",
+        "4454",
+        "4456",
+        "4445",
+        "4455",
+        "4452",
+        "4448",
+        "4453",
+        "4442",
+        "4444",
+        "4447",
+        "4449",
+        "4451",
+        "4450",
+        "4457"
+      ],
+      "sourceFile": "rampart.json"
+    },
+    {
+      "teamId": "kirkwood",
+      "id": "kirkwood",
+      "teamName": "Kirkwood",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/e/ea/Kidokawa_Seishuu_%28GO%29_emblem_%28VR%29.png/revision/latest/scale-to-width-down/200?cb=20251119113313",
+      "teamOverall": 78,
+      "teamStars": 4,
+      "ratedPlayers": 20,
+      "totalPlayers": 22,
+      "playerIds": [
+        "4463",
+        "4472",
+        "171",
+        "4464",
+        "173",
+        "4473",
+        "4474",
+        "159",
+        "4462",
+        "167",
+        "174",
+        "163",
+        "170",
+        "168",
+        "4466",
+        "4461",
+        "169",
+        "172",
+        "165",
+        "4468"
+      ],
+      "sourceFile": "kirkwood.json"
+    },
+    {
+      "teamId": "everytown",
+      "id": "everytown",
+      "teamName": "Everytown",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/9/9a/Tonegawa_Tousen_emblem.png/revision/latest/scale-to-width-down/200?cb=20251118125413",
+      "teamOverall": 80,
+      "teamStars": 4,
+      "ratedPlayers": 16,
+      "totalPlayers": 18,
+      "playerIds": [
+        "4562",
+        "4565",
+        "4568",
+        "4574",
+        "4577",
+        "4575",
+        "4567",
+        "4569",
+        "4563",
+        "4572",
+        "4566",
+        "4561",
+        "4564",
+        "4571",
+        "4570",
+        "4576"
+      ],
+      "sourceFile": "everytown.json"
+    },
+    {
+      "teamId": "royal_academy_ares",
+      "id": "royal_academy_ares",
+      "teamName": "Royal Academy",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/2/28/Teikoku_Gakuen_%28Ares%29_emblem.png/revision/latest?cb=20251118125411",
+      "teamOverall": 82,
+      "teamStars": 4.5,
+      "ratedPlayers": 13,
+      "totalPlayers": 15,
+      "playerIds": [
+        "22",
+        "16",
+        "4511",
+        "28",
+        "30",
+        "27",
+        "4510",
+        "24",
+        "25",
+        "26",
+        "4498",
+        "4508",
+        "21"
+      ],
+      "sourceFile": "royal.json"
+    },
+    {
+      "teamId": "alpine",
+      "id": "alpine",
+      "teamName": "Alpine",
+      "logoUrl": "https://static.wikia.nocookie.net/inazumaeleven/images/f/fe/Hakuren_emblem_%25_28SD%25_29.webp/revision/latest?cb=20240405150233&path-prefix=pl",
+      "teamOverall": 83,
+      "teamStars": 4.5,
+      "ratedPlayers": 17,
+      "totalPlayers": 25,
+      "playerIds": [
+        "4530",
+        "4539",
+        "4542",
+        "1172",
+        "4531",
+        "1159",
+        "4543",
+        "4536",
+        "1170",
+        "4532",
+        "1171",
+        "1168",
+        "4537",
+        "4534",
+        "4538",
+        "1157",
+        "1169"
+      ],
+      "sourceFile": "alpine.json"
+    },
+    {
+      "teamId": "polestar_academy",
+      "id": "polestar_academy",
+      "teamName": "Polestar Academy",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/2/23/Seishou_Gakuen_emblem.png/revision/latest?cb=20240331224724",
+      "teamOverall": 84,
+      "teamStars": 4.5,
+      "ratedPlayers": 16,
+      "totalPlayers": 19,
+      "playerIds": [
+        "4410",
+        "4421",
+        "4409",
+        "4419",
+        "4412",
+        "4408",
+        "4415",
+        "4416",
+        "4418",
+        "4411",
+        "4417",
+        "4420",
+        "4407",
+        "4406",
+        "4413",
+        "4414"
+      ],
+      "sourceFile": "polestar.json"
+    },
+    {
+      "teamId": "zeus_ares",
+      "id": "zeus_ares",
+      "teamName": "Zeus Ares",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/6/63/Zeus_%28Asuto-hen%29_emblem_%28SD%29.png/revision/latest?cb=20230802094850",
+      "teamOverall": 85,
+      "teamStars": 4.5,
+      "ratedPlayers": 11,
+      "totalPlayers": 13,
+      "playerIds": [
+        "4518",
+        "4523",
+        "4522",
+        "4526",
+        "4521",
+        "4519",
+        "4525",
+        "4520",
+        "4527",
+        "4517",
+        "4524"
+      ],
+      "sourceFile": "zeus.json"
+    },
+    {
+      "teamId": "alia_academy",
+      "id": "alia_academy",
+      "teamName": "Alia Academy",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/a/aa/Eisei_Gakuen_emblem.png/revision/latest?cb=20251118125404",
+      "teamOverall": 86,
+      "teamStars": 4.5,
+      "ratedPlayers": 14,
+      "totalPlayers": 15,
+      "playerIds": [
+        "4550",
+        "4559",
+        "4554",
+        "4548",
+        "4553",
+        "4546",
+        "4547",
+        "4555",
+        "4551",
+        "4549",
+        "4552",
+        "4557",
+        "4556",
+        "4558"
+      ],
+      "sourceFile": "alia academy.json"
+    },
+    {
+      "teamId": "lunar_prime_academy",
+      "id": "lunar_prime_academy",
+      "teamName": "Lunar Prime",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/6/6b/Outei_Tsukinomiya_emblem.png/revision/latest?cb=20240331224724",
+      "teamOverall": 87,
+      "teamStars": 4.5,
+      "ratedPlayers": 17,
+      "totalPlayers": 17,
+      "playerIds": [
+        "4429",
+        "4441",
+        "4425",
+        "4438",
+        "4440",
+        "4434",
+        "4435",
+        "4436",
+        "4427",
+        "4428",
+        "4433",
+        "4439",
+        "4430",
+        "4426",
+        "4437",
+        "4431",
+        "4432"
+      ],
+      "sourceFile": "lunar prime.json"
+    },
+    {
+      "teamId": "raimon_2",
+      "id": "raimon_2",
+      "teamName": "Raimon",
+      "logoUrl": "https://static.wikia.nocookie.net/inazumaelevenwiki-italia/images/3/3e/Raimon_Go_simbolo.png/revision/latest?cb=20130411084426&path-prefix=it",
+      "teamOverall": 88,
+      "teamStars": 4.5,
+      "ratedPlayers": 13,
+      "totalPlayers": 16,
+      "playerIds": [
+        "4392",
+        "4391",
+        "4395",
+        "4398",
+        "4416",
+        "4394",
+        "4396",
+        "4400",
+        "4638",
+        "4393",
+        "4390",
+        "4397",
+        "4399"
+      ],
+      "sourceFile": "Backwater Island.json"
+    },
+    {
+      "teamId": "barcelona_orb",
+      "id": "barcelona_orb",
+      "teamName": "Barcelona Orb",
+      "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/8/84/Barcelona_Orb_emblem.png/revision/latest?cb=20251118125403",
+      "teamOverall": 90,
+      "teamStars": 5,
+      "ratedPlayers": 13,
+      "totalPlayers": 14,
+      "playerIds": [
+        "4590",
+        "4600",
+        "4593",
+        "4601",
+        "4592",
+        "4599",
+        "4591",
+        "4594",
+        "4597",
+        "4596",
+        "4589",
+        "4598",
+        "4595"
+      ],
+      "sourceFile": "barcelona.json"
+    }
+  ],
+  "players": [
+    {
+      "playerId": "4590",
+      "id": "4590",
+      "name": "Antoni Valls",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/r/n/rn0vh9guhfc.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Mondiale",
+      "finalOverall": 90,
+      "ratings": {
+        "attack": 6,
+        "physical": 9,
+        "stamina": 8,
+        "control": 8,
+        "defense": 9,
+        "speed": 10,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "barcelona_orb"
+      ]
+    },
+    {
+      "playerId": "4600",
+      "id": "4600",
+      "name": "Augusto Gomez",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/a/g/agm75fzmfme.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Mondiale",
+      "finalOverall": 90,
+      "ratings": {
+        "attack": 9,
+        "physical": 9,
+        "stamina": 9,
+        "control": 9,
+        "defense": 9,
+        "speed": 9,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "barcelona_orb"
+      ]
+    },
+    {
+      "playerId": "4593",
+      "id": "4593",
+      "name": "Carles Ripoll",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/6/n/6nhbbomfs_8.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Mondiale",
+      "finalOverall": 90,
+      "ratings": {
+        "attack": 4,
+        "physical": 9,
+        "stamina": 9,
+        "control": 9,
+        "defense": 9,
+        "speed": 9,
+        "grit": 9,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "barcelona_orb"
+      ]
+    },
+    {
+      "playerId": "4601",
+      "id": "4601",
+      "name": "Geraldo Enrique",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/x/i/xixaugvcy_s.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 89,
+      "ratings": {
+        "attack": 9,
+        "physical": 9,
+        "stamina": 8,
+        "control": 9,
+        "defense": 3,
+        "speed": 9,
+        "grit": 8,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "barcelona_orb"
+      ]
+    },
+    {
+      "playerId": "4592",
+      "id": "4592",
+      "name": "Gerard Carbonell",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/n/onedwdpnlau.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Mondiale",
+      "finalOverall": 90,
+      "ratings": {
+        "attack": 4,
+        "physical": 9,
+        "stamina": 9,
+        "control": 9,
+        "defense": 9,
+        "speed": 9,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "barcelona_orb"
+      ]
+    },
+    {
+      "playerId": "4599",
+      "id": "4599",
+      "name": "Joan Asensi",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/p/r/pr0tr1nbxqk.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Mondiale",
+      "finalOverall": 90,
+      "ratings": {
+        "attack": 10,
+        "physical": 7,
+        "stamina": 8,
+        "control": 8,
+        "defense": 1,
+        "speed": 9,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "barcelona_orb"
+      ]
+    },
+    {
+      "playerId": "4591",
+      "id": "4591",
+      "name": "Jordi Belloch",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/_/p/_pvid8pdmz8.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Elite",
+      "finalOverall": 89,
+      "ratings": {
+        "attack": 2,
+        "physical": 7,
+        "stamina": 9,
+        "control": 7,
+        "defense": 10,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "barcelona_orb"
+      ]
+    },
+    {
+      "playerId": "4594",
+      "id": "4594",
+      "name": "Josep Anglesola",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/l/l/llq6sxq_bmu.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Mondiale",
+      "finalOverall": 90,
+      "ratings": {
+        "attack": 9,
+        "physical": 9,
+        "stamina": 9,
+        "control": 9,
+        "defense": 9,
+        "speed": 8,
+        "grit": 8,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "barcelona_orb"
+      ]
+    },
+    {
+      "playerId": "4597",
+      "id": "4597",
+      "name": "Leo Segarra",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/y/d/ydfy8krhczm.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Mondiale",
+      "finalOverall": 90,
+      "ratings": {
+        "attack": 9,
+        "physical": 10,
+        "stamina": 9,
+        "control": 9,
+        "defense": 3,
+        "speed": 7,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "barcelona_orb"
+      ]
+    },
+    {
+      "playerId": "4596",
+      "id": "4596",
+      "name": "Ronaldo Ramallets",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/a/i/aicust5nzfm.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Mondiale",
+      "finalOverall": 90,
+      "ratings": {
+        "attack": 8,
+        "physical": 8,
+        "stamina": 8,
+        "control": 10,
+        "defense": 8,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "barcelona_orb"
+      ]
+    },
+    {
+      "playerId": "4589",
+      "id": "4589",
+      "name": "Salvador Castell",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/g/p/gpfoqcguqs0.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Mondiale",
+      "finalOverall": 92,
+      "ratings": {
+        "attack": 1,
+        "physical": 7,
+        "stamina": 6,
+        "control": 6,
+        "defense": 9,
+        "speed": 1,
+        "grit": 7,
+        "save": 10
+      },
+      "custom": false,
+      "teamIds": [
+        "barcelona_orb"
+      ]
+    },
+    {
+      "playerId": "4598",
+      "id": "4598",
+      "name": "Sergi Hernández",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/j/e/jexmco4teku.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Mondiale",
+      "finalOverall": 94,
+      "ratings": {
+        "attack": 10,
+        "physical": 10,
+        "stamina": 9,
+        "control": 10,
+        "defense": 8,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "barcelona_orb"
+      ]
+    },
+    {
+      "playerId": "4595",
+      "id": "4595",
+      "name": "Xavi Casals",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/r/k/rkzp_sf30sk.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Mondiale",
+      "finalOverall": 90,
+      "ratings": {
+        "attack": 8,
+        "physical": 8,
+        "stamina": 8,
+        "control": 10,
+        "defense": 8,
+        "speed": 8,
+        "grit": 8,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "barcelona_orb"
+      ]
+    },
+    {
+      "playerId": "4446",
+      "id": "4446",
+      "name": "Barry Cade",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/z/t/ztbd8s00ufu.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 75,
+      "ratings": {
+        "attack": 3,
+        "physical": 8,
+        "stamina": 7,
+        "control": 6,
+        "defense": 7,
+        "speed": 6,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4460",
+      "id": "4460",
+      "name": "Bastiana Chateau",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/v/6/v6vpkc3nq3u.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Buono",
+      "finalOverall": 75,
+      "ratings": {
+        "attack": 4,
+        "physical": 6,
+        "stamina": 7,
+        "control": 7,
+        "defense": 7,
+        "speed": 8,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4443",
+      "id": "4443",
+      "name": "Björn Brocken",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/s/t/strvlsbhiac.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 75,
+      "ratings": {
+        "attack": 2,
+        "physical": 9,
+        "stamina": 7,
+        "control": 6,
+        "defense": 7,
+        "speed": 5,
+        "grit": 7,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4454",
+      "id": "4454",
+      "name": "Corbin Brickham",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/9/u/9u571wi16je.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Buono",
+      "finalOverall": 75,
+      "ratings": {
+        "attack": 3,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 7,
+        "speed": 8,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4456",
+      "id": "4456",
+      "name": "Dane Upchurch",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/d/odpg2w8js8s.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 76,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 7,
+        "control": 6,
+        "defense": 2,
+        "speed": 9,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4445",
+      "id": "4445",
+      "name": "Hefton Bulk",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/u/f/ufrtda2iuvk.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 75,
+      "ratings": {
+        "attack": 2,
+        "physical": 8,
+        "stamina": 6,
+        "control": 6,
+        "defense": 7,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4455",
+      "id": "4455",
+      "name": "Helena Harwood",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/_/1/_1-nbpaz_pe.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Normale",
+      "finalOverall": 73,
+      "ratings": {
+        "attack": 1,
+        "physical": 6,
+        "stamina": 6,
+        "control": 6,
+        "defense": 6,
+        "speed": 2,
+        "grit": 6,
+        "save": 7
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4452",
+      "id": "4452",
+      "name": "Iggy Motte",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/n/w/nwdue8ce8am.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 8,
+        "physical": 6,
+        "stamina": 7,
+        "control": 8,
+        "defense": 1,
+        "speed": 8,
+        "grit": 7,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4448",
+      "id": "4448",
+      "name": "Ivor Shield",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/2/r/2rp6gerskju.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 75,
+      "ratings": {
+        "attack": 7,
+        "physical": 6,
+        "stamina": 7,
+        "control": 7,
+        "defense": 7,
+        "speed": 6,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4453",
+      "id": "4453",
+      "name": "Jack Wallside",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/m/8/m8iaypupx6s.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Mondiale",
+      "finalOverall": 90,
+      "ratings": {
+        "attack": 2,
+        "physical": 10,
+        "stamina": 6,
+        "control": 8,
+        "defense": 10,
+        "speed": 8,
+        "grit": 7,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4442",
+      "id": "4442",
+      "name": "Knox Loxley",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/c/7/c7wirtsod28.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 1,
+        "physical": 7,
+        "stamina": 5,
+        "control": 5,
+        "defense": 7,
+        "speed": 1,
+        "grit": 7,
+        "save": 8
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4444",
+      "id": "4444",
+      "name": "Lunk Ironbrow",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/w/-/w-spzdkkrpk.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 75,
+      "ratings": {
+        "attack": 2,
+        "physical": 8,
+        "stamina": 6,
+        "control": 6,
+        "defense": 7,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4447",
+      "id": "4447",
+      "name": "Rick Wall",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/l/3/l3aywlqy5cm.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Normale",
+      "finalOverall": 74,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 6,
+        "control": 7,
+        "defense": 6,
+        "speed": 7,
+        "grit": 7,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4449",
+      "id": "4449",
+      "name": "Rocky Hardcastle",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/f/y/fy5hj4l6m88.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Buono",
+      "finalOverall": 75,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 7,
+        "speed": 7,
+        "grit": 6,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4451",
+      "id": "4451",
+      "name": "Sebastian Fortwright",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/h/5/h5-bnh3wj68.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Buono",
+      "finalOverall": 75,
+      "ratings": {
+        "attack": 6,
+        "physical": 8,
+        "stamina": 7,
+        "control": 7,
+        "defense": 6,
+        "speed": 7,
+        "grit": 7,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4450",
+      "id": "4450",
+      "name": "Waldo Gibbons",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/d/7/d7aomt99pp0.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Buono",
+      "finalOverall": 75,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 2,
+        "speed": 7,
+        "grit": 7,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4457",
+      "id": "4457",
+      "name": "Warden Watchford",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/u/y/uyszlljrncc.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Buono",
+      "finalOverall": 75,
+      "ratings": {
+        "attack": 7,
+        "physical": 8,
+        "stamina": 6,
+        "control": 7,
+        "defense": 8,
+        "speed": 6,
+        "grit": 7,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "rampart_junior_high"
+      ]
+    },
+    {
+      "playerId": "4518",
+      "id": "4518",
+      "name": "Apollo Light",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/r/t/rtno7zncduu.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Forte",
+      "finalOverall": 83,
+      "ratings": {
+        "attack": 3,
+        "physical": 6,
+        "stamina": 8,
+        "control": 7,
+        "defense": 9,
+        "speed": 8,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "zeus_ares"
+      ]
+    },
+    {
+      "playerId": "4523",
+      "id": "4523",
+      "name": "Arion Matlock",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/9/j/9j8_3qpak3m.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Forte",
+      "finalOverall": 83,
+      "ratings": {
+        "attack": 8,
+        "physical": 7,
+        "stamina": 8,
+        "control": 8,
+        "defense": 8,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "zeus_ares"
+      ]
+    },
+    {
+      "playerId": "4522",
+      "id": "4522",
+      "name": "Artie Mishman",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/j/j/jjdngdq4tik.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Forte",
+      "finalOverall": 83,
+      "ratings": {
+        "attack": 8,
+        "physical": 8,
+        "stamina": 8,
+        "control": 8,
+        "defense": 8,
+        "speed": 7,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "zeus_ares"
+      ]
+    },
+    {
+      "playerId": "4526",
+      "id": "4526",
+      "name": "Byron Love",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/6/q/6q1af7euf9m.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Mondiale",
+      "finalOverall": 91,
+      "ratings": {
+        "attack": 10,
+        "physical": 8,
+        "stamina": 8,
+        "control": 10,
+        "defense": 7,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "zeus_ares"
+      ]
+    },
+    {
+      "playerId": "4521",
+      "id": "4521",
+      "name": "Danny Wood",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/4/l/4lygrimca7m.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Elite",
+      "finalOverall": 85,
+      "ratings": {
+        "attack": 1,
+        "physical": 9,
+        "stamina": 8,
+        "control": 7,
+        "defense": 9,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "zeus_ares"
+      ]
+    },
+    {
+      "playerId": "4519",
+      "id": "4519",
+      "name": "Hadrian Diesel",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/p/m/pmgsvafwyou.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Elite",
+      "finalOverall": 86,
+      "ratings": {
+        "attack": 3,
+        "physical": 8,
+        "stamina": 8,
+        "control": 8,
+        "defense": 9,
+        "speed": 7,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "zeus_ares"
+      ]
+    },
+    {
+      "playerId": "4525",
+      "id": "4525",
+      "name": "Jonas Demetrius",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/i/j/ijwtaugpgoe.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 85,
+      "ratings": {
+        "attack": 8,
+        "physical": 9,
+        "stamina": 8,
+        "control": 9,
+        "defense": 1,
+        "speed": 9,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "zeus_ares"
+      ]
+    },
+    {
+      "playerId": "4520",
+      "id": "4520",
+      "name": "Lane War",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/y/k/ykrz4_5k1b8.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Forte",
+      "finalOverall": 83,
+      "ratings": {
+        "attack": 4,
+        "physical": 8,
+        "stamina": 8,
+        "control": 8,
+        "defense": 8,
+        "speed": 9,
+        "grit": 8,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "zeus_ares"
+      ]
+    },
+    {
+      "playerId": "4527",
+      "id": "4527",
+      "name": "Percy Hurst",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/t/h/thnytrgtrbs.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 88,
+      "ratings": {
+        "attack": 9,
+        "physical": 7,
+        "stamina": 8,
+        "control": 8,
+        "defense": 1,
+        "speed": 10,
+        "grit": 9,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "zeus_ares"
+      ]
+    },
+    {
+      "playerId": "4517",
+      "id": "4517",
+      "name": "Ross Siddon",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/a/f/afwvwmrmwd8.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Elite",
+      "finalOverall": 89,
+      "ratings": {
+        "attack": 1,
+        "physical": 10,
+        "stamina": 8,
+        "control": 5,
+        "defense": 9,
+        "speed": 1,
+        "grit": 8,
+        "save": 9
+      },
+      "custom": false,
+      "teamIds": [
+        "zeus_ares"
+      ]
+    },
+    {
+      "playerId": "4524",
+      "id": "4524",
+      "name": "Wesley Knox",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/m/h/mhneavpgnek.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Forte",
+      "finalOverall": 84,
+      "ratings": {
+        "attack": 8,
+        "physical": 8,
+        "stamina": 8,
+        "control": 8,
+        "defense": 8,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "zeus_ares"
+      ]
+    },
+    {
+      "playerId": "22",
+      "id": "22",
+      "name": "Ben Simmons",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/s/r/srbc08syx-0.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Buono",
+      "finalOverall": 79,
+      "ratings": {
+        "attack": 2,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 8,
+        "speed": 7,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "royal_academy_ares"
+      ]
+    },
+    {
+      "playerId": "16",
+      "id": "16",
+      "name": "Bobby Shearer",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/-/x/-xzmaq-eqf8.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Forte",
+      "finalOverall": 82,
+      "ratings": {
+        "attack": 6,
+        "physical": 6,
+        "stamina": 8,
+        "control": 8,
+        "defense": 8,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "royal_academy_ares"
+      ]
+    },
+    {
+      "playerId": "4511",
+      "id": "4511",
+      "name": "Caleb Stonewall",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/a/k/akqdgckxbwe.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Mondiale",
+      "finalOverall": 90,
+      "ratings": {
+        "attack": 8,
+        "physical": 8,
+        "stamina": 7,
+        "control": 10,
+        "defense": 8,
+        "speed": 8,
+        "grit": 10,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "royal_academy_ares"
+      ]
+    },
+    {
+      "playerId": "28",
+      "id": "28",
+      "name": "Daniel Hatch",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/l/d/ldrmvkqotue.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 8,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 7,
+        "speed": 7,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "royal_academy_ares"
+      ]
+    },
+    {
+      "playerId": "30",
+      "id": "30",
+      "name": "David Samford",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/u/d/udbgi0_9hlm.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 9,
+        "physical": 9,
+        "stamina": 7,
+        "control": 8,
+        "defense": 1,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "royal_academy_ares"
+      ]
+    },
+    {
+      "playerId": "27",
+      "id": "27",
+      "name": "Derek Swing",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/6/1/61at4120ans.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 7,
+        "physical": 8,
+        "stamina": 7,
+        "control": 8,
+        "defense": 8,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "royal_academy_ares"
+      ]
+    },
+    {
+      "playerId": "4510",
+      "id": "4510",
+      "name": "Grotley Bogwash",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/l/j/ljcxe-zdzjc.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Buono",
+      "finalOverall": 79,
+      "ratings": {
+        "attack": 1,
+        "physical": 7,
+        "stamina": 7,
+        "control": 6,
+        "defense": 7,
+        "speed": 1,
+        "grit": 6,
+        "save": 8
+      },
+      "custom": false,
+      "teamIds": [
+        "royal_academy_ares"
+      ]
+    },
+    {
+      "playerId": "24",
+      "id": "24",
+      "name": "Gus Martin",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/f/y/fy3h3amk_lc.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 3,
+        "physical": 7,
+        "stamina": 8,
+        "control": 7,
+        "defense": 8,
+        "speed": 8,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "royal_academy_ares"
+      ]
+    },
+    {
+      "playerId": "25",
+      "id": "25",
+      "name": "Herman Waldon",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/_/3/_3uukhtskrs.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Buono",
+      "finalOverall": 79,
+      "ratings": {
+        "attack": 7,
+        "physical": 8,
+        "stamina": 8,
+        "control": 7,
+        "defense": 8,
+        "speed": 8,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "royal_academy_ares"
+      ]
+    },
+    {
+      "playerId": "26",
+      "id": "26",
+      "name": "John Bloom",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/f/ofl1j41wnye.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 5,
+        "physical": 6,
+        "stamina": 8,
+        "control": 8,
+        "defense": 7,
+        "speed": 6,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "royal_academy_ares"
+      ]
+    },
+    {
+      "playerId": "4498",
+      "id": "4498",
+      "name": "Joseph King",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/z/v/zvcri20mvwk.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 1,
+        "physical": 7,
+        "stamina": 6,
+        "control": 6,
+        "defense": 9,
+        "speed": 1,
+        "grit": 8,
+        "save": 9
+      },
+      "custom": false,
+      "teamIds": [
+        "royal_academy_ares"
+      ]
+    },
+    {
+      "playerId": "4508",
+      "id": "4508",
+      "name": "Nathan Swift",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/6/l/6lz2zb_50q0.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Mondiale",
+      "finalOverall": 90,
+      "ratings": {
+        "attack": 8,
+        "physical": 8,
+        "stamina": 8,
+        "control": 9,
+        "defense": 9,
+        "speed": 10,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "royal_academy_ares"
+      ]
+    },
+    {
+      "playerId": "21",
+      "id": "21",
+      "name": "Peter Drent",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/d/5/d5w9zd0i6nc.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 2,
+        "physical": 9,
+        "stamina": 6,
+        "control": 7,
+        "defense": 8,
+        "speed": 7,
+        "grit": 7,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "royal_academy_ares"
+      ]
+    },
+    {
+      "playerId": "4392",
+      "id": "4392",
+      "name": "Adriano Donati",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/9/r/9rwxfvauzle.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 88,
+      "ratings": {
+        "attack": 9,
+        "physical": 7,
+        "stamina": 8,
+        "control": 9,
+        "defense": 2,
+        "speed": 9,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "raimon_2"
+      ]
+    },
+    {
+      "playerId": "4391",
+      "id": "4391",
+      "name": "Basile Hardy",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/m/5/m5nqoq8uews.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 89,
+      "ratings": {
+        "attack": 10,
+        "physical": 7,
+        "stamina": 8,
+        "control": 8,
+        "defense": 2,
+        "speed": 7,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "raimon_2"
+      ]
+    },
+    {
+      "playerId": "4395",
+      "id": "4395",
+      "name": "César Montalbán",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/u/3/u3d5vubkuwc.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Elite",
+      "finalOverall": 88,
+      "ratings": {
+        "attack": 8,
+        "physical": 8,
+        "stamina": 8,
+        "control": 9,
+        "defense": 8,
+        "speed": 9,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "raimon_2"
+      ]
+    },
+    {
+      "playerId": "4398",
+      "id": "4398",
+      "name": "Cliff Parker",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/a/d/ad8hkjyojp0.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Elite",
+      "finalOverall": 89,
+      "ratings": {
+        "attack": 2,
+        "physical": 10,
+        "stamina": 8,
+        "control": 8,
+        "defense": 9,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "raimon_2"
+      ]
+    },
+    {
+      "playerId": "4416",
+      "id": "4416",
+      "name": "Elliot Ember",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/a/h/ah_jq5yqice.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Mondiale",
+      "finalOverall": 92,
+      "ratings": {
+        "attack": 10,
+        "physical": 8,
+        "stamina": 8,
+        "control": 9,
+        "defense": 1,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "raimon_2",
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4394",
+      "id": "4394",
+      "name": "Kiko Calavento",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/y/oygmgzucbqs.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 6,
+        "physical": 8,
+        "stamina": 8,
+        "control": 7,
+        "defense": 9,
+        "speed": 9,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "raimon_2"
+      ]
+    },
+    {
+      "playerId": "4396",
+      "id": "4396",
+      "name": "Maxime Dassier",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/f/f/ffyy4r9wdd0.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Elite",
+      "finalOverall": 88,
+      "ratings": {
+        "attack": 8,
+        "physical": 9,
+        "stamina": 8,
+        "control": 9,
+        "defense": 8,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "raimon_2"
+      ]
+    },
+    {
+      "playerId": "4400",
+      "id": "4400",
+      "name": "Nino Nango",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/f/d/fdwntd3bfq8.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 8,
+        "physical": 6,
+        "stamina": 8,
+        "control": 9,
+        "defense": 8,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "raimon_2"
+      ]
+    },
+    {
+      "playerId": "4638",
+      "id": "4638",
+      "name": "Rolland Bowlby",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/l/y/ly14aactwwm.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Forte",
+      "finalOverall": 84,
+      "ratings": {
+        "attack": 2,
+        "physical": 8,
+        "stamina": 8,
+        "control": 8,
+        "defense": 8,
+        "speed": 5,
+        "grit": 9,
+        "save": 8
+      },
+      "custom": false,
+      "teamIds": [
+        "raimon_2"
+      ]
+    },
+    {
+      "playerId": "4393",
+      "id": "4393",
+      "name": "Sandra Fischer",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/_/w/_wrtrmi42je.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Elite",
+      "finalOverall": 88,
+      "ratings": {
+        "attack": 4,
+        "physical": 8,
+        "stamina": 8,
+        "control": 6,
+        "defense": 9,
+        "speed": 3,
+        "grit": 8,
+        "save": 9
+      },
+      "custom": false,
+      "teamIds": [
+        "raimon_2"
+      ]
+    },
+    {
+      "playerId": "4390",
+      "id": "4390",
+      "name": "Sonny Wright",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/s/w/swel73jmr2c.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Mondiale",
+      "finalOverall": 92,
+      "ratings": {
+        "attack": 10,
+        "physical": 8,
+        "stamina": 8,
+        "control": 9,
+        "defense": 5,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "raimon_2"
+      ]
+    },
+    {
+      "playerId": "4397",
+      "id": "4397",
+      "name": "Trevor Cook",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/r/1/r1najc-sk8c.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Elite",
+      "finalOverall": 88,
+      "ratings": {
+        "attack": 4,
+        "physical": 9,
+        "stamina": 8,
+        "control": 8,
+        "defense": 9,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "raimon_2"
+      ]
+    },
+    {
+      "playerId": "4399",
+      "id": "4399",
+      "name": "Valentin Eisner",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/0/1/01ns-irhoju.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Elite",
+      "finalOverall": 88,
+      "ratings": {
+        "attack": 8,
+        "physical": 8,
+        "stamina": 8,
+        "control": 9,
+        "defense": 8,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "raimon_2"
+      ]
+    },
+    {
+      "playerId": "4530",
+      "id": "4530",
+      "name": "Adam Ropes",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/e/w/ewqf6g8gzd0.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Forte",
+      "finalOverall": 83,
+      "ratings": {
+        "attack": 1,
+        "physical": 10,
+        "stamina": 8,
+        "control": 6,
+        "defense": 6,
+        "speed": 1,
+        "grit": 8,
+        "save": 8
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "4539",
+      "id": "4539",
+      "name": "Aiden Froste",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/m/a/maq5sorjvom.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Mondiale",
+      "finalOverall": 92,
+      "ratings": {
+        "attack": 10,
+        "physical": 7,
+        "stamina": 9,
+        "control": 8,
+        "defense": 1,
+        "speed": 10,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "4542",
+      "id": "4542",
+      "name": "Bunny Cottontail",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/-/5/-5zwp9jos9e.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Elite",
+      "finalOverall": 86,
+      "ratings": {
+        "attack": 8,
+        "physical": 7,
+        "stamina": 10,
+        "control": 9,
+        "defense": 1,
+        "speed": 10,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "1172",
+      "id": "1172",
+      "name": "Gem Strata",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/z/n/znuiw4puex8.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Forte",
+      "finalOverall": 81,
+      "ratings": {
+        "attack": 1,
+        "physical": 8,
+        "stamina": 8,
+        "control": 8,
+        "defense": 8,
+        "speed": 7,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "4531",
+      "id": "4531",
+      "name": "Joaquine Downtown",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/w/-/w-ligh1p4xu.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Forte",
+      "finalOverall": 82,
+      "ratings": {
+        "attack": 3,
+        "physical": 8,
+        "stamina": 7,
+        "control": 8,
+        "defense": 8,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "1159",
+      "id": "1159",
+      "name": "Kerry Bootgaiter",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/6/d/6dlvtpebf3s.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 7,
+        "control": 8,
+        "defense": 8,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "4543",
+      "id": "4543",
+      "name": "Kevin Dragonfly",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/8/y/8y0shkbip7e.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Mondiale",
+      "finalOverall": 90,
+      "ratings": {
+        "attack": 10,
+        "physical": 8,
+        "stamina": 8,
+        "control": 8,
+        "defense": 1,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "4536",
+      "id": "4536",
+      "name": "Maddox Rock",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/e/u/eu0qrs2tfo8.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 7,
+        "control": 8,
+        "defense": 7,
+        "speed": 8,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "1170",
+      "id": "1170",
+      "name": "Martin Ursus",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/a/u/aui1ve74seu.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 1,
+        "physical": 8,
+        "stamina": 8,
+        "control": 7,
+        "defense": 8,
+        "speed": 8,
+        "grit": 6,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "4532",
+      "id": "4532",
+      "name": "Milton Bindings",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/1/8/18fx8tqxy9u.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 3,
+        "physical": 8,
+        "stamina": 7,
+        "control": 7,
+        "defense": 8,
+        "speed": 8,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "1171",
+      "id": "1171",
+      "name": "Pete Bogg",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/c/p/cplp7hpupcu.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 8,
+        "control": 8,
+        "defense": 8,
+        "speed": 7,
+        "grit": 6,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "1168",
+      "id": "1168",
+      "name": "Quentin Rackner",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/r/p/rpwhr8ok0xm.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 8,
+        "physical": 7,
+        "stamina": 7,
+        "control": 8,
+        "defense": 2,
+        "speed": 7,
+        "grit": 7,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "4537",
+      "id": "4537",
+      "name": "Robert Skipolson",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/v/t/vtmevolfhdk.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 8,
+        "control": 8,
+        "defense": 8,
+        "speed": 7,
+        "grit": 6,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "4534",
+      "id": "4534",
+      "name": "Sean Snowfield",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/b/w/bw6pnet1vc8.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 7,
+        "physical": 8,
+        "stamina": 7,
+        "control": 8,
+        "defense": 8,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "4538",
+      "id": "4538",
+      "name": "Shawn Froste",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/g/1/g1zm_1kbai8.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Mondiale",
+      "finalOverall": 92,
+      "ratings": {
+        "attack": 9,
+        "physical": 8,
+        "stamina": 10,
+        "control": 8,
+        "defense": 9,
+        "speed": 10,
+        "grit": 10,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "1157",
+      "id": "1157",
+      "name": "Spike Gleeson",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/r/e/re3bttxphk0.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Buono",
+      "finalOverall": 79,
+      "ratings": {
+        "attack": 1,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 8,
+        "speed": 8,
+        "grit": 7,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "1169",
+      "id": "1169",
+      "name": "Trent Peggs",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/x/g/xgtu4hdcb38.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 79,
+      "ratings": {
+        "attack": 1,
+        "physical": 6,
+        "stamina": 6,
+        "control": 7,
+        "defense": 6,
+        "speed": 6,
+        "grit": 6,
+        "save": 8
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "4410",
+      "id": "4410",
+      "name": "Acker Reese",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/p/o/poj0tfsggps.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Elite",
+      "finalOverall": 89,
+      "ratings": {
+        "attack": 4,
+        "physical": 9,
+        "stamina": 9,
+        "control": 10,
+        "defense": 9,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4421",
+      "id": "4421",
+      "name": "Aren Yarrow",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/x/l/xlq9wk0bj8k.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Forte",
+      "finalOverall": 84,
+      "ratings": {
+        "attack": 8,
+        "physical": 8,
+        "stamina": 8,
+        "control": 9,
+        "defense": 7,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4409",
+      "id": "4409",
+      "name": "Ari Zimmerman",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/d/c/dc2sisvkhwe.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Forte",
+      "finalOverall": 84,
+      "ratings": {
+        "attack": 1,
+        "physical": 8,
+        "stamina": 7,
+        "control": 8,
+        "defense": 9,
+        "speed": 8,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4419",
+      "id": "4419",
+      "name": "Braveon Halvors",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/g/m/gm4poonz7v8.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Forte",
+      "finalOverall": 84,
+      "ratings": {
+        "attack": 9,
+        "physical": 8,
+        "stamina": 7,
+        "control": 8,
+        "defense": 1,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4412",
+      "id": "4412",
+      "name": "Caesar Pike",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/4/v/4vbgt9_0460.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 7,
+        "control": 8,
+        "defense": 7,
+        "speed": 8,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4408",
+      "id": "4408",
+      "name": "Cygnus Starkey",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/s/q/sqhnptjeqls.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Forte",
+      "finalOverall": 81,
+      "ratings": {
+        "attack": 2,
+        "physical": 8,
+        "stamina": 7,
+        "control": 7,
+        "defense": 8,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4415",
+      "id": "4415",
+      "name": "Eddy O'Ryan",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/6/o/6oc8dkty980.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 85,
+      "ratings": {
+        "attack": 8,
+        "physical": 7,
+        "stamina": 8,
+        "control": 9,
+        "defense": 8,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4418",
+      "id": "4418",
+      "name": "Holt Northam",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/i/t/it_1gx1f-p8.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Forte",
+      "finalOverall": 82,
+      "ratings": {
+        "attack": 1,
+        "physical": 8,
+        "stamina": 8,
+        "control": 8,
+        "defense": 8,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4411",
+      "id": "4411",
+      "name": "Jimmy Nigh",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/y/a/ya4v-gk8nae.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Forte",
+      "finalOverall": 81,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 7,
+        "control": 8,
+        "defense": 8,
+        "speed": 9,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4417",
+      "id": "4417",
+      "name": "Jude Sharp",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/t/f/tfourotltau.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Mondiale",
+      "finalOverall": 93,
+      "ratings": {
+        "attack": 9,
+        "physical": 8,
+        "stamina": 9,
+        "control": 10,
+        "defense": 8,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4420",
+      "id": "4420",
+      "name": "Konrad Hardin",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/r/k/rkjifxbjwcu.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Forte",
+      "finalOverall": 83,
+      "ratings": {
+        "attack": 1,
+        "physical": 5,
+        "stamina": 5,
+        "control": 5,
+        "defense": 6,
+        "speed": 1,
+        "grit": 6,
+        "save": 9
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4407",
+      "id": "4407",
+      "name": "Larry Lyre",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/c/c/cccavsaxljm.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Forte",
+      "finalOverall": 84,
+      "ratings": {
+        "attack": 2,
+        "physical": 8,
+        "stamina": 7,
+        "control": 8,
+        "defense": 9,
+        "speed": 8,
+        "grit": 6,
+        "save": 4
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4406",
+      "id": "4406",
+      "name": "Mickey Way",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/z/q/zqth4tmtm6k.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 1,
+        "physical": 9,
+        "stamina": 6,
+        "control": 6,
+        "defense": 7,
+        "speed": 1,
+        "grit": 7,
+        "save": 9
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4413",
+      "id": "4413",
+      "name": "Oliver Golightly",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/j/h/jhqbaczovjc.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 7,
+        "control": 8,
+        "defense": 7,
+        "speed": 8,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4414",
+      "id": "4414",
+      "name": "Oscar Pio",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/l/m/lmtdubliqpc.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Forte",
+      "finalOverall": 81,
+      "ratings": {
+        "attack": 8,
+        "physical": 7,
+        "stamina": 8,
+        "control": 8,
+        "defense": 7,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "polestar_academy"
+      ]
+    },
+    {
+      "playerId": "4562",
+      "id": "4562",
+      "name": "Billy Miller",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/d/s/dsqctotk4v8.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 85,
+      "ratings": {
+        "attack": 3,
+        "physical": 8,
+        "stamina": 7,
+        "control": 6,
+        "defense": 9,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4565",
+      "id": "4565",
+      "name": "Burleigh Carpenter",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/q/n/qn407ct3wzc.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 3,
+        "physical": 7,
+        "stamina": 7,
+        "control": 8,
+        "defense": 8,
+        "speed": 8,
+        "grit": 5,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4568",
+      "id": "4568",
+      "name": "Dan Bowsun",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/1/n/1nsym8ceasu.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 3,
+        "physical": 7,
+        "stamina": 7,
+        "control": 6,
+        "defense": 8,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4574",
+      "id": "4574",
+      "name": "Eamond Everwing",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/7/g/7gqgfg-foge.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 79,
+      "ratings": {
+        "attack": 8,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 2,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4577",
+      "id": "4577",
+      "name": "Everest Brightwell",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/g/og_ovb_bt1c.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Buono",
+      "finalOverall": 79,
+      "ratings": {
+        "attack": 3,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 8,
+        "speed": 7,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4575",
+      "id": "4575",
+      "name": "Frey Fielding",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/5/b/5bt8r5splme.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 79,
+      "ratings": {
+        "attack": 8,
+        "physical": 7,
+        "stamina": 7,
+        "control": 8,
+        "defense": 7,
+        "speed": 7,
+        "grit": 6,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4567",
+      "id": "4567",
+      "name": "Gaffer Mason",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/e/p/epj5hdk-3f8.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Buono",
+      "finalOverall": 79,
+      "ratings": {
+        "attack": 7,
+        "physical": 9,
+        "stamina": 6,
+        "control": 8,
+        "defense": 7,
+        "speed": 8,
+        "grit": 6,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4569",
+      "id": "4569",
+      "name": "Giles Farmer",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/b/n/bnta9xbm9t8.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 79,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 8,
+        "control": 7,
+        "defense": 7,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4563",
+      "id": "4563",
+      "name": "Jack Sawyer",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/w/l/wlchqoncqgu.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 7,
+        "physical": 8,
+        "stamina": 8,
+        "control": 7,
+        "defense": 8,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4572",
+      "id": "4572",
+      "name": "Kia Tanner",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/k/i/kibbofy_jts.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Elite",
+      "finalOverall": 85,
+      "ratings": {
+        "attack": 8,
+        "physical": 8,
+        "stamina": 8,
+        "control": 8,
+        "defense": 7,
+        "speed": 10,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4566",
+      "id": "4566",
+      "name": "Luke Blank",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/s/r/sr4itka4ggk.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 8,
+        "control": 7,
+        "defense": 7,
+        "speed": 8,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4561",
+      "id": "4561",
+      "name": "Mark Evans",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/j/d/jdjpa1mcn1m.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Leggenda",
+      "finalOverall": 95,
+      "ratings": {
+        "attack": 7,
+        "physical": 8,
+        "stamina": 6,
+        "control": 6,
+        "defense": 8,
+        "speed": 6,
+        "grit": 10,
+        "save": 10
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4564",
+      "id": "4564",
+      "name": "Meriwether Beaumont",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/b/p/bpjvw9ln7a0.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 3,
+        "physical": 6,
+        "stamina": 7,
+        "control": 7,
+        "defense": 8,
+        "speed": 8,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4571",
+      "id": "4571",
+      "name": "Neville Merchant",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/q/k/qk_udtsulak.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Buono",
+      "finalOverall": 77,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 8,
+        "control": 8,
+        "defense": 2,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4570",
+      "id": "4570",
+      "name": "Pacey Hawker",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/h/i/hio1us0uizm.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 8,
+        "control": 8,
+        "defense": 2,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4576",
+      "id": "4576",
+      "name": "Tobin Harveston",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/i/p/ipcdggktmvs.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 7,
+        "physical": 9,
+        "stamina": 7,
+        "control": 8,
+        "defense": 7,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "everytown"
+      ]
+    },
+    {
+      "playerId": "4463",
+      "id": "4463",
+      "name": "Alfred Meenan",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/k/o/kojsaqrd78k.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 5,
+        "physical": 7,
+        "stamina": 8,
+        "control": 7,
+        "defense": 7,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "4472",
+      "id": "4472",
+      "name": "Axel Blaze",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/5/h/5h_rz2fvtjm.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Mondiale",
+      "finalOverall": 93,
+      "ratings": {
+        "attack": 10,
+        "physical": 8,
+        "stamina": 8,
+        "control": 9,
+        "defense": 1,
+        "speed": 9,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "171",
+      "id": "171",
+      "name": "Brody Gloom",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/n/b/nbnlivjcuv0.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 77,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 7,
+        "speed": 7,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "4464",
+      "id": "4464",
+      "name": "Dan Mirthful",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/-/k/-k20rdohcdm.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Buono",
+      "finalOverall": 77,
+      "ratings": {
+        "attack": 6,
+        "physical": 8,
+        "stamina": 7,
+        "control": 7,
+        "defense": 7,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "173",
+      "id": "173",
+      "name": "Eren Middleton",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/u/s/usr2hzxugac.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 77,
+      "ratings": {
+        "attack": 4,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 7,
+        "speed": 7,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "4473",
+      "id": "4473",
+      "name": "Hilary Prentice",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/b/l/bl_tp-yal80.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Buono",
+      "finalOverall": 75,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 7,
+        "speed": 7,
+        "grit": 6,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "4474",
+      "id": "4474",
+      "name": "Jodi Green",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/d/q/dq4xhng2g60.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 2,
+        "physical": 7,
+        "stamina": 6,
+        "control": 6,
+        "defense": 8,
+        "speed": 8,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "159",
+      "id": "159",
+      "name": "John Neville",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/f/x/fxn30donyam.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 2,
+        "physical": 8,
+        "stamina": 7,
+        "control": 7,
+        "defense": 8,
+        "speed": 6,
+        "grit": 9,
+        "save": 7
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "4462",
+      "id": "4462",
+      "name": "Malcolm Night",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/7/m/7m4n3vn5wpm.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 8,
+        "control": 7,
+        "defense": 8,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "167",
+      "id": "167",
+      "name": "Marvin Murdock",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/p/c/pcfzrjfd6jk.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 7,
+        "control": 8,
+        "defense": 2,
+        "speed": 9,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "174",
+      "id": "174",
+      "name": "Peter Wells",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/0/9/09ydyuicz6s.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 2,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 8,
+        "speed": 7,
+        "grit": 6,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "163",
+      "id": "163",
+      "name": "Ricky Clover",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/9/z/9zdejzppo88.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 6,
+        "physical": 7,
+        "stamina": 7,
+        "control": 5,
+        "defense": 8,
+        "speed": 6,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "170",
+      "id": "170",
+      "name": "Simon Calier",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/w/z/wzwqpqf4dcc.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Buono",
+      "finalOverall": 77,
+      "ratings": {
+        "attack": 1,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 7,
+        "speed": 5,
+        "grit": 9,
+        "save": 7
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "168",
+      "id": "168",
+      "name": "Thomas Murdock",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/h/0/h0e-xiwkbpe.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 8,
+        "control": 8,
+        "defense": 3,
+        "speed": 9,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "4466",
+      "id": "4466",
+      "name": "Toby Damian",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/h/k/hkcycjhsqce.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Buono",
+      "finalOverall": 77,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 7,
+        "speed": 8,
+        "grit": 7,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "4461",
+      "id": "4461",
+      "name": "Trice Topper",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/b/j/bjb4ky4xjv8.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 2,
+        "physical": 6,
+        "stamina": 5,
+        "control": 4,
+        "defense": 6,
+        "speed": 6,
+        "grit": 6,
+        "save": 8
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "169",
+      "id": "169",
+      "name": "Tyler Murdock",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/2/c/2c1fc3ww28s.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 8,
+        "physical": 6,
+        "stamina": 7,
+        "control": 7,
+        "defense": 3,
+        "speed": 9,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "172",
+      "id": "172",
+      "name": "Victor Talis",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/l/6/l6gxmmxurp0.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Buono",
+      "finalOverall": 77,
+      "ratings": {
+        "attack": 6,
+        "physical": 6,
+        "stamina": 7,
+        "control": 7,
+        "defense": 6,
+        "speed": 9,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "165",
+      "id": "165",
+      "name": "York Nashmith",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/s/e/serk376bwvk.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Buono",
+      "finalOverall": 77,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 8,
+        "control": 7,
+        "defense": 6,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "4468",
+      "id": "4468",
+      "name": "Zachary Moore",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/w/j/wjomibugipc.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Buono",
+      "finalOverall": 78,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 8,
+        "control": 7,
+        "defense": 7,
+        "speed": 7,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "kirkwood"
+      ]
+    },
+    {
+      "playerId": "4550",
+      "id": "4550",
+      "name": "Ben Blowton",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/j/4/j4uo2y4rfzk.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 85,
+      "ratings": {
+        "attack": 7,
+        "physical": 10,
+        "stamina": 8,
+        "control": 9,
+        "defense": 8,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alia_academy"
+      ]
+    },
+    {
+      "playerId": "4559",
+      "id": "4559",
+      "name": "Bonnie Sparks",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/2/x/2xdxsriq8mc.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Elite",
+      "finalOverall": 85,
+      "ratings": {
+        "attack": 3,
+        "physical": 7,
+        "stamina": 8,
+        "control": 7,
+        "defense": 9,
+        "speed": 9,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alia_academy"
+      ]
+    },
+    {
+      "playerId": "4554",
+      "id": "4554",
+      "name": "Bryce Whitingale",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/9/s/9srwh_7jimm.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 9,
+        "physical": 8,
+        "stamina": 7,
+        "control": 8,
+        "defense": 3,
+        "speed": 9,
+        "grit": 8,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "alia_academy"
+      ]
+    },
+    {
+      "playerId": "4548",
+      "id": "4548",
+      "name": "Claire Lesnow",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/w/4/w4-ibmxyjgs.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Elite",
+      "finalOverall": 85,
+      "ratings": {
+        "attack": 3,
+        "physical": 7,
+        "stamina": 8,
+        "control": 8,
+        "defense": 9,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alia_academy"
+      ]
+    },
+    {
+      "playerId": "4553",
+      "id": "4553",
+      "name": "Claude Beacons",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/m/6/m6a3qadzpvk.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 9,
+        "physical": 7,
+        "stamina": 8,
+        "control": 8,
+        "defense": 2,
+        "speed": 9,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alia_academy"
+      ]
+    },
+    {
+      "playerId": "4546",
+      "id": "4546",
+      "name": "Dave Quagmire",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/s/v/sv5c5do761u.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 86,
+      "ratings": {
+        "attack": 6,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 7,
+        "speed": 6,
+        "grit": 6,
+        "save": 9
+      },
+      "custom": false,
+      "teamIds": [
+        "alia_academy"
+      ]
+    },
+    {
+      "playerId": "4547",
+      "id": "4547",
+      "name": "Grant Icewater",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/n/q/nqpdszxik1e.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Forte",
+      "finalOverall": 84,
+      "ratings": {
+        "attack": 2,
+        "physical": 9,
+        "stamina": 7,
+        "control": 7,
+        "defense": 9,
+        "speed": 7,
+        "grit": 6,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alia_academy"
+      ]
+    },
+    {
+      "playerId": "4555",
+      "id": "4555",
+      "name": "Hunter Foster",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/_/z/_zskpmplngm.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 89,
+      "ratings": {
+        "attack": 9,
+        "physical": 8,
+        "stamina": 8,
+        "control": 8,
+        "defense": 6,
+        "speed": 10,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alia_academy"
+      ]
+    },
+    {
+      "playerId": "4551",
+      "id": "4551",
+      "name": "Isabelle Trick",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/d/9/d9ijuiobxg8.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Elite",
+      "finalOverall": 85,
+      "ratings": {
+        "attack": 8,
+        "physical": 8,
+        "stamina": 8,
+        "control": 8,
+        "defense": 8,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alia_academy"
+      ]
+    },
+    {
+      "playerId": "4549",
+      "id": "4549",
+      "name": "Jordan Greenway",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/u/0/u0-exe6x_zu.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Elite",
+      "finalOverall": 86,
+      "ratings": {
+        "attack": 9,
+        "physical": 8,
+        "stamina": 8,
+        "control": 9,
+        "defense": 6,
+        "speed": 9,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alia_academy"
+      ]
+    },
+    {
+      "playerId": "4552",
+      "id": "4552",
+      "name": "Nigel August",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/4/q/4qlvbneroqm.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Forte",
+      "finalOverall": 83,
+      "ratings": {
+        "attack": 8,
+        "physical": 8,
+        "stamina": 9,
+        "control": 8,
+        "defense": 2,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alia_academy"
+      ]
+    },
+    {
+      "playerId": "4557",
+      "id": "4557",
+      "name": "Ronny Metcalf",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/h/_/h_s2_ueqrv0.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Forte",
+      "finalOverall": 82,
+      "ratings": {
+        "attack": 8,
+        "physical": 7,
+        "stamina": 8,
+        "control": 8,
+        "defense": 8,
+        "speed": 8,
+        "grit": 7,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "alia_academy"
+      ]
+    },
+    {
+      "playerId": "4556",
+      "id": "4556",
+      "name": "Xavier Schiller",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/f/c/fcp_67ctsa8.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Mondiale",
+      "finalOverall": 92,
+      "ratings": {
+        "attack": 10,
+        "physical": 7,
+        "stamina": 8,
+        "control": 9,
+        "defense": 1,
+        "speed": 9,
+        "grit": 9,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "alia_academy"
+      ]
+    },
+    {
+      "playerId": "4558",
+      "id": "4558",
+      "name": "Zeke Valanche",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/f/e/ferqr3wgut0.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Forte",
+      "finalOverall": 83,
+      "ratings": {
+        "attack": 8,
+        "physical": 7,
+        "stamina": 8,
+        "control": 9,
+        "defense": 2,
+        "speed": 8,
+        "grit": 8,
+        "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "alia_academy"
+      ]
+    },
+    {
+      "playerId": "4429",
+      "id": "4429",
+      "name": "Bud Bloome",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/p/1/p1r3cdcc5pu.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 3,
+        "physical": 9,
+        "stamina": 9,
+        "control": 9,
+        "defense": 9,
+        "speed": 5,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4441",
+      "id": "4441",
+      "name": "Curt Gale",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/k/s/kskij9rdhe8.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 8,
+        "physical": 9,
+        "stamina": 9,
+        "control": 8,
+        "defense": 9,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4425",
+      "id": "4425",
+      "name": "Duske Grayling",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/g/r/graq5qx3ije.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Mondiale",
+      "finalOverall": 91,
+      "ratings": {
+        "attack": 3,
+        "physical": 10,
+        "stamina": 10,
+        "control": 5,
+        "defense": 9,
+        "speed": 5,
+        "grit": 9,
+        "save": 9
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4438",
+      "id": "4438",
+      "name": "Elior March",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/c/t/ct-_smdckam.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 3,
+        "physical": 8,
+        "stamina": 8,
+        "control": 8,
+        "defense": 9,
+        "speed": 9,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4440",
+      "id": "4440",
+      "name": "Fedrin Fennley",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/n/u/nusrseou8ju.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Elite",
+      "finalOverall": 86,
+      "ratings": {
+        "attack": 2,
+        "physical": 8,
+        "stamina": 8,
+        "control": 8,
+        "defense": 9,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4434",
+      "id": "4434",
+      "name": "Heath Moore",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/m/-/m-5fq3i_xp0.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Mondiale",
+      "finalOverall": 94,
+      "ratings": {
+        "attack": 10,
+        "physical": 8,
+        "stamina": 7,
+        "control": 10,
+        "defense": 6,
+        "speed": 9,
+        "grit": 10,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4435",
+      "id": "4435",
+      "name": "Leif Bolt",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/1/y/1ysx6mjhk8s.png",
+      "frontFullbodyUrl": null,
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 9,
+        "physical": 8,
+        "stamina": 7,
+        "control": 8,
+        "defense": 1,
+        "speed": 10,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4436",
+      "id": "4436",
+      "name": "Lucian Skye",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/v/a/vaicrapkmvk.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Elite",
+      "finalOverall": 86,
+      "ratings": {
+        "attack": 8,
+        "physical": 9,
+        "stamina": 8,
+        "control": 8,
+        "defense": 9,
+        "speed": 9,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4427",
+      "id": "4427",
+      "name": "Oleander Meadows",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/e/w/ewd2xzfbnpe.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 3,
+        "physical": 8,
+        "stamina": 6,
+        "control": 7,
+        "defense": 9,
+        "speed": 9,
+        "grit": 10,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4428",
+      "id": "4428",
+      "name": "Piers Thornton",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/-/d/-dawvi64u88.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 4,
+        "physical": 8,
+        "stamina": 8,
+        "control": 8,
+        "defense": 9,
+        "speed": 9,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4433",
+      "id": "4433",
+      "name": "Raven Vale",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/k/f/kf-deuwtsv0.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Forest",
+      "type": "Forest",
+      "category": "Elite",
+      "finalOverall": 86,
+      "ratings": {
+        "attack": 8,
+        "physical": 9,
+        "stamina": 9,
+        "control": 8,
+        "defense": 9,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4439",
+      "id": "4439",
+      "name": "Raylon Highmoor",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/t/7/t7pe_z7mjpk.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 8,
+        "physical": 7,
+        "stamina": 8,
+        "control": 8,
+        "defense": 8,
+        "speed": 10,
+        "grit": 10,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4430",
+      "id": "4430",
+      "name": "Reid Rivers",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/q/1/q1bb1jzx1qc.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Elite",
+      "finalOverall": 86,
+      "ratings": {
+        "attack": 2,
+        "physical": 8,
+        "stamina": 9,
+        "control": 8,
+        "defense": 9,
+        "speed": 8,
+        "grit": 7,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4426",
+      "id": "4426",
+      "name": "Solomon Owle",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/3/5/35rluvxnp6s.png",
+      "frontFullbodyUrl": null,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 3,
+        "physical": 8,
+        "stamina": 9,
+        "control": 8,
+        "defense": 9,
+        "speed": 8,
+        "grit": 9,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4437",
+      "id": "4437",
+      "name": "Solren Dawnwright",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/e/y/ey5j8_pwhcm.png",
+      "frontFullbodyUrl": null,
+      "position": "GK",
+      "normalizedRole": "GK",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Elite",
+      "finalOverall": 86,
+      "ratings": {
+        "attack": 3,
+        "physical": 7,
+        "stamina": 7,
+        "control": 6,
+        "defense": 7,
+        "speed": 3,
+        "grit": 7,
+        "save": 9
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4431",
+      "id": "4431",
+      "name": "Willow Proude",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/h/d/hdw6ycvlyj0.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Elite",
+      "finalOverall": 87,
+      "ratings": {
+        "attack": 8,
+        "physical": 8,
+        "stamina": 8,
+        "control": 9,
+        "defense": 9,
+        "speed": 7,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    },
+    {
+      "playerId": "4432",
+      "id": "4432",
+      "name": "Wolfe Redwood",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/v/3/v3piprwp_cc.png",
+      "frontFullbodyUrl": null,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Mountain",
+      "type": "Mountain",
+      "category": "Elite",
+      "finalOverall": 88,
+      "ratings": {
+        "attack": 9,
+        "physical": 9,
+        "stamina": 8,
+        "control": 9,
+        "defense": 8,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "lunar_prime_academy"
+      ]
+    }
+  ],
+  "summary": {
+    "teamFiles": 11,
+    "teams": 11,
+    "players": 166,
+    "bosses": 11,
+    "warnings": 0
+  },
+  "warnings": []
+}

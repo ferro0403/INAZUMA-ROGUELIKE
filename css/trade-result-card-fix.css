@@ -1,0 +1,118 @@
+/* Scambio completato: normalizza esclusivamente la card del giocatore ricevuto.
+   La card risultato usa trade-preview-card--result senza la classe trade-preview-card,
+   quindi in precedenza poteva ereditare larghezze responsive generiche e collassare. */
+
+.trade-result-modal .trade-result-card {
+  width: 138px;
+  max-width: 138px;
+  min-width: 138px;
+  margin: 0 auto 12px;
+  display: grid;
+  place-items: center;
+}
+
+.trade-result-modal .trade-preview-card--result {
+  position: relative;
+  width: 138px !important;
+  max-width: 138px !important;
+  min-width: 138px !important;
+  min-height: 164px;
+  height: auto;
+  flex: 0 0 138px;
+  justify-self: center;
+  align-self: start;
+  padding: 0;
+}
+
+.trade-result-modal .trade-preview-card--result .player-portrait-wrap {
+  width: 100%;
+  height: 112px;
+  aspect-ratio: auto;
+  padding: 10px 8px 0;
+  overflow: hidden;
+}
+
+.trade-result-modal .trade-preview-card--result img.player-portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+}
+
+.trade-result-modal .trade-preview-card--result .player-info {
+  width: 100%;
+  padding: 5px 4px 7px;
+}
+
+.trade-result-modal .trade-preview-card--result .player-title strong {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .75rem;
+}
+
+.trade-result-modal .trade-preview-card--result .player-meta,
+.trade-result-modal .trade-preview-card--result .player-level {
+  display: none;
+}
+
+.trade-result-modal .trade-preview-card--result .player-role,
+.trade-result-modal .trade-preview-card--result .player-overall {
+  display: grid;
+  place-items: center;
+  min-width: 30px;
+  min-height: 26px;
+  font-size: .72rem;
+}
+
+@media (max-width: 780px) {
+  .trade-result-modal .trade-result-card {
+    width: 104px;
+    max-width: 104px;
+    min-width: 104px;
+  }
+
+  .trade-result-modal .trade-preview-card--result {
+    width: 104px !important;
+    max-width: 104px !important;
+    min-width: 104px !important;
+    min-height: 126px;
+    flex-basis: 104px;
+    border-width: 3px;
+  }
+
+  .trade-result-modal .trade-preview-card--result .player-portrait-wrap {
+    height: 82px;
+    padding: 7px 5px 0;
+  }
+
+  .trade-result-modal .trade-preview-card--result .player-title strong {
+    font-size: .6rem;
+  }
+
+  .trade-result-modal .trade-preview-card--result .player-role,
+  .trade-result-modal .trade-preview-card--result .player-overall {
+    min-width: 24px;
+    min-height: 21px;
+    border-width: 1px;
+    font-size: .58rem;
+  }
+}
+
+@media (max-width: 370px) {
+  .trade-result-modal .trade-result-card {
+    width: 94px;
+    max-width: 94px;
+    min-width: 94px;
+  }
+
+  .trade-result-modal .trade-preview-card--result {
+    width: 94px !important;
+    max-width: 94px !important;
+    min-width: 94px !important;
+    flex-basis: 94px;
+  }
+}

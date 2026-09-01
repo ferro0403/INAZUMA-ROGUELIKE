@@ -1,0 +1,13 @@
+"use strict";
+const assert = require("assert"), fs = require("fs"), rules = fs.readFileSync("firestore.rules", "utf8"), client = fs.readFileSync("js/firebase-cloud-save.js", "utf8"), core = fs.readFileSync("js/cloud-save-core.js", "utf8");
+function block(marker, next) { const start = rules.indexOf(marker), end = rules.indexOf(next, start + marker.length); assert(start >= 0 && end > start); return rules.slice(start, end); }
+const metadata = block("match /saveCommits/{commitId}/metadata/{documentId}", "match /saveCommits/{commitId}/sectors/{sectorId}");
+const compact = value => value.replace(/\s+/g, " ").trim();
+for (const proof of ["allow read: if isOwner(uid)", "allow create: if isOwner(uid) && documentId == 'manifest'", "accountUid == uid", "cloudCommitId == commitId", "schemaVersion == 1", "baseRevision == request.resource.data.revision - 1", "allow update, delete: if false"]) assert(compact(metadata).includes(proof), proof);
+const sectors = block("match /saveCommits/{commitId}/sectors/{sectorId}", "match /saveCommits/{commitId}/hallOfFame/{hallTeamId}");
+for (const proof of ["isOwner(uid) && allowedSector(sectorId)", "schemaVersion == 1", "cloudCommitId == commitId", "sector == sectorId", "revision == request.resource.data.targetRevision", "baseRevision == request.resource.data.targetRevision - 1", "allow update, delete: if false"]) assert(compact(sectors).includes(proof), proof);
+for (const proof of ["isAnyRunSector(sectorId) && request.resource.data.payload == null && request.resource.data.payloadHash == null", "request.resource.data.payload != null && request.resource.data.payloadHash is string"]) assert(compact(sectors).includes(proof), proof);
+const hall = block("match /saveCommits/{commitId}/hallOfFame/{hallTeamId}", "match /usernames/{usernameKey}");
+for (const proof of ["isOwner(uid)", "schemaVersion == 1", "cloudCommitId == commitId", "hallTeamId == hallTeamId", "revision == request.resource.data.targetRevision", "baseRevision == request.resource.data.targetRevision - 1", "allow update, delete: if false"]) assert(compact(hall).includes(proof), proof);
+for (const path of ['"saveCommits", commitId, "metadata", "manifest"', '"saveCommits", commitId, "sectors", name', '"saveCommits", commitId, "hallOfFame", entry.hallTeamId']) assert(client.includes(path), path);
+assert(rules.includes("name == 'run_orion'"), 'legacy rules remain non-destructive for old clients'); assert(!core.includes('\"run_orion\"')); for (const active of ['profile','album','development','hall_index']) assert(core.includes(`\"${active}\"`)); console.log("Firebase V12 immutable account-sector contract; legacy run rules retained for compatibility only");
