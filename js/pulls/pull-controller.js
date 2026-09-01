@@ -33,6 +33,32 @@
     } else if (!node.pullState) {
       node.pullState = { pullType, rerolls: 0, excludedCandidateIds: [], luckyCharmUsed: false, candidateIds: [] };
     }
+    if (!options.dev && node.pullState?.candidateIds?.length && typeof global.PullCandidatesRuntime.resolveCandidateIds === "function") {
+      const resolution = global.PullCandidatesRuntime.resolveCandidateIds(getRun(), pool, node);
+      if (resolution.repaired) {
+        const nodeId = String(node.id);
+        const expectedCandidateIds = node.pullState.candidateIds.map(String);
+        const expectedRerolls = Number(node.pullState.rerolls || 0);
+        const committed = persistGameplayMutation({
+          label: "pull-offer-repair",
+          mutate: (current) => {
+            const currentNode = pendingPullNodeById(current, nodeId, pullType);
+            const currentCandidateIds = (currentNode?.pullState?.candidateIds || []).map(String);
+            if (!currentNode?.pullState
+              || currentNode.pullState.pullType !== pullType
+              || Number(currentNode.pullState.rerolls || 0) !== expectedRerolls
+              || currentCandidateIds.length !== expectedCandidateIds.length
+              || currentCandidateIds.some((id, index) => id !== expectedCandidateIds[index])) {
+              throw new Error("Pull repair state changed");
+            }
+            currentNode.pullState.candidateIds = resolution.candidateIds;
+          },
+          rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
+        });
+        if (!committed.ok) return committed;
+        return openPull(canonicalNodeById(nodeId), pullType, options);
+      }
+    }
     const candidates = global.PullCandidatesRuntime.pullCandidates(getRun(), pool, node);
     if (options.dev) { try { global.RunState.save(getRun()); } catch (error) { console.error("save failed (dev pull)", error); } }
     const level = previousBossLevel();

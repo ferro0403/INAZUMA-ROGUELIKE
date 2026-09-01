@@ -7,6 +7,7 @@ const PRODUCTION_MODULES = [
   "season1-config.js", "persistence-recovery-guard.js", "run-state.js", "gameplay-persistence.js",
   "album-progress.js", "development-v2.js", "hall-of-fame.js",
   "permanent-effects.js", "map-generator.js", "team-emblems.js", "boss-gameover-runtime.js",
+  "recruitment/player-identity.js", "recruitment/roster-invariants.js", "pulls/pull-invariants.js",
   "pulls/pull-pool.js", "pulls/pull-items.js", "pulls/pull-view.js", "pulls/pull-controller.js", "pulls/pull-candidates.js", "app.js",
 ];
 

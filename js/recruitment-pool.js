@@ -67,8 +67,10 @@
   const eligibleForProfiledFreeAgentPull = eligibleForSeason3FreeAgentPull;
 
   function eligible(run, player, eligibleProfile = global.SpecialMatchRuntime?.eligibleProfile) {
+    const owned = (run?.roster || []).some((entry) => canonicalPlayerId(entry) === canonicalPlayerId(player));
+    if (owned) return false;
     if (isSeasonProfileCandidate(player)) return Boolean(player.profileId && eligibleProfile?.(run, player.profileId));
-    return !(run?.roster || []).some((entry) => id(entry.playerId) === canonicalPlayerId(player));
+    return true;
   }
 
   function choiceDatabase(source, seasonDb, freeAgentsDb, registry = global.SeasonRegistry) {
