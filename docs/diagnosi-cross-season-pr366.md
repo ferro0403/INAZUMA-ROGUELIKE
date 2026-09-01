@@ -77,3 +77,37 @@ Nessuna per gli incidenti iPhone: il checkout locale non riproduce ancora i tre 
 ## Informazione runtime ancora necessaria
 
 Poiché il caso Preview non è riprodotto localmente, serve catturare il primo fallimento reale direttamente nel runtime Preview: label, errore, generation/commit in memoria e canonici, identità match/nodo e dimensioni delle chiavi. La branch diagnostica aggiunge esclusivamente questa telemetria locale in modalità `?dev=1`; non modifica transazioni, retry o sicurezza di RunStorage.
+
+## Secondo pass: percorsi reali da mappa e diagnostica pre-recovery
+
+Il secondo pass non parte più da una `activeMatch` costruita dal test. Usa `enterNode` su una zona in fase `map`, lascia che `enterMatchFromNode` crei il match production, esegue il vero handler del pulsante `simulate-boss-match` e verifica il canonico dopo ogni transazione.
+
+| Season | Percorso reale | Esito | Generation |
+| --- | --- | --- | --- |
+| IE1 | map → nodo 5v5 → match → click Simula → skip → statistiche reali → resolution → map | PASS, incidente non riprodotto | 1 ingresso, 1 start, 1 completion, 1 resolution, 1 navigation |
+| IE1_S3 | map → nodo 5v5 → match → click Simula | PASS, failure map/formation non riprodotta | ingresso e start entrambi canonici |
+| IE1_S2 | map → nodo special normalizzato → match creato → click Simula | PASS, pre-partita bloccata non riprodotta | ingresso e start entrambi canonici |
+| IE2 | map → nodo boss → match creato → click Simula | PASS, pre-partita bloccata non riprodotta | ingresso e start entrambi canonici |
+| Orion | stesso percorso IE2 come controllo | PASS | ingresso e start entrambi canonici |
+
+Il percorso IE1 usa l'implementazione production di `RunStatistics.applyCompletedMatchStatistics`: dopo la vittoria risultano `fiveVFiveWins === 1`, nodo completato, livello aumentato, vite invariate, `resolutionApplied === true`, `activeMatch === null` dopo Continua e fase `map`.
+
+### Failure snapshot corretto
+
+`GameplayPersistence` clona ora l'oggetto tentato immediatamente dopo la mutation e prima di `save`. Su failure passa tale clone al recorder prima che l'app possa perdere l'informazione attraverso `replaceRun(canonical)`. Il probe stale reale produce:
+
+- attempted generation: 1;
+- canonical generation before: 2;
+- error-reported generation: 2 (esplicitamente separata, non chiamata expected);
+- canonical generation after recovery: 2;
+- explicit expected generation: `null`.
+
+Il record separa inoltre match e nodo tentati dalle rispettive versioni canoniche. Nel probe il match tentato è già `simulating` e ha il nuovo stable match ID, mentre il canonico resta `pre-match` col precedente match ID.
+
+### Trace e persistenza di sessione
+
+In `?dev=1` una trace circolare conserva al massimo 200 eventi e le failure al massimo 100. I record vengono copiati in `sessionStorage` con gestione fail-safe delle eccezioni. La trace copre ingressi mappa/match, click, preview, confini delle mutation, tentativi e risultati dei save, playback/skip, resolution e navigazione. Il menu DEV permette copia/esportazione JSON e reset; nessun payload giocatori completo o dato Firebase viene incluso.
+
+### Root cause dopo i percorsi reali
+
+Nessuna root cause gameplay è stata riprodotta. Non è stato applicato alcun gameplay fix. La nuova diagnostica serve a distinguere nella Preview una mutation exception da stale/write/quota e conserva lo stato tentato pre-recovery necessario per una decisione successiva.

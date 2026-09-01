@@ -7,7 +7,7 @@
     const tools = document.createElement("aside");
     tools.className = "persistence-dev-tools";
     tools.style.cssText = "position:fixed;top:calc(env(safe-area-inset-top, 0px) + 8px);right:calc(env(safe-area-inset-right, 0px) + 8px);z-index:10000;display:flex;flex-direction:column;align-items:flex-end;gap:6px;max-width:min(300px,calc(100vw - 16px));pointer-events:none";
-    tools.innerHTML = '<button type="button" data-dev-diagnostics-trigger aria-expanded="false" aria-controls="dev-diagnostics-menu" style="pointer-events:auto;min-width:44px;min-height:36px;padding:6px 10px">DEV</button><div id="dev-diagnostics-menu" data-dev-diagnostics-menu hidden style="pointer-events:auto;background:#05080f;border:1px solid #52627a;border-radius:10px;padding:8px;box-shadow:0 10px 28px #000a;max-width:100%"><button type="button" data-persistence-diagnostic>COPIA DIAGNOSTICA SALVATAGGIO</button><button type="button" data-raw-save-diagnostic>COPIA RAW SAVE IE1/IE2</button><button type="button" data-persistence-repair>RIPARA SALVATAGGIO</button><span data-persistence-feedback role="status" aria-live="polite" style="display:block;color:#fff;font:700 11px sans-serif;margin-top:6px"></span></div>';
+    tools.innerHTML = '<button type="button" data-dev-diagnostics-trigger aria-expanded="false" aria-controls="dev-diagnostics-menu" style="pointer-events:auto;min-width:44px;min-height:36px;padding:6px 10px">DEV</button><div id="dev-diagnostics-menu" data-dev-diagnostics-menu hidden style="pointer-events:auto;background:#05080f;border:1px solid #52627a;border-radius:10px;padding:8px;box-shadow:0 10px 28px #000a;max-width:100%"><button type="button" data-gameplay-diagnostic>COPIA DIAGNOSTICA GAMEPLAY</button><button type="button" data-gameplay-diagnostic-reset>AZZERA DIAGNOSTICA GAMEPLAY</button><button type="button" data-persistence-diagnostic>COPIA DIAGNOSTICA SALVATAGGIO</button><button type="button" data-raw-save-diagnostic>COPIA RAW SAVE IE1/IE2</button><button type="button" data-persistence-repair>RIPARA SALVATAGGIO</button><span data-persistence-feedback role="status" aria-live="polite" style="display:block;color:#fff;font:700 11px sans-serif;margin-top:6px"></span></div>';
     const trigger = tools.querySelector("[data-dev-diagnostics-trigger]");
     const menu = tools.querySelector("[data-dev-diagnostics-menu]");
     const setOpen = (open) => { menu.hidden = !open; trigger.setAttribute("aria-expanded", String(open)); };
@@ -18,6 +18,8 @@
     const copy = async (value, fallback = false) => { const text = JSON.stringify(value, null, 2); try { if (!navigator.clipboard?.writeText) throw new Error("clipboard-unavailable"); await navigator.clipboard.writeText(text); return true; } catch (error) { if (fallback) download(text); else throw error; return false; } finally { console.info("Inazuma persistence report", value); } };
     tools.querySelector("[data-persistence-diagnostic]").onclick = async () => { try { await copy(await global.InazumaPersistenceDiagnostics.snapshot()); } finally { setOpen(false); } };
     tools.querySelector("[data-raw-save-diagnostic]").onclick = async () => { try { const copied = await copy(await global.InazumaPersistenceDiagnostics.exportRawLegacySaves(), true); feedback.textContent = copied ? "DIAGNOSTICA RAW COPIATA" : "CLIPBOARD NON DISPONIBILE: JSON SCARICATO"; } finally { setOpen(false); } };
+    tools.querySelector("[data-gameplay-diagnostic]").onclick = async () => { try { const copied = await copy(await global.__INAZUMA_EXPORT_GAMEPLAY_DIAGNOSTICS__?.(), true); feedback.textContent = copied ? "DIAGNOSTICA GAMEPLAY COPIATA" : "CLIPBOARD NON DISPONIBILE: JSON SCARICATO"; } finally { setOpen(false); } };
+    tools.querySelector("[data-gameplay-diagnostic-reset]").onclick = () => { global.__INAZUMA_RESET_GAMEPLAY_DIAGNOSTICS__?.(); feedback.textContent = "DIAGNOSTICA GAMEPLAY AZZERATA"; setOpen(false); };
     tools.querySelector("[data-persistence-repair]").onclick = async () => { try { const result = await global.InazumaPersistenceDiagnostics.repair(); await copy(result); alert(repairResultMessage(result)); } finally { setOpen(false); } };
     document.body.appendChild(tools);
   });
@@ -385,31 +387,59 @@
     ui.itemRewardSubmitting = false;
   }
 
+  const GAMEPLAY_DIAGNOSTICS_SESSION_KEY = "inazuma.dev.gameplayDiagnostics.v1";
   const gameplayFailureDiagnostics = [];
-  function recordGameplayFailure(label, stage, error, kind = null) {
+  const gameplayTraceDiagnostics = [];
+  function cloneDiagnostic(value) { return value == null ? value : (typeof structuredClone === "function" ? structuredClone(value) : JSON.parse(JSON.stringify(value))); }
+  function restoreGameplayDiagnostics() {
+    if (!DEV_MODE) return;
+    try { const saved = JSON.parse(global.sessionStorage?.getItem(GAMEPLAY_DIAGNOSTICS_SESSION_KEY) || "null"); gameplayFailureDiagnostics.push(...(Array.isArray(saved?.failures) ? saved.failures.slice(-100) : [])); gameplayTraceDiagnostics.push(...(Array.isArray(saved?.trace) ? saved.trace.slice(-200) : [])); } catch (_) {}
+  }
+  function persistGameplayDiagnostics() {
+    if (!DEV_MODE) return;
+    try { global.sessionStorage?.setItem(GAMEPLAY_DIAGNOSTICS_SESSION_KEY, JSON.stringify({ failures: gameplayFailureDiagnostics.slice(-100), trace: gameplayTraceDiagnostics.slice(-200) })); } catch (_) {}
+  }
+  function matchDiagnostic(match) { return match ? { matchId: match.matchId || null, type: match.type || null, state: match.state || null, simulationState: match.simulation?.state || null, resolutionApplied: match.simulation?.resolutionApplied === true, postMatchNavigationApplied: match.postMatchNavigationApplied === true } : null; }
+  function nodeDiagnostic(current) { return { currentNodeId: current?.currentZone?.currentNodeId || null, pendingNodeId: current?.currentZone?.pendingNodeId || null }; }
+  function canonicalDiagnostic(current) { return { generation: current?.storageGeneration ?? null, commitId: current?.storageCommitId || null, runId: current?.runId || null }; }
+  function recordGameplayTrace(event, details = {}) {
     if (!DEV_MODE) return null;
-    const current = run;
-    const seasonId = current?.seasonId || activeSeason?.id || null;
+    const current = details.current || run; const match = details.match || current?.activeMatch || ui.match || null;
+    const entry = { timestamp: new Date().toISOString(), event, label: details.label || null, seasonId: current?.seasonId || activeSeason?.id || null, runId: current?.runId || null, phase: current?.phase || null, generation: current?.storageGeneration ?? null, matchId: match?.matchId || null, matchType: match?.type || null, matchState: match?.state || null, simulationState: match?.simulation?.state || null, resolutionApplied: match?.simulation?.resolutionApplied === true, ...nodeDiagnostic(current), ...details.data };
+    gameplayTraceDiagnostics.push(entry); if (gameplayTraceDiagnostics.length > 200) gameplayTraceDiagnostics.shift(); persistGameplayDiagnostics(); return entry;
+  }
+  function captureCanonicalBefore(attempted, options = {}) {
+    let canonical = null; try { canonical = global.RunState.load(attempted?.seasonId, { readOnly: true }); } catch (_) {}
+    recordGameplayTrace("save-attempt", { current: attempted, label: options.label, data: { attemptedGeneration: attempted?.storageGeneration ?? null, canonicalGenerationBefore: canonical?.storageGeneration ?? null, explicitExpectedGeneration: options.saveOptions?.expectedGeneration ?? null } });
+    return { canonicalBefore: canonicalDiagnostic(canonical) };
+  }
+  function recordGameplayFailure(label, stage, error, kind = null, failure = {}) {
+    if (!DEV_MODE) return null;
+    const attempted = failure.attempted || run;
+    const seasonId = attempted?.seasonId || run?.seasonId || activeSeason?.id || null;
     let canonical = null; let storage = null;
     try { canonical = seasonId ? global.RunState.load(seasonId, { readOnly: true }) : null; } catch (_) {}
     try { storage = seasonId ? global.RunStorage?.diagnostics?.(seasonId) : null; } catch (_) {}
-    const match = current?.activeMatch || ui.match || null;
     const entry = {
-      at: new Date().toISOString(), label: label || "unknown", stage, kind,
-      seasonId, runId: current?.runId || null, phase: current?.phase || null,
-      error: { name: error?.name || null, code: error?.code || null, stage: error?.stage || null, message: error?.message || String(error || ""), recoverable: error?.recoverable === true },
-      generation: { memory: current?.storageGeneration ?? null, canonical: canonical?.storageGeneration ?? storage?.canonicalGeneration ?? null, expected: error?.generation ?? current?.storageGeneration ?? null },
-      commitId: { memory: current?.storageCommitId || null, canonical: canonical?.storageCommitId || storage?.canonicalCommitId || null },
-      canonicalRunId: canonical?.runId || storage?.canonicalRunId || null,
-      match: match ? { matchId: match.matchId || null, type: match.type || null, state: match.state || null, simulationState: match.simulation?.state || null, resolutionApplied: match.simulation?.resolutionApplied === true } : null,
-      node: { currentNodeId: current?.currentZone?.currentNodeId || null, pendingNodeId: current?.currentZone?.pendingNodeId || null },
+      timestamp: new Date().toISOString(), label: label || "unknown", stage, kind, seasonId, runId: attempted?.runId || null,
+      error: { name: error?.name || null, code: error?.code || null, stage: error?.stage || null, message: error?.message || String(error || ""), recoverable: error?.recoverable === true, canonicalCommitted: error?.canonicalCommitted === true },
+      attempt: { phase: attempted?.phase || null, storageGeneration: attempted?.storageGeneration ?? null, storageCommitId: attempted?.storageCommitId || null, runId: attempted?.runId || null },
+      expected: { explicitExpectedGeneration: failure.options?.saveOptions?.expectedGeneration ?? null },
+      canonicalBefore: failure.saveContext?.canonicalBefore || canonicalDiagnostic(null),
+      errorReportedGeneration: error?.generation ?? null,
+      canonicalAfter: canonicalDiagnostic(canonical),
+      matchAttempt: matchDiagnostic(attempted?.activeMatch), matchCanonical: matchDiagnostic(canonical?.activeMatch),
+      nodeAttempt: nodeDiagnostic(attempted), nodeCanonical: nodeDiagnostic(canonical),
       storage: storage ? { bytes: storage.bytes, totalKnownBytes: storage.totalKnownBytes, headGeneration: storage.headGeneration, backupGeneration: storage.backupGeneration, headMatchesCanonical: storage.headMatchesCanonical } : null,
     };
     gameplayFailureDiagnostics.push(entry);
-    if (gameplayFailureDiagnostics.length > 20) gameplayFailureDiagnostics.shift();
+    if (gameplayFailureDiagnostics.length > 100) gameplayFailureDiagnostics.shift();
+    recordGameplayTrace(stage === "mutation" ? "mutation-failure" : "save-failure", { current: attempted, label, data: { code: error?.code || null, errorStage: error?.stage || null, attemptedGeneration: attempted?.storageGeneration ?? null, canonicalGenerationBefore: entry.canonicalBefore.generation, canonicalGenerationAfter: entry.canonicalAfter.generation } });
+    persistGameplayDiagnostics();
     console.error("Gameplay persistence diagnostic", entry);
     return entry;
   }
+  restoreGameplayDiagnostics();
 
   const persistGameplayMutation = global.GameplayPersistence.create({
     save: (current, options) => global.RunState.save(current, options),
@@ -426,9 +456,12 @@
       ui.returnToMatchContext = null;
     },
     stopRuntime: stopGameplayRuntime,
-    reportFailure: (message, kind, error, options) => { recordGameplayFailure(options?.label, "persistence", error, kind); toast(message, "error"); },
-    reportMutationFailure: (message, error, options) => {
-      recordGameplayFailure(options?.label, "mutation", error, "mutation");
+    beforeSave: captureCanonicalBefore,
+    afterSave: (current, options) => recordGameplayTrace("save-success", { current, label: options.label, data: { newGeneration: current.storageGeneration, newCommitId: current.storageCommitId } }),
+    onMutationEnter: (current, options) => recordGameplayTrace("persist-mutation-enter", { current, label: options.label }),
+    reportFailure: (message, kind, error, options, failure) => { recordGameplayFailure(options?.label, "persistence", error, kind, { ...failure, options }); toast(message, "error"); },
+    reportMutationFailure: (message, error, options, failure) => {
+      recordGameplayFailure(options?.label, "mutation", error, "mutation", { ...failure, options });
       console.error("Gameplay mutation failed", error);
       toast(message, "error");
     },
@@ -3023,6 +3056,7 @@
   }
 
   function enterMatchFromNode(nodeId, previousNodeId = null, { alreadySelected = false, matchType = null } = {}) {
+      recordGameplayTrace("map-node-mutation-enter", { label: "map-match-entry", data: { selectedNodeId: String(nodeId), requestedMatchType: matchType } });
       const committed = persistGameplayMutation({
         label: "map-match-entry",
         mutate: (current) => {
@@ -3044,6 +3078,7 @@
         onCommitted: (created) => {
           if (created?.formationRequired) return toast("Completa la Formazione 5v5 prima di avviare la partitella.");
           ui.match = created; ui.bossMatchState = created.state || "pre-match"; ui.bossMatchLog = created.log || []; ui.bossMatchResolving = false;
+          recordGameplayTrace(created.type === "five_v_five" ? "five-v-five-entry" : created.type === "special_match" ? "special-match-entry" : "boss-match-entry", { match: created, label: "map-match-entry" });
         },
         rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
       });
@@ -3053,6 +3088,7 @@
   }
 
   function enterNode(nodeId) {
+    recordGameplayTrace("map-node-enter", { data: { selectedNodeId: String(nodeId) } });
     const previousNodeId = run.currentZone?.currentNodeId || null;
     const candidate = canonicalNodeById(nodeId);
     if (candidate && ["five_v_five", "special_match", "boss"].includes(candidate.type)) return enterMatchFromNode(nodeId, previousNodeId);
@@ -4517,6 +4553,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function commitMatchMutation(label, identity, mutate, options = {}) {
+    recordGameplayTrace("commit-match-mutation-enter", { label, data: { transactionMatchId: identity.matchId, transactionMatchType: identity.type } });
     return persistGameplayMutation({
       label,
       mutate: (current) => mutate(canonicalMatchFor(current, identity), current),
@@ -4526,8 +4563,9 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         ui.bossMatchLog = ui.match?.log || [];
         options.onCommitted?.(value, current);
       },
-      onMutationError: ({ error }) => {
-        recordGameplayFailure(label, "mutation", error, "mutation");
+      onMutationError: (failure) => {
+        const { error } = failure;
+        recordGameplayFailure(label, "mutation", error, "mutation", failure);
         if (error?.code !== "match-identity-mismatch") console.error(`${label} mutation failed`, error);
       },
       rerender: ({ ok, run: recovered }) => {
@@ -4754,6 +4792,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     const match = run?.activeMatch;
     const sim = match?.simulation;
     if (!sim || sim.state !== "simulating" || sim.manuallyResolved) return;
+    recordGameplayTrace("playback-step", { match, data: { revealedCount: sim.revealedCount, timelineLength: sim.timeline?.length || 0 } });
     const identity = matchTransactionIdentity(match);
     if (sim.revealedCount >= sim.timeline.length) {
       const completed = commitMatchMutation("match-playback-completed", identity, (currentMatch) => {
@@ -4765,6 +4804,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         currentMatch.state = currentSim.winner === "user" ? "completed-victory" : "completed-defeat";
       });
       if (!completed.ok) return stopMatchAfterPersistenceFailure();
+      recordGameplayTrace("simulation-completed", { match: run?.activeMatch, label: "match-playback-completed" });
       updateMatchScoreDom(ui.match, true);
       updateMatchControlsDom();
       return applySimulationResolution(ui.match);
@@ -4789,6 +4829,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   function startMatchSimulation(match, options = {}) {
+    recordGameplayTrace("startMatchSimulation-enter", { match });
     if (ui.matchStartLocked || match?.simulation?.state === "simulating") return;
     if (match.simulation?.state && match.simulation.state !== "pre-match") return;
     ui.matchStartLocked = true;
@@ -4802,6 +4843,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         updateMatchControlsDom();
         return toast(sim.message || "Formazione non valida: impossibile simulare.");
       }
+      recordGameplayTrace("match-preview-ready", { match: frozenMatch, data: { valid: true, timelineLength: sim.timeline?.length || 0 } });
     } catch (error) {
       console.error("Match simulation failed to start", error);
       ui.matchStartLocked = false;
@@ -4829,6 +4871,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       updateMatchControlsDom();
       return stopMatchAfterPersistenceFailure();
     }
+    recordGameplayTrace("match-start-committed", { match: run?.activeMatch, label: "match-simulation-start" });
     clearMatchPlaybackTimer();
     ui.matchStartLocked = false;
     updateMatchControlsDom();
@@ -4850,6 +4893,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
 
   function skipMatchToResult(event) {
     event?.preventDefault();
+    recordGameplayTrace("skip-enter", { match: run?.activeMatch });
     const match = run?.activeMatch;
     const sim = match?.simulation;
     if (!sim || sim.state !== "simulating" || sim.manuallyResolved) return;
@@ -4867,6 +4911,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       currentMatch.log = currentSim.timeline.map(matchEventView);
     });
     if (!committed.ok) return stopMatchAfterPersistenceFailure();
+    recordGameplayTrace("simulation-completed", { match: run?.activeMatch, label: "match-playback-skip" });
     appendMissingMatchLogEvents(missing);
     updateMatchScoreDom(ui.match, true);
     updateMatchControlsDom();
@@ -4877,6 +4922,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   function applySimulationResolution(match) {
     const sim = match?.simulation;
     if (!sim || sim.resolutionApplied || sim.manuallyResolved) return;
+    recordGameplayTrace("resolution-enter", { match });
     return sim.winner === "user" ? (match.type === "five_v_five" ? completeFiveMatch("victory") : match.type === "special_match" ? completeSpecialMatch("victory") : completeBossMatch("victory")) : (match.type === "five_v_five" ? completeFiveMatch("defeat") : match.type === "special_match" ? completeSpecialMatch("defeat") : completeBossMatch("defeat"));
   }
 
@@ -5347,7 +5393,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       });
       document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("victory"); });
       document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("defeat"); });
-      document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); startMatchSimulation(match); });
+      document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); recordGameplayTrace("simulate-click", { match }); openFiveMatchSimulationModal(match, userName, opponentName); startMatchSimulation(match); });
       if (simulating || resolved) openFiveMatchSimulationModal(match, userName, opponentName);
       if (allowAutomaticResume) resumeMatchSimulationIfNeeded(run?.activeMatch);
       return;
@@ -5454,7 +5500,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     });
     document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("victory", { boss }); });
     document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("defeat", { boss }); });
-    document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(ui.match, { boss }); });
+    document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); recordGameplayTrace("simulate-click", { match: ui.match }); startMatchSimulation(ui.match, { boss }); });
     document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
     document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch);
     if (allowAutomaticResume) resumeMatchSimulationIfNeeded(run?.activeMatch);
@@ -5554,7 +5600,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       appendFinalMatchMessage(result, "five_v_five", currentMatch);
       return { applied: true };
     }, { onCommitted: () => { ui.bossMatchResolving = "done"; } });
-    if (!committed.ok) return stopMatchAfterPersistenceFailure();
+    if (!committed.ok) { recordGameplayTrace("resolution-failure", { match: run?.activeMatch, label: "five-match-resolution", data: { code: committed.error?.code || null } }); return stopMatchAfterPersistenceFailure(); }
+    recordGameplayTrace("resolution-success", { match: run?.activeMatch, label: "five-match-resolution" });
     updateMatchScoreDom(ui.match, true);
     syncCommittedFinalMatchLog();
     updateMatchControlsDom();
@@ -5587,7 +5634,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       appendFinalMatchMessage(result, "special_match", currentMatch);
       return { applied: true };
     }, { onCommitted: () => { ui.bossMatchResolving = "done"; } });
-    if (!committed.ok) return stopMatchAfterPersistenceFailure();
+    if (!committed.ok) { recordGameplayTrace("resolution-failure", { match: run?.activeMatch, label: "special-match-resolution", data: { code: committed.error?.code || null } }); return stopMatchAfterPersistenceFailure(); }
+    recordGameplayTrace("resolution-success", { match: run?.activeMatch, label: "special-match-resolution" });
     updateMatchScoreDom(ui.match, true);
     syncCommittedFinalMatchLog();
     updateMatchControlsDom();
@@ -5616,7 +5664,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       onCommitted: (_value, current) => { ui.match = current.activeMatch; ui.bossMatchResolving = "done"; ui.bossMatchState = current.activeMatch.state; },
       rerender: ({ ok, run: recovered }) => { if (!ok) { ui.match = recovered?.activeMatch || null; ui.bossMatchResolving = false; ui.bossMatchState = ui.match?.state || "pre-match"; } },
     });
-    if (!committed.ok) return stopMatchAfterPersistenceFailure();
+    if (!committed.ok) { recordGameplayTrace("resolution-failure", { match: run?.activeMatch, label: "boss-resolution", data: { code: committed.error?.code || null } }); return stopMatchAfterPersistenceFailure(); }
+    recordGameplayTrace("resolution-success", { match: run?.activeMatch, label: "boss-resolution" });
     updateMatchScoreDom(ui.match, true);
     syncCommittedFinalMatchLog();
     updateMatchControlsDom();
@@ -5624,6 +5673,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
 
   function continueAfterMatch(event) {
     event?.preventDefault();
+    recordGameplayTrace("continue-after-match-enter", { match: run?.activeMatch || ui.match });
     const match = run?.activeMatch || ui.match;
     if (!match || match.postMatchNavigationApplied) return;
     const completed = match.simulation?.state === "completed" || String(match.state || "").startsWith("completed");
@@ -5633,6 +5683,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       return navigateBossVictoryDestination(flow);
     }
     const identity = matchTransactionIdentity(match);
+    recordGameplayTrace("post-navigation-enter", { match, label: "match-post-navigation" });
     const committed = commitMatchMutation("match-post-navigation", identity, (currentMatch, current) => {
       if (currentMatch.simulation?.resolutionApplied !== true) throw new Error("Match resolution is not durable");
       const action = { ...(currentMatch.pendingPostMatchAction || { type: "map" }) };
@@ -5642,6 +5693,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       return action;
     });
     if (!committed.ok) return stopMatchAfterPersistenceFailure();
+    recordGameplayTrace("post-navigation-success", { current: run, label: "match-post-navigation" });
     const action = committed.value;
     ui.match = null; ui.bossMatchResolving = false; closeModal({ invokeOnClose: false });
     if (action.toast) toast(action.toast);
@@ -7153,7 +7205,16 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   }
 
   global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, startNewRunFromHome, startRunWithIdentity, getRun: () => run };
-  if (DEV_MODE) global.__INAZUMA_GAMEPLAY_FAILURE_DIAGNOSTICS__ = () => global.RunState.clone(gameplayFailureDiagnostics);
+  if (DEV_MODE) {
+    global.__INAZUMA_GAMEPLAY_FAILURE_DIAGNOSTICS__ = () => cloneDiagnostic(gameplayFailureDiagnostics);
+    global.__INAZUMA_GAMEPLAY_TRACE__ = () => cloneDiagnostic(gameplayTraceDiagnostics);
+    global.__INAZUMA_RESET_GAMEPLAY_DIAGNOSTICS__ = () => { gameplayFailureDiagnostics.length = 0; gameplayTraceDiagnostics.length = 0; try { global.sessionStorage?.removeItem(GAMEPLAY_DIAGNOSTICS_SESSION_KEY); } catch (_) {} };
+    global.__INAZUMA_EXPORT_GAMEPLAY_DIAGNOSTICS__ = async () => ({
+      generatedAt: new Date().toISOString(), location: String(global.location?.href || global.location?.pathname || ""), season: run?.seasonId || activeSeason?.id || null,
+      failures: cloneDiagnostic(gameplayFailureDiagnostics), trace: cloneDiagnostic(gameplayTraceDiagnostics), currentMatch: global.__INAZUMA_MATCH_DIAGNOSTICS__?.() || null,
+      persistenceSnapshot: await global.InazumaPersistenceDiagnostics?.snapshot?.() || null,
+    });
+  }
   if (DEV_MODE) global.__INAZUMA_MATCH_DIAGNOSTICS__ = () => {
     const match = run?.activeMatch, effects = run?.permanentEffectOutbox || [];
     return { runId: run?.runId, matchId: match?.matchId, matchType: match?.type, phase: run?.phase, simulationState: match?.simulation?.state, resolutionApplied: match?.simulation?.resolutionApplied === true, result: match?.result, winner: match?.simulation?.winner, revealedCount: match?.simulation?.revealedCount, timelineLength: match?.simulation?.timeline?.length, pendingPostMatchAction: match?.pendingPostMatchAction || null, lives: run?.lives, gameOver: run?.gameOver, finalization: run?.finalization?.status || null, permanentEffects: { pending: effects.filter((effect) => effect.status === "pending").length, applied: effects.filter((effect) => effect.status === "applied").length }, postBossFlow: run?.postBossFlow?.status || null };

@@ -19,7 +19,7 @@
     return JSON.parse(JSON.stringify(run));
   }
 
-  function create({ save, load, getRun, replaceRun, stopRuntime, reportFailure, reportMutationFailure, cloneRun = defaultCloneRun }) {
+  function create({ save, load, getRun, replaceRun, stopRuntime, reportFailure, reportMutationFailure, beforeSave, afterSave, onMutationEnter, cloneRun = defaultCloneRun }) {
     if (![save, load, getRun, replaceRun].every((value) => typeof value === "function")) throw new TypeError("GameplayPersistence requires save, load, getRun and replaceRun");
     return function persistGameplayMutation(options = {}) {
       const current = getRun();
@@ -27,16 +27,20 @@
       const before = cloneRun(current);
       const seasonId = current.seasonId;
       let value;
+      onMutationEnter?.(current, options);
       try {
         value = options.mutate?.(current);
       } catch (error) {
+        const attempted = cloneRun(current);
         replaceRun(before);
-        const failure = { error, kind: "mutation", stage: "mutation", run: before, before, canonical: undefined };
+        const failure = { error, kind: "mutation", stage: "mutation", run: before, before, attempted, canonical: undefined };
         if (options.onMutationError) options.onMutationError(failure);
-        else reportMutationFailure?.(MESSAGES.mutation, error, options);
+        else reportMutationFailure?.(MESSAGES.mutation, error, options, failure);
         options.rerender?.({ ok: false, ...failure });
         return { ok: false, ...failure };
       }
+      const attempted = cloneRun(current);
+      const saveContext = beforeSave?.(attempted, options);
       try {
         save(current, options.saveOptions);
       } catch (error) {
@@ -45,13 +49,15 @@
         try { canonical = load(seasonId, { readOnly: true }); } catch (_) { canonical = null; }
         const kind = canonical ? failureKind(error) : "unreadable";
         const recovered = canonical || before;
+        const failure = { error, kind, stage: "persistence", message: MESSAGES[kind], canonical, run: recovered, attempted, saveContext };
         replaceRun(recovered);
         const message = MESSAGES[kind];
-        reportFailure?.(message, kind, error, options);
-        options.onFailure?.({ error, kind, stage: "persistence", message, canonical, run: recovered });
+        reportFailure?.(message, kind, error, options, failure);
+        options.onFailure?.(failure);
         options.rerender?.({ ok: false, kind, stage: "persistence", canonical, run: recovered });
-        return { ok: false, kind, stage: "persistence", error, run: recovered, canonical };
+        return { ok: false, ...failure };
       }
+      afterSave?.(current, options, saveContext);
       options.onCommitted?.(value, current);
       options.rerender?.({ ok: true, run: current, value });
       return { ok: true, value, run: current };
