@@ -1,7 +1,0 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 140" role="img" aria-labelledby="title">
-  <title id="title">Stemma fulmine predefinito</title>
-  <path d="M60 4 108 22l-7 72-41 41-41-41-7-72Z" fill="#111216" stroke="#fffaf0" stroke-width="5"/>
-  <path d="M60 13 98 28l-6 61-32 33-32-33-6-61Z" fill="#111216" stroke="#ffd21f" stroke-width="4"/>
-  <path d="m69 29-31 48h22l-12 36 36-55H62Z" fill="#ffd21f" stroke="#ffd21f" stroke-linejoin="round"/>
-  <path d="M31 31 60 20l29 11" fill="none" stroke="#fffaf0" stroke-width="3" opacity=".7"/>
-</svg>
