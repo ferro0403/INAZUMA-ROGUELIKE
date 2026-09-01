@@ -37,11 +37,20 @@
       const resolution = global.PullCandidatesRuntime.resolveCandidateIds(getRun(), pool, node);
       if (resolution.repaired) {
         const nodeId = String(node.id);
+        const expectedCandidateIds = node.pullState.candidateIds.map(String);
+        const expectedRerolls = Number(node.pullState.rerolls || 0);
         const committed = persistGameplayMutation({
           label: "pull-offer-repair",
           mutate: (current) => {
             const currentNode = pendingPullNodeById(current, nodeId, pullType);
-            if (!currentNode?.pullState) throw new Error("Pull state changed");
+            const currentCandidateIds = (currentNode?.pullState?.candidateIds || []).map(String);
+            if (!currentNode?.pullState
+              || currentNode.pullState.pullType !== pullType
+              || Number(currentNode.pullState.rerolls || 0) !== expectedRerolls
+              || currentCandidateIds.length !== expectedCandidateIds.length
+              || currentCandidateIds.some((id, index) => id !== expectedCandidateIds[index])) {
+              throw new Error("Pull repair state changed");
+            }
             currentNode.pullState.candidateIds = resolution.candidateIds;
           },
           rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
