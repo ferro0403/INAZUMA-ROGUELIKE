@@ -7,19 +7,7 @@ require("../js/roguelike_progression.js");
 require("../js/development-v2.js");
 require("../js/game-rules.js");
 
-const app = fs.readFileSync(require.resolve("../js/app.js"), "utf8");
-const functionSource = (name) => {
-  const start = app.indexOf(`  function ${name}(`);
-  assert.notStrictEqual(start, -1, `${name} is present`);
-  const bodyStart = app.indexOf("{", start);
-  let depth = 0;
-  for (let index = bodyStart; index < app.length; index += 1) {
-    if (app[index] === "{") depth += 1;
-    if (app[index] === "}") depth -= 1;
-    if (depth === 0) return app.slice(start, index + 1).trim();
-  }
-  throw new Error(`Cannot extract ${name}`);
-};
+const viewSource = fs.readFileSync(require.resolve("../js/pulls/pull-view.js"), "utf8");
 
 const raw = {
   playerId: "adam-montayne",
@@ -44,10 +32,13 @@ const context = {
     },
   },
   run: { developmentPlayerSnapshot: snapshot },
-  seasonDb: database,
-  freeAgentsDb: database,
 };
-vm.runInNewContext(`${functionSource("pullChoiceSource")}; ${functionSource("pullChoiceDatabase")}; ${functionSource("resolvePullChoicePlayer")}; this.resolvePullChoicePlayer = resolvePullChoicePlayer;`, context);
+context.globalThis = context.global;
+vm.runInNewContext(viewSource, context);
+const view = context.global.PullViewRuntime.create({
+  getRun: () => context.run, getSeasonDb: () => database, getFreeAgentsDb: () => database,
+});
+context.resolvePullChoicePlayer = view.resolvePullChoicePlayer;
 
 const options = { level: 0, source: "free_agents" };
 const effective = context.resolvePullChoicePlayer(options, raw);
@@ -62,9 +53,9 @@ const normal = context.resolvePullChoicePlayer(options, { ...raw, playerId: "nor
 assert.strictEqual(normal.category, "Forte", "a player without Development keeps the raw rarity");
 assert.strictEqual(normal.potential, 83, "a player without Development keeps the raw potential");
 
-assert.match(app, /pull-choice-option \$\{rarityClass\(effectivePlayer\.category\)\}/, "the pull wrapper uses effective rarity");
-assert.doesNotMatch(app, /pull-choice-option \$\{rarityClass\(player\.category\)\}/, "the pull wrapper does not use raw rarity");
-assert.match(app, /playerCard\(player, \{[^}]*resolvedPlayer: effectivePlayer/, "the card uses the resolved effective player");
-assert.match(app, /showPlayerDetailsFor\(effectivePlayer, \{/, "SCHEDA uses the same effective source");
+assert.match(viewSource, /pull-choice-option \$\{rarityClass\(effectivePlayer\.category\)\}/, "the pull wrapper uses effective rarity");
+assert.doesNotMatch(viewSource, /pull-choice-option \$\{rarityClass\(player\.category\)\}/, "the pull wrapper does not use raw rarity");
+assert.match(viewSource, /playerCard\(player, \{[^}]*resolvedPlayer: effectivePlayer/, "the card uses the resolved effective player");
+assert.match(viewSource, /showPlayerDetailsFor\(effectivePlayer, \{/, "SCHEDA uses the same effective source");
 
 console.log("pull-effective-detail-test: effective card/detail parity, wrapper rarity and raw fallback OK");
