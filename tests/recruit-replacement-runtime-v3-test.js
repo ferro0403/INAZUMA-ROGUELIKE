@@ -35,12 +35,10 @@ assert(resolvedAtLevel.overall >= rawAtLevel.overall, "V3 replacement card keeps
 const baseRun = { seasonId: "ie1" };
 assert.deepStrictEqual(Runtime.resolvePlayer(baseRun, adam, 3, database), rawAtLevel, "non-evolved incoming players remain unchanged");
 
-const source = fs.readFileSync("js/app.js", "utf8");
-const fixedCall = '${playerCard(player, { context: "pull", extraClass: "bench-replacement-new-card", level, database: global.SeasonRegistry?.isSeasonSource?.(source) ? (global.SeasonRegistry.database(source) || seasonDb) : freeAgentsDb, applyPermanent: !profileAware })}';
-const staleCall = '${playerCard(player, { context: "pull", extraClass: "bench-replacement-new-card", level, database: global.SeasonRegistry?.isSeasonSource?.(source) ? (global.SeasonRegistry.database(source) || seasonDb) : freeAgentsDb })}';
-assert.equal(source.split(fixedCall).length - 1, 1, "replacement modal resolves normal/free-agent incoming cards through frozen run Development");
-assert(!source.includes(staleCall), "raw incoming replacement-card call is gone");
-assert.match(source, /const profileAware = isProfileAwareSeason\(\) && Boolean\(player\.profileId\)/, "profile-aware recruitment branch remains explicit");
-assert.match(source, /applyPermanent: !profileAware/, "season profile candidates deliberately bypass free-agent V3 resolution");
+const controller = fs.readFileSync("js/recruitment/recruitment-controller.js", "utf8");
+const view = fs.readFileSync("js/recruitment/recruitment-view.js", "utf8");
+assert.match(view, /playerCard\(player, \{ context: "pull", extraClass: "bench-replacement-new-card", level, database: databaseFor\(source\), applyPermanent: !profileAware \}\)/, "replacement modal resolves normal/free-agent incoming cards through the injected frozen-run resolver");
+assert.match(controller, /const profileAware = isProfileAwareSeason\(\) && Boolean\(player\.profileId\)/, "profile-aware recruitment branch remains explicit");
+assert.match(view, /applyPermanent: !profileAware/, "season profile candidates deliberately bypass free-agent V3 resolution");
 
 console.log("recruit replacement card uses frozen V3 runtime for evolved free agents and preserves profile-aware/base behavior");
