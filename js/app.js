@@ -3776,10 +3776,15 @@
         label: "recruit-profile",
         mutate: (current) => {
           smartLineupResult = null;
+          const alreadyOwned = current.roster.some((entry) => global.PlayerIdentity.canonicalPlayerId(entry) === global.PlayerIdentity.canonicalPlayerId(player));
           result = global.ProfiledSeasonRuntime.acquireOrUpgradeProfile(current, player, { seasonId: current.seasonId, maxRoster: global.SEASON1_CONFIG.maxRoster, level });
           if (result.status === "roster-full") throw Object.assign(new Error("Roster full"), { code: "recruit-needs-replacement" });
           if (!["upgraded", "acquired"].includes(result.status)) throw Object.assign(new Error("Recruit not eligible"), { code: "recruit-ineligible" });
-          if (result.status === "acquired") { current.bench.push(String(result.player.playerId)); decorateRecruit(current, result.player); }
+          if (result.status === "acquired") {
+            if (alreadyOwned) throw Object.assign(new Error("Recruit not eligible"), { code: "recruit-ineligible" });
+            current.bench.push(String(result.player.playerId)); decorateRecruit(current, result.player);
+          }
+          global.RosterInvariants.assertValid(current);
           options.transactionMutate?.(current, result.player);
         },
         onCommitted: () => committedSideEffects(result.player, result.status === "upgraded" ? "committed-upgraded" : "committed-acquired"),
@@ -3798,9 +3803,10 @@
         label: "recruit",
         mutate: (current) => {
           smartLineupResult = null;
-          if (current.roster.some((item) => String(item.playerId) === String(player.playerId))) throw Object.assign(new Error("Recruit not eligible"), { code: "recruit-ineligible" });
+          try { global.RosterInvariants.assertCanOwn(current, player); } catch (error) { throw Object.assign(error, { code: "recruit-ineligible" }); }
           entry = { playerId: String(player.playerId), source, level, equippedItem: null, ...permanentRosterFields(player) };
           current.roster.push(entry); current.bench.push(entry.playerId); decorateRecruit(current, entry);
+          global.RosterInvariants.assertValid(current);
           options.transactionMutate?.(current, entry);
         },
         onCommitted: () => committedSideEffects(entry, "committed-acquired"),
@@ -3839,6 +3845,8 @@
         label: "recruit-replacement",
         mutate: (current) => {
           smartLineupResult = null;
+          const incomingId = global.PlayerIdentity.canonicalPlayerId(player);
+          if (current.roster.some((candidate) => global.PlayerIdentity.canonicalPlayerId(candidate) === incomingId && String(candidate.playerId) !== String(removeId))) throw Object.assign(new Error("Canonical player already owned"), { code: "replacement-invalid" });
           const removed = rosterEntry(removeId, current);
           if (!removed || !(current.bench || []).some((id) => String(id) === removeId)) throw Object.assign(new Error("Replacement no longer valid"), { code: "replacement-invalid" });
           if (discardInstanceId) {
@@ -3864,6 +3872,7 @@
           }
           current.bench.push(String(entry.playerId)); decorateRecruit(current, entry);
           global.FiveVFive.removeUnavailable(current);
+          global.RosterInvariants.assertValid(current);
           options.transactionMutate?.(current, entry);
         },
         onCommitted: () => committedSideEffects(entry, "committed-acquired"),

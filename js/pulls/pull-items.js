@@ -40,6 +40,7 @@
 
 function buildLuckyCharmUpgrades(currentCandidates, available, random) {
   if (!Array.isArray(currentCandidates) || currentCandidates.length !== 3) return null;
+  try { global.PullInvariants?.assertUniqueCandidates(currentCandidates); } catch (_) { return null; }
   const usedIds = new Set(currentCandidates.map((candidate) => canonicalCandidatePlayerId(candidate)));
   const upgradedCandidates = [];
   let upgradedCount = 0;
@@ -57,6 +58,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
 
   const uniqueIds = new Set(upgradedCandidates.map((candidate) => canonicalCandidatePlayerId(candidate)));
   if (uniqueIds.size !== upgradedCandidates.length) return null;
+  global.PullInvariants?.assertUniqueCandidates(upgradedCandidates);
   return { candidates: upgradedCandidates, upgradedCount };
 }
 
@@ -70,8 +72,9 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (!Array.isArray(currentCandidates) || currentCandidates.length !== 3) return toast("Il Portafortuna richiede una selezione completa di 3 candidati.");
     const pool = luckyCharmPoolForPull(pullType);
     if (!pool) return toast("Portafortuna non utilizzabile in questa selezione.");
-    const owned = new Set(getRun().roster.map((entry) => String(entry.playerId)));
-    const available = pool.players.filter((player) => pool.profileAware ? isPullCandidateEligible(getRun(), player) : !owned.has(String(player.playerId)));
+    const owned = new Set(getRun().roster.map((entry) => canonicalCandidatePlayerId(entry)));
+    const eligible = pool.players.filter((player) => pool.profileAware ? isPullCandidateEligible(getRun(), player) : !owned.has(canonicalCandidatePlayerId(player)));
+    const available = global.PullInvariants ? global.PullInvariants.uniqueCandidates(eligible) : [...new Map(eligible.map((player) => [canonicalCandidatePlayerId(player), player])).values()];
     const random = global.DraftEngine.randomFromSeed(`${getRun().currentZone.seed}:${node.id}:lucky:${node.pullState.rerolls}`);
     const upgradeResult = buildLuckyCharmUpgrades(currentCandidates, available, random);
   if (!upgradeResult || upgradeResult.upgradedCount < 1) return toast("Nessun candidato può salire di rarità con il Portafortuna.");
@@ -107,6 +110,10 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         current.inventory.splice(index, 1);
         global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId, itemId: scoutToken.id, instanceId: scoutToken.instanceId, actionId: `${current.runId}:${nodeId}:reroll:${currentNode.pullState.rerolls + 1}` });
         currentNode.pullState.excludedCandidateIds.push(...candidates.map((player) => pullCandidateKey(player, pool)));
+        currentNode.pullState.excludedCanonicalPlayerIds = [...new Set([
+          ...(currentNode.pullState.excludedCanonicalPlayerIds || []).map(String),
+          ...candidates.map((player) => canonicalCandidatePlayerId(player)),
+        ])];
         currentNode.pullState.rerolls += 1;
         currentNode.pullState.candidateIds = global.PullCandidatesRuntime.generatedPullCandidates(current, pool, currentNode).map(pullCandidateKey);
       },
