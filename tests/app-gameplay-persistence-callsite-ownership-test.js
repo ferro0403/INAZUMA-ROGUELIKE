@@ -11,13 +11,15 @@ function bodyBetween(start, end, owner = source) {
 const formation = bodyBetween("function renderFormationChoice", "function renderDraft");
 assert.match(formation, /label: "initial-formation-phase"[\s\S]*mutate:/);
 assert.match(formation, /label: "initial-draft-start"[\s\S]*DraftEngine\.start\(current/);
-const draft = bodyBetween("function renderDraft", "function rosterCounts");
+const draft = bodyBetween("function renderDraft", "const squadController");
 assert.match(draft, /label: "initial-draft-pick"[\s\S]*DraftEngine\.choose\(current/);
 assert.match(draft, /DraftEngine\.choose\(current[\s\S]*current\.phase = "squad";[\s\S]*reconcileSquadRosterState\(current\)/);
 assert.match(draft, /onCommitted:[\s\S]*completed \? renderSquad\(\) : renderDraft\(\)/);
-const squadView = bodyBetween("function renderSquad()", "function replaceSquadPlayerCard");
+const squadViewSource = fs.readFileSync("js/squad/squad-view.js", "utf8");
+const squadView = bodyBetween("function renderSquad()", "function squadPlayerRole", squadViewSource);
 assert.doesNotMatch(squadView, /RunState\.save|run\.phase\s*=|reconcileSquadRosterState/);
-const lineup = bodyBetween("function handleSquadSelection", "function ensureCurrentZone");
+const squadControllerSource = fs.readFileSync("js/squad/squad-controller.js", "utf8");
+const lineup = bodyBetween("function swapPlayers", "return { formationById", squadControllerSource);
 assert.match(lineup, /label: "lineup-swap"[\s\S]*mutate:[\s\S]*firstList\[firstIndex\]/);
 const trade = bodyBetween("function executeTrade", "function showTradeResult");
 assert.match(trade, /mutate: \(current\)[\s\S]*executeProfileAwareTrade\(current/);
