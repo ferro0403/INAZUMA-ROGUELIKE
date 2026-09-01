@@ -3791,14 +3791,6 @@
     return global.DraftEngine.selectCandidates(available, random, 3);
   }
 
-  function selectLegendaryCandidates(available, random) {
-    return global.DraftEngine.selectLegendaryCandidates(available, random, categoryRank, "Elite", 3);
-  }
-
-  function categoryRank(category) {
-    return Number(global.SEASON1_CONFIG.categoryRanks[category] ?? 0);
-  }
-
   function improvedCategory(category) {
   const ranks = global.SEASON1_CONFIG.categoryRanks;
   const ordered = Object.keys(ranks).sort((left, right) => ranks[left] - ranks[right]);
@@ -3806,32 +3798,6 @@
   if (index < 0 || index >= ordered.length - 1) return null;
   return ordered[index + 1] || null;
 }
-
-  function generatedPullCandidates(activeRun, pool, node) {
-    const owned = new Set(activeRun.roster.map((entry) => String(entry.playerId)));
-    const excluded = new Set(node.pullState.excludedCandidateIds || []);
-    const available = pool.players.filter((player) => (pool.profileAware ? isPullCandidateEligible(activeRun, player) : !owned.has(canonicalCandidatePlayerId(player))) && !excluded.has(pullCandidateKey(player)));
-    const random = global.DraftEngine.randomFromSeed(`${activeRun.currentZone.seed}:${node.id}:pull:${node.pullState.rerolls}`);
-    const candidates = node.pullState.pullType === "pull_legendary"
-      ? selectLegendaryCandidates(available, random)
-      : selectWeightedCandidates(
-          available,
-          random,
-          node.pullState.pullType === "pull_unlocked_teams"
-            ? global.RoguelikeRules.unlockedTeamPullCategoryWeights(activeRun.bossIndex)
-            : null
-        );
-    return [...new Map(candidates.map((player) => [canonicalCandidatePlayerId(player), player])).values()];
-  }
-
-  function pullCandidates(pool, node, activeRun = run) {
-    if (node.pullState?.candidateIds?.length) {
-      return node.pullState.candidateIds.map((id) => pool.players.find((player) => pullCandidateKey(player) === String(id))).filter(Boolean);
-    }
-    const deduplicated = generatedPullCandidates(activeRun, pool, node);
-    node.pullState.candidateIds = deduplicated.map(pullCandidateKey);
-    return deduplicated;
-  }
 
   function luckyCharmPoolForPull(pullType) {
   if (pullType === "pull_free_agents") return pullPool(pullType);
@@ -3930,7 +3896,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId, itemId: scoutToken.id, instanceId: scoutToken.instanceId, actionId: `${current.runId}:${nodeId}:reroll:${currentNode.pullState.rerolls + 1}` });
         currentNode.pullState.excludedCandidateIds.push(...candidates.map((player) => pullCandidateKey(player, pool)));
         currentNode.pullState.rerolls += 1;
-        currentNode.pullState.candidateIds = generatedPullCandidates(current, pool, currentNode).map(pullCandidateKey);
+        currentNode.pullState.candidateIds = global.PullCandidatesRuntime.generatedPullCandidates(current, pool, currentNode).map(pullCandidateKey);
       },
       onCommitted: () => rerenderCanonicalPull(nodeId, pullType, options),
       rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
@@ -3956,7 +3922,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
               global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PULL_OPENED, { nodeId, pullType, actionId: `${current.runId}:${nodeId}:pull_opened` });
             }
             if (currentNode.pullState.pullType !== pullType) throw new Error("Pull state changed");
-            if (!currentNode.pullState.candidateIds.length) currentNode.pullState.candidateIds = generatedPullCandidates(current, pool, currentNode).map(pullCandidateKey);
+            if (!currentNode.pullState.candidateIds.length) currentNode.pullState.candidateIds = global.PullCandidatesRuntime.generatedPullCandidates(current, pool, currentNode).map(pullCandidateKey);
           },
           rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
         });
@@ -3967,7 +3933,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     } else if (!node.pullState) {
       node.pullState = { pullType, rerolls: 0, excludedCandidateIds: [], luckyCharmUsed: false, candidateIds: [] };
     }
-    const candidates = pullCandidates(pool, node);
+    const candidates = global.PullCandidatesRuntime.pullCandidates(run, pool, node);
     if (options.dev) { try { global.RunState.save(run); } catch (error) { console.error("save failed (dev pull)", error); } }
     const level = previousBossLevel();
     const scoutToken = run.inventory.find((item) => item.effect === "pull_reroll");
