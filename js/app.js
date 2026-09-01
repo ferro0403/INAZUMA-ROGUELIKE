@@ -3717,6 +3717,14 @@
     document.getElementById("cancel-discard").addEventListener("click", onCancel);
   }
 
+  const recruitmentView = global.RecruitmentViewRuntime.create({
+    getRun: () => run, getSeasonDb: () => seasonDb, getFreeAgentsDb: () => freeAgentsDb, resolvedRosterPlayer, playerCard, openModal, getModalRoot: () => modalRoot, closeModal, escapeHtml, seasonRegistry: global.SeasonRegistry,
+  });
+  const recruitmentRuntime = global.RecruitmentControllerRuntime.create({
+    getRun: () => run, isProfileAwareSeason, persistGameplayMutation, rosterInvariants: global.RosterInvariants, playerIdentity: global.PlayerIdentity, getProfiledSeasonRuntime: () => global.ProfiledSeasonRuntime, getMaxRoster: () => global.SEASON1_CONFIG.maxRoster, getMaxInventory: () => global.SEASON1_CONFIG.maxInventory, permanentRosterFields, resolvedRosterPlayer, rosterEntry, optimizeLineupsForNewPlayer, fiveVFive: global.FiveVFive, runStatistics: global.RunStatistics, enqueueAlbumRecruit, unlockAlbumRecruit, closeModal, toast, chooseInventoryDiscardSelection, renderMapFailureRecovery, recruitmentView,
+  });
+  const { recruitPlayer } = recruitmentRuntime;
+
   const pullPoolRuntime = global.PullPoolRuntime.create({
     getRun: () => run, getSeasonDb: () => seasonDb, getFreeAgentsDb: () => freeAgentsDb, isProfileAwareSeason,
   });
@@ -3734,153 +3742,6 @@
   });
   const { openPull, openDevLegendaryPull } = pullControllerRuntime;
 
-  function recruitPlayer(player, source, level, done, options = {}) {
-    let smartLineupResult = null;
-    const allowCancel = options.allowCancel !== false;
-    const profileAware = isProfileAwareSeason() && Boolean(player.profileId);
-    const complete = (status, extra = {}) => done?.({ status, committed: status.startsWith("committed-"), ...extra });
-    const recover = (status, failure = {}) => {
-      complete(status, failure);
-      if (status === "recovery-blocked") {
-        closeModal();
-        return options.onRecoveryBlocked?.(failure) || renderMapFailureRecovery();
-      }
-      options.onRecover?.(status, failure);
-    };
-    const recruitmentSource = options.recruitmentSource || source;
-    const actionId = options.actionId || `${run.runId}:${player.profileId || player.playerId}:recruited:${recruitmentSource}`;
-    const decorateRecruit = (current, entry) => {
-      const overall = resolvedRosterPlayer(entry.playerId, current)?.overall ?? player.overall ?? player.finalOverall ?? null;
-      Object.assign(entry, { firstJoinedAt: new Date().toISOString(), recruitmentSource, recruitedAtLevel: level, recruitedOverall: overall });
-      global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player, playerId: entry.playerId, source: recruitmentSource, level, overall, actionId });
-      enqueueAlbumRecruit(current, entry.playerId, recruitmentSource, actionId);
-      smartLineupResult = optimizeLineupsForNewPlayer(entry.playerId, current, false);
-    };
-    const announceCommittedSmartLineup = () => {
-      if (!smartLineupResult?.elevenChanged && !smartLineupResult?.fiveChanged) return;
-      const areas = [smartLineupResult.elevenChanged ? "11v11" : null, smartLineupResult.fiveChanged ? "5v5" : null].filter(Boolean).join(" e ");
-      toast(`AUTO-FORMAZIONE — aggiornata ${areas}`);
-    };
-    const committedSideEffects = (entry, status) => {
-      if (status === "committed-acquired") unlockAlbumRecruit(entry.playerId, recruitmentSource);
-      closeModal();
-      toast(status === "committed-upgraded" ? "POTENZIAMENTO PROFILO" : "NUOVO GIOCATORE");
-      announceCommittedSmartLineup();
-      complete(status, { player: entry });
-    };
-    const persistenceFailure = ({ kind, ...failure }) => recover(kind === "unreadable" ? "recovery-blocked" : "persistence-failed", { kind, ...failure });
-
-    if (profileAware) {
-      let result;
-      const committed = persistGameplayMutation({
-        label: "recruit-profile",
-        mutate: (current) => {
-          smartLineupResult = null;
-          const alreadyOwned = current.roster.some((entry) => global.PlayerIdentity.canonicalPlayerId(entry) === global.PlayerIdentity.canonicalPlayerId(player));
-          result = global.ProfiledSeasonRuntime.acquireOrUpgradeProfile(current, player, { seasonId: current.seasonId, maxRoster: global.SEASON1_CONFIG.maxRoster, level });
-          if (result.status === "roster-full") throw Object.assign(new Error("Roster full"), { code: "recruit-needs-replacement" });
-          if (!["upgraded", "acquired"].includes(result.status)) throw Object.assign(new Error("Recruit not eligible"), { code: "recruit-ineligible" });
-          if (result.status === "acquired") {
-            if (alreadyOwned) throw Object.assign(new Error("Recruit not eligible"), { code: "recruit-ineligible" });
-            current.bench.push(String(result.player.playerId)); decorateRecruit(current, result.player);
-          }
-          global.RosterInvariants.assertValid(current);
-          options.transactionMutate?.(current, result.player);
-        },
-        onCommitted: () => committedSideEffects(result.player, result.status === "upgraded" ? "committed-upgraded" : "committed-acquired"),
-        onMutationError: ({ error }) => {
-          if (error?.code === "recruit-needs-replacement") return showRecruitReplacement();
-          if (error?.code === "recruit-ineligible") return recover("ineligible", { error });
-          console.error("Recruit mutation failed", error); recover("persistence-failed", { error });
-        },
-        onFailure: persistenceFailure,
-      });
-      return committed;
-    }
-    if (run.roster.length < global.SEASON1_CONFIG.maxRoster) {
-      let entry;
-      return persistGameplayMutation({
-        label: "recruit",
-        mutate: (current) => {
-          smartLineupResult = null;
-          try { global.RosterInvariants.assertCanOwn(current, player); } catch (error) { throw Object.assign(error, { code: "recruit-ineligible" }); }
-          entry = { playerId: String(player.playerId), source, level, equippedItem: null, ...permanentRosterFields(player) };
-          current.roster.push(entry); current.bench.push(entry.playerId); decorateRecruit(current, entry);
-          global.RosterInvariants.assertValid(current);
-          options.transactionMutate?.(current, entry);
-        },
-        onCommitted: () => committedSideEffects(entry, "committed-acquired"),
-        onMutationError: ({ error }) => recover(error?.code === "recruit-ineligible" ? "ineligible" : "persistence-failed", { error }),
-        onFailure: persistenceFailure,
-      });
-    }
-    return showRecruitReplacement();
-
-    function showRecruitReplacement() {
-      const benchPlayers = (run.bench || []).map((id) => resolvedRosterPlayer(id, run)).filter(Boolean);
-      openModal(`
-        <div class="modal-head bench-replacement-head"><div><p class="eyebrow">Rosa piena</p><h2>Sostituisci una riserva</h2><p class="muted">Il nuovo giocatore entrerà al posto di una delle quattro riserve.</p></div></div>
-        <section class="bench-replacement-incoming" aria-label="Nuovo giocatore scelto"><p class="bench-replacement-label">NUOVO GIOCATORE</p>${playerCard(player, { context: "pull", extraClass: "bench-replacement-new-card", level, database: global.SeasonRegistry?.isSeasonSource?.(source) ? (global.SeasonRegistry.database(source) || seasonDb) : freeAgentsDb, applyPermanent: !profileAware })}</section>
-        <section class="bench-replacement-options" aria-label="Riserve sostituibili"><p class="bench-replacement-label">SCEGLI LA RISERVA DA SOSTITUIRE</p><div class="player-grid mobile-compact-player-list bench-replacement-grid">${benchPlayers.map((candidate) => playerCard(candidate, { button: true, context: "pull", level: candidate.displayLevel, database: global.SeasonRegistry?.isSeasonSource?.(candidate.source) ? (global.SeasonRegistry.database(candidate.source) || seasonDb) : freeAgentsDb, resolvedPlayer: candidate })).join("")}</div></section>
-        ${allowCancel ? `<div class="button-row bench-replacement-footer"><button type="button" class="btn btn-ghost" id="cancel-recruit">${escapeHtml(options.cancelLabel || "RINUNCIA AL NUOVO GIOCATORE")}</button></div>` : ""}`,
-        { closeable: false, className: "pull-selection-modal bench-replacement-modal" });
-      complete("needs-replacement");
-      modalRoot.querySelectorAll(".bench-replacement-grid [data-player-id]").forEach((button) => button.addEventListener("click", () => prepareReplacement(String(button.dataset.playerId))));
-      document.getElementById("cancel-recruit")?.addEventListener("click", () => { closeModal(); complete("cancelled"); });
-      return { ok: false, kind: "needs-replacement" };
-    }
-
-    function prepareReplacement(removeId) {
-      const selected = rosterEntry(removeId, run);
-      if (!selected || !(run.bench || []).some((id) => String(id) === removeId)) return showRecruitReplacement();
-      if (selected.equippedItem && run.inventory.length >= global.SEASON1_CONFIG.maxInventory) {
-        return chooseInventoryDiscardSelection("Libera uno spazio per recuperare l'oggetto equipaggiato", (discardId) => replace(removeId, discardId), showRecruitReplacement);
-      }
-      return replace(removeId, null);
-    }
-
-    function replace(removeId, discardInstanceId) {
-      let entry;
-      return persistGameplayMutation({
-        label: "recruit-replacement",
-        mutate: (current) => {
-          smartLineupResult = null;
-          const incomingId = global.PlayerIdentity.canonicalPlayerId(player);
-          if (current.roster.some((candidate) => global.PlayerIdentity.canonicalPlayerId(candidate) === incomingId && String(candidate.playerId) !== String(removeId))) throw Object.assign(new Error("Canonical player already owned"), { code: "replacement-invalid" });
-          const removed = rosterEntry(removeId, current);
-          if (!removed || !(current.bench || []).some((id) => String(id) === removeId)) throw Object.assign(new Error("Replacement no longer valid"), { code: "replacement-invalid" });
-          if (discardInstanceId) {
-            const discardIndex = current.inventory.findIndex((item) => String(item.instanceId) === String(discardInstanceId));
-            if (discardIndex < 0) throw Object.assign(new Error("Discard no longer valid"), { code: "replacement-invalid" });
-            current.inventory.splice(discardIndex, 1);
-          }
-          if (removed.equippedItem) {
-            if (current.inventory.length >= global.SEASON1_CONFIG.maxInventory) throw Object.assign(new Error("Inventory still full"), { code: "replacement-invalid" });
-            current.inventory.push(removed.equippedItem);
-          }
-          current.roster = current.roster.filter((item) => String(item.playerId) !== removeId);
-          current.bench = current.bench.filter((id) => String(id) !== removeId);
-          current.lineup = (current.lineup || []).filter((id) => String(id) !== removeId);
-          global.FiveVFive.removeUnavailable(current);
-          if (profileAware) {
-            const acquired = global.ProfiledSeasonRuntime.acquireOrUpgradeProfile(current, player, { seasonId: current.seasonId, maxRoster: global.SEASON1_CONFIG.maxRoster, level });
-            if (acquired.status !== "acquired" || !acquired.player) throw Object.assign(new Error("Replacement recruit invalid"), { code: "replacement-invalid" });
-            entry = acquired.player;
-          } else {
-            entry = { playerId: String(player.playerId), source, level, equippedItem: null, ...permanentRosterFields(player) };
-            current.roster.push(entry);
-          }
-          current.bench.push(String(entry.playerId)); decorateRecruit(current, entry);
-          global.FiveVFive.removeUnavailable(current);
-          global.RosterInvariants.assertValid(current);
-          options.transactionMutate?.(current, entry);
-        },
-        onCommitted: () => committedSideEffects(entry, "committed-acquired"),
-        onMutationError: ({ error }) => { toast("Sostituzione non più valida", "error"); recover("ineligible", { error }); },
-        onFailure: persistenceFailure,
-      });
-    }
-  }
   function openBossPreviewModal(boss) {
     const bossPlayers = bossTeamPlayers(boss);
     const meta = bossMatchTeamMeta(boss).boss;

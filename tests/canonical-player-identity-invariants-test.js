@@ -88,7 +88,7 @@ assert.strictEqual(recovery.repaired, true);
 assert.deepStrictEqual(Array.from(recovery.candidateIds), ["antoni-a", "bob", "carl"]);
 assert.deepStrictEqual(Array.from(ids(recovery.candidates)), ["antoni", "bob", "carl"]);
 
-const app = fs.readFileSync("js/app.js", "utf8");
-assert.match(app, /RosterInvariants\.assertCanOwn\(current, player\)/, "recruitment write boundary gates canonical ownership");
-assert.match(app, /RosterInvariants\.assertValid\(current\)/, "recruitment mutations enforce the roster/formation invariant");
+const recruitment = fs.readFileSync("js/recruitment/recruitment-controller.js", "utf8");
+assert.match(recruitment, /rosterInvariants\.assertCanOwn\(current, player\)/, "recruitment write boundary gates canonical ownership");
+assert.match(recruitment, /rosterInvariants\.assertValid\(current\)/, "recruitment mutations enforce the roster/formation invariant");
 console.log("canonical pull, ownership, recruitment, roster, formation and legacy recovery invariants passed");
