@@ -2,11 +2,11 @@ const assert = require("assert");
 const fs = require("fs");
 const source = fs.readFileSync("js/app.js", "utf8");
 
-function bodyBetween(start, end) {
-  const from = source.indexOf(start);
-  const to = source.indexOf(end, from + start.length);
+function bodyBetween(start, end, owner = source) {
+  const from = owner.indexOf(start);
+  const to = owner.indexOf(end, from + start.length);
   assert(from >= 0 && to > from, `missing source range ${start}`);
-  return source.slice(from, to);
+  return owner.slice(from, to);
 }
 const formation = bodyBetween("function renderFormationChoice", "function renderDraft");
 assert.match(formation, /label: "initial-formation-phase"[\s\S]*mutate:/);
@@ -30,7 +30,8 @@ assert.match(recruit, /committed-acquired[\s\S]*committed-upgraded[\s\S]*needs-r
 assert.match(recruit, /chooseInventoryDiscardSelection[\s\S]*discardInstanceId[\s\S]*mutate: \(current\)/);
 assert.doesNotMatch(recruit, /removeInventoryItem\(/);
 
-const pull = bodyBetween("function openPull", "function openDevLegendaryPull");
+const pullController = fs.readFileSync("js/pulls/pull-controller.js", "utf8");
+const pull = bodyBetween("function openPull", "function openDevLegendaryPull", pullController);
 assert.match(pull, /onRecover: \(\) => rerenderCanonicalPull\(nodeId, pullType, options\)/, "pull recovery resolves the canonical active node instead of reusing a stale object");
 assert.doesNotMatch(pull, /onRecover: \(\) => openPull\(node, pullType, options\)/, "pull recovery must not reuse the pre-rollback node reference");
 assert.doesNotMatch(pull, /onRecover: \(\) => showPlayerOffer\(options\)/, "recovery must not reuse incomplete openPull options as an offer config");
