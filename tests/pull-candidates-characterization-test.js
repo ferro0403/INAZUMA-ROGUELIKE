@@ -168,7 +168,7 @@ for (const scenario of scenarios) {
   const expected = legacyPullCandidates(scenario.run, scenario.pool, oldNode, deps);
   const actual = context.PullCandidatesRuntime.pullCandidates(scenario.run, scenario.pool, newNode);
   assert.strictEqual(JSON.stringify(actual), JSON.stringify(expected), `${scenario.label}: candidates preserve legacy behavior`);
-  assert.deepStrictEqual(newNode.pullState.candidateIds, oldNode.pullState.candidateIds, `${scenario.label}: persisted candidateIds preserve legacy behavior`);
+  assert.strictEqual(JSON.stringify(newNode.pullState.candidateIds), JSON.stringify(oldNode.pullState.candidateIds), `${scenario.label}: persisted candidateIds preserve legacy behavior`);
 }
 
 const savedPool = {
