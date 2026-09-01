@@ -103,7 +103,7 @@ function controllerHarness({ state = null, persistFails = false, type = "pull_fr
   assert.strictEqual(h.events.finished.length, 0);
 }
 
-function itemsHarness({ fail = false } = {}) {
+function itemsHarness({ fail = false, beforeMutate = null } = {}) {
   const node = { id: "pull-1", type: "pull_free_agents", pullState: pullState() };
   const run = { runId: "run-1", seasonId: "ie1", roster: [], inventory: [], currentZone: { seed: "zone-seed", nodes: [node] } };
   const events = { records: [], generated: 0, rerenders: 0, recovery: 0, mutationCalls: 0 };
@@ -117,7 +117,14 @@ function itemsHarness({ fail = false } = {}) {
   const persistGameplayMutation = (request) => {
     events.mutationCalls += 1;
     if (fail) { request.rerender?.({ ok: false }); return { ok: false }; }
-    request.mutate(run); request.onCommitted?.(); return { ok: true };
+    beforeMutate?.(run);
+    try {
+      request.mutate(run); request.onCommitted?.(); return { ok: true };
+    } catch (error) {
+      events.mutationError = error;
+      request.rerender?.({ ok: false });
+      return { ok: false };
+    }
   };
   const runtime = context.PullItemsRuntime.create({
     getRun: () => run, getSeasonDb: () => ({ players: [] }), isProfileAwareSeason: () => false,
@@ -156,6 +163,41 @@ function itemsHarness({ fail = false } = {}) {
   assert.strictEqual(h.events.recovery, 1);
 }
 
+// Scout reroll delegates seed construction to the real PullCandidatesRuntime exactly once.
+{
+  const node = { id: "pull-1", type: "pull_free_agents", pullState: pullState() };
+  const run = { runId: "run-1", bossIndex: 0, roster: [], inventory: [], currentZone: { seed: "zone-seed", nodes: [node] } };
+  const seeds = [];
+  let selectionCalls = 0;
+  const context = load(["js/pulls/pull-candidates.js", "js/pulls/pull-items.js"], {
+    RecruitmentPoolRuntime: {
+      canonicalPlayerId: (entry) => String(entry.playerId), candidateKey: (entry) => String(entry.profileId || entry.playerId), eligible: () => true,
+    },
+    DraftEngine: {
+      randomFromSeed: (seed) => { seeds.push(seed); return () => 0; },
+      unlockedPullCategoryWeights: () => null,
+      selectCandidates: (available) => { selectionCalls += 1; return available.slice(0, 3); },
+      selectWeightedCandidates: (available) => available.slice(0, 3),
+    },
+    LegendaryPullRuntime: { select: (available) => available.slice(0, 3) },
+    RunStatistics: { ACTIONS: { REROLL_USED: "REROLL_USED" }, recordRunAction: () => {} },
+  });
+  const scout = { id: "scout_token", instanceId: "scout-1", effect: "pull_reroll" };
+  run.inventory.push(scout);
+  const pool = { players: [player("a"), player("b"), player("c"), player("d"), player("e"), player("f")], profileAware: false };
+  const runtime = context.PullItemsRuntime.create({
+    getRun: () => run, getSeasonDb: () => ({ players: [] }), isProfileAwareSeason: () => false, pullPool: () => pool,
+    canonicalCandidatePlayerId: (entry) => String(entry.playerId), pullCandidateKey: (entry) => String(entry.profileId || entry.playerId),
+    isPullCandidateEligible: () => true, toast: () => {},
+    persistGameplayMutation: (request) => { request.mutate(run); request.onCommitted?.(); return { ok: true }; },
+    activePullNodeById: (activeRun) => activeRun.currentZone.nodes[0], rerenderCanonicalPull: () => {}, renderMapFailureRecovery: () => {},
+  });
+  runtime.useScoutTokenOnPull(node, node.type, [player("a"), player("b"), player("c")], scout, pool);
+  assert.strictEqual(node.pullState.rerolls, 1);
+  assert.deepStrictEqual(seeds, ["zone-seed:pull-1:pull:1"]);
+  assert.strictEqual(selectionCalls, 1, "Scout Token performs exactly one new candidate generation");
+}
+
 // 5. Legendary offers never expose Scout Token reroll.
 {
   const h = controllerHarness({ state: pullState(["a", "b", "c"], { pullType: "pull_legendary" }), type: "pull_legendary" });
@@ -190,6 +232,19 @@ function itemsHarness({ fail = false } = {}) {
   assert.strictEqual(h.node.pullState.luckyCharmUsed, false);
   assert.deepStrictEqual(json(h.node.pullState.candidateIds), ["a", "b", "c"]);
   assert.strictEqual(h.events.rerenders, 0);
+}
+{
+  const h = itemsHarness({ beforeMutate: (current) => { current.currentZone.nodes[0].pullState.candidateIds = ["a", "b", "d"]; } });
+  const lucky = { id: "lucky_charm", instanceId: "lucky-stale", effect: "lucky_pull" };
+  h.run.inventory.push(lucky);
+  h.events.luckyPool = { players: [player("ua", { category: "Elite" }), player("ub", { category: "Elite" }), player("uc", { category: "Elite" })] };
+  h.runtime.useLuckyCharmOnPull(h.node, h.node.type, [player("a"), player("b"), player("c")]);
+  assert.match(h.events.mutationError?.message || "", /Lucky Charm state changed/);
+  assert.strictEqual(h.run.inventory.length, 1);
+  assert.strictEqual(h.node.pullState.luckyCharmUsed, false);
+  assert.deepStrictEqual(json(h.node.pullState.candidateIds), ["a", "b", "d"]);
+  assert.strictEqual(h.events.rerenders, 0, "no stale upgrade is presented as committed");
+  assert.strictEqual(h.events.recovery, 1);
 }
 
 // 7. Skip delegates exactly once to the existing finishNonMatchNode boundary.
