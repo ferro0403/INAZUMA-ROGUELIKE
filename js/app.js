@@ -79,11 +79,11 @@
     closeModal({ invokeOnClose: false });
     if (destination === "home") return renderHome();
     if (destination === "seasonSelection") {
-      if (run) global.RunState.save(run);
+      if (run) { try { global.RunState.save(run); } catch (error) { console.error("save failed (seasonSelection nav)", error); } }
       return renderSeasonSelect();
     }
     if (destination === "map") {
-      if (run) { run.phase = "map"; global.RunState.save(run); }
+      if (run) { run.phase = "map"; try { global.RunState.save(run); } catch (error) { console.error("save failed (map nav)", error); } }
       return renderMap();
     }
     if (destination === "albumRoot") return renderAlbumCollections();
@@ -385,6 +385,32 @@
     ui.itemRewardSubmitting = false;
   }
 
+  const gameplayFailureDiagnostics = [];
+  function recordGameplayFailure(label, stage, error, kind = null) {
+    if (!DEV_MODE) return null;
+    const current = run;
+    const seasonId = current?.seasonId || activeSeason?.id || null;
+    let canonical = null; let storage = null;
+    try { canonical = seasonId ? global.RunState.load(seasonId, { readOnly: true }) : null; } catch (_) {}
+    try { storage = seasonId ? global.RunStorage?.diagnostics?.(seasonId) : null; } catch (_) {}
+    const match = current?.activeMatch || ui.match || null;
+    const entry = {
+      at: new Date().toISOString(), label: label || "unknown", stage, kind,
+      seasonId, runId: current?.runId || null, phase: current?.phase || null,
+      error: { name: error?.name || null, code: error?.code || null, stage: error?.stage || null, message: error?.message || String(error || ""), recoverable: error?.recoverable === true },
+      generation: { memory: current?.storageGeneration ?? null, canonical: canonical?.storageGeneration ?? storage?.canonicalGeneration ?? null, expected: error?.generation ?? current?.storageGeneration ?? null },
+      commitId: { memory: current?.storageCommitId || null, canonical: canonical?.storageCommitId || storage?.canonicalCommitId || null },
+      canonicalRunId: canonical?.runId || storage?.canonicalRunId || null,
+      match: match ? { matchId: match.matchId || null, type: match.type || null, state: match.state || null, simulationState: match.simulation?.state || null, resolutionApplied: match.simulation?.resolutionApplied === true } : null,
+      node: { currentNodeId: current?.currentZone?.currentNodeId || null, pendingNodeId: current?.currentZone?.pendingNodeId || null },
+      storage: storage ? { bytes: storage.bytes, totalKnownBytes: storage.totalKnownBytes, headGeneration: storage.headGeneration, backupGeneration: storage.backupGeneration, headMatchesCanonical: storage.headMatchesCanonical } : null,
+    };
+    gameplayFailureDiagnostics.push(entry);
+    if (gameplayFailureDiagnostics.length > 20) gameplayFailureDiagnostics.shift();
+    console.error("Gameplay persistence diagnostic", entry);
+    return entry;
+  }
+
   const persistGameplayMutation = global.GameplayPersistence.create({
     save: (current, options) => global.RunState.save(current, options),
     load: (seasonId, options) => global.RunState.load(seasonId, options),
@@ -400,8 +426,9 @@
       ui.returnToMatchContext = null;
     },
     stopRuntime: stopGameplayRuntime,
-    reportFailure: (message) => toast(message, "error"),
-    reportMutationFailure: (message, error) => {
+    reportFailure: (message, kind, error, options) => { recordGameplayFailure(options?.label, "persistence", error, kind); toast(message, "error"); },
+    reportMutationFailure: (message, error, options) => {
+      recordGameplayFailure(options?.label, "mutation", error, "mutation");
       console.error("Gameplay mutation failed", error);
       toast(message, "error");
     },
@@ -650,7 +677,6 @@
     if (!run) return;
     run.inventory = Array.isArray(run.inventory) ? run.inventory : [];
     run.teamIdentity = normalizeTeamIdentity(run.teamIdentity);
-    syncRunTeamIdentity();
     run.effects = run.effects || {};
     const legacyLuckyPulls = Number(run.effects.luckyPulls || run.luckyCharmActive || run.nextPullBoost || 0);
     if (legacyLuckyPulls > 0 && !run.effects.luckyPullsMigrated) {
@@ -856,7 +882,7 @@
         } else if (destination === "squad") {
           ensurePostBossFlow({ clearMatch: true });
           run.phase = "squad";
-          global.RunState.save(run);
+          try { global.RunState.save(run); } catch (error) { console.error("save failed (squad nav)", error); }
           renderSquad();
         } else if (destination === "inventory") {
           renderInventory();
@@ -1116,8 +1142,11 @@
       if (render) renderFinalizationPending(result);
       return result;
     }
-    if (render) renderFinalCelebration(run.hallTeamId, { developmentResolved: true });
-    return result;
+    if (!render) return result;
+    return resolveDevelopmentEndRunFlow({
+      endReason: "victory",
+      onComplete: () => renderFinalCelebration(run.hallTeamId, { developmentResolved: true }),
+    });
   }
 
   function renderFinalizationPending(result = {}) {
@@ -1131,7 +1160,12 @@
     retry?.addEventListener("click", () => {
       retry.disabled = true;
       const resumed = resumeRunFinalization({ render: false });
-      if (resumed.completed) return renderFinalCelebration(run.hallTeamId, { developmentResolved: true });
+      if (resumed.completed) {
+        return resolveDevelopmentEndRunFlow({
+          endReason: "victory",
+          onComplete: () => renderFinalCelebration(run.hallTeamId, { developmentResolved: true }),
+        });
+      }
       toast("Finalizzazione ancora in sospeso. Puoi riprovare senza perdere la vittoria.", "error");
       renderFinalizationPending(resumed);
     });
@@ -1327,25 +1361,13 @@
     return loadTeamProfile().teamIdentity;
   }
 
-  function syncRunTeamIdentity(identity = savedTeamIdentity()) {
-    if (!run || !identity) return false;
-    const cleanIdentity = normalizeTeamIdentity(identity);
-    if (run.teamIdentity?.name === cleanIdentity.name && run.teamIdentity?.emblemId === cleanIdentity.emblemId) return false;
-    run.teamIdentity = cleanIdentity;
-    return true;
-  }
-
   function migrateTeamIdentityProfile() {
     const profileIdentity = savedTeamIdentity();
-    if (profileIdentity) {
-      if (syncRunTeamIdentity(profileIdentity) && persistenceWritesAllowed()) global.RunState.save(run);
-      return profileIdentity;
-    }
+    if (profileIdentity) return profileIdentity;
     const legacyName = run ? global.RunState.validTeamName(run.teamIdentity?.name) : "";
     if (!legacyName) return null;
     if (!persistenceWritesAllowed()) return normalizeTeamIdentity({ name: legacyName, emblemId: "default-lightning" });
     const migrated = global.RunState.saveProfileTeamIdentity({ name: legacyName, emblemId: "default-lightning" });
-    if (syncRunTeamIdentity(migrated)) global.RunState.save(run);
     return migrated;
   }
 
@@ -1492,7 +1514,7 @@
     }
     ensureRunSchema();
     const profileIdentity = migrateTeamIdentityProfile();
-    if (persistenceWritesAllowed() && run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
+    if (persistenceWritesAllowed() && run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) { try { global.RunState.save(run); } catch (error) { console.error("save failed (boss level migration, init)", error); } }
     const homeIdentity = normalizeTeamIdentity(run?.teamIdentity || profileIdentity || {});
     await ensureHomeTeamEmblemSeasonLoaded(homeIdentity);
     app.innerHTML = `
@@ -1526,7 +1548,7 @@
       if (run?.permanentEffectOutbox?.some((effect) => effect.status === "pending")) drainPermanentEffects();
     }
     if (run && markPlayed) global.RunState.touch(run);
-    if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) global.RunState.save(run);
+    if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) { try { global.RunState.save(run); } catch (error) { console.error("save failed (boss level migration, selectSeason)", error); } }
   }
 
   function runTimestamp(run) {
@@ -2003,7 +2025,7 @@
       global.RunState.saveProfilePreferences({ smartAutoLineup: event.currentTarget.checked });
       toast(event.currentTarget.checked ? "AUTO-FORMAZIONE ATTIVATA" : "AUTO-FORMAZIONE DISATTIVATA");
     });
-    document.querySelectorAll("[data-settings-emblem]").forEach((button) => button.onclick = () => { const saved = savedTeamIdentity(); if (!saved) { toast("IMPOSTA PRIMA IL NOME SQUADRA"); return; } const updated = global.RunState.saveProfileTeamIdentity({ ...saved, emblemId: button.dataset.settingsEmblem }); if (syncRunTeamIdentity(updated)) global.RunState.save(run); toast("STEMMA SALVATO"); renderSettings({ view: "emblems" }); });
+    document.querySelectorAll("[data-settings-emblem]").forEach((button) => button.onclick = () => { const saved = savedTeamIdentity(); if (!saved) { toast("IMPOSTA PRIMA IL NOME SQUADRA"); return; } global.RunState.saveProfileTeamIdentity({ ...saved, emblemId: button.dataset.settingsEmblem }); toast("STEMMA SALVATO"); renderSettings({ view: "emblems" }); });
   }
 
   function shopDevMarkup() { const cupLabels = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES", orion: "ORION" }; return `<section class="shop-dev"><h2>NEGOZIO — HACK TEST</h2><button data-shop-prepare>PREPARA TEST NEGOZIO</button><div class="shop-dev-grid">${[1000,5000].map((n) => `<button data-shop-coins="${n}">+${n} MONETE</button>`).join("")}${global.DevelopmentV2.SEASON_IDS.flatMap((id) => [1,5].map((n) => `<button data-shop-cups="${id}" data-amount="${n}">+${n} COPPA ${cupLabels[id]}</button>`)).join("")}${global.DevelopmentV2.PROJECT_RARITIES.map((rarity) => `<button data-shop-project="${rarity}">+1 PROGETTO ${rarity.toUpperCase()}</button>`).join("")}</div><div class="shop-dev-danger"><button data-shop-unlock>SBLOCCA TUTTI GLI STEMMI</button><button data-shop-remove>RIMUOVI TUTTI GLI STEMMI ACQUISTATI</button><button data-shop-reset>RESET RISORSE SHOP</button></div></section>`; }
@@ -2034,10 +2056,10 @@
   }
 
   function startRunWithIdentity(identity) {
-    if (!global.RestoreGameplayRoutingGate?.enter("new-run")) return false;
+    const localIdentity = normalizeTeamIdentity(identity);
     let candidate;
     try {
-      candidate = global.RunState.createRun(normalizeTeamIdentity(identity), activeSeason?.id);
+      candidate = global.RunState.createRun(localIdentity, activeSeason?.id);
     } catch (error) {
       const SnapshotError = global.DevelopmentRuntime?.DevelopmentSnapshotError;
       if (!SnapshotError || !(error instanceof SnapshotError)) throw error;
@@ -2045,18 +2067,17 @@
       toast("Impossibile avviare la run: i dati del Centro di sviluppo richiedono una verifica.");
       return false;
     }
-    const cleanIdentity = global.RunState.saveProfileTeamIdentity(identity);
-    candidate.teamIdentity = cleanIdentity;
     global.RunState.save(candidate, { replaceRun: true });
     run = candidate;
     global.run = candidate;
+    try { global.RunState.saveProfileTeamIdentity(localIdentity); }
+    catch (error) { console.warn("Account profile update deferred; local run is already saved", { code: error?.code || "profile-write-failed" }); }
     closeModal({ invokeOnClose: false });
     renderFormationChoice();
     return true;
   }
 
   function startNewRunFromHome() {
-    if (!global.RestoreGameplayRoutingGate?.enter("new-run")) return false;
     const identity = savedTeamIdentity();
     run = global.RunState.load(activeSeason?.id);
     const startConfirmedRun = () => {
@@ -2095,8 +2116,7 @@
       if (!result.valid) { error.textContent = result.message; return; }
       if (mode === "edit") {
         const before = run ? JSON.stringify({ roster: run.roster, lineup: run.lineup, bench: run.bench, bossIndex: run.bossIndex, currentZone: run.currentZone }) : null;
-        const identity = global.RunState.saveProfileTeamIdentity({ name: result.name, emblemId: savedTeamIdentity()?.emblemId || "default-lightning" });
-        if (syncRunTeamIdentity(identity)) global.RunState.save(run);
+        global.RunState.saveProfileTeamIdentity({ name: result.name, emblemId: savedTeamIdentity()?.emblemId || "default-lightning" });
         if (before && before !== JSON.stringify({ roster: run.roster, lineup: run.lineup, bench: run.bench, bossIndex: run.bossIndex, currentZone: run.currentZone })) throw new Error("Team name edit changed run progress");
         closeModal();
         renderSettings();
@@ -2115,7 +2135,6 @@
   }
 
   async function resumeRun() {
-    if (!global.RestoreGameplayRoutingGate?.enter("resume-run")) return false;
     await selectSeason(run?.seasonId || activeSeason?.id, { markPlayed: true });
     if (!run) return renderHome();
     if (run.phase === "finalization" || (run.finalization && run.finalization.status !== "complete")) return resumeRunFinalization();
@@ -2665,7 +2684,7 @@
   function ensureCurrentZone() {
     const result = global.MapEngine.ensureCurrentZone(run, seasonDb);
     if (!result.generated) {
-      if (result.changed) global.RunState.save(run);
+      if (result.changed) { try { global.RunState.save(run); } catch (error) { console.error("save failed (ensureCurrentZone)", error); } }
       return;
     }
     run.phase = "map";
@@ -2846,7 +2865,7 @@
     }
     if (!readOnly) {
       run.phase = "map";
-      global.RunState.save(run);
+      try { global.RunState.save(run); } catch (error) { console.error("save failed (renderMap)", error); }
     }
     const zone = run.currentZone;
     const boss = seasonDb.bossOrder[run.bossIndex];
@@ -2966,7 +2985,7 @@
       node.type = button.dataset.devTransformNode;
       delete node.revealedType;
       delete node.pullState;
-      global.RunState.save(run);
+      try { global.RunState.save(run); } catch (error) { console.error("save failed (dev transform node)", error); }
       toast(node.type === "trade" ? "Nodo trasformato in Scambio" : "Nodo trasformato in Pull Leggendario");
       renderMap();
     }));
@@ -3058,12 +3077,13 @@
       return resolveRandomNode(canonicalNodeById(committed.value?.nodeId || nodeId));
     }
     let node;
-    try {
-      node = global.MapEngine.selectNode(run.currentZone, nodeId);
-    } catch (error) {
-      return toast(error.message);
-    }
-    global.RunState.save(run);
+    const committed = persistGameplayMutation({
+      label: "map-node-select",
+      mutate: (current) => { node = global.MapEngine.selectNode(current.currentZone, nodeId); },
+      onMutationError: ({ error }) => toast(error.message),
+      rerender: ({ ok, stage }) => { if (!ok && stage === "persistence") renderMapFailureRecovery(); },
+    });
+    if (!committed.ok) return committed;
 
     dispatchNode(node, node.type, { previousNodeId });
   }
@@ -3948,7 +3968,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       node.pullState = { pullType, rerolls: 0, excludedCandidateIds: [], luckyCharmUsed: false, candidateIds: [] };
     }
     const candidates = pullCandidates(pool, node);
-    if (options.dev) global.RunState.save(run);
+    if (options.dev) { try { global.RunState.save(run); } catch (error) { console.error("save failed (dev pull)", error); } }
     const level = previousBossLevel();
     const scoutToken = run.inventory.find((item) => item.effect === "pull_reroll");
     const luckyCharm = run.inventory.find((item) => item.effect === "lucky_pull");
@@ -4516,6 +4536,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
         options.onCommitted?.(value, current);
       },
       onMutationError: ({ error }) => {
+        recordGameplayFailure(label, "mutation", error, "mutation");
         if (error?.code !== "match-identity-mismatch") console.error(`${label} mutation failed`, error);
       },
       rerender: ({ ok, run: recovered }) => {
@@ -5698,7 +5719,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (flow.destination !== "none") return navigateBossVictoryDestination(flow);
     ensureCurrentZone();
     run.phase = "map";
-    global.RunState.save(run);
+    try { global.RunState.save(run); } catch (error) { console.error("save failed (resumePostBossFlowOrMap)", error); }
     return renderMap();
   }
 
@@ -5879,7 +5900,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     run.currentZone = null;
     ui.match = null;
     const destination = finishBossVictoryTransition();
-    global.RunState.save(run);
+    try { global.RunState.save(run); } catch (error) { console.error("save failed (devSkipCurrentBoss)", error); }
     if (renderResult) navigateBossVictoryDestination(destination);
     return true;
   }
@@ -5888,7 +5909,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (!DEV_MODE || !run) return;
     const cappedTarget = Math.min(Math.max(0, target), Math.max(0, seasonDb.bossOrder.length - 1));
     while (run.completedBossIds.length < cappedTarget && devSkipCurrentBoss({ renderResult: false })) { /* shared, progressive skip */ }
-    global.RunState.save(run);
+    try { global.RunState.save(run); } catch (error) { console.error("save failed (devSkipToCompletedBosses)", error); }
     renderMap();
   }
 
@@ -5901,7 +5922,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     run.pendingBossVictory = null;
     run.postBossFlow = null;
     ui.match = null;
-    global.RunState.save(run);
+    try { global.RunState.save(run); } catch (error) { console.error("save failed (devGameOverNow)", error); }
     renderGameOver();
   }
 
@@ -6905,7 +6926,12 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       run.phase = "finalization";
       run.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId };
       global.PermanentEffects.enqueueHall(run, snapshot);
-      global.RunState.save(run);
+      try {
+        global.RunState.save(run);
+      } catch (error) {
+        console.error("save failed (persistChampionBeforeFinalUi)", error);
+        toast("Salvataggio della vittoria non riuscito, riprova.", "error");
+      }
     }
     drainPermanentEffects();
     return run.hallTeamId ? global.HallOfFameStorage.getTeam(run.hallTeamId) : null;
@@ -7018,7 +7044,7 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (!team) return renderHome();
     app.innerHTML = `<main class="final-celebration-screen"><section class="final-celebration-panel"><header class="final-victory-hero"><div class="final-trophy" aria-hidden="true">★</div><div class="final-victory-copy"><p class="eyebrow">${escapeHtml(normalizedHallSeasonName(team).toUpperCase())} COMPLETATA</p><h1>${escapeHtml(team.teamName)}</h1><h2>Campioni della run</h2><p>${escapeHtml(team.modeName)} · ${formatDate(team.victoryDate)} · ${escapeHtml(team.finalFormation || '-')}</p></div></header><div class="final-victory-team"><div class="final-victory-section-head"><span>Squadra vincente</span><strong>La formazione che ha scritto la storia</strong></div>${championFormationMarkup(team)}</div><div class="button-row final-actions"><button type="button" class="btn btn-yellow" id="final-continue">Continua <span aria-hidden="true">→</span></button><button type="button" class="btn" id="skip-final-animation">Vai al riepilogo</button></div></section></main>`;
     resetRenderedViewScroll(); bindHallPlayerDetails(team);
-    const go = () => { run.phase = "final-summary"; global.RunState.save(run); renderFinalSummary(team.hallTeamId, { developmentResolved: true }); };
+    const go = () => { run.phase = "final-summary"; try { global.RunState.save(run); } catch (error) { console.error("save failed (renderFinalCelebration)", error); } renderFinalSummary(team.hallTeamId, { developmentResolved: true }); };
     document.getElementById("final-continue").addEventListener("click", go);
     document.getElementById("skip-final-animation").addEventListener("click", go);
   }
@@ -7029,7 +7055,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     if (!team) return renderHome();
     const summaries = global.HallOfFameStorage.listSummaries();
     const ordinal = summaries.findIndex((item) => item.hallTeamId === team.hallTeamId) + 1;
-    run.phase = "final-summary"; run.hallTeamId = team.hallTeamId; global.RunState.save(run);
+    run.phase = "final-summary"; run.hallTeamId = team.hallTeamId;
+    try { global.RunState.save(run); } catch (error) { console.error("save failed (renderFinalSummary)", error); }
     app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><div><p class="eyebrow">CAMPIONI · ${escapeHtml(normalizedHallSeasonName(team).toUpperCase())}</p><h1>${escapeHtml(team.teamName)}</h1><p class="final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span><span>Seed ${escapeHtml(compactSeed(team.seed))}</span><span>#${escapeHtml(ordinal || '-')} Albo d’Oro</span></p></div><span class="final-summary-star" aria-hidden="true">★</span></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3>${championFiveVFiveMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel"><button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn btn-primary" id="final-new-run">Nuova run</button>${sectionRootButton("finalSummary")}</aside></section></main>`;
     resetRenderedViewScroll(); bindFinalTabs(); bindHallPlayerDetails(team);
     document.getElementById("open-current-hall").addEventListener("click", () => renderHallOfFameDetail(team.hallTeamId));
@@ -7129,8 +7156,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
       const visualsDb = await visualsResponse.json();
       freeAgentsDb = await freeAgentsResponse.json();
       global.DevelopmentRuntime?.registerDatabase?.("free-agents", freeAgentsDb);
-      await global.PersistenceBootstrapGate?.ready;
-      await global.PersistenceBootstrapGate?.whenAccessible?.();
+      // Run gameplay is a device-local domain. Account authentication and
+      // cloud recovery continue independently and must not gate app startup.
       configureAlbumForBootstrap((freeAgentsDb.players || []).map((player) => player.playerId));
       freeAgentsById = new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player]));
       playerVisualsById = new Map(Object.entries(visualsDb.players || {}));
@@ -7140,7 +7167,8 @@ function buildLuckyCharmUpgrades(currentCandidates, available, random) {
     }
   }
 
-  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, startRunWithIdentity, getRun: () => run };
+  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, startNewRunFromHome, startRunWithIdentity, getRun: () => run };
+  if (DEV_MODE) global.__INAZUMA_GAMEPLAY_FAILURE_DIAGNOSTICS__ = () => global.RunState.clone(gameplayFailureDiagnostics);
   if (DEV_MODE) global.__INAZUMA_MATCH_DIAGNOSTICS__ = () => {
     const match = run?.activeMatch, effects = run?.permanentEffectOutbox || [];
     return { runId: run?.runId, matchId: match?.matchId, matchType: match?.type, phase: run?.phase, simulationState: match?.simulation?.state, resolutionApplied: match?.simulation?.resolutionApplied === true, result: match?.result, winner: match?.simulation?.winner, revealedCount: match?.simulation?.revealedCount, timelineLength: match?.simulation?.timeline?.length, pendingPostMatchAction: match?.pendingPostMatchAction || null, lives: run?.lives, gameOver: run?.gameOver, finalization: run?.finalization?.status || null, permanentEffects: { pending: effects.filter((effect) => effect.status === "pending").length, applied: effects.filter((effect) => effect.status === "applied").length }, postBossFlow: run?.postBossFlow?.status || null };

@@ -75,7 +75,6 @@
     try { raw = global.localStorage?.getItem(d.V2.STORAGE_KEY) ?? null; }
     catch (error) { return failure("storage-access-error", { blockers: [{ code: "storage-access-error", detail: error.message }] }); }
     if (raw === ensuredRaw && ensuredState) return { ok: true, migrated: false, deferred: false, reason: null, state: clone(ensuredState) };
-    if (global.PersistenceRecoveryGuard?.isBlocked?.()) return { ...failure("restore-recovery-required"), deferred: true };
     let parsed;
     try { parsed = raw == null || raw === "" ? {} : JSON.parse(raw); }
     catch (_) { return failure("invalid-json"); }
@@ -89,9 +88,15 @@
       if (!validation.valid) return failure("development-v3-schema-conflict", { blockers: validation.errors.map((detail) => ({ code: "development-v3-schema-conflict", detail })) });
       const shadow = d.V3.normalize(parsed[SHADOW_FIELD]);
       if (hasAuthority) {
+        // A canonical authoritative envelope needs no migration or write. It
+        // may be read while account recovery is fenced so a device-local run
+        // can take its immutable starting snapshot. Do not warm session cache
+        // in the blocked path; each read revalidates persisted bytes.
+        if (global.PersistenceRecoveryGuard?.isBlocked?.()) return { ok: true, migrated: false, deferred: false, readOnly: true, reason: null, state: clone(shadow) };
         ensuredRaw = raw; ensuredState = shadow;
         return { ok: true, migrated: false, deferred: false, reason: null, state: clone(ensuredState) };
       }
+      if (global.PersistenceRecoveryGuard?.isBlocked?.()) return { ...failure("restore-recovery-required"), deferred: true };
       // Before PR5A the mirror was authoritative. An unmarked V3 value is only
       // a pre-cutover shadow and may be adopted iff it still describes the
       // independently converted current V2 bytes exactly.
@@ -109,6 +114,7 @@
         return failure("persistence", { error });
       }
     }
+    if (global.PersistenceRecoveryGuard?.isBlocked?.()) return { ...failure("restore-recovery-required"), deferred: true };
     const v2State = d.V2.normalize(parsed);
     const plan = d.Migration.convertState({ ...options, v2State, DevelopmentV2: d.V2, DevelopmentV3: d.V3, resolveBasePlayer: d.resolveBasePlayer, progression: d.progression, database: d.database });
     if (!plan.ok) return { ...failure(plan.blockers?.[0]?.code || "migration-blocked"), blockers: plan.blockers || [] };

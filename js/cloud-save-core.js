@@ -4,10 +4,9 @@
   const DOCUMENT_LIMIT_BYTES = 850 * 1024;
   const CLOUD_SCHEMA_VERSION = 1;
   const MAX_HALL_TEAMS = 1000;
-  const RUN_SECTOR_NAMES = ["run_ie1", "run_ie2", "run_ie1_s2", "run_ie1_s3", "run_orion"];
-  const RUN_SECTORS = new Set(RUN_SECTOR_NAMES);
-  const SECTOR_NAMES = ["profile", ...RUN_SECTOR_NAMES, "album", "development", "hall_index"];
-  const isRunSector = (name) => RUN_SECTORS.has(name);
+  // Cloud persistence is an account-permanent domain. RunStorage is a
+  // separate, device-local domain and is deliberately absent from this list.
+  const SECTOR_NAMES = ["profile", "album", "development", "hall_index"];
   const SHA256_REGEX = /^[a-f0-9]{64}$/;
   const PAYLOAD_ENCODING = "firestore-safe-v1";
   const ARRAY_WRAPPER = "__inazumaCloudArrayV1";
@@ -69,10 +68,8 @@
   function readLocalSnapshot(apis = global) {
     const archive = apis.HallOfFameStorage._loadArchive();
     const teams = Array.isArray(archive?.teams) ? archive.teams.map(clone) : [];
-    const runSnapshot = (seasonId) => { const run = apis.RunState.load(seasonId, { readOnly: true }); if (!run) return null; const clean = clone(run); delete clean.storageGeneration; delete clean.storageCommitId; return clean; };
     const snapshot = normalize({
       profile: apis.RunState.loadProfile(),
-      runs: { ie1: runSnapshot("ie1"), ie2: runSnapshot("ie2"), ie1_s2: runSnapshot("ie1_s2"), ie1_s3: runSnapshot("ie1_s3"), orion: runSnapshot("orion") },
       album: apis.AlbumProgress.read(),
       development: apis.DevelopmentV2.read(),
       hallOfFame: {
@@ -82,10 +79,6 @@
         index: Array.isArray(archive?.index) ? archive.index : [],
       },
     });
-    snapshot.runProvenance = Object.fromEntries(Object.entries(snapshot.runs).map(([seasonId, run]) => {
-      const diagnostic = apis.RunStorage?.diagnostics?.(seasonId) || {};
-      return [seasonId, { runId: run?.runId || null, sourceLocalGeneration: Number(diagnostic.canonicalGeneration || 0), sourceLocalCommitId: diagnostic.canonicalCommitId || null }];
-    }));
     return snapshot;
   }
 
@@ -109,22 +102,12 @@
       || (development.victoryRewardRunIds || []).length > 0 || (development.unlockedEmblems || []).length > 0;
     const summary = {
       profile: !!value.profile?.teamIdentity,
-      runIe1: value.runs?.ie1 != null,
-      runIe2: value.runs?.ie2 != null,
-      runIe1S2: value.runs?.ie1_s2 != null,
-      runIe1S3: value.runs?.ie1_s3 != null,
-      runOrion: value.runs?.orion != null,
       albumUnlocked,
       developmentProgress,
       hallOfFameCount: Array.isArray(value.hallOfFame?.teams) ? value.hallOfFame.teams.length : 0,
     };
     const reasons = [];
     if (summary.profile) reasons.push("profile");
-    if (summary.runIe1) reasons.push("run_ie1");
-    if (summary.runIe2) reasons.push("run_ie2");
-    if (summary.runIe1S2) reasons.push("run_ie1_s2");
-    if (summary.runIe1S3) reasons.push("run_ie1_s3");
-    if (summary.runOrion) reasons.push("run_orion");
     if (summary.albumUnlocked) reasons.push("album");
     if (summary.developmentProgress) reasons.push("development");
     if (summary.hallOfFameCount) reasons.push("hall_of_fame");
@@ -137,15 +120,11 @@
     if (manifest.schemaVersion !== CLOUD_SCHEMA_VERSION || manifest.initialized !== true) throw cloudError("invalid-manifest", "manifest");
     if (!Number.isInteger(manifest.revision) || manifest.revision < 1 || manifest.accountUid !== uid) throw cloudError("invalid-manifest", "manifest");
     if (!manifest.sectors || typeof manifest.sectors !== "object" || !manifest.sectorHashes || typeof manifest.sectorHashes !== "object") throw cloudError("invalid-manifest", "manifest");
-    const legacyMissingRunSectors = [];
     for (const name of SECTOR_NAMES) {
-      const legacyMissingRun = ["run_ie1_s2", "run_ie1_s3", "run_orion"].includes(name) && !own(manifest.sectors, name) && !own(manifest.sectorHashes, name);
-      if (legacyMissingRun) { legacyMissingRunSectors.push(name); manifest.sectors[name] = false; manifest.sectorHashes[name] = null; if (manifest.sectorRevisions) manifest.sectorRevisions[name] = manifest.revision; }
       if (name !== "hall_index" && !own(manifest.sectors, name)) throw cloudError("invalid-manifest", "manifest");
       if (!own(manifest.sectorHashes, name)) throw cloudError("invalid-manifest", "manifest");
       const hashValue = manifest.sectorHashes[name];
-      const absentRun = isRunSector(name) && manifest.sectors[name] === false;
-      if (absentRun ? hashValue !== null : !SHA256_REGEX.test(hashValue || "")) throw cloudError("invalid-manifest", name);
+      if (!SHA256_REGEX.test(hashValue || "")) throw cloudError("invalid-manifest", name);
       if (manifest.sectorRevisions != null && (!Number.isInteger(manifest.sectorRevisions[name]) || manifest.sectorRevisions[name] < 1 || manifest.sectorRevisions[name] > manifest.revision)) throw cloudError("invalid-manifest", name);
     }
     if (manifest.hallTeamIds != null && (!Array.isArray(manifest.hallTeamIds) || new Set(manifest.hallTeamIds).size !== manifest.hallTeamIds.length)) throw cloudError("invalid-manifest", "hall_index");
@@ -156,26 +135,15 @@
     // into plain objects before the cloud manager caches them.
     validated.createdAt = manifest.createdAt;
     validated.updatedAt = manifest.updatedAt;
-    validated.legacyMissingRunSectors = legacyMissingRunSectors;
     return validated;
   }
 
   async function validateSectorDocument(name, data, manifest, cryptoApi = global.crypto) {
-    if ((!data || typeof data !== "object") && isRunSector(name) && manifest.sectors[name] === false) return null;
     if (!data || typeof data !== "object") throw cloudError("missing-sector", name);
     const expectedRevision = manifest.sectorRevisions?.[name] ?? manifest.revision;
     if (data.schemaVersion !== CLOUD_SCHEMA_VERSION || data.revision !== expectedRevision || data.sector !== name || !own(data, "payload") || !own(data, "payloadHash")) throw cloudError("invalid-sector", name);
     if (data.payloadEncoding != null && data.payloadEncoding !== PAYLOAD_ENCODING) throw cloudError("unsupported-payload-encoding", name);
     if (data.sourceDeviceId != null && (typeof data.sourceDeviceId !== "string" || !data.sourceDeviceId.trim())) throw cloudError("invalid-sector", name);
-    const isRun = isRunSector(name);
-    const present = isRun ? manifest.sectors[name] === true : true;
-    if (!present) {
-      if (data.payload !== null || manifest.sectorHashes[name] !== null) throw cloudError("invalid-sector", name);
-      if (data.payloadHash === null) return null;
-      if (!SHA256_REGEX.test(data.payloadHash)) throw cloudError("invalid-sector", name);
-      if (data.payloadHash !== await hash(null, cryptoApi)) throw cloudError("hash-mismatch", name);
-      return null;
-    }
     if (data.payload === null || !SHA256_REGEX.test(data.payloadHash || "")) throw cloudError("invalid-sector", name);
     const payload = logicalPayload(data, name);
     const calculated = await hash(payload, cryptoApi);
@@ -206,14 +174,15 @@
   function reconstructSnapshot(payloads, hallPayloads) {
     const index = payloads.hall_index;
     const entries = hallPayloads.map((entry) => own(entry, "payload") ? entry : { hallTeamId: entry?.hallTeamId, archiveKey: entry?.archiveKey, payload: entry, payloadHash: null });
-    return normalize({ profile: payloads.profile, runs: { ie1: payloads.run_ie1, ie2: payloads.run_ie2, ie1_s2: payloads.run_ie1_s2, ie1_s3: payloads.run_ie1_s3, orion: payloads.run_orion }, album: payloads.album, development: payloads.development,
+    return normalize({ profile: payloads.profile, album: payloads.album, development: payloads.development,
       hallOfFame: { archiveSchemaVersion: index.archiveSchemaVersion, updatedAt: index.updatedAt ?? null, teams: entries.map((entry) => entry.payload), index: index.index, cloudEntries: entries } });
   }
 
   async function prepareSnapshot(snapshot, cryptoApi = global.crypto) {
-    const clean = normalize(snapshot);
+    const input = normalize(snapshot);
+    const clean = normalize({ profile: input.profile, album: input.album, development: input.development, hallOfFame: input.hallOfFame });
     const payloads = {
-      profile: clean.profile ?? {}, run_ie1: clean.runs?.ie1 ?? null, run_ie2: clean.runs?.ie2 ?? null, run_ie1_s2: clean.runs?.ie1_s2 ?? null, run_ie1_s3: clean.runs?.ie1_s3 ?? null, run_orion: clean.runs?.orion ?? null,
+      profile: clean.profile ?? {},
       album: clean.album ?? {}, development: clean.development ?? {}, hall_index: hallIndex(clean),
     };
     const hashes = {};
@@ -264,23 +233,21 @@
     }
     return true;
   }
-  function sectorLogicalHash(prepared, name) { return isRunSector(name) && prepared.payloads[name] === null ? null : prepared.hashes[name]; }
+  function sectorLogicalHash(prepared, name) { return prepared.hashes[name]; }
 
   function buildManifest(prepared, uid, deviceId, timestamp, commit = {}) {
     const revision = Number(commit.revision || 1), cloudCommitId = commit.cloudCommitId || null;
     const previous = commit.expectedManifest || null;
-    const runProvenance = Object.fromEntries(RUN_SECTOR_NAMES.flatMap((name) => {
-      const run = prepared.payloads[name], seasonId = name.slice(4); if (!run) return [];
-      const source = prepared.snapshot.runProvenance?.[seasonId] || {};
-      return [[seasonId, { runId: run.runId || source.runId || null, sourceLocalGeneration: Number(source.sourceLocalGeneration || 0), sourceLocalCommitId: source.sourceLocalCommitId || null, logicalHash: sectorLogicalHash(prepared, name), sourceDeviceId: deviceId, cloudRevision: revision, cloudCommitId }]];
-    }));
-    return { schemaVersion: previous?.schemaVersion ?? 1, revision, baseRevision: Number(commit.baseRevision || 0), cloudCommitId, initialized: previous?.initialized ?? true, createdAt: previous ? previous.createdAt : timestamp, updatedAt: timestamp, source: previous ? previous.source : "local-first-association", deviceId, sourceDeviceId: deviceId, accountUid: previous?.accountUid ?? uid, runProvenance,
-      sectors: { profile: true, run_ie1: prepared.payloads.run_ie1 !== null, run_ie2: prepared.payloads.run_ie2 !== null, run_ie1_s2: prepared.payloads.run_ie1_s2 !== null, run_ie1_s3: prepared.payloads.run_ie1_s3 !== null, run_orion: prepared.payloads.run_orion !== null, album: true, development: true, hallOfFameCount: prepared.hallEntries.length },
-      sectorHashes: { profile: prepared.hashes.profile, run_ie1: prepared.payloads.run_ie1 === null ? null : prepared.hashes.run_ie1, run_ie2: prepared.payloads.run_ie2 === null ? null : prepared.hashes.run_ie2, run_ie1_s2: prepared.payloads.run_ie1_s2 === null ? null : prepared.hashes.run_ie1_s2, run_ie1_s3: prepared.payloads.run_ie1_s3 === null ? null : prepared.hashes.run_ie1_s3, run_orion: prepared.payloads.run_orion === null ? null : prepared.hashes.run_orion, album: prepared.hashes.album, development: prepared.hashes.development, hall_index: prepared.hashes.hall_index },
-      sectorRevisions: Object.fromEntries(SECTOR_NAMES.map((name) => [name, revision])), hallTeamIds: prepared.hallEntries.map((entry) => entry.hallTeamId),
+    return { schemaVersion: previous?.schemaVersion ?? 1, revision, baseRevision: Number(commit.baseRevision || 0), cloudCommitId, initialized: previous?.initialized ?? true, createdAt: previous ? previous.createdAt : timestamp, updatedAt: timestamp, source: previous ? previous.source : "local-first-association", deviceId, sourceDeviceId: deviceId, accountUid: previous?.accountUid ?? uid,
+      // Preserve unknown/legacy manifest fields byte-logically. In particular,
+      // old run sector metadata remains untouched and is never made active.
+      ...(previous?.runProvenance ? { runProvenance: clone(previous.runProvenance) } : {}),
+      sectors: { ...(previous?.sectors || {}), profile: true, album: true, development: true, hallOfFameCount: prepared.hallEntries.length },
+      sectorHashes: { ...(previous?.sectorHashes || {}), profile: prepared.hashes.profile, album: prepared.hashes.album, development: prepared.hashes.development, hall_index: prepared.hashes.hall_index },
+      sectorRevisions: { ...(previous?.sectorRevisions || {}), ...Object.fromEntries(SECTOR_NAMES.map((name) => [name, revision])) }, hallTeamIds: prepared.hallEntries.map((entry) => entry.hallTeamId),
       hallTeamHashes: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, entry.payloadHash])), hallTeamRevisions: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, revision])) };
   }
 
-  global.InazumaCloudSaveCore = Object.freeze({ DOCUMENT_LIMIT_BYTES, CLOUD_SCHEMA_VERSION, MAX_HALL_TEAMS, SECTOR_NAMES, RUN_SECTOR_NAMES, isRunSector, PAYLOAD_ENCODING, encodeFirestorePayload, decodeFirestorePayload, normalize, clone, stableSerialize, byteSize, hash, readLocalSnapshot, hallIndex, inspectLocalProgress, validateManifest, validateSectorDocument, validateHallIndex, validateHallDocument, reconstructSnapshot, prepareSnapshot, compareSnapshots, preflight, manifestMatchesExpected, buildManifest });
+  global.InazumaCloudSaveCore = Object.freeze({ DOCUMENT_LIMIT_BYTES, CLOUD_SCHEMA_VERSION, MAX_HALL_TEAMS, SECTOR_NAMES, PAYLOAD_ENCODING, encodeFirestorePayload, decodeFirestorePayload, normalize, clone, stableSerialize, byteSize, hash, readLocalSnapshot, hallIndex, inspectLocalProgress, validateManifest, validateSectorDocument, validateHallIndex, validateHallDocument, reconstructSnapshot, prepareSnapshot, compareSnapshots, preflight, manifestMatchesExpected, buildManifest });
   if (typeof module !== "undefined" && module.exports) module.exports = global.InazumaCloudSaveCore;
 })(globalThis);

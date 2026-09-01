@@ -44,7 +44,8 @@ assert.strictEqual(values.has('run:ie1_tmp'), false);
   const storageBefore = JSON.stringify([...values]);
   const snapshotAfter = cloudCore.readLocalSnapshot(snapshotApis);
   assert.strictEqual(await cloudCore.hash(snapshotBefore, crypto), await cloudCore.hash(snapshotAfter, crypto));
-  assert.strictEqual(snapshotAfter.runs.ie1.updatedAt, timestamp);
+  assert.strictEqual(Object.prototype.hasOwnProperty.call(snapshotAfter, 'runs'), false);
+  assert.strictEqual(context.RunStorage.load('ie1', { readOnly: true }).updatedAt, timestamp);
   assert.strictEqual(JSON.stringify([...values]), storageBefore, 'consecutive cloud snapshots do not mutate storage');
 
   for (let index = 0; index < 10; index += 1) context.RunStorage.load('ie1');

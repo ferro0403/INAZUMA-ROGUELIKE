@@ -12,7 +12,9 @@ const pending = app.slice(app.indexOf("function renderFinalizationPending"), app
 assert.match(pending, /data-finalization-pending/);
 assert.match(pending, /retry-run-finalization/);
 assert.match(pending, /resumeRunFinalization\(\{ render: false \}\)/);
-assert.match(pending, /if \(resumed\.completed\) return renderFinalCelebration/);
+assert.match(pending, /if \(resumed\.completed\) \{/, "completed finalization proceeds past the pending screen");
+assert.match(pending, /endReason: "victory"/, "victory now surfaces the development reward reveal, matching the gameover path");
+assert.match(pending, /onComplete: \(\) => renderFinalCelebration/, "celebration is still reached once the reward flow completes");
 assert.doesNotMatch(pending, /renderMap\(/);
 assert.doesNotMatch(pending, /renderSeasonComplete\(/);
 

@@ -13,28 +13,27 @@ async function runtime() {
   const blocked = [], guard = context.PersistenceRecoveryGuard;
   context.PersistenceRecoveryGuard = new Proxy(guard, { get(target, key) { if (key === "setBlocked") return value => { blocked.push(value); return target.setBlocked(value); }; return target[key]; } });
   context.HallOfFameStorage._saveArchive(context.HallOfFameStorage._loadArchive(), { preserveTimestamp: true });
-  const run = context.RunState.createRun({ name: "Cloud" }, "orion"); context.RunState.save(run);
+  context.RunState.saveProfileTeamIdentity({ name: "Cloud" });
   const cloud = await attachAuthenticatedCloud(context);
   assert.equal(cloud.api.getState().status, "synced", "authenticated baseline association must upload");
   cloud.records.uploadedSectors.length = 0;
   return { storage, context, blocked, ...cloud };
 }
-function dirty(value, sector = "run_orion") {
-  const run = value.context.RunState.load("orion"); run.bossIndex += 1; value.context.RunState.save(run, { suppressCloudEvent: true });
-  value.context.dispatchEvent(new value.context.CustomEvent("inazuma:local-save-committed", { detail: { sector } }));
+function dirty(value, sector = "development") {
+  const development = value.context.DevelopmentV2.read(); development.coins += 1; value.context.DevelopmentV2.write(development);
   assert(value.api.getState().pendingSectors.includes(sector));
 }
 async function transient(code) {
   const value = await runtime(); dirty(value); value.backend.failure = code; await value.api.syncNow();
   assert.equal(value.api.getState().status, "sync-error"); assert.notEqual(value.api.getState().status, "sync-conflict");
-  assert(value.api.getState().pendingSectors.includes("run_orion")); assert.deepEqual(value.blocked, []);
+  assert(value.api.getState().pendingSectors.includes("development")); assert.deepEqual(value.blocked, []);
   value.backend.failure = null; await value.api.retrySync(); assert.equal(value.api.getState().status, "synced");
-  assert.deepEqual(value.api.getState().pendingSectors, []); assert(value.records.stagedCommits.length); assert(value.records.uploadedSectors.includes("run_orion"));
+  assert.deepEqual(value.api.getState().pendingSectors, []); assert(value.records.stagedCommits.length); assert(value.records.uploadedSectors.includes("development"));
 }
 (async () => {
   await transient("permission-denied"); await transient("unavailable");
   const value = await runtime(); dirty(value); value.backend.conflictOnce = true; await value.api.syncNow();
-  assert.equal(value.api.getState().status, "sync-conflict"); assert(value.api.getState().pendingSectors.includes("run_orion"));
+  assert.equal(value.api.getState().status, "sync-conflict"); assert(value.api.getState().pendingSectors.includes("development"));
   const developmentBefore = value.context.DevelopmentV2.read();
   const changedDevelopment = structuredClone(developmentBefore); changedDevelopment.coins += 7;
   const developmentAfter = value.context.DevelopmentV2.write(changedDevelopment);
@@ -47,7 +46,7 @@ async function transient(code) {
   const finalManifest = value.documents.get(value.manifestPath);
   const finalDevelopmentDocument = value.documents.get(`users/test-user/saveCommits/${finalManifest.cloudCommitId}/sectors/development`);
   const finalDevelopment = value.context.InazumaCloudSaveCore.decodeFirestorePayload(finalDevelopmentDocument.payload);
-  assert(value.records.uploadedSectors.includes("run_orion"));
+  assert(value.records.uploadedSectors.includes("development"));
   assert(value.api.getState().pendingSectors.length === 0, "development must remain represented through successful conflict resolution");
   assert.equal(finalManifest.sectorHashes.development, developmentHash, "published Development hash must describe the new local state");
   assert.equal(finalDevelopmentDocument.payloadHash, developmentHash, "staged Development hash must describe the new local state");

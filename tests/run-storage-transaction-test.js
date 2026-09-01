@@ -66,6 +66,13 @@ const advanced = runtime(new FaultStorage(shared)).RunState.load('ie1'); advance
 assert.throws(() => runtime(new FaultStorage(shared)).RunState.remove('ie1', { expectedGeneration: staleDeleteGeneration }), (error) => error.code === 'stale-write', 'stale delete cannot remove a newer commit');
 assert.throws(() => runtime(new FaultStorage(shared)).RunState.remove('ie1'), (error) => error.code === 'missing-expected-generation');
 
+const lockProtected = runtime(new FaultStorage(shared)).RunState.load('ie1');
+shared.set('run:ie1_lock', JSON.stringify({ ownerId: 'other-tab', fence: 99, expiresAt: Date.now() + 60000 }));
+assert.throws(() => runtime(new FaultStorage(shared)).RunState.save(lockProtected), error => error.code === 'write-locked' && error.stage === 'lock-acquire', 'active local lease fences another tab');
+shared.set('run:ie1_lock', JSON.stringify({ ownerId: 'expired-tab', fence: 100, expiresAt: 0 }));
+runtime(new FaultStorage(shared)).RunState.save(lockProtected);
+assert.strictEqual(runtime(new FaultStorage(shared)).RunState.load('ie1').storageGeneration, lockProtected.storageGeneration, 'expired lease is safely replaced');
+
 const other = a.RunState.createRun({ name: 'Zeus' }, 'ie2'); a.RunState.save(other);
 assert.strictEqual(other.storageGeneration, 1, 'generations are independent by season');
 
