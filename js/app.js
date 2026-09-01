@@ -1142,11 +1142,8 @@
       if (render) renderFinalizationPending(result);
       return result;
     }
-    if (!render) return result;
-    return resolveDevelopmentEndRunFlow({
-      endReason: "victory",
-      onComplete: () => renderFinalCelebration(run.hallTeamId, { developmentResolved: true }),
-    });
+    if (render) renderFinalCelebration(run.hallTeamId, { developmentResolved: true });
+    return result;
   }
 
   function renderFinalizationPending(result = {}) {
@@ -1160,12 +1157,7 @@
     retry?.addEventListener("click", () => {
       retry.disabled = true;
       const resumed = resumeRunFinalization({ render: false });
-      if (resumed.completed) {
-        return resolveDevelopmentEndRunFlow({
-          endReason: "victory",
-          onComplete: () => renderFinalCelebration(run.hallTeamId, { developmentResolved: true }),
-        });
-      }
+      if (resumed.completed) return renderFinalCelebration(run.hallTeamId, { developmentResolved: true });
       toast("Finalizzazione ancora in sospeso. Puoi riprovare senza perdere la vittoria.", "error");
       renderFinalizationPending(resumed);
     });
