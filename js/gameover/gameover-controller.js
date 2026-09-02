@@ -22,8 +22,12 @@
       } });
       if (!prepared.ok) return deps.view.renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
       const drained = drainPermanentEffects();
+      if (drained.error) {
+        deps.recoverCanonicalRun?.();
+        return deps.view.renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
+      }
       const effect = run().permanentEffectOutbox.find((entry) => entry.id === effectId);
-      if (drained.error || effect?.status !== "applied") return deps.view.renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
+      if (effect?.status !== "applied") return deps.view.renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
       if (!run().developmentRewardPresentation || run().developmentRewardPresentation.endReason !== endReason) {
         const presentation = deps.persistMutation({ label: "development-reward-presentation-create", mutate: (current) => {
           const currentEffect = current.permanentEffectOutbox?.find((entry) => entry.id === effectId);
