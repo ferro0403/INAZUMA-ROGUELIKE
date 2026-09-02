@@ -16,6 +16,6 @@ fail=false; assert.strictEqual(resolve("victory").ok,true); const P4=JSON.parse(
 memory.postBossFlow.status="next-zone"; memory.postBossFlow.remainingRewards=0; canonical=JSON.parse(JSON.stringify(memory));
 const handoff=()=>tx({label:"boss-victory-handoff",mutate:r=>Runtime.applyBossVictoryHandoffMutation({run:r,seasonDb,ensureCurrentZoneMutation:()=>{r.currentZone={bossIndex:r.bossIndex,currentNodeId:"next",nodes:[],completedNodeIds:[]};},buildFinalization:()=>{throw Error("not final");}})});
 assert.strictEqual(handoff().ok,true); assert.strictEqual(canonical.bossIndex,1); assert.deepStrictEqual(canonical.completedBossIds,["b0"]); assert.strictEqual(canonical.postBossFlow,null);
-const app=fs.readFileSync("js/app.js","utf8"), slice=app.slice(app.indexOf("function completeBossMatch"),app.indexOf("function continueAfterMatch"));
+const controller=fs.readFileSync("js/boss/boss-flow-controller.js","utf8"), slice=controller.slice(controller.indexOf("function complete(result)"),controller.indexOf("function ensureFlow"));
 assert.match(slice,/label: "boss-resolution"/); assert.match(slice,/BossGameOverRuntime\.applyBossResolutionMutation/); assert.doesNotMatch(slice.split("persistGameplayMutation")[0],/restoreAfterLoss|addLevels|pendingBossVictory|postBossFlow/);
 console.log("boss-crash-matrix-test: production P0-P10 (P3/P4 atomic) transaction and handoff OK");

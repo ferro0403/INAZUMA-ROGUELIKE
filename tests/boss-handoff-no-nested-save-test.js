@@ -58,11 +58,11 @@ assert.strictEqual(run.bossIndex, 1);
 assert.strictEqual(canonical.storageGeneration, 6);
 
 // Source/wiring audit supplements (and does not replace) the runtime counters above.
-const app = fs.readFileSync("js/app.js", "utf8");
-const handoff = app.slice(app.indexOf("function finishBossVictoryTransition"), app.indexOf("function devSkipCurrentBoss"));
+const controller = fs.readFileSync("js/boss/boss-flow-controller.js", "utf8");
+const handoff = controller.slice(controller.indexOf("function finishTransition"), controller.indexOf("return Object.freeze"));
 const mutateSlice = handoff.slice(handoff.indexOf("mutate:"), handoff.indexOf("onCommitted:"));
 assert.doesNotMatch(mutateSlice, /RunState\.save|createCheckpoint/);
 assert.match(mutateSlice, /ensureCurrentZoneMutation/);
 assert.doesNotMatch(mutateSlice, /run: current, seasonDb, ensureCurrentZone[,\s]/);
-assert.ok(handoff.indexOf("createPostBossCheckpoint(run)") > handoff.indexOf("if (!committed.ok)"), "checkpoint wiring is strictly post-commit");
+assert.ok(handoff.indexOf("createPostBossCheckpoint(run())") > handoff.indexOf("if (!committed.ok)"), "checkpoint wiring is strictly post-commit");
 console.log("boss-handoff-no-nested-save-test: 0 nested saves, one outer G+1 commit, crash-safe reopen and non-destructive checkpoint failure OK");

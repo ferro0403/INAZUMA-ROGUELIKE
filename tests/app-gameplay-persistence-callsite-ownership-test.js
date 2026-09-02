@@ -38,9 +38,10 @@ const pull = bodyBetween("function openPull", "function openDevLegendaryPull", p
 assert.match(pull, /onRecover: \(\) => rerenderCanonicalPull\(nodeId, pullType, options\)/, "pull recovery resolves the canonical active node instead of reusing a stale object");
 assert.doesNotMatch(pull, /onRecover: \(\) => openPull\(node, pullType, options\)/, "pull recovery must not reuse the pre-rollback node reference");
 assert.doesNotMatch(pull, /onRecover: \(\) => showPlayerOffer\(options\)/, "recovery must not reuse incomplete openPull options as an offer config");
-const bossRewards = bodyBetween("function showNextBossReward", "function advanceBossReward");
-assert.match(bossRewards, /result\.status === "cancelled"\) showNextBossReward\(\)/, "boss replacement cancel reopens the pending reward");
-assert.doesNotMatch(bossRewards, /result\.status === "cancelled"\) advanceBossReward/, "boss replacement cancel never consumes a reward");
+const bossController = fs.readFileSync("js/boss/boss-flow-controller.js", "utf8");
+const bossRewards = bodyBetween("function showNextReward", "function advanceReward", bossController);
+assert.match(bossRewards, /result\.status === "cancelled"\) showNextReward\(\)/, "boss replacement cancel reopens the pending reward");
+assert.doesNotMatch(bossRewards, /result\.status === "cancelled"\) advanceReward/, "boss replacement cancel never consumes a reward");
 assert.match(recruit, /smartLineupResult = optimizeLineupsForNewPlayer[\s\S]*onCommitted:[\s\S]*committedSideEffects/);
 const persistence = fs.readFileSync("js/gameplay-persistence.js", "utf8");
 assert.match(persistence, /catch \(error\)[\s\S]*kind: "mutation"[\s\S]*onMutationError/);
