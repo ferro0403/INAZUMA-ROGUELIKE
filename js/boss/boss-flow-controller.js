@@ -80,7 +80,7 @@
 
     function navigate(flow) {
       if (flow.destination === "boss-result") {
-        if (run().activeMatch) { deps.mountCommittedMatch(run().activeMatch); return deps.renderMatch(); }
+        if (run().activeMatch) { deps.mountBossResultMatch(run().activeMatch); return deps.renderMatch(); }
         return startRewards();
       }
       if (flow.destination === "boss-rewards") return startRewards();

@@ -2351,6 +2351,7 @@
     matchTransactionIdentity, commitMatchMutation, persistGameplayMutation,
     canonicalMatchFor,
     mountCommittedMatch: (match) => { ui.match = match; ui.bossMatchState = match?.state || "pre-match"; ui.bossMatchLog = match?.log || []; },
+    mountBossResultMatch: (match) => { ui.match = match; ui.bossMatchState = match?.state || "completed-victory"; ui.bossMatchLog = match?.log || ui.bossMatchLog || []; },
     resolutionDependencies: (current) => ({
       applyStatistics: (match, result) => applyRealMatchStatistics(match, result, current),
       addLevels: (amount, actionId, units) => addLevels(amount, actionId, units, current),
