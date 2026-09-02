@@ -9,7 +9,8 @@ const PRODUCTION_MODULES = [
   "permanent-effects.js", "map-generator.js", "team-emblems.js", "boss-gameover-runtime.js",
   "recruitment/player-identity.js", "recruitment/roster-invariants.js", "recruitment/recruitment-view.js", "recruitment/recruitment-controller.js", "pulls/pull-invariants.js",
   "pulls/pull-pool.js", "pulls/pull-items.js", "pulls/pull-view.js", "pulls/pull-controller.js", "pulls/pull-candidates.js",
-  "squad/squad-controller.js", "squad/squad-view.js", "five-v-five/five-v-five-controller.js", "five-v-five/five-v-five-view.js", "app.js",
+  "squad/squad-controller.js", "squad/squad-view.js", "five-v-five/five-v-five-controller.js", "five-v-five/five-v-five-view.js",
+  "special-match/special-match-view.js", "special-match/special-match-controller.js", "special-match/special-match-reward-view.js", "special-match/special-match-reward-controller.js", "app.js",
 ];
 
 function runModule(context, file) {
@@ -30,7 +31,8 @@ function element() {
   const listeners = new Map();
   return { innerHTML: "", textContent: "", disabled: false, dataset: {}, style: {}, classList: { add() {}, remove() {}, toggle() {} },
     addEventListener(type, listener) { const current = listeners.get(type) || []; current.push(listener); listeners.set(type, current); }, removeEventListener() {},
-    click() { const event = { currentTarget: this, target: this, preventDefault() {}, stopPropagation() {} }; for (const listener of listeners.get("click") || []) listener(event); },
+    click() { const event = { currentTarget: this, target: this, preventDefault() {}, stopPropagation() {} }; for (const listener of [...(listeners.get("click") || [])]) listener(event); },
+    clickLatest() { const event = { currentTarget: this, target: this, preventDefault() {}, stopPropagation() {} }; const values = listeners.get("click") || []; values.at(-1)?.(event); },
     appendChild() {}, append() {}, remove() {}, removeAttribute() {}, setAttribute() {}, getAttribute() { return null; }, scrollTo() {}, scrollIntoView() {},
     querySelector() { return element(); }, querySelectorAll() { return []; }, firstElementChild: null };
 }
@@ -86,9 +88,14 @@ function load(storage, options = {}) {
   c.SpecialMatchRuntime = { eligibleProfile: () => true };
   c.RunStatistics = { createStableMatchId: () => "match", buildHallOfFameStatisticsSnapshot: () => ({ runStatistics: {}, playerStatistics: {}, matchHistory: [], awards: [] }), snapshotFinalPlayerStats: noop, recordRunAction: noop };
   const seasonIds = ["ie1", "ie2", "ie1_s2", "ie1_s3", "orion"];
-  c.SeasonRegistry = { DEFAULT_SEASON_ID: runtimeSeasonId || "ie2", normalizeSeasonId: id => seasonIds.includes(id) ? id : "ie1", activeId: () => options.seasonId || options.run?.seasonId || "ie2", list: () => seasonIds.map(id => ({ id })), database: () => options.seasonDb || {}, get: id => ({ id, name: id }), sourceForSeason: id => id, isSeasonSource: () => true, setActive: id => ({ id }), loadDatabase: async () => options.seasonDb, playersIndex: () => new Map(), teamsIndex: () => new Map() };
+  c.SeasonRegistry = { DEFAULT_SEASON_ID: runtimeSeasonId || "ie2", normalizeSeasonId: id => seasonIds.includes(id) ? id : "ie1", activeId: () => options.seasonId || options.run?.seasonId || "ie2", list: () => seasonIds.map(id => ({ id })), database: () => options.seasonDb || {}, get: id => ({ id, name: id }), sourceForSeason: id => id, isSeasonSource: () => true, setActive: id => ({ id }), loadDatabase: async () => options.seasonDb, player: id => options.seasonDb?.players?.find((player) => String(player.playerId) === String(id)) || null, playersIndex: () => new Map(), teamsIndex: () => new Map() };
   Object.assign(c, options.contextOverrides || {});
   vm.createContext(c);
+  if (options.useProductionSpecialMatchRuntime) {
+    runModule(c, "profiled-season.js");
+    c.ProfiledSeasonRuntime.register(options.seasonDb.seasonId, options.seasonDb);
+    runModule(c, "special-match.js");
+  }
   for (const file of PRODUCTION_MODULES) runModule(c, file);
   if (options.run) c.RunState.save(structuredClone(options.run));
   const restored = c.RunState.load(runtimeSeasonId);

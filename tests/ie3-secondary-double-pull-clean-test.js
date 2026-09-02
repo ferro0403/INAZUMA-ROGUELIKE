@@ -173,11 +173,14 @@ assert.strictEqual(otherRun.pendingSpecialMatchReward, null);
 
 // Integration/source contract: recruitment and reward completion share one canonical transaction.
 const appSource = fs.readFileSync("js/app.js", "utf8");
+const rewardSource = fs.readFileSync("js/special-match/special-match-reward-controller.js", "utf8");
 const bridgeSource = fs.readFileSync("js/special-reward-ui-bridge.js", "utf8");
-assert(appSource.includes('allowCancel: true,'), "special reward must request recruitPlayer's native cancel");
-assert(appSource.includes('transactionMutate: (current) => { transition = global.SpecialMatchRuntime.completeCurrentReward(current'), "recruit and special reward completion must be atomic");
-assert(appSource.includes('id="cancel-recruit"'), "recruitPlayer must render its native cancel control");
-assert(appSource.includes('complete("cancelled")'), "native cancel must expose the structured cancelled result");
+const recruitmentSource = fs.readFileSync("js/recruitment/recruitment-controller.js", "utf8");
+const recruitmentViewSource = fs.readFileSync("js/recruitment/recruitment-view.js", "utf8");
+assert(rewardSource.includes('allowCancel: true,'), "special reward must request recruitPlayer's native cancel");
+assert(rewardSource.includes('transactionMutate: (current) => {') && rewardSource.includes('global.SpecialMatchRuntime.completeCurrentReward(current'), "recruit and special reward completion must be atomic");
+assert(recruitmentViewSource.includes('id="cancel-recruit"'), "recruitPlayer must render its native cancel control");
+assert(recruitmentSource.includes('complete("cancelled")'), "native cancel must expose the structured cancelled result");
 assert(!bridgeSource.includes("SpecialMatchRuntime?.decline?."), "bridge must not resolve replacement rewards");
 assert(!bridgeSource.includes('phase = "map"'), "bridge must not force map phase");
 assert(!bridgeSource.includes("returnToMapWithoutReload"), "bridge must not navigate replacement cancellation");
