@@ -1102,10 +1102,20 @@
     return global.AlbumProgress?.backfillAlbumProgress?.({ run, hallTeams: albumHallTeams() }) || 0;
   }
 
+  function recoverCanonicalRun() {
+    let canonical = null;
+    try { canonical = global.RunState.load(run?.seasonId, { readOnly: true }); } catch (_) { return null; }
+    if (!canonical) return null;
+    run = canonical; global.run = canonical;
+    ui.match = canonical.activeMatch || null; ui.pendingReward = canonical.pendingReward || null;
+    return canonical;
+  }
+
   const gameOverView = global.GameOverView.create({ app: () => app, resetScroll: resetRenderedViewScroll, escapeHtml, currencyIcon: (...args) => developmentCurrencyIcon(...args) });
   const gameOverController = global.GameOverController.create({
     getRun: () => run, getSeasonDb: () => seasonDb, view: gameOverView,
     persistMutation: (options) => persistGameplayMutation(options), enqueueGameOverDevelopmentEffect,
+    recoverCanonicalRun,
     averageOverall, startNewRun: startNewRunFromHome, renderHome,
   });
   const finalizationView = global.FinalizationView.create({
@@ -1119,6 +1129,7 @@
   });
   const finalizationController = global.FinalizationController.create({
     getRun: () => run, view: finalizationView, toast,
+    recoverCanonicalRun,
     resolveDevelopment: (options) => gameOverController.resolveDevelopmentEndRunFlow(options),
     championTeam, renderHome,
   });

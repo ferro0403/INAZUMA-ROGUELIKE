@@ -6,7 +6,11 @@
       if (!global.RestoreGameplayRoutingGate?.enter("finalization")) return { completed: false, blocked: true };
       const result = global.PermanentEffects.resumeFinalization(run());
       if (!result.completed) {
-        if (result.error) { console.error("Finalization remains resumable", result.error); deps.toast("Finalizzazione non completata. Riprova con Continua."); }
+        if (result.error) {
+          console.error("Finalization remains resumable", result.error);
+          deps.recoverCanonicalRun?.();
+          deps.toast("Finalizzazione non completata. Riprova con Continua.");
+        }
         if (render) renderPending(result);
         return result;
       }
