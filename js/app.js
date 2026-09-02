@@ -2367,6 +2367,8 @@
     renderCommittedResolution: () => { updateMatchScoreDom(ui.match, true); syncCommittedFinalMatchLog(); updateMatchControlsDom(); },
     clearMountedMatch: () => { ui.match = null; ui.bossMatchResolving = false; },
     renderMatch, renderSeasonComplete, renderFinalizationPending, renderMap,
+    renderFinalSummary: (hallTeamId) => renderFinalSummary(hallTeamId, { developmentResolved: true }),
+    renderFinalCelebration: (hallTeamId) => renderFinalCelebration(hallTeamId, { developmentResolved: true }),
     isProfileAwareSeason, seasonPlayer: (id) => seasonPlayersById.get(String(id)), selectWeightedCandidates: (...args) => selectWeightedCandidates(...args),
     showPlayerOffer: (...args) => showPlayerOffer(...args), recruitPlayer: (...args) => recruitPlayer(...args),
     recordReroll: (current, flow, token) => global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.REROLL_USED, { nodeId: flow.matchNodeId, itemId: token.id, instanceId: token.instanceId, actionId: `${current.runId}:${flow.matchNodeId}:boss_reward_reroll:${flow.rewardNumber}:${flow.rerolls}` }),
