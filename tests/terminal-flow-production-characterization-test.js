@@ -1,0 +1,32 @@
+"use strict";
+const assert = require("assert");
+const BudgetStorage = require("./helpers/budget-storage");
+const { load } = require("./helpers/production-runtime");
+const season = require("../data/ORION_season_compact.json");
+function terminal(id, overrides = {}) { return { runId: id, seasonId: "orion", lives: 0, gameOver: true, phase: "gameover", bossIndex: 1, completedBossIds: [], roster: [], lineup: [], bench: [], inventory: [], statistics: {}, teamIdentity: { name: "Raimon" }, permanentEffectOutbox: [], ...overrides }; }
+const storage = new BudgetStorage(Infinity);
+let runtime = load(storage, { run: terminal("terminal-characterization"), seasonDb: season });
+runtime.seam.renderGameOver();
+assert.match(runtime.seam.getAppMarkup(), /data-development-reward-reveal/);
+const continueButton = runtime.context.document.getElementById("development-reward-continue");
+continueButton.click();
+assert.equal(runtime.canonical.developmentRewardPresentation.seen, true);
+assert.match(runtime.seam.getAppMarkup(), /RUN TERMINATA/);
+const effectId = runtime.context.PermanentEffects.developmentId(runtime.canonical, "gameover");
+assert.equal(runtime.canonical.permanentEffectOutbox.filter(effect => effect.id === effectId).length, 1);
+runtime = runtime.reopen({ seasonDb: season });
+runtime.seam.renderGameOver();
+assert.match(runtime.seam.getAppMarkup(), /RUN TERMINATA/);
+assert.equal(runtime.canonical.permanentEffectOutbox.filter(effect => effect.id === effectId).length, 1, "reopen is idempotent");
+
+const failureStorage = new BudgetStorage(Infinity);
+const failure = load(failureStorage, { run: terminal("terminal-known-pending"), seasonDb: season });
+failureStorage.budget = failureStorage.bytes();
+failure.seam.renderGameOver();
+assert.match(failure.seam.getAppMarkup(), /FINALIZZAZIONE NON SALVATA/);
+const retry = failure.context.document.getElementById("retry-terminal-effect");
+failureStorage.budget = Infinity;
+retry.click();
+assert.notEqual(retry, failure.context.document.getElementById("retry-terminal-effect"), "the same mounted button handles the retry before navigation replaces the pending surface");
+assert.match(failure.seam.getAppMarkup(), /data-development-reward-reveal/);
+console.log("terminal production characterization: reveal, click, reopen, idempotency, and pending retry OK");

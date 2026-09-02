@@ -9,18 +9,20 @@ assert.match(navigate, /flow\.destination === "finalization-pending"/);
 assert.match(navigate, /deps\.renderFinalizationPending\(flow\.finalization\)/);
 assert.ok(navigate.indexOf('"finalization-pending"') < navigate.indexOf("return null"), "pending finalization is handled before the unknown-destination fallback");
 
-const pending = app.slice(app.indexOf("function renderFinalizationPending"), app.indexOf("function enqueueAlbumRecruit"));
+const finalizationSource = fs.readFileSync("js/finalization/finalization-controller.js", "utf8");
+const finalizationView = fs.readFileSync("js/finalization/finalization-view.js", "utf8");
+const pending = finalizationSource + finalizationView;
 assert.match(pending, /data-finalization-pending/);
 assert.match(pending, /retry-run-finalization/);
-assert.match(pending, /resumeRunFinalization\(\{ render: false \}\)/);
-assert.match(pending, /if \(resumed\.completed\) \{/, "completed finalization proceeds past the pending screen");
+assert.match(pending, /resume\(\{ render: false \}\)/);
+assert.match(pending, /if \(resumed\.completed\)/, "completed finalization proceeds past the pending screen");
 assert.match(pending, /endReason: "victory"/, "victory now surfaces the development reward reveal, matching the gameover path");
-assert.match(pending, /onComplete: \(\) => renderFinalCelebration/, "celebration is still reached once the reward flow completes");
+assert.match(pending, /onComplete: \(\) => renderCelebration/, "celebration is still reached once the reward flow completes");
 assert.doesNotMatch(pending, /renderMap\(/);
 assert.doesNotMatch(pending, /renderSeasonComplete\(/);
 
-const resume = app.slice(app.indexOf("function resumeRunFinalization"), app.indexOf("function enqueueAlbumRecruit"));
-assert.match(resume, /if \(render\) renderFinalizationPending\(result\)/, "fresh Continue renders a recoverable pending state");
+const resume = finalizationSource;
+assert.match(resume, /if \(render\) renderPending\(result\)/, "fresh Continue renders a recoverable pending state");
 console.log("finalization-pending-navigation-test: explicit destination, same-runtime retry, fresh retry UI OK");
 
 const handoff = controller.slice(controller.indexOf("function finishTransition"), controller.indexOf("return Object.freeze"));
