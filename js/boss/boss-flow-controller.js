@@ -79,6 +79,12 @@
     }
 
     function navigate(flow) {
+      if (flow.destination === "none") {
+        const currentRun = run();
+        if (currentRun?.phase === "finalization" || currentRun?.finalization) return deps.renderFinalizationPending(currentRun.finalization);
+        if (currentRun?.phase === "complete") return deps.renderSeasonComplete();
+        return deps.renderMap({ persist: false });
+      }
       if (flow.destination === "boss-result") {
         if (run().activeMatch) { deps.mountBossResultMatch(run().activeMatch); return deps.renderMatch(); }
         return startRewards();
