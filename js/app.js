@@ -3861,25 +3861,34 @@
   }
 
   function startMatchSimulation(match, options = {}) {
-    if (ui.matchStartLocked || match?.simulation?.state === "simulating") return;
-    if (match.simulation?.state && match.simulation.state !== "pre-match") return;
+    if (ui.matchStartLocked) return { ok: false, reason: "already-starting" };
+    const identity = matchTransactionIdentity(match);
+    let liveMatch;
+    try {
+      liveMatch = canonicalMatchFor(run, identity);
+    } catch (error) {
+      return { ok: false, reason: "identity-mismatch", error };
+    }
+    if (liveMatch.simulation?.state === "simulating") return { ok: false, reason: "already-starting" };
+    if (liveMatch.simulation?.state && liveMatch.simulation.state !== "pre-match") return { ok: false, reason: "invalid-state" };
     ui.matchStartLocked = true;
     updateMatchControlsDom();
     let frozenMatch;
     try {
-      frozenMatch = cloneMatchState(match);
+      frozenMatch = cloneMatchState(liveMatch);
       const sim = ensureMatchPreview(frozenMatch, { ...options, forceRefresh: false, freeze: true });
       if (!sim.valid) {
         ui.matchStartLocked = false;
         updateMatchControlsDom();
-        return toast(sim.message || "Formazione non valida: impossibile simulare.");
+        toast(sim.message || "Formazione non valida: impossibile simulare.");
+        return { ok: false, reason: "invalid-lineup" };
       }
     } catch (error) {
       console.error("Match simulation failed to start", error);
       ui.matchStartLocked = false;
       updateMatchControlsDom();
       toast("Errore tecnico: impossibile avviare la simulazione.");
-      return;
+      return { ok: false, reason: "simulation-error", error };
     }
     const sim = frozenMatch.simulation;
     sim.seed = sim.seed || matchSeed(frozenMatch);
@@ -3890,7 +3899,6 @@
     frozenMatch.state = "simulating";
     frozenMatch.log = [];
     frozenMatch.score = [0, 0];
-    const identity = matchTransactionIdentity(match);
     const committed = commitMatchMutation("match-simulation-start", identity, (currentMatch) => {
       Object.keys(currentMatch).forEach((key) => { delete currentMatch[key]; });
       Object.assign(currentMatch, cloneMatchState(frozenMatch));
@@ -3904,8 +3912,9 @@
     clearMatchPlaybackTimer();
     ui.matchStartLocked = false;
     updateMatchControlsDom();
-    document.getElementById(match.type === "five_v_five" ? "five-match-log-panel" : "")?.scrollIntoView({ block: "nearest" });
+    document.getElementById(ui.match?.type === "five_v_five" ? "five-match-log-panel" : "")?.scrollIntoView({ block: "nearest" });
     ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.eventDelayMs || global.MatchSimulatorConfig.playbackMs);
+    return { ok: true, match: ui.match };
   }
 
   function resumeMatchSimulationIfNeeded(match) {
@@ -4261,7 +4270,10 @@
         : { specialType: "free-agents", fallbackKind: "free-agents" });
       const userEmblemMarkup = global.TeamEmblems.teamEmblemMarkup(userEmblem, { escape: escapeHtml, className: "five-match-emblem" });
       const opponentEmblemMarkup = global.TeamEmblems.teamEmblemMarkup(opponentEmblem, { escape: escapeHtml, className: "five-match-emblem" });
-      const simPreview = ensureMatchPreview(match);
+      // Rendering is a read boundary. Preview generation may decorate its input,
+      // therefore it must only ever receive a disposable match snapshot.
+      const previewMatch = cloneMatchState(match);
+      const simPreview = ensureMatchPreview(previewMatch);
       const userFivePlayers = Object.values(userPlayersBySlot).filter(Boolean);
       const opponentFivePlayers = Object.values(opponentPlayersBySlot).filter(Boolean);
       const userAverageOverall = simPreview.userStrength?.averageOverall ? Math.round(simPreview.userStrength.averageOverall) : bossMatchAverage(userFivePlayers) || "-";
@@ -4419,7 +4431,11 @@
       });
       document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("victory"); });
       document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("defeat"); });
-      document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); startMatchSimulation(match); });
+      document.getElementById("simulate-boss-match").addEventListener("click", (event) => {
+        event.preventDefault();
+        const started = startMatchSimulation(match);
+        if (started?.ok) openFiveMatchSimulationModal(started.match, userName, opponentName);
+      });
       if (simulating || resolved) openFiveMatchSimulationModal(match, userName, opponentName);
       if (allowAutomaticResume) resumeMatchSimulationIfNeeded(run?.activeMatch);
       return;
@@ -4435,7 +4451,8 @@
     const activeSide = ui.bossMatchTab === "boss" ? "boss" : "user";
     const resolved = ui.bossMatchState.startsWith("completed");
     const simulating = ui.bossMatchState === "simulating";
-    const simPreview = ensureMatchPreview(ui.match, { boss });
+    const previewMatch = cloneMatchState(ui.match);
+    const simPreview = ensureMatchPreview(previewMatch, { boss });
     const simError = !simPreview.valid ? simPreview.message : "";
     const userProbability = simPreview.probabilities ? formatMatchProbability(simPreview.probabilities.userChance) : null;
     const bossProbability = simPreview.probabilities ? formatMatchProbability(simPreview.probabilities.opponentChance) : null;
