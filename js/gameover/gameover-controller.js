@@ -11,8 +11,11 @@
       const bosses = Math.max(0, Number(defeatedBosses) || 0);
       return { endReason, coins: bosses * 20 + (endReason === "victory" ? 100 : 0), cups: endReason === "victory" ? 1 : 0, seen: false };
     }
-    function resolveDevelopmentEndRunFlow({ endReason, onComplete }) {
+    function resolveDevelopmentEndRunFlow({ endReason, onComplete, expectedRunId = null }) {
+      deps.recoverCanonicalRun?.();
       const currentRun = run();
+      if (expectedRunId && currentRun?.runId !== expectedRunId) return;
+      const retry = () => resolveDevelopmentEndRunFlow({ endReason, onComplete, expectedRunId: currentRun.runId });
       const defeatedBosses = Number(currentRun.completedBossIds?.length || currentRun.bossIndex || 0);
       const effectId = global.PermanentEffects.developmentId(currentRun, endReason);
       const existingEffect = currentRun.permanentEffectOutbox?.find((entry) => entry.id === effectId);
@@ -20,14 +23,14 @@
         global.PermanentEffects.assertCanonicalTerminal(current, endReason);
         return global.PermanentEffects.enqueueDevelopment(current, { endReason, defeatedBosses });
       } });
-      if (!prepared.ok) return deps.view.renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
+      if (!prepared.ok) return deps.view.renderTerminalEffectPending(retry);
       const drained = drainPermanentEffects();
       if (drained.error) {
         deps.recoverCanonicalRun?.();
-        return deps.view.renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
+        return deps.view.renderTerminalEffectPending(retry);
       }
       const effect = run().permanentEffectOutbox.find((entry) => entry.id === effectId);
-      if (effect?.status !== "applied") return deps.view.renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
+      if (effect?.status !== "applied") return deps.view.renderTerminalEffectPending(retry);
       if (!run().developmentRewardPresentation || run().developmentRewardPresentation.endReason !== endReason) {
         const presentation = deps.persistMutation({ label: "development-reward-presentation-create", mutate: (current) => {
           const currentEffect = current.permanentEffectOutbox?.find((entry) => entry.id === effectId);
@@ -35,13 +38,13 @@
           if (!current.developmentRewardPresentation || current.developmentRewardPresentation.endReason !== endReason) current.developmentRewardPresentation = rewardPresentation(defeatedBosses, endReason);
           return current.developmentRewardPresentation;
         } });
-        if (!presentation.ok) return deps.view.renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
+        if (!presentation.ok) return deps.view.renderTerminalEffectPending(retry);
       }
       const continueFlow = () => deps.persistMutation({ label: "development-reward-presentation-seen", mutate: (current) => {
         const presentation = current.developmentRewardPresentation;
         if (!presentation || presentation.endReason !== endReason) throw new Error("Development reward presentation changed");
         presentation.seen = true;
-      }, onCommitted: () => onComplete(), rerender: ({ ok }) => { if (!ok) deps.view.renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete })); } });
+      }, onCommitted: () => onComplete(), rerender: ({ ok }) => { if (!ok) deps.view.renderTerminalEffectPending(retry); } });
       if (!run().developmentRewardPresentation.seen) return deps.view.renderDevelopmentRewardReveal(run().developmentRewardPresentation, continueFlow);
       return onComplete();
     }
