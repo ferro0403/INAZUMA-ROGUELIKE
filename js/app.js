@@ -1028,259 +1028,28 @@
     return seasonDisplayName(team?.seasonId || team?.modeId, team?.seasonName || team?.modeName || "Season");
   }
 
-  function runFormationLabel(savedRun) {
-    const formation = seasonDb?.formations?.eleven?.find((item) => item.id === savedRun?.formationId);
-    return formation?.formation || formation?.name || savedRun?.formationId || "Da scegliere";
-  }
+  function setRun(nextRun) { run = nextRun; global.run = nextRun; }
 
-  function runHeartsMarkup(savedRun) {
-    return lifeHeartsMarkup(savedRun?.lives);
-  }
-
-  function runAverageOverall(savedRun) {
-    const players = (savedRun?.roster || []).map((entry) => resolvedRosterPlayer(entry.playerId || entry.id)).filter(Boolean);
-    return averageOverall(players);
-  }
-
-  function homeZoneProgress(savedRun) {
-    const zone = savedRun?.currentZone;
-    if (!zone?.nodes?.length) return 0;
-    const currentNode = zone.nodes.find((node) => node.id === zone.currentNodeId);
-    const finalLayer = Math.max(1, ...zone.nodes.map((node) => Number(node.layer || 0)));
-    return Math.max(0, Math.min(100, Math.round((Number(currentNode?.layer || 0) / finalLayer) * 100)));
-  }
-
-  const HOME_SECONDARY_ACTIONS = [
-    { id: "open-shop-home", label: "Negozio", description: "Oggetti e potenziamenti", icon: "◆", className: "home-club-action--wide" },
-    { id: "open-development-home", label: "Centro di Sviluppo", description: "Potenzia il tuo club", icon: "↗", className: "home-club-action--wide" },
-    { id: "open-album-home", label: "Album", description: "Le tue collezioni", icon: "▤", className: "" },
-    { id: "open-hall-home", label: "Albo d’Oro", description: "Le squadre campioni", icon: "★", className: "home-club-action--gold" },
-    { id: "open-modes-home", label: "Modalità", description: "Altre modalità di gioco", icon: "⚡", className: "home-club-action--wide" },
-  ];
-
-  function homeQuickActionsMarkup() {
-    const actions = HOME_SECONDARY_ACTIONS.map(({ id, label, description, icon, className }) => `
-      <button type="button" class="home-club-action ${className}" id="${id}">
-        <span class="home-club-icon" aria-hidden="true">${icon}</span><span class="home-club-copy"><strong>${label}</strong><small>${description}</small></span><span class="home-club-arrow" aria-hidden="true">»</span>
-      </button>`).join("");
-    return `<section class="home-club-section" aria-label="Il tuo club"><div class="home-section-label"><span>⚡</span> Il tuo club</div><nav class="home-club-actions" aria-label="Sezioni principali">${actions}</nav></section>`;
-  }
-
-  function homeTeamCrestMarkup(identity) {
-    const emblem = global.TeamEmblems.resolveTeamEmblem({ teamIdentity: identity, fallbackKind: "user" });
-    return global.TeamEmblems.teamEmblemMarkup(emblem, { escape: escapeHtml, className: "home-team-emblem" });
-  }
-
-  async function ensureHomeTeamEmblemSeasonLoaded(identity) {
-    const encoded = global.TeamEmblems?.parseTeamEmblemId?.(identity?.emblemId);
-    if (!encoded || !global.SeasonRegistry?.isSeasonSource?.(encoded.seasonId) || global.SeasonRegistry.database(encoded.seasonId)) return;
-    const previousSeasonId = global.SeasonRegistry.activeId();
-    try {
-      await global.SeasonRegistry.loadDatabase(encoded.seasonId);
-    } finally {
-      global.SeasonRegistry.setActive(previousSeasonId);
-    }
-  }
-
-  function homeIdentityMarkup(savedRun, profileIdentity = savedTeamIdentity()) {
-    const identity = normalizeTeamIdentity(savedRun?.teamIdentity || profileIdentity || {});
-    const season = savedRun ? global.SeasonRegistry?.get?.(savedRun.seasonId) : null;
-    return `<section class="home-team-banner anime-panel" aria-label="Identità squadra">
-      <div class="home-team-crest">${homeTeamCrestMarkup(identity)}</div>
-      <div class="home-team-copy"><h1>${escapeHtml(identity.name)}</h1>${savedRun ? `<p>${escapeHtml(seasonDisplayName(savedRun.seasonId))}</p>${season?.displaySeasonNumber != null ? `<span>Stagione ${escapeHtml(season.displaySeasonNumber)}</span>` : ""}` : ""}</div>
-    </section>`;
-  }
-
-  function homeActiveRunMarkup(savedRun) {
-    // Historical smoke-test signature: class="home-hub-card home-run-card"
-    const bossIndex = Number(savedRun.bossIndex || 0);
-    const boss = seasonDb?.bossOrder?.[bossIndex];
-    const bossNumber = bossIndex + 1;
-    const totalBosses = seasonDb?.bossOrder?.length || 10;
-    const zoneProgress = homeZoneProgress(savedRun);
-    const bossLogo = bossTeamLogoUrl(boss);
-    return `<div class="home-content"><section class="home-hero home-active-dashboard" aria-label="Home con run attiva">
-      ${homeIdentityMarkup(savedRun)}
-      <article class="home-hub-card home-run-card home-run-panel anime-panel">
-        <div class="home-panel-kicker"><span>⚡</span> Run in corso</div>
-        <div class="home-next-boss">
-          <div class="home-boss-identity">
-            <small>Prossimo boss</small>
-            <span class="home-boss-logo">${bossLogo ? `<img src="${escapeHtml(bossLogo)}" alt="" loading="lazy" onerror="this.hidden=true;this.nextElementSibling.hidden=false" /><b hidden aria-hidden="true">B</b>` : "B"}</span>
-            <strong>${escapeHtml(boss?.teamName || "Raimon")}</strong>
-          </div>
-          <div class="home-stage"><small>Stage</small><strong>${escapeHtml(Math.min(bossNumber, totalBosses))}<em>/${escapeHtml(totalBosses)}</em></strong></div>
-        </div>
-        <div class="home-run-stats">
-          <span><small>Media team</small><strong>${escapeHtml(runAverageOverall(savedRun))}</strong></span>
-          <span><small>Formazione</small><strong>${escapeHtml(runFormationLabel(savedRun))}</strong></span>
-          <span class="home-zone-stat"><small>Progresso zona</small><strong>${escapeHtml(zoneProgress)}%</strong><i><b style="width:${zoneProgress}%"></b></i></span>
-        </div>
-      </article>
-      <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="continue-run">Continua la run »</strong></button>
-      ${homeQuickActionsMarkup()}
-    </section></div>`;
-  }
-
-  function homeEmptyRunMarkup() {
-    return `<div class="home-content"><section class="home-hero home-empty-dashboard" aria-label="Home senza run attiva">
-      ${homeIdentityMarkup(null)}
-      <article class="home-empty-panel anime-panel">
-        <div class="home-panel-kicker"><span>⚡</span> Nessuna run attiva</div>
-        <div class="home-empty-copy">
-          <h1>Scrivi la tua leggenda</h1>
-          <p>Una nuova avventura ti aspetta.</p>
-        </div>
-        <button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="choose-run">Entra nel torneo »</strong></button>
-      </article>
-      ${homeQuickActionsMarkup()}
-    </section></div>`;
-  }
-
-  function homeRunCardMarkup(savedRun) {
-    if (!savedRun) return homeEmptyRunMarkup();
-    return homeActiveRunMarkup(savedRun);
-  }
-
-  async function renderHome() {
-    closeModal({ invokeOnClose: false });
-    const latest = global.RunState.latestActiveSave?.();
-    if (latest?.run) {
-      await loadSeason(latest.run.seasonId || latest.season.id);
-      run = global.RunState.load(activeSeason.id);
-      if (persistenceWritesAllowed() && (!run?.finalization || run.finalization.status === "complete") && run?.permanentEffectOutbox?.some((effect) => effect.status === "pending")) drainPermanentEffects();
-    } else {
-      await loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID);
-      run = null;
-    }
-    ensureRunSchema();
-    const profileIdentity = migrateTeamIdentityProfile();
-    if (persistenceWritesAllowed() && run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) { try { global.RunState.save(run); } catch (error) { console.error("save failed (boss level migration, init)", error); } }
-    const homeIdentity = normalizeTeamIdentity(run?.teamIdentity || profileIdentity || {});
-    await ensureHomeTeamEmblemSeasonLoaded(homeIdentity);
-    app.innerHTML = `
-      <main class="home-screen modern-home" id="clean-home" data-run-state="${run ? "active" : "empty"}">
-        <header class="home-masthead">
-          <div class="home-wordmark" aria-label="Inazuma Roguelike · Road to Raimon"><span>Ina<span>z</span>uma</span><small>Roguelike</small><i class="home-road-label">Road to Raimon</i></div>
-          <div class="home-profile-actions">${global.InazumaAccountUI?.buttonMarkup?.() || '<button type="button" class="account-header-button" data-account-trigger disabled><span>ACCOUNT</span></button>'}<button type="button" class="home-settings-button" id="open-settings-home" aria-label="Impostazioni"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 3h4.8l.6 2.3 2 .9 2.1-1.2 2.4 4.1-1.8 1.6.2 2.2 1.8 1.6-2.4 4.1-2.3-.7-1.8 1.3-.5 2.3H9.6L9 18.3l-2-.9-2.1 1.2-2.4-4.1 1.8-1.6-.2-2.2-1.8-1.6L4.7 5l2.3.7 2-1.3L9.6 3Zm2.4 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg></button></div>
-        </header>
-        ${homeRunCardMarkup(run)}
-      </main>`;
-    resetRenderedViewScroll();
-
-    document.getElementById("open-modes-home")?.addEventListener("click", renderSeasonSelect);
-    document.getElementById("open-shop-home")?.addEventListener("click", () => renderShop());
-    document.getElementById("home-primary-cta")?.addEventListener("click", () => run ? resumeRun() : renderSeasonSelect());
-    document.getElementById("open-hall-home")?.addEventListener("click", renderHallOfFame);
-    document.getElementById("open-album-home")?.addEventListener("click", renderAlbumCollections);
-    document.getElementById("open-development-home")?.addEventListener("click", () => renderDevelopmentCenter());
-    document.getElementById("open-settings-home")?.addEventListener("click", () => renderSettings({ view: "main" }));
-    document.getElementById("open-hall-home-empty")?.addEventListener("click", renderHallOfFame);
-    document.getElementById("open-hall-home-list")?.addEventListener("click", renderHallOfFame);
-    document.getElementById("open-latest-hall-home")?.addEventListener("click", (event) => renderHallOfFameDetail(event.currentTarget.dataset.latestHall));
-  }
-
-
-  async function selectSeason(seasonId, { markPlayed = false } = {}) {
-    await loadSeason(seasonId);
-    run = global.RunState.load(activeSeason.id);
-    ensureRunSchema();
-    if (!run?.finalization || run.finalization.status === "complete") {
-      if (run?.permanentEffectOutbox?.some((effect) => effect.status === "pending")) drainPermanentEffects();
-    }
-    if (run && markPlayed) global.RunState.touch(run);
-    if (run && global.RoguelikeRules.migrateDefeatedBossPlayerLevels(run, seasonDb) > 0) { try { global.RunState.save(run); } catch (error) { console.error("save failed (boss level migration, selectSeason)", error); } }
-  }
-
-  function runTimestamp(run) {
-    return Math.max(0, ...[run?.lastPlayedAt, run?.updatedAt, run?.createdAt].map((value) => Date.parse(value || "") || 0));
-  }
-
-  function rosterPlayerId(entry) {
-    const raw = (entry && typeof entry === "object") ? (entry.playerId ?? entry.id ?? entry.player?.playerId ?? entry.player?.id) : entry;
-    const id = String(raw ?? "").trim();
-    return id && id !== "null" && id !== "undefined" ? id : "";
-  }
-
-  function savedRosterEntries(savedRun) {
-    const sourceEntries = Array.isArray(savedRun?.roster) ? savedRun.roster : [];
-    const byId = new Map(sourceEntries.map((entry) => [rosterPlayerId(entry), entry]).filter(([id]) => id));
-    const orderedEntries = [...(Array.isArray(savedRun?.lineup) ? savedRun.lineup : []), ...(Array.isArray(savedRun?.bench) ? savedRun.bench : [])];
-    const orderedIds = orderedEntries.map(rosterPlayerId).filter(Boolean);
-    const rosterIds = sourceEntries.map(rosterPlayerId).filter(Boolean);
-    const ids = [...new Set([...orderedIds, ...rosterIds])];
-    return ids.map((id) => {
-      const entry = byId.get(id);
-      return entry && typeof entry === "object" ? { ...entry, playerId: id } : { playerId: id, level: savedRun?.teamLevel || 0 };
-    });
-  }
-
-  // Artwork is keyed by registry id so additions/reordering in SeasonRegistry do not
-  // accidentally associate a cover with the wrong playable season.
-  const SEASON_CARD_PRESENTATION = Object.freeze({
-    ie1: Object.freeze({ coverUrl: "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiTljpQy0-8hZqy9NP7BmOZwijtzN9VGYbXEN4bR2bPW8GiaccWADFA3RAlYclPfO8HSr9aEgR8H_NWF-al-1MLXlH6ToD-mMNUKwTsaSKlKvUCEY1xzg_2auQvhA3usKf5qPwV8Iawi6pm/s1600/wallpapers_inazuma11_1_1024x768.jpg", focalPoint: "center" }),
-    ie1_s2: Object.freeze({ coverUrl: "https://static.wikia.nocookie.net/inazuma-eleven/images/9/9b/%28Artwork%29_Aliea_Gakuen_captains.jpg/revision/latest?cb=20120722223451", focalPoint: "center 42%" }),
-    ie1_s3: Object.freeze({ coverUrl: "https://static.wikia.nocookie.net/inazuma-eleven-fanon/images/6/67/Inazuma-boys-inazuma-eleven-35597232-1600-1200_%281%29.jpg/revision/latest?cb=20140310150638", focalPoint: "center" }),
-    ie2: Object.freeze({ coverUrl: "https://www.akibagamers.it/wp-content/uploads/2019/12/inazuma-eleven-great-road-of-heroes-cover.jpg", focalPoint: "center 38%" }),
+  const homeView = global.HomeView.create({ escapeHtml, normalizeTeamIdentity, savedTeamIdentity, seasonDisplayName, resolvedRosterPlayer, averageOverall, lifeHeartsMarkup, bossTeamLogoUrl, getSeasonDb: () => seasonDb });
+  const homeController = global.HomeController.create({
+    view: homeView, app, getRun: () => run, setRun, getSeasonDb: () => seasonDb, getActiveSeason: () => activeSeason,
+    loadSeason, closeModal, persistenceWritesAllowed, drainPermanentEffects, ensureRunSchema, migrateTeamIdentityProfile, normalizeTeamIdentity, resetRenderedViewScroll,
+    renderSeasonSelect: (...args) => renderSeasonSelect(...args), resumeRun: (...args) => resumeRun(...args), renderShop: (...args) => renderShop(...args),
+    renderHallOfFame: (...args) => renderHallOfFame(...args), renderAlbumCollections: (...args) => renderAlbumCollections(...args),
+    renderDevelopmentCenter: (...args) => renderDevelopmentCenter(...args), renderSettings: (...args) => renderSettings(...args),
   });
-
-  function seasonCoverMarkup(season) {
-    const databasePresentation = global.SeasonRegistry?.database?.(season.id)?.presentation;
-    const presentation = databasePresentation?.menuImageUrl
-      ? { coverUrl: databasePresentation.menuImageUrl, focalPoint: databasePresentation.menuImageFocalPoint || "center" }
-      : SEASON_CARD_PRESENTATION[season.id];
-    return presentation ? `<img class="season-cover-art" src="${escapeHtml(presentation.coverUrl)}" alt="" style="object-position:${escapeHtml(presentation.focalPoint)}" loading="lazy" decoding="async" onerror="this.hidden=true;this.closest('.season-select-card').classList.add('season-cover-fallback')">` : "";
-  }
-
-  function seasonSelectCardMarkup({ season, savedRun, database, playersById, isLastPlayed }) {
-    const activeSaved = savedRun && global.RunState.isActiveRun(savedRun) ? savedRun : null;
-    const actions = activeSaved
-      ? `<button type="button" class="btn btn-yellow" data-season-continue="${escapeHtml(season.id)}">CONTINUA</button><button type="button" class="btn btn-ghost" data-season-new="${escapeHtml(season.id)}">INIZIA</button><button type="button" class="btn season-delete-button" data-season-delete="${escapeHtml(season.id)}">ELIMINA</button>`
-      : `<button type="button" class="btn btn-yellow" data-season-new="${escapeHtml(season.id)}">INIZIA NUOVA RUN</button>`;
-
-    if (!activeSaved) {
-      return `<article class="home-hub-card season-select-card season-select-card--empty">${seasonCoverMarkup(season)}<div class="season-card-content"><div class="season-card-head"><div><p class="season-card-kicker">SEASON ${escapeHtml(season.displaySeasonNumber)}</p><h2>${escapeHtml(season.name)}</h2><p class="season-card-subtitle">Costruisci la squadra e affronta la scalata.</p></div></div><div class="home-card-actions season-card-actions">${actions}</div></div></article>`;
-    }
-
-    return `<article class="home-hub-card season-select-card season-select-card--active ${isLastPlayed ? "season-select-card--last" : ""}">${seasonCoverMarkup(season)}<div class="season-card-content"><div class="season-card-head"><div><p class="season-card-kicker">SEASON ${escapeHtml(season.displaySeasonNumber)}</p><h2>${escapeHtml(season.name)}</h2></div></div><div class="home-card-actions season-card-actions">${actions}</div></div></article>`;
-  }
-
-  async function renderSeasonSelect({ preserveScroll = null } = {}) {
-    await loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID);
-    const seasons = global.SeasonRegistry.list();
-    await Promise.all(seasons.map((season) => global.SeasonRegistry.loadDatabase(season.id)));
-    const runs = seasons.map((season) => ({ season, savedRun: global.RunState.load(season.id, { readOnly: true }) }));
-    const latestTime = Math.max(0, ...runs.filter((entry) => entry.savedRun && global.RunState.isActiveRun(entry.savedRun)).map((entry) => runTimestamp(entry.savedRun)));
-    const cards = runs.map(({ season, savedRun }) => seasonSelectCardMarkup({
-      season,
-      savedRun,
-      database: global.SeasonRegistry.database(season.id),
-      playersById: global.SeasonRegistry.playersIndex(season.id),
-      isLastPlayed: Boolean(savedRun && latestTime && runTimestamp(savedRun) === latestTime),
-    })).join("");
-    app.innerHTML = `<main class="home-screen modern-home season-select-screen"><header class="season-select-topbar">${sectionRootButton("seasonSelection", "season-select-home-button")}<div><p class="eyebrow">MODALITÀ</p><h1>SELEZIONA SEASON</h1><p class="season-select-subtitle">Scegli la tua storia e riprendi la scalata.</p></div><span class="season-select-topbar-spacer" aria-hidden="true"></span></header><section class="home-choice-grid season-choice-grid">${cards}</section></main>`;
-    if (preserveScroll) afterNextPaint(() => restorePageScroll(preserveScroll));
-    else resetRenderedViewScroll();
-    bindSectionRootNav();
-    document.querySelectorAll("[data-season-continue]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonContinue, { markPlayed: true }); resumeRun(); }));
-    document.querySelectorAll("[data-season-new]").forEach((button) => button.addEventListener("click", async () => { await selectSeason(button.dataset.seasonNew); startNewRunFromHome(); }));
-    document.querySelectorAll("[data-season-delete]").forEach((button) => button.addEventListener("click", () => openDeleteSeasonRunModal(button.dataset.seasonDelete)));
-  }
-
-  function openDeleteSeasonRunModal(seasonId) {
-    const season = global.SeasonRegistry.get(seasonId);
-    const observedGeneration = global.RunState.load(season.id, { readOnly: true })?.storageGeneration;
-    const preservedScroll = scrollSnapshot();
-    openModal(`<div class="modal-head"><div><p class="eyebrow">${escapeHtml(season.name)}</p><h2>ELIMINA RUN</h2><p class="muted">Vuoi eliminare la run di questa Season? I progressi della run verranno cancellati.</p></div></div><div class="button-row"><button type="button" class="btn btn-ghost" data-cancel-delete-run>ANNULLA</button><button type="button" class="btn season-delete-button" data-confirm-delete-run>ELIMINA</button></div>`, { closeable: false, className: "season-delete-modal", preserveScroll: preservedScroll });
-    modalRoot.querySelector("[data-cancel-delete-run]")?.addEventListener("click", closeModal);
-    modalRoot.querySelector("[data-confirm-delete-run]")?.addEventListener("click", async () => {
-      try { global.RunState.remove(season.id, { expectedGeneration: observedGeneration }); }
-      catch (error) { closeModal({ invokeOnClose: false }); if (error?.code === "stale-write") { run = global.RunState.load(season.id, { readOnly: true }); global.run = run; global.alert?.("La run è stata aggiornata in un'altra scheda. Ho ricaricato l'ultima versione salvata."); return renderSeasonSelect({ preserveScroll: preservedScroll }); } global.alert?.("Salvataggio non riuscito. L'azione non è stata registrata."); return; }
-      if (run?.seasonId === season.id) { run = null; global.run = null; }
-      closeModal({ invokeOnClose: false });
-      await renderSeasonSelect({ preserveScroll: preservedScroll });
-    });
-  }
+  const seasonSelectionView = global.SeasonSelectionView.create({ escapeHtml, sectionRootButton });
+  const seasonSelectionController = global.SeasonSelectionController.create({
+    view: seasonSelectionView, app, modalRoot, getRun: () => run, setRun, getSeasonDb: () => seasonDb, getActiveSeason: () => activeSeason,
+    loadSeason, ensureRunSchema, drainPermanentEffects, afterNextPaint, restorePageScroll, resetRenderedViewScroll, bindSectionRootNav,
+    startNewRun: (...args) => startNewRunFromHome(...args), resumeRun: (...args) => resumeRun(...args), scrollSnapshot, openModal, closeModal, escapeHtml,
+  });
+  const newRunController = global.NewRunController.create({ getRun: () => run, setRun, getActiveSeason: () => activeSeason, getSeasonDb: () => seasonDb, normalizeTeamIdentity, savedTeamIdentity, seasonDisplayName, openTeamNameModal: (...args) => openTeamNameModal(...args), openModal, closeModal, toast, renderFormationChoice: (...args) => renderFormationChoice(...args), escapeHtml, inazumaLogoMarkup });
+  function renderHome(...args) { return homeController.renderHome(...args); }
+  function renderSeasonSelect(...args) { return seasonSelectionController.renderSeasonSelect(...args); }
+  function selectSeason(...args) { return seasonSelectionController.selectSeason(...args); }
+  function startRunWithIdentity(...args) { return newRunController.startRunWithIdentity(...args); }
+  function startNewRunFromHome(...args) { return newRunController.startNewRunFromHome(...args); }
 
   function renderDevelopmentCenter(...args) { return developmentCenterController.render(...args); }
   function developmentCurrencyIcon(...args) { return developmentCenterController.currencyIcon(...args); }
@@ -1356,49 +1125,6 @@
       </section>`;
   }
 
-  function startRunWithIdentity(identity) {
-    const localIdentity = normalizeTeamIdentity(identity);
-    let candidate;
-    try {
-      candidate = global.RunState.createRun(localIdentity, activeSeason?.id);
-    } catch (error) {
-      const SnapshotError = global.DevelopmentRuntime?.DevelopmentSnapshotError;
-      if (!SnapshotError || !(error instanceof SnapshotError)) throw error;
-      console.error("New run Development snapshot rejected", { code: error.code, details: error.details });
-      toast("Impossibile avviare la run: i dati del Centro di sviluppo richiedono una verifica.");
-      return false;
-    }
-    global.RunState.save(candidate, { replaceRun: true });
-    run = candidate;
-    global.run = candidate;
-    try { global.RunState.saveProfileTeamIdentity(localIdentity); }
-    catch (error) { console.warn("Account profile update deferred; local run is already saved", { code: error?.code || "profile-write-failed" }); }
-    closeModal({ invokeOnClose: false });
-    renderFormationChoice();
-    return true;
-  }
-
-  function startNewRunFromHome() {
-    const identity = savedTeamIdentity();
-    run = global.RunState.load(activeSeason?.id);
-    const startConfirmedRun = () => {
-      const confirmedIdentity = savedTeamIdentity();
-      if (!confirmedIdentity) return openTeamNameModal({ mode: "create" });
-      return startRunWithIdentity(confirmedIdentity);
-    };
-    if (!run || !global.RunState.isActiveRun(run)) return identity ? startRunWithIdentity(identity) : openTeamNameModal({ mode: "create" });
-    const seasonName = seasonDisplayName(activeSeason?.id);
-    const bossLine = `Boss ${Math.min(Number(run.bossIndex || 0) + 1, seasonDb?.bossOrder?.length || 99)} · Livello ${global.LevelProgression.formatLevel(run, run.seasonId)} · ${run.lives ?? "-"} vite`;
-    openModal(`
-      <div class="modal-head"><div><p class="eyebrow">Nuova run</p><h2>Inizia nuova run</h2><p class="muted">Hai già una run attiva in ${escapeHtml(seasonName)}.</p></div>${inazumaLogoMarkup("inazuma-logo--modal")}</div>
-      <p class="home-overwrite-warning"><strong>${escapeHtml(bossLine)}</strong><br>Iniziando una nuova run, i progressi attuali di ${escapeHtml(seasonName)} verranno sostituiti. Le altre Season resteranno intatte. L’Albo d’Oro e le squadre campioni resteranno salvati.</p>
-      <div class="button-row"><button type="button" class="btn" id="cancel-new-run">Annulla</button><button type="button" class="btn btn-yellow" id="confirm-new-run">Inizia nuova run</button></div>`,
-      { closeable: false, className: "team-name-modal new-run-confirm-modal" }
-    );
-    document.getElementById("confirm-new-run").addEventListener("click", startConfirmedRun);
-    document.getElementById("cancel-new-run").addEventListener("click", closeModal);
-  }
-
   function openTeamNameModal({ mode = "create" } = {}) {
     openModal(`
       <div class="modal-head"><div><p class="eyebrow">${mode === "edit" ? "Home" : "Nuova run"}</p><h2>${mode === "edit" ? "Modifica nome squadra" : "Nome della squadra"}</h2><p class="muted">${mode === "edit" ? "Aggiorna il nome permanente della tua squadra." : "Scegli il nome che rappresenterà la tua squadra."}</p></div>${inazumaLogoMarkup("inazuma-logo--modal")}</div>
@@ -1435,52 +1161,16 @@
     openTeamNameModal({ mode: "edit" });
   }
 
-  async function resumeRun() {
-    await selectSeason(run?.seasonId || activeSeason?.id, { markPlayed: true });
-    if (!run) return renderHome();
-    if (run.phase === "finalization" || (run.finalization && run.finalization.status !== "complete")) return resumeRunFinalization();
-    const specialNormalizationProbe = global.RunState.clone(run);
-    if (global.MapEngine.normalizeSpecialMatchNode(specialNormalizationProbe, seasonDb)) {
-      const normalized = persistGameplayMutation({
-        label: "special-node-normalize-resume",
-        mutate: (current) => {
-          const previousSpecialNode = current.currentZone?.nodes?.find((node) => node.type === "special_match") || null;
-          const activeSpecial = current.activeMatch?.type === "special_match" ? current.activeMatch : null;
-          const activeSpecialNodeId = activeSpecial?.nodeId == null ? null : String(activeSpecial.nodeId);
-          const changed = global.MapEngine.normalizeSpecialMatchNode(current, seasonDb);
-          if (!changed) return { changed: false };
-          if (activeSpecial && previousSpecialNode && activeSpecialNodeId === String(previousSpecialNode.id)) {
-            const normalizedSpecialNode = current.currentZone?.nodes?.find((node) => node.type === "special_match"
-              && (!activeSpecial.specialMatchId || String(node.specialMatchId) === String(activeSpecial.specialMatchId)));
-            if (!normalizedSpecialNode) throw Object.assign(new Error("Normalized special match node unavailable"), { code: "special-node-normalization-mismatch" });
-            activeSpecial.nodeId = normalizedSpecialNode.id;
-          }
-          return { changed: true };
-        },
-      });
-      if (!normalized.ok) return renderMapFailureRecovery();
-    }
-    const matchRecovery = recoverInterruptedMatchAccess();
-    if (!matchRecovery.ok) return renderMapFailureRecovery();
-    if (run.gameOver || run.phase === "gameover") return renderGameOver();
-    if (run.phase === "formation") return renderFormationChoice();
-    if (run.phase === "draft") return renderDraft();
-    if (run.pendingSpecialMatchReward) return showSpecialMatchReward();
-    if (run.postBossFlow) return resumePostBossFlow();
-    if (run.phase === "final-summary") return renderFinalSummary(run.hallTeamId, { developmentResolved: true });
-    if (run.phase === "final-celebration" || run.phase === "complete") return renderFinalCelebration(run.hallTeamId, { developmentResolved: true });
-    if (run.phase === "squad") return renderSquad();
-    if (run.phase === "five") return renderFiveVFive({ persist: false, returnToMatch: run.activeMatch?.type === "five_v_five" });
-    if (run.phase === "inventory") return renderInventory();
-    if (run.phase === "match" && run.activeMatch) {
-      ui.match = run.activeMatch;
-      ui.bossMatchState = run.activeMatch.state || "pre-match";
-      ui.bossMatchLog = run.activeMatch.log || [];
-      return renderMatch();
-    }
-    ensureCurrentZone();
-    if (resumePendingItemReward()) return;
-    renderMap();
+  let runResumeController = null;
+  function resumeRun(...args) {
+    runResumeController ||= global.RunResumeController.create({
+      getRun: () => run, getActiveSeason: () => activeSeason, getSeasonDb: () => seasonDb, selectSeason, renderHome, resumeFinalization: resumeRunFinalization,
+      persistGameplayMutation, renderMapFailureRecovery, recoverInterruptedMatchAccess, renderGameOver, renderFormationChoice, renderDraft, showSpecialMatchReward,
+      resumePostBossFlow, renderFinalSummary, renderFinalCelebration, renderSquad, renderFiveVFive, renderInventory,
+      setMatchUi: (match) => { ui.match = match; ui.bossMatchState = match.state || "pre-match"; ui.bossMatchLog = match.log || []; },
+      renderMatch, ensureCurrentZone, resumePendingItemReward, renderMap,
+    });
+    return runResumeController.resumeRun(...args);
   }
 
   function initialDraftPlayers() {
@@ -2803,7 +2493,7 @@
     return true;
   }
 
-  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, setPermanentClubTestContext, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, renderAlbumCollections, renderAlbumTeams, renderAlbumRoster, renderHallOfFame, renderHallOfFameDetail, renderDevelopmentCenter, developmentCurrencyIcon, bindHallPlayerDetails, startNewRunFromHome, startRunWithIdentity, getRun: () => run };
+  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, setPermanentClubTestContext, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, renderAlbumCollections, renderAlbumTeams, renderAlbumRoster, renderHallOfFame, renderHallOfFameDetail, renderDevelopmentCenter, developmentCurrencyIcon, bindHallPlayerDetails, startNewRunFromHome, startRunWithIdentity, renderSeasonSelect, selectSeason, resumeRun, getRun: () => run };
   if (DEV_MODE) global.__INAZUMA_GAMEPLAY_FAILURE_DIAGNOSTICS__ = () => global.RunState.clone(gameplayFailureDiagnostics);
   if (DEV_MODE) global.__INAZUMA_MATCH_DIAGNOSTICS__ = () => {
     const match = run?.activeMatch, effects = run?.permanentEffectOutbox || [];
