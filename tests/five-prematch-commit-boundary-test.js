@@ -40,6 +40,7 @@ function open(run = baseRun()) {
   rt.context.__INAZUMA_RECRUITMENT_TEST__.setContext({ freeAgentsDb: { players: opponents } });
   rt.context.SeasonRegistry.player = id => users.find(player => player.playerId === String(id));
   rt.context.RoguelikeRules.isProfileAwareRosterEntry = () => false;
+  rt.context.RunStatistics.createStableMatchId = (_run, match) => match.matchId;
   rt.context.MatchSimulator.simulate = ({ seed }) => simulation(seed);
   rt.context.MatchSimulatorConfig = { eventDelayMs: 1000, playbackMs: 1000 };
   let timers = 0;
@@ -72,11 +73,15 @@ for (const injected of [
   assert.strictEqual(rt.seam.getUi().matchPlaybackTimer, null);
   const timersAfterFailure = timers();
   assert.ok(timersAfterFailure >= timersBeforeFailure, "failure UI may schedule only its transient toast");
-  rt.context.RunState.save = realSave;
-  const retried = rt.seam.startMatchSimulation(rt.seam.getRun().activeMatch);
-  assert.strictEqual(retried.ok, true, "the recovered canonical action remains retryable");
+  let retryAttempts = 0;
+  rt.context.RunState.save = current => { retryAttempts += 1; return realSave(current); };
+  button.click();
+  assert.strictEqual(attempts, 1, "the injected save was attempted exactly once before recovery");
+  assert.strictEqual(retryAttempts, 1, "the same mounted button performs one new match-simulation-start save");
   assert.strictEqual(rt.canonical.activeMatch.state, "simulating", "the same mounted action remains retryable");
   assert.strictEqual(rt.canonical.activeMatch.simulation.state, "simulating");
+  assert.match(rt.modalMarkup, /data-match-state="simulating"/, "retry opens the committed simulation modal without a rerender");
+  assert.match(rt.modalMarkup, />Live</);
   assert.strictEqual(timers(), timersAfterFailure + 1, "retry arms exactly one playback timer");
 }
 

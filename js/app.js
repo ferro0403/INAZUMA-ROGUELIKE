@@ -3861,13 +3861,21 @@
   }
 
   function startMatchSimulation(match, options = {}) {
-    if (ui.matchStartLocked || match?.simulation?.state === "simulating") return { ok: false, reason: "already-starting" };
-    if (match.simulation?.state && match.simulation.state !== "pre-match") return { ok: false, reason: "invalid-state" };
+    if (ui.matchStartLocked) return { ok: false, reason: "already-starting" };
+    const identity = matchTransactionIdentity(match);
+    let liveMatch;
+    try {
+      liveMatch = canonicalMatchFor(run, identity);
+    } catch (error) {
+      return { ok: false, reason: "identity-mismatch", error };
+    }
+    if (liveMatch.simulation?.state === "simulating") return { ok: false, reason: "already-starting" };
+    if (liveMatch.simulation?.state && liveMatch.simulation.state !== "pre-match") return { ok: false, reason: "invalid-state" };
     ui.matchStartLocked = true;
     updateMatchControlsDom();
     let frozenMatch;
     try {
-      frozenMatch = cloneMatchState(match);
+      frozenMatch = cloneMatchState(liveMatch);
       const sim = ensureMatchPreview(frozenMatch, { ...options, forceRefresh: false, freeze: true });
       if (!sim.valid) {
         ui.matchStartLocked = false;
@@ -3891,7 +3899,6 @@
     frozenMatch.state = "simulating";
     frozenMatch.log = [];
     frozenMatch.score = [0, 0];
-    const identity = matchTransactionIdentity(match);
     const committed = commitMatchMutation("match-simulation-start", identity, (currentMatch) => {
       Object.keys(currentMatch).forEach((key) => { delete currentMatch[key]; });
       Object.assign(currentMatch, cloneMatchState(frozenMatch));
@@ -3905,7 +3912,7 @@
     clearMatchPlaybackTimer();
     ui.matchStartLocked = false;
     updateMatchControlsDom();
-    document.getElementById(match.type === "five_v_five" ? "five-match-log-panel" : "")?.scrollIntoView({ block: "nearest" });
+    document.getElementById(ui.match?.type === "five_v_five" ? "five-match-log-panel" : "")?.scrollIntoView({ block: "nearest" });
     ui.matchPlaybackTimer = setTimeout(stepMatchPlayback, global.MatchSimulatorConfig.eventDelayMs || global.MatchSimulatorConfig.playbackMs);
     return { ok: true, match: ui.match };
   }

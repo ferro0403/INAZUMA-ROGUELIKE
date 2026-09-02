@@ -11,7 +11,8 @@ const startSource = app.slice(app.indexOf('function startMatchSimulation'), app.
 // :preview simulation whenever the lineup signature had not changed.
 assert.match(previewSource, /if \(!options\.freeze && match\.simulation\?\.valid && existingState === "pre-match"/, 'freezing must bypass the disposable preview shortcut');
 assert.match(previewSource, /const seed = options\.freeze \? matchSeed\(match\)/, 'a frozen simulation must use the attempt seed');
-assert.match(startSource, /frozenMatch = cloneMatchState\(match\)/, 'starting a match must isolate the uncommitted simulation from live state');
+assert.match(startSource, /liveMatch = canonicalMatchFor\(run, identity\)/, 'starting a match must resolve a captured callback against the live canonical identity');
+assert.match(startSource, /frozenMatch = cloneMatchState\(liveMatch\)/, 'starting a match must isolate the uncommitted simulation from live canonical state');
 assert.match(startSource, /ensureMatchPreview\(frozenMatch, \{ \.\.\.options, forceRefresh: false, freeze: true \}\)/, 'starting a match must freeze an attempt-specific simulation');
 assert.match(startSource, /commitMatchMutation\("match-simulation-start"/, 'the frozen simulation becomes authoritative only through the canonical transaction');
 assert.match(app, /return `\$\{run\.runId\}:\$\{match\.type\}:\$\{match\.nodeId\}:\$\{match\.attemptNumber \|\| 1\}`/, 'the real seed must contain attemptNumber');
