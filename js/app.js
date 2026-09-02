@@ -4546,8 +4546,7 @@
     document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("defeat", { boss }); });
     document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(ui.match, { boss }); });
     document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
-    const renderedMatchIdentity = matchTransactionIdentity(ui.match);
-    document.getElementById("continue-match-result")?.addEventListener("click", (event) => continueAfterMatch(event, renderedMatchIdentity));
+    document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch);
     if (allowAutomaticResume) resumeMatchSimulationIfNeeded(run?.activeMatch);
   }
 
