@@ -21,7 +21,8 @@ assert.doesNotMatch(squadView, /RunState\.save|run\.phase\s*=|reconcileSquadRost
 const squadControllerSource = fs.readFileSync("js/squad/squad-controller.js", "utf8");
 const lineup = bodyBetween("function swapPlayers", "return { formationById", squadControllerSource);
 assert.match(lineup, /label: "lineup-swap"[\s\S]*mutate:[\s\S]*firstList\[firstIndex\]/);
-const trade = bodyBetween("function executeTrade", "function showTradeResult");
+const tradeNodeSource = fs.readFileSync("js/map/trade-node-controller.js", "utf8");
+const trade = bodyBetween("function executeTrade", "function showTradeResult", tradeNodeSource);
 assert.match(trade, /mutate: \(current\)[\s\S]*executeProfileAwareTrade\(current/);
 assert.match(trade, /mutate: \(current\)[\s\S]*current\.roster\[rosterIndex\]/);
 assert.match(trade, /onMutationError:[\s\S]*trade-invalid[\s\S]*Offerta non più valida/);
