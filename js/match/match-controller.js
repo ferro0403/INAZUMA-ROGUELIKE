@@ -680,9 +680,17 @@ function renderMatch(options = {}) {
       });
       document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("victory"); });
       document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); openFiveMatchSimulationModal(match, userName, opponentName); forceMatchOutcome("defeat"); });
+      const simulationStartIdentity = matchTransactionIdentity(match);
       document.getElementById("simulate-boss-match").addEventListener("click", (event) => {
         event.preventDefault();
-        const started = startMatchSimulation(match);
+        syncRun();
+        let currentMatch;
+        try {
+          currentMatch = canonicalMatchFor(run, simulationStartIdentity);
+        } catch (_error) {
+          return;
+        }
+        const started = startMatchSimulation(currentMatch);
         if (started?.ok) openFiveMatchSimulationModal(started.match, userName, opponentName);
       });
       if (simulating || resolved) openFiveMatchSimulationModal(match, userName, opponentName);
@@ -792,7 +800,18 @@ function renderMatch(options = {}) {
     });
     document.getElementById("test-win")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("victory", { boss }); });
     document.getElementById("test-loss")?.addEventListener("click", (event) => { event.preventDefault(); forceMatchOutcome("defeat", { boss }); });
-    document.getElementById("simulate-boss-match").addEventListener("click", (event) => { event.preventDefault(); startMatchSimulation(ui.match, { boss }); });
+    const simulationStartIdentity = matchTransactionIdentity(ui.match);
+    document.getElementById("simulate-boss-match").addEventListener("click", (event) => {
+      event.preventDefault();
+      syncRun();
+      let currentMatch;
+      try {
+        currentMatch = canonicalMatchFor(run, simulationStartIdentity);
+      } catch (_error) {
+        return;
+      }
+      startMatchSimulation(currentMatch, { boss });
+    });
     document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
     document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch);
     if (allowAutomaticResume) resumeMatchSimulationIfNeeded(run?.activeMatch);
