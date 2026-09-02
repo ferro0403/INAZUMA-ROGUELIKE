@@ -2785,7 +2785,25 @@
     }
   }
 
-  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, renderAlbumCollections, renderAlbumTeams, renderAlbumRoster, renderHallOfFame, renderHallOfFameDetail, renderDevelopmentCenter, startNewRunFromHome, startRunWithIdentity, getRun: () => run };
+  function setPermanentClubTestContext(context = {}) {
+    if (global.__INAZUMA_TEST_MODE__ !== true) return false;
+    if (Object.hasOwn(context, "run")) { run = context.run; global.run = run; }
+    if (context.seasonDb) {
+      seasonDb = context.seasonDb;
+      seasonPlayersById = new Map((seasonDb.players || []).map((player) => [String(player.playerId), player]));
+      seasonTeamsById = new Map((seasonDb.teams || []).map((team) => [String(team.teamId), team]));
+    }
+    if (context.freeAgentsDb) {
+      freeAgentsDb = context.freeAgentsDb;
+      freeAgentsById = new Map((freeAgentsDb.players || []).map((player) => [String(player.playerId), player]));
+      global.DevelopmentRuntime?.registerDatabase?.("free-agents", freeAgentsDb);
+      configureAlbumForBootstrap((freeAgentsDb.players || []).map((player) => player.playerId));
+    }
+    activeSeason = context.activeSeason || activeSeason;
+    return true;
+  }
+
+  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, setPermanentClubTestContext, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, renderAlbumCollections, renderAlbumTeams, renderAlbumRoster, renderHallOfFame, renderHallOfFameDetail, renderDevelopmentCenter, developmentCurrencyIcon, bindHallPlayerDetails, startNewRunFromHome, startRunWithIdentity, getRun: () => run };
   if (DEV_MODE) global.__INAZUMA_GAMEPLAY_FAILURE_DIAGNOSTICS__ = () => global.RunState.clone(gameplayFailureDiagnostics);
   if (DEV_MODE) global.__INAZUMA_MATCH_DIAGNOSTICS__ = () => {
     const match = run?.activeMatch, effects = run?.permanentEffectOutbox || [];
