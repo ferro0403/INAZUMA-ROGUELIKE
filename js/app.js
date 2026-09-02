@@ -2315,10 +2315,6 @@
     return global.BossGameOverRuntime.ensureCurrentZoneMutation({ run: current, seasonDb, mapEngine: global.MapEngine });
   }
 
-  function specialMatchById(specialMatchId) { return global.SpecialMatchRuntime.byId(seasonDb, specialMatchId); }
-  function specialMatchForNode(node) { return global.SpecialMatchRuntime.forNode(seasonDb, node); }
-  function specialMatchTeamPlayers(specialMatch) { return global.SpecialMatchRuntime.teamPlayers(seasonDb, specialMatch); }
-  function specialMatchFromNode(node, previousNodeId = null, activeRun = run) { return global.SpecialMatchRuntime.fromNode(activeRun, seasonDb, node, previousNodeId); }
   function activeMatchNeedsPhaseRecovery(activeRun, match) {
     return Boolean(
       match &&
@@ -2348,28 +2344,7 @@
     return { needed: specialNeeded || bossNeeded, ok: true };
   }
 
-  function recoverInterruptedSpecialMatchAccess() {
-    if (!run || run.pendingSpecialMatchReward) return false;
-    if (run.activeMatch?.type === "special_match") {
-      if (run.phase === "match") return true;
-      const identity = matchTransactionIdentity(run.activeMatch);
-      return commitMatchMutation("special-match-access-recovery", identity, (_match, current) => { current.phase = "match"; }).ok;
-    }
-    const pending = run.currentZone?.nodes?.find((node) => String(node.id) === String(run.currentZone?.pendingNodeId));
-    if (pending?.type !== "special_match") return false;
-    const nodeId = pending.id;
-    return persistGameplayMutation({
-      label: "special-match-entry-recovery",
-      mutate: (current) => {
-        if (current.activeMatch || String(current.currentZone?.pendingNodeId) !== String(nodeId)) throw new Error("Special match recovery state changed");
-        const currentNode = current.currentZone?.nodes?.find((node) => String(node.id) === String(nodeId));
-        if (currentNode?.type !== "special_match") throw new Error("Special match recovery node changed");
-        current.activeMatch = specialMatchFromNode(currentNode, current.currentZone.currentNodeId, current);
-        current.phase = "match";
-      },
-      onCommitted: (_value, current) => { ui.match = current.activeMatch; ui.bossMatchState = ui.match?.state || "pre-match"; ui.bossMatchLog = ui.match?.log || []; },
-    }).ok;
-  }
+  function recoverInterruptedSpecialMatchAccess() { return specialMatchController.recoverAccess(); }
 
   function bossMatchFromNode(node, previousNodeId = null, activeRun = run) {
     const match = {
@@ -2664,7 +2639,7 @@
             if (!status.valid) { current.phase = "five"; current.activeMatch = null; return { formationRequired: true }; }
             created = createOrLoadFiveMatch(selectedNode, current);
           }
-          else if (selectedNode.type === "special_match") created = current.activeMatch?.type === "special_match" && current.activeMatch.nodeId === selectedNode.id ? current.activeMatch : specialMatchFromNode(selectedNode, previousNodeId, current);
+          else if (selectedNode.type === "special_match") created = specialMatchController.createForSelectedNode(current, selectedNode, previousNodeId);
           else if (selectedNode.type === "boss") created = bossMatchFromNode(selectedNode, previousNodeId, current);
           else throw new Error("Node is not a match");
           current.phase = "match"; current.activeMatch = created; return created;
@@ -3345,6 +3320,31 @@
   });
   const { recruitPlayer } = recruitmentRuntime;
 
+  const specialMatchView = global.SpecialMatchViewRuntime.create({
+    getSeasonDb: () => seasonDb, runtime: global.SpecialMatchRuntime,
+  });
+  const specialMatchController = global.SpecialMatchControllerRuntime.create({
+    getRun: () => run, getSeasonDb: () => seasonDb, persistMutation: persistGameplayMutation,
+    commitMatch: commitMatchMutation, matchIdentity: matchTransactionIdentity,
+    mountMatch: (match) => { ui.match = match; ui.bossMatchState = match?.state || "pre-match"; ui.bossMatchLog = match?.log || []; },
+    applyConsecutiveLoss: applyConsecutiveLossResult, applyStatistics: applyRealMatchStatistics,
+    completeNode: (zone, nodeId) => global.MapEngine.completeNode(zone, nodeId),
+    restoreAfterLoss: (...args) => global.RunState.restoreAfterLoss(...args), enqueueGameOver: enqueueGameOverDevelopmentEffect,
+    appendFinalMessage: appendFinalMatchMessage,
+    onResolutionCommitted: () => { ui.bossMatchResolving = "done"; }, stopAfterPersistenceFailure: stopMatchAfterPersistenceFailure,
+    renderCommittedResult: () => { updateMatchScoreDom(ui.match, true); syncCommittedFinalMatchLog(); updateMatchControlsDom(); },
+    view: specialMatchView,
+  });
+  const specialMatchRewardView = global.SpecialMatchRewardViewRuntime.create({
+    getRun: () => run, getSeasonDb: () => seasonDb, getProfiles: () => global.ProfiledSeasonRuntime,
+    specialById: (id) => specialMatchController.byId(id), openModal, getModalRoot: () => modalRoot, playerCard,
+  });
+  const specialMatchRewardController = global.SpecialMatchRewardControllerRuntime.create({
+    getRun: () => run, getSeasonDb: () => seasonDb, getDocument: () => document, getModalRoot: () => modalRoot,
+    persistMutation: persistGameplayMutation, recruitPlayer, seasonSource: (id) => global.SeasonRegistry.sourceForSeason(id),
+    closeModal, toast, renderMap, view: specialMatchRewardView,
+  });
+
   const pullPoolRuntime = global.PullPoolRuntime.create({
     getRun: () => run, getSeasonDb: () => seasonDb, getFreeAgentsDb: () => freeAgentsDb, isProfileAwareSeason,
   });
@@ -3660,11 +3660,11 @@
         userSnapshot: matchSnapshotFromTeam({ name: normalizeTeamIdentity(run.teamIdentity).name || "La tua squadra", players: userPlayers }),
       };
     }
-    const special = match.type === "special_match" ? specialMatchById(match.specialMatchId) : null;
+    const special = match.type === "special_match" ? specialMatchController.byId(match.specialMatchId) : null;
     const boss = special || options.boss || seasonDb.bossOrder[run.bossIndex];
     const meta = special ? { user: { name: normalizeTeamIdentity(run.teamIdentity).name, formation: run.formationId }, boss: { name: special.teamName, formation: special.matchFormation } } : bossMatchTeamMeta(boss);
     const userPlayers = userTeamPlayers().map(normalizedMatchPlayer).filter(Boolean);
-    const opponentPlayers = (special ? specialMatchTeamPlayers(special) : bossTeamPlayers(boss)).map(normalizedMatchPlayer).filter(Boolean);
+    const opponentPlayers = (special ? specialMatchController.teamPlayers(special) : bossTeamPlayers(boss)).map(normalizedMatchPlayer).filter(Boolean);
     return {
       type: "eleven",
       userTeam: { name: meta.user.name, players: userPlayers, formationId: meta.user.formation },
@@ -4249,7 +4249,7 @@
     ui.match = run?.activeMatch || ui.match;
     // Legacy boss resume identity: const boss = seasonDb.bossOrder[Number(ui.match?.bossIndex ?? run.bossIndex)];
     const isSpecial = ui.match?.type === "special_match";
-    const boss = isSpecial ? specialMatchById(ui.match.specialMatchId) : seasonDb.bossOrder[Number(ui.match?.bossIndex ?? run.bossIndex)];
+    const boss = isSpecial ? specialMatchController.byId(ui.match.specialMatchId) : seasonDb.bossOrder[Number(ui.match?.bossIndex ?? run.bossIndex)];
     const isBoss = ui.match?.type === "boss";
     if (!isBoss && !isSpecial) {
       const match = createOrLoadFiveMatch({ id: ui.match?.nodeId });
@@ -4443,7 +4443,7 @@
     }
 
     const userPlayers = userTeamPlayers();
-    const bossPlayers = isSpecial ? specialMatchTeamPlayers(boss) : bossTeamPlayers(boss);
+    const bossPlayers = isSpecial ? specialMatchController.teamPlayers(boss) : bossTeamPlayers(boss);
     const meta = isSpecial ? { user: { name: normalizeTeamIdentity(run.teamIdentity).name, logoUrl: "", formation: run.formationId, level: run.teamLevel }, boss: { name: boss.teamName, logoUrl: boss.logoUrl, formation: boss.matchFormation, level: boss.matchLevel } } : bossMatchTeamMeta(boss);
     const userAverage = bossMatchAverage(userPlayers);
     const bossAverage = bossMatchAverage(bossPlayers);
@@ -4650,38 +4650,7 @@
     updateMatchControlsDom();
   }
 
-  function completeSpecialMatch(result) {
-    const match = run?.activeMatch;
-    if (!match?.simulation || match.simulation.resolutionApplied) return;
-    const identity = matchTransactionIdentity(match);
-    const committed = commitMatchMutation("special-match-resolution", identity, (currentMatch, current) => {
-      if (currentMatch.simulation.resolutionApplied) return { applied: false };
-      currentMatch.simulation.resolutionApplied = true;
-      currentMatch.result = result;
-      currentMatch.state = result === "victory" ? "completed-victory" : "completed-defeat";
-      applyConsecutiveLossResult(result, current);
-      if (currentMatch.simulation.score) currentMatch.score = [currentMatch.simulation.score.user, currentMatch.simulation.score.opponent];
-      applyRealMatchStatistics(currentMatch, result, current);
-      const node = current.currentZone?.nodes?.find((item) => item.id === currentMatch.nodeId);
-      if (result === "victory") {
-        global.SpecialMatchRuntime.complete(current, seasonDb, currentMatch, result);
-        if (node) global.MapEngine.completeNode(current.currentZone, node.id);
-        currentMatch.pendingPostMatchAction = { type: "special-reward", toast: "Vittoria: +1 livello e scelta giocatore" };
-      } else {
-        global.RunState.restoreAfterLoss(current, currentMatch.previousNodeId, currentMatch.type, { save: false });
-        enqueueGameOverDevelopmentEffect(current);
-        currentMatch.pendingPostMatchAction = { type: current.gameOver ? "game-over" : "map", toast: current.gameOver ? "Hai perso l'ultima vita. La run è terminata." : "Sconfitta: torni al nodo precedente." };
-      }
-      current.phase = "match";
-      current.activeMatch = currentMatch;
-      appendFinalMatchMessage(result, "special_match", currentMatch);
-      return { applied: true };
-    }, { onCommitted: () => { ui.bossMatchResolving = "done"; } });
-    if (!committed.ok) return stopMatchAfterPersistenceFailure();
-    updateMatchScoreDom(ui.match, true);
-    syncCommittedFinalMatchLog();
-    updateMatchControlsDom();
-  }
+  function completeSpecialMatch(result) { return specialMatchController.complete(result); }
 
   function completeBossMatch(result) {
     // Durable loss semantics: run.gameOver ? "Hai perso l'ultima vita. La run è terminata."; type: run.gameOver ? "game-over" : "map"
@@ -4747,60 +4716,7 @@
     return renderMap({ persist: false });
   }
 
-  function showSpecialMatchReward() {
-  const pending = run.pendingSpecialMatchReward;
-  if (!pending) return renderMap({ persist: false });
-  const candidateIds = pending.candidateProfileIds?.length ? pending.candidateProfileIds : [pending.selectedProfileId].filter(Boolean);
-  const candidates = candidateIds.map((profileId) => global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, profileId)).filter(Boolean);
-  const profile = pending.selectedProfileId && global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, pending.selectedProfileId);
-  const pullLabel = Number(pending.totalRewards || 1) > 1 ? ` · PULL ${Number(pending.currentReward || 1)}/${Number(pending.totalRewards)}` : "";
-  openModal(`<div class="modal-head special-reward-head"><div><p class="eyebrow">SCELTA GIOCATORE DISPONIBILE${pullLabel}</p><h2>${candidates.length ? "Scegli 1 giocatore su 3" : "Pool completato"}</h2><p class="muted">I candidati provengono esclusivamente dalla squadra appena battuta.</p></div></div><div class="candidate-grid pull-offer-grid">${candidates.map((candidate) => playerCard(candidate, { button: true, context: "pull", level: Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), database: seasonDb })).join("")}</div><div class="button-row special-reward-actions">${candidates.length ? '<button type="button" class="btn btn-ghost" id="decline-special-reward">RIFIUTA</button>' : ""}<button type="button" class="btn btn-yellow" id="claim-special-reward" ${candidates.length && !profile ? "disabled" : ""}>${candidates.length ? "ACQUISISCI O POTENZIA" : "CONTINUA"}</button></div>`, { closeable: false, className: "pull-selection-modal special-reward-modal" });
-
-  modalRoot.querySelectorAll("[data-player-id]").forEach((card) => card.addEventListener("click", () => {
-    const profileId = card.dataset.playerId ? candidates.find((candidate) => String(candidate.playerId) === String(card.dataset.playerId))?.profileId : null;
-    persistGameplayMutation({ label: "special-reward-select", mutate: (current) => global.SpecialMatchRuntime.selectRewardCandidate(current, profileId, current.pendingSpecialMatchReward), onCommitted: showSpecialMatchReward, rerender: ({ ok }) => { if (!ok) showSpecialMatchReward(); } });
-  }));
-
-  document.getElementById("decline-special-reward")?.addEventListener("click", (event) => {
-    const button = event.currentTarget;
-    if (button.disabled) return;
-    modalRoot.querySelectorAll(".special-reward-actions button").forEach((action) => { action.disabled = true; });
-    let result;
-    persistGameplayMutation({ label: "special-reward-decline", mutate: (current) => { result = global.SpecialMatchRuntime.decline(current, current.pendingSpecialMatchReward, seasonDb); if (result.transition?.status !== "next-reward") current.phase = "map"; }, onCommitted: () => { closeModal(); if (result.status === "declined") toast("Ricompensa rifiutata"); if (result.transition?.status === "next-reward") return showSpecialMatchReward(); renderMap({ persist: false }); }, rerender: ({ ok }) => { if (!ok) showSpecialMatchReward(); } });
-  });
-
-  document.getElementById("claim-special-reward").addEventListener("click", (event) => {
-    const button = event.currentTarget;
-    if (button.disabled) return;
-    button.disabled = true;
-    const finishCommitted = (transition) => {
-      closeModal();
-      if (transition?.status === "next-reward") return showSpecialMatchReward();
-      renderMap({ persist: false });
-    };
-    if (!profile) {
-      let transition;
-      return persistGameplayMutation({
-        label: "special-reward-empty",
-        mutate: (current) => { transition = global.SpecialMatchRuntime.completeCurrentReward(current, seasonDb, current.pendingSpecialMatchReward); if (transition.status !== "next-reward") current.phase = "map"; },
-        onCommitted: () => finishCommitted(transition),
-        rerender: ({ ok }) => { if (!ok) showSpecialMatchReward(); },
-      });
-    }
-    let transition;
-    recruitPlayer(profile, global.SeasonRegistry.sourceForSeason(run.seasonId), Number(specialMatchById(pending.specialMatchId)?.matchLevel || 0), (result) => {
-      if (result.status.startsWith("committed-")) finishCommitted(transition);
-      if (result.status === "cancelled") showSpecialMatchReward();
-    }, {
-      allowCancel: true,
-      cancelLabel: "RIFIUTA",
-      recruitmentSource: "special_match_reward",
-      actionId: pending.actionId,
-      transactionMutate: (current) => { transition = global.SpecialMatchRuntime.completeCurrentReward(current, seasonDb, current.pendingSpecialMatchReward); if (transition.status !== "next-reward") current.phase = "map"; },
-      onRecover: () => showSpecialMatchReward(),
-    });
-  });
-}
+  function showSpecialMatchReward() { return specialMatchRewardController.show(); }
 
   function resumePostBossFlowOrMap() {
     const flow = resolvePendingRunFlow({ clearMatch: true });
