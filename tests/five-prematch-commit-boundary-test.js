@@ -69,6 +69,10 @@ for (const injected of [
   assert.strictEqual(rt.modalMarkup, "", "a failed start must not expose the pre-commit simulation modal");
   assert.strictEqual(rt.canonical.activeMatch.state, "pre-match");
   assert.strictEqual(rt.canonical.activeMatch.simulation, undefined);
+  assert.deepStrictEqual(rt.seam.getUi().match, rt.canonical.activeMatch, "mounted match must realign to recovered canonical state");
+  assert.strictEqual(rt.seam.getUi().match.state, "pre-match");
+  assert.strictEqual(rt.seam.getUi().match.simulation, undefined);
+  assert.strictEqual(rt.seam.getUi().bossMatchState, "pre-match");
   assert.strictEqual(rt.seam.getUi().matchStartLocked, false);
   assert.strictEqual(rt.seam.getUi().matchPlaybackTimer, null);
   const timersAfterFailure = timers();
@@ -137,4 +141,19 @@ assert.strictEqual(successfulStart(0), successfulStart(3), "preview renders cann
   assert.strictEqual(timers(), 1); assert.strictEqual(rt.canonical.activeMatch.simulation.seed, "resume:five_v_five:five-node:1");
 }
 
+
+// A playback write mutates a transaction-owned candidate before save. When the
+// save fails, both the engine cache and mounted UI must point back at canonical.
+{
+  const { rt } = open(baseRun("playback-canonical-realign"));
+  assert.strictEqual(rt.seam.startMatchSimulation(rt.seam.getRun().activeMatch).ok, true);
+  const beforePlayback = rt.canonical;
+  rt.context.RunState.save = () => { throw Object.assign(new Error("quota"), { name: "QuotaExceededError" }); };
+  rt.seam.stepMatchPlayback();
+  assert.deepStrictEqual(rt.canonical, beforePlayback);
+  assert.deepStrictEqual(rt.seam.getUi().match, beforePlayback.activeMatch);
+  assert.strictEqual(rt.seam.getUi().match.simulation.revealedCount, 0);
+  assert.strictEqual(rt.seam.getUi().bossMatchState, "simulating");
+  assert.strictEqual(rt.seam.getUi().matchPlaybackTimer, null);
+}
 console.log("five prematch commit boundary: read-only preview, commit-first modal, failures, retry, double-click, refresh, legacy, stale identity and RNG parity OK");

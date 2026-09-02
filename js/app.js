@@ -2299,6 +2299,8 @@
     recoverLegacyResolvedMatchRoutingIfNeeded: (...a) => recoverLegacyResolvedMatchRoutingIfNeeded(...a), closeModal: (...a) => closeModal(...a),
     resolvePendingRunFlow: (...a) => resolvePendingRunFlow(...a), navigateBossVictoryDestination: (...a) => navigateBossVictoryDestination(...a),
     showSpecialMatchReward: (...a) => showSpecialMatchReward(...a), renderGameOver: (...a) => renderGameOver(...a), renderMap: (...a) => renderMap(...a), hearts: (...a) => hearts(...a),
+    openFiveMatchPlayerSwap: (...a) => openFiveMatchPlayerSwap(...a), fiveMatchPlayerDetail: (...a) => fiveMatchPlayerDetail(...a),
+    renderFiveVFive: (...a) => renderFiveVFive(...a), renderMapFailureRecovery: (...a) => renderMapFailureRecovery(...a), getFreeAgentsDb: () => freeAgentsDb,
     testMatchControlsEnabled: TEST_MATCH_CONTROLS_ENABLED, devMode: DEV_MODE,
   });
 

@@ -5,7 +5,7 @@
     const ui = d.ui;
     const app = d.app;
     const document = global.document;
-    const { persistGameplayMutation, recordGameplayFailure, fiveUserPlayersBySlot, fiveOpponentPlayersBySlot, normalizeTeamIdentity, specialMatchView, bossMatchTeamMeta, userTeamPlayers, bossTeamPlayers, toast, bossMatchStatusText, bossMatchTimeline, openModal, scrollSnapshot, formatMatchProbability, createOrLoadFiveMatch, ensureFiveVFive, teamById, escapeHtml, bossMatchAverage, fiveMatchField, fiveMatchComparisonMarkup, topbar, resetRenderedViewScroll, bindSectionRootNav, bindBottomNav, showPlayerDetails, showPlayerDetailsFor, bossMatchField, switchBossMatchTab, completeFiveMatch, completeSpecialMatch, completeBossMatch, recoverLegacyResolvedMatchRoutingIfNeeded, closeModal, resolvePendingRunFlow, navigateBossVictoryDestination, showSpecialMatchReward, renderGameOver, renderMap, hearts } = d;
+    const { persistGameplayMutation, recordGameplayFailure, fiveUserPlayersBySlot, fiveOpponentPlayersBySlot, normalizeTeamIdentity, specialMatchView, bossMatchTeamMeta, userTeamPlayers, bossTeamPlayers, toast, bossMatchStatusText, bossMatchTimeline, openModal, scrollSnapshot, formatMatchProbability, createOrLoadFiveMatch, ensureFiveVFive, teamById, escapeHtml, bossMatchAverage, fiveMatchField, fiveMatchComparisonMarkup, topbar, resetRenderedViewScroll, bindSectionRootNav, bindBottomNav, showPlayerDetails, showPlayerDetailsFor, bossMatchField, switchBossMatchTab, completeFiveMatch, completeSpecialMatch, completeBossMatch, recoverLegacyResolvedMatchRoutingIfNeeded, closeModal, resolvePendingRunFlow, navigateBossVictoryDestination, showSpecialMatchReward, renderGameOver, renderMap, hearts, openFiveMatchPlayerSwap, fiveMatchPlayerDetail, renderFiveVFive, renderMapFailureRecovery, getFreeAgentsDb } = d;
     const TEST_MATCH_CONTROLS_ENABLED = d.testMatchControlsEnabled;
     const DEV_MODE = d.devMode;
     let run = d.getRun();
@@ -60,7 +60,7 @@ function cloneMatchState(match) {
 
 function commitMatchMutation(label, identity, mutate, options = {}) {
     syncRun();
-    return persistGameplayMutation({
+    const result = persistGameplayMutation({
       label,
       mutate: (current) => mutate(canonicalMatchFor(current, identity), current),
       onCommitted: (value, current) => {
@@ -81,9 +81,12 @@ function commitMatchMutation(label, identity, mutate, options = {}) {
         }
       },
     });
+    syncRun();
+    return result;
   }
 
 function stopMatchAfterPersistenceFailure() {
+    syncRun();
     clearMatchPlaybackTimer();
     ui.match = run?.activeMatch || null;
     ui.bossMatchState = ui.match?.state || "pre-match";
@@ -639,7 +642,7 @@ function renderMatch(options = {}) {
           detail.querySelector("[data-five-detail-close]")?.addEventListener("click", closeFiveMatchPlayerDetail);
           detail.querySelector("[data-five-detail-sheet]")?.addEventListener("click", () => side === "user"
             ? showPlayerDetails(id)
-            : showPlayerDetailsFor(player, { playerId: id, level: player.displayLevel, database: freeAgentsDb, preserveScroll: scrollSnapshot() }));
+            : showPlayerDetailsFor(player, { playerId: id, level: player.displayLevel, database: getFreeAgentsDb(), preserveScroll: scrollSnapshot() }));
         });
       });
       bindFiveMatchPlayerButtons();

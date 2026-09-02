@@ -41,3 +41,9 @@ For all three match types, pre-match reopens as pre-match; simulating and mid-pl
 ## Parity and residual risks
 
 Seed generation, `RunStatistics.createStableMatchId`, `MatchSimulator`, strength/probability formulas, winner, score and timeline generation are unchanged. Existing fixed-seed and retry characterization tests compare those payloads. UI strings and controls are moved without redesign. The remaining risk is the intentionally broad dependency-injection surface while `app.js` still owns 5v5/domain adapters; the next decomposition should not move GameOver/finalization into this engine.
+
+## Boundary correctness revision
+
+The extraction-boundary audit initially found five app-local free identifiers in the standalone IIFE: `openFiveMatchPlayerSwap`, `fiveMatchPlayerDetail`, `freeAgentsDb`, `renderFiveVFive`, and `renderMapFailureRecovery`. They are now explicit injected dependencies; the Free Agents database is obtained through `getFreeAgentsDb()` at interaction time rather than captured during controller creation. An ESLint `no-undef` audit with browser built-ins declared reports no remaining app-local free identifier.
+
+`commitMatchMutation` now refreshes the controller's cached run both before and after `persistGameplayMutation`. Consequently, a successful commit observes the committed runtime and a failed save observes the canonical run installed by `replaceRun`. `stopMatchAfterPersistenceFailure` also refreshes defensively before resetting mounted UI and timers. Behavioral production-runtime coverage exercises user and opponent player cards, the full opponent detail sheet, successful and failed 5v5 edit entry, failed simulation start, and failed playback cursor persistence.
