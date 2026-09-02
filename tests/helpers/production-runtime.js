@@ -32,18 +32,37 @@ function loadModules(storage, files = ["persistence-recovery-guard.js", "run-sta
   return c;
 }
 
-function element() {
+function element(eventRoot = null) {
   const listeners = new Map();
   const node = { innerHTML: "", textContent: "", disabled: false, dataset: {}, style: {}, parentElement: null, className: "", id: "", classList: { add() {}, remove() {}, toggle() {} },
-    addEventListener(type, listener) { const current = listeners.get(type) || []; current.push(listener); listeners.set(type, current); }, removeEventListener() {},
-    dispatchEvent(event) { event.currentTarget = this; for (const listener of [...(listeners.get(event.type) || [])]) listener(event); if (!event.cancelBubble) this.parentElement?.dispatchEvent?.(event); },
-    click() { const event = { type: "click", currentTarget: this, target: this, preventDefault() {}, stopPropagation() { this.cancelBubble = true; }, cancelBubble: false }; this.dispatchEvent(event); },
-    clickLatest() { const event = { currentTarget: this, target: this, preventDefault() {}, stopPropagation() {} }; const values = listeners.get("click") || []; values.at(-1)?.(event); },
-    appendChild() {}, append() {}, remove() {}, removeAttribute(name) { if (name === "disabled") this.disabled = false; }, setAttribute(name, value) { if (name === "disabled") this.disabled = true; this[name] = value; }, getAttribute() { return null; }, scrollTo() {}, scrollIntoView() {}, focus() {},
+    addEventListener(type, listener, options = false) { const current = listeners.get(type) || []; current.push({ listener, capture: options === true || options?.capture === true }); listeners.set(type, current); }, removeEventListener() {},
+    dispatchEvent(event) {
+      event.target ||= this; event.preventDefault ||= function () { this.defaultPrevented = true; };
+      event.stopPropagation ||= function () { this.cancelBubble = true; };
+      event.stopImmediatePropagation ||= function () { this.cancelBubble = true; this.immediatePropagationStopped = true; };
+      const path = []; for (let current = this; current; current = current.parentElement) path.push(current);
+      if (eventRoot && !path.includes(eventRoot)) path.push(eventRoot);
+      const invoke = (target, capture) => {
+        event.currentTarget = target;
+        for (const entry of [...(target.__listeners?.get(event.type) || [])]) {
+          if (entry.capture !== capture) continue;
+          entry.listener(event);
+          if (event.immediatePropagationStopped) break;
+        }
+      };
+      for (const target of [...path].reverse()) { invoke(target, true); if (event.cancelBubble) return !event.defaultPrevented; }
+      if (typeof this[`on${event.type}`] === "function") this[`on${event.type}`](event);
+      if (!event.immediatePropagationStopped) invoke(this, false);
+      for (const target of path.slice(1)) { if (event.cancelBubble) break; invoke(target, false); }
+      return !event.defaultPrevented;
+    },
+    click() { this.dispatchEvent({ type: "click", target: this, cancelBubble: false, defaultPrevented: false }); },
+    clickLatest() { const event = { currentTarget: this, target: this, preventDefault() {}, stopPropagation() {} }; const values = listeners.get("click") || []; values.at(-1)?.listener(event); },
+    appendChild(child) { child.parentElement = this; child.__register?.(); this.__appendChild?.(child); return child; }, append(child) { return this.appendChild(child); }, remove() { this.__remove?.(); }, removeAttribute(name) { if (name === "disabled") this.disabled = false; }, setAttribute(name, value) { if (name === "disabled") this.disabled = true; this[name] = value; }, getAttribute() { return null; }, scrollTo() {}, scrollIntoView() {}, focus() {},
     contains(candidate) { for (let current = candidate; current; current = current.parentElement) if (current === this) return true; return false; },
-    matches(selector) { const data = /^\[data-([a-z0-9-]+)(?:="([^"]*)")?\]$/i.exec(selector); if (data) { const key = data[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase()); return Object.hasOwn(this.dataset, key) && (data[2] === undefined || String(this.dataset[key]) === data[2]); } if (selector.startsWith("#")) return this.id === selector.slice(1); if (selector.startsWith(".")) return this.className.split(/\s+/).includes(selector.slice(1)); return false; },
+    matches(selector) { if (selector.includes(",") || selector.includes(" ")) return selector.split(",").some((part) => this.matches(part.trim().split(/\s+/).at(-1))); const compound = /^(\[[^\]]+\])(\.[a-z0-9_-]+)$/i.exec(selector); if (compound) return this.matches(compound[1]) && this.matches(compound[2]); const data = /^\[data-([a-z0-9-]+)(?:="([^"]*)")?\]$/i.exec(selector); if (data) { const key = data[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase()); return Object.hasOwn(this.dataset, key) && (data[2] === undefined || String(this.dataset[key]) === data[2]); } if (selector.startsWith("#")) return this.id === selector.slice(1); if (selector.startsWith(".")) return this.className.split(/\s+/).includes(selector.slice(1)); return false; },
     closest(selector) { return this.matches(selector) ? this : this.parentElement?.closest?.(selector) || null; },
-    querySelector() { return null; }, querySelectorAll() { return []; }, firstElementChild: null };
+    querySelector() { return null; }, querySelectorAll() { return []; }, firstElementChild: null, __listeners: listeners };
   return node;
 }
 
@@ -53,10 +72,18 @@ function load(storage, options = {}) {
   const runtimeSeasonId = options.seasonId || options.run?.seasonId;
   const elementsById = new Map();
   const selectorTargets = new Map();
-  const document = { body: element(), documentElement: element(), scrollingElement: element(), createElement: element, createDocumentFragment: element,
+  const documentListeners = new Map();
+  const document = { __listeners: documentListeners,
+    addEventListener(type, listener, options = false) { const values = documentListeners.get(type) || []; values.push({ listener, capture: options === true || options?.capture === true }); documentListeners.set(type, values); },
+    body: null, head: null, documentElement: null, scrollingElement: null, createElement: null, createDocumentFragment: null,
     getElementById: id => elementsById.get(id) || null,
-    querySelector: selector => selectorTargets.get(selector)?.[0] || null,
-    querySelectorAll: selector => selectorTargets.get(selector) || [] };
+    querySelector(selector) { return this.querySelectorAll(selector)[0] || null; },
+    querySelectorAll(selector) {
+      if (selectorTargets.has(selector)) return selectorTargets.get(selector);
+      const nodes = [...new Set([...selectorTargets.values()].flat())];
+      return nodes.filter((node) => node.matches(selector));
+    } };
+  document.body = element(document); document.head = element(document); document.documentElement = element(document); document.scrollingElement = element(document);
   function registerMarkup(root, markup, delegatedParent = root, reset = true) {
     if (reset) {
       for (const values of selectorTargets.values()) values.splice(0);
@@ -64,10 +91,11 @@ function load(storage, options = {}) {
     }
     const tags = String(markup).match(/<[^/!][^>]*>/g) || [];
     for (const tag of tags) {
-      const node = element(); node.parentElement = delegatedParent;
+      const node = element(document); node.parentElement = delegatedParent;
       let fragmentMarkup = "";
       Object.defineProperty(node, "innerHTML", { configurable: true, get() { return fragmentMarkup; }, set(value) { fragmentMarkup = String(value ?? ""); registerMarkup(node, fragmentMarkup, node, false); } });
       node.id = /\bid="([^"]+)"/.exec(tag)?.[1] || "";
+      node.value = /\bvalue="([^"]*)"/.exec(tag)?.[1] || "";
       node.className = /\bclass="([^"]+)"/.exec(tag)?.[1] || "";
       node.disabled = /\sdisabled(?:\s|>|=)/.test(tag);
       for (const match of tag.matchAll(/data-([a-z0-9-]+)="([^"]*)"/gi)) {
@@ -91,13 +119,45 @@ function load(storage, options = {}) {
     reparent("#development-player-results", ["[data-development-player]", "[data-development-card]"]);
     reparent("#development-management-results", ["[data-open-management-player]", "[data-regress-management-player]"]);
   }
-  const appElement = element(), modalElement = element(), toastElement = element(), inventoryContent = element();
+  function clearDescendants(root) {
+    const belongsToRoot = (item) => {
+      for (let current = item?.parentElement; current; current = current.parentElement) if (current === root) return true;
+      return false;
+    };
+    for (const [selector, values] of selectorTargets) selectorTargets.set(selector, values.filter((item) => !belongsToRoot(item)));
+    for (const [id, item] of elementsById) if (belongsToRoot(item)) elementsById.delete(id);
+  }
+  function createElement() {
+    const node = element(document);
+    let markup = "";
+    Object.defineProperty(node, "innerHTML", { configurable: true, get() { return markup; }, set(value) { markup = String(value ?? ""); registerMarkup(node, markup, node, false); } });
+    node.querySelector = selector => document.querySelector(selector);
+    node.querySelectorAll = selector => document.querySelectorAll(selector);
+    node.__register = () => {
+      const child = node;
+      if (child.id) { elementsById.set(child.id, child); selectorTargets.set(`#${child.id}`, [child]); }
+      for (const className of child.className.split(/\s+/).filter(Boolean)) { const values = selectorTargets.get(`.${className}`) || []; values.push(child); selectorTargets.set(`.${className}`, values); }
+      child.__remove = () => {
+        const belongsToChild = (item) => {
+          for (let current = item; current; current = current.parentElement) if (current === child) return true;
+          return false;
+        };
+        if (child.id) { elementsById.delete(child.id); selectorTargets.delete(`#${child.id}`); }
+        for (const [selector, values] of selectorTargets) selectorTargets.set(selector, values.filter((item) => !belongsToChild(item)));
+        for (const [id, item] of elementsById) if (belongsToChild(item)) elementsById.delete(id);
+      };
+    };
+    return node;
+  }
+  document.createElement = createElement;
+  document.createDocumentFragment = createElement;
+  const appElement = element(document), modalElement = element(document), toastElement = element(document), inventoryContent = element(document);
   elementsById.set("app", appElement); elementsById.set("modal-root", modalElement); elementsById.set("toast-root", toastElement);
   selectorTargets.set(".inventory-content", [inventoryContent]);
   let appMarkup = "", modalMarkup = "";
   Object.defineProperty(appElement, "innerHTML", { configurable: true, get() { return appMarkup; }, set(value) { appMarkup = String(value ?? ""); registerMarkup(appElement, appMarkup, inventoryContent); selectorTargets.set(".inventory-content", [inventoryContent]); } });
   Object.defineProperty(modalElement, "innerHTML", { configurable: true, get() { return modalMarkup; }, set(value) {
-    modalMarkup = String(value ?? ""); registerMarkup(modalElement, modalMarkup, modalElement);
+    modalMarkup = String(value ?? ""); clearDescendants(modalElement); registerMarkup(modalElement, modalMarkup, modalElement, false);
     const workspace = document.querySelector(".inventory-equipment-workspace");
     if (workspace) for (const target of document.querySelectorAll("[data-item-target-player]")) target.parentElement = workspace;
   } });
@@ -106,7 +166,7 @@ function load(storage, options = {}) {
   modalElement.querySelector = selector => document.querySelector(selector);
   modalElement.querySelectorAll = selector => document.querySelectorAll(selector);
   const listeners = new Map();
-  const c = { console, structuredClone, Date, Math, JSON, Object, Array, String, Number, Boolean, RegExp, Error, TypeError, Promise, Map, Set, WeakMap, WeakSet, Symbol, Intl, parseInt, parseFloat, isNaN, TextEncoder, Uint8Array, crypto: global.crypto, URLSearchParams,
+  const c = { console, structuredClone, Date, Math, JSON, Object, Array, String, Number, Boolean, RegExp, Error, TypeError, Promise, Map, Set, WeakMap, WeakSet, Symbol, Intl, parseInt, parseFloat, isNaN, TextEncoder, Uint8Array, crypto: global.crypto, URLSearchParams, CSS: { escape: value => String(value) },
     location: { search: "" }, document, window: null, localStorage: storage, performance: { now: () => 1000 },
     requestAnimationFrame: fn => { fn(2000); return 1; }, cancelAnimationFrame() {}, setTimeout, clearTimeout,
     matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }),
