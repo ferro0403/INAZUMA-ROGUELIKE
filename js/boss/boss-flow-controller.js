@@ -81,9 +81,14 @@
     function navigate(flow) {
       if (flow.destination === "none") {
         const currentRun = run();
-        if (currentRun?.phase === "finalization" || currentRun?.finalization) return deps.renderFinalizationPending(currentRun.finalization);
+        const finalizationStatus = String(currentRun?.finalization?.status || "");
+        const pendingFinalization = currentRun?.phase === "finalization" || ["pending", "hall-written", "development-written"].includes(finalizationStatus);
+        if (pendingFinalization) return deps.renderFinalizationPending(currentRun.finalization);
+        if (currentRun?.phase === "final-summary") return deps.renderFinalSummary(currentRun.hallTeamId);
+        if (currentRun?.phase === "final-celebration") return deps.renderFinalCelebration(currentRun.hallTeamId);
         if (currentRun?.phase === "complete") return deps.renderSeasonComplete();
-        return deps.renderMap({ persist: false });
+        if (currentRun?.phase === "map") return deps.renderMap({ persist: false });
+        return renderRecovery();
       }
       if (flow.destination === "boss-result") {
         if (run().activeMatch) { deps.mountBossResultMatch(run().activeMatch); return deps.renderMatch(); }
