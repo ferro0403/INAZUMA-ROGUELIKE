@@ -1,6 +1,89 @@
-'use strict';
-const assert=require('assert'),fs=require('fs'),vm=require('vm');
-const source=fs.readFileSync('js/home/home-controller.js','utf8');
-const c={globalThis:null,console};c.globalThis=c;vm.createContext(c);vm.runInContext(source,c);
-async function test(active,loaded,identity,expected){let id=active;const calls=[];c.TeamEmblems={parseTeamEmblemId:value=>{const m=/^team:([^:]+):/.exec(value||'');return m&&{seasonId:m[1]}}};c.SeasonRegistry={activeId:()=>id,setActive:value=>{id=value},isSeasonSource:()=>true,database:value=>loaded.includes(value)?{}:null,loadDatabase:async value=>{calls.push(value);id=value}};const controller=c.HomeController.create({});await controller.ensureHomeTeamEmblemSeasonLoaded(identity);assert.deepEqual(calls,expected);assert.equal(id,active)}
-(async()=>{await test('ie1_s3',['ie1_s3'],{emblemId:'team:ie1:raimon'},['ie1']);await test('ie1',['ie1'],{emblemId:'team:ie1:raimon'},[]);await test('ie1',['ie1'],null,[]);assert.match(source,/await ensureHomeTeamEmblemSeasonLoaded/);console.log('home-team-emblem-preload-test: ok')})().catch(e=>{console.error(e);process.exit(1)});
+"use strict";
+
+const assert = require("assert");
+const fs = require("fs");
+const vm = require("vm");
+
+const source = fs.readFileSync("js/home/home-controller.js", "utf8");
+const context = { globalThis: null, console };
+context.globalThis = context;
+vm.createContext(context);
+vm.runInContext(source, context);
+
+async function testPreload({ active, loaded, identity, expectedLoads }) {
+  let activeSeasonId = active;
+  const loadCalls = [];
+  context.TeamEmblems = {
+    parseTeamEmblemId(value) {
+      const match = /^team:([^:]+):/.exec(value || "");
+      return match ? { seasonId: match[1] } : null;
+    },
+  };
+  context.SeasonRegistry = {
+    activeId: () => activeSeasonId,
+    setActive: (value) => {
+      activeSeasonId = value;
+    },
+    isSeasonSource: (value) => ["ie1", "ie1_s3"].includes(value),
+    database: (value) => (loaded.includes(value) ? {} : null),
+    async loadDatabase(value) {
+      loadCalls.push(value);
+      activeSeasonId = value;
+    },
+  };
+
+  const controller = context.HomeController.create({});
+  await controller.ensureHomeTeamEmblemSeasonLoaded(identity);
+  assert.deepEqual(loadCalls, expectedLoads);
+  assert.equal(
+    activeSeasonId,
+    active,
+    "the active Season must always be restored",
+  );
+}
+
+(async () => {
+  await testPreload({
+    active: "ie1_s3",
+    loaded: ["ie1_s3"],
+    identity: { emblemId: "team:ie1:raimon" },
+    expectedLoads: ["ie1"],
+  });
+  await testPreload({
+    active: "ie1",
+    loaded: ["ie1"],
+    identity: { emblemId: "team:ie1_s3:inazuma_japan" },
+    expectedLoads: ["ie1_s3"],
+  });
+  await testPreload({
+    active: "ie1_s3",
+    loaded: ["ie1_s3"],
+    identity: { emblemId: "team:ie1_s3:inazuma_japan" },
+    expectedLoads: [],
+  });
+  await testPreload({
+    active: "ie1",
+    loaded: ["ie1"],
+    identity: { emblemId: "default-lightning" },
+    expectedLoads: [],
+  });
+  await testPreload({
+    active: "ie1",
+    loaded: ["ie1"],
+    identity: null,
+    expectedLoads: [],
+  });
+  await testPreload({
+    active: "ie1",
+    loaded: ["ie1"],
+    identity: {},
+    expectedLoads: [],
+  });
+  assert.match(source, /await ensureHomeTeamEmblemSeasonLoaded/);
+  console.log(
+    "home-team-emblem-preload-test: full preload and active-Season restoration matrix OK",
+  );
+})().catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
