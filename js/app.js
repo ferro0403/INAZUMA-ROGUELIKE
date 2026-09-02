@@ -3532,6 +3532,7 @@
   }
 
   function openFiveMatchSimulationModal(match, userName, opponentName) {
+    const matchIdentity = ["simulating", "completed"].includes(match?.simulation?.state) ? matchTransactionIdentity(match) : null;
     const resolved = ui.bossMatchState.startsWith("completed");
     const simulating = ui.bossMatchState === "simulating";
     const score = simulationScoreArray(match, resolved);
@@ -3548,7 +3549,7 @@
       <footer class="five-simulation-actions"><button type="button" class="btn btn-secondary" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow btn-primary-action" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Torna alla mappa</button></footer>
     </div>`, { closeable: false, className: "five-simulation-modal", preserveScroll: scrollSnapshot() });
     document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
-    document.getElementById("continue-match-result")?.addEventListener("click", continueAfterMatch);
+    document.getElementById("continue-match-result")?.addEventListener("click", (event) => continueAfterMatch(event, matchIdentity));
   }
 
   function bossMatchStatusText() {
@@ -4711,10 +4712,17 @@
     updateMatchControlsDom();
   }
 
-  function continueAfterMatch(event) {
+  function continueAfterMatch(event, expectedIdentity = null) {
     event?.preventDefault();
     const match = run?.activeMatch || ui.match;
     if (!match || match.postMatchNavigationApplied) return;
+    if (expectedIdentity) {
+      try {
+        canonicalMatchFor(run, expectedIdentity);
+      } catch (error) {
+        return { ok: false, reason: "identity-mismatch", error };
+      }
+    }
     const completed = match.simulation?.state === "completed" || String(match.state || "").startsWith("completed");
     if (completed && match.simulation?.resolutionApplied !== true) return applySimulationResolution(run?.activeMatch || match);
     if (match.type === "boss" && match.result === "victory") {
