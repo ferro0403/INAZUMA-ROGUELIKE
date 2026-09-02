@@ -1,0 +1,13 @@
+'use strict';
+const assert = require('assert');
+const fs = require('fs');
+const files = ['js/home/home-view.js','js/home/home-controller.js','js/run-entry/season-selection-view.js','js/run-entry/season-selection-controller.js','js/run-entry/run-resume-controller.js'];
+const source = files.map(file => fs.readFileSync(file, 'utf8')).join('\n');
+for (const name of ['HomeView','HomeController','SeasonSelectionView','SeasonSelectionController','RunResumeController']) assert.match(source, new RegExp(`global\\.${name}`));
+for (const forbidden of ['Firebase','Firestore','CloudRestore','InazumaCloudSave']) assert.doesNotMatch(source, new RegExp(forbidden), `device-local run domain must not depend on ${forbidden}`);
+assert.match(source, /latestActiveSave/);
+assert.match(source, /expectedGeneration: observedGeneration/);
+assert.match(source, /label: "special-node-normalize-resume"/);
+assert.match(source, /getRun:|d\.getRun|deps\.getRun/);
+for (const leaked of ['>getRun()</','>getSeasonDb()</','>getActiveSeason()</','>setRun()</']) assert.ok(!source.includes(leaked));
+console.log('home/season/resume characterization: boundaries, local persistence and labels OK');
