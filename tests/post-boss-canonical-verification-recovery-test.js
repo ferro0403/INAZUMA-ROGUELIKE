@@ -81,8 +81,8 @@ function reachRewardTwo(runtime) {
   assert.deepEqual([...runtime.seam.getRun().completedBossIds], ["boss"]);
 }
 
-// A stale PostBoss callback must recover externally advanced canonical B and
-// the same recovery button must route B without replaying either reward.
+// A stale PostBoss callback must recover externally advanced canonical B
+// without mounting a false recovery or replaying either reward.
 {
   const storage = new OneShotReadbackStorage(Infinity);
   const runtimeA = open(storage, victoryRun("stale"));
@@ -99,13 +99,13 @@ function reachRewardTwo(runtime) {
   runtimeA.context.RunState.save = (...args) => { try { return productionSave(...args); } catch (error) { observedError = error; throw error; } };
   runtimeA.seam.advanceBossReward();
   assert.equal(observedError?.code, "stale-write");
-  const retry = runtimeA.context.document.getElementById("retry-post-boss-flow");
-  retry.click();
-  assert.doesNotMatch(runtimeA.seam.getAppMarkup(), /Ripresa ricompense/);
+  assert.doesNotMatch(runtimeA.seam.getAppMarkup(), /Ripresa ricompense/, "canonical B has no PostBoss flow, so stale-write must not mount a false recovery screen");
   assert.equal(runtimeA.seam.getRun().postBossFlow, null);
+  assert.equal(runtimeA.seam.getRun().pendingBossVictory, null);
   assert.equal(runtimeA.seam.getRun().bossIndex, 1);
   assert.equal(runtimeA.seam.getRun().currentZone.currentNodeId, "canonical-next");
   assert.deepEqual([...runtimeA.seam.getRun().completedBossIds], ["boss"]);
+  assert.deepEqual([...runtimeA.seam.getRun().unlockedTeamIds], ["boss"]);
 }
 
 console.log("post-boss canonical recovery: real verification failure and stale canonical advancement preserve B");
