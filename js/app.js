@@ -3333,7 +3333,6 @@
     appendFinalMessage: appendFinalMatchMessage,
     onResolutionCommitted: () => { ui.bossMatchResolving = "done"; }, stopAfterPersistenceFailure: stopMatchAfterPersistenceFailure,
     renderCommittedResult: () => { updateMatchScoreDom(ui.match, true); syncCommittedFinalMatchLog(); updateMatchControlsDom(); },
-    view: specialMatchView,
   });
   const specialMatchRewardView = global.SpecialMatchRewardViewRuntime.create({
     getRun: () => run, getSeasonDb: () => seasonDb, getProfiles: () => global.ProfiledSeasonRuntime,
@@ -3660,11 +3659,11 @@
         userSnapshot: matchSnapshotFromTeam({ name: normalizeTeamIdentity(run.teamIdentity).name || "La tua squadra", players: userPlayers }),
       };
     }
-    const special = match.type === "special_match" ? specialMatchController.byId(match.specialMatchId) : null;
-    const boss = special || options.boss || seasonDb.bossOrder[run.bossIndex];
-    const meta = special ? { user: { name: normalizeTeamIdentity(run.teamIdentity).name, formation: run.formationId }, boss: { name: special.teamName, formation: special.matchFormation } } : bossMatchTeamMeta(boss);
+    const specialOpponent = match.type === "special_match" ? specialMatchView.opponentMeta(match) : null;
+    const boss = specialOpponent?.special || options.boss || seasonDb.bossOrder[run.bossIndex];
+    const meta = specialOpponent ? { user: { name: normalizeTeamIdentity(run.teamIdentity).name, formation: run.formationId }, boss: { name: specialOpponent.name, formation: specialOpponent.formation } } : bossMatchTeamMeta(boss);
     const userPlayers = userTeamPlayers().map(normalizedMatchPlayer).filter(Boolean);
-    const opponentPlayers = (special ? specialMatchController.teamPlayers(special) : bossTeamPlayers(boss)).map(normalizedMatchPlayer).filter(Boolean);
+    const opponentPlayers = (specialOpponent ? specialOpponent.players : bossTeamPlayers(boss)).map(normalizedMatchPlayer).filter(Boolean);
     return {
       type: "eleven",
       userTeam: { name: meta.user.name, players: userPlayers, formationId: meta.user.formation },
@@ -4249,7 +4248,8 @@
     ui.match = run?.activeMatch || ui.match;
     // Legacy boss resume identity: const boss = seasonDb.bossOrder[Number(ui.match?.bossIndex ?? run.bossIndex)];
     const isSpecial = ui.match?.type === "special_match";
-    const boss = isSpecial ? specialMatchController.byId(ui.match.specialMatchId) : seasonDb.bossOrder[Number(ui.match?.bossIndex ?? run.bossIndex)];
+    const specialOpponent = isSpecial ? specialMatchView.opponentMeta(ui.match) : null;
+    const boss = specialOpponent?.special || seasonDb.bossOrder[Number(ui.match?.bossIndex ?? run.bossIndex)];
     const isBoss = ui.match?.type === "boss";
     if (!isBoss && !isSpecial) {
       const match = createOrLoadFiveMatch({ id: ui.match?.nodeId });
@@ -4443,8 +4443,8 @@
     }
 
     const userPlayers = userTeamPlayers();
-    const bossPlayers = isSpecial ? specialMatchController.teamPlayers(boss) : bossTeamPlayers(boss);
-    const meta = isSpecial ? { user: { name: normalizeTeamIdentity(run.teamIdentity).name, logoUrl: "", formation: run.formationId, level: run.teamLevel }, boss: { name: boss.teamName, logoUrl: boss.logoUrl, formation: boss.matchFormation, level: boss.matchLevel } } : bossMatchTeamMeta(boss);
+    const bossPlayers = isSpecial ? specialOpponent.players : bossTeamPlayers(boss);
+    const meta = isSpecial ? { user: { name: normalizeTeamIdentity(run.teamIdentity).name, logoUrl: "", formation: run.formationId, level: run.teamLevel }, boss: { name: specialOpponent.name, logoUrl: specialOpponent.logoUrl, formation: specialOpponent.formation, level: specialOpponent.level } } : bossMatchTeamMeta(boss);
     const userAverage = bossMatchAverage(userPlayers);
     const bossAverage = bossMatchAverage(bossPlayers);
     const userEmblem = global.TeamEmblems.resolveTeamEmblem({ teamIdentity: normalizeTeamIdentity(run.teamIdentity), seasonId: run.seasonId, fallbackKind: "user" });
@@ -5905,6 +5905,7 @@
       resumeRunFinalization,
       renderGameOver,
       renderMatch,
+      specialMatchOpponentMeta: (match) => specialMatchView.opponentMeta(match),
       renderFiveVFive,
       openFiveVFiveEditor,
       openFiveMatchPlayerSwap,

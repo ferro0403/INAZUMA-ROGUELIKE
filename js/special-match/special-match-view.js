@@ -7,6 +7,7 @@
       return special ? {
         special,
         name: special.teamName,
+        logoUrl: special.logoUrl,
         formation: special.matchFormation,
         level: special.matchLevel,
         players: deps.runtime.teamPlayers(deps.getSeasonDb(), special),
