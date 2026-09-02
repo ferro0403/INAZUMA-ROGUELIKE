@@ -38,13 +38,14 @@ assert.strictEqual(second.status, "already-resolved");
 assert.deepStrictEqual(run.claimedSpecialMatchRewardIds, ["special_alpine_ie2"], "Decline must be idempotent");
 
 const appSource = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
+const matchSource = fs.readFileSync(path.join(root, "js", "match", "match-controller.js"), "utf8");
 const rewardSource = fs.readFileSync(path.join(root, "js", "special-match", "special-match-reward-controller.js"), "utf8");
 const rewardViewSource = fs.readFileSync(path.join(root, "js", "special-match", "special-match-reward-view.js"), "utf8");
 assert(rewardViewSource.includes('id="decline-special-reward"'), "Special reward modal must expose decline action");
 assert(rewardViewSource.includes('>RIFIUTA</button>'), "Decline action must be labeled RIFIUTA");
 assert(rewardSource.includes('SpecialMatchRuntime.decline(current, assertCurrent(current, expected), deps.getSeasonDb())'), "UI must use runtime decline helper on transaction-owned state");
 assert(rewardViewSource.includes('id="claim-special-reward"'), "Existing claim action must remain available");
-assert(appSource.includes('commitMatchMutation("match-post-navigation"'), "Special reward handoff must use the durable post-match transaction");
+assert(matchSource.includes('commitMatchMutation("match-post-navigation"'), "Special reward handoff must use the durable post-match transaction");
 
 const bridgeSource = fs.readFileSync(path.join(root, "js", "special-reward-ui-bridge.js"), "utf8");
 assert(bridgeSource.includes('bench-replacement-modal'), "Full-roster replacement modal may be styled");

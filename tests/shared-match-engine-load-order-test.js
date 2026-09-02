@@ -1,0 +1,11 @@
+"use strict";
+const assert = require("assert");
+const fs = require("fs");
+const html = fs.readFileSync("index.html", "utf8");
+const app = html.indexOf('src="js/app.js');
+const engine = html.indexOf('src="js/match/match-controller.js');
+assert(engine >= 0 && engine < app, "shared Match Engine must load before app.js");
+const source = fs.readFileSync("js/match/match-controller.js", "utf8");
+assert(source.includes("global.MatchControllerRuntime = { create }"));
+assert(!source.includes("RunState.save("), "engine must not directly save gameplay state");
+console.log("shared match engine load-order and persistence ownership: OK");
