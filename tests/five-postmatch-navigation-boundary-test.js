@@ -31,9 +31,9 @@ function run(id, state = "completed", winner = "user") {
     currentZone: { currentNodeId: "five", pendingNodeId: null, startNodeId: "start", path: ["start"], completedNodeIds: [], nodes: [{ id: "start", type: "start" }, { id: "five", type: "five_v_five" }], edges: [["start", "five"]] } };
 }
 
-function open(initial) {
+function open(initial, options = {}) {
   const storage = new BudgetStorage(Infinity);
-  const rt = load(storage, { run: initial, seasonDb, contextOverrides: { FiveVFive } });
+  const rt = load(storage, { run: initial, seasonDb, contextOverrides: { FiveVFive, ...(options.dev ? { location: { search: "?dev=1" } } : {}) } });
   rt.context.__INAZUMA_RECRUITMENT_TEST__.setContext({ freeAgentsDb: { players: opponents } });
   rt.context.SeasonRegistry.player = id => players.find(player => player.playerId === String(id));
   rt.context.RoguelikeRules.isProfileAwareRosterEntry = () => false;
@@ -171,6 +171,44 @@ for (const failure of [Object.assign(new Error("stale"), { code: "stale-write" }
   const initial = run("last-life", "completed", "opponent"); initial.lives = 0.5;
   const { rt } = open(initial); resolve(rt, "defeat"); rt.seam.continueAfterMatch();
   assert.strictEqual(rt.canonical.gameOver, true); assert.strictEqual(rt.canonical.phase, "gameover");
+}
+
+// DEV force controls open the modal before freeze. Their same mounted Continue
+// must follow the freshly committed identity for both outcomes.
+for (const [controlId, result] of [["test-win", "victory"], ["test-loss", "defeat"]]) {
+  const initial = run(`dev-${result}`, "pre-match"); initial.activeMatch.simulation = undefined;
+  const { rt } = open(initial, { dev: true });
+  rt.context.RunStatistics.createStableMatchId = (current, match) => `${current.runId}::${match.nodeId}::${match.type}::${match.simulation?.seed || "preseed"}`;
+  rt.seam.renderMatch({ allowAutomaticResume: false });
+  const preFreezeId = rt.canonical.activeMatch.matchId;
+  rt.context.document.getElementById(controlId).click();
+  const postFreezeId = rt.canonical.activeMatch.matchId;
+  assert.notStrictEqual(postFreezeId, preFreezeId, `${result}: DEV force must demonstrate the freeze identity change`);
+  assert.strictEqual(rt.canonical.activeMatch.result, result);
+  const remainingLives = rt.canonical.lives;
+  rt.context.document.getElementById("continue-match-result").click();
+  assert.strictEqual(rt.canonical.activeMatch, null, `${result}: same DEV modal Continue reaches its destination`);
+  assert.strictEqual(rt.canonical.phase, "map");
+  if (result === "defeat") assert.strictEqual(remainingLives, 1.5, "forced defeat preserves the existing single restore/lives behavior");
+}
+
+// Normal simulation opens its modal after the start commit, so its definitive
+// identity guard must still reject a stale cross-match callback.
+{
+  const initial = run("normal-guard", "pre-match"); initial.activeMatch.simulation = undefined;
+  const { rt } = open(initial);
+  rt.context.RunStatistics.createStableMatchId = (current, match) => `${current.runId}::${match.nodeId}::${match.type}::${match.simulation?.seed || "preseed"}`;
+  rt.seam.renderMatch({ allowAutomaticResume: false });
+  rt.context.document.getElementById("simulate-boss-match").click();
+  const guardedContinue = rt.context.document.getElementById("continue-match-result");
+  const replacement = run("normal-guard-b", "completed");
+  replacement.activeMatch.simulation.resolutionApplied = true;
+  replacement.activeMatch.result = "victory";
+  replacement.activeMatch.pendingPostMatchAction = { type: "map" };
+  rt.seam.setContext({ run: replacement });
+  guardedContinue.click();
+  assert.strictEqual(rt.seam.getRun().activeMatch.matchId, "normal-guard-b-match");
+  assert.strictEqual(rt.seam.getRun().phase, "match");
 }
 
 console.log("five postmatch boundary: checkpoints, failures, same-button retry, stale callback, double tap, refresh, skip, reward and defeat OK");

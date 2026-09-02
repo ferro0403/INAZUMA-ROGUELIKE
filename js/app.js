@@ -3532,7 +3532,7 @@
   }
 
   function openFiveMatchSimulationModal(match, userName, opponentName) {
-    const matchIdentity = matchTransactionIdentity(match);
+    const matchIdentity = ["simulating", "completed"].includes(match?.simulation?.state) ? matchTransactionIdentity(match) : null;
     const resolved = ui.bossMatchState.startsWith("completed");
     const simulating = ui.bossMatchState === "simulating";
     const score = simulationScoreArray(match, resolved);
