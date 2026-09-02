@@ -907,14 +907,6 @@
   }
 
 
-  function albumHallTeams() {
-    return (global.HallOfFameStorage?.listSummaries?.() || []).map((summary) => global.HallOfFameStorage.getTeam(summary.hallTeamId)).filter(Boolean);
-  }
-
-  function ensureAlbumBackfill() {
-    return global.AlbumProgress?.backfillAlbumProgress?.({ run, hallTeams: albumHallTeams() }) || 0;
-  }
-
   function recoverCanonicalRun() {
     let canonical = null;
     try { canonical = global.RunState.load(run?.seasonId, { readOnly: true }); } catch (_) { return null; }
@@ -923,6 +915,32 @@
     ui.match = canonical.activeMatch || null; ui.pendingReward = canonical.pendingReward || null;
     return canonical;
   }
+
+  // LEGACY ONE-WAY RUN → ALBUM BACKFILL BRIDGE: read-only input; Album never persists a run.
+  function prepareAlbumLegacyContext() {
+    run = global.RunState.load();
+    ensureRunSchema();
+    return run;
+  }
+  const albumView = global.AlbumView.create({ escapeHtml, sectionRootButton, playerCard });
+  const albumController = global.AlbumController.create({
+    view: albumView, app, getUi: () => ui, getRun: () => run, prepareAlbumLegacyContext,
+    getSeasonDb: () => seasonDb, getFreeAgentsDb: () => freeAgentsDb, getSeasonPlayersById: () => seasonPlayersById, getActiveSeason: () => activeSeason,
+    loadSeason, isProfileAwareSeason, closeModal, resetRenderedViewScroll, bindSectionRootNav,
+    showPlayerDetailsFor, scrollSnapshot,
+  });
+  const hallView = global.HallView.create({ escapeHtml, sectionRootButton });
+  const hallController = global.HallController.create({
+    view: hallView, app, resetRenderedViewScroll, bindSectionRootNav, normalizedHallSeasonName, formatDate,
+    tacticPanelMarkup, championFormationMarkup, championFiveVFiveMarkup, snapshotCard, statsMarkup, awardsMarkup,
+    showPlayerDetailsFor, scrollSnapshot,
+  });
+  const developmentCenterView = global.DevelopmentCenterView.create({ escapeHtml, rarityClass, compactPlayerCardMarkup, itemImageFallbackSvg, playerPortraitUrl, imageFallbackAttributes, resolvePlayerVisual, sectionRootButton });
+  const developmentCenterController = global.DevelopmentCenterController.create({
+    view: developmentCenterView, app, modalRoot, getUi: () => ui, getFreeAgentsDb: () => freeAgentsDb, ensureAlbumBackfill: () => albumController.ensureBackfill(),
+    albumPlayerView: (...args) => albumController.playerView(...args), openModal, closeModal, toast, renderHome, renderShop,
+    showPlayerDetailsFor, scrollSnapshot, getStatLabels: () => STAT_LABELS, developmentDevMarkup, bindDevelopmentDev,
+  });
 
   const gameOverView = global.GameOverView.create({ app: () => app, resetScroll: resetRenderedViewScroll, escapeHtml, currencyIcon: (...args) => developmentCurrencyIcon(...args) });
   const gameOverController = global.GameOverController.create({
@@ -962,170 +980,11 @@
     return drainPermanentEffects();
   }
 
-  function albumFreeAgentPlayers(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
-    return global.AlbumCatalog.freeAgentPlayers(freeAgentsDb?.players, collectionId);
-  }
+  function renderAlbumCollections(...args) { return albumController.renderCollections(...args); }
+  function renderAlbumTeams(...args) { return albumController.renderTeams(...args); }
+  function renderAlbumRoster(...args) { return albumController.renderRoster(...args); }
+  function bindAlbumRosterInteractions(...args) { return albumController.bindRosterInteractions(...args); }
 
-  function albumCollectionPlayers(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
-    const db = global.SeasonRegistry.database(collectionId) || seasonDb;
-    const byId = new Map();
-    (db?.players || []).forEach((player) => byId.set(String(player.playerId), { ...player, albumDatabase: db }));
-    albumFreeAgentPlayers(collectionId).forEach((player) => { if (!byId.has(String(player.playerId))) byId.set(String(player.playerId), { ...player, albumDatabase: freeAgentsDb }); });
-    return [...byId.values()];
-  }
-
-  function albumCollectionProgress(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
-    ensureAlbumBackfill();
-    const unlocked = global.AlbumProgress.unlockedSet(collectionId);
-    const totalIds = new Set(albumCollectionPlayers(collectionId).map((player) => String(player.playerId)));
-    return { unlocked: [...totalIds].filter((id) => unlocked.has(id)).length, total: totalIds.size };
-  }
-
-  function albumTeamLogoMarkup(team) {
-    if (team?.logoUrl) return `<img src="${escapeHtml(team.logoUrl)}" alt="${escapeHtml(team.teamName || team.name)}" loading="lazy" decoding="async" />`;
-    return `<span class="album-free-agent-logo" aria-hidden="true">⚽</span>`;
-  }
-
-  function homeAlbumCardMarkup() {
-    return `<article class="home-hub-card album-home-card" aria-label="Album">
-      <div class="home-card-kicker"><span>▣</span><strong>ALBUM</strong></div>
-      <h2>Album</h2>
-      <p class="muted">Completa la collezione dei giocatori.</p>
-      <div class="stat-grid home-stat-grid"><div class="stat-card"><span>ALBUM</span><strong>${Object.keys(global.AlbumProgress?.ALBUM_COLLECTIONS || {}).length} COLLEZIONI</strong></div></div>
-      <div class="home-card-actions"><button type="button" class="btn btn-yellow" id="open-album-home">Apri Album</button></div>
-    </article>`;
-  }
-
-  function albumProgressForPlayers(players, collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
-    const unlocked = global.AlbumProgress.unlockedSet(collectionId);
-    const ids = [...new Set((players || []).map((player) => String(player.playerId)))];
-    return { unlocked: ids.filter((id) => unlocked.has(id)).length, total: ids.length };
-  }
-
-  function albumPlayerView(player, database, state = undefined) {
-    const basePotential = Number(player.basePotential ?? player.finalOverall ?? 0);
-    const final = global.DevelopmentRuntime.resolveAccountPlayer(player, Number(player.maxLevel || 20), database, state ? { state } : undefined);
-    return { ...player, basePotential, overall: final.overall, finalOverall: final.overall, potential: final.potential, category: final.category, stats: final.stats, baseStats: final.stats, displayLevel: Number(player.maxLevel || 20), albumDatabase: database };
-  }
-
-  function albumProgressPercent(progress) {
-    const unlocked = Number(progress?.unlocked);
-    const total = Number(progress?.total);
-    const safeUnlocked = Number.isFinite(unlocked) ? Math.max(0, unlocked) : 0;
-    const safeTotal = Number.isFinite(total) ? Math.max(0, total) : 0;
-    if (safeTotal <= 0) return 0;
-    return Math.min(100, Math.max(0, (safeUnlocked / safeTotal) * 100));
-  }
-
-  async function renderAlbumCollections() {
-    run = global.RunState.load();
-    ensureRunSchema();
-    const currentSeasonId = activeSeason?.id || global.SeasonRegistry.activeId();
-    await Promise.all(Object.values(global.AlbumProgress.ALBUM_COLLECTIONS).map((collection) => global.SeasonRegistry.loadDatabase(collection.seasonId)));
-    global.SeasonRegistry.setActive(currentSeasonId);
-    ensureAlbumBackfill();
-    app.innerHTML = `<main class="album-screen"><header class="topbar album-topbar"><div><p class="eyebrow">Album</p><h1>Collezioni</h1><p class="muted">Progressi permanenti, separati dalla run attiva.</p></div>${sectionRootButton("albumRoot")}</header><section class="album-collection-grid">${Object.values(global.AlbumProgress.ALBUM_COLLECTIONS).map((collection) => { const progress = albumCollectionProgress(collection.id); const percent = albumProgressPercent(progress); const percentLabel = `${Math.round(percent)}%`; const coverUrl = collection.coverUrl || ""; return `<button type="button" class="panel album-collection-card" data-album-collection="${escapeHtml(collection.id)}" aria-label="Apri collezione ${escapeHtml(collection.name)}: ${escapeHtml(progress.unlocked)} su ${escapeHtml(progress.total)} giocatori sbloccati, ${escapeHtml(percentLabel)}"><span class="album-collection-cover"><img src="${escapeHtml(coverUrl)}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('is-fallback');" /></span><span class="album-collection-content"><span class="album-collection-kicker">COLLEZIONE</span><span class="album-collection-title">${escapeHtml(collection.name)}</span><span class="album-collection-subtitle">Collezione giocatori</span><span class="album-collection-progress-copy"><span>${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)} giocatori sbloccati</span><strong>${escapeHtml(percentLabel)}</strong></span><span class="album-collection-progress-bar" aria-hidden="true"><span style="width: ${percent}%"></span></span><span class="album-collection-action">Apri collezione <span aria-hidden="true">→</span></span></span></button>`; }).join("")}</section></main>`;
-    resetRenderedViewScroll();
-    bindSectionRootNav();
-    document.querySelectorAll("[data-album-collection]").forEach((button) => button.addEventListener("click", () => renderAlbumTeams(button.dataset.albumCollection)));
-  }
-
-  function albumTeamsView(collectionId = ui.albumCollectionId, database = seasonDb) {
-    const teams = global.RecruitmentPoolRuntime.orderedAlbumTeams(database, Boolean(database?.recruitmentPool?.entries), isProfileAwareSeason(collectionId));
-    const freeAgentsTeam = { teamId: "__free_agents", teamName: "Svincolati", logoUrl: null, playerIds: albumFreeAgentPlayers(collectionId).map((player) => String(player.playerId)), freeAgents: true };
-    return [...teams, freeAgentsTeam];
-  }
-
-  function albumTeamPlayers(team, collectionId = ui.albumCollectionId) {
-    if (team?.freeAgents) return albumFreeAgentPlayers(collectionId);
-    if (isProfileAwareSeason(collectionId) && team?.playerProfileIds?.length) {
-      return team.playerProfileIds.map((profileId) => {
-        const profile = global.ProfiledSeasonRuntime.resolveProfile(collectionId, profileId);
-        return profile ? { ...global.ProfiledSeasonRuntime.resolveEffectiveBase({ playerId: profile.playerId, activeProfileId: profile.profileId, activeRoleVariantId: profile.defaultRoleVariantId }, collectionId), albumProfileId: profile.profileId } : null;
-      }).filter(Boolean);
-    }
-    return (team?.playerIds || []).map((id) => seasonPlayersById.get(String(id))).filter(Boolean);
-  }
-
-  async function renderAlbumTeams(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
-    closeModal({ invokeOnClose: false });
-    await loadSeason(collectionId);
-    ui.albumCollectionId = collectionId;
-    const collection = global.AlbumProgress.ALBUM_COLLECTIONS[collectionId];
-    ensureAlbumBackfill();
-    app.innerHTML = `<main class="album-screen"><header class="topbar album-topbar"><div><p class="eyebrow">Album → ${escapeHtml(collection.name)}</p><h1>Squadre</h1></div>${sectionRootButton("albumCollection")}</header><section class="album-team-grid">${albumTeamsView(collectionId).map((team) => { const players = albumTeamPlayers(team, collectionId); const progress = albumProgressForPlayers(players, collectionId); const complete = progress.total > 0 && progress.unlocked === progress.total; return `<button type="button" class="panel album-team-card ${complete ? "album-complete" : ""}" data-album-team="${escapeHtml(team.teamId)}" aria-label="${escapeHtml(team.teamName)} ${progress.unlocked} su ${escapeHtml(progress.total)}"><span class="album-team-logo">${albumTeamLogoMarkup(team)}</span><strong>${escapeHtml(team.teamName)}</strong><span>${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)}</span>${complete ? `<em>Completato</em>` : ""}</button>`; }).join("")}</section></main>`;
-    resetRenderedViewScroll();
-    bindSectionRootNav({ collectionId });
-    document.querySelectorAll("[data-album-team]").forEach((button) => button.addEventListener("click", () => renderAlbumRoster(collectionId, button.dataset.albumTeam)));
-  }
-
-  function renderAlbumRoster(collectionId, teamId) {
-    closeModal({ invokeOnClose: false });
-    ui.albumCollectionId = collectionId; ui.albumTeamId = teamId;
-    const team = albumTeamsView(collectionId).find((candidate) => String(candidate.teamId) === String(teamId));
-    if (!team) return renderAlbumTeams(collectionId);
-    const rawPlayers = albumTeamPlayers(team, collectionId);
-    const database = team.freeAgents ? freeAgentsDb : seasonDb;
-    const albumProgressState = global.AlbumProgress.read();
-    const unlocked = global.AlbumProgress.unlockedSet(collectionId, albumProgressState);
-    const developmentState = global.DevelopmentAccountV3.read();
-    const rawById = new Map(rawPlayers.map((player) => [String(player.playerId), player]));
-    const resolvedById = new Map();
-    const progress = { unlocked: rawPlayers.filter((player) => unlocked.has(String(player.playerId))).length, total: rawPlayers.length };
-    const pageSize = 60;
-    let visibleCount = rawPlayers.length > 80 ? pageSize : rawPlayers.length;
-    const resolvedPlayer = (raw) => {
-      const id = String(raw.playerId);
-      if (!resolvedById.has(id)) resolvedById.set(id, albumPlayerView(raw, database, developmentState));
-      return resolvedById.get(id);
-    };
-    const rosterMarkup = () => {
-      const visible = rawPlayers.slice(0, visibleCount);
-      const cards = visible.map((raw) => {
-        const player = resolvedPlayer(raw);
-        const isUnlocked = unlocked.has(String(player.playerId));
-        return `<div class="album-player-entry ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${playerCard(player, { button: true, dataAttribute: "data-album-player", level: player.maxLevel || 20, database: player.albumDatabase, resolvedPlayer: player })}${isUnlocked ? "" : `<span class="album-lock-overlay album-player-lock"><span aria-hidden="true">🔒</span>Non sbloccato</span>`}</div>`;
-      }).join("");
-      const remaining = rawPlayers.length - visible.length;
-      return `${cards}${remaining > 0 ? `<div class="album-load-more-wrap"><button type="button" class="btn btn-yellow album-load-more" data-album-load-more>MOSTRA ALTRI ${escapeHtml(Math.min(pageSize, remaining))}</button><small>${escapeHtml(visible.length)} di ${escapeHtml(rawPlayers.length)}</small></div>` : ""}`;
-    };
-    app.innerHTML = `<main class="album-screen album-roster-screen"><header class="topbar album-topbar album-roster-header"><div class="album-roster-title"><span class="album-team-logo album-team-logo--header album-roster-logo">${albumTeamLogoMarkup(team)}</span><div class="album-roster-heading"><p class="eyebrow album-roster-breadcrumb">Album → ${escapeHtml(global.AlbumProgress.ALBUM_COLLECTIONS[collectionId]?.name || collectionId)}</p><h1 class="album-roster-name">${escapeHtml(team.teamName)}</h1><p class="muted album-roster-progress">${escapeHtml(progress.unlocked)} / ${escapeHtml(progress.total)} giocatori sbloccati</p></div></div>${sectionRootButton("albumRoster", "album-roster-action")}</header><section class="album-player-grid" data-album-roster>${rosterMarkup()}</section></main>`;
-    resetRenderedViewScroll();
-    bindSectionRootNav({ collectionId });
-    const albumRoster = document.querySelector("[data-album-roster]");
-    bindAlbumRosterInteractions(albumRoster, ({ playerId }) => {
-      const raw = rawById.get(String(playerId));
-      const player = raw ? resolvedPlayer(raw) : null;
-      if (!player) {
-        console.error("Album player not found", { collectionId, teamId, playerId });
-        return;
-      }
-      const isUnlocked = unlocked.has(String(player.playerId));
-      showPlayerDetailsFor(player, { mode: "album", readOnly: true, playerId: player.playerId, level: player.maxLevel || 20, database: player.albumDatabase, equipment: null, preserveScroll: scrollSnapshot(), albumUnlocked: isUnlocked });
-    });
-    albumRoster?.addEventListener("click", (event) => {
-      if (!event.target.closest("[data-album-load-more]")) return;
-      visibleCount = Math.min(rawPlayers.length, visibleCount + pageSize);
-      albumRoster.innerHTML = rosterMarkup();
-    });
-  }
-
-  function bindAlbumRosterInteractions(albumRoster, openPlayer) {
-    if (!albumRoster) return;
-    // Keep one delegated listener while refreshing the resolver after every roster render.
-    albumRoster.albumOpenPlayer = openPlayer;
-    if (albumRoster.dataset.albumInteractionBound === "true") return;
-    albumRoster.dataset.albumInteractionBound = "true";
-    albumRoster.addEventListener("click", (event) => {
-      const origin = typeof event.target?.closest === "function" ? event.target : event.target?.parentElement;
-      const entry = origin?.closest("[data-album-player-entry]");
-      const button = origin?.closest("[data-album-player]");
-      const target = entry || button;
-      if (!target || !albumRoster.contains(target)) return;
-      event.preventDefault();
-      albumRoster.albumOpenPlayer?.({ playerId: String(entry?.dataset.albumPlayerEntry ?? button.dataset.albumPlayer), entry, button });
-    });
-  }
 
   function inazumaLogoMarkup(className = "") {
     return `<span class="inazuma-logo ${className}" aria-label="Logo Inazuma" role="img">⚡</span>`;
@@ -1423,250 +1282,10 @@
     });
   }
 
-  function eligibleFreeAgentIds() {
-    return new Set((freeAgentsDb?.players || []).map((player) => String(player.playerId)));
-  }
+  function renderDevelopmentCenter(...args) { return developmentCenterController.render(...args); }
+  function developmentCurrencyIcon(...args) { return developmentCenterController.currencyIcon(...args); }
+  function eligibleFreeAgentIds() { return developmentCenterController.eligibleFreeAgentIds(); }
 
-  function isDevelopmentFreeAgentEligible(playerId) {
-    return eligibleFreeAgentIds().has(String(playerId));
-  }
-
-  function developmentPlayers() {
-    ensureAlbumBackfill();
-    const collections = Object.keys(global.AlbumProgress.ALBUM_COLLECTIONS);
-    const progress = global.AlbumProgress.read();
-    const unlockedByCollection = new Map(collections.map((collectionId) => [collectionId, global.AlbumProgress.unlockedSet(collectionId, progress)]));
-    const developmentState = global.DevelopmentAccountV3.read();
-    const freeAgentIds = eligibleFreeAgentIds();
-    const seen = new Set();
-    return (freeAgentsDb?.players || []).flatMap((player) => {
-      const id = String(player.playerId);
-      if (!freeAgentIds.has(id) || seen.has(id)) return [];
-      const developmentCollections = collections.filter((collectionId) => unlockedByCollection.get(collectionId).has(id));
-      if (developmentCollections.length) seen.add(id);
-      const chain = developmentState.players?.[id];
-      const active = chain?.steps?.at(-1) || chain?.legacyNormale;
-      const basePotential = Number(player.basePotential ?? player.finalOverall ?? 0);
-      const currentPotential = Math.max(basePotential, Number(active?.toPotential || 0));
-      return developmentCollections.length
-        ? [{ ...player, rawPlayer: player, developmentState, developmentVersion: String(active?.stepId || active?.migrationId || "base"), basePotential, currentPotential, category: active?.profile?.category || global.InazumaProgression.categoryForPotential(currentPotential), developmentCollections }]
-        : [];
-    });
-  }
-
-  const DEVELOPMENT_PAGE_SIZE = 60;
-  let developmentPlayersCache = null;
-  const developmentResolvedCache = new Map();
-  let developmentVisibleCount = DEVELOPMENT_PAGE_SIZE;
-
-  function cachedDevelopmentPlayers({ refresh = false } = {}) {
-    if (refresh || !developmentPlayersCache) developmentPlayersCache = developmentPlayers();
-    return developmentPlayersCache;
-  }
-
-  function filterDevelopmentPlayers(players, query = "", rarity = "Tutti") {
-    const needle = String(query).trim().toLocaleLowerCase("it");
-    return players.filter((player) => (!needle || player.name.toLocaleLowerCase("it").includes(needle)) && (rarity === "Tutti" || player.category === rarity));
-  }
-
-  function resolveDevelopmentPlayer(indexedPlayer) {
-    if (!indexedPlayer) return null;
-    const id = String(indexedPlayer.playerId);
-    const version = indexedPlayer.developmentVersion;
-    const cached = developmentResolvedCache.get(id);
-    if (cached?.version === version) return cached.player;
-    const player = { ...albumPlayerView(indexedPlayer.rawPlayer || indexedPlayer, freeAgentsDb, indexedPlayer.developmentState), developmentCollections: indexedPlayer.developmentCollections };
-    developmentResolvedCache.set(id, { version, player });
-    return player;
-  }
-
-  function developmentSquadCardMarkup(player, dataAttr = "") {
-    return compactPlayerCardMarkup(player, {
-      level: player.displayLevel ?? player.maxLevel ?? 20,
-      overall: player.overall,
-      dataAttr,
-      extraClass: "squad-player-card development-squad-card",
-    });
-  }
-
-  function developmentPlayerGridMarkup(players, visibleCount = developmentVisibleCount) {
-    const visible = players.slice(0, visibleCount).map(resolveDevelopmentPlayer);
-    const cards = visible.map((player) => `<div data-development-player="${escapeHtml(player.playerId)}">${developmentSquadCardMarkup(player, `data-development-card="${escapeHtml(player.playerId)}"`)}${player.category === "Leggenda" ? '<span class="development-max" aria-label="Rarità massima">MAX</span>' : ""}</div>`).join("");
-    if (!cards) return '<p class="empty-state">Nessuno svincolato sbloccato corrisponde ai filtri.</p>';
-    const remaining = players.length - visible.length;
-    return `${cards}${remaining > 0 ? `<div class="development-load-more-wrap"><button class="btn btn-yellow development-load-more" id="development-load-more"><span>MOSTRA ALTRI <b>${escapeHtml(Math.min(DEVELOPMENT_PAGE_SIZE, remaining))}</b></span><small>${escapeHtml(visible.length)} di ${escapeHtml(players.length)}</small></button></div>` : ""}`;
-  }
-
-  const DEVELOPMENT_RESOURCE_ITEMS = Object.freeze({
-    coins: Object.freeze({ id: "development-coins", name: "Dragon Sticker", imageUrl: global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.coins }),
-    cups: Object.freeze({ id: "development-cups", name: "Coppa", imageUrl: global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.cups }),
-  });
-
-  function developmentCurrencyIcon(type, rarity = "") {
-    if (type === "project") return `<span class="development-resource-icon project-image-frame"><img src="${escapeHtml(global.DevelopmentV2.ASSETS[rarity])}" alt="" loading="lazy" decoding="async"></span>`;
-    const resource = DEVELOPMENT_RESOURCE_ITEMS[type];
-    if (!resource?.imageUrl) return "";
-    return `<span class="item-icon item-icon--image development-resource-icon" aria-label="${escapeHtml(resource.name)}"><img src="${escapeHtml(resource.imageUrl)}" alt="${escapeHtml(resource.name)}" loading="eager" decoding="async" onerror="globalThis.handleItemImageError && globalThis.handleItemImageError(this)">${itemImageFallbackSvg()}</span>`;
-  }
-
-  function resourceCostMarkup({ type, rarity = "", label, current = null, required, satisfied = true, compact = false }) {
-    const values = current == null ? `×${escapeHtml(required)}` : `${escapeHtml(current)} / ${escapeHtml(required)}`;
-    const tag = compact ? "span" : "article";
-    return `<${tag} class="development-requirement ${satisfied ? "is-ready" : "is-missing"}">${developmentCurrencyIcon(type, rarity)}<span><small>${escapeHtml(label)}</small><strong>${values}</strong></span>${compact ? "" : `<b aria-label="${satisfied ? "Requisito soddisfatto" : "Requisito mancante"}">${satisfied ? "✓" : "!"}</b>`}</${tag}>`;
-  }
-
-  function projectInventoryMarkup(state) { return global.DevelopmentV2.PROJECT_RARITIES.map((rarity) => `<article class="project-inventory-item ${rarityClass(rarity)}"><span class="project-inventory-image"><img src="${escapeHtml(global.DevelopmentV2.ASSETS[rarity])}" alt="" loading="lazy"></span><strong>${escapeHtml(rarity)}</strong><b>×${escapeHtml(state.projects[rarity] || 0)}</b></article>`).join(""); }
-
-  function developmentSelectedMarkup(player) {
-    const state = global.DevelopmentAccountV3.read();
-    const target = global.DevelopmentV2.nextRarity(player.category);
-    const selectedCard = `<div class="development-selected-card">${developmentSquadCardMarkup(player, `data-development-selected-card="${escapeHtml(player.playerId)}" aria-label="Apri la scheda di ${escapeHtml(player.name)}"`)}</div>`;
-    if (!target) return `<section class="development-selected development-squad-card-scope"><p class="eyebrow">GIOCATORE SELEZIONATO</p><div class="development-selected-layout">${selectedCard}<div class="development-selected-copy"><h2>${escapeHtml(player.name)}</h2><p class="development-max-copy">MAX · RARITÀ MASSIMA</p><button class="btn btn-ghost" id="change-development-player">CAMBIA GIOCATORE</button></div></div></section>`;
-    const cost = global.DevelopmentV2.COSTS[target];
-    const have = state.projects[target] || 0;
-    const nextOverall = Math.max(Number(player.overall || 0), Number(global.DevelopmentV2.threshold(target)));
-    const missing = [Math.max(0, cost.projects - have) ? `MANCA ${cost.projects - have} PROGETTO ${target.toUpperCase()}` : "", Math.max(0, cost.cups - global.DevelopmentV2.totalCups(state)) ? `MANCANO ${cost.cups - global.DevelopmentV2.totalCups(state)} COPPE` : "", Math.max(0, cost.coins - state.coins) ? `MANCANO ${cost.coins - state.coins} MONETE` : ""].filter(Boolean);
-    return `<section class="development-selected development-squad-card-scope"><p class="eyebrow">GIOCATORE SELEZIONATO</p><div class="development-selected-layout">${selectedCard}<div class="development-selected-copy"><h2>${escapeHtml(player.name)}</h2><strong class="development-rarity-step">${escapeHtml(player.category)} <span>→</span> ${escapeHtml(target)}</strong><p class="development-potential">Overall / potenziale <b>${escapeHtml(player.overall)} / ${escapeHtml(player.potential)}</b> → <b>${escapeHtml(nextOverall)} / ${escapeHtml(global.DevelopmentV2.threshold(target))}</b></p><h3>REQUISITI EVOLUZIONE</h3><div class="development-requirements">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, current: have, required: cost.projects, satisfied: have >= cost.projects })}${resourceCostMarkup({ type: "cups", label: "Coppe", current: global.DevelopmentV2.totalCups(state), required: cost.cups, satisfied: global.DevelopmentV2.totalCups(state) >= cost.cups })}${resourceCostMarkup({ type: "coins", label: "Monete", current: state.coins, required: cost.coins, satisfied: state.coins >= cost.coins })}</div>${missing.length ? `<p class="development-missing">${escapeHtml(missing.join(" · "))}</p>` : '<p class="development-ready-copy">Tutti i requisiti sono soddisfatti.</p>'}<div class="button-row"><button class="btn btn-ghost" id="change-development-player">CAMBIA GIOCATORE</button><button class="btn btn-yellow" id="prepare-evolution" ${missing.length ? "disabled" : ""}>EVOLVI A ${escapeHtml(target.toUpperCase())}</button></div></div></div></section>`;
-  }
-
-  function bindDevelopmentSelectedCardInteraction(card, selectedPlayer, openDetails) {
-    if (!card) return;
-    const playerId = card.dataset.developmentSelectedCard;
-    card.addEventListener("click", () => openDetails(selectedPlayer, playerId));
-  }
-
-  function developmentManagementPathMarkup(path) {
-    return path.map((entry, index) => `<span class="development-management-path-step ${rarityClass(entry.rarity)}"><small>${entry.kind === "base" ? "BASE " : ""}${escapeHtml(entry.rarity)}</small> <strong>${escapeHtml(entry.potential)}</strong>${entry.kind === "legacyNormale" ? '<em>BASELINE</em>' : ""}</span>${index < path.length - 1 ? '<b class="development-management-arrow" aria-hidden="true">→</b>' : ""}`).join("");
-  }
-
-  function developmentManagementRowsMarkup(rows) {
-    if (!rows.length) return '<p class="empty-state">Nessun giocatore evoluto corrisponde al filtro.</p>';
-    return rows.map((row) => {
-      if (row.missingIdentity) return `<article class="development-management-card is-missing" data-management-player="${escapeHtml(row.playerId)}"><div class="development-management-missing-icon" aria-hidden="true">!</div><div class="development-management-copy"><p class="eyebrow">IDENTITÀ NON DISPONIBILE</p><h3>${escapeHtml(row.name)}</h3><p>La catena canonica è stata conservata. ID: <code>${escapeHtml(row.playerId)}</code></p><strong>${escapeHtml(row.activeRarity)} · ${escapeHtml(row.activePotential)}</strong></div><div class="development-management-actions"><button type="button" class="btn btn-ghost" disabled>APRI SCHEDA</button></div></article>`;
-      const portrait = playerPortraitUrl(row.base), fallbacks = imageFallbackAttributes(resolvePlayerVisual(row.base).cardFallbacks);
-      return `<article class="development-management-card ${rarityClass(row.activeRarity)}" data-management-player="${escapeHtml(row.playerId)}"><span class="development-management-portrait"><img src="${escapeHtml(portrait)}" alt="" loading="lazy" ${fallbacks}></span><div class="development-management-copy"><div class="development-management-title"><div><h3>${escapeHtml(row.name)}</h3><span>${escapeHtml(row.role)}</span></div><strong>${escapeHtml(row.activeRarity)} · ${escapeHtml(row.activePotential)}</strong></div><p class="development-management-origin"><small>ORIGINE</small> BASE · ${escapeHtml(row.base.category)} ${escapeHtml(row.base.finalOverall)}</p><div class="development-management-path" aria-label="Percorso evolutivo di ${escapeHtml(row.name)}"><small>PERCORSO</small><div>${developmentManagementPathMarkup(row.path)}</div></div></div><div class="development-management-actions"><button type="button" class="btn btn-yellow development-management-open" data-open-management-player="${escapeHtml(row.playerId)}" ${row.detailPlayer ? "" : "disabled"}>APRI SCHEDA</button><button type="button" class="btn btn-ghost development-management-regress" data-regress-management-player="${escapeHtml(row.playerId)}">REGREDISCI</button></div></article>`;
-    }).join("");
-  }
-
-  function regressionCupLabel(sourceId) {
-    const labels = { ie1: "IE1", ie1_s2: "IE2", ie1_s3: "IE3", ie2: "ARES", orion: "ORION" };
-    return labels[sourceId] || String(sourceId).replace(/_/g, " ").toUpperCase();
-  }
-
-  function openDevelopmentRegression(row) {
-    const preview = row.regression;
-    const destinationFlag = preview.to.isBase ? "<em>BASE ORIGINALE</em>" : preview.to.isBaseline ? "<em>BASELINE</em>" : "";
-    const cupSources = Object.entries(preview.refund.cupsBySource).map(([sourceId, amount]) => `<li><span>${escapeHtml(regressionCupLabel(sourceId))}</span><strong>+${escapeHtml(amount)}</strong></li>`).join("");
-    openModal(`<section class="development-regression"><header class="development-regression-head"><p class="eyebrow">REGRESSIONE EVOLUZIONE</p><h1>${escapeHtml(row.name)}</h1></header><div class="development-regression-transition"><article class="development-regression-state ${rarityClass(preview.from.rarity)}"><small>PRIMA</small><strong>${escapeHtml(preview.from.rarity)}</strong><span>OVR ${escapeHtml(preview.from.potential)}</span></article><b aria-hidden="true">→</b><article class="development-regression-state ${rarityClass(preview.to.rarity)}"><small>DOPO</small>${preview.to.isBase ? "<strong>BASE</strong>" : ""}<strong>${escapeHtml(preview.to.rarity)}</strong><span>OVR ${escapeHtml(preview.to.potential)}</span>${destinationFlag}</article></div><section class="development-regression-refund"><h2>RIMBORSO</h2><div class="development-regression-resources"><article>${developmentCurrencyIcon("coins")}<span><small>MONETE</small><strong>+${escapeHtml(preview.refund.coins)}</strong></span></article><article>${developmentCurrencyIcon("cups")}<span><small>COPPE</small><strong>+${escapeHtml(preview.refund.cups)}</strong></span></article><article class="is-project"><span class="development-regression-project-mark" aria-hidden="true">!</span><span><small>PROGETTI</small><strong>NON RIMBORSATI</strong></span></article></div>${cupSources ? `<ul class="development-regression-cup-sources">${cupSources}</ul>` : ""}</section><div class="node-actions development-regression-actions"><button type="button" class="btn btn-ghost" data-cancel-regression>ANNULLA</button><button type="button" class="btn btn-yellow" data-confirm-regression>CONFERMA REGRESSIONE</button></div></section>`, { closeable: true, className: "development-regression-modal" });
-    modalRoot.querySelector("[data-cancel-regression]")?.addEventListener("click", () => closeModal());
-    const confirm = modalRoot.querySelector("[data-confirm-regression]");
-    confirm?.addEventListener("click", () => {
-      if (confirm.disabled) return;
-      confirm.disabled = true;
-      const result = global.DevelopmentAccountV3.regress({ playerId: row.playerId, expectedActiveId: preview.activeId }, { database: freeAgentsDb });
-      if (!result.ok) { closeModal({ invokeOnClose: false }); toast(result.reason === "stale-regression" ? "Evoluzione già cambiata: aggiornata la lista" : "Regressione non salvata", "error"); return renderDevelopmentCenter("management"); }
-      developmentPlayersCache = null;
-      developmentResolvedCache.delete(String(row.playerId));
-      closeModal({ invokeOnClose: false }); toast(`${row.name}: ${result.to.rarity} ${result.to.potential}`); renderDevelopmentCenter("management");
-    });
-  }
-
-  function developmentManagementMarkup(model) {
-    const rarityOptions = global.DevelopmentManagementV3.FILTER_RARITIES.map((rarity) => `<option value="${escapeHtml(rarity)}" ${ui.developmentManagementRarity === rarity ? "selected" : ""}>${rarity === "Tutti" ? "Tutte" : escapeHtml(rarity)}</option>`).join("");
-    const rows = global.DevelopmentManagementV3.filterRows(model.rows, ui.developmentManagementRarity);
-    return `<section class="development-management"><div class="development-section-heading"><div><p class="eyebrow">STATO PERMANENTE CORRENTE</p><h2>GESTIONE EVOLUZIONI</h2></div></div><div class="development-slot-grid" aria-label="Capacità slot evoluzione">${model.slots.map((slot) => `<article class="development-slot-card ${rarityClass(slot.rarity)} ${slot.overCapacity ? "is-over-capacity" : ""}" aria-label="${escapeHtml(slot.rarity)}: ${escapeHtml(slot.used)} slot usati su ${escapeHtml(slot.capacity)}${slot.overCapacity ? ", capacità superata" : ""}"><span>${escapeHtml(slot.rarity.toUpperCase())}</span><strong>${escapeHtml(slot.display)}</strong>${slot.overCapacity ? "<em>CAPACITÀ SUPERATA</em>" : ""}</article>`).join("")}</div><div class="development-filters development-management-filter"><label class="development-rarity-field"><span>RARITÀ</span><select id="development-management-rarity" aria-label="Filtra evoluzioni per rarità attiva">${rarityOptions}</select></label></div><div class="development-management-list" id="development-management-results">${developmentManagementRowsMarkup(rows)}</div></section>`;
-  }
-
-  function renderDevelopmentCenter(tab = "players") {
-    if (!global.RestoreGameplayRoutingGate?.enter("development")) return false;
-    if (tab === "history") tab = "management";
-    const v3State = global.DevelopmentAccountV3.read();
-    const state = v3State;
-    // Management deliberately skips the Album-backed 2,800+ player projection:
-    // canonical chains include evolved players even when they are not unlocked.
-    const players = tab === "management" ? [] : cachedDevelopmentPlayers();
-    const selectedIndex = players.find((player) => String(player.playerId) === String(ui.selectedDevelopmentPlayerId));
-    const selected = resolveDevelopmentPlayer(selectedIndex);
-    if (ui.selectedDevelopmentPlayerId && !selected) ui.selectedDevelopmentPlayerId = null;
-    let filtered = filterDevelopmentPlayers(players, ui.developmentQuery, ui.developmentRarity);
-    const rarityOptions = ["Tutti", ...global.DevelopmentV2.RARITIES].map((value) => `<option value="${escapeHtml(value)}" ${value === ui.developmentRarity ? "selected" : ""}>${value === "Tutti" ? "Tutte" : escapeHtml(value)}</option>`).join("");
-    const playerBody = selected ? developmentSelectedMarkup(selected) : `<div class="development-filters"><label class="development-search-field"><span aria-hidden="true">⌕</span><input class="development-search" id="development-search" value="${escapeHtml(ui.developmentQuery)}" placeholder="Cerca giocatore…" aria-label="Cerca giocatore per nome" autocomplete="off"></label><label class="development-rarity-field"><span>RARITÀ</span><select id="development-rarity">${rarityOptions}</select></label></div><section class="album-player-grid development-player-grid development-squad-card-scope" id="development-player-results">${developmentPlayerGridMarkup(filtered)}</section>`;
-    const managementModel = tab === "management" ? global.DevelopmentManagementV3.buildModel({ state: v3State, database: freeAgentsDb, account: global.DevelopmentAccountV3, V3: global.DevelopmentV3 }) : null;
-    const body = tab === "projects" ? `<section class="development-projects"><div class="development-section-heading"><div><p class="eyebrow">INVENTARIO</p><h2>PROGETTI COMPLETI</h2></div><p>Disponibili per le evoluzioni.</p></div><div class="project-inventory-grid">${projectInventoryMarkup(state)}</div><button class="btn btn-yellow" id="development-open-shop">APRI NEGOZIO</button></section>` : tab === "management" ? developmentManagementMarkup(managementModel) : playerBody;
-    const projectTotal = Object.values(state.projects).reduce((sum, value) => sum + Number(value || 0), 0);
-    const existing = document.querySelector(".development-screen");
-    if (!existing) app.innerHTML = `<main class="development-screen"><header class="topbar">${sectionRootButton("development", "development-back-button")}<div><p class="eyebrow">CRESCITA PERMANENTE</p><h1>CENTRO DI SVILUPPO</h1></div></header><section class="development-wallet"><span>${developmentCurrencyIcon("coins")}<span>MONETE <strong data-wallet="coins">${state.coins}</strong></span></span><span>${developmentCurrencyIcon("cups")}<span>COPPE <strong data-wallet="cups">${global.DevelopmentV2.totalCups(state)}</strong></span></span><span><span>PROGETTI <strong data-wallet="projects">${projectTotal}</strong></span></span></section><nav class="development-tabs">${[["players","GIOCATORI"],["projects","PROGETTI"],["management","EVOLUZIONI"]].map(([id,label]) => `<button class="${tab === id ? "active" : ""}" data-development-tab="${id}">${label}</button>`).join("")}</nav><div id="development-tab-content"></div><div id="development-dev-root"></div></main>`;
-    document.getElementById("development-tab-content").innerHTML = body;
-    document.querySelectorAll("[data-development-tab]").forEach((button) => { button.classList.toggle("active", button.dataset.developmentTab === tab); button.onclick = () => renderDevelopmentCenter(button.dataset.developmentTab); });
-    document.querySelector('[data-wallet="coins"]').textContent = state.coins; document.querySelector('[data-wallet="cups"]').textContent = global.DevelopmentV2.totalCups(state); document.querySelector('[data-wallet="projects"]').textContent = projectTotal;
-    const devRoot = document.getElementById("development-dev-root"); if (devRoot) devRoot.innerHTML = new URLSearchParams(location.search).get("dev") === "1" ? developmentDevMarkup(players.length) : "";
-    document.getElementById("development-open-shop")?.addEventListener("click", () => renderShop());
-    document.querySelector(".development-back-button").onclick = () => { ui.selectedDevelopmentPlayerId = null; developmentPlayersCache = null; renderHome(); };
-    const search = document.getElementById("development-search"), results = document.getElementById("development-player-results");
-    const bindLoadMore = () => document.getElementById("development-load-more")?.addEventListener("click", () => { developmentVisibleCount += DEVELOPMENT_PAGE_SIZE; filtered = filterDevelopmentPlayers(players, ui.developmentQuery, ui.developmentRarity); results.innerHTML = developmentPlayerGridMarkup(filtered); bindLoadMore(); });
-    const updateResults = () => { ui.developmentQuery = search?.value || ""; developmentVisibleCount = DEVELOPMENT_PAGE_SIZE; filtered = filterDevelopmentPlayers(players, ui.developmentQuery, ui.developmentRarity); if (results) { results.innerHTML = developmentPlayerGridMarkup(filtered); bindLoadMore(); } };
-    search?.addEventListener("input", updateResults);
-    document.getElementById("development-rarity")?.addEventListener("change", (event) => { ui.developmentRarity = event.currentTarget.value; updateResults(); });
-    document.getElementById("development-management-rarity")?.addEventListener("change", (event) => { ui.developmentManagementRarity = event.currentTarget.value; renderDevelopmentCenter("management"); });
-    document.getElementById("development-management-results")?.addEventListener("click", (event) => {
-      if (!managementModel) return;
-      const regressButton = event.target.closest("[data-regress-management-player]");
-      if (regressButton) { const regressionRow = managementModel.rows.find((candidate) => candidate.playerId === regressButton.dataset.regressManagementPlayer); if (regressionRow?.regression) openDevelopmentRegression(regressionRow); return; }
-      const button = event.target.closest("[data-open-management-player]"); if (!button) return;
-      const row = managementModel.rows.find((candidate) => candidate.playerId === button.dataset.openManagementPlayer);
-      if (!row?.detailPlayer) return toast("Scheda giocatore non disponibile");
-      showPlayerDetailsFor(row.detailPlayer, { playerId: row.playerId, level: row.detailPlayer.displayLevel, database: freeAgentsDb, equipment: null, readOnly: true, preserveScroll: scrollSnapshot() });
-    });
-    results?.addEventListener("click", (event) => { const element = event.target.closest("[data-development-player]"); if (element) { ui.selectedDevelopmentPlayerId = element.dataset.developmentPlayer; renderDevelopmentCenter("players"); } });
-    bindLoadMore();
-    document.getElementById("change-development-player")?.addEventListener("click", () => { ui.selectedDevelopmentPlayerId = null; closeModal(); renderDevelopmentCenter("players"); });
-    bindDevelopmentSelectedCardInteraction(document.querySelector("[data-development-selected-card]"), selected, (selectedPlayer, playerId) => {
-      const current = selectedPlayer || resolveDevelopmentPlayer(cachedDevelopmentPlayers().find((candidate) => String(candidate.playerId) === String(playerId)));
-      if (!current) return toast("Giocatore non disponibile");
-      showPlayerDetailsFor(current, { playerId: current.playerId, level: current.displayLevel, database: freeAgentsDb, equipment: null, readOnly: true, preserveScroll: scrollSnapshot() });
-    });
-    document.getElementById("prepare-evolution")?.addEventListener("click", () => { const target = global.DevelopmentV2.nextRarity(selected.category); renderEvolutionConfirmation(selected, target, global.DevelopmentV2.COSTS[target]); });
-    bindDevelopmentDev();
-  }
-
-  function isDevelopmentPlayerUnlocked(player) {
-    return (player.developmentCollections || Object.keys(global.AlbumProgress.ALBUM_COLLECTIONS)).some((collectionId) => global.AlbumProgress.isAlbumPlayerUnlocked(collectionId, player.playerId));
-  }
-
-  function renderEvolutionConfirmation(player, target, cost) {
-    const rawPlayer = (freeAgentsDb?.players || []).find((candidate) => String(candidate.playerId) === String(player.playerId));
-    if (!rawPlayer) return toast("Giocatore non trovato nel database svincolati");
-    const basePotential = Number(rawPlayer.basePotential ?? rawPlayer.finalOverall ?? 0);
-    const targetPotential = Math.max(Number(player.potential || 0), Number(global.DevelopmentV2.threshold(target)));
-    const preview = global.InazumaProgression.getPlayerAtLevel(rawPlayer, Number(rawPlayer.maxLevel || 20), freeAgentsDb, global.DevelopmentV2.optionsFromUpgrade(rawPlayer, { permanentTargetPotential: targetPotential }));
-    const after = { ...rawPlayer, basePotential, ...preview, overall: preview.overall, finalOverall: preview.overall, displayLevel: Number(rawPlayer.maxLevel || 20), albumDatabase: freeAgentsDb };
-    const statChanges = Object.entries(STAT_LABELS).flatMap(([stat, label]) => { const before = Number(player.stats?.[stat] || 0), next = Number(after.stats?.[stat] || 0), delta = next - before; return delta > 0 ? [{ label, before, next, delta }] : []; });
-    const statsMarkup = statChanges.map(({ label, before, next, delta }) => `<li><strong>${escapeHtml(label)}</strong><span>${escapeHtml(before)} <b aria-hidden="true">→</b> ${escapeHtml(next)}</span><em>+${escapeHtml(delta)}</em></li>`).join("");
-    const wallet=global.DevelopmentAccountV3.read(), cupLabels={ie1:"IE1",ie1_s2:"IE2",ie1_s3:"IE3",ie2:"ARES",orion:"ORION"}, cupSelection=global.DevelopmentV2.defaultCupSelection(wallet,cost.cups);
-    const cupRows=global.DevelopmentV2.SEASON_IDS.filter((id)=>Number(wallet.cupsBySeason[id]||0)>0).map((id)=>`<div class="development-cup-row"><img src="${escapeHtml(global.DevelopmentV2.DEVELOPMENT_RESOURCE_ASSETS.cupsBySeason[id])}" alt=""><strong>${escapeHtml(cupLabels[id]||id)}</strong><button type="button" data-cup-minus="${escapeHtml(id)}" aria-label="Rimuovi Coppa ${escapeHtml(cupLabels[id]||id)}">−</button><b data-cup-count="${escapeHtml(id)}">${escapeHtml(cupSelection[id]||0)}</b><button type="button" data-cup-plus="${escapeHtml(id)}" aria-label="Aggiungi Coppa ${escapeHtml(cupLabels[id]||id)}">+</button></div>`).join("");
-    openModal(`<div class="development-detail development-confirm"><p class="eyebrow">CONFERMA EVOLUZIONE</p><h2>${escapeHtml(player.name)}</h2><div class="development-evolution-preview development-squad-card-scope"><div><small>ATTUALE · ${escapeHtml(player.category)} · OVR ${escapeHtml(player.overall)}</small>${developmentSquadCardMarkup(player)}</div><span class="development-evolution-arrow" aria-hidden="true">→</span><div><small>NUOVA · ${escapeHtml(after.category)} · OVR ${escapeHtml(after.overall)}</small>${developmentSquadCardMarkup(after)}</div></div><section class="development-stat-increases"><h3>AUMENTO STATISTICHE</h3><ul>${statsMarkup || "<li><span>Nessuna statistica cambia.</span></li>"}</ul></section><h3 class="development-confirm-requirements-title">REQUISITI</h3><div class="development-confirm-costs">${resourceCostMarkup({ type: "project", rarity: target, label: `Progetto ${target}`, required: cost.projects, compact: true })}<section class="development-cup-selector"><h4>COPPE RICHIESTE: ${escapeHtml(cost.cups)}</h4>${cupRows}<p data-cup-total></p></section>${resourceCostMarkup({ type: "coins", label: "Monete", required: cost.coins, compact: true })}</div><div class="button-row"><button class="btn btn-ghost" id="back-evolution">ANNULLA</button><button class="btn btn-yellow" id="confirm-evolution">CONFERMA EVOLUZIONE</button></div></div>`, { closeable: false, className: "development-confirm-modal" });
-    document.getElementById("back-evolution").onclick = closeModal;
-    const confirmButton=document.getElementById("confirm-evolution");
-    const refreshCupSelection=()=>{const selected=Object.values(cupSelection).reduce((sum,n)=>sum+Number(n||0),0),complete=selected===cost.cups; document.querySelector("[data-cup-total]").textContent=`COPPE SELEZIONATE ${selected} / ${cost.cups}`;document.querySelector("[data-cup-total]").classList.toggle("complete",complete);document.querySelectorAll("[data-cup-plus]").forEach((button)=>button.disabled=selected>=cost.cups||cupSelection[button.dataset.cupPlus]>=Number(wallet.cupsBySeason[button.dataset.cupPlus]||0));document.querySelectorAll("[data-cup-minus]").forEach((button)=>button.disabled=!cupSelection[button.dataset.cupMinus]);confirmButton.disabled=!complete;};
-    document.querySelectorAll("[data-cup-plus]").forEach((button)=>button.onclick=()=>{const id=button.dataset.cupPlus,total=Object.values(cupSelection).reduce((sum,n)=>sum+Number(n||0),0);if(total<cost.cups&&cupSelection[id]<wallet.cupsBySeason[id]){cupSelection[id]+=1;document.querySelector(`[data-cup-count="${id}"]`).textContent=cupSelection[id];refreshCupSelection();}});
-    document.querySelectorAll("[data-cup-minus]").forEach((button)=>button.onclick=()=>{const id=button.dataset.cupMinus;if(cupSelection[id]>0){cupSelection[id]-=1;document.querySelector(`[data-cup-count="${id}"]`).textContent=cupSelection[id];refreshCupSelection();}}); refreshCupSelection();
-    let submitting = false;
-    confirmButton.onclick = (event) => {
-      if (submitting) return; submitting = true; event.currentTarget.disabled = true;
-      const result = global.DevelopmentAccountV3.evolve({ playerId: rawPlayer.playerId, basePlayer: rawPlayer, unlocked: isDevelopmentPlayerUnlocked(player), freeAgentEligible: isDevelopmentFreeAgentEligible(player.playerId), cupSelection }, { database: freeAgentsDb });
-      if (!result.ok) { submitting = false; closeModal(); toast(result.reason === "not_free_agent" ? "Giocatore non eleggibile: non è svincolato" : result.reason === "rarity-capacity-full" ? `Slot ${result.rarity} esauriti (${result.used}/${result.capacity}).` : "Risorse cambiate: evoluzione non completata"); return renderDevelopmentCenter("players"); }
-      const written = global.DevelopmentAccountV3.read().players[String(rawPlayer.playerId)];
-      const activeWritten = written?.steps?.at(-1) || written?.legacyNormale;
-      const writeIsCurrent = (activeWritten?.rarity || activeWritten?.profile?.category) === result.target && Number(activeWritten?.toPotential) >= Number(global.DevelopmentV2.threshold(result.target));
-      if (!writeIsCurrent) { submitting = false; closeModal(); toast("Evoluzione non salvata: stato non coerente"); return renderDevelopmentCenter("players"); }
-      developmentPlayersCache = null;
-      developmentResolvedCache.delete(String(rawPlayer.playerId));
-      const updated = albumPlayerView(rawPlayer, freeAgentsDb);
-      closeModal({ invokeOnClose: false }); toast(`${updated.name}: ${updated.category}`);
-      renderDevelopmentCenter("players");
-      showPlayerDetailsFor(updated, { playerId: updated.playerId, level: updated.displayLevel, database: freeAgentsDb, equipment: null, readOnly: true, preserveScroll: scrollSnapshot() });
-    };
-  }
 
   async function renderShop(section = "general") {
     await Promise.all(global.SeasonRegistry.list().map((season) => global.SeasonRegistry.loadDatabase(season.id)));
@@ -1718,7 +1337,7 @@
     document.querySelectorAll("[data-dev-coins]").forEach(b=>b.onclick=()=>{global.DevelopmentAccountV3.mutate(s=>{s.coins+=Number(b.dataset.devCoins);});renderDevelopmentCenter();});
     document.querySelectorAll("[data-dev-season-cup]").forEach(b=>b.onclick=()=>{const id=b.dataset.devSeasonCup;global.DevelopmentAccountV3.mutate(s=>{s.cupsBySeason[id]=(s.cupsBySeason[id]||0)+1;});renderDevelopmentCenter();});
     document.querySelectorAll("[data-dev-complete-project]").forEach(b=>b.onclick=()=>{global.DevelopmentAccountV3.addCompletedProject(b.dataset.devCompleteProject);renderDevelopmentCenter("projects");});
-    document.getElementById("dev-unlock-free-agents")?.addEventListener("click",()=>{const ids=[...eligibleFreeAgentIds()];global.AlbumProgress.unlockAlbumPlayers(global.AlbumProgress.DEFAULT_COLLECTION_ID,ids,{source:"development-dev-unlock"});developmentPlayersCache=null;developmentResolvedCache.clear();toast(`${ids.length} svincolati disponibili.`);renderDevelopmentCenter("players");});
+    document.getElementById("dev-unlock-free-agents")?.addEventListener("click",()=>{const ids=[...eligibleFreeAgentIds()];global.AlbumProgress.unlockAlbumPlayers(global.AlbumProgress.DEFAULT_COLLECTION_ID,ids,{source:"development-dev-unlock"});developmentCenterController.invalidate();toast(`${ids.length} svincolati disponibili.`);renderDevelopmentCenter("players");});
     document.getElementById("dev-reset")?.addEventListener("click",()=>{if(confirm("Azzerare solo lo sviluppo?")){global.DevelopmentAccountV3.reset();renderDevelopmentCenter();}});
   }
 
@@ -3103,30 +2722,10 @@
 
   function bindFinalTabs() { document.querySelectorAll("[data-final-tab]").forEach((button) => button.addEventListener("click", () => { document.querySelectorAll("[data-final-tab]").forEach((item) => { item.classList.toggle("active", item === button); item.setAttribute("aria-selected", item === button ? "true" : "false"); }); document.querySelectorAll("[data-tab-panel]").forEach((panel) => panel.classList.toggle("active", panel.dataset.tabPanel === button.dataset.finalTab)); })); document.querySelector('[data-final-tab="team"]')?.click(); }
 
-  function bindHallPlayerDetails(team) {
-    document.querySelectorAll("[data-hall-player]").forEach((button) => button.addEventListener("click", () => {
-      const player = (team.fullRoster || []).find((p) => String(p.playerId) === String(button.dataset.hallPlayer));
-      if (!player) return;
-      showPlayerDetailsFor(player, { mode: "historical", readOnly: true, source: "hall-of-fame", playerId: player.playerId, level: player.finalLevel, equipment: player.equippedItem, team, runStats: team.playerStatistics?.[String(player.playerId)] || null, preserveScroll: scrollSnapshot() });
-    }));
-  }
+  function bindHallPlayerDetails(...args) { return hallController.bindPlayerDetails(...args); }
+  function renderHallOfFame(...args) { return hallController.renderList(...args); }
+  function renderHallOfFameDetail(...args) { return hallController.renderDetail(...args); }
 
-  function renderHallOfFame() {
-    if (!global.RestoreGameplayRoutingGate?.enter("hall")) return false;
-    const teams = global.HallOfFameStorage.listSummaries();
-    app.innerHTML = `<main class="hall-screen"><header class="hall-archive-head"><div><p class="eyebrow">ALBO D’ORO</p><h1>Squadre campioni</h1><p>Le imprese che hanno scritto la storia.</p></div>${sectionRootButton("hallRoot")}</header>${teams.length ? `<section class="hall-grid">${teams.map((team, index) => `<article class="hall-card"><div class="hall-card-rank"><span>★</span> CAMPIONE #${index + 1}</div><div><h2>${escapeHtml(team.teamName)}</h2><p class="hall-card-meta">${escapeHtml(normalizedHallSeasonName(team))} · ${formatDate(team.victoryDate)}</p></div><div class="hall-card-highlights"><span><small>MODULO</small><strong>${escapeHtml(team.finalFormation || '-')}</strong></span><span><small>OVERALL</small><strong>${escapeHtml(team.finalAverageOverall ?? 'N/D')}</strong></span><span><small>MVP</small><strong>${escapeHtml(team.mvp?.name || 'N/D')}</strong></span></div><div class="hall-card-footer"><div class="hall-portraits">${(team.portraits || []).map((src) => `<img src="${escapeHtml(src)}" alt="" loading="lazy"/>`).join('')}</div><button class="btn btn-yellow" data-open-hall-team="${escapeHtml(team.hallTeamId)}">Rivivi l'impresa</button></div></article>`).join('')}</section>` : `<section class="panel hall-empty"><h2>Nessuna squadra campione.</h2><p class="muted">Completa una run per lasciare il tuo segno.</p></section>`}</main>`;
-    resetRenderedViewScroll();
-    bindSectionRootNav();
-    document.querySelectorAll("[data-open-hall-team]").forEach((button) => button.addEventListener("click", () => renderHallOfFameDetail(button.dataset.openHallTeam)));
-  }
-
-  function renderHallOfFameDetail(hallTeamId) {
-    const team = global.HallOfFameStorage.getTeam(hallTeamId);
-    if (!team) return renderHallOfFame();
-    app.innerHTML = `<main class="hall-detail-screen"><header class="hall-hero"><div class="hall-hero-copy"><p class="eyebrow">ALBO D’ORO</p><h1>${escapeHtml(team.teamName)}</h1><div class="hall-hero-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span></div><p class="hall-boss-label">BOSS FINALE BATTUTO</p><strong class="hall-boss-name">${escapeHtml(team.finalBossName || 'N/D')}</strong></div><div class="hall-hero-trophy" aria-hidden="true">★</div>${sectionRootButton("hallDetail")}</header><section class="hall-detail-grid"><article class="hall-champion-team"><div class="hall-section-heading"><p class="eyebrow">SQUADRA VINCENTE</p><h2>Formazione finale</h2></div>${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<details class="hall-roster-extra"><summary>Riserve <span>${(team.bench || []).length}</span></summary><div class="bench-list">${(team.bench || []).map(snapshotCard).join('') || '<p class="muted">Non disponibili</p>'}</div></details><details class="hall-roster-extra"><summary>Formazione 5v5</summary>${championFiveVFiveMarkup(team)}</details></article><aside class="hall-achievement-column"><section class="hall-data-panel"><div class="hall-section-heading"><p class="eyebrow">LA RUN</p><h2>Statistiche essenziali</h2></div>${statsMarkup(team)}</section><section class="hall-awards-panel"><div class="hall-section-heading"><p class="eyebrow">RICONOSCIMENTI</p><h2>Premi della run</h2></div><div class="hall-awards-list">${awardsMarkup(team)}</div></section></aside></section></main>`;
-    resetRenderedViewScroll(); bindHallPlayerDetails(team);
-    bindSectionRootNav();
-  }
 
   function renderSeasonComplete() {
     return renderFinalCelebration(run?.hallTeamId, { developmentResolved: true });
@@ -3186,7 +2785,7 @@
     }
   }
 
-  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, startNewRunFromHome, startRunWithIdentity, getRun: () => run };
+  global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, renderAlbumCollections, renderAlbumTeams, renderAlbumRoster, renderHallOfFame, renderHallOfFameDetail, renderDevelopmentCenter, startNewRunFromHome, startRunWithIdentity, getRun: () => run };
   if (DEV_MODE) global.__INAZUMA_GAMEPLAY_FAILURE_DIAGNOSTICS__ = () => global.RunState.clone(gameplayFailureDiagnostics);
   if (DEV_MODE) global.__INAZUMA_MATCH_DIAGNOSTICS__ = () => {
     const match = run?.activeMatch, effects = run?.permanentEffectOutbox || [];

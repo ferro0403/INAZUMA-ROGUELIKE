@@ -1,0 +1,14 @@
+"use strict";
+const assert = require("assert");
+const { load } = require("./helpers/production-runtime");
+const storage = (() => { const values = new Map(); return { getItem:k=>values.get(k)??null,setItem:(k,v)=>values.set(k,String(v)),removeItem:k=>values.delete(k) }; })();
+const run = { saveVersion:2, runId:"run-ui-boundary", seasonId:"ie2", phase:"map", lives:2, roster:[], lineup:[], bench:[], inventory:[], completedBossIds:[], map:{nodes:[]}, currentZone:0 };
+const runtime = load(storage, { fullRuntime:true, run, seasonId:"ie2", seasonDb:{ seasonId:"ie2", players:[], teams:[], formations:{eleven:[]}, bossOrder:[], recruitmentPool:{entries:[]} } });
+const before = JSON.stringify(runtime.canonical);
+assert.doesNotThrow(() => runtime.context.__INAZUMA_UI_TEST__.renderHallOfFame());
+assert.match(runtime.context.document.getElementById("app").innerHTML, /Squadre campioni/);
+assert.strictEqual(JSON.stringify(runtime.canonical), before, "Hall production entry is run read-only");
+assert.ok(typeof runtime.context.__INAZUMA_UI_TEST__.renderAlbumCollections === "function");
+assert.ok(typeof runtime.context.__INAZUMA_UI_TEST__.renderDevelopmentCenter === "function");
+runtime.destroy();
+console.log("permanent club UI production path: controller entries and Hall DOM path OK");

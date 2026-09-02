@@ -13,6 +13,7 @@ const PRODUCTION_MODULES = [
   "special-match/special-match-view.js", "special-match/special-match-controller.js", "special-match/special-match-reward-view.js", "special-match/special-match-reward-controller.js", "match/match-controller.js",
   "inventory/inventory-model.js", "inventory/item-presenter.js", "inventory/inventory-controller.js",
   "map/node-router.js", "map/trade-node-controller.js", "map/run-map-controller.js",
+  "album/album-view.js", "album/album-controller.js", "hall/hall-view.js", "hall/hall-controller.js", "development/development-center-view.js", "development/development-center-controller.js",
   "gameover/gameover-view.js", "gameover/gameover-controller.js", "finalization/finalization-view.js", "finalization/finalization-controller.js", "app.js",
 ];
 
