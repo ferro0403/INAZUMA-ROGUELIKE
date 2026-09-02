@@ -1102,52 +1102,33 @@
     return global.AlbumProgress?.backfillAlbumProgress?.({ run, hallTeams: albumHallTeams() }) || 0;
   }
 
-  function drainPermanentEffects() {
-    const result = global.PermanentEffects.drain(run);
-    if (result.error) console.error("Permanent effect remains pending", result.error);
-    return result;
-  }
-
-  function resumeRunFinalization({ render = true } = {}) {
-    if (!global.RestoreGameplayRoutingGate?.enter("finalization")) return { completed: false, blocked: true };
-    const result = global.PermanentEffects.resumeFinalization(run);
-    if (!result.completed) {
-      if (result.error) {
-        console.error("Finalization remains resumable", result.error);
-        toast("Finalizzazione non completata. Riprova con Continua.");
-      }
-      if (render) renderFinalizationPending(result);
-      return result;
-    }
-    if (!render) return result;
-    return resolveDevelopmentEndRunFlow({
-      endReason: "victory",
-      onComplete: () => renderFinalCelebration(run.hallTeamId, { developmentResolved: true }),
-    });
-  }
-
-  function renderFinalizationPending(result = {}) {
-    app.innerHTML = `<main class="hero-screen finalization-pending-screen" data-finalization-pending>
-      <section class="panel"><p class="eyebrow">SALVATAGGIO CAMPIONI</p><h1>Finalizzazione in sospeso</h1>
-      <p class="muted">La vittoria è al sicuro. Completa il salvataggio permanente prima di continuare.</p>
-      <button type="button" class="btn btn-yellow" id="retry-run-finalization">RIPROVA / CONTINUA</button></section>
-    </main>`;
-    resetRenderedViewScroll();
-    const retry = document.getElementById("retry-run-finalization");
-    retry?.addEventListener("click", () => {
-      retry.disabled = true;
-      const resumed = resumeRunFinalization({ render: false });
-      if (resumed.completed) {
-        return resolveDevelopmentEndRunFlow({
-          endReason: "victory",
-          onComplete: () => renderFinalCelebration(run.hallTeamId, { developmentResolved: true }),
-        });
-      }
-      toast("Finalizzazione ancora in sospeso. Puoi riprovare senza perdere la vittoria.", "error");
-      renderFinalizationPending(resumed);
-    });
-    return result;
-  }
+  const gameOverView = global.GameOverView.create({ app: () => app, resetScroll: resetRenderedViewScroll, escapeHtml, currencyIcon: (...args) => developmentCurrencyIcon(...args) });
+  const gameOverController = global.GameOverController.create({
+    getRun: () => run, getSeasonDb: () => seasonDb, view: gameOverView,
+    persistMutation: (options) => persistGameplayMutation(options), enqueueGameOverDevelopmentEffect,
+    averageOverall, startNewRun: startNewRunFromHome, renderHome,
+  });
+  const finalizationView = global.FinalizationView.create({
+    app: () => app, resetScroll: resetRenderedViewScroll, escapeHtml,
+    seasonName: normalizedHallSeasonName, formatDate, compactSeed,
+    formationMarkup: championFormationMarkup, fiveMarkup: championFiveVFiveMarkup,
+    snapshotCard, tacticMarkup: tacticPanelMarkup, statsMarkup, awardsMarkup,
+    bindTabs: bindFinalTabs, bindPlayerDetails: bindHallPlayerDetails,
+    renderHallDetail: renderHallOfFameDetail, bindSectionRootNav, sectionRootButton,
+    startNewRun: startNewRunFromHome,
+  });
+  const finalizationController = global.FinalizationController.create({
+    getRun: () => run, view: finalizationView, toast,
+    resolveDevelopment: (options) => gameOverController.resolveDevelopmentEndRunFlow(options),
+    championTeam, renderHome,
+  });
+  function drainPermanentEffects() { return gameOverController.drainPermanentEffects(); }
+  function resolveDevelopmentEndRunFlow(options) { return gameOverController.resolveDevelopmentEndRunFlow(options); }
+  function renderGameOver(options) { return gameOverController.renderGameOver(options); }
+  function resumeRunFinalization(options) { return finalizationController.resume(options); }
+  function renderFinalizationPending(result) { return finalizationController.renderPending(result); }
+  function renderFinalCelebration(hallTeamId, options) { return finalizationController.renderCelebration(hallTeamId, options); }
+  function renderFinalSummary(hallTeamId, options) { return finalizationController.renderSummary(hallTeamId, options); }
 
   function enqueueAlbumRecruit(current, playerId, source, actionId) {
     return global.PermanentEffects.enqueueAlbum(current, { playerId, source, actionId });
@@ -1711,106 +1692,6 @@
   }
 
   function projectInventoryMarkup(state) { return global.DevelopmentV2.PROJECT_RARITIES.map((rarity) => `<article class="project-inventory-item ${rarityClass(rarity)}"><span class="project-inventory-image"><img src="${escapeHtml(global.DevelopmentV2.ASSETS[rarity])}" alt="" loading="lazy"></span><strong>${escapeHtml(rarity)}</strong><b>×${escapeHtml(state.projects[rarity] || 0)}</b></article>`).join(""); }
-
-  function developmentRewardPresentation(defeatedBosses, endReason) {
-    const bosses = Math.max(0, Number(defeatedBosses) || 0);
-    return {
-      endReason,
-      coins: bosses * 20 + (endReason === "victory" ? 100 : 0),
-      cups: endReason === "victory" ? 1 : 0,
-      seen: false,
-    };
-  }
-
-  function renderDevelopmentRewardReveal(presentation, onContinue) {
-    const won = presentation.endReason === "victory";
-    app.innerHTML = `<main class="development-reward-screen" data-development-reward-reveal><section class="development-reward-panel">
-      <header><h1>RICOMPENSE RUN</h1><p>${won ? "RUN COMPLETATA" : "RUN TERMINATA"}</p></header>
-      <div class="development-reward-list">
-        <article class="development-reward-item">${developmentCurrencyIcon("coins")}<span><small>MONETE</small><strong data-reward-count="${escapeHtml(presentation.coins)}">+0</strong></span></article>
-        ${won ? `<article class="development-reward-item development-reward-cup">${developmentCurrencyIcon("cups")}<span><small>COPPA SEASON</small><strong>+${escapeHtml(presentation.cups)}</strong></span></article>` : ""}
-      </div>
-      <button type="button" class="btn btn-yellow development-reward-continue" id="development-reward-continue">CONTINUA</button>
-      <p class="development-reward-skip">Tocca per saltare l’animazione</p>
-    </section></main>`;
-    resetRenderedViewScroll();
-    const counter = document.querySelector("[data-reward-count]");
-    const target = Number(presentation.coins) || 0;
-    const startedAt = performance.now();
-    let finished = false;
-    const finishAnimation = () => {
-      if (finished) return;
-      finished = true;
-      if (counter) counter.textContent = `+${target}`;
-      document.querySelector(".development-reward-panel")?.classList.add("is-complete");
-    };
-    const tick = (now) => {
-      if (finished) return;
-      const progress = Math.min(1, (now - startedAt) / 900);
-      if (counter) counter.textContent = `+${Math.round(target * progress)}`;
-      if (progress < 1) requestAnimationFrame(tick); else finishAnimation();
-    };
-    requestAnimationFrame(tick);
-    document.querySelector("[data-development-reward-reveal]")?.addEventListener("click", finishAnimation);
-    document.getElementById("development-reward-continue")?.addEventListener("click", (event) => { event.stopPropagation(); finishAnimation(); onContinue(); });
-  }
-
-  function resolveDevelopmentEndRunFlow({ endReason, onComplete }) {
-    const defeatedBosses = Number(run.completedBossIds?.length || run.bossIndex || 0);
-    const effectId = global.PermanentEffects.developmentId(run, endReason);
-    const existingEffect = run.permanentEffectOutbox?.find((entry) => entry.id === effectId);
-    const prepared = existingEffect ? { ok: true } : persistGameplayMutation({
-      label: "terminal-development-effect",
-      mutate: (current) => {
-        global.PermanentEffects.assertCanonicalTerminal(current, endReason);
-        return global.PermanentEffects.enqueueDevelopment(current, { endReason, defeatedBosses });
-      },
-    });
-    if (!prepared.ok) return renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
-    const drained = drainPermanentEffects();
-    const effect = run.permanentEffectOutbox.find((entry) => entry.id === effectId);
-    if (drained.error || effect?.status !== "applied") return renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
-    if (!run.developmentRewardPresentation || run.developmentRewardPresentation.endReason !== endReason) {
-      const presentation = persistGameplayMutation({
-        label: "development-reward-presentation-create",
-        mutate: (current) => {
-          const currentEffect = current.permanentEffectOutbox?.find((entry) => entry.id === effectId);
-          if (currentEffect?.status !== "applied") throw new Error("Development effect must be applied before reward presentation");
-          if (!current.developmentRewardPresentation || current.developmentRewardPresentation.endReason !== endReason) {
-            current.developmentRewardPresentation = developmentRewardPresentation(defeatedBosses, endReason);
-          }
-          return current.developmentRewardPresentation;
-        },
-      });
-      if (!presentation.ok) return renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete }));
-    }
-    const continueFlow = () => {
-      const committed = persistGameplayMutation({
-        label: "development-reward-presentation-seen",
-        mutate: (current) => {
-          const currentPresentation = current.developmentRewardPresentation;
-          if (!currentPresentation || currentPresentation.endReason !== endReason) throw new Error("Development reward presentation changed");
-          currentPresentation.seen = true;
-        },
-        onCommitted: () => onComplete(),
-        rerender: ({ ok }) => { if (!ok) renderTerminalEffectPending(() => resolveDevelopmentEndRunFlow({ endReason, onComplete })); },
-      });
-      return committed;
-    };
-    if (!run.developmentRewardPresentation.seen) return renderDevelopmentRewardReveal(run.developmentRewardPresentation, continueFlow);
-    return onComplete();
-  }
-
-  function renderTerminalEffectPending(retry) {
-    app.innerHTML = `<main class="gameover-screen"><section class="gameover-card" aria-labelledby="terminal-pending-title">
-      <div class="gameover-mark" aria-hidden="true">!</div><p class="eyebrow">RICOMPENSA IN ATTESA</p>
-      <h1 id="terminal-pending-title">FINALIZZAZIONE NON SALVATA</h1>
-      <p class="gameover-copy">La run è al sicuro, ma la ricompensa permanente non è ancora stata registrata. Riprova senza creare una nuova run.</p>
-      <div class="gameover-actions"><button type="button" class="btn btn-yellow" id="retry-terminal-effect">RIPROVA</button></div>
-    </section></main>`;
-    resetRenderedViewScroll();
-    document.getElementById("retry-terminal-effect")?.addEventListener("click", retry);
-  }
 
   function developmentSelectedMarkup(player) {
     const state = global.DevelopmentAccountV3.read();
@@ -4603,46 +4484,6 @@
     });
   }
 
-  function renderGameOver({ developmentResolved = false } = {}) {
-    // The terminal route itself owns the canonical phase. This keeps a reload
-    // between navigation and the permanent-effect drain on the game-over path.
-    if (run.phase !== "gameover") {
-      const committed = persistGameplayMutation({
-        label: "gameover-route",
-        mutate: (current) => {
-          if (!current.gameOver && Number(current.lives || 0) > 0) throw new Error("Game over route requires a terminal run");
-          current.gameOver = true;
-          current.phase = "gameover";
-          enqueueGameOverDevelopmentEffect(current);
-        },
-      });
-      if (!committed.ok) return;
-    }
-    const bossReached = Math.min(Number(run.bossIndex || 0) + 1, seasonDb.bossOrder.length);
-    if (!developmentResolved) return resolveDevelopmentEndRunFlow({ endReason: "gameover", onComplete: () => renderGameOver({ developmentResolved: true }) });
-    const wins = Number(run.statistics?.winsTotal || 0);
-    app.innerHTML = `
-      <main class="gameover-screen">
-        <section class="gameover-card" aria-labelledby="gameover-title">
-          <div class="gameover-mark" aria-hidden="true">×</div>
-          <p class="eyebrow">0 VITE RIMASTE</p>
-          <h1 id="gameover-title">RUN TERMINATA</h1>
-          <p class="gameover-copy">La squadra non può più continuare questa run.</p>
-          <dl class="gameover-summary">
-            <div><dt>Boss raggiunto</dt><dd>${escapeHtml(bossReached)}/${escapeHtml(seasonDb.bossOrder.length)}</dd></div>
-            <div><dt>Livello</dt><dd>${escapeHtml(global.LevelProgression.formatLevel(run, run.seasonId))}</dd></div>
-            <div><dt>OVR</dt><dd>${escapeHtml(averageOverall())}</dd></div>
-            <div><dt>Partite vinte</dt><dd>${escapeHtml(wins)}</dd></div>
-          </dl>
-          <div class="gameover-actions"><button type="button" class="btn btn-yellow" id="restart-run">NUOVA RUN</button><button type="button" class="btn" id="home">MENU</button></div>
-        </section>
-      </main>`;
-    resetRenderedViewScroll();
-    document.getElementById("restart-run").addEventListener("click", startNewRunFromHome);
-    document.getElementById("home").addEventListener("click", renderHome);
-  }
-
-
   function homeHallOfFameMarkup() {
     const summaries = global.HallOfFameStorage?.listSummaries?.() || [];
     const latest = summaries[0];
@@ -4804,32 +4645,6 @@
       const description = award.description || award.reason || (award.score != null ? `Punteggio ${award.score}` : "Riconoscimento della run");
       return `<article class="hall-award ${playerAttr ? "hall-award--interactive" : ""}"${playerAttr}><span class="hall-award-mark" aria-hidden="true">★</span><img src="${escapeHtml(award.portraitUrl || '')}" alt="" loading="lazy"/><div class="hall-award-copy"><strong>${escapeHtml(award.label || award.title)}</strong><span>${escapeHtml(award.playerName)}</span><small>${escapeHtml(description)}</small></div></article>`;
     }).join("") || '<p class="muted">Premi individuali disponibili solo quando i dati registrati sono affidabili.</p>';
-  }
-
-  function renderFinalCelebration(hallTeamId, { developmentResolved = false } = {}) {
-    if (!developmentResolved || run.finalization?.status !== "complete") return resumeRunFinalization();
-    const team = championTeam(hallTeamId || run?.hallTeamId);
-    if (!team) return renderHome();
-    app.innerHTML = `<main class="final-celebration-screen"><section class="final-celebration-panel"><header class="final-victory-hero"><div class="final-trophy" aria-hidden="true">★</div><div class="final-victory-copy"><p class="eyebrow">${escapeHtml(normalizedHallSeasonName(team).toUpperCase())} COMPLETATA</p><h1>${escapeHtml(team.teamName)}</h1><h2>Campioni della run</h2><p>${escapeHtml(team.modeName)} · ${formatDate(team.victoryDate)} · ${escapeHtml(team.finalFormation || '-')}</p></div></header><div class="final-victory-team"><div class="final-victory-section-head"><span>Squadra vincente</span><strong>La formazione che ha scritto la storia</strong></div>${championFormationMarkup(team)}</div><div class="button-row final-actions"><button type="button" class="btn btn-yellow" id="final-continue">Continua <span aria-hidden="true">→</span></button><button type="button" class="btn" id="skip-final-animation">Vai al riepilogo</button></div></section></main>`;
-    resetRenderedViewScroll(); bindHallPlayerDetails(team);
-    const go = () => { run.phase = "final-summary"; try { global.RunState.save(run); } catch (error) { console.error("save failed (renderFinalCelebration)", error); } renderFinalSummary(team.hallTeamId, { developmentResolved: true }); };
-    document.getElementById("final-continue").addEventListener("click", go);
-    document.getElementById("skip-final-animation").addEventListener("click", go);
-  }
-
-  function renderFinalSummary(hallTeamId, { developmentResolved = false } = {}) {
-    if (!developmentResolved || run.finalization?.status !== "complete") return resumeRunFinalization();
-    const team = championTeam(hallTeamId || run?.hallTeamId);
-    if (!team) return renderHome();
-    const summaries = global.HallOfFameStorage.listSummaries();
-    const ordinal = summaries.findIndex((item) => item.hallTeamId === team.hallTeamId) + 1;
-    run.phase = "final-summary"; run.hallTeamId = team.hallTeamId;
-    try { global.RunState.save(run); } catch (error) { console.error("save failed (renderFinalSummary)", error); }
-    app.innerHTML = `<main class="final-summary-screen"><header class="final-summary-head"><div><p class="eyebrow">CAMPIONI · ${escapeHtml(normalizedHallSeasonName(team).toUpperCase())}</p><h1>${escapeHtml(team.teamName)}</h1><p class="final-summary-meta"><span>${formatDate(team.victoryDate)}</span><span>${escapeHtml(normalizedHallSeasonName(team))}</span><span>Seed ${escapeHtml(compactSeed(team.seed))}</span><span>#${escapeHtml(ordinal || '-')} Albo d’Oro</span></p></div><span class="final-summary-star" aria-hidden="true">★</span></header><nav class="final-tabs" role="tablist"><button class="active" data-final-tab="team" role="tab" aria-selected="true">Squadra</button><button data-final-tab="stats" role="tab" aria-selected="false">Statistiche</button><button data-final-tab="awards" role="tab" aria-selected="false">Premi</button></nav><section class="final-summary-grid"><article class="panel final-tab-panel" data-tab-panel="team">${tacticPanelMarkup(team.finalFormation, { compact: true })}${championFormationMarkup(team)}<h3>Riserve</h3><div class="bench-list">${(team.bench || []).map(snapshotCard).join("") || '<p class="muted">Non disponibili</p>'}</div><h3>Formazione 5v5</h3>${championFiveVFiveMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="stats">${statsMarkup(team)}</article><article class="panel final-tab-panel" data-tab-panel="awards">${awardsMarkup(team)}</article><aside class="panel final-actions-panel"><button class="btn btn-yellow" id="open-current-hall">Apri Albo d’Oro</button><button class="btn btn-primary" id="final-new-run">Nuova run</button>${sectionRootButton("finalSummary")}</aside></section></main>`;
-    resetRenderedViewScroll(); bindFinalTabs(); bindHallPlayerDetails(team);
-    document.getElementById("open-current-hall").addEventListener("click", () => renderHallOfFameDetail(team.hallTeamId));
-    bindSectionRootNav();
-    document.getElementById("final-new-run").addEventListener("click", startNewRunFromHome);
   }
 
   function playerStatsMarkup(team, player, explicitStats = null) {
