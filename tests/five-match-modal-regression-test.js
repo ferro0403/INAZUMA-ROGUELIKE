@@ -20,7 +20,7 @@ const modal = match.slice(modalStart, modalEnd);
 assert.match(modal, /data-five-simulation-modal/, 'simulation uses a dedicated modal container');
 assert.match(modal, /bossMatchTimeline\(\)/, 'modal renders the already revealed simulator timeline');
 assert.match(modal, /simulationScoreArray\(match, resolved\)/, 'modal renders the existing simulation score');
-assert.match(fiveRenderer, /const started = startMatchSimulation\(match\);[\s\S]*if \(started\?\.ok\) openFiveMatchSimulationModal\(started\.match, userName, opponentName\)/, 'primary CTA opens the modal only after the simulation start commits');
+assert.match(fiveRenderer, /currentMatch = canonicalMatchFor\(run, simulationStartIdentity\);[\s\S]*const started = startMatchSimulation\(currentMatch\);[\s\S]*if \(started\?\.ok\) openFiveMatchSimulationModal\(started\.match, userName, opponentName\)/, 'primary CTA refinds its canonical match and opens the modal only after the simulation start commits');
 assert.match(fiveRenderer, /openFiveMatchSimulationModal[\s\S]*forceMatchOutcome\("victory"\)/, 'safe victory uses the same modal and existing forced-outcome control');
 
 const startSimulation = match.slice(match.indexOf('function startMatchSimulation'), match.indexOf('function resumeMatchSimulationIfNeeded'));
