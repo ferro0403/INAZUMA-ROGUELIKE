@@ -12,7 +12,7 @@
     specialMatchController, bossMatchFromNode, renderFiveVFive, renderMatch, openPull,
     resolveTradeNode, closeModal, itemDefinitionById, weightedItemCandidates, inventoryItemIdentity,
     groupedOwnedInventoryItems, itemStatLabel, itemIcon, openModal, cssEscape, receiveItem,
-    nodeRouter, runMapView,
+    nodeRouter,
     } = deps;
 
 function ensureCurrentZone() {
@@ -174,7 +174,7 @@ function renderMap(options = {}) {
             <span class="route-target-card__copy">
               <span>Prossima sfida</span>
               <strong>${escapeHtml(boss.teamName)}</strong>
-              <small>${escapeHtml(boss.bossFormation || "Boss della getRun()")}${boss.bossLevel ? ` · Lv ${escapeHtml(boss.bossLevel)}` : ""}</small>
+              <small>${escapeHtml(boss.bossFormation || "Boss della run")}${boss.bossLevel ? ` · Lv ${escapeHtml(boss.bossLevel)}` : ""}</small>
             </span>
             <em>FORMAZIONE</em>
           </button>
@@ -527,7 +527,7 @@ function resolveItemNode(node) {
   openModal(`
     <section class="item-reward-screen">
       <div class="item-reward-head">
-        <p class="eyebrow">${node.type === "random" ? "Ricompensa dal nodo ?" : "Ricompensa della getRun()"}</p>
+        <p class="eyebrow">${node.type === "random" ? "Ricompensa dal nodo ?" : "Ricompensa della run"}</p>
         <h1>OGGETTO TROVATO</h1>
         <p>Scegli una delle tre ricompense estratte. La scelta resta identica anche dopo un refresh.</p>
       </div>

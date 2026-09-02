@@ -2187,7 +2187,6 @@
   const { openPull, openDevLegendaryPull } = pullControllerRuntime;
 
 
-  const runMapView = global.RunMapViewRuntime.create({ app });
   let runMapController;
   const tradeNodeController = global.TradeNodeControllerRuntime.create({
     getRun: () => run, getUi: () => ui, getSeasonDb: () => seasonDb, getFreeAgentsDb: () => freeAgentsDb, modalRoot, escapeHtml,
@@ -2213,7 +2212,7 @@
     specialMatchController, bossMatchFromNode, renderFiveVFive, renderMatch, openPull,
     resolveTradeNode: (...args) => tradeNodeController.resolveTradeNode(...args), closeModal, itemDefinitionById,
     weightedItemCandidates, inventoryItemIdentity, groupedOwnedInventoryItems, itemStatLabel, itemIcon,
-    openModal, cssEscape, receiveItem, nodeRouter, runMapView,
+    openModal, cssEscape, receiveItem, nodeRouter,
   });
 
   function ensureCurrentZone(...args) { return runMapController.ensureCurrentZone(...args); }
