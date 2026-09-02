@@ -18,3 +18,11 @@ assert.deepEqual(model.inventoryOwnershipSummary(run), { backpackCount: 3, equip
 assert.deepEqual(model.inventoryFilterDefinitions(run).map(filter => [filter.id, filter.count]), [["all",4],["equipment",3],["consumable",1],["stat:attack",3]]);
 for (const file of ["inventory-model.js", "item-presenter.js", "inventory-controller.js"]) assert.doesNotMatch(fs.readFileSync(`js/inventory/${file}`, "utf8"), /firebase|firestore|InazumaCloudSave|CloudRestore|cloudSave|RunState\.save\s*\(/i);
 console.log("inventory domain extraction characterization: grouping, ownership, legacy resolution, filters and cloud gate OK");
+const controllerSource = fs.readFileSync("js/inventory/inventory-controller.js", "utf8");
+const appSource = fs.readFileSync("js/app.js", "utf8");
+for (const dependency of ["groupedOwnedInventoryItems", "lineupRows", "getSeasonDb", "getFreeAgentsDb"]) assert.match(controllerSource.slice(0, controllerSource.indexOf("const run =")), new RegExp(`\\b${dependency}\\b`));
+assert.doesNotMatch(controllerSource, /\bseasonDb\b|\bfreeAgentsDb\b/);
+assert.match(appSource, /groupedOwnedInventoryItems[\s\S]*lineupRows[\s\S]*getSeasonDb: \(\) => seasonDb[\s\S]*getFreeAgentsDb: \(\) => freeAgentsDb/);
+const cloudCore = require("../js/cloud-save-core.js");
+const snapshot = cloudCore.readLocalSnapshot({ RunState: { loadProfile: () => ({}) }, AlbumProgress: { read: () => ({}) }, DevelopmentV2: { read: () => ({}) }, HallOfFameStorage: { ARCHIVE_SCHEMA_VERSION: 1, _loadArchive: () => ({ teams: [], index: [] }) } });
+for (const localKey of ["run", "runs", "inventory", "roster", "lineup", "bench", "activeMatch", "lives", "currentZone", "bossIndex"]) assert.equal(Object.hasOwn(snapshot, localKey), false);

@@ -31,12 +31,16 @@ function loadModules(storage, files = ["persistence-recovery-guard.js", "run-sta
 
 function element() {
   const listeners = new Map();
-  return { innerHTML: "", textContent: "", disabled: false, dataset: {}, style: {}, classList: { add() {}, remove() {}, toggle() {} },
+  const node = { innerHTML: "", textContent: "", disabled: false, dataset: {}, style: {}, parentElement: null, className: "", id: "", classList: { add() {}, remove() {}, toggle() {} },
     addEventListener(type, listener) { const current = listeners.get(type) || []; current.push(listener); listeners.set(type, current); }, removeEventListener() {},
-    click() { const event = { currentTarget: this, target: this, preventDefault() {}, stopPropagation() {} }; for (const listener of [...(listeners.get("click") || [])]) listener(event); },
+    dispatchEvent(event) { event.currentTarget = this; for (const listener of [...(listeners.get(event.type) || [])]) listener(event); if (!event.cancelBubble) this.parentElement?.dispatchEvent?.(event); },
+    click() { const event = { type: "click", currentTarget: this, target: this, preventDefault() {}, stopPropagation() { this.cancelBubble = true; }, cancelBubble: false }; this.dispatchEvent(event); },
     clickLatest() { const event = { currentTarget: this, target: this, preventDefault() {}, stopPropagation() {} }; const values = listeners.get("click") || []; values.at(-1)?.(event); },
-    appendChild() {}, append() {}, remove() {}, removeAttribute() {}, setAttribute() {}, getAttribute() { return null; }, scrollTo() {}, scrollIntoView() {},
-    querySelector() { return element(); }, querySelectorAll() { return []; }, firstElementChild: null };
+    appendChild() {}, append() {}, remove() {}, removeAttribute(name) { if (name === "disabled") this.disabled = false; }, setAttribute(name, value) { if (name === "disabled") this.disabled = true; this[name] = value; }, getAttribute() { return null; }, scrollTo() {}, scrollIntoView() {}, focus() {},
+    matches(selector) { const data = /^\[data-([a-z0-9-]+)(?:="([^"]*)")?\]$/i.exec(selector); if (data) { const key = data[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase()); return Object.hasOwn(this.dataset, key) && (data[2] === undefined || String(this.dataset[key]) === data[2]); } if (selector.startsWith("#")) return this.id === selector.slice(1); if (selector.startsWith(".")) return this.className.split(/\s+/).includes(selector.slice(1)); return false; },
+    closest(selector) { return this.matches(selector) ? this : this.parentElement?.closest?.(selector) || null; },
+    querySelector() { return null; }, querySelectorAll() { return []; }, firstElementChild: null };
+  return node;
 }
 
 function load(storage, options = {}) {
@@ -44,20 +48,48 @@ function load(storage, options = {}) {
   const blockedCalls = [];
   const runtimeSeasonId = options.seasonId || options.run?.seasonId;
   const elementsById = new Map();
+  const selectorTargets = new Map();
   const document = { body: element(), documentElement: element(), scrollingElement: element(), createElement: element, createDocumentFragment: element,
-    getElementById: id => { if (!elementsById.has(id)) elementsById.set(id, element()); return elementsById.get(id); }, querySelector: () => element(), querySelectorAll: () => [] };
-  const appElement = document.getElementById("app");
-  let appMarkup = "";
-  Object.defineProperty(appElement, "innerHTML", {
-    configurable: true,
-    get() { return appMarkup; },
-    set(value) {
-      appMarkup = String(value ?? "");
-      for (const id of [...elementsById.keys()]) {
-        if (!["app", "modal-root", "toast-root"].includes(id)) elementsById.delete(id);
+    getElementById: id => elementsById.get(id) || null,
+    querySelector: selector => selectorTargets.get(selector)?.[0] || null,
+    querySelectorAll: selector => selectorTargets.get(selector) || [] };
+  function registerMarkup(root, markup, delegatedParent = root) {
+    for (const values of selectorTargets.values()) values.splice(0);
+    for (const id of [...elementsById.keys()]) if (!["app", "modal-root", "toast-root"].includes(id)) elementsById.delete(id);
+    const tags = String(markup).match(/<[^/!][^>]*>/g) || [];
+    for (const tag of tags) {
+      const node = element(); node.parentElement = delegatedParent;
+      node.id = /\bid="([^"]+)"/.exec(tag)?.[1] || "";
+      node.className = /\bclass="([^"]+)"/.exec(tag)?.[1] || "";
+      node.disabled = /\sdisabled(?:\s|>|=)/.test(tag);
+      for (const match of tag.matchAll(/data-([a-z0-9-]+)="([^"]*)"/gi)) {
+        const key = match[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase()); node.dataset[key] = match[2];
+        const bare = `[data-${match[1]}]`, exact = `[data-${match[1]}="${match[2]}"]`;
+        for (const selector of [bare, exact]) { const values = selectorTargets.get(selector) || []; values.push(node); selectorTargets.set(selector, values); }
       }
-    },
-  });
+      for (const match of tag.matchAll(/\bdata-([a-z0-9-]+)(?=\s|>)/gi)) {
+        const key = match[1].replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+        if (Object.hasOwn(node.dataset, key)) continue;
+        node.dataset[key] = ""; const selector = `[data-${match[1]}]`, values = selectorTargets.get(selector) || []; values.push(node); selectorTargets.set(selector, values);
+      }
+      if (node.id) { elementsById.set(node.id, node); selectorTargets.set(`#${node.id}`, [node]); }
+      for (const className of node.className.split(/\s+/).filter(Boolean)) { const selector = `.${className}`, values = selectorTargets.get(selector) || []; values.push(node); selectorTargets.set(selector, values); }
+    }
+  }
+  const appElement = element(), modalElement = element(), toastElement = element(), inventoryContent = element();
+  elementsById.set("app", appElement); elementsById.set("modal-root", modalElement); elementsById.set("toast-root", toastElement);
+  selectorTargets.set(".inventory-content", [inventoryContent]);
+  let appMarkup = "", modalMarkup = "";
+  Object.defineProperty(appElement, "innerHTML", { configurable: true, get() { return appMarkup; }, set(value) { appMarkup = String(value ?? ""); registerMarkup(appElement, appMarkup, inventoryContent); selectorTargets.set(".inventory-content", [inventoryContent]); } });
+  Object.defineProperty(modalElement, "innerHTML", { configurable: true, get() { return modalMarkup; }, set(value) {
+    modalMarkup = String(value ?? ""); registerMarkup(modalElement, modalMarkup, modalElement);
+    const workspace = document.querySelector(".inventory-equipment-workspace");
+    if (workspace) for (const target of document.querySelectorAll("[data-item-target-player]")) target.parentElement = workspace;
+  } });
+  appElement.querySelector = selector => selector === "main" ? appElement : document.querySelector(selector);
+  appElement.querySelectorAll = selector => document.querySelectorAll(selector);
+  modalElement.querySelector = selector => document.querySelector(selector);
+  modalElement.querySelectorAll = selector => document.querySelectorAll(selector);
   const listeners = new Map();
   const c = { console, structuredClone, Date, Math, JSON, Object, Array, String, Number, Boolean, RegExp, Error, TypeError, Promise, Map, Set, WeakMap, WeakSet, Symbol, Intl, parseInt, parseFloat, isNaN, TextEncoder, Uint8Array, crypto: global.crypto, URLSearchParams,
     location: { search: "" }, document, window: null, localStorage: storage, performance: { now: () => 1000 },
@@ -88,7 +120,7 @@ function load(storage, options = {}) {
   c.ProfiledSeasonRuntime = { resolveProfile: (_season, id) => ({ profileId: String(id), playerId: String(id), name: String(id), position: "MF", category: "Normale", overall: 50, stats: {} }), addLevelUnits: player => player };
   c.MatchSimulator = { simulate: () => ({ score: { user: 1, opponent: 0 }, events: [] }) };
   c.SpecialMatchRuntime = { eligibleProfile: () => true };
-  c.RunStatistics = { createStableMatchId: () => "match", buildHallOfFameStatisticsSnapshot: () => ({ runStatistics: {}, playerStatistics: {}, matchHistory: [], awards: [] }), snapshotFinalPlayerStats: noop, recordRunAction: noop };
+  c.RunStatistics = { ACTIONS: { ITEM_USED: "ITEM_USED" }, createStableMatchId: () => "match", buildHallOfFameStatisticsSnapshot: () => ({ runStatistics: {}, playerStatistics: {}, matchHistory: [], awards: [] }), snapshotFinalPlayerStats: noop, recordRunAction: noop };
   const seasonIds = ["ie1", "ie2", "ie1_s2", "ie1_s3", "orion"];
   c.SeasonRegistry = { DEFAULT_SEASON_ID: runtimeSeasonId || "ie2", normalizeSeasonId: id => seasonIds.includes(id) ? id : "ie1", activeId: () => options.seasonId || options.run?.seasonId || "ie2", list: () => seasonIds.map(id => ({ id })), database: () => options.seasonDb || {}, get: id => ({ id, name: id }), sourceForSeason: id => id, isSeasonSource: () => true, setActive: id => ({ id }), loadDatabase: async () => options.seasonDb, player: id => options.seasonDb?.players?.find((player) => String(player.playerId) === String(id)) || null, playersIndex: () => new Map(), teamsIndex: () => new Map() };
   Object.assign(c, options.contextOverrides || {});
@@ -105,6 +137,7 @@ function load(storage, options = {}) {
   return {
     context: c, seam: c.__INAZUMA_TERMINAL_FLOW_TEST__, blockedCalls,
     get modalMarkup() { return elementsById.get("modal-root")?.innerHTML || ""; },
+    query(selector) { return document.querySelector(selector); }, queryAll(selector) { return document.querySelectorAll(selector); },
     get canonical() { const value = c.RunState.load(runtimeSeasonId); return value && structuredClone(value); },
     get hall() { return c.HallOfFameStorage.listTeams(); },
     get redeemed() { return new Set(c.DevelopmentV2.read().redeemedRunIds); },

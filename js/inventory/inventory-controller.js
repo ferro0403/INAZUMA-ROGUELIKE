@@ -2,7 +2,7 @@
   "use strict";
 
   function create(deps) {
-    const { ensureRunSchema, groupedInventoryItems, resolveItem, itemStatLabel, itemIcon, escapeHtml, playerPortraitUrl, imageFallbackAttributes, resolvePlayerVisual, topbar, bottomNav, restoreScroll, resetRenderedViewScroll, bindSectionRootNav, bindBottomNav, inventoryItemIdentity, inventoryItemCategory, openModal, modalRoot, closeModal, rosterEntry, resolvedRosterPlayer, sourcePlayer, compactPlayerCardMarkup, rarityClass, cssEscape, toast, persistGameplayMutation, removeInventoryItem, scrollSnapshot, app, runtimeTrainingState, addLevels, isProfileAwareSeason, formationById, seasonDb, freeAgentsDb } = deps;
+    const { ensureRunSchema, groupedInventoryItems, groupedOwnedInventoryItems, resolveItem, itemStatLabel, itemIcon, escapeHtml, playerPortraitUrl, imageFallbackAttributes, resolvePlayerVisual, topbar, bottomNav, restoreScroll, resetRenderedViewScroll, bindSectionRootNav, bindBottomNav, inventoryItemIdentity, inventoryItemCategory, openModal, modalRoot, closeModal, rosterEntry, resolvedRosterPlayer, sourcePlayer, compactPlayerCardMarkup, rarityClass, cssEscape, toast, persistGameplayMutation, removeInventoryItem, scrollSnapshot, app, runtimeTrainingState, addLevels, isProfileAwareSeason, formationById, lineupRows, getSeasonDb, getFreeAgentsDb } = deps;
     const run = new Proxy({}, { get: (_target, key) => deps.getRun()?.[key], set: (_target, key, value) => { deps.getRun()[key] = value; return true; } });
     const ui = new Proxy({}, { get: (_target, key) => deps.getUi()?.[key], set: (_target, key, value) => { deps.getUi()[key] = value; return true; } });
 
@@ -437,7 +437,7 @@
               const committed = persistGameplayMutation({ label: "consumable-potential", mutate: (current) => {
               const currentEntry = rosterEntry(entry.playerId);
               const currentProfileAware=global.RoguelikeRules.isProfileAwareRosterEntry(currentEntry,current);
-              const trainingPlan=global.DevelopmentRuntime.planIntensiveTraining(current,trainingBase,currentEntry,addedBoost,currentProfileAware?seasonDb:freeAgentsDb,currentProfileAware?{permanentMode:"provided-base"}:undefined);
+              const trainingPlan=global.DevelopmentRuntime.planIntensiveTraining(current,trainingBase,currentEntry,addedBoost,currentProfileAware ? getSeasonDb() : getFreeAgentsDb(),currentProfileAware?{permanentMode:"provided-base"}:undefined);
               currentEntry.potentialBoost = Math.min(training.maxLocalBoost, currentPotentialBoost + addedBoost);
               currentEntry.currentOverallBoost = Math.min(training.maxLocalBoost, currentOverallBoost + addedBoost);
               currentEntry.intensiveTrainingMigrated = true;

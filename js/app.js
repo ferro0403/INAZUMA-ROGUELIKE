@@ -2024,6 +2024,11 @@
     profiledSeasonRuntime: global.ProfiledSeasonRuntime, persistGameplayMutation, fiveVFive: global.FiveVFive, cssEscape,
   });
   function reconcileSquadRosterState(current = run) { return squadController.reconcileRosterState(current); }
+  function lineupRows() {
+    const formation = formationById(run.formationId) || formationById("4-3-3");
+    const idsByRole = new Map(["FW", "MF", "DF", "GK"].map((role) => [role, run.lineup.filter((id) => effectiveRosterRole(id) === role)]));
+    return global.FormationLayout.displayRows(formation).map((row) => ({ ...row, ids: idsByRole.get(row.role).splice(0, row.count) }));
+  }
   function tacticalMiniPlayer(id, options) { return squadView.tacticalPlayer(id, options); }
   function squadPitchMarkup(options) { return squadView.pitchMarkup(options); }
   function benchMarkup(options) { return squadView.benchMarkup(options); }
@@ -3762,7 +3767,7 @@
 
   const inventoryController = global.InventoryController.create({
     getRun: () => run, getUi: () => ui, setInventoryEquipmentPlayerId: (value) => { ui.inventoryEquipmentPlayerId = value; },
-    ensureRunSchema, groupedInventoryItems, resolveItem, itemStatLabel, itemIcon, escapeHtml, playerPortraitUrl, imageFallbackAttributes, resolvePlayerVisual, topbar, bottomNav, restoreScroll, resetRenderedViewScroll, bindSectionRootNav, bindBottomNav, inventoryItemIdentity, inventoryItemCategory, openModal, modalRoot, closeModal, rosterEntry, resolvedRosterPlayer, sourcePlayer, compactPlayerCardMarkup, rarityClass, cssEscape, toast, persistGameplayMutation, removeInventoryItem, scrollSnapshot, app, runtimeTrainingState, addLevels, isProfileAwareSeason, formationById, seasonDb, freeAgentsDb
+    ensureRunSchema, groupedInventoryItems, groupedOwnedInventoryItems, resolveItem, itemStatLabel, itemIcon, escapeHtml, playerPortraitUrl, imageFallbackAttributes, resolvePlayerVisual, topbar, bottomNav, restoreScroll, resetRenderedViewScroll, bindSectionRootNav, bindBottomNav, inventoryItemIdentity, inventoryItemCategory, openModal, modalRoot, closeModal, rosterEntry, resolvedRosterPlayer, sourcePlayer, compactPlayerCardMarkup, rarityClass, cssEscape, toast, persistGameplayMutation, removeInventoryItem, scrollSnapshot, app, runtimeTrainingState, addLevels, isProfileAwareSeason, formationById, lineupRows, getSeasonDb: () => seasonDb, getFreeAgentsDb: () => freeAgentsDb
   });
   const { renderInventory, unequipPlayerItem } = inventoryController;
 
