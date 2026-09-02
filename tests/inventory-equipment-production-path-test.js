@@ -1,0 +1,17 @@
+"use strict";
+const assert = require("assert");
+const BudgetStorage = require("./helpers/budget-storage");
+const { load } = require("./helpers/production-runtime");
+const storage = new BudgetStorage();
+const bootstrap = load(storage);
+const run = bootstrap.RunState.createRun({ name: "Test" }, "ie2");
+run.phase = "inventory";
+const runtime = load(storage, { fullRuntime: true, run, seasonDb: { seasonId: "ie2", players: [], teams: [], bossOrder: [], itemPool: [] } });
+runtime.seam.renderInventory();
+assert.match(runtime.seam.getAppMarkup(), /ZAINO/);
+assert.match(runtime.seam.getAppMarkup(), /Nessun oggetto disponibile/);
+assert.equal(runtime.canonical.inventory.length, 0);
+const reopened = runtime.reopen();
+reopened.seam.renderInventory();
+assert.match(reopened.seam.getAppMarkup(), /ZAINO/);
+console.log("inventory equipment production path: real production render and canonical refresh/reopen OK");
