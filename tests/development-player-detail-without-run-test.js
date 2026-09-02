@@ -4,7 +4,7 @@ const assert = require("assert");
 const fs = require("fs");
 const vm = require("vm");
 
-const source = fs.readFileSync("js/app.js", "utf8");
+const source = fs.readFileSync("js/app.js", "utf8") + "\n" + fs.readFileSync("js/development/development-center-controller.js", "utf8");
 
 function extractFunction(name) {
   const start = source.indexOf(`  function ${name}(`);

@@ -6,7 +6,7 @@ const root = path.join(__dirname, "..");
 const catalog = require(path.join(root, "js/album-catalog.js"));
 const freeAgents = require(path.join(root, "data/FREE_AGENTS_compact.json")).players;
 const season3 = require(path.join(root, "data/IE1_S3_season_compact.json"));
-const appSource = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
+const appSource = ["js/app.js", "js/album/album-controller.js"].map((file) => fs.readFileSync(path.join(root, file), "utf8")).join("\n");
 
 const low = freeAgents.find((player) => Number(player.finalOverall) === 74);
 const threshold = freeAgents.find((player) => Number(player.finalOverall) === 75);
