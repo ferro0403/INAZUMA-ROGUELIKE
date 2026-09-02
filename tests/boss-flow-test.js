@@ -4,6 +4,7 @@ const fs = require('fs');
 
 const app = fs.readFileSync('js/app.js', 'utf8');
 const match = fs.readFileSync('js/match/match-controller.js', 'utf8');
+const mapController = fs.readFileSync('js/map/run-map-controller.js', 'utf8');
 const bossController = fs.readFileSync('js/boss/boss-flow-controller.js', 'utf8');
 const css = fs.readFileSync('css/game.css', 'utf8');
 
@@ -27,6 +28,6 @@ assert.match(css, /\.route-boss-preview-logo\.boss-logo-missing \.boss-logo-fall
 assert.match(css, /\.route-boss-preview-logo \.boss-node-logo \{[^}]*object-fit: contain[^}]*object-position: center/s, 'real boss logo must remain centered');
 assert.match(app, /function recoverInterruptedBossAccess\(\)/, 'resume must reconcile interrupted boss saves');
 assert.match(bossController, /current\.activeMatch = matchFromNode\(currentNode, current\.currentZone\.currentNodeId, current\)/, 'a pending boss node must recover its match snapshot transactionally');
-assert.match(app, /dispatchNode\(node, node\.type, \{ previousNodeId \}\)/, 'boss entry must preserve the node before selection');
+assert.match(mapController, /dispatchNode\(node, node\.type, \{ previousNodeId \}\)/, 'boss entry must preserve the node before selection');
 
 console.log('boss-flow-test: ok');

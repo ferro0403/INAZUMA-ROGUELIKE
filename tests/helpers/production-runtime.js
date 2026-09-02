@@ -12,6 +12,7 @@ const PRODUCTION_MODULES = [
   "squad/squad-controller.js", "squad/squad-view.js", "five-v-five/five-v-five-controller.js", "five-v-five/five-v-five-view.js",
   "special-match/special-match-view.js", "special-match/special-match-controller.js", "special-match/special-match-reward-view.js", "special-match/special-match-reward-controller.js", "match/match-controller.js",
   "inventory/inventory-model.js", "inventory/item-presenter.js", "inventory/inventory-controller.js",
+  "map/run-map-view.js", "map/node-router.js", "map/trade-node-controller.js", "map/run-map-controller.js",
   "gameover/gameover-view.js", "gameover/gameover-controller.js", "finalization/finalization-view.js", "finalization/finalization-controller.js", "app.js",
 ];
 
