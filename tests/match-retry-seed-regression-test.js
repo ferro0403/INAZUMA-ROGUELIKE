@@ -4,8 +4,9 @@ const fs = require('fs');
 const vm = require('vm');
 
 const app = fs.readFileSync('js/app.js', 'utf8');
-const previewSource = app.slice(app.indexOf('function ensureMatchPreview'), app.indexOf('function simulationScoreArray'));
-const startSource = app.slice(app.indexOf('function startMatchSimulation'), app.indexOf('function resumeMatchSimulationIfNeeded'));
+const match = fs.readFileSync('js/match/match-controller.js', 'utf8');
+const previewSource = match.slice(match.indexOf('function ensureMatchPreview'), match.indexOf('function simulationScoreArray'));
+const startSource = match.slice(match.indexOf('function startMatchSimulation'), match.indexOf('function resumeMatchSimulationIfNeeded'));
 
 // Regression: before this guard existed, freeze:true returned the already valid
 // :preview simulation whenever the lineup signature had not changed.
@@ -15,10 +16,11 @@ assert.match(startSource, /liveMatch = canonicalMatchFor\(run, identity\)/, 'sta
 assert.match(startSource, /frozenMatch = cloneMatchState\(liveMatch\)/, 'starting a match must isolate the uncommitted simulation from live canonical state');
 assert.match(startSource, /ensureMatchPreview\(frozenMatch, \{ \.\.\.options, forceRefresh: false, freeze: true \}\)/, 'starting a match must freeze an attempt-specific simulation');
 assert.match(startSource, /commitMatchMutation\("match-simulation-start"/, 'the frozen simulation becomes authoritative only through the canonical transaction');
-assert.match(app, /return `\$\{run\.runId\}:\$\{match\.type\}:\$\{match\.nodeId\}:\$\{match\.attemptNumber \|\| 1\}`/, 'the real seed must contain attemptNumber');
+assert.match(match, /return `\$\{run\.runId\}:\$\{match\.type\}:\$\{match\.nodeId\}:\$\{match\.attemptNumber \|\| 1\}`/, 'the real seed must contain attemptNumber');
 
 // Boss and 5v5 attempts are reconstructed from completed, processed matches.
-const bossFactory = app.slice(app.indexOf('function bossMatchFromNode'), app.indexOf('function recoverInterruptedBossAccess'));
+const bossController = fs.readFileSync('js/boss/boss-flow-controller.js', 'utf8');
+const bossFactory = bossController.slice(bossController.indexOf('function matchFromNode'), bossController.indexOf('function recoverAccess'));
 const fiveFactory = app.slice(app.indexOf('function createOrLoadFiveMatch'), app.indexOf('function fiveOpponentPlayersBySlot'));
 assert.match(bossFactory, /processedMatchIds[\s\S]*::\$\{node\.id\}::boss::[\s\S]*length \+ 1/, 'boss retries must advance their attempt number');
 assert.match(fiveFactory, /processedMatchIds[\s\S]*::\$\{node\.id\}::five_v_five::[\s\S]*length \+ 1/, '5v5 retries must advance their attempt number');

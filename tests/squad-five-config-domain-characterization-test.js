@@ -29,5 +29,5 @@ five.changeFormation(run, "1-1-2", role); assert.equal(run.fiveVFive.formation, 
 const fiveSaved = structuredClone(run.fiveVFive); run.fiveVFive = structuredClone(fiveSaved); assert.deepEqual(run.fiveVFive, fiveSaved);
 const removed = Object.values(run.fiveVFive.slots).find(Boolean); run.roster = run.roster.filter(e => e.playerId !== removed); five.removeUnavailable(run); assert(!Object.values(run.fiveVFive.slots).includes(removed));
 // The match boundary consumes the exact configured IDs and remains in app.js; no simulation is invoked here.
-const app = fs.readFileSync("js/app.js", "utf8"); assert.match(app, /function dispatchNode[\s\S]*enterMatchFromNode/); assert.match(app, /state: "pre-match"/); assert.match(app, /current\.activeMatch = created/); assert.match(app, /function startMatchSimulation/);
+const app = fs.readFileSync("js/app.js", "utf8") + "\n" + fs.readFileSync("js/match/match-controller.js", "utf8"); assert.match(app, /function dispatchNode[\s\S]*enterMatchFromNode/); assert.match(app, /state: "pre-match"/); assert.match(app, /current\.activeMatch = created/); assert.match(app, /function startMatchSimulation/);
 console.log("squad/five configuration characterization: invariants, transactions, resume and prematch boundary OK");

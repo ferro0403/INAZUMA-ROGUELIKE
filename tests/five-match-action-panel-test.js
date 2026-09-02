@@ -3,7 +3,7 @@
 const assert = require('assert');
 const fs = require('fs');
 
-const app = fs.readFileSync('js/app.js', 'utf8');
+const app = fs.readFileSync('js/app.js', 'utf8') + '\n' + fs.readFileSync('js/match/match-controller.js', 'utf8');
 const css = fs.readFileSync('css/game.css', 'utf8');
 const fiveStart = app.indexOf('if (!isBoss && !isSpecial)');
 const fiveEnd = app.indexOf('const userPlayers = userTeamPlayers()', fiveStart);
@@ -17,7 +17,7 @@ assert.match(renderer, /const canEditFiveMatch = match\.state === "pre-match"[\s
 assert.match(renderer, /getElementById\("edit-five-team"\)\.addEventListener[\s\S]*commitMatchMutation\("five-match-edit-entry"[\s\S]*renderFiveVFive\(\{ persist: false, returnToMatch: true \}\)/, 'team editing enters through one canonical transaction and renders only after commit');
 assert.doesNotMatch(renderer, /persistMatchState\(\);\s*renderFiveVFive\(\{ returnToMatch: true \}\)/, 'team editing must not restore the legacy double-save path');
 assert.match(renderer, /getElementById\("test-win"\)\?\.addEventListener[\s\S]*forceMatchOutcome\("victory"\)/, 'safe victory retains its existing test flow');
-assert.match(renderer, /getElementById\("simulate-boss-match"\)\.addEventListener[\s\S]*openFiveMatchSimulationModal[\s\S]*startMatchSimulation/, 'simulation retains its existing modal and playback flow');
+assert.match(renderer, /getElementById\("simulate-boss-match"\)\.addEventListener[\s\S]*startMatchSimulation[\s\S]*openFiveMatchSimulationModal/, 'simulation retains its existing modal and playback flow');
 
 assert.match(css, /\.five-match-screen > \.five-match-controls \{[\s\S]*border: 3px solid #111216;[\s\S]*background: linear-gradient/, 'action styling stays scoped to the 5v5 screen');
 assert.match(css, /\.five-match-action-cta--primary[\s\S]*#ffc91b[\s\S]*#ffdd43/, 'primary simulation CTA uses the premium gold treatment');
