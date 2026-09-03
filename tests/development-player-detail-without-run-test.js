@@ -1,4 +1,5 @@
 "use strict";
+
 const assert = require("assert");
 const fs = require("fs");
 const vm = require("vm");
@@ -13,16 +14,49 @@ for (const file of [
 ]) {
   vm.runInContext(fs.readFileSync(file, "utf8"), context, { filename: file });
 }
+
+const controllerSource = fs.readFileSync(
+  "js/development/development-center-controller.js",
+  "utf8",
+);
+const bindStart = controllerSource.indexOf(
+  "function bindDevelopmentSelectedCardInteraction",
+);
+const bindEnd = controllerSource.indexOf(
+  "function developmentManagementPathMarkup",
+  bindStart,
+);
+assert.ok(bindStart >= 0 && bindEnd > bindStart);
+vm.runInContext(
+  `${controllerSource.slice(bindStart, bindEnd)}; globalThis.bindDevelopmentSelectedCardInteraction = bindDevelopmentSelectedCardInteraction;`,
+  context,
+);
+
 const stats = {
-  attack: 50,
-  control: 50,
-  speed: 50,
-  grit: 50,
-  physical: 50,
-  stamina: 50,
-  defense: 50,
-  save: 50,
+  attack: 91,
+  control: 86,
+  speed: 80,
+  grit: 79,
+  physical: 78,
+  stamina: 77,
+  defense: 52,
+  save: 20,
 };
+const adam = {
+  playerId: "adam-montayne",
+  name: "Adam Montayne",
+  position: "FW",
+  element: "Fuoco",
+  category: "Elite",
+  overall: 84,
+  potential: 90,
+  displayLevel: 20,
+  stats,
+  baseStats: stats,
+};
+let run = null;
+let modalMarkup = "";
+const modalRoot = { querySelector: () => null };
 const visuals = context.PlayerVisuals.create({
   getPlayerVisualsById: () => new Map(),
   escapeHtml: String,
@@ -32,43 +66,91 @@ const view = context.PlayerView.create({
   escapeHtml: String,
   resolveItem: (item) => item,
   itemIcon: () => "",
-  getProgression: () => ({
-    getPlayerAtLevel: (player) => ({
-      ...player,
-      overall: 50,
-      potential: 60,
-      stats,
-      baseStats: stats,
-    }),
-  }),
+  getProgression: () => ({ getPlayerAtLevel: (player) => player }),
   applyEquipment: (value) => value,
   formatLevel: String,
-  getSeasonId: () => undefined,
+  getSeasonId: () => run?.seasonId,
   sourcePlayer: () => null,
-  playerTeamIdentity: (player) => ({
-    name: player.teamName || "Svincolato",
+  playerTeamIdentity: (player, playerId) => {
+    const entry = run?.roster?.find(
+      (candidate) => String(candidate.playerId) === String(playerId),
+    );
+    return {
+      name: entry?.teamName || player.teamName || "Svincolato",
+      logoUrl: "",
+      logo: "",
+    };
+  },
+  historicalTeamIdentity: () => ({
+    name: "Svincolato",
     logoUrl: "",
     logo: "",
   }),
-  historicalTeamIdentity: () => ({ name: "Svincolato", logoUrl: "", logo: "" }),
   teamLogoMarkup: () => "",
   playerStatsMarkup: () => "",
 });
-const player = {
-  playerId: "dev",
-  name: "Development Player",
-  position: "MF",
-  element: "Vento",
-  category: "Normale",
-  finalOverall: 60,
-  stats,
-};
-assert.doesNotThrow(() =>
-  view.detailMarkup(player, { mode: "current", readOnly: true }),
+const detailController = context.PlayerDetailController.create({
+  view,
+  openModal: (markup) => {
+    modalMarkup = markup;
+  },
+  closeModal: () => {},
+  toast: (message) => {
+    throw new Error(message);
+  },
+  getModalRoot: () => modalRoot,
+  getFreeAgentsDb: () => ({ players: [adam] }),
+  getRosterEntry: () => null,
+  resolveRosterPlayer: () => null,
+  databaseForEntry: () => ({ players: [adam] }),
+  unequipPlayerItem: () => {},
+  renderSquad: () => {},
+});
+
+function assertDevelopmentDetail(markup) {
+  assert.ok(markup, "Player Detail returns non-empty markup");
+  assert.match(markup, /Adam Montayne/);
+  assert.match(markup, /Elite/);
+  assert.match(markup, /Potenziale[\s\S]*90/);
+  assert.match(markup, /Attacco[\s\S]*91/);
+  assert.match(markup, /Controllo[\s\S]*86/);
+  assert.match(markup, /Difesa[\s\S]*52/);
+  assert.strictEqual((markup.match(/player-stat-card/g) || []).length, 8);
+}
+
+function selectedCardClick(currentRun) {
+  run = currentRun;
+  modalMarkup = "";
+  let clickHandler = null;
+  const card = {
+    dataset: { developmentSelectedCard: adam.playerId },
+    addEventListener(type, handler) {
+      if (type === "click") clickHandler = handler;
+    },
+  };
+  context.bindDevelopmentSelectedCardInteraction(
+    card,
+    adam,
+    (selectedPlayer, playerId) =>
+      detailController.showFor(selectedPlayer, {
+        playerId,
+        readOnly: true,
+        database: { players: [adam] },
+      }),
+  );
+  assert.ok(clickHandler, "Development selected card binds a click handler");
+  clickHandler({ type: "click" });
+  return modalMarkup;
+}
+
+assertDevelopmentDetail(selectedCardClick(null));
+assertDevelopmentDetail(
+  selectedCardClick({
+    seasonId: "season-1",
+    roster: [{ playerId: adam.playerId, teamName: "Inazuma Japan" }],
+  }),
 );
-const markup = view.detailMarkup(player, { mode: "current", readOnly: true });
-assert.match(markup, /Development Player/);
-assert.strictEqual((markup.match(/player-stat-card/g) || []).length, 8);
+
 console.log(
-  "development player detail without run: injected PlayerView works without Run authority",
+  "development-player-detail-without-run-test: selected-card controller path works without and with active run",
 );
