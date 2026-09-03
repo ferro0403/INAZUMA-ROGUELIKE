@@ -73,6 +73,7 @@ jobs:
             tests/app-ui-shell-domain-test.js
             tests/app-bootstrap-domain-test.js
             tests/team-profile-runtime-domain-test.js
+            tests/app-dev-diagnostics-runtime-test.js
             tests/run-roster-runtime-domain-test.js
             tests/player-presentation-production-path-test.js
             tests/permanent-club-ui-production-path-test.js
