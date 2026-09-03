@@ -15,7 +15,7 @@ const PRODUCTION_MODULES = [
   "map/node-router.js", "map/trade-node-controller.js", "map/run-map-controller.js",
   "album/album-view.js", "album/album-controller.js", "hall/champion-snapshot.js", "hall/champion-presentation.js", "hall/hall-view.js", "hall/hall-controller.js", "development/development-center-view.js", "development/development-center-controller.js",
   "gameover/gameover-view.js", "gameover/gameover-controller.js", "finalization/finalization-view.js", "finalization/finalization-controller.js",
-  "home/home-view.js", "home/home-controller.js", "shop/shop-view.js", "shop/shop-controller.js", "settings/settings-view.js", "settings/settings-controller.js", "run-entry/season-selection-view.js", "run-entry/season-selection-controller.js", "run-entry/run-resume-controller.js", "run-entry/initial-draft-view.js", "run-entry/initial-draft-controller.js", "app/ui-shell.js", "app/app-bootstrap.js", "run/run-roster-runtime.js", "player/player-visuals.js", "player/player-view.js", "player/player-detail-controller.js", "app.js",
+  "home/home-view.js", "home/home-controller.js", "shop/shop-view.js", "shop/shop-controller.js", "settings/settings-view.js", "settings/settings-controller.js", "run-entry/season-selection-view.js", "run-entry/season-selection-controller.js", "run-entry/run-resume-controller.js", "run-entry/initial-draft-view.js", "run-entry/initial-draft-controller.js", "app/ui-shell.js", "app/app-bootstrap.js", "profile/team-profile-runtime.js", "run/run-roster-runtime.js", "player/player-visuals.js", "player/player-view.js", "player/player-detail-controller.js", "app.js",
 ];
 
 function runModule(context, file) {
