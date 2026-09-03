@@ -72,6 +72,7 @@ jobs:
           tests=(
             tests/player-presentation-production-path-test.js
             tests/permanent-club-ui-production-path-test.js
+            tests/champion-hall-presentation-domain-test.js
             tests/inventory-equipment-production-path-test.js
             tests/home-season-resume-production-path-test.js
             tests/shop-settings-production-path-test.js
