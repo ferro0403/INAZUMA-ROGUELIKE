@@ -1414,76 +1414,26 @@
   }
 
 
-  async function loadSeason(seasonId) {
-    activeSeason = global.SeasonRegistry.setActive(seasonId);
-    seasonDb = await global.SeasonRegistry.loadDatabase(activeSeason.id);
-    global.DevelopmentRuntime?.registerDatabase?.(activeSeason.id, seasonDb);
-    activeSeason = global.SeasonRegistry.get(activeSeason.id);
-    seasonPlayersById = global.SeasonRegistry.playersIndex(activeSeason.id);
-    seasonTeamsById = global.SeasonRegistry.teamsIndex(activeSeason.id);
-    return seasonDb;
-  }
-
-  function showLoadError(error) {
-    console.error(error);
-    const code = String(error?.code || error?.message || "unknown-load-error");
-    const persistenceError = /restore-recovery-required|restore-repair-needed|canonical-unrecoverable|storage-access-error|legacy-cloud-target-not-immutable|restore-terminal-error/i.test(code);
-    const databaseError = !persistenceError && (global.location?.protocol === "file:" || /database|fetch|network|json|load failed|failed to fetch/i.test(code));
-    const heading = databaseError ? "Caricamento database non riuscito" : "Avvio temporaneamente non disponibile";
-    const guidance = databaseError
-      ? "I browser possono bloccare i database JSON quando index.html viene aperto direttamente. Usa Live Server oppure il file AVVIA_GIOCO.bat."
-      : "Apri Account per controllare lo stato del salvataggio o usare le operazioni di recupero disponibili.";
-    const accountEntry = databaseError ? "" : `<div class="button-row">${global.InazumaAccountUI?.buttonMarkup?.() || ""}</div>`;
-    app.innerHTML = `
-      <main class="hero-screen"><div><p class="eyebrow">Caricamento non riuscito</p><h2>${heading}</h2>
-      <p class="muted">${guidance}</p>
-      <pre class="panel">${escapeHtml(code)}</pre>${accountEntry}</div></main>`;
-    return app.innerHTML;
-  }
-
-  function configureAlbumForBootstrap(playerIds) {
-    return global.AlbumProgress.configureFreeAgentIds(playerIds, { persist: persistenceWritesAllowed() });
-  }
-
-  async function init() {
-    try {
-      const [activeDb, freeAgentsResponse, visualsResponse] = await Promise.all([
-        loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID),
-        fetch("data/FREE_AGENTS_compact.json"),
-        fetch("data/PLAYER_VISUALS.json"),
-      ]);
-      if (!activeDb || !freeAgentsResponse.ok || !visualsResponse.ok) throw new Error("Database non raggiungibili");
-      const visualsDb = await visualsResponse.json();
-      freeAgentsDb = await freeAgentsResponse.json();
-      global.DevelopmentRuntime?.registerDatabase?.("free-agents", freeAgentsDb);
-      // Run gameplay is a device-local domain. Account authentication and
-      // cloud recovery continue independently and must not gate app startup.
-      configureAlbumForBootstrap((freeAgentsDb.players || []).map((player) => player.playerId));
-      freeAgentsById = new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player]));
-      playerVisualsById = new Map(Object.entries(visualsDb.players || {}));
-      await renderHome();
-    } catch (error) {
-      showLoadError(error);
-    }
-  }
-
-  function setPermanentClubTestContext(context = {}) {
-    if (global.__INAZUMA_TEST_MODE__ !== true) return false;
-    if (Object.hasOwn(context, "run")) { run = context.run; global.run = run; }
-    if (context.seasonDb) {
-      seasonDb = context.seasonDb;
-      seasonPlayersById = new Map((seasonDb.players || []).map((player) => [String(player.playerId), player]));
-      seasonTeamsById = new Map((seasonDb.teams || []).map((team) => [String(team.teamId), team]));
-    }
-    if (context.freeAgentsDb) {
-      freeAgentsDb = context.freeAgentsDb;
-      freeAgentsById = new Map((freeAgentsDb.players || []).map((player) => [String(player.playerId), player]));
-      global.DevelopmentRuntime?.registerDatabase?.("free-agents", freeAgentsDb);
-      configureAlbumForBootstrap((freeAgentsDb.players || []).map((player) => player.playerId));
-    }
-    activeSeason = context.activeSeason || activeSeason;
-    return true;
-  }
+  const appBootstrap = global.AppBootstrapRuntime.create({
+    app,
+    fetchResource: (...args) => fetch(...args),
+    escapeHtml,
+    persistenceWritesAllowed,
+    renderHome,
+    setRun,
+    getActiveSeason: () => activeSeason,
+    setActiveSeason: (value) => { activeSeason = value; },
+    setSeasonDb: (value) => { seasonDb = value; },
+    setSeasonPlayersById: (value) => { seasonPlayersById = value; },
+    setSeasonTeamsById: (value) => { seasonTeamsById = value; },
+    setFreeAgentsDb: (value) => { freeAgentsDb = value; },
+    setFreeAgentsById: (value) => { freeAgentsById = value; },
+    setPlayerVisualsById: (value) => { playerVisualsById = value; },
+  });
+  function loadSeason(...args) { return appBootstrap.loadSeason(...args); }
+  function showLoadError(...args) { return appBootstrap.showLoadError(...args); }
+  function configureAlbumForBootstrap(...args) { return appBootstrap.configureAlbumForBootstrap(...args); }
+  function setPermanentClubTestContext(...args) { return appBootstrap.setPermanentClubTestContext(...args); }
 
   global.__INAZUMA_UI_TEST__ = { bindAlbumRosterInteractions, configureAlbumForBootstrap, setPermanentClubTestContext, persistenceWritesAllowed, repairResultMessage, showLoadError, renderHome, renderAlbumCollections, renderAlbumTeams, renderAlbumRoster, renderHallOfFame, renderHallOfFameDetail, renderDevelopmentCenter, developmentCurrencyIcon, bindHallPlayerDetails, startNewRunFromHome, startRunWithIdentity, renderSeasonSelect, selectSeason, resumeRun, getRun: () => run };
   if (DEV_MODE) global.__INAZUMA_GAMEPLAY_FAILURE_DIAGNOSTICS__ = () => global.RunState.clone(gameplayFailureDiagnostics);
@@ -1587,5 +1537,5 @@
       getAppMarkup: () => app.innerHTML,
     });
   }
-  init();
+  appBootstrap.init();
 })(globalThis);
