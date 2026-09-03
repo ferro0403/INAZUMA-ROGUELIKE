@@ -1,0 +1,43 @@
+name: One-shot finalization navigation fix
+on:
+  push:
+    branches:
+      - hardening/finalization-navigation-persistence
+    paths:
+      - .github/workflows/one-shot-finalization-navigation-fix.yml
+permissions:
+  contents: write
+jobs:
+  patch:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hardening/finalization-navigation-persistence
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Wire and targeted verification
+        run: |
+          set -euo pipefail
+          node .github/one-shot-finalization-navigation-app-wire.js
+          node --check js/app.js
+          node --check js/finalization/finalization-controller.js
+          node tests/finalization-navigation-persistence-hardening-test.js
+          node tests/finalization-entry-persistence-hardening-test.js
+          node tests/finalization-pending-navigation-test.js
+          node tests/finalization-ambiguous-commit-production-test.js
+          node tests/real-final-boss-production-path-test.js
+          node tests/home-season-resume-production-path-test.js
+          node tests/app-gameplay-persistence-callsite-ownership-test.js
+          git diff --check
+      - name: Commit production wiring only
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/app.js
+          git diff --cached --check
+          git commit -m 'hardening: wire atomic finalization summary persistence'
+          git push origin HEAD:hardening/finalization-navigation-persistence
