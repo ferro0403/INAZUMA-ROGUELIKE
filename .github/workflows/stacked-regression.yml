@@ -101,6 +101,7 @@ jobs:
             tests/five-match-presentation-domain-test.js
             tests/five-prematch-commit-boundary-test.js
             tests/five-postmatch-navigation-boundary-test.js
+            tests/post-boss-map-navigation-hardening-test.js
             tests/post-boss-recovery-loop-production-test.js
             tests/terminal-effect-recovery-loop-production-test.js
             tests/finalization-ambiguous-commit-production-test.js
