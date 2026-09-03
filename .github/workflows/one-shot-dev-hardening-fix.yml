@@ -1,0 +1,44 @@
+name: One-shot DEV hardening fix
+on:
+  push:
+    branches:
+      - hardening/dev-shortcuts-persistence
+    paths:
+      - .github/workflows/one-shot-dev-hardening-fix.yml
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hardening/dev-shortcuts-persistence
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply DEV persistence hardening and targeted verification
+        run: |
+          set -euo pipefail
+          python .github/one-shot-dev-hardening-fix.py
+          node --check js/app.js
+          node tests/dev-shortcuts-persistence-hardening-test.js
+          node tests/app-gameplay-persistence-callsite-ownership-test.js
+          node tests/app-gameplay-persistence-transactions-test.js
+          node tests/post-boss-map-navigation-hardening-test.js
+          node tests/post-boss-recovery-loop-production-test.js
+          node tests/finalization-entry-persistence-hardening-test.js
+          node tests/finalization-navigation-persistence-hardening-test.js
+          node tests/terminal-effect-recovery-loop-production-test.js
+          node tests/real-final-boss-production-path-test.js
+          git diff --check
+      - name: Commit production fix only
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/app.js
+          git diff --cached --check
+          git commit -m 'hardening: make DEV shortcuts atomic'
+          git push origin HEAD:hardening/dev-shortcuts-persistence
