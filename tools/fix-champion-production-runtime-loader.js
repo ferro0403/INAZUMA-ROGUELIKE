@@ -1,0 +1,10 @@
+"use strict";
+const fs = require("fs");
+const path = "tests/helpers/production-runtime.js";
+let source = fs.readFileSync(path, "utf8");
+const from = '"album/album-view.js", "album/album-controller.js", "hall/hall-view.js", "hall/hall-controller.js"';
+const to = '"album/album-view.js", "album/album-controller.js", "hall/champion-snapshot.js", "hall/champion-presentation.js", "hall/hall-view.js", "hall/hall-controller.js"';
+if (!source.includes(from)) throw new Error("missing production runtime Hall loader anchor");
+source = source.replace(from, to);
+fs.writeFileSync(path, source);
+console.log("production runtime Hall loader updated");
