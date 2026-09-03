@@ -2,11 +2,37 @@
 
 const fs = require("fs");
 
+function functionBodyBrace(source, start) {
+  const openParen = source.indexOf("(", start);
+  if (openParen < 0) throw new Error("function parameter list missing");
+  let depth = 0, quote = null, escaped = false;
+  for (let i = openParen; i < source.length; i += 1) {
+    const ch = source[i];
+    if (quote) {
+      if (escaped) { escaped = false; continue; }
+      if (ch === "\\") { escaped = true; continue; }
+      if (ch === quote) quote = null;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === "`") { quote = ch; continue; }
+    if (ch === "(") depth += 1;
+    else if (ch === ")") {
+      depth -= 1;
+      if (depth === 0) {
+        const brace = source.indexOf("{", i + 1);
+        if (brace < 0) throw new Error("function body missing");
+        return brace;
+      }
+    }
+  }
+  throw new Error("function parameter list not closed");
+}
+
 function replaceFunction(source, name, replacement) {
   const marker = `  function ${name}(`;
   const start = source.indexOf(marker);
   if (start < 0) throw new Error(`function not found: ${name}`);
-  const brace = source.indexOf("{", start);
+  const brace = functionBodyBrace(source, start);
   let depth = 0, quote = null, escaped = false, lineComment = false, blockComment = false;
   for (let i = brace; i < source.length; i += 1) {
     const ch = source[i], next = source[i + 1];
