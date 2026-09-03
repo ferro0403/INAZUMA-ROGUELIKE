@@ -105,6 +105,7 @@ jobs:
             tests/post-boss-recovery-loop-production-test.js
             tests/terminal-effect-recovery-loop-production-test.js
             tests/finalization-ambiguous-commit-production-test.js
+            tests/finalization-entry-persistence-hardening-test.js
             tests/real-final-boss-production-path-test.js
           )
           for test_file in "${tests[@]}"; do

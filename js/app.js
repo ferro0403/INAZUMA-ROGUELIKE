@@ -1313,17 +1313,17 @@
   function persistChampionBeforeFinalUi(finalBoss = null) {
     const boss = finalBoss || seasonDb.bossOrder[Math.min(Number(run.bossIndex || 1) - 1, seasonDb.bossOrder.length - 1)] || seasonDb.bossOrder.at(-1);
     if (!run.finalization) {
-      run.completedAt = run.completedAt || new Date().toISOString();
-      const snapshot = buildChampionSnapshot(boss);
-      run.phase = "finalization";
-      run.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId };
-      global.PermanentEffects.enqueueHall(run, snapshot);
-      try {
-        global.RunState.save(run);
-      } catch (error) {
-        console.error("save failed (persistChampionBeforeFinalUi)", error);
-        toast("Salvataggio della vittoria non riuscito, riprova.", "error");
-      }
+      const committed = persistGameplayMutation({
+        label: "champion-finalization-entry",
+        mutate: (current) => {
+          current.completedAt = current.completedAt || new Date().toISOString();
+          const snapshot = buildChampionSnapshot(boss);
+          current.phase = "finalization";
+          current.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId };
+          global.PermanentEffects.enqueueHall(current, snapshot);
+        },
+      });
+      if (!committed.ok) return null;
     }
     drainPermanentEffects();
     return run.hallTeamId ? global.HallOfFameStorage.getTeam(run.hallTeamId) : null;
@@ -1410,7 +1410,7 @@
       useScoutTokenOnPull, useLuckyCharmOnPull, completePullNodeMutation, renderItemRewardResult, resolveItemNode,
       resumePendingItemReward, ensurePendingItemReward, finishNonMatchNode, recoverLegacyResolvedMatchRoutingIfNeeded,
       continueAfterMatch, resolvePendingRunFlow, showNextBossReward, advanceBossReward, finishBossVictoryTransition,
-      navigateBossVictoryDestination, resumeRunFinalization, renderGameOver, renderMatch,
+      navigateBossVictoryDestination, resumeRunFinalization, persistChampionBeforeFinalUi, renderGameOver, renderMatch,
       specialMatchOpponentMeta: (match) => specialMatchView.opponentMeta(match),
       renderFiveVFive, renderSquad, showPlayerDetailsFor, showPlayerDetails, openFiveVFiveEditor,
       openFiveMatchPlayerSwap, resolveDevelopmentEndRunFlow, renderMap, renderMapFailureRecovery, renderInventory,
