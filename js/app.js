@@ -1177,9 +1177,27 @@
   function resumePostBossFlowOrMap() {
     const flow = resolvePendingRunFlow({ clearMatch: true });
     if (flow.destination !== "none") return navigateBossVictoryDestination(flow);
-    ensureCurrentZone(); run.phase = "map";
-    try { global.RunState.save(run); } catch (error) { console.error("save failed (resumePostBossFlowOrMap)", error); }
-    return renderMap();
+    const zone = run?.currentZone;
+    const mapReady = run?.phase === "map"
+      && zone
+      && Array.isArray(zone.nodes)
+      && Array.isArray(zone.edges)
+      && Array.isArray(zone.path);
+    if (mapReady) return renderMap({ persist: false });
+    let zoneResult = null;
+    const committed = persistGameplayMutation({
+      label: "post-boss-map-navigation",
+      mutate: (current) => {
+        zoneResult = ensureCurrentZoneMutation(current);
+        current.phase = "map";
+      },
+    });
+    if (!committed.ok) return null;
+    if (zoneResult?.generated) {
+      try { global.RunState.createCheckpoint?.(run); }
+      catch (error) { console.warn("Unable to persist map checkpoint", error); }
+    }
+    return renderMap({ persist: false });
   }
   function bossVictoryMatch() { const match = ui.match || run.activeMatch; return match?.type === "boss" && match.result === "victory" && String(match.state || "").startsWith("completed") ? match : null; }
   function ensurePostBossFlow(options = {}) { return bossFlowController.ensureFlow(options); }
