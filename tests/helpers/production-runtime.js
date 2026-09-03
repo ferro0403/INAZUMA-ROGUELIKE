@@ -172,7 +172,7 @@ function load(storage, options = {}) {
   modalElement.querySelectorAll = selector => document.querySelectorAll(selector);
   const listeners = new Map();
   const c = { console, structuredClone, Date, Math, JSON, Object, Array, String, Number, Boolean, RegExp, Error, TypeError, Promise, Map, Set, WeakMap, WeakSet, Symbol, Intl, parseInt, parseFloat, isNaN, TextEncoder, Uint8Array, crypto: global.crypto, URLSearchParams, CSS: { escape: value => String(value) },
-    location: { search: "" }, document, window: null, localStorage: storage, performance: { now: () => 1000 },
+    location: { search: options.locationSearch || "" }, document, window: null, localStorage: storage, performance: { now: () => 1000 },
     requestAnimationFrame: fn => { fn(2000); return 1; }, cancelAnimationFrame() {}, setTimeout, clearTimeout,
     matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }),
     CustomEvent: class { constructor(type, init) { this.type = type; this.detail = init?.detail; } },

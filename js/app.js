@@ -1417,7 +1417,7 @@
       openFiveMatchPlayerSwap, resolveDevelopmentEndRunFlow, renderMap, renderMapFailureRecovery, renderInventory,
       chooseEquipmentPlayer: inventoryController.chooseEquipmentPlayer,
       useInventoryItem: inventoryController.useInventoryItem,
-      inventoryModel, ensureCurrentZoneMutation,
+      inventoryModel, ensureCurrentZoneMutation, devSkipCurrentBoss, devSkipToCompletedBosses, devGameOverNow,
     },
   });
   appBootstrap.init();
