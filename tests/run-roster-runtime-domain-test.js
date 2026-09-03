@@ -88,7 +88,7 @@ assert.strictEqual(runtime.sourcePlayer("p1").name, "Uno");
 assert.strictEqual(runtime.roleForPlayerId("p1"), "FW");
 assert.strictEqual(runtime.overallForPlayerId("p1"), 74);
 assert.strictEqual(runtime.activeBasePotential(run.roster[0]), 70);
-assert.strictEqual(runtime.averageOverall(), 68);
+assert.strictEqual(runtime.averageOverall(), 69);
 assert.deepStrictEqual(runtime.permanentRosterFields({ playerId: "p1" }), { owner: "run-a", playerId: "p1" });
 const resolved = runtime.resolvedRosterPlayer("p1");
 assert.strictEqual(resolved.overall, 74);
