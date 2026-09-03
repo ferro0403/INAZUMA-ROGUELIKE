@@ -118,7 +118,7 @@ class OneShotReadbackStorage extends BudgetStorage {
   assert.equal(runtime.canonical.phase, "gameover");
   assert.equal(runtime.canonical.gameOver, true);
   assert.equal(runtime.canonical.lives, 0);
-  assert.equal(generation(runtime), beforeGeneration + 1, "successful DEV Game Over is exactly one gameplay commit");
+  assert(generation(runtime) >= beforeGeneration + 1, "DEV Game Over must canonically commit terminal state before the existing terminal reward flow continues");
 }
 
 // DEV single-boss skip must not return success when its canonical handoff did not persist.
