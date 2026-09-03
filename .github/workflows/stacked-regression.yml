@@ -91,6 +91,7 @@ jobs:
         run: |
           set -euo pipefail
           tests=(
+            tests/match-presentation-domain-test.js
             tests/five-match-presentation-domain-test.js
             tests/five-prematch-commit-boundary-test.js
             tests/five-postmatch-navigation-boundary-test.js
