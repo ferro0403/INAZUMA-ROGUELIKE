@@ -757,6 +757,23 @@
     loadSeason, isProfileAwareSeason, closeModal, resetRenderedViewScroll, bindSectionRootNav,
     showPlayerDetailsFor, scrollSnapshot,
   });
+  const championSnapshotRuntime = global.ChampionSnapshotRuntime.create({
+    getRun: () => run,
+    getSeasonDb: () => seasonDb,
+    sourcePlayer: (...args) => sourcePlayer(...args),
+    resolvedRosterPlayer: (...args) => resolvedRosterPlayer(...args),
+    rosterEntry: (...args) => rosterEntry(...args),
+    playerPortraitUrl: (...args) => playerPortraitUrl(...args),
+    resolvePlayerVisual: (...args) => resolvePlayerVisual(...args),
+    normalizeTeamIdentity: (...args) => normalizeTeamIdentity(...args),
+  });
+  const championPresentation = global.ChampionPresentation.create({
+    getSeasonDb: () => seasonDb,
+    escapeHtml: (...args) => escapeHtml(...args),
+    formatDate: (...args) => formatDate(...args),
+    compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
+  });
+
   const hallView = global.HallView.create({ escapeHtml, sectionRootButton });
   const hallController = global.HallController.create({
     view: hallView, app, resetRenderedViewScroll, bindSectionRootNav, normalizedHallSeasonName, formatDate,
@@ -1766,35 +1783,9 @@
     try { return new Intl.DateTimeFormat("it-IT", { dateStyle: "medium", timeStyle: "short" }).format(new Date(value)); } catch (_) { return String(value); }
   }
 
-  function snapshotPlayer(entry, area, slot) {
-    const source = sourcePlayer(entry);
-    const resolved = resolvedRosterPlayer(entry.playerId) || source || {};
-    return { playerId: String(entry.playerId), profileId: entry.activeProfileId || null, roleVariantId: entry.activeRoleVariantId || null, name: resolved.name || source?.name || String(entry.playerId), nickname: resolved.nickname || null, role: resolved.position || source?.position || null, element: resolved.element || resolved.type || source?.element || null, portraitUrl: playerPortraitUrl(resolved || source), fullbodyUrl: resolvePlayerVisual(resolved || source, { playerId: entry.playerId }).frontFullbodyUrl || null, teamId: entry.teamId || source?.teamId || null, teamName: entry.teamName || source?.teamName || null, originalRarity: source?.category || null, finalRarity: resolved.category || source?.category || null, recruitedAtLevel: entry.recruitedAtLevel ?? null, finalLevel: Number(entry.level || 0), finalLevelUnits: Number(entry.levelUnits || 0), seasonId: run.seasonId, recruitedOverall: entry.recruitedOverall ?? null, finalOverall: resolved.overall ?? source?.finalOverall ?? null, finalPotential: resolved.potential ?? null, finalStats: resolved.stats || null, equippedItem: entry.equippedItem ? { ...entry.equippedItem } : null, formationSlot: area === "lineup" ? slot : null, benchSlot: area === "bench" ? slot : null, recruitmentSource: entry.source || null, traits: Array.isArray(entry.traits) ? entry.traits.slice() : [] };
-  }
-
-  function collectPlayerStatistics(players) {
-    const stats = {};
-    players.forEach((player) => { stats[player.playerId] = { appearancesTotal: player.formationSlot != null ? 1 : 0, appearances5v5: 0, appearances11v11: player.formationSlot != null ? 1 : 0, winsAsStarter: player.formationSlot != null ? 1 : 0, goals: 0, saves: 0, defensiveStops: 0, shots: null, posts: null, crossbars: null, bossMatches: player.formationSlot != null ? 1 : 0, recruitedAtLevel: player.recruitedAtLevel, finalLevel: player.finalLevel, recruitedOverall: player.recruitedOverall, finalOverall: player.finalOverall, overallGrowth: player.recruitedOverall == null || player.finalOverall == null ? null : Number(player.finalOverall) - Number(player.recruitedOverall), equipmentUsed: player.equippedItem ? [player.equippedItem] : [] }; });
-    const timeline = run.activeMatch?.simulation?.timeline || [];
-    timeline.forEach((event) => { const id = String(event.playerId || ""); if (!stats[id]) return; if (event.type === "goal") stats[id].goals += 1; if (event.type === "save") stats[id].saves += 1; if (event.type === "defense") stats[id].defensiveStops += 1; });
-    return stats;
-  }
-
-  function buildChampionSnapshot(finalBoss) {
-    const identity = normalizeTeamIdentity(run.teamIdentity);
-    const starters = run.lineup.map((id, index) => snapshotPlayer(rosterEntry(id), "lineup", index + 1)).filter(Boolean);
-    const bench = run.bench.slice(0, 4).map((id, index) => snapshotPlayer(rosterEntry(id), "bench", index + 1)).filter(Boolean);
-    const fullRoster = run.roster.map((entry) => snapshotPlayer(entry, run.lineup.includes(String(entry.playerId)) ? "lineup" : (run.bench.includes(String(entry.playerId)) ? "bench" : "roster"), run.lineup.indexOf(String(entry.playerId)) + 1 || run.bench.indexOf(String(entry.playerId)) + 1 || null));
-    const avg = starters.length ? Math.round(starters.reduce((sum, p) => sum + Number(p.finalOverall || 0), 0) / starters.length) : null;
-    global.RunStatistics?.snapshotFinalPlayerStats?.(run, fullRoster);
-    const statsSnapshot = global.RunStatistics?.buildHallOfFameStatisticsSnapshot?.(run) || { runStatistics: {}, playerStatistics: {}, matchHistory: [], awards: [] };
-    const seasonMeta = global.SeasonRegistry.get(run?.seasonId);
-    const runStatistics = { ...statsSnapshot.runStatistics, mode: seasonMeta.name, season: seasonMeta.name, victoryDate: run.completedAt || new Date().toISOString(), seed: run.runId, durationMs: run.createdAt ? Date.now() - new Date(run.createdAt).getTime() : statsSnapshot.runStatistics.durationMs, finalTeamLevel: run.teamLevel ?? null, finalTeamLevelUnits: run.teamLevelUnits ?? 0, finalAverageOverall: avg, finalFormation: run.formationId, livesRemaining: run.lives ?? null, recruitedPlayers: run.roster.length, bossesDefeated: (run.completedBossIds || []).slice() };
-    const snapshot = { archiveSchemaVersion: 1, runId: run.runId, teamName: identity.name, teamLogo: identity.logo || "inazuma-lightning", modeId: seasonMeta.id, modeName: seasonMeta.name, seasonId: seasonMeta.id, seasonName: seasonMeta.name, difficultyId: null, victoryDate: run.completedAt || new Date().toISOString(), seed: run.runId, finalBossId: String(finalBoss?.teamId || "raimon"), finalBossName: finalBoss?.teamName || "Raimon", finalFormation: run.formationId, finalFormationTactics: global.MatchSimulator?.formationTactic?.(run.formationId) || null, finalStartingEleven: starters, fullRoster, bench, savedFiveVFiveFormation: run.fiveVFive ? JSON.parse(JSON.stringify(run.fiveVFive)) : null, finalTeamLevel: run.teamLevel ?? null, finalTeamLevelUnits: run.teamLevelUnits ?? 0, finalAverageOverall: avg, livesRemaining: run.lives ?? null, statisticsSchemaVersion: statsSnapshot.statisticsSchemaVersion || 1, statisticsComplete: statsSnapshot.statisticsComplete, statisticsStartedAt: statsSnapshot.statisticsStartedAt, runStatistics, playerStatistics: statsSnapshot.playerStatistics, matchHistory: statsSnapshot.matchHistory, awards: statsSnapshot.awards, rulesetVersion: "season1-config-v2", databaseVersion: seasonDb?.version || null, formationTacticsVersion: "match-simulator-config-v1", equipmentVersion: "season1-item-pool-v1", traitSystemVersion: null, sourceAppVersion: "hall-of-fame-v2-run-statistics" };
-    snapshot.archiveKey = global.HallOfFameStorage.archiveKeyFor(snapshot);
-    snapshot.hallTeamId = global.HallOfFameStorage.stableId(snapshot.archiveKey);
-    return snapshot;
-  }
+  function snapshotPlayer(...args) { return championSnapshotRuntime.snapshotPlayer(...args); }
+  function collectPlayerStatistics(...args) { return championSnapshotRuntime.collectPlayerStatistics(...args); }
+  function buildChampionSnapshot(...args) { return championSnapshotRuntime.buildChampionSnapshot(...args); }
 
   function persistChampionBeforeFinalUi(finalBoss = null) {
     const boss = finalBoss || seasonDb.bossOrder[Math.min(Number(run.bossIndex || 1) - 1, seasonDb.bossOrder.length - 1)] || seasonDb.bossOrder.at(-1);
@@ -1821,118 +1812,15 @@
     return team;
   }
 
-  function snapshotCard(player) {
-    return compactPlayerCardMarkup({ ...player, position: player.role, category: player.finalRarity, overall: player.finalOverall, displayLevel: player.finalLevel, stats: player.finalStats }, { equipment: player.equippedItem, equipmentInFooter: true, level: global.LevelProgression.formatLevel(player.finalLevel, player.seasonId, player.finalLevelUnits), overall: player.finalOverall, dataAttr: `data-hall-player="${escapeHtml(player.playerId)}"`, extraClass: "squad-player-card hall-player-card" });
-  }
-
-  function championFormationMarkup(team) {
-    const starters = Array.isArray(team.finalStartingEleven) ? team.finalStartingEleven : [];
-    const database = global.SeasonRegistry?.database?.(team.seasonId || team.modeId) || seasonDb;
-    const formation = database?.formations?.eleven?.find((item) => item.id === team.finalFormation);
-    const playersByRole = new Map(["FW", "MF", "DF", "GK"].map((role) => [role, starters.filter((player) => player.role === role)]));
-    const layouts = global.FormationLayout.displayRows(formation || { requirements: { FW: 3, MF: 3, DF: 4, GK: 1 } });
-    const rows = layouts.map((layout) => ({ ...layout, players: (playersByRole.get(layout.role) || []).splice(0, layout.count) }));
-    return `<section class="pitch hall-pitch">${rows.map((row) => `<div class="pitch-row tactical-row" data-display-role="${escapeHtml(row.displayRole || row.role)}" data-row-count="${row.players.length || 1}" style="--players-in-row:${row.players.length || 1}">${row.players.map(snapshotCard).join("")}</div>`).join("")}</section>`;
-  }
-
-  function championFiveVFiveMarkup(team) {
-    const formation = team.savedFiveVFiveFormation;
-    const slots = formation?.slots || {};
-    const roster = Array.isArray(team.fullRoster) ? team.fullRoster : [];
-    const players = Object.values(slots).map((playerId) => roster.find((player) => String(player.playerId) === String(playerId))).filter(Boolean);
-    if (!players.length) return `<p class="muted">${escapeHtml(formation?.formation || "Non disponibile")}</p>`;
-    return `<p class="muted">${escapeHtml(formation?.formation || "Formazione salvata")}</p><div class="bench-list hall-five-list">${players.map(snapshotCard).join("")}</div>`;
-  }
-
-  function compactSeed(seed) { const value = String(seed || ""); return value.length > 18 ? `${value.slice(0, 8)}…${value.slice(-6)}` : value; }
-
-  function formatStatValue(value, type = "text") {
-    if (value == null || value === "") return null;
-    if (type === "date") return formatDate(value);
-    if (type === "duration") {
-      const ms = Number(value);
-      if (!Number.isFinite(ms) || ms < 0) return null;
-      const minutes = Math.max(1, Math.round(ms / 60000));
-      const hours = Math.floor(minutes / 60);
-      const rest = minutes % 60;
-      return hours ? `${hours}h ${rest}m` : `${minutes} min`;
-    }
-    if (type === "list") return Array.isArray(value) && value.length ? value : null;
-    if (typeof value === "number" && !Number.isFinite(value)) return null;
-    return String(value);
-  }
-
-  function runStatsSections(team) {
-    const stats = team.runStatistics || {};
-    return [
-      { title: "Identità finale", className: "hall-stat-group--identity", items: [
-        { label: "Livello finale squadra", value: global.LevelProgression.formatLevel(stats.finalTeamLevel ?? team.finalTeamLevel, team.seasonId || team.modeId, team.finalTeamLevelUnits ?? 0) },
-        { label: "Overall medio finale", value: stats.finalAverageOverall ?? team.finalAverageOverall },
-        { label: "Modulo finale", value: stats.finalFormation || team.finalFormation },
-        { label: "Vite rimaste", value: stats.livesRemaining ?? team.livesRemaining },
-      ] },
-      { title: "Bilancio della run", className: "hall-stat-group--results", items: [
-        { label: "Partite", value: stats.matchesTotal },
-        { label: "Vittorie", value: stats.winsTotal },
-        { label: "Sconfitte", value: stats.lossesTotal },
-        { label: "Gol fatti", value: stats.goalsFor },
-        { label: "Gol subiti", value: stats.goalsAgainst },
-        { label: "Differenza reti", value: stats.goalDifference },
-        { label: "Clean sheet", value: stats.cleanSheets },
-      ] },
-      { title: "Sfide boss", className: "hall-stat-group--boss", items: [
-        { label: "Partite Boss", value: stats.bossMatches },
-        { label: "Vittorie Boss", value: stats.bossWins },
-        { label: "Sconfitte Boss", value: stats.bossLosses },
-      ] },
-      ...(Number(stats.specialMatches || 0) > 0 ? [{ title: "Partite speciali", className: "hall-stat-group--special", items: [
-        { label: "Giocate", value: stats.specialMatches },
-        { label: "Vinte", value: stats.specialWins },
-        { label: "Perse", value: stats.specialLosses },
-      ] }] : []),
-      { title: "Percorso", className: "hall-stat-group--secondary", items: [
-        { label: "Nodi completati", value: stats.nodesCompleted },
-        { label: "Giocatori reclutati", value: stats.recruitedPlayers ?? stats.playersRecruited ?? team.fullRoster?.length },
-      ] },
-    ];
-  }
-
-  function statsMarkup(team) {
-    const sections = runStatsSections(team).map((section) => {
-      const items = section.items.map((item) => ({ ...item, formatted: formatStatValue(item.value, item.type) })).filter((item) => item.formatted != null);
-      if (!items.length) return "";
-      return `<section class="hall-stat-group ${escapeHtml(section.className || "")}"><h3>${escapeHtml(section.title)}</h3><div class="hall-stat-list">${items.map((item) => `<div class="hall-stat"><span>${escapeHtml(item.label)}</span><strong>${escapeHtml(item.formatted)}</strong></div>`).join("")}</div></section>`;
-    }).filter(Boolean).join("");
-    return sections || '<p class="muted">Statistiche essenziali non disponibili per questa run.</p>';
-  }
-
-  function awardsMarkup(team) {
-    const featuredAwardIds = new Set(["top_scorer", "best_goalkeeper", "defensive_pillar", "final_hero", "mvp"]);
-    const awards = (team.awards || []).filter((award) => award && award.playerName && featuredAwardIds.has(award.id));
-    return awards.map((award) => {
-      const playerAttr = award.playerId ? ` data-hall-player="${escapeHtml(award.playerId)}"` : "";
-      const description = award.description || award.reason || (award.score != null ? `Punteggio ${award.score}` : "Riconoscimento della run");
-      return `<article class="hall-award ${playerAttr ? "hall-award--interactive" : ""}"${playerAttr}><span class="hall-award-mark" aria-hidden="true">★</span><img src="${escapeHtml(award.portraitUrl || '')}" alt="" loading="lazy"/><div class="hall-award-copy"><strong>${escapeHtml(award.label || award.title)}</strong><span>${escapeHtml(award.playerName)}</span><small>${escapeHtml(description)}</small></div></article>`;
-    }).join("") || '<p class="muted">Premi individuali disponibili solo quando i dati registrati sono affidabili.</p>';
-  }
-
-  function playerStatsMarkup(team, player, explicitStats = null) {
-    const stats = explicitStats || team.playerStatistics?.[String(player.playerId)] || player.playerStatistics || {};
-    const role = player.role || player.position || stats.role;
-    const items = [
-      ["Presenze", stats.appearances ?? stats.appearancesTotal], ["Vittorie", stats.wins],
-      role !== "GK" ? ["Gol", stats.goals] : null,
-      role === "FW" || role === "MF" ? ["Tiri", stats.shots] : null,
-      role === "GK" ? ["Parate", stats.saves] : null,
-      role === "GK" || role === "DF" ? ["Clean sheet", stats.cleanSheets] : null,
-      role === "DF" || role === "MF" ? ["Azioni difensive", stats.defensiveActions ?? stats.defensiveStops] : null,
-      ["Voto medio", stats.averageRating], ["Miglior voto", stats.bestRating], ["Crescita overall", stats.overallGrowth],
-    ].filter((item) => item && item[1] != null && item[1] !== "");
-    const awards = (team.awards || []).filter((award) => String(award.playerId || award.playerName) === String(player.playerId) || award.playerName === player.name).map((award) => award.label || award.title).filter(Boolean);
-    const awardsMarkup = awards.length ? `<div class="run-stat-card"><span class="run-stat-label">Premi</span><strong class="run-stat-value">${escapeHtml(awards.join(", "))}</strong></div>` : "";
-    if (!items.length && !awardsMarkup) return '<section class="player-history-section"><h3>PRESTAZIONI NELLA RUN</h3><p class="muted">Statistiche complete non disponibili per questa run.</p></section>';
-    return `<section class="player-history-section"><h3>PRESTAZIONI NELLA RUN</h3><div class="player-history-stats">${items.map(([label, value]) => `<div class="run-stat-card"><span class="run-stat-label">${escapeHtml(label)}</span><strong class="run-stat-value">${escapeHtml(value)}</strong></div>`).join("")}${awardsMarkup}</div></section>`;
-  }
+  function snapshotCard(...args) { return championPresentation.snapshotCard(...args); }
+  function championFormationMarkup(...args) { return championPresentation.championFormationMarkup(...args); }
+  function championFiveVFiveMarkup(...args) { return championPresentation.championFiveVFiveMarkup(...args); }
+  function compactSeed(...args) { return championPresentation.compactSeed(...args); }
+  function formatStatValue(...args) { return championPresentation.formatStatValue(...args); }
+  function runStatsSections(...args) { return championPresentation.runStatsSections(...args); }
+  function statsMarkup(...args) { return championPresentation.statsMarkup(...args); }
+  function awardsMarkup(...args) { return championPresentation.awardsMarkup(...args); }
+  function playerStatsMarkup(...args) { return championPresentation.playerStatsMarkup(...args); }
 
   function bindFinalTabs() { document.querySelectorAll("[data-final-tab]").forEach((button) => button.addEventListener("click", () => { document.querySelectorAll("[data-final-tab]").forEach((item) => { item.classList.toggle("active", item === button); item.setAttribute("aria-selected", item === button ? "true" : "false"); }); document.querySelectorAll("[data-tab-panel]").forEach((panel) => panel.classList.toggle("active", panel.dataset.tabPanel === button.dataset.finalTab)); })); document.querySelector('[data-final-tab="team"]')?.click(); }
 

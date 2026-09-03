@@ -3,7 +3,7 @@ const assert = require("assert");
 const fs = require("fs");
 const files = [
   "js/album/album-controller.js", "js/album/album-view.js",
-  "js/hall/hall-controller.js", "js/hall/hall-view.js",
+  "js/hall/hall-controller.js", "js/hall/champion-snapshot.js","js/hall/champion-presentation.js","js/hall/hall-view.js",
   "js/development/development-center-controller.js", "js/development/development-center-view.js",
 ];
 const source = files.map(file => fs.readFileSync(file, "utf8")).join("\n");
