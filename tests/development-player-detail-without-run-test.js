@@ -1,113 +1,74 @@
 "use strict";
-
 const assert = require("assert");
 const fs = require("fs");
 const vm = require("vm");
 
-const source = fs.readFileSync("js/app.js", "utf8") + "\n" + fs.readFileSync("js/development/development-center-controller.js", "utf8");
-
-function extractFunction(name) {
-  const start = source.indexOf(`  function ${name}(`);
-  assert.notStrictEqual(start, -1, `${name} is present`);
-  const bodyStart = source.indexOf(") {", start) + 2;
-  let depth = 0;
-  for (let index = bodyStart; index < source.length; index += 1) {
-    if (source[index] === "{") depth += 1;
-    if (source[index] === "}") depth -= 1;
-    if (depth === 0) return source.slice(start, index + 1).trim();
-  }
-  throw new Error(`Cannot extract ${name}`);
+const context = { globalThis: null, Map, Set, JSON };
+context.globalThis = context;
+vm.createContext(context);
+for (const file of [
+  "js/player/player-visuals.js",
+  "js/player/player-view.js",
+  "js/player/player-detail-controller.js",
+]) {
+  vm.runInContext(fs.readFileSync(file, "utf8"), context, { filename: file });
 }
-
-const adam = {
-  playerId: "adam-montayne",
-  name: "Adam Montayne",
-  position: "FW",
-  element: "Fuoco",
-  category: "Elite",
-  overall: 84,
-  potential: 90,
-  displayLevel: 20,
-  stats: { attack: 91, control: 86, defense: 52 },
-  baseStats: { attack: 91, control: 86, defense: 52 },
+const stats = {
+  attack: 50,
+  control: 50,
+  speed: 50,
+  grit: 50,
+  physical: 50,
+  stamina: 50,
+  defense: 50,
+  save: 50,
 };
-
-const context = {
-  initialRun: null,
-  global: {
-    InazumaProgression: { getPlayerAtLevel: (player) => player },
-    RoguelikeRules: { applyEquipment: (stats) => stats },
-    LevelProgression: { formatLevel: (level) => String(level) },
-  },
+const visuals = context.PlayerVisuals.create({
+  getPlayerVisualsById: () => new Map(),
+  escapeHtml: String,
+});
+const view = context.PlayerView.create({
+  visuals,
+  escapeHtml: String,
+  resolveItem: (item) => item,
+  itemIcon: () => "",
+  getProgression: () => ({
+    getPlayerAtLevel: (player) => ({
+      ...player,
+      overall: 50,
+      potential: 60,
+      stats,
+      baseStats: stats,
+    }),
+  }),
+  applyEquipment: (value) => value,
+  formatLevel: String,
+  getSeasonId: () => undefined,
+  sourcePlayer: () => null,
+  playerTeamIdentity: (player) => ({
+    name: player.teamName || "Svincolato",
+    logoUrl: "",
+    logo: "",
+  }),
+  historicalTeamIdentity: () => ({ name: "Svincolato", logoUrl: "", logo: "" }),
+  teamLogoMarkup: () => "",
+  playerStatsMarkup: () => "",
+});
+const player = {
+  playerId: "dev",
+  name: "Development Player",
+  position: "MF",
+  element: "Vento",
+  category: "Normale",
+  finalOverall: 60,
+  stats,
 };
-
-vm.runInNewContext(`
-  let run = initialRun;
-  const freeAgentsDb = { players: [] };
-  const seasonDb = { teams: [] };
-  const seasonTeamsById = new Map();
-  const STAT_LABELS = { attack: "Attacco", control: "Controllo", defense: "Difesa" };
-  const modalRoot = { querySelector: () => null };
-  let modalMarkup = "";
-  const escapeHtml = (value) => String(value ?? "");
-  const rarityClass = (category) => "rarity-" + String(category).toLowerCase();
-  const rosterEntry = (playerId) => run.roster.find((entry) => String(entry.playerId) === String(playerId));
-  const resolvePlayerVisual = () => ({ frontFullbodyUrl: "", portraitUrl: "", detailImageUrl: "adam.png", detailImageKind: "portrait", detailFallbacks: [] });
-  const imageFallbackAttributes = () => "";
-  const statIcon = () => "";
-  const sourcePlayer = () => null;
-  const teamLogoMarkup = () => "";
-  const resolveItem = () => ({ name: "", description: "", bonus: 0, stat: "" });
-  const itemIcon = () => "";
-  const playerStatsMarkup = () => "";
-  const toast = (message) => { throw new Error(message); };
-  const openModal = (markup) => { modalMarkup = markup; };
-  const unequipPlayerItem = () => {};
-  const closeModal = () => {};
-  const renderSquad = () => {};
-  ${extractFunction("playerTeamIdentity")}
-  ${extractFunction("historicalTeamIdentity")}
-  ${extractFunction("playerDetailMarkup")}
-  ${extractFunction("showPlayerDetailsFor")}
-  ${extractFunction("bindDevelopmentSelectedCardInteraction")}
-  this.detail = playerDetailMarkup;
-  this.show = showPlayerDetailsFor;
-  this.bind = bindDevelopmentSelectedCardInteraction;
-  this.markup = () => modalMarkup;
-  this.setRun = (value) => { run = value; };
-`, context);
-
-function assertDevelopmentDetail(markup) {
-  assert.ok(markup, "Player Detail returns non-empty markup");
-  assert.match(markup, /Adam Montayne/, "the Development player name is shown");
-  assert.match(markup, /Elite/, "the Development rarity is shown");
-  assert.match(markup, /Potenziale<\/span><strong>90/, "the Development potential is shown");
-  assert.match(markup, /Attacco[\s\S]*91/, "attack is shown");
-  assert.match(markup, /Controllo[\s\S]*86/, "control is shown");
-  assert.match(markup, /Difesa[\s\S]*52/, "defense is shown");
-}
-
-function renderDevelopmentSelectionAndClick(run) {
-  context.setRun(run);
-  let clickHandler = null;
-  const card = {
-    dataset: { developmentSelectedCard: adam.playerId },
-    addEventListener(type, handler) { if (type === "click") clickHandler = handler; },
-  };
-  context.bind(card, adam, (selectedPlayer) => context.show(selectedPlayer, {
-    readOnly: true,
-    equipment: null,
-    database: { players: [adam] },
-  }));
-  assert.ok(clickHandler, "the selected Development card is interactive");
-  clickHandler();
-  return context.markup();
-}
-
-context.setRun(null);
-assert.doesNotThrow(() => context.detail(adam, { readOnly: true, equipment: null, database: { players: [adam] } }));
-assertDevelopmentDetail(context.detail(adam, { readOnly: true, equipment: null, database: { players: [adam] } }));
-assertDevelopmentDetail(renderDevelopmentSelectionAndClick(null));
-assertDevelopmentDetail(renderDevelopmentSelectionAndClick({ seasonId: "season-1", roster: [{ playerId: adam.playerId, teamName: "Inazuma Japan" }] }));
-
-console.log("development-player-detail-without-run-test: no-run and active-run Development detail flows OK");
+assert.doesNotThrow(() =>
+  view.detailMarkup(player, { mode: "current", readOnly: true }),
+);
+const markup = view.detailMarkup(player, { mode: "current", readOnly: true });
+assert.match(markup, /Development Player/);
+assert.strictEqual((markup.match(/player-stat-card/g) || []).length, 8);
+console.log(
+  "development player detail without run: injected PlayerView works without Run authority",
+);

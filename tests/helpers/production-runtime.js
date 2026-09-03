@@ -92,6 +92,8 @@ function load(storage, options = {}) {
     const tags = String(markup).match(/<[^/!][^>]*>/g) || [];
     for (const tag of tags) {
       const node = element(document); node.parentElement = delegatedParent;
+      node.tagName = /^<([a-z0-9-]+)/i.exec(tag)?.[1]?.toUpperCase() || "";
+      if (node.tagName) { const selector = node.tagName.toLowerCase(), values = selectorTargets.get(selector) || []; values.push(node); selectorTargets.set(selector, values); }
       let fragmentMarkup = "";
       Object.defineProperty(node, "innerHTML", { configurable: true, get() { return fragmentMarkup; }, set(value) { fragmentMarkup = String(value ?? ""); registerMarkup(node, fragmentMarkup, node, false); } });
       node.id = /\bid="([^"]+)"/.exec(tag)?.[1] || "";
@@ -118,6 +120,9 @@ function load(storage, options = {}) {
     reparent("[data-album-roster]", ["[data-album-player-entry]", "[data-album-player]", "[data-album-load-more]"]);
     reparent("#development-player-results", ["[data-development-player]", "[data-development-card]"]);
     reparent("#development-management-results", ["[data-open-management-player]", "[data-regress-management-player]"]);
+    reparent(".squad-screen", ["[data-squad-player]", "#squad-player-info"]);
+    const squadScreen = document.querySelector(".squad-screen");
+    if (squadScreen && elementsById.get("app") === root) squadScreen.parentElement = root;
   }
   function clearDescendants(root) {
     const belongsToRoot = (item) => {
@@ -161,7 +166,7 @@ function load(storage, options = {}) {
     const workspace = document.querySelector(".inventory-equipment-workspace");
     if (workspace) for (const target of document.querySelectorAll("[data-item-target-player]")) target.parentElement = workspace;
   } });
-  appElement.querySelector = selector => selector === "main" ? appElement : document.querySelector(selector);
+  appElement.querySelector = selector => document.querySelector(selector);
   appElement.querySelectorAll = selector => document.querySelectorAll(selector);
   modalElement.querySelector = selector => document.querySelector(selector);
   modalElement.querySelectorAll = selector => document.querySelectorAll(selector);
