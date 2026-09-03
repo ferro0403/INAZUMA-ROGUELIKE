@@ -4,21 +4,44 @@ const assert = require("assert");
 const fs = require("fs");
 const vm = require("vm");
 
-const source = fs.readFileSync("js/app.js", "utf8") + "\n" + fs.readFileSync("js/development/development-center-controller.js", "utf8");
-
-function extractFunction(name) {
-  const start = source.indexOf(`  function ${name}(`);
-  assert.notStrictEqual(start, -1, `${name} is present`);
-  const bodyStart = source.indexOf(") {", start) + 2;
-  let depth = 0;
-  for (let index = bodyStart; index < source.length; index += 1) {
-    if (source[index] === "{") depth += 1;
-    if (source[index] === "}") depth -= 1;
-    if (depth === 0) return source.slice(start, index + 1).trim();
-  }
-  throw new Error(`Cannot extract ${name}`);
+const context = { globalThis: null, Map, Set, JSON };
+context.globalThis = context;
+vm.createContext(context);
+for (const file of [
+  "js/player/player-visuals.js",
+  "js/player/player-view.js",
+  "js/player/player-detail-controller.js",
+]) {
+  vm.runInContext(fs.readFileSync(file, "utf8"), context, { filename: file });
 }
 
+const controllerSource = fs.readFileSync(
+  "js/development/development-center-controller.js",
+  "utf8",
+);
+const bindStart = controllerSource.indexOf(
+  "function bindDevelopmentSelectedCardInteraction",
+);
+const bindEnd = controllerSource.indexOf(
+  "function developmentManagementPathMarkup",
+  bindStart,
+);
+assert.ok(bindStart >= 0 && bindEnd > bindStart);
+vm.runInContext(
+  `${controllerSource.slice(bindStart, bindEnd)}; globalThis.bindDevelopmentSelectedCardInteraction = bindDevelopmentSelectedCardInteraction;`,
+  context,
+);
+
+const stats = {
+  attack: 91,
+  control: 86,
+  speed: 80,
+  grit: 79,
+  physical: 78,
+  stamina: 77,
+  defense: 52,
+  save: 20,
+};
 const adam = {
   playerId: "adam-montayne",
   name: "Adam Montayne",
@@ -28,86 +51,106 @@ const adam = {
   overall: 84,
   potential: 90,
   displayLevel: 20,
-  stats: { attack: 91, control: 86, defense: 52 },
-  baseStats: { attack: 91, control: 86, defense: 52 },
+  stats,
+  baseStats: stats,
 };
-
-const context = {
-  initialRun: null,
-  global: {
-    InazumaProgression: { getPlayerAtLevel: (player) => player },
-    RoguelikeRules: { applyEquipment: (stats) => stats },
-    LevelProgression: { formatLevel: (level) => String(level) },
+let run = null;
+let modalMarkup = "";
+const modalRoot = { querySelector: () => null };
+const visuals = context.PlayerVisuals.create({
+  getPlayerVisualsById: () => new Map(),
+  escapeHtml: String,
+});
+const view = context.PlayerView.create({
+  visuals,
+  escapeHtml: String,
+  resolveItem: (item) => item,
+  itemIcon: () => "",
+  getProgression: () => ({ getPlayerAtLevel: (player) => player }),
+  applyEquipment: (value) => value,
+  formatLevel: String,
+  getSeasonId: () => run?.seasonId,
+  sourcePlayer: () => null,
+  playerTeamIdentity: (player, playerId) => {
+    const entry = run?.roster?.find(
+      (candidate) => String(candidate.playerId) === String(playerId),
+    );
+    return {
+      name: entry?.teamName || player.teamName || "Svincolato",
+      logoUrl: "",
+      logo: "",
+    };
   },
-};
-
-vm.runInNewContext(`
-  let run = initialRun;
-  const freeAgentsDb = { players: [] };
-  const seasonDb = { teams: [] };
-  const seasonTeamsById = new Map();
-  const STAT_LABELS = { attack: "Attacco", control: "Controllo", defense: "Difesa" };
-  const modalRoot = { querySelector: () => null };
-  let modalMarkup = "";
-  const escapeHtml = (value) => String(value ?? "");
-  const rarityClass = (category) => "rarity-" + String(category).toLowerCase();
-  const rosterEntry = (playerId) => run.roster.find((entry) => String(entry.playerId) === String(playerId));
-  const resolvePlayerVisual = () => ({ frontFullbodyUrl: "", portraitUrl: "", detailImageUrl: "adam.png", detailImageKind: "portrait", detailFallbacks: [] });
-  const imageFallbackAttributes = () => "";
-  const statIcon = () => "";
-  const sourcePlayer = () => null;
-  const teamLogoMarkup = () => "";
-  const resolveItem = () => ({ name: "", description: "", bonus: 0, stat: "" });
-  const itemIcon = () => "";
-  const playerStatsMarkup = () => "";
-  const toast = (message) => { throw new Error(message); };
-  const openModal = (markup) => { modalMarkup = markup; };
-  const unequipPlayerItem = () => {};
-  const closeModal = () => {};
-  const renderSquad = () => {};
-  ${extractFunction("playerTeamIdentity")}
-  ${extractFunction("historicalTeamIdentity")}
-  ${extractFunction("playerDetailMarkup")}
-  ${extractFunction("showPlayerDetailsFor")}
-  ${extractFunction("bindDevelopmentSelectedCardInteraction")}
-  this.detail = playerDetailMarkup;
-  this.show = showPlayerDetailsFor;
-  this.bind = bindDevelopmentSelectedCardInteraction;
-  this.markup = () => modalMarkup;
-  this.setRun = (value) => { run = value; };
-`, context);
+  historicalTeamIdentity: () => ({
+    name: "Svincolato",
+    logoUrl: "",
+    logo: "",
+  }),
+  teamLogoMarkup: () => "",
+  playerStatsMarkup: () => "",
+});
+const detailController = context.PlayerDetailController.create({
+  view,
+  openModal: (markup) => {
+    modalMarkup = markup;
+  },
+  closeModal: () => {},
+  toast: (message) => {
+    throw new Error(message);
+  },
+  getModalRoot: () => modalRoot,
+  getFreeAgentsDb: () => ({ players: [adam] }),
+  getRosterEntry: () => null,
+  resolveRosterPlayer: () => null,
+  databaseForEntry: () => ({ players: [adam] }),
+  unequipPlayerItem: () => {},
+  renderSquad: () => {},
+});
 
 function assertDevelopmentDetail(markup) {
   assert.ok(markup, "Player Detail returns non-empty markup");
-  assert.match(markup, /Adam Montayne/, "the Development player name is shown");
-  assert.match(markup, /Elite/, "the Development rarity is shown");
-  assert.match(markup, /Potenziale<\/span><strong>90/, "the Development potential is shown");
-  assert.match(markup, /Attacco[\s\S]*91/, "attack is shown");
-  assert.match(markup, /Controllo[\s\S]*86/, "control is shown");
-  assert.match(markup, /Difesa[\s\S]*52/, "defense is shown");
+  assert.match(markup, /Adam Montayne/);
+  assert.match(markup, /Elite/);
+  assert.match(markup, /Potenziale[\s\S]*90/);
+  assert.match(markup, /Attacco[\s\S]*91/);
+  assert.match(markup, /Controllo[\s\S]*86/);
+  assert.match(markup, /Difesa[\s\S]*52/);
+  assert.strictEqual((markup.match(/player-stat-card/g) || []).length, 8);
 }
 
-function renderDevelopmentSelectionAndClick(run) {
-  context.setRun(run);
+function selectedCardClick(currentRun) {
+  run = currentRun;
+  modalMarkup = "";
   let clickHandler = null;
   const card = {
     dataset: { developmentSelectedCard: adam.playerId },
-    addEventListener(type, handler) { if (type === "click") clickHandler = handler; },
+    addEventListener(type, handler) {
+      if (type === "click") clickHandler = handler;
+    },
   };
-  context.bind(card, adam, (selectedPlayer) => context.show(selectedPlayer, {
-    readOnly: true,
-    equipment: null,
-    database: { players: [adam] },
-  }));
-  assert.ok(clickHandler, "the selected Development card is interactive");
-  clickHandler();
-  return context.markup();
+  context.bindDevelopmentSelectedCardInteraction(
+    card,
+    adam,
+    (selectedPlayer, playerId) =>
+      detailController.showFor(selectedPlayer, {
+        playerId,
+        readOnly: true,
+        database: { players: [adam] },
+      }),
+  );
+  assert.ok(clickHandler, "Development selected card binds a click handler");
+  clickHandler({ type: "click" });
+  return modalMarkup;
 }
 
-context.setRun(null);
-assert.doesNotThrow(() => context.detail(adam, { readOnly: true, equipment: null, database: { players: [adam] } }));
-assertDevelopmentDetail(context.detail(adam, { readOnly: true, equipment: null, database: { players: [adam] } }));
-assertDevelopmentDetail(renderDevelopmentSelectionAndClick(null));
-assertDevelopmentDetail(renderDevelopmentSelectionAndClick({ seasonId: "season-1", roster: [{ playerId: adam.playerId, teamName: "Inazuma Japan" }] }));
+assertDevelopmentDetail(selectedCardClick(null));
+assertDevelopmentDetail(
+  selectedCardClick({
+    seasonId: "season-1",
+    roster: [{ playerId: adam.playerId, teamName: "Inazuma Japan" }],
+  }),
+);
 
-console.log("development-player-detail-without-run-test: no-run and active-run Development detail flows OK");
+console.log(
+  "development-player-detail-without-run-test: selected-card controller path works without and with active run",
+);

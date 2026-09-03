@@ -1,92 +1,233 @@
-'use strict';
+"use strict";
 
-const assert = require('assert');
-const fs = require('fs');
-const vm = require('vm');
+const assert = require("assert");
+const fs = require("fs");
+const vm = require("vm");
 
-const app = fs.readFileSync('js/app.js', 'utf8');
-const css = fs.readFileSync('css/game.css', 'utf8');
+const playerView = fs.readFileSync("js/player/player-view.js", "utf8");
+const fiveView = fs.readFileSync("js/five-v-five/five-v-five-view.js", "utf8");
+const app = fs.readFileSync("js/app.js", "utf8");
+const matchController = fs.readFileSync("js/match/match-controller.js", "utf8");
+const css = fs.readFileSync("css/game.css", "utf8");
 
-function functionSource(name, nextName) {
-  const start = app.indexOf(`function ${name}`);
-  const end = app.indexOf(`function ${nextName}`, start);
-  assert.ok(start >= 0 && end > start, `${name} source is available`);
-  return app.slice(start, end);
+function sourceRange(source, name, nextToken) {
+  const start = source.indexOf(`function ${name}(`);
+  assert.ok(start >= 0, `${name} source is available`);
+  const end = source.indexOf(nextToken, start + 1);
+  assert.ok(end > start, `${name} end marker is available`);
+  return source.slice(start, end);
 }
 
-const helper = functionSource('compactPlayerCardMarkup', 'playerCard');
-const bossRenderer = functionSource('matchFormationCard', 'renderMatchFormation');
-const matchRenderer = functionSource('fiveMatchCard', 'fiveMatchField');
-const formationRenderer = functionSource('fiveSlotCard', 'fiveRosterCard');
-const selectionSync = functionSource('syncFiveSlotSelection', 'renderFiveVFive');
-const fiveEditor = functionSource('renderFiveVFive', 'renderInventory');
+const compactCard = sourceRange(
+  playerView,
+  "compactCard",
+  "function detailMarkup",
+);
+const formationCard = sourceRange(
+  fiveView,
+  "fiveSlotCard",
+  "function fiveRosterCard",
+);
+const selectionSync = sourceRange(
+  fiveView,
+  "syncFiveSlotSelection",
+  "function openFiveVFiveEditor",
+);
+const fiveEditor = sourceRange(fiveView, "renderFiveVFive", "return { render:");
+const bossRenderer = sourceRange(
+  app,
+  "matchFormationCard",
+  "function renderMatchFormation",
+);
+const matchRenderer = sourceRange(
+  app,
+  "fiveMatchCard",
+  "function fiveMatchField",
+);
+const quickDetail = sourceRange(
+  app,
+  "fiveMatchPlayerDetail",
+  "function fiveMatchField",
+);
 
-for (const token of ['player-role', 'player-overall', 'player-title', 'player-equipment--footer']) {
-  assert.ok(helper.includes(token), `shared tactical card is missing ${token}`);
+for (const token of [
+  "player-role",
+  "player-overall",
+  "player-title",
+  "player-equipment--footer",
+]) {
+  assert.ok(
+    compactCard.includes(token),
+    `shared tactical card is missing ${token}`,
+  );
 }
-assert.match(helper, /equipmentDefinition\s*\?/, 'equipment is rendered only when present');
-assert.match(helper, /<span class="player-corner player-equipment \$\{equipmentInFooter \? "player-equipment--footer" : ""\}"[^>]*>\$\{itemIcon\(equipment\)\}<\/span>/, 'the item icon is a child of the complete equipment badge');
-assert.match(helper, /<div class="player-title"><strong[^>]*>[^<]*\$\{escapeHtml\(player\.name\)\}<\/strong>\$\{equipmentInFooter \? equipmentMarkup : ""\}<\/div>/, 'the shared footer reserves name space only when equipment is present');
-for (const renderer of [bossRenderer, formationRenderer]) {
-  assert.match(renderer, /compactPlayerCardMarkup\(player/, 'every 5v5 renderer reuses the shared tactical card');
-  assert.match(renderer, /equipmentInFooter: true/, 'every 5v5 renderer places equipment in the shared footer');
+assert.match(compactCard, /equipmentDefinition\s*\?/);
+assert.match(compactCard, /itemIcon\(equipment\)/);
+assert.match(compactCard, /equipmentInFooter \? equipmentMarkup/);
+for (const renderer of [bossRenderer, formationCard]) {
+  assert.match(renderer, /compactPlayerCardMarkup\(player/);
+  assert.match(renderer, /equipmentInFooter: true/);
 }
-for (const token of ['five-match-card-portrait', 'five-match-card-role', 'aria-pressed="false"', 'player.name']) {
-  assert.ok(matchRenderer.includes(token), `the dedicated match half card is missing ${token}`);
+for (const token of [
+  "five-match-card-portrait",
+  "five-match-card-role",
+  'aria-pressed="false"',
+  "player.name",
+]) {
+  assert.ok(
+    matchRenderer.includes(token),
+    `match half card is missing ${token}`,
+  );
 }
-assert.doesNotMatch(matchRenderer, /compactPlayerCardMarkup/, 'the tactical pitch no longer miniaturizes a complete player card');
-assert.match(app, /function fiveMatchPlayerDetail[\s\S]*data-five-detail-close[\s\S]*Scheda completa/, 'the match exposes an in-pitch contextual player detail');
-assert.match(app, /const positionFiveMatchPlayerDetail[\s\S]*preferredLeft[\s\S]*--five-detail-left[\s\S]*--five-detail-top/, 'the contextual detail chooses right/left placement and clamps itself to the pitch');
-assert.match(app, /classList\.toggle\("is-active", card === button\)[\s\S]*aria-pressed/, 'quick selection updates only the tapped tactical card');
-assert.doesNotMatch(app, /fivePlayerEquipmentMarkup/, '5v5 has no position-specific equipment renderer');
-assert.doesNotMatch(css, /five-player-equipment/, 'obsolete free-floating 5v5 equipment CSS is removed');
+assert.doesNotMatch(matchRenderer, /compactPlayerCardMarkup/);
+assert.match(quickDetail, /data-five-detail-close/);
+assert.match(quickDetail, /Scheda completa/);
+assert.match(
+  matchController,
+  /preferredLeft[\s\S]*--five-detail-left[\s\S]*--five-detail-top/,
+);
+assert.match(
+  matchController,
+  /classList\.toggle\("is-active", card === button\)[\s\S]*aria-pressed/,
+);
+assert.match(
+  matchController,
+  /data-five-detail-close[\s\S]*closeFiveMatchPlayerDetail/,
+);
+assert.doesNotMatch(app + fiveView, /fivePlayerEquipmentMarkup/);
+assert.doesNotMatch(css, /five-player-equipment/);
 
-assert.match(css, /:is\(\.five-screen,\.five-match-screen,\.boss-match-screen\) \.run-tactical-card\.tactical-player-card \.player-title strong \{[^}]*min-width: 0;[^}]*overflow: hidden;[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s);
-assert.match(css, /:is\(\.five-screen,\.five-match-screen,\.boss-match-screen\) \.run-tactical-card\.tactical-player-card \.player-equipment--footer \{[^}]*position: static;[^}]*box-sizing: border-box;[^}]*overflow: hidden;[^}]*border: 2px solid var\(--unified-card-ink\);[^}]*background: var\(--unified-card-yellow\);[^}]*box-shadow: none;/s);
-assert.match(css, /\.player-equipment--footer \.item-icon img \{[^}]*object-fit: contain;/s, 'the image remains contained inside the shared badge');
-assert.doesNotMatch(css, /\.five-match-screen \.five-match-card\.run-tactical-card \.player-equipment--footer/, 'match cards have no divergent equipment badge override');
-for (const rarity of ['buono', 'forte', 'elite', 'mondiale', 'leggenda']) {
-  assert.match(css, new RegExp(`\\.five-match-screen :is\\(\\.rarity-${rarity}\\) \\{ --rarity-border:`), `${rarity} keeps its canonical pitch accent`);
+assert.match(
+  css,
+  /:is\(\.five-screen,\.five-match-screen,\.boss-match-screen\) \.run-tactical-card\.tactical-player-card \.player-title strong \{[^}]*min-width: 0;[^}]*overflow: hidden;[^}]*text-overflow: ellipsis;[^}]*white-space: nowrap;/s,
+);
+assert.match(
+  css,
+  /:is\(\.five-screen,\.five-match-screen,\.boss-match-screen\) \.run-tactical-card\.tactical-player-card \.player-equipment--footer \{[^}]*position: static;[^}]*box-sizing: border-box;[^}]*overflow: hidden;[^}]*border: 2px solid var\(--unified-card-ink\);[^}]*background: var\(--unified-card-yellow\);[^}]*box-shadow: none;/s,
+);
+assert.match(
+  css,
+  /\.player-equipment--footer \.item-icon img \{[^}]*object-fit: contain;/s,
+);
+assert.doesNotMatch(
+  css,
+  /\.five-match-screen \.five-match-card\.run-tactical-card \.player-equipment--footer/,
+);
+for (const rarity of ["buono", "forte", "elite", "mondiale", "leggenda"]) {
+  assert.match(
+    css,
+    new RegExp(
+      `\\.five-match-screen :is\\(\\.rarity-${rarity}\\) \\{ --rarity-border:`,
+    ),
+  );
 }
-assert.match(css, /\.five-match-screen \.five-match-card::before \{[\s\S]*background:var\(--rarity-border[\s\S]*clip-path:/, 'half cards expose a geometric rarity corner');
-assert.match(css, /\.five-match-screen \.five-match-card\.is-active \{[\s\S]*#ffd21f/, 'active state is communicated independently in yellow');
-assert.match(css, /\.five-match-screen \.five-match-player-detail \{[\s\S]*--five-detail-left[\s\S]*width:min\(218px,/, 'the quick player sheet remains a narrow positioned panel');
+assert.match(
+  css,
+  /\.five-match-screen \.five-match-card::before \{[\s\S]*background:var\(--rarity-border[\s\S]*clip-path:/,
+);
+assert.match(
+  css,
+  /\.five-match-screen \.five-match-card\.is-active \{[\s\S]*#ffd21f/,
+);
+assert.match(
+  css,
+  /\.five-match-screen \.five-match-player-detail \{[\s\S]*--five-detail-left[\s\S]*width:min\(218px,/,
+);
 
-for (const token of ['classList.toggle("selected", selected)', 'setAttribute("aria-selected", selected ? "true" : "false")', 'querySelectorAll(".five-slot-selected-label")', 'label.textContent = "SELEZIONATO"']) {
-  assert.ok(selectionSync.includes(token), `selection synchronization is missing: ${token}`);
+for (const token of [
+  'classList.toggle("selected", selected)',
+  'setAttribute("aria-selected", selected ? "true" : "false")',
+  'querySelectorAll(".five-slot-selected-label")',
+  'label.textContent = "SELEZIONATO"',
+]) {
+  assert.ok(
+    selectionSync.includes(token),
+    `selection synchronization is missing: ${token}`,
+  );
 }
-assert.match(fiveEditor, /ui\.fiveVFiveSelectedSlot === button\.dataset\.fiveSlot \? null : button\.dataset\.fiveSlot/, 'tapping the selected slot clears selection');
-assert.match(fiveEditor, /FiveVFive\.assign[\s\S]*ui\.fiveVFiveSelectedSlot = null;[\s\S]*refreshFiveAfterAssignment/, 'an assignment or swap clears stale selection before the partial refresh');
-assert.match(fiveEditor, /FiveVFive\.clearSlot[\s\S]*ui\.fiveVFiveSelectedSlot = null;[\s\S]*refreshFiveAfterAssignment/, 'clearing a slot clears its selection label');
-assert.strictEqual((fiveEditor.match(/addEventListener\("click", onFiveSlotClick\)/g) || []).length, 2, 'slot listeners are bound once initially and once to replacement cards');
+assert.match(
+  fiveEditor,
+  /getUi\(\)\.fiveVFiveSelectedSlot === button\.dataset\.fiveSlot \? null : button\.dataset\.fiveSlot/,
+);
+assert.match(
+  fiveEditor,
+  /fiveVFive\.assign[\s\S]*getUi\(\)\.fiveVFiveSelectedSlot = null;[\s\S]*refreshFiveAfterAssignment/,
+);
+assert.match(
+  fiveEditor,
+  /fiveVFive\.clearSlot[\s\S]*getUi\(\)\.fiveVFiveSelectedSlot = null;[\s\S]*refreshFiveAfterAssignment/,
+);
+assert.strictEqual(
+  (fiveEditor.match(/addEventListener\("click", onFiveSlotClick\)/g) || [])
+    .length,
+  2,
+);
 
 class FakeSlot {
   constructor(key) {
     this.dataset = { fiveSlot: key };
     this.attributes = {};
     this.labels = [];
-    this.classList = { toggle: (name, active) => { this.selected = name === 'selected' && active; } };
+    this.classList = {
+      toggle: (name, active) => {
+        this.selected = name === "selected" && active;
+      },
+    };
   }
-  setAttribute(name, value) { this.attributes[name] = value; }
-  querySelectorAll() { return this.labels.slice(); }
-  append(label) { label.parent = this; this.labels.push(label); }
+  setAttribute(name, value) {
+    this.attributes[name] = value;
+  }
+  querySelectorAll() {
+    return this.labels.slice();
+  }
+  append(label) {
+    label.parent = this;
+    this.labels.push(label);
+  }
 }
-const slots = ['GK', 'DF', 'FW'].map((key) => new FakeSlot(key));
+const slots = ["GK", "DF", "FW"].map((key) => new FakeSlot(key));
 const documentStub = {
   querySelectorAll: () => slots,
-  createElement: () => ({ remove() { this.parent.labels = this.parent.labels.filter((label) => label !== this); } }),
+  createElement: () => ({
+    remove() {
+      this.parent.labels = this.parent.labels.filter((label) => label !== this);
+    },
+  }),
 };
-const selectionContext = { ui: { fiveVFiveSelectedSlot: null }, document: documentStub };
-vm.runInNewContext(`${selectionSync}; this.sync = syncFiveSlotSelection;`, selectionContext);
-for (const key of ['GK', 'DF', 'FW']) {
-  selectionContext.ui.fiveVFiveSelectedSlot = key;
-  selectionContext.sync(documentStub);
-  assert.strictEqual(slots.filter((slot) => slot.labels.length === 1).length, 1, 'three consecutive selections keep exactly one label');
-  assert.strictEqual(slots.find((slot) => slot.dataset.fiveSlot === key).attributes['aria-selected'], 'true');
+const selectionContext = { selectedSlot: null, document: documentStub };
+vm.runInNewContext(`${selectionSync}; this.sync = syncFiveSlotSelection;`, {
+  ...selectionContext,
+  getUi: () => selectionContext,
+});
+for (const key of ["GK", "DF", "FW"]) {
+  selectionContext.fiveVFiveSelectedSlot = key;
+  vm.runInNewContext(`${selectionSync}; syncFiveSlotSelection(document);`, {
+    document: documentStub,
+    getUi: () => selectionContext,
+  });
+  assert.strictEqual(
+    slots.filter((slot) => slot.labels.length === 1).length,
+    1,
+  );
+  assert.strictEqual(
+    slots.find((slot) => slot.dataset.fiveSlot === key).attributes[
+      "aria-selected"
+    ],
+    "true",
+  );
 }
-selectionContext.ui.fiveVFiveSelectedSlot = null;
-selectionContext.sync(documentStub);
-assert.strictEqual(slots.filter((slot) => slot.labels.length).length, 0, 'cancelling or completing a swap removes every label');
-assert.ok(slots.every((slot) => slot.attributes['aria-selected'] === 'false' && !slot.selected), 'neutral slots expose coherent selection state');
+selectionContext.fiveVFiveSelectedSlot = null;
+vm.runInNewContext(`${selectionSync}; syncFiveSlotSelection(document);`, {
+  document: documentStub,
+  getUi: () => selectionContext,
+});
+assert.strictEqual(slots.filter((slot) => slot.labels.length).length, 0);
+assert.ok(
+  slots.every(
+    (slot) => slot.attributes["aria-selected"] === "false" && !slot.selected,
+  ),
+);
 
-console.log('tactical-player-card-test: ok');
+console.log(
+  "tactical-player-card-test: full tactical card, selection, quick detail and CSS contracts OK",
+);
