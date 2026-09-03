@@ -973,127 +973,18 @@
     return runResumeController.resumeRun(...args);
   }
 
-  function initialDraftPlayers() {
-    if (seasonDb?.recruitmentPool?.entries && isProfileAwareSeason()) {
-      const candidates = global.RecruitmentPoolRuntime.effectiveProfiledPlayers(seasonDb, freeAgentsDb);
-      return global.RecruitmentPoolRuntime.eligibleInitialDraftPlayers(candidates);
-    }
-    const config = seasonDb?.draftConfig;
-    if (config?.freeAgentsOnly && !Array.isArray(freeAgentsDb?.players)) {
-      throw new Error(`Draft ${run?.seasonId}: database svincolati non disponibile (${config.databasePath || "data/FREE_AGENTS_compact.json"})`);
-    }
-    const players = freeAgentsDb?.players;
-    if (!Array.isArray(players)) throw new Error("Draft: database svincolati non disponibile");
-    const invalid = players.find((player) => player.profileId || global.SeasonRegistry?.isSeasonSource?.(player.source));
-    if (invalid) throw new Error(`Draft corrotto: candidato ${invalid.playerId} non è uno svincolato normale`);
-    return players;
-  }
-
-  function renderFormationChoice() {
-    if (run.phase !== "formation") {
-      const transition = persistGameplayMutation({ label: "initial-formation-phase", mutate: (current) => { current.phase = "formation"; } });
-      if (!transition.ok) return renderHome();
-    }
-    app.innerHTML = `
-      <main class="screen onboarding-screen formation-choice-screen">
-        ${topbar("Scegli il modulo")}
-        <div class="content narrow">
-          <div class="section-head">
-            <div><p class="eyebrow">Prima decisione</p><h2>Come giocherà la tua squadra?</h2></div>
-          </div>
-          <div class="formation-grid">
-            ${seasonDb.formations.eleven.map((formation) => `
-              <button type="button" class="formation-card ${run.formationId === formation.id ? "selected" : ""}" data-formation="${escapeHtml(formation.id)}" aria-pressed="${run.formationId === formation.id ? "true" : "false"}">
-                <strong>${escapeHtml(formation.name)}</strong>
-                <p class="muted small">Il draft proporrà esattamente i ruoli necessari.</p>
-                <div class="formation-roles">
-                  <span class="role-chip">GK ${formation.requirements.GK}</span>
-                  <span class="role-chip">DF ${formation.requirements.DF}</span>
-                  <span class="role-chip">MF ${formation.requirements.MF}</span>
-                  <span class="role-chip">FW ${formation.requirements.FW}</span>
-                </div>
-              </button>`).join("")}
-          </div>
-        </div>
-      </main>`;
-    resetRenderedViewScroll();
-    bindSectionRootNav();
-
-    document.querySelectorAll("[data-formation]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const formation = formationById(button.dataset.formation);
-        const draftPlayers = initialDraftPlayers();
-        persistGameplayMutation({
-          label: "initial-draft-start",
-          mutate: (current) => {
-            current.formationId = formation.id;
-            global.DraftEngine.start(current, formation, draftPlayers);
-          },
-          onCommitted: () => renderDraft(),
-          rerender: ({ ok }) => { if (!ok) renderFormationChoice(); },
-        });
-      });
-    });
-  }
-
-  function renderDraft() {
-    const draft = run.draft;
-    if (!draft) return renderSquad();
-    const role = draft.roles[draft.step];
-    const draftPlayers = initialDraftPlayers();
-    const draftById = new Map(draftPlayers.map((player) => [String(player.playerId), player]));
-    const candidates = draft.candidates.map((id) => draftById.get(String(id))).filter(Boolean);
-    const progress = (draft.step / draft.roles.length) * 100;
-    app.innerHTML = `
-      <main class="screen onboarding-screen initial-draft-screen">
-        ${topbar("Draft iniziale")}
-        <div class="content narrow">
-          <p class="eyebrow">Scelta ${draft.step + 1} di ${draft.roles.length}</p>
-          <div class="section-head">
-            <div><h2>Scegli il tuo ${role}</h2><p class="muted">Uno di questi tre entrerà nella rosa.</p></div>
-            <span class="role-chip">${escapeHtml(run.formationId)}</span>
-          </div>
-          <div class="progress-track"><div class="progress-bar" style="width:${progress}%"></div></div>
-          <div class="candidate-grid pull-offer-grid initial-draft-grid">
-            ${candidates.map((player) => playerCard(player, { button: true, extraClass: "initial-draft-card", applyPermanent: true })).join("")}
-          </div>
-        </div>
-      </main>`;
-    resetRenderedViewScroll();
-    bindSectionRootNav();
-
-    document.querySelectorAll("[data-player-id]").forEach((button) => {
-      button.addEventListener("click", () => {
-        const playerId = button.dataset.playerId;
-        let completed = false;
-        const committed = persistGameplayMutation({
-          label: "initial-draft-pick",
-          mutate: (current) => {
-            completed = global.DraftEngine.choose(current, playerId, draftPlayers, formationById(current.formationId));
-            if (!completed) return;
-            ensureFiveVFive();
-            current.roster.forEach((entry) => {
-              const source = sourcePlayer(entry);
-              entry.firstJoinedAt = entry.firstJoinedAt || new Date().toISOString();
-              entry.recruitmentSource = entry.recruitmentSource || "initial_draft";
-              entry.recruitedAtLevel = entry.recruitedAtLevel ?? entry.level ?? 0;
-              entry.recruitedOverall = entry.recruitedOverall ?? source?.finalOverall ?? null;
-              global.RunStatistics?.recordRunAction?.(current, global.RunStatistics.ACTIONS.PLAYER_RECRUITED, { player: source || entry, playerId: entry.playerId, source: "initial_draft", level: entry.level || 0, overall: entry.recruitedOverall, actionId: `${current.runId}:initial_draft:${entry.playerId}` });
-              enqueueAlbumRecruit(current, entry.playerId, "initial_draft", `${current.runId}:initial_draft:${entry.playerId}`);
-            });
-            current.phase = "squad";
-            reconcileSquadRosterState(current);
-          },
-          onCommitted: () => {
-            if (completed) run.roster.forEach((entry) => unlockAlbumRecruit(entry.playerId, "initial_draft"));
-            completed ? renderSquad() : renderDraft();
-          },
-          rerender: ({ ok }) => { if (!ok) renderDraft(); },
-        });
-        return committed;
-      });
-    });
-  }
+  const initialDraftView = global.InitialDraftView.create({ escapeHtml, topbar, playerCard });
+  const initialDraftController = global.InitialDraftController.create({
+    view: initialDraftView, app, getRun: () => run, getSeasonDb: () => seasonDb,
+    getFreeAgentsDb: () => freeAgentsDb,
+    isProfileAwareSeason, formationById, persistGameplayMutation,
+    resetRenderedViewScroll, bindSectionRootNav, renderHome, renderSquad,
+    ensureFiveVFive, reconcileSquadRosterState, sourcePlayer,
+    enqueueAlbumRecruit, unlockAlbumRecruit,
+  });
+  function initialDraftPlayers(...args) { return initialDraftController.players(...args); }
+  function renderFormationChoice(...args) { return initialDraftController.renderFormationChoice(...args); }
+  function renderDraft(...args) { return initialDraftController.renderDraft(...args); }
 
   const matchEngine = global.MatchControllerRuntime.create({
     getRun: () => run, getSeasonDb: () => seasonDb, ui, app,
@@ -2309,6 +2200,24 @@
       },
       getRun: () => run,
     };
+    global.__INAZUMA_INITIAL_DRAFT_TEST__ = Object.freeze({
+      players: (...args) => initialDraftPlayers(...args),
+      renderFormationChoice: (...args) => renderFormationChoice(...args),
+      renderDraft: (...args) => renderDraft(...args),
+      setContext: (context = {}) => {
+        if (context.run) { run = context.run; global.run = run; }
+        if (context.seasonDb) {
+          seasonDb = context.seasonDb;
+          activeSeason = { id: seasonDb.seasonId || context.run?.seasonId };
+          seasonPlayersById = new Map((seasonDb.players || []).map((player) => [String(player.playerId), player]));
+        }
+        if (context.freeAgentsDb) {
+          freeAgentsDb = context.freeAgentsDb;
+          freeAgentsById = new Map((freeAgentsDb.players || []).map((player) => [String(player.playerId), player]));
+        }
+      },
+      getRun: () => run,
+    });
     // Deliberately thin test seam: every entry delegates to the same private
     // production function used by the UI. Keep orchestration out of tests and
     // do not duplicate terminal-run persistence semantics here.

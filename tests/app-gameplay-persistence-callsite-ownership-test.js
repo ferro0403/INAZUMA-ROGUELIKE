@@ -1,6 +1,7 @@
 const assert = require("assert");
 const fs = require("fs");
 const source = fs.readFileSync("js/app.js", "utf8");
+const initialDraftSource = fs.readFileSync("js/run-entry/initial-draft-controller.js", "utf8");
 
 function bodyBetween(start, end, owner = source) {
   const from = owner.indexOf(start);
@@ -8,13 +9,13 @@ function bodyBetween(start, end, owner = source) {
   assert(from >= 0 && to > from, `missing source range ${start}`);
   return owner.slice(from, to);
 }
-const formation = bodyBetween("function renderFormationChoice", "function renderDraft");
+const formation = bodyBetween("function renderFormationChoice", "function renderDraft", initialDraftSource);
 assert.match(formation, /label: "initial-formation-phase"[\s\S]*mutate:/);
 assert.match(formation, /label: "initial-draft-start"[\s\S]*DraftEngine\.start\(current/);
-const draft = bodyBetween("function renderDraft", "const squadController");
+const draft = bodyBetween("function renderDraft", "return Object.freeze", initialDraftSource);
 assert.match(draft, /label: "initial-draft-pick"[\s\S]*DraftEngine\.choose\(current/);
 assert.match(draft, /DraftEngine\.choose\(current[\s\S]*current\.phase = "squad";[\s\S]*reconcileSquadRosterState\(current\)/);
-assert.match(draft, /onCommitted:[\s\S]*completed \? renderSquad\(\) : renderDraft\(\)/);
+assert.match(draft, /onCommitted(?:\(\)|:)[\s\S]*completed \? renderSquad\(\) : renderDraft\(\)/);
 const squadViewSource = fs.readFileSync("js/squad/squad-view.js", "utf8");
 const squadView = bodyBetween("function renderSquad()", "function squadPlayerRole", squadViewSource);
 assert.doesNotMatch(squadView, /RunState\.save|run\.phase\s*=|reconcileSquadRosterState/);
