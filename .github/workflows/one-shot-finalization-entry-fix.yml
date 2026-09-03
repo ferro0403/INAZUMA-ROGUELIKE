@@ -22,51 +22,32 @@ jobs:
           set -euo pipefail
           python - <<'PY'
           from pathlib import Path
-
           app = Path('js/app.js')
           s = app.read_text()
-          old = '''  function persistChampionBeforeFinalUi(finalBoss = null) {
-    const boss = finalBoss || seasonDb.bossOrder[Math.min(Number(run.bossIndex || 1) - 1, seasonDb.bossOrder.length - 1)] || seasonDb.bossOrder.at(-1);
-    if (!run.finalization) {
-      run.completedAt = run.completedAt || new Date().toISOString();
-      const snapshot = buildChampionSnapshot(boss);
-      run.phase = "finalization";
-      run.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId };
-      global.PermanentEffects.enqueueHall(run, snapshot);
-      try {
-        global.RunState.save(run);
-      } catch (error) {
-        console.error("save failed (persistChampionBeforeFinalUi)", error);
-        toast("Salvataggio della vittoria non riuscito, riprova.", "error");
-      }
-    }
-    drainPermanentEffects();
-    return run.hallTeamId ? global.HallOfFameStorage.getTeam(run.hallTeamId) : null;
-  }
-'''
-          new = '''  function persistChampionBeforeFinalUi(finalBoss = null) {
-    const boss = finalBoss || seasonDb.bossOrder[Math.min(Number(run.bossIndex || 1) - 1, seasonDb.bossOrder.length - 1)] || seasonDb.bossOrder.at(-1);
-    if (!run.finalization) {
-      const committed = persistGameplayMutation({
-        label: "champion-finalization-entry",
-        mutate: (current) => {
-          current.completedAt = current.completedAt || new Date().toISOString();
-          const snapshot = buildChampionSnapshot(boss);
-          current.phase = "finalization";
-          current.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId };
-          global.PermanentEffects.enqueueHall(current, snapshot);
-        },
-      });
-      if (!committed.ok) return null;
-    }
-    drainPermanentEffects();
-    return run.hallTeamId ? global.HallOfFameStorage.getTeam(run.hallTeamId) : null;
-  }
-'''
-          if old not in s:
-              raise SystemExit('persistChampionBeforeFinalUi anchor not found')
-          app.write_text(s.replace(old, new, 1))
-
+          start = s.index('  function persistChampionBeforeFinalUi(finalBoss = null) {')
+          end = s.index('\n  function championTeam(', start)
+          lines = [
+              '  function persistChampionBeforeFinalUi(finalBoss = null) {',
+              '    const boss = finalBoss || seasonDb.bossOrder[Math.min(Number(run.bossIndex || 1) - 1, seasonDb.bossOrder.length - 1)] || seasonDb.bossOrder.at(-1);',
+              '    if (!run.finalization) {',
+              '      const committed = persistGameplayMutation({',
+              '        label: "champion-finalization-entry",',
+              '        mutate: (current) => {',
+              '          current.completedAt = current.completedAt || new Date().toISOString();',
+              '          const snapshot = buildChampionSnapshot(boss);',
+              '          current.phase = "finalization";',
+              '          current.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId };',
+              '          global.PermanentEffects.enqueueHall(current, snapshot);',
+              '        },',
+              '      });',
+              '      if (!committed.ok) return null;',
+              '    }',
+              '    drainPermanentEffects();',
+              '    return run.hallTeamId ? global.HallOfFameStorage.getTeam(run.hallTeamId) : null;',
+              '  }',
+          ]
+          replacement = '\n'.join(lines) + '\n'
+          app.write_text(s[:start] + replacement + s[end:])
           ci = Path('.github/workflows/stacked-regression.yml')
           y = ci.read_text()
           anchor = '            tests/finalization-ambiguous-commit-production-test.js\n'
@@ -74,8 +55,7 @@ jobs:
           if 'tests/finalization-entry-persistence-hardening-test.js' not in y:
               if anchor not in y:
                   raise SystemExit('CI finalization anchor not found')
-              y = y.replace(anchor, addition, 1)
-              ci.write_text(y)
+              ci.write_text(y.replace(anchor, addition, 1))
           PY
           node --check js/app.js
           node tests/finalization-entry-persistence-hardening-test.js
