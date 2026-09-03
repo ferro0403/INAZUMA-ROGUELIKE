@@ -527,6 +527,7 @@
   const finalizationController = global.FinalizationController.create({
     getRun: () => run, view: finalizationView, toast,
     recoverCanonicalRun,
+    persistMutation: (options) => persistGameplayMutation(options),
     resolveDevelopment: (options) => gameOverController.resolveDevelopmentEndRunFlow(options),
     championTeam, renderHome,
   });
