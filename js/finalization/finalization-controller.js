@@ -27,21 +27,39 @@
         renderPending(resumed);
       });
     }
+    function ensureSummaryState(hallTeamId) {
+      const current = run();
+      const targetHallTeamId = hallTeamId || current?.hallTeamId || null;
+      if (current?.phase === "final-summary" && String(current?.hallTeamId || "") === String(targetHallTeamId || "")) {
+        return { ok: true, skipped: true, run: current };
+      }
+      return deps.persistMutation({
+        label: "finalization-summary-navigation",
+        mutate(next) {
+          next.phase = "final-summary";
+          if (targetHallTeamId) next.hallTeamId = targetHallTeamId;
+        },
+      });
+    }
     function renderCelebration(hallTeamId, { developmentResolved = false } = {}) {
       if (!developmentResolved || run().finalization?.status !== "complete") return resume();
       const team = deps.championTeam(hallTeamId || run()?.hallTeamId);
       if (!team) return deps.renderHome();
-      const go = () => { run().phase = "final-summary"; try { global.RunState.save(run()); } catch (error) { console.error("save failed (renderFinalCelebration)", error); } renderSummary(team.hallTeamId, { developmentResolved: true }); };
+      const go = () => {
+        const committed = ensureSummaryState(team.hallTeamId);
+        if (!committed.ok) return committed;
+        return renderSummary(team.hallTeamId, { developmentResolved: true });
+      };
       return deps.view.renderCelebration(team, go);
     }
     function renderSummary(hallTeamId, { developmentResolved = false } = {}) {
       if (!developmentResolved || run().finalization?.status !== "complete") return resume();
       const team = deps.championTeam(hallTeamId || run()?.hallTeamId);
       if (!team) return deps.renderHome();
+      const committed = ensureSummaryState(team.hallTeamId);
+      if (!committed.ok) return committed;
       const summaries = global.HallOfFameStorage.listSummaries();
       const ordinal = summaries.findIndex((item) => item.hallTeamId === team.hallTeamId) + 1;
-      run().phase = "final-summary"; run().hallTeamId = team.hallTeamId;
-      try { global.RunState.save(run()); } catch (error) { console.error("save failed (renderFinalSummary)", error); }
       return deps.view.renderSummary(team, ordinal);
     }
     return { resume, renderPending, renderCelebration, renderSummary };
