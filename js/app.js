@@ -1410,7 +1410,7 @@
       useScoutTokenOnPull, useLuckyCharmOnPull, completePullNodeMutation, renderItemRewardResult, resolveItemNode,
       resumePendingItemReward, ensurePendingItemReward, finishNonMatchNode, recoverLegacyResolvedMatchRoutingIfNeeded,
       continueAfterMatch, resolvePendingRunFlow, showNextBossReward, advanceBossReward, finishBossVictoryTransition,
-      navigateBossVictoryDestination, resumeRunFinalization, renderGameOver, renderMatch,
+      navigateBossVictoryDestination, resumeRunFinalization, persistChampionBeforeFinalUi, renderGameOver, renderMatch,
       specialMatchOpponentMeta: (match) => specialMatchView.opponentMeta(match),
       renderFiveVFive, renderSquad, showPlayerDetailsFor, showPlayerDetails, openFiveVFiveEditor,
       openFiveMatchPlayerSwap, resolveDevelopmentEndRunFlow, renderMap, renderMapFailureRecovery, renderInventory,
