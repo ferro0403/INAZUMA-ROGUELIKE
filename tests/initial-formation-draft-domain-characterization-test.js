@@ -24,6 +24,8 @@ assert(controller.indexOf("onCommitted()") < controller.lastIndexOf("unlockAlbum
 assert(controller.includes("new Map(draftPlayers.map((player) => [String(player.playerId), player]))"));
 assert(controller.includes("draftState.candidates.map((id) => draftById.get(String(id))).filter(Boolean)"));
 assert(controller.includes("button.addEventListener(\"click\", () =>"), "application callbacks use explicit closures");
+assert(controller.includes("DraftEngine.choose(current, playerId, draftPlayers,"), "the click uses the pool captured by its render, matching BASE");
+assert(!controller.includes("currentDraftPlayers"), "the click does not recalculate the pool");
 assert(!/create\([^)]*\)[\s\S]*?const draftState = getRun\(\)\.draft/.test(controller), "no creation-time draft snapshot");
 assert(app.includes("InitialDraftView.create"));
 assert(app.includes("InitialDraftController.create"));

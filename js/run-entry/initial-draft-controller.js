@@ -71,12 +71,11 @@
       document.querySelectorAll("[data-player-id]").forEach((button) => {
         button.addEventListener("click", () => {
           const playerId = button.dataset.playerId;
-          const currentDraftPlayers = players();
           let completed = false;
           const committed = persistGameplayMutation({
             label: "initial-draft-pick",
             mutate(current) {
-              completed = global.DraftEngine.choose(current, playerId, currentDraftPlayers, formationById(current.formationId));
+              completed = global.DraftEngine.choose(current, playerId, draftPlayers, formationById(current.formationId));
               if (!completed) return;
               ensureFiveVFive();
               current.roster.forEach((entry) => {
