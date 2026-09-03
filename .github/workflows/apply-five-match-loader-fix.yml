@@ -1,0 +1,31 @@
+name: Apply five-match loader fix
+
+on:
+  push:
+    branches:
+      - refactor/five-match-presentation
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, '[auto-loader-fix]') }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Update manual loader
+        run: node tools/fix-five-match-test-loader.js
+      - name: Verify regression
+        run: node tests/recruitment-production-path-e2e-test.js
+      - name: Commit test loader fix
+        run: |
+          rm tools/fix-five-match-test-loader.js
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add tests/recruitment-production-path-e2e-test.js tools/fix-five-match-test-loader.js
+          git commit -m "[auto-loader-fix] test: load five match presentation runtime"
+          git push
