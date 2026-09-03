@@ -96,9 +96,11 @@ if (!index.includes("js/app/ui-shell.js")) {
 for (const file of ["tests/helpers/production-runtime.js", "tests/recruitment-production-path-e2e-test.js"]) {
   let text = fs.readFileSync(file, "utf8");
   if (text.includes("app/ui-shell.js")) continue;
-  const anchor = '"run/run-roster-runtime.js"';
-  if (!text.includes(anchor)) throw new Error(`run runtime loader anchor missing: ${file}`);
-  text = text.replace(anchor, '"app/ui-shell.js", ' + anchor);
+  const candidates = ['"run/run-roster-runtime.js"', '"js/run/run-roster-runtime.js"'];
+  const anchor = candidates.find(candidate => text.includes(candidate));
+  if (!anchor) throw new Error(`run runtime loader anchor missing: ${file}`);
+  const prefix = anchor.startsWith('"js/') ? '"js/app/ui-shell.js", ' : '"app/ui-shell.js", ';
+  text = text.replace(anchor, prefix + anchor);
   fs.writeFileSync(file, text);
 }
 
