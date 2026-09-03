@@ -24,6 +24,7 @@ jobs:
         run: |
           node tools/apply-champion-hall-extraction.js
           node tools/fix-champion-domain-test.js
+          node tools/fix-champion-production-runtime-loader.js
       - name: Syntax
         run: |
           node --check js/hall/champion-snapshot.js
@@ -44,9 +45,10 @@ jobs:
         run: |
           rm tools/apply-champion-hall-extraction.js
           rm tools/fix-champion-domain-test.js
+          rm tools/fix-champion-production-runtime-loader.js
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add js/app.js index.html tests
-          git add -u tools/apply-champion-hall-extraction.js tools/fix-champion-domain-test.js
+          git add -u tools/apply-champion-hall-extraction.js tools/fix-champion-domain-test.js tools/fix-champion-production-runtime-loader.js
           git commit -m "[auto-champion-hall] refactor: extract champion snapshot and Hall presentation"
           git push
