@@ -1,0 +1,53 @@
+name: Apply run roster runtime extraction
+
+on:
+  push:
+    branches:
+      - refactor/run-roster-runtime
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, '[auto-run-roster]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply structural extraction
+        run: node tools/apply-run-roster-runtime-extraction.js
+      - name: Syntax
+        run: |
+          node --check js/run/run-roster-runtime.js
+          node --check js/app.js
+          node --check tests/run-roster-runtime-domain-test.js
+      - name: Targeted regression tests
+        run: |
+          node tests/run-roster-runtime-domain-test.js
+          node tests/player-presentation-production-path-test.js
+          node tests/permanent-club-ui-production-path-test.js
+          node tests/inventory-equipment-production-path-test.js
+          node tests/initial-formation-draft-production-path-test.js
+          node tests/recruitment-production-path-e2e-test.js
+          node tests/five-prematch-commit-boundary-test.js
+          node tests/five-postmatch-navigation-boundary-test.js
+          node tests/real-final-boss-production-path-test.js
+          node tests/app-gameplay-persistence-callsite-ownership-test.js
+      - name: Diff check
+        run: git diff --check
+      - name: Commit extracted production tree
+        run: |
+          rm tools/apply-run-roster-runtime-extraction.js
+          rm .github/workflows/apply-run-roster-runtime.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/app.js index.html tests .github/workflows/stacked-regression.yml
+          git add -u tools/apply-run-roster-runtime-extraction.js .github/workflows/apply-run-roster-runtime.yml
+          git commit -m "[auto-run-roster] refactor: extract shared run roster runtime"
+          git push
