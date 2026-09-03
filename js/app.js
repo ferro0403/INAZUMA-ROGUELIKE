@@ -115,9 +115,19 @@
   let seasonPlayersById = new Map();
   let seasonTeamsById = new Map();
   let playerVisualsById = new Map();
-  function isProfileAwareSeason(seasonId = run?.seasonId) {
-    return global.SeasonRegistry?.database?.(seasonId)?.requiresProfileAwareRuntime === true;
+  let sharedRunRosterRuntime = null;
+  function runRosterRuntime() {
+    sharedRunRosterRuntime ||= global.RunRosterRuntime.create({
+      getRun: () => run,
+      getSeasonDb: () => seasonDb,
+      getFreeAgentsDb: () => freeAgentsDb,
+      getFreeAgentsById: () => freeAgentsById,
+      getSeasonPlayersById: () => seasonPlayersById,
+      getSeasonTeamsById: () => seasonTeamsById,
+    });
+    return sharedRunRosterRuntime;
   }
+  function isProfileAwareSeason(...args) { return runRosterRuntime().isProfileAwareSeason(...args); }
   const playerVisuals = global.PlayerVisuals.create({ getPlayerVisualsById: () => playerVisualsById, escapeHtml });
   global.handlePlayerImageError = playerVisuals.handleImageError;
   const playerView = global.PlayerView.create({
@@ -389,18 +399,11 @@
     afterNextPaint(() => modalRoot.querySelector("[data-close-modal]")?.focus?.({ preventScroll: true }));
   }
 
-  function formationById(id) {
-    return seasonDb.formations.eleven.find((formation) => formation.id === id);
-  }
+  function formationById(...args) { return runRosterRuntime().formationById(...args); }
 
-  function fiveRoleForPlayerId(playerId, currentRun = run) {
-    const entry = rosterEntry(playerId, currentRun);
-    return entry ? (resolvedRosterPlayer(playerId, currentRun)?.position || sourcePlayer(entry)?.position) : null;
-  }
+  function fiveRoleForPlayerId(...args) { return runRosterRuntime().roleForPlayerId(...args); }
 
-  function effectiveRosterRole(playerId, currentRun = run) {
-    return fiveRoleForPlayerId(playerId, currentRun);
-  }
+  function effectiveRosterRole(...args) { return runRosterRuntime().roleForPlayerId(...args); }
 
   const fiveVFiveController = global.FiveVFiveControllerRuntime.create({
     getRun: () => run, fiveVFive: global.FiveVFive,
@@ -412,25 +415,15 @@
     matchIdentity: matchTransactionIdentity, canonicalMatch: canonicalMatchFor, onPersistenceFailure: renderMapFailureRecovery,
   });
   function ensureFiveVFive(currentRun = run) { return fiveVFiveController.ensure(currentRun); }
-  function fiveOverallForPlayerId(playerId, currentRun = run) { return resolvedRosterPlayer(playerId, currentRun)?.overall || 0; }
+  function fiveOverallForPlayerId(...args) { return runRosterRuntime().overallForPlayerId(...args); }
   function optimizeLineupsForNewPlayer(playerId, currentRun = run, announce = true) { return fiveVFiveController.optimizeForNewPlayer(playerId, currentRun, announce); }
   function fiveVFiveStatus(currentRun = run, options = {}) { return fiveVFiveController.status(currentRun, options); }
 
-  function sourcePlayer(entryOrId, preferredSource) {
-    const id = String(entryOrId && typeof entryOrId === "object" ? entryOrId.playerId : entryOrId);
-    const source = preferredSource || (entryOrId && entryOrId.source);
-    if (global.SeasonRegistry?.isSeasonSource?.(source)) return global.SeasonRegistry.player(id, source);
-    return seasonPlayersById.get(id) || freeAgentsById.get(id);
-  }
+  function sourcePlayer(...args) { return runRosterRuntime().sourcePlayer(...args); }
 
-  function legacyRosterPlayer(entry, currentRun = run) {
-    if (isProfileAwareSeason(currentRun?.seasonId)) return freeAgentsById.get(String(entry?.playerId));
-    return sourcePlayer(entry);
-  }
+  function legacyRosterPlayer(...args) { return runRosterRuntime().legacyRosterPlayer(...args); }
 
-  function rosterEntry(playerId, currentRun = run) {
-    return currentRun?.roster?.find((entry) => String(entry.playerId) === String(playerId));
-  }
+  function rosterEntry(...args) { return runRosterRuntime().rosterEntry(...args); }
 
   function ensureRunSchema() {
     if (!run) return;
@@ -503,46 +496,11 @@
     return run.inventory.splice(index, 1)[0];
   }
 
-  function activeBasePotential(entry) {
-    if (!entry) return 0;
-    if (global.RoguelikeRules.isProfileAwareRosterEntry(entry, run)) {
-      return Number(global.ProfiledSeasonRuntime.resolveEffectiveBase(entry, run.seasonId)?.finalOverall || 0);
-    }
-    return Number(legacyRosterPlayer(entry)?.finalOverall || 0);
-  }
+  function activeBasePotential(...args) { return runRosterRuntime().activeBasePotential(...args); }
 
-  function runtimeTrainingState(entry, currentRun = run) {
-    const profileAware = global.RoguelikeRules.isProfileAwareRosterEntry(entry, currentRun);
-    const player = profileAware ? global.ProfiledSeasonRuntime.resolveEffectiveBase(entry, currentRun.seasonId) : sourcePlayer(entry);
-    const database = profileAware ? seasonDb : (global.SeasonRegistry?.isSeasonSource?.(entry?.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb);
-    return global.DevelopmentRuntime.trainingState(currentRun, player, entry, database, profileAware ? { permanentMode: "provided-base" } : undefined);
-  }
+  function runtimeTrainingState(...args) { return runRosterRuntime().runtimeTrainingState(...args); }
 
-  function resolvedRosterPlayer(playerId, currentRun = run) {
-    const entry = rosterEntry(playerId, currentRun);
-    if (!entry) return null;
-    const player = global.RoguelikeRules.isProfileAwareRosterEntry(entry, currentRun)
-      ? sourcePlayer(entry)
-      : legacyRosterPlayer(entry, currentRun);
-    const profileAware = global.RoguelikeRules.isProfileAwareRosterEntry(entry, currentRun);
-    const database = profileAware ? seasonDb : (isProfileAwareSeason(currentRun?.seasonId) ? freeAgentsDb : (global.SeasonRegistry?.isSeasonSource?.(entry.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb));
-    if (!player && !profileAware) return null;
-    const resolved = profileAware
-      ? global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel(entry, { seasonId: currentRun.seasonId, database })
-      : global.DevelopmentRuntime.resolveRosterPlayer(currentRun, player, entry, database);
-    const effectiveStats = global.RoguelikeRules.applyEquipment(resolved.stats, entry.equippedItem);
-    return {
-      ...resolved,
-      ...effectiveStats,
-      stats: effectiveStats,
-      baseStats: resolved.stats,
-      equipment: entry.equippedItem,
-      displayLevel: Number(entry.level || 0),
-      displayLevelUnits: Number(entry.levelUnits || 0),
-      displayLevelText: global.LevelProgression.formatLevel(entry, currentRun.seasonId),
-      source: entry.source,
-    };
-  }
+  function resolvedRosterPlayer(...args) { return runRosterRuntime().resolvedRosterPlayer(...args); }
 
   function hearts() {
     return lifeHeartsMarkup(run.lives);
@@ -567,12 +525,7 @@
   }
 
 
-  function averageOverall(players = null) {
-    const list = Array.isArray(players) ? players : (run?.roster || []).map((entry) => resolvedRosterPlayer(entry.playerId || entry.id)).filter(Boolean);
-    if (!list.length) return "-";
-    const total = list.reduce((sum, player) => sum + Number(player.displayOverall ?? player.overall ?? player.finalOverall ?? 0), 0);
-    return Math.round(total / list.length);
-  }
+  function averageOverall(...args) { return runRosterRuntime().averageOverall(...args); }
 
   function formatDuration(ms) {
     const value = Number(ms);
@@ -697,9 +650,7 @@
       </${tag}>`;
   }
 
-  function permanentRosterFields(player) {
-    return global.DevelopmentRuntime.rosterEntryPermanentFields(run, player);
-  }
+  function permanentRosterFields(...args) { return runRosterRuntime().permanentRosterFields(...args); }
 
   function teamLogoMarkup(teamIdentity) {
     if (teamIdentity?.logoUrl) return `<img src="${escapeHtml(teamIdentity.logoUrl)}" alt="${escapeHtml(teamIdentity.name)}" loading="lazy" />`;
@@ -707,22 +658,9 @@
     return `<span class="team-logo-placeholder" aria-hidden="true">⚽</span>`;
   }
 
-  function playerTeamIdentity(player, playerId) {
-    const entry = playerId && Array.isArray(run?.roster) ? rosterEntry(playerId) : null;
-    const ids = [entry?.teamId, player.teamId, ...(player.teamIds || [])].filter(Boolean);
-    let team = ids.map((id) => seasonTeamsById.get(String(id))).find(Boolean);
-    let teamName = team?.teamName || entry?.teamName || player.teamName || (player.teams || []).find((name) => name && name !== "Unaffiliated") || (player.teamId === "unaffiliated" ? "Svincolato" : "");
-    if (!team && teamName) team = (seasonDb?.teams || []).find((candidate) => candidate.teamName === teamName);
-    if (!teamName) teamName = "Svincolato";
-    return { name: teamName === "Unaffiliated" ? "Svincolato" : teamName, logoUrl: team?.logoUrl || "", logo: team?.logo || "" };
-  }
+  function playerTeamIdentity(...args) { return runRosterRuntime().playerTeamIdentity(...args); }
 
-  function historicalTeamIdentity(player, team, sourceFallback) {
-    const ids = [player.teamId, player.originTeamId, sourceFallback.teamId, ...(sourceFallback.teamIds || [])].filter(Boolean);
-    const dbTeam = ids.map((id) => seasonTeamsById.get(String(id))).find(Boolean);
-    const name = player.teamName || player.originTeamName || player.recruitmentTeamName || sourceFallback.teamName || dbTeam?.teamName || (team?.teamName ? `Rosa campione: ${team.teamName}` : "Svincolato");
-    return { name: name === "Unaffiliated" ? "Svincolato" : name, logoUrl: player.teamLogoUrl || player.logoUrl || dbTeam?.logoUrl || "", logo: player.teamLogo || player.logo || "" };
-  }
+  function historicalTeamIdentity(...args) { return runRosterRuntime().historicalTeamIdentity(...args); }
 
   function playerDetailMarkup(...args) { return playerView.detailMarkup(...args); }
   const playerDetailController = global.PlayerDetailController.create({
@@ -1561,24 +1499,7 @@
 
   function renderMatch(...args) { return matchEngine.renderMatch(...args); }
 
-  function addLevels(amount, actionId = null, explicitUnits = null, currentRun = run) {
-    if (isProfileAwareSeason(currentRun?.seasonId)) {
-      const units = explicitUnits == null ? Math.round(Number(amount || 0) * 6) : Number(explicitUnits);
-      const before = currentRun.roster.map((entry) => Number(entry.level || 0));
-      global.ProfiledSeasonRuntime.addLevelUnits(currentRun, units, actionId);
-      return currentRun.roster.filter((entry, index) => Number(entry.level || 0) > before[index]).length;
-    }
-    let updatedPlayers = 0;
-    const numericAmount = Number(amount || 0);
-    currentRun.teamLevel = Math.min(20, Number(currentRun.teamLevel) + numericAmount);
-    currentRun.roster.forEach((entry) => {
-      const currentLevel = Number(entry.level || 0);
-      const nextLevel = Math.min(20, currentLevel + numericAmount);
-      if (nextLevel > currentLevel) updatedPlayers += 1;
-      entry.level = nextLevel;
-    });
-    return updatedPlayers;
-  }
+  function addLevels(...args) { return runRosterRuntime().addLevels(...args); }
 
   function appendFinalMatchMessage(result, matchType = "five_v_five", match = run?.activeMatch) {
     const text = matchType === "boss"
