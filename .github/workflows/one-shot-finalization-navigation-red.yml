@@ -1,0 +1,20 @@
+name: One-shot finalization navigation red
+on:
+  push:
+    branches:
+      - hardening/finalization-navigation-persistence
+    paths:
+      - .github/workflows/one-shot-finalization-navigation-red.yml
+permissions:
+  contents: read
+jobs:
+  red:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hardening/finalization-navigation-persistence
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: node tests/finalization-navigation-persistence-hardening-test.js
