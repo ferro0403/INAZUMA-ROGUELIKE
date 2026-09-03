@@ -1,0 +1,54 @@
+name: One-shot finalization entry red test
+on:
+  push:
+    branches:
+      - hardening/finalization-entry-persistence
+permissions:
+  contents: write
+jobs:
+  characterize:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hardening/finalization-entry-persistence
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Expose production seam and prove legacy failure
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          from pathlib import Path
+          p = Path('js/app.js')
+          s = p.read_text()
+          old = '      resumeRunFinalization, renderGameOver, renderMatch,\n'
+          new = '      resumeRunFinalization, persistChampionBeforeFinalUi, renderGameOver, renderMatch,\n'
+          if old not in s:
+              raise SystemExit('terminal seam anchor not found')
+          p.write_text(s.replace(old, new, 1))
+          PY
+          set +e
+          node tests/finalization-entry-persistence-hardening-test.js > /tmp/red.log 2>&1
+          code=$?
+          set -e
+          cat /tmp/red.log
+          if [ "$code" -eq 0 ]; then
+            echo 'Expected legacy test to fail before production fix' >&2
+            exit 1
+          fi
+          grep -q 'Hall remains untouched before a verified run commit' /tmp/red.log
+          node --check js/app.js
+      - name: Commit seam only and remove one-shot workflow
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/workflows/one-shot-finalization-entry-test.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/app.js .github/workflows/one-shot-finalization-entry-test.yml
+          git diff --cached --check
+          git commit -m 'test: expose finalization entry production seam'
+          git push origin HEAD:hardening/finalization-entry-persistence
