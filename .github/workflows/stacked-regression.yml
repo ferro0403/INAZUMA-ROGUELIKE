@@ -70,6 +70,7 @@ jobs:
         run: |
           set -euo pipefail
           tests=(
+            tests/run-roster-runtime-domain-test.js
             tests/player-presentation-production-path-test.js
             tests/permanent-club-ui-production-path-test.js
             tests/champion-hall-presentation-domain-test.js
