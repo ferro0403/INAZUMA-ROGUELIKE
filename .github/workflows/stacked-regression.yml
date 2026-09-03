@@ -56,6 +56,7 @@ jobs:
             tests/app-gameplay-persistence-callsite-ownership-test.js
             tests/app-gameplay-persistence-transactions-test.js
             tests/navigation-persistence-hardening-test.js
+            tests/dev-shortcuts-persistence-hardening-test.js
             tests/draft-to-squad-persistence-test.js
             tests/initial-formation-draft-domain-characterization-test.js
             tests/initial-formation-draft-production-path-test.js
