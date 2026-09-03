@@ -86,9 +86,11 @@ const loaderFiles = [
 for (const file of loaderFiles) {
   let text = fs.readFileSync(file, "utf8");
   if (text.includes('run/run-roster-runtime.js')) continue;
-  const anchor = '"player/player-visuals.js"';
-  if (!text.includes(anchor)) throw new Error(`player loader anchor missing: ${file}`);
-  text = text.replace(anchor, '"run/run-roster-runtime.js", ' + anchor);
+  const relativeAnchor = '"player/player-visuals.js"';
+  const fullAnchor = '"js/player/player-visuals.js"';
+  if (text.includes(relativeAnchor)) text = text.replace(relativeAnchor, '"run/run-roster-runtime.js", ' + relativeAnchor);
+  else if (text.includes(fullAnchor)) text = text.replace(fullAnchor, '"js/run/run-roster-runtime.js", ' + fullAnchor);
+  else throw new Error(`player loader anchor missing: ${file}`);
   fs.writeFileSync(file, text);
 }
 
