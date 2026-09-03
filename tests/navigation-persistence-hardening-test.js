@@ -1,4 +1,5 @@
 "use strict";
+// Final regression gate for the navigation persistence boundary introduced by PR #404.
 const assert = require("assert");
 const fs = require("fs");
 const { load } = require("./helpers/production-runtime");
