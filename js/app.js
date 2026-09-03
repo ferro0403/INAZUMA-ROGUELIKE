@@ -452,6 +452,28 @@
   function showPlayerDetails(...args) { return playerDetailController.showRosterPlayer(...args); }
 
 
+  const matchPresentation = global.MatchPresentationRuntime.create({
+    getRun: () => run,
+    getUi: () => ui,
+    getSeasonDb: () => seasonDb,
+    getSeasonPlayersById: () => seasonPlayersById,
+    getSeasonTeamsById: () => seasonTeamsById,
+    isProfileAwareSeason: (...args) => isProfileAwareSeason(...args),
+    formationById: (...args) => formationById(...args),
+    resolvedRosterPlayer: (...args) => resolvedRosterPlayer(...args),
+    rosterEntry: (...args) => rosterEntry(...args),
+    compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
+    normalizeTeamIdentity: (...args) => normalizeTeamIdentity(...args),
+    escapeHtml: (...args) => escapeHtml(...args),
+    matchEventSideClass: (...args) => matchEventSideClass(...args),
+    openModal: (...args) => openModal(...args),
+    closeModal: (...args) => closeModal(...args),
+    scrollSnapshot: (...args) => scrollSnapshot(...args),
+    showPlayerDetailsFor: (...args) => showPlayerDetailsFor(...args),
+    bossNodeIconMarkup: (...args) => bossNodeIconMarkup(...args),
+    modalRoot,
+  });
+
   function recoverCanonicalRun() {
     let canonical = null;
     try { canonical = global.RunState.load(run?.seasonId, { readOnly: true }); } catch (_) { return null; }
@@ -995,185 +1017,45 @@
   function recoverCanonicalItemReward(...args) { return runMapController.recoverCanonicalItemReward(...args); }
   function resolveTradeNode(...args) { return tradeNodeController.resolveTradeNode(...args); }
 
-  function openBossPreviewModal(boss) {
-    const bossPlayers = bossTeamPlayers(boss);
-    const meta = bossMatchTeamMeta(boss).boss;
-    const average = bossMatchAverage(bossPlayers);
-    openModal(`
-      <div class="modal-head route-boss-preview-head">
-        <div>
-          <p class="eyebrow">Prossima sfida</p>
-          <h2>${escapeHtml(meta.name)}</h2>
-          <p class="muted">${escapeHtml(meta.formation)} · Boss ${run.bossIndex + 1}/${seasonDb.bossOrder.length}${average ? ` · OVR ${escapeHtml(average)}` : ""}</p>
-        </div>
-        <span class="boss-match-logo route-boss-preview-logo">${bossNodeIconMarkup(boss)}</span>
-      </div>
-      <section class="route-boss-preview-field" aria-label="Formazione boss ${escapeHtml(meta.name)}">
-        ${bossMatchField({ players: bossPlayers, formationId: boss.bossFormation }, "boss", true)}
-      </section>
-      <div class="button-row route-boss-preview-actions">
-        <button type="button" class="btn btn-yellow" data-close-modal>Chiudi</button>
-      </div>`,
-      { closeable: true, className: "route-boss-preview-modal", preserveScroll: scrollSnapshot() }
-    );
-    modalRoot.querySelectorAll("[data-boss-player]").forEach((button) => button.addEventListener("click", () => {
-      const id = button.dataset.bossPlayer;
-      const player = bossPlayers.find((candidate) => String(candidate.playerId) === String(id));
-      showPlayerDetailsFor(player, { playerId: id, level: player?.displayLevel, database: seasonDb, preserveScroll: scrollSnapshot() });
-    }));
-    modalRoot.querySelectorAll(".route-boss-preview-actions [data-close-modal]").forEach((button) => button.addEventListener("click", closeModal));
-  }
+  function openBossPreviewModal(...args) { return matchPresentation.openBossPreviewModal(...args); }
 
 
-  function shortName(name) {
-    const parts = String(name || "?").trim().split(/\s+/).filter(Boolean);
-    if (parts.length <= 1) return parts[0] || "?";
-    return `${parts[0][0]}. ${parts.slice(1).join(" ")}`;
-  }
+  function shortName(...args) { return matchPresentation.shortName(...args); }
 
-  function teamById(id) {
-    return seasonTeamsById.get(String(id)) || null;
-  }
+  function teamById(...args) { return matchPresentation.teamById(...args); }
 
-  function bossTeamPlayers(boss) {
-    const level = Number(boss?.bossLevel || 0);
-    return (boss?.startingXI || (boss?.startingXIPlayerIds || []).map((playerId) => ({ playerId, level })))
-      .slice(0, 11)
-      .map((slot) => {
-        let source = seasonPlayersById.get(String(slot.playerId));
-        let profileId = slot.profileId;
-        if (isProfileAwareSeason(run?.seasonId)) {
-          profileId = profileId || boss.startingXIProfileIds?.[Number(slot.slot || 1) - 1];
-          const profile = global.ProfiledSeasonRuntime.resolveProfile(run.seasonId, profileId);
-          if (profile) {
-            const variant = (profile.roleVariants || []).find((item) => String(item.roleVariantId || item.variantId) === String(profile.defaultRoleVariantId));
-            source = { ...source, ...profile, ...(variant || {}), playerId: String(profile.playerId), profileId: profile.profileId, roleVariantId: variant?.roleVariantId || variant?.variantId || profile.defaultRoleVariantId || null };
-          }
-        }
-        if (!source) return null;
-        const resolved = global.InazumaProgression.getPlayerAtLevel(source, Math.floor(Number(slot.level ?? level)), seasonDb);
-        return { ...resolved, profileId: profileId || resolved.profileId || null, displayLevel: Number(slot.level ?? level), source: global.SeasonRegistry.sourceForSeason(run?.seasonId), playerId: String(slot.playerId) };
-      })
-      .filter(Boolean);
-  }
+  function bossTeamPlayers(...args) { return matchPresentation.bossTeamPlayers(...args); }
 
-  function userTeamPlayers() {
-    return (run.lineup || []).slice(0, 11).map((id) => resolvedRosterPlayer(id)).filter(Boolean);
-  }
+  function userTeamPlayers(...args) { return matchPresentation.userTeamPlayers(...args); }
 
-  function formationRows(formationId, players) {
-    const formation = formationById(formationId) || formationById("4-3-3") || { requirements: { FW: 3, MF: 3, DF: 4, GK: 1 } };
-    const playersByRole = new Map(["FW", "MF", "DF", "GK"].map((role) => [role, players.filter((player) => String(player.position || player.normalizedRole || "").toUpperCase() === role)]));
-    return global.FormationLayout.displayRows(formation).map((layout) => {
-      return { ...layout, players: (playersByRole.get(layout.role) || []).splice(0, layout.count) };
-    }).filter((row) => row.players.length);
-  }
+  function formationRows(...args) { return matchPresentation.formationRows(...args); }
 
-  function bossMatchTeamMeta(boss) {
-    const userIdentity = normalizeTeamIdentity(run.teamIdentity);
-    return {
-      user: { name: userIdentity.name || "La tua squadra", logoUrl: "", formation: run.formationId || "-", level: run.teamLevel },
-      boss: { name: boss?.teamName || "Boss", logoUrl: boss?.logoUrl || teamById(boss?.teamId)?.logoUrl || "", formation: boss?.bossFormation || "-", level: boss?.bossLevel ?? "-", overall: boss?.teamOverall || null },
-    };
-  }
+  function bossMatchTeamMeta(...args) { return matchPresentation.bossMatchTeamMeta(...args); }
 
-  function bossMatchAverage(players) {
-    if (!players.length) return null;
-    return Math.round(players.reduce((sum, player) => sum + Number(player.overall || 0), 0) / players.length);
-  }
+  function bossMatchAverage(...args) { return matchPresentation.bossMatchAverage(...args); }
 
 
 
-  const TACTIC_LABELS = { attack: "Attacco", control: "Controllo", defense: "Difesa", save: "Parata", speed: "Velocità", physical: "Fisico", stamina: "Resistenza" };
-  const TACTIC_SHORT_LABELS = { attack: "ATT", control: "CON", defense: "DIF", save: "PAR", speed: "VEL", physical: "FIS", stamina: "RES" };
 
-  function tacticSummary(formationId) {
-    return global.MatchSimulator.formationTactic(formationId);
-  }
+  function tacticSummary(...args) { return matchPresentation.tacticSummary(...args); }
 
-  function tacticChipMarkup(key, value, compact = false) {
-    const positive = Number(value) >= 0;
-    const percent = Math.round(Math.abs(Number(value) || 0) * 100);
-    const label = compact ? (TACTIC_SHORT_LABELS[key] || key.toUpperCase()) : (TACTIC_LABELS[key] || key);
-    const text = `${positive ? "↑" : "↓"} ${label} ${positive ? "+" : "-"}${percent}%`;
-    return `<span class="tactic-chip tactic-chip--${positive ? "bonus" : "penalty"}" aria-label="${escapeHtml(text)}">${escapeHtml(text)}</span>`;
-  }
+  function tacticChipMarkup(...args) { return matchPresentation.tacticChipMarkup(...args); }
 
-  function tacticPanelMarkup(formationId, { className = "", compact = false, strength = null, probability = null } = {}) {
-    const tactic = tacticSummary(formationId);
-    const entries = Object.entries(tactic.modifiers || {});
-    const bonuses = entries.filter(([, value]) => value >= 0).map(([key, value]) => tacticChipMarkup(key, value, compact)).join("");
-    const penalties = entries.filter(([, value]) => value < 0).map(([key, value]) => tacticChipMarkup(key, value, compact)).join("");
-    const strengthMarkup = strength ? `<div class="tactic-strength"><span>Forza base <strong>${escapeHtml(Math.round(strength.averageOverall ?? 0))}</strong></span><span>Forza effettiva <strong>${escapeHtml(strength.final ?? "-")}</strong></span>${probability != null ? `<span>Probabilità <strong>${escapeHtml(probability)}%</strong></span>` : ""}</div>` : "";
-    return `<section class="tactic-panel ${className}" data-tactic-panel data-formation="${escapeHtml(formationId || "")}"><div class="tactic-heading"><strong>${escapeHtml(formationId || "-")}</strong><span>${escapeHtml(tactic.name)}</span></div><p>${escapeHtml(tactic.description)}</p><div class="tactic-chip-row tactic-chip-row--bonus">${bonuses || '<span class="tactic-chip">Nessun bonus</span>'}</div><div class="tactic-chip-row tactic-chip-row--penalty">${penalties || '<span class="tactic-chip">Nessuna penalità</span>'}</div>${strengthMarkup}</section>`;
-  }
+  function tacticPanelMarkup(...args) { return matchPresentation.tacticPanelMarkup(...args); }
 
-  function matchFormationCard(player, { side = "user", readonly = true, showEquipment = false } = {}) {
-    const equipment = showEquipment ? (player.equipment || rosterEntry(player.playerId)?.equippedItem || null) : null;
-    return compactPlayerCardMarkup(player, {
-      equipment,
-      equipmentInFooter: true,
-      level: player.displayLevel ?? player.level ?? 0,
-      overall: player.overall ?? player.finalOverall ?? "-",
-      dataAttr: `data-boss-player="${escapeHtml(player.playerId)}" data-boss-side="${side}" ${readonly ? 'aria-label="Apri scheda ' + escapeHtml(player.name) + '"' : ""}`,
-      extraClass: `run-tactical-card match-player-card match-player-card--${side} boss-match-card boss-match-card--${side}`,
-      detailLayout: "stacked",
-    });
-  }
+  function matchFormationCard(...args) { return matchPresentation.matchFormationCard(...args); }
 
-  function renderMatchFormation({ players, formationId, side = "user", readonly = true, showEquipment = false, mobile = false, hidden = false } = {}) {
-    const rows = formationRows(formationId, players || []);
-    return `
-      <div class="match-formation match-formation--${side} boss-match-field-side boss-match-field-side--${side} ${mobile ? "boss-match-field-side--mobile" : ""}" data-boss-team="${side}" data-readonly="${readonly}"${hidden ? " hidden" : ""}>
-        ${rows.map((row) => `<div class="match-formation-line match-formation-line--${row.role} boss-match-line boss-match-line--${row.role}" data-row-count="${row.players.length}" style="--players-in-row:${row.players.length || 1};--row-count:${row.players.length || 1};--boss-row-count:${row.players.length || 1}">${row.players.map((player) => matchFormationCard(player, { side, readonly, showEquipment })).join("")}</div>`).join("")}
-      </div>`;
-  }
+  function renderMatchFormation(...args) { return matchPresentation.renderMatchFormation(...args); }
 
-  function bossMatchField(team, side, mobile = false, hidden = false) {
-    return renderMatchFormation({
-      players: team.players,
-      formationId: team.formationId,
-      side,
-      readonly: true,
-      showEquipment: side === "user",
-      mobile,
-      hidden,
-    });
-  }
+  function bossMatchField(...args) { return matchPresentation.bossMatchField(...args); }
 
-  function bossMatchTimeline() {
-    if (!ui.bossMatchLog.length) return `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>Formazioni pronte. Avvia la simulazione o usa i controlli provvisori.</p></li>`;
-    return ui.bossMatchLog.map((event) => `<li class="${matchEventSideClass(event.side)}"><span>${escapeHtml(event.minute)}</span><b>${event.icon}</b><p>${escapeHtml(event.text)}</p></li>`).join("");
-  }
+  function bossMatchTimeline(...args) { return matchPresentation.bossMatchTimeline(...args); }
 
-  function switchBossMatchTab(side) {
-    const activeSide = side === "boss" ? "boss" : "user";
-    ui.bossMatchTab = activeSide;
-    const field = document.querySelector(".boss-match-field");
-    if (field) field.dataset.activeBossSide = activeSide;
-    document.querySelectorAll("[data-boss-tab]").forEach((button) => {
-      const selected = button.dataset.bossTab === activeSide;
-      button.classList.toggle("active", selected);
-      button.setAttribute("aria-selected", selected ? "true" : "false");
-    });
-    document.querySelectorAll(".boss-match-field [data-boss-team]").forEach((formation) => {
-      formation.hidden = formation.dataset.bossTeam !== activeSide;
-    });
-    const label = document.querySelector(".boss-match-half-label--active");
-    const team = document.querySelector(`.boss-match-team${activeSide === "boss" ? ".boss-match-team--boss" : ":not(.boss-match-team--boss)"} strong`);
-    if (label && team) label.textContent = team.textContent || "";
-  }
+  function switchBossMatchTab(...args) { return matchPresentation.switchBossMatchTab(...args); }
 
   function openFiveMatchSimulationModal(...args) { return matchEngine.openFiveMatchSimulationModal(...args); }
 
-  function bossMatchStatusText() {
-    return {
-      "pre-match": "Pre-partita",
-      simulating: "Simulazione in corso",
-      "completed-victory": "Vittoria completata",
-      "completed-defeat": "Sconfitta completata",
-    }[ui.bossMatchState] || "Pre-partita";
-  }
+  function bossMatchStatusText(...args) { return matchPresentation.bossMatchStatusText(...args); }
 
 
 
