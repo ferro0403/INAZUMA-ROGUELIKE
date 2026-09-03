@@ -67,7 +67,7 @@ writesAllowed = true;
 const persistedMigration = runtime.migrateTeamIdentityProfile();
 assert.deepStrictEqual(JSON.parse(JSON.stringify(persistedMigration)), { name: "Legacy Eleven", emblemId: "default-lightning" });
 assert.strictEqual(saved.length, 1);
-assert.deepStrictEqual(saved[0], { name: "Legacy Eleven", emblemId: "default-lightning" });
+assert.deepStrictEqual(JSON.parse(JSON.stringify(saved[0])), { name: "Legacy Eleven", emblemId: "default-lightning" });
 assert.deepStrictEqual(JSON.parse(JSON.stringify(runtime.savedTeamIdentity())), { name: "Legacy Eleven", emblemId: "default-lightning" });
 
 profile = { teamIdentity: { name: "<Raimon>", emblemId: "x" } };
