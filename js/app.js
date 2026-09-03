@@ -26,16 +26,23 @@
   function navigateToSectionRoot(section, context = {}) {
     const destination = getSectionRootDestination(section).destination;
     if (destination === "map" && run?.activeMatch) return leaveMatchViaSectionRoot();
+    if (destination === "map" && run) {
+      if (run.phase === "map") {
+        closeModal({ invokeOnClose: false });
+        return renderMap({ persist: false });
+      }
+      const committed = persistGameplayMutation({
+        label: "section-root-map-navigation",
+        mutate: (current) => { current.phase = "map"; },
+      });
+      if (!committed.ok) return null;
+      closeModal({ invokeOnClose: false });
+      return renderMap({ persist: false });
+    }
     closeModal({ invokeOnClose: false });
     if (destination === "home") return renderHome();
-    if (destination === "seasonSelection") {
-      if (run) { try { global.RunState.save(run); } catch (error) { console.error("save failed (seasonSelection nav)", error); } }
-      return renderSeasonSelect();
-    }
-    if (destination === "map") {
-      if (run) { run.phase = "map"; try { global.RunState.save(run); } catch (error) { console.error("save failed (map nav)", error); } }
-      return renderMap();
-    }
+    if (destination === "seasonSelection") return renderSeasonSelect();
+    if (destination === "map") return renderMap({ persist: false });
     if (destination === "albumRoot") return renderAlbumCollections();
     if (destination === "albumTeams") return renderAlbumTeams(context.collectionId || ui.albumCollectionId || global.AlbumProgress.DEFAULT_COLLECTION_ID);
     if (destination === "hallRoot") return renderHallOfFame();
@@ -333,20 +340,31 @@
   function bindBottomNav() {
     document.querySelectorAll("[data-nav]").forEach((button) => {
       button.addEventListener("click", () => {
-        closeModal({ invokeOnClose: false });
         const destination = button.dataset.nav;
         if (destination === "map") {
+          closeModal({ invokeOnClose: false });
           return resumePostBossFlowOrMap();
         } else if (destination === "squad") {
           ensurePostBossFlow({ clearMatch: true });
-          run.phase = "squad";
-          try { global.RunState.save(run); } catch (error) { console.error("save failed (squad nav)", error); }
-          renderSquad();
+          if (run.phase === "squad") {
+            closeModal({ invokeOnClose: false });
+            return renderSquad();
+          }
+          const committed = persistGameplayMutation({
+            label: "bottom-nav-squad-navigation",
+            mutate: (current) => { current.phase = "squad"; },
+          });
+          if (!committed.ok) return null;
+          closeModal({ invokeOnClose: false });
+          return renderSquad();
         } else if (destination === "inventory") {
-          renderInventory();
+          closeModal({ invokeOnClose: false });
+          return renderInventory();
         } else if (destination === "five") {
-          openFiveVFiveEditor();
+          closeModal({ invokeOnClose: false });
+          return openFiveVFiveEditor();
         }
+        return null;
       });
     });
   }
