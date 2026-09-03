@@ -1,0 +1,34 @@
+name: One-shot DEV hardening red
+on:
+  push:
+    branches:
+      - hardening/dev-shortcuts-persistence
+    paths:
+      - .github/workflows/one-shot-dev-hardening-red.yml
+permissions:
+  contents: write
+jobs:
+  red:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hardening/dev-shortcuts-persistence
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Wire DEV production test support
+        run: |
+          set -euo pipefail
+          python .github/one-shot-dev-hardening-support.py
+          node --check js/app.js
+          node --check tests/helpers/production-runtime.js
+          git diff --check
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add js/app.js tests/helpers/production-runtime.js
+          git commit -m 'test: expose DEV shortcuts to production runtime harness'
+          git push origin HEAD:hardening/dev-shortcuts-persistence
+      - name: Run red DEV persistence characterization
+        run: node tests/dev-shortcuts-persistence-hardening-test.js
