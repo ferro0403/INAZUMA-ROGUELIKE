@@ -1,0 +1,49 @@
+name: Apply dev diagnostics extraction
+
+on:
+  push:
+    branches:
+      - refactor/dev-diagnostics-runtime
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, '[auto-dev-diagnostics]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply structural extraction
+        run: node tools/apply-dev-diagnostics-extraction.js
+      - name: Syntax
+        run: |
+          node --check js/app/dev-diagnostics-runtime.js
+          node --check js/app.js
+          node --check tests/app-dev-diagnostics-runtime-test.js
+      - name: Targeted regression tests
+        run: |
+          node tests/app-dev-diagnostics-runtime-test.js
+          node tests/app-bootstrap-domain-test.js
+          node tests/team-profile-runtime-domain-test.js
+          node tests/home-season-resume-production-path-test.js
+          node tests/permanent-club-ui-production-path-test.js
+          node tests/recruitment-production-path-e2e-test.js
+          node tests/app-gameplay-persistence-callsite-ownership-test.js
+          node tests/five-prematch-commit-boundary-test.js
+          node tests/real-final-boss-production-path-test.js
+      - name: Diff check
+        run: git diff --check
+      - name: Commit extracted production tree
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/app.js index.html tests/helpers/production-runtime.js tests/recruitment-production-path-e2e-test.js
+          git commit -m "[auto-dev-diagnostics] refactor: extract dev diagnostics runtime"
+          git push
