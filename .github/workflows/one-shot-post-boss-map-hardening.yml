@@ -1,0 +1,48 @@
+name: One-shot post-boss map hardening
+
+on:
+  push:
+    branches:
+      - hardening/post-boss-map-persistence
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: hardening/post-boss-map-persistence
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Patch and verify
+        shell: bash
+        run: |
+          set -euo pipefail
+          python .github/one-shot-post-boss-map-hardening.py
+          node --check js/app.js
+          node tests/post-boss-map-navigation-hardening-test.js
+          node tests/post-boss-recovery-loop-production-test.js
+          node tests/post-boss-canonical-verification-recovery-test.js
+          node tests/boss-handoff-no-nested-save-test.js
+          git diff --check
+
+      - name: Commit clean production change
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm .github/one-shot-post-boss-map-hardening.py
+          rm .github/workflows/one-shot-post-boss-map-hardening.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/app.js .github/one-shot-post-boss-map-hardening.py .github/workflows/one-shot-post-boss-map-hardening.yml
+          git diff --cached --check
+          git commit -m "hardening: serialize post-boss map resume"
+          git push origin HEAD:hardening/post-boss-map-persistence
