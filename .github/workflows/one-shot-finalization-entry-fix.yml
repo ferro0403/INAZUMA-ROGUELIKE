@@ -3,6 +3,8 @@ on:
   push:
     branches:
       - hardening/finalization-entry-persistence
+    paths:
+      - .github/workflows/one-shot-finalization-entry-fix.yml
 permissions:
   contents: write
 jobs:
@@ -29,14 +31,12 @@ jobs:
           node tests/champion-hall-presentation-domain-test.js
           node tests/boss-handoff-no-nested-save-test.js
           git diff --check
-      - name: Commit clean production change
+      - name: Commit production app change only
         run: |
           set -euo pipefail
-          rm .github/one-shot-finalization-entry-fix.js
-          rm .github/workflows/one-shot-finalization-entry-fix.yml
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add js/app.js .github/workflows/stacked-regression.yml .github/one-shot-finalization-entry-fix.js .github/workflows/one-shot-finalization-entry-fix.yml
+          git add js/app.js
           git diff --cached --check
           git commit -m 'hardening: serialize finalization entry before Hall effects'
           git push origin HEAD:hardening/finalization-entry-persistence
