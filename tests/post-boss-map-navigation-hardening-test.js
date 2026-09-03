@@ -76,6 +76,26 @@ function goMap(runtime) {
   return button;
 }
 
+class OneShotReadbackStorage extends BudgetStorage {
+  arm() { this.armNextPrimary = true; }
+  setItem(key, value) {
+    super.setItem(key, value);
+    if (this.armNextPrimary && String(key).endsWith(":ie1")) {
+      this.armNextPrimary = false;
+      this.failReadback = true;
+    }
+  }
+  getItem(key) {
+    if (this.failReadback && String(key).endsWith(":ie1")) {
+      this.failReadback = false;
+      const error = new Error("one-shot primary readback failure");
+      error.name = "SecurityError";
+      throw error;
+    }
+    return super.getItem(key);
+  }
+}
+
 // No PostBoss flow is pending: returning from Squad to Map is still a gameplay phase mutation.
 // A failed write must keep canonical, runtime and mounted UI on Squad so the same button can retry.
 {
@@ -109,6 +129,61 @@ function goMap(runtime) {
   assert.equal(reopened.seam.getRun().phase, "map", "reopened runtime matches canonical Map phase");
 }
 
+// A stale mounted Squad must not overwrite a newer canonical writer. Retry uses the recovered canonical run.
+{
+  const storage = new BudgetStorage(2_000_000);
+  const runtime = load(storage, { run: baseRun("post-boss-map-stale"), seasonDb });
+  runtime.seam.renderSquad();
+  const button = goMap(runtime);
+  const beforeMarkup = runtime.seam.getAppMarkup();
+  const beforeGeneration = generation(runtime);
+
+  const external = runtime.canonical;
+  external.messages.push("external-post-boss-update");
+  runtime.context.RunState.save(external);
+  assert.equal(generation(runtime), beforeGeneration + 1, "external writer advances canonical generation once");
+
+  assert.doesNotThrow(() => button.click(), "stale map navigation is contained");
+  assert.equal(runtime.canonical.phase, "squad", "stale navigation cannot overwrite canonical phase");
+  assert.equal(runtime.canonical.messages.includes("external-post-boss-update"), true, "external canonical update survives stale navigation");
+  assert.equal(runtime.seam.getRun().phase, "squad", "runtime rebases after stale navigation");
+  assert.equal(runtime.seam.getRun().messages.includes("external-post-boss-update"), true, "runtime rebases to newest canonical data");
+  assert.equal(runtime.seam.getAppMarkup(), beforeMarkup, "stale navigation does not falsely advance UI");
+  assert.equal(generation(runtime), beforeGeneration + 1, "stale failure adds no generation");
+
+  button.click();
+  assert.equal(runtime.canonical.phase, "map", "same mounted retry commits Map after stale recovery");
+  assert.equal(runtime.canonical.messages.includes("external-post-boss-update"), true, "retry preserves newer canonical data");
+  assert.equal(generation(runtime), beforeGeneration + 2, "retry creates exactly one navigation commit");
+  const reopened = runtime.reopen();
+  assert.equal(reopened.canonical.phase, "map", "reopen observes retried Map phase");
+  assert.equal(reopened.canonical.messages.includes("external-post-boss-update"), true, "reopen preserves external update");
+}
+
+// If primary readback fails after the write, canonical recovery may reveal that Map already committed.
+// The mounted UI stays on Squad until explicit retry, which must not duplicate the commit.
+{
+  const storage = new OneShotReadbackStorage(2_000_000);
+  const runtime = load(storage, { run: baseRun("post-boss-map-ambiguous"), seasonDb });
+  runtime.seam.renderSquad();
+  const button = goMap(runtime);
+  const beforeMarkup = runtime.seam.getAppMarkup();
+  const beforeGeneration = generation(runtime);
+
+  storage.arm();
+  assert.doesNotThrow(() => button.click(), "ambiguous readback failure is contained");
+  assert.equal(runtime.canonical.phase, "map", "canonical recovery finds the already committed Map phase");
+  assert.equal(runtime.seam.getRun().phase, "map", "runtime rebases to recovered canonical Map phase");
+  assert.equal(runtime.seam.getAppMarkup(), beforeMarkup, "ambiguous commit does not falsely advance mounted UI");
+  assert.equal(generation(runtime), beforeGeneration + 1, "ambiguous write exists exactly once canonically");
+
+  button.click();
+  assert.match(runtime.seam.getAppMarkup(), /route-screen/, "same mounted retry resumes from recovered canonical Map");
+  assert.equal(generation(runtime), beforeGeneration + 1, "retry after ambiguous recovery creates no duplicate commit");
+  const reopened = runtime.reopen();
+  assert.equal(reopened.canonical.phase, "map", "reopen observes recovered Map commit");
+}
+
 const appSource = fs.readFileSync("js/app.js", "utf8");
 const start = appSource.indexOf("function resumePostBossFlowOrMap");
 const end = appSource.indexOf("function bossVictoryMatch", start);
@@ -119,4 +194,4 @@ assert.match(source, /label: "post-boss-map-navigation"/, "fallback Map transiti
 assert.match(source, /ensureCurrentZoneMutation\(current\)/, "zone normalization is part of the same atomic mutation");
 assert.match(source, /renderMap\(\{ persist: false \}\)/, "Map UI is read-only after the verified commit");
 
-console.log("post-boss map navigation hardening: failure rollback, same-mounted retry, idempotence and reopen OK");
+console.log("post-boss map navigation hardening: quota, stale, ambiguous readback, same-mounted retry, idempotence and reopen OK");
