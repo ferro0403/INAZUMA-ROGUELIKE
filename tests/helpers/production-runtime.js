@@ -10,7 +10,7 @@ const PRODUCTION_MODULES = [
   "recruitment/player-identity.js", "recruitment/roster-invariants.js", "recruitment/recruitment-view.js", "recruitment/recruitment-controller.js", "pulls/pull-invariants.js",
   "pulls/pull-pool.js", "pulls/pull-items.js", "pulls/pull-view.js", "pulls/pull-controller.js", "pulls/pull-candidates.js",
   "squad/squad-controller.js", "squad/squad-view.js", "five-v-five/five-v-five-controller.js", "five-v-five/five-v-five-view.js", "five-v-five/five-match-presentation.js",
-  "special-match/special-match-view.js", "special-match/special-match-controller.js", "special-match/special-match-reward-view.js", "special-match/special-match-reward-controller.js", "match/match-controller.js",
+  "special-match/special-match-view.js", "special-match/special-match-controller.js", "special-match/special-match-reward-view.js", "special-match/special-match-reward-controller.js", "match/match-presentation.js", "match/match-controller.js",
   "inventory/inventory-model.js", "inventory/item-presenter.js", "inventory/inventory-controller.js",
   "map/node-router.js", "map/trade-node-controller.js", "map/run-map-controller.js",
   "album/album-view.js", "album/album-controller.js", "hall/champion-snapshot.js", "hall/champion-presentation.js", "hall/hall-view.js", "hall/hall-controller.js", "development/development-center-view.js", "development/development-center-controller.js",
