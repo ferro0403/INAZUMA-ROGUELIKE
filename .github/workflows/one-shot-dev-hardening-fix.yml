@@ -42,4 +42,4 @@ jobs:
           git diff --cached --check
           git commit -m 'hardening: make DEV shortcuts atomic'
           git push origin HEAD:hardening/dev-shortcuts-persistence
-# rerun after correcting terminal-flow test expectation
+# rerun after correcting checkpoint-aware test expectations
