@@ -1,0 +1,48 @@
+name: Apply five-match extraction
+
+on:
+  push:
+    branches:
+      - refactor/five-match-presentation
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: ${{ !contains(github.event.head_commit.message, '[auto-refactor]') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Apply deterministic extraction
+        run: node tools/apply-five-match-presentation-extraction.js
+      - name: Syntax
+        run: |
+          node --check js/five-v-five/five-match-presentation.js
+          node --check js/app.js
+          node --check tests/five-match-presentation-domain-test.js
+      - name: Targeted regression tests
+        run: |
+          node tests/five-match-presentation-domain-test.js
+          node tests/tactical-player-card-test.js
+          node tests/five-prematch-commit-boundary-test.js
+          node tests/five-postmatch-navigation-boundary-test.js
+          node tests/player-presentation-production-path-test.js
+          node tests/map-node-production-path-test.js
+      - name: Diff check
+        run: git diff --check
+      - name: Commit extracted production tree
+        run: |
+          rm tools/apply-five-match-presentation-extraction.js
+          rm .github/workflows/apply-five-match-extraction.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "[auto-refactor] refactor: extract five match presentation domain"
+          git push
