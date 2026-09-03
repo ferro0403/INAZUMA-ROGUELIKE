@@ -134,7 +134,7 @@ assert.strictEqual(presentation.compactSeed("123456789012345678901234"), "123456
 assert.match(presentation.snapshotCard(snapshot.fullRoster[0]), /data-player="p1"/);
 assert.match(presentation.championFormationMarkup(snapshot), /hall-pitch/);
 assert.match(presentation.championFormationMarkup(snapshot), /data-player="p1"/);
-assert.match(presentation.championFiveVFiveMarkup(snapshot), /Formazione salvata/);
+assert.match(presentation.championFiveVFiveMarkup(snapshot), /1-2-1/);
 assert.match(presentation.championFiveVFiveMarkup(snapshot), /data-player="p3"/);
 assert.match(presentation.statsMarkup(snapshot), /Bilancio della run/);
 assert.match(presentation.statsMarkup(snapshot), /Partite speciali/);
