@@ -43,11 +43,8 @@ jobs:
         run: git diff --check
       - name: Commit extracted production tree
         run: |
-          rm tools/apply-run-roster-runtime-extraction.js
-          rm .github/workflows/apply-run-roster-runtime.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add js/app.js index.html tests .github/workflows/stacked-regression.yml
-          git add -u tools/apply-run-roster-runtime-extraction.js .github/workflows/apply-run-roster-runtime.yml
+          git add js/app.js index.html tests
           git commit -m "[auto-run-roster] refactor: extract shared run roster runtime"
           git push
