@@ -21,7 +21,9 @@ jobs:
         with:
           node-version: 22
       - name: Apply structural extraction
-        run: node tools/apply-champion-hall-extraction.js
+        run: |
+          node tools/apply-champion-hall-extraction.js
+          node tools/fix-champion-domain-test.js
       - name: Syntax
         run: |
           node --check js/hall/champion-snapshot.js
@@ -41,9 +43,10 @@ jobs:
       - name: Commit extracted production tree
         run: |
           rm tools/apply-champion-hall-extraction.js
+          rm tools/fix-champion-domain-test.js
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add js/app.js index.html tests
-          git add -u tools/apply-champion-hall-extraction.js
+          git add -u tools/apply-champion-hall-extraction.js tools/fix-champion-domain-test.js
           git commit -m "[auto-champion-hall] refactor: extract champion snapshot and Hall presentation"
           git push
