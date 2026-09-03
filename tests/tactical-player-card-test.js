@@ -7,6 +7,7 @@ const vm = require("vm");
 const playerView = fs.readFileSync("js/player/player-view.js", "utf8");
 const fiveView = fs.readFileSync("js/five-v-five/five-v-five-view.js", "utf8");
 const app = fs.readFileSync("js/app.js", "utf8");
+const fiveMatchPresentation = fs.readFileSync("js/five-v-five/five-match-presentation.js", "utf8");
 const matchController = fs.readFileSync("js/match/match-controller.js", "utf8");
 const css = fs.readFileSync("css/game.css", "utf8");
 
@@ -40,12 +41,12 @@ const bossRenderer = sourceRange(
   "function renderMatchFormation",
 );
 const matchRenderer = sourceRange(
-  app,
+  fiveMatchPresentation,
   "fiveMatchCard",
-  "function fiveMatchField",
+  "function fiveMatchPlayerDetail",
 );
 const quickDetail = sourceRange(
-  app,
+  fiveMatchPresentation,
   "fiveMatchPlayerDetail",
   "function fiveMatchField",
 );
