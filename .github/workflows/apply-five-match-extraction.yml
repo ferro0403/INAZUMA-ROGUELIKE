@@ -21,7 +21,9 @@ jobs:
         with:
           node-version: 22
       - name: Apply deterministic extraction
-        run: node tools/apply-five-match-presentation-extraction.js
+        run: |
+          node tools/apply-five-match-presentation-extraction.js
+          node tools/repair-five-match-app.js
       - name: Syntax
         run: |
           node --check js/five-v-five/five-match-presentation.js
@@ -40,6 +42,7 @@ jobs:
       - name: Commit extracted production tree
         run: |
           rm tools/apply-five-match-presentation-extraction.js
+          rm tools/repair-five-match-app.js
           rm .github/workflows/apply-five-match-extraction.yml
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
