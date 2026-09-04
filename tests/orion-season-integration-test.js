@@ -7,7 +7,7 @@ const orion = JSON.parse(fs.readFileSync(`${root}/data/ORION_season_compact.json
 const freeAgents = JSON.parse(fs.readFileSync(`${root}/data/FREE_AGENTS_compact.json`, "utf8"));
 const context = { console, structuredClone, DevelopmentV2: { playerUpgrade: () => null } };
 context.globalThis = context;
-for (const file of ["profiled-season.js", "recruitment-pool.js", "formation-layout.js", "match-simulator-config.js", "match-simulator.js", "boss-gameover-runtime.js"]) {
+for (const file of ["profiled-season.js", "recruitment/player-identity.js", "recruitment-pool.js", "formation-layout.js", "match-simulator-config.js", "match-simulator.js", "boss-gameover-runtime.js"]) {
   vm.runInNewContext(fs.readFileSync(`${root}/js/${file}`, "utf8"), context, { filename: file });
 }
 context.ProfiledSeasonRuntime.register("orion", orion);
