@@ -148,7 +148,24 @@ jobs:
           set -euo pipefail
           node tests/500-run-soak-fuzz-gate.js
 
-      - name: 500 complete stateful campaigns
+  complete_soak:
+    name: 500 complete stateful campaigns
+    needs: regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run 500 complete stateful campaigns
         shell: bash
         run: |
           set -euo pipefail
