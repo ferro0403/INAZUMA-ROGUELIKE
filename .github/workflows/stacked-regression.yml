@@ -110,6 +110,7 @@ jobs:
             tests/finalization-entry-persistence-hardening-test.js
             tests/finalization-navigation-persistence-hardening-test.js
             tests/real-final-boss-production-path-test.js
+            tests/final-victory-reward-presentation-production-test.js
           )
           for test_file in "${tests[@]}"; do
             echo "::group::$test_file"

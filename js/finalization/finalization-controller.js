@@ -15,14 +15,14 @@
         return result;
       }
       if (!render) return result;
-      return deps.resolveDevelopment({ endReason: "victory", onComplete: () => renderCelebration(run().hallTeamId, { developmentResolved: true }) });
+      return deps.resolveDevelopment({ endReason: "victory", onComplete: () => renderCelebration(run().hallTeamId, { developmentResolved: true, rewardPresentationResolved: true }) });
     }
     function renderPending(result = {}) {
       return deps.view.renderPending(result, () => {
         const retry = document.getElementById("retry-run-finalization");
         retry.disabled = true;
         const resumed = resume({ render: false });
-        if (resumed.completed) return deps.resolveDevelopment({ endReason: "victory", onComplete: () => renderCelebration(run().hallTeamId, { developmentResolved: true }) });
+        if (resumed.completed) return deps.resolveDevelopment({ endReason: "victory", onComplete: () => renderCelebration(run().hallTeamId, { developmentResolved: true, rewardPresentationResolved: true }) });
         deps.toast("Finalizzazione ancora in sospeso. Puoi riprovare senza perdere la vittoria.", "error");
         renderPending(resumed);
       });
@@ -41,8 +41,13 @@
         },
       });
     }
-    function renderCelebration(hallTeamId, { developmentResolved = false } = {}) {
+    function victoryRewardPresentationSeen() {
+      const presentation = run()?.developmentRewardPresentation;
+      return presentation?.endReason === "victory" && presentation?.seen === true;
+    }
+    function renderCelebration(hallTeamId, { developmentResolved = false, rewardPresentationResolved = false } = {}) {
       if (!developmentResolved || run().finalization?.status !== "complete") return resume();
+      if (!rewardPresentationResolved && !victoryRewardPresentationSeen()) return resume();
       const team = deps.championTeam(hallTeamId || run()?.hallTeamId);
       if (!team) return deps.renderHome();
       const go = () => {
