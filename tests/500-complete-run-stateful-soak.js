@@ -330,10 +330,6 @@ async function resolveInteractiveState(runtime, seasonDb, meta, random, coverage
     const run = runtime.canonical;
     assertInvariants(run, meta);
     if (run.phase === "gameover" || ["final-celebration", "final-summary", "complete"].includes(String(run.phase))) return runtime;
-    if (run.phase === "match") {
-      runtime = await resolveMatch(runtime, seasonDb, meta, random, coverage, faults);
-      continue;
-    }
     if (run.pendingSpecialMatchReward) {
       const action = runtime.query("#decline-special-reward") || runtime.query("#claim-special-reward");
       expect(Boolean(action), "Special reward has no valid action", meta, run, { modal: runtime.modalMarkup.slice(0, 600) });
@@ -345,6 +341,10 @@ async function resolveInteractiveState(runtime, seasonDb, meta, random, coverage
       const skip = runtime.query("#skip-offer");
       if (skip) skip.click(); else runtime.seam.advanceBossReward();
       coverage.bossRewards += 1;
+      continue;
+    }
+    if (run.phase === "match") {
+      runtime = await resolveMatch(runtime, seasonDb, meta, random, coverage, faults);
       continue;
     }
     const hidden = runtime.query("#open-hidden-event");
