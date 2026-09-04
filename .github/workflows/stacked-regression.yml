@@ -1,0 +1,172 @@
+name: Stacked regression gate
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: stacked-regression-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  regression:
+    name: Node regression gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Runtime versions
+        run: |
+          node --version
+          git --version
+
+      - name: Syntax check production JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find js -type f -name '*.js' -print0 | sort -z)
+
+      - name: Diff whitespace check
+        if: github.event_name == 'pull_request'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
+
+      - name: Core persistence and ownership regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          tests=(
+            tests/app-gameplay-persistence-callsite-ownership-test.js
+            tests/final-persistence-audit-production-test.js
+            tests/app-gameplay-persistence-transactions-test.js
+            tests/navigation-persistence-hardening-test.js
+            tests/dev-shortcuts-persistence-hardening-test.js
+            tests/draft-to-squad-persistence-test.js
+            tests/initial-formation-draft-domain-characterization-test.js
+            tests/initial-formation-draft-production-path-test.js
+            tests/recruitment-production-path-e2e-test.js
+            tests/legendary-pull-sticky-candidate-production-test.js
+          )
+          for test_file in "${tests[@]}"; do
+            echo "::group::$test_file"
+            node "$test_file"
+            echo "::endgroup::"
+          done
+
+      - name: Extracted-domain production regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          tests=(
+            tests/app-ui-shell-domain-test.js
+            tests/app-bootstrap-domain-test.js
+            tests/app-dev-diagnostics-domain-test.js
+            tests/app-test-seams-domain-test.js
+            tests/team-profile-runtime-domain-test.js
+            tests/run-roster-runtime-domain-test.js
+            tests/player-presentation-production-path-test.js
+            tests/permanent-club-ui-production-path-test.js
+            tests/champion-hall-presentation-domain-test.js
+            tests/inventory-equipment-production-path-test.js
+            tests/home-season-resume-production-path-test.js
+            tests/gameover-resume-terminal-guard-test.js
+            tests/shop-settings-production-path-test.js
+            tests/map-node-production-path-test.js
+          )
+          for test_file in "${tests[@]}"; do
+            echo "::group::$test_file"
+            node "$test_file"
+            echo "::endgroup::"
+          done
+
+      - name: Match, boss, and finalization regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          tests=(
+            tests/match-presentation-domain-test.js
+            tests/five-match-presentation-domain-test.js
+            tests/five-prematch-commit-boundary-test.js
+            tests/five-postmatch-navigation-boundary-test.js
+            tests/post-boss-map-navigation-hardening-test.js
+            tests/post-boss-recovery-loop-production-test.js
+            tests/terminal-effect-recovery-loop-production-test.js
+            tests/finalization-ambiguous-commit-production-test.js
+            tests/finalization-entry-persistence-hardening-test.js
+            tests/finalization-navigation-persistence-hardening-test.js
+            tests/real-final-boss-production-path-test.js
+            tests/final-victory-reward-presentation-production-test.js
+          )
+          for test_file in "${tests[@]}"; do
+            echo "::group::$test_file"
+            node "$test_file"
+            echo "::endgroup::"
+          done
+
+      - name: Release candidate integration gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          tests=(
+            tests/run-local-only-cloud-decoupling-test.js
+            tests/cloud-login-restore-run-invariance-test.js
+            tests/read-only-map-orphan-match-recovery-test.js
+            tests/final-persistence-stress-test.js
+            tests/special-node-normalize-resume-final-gate-test.js
+            tests/recovered-match-reward-handoff-e2e-test.js
+            tests/real-finalization-quota-matrix-test.js
+            tests/ie1-s2-final-runtime-integration-test.js
+            tests/ie1-s3-integration-test.js
+            tests/orion-season-integration-test.js
+          )
+          for test_file in "${tests[@]}"; do
+            echo "::group::$test_file"
+            node "$test_file"
+            echo "::endgroup::"
+          done
+
+      - name: 500-run deterministic soak/fuzz gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/500-run-soak-fuzz-gate.js
+
+  complete_soak:
+    name: 500 complete stateful campaigns
+    needs: regression
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run 500 complete stateful campaigns
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/500-complete-run-stateful-soak.js

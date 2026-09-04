@@ -1,17 +1,16 @@
 (function (global) {
   "use strict";
 
-  const id = (value) => String(value ?? "");
+  const identity = global.PlayerIdentity;
+  if (!identity) throw new Error("PlayerIdentity must be loaded before RecruitmentPoolRuntime");
 
-  function isSeasonProfileCandidate(player) {
-    return /_recruitment_profile$/.test(String(player?.sourceKind || ""))
-      || player?.pullCandidateKind === "season_profile"
-      || (player?.pullCandidateKind !== "free_agent" && Boolean(player?.profileId));
-  }
-
-  function canonicalPlayerId(player) { return id(player?.playerId); }
-  function candidateKey(player) { return id(isSeasonProfileCandidate(player) ? player.profileId : player?.playerId); }
-  function candidateSource(player, seasonId = "ie1_s3") { return isSeasonProfileCandidate(player) ? seasonId : "free_agents"; }
+  const {
+    id,
+    isSeasonProfileCandidate,
+    canonicalPlayerId,
+    candidateKey,
+    candidateSource,
+  } = identity;
 
   function effectiveFinalOverall(candidate, state) {
     return Number(global.DevelopmentRuntime?.effectiveAccountPotential?.(candidate, state) ?? candidate?.finalOverall ?? 0);
@@ -68,8 +67,10 @@
   const eligibleForProfiledFreeAgentPull = eligibleForSeason3FreeAgentPull;
 
   function eligible(run, player, eligibleProfile = global.SpecialMatchRuntime?.eligibleProfile) {
+    const owned = (run?.roster || []).some((entry) => canonicalPlayerId(entry) === canonicalPlayerId(player));
+    if (owned) return false;
     if (isSeasonProfileCandidate(player)) return Boolean(player.profileId && eligibleProfile?.(run, player.profileId));
-    return !(run?.roster || []).some((entry) => id(entry.playerId) === canonicalPlayerId(player));
+    return true;
   }
 
   function choiceDatabase(source, seasonDb, freeAgentsDb, registry = global.SeasonRegistry) {

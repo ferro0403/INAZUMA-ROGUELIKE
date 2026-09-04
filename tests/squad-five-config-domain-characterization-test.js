@@ -1,0 +1,33 @@
+"use strict";
+const assert = require("assert");
+const fs = require("fs");
+const vm = require("vm");
+const context = { globalThis: null, structuredClone, console }; context.globalThis = context; vm.createContext(context);
+for (const file of ["js/recruitment/player-identity.js", "js/recruitment/roster-invariants.js", "js/five-v-five.js", "js/squad/squad-controller.js", "js/five-v-five/five-v-five-controller.js"]) vm.runInContext(fs.readFileSync(file, "utf8"), context, { filename: file });
+const roles = ["GK", ...Array(4).fill("DF"), ...Array(3).fill("MF"), ...Array(3).fill("FW"), "GK", "DF", "MF", "FW"];
+const roster = roles.map((position, index) => ({ playerId: `p${index}`, position, overall: 50 + index }));
+const formations = [{ id: "4-3-3", name: "4-3-3", requirements: { GK: 1, DF: 4, MF: 3, FW: 3 }, slotRoles: roles.slice(0, 11) }, { id: "invalid", requirements: { GK: 2, DF: 5, MF: 5, FW: 4 }, slotRoles: [] }];
+let run = { roster: roster.map(({ playerId }) => ({ playerId })), formationId: "4-3-3", lineup: roster.slice(0, 11).map(p => p.playerId), bench: roster.slice(11, 15).map(p => p.playerId) };
+let saves = 0; let confirmations = 0; let fail = false;
+const resolve = id => roster.find(p => p.playerId === String(id));
+const persistMutation = options => { const current = structuredClone(run); let value; try { value = options.mutate(current); context.RosterInvariants.assertValid(current); if (fail) throw new Error("save failed"); saves++; run = current; options.onCommitted?.(value, current); return { ok: true, value }; } catch (error) { options.rerender?.({ ok: false }); return { ok: false, error }; } };
+const squad = context.SquadControllerRuntime.create({ getRun: () => run, formations: () => formations, getRole: id => resolve(id)?.position, resolveEntry: (id, current) => current.roster.find(e => e.playerId === String(id)), resolveSource: entry => resolve(entry?.playerId), persistMutation, rosterInvariants: context.RosterInvariants });
+assert.equal(squad.validitySummary().starters, 11); assert.equal(squad.validitySummary().bench, 4); assert.equal(new Set(run.lineup).size, 11); assert.equal(new Set(run.bench).size, 4); assert(!run.lineup.some(id => run.bench.includes(id)));
+assert.equal(squad.canUseFormation(formations[0]), true); assert.equal(squad.canUseFormation(formations[1]), false);
+assert.equal(squad.changeFormation("4-3-3", { onCommitted: () => confirmations++ }).ok, true); assert.equal(run.formationId, "4-3-3");
+assert.equal(squad.changeFormation("invalid").unavailable, true);
+const beforeSwap = structuredClone(run); assert.equal(squad.swapPlayers("p0", "p11").ok, true); assert.equal(run.lineup[0], "p11"); assert.equal(run.bench[0], "p0");
+const invalidPlayer = structuredClone(run); invalidPlayer.lineup[0] = "absent"; assert.throws(() => context.RosterInvariants.assertValid(invalidPlayer), /formation-player-not-in-roster/);
+const duplicate = structuredClone(run); duplicate.bench[1] = duplicate.bench[0]; assert.throws(() => context.RosterInvariants.assertValid(duplicate), /bench-duplicate-canonical-player/);
+const saved = structuredClone(run); run = structuredClone(saved); assert.deepEqual(run.lineup, saved.lineup); assert.equal(squad.reconcileRosterState(run), false);
+fail = true; const confirmationsBeforeFailure = confirmations; const snapshot = structuredClone(run); assert.equal(squad.changeFormation("4-3-3", { onCommitted: () => confirmations++ }).ok, false); assert.deepEqual(run, snapshot); assert.equal(confirmations, confirmationsBeforeFailure); fail = false;
+const five = context.FiveVFive; const role = id => resolve(id)?.position; const overall = id => resolve(id)?.overall || 0;
+five.ensure(run, role, overall); assert.equal(five.validate(run, role).valid, true); assert.equal(Object.values(run.fiveVFive.slots).filter(Boolean).length, 5); assert.equal(new Set(Object.values(run.fiveVFive.slots)).size, 5);
+const assigned = Object.values(run.fiveVFive.slots)[0]; const target = five.formationById(run.fiveVFive.formation).slots.find(s => s.role === role(assigned) && run.fiveVFive.slots[s.key] !== assigned); if (target) { five.assign(run, target.key, assigned, role); assert.equal(Object.values(run.fiveVFive.slots).filter(id => id === assigned).length, 1); }
+assert.throws(() => five.assign(run, "GK", "absent", role), /non presente in rosa/);
+five.changeFormation(run, "1-1-2", role); assert.equal(run.fiveVFive.formation, "1-1-2"); five.ensure(run, role, overall); assert.equal(five.validate(run, role).valid, true);
+const fiveSaved = structuredClone(run.fiveVFive); run.fiveVFive = structuredClone(fiveSaved); assert.deepEqual(run.fiveVFive, fiveSaved);
+const removed = Object.values(run.fiveVFive.slots).find(Boolean); run.roster = run.roster.filter(e => e.playerId !== removed); five.removeUnavailable(run); assert(!Object.values(run.fiveVFive.slots).includes(removed));
+// The match boundary consumes the exact configured IDs and remains in app.js; no simulation is invoked here.
+const app = fs.readFileSync("js/app.js", "utf8") + "\n" + fs.readFileSync("js/match/match-controller.js", "utf8"); assert.match(app, /function dispatchNode[\s\S]*enterMatchFromNode/); assert.match(app, /state: "pre-match"/); assert.match(app, /current\.activeMatch = created/); assert.match(app, /function startMatchSimulation/);
+console.log("squad/five configuration characterization: invariants, transactions, resume and prematch boundary OK");

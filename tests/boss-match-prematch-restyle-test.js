@@ -1,6 +1,6 @@
 const assert = require('assert');
 const fs = require('fs');
-const app = fs.readFileSync('js/app.js', 'utf8');
+const app = fs.readFileSync('js/app.js', 'utf8') + '\n' + fs.readFileSync('js/match/match-controller.js', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
 const css = fs.readFileSync('css/boss-match-prematch-restyle.css', 'utf8');
 const actionCss = fs.readFileSync('css/five-match-action-assets.css', 'utf8');

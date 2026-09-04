@@ -1,6 +1,6 @@
 "use strict";
 const assert = require("assert"), fs = require("fs");
-const app = fs.readFileSync("js/app.js", "utf8"), css = fs.readFileSync("css/game.css", "utf8"), html = fs.readFileSync("index.html", "utf8");
+const app = fs.readFileSync("js/app.js", "utf8") + fs.readFileSync("js/development/development-center-controller.js", "utf8"), css = fs.readFileSync("css/game.css", "utf8"), html = fs.readFileSync("index.html", "utf8");
 assert.match(app, /\[\["players","GIOCATORI"\],\["projects","PROGETTI"\],\["management","EVOLUZIONI"\]\]/);
 assert.doesNotMatch(app, /\["history","STORICO"\]/);
 assert.match(app, /const v3State = global\.DevelopmentAccountV3\.read\(\)/);

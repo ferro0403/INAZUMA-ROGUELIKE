@@ -3,7 +3,7 @@
 const assert = require('assert');
 const fs = require('fs');
 
-const app = fs.readFileSync('js/app.js', 'utf8');
+const app = fs.readFileSync('js/inventory/inventory-controller.js', 'utf8');
 const css = fs.readFileSync('css/inventory-redesign.css', 'utf8');
 const html = fs.readFileSync('index.html', 'utf8');
 const render = app.slice(app.indexOf('function renderInventory'), app.indexOf('function inventoryItemEffect'));

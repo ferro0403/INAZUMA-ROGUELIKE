@@ -3,7 +3,7 @@ const fs = require("fs");
 const path = require("path");
 const root = path.join(__dirname, "..");
 const css = fs.readFileSync(path.join(root, "css/game.css"), "utf8");
-const app = fs.readFileSync(path.join(root, "js/app.js"), "utf8");
+const shopView = fs.readFileSync(path.join(root, "js/shop/shop-view.js"), "utf8");
 const polish = fs.readFileSync(path.join(root, "js/shop-ui-polish.js"), "utf8");
 const orionDb = JSON.parse(fs.readFileSync(path.join(root, "data/ORION_season_compact.json"), "utf8"));
 assert.match(css, /main\.shop-screen \.shop-cups\{display:grid;grid-template-columns:repeat\(5,minmax\(0,1fr\)\);gap:4px\}/, "desktop cup grid must keep five columns");
@@ -18,7 +18,7 @@ assert.match(css, /\.shop-cups img\{[^}]*display:block;justify-self:center;[^}]*
 assert.match(css, /\.shop-cups span:nth-child\(-n\+3\)\{border-bottom:4px solid var\(--ink\)\}/, "the first row must have a continuous lower divider");
 assert.match(css, /\.shop-cups span:nth-child\(1\),\.shop-cups span:nth-child\(2\),\.shop-cups span:nth-child\(4\)\{border-right:4px solid var\(--ink\)\}/, "both cup rows must have coherent vertical dividers");
 assert.match(css, /main\.shop-screen \.shop-tabs\{grid-template-columns:repeat\(3,minmax\(0,1fr\)\)\}/, "mobile tabs must render as a 3x2 grid");
-assert.match(app, /orion: "Comet Pendant"/);
+assert.match(shopView, /orion: "Comet Pendant"/);
 assert.match(polish, /orion: "Comet Pendant"/);
 assert.match(polish, /orion: "ORION"/);
 const emptyDb = { teams: [], bossOrder: [] };

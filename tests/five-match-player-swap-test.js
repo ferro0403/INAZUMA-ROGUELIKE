@@ -3,22 +3,24 @@
 const assert = require('assert');
 const fs = require('fs');
 
-const app = fs.readFileSync('js/app.js', 'utf8');
+const app = fs.readFileSync('js/app.js', 'utf8') + '\n' + fs.readFileSync('js/match/match-controller.js', 'utf8');
+const fiveView = fs.readFileSync('js/five-v-five/five-v-five-view.js', 'utf8');
 const pickerBridge = fs.readFileSync('js/five-formation-floating-picker.js', 'utf8');
 const pickerCss = fs.readFileSync('css/five-formation-floating-picker.css', 'utf8');
 const index = fs.readFileSync('index.html', 'utf8');
 
-function sourceBetween(startToken, endToken) {
-  const start = app.indexOf(startToken);
-  const end = app.indexOf(endToken, start + startToken.length);
+function sourceBetween(startToken, endToken, source = app) {
+  const start = source.indexOf(startToken);
+  const end = source.indexOf(endToken, start + startToken.length);
   assert.ok(start >= 0 && end > start, `${startToken} source is available`);
-  return app.slice(start, end);
+  return source.slice(start, end);
 }
 
 const prematchPicker = sourceBetween('function openFiveMatchPlayerSwap', 'function fiveMatchStatAverage');
-const sharedRenderer = sourceBetween('function renderFivePlayerPicker', 'function syncFiveSlotSelection');
-const generalEditor = sourceBetween('function renderFiveVFive(options = {})', 'function renderInventory');
-const snapshotSource = sourceBetween('function ensureMatchPreview', 'function simulationScoreArray');
+const sharedRenderer = sourceBetween('function renderFivePlayerPicker', 'function syncFiveSlotSelection', fiveView);
+const generalEditor = sourceBetween('function renderFiveVFive(options = {})', 'return { render:', fiveView);
+const matchSource = fs.readFileSync('js/match/match-controller.js', 'utf8');
+const snapshotSource = sourceBetween('function ensureMatchPreview', 'function simulationScoreArray', matchSource);
 
 // Both contexts render the exact same picker markup and compact roster cards.
 assert.match(prematchPicker, /renderFivePlayerPicker\(\{ selectedSlot: slotKey, selectedRole: slot\.role \}\)/, 'prematch calls the shared picker renderer');

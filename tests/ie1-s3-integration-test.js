@@ -50,7 +50,7 @@ const formation = season.formations.eleven.find(f => f.id === '4-3-1-2'); assert
 const nakata = season.profiles.find(p => p.playerId === 'custom_0001' && p.teamId === 'orpheus'); assert(nakata); assert.strictEqual(nakata.portraitUrl,'assets/players/season3/custom_0001_nakata_portrait.webp'); assert.strictEqual(nakata.frontFullbodyUrl,'assets/players/season3/custom_0001_nakata_fullbody.webp'); assert(fs.existsSync(nakata.portraitUrl)); assert(fs.existsSync(nakata.frontFullbodyUrl));
 
 const context = { console, fetch: async () => ({ok:true,json:async()=>season}) }; context.globalThis=context; vm.createContext(context);
-for (const file of ['js/profiled-season.js','js/season-registry.js','js/recruitment-pool.js','js/draft.js','js/level-progression.js','js/special-match.js']) vm.runInContext(fs.readFileSync(file,'utf8'),context,{filename:file});
+for (const file of ['js/profiled-season.js','js/season-registry.js','js/recruitment/player-identity.js','js/recruitment-pool.js','js/draft.js','js/level-progression.js','js/special-match.js']) vm.runInContext(fs.readFileSync(file,'utf8'),context,{filename:file});
 context.ProfiledSeasonRuntime.register('ie1_s3',season);
 assert(context.SeasonRegistry.list().some(s => s.id==='ie1_s3')); assert.strictEqual(context.SeasonRegistry.get('ie2').name,'Inazuma Eleven Ares');
 const eligibility=context.RecruitmentPoolRuntime.eligibleForSeason3InitialDraft;

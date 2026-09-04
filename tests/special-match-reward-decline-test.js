@@ -38,11 +38,14 @@ assert.strictEqual(second.status, "already-resolved");
 assert.deepStrictEqual(run.claimedSpecialMatchRewardIds, ["special_alpine_ie2"], "Decline must be idempotent");
 
 const appSource = fs.readFileSync(path.join(root, "js", "app.js"), "utf8");
-assert(appSource.includes('id="decline-special-reward"'), "Special reward modal must expose decline action");
-assert(appSource.includes('>RIFIUTA</button>'), "Decline action must be labeled RIFIUTA");
-assert(appSource.includes('SpecialMatchRuntime.decline(current, current.pendingSpecialMatchReward, seasonDb)'), "UI must use runtime decline helper on transaction-owned state");
-assert(appSource.includes('id="claim-special-reward"'), "Existing claim action must remain available");
-assert(appSource.includes('commitMatchMutation("match-post-navigation"'), "Special reward handoff must use the durable post-match transaction");
+const matchSource = fs.readFileSync(path.join(root, "js", "match", "match-controller.js"), "utf8");
+const rewardSource = fs.readFileSync(path.join(root, "js", "special-match", "special-match-reward-controller.js"), "utf8");
+const rewardViewSource = fs.readFileSync(path.join(root, "js", "special-match", "special-match-reward-view.js"), "utf8");
+assert(rewardViewSource.includes('id="decline-special-reward"'), "Special reward modal must expose decline action");
+assert(rewardViewSource.includes('>RIFIUTA</button>'), "Decline action must be labeled RIFIUTA");
+assert(rewardSource.includes('SpecialMatchRuntime.decline(current, assertCurrent(current, expected), deps.getSeasonDb())'), "UI must use runtime decline helper on transaction-owned state");
+assert(rewardViewSource.includes('id="claim-special-reward"'), "Existing claim action must remain available");
+assert(matchSource.includes('commitMatchMutation("match-post-navigation"'), "Special reward handoff must use the durable post-match transaction");
 
 const bridgeSource = fs.readFileSync(path.join(root, "js", "special-reward-ui-bridge.js"), "utf8");
 assert(bridgeSource.includes('bench-replacement-modal'), "Full-roster replacement modal may be styled");
@@ -56,5 +59,10 @@ assert(!bridgeSource.includes('sessionStorage'), "Full-roster decline must not r
 
 const indexSource = fs.readFileSync(path.join(root, "index.html"), "utf8");
 assert(indexSource.includes('js/special-reward-ui-bridge.js'), "Special reward UI bridge must be loaded by index.html");
+const runtimeIndex = indexSource.indexOf('js/special-match.js');
+const controllerIndex = indexSource.indexOf('js/special-match/special-match-controller.js');
+const rewardIndex = indexSource.indexOf('js/special-match/special-match-reward-controller.js');
+const appIndex = indexSource.indexOf('js/app.js');
+assert(runtimeIndex >= 0 && runtimeIndex < controllerIndex && controllerIndex < rewardIndex && rewardIndex < appIndex, "Special runtime, extracted controllers, and app must preserve dependency load order");
 
 console.log("special-match-reward-decline-test: OK");

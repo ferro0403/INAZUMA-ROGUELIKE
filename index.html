@@ -65,7 +65,11 @@
     <script type="module" src="js/firebase-account.js?v=20260801-account-1"></script>
     <script src="js/season1-config.js?v=20260820-pull-card-copy-1"></script>
     <script src="js/profiled-season.js?v=20260814-ie1-s3-1"></script>
-    <script src="js/recruitment-pool.js?v=20260829-development-v3-pr7-1"></script>
+    <script src="js/recruitment/player-identity.js?v=20260901-app-decomposition-v1-1"></script>
+    <script src="js/recruitment/roster-invariants.js?v=20260901-canonical-identity-1"></script>
+    <script src="js/recruitment/recruitment-view.js?v=20260901-recruitment-domain-1"></script>
+    <script src="js/recruitment/recruitment-controller.js?v=20260901-recruitment-domain-1"></script>
+    <script src="js/recruitment-pool.js?v=20260901-app-decomposition-v1-1"></script>
     <script src="js/formation-layout.js?v=20260814-4312-layout-1"></script>
     <script src="js/season-registry.js?v=20260817-season-cards-1"></script>
     <script src="js/team-emblems.js?v=20260811-no-yellow-accent-1"></script>
@@ -90,9 +94,15 @@
     <script src="js/cloud-restore-protocol.js?v=20260831-run-local-only-pr366-2"></script>
     <script src="js/cloud-restore-resume-coordinator.js?v=20260824-persistence-final-5"></script>
     <script type="module" src="js/firebase-cloud-save.js?v=20260831-run-local-only-pr366-2"></script>
-    <script src="js/draft.js?v=20260828-development-v3-pr4-1"></script>
+    <script src="js/pulls/weighted-pull.js?v=20260901-app-decomposition-v1-3"></script>
+    <script src="js/pulls/legendary-pull.js?v=20260901-app-decomposition-v1-2"></script>
+    <script src="js/draft.js?v=20260901-app-decomposition-v1-3"></script>
     <script src="js/map-generator.js?v=20260814-ie1-s3-1"></script>
     <script src="js/special-match.js?v=20260814-ie1-s3-1"></script>
+    <script src="js/special-match/special-match-view.js?v=20260902-special-extraction-1"></script>
+    <script src="js/special-match/special-match-controller.js?v=20260902-special-extraction-1"></script>
+    <script src="js/special-match/special-match-reward-view.js?v=20260902-special-extraction-1"></script>
+    <script src="js/special-match/special-match-reward-controller.js?v=20260902-special-extraction-1"></script>
     <script src="js/roguelike_progression.js?v=20260820-role-aware-growth-1"></script>
     <script src="js/game-rules.js?v=20260828-development-v3-pr5a-3"></script>
     <script src="js/five-v-five.js?v=20260718-home-navigation-hotfix-1"></script>
@@ -108,6 +118,58 @@
     <script src="js/development-runtime.js?v=20260829-development-v3-pr7-1"></script>
     <script src="js/gameplay-persistence.js?v=20260823-gameplay-persistence-3"></script>
     <script src="js/boss-gameover-runtime.js?v=20260823-boss-crash-4"></script>
+    <script src="js/boss/boss-flow-controller.js?v=20260902-boss-extraction-1"></script>
+    <script src="js/pulls/pull-pool.js?v=20260901-pull-domain-1"></script>
+    <script src="js/pulls/pull-items.js?v=20260901-pull-domain-1"></script>
+    <script src="js/pulls/pull-view.js?v=20260901-pull-domain-1"></script>
+    <script src="js/pulls/pull-controller.js?v=20260901-pull-domain-1"></script>
+    <script src="js/pulls/pull-invariants.js?v=20260901-canonical-identity-1"></script>
+    <script src="js/pulls/pull-candidates.js?v=20260901-pull-candidates-1"></script>
+    <script src="js/squad/squad-controller.js?v=20260901-squad-extraction-1"></script>
+    <script src="js/squad/squad-view.js?v=20260901-squad-extraction-1"></script>
+    <script src="js/five-v-five/five-v-five-controller.js?v=20260901-five-config-extraction-1"></script>
+    <script src="js/five-v-five/five-v-five-view.js?v=20260901-five-config-extraction-1"></script>
+    <script src="js/five-v-five/five-match-presentation.js?v=20260903-five-match-presentation-1"></script>
+    <script src="js/match/match-presentation.js?v=20260903-match-presentation-1"></script>
+    <script src="js/match/match-controller.js?v=20260902-match-extraction-1"></script>
+    <script src="js/gameover/gameover-view.js?v=20260902-terminal-extraction-1"></script>
+    <script src="js/gameover/gameover-controller.js?v=20260902-terminal-extraction-1"></script>
+    <script src="js/finalization/finalization-view.js?v=20260902-terminal-extraction-1"></script>
+    <script src="js/finalization/finalization-controller.js?v=20260902-terminal-extraction-1"></script>
+    <script src="js/inventory/inventory-model.js?v=20260902-inventory-extraction-1"></script>
+    <script src="js/inventory/item-presenter.js?v=20260902-inventory-extraction-1"></script>
+    <script src="js/inventory/inventory-controller.js?v=20260902-inventory-extraction-1"></script>
+    <script src="js/map/node-router.js?v=20260902-map-extraction-1"></script>
+    <script src="js/map/trade-node-controller.js?v=20260902-map-extraction-1"></script>
+    <script src="js/map/run-map-controller.js?v=20260902-map-extraction-1"></script>
+    <script src="js/album/album-view.js?v=20260902-permanent-club-ui-1"></script>
+    <script src="js/album/album-controller.js?v=20260902-permanent-club-ui-1"></script>
+    <script src="js/hall/champion-snapshot.js?v=20260903-champion-hall-extraction-1"></script>
+    <script src="js/hall/champion-presentation.js?v=20260903-champion-hall-extraction-1"></script>
+    <script src="js/hall/hall-view.js?v=20260902-permanent-club-ui-1"></script>
+    <script src="js/hall/hall-controller.js?v=20260902-permanent-club-ui-1"></script>
+    <script src="js/development/development-center-view.js?v=20260902-permanent-club-ui-1"></script>
+    <script src="js/development/development-center-controller.js?v=20260902-permanent-club-ui-1"></script>
+    <script src="js/home/home-view.js?v=20260902-home-season-resume-1"></script>
+    <script src="js/home/home-controller.js?v=20260902-home-season-resume-1"></script>
+    <script src="js/shop/shop-view.js?v=20260902-shop-settings-domain-1"></script>
+    <script src="js/shop/shop-controller.js?v=20260902-shop-settings-domain-1"></script>
+    <script src="js/settings/settings-view.js?v=20260902-shop-settings-domain-1"></script>
+    <script src="js/settings/settings-controller.js?v=20260902-shop-settings-domain-1"></script>
+    <script src="js/run-entry/season-selection-view.js?v=20260902-home-season-resume-1"></script>
+    <script src="js/run-entry/season-selection-controller.js?v=20260902-home-season-resume-1"></script>
+    <script src="js/run-entry/run-resume-controller.js?v=20260902-home-season-resume-1"></script>
+    <script src="js/run-entry/initial-draft-view.js?v=20260903-initial-draft-extraction-1"></script>
+    <script src="js/run-entry/initial-draft-controller.js?v=20260903-initial-draft-extraction-1"></script>
+    <script src="js/app/ui-shell.js?v=20260903-app-ui-shell-1"></script>
+    <script src="js/app/app-bootstrap.js?v=20260903-app-bootstrap-1"></script>
+    <script src="js/app/dev-diagnostics.js?v=20260903-dev-diagnostics-1"></script>
+    <script src="js/app/test-seams.js?v=20260903-test-seams-1"></script>
+    <script src="js/profile/team-profile-runtime.js?v=20260903-team-profile-1"></script>
+    <script src="js/run/run-roster-runtime.js?v=20260903-run-roster-runtime-1"></script>
+    <script src="js/player/player-visuals.js?v=20260902-player-presentation-1"></script>
+    <script src="js/player/player-view.js?v=20260902-player-presentation-1"></script>
+    <script src="js/player/player-detail-controller.js?v=20260902-player-presentation-1"></script>
     <script src="js/app.js?v=20260901-save-persistence-fix-1"></script>
     <script src="js/inventory-pull-detail-copy.js?v=20260820-pull-detail-copy-1"></script>
     <script src="js/notification-preferences.js?v=20260819-notifications-1"></script>

@@ -104,9 +104,14 @@ async function runtime() {
   rt.context.RoguelikeRules.isProfileAwareRosterEntry = () => false;
   rt.context.RoguelikeRules.migrateDefeatedBossPlayerLevels = () => false;
   await new Promise(resolve => setImmediate(resolve));
-  // resumeRun marks a run as played before normalization. That write is not
-  // under test here, so neutralize it to isolate the normalization transaction.
-  rt.context.RunState.touch = value => value;
+  // resumeRun persists lastPlayedAt through SeasonSelection before Special-node
+  // normalization. That bookkeeping commit is outside this regression's scope,
+  // so isolate the later normalization transaction without changing production.
+  const realPersistMutationOrRecover = rt.context.RunState.persistMutationOrRecover.bind(rt.context.RunState);
+  rt.context.RunState.persistMutationOrRecover = (value, mutate, options = {}) => {
+    if (options.source === "season-select-resume") return { ok: true, run: value };
+    return realPersistMutationOrRecover(value, mutate, options);
+  };
   rt.context.SeasonRegistry.player = id => players.find(player => player.playerId === String(id));
   rt.context.MapEngine.normalizeSpecialMatchNode = forcedSpecialNormalizer;
   rt.seam.setContext({ run: rt.canonical, seasonDb });

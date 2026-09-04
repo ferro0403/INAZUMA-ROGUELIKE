@@ -3,7 +3,7 @@
 const assert = require('assert');
 const fs = require('fs');
 
-const app = fs.readFileSync('js/app.js', 'utf8');
+const app = fs.readFileSync('js/inventory/inventory-controller.js', 'utf8');
 const css = fs.readFileSync('css/game.css', 'utf8');
 const benchRenderer = app.slice(app.indexOf('function inventoryEquipmentBenchMarkup'), app.indexOf('function inventoryEquipmentSelectionSummary'));
 const equipmentFlow = app.slice(app.indexOf('function chooseEquipmentPlayer'), app.indexOf('function handleEquipmentTarget'));
