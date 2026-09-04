@@ -16,14 +16,6 @@
             (run.finalization && run.finalization.status !== "complete")
           )
             return d.resumeFinalization();
-          if (run.phase === "final-summary")
-            return d.renderFinalSummary(run.hallTeamId, {
-              developmentResolved: true,
-            });
-          if (run.phase === "final-celebration" || run.phase === "complete")
-            return d.renderFinalCelebration(run.hallTeamId, {
-              developmentResolved: true,
-            });
           const probe = global.RunState.clone(run);
           if (
             global.MapEngine.normalizeSpecialMatchNode(probe, d.getSeasonDb())
@@ -75,6 +67,14 @@
           if (run.phase === "draft") return d.renderDraft();
           if (run.pendingSpecialMatchReward) return d.showSpecialMatchReward();
           if (run.postBossFlow) return d.resumePostBossFlow();
+          if (run.phase === "final-summary")
+            return d.renderFinalSummary(run.hallTeamId, {
+              developmentResolved: true,
+            });
+          if (run.phase === "final-celebration" || run.phase === "complete")
+            return d.renderFinalCelebration(run.hallTeamId, {
+              developmentResolved: true,
+            });
           if (run.phase === "squad") return d.renderSquad();
           if (run.phase === "five")
             return d.renderFiveVFive({

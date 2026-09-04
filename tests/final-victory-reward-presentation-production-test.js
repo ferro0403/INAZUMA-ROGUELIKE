@@ -5,6 +5,8 @@ const { load } = require("./helpers/production-runtime");
 const BudgetStorage = require("./helpers/budget-storage");
 const ie2 = require("../data/IE2_season_compact.json");
 
+const settleBootstrap = () => new Promise((resolve) => setImmediate(resolve));
+
 async function main() {
   const finalBossIndex = ie2.bossOrder.length - 1;
   const run = {
@@ -86,9 +88,11 @@ async function main() {
   );
 
   // Reopen after finalization completed but before the reveal is acknowledged:
-  // the reward screen must remain the first terminal UI and rewards must not reapply.
+  // let the deliberately failing bootstrap fixture settle before exercising resumeRun,
+  // then the reward screen must remain the first terminal UI without reapplying rewards.
   runtime = runtime.reopen({ seasonDb: ie2 });
   flow = runtime.seam;
+  await settleBootstrap();
   await flow.resumeRun();
   assert(flow.getAppMarkup().includes("data-development-reward-reveal"), "reopen before seen must resume reward reveal");
   account = runtime.context.DevelopmentV2.read();
@@ -130,6 +134,7 @@ async function main() {
   // Reopen after seen must not show the reward screen again; Celebration then Summary remain canonical.
   runtime = runtime.reopen({ seasonDb: ie2 });
   flow = runtime.seam;
+  await settleBootstrap();
   await flow.resumeRun();
   assert(!flow.getAppMarkup().includes("data-development-reward-reveal"));
   assert(flow.getAppMarkup().includes("final-celebration-screen"));
@@ -142,6 +147,7 @@ async function main() {
 
   runtime = runtime.reopen({ seasonDb: ie2 });
   flow = runtime.seam;
+  await settleBootstrap();
   await flow.resumeRun();
   assert.equal(runtime.canonical.phase, "final-summary");
   assert(flow.getAppMarkup().includes("final-summary-screen"));
