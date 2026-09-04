@@ -5,8 +5,7 @@
     const {
     getRun, getUi, getSeasonDb, app, modalRoot, DEV_MODE, topbar, bottomNav, escapeHtml,
     teamById, resetRenderedViewScroll, bindSectionRootNav, bindBottomNav, openBossPreviewModal,
-    openDevLegendaryPull, toast, resolvePendingRunFlow, navigateBossVictoryDestination,
-    renderPostBossRecovery, renderSeasonComplete, resumeRun, persistGameplayMutation,
+    openDevLegendaryPull, toast, renderPostBossRecovery, resumeRun, persistGameplayMutation,
     matchTransactionIdentity, commitMatchMutation, recoverInterruptedSpecialMatchAccess,
     recoverInterruptedBossAccess, ensureFiveVFive, fiveRoleForPlayerId, createOrLoadFiveMatch,
     specialMatchController, bossMatchFromNode, renderFiveVFive, renderMatch, openPull,
@@ -15,15 +14,54 @@
     nodeRouter,
     } = deps;
 
-function ensureCurrentZone() {
+function checkpointSnapshot(current) {
+  return global.RunState.clone({
+    version: global.SEASON1_CONFIG.saveVersion,
+    formationId: current.formationId,
+    teamIdentity: current.teamIdentity,
+    roster: current.roster,
+    lineup: current.lineup,
+    bench: current.bench,
+    bossIndex: current.bossIndex,
+    completedBossIds: current.completedBossIds,
+    unlockedTeamIds: current.unlockedTeamIds,
+    teamLevel: current.teamLevel,
+    inventory: current.inventory,
+    effects: current.effects,
+    randomEventHistory: current.randomEventHistory,
+    fiveVFive: current.fiveVFive,
+    activeMatch: current.activeMatch || null,
+    pendingBossVictory: current.pendingBossVictory || null,
+    postBossFlow: current.postBossFlow || null,
+    currentZone: current.currentZone,
+  });
+}
+
+function ensureCurrentZone(options = {}) {
   const current = getRun();
-  const result = global.MapEngine.ensureCurrentZone(current, getSeasonDb());
-  if (!result.generated) {
-    if (result.changed) { try { global.RunState.save(current); } catch (error) { console.error("save failed (ensureCurrentZone)", error); } }
-    return;
-  }
-  current.phase = "map";
-  global.RunState.createCheckpoint(current);
+  if (!current) return { ok: false, seasonComplete: false, error: new Error("Run unavailable") };
+  const probe = global.RunState.clone(current);
+  const preview = ensureCurrentZoneMutation(probe);
+  if (!preview?.boss) return { ok: true, seasonComplete: true, value: preview, run: current };
+  const needsCommit = preview.changed || current.phase !== "map";
+  if (!needsCommit) return { ok: true, seasonComplete: false, value: preview, run: current };
+  const committed = persistGameplayMutation({
+    label: options.label || "map-zone-ensure",
+    mutate: (canonical) => {
+      const result = ensureCurrentZoneMutation(canonical);
+      if (!result?.boss) return { ...result, seasonComplete: true };
+      canonical.phase = "map";
+      if (result.generated) canonical.checkpoint = checkpointSnapshot(canonical);
+      return { ...result, seasonComplete: false };
+    },
+    rerender: ({ ok }) => {
+      if (!ok && options.rerenderOnFailure !== false) renderMapFailureRecovery();
+    },
+  });
+  return {
+    ...committed,
+    seasonComplete: Boolean(committed.ok && committed.value?.seasonComplete),
+  };
 }
 
 function ensureCurrentZoneMutation(current) {
@@ -95,8 +133,7 @@ function routeNodeIconMarkup(type, fallback = "◆") {
 }
 
 function renderMap(options = {}) {
-  const readOnly = options.persist === false;
-  if (readOnly && options.failureLocked === true) {
+  if (options.failureLocked === true) {
     app.innerHTML = `<main class="screen"><div class="content"><section class="panel"><h1>SALVATAGGIO NON RIUSCITO</h1><p>Lo stato salvato non è stato modificato. Riprova per riprendere dal checkpoint canonico.</p><button type="button" class="btn btn-yellow" id="retry-failed-gameplay">RIPROVA</button></section></div></main>`;
     document.getElementById("retry-failed-gameplay")?.addEventListener("click", async (event) => {
       const button = event.currentTarget;
@@ -106,24 +143,15 @@ function renderMap(options = {}) {
     });
     return app.innerHTML;
   }
-  if (!readOnly) {
-    if (getRun()) global.RunState.touch(getRun());
-    const bossFlow = resolvePendingRunFlow();
-    if (bossFlow.destination !== "none") return navigateBossVictoryDestination(bossFlow);
-    ensureCurrentZone();
-  } else if (getRun()?.postBossFlow || getRun()?.pendingBossVictory) {
-    return renderPostBossRecovery();
-  }
-  const readOnlyZoneUnavailable = readOnly && (!getRun()?.currentZone || !Array.isArray(getRun().currentZone.nodes) || !Array.isArray(getRun().currentZone.edges) || !Array.isArray(getRun().currentZone.path));
-  if (!getRun()?.currentZone || readOnlyZoneUnavailable) {
-    if (!readOnly) return renderSeasonComplete();
+  if (getRun()?.postBossFlow || getRun()?.pendingBossVictory) return renderPostBossRecovery();
+  const zoneUnavailable = !getRun()?.currentZone
+    || !Array.isArray(getRun().currentZone.nodes)
+    || !Array.isArray(getRun().currentZone.edges)
+    || !Array.isArray(getRun().currentZone.path);
+  if (zoneUnavailable) {
     app.innerHTML = `<main class="screen"><div class="content"><section class="panel"><h1>PERCORSO NON DISPONIBILE</h1><p>Lo stato salvato non è stato modificato. Riprova quando il salvataggio è disponibile.</p><button type="button" id="retry-map-render">RIPROVA</button></section></div></main>`;
-    document.getElementById("retry-map-render")?.addEventListener("click", () => renderMap());
+    document.getElementById("retry-map-render")?.addEventListener("click", () => resumeRun());
     return app.innerHTML;
-  }
-  if (!readOnly) {
-    getRun().phase = "map";
-    try { global.RunState.save(getRun()); } catch (error) { console.error("save failed (renderMap)", error); }
   }
   const zone = getRun().currentZone;
   const boss = getSeasonDb().bossOrder[getRun().bossIndex];
@@ -238,14 +266,24 @@ function bindMapDevTools() {
   document.querySelector("[data-dev-open-legendary]")?.addEventListener("click", openDevLegendaryPull);
   document.querySelectorAll("[data-dev-transform-node]").forEach((button) => button.addEventListener("click", () => {
     const nodeId = document.querySelector("[data-dev-node]")?.value;
-    const node = getRun().currentZone?.nodes?.find((candidate) => String(candidate.id) === String(nodeId));
-    if (!node || node.type === "boss" || !global.MapEngine.reachableNodeIds(getRun().currentZone).map(String).includes(String(node.id))) return toast("Seleziona un nodo disponibile");
-    node.type = button.dataset.devTransformNode;
-    delete node.revealedType;
-    delete node.pullState;
-    try { global.RunState.save(getRun()); } catch (error) { console.error("save failed (dev transform node)", error); }
-    toast(node.type === "trade" ? "Nodo trasformato in Scambio" : "Nodo trasformato in Pull Leggendario");
-    renderMap();
+    const targetType = button.dataset.devTransformNode;
+    const committed = persistGameplayMutation({
+      label: "dev-map-node-transform",
+      mutate: (current) => {
+        const node = current.currentZone?.nodes?.find((candidate) => String(candidate.id) === String(nodeId));
+        const reachable = current.currentZone ? global.MapEngine.reachableNodeIds(current.currentZone).map(String) : [];
+        if (!node || node.type === "boss" || !reachable.includes(String(node.id))) throw new Error("Seleziona un nodo disponibile");
+        node.type = targetType;
+        delete node.revealedType;
+        delete node.pullState;
+        return { nodeId: String(node.id), type: node.type };
+      },
+      onMutationError: ({ error }) => toast(error.message),
+      rerender: ({ ok }) => { if (!ok) renderMapFailureRecovery(); },
+    });
+    if (!committed.ok) return;
+    toast(committed.value?.type === "trade" ? "Nodo trasformato in Scambio" : "Nodo trasformato in Pull Leggendario");
+    renderMap({ persist: false });
   }));
 }
 
@@ -668,7 +706,7 @@ function renderItemRewardResult(node) {
 
 function resolveRandomNode(node) {
   const revealedType = node?.revealedType;
-  if (!revealedType) return renderMap();
+  if (!revealedType) return renderMap({ persist: false });
   const meta = global.SEASON1_CONFIG.nodeLabels[revealedType];
   openModal(`
     <div class="modal-head random-event-head"><div><p class="eyebrow">Evento casuale</p><h2>${escapeHtml(meta.label)}</h2><p class="muted">Il contenuto è stato rivelato e non cambierà ricaricando la pagina.</p></div></div>
@@ -679,7 +717,7 @@ function resolveRandomNode(node) {
   document.getElementById("open-hidden-event").addEventListener("click", () => {
     closeModal();
     const currentNode = canonicalNodeById(node.id);
-    currentNode ? dispatchNode(currentNode, revealedType, { previousNodeId: getRun().currentZone?.currentNodeId }) : renderMap();
+    currentNode ? dispatchNode(currentNode, revealedType, { previousNodeId: getRun().currentZone?.currentNodeId }) : renderMap({ persist: false });
   });
 }
 

@@ -159,7 +159,7 @@
     return !!value && typeof value === "object" && !Array.isArray(value) && ["storageSchemaVersion", "generation", "commitId", "state", "payload"].some((key) => Object.prototype.hasOwnProperty.call(value, key));
   }
   function parseLegacy(raw, sid) { const parsed = JSON.parse(raw); if (looksLikeStorageEnvelope(parsed)) throw persistenceError(Number(parsed.storageSchemaVersion) > STORAGE_SCHEMA_VERSION ? "unsupported-storage-schema" : "corrupt-storage-envelope", "legacy-guard", { seasonId: sid }); if (!rawSanity(parsed)) throw new Error("Invalid raw run save"); const explicit = rawSeasonId(parsed.seasonId); if (explicit && explicit !== sid) throw new Error("Wrong run season"); const migrated = migrate(parsed, { storageRead: true, requestedSeasonId: sid, stableRunId: stableLegacyId(raw, sid) }); if (!validate(migrated)) throw new Error("Invalid run save"); return migrated; }
-  function parseEnvelope(raw, sid) { const envelope = JSON.parse(raw); if (Number(envelope?.storageSchemaVersion) > STORAGE_SCHEMA_VERSION) throw persistenceError("unsupported-storage-schema", "envelope-parse", { seasonId: sid }); if (!envelope || envelope.storageSchemaVersion !== STORAGE_SCHEMA_VERSION || envelope.seasonId !== sid || !Number.isInteger(envelope.generation) || envelope.generation < 1 || typeof envelope.commitId !== "string" || !["active", "deleted"].includes(envelope.state)) throw persistenceError("corrupt-storage-envelope", "envelope-parse", { seasonId: sid }); if (envelope.state === "active") { if (!rawSanity(envelope.payload)) throw persistenceError("corrupt-storage-envelope", "payload-parse", { seasonId: sid }); const run = migrate(envelope.payload, { storageRead: true, requestedSeasonId: sid }); if (run.seasonId !== sid || run.runId !== envelope.runId || !validate(run)) throw persistenceError("corrupt-storage-envelope", "payload-validate", { seasonId: sid }); run.storageGeneration = envelope.generation; run.storageCommitId = envelope.commitId; envelope.payload = run; } else if (envelope.payload !== null || envelope.runId !== null) throw persistenceError("corrupt-storage-envelope", "tombstone-validate", { seasonId: sid }); return envelope; }
+  function parseEnvelope(raw, sid) { const envelope = JSON.parse(raw); if (Number(envelope?.storageSchemaVersion) > STORAGE_SCHEMA_VERSION) throw persistenceError("unsupported-storage-schema", "envelope-parse", { seasonId: sid }); if (!envelope || envelope.storageSchemaVersion !== STORAGE_SCHEMA_VERSION || envelope.seasonId !== sid || !Number.isInteger(envelope.generation) || envelope.generation < 1 || typeof envelope.commitId !== "string" || !["active", "deleted"].includes(envelope.state)) throw persistenceError("corrupt-storage-envelope", "envelope-parse", { seasonId: sid }); if (envelope.state === "active") { if (!rawSanity(envelope.payload)) throw persistenceError("corrupt-storage-envelope", "payload-parse", { seasonId: sid }); const run = migrate(envelope.payload, { storageRead: true, requestedSeasonId: sid }); if (run.seasonId !== sid || run.runId !== envelope.runId || !validate(run)) throw persistenceError("corrupt-storage-envelope", "payload-validate", { seasonId: sid }); run.storageGeneration = envelope.generation; run.storageCommitId = envelope.commitId; envelope.payload = run; } else if (envelope.payload !== null || envelope.runId !== null) throw persistenceError("corrupt-storage-envelope", "payload-validate", { seasonId: sid }); return envelope; }
   function stableSerializeForStorage(value) {
     if (value === null || typeof value === "string" || typeof value === "boolean") return JSON.stringify(value);
     if (typeof value === "number") return JSON.stringify(Number.isFinite(value) ? value : null);
@@ -182,7 +182,18 @@
   function hasSave(seasonId = null) { return !!RunStorage.load(seasonId, { readOnly: true }); }
   function isActiveRun(run) { return validate(run) && !run.gameOver && !["complete", "final-summary", "final-celebration", "gameover"].includes(String(run.phase || "")); }
   function runSortTime(run, fallbackIndex = 0) { const value = run?.lastPlayedAt || run?.updatedAt || run?.savedAt || run?.timestamp || run?.createdAt || ""; const time = Date.parse(value); return Number.isFinite(time) ? time : fallbackIndex; }
-  function touch(run) { if (!run) return run; run.lastPlayedAt = new Date().toISOString(); return save(run); }
+  function touch(run) {
+    if (!run) return run;
+    const hadLastPlayedAt = Object.prototype.hasOwnProperty.call(run, "lastPlayedAt");
+    const previousLastPlayedAt = run.lastPlayedAt;
+    run.lastPlayedAt = new Date().toISOString();
+    try { return save(run); }
+    catch (error) {
+      if (hadLastPlayedAt) run.lastPlayedAt = previousLastPlayedAt;
+      else delete run.lastPlayedAt;
+      throw error;
+    }
+  }
   function activeSaves() { return (global.SeasonRegistry?.list?.() || [{ id: "ie1" }]).map((season, index) => { try { return { season, run: load(season.id, { readOnly: true }), index }; } catch (error) { return { season, run: null, index, recovery: { code: error?.code || "storage-read-failed", recoverable: error?.recoverable === true } }; } }).filter((entry) => (entry.run && isActiveRun(entry.run)) || entry.recovery).sort((a, b) => runSortTime(b.run, b.index) - runSortTime(a.run, a.index)); }
   function recoverySaves() { return activeSaves().filter((entry) => entry.recovery); }
   function latestActiveSave() { return activeSaves().find((entry) => entry.run && isActiveRun(entry.run)) || null; }
@@ -343,7 +354,7 @@
       const reparsed = parseEnvelope(rawEnvelope, sid).payload;
       Object.assign(run, reparsed);
       emitSave(`run_${sid}`, sid, "write", { ...options, generation, commitId });
-        return run;
+      return run;
     },
     remove, forceDeleteForRestore, forceReplaceCanonicalFromSnapshot, looksLikeStorageEnvelope,
   };
@@ -361,11 +372,44 @@
   }
 
   function createCheckpoint(run) {
+    const hadCheckpoint = Object.prototype.hasOwnProperty.call(run, "checkpoint");
+    const previousCheckpoint = hadCheckpoint ? clone(run.checkpoint) : undefined;
     run.checkpoint = clone({ version: config().saveVersion, formationId: run.formationId, teamIdentity: run.teamIdentity, roster: run.roster, lineup: run.lineup, bench: run.bench, bossIndex: run.bossIndex, completedBossIds: run.completedBossIds, unlockedTeamIds: run.unlockedTeamIds, teamLevel: run.teamLevel, inventory: run.inventory, effects: run.effects, randomEventHistory: run.randomEventHistory, fiveVFive: run.fiveVFive, activeMatch: run.activeMatch || null, pendingBossVictory: run.pendingBossVictory || null, postBossFlow: run.postBossFlow || null, currentZone: run.currentZone });
-    return save(run);
+    try { return save(run); }
+    catch (error) {
+      if (hadCheckpoint) run.checkpoint = previousCheckpoint;
+      else delete run.checkpoint;
+      throw error;
+    }
   }
   function getLifeDamageForMatch(matchType) { return LIFE_DAMAGE_BY_MATCH_TYPE[matchType] ?? 1; }
-  function restoreAfterLoss(run, previousNodeId = null, matchType = run?.activeMatch?.type, options = {}) { run.lives = Math.max(0, Math.min(runLivesLimit(), Number(run.lives) || 0) - getLifeDamageForMatch(matchType)); if (run.lives <= 0) { run.lives = 0; run.gameOver = true; run.phase = "gameover"; return options.save === false ? run : save(run); } const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null; if (!targetNodeId) throw new Error("Previous match node unavailable"); if (run.currentZone) { run.currentZone.currentNodeId = targetNodeId; run.currentZone.pendingNodeId = null; } run.phase = "map"; run.gameOver = false; return options.save === false ? run : save(run); }
+  function restoreAfterLoss(run, previousNodeId = null, matchType = run?.activeMatch?.type, options = {}) {
+    const before = options.save === false ? null : clone(run);
+    try {
+      run.lives = Math.max(0, Math.min(runLivesLimit(), Number(run.lives) || 0) - getLifeDamageForMatch(matchType));
+      if (run.lives <= 0) {
+        run.lives = 0;
+        run.gameOver = true;
+        run.phase = "gameover";
+        return options.save === false ? run : save(run);
+      }
+      const targetNodeId = previousNodeId || run.activeMatch?.previousNodeId || run.currentZone?.currentNodeId || null;
+      if (!targetNodeId) throw new Error("Previous match node unavailable");
+      if (run.currentZone) {
+        run.currentZone.currentNodeId = targetNodeId;
+        run.currentZone.pendingNodeId = null;
+      }
+      run.phase = "map";
+      run.gameOver = false;
+      return options.save === false ? run : save(run);
+    } catch (error) {
+      if (before) {
+        for (const key of Object.keys(run)) delete run[key];
+        Object.assign(run, before);
+      }
+      throw error;
+    }
+  }
 
   global.RunPersistenceError = RunPersistenceError;
   global.RunStorage = Object.assign(RunStorage, { STORAGE_SCHEMA_VERSION, diagnostics });
