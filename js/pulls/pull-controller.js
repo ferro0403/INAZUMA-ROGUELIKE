@@ -60,7 +60,6 @@
       }
     }
     const candidates = global.PullCandidatesRuntime.pullCandidates(getRun(), pool, node);
-    if (options.dev) { try { global.RunState.save(getRun()); } catch (error) { console.error("save failed (dev pull)", error); } }
     const level = previousBossLevel();
     const scoutToken = getRun().inventory.find((item) => item.effect === "pull_reroll");
     const luckyCharm = getRun().inventory.find((item) => item.effect === "lucky_pull");
@@ -76,7 +75,7 @@
       openPull(node, pullType, options);
     } : null;
     const finishPull = (message) => options.dev
-      ? (closeModal(), toast(message), renderMap())
+      ? (closeModal(), toast(message), renderMap({ persist: false }))
       : finishNonMatchNode(node, message);
     const finishCommittedPull = (message) => { toast(message); renderMap({ persist: false }); };
     showPlayerOffer({

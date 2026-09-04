@@ -4,10 +4,11 @@
     create(d) {
       return {
         async resumeRun() {
-          await d.selectSeason(
+          const selected = await d.selectSeason(
             d.getRun()?.seasonId || d.getActiveSeason()?.id,
             { markPlayed: true },
           );
+          if (selected === false) return d.renderMapFailureRecovery();
           let run = d.getRun();
           if (!run) return d.renderHome();
           if (
@@ -85,9 +86,13 @@
             d.setMatchUi(run.activeMatch);
             return d.renderMatch();
           }
-          d.ensureCurrentZone();
+          const mapReady = d.ensureCurrentZone({
+            label: "resume-map-navigation",
+          });
+          if (!mapReady?.ok) return d.renderMapFailureRecovery();
+          if (mapReady.seasonComplete) return d.renderSeasonComplete();
           if (d.resumePendingItemReward()) return;
-          return d.renderMap();
+          return d.renderMap({ persist: false });
         },
       };
     },

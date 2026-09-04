@@ -41,6 +41,7 @@ const pull = bodyBetween("function openPull", "function openDevLegendaryPull", p
 assert.match(pull, /onRecover: \(\) => rerenderCanonicalPull\(nodeId, pullType, options\)/, "pull recovery resolves the canonical active node instead of reusing a stale object");
 assert.doesNotMatch(pull, /onRecover: \(\) => openPull\(node, pullType, options\)/, "pull recovery must not reuse the pre-rollback node reference");
 assert.doesNotMatch(pull, /onRecover: \(\) => showPlayerOffer\(options\)/, "recovery must not reuse incomplete openPull options as an offer config");
+assert.doesNotMatch(pullController, /\bRunState\.(?:save|touch|createCheckpoint)\s*\(/, "pull controller has no direct run persistence owner, including DEV pulls");
 const bossController = fs.readFileSync("js/boss/boss-flow-controller.js", "utf8");
 const bossRewards = bodyBetween("function showNextReward", "function advanceReward", bossController);
 assert.match(bossRewards, /result\.status === "cancelled"\) showNextReward\(\)/, "boss replacement cancel reopens the pending reward");
@@ -51,10 +52,9 @@ assert.match(persistence, /catch \(error\)[\s\S]*kind: "mutation"[\s\S]*onMutati
 assert.doesNotMatch(persistence, /kind: "mutation"[\s\S]{0,500}reportFailure\?/);
 assert.doesNotMatch(source, /mutate: \(\) => \{\}/);
 
-// Final persistence audit: no gameplay renderer/controller may directly own RunState writes.
-// The only intentional direct save callsites in production are the central app adapter and
-// PermanentEffects' idempotent outbox fallback. Post-boss checkpoint creation is a best-effort
-// snapshot taken only after an already-verified canonical commit.
+// Final persistence audit. Gameplay renderers/controllers must not directly own RunState writes.
+// Explicit lifecycle/storage owners remain visible and enumerated: the central app adapter,
+// PermanentEffects' idempotent outbox fallback, and the first canonical save of a brand-new run.
 function productionJsFiles(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
     const full = path.join(dir, entry.name);
@@ -74,11 +74,25 @@ const observedOwners = Object.fromEntries(
 assert.deepStrictEqual(observedOwners, {
   "js/app.js": ["save", "createCheckpoint"],
   "js/permanent-effects.js": ["save", "save"],
+  "js/run-entry/season-selection-controller.js": ["save"],
 }, `unexpected direct RunState persistence ownership:\n${JSON.stringify(observedOwners, null, 2)}`);
 
 const runMapControllerSource = fs.readFileSync("js/map/run-map-controller.js", "utf8");
 assert.doesNotMatch(runMapControllerSource, /\bRunState\.(?:save|touch|createCheckpoint)\s*\(/, "RunMapController must be a read-only renderer/orchestrator; map state changes commit through persistGameplayMutation");
+assert.match(runMapControllerSource, /label: options\.label \|\| "map-zone-ensure"[\s\S]*persistGameplayMutation/, "map zone generation is committed through the gameplay persistence adapter");
+assert.match(runMapControllerSource, /if \(result\.generated\) canonical\.checkpoint = checkpointSnapshot\(canonical\)/, "new map zone and recovery checkpoint share one canonical transaction");
+assert.match(runMapControllerSource, /label: "dev-map-node-transform"/, "DEV node transform uses the gameplay persistence adapter");
 const runResumeControllerSource = fs.readFileSync("js/run-entry/run-resume-controller.js", "utf8");
 assert.doesNotMatch(runResumeControllerSource, /ensureCurrentZone\(\);[\s\S]*renderMap\(\);/, "resume-to-map must not depend on a persistence-owning render path");
+assert.match(runResumeControllerSource, /label: "resume-map-navigation"/, "resume-to-map has an explicit canonical transaction label");
+assert.match(runResumeControllerSource, /renderMap\(\{ persist: false \}\)/, "resume renders the map read-only after canonical verification");
+const homeControllerSource = fs.readFileSync("js/home/home-controller.js", "utf8");
+assert.doesNotMatch(homeControllerSource, /\bRunState\.save\s*\(/, "Home migration must not raw-save a mutated run");
+assert.match(homeControllerSource, /persistMutationOrRecover/, "Home migration is rollback/recovery aware");
+const seasonControllerSource = fs.readFileSync("js/run-entry/season-selection-controller.js", "utf8");
+assert.match(seasonControllerSource, /persistMutationOrRecover[\s\S]*season-select-resume/, "season resume timestamp/migration uses rollback/recovery persistence");
+const newRunBody = bodyBetween("function startRunWithIdentity", "function startNewRunFromHome", seasonControllerSource);
+assert.equal((newRunBody.match(/\bRunState\.save\s*\(/g) || []).length, 1, "new-run lifecycle keeps exactly one direct first-save owner");
+assert.match(newRunBody, /try \{[\s\S]*RunState\.save\(candidate, \{ replaceRun: true \}\)[\s\S]*catch \(error\)[\s\S]*return false/, "new run never renders formation after a failed first save");
 
 console.log("app gameplay persistence callsite ownership: ok");

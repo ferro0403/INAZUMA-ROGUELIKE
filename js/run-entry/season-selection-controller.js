@@ -21,22 +21,38 @@
             )
           )
             d.drainPermanentEffects();
-        if (run && markPlayed) global.RunState.touch(run);
-        if (
-          run &&
+        if (!run) return true;
+        const probe = global.RunState.clone(run);
+        const needsBossLevelMigration =
           global.RoguelikeRules.migrateDefeatedBossPlayerLevels(
-            run,
+            probe,
             d.getSeasonDb(),
-          ) > 0
-        )
-          try {
-            global.RunState.save(run);
-          } catch (error) {
-            console.error(
-              "save failed (boss level migration, selectSeason)",
-              error,
-            );
+          ) > 0;
+        if (markPlayed || needsBossLevelMigration) {
+          const persisted = global.RunState.persistMutationOrRecover(
+            run,
+            (current) => {
+              if (markPlayed)
+                current.lastPlayedAt = new Date().toISOString();
+              if (needsBossLevelMigration)
+                global.RoguelikeRules.migrateDefeatedBossPlayerLevels(
+                  current,
+                  d.getSeasonDb(),
+                );
+            },
+            {
+              source: markPlayed
+                ? "season-select-resume"
+                : "boss-level-migration-season-select",
+            },
+          );
+          d.setRun(persisted.run);
+          if (!persisted.ok) {
+            console.error("save failed (season selection)", persisted.error);
+            return false;
           }
+        }
+        return true;
       }
       async function renderSeasonSelect({ preserveScroll = null } = {}) {
         await d.loadSeason(global.SeasonRegistry.DEFAULT_SEASON_ID);
@@ -77,15 +93,15 @@
         d.bindSectionRootNav();
         document.querySelectorAll("[data-season-continue]").forEach((button) =>
           button.addEventListener("click", async () => {
-            await selectSeason(button.dataset.seasonContinue, {
-              markPlayed: true,
-            });
+            const selected = await selectSeason(button.dataset.seasonContinue);
+            if (selected === false) return;
             d.resumeRun();
           }),
         );
         document.querySelectorAll("[data-season-new]").forEach((button) =>
           button.addEventListener("click", async () => {
-            await selectSeason(button.dataset.seasonNew);
+            const selected = await selectSeason(button.dataset.seasonNew);
+            if (selected === false) return;
             d.startNewRun();
           }),
         );
@@ -171,7 +187,13 @@
           );
           return false;
         }
-        global.RunState.save(candidate, { replaceRun: true });
+        try {
+          global.RunState.save(candidate, { replaceRun: true });
+        } catch (error) {
+          console.error("New run save failed", error);
+          d.toast("Salvataggio non riuscito. La nuova run non è stata avviata.");
+          return false;
+        }
         d.setRun(candidate);
         try {
           global.RunState.saveProfileTeamIdentity(localIdentity);

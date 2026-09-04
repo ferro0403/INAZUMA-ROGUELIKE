@@ -42,19 +42,26 @@
         }
         deps.ensureRunSchema();
         const profileIdentity = deps.migrateTeamIdentityProfile();
-        // PRE-EXISTING STRUCTURAL BEHAVIOR / FUTURE HARDENING CANDIDATE.
-        if (
-          deps.persistenceWritesAllowed() &&
-          deps.getRun() &&
-          global.RoguelikeRules.migrateDefeatedBossPlayerLevels(
-            deps.getRun(),
-            deps.getSeasonDb(),
-          ) > 0
-        ) {
-          try {
-            global.RunState.save(deps.getRun());
-          } catch (error) {
-            console.error("save failed (boss level migration, init)", error);
+        if (deps.persistenceWritesAllowed() && deps.getRun()) {
+          const probe = global.RunState.clone(deps.getRun());
+          const needsBossLevelMigration =
+            global.RoguelikeRules.migrateDefeatedBossPlayerLevels(
+              probe,
+              deps.getSeasonDb(),
+            ) > 0;
+          if (needsBossLevelMigration) {
+            const migrated = global.RunState.persistMutationOrRecover(
+              deps.getRun(),
+              (current) =>
+                global.RoguelikeRules.migrateDefeatedBossPlayerLevels(
+                  current,
+                  deps.getSeasonDb(),
+                ),
+              { source: "boss-level-migration-home" },
+            );
+            deps.setRun(migrated.run);
+            if (!migrated.ok)
+              console.error("save failed (boss level migration, home)", migrated.error);
           }
         }
         await ensureHomeTeamEmblemSeasonLoaded(
