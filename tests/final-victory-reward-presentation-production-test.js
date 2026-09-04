@@ -41,7 +41,14 @@ async function main() {
   };
 
   const storage = new BudgetStorage(2_000_000);
-  let runtime = load(storage, { run, seasonDb: ie2 });
+  const roguelikeRules = {
+    defeatedBossRewardLevel: (boss) => Number(boss?.bossLevel || 1),
+    resolveDevelopmentEffectiveMetadata: () => ({}),
+    applyEquipment: (stats) => stats,
+    isProfileAwareRosterEntry: () => false,
+    migrateDefeatedBossPlayerLevels: () => false,
+  };
+  let runtime = load(storage, { run, seasonDb: ie2, contextOverrides: { RoguelikeRules: roguelikeRules } });
   let flow = runtime.seam;
 
   flow.completeBossMatch("victory");
