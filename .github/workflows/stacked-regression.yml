@@ -125,7 +125,7 @@ jobs:
             tests/run-local-only-cloud-decoupling-test.js
             tests/cloud-login-restore-run-invariance-test.js
             tests/read-only-map-orphan-match-recovery-test.js
-            tests/transactional-entry-stale-recovery-test.js
+            tests/final-persistence-stress-test.js
             tests/special-node-normalize-resume-final-gate-test.js
             tests/five-cycle-final-hardening-test.js
             tests/recovered-match-reward-handoff-e2e-test.js
