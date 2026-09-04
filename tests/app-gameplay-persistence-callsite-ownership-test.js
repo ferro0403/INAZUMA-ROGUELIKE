@@ -1,5 +1,6 @@
 const assert = require("assert");
 const fs = require("fs");
+const path = require("path");
 const source = fs.readFileSync("js/app.js", "utf8");
 const initialDraftSource = fs.readFileSync("js/run-entry/initial-draft-controller.js", "utf8");
 
@@ -49,4 +50,35 @@ const persistence = fs.readFileSync("js/gameplay-persistence.js", "utf8");
 assert.match(persistence, /catch \(error\)[\s\S]*kind: "mutation"[\s\S]*onMutationError/);
 assert.doesNotMatch(persistence, /kind: "mutation"[\s\S]{0,500}reportFailure\?/);
 assert.doesNotMatch(source, /mutate: \(\) => \{\}/);
+
+// Final persistence audit: no gameplay renderer/controller may directly own RunState writes.
+// The only intentional direct save callsites in production are the central app adapter and
+// PermanentEffects' idempotent outbox fallback. Post-boss checkpoint creation is a best-effort
+// snapshot taken only after an already-verified canonical commit.
+function productionJsFiles(dir) {
+  return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+    const full = path.join(dir, entry.name);
+    return entry.isDirectory() ? productionJsFiles(full) : entry.isFile() && entry.name.endsWith(".js") ? [full.replaceAll("\\", "/")] : [];
+  });
+}
+function directRunStorageCalls(file) {
+  const text = fs.readFileSync(file, "utf8");
+  return [...text.matchAll(/\bRunState\.(save|touch|createCheckpoint)\s*\(/g)].map((match) => match[1]);
+}
+const observedOwners = Object.fromEntries(
+  productionJsFiles("js")
+    .map((file) => [file, directRunStorageCalls(file)])
+    .filter(([, calls]) => calls.length)
+    .sort(([a], [b]) => a.localeCompare(b)),
+);
+assert.deepStrictEqual(observedOwners, {
+  "js/app.js": ["save", "createCheckpoint"],
+  "js/permanent-effects.js": ["save", "save"],
+}, `unexpected direct RunState persistence ownership:\n${JSON.stringify(observedOwners, null, 2)}`);
+
+const runMapControllerSource = fs.readFileSync("js/map/run-map-controller.js", "utf8");
+assert.doesNotMatch(runMapControllerSource, /\bRunState\.(?:save|touch|createCheckpoint)\s*\(/, "RunMapController must be a read-only renderer/orchestrator; map state changes commit through persistGameplayMutation");
+const runResumeControllerSource = fs.readFileSync("js/run-entry/run-resume-controller.js", "utf8");
+assert.doesNotMatch(runResumeControllerSource, /ensureCurrentZone\(\);[\s\S]*renderMap\(\);/, "resume-to-map must not depend on a persistence-owning render path");
+
 console.log("app gameplay persistence callsite ownership: ok");
