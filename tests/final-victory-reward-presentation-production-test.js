@@ -47,9 +47,6 @@ async function main() {
   flow.completeBossMatch("victory");
   flow.resolvePendingRunFlow({ clearMatch: true });
   while (flow.getRun().postBossFlow?.remainingRewards > 0) flow.advanceBossReward();
-  flow.continueAfterMatch({ preventDefault() {} });
-  const transition = flow.finishBossVictoryTransition();
-  flow.navigateBossVictoryDestination(transition || { destination: "season-complete" });
 
   let saved = runtime.canonical;
   assert.equal(saved.finalization?.status, "complete", "finalization must already be canonically complete");
