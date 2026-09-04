@@ -140,3 +140,9 @@ jobs:
             node "$test_file"
             echo "::endgroup::"
           done
+
+      - name: 500-run deterministic soak/fuzz gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/500-run-soak-fuzz-gate.js
