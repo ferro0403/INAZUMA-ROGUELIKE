@@ -62,6 +62,7 @@ jobs:
             tests/initial-formation-draft-domain-characterization-test.js
             tests/initial-formation-draft-production-path-test.js
             tests/recruitment-production-path-e2e-test.js
+            tests/legendary-pull-sticky-candidate-production-test.js
           )
           for test_file in "${tests[@]}"; do
             echo "::group::$test_file"
