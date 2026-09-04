@@ -41,8 +41,12 @@
         },
       });
     }
+    function victoryRewardPresentationSeen() {
+      const presentation = run()?.developmentRewardPresentation;
+      return presentation?.endReason === "victory" && presentation?.seen === true;
+    }
     function renderCelebration(hallTeamId, { developmentResolved = false } = {}) {
-      if (!developmentResolved || run().finalization?.status !== "complete") return resume();
+      if (!developmentResolved || run().finalization?.status !== "complete" || !victoryRewardPresentationSeen()) return resume();
       const team = deps.championTeam(hallTeamId || run()?.hallTeamId);
       if (!team) return deps.renderHome();
       const go = () => {
