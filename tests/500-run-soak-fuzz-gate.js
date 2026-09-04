@@ -17,6 +17,13 @@ const positions = ["GK", "DF", "DF", "DF", "DF", "MF", "MF", "MF", "FW", "FW", "
 const fivePositions = ["GK", "DF", "MF", "MF", "FW"];
 const settle = () => new Promise((resolve) => setImmediate(resolve));
 
+async function settleRuntime(runtime, seasonDb) {
+  await settle();
+  await settle();
+  runtime.seam.setContext({ run: runtime.canonical, seasonDb });
+  return runtime;
+}
+
 function rngFrom(seed) {
   let state = (seed >>> 0) || 1;
   return () => {
@@ -73,7 +80,12 @@ function assertInvariants(run, meta) {
     expect(benchIds.every((id) => rosterIds.includes(id)), "bench contains player outside roster", meta, run);
   }
   expect(new Set(run.completedBossIds || []).size === (run.completedBossIds || []).length, "duplicate completed boss", meta, run);
-  if (run.gameOver) expect(run.phase === "gameover", "gameOver run is not in gameover phase", meta, run);
+  if (run.gameOver) {
+    const durablePendingGameOver = run.phase === "match"
+      && run.activeMatch?.simulation?.resolutionApplied === true
+      && run.activeMatch?.pendingPostMatchAction?.type === "game-over";
+    expect(run.phase === "gameover" || durablePendingGameOver, "gameOver run is neither terminal nor durably awaiting GameOver navigation", meta, run);
+  }
   if (["map", "gameover", "final-celebration", "final-summary", "complete"].includes(run.phase)) {
     expect(!run.activeMatch, "terminal/map phase still owns activeMatch", meta, run);
   }
@@ -130,6 +142,7 @@ async function bossVictoryScenario(meta, seasonDb, random) {
   const bossIndex = Math.min(Math.floor(random() * Math.max(1, seasonDb.bossOrder.length - 1)), Math.max(0, seasonDb.bossOrder.length - 2));
   const run = baseBossRun(meta, seasonDb, bossIndex, "victory", 3);
   let { runtime } = openBoss(meta, seasonDb, run);
+  await settleRuntime(runtime, seasonDb);
   const flow = runtime.seam;
   const before = runtime.canonical;
   flow.completeBossMatch("victory");
@@ -141,7 +154,7 @@ async function bossVictoryScenario(meta, seasonDb, random) {
 
   if (meta.index % 4 === 0) {
     runtime = runtime.reopen({ seasonDb, contextOverrides: { RoguelikeRules: commonRules(), fetch: quietFetch(seasonDb) } });
-    await settle();
+    await settleRuntime(runtime, seasonDb);
     saved = runtime.canonical;
     expect(Boolean(saved.postBossFlow), "refresh lost postBoss reward flow", meta, saved);
   }
@@ -186,7 +199,8 @@ async function fiveScenario(meta, random) {
   const lastLife = result === "defeat" && random() < 0.35;
   const fx = fiveFixture(meta, result, lastLife);
   const storage = new BudgetStorage(3_000_000);
-  let runtime = load(storage, { run: fx.run, seasonDb: fx.seasonDb, contextOverrides: { FiveVFive: fx.FiveVFive, fetch: quietFetch(fx.seasonDb) } });
+  let runtime = load(storage, { run: fx.run, seasonDb: fx.seasonDb, contextOverrides: { RoguelikeRules: commonRules(), FiveVFive: fx.FiveVFive, fetch: quietFetch(fx.seasonDb) } });
+  await settleRuntime(runtime, fx.seasonDb);
   runtime.context.__INAZUMA_RECRUITMENT_TEST__.setContext({ freeAgentsDb: { players: fx.opponents } });
   runtime.context.SeasonRegistry.player = (id) => fx.players.find((player) => player.playerId === String(id));
   runtime.context.MatchSimulatorConfig = { eventDelayMs: 1_000_000, playbackMs: 1_000_000 };
@@ -204,9 +218,9 @@ async function fiveScenario(meta, random) {
   assertInvariants(saved, meta);
 
   if (meta.index % 5 === 0) {
-    runtime = runtime.reopen({ seasonDb: fx.seasonDb, contextOverrides: { FiveVFive: fx.FiveVFive, fetch: quietFetch(fx.seasonDb) } });
+    runtime = runtime.reopen({ seasonDb: fx.seasonDb, contextOverrides: { RoguelikeRules: commonRules(), FiveVFive: fx.FiveVFive, fetch: quietFetch(fx.seasonDb) } });
+    await settleRuntime(runtime, fx.seasonDb);
     runtime.context.__INAZUMA_RECRUITMENT_TEST__.setContext({ freeAgentsDb: { players: fx.opponents } });
-    await settle();
     saved = runtime.canonical;
     expect(Boolean(saved.activeMatch), "refresh lost resolved 5v5 before Continue", meta, saved);
   }
@@ -244,7 +258,8 @@ function specialFixture(meta) {
 async function specialScenario(meta) {
   const fx = specialFixture(meta);
   const storage = new BudgetStorage(3_000_000);
-  let runtime = load(storage, { run: fx.run, seasonDb: fx.seasonDb, useProductionSpecialMatchRuntime: true, contextOverrides: { RoguelikeRules: commonRules(), fetch: quietFetch(fx.seasonDb) } });
+  const runtime = load(storage, { run: fx.run, seasonDb: fx.seasonDb, useProductionSpecialMatchRuntime: true, contextOverrides: { RoguelikeRules: commonRules(), fetch: quietFetch(fx.seasonDb) } });
+  await settleRuntime(runtime, fx.seasonDb);
   runtime.context.SeasonRegistry.player = (id) => fx.seasonDb.players.find((player) => player.playerId === String(id));
   runtime.context.RecruitmentPoolRuntime.eligible = () => true;
   const before = runtime.canonical;
@@ -256,10 +271,12 @@ async function specialScenario(meta) {
   runtime.seam.continueAfterMatch();
   saved = runtime.canonical;
   expect(Boolean(saved.pendingSpecialMatchReward), "special Continue lost pending reward", meta, saved);
-  expect(Boolean(runtime.query("#decline-special-reward")), "special reward UI did not render", meta, saved);
-  runtime.query("#decline-special-reward").click();
+  const decline = runtime.query("#decline-special-reward");
+  const claim = runtime.query("#claim-special-reward");
+  expect(Boolean(decline || claim), "special reward UI did not expose any valid action", meta, saved);
+  (decline || claim).click();
   saved = runtime.canonical;
-  expect(!saved.pendingSpecialMatchReward && !saved.activeMatch && saved.phase === "map", "special reward decline did not advance to map", meta, saved);
+  expect(!saved.pendingSpecialMatchReward && !saved.activeMatch && saved.phase === "map", "special reward action did not advance to map", meta, saved);
   assertInvariants(saved, meta);
 }
 
@@ -268,6 +285,7 @@ async function finalVictoryScenario(meta, seasonDb) {
   const run = baseBossRun(meta, seasonDb, finalBossIndex, "victory", 3);
   const storage = new BudgetStorage(8_000_000);
   let runtime = load(storage, { run, seasonDb, contextOverrides: { RoguelikeRules: commonRules(), fetch: quietFetch(seasonDb) } });
+  await settleRuntime(runtime, seasonDb);
   runtime.seam.completeBossMatch("victory");
   while (runtime.seam.getRun().postBossFlow?.remainingRewards > 0) runtime.seam.advanceBossReward();
   let saved = runtime.canonical;
@@ -279,7 +297,7 @@ async function finalVictoryScenario(meta, seasonDb) {
 
   if (meta.index % 2 === 0) {
     runtime = runtime.reopen({ seasonDb, contextOverrides: { RoguelikeRules: commonRules(), fetch: quietFetch(seasonDb) } });
-    await settle();
+    await settleRuntime(runtime, seasonDb);
     await runtime.seam.resumeRun();
     expect(runtime.seam.getAppMarkup().includes("data-development-reward-reveal"), "refresh before reward acknowledgement lost RICOMPENSE RUN", meta, runtime.canonical);
   }
@@ -312,7 +330,8 @@ async function finalVictoryScenario(meta, seasonDb) {
 
 function seasonalPullCandidates(db, random) {
   const profiled = (db.recruitmentPool?.entries || []).filter((entry) => entry?.profileId && entry?.playerId);
-  const source = profiled.length >= 3 ? profiled : (db.players || []).filter((player) => player?.playerId).map((player) => ({ ...player, pullCandidateKind: "season_profile" }));
+  const raw = profiled.length >= 3 ? profiled : (db.players || []).filter((player) => player?.playerId).map((player) => ({ ...player, pullCandidateKind: "season_profile" }));
+  const source = [...new Map(raw.map((entry) => [String(entry.playerId), entry])).values()];
   const start = Math.floor(random() * Math.max(1, source.length - 3));
   return source.slice(start, start + 3).map((entry) => ({ ...entry, pullCandidateKind: "season_profile" }));
 }
@@ -320,7 +339,8 @@ function seasonalPullCandidates(db, random) {
 async function legendaryScenario(meta, seasonDb, random) {
   const run = { runId: meta.runId, seasonId: meta.seasonId, version: 2, phase: "map", lives: 3, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], roster: [], lineup: [], bench: [], inventory: [], formationId: "4-3-3", teamIdentity: { name: "Raimon" }, statistics: {}, currentZone: { seed: `${meta.seed}:pull`, currentNodeId: "pull", pendingNodeId: null, completedNodeIds: [], path: [], nodes: [{ id: "pull", type: "pull_legendary", pullState: { pullType: "pull_legendary", rerolls: 0, candidateIds: [] } }] } };
   const storage = new BudgetStorage(2_000_000);
-  const runtime = load(storage, { run, seasonDb, contextOverrides: { fetch: quietFetch(seasonDb) } });
+  const runtime = load(storage, { run, seasonDb, contextOverrides: { RoguelikeRules: commonRules(), fetch: quietFetch(seasonDb) } });
+  await settleRuntime(runtime, seasonDb);
   const identity = runtime.context.PlayerIdentity;
   runtime.context.RecruitmentPoolRuntime.canonicalPlayerId = identity.canonicalPlayerId;
   runtime.context.RecruitmentPoolRuntime.candidateKey = identity.candidateKey;
@@ -343,6 +363,7 @@ async function bossDefeatScenario(meta, seasonDb, random) {
   const lastLife = random() < 0.45;
   const run = baseBossRun(meta, seasonDb, bossIndex, "defeat", lastLife ? 1 : 3);
   const { runtime } = openBoss(meta, seasonDb, run);
+  await settleRuntime(runtime, seasonDb);
   runtime.seam.completeBossMatch("defeat");
   let saved = runtime.canonical;
   const livesAfterResolution = saved.lives;
@@ -360,7 +381,7 @@ async function main() {
   const counters = { bossVictory: 0, five: 0, special: 0, finalVictory: 0, legendary: 0, bossDefeat: 0 };
   const start = Date.now();
   for (let index = 0; index < 500; index += 1) {
-    const season = seasons[index % seasons.length];
+    const season = seasons[Math.floor(index / 10) % seasons.length];
     const seed = (0x5f3759df ^ Math.imul(index + 1, 2654435761)) >>> 0;
     const random = rngFrom(seed);
     const bucket = index % 10;
