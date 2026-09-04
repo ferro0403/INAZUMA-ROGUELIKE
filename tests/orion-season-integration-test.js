@@ -59,9 +59,10 @@ assert.strictEqual(finalRun.bossIndex, orion.bossOrder.length);
 
 const registrySource = fs.readFileSync(`${root}/js/season-registry.js`, "utf8");
 const appSource = fs.readFileSync(`${root}/js/app.js`, "utf8");
+const seasonSelectionViewSource = fs.readFileSync(`${root}/js/run-entry/season-selection-view.js`, "utf8");
 assert(registrySource.includes('database: "data/ORION_season_compact.json"'));
 assert(registrySource.includes('["ie1", "ie1_s2", "ie1_s3", "ie2", "orion"]'));
 assert(!appSource.includes('run?.seasonId === "orion"'));
-assert(appSource.includes("databasePresentation?.menuImageUrl"));
+assert(seasonSelectionViewSource.includes("db?.menuImageUrl"), "database-driven season cover belongs to the extracted season-selection view");
 
 console.log(`orion-season-integration-test: ${pool.length} mixed candidates, 13 bosses, 3-5-2 and generic finalization OK`);
