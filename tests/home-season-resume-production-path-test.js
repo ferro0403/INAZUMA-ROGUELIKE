@@ -52,7 +52,7 @@ function routingMatrix() {
       renderInventory: go("Inventory"),
       setMatchUi: () => {},
       renderMatch: go("Match"),
-      ensureCurrentZone: () => {},
+      ensureCurrentZone: () => ({ ok: true, seasonComplete: false }),
       resumePendingItemReward: () =>
         run.pendingItemReward ? ((destination = "Pending Item"), true) : false,
       renderMap: go("Map"),
