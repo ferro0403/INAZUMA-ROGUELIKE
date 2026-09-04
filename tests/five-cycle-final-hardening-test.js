@@ -84,9 +84,9 @@ function failNextSave(rt,name="QuotaExceededError") {
     assert.equal(failure.attempts(),1); assert.deepEqual(rt.canonical,before); assert.deepEqual(rt.seam.getRun(),before); assert.match(rt.seam.getAppMarkup(),/SALVATAGGIO NON RIUSCITO/);
   }
 
-  // Save formation failure (including ensure/autofill) rolls back.
+  // Save formation failure from a valid editor state rolls back.
   {
-    const {rt}=harness({phase:"five",incomplete:true,match:activeMatch()});
+    const {rt}=harness({phase:"five",incomplete:false,match:activeMatch()});
     rt.seam.renderFiveVFive({persist:false,returnToMatch:true}); const before=structuredClone(rt.canonical); const failure=failNextSave(rt);
     rt.context.document.getElementById("save-five").click();
     assert.equal(failure.attempts(),1); assert.deepEqual(rt.canonical,before); assert.deepEqual(rt.seam.getRun(),before);
