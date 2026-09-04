@@ -116,3 +116,25 @@ jobs:
             node "$test_file"
             echo "::endgroup::"
           done
+
+      - name: Release candidate integration gate
+        shell: bash
+        run: |
+          set -euo pipefail
+          tests=(
+            tests/run-local-only-cloud-decoupling-test.js
+            tests/cloud-login-restore-run-invariance-test.js
+            tests/read-only-map-orphan-match-recovery-test.js
+            tests/final-persistence-stress-test.js
+            tests/special-node-normalize-resume-final-gate-test.js
+            tests/recovered-match-reward-handoff-e2e-test.js
+            tests/real-finalization-quota-matrix-test.js
+            tests/ie1-s2-final-runtime-integration-test.js
+            tests/ie1-s3-integration-test.js
+            tests/orion-season-integration-test.js
+          )
+          for test_file in "${tests[@]}"; do
+            echo "::group::$test_file"
+            node "$test_file"
+            echo "::endgroup::"
+          done

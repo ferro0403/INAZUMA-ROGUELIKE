@@ -7,7 +7,7 @@ const orion = JSON.parse(fs.readFileSync(`${root}/data/ORION_season_compact.json
 const freeAgents = JSON.parse(fs.readFileSync(`${root}/data/FREE_AGENTS_compact.json`, "utf8"));
 const context = { console, structuredClone, DevelopmentV2: { playerUpgrade: () => null } };
 context.globalThis = context;
-for (const file of ["profiled-season.js", "recruitment-pool.js", "formation-layout.js", "match-simulator-config.js", "match-simulator.js", "boss-gameover-runtime.js"]) {
+for (const file of ["profiled-season.js", "recruitment/player-identity.js", "recruitment-pool.js", "formation-layout.js", "match-simulator-config.js", "match-simulator.js", "boss-gameover-runtime.js"]) {
   vm.runInNewContext(fs.readFileSync(`${root}/js/${file}`, "utf8"), context, { filename: file });
 }
 context.ProfiledSeasonRuntime.register("orion", orion);
@@ -59,9 +59,10 @@ assert.strictEqual(finalRun.bossIndex, orion.bossOrder.length);
 
 const registrySource = fs.readFileSync(`${root}/js/season-registry.js`, "utf8");
 const appSource = fs.readFileSync(`${root}/js/app.js`, "utf8");
+const seasonSelectionViewSource = fs.readFileSync(`${root}/js/run-entry/season-selection-view.js`, "utf8");
 assert(registrySource.includes('database: "data/ORION_season_compact.json"'));
 assert(registrySource.includes('["ie1", "ie1_s2", "ie1_s3", "ie2", "orion"]'));
 assert(!appSource.includes('run?.seasonId === "orion"'));
-assert(appSource.includes("databasePresentation?.menuImageUrl"));
+assert(seasonSelectionViewSource.includes("db?.menuImageUrl"), "database-driven season cover belongs to the extracted season-selection view");
 
 console.log(`orion-season-integration-test: ${pool.length} mixed candidates, 13 bosses, 3-5-2 and generic finalization OK`);
