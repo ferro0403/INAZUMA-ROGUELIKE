@@ -16,6 +16,14 @@
             (run.finalization && run.finalization.status !== "complete")
           )
             return d.resumeFinalization();
+          if (run.phase === "final-summary")
+            return d.renderFinalSummary(run.hallTeamId, {
+              developmentResolved: true,
+            });
+          if (run.phase === "final-celebration" || run.phase === "complete")
+            return d.renderFinalCelebration(run.hallTeamId, {
+              developmentResolved: true,
+            });
           const probe = global.RunState.clone(run);
           if (
             global.MapEngine.normalizeSpecialMatchNode(probe, d.getSeasonDb())
@@ -63,14 +71,6 @@
           run = d.getRun();
           if (run.gameOver || run.phase === "gameover")
             return d.renderGameOver();
-          if (run.phase === "final-summary")
-            return d.renderFinalSummary(run.hallTeamId, {
-              developmentResolved: true,
-            });
-          if (run.phase === "final-celebration" || run.phase === "complete")
-            return d.renderFinalCelebration(run.hallTeamId, {
-              developmentResolved: true,
-            });
           if (run.phase === "formation") return d.renderFormationChoice();
           if (run.phase === "draft") return d.renderDraft();
           if (run.pendingSpecialMatchReward) return d.showSpecialMatchReward();
