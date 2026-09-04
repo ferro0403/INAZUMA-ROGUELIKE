@@ -16,6 +16,8 @@
             (run.finalization && run.finalization.status !== "complete")
           )
             return d.resumeFinalization();
+          if (run.gameOver || run.phase === "gameover")
+            return d.renderGameOver();
           const probe = global.RunState.clone(run);
           if (
             global.MapEngine.normalizeSpecialMatchNode(probe, d.getSeasonDb())
@@ -61,8 +63,6 @@
           const recovery = d.recoverInterruptedMatchAccess();
           if (!recovery.ok) return d.renderMapFailureRecovery();
           run = d.getRun();
-          if (run.gameOver || run.phase === "gameover")
-            return d.renderGameOver();
           if (run.phase === "formation") return d.renderFormationChoice();
           if (run.phase === "draft") return d.renderDraft();
           if (run.pendingSpecialMatchReward) return d.showSpecialMatchReward();
