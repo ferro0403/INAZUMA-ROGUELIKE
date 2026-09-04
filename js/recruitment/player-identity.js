@@ -14,7 +14,12 @@
   }
 
   function candidateKey(player) {
-    return id(isSeasonProfileCandidate(player) ? player?.profileId : player?.playerId);
+    if (!player) return "";
+    if (isSeasonProfileCandidate(player)) {
+      const profileId = id(player?.profileId);
+      if (profileId) return profileId;
+    }
+    return canonicalPlayerId(player);
   }
 
   function candidateSource(player, seasonId = "ie1_s3") {

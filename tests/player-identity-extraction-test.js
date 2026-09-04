@@ -27,6 +27,7 @@ const cases = [
   { player: { playerId: 101, profileId: "profile-101", pullCandidateKind: "season_profile" }, profile: true, canonical: "101", key: "profile-101", source: "ie1_s3" },
   { player: { playerId: "202", profileId: "profile-202", sourceKind: "ie1_s3_recruitment_profile" }, profile: true, canonical: "202", key: "profile-202", source: "ie1_s3" },
   { player: { playerId: "303", profileId: "profile-303" }, profile: true, canonical: "303", key: "profile-303", source: "ie1_s3" },
+  { player: { playerId: "404", pullCandidateKind: "season_profile" }, profile: true, canonical: "404", key: "404", source: "ie1_s3" },
 ];
 
 for (const test of cases) {
