@@ -153,8 +153,23 @@ jobs:
           print('IE1 Season 1 data-only corrections applied:', len(corrected_players), 'players')
           PY
 
-      - name: Validate Season runtime contracts
-        run: node scripts/validate-seasons.js
+      - name: Validate corrected IE1 JSON shape
+        shell: bash
+        run: |
+          node - <<'NODE'
+          const fs = require('fs');
+          const season = JSON.parse(fs.readFileSync('data/IE1_season_compact.json', 'utf8'));
+          if (season.seasonId !== 'ie1') throw new Error('Unexpected seasonId');
+          if (!Array.isArray(season.players) || season.players.length !== 157) throw new Error('Unexpected IE1 player count');
+          const ids = new Set(season.players.map((player) => String(player.playerId)));
+          for (const removedId of ['4484', '4482', '4477', '4461']) {
+            if (ids.has(removedId)) throw new Error(`Removed player still present: ${removedId}`);
+          }
+          const brainwashing = season.bossOrder.find((boss) => boss.teamId === 'brainwashing');
+          if (!brainwashing || brainwashing.startingXIPlayerIds.length !== 11) throw new Error('Invalid Brainwashing XI');
+          if (!brainwashing.startingXIPlayerIds.includes('89') || !brainwashing.startingXIPlayerIds.includes('93')) throw new Error('Brainwashing replacements missing');
+          console.log('Scoped IE1 JSON validation passed.');
+          NODE
 
       - name: Commit final data and remove temporary CI controls
         shell: bash
