@@ -1,0 +1,209 @@
+name: Apply IE1 Season 1 corrections
+
+on:
+  push:
+    branches:
+      - fix/ie1-season1-player-identities
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/ie1-season1-player-identities
+          fetch-depth: 0
+
+      - name: Apply and validate IE1 corrections
+        shell: bash
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          season_path = Path('data/IE1_season_compact.json')
+          visuals_path = Path('data/PLAYER_VISUALS.json')
+
+          season = json.loads(season_path.read_text(encoding='utf-8'))
+          visuals = json.loads(visuals_path.read_text(encoding='utf-8'))['players']
+
+          replacements = {
+              '4483': '87',   # Francis Tell
+              '4478': '77',   # Harry Leading
+              '4485': '91',   # Jonathan Seller
+              '4487': '95',   # Neil Turner
+              '4480': '81',   # Philip Marvel
+              '4463': '161',  # Alfred Meenan
+              '4464': '162',  # Dan Mirthful
+              '4462': '160',  # Malcolm Night
+              '4466': '164',  # Toby Damian
+              '4468': '166',  # Zachary Moore
+              '4501': '23',   # Alan Master
+              '4500': '22',   # Ben Simmons
+              '4506': '28',   # Daniel Hatch
+              '4507': '30',   # David Samford
+              '4505': '27',   # Derek Swing
+              '4502': '24',   # Gus Martin
+              '4503': '25',   # Herman Waldon
+              '4504': '26',   # John Bloom
+              '4499': '21',   # Peter Drent
+          }
+          removed = {'4484', '4482', '4477', '4461'}
+          brainwashing_xi_removed_replacements = {
+              '4484': '89',  # Samuel Buster
+              '4482': '93',  # Victor Kind
+          }
+
+          expected_names = {
+              '87': 'Francis Tell',
+              '77': 'Harry Leading',
+              '91': 'Jonathan Seller',
+              '95': 'Neil Turner',
+              '81': 'Philip Marvel',
+              '161': 'Alfred Meenan',
+              '162': 'Dan Mirthful',
+              '160': 'Malcolm Night',
+              '164': 'Toby Damian',
+              '166': 'Zachary Moore',
+              '23': 'Alan Master',
+              '22': 'Ben Simmons',
+              '28': 'Daniel Hatch',
+              '30': 'David Samford',
+              '27': 'Derek Swing',
+              '24': 'Gus Martin',
+              '25': 'Herman Waldon',
+              '26': 'John Bloom',
+              '21': 'Peter Drent',
+          }
+          expected_removed_names = {
+              '4484': 'Darren Gouger',
+              '4482': 'Electra Faraday',
+              '4477': 'Gideon Poe',
+              '4461': 'Trice Topper',
+          }
+
+          players_by_id_before = {str(p['playerId']): p for p in season['players']}
+          for old_id, new_id in replacements.items():
+              assert old_id in players_by_id_before, f'Missing source player {old_id}'
+              assert new_id not in players_by_id_before, f'Target id already present in IE1: {new_id}'
+              assert players_by_id_before[old_id]['name'] == expected_names[new_id], (old_id, players_by_id_before[old_id]['name'], expected_names[new_id])
+          for old_id, name in expected_removed_names.items():
+              assert old_id in players_by_id_before, f'Missing removable player {old_id}'
+              assert players_by_id_before[old_id]['name'] == name, (old_id, players_by_id_before[old_id]['name'], name)
+
+          for target_id, expected_name in expected_names.items():
+              visual = visuals.get(target_id)
+              assert visual, f'Missing visual target {target_id}'
+              assert visual.get('name') == expected_name, (target_id, visual.get('name'), expected_name)
+              assert visual.get('portraitUrl'), f'Missing portrait for {target_id}'
+              assert visual.get('frontFullbodyUrl'), f'Missing fullbody for {target_id}'
+
+          def regular_ids(ids):
+              out = []
+              for raw in ids:
+                  pid = str(raw)
+                  if pid in removed:
+                      continue
+                  out.append(replacements.get(pid, pid))
+              assert len(out) == len(set(out)), f'Duplicate ids after correction: {out}'
+              return out
+
+          # Boss references. Brainwashing needs two real replacements in its XI because
+          # Darren Gouger and Electra Faraday were starters; Samuel Buster and Victor Kind
+          # are already valid Brainwashing players in this dataset.
+          for boss in season['bossOrder']:
+              old_xi = [str(x) for x in boss.get('startingXIPlayerIds', [])]
+              if boss.get('teamId') == 'brainwashing':
+                  new_xi = []
+                  for pid in old_xi:
+                      if pid in brainwashing_xi_removed_replacements:
+                          new_xi.append(brainwashing_xi_removed_replacements[pid])
+                      else:
+                          assert pid not in removed, f'Unexpected removed Brainwashing starter {pid}'
+                          new_xi.append(replacements.get(pid, pid))
+              else:
+                  new_xi = regular_ids(old_xi)
+              assert len(new_xi) == 11, (boss.get('teamId'), new_xi)
+              assert len(set(new_xi)) == 11, (boss.get('teamId'), new_xi)
+              boss['startingXIPlayerIds'] = new_xi
+
+              starting_xi = boss.get('startingXI', [])
+              assert len(starting_xi) == 11, boss.get('teamId')
+              for entry, new_id in zip(starting_xi, new_xi):
+                  entry['playerId'] = new_id
+
+              boss['rewardPoolPlayerIds'] = regular_ids(boss.get('rewardPoolPlayerIds', []))
+
+          # Team rosters / reward pools.
+          for team in season['teams']:
+              team['playerIds'] = regular_ids(team.get('playerIds', []))
+              team['ratedPlayers'] = len(team['playerIds'])
+
+          # Player records: preserve all gameplay values/progression, change only identity
+          # fields and portrait to the explicitly selected canonical variant.
+          new_players = []
+          for player in season['players']:
+              old_id = str(player['playerId'])
+              if old_id in removed:
+                  continue
+              if old_id in replacements:
+                  new_id = replacements[old_id]
+                  player['playerId'] = new_id
+                  player['id'] = new_id
+                  player['portraitUrl'] = visuals[new_id]['portraitUrl']
+              new_players.append(player)
+          season['players'] = new_players
+
+          season['summary']['players'] = len(new_players)
+          season['validation']['players'] = len(new_players)
+          season['validation']['exactValuesChecked'] = len(new_players) * int(season['validation']['levelsPerPlayer']) * 9
+
+          # Final integrity checks.
+          players_by_id = {str(p['playerId']): p for p in season['players']}
+          assert len(players_by_id) == len(season['players']), 'Duplicate playerId in IE1 players'
+          assert len(season['players']) == 157, len(season['players'])
+
+          forbidden = set(replacements) | removed
+          assert not (forbidden & set(players_by_id)), f'Old/removed ids still stored as IE1 players: {forbidden & set(players_by_id)}'
+
+          for new_id, expected_name in expected_names.items():
+              player = players_by_id.get(new_id)
+              assert player, f'Missing corrected player {new_id}'
+              assert player['name'] == expected_name, (new_id, player['name'], expected_name)
+              assert player['portraitUrl'] == visuals[new_id]['portraitUrl'], f'Portrait mismatch for {new_id}'
+
+          for team in season['teams']:
+              for pid in team.get('playerIds', []):
+                  assert str(pid) in players_by_id, f"Dangling team player {team.get('teamId')}:{pid}"
+
+          for boss in season['bossOrder']:
+              for pid in boss.get('startingXIPlayerIds', []):
+                  assert str(pid) in players_by_id, f"Dangling boss XI player {boss.get('teamId')}:{pid}"
+              for pid in boss.get('rewardPoolPlayerIds', []):
+                  assert str(pid) in players_by_id, f"Dangling reward player {boss.get('teamId')}:{pid}"
+
+          brainwashing = next(b for b in season['bossOrder'] if b['teamId'] == 'brainwashing')
+          assert '89' in brainwashing['startingXIPlayerIds'] and '93' in brainwashing['startingXIPlayerIds']
+          assert len(brainwashing['rewardPoolPlayerIds']) == 16
+          kirkwood = next(b for b in season['bossOrder'] if b['teamId'] == 'kirkwood')
+          assert len(kirkwood['rewardPoolPlayerIds']) == 14
+          royal = next(b for b in season['bossOrder'] if b['teamId'] == 'royal')
+          assert len(royal['rewardPoolPlayerIds']) == 16
+
+          season_path.write_text(json.dumps(season, ensure_ascii=False, separators=(',', ':')), encoding='utf-8')
+          print('IE1 Season 1 corrections applied and validated:', len(new_players), 'players')
+          PY
+
+      - name: Commit corrected IE1 data and remove temporary workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git rm .github/workflows/apply-ie1-season1-corrections.yml
+          git add data/IE1_season_compact.json
+          git commit -m "fix: correct Season 1 player identities and rosters"
+          git push origin HEAD:fix/ie1-season1-player-identities
