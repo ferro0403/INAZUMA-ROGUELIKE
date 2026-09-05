@@ -4942,16 +4942,16 @@
       "playerIds": [
         "161",
         "171",
-        "4464",
+        "162",
         "173",
         "159",
-        "4462",
+        "160",
         "167",
         "174",
         "163",
         "170",
         "168",
-        "4466",
+        "166",
         "164",
         "172",
         "165"
@@ -4959,16 +4959,16 @@
       "playerProfileIds": [
         "161@kirkwood",
         "171@kirkwood",
-        "4464@kirkwood",
+        "162@kirkwood",
         "173@kirkwood",
         "159@kirkwood",
-        "4462@kirkwood",
+        "160@kirkwood",
         "167@kirkwood",
         "174@kirkwood",
         "163@kirkwood",
         "170@kirkwood",
         "168@kirkwood",
-        "4466@kirkwood",
+        "166@kirkwood",
         "164@kirkwood",
         "172@kirkwood",
         "165@kirkwood"
@@ -9910,7 +9910,7 @@
       "id": "161",
       "name": "Alfred Meenan",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/q/oq1jk_d_aju.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/5/j/5jcxk60j0r8_r0_fullbody.webp",
       "element": "Forest",
       "type": "Forest",
       "custom": false,
@@ -25831,19 +25831,19 @@
       "legacyPreviewProfileId": "2082@team_ogre"
     },
     {
-      "playerId": "4462",
-      "id": "4462",
+      "playerId": "160",
+      "id": "160",
       "name": "Malcolm Night",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/7/m/7m4n3vn5wpm.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/_/4/_4ecna7ft68.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/i/l/iltqnfszziu_r0_fullbody.webp",
       "element": "Fire",
       "type": "Fire",
       "custom": false,
       "profileIds": [
-        "4462@kirkwood"
+        "160@kirkwood"
       ],
-      "baseProfileId": "4462@kirkwood",
-      "latestProfileId": "4462@kirkwood",
+      "baseProfileId": "160@kirkwood",
+      "latestProfileId": "160@kirkwood",
       "teamIds": [
         "kirkwood"
       ],
@@ -25863,22 +25863,22 @@
         "save": 1
       },
       "maxLevel": 20,
-      "legacyPreviewProfileId": "4462@kirkwood"
+      "legacyPreviewProfileId": "160@kirkwood"
     },
     {
-      "playerId": "4464",
-      "id": "4464",
+      "playerId": "162",
+      "id": "162",
       "name": "Dan Mirthful",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/-/k/-k20rdohcdm.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/m/x/mxy_kmptfpu.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/7/c/7cbtkjmlxx8_r0_fullbody.webp",
       "element": "Forest",
       "type": "Forest",
       "custom": false,
       "profileIds": [
-        "4464@kirkwood"
+        "162@kirkwood"
       ],
-      "baseProfileId": "4464@kirkwood",
-      "latestProfileId": "4464@kirkwood",
+      "baseProfileId": "162@kirkwood",
+      "latestProfileId": "162@kirkwood",
       "teamIds": [
         "kirkwood"
       ],
@@ -25898,22 +25898,22 @@
         "save": 1
       },
       "maxLevel": 20,
-      "legacyPreviewProfileId": "4464@kirkwood"
+      "legacyPreviewProfileId": "162@kirkwood"
     },
     {
-      "playerId": "4466",
-      "id": "4466",
-      "name": "Toby Damian",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/h/k/hkcycjhsqce.png",
-      "frontFullbodyUrl": null,
-      "element": "Wind",
-      "type": "Wind",
+      "playerId": "166",
+      "id": "166",
+      "name": "Zachary Moore",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/y/0/y0usg255xqm.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/v/h/vhhagzqpjik_r0_fullbody.webp",
+      "element": "Forest",
+      "type": "Forest",
       "custom": false,
       "profileIds": [
-        "4466@kirkwood"
+        "166@kirkwood"
       ],
-      "baseProfileId": "4466@kirkwood",
-      "latestProfileId": "4466@kirkwood",
+      "baseProfileId": "166@kirkwood",
+      "latestProfileId": "166@kirkwood",
       "teamIds": [
         "kirkwood"
       ],
@@ -25928,12 +25928,12 @@
         "stamina": 7,
         "control": 7,
         "defense": 7,
-        "speed": 8,
-        "grit": 7,
-        "save": 5
+        "speed": 7,
+        "grit": 8,
+        "save": 1
       },
       "maxLevel": 20,
-      "legacyPreviewProfileId": "4466@kirkwood"
+      "legacyPreviewProfileId": "166@kirkwood"
     },
     {
       "playerId": "custom_0001",
@@ -49677,7 +49677,7 @@
       "sourceFile": "KIRKWOOD.json",
       "name": "Alfred Meenan",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/q/oq1jk_d_aju.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/5/j/5jcxk60j0r8_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Forest",
@@ -49716,8 +49716,8 @@
             "grit": 7,
             "save": 1
           },
-          "portraitUrl": null,
-          "frontFullbodyUrl": null,
+          "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/q/oq1jk_d_aju.png",
+          "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/5/j/5jcxk60j0r8_r0_fullbody.webp",
           "evaluated": true,
           "updatedAt": "2026-08-08T19:51:54.895Z"
         }
@@ -49783,17 +49783,17 @@
       "sourceUpdatedAt": "2026-08-08T19:52:31.593Z"
     },
     {
-      "profileId": "4464@kirkwood",
-      "playerId": "4464",
-      "id": "4464@kirkwood",
+      "profileId": "162@kirkwood",
+      "playerId": "162",
+      "id": "162@kirkwood",
       "teamId": "kirkwood",
       "teamName": "Kirkwood",
       "profileRank": 110,
       "sourceKind": "recruitment_source",
       "sourceFile": "KIRKWOOD.json",
       "name": "Dan Mirthful",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/-/k/-k20rdohcdm.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/m/x/mxy_kmptfpu.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/7/c/7cbtkjmlxx8_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Forest",
@@ -49832,8 +49832,8 @@
             "grit": 7,
             "save": 1
           },
-          "portraitUrl": null,
-          "frontFullbodyUrl": null,
+          "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/m/x/mxy_kmptfpu.png",
+          "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/7/c/7cbtkjmlxx8_r0_fullbody.webp",
           "evaluated": true,
           "updatedAt": "2026-08-08T19:52:48.411Z"
         }
@@ -49957,17 +49957,17 @@
       "sourceUpdatedAt": "2026-08-08T19:53:20.560Z"
     },
     {
-      "profileId": "4462@kirkwood",
-      "playerId": "4462",
-      "id": "4462@kirkwood",
+      "profileId": "160@kirkwood",
+      "playerId": "160",
+      "id": "160@kirkwood",
       "teamId": "kirkwood",
       "teamName": "Kirkwood",
       "profileRank": 110,
       "sourceKind": "recruitment_source",
       "sourceFile": "KIRKWOOD.json",
       "name": "Malcolm Night",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/7/m/7m4n3vn5wpm.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/_/4/_4ecna7ft68.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/i/l/iltqnfszziu_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Fire",
@@ -50006,8 +50006,8 @@
             "grit": 7,
             "save": 1
           },
-          "portraitUrl": null,
-          "frontFullbodyUrl": null,
+          "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/_/4/_4ecna7ft68.png",
+          "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/i/l/iltqnfszziu_r0_fullbody.webp",
           "evaluated": true,
           "updatedAt": "2026-08-08T22:25:41.435Z"
         }
@@ -50305,21 +50305,21 @@
       "sourceUpdatedAt": "2026-08-08T19:55:41.865Z"
     },
     {
-      "profileId": "4466@kirkwood",
-      "playerId": "4466",
-      "id": "4466@kirkwood",
+      "profileId": "166@kirkwood",
+      "playerId": "166",
+      "id": "166@kirkwood",
       "teamId": "kirkwood",
       "teamName": "Kirkwood",
       "profileRank": 110,
       "sourceKind": "recruitment_source",
       "sourceFile": "KIRKWOOD.json",
-      "name": "Toby Damian",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/h/k/hkcycjhsqce.png",
-      "frontFullbodyUrl": null,
+      "name": "Zachary Moore",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/y/0/y0usg255xqm.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/v/h/vhhagzqpjik_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
-      "element": "Wind",
-      "type": "Wind",
+      "element": "Forest",
+      "type": "Forest",
       "category": "Buono",
       "finalOverall": 77,
       "ratings": {
@@ -50328,9 +50328,9 @@
         "stamina": 7,
         "control": 7,
         "defense": 7,
-        "speed": 8,
-        "grit": 7,
-        "save": 5
+        "speed": 7,
+        "grit": 8,
+        "save": 1
       },
       "maxLevel": 20,
       "custom": false,
@@ -50350,12 +50350,12 @@
             "stamina": 7,
             "control": 7,
             "defense": 7,
-            "speed": 8,
-            "grit": 7,
-            "save": 5
+            "speed": 7,
+            "grit": 8,
+            "save": 1
           },
-          "portraitUrl": null,
-          "frontFullbodyUrl": null,
+          "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/y/0/y0usg255xqm.png",
+          "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/v/h/vhhagzqpjik_r0_fullbody.webp",
           "evaluated": true,
           "updatedAt": "2026-08-08T22:25:41.435Z"
         }
@@ -64584,8 +64584,8 @@
         "poolId": "ie1_s3_mixed_recruitment"
       },
       {
-        "playerId": "4462",
-        "profileId": "4462@kirkwood",
+        "playerId": "160",
+        "profileId": "160@kirkwood",
         "source": "ie1_s3",
         "sourceKind": "season3_recruitment_profile",
         "sourceTeamId": "kirkwood",
@@ -64600,8 +64600,8 @@
         "poolId": "ie1_s3_mixed_recruitment"
       },
       {
-        "playerId": "4464",
-        "profileId": "4464@kirkwood",
+        "playerId": "162",
+        "profileId": "162@kirkwood",
         "source": "ie1_s3",
         "sourceKind": "season3_recruitment_profile",
         "sourceTeamId": "kirkwood",
@@ -64616,8 +64616,8 @@
         "poolId": "ie1_s3_mixed_recruitment"
       },
       {
-        "playerId": "4466",
-        "profileId": "4466@kirkwood",
+        "playerId": "166",
+        "profileId": "166@kirkwood",
         "source": "ie1_s3",
         "sourceKind": "season3_recruitment_profile",
         "sourceTeamId": "kirkwood",
@@ -64626,7 +64626,7 @@
         "normalizedRole": "MF",
         "finalOverall": 77,
         "category": "Buono",
-        "element": "Wind",
+        "element": "Forest",
         "eligibleInitialDraft": true,
         "eligiblePullFreeAgents": true,
         "poolId": "ie1_s3_mixed_recruitment"
