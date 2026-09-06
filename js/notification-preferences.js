@@ -55,8 +55,12 @@
     panel.querySelector("#settings-smart-lineup-description")?.remove();
     panel.querySelector("#settings-smart-lineup")?.removeAttribute("aria-describedby");
 
-    if (panel.querySelector("[data-notification-preferences-toggle]")) return;
+    const existing = panel.querySelector("[data-notification-preferences-toggle]");
     const diagnosticsRow = panel.querySelector("[data-settings-game-diagnostics]");
+    if (existing) {
+      if (diagnosticsRow && existing.nextElementSibling !== diagnosticsRow) diagnosticsRow.insertAdjacentElement("beforebegin", existing);
+      return;
+    }
     if (diagnosticsRow) diagnosticsRow.insertAdjacentHTML("beforebegin", notificationToggleMarkup());
     else panel.insertAdjacentHTML("beforeend", notificationToggleMarkup());
     panel.querySelector("#settings-game-notifications")?.addEventListener("change", (event) => {
