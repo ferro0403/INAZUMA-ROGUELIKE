@@ -23,6 +23,16 @@
     return normalized.length > max ? `${normalized.slice(0, max - 1)}…` : normalized;
   }
 
+  function causeSnapshot(error) {
+    if (!error) return null;
+    return {
+      name: text(error?.name || "Error", 80),
+      code: text(error?.code || "", 120) || null,
+      stage: text(error?.stage || "", 120) || null,
+      message: text(error?.message || String(error || "Errore sconosciuto")),
+    };
+  }
+
   function errorSnapshot(error) {
     return {
       name: text(error?.name || "Error", 80),
@@ -32,6 +42,7 @@
       recoverable: error?.recoverable === true,
       canonicalCommitted: error?.canonicalCommitted === true,
       generation: Number.isFinite(Number(error?.generation)) ? Number(error.generation) : null,
+      cause: error?.cause ? causeSnapshot(error.cause) : null,
     };
   }
 
@@ -147,8 +158,14 @@
     return rememberFailure(buildFailureEntry(context || {}));
   }
 
+  function errorSearchText(error) {
+    if (!error) return "";
+    const cause = error.cause || null;
+    return `${error.name || ""} ${error.code || ""} ${error.stage || ""} ${error.message || ""} ${cause?.name || ""} ${cause?.code || ""} ${cause?.stage || ""} ${cause?.message || ""}`.toLowerCase();
+  }
+
   function failureKind(error) {
-    const code = `${error?.name || ""} ${error?.code || ""} ${error?.message || ""}`.toLowerCase();
+    const code = errorSearchText(error);
     if (/quota|dom_quota|storage-quota-exceeded/.test(code)) return "quota";
     if (/canonical-verification-failed/.test(code)) return "verification";
     if (/stale-write|lineage-mismatch/.test(code)) return "stale";
@@ -244,6 +261,11 @@
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   }
 
+  function shortCommit(value) {
+    const string = String(value || "");
+    return string ? (string.length > 16 ? `${string.slice(0, 8)}…${string.slice(-6)}` : string) : "-";
+  }
+
   function measureLocalStorage() {
     const entries = [];
     let totalBytes = 0;
@@ -302,19 +324,20 @@
   }
 
   function classify(lastFailure, diagnosticWriteError, probe) {
-    const error = lastFailure?.error || diagnosticWriteError || probe?.failure || null;
-    const code = `${error?.name || ""} ${error?.code || ""} ${error?.message || ""}`.toLowerCase();
-    const memoryGeneration = Number(lastFailure?.generation?.memory);
-    const canonicalGeneration = Number(lastFailure?.generation?.canonical);
+    const failureError = lastFailure?.error || null;
+    const combined = [failureError, diagnosticWriteError, probe?.failure].map(errorSearchText).join(" ");
+    const memoryRaw = lastFailure?.generation?.memory;
+    const canonicalRaw = lastFailure?.generation?.canonical;
+    const memoryGeneration = memoryRaw == null ? NaN : Number(memoryRaw);
+    const canonicalGeneration = canonicalRaw == null ? NaN : Number(canonicalRaw);
     const canonicalAhead = Number.isFinite(memoryGeneration) && Number.isFinite(canonicalGeneration) && canonicalGeneration > memoryGeneration;
-    if (/quota|dom_quota|storage-quota-exceeded/.test(code)) return { code: "quota-confirmed", title: "SPAZIO LOCALE: QUOTA CONFERMATA", detail: "È stato registrato un QuotaExceededError o equivalente. Lo spazio locale è un trigger reale su questo dispositivo." };
-    if (probe?.failedAtBytes && /quota|dom_quota/.test(`${probe.failure?.name || ""} ${probe.failure?.code || ""} ${probe.failure?.message || ""}`.toLowerCase())) return { code: "quota-probe", title: "SPAZIO LOCALE: TEST FALLITO", detail: `Il test temporaneo non riesce a scrivere ${formatBytes(probe.failedAtBytes)}.` };
-    if (/canonical-verification-failed/.test(code) || error?.canonicalCommitted === true || canonicalAhead) return { code: "ambiguous-commit", title: "COMMIT AMBIGUO / CANONICO PIÙ AVANTI", detail: "Il salvataggio canonico può essere già avanzato anche se la chiamata ha restituito errore. Questo è il caso che può lasciare runtime e UI disallineati." };
-    if (/stale-write|lineage-mismatch/.test(code)) return { code: "stale", title: "GENERATION STALE", detail: "La generation in memoria non coincide con quella canonica oppure il lineage è cambiato." };
-    if (/write-locked|storage-unavailable/.test(code)) return { code: "locked", title: "LOCK / STORAGE TEMPORANEAMENTE NON SCRIVIBILE", detail: "La scrittura è stata bloccata dal lock locale o dallo storage non disponibile." };
-    if (/securityerror|storage-access-error/.test(code)) return { code: "access", title: "ACCESSO STORAGE BLOCCATO", detail: "Il browser ha negato o perso l’accesso allo storage locale." };
+    if (/quota|dom_quota|storage-quota-exceeded/.test(combined)) return { code: "quota-confirmed", title: "SPAZIO LOCALE: QUOTA CONFERMATA", detail: "È stato registrato un QuotaExceededError o equivalente, anche come causa interna. Lo spazio locale è un trigger reale su questo dispositivo." };
+    if (/canonical-verification-failed/.test(combined) || failureError?.canonicalCommitted === true || canonicalAhead) return { code: "ambiguous-commit", title: "COMMIT AMBIGUO / CANONICO PIÙ AVANTI", detail: "Il salvataggio canonico può essere già avanzato anche se la chiamata ha restituito errore. Questo è il caso che può lasciare runtime e UI disallineati." };
+    if (/stale-write|lineage-mismatch/.test(combined)) return { code: "stale", title: "GENERATION STALE", detail: "La generation in memoria non coincide con quella canonica oppure il lineage è cambiato." };
+    if (/write-locked|storage-unavailable/.test(combined)) return { code: "locked", title: "LOCK / STORAGE TEMPORANEAMENTE NON SCRIVIBILE", detail: "La scrittura è stata bloccata dal lock locale o dallo storage non disponibile." };
+    if (/securityerror|storage-access-error/.test(combined)) return { code: "access", title: "ACCESSO STORAGE BLOCCATO", detail: "Il browser ha negato o perso l’accesso allo storage locale." };
     if (lastFailure) return { code: "failure", title: "ERRORE DI SALVATAGGIO REGISTRATO", detail: "È presente un errore reale da analizzare; il codice esatto è mostrato qui sotto." };
-    return { code: "none", title: "NESSUN ERRORE REGISTRATO", detail: "La diagnostica è pronta. Dopo il prossimo problema resteranno qui codice, stage, generation e stato della partita." };
+    return { code: "none", title: "NESSUN ERRORE REGISTRATO", detail: "La diagnostica è pronta. Dopo il prossimo problema resteranno qui codice, causa, stage, generation e stato della partita." };
   }
 
   async function buildReport(probe = null) {
@@ -367,14 +390,15 @@
     if (!failure) return '<section class="panel"><p class="eyebrow">ULTIMO ERRORE</p><h3>Nessun errore ancora registrato</h3><p class="muted">Quando una persistence fallirà, questa sezione conserverà il contesto tecnico.</p></section>';
     const generation = failure.generation || {};
     const match = failure.match || {};
-    return `<section class="panel"><p class="eyebrow">ULTIMO ERRORE</p><h3>${escape(failure.error?.code || failure.error?.name || "Errore sconosciuto")}</h3><p class="muted">${escape(failure.error?.message || "")}</p><div class="stat-grid"><div class="stat-card"><span>Azione</span><strong>${escape(failure.label || "-")}</strong></div><div class="stat-card"><span>Stage</span><strong>${escape(failure.stage || failure.error?.stage || "-")}</strong></div><div class="stat-card"><span>Quando</span><strong>${escape(failure.at ? new Date(failure.at).toLocaleString("it-IT") : "-")}</strong></div><div class="stat-card"><span>Fase run</span><strong>${escape(failure.phase || "-")}</strong></div><div class="stat-card"><span>Generation RAM</span><strong>${escape(generation.memory ?? "-")}</strong></div><div class="stat-card"><span>Generation canonica</span><strong>${escape(generation.canonical ?? "-")}</strong></div><div class="stat-card"><span>Partita</span><strong>${escape(match.type || "-")}</strong></div><div class="stat-card"><span>Stato partita</span><strong>${escape(match.simulationState || match.state || "-")}</strong></div><div class="stat-card"><span>Resolution durable</span><strong>${match.resolutionApplied === true ? "SÌ" : match.resolutionApplied === false ? "NO" : "-"}</strong></div><div class="stat-card"><span>Post-navigation</span><strong>${match.postMatchNavigationApplied === true ? "SÌ" : match.postMatchNavigationApplied === false ? "NO" : "-"}</strong></div></div></section>`;
+    const cause = failure.error?.cause;
+    return `<section class="panel"><p class="eyebrow">ULTIMO ERRORE</p><h3>${escape(failure.error?.code || failure.error?.name || "Errore sconosciuto")}</h3><p class="muted">${escape(failure.error?.message || "")}</p>${cause ? `<p class="muted"><strong>Causa:</strong> ${escape(cause.name || "Error")} · ${escape(cause.code || cause.message || "-")}</p>` : ""}<div class="stat-grid"><div class="stat-card"><span>Azione</span><strong>${escape(failure.label || "-")}</strong></div><div class="stat-card"><span>Stage</span><strong>${escape(failure.stage || failure.error?.stage || "-")}</strong></div><div class="stat-card"><span>Quando</span><strong>${escape(failure.at ? new Date(failure.at).toLocaleString("it-IT") : "-")}</strong></div><div class="stat-card"><span>Season / fase</span><strong>${escape(`${failure.seasonId || "-"} · ${failure.phase || "-"}`)}</strong></div><div class="stat-card"><span>Generation RAM</span><strong>${escape(generation.memory ?? "-")}</strong></div><div class="stat-card"><span>Generation canonica</span><strong>${escape(generation.canonical ?? "-")}</strong></div><div class="stat-card"><span>Commit RAM</span><strong>${escape(shortCommit(failure.commitId?.memory))}</strong></div><div class="stat-card"><span>Commit canonico</span><strong>${escape(shortCommit(failure.commitId?.canonical))}</strong></div><div class="stat-card"><span>Partita</span><strong>${escape(match.type || "-")}</strong></div><div class="stat-card"><span>Stato partita</span><strong>${escape(match.simulationState || match.state || "-")}</strong></div><div class="stat-card"><span>Resolution durable</span><strong>${match.resolutionApplied === true ? "SÌ" : match.resolutionApplied === false ? "NO" : "-"}</strong></div><div class="stat-card"><span>Post-navigation</span><strong>${match.postMatchNavigationApplied === true ? "SÌ" : match.postMatchNavigationApplied === false ? "NO" : "-"}</strong></div></div></section>`;
   }
 
   function storageMarkup(report) {
     const storage = report.storage;
     const estimate = storage.browserEstimate;
     const top = (storage.topInazumaKeys || []).slice(0, 6);
-    return `<section class="panel"><p class="eyebrow">SPAZIO LOCALE</p><div class="stat-grid"><div class="stat-card"><span>localStorage misurato</span><strong>${escape(formatBytes(storage.localStorageMeasuredBytes))}</strong></div><div class="stat-card"><span>Albo d’Oro</span><strong>${escape(formatBytes(storage.hallBytes))}</strong><small>${escape(storage.hallSharePercent)}% del totale locale</small></div><div class="stat-card"><span>Development</span><strong>${escape(formatBytes(storage.developmentBytes))}</strong></div><div class="stat-card"><span>Album</span><strong>${escape(formatBytes(storage.albumBytes))}</strong></div>${estimate ? `<div class="stat-card"><span>Storage browser usato</span><strong>${escape(formatBytes(estimate.usage))}</strong></div><div class="stat-card"><span>Quota browser stimata</span><strong>${escape(formatBytes(estimate.quota))}</strong></div>` : ""}</div>${top.length ? `<div class="panel" style="margin-top:12px"><p class="eyebrow">CHIAVI PIÙ PESANTI</p>${top.map((entry) => `<p class="muted" style="display:flex;justify-content:space-between;gap:12px"><span>${escape(entry.key)}</span><strong>${escape(formatBytes(entry.bytes))}</strong></p>`).join("")}</div>` : ""}</section>`;
+    return `<section class="panel"><p class="eyebrow">SPAZIO LOCALE</p><div class="stat-grid"><div class="stat-card"><span>localStorage misurato</span><strong>${escape(formatBytes(storage.localStorageMeasuredBytes))}</strong></div><div class="stat-card"><span>Albo d’Oro</span><strong>${escape(formatBytes(storage.hallBytes))}</strong><small>${escape(storage.hallSharePercent)}% del totale locale</small></div><div class="stat-card"><span>Development</span><strong>${escape(formatBytes(storage.developmentBytes))}</strong></div><div class="stat-card"><span>Album</span><strong>${escape(formatBytes(storage.albumBytes))}</strong></div>${storage.browserFamily ? `<div class="stat-card"><span>Browser</span><strong>${escape(storage.browserFamily)}</strong></div>` : ""}${estimate ? `<div class="stat-card"><span>Storage browser usato</span><strong>${escape(formatBytes(estimate.usage))}</strong></div><div class="stat-card"><span>Quota browser stimata</span><strong>${escape(formatBytes(estimate.quota))}</strong></div>` : ""}</div>${top.length ? `<div class="panel" style="margin-top:12px"><p class="eyebrow">CHIAVI PIÙ PESANTI</p>${top.map((entry) => `<p class="muted" style="display:flex;justify-content:space-between;gap:12px"><span>${escape(entry.key)}</span><strong>${escape(formatBytes(entry.bytes))}</strong></p>`).join("")}</div>` : ""}</section>`;
   }
 
   function probeMarkup(probe) {
