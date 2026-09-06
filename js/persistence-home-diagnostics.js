@@ -1,13 +1,17 @@
 (function (global) {
   "use strict";
 
-  const FAILURE_KEY = "inazuma.persistence.lastFailure.v1";
+  const FAILURE_KEY = "inazuma.diagnostics.lastFailure.v2";
   const FAILURE_WRITE_ERROR_KEY = `${FAILURE_KEY}.writeError`;
-  const PROBE_KEY = "inazuma.persistence.spaceProbe.v1";
-  const MAX_TEXT = 320;
+  const EVENTS_KEY = "inazuma.diagnostics.events.v1";
+  const PROBE_KEY = "inazuma.diagnostics.spaceProbe.v1";
+  const MAX_EVENTS = 24;
+  const MAX_TEXT = 420;
+
   let volatileFailure = null;
+  let volatileEvents = [];
   let uiShell = null;
-  let homeObserver = null;
+  let settingsObserver = null;
 
   function clone(value) {
     if (value == null) return value;
@@ -23,139 +27,150 @@
     return normalized.length > max ? `${normalized.slice(0, max - 1)}…` : normalized;
   }
 
-  function causeSnapshot(error) {
-    if (!error) return null;
-    return {
-      name: text(error?.name || "Error", 80),
-      code: text(error?.code || "", 120) || null,
-      stage: text(error?.stage || "", 120) || null,
-      message: text(error?.message || String(error || "Errore sconosciuto")),
-    };
-  }
-
   function errorSnapshot(error) {
+    if (!error) return null;
+    const cause = error?.cause;
     return {
       name: text(error?.name || "Error", 80),
       code: text(error?.code || "", 120) || null,
       stage: text(error?.stage || "", 120) || null,
       message: text(error?.message || String(error || "Errore sconosciuto")),
+      stack: text(error?.stack || "", 900) || null,
       recoverable: error?.recoverable === true,
       canonicalCommitted: error?.canonicalCommitted === true,
       generation: Number.isFinite(Number(error?.generation)) ? Number(error.generation) : null,
-      cause: error?.cause ? causeSnapshot(error.cause) : null,
+      cause: cause ? {
+        name: text(cause?.name || "Error", 80),
+        code: text(cause?.code || "", 120) || null,
+        stage: text(cause?.stage || "", 120) || null,
+        message: text(cause?.message || String(cause), 320),
+      } : null,
     };
   }
 
-  function storageErrorSnapshot(error) {
-    return { at: new Date().toISOString(), ...errorSnapshot(error) };
-  }
-
-  function safeSessionSet(key, value) {
-    try { global.sessionStorage?.setItem(key, value); return true; }
-    catch (_) { return false; }
-  }
-
-  function safeLocalSet(key, value) {
-    try { global.localStorage?.setItem(key, value); return { ok: true, error: null }; }
-    catch (error) { return { ok: false, error }; }
-  }
-
-  function parseStored(raw) {
+  function parseJson(raw) {
     try { return raw ? JSON.parse(raw) : null; }
     catch (_) { return null; }
   }
 
-  function readStored(key, storage) {
-    try { return parseStored(storage?.getItem(key)); }
+  function safeRead(storage, key) {
+    try { return parseJson(storage?.getItem(key)); }
     catch (_) { return null; }
   }
 
-  function rememberFailure(entry) {
-    const compact = clone(entry);
-    volatileFailure = compact;
-    const raw = JSON.stringify(compact);
-    safeSessionSet(FAILURE_KEY, raw);
-    const local = safeLocalSet(FAILURE_KEY, raw);
-    if (!local.ok) safeSessionSet(FAILURE_WRITE_ERROR_KEY, JSON.stringify(storageErrorSnapshot(local.error)));
-    else {
-      try { global.sessionStorage?.removeItem(FAILURE_WRITE_ERROR_KEY); } catch (_) {}
-    }
-    return compact;
+  function safeSessionWrite(key, value) {
+    try { global.sessionStorage?.setItem(key, value); return true; }
+    catch (_) { return false; }
   }
 
-  function readFailure() {
-    if (volatileFailure) return { source: "memory", value: clone(volatileFailure) };
-    const session = readStored(FAILURE_KEY, global.sessionStorage);
-    if (session) return { source: "sessionStorage", value: session };
-    const local = readStored(FAILURE_KEY, global.localStorage);
-    if (local) return { source: "localStorage", value: local };
-    return { source: "none", value: null };
+  function safeLocalWrite(key, value) {
+    try { global.localStorage?.setItem(key, value); return { ok: true, error: null }; }
+    catch (error) { return { ok: false, error }; }
   }
 
-  function readFailureWriteError() {
-    return readStored(FAILURE_WRITE_ERROR_KEY, global.sessionStorage);
-  }
-
-  function clearFailure() {
-    volatileFailure = null;
-    for (const storage of [global.sessionStorage, global.localStorage]) {
-      try { storage?.removeItem(FAILURE_KEY); } catch (_) {}
-    }
-    try { global.sessionStorage?.removeItem(FAILURE_WRITE_ERROR_KEY); } catch (_) {}
-  }
-
-  function buildFailureEntry({ label, stage, error, kind, getRun, getUi, getActiveSeason, run: suppliedRun = null }) {
-    const current = suppliedRun || getRun?.() || global.run || null;
+  function currentContext(runOverride = null, getUi = null) {
+    const run = runOverride || global.run || null;
     const ui = getUi?.() || {};
-    const seasonId = current?.seasonId || getActiveSeason?.()?.id || global.SeasonRegistry?.activeId?.() || null;
-    let canonical = null;
-    let storage = null;
-    try { canonical = seasonId ? global.RunState?.load?.(seasonId, { readOnly: true }) : null; } catch (_) {}
-    try { storage = seasonId ? global.RunStorage?.diagnostics?.(seasonId) : null; } catch (_) {}
-    const match = current?.activeMatch || ui.match || null;
+    const match = run?.activeMatch || ui.match || null;
     return {
-      schemaVersion: 1,
-      at: new Date().toISOString(),
-      label: text(label || "unknown", 120),
-      stage: text(stage || "unknown", 120),
-      kind: text(kind || "generic", 80),
-      seasonId: seasonId ? text(seasonId, 80) : null,
-      runId: current?.runId ? text(current.runId, 160) : null,
-      phase: current?.phase ? text(current.phase, 80) : null,
-      error: errorSnapshot(error),
-      generation: {
-        memory: Number.isFinite(Number(current?.storageGeneration)) ? Number(current.storageGeneration) : null,
-        canonical: Number.isFinite(Number(canonical?.storageGeneration ?? storage?.canonicalGeneration)) ? Number(canonical?.storageGeneration ?? storage?.canonicalGeneration) : null,
-        expected: Number.isFinite(Number(error?.generation ?? current?.storageGeneration)) ? Number(error?.generation ?? current?.storageGeneration) : null,
-      },
-      commitId: {
-        memory: current?.storageCommitId ? text(current.storageCommitId, 180) : null,
-        canonical: canonical?.storageCommitId || storage?.canonicalCommitId ? text(canonical?.storageCommitId || storage?.canonicalCommitId, 180) : null,
-      },
+      seasonId: run?.seasonId || null,
+      runId: run?.runId || null,
+      phase: run?.phase || null,
+      bossIndex: Number.isFinite(Number(run?.bossIndex)) ? Number(run.bossIndex) : null,
+      currentNodeId: run?.currentZone?.currentNodeId || null,
+      pendingNodeId: run?.currentZone?.pendingNodeId || null,
       match: match ? {
-        matchId: match.matchId ? text(match.matchId, 180) : null,
+        matchId: match.matchId || null,
         type: match.type || null,
         state: match.state || null,
         simulationState: match.simulation?.state || null,
+        result: match.result || null,
         resolutionApplied: match.simulation?.resolutionApplied === true,
         postMatchNavigationApplied: match.postMatchNavigationApplied === true,
-        result: match.result || null,
-      } : null,
-      node: {
-        currentNodeId: current?.currentZone?.currentNodeId || null,
-        pendingNodeId: current?.currentZone?.pendingNodeId || null,
-      },
-      storage: storage ? {
-        totalKnownBytes: Number(storage.totalKnownBytes || 0) || null,
-        headGeneration: storage.headGeneration ?? null,
-        backupGeneration: storage.backupGeneration ?? null,
-        headMatchesCanonical: storage.headMatchesCanonical ?? null,
       } : null,
     };
   }
 
-  function recordFailure(context) {
-    return rememberFailure(buildFailureEntry(context || {}));
+  function readEvents() {
+    if (volatileEvents.length) return clone(volatileEvents);
+    const session = safeRead(global.sessionStorage, EVENTS_KEY);
+    if (Array.isArray(session)) {
+      volatileEvents = session.slice(-MAX_EVENTS);
+      return clone(volatileEvents);
+    }
+    const local = safeRead(global.localStorage, EVENTS_KEY);
+    if (Array.isArray(local)) {
+      volatileEvents = local.slice(-MAX_EVENTS);
+      return clone(volatileEvents);
+    }
+    return [];
+  }
+
+  function writeEvents(events) {
+    volatileEvents = events.slice(-MAX_EVENTS);
+    const raw = JSON.stringify(volatileEvents);
+    safeSessionWrite(EVENTS_KEY, raw);
+    safeLocalWrite(EVENTS_KEY, raw);
+  }
+
+  function recordEvent(type, detail = {}, context = null) {
+    const events = readEvents();
+    events.push({
+      at: new Date().toISOString(),
+      type: text(type || "event", 100),
+      detail: clone(detail || {}),
+      context: context || currentContext(),
+    });
+    writeEvents(events);
+    return events.at(-1);
+  }
+
+  function readFailure() {
+    if (volatileFailure) return { source: "memory", value: clone(volatileFailure) };
+    const session = safeRead(global.sessionStorage, FAILURE_KEY);
+    if (session) return { source: "sessionStorage", value: session };
+    const local = safeRead(global.localStorage, FAILURE_KEY);
+    if (local) return { source: "localStorage", value: local };
+    return { source: "none", value: null };
+  }
+
+  function rememberFailure(entry) {
+    volatileFailure = clone(entry);
+    const raw = JSON.stringify(volatileFailure);
+    safeSessionWrite(FAILURE_KEY, raw);
+    const local = safeLocalWrite(FAILURE_KEY, raw);
+    if (!local.ok) {
+      safeSessionWrite(FAILURE_WRITE_ERROR_KEY, JSON.stringify({ at: new Date().toISOString(), error: errorSnapshot(local.error) }));
+    } else {
+      try { global.sessionStorage?.removeItem(FAILURE_WRITE_ERROR_KEY); } catch (_) {}
+    }
+    recordEvent("persistence-failure", {
+      label: entry.label,
+      stage: entry.stage,
+      kind: entry.kind,
+      error: entry.error,
+      generation: entry.generation,
+    }, {
+      seasonId: entry.seasonId,
+      runId: entry.runId,
+      phase: entry.phase,
+      bossIndex: entry.bossIndex,
+      currentNodeId: entry.node?.currentNodeId || null,
+      pendingNodeId: entry.node?.pendingNodeId || null,
+      match: entry.match || null,
+    });
+    return clone(volatileFailure);
+  }
+
+  function clearRecorded() {
+    volatileFailure = null;
+    volatileEvents = [];
+    for (const storage of [global.sessionStorage, global.localStorage]) {
+      for (const key of [FAILURE_KEY, EVENTS_KEY]) {
+        try { storage?.removeItem(key); } catch (_) {}
+      }
+    }
+    try { global.sessionStorage?.removeItem(FAILURE_WRITE_ERROR_KEY); } catch (_) {}
   }
 
   function errorSearchText(error) {
@@ -165,20 +180,113 @@
   }
 
   function failureKind(error) {
-    const code = errorSearchText(error);
-    if (/quota|dom_quota|storage-quota-exceeded/.test(code)) return "quota";
-    if (/canonical-verification-failed/.test(code)) return "verification";
-    if (/stale-write|lineage-mismatch/.test(code)) return "stale";
-    if (/write-locked|storage-unavailable/.test(code)) return "locked";
-    if (/securityerror|storage-access-error/.test(code)) return "access";
+    const value = errorSearchText(error);
+    if (/quota|dom_quota|storage-quota-exceeded/.test(value)) return "quota";
+    if (/canonical-verification-failed/.test(value)) return "verification";
+    if (/stale-write|lineage-mismatch/.test(value)) return "stale";
+    if (/write-locked|storage-unavailable/.test(value)) return "locked";
+    if (/securityerror|storage-access-error/.test(value)) return "access";
     return "generic";
+  }
+
+  function buildFailureEntry({ label, stage, error, kind, run: suppliedRun = null, getRun = null, getUi = null, getActiveSeason = null }) {
+    const current = suppliedRun || getRun?.() || global.run || null;
+    const seasonId = current?.seasonId || getActiveSeason?.()?.id || global.SeasonRegistry?.activeId?.() || null;
+    let canonical = null;
+    let storage = null;
+    try { canonical = seasonId ? global.RunState?.load?.(seasonId, { readOnly: true }) : null; } catch (_) {}
+    try { storage = seasonId ? global.RunStorage?.diagnostics?.(seasonId) : null; } catch (_) {}
+    const context = currentContext(current, getUi);
+    return {
+      schemaVersion: 2,
+      at: new Date().toISOString(),
+      label: text(label || "unknown", 120),
+      stage: text(stage || error?.stage || "unknown", 120),
+      kind: text(kind || failureKind(error), 80),
+      seasonId: seasonId ? text(seasonId, 80) : null,
+      runId: current?.runId ? text(current.runId, 160) : null,
+      phase: current?.phase || null,
+      bossIndex: context.bossIndex,
+      error: errorSnapshot(error),
+      generation: {
+        memory: Number.isFinite(Number(current?.storageGeneration)) ? Number(current.storageGeneration) : null,
+        canonical: Number.isFinite(Number(canonical?.storageGeneration ?? storage?.canonicalGeneration)) ? Number(canonical?.storageGeneration ?? storage?.canonicalGeneration) : null,
+        expected: Number.isFinite(Number(error?.generation ?? current?.storageGeneration)) ? Number(error?.generation ?? current?.storageGeneration) : null,
+      },
+      commitId: {
+        memory: current?.storageCommitId || null,
+        canonical: canonical?.storageCommitId || storage?.canonicalCommitId || null,
+      },
+      match: context.match,
+      node: { currentNodeId: context.currentNodeId, pendingNodeId: context.pendingNodeId },
+      storage: storage ? {
+        totalKnownBytes: Number(storage.totalKnownBytes || 0),
+        headGeneration: storage.headGeneration ?? null,
+        backupGeneration: storage.backupGeneration ?? null,
+        headMatchesCanonical: storage.headMatchesCanonical ?? null,
+      } : null,
+    };
+  }
+
+  function recordFailure(context = {}) {
+    return rememberFailure(buildFailureEntry(context));
+  }
+
+  function replaceMethod(apiName, methodName, factory) {
+    const api = global[apiName];
+    const original = api?.[methodName];
+    if (typeof original !== "function" || original.__gameDiagnosticsWrapped) return;
+    const wrapped = factory(original);
+    wrapped.__gameDiagnosticsWrapped = true;
+    try { api[methodName] = wrapped; } catch (_) {}
+    if (api[methodName] !== wrapped) {
+      try { global[apiName] = Object.freeze({ ...api, [methodName]: wrapped }); } catch (_) {}
+    }
+  }
+
+  function installPersistenceHooks() {
+    replaceMethod("RunState", "save", (original) => function saveWithDiagnostics(run, options = {}) {
+      try { return original.call(this, run, options); }
+      catch (error) {
+        recordFailure({ label: options?.source || "run-state-save", stage: error?.stage || "persistence", error, run });
+        throw error;
+      }
+    });
+
+    replaceMethod("RunState", "createCheckpoint", (original) => function checkpointWithDiagnostics(run, ...args) {
+      try { return original.call(this, run, ...args); }
+      catch (error) {
+        recordFailure({ label: "run-checkpoint", stage: error?.stage || "checkpoint", error, run });
+        throw error;
+      }
+    });
+
+    replaceMethod("RunState", "persistMutationOrRecover", (original) => function mutationWithDiagnostics(run, mutate, options = {}) {
+      const result = original.call(this, run, mutate, options);
+      if (result?.ok === false && result.error) {
+        recordFailure({ label: options?.source || "run-state-mutation", stage: result.error?.stage || "persistence", error: result.error, kind: result.stale ? "stale" : failureKind(result.error), run: result.run || run });
+      }
+      return result;
+    });
+
+    replaceMethod("PermanentEffects", "drain", (original) => function drainWithDiagnostics(run, ...args) {
+      const result = original.call(this, run, ...args);
+      if (result?.error) recordFailure({ label: "permanent-effects-drain", stage: result.error?.stage || "permanent-effect", error: result.error, run });
+      return result;
+    });
+
+    replaceMethod("PermanentEffects", "resumeFinalization", (original) => function finalizationWithDiagnostics(run, ...args) {
+      const result = original.call(this, run, ...args);
+      if (result?.error) recordFailure({ label: "finalization-resume", stage: result.error?.stage || "finalization", error: result.error, run });
+      return result;
+    });
   }
 
   function wrapAppDiagnostics() {
     const api = global.AppDevDiagnostics;
-    if (!api?.create || api.create.__homeDiagnosticsWrapped) return;
+    if (!api?.create || api.create.__gameDiagnosticsWrapped) return;
     const originalCreate = api.create;
-    const wrappedCreate = function createWithHomeDiagnostics(options = {}) {
+    const wrappedCreate = function createWithGameDiagnostics(options = {}) {
       const original = originalCreate(options);
       return Object.freeze({
         ...original,
@@ -189,75 +297,48 @@
         },
       });
     };
-    wrappedCreate.__homeDiagnosticsWrapped = true;
+    wrappedCreate.__gameDiagnosticsWrapped = true;
     global.AppDevDiagnostics = Object.freeze({ ...api, create: wrappedCreate });
-  }
-
-  function replaceMethod(apiName, methodName, factory) {
-    const api = global[apiName];
-    const original = api?.[methodName];
-    if (typeof original !== "function" || original.__homeDiagnosticsWrapped) return;
-    const wrapped = factory(original);
-    wrapped.__homeDiagnosticsWrapped = true;
-    try { api[methodName] = wrapped; } catch (_) {}
-    if (api[methodName] !== wrapped) {
-      try { global[apiName] = Object.freeze({ ...api, [methodName]: wrapped }); } catch (_) {}
-    }
-  }
-
-  function wrapDirectPersistenceBoundaries() {
-    replaceMethod("RunState", "save", (original) => function saveWithDiagnostics(run, options = {}) {
-      try { return original.call(this, run, options); }
-      catch (error) {
-        recordFailure({ label: options?.source || "run-state-save", stage: error?.stage || "persistence", error, kind: failureKind(error), run });
-        throw error;
-      }
-    });
-
-    replaceMethod("RunState", "createCheckpoint", (original) => function checkpointWithDiagnostics(run, ...args) {
-      try { return original.call(this, run, ...args); }
-      catch (error) {
-        recordFailure({ label: "run-checkpoint", stage: error?.stage || "checkpoint", error, kind: failureKind(error), run });
-        throw error;
-      }
-    });
-
-    replaceMethod("RunState", "persistMutationOrRecover", (original) => function persistMutationWithDiagnostics(run, mutate, options = {}) {
-      const result = original.call(this, run, mutate, options);
-      if (result?.ok === false && result.error) recordFailure({ label: options?.source || "run-state-mutation", stage: result.error?.stage || "persistence", error: result.error, kind: result.stale ? "stale" : failureKind(result.error), run: result.run || run });
-      return result;
-    });
-
-    replaceMethod("PermanentEffects", "drain", (original) => function permanentDrainWithDiagnostics(run, ...args) {
-      const result = original.call(this, run, ...args);
-      if (result?.error) recordFailure({ label: "permanent-effects-drain", stage: result.error?.stage || "permanent-effect", error: result.error, kind: failureKind(result.error), run });
-      return result;
-    });
-
-    replaceMethod("PermanentEffects", "resumeFinalization", (original) => function finalizationWithDiagnostics(run, ...args) {
-      const result = original.call(this, run, ...args);
-      if (result?.error) recordFailure({ label: "finalization-resume", stage: result.error?.stage || "finalization", error: result.error, kind: failureKind(result.error), run });
-      return result;
-    });
   }
 
   function captureUiShell() {
     const api = global.AppUiShell;
-    if (!api?.create || api.create.__homeDiagnosticsWrapped) return;
+    if (!api?.create || api.create.__gameDiagnosticsWrapped) return;
     const originalCreate = api.create;
     const wrappedCreate = function createWithDiagnosticsShell(...args) {
       const shell = originalCreate(...args);
       uiShell = shell;
       return shell;
     };
-    wrappedCreate.__homeDiagnosticsWrapped = true;
+    wrappedCreate.__gameDiagnosticsWrapped = true;
     global.AppUiShell = Object.freeze({ ...api, create: wrappedCreate });
+  }
+
+  function installGlobalErrorCapture() {
+    if (global.__INAZUMA_GAME_DIAGNOSTICS_ERRORS__) return;
+    global.__INAZUMA_GAME_DIAGNOSTICS_ERRORS__ = true;
+    global.addEventListener?.("error", (event) => {
+      recordEvent("javascript-error", {
+        message: text(event?.message || event?.error?.message || "Errore JavaScript"),
+        filename: text(event?.filename || "", 220) || null,
+        line: event?.lineno || null,
+        column: event?.colno || null,
+        error: errorSnapshot(event?.error),
+      });
+    });
+    global.addEventListener?.("unhandledrejection", (event) => {
+      const reason = event?.reason;
+      recordEvent("unhandled-rejection", {
+        message: text(reason?.message || String(reason || "Promise rifiutata")),
+        error: errorSnapshot(reason),
+      });
+    });
   }
 
   function formatBytes(value) {
     const bytes = Math.max(0, Number(value) || 0);
     if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes >= 1024 * 100 ? 0 : 1)} KB`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(bytes >= 102400 ? 0 : 1)} KB`;
     return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
   }
 
@@ -279,9 +360,9 @@
         if (/inazuma|^run:/i.test(key)) entries.push({ key, bytes });
       }
       entries.sort((a, b) => b.bytes - a.bytes);
-      return { ok: true, totalBytes, topInazumaKeys: entries.slice(0, 10), error: null };
+      return { ok: true, totalBytes, topInazumaKeys: entries.slice(0, 12), error: null };
     } catch (error) {
-      return { ok: false, totalBytes, topInazumaKeys: entries.slice(0, 10), error: errorSnapshot(error) };
+      return { ok: false, totalBytes, topInazumaKeys: entries.slice(0, 12), error: errorSnapshot(error) };
     }
   }
 
@@ -323,46 +404,45 @@
     };
   }
 
-  function classify(lastFailure, diagnosticWriteError, probe) {
-    const failureError = lastFailure?.error || null;
-    const combined = [failureError, diagnosticWriteError, probe?.failure].map(errorSearchText).join(" ");
+  function classify(lastFailure, writeError, probe, events) {
+    const combined = [lastFailure?.error, writeError?.error, probe?.failure].map(errorSearchText).join(" ");
     const memoryRaw = lastFailure?.generation?.memory;
     const canonicalRaw = lastFailure?.generation?.canonical;
     const memoryGeneration = memoryRaw == null ? NaN : Number(memoryRaw);
     const canonicalGeneration = canonicalRaw == null ? NaN : Number(canonicalRaw);
     const canonicalAhead = Number.isFinite(memoryGeneration) && Number.isFinite(canonicalGeneration) && canonicalGeneration > memoryGeneration;
-    if (/quota|dom_quota|storage-quota-exceeded/.test(combined)) return { code: "quota-confirmed", title: "SPAZIO LOCALE: QUOTA CONFERMATA", detail: "È stato registrato un QuotaExceededError o equivalente, anche come causa interna. Lo spazio locale è un trigger reale su questo dispositivo." };
-    if (/canonical-verification-failed/.test(combined) || failureError?.canonicalCommitted === true || canonicalAhead) return { code: "ambiguous-commit", title: "COMMIT AMBIGUO / CANONICO PIÙ AVANTI", detail: "Il salvataggio canonico può essere già avanzato anche se la chiamata ha restituito errore. Questo è il caso che può lasciare runtime e UI disallineati." };
-    if (/stale-write|lineage-mismatch/.test(combined)) return { code: "stale", title: "GENERATION STALE", detail: "La generation in memoria non coincide con quella canonica oppure il lineage è cambiato." };
-    if (/write-locked|storage-unavailable/.test(combined)) return { code: "locked", title: "LOCK / STORAGE TEMPORANEAMENTE NON SCRIVIBILE", detail: "La scrittura è stata bloccata dal lock locale o dallo storage non disponibile." };
+    if (/quota|dom_quota|storage-quota-exceeded/.test(combined)) return { code: "quota", title: "QUOTA LOCALE CONFERMATA", detail: "È stato registrato un QuotaExceededError o equivalente. Lo spazio locale è un trigger reale su questo dispositivo." };
+    if (/canonical-verification-failed/.test(combined) || lastFailure?.error?.canonicalCommitted === true || canonicalAhead) return { code: "ambiguous-commit", title: "COMMIT AMBIGUO", detail: "Il canonico risulta più avanti o la verifica del commit è fallita dopo una possibile scrittura. È il caso che può lasciare UI e runtime disallineati." };
+    if (/stale-write|lineage-mismatch/.test(combined)) return { code: "stale", title: "GENERATION STALE", detail: "La generation in memoria non coincide con quella canonica oppure il lineage della run è cambiato." };
+    if (/write-locked|storage-unavailable/.test(combined)) return { code: "locked", title: "STORAGE BLOCCATO", detail: "La scrittura è stata fermata da lock locale o storage temporaneamente non disponibile." };
     if (/securityerror|storage-access-error/.test(combined)) return { code: "access", title: "ACCESSO STORAGE BLOCCATO", detail: "Il browser ha negato o perso l’accesso allo storage locale." };
-    if (lastFailure) return { code: "failure", title: "ERRORE DI SALVATAGGIO REGISTRATO", detail: "È presente un errore reale da analizzare; il codice esatto è mostrato qui sotto." };
-    return { code: "none", title: "NESSUN ERRORE REGISTRATO", detail: "La diagnostica è pronta. Dopo il prossimo problema resteranno qui codice, causa, stage, generation e stato della partita." };
+    if (lastFailure) return { code: "persistence", title: "ERRORE DI SALVATAGGIO REGISTRATO", detail: "È presente un errore reale di persistenza. Sotto trovi stage, generation, match e causa interna." };
+    if ((events || []).some((entry) => ["javascript-error", "unhandled-rejection"].includes(entry.type))) return { code: "javascript", title: "ERRORE JAVASCRIPT REGISTRATO", detail: "È stato catturato un errore JavaScript o una Promise non gestita. Gli ultimi eventi sono inclusi nel report." };
+    return { code: "none", title: "NESSUN ERRORE REGISTRATO", detail: "La diagnostica è attiva. Se il gioco si blocca, torna qui prima di cancellare dati e copia il report." };
   }
 
   async function buildReport(probe = null) {
     const failureRecord = readFailure();
-    const diagnosticWriteError = readFailureWriteError();
+    const writeError = safeRead(global.sessionStorage, FAILURE_WRITE_ERROR_KEY);
+    const events = readEvents();
     const snapshotResult = await baseSnapshot();
     const measured = measureLocalStorage();
     const snapshot = snapshotResult.value || {};
-    const permanentStores = snapshot.permanentStores || {};
-    const localStorageBytes = Number(permanentStores.localStorageBytes ?? measured.totalBytes ?? 0);
-    const hallBytes = Number(permanentStores.hall?.bytes || 0);
-    const developmentBytes = Number(permanentStores.development?.bytes || 0);
-    const albumBytes = Number(permanentStores.album?.bytes || 0);
-    const profileBytes = Number(permanentStores.profile?.bytes || 0);
-    const hallSharePercent = localStorageBytes > 0 ? Math.round((hallBytes / localStorageBytes) * 1000) / 10 : 0;
-    const topInazumaKeys = Array.isArray(permanentStores.topInazumaKeys) && permanentStores.topInazumaKeys.length
-      ? permanentStores.topInazumaKeys.slice(0, 10)
-      : measured.topInazumaKeys;
+    const permanent = snapshot.permanentStores || {};
+    const localStorageBytes = Number(permanent.localStorageBytes ?? measured.totalBytes ?? 0);
+    const hallBytes = Number(permanent.hall?.bytes || 0);
+    const developmentBytes = Number(permanent.development?.bytes || 0);
+    const albumBytes = Number(permanent.album?.bytes || 0);
+    const profileBytes = Number(permanent.profile?.bytes || 0);
     return {
-      schemaVersion: 1,
+      schemaVersion: 2,
       capturedAt: new Date().toISOString(),
-      classification: classify(failureRecord.value, diagnosticWriteError, probe),
+      classification: classify(failureRecord.value, writeError, probe, events),
+      current: currentContext(),
       lastFailureSource: failureRecord.source,
       lastFailure: failureRecord.value,
-      diagnosticWriteError,
+      diagnosticWriteError: writeError,
+      recentEvents: events.slice(-12),
       probe,
       storage: {
         localStorageMeasuredBytes: localStorageBytes,
@@ -370,8 +450,8 @@
         developmentBytes,
         albumBytes,
         profileBytes,
-        hallSharePercent,
-        topInazumaKeys,
+        hallSharePercent: localStorageBytes > 0 ? Math.round((hallBytes / localStorageBytes) * 1000) / 10 : 0,
+        topInazumaKeys: (permanent.topInazumaKeys?.length ? permanent.topInazumaKeys : measured.topInazumaKeys).slice(0, 10),
         browserEstimate: snapshot.browser?.storageEstimate || null,
         browserFamily: snapshot.browser?.family || null,
         snapshotError: snapshotResult.error,
@@ -381,33 +461,42 @@
     };
   }
 
-  function escape(value) {
+  function esc(value) {
     if (uiShell?.escapeHtml) return uiShell.escapeHtml(value);
     return String(value ?? "").replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
   }
 
+  function diagnosticCard(title, body) {
+    return `<section class="panel"><p class="eyebrow">${esc(title)}</p>${body}</section>`;
+  }
+
   function failureMarkup(failure) {
-    if (!failure) return '<section class="panel"><p class="eyebrow">ULTIMO ERRORE</p><h3>Nessun errore ancora registrato</h3><p class="muted">Quando una persistence fallirà, questa sezione conserverà il contesto tecnico.</p></section>';
+    if (!failure) return diagnosticCard("ULTIMO ERRORE", '<h3>Nessun errore di salvataggio</h3><p class="muted">Se un salvataggio fallisce, qui restano causa, stage e stato della run.</p>');
     const generation = failure.generation || {};
     const match = failure.match || {};
     const cause = failure.error?.cause;
-    return `<section class="panel"><p class="eyebrow">ULTIMO ERRORE</p><h3>${escape(failure.error?.code || failure.error?.name || "Errore sconosciuto")}</h3><p class="muted">${escape(failure.error?.message || "")}</p>${cause ? `<p class="muted"><strong>Causa:</strong> ${escape(cause.name || "Error")} · ${escape(cause.code || cause.message || "-")}</p>` : ""}<div class="stat-grid"><div class="stat-card"><span>Azione</span><strong>${escape(failure.label || "-")}</strong></div><div class="stat-card"><span>Stage</span><strong>${escape(failure.stage || failure.error?.stage || "-")}</strong></div><div class="stat-card"><span>Quando</span><strong>${escape(failure.at ? new Date(failure.at).toLocaleString("it-IT") : "-")}</strong></div><div class="stat-card"><span>Season / fase</span><strong>${escape(`${failure.seasonId || "-"} · ${failure.phase || "-"}`)}</strong></div><div class="stat-card"><span>Generation RAM</span><strong>${escape(generation.memory ?? "-")}</strong></div><div class="stat-card"><span>Generation canonica</span><strong>${escape(generation.canonical ?? "-")}</strong></div><div class="stat-card"><span>Commit RAM</span><strong>${escape(shortCommit(failure.commitId?.memory))}</strong></div><div class="stat-card"><span>Commit canonico</span><strong>${escape(shortCommit(failure.commitId?.canonical))}</strong></div><div class="stat-card"><span>Partita</span><strong>${escape(match.type || "-")}</strong></div><div class="stat-card"><span>Stato partita</span><strong>${escape(match.simulationState || match.state || "-")}</strong></div><div class="stat-card"><span>Resolution durable</span><strong>${match.resolutionApplied === true ? "SÌ" : match.resolutionApplied === false ? "NO" : "-"}</strong></div><div class="stat-card"><span>Post-navigation</span><strong>${match.postMatchNavigationApplied === true ? "SÌ" : match.postMatchNavigationApplied === false ? "NO" : "-"}</strong></div></div></section>`;
+    return diagnosticCard("ULTIMO ERRORE", `<h3>${esc(failure.error?.code || failure.error?.name || "Errore sconosciuto")}</h3><p class="muted">${esc(failure.error?.message || "")}</p>${cause ? `<p class="muted"><strong>Causa interna:</strong> ${esc(cause.name || "Error")} · ${esc(cause.code || cause.message || "-")}</p>` : ""}<div class="stat-grid"><div class="stat-card"><span>Azione</span><strong>${esc(failure.label || "-")}</strong></div><div class="stat-card"><span>Stage</span><strong>${esc(failure.stage || failure.error?.stage || "-")}</strong></div><div class="stat-card"><span>Generation RAM</span><strong>${esc(generation.memory ?? "-")}</strong></div><div class="stat-card"><span>Generation canonica</span><strong>${esc(generation.canonical ?? "-")}</strong></div><div class="stat-card"><span>Commit RAM</span><strong>${esc(shortCommit(failure.commitId?.memory))}</strong></div><div class="stat-card"><span>Commit canonico</span><strong>${esc(shortCommit(failure.commitId?.canonical))}</strong></div><div class="stat-card"><span>Partita</span><strong>${esc(match.type || "-")}</strong></div><div class="stat-card"><span>Stato partita</span><strong>${esc(match.simulationState || match.state || "-")}</strong></div><div class="stat-card"><span>Resolution</span><strong>${match.resolutionApplied === true ? "SÌ" : match.resolutionApplied === false ? "NO" : "-"}</strong></div><div class="stat-card"><span>Post-navigation</span><strong>${match.postMatchNavigationApplied === true ? "SÌ" : match.postMatchNavigationApplied === false ? "NO" : "-"}</strong></div></div>`);
   }
 
   function storageMarkup(report) {
     const storage = report.storage;
     const estimate = storage.browserEstimate;
-    const top = (storage.topInazumaKeys || []).slice(0, 6);
-    return `<section class="panel"><p class="eyebrow">SPAZIO LOCALE</p><div class="stat-grid"><div class="stat-card"><span>localStorage misurato</span><strong>${escape(formatBytes(storage.localStorageMeasuredBytes))}</strong></div><div class="stat-card"><span>Albo d’Oro</span><strong>${escape(formatBytes(storage.hallBytes))}</strong><small>${escape(storage.hallSharePercent)}% del totale locale</small></div><div class="stat-card"><span>Development</span><strong>${escape(formatBytes(storage.developmentBytes))}</strong></div><div class="stat-card"><span>Album</span><strong>${escape(formatBytes(storage.albumBytes))}</strong></div>${storage.browserFamily ? `<div class="stat-card"><span>Browser</span><strong>${escape(storage.browserFamily)}</strong></div>` : ""}${estimate ? `<div class="stat-card"><span>Storage browser usato</span><strong>${escape(formatBytes(estimate.usage))}</strong></div><div class="stat-card"><span>Quota browser stimata</span><strong>${escape(formatBytes(estimate.quota))}</strong></div>` : ""}</div>${top.length ? `<div class="panel" style="margin-top:12px"><p class="eyebrow">CHIAVI PIÙ PESANTI</p>${top.map((entry) => `<p class="muted" style="display:flex;justify-content:space-between;gap:12px"><span>${escape(entry.key)}</span><strong>${escape(formatBytes(entry.bytes))}</strong></p>`).join("")}</div>` : ""}</section>`;
+    return diagnosticCard("SPAZIO LOCALE", `<div class="stat-grid"><div class="stat-card"><span>localStorage</span><strong>${esc(formatBytes(storage.localStorageMeasuredBytes))}</strong></div><div class="stat-card"><span>Albo d’Oro</span><strong>${esc(formatBytes(storage.hallBytes))}</strong><small>${esc(storage.hallSharePercent)}% del totale</small></div><div class="stat-card"><span>Development</span><strong>${esc(formatBytes(storage.developmentBytes))}</strong></div><div class="stat-card"><span>Album</span><strong>${esc(formatBytes(storage.albumBytes))}</strong></div>${storage.browserFamily ? `<div class="stat-card"><span>Browser</span><strong>${esc(storage.browserFamily)}</strong></div>` : ""}${estimate ? `<div class="stat-card"><span>Quota stimata browser</span><strong>${esc(formatBytes(estimate.quota))}</strong></div>` : ""}</div>`);
+  }
+
+  function eventsMarkup(events) {
+    const visible = (events || []).slice(-6).reverse();
+    if (!visible.length) return diagnosticCard("EVENTI RECENTI", '<p class="muted">Nessun errore JavaScript o evento diagnostico registrato.</p>');
+    return diagnosticCard("EVENTI RECENTI", visible.map((entry) => `<p class="muted"><strong>${esc(entry.type)}</strong> · ${esc(entry.detail?.message || entry.detail?.label || entry.detail?.error?.code || "evento registrato")}<br><small>${esc(new Date(entry.at).toLocaleString("it-IT"))}</small></p>`).join(""));
   }
 
   function probeMarkup(probe) {
-    if (!probe) return '<section class="panel"><p class="eyebrow">TEST DI SCRITTURA</p><p class="muted">Premi “Testa spazio locale” per provare scritture temporanee da 16 KB, 64 KB e 256 KB. La chiave di test viene rimossa subito.</p></section>';
-    return `<section class="panel"><p class="eyebrow">TEST DI SCRITTURA</p><div class="stat-grid">${probe.results.map((result) => `<div class="stat-card"><span>${escape(formatBytes(result.sizeBytes))}</span><strong>${result.ok ? "OK" : "FALLITO"}</strong>${result.error ? `<small>${escape(result.error.code || result.error.name || result.error.message)}</small>` : ""}</div>`).join("")}</div></section>`;
+    if (!probe) return diagnosticCard("TEST DI SCRITTURA", '<p class="muted">Prova scritture temporanee da 16 KB, 64 KB e 256 KB. La chiave viene rimossa subito.</p>');
+    return diagnosticCard("TEST DI SCRITTURA", `<div class="stat-grid">${probe.results.map((item) => `<div class="stat-card"><span>${esc(formatBytes(item.sizeBytes))}</span><strong>${item.ok ? "OK" : "FALLITO"}</strong>${item.error ? `<small>${esc(item.error.code || item.error.name || item.error.message)}</small>` : ""}</div>`).join("")}</div>`);
   }
 
   function reportMarkup(report) {
-    return `<div class="modal-head"><div><p class="eyebrow">DIAGNOSTICA SALVATAGGIO</p><h2>${escape(report.classification.title)}</h2><p class="muted">${escape(report.classification.detail)}</p></div></div>${failureMarkup(report.lastFailure)}${storageMarkup(report)}${probeMarkup(report.probe)}${report.diagnosticWriteError ? `<section class="panel"><p class="eyebrow">LOG DIAGNOSTICO</p><h3>Il log non è entrato in localStorage</h3><p class="muted">${escape(report.diagnosticWriteError.code || report.diagnosticWriteError.name)} · ${escape(report.diagnosticWriteError.message)}</p></section>` : ""}<div class="button-row"><button type="button" class="btn btn-yellow" id="run-persistence-space-probe">TESTA SPAZIO LOCALE</button><button type="button" class="btn" id="copy-persistence-diagnostics">COPIA DIAGNOSTICA</button>${report.lastFailure ? '<button type="button" class="btn" id="clear-persistence-diagnostics">AZZERA ULTIMO ERRORE</button>' : ""}</div>`;
+    return `<div class="modal-head"><div><p class="eyebrow">DIAGNOSTICA GIOCO</p><h2>${esc(report.classification.title)}</h2><p class="muted">${esc(report.classification.detail)}</p></div></div>${failureMarkup(report.lastFailure)}${storageMarkup(report)}${eventsMarkup(report.recentEvents)}${probeMarkup(report.probe)}${report.diagnosticWriteError ? diagnosticCard("LOG DIAGNOSTICO", `<h3>Il log non è entrato in localStorage</h3><p class="muted">${esc(report.diagnosticWriteError.error?.code || report.diagnosticWriteError.error?.name || "Errore storage")}</p>`) : ""}<div class="button-row"><button type="button" class="btn btn-yellow" id="game-diagnostics-probe">TESTA SPAZIO LOCALE</button><button type="button" class="btn" id="game-diagnostics-copy">COPIA REPORT</button><button type="button" class="btn" id="game-diagnostics-clear">AZZERA LOG</button></div>`;
   }
 
   async function copyReport(report) {
@@ -425,67 +514,65 @@
       document.execCommand?.("copy");
       textarea.remove();
     }
-    uiShell?.toast?.("Diagnostica copiata");
+    uiShell?.toast?.("REPORT DIAGNOSTICO COPIATO");
   }
 
   async function open(probe = null) {
-    if (!uiShell?.openModal) return false;
+    if (!uiShell?.openModal) return null;
+    recordEvent("diagnostics-opened", { hasProbe: !!probe });
     const report = await buildReport(probe);
-    uiShell.openModal(reportMarkup(report), { closeable: true, className: "persistence-diagnostic-modal" });
-    document.getElementById("copy-persistence-diagnostics")?.addEventListener("click", () => copyReport(report));
-    document.getElementById("clear-persistence-diagnostics")?.addEventListener("click", () => { clearFailure(); open(probe); });
-    document.getElementById("run-persistence-space-probe")?.addEventListener("click", async (event) => {
+    uiShell.openModal(reportMarkup(report), { closeable: true, className: "game-diagnostics-modal" });
+    document.getElementById("game-diagnostics-copy")?.addEventListener("click", () => copyReport(report));
+    document.getElementById("game-diagnostics-clear")?.addEventListener("click", () => { clearRecorded(); open(probe); });
+    document.getElementById("game-diagnostics-probe")?.addEventListener("click", async (event) => {
       const button = event.currentTarget;
       button.disabled = true;
       button.textContent = "VERIFICA IN CORSO…";
       const result = await probeStorage();
+      recordEvent("storage-probe", { results: result.results });
       open(result);
     });
     return report;
   }
 
-  function hasFailure() {
-    return !!readFailure().value;
-  }
-
-  function injectHomeButton() {
-    const home = document.querySelector(".home-screen");
-    const nav = home?.querySelector(".home-club-actions");
-    if (!nav || nav.querySelector("#open-persistence-diagnostics-home")) return false;
-    const last = readFailure().value;
-    const button = document.createElement("button");
-    button.type = "button";
-    button.className = "home-club-action home-club-action--wide";
-    button.id = "open-persistence-diagnostics-home";
-    button.innerHTML = `<span class="home-club-icon" aria-hidden="true">!</span><span class="home-club-copy"><strong>Diagnostica salvataggio</strong><small>${escape(last ? `Ultimo errore: ${last.error?.code || last.error?.name || "registrato"}` : "Errori, generation e spazio locale")}</small></span><span class="home-club-arrow" aria-hidden="true">»</span>`;
-    button.addEventListener("click", () => open());
-    nav.appendChild(button);
+  function injectSettingsButton() {
+    const panel = document.querySelector(".settings-preferences-panel");
+    if (!panel || panel.querySelector("[data-settings-game-diagnostics]")) return false;
+    const row = document.createElement("div");
+    row.className = "settings-name-row";
+    row.dataset.settingsGameDiagnostics = "";
+    row.innerHTML = `<div><small>STRUMENTI</small><strong style="display:block;margin-top:4px;font-size:.9rem">DIAGNOSTICA GIOCO</strong><small style="display:block;margin-top:5px;color:#625e55;font-size:.72rem;line-height:1.35">Controlla errori, salvataggi, spazio locale e stato della run.</small></div><button type="button" class="btn btn-yellow" id="settings-open-game-diagnostics">ANALIZZA</button>`;
+    row.querySelector("#settings-open-game-diagnostics")?.addEventListener("click", () => open());
+    panel.appendChild(row);
     return true;
   }
 
-  function installHomeObserver() {
+  function installSettingsObserver() {
     const app = document.getElementById("app");
-    if (!app || homeObserver) return;
-    homeObserver = new MutationObserver(() => queueMicrotask(injectHomeButton));
-    homeObserver.observe(app, { childList: true, subtree: true });
-    injectHomeButton();
+    if (!app || settingsObserver) return;
+    settingsObserver = new MutationObserver(() => queueMicrotask(injectSettingsButton));
+    settingsObserver.observe(app, { childList: true, subtree: true });
+    injectSettingsButton();
   }
 
   wrapAppDiagnostics();
-  wrapDirectPersistenceBoundaries();
+  installPersistenceHooks();
   captureUiShell();
+  installGlobalErrorCapture();
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installSettingsObserver, { once: true });
+  else installSettingsObserver();
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", installHomeObserver, { once: true });
-  else installHomeObserver();
-
-  global.PersistenceHomeDiagnostics = Object.freeze({
+  const api = Object.freeze({
     recordFailure,
+    recordEvent,
     readFailure: () => clone(readFailure()),
-    clearFailure,
+    readEvents,
+    clearRecorded,
     buildReport,
     probeStorage,
     open,
-    hasFailure,
-    injectHomeButton,
+    injectSettingsButton,
   });
+  global.GameDiagnostics = api;
+  global.PersistenceHomeDiagnostics = api;
 })(globalThis);
