@@ -17,6 +17,7 @@
       document.getElementById("settings-edit-name")?.addEventListener("click", () => openEditTeamNameModal());
       document.getElementById("settings-change-emblem")?.addEventListener("click", () => render({ view: "emblems" }));
       document.getElementById("settings-open-shop")?.addEventListener("click", () => renderShop("general"));
+      document.getElementById("settings-open-game-diagnostics")?.addEventListener("click", () => global.GameDiagnostics?.open?.());
       document.getElementById("settings-smart-lineup")?.addEventListener("change", (event) => {
         global.RunState.saveProfilePreferences({ smartAutoLineup: event.currentTarget.checked });
         toast(event.currentTarget.checked ? "AUTO-FORMAZIONE ATTIVATA" : "AUTO-FORMAZIONE DISATTIVATA");
