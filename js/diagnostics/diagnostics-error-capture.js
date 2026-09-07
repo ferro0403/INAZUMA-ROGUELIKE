@@ -68,9 +68,8 @@
         return Object.freeze({
           ...original,
           recordGameplayFailure(label, stage, error, kind = null) {
-            const entry = runtime.recordFailure({ label, stage, error, kind: kind || runtime.failureKind(error), ...options });
-            original.recordGameplayFailure?.(label, stage, error, kind);
-            return entry;
+            runtime.recordFailure({ label, stage, error, kind: kind || runtime.failureKind(error), ...options });
+            return original.recordGameplayFailure?.(label, stage, error, kind);
           },
         });
       };
