@@ -188,6 +188,11 @@ for (const path of modulePaths) vm.runInContext(fs.readFileSync(path, "utf8"), c
   assert.strictEqual(report.lastFailure.generation.canonical, 13);
   assert.strictEqual(report.lastFailure.match.matchId, "match-1");
 
+  const devDiagnostics = context.AppDevDiagnostics.create({});
+  const devReturn = devDiagnostics.recordGameplayFailure("dev-contract", "persistence", new Error("dev-test"), "test");
+  assert.strictEqual(devReturn, "original-dev-result", "AppDevDiagnostics wrapper must preserve the original return value");
+  assert.strictEqual(JSON.stringify(currentRun), runBefore, "AppDevDiagnostics capture must not mutate the run");
+
   const probeKey = context.GameDiagnostics.keys.probe;
   const probe = await context.GameDiagnostics.probeStorage();
   assert.strictEqual(probe.results.length, 3);
