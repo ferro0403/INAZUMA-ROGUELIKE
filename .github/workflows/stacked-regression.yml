@@ -80,6 +80,7 @@ jobs:
             tests/app-dev-diagnostics-domain-test.js
             tests/game-diagnostics-domain-test.js
             tests/game-diagnostics-failure-isolation-test.js
+            tests/permanent-storage-compaction-test.js
             tests/app-test-seams-domain-test.js
             tests/team-profile-runtime-domain-test.js
             tests/run-roster-runtime-domain-test.js

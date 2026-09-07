@@ -4,7 +4,7 @@
   const STORAGE_KEY = "inazuma.hallOfFame.v1";
   const BACKUP_KEY = `${STORAGE_KEY}.backup`;
   const TEMP_KEY = `${STORAGE_KEY}.tmp`;
-  const ARCHIVE_SCHEMA_VERSION = 2;
+  const ARCHIVE_SCHEMA_VERSION = 3;
 
   function clone(value) { return JSON.parse(JSON.stringify(value)); }
   function nowIso() { return new Date().toISOString(); }
@@ -43,8 +43,23 @@
     }
     return player;
   }
-  function compactTeam(input, { emergency = false } = {}) {
+  function playerIdOf(player) { return player?.playerId == null ? null : String(player.playerId); }
+  function expandStoredTeam(input) {
     const team = input && typeof input === "object" ? clone(input) : {};
+    const roster = Array.isArray(team.fullRoster) ? team.fullRoster : [];
+    const byId = new Map(roster.map((player) => [playerIdOf(player), player]).filter(([id]) => id));
+    if (!Array.isArray(team.finalStartingEleven) && Array.isArray(team.finalStartingElevenIds)) {
+      team.finalStartingEleven = team.finalStartingElevenIds.map((id) => byId.get(String(id))).filter(Boolean).map(clone);
+    }
+    if (!Array.isArray(team.bench) && Array.isArray(team.benchIds)) {
+      team.bench = team.benchIds.map((id) => byId.get(String(id))).filter(Boolean).map(clone);
+    }
+    delete team.finalStartingElevenIds;
+    delete team.benchIds;
+    return team;
+  }
+  function compactTeam(input, { emergency = false } = {}) {
+    const team = expandStoredTeam(input);
     team.archiveSchemaVersion = ARCHIVE_SCHEMA_VERSION;
     delete team.matchHistory;
     team.runStatistics = stripTechnicalRunStatistics(team.runStatistics);
@@ -62,6 +77,15 @@
       delete team.sourceAppVersion;
     }
     return team;
+  }
+  function storageTeam(input, options = {}) {
+    const team = compactTeam(input, options);
+    const stored = clone(team);
+    stored.finalStartingElevenIds = team.finalStartingEleven.map(playerIdOf).filter(Boolean);
+    stored.benchIds = team.bench.map(playerIdOf).filter(Boolean);
+    delete stored.finalStartingEleven;
+    delete stored.bench;
+    return stored;
   }
   function isValidTeam(team) { return !!(team && typeof team === "object" && team.hallTeamId && team.archiveKey && team.runId && Array.isArray(team.finalStartingEleven) && Array.isArray(team.fullRoster)); }
   function lightSummary(team, index = null) {
@@ -95,6 +119,10 @@
     teams.sort((a, b) => String(b.victoryDate || "").localeCompare(String(a.victoryDate || "")));
     return { schemaVersion: ARCHIVE_SCHEMA_VERSION, updatedAt: archive.updatedAt ?? null, teams, index: teams.map(lightSummary) };
   }
+  function serializeArchive(input, options = {}) {
+    const clean = sanitizeArchive(input, options);
+    return { schemaVersion: ARCHIVE_SCHEMA_VERSION, updatedAt: clean.updatedAt, teams: clean.teams.map((team) => storageTeam(team, options)), index: clean.index };
+  }
   function parse(raw) { return sanitizeArchive(raw ? JSON.parse(raw) : emptyArchive()); }
   function loadArchive() {
     for (const key of [STORAGE_KEY, BACKUP_KEY, TEMP_KEY]) {
@@ -102,8 +130,8 @@
     }
     return emptyArchive();
   }
-  function writePrimaryArchive(archive) {
-    const json = JSON.stringify(archive);
+  function writePrimaryArchive(archive, options = {}) {
+    const json = JSON.stringify(serializeArchive(archive, options));
     localStorage.removeItem(TEMP_KEY);
     localStorage.removeItem(BACKUP_KEY);
     localStorage.setItem(STORAGE_KEY, json);
@@ -115,8 +143,6 @@
     global.PersistenceRecoveryGuard?.reserve(options);
     global.PersistenceRecoveryGuard?.assertWritable(options);
     const clean = sanitizeArchive({ ...archive, updatedAt: options.preserveTimestamp ? archive?.updatedAt : nowIso() });
-    // Terminal writes may be the largest local transaction. Reclaim only
-    // byte-identical/expired technical records; permanent stores are never GC'd.
     global.InazumaPersistenceDiagnostics?.removeExactTechnicalDuplicates?.();
     try {
       const saved = writePrimaryArchive(clean); emitSave(options); return saved;
@@ -124,7 +150,7 @@
       if (!isQuotaError(error)) throw error;
       const emergency = sanitizeArchive(clean, { emergency: true });
       try {
-        const saved = writePrimaryArchive(emergency); emitSave(options); return saved;
+        const saved = writePrimaryArchive(emergency, { emergency: true }); emitSave(options); return saved;
       } catch (retryError) {
         retryError.hallOfFameSaveFailed = true;
         retryError.code = "storage-quota-exceeded";
@@ -171,6 +197,13 @@
   function listSummaries() { return loadArchive().index.map((item, index) => ({ ...item, ordinal: index + 1 })); }
   function getTeam(hallTeamId) { const team = loadArchive().teams.find((item) => item.hallTeamId === hallTeamId); return team ? clone(team) : null; }
   function removeTeam(hallTeamId, options = {}) { const archive = loadArchive(); const teams = archive.teams.filter((item) => item.hallTeamId !== hallTeamId); return saveArchive({ ...archive, teams }, { ...options, hallTeamId, operation: "remove" }); }
+  function compactStoredArchive(options = {}) {
+    const archive = loadArchive();
+    const before = String(localStorage.getItem(STORAGE_KEY) || "").length * 2;
+    const saved = saveArchive(archive, { ...options, operation: "compact", preserveTimestamp: true, suppressCloudEvent: true });
+    const after = String(localStorage.getItem(STORAGE_KEY) || "").length * 2;
+    return { archive: saved, beforeBytes: before, afterBytes: after, savedBytes: Math.max(0, before - after) };
+  }
 
-  global.HallOfFameStorage = { STORAGE_KEY, BACKUP_KEY, TEMP_KEY, ARCHIVE_SCHEMA_VERSION, archiveKeyFor, stableId, addChampion, listTeams, listSummaries, getTeam, removeTeam, calculateAwards, _loadArchive: loadArchive, _saveArchive: saveArchive, _compactTeam: compactTeam };
+  global.HallOfFameStorage = { STORAGE_KEY, BACKUP_KEY, TEMP_KEY, ARCHIVE_SCHEMA_VERSION, archiveKeyFor, stableId, addChampion, listTeams, listSummaries, getTeam, removeTeam, calculateAwards, compactStoredArchive, _loadArchive: loadArchive, _saveArchive: saveArchive, _compactTeam: compactTeam, _serializeArchive: serializeArchive };
 })(globalThis);
