@@ -1,0 +1,58 @@
+name: Export IE1 modified team JSONs
+
+on:
+  push:
+    branches:
+      - tmp/export-ie1-modified-team-jsons
+
+permissions:
+  contents: read
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build team exports
+        shell: bash
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import json
+          from pathlib import Path
+
+          src = Path('data/IE1_season_compact.json')
+          data = json.loads(src.read_text(encoding='utf-8'))
+          out_dir = Path('exports')
+          out_dir.mkdir(exist_ok=True)
+          player_by_id = {str(p.get('playerId', p.get('id'))): p for p in data['players']}
+          targets = {
+              'brainwashing': 'IE1_BRAINWASHING_modified.json',
+              'kirkwood': 'IE1_KIRKWOOD_modified.json',
+              'royal': 'IE1_ROYAL_ACADEMY_modified.json',
+          }
+          for team_id, filename in targets.items():
+              matches = [t for t in data['bossOrder'] if t.get('teamId') == team_id]
+              assert len(matches) == 1, (team_id, len(matches))
+              team = matches[0]
+              ids = [str(x) for x in team['rewardPoolPlayerIds']]
+              missing = [pid for pid in ids if pid not in player_by_id]
+              assert not missing, (team_id, missing)
+              export = {
+                  'exportType': 'inazuma_roguelike_team_export',
+                  'sourceSeasonId': data['seasonId'],
+                  'sourceSeasonName': data['seasonName'],
+                  'sourceVersion': data['version'],
+                  'team': team,
+                  'players': [player_by_id[pid] for pid in ids],
+              }
+              path = out_dir / filename
+              path.write_text(json.dumps(export, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
+              print(filename, path.stat().st_size, 'bytes', len(ids), 'players')
+          PY
+          ls -lh exports
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ie1-modified-team-jsons
+          path: exports/*.json
+          if-no-files-found: error
