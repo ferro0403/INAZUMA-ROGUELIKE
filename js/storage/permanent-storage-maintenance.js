@@ -41,17 +41,18 @@
   function runOnce(options = {}) {
     if (ran && !options.force) return { ok: true, skipped: true, reason: "already-ran" };
     if (global.PersistenceRecoveryGuard?.isBlocked?.()) return { ok: false, skipped: true, reason: "restore-recovery-required" };
-    ran = true;
     const hall = compactHallIfLegacy();
     const album = compactAlbumIfLegacy();
     const terminalRuns = global.TerminalRunCleanup?.cleanupStored?.({ source: "home-terminal-cleanup", excludeRunId: options.excludeRunId || null }) || [];
-    return {
+    const result = {
       ok: hall.ok !== false && album.ok !== false && terminalRuns.every((entry) => entry.ok !== false),
       skipped: false,
       hall,
       album,
       terminalRuns,
     };
+    ran = result.ok;
+    return result;
   }
 
   global.PermanentStorageMaintenance = Object.freeze({ runOnce, compactHallIfLegacy, compactAlbumIfLegacy, _rawSchemaVersion: rawSchemaVersion });
