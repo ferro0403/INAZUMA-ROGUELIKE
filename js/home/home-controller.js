@@ -19,8 +19,19 @@
           global.SeasonRegistry.setActive(previousSeasonId);
         }
       }
+      function maintainStorageBeforeHome() {
+        if (!deps.persistenceWritesAllowed()) return;
+        const current = deps.getRun();
+        const maintenance = global.PermanentStorageMaintenance?.runOnce?.({ excludeRunId: current?.runId || null });
+        if (maintenance?.ok === false) console.warn("Permanent storage maintenance incomplete", maintenance);
+        if (!current) return;
+        const cleanup = global.TerminalRunCleanup?.cleanup?.(current, { source: "terminal-run-leave-to-home" });
+        if (cleanup?.cleaned) deps.setRun(null);
+        else if (cleanup?.ok === false) console.warn("Terminal run cleanup incomplete", cleanup);
+      }
       async function renderHome() {
         deps.closeModal({ invokeOnClose: false });
+        maintainStorageBeforeHome();
         const latest = global.RunState.latestActiveSave?.();
         if (latest?.run) {
           await deps.loadSeason(latest.run.seasonId || latest.season.id);
@@ -97,7 +108,7 @@
             deps.renderSettings({ view: "main" }),
           );
       }
-      return { renderHome, ensureHomeTeamEmblemSeasonLoaded };
+      return { renderHome, ensureHomeTeamEmblemSeasonLoaded, maintainStorageBeforeHome };
     },
   };
 })(globalThis);
