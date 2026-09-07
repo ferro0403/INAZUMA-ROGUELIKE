@@ -159,61 +159,66 @@ context.globalThis = context;
 vm.createContext(context);
 for (const path of modulePaths) vm.runInContext(fs.readFileSync(path, "utf8"), context, { filename: path });
 
-assert(context.GameDiagnostics, "bootstrap must expose GameDiagnostics");
-assert(context.PersistenceHomeDiagnostics, "compatibility alias must remain available");
+(async () => {
+  assert(context.GameDiagnostics, "bootstrap must expose GameDiagnostics");
+  assert(context.PersistenceHomeDiagnostics, "compatibility alias must remain available");
 
-const localWritesBeforeEvent = localStorage.writes.length;
-context.GameDiagnostics.recordEvent("manual-event", { message: "test" });
-assert.strictEqual(localStorage.writes.length, localWritesBeforeEvent, "ordinary diagnostic events must never write localStorage");
-assert(sessionStorage.writes.some((key) => key === "inazuma.diagnostics.events.v2"), "diagnostic events should stay in sessionStorage");
+  const localWritesBeforeEvent = localStorage.writes.length;
+  context.GameDiagnostics.recordEvent("manual-event", { message: "test" });
+  assert.strictEqual(localStorage.writes.length, localWritesBeforeEvent, "ordinary diagnostic events must never write localStorage");
+  assert(sessionStorage.writes.some((key) => key === "inazuma.diagnostics.events.v2"), "diagnostic events should stay in sessionStorage");
 
-const originalSaveResult = context.RunState.save(currentRun, { source: "success-boundary" });
-assert.strictEqual(originalSaveResult, saveReturn, "successful wrapped save must return exact original result");
-assert.strictEqual(JSON.stringify(currentRun), runBefore, "diagnostics must not mutate the run on successful save");
+  const originalSaveResult = context.RunState.save(currentRun, { source: "success-boundary" });
+  assert.strictEqual(originalSaveResult, saveReturn, "successful wrapped save must return exact original result");
+  assert.strictEqual(JSON.stringify(currentRun), runBefore, "diagnostics must not mutate the run on successful save");
 
-saveMode = "throw";
-thrownSaveError = new Error("write failed");
-thrownSaveError.name = "QuotaExceededError";
-let caught = null;
-try { context.RunState.save(currentRun, { source: "quota-boundary" }); }
-catch (error) { caught = error; }
-assert.strictEqual(caught, thrownSaveError, "wrapped save must rethrow the exact original error object");
-assert.strictEqual(JSON.stringify(currentRun), runBefore, "diagnostics must not mutate the run on failed save");
-assert(context.GameDiagnostics.readFailure().value, "failed save should be captured");
+  saveMode = "throw";
+  thrownSaveError = new Error("write failed");
+  thrownSaveError.name = "QuotaExceededError";
+  let caught = null;
+  try { context.RunState.save(currentRun, { source: "quota-boundary" }); }
+  catch (error) { caught = error; }
+  assert.strictEqual(caught, thrownSaveError, "wrapped save must rethrow the exact original error object");
+  assert.strictEqual(JSON.stringify(currentRun), runBefore, "diagnostics must not mutate the run on failed save");
+  assert(context.GameDiagnostics.readFailure().value, "failed save should be captured");
 
-const report = await context.GameDiagnostics.buildReport();
-assert.strictEqual(report.classification.code, "quota", "QuotaExceededError must be classified as quota");
-assert.strictEqual(report.lastFailure.generation.memory, 12);
-assert.strictEqual(report.lastFailure.generation.canonical, 13);
-assert.strictEqual(report.lastFailure.match.matchId, "match-1");
+  const report = await context.GameDiagnostics.buildReport();
+  assert.strictEqual(report.classification.code, "quota", "QuotaExceededError must be classified as quota");
+  assert.strictEqual(report.lastFailure.generation.memory, 12);
+  assert.strictEqual(report.lastFailure.generation.canonical, 13);
+  assert.strictEqual(report.lastFailure.match.matchId, "match-1");
 
-const probeKey = context.GameDiagnostics.keys.probe;
-const probe = await context.GameDiagnostics.probeStorage();
-assert.strictEqual(probe.results.length, 3);
-assert(probe.results.every((entry) => entry.ok), "healthy storage probe should complete all sizes");
-assert.strictEqual(localStorage.getItem(probeKey), null, "probe key must always be removed");
-assert(localStorage.removals.filter((key) => key === probeKey).length >= 4, "probe cleanup must run before/after attempts");
+  const probeKey = context.GameDiagnostics.keys.probe;
+  const probe = await context.GameDiagnostics.probeStorage();
+  assert.strictEqual(probe.results.length, 3);
+  assert(probe.results.every((entry) => entry.ok), "healthy storage probe should complete all sizes");
+  assert.strictEqual(localStorage.getItem(probeKey), null, "probe key must always be removed");
+  assert(localStorage.removals.filter((key) => key === probeKey).length >= 4, "probe cleanup must run before/after attempts");
 
-const shell = context.AppUiShell.create({});
-assert(shell, "wrapped AppUiShell.create must preserve original shell result");
-const modalReport = await context.GameDiagnostics.open();
-assert(modalReport, "diagnostics modal must build a report");
-assert.strictEqual(opened.length, 1);
-assert(opened[0].markup.includes("DIAGNOSTICA GIOCO"));
-assert(opened[0].markup.includes("TESTA SPAZIO LOCALE"));
-assert.strictEqual(JSON.stringify(currentRun), runBefore, "opening diagnostics modal must not mutate the run");
+  const shell = context.AppUiShell.create({});
+  assert(shell, "wrapped AppUiShell.create must preserve original shell result");
+  const modalReport = await context.GameDiagnostics.open();
+  assert(modalReport, "diagnostics modal must build a report");
+  assert.strictEqual(opened.length, 1);
+  assert(opened[0].markup.includes("DIAGNOSTICA GIOCO"));
+  assert(opened[0].markup.includes("TESTA SPAZIO LOCALE"));
+  assert.strictEqual(JSON.stringify(currentRun), runBefore, "opening diagnostics modal must not mutate the run");
 
-const localWritesBeforeJsError = localStorage.writes.length;
-listeners.get("error")?.({ message: "boom", filename: "test.js", lineno: 1, colno: 2, error: new Error("boom") });
-assert.strictEqual(localStorage.writes.length, localWritesBeforeJsError, "global JS error event must remain session-only");
-assert(context.GameDiagnostics.readEvents().some((entry) => entry.type === "javascript-error"));
+  const localWritesBeforeJsError = localStorage.writes.length;
+  listeners.get("error")?.({ message: "boom", filename: "test.js", lineno: 1, colno: 2, error: new Error("boom") });
+  assert.strictEqual(localStorage.writes.length, localWritesBeforeJsError, "global JS error event must remain session-only");
+  assert(context.GameDiagnostics.readEvents().some((entry) => entry.type === "javascript-error"));
 
-localStorage.failWrites = true;
-const localFailureError = new Error("second save failed");
-localFailureError.name = "QuotaExceededError";
-thrownSaveError = localFailureError;
-try { context.RunState.save(currentRun, { source: "quota-no-room-for-log" }); } catch (_) {}
-assert(sessionStorage.getItem("inazuma.diagnostics.lastFailure.v3.writeError"), "diagnostic write failure must be preserved in sessionStorage when localStorage is full");
-localStorage.failWrites = false;
+  localStorage.failWrites = true;
+  const localFailureError = new Error("second save failed");
+  localFailureError.name = "QuotaExceededError";
+  thrownSaveError = localFailureError;
+  try { context.RunState.save(currentRun, { source: "quota-no-room-for-log" }); } catch (_) {}
+  assert(sessionStorage.getItem("inazuma.diagnostics.lastFailure.v3.writeError"), "diagnostic write failure must be preserved in sessionStorage when localStorage is full");
+  localStorage.failWrites = false;
 
-console.log("game-diagnostics-domain-test: PASS");
+  console.log("game-diagnostics-domain-test: PASS");
+})().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
