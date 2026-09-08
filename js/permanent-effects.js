@@ -36,11 +36,45 @@
   function enqueueHall(run, snapshot) {
     return enqueue(run, { id: hallId(run), type: TYPES.HALL, payload: { archiveKey: snapshot.archiveKey, snapshot: clone(snapshot) } });
   }
+  function propagatedPersistenceError(error, stage, problemSector) {
+    const wrapped = new Error(error?.message || "Permanent effect persistence failed");
+    wrapped.name = error?.name || "Error";
+    wrapped.code = error?.code ?? null;
+    wrapped.stage = error?.stage || stage;
+    wrapped.problemSector = error?.problemSector || problemSector;
+    wrapped.recoverable = error?.recoverable === true;
+    wrapped.canonicalCommitted = error?.canonicalCommitted === true;
+    wrapped.generation = error?.generation ?? null;
+    wrapped.cause = error?.cause || error || null;
+    return wrapped;
+  }
+  function isQuotaLikeError(error, seen = new Set()) {
+    if (!error) return false;
+    if (typeof error !== "object") return false;
+    if (seen.has(error)) return false;
+    seen.add(error);
+    const code = error?.code;
+    const codeText = String(code ?? "");
+    const message = String(error?.message || "");
+    if (
+      error?.name === "QuotaExceededError" ||
+      Number(code) === 22 ||
+      Number(code) === 1014 ||
+      /quota/i.test(codeText) ||
+      /(quota.{0,40}exceed|exceed.{0,40}quota|storage[-_\s]?quota|dom_quota)/i.test(message)
+    ) return true;
+    return isQuotaLikeError(error?.cause, seen) || isQuotaLikeError(error?.error, seen);
+  }
+  function reclaimFinalizationHeadroom(run, options = {}) {
+    const result = global.FinalizationStorageHeadroom?.reclaimExactBackup?.(run, options);
+    return result || { ok: true, reclaimed: false, reason: "headroom-owner-unavailable" };
+  }
   function apply(effect, apis) {
     if (effect.type === TYPES.ALBUM) return { ok: apis.AlbumProgress.unlockAlbumPlayer(effect.payload.collectionId, effect.payload.playerId, { source: effect.payload.source, applicationKey: effect.id }) !== undefined };
     if (effect.type === TYPES.DEVELOPMENT) {
       const account = apis.DevelopmentAccountV3 || global.DevelopmentAccountV3 || apis.DevelopmentV2;
       const result = account.processRunEnd(effect.payload);
+      if (result?.reason === "persistence" && result?.error) throw propagatedPersistenceError(result.error, "development-write", "development");
       const redeemed = result?.state?.redeemedRunIds?.includes(effect.payload.runId) || account.read().redeemedRunIds.includes(effect.payload.runId);
       return { ok: redeemed, result };
     }
@@ -141,8 +175,22 @@
             return { run, status: "hall-written", completed: false, error };
           }
         }
-        const result = drain(run, { apis, save, types: [TYPES.DEVELOPMENT] });
-        if (result.error || run.finalization?.status !== "development-written") return { run, status: "hall-written", completed: false, error: result.error || new Error("Development effect remains pending") };
+
+        let result = drain(run, { apis, save, types: [TYPES.DEVELOPMENT] });
+        if (result.error || run.finalization?.status !== "development-written") {
+          const firstError = result.error || new Error("Development effect remains pending");
+          if (!isQuotaLikeError(firstError)) return { run, status: "hall-written", completed: false, error: firstError };
+
+          const headroom = reclaimFinalizationHeadroom(run, { ...options, source: "finalization-headroom-after-quota" });
+          if (headroom.ok === false || headroom.reclaimed !== true) {
+            return { run, status: "hall-written", completed: false, error: firstError };
+          }
+
+          result = drain(run, { apis, save, types: [TYPES.DEVELOPMENT] });
+          if (result.error || run.finalization?.status !== "development-written") {
+            return { run, status: "hall-written", completed: false, error: result.error || firstError };
+          }
+        }
         continue;
       }
       if (status === "development-written") {

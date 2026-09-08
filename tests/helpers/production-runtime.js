@@ -6,7 +6,7 @@ const vm = require("vm");
 const PRODUCTION_MODULES = [
   "season1-config.js", "persistence-recovery-guard.js", "run-state.js", "gameplay-persistence.js",
   "album-progress.js", "album-catalog.js", "development-v2.js", "development-management-v3.js", "hall-of-fame.js", "cloud-save-core.js",
-  "permanent-effects.js", "map-generator.js", "team-emblems.js", "boss-gameover-runtime.js", "boss/boss-flow-controller.js",
+  "storage/finalization-storage-headroom.js", "permanent-effects.js", "map-generator.js", "team-emblems.js", "boss-gameover-runtime.js", "boss/boss-flow-controller.js",
   "recruitment/player-identity.js", "recruitment/roster-invariants.js", "recruitment/recruitment-view.js", "recruitment/recruitment-controller.js", "pulls/pull-invariants.js",
   "pulls/pull-pool.js", "pulls/pull-items.js", "pulls/pull-view.js", "pulls/pull-controller.js", "pulls/pull-candidates.js",
   "squad/squad-controller.js", "squad/squad-view.js", "five-v-five/five-v-five-controller.js", "five-v-five/five-v-five-view.js", "five-v-five/five-match-presentation.js",
