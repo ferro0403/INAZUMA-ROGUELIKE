@@ -91,6 +91,7 @@ jobs:
             tests/home-season-resume-production-path-test.js
             tests/gameover-resume-terminal-guard-test.js
             tests/shop-settings-production-path-test.js
+            tests/aurico-rarity-production-test.js
             tests/map-node-production-path-test.js
           )
           for test_file in "${tests[@]}"; do
