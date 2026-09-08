@@ -36,11 +36,28 @@
   function enqueueHall(run, snapshot) {
     return enqueue(run, { id: hallId(run), type: TYPES.HALL, payload: { archiveKey: snapshot.archiveKey, snapshot: clone(snapshot) } });
   }
+  function propagatedPersistenceError(error, stage, problemSector) {
+    const wrapped = new Error(error?.message || "Permanent effect persistence failed");
+    wrapped.name = error?.name || "Error";
+    wrapped.code = error?.code ?? null;
+    wrapped.stage = error?.stage || stage;
+    wrapped.problemSector = error?.problemSector || problemSector;
+    wrapped.recoverable = error?.recoverable === true;
+    wrapped.canonicalCommitted = error?.canonicalCommitted === true;
+    wrapped.generation = error?.generation ?? null;
+    wrapped.cause = error?.cause || error || null;
+    return wrapped;
+  }
+  function reclaimFinalizationHeadroom(run, options = {}) {
+    const result = global.FinalizationStorageHeadroom?.reclaimExactBackup?.(run, options);
+    return result || { ok: true, reclaimed: false, reason: "headroom-owner-unavailable" };
+  }
   function apply(effect, apis) {
     if (effect.type === TYPES.ALBUM) return { ok: apis.AlbumProgress.unlockAlbumPlayer(effect.payload.collectionId, effect.payload.playerId, { source: effect.payload.source, applicationKey: effect.id }) !== undefined };
     if (effect.type === TYPES.DEVELOPMENT) {
       const account = apis.DevelopmentAccountV3 || global.DevelopmentAccountV3 || apis.DevelopmentV2;
       const result = account.processRunEnd(effect.payload);
+      if (result?.reason === "persistence" && result?.error) throw propagatedPersistenceError(result.error, "development-write", "development");
       const redeemed = result?.state?.redeemedRunIds?.includes(effect.payload.runId) || account.read().redeemedRunIds.includes(effect.payload.runId);
       return { ok: redeemed, result };
     }
@@ -129,6 +146,8 @@
         continue;
       }
       if (status === "hall-written") {
+        const beforeEnqueueHeadroom = reclaimFinalizationHeadroom(run, { ...options, source: "finalization-headroom-pre-enqueue" });
+        if (beforeEnqueueHeadroom.ok === false) return { run, status: "hall-written", completed: false, error: beforeEnqueueHeadroom.error || new Error("Finalization headroom reclaim failed") };
         const id = developmentId(run, "victory");
         let effect = outbox(run).find((entry) => entry.id === id);
         if (!effect) {
@@ -141,6 +160,8 @@
             return { run, status: "hall-written", completed: false, error };
           }
         }
+        const beforeDevelopmentHeadroom = reclaimFinalizationHeadroom(run, { ...options, source: "finalization-headroom-pre-development" });
+        if (beforeDevelopmentHeadroom.ok === false) return { run, status: "hall-written", completed: false, error: beforeDevelopmentHeadroom.error || new Error("Finalization headroom reclaim failed") };
         const result = drain(run, { apis, save, types: [TYPES.DEVELOPMENT] });
         if (result.error || run.finalization?.status !== "development-written") return { run, status: "hall-written", completed: false, error: result.error || new Error("Development effect remains pending") };
         continue;
