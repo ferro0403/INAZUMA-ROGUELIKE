@@ -55,7 +55,7 @@
     let parsed;
     try { parsed = JSON.parse(rawText); }
     catch (_) { return { valid: false, needed: false, reasons: ["invalid-json"], rawText, state: null, error: "invalid-json" }; }
-    if (parsed == null) return { valid: true, needed: false, deferred: false, reasons: [], rawText, state: empty() };
+    if (parsed == null) return { valid: true, needed: false, reasons: [], rawText, state: empty() };
     if (typeof parsed !== "object" || Array.isArray(parsed)) return { valid: false, needed: false, reasons: ["invalid-state"], rawText, state: null, error: "invalid-state" };
     const legacyBalance = Math.max(0, Math.floor(Number(parsed.legacyCups ?? parsed.cups) || 0));
     const reasons = [];
