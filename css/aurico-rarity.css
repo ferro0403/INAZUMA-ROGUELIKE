@@ -1,0 +1,53 @@
+/* Aurico is the unique 99 OVR rarity. Keep the existing rarity-driven card anatomy and give it a black treatment. */
+.rarity-aurico {
+  --rarity-bg: #101114;
+  --rarity-surface: #07080a;
+  --rarity-border: #050506;
+  --rarity-glow: rgba(0, 0, 0, .52);
+  --rarity-text: #fff;
+}
+
+.player-detail-layout.rarity-aurico {
+  --detail-rarity-bg: #101114;
+  --detail-rarity-accent: #050506;
+  --detail-rarity-text: #fff;
+}
+
+.player-card.rarity-aurico .role-chip {
+  color: #fff;
+}
+
+:is(.squad-screen, .development-squad-card-scope) .rarity-aurico {
+  --rarity-border: #050506;
+  --rarity-glow: rgba(0, 0, 0, .48);
+}
+
+:is(.squad-screen, .development-squad-card-scope) .squad-player-card.rarity-aurico {
+  box-shadow: 4px 5px 0 rgba(5, 18, 12, .48), 0 0 16px var(--rarity-glow, transparent), inset 0 -4px 0 var(--rarity-border, #050506);
+}
+
+.pull-selection-modal .rarity-aurico {
+  --rarity-border: #050506;
+  --rarity-glow: rgba(0, 0, 0, .5);
+}
+
+:is(.hall-detail-screen, .final-summary-screen, .final-celebration-screen) :is(.rarity-aurico) {
+  --rarity-border: #050506;
+}
+
+.five-match-screen :is(.rarity-aurico) {
+  --rarity-border: #050506;
+}
+
+.development-slot-card.rarity-aurico,
+.development-management-card.rarity-aurico,
+.development-management-path-step.rarity-aurico,
+.project-inventory-item.rarity-aurico {
+  --rarity-border: #050506;
+  --rarity-glow: rgba(0, 0, 0, .48);
+}
+
+.shop-project--aurico {
+  border-color: #111216;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .2), 0 10px 24px rgba(0, 0, 0, .2);
+}
