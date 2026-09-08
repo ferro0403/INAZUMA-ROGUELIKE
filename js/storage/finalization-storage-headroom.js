@@ -48,6 +48,54 @@
     );
   }
 
+  function readProof(keys) {
+    try {
+      return {
+        primaryRaw: global.localStorage?.getItem(keys.primary),
+        backupRaw: global.localStorage?.getItem(keys.backup),
+        headRaw: global.localStorage?.getItem(keys.head),
+      };
+    } catch (error) {
+      throw leaseError("storage-read-failed", "finalization-headroom-read", error);
+    }
+  }
+
+  function inspectProof(run, seasonId, runId, proof) {
+    if (!proof?.primaryRaw || !proof?.backupRaw || !proof?.headRaw) return { valid: false, reason: "technical-copy-missing" };
+    if (proof.primaryRaw !== proof.backupRaw) return { valid: false, reason: "backup-not-exact" };
+
+    const primary = parseObject(proof.primaryRaw);
+    const head = parseObject(proof.headRaw);
+    if (!primary || !head) return { valid: false, reason: "recovery-proof-invalid" };
+    if (
+      String(primary.state || "") !== "active" ||
+      String(primary.seasonId || "") !== seasonId ||
+      String(primary.runId || "") !== runId ||
+      !Number.isInteger(Number(primary.generation)) ||
+      Number(primary.generation) < 1 ||
+      typeof primary.commitId !== "string" ||
+      !primary.commitId ||
+      !sameWitness(primary, head)
+    ) {
+      return { valid: false, reason: "recovery-proof-invalid" };
+    }
+
+    if (run.storageGeneration != null && Number(run.storageGeneration) !== Number(primary.generation)) {
+      return { valid: false, reason: "memory-generation-mismatch" };
+    }
+
+    return { valid: true, reason: null, primary, head };
+  }
+
+  function sameProof(left, right) {
+    return !!(
+      left && right &&
+      left.primaryRaw === right.primaryRaw &&
+      left.backupRaw === right.backupRaw &&
+      left.headRaw === right.headRaw
+    );
+  }
+
   function withRunStorageLease(keys, operation) {
     const lockKey = keys?.lock;
     if (!lockKey) throw leaseError("run-storage-unavailable", "finalization-headroom-lock-key");
@@ -112,54 +160,39 @@
 
     try {
       global.PersistenceRecoveryGuard?.assertWritable(options);
-      global.PersistenceRecoveryGuard?.reserve(options);
-      global.PersistenceRecoveryGuard?.assertWritable(options);
     } catch (error) {
       return { ok: false, reclaimed: false, reason: error?.code || "restore-recovery-required", error: wrappedError(error, "finalization-headroom-guard") };
     }
+
+    let initialProof;
+    try {
+      initialProof = readProof(keys);
+    } catch (error) {
+      return { ok: false, reclaimed: false, reason: error?.code || "storage-read-failed", error: wrappedError(error, error?.stage || "finalization-headroom-read") };
+    }
+    const initialInspection = inspectProof(run, seasonId, runId, initialProof);
+    if (!initialInspection.valid) return { ok: true, reclaimed: false, reason: initialInspection.reason };
 
     try {
       return withRunStorageLease(keys, (ownsLease) => {
         if (!ownsLease()) throw leaseError("write-locked", "finalization-headroom-lock-fence");
 
-        let primaryRaw;
-        let backupRaw;
-        let headRaw;
+        const lockedProof = readProof(keys);
+        if (!sameProof(initialProof, lockedProof)) return { ok: true, reclaimed: false, reason: "storage-changed-during-reclaim" };
+        const lockedInspection = inspectProof(run, seasonId, runId, lockedProof);
+        if (!lockedInspection.valid) return { ok: true, reclaimed: false, reason: lockedInspection.reason };
+
         try {
-          primaryRaw = global.localStorage?.getItem(keys.primary);
-          backupRaw = global.localStorage?.getItem(keys.backup);
-          headRaw = global.localStorage?.getItem(keys.head);
+          global.PersistenceRecoveryGuard?.assertWritable(options);
+          global.PersistenceRecoveryGuard?.reserve(options);
+          global.PersistenceRecoveryGuard?.assertWritable(options);
         } catch (error) {
-          throw leaseError("storage-read-failed", "finalization-headroom-read", error);
-        }
-
-        if (!primaryRaw || !backupRaw || !headRaw) return { ok: true, reclaimed: false, reason: "technical-copy-missing" };
-        if (primaryRaw !== backupRaw) return { ok: true, reclaimed: false, reason: "backup-not-exact" };
-
-        const primary = parseObject(primaryRaw);
-        const head = parseObject(headRaw);
-        if (!primary || !head) return { ok: true, reclaimed: false, reason: "recovery-proof-invalid" };
-        if (
-          String(primary.state || "") !== "active" ||
-          String(primary.seasonId || "") !== seasonId ||
-          String(primary.runId || "") !== runId ||
-          !sameWitness(primary, head)
-        ) {
-          return { ok: true, reclaimed: false, reason: "recovery-proof-invalid" };
-        }
-
-        if (run.storageGeneration != null && Number(run.storageGeneration) !== Number(primary.generation)) {
-          return { ok: true, reclaimed: false, reason: "memory-generation-mismatch" };
+          throw wrappedError(error, "finalization-headroom-guard");
         }
 
         if (!ownsLease()) throw leaseError("write-locked", "finalization-headroom-lock-fence");
-        if (
-          global.localStorage?.getItem(keys.primary) !== primaryRaw ||
-          global.localStorage?.getItem(keys.backup) !== backupRaw ||
-          global.localStorage?.getItem(keys.head) !== headRaw
-        ) {
-          return { ok: true, reclaimed: false, reason: "storage-changed-during-reclaim" };
-        }
+        const finalProof = readProof(keys);
+        if (!sameProof(lockedProof, finalProof)) return { ok: true, reclaimed: false, reason: "storage-changed-during-reclaim" };
 
         try {
           global.localStorage?.removeItem(keys.backup);
@@ -174,9 +207,9 @@
           reason: null,
           seasonId,
           runId,
-          generation: Number(primary.generation),
-          commitId: primary.commitId || null,
-          reclaimedBytes: 2 * (String(keys.backup).length + String(backupRaw).length),
+          generation: Number(lockedInspection.primary.generation),
+          commitId: lockedInspection.primary.commitId || null,
+          reclaimedBytes: 2 * (String(keys.backup).length + String(lockedProof.backupRaw).length),
         };
       });
     } catch (error) {
