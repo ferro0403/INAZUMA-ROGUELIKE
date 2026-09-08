@@ -114,6 +114,7 @@ jobs:
             tests/finalization-ambiguous-commit-production-test.js
             tests/finalization-entry-persistence-hardening-test.js
             tests/finalization-navigation-persistence-hardening-test.js
+            tests/finalization-storage-headroom-test.js
             tests/real-final-boss-production-path-test.js
             tests/final-victory-reward-presentation-production-test.js
           )
