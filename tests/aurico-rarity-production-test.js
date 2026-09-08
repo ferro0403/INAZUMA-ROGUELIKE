@@ -79,6 +79,8 @@ assert.equal(global.PlayerView.rarityClass("Aurico"), "rarity-aurico");
 const css = fs.readFileSync(path.join(root, "css/aurico-rarity.css"), "utf8");
 assert.match(css, /\.rarity-aurico\s*\{/);
 assert.match(css, /--rarity-(?:bg|surface):\s*#(?:101114|07080a)/);
+assert.match(css, /\.album-player-entry\s*>\s*\.player-card\.rarity-aurico\s+\.player-title strong\s*\{[\s\S]*?color:\s*#fff/);
+assert.match(css, /@media\s*\(max-width:\s*700px\)[\s\S]*?\.development-slot-grid\s+\.development-slot-card\.rarity-aurico:last-child\s*\{[\s\S]*?grid-column:\s*auto/);
 
 const developmentController = fs.readFileSync(path.join(root, "js/development/development-center-controller.js"), "utf8");
 assert.match(developmentController, /player\.category === "Aurico"[\s\S]*development-max/);
@@ -86,4 +88,4 @@ assert.match(developmentController, /player\.category === "Aurico"[\s\S]*develop
 const index = fs.readFileSync(path.join(root, "index.html"), "utf8");
 assert.match(index, /css\/aurico-rarity\.css\?v=20260909-aurico-1/);
 
-console.log("aurico rarity production contract: 99 mapping, Development costs/capacity, legacy counters, UI class and assets OK");
+console.log("aurico rarity production contract: 99 mapping, Development costs/capacity, legacy counters, UI class/assets and mobile polish OK");
