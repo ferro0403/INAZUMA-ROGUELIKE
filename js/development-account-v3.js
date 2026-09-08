@@ -4,7 +4,7 @@
   const SHADOW_FIELD = "developmentV3";
   const AUTHORITY_FIELD = "developmentV3AuthorityVersion";
   const AUTHORITY_VERSION = 1;
-  const SLOT_CAPACITIES = Object.freeze({ Buono: 50, Forte: 20, Elite: 15, Mondiale: 10, Leggenda: 5 });
+  const SLOT_CAPACITIES = Object.freeze({ Buono: 50, Forte: 20, Elite: 15, Mondiale: 10, Leggenda: 5, Aurico: 1 });
   const clone = (value) => value === undefined ? undefined : JSON.parse(JSON.stringify(value));
   const record = (value) => value && typeof value === "object" && !Array.isArray(value);
   let ensuredRaw = null;
