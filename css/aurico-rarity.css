@@ -17,6 +17,11 @@
   color: #fff;
 }
 
+/* Album uses its own dark-ink player-info treatment: Aurico names must stay readable on the black card. */
+.album-player-entry > .player-card.rarity-aurico .player-title strong {
+  color: #fff;
+}
+
 :is(.squad-screen, .development-squad-card-scope) .rarity-aurico {
   --rarity-border: #050506;
   --rarity-glow: rgba(0, 0, 0, .48);
@@ -45,6 +50,14 @@
 .project-inventory-item.rarity-aurico {
   --rarity-border: #050506;
   --rarity-glow: rgba(0, 0, 0, .48);
+}
+
+/* The legacy mobile rule expanded the final slot across both columns. With six rarities,
+   Aurico belongs beside Leggenda and keeps exactly the same footprint as every other slot. */
+@media (max-width: 700px) {
+  .development-slot-grid .development-slot-card.rarity-aurico:last-child {
+    grid-column: auto;
+  }
 }
 
 .shop-project--aurico {
