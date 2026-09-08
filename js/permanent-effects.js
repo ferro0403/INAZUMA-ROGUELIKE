@@ -50,16 +50,18 @@
   }
   function isQuotaLikeError(error, seen = new Set()) {
     if (!error) return false;
-    if (typeof error !== "object") return /quota/i.test(String(error));
+    if (typeof error !== "object") return false;
     if (seen.has(error)) return false;
     seen.add(error);
     const code = error?.code;
+    const codeText = String(code ?? "");
+    const message = String(error?.message || "");
     if (
       error?.name === "QuotaExceededError" ||
       Number(code) === 22 ||
       Number(code) === 1014 ||
-      /quota/i.test(String(code ?? "")) ||
-      /quota/i.test(String(error?.message || ""))
+      /quota/i.test(codeText) ||
+      /(quota.{0,40}exceed|exceed.{0,40}quota|storage[-_\s]?quota|dom_quota)/i.test(message)
     ) return true;
     return isQuotaLikeError(error?.cause, seen) || isQuotaLikeError(error?.error, seen);
   }
