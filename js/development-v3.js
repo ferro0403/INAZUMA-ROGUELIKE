@@ -10,13 +10,14 @@
   const STAT_ORDER = Object.freeze(["attack", "control", "speed", "grit", "physical", "stamina", "defense", "save"]);
   // Only colored upgrades are V3 steps. A paid legacy Normale upgrade is an
   // optional migration baseline and never consumes a colored slot.
-  const COLORED_RARITIES = Object.freeze(["Buono", "Forte", "Elite", "Mondiale", "Leggenda"]);
+  const COLORED_RARITIES = Object.freeze(["Buono", "Forte", "Elite", "Mondiale", "Leggenda", "Aurico"]);
   const RARITY_POTENTIAL_BANDS = Object.freeze({
     Buono: Object.freeze({ min: 75, max: 79 }),
     Forte: Object.freeze({ min: 80, max: 84 }),
     Elite: Object.freeze({ min: 85, max: 89 }),
     Mondiale: Object.freeze({ min: 90, max: 94 }),
-    Leggenda: Object.freeze({ min: 95, max: 99 }),
+    Leggenda: Object.freeze({ min: 95, max: 98 }),
+    Aurico: Object.freeze({ min: 99, max: 99 }),
   });
   const PROJECT_RARITIES = COLORED_RARITIES;
   const SEASON_IDS = Object.freeze(["ie1", "ie1_s2", "ie1_s3", "ie2", "orion"]);
@@ -221,7 +222,7 @@
     if (raw.migrationLegacy != null) {
       const projectBuild = raw.migrationLegacy?.projectBuild;
       if (!record(raw.migrationLegacy) || !record(projectBuild) || Object.keys(raw.migrationLegacy).some((key) => key !== "projectBuild") ||
-          Object.keys(projectBuild || {}).sort().join(",") !== [...PROJECT_RARITIES].sort().join(",") || Object.values(projectBuild || {}).some((value) => !integer(value))) errors.push("migrationLegacy:invalid");
+          Object.keys(projectBuild || {}).some((rarity) => !PROJECT_RARITIES.includes(rarity)) || Object.values(projectBuild || {}).some((value) => !integer(value))) errors.push("migrationLegacy:invalid");
     }
     return { valid: errors.length === 0, errors };
   }
