@@ -4,15 +4,16 @@
   const STORAGE_KEY = "inazumaRoguelike.developmentV2";
   const SCHEMA_VERSION = 7;
   const SEASON_IDS = Object.freeze(["ie1", "ie1_s2", "ie1_s3", "ie2", "orion"]);
-  const RARITIES = ["Scarso", "Debole", "Normale", "Buono", "Forte", "Elite", "Mondiale", "Leggenda"];
+  const RARITIES = ["Scarso", "Debole", "Normale", "Buono", "Forte", "Elite", "Mondiale", "Leggenda", "Aurico"];
   const PROJECT_RARITIES = RARITIES.slice(3);
-  const PROJECT_PRICES = Object.freeze({ Buono: 250, Forte: 500, Elite: 1000, Mondiale: 1600, Leggenda: 2500 });
+  const PROJECT_PRICES = Object.freeze({ Buono: 250, Forte: 500, Elite: 1000, Mondiale: 1600, Leggenda: 2500, Aurico: 3200 });
   const COSTS = Object.freeze({
     Normale: { coins: 100, cups: 0, projects: 0 }, Buono: { coins: 200, cups: 1, projects: 1 },
     Forte: { coins: 400, cups: 2, projects: 1 }, Elite: { coins: 800, cups: 3, projects: 1 },
     Mondiale: { coins: 1000, cups: 5, projects: 1 }, Leggenda: { coins: 1500, cups: 8, projects: 1 },
+    Aurico: { coins: 2000, cups: 10, projects: 1 },
   });
-  const ASSETS = Object.freeze({ Buono: "https://dxi4wb638ujep.cloudfront.net/1/k/i/m/im08lvscqau.webp", Forte: "https://dxi4wb638ujep.cloudfront.net/1/k/p/g/pgsrd8dyplu.png", Elite: "https://dxi4wb638ujep.cloudfront.net/1/k/a/n/anad1wjpht0.png", Mondiale: "https://dxi4wb638ujep.cloudfront.net/1/k/c/j/cj7t4wj1bx8.png", Leggenda: "https://dxi4wb638ujep.cloudfront.net/1/k/g/i/gibitioquoe.png" });
+  const ASSETS = Object.freeze({ Buono: "https://dxi4wb638ujep.cloudfront.net/1/k/i/m/im08lvscqau.webp", Forte: "https://dxi4wb638ujep.cloudfront.net/1/k/p/g/pgsrd8dyplu.png", Elite: "https://dxi4wb638ujep.cloudfront.net/1/k/a/n/anad1wjpht0.png", Mondiale: "https://dxi4wb638ujep.cloudfront.net/1/k/k/z/kz4ohtonkje.png", Leggenda: "https://dxi4wb638ujep.cloudfront.net/1/k/g/i/gibitioquoe.png", Aurico: "https://dxi4wb638ujep.cloudfront.net/1/k/c/j/cj7t4wj1bx8.png" });
   const DEVELOPMENT_RESOURCE_ASSETS = Object.freeze({
     coins: "https://dxi4wb638ujep.cloudfront.net/1/k/r/e/rez8i1pp0p8.webp",
     cups: "https://dxi4wb638ujep.cloudfront.net/1/k/t/t/ttzfl1b8nbe.png",
@@ -54,7 +55,7 @@
     let parsed;
     try { parsed = JSON.parse(rawText); }
     catch (_) { return { valid: false, needed: false, reasons: ["invalid-json"], rawText, state: null, error: "invalid-json" }; }
-    if (parsed == null) return { valid: true, needed: false, reasons: [], rawText, state: empty() };
+    if (parsed == null) return { valid: true, needed: false, deferred: false, reasons: [], rawText, state: empty() };
     if (typeof parsed !== "object" || Array.isArray(parsed)) return { valid: false, needed: false, reasons: ["invalid-state"], rawText, state: null, error: "invalid-state" };
     const legacyBalance = Math.max(0, Math.floor(Number(parsed.legacyCups ?? parsed.cups) || 0));
     const reasons = [];
@@ -102,7 +103,7 @@
   function purchaseEmblem(product) { const state = read(); const emblemId = String(product?.emblemId || ""); if (!emblemId) return { ok: false, reason: "invalid" }; if (state.unlockedEmblems.includes(emblemId)) return { ok: false, reason: "owned", state }; const coins = Number(product.coins || 0), cups = Number(product.cups || 0), sid = String(product.seasonId || ""); if (state.coins < coins) return { ok: false, reason: "coins", state }; if (Number(state.cupsBySeason[sid] || 0) < cups) return { ok: false, reason: "cups", state }; state.coins -= coins; state.cupsBySeason[sid] -= cups; state.unlockedEmblems.push(emblemId); try { return { ok: true, state: write(state), emblemId }; } catch (_) { return { ok: false, reason: "persistence", state: read() }; } }
   function addCompletedProject(rarity, amount = 1) { if (!PROJECT_RARITIES.includes(rarity)) return false; const state = read(); state.projects[rarity] += Math.max(0, Math.floor(Number(amount) || 0)); write(state); return true; }
   function nextRarity(current) { const index = RARITIES.indexOf(current); return index < 2 ? "Normale" : RARITIES[index + 1] || null; }
-  function threshold(rarity) { return global.InazumaProgression?.RARITY_THRESHOLDS?.find((x) => x.category === rarity)?.min ?? ({ Scarso: 0, Debole: 66, Normale: 70, Buono: 75, Forte: 80, Elite: 85, Mondiale: 90, Leggenda: 95 }[rarity]); }
+  function threshold(rarity) { return global.InazumaProgression?.RARITY_THRESHOLDS?.find((x) => x.category === rarity)?.min ?? ({ Scarso: 0, Debole: 66, Normale: 70, Buono: 75, Forte: 80, Elite: 85, Mondiale: 90, Leggenda: 95, Aurico: 99 }[rarity]); }
   function groupEvolutionHistory(history = []) { const groups = new Map(); history.forEach((entry) => { const id = String(entry?.playerId || ""); if (id) groups.set(id, [...(groups.get(id) || []), entry]); }); return [...groups.entries()].map(([playerId, entries]) => { entries.sort((a,b) => new Date(a.timestamp)-new Date(b.timestamp)); const first=entries[0], latest=entries.at(-1); return { playerId, entries, playerNameSnapshot: latest.playerNameSnapshot || playerId, fromRarity:first.fromRarity,toRarity:latest.toRarity,timestamp:latest.timestamp,evolutionCount:entries.length,coinsConsumed:entries.reduce((s,e)=>s+Number(e.coinsConsumed||0),0),cupsConsumed:entries.reduce((s,e)=>s+Number(e.cupsConsumed||0),0),projectsConsumed:entries.reduce((s,e)=>s+Number(e.projectsConsumed||0),0) }; }).sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp)); }
   function playerUpgrade(id) { return read().players[String(id)] || null; }
   function optionsFromUpgrade(player, upgrade) { const boost=Math.max(0,Number(upgrade?.permanentTargetPotential||0)-Number(player?.finalOverall||0)); return { potentialBoost:boost,currentOverallBoost:boost,potentialBoostApplications:boost?[{amount:boost,appliedLevel:0,permanent:true}]:[] }; }
