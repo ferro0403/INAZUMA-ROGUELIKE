@@ -146,8 +146,6 @@
         continue;
       }
       if (status === "hall-written") {
-        const beforeEnqueueHeadroom = reclaimFinalizationHeadroom(run, { ...options, source: "finalization-headroom-pre-enqueue" });
-        if (beforeEnqueueHeadroom.ok === false) return { run, status: "hall-written", completed: false, error: beforeEnqueueHeadroom.error || new Error("Finalization headroom reclaim failed") };
         const id = developmentId(run, "victory");
         let effect = outbox(run).find((entry) => entry.id === id);
         if (!effect) {
