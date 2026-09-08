@@ -40,6 +40,19 @@ function seedTerminalRun(context, storage, runId = "terminal-headroom") {
   return { run, keys };
 }
 
+function countHeadroomCalls(context) {
+  const owner = context.FinalizationStorageHeadroom;
+  let calls = 0;
+  context.FinalizationStorageHeadroom = {
+    ...owner,
+    reclaimExactBackup(...args) {
+      calls += 1;
+      return owner.reclaimExactBackup(...args);
+    },
+  };
+  return () => calls;
+}
+
 {
   const storage = new BudgetStorage(Infinity);
   const context = load(storage, HARDENED_MODULES);
@@ -63,11 +76,14 @@ function seedTerminalRun(context, storage, runId = "terminal-headroom") {
   const context = load(storage, HARDENED_MODULES);
   const { run, keys } = seedTerminalRun(context, storage, "different-backup");
   storage.setItem(keys.backup, `${storage.getItem(keys.backup)} `);
+  const epochBefore = storage.getItem(context.PersistenceRecoveryGuard.EPOCH_KEY);
   const result = context.FinalizationStorageHeadroom.reclaimExactBackup(run, { source: "test-different" });
   assert.strictEqual(result.ok, true);
   assert.strictEqual(result.reclaimed, false);
   assert.strictEqual(result.reason, "backup-not-exact");
   assert(storage.getItem(keys.backup));
+  assert.strictEqual(storage.getItem(keys.lock), null, "no-op proof must not acquire a run lease");
+  assert.strictEqual(storage.getItem(context.PersistenceRecoveryGuard.EPOCH_KEY), epochBefore, "no-op proof must not bump mutation epoch");
 }
 
 {
@@ -77,11 +93,14 @@ function seedTerminalRun(context, storage, runId = "terminal-headroom") {
   const head = JSON.parse(storage.getItem(keys.head));
   head.generation += 1;
   storage.setItem(keys.head, JSON.stringify(head));
+  const epochBefore = storage.getItem(context.PersistenceRecoveryGuard.EPOCH_KEY);
   const result = context.FinalizationStorageHeadroom.reclaimExactBackup(run, { source: "test-head-mismatch" });
   assert.strictEqual(result.ok, true);
   assert.strictEqual(result.reclaimed, false);
   assert.strictEqual(result.reason, "recovery-proof-invalid");
   assert(storage.getItem(keys.backup));
+  assert.strictEqual(storage.getItem(keys.lock), null);
+  assert.strictEqual(storage.getItem(context.PersistenceRecoveryGuard.EPOCH_KEY), epochBefore);
 }
 
 {
@@ -98,6 +117,7 @@ function seedTerminalRun(context, storage, runId = "terminal-headroom") {
   assert.strictEqual(result.ok, false);
   assert.strictEqual(result.error.code, "restore-recovery-required");
   assert(storage.getItem(keys.backup));
+  assert.strictEqual(storage.getItem(keys.lock), null);
 }
 
 {
@@ -126,14 +146,26 @@ function seedTerminalRun(context, storage, runId = "terminal-headroom") {
   assert(storage.getItem(keys.backup), "backup must remain when the safety lease cannot be acquired");
 }
 
-function quotaScenario(modules, runId) {
+{
+  const storage = new BudgetStorage(Infinity);
+  const context = load(storage, HARDENED_MODULES);
+  const { run, keys } = seedTerminalRun(context, storage, "normal-path-keeps-backup");
+  const calls = countHeadroomCalls(context);
+  const result = context.PermanentEffects.resumeFinalization(run);
+  assert.strictEqual(result.completed, true);
+  assert.strictEqual(calls(), 0, "healthy finalization must not reclaim a backup preemptively");
+  assert(storage.getItem(keys.backup), "normal successful saves should retain their technical backup");
+}
+
+function quotaScenario(modules, runId, countCalls = false) {
   const storage = new BudgetStorage(Infinity);
   const context = load(storage, modules);
   const { run, keys } = seedTerminalRun(context, storage, runId);
+  const calls = countCalls ? countHeadroomCalls(context) : () => 0;
   const before = storage.bytes();
   storage.budget = before + 1024;
   const result = context.PermanentEffects.resumeFinalization(run);
-  return { storage, context, run, keys, result, before };
+  return { storage, context, run, keys, result, before, calls };
 }
 
 const longQuotaRunId = (suffix) => `quota-${suffix}-${"r".repeat(2048)}`;
@@ -146,8 +178,9 @@ const longQuotaRunId = (suffix) => `quota-${suffix}-${"r".repeat(2048)}`;
 }
 
 {
-  const hardened = quotaScenario(HARDENED_MODULES, longQuotaRunId("with-headroom"));
+  const hardened = quotaScenario(HARDENED_MODULES, longQuotaRunId("with-headroom"), true);
   assert.strictEqual(hardened.result.completed, true);
+  assert.strictEqual(hardened.calls(), 1, "quota path should reclaim exactly once before retry");
   assert.strictEqual(hardened.run.finalization.status, "complete");
   assert.strictEqual(hardened.run.phase, "final-celebration");
   const development = hardened.context.DevelopmentV2.read();
@@ -160,6 +193,55 @@ const longQuotaRunId = (suffix) => `quota-${suffix}-${"r".repeat(2048)}`;
   assert.strictEqual(retry.completed, true);
   assert.strictEqual(hardened.context.DevelopmentV2.read().coins, coinsBeforeRetry, "retry must not duplicate terminal rewards");
   assert.strictEqual(hardened.context.RunState.load("orion", { readOnly: true }).finalization.status, "complete");
+}
+
+{
+  const storage = new BudgetStorage(Infinity);
+  const context = load(storage, HARDENED_MODULES);
+  const { run, keys } = seedTerminalRun(context, storage, "non-quota-does-not-reclaim");
+  const backupBefore = storage.getItem(keys.backup);
+  const calls = countHeadroomCalls(context);
+  const persistence = new Error("simulated non quota persistence failure");
+  persistence.code = "io-failed";
+  const account = {
+    processRunEnd() { return { state: { redeemedRunIds: [] }, awarded: false, reason: "persistence", error: persistence }; },
+    read() { return { redeemedRunIds: [] }; },
+  };
+  const result = context.PermanentEffects.resumeFinalization(run, {
+    apis: { DevelopmentAccountV3: account },
+    save() { throw new Error("save should not run after Development persistence failure"); },
+  });
+  assert.strictEqual(result.completed, false);
+  assert.strictEqual(result.error.code, "io-failed");
+  assert.strictEqual(calls(), 0, "non-quota errors must not sacrifice the backup");
+  assert.strictEqual(storage.getItem(keys.backup), backupBefore);
+}
+
+{
+  const storage = new BudgetStorage(Infinity);
+  const context = load(storage, HARDENED_MODULES);
+  const { run } = seedTerminalRun(context, storage, "marker-quota-retry");
+  const calls = countHeadroomCalls(context);
+  let firstMarker = true;
+  const result = context.PermanentEffects.resumeFinalization(run, {
+    save(current, metadata = {}) {
+      if (firstMarker && metadata.effectMarker) {
+        firstMarker = false;
+        const quota = new Error("The quota has been exceeded.");
+        quota.name = "QuotaExceededError";
+        quota.code = 22;
+        throw quota;
+      }
+      return context.RunState.save(current, metadata);
+    },
+  });
+  assert.strictEqual(result.completed, true, "marker quota should recover in-session after exact-backup reclaim");
+  assert.strictEqual(calls(), 1);
+  const development = context.DevelopmentV2.read();
+  assert.strictEqual(development.redeemedRunIds.filter((id) => id === run.runId).length, 1);
+  assert.strictEqual(development.victoryRewardRunIds.filter((id) => id === run.runId).length, 1);
+  assert.strictEqual(development.cupsBySeason.orion, 1);
+  assert.strictEqual(development.coins, 360, "retry after marker quota must not duplicate coins");
 }
 
 {
@@ -180,7 +262,7 @@ const longQuotaRunId = (suffix) => `quota-${suffix}-${"r".repeat(2048)}`;
   });
   assert.strictEqual(first.completed, false);
   assert.strictEqual(first.error?.code, "simulated-effect-marker-failure");
-  assert.strictEqual(storage.getItem(keys.backup), null, "exact backup should already have been reclaimed");
+  assert(storage.getItem(keys.backup), "non-quota marker crash must preserve the technical backup");
   const rewarded = context.DevelopmentV2.read();
   assert.strictEqual(rewarded.redeemedRunIds.filter((id) => id === run.runId).length, 1);
   assert.strictEqual(rewarded.victoryRewardRunIds.filter((id) => id === run.runId).length, 1);
@@ -233,4 +315,4 @@ const longQuotaRunId = (suffix) => `quota-${suffix}-${"r".repeat(2048)}`;
   assert.strictEqual(run.permanentEffectOutbox[0].status, "pending");
 }
 
-console.log("finalization storage headroom + fenced recovery/error propagation: ok");
+console.log("finalization storage headroom + quota-triggered fenced recovery/error propagation: ok");
