@@ -48,6 +48,21 @@
     wrapped.cause = error?.cause || error || null;
     return wrapped;
   }
+  function isQuotaLikeError(error, seen = new Set()) {
+    if (!error) return false;
+    if (typeof error !== "object") return /quota/i.test(String(error));
+    if (seen.has(error)) return false;
+    seen.add(error);
+    const code = error?.code;
+    if (
+      error?.name === "QuotaExceededError" ||
+      Number(code) === 22 ||
+      Number(code) === 1014 ||
+      /quota/i.test(String(code ?? "")) ||
+      /quota/i.test(String(error?.message || ""))
+    ) return true;
+    return isQuotaLikeError(error?.cause, seen) || isQuotaLikeError(error?.error, seen);
+  }
   function reclaimFinalizationHeadroom(run, options = {}) {
     const result = global.FinalizationStorageHeadroom?.reclaimExactBackup?.(run, options);
     return result || { ok: true, reclaimed: false, reason: "headroom-owner-unavailable" };
@@ -158,10 +173,22 @@
             return { run, status: "hall-written", completed: false, error };
           }
         }
-        const beforeDevelopmentHeadroom = reclaimFinalizationHeadroom(run, { ...options, source: "finalization-headroom-pre-development" });
-        if (beforeDevelopmentHeadroom.ok === false) return { run, status: "hall-written", completed: false, error: beforeDevelopmentHeadroom.error || new Error("Finalization headroom reclaim failed") };
-        const result = drain(run, { apis, save, types: [TYPES.DEVELOPMENT] });
-        if (result.error || run.finalization?.status !== "development-written") return { run, status: "hall-written", completed: false, error: result.error || new Error("Development effect remains pending") };
+
+        let result = drain(run, { apis, save, types: [TYPES.DEVELOPMENT] });
+        if (result.error || run.finalization?.status !== "development-written") {
+          const firstError = result.error || new Error("Development effect remains pending");
+          if (!isQuotaLikeError(firstError)) return { run, status: "hall-written", completed: false, error: firstError };
+
+          const headroom = reclaimFinalizationHeadroom(run, { ...options, source: "finalization-headroom-after-quota" });
+          if (headroom.ok === false || headroom.reclaimed !== true) {
+            return { run, status: "hall-written", completed: false, error: firstError };
+          }
+
+          result = drain(run, { apis, save, types: [TYPES.DEVELOPMENT] });
+          if (result.error || run.finalization?.status !== "development-written") {
+            return { run, status: "hall-written", completed: false, error: result.error || firstError };
+          }
+        }
         continue;
       }
       if (status === "development-written") {
