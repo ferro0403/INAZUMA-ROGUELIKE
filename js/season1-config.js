@@ -52,7 +52,7 @@
       boss: { label: "Boss", icon: "⚽", color: "#d63031" },
       special_match: { label: "Partita speciale", icon: "11", color: "#f6c85f" },
     },
-    legendaryCategories: ["Forte", "Elite", "Mondiale", "Leggenda"],
+    legendaryCategories: ["Forte", "Elite", "Mondiale", "Leggenda", "Aurico"],
     categoryRanks: {
       Scarso: -1,
       Debole: 0,
@@ -62,6 +62,7 @@
       Elite: 5,
       Mondiale: 6,
       Leggenda: 7,
+      Aurico: 8,
     },
     luckyCharmWeightPerRank: 1.5,
     itemPool: [
