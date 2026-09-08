@@ -2,7 +2,13 @@
 
 const assert = require("assert");
 const BudgetStorage = require("./helpers/budget-storage");
-const { load } = require("./helpers/production-runtime");
+const { load, PRODUCTION_MODULES } = require("./helpers/production-runtime");
+
+const HEADROOM_MODULE = "storage/finalization-storage-headroom.js";
+const headroomProductionIndex = PRODUCTION_MODULES.indexOf(HEADROOM_MODULE);
+const permanentEffectsProductionIndex = PRODUCTION_MODULES.indexOf("permanent-effects.js");
+assert(headroomProductionIndex >= 0, "production runtime must load finalization headroom");
+assert(headroomProductionIndex < permanentEffectsProductionIndex, "headroom owner must load before permanent effects");
 
 const BASE_MODULES = [
   "persistence-recovery-guard.js",
@@ -14,7 +20,7 @@ const HARDENED_MODULES = [
   "persistence-recovery-guard.js",
   "run-state.js",
   "development-v2.js",
-  "storage/finalization-storage-headroom.js",
+  HEADROOM_MODULE,
   "permanent-effects.js",
 ];
 
@@ -48,6 +54,7 @@ function seedTerminalRun(context, storage, runId = "terminal-headroom") {
   assert.strictEqual(storage.getItem(keys.backup), null);
   assert.strictEqual(storage.getItem(keys.primary), primaryBefore);
   assert.strictEqual(storage.getItem(keys.head), headBefore);
+  assert.strictEqual(storage.getItem(keys.lock), null, "lease must be released after reclaim");
   assert.strictEqual(context.RunState.load("orion", { readOnly: true }).runId, run.runId);
 }
 
@@ -93,26 +100,53 @@ function seedTerminalRun(context, storage, runId = "terminal-headroom") {
   assert(storage.getItem(keys.backup));
 }
 
+{
+  const storage = new BudgetStorage(Infinity);
+  const context = load(storage, HARDENED_MODULES);
+  const { run, keys } = seedTerminalRun(context, storage, "foreign-run-writer");
+  storage.setItem(keys.lock, JSON.stringify({ ownerId: "another-tab", fence: Date.now(), expiresAt: Date.now() + 5000 }));
+  const backupBefore = storage.getItem(keys.backup);
+  const result = context.FinalizationStorageHeadroom.reclaimExactBackup(run, { source: "test-concurrent-writer" });
+  assert.strictEqual(result.ok, false);
+  assert.strictEqual(result.error.code, "write-locked");
+  assert.strictEqual(storage.getItem(keys.backup), backupBefore, "reclaim must not delete a backup owned by another writer window");
+  storage.removeItem(keys.lock);
+}
+
+{
+  const storage = new BudgetStorage(Infinity);
+  const context = load(storage, HARDENED_MODULES);
+  const { run, keys } = seedTerminalRun(context, storage, "no-lock-headroom");
+  const before = storage.bytes();
+  storage.budget = before;
+  const result = context.FinalizationStorageHeadroom.reclaimExactBackup(run, { source: "test-lock-quota" });
+  assert.strictEqual(result.ok, false);
+  assert.strictEqual(result.error.code, "storage-unavailable");
+  assert.strictEqual(result.error.cause?.name, "QuotaExceededError");
+  assert(storage.getItem(keys.backup), "backup must remain when the safety lease cannot be acquired");
+}
+
 function quotaScenario(modules, runId) {
   const storage = new BudgetStorage(Infinity);
   const context = load(storage, modules);
   const { run, keys } = seedTerminalRun(context, storage, runId);
   const before = storage.bytes();
-  storage.budget = before;
+  storage.budget = before + 1024;
   const result = context.PermanentEffects.resumeFinalization(run);
   return { storage, context, run, keys, result, before };
 }
 
+const longQuotaRunId = (suffix) => `quota-${suffix}-${"r".repeat(2048)}`;
+
 {
-  const baseline = quotaScenario(BASE_MODULES, "quota-without-headroom");
+  const baseline = quotaScenario(BASE_MODULES, longQuotaRunId("without-headroom"));
   assert.strictEqual(baseline.result.completed, false);
-  assert.strictEqual(baseline.result.error?.name, "QuotaExceededError");
   assert.strictEqual(baseline.run.finalization.status, "hall-written");
   assert(baseline.storage.getItem(baseline.keys.backup), "baseline should still hold the duplicate backup");
 }
 
 {
-  const hardened = quotaScenario(HARDENED_MODULES, "quota-with-headroom");
+  const hardened = quotaScenario(HARDENED_MODULES, longQuotaRunId("with-headroom"));
   assert.strictEqual(hardened.result.completed, true);
   assert.strictEqual(hardened.run.finalization.status, "complete");
   assert.strictEqual(hardened.run.phase, "final-celebration");
@@ -126,6 +160,43 @@ function quotaScenario(modules, runId) {
   assert.strictEqual(retry.completed, true);
   assert.strictEqual(hardened.context.DevelopmentV2.read().coins, coinsBeforeRetry, "retry must not duplicate terminal rewards");
   assert.strictEqual(hardened.context.RunState.load("orion", { readOnly: true }).finalization.status, "complete");
+}
+
+{
+  const storage = new BudgetStorage(Infinity);
+  const context = load(storage, HARDENED_MODULES);
+  const { run, keys } = seedTerminalRun(context, storage, "marker-crash-after-development");
+  let failedMarker = false;
+  const first = context.PermanentEffects.resumeFinalization(run, {
+    save(current, metadata = {}) {
+      if (!failedMarker && metadata.effectMarker) {
+        failedMarker = true;
+        const error = new Error("simulated marker crash");
+        error.code = "simulated-effect-marker-failure";
+        throw error;
+      }
+      return context.RunState.save(current, metadata);
+    },
+  });
+  assert.strictEqual(first.completed, false);
+  assert.strictEqual(first.error?.code, "simulated-effect-marker-failure");
+  assert.strictEqual(storage.getItem(keys.backup), null, "exact backup should already have been reclaimed");
+  const rewarded = context.DevelopmentV2.read();
+  assert.strictEqual(rewarded.redeemedRunIds.filter((id) => id === run.runId).length, 1);
+  assert.strictEqual(rewarded.victoryRewardRunIds.filter((id) => id === run.runId).length, 1);
+  const coinsAfterFirstAttempt = rewarded.coins;
+
+  const reloaded = context.RunState.load("orion", { readOnly: true });
+  assert.strictEqual(reloaded.finalization.status, "hall-written");
+  assert.strictEqual(reloaded.permanentEffectOutbox.find((entry) => entry.type === "development-run-end")?.status, "pending");
+  const resumed = context.PermanentEffects.resumeFinalization(reloaded);
+  assert.strictEqual(resumed.completed, true);
+  assert.strictEqual(reloaded.finalization.status, "complete");
+  const afterReload = context.DevelopmentV2.read();
+  assert.strictEqual(afterReload.coins, coinsAfterFirstAttempt, "reload retry must not award coins twice");
+  assert.strictEqual(afterReload.redeemedRunIds.filter((id) => id === run.runId).length, 1);
+  assert.strictEqual(afterReload.victoryRewardRunIds.filter((id) => id === run.runId).length, 1);
+  assert.strictEqual(context.RunState.load("orion", { readOnly: true }).finalization.status, "complete");
 }
 
 {
@@ -162,4 +233,4 @@ function quotaScenario(modules, runId) {
   assert.strictEqual(run.permanentEffectOutbox[0].status, "pending");
 }
 
-console.log("finalization storage headroom + Development error propagation: ok");
+console.log("finalization storage headroom + fenced recovery/error propagation: ok");
