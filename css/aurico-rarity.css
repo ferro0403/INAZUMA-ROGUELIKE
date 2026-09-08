@@ -22,6 +22,30 @@
   color: #fff;
 }
 
+/* Several tactical/historical renderers intentionally force an ivory card skin after the shared rarity layer.
+   Aurico is the one exception: a 99 card remains black in Squad, Development, 5v5, Boss and new Hall snapshots. */
+:is(.squad-screen, .development-squad-card-scope) .squad-player-card.rarity-aurico,
+.five-screen .five-slot.run-tactical-card.rarity-aurico,
+:is(.five-screen, .five-match-screen, .boss-match-screen) .run-tactical-card.tactical-player-card.rarity-aurico,
+:is(.hall-detail-screen, .final-summary-screen, .final-celebration-screen) .hall-player-card.rarity-aurico {
+  background: linear-gradient(165deg, #15161a 0 70%, #07080a 70%);
+  color: #fff;
+}
+
+:is(.squad-screen, .development-squad-card-scope) .squad-player-card.rarity-aurico .player-title strong,
+:is(.five-screen, .five-match-screen, .boss-match-screen) .run-tactical-card.tactical-player-card.rarity-aurico .player-title strong,
+:is(.hall-detail-screen, .final-summary-screen, .final-celebration-screen) .hall-player-card.rarity-aurico .player-title strong,
+.five-screen .five-slot.run-tactical-card.rarity-aurico .five-slot-copy strong {
+  color: #fff;
+}
+
+:is(.squad-screen, .development-squad-card-scope) .squad-player-card.rarity-aurico .player-portrait-wrap,
+:is(.five-screen, .five-match-screen, .boss-match-screen) .run-tactical-card.tactical-player-card.rarity-aurico .player-portrait-wrap,
+:is(.hall-detail-screen, .final-summary-screen, .final-celebration-screen) .hall-player-card.rarity-aurico .player-portrait-wrap,
+.five-screen .five-slot.run-tactical-card.rarity-aurico .five-slot-portrait {
+  background: linear-gradient(160deg, #24262b, #090a0c);
+}
+
 :is(.squad-screen, .development-squad-card-scope) .rarity-aurico {
   --rarity-border: #050506;
   --rarity-glow: rgba(0, 0, 0, .48);
