@@ -80,11 +80,21 @@ const css = fs.readFileSync(path.join(root, "css/aurico-rarity.css"), "utf8");
 assert.match(css, /\.rarity-aurico\s*\{/);
 assert.match(css, /--rarity-(?:bg|surface):\s*#(?:101114|07080a)/);
 assert.match(css, /\.album-player-entry\s*>\s*\.player-card\.rarity-aurico\s+\.player-title strong\s*\{[\s\S]*?color:\s*#fff/);
-assert.match(css, /\.squad-player-card\.rarity-aurico[\s\S]*?background:\s*linear-gradient\(165deg,\s*#15161a/);
-assert.match(css, /\.five-slot\.run-tactical-card\.rarity-aurico[\s\S]*?background:\s*linear-gradient\(165deg,\s*#15161a/);
-assert.match(css, /\.run-tactical-card\.tactical-player-card\.rarity-aurico[\s\S]*?background:\s*linear-gradient\(165deg,\s*#15161a/);
-assert.match(css, /\.hall-player-card\.rarity-aurico[\s\S]*?background:\s*linear-gradient\(165deg,\s*#15161a/);
+[
+  ".squad-player-card.rarity-aurico",
+  ".initial-draft-card.rarity-aurico",
+  ".pull-selection-card.rarity-aurico",
+  ".trade-player-card.rarity-aurico",
+  ".trade-preview-card.rarity-aurico",
+  ".five-slot.run-tactical-card.rarity-aurico",
+  ".five-match-card.rarity-aurico",
+  ".run-tactical-card.tactical-player-card.rarity-aurico",
+  ".boss-match-card.rarity-aurico",
+  ".hall-player-card.rarity-aurico",
+].forEach((selector) => assert.ok(css.includes(selector), `missing Aurico black-card scope: ${selector}`));
+assert.match(css, /background:\s*linear-gradient\(165deg,\s*#15161a/);
 assert.match(css, /\.hall-player-card\.rarity-aurico\s+\.player-title strong[\s\S]*?\.hall-player-card\.rarity-aurico\s+\.player-level[\s\S]*?color:\s*#fff/);
+assert.match(css, /\.initial-draft-card\.rarity-aurico\s+\.player-meta[\s\S]*?color:\s*rgba\(255,\s*255,\s*255,\s*\.82\)/);
 assert.match(css, /@media\s*\(max-width:\s*700px\)[\s\S]*?\.development-slot-grid\s+\.development-slot-card\.rarity-aurico:last-child\s*\{[\s\S]*?grid-column:\s*auto/);
 
 const developmentController = fs.readFileSync(path.join(root, "js/development/development-center-controller.js"), "utf8");
