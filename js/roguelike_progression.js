@@ -367,7 +367,7 @@
       currentOverall: baseOverall,
       targetOverall: Math.max(baseOverall,overall-trainingBoost),
     });
-    for(const application of trainingApplications)for(const[stat,delta]of Object.entries(application.codexDeltas))boostedStats[stat]=Math.min(99,Number(boostedStats[stat]||0)+(Number(delta)||0)*10);
+    for(const application of trainingApplications)for(const[stat,delta]of Object.entries(application.codexDeltas))boostedStats[stat]=Math.min(100,Number(boostedStats[stat]||0)+(Number(delta)||0)*10);
     const category = categoryForPotential(potential, player.category, database);
     return { ...player, ...boostedStats, level, overall, potential, category, stats: boostedStats };
   }

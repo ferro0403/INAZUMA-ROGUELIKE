@@ -197,7 +197,7 @@
     const visibleBoost = state.currentOverallBoost;
     const stats = { ...(permanent.stats || {}) };
     for (const application of applications) for (const [stat, delta] of Object.entries(application.codexDeltas || {})) {
-      stats[stat] = Math.min(99, Number(stats[stat] || 0) + Number(delta || 0) * 10);
+      stats[stat] = Math.min(100, Number(stats[stat] || 0) + Number(delta || 0) * 10);
     }
     const potential = Math.min(99, Number(permanent.potential || 0) + trainingBoost);
     const overall = Math.min(potential, Number(permanent.overall || 0) + visibleBoost);

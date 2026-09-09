@@ -10,6 +10,7 @@ const V2 = require(path.join(root, "js/development-v2.js"));
 const V3 = require(path.join(root, "js/development-v3.js"));
 const Account = require(path.join(root, "js/development-account-v3.js"));
 const Management = require(path.join(root, "js/development-management-v3.js"));
+const Runtime = require(path.join(root, "js/development-runtime.js"));
 require(path.join(root, "js/season1-config.js"));
 require(path.join(root, "js/player/player-view.js"));
 
@@ -69,6 +70,44 @@ assert.equal(auricoProfile.finalOverall, 99);
 assert.equal(auricoProfile.category, "Aurico");
 assert.equal(V3.validateProfile(auricoProfile).valid, true);
 
+const trainingBase = {
+  playerId: "training-cap-fixture",
+  name: "Training Cap Fixture",
+  finalOverall: 83,
+  category: "Forte",
+  position: "FW",
+  maxLevel: 20,
+  ratings: { attack: 9, control: 8, speed: 8, grit: 8, physical: 8, stamina: 8, defense: 2, save: 1 },
+};
+const trainingEntry = {
+  level: 20,
+  potentialBoost: 3,
+  currentOverallBoost: 3,
+  potentialBoostApplications: [{ amount: 3, appliedLevel: 20, codexDeltas: { attack: 1 } }],
+};
+const legacyTrainingResolved = Progression.getPlayerAtLevel(trainingBase, 20, null, trainingEntry);
+assert.equal(legacyTrainingResolved.attack, 100, "training Codex delta may raise an individual stat from 90 to 100");
+assert.equal(legacyTrainingResolved.overall, 86, "training keeps overall semantics unchanged");
+assert.equal(legacyTrainingResolved.potential, 86, "training keeps potential semantics unchanged");
+
+const trainingProfile = V3.materializeProfile({
+  basePlayer: trainingBase,
+  targetPotential: 83,
+  category: "Forte",
+  progression: Progression,
+});
+const trainingRun = {
+  developmentV3PlayerSnapshot: {
+    schemaVersion: Runtime.SNAPSHOT_SCHEMA_VERSION,
+    profileFormatVersion: V3.PROFILE_FORMAT_VERSION,
+    players: { [trainingBase.playerId]: { profile: trainingProfile } },
+  },
+};
+const v3TrainingResolved = Runtime.resolveRosterPlayer(trainingRun, trainingBase, trainingEntry, null);
+assert.equal(v3TrainingResolved.attack, 100, "Development V3 training path uses the same 100 stat cap");
+assert.equal(v3TrainingResolved.overall, 86, "Development V3 keeps overall below the 99 cap");
+assert.equal(v3TrainingResolved.potential, 86, "Development V3 keeps potential below the 99 cap");
+
 assert.equal(Account.SLOT_CAPACITIES.Aurico, 1);
 assert.ok(Management.CAPACITY_RARITIES.includes("Aurico"));
 assert.equal(Management.SORT_WEIGHT.Aurico, Management.SORT_WEIGHT.Leggenda + 1);
@@ -97,4 +136,4 @@ assert.match(developmentController, /player\.category === "Aurico"[\s\S]*develop
 const index = fs.readFileSync(path.join(root, "index.html"), "utf8");
 assert.match(index, /css\/aurico-rarity\.css\?v=20260909-aurico-1/);
 
-console.log("aurico rarity production contract: 99 mapping, Development costs/capacity, legacy counters, UI class/assets and ivory-card/black-accent coverage OK");
+console.log("aurico rarity production contract: 99 mapping, Development costs/capacity, training stat cap 100, legacy counters, UI class/assets and ivory-card/black-accent coverage OK");
