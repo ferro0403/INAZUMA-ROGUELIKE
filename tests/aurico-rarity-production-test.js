@@ -84,7 +84,7 @@ assert.match(css, /\.squad-player-card\.rarity-aurico[\s\S]*?background:\s*linea
 assert.match(css, /\.five-slot\.run-tactical-card\.rarity-aurico[\s\S]*?background:\s*linear-gradient\(165deg,\s*#15161a/);
 assert.match(css, /\.run-tactical-card\.tactical-player-card\.rarity-aurico[\s\S]*?background:\s*linear-gradient\(165deg,\s*#15161a/);
 assert.match(css, /\.hall-player-card\.rarity-aurico[\s\S]*?background:\s*linear-gradient\(165deg,\s*#15161a/);
-assert.match(css, /\.hall-player-card\.rarity-aurico\s+\.player-title strong[\s\S]*?color:\s*#fff/);
+assert.match(css, /\.hall-player-card\.rarity-aurico\s+\.player-title strong[\s\S]*?\.hall-player-card\.rarity-aurico\s+\.player-level[\s\S]*?color:\s*#fff/);
 assert.match(css, /@media\s*\(max-width:\s*700px\)[\s\S]*?\.development-slot-grid\s+\.development-slot-card\.rarity-aurico:last-child\s*\{[\s\S]*?grid-column:\s*auto/);
 
 const developmentController = fs.readFileSync(path.join(root, "js/development/development-center-controller.js"), "utf8");
