@@ -1,9 +1,9 @@
 (function (global) {
   "use strict";
 
-  const CAPACITY_RARITIES = Object.freeze(["Buono", "Forte", "Elite", "Mondiale", "Leggenda"]);
+  const CAPACITY_RARITIES = Object.freeze(["Buono", "Forte", "Elite", "Mondiale", "Leggenda", "Aurico"]);
   const FILTER_RARITIES = Object.freeze(["Tutti", "Normale", ...CAPACITY_RARITIES]);
-  const SORT_WEIGHT = Object.freeze({ Normale: 0, Buono: 1, Forte: 2, Elite: 3, Mondiale: 4, Leggenda: 5 });
+  const SORT_WEIGHT = Object.freeze({ Normale: 0, Buono: 1, Forte: 2, Elite: 3, Mondiale: 4, Leggenda: 5, Aurico: 6 });
 
   function playerIndex(database) {
     return new Map((database?.players || []).map((player) => [String(player.playerId), player]));

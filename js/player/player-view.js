@@ -10,6 +10,7 @@
     Elite: "rarity-elite",
     Mondiale: "rarity-mondiale",
     Leggenda: "rarity-leggenda",
+    Aurico: "rarity-aurico",
   };
   const STAT_LABELS = {
     attack: "Attacco",

@@ -71,7 +71,7 @@
 
   function developmentPlayerGridMarkup(players, visibleCount = developmentVisibleCount) {
     const visible = players.slice(0, visibleCount).map(resolveDevelopmentPlayer);
-    const cards = visible.map((player) => `<div data-development-player="${view.escapeHtml(player.playerId)}">${developmentSquadCardMarkup(player, `data-development-card="${view.escapeHtml(player.playerId)}"`)}${player.category === "Leggenda" ? '<span class="development-max" aria-label="Rarità massima">MAX</span>' : ""}</div>`).join("");
+    const cards = visible.map((player) => `<div data-development-player="${view.escapeHtml(player.playerId)}">${developmentSquadCardMarkup(player, `data-development-card="${view.escapeHtml(player.playerId)}"`)}${player.category === "Aurico" ? '<span class="development-max" aria-label="Rarità massima">MAX</span>' : ""}</div>`).join("");
     if (!cards) return '<p class="empty-state">Nessuno svincolato sbloccato corrisponde ai filtri.</p>';
     const remaining = players.length - visible.length;
     return `${cards}${remaining > 0 ? `<div class="development-load-more-wrap"><button class="btn btn-yellow development-load-more" id="development-load-more"><span>MOSTRA ALTRI <b>${view.escapeHtml(Math.min(DEVELOPMENT_PAGE_SIZE, remaining))}</b></span><small>${view.escapeHtml(visible.length)} di ${view.escapeHtml(players.length)}</small></button></div>` : ""}`;

@@ -1,0 +1,116 @@
+/* Aurico is the unique 99 OVR rarity. Keep the existing rarity-driven card anatomy and give it a black treatment. */
+.rarity-aurico {
+  --rarity-bg: #101114;
+  --rarity-surface: #07080a;
+  --rarity-border: #050506;
+  --rarity-glow: rgba(0, 0, 0, .52);
+  --rarity-text: #fff;
+}
+
+.player-detail-layout.rarity-aurico {
+  --detail-rarity-bg: #101114;
+  --detail-rarity-accent: #050506;
+  --detail-rarity-text: #fff;
+}
+
+.player-card.rarity-aurico .role-chip {
+  color: #fff;
+}
+
+/* Album uses its own dark-ink player-info treatment: Aurico names must stay readable on the black card. */
+.album-player-entry > .player-card.rarity-aurico .player-title strong {
+  color: #fff;
+}
+
+/* Several views deliberately force an ivory card skin after the shared rarity layer.
+   Aurico is the one exception: a 99 card remains black everywhere a player card is presented. */
+:is(.squad-screen, .development-squad-card-scope) .squad-player-card.rarity-aurico,
+.initial-draft-screen .initial-draft-card.rarity-aurico,
+.pull-selection-modal .pull-selection-card.rarity-aurico,
+.trade-modal .trade-player-card.rarity-aurico,
+.trade-preview-card.rarity-aurico,
+.five-screen .five-slot.run-tactical-card.rarity-aurico,
+.five-match-screen .five-match-card.rarity-aurico,
+:is(.five-screen, .five-match-screen, .boss-match-screen) .run-tactical-card.tactical-player-card.rarity-aurico,
+.route-boss-preview-field .boss-match-card.rarity-aurico,
+:is(.hall-detail-screen, .final-summary-screen, .final-celebration-screen) .hall-player-card.rarity-aurico {
+  background: linear-gradient(165deg, #15161a 0 70%, #07080a 70%);
+  color: #fff;
+}
+
+:is(.squad-screen, .development-squad-card-scope) .squad-player-card.rarity-aurico .player-title strong,
+.initial-draft-screen .initial-draft-card.rarity-aurico .player-title strong,
+.pull-selection-modal .pull-selection-card.rarity-aurico .player-title strong,
+.trade-modal .trade-player-card.rarity-aurico .player-title strong,
+.trade-preview-card.rarity-aurico .player-title strong,
+.five-match-screen .five-match-card.rarity-aurico > strong,
+:is(.five-screen, .five-match-screen, .boss-match-screen) .run-tactical-card.tactical-player-card.rarity-aurico .player-title strong,
+.route-boss-preview-field .boss-match-card.rarity-aurico .player-title strong,
+:is(.hall-detail-screen, .final-summary-screen, .final-celebration-screen) .hall-player-card.rarity-aurico .player-title strong,
+:is(.hall-detail-screen, .final-summary-screen, .final-celebration-screen) .hall-player-card.rarity-aurico .player-level,
+.five-screen .five-slot.run-tactical-card.rarity-aurico .five-slot-copy strong {
+  color: #fff;
+}
+
+.initial-draft-screen .initial-draft-card.rarity-aurico .player-info,
+.initial-draft-screen .initial-draft-card.rarity-aurico .player-meta,
+.route-boss-preview-field .boss-match-card.rarity-aurico .player-meta--stacked,
+.route-boss-preview-field .boss-match-card.rarity-aurico .player-meta-line--level {
+  color: rgba(255, 255, 255, .82);
+}
+
+:is(.squad-screen, .development-squad-card-scope) .squad-player-card.rarity-aurico .player-portrait-wrap,
+.initial-draft-screen .initial-draft-card.rarity-aurico .player-portrait-wrap,
+.pull-selection-modal .pull-selection-card.rarity-aurico .player-portrait-wrap,
+.trade-modal .trade-player-card.rarity-aurico .player-portrait-wrap,
+.trade-preview-card.rarity-aurico .player-portrait-wrap,
+.five-match-screen .five-match-card.rarity-aurico .five-match-card-portrait,
+:is(.five-screen, .five-match-screen, .boss-match-screen) .run-tactical-card.tactical-player-card.rarity-aurico .player-portrait-wrap,
+.route-boss-preview-field .boss-match-card.rarity-aurico .player-portrait-wrap,
+:is(.hall-detail-screen, .final-summary-screen, .final-celebration-screen) .hall-player-card.rarity-aurico .player-portrait-wrap,
+.five-screen .five-slot.run-tactical-card.rarity-aurico .five-slot-portrait {
+  background: linear-gradient(160deg, #24262b, #090a0c);
+}
+
+:is(.squad-screen, .development-squad-card-scope) .rarity-aurico {
+  --rarity-border: #050506;
+  --rarity-glow: rgba(0, 0, 0, .48);
+}
+
+:is(.squad-screen, .development-squad-card-scope) .squad-player-card.rarity-aurico {
+  box-shadow: 4px 5px 0 rgba(5, 18, 12, .48), 0 0 16px var(--rarity-glow, transparent), inset 0 -4px 0 var(--rarity-border, #050506);
+}
+
+.pull-selection-modal .rarity-aurico {
+  --rarity-border: #050506;
+  --rarity-glow: rgba(0, 0, 0, .5);
+}
+
+:is(.hall-detail-screen, .final-summary-screen, .final-celebration-screen) :is(.rarity-aurico) {
+  --rarity-border: #050506;
+}
+
+.five-match-screen :is(.rarity-aurico) {
+  --rarity-border: #050506;
+}
+
+.development-slot-card.rarity-aurico,
+.development-management-card.rarity-aurico,
+.development-management-path-step.rarity-aurico,
+.project-inventory-item.rarity-aurico {
+  --rarity-border: #050506;
+  --rarity-glow: rgba(0, 0, 0, .48);
+}
+
+/* The legacy mobile rule expanded the final slot across both columns. With six rarities,
+   Aurico belongs beside Leggenda and keeps exactly the same footprint as every other slot. */
+@media (max-width: 700px) {
+  .development-slot-grid .development-slot-card.rarity-aurico:last-child {
+    grid-column: auto;
+  }
+}
+
+.shop-project--aurico {
+  border-color: #111216;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .2), 0 10px 24px rgba(0, 0, 0, .2);
+}

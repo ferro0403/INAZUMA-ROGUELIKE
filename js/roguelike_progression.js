@@ -34,6 +34,7 @@
     Object.freeze({ category: "Elite", min: 85 }),
     Object.freeze({ category: "Mondiale", min: 90 }),
     Object.freeze({ category: "Leggenda", min: 95 }),
+    Object.freeze({ category: "Aurico", min: 99 }),
   ]);
 
   function normalizePotentialBoostApplications(options = {}, maxAllowedBoost = Number.POSITIVE_INFINITY) {
