@@ -35,6 +35,7 @@
 :is(.squad-screen, .development-squad-card-scope) .squad-player-card.rarity-aurico .player-title strong,
 :is(.five-screen, .five-match-screen, .boss-match-screen) .run-tactical-card.tactical-player-card.rarity-aurico .player-title strong,
 :is(.hall-detail-screen, .final-summary-screen, .final-celebration-screen) .hall-player-card.rarity-aurico .player-title strong,
+:is(.hall-detail-screen, .final-summary-screen, .final-celebration-screen) .hall-player-card.rarity-aurico .player-level,
 .five-screen .five-slot.run-tactical-card.rarity-aurico .five-slot-copy strong {
   color: #fff;
 }
