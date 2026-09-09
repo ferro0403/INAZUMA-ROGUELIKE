@@ -78,23 +78,17 @@ assert.equal(global.PlayerView.rarityClass("Aurico"), "rarity-aurico");
 
 const css = fs.readFileSync(path.join(root, "css/aurico-rarity.css"), "utf8");
 assert.match(css, /\.rarity-aurico\s*\{/);
-assert.match(css, /--rarity-(?:bg|surface):\s*#(?:101114|07080a)/);
-assert.match(css, /\.album-player-entry\s*>\s*\.player-card\.rarity-aurico\s+\.player-title strong\s*\{[\s\S]*?color:\s*#fff/);
-[
-  ".squad-player-card.rarity-aurico",
-  ".initial-draft-card.rarity-aurico",
-  ".pull-selection-card.rarity-aurico",
-  ".trade-player-card.rarity-aurico",
-  ".trade-preview-card.rarity-aurico",
-  ".five-slot.run-tactical-card.rarity-aurico",
-  ".five-match-card.rarity-aurico",
-  ".run-tactical-card.tactical-player-card.rarity-aurico",
-  ".boss-match-card.rarity-aurico",
-  ".hall-player-card.rarity-aurico",
-].forEach((selector) => assert.ok(css.includes(selector), `missing Aurico black-card scope: ${selector}`));
-assert.match(css, /background:\s*linear-gradient\(165deg,\s*#15161a/);
-assert.match(css, /\.hall-player-card\.rarity-aurico\s+\.player-title strong[\s\S]*?\.hall-player-card\.rarity-aurico\s+\.player-level[\s\S]*?color:\s*#fff/);
-assert.match(css, /\.initial-draft-card\.rarity-aurico\s+\.player-meta[\s\S]*?color:\s*rgba\(255,\s*255,\s*255,\s*\.82\)/);
+assert.match(css, /--rarity-bg:\s*#fffdf6/);
+assert.match(css, /--rarity-surface:\s*#f1eee5/);
+assert.match(css, /--rarity-border:\s*#050506/);
+assert.match(css, /--rarity-text:\s*#111216/);
+assert.match(css, /\.player-detail-layout\.rarity-aurico\s*\{[\s\S]*?--detail-rarity-bg:\s*#f3f0e7;[\s\S]*?--detail-rarity-accent:\s*#050506;[\s\S]*?--detail-rarity-text:\s*#111216/);
+assert.doesNotMatch(css, /background:\s*linear-gradient\(165deg,\s*#15161a/);
+assert.doesNotMatch(css, /rgba\(255,\s*255,\s*255,\s*\.82\)/);
+assert.match(css, /:is\(\.squad-screen, \.development-squad-card-scope\) \.rarity-aurico\s*\{[\s\S]*?--rarity-border:\s*#050506/);
+assert.match(css, /\.pull-selection-modal \.rarity-aurico\s*\{[\s\S]*?--rarity-border:\s*#050506/);
+assert.match(css, /:is\(\.hall-detail-screen, \.final-summary-screen, \.final-celebration-screen\) :is\(\.rarity-aurico\)\s*\{[\s\S]*?--rarity-border:\s*#050506/);
+assert.match(css, /\.five-match-screen :is\(\.rarity-aurico\)\s*\{[\s\S]*?--rarity-border:\s*#050506/);
 assert.match(css, /@media\s*\(max-width:\s*700px\)[\s\S]*?\.development-slot-grid\s+\.development-slot-card\.rarity-aurico:last-child\s*\{[\s\S]*?grid-column:\s*auto/);
 
 const developmentController = fs.readFileSync(path.join(root, "js/development/development-center-controller.js"), "utf8");
@@ -103,4 +97,4 @@ assert.match(developmentController, /player\.category === "Aurico"[\s\S]*develop
 const index = fs.readFileSync(path.join(root, "index.html"), "utf8");
 assert.match(index, /css\/aurico-rarity\.css\?v=20260909-aurico-1/);
 
-console.log("aurico rarity production contract: 99 mapping, Development costs/capacity, legacy counters, UI class/assets and black-card coverage OK");
+console.log("aurico rarity production contract: 99 mapping, Development costs/capacity, legacy counters, UI class/assets and ivory-card/black-accent coverage OK");
