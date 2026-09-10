@@ -222,10 +222,16 @@
       const snapshot = snapshotResult.value || {};
       const permanent = snapshot.permanentStores || {};
       const localStorageBytes = Number(permanent.localStorageBytes ?? measured.totalBytes ?? 0);
-      const hallBytes = Number(permanent.hall?.bytes || 0);
-      const developmentBytes = Number(permanent.development?.bytes || 0);
-      const albumBytes = Number(permanent.album?.bytes || 0);
+      const hallLegacyBytes = Number(permanent.hall?.legacyBytes ?? permanent.hall?.bytes ?? 0);
+      const developmentLegacyBytes = Number(permanent.development?.legacyBytes ?? permanent.development?.bytes ?? 0);
+      const albumLegacyBytes = Number(permanent.album?.legacyBytes ?? permanent.album?.bytes ?? 0);
+      const hallBytes = Number(permanent.hall?.indexedDbBytes ?? permanent.hall?.bytes ?? 0);
+      const developmentBytes = Number(permanent.development?.indexedDbBytes ?? permanent.development?.bytes ?? 0);
+      const albumBytes = Number(permanent.album?.indexedDbBytes ?? permanent.album?.bytes ?? 0);
       const profileBytes = Number(permanent.profile?.bytes || 0);
+      const legacyPermanentBytes = Number(permanent.legacyPermanentBytes ?? (hallLegacyBytes + developmentLegacyBytes + albumLegacyBytes));
+      const indexedDbPermanentBytes = Number(permanent.indexedDbPermanentBytes ?? (hallBytes + developmentBytes + albumBytes));
+      const localStorageRunAndMetadataBytes = Math.max(0, localStorageBytes - legacyPermanentBytes);
       return {
         schemaVersion: 3,
         capturedAt: new Date().toISOString(),
@@ -242,7 +248,24 @@
           developmentBytes,
           albumBytes,
           profileBytes,
-          hallSharePercent: localStorageBytes > 0 ? Math.round((hallBytes / localStorageBytes) * 1000) / 10 : 0,
+          hallLegacyBytes,
+          developmentLegacyBytes,
+          albumLegacyBytes,
+          legacyPermanentBytes,
+          indexedDbPermanentBytes,
+          localStorageRunAndMetadataBytes,
+          authority: {
+            hall: permanent.hall?.authority || "legacy",
+            development: permanent.development?.authority || "legacy",
+            album: permanent.album?.authority || "legacy",
+          },
+          indexedDbPresent: {
+            hall: permanent.hall?.indexedDbPresent === true,
+            development: permanent.development?.indexedDbPresent === true,
+            album: permanent.album?.indexedDbPresent === true,
+          },
+          cleanupSentinelPresent: permanent.cleanupSentinelPresent === true,
+          hallSharePercent: indexedDbPermanentBytes > 0 ? Math.round((hallBytes / indexedDbPermanentBytes) * 1000) / 10 : 0,
           topInazumaKeys: (permanent.topInazumaKeys?.length ? permanent.topInazumaKeys : measured.topInazumaKeys).slice(0, 10),
           browserEstimate: snapshot.browser?.storageEstimate || null,
           browserFamily: snapshot.browser?.family || null,

@@ -221,7 +221,12 @@
       try { marker = await db().read("meta", IDB_MIGRATION_KEY); }
       catch (error) {
         const unavailable = ["indexeddb-unavailable", "indexeddb-open-failed", "indexeddb-open-blocked", "storage-access-error"].includes(error?.code);
-        if (unavailable) return { authority: "legacy", migrated: false, deferred: true, error };
+        if (unavailable) {
+          if (global.PermanentLegacyCleanup?.wasCleaned?.("hall")) {
+            throw global.PermanentLegacyCleanup.authorityUnavailable("hall", error);
+          }
+          return { authority: "legacy", migrated: false, deferred: true, error };
+        }
         throw error;
       }
       if (marker?.complete === true) {

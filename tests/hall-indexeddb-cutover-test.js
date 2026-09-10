@@ -57,7 +57,7 @@ function serializedArchive(teams) {
   return { schemaVersion: 3, updatedAt: "2026-09-09T00:00:00.000Z", teams, index: [] };
 }
 
-function makeContext({ db = memoryDb(), legacyTeams = [team("legacy", "legacy-key", "2026-09-01T00:00:00.000Z")], blocked = false } = {}) {
+function makeContext({ db = memoryDb(), legacyTeams = [team("legacy", "legacy-key", "2026-09-01T00:00:00.000Z")], blocked = false, cleaned = false } = {}) {
   const storage = new Map();
   storage.set("inazuma.hallOfFame.v1", JSON.stringify(serializedArchive(legacyTeams)));
   const originalRaw = storage.get("inazuma.hallOfFame.v1");
@@ -89,6 +89,10 @@ function makeContext({ db = memoryDb(), legacyTeams = [team("legacy", "legacy-ke
     dispatchEvent(event) { events.push(event); },
     addEventListener() {},
     PermanentIndexedDb: db,
+    PermanentLegacyCleanup: cleaned ? {
+      wasCleaned: (domain) => domain === "hall",
+      authorityUnavailable(domain, cause) { return Object.assign(new Error("indexeddb authority unavailable"), { code: `${domain}-indexeddb-authority-unavailable`, cause }); },
+    } : null,
     PersistenceRecoveryGuard: {
       EPOCH_KEY: "epoch",
       isBlocked: () => blocked,
@@ -161,6 +165,11 @@ function makeContext({ db = memoryDb(), legacyTeams = [team("legacy", "legacy-ke
     assert.strictEqual(result.authority, "legacy");
     assert.strictEqual(result.deferred, true);
     assert.strictEqual(result.reason, "restore-recovery-required");
+  }
+
+  {
+    const runtime = makeContext({ db: memoryDb({}, { unavailable: true }), cleaned: true });
+    await assert.rejects(runtime.context.HallOfFameStorage.ensureIndexedDbReady(), (error) => error.code === "hall-indexeddb-authority-unavailable");
   }
 
   console.log("hall-indexeddb-cutover-test: PASS");

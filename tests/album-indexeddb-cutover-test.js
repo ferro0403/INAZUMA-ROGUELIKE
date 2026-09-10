@@ -25,7 +25,7 @@ function memoryDb(seed = {}) {
   };
 }
 
-function makeContext({ db = memoryDb(), legacyState = null, unavailable = false } = {}) {
+function makeContext({ db = memoryDb(), legacyState = null, unavailable = false, cleaned = false } = {}) {
   let legacy = clone(legacyState || {
     schemaVersion: 2,
     sharedUnlockedPlayerIds: {},
@@ -58,6 +58,10 @@ function makeContext({ db = memoryDb(), legacyState = null, unavailable = false 
     PermanentIndexedDb: unavailable ? {
       async read() { throw Object.assign(new Error("unavailable"), { code: "indexeddb-unavailable" }); },
     } : db,
+    PermanentLegacyCleanup: cleaned ? {
+      wasCleaned: (domain) => domain === "album",
+      authorityUnavailable(domain, cause) { return Object.assign(new Error("indexeddb authority unavailable"), { code: `${domain}-indexeddb-authority-unavailable`, cause }); },
+    } : null,
     PersistenceRecoveryGuard: {
       isBlocked: () => false,
       assertWritable() { return true; },
@@ -148,6 +152,11 @@ function makeContext({ db = memoryDb(), legacyState = null, unavailable = false 
     assert.strictEqual(result.authority, "legacy");
     assert.strictEqual(result.deferred, true, "before cutover an unavailable IndexedDB must preserve legacy compatibility");
     assert(runtime.context.AlbumProgress.isAlbumPlayerUnlocked("ie1", "legacy_player"));
+  }
+
+  {
+    const runtime = makeContext({ unavailable: true, cleaned: true });
+    await assert.rejects(runtime.context.AlbumIndexedDbStorage.ensureReady(), (error) => error.code === "album-indexeddb-authority-unavailable");
   }
 
   console.log("album-indexeddb-cutover-test: PASS");
