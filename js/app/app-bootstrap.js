@@ -2,6 +2,17 @@
   "use strict";
 
   function create({ app, fetchResource = (...args) => global.fetch(...args), escapeHtml, persistenceWritesAllowed, renderHome, setRun, getActiveSeason, setActiveSeason, setSeasonDb, setSeasonPlayersById, setSeasonTeamsById, setFreeAgentsDb, setFreeAgentsById, setPlayerVisualsById }) {
+    let developmentDatabasesSignaled = false;
+    function signalDevelopmentDatabasesReady(ok = true) {
+      if (ok) global.__INAZUMA_DEVELOPMENT_DATABASES_READY__ = true;
+      else global.__INAZUMA_DEVELOPMENT_DATABASES_FAILED__ = true;
+      if (developmentDatabasesSignaled) return;
+      developmentDatabasesSignaled = true;
+      if (typeof global.dispatchEvent === "function" && typeof global.CustomEvent === "function") {
+        global.dispatchEvent(new global.CustomEvent("inazuma:development-databases-ready", { detail: { ok } }));
+      }
+    }
+
     async function loadSeason(seasonId) {
       let activeSeason = global.SeasonRegistry.setActive(seasonId);
       setActiveSeason(activeSeason);
@@ -18,7 +29,7 @@
     function showLoadError(error) {
       console.error(error);
       const code = String(error?.code || error?.message || "unknown-load-error");
-      const persistenceError = /restore-recovery-required|restore-repair-needed|canonical-unrecoverable|storage-access-error|legacy-cloud-target-not-immutable|restore-terminal-error|album-indexeddb-authority|hall-indexeddb-authority/i.test(code);
+      const persistenceError = /restore-recovery-required|restore-repair-needed|canonical-unrecoverable|storage-access-error|legacy-cloud-target-not-immutable|restore-terminal-error|album-indexeddb-authority|hall-indexeddb-authority|development-indexeddb-authority/i.test(code);
       const databaseError = !persistenceError && (global.location?.protocol === "file:" || /database|fetch|network|json|load failed|failed to fetch/i.test(code));
       const heading = databaseError ? "Caricamento database non riuscito" : "Avvio temporaneamente non disponibile";
       const guidance = databaseError
@@ -54,10 +65,18 @@
       return result;
     }
 
+    async function preparePermanentDevelopmentStorage() {
+      if (!global.DevelopmentIndexedDbStorage?.ensureReady) return { authority: "legacy", migrated: false, unavailable: true };
+      const result = await global.DevelopmentIndexedDbStorage.ensureReady();
+      if (result?.authority === "indexeddb") await global.DevelopmentIndexedDbStorage.refresh();
+      return result;
+    }
+
     async function preparePermanentStorage() {
       const album = await preparePermanentAlbumStorage();
       const hall = await preparePermanentHallStorage();
-      return { album, hall };
+      const development = await preparePermanentDevelopmentStorage();
+      return { album, hall, development };
     }
 
     async function init() {
@@ -72,12 +91,14 @@
         const freeAgentsDb = await freeAgentsResponse.json();
         setFreeAgentsDb(freeAgentsDb);
         global.DevelopmentRuntime?.registerDatabase?.("free-agents", freeAgentsDb);
+        signalDevelopmentDatabasesReady(true);
         configureAlbumForBootstrap((freeAgentsDb.players || []).map((player) => player.playerId));
         await preparePermanentStorage();
         setFreeAgentsById(new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player])));
         setPlayerVisualsById(new Map(Object.entries(visualsDb.players || {})));
         await renderHome();
       } catch (error) {
+        signalDevelopmentDatabasesReady(false);
         showLoadError(error);
       }
     }
@@ -94,13 +115,14 @@
         setFreeAgentsDb(context.freeAgentsDb);
         setFreeAgentsById(new Map((context.freeAgentsDb.players || []).map((player) => [String(player.playerId), player])));
         global.DevelopmentRuntime?.registerDatabase?.("free-agents", context.freeAgentsDb);
+        signalDevelopmentDatabasesReady(true);
         configureAlbumForBootstrap((context.freeAgentsDb.players || []).map((player) => player.playerId));
       }
       setActiveSeason(context.activeSeason || getActiveSeason());
       return true;
     }
 
-    return Object.freeze({ loadSeason, showLoadError, configureAlbumForBootstrap, preparePermanentAlbumStorage, preparePermanentHallStorage, preparePermanentStorage, init, setPermanentClubTestContext });
+    return Object.freeze({ loadSeason, showLoadError, configureAlbumForBootstrap, preparePermanentAlbumStorage, preparePermanentHallStorage, preparePermanentDevelopmentStorage, preparePermanentStorage, init, setPermanentClubTestContext, signalDevelopmentDatabasesReady });
   }
 
   global.AppBootstrapRuntime = Object.freeze({ create });

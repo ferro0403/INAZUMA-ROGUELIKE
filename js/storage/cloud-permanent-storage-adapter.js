@@ -51,6 +51,15 @@
       }
     }
 
+    const developmentRepository = global.DevelopmentIndexedDbStorage;
+    if (developmentRepository?.ensureReady) {
+      const readiness = await developmentRepository.ensureReady();
+      if (readiness?.authority === "indexeddb") {
+        await developmentRepository.refresh();
+        current.development = developmentRepository.readCompatibility();
+      }
+    }
+
     return current;
   }
 

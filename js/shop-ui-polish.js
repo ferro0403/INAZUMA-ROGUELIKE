@@ -42,6 +42,13 @@
     return src ? `<img src="${escapeHtml(src)}" alt="${escapeHtml(CUP_NAMES[seasonId] || "Coppa Season")}">` : "";
   }
 
+  function accountOperation(asyncName, syncName, ...args) {
+    const account = global.DevelopmentAccountV3;
+    const operation = typeof account?.[asyncName] === "function" ? account[asyncName] : account?.[syncName];
+    if (typeof operation !== "function") throw Object.assign(new Error(`Development operation unavailable: ${syncName}`), { code: "development-operation-unavailable" });
+    return operation.apply(account, args);
+  }
+
   function projectDescriptor(button) {
     const rarity = String(button.dataset.buyProject || "");
     if (!rarity) return null;
@@ -56,7 +63,7 @@
       cups: 0,
       seasonId: null,
       accent: ({ Buono: "#5a7a69", Forte: "#3487bd", Elite: "#8b48bd", Mondiale: "#a87714", Leggenda: "#c39a1c" })[rarity] || "#4a4b4f",
-      execute() { return global.DevelopmentAccountV3.purchaseProject(rarity); },
+      execute() { return accountOperation("purchaseProjectAsync", "purchaseProject", rarity); },
     };
   }
 
@@ -76,7 +83,7 @@
       cups: Number(product.cups || 0),
       seasonId: product.seasonId,
       accent: TIER_ACCENTS[product.rarity] || "#4a4b4f",
-      execute() { return global.DevelopmentAccountV3.purchaseEmblem(product); },
+      execute() { return accountOperation("purchaseEmblemAsync", "purchaseEmblem", product); },
     };
   }
 
@@ -132,10 +139,13 @@
 
     cancel.addEventListener("click", closePurchaseModal);
     overlay.addEventListener("click", (event) => { if (event.target === overlay) closePurchaseModal(); });
-    confirm.addEventListener("click", () => {
+    confirm.addEventListener("click", async () => {
+      if (confirm.disabled) return;
       confirm.disabled = true;
       cancel.disabled = true;
-      const result = descriptor.execute();
+      let result;
+      try { result = await Promise.resolve(descriptor.execute()); }
+      catch (error) { result = { ok: false, reason: "persistence", error }; }
       if (!result?.ok) {
         status.textContent = purchaseError(result);
         confirm.disabled = false;
