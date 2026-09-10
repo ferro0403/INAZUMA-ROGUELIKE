@@ -55,6 +55,7 @@ function makeFakeIndexedDb(options = {}) {
           onabort: null,
           onerror: null,
           _finished: false,
+          abort() { this._abort(this.error || new Error("aborted")); },
           _complete() {
             if (this._finished) return;
             this._finished = true;
@@ -125,6 +126,7 @@ function loadModule(fakeIndexedDb) {
     window: null,
     console,
     Error,
+    TypeError,
     Object,
     Array,
     String,
@@ -160,6 +162,10 @@ function loadModule(fakeIndexedDb) {
     assert.deepStrictEqual(await db.read("album"), album);
     assert.strictEqual(await db.has("album"), true);
 
+    const updated = await db.update("album", (current) => ({ ...current, revision: Number(current?.revision || 0) + 1 }));
+    assert.strictEqual(updated.revision, 1, "update must return the value committed by the readwrite transaction");
+    assert.strictEqual((await db.read("album")).revision, 1, "update must commit to the same singleton key");
+
     const replacement = { schemaVersion: 2, collections: {} };
     await db.write("album", replacement);
     assert.deepStrictEqual(await db.read("album"), replacement, "writes must replace the same singleton key");
@@ -176,6 +182,7 @@ function loadModule(fakeIndexedDb) {
     assert.strictEqual(await db.read("development"), undefined);
 
     assert.throws(() => api._assertStoreName("shop"), (error) => error.code === "indexeddb-invalid-store");
+    await assert.rejects(db.update("album", async () => ({})), (error) => error.code === "indexeddb-async-updater-not-supported");
     db.close();
   }
 

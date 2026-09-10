@@ -18,7 +18,7 @@
     function showLoadError(error) {
       console.error(error);
       const code = String(error?.code || error?.message || "unknown-load-error");
-      const persistenceError = /restore-recovery-required|restore-repair-needed|canonical-unrecoverable|storage-access-error|legacy-cloud-target-not-immutable|restore-terminal-error/i.test(code);
+      const persistenceError = /restore-recovery-required|restore-repair-needed|canonical-unrecoverable|storage-access-error|legacy-cloud-target-not-immutable|restore-terminal-error|album-indexeddb-authority/i.test(code);
       const databaseError = !persistenceError && (global.location?.protocol === "file:" || /database|fetch|network|json|load failed|failed to fetch/i.test(code));
       const heading = databaseError ? "Caricamento database non riuscito" : "Avvio temporaneamente non disponibile";
       const guidance = databaseError
@@ -33,7 +33,18 @@
     }
 
     function configureAlbumForBootstrap(playerIds) {
-      return global.AlbumProgress.configureFreeAgentIds(playerIds, { persist: persistenceWritesAllowed() });
+      const indexedDbAlbumAvailable = Boolean(global.AlbumIndexedDbStorage);
+      return global.AlbumProgress.configureFreeAgentIds(playerIds, { persist: indexedDbAlbumAvailable ? false : persistenceWritesAllowed() });
+    }
+
+    async function preparePermanentAlbumStorage() {
+      if (!global.AlbumIndexedDbStorage) return { authority: "legacy", migrated: false, unavailable: true };
+      const result = await global.AlbumIndexedDbStorage.ensureReady();
+      if (result?.authority === "indexeddb") {
+        await global.AlbumIndexedDbStorage.recompact();
+        await global.AlbumPermanentEffects?.resumeStoredRuns?.();
+      }
+      return result;
     }
 
     async function init() {
@@ -49,6 +60,7 @@
         setFreeAgentsDb(freeAgentsDb);
         global.DevelopmentRuntime?.registerDatabase?.("free-agents", freeAgentsDb);
         configureAlbumForBootstrap((freeAgentsDb.players || []).map((player) => player.playerId));
+        await preparePermanentAlbumStorage();
         setFreeAgentsById(new Map(freeAgentsDb.players.map((player) => [String(player.playerId), player])));
         setPlayerVisualsById(new Map(Object.entries(visualsDb.players || {})));
         await renderHome();
@@ -75,7 +87,7 @@
       return true;
     }
 
-    return Object.freeze({ loadSeason, showLoadError, configureAlbumForBootstrap, init, setPermanentClubTestContext });
+    return Object.freeze({ loadSeason, showLoadError, configureAlbumForBootstrap, preparePermanentAlbumStorage, init, setPermanentClubTestContext });
   }
 
   global.AppBootstrapRuntime = Object.freeze({ create });

@@ -148,9 +148,7 @@
 
         if (request && typeof request === "object") {
           request.onsuccess = () => { requestResult = request.result; };
-          request.onerror = () => {
-            requestResult = undefined;
-          };
+          request.onerror = () => { requestResult = undefined; };
         }
 
         transaction.oncomplete = () => {
@@ -174,6 +172,63 @@
       return value;
     }
 
+    async function update(storeName, updater, key = DEFAULT_RECORD_KEY) {
+      const name = assertStoreName(storeName);
+      if (typeof updater !== "function") {
+        throw Object.assign(new TypeError("IndexedDB updater deve essere una funzione sincrona"), {
+          code: "indexeddb-invalid-updater",
+          stage: `indexeddb-${name}-update`,
+          storeName: name,
+        });
+      }
+      const database = await open();
+      return new Promise((resolve, reject) => {
+        let transaction;
+        let readRequest;
+        let nextValue;
+        let settled = false;
+        const stage = `indexeddb-${name}-update`;
+        const fail = (error, fallback = "indexeddb-transaction-failed") => {
+          if (settled) return;
+          settled = true;
+          reject(wrapError(error, fallback, stage, { storeName: name }));
+        };
+        try {
+          transaction = database.transaction(name, "readwrite");
+          const store = transaction.objectStore(name);
+          readRequest = store.get(String(key));
+          readRequest.onsuccess = () => {
+            try {
+              nextValue = updater(readRequest.result);
+              if (nextValue && typeof nextValue.then === "function") {
+                throw Object.assign(new TypeError("IndexedDB updater asincrono non supportato"), { code: "indexeddb-async-updater-not-supported" });
+              }
+              const writeRequest = store.put(nextValue, String(key));
+              writeRequest.onerror = () => {
+                // Transaction abort owns the rejection and preserves atomicity.
+              };
+            } catch (error) {
+              fail(error, error?.code || "indexeddb-update-failed");
+              try { transaction.abort(); } catch (_) {}
+            }
+          };
+          readRequest.onerror = () => {
+            // Transaction abort owns the rejection and preserves atomicity.
+          };
+        } catch (error) {
+          fail(error);
+          return;
+        }
+        transaction.oncomplete = () => {
+          if (settled) return;
+          settled = true;
+          resolve(nextValue);
+        };
+        transaction.onabort = () => fail(transaction.error || readRequest?.error, "indexeddb-transaction-aborted");
+        transaction.onerror = () => {};
+      });
+    }
+
     async function remove(storeName, key = DEFAULT_RECORD_KEY) {
       await requestInStore(storeName, "readwrite", (store) => store.delete(String(key)), `indexeddb-${storeName}-delete`);
       return true;
@@ -193,6 +248,7 @@
       close,
       read,
       write,
+      update,
       remove,
       clear,
       has,
@@ -213,6 +269,7 @@
     close: (...args) => defaultInstance.close(...args),
     read: (...args) => defaultInstance.read(...args),
     write: (...args) => defaultInstance.write(...args),
+    update: (...args) => defaultInstance.update(...args),
     remove: (...args) => defaultInstance.remove(...args),
     clear: (...args) => defaultInstance.clear(...args),
     has: (...args) => defaultInstance.has(...args),
