@@ -3,10 +3,17 @@
 
   const RUN_IDS = ["ie1", "ie2", "ie1_s2", "ie1_s3", "orion"];
   const HALL_KEY = "inazuma.hallOfFame.v1";
+  const HALL_LEGACY_KEYS = [HALL_KEY, `${HALL_KEY}.backup`, `${HALL_KEY}.tmp`];
   const DEVELOPMENT_KEY = "inazumaRoguelike.developmentV2";
   const ALBUM_KEY = "inazumaRoguelike.albumProgress";
   const PROFILE_KEYS = ["inazuma_roguelike_profile", "inazuma.profile"];
   const byteLength = (key, value) => 2 * (String(key || "").length + String(value || "").length);
+  const jsonByteLength = (value) => {
+    if (value == null) return 0;
+    const raw = JSON.stringify(value);
+    try { return new TextEncoder().encode(raw).length; }
+    catch (_) { return raw.length * 2; }
+  };
   const shortHash = (value) => {
     if (!value) return null;
     let hash = 2166136261;
@@ -139,12 +146,47 @@
     const hall = safeJson(global.localStorage.getItem(HALL_KEY), {}), development = safeJson(global.localStorage.getItem(DEVELOPMENT_KEY), {});
     const storageEstimate = await global.navigator?.storage?.estimate?.().catch?.(() => null) || null;
     const bytesFor = (keys) => all.filter((entry) => keys.some((key) => entry.key === key || entry.key.startsWith(key))).reduce((sum, entry) => sum + entry.bytes, 0);
+    const exactBytesFor = (keys) => all.filter((entry) => keys.includes(entry.key)).reduce((sum, entry) => sum + entry.bytes, 0);
+    const authority = {
+      album: global.AlbumIndexedDbStorage?.isAuthority?.() === true ? "indexeddb" : "legacy",
+      hall: global.HallOfFameStorage?.isIndexedDbAuthority?.() === true ? "indexeddb" : "legacy",
+      development: global.DevelopmentIndexedDbStorage?.isAuthority?.() === true ? "indexeddb" : "legacy",
+    };
+    const readIndexedDb = async (domain, store, stateKey) => {
+      if (authority[domain] !== "indexeddb" || !global.PermanentIndexedDb?.read) return { authority: authority[domain], present: false, bytes: 0, error: null, record: null };
+      try {
+        const record = await global.PermanentIndexedDb.read(store, stateKey);
+        return { authority: "indexeddb", present: record != null, bytes: jsonByteLength(record), error: null, record };
+      } catch (error) {
+        return { authority: "indexeddb", present: false, bytes: 0, error: error?.code || error?.name || "indexeddb-read-failed", record: null };
+      }
+    };
+    const [albumIndexedDb, hallIndexedDb, developmentIndexedDb] = await Promise.all([
+      readIndexedDb("album", global.AlbumIndexedDbStorage?.STORE || "album", global.AlbumIndexedDbStorage?.STATE_KEY || "state"),
+      readIndexedDb("hall", global.HallOfFameStorage?.IDB_STORE || "hall", global.HallOfFameStorage?.IDB_STATE_KEY || "state"),
+      readIndexedDb("development", global.DevelopmentIndexedDbStorage?.STORE || "development", global.DevelopmentIndexedDbStorage?.STATE_KEY || "state"),
+    ]);
+    const hallLegacyBytes = exactBytesFor(HALL_LEGACY_KEYS);
+    const developmentLegacyBytes = exactBytesFor([DEVELOPMENT_KEY]);
+    const albumLegacyBytes = exactBytesFor([ALBUM_KEY]);
+    const legacyPermanentBytes = hallLegacyBytes + developmentLegacyBytes + albumLegacyBytes;
+    const indexedDbPermanentBytes = hallIndexedDb.bytes + developmentIndexedDb.bytes + albumIndexedDb.bytes;
     return {
       schemaVersion: 1, capturedAt: new Date().toISOString(),
       cloud: { status: cloud.status || "unavailable", errorCode: cloud.error || null, localRevision: cloud.localRevision ?? null, cloudRevision: cloud.cloudRevision ?? cloud.revision ?? null, attemptedRevision: cloud.attemptedRevision ?? null, pendingSectors: cloud.pendingSectors || [], restoreStage: cloud.restoreStage || null, restoreReadCount: cloud.restoreReadCount || 0, hasCommitId: !!cloud.cloudCommitId, deviceId: shortHash(cloud.deviceId) },
       guard: { state: { ...guard, uid: guard.uid ? "[redacted]" : null, operationId: shortHash(guard.operationId), error: guard.error || null }, isBlocked: !!global.PersistenceRecoveryGuard?.isBlocked?.(), authenticated: !!active, storedJournalCount: all.filter((entry) => entry.key.startsWith("inazuma.cloud.restoreJournal.")).length, journalPresent: !!journal, journalStage: journal?.stage || null, operationId: shortHash(journal?.operationId), targetCloudRevision: journal?.targetCloudRevision ?? null, hasTargetCloudCommitId: !!journal?.targetCloudCommitId, cloudTargetImmutable: !!journal?.targetCloudCommitId, journalTerminalReason: guard.status === "terminal-recovery" ? guard.error : null, restoreResumeEligibility: journal?.targetCloudCommitId ? "immutable-target" : journal ? "fresh-comparison-only" : "none", repairEligibility: journal && !journal.targetCloudCommitId ? "abort-non-resumable" : "canonicalize-primary", terminalMarkerPresent: !!terminal, terminalOperationId: shortHash(terminal?.operationId), freshComparisonStatus: cloud.freshComparisonStatus || null, legacyCloudUpgradeStatus: cloud.legacyCloudUpgradeStatus || null, automaticMutationBlocked: !!global.PersistenceRecoveryGuard?.isBlocked?.(), recoveryUiAccessible: guard.status === "terminal-recovery", journalAgeMs: journal?.startedAt ? Math.max(0, Date.now() - Date.parse(journal.startedAt)) : null, localMutationEpoch: global.PersistenceRecoveryGuard?.readEpoch?.() ?? null },
       runs: RUN_IDS.map(runDiagnostic),
-      permanentStores: { hall: { count: hall.teams?.length || 0, bytes: bytesFor([HALL_KEY]) }, development: { bytes: bytesFor([DEVELOPMENT_KEY]), redeemedRunIds: development.redeemedRunIds?.length || 0, victoryRewardRunIds: development.victoryRewardRunIds?.length || 0 }, album: { bytes: bytesFor([ALBUM_KEY]) }, profile: { bytes: bytesFor(PROFILE_KEYS) }, localStorageBytes: all.reduce((sum, entry) => sum + entry.bytes, 0), topInazumaKeys: all.filter((entry) => /inazuma|^run:/i.test(entry.key)).sort((a, b) => b.bytes - a.bytes).slice(0, 15).map(({ key, bytes }) => ({ key: sanitizedKey(key), bytes })) },
+      permanentStores: {
+        hall: { count: hallIndexedDb.record?.teams?.length ?? hall.teams?.length ?? 0, bytes: hallLegacyBytes, legacyBytes: hallLegacyBytes, indexedDbBytes: hallIndexedDb.bytes, indexedDbPresent: hallIndexedDb.present, authority: authority.hall, error: hallIndexedDb.error },
+        development: { bytes: developmentLegacyBytes, legacyBytes: developmentLegacyBytes, indexedDbBytes: developmentIndexedDb.bytes, indexedDbPresent: developmentIndexedDb.present, authority: authority.development, error: developmentIndexedDb.error, redeemedRunIds: developmentIndexedDb.record?.state?.redeemedRunIds?.length ?? development.redeemedRunIds?.length ?? 0, victoryRewardRunIds: developmentIndexedDb.record?.state?.victoryRewardRunIds?.length ?? development.victoryRewardRunIds?.length ?? 0 },
+        album: { bytes: albumLegacyBytes, legacyBytes: albumLegacyBytes, indexedDbBytes: albumIndexedDb.bytes, indexedDbPresent: albumIndexedDb.present, authority: authority.album, error: albumIndexedDb.error },
+        profile: { bytes: bytesFor(PROFILE_KEYS) },
+        legacyPermanentBytes,
+        indexedDbPermanentBytes,
+        localStorageBytes: all.reduce((sum, entry) => sum + entry.bytes, 0),
+        cleanupSentinelPresent: global.PermanentLegacyCleanup?.readSentinel ? Object.values(global.PermanentLegacyCleanup.readSentinel().domains || {}).some((entry) => entry?.cleaned === true) : false,
+        topInazumaKeys: all.filter((entry) => /inazuma|^run:/i.test(entry.key)).sort((a, b) => b.bytes - a.bytes).slice(0, 15).map(({ key, bytes }) => ({ key: sanitizedKey(key), bytes })),
+      },
       browser: { storageEstimate: storageEstimate && { usage: storageEstimate.usage ?? null, quota: storageEstimate.quota ?? null }, localStorageMeasuredBytes: all.reduce((sum, entry) => sum + entry.bytes, 0), family: /iP(?:hone|ad|od)/.test(global.navigator?.userAgent || "") ? "iOS WebKit" : /Firefox/i.test(global.navigator?.userAgent || "") ? "Firefox" : /Chrome|Chromium/i.test(global.navigator?.userAgent || "") ? "Chromium" : "Other" }
     };
   }

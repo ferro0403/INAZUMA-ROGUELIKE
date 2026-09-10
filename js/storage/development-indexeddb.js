@@ -296,7 +296,12 @@
       let marker;
       try { marker = await db().read("meta", MIGRATION_KEY); }
       catch (error) {
-        if (isUnavailable(error)) return { authority: "legacy", migrated: false, deferred: true, error };
+        if (isUnavailable(error)) {
+          if (global.PermanentLegacyCleanup?.wasCleaned?.("development")) {
+            throw global.PermanentLegacyCleanup.authorityUnavailable("development", error);
+          }
+          return { authority: "legacy", migrated: false, deferred: true, error };
+        }
         throw error;
       }
       if (marker?.complete === true) {

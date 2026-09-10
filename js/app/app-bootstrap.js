@@ -76,7 +76,15 @@
       const album = await preparePermanentAlbumStorage();
       const hall = await preparePermanentHallStorage();
       const development = await preparePermanentDevelopmentStorage();
-      return { album, hall, development };
+      let cleanup = { ok: true, skipped: true, reason: "cleanup-unavailable" };
+      if (global.PermanentLegacyCleanup?.cleanup) {
+        try { cleanup = await global.PermanentLegacyCleanup.cleanup(); }
+        catch (error) {
+          cleanup = { ok: false, skipped: false, reason: error?.code || "legacy-cleanup-failed", error };
+          global.console?.warn?.("Permanent legacy localStorage cleanup failed", error?.code || error);
+        }
+      }
+      return { album, hall, development, cleanup };
     }
 
     async function init() {

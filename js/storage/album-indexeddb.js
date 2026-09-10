@@ -244,7 +244,12 @@
     let marker;
     try { marker = await db().read("meta", MIGRATION_KEY); }
     catch (error) {
-      if (!isAuthority()) return { authority: "legacy", migrated: false, deferred: true, error };
+      if (!isAuthority()) {
+        if (global.PermanentLegacyCleanup?.wasCleaned?.("album")) {
+          throw global.PermanentLegacyCleanup.authorityUnavailable("album", error);
+        }
+        return { authority: "legacy", migrated: false, deferred: true, error };
+      }
       throw error;
     }
 
