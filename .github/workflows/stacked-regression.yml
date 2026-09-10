@@ -81,6 +81,16 @@ jobs:
             tests/game-diagnostics-domain-test.js
             tests/game-diagnostics-failure-isolation-test.js
             tests/permanent-storage-compaction-test.js
+            tests/permanent-indexeddb-core-test.js
+            tests/album-indexeddb-cutover-test.js
+            tests/album-permanent-effects-indexeddb-test.js
+            tests/cloud-permanent-storage-adapter-test.js
+            tests/hall-indexeddb-cutover-test.js
+            tests/hall-finalization-indexeddb-test.js
+            tests/cloud-hall-indexeddb-adapter-test.js
+            tests/development-indexeddb-cutover-test.js
+            tests/cloud-development-indexeddb-adapter-test.js
+            tests/permanent-indexeddb-cross-domain-failure-test.js
             tests/app-test-seams-domain-test.js
             tests/team-profile-runtime-domain-test.js
             tests/run-roster-runtime-domain-test.js

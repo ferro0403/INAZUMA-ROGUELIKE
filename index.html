@@ -85,19 +85,23 @@
     <script src="js/persistence-diagnostics.js?v=20260826-raw-save-diagnostics-1"></script>
     <script src="js/restore-gameplay-routing-gate.js?v=20260831-run-local-routing-pr366-1"></script>
     <script src="js/persistence-bootstrap-gate.js?v=20260824-persistence-final-5"></script>
+    <script src="js/storage/permanent-indexeddb.js?v=20260910-development-indexeddb-1"></script>
+    <script src="js/storage/album-indexeddb.js?v=20260910-development-indexeddb-1"></script>
     <script src="js/storage/finalization-storage-headroom.js?v=20260908-finalization-headroom-3"></script>
     <script src="js/permanent-effects.js?v=20260908-finalization-headroom-3"></script>
+    <script src="js/storage/album-permanent-effects.js?v=20260910-development-indexeddb-1"></script>
     <script src="js/storage/terminal-run-cleanup.js?v=20260907-permanent-compaction-1"></script>
     <script src="js/storage/permanent-storage-maintenance.js?v=20260907-permanent-compaction-1"></script>
     <script src="js/hall-of-fame-summary-season-fix.js?v=20260813-summary-season-1"></script>
     <script src="js/cloud-save-core.js?v=20260831-run-local-only-pr366-2"></script>
+    <script src="js/storage/cloud-permanent-storage-adapter.js?v=20260910-development-indexeddb-1"></script>
     <script src="js/cloud-sync-protocol.js?v=20260823-persistence-final-3"></script>
     <script src="js/cloud-write-failure-policy.js?v=20260825-veteran-cloud-1"></script>
     <script src="js/cloud-metadata-protocol.js?v=20260823-persistence-final-3"></script>
     <script src="js/cloud-local-metadata.js?v=20260824-persistence-final-4"></script>
     <script src="js/cloud-restore-protocol.js?v=20260831-run-local-only-pr366-2"></script>
     <script src="js/cloud-restore-resume-coordinator.js?v=20260824-persistence-final-5"></script>
-    <script type="module" src="js/firebase-cloud-save.js?v=20260831-run-local-only-pr366-2"></script>
+    <script type="module" src="js/storage/permanent-cloud-bootstrap-gate.js?v=20260910-development-indexeddb-1"></script>
     <script src="js/pulls/weighted-pull.js?v=20260901-app-decomposition-v1-3"></script>
     <script src="js/pulls/legendary-pull.js?v=20260901-app-decomposition-v1-2"></script>
     <script src="js/draft.js?v=20260901-app-decomposition-v1-3"></script>
@@ -117,9 +121,10 @@
     <script src="js/level-progression.js?v=20260814-ie1-s3-1"></script>
     <script src="js/development-v3.js?v=20260909-aurico-1"></script>
     <script src="js/development-v3-migration.js?v=20260828-development-v3-pr3-2"></script>
-    <script src="js/development-account-v3.js?v=20260909-aurico-1"></script>
+    <script src="js/development-account-v3.js?v=20260910-development-indexeddb-1"></script>
     <script src="js/development-management-v3.js?v=20260909-aurico-1"></script>
     <script src="js/development-runtime.js?v=20260829-development-v3-pr7-1"></script>
+    <script src="js/storage/development-indexeddb.js?v=20260910-development-indexeddb-1"></script>
     <script src="js/gameplay-persistence.js?v=20260823-gameplay-persistence-3"></script>
     <script src="js/boss-gameover-runtime.js?v=20260823-boss-crash-4"></script>
     <script src="js/boss/boss-flow-controller.js?v=20260902-boss-extraction-1"></script>
@@ -137,7 +142,7 @@
     <script src="js/match/match-presentation.js?v=20260903-match-presentation-1"></script>
     <script src="js/match/match-controller.js?v=20260902-match-extraction-1"></script>
     <script src="js/gameover/gameover-view.js?v=20260902-terminal-extraction-1"></script>
-    <script src="js/gameover/gameover-controller.js?v=20260902-terminal-extraction-1"></script>
+    <script src="js/gameover/gameover-controller.js?v=20260910-development-indexeddb-1"></script>
     <script src="js/finalization/finalization-view.js?v=20260902-terminal-extraction-1"></script>
     <script src="js/finalization/finalization-controller.js?v=20260902-terminal-extraction-1"></script>
     <script src="js/inventory/inventory-model.js?v=20260902-inventory-extraction-1"></script>
@@ -154,10 +159,11 @@
     <script src="js/hall/hall-controller.js?v=20260902-permanent-club-ui-1"></script>
     <script src="js/development/development-center-view.js?v=20260902-permanent-club-ui-1"></script>
     <script src="js/development/development-center-controller.js?v=20260909-aurico-1"></script>
+    <script src="js/development/development-indexeddb-controller-adapter.js?v=20260910-development-indexeddb-1"></script>
     <script src="js/home/home-view.js?v=20260902-home-season-resume-1"></script>
     <script src="js/home/home-controller.js?v=20260902-home-season-resume-1"></script>
     <script src="js/shop/shop-view.js?v=20260902-shop-settings-domain-1"></script>
-    <script src="js/shop/shop-controller.js?v=20260902-shop-settings-domain-1"></script>
+    <script src="js/shop/shop-controller.js?v=20260910-development-indexeddb-1"></script>
     <script src="js/settings/settings-view.js?v=20260907-game-diagnostics-domain-1"></script>
     <script src="js/settings/settings-controller.js?v=20260907-game-diagnostics-domain-1"></script>
     <script src="js/run-entry/season-selection-view.js?v=20260902-home-season-resume-1"></script>
@@ -166,7 +172,7 @@
     <script src="js/run-entry/initial-draft-view.js?v=20260903-initial-draft-extraction-1"></script>
     <script src="js/run-entry/initial-draft-controller.js?v=20260903-initial-draft-extraction-1"></script>
     <script src="js/app/ui-shell.js?v=20260903-app-ui-shell-1"></script>
-    <script src="js/app/app-bootstrap.js?v=20260903-app-bootstrap-1"></script>
+    <script src="js/app/app-bootstrap.js?v=20260910-development-indexeddb-1"></script>
     <script src="js/app/dev-diagnostics.js?v=20260903-dev-diagnostics-1"></script>
     <script src="js/diagnostics/diagnostics-storage.js?v=20260907-game-diagnostics-domain-1"></script>
     <script src="js/diagnostics/diagnostics-runtime.js?v=20260907-game-diagnostics-domain-1"></script>
@@ -183,7 +189,7 @@
     <script src="js/app.js?v=20260901-save-persistence-fix-1"></script>
     <script src="js/inventory-pull-detail-copy.js?v=20260820-pull-detail-copy-1"></script>
     <script src="js/notification-preferences.js?v=20260907-diagnostics-order-2"></script>
-    <script src="js/shop-ui-polish.js?v=20260828-development-v3-pr5a-1"></script>
+    <script src="js/shop-ui-polish.js?v=20260910-development-indexeddb-1"></script>
     <script src="js/player-detail-element-badges.js?v=20260813-element-badges-1"></script>
     <script src="js/player-detail-element-badges-global.js?v=20260813-album-element-badges-1"></script>
     <script src="js/five-formation-floating-picker.js?v=20260817-dynamic-three-card-picker-1"></script>

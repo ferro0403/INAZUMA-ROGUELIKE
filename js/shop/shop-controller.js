@@ -2,6 +2,14 @@
   "use strict";
 
   function create({ app, view, devMode, renderHome, toast }) {
+    const callAccount = (asyncName, syncName, ...args) => {
+      const account = global.DevelopmentAccountV3;
+      const operation = typeof account?.[asyncName] === "function" ? account[asyncName] : account?.[syncName];
+      if (typeof operation !== "function") return Promise.reject(Object.assign(new Error(`Development operation unavailable: ${syncName}`), { code: "development-operation-unavailable" }));
+      try { return Promise.resolve(operation.apply(account, args)); }
+      catch (error) { return Promise.reject(error); }
+    };
+
     async function render(section = "general") {
       await Promise.all(global.SeasonRegistry.list().map((season) => global.SeasonRegistry.loadDatabase(season.id)));
       const state = global.DevelopmentAccountV3.read();
@@ -13,27 +21,40 @@
         button.onclick = () => render(button.dataset.shopTab);
       });
       document.querySelectorAll("[data-buy-project]").forEach((button) => {
-        button.onclick = () => {
-          const result = global.DevelopmentAccountV3.purchaseProject(button.dataset.buyProject);
+        button.onclick = async () => {
+          if (button.disabled) return;
+          button.disabled = true;
+          let result;
+          try { result = await callAccount("purchaseProjectAsync", "purchaseProject", button.dataset.buyProject); }
+          catch (error) { result = { ok: false, reason: "persistence", error }; }
           toast(result.ok ? "PROGETTO ACQUISTATO" : result.reason === "coins" ? "MONETE INSUFFICIENTI" : "ACQUISTO NON SALVATO");
-          render(section);
+          await render(section);
         };
       });
       document.querySelectorAll("[data-buy-emblem]").forEach((button) => {
-        button.onclick = () => {
+        button.onclick = async () => {
+          if (button.disabled) return;
+          button.disabled = true;
           const product = catalog.find((item) => item.emblemId === button.dataset.buyEmblem);
-          const result = global.DevelopmentAccountV3.purchaseEmblem(product);
-          toast(result.ok ? "STEMMA SBLOCCATO" : result.reason === "cups" ? "COPPE SEASON INSUFFICIENTI" : result.reason === "coins" ? "MONETE INSUFFICIENTI" : "STEMMA GIÀ POSSEDUTO");
-          render(section);
+          let result;
+          try { result = await callAccount("purchaseEmblemAsync", "purchaseEmblem", product); }
+          catch (error) { result = { ok: false, reason: "persistence", error }; }
+          toast(result.ok ? "STEMMA SBLOCCATO" : result.reason === "cups" ? "COPPE SEASON INSUFFICIENTI" : result.reason === "coins" ? "MONETE INSUFFICIENTI" : result.reason === "owned" ? "STEMMA GIÀ POSSEDUTO" : "ACQUISTO NON SALVATO");
+          await render(section);
         };
       });
       if (devMode) bindDev(section, catalog);
     }
 
     function bindDev(section, catalog) {
-      const mutate = (callback) => {
-        global.DevelopmentAccountV3.mutate(callback);
-        render(section);
+      const mutate = async (callback) => {
+        try {
+          await callAccount("mutateAsync", "mutate", callback);
+          await render(section);
+        } catch (error) {
+          console.error("Development dev mutation failed", error);
+          toast("MODIFICA DEV NON SALVATA");
+        }
       };
       document.querySelectorAll("[data-shop-coins]").forEach((button) => button.onclick = () => mutate((state) => { state.coins += Number(button.dataset.shopCoins); }));
       document.querySelectorAll("[data-shop-cups]").forEach((button) => button.onclick = () => mutate((state) => { state.cupsBySeason[button.dataset.shopCups] += Number(button.dataset.amount); }));

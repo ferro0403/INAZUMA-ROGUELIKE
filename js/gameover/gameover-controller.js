@@ -2,34 +2,25 @@
   "use strict";
   function create(deps) {
     const run = () => deps.getRun();
-    function drainPermanentEffects() {
-      const result = global.PermanentEffects.drain(run());
-      if (result.error) console.error("Permanent effect remains pending", result.error);
+    function reportPermanentDrain(result) {
+      if (result?.error) console.error("Permanent effect remains pending", result.error);
       return result;
+    }
+    function drainPermanentEffects() {
+      const operation = global.PermanentEffects.drain(run());
+      if (operation && typeof operation.then === "function") return operation.then(reportPermanentDrain);
+      return reportPermanentDrain(operation);
     }
     function rewardPresentation(defeatedBosses, endReason) {
       const bosses = Math.max(0, Number(defeatedBosses) || 0);
       return { endReason, coins: bosses * 20 + (endReason === "victory" ? 100 : 0), cups: endReason === "victory" ? 1 : 0, seen: false };
     }
-    function resolveDevelopmentEndRunFlow({ endReason, onComplete, expectedRunId = null }) {
-      deps.recoverCanonicalRun?.();
-      const currentRun = run();
-      if (expectedRunId && currentRun?.runId !== expectedRunId) return;
-      const retry = () => resolveDevelopmentEndRunFlow({ endReason, onComplete, expectedRunId: currentRun.runId });
-      const defeatedBosses = Number(currentRun.completedBossIds?.length || currentRun.bossIndex || 0);
-      const effectId = global.PermanentEffects.developmentId(currentRun, endReason);
-      const existingEffect = currentRun.permanentEffectOutbox?.find((entry) => entry.id === effectId);
-      const prepared = existingEffect ? { ok: true } : deps.persistMutation({ label: "terminal-development-effect", mutate: (current) => {
-        global.PermanentEffects.assertCanonicalTerminal(current, endReason);
-        return global.PermanentEffects.enqueueDevelopment(current, { endReason, defeatedBosses });
-      } });
-      if (!prepared.ok) return deps.view.renderTerminalEffectPending(retry);
-      const drained = drainPermanentEffects();
-      if (drained.error) {
+    function finishDevelopmentDrain(drained, { endReason, onComplete, retry, defeatedBosses, effectId }) {
+      if (drained?.error) {
         deps.recoverCanonicalRun?.();
         return deps.view.renderTerminalEffectPending(retry);
       }
-      const effect = run().permanentEffectOutbox.find((entry) => entry.id === effectId);
+      const effect = run()?.permanentEffectOutbox?.find((entry) => entry.id === effectId);
       if (effect?.status !== "applied") return deps.view.renderTerminalEffectPending(retry);
       if (!run().developmentRewardPresentation || run().developmentRewardPresentation.endReason !== endReason) {
         const presentation = deps.persistMutation({ label: "development-reward-presentation-create", mutate: (current) => {
@@ -47,6 +38,30 @@
       }, onCommitted: () => onComplete(), rerender: ({ ok }) => { if (!ok) deps.view.renderTerminalEffectPending(retry); } });
       if (!run().developmentRewardPresentation.seen) return deps.view.renderDevelopmentRewardReveal(run().developmentRewardPresentation, continueFlow);
       return onComplete();
+    }
+    function resolveDevelopmentEndRunFlow({ endReason, onComplete, expectedRunId = null }) {
+      deps.recoverCanonicalRun?.();
+      const currentRun = run();
+      if (expectedRunId && currentRun?.runId !== expectedRunId) return;
+      const retry = () => resolveDevelopmentEndRunFlow({ endReason, onComplete, expectedRunId: currentRun.runId });
+      const defeatedBosses = Number(currentRun.completedBossIds?.length || currentRun.bossIndex || 0);
+      const effectId = global.PermanentEffects.developmentId(currentRun, endReason);
+      const existingEffect = currentRun.permanentEffectOutbox?.find((entry) => entry.id === effectId);
+      const prepared = existingEffect ? { ok: true } : deps.persistMutation({ label: "terminal-development-effect", mutate: (current) => {
+        global.PermanentEffects.assertCanonicalTerminal(current, endReason);
+        return global.PermanentEffects.enqueueDevelopment(current, { endReason, defeatedBosses });
+      } });
+      if (!prepared.ok) return deps.view.renderTerminalEffectPending(retry);
+      const drained = drainPermanentEffects();
+      const finish = (result) => finishDevelopmentDrain(result, { endReason, onComplete, retry, defeatedBosses, effectId });
+      if (drained && typeof drained.then === "function") {
+        return drained.then(finish).catch((error) => {
+          console.error("Permanent effect remains pending", error);
+          deps.recoverCanonicalRun?.();
+          return deps.view.renderTerminalEffectPending(retry);
+        });
+      }
+      return finish(drained);
     }
     function renderGameOver({ developmentResolved = false } = {}) {
       const currentRun = run();
