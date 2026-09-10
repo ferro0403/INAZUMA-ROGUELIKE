@@ -2,9 +2,8 @@
   "use strict";
   function create(deps) {
     const run = () => deps.getRun();
-    function resume({ render = true } = {}) {
-      if (!global.RestoreGameplayRoutingGate?.enter("finalization")) return { completed: false, blocked: true };
-      const result = global.PermanentEffects.resumeFinalization(run());
+
+    function finishResume(result, render) {
       if (!result.completed) {
         if (result.error) {
           console.error("Finalization remains resumable", result.error);
@@ -17,14 +16,28 @@
       if (!render) return result;
       return deps.resolveDevelopment({ endReason: "victory", onComplete: () => renderCelebration(run().hallTeamId, { developmentResolved: true, rewardPresentationResolved: true }) });
     }
+
+    function resume({ render = true } = {}) {
+      if (!global.RestoreGameplayRoutingGate?.enter("finalization")) return { completed: false, blocked: true };
+      const operation = global.PermanentEffects.resumeFinalization(run());
+      if (operation && typeof operation.then === "function") {
+        return operation.then((result) => finishResume(result, render)).catch((error) => finishResume({ run: run(), status: run()?.finalization?.status || "pending", completed: false, error }, render));
+      }
+      return finishResume(operation, render);
+    }
+
     function renderPending(result = {}) {
       return deps.view.renderPending(result, () => {
         const retry = document.getElementById("retry-run-finalization");
         retry.disabled = true;
+        const handle = (resumed) => {
+          if (resumed.completed) return deps.resolveDevelopment({ endReason: "victory", onComplete: () => renderCelebration(run().hallTeamId, { developmentResolved: true, rewardPresentationResolved: true }) });
+          deps.toast("Finalizzazione ancora in sospeso. Puoi riprovare senza perdere la vittoria.", "error");
+          return renderPending(resumed);
+        };
         const resumed = resume({ render: false });
-        if (resumed.completed) return deps.resolveDevelopment({ endReason: "victory", onComplete: () => renderCelebration(run().hallTeamId, { developmentResolved: true, rewardPresentationResolved: true }) });
-        deps.toast("Finalizzazione ancora in sospeso. Puoi riprovare senza perdere la vittoria.", "error");
-        renderPending(resumed);
+        if (resumed && typeof resumed.then === "function") return resumed.then(handle);
+        return handle(resumed);
       });
     }
     function ensureSummaryState(hallTeamId) {

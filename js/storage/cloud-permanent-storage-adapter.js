@@ -2,8 +2,9 @@
   "use strict";
 
   const core = global.InazumaCloudSaveCore;
-  const repository = global.AlbumIndexedDbStorage;
-  if (!core || !repository) return;
+  const albumRepository = global.AlbumIndexedDbStorage;
+  const hallRepository = global.HallOfFameStorage;
+  if (!core) return;
 
   const LOCAL_SNAPSHOT = typeof Symbol === "function" ? Symbol("inazuma-local-permanent-snapshot") : "__inazumaLocalPermanentSnapshot";
   const baseReadLocalSnapshot = core.readLocalSnapshot.bind(core);
@@ -21,13 +22,35 @@
     return !!snapshot?.[LOCAL_SNAPSHOT];
   }
 
+  function hallCloudShape(archive) {
+    return {
+      archiveSchemaVersion: archive?.schemaVersion ?? hallRepository?.ARCHIVE_SCHEMA_VERSION ?? 1,
+      updatedAt: archive?.updatedAt ?? null,
+      teams: Array.isArray(archive?.teams) ? core.clone(archive.teams) : [],
+      index: Array.isArray(archive?.index) ? core.clone(archive.index) : [],
+    };
+  }
+
   async function materializeLocal(snapshot) {
     if (!isLocal(snapshot)) return snapshot;
-    const readiness = await repository.ensureReady();
-    if (readiness?.authority !== "indexeddb") return snapshot;
-    await repository.refresh();
     const current = core.clone(snapshot);
-    current.album = repository.read();
+
+    if (albumRepository?.ensureReady) {
+      const readiness = await albumRepository.ensureReady();
+      if (readiness?.authority === "indexeddb") {
+        await albumRepository.refresh();
+        current.album = albumRepository.read();
+      }
+    }
+
+    if (hallRepository?.ensureIndexedDbReady) {
+      const readiness = await hallRepository.ensureIndexedDbReady();
+      if (readiness?.authority === "indexeddb") {
+        const archive = await hallRepository.refreshIndexedDbArchive();
+        current.hallOfFame = hallCloudShape(archive);
+      }
+    }
+
     return current;
   }
 

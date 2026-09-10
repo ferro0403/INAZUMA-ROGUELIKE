@@ -85,6 +85,9 @@ jobs:
             tests/album-indexeddb-cutover-test.js
             tests/album-permanent-effects-indexeddb-test.js
             tests/cloud-permanent-storage-adapter-test.js
+            tests/hall-indexeddb-cutover-test.js
+            tests/hall-finalization-indexeddb-test.js
+            tests/cloud-hall-indexeddb-adapter-test.js
             tests/app-test-seams-domain-test.js
             tests/team-profile-runtime-domain-test.js
             tests/run-roster-runtime-domain-test.js
