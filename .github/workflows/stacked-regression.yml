@@ -90,6 +90,7 @@ jobs:
             tests/cloud-hall-indexeddb-adapter-test.js
             tests/development-indexeddb-cutover-test.js
             tests/cloud-development-indexeddb-adapter-test.js
+            tests/permanent-indexeddb-cross-domain-failure-test.js
             tests/app-test-seams-domain-test.js
             tests/team-profile-runtime-domain-test.js
             tests/run-roster-runtime-domain-test.js
