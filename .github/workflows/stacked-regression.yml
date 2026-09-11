@@ -96,6 +96,7 @@ jobs:
             tests/team-profile-runtime-domain-test.js
             tests/run-roster-runtime-domain-test.js
             tests/player-presentation-production-path-test.js
+            tests/ie1-player-id-visual-corrections-test.js
             tests/permanent-club-ui-production-path-test.js
             tests/champion-hall-presentation-domain-test.js
             tests/inventory-equipment-production-path-test.js
