@@ -535,6 +535,19 @@
   function resolveDevelopmentEndRunFlow(options) { return gameOverController.resolveDevelopmentEndRunFlow(options); }
   function renderGameOver(options) { return gameOverController.renderGameOver(options); }
   function resumeRunFinalization(options) { return finalizationController.resume(options); }
+  function finalizationDestination(result) {
+    return result?.completed
+      ? { destination: "season-complete", finalization: result }
+      : { destination: "finalization-pending", finalization: result || run?.finalization || null };
+  }
+  function resolveFinalizationDestination(operation) {
+    if (operation && typeof operation.then === "function") {
+      return operation
+        .then(finalizationDestination)
+        .catch((error) => ({ destination: "finalization-pending", finalization: { ...(run?.finalization || {}), error } }));
+    }
+    return finalizationDestination(operation);
+  }
   function renderFinalizationPending(result) { return finalizationController.renderPending(result); }
   function renderFinalCelebration(hallTeamId, options) { return finalizationController.renderCelebration(hallTeamId, options); }
   function renderFinalSummary(hallTeamId, options) { return finalizationController.renderSummary(hallTeamId, options); }
@@ -772,7 +785,7 @@
     buildFinalization: (current, boss) => { const snapshot = buildChampionSnapshot(boss); current.finalization = { status: "pending", archiveKey: snapshot.archiveKey, hallTeamId: snapshot.hallTeamId }; global.PermanentEffects.enqueueHall(current, snapshot); },
     handoffCommitted: () => { ui.pendingReward = null; ui.match = null; closeModal(); },
     failedHandoffDestination: (committed) => { const recovered = committed.run; const status = String(recovered?.finalization?.status || ""); const final = recovered?.phase === "finalization" || ["pending", "hall-written", "development-written"].includes(status); return { destination: final ? "finalization-pending" : "post-boss-recovery", error: committed.error, finalization: recovered?.finalization }; },
-    finishFinalization: () => { const finalization = resumeRunFinalization({ render: false }); return finalization.completed ? { destination: "season-complete", finalization } : { destination: "finalization-pending", finalization }; },
+    finishFinalization: () => resolveFinalizationDestination(resumeRunFinalization({ render: false })),
     createPostBossCheckpoint: (current) => { try { global.RunState.createCheckpoint(current); } catch (error) { console.error("Post-boss checkpoint creation failed after canonical commit", error); toast("Progresso Boss salvato; il checkpoint di recupero verrà ricreato più tardi.", "warning"); } },
     renderRecoveryView: (retry) => { app.innerHTML = `<main class="hero-screen post-boss-recovery-screen" data-post-boss-recovery><section class="panel"><p class="eyebrow">PROGRESSO BOSS</p><h1>Ripresa ricompense</h1><p class="muted">Il progresso salvato non è stato modificato.</p><button type="button" class="btn btn-yellow" id="retry-post-boss-flow">RIPROVA / CONTINUA</button></section></main>`; resetRenderedViewScroll(); document.getElementById("retry-post-boss-flow")?.addEventListener("click", retry); },
   });
@@ -1251,18 +1264,22 @@
     });
     if (!committed.ok) return false;
     let destination = committed.value || { destination: "none" };
+    const finishDevNavigation = (resolvedDestination) => {
+      if (resolvedDestination.destination === "map") {
+        try { global.RunState.createCheckpoint?.(run); }
+        catch (error) { console.warn("Unable to persist DEV boss checkpoint", error); }
+      }
+      if (renderResult) navigateBossVictoryDestination(resolvedDestination);
+      return true;
+    };
     if (destination.destination === "finalization-pending") {
-      const finalization = resumeRunFinalization({ render: false });
-      destination = finalization.completed
-        ? { destination: "season-complete", finalization }
-        : { destination: "finalization-pending", finalization };
+      const finalizationDestinationResult = resolveFinalizationDestination(resumeRunFinalization({ render: false }));
+      if (finalizationDestinationResult && typeof finalizationDestinationResult.then === "function") {
+        return finalizationDestinationResult.then(finishDevNavigation);
+      }
+      destination = finalizationDestinationResult;
     }
-    if (destination.destination === "map") {
-      try { global.RunState.createCheckpoint?.(run); }
-      catch (error) { console.warn("Unable to persist DEV boss checkpoint", error); }
-    }
-    if (renderResult) navigateBossVictoryDestination(destination);
-    return true;
+    return finishDevNavigation(destination);
   }
 
   function devSkipToCompletedBosses(target) {

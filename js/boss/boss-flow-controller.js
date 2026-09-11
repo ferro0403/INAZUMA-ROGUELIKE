@@ -6,6 +6,16 @@
   function create(deps) {
     const run = () => deps.getRun();
     const db = () => deps.getSeasonDb();
+    const isThenable = (value) => Boolean(value && typeof value.then === "function");
+
+    function routeAsyncFailure(error) {
+      console.error("Boss flow async transition failed", error);
+      const currentRun = run();
+      const status = String(currentRun?.finalization?.status || "");
+      const pendingFinalization = currentRun?.phase === "finalization" || ["pending", "hall-written", "development-written"].includes(status);
+      if (pendingFinalization) return deps.renderFinalizationPending({ ...(currentRun.finalization || {}), error });
+      return renderRecovery();
+    }
 
     function matchFromNode(node, previousNodeId = null, activeRun = run()) {
       const match = {
@@ -79,6 +89,8 @@
     }
 
     function navigate(flow) {
+      if (isThenable(flow)) return flow.then((resolved) => navigate(resolved)).catch(routeAsyncFailure);
+      if (!flow) return renderRecovery();
       if (flow.destination === "none") {
         const currentRun = run();
         const finalizationStatus = String(currentRun?.finalization?.status || "");
@@ -115,10 +127,8 @@
       return deps.selectWeightedCandidates(available, random);
     }
 
-    function startRewards() {
-      const flowResult = resolve({ clearMatch: true });
-      if (flowResult.destination === "season-complete") return deps.renderSeasonComplete();
-      if (flowResult.destination === "map") return deps.renderMap({ persist: false });
+    function continueStartRewards(flowResult) {
+      if (["season-complete", "map", "finalization-pending", "post-boss-recovery"].includes(flowResult?.destination)) return navigate(flowResult);
       const flow = run().postBossFlow;
       const boss = db().bossOrder[Number(flow?.bossIndex ?? run().bossIndex)];
       if (!flow || !boss) return deps.renderMap();
@@ -127,7 +137,14 @@
         mutate: (current) => global.BossGameOverRuntime.prepareBossRewardCandidatesMutation({ run: current, seasonDb: db(), candidateIds: flow.candidateIds?.length ? flow.candidateIds : candidates(flow, boss).map((player) => String(player.profileId || player.playerId)) }),
         rerender: ({ ok }) => { if (!ok && run()?.postBossFlow) renderRecovery(); },
       });
-      if (committed.ok) showNextReward();
+      if (committed.ok) return showNextReward();
+      return committed;
+    }
+
+    function startRewards() {
+      const flowResult = resolve({ clearMatch: true });
+      if (isThenable(flowResult)) return flowResult.then(continueStartRewards).catch(routeAsyncFailure);
+      return continueStartRewards(flowResult);
     }
 
     function renderRecovery() {
@@ -158,7 +175,7 @@
       if (!run().postBossFlow) return deps.renderMap();
       const committed = deps.persistGameplayMutation({ label: "boss-reward-advance", mutate: (current) => global.BossGameOverRuntime.advanceBossRewardMutation({ run: current, recordAction }), rerender: ({ ok }) => { if (!ok && run()?.postBossFlow) renderRecovery(); } });
       if (!committed.ok) return;
-      run().postBossFlow.remainingRewards > 0 ? showNextReward() : navigate(finishTransition());
+      return run().postBossFlow.remainingRewards > 0 ? showNextReward() : navigate(finishTransition());
     }
 
     function finishTransition() {
