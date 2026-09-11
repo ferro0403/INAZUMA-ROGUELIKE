@@ -1,6 +1,8 @@
 "use strict";
 
 const assert = require("assert");
+const fs = require("fs");
+const vm = require("vm");
 const season = require("../data/IE1_season_compact.json");
 const visuals = require("../data/PLAYER_VISUALS.json");
 
@@ -113,4 +115,83 @@ assert.strictEqual(season.summary.players, season.players.length);
 assert.strictEqual(season.validation.players, season.players.length);
 assert.strictEqual(season.validation.exactValuesChecked, season.players.length * 21 * 9);
 
-console.log("IE1 corrected canonical ids, removals, portraits, fullbody mappings and boss lineups: ok");
+async function verifyLegacyReadCompatibility() {
+  const context = {
+    console,
+    fetch: async () => ({
+      ok: true,
+      json: async () => structuredClone(season),
+    }),
+    ProfiledSeasonRuntime: { register: () => {} },
+  };
+  context.globalThis = context;
+  vm.createContext(context);
+  vm.runInContext(fs.readFileSync("js/season-registry.js", "utf8"), context, {
+    filename: "js/season-registry.js",
+  });
+
+  const loaded = await context.SeasonRegistry.loadDatabase("ie1");
+  assert.strictEqual(
+    loaded.players.some((player) => String(player.playerId) === "4483"),
+    false,
+    "legacy IDs must stay outside the active IE1 player catalog",
+  );
+  assert.strictEqual(
+    context.SeasonRegistry.player("87", "ie1")?.name,
+    "Francis Tell",
+    "new runs resolve the corrected canonical ID",
+  );
+  assert.strictEqual(
+    context.SeasonRegistry.player("4483", "ie1")?.name,
+    "Francis Tell",
+    "pre-correction runs can still resolve the historical ID",
+  );
+  assert.strictEqual(
+    context.SeasonRegistry.player("4484", "ie1")?.name,
+    "Darren Gouger",
+    "a removed player remains resolvable only for an already-started run",
+  );
+  assert.strictEqual(
+    context.SeasonRegistry.player("4483", "ie1")?.frontFullbodyUrl,
+    visuals.players["87"].frontFullbodyUrl,
+    "historical remapped entries use the corrected fullbody visual",
+  );
+
+  context.AlbumProgress = {
+    DEFAULT_COLLECTION_ID: "ie1",
+    unlockedSet: () => new Set(["4483", "4484"]),
+  };
+  context.HallOfFameStorage = { listSummaries: () => [] };
+  vm.runInContext(fs.readFileSync("js/album/album-controller.js", "utf8"), context, {
+    filename: "js/album/album-controller.js",
+  });
+  const controller = context.AlbumController.create({
+    app: {},
+    getUi: () => ({}),
+    getRun: () => null,
+    prepareAlbumLegacyContext: () => {},
+    getSeasonDb: () => loaded,
+    getFreeAgentsDb: () => ({ players: [] }),
+    getSeasonPlayersById: () => context.SeasonRegistry.playersIndex("ie1"),
+    getActiveSeason: () => ({ id: "ie1" }),
+    loadSeason: async () => loaded,
+    isProfileAwareSeason: () => false,
+    closeModal: () => {},
+    resetRenderedViewScroll: () => {},
+    bindSectionRootNav: () => {},
+    showPlayerDetailsFor: () => {},
+    scrollSnapshot: () => ({}),
+    view: { escapeHtml: String, sectionRootButton: () => "", playerCard: () => "" },
+  });
+  const unlocked = controller.unlockedSet("ie1", {});
+  assert.ok(unlocked.has("4483"), "stored legacy Album unlock remains untouched");
+  assert.ok(unlocked.has("87"), "legacy Album unlock is recognized as the corrected canonical ID at read time");
+  assert.strictEqual(unlocked.has("4482"), false, "unrelated IDs are not synthesized");
+}
+
+verifyLegacyReadCompatibility()
+  .then(() => console.log("IE1 corrected IDs, visuals, legacy run resolution and Album read aliases: ok"))
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
