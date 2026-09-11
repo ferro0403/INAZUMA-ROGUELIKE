@@ -1,0 +1,52 @@
+name: Export IE1 S3 Kirkwood JS v2
+on:
+  push:
+    branches:
+      - tmp/export-ie1-s3-kirkwood-js
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Extract corrected Kirkwood
+        run: |
+          python - <<'PY'
+          import json, os
+          with open("data/IE1_S3_season_compact.json", encoding="utf-8") as f:
+              data=json.load(f)
+          def vals(x):
+              if isinstance(x, dict): return list(x.values())
+              if isinstance(x, list): return x
+              return []
+          teams=data.get("teams", {})
+          if isinstance(teams, dict):
+              team=teams.get("kirkwood")
+              if team is None:
+                  team=next((t for t in vals(teams) if isinstance(t,dict) and (t.get("id")=="kirkwood" or t.get("teamId")=="kirkwood" or t.get("name")=="Kirkwood")), None)
+          else:
+              team=next((t for t in vals(teams) if isinstance(t,dict) and (t.get("id")=="kirkwood" or t.get("teamId")=="kirkwood" or t.get("name")=="Kirkwood")), None)
+          assert team is not None, "Kirkwood team not found"
+          ids=set(str(x) for x in team.get("playerIds", []))
+          players=[p for p in vals(data.get("players",{})) if isinstance(p,dict) and str(p.get("playerId")) in ids]
+          profiles=[p for p in vals(data.get("profiles",{})) if isinstance(p,dict) and (p.get("teamId")=="kirkwood" or str(p.get("profileId","")).endswith("@kirkwood"))]
+          pool=[x for x in vals(data.get("recruitmentPool",[])) if isinstance(x,dict) and (x.get("teamId")=="kirkwood" or str(x.get("playerId")) in ids)]
+          by_name={p.get("name"):str(p.get("playerId")) for p in players}
+          expected={"Alfred Meenan":"161","Dan Mirthful":"162","Malcolm Night":"160","Toby Damian":"164","Zachary Moore":"166"}
+          for name,pid in expected.items():
+              assert by_name.get(name)==pid, (name, by_name.get(name), pid)
+          assert len([p for p in players if p.get("name")=="Toby Damian"])==1
+          bundle={"seasonId":data.get("seasonId"),"seasonName":data.get("seasonName"),"team":team,"players":players,"profiles":profiles,"recruitmentPool":pool}
+          os.makedirs("export",exist_ok=True)
+          for path in ["export/IE1_S3_KIRKWOOD_MODIFICATA.json"]:
+              with open(path,"w",encoding="utf-8") as f:
+                  json.dump(bundle,f,ensure_ascii=False,indent=2); f.write("\n")
+          with open("export/IE1_S3_KIRKWOOD_MODIFICATA.js","w",encoding="utf-8") as f:
+              f.write("globalThis.IE1_S3_KIRKWOOD_MODIFICATA = ")
+              json.dump(bundle,f,ensure_ascii=False,indent=2)
+              f.write(";\n")
+          print("OK",len(players),len(profiles),len(pool))
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ie1-s3-kirkwood-modificata-v2
+          path: export/*
