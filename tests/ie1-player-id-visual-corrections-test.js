@@ -136,6 +136,22 @@ async function verifyLegacyReadCompatibility() {
     false,
     "legacy IDs must stay outside the active IE1 player catalog",
   );
+  const lookupIndex = context.SeasonRegistry.playersIndex("ie1");
+  assert.strictEqual(
+    lookupIndex.size,
+    loaded.players.length,
+    "legacy lookup records must not increase the active playersIndex size",
+  );
+  assert.strictEqual(
+    [...lookupIndex.values()].some((player) => String(player.playerId) === "4483"),
+    false,
+    "legacy lookup records must not be enumerable by new-content consumers",
+  );
+  assert.strictEqual(
+    lookupIndex.get("4483")?.name,
+    "Francis Tell",
+    "playersIndex direct lookup falls back to the historical record",
+  );
   assert.strictEqual(
     context.SeasonRegistry.player("87", "ie1")?.name,
     "Francis Tell",
