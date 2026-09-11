@@ -23,6 +23,7 @@ const PRE_APP_PRODUCTION_MODULES = [
   "match-simulator-config.js",
   "match-simulator.js",
   "level-progression.js",
+  "storage/album-permanent-effects.js",
 ];
 const appModuleIndex = PRODUCTION_MODULES.indexOf("app.js");
 assert(appModuleIndex >= 0, "production runtime must load app.js");
@@ -104,6 +105,18 @@ function runtimeOptions(meta, seasonDb, random) {
       fetch: fetchFor(seasonDb),
       Math: seededMath(random),
       Date: seededDate(meta.index),
+      AlbumIndexedDbStorage: (() => {
+        const applied = new Set();
+        return {
+          isAuthority: () => true,
+          async applyUnlock(collectionId, playerId, metadata = {}) {
+            const key = String(metadata.applicationKey || `${collectionId}:${playerId}`);
+            const first = !applied.has(key);
+            applied.add(key);
+            return first;
+          },
+        };
+      })(),
     },
   };
 }
@@ -259,6 +272,21 @@ async function draftFromCreation(runtime, seasonDb, meta, random, coverage) {
   expect(runtime.canonical.roster.length === runtime.canonical.lineup.length, "initial roster/lineup count mismatch", meta, runtime.canonical);
   expect(runtime.canonical.roster.length >= 11, "initial draft produced fewer than 11 players", meta, runtime.canonical);
   coverage.draftPicks += picks;
+
+  // The real browser IndexedDB cutover drains Album receipts asynchronously
+  // after the draft commit. Wait for that background drain before the very
+  // next gameplay action: the pre-fix race advanced canonical generation here
+  // while leaving app.js on the previous generation.
+  await settle();
+  await settle();
+  const canonicalAfterAlbumDrain = runtime.canonical;
+  const liveAfterAlbumDrain = runtime.seam.getRun();
+  const albumReceipts = (canonicalAfterAlbumDrain.permanentEffectOutbox || []).filter((effect) => effect.type === "album-unlock");
+  expect(albumReceipts.length >= runtime.canonical.roster.length, "IndexedDB Album soak produced no draft receipts", meta, canonicalAfterAlbumDrain, { albumReceipts: albumReceipts.length });
+  expect(albumReceipts.every((effect) => effect.status === "applied"), "IndexedDB Album background drain left draft receipts pending", meta, canonicalAfterAlbumDrain, { pending: albumReceipts.filter((effect) => effect.status !== "applied").map((effect) => effect.id) });
+  expect(Number(liveAfterAlbumDrain?.storageGeneration || 0) === Number(canonicalAfterAlbumDrain.storageGeneration || 0), "IndexedDB Album drain desynchronized live/canonical generation", meta, canonicalAfterAlbumDrain, { liveGeneration: liveAfterAlbumDrain?.storageGeneration, canonicalGeneration: canonicalAfterAlbumDrain.storageGeneration });
+  coverage.albumDrainChecks += 1;
+
   const goMap = runtime.query("#go-map");
   expect(Boolean(goMap), "Squad has no go-map action after draft", meta, runtime.canonical);
   goMap.click();
@@ -496,7 +524,7 @@ async function runCampaign(meta, seasonDb, globalCoverage) {
   const coverage = {
     actions: 0, draftPicks: 0, nodeTypes: {}, matches: {}, victories: 0, defeats: 0,
     bossRewards: 0, specialRewards: 0, pullSkips: 0, itemSkips: 0, tradeSkips: 0,
-    randomReveals: 0, fiveEditorSaves: 0, refreshes: 0, quotaRetries: 0, doubleActions: 0,
+    randomReveals: 0, fiveEditorSaves: 0, refreshes: 0, quotaRetries: 0, doubleActions: 0, albumDrainChecks: 0,
   };
 
   runtime = await draftFromCreation(runtime, seasonDb, meta, random, coverage);
@@ -526,7 +554,7 @@ async function runCampaign(meta, seasonDb, globalCoverage) {
   globalCoverage.seasons[meta.seasonId] = (globalCoverage.seasons[meta.seasonId] || 0) + 1;
   for (const [type, count] of Object.entries(coverage.nodeTypes)) globalCoverage.nodeTypes[type] = (globalCoverage.nodeTypes[type] || 0) + count;
   for (const [type, count] of Object.entries(coverage.matches)) globalCoverage.matches[type] = (globalCoverage.matches[type] || 0) + count;
-  for (const key of ["actions", "draftPicks", "victories", "defeats", "bossRewards", "specialRewards", "pullSkips", "itemSkips", "tradeSkips", "randomReveals", "fiveEditorSaves", "refreshes", "quotaRetries", "doubleActions"]) globalCoverage[key] += coverage[key];
+  for (const key of ["actions", "draftPicks", "victories", "defeats", "bossRewards", "specialRewards", "pullSkips", "itemSkips", "tradeSkips", "randomReveals", "fiveEditorSaves", "refreshes", "quotaRetries", "doubleActions", "albumDrainChecks"]) globalCoverage[key] += coverage[key];
   runtime.destroy();
 }
 
@@ -536,7 +564,7 @@ async function main() {
     targets: { champion: 0, gameover: 0 },
     seasons: {}, nodeTypes: {}, matches: {}, actions: 0, draftPicks: 0, victories: 0, defeats: 0,
     bossRewards: 0, specialRewards: 0, pullSkips: 0, itemSkips: 0, tradeSkips: 0,
-    randomReveals: 0, fiveEditorSaves: 0, refreshes: 0, quotaRetries: 0, doubleActions: 0,
+    randomReveals: 0, fiveEditorSaves: 0, refreshes: 0, quotaRetries: 0, doubleActions: 0, albumDrainChecks: 0,
   };
   const startedAt = Date.now();
   for (let index = 0; index < 500; index += 1) {
@@ -560,12 +588,13 @@ async function main() {
   assert((coverage.matches.five_v_five || 0) > 0, "full-run soak never executed a 5v5 match");
   assert((coverage.matches.special_match || 0) > 0, "full-run soak never executed a Special Match");
   assert(coverage.bossRewards > 0, "full-run soak never crossed Boss rewards");
+  assert.strictEqual(coverage.albumDrainChecks, 500, "every complete campaign must verify IndexedDB Album live/canonical generation alignment");
   assert(coverage.quotaRetries > 0 && coverage.refreshes > 0 && coverage.doubleActions > 0, "fault/reopen/double-action coverage missing");
 
   const elapsedMs = Date.now() - startedAt;
   console.log(`500 complete stateful campaigns: PASS | targets=${JSON.stringify(coverage.targets)} | seasons=${JSON.stringify(coverage.seasons)} | elapsedMs=${elapsedMs}`);
-  console.log(`full-run coverage: nodes=${JSON.stringify(coverage.nodeTypes)} matches=${JSON.stringify(coverage.matches)} actions=${coverage.actions} draftPicks=${coverage.draftPicks} bossRewards=${coverage.bossRewards} specialRewards=${coverage.specialRewards} pullSkips=${coverage.pullSkips} itemSkips=${coverage.itemSkips} tradeSkips=${coverage.tradeSkips} random=${coverage.randomReveals} refreshes=${coverage.refreshes} quotaRetries=${coverage.quotaRetries} doubleActions=${coverage.doubleActions}`);
-  console.log("terminal invariant: 300 champion runs defeated every boss and reached reward -> Celebration -> Summary; 200 runs reached real GameOver; Development exactly once on all 500 and Hall exactly once only on champions");
+  console.log(`full-run coverage: nodes=${JSON.stringify(coverage.nodeTypes)} matches=${JSON.stringify(coverage.matches)} actions=${coverage.actions} draftPicks=${coverage.draftPicks} bossRewards=${coverage.bossRewards} specialRewards=${coverage.specialRewards} pullSkips=${coverage.pullSkips} itemSkips=${coverage.itemSkips} tradeSkips=${coverage.tradeSkips} random=${coverage.randomReveals} refreshes=${coverage.refreshes} quotaRetries=${coverage.quotaRetries} doubleActions=${coverage.doubleActions} albumDrainChecks=${coverage.albumDrainChecks}`);
+  console.log("terminal invariant: all 500 campaigns run with IndexedDB Album authority and verify async drain live/canonical generation alignment before the next gameplay action; 300 champion runs defeated every boss and reached reward -> Celebration -> Summary; 200 runs reached real GameOver; Development exactly once on all 500 and Hall exactly once only on champions");
 }
 
 main().catch((error) => {

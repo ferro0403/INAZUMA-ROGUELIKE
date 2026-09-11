@@ -581,6 +581,7 @@
   function normalizedHallSeasonName(...args) { return teamProfileRuntime.normalizedHallSeasonName(...args); }
 
   function setRun(nextRun) { run = nextRun; global.run = nextRun; }
+  global.AlbumPermanentEffects?.bindRuntimeRunAccessor?.(() => run);
 
   const homeView = global.HomeView.create({ escapeHtml, normalizeTeamIdentity, savedTeamIdentity, seasonDisplayName, resolvedRosterPlayer, averageOverall, lifeHeartsMarkup, bossTeamLogoUrl, getSeasonDb: () => seasonDb });
   const homeController = global.HomeController.create({
