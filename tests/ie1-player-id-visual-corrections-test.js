@@ -42,6 +42,20 @@ for (const [oldId, [newId, expectedName]] of corrected) {
   assert.ok(visuals.players[newId].frontFullbodyUrl, `fullbody visual must exist for ${newId}`);
 }
 
+const legacyById = new Map((season.legacyPlayers || []).map((player) => [String(player.playerId), player]));
+assert.strictEqual(legacyById.size, 23, "IE1 must retain exactly the 23 pre-correction records needed by historical runs");
+for (const [oldId, [newId, expectedName]] of corrected) {
+  assert.strictEqual(season.legacyPlayerIdAliases?.[oldId], newId, `legacy alias ${oldId} must point to ${newId}`);
+  const legacy = legacyById.get(oldId);
+  const canonical = byId.get(newId);
+  assert.ok(legacy, `legacy lookup record ${oldId} must exist`);
+  assert.strictEqual(legacy.name, expectedName);
+  for (const field of ["position", "element", "category", "finalOverall", "progressionCode"]) {
+    assert.deepStrictEqual(canonical[field], legacy[field], `${expectedName} must preserve gameplay field ${field}`);
+  }
+  assert.deepStrictEqual(canonical.finalStats, legacy.finalStats, `${expectedName} finalStats must not change during identity correction`);
+}
+
 const removed = new Map([
   ["4484", "Darren Gouger"],
   ["4482", "Electra Faraday"],
