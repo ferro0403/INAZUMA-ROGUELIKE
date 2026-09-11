@@ -221,6 +221,14 @@ function load(storage, options = {}) {
       for (const developmentFile of ["roguelike_progression.js", "development-v3.js", "development-v3-migration.js", "development-runtime.js", "development-account-v3.js"]) runModule(c, developmentFile);
     }
   }
+  if (options.asyncFinalizationBridge && c.PermanentEffects?.resumeFinalization) {
+    const basePermanentEffects = c.PermanentEffects;
+    const baseResumeFinalization = basePermanentEffects.resumeFinalization.bind(basePermanentEffects);
+    c.PermanentEffects = Object.freeze({
+      ...basePermanentEffects,
+      resumeFinalization: (...args) => Promise.resolve().then(() => baseResumeFinalization(...args)),
+    });
+  }
   if (options.run) c.RunState.save(structuredClone(options.run));
   const restored = c.RunState.load(runtimeSeasonId);
   if (restored) c.__INAZUMA_TERMINAL_FLOW_TEST__.setContext({ run: restored, seasonDb: options.seasonDb });
