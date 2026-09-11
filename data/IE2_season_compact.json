@@ -501,16 +501,16 @@
       "bossLevel": 3,
       "startingXIPlayerIds": [
         "4472",
-        "169",
-        "167",
-        "168",
+        "4471",
+        "4469",
+        "4470",
         "4468",
-        "171",
+        "4466",
         "4462",
         "4463",
         "4474",
-        "174",
-        "159"
+        "4464",
+        "4461"
       ],
       "startingXI": [
         {
@@ -520,17 +520,17 @@
         },
         {
           "slot": 2,
-          "playerId": "169",
+          "playerId": "4471",
           "level": 3
         },
         {
           "slot": 3,
-          "playerId": "167",
+          "playerId": "4469",
           "level": 3
         },
         {
           "slot": 4,
-          "playerId": "168",
+          "playerId": "4470",
           "level": 3
         },
         {
@@ -540,7 +540,7 @@
         },
         {
           "slot": 6,
-          "playerId": "171",
+          "playerId": "4466",
           "level": 3
         },
         {
@@ -560,37 +560,31 @@
         },
         {
           "slot": 10,
-          "playerId": "174",
+          "playerId": "4464",
           "level": 3
         },
         {
           "slot": 11,
-          "playerId": "159",
+          "playerId": "4461",
           "level": 3
         }
       ],
       "rewardPool": "all_team_players",
       "rewardPoolPlayerIds": [
-        "4463",
-        "4472",
-        "171",
-        "4464",
-        "173",
-        "4473",
-        "4474",
-        "159",
-        "4462",
-        "167",
-        "174",
-        "163",
-        "170",
-        "168",
-        "4466",
         "4461",
-        "169",
-        "172",
-        "165",
-        "4468"
+        "4462",
+        "4463",
+        "4464",
+        "4465",
+        "4466",
+        "4467",
+        "4468",
+        "4469",
+        "4470",
+        "4471",
+        "4472",
+        "4473",
+        "4474"
       ],
       "unlocksTeamPool": true
     },
@@ -704,27 +698,27 @@
       "bossFormation": "4-4-2",
       "bossLevel": 7,
       "startingXIPlayerIds": [
-        "30",
-        "28",
+        "4507",
+        "4506",
         "4511",
-        "27",
-        "25",
-        "26",
+        "4505",
+        "4503",
+        "4504",
         "4508",
         "16",
-        "24",
-        "21",
+        "4502",
+        "4499",
         "4510"
       ],
       "startingXI": [
         {
           "slot": 1,
-          "playerId": "30",
+          "playerId": "4507",
           "level": 7
         },
         {
           "slot": 2,
-          "playerId": "28",
+          "playerId": "4506",
           "level": 7
         },
         {
@@ -734,17 +728,17 @@
         },
         {
           "slot": 4,
-          "playerId": "27",
+          "playerId": "4505",
           "level": 7
         },
         {
           "slot": 5,
-          "playerId": "25",
+          "playerId": "4503",
           "level": 7
         },
         {
           "slot": 6,
-          "playerId": "26",
+          "playerId": "4504",
           "level": 7
         },
         {
@@ -759,12 +753,12 @@
         },
         {
           "slot": 9,
-          "playerId": "24",
+          "playerId": "4502",
           "level": 7
         },
         {
           "slot": 10,
-          "playerId": "21",
+          "playerId": "4499",
           "level": 7
         },
         {
@@ -775,19 +769,19 @@
       ],
       "rewardPool": "all_team_players",
       "rewardPoolPlayerIds": [
-        "22",
+        "4500",
         "16",
         "4511",
-        "28",
-        "30",
-        "27",
+        "4506",
+        "4507",
+        "4505",
         "4510",
-        "24",
-        "25",
-        "26",
+        "4502",
+        "4503",
+        "4504",
         "4498",
         "4508",
-        "21"
+        "4499"
       ],
       "unlocksTeamPool": true
     },
@@ -805,11 +799,11 @@
         "4538",
         "4543",
         "4542",
-        "1159",
+        "4535",
         "4536",
         "4531",
-        "1172",
-        "1170",
+        "4533",
+        "4534",
         "4532",
         "4530"
       ],
@@ -836,7 +830,7 @@
         },
         {
           "slot": 5,
-          "playerId": "1159",
+          "playerId": "4535",
           "level": 8
         },
         {
@@ -851,12 +845,12 @@
         },
         {
           "slot": 8,
-          "playerId": "1172",
+          "playerId": "4533",
           "level": 8
         },
         {
           "slot": 9,
-          "playerId": "1170",
+          "playerId": "4534",
           "level": 8
         },
         {
@@ -873,22 +867,19 @@
       "rewardPool": "all_team_players",
       "rewardPoolPlayerIds": [
         "4530",
-        "4539",
-        "4542",
-        "1172",
         "4531",
-        "1159",
-        "4543",
-        "4536",
-        "1170",
         "4532",
-        "1171",
-        "1168",
-        "4537",
+        "4533",
         "4534",
+        "4535",
+        "4536",
+        "4537",
         "4538",
-        "1157",
-        "1169"
+        "4539",
+        "4540",
+        "4541",
+        "4542",
+        "4543"
       ],
       "unlocksTeamPool": true
     },
@@ -1519,29 +1510,23 @@
       "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/e/ea/Kidokawa_Seishuu_%28GO%29_emblem_%28VR%29.png/revision/latest/scale-to-width-down/200?cb=20251119113313",
       "teamOverall": 78,
       "teamStars": 4,
-      "ratedPlayers": 20,
-      "totalPlayers": 22,
+      "ratedPlayers": 14,
+      "totalPlayers": 14,
       "playerIds": [
-        "4463",
-        "4472",
-        "171",
-        "4464",
-        "173",
-        "4473",
-        "4474",
-        "159",
-        "4462",
-        "167",
-        "174",
-        "163",
-        "170",
-        "168",
-        "4466",
         "4461",
-        "169",
-        "172",
-        "165",
-        "4468"
+        "4462",
+        "4463",
+        "4464",
+        "4465",
+        "4466",
+        "4467",
+        "4468",
+        "4469",
+        "4470",
+        "4471",
+        "4472",
+        "4473",
+        "4474"
       ],
       "sourceFile": "kirkwood.json"
     },
@@ -1584,19 +1569,19 @@
       "ratedPlayers": 13,
       "totalPlayers": 15,
       "playerIds": [
-        "22",
+        "4500",
         "16",
         "4511",
-        "28",
-        "30",
-        "27",
+        "4506",
+        "4507",
+        "4505",
         "4510",
-        "24",
-        "25",
-        "26",
+        "4502",
+        "4503",
+        "4504",
         "4498",
         "4508",
-        "21"
+        "4499"
       ],
       "sourceFile": "royal.json"
     },
@@ -1607,26 +1592,23 @@
       "logoUrl": "https://static.wikia.nocookie.net/inazumaeleven/images/f/fe/Hakuren_emblem_%25_28SD%25_29.webp/revision/latest?cb=20240405150233&path-prefix=pl",
       "teamOverall": 83,
       "teamStars": 4.5,
-      "ratedPlayers": 17,
-      "totalPlayers": 25,
+      "ratedPlayers": 14,
+      "totalPlayers": 14,
       "playerIds": [
         "4530",
-        "4539",
-        "4542",
-        "1172",
         "4531",
-        "1159",
-        "4543",
-        "4536",
-        "1170",
         "4532",
-        "1171",
-        "1168",
-        "4537",
+        "4533",
         "4534",
+        "4535",
+        "4536",
+        "4537",
         "4538",
-        "1157",
-        "1169"
+        "4539",
+        "4540",
+        "4541",
+        "4542",
+        "4543"
       ],
       "sourceFile": "alpine.json"
     },
@@ -2902,11 +2884,11 @@
       ]
     },
     {
-      "playerId": "22",
-      "id": "22",
+      "playerId": "4500",
+      "id": "4500",
       "name": "Ben Simmons",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/s/r/srbc08syx-0.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/g/j/gjxjyn1syd8.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/x/6/x6-xyickgbu_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Forest",
@@ -2960,7 +2942,7 @@
       "id": "4511",
       "name": "Caleb Stonewall",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/a/k/akqdgckxbwe.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/t/x/tx5rgzjh1os_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
       "element": "Fire",
@@ -2983,11 +2965,11 @@
       ]
     },
     {
-      "playerId": "28",
-      "id": "28",
+      "playerId": "4506",
+      "id": "4506",
       "name": "Daniel Hatch",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/l/d/ldrmvkqotue.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/r/m/rmhinjslsds.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/c/_/c_iwnmf9ybe_r0_fullbody.webp",
       "position": "FW",
       "normalizedRole": "FW",
       "element": "Forest",
@@ -3010,11 +2992,11 @@
       ]
     },
     {
-      "playerId": "30",
-      "id": "30",
+      "playerId": "4507",
+      "id": "4507",
       "name": "David Samford",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/u/d/udbgi0_9hlm.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/t/a/tahebrbea2u.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/k/z/kzimbuoyuu8_r0_fullbody.webp",
       "position": "FW",
       "normalizedRole": "FW",
       "element": "Forest",
@@ -3037,11 +3019,11 @@
       ]
     },
     {
-      "playerId": "27",
-      "id": "27",
+      "playerId": "4505",
+      "id": "4505",
       "name": "Derek Swing",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/6/1/61at4120ans.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/f/k/fk6vxilcnvm.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/y/x/yxt9xnm053k_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
       "element": "Wind",
@@ -3068,7 +3050,7 @@
       "id": "4510",
       "name": "Grotley Bogwash",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/l/j/ljcxe-zdzjc.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/8/q/8qrfe7w1t70_r0_fullbody.webp",
       "position": "GK",
       "normalizedRole": "GK",
       "element": "Wind",
@@ -3091,11 +3073,11 @@
       ]
     },
     {
-      "playerId": "24",
-      "id": "24",
+      "playerId": "4502",
+      "id": "4502",
       "name": "Gus Martin",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/f/y/fy3h3amk_lc.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/x/o/xof3mvmgqqk.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/g/9/g9slmqpweim_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Forest",
@@ -3118,11 +3100,11 @@
       ]
     },
     {
-      "playerId": "25",
-      "id": "25",
+      "playerId": "4503",
+      "id": "4503",
       "name": "Herman Waldon",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/_/3/_3uukhtskrs.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/a/m/am0wlqaahjm.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/3/v/3vdelvpsz7k_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
       "element": "Wind",
@@ -3145,11 +3127,11 @@
       ]
     },
     {
-      "playerId": "26",
-      "id": "26",
+      "playerId": "4504",
+      "id": "4504",
       "name": "John Bloom",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/f/ofl1j41wnye.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/0/m/0mlo6dd4gck.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/d/_/d_ic6yqouem_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
       "element": "Fire",
@@ -3176,7 +3158,7 @@
       "id": "4498",
       "name": "Joseph King",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/z/v/zvcri20mvwk.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/e/c/ecr5izd6bom_r0_fullbody.webp",
       "position": "GK",
       "normalizedRole": "GK",
       "element": "Fire",
@@ -3203,7 +3185,7 @@
       "id": "4508",
       "name": "Nathan Swift",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/6/l/6lz2zb_50q0.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/n/4/n4akzewpaic_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Wind",
@@ -3226,11 +3208,11 @@
       ]
     },
     {
-      "playerId": "21",
-      "id": "21",
+      "playerId": "4499",
+      "id": "4499",
       "name": "Peter Drent",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/d/5/d5w9zd0i6nc.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/i/o/ioq_2un-3f8.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/v/b/vb5t2roiddu_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Mountain",
@@ -3609,7 +3591,7 @@
       "id": "4530",
       "name": "Adam Ropes",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/e/w/ewqf6g8gzd0.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/p/l/pl5x6lvwtfc_r0_fullbody.webp",
       "position": "GK",
       "normalizedRole": "GK",
       "element": "Wind",
@@ -3636,7 +3618,7 @@
       "id": "4539",
       "name": "Aiden Froste",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/m/a/maq5sorjvom.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/r/p/rp5rst4_bwk_r0_fullbody.webp",
       "position": "FW",
       "normalizedRole": "FW",
       "element": "Fire",
@@ -3663,7 +3645,7 @@
       "id": "4542",
       "name": "Bunny Cottontail",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/-/5/-5zwp9jos9e.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/j/k/jkaip4g4yls_r0_fullbody.webp",
       "position": "FW",
       "normalizedRole": "FW",
       "element": "Wind",
@@ -3686,38 +3668,11 @@
       ]
     },
     {
-      "playerId": "1172",
-      "id": "1172",
-      "name": "Gem Strata",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/z/n/znuiw4puex8.png",
-      "frontFullbodyUrl": null,
-      "position": "DF",
-      "normalizedRole": "DF",
-      "element": "Fire",
-      "type": "Fire",
-      "category": "Forte",
-      "finalOverall": 81,
-      "ratings": {
-        "attack": 1,
-        "physical": 8,
-        "stamina": 8,
-        "control": 8,
-        "defense": 8,
-        "speed": 7,
-        "grit": 8,
-        "save": 1
-      },
-      "custom": false,
-      "teamIds": [
-        "alpine"
-      ]
-    },
-    {
       "playerId": "4531",
       "id": "4531",
       "name": "Joaquine Downtown",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/w/-/w-ligh1p4xu.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/h/n/hniagkc5mp8_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Fire",
@@ -3740,11 +3695,11 @@
       ]
     },
     {
-      "playerId": "1159",
-      "id": "1159",
+      "playerId": "4535",
+      "id": "4535",
       "name": "Kerry Bootgaiter",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/6/d/6dlvtpebf3s.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/k/7/k7xlcxdlqum.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/t/i/ti-3c0qte2k_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
       "element": "Wind",
@@ -3771,7 +3726,7 @@
       "id": "4543",
       "name": "Kevin Dragonfly",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/8/y/8y0shkbip7e.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/l/r/lrd-hhyudjs_r0_fullbody.webp",
       "position": "FW",
       "normalizedRole": "FW",
       "element": "Forest",
@@ -3798,7 +3753,7 @@
       "id": "4536",
       "name": "Maddox Rock",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/e/u/eu0qrs2tfo8.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/z/n/zndcrpfbrwu_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
       "element": "Forest",
@@ -3821,38 +3776,11 @@
       ]
     },
     {
-      "playerId": "1170",
-      "id": "1170",
-      "name": "Martin Ursus",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/a/u/aui1ve74seu.png",
-      "frontFullbodyUrl": null,
-      "position": "DF",
-      "normalizedRole": "DF",
-      "element": "Forest",
-      "type": "Forest",
-      "category": "Forte",
-      "finalOverall": 80,
-      "ratings": {
-        "attack": 1,
-        "physical": 8,
-        "stamina": 8,
-        "control": 7,
-        "defense": 8,
-        "speed": 8,
-        "grit": 6,
-        "save": 5
-      },
-      "custom": false,
-      "teamIds": [
-        "alpine"
-      ]
-    },
-    {
       "playerId": "4532",
       "id": "4532",
       "name": "Milton Bindings",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/1/8/18fx8tqxy9u.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/c/p/cpsj8w5hgl8_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Wind",
@@ -3875,38 +3803,11 @@
       ]
     },
     {
-      "playerId": "1171",
-      "id": "1171",
-      "name": "Pete Bogg",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/c/p/cplp7hpupcu.png",
-      "frontFullbodyUrl": null,
-      "position": "MF",
-      "normalizedRole": "MF",
-      "element": "Fire",
-      "type": "Fire",
-      "category": "Forte",
-      "finalOverall": 80,
-      "ratings": {
-        "attack": 7,
-        "physical": 7,
-        "stamina": 8,
-        "control": 8,
-        "defense": 8,
-        "speed": 7,
-        "grit": 6,
-        "save": 1
-      },
-      "custom": false,
-      "teamIds": [
-        "alpine"
-      ]
-    },
-    {
-      "playerId": "1168",
-      "id": "1168",
+      "playerId": "4540",
+      "id": "4540",
       "name": "Quentin Rackner",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/r/p/rpwhr8ok0xm.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/p/r/prcrecv0bos.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/4/i/4irdehgc1we_r0_fullbody.webp",
       "position": "FW",
       "normalizedRole": "FW",
       "element": "Forest",
@@ -3933,7 +3834,7 @@
       "id": "4537",
       "name": "Robert Skipolson",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/v/t/vtmevolfhdk.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/i/g/igpwvlmpzfm_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
       "element": "Forest",
@@ -3960,7 +3861,7 @@
       "id": "4534",
       "name": "Sean Snowfield",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/b/w/bw6pnet1vc8.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/2/l/2lt7nb6dhau_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
       "element": "Mountain",
@@ -3987,7 +3888,7 @@
       "id": "4538",
       "name": "Shawn Froste",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/g/1/g1zm_1kbai8.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/x/g/xgae_wn3uqu_r0_fullbody.webp",
       "position": "FW",
       "normalizedRole": "FW",
       "element": "Wind",
@@ -4010,11 +3911,11 @@
       ]
     },
     {
-      "playerId": "1157",
-      "id": "1157",
+      "playerId": "4533",
+      "id": "4533",
       "name": "Spike Gleeson",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/r/e/re3bttxphk0.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/v/-/v-hkxfa80uc.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/y/n/yni2xazka20_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Forest",
@@ -4030,33 +3931,6 @@
         "speed": 8,
         "grit": 7,
         "save": 5
-      },
-      "custom": false,
-      "teamIds": [
-        "alpine"
-      ]
-    },
-    {
-      "playerId": "1169",
-      "id": "1169",
-      "name": "Trent Peggs",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/x/g/xgtu4hdcb38.png",
-      "frontFullbodyUrl": null,
-      "position": "GK",
-      "normalizedRole": "GK",
-      "element": "Mountain",
-      "type": "Mountain",
-      "category": "Buono",
-      "finalOverall": 79,
-      "ratings": {
-        "attack": 1,
-        "physical": 6,
-        "stamina": 6,
-        "control": 7,
-        "defense": 6,
-        "speed": 6,
-        "grit": 6,
-        "save": 8
       },
       "custom": false,
       "teamIds": [
@@ -4905,7 +4779,7 @@
       "id": "4463",
       "name": "Alfred Meenan",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/k/o/kojsaqrd78k.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/9/9/99g-avc1pkm_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Forest",
@@ -4932,7 +4806,7 @@
       "id": "4472",
       "name": "Axel Blaze",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/5/h/5h_rz2fvtjm.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/0/o0wdzz2jnrk_r0_fullbody.webp",
       "position": "FW",
       "normalizedRole": "FW",
       "element": "Fire",
@@ -4955,38 +4829,11 @@
       ]
     },
     {
-      "playerId": "171",
-      "id": "171",
-      "name": "Brody Gloom",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/n/b/nbnlivjcuv0.png",
-      "frontFullbodyUrl": null,
-      "position": "MF",
-      "normalizedRole": "MF",
-      "element": "Mountain",
-      "type": "Mountain",
-      "category": "Buono",
-      "finalOverall": 77,
-      "ratings": {
-        "attack": 7,
-        "physical": 7,
-        "stamina": 7,
-        "control": 7,
-        "defense": 7,
-        "speed": 7,
-        "grit": 8,
-        "save": 1
-      },
-      "custom": false,
-      "teamIds": [
-        "kirkwood"
-      ]
-    },
-    {
       "playerId": "4464",
       "id": "4464",
       "name": "Dan Mirthful",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/-/k/-k20rdohcdm.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/j/x/jxfmrybxobk_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Forest",
@@ -5009,38 +4856,11 @@
       ]
     },
     {
-      "playerId": "173",
-      "id": "173",
-      "name": "Eren Middleton",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/u/s/usr2hzxugac.png",
-      "frontFullbodyUrl": null,
-      "position": "DF",
-      "normalizedRole": "DF",
-      "element": "Mountain",
-      "type": "Mountain",
-      "category": "Buono",
-      "finalOverall": 77,
-      "ratings": {
-        "attack": 4,
-        "physical": 7,
-        "stamina": 7,
-        "control": 7,
-        "defense": 7,
-        "speed": 7,
-        "grit": 9,
-        "save": 1
-      },
-      "custom": false,
-      "teamIds": [
-        "kirkwood"
-      ]
-    },
-    {
       "playerId": "4473",
       "id": "4473",
       "name": "Hilary Prentice",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/b/l/bl_tp-yal80.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/2/4/24w_p7bsrkc_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
       "element": "Wind",
@@ -5067,7 +4887,7 @@
       "id": "4474",
       "name": "Jodi Green",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/d/q/dq4xhng2g60.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/0/z/0zrjhijauic_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Fire",
@@ -5090,38 +4910,11 @@
       ]
     },
     {
-      "playerId": "159",
-      "id": "159",
-      "name": "John Neville",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/f/x/fxn30donyam.png",
-      "frontFullbodyUrl": null,
-      "position": "GK",
-      "normalizedRole": "GK",
-      "element": "Fire",
-      "type": "Fire",
-      "category": "Buono",
-      "finalOverall": 78,
-      "ratings": {
-        "attack": 2,
-        "physical": 8,
-        "stamina": 7,
-        "control": 7,
-        "defense": 8,
-        "speed": 6,
-        "grit": 9,
-        "save": 7
-      },
-      "custom": false,
-      "teamIds": [
-        "kirkwood"
-      ]
-    },
-    {
       "playerId": "4462",
       "id": "4462",
       "name": "Malcolm Night",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/7/m/7m4n3vn5wpm.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/m/v/mvrf3qkpixk_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Fire",
@@ -5144,11 +4937,11 @@
       ]
     },
     {
-      "playerId": "167",
-      "id": "167",
+      "playerId": "4469",
+      "id": "4469",
       "name": "Marvin Murdock",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/p/c/pcfzrjfd6jk.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/z/o/zockkrqdmp8.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/u/b/ub12kudrsxu_r0_fullbody.webp",
       "position": "FW",
       "normalizedRole": "FW",
       "element": "Fire",
@@ -5171,38 +4964,11 @@
       ]
     },
     {
-      "playerId": "174",
-      "id": "174",
-      "name": "Peter Wells",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/0/9/09ydyuicz6s.png",
-      "frontFullbodyUrl": null,
-      "position": "DF",
-      "normalizedRole": "DF",
-      "element": "Wind",
-      "type": "Wind",
-      "category": "Buono",
-      "finalOverall": 78,
-      "ratings": {
-        "attack": 2,
-        "physical": 7,
-        "stamina": 7,
-        "control": 7,
-        "defense": 8,
-        "speed": 7,
-        "grit": 6,
-        "save": 1
-      },
-      "custom": false,
-      "teamIds": [
-        "kirkwood"
-      ]
-    },
-    {
-      "playerId": "163",
-      "id": "163",
+      "playerId": "4465",
+      "id": "4465",
       "name": "Ricky Clover",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/9/z/9zdejzppo88.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/p/m/pmhvgiobxwk.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/4/_/4_uhgnntfom_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Mountain",
@@ -5225,38 +4991,11 @@
       ]
     },
     {
-      "playerId": "170",
-      "id": "170",
-      "name": "Simon Calier",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/w/z/wzwqpqf4dcc.png",
-      "frontFullbodyUrl": null,
-      "position": "GK",
-      "normalizedRole": "GK",
-      "element": "Forest",
-      "type": "Forest",
-      "category": "Buono",
-      "finalOverall": 77,
-      "ratings": {
-        "attack": 1,
-        "physical": 7,
-        "stamina": 7,
-        "control": 7,
-        "defense": 7,
-        "speed": 5,
-        "grit": 9,
-        "save": 7
-      },
-      "custom": false,
-      "teamIds": [
-        "kirkwood"
-      ]
-    },
-    {
-      "playerId": "168",
-      "id": "168",
+      "playerId": "4470",
+      "id": "4470",
       "name": "Thomas Murdock",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/h/0/h0e-xiwkbpe.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/a/oatfnumnlau.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/f/z/fzexnrlr_c8_r0_fullbody.webp",
       "position": "FW",
       "normalizedRole": "FW",
       "element": "Wind",
@@ -5283,7 +5022,7 @@
       "id": "4466",
       "name": "Toby Damian",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/h/k/hkcycjhsqce.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/w/x/wx1kcmukkes_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
       "element": "Wind",
@@ -5310,7 +5049,7 @@
       "id": "4461",
       "name": "Trice Topper",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/b/j/bjb4ky4xjv8.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/s/6/s6yqk3rhx3u_r0_fullbody.webp",
       "position": "GK",
       "normalizedRole": "GK",
       "element": "Fire",
@@ -5333,11 +5072,11 @@
       ]
     },
     {
-      "playerId": "169",
-      "id": "169",
+      "playerId": "4471",
+      "id": "4471",
       "name": "Tyler Murdock",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/2/c/2c1fc3ww28s.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/q/h/qhqzjnelocu.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/d/s/dsdlji396e8_r0_fullbody.webp",
       "position": "FW",
       "normalizedRole": "FW",
       "element": "Mountain",
@@ -5360,38 +5099,11 @@
       ]
     },
     {
-      "playerId": "172",
-      "id": "172",
-      "name": "Victor Talis",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/l/6/l6gxmmxurp0.png",
-      "frontFullbodyUrl": null,
-      "position": "MF",
-      "normalizedRole": "MF",
-      "element": "Forest",
-      "type": "Forest",
-      "category": "Buono",
-      "finalOverall": 77,
-      "ratings": {
-        "attack": 6,
-        "physical": 6,
-        "stamina": 7,
-        "control": 7,
-        "defense": 6,
-        "speed": 9,
-        "grit": 8,
-        "save": 1
-      },
-      "custom": false,
-      "teamIds": [
-        "kirkwood"
-      ]
-    },
-    {
-      "playerId": "165",
-      "id": "165",
+      "playerId": "4467",
+      "id": "4467",
       "name": "York Nashmith",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/s/e/serk376bwvk.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/q/m/qmt5xcho9vs.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/n/_/n_erxziej3e_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
       "element": "Forest",
@@ -5418,7 +5130,7 @@
       "id": "4468",
       "name": "Zachary Moore",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/w/j/wjomibugipc.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/h/q/hqneie9w8x0_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
       "element": "Forest",
@@ -6276,12 +5988,39 @@
       "teamIds": [
         "lunar_prime_academy"
       ]
+    },
+    {
+      "playerId": "4541",
+      "id": "4541",
+      "name": "Roland Climbstein",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/x/y/xyhybx3zcbk.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/g/b/gbikbsef2dm_r0_fullbody.webp",
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Buono",
+      "finalOverall": 77,
+      "ratings": {
+        "attack": 7,
+        "physical": 6,
+        "stamina": 7,
+        "control": 8,
+        "defense": 2,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
     }
   ],
   "summary": {
     "teamFiles": 11,
     "teams": 11,
-    "players": 166,
+    "players": 157,
     "bosses": 11,
     "warnings": 0
   },
