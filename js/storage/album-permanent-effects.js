@@ -43,28 +43,48 @@
     return live;
   }
 
+  function synchronizeLiveRun(live, canonical, effectId, expectedGeneration) {
+    if (!live || !canonical) return false;
+    if (Number(live.storageGeneration || 0) !== Number(expectedGeneration || 0)) return false;
+    if (String(live.seasonId || "") !== String(canonical.seasonId || "")) return false;
+    if (String(live.runId || "") !== String(canonical.runId || "")) return false;
+    const liveEffect = (live.permanentEffectOutbox || []).find((entry) => entry.id === effectId);
+    const canonicalEffect = (canonical.permanentEffectOutbox || []).find((entry) => entry.id === effectId);
+    if (!liveEffect || liveEffect.status !== "pending" || canonicalEffect?.status !== "applied") return false;
+
+    liveEffect.status = canonicalEffect.status;
+    liveEffect.appliedAt = canonicalEffect.appliedAt;
+    live.storageGeneration = canonical.storageGeneration;
+    live.storageCommitId = canonical.storageCommitId;
+    if (canonical.updatedAt != null) live.updatedAt = canonical.updatedAt;
+    if (canonical.lastPlayedAt != null) live.lastPlayedAt = canonical.lastPlayedAt;
+    return true;
+  }
+
   async function markApplied(seasonId, effectId, maxAttempts = 5) {
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       const canonical = global.RunState?.load?.(seasonId, { readOnly: true });
       if (!canonical) return { applied: false, reason: "run-missing" };
-      const canonicalEffect = (canonical.permanentEffectOutbox || []).find((entry) => entry.id === effectId);
-      if (!canonicalEffect) return { applied: false, reason: "effect-missing" };
-      if (canonicalEffect.status === "applied") return { applied: true, alreadyApplied: true };
-      if (canonicalEffect.type !== albumType()) return { applied: false, reason: "effect-type-changed" };
+      const effect = (canonical.permanentEffectOutbox || []).find((entry) => entry.id === effectId);
+      if (!effect) return { applied: false, reason: "effect-missing" };
+      if (effect.status === "applied") return { applied: true, alreadyApplied: true };
+      if (effect.type !== albumType()) return { applied: false, reason: "effect-type-changed" };
 
       const live = liveRunFor(canonical, effectId);
-      const target = live || canonical;
-      const effect = (target.permanentEffectOutbox || []).find((entry) => entry.id === effectId);
+      const expectedLiveGeneration = live ? Number(live.storageGeneration || 0) : null;
       const before = { status: effect.status, appliedAt: effect.appliedAt };
       effect.status = "applied";
       effect.appliedAt = new Date().toISOString();
       try {
-        baseRunSave(target, {
+        baseRunSave(canonical, {
           source: "album-indexeddb-effect-marker",
           effectMarker: effect.id,
           suppressCloudEvent: true,
         });
-        return { applied: true, alreadyApplied: false, liveSynchronized: Boolean(live) };
+        const liveSynchronized = live
+          ? synchronizeLiveRun(live, canonical, effectId, expectedLiveGeneration)
+          : false;
+        return { applied: true, alreadyApplied: false, liveSynchronized };
       } catch (error) {
         effect.status = before.status;
         effect.appliedAt = before.appliedAt;
