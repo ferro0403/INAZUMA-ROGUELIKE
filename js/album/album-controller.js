@@ -22,9 +22,18 @@
     return [...byId.values()];
   }
 
+  function albumUnlockedSet(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID, progress = undefined) {
+    const unlocked = global.AlbumProgress.unlockedSet(collectionId, progress);
+    const database = global.SeasonRegistry.database(collectionId) || getSeasonDb();
+    Object.entries(database?.legacyPlayerIdAliases || {}).forEach(([legacyId, canonicalId]) => {
+      if (unlocked.has(String(legacyId))) unlocked.add(String(canonicalId));
+    });
+    return unlocked;
+  }
+
   function albumCollectionProgress(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
     ensureBackfill();
-    const unlocked = global.AlbumProgress.unlockedSet(collectionId);
+    const unlocked = albumUnlockedSet(collectionId);
     const totalIds = new Set(albumCollectionPlayers(collectionId).map((player) => String(player.playerId)));
     return { unlocked: [...totalIds].filter((id) => unlocked.has(id)).length, total: totalIds.size };
   }
@@ -45,7 +54,7 @@
   }
 
   function albumProgressForPlayers(players, collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
-    const unlocked = global.AlbumProgress.unlockedSet(collectionId);
+    const unlocked = albumUnlockedSet(collectionId);
     const ids = [...new Set((players || []).map((player) => String(player.playerId)))];
     return { unlocked: ids.filter((id) => unlocked.has(id)).length, total: ids.length };
   }
@@ -114,7 +123,7 @@
     const rawPlayers = albumTeamPlayers(team, collectionId);
     const database = team.freeAgents ? getFreeAgentsDb() : getSeasonDb();
     const albumProgressState = global.AlbumProgress.read();
-    const unlocked = global.AlbumProgress.unlockedSet(collectionId, albumProgressState);
+    const unlocked = albumUnlockedSet(collectionId, albumProgressState);
     const developmentState = global.DevelopmentAccountV3.read();
     const rawById = new Map(rawPlayers.map((player) => [String(player.playerId), player]));
     const resolvedById = new Map();
@@ -174,7 +183,7 @@
     });
   }
 
-    return { renderCollections: renderAlbumCollections, renderTeams: renderAlbumTeams, renderRoster: renderAlbumRoster, ensureBackfill, playerView: albumPlayerView, bindRosterInteractions: bindAlbumRosterInteractions };
+    return { renderCollections: renderAlbumCollections, renderTeams: renderAlbumTeams, renderRoster: renderAlbumRoster, ensureBackfill, playerView: albumPlayerView, bindRosterInteractions: bindAlbumRosterInteractions, unlockedSet: albumUnlockedSet };
   }
   global.AlbumController = Object.freeze({ create });
 })(globalThis);
