@@ -50,12 +50,24 @@ async function main() {
     isProfileAwareRosterEntry: () => false,
     migrateDefeatedBossPlayerLevels: () => false,
   };
-  let runtime = load(storage, { run, seasonDb: ie2, contextOverrides: { RoguelikeRules: roguelikeRules } });
+  let runtime = load(storage, { run, seasonDb: ie2, asyncFinalizationBridge: true, contextOverrides: { RoguelikeRules: roguelikeRules } });
   let flow = runtime.seam;
 
   flow.completeBossMatch("victory");
   flow.resolvePendingRunFlow({ clearMatch: true });
-  while (flow.getRun().postBossFlow?.remainingRewards > 0) flow.advanceBossReward();
+  let finalTransition = null;
+  while (flow.getRun().postBossFlow?.remainingRewards > 0) finalTransition = flow.advanceBossReward();
+
+  assert(
+    !flow.getAppMarkup().includes("data-finalization-pending"),
+    "a healthy async finalization must not render the retry screen before its Promise settles",
+  );
+  if (finalTransition && typeof finalTransition.then === "function") await finalTransition;
+  await settleBootstrap();
+  assert(
+    !flow.getAppMarkup().includes("data-finalization-pending"),
+    "a healthy async finalization must route directly to the reward reveal without an intermediate retry",
+  );
 
   let saved = runtime.canonical;
   assert.equal(saved.finalization?.status, "complete", "finalization must already be canonically complete");
@@ -159,7 +171,7 @@ async function main() {
   assert.equal(runtime.canonical.permanentEffectOutbox.filter((effect) => effect.type === "development-run-end").length, 1);
   assert.equal(runtime.canonical.permanentEffectOutbox.filter((effect) => effect.type === "hall-champion").length, 1);
 
-  console.log("final victory reward presentation: real final boss -> rewards -> reveal -> quota retry -> Celebration -> Summary exactly once OK");
+  console.log("final victory reward presentation: async finalization -> reward reveal without false retry -> quota retry -> Celebration -> Summary exactly once OK");
 }
 
 main().catch((error) => {
