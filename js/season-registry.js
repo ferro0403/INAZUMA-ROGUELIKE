@@ -90,13 +90,13 @@
     applyDisplayTeamNameOverrides(database, season.id);
     dbBySeason.set(season.id, database);
     const playerIndex = new Map((database.players || []).map((player) => [String(player.playerId), player]));
-    // Legacy lookup records are intentionally excluded from database.players so new
-    // content never recruits them, while pre-correction runs can still resolve their
-    // historical playerId without rewriting the saved run.
-    (database.legacyPlayers || []).forEach((player) => {
-      const playerId = String(player?.playerId ?? "");
-      if (playerId && !playerIndex.has(playerId)) playerIndex.set(playerId, player);
-    });
+    // Keep legacy records lookup-only: iteration/size expose active players exclusively,
+    // while direct historical lookups can still resolve pre-correction run IDs.
+    const legacyPlayerIndex = new Map((database.legacyPlayers || []).map((player) => [String(player.playerId), player]));
+    const activeGet = playerIndex.get.bind(playerIndex);
+    const activeHas = playerIndex.has.bind(playerIndex);
+    playerIndex.get = (playerId) => activeGet(String(playerId)) || legacyPlayerIndex.get(String(playerId));
+    playerIndex.has = (playerId) => activeHas(String(playerId)) || legacyPlayerIndex.has(String(playerId));
     playersBySeason.set(season.id, playerIndex);
     teamsBySeason.set(season.id, new Map((database.teams || []).map((team) => [String(team.teamId ?? team.id), team])));
     global.ProfiledSeasonRuntime?.register?.(season.id, database);
