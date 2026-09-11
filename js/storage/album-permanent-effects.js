@@ -5,6 +5,12 @@
   const baseRunSave = global.RunState?.save?.bind(global.RunState);
   const baseRunRemove = global.RunState?.remove?.bind(global.RunState);
   const drains = new Map();
+  let runtimeRunAccessor = null;
+
+  function bindRuntimeRunAccessor(getRun) {
+    runtimeRunAccessor = typeof getRun === "function" ? getRun : null;
+    return Boolean(runtimeRunAccessor);
+  }
 
   function storage() { return global.AlbumIndexedDbStorage; }
   function albumType() { return baseEffects?.TYPES?.ALBUM || "album-unlock"; }
@@ -24,20 +30,44 @@
     });
   }
 
+  function liveRunFor(canonical, effectId) {
+    if (!runtimeRunAccessor || !canonical) return null;
+    let live = null;
+    try { live = runtimeRunAccessor() || null; } catch (_) { return null; }
+    if (!live) return null;
+    if (String(live.seasonId || "") !== String(canonical.seasonId || "")) return null;
+    if (String(live.runId || "") !== String(canonical.runId || "")) return null;
+    if (Number(live.storageGeneration || 0) !== Number(canonical.storageGeneration || 0)) return null;
+    const effect = (live.permanentEffectOutbox || []).find((entry) => entry.id === effectId);
+    if (!effect || effect.type !== albumType() || effect.status !== "pending") return null;
+    return live;
+  }
+
   async function markApplied(seasonId, effectId, maxAttempts = 5) {
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
-      const run = global.RunState?.load?.(seasonId, { readOnly: true });
-      if (!run) return { applied: false, reason: "run-missing" };
-      const effect = (run.permanentEffectOutbox || []).find((entry) => entry.id === effectId);
-      if (!effect) return { applied: false, reason: "effect-missing" };
-      if (effect.status === "applied") return { applied: true, alreadyApplied: true };
-      if (effect.type !== albumType()) return { applied: false, reason: "effect-type-changed" };
+      const canonical = global.RunState?.load?.(seasonId, { readOnly: true });
+      if (!canonical) return { applied: false, reason: "run-missing" };
+      const canonicalEffect = (canonical.permanentEffectOutbox || []).find((entry) => entry.id === effectId);
+      if (!canonicalEffect) return { applied: false, reason: "effect-missing" };
+      if (canonicalEffect.status === "applied") return { applied: true, alreadyApplied: true };
+      if (canonicalEffect.type !== albumType()) return { applied: false, reason: "effect-type-changed" };
+
+      const live = liveRunFor(canonical, effectId);
+      const target = live || canonical;
+      const effect = (target.permanentEffectOutbox || []).find((entry) => entry.id === effectId);
+      const before = { status: effect.status, appliedAt: effect.appliedAt };
       effect.status = "applied";
       effect.appliedAt = new Date().toISOString();
       try {
-        baseRunSave(run, { source: "album-indexeddb-effect-marker", effectMarker: effect.id });
-        return { applied: true, alreadyApplied: false };
+        baseRunSave(target, {
+          source: "album-indexeddb-effect-marker",
+          effectMarker: effect.id,
+          suppressCloudEvent: true,
+        });
+        return { applied: true, alreadyApplied: false, liveSynchronized: Boolean(live) };
       } catch (error) {
+        effect.status = before.status;
+        effect.appliedAt = before.appliedAt;
         if (!["stale-write", "write-locked"].includes(error?.code) || attempt === maxAttempts - 1) throw error;
       }
     }
@@ -142,7 +172,7 @@
   installEffectsBridge();
   installRunGuards();
 
-  const api = Object.freeze({ pendingAlbum, requestDrain, drainSeason, resumeStoredRuns, hasPending: (run) => pendingAlbum(run).length > 0 });
+  const api = Object.freeze({ bindRuntimeRunAccessor, pendingAlbum, requestDrain, drainSeason, resumeStoredRuns, hasPending: (run) => pendingAlbum(run).length > 0 });
   global.AlbumPermanentEffects = api;
   if (typeof module !== "undefined" && module.exports) module.exports = api;
 })(typeof globalThis !== "undefined" ? globalThis : window);
