@@ -110,6 +110,8 @@ function runtimeOptions(meta, seasonDb, random) {
         const applied = new Set();
         return {
           isAuthority: () => true,
+          async ensureReady() { return { authority: "indexeddb", migrated: false }; },
+          async recompact() { return { compacted: true }; },
           async applyUnlock(collectionId, playerId, metadata = {}) {
             const key = String(metadata.applicationKey || `${collectionId}:${playerId}`);
             const first = !applied.has(key);
@@ -409,7 +411,15 @@ async function resolveInteractiveState(runtime, seasonDb, meta, random, coverage
       continue;
     }
     if (run.phase === "finalization") {
-      runtime.seam.resumeRunFinalization();
+      // UI event handlers do not propagate returned Promises. Give the
+      // async final-boss handoff a chance to settle before deciding a retry
+      // is required; only explicitly resume if the canonical run is still
+      // genuinely pending afterwards.
+      await settle();
+      await settle();
+      if (runtime.canonical.phase !== "finalization") continue;
+      const resumed = runtime.seam.resumeRunFinalization();
+      if (resumed && typeof resumed.then === "function") await resumed;
       continue;
     }
     if (run.phase === "map" && !run.currentZone?.pendingNodeId) return runtime;
