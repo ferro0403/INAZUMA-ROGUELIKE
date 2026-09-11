@@ -239,7 +239,7 @@ function makeContext() {
     runtime.failNextMarker();
     await runtime.context.AlbumPermanentEffects.requestDrain("ie1");
     assert.strictEqual(runtime.context.RunState.load("ie1").permanentEffectOutbox[0].status, "applied", "stale marker save must reload canonical run and retry");
-    assert.strictEqual(active.permanentEffectOutbox[0].status, "applied", "failed live marker attempt must roll back before retry and then commit cleanly");
+    assert.strictEqual(active.permanentEffectOutbox[0].status, "applied", "failed marker attempts must leave the live run untouched until a retry commits and synchronizes it");
     assert.strictEqual(active.storageGeneration, runtime.context.RunState.load("ie1").storageGeneration, "retry must leave the active run on the committed generation");
   }
 
