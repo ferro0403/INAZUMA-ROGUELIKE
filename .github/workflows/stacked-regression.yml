@@ -152,6 +152,7 @@ jobs:
             tests/ie1-s2-final-runtime-integration-test.js
             tests/ie1-s3-integration-test.js
             tests/ie1-s3-kirkwood-player-corrections-test.js
+            tests/ie2-ares-player-id-visual-corrections-test.js
             tests/orion-season-integration-test.js
           )
           for test_file in "${tests[@]}"; do
