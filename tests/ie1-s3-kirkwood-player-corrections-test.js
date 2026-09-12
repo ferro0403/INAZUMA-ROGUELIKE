@@ -26,6 +26,7 @@ assert.strictEqual(new Set(kirkwood.playerProfileIds.map(String)).size, 15);
 
 const expected = new Map([
   ["161", "Alfred Meenan"],
+  ["162", "Dan Mirthful"],
   ["160", "Malcolm Night"],
   ["164", "Toby Damian"],
   ["166", "Zachary Moore"],
@@ -47,11 +48,11 @@ for (const [playerId, name] of expected) {
   assert.ok(kirkwood.playerProfileIds.map(String).includes(`${playerId}@kirkwood`), `${name} must be in Kirkwood profileIds`);
 }
 
-for (const badId of ["4462", "4466"]) {
+for (const badId of ["4462", "4464", "4466"]) {
   assert.strictEqual(players.has(badId), false, `legacy player ${badId} must not stay in active IE3 players`);
   assert.strictEqual(kirkwood.playerIds.map(String).includes(badId), false, `legacy player ${badId} must not stay in active Kirkwood`);
 }
-for (const badProfile of ["4462@kirkwood", "4466@kirkwood"]) {
+for (const badProfile of ["4462@kirkwood", "4464@kirkwood", "4466@kirkwood"]) {
   assert.strictEqual(profiles.has(badProfile), false, `legacy profile ${badProfile} must not stay active`);
   assert.strictEqual(kirkwood.playerProfileIds.map(String).includes(badProfile), false, `legacy profile ${badProfile} must not stay in Kirkwood`);
 }
@@ -81,6 +82,7 @@ assert.deepStrictEqual(moore.ratings, {
 });
 
 assert.strictEqual(season.legacyPlayerIdAliases["4462"], "160");
+assert.strictEqual(season.legacyPlayerIdAliases["4464"], "162");
 assert.strictEqual(season.legacyPlayerIdAliases["4466"], "164");
 
 const legacyNight = legacyPlayers.get("4462");
@@ -97,6 +99,21 @@ assert.deepStrictEqual(canonicalNightProfile.ratings, legacyNightProfile.ratings
 assert.strictEqual(legacyNight.portraitUrl, visuals.players["160"].portraitUrl);
 assert.strictEqual(legacyNight.frontFullbodyUrl, visuals.players["160"].frontFullbodyUrl);
 
+const legacyMirthful = legacyPlayers.get("4464");
+const legacyMirthfulProfile = legacyProfiles.get("4464@kirkwood");
+const canonicalMirthful = players.get("162");
+const canonicalMirthfulProfile = profiles.get("162@kirkwood");
+assert.ok(legacyMirthful && legacyMirthfulProfile, "pre-correction Dan Mirthful snapshot must remain lookup-only");
+for (const field of ["name", "position", "normalizedRole", "element", "type", "category", "finalOverall", "maxLevel"]) {
+  assert.deepStrictEqual(canonicalMirthful[field], legacyMirthful[field], `Mirthful gameplay field ${field} must survive the ID correction`);
+  assert.deepStrictEqual(canonicalMirthfulProfile[field], legacyMirthfulProfile[field], `Mirthful profile field ${field} must survive the ID correction`);
+}
+assert.deepStrictEqual(canonicalMirthful.ratings, legacyMirthful.ratings, "Mirthful player ratings must stay IE3-specific");
+assert.deepStrictEqual(canonicalMirthfulProfile.ratings, legacyMirthfulProfile.ratings, "Mirthful profile ratings must stay IE3-specific");
+assert.strictEqual(canonicalMirthful.finalOverall, 75, "IE3 Mirthful keeps his IE3 overall instead of importing Ares/other-season gameplay data");
+assert.strictEqual(legacyMirthful.portraitUrl, visuals.players["162"].portraitUrl);
+assert.strictEqual(legacyMirthful.frontFullbodyUrl, visuals.players["162"].frontFullbodyUrl);
+
 const legacyToby = legacyPlayers.get("4466");
 const legacyTobyProfile = legacyProfiles.get("4466@kirkwood");
 assert.ok(legacyToby && legacyTobyProfile, "pre-correction duplicate Toby snapshot must remain lookup-only");
@@ -108,8 +125,10 @@ assert.strictEqual(legacyToby.frontFullbodyUrl, visuals.players["164"].frontFull
 const kirkwoodPool = season.recruitmentPool.entries.filter((entry) => entry.sourceTeamId === "kirkwood");
 assert.strictEqual(kirkwoodPool.length, 15, "Kirkwood recruitment pool cardinality must stay stable");
 assert.strictEqual(kirkwoodPool.some((entry) => String(entry.playerId) === "4462"), false);
+assert.strictEqual(kirkwoodPool.some((entry) => String(entry.playerId) === "4464"), false);
 assert.strictEqual(kirkwoodPool.some((entry) => String(entry.playerId) === "4466"), false);
 assert.ok(kirkwoodPool.some((entry) => String(entry.playerId) === "160" && entry.profileId === "160@kirkwood"));
+assert.ok(kirkwoodPool.some((entry) => String(entry.playerId) === "162" && entry.profileId === "162@kirkwood"));
 assert.ok(kirkwoodPool.some((entry) => String(entry.playerId) === "164" && entry.profileId === "164@kirkwood"));
 assert.ok(kirkwoodPool.some((entry) => String(entry.playerId) === "166" && entry.profileId === "166@kirkwood" && entry.finalOverall === 77));
 
@@ -145,6 +164,11 @@ assert.strictEqual(
   "historical Night ownership must canonicalize to 160 without rewriting the run",
 );
 assert.strictEqual(
+  context.PlayerIdentity.canonicalPlayerId({ playerId: "4464", source: "ie1_s3" }),
+  "162",
+  "historical Mirthful ownership must canonicalize to 162",
+);
+assert.strictEqual(
   context.PlayerIdentity.canonicalPlayerId({ playerId: "4466", source: "ie1_s3" }),
   "164",
   "historical duplicate Toby ownership must canonicalize to 164",
@@ -164,6 +188,8 @@ assert.strictEqual(context.ProfiledSeasonRuntime.resolveCanonicalPlayer("ie1_s3"
 assert.strictEqual(context.ProfiledSeasonRuntime.resolveCanonicalPlayer("ie1_s3", "4462").name, "Malcolm Night");
 assert.strictEqual(context.ProfiledSeasonRuntime.resolveProfile("ie1_s3", "160@kirkwood").name, "Malcolm Night");
 assert.strictEqual(context.ProfiledSeasonRuntime.resolveProfile("ie1_s3", "4462@kirkwood").name, "Malcolm Night");
+assert.strictEqual(context.ProfiledSeasonRuntime.resolveCanonicalPlayer("ie1_s3", "4464").name, "Dan Mirthful");
+assert.strictEqual(context.ProfiledSeasonRuntime.resolveProfile("ie1_s3", "4464@kirkwood").name, "Dan Mirthful");
 assert.strictEqual(context.ProfiledSeasonRuntime.resolveCanonicalPlayer("ie1_s3", "4466").name, "Toby Damian");
 assert.strictEqual(context.ProfiledSeasonRuntime.resolveProfile("ie1_s3", "4466@kirkwood").finalOverall, 77);
 
@@ -185,6 +211,25 @@ const duplicateNightAttempt = context.ProfiledSeasonRuntime.acquireOrUpgradeProf
 );
 assert.strictEqual(duplicateNightAttempt.status, "ineligible", "old Night must block recruiting canonical Night as a second card");
 assert.strictEqual(oldNightRun.roster.length, 1, "duplicate canonicalization must not mutate the historical roster");
+
+const oldMirthfulRun = {
+  seasonId: "ie1_s3",
+  roster: [{
+    playerId: "4464",
+    source: "ie1_s3",
+    activeProfileId: "4464@kirkwood",
+    activeRoleVariantId: "df",
+    level: 3,
+    levelUnits: 0,
+  }],
+};
+const duplicateMirthfulAttempt = context.ProfiledSeasonRuntime.acquireOrUpgradeProfile(
+  oldMirthfulRun,
+  { playerId: "162", profileId: "162@kirkwood" },
+  { seasonId: "ie1_s3", maxRoster: 15, level: 3 },
+);
+assert.strictEqual(duplicateMirthfulAttempt.status, "ineligible", "old Mirthful must block recruiting canonical Mirthful 162 as a second card");
+assert.strictEqual(oldMirthfulRun.roster.length, 1);
 
 const oldTobyRun = {
   seasonId: "ie1_s3",
@@ -226,7 +271,7 @@ assert.strictEqual(historicalToby.frontFullbodyUrl, visuals.players["164"].front
 
 context.AlbumProgress = {
   DEFAULT_COLLECTION_ID: "ie1",
-  unlockedSet: () => new Set(["4462", "4466"]),
+  unlockedSet: () => new Set(["4462", "4464", "4466"]),
 };
 context.HallOfFameStorage = { listSummaries: () => [] };
 vm.runInContext(fs.readFileSync("js/album/album-controller.js", "utf8"), context, {
@@ -252,8 +297,10 @@ const controller = context.AlbumController.create({
 });
 const unlocked = controller.unlockedSet("ie1_s3", {});
 assert.ok(unlocked.has("4462"), "stored old Night unlock remains untouched");
+assert.ok(unlocked.has("4464"), "stored old Mirthful unlock remains untouched");
 assert.ok(unlocked.has("4466"), "stored old Toby unlock remains untouched");
 assert.ok(unlocked.has("160"), "old Night unlock is recognized as canonical 160");
+assert.ok(unlocked.has("162"), "old Mirthful unlock is recognized as canonical 162");
 assert.ok(unlocked.has("164"), "old duplicate Toby unlock is recognized as canonical 164");
 assert.strictEqual(unlocked.has("166"), false, "Moore is not synthesized as unlocked");
 
