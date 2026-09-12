@@ -21,6 +21,10 @@
   }
 
   function databaseFor(seasonId) { return databases.get(id(seasonId)) || global.SeasonRegistry?.database?.(seasonId) || null; }
+  function canonicalIdentityId(seasonId, playerId) {
+    const player = id(playerId);
+    return id(databaseFor(seasonId)?.legacyPlayerIdAliases?.[player] || player);
+  }
   function indexFor(seasonId) {
     if (!indexes.has(id(seasonId)) && databaseFor(seasonId)) register(seasonId, databaseFor(seasonId));
     return indexes.get(id(seasonId)) || null;
@@ -88,7 +92,8 @@
     const seasonId = options.seasonId || run.seasonId;
     const profile = resolveProfile(seasonId, candidate.profileId || candidate.activeProfileId);
     if (!profile) throw new Error(`Profilo non trovato: ${candidate.profileId || candidate.activeProfileId}`);
-    const existing = (run.roster || []).find((entry) => id(entry.playerId) === id(profile.playerId));
+    const candidateCanonicalId = canonicalIdentityId(seasonId, profile.playerId);
+    const existing = (run.roster || []).find((entry) => canonicalIdentityId(seasonId, entry.playerId) === candidateCanonicalId);
     if (existing) {
       if (compareProfileProgression(seasonId, existing.activeProfileId, profile.profileId) !== 1) return { status: "ineligible", player: existing };
       existing.activeRoleVariantId = roleIdForUpgrade(existing, profile, seasonId);
