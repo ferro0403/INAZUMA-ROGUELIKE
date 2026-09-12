@@ -89,7 +89,15 @@
     }
     applyDisplayTeamNameOverrides(database, season.id);
     dbBySeason.set(season.id, database);
-    playersBySeason.set(season.id, new Map((database.players || []).map((player) => [String(player.playerId), player])));
+    const playerIndex = new Map((database.players || []).map((player) => [String(player.playerId), player]));
+    // Keep legacy records lookup-only: iteration/size expose active players exclusively,
+    // while direct historical lookups can still resolve pre-correction run IDs.
+    const legacyPlayerIndex = new Map((database.legacyPlayers || []).map((player) => [String(player.playerId), player]));
+    const activeGet = playerIndex.get.bind(playerIndex);
+    const activeHas = playerIndex.has.bind(playerIndex);
+    playerIndex.get = (playerId) => activeGet(String(playerId)) || legacyPlayerIndex.get(String(playerId));
+    playerIndex.has = (playerId) => activeHas(String(playerId)) || legacyPlayerIndex.has(String(playerId));
+    playersBySeason.set(season.id, playerIndex);
     teamsBySeason.set(season.id, new Map((database.teams || []).map((team) => [String(team.teamId ?? team.id), team])));
     global.ProfiledSeasonRuntime?.register?.(season.id, database);
     setActive(season.id);
