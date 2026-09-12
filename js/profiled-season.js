@@ -13,18 +13,30 @@
     indexes.set(id(seasonId), {
       players: new Map((database.players || []).map((player) => [id(player.playerId), player])),
       profiles: new Map((database.profiles || []).map((profile) => [id(profile.profileId), profile])),
+      legacyPlayers: new Map((database.legacyPlayers || []).map((player) => [id(player.playerId), player])),
+      legacyProfiles: new Map((database.legacyProfiles || []).map((profile) => [id(profile.profileId), profile])),
       paths: new Map((database.profileUpgradePaths || []).map((path) => [id(path.playerId), path])),
     });
     return database;
   }
 
   function databaseFor(seasonId) { return databases.get(id(seasonId)) || global.SeasonRegistry?.database?.(seasonId) || null; }
+  function canonicalIdentityId(seasonId, playerId) {
+    const player = id(playerId);
+    return id(databaseFor(seasonId)?.legacyPlayerIdAliases?.[player] || player);
+  }
   function indexFor(seasonId) {
     if (!indexes.has(id(seasonId)) && databaseFor(seasonId)) register(seasonId, databaseFor(seasonId));
     return indexes.get(id(seasonId)) || null;
   }
-  function resolveCanonicalPlayer(seasonId, playerId) { return indexFor(seasonId)?.players.get(id(playerId)) || null; }
-  function resolveProfile(seasonId, profileId) { return indexFor(seasonId)?.profiles.get(id(profileId)) || null; }
+  function resolveCanonicalPlayer(seasonId, playerId) {
+    const index = indexFor(seasonId);
+    return index?.players.get(id(playerId)) || index?.legacyPlayers.get(id(playerId)) || null;
+  }
+  function resolveProfile(seasonId, profileId) {
+    const index = indexFor(seasonId);
+    return index?.profiles.get(id(profileId)) || index?.legacyProfiles.get(id(profileId)) || null;
+  }
   function implicitProfile(seasonId, playerId) {
     const player = resolveCanonicalPlayer(seasonId, playerId) || global.SeasonRegistry?.player?.(playerId, seasonId);
     return player ? { ...player, profileId: id(player.playerId), playerId: id(player.playerId), defaultRoleVariantId: id(player.position || player.normalizedRole).toLowerCase(), roleVariants: [] } : null;
@@ -80,7 +92,8 @@
     const seasonId = options.seasonId || run.seasonId;
     const profile = resolveProfile(seasonId, candidate.profileId || candidate.activeProfileId);
     if (!profile) throw new Error(`Profilo non trovato: ${candidate.profileId || candidate.activeProfileId}`);
-    const existing = (run.roster || []).find((entry) => id(entry.playerId) === id(profile.playerId));
+    const candidateCanonicalId = canonicalIdentityId(seasonId, profile.playerId);
+    const existing = (run.roster || []).find((entry) => canonicalIdentityId(seasonId, entry.playerId) === candidateCanonicalId);
     if (existing) {
       if (compareProfileProgression(seasonId, existing.activeProfileId, profile.profileId) !== 1) return { status: "ineligible", player: existing };
       existing.activeRoleVariantId = roleIdForUpgrade(existing, profile, seasonId);
