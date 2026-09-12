@@ -10,7 +10,12 @@
   }
 
   function canonicalPlayerId(player) {
-    return id(player?.playerId);
+    const playerId = id(player?.playerId);
+    const source = id(player?.source || player?.seasonId);
+    const database = source && global.SeasonRegistry?.isSeasonSource?.(source)
+      ? global.SeasonRegistry.database(source)
+      : null;
+    return id(database?.legacyPlayerIdAliases?.[playerId] || playerId);
   }
 
   function candidateKey(player) {
