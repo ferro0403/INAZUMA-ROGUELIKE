@@ -131,10 +131,30 @@ const context = {
   SeasonRegistry: {
     database: (seasonId) => String(seasonId) === "ie1_s3" ? season : null,
     player: () => null,
+    isSeasonSource: (source) => String(source) === "ie1_s3",
   },
 };
 context.globalThis = context;
 vm.createContext(context);
+vm.runInContext(fs.readFileSync("js/recruitment/player-identity.js", "utf8"), context, {
+  filename: "js/recruitment/player-identity.js",
+});
+assert.strictEqual(
+  context.PlayerIdentity.canonicalPlayerId({ playerId: "4462", source: "ie1_s3" }),
+  "160",
+  "historical Night ownership must canonicalize to 160 without rewriting the run",
+);
+assert.strictEqual(
+  context.PlayerIdentity.canonicalPlayerId({ playerId: "4466", source: "ie1_s3" }),
+  "164",
+  "historical duplicate Toby ownership must canonicalize to 164",
+);
+assert.strictEqual(
+  context.PlayerIdentity.canonicalPlayerId({ playerId: "4462", source: "free_agents" }),
+  "4462",
+  "aliases must be season-scoped and must not affect unrelated sources",
+);
+
 vm.runInContext(fs.readFileSync("js/profiled-season.js", "utf8"), context, {
   filename: "js/profiled-season.js",
 });
@@ -146,6 +166,44 @@ assert.strictEqual(context.ProfiledSeasonRuntime.resolveProfile("ie1_s3", "160@k
 assert.strictEqual(context.ProfiledSeasonRuntime.resolveProfile("ie1_s3", "4462@kirkwood").name, "Malcolm Night");
 assert.strictEqual(context.ProfiledSeasonRuntime.resolveCanonicalPlayer("ie1_s3", "4466").name, "Toby Damian");
 assert.strictEqual(context.ProfiledSeasonRuntime.resolveProfile("ie1_s3", "4466@kirkwood").finalOverall, 77);
+
+const oldNightRun = {
+  seasonId: "ie1_s3",
+  roster: [{
+    playerId: "4462",
+    source: "ie1_s3",
+    activeProfileId: "4462@kirkwood",
+    activeRoleVariantId: "df",
+    level: 5,
+    levelUnits: 0,
+  }],
+};
+const duplicateNightAttempt = context.ProfiledSeasonRuntime.acquireOrUpgradeProfile(
+  oldNightRun,
+  { playerId: "160", profileId: "160@kirkwood" },
+  { seasonId: "ie1_s3", maxRoster: 15, level: 5 },
+);
+assert.strictEqual(duplicateNightAttempt.status, "ineligible", "old Night must block recruiting canonical Night as a second card");
+assert.strictEqual(oldNightRun.roster.length, 1, "duplicate canonicalization must not mutate the historical roster");
+
+const oldTobyRun = {
+  seasonId: "ie1_s3",
+  roster: [{
+    playerId: "4466",
+    source: "ie1_s3",
+    activeProfileId: "4466@kirkwood",
+    activeRoleVariantId: "mf",
+    level: 4,
+    levelUnits: 0,
+  }],
+};
+const duplicateTobyAttempt = context.ProfiledSeasonRuntime.acquireOrUpgradeProfile(
+  oldTobyRun,
+  { playerId: "164", profileId: "164@kirkwood" },
+  { seasonId: "ie1_s3", maxRoster: 15, level: 4 },
+);
+assert.strictEqual(duplicateTobyAttempt.status, "ineligible", "old high Toby must block recruiting Toby 164 as a duplicate");
+assert.strictEqual(oldTobyRun.roster.length, 1);
 
 const historicalNight = context.ProfiledSeasonRuntime.resolveEffectiveBase({
   playerId: "4462",
