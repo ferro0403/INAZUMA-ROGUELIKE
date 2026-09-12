@@ -13,6 +13,8 @@
     indexes.set(id(seasonId), {
       players: new Map((database.players || []).map((player) => [id(player.playerId), player])),
       profiles: new Map((database.profiles || []).map((profile) => [id(profile.profileId), profile])),
+      legacyPlayers: new Map((database.legacyPlayers || []).map((player) => [id(player.playerId), player])),
+      legacyProfiles: new Map((database.legacyProfiles || []).map((profile) => [id(profile.profileId), profile])),
       paths: new Map((database.profileUpgradePaths || []).map((path) => [id(path.playerId), path])),
     });
     return database;
@@ -23,8 +25,14 @@
     if (!indexes.has(id(seasonId)) && databaseFor(seasonId)) register(seasonId, databaseFor(seasonId));
     return indexes.get(id(seasonId)) || null;
   }
-  function resolveCanonicalPlayer(seasonId, playerId) { return indexFor(seasonId)?.players.get(id(playerId)) || null; }
-  function resolveProfile(seasonId, profileId) { return indexFor(seasonId)?.profiles.get(id(profileId)) || null; }
+  function resolveCanonicalPlayer(seasonId, playerId) {
+    const index = indexFor(seasonId);
+    return index?.players.get(id(playerId)) || index?.legacyPlayers.get(id(playerId)) || null;
+  }
+  function resolveProfile(seasonId, profileId) {
+    const index = indexFor(seasonId);
+    return index?.profiles.get(id(profileId)) || index?.legacyProfiles.get(id(profileId)) || null;
+  }
   function implicitProfile(seasonId, playerId) {
     const player = resolveCanonicalPlayer(seasonId, playerId) || global.SeasonRegistry?.player?.(playerId, seasonId);
     return player ? { ...player, profileId: id(player.playerId), playerId: id(player.playerId), defaultRoleVariantId: id(player.position || player.normalizedRole).toLowerCase(), roleVariants: [] } : null;
