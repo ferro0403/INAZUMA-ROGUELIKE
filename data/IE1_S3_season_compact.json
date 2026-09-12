@@ -4945,13 +4945,13 @@
         "4464",
         "173",
         "159",
-        "4462",
+        "160",
         "167",
         "174",
         "163",
         "170",
         "168",
-        "4466",
+        "166",
         "164",
         "172",
         "165"
@@ -4962,13 +4962,13 @@
         "4464@kirkwood",
         "173@kirkwood",
         "159@kirkwood",
-        "4462@kirkwood",
+        "160@kirkwood",
         "167@kirkwood",
         "174@kirkwood",
         "163@kirkwood",
         "170@kirkwood",
         "168@kirkwood",
-        "4466@kirkwood",
+        "166@kirkwood",
         "164@kirkwood",
         "172@kirkwood",
         "165@kirkwood"
@@ -9910,7 +9910,7 @@
       "id": "161",
       "name": "Alfred Meenan",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/q/oq1jk_d_aju.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/5/j/5jcxk60j0r8_r0_fullbody.webp",
       "element": "Forest",
       "type": "Forest",
       "custom": false,
@@ -9980,7 +9980,7 @@
       "id": "164",
       "name": "Toby Damian",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/d/2/d2graechdcm.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/q/f/qfj5ab1xpek_r0_fullbody.webp",
       "element": "Wind",
       "type": "Wind",
       "custom": false,
@@ -25831,19 +25831,19 @@
       "legacyPreviewProfileId": "2082@team_ogre"
     },
     {
-      "playerId": "4462",
-      "id": "4462",
+      "playerId": "160",
+      "id": "160",
       "name": "Malcolm Night",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/7/m/7m4n3vn5wpm.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/_/4/_4ecna7ft68.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/i/l/iltqnfszziu_r0_fullbody.webp",
       "element": "Fire",
       "type": "Fire",
       "custom": false,
       "profileIds": [
-        "4462@kirkwood"
+        "160@kirkwood"
       ],
-      "baseProfileId": "4462@kirkwood",
-      "latestProfileId": "4462@kirkwood",
+      "baseProfileId": "160@kirkwood",
+      "latestProfileId": "160@kirkwood",
       "teamIds": [
         "kirkwood"
       ],
@@ -25863,7 +25863,7 @@
         "save": 1
       },
       "maxLevel": 20,
-      "legacyPreviewProfileId": "4462@kirkwood"
+      "legacyPreviewProfileId": "160@kirkwood"
     },
     {
       "playerId": "4464",
@@ -25901,19 +25901,19 @@
       "legacyPreviewProfileId": "4464@kirkwood"
     },
     {
-      "playerId": "4466",
-      "id": "4466",
-      "name": "Toby Damian",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/h/k/hkcycjhsqce.png",
-      "frontFullbodyUrl": null,
-      "element": "Wind",
-      "type": "Wind",
+      "playerId": "166",
+      "id": "166",
+      "name": "Zachary Moore",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/y/0/y0usg255xqm.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/v/h/vhhagzqpjik_r0_fullbody.webp",
+      "element": "Forest",
+      "type": "Forest",
       "custom": false,
       "profileIds": [
-        "4466@kirkwood"
+        "166@kirkwood"
       ],
-      "baseProfileId": "4466@kirkwood",
-      "latestProfileId": "4466@kirkwood",
+      "baseProfileId": "166@kirkwood",
+      "latestProfileId": "166@kirkwood",
       "teamIds": [
         "kirkwood"
       ],
@@ -25925,15 +25925,15 @@
       "ratings": {
         "attack": 7,
         "physical": 7,
-        "stamina": 7,
-        "control": 7,
-        "defense": 7,
+        "stamina": 9,
+        "control": 8,
+        "defense": 8,
         "speed": 8,
-        "grit": 7,
-        "save": 5
+        "grit": 9,
+        "save": 1
       },
       "maxLevel": 20,
-      "legacyPreviewProfileId": "4466@kirkwood"
+      "legacyPreviewProfileId": "166@kirkwood"
     },
     {
       "playerId": "custom_0001",
@@ -49677,7 +49677,7 @@
       "sourceFile": "KIRKWOOD.json",
       "name": "Alfred Meenan",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/o/q/oq1jk_d_aju.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/5/j/5jcxk60j0r8_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Forest",
@@ -49957,17 +49957,17 @@
       "sourceUpdatedAt": "2026-08-08T19:53:20.560Z"
     },
     {
-      "profileId": "4462@kirkwood",
-      "playerId": "4462",
-      "id": "4462@kirkwood",
+      "profileId": "160@kirkwood",
+      "playerId": "160",
+      "id": "160@kirkwood",
       "teamId": "kirkwood",
       "teamName": "Kirkwood",
       "profileRank": 110,
       "sourceKind": "recruitment_source",
       "sourceFile": "KIRKWOOD.json",
       "name": "Malcolm Night",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/7/m/7m4n3vn5wpm.png",
-      "frontFullbodyUrl": null,
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/_/4/_4ecna7ft68.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/i/l/iltqnfszziu_r0_fullbody.webp",
       "position": "DF",
       "normalizedRole": "DF",
       "element": "Fire",
@@ -50305,32 +50305,32 @@
       "sourceUpdatedAt": "2026-08-08T19:55:41.865Z"
     },
     {
-      "profileId": "4466@kirkwood",
-      "playerId": "4466",
-      "id": "4466@kirkwood",
+      "profileId": "166@kirkwood",
+      "playerId": "166",
+      "id": "166@kirkwood",
       "teamId": "kirkwood",
       "teamName": "Kirkwood",
       "profileRank": 110,
       "sourceKind": "recruitment_source",
       "sourceFile": "KIRKWOOD.json",
-      "name": "Toby Damian",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/h/k/hkcycjhsqce.png",
-      "frontFullbodyUrl": null,
+      "name": "Zachary Moore",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/y/0/y0usg255xqm.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/v/h/vhhagzqpjik_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
-      "element": "Wind",
-      "type": "Wind",
+      "element": "Forest",
+      "type": "Forest",
       "category": "Buono",
       "finalOverall": 77,
       "ratings": {
         "attack": 7,
         "physical": 7,
-        "stamina": 7,
-        "control": 7,
-        "defense": 7,
+        "stamina": 9,
+        "control": 8,
+        "defense": 8,
         "speed": 8,
-        "grit": 7,
-        "save": 5
+        "grit": 9,
+        "save": 1
       },
       "maxLevel": 20,
       "custom": false,
@@ -50347,20 +50347,20 @@
           "ratings": {
             "attack": 7,
             "physical": 7,
-            "stamina": 7,
-            "control": 7,
-            "defense": 7,
+            "stamina": 9,
+            "control": 8,
+            "defense": 8,
             "speed": 8,
-            "grit": 7,
-            "save": 5
+            "grit": 9,
+            "save": 1
           },
           "portraitUrl": null,
           "frontFullbodyUrl": null,
           "evaluated": true,
-          "updatedAt": "2026-08-08T22:25:41.435Z"
+          "updatedAt": "2026-09-12T07:29:00.000Z"
         }
       ],
-      "sourceUpdatedAt": "2026-08-08T22:25:41.435Z"
+      "sourceUpdatedAt": "2026-09-12T07:29:00.000Z"
     },
     {
       "profileId": "164@kirkwood",
@@ -50373,7 +50373,7 @@
       "sourceFile": "KIRKWOOD.json",
       "name": "Toby Damian",
       "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/d/2/d2graechdcm.png",
-      "frontFullbodyUrl": null,
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/q/f/qfj5ab1xpek_r0_fullbody.webp",
       "position": "MF",
       "normalizedRole": "MF",
       "element": "Wind",
@@ -64584,8 +64584,8 @@
         "poolId": "ie1_s3_mixed_recruitment"
       },
       {
-        "playerId": "4462",
-        "profileId": "4462@kirkwood",
+        "playerId": "160",
+        "profileId": "160@kirkwood",
         "source": "ie1_s3",
         "sourceKind": "season3_recruitment_profile",
         "sourceTeamId": "kirkwood",
@@ -64616,8 +64616,8 @@
         "poolId": "ie1_s3_mixed_recruitment"
       },
       {
-        "playerId": "4466",
-        "profileId": "4466@kirkwood",
+        "playerId": "166",
+        "profileId": "166@kirkwood",
         "source": "ie1_s3",
         "sourceKind": "season3_recruitment_profile",
         "sourceTeamId": "kirkwood",
@@ -64626,7 +64626,7 @@
         "normalizedRole": "MF",
         "finalOverall": 77,
         "category": "Buono",
-        "element": "Wind",
+        "element": "Forest",
         "eligibleInitialDraft": true,
         "eligiblePullFreeAgents": true,
         "poolId": "ie1_s3_mixed_recruitment"
@@ -64996,5 +64996,206 @@
       "sourceValidationRecruitmentOldTeamPlayers": 288
     },
     "errors": []
+  },
+  "legacyPlayerIdAliases": {
+    "4462": "160",
+    "4466": "164"
+  },
+  "legacyPlayers": [
+    {
+      "playerId": "4462",
+      "id": "4462",
+      "name": "Malcolm Night",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/_/4/_4ecna7ft68.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/i/l/iltqnfszziu_r0_fullbody.webp",
+      "element": "Fire",
+      "type": "Fire",
+      "custom": false,
+      "profileIds": [
+        "4462@kirkwood"
+      ],
+      "baseProfileId": "4462@kirkwood",
+      "latestProfileId": "4462@kirkwood",
+      "teamIds": [
+        "kirkwood"
+      ],
+      "hasProfileUpgrades": false,
+      "position": "DF",
+      "normalizedRole": "DF",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 8,
+        "control": 7,
+        "defense": 8,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "maxLevel": 20,
+      "legacyPreviewProfileId": "4462@kirkwood"
+    },
+    {
+      "playerId": "4466",
+      "id": "4466",
+      "name": "Toby Damian",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/d/2/d2graechdcm.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/q/f/qfj5ab1xpek_r0_fullbody.webp",
+      "element": "Wind",
+      "type": "Wind",
+      "custom": false,
+      "profileIds": [
+        "4466@kirkwood"
+      ],
+      "baseProfileId": "4466@kirkwood",
+      "latestProfileId": "4466@kirkwood",
+      "teamIds": [
+        "kirkwood"
+      ],
+      "hasProfileUpgrades": false,
+      "position": "MF",
+      "normalizedRole": "MF",
+      "category": "Buono",
+      "finalOverall": 77,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 7,
+        "speed": 8,
+        "grit": 7,
+        "save": 5
+      },
+      "maxLevel": 20,
+      "legacyPreviewProfileId": "4466@kirkwood"
+    }
+  ],
+  "legacyProfiles": [
+    {
+      "profileId": "4462@kirkwood",
+      "playerId": "4462",
+      "id": "4462@kirkwood",
+      "teamId": "kirkwood",
+      "teamName": "Kirkwood",
+      "profileRank": 110,
+      "sourceKind": "recruitment_source",
+      "sourceFile": "KIRKWOOD.json",
+      "name": "Malcolm Night",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/_/4/_4ecna7ft68.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/i/l/iltqnfszziu_r0_fullbody.webp",
+      "position": "DF",
+      "normalizedRole": "DF",
+      "element": "Fire",
+      "type": "Fire",
+      "category": "Forte",
+      "finalOverall": 80,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 8,
+        "control": 7,
+        "defense": 8,
+        "speed": 7,
+        "grit": 7,
+        "save": 1
+      },
+      "maxLevel": 20,
+      "custom": false,
+      "defaultRoleVariantId": "df",
+      "roleSwitchEnabled": false,
+      "roleVariants": [
+        {
+          "variantId": "df",
+          "roleVariantId": "df",
+          "position": "DF",
+          "normalizedRole": "DF",
+          "finalOverall": 80,
+          "category": "Forte",
+          "ratings": {
+            "attack": 7,
+            "physical": 7,
+            "stamina": 8,
+            "control": 7,
+            "defense": 8,
+            "speed": 7,
+            "grit": 7,
+            "save": 1
+          },
+          "portraitUrl": null,
+          "frontFullbodyUrl": null,
+          "evaluated": true,
+          "updatedAt": "2026-08-08T22:25:41.435Z"
+        }
+      ],
+      "sourceUpdatedAt": "2026-08-08T22:25:41.435Z"
+    },
+    {
+      "profileId": "4466@kirkwood",
+      "playerId": "4466",
+      "id": "4466@kirkwood",
+      "teamId": "kirkwood",
+      "teamName": "Kirkwood",
+      "profileRank": 110,
+      "sourceKind": "recruitment_source",
+      "sourceFile": "KIRKWOOD.json",
+      "name": "Toby Damian",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/d/2/d2graechdcm.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/q/f/qfj5ab1xpek_r0_fullbody.webp",
+      "position": "MF",
+      "normalizedRole": "MF",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Buono",
+      "finalOverall": 77,
+      "ratings": {
+        "attack": 7,
+        "physical": 7,
+        "stamina": 7,
+        "control": 7,
+        "defense": 7,
+        "speed": 8,
+        "grit": 7,
+        "save": 5
+      },
+      "maxLevel": 20,
+      "custom": false,
+      "defaultRoleVariantId": "mf",
+      "roleSwitchEnabled": false,
+      "roleVariants": [
+        {
+          "variantId": "mf",
+          "roleVariantId": "mf",
+          "position": "MF",
+          "normalizedRole": "MF",
+          "finalOverall": 77,
+          "category": "Buono",
+          "ratings": {
+            "attack": 7,
+            "physical": 7,
+            "stamina": 7,
+            "control": 7,
+            "defense": 7,
+            "speed": 8,
+            "grit": 7,
+            "save": 5
+          },
+          "portraitUrl": null,
+          "frontFullbodyUrl": null,
+          "evaluated": true,
+          "updatedAt": "2026-08-08T22:25:41.435Z"
+        }
+      ],
+      "sourceUpdatedAt": "2026-08-08T22:25:41.435Z"
+    }
+  ],
+  "legacyCompatibility": {
+    "ie3KirkwoodPlayerCorrections": {
+      "purpose": "read_only_support_for_pre_correction_ie3_runs_and_album_unlocks",
+      "activeCatalogExcludesLegacy": true,
+      "legacyPlayersUsedForNewContent": false
+    }
   }
 }
