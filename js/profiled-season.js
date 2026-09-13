@@ -60,6 +60,14 @@
   }
   function resolveCanonicalPlayer(seasonId, playerId) { return indexFor(seasonId)?.players.get(id(playerId)) || null; }
   function resolveProfile(seasonId, profileId) { return indexFor(seasonId)?.profiles.get(id(profileId)) || null; }
+  function canonicalPlayerId(seasonId, playerId) {
+    const resolved = resolveCanonicalPlayer(seasonId, playerId);
+    return id(resolved?.legacyCanonicalPlayerId || resolved?.playerId || playerId);
+  }
+  function canonicalProfileId(seasonId, profileId) {
+    const resolved = resolveProfile(seasonId, profileId);
+    return id(resolved?.legacyCanonicalProfileId || resolved?.profileId || profileId);
+  }
   function implicitProfile(seasonId, playerId) {
     const player = resolveCanonicalPlayer(seasonId, playerId) || global.SeasonRegistry?.player?.(playerId, seasonId);
     return player ? { ...player, profileId: id(player.playerId), playerId: id(player.playerId), defaultRoleVariantId: id(player.position || player.normalizedRole).toLowerCase(), roleVariants: [] } : null;
@@ -92,15 +100,19 @@
       : base;
   }
   function compareProfileProgression(seasonId, currentProfileId, candidateProfileId) {
-    if (id(currentProfileId) === id(candidateProfileId)) return 0;
+    const currentCanonicalProfileId = canonicalProfileId(seasonId, currentProfileId);
+    const candidateCanonicalProfileId = canonicalProfileId(seasonId, candidateProfileId);
+    if (currentCanonicalProfileId === candidateCanonicalProfileId) return 0;
     const current = resolveProfile(seasonId, currentProfileId);
     const candidate = resolveProfile(seasonId, candidateProfileId);
     if (!candidate) return -1;
     if (!current) return 1;
-    if (id(current.playerId) !== id(candidate.playerId)) return null;
-    const path = indexFor(seasonId)?.paths.get(id(candidate.playerId));
-    const forward = path?.steps?.some((step) => id(step.fromProfileId) === id(currentProfileId) && id(step.toProfileId) === id(candidateProfileId));
-    const backward = path?.steps?.some((step) => id(step.toProfileId) === id(currentProfileId) && id(step.fromProfileId) === id(candidateProfileId));
+    const currentPlayerId = canonicalPlayerId(seasonId, current.playerId);
+    const candidatePlayerId = canonicalPlayerId(seasonId, candidate.playerId);
+    if (currentPlayerId !== candidatePlayerId) return null;
+    const path = indexFor(seasonId)?.paths.get(candidatePlayerId);
+    const forward = path?.steps?.some((step) => id(step.fromProfileId) === currentCanonicalProfileId && id(step.toProfileId) === candidateCanonicalProfileId);
+    const backward = path?.steps?.some((step) => id(step.toProfileId) === currentCanonicalProfileId && id(step.fromProfileId) === candidateCanonicalProfileId);
     if (forward) return 1;
     if (backward) return -1;
     return Math.sign(Number(candidate.profileRank || 0) - Number(current.profileRank || 0));
@@ -115,7 +127,8 @@
     const seasonId = options.seasonId || run.seasonId;
     const profile = resolveProfile(seasonId, candidate.profileId || candidate.activeProfileId);
     if (!profile) throw new Error(`Profilo non trovato: ${candidate.profileId || candidate.activeProfileId}`);
-    const existing = (run.roster || []).find((entry) => id(entry.playerId) === id(profile.playerId));
+    const candidatePlayerId = canonicalPlayerId(seasonId, profile.playerId);
+    const existing = (run.roster || []).find((entry) => canonicalPlayerId(seasonId, entry.playerId) === candidatePlayerId);
     if (existing) {
       if (compareProfileProgression(seasonId, existing.activeProfileId, profile.profileId) !== 1) return { status: "ineligible", player: existing };
       existing.activeRoleVariantId = roleIdForUpgrade(existing, profile, seasonId);
@@ -177,5 +190,5 @@
     return run;
   }
 
-  global.ProfiledSeasonRuntime = { register, resolveCanonicalPlayer, resolveProfile, resolveOwnedPlayerProfile: ownedProfile, resolveActiveRoleVariant: activeVariant, resolveEffectiveBase: effectiveBase, resolveEffectivePlayerAtLevel, compareProfileProgression, acquireOrUpgradeProfile, addLevelUnits, canSwitchRole, switchBenchRole, normalizeRun };
+  global.ProfiledSeasonRuntime = { register, resolveCanonicalPlayer, resolveProfile, canonicalPlayerId, canonicalProfileId, resolveOwnedPlayerProfile: ownedProfile, resolveActiveRoleVariant: activeVariant, resolveEffectiveBase: effectiveBase, resolveEffectivePlayerAtLevel, compareProfileProgression, acquireOrUpgradeProfile, addLevelUnits, canSwitchRole, switchBenchRole, normalizeRun };
 })(globalThis);
