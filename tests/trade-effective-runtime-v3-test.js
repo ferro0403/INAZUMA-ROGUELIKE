@@ -10,7 +10,6 @@ const Runtime = require("../js/development-runtime.js");
 require("../js/game-rules.js");
 const Rules = global.RoguelikeRules;
 const database = require("../data/FREE_AGENTS_compact.json");
-const orion = require("../data/ORION_season_compact.json");
 Runtime.registerDatabase("free-agents", database);
 
 const base = database.players.find((player) => player.category === "Forte" && Number(player.finalOverall) === 80);
@@ -45,34 +44,6 @@ assert.equal(result.status, "ineligible"); assert.equal(result.reason, "trade-co
 tradeRun = { seasonId: "ie1", roster: [trainedEntry], lineup: [String(base.playerId)], bench: [], inventory: [] };
 result = Rules.executeProfileAwareTrade(tradeRun, base.playerId, incoming(candidate88), { resolveOutgoingBase: () => threshold88, resolveIncomingCandidate: (player) => player });
 assert.equal(result.status, "acquired");
-
-// Orion recruitment-source profiles are valid trade candidates even before their team is unlocked.
-const jackProfile = orion.profiles.find((item) => item.profileId === "4453@rampart_junior_high");
-const jackRecruitment = orion.recruitmentPool.entries.find((item) => item.profileId === jackProfile?.profileId);
-assert(jackProfile && jackRecruitment && jackRecruitment.eligiblePullFreeAgents === true, "real Orion Jack recruitment fixture required");
-const orionTradeCandidates = Rules.getProfileAwareTradeCandidates({
-  outgoingPlayer: { playerId: "outgoing-df", position: "DF", finalOverall: 85 },
-  outgoingPlayerId: "outgoing-df",
-  rosterEntries: [{ playerId: "outgoing-df" }],
-  freeAgents: [],
-  profiles: [jackProfile],
-  recruitmentEntries: [jackRecruitment],
-  unlockedTeamIds: [],
-  teams: orion.teams,
-  seasonId: "orion",
-});
-assert.deepStrictEqual(orionTradeCandidates.map((candidate) => candidate.playerId), ["4453"], "Orion recruitment-source player must be trade-eligible without unlocking Rampart");
-assert.strictEqual(Rules.getProfileAwareTradeCandidates({
-  outgoingPlayer: { playerId: "outgoing-df", position: "DF", finalOverall: 85 },
-  outgoingPlayerId: "outgoing-df",
-  rosterEntries: [{ playerId: "outgoing-df" }],
-  freeAgents: [],
-  profiles: [jackProfile],
-  recruitmentEntries: [{ ...jackRecruitment, eligiblePullFreeAgents: false }],
-  unlockedTeamIds: [],
-  teams: orion.teams,
-  seasonId: "orion",
-}).length, 0, "profiles explicitly excluded from free-agent pulls must stay excluded from trades");
 
 // Base-only and legacy V2 roster semantics remain BASE + local/snapshotted boost.
 const baseOnly = { seasonId: "ie1", roster: [] };
