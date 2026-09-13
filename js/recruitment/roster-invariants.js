@@ -1,17 +1,24 @@
 (function (global) {
   "use strict";
 
-  const canonicalId = (value) => global.PlayerIdentity.canonicalPlayerId(
-    value && typeof value === "object" ? value : { playerId: value }
-  );
+  const canonicalId = (value, seasonId = null) => {
+    const rawId = global.PlayerIdentity.canonicalPlayerId(
+      value && typeof value === "object" ? value : { playerId: value }
+    );
+    if (!rawId) return rawId;
+    return global.ProfiledSeasonRuntime?.canonicalPlayerId?.(seasonId, rawId)
+      || global.SeasonRegistry?.player?.(rawId, seasonId)?.legacyCanonicalPlayerId
+      || rawId;
+  };
 
   function inspect(run) {
     const roster = Array.isArray(run?.roster) ? run.roster : [];
     const lineup = Array.isArray(run?.lineup) ? run.lineup : [];
     const bench = Array.isArray(run?.bench) ? run.bench : [];
-    const rosterIds = roster.map(canonicalId).filter(Boolean);
-    const lineupIds = lineup.map(canonicalId).filter(Boolean);
-    const benchIds = bench.map(canonicalId).filter(Boolean);
+    const seasonId = run?.seasonId || null;
+    const rosterIds = roster.map((entry) => canonicalId(entry, seasonId)).filter(Boolean);
+    const lineupIds = lineup.map((entry) => canonicalId(entry, seasonId)).filter(Boolean);
+    const benchIds = bench.map((entry) => canonicalId(entry, seasonId)).filter(Boolean);
     const rosterSet = new Set(rosterIds);
     const duplicate = (ids) => ids.find((id, index) => ids.indexOf(id) !== index) || null;
     const errors = [];
@@ -35,8 +42,9 @@
   }
 
   function assertCanOwn(run, player) {
-    const playerId = canonicalId(player);
-    if (!playerId || (run?.roster || []).some((entry) => canonicalId(entry) === playerId)) {
+    const seasonId = run?.seasonId || null;
+    const playerId = canonicalId(player, seasonId);
+    if (!playerId || (run?.roster || []).some((entry) => canonicalId(entry, seasonId) === playerId)) {
       const error = new Error("Canonical player is already owned");
       error.code = "canonical-player-owned";
       throw error;
