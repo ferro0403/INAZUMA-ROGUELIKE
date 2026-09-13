@@ -4,6 +4,7 @@ const vm = require('vm');
 const read = (path) => JSON.parse(fs.readFileSync(path, 'utf8'));
 const season = read('data/IE1_S3_season_compact.json');
 const free = read('data/FREE_AGENTS_compact.json');
+const visuals = read('data/PLAYER_VISUALS.json');
 
 assert.strictEqual(season.seasonId, 'ie1_s3');
 assert.strictEqual(season.requiresProfileAwareRuntime, true);
@@ -30,6 +31,40 @@ assert.strictEqual(season.bossOrder.at(-1).teamId, 'inazuma_national'); assert.s
 assert.strictEqual(new Set(season.players.map(player => player.playerId)).size, season.players.length);
 assert.strictEqual(new Set(season.profiles.map(profile => profile.profileId)).size, season.profiles.length);
 const playersById = new Map(season.players.map(player => [player.playerId, player]));
+const kirkwood = season.teams.find(team => team.teamId === 'kirkwood');
+assert(kirkwood);
+assert.deepStrictEqual(kirkwood.playerIds, ['161','171','162','173','159','160','167','174','163','170','168','166','164','172','165']);
+assert.deepStrictEqual(kirkwood.playerProfileIds, ['161@kirkwood','171@kirkwood','162@kirkwood','173@kirkwood','159@kirkwood','160@kirkwood','167@kirkwood','174@kirkwood','163@kirkwood','170@kirkwood','168@kirkwood','166@kirkwood','164@kirkwood','172@kirkwood','165@kirkwood']);
+for (const legacyId of ['4462','4464','4466']) assert(!season.players.some(player => String(player.playerId) === legacyId));
+for (const legacyProfileId of ['4462@kirkwood','4464@kirkwood','4466@kirkwood']) assert(!season.profiles.some(profile => profile.profileId === legacyProfileId));
+const kirkwoodExpected = [
+  ['161','Alfred Meenan',75],
+  ['160','Malcolm Night',80],
+  ['162','Dan Mirthful',75],
+  ['164','Toby Damian',75],
+  ['166','Zachary Moore',77],
+];
+for (const [playerId, name, overall] of kirkwoodExpected) {
+  const player = playersById.get(playerId);
+  assert(player, `Kirkwood player ${playerId} must exist`);
+  assert.strictEqual(player.name, name);
+  assert.strictEqual(player.finalOverall, overall);
+  assert.strictEqual(player.portraitUrl, visuals.players[playerId].portraitUrl);
+  assert(visuals.players[playerId].frontFullbodyUrl, `${name} must have a canonical fullbody render`);
+}
+assert.strictEqual(playersById.get('166').element, 'Forest');
+assert.strictEqual(season.players.filter(player => player.name === 'Toby Damian' && player.teamIds?.includes('kirkwood')).length, 1);
+assert.strictEqual(season.players.find(player => player.name === 'Toby Damian' && player.teamIds?.includes('kirkwood')).playerId, '164');
+for (const playerId of ['160','162','166']) {
+  assert(recruitment.some(entry => String(entry.playerId) === playerId && entry.profileId === `${playerId}@kirkwood`));
+}
+assert(!recruitment.some(entry => ['4462','4464','4466'].includes(String(entry.playerId))));
+assert.deepStrictEqual(season.legacyPlayerCompatibility.idAliases, {'4464':'162','4462':'160','4466':'166'});
+assert.deepStrictEqual(season.legacyPlayerCompatibility.profileAliases, {
+  '4464@kirkwood':'162@kirkwood',
+  '4462@kirkwood':'160@kirkwood',
+  '4466@kirkwood':'166@kirkwood',
+});
 assert(darkTeam.playerIds.every(id => playersById.has(id))); assert(darkTeam.playerProfileIds.every(id => profilesById.has(id)));
 for (const key of ['teamFiles','teams','bosses','canonicalPlayers','profiles','combinedUniqueGameplayPlayers','warnings']) assert.strictEqual(season.validation.counts[key], season.summary[key]);
 const specials = [[2,'neo_national',3,82],[4,'brocken_brigade',7,84],[5,'the_cape_crusaders',9,83],[6,'rose_griffons',11,84],[7,'team_d',14,84],[8,'team_zoolan',16,85],[9,'red_matador',17,85]];
@@ -52,6 +87,14 @@ const nakata = season.profiles.find(p => p.playerId === 'custom_0001' && p.teamI
 const context = { console, fetch: async () => ({ok:true,json:async()=>season}) }; context.globalThis=context; vm.createContext(context);
 for (const file of ['js/profiled-season.js','js/season-registry.js','js/recruitment/player-identity.js','js/recruitment-pool.js','js/draft.js','js/level-progression.js','js/special-match.js']) vm.runInContext(fs.readFileSync(file,'utf8'),context,{filename:file});
 context.ProfiledSeasonRuntime.register('ie1_s3',season);
+const legacyNight = context.ProfiledSeasonRuntime.resolveCanonicalPlayer('ie1_s3','4462');
+assert(legacyNight); assert.strictEqual(legacyNight.name,'Malcolm Night'); assert.strictEqual(legacyNight.finalOverall,80); assert.strictEqual(legacyNight.legacyCanonicalPlayerId,'160');
+const legacyNightProfile = context.ProfiledSeasonRuntime.resolveProfile('ie1_s3','4462@kirkwood');
+assert(legacyNightProfile); assert.strictEqual(legacyNightProfile.name,'Malcolm Night'); assert.strictEqual(legacyNightProfile.playerId,'4462'); assert.strictEqual(legacyNightProfile.legacyCanonicalProfileId,'160@kirkwood');
+const legacyMoore = context.ProfiledSeasonRuntime.resolveEffectiveBase({playerId:'4466',activeProfileId:'4466@kirkwood',activeRoleVariantId:'mf'},'ie1_s3');
+assert.strictEqual(legacyMoore.name,'Zachary Moore'); assert.strictEqual(legacyMoore.finalOverall,77); assert.strictEqual(legacyMoore.playerId,'4466'); assert.strictEqual(legacyMoore.profileId,'4466@kirkwood');
+const canonicalMoore = context.ProfiledSeasonRuntime.resolveEffectiveBase({playerId:'166',activeProfileId:'166@kirkwood',activeRoleVariantId:'mf'},'ie1_s3');
+assert.strictEqual(canonicalMoore.name,'Zachary Moore'); assert.strictEqual(canonicalMoore.finalOverall,77); assert.strictEqual(canonicalMoore.playerId,'166');
 assert(context.SeasonRegistry.list().some(s => s.id==='ie1_s3')); assert.strictEqual(context.SeasonRegistry.get('ie2').name,'Inazuma Eleven Ares');
 const eligibility=context.RecruitmentPoolRuntime.eligibleForSeason3InitialDraft;
 assert(eligibility({sourceKind:'season3_recruitment_profile',profileId:'low@team',finalOverall:72}));
