@@ -66,6 +66,43 @@ function assertIe1IdentityVisualCorrections() {
   );
 }
 
+async function assertIe1LegacyLookupCompatibility() {
+  const registryContext = {
+    fetch: async (url) => ({
+      ok: url === "data/IE1_season_compact.json",
+      json: async () => ie1Fixture,
+    }),
+    ProfiledSeasonRuntime: { register: () => {} },
+  };
+  registryContext.globalThis = registryContext;
+  vm.runInNewContext(
+    fs.readFileSync("js/season-registry.js", "utf8"),
+    registryContext,
+    { filename: "season-registry.js" },
+  );
+  const registry = registryContext.SeasonRegistry;
+  await registry.loadDatabase("ie1");
+
+  const activeIds = new Set(ie1Fixture.players.map((player) => String(player.playerId)));
+  for (const legacyId of ["4501", "4483", "4463", "4484", "4482", "4477", "4461"]) {
+    assert.ok(!activeIds.has(legacyId), `legacy id ${legacyId} stays out of the active IE1 player list`);
+  }
+
+  const mapped = registry.player("4501", "ie1");
+  assert.ok(mapped, "historic Alan Master id remains resolvable");
+  assert.strictEqual(mapped.playerId, "4501");
+  assert.strictEqual(mapped.legacyCanonicalPlayerId, "23");
+  assert.strictEqual(mapped.name, "Alan Master");
+  assert.strictEqual(mapped.finalOverall, 86);
+  assert.strictEqual(mapped.portraitUrl, playerVisualsFixture.players["23"].portraitUrl);
+
+  const removed = registry.player("4484", "ie1");
+  assert.ok(removed, "historic Darren Gouger remains resolvable for an old run");
+  assert.strictEqual(removed.playerId, "4484");
+  assert.strictEqual(removed.name, "Darren Gouger");
+  assert.strictEqual(removed.finalOverall, 81);
+}
+
 const flush = async () => {
   await Promise.resolve();
   await new Promise((resolve) => setImmediate(resolve));
@@ -98,6 +135,7 @@ function gameplaySnapshot(run) {
 
 async function main() {
   assertIe1IdentityVisualCorrections();
+  await assertIe1LegacyLookupCompatibility();
   const storage = new BudgetStorage();
   const bootstrap = load(storage);
   const player = structuredClone(
