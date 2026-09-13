@@ -6,6 +6,102 @@ const vm = require("vm");
 const BudgetStorage = require("./helpers/budget-storage");
 const { load } = require("./helpers/production-runtime");
 const freeAgentFixture = require("../data/FREE_AGENTS_compact.json");
+const ie1Fixture = require("../data/IE1_season_compact.json");
+const playerVisualsFixture = require("../data/PLAYER_VISUALS.json");
+
+function assertIe1IdentityVisualCorrections() {
+  const expected = [
+    ["87", "Francis Tell", 80], ["77", "Harry Leading", 79],
+    ["91", "Jonathan Seller", 80], ["95", "Neil Turner", 82],
+    ["81", "Philip Marvel", 80], ["161", "Alfred Meenan", 84],
+    ["162", "Dan Mirthful", 84], ["160", "Malcolm Night", 86],
+    ["164", "Toby Damian", 83], ["166", "Zachary Moore", 85],
+    ["23", "Alan Master", 86], ["22", "Ben Simmons", 86],
+    ["28", "Daniel Hatch", 87], ["30", "David Samford", 90],
+    ["27", "Derek Swing", 86], ["24", "Gus Martin", 87],
+    ["25", "Herman Waldon", 85], ["26", "John Bloom", 87],
+    ["21", "Peter Drent", 88],
+  ];
+  const forbiddenIds = new Set([
+    "4484", "4482", "4477", "4461",
+    "4483", "4478", "4485", "4487", "4480",
+    "4463", "4464", "4462", "4466", "4468",
+    "4501", "4500", "4506", "4507", "4505", "4502", "4503", "4504", "4499",
+  ]);
+  const byId = new Map(ie1Fixture.players.map((player) => [String(player.playerId), player]));
+  for (const [id, name, overall] of expected) {
+    const player = byId.get(id);
+    const visual = playerVisualsFixture.players[id];
+    assert.ok(player, `IE1 corrected player ${id} must exist`);
+    assert.strictEqual(player.name, name);
+    assert.strictEqual(player.id, id);
+    assert.strictEqual(player.finalOverall, overall, `${name} keeps the previous gameplay overall`);
+    assert.strictEqual(player.portraitUrl, visual.portraitUrl, `${name} uses the canonical portrait`);
+    assert.ok(visual.frontFullbodyUrl, `${name} has a canonical front fullbody render`);
+    assert.ok(player.progressionCode, `${name} keeps progression data`);
+  }
+  assert.strictEqual(ie1Fixture.players.length, 157);
+  assert.strictEqual(ie1Fixture.summary.players, 157);
+  assert.strictEqual(ie1Fixture.validation.players, 157);
+  assert.strictEqual(ie1Fixture.validation.exactValuesChecked, 29673);
+  for (const player of ie1Fixture.players) {
+    assert.ok(!forbiddenIds.has(String(player.playerId)), `legacy IE1 player id ${player.playerId} must be removed`);
+  }
+  for (const teamId of ["brainwashing", "kirkwood", "royal"]) {
+    const team = ie1Fixture.teams.find((entry) => entry.teamId === teamId);
+    const boss = ie1Fixture.bossOrder.find((entry) => entry.teamId === teamId);
+    assert.ok(team && boss, `${teamId} data must exist`);
+    assert.strictEqual(boss.startingXIPlayerIds.length, 11, `${teamId} keeps 11 starters`);
+    assert.strictEqual(new Set(boss.startingXIPlayerIds.map(String)).size, 11, `${teamId} starters stay unique`);
+    for (const id of [...team.playerIds, ...boss.startingXIPlayerIds, ...boss.rewardPoolPlayerIds]) {
+      assert.ok(byId.has(String(id)), `${teamId} reference ${id} resolves to a Season 1 player`);
+      assert.ok(!forbiddenIds.has(String(id)), `${teamId} no longer references legacy id ${id}`);
+    }
+  }
+  const brainwashing = ie1Fixture.bossOrder.find((entry) => entry.teamId === "brainwashing");
+  assert.deepStrictEqual(
+    brainwashing.startingXIPlayerIds.map(String),
+    ["95", "91", "93", "89", "87", "85", "83", "81", "79", "77", "75"],
+    "Brainwashing keeps a valid canonical 4-4-2 starting XI after removing Ares-only players",
+  );
+}
+
+async function assertIe1LegacyLookupCompatibility() {
+  const registryContext = {
+    fetch: async (url) => ({
+      ok: url === "data/IE1_season_compact.json",
+      json: async () => ie1Fixture,
+    }),
+    ProfiledSeasonRuntime: { register: () => {} },
+  };
+  registryContext.globalThis = registryContext;
+  vm.runInNewContext(
+    fs.readFileSync("js/season-registry.js", "utf8"),
+    registryContext,
+    { filename: "season-registry.js" },
+  );
+  const registry = registryContext.SeasonRegistry;
+  await registry.loadDatabase("ie1");
+
+  const activeIds = new Set(ie1Fixture.players.map((player) => String(player.playerId)));
+  for (const legacyId of ["4501", "4483", "4463", "4484", "4482", "4477", "4461"]) {
+    assert.ok(!activeIds.has(legacyId), `legacy id ${legacyId} stays out of the active IE1 player list`);
+  }
+
+  const mapped = registry.player("4501", "ie1");
+  assert.ok(mapped, "historic Alan Master id remains resolvable");
+  assert.strictEqual(mapped.playerId, "4501");
+  assert.strictEqual(mapped.legacyCanonicalPlayerId, "23");
+  assert.strictEqual(mapped.name, "Alan Master");
+  assert.strictEqual(mapped.finalOverall, 86);
+  assert.strictEqual(mapped.portraitUrl, playerVisualsFixture.players["23"].portraitUrl);
+
+  const removed = registry.player("4484", "ie1");
+  assert.ok(removed, "historic Darren Gouger remains resolvable for an old run");
+  assert.strictEqual(removed.playerId, "4484");
+  assert.strictEqual(removed.name, "Darren Gouger");
+  assert.strictEqual(removed.finalOverall, 81);
+}
 
 const flush = async () => {
   await Promise.resolve();
@@ -38,6 +134,8 @@ function gameplaySnapshot(run) {
 }
 
 async function main() {
+  assertIe1IdentityVisualCorrections();
+  await assertIe1LegacyLookupCompatibility();
   const storage = new BudgetStorage();
   const bootstrap = load(storage);
   const player = structuredClone(

@@ -32,6 +32,29 @@
   function isSeasonSource(source) { return !!SEASONS[String(source || "")]; }
   function sourceForSeason(seasonId = activeSeasonId) { return normalizeSeasonId(seasonId); }
 
+  function buildPlayersIndex(database) {
+    const index = new Map((database?.players || []).map((player) => [String(player.playerId), player]));
+    const compatibility = database?.legacyPlayerCompatibility;
+    for (const legacyPlayer of compatibility?.removedPlayers || []) {
+      const legacyId = String(legacyPlayer?.playerId ?? legacyPlayer?.id ?? "");
+      if (legacyId && !index.has(legacyId)) index.set(legacyId, legacyPlayer);
+    }
+    for (const [legacyIdValue, canonicalIdValue] of Object.entries(compatibility?.idAliases || {})) {
+      const legacyId = String(legacyIdValue || "");
+      const canonicalId = String(canonicalIdValue || "");
+      if (!legacyId || !canonicalId || index.has(legacyId)) continue;
+      const canonical = index.get(canonicalId);
+      if (!canonical) continue;
+      index.set(legacyId, {
+        ...canonical,
+        playerId: legacyId,
+        ...(Object.prototype.hasOwnProperty.call(canonical, "id") ? { id: legacyId } : {}),
+        legacyCanonicalPlayerId: canonicalId,
+      });
+    }
+    return index;
+  }
+
   function applyDisplayTeamNameOverrides(database, seasonId) {
     const overrides = DISPLAY_TEAM_NAME_OVERRIDES[String(seasonId || "")];
     if (!database || !overrides) return database;
@@ -89,7 +112,7 @@
     }
     applyDisplayTeamNameOverrides(database, season.id);
     dbBySeason.set(season.id, database);
-    playersBySeason.set(season.id, new Map((database.players || []).map((player) => [String(player.playerId), player])));
+    playersBySeason.set(season.id, buildPlayersIndex(database));
     teamsBySeason.set(season.id, new Map((database.teams || []).map((team) => [String(team.teamId ?? team.id), team])));
     global.ProfiledSeasonRuntime?.register?.(season.id, database);
     setActive(season.id);
