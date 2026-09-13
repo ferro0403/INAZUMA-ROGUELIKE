@@ -62,6 +62,18 @@ const jackTradeCandidates = context.RoguelikeRules.getProfileAwareTradeCandidate
   seasonId: "orion",
 });
 assert(jackTradeCandidates.some((candidate) => String(candidate.playerId) === "4453"), "Rampart recruitment profile must be trade-eligible without unlocking the team");
+const blockedJackTradeCandidates = context.RoguelikeRules.getProfileAwareTradeCandidates({
+  outgoingPlayer: { playerId: "outgoing-df", position: "DF", finalOverall: 85 },
+  outgoingPlayerId: "outgoing-df",
+  rosterEntries: [{ playerId: "outgoing-df" }],
+  freeAgents: [],
+  profiles: [jackProfile],
+  recruitmentEntries: [{ ...jackRecruitment, eligiblePullFreeAgents: false }],
+  unlockedTeamIds: [],
+  teams: orion.teams,
+  seasonId: "orion",
+});
+assert.strictEqual(blockedJackTradeCandidates.length, 0, "profiles excluded from free-agent pulls must stay excluded from trades");
 assert(!orion.recruitmentPool.entries.some((entry) => String(entry.playerId) === "4546"));
 assert(orion.profiles.some((profile) => String(profile.playerId) === "4546"));
 assert(orion.bossOrder.some((boss) => (boss.rewardPoolPlayerIds || []).map(String).includes("4546")));
