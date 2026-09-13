@@ -7,7 +7,7 @@ const orion = JSON.parse(fs.readFileSync(`${root}/data/ORION_season_compact.json
 const freeAgents = JSON.parse(fs.readFileSync(`${root}/data/FREE_AGENTS_compact.json`, "utf8"));
 const context = { console, structuredClone, DevelopmentV2: { playerUpgrade: () => null } };
 context.globalThis = context;
-for (const file of ["profiled-season.js", "recruitment/player-identity.js", "recruitment-pool.js", "formation-layout.js", "match-simulator-config.js", "match-simulator.js", "boss-gameover-runtime.js"]) {
+for (const file of ["profiled-season.js", "recruitment/player-identity.js", "recruitment-pool.js", "game-rules.js", "formation-layout.js", "match-simulator-config.js", "match-simulator.js", "boss-gameover-runtime.js"]) {
   vm.runInNewContext(fs.readFileSync(`${root}/js/${file}`, "utf8"), context, { filename: file });
 }
 context.ProfiledSeasonRuntime.register("orion", orion);
@@ -50,6 +50,18 @@ assert.strictEqual(jack.finalOverall, 90);
 assert.strictEqual(jackProfile.finalOverall, 90);
 assert.strictEqual(jackRecruitment.eligibleInitialDraft, true);
 assert.strictEqual(jackRecruitment.eligiblePullFreeAgents, true);
+const jackTradeCandidates = context.RoguelikeRules.getProfileAwareTradeCandidates({
+  outgoingPlayer: { playerId: "outgoing-df", position: "DF", finalOverall: 85 },
+  outgoingPlayerId: "outgoing-df",
+  rosterEntries: [{ playerId: "outgoing-df" }],
+  freeAgents: [],
+  profiles: orion.profiles,
+  recruitmentEntries: orion.recruitmentPool.entries,
+  unlockedTeamIds: [],
+  teams: orion.teams,
+  seasonId: "orion",
+});
+assert(jackTradeCandidates.some((candidate) => String(candidate.playerId) === "4453"), "Rampart recruitment profile must be trade-eligible without unlocking the team");
 assert(!orion.recruitmentPool.entries.some((entry) => String(entry.playerId) === "4546"));
 assert(orion.profiles.some((profile) => String(profile.playerId) === "4546"));
 assert(orion.bossOrder.some((boss) => (boss.rewardPoolPlayerIds || []).map(String).includes("4546")));
