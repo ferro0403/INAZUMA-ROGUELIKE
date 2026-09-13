@@ -38,7 +38,9 @@
   function eligibleProfile(run, profileId, profiles = global.ProfiledSeasonRuntime) {
     const profile = profiles.resolveProfile(run.seasonId, profileId);
     if (!profile) return false;
-    const owned = run.roster?.find((entry) => id(entry.playerId) === id(profile.playerId));
+    const canonicalPlayerId = (playerId) => profiles.canonicalPlayerId?.(run.seasonId, playerId) || id(playerId);
+    const targetPlayerId = canonicalPlayerId(profile.playerId);
+    const owned = run.roster?.find((entry) => canonicalPlayerId(entry.playerId) === targetPlayerId);
     return !owned || profiles.compareProfileProgression(run.seasonId, owned.activeProfileId, profile.profileId) === 1;
   }
   function isIe3SecondaryTeamReward(database, special) {
