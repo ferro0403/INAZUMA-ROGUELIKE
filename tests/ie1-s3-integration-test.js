@@ -31,6 +31,7 @@ assert.strictEqual(season.bossOrder.at(-1).teamId, 'inazuma_national'); assert.s
 assert.strictEqual(new Set(season.players.map(player => player.playerId)).size, season.players.length);
 assert.strictEqual(new Set(season.profiles.map(profile => profile.profileId)).size, season.profiles.length);
 const playersById = new Map(season.players.map(player => [player.playerId, player]));
+const recruitment = season.recruitmentPool.entries;
 const kirkwood = season.teams.find(team => team.teamId === 'kirkwood');
 assert(kirkwood);
 assert.deepStrictEqual(kirkwood.playerIds, ['161','171','162','173','159','160','167','174','163','170','168','166','164','172','165']);
@@ -70,7 +71,6 @@ for (const key of ['teamFiles','teams','bosses','canonicalPlayers','profiles','c
 const specials = [[2,'neo_national',3,82],[4,'brocken_brigade',7,84],[5,'the_cape_crusaders',9,83],[6,'rose_griffons',11,84],[7,'team_d',14,84],[8,'team_zoolan',16,85],[9,'red_matador',17,85]];
 assert.deepStrictEqual(season.specialMatches.map(s => [s.zoneIndex,s.teamId,s.matchLevel,s.teamOverall]), specials);
 for (const match of season.specialMatches) { assert.strictEqual(match.reward.candidateCount,3); assert.strictEqual(match.reward.pickCount,1); assert.strictEqual(match.reward.guaranteedPlayerId,null); assert.strictEqual(match.reward.unlocksTeamPullPool,true); assert.deepStrictEqual([match.mapPlacement.layer,match.mapPlacement.column],[3,1]); }
-const recruitment = season.recruitmentPool.entries;
 assert.strictEqual(recruitment.filter(e => e.sourceKind === 'season3_recruitment_profile').length,288);
 assert.strictEqual(recruitment.filter(e => e.sourceKind === 'global_free_agent').length,3);
 assert(!recruitment.some(e => String(e.playerId) === '1196'));
