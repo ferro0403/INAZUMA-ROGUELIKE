@@ -142,7 +142,7 @@
     return { playerId: String(resolvedPlayer.playerId), position, finalOverall };
   }
 
-  function getProfileAwareTradeCandidates({ outgoingPlayer, outgoingPlayerId = null, rosterEntries, freeAgents, profiles, unlockedTeamIds, teams, seasonId = "ie1_s2", compareProfileProgression, resolveCandidate = (player) => player }) {
+  function getProfileAwareTradeCandidates({ outgoingPlayer, outgoingPlayerId = null, rosterEntries, freeAgents, profiles, recruitmentEntries = [], unlockedTeamIds, teams, seasonId = "ie1_s2", compareProfileProgression, resolveCandidate = (player) => player }) {
     if (!outgoingPlayer) return [];
     const role = String(outgoingPlayer.position || outgoingPlayer.role || "").toUpperCase();
     const potential = Number(outgoingPlayer.finalOverall || 0);
@@ -151,6 +151,10 @@
     const unlockedProfileIds = new Set((teams || [])
       .filter((team) => unlocked.has(String(team.teamId)))
       .flatMap((team) => [...(team.playerProfileIds || []), ...(team.teamPullPoolProfileIds || [])].map(String)));
+    const recruitmentProfileIds = new Set((recruitmentEntries || [])
+      .filter((entry) => entry?.eligiblePullFreeAgents !== false && entry?.profileId)
+      .map((entry) => String(entry.profileId)));
+    const tradeProfileIds = new Set([...unlockedProfileIds, ...recruitmentProfileIds]);
     const candidates = [];
     (freeAgents || []).forEach((player) => {
       const candidate = { player, source: "free_agents", playerId: String(player.playerId), profileId: null, activeRoleVariantId: null, kind: "new" };
@@ -160,7 +164,7 @@
       candidates.push({ ...candidate, outcome, player: outcome.player });
     });
     (profiles || []).forEach((profile) => {
-      if (!unlockedProfileIds.has(String(profile.profileId))) return;
+      if (!tradeProfileIds.has(String(profile.profileId))) return;
       const defaultVariant = (profile.roleVariants || []).find((variant) => String(variant.roleVariantId || variant.variantId) === String(profile.defaultRoleVariantId));
       const player = { ...profile, ...(defaultVariant || {}), playerId: String(profile.playerId), profileId: String(profile.profileId) };
       const owned = ownedByPlayerId.get(String(profile.playerId));
