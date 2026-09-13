@@ -505,12 +505,12 @@
         "4469",
         "4470",
         "4468",
-        "171",
+        "4466",
         "4462",
         "4463",
         "4474",
-        "174",
-        "159"
+        "4465",
+        "4461"
       ],
       "startingXI": [
         {
@@ -540,7 +540,7 @@
         },
         {
           "slot": 6,
-          "playerId": "171",
+          "playerId": "4466",
           "level": 3
         },
         {
@@ -560,12 +560,12 @@
         },
         {
           "slot": 10,
-          "playerId": "174",
+          "playerId": "4465",
           "level": 3
         },
         {
           "slot": 11,
-          "playerId": "159",
+          "playerId": "4461",
           "level": 3
         }
       ],
@@ -573,22 +573,16 @@
       "rewardPoolPlayerIds": [
         "4463",
         "4472",
-        "171",
         "4464",
-        "173",
         "4473",
         "4474",
-        "159",
         "4462",
         "4469",
-        "174",
         "4465",
-        "170",
         "4470",
         "4466",
         "4461",
         "4471",
-        "172",
         "4467",
         "4468"
       ],
@@ -808,8 +802,8 @@
         "4535",
         "4536",
         "4531",
-        "1172",
-        "1170",
+        "4533",
+        "4534",
         "4532",
         "4530"
       ],
@@ -851,12 +845,12 @@
         },
         {
           "slot": 8,
-          "playerId": "1172",
+          "playerId": "4533",
           "level": 8
         },
         {
           "slot": 9,
-          "playerId": "1170",
+          "playerId": "4534",
           "level": 8
         },
         {
@@ -875,20 +869,17 @@
         "4530",
         "4539",
         "4542",
-        "1172",
         "4531",
         "4535",
         "4543",
         "4536",
-        "1170",
         "4532",
-        "1171",
         "4540",
+        "4541",
         "4537",
         "4534",
         "4538",
-        "4533",
-        "1169"
+        "4533"
       ],
       "unlocksTeamPool": true
     },
@@ -1519,27 +1510,21 @@
       "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/e/ea/Kidokawa_Seishuu_%28GO%29_emblem_%28VR%29.png/revision/latest/scale-to-width-down/200?cb=20251119113313",
       "teamOverall": 78,
       "teamStars": 4,
-      "ratedPlayers": 20,
+      "ratedPlayers": 14,
       "totalPlayers": 22,
       "playerIds": [
         "4463",
         "4472",
-        "171",
         "4464",
-        "173",
         "4473",
         "4474",
-        "159",
         "4462",
         "4469",
-        "174",
         "4465",
-        "170",
         "4470",
         "4466",
         "4461",
         "4471",
-        "172",
         "4467",
         "4468"
       ],
@@ -1607,26 +1592,23 @@
       "logoUrl": "https://static.wikia.nocookie.net/inazumaeleven/images/f/fe/Hakuren_emblem_%25_28SD%25_29.webp/revision/latest?cb=20240405150233&path-prefix=pl",
       "teamOverall": 83,
       "teamStars": 4.5,
-      "ratedPlayers": 17,
+      "ratedPlayers": 14,
       "totalPlayers": 25,
       "playerIds": [
         "4530",
         "4539",
         "4542",
-        "1172",
         "4531",
         "4535",
         "4543",
         "4536",
-        "1170",
         "4532",
-        "1171",
         "4540",
+        "4541",
         "4537",
         "4534",
         "4538",
-        "4533",
-        "1169"
+        "4533"
       ],
       "sourceFile": "alpine.json"
     },
@@ -3686,33 +3668,6 @@
       ]
     },
     {
-      "playerId": "1172",
-      "id": "1172",
-      "name": "Gem Strata",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/z/n/znuiw4puex8.png",
-      "frontFullbodyUrl": null,
-      "position": "DF",
-      "normalizedRole": "DF",
-      "element": "Fire",
-      "type": "Fire",
-      "category": "Forte",
-      "finalOverall": 81,
-      "ratings": {
-        "attack": 1,
-        "physical": 8,
-        "stamina": 8,
-        "control": 8,
-        "defense": 8,
-        "speed": 7,
-        "grit": 8,
-        "save": 1
-      },
-      "custom": false,
-      "teamIds": [
-        "alpine"
-      ]
-    },
-    {
       "playerId": "4531",
       "id": "4531",
       "name": "Joaquine Downtown",
@@ -3821,33 +3776,6 @@
       ]
     },
     {
-      "playerId": "1170",
-      "id": "1170",
-      "name": "Martin Ursus",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/a/u/aui1ve74seu.png",
-      "frontFullbodyUrl": null,
-      "position": "DF",
-      "normalizedRole": "DF",
-      "element": "Forest",
-      "type": "Forest",
-      "category": "Forte",
-      "finalOverall": 80,
-      "ratings": {
-        "attack": 1,
-        "physical": 8,
-        "stamina": 8,
-        "control": 7,
-        "defense": 8,
-        "speed": 8,
-        "grit": 6,
-        "save": 5
-      },
-      "custom": false,
-      "teamIds": [
-        "alpine"
-      ]
-    },
-    {
       "playerId": "4532",
       "id": "4532",
       "name": "Milton Bindings",
@@ -3867,33 +3795,6 @@
         "defense": 8,
         "speed": 8,
         "grit": 7,
-        "save": 1
-      },
-      "custom": false,
-      "teamIds": [
-        "alpine"
-      ]
-    },
-    {
-      "playerId": "1171",
-      "id": "1171",
-      "name": "Pete Bogg",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/c/p/cplp7hpupcu.png",
-      "frontFullbodyUrl": null,
-      "position": "MF",
-      "normalizedRole": "MF",
-      "element": "Fire",
-      "type": "Fire",
-      "category": "Forte",
-      "finalOverall": 80,
-      "ratings": {
-        "attack": 7,
-        "physical": 7,
-        "stamina": 8,
-        "control": 8,
-        "defense": 8,
-        "speed": 7,
-        "grit": 6,
         "save": 1
       },
       "custom": false,
@@ -3922,6 +3823,33 @@
         "speed": 7,
         "grit": 7,
         "save": 5
+      },
+      "custom": false,
+      "teamIds": [
+        "alpine"
+      ]
+    },
+    {
+      "playerId": "4541",
+      "id": "4541",
+      "name": "Roland Climbstein",
+      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/x/y/xyhybx3zcbk.png",
+      "frontFullbodyUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/g/b/gbikbsef2dm_r0_fullbody.webp",
+      "position": "FW",
+      "normalizedRole": "FW",
+      "element": "Wind",
+      "type": "Wind",
+      "category": "Buono",
+      "finalOverall": 77,
+      "ratings": {
+        "attack": 7,
+        "physical": 6,
+        "stamina": 7,
+        "control": 8,
+        "defense": 2,
+        "speed": 8,
+        "grit": 8,
+        "save": 1
       },
       "custom": false,
       "teamIds": [
@@ -4030,33 +3958,6 @@
         "speed": 8,
         "grit": 7,
         "save": 5
-      },
-      "custom": false,
-      "teamIds": [
-        "alpine"
-      ]
-    },
-    {
-      "playerId": "1169",
-      "id": "1169",
-      "name": "Trent Peggs",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/x/g/xgtu4hdcb38.png",
-      "frontFullbodyUrl": null,
-      "position": "GK",
-      "normalizedRole": "GK",
-      "element": "Mountain",
-      "type": "Mountain",
-      "category": "Buono",
-      "finalOverall": 79,
-      "ratings": {
-        "attack": 1,
-        "physical": 6,
-        "stamina": 6,
-        "control": 7,
-        "defense": 6,
-        "speed": 6,
-        "grit": 6,
-        "save": 8
       },
       "custom": false,
       "teamIds": [
@@ -4955,33 +4856,6 @@
       ]
     },
     {
-      "playerId": "171",
-      "id": "171",
-      "name": "Brody Gloom",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/n/b/nbnlivjcuv0.png",
-      "frontFullbodyUrl": null,
-      "position": "MF",
-      "normalizedRole": "MF",
-      "element": "Mountain",
-      "type": "Mountain",
-      "category": "Buono",
-      "finalOverall": 77,
-      "ratings": {
-        "attack": 7,
-        "physical": 7,
-        "stamina": 7,
-        "control": 7,
-        "defense": 7,
-        "speed": 7,
-        "grit": 8,
-        "save": 1
-      },
-      "custom": false,
-      "teamIds": [
-        "kirkwood"
-      ]
-    },
-    {
       "playerId": "4464",
       "id": "4464",
       "name": "Dan Mirthful",
@@ -5001,33 +4875,6 @@
         "defense": 7,
         "speed": 7,
         "grit": 7,
-        "save": 1
-      },
-      "custom": false,
-      "teamIds": [
-        "kirkwood"
-      ]
-    },
-    {
-      "playerId": "173",
-      "id": "173",
-      "name": "Eren Middleton",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/u/s/usr2hzxugac.png",
-      "frontFullbodyUrl": null,
-      "position": "DF",
-      "normalizedRole": "DF",
-      "element": "Mountain",
-      "type": "Mountain",
-      "category": "Buono",
-      "finalOverall": 77,
-      "ratings": {
-        "attack": 4,
-        "physical": 7,
-        "stamina": 7,
-        "control": 7,
-        "defense": 7,
-        "speed": 7,
-        "grit": 9,
         "save": 1
       },
       "custom": false,
@@ -5090,33 +4937,6 @@
       ]
     },
     {
-      "playerId": "159",
-      "id": "159",
-      "name": "John Neville",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/f/x/fxn30donyam.png",
-      "frontFullbodyUrl": null,
-      "position": "GK",
-      "normalizedRole": "GK",
-      "element": "Fire",
-      "type": "Fire",
-      "category": "Buono",
-      "finalOverall": 78,
-      "ratings": {
-        "attack": 2,
-        "physical": 8,
-        "stamina": 7,
-        "control": 7,
-        "defense": 8,
-        "speed": 6,
-        "grit": 9,
-        "save": 7
-      },
-      "custom": false,
-      "teamIds": [
-        "kirkwood"
-      ]
-    },
-    {
       "playerId": "4462",
       "id": "4462",
       "name": "Malcolm Night",
@@ -5171,33 +4991,6 @@
       ]
     },
     {
-      "playerId": "174",
-      "id": "174",
-      "name": "Peter Wells",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/0/9/09ydyuicz6s.png",
-      "frontFullbodyUrl": null,
-      "position": "DF",
-      "normalizedRole": "DF",
-      "element": "Wind",
-      "type": "Wind",
-      "category": "Buono",
-      "finalOverall": 78,
-      "ratings": {
-        "attack": 2,
-        "physical": 7,
-        "stamina": 7,
-        "control": 7,
-        "defense": 8,
-        "speed": 7,
-        "grit": 6,
-        "save": 1
-      },
-      "custom": false,
-      "teamIds": [
-        "kirkwood"
-      ]
-    },
-    {
       "playerId": "4465",
       "id": "4465",
       "name": "Ricky Clover",
@@ -5218,33 +5011,6 @@
         "speed": 6,
         "grit": 7,
         "save": 1
-      },
-      "custom": false,
-      "teamIds": [
-        "kirkwood"
-      ]
-    },
-    {
-      "playerId": "170",
-      "id": "170",
-      "name": "Simon Calier",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/w/z/wzwqpqf4dcc.png",
-      "frontFullbodyUrl": null,
-      "position": "GK",
-      "normalizedRole": "GK",
-      "element": "Forest",
-      "type": "Forest",
-      "category": "Buono",
-      "finalOverall": 77,
-      "ratings": {
-        "attack": 1,
-        "physical": 7,
-        "stamina": 7,
-        "control": 7,
-        "defense": 7,
-        "speed": 5,
-        "grit": 9,
-        "save": 7
       },
       "custom": false,
       "teamIds": [
@@ -5352,33 +5118,6 @@
         "defense": 3,
         "speed": 9,
         "grit": 7,
-        "save": 1
-      },
-      "custom": false,
-      "teamIds": [
-        "kirkwood"
-      ]
-    },
-    {
-      "playerId": "172",
-      "id": "172",
-      "name": "Victor Talis",
-      "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/l/6/l6gxmmxurp0.png",
-      "frontFullbodyUrl": null,
-      "position": "MF",
-      "normalizedRole": "MF",
-      "element": "Forest",
-      "type": "Forest",
-      "category": "Buono",
-      "finalOverall": 77,
-      "ratings": {
-        "attack": 6,
-        "physical": 6,
-        "stamina": 7,
-        "control": 7,
-        "defense": 6,
-        "speed": 9,
-        "grit": 8,
         "save": 1
       },
       "custom": false,
@@ -6281,7 +6020,7 @@
   "summary": {
     "teamFiles": 11,
     "teams": 11,
-    "players": 166,
+    "players": 157,
     "bosses": 11,
     "warnings": 0
   },
@@ -6307,6 +6046,278 @@
       "1157": "4533",
       "1159": "4535",
       "1168": "4540"
-    }
+    },
+    "removedPlayers": [
+      {
+        "playerId": "159",
+        "id": "159",
+        "name": "John Neville",
+        "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/f/x/fxn30donyam.png",
+        "frontFullbodyUrl": null,
+        "position": "GK",
+        "normalizedRole": "GK",
+        "element": "Fire",
+        "type": "Fire",
+        "category": "Buono",
+        "finalOverall": 78,
+        "ratings": {
+          "attack": 2,
+          "physical": 8,
+          "stamina": 7,
+          "control": 7,
+          "defense": 8,
+          "speed": 6,
+          "grit": 9,
+          "save": 7
+        },
+        "custom": false,
+        "teamIds": [
+          "kirkwood"
+        ]
+      },
+      {
+        "playerId": "170",
+        "id": "170",
+        "name": "Simon Calier",
+        "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/w/z/wzwqpqf4dcc.png",
+        "frontFullbodyUrl": null,
+        "position": "GK",
+        "normalizedRole": "GK",
+        "element": "Forest",
+        "type": "Forest",
+        "category": "Buono",
+        "finalOverall": 77,
+        "ratings": {
+          "attack": 1,
+          "physical": 7,
+          "stamina": 7,
+          "control": 7,
+          "defense": 7,
+          "speed": 5,
+          "grit": 9,
+          "save": 7
+        },
+        "custom": false,
+        "teamIds": [
+          "kirkwood"
+        ]
+      },
+      {
+        "playerId": "171",
+        "id": "171",
+        "name": "Brody Gloom",
+        "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/n/b/nbnlivjcuv0.png",
+        "frontFullbodyUrl": null,
+        "position": "MF",
+        "normalizedRole": "MF",
+        "element": "Mountain",
+        "type": "Mountain",
+        "category": "Buono",
+        "finalOverall": 77,
+        "ratings": {
+          "attack": 7,
+          "physical": 7,
+          "stamina": 7,
+          "control": 7,
+          "defense": 7,
+          "speed": 7,
+          "grit": 8,
+          "save": 1
+        },
+        "custom": false,
+        "teamIds": [
+          "kirkwood"
+        ]
+      },
+      {
+        "playerId": "172",
+        "id": "172",
+        "name": "Victor Talis",
+        "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/l/6/l6gxmmxurp0.png",
+        "frontFullbodyUrl": null,
+        "position": "MF",
+        "normalizedRole": "MF",
+        "element": "Forest",
+        "type": "Forest",
+        "category": "Buono",
+        "finalOverall": 77,
+        "ratings": {
+          "attack": 6,
+          "physical": 6,
+          "stamina": 7,
+          "control": 7,
+          "defense": 6,
+          "speed": 9,
+          "grit": 8,
+          "save": 1
+        },
+        "custom": false,
+        "teamIds": [
+          "kirkwood"
+        ]
+      },
+      {
+        "playerId": "173",
+        "id": "173",
+        "name": "Eren Middleton",
+        "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/u/s/usr2hzxugac.png",
+        "frontFullbodyUrl": null,
+        "position": "DF",
+        "normalizedRole": "DF",
+        "element": "Mountain",
+        "type": "Mountain",
+        "category": "Buono",
+        "finalOverall": 77,
+        "ratings": {
+          "attack": 4,
+          "physical": 7,
+          "stamina": 7,
+          "control": 7,
+          "defense": 7,
+          "speed": 7,
+          "grit": 9,
+          "save": 1
+        },
+        "custom": false,
+        "teamIds": [
+          "kirkwood"
+        ]
+      },
+      {
+        "playerId": "174",
+        "id": "174",
+        "name": "Peter Wells",
+        "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/0/9/09ydyuicz6s.png",
+        "frontFullbodyUrl": null,
+        "position": "DF",
+        "normalizedRole": "DF",
+        "element": "Wind",
+        "type": "Wind",
+        "category": "Buono",
+        "finalOverall": 78,
+        "ratings": {
+          "attack": 2,
+          "physical": 7,
+          "stamina": 7,
+          "control": 7,
+          "defense": 8,
+          "speed": 7,
+          "grit": 6,
+          "save": 1
+        },
+        "custom": false,
+        "teamIds": [
+          "kirkwood"
+        ]
+      },
+      {
+        "playerId": "1169",
+        "id": "1169",
+        "name": "Trent Peggs",
+        "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/x/g/xgtu4hdcb38.png",
+        "frontFullbodyUrl": null,
+        "position": "GK",
+        "normalizedRole": "GK",
+        "element": "Mountain",
+        "type": "Mountain",
+        "category": "Buono",
+        "finalOverall": 79,
+        "ratings": {
+          "attack": 1,
+          "physical": 6,
+          "stamina": 6,
+          "control": 7,
+          "defense": 6,
+          "speed": 6,
+          "grit": 6,
+          "save": 8
+        },
+        "custom": false,
+        "teamIds": [
+          "alpine"
+        ]
+      },
+      {
+        "playerId": "1170",
+        "id": "1170",
+        "name": "Martin Ursus",
+        "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/a/u/aui1ve74seu.png",
+        "frontFullbodyUrl": null,
+        "position": "DF",
+        "normalizedRole": "DF",
+        "element": "Forest",
+        "type": "Forest",
+        "category": "Forte",
+        "finalOverall": 80,
+        "ratings": {
+          "attack": 1,
+          "physical": 8,
+          "stamina": 8,
+          "control": 7,
+          "defense": 8,
+          "speed": 8,
+          "grit": 6,
+          "save": 5
+        },
+        "custom": false,
+        "teamIds": [
+          "alpine"
+        ]
+      },
+      {
+        "playerId": "1171",
+        "id": "1171",
+        "name": "Pete Bogg",
+        "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/c/p/cplp7hpupcu.png",
+        "frontFullbodyUrl": null,
+        "position": "MF",
+        "normalizedRole": "MF",
+        "element": "Fire",
+        "type": "Fire",
+        "category": "Forte",
+        "finalOverall": 80,
+        "ratings": {
+          "attack": 7,
+          "physical": 7,
+          "stamina": 8,
+          "control": 8,
+          "defense": 8,
+          "speed": 7,
+          "grit": 6,
+          "save": 1
+        },
+        "custom": false,
+        "teamIds": [
+          "alpine"
+        ]
+      },
+      {
+        "playerId": "1172",
+        "id": "1172",
+        "name": "Gem Strata",
+        "portraitUrl": "https://dxi4wb638ujep.cloudfront.net/1/k/z/n/znuiw4puex8.png",
+        "frontFullbodyUrl": null,
+        "position": "DF",
+        "normalizedRole": "DF",
+        "element": "Fire",
+        "type": "Fire",
+        "category": "Forte",
+        "finalOverall": 81,
+        "ratings": {
+          "attack": 1,
+          "physical": 8,
+          "stamina": 8,
+          "control": 8,
+          "defense": 8,
+          "speed": 7,
+          "grit": 8,
+          "save": 1
+        },
+        "custom": false,
+        "teamIds": [
+          "alpine"
+        ]
+      }
+    ]
   }
 }
