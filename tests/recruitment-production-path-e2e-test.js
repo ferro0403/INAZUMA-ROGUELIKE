@@ -34,6 +34,25 @@ function makeContext(testMode=true) {
   c.__INAZUMA_RECRUITMENT_TEST__?.setContext({run,seasonDb:db,freeAgentsDb:{players:db.players}});
   return {c,document,modal,run,db,album,setFail:x=>fail=x,get canonical(){return canonical},get saves(){return saves}};
 }
+// Legacy canonical aliases are enforced at the final roster ownership boundary.
+{
+  const h = makeContext();
+  h.run.seasonId = "ie2";
+  h.run.roster = [{ playerId: "167", source: "ie2", level: 1, equippedItem: null }];
+  h.run.lineup = [];
+  h.run.bench = ["167"];
+  h.c.ProfiledSeasonRuntime = {
+    canonicalPlayerId: (seasonId, playerId) =>
+      seasonId === "ie2" && String(playerId) === "167" ? "4469" : String(playerId),
+  };
+  assert.strictEqual(h.c.RosterInvariants.inspect(h.run).valid, true);
+  assert.throws(
+    () => h.c.RosterInvariants.assertCanOwn(h.run, { playerId: "4469" }),
+    /already owned/,
+    "historic Ares ID and corrected canonical ID are one ownership identity",
+  );
+}
+
 // Strict gating: recruitment orchestrator is absent without the explicit flag.
 { const h=makeContext(false); assert.strictEqual(h.c.__INAZUMA_RECRUITMENT_TEST__,undefined); }
 
