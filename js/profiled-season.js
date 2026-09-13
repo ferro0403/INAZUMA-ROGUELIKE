@@ -10,9 +10,44 @@
 
   function register(seasonId, database) {
     databases.set(id(seasonId), database);
+    const players = new Map((database.players || []).map((player) => [id(player.playerId), player]));
+    const profiles = new Map((database.profiles || []).map((profile) => [id(profile.profileId), profile]));
+    const compatibility = database?.legacyPlayerCompatibility || {};
+
+    for (const [legacyPlayerIdValue, canonicalPlayerIdValue] of Object.entries(compatibility.idAliases || {})) {
+      const legacyPlayerId = id(legacyPlayerIdValue);
+      const canonicalPlayerId = id(canonicalPlayerIdValue);
+      if (!legacyPlayerId || !canonicalPlayerId || players.has(legacyPlayerId)) continue;
+      const canonical = players.get(canonicalPlayerId);
+      if (!canonical) continue;
+      players.set(legacyPlayerId, {
+        ...canonical,
+        playerId: legacyPlayerId,
+        ...(Object.prototype.hasOwnProperty.call(canonical, "id") ? { id: legacyPlayerId } : {}),
+        legacyCanonicalPlayerId: canonicalPlayerId,
+      });
+    }
+
+    for (const [legacyProfileIdValue, canonicalProfileIdValue] of Object.entries(compatibility.profileAliases || {})) {
+      const legacyProfileId = id(legacyProfileIdValue);
+      const canonicalProfileId = id(canonicalProfileIdValue);
+      if (!legacyProfileId || !canonicalProfileId || profiles.has(legacyProfileId)) continue;
+      const canonical = profiles.get(canonicalProfileId);
+      if (!canonical) continue;
+      const legacyPlayerId = legacyProfileId.includes("@") ? legacyProfileId.split("@", 1)[0] : id(canonical.playerId);
+      profiles.set(legacyProfileId, {
+        ...canonical,
+        profileId: legacyProfileId,
+        playerId: legacyPlayerId,
+        ...(Object.prototype.hasOwnProperty.call(canonical, "id") ? { id: legacyProfileId } : {}),
+        legacyCanonicalProfileId: canonicalProfileId,
+        legacyCanonicalPlayerId: id(canonical.playerId),
+      });
+    }
+
     indexes.set(id(seasonId), {
-      players: new Map((database.players || []).map((player) => [id(player.playerId), player])),
-      profiles: new Map((database.profiles || []).map((profile) => [id(profile.profileId), profile])),
+      players,
+      profiles,
       paths: new Map((database.profileUpgradePaths || []).map((path) => [id(path.playerId), path])),
     });
     return database;
