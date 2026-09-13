@@ -131,6 +131,18 @@ function assertAresIdentityVisualCorrections() {
   }
   assert.strictEqual(aresFixture.players.length, 157);
   assert.strictEqual(aresFixture.summary.players, 157);
+  for (const teamId of ["kirkwood", "alpine"]) {
+    const team = teams.get(teamId);
+    const boss = aresFixture.bossOrder.find((entry) => entry.teamId === teamId);
+    assert.ok(boss, `${teamId} Ares boss exists`);
+    assert.strictEqual(boss.startingXIPlayerIds.length, 11, `${teamId} keeps 11 starters`);
+    assert.strictEqual(new Set(boss.startingXIPlayerIds.map(String)).size, 11, `${teamId} starters remain unique`);
+    assert.deepStrictEqual(new Set(boss.rewardPoolPlayerIds.map(String)), new Set(team.playerIds.map(String)), `${teamId} reward pool is the exact active roster`);
+    for (const id of boss.startingXIPlayerIds) {
+      assert.ok(team.playerIds.map(String).includes(String(id)), `${teamId} starter ${id} belongs to the corrected active roster`);
+    }
+    assert.strictEqual(team.ratedPlayers, 14, `${teamId} rated player count follows the corrected Ares roster`);
+  }
   const removed = new Map((aresFixture.legacyPlayerCompatibility.removedPlayers || []).map((player) => [String(player.playerId), player]));
   for (const [id, name] of [
     ["159","John Neville"], ["170","Simon Calier"], ["171","Brody Gloom"],
