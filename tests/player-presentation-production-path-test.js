@@ -83,18 +83,20 @@ function assertAresIdentityVisualCorrections() {
     ["4531", "Joaquine Downtown"], ["4535", "Kerry Bootgaiter"], ["4543", "Kevin Dragonfly"],
     ["4536", "Maddox Rock"], ["4532", "Milton Bindings"], ["4540", "Quentin Rackner"],
     ["4537", "Robert Skipolson"], ["4534", "Sean Snowfield"], ["4538", "Shawn Froste"],
-    ["4533", "Spike Gleeson"],
+    ["4533", "Spike Gleeson"], ["4541", "Roland Climbstein"],
   ];
   const correctedOveralls = new Map([
     ["4465", 78], ["4467", 77], ["4469", 78], ["4470", 78], ["4471", 80],
     ["4500", 79], ["4588", 82], ["4506", 80], ["4507", 87], ["4505", 80],
     ["4502", 80], ["4503", 79], ["4504", 78], ["4499", 80],
-    ["4535", 80], ["4540", 80], ["4533", 79],
+    ["4535", 80], ["4540", 80], ["4533", 79], ["4541", 77],
   ]);
   const forbiddenLegacyIds = new Set([
     "167", "163", "168", "169", "165",
     "22", "16", "28", "30", "27", "24", "25", "26", "21",
     "1159", "1168", "1157",
+    "159", "170", "171", "172", "173", "174",
+    "1169", "1170", "1171", "1172",
   ]);
   const byId = new Map(aresFixture.players.map((player) => [String(player.playerId), player]));
   for (const [id, name] of expected) {
@@ -113,16 +115,30 @@ function assertAresIdentityVisualCorrections() {
     assert.ok(!byId.has(legacyId), `legacy Ares player id ${legacyId} must be absent from active players`);
   }
   const teams = new Map(aresFixture.teams.map((team) => [team.teamId, team]));
-  for (const [teamId, ids] of [
-    ["kirkwood", ["4461","4462","4463","4464","4465","4466","4467","4468","4469","4470","4471","4472","4473","4474"]],
-    ["royal_academy_ares", ["4498","4499","4500","4502","4503","4504","4505","4506","4507","4508","4510","4511","4588"]],
-    ["alpine", ["4530","4531","4532","4533","4534","4535","4536","4537","4538","4539","4540","4542","4543"]],
+  for (const [teamId, ids, exact] of [
+    ["kirkwood", ["4461","4462","4463","4464","4465","4466","4467","4468","4469","4470","4471","4472","4473","4474"], true],
+    ["royal_academy_ares", ["4498","4499","4500","4502","4503","4504","4505","4506","4507","4508","4510","4511","4588"], false],
+    ["alpine", ["4530","4531","4532","4533","4534","4535","4536","4537","4538","4539","4540","4541","4542","4543"], true],
   ]) {
     const team = teams.get(teamId);
     assert.ok(team, `Ares team ${teamId} exists`);
-    for (const id of ids) assert.ok(team.playerIds.map(String).includes(id), `${teamId} contains corrected ${id}`);
+    const activeIds = team.playerIds.map(String);
+    for (const id of ids) assert.ok(activeIds.includes(id), `${teamId} contains corrected ${id}`);
+    if (exact) {
+      assert.strictEqual(activeIds.length, ids.length, `${teamId} has no extra non-Ares players`);
+      assert.deepStrictEqual(new Set(activeIds), new Set(ids), `${teamId} active roster is exactly the Ares roster`);
+    }
   }
-  assert.strictEqual(aresFixture.players.length, 166);
+  assert.strictEqual(aresFixture.players.length, 157);
+  assert.strictEqual(aresFixture.summary.players, 157);
+  const removed = new Map((aresFixture.legacyPlayerCompatibility.removedPlayers || []).map((player) => [String(player.playerId), player]));
+  for (const [id, name] of [
+    ["159","John Neville"], ["170","Simon Calier"], ["171","Brody Gloom"],
+    ["172","Victor Talis"], ["173","Eren Middleton"], ["174","Peter Wells"],
+    ["1169","Trent Peggs"], ["1170","Martin Ursus"], ["1171","Pete Bogg"], ["1172","Gem Strata"],
+  ]) {
+    assert.strictEqual(removed.get(id)?.name, name, `${name} remains lookup-only for old Ares runs`);
+  }
   assert.deepStrictEqual(aresFixture.legacyPlayerCompatibility.idAliases, {
     "16": "4588", "21": "4499", "22": "4500", "24": "4502", "25": "4503",
     "26": "4504", "27": "4505", "28": "4506", "30": "4507",
@@ -176,6 +192,18 @@ async function assertIe1LegacyLookupCompatibility() {
   assert.strictEqual(aresMapped.finalOverall, 78);
   assert.strictEqual(aresMapped.portraitUrl, playerVisualsFixture.players["4469"].portraitUrl);
   assert.strictEqual(aresMapped.frontFullbodyUrl, playerVisualsFixture.players["4469"].frontFullbodyUrl);
+
+  const removedAres = registry.player("171", "ie2");
+  assert.ok(removedAres, "historic wrong Kirkwood player remains resolvable for an old Ares run");
+  assert.strictEqual(removedAres.playerId, "171");
+  assert.strictEqual(removedAres.name, "Brody Gloom");
+  assert.strictEqual(removedAres.finalOverall, 77);
+
+  const removedAlpine = registry.player("1172", "ie2");
+  assert.ok(removedAlpine, "historic wrong Alpine player remains resolvable for an old Ares run");
+  assert.strictEqual(removedAlpine.playerId, "1172");
+  assert.strictEqual(removedAlpine.name, "Gem Strata");
+  assert.strictEqual(removedAlpine.finalOverall, 81);
 }
 
 const flush = async () => {
