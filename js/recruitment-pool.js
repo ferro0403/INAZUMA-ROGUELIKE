@@ -67,7 +67,11 @@
   const eligibleForProfiledFreeAgentPull = eligibleForSeason3FreeAgentPull;
 
   function eligible(run, player, eligibleProfile = global.SpecialMatchRuntime?.eligibleProfile) {
-    const owned = (run?.roster || []).some((entry) => canonicalPlayerId(entry) === canonicalPlayerId(player));
+    const canonicalForRun = (value) => {
+      const rawPlayerId = canonicalPlayerId(value);
+      return global.ProfiledSeasonRuntime?.canonicalPlayerId?.(run?.seasonId, rawPlayerId) || rawPlayerId;
+    };
+    const owned = (run?.roster || []).some((entry) => canonicalForRun(entry) === canonicalForRun(player));
     if (owned) return false;
     if (isSeasonProfileCandidate(player)) return Boolean(player.profileId && eligibleProfile?.(run, player.profileId));
     return true;
