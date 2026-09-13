@@ -95,6 +95,15 @@ const legacyMoore = context.ProfiledSeasonRuntime.resolveEffectiveBase({playerId
 assert.strictEqual(legacyMoore.name,'Zachary Moore'); assert.strictEqual(legacyMoore.finalOverall,77); assert.strictEqual(legacyMoore.playerId,'4466'); assert.strictEqual(legacyMoore.profileId,'4466@kirkwood');
 const canonicalMoore = context.ProfiledSeasonRuntime.resolveEffectiveBase({playerId:'166',activeProfileId:'166@kirkwood',activeRoleVariantId:'mf'},'ie1_s3');
 assert.strictEqual(canonicalMoore.name,'Zachary Moore'); assert.strictEqual(canonicalMoore.finalOverall,77); assert.strictEqual(canonicalMoore.playerId,'166');
+assert.strictEqual(context.ProfiledSeasonRuntime.canonicalPlayerId('ie1_s3','4462'),'160');
+assert.strictEqual(context.ProfiledSeasonRuntime.canonicalProfileId('ie1_s3','4462@kirkwood'),'160@kirkwood');
+assert.strictEqual(context.ProfiledSeasonRuntime.compareProfileProgression('ie1_s3','4462@kirkwood','160@kirkwood'),0);
+const legacyOwnedRun={seasonId:'ie1_s3',roster:[{playerId:'4462',activeProfileId:'4462@kirkwood',activeRoleVariantId:'df',level:0,levelUnits:0}],bench:['4462']};
+assert.strictEqual(context.SpecialMatchRuntime.eligibleProfile(legacyOwnedRun,'160@kirkwood'),false,'legacy Night ownership blocks the corrected canonical profile');
+assert.strictEqual(context.RecruitmentPoolRuntime.eligible(legacyOwnedRun,{playerId:'160',profileId:'160@kirkwood',pullCandidateKind:'season_profile'}),false,'legacy Night ownership blocks corrected recruitment candidate');
+const beforeLegacyAcquire=legacyOwnedRun.roster.length;
+assert.strictEqual(context.ProfiledSeasonRuntime.acquireOrUpgradeProfile(legacyOwnedRun,{playerId:'160',profileId:'160@kirkwood'},{seasonId:'ie1_s3',maxRoster:15,level:0}).status,'ineligible');
+assert.strictEqual(legacyOwnedRun.roster.length,beforeLegacyAcquire,'legacy ownership cannot create a duplicate corrected card');
 assert(context.SeasonRegistry.list().some(s => s.id==='ie1_s3')); assert.strictEqual(context.SeasonRegistry.get('ie2').name,'Inazuma Eleven Ares');
 const eligibility=context.RecruitmentPoolRuntime.eligibleForSeason3InitialDraft;
 assert(eligibility({sourceKind:'season3_recruitment_profile',profileId:'low@team',finalOverall:72}));
