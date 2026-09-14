@@ -188,15 +188,39 @@
   top: 10px;
   right: 10px;
   z-index: 5;
-  padding: 6px 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 30px;
+  padding: 4px 8px 4px 5px;
   border: 2px solid var(--album-ink);
-  background: #fffdf6;
+  background: rgba(255, 253, 246, .96);
   color: var(--album-ink);
-  box-shadow: 3px 3px 0 var(--album-ink);
-  font-size: .59rem;
+  box-shadow:
+    3px 3px 0 var(--album-ink),
+    0 8px 18px rgba(17, 18, 22, .14);
   font-style: normal;
+  white-space: nowrap;
+}
+
+.album-team-complete__icon {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--album-ink);
+  background: var(--album-yellow);
+  color: var(--album-ink);
+  font-size: .72rem;
   font-weight: 1000;
-  letter-spacing: .07em;
+  line-height: 1;
+}
+
+.album-team-complete__label {
+  font-size: .57rem;
+  font-weight: 1000;
+  line-height: 1;
+  letter-spacing: .08em;
 }
 
 .album-team-card__footer {
@@ -275,10 +299,25 @@
   background: var(--album-yellow);
 }
 
+.album-teams-screen .album-team-card--modern.album-complete {
+  box-shadow:
+    7px 8px 0 rgba(17, 18, 22, .26),
+    0 0 0 2px rgba(255, 210, 31, .24);
+}
+
 .album-teams-screen .album-team-card--modern.album-complete .album-team-card__stage {
   background:
-    radial-gradient(circle at 50% 42%, rgba(255,255,255,.96) 0 13%, rgba(255,255,255,.2) 34%, transparent 56%),
-    linear-gradient(135deg, #ffe15d 0 55%, #ffd21f 55% 67%, #111216 67% 70%, #fff8df 70% 100%);
+    radial-gradient(circle at 50% 42%, rgba(255,255,255,.98) 0 13%, rgba(255,255,255,.24) 34%, transparent 56%),
+    linear-gradient(135deg, #ffe36a 0 55%, #ffd21f 55% 67%, #111216 67% 70%, #fff8df 70% 100%);
+}
+
+.album-teams-screen .album-team-card--modern.album-complete .album-team-card__bar {
+  border-color: #fffdf6;
+}
+
+.album-teams-screen .album-team-card--modern.album-complete .album-team-card__bar > span {
+  background:
+    linear-gradient(90deg, #ffd21f 0%, #ffe36a 52%, #ffd21f 100%);
 }
 
 @media (max-width: 780px) {
@@ -347,8 +386,20 @@
   .album-team-complete {
     top: 7px;
     right: 7px;
-    padding: 4px 6px;
-    font-size: .52rem;
+    gap: 4px;
+    min-height: 26px;
+    padding: 3px 6px 3px 4px;
+  }
+
+  .album-team-complete__icon {
+    width: 18px;
+    height: 18px;
+    font-size: .64rem;
+  }
+
+  .album-team-complete__label {
+    font-size: .49rem;
+    letter-spacing: .065em;
   }
 }
 
