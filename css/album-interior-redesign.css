@@ -425,28 +425,13 @@
 .album-roster-hero__nav {
   position: relative;
   z-index: 2;
-  display: grid;
-  grid-template-columns: 54px minmax(0, 1fr);
+  display: flex;
   align-items: center;
-  gap: 12px;
   min-width: 0;
 }
 
 .album-roster-back-button {
   justify-self: start;
-}
-
-.album-roster-screen--modern .album-roster-breadcrumb {
-  min-width: 0;
-  margin: 0;
-  color: var(--album-gold);
-  font-size: .72rem;
-  font-weight: 1000;
-  line-height: 1.15;
-  letter-spacing: .14em;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .album-roster-hero__identity {
@@ -459,7 +444,7 @@
   min-width: 0;
 }
 
-.album-roster-screen--modern .album-roster-logo {
+.album-roster-screen--modern .album-roster-hero__logo {
   display: grid;
   place-items: center;
   width: 82px;
@@ -471,7 +456,7 @@
   overflow: hidden;
 }
 
-.album-roster-screen--modern .album-roster-logo img {
+.album-roster-screen--modern .album-roster-hero__logo img {
   width: 84%;
   height: 84%;
   max-width: 84%;
@@ -479,11 +464,11 @@
   object-fit: contain;
 }
 
-.album-roster-screen--modern .album-roster-logo .album-free-agent-logo {
+.album-roster-screen--modern .album-roster-hero__logo .album-free-agent-logo {
   font-size: 2.3rem;
 }
 
-.album-roster-screen--modern .album-roster-name {
+.album-roster-screen--modern .album-roster-hero__name {
   min-width: 0;
   margin: 0;
   color: var(--album-ink);
@@ -841,13 +826,7 @@
   }
 
   .album-roster-hero__nav {
-    grid-template-columns: 48px minmax(0, 1fr);
-    gap: 9px;
-  }
-
-  .album-roster-screen--modern .album-roster-breadcrumb {
-    font-size: clamp(.58rem, 2.6vw, .69rem);
-    letter-spacing: .095em;
+    min-height: 48px;
   }
 
   .album-roster-hero__identity {
@@ -855,12 +834,12 @@
     gap: 11px;
   }
 
-  .album-roster-screen--modern .album-roster-logo {
+  .album-roster-screen--modern .album-roster-hero__logo {
     width: 66px;
     height: 66px;
   }
 
-  .album-roster-screen--modern .album-roster-name {
+  .album-roster-screen--modern .album-roster-hero__name {
     font-size: clamp(1.8rem, 8.2vw, 2.6rem);
     line-height: .96;
   }
@@ -943,12 +922,12 @@
     grid-template-columns: 58px minmax(0, 1fr);
   }
 
-  .album-roster-screen--modern .album-roster-logo {
+  .album-roster-screen--modern .album-roster-hero__logo {
     width: 58px;
     height: 58px;
   }
 
-  .album-roster-screen--modern .album-roster-name {
+  .album-roster-screen--modern .album-roster-hero__name {
     font-size: 1.72rem;
   }
 
