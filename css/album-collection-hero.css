@@ -1,0 +1,287 @@
+/* Album collection landing page: season-selection-style hero cards.
+   Scoped to the collection root so Album team/roster screens stay untouched. */
+
+.album-collections-screen {
+  padding-top: max(10px, env(safe-area-inset-top));
+}
+
+.album-collections-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 56px;
+  align-items: center;
+  width: min(1180px, calc(100% - 20px));
+  min-height: 78px;
+  margin: 0 auto 16px;
+  padding: 8px;
+}
+
+.album-collections-heading {
+  min-width: 0;
+  text-align: left;
+}
+
+.album-collections-topbar .eyebrow {
+  margin: 0 0 3px;
+  font-size: .72rem;
+  letter-spacing: .18em;
+}
+
+.album-collections-topbar h1 {
+  margin: 0;
+  font-size: clamp(1.45rem, 5vw, 2rem);
+  line-height: 1;
+  letter-spacing: -.035em;
+}
+
+.album-collections-topbar .muted {
+  margin: 7px 0 0;
+  font-size: clamp(.78rem, 2.6vw, .98rem);
+  line-height: 1.25;
+}
+
+.album-collections-home-button {
+  justify-self: start;
+}
+
+.album-collections-topbar-spacer {
+  width: 44px;
+  height: 44px;
+  justify-self: end;
+}
+
+.album-collections-screen .album-collection-grid {
+  width: min(1040px, calc(100% - 20px));
+  margin: 0 auto;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.album-collections-screen .album-collection-card {
+  position: relative;
+  display: block;
+  min-width: 0;
+  min-height: clamp(440px, 48vw, 600px);
+  padding: 0;
+  overflow: hidden;
+  isolation: isolate;
+  border: 3px solid var(--album-ink);
+  border-radius: 0;
+  background: #111216;
+  color: #fffdf6;
+  text-align: left;
+  box-shadow: 7px 8px 0 rgba(17, 18, 22, .28);
+}
+
+.album-collections-screen .album-collection-card::before {
+  content: none;
+}
+
+.album-collections-screen .album-collection-card:hover,
+.album-collections-screen .album-collection-card:focus-visible {
+  border-color: var(--album-ink);
+  outline: 4px solid var(--album-yellow);
+  box-shadow: 8px 9px 0 var(--album-ink);
+}
+
+.album-collections-screen .album-collection-cover {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: linear-gradient(145deg, var(--album-yellow), #e6b61d);
+}
+
+.album-collections-screen .album-collection-cover::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(180deg, rgba(17, 18, 22, .04) 0%, rgba(17, 18, 22, .10) 38%, rgba(17, 18, 22, .82) 72%, rgba(17, 18, 22, .96) 100%),
+    linear-gradient(90deg, rgba(17, 18, 22, .16), transparent 38%, rgba(17, 18, 22, .08));
+  pointer-events: none;
+}
+
+.album-collections-screen .album-collection-cover img {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: cover;
+  transform: none;
+}
+
+.album-collections-screen .album-collection-cover.is-fallback::before {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: grid;
+  place-items: center;
+  content: "INAZUMA";
+  color: rgba(17, 18, 22, .72);
+  font-size: clamp(2rem, 8vw, 4rem);
+  font-weight: 1000;
+  letter-spacing: -.05em;
+}
+
+.album-collections-screen .album-collection-content {
+  position: absolute;
+  inset: auto 0 0;
+  z-index: 2;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: clamp(20px, 3.4vw, 30px);
+  border: 0;
+  background: transparent;
+  color: #fffdf6;
+}
+
+.album-collections-screen .album-collection-title {
+  color: #fffdf6;
+  font-size: clamp(2rem, 4.8vw, 3rem);
+  font-weight: 1000;
+  line-height: .98;
+  letter-spacing: -.045em;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, .42);
+}
+
+.album-collections-screen .album-collection-progress-copy {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  color: #fffdf6;
+  font-size: clamp(.9rem, 2vw, 1.05rem);
+  font-weight: 800;
+  line-height: 1.18;
+}
+
+.album-collections-screen .album-collection-progress-copy > span {
+  min-width: 0;
+}
+
+.album-collections-screen .album-collection-progress-copy strong {
+  flex: 0 0 auto;
+  color: var(--album-yellow);
+  font-size: clamp(1.6rem, 4vw, 2.25rem);
+  font-weight: 1000;
+  line-height: .9;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, .35);
+}
+
+.album-collections-screen .album-collection-progress-bar {
+  height: 13px;
+  overflow: hidden;
+  border: 2px solid #fffdf6;
+  border-radius: 0;
+  background: rgba(255, 253, 246, .24);
+}
+
+.album-collections-screen .album-collection-progress-bar > span {
+  display: block;
+  height: 100%;
+  border-radius: 0;
+  background: var(--album-yellow);
+}
+
+.album-collections-screen .album-collection-action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 56px;
+  margin-top: 3px;
+  padding: 13px 16px;
+  border: 3px solid var(--album-ink);
+  background: var(--album-yellow);
+  color: var(--album-ink);
+  box-shadow: 4px 5px 0 rgba(17, 18, 22, .88);
+  font-size: .9rem;
+  font-weight: 1000;
+  letter-spacing: .02em;
+  text-transform: uppercase;
+}
+
+.album-collections-screen .album-collection-action > span {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+@media (max-width: 780px) {
+  .album-collections-screen {
+    padding-inline: 10px;
+  }
+
+  .album-collections-topbar {
+    grid-template-columns: 52px minmax(0, 1fr) 52px;
+    width: 100%;
+    min-height: 74px;
+    margin-bottom: 14px;
+  }
+
+  .album-collections-topbar .muted {
+    display: none;
+  }
+
+  .album-collections-screen .album-collection-grid {
+    width: 100%;
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .album-collections-screen .album-collection-card {
+    min-height: clamp(440px, 88vw, 600px);
+  }
+
+  .album-collections-screen .album-collection-content {
+    gap: 10px;
+    padding: 20px 18px 22px;
+  }
+
+  .album-collections-screen .album-collection-title {
+    font-size: clamp(2rem, 8.6vw, 2.75rem);
+  }
+
+  .album-collections-screen .album-collection-progress-copy {
+    align-items: center;
+    font-size: clamp(.84rem, 3.7vw, 1rem);
+  }
+
+  .album-collections-screen .album-collection-progress-copy strong {
+    font-size: clamp(1.65rem, 7vw, 2.1rem);
+  }
+
+  .album-collections-screen .album-collection-action {
+    min-height: 58px;
+  }
+}
+
+@media (max-width: 390px) {
+  .album-collections-topbar {
+    grid-template-columns: 48px minmax(0, 1fr) 48px;
+  }
+
+  .album-collections-topbar h1 {
+    font-size: 1.35rem;
+  }
+
+  .album-collections-screen .album-collection-card {
+    min-height: 430px;
+  }
+
+  .album-collections-screen .album-collection-progress-copy {
+    gap: 8px;
+  }
+}
