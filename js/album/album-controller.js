@@ -200,7 +200,7 @@
         const player = resolvedPlayer(raw);
         const isUnlocked = unlocked.has(String(player.playerId));
         const rarityClass = albumRarityClass(player.category);
-        return `<div class="album-player-entry ${rarityClass} ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${view.escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${view.playerCard(player, { button: true, dataAttribute: "data-album-player", level: player.maxLevel || 20, database: player.albumDatabase, resolvedPlayer: player, extraClass: "album-player-card" })}<span class="album-player-rarity-badge">${view.escapeHtml(player.category || "Debole")}</span>${isUnlocked ? "" : `<span class="album-player-lock"><span aria-hidden="true">🔒</span>NON SBLOCCATO</span>`}</div>`;
+        return `<div class="album-player-entry ${rarityClass} ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${view.escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${view.playerCard(player, { button: true, dataAttribute: "data-album-player", level: player.maxLevel || 20, database: player.albumDatabase, resolvedPlayer: player, extraClass: "album-player-card" })}${isUnlocked ? "" : `<span class="album-player-lock"><span aria-hidden="true">🔒</span>NON SBLOCCATO</span>`}</div>`;
       }).join("");
       const remaining = rawPlayers.length - visible.length;
       return `${cards}${remaining > 0 ? `<div class="album-load-more-wrap"><button type="button" class="btn btn-yellow album-load-more" data-album-load-more>MOSTRA ALTRI ${view.escapeHtml(Math.min(pageSize, remaining))}</button><small>${view.escapeHtml(visible.length)} di ${view.escapeHtml(rawPlayers.length)}</small></div>` : ""}`;
