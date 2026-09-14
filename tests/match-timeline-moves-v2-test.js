@@ -6,6 +6,11 @@ const roles11=["GK","DF","DF","DF","DF","MF","MF","MF","FW","FW","FW"],u=team("u
 let dribble=false,moveDribble=false;
 for(let i=0;i<60;i++){const sim=c.MatchSimulator.simulate({type:"eleven",seed:`t-${i}`,userTeam:u,opponentTeam:o,rulesVersion:2,seasonId:"ie1"});assert(sim.valid);assert(sim.timeline.length>=22&&sim.timeline.length<=25);const used=new Map();for(const e of sim.timeline){if(e.type==="dribble")dribble=true;if(!e.moveName)continue;assert.strictEqual(e.moveType,compat[e.type]);if(e.type==="dribble")moveDribble=true;const k=`${e.playerId}:${e.moveName}`;used.set(k,(used.get(k)||0)+1);assert(used.get(k)<=2);}}
 assert(dribble);assert(moveDribble);
+const deterministicA=c.MatchSimulator.simulate({type:"eleven",seed:"deterministic-v2",userTeam:u,opponentTeam:o,rulesVersion:2,seasonId:"ie1"});
+const deterministicB=c.MatchSimulator.simulate({type:"eleven",seed:"deterministic-v2",userTeam:u,opponentTeam:o,rulesVersion:2,seasonId:"ie1"});
+assert.deepStrictEqual(JSON.parse(JSON.stringify(deterministicB)),JSON.parse(JSON.stringify(deterministicA)),"same V2 seed and inputs must reproduce the exact simulation");
 const legacy=c.MatchSimulator.simulate({type:"eleven",seed:"legacy",userTeam:u,opponentTeam:o,rulesVersion:1,seasonId:"ie1"});assert(legacy.timeline.length>=12&&legacy.timeline.length<=20);assert(!legacy.timeline.some(e=>["dribble","recovery","key_pass","build_up"].includes(e.type)));assert(!legacy.timeline.some(e=>e.moveName));
+const legacyAgain=c.MatchSimulator.simulate({type:"eleven",seed:"legacy",userTeam:u,opponentTeam:o,rulesVersion:1,seasonId:"ie1"});
+assert.deepStrictEqual(JSON.parse(JSON.stringify(legacyAgain)),JSON.parse(JSON.stringify(legacy)),"same legacy seed and inputs must remain deterministic");
 const roles5=["GK","DF","MF","MF","FW"],five=c.MatchSimulator.simulate({type:"five",seed:"five",userTeam:team("fu",roles5),opponentTeam:team("fo",roles5),rulesVersion:2,seasonId:"ie1"});assert(five.timeline.length>=10&&five.timeline.length<=12);
 console.log("match timeline V2: 22-25 events, dribbling, compatible moves and anti-spam OK");
