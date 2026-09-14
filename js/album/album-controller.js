@@ -107,6 +107,12 @@
     return Math.min(100, Math.max(0, (safeUnlocked / safeTotal) * 100));
   }
 
+  function albumRarityClass(category) {
+    const rarity = String(category || "Debole").trim().toLowerCase();
+    const known = new Set(["scarso", "debole", "normale", "buono", "forte", "elite", "mondiale", "leggenda", "aurico"]);
+    return `rarity-${known.has(rarity) ? rarity : "debole"}`;
+  }
+
   async function renderAlbumCollections() {
     prepareAlbumLegacyContext();
     const currentSeasonId = getActiveSeason()?.id || global.SeasonRegistry.activeId();
@@ -193,14 +199,15 @@
       const cards = visible.map((raw) => {
         const player = resolvedPlayer(raw);
         const isUnlocked = unlocked.has(String(player.playerId));
-        return `<div class="album-player-entry ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${view.escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${view.playerCard(player, { button: true, dataAttribute: "data-album-player", level: player.maxLevel || 20, database: player.albumDatabase, resolvedPlayer: player, extraClass: "album-player-card" })}${isUnlocked ? "" : `<span class="album-lock-overlay album-player-lock"><span aria-hidden="true">🔒</span>NON SBLOCCATO</span>`}</div>`;
+        const rarityClass = albumRarityClass(player.category);
+        return `<div class="album-player-entry ${rarityClass} ${isUnlocked ? "is-unlocked" : "is-locked"}" data-album-player-entry="${view.escapeHtml(player.playerId)}" data-album-unlocked="${isUnlocked ? "true" : "false"}">${view.playerCard(player, { button: true, dataAttribute: "data-album-player", level: player.maxLevel || 20, database: player.albumDatabase, resolvedPlayer: player, extraClass: "album-player-card" })}<span class="album-player-rarity-badge">${view.escapeHtml(player.category || "Debole")}</span>${isUnlocked ? "" : `<span class="album-player-lock"><span aria-hidden="true">🔒</span>NON SBLOCCATO</span>`}</div>`;
       }).join("");
       const remaining = rawPlayers.length - visible.length;
       return `${cards}${remaining > 0 ? `<div class="album-load-more-wrap"><button type="button" class="btn btn-yellow album-load-more" data-album-load-more>MOSTRA ALTRI ${view.escapeHtml(Math.min(pageSize, remaining))}</button><small>${view.escapeHtml(visible.length)} di ${view.escapeHtml(rawPlayers.length)}</small></div>` : ""}`;
     };
     const percent = albumProgressPercent(progress);
     const percentLabel = `${Math.round(percent)}%`;
-    app.innerHTML = `<main class="album-screen album-roster-screen album-roster-screen--modern"><header class="topbar album-topbar album-roster-header album-roster-header--modern"><div class="album-roster-header__top">${view.sectionRootButton("albumRoster", "album-roster-back-button")}<span class="album-team-logo album-team-logo--header album-roster-logo">${albumTeamLogoMarkup(team)}</span><div class="album-roster-header__context"><p class="eyebrow album-roster-breadcrumb">ALBUM → ${view.escapeHtml(global.AlbumProgress.ALBUM_COLLECTIONS[collectionId]?.name || collectionId)}</p><span>${view.escapeHtml(progress.unlocked)} / ${view.escapeHtml(progress.total)} giocatori sbloccati</span></div></div><div class="album-roster-header__identity"><h1 class="album-roster-name">${view.escapeHtml(team.teamName)}</h1><strong>${view.escapeHtml(percentLabel)}</strong></div><span class="album-roster-header__bar" aria-hidden="true"><span style="width:${percent}%"></span></span></header><section class="album-player-grid album-player-grid--modern" data-album-roster>${rosterMarkup()}</section></main>`;
+    app.innerHTML = `<main class="album-screen album-roster-screen album-roster-screen--modern"><header class="album-roster-hero"><div class="album-roster-hero__nav">${view.sectionRootButton("albumRoster", "album-roster-back-button")}<p class="eyebrow album-roster-breadcrumb">ALBUM → ${view.escapeHtml(global.AlbumProgress.ALBUM_COLLECTIONS[collectionId]?.name || collectionId)}</p></div><div class="album-roster-hero__identity"><span class="album-team-logo album-roster-logo">${albumTeamLogoMarkup(team)}</span><h1 class="album-roster-name">${view.escapeHtml(team.teamName)}</h1></div><div class="album-roster-hero__stats"><span><strong>${view.escapeHtml(progress.unlocked)} / ${view.escapeHtml(progress.total)}</strong> giocatori sbloccati</span><strong class="album-roster-percent">${view.escapeHtml(percentLabel)}</strong></div><span class="album-roster-hero__bar" aria-hidden="true"><span style="width:${percent}%"></span></span></header><section class="album-player-grid album-player-grid--modern" data-album-roster>${rosterMarkup()}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav({ collectionId });
     const albumRoster = document.querySelector("[data-album-roster]");
