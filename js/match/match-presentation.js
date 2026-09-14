@@ -156,8 +156,9 @@
       return currentUi.bossMatchLog.map((event) => {
         const presented = global.MovePresentationRuntime?.decorateEventVisual?.(event, resolvePlayerVisual) || event;
         const marker = global.MovePresentationRuntime?.eventMarkerMarkup?.(presented, escapeHtml) || escapeHtml(presented.icon);
-        const text = global.MovePresentationRuntime?.eventTextMarkup?.(presented, escapeHtml) || escapeHtml(presented.text);
-        return `<li class="${matchEventSideClass(presented.side)}"><span>${escapeHtml(presented.minute)}</span><b class="match-event-marker">${marker}</b><p>${text}</p></li>`;
+        const text = global.MovePresentationRuntime?.eventContentMarkup?.(presented, escapeHtml) || escapeHtml(presented.text);
+        const typeClass = `match-event-type--${String(presented.type || "generic").replace(/[^a-z0-9_-]/gi, "")}`;
+        return `<li class="${matchEventSideClass(presented.side)} ${escapeHtml(typeClass)}"><span>${escapeHtml(presented.minute)}</span><b class="match-event-marker">${marker}</b><p>${text}</p></li>`;
       }).join("");
     }
 

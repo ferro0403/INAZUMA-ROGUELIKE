@@ -1,0 +1,407 @@
+/* Match simulation V2 presentation layer.
+   Pure visual skin: no gameplay, persistence or simulation rules. */
+.five-simulation-modal{
+  --sim-ink:#111216;
+  --sim-paper:#fffaf0;
+  --sim-cream:#f2ead9;
+  --sim-yellow:#ffd21f;
+  --sim-user:#248bc8;
+  --sim-user-soft:#e6f5ff;
+  --sim-opponent:#d94a45;
+  --sim-opponent-soft:#fff0ec;
+}
+
+.five-simulation-modal .five-simulation-cabin{
+  position:relative;
+  overflow:hidden;
+  border:4px solid var(--sim-ink);
+  border-radius:2px;
+  background:var(--sim-cream);
+  box-shadow:8px 10px 0 rgba(17,18,22,.28);
+}
+
+.five-simulation-modal .five-simulation-head{
+  position:relative;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  grid-template-areas:"eyebrow state" "title state";
+  align-items:center;
+  gap:2px 14px;
+  padding:14px 16px 13px;
+  overflow:hidden;
+  border-bottom:4px solid var(--sim-yellow);
+  background:
+    linear-gradient(118deg,var(--sim-ink) 0 74%,#292b2e 74% 100%);
+  color:#fff;
+}
+.five-simulation-modal .five-simulation-head::after{
+  content:"";
+  position:absolute;
+  right:-22px;
+  bottom:-30px;
+  width:120px;
+  height:84px;
+  opacity:.18;
+  background:repeating-linear-gradient(125deg,var(--sim-yellow) 0 9px,transparent 9px 16px);
+  transform:rotate(-8deg);
+  pointer-events:none;
+}
+.five-simulation-modal .five-simulation-head .eyebrow{
+  grid-area:eyebrow;
+  margin:0;
+  color:var(--sim-yellow);
+  font-size:.61rem;
+  font-weight:950;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+}
+.five-simulation-modal .five-simulation-head h2{
+  grid-area:title;
+  margin:0;
+  color:#fff;
+  font-size:clamp(1.2rem,5vw,1.65rem);
+  font-style:italic;
+  font-weight:1000;
+  line-height:.98;
+  letter-spacing:-.035em;
+  text-transform:uppercase;
+}
+.five-simulation-modal .five-simulation-state{
+  grid-area:state;
+  position:relative;
+  z-index:1;
+  min-width:88px;
+  padding:9px 12px;
+  border:2px solid #fff;
+  background:var(--sim-yellow);
+  color:var(--sim-ink);
+  box-shadow:3px 3px 0 rgba(255,255,255,.22);
+  font-size:.72rem;
+  font-weight:1000;
+  letter-spacing:.05em;
+  text-align:center;
+  text-transform:uppercase;
+  transform:skewX(-5deg);
+}
+
+.five-simulation-modal .five-simulation-score{
+  position:relative;
+  margin:0;
+  padding:14px 14px 11px;
+  overflow:hidden;
+  border:0;
+  border-bottom:3px solid var(--sim-ink);
+  background:
+    linear-gradient(135deg,rgba(255,210,31,.11) 0 30%,transparent 30% 100%),
+    var(--sim-paper);
+}
+.five-simulation-modal .five-simulation-score::before{
+  content:"";
+  position:absolute;
+  inset:0 auto 0 50%;
+  width:1px;
+  opacity:.28;
+  background:var(--sim-ink);
+  pointer-events:none;
+}
+.five-simulation-modal .five-simulation-score .five-match-result-row{
+  position:relative;
+  z-index:1;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:10px;
+}
+.five-simulation-modal .five-simulation-score .five-match-result-row>strong{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  min-width:0;
+  padding:6px 4px;
+  border:0;
+  color:var(--sim-ink);
+  font-size:clamp(.76rem,3.2vw,.92rem);
+  font-weight:1000;
+  line-height:1;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.five-simulation-modal .five-simulation-score .five-match-result-row>strong:last-child{
+  justify-content:flex-end;
+  text-align:right;
+}
+.five-simulation-modal .five-simulation-score .five-simulation-emblem{
+  width:34px;
+  height:34px;
+}
+.five-simulation-modal .five-simulation-score .boss-match-score{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  min-width:112px;
+  padding:7px 15px 8px;
+  clip-path:polygon(9% 0,100% 0,91% 100%,0 100%);
+  background:var(--sim-ink);
+  color:#fff;
+  box-shadow:none;
+}
+.five-simulation-modal .five-simulation-score .boss-match-score span{
+  color:#fff;
+  font-size:clamp(2rem,8vw,2.8rem);
+  font-weight:1000;
+  line-height:.9;
+}
+.five-simulation-modal .five-simulation-score .boss-match-score small{
+  margin-inline:8px;
+  color:var(--sim-yellow);
+  font-size:1rem;
+  font-weight:1000;
+}
+.five-simulation-modal .five-simulation-score>p{
+  position:relative;
+  z-index:1;
+  width:max-content;
+  max-width:100%;
+  margin:9px auto 0;
+  padding:5px 12px;
+  border:2px solid var(--sim-ink);
+  background:var(--sim-yellow);
+  color:var(--sim-ink);
+  font-size:.72rem;
+  font-weight:1000;
+  letter-spacing:.035em;
+  text-transform:uppercase;
+  transform:skewX(-4deg);
+}
+
+.five-simulation-modal .five-simulation-events{
+  padding:11px 12px 12px;
+  border:0;
+  background:
+    linear-gradient(180deg,#f7efdf 0,#f1e5d1 100%);
+}
+.five-simulation-modal .five-simulation-events .panel-title-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin:0 0 9px;
+  padding:0 1px 8px;
+  border-bottom:3px solid var(--sim-ink);
+}
+.five-simulation-modal .five-simulation-events .panel-title-row h3{
+  margin:0;
+  color:var(--sim-ink);
+  font-size:1rem;
+  font-style:italic;
+  font-weight:1000;
+  letter-spacing:-.02em;
+  text-transform:uppercase;
+}
+.five-simulation-modal .five-simulation-events .match-state-badge{
+  padding:5px 10px;
+  border:2px solid rgba(17,18,22,.45);
+  border-radius:999px;
+  background:#fff8df;
+  color:#d6a500;
+  font-size:.62rem;
+  font-weight:1000;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+
+.five-simulation-modal .match-sim-log{
+  display:grid;
+  gap:9px;
+  padding:4px 2px 7px 8px;
+  scroll-padding-block:10px;
+}
+.five-simulation-modal .match-sim-log>li{
+  --event-accent:#6d7178;
+  --event-soft:#f4f4f2;
+  position:relative;
+  display:grid;
+  grid-template-columns:44px 54px minmax(0,1fr);
+  align-items:center;
+  gap:7px;
+  min-height:76px;
+  padding:8px 10px 8px 8px;
+  overflow:visible;
+  border:2px solid var(--sim-ink);
+  border-left:0;
+  border-radius:1px;
+  background:
+    linear-gradient(110deg,var(--event-soft) 0 22%,#fff 22% 100%);
+  box-shadow:3px 4px 0 rgba(17,18,22,.14);
+  isolation:isolate;
+}
+.five-simulation-modal .match-sim-log>li::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:-8px;
+  top:-2px;
+  bottom:-2px;
+  width:12px;
+  background:var(--event-accent);
+  clip-path:polygon(0 0,100% 0,72% 100%,0 100%);
+}
+.five-simulation-modal .match-sim-log>li::after{
+  content:"";
+  position:absolute;
+  right:0;
+  top:0;
+  width:46px;
+  height:12px;
+  opacity:.18;
+  background:repeating-linear-gradient(120deg,var(--event-accent) 0 6px,transparent 6px 10px);
+  pointer-events:none;
+}
+.five-simulation-modal .match-sim-log>li.match-event--user{
+  --event-accent:var(--sim-user);
+  --event-soft:var(--sim-user-soft);
+}
+.five-simulation-modal .match-sim-log>li.match-event--opponent{
+  --event-accent:var(--sim-opponent);
+  --event-soft:var(--sim-opponent-soft);
+}
+.five-simulation-modal .match-sim-log>li.match-event--neutral{
+  --event-accent:#8c7a4f;
+  --event-soft:#fbf5e5;
+}
+
+.five-simulation-modal .match-sim-log>li>span:first-child{
+  display:grid;
+  place-items:center;
+  align-self:center;
+  min-height:34px;
+  padding:4px 3px;
+  border:2px solid var(--sim-ink);
+  background:var(--sim-ink);
+  color:#fff;
+  font-size:.78rem;
+  font-weight:1000;
+  line-height:1;
+  transform:skewX(-4deg);
+}
+.five-simulation-modal .match-sim-log .match-event-marker{
+  display:grid;
+  place-items:center;
+  width:52px;
+  height:56px;
+  min-width:52px;
+  overflow:visible;
+  background:transparent;
+}
+.five-simulation-modal .match-sim-log .match-event-avatar{
+  display:block;
+  width:50px;
+  height:54px;
+  overflow:hidden;
+  border:2px solid var(--sim-ink);
+  border-radius:0;
+  background:#f7efe2;
+  box-shadow:2px 2px 0 var(--event-accent);
+  clip-path:polygon(9% 0,100% 0,100% 88%,89% 100%,0 100%,0 11%);
+  transform:rotate(-1deg);
+}
+.five-simulation-modal .match-sim-log .match-event--opponent .match-event-avatar{
+  transform:rotate(1deg);
+}
+.five-simulation-modal .match-sim-log .match-event-avatar img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  object-position:center top;
+  transform:scale(1.08);
+}
+.five-simulation-modal .match-sim-log .match-event-symbol{
+  display:grid;
+  place-items:center;
+  width:48px;
+  height:48px;
+  border:2px solid var(--sim-ink);
+  border-radius:0;
+  background:var(--sim-yellow);
+  color:var(--sim-ink);
+  clip-path:polygon(10% 0,100% 0,100% 90%,90% 100%,0 100%,0 10%);
+  font-size:1rem;
+  font-weight:1000;
+}
+.five-simulation-modal .match-sim-log>li>p{
+  display:grid;
+  align-content:center;
+  gap:3px;
+  min-width:0;
+  margin:0;
+  color:var(--sim-ink);
+  line-height:1.15;
+}
+.five-simulation-modal .match-event-kind{
+  width:max-content;
+  max-width:100%;
+  color:var(--event-accent);
+  font-size:.53rem;
+  font-weight:1000;
+  letter-spacing:.12em;
+  line-height:1;
+  text-transform:uppercase;
+}
+.five-simulation-modal .match-event-copy{
+  display:block;
+  color:var(--sim-ink);
+  font-size:.82rem;
+  font-weight:650;
+  line-height:1.18;
+}
+.five-simulation-modal .match-event-type--goal .match-event-kind{color:#b88600}
+.five-simulation-modal .match-event-type--save .match-event-kind{color:#e47a00}
+.five-simulation-modal .match-event-type--dribble .match-event-kind{color:#2478c5}
+.five-simulation-modal .match-event-type--defensive_stop .match-event-kind{color:#25833d}
+.five-simulation-modal .match-event-type--shot .match-event-kind,
+.five-simulation-modal .match-event-type--long_shot .match-event-kind{color:#d94f91}
+
+.five-simulation-modal .five-simulation-actions{
+  padding:10px 12px 12px;
+  border-top:3px solid var(--sim-ink);
+  background:var(--sim-paper);
+}
+.five-simulation-modal .five-simulation-actions .btn{
+  min-height:54px;
+  border:2px solid var(--sim-ink);
+  border-radius:1px;
+  font-weight:1000;
+  box-shadow:3px 4px 0 rgba(17,18,22,.18);
+}
+.five-simulation-modal .five-simulation-actions .btn-yellow{
+  background:linear-gradient(105deg,#ffd21f,#ff9f32);
+}
+
+@media(max-width:520px){
+  .five-simulation-modal .five-simulation-cabin{box-shadow:5px 6px 0 rgba(17,18,22,.28)}
+  .five-simulation-modal .five-simulation-head{padding:12px 12px 11px;gap:2px 9px}
+  .five-simulation-modal .five-simulation-head h2{font-size:1.16rem}
+  .five-simulation-modal .five-simulation-state{min-width:78px;padding:8px 9px;font-size:.66rem}
+  .five-simulation-modal .five-simulation-score{padding:11px 10px 9px}
+  .five-simulation-modal .five-simulation-score .five-match-result-row{gap:6px}
+  .five-simulation-modal .five-simulation-score .five-match-result-row>strong{gap:5px;font-size:.72rem}
+  .five-simulation-modal .five-simulation-score .five-simulation-emblem{width:29px;height:29px}
+  .five-simulation-modal .five-simulation-score .boss-match-score{min-width:92px;padding:6px 11px}
+  .five-simulation-modal .five-simulation-score .boss-match-score span{font-size:2.1rem}
+  .five-simulation-modal .five-simulation-score .boss-match-score small{margin-inline:6px}
+  .five-simulation-modal .five-simulation-events{padding:9px 8px 10px}
+  .five-simulation-modal .match-sim-log{gap:8px;padding-left:7px}
+  .five-simulation-modal .match-sim-log>li{
+    grid-template-columns:39px 48px minmax(0,1fr);
+    gap:5px;
+    min-height:69px;
+    padding:7px 7px 7px 7px;
+  }
+  .five-simulation-modal .match-sim-log>li>span:first-child{min-height:31px;font-size:.72rem}
+  .five-simulation-modal .match-sim-log .match-event-marker{width:46px;height:50px;min-width:46px}
+  .five-simulation-modal .match-sim-log .match-event-avatar{width:44px;height:48px}
+  .five-simulation-modal .match-sim-log .match-event-symbol{width:43px;height:43px}
+  .five-simulation-modal .match-event-kind{font-size:.47rem}
+  .five-simulation-modal .match-event-copy{font-size:.76rem}
+}

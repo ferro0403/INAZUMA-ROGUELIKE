@@ -205,6 +205,7 @@ function matchEventView(ev) {
     return {
       minute: `${ev.minute}'`,
       icon: global.MovePresentationRuntime?.eventIcon?.(ev.type) || "◇",
+      type: ev.type || "generic",
       text: ev.text,
       side: ev.team === "user" || ev.team === "opponent" ? ev.team : null,
       moveName: ev.moveName || null,
@@ -220,7 +221,7 @@ function appendMatchLogEvent(event) {
     if (!log) return false;
     if (log.querySelector("[data-empty-log]")) log.innerHTML = "";
     const li = document.createElement("li");
-    li.className = matchEventSideClass(event.side);
+    li.className = `${matchEventSideClass(event.side)} match-event-type--${String(event.type || "generic").replace(/[^a-z0-9_-]/gi, "")}`;
     const minute = document.createElement("span");
     const icon = document.createElement("b");
     const text = document.createElement("p");
@@ -228,7 +229,7 @@ function appendMatchLogEvent(event) {
     minute.textContent = event.minute;
     icon.className = "match-event-marker";
     icon.innerHTML = global.MovePresentationRuntime?.eventMarkerMarkup?.(presented, escapeHtml) || escapeHtml(event.icon);
-    text.innerHTML = global.MovePresentationRuntime?.eventTextMarkup?.(presented, escapeHtml) || escapeHtml(event.text);
+    text.innerHTML = global.MovePresentationRuntime?.eventContentMarkup?.(presented, escapeHtml) || escapeHtml(event.text);
     li.append(minute, icon, text);
     log.appendChild(li);
     requestAnimationFrame(() => { log.scrollTop = log.scrollHeight; });
@@ -242,7 +243,7 @@ function appendMissingMatchLogEvents(events) {
     const fragment = document.createDocumentFragment();
     events.forEach((event) => {
       const li = document.createElement("li");
-      li.className = matchEventSideClass(event.side);
+      li.className = `${matchEventSideClass(event.side)} match-event-type--${String(event.type || "generic").replace(/[^a-z0-9_-]/gi, "")}`;
       const minute = document.createElement("span");
       const icon = document.createElement("b");
       const text = document.createElement("p");
@@ -250,7 +251,7 @@ function appendMissingMatchLogEvents(events) {
       minute.textContent = event.minute;
       icon.className = "match-event-marker";
       icon.innerHTML = global.MovePresentationRuntime?.eventMarkerMarkup?.(presented, escapeHtml) || escapeHtml(event.icon);
-      text.innerHTML = global.MovePresentationRuntime?.eventTextMarkup?.(presented, escapeHtml) || escapeHtml(event.text);
+      text.innerHTML = global.MovePresentationRuntime?.eventContentMarkup?.(presented, escapeHtml) || escapeHtml(event.text);
       li.append(minute, icon, text);
       fragment.appendChild(li);
     });
