@@ -183,42 +183,6 @@
   font-size: 4rem;
 }
 
-.album-team-complete {
-  display: inline-flex;
-  align-items: center;
-  justify-self: start;
-  gap: 5px;
-  width: fit-content;
-  min-height: 24px;
-  padding: 3px 7px 3px 4px;
-  border: 2px solid rgba(255, 253, 246, .78);
-  background: rgba(255, 210, 31, .14);
-  color: #fffdf6;
-  box-shadow: inset 0 0 0 1px rgba(255, 210, 31, .24);
-  font-style: normal;
-  white-space: nowrap;
-}
-
-.album-team-complete__icon {
-  display: grid;
-  place-items: center;
-  width: 17px;
-  height: 17px;
-  border: 2px solid #fffdf6;
-  background: var(--album-yellow);
-  color: var(--album-ink);
-  font-size: .62rem;
-  font-weight: 1000;
-  line-height: 1;
-}
-
-.album-team-complete__label {
-  font-size: .54rem;
-  font-weight: 1000;
-  line-height: 1;
-  letter-spacing: .075em;
-}
-
 .album-team-card__footer {
   position: relative;
   z-index: 3;
@@ -238,13 +202,6 @@
   grid-template-columns: minmax(0, 1fr) 34px;
   align-items: center;
   gap: 10px;
-  min-width: 0;
-}
-
-.album-team-card__title-group {
-  display: grid;
-  align-content: start;
-  gap: 7px;
   min-width: 0;
 }
 
@@ -286,6 +243,33 @@
   color: var(--album-yellow);
   font-size: .96rem;
   font-weight: 1000;
+}
+
+.album-team-card__complete-state {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  color: var(--album-yellow);
+  font-size: .65rem;
+  font-weight: 1000;
+  line-height: 1;
+  letter-spacing: .055em;
+  white-space: nowrap;
+}
+
+.album-team-card__complete-check {
+  display: grid;
+  place-items: center;
+  width: 18px;
+  height: 18px;
+  border: 2px solid #fffdf6;
+  background: var(--album-yellow);
+  color: var(--album-ink);
+  font-size: .62rem;
+  font-weight: 1000;
+  line-height: 1;
+  box-shadow: 2px 2px 0 rgba(255, 255, 255, .16);
 }
 
 .album-team-card__bar {
@@ -386,22 +370,18 @@
     font-size: .82rem;
   }
 
-  .album-team-complete {
+  .album-team-card__complete-state {
     gap: 4px;
-    min-height: 22px;
-    padding: 2px 6px 2px 3px;
+    font-size: clamp(.48rem, 2.25vw, .57rem);
+    letter-spacing: .045em;
   }
 
-  .album-team-complete__icon {
+  .album-team-card__complete-check {
     width: 16px;
     height: 16px;
-    font-size: .58rem;
+    font-size: .55rem;
   }
 
-  .album-team-complete__label {
-    font-size: .47rem;
-    letter-spacing: .06em;
-  }
 }
 
 @media (max-width: 360px) {
