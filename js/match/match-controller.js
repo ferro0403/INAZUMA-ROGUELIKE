@@ -202,7 +202,16 @@ function matchEventSideClass(side) {
   }
 
 function matchEventView(ev) {
-    return { minute: `${ev.minute}'`, icon: ({goal:"⚽",save:"🧤",counter:"⚡",long_shot:"🎯",post:"🥅",crossbar:"🥅",shot:"👟",defensive_stop:"🛡️",first_half_start:"▶",second_half_start:"▶"})[ev.type] || "•", text: ev.text, side: ev.team === "user" || ev.team === "opponent" ? ev.team : null };
+    return {
+      minute: `${ev.minute}'`,
+      icon: global.MovePresentationRuntime?.eventIcon?.(ev.type) || "◇",
+      text: ev.text,
+      side: ev.team === "user" || ev.team === "opponent" ? ev.team : null,
+      moveName: ev.moveName || null,
+      moveType: ev.moveType || null,
+      moveElement: ev.moveElement || null,
+      movePower: ev.movePower ?? null,
+    };
   }
 
 function appendMatchLogEvent(event) {
@@ -216,7 +225,7 @@ function appendMatchLogEvent(event) {
     const text = document.createElement("p");
     minute.textContent = event.minute;
     icon.textContent = event.icon;
-    text.textContent = event.text;
+    text.innerHTML = global.MovePresentationRuntime?.eventTextMarkup?.(event, escapeHtml) || escapeHtml(event.text);
     li.append(minute, icon, text);
     log.appendChild(li);
     requestAnimationFrame(() => { log.scrollTop = log.scrollHeight; });
@@ -236,7 +245,7 @@ function appendMissingMatchLogEvents(events) {
       const text = document.createElement("p");
       minute.textContent = event.minute;
       icon.textContent = event.icon;
-      text.textContent = event.text;
+      text.innerHTML = global.MovePresentationRuntime?.eventTextMarkup?.(event, escapeHtml) || escapeHtml(event.text);
       li.append(minute, icon, text);
       fragment.appendChild(li);
     });

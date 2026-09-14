@@ -7,7 +7,7 @@
     const id=String(playerId??""), raw=catalog(seasonId)?.players?.[id];
     if(!raw)return null;
     const power=Number(raw.power);
-    return{playerId:id,name:String(raw.name||""),type:String(raw.type||""),power:Number.isFinite(power)?Math.max(0,power):0};
+    return{playerId:id,name:String(raw.name||""),type:String(raw.type||""),element:String(raw.element||""),power:Number.isFinite(power)?Math.max(0,power):0};
   }
   function teamContribution(seasonId,players){
     const lineup=Array.isArray(players)?players:[];

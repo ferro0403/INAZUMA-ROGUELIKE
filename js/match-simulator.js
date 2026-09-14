@@ -206,7 +206,7 @@ function minutePool(type, count, rng) { const max = type === "five" ? 30 : 90; c
       if(kind==="goal") side=goalSides.shift();
       const p=protagonist(teams[side],kind,rng), ev={minute:minutes[i],type:kind,team:side,playerId:p?.playerId,playerName:name(p)};
       const move=moveForTimelineEvent(p,kind,options,moveUsage,rng);
-      if(move){ev.moveName=move.name;ev.moveType=move.type;ev.movePower=move.power;}
+      if(move){ev.moveName=move.name;ev.moveType=move.type;ev.moveElement=move.element;ev.movePower=move.power;}
       if(kind==="goal") displayed[side]+=1;
       ev.text=eventText(ev,teams,displayed); events.push(ev);
     }
@@ -214,7 +214,7 @@ function minutePool(type, count, rng) { const max = type === "five" ? 30 : 90; c
       const side=goalSides.shift(), p=protagonist(teams[side],"goal",rng); displayed[side]+=1;
       const ev={minute:1+Math.floor(rng()*limits.duration),type:"goal",team:side,playerId:p?.playerId,playerName:name(p),text:""};
       const move=moveForTimelineEvent(p,"goal",options,moveUsage,rng);
-      if(move){ev.moveName=move.name;ev.moveType=move.type;ev.movePower=move.power;} events.push(ev);
+      if(move){ev.moveName=move.name;ev.moveType=move.type;ev.moveElement=move.element;ev.movePower=move.power;} events.push(ev);
     }
     if(type==="eleven") events.push({minute:46,type:"second_half_start",team:null,text:"Inizio secondo tempo."});
     events.sort((a,b)=>a.minute-b.minute||(a.type.includes("start")?-1:1));

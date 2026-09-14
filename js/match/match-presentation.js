@@ -152,7 +152,7 @@
     function bossMatchTimeline() {
       const currentUi = ui();
       if (!currentUi.bossMatchLog?.length) return `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>Formazioni pronte. Avvia la simulazione o usa i controlli provvisori.</p></li>`;
-      return currentUi.bossMatchLog.map((event) => `<li class="${matchEventSideClass(event.side)}"><span>${escapeHtml(event.minute)}</span><b>${event.icon}</b><p>${escapeHtml(event.text)}</p></li>`).join("");
+      return currentUi.bossMatchLog.map((event) => `<li class="${matchEventSideClass(event.side)}"><span>${escapeHtml(event.minute)}</span><b>${escapeHtml(event.icon)}</b><p>${global.MovePresentationRuntime?.eventTextMarkup?.(event, escapeHtml) || escapeHtml(event.text)}</p></li>`).join("");
     }
 
     function switchBossMatchTab(side) {
