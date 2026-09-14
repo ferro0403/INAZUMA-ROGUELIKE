@@ -5,7 +5,7 @@
     const ui = d.ui;
     const app = d.app;
     const document = global.document;
-    const { persistGameplayMutation, recordGameplayFailure, fiveUserPlayersBySlot, fiveOpponentPlayersBySlot, normalizeTeamIdentity, specialMatchView, bossMatchTeamMeta, userTeamPlayers, bossTeamPlayers, toast, bossMatchStatusText, bossMatchTimeline, openModal, scrollSnapshot, formatMatchProbability, createOrLoadFiveMatch, ensureFiveVFive, teamById, escapeHtml, bossMatchAverage, fiveMatchField, fiveMatchComparisonMarkup, topbar, resetRenderedViewScroll, bindSectionRootNav, bindBottomNav, showPlayerDetails, showPlayerDetailsFor, bossMatchField, switchBossMatchTab, completeFiveMatch, completeSpecialMatch, completeBossMatch, recoverLegacyResolvedMatchRoutingIfNeeded, closeModal, resolvePendingRunFlow, navigateBossVictoryDestination, showSpecialMatchReward, renderGameOver, renderMap, hearts, openFiveMatchPlayerSwap, fiveMatchPlayerDetail, renderFiveVFive, renderMapFailureRecovery, getFreeAgentsDb, resolvePlayerVisual } = d;
+    const { persistGameplayMutation, recordGameplayFailure, fiveUserPlayersBySlot, fiveOpponentPlayersBySlot, normalizeTeamIdentity, specialMatchView, bossMatchTeamMeta, userTeamPlayers, bossTeamPlayers, toast, bossMatchStatusText, bossMatchTimeline, openModal, scrollSnapshot, formatMatchProbability, createOrLoadFiveMatch, ensureFiveVFive, teamById, escapeHtml, bossMatchAverage, fiveMatchField, fiveMatchComparisonMarkup, topbar, resetRenderedViewScroll, bindSectionRootNav, bindBottomNav, showPlayerDetails, showPlayerDetailsFor, bossMatchField, switchBossMatchTab, completeFiveMatch, completeSpecialMatch, completeBossMatch, recoverLegacyResolvedMatchRoutingIfNeeded, closeModal, resolvePendingRunFlow, navigateBossVictoryDestination, showSpecialMatchReward, renderGameOver, renderMap, hearts, openFiveMatchPlayerSwap, fiveMatchPlayerDetail, renderFiveVFive, renderMapFailureRecovery, getFreeAgentsDb, resolvePlayerVisual, resolveMatchEventPlayer } = d;
     const TEST_MATCH_CONTROLS_ENABLED = d.testMatchControlsEnabled;
     const DEV_MODE = d.devMode;
     let run = d.getRun();
@@ -225,7 +225,7 @@ function appendMatchLogEvent(event) {
     const minute = document.createElement("span");
     const icon = document.createElement("b");
     const text = document.createElement("p");
-    const presented = global.MovePresentationRuntime?.decorateEventVisual?.(event, resolvePlayerVisual) || event;
+    const presented = global.MovePresentationRuntime?.decorateEventVisual?.(event, resolvePlayerVisual, resolveMatchEventPlayer) || event;
     minute.textContent = event.minute;
     icon.className = "match-event-marker";
     icon.innerHTML = global.MovePresentationRuntime?.eventMarkerMarkup?.(presented, escapeHtml) || escapeHtml(event.icon);
@@ -247,7 +247,7 @@ function appendMissingMatchLogEvents(events) {
       const minute = document.createElement("span");
       const icon = document.createElement("b");
       const text = document.createElement("p");
-      const presented = global.MovePresentationRuntime?.decorateEventVisual?.(event, resolvePlayerVisual) || event;
+      const presented = global.MovePresentationRuntime?.decorateEventVisual?.(event, resolvePlayerVisual, resolveMatchEventPlayer) || event;
       minute.textContent = event.minute;
       icon.className = "match-event-marker";
       icon.innerHTML = global.MovePresentationRuntime?.eventMarkerMarkup?.(presented, escapeHtml) || escapeHtml(event.icon);

@@ -20,6 +20,7 @@
       escapeHtml,
       matchEventSideClass,
       resolvePlayerVisual,
+      resolveMatchEventPlayer,
       openModal,
       closeModal,
       scrollSnapshot,
@@ -154,7 +155,7 @@
       const currentUi = ui();
       if (!currentUi.bossMatchLog?.length) return `<li data-empty-log="true"><span>0'</span><b class="match-event-marker"><span class="match-event-symbol">◇</span></b><p>Formazioni pronte. Avvia la simulazione o usa i controlli provvisori.</p></li>`;
       return currentUi.bossMatchLog.map((event) => {
-        const presented = global.MovePresentationRuntime?.decorateEventVisual?.(event, resolvePlayerVisual) || event;
+        const presented = global.MovePresentationRuntime?.decorateEventVisual?.(event, resolvePlayerVisual, resolveMatchEventPlayer) || event;
         const marker = global.MovePresentationRuntime?.eventMarkerMarkup?.(presented, escapeHtml) || escapeHtml(presented.icon);
         const text = global.MovePresentationRuntime?.eventContentMarkup?.(presented, escapeHtml) || escapeHtml(presented.text);
         const typeClass = `match-event-type--${String(presented.type || "generic").replace(/[^a-z0-9_-]/gi, "")}`;

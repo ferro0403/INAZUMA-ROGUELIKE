@@ -13,6 +13,15 @@ assert.strictEqual(c.MovePresentationRuntime.typeLabel("shot"),"Tiro");
 assert.strictEqual(c.MovePresentationRuntime.typeLabel("save"),"Parata");
 const decorated=c.MovePresentationRuntime.decorateEventVisual({playerId:"2",icon:"⚽"},()=>({cardImageUrl:"https://example.com/axel.png",cardFallbacks:["https://example.com/axel.png","fallback.png"]}));
 assert.strictEqual(decorated.portraitUrl,"https://example.com/axel.png");
+const nakataSource={playerId:"custom_0001",name:"Nakata",portraitUrl:"assets/players/season3/custom_0001_nakata_portrait.webp",frontFullbodyUrl:"assets/players/season3/custom_0001_nakata_fullbody.webp"};
+let receivedSource=null;
+const nakataDecorated=c.MovePresentationRuntime.decorateEventVisual(
+  {playerId:"custom_0001",type:"defensive_stop",side:"user"},
+  (player)=>{receivedSource=player;return{cardImageUrl:player.portraitUrl||null,cardFallbacks:[player.portraitUrl,player.frontFullbodyUrl].filter(Boolean)};},
+  (playerId)=>playerId==="custom_0001"?nakataSource:null
+);
+assert.strictEqual(receivedSource,nakataSource);
+assert.strictEqual(nakataDecorated.portraitUrl,"assets/players/season3/custom_0001_nakata_portrait.webp");
 const marker=c.MovePresentationRuntime.eventMarkerMarkup(decorated,(value)=>String(value));
 assert(marker.includes("match-event-avatar"));assert(marker.includes("<img"));assert(!marker.includes("⚽"));
 const card=c.MovePresentationRuntime.detailMarkup(move,(value)=>String(value));
@@ -41,12 +50,15 @@ assert(matchCss.includes(".match-sim-log>li.match-event--user{")&&matchCss.inclu
 const controller=fs.readFileSync("js/match/match-controller.js","utf8");
 assert(controller.includes("playerId: ev.playerId != null ? String(ev.playerId) : null"));
 assert(controller.includes("type: ev.type || \"generic\""));
-assert(controller.includes("decorateEventVisual?.(event, resolvePlayerVisual)"));
+assert(controller.includes("decorateEventVisual?.(event, resolvePlayerVisual, resolveMatchEventPlayer)"));
 assert(controller.includes("eventContentMarkup?.(presented, escapeHtml)"));
 assert(controller.includes("match-event-type--"));
 assert(!controller.includes("portraitFallbacks: visual.cardFallbacks"),"portrait URLs/fallbacks must not be persisted in the match log");
 const app=fs.readFileSync("js/app.js","utf8");
 assert((app.match(/resolvePlayerVisual:/g)||[]).length>=2,"visual resolver is wired to match presentation and controller");
+assert(app.includes("function matchEventPlayerSource(playerId)"));
+assert((app.match(/resolveMatchEventPlayer:/g)||[]).length>=2,"full player source resolver is wired to match presentation and controller");
 const index=fs.readFileSync("index.html","utf8");
 assert(index.includes("css/match-simulation-modern.css?v=20260914-match-redesign-1"));
+assert(index.includes("js/moves/move-presentation.js?v=20260914-season-visual-fix-1"));
 console.log("move presentation UI: category-dominant move cards, element text colors, redesigned match timeline and portraits OK");

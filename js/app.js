@@ -373,6 +373,13 @@
 
   function playerImageCandidates(...args) { return playerVisuals.candidates(...args); }
   function resolvePlayerVisual(...args) { return playerVisuals.resolve(...args); }
+  function matchEventPlayerSource(playerId) {
+    const id = playerId != null ? String(playerId) : "";
+    if (!id) return null;
+    const entry = rosterEntry(id);
+    const rosterSource = entry ? sourcePlayer(entry) : null;
+    return rosterSource || seasonPlayersById.get(id) || freeAgentsById.get(id) || { playerId: id };
+  }
   function imageFallbackAttributes(...args) { return playerVisuals.imageFallbackAttributes(...args); }
   function playerPortraitUrl(...args) { return playerVisuals.portraitUrl(...args); }
   function compactPlayerCardMarkup(...args) { return playerView.compactCard(...args); }
@@ -449,6 +456,7 @@
     escapeHtml: (...args) => escapeHtml(...args),
     matchEventSideClass: (...args) => matchEventSideClass(...args),
     resolvePlayerVisual: (...args) => resolvePlayerVisual(...args),
+    resolveMatchEventPlayer: (...args) => matchEventPlayerSource(...args),
     openModal: (...args) => openModal(...args),
     closeModal: (...args) => closeModal(...args),
     scrollSnapshot: (...args) => scrollSnapshot(...args),
@@ -723,7 +731,7 @@
     showSpecialMatchReward: (...a) => showSpecialMatchReward(...a), renderGameOver: (...a) => renderGameOver(...a), renderMap: (...a) => renderMap(...a), hearts: (...a) => hearts(...a),
     openFiveMatchPlayerSwap: (...a) => openFiveMatchPlayerSwap(...a), fiveMatchPlayerDetail: (...a) => fiveMatchPlayerDetail(...a),
     renderFiveVFive: (...a) => renderFiveVFive(...a), renderMapFailureRecovery: (...a) => renderMapFailureRecovery(...a), getFreeAgentsDb: () => freeAgentsDb,
-    resolvePlayerVisual: (...a) => resolvePlayerVisual(...a),
+    resolvePlayerVisual: (...a) => resolvePlayerVisual(...a), resolveMatchEventPlayer: (...a) => matchEventPlayerSource(...a),
     testMatchControlsEnabled: TEST_MATCH_CONTROLS_ENABLED, devMode: DEV_MODE,
   });
 

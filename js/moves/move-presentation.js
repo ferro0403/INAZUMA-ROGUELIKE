@@ -14,9 +14,13 @@
   function typeLabel(type){return TYPE_LABELS[String(type||"").toLowerCase()]||String(type||"-");}
   function eventIcon(type){return EVENT_ICONS[type]||"◇";}
   function eventLabel(type){return EVENT_LABELS[String(type||"")]||"Azione";}
-  function decorateEventVisual(event,resolvePlayerVisual){
+  function decorateEventVisual(event,resolvePlayerVisual,resolveMatchEventPlayer){
     if(!event?.playerId||typeof resolvePlayerVisual!=="function")return event;
-    const visual=resolvePlayerVisual({playerId:String(event.playerId)},{playerId:String(event.playerId)})||{};
+    const playerId=String(event.playerId);
+    const sourcePlayer=typeof resolveMatchEventPlayer==="function"
+      ? (resolveMatchEventPlayer(playerId,event) || {playerId})
+      : {playerId};
+    const visual=resolvePlayerVisual(sourcePlayer,{playerId})||{};
     return {...event,portraitUrl:visual.cardImageUrl||visual.portraitUrl||null,portraitFallbacks:Array.isArray(visual.cardFallbacks)?visual.cardFallbacks:[]};
   }
   function eventMarkerMarkup(event,escapeHtml=escapeFallback){
