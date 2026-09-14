@@ -20,18 +20,27 @@
     }),
   });
 
+  function isInazumaEleven2Collection(collection) {
+    const collectionId = String(collection?.id || "").trim().toLowerCase();
+    const collectionName = String(collection?.name || "").trim().toLowerCase();
+    return collectionId === "ie1_s2" || collectionName === "inazuma eleven 2";
+  }
+
   function albumCollectionPresentation(collection) {
     const collectionId = String(collection?.id || "");
     const databasePresentation = global.SeasonRegistry?.database?.(collection?.seasonId || collectionId)?.presentation;
-    if (databasePresentation?.menuImageUrl) {
-      return {
-        coverUrl: databasePresentation.menuImageUrl,
-        focalPoint: databasePresentation.menuImageFocalPoint || "center",
-      };
-    }
-    return ALBUM_COLLECTION_PRESENTATION[collectionId] || {
-      coverUrl: collection?.coverUrl || "",
-      focalPoint: "center",
+    const basePresentation = databasePresentation?.menuImageUrl
+      ? {
+          coverUrl: databasePresentation.menuImageUrl,
+          focalPoint: databasePresentation.menuImageFocalPoint || "center",
+        }
+      : ALBUM_COLLECTION_PRESENTATION[collectionId] || {
+          coverUrl: collection?.coverUrl || "",
+          focalPoint: "center",
+        };
+    return {
+      ...basePresentation,
+      zoomOut: isInazumaEleven2Collection(collection),
     };
   }
   function create(deps) {
@@ -120,7 +129,7 @@
       const percent = albumProgressPercent(progress);
       const percentLabel = `${Math.round(percent)}%`;
       const presentation = albumCollectionPresentation(collection);
-      return `<button type="button" class="panel album-collection-card" data-album-collection="${view.escapeHtml(collection.id)}" aria-label="Apri collezione ${view.escapeHtml(collection.name)}: ${view.escapeHtml(progress.unlocked)} su ${view.escapeHtml(progress.total)} giocatori sbloccati, ${view.escapeHtml(percentLabel)}"><span class="album-collection-cover album-collection-cover--hero"><img src="${view.escapeHtml(presentation.coverUrl)}" alt="" style="object-position:${view.escapeHtml(presentation.focalPoint)}" loading="lazy" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('is-fallback');" /></span><span class="album-collection-content album-collection-content--hero"><span class="album-collection-title">${view.escapeHtml(collection.name)}</span><span class="album-collection-progress-copy"><span>${view.escapeHtml(progress.unlocked)} / ${view.escapeHtml(progress.total)} giocatori sbloccati</span><strong>${view.escapeHtml(percentLabel)}</strong></span><span class="album-collection-progress-bar" aria-hidden="true"><span style="width: ${percent}%"></span></span><span class="album-collection-action">Apri collezione <span aria-hidden="true">→</span></span></span></button>`;
+      return `<button type="button" class="panel album-collection-card" data-album-collection="${view.escapeHtml(collection.id)}" aria-label="Apri collezione ${view.escapeHtml(collection.name)}: ${view.escapeHtml(progress.unlocked)} su ${view.escapeHtml(progress.total)} giocatori sbloccati, ${view.escapeHtml(percentLabel)}"><span class="album-collection-cover album-collection-cover--hero${presentation.zoomOut ? " album-collection-cover--zoom-out" : ""}"><img src="${view.escapeHtml(presentation.coverUrl)}" alt="" style="object-position:${view.escapeHtml(presentation.focalPoint)}" loading="lazy" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('is-fallback');" /></span><span class="album-collection-content album-collection-content--hero"><span class="album-collection-title">${view.escapeHtml(collection.name)}</span><span class="album-collection-progress-copy"><span>${view.escapeHtml(progress.unlocked)} / ${view.escapeHtml(progress.total)} giocatori sbloccati</span><strong>${view.escapeHtml(percentLabel)}</strong></span><span class="album-collection-progress-bar" aria-hidden="true"><span style="width: ${percent}%"></span></span><span class="album-collection-action">Apri collezione <span aria-hidden="true">→</span></span></span></button>`;
     }).join("");
     app.innerHTML = `<main class="album-screen album-collections-screen"><header class="topbar album-topbar album-collections-topbar">${view.sectionRootButton("albumRoot", "album-collections-home-button")}<div class="album-collections-heading"><p class="eyebrow">ALBUM</p><h1>COLLEZIONI</h1><p class="muted">Progressi permanenti, separati dalla run attiva.</p></div><span class="album-collections-topbar-spacer" aria-hidden="true"></span></header><section class="album-collection-grid">${collectionCards}</section></main>`;
     resetRenderedViewScroll();
