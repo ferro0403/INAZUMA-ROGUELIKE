@@ -1,0 +1,284 @@
+/* Album interior redesign — team selection.
+   Scoped to Album interior screens; no gameplay or persistence rules live here. */
+
+.album-teams-screen {
+  width: min(1180px, 100%);
+  margin-inline: auto;
+  padding-top: max(10px, env(safe-area-inset-top));
+}
+
+.album-teams-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr) 56px;
+  align-items: center;
+  width: min(1180px, calc(100% - 20px));
+  min-height: 82px;
+  margin: 0 auto 18px;
+  padding: 8px;
+}
+
+.album-teams-heading {
+  min-width: 0;
+}
+
+.album-teams-heading .eyebrow {
+  margin: 0 0 4px;
+  color: var(--album-gold);
+  font-size: .72rem;
+  letter-spacing: .16em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.album-teams-heading h1 {
+  margin: 0;
+  color: var(--album-ink);
+  font-size: clamp(1.55rem, 4.8vw, 2.15rem);
+  line-height: 1;
+  letter-spacing: -.04em;
+}
+
+.album-teams-back-button {
+  justify-self: start;
+}
+
+.album-teams-topbar-spacer {
+  width: 44px;
+  height: 44px;
+  justify-self: end;
+}
+
+.album-team-grid--modern {
+  width: min(1060px, calc(100% - 20px));
+  margin: 0 auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.album-teams-screen .album-team-card--modern {
+  position: relative;
+  display: grid;
+  grid-template-rows: 132px minmax(0, 1fr);
+  gap: 0;
+  min-width: 0;
+  min-height: 266px;
+  padding: 0;
+  overflow: hidden;
+  border: 3px solid var(--album-ink);
+  border-radius: 0;
+  background: var(--album-paper);
+  color: var(--album-ink);
+  box-shadow: 6px 7px 0 rgba(17, 18, 22, .24);
+  text-align: left;
+}
+
+.album-teams-screen .album-team-card--modern:hover,
+.album-teams-screen .album-team-card--modern:focus-visible {
+  transform: translate(-1px, -1px);
+  border-color: var(--album-ink);
+  outline: 4px solid var(--album-yellow);
+  box-shadow: 8px 9px 0 var(--album-ink);
+}
+
+.album-team-card__visual {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-bottom: 3px solid var(--album-ink);
+  background:
+    linear-gradient(135deg, rgba(255, 210, 31, .94), rgba(255, 240, 173, .9) 56%, #f3eddd 100%);
+}
+
+.album-team-card__visual::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(140deg, transparent 0 55%, rgba(17, 18, 22, .07) 55% 58%, transparent 58%),
+    radial-gradient(circle at 18% 24%, rgba(255, 255, 255, .6), transparent 34%);
+  pointer-events: none;
+}
+
+.album-teams-screen .album-team-card__logo {
+  position: relative;
+  z-index: 1;
+  width: 86px;
+  height: 86px;
+  border: 3px solid var(--album-ink);
+  border-radius: 0;
+  background: rgba(255, 253, 246, .94);
+  box-shadow: 4px 5px 0 rgba(17, 18, 22, .16);
+}
+
+.album-teams-screen .album-team-card__logo img {
+  width: 82%;
+  height: 82%;
+  max-width: 82%;
+  max-height: 82%;
+  object-fit: contain;
+}
+
+.album-team-complete {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  padding: 5px 7px;
+  border: 2px solid var(--album-ink);
+  background: var(--album-yellow);
+  color: var(--album-ink);
+  font-size: .62rem;
+  font-style: normal;
+  font-weight: 1000;
+  letter-spacing: .07em;
+}
+
+.album-team-card__body {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  min-width: 0;
+  padding: 15px 15px 14px;
+  background: var(--album-paper);
+}
+
+.album-team-card__name {
+  min-width: 0;
+  color: var(--album-ink);
+  font-size: clamp(1rem, 2vw, 1.22rem);
+  font-weight: 1000;
+  line-height: 1.02;
+  letter-spacing: -.025em;
+  overflow-wrap: anywhere;
+}
+
+.album-team-card__progress {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #615e57;
+  font-size: .78rem;
+  font-weight: 850;
+}
+
+.album-team-card__progress b {
+  color: var(--album-gold);
+  font-size: .88rem;
+  font-weight: 1000;
+}
+
+.album-team-card__bar {
+  display: block;
+  height: 9px;
+  overflow: hidden;
+  border: 2px solid var(--album-ink);
+  background: #ddd7ca;
+}
+
+.album-team-card__bar > span {
+  display: block;
+  height: 100%;
+  background: var(--album-yellow);
+}
+
+.album-team-card__action {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 2px;
+  padding-top: 9px;
+  border-top: 2px solid var(--album-ink);
+  color: var(--album-ink);
+  font-size: .7rem;
+  font-weight: 1000;
+  letter-spacing: .06em;
+}
+
+.album-team-card__action > span {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.album-teams-screen .album-team-card--modern.album-complete {
+  background: var(--album-paper);
+  box-shadow: 6px 7px 0 #d1a91d;
+}
+
+@media (max-width: 780px) {
+  .album-teams-screen {
+    padding-inline: 10px;
+  }
+
+  .album-teams-topbar {
+    grid-template-columns: 52px minmax(0, 1fr) 52px;
+    width: 100%;
+    min-height: 76px;
+    margin-bottom: 14px;
+  }
+
+  .album-team-grid--modern {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .album-teams-screen .album-team-card--modern {
+    grid-template-rows: 112px minmax(0, 1fr);
+    min-height: 228px;
+  }
+
+  .album-teams-screen .album-team-card__logo {
+    width: 70px;
+    height: 70px;
+  }
+
+  .album-team-card__body {
+    gap: 8px;
+    padding: 12px 11px 11px;
+  }
+
+  .album-team-card__name {
+    min-height: 2.04em;
+    font-size: clamp(.94rem, 4.2vw, 1.1rem);
+  }
+
+  .album-team-card__progress {
+    font-size: .72rem;
+  }
+
+  .album-team-card__progress b {
+    font-size: .78rem;
+  }
+
+  .album-team-card__action {
+    font-size: .64rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .album-team-grid--modern {
+    grid-template-columns: 1fr;
+  }
+
+  .album-teams-screen .album-team-card--modern {
+    grid-template-columns: 118px minmax(0, 1fr);
+    grid-template-rows: none;
+    min-height: 154px;
+  }
+
+  .album-team-card__visual {
+    border-right: 3px solid var(--album-ink);
+    border-bottom: 0;
+  }
+
+  .album-team-card__name {
+    min-height: 0;
+  }
+}
