@@ -91,7 +91,7 @@
     // load the V3 modules. The production bundle always supplies the canonical
     // runtime before app code can create a run.
     const snapshots = global.DevelopmentRuntime?.buildRunSnapshot?.() || { developmentPlayerSnapshot: clone(global.DevelopmentV2?.read?.().players || {}) };
-    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), storageGeneration, createdAt: now, updatedAt: now, lastPlayedAt: now, phase: "formation", teamIdentity: normalizeTeamIdentity(initialTeamIdentity), lives: initialRunLives(), consecutiveLosses: 0, formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, teamLevelUnits: 0, completedSpecialMatchIds: [], claimedSpecialMatchRewardIds: [], unlockedSpecialTeamIds: [], pendingSpecialMatchReward: null, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [], ...snapshots };
+    return { version: config().saveVersion, seasonId: normalizedSeasonId, runId: makeId("run"), storageGeneration, createdAt: now, updatedAt: now, lastPlayedAt: now, phase: "formation", simulationRulesVersion: normalizedSeasonId === "ie1" ? 2 : 1, teamIdentity: normalizeTeamIdentity(initialTeamIdentity), lives: initialRunLives(), consecutiveLosses: 0, formationId: null, roster: [], lineup: [], bench: [], draft: null, bossIndex: 0, completedBossIds: [], unlockedTeamIds: [], teamLevel: 0, teamLevelUnits: 0, completedSpecialMatchIds: [], claimedSpecialMatchRewardIds: [], unlockedSpecialTeamIds: [], pendingSpecialMatchReward: null, inventory: [], effects: {}, randomEventHistory: [], fiveVFive: null, activeMatch: null, pendingBossVictory: null, postBossFlow: null, currentZone: null, checkpoint: null, gameOver: false, messages: [], ...snapshots };
   }
 
   function defaultPostBossFlowFromPending(run) {
@@ -133,6 +133,8 @@
     run.teamIdentity = normalizeTeamIdentity(run.teamIdentity || run.checkpoint?.teamIdentity || {});
     run.runId = run.runId || options.stableRunId || makeId("run");
     run.phase = run.phase || "formation";
+    const rawSimulationRulesVersion = Number(run.simulationRulesVersion);
+    run.simulationRulesVersion = Number.isInteger(rawSimulationRulesVersion) && rawSimulationRulesVersion >= 1 ? rawSimulationRulesVersion : 1;
     run.lastPlayedAt = run.lastPlayedAt || run.updatedAt || run.savedAt || run.timestamp || run.createdAt || null;
     const rawLives = Number(run.lives);
     const fallbackLives = run.gameOver || ["gameover", "complete", "final-summary", "final-celebration"].includes(String(run.phase || "")) ? 0 : initialRunLives();
@@ -374,7 +376,7 @@
   function createCheckpoint(run) {
     const hadCheckpoint = Object.prototype.hasOwnProperty.call(run, "checkpoint");
     const previousCheckpoint = hadCheckpoint ? clone(run.checkpoint) : undefined;
-    run.checkpoint = clone({ version: config().saveVersion, formationId: run.formationId, teamIdentity: run.teamIdentity, roster: run.roster, lineup: run.lineup, bench: run.bench, bossIndex: run.bossIndex, completedBossIds: run.completedBossIds, unlockedTeamIds: run.unlockedTeamIds, teamLevel: run.teamLevel, inventory: run.inventory, effects: run.effects, randomEventHistory: run.randomEventHistory, fiveVFive: run.fiveVFive, activeMatch: run.activeMatch || null, pendingBossVictory: run.pendingBossVictory || null, postBossFlow: run.postBossFlow || null, currentZone: run.currentZone });
+    run.checkpoint = clone({ version: config().saveVersion, simulationRulesVersion: run.simulationRulesVersion, formationId: run.formationId, teamIdentity: run.teamIdentity, roster: run.roster, lineup: run.lineup, bench: run.bench, bossIndex: run.bossIndex, completedBossIds: run.completedBossIds, unlockedTeamIds: run.unlockedTeamIds, teamLevel: run.teamLevel, inventory: run.inventory, effects: run.effects, randomEventHistory: run.randomEventHistory, fiveVFive: run.fiveVFive, activeMatch: run.activeMatch || null, pendingBossVictory: run.pendingBossVictory || null, postBossFlow: run.postBossFlow || null, currentZone: run.currentZone });
     try { return save(run); }
     catch (error) {
       if (hadCheckpoint) run.checkpoint = previousCheckpoint;

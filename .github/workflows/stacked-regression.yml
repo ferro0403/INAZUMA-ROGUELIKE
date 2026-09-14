@@ -117,6 +117,7 @@ jobs:
         run: |
           set -euo pipefail
           tests=(
+            tests/normal-match-moves-v2-suite.js
             tests/match-presentation-domain-test.js
             tests/five-match-presentation-domain-test.js
             tests/five-prematch-commit-boundary-test.js

@@ -155,7 +155,15 @@ function ensureMatchPreview(match, options = {}) {
     // so it must never take this shortcut even when the lineup is unchanged.
     if (!options.freeze && match.simulation?.valid && existingState === "pre-match" && !options.forceRefresh && match.simulation.userSnapshot?.lineupSignature === teams.userSnapshot.lineupSignature) return match.simulation;
     const seed = options.freeze ? matchSeed(match) : (match.simulation?.seed || `${run.runId}:${match.type}:${match.nodeId}:preview`);
-    const preview = global.MatchSimulator.simulate({ type: teams.type, seed, userTeam: teams.userTeam, opponentTeam: teams.opponentTeam, consecutiveLosses: run.consecutiveLosses });
+    const preview = global.MatchSimulator.simulate({
+      type: teams.type,
+      seed,
+      userTeam: teams.userTeam,
+      opponentTeam: teams.opponentTeam,
+      consecutiveLosses: run.consecutiveLosses,
+      rulesVersion: run.simulationRulesVersion,
+      seasonId: run.seasonId,
+    });
     if (!preview.valid) return preview;
     match.simulation = {
       ...preview,

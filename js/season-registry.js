@@ -3,7 +3,7 @@
 
   const DEFAULT_SEASON_ID = "ie1";
   const SEASONS = Object.freeze({
-    ie1: Object.freeze({ id: "ie1", name: "Inazuma Eleven 1", displaySeasonNumber: "1", database: "data/IE1_season_compact.json", albumCollectionId: "ie1" }),
+    ie1: Object.freeze({ id: "ie1", name: "Inazuma Eleven 1", displaySeasonNumber: "1", database: "data/IE1_season_compact.json", moves: "data/IE1_moves.json", albumCollectionId: "ie1" }),
     ie1_s2: Object.freeze({ id: "ie1_s2", name: "Inazuma Eleven 2", displaySeasonNumber: "2", database: "data/IE1_S2_season_compact.json", albumCollectionId: "ie1_s2" }),
     ie1_s3: Object.freeze({ id: "ie1_s3", name: "Inazuma Eleven 3", displaySeasonNumber: "3", database: "data/IE1_S3_season_compact.json", albumCollectionId: "ie1_s3" }),
     ie2: Object.freeze({ id: "ie2", name: "Inazuma Eleven Ares", displaySeasonNumber: "1", database: "data/IE2_season_compact.json", albumCollectionId: "ie2" }),
@@ -75,10 +75,16 @@
   async function loadDatabase(seasonId = activeSeasonId) {
     const season = get(seasonId);
     if (dbBySeason.has(season.id)) { setActive(season.id); return dbBySeason.get(season.id); }
-    const response = await fetch(season.database);
+    const [response, movesResponse] = await Promise.all([
+      fetch(season.database),
+      season.moves ? fetch(season.moves) : Promise.resolve(null),
+    ]);
     if (!response.ok) throw new Error(`Database Season non raggiungibile: ${season.name}`);
+    if (movesResponse && !movesResponse.ok) throw new Error(`Database mosse non raggiungibile: ${season.name}`);
     const database = await response.json();
+    const moveCatalog = movesResponse ? await movesResponse.json() : null;
     if (database.seasonId && String(database.seasonId) !== season.id) throw new Error(`Database Season non valido: atteso ${season.id}`);
+    if (moveCatalog && (String(moveCatalog.seasonId || "") !== season.id || !moveCatalog.players || typeof moveCatalog.players !== "object")) throw new Error(`Database mosse non valido: atteso ${season.id}`);
     if (season.id === "ie1_s2") {
       const counts = database.validation?.counts || {};
       const formation253 = database.formations?.eleven?.some((formation) => formation.id === "2-5-3");
@@ -110,6 +116,7 @@
         && database.warnings?.length === 0;
       if (!valid) throw new Error("Database Inazuma Eleven Orion non supera la validazione runtime");
     }
+    if (moveCatalog) database.moveCatalog = moveCatalog;
     applyDisplayTeamNameOverrides(database, season.id);
     dbBySeason.set(season.id, database);
     playersBySeason.set(season.id, buildPlayersIndex(database));

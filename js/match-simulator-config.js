@@ -13,10 +13,11 @@
       goalkeeper: { stats: { save: .65, grit: .15, physical: .10, defense: .05, control: .05 } },
     },
     events: { eleven: { min: 12, max: 20, duration: 90 }, five: { min: 8, max: 10, duration: 30 } },
+    eventsV2: { eleven: { min: 22, max: 25, duration: 90 }, five: { min: 10, max: 12, duration: 30 } },
     scores: {
       eleven: [ { score:[1,0], weight:18 }, { score:[2,0], weight:15 }, { score:[2,1], weight:24 }, { score:[3,0], weight:8 }, { score:[3,1], weight:15 }, { score:[3,2], weight:12 }, { score:[4,1], weight:4 }, { score:[4,2], weight:4 } ],
       five: [ { score:[2,1], weight:12 }, { score:[3,1], weight:15 }, { score:[3,2], weight:20 }, { score:[4,2], weight:18 }, { score:[4,3], weight:15 }, { score:[5,2], weight:8 }, { score:[5,3], weight:8 }, { score:[6,3], weight:2 }, { score:[6,4], weight:2 } ],
     },
-    allowedEventTypes: ["save", "goal", "counter", "long_shot", "post", "crossbar", "shot", "defensive_stop", "first_half_start", "second_half_start"],
+    allowedEventTypes: ["save", "goal", "counter", "long_shot", "post", "crossbar", "shot", "defensive_stop", "dribble", "recovery", "key_pass", "build_up", "first_half_start", "second_half_start"],
   };
 })(globalThis);
