@@ -36,6 +36,8 @@ for(const token of [".move-element--fire",".move-element--wind",".move-element--
 assert(!css.includes(".player-move-card{--move-accent:#4e535c"),"old gray element-dominant card contract must stay removed");
 const matchCss=fs.readFileSync("css/match-simulation-modern.css","utf8");
 for(const token of [".five-simulation-modal .five-simulation-head",".five-simulation-modal .five-simulation-score",".five-simulation-modal .match-sim-log>li","match-event-kind","clip-path:polygon","match-event-avatar"])assert(matchCss.includes(token),`match redesign css includes ${token}`);
+for(const token of [".match-event-type--goal{","inset 0 5px 0 var(--sim-yellow)",".match-event-type--goal .match-event-avatar",".match-event-type--goal .match-event-kind",".match-event-type--goal .match-event-copy"])assert(matchCss.includes(token),`goal highlight css includes ${token}`);
+assert(matchCss.includes(".match-sim-log>li.match-event--user{")&&matchCss.includes(".match-sim-log>li.match-event--opponent{"),"goal highlight must preserve user/opponent side accent classes");
 const controller=fs.readFileSync("js/match/match-controller.js","utf8");
 assert(controller.includes("playerId: ev.playerId != null ? String(ev.playerId) : null"));
 assert(controller.includes("type: ev.type || \"generic\""));
