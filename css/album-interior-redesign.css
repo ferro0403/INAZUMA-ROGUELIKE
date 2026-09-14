@@ -383,23 +383,50 @@
   padding-top: max(10px, env(safe-area-inset-top));
 }
 
-.album-roster-header--modern {
+.album-roster-hero {
+  position: relative;
   display: grid;
-  gap: 16px;
+  gap: 14px;
   width: min(1120px, calc(100% - 20px));
   margin: 0 auto 18px;
-  padding: 16px 18px 18px;
+  padding: 15px 18px 17px;
+  overflow: hidden;
   border: 3px solid var(--album-ink);
-  border-radius: 0;
   background:
-    linear-gradient(135deg, rgba(255, 210, 31, .13), transparent 42%),
+    linear-gradient(135deg, rgba(255, 210, 31, .17), transparent 38%),
     var(--album-paper);
-  box-shadow: 6px 7px 0 rgba(17, 18, 22, .25);
+  color: var(--album-ink);
+  box-shadow: 7px 8px 0 rgba(17, 18, 22, .24);
 }
 
-.album-roster-header__top {
+.album-roster-hero::before {
+  content: "";
+  position: absolute;
+  top: -60px;
+  right: -48px;
+  width: 190px;
+  height: 190px;
+  border: 30px solid rgba(255, 210, 31, .18);
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.album-roster-hero::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 5px;
+  background: var(--album-yellow);
+  pointer-events: none;
+}
+
+.album-roster-hero__nav {
+  position: relative;
+  z-index: 2;
   display: grid;
-  grid-template-columns: 52px 68px minmax(0, 1fr);
+  grid-template-columns: 54px minmax(0, 1fr);
   align-items: center;
   gap: 12px;
   min-width: 0;
@@ -409,30 +436,8 @@
   justify-self: start;
 }
 
-.album-roster-screen--modern .album-roster-logo {
-  width: 68px;
-  height: 68px;
-  border: 3px solid var(--album-ink);
-  border-radius: 0;
-  background: #fff;
-  box-shadow: 4px 5px 0 rgba(17, 18, 22, .14);
-}
-
-.album-roster-screen--modern .album-roster-logo img {
-  width: 82%;
-  height: 82%;
-  max-width: 82%;
-  max-height: 82%;
-  object-fit: contain;
-}
-
-.album-roster-header__context {
-  min-width: 0;
-  display: grid;
-  gap: 5px;
-}
-
 .album-roster-screen--modern .album-roster-breadcrumb {
+  min-width: 0;
   margin: 0;
   color: var(--album-gold);
   font-size: .72rem;
@@ -444,48 +449,93 @@
   text-overflow: ellipsis;
 }
 
-.album-roster-header__context > span {
-  color: #615e57;
-  font-size: .84rem;
-  font-weight: 800;
+.album-roster-hero__identity {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  align-items: center;
+  gap: 15px;
+  min-width: 0;
 }
 
-.album-roster-header__identity {
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 16px;
-  min-width: 0;
+.album-roster-screen--modern .album-roster-logo {
+  display: grid;
+  place-items: center;
+  width: 82px;
+  height: 82px;
+  border: 3px solid var(--album-ink);
+  border-radius: 0;
+  background: rgba(255, 255, 255, .92);
+  box-shadow: 4px 5px 0 rgba(17, 18, 22, .16);
+  overflow: hidden;
+}
+
+.album-roster-screen--modern .album-roster-logo img {
+  width: 84%;
+  height: 84%;
+  max-width: 84%;
+  max-height: 84%;
+  object-fit: contain;
+}
+
+.album-roster-screen--modern .album-roster-logo .album-free-agent-logo {
+  font-size: 2.3rem;
 }
 
 .album-roster-screen--modern .album-roster-name {
   min-width: 0;
   margin: 0;
   color: var(--album-ink);
-  font-size: clamp(2rem, 5.6vw, 3.35rem);
+  font-size: clamp(2rem, 5.2vw, 3.35rem);
   font-weight: 1000;
-  line-height: .95;
+  line-height: .94;
   letter-spacing: -.05em;
   overflow-wrap: anywhere;
 }
 
-.album-roster-header__identity > strong {
+.album-roster-hero__stats {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  color: #615e57;
+  font-size: .9rem;
+  font-weight: 800;
+}
+
+.album-roster-hero__stats > span {
+  min-width: 0;
+}
+
+.album-roster-hero__stats > span > strong {
+  color: var(--album-ink);
+  font-size: 1rem;
+  font-weight: 1000;
+}
+
+.album-roster-percent {
   flex: 0 0 auto;
   color: var(--album-gold);
-  font-size: clamp(1.75rem, 4vw, 2.55rem);
+  font-size: clamp(1.7rem, 4vw, 2.35rem);
   font-weight: 1000;
   line-height: .9;
 }
 
-.album-roster-header__bar {
+.album-roster-hero__bar {
+  position: relative;
+  z-index: 2;
   display: block;
   height: 12px;
   overflow: hidden;
   border: 2px solid var(--album-ink);
-  background: #ddd7ca;
+  background: #dcd6c8;
 }
 
-.album-roster-header__bar > span {
+.album-roster-hero__bar > span {
   display: block;
   height: 100%;
   background: var(--album-yellow);
@@ -495,59 +545,96 @@
   width: min(1080px, calc(100% - 20px));
   margin: 0 auto;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 14px;
+  gap: 15px;
 }
 
 .album-roster-screen--modern .album-player-entry {
+  --album-rarity: var(--rarity-border, #8d8d8d);
   position: relative;
   min-width: 0;
   border-radius: 0;
+  isolation: isolate;
 }
 
 .album-roster-screen--modern .album-player-entry > .album-player-card {
   position: relative;
-  min-height: 288px;
+  width: 100%;
+  min-height: 302px;
   overflow: hidden;
   border: 3px solid var(--album-ink);
   border-radius: 0;
   background: var(--album-paper);
   color: var(--album-ink);
-  box-shadow: 4px 5px 0 rgba(17, 18, 22, .2);
+  box-shadow:
+    5px 6px 0 rgba(17, 18, 22, .24),
+    0 0 0 0 var(--album-rarity);
   filter: none;
   opacity: 1;
   transform: none;
+  transition: transform .14s ease, box-shadow .14s ease;
 }
 
 .album-roster-screen--modern .album-player-entry > .album-player-card::before {
   content: "";
   position: absolute;
   inset: 0 0 auto;
-  z-index: 4;
-  height: 6px;
-  background: var(--rarity-border, var(--album-yellow));
+  z-index: 5;
+  height: 10px;
+  background: var(--album-rarity);
+  pointer-events: none;
+}
+
+.album-roster-screen--modern .album-player-entry > .album-player-card::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  right: -34px;
+  z-index: 0;
+  width: 110px;
+  height: 110px;
+  background: color-mix(in srgb, var(--album-rarity) 18%, transparent);
+  transform: rotate(45deg);
   pointer-events: none;
 }
 
 .album-roster-screen--modern .album-player-entry > .album-player-card:hover,
 .album-roster-screen--modern .album-player-entry > .album-player-card:focus-visible {
-  transform: translate(-1px, -1px);
+  transform: translate(-2px, -2px);
   border-color: var(--album-ink);
-  outline: 4px solid var(--album-yellow);
-  box-shadow: 7px 8px 0 var(--album-ink);
+  outline: none;
+  box-shadow:
+    8px 9px 0 var(--album-ink),
+    0 0 0 4px color-mix(in srgb, var(--album-rarity) 70%, transparent);
 }
 
 .album-roster-screen--modern .album-player-card .player-portrait-wrap {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  height: 188px;
+  height: 196px;
   aspect-ratio: auto;
-  padding: 32px 18px 4px;
-  border-bottom: 2px solid var(--album-ink);
+  padding: 34px 18px 5px;
+  overflow: hidden;
+  border-bottom: 3px solid var(--album-ink);
   background:
-    radial-gradient(circle at 50% 80%, rgba(255, 210, 31, .18), transparent 48%),
-    linear-gradient(180deg, #faf8ef, #e9e5d9);
+    radial-gradient(circle at 50% 80%, color-mix(in srgb, var(--album-rarity) 26%, transparent), transparent 48%),
+    linear-gradient(160deg, #fffdf6 0 62%, color-mix(in srgb, var(--album-rarity) 14%, #eee8da) 62% 100%);
+}
+
+.album-roster-screen--modern .album-player-card .player-portrait-wrap::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    repeating-linear-gradient(118deg, transparent 0 24px, rgba(17, 18, 22, .035) 24px 27px),
+    linear-gradient(90deg, transparent 0 72%, color-mix(in srgb, var(--album-rarity) 18%, transparent) 72% 76%, transparent 76%);
+  pointer-events: none;
 }
 
 .album-roster-screen--modern .album-player-card .player-portrait {
+  position: relative;
+  z-index: 1;
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -555,35 +642,77 @@
 }
 
 .album-roster-screen--modern .album-player-card .player-info {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  align-content: start;
   min-width: 0;
-  padding: 12px 12px 38px;
+  min-height: 96px;
+  padding: 12px 12px 42px;
+  background: var(--album-paper);
   color: var(--album-ink);
   text-align: left;
 }
 
 .album-roster-screen--modern .album-player-card .player-title strong {
+  display: block;
   color: var(--album-ink);
   font-size: 1rem;
   font-weight: 1000;
   line-height: 1.05;
-  letter-spacing: -.02em;
+  letter-spacing: -.025em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .album-roster-screen--modern .album-player-card .player-meta {
+  display: flex;
   justify-content: flex-start;
-  gap: 5px;
-  margin-top: 7px;
-  color: #615e57;
-  font-size: .72rem;
-  font-weight: 800;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  color: #66625a;
+  font-size: .7rem;
+  font-weight: 850;
 }
 
-.album-roster-screen--modern .album-player-card .player-meta span + span {
-  padding-left: 6px;
-  border-left: 1px solid #aaa498;
+.album-roster-screen--modern .album-player-card .player-meta span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.album-roster-screen--modern .album-player-card .player-meta span:last-child {
+  flex: 0 0 auto;
+  max-width: 100%;
+  padding: 4px 6px;
+  border: 2px solid var(--album-ink);
+  background: var(--album-rarity);
+  color: #111216;
+  box-shadow: 2px 2px 0 rgba(17, 18, 22, .16);
+  font-size: .6rem;
+  font-weight: 1000;
+  line-height: 1;
+  letter-spacing: .03em;
+  text-transform: uppercase;
+}
+
+.album-roster-screen--modern .album-player-card.rarity-debole .player-meta span:last-child,
+.album-roster-screen--modern .album-player-card.rarity-scarso .player-meta span:last-child,
+.album-roster-screen--modern .album-player-card.rarity-elite .player-meta span:last-child,
+.album-roster-screen--modern .album-player-card.rarity-mondiale .player-meta span:last-child,
+.album-roster-screen--modern .album-player-card.rarity-aurico .player-meta span:last-child {
+  color: #fffdf6;
+}
+
+.album-roster-screen--modern .album-player-card.rarity-aurico .player-meta span:last-child {
+  background: #111216;
 }
 
 .album-roster-screen--modern .album-player-card .player-corner {
+  z-index: 6;
   border: 2px solid var(--album-ink);
   border-radius: 0;
   box-shadow: 3px 3px 0 rgba(17, 18, 22, .18);
@@ -591,19 +720,19 @@
 }
 
 .album-roster-screen--modern .album-player-card .player-role {
-  top: 10px;
+  top: 16px;
   left: 10px;
-  min-width: 38px;
-  min-height: 30px;
+  min-width: 40px;
+  min-height: 31px;
   background: var(--album-ink);
   color: #fffdf6;
 }
 
 .album-roster-screen--modern .album-player-card .player-overall {
-  top: 10px;
+  top: 16px;
   right: 10px;
-  min-width: 48px;
-  min-height: 48px;
+  min-width: 50px;
+  min-height: 50px;
   border-radius: 0;
   background: var(--album-yellow);
   color: var(--album-ink);
@@ -614,7 +743,7 @@
   right: 10px;
   bottom: 10px;
   min-width: 44px;
-  background: #f1ede1;
+  background: #eee9dc;
   color: var(--album-ink);
 }
 
@@ -624,17 +753,18 @@
 }
 
 .album-roster-screen--modern .album-player-entry.is-locked .player-portrait-wrap {
-  filter: grayscale(1);
+  filter: grayscale(.96);
 }
 
 .album-roster-screen--modern .album-player-entry.is-locked .player-portrait {
-  opacity: .52;
+  opacity: .54;
 }
 
-.album-roster-screen--modern .album-player-entry.is-locked .player-info,
+.album-roster-screen--modern .album-player-entry.is-locked .player-title,
+.album-roster-screen--modern .album-player-entry.is-locked .player-meta span:first-child,
 .album-roster-screen--modern .album-player-entry.is-locked .player-role,
 .album-roster-screen--modern .album-player-entry.is-locked .player-overall {
-  opacity: .7;
+  opacity: .72;
 }
 
 .album-roster-screen--modern .album-player-entry.is-locked .player-level {
@@ -643,23 +773,33 @@
 
 .album-roster-screen--modern .album-player-lock {
   position: absolute;
-  inset: auto 10px 10px 10px;
-  z-index: 6;
-  display: flex;
+  right: 10px;
+  bottom: 10px;
+  z-index: 8;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 36px;
-  gap: 7px;
-  padding: 7px 9px;
+  width: fit-content;
+  max-width: calc(100% - 20px);
+  min-height: 32px;
+  gap: 6px;
+  padding: 6px 8px;
   border: 2px solid var(--album-ink);
-  border-radius: 0;
   background: var(--album-ink);
   color: #fffdf6;
-  box-shadow: 3px 3px 0 var(--album-yellow);
-  font-size: .68rem;
+  box-shadow: 3px 3px 0 var(--album-rarity);
+  font-size: .61rem;
   font-weight: 1000;
-  letter-spacing: .05em;
-  text-shadow: none;
+  line-height: 1;
+  letter-spacing: .045em;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.album-roster-screen--modern .album-player-entry.is-unlocked > .album-player-card {
+  box-shadow:
+    5px 6px 0 rgba(17, 18, 22, .24),
+    inset 0 -5px 0 color-mix(in srgb, var(--album-rarity) 82%, transparent);
 }
 
 .album-roster-screen--modern .album-load-more-wrap {
@@ -667,7 +807,7 @@
   display: grid;
   justify-items: center;
   gap: 7px;
-  padding: 12px 0 4px;
+  padding: 14px 0 4px;
 }
 
 .album-roster-screen--modern .album-load-more {
@@ -693,16 +833,114 @@
     padding-inline: 10px;
   }
 
-  .album-roster-header--modern {
+  .album-roster-hero {
     width: 100%;
-    gap: 13px;
+    gap: 12px;
     margin-bottom: 14px;
-    padding: 13px 13px 15px;
+    padding: 12px 12px 14px;
   }
 
-  .album-roster-header__top {
-    grid-template-columns: 48px 58px minmax(0, 1fr);
+  .album-roster-hero__nav {
+    grid-template-columns: 48px minmax(0, 1fr);
     gap: 9px;
+  }
+
+  .album-roster-screen--modern .album-roster-breadcrumb {
+    font-size: clamp(.58rem, 2.6vw, .69rem);
+    letter-spacing: .095em;
+  }
+
+  .album-roster-hero__identity {
+    grid-template-columns: 66px minmax(0, 1fr);
+    gap: 11px;
+  }
+
+  .album-roster-screen--modern .album-roster-logo {
+    width: 66px;
+    height: 66px;
+  }
+
+  .album-roster-screen--modern .album-roster-name {
+    font-size: clamp(1.8rem, 8.2vw, 2.6rem);
+    line-height: .96;
+  }
+
+  .album-roster-hero__stats {
+    align-items: center;
+    font-size: clamp(.72rem, 3vw, .82rem);
+  }
+
+  .album-roster-hero__stats > span > strong {
+    font-size: .88rem;
+  }
+
+  .album-roster-percent {
+    font-size: clamp(1.6rem, 7vw, 2rem);
+  }
+
+  .album-player-grid--modern {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 11px;
+  }
+
+  .album-roster-screen--modern .album-player-entry > .album-player-card {
+    min-height: 268px;
+  }
+
+  .album-roster-screen--modern .album-player-card .player-portrait-wrap {
+    height: 166px;
+    padding: 31px 10px 4px;
+  }
+
+  .album-roster-screen--modern .album-player-card .player-info {
+    min-height: 94px;
+    padding: 10px 9px 39px;
+  }
+
+  .album-roster-screen--modern .album-player-card .player-title strong {
+    font-size: clamp(.86rem, 4vw, .98rem);
+  }
+
+  .album-roster-screen--modern .album-player-card .player-meta {
+    align-items: flex-start;
+    gap: 4px;
+    font-size: clamp(.6rem, 2.75vw, .69rem);
+  }
+
+  .album-roster-screen--modern .album-player-card .player-meta span:last-child {
+    padding: 3px 5px;
+    font-size: clamp(.5rem, 2.25vw, .58rem);
+  }
+
+  .album-roster-screen--modern .album-player-card .player-role {
+    top: 14px;
+    left: 8px;
+    min-width: 34px;
+    min-height: 28px;
+  }
+
+  .album-roster-screen--modern .album-player-card .player-overall {
+    top: 14px;
+    right: 8px;
+    min-width: 44px;
+    min-height: 44px;
+    font-size: .92rem;
+  }
+
+  .album-roster-screen--modern .album-player-lock {
+    right: 8px;
+    bottom: 8px;
+    max-width: calc(100% - 16px);
+    min-height: 30px;
+    padding: 5px 7px;
+    font-size: clamp(.51rem, 2.35vw, .59rem);
+  }
+}
+
+@media (max-width: 370px) {
+  .album-roster-hero__identity {
+    grid-template-columns: 58px minmax(0, 1fr);
   }
 
   .album-roster-screen--modern .album-roster-logo {
@@ -710,93 +948,26 @@
     height: 58px;
   }
 
-  .album-roster-screen--modern .album-roster-breadcrumb {
-    font-size: clamp(.58rem, 2.6vw, .7rem);
-    letter-spacing: .1em;
-  }
-
-  .album-roster-header__context > span {
-    font-size: clamp(.72rem, 3.2vw, .82rem);
-  }
-
   .album-roster-screen--modern .album-roster-name {
-    font-size: clamp(2rem, 9vw, 2.8rem);
+    font-size: 1.72rem;
   }
 
-  .album-roster-header__identity > strong {
-    font-size: clamp(1.65rem, 7vw, 2.05rem);
-  }
-
-  .album-player-grid--modern {
-    width: 100%;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 10px;
-  }
-
-  .album-roster-screen--modern .album-player-entry > .album-player-card {
-    min-height: 246px;
-  }
-
-  .album-roster-screen--modern .album-player-card .player-portrait-wrap {
-    height: 154px;
-    padding: 29px 10px 3px;
-  }
-
-  .album-roster-screen--modern .album-player-card .player-info {
-    padding: 10px 9px 36px;
-  }
-
-  .album-roster-screen--modern .album-player-card .player-title strong {
-    font-size: clamp(.85rem, 4vw, 1rem);
-  }
-
-  .album-roster-screen--modern .album-player-card .player-meta {
-    font-size: clamp(.62rem, 2.9vw, .72rem);
-  }
-
-  .album-roster-screen--modern .album-player-card .player-role {
-    top: 8px;
-    left: 8px;
-    min-width: 34px;
-    min-height: 28px;
-  }
-
-  .album-roster-screen--modern .album-player-card .player-overall {
-    top: 8px;
-    right: 8px;
-    min-width: 43px;
-    min-height: 43px;
-    font-size: .92rem;
-  }
-
-  .album-roster-screen--modern .album-player-lock {
-    inset: auto 8px 8px 8px;
-    min-height: 34px;
-    padding: 6px 7px;
-    font-size: clamp(.58rem, 2.7vw, .67rem);
-  }
-}
-
-@media (max-width: 370px) {
-  .album-roster-header__identity {
-    align-items: start;
-  }
-
-  .album-roster-screen--modern .album-roster-name {
-    font-size: 1.9rem;
-  }
-
-  .album-roster-header__identity > strong {
-    font-size: 1.55rem;
+  .album-roster-hero__stats {
+    align-items: end;
   }
 
   .album-roster-screen--modern .album-player-card .player-meta {
     display: grid;
-    gap: 2px;
+    gap: 4px;
   }
 
-  .album-roster-screen--modern .album-player-card .player-meta span + span {
-    padding-left: 0;
-    border-left: 0;
+  .album-roster-screen--modern .album-player-card .player-meta span:last-child {
+    width: fit-content;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .album-roster-screen--modern .album-player-entry > .album-player-card {
+    transition: none;
   }
 }
