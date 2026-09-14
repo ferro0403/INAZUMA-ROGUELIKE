@@ -6,8 +6,15 @@
     function albumHallTeams() {
       return (global.HallOfFameStorage?.listSummaries?.() || []).map((summary) => global.HallOfFameStorage.getTeam(summary.hallTeamId)).filter(Boolean);
     }
-    // LEGACY ONE-WAY RUN → ALBUM BACKFILL BRIDGE. Both inputs are read-only; no run writer is available here.
+    function albumUnlockedSetFromState(collectionId, progress) {
+      const id = String(collectionId || global.AlbumProgress.DEFAULT_COLLECTION_ID);
+      const unlocked = progress?.collections?.[id]?.unlockedPlayerIds;
+      return new Set(Object.keys(unlocked && typeof unlocked === "object" ? unlocked : {}));
+    }
+    // LEGACY ONE-WAY RUN → ALBUM BACKFILL BRIDGE. IndexedDB already owns migration/backfill,
+    // so do not materialize Hall snapshots for a facade call that is intentionally a no-op.
     function ensureBackfill() {
+      if (global.AlbumIndexedDbStorage?.isAuthority?.() === true) return 0;
       return global.AlbumProgress?.backfillAlbumProgress?.({ run: getRun(), hallTeams: albumHallTeams() }) || 0;
     }
   function albumFreeAgentPlayers(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
@@ -22,9 +29,9 @@
     return [...byId.values()];
   }
 
-  function albumCollectionProgress(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
-    ensureBackfill();
-    const unlocked = global.AlbumProgress.unlockedSet(collectionId);
+  function albumCollectionProgress(collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID, progressState = undefined, unlockedSet = undefined) {
+    const state = progressState || global.AlbumProgress.read();
+    const unlocked = unlockedSet || albumUnlockedSetFromState(collectionId, state);
     const totalIds = new Set(albumCollectionPlayers(collectionId).map((player) => String(player.playerId)));
     return { unlocked: [...totalIds].filter((id) => unlocked.has(id)).length, total: totalIds.size };
   }
@@ -44,8 +51,9 @@
     </article>`;
   }
 
-  function albumProgressForPlayers(players, collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID) {
-    const unlocked = global.AlbumProgress.unlockedSet(collectionId);
+  function albumProgressForPlayers(players, collectionId = global.AlbumProgress.DEFAULT_COLLECTION_ID, progressState = undefined, unlockedSet = undefined) {
+    const state = progressState || global.AlbumProgress.read();
+    const unlocked = unlockedSet || albumUnlockedSetFromState(collectionId, state);
     const ids = [...new Set((players || []).map((player) => String(player.playerId)))];
     return { unlocked: ids.filter((id) => unlocked.has(id)).length, total: ids.length };
   }
@@ -71,7 +79,9 @@
     await Promise.all(Object.values(global.AlbumProgress.ALBUM_COLLECTIONS).map((collection) => global.SeasonRegistry.loadDatabase(collection.seasonId)));
     global.SeasonRegistry.setActive(currentSeasonId);
     ensureBackfill();
-    app.innerHTML = `<main class="album-screen"><header class="topbar album-topbar"><div><p class="eyebrow">Album</p><h1>Collezioni</h1><p class="muted">Progressi permanenti, separati dalla run attiva.</p></div>${view.sectionRootButton("albumRoot")}</header><section class="album-collection-grid">${Object.values(global.AlbumProgress.ALBUM_COLLECTIONS).map((collection) => { const progress = albumCollectionProgress(collection.id); const percent = albumProgressPercent(progress); const percentLabel = `${Math.round(percent)}%`; const coverUrl = collection.coverUrl || ""; return `<button type="button" class="panel album-collection-card" data-album-collection="${view.escapeHtml(collection.id)}" aria-label="Apri collezione ${view.escapeHtml(collection.name)}: ${view.escapeHtml(progress.unlocked)} su ${view.escapeHtml(progress.total)} giocatori sbloccati, ${view.escapeHtml(percentLabel)}"><span class="album-collection-cover"><img src="${view.escapeHtml(coverUrl)}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('is-fallback');" /></span><span class="album-collection-content"><span class="album-collection-kicker">COLLEZIONE</span><span class="album-collection-title">${view.escapeHtml(collection.name)}</span><span class="album-collection-subtitle">Collezione giocatori</span><span class="album-collection-progress-copy"><span>${view.escapeHtml(progress.unlocked)} / ${view.escapeHtml(progress.total)} giocatori sbloccati</span><strong>${view.escapeHtml(percentLabel)}</strong></span><span class="album-collection-progress-bar" aria-hidden="true"><span style="width: ${percent}%"></span></span><span class="album-collection-action">Apri collezione <span aria-hidden="true">→</span></span></span></button>`; }).join("")}</section></main>`;
+    const albumProgressState = global.AlbumProgress.read();
+    const unlockedByCollection = new Map(Object.keys(global.AlbumProgress.ALBUM_COLLECTIONS).map((collectionId) => [collectionId, albumUnlockedSetFromState(collectionId, albumProgressState)]));
+    app.innerHTML = `<main class="album-screen"><header class="topbar album-topbar"><div><p class="eyebrow">Album</p><h1>Collezioni</h1><p class="muted">Progressi permanenti, separati dalla run attiva.</p></div>${view.sectionRootButton("albumRoot")}</header><section class="album-collection-grid">${Object.values(global.AlbumProgress.ALBUM_COLLECTIONS).map((collection) => { const progress = albumCollectionProgress(collection.id, albumProgressState, unlockedByCollection.get(collection.id)); const percent = albumProgressPercent(progress); const percentLabel = `${Math.round(percent)}%`; const coverUrl = collection.coverUrl || ""; return `<button type="button" class="panel album-collection-card" data-album-collection="${view.escapeHtml(collection.id)}" aria-label="Apri collezione ${view.escapeHtml(collection.name)}: ${view.escapeHtml(progress.unlocked)} su ${view.escapeHtml(progress.total)} giocatori sbloccati, ${view.escapeHtml(percentLabel)}"><span class="album-collection-cover"><img src="${view.escapeHtml(coverUrl)}" alt="" loading="lazy" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('is-fallback');" /></span><span class="album-collection-content"><span class="album-collection-kicker">COLLEZIONE</span><span class="album-collection-title">${view.escapeHtml(collection.name)}</span><span class="album-collection-subtitle">Collezione giocatori</span><span class="album-collection-progress-copy"><span>${view.escapeHtml(progress.unlocked)} / ${view.escapeHtml(progress.total)} giocatori sbloccati</span><strong>${view.escapeHtml(percentLabel)}</strong></span><span class="album-collection-progress-bar" aria-hidden="true"><span style="width: ${percent}%"></span></span><span class="album-collection-action">Apri collezione <span aria-hidden="true">→</span></span></span></button>`; }).join("")}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav();
     document.querySelectorAll("[data-album-collection]").forEach((button) => button.addEventListener("click", () => renderAlbumTeams(button.dataset.albumCollection)));
@@ -100,7 +110,10 @@
     ui.albumCollectionId = collectionId;
     const collection = global.AlbumProgress.ALBUM_COLLECTIONS[collectionId];
     ensureBackfill();
-    app.innerHTML = `<main class="album-screen"><header class="topbar album-topbar"><div><p class="eyebrow">Album → ${view.escapeHtml(collection.name)}</p><h1>Squadre</h1></div>${view.sectionRootButton("albumCollection")}</header><section class="album-team-grid">${albumTeamsView(collectionId).map((team) => { const players = albumTeamPlayers(team, collectionId); const progress = albumProgressForPlayers(players, collectionId); const complete = progress.total > 0 && progress.unlocked === progress.total; return `<button type="button" class="panel album-team-card ${complete ? "album-complete" : ""}" data-album-team="${view.escapeHtml(team.teamId)}" aria-label="${view.escapeHtml(team.teamName)} ${progress.unlocked} su ${view.escapeHtml(progress.total)}"><span class="album-team-logo">${albumTeamLogoMarkup(team)}</span><strong>${view.escapeHtml(team.teamName)}</strong><span>${view.escapeHtml(progress.unlocked)} / ${view.escapeHtml(progress.total)}</span>${complete ? `<em>Completato</em>` : ""}</button>`; }).join("")}</section></main>`;
+    const albumProgressState = global.AlbumProgress.read();
+    const unlocked = albumUnlockedSetFromState(collectionId, albumProgressState);
+    const teams = albumTeamsView(collectionId);
+    app.innerHTML = `<main class="album-screen"><header class="topbar album-topbar"><div><p class="eyebrow">Album → ${view.escapeHtml(collection.name)}</p><h1>Squadre</h1></div>${view.sectionRootButton("albumCollection")}</header><section class="album-team-grid">${teams.map((team) => { const players = albumTeamPlayers(team, collectionId); const progress = albumProgressForPlayers(players, collectionId, albumProgressState, unlocked); const complete = progress.total > 0 && progress.unlocked === progress.total; return `<button type="button" class="panel album-team-card ${complete ? "album-complete" : ""}" data-album-team="${view.escapeHtml(team.teamId)}" aria-label="${view.escapeHtml(team.teamName)} ${progress.unlocked} su ${view.escapeHtml(progress.total)}"><span class="album-team-logo">${albumTeamLogoMarkup(team)}</span><strong>${view.escapeHtml(team.teamName)}</strong><span>${view.escapeHtml(progress.unlocked)} / ${view.escapeHtml(progress.total)}</span>${complete ? `<em>Completato</em>` : ""}</button>`; }).join("")}</section></main>`;
     resetRenderedViewScroll();
     bindSectionRootNav({ collectionId });
     document.querySelectorAll("[data-album-team]").forEach((button) => button.addEventListener("click", () => renderAlbumRoster(collectionId, button.dataset.albumTeam)));
@@ -114,7 +127,7 @@
     const rawPlayers = albumTeamPlayers(team, collectionId);
     const database = team.freeAgents ? getFreeAgentsDb() : getSeasonDb();
     const albumProgressState = global.AlbumProgress.read();
-    const unlocked = global.AlbumProgress.unlockedSet(collectionId, albumProgressState);
+    const unlocked = albumUnlockedSetFromState(collectionId, albumProgressState);
     const developmentState = global.DevelopmentAccountV3.read();
     const rawById = new Map(rawPlayers.map((player) => [String(player.playerId), player]));
     const resolvedById = new Map();
