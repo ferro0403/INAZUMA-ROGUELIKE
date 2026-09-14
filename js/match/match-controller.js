@@ -5,7 +5,7 @@
     const ui = d.ui;
     const app = d.app;
     const document = global.document;
-    const { persistGameplayMutation, recordGameplayFailure, fiveUserPlayersBySlot, fiveOpponentPlayersBySlot, normalizeTeamIdentity, specialMatchView, bossMatchTeamMeta, userTeamPlayers, bossTeamPlayers, toast, bossMatchStatusText, bossMatchTimeline, openModal, scrollSnapshot, formatMatchProbability, createOrLoadFiveMatch, ensureFiveVFive, teamById, escapeHtml, bossMatchAverage, fiveMatchField, fiveMatchComparisonMarkup, topbar, resetRenderedViewScroll, bindSectionRootNav, bindBottomNav, showPlayerDetails, showPlayerDetailsFor, bossMatchField, switchBossMatchTab, completeFiveMatch, completeSpecialMatch, completeBossMatch, recoverLegacyResolvedMatchRoutingIfNeeded, closeModal, resolvePendingRunFlow, navigateBossVictoryDestination, showSpecialMatchReward, renderGameOver, renderMap, hearts, openFiveMatchPlayerSwap, fiveMatchPlayerDetail, renderFiveVFive, renderMapFailureRecovery, getFreeAgentsDb } = d;
+    const { persistGameplayMutation, recordGameplayFailure, fiveUserPlayersBySlot, fiveOpponentPlayersBySlot, normalizeTeamIdentity, specialMatchView, bossMatchTeamMeta, userTeamPlayers, bossTeamPlayers, toast, bossMatchStatusText, bossMatchTimeline, openModal, scrollSnapshot, formatMatchProbability, createOrLoadFiveMatch, ensureFiveVFive, teamById, escapeHtml, bossMatchAverage, fiveMatchField, fiveMatchComparisonMarkup, topbar, resetRenderedViewScroll, bindSectionRootNav, bindBottomNav, showPlayerDetails, showPlayerDetailsFor, bossMatchField, switchBossMatchTab, completeFiveMatch, completeSpecialMatch, completeBossMatch, recoverLegacyResolvedMatchRoutingIfNeeded, closeModal, resolvePendingRunFlow, navigateBossVictoryDestination, showSpecialMatchReward, renderGameOver, renderMap, hearts, openFiveMatchPlayerSwap, fiveMatchPlayerDetail, renderFiveVFive, renderMapFailureRecovery, getFreeAgentsDb, resolvePlayerVisual } = d;
     const TEST_MATCH_CONTROLS_ENABLED = d.testMatchControlsEnabled;
     const DEV_MODE = d.devMode;
     let run = d.getRun();
@@ -25,7 +25,7 @@ function openFiveMatchSimulationModal(match, userName, opponentName) {
         <div class="five-match-result-row"><strong>${scoreUserEmblem}${escapeHtml(userName)}</strong><div class="boss-match-score" aria-label="${escapeHtml(`${userName} ${score[0]} - ${score[1]} ${opponentName}`)}"><span>${score[0]}</span><small>-</small><span>${score[1]}</span></div><strong>${escapeHtml(opponentName)}${scoreOpponentEmblem}</strong></div>
         <p>${escapeHtml(bossMatchStatusText())}</p>
       </section>
-      <section class="five-simulation-events"><div class="panel-title-row"><h3>Cronaca eventi</h3><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${ui.bossMatchLog.length ? bossMatchTimeline() : `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>Calcio d'inizio.</p></li>`}</ol></section>
+      <section class="five-simulation-events"><div class="panel-title-row"><h3>Cronaca eventi</h3><span class="match-state-badge">${simulating ? "Live" : resolved ? "Completa" : "In attesa"}</span></div><ol class="boss-match-log match-sim-log" tabindex="0" aria-label="Cronaca partita" aria-live="polite">${ui.bossMatchLog.length ? bossMatchTimeline() : `<li data-empty-log="true"><span>0'</span><b class="match-event-marker"><span class="match-event-symbol">◇</span></b><p>Calcio d'inizio.</p></li>`}</ol></section>
       <footer class="five-simulation-actions"><button type="button" class="btn btn-secondary" id="skip-match-result" ${simulating ? "" : "hidden disabled"}>Vai al risultato</button><button type="button" class="btn btn-yellow btn-primary-action" id="continue-match-result" ${resolved ? "" : "hidden disabled"}>Torna alla mappa</button></footer>
     </div>`, { closeable: false, className: "five-simulation-modal", preserveScroll: scrollSnapshot() });
     document.getElementById("skip-match-result")?.addEventListener("click", skipMatchToResult);
@@ -211,6 +211,7 @@ function matchEventView(ev) {
       moveType: ev.moveType || null,
       moveElement: ev.moveElement || null,
       movePower: ev.movePower ?? null,
+      playerId: ev.playerId != null ? String(ev.playerId) : null,
     };
   }
 
@@ -223,9 +224,11 @@ function appendMatchLogEvent(event) {
     const minute = document.createElement("span");
     const icon = document.createElement("b");
     const text = document.createElement("p");
+    const presented = global.MovePresentationRuntime?.decorateEventVisual?.(event, resolvePlayerVisual) || event;
     minute.textContent = event.minute;
-    icon.textContent = event.icon;
-    text.innerHTML = global.MovePresentationRuntime?.eventTextMarkup?.(event, escapeHtml) || escapeHtml(event.text);
+    icon.className = "match-event-marker";
+    icon.innerHTML = global.MovePresentationRuntime?.eventMarkerMarkup?.(presented, escapeHtml) || escapeHtml(event.icon);
+    text.innerHTML = global.MovePresentationRuntime?.eventTextMarkup?.(presented, escapeHtml) || escapeHtml(event.text);
     li.append(minute, icon, text);
     log.appendChild(li);
     requestAnimationFrame(() => { log.scrollTop = log.scrollHeight; });
@@ -243,9 +246,11 @@ function appendMissingMatchLogEvents(events) {
       const minute = document.createElement("span");
       const icon = document.createElement("b");
       const text = document.createElement("p");
+      const presented = global.MovePresentationRuntime?.decorateEventVisual?.(event, resolvePlayerVisual) || event;
       minute.textContent = event.minute;
-      icon.textContent = event.icon;
-      text.innerHTML = global.MovePresentationRuntime?.eventTextMarkup?.(event, escapeHtml) || escapeHtml(event.text);
+      icon.className = "match-event-marker";
+      icon.innerHTML = global.MovePresentationRuntime?.eventMarkerMarkup?.(presented, escapeHtml) || escapeHtml(event.icon);
+      text.innerHTML = global.MovePresentationRuntime?.eventTextMarkup?.(presented, escapeHtml) || escapeHtml(event.text);
       li.append(minute, icon, text);
       fragment.appendChild(li);
     });

@@ -19,6 +19,7 @@
       normalizeTeamIdentity,
       escapeHtml,
       matchEventSideClass,
+      resolvePlayerVisual,
       openModal,
       closeModal,
       scrollSnapshot,
@@ -151,8 +152,13 @@
 
     function bossMatchTimeline() {
       const currentUi = ui();
-      if (!currentUi.bossMatchLog?.length) return `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>Formazioni pronte. Avvia la simulazione o usa i controlli provvisori.</p></li>`;
-      return currentUi.bossMatchLog.map((event) => `<li class="${matchEventSideClass(event.side)}"><span>${escapeHtml(event.minute)}</span><b>${escapeHtml(event.icon)}</b><p>${global.MovePresentationRuntime?.eventTextMarkup?.(event, escapeHtml) || escapeHtml(event.text)}</p></li>`).join("");
+      if (!currentUi.bossMatchLog?.length) return `<li data-empty-log="true"><span>0'</span><b class="match-event-marker"><span class="match-event-symbol">◇</span></b><p>Formazioni pronte. Avvia la simulazione o usa i controlli provvisori.</p></li>`;
+      return currentUi.bossMatchLog.map((event) => {
+        const presented = global.MovePresentationRuntime?.decorateEventVisual?.(event, resolvePlayerVisual) || event;
+        const marker = global.MovePresentationRuntime?.eventMarkerMarkup?.(presented, escapeHtml) || escapeHtml(presented.icon);
+        const text = global.MovePresentationRuntime?.eventTextMarkup?.(presented, escapeHtml) || escapeHtml(presented.text);
+        return `<li class="${matchEventSideClass(presented.side)}"><span>${escapeHtml(presented.minute)}</span><b class="match-event-marker">${marker}</b><p>${text}</p></li>`;
+      }).join("");
     }
 
     function switchBossMatchTab(side) {
