@@ -7,14 +7,14 @@ const orion = JSON.parse(fs.readFileSync(`${root}/data/ORION_season_compact.json
 const freeAgents = JSON.parse(fs.readFileSync(`${root}/data/FREE_AGENTS_compact.json`, "utf8"));
 const context = { console, structuredClone, DevelopmentV2: { playerUpgrade: () => null } };
 context.globalThis = context;
-for (const file of ["profiled-season.js", "recruitment/player-identity.js", "recruitment-pool.js", "formation-layout.js", "match-simulator-config.js", "match-simulator.js", "boss-gameover-runtime.js"]) {
+for (const file of ["profiled-season.js", "recruitment/player-identity.js", "recruitment-pool.js", "game-rules.js", "formation-layout.js", "match-simulator-config.js", "match-simulator.js", "boss-gameover-runtime.js"]) {
   vm.runInNewContext(fs.readFileSync(`${root}/js/${file}`, "utf8"), context, { filename: file });
 }
 context.ProfiledSeasonRuntime.register("orion", orion);
 
 assert.strictEqual(orion.seasonId, "orion");
 assert.strictEqual(orion.requiresProfileAwareRuntime, true);
-assert.deepStrictEqual([orion.bossOrder.length, orion.players.length, orion.profiles.length, orion.recruitmentPool.entries.length], [13, 308, 328, 128]);
+assert.deepStrictEqual([orion.bossOrder.length, orion.players.length, orion.profiles.length, orion.recruitmentPool.entries.length], [13, 309, 329, 129]);
 assert.strictEqual(orion.specialMatches.length, 0);
 assert.deepStrictEqual(orion.bossOrder.slice(-2).map((boss) => [boss.order, boss.teamName, boss.bossLevel]), [[12, "Inazuma National", 20], [13, "Zhao eclipse", 20]]);
 assert.strictEqual(orion.bossOrder.at(-1).finalBoss, true);
@@ -42,6 +42,38 @@ for (const [stage, minimum] of [[1, 75], [4, 75], [5, 76], [8, 79], [10, 81], [1
   assert.strictEqual(runtime.eligibleForSeason3FreeAgentPull({ sourceKind: "global_free_agent", finalOverall: 999 }, index, orion), true);
 }
 for (const overall of [73, 74]) assert.strictEqual(runtime.eligibleForSeason3FreeAgentPull({ sourceKind: "orion_recruitment_profile", profileId: `low-${overall}@team`, finalOverall: overall }, 12, orion), true);
+const jack = orion.players.find((player) => String(player.playerId) === "4453");
+const jackProfile = orion.profiles.find((profile) => profile.profileId === "4453@rampart_junior_high");
+const jackRecruitment = orion.recruitmentPool.entries.find((entry) => String(entry.playerId) === "4453");
+assert(jack && jackProfile && jackRecruitment);
+assert.strictEqual(jack.finalOverall, 90);
+assert.strictEqual(jackProfile.finalOverall, 90);
+assert.strictEqual(jackRecruitment.eligibleInitialDraft, true);
+assert.strictEqual(jackRecruitment.eligiblePullFreeAgents, true);
+const jackTradeCandidates = context.RoguelikeRules.getProfileAwareTradeCandidates({
+  outgoingPlayer: { playerId: "outgoing-df", position: "DF", finalOverall: 85 },
+  outgoingPlayerId: "outgoing-df",
+  rosterEntries: [{ playerId: "outgoing-df" }],
+  freeAgents: [],
+  profiles: orion.profiles,
+  recruitmentEntries: orion.recruitmentPool.entries,
+  unlockedTeamIds: [],
+  teams: orion.teams,
+  seasonId: "orion",
+});
+assert(jackTradeCandidates.some((candidate) => String(candidate.playerId) === "4453"), "Rampart recruitment profile must be trade-eligible without unlocking the team");
+const blockedJackTradeCandidates = context.RoguelikeRules.getProfileAwareTradeCandidates({
+  outgoingPlayer: { playerId: "outgoing-df", position: "DF", finalOverall: 85 },
+  outgoingPlayerId: "outgoing-df",
+  rosterEntries: [{ playerId: "outgoing-df" }],
+  freeAgents: [],
+  profiles: [jackProfile],
+  recruitmentEntries: [{ ...jackRecruitment, eligiblePullFreeAgents: false }],
+  unlockedTeamIds: [],
+  teams: orion.teams,
+  seasonId: "orion",
+});
+assert.strictEqual(blockedJackTradeCandidates.length, 0, "profiles excluded from free-agent pulls must stay excluded from trades");
 assert(!orion.recruitmentPool.entries.some((entry) => String(entry.playerId) === "4546"));
 assert(orion.profiles.some((profile) => String(profile.playerId) === "4546"));
 assert(orion.bossOrder.some((boss) => (boss.rewardPoolPlayerIds || []).map(String).includes("4546")));

@@ -1258,7 +1258,6 @@
       "rewardPool": "all_team_players",
       "rewardPoolPlayerIds": [
         "4429",
-        "4441",
         "4425",
         "4438",
         "4440",
@@ -1699,11 +1698,10 @@
       "logoUrl": "https://static.wikia.nocookie.net/inazuma-eleven/images/6/6b/Outei_Tsukinomiya_emblem.png/revision/latest?cb=20240331224724",
       "teamOverall": 87,
       "teamStars": 4.5,
-      "ratedPlayers": 17,
-      "totalPlayers": 17,
+      "ratedPlayers": 16,
+      "totalPlayers": 16,
       "playerIds": [
         "4429",
-        "4441",
         "4425",
         "4438",
         "4440",
@@ -5607,9 +5605,7 @@
         "save": 1
       },
       "custom": false,
-      "teamIds": [
-        "lunar_prime_academy"
-      ]
+      "teamIds": []
     },
     {
       "playerId": "4425",

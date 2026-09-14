@@ -136,6 +136,7 @@ function prepareTrade(node, outgoingId) {
         rosterEntries: getRun().roster,
         freeAgents: getFreeAgentsDb().players,
         profiles: getSeasonDb().profiles,
+        recruitmentEntries: getSeasonDb().recruitmentPool?.entries || [],
         unlockedTeamIds: [...(getRun().unlockedTeamIds || []), ...(getRun().unlockedSpecialTeamIds || [])],
         teams: getSeasonDb().teams,
         seasonId: getRun().seasonId,
