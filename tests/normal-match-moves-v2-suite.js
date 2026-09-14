@@ -1,0 +1,2 @@
+"use strict";
+const assert=require("assert"),{spawnSync}=require("child_process");for(const f of["tests/ie1-move-catalog-test.js","tests/match-moves-v2-domain-test.js","tests/match-timeline-moves-v2-test.js","tests/match-rules-version-run-state-test.js","tests/match-moves-v2-statistical-test.js","tests/move-presentation-ui-test.js"]){const r=spawnSync(process.execPath,[f],{encoding:"utf8"});assert.strictEqual(r.status,0,`${f} failed:\n${r.stdout}\n${r.stderr}`);}console.log("normal match moves V2 suite: OK");

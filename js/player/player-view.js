@@ -188,6 +188,16 @@
       const equipmentMarkup = equipment
         ? `<div class="equipped-detail"><div class="equipped-detail-art">${itemIcon(equipment)}</div><div class="equipped-detail-copy"><span>${historical ? "Equipaggiamento storico" : "Oggetto assegnato"}</span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.description)}</small><em>+${Number(item.bonus || 0)} ${escapeHtml(STAT_LABELS[item.stat] || item.stat || "")}</em></div>${!readOnly && playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>`
         : `<div class="equipped-detail equipped-detail-empty"><div class="equipped-detail-copy"><span>Slot disponibile</span><strong>Nessun equipaggiamento</strong><small>Questo giocatore non ha ancora un oggetto assegnato.</small></div></div>`;
+      const moveSeasonId = [player.seasonId, player.recruitmentSource, sourceFallback.seasonId, getSeasonId()]
+        .find((seasonId) => global.SeasonRegistry?.isSeasonSource?.(seasonId)) || getSeasonId();
+      const movePlayerId = player.legacyCanonicalPlayerId || sourceFallback.legacyCanonicalPlayerId || playerId;
+      const playerMove = global.MatchMoveRuntime?.moveForPlayer?.(moveSeasonId, movePlayerId) || null;
+      const moveSectionMarkup = playerMove && global.MovePresentationRuntime?.detailMarkup
+        ? `<section class="player-detail-section player-detail-move">
+              <h3><span>Mossa</span></h3>
+              ${global.MovePresentationRuntime.detailMarkup(playerMove, escapeHtml)}
+            </section>`
+        : "";
       const displayLevel = historical
         ? formatLevel(
             player.finalLevel ?? 0,
@@ -232,6 +242,7 @@
               <h3><span>Statistiche</span></h3>
               <div class="detail-stats">${stats}</div>
             </section>
+            ${moveSectionMarkup}
             <section class="player-detail-section player-detail-equipment">
               <h3><span>Equipaggiamento</span></h3>
               ${equipmentMarkup}

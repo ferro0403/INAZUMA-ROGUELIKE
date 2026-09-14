@@ -40,62 +40,94 @@
     });
     return { base, modifiers: { ...tactic.modifiers }, effective, tactic };
   }
-  function teamStrength(team, type) {
+  function simulationRulesVersion(value) {
+    const numeric = Number(value);
+    return Number.isInteger(numeric) && numeric >= 1 ? numeric : 1;
+  }
+  function moveContributionForTeam(players, options = {}) {
+    if (simulationRulesVersion(options.rulesVersion) < 2) return { score: 0, bonus: 0, mappedPlayers: 0, totalPower: 0 };
+    return global.MatchMoveRuntime?.teamContribution?.(options.seasonId, players) || { score: 0, bonus: 0, mappedPlayers: 0, totalPower: 0 };
+  }
+  function teamStrength(team, type, options = {}) {
     const validation = validateTeam(team, type); if (!validation.valid) return { ...validation };
     const players = team.players;
-    const averageOverall = players.reduce((s, p) => s + Number(p.overall || p.finalOverall || 0), 0) / players.length;
+    const averageOverall = players.reduce((sum, p) => sum + Number(p.overall || p.finalOverall || 0), 0) / players.length;
     const offense = phaseQuality(players, "offense"); const midfield = phaseQuality(players, "midfield"); const defense = phaseQuality(players, "defense"); const goalkeeper = goalkeeperQuality(players);
-    if (normalizeMatchMode(type) === "five") { const w = cfg().profileWeights; const statisticalProfile = offense*w.offense + midfield*w.midfield + defense*w.defense + goalkeeper*w.goalkeeper; const finalRaw = averageOverall*cfg().forceWeights.overall + statisticalProfile*cfg().forceWeights.profile; return { valid:true, averageOverall, offense, midfield, defense, goalkeeper, statisticalProfile, finalRaw, final: Math.round(finalRaw) }; }
-    const baseComponents = { attack: offense, control: midfield, defense, save: goalkeeper, speed: averageStat(players, "speed"), physical: averageStat(players, "physical"), stamina: averageStat(players, "stamina") };
+    const moveContribution = moveContributionForTeam(players, options);
+    if (normalizeMatchMode(type) === "five") {
+      const w = cfg().profileWeights;
+      const statisticalProfile = offense*w.offense + midfield*w.midfield + defense*w.defense + goalkeeper*w.goalkeeper;
+      const baseFinalRaw = averageOverall*cfg().forceWeights.overall + statisticalProfile*cfg().forceWeights.profile;
+      const finalRaw = baseFinalRaw + moveContribution.bonus;
+      return { valid:true, averageOverall, offense, midfield, defense, goalkeeper, statisticalProfile, baseFinalRaw, moveScore:moveContribution.score, moveBonus:moveContribution.bonus, mappedMovePlayers:moveContribution.mappedPlayers, finalRaw, final:Math.round(finalRaw) };
+    }
+    const baseComponents = { attack:offense, control:midfield, defense, save:goalkeeper, speed:averageStat(players,"speed"), physical:averageStat(players,"physical"), stamina:averageStat(players,"stamina") };
     const tactics = applyFormationTactics(baseComponents, team.formationId || team.formation || team.tacticFormationId);
     const w = cfg().tacticalComponentWeights || { attack:.28, control:.20, defense:.22, save:.12, speed:.07, physical:.06, stamina:.05 };
-    const statisticalProfile = COMPONENT_KEYS.reduce((sum, key) => sum + tactics.effective[key] * Number(w[key] || 0), 0);
-    const finalRaw = averageOverall*cfg().forceWeights.overall + statisticalProfile*cfg().forceWeights.profile;
-    return { valid:true, averageOverall, offense: tactics.effective.attack, midfield: tactics.effective.control, defense: tactics.effective.defense, goalkeeper: tactics.effective.save, statisticalProfile, finalRaw, final: Math.round(finalRaw), baseComponents: tactics.base, effectiveComponents: tactics.effective, formationModifiers: tactics.modifiers, tacticalIdentity: tactics.tactic };
+    const statisticalProfile = COMPONENT_KEYS.reduce((sum,key)=>sum+tactics.effective[key]*Number(w[key]||0),0);
+    const baseFinalRaw = averageOverall*cfg().forceWeights.overall + statisticalProfile*cfg().forceWeights.profile;
+    const finalRaw = baseFinalRaw + moveContribution.bonus;
+    return { valid:true, averageOverall, offense:tactics.effective.attack, midfield:tactics.effective.control, defense:tactics.effective.defense, goalkeeper:tactics.effective.save, statisticalProfile, baseFinalRaw, moveScore:moveContribution.score, moveBonus:moveContribution.bonus, mappedMovePlayers:moveContribution.mappedPlayers, finalRaw, final:Math.round(finalRaw), baseComponents:tactics.base, effectiveComponents:tactics.effective, formationModifiers:tactics.modifiers, tacticalIdentity:tactics.tactic };
   }
-  function normalizeMatchMode(mode) { return mode === "five" || mode === "five_v_five" ? "five" : "eleven"; }
-  function getMatchWinProbabilities(mode, userStrength, opponentStrength) {
-    if (arguments.length === 2) {
-      opponentStrength = userStrength;
-      userStrength = mode;
-      mode = "eleven";
+function normalizeMatchMode(mode) { return mode === "five" || mode === "five_v_five" ? "five" : "eleven"; }
+  function interpolateChance(points, value) {
+    if (value <= points[0][0]) return points[0][1];
+    if (value >= points.at(-1)[0]) return points.at(-1)[1];
+    for (let index=1; index<points.length; index+=1) {
+      const [x1,y1]=points[index];
+      if (value > x1) continue;
+      const [x0,y0]=points[index-1];
+      return y0 + ((y1-y0)*((value-x0)/(x1-x0)));
     }
-    const normalizedMode = normalizeMatchMode(mode);
-    const roundedUserStrength = Math.round(Number(userStrength));
-    const roundedOpponentStrength = Math.round(Number(opponentStrength));
-    const difference = Math.abs(roundedUserStrength - roundedOpponentStrength);
-    const userIsStronger = roundedUserStrength > roundedOpponentStrength;
-    const userIsWeaker = roundedUserStrength < roundedOpponentStrength;
+    return points.at(-1)[1];
+  }
+  function probabilityBand(difference) {
+    const roundedDifference=Math.round(Math.abs(Number(difference)||0));
+    const bandStart=Math.min(40,Math.floor(roundedDifference/5)*5);
+    return roundedDifference<=4 ? "0-4" : `${bandStart}${bandStart>=40?"+":`-${bandStart+4}`}`;
+  }
+  function getMatchWinProbabilities(mode,userStrength,opponentStrength,rulesVersion=1) {
+    if (arguments.length===2) { opponentStrength=userStrength; userStrength=mode; mode="eleven"; rulesVersion=1; }
+    const normalizedMode=normalizeMatchMode(mode);
+    const version=simulationRulesVersion(rulesVersion);
+    const rawUserStrength=Number(userStrength)||0;
+    const rawOpponentStrength=Number(opponentStrength)||0;
+    if (version>=2) {
+      const signedDifference=rawUserStrength-rawOpponentStrength;
+      const difference=Math.abs(signedDifference);
+      let userChance;
+      if (normalizedMode==="five") userChance=Math.max(60,Math.min(95,80+signedDifference));
+      else {
+        const curve=signedDifference>=0 ? [[0,70],[5,80],[10,88],[15,94],[20,97]] : [[0,70],[5,60],[10,55],[15,50],[20,45],[25,40]];
+        userChance=interpolateChance(curve,difference);
+      }
+      const opponentChance=100-userChance;
+      return { mode:normalizedMode,rulesVersion:version,user:userChance/100,opponent:opponentChance/100,diff:difference,difference,signedDifference,band:probabilityBand(difference),userChance,opponentChance };
+    }
+    const roundedUserStrength=Math.round(rawUserStrength), roundedOpponentStrength=Math.round(rawOpponentStrength);
+    const difference=Math.abs(roundedUserStrength-roundedOpponentStrength);
+    const userIsStronger=roundedUserStrength>roundedOpponentStrength, userIsWeaker=roundedUserStrength<roundedOpponentStrength;
     let userChance;
-    if (normalizedMode === "five") {
-      if (userIsWeaker || difference <= 4) userChance = 80;
-      else if (difference <= 9) userChance = 85;
-      else if (difference <= 14) userChance = 90;
-      else userChance = 95;
-    } else if (difference <= 4) {
-      userChance = 70;
-    } else if (userIsStronger) {
-      if (difference <= 9) userChance = 80;
-      else if (difference <= 14) userChance = 88;
-      else if (difference <= 19) userChance = 94;
-      else userChance = 97;
-    } else if (difference <= 9) {
-      userChance = 60;
-    } else if (difference <= 14) {
-      userChance = 55;
-    } else if (difference <= 19) {
-      userChance = 50;
-    } else if (difference <= 24) {
-      userChance = 45;
-    } else {
-      userChance = 40;
-    }
-    const opponentChance = 100 - userChance;
-    const bandStart = Math.min(40, Math.floor(difference / 5) * 5);
-    const band = difference <= 4 ? "0-4" : `${bandStart}${bandStart >= 40 ? "+" : `-${bandStart + 4}`}`;
-    return { mode: normalizedMode, user: userChance / 100, opponent: opponentChance / 100, diff: difference, difference, band, userChance, opponentChance };
+    if (normalizedMode==="five") {
+      if (userIsWeaker || difference<=4) userChance=80;
+      else if (difference<=9) userChance=85;
+      else if (difference<=14) userChance=90;
+      else userChance=95;
+    } else if (difference<=4) userChance=70;
+    else if (userIsStronger) {
+      if (difference<=9) userChance=80;
+      else if (difference<=14) userChance=88;
+      else if (difference<=19) userChance=94;
+      else userChance=97;
+    } else if (difference<=9) userChance=60;
+    else if (difference<=14) userChance=55;
+    else if (difference<=19) userChance=50;
+    else if (difference<=24) userChance=45;
+    else userChance=40;
+    const opponentChance=100-userChance;
+    return { mode:normalizedMode,rulesVersion:version,user:userChance/100,opponent:opponentChance/100,diff:difference,difference,band:probabilityBand(difference),userChance,opponentChance };
   }
-  function probabilities(mode, aForce, bForce) { return getMatchWinProbabilities(mode, aForce, bForce); }
+function probabilities(mode, aForce, bForce, rulesVersion = 1) { return getMatchWinProbabilities(mode, aForce, bForce, rulesVersion); }
   function applyConsecutiveLossProtection(baseWinChance, consecutiveLosses) {
     const numericChance = Number(baseWinChance);
     const chance = Math.max(0, Math.min(100, Number.isFinite(numericChance) ? numericChance : 0));
@@ -108,15 +140,103 @@
   function determineUserWins(userChance, rng) { return rng() < userChance / 100; }
   function pickScore(type, band, rng) { let dist = cfg().scores[type].map((x) => ({...x})); if (band === "0-4") dist = dist.map((x) => ({...x, weight: x.weight * (x.score[0]-x.score[1] === 1 ? 1.35 : .8)})); if (band === "10-14" || band === "15-19" || band === "20-24" || band === "25-29" || band === "30-34" || band === "35-39" || band === "40+") dist = dist.map((x) => ({...x, weight: x.weight * (x.score[0]-x.score[1] >= 2 ? 1.25 : .8)})); return weightedPick(dist, rng, (x) => x.weight).score.slice(); }
   function byRoleWeight(players, roleWeights, statWeights, rng) { const eligible = players.filter((p) => (roleWeights[role(p)] || 0) > 0); return weightedPick(eligible, rng, (p) => (roleWeights[role(p)] || 0) * Math.max(1, statValue(p, statWeights))); }
-  function protagonist(team, kind, rng) { const players = team.players || []; if (kind === "save") return players.find((p) => role(p) === "GK"); const maps = { goal:[{FW:.65,MF:.28,DF:.07,GK:0},{attack:.4,control:.25,speed:.2,grit:.15}], shot:[{FW:.65,MF:.28,DF:.07,GK:0},{attack:.4,control:.25,speed:.2,grit:.15}], long_shot:[{MF:.55,FW:.30,DF:.15,GK:0},{attack:.35,control:.35,grit:.3}], counter:[{FW:.45,MF:.40,DF:.15,GK:0},{speed:.35,control:.25,attack:.25,stamina:.15}], defensive_stop:[{DF:.65,MF:.30,FW:.05,GK:0},{defense:.45,physical:.25,grit:.2,speed:.1}] }; const m = maps[kind] || maps.shot; return byRoleWeight(players, m[0], m[1], rng); }
-  function eventText(ev, teams, score) { const team = teams[ev.team]; const opponentKey = ev.team === "user" ? "opponent" : "user"; const n = ev.playerName; if (ev.type === "first_half_start") return "Inizio primo tempo."; if (ev.type === "second_half_start") return "Inizio secondo tempo."; if (ev.type === "goal") return `GOL! ${n} segna per ${team.name}: ${score.user}-${score.opponent}.`; if (ev.type === "save") return `Grande parata di ${n} per ${team.name}.`; if (ev.type === "counter") return `Contropiede di ${team.name} guidato da ${n}.`; if (ev.type === "long_shot") return `Tiro da fuori di ${n}.`; if (ev.type === "post") return `Palo colpito da ${n}!`; if (ev.type === "crossbar") return `Traversa colpita da ${n}!`; if (ev.type === "defensive_stop") return `Chiusura difensiva importante di ${n} per ${team.name}.`; return `${n} prova il tiro per ${team.name}.`;
+  function protagonist(team,kind,rng) {
+    const players=team.players||[];
+    if (kind==="save") return players.find((p)=>role(p)==="GK");
+    const maps={
+      goal:[{FW:.65,MF:.28,DF:.07,GK:0},{attack:.4,control:.25,speed:.2,grit:.15}],
+      shot:[{FW:.65,MF:.28,DF:.07,GK:0},{attack:.4,control:.25,speed:.2,grit:.15}],
+      long_shot:[{MF:.55,FW:.30,DF:.15,GK:0},{attack:.35,control:.35,grit:.3}],
+      counter:[{FW:.45,MF:.40,DF:.15,GK:0},{speed:.35,control:.25,attack:.25,stamina:.15}],
+      defensive_stop:[{DF:.65,MF:.30,FW:.05,GK:0},{defense:.45,physical:.25,grit:.2,speed:.1}],
+      dribble:[{MF:.48,FW:.42,DF:.10,GK:0},{control:.45,speed:.30,grit:.15,attack:.10}],
+      recovery:[{MF:.45,DF:.45,FW:.10,GK:0},{defense:.35,control:.25,grit:.20,physical:.10,speed:.10}],
+      key_pass:[{MF:.60,FW:.25,DF:.15,GK:0},{control:.50,attack:.20,speed:.15,stamina:.15}],
+      build_up:[{MF:.50,DF:.40,FW:.10,GK:0},{control:.45,stamina:.25,defense:.15,grit:.15}],
+    };
+    const m=maps[kind]||maps.shot;
+    return byRoleWeight(players,m[0],m[1],rng);
   }
-  function minutePool(type, count, rng) { const max = type === "five" ? 30 : 90; const mins = []; while (mins.length < count) { const m = 1 + Math.floor(rng() * max); if (type === "eleven" && (m === 1 || m === 46)) continue; if (mins.filter((x) => x === m).length < 2) mins.push(m); } return mins.sort((a,b)=>a-b); }
+  function eventText(ev,teams,score) {
+    const team=teams[ev.team], n=ev.playerName, move=ev.moveName;
+    if (ev.type==="first_half_start") return "Inizio primo tempo.";
+    if (ev.type==="second_half_start") return "Inizio secondo tempo.";
+    if (ev.type==="goal") return move ? `GOL! ${n} segna con ${move} per ${team.name}: ${score.user}-${score.opponent}.` : `GOL! ${n} segna per ${team.name}: ${score.user}-${score.opponent}.`;
+    if (ev.type==="save") return move ? `${n} para con ${move} per ${team.name}!` : `Grande parata di ${n} per ${team.name}.`;
+    if (ev.type==="counter") return `Contropiede di ${team.name} guidato da ${n}.`;
+    if (ev.type==="long_shot") return move ? `${n} prova il tiro da fuori con ${move}.` : `Tiro da fuori di ${n}.`;
+    if (ev.type==="post") return move ? `Palo! ${n} colpisce il legno con ${move}.` : `Palo colpito da ${n}!`;
+    if (ev.type==="crossbar") return move ? `Traversa! ${n} la colpisce con ${move}.` : `Traversa colpita da ${n}!`;
+    if (ev.type==="defensive_stop") return move ? `${n} ferma l'azione con ${move} per ${team.name}.` : `Chiusura difensiva importante di ${n} per ${team.name}.`;
+    if (ev.type==="dribble") return move ? `${n} salta l'uomo con ${move}.` : `${n} supera il diretto avversario e apre il campo.`;
+    if (ev.type==="recovery") return move ? `${n} recupera palla con ${move} per ${team.name}.` : `${n} recupera un pallone importante per ${team.name}.`;
+    if (ev.type==="key_pass") return `${n} trova un passaggio chiave per ${team.name}.`;
+    if (ev.type==="build_up") return `${n} guida l'azione manovrata di ${team.name}.`;
+    return move ? `${n} prova il tiro con ${move} per ${team.name}.` : `${n} prova il tiro per ${team.name}.`;
+  }
+function minutePool(type, count, rng) { const max = type === "five" ? 30 : 90; const mins = []; while (mins.length < count) { const m = 1 + Math.floor(rng() * max); if (type === "eleven" && (m === 1 || m === 46)) continue; if (mins.filter((x) => x === m).length < 2) mins.push(m); } return mins.sort((a,b)=>a-b); }
   function validateUserTimeline(timeline, userTeam) { const ids = new Set((userTeam.players || []).map((p) => String(p.playerId ?? p.id ?? name(p)))); const gk = (userTeam.players || []).find((p) => role(p) === "GK"); const invalid = (timeline || []).filter((ev) => ev.team === "user" && ev.playerId != null && !ids.has(String(ev.playerId))); if (invalid.length) return { valid:false, message:"La cronaca contiene protagonisti non schierati.", invalidEvents: invalid }; const badSave = (timeline || []).find((ev) => ev.team === "user" && ev.type === "save" && gk && String(ev.playerId) !== String(gk.playerId ?? gk.id ?? name(gk))); if (badSave) return { valid:false, message:"La cronaca contiene una parata di un portiere non schierato.", invalidEvents:[badSave] }; return { valid:true }; }
-  function generateTimeline(type, teams, score, winner, rng) { const totalGoals = score.user + score.opponent; const limits = cfg().events[type]; const target = Math.max(limits.min, Math.min(limits.max, totalGoals + (type === "eleven" ? 6 : 3) + Math.floor(rng()*4))); const events = []; if (type === "eleven") events.push({ minute:1, type:"first_half_start", team:null, text:"Inizio primo tempo." }); const normalCount = target - events.length - (type === "eleven" ? 1 : 0); const minutes = minutePool(type, normalCount, rng); const goalSides = [...Array(score.user).fill("user"), ...Array(score.opponent).fill("opponent")].sort(() => rng() - .5); let displayed = { user:0, opponent:0 }; for (let i=0;i<normalCount;i++) { let side = rng() < .5 ? "user" : "opponent"; let kind = goalSides.length && (i >= normalCount - goalSides.length || rng() < .42) ? "goal" : weightedPick(["save","counter","long_shot","post","crossbar","shot","defensive_stop"], rng, (k)=>({save:18,counter:16,long_shot:14,post:type==="five"?5:3,crossbar:type==="five"?5:3,shot:28,defensive_stop:16}[k])); if (kind === "goal") side = goalSides.shift(); const actingTeam = kind === "save" || kind === "defensive_stop" ? teams[side] : teams[side]; const p = protagonist(actingTeam, kind, rng); const ev = { minute: minutes[i], type: kind, team: side, playerId:p?.playerId, playerName:name(p) }; if (kind === "goal") displayed[side] += 1; ev.text = eventText(ev, teams, displayed); events.push(ev); }
-    while (goalSides.length) { const side = goalSides.shift(); const p = protagonist(teams[side], "goal", rng); displayed[side] += 1; events.push({ minute: 1 + Math.floor(rng()*limits.duration), type:"goal", team:side, playerId:p?.playerId, playerName:name(p), text:"" }); }
-    if (type === "eleven") events.push({ minute:46, type:"second_half_start", team:null, text:"Inizio secondo tempo." });
-    events.sort((a,b)=>a.minute-b.minute || (a.type.includes("start") ? -1 : 1)); displayed={user:0,opponent:0}; events.forEach((ev)=>{ if (ev.type === "goal") displayed[ev.team]+=1; ev.text = ev.text && ev.type !== "goal" ? ev.text : eventText(ev, teams, displayed); }); return events.slice(0, limits.max); }
-  function simulate({ type, seed, userTeam, opponentTeam, consecutiveLosses = 0 }) { type = normalizeMatchMode(type); const userStrength = teamStrength(userTeam, type); const opponentStrength = teamStrength(opponentTeam, type); if (!userStrength.valid) return { valid:false, message:userStrength.message }; if (!opponentStrength.valid) return { valid:false, message:opponentStrength.message }; const baseProbabilities = probabilities(type, userStrength.final, opponentStrength.final); const userChance = applyConsecutiveLossProtection(baseProbabilities.userChance, consecutiveLosses); const probs = { ...baseProbabilities, baseUserChance: baseProbabilities.userChance, userChance, opponentChance: 100 - userChance, user: userChance / 100, opponent: (100 - userChance) / 100 }; const rng = createRng(seed); const userWins = determineUserWins(probs.userChance, rng); const winner = userWins ? "user" : "opponent"; const picked = pickScore(type, probs.band, rng); const score = winner === "user" ? { user:picked[0], opponent:picked[1] } : { user:picked[1], opponent:picked[0] }; if (score.user === score.opponent) score[winner] += 1; const teams = { user: { name:userTeam.name || "La tua squadra", players:userTeam.players }, opponent:{ name:opponentTeam.name || "Avversari", players:opponentTeam.players } }; const timeline = generateTimeline(type, teams, score, winner, rng); const timelineValidation = validateUserTimeline(timeline, teams.user); if (!timelineValidation.valid) return { valid:false, message:timelineValidation.message, timelineValidation }; return { valid:true, type, seed, userStrength, opponentStrength, probabilities: probs, winner, score, timeline, userPlayerIds: teams.user.players.map((p) => String(p.playerId ?? p.id ?? name(p))) } }
-  global.MatchSimulator = { createRng, teamStrength, probabilities, getMatchWinProbabilities, getFinalWinProbabilities: getMatchWinProbabilities, applyConsecutiveLossProtection, determineUserWins, simulate, validateTeam, normalizeMatchMode, validateUserTimeline, FORMATION_TACTICS, formationTactic, applyFormationTactics };
+  const EVENT_MOVE_TYPES=Object.freeze({goal:"shot",shot:"shot",long_shot:"shot",post:"shot",crossbar:"shot",save:"save",defensive_stop:"defense",recovery:"defense",dribble:"dribble"});
+  function moveForTimelineEvent(player,kind,options,usage,rng) {
+    if (simulationRulesVersion(options?.rulesVersion)<2 || !player) return null;
+    const expectedType=EVENT_MOVE_TYPES[kind]; if (!expectedType) return null;
+    const move=global.MatchMoveRuntime?.moveForPlayer?.(options?.seasonId,player.playerId??player.id);
+    if (!move || move.type!==expectedType) return null;
+    if (rng()>=.65) return null;
+    const key=`${player.playerId??player.id}:${move.name}`, used=Number(usage.get(key)||0);
+    if (used>=2) return null;
+    usage.set(key,used+1); return move;
+  }
+  function generateTimeline(type,teams,score,winner,rng,options={}) {
+    const version=simulationRulesVersion(options.rulesVersion), modern=version>=2;
+    const totalGoals=score.user+score.opponent;
+    const limits=modern ? (cfg().eventsV2?.[type]||cfg().events[type]) : cfg().events[type];
+    const target=modern ? Math.max(totalGoals,limits.min+Math.floor(rng()*(limits.max-limits.min+1))) : Math.max(limits.min,Math.min(limits.max,totalGoals+(type==="eleven"?6:3)+Math.floor(rng()*4)));
+    const events=[], moveUsage=new Map();
+    if (type==="eleven") events.push({minute:1,type:"first_half_start",team:null,text:"Inizio primo tempo."});
+    const normalCount=target-events.length-(type==="eleven"?1:0), minutes=minutePool(type,normalCount,rng);
+    const goalSides=[...Array(score.user).fill("user"),...Array(score.opponent).fill("opponent")].sort(()=>rng()-.5);
+    let displayed={user:0,opponent:0};
+    const legacyKinds=["save","counter","long_shot","post","crossbar","shot","defensive_stop"];
+    const modernKinds=[...legacyKinds,"dribble","recovery","key_pass","build_up"];
+    const weights={save:18,counter:16,long_shot:14,post:type==="five"?5:3,crossbar:type==="five"?5:3,shot:28,defensive_stop:16,dribble:20,recovery:16,key_pass:14,build_up:14};
+    for(let i=0;i<normalCount;i++){
+      let side=rng()<.5?"user":"opponent";
+      let kind=goalSides.length&&(i>=normalCount-goalSides.length||rng()<.42)?"goal":weightedPick(modern?modernKinds:legacyKinds,rng,(k)=>weights[k]);
+      if(kind==="goal") side=goalSides.shift();
+      const p=protagonist(teams[side],kind,rng), ev={minute:minutes[i],type:kind,team:side,playerId:p?.playerId,playerName:name(p)};
+      const move=moveForTimelineEvent(p,kind,options,moveUsage,rng);
+      if(move){ev.moveName=move.name;ev.moveType=move.type;ev.moveElement=move.element;ev.movePower=move.power;}
+      if(kind==="goal") displayed[side]+=1;
+      ev.text=eventText(ev,teams,displayed); events.push(ev);
+    }
+    while(goalSides.length){
+      const side=goalSides.shift(), p=protagonist(teams[side],"goal",rng); displayed[side]+=1;
+      const ev={minute:1+Math.floor(rng()*limits.duration),type:"goal",team:side,playerId:p?.playerId,playerName:name(p),text:""};
+      const move=moveForTimelineEvent(p,"goal",options,moveUsage,rng);
+      if(move){ev.moveName=move.name;ev.moveType=move.type;ev.moveElement=move.element;ev.movePower=move.power;} events.push(ev);
+    }
+    if(type==="eleven") events.push({minute:46,type:"second_half_start",team:null,text:"Inizio secondo tempo."});
+    events.sort((a,b)=>a.minute-b.minute||(a.type.includes("start")?-1:1));
+    displayed={user:0,opponent:0};
+    events.forEach((ev)=>{if(ev.type==="goal")displayed[ev.team]+=1;ev.text=ev.text&&ev.type!=="goal"?ev.text:eventText(ev,teams,displayed);});
+    return events.slice(0,limits.max);
+  }
+function simulate({type,seed,userTeam,opponentTeam,consecutiveLosses=0,rulesVersion=1,seasonId=null}) {
+    type=normalizeMatchMode(type);
+    const version=simulationRulesVersion(rulesVersion), opts={rulesVersion:version,seasonId};
+    const userStrength=teamStrength(userTeam,type,opts), opponentStrength=teamStrength(opponentTeam,type,opts);
+    if(!userStrength.valid)return{valid:false,message:userStrength.message};
+    if(!opponentStrength.valid)return{valid:false,message:opponentStrength.message};
+    const baseProbabilities=probabilities(type,version>=2?userStrength.finalRaw:userStrength.final,version>=2?opponentStrength.finalRaw:opponentStrength.final,version);
+    const userChance=applyConsecutiveLossProtection(baseProbabilities.userChance,consecutiveLosses);
+    const probs={...baseProbabilities,baseUserChance:baseProbabilities.userChance,userChance,opponentChance:100-userChance,user:userChance/100,opponent:(100-userChance)/100};
+    const rng=createRng(seed), userWins=determineUserWins(probs.userChance,rng), winner=userWins?"user":"opponent", picked=pickScore(type,probs.band,rng);
+    const score=winner==="user"?{user:picked[0],opponent:picked[1]}:{user:picked[1],opponent:picked[0]}; if(score.user===score.opponent)score[winner]+=1;
+    const teams={user:{name:userTeam.name||"La tua squadra",players:userTeam.players},opponent:{name:opponentTeam.name||"Avversari",players:opponentTeam.players}};
+    const timeline=generateTimeline(type,teams,score,winner,rng,{rulesVersion:version,seasonId});
+    const timelineValidation=validateUserTimeline(timeline,teams.user); if(!timelineValidation.valid)return{valid:false,message:timelineValidation.message,timelineValidation};
+    return{valid:true,type,seed,rulesVersion:version,seasonId,userStrength,opponentStrength,probabilities:probs,winner,score,timeline,userPlayerIds:teams.user.players.map((p)=>String(p.playerId??p.id??name(p)))};
+  }
+global.MatchSimulator = { createRng, teamStrength, probabilities, getMatchWinProbabilities, getFinalWinProbabilities: getMatchWinProbabilities, applyConsecutiveLossProtection, determineUserWins, simulate, validateTeam, normalizeMatchMode, validateUserTimeline, FORMATION_TACTICS, formationTactic, applyFormationTactics };
 })(globalThis);

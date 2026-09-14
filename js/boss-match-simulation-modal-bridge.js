@@ -60,7 +60,7 @@
 
   function normalizeEmptyTimeline(log) {
     if (!log?.querySelector("[data-empty-log]")) return;
-    log.innerHTML = `<li data-empty-log="true"><span>0'</span><b>⚽</b><p>Calcio d'inizio.</p></li>`;
+    log.innerHTML = `<li class="match-event--neutral match-event-type--generic" data-empty-log="true"><span>0'</span><b class="match-event-marker"><span class="match-event-symbol">◇</span></b><p><span class="match-event-kind">Pre-partita</span><span class="match-event-copy">Calcio d'inizio.</span></p></li>`;
   }
 
   function continueButtonText(screen, state) {

@@ -7,6 +7,7 @@ const BudgetStorage = require("./helpers/budget-storage");
 const { load } = require("./helpers/production-runtime");
 const freeAgentFixture = require("../data/FREE_AGENTS_compact.json");
 const ie1Fixture = require("../data/IE1_season_compact.json");
+const ie1MovesFixture = require("../data/IE1_moves.json");
 const aresFixture = require("../data/IE2_season_compact.json");
 const playerVisualsFixture = require("../data/PLAYER_VISUALS.json");
 
@@ -162,8 +163,11 @@ function assertAresIdentityVisualCorrections() {
 async function assertIe1LegacyLookupCompatibility() {
   const registryContext = {
     fetch: async (url) => ({
-      ok: url === "data/IE1_season_compact.json" || url === "data/IE2_season_compact.json",
-      json: async () => url === "data/IE2_season_compact.json" ? aresFixture : ie1Fixture,
+      ok: ["data/IE1_season_compact.json", "data/IE1_moves.json", "data/IE2_season_compact.json"].includes(url),
+      json: async () => {
+        if (url === "data/IE1_moves.json") return ie1MovesFixture;
+        return url === "data/IE2_season_compact.json" ? aresFixture : ie1Fixture;
+      },
     }),
     ProfiledSeasonRuntime: { register: () => {} },
   };
@@ -175,6 +179,7 @@ async function assertIe1LegacyLookupCompatibility() {
   );
   const registry = registryContext.SeasonRegistry;
   await registry.loadDatabase("ie1");
+  assert.strictEqual(registry.database("ie1").moveCatalog, ie1MovesFixture, "IE1 move catalog is attached by the registry");
 
   const activeIds = new Set(ie1Fixture.players.map((player) => String(player.playerId)));
   for (const legacyId of ["4501", "4483", "4463", "4484", "4482", "4477", "4461"]) {
