@@ -123,6 +123,14 @@
   transform: none;
 }
 
+.album-collections-screen .album-collection-cover--zoom-out {
+  background: #e9e9e7;
+}
+
+.album-collections-screen .album-collection-cover--zoom-out img {
+  transform: scale(.96);
+}
+
 .album-collections-screen .album-collection-cover.is-fallback::before {
   position: absolute;
   inset: 0;
