@@ -4,7 +4,7 @@ const c={console};c.globalThis=c;
 const moveCatalogs={
   ie1:{players:{
     "1":{name:"God Hand",type:"save",element:"Mountain",power:65},
-    "2":{name:"Fire Tornado",type:"shot",element:"Fire",power:70}
+    "2":{name:"Fire Tornado",type:"shot",element:"Fire",power:80}
   }},
   ie1_s2:{players:{
     "1":{name:"Majin the Hand",type:"save",element:"Mountain",power:75,roleMoves:{
@@ -17,7 +17,7 @@ c.SeasonRegistry={database:(seasonId)=>({moveCatalog:moveCatalogs[seasonId]||{pl
 vm.runInNewContext(fs.readFileSync("js/moves/move-runtime.js","utf8"),c);
 vm.runInNewContext(fs.readFileSync("js/moves/move-presentation.js","utf8"),c);
 const move=c.MatchMoveRuntime.moveForPlayer("ie1","2");
-assert.deepStrictEqual(JSON.parse(JSON.stringify(move)),{playerId:"2",name:"Fire Tornado",type:"shot",element:"Fire",power:70});
+assert.deepStrictEqual(JSON.parse(JSON.stringify(move)),{playerId:"2",name:"Fire Tornado",type:"shot",element:"Fire",power:80});
 const rich=c.MovePresentationRuntime.eventTextMarkup({text:"Axel Blaze tira con Fire Tornado.",moveName:"Fire Tornado",moveElement:"Fire"},(value)=>String(value));
 assert.strictEqual(rich,'Axel Blaze tira con <strong class="match-move-name move-element--fire">Fire Tornado</strong>.');
 for(const type of ["dribble","recovery","key_pass","build_up"])assert.notStrictEqual(c.MovePresentationRuntime.eventIcon(type),"•");
@@ -37,7 +37,7 @@ assert.strictEqual(nakataDecorated.portraitUrl,"assets/players/season3/custom_00
 const marker=c.MovePresentationRuntime.eventMarkerMarkup(decorated,(value)=>String(value));
 assert(marker.includes("match-event-avatar"));assert(marker.includes("<img"));assert(!marker.includes("⚽"));
 const card=c.MovePresentationRuntime.detailMarkup(move,(value)=>String(value));
-for(const token of ["player-move-card move-category--shot","player-move-element move-element--fire","Fire Tornado","Fuoco","Tiro","Potenza","70"])assert(card.includes(token),`move card includes ${token}`);
+for(const token of ["player-move-card move-category--shot","player-move-element move-element--fire","Fire Tornado","Fuoco","Tiro","Potenza","80"])assert(card.includes(token),`move card includes ${token}`);
 const eventContent=c.MovePresentationRuntime.eventContentMarkup({type:"dribble",text:"Axel supera l'uomo.",playerId:"2"},(value)=>String(value));
 assert(eventContent.includes("match-event-kind"));assert(eventContent.includes("Dribbling"));assert(eventContent.includes("match-event-copy"));
 const vc={console,SeasonRegistry:c.SeasonRegistry,MatchMoveRuntime:c.MatchMoveRuntime,MovePresentationRuntime:c.MovePresentationRuntime};vc.globalThis=vc;
