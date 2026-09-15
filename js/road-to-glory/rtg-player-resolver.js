@@ -20,7 +20,11 @@
     return id(global.ProfiledSeasonRuntime?.canonicalPlayerId?.(seasonId, playerId) || playerId);
   }
 
-  function resolveVersion(playerId, activeSeasonId = "ie1") {
+  function freeAgentById(playerId, freeAgentsDb) {
+    return (freeAgentsDb?.players || []).find((player) => id(player?.playerId || player?.id) === id(playerId)) || null;
+  }
+
+  function resolveVersion(playerId, activeSeasonId = "ie1", freeAgentsDb = null) {
     const requestedId = id(playerId);
     if (!requestedId) return null;
     const maxIndex = seasonIndex(activeSeasonId);
@@ -34,13 +38,20 @@
         player: Object.freeze({ ...player, playerId: canonicalIdFor(seasonId, player.playerId || requestedId) }),
       });
     }
-    return null;
+    const freeAgent = freeAgentById(requestedId, freeAgentsDb);
+    if (!freeAgent) return null;
+    return Object.freeze({
+      seasonId: "free_agents",
+      player: Object.freeze({ ...freeAgent, playerId: id(freeAgent.playerId || freeAgent.id || requestedId) }),
+    });
   }
 
-  function resolveAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null) {
-    const resolved = resolveVersion(playerId, activeSeasonId);
+  function resolveAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null) {
+    const resolved = resolveVersion(playerId, activeSeasonId, freeAgentsDb);
     if (!resolved) return null;
-    const database = global.SeasonRegistry?.database?.(resolved.seasonId) || null;
+    const database = resolved.seasonId === "free_agents"
+      ? freeAgentsDb
+      : (global.SeasonRegistry?.database?.(resolved.seasonId) || null);
     const canonicalPlayerId = id(resolved.player.playerId || playerId);
     let player;
     if (database?.requiresProfileAwareRuntime && global.ProfiledSeasonRuntime?.resolveEffectivePlayerAtLevel) {
@@ -62,15 +73,15 @@
     return { ...player, playerId: canonicalPlayerId, level: 20, resolvedSeasonId: resolved.seasonId };
   }
 
-  function resolveMove(playerId, activeSeasonId = "ie1", role = null) {
-    const resolved = resolveVersion(playerId, activeSeasonId);
-    if (!resolved) return null;
-    const player = resolveAtLevel20(playerId, activeSeasonId, role ? String(role).toLowerCase() : null) || resolved.player;
+  function resolveMove(playerId, activeSeasonId = "ie1", role = null, freeAgentsDb = null) {
+    const resolved = resolveVersion(playerId, activeSeasonId, freeAgentsDb);
+    if (!resolved || resolved.seasonId === "free_agents") return null;
+    const player = resolveAtLevel20(playerId, activeSeasonId, role ? String(role).toLowerCase() : null, freeAgentsDb) || resolved.player;
     return global.MatchMoveRuntime?.moveForPlayer?.(resolved.seasonId, player, role) || null;
   }
 
-  function rarity(playerId, activeSeasonId = "ie1") {
-    return resolveVersion(playerId, activeSeasonId)?.player?.category || null;
+  function rarity(playerId, activeSeasonId = "ie1", freeAgentsDb = null) {
+    return resolveVersion(playerId, activeSeasonId, freeAgentsDb)?.player?.category || null;
   }
 
   global.RoadToGloryPlayerResolver = Object.freeze({ ORDER, resolveVersion, resolveAtLevel20, resolveMove, rarity });
