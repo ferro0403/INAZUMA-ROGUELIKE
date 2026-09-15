@@ -144,6 +144,27 @@ For Season 1:
 
 A completed or abandoned attempt allows the next attempt to generate a new opponent.
 
+### Secondary strength band and linear progression
+
+Each secondary node inherits its **user RTG Team Power cap** from the next main match.
+
+Its random opponent target band is derived from that next-main cap:
+
+```
+secondaryUserCap = nextMainConstraint.cap
+opponentTargetMin = max(70, secondaryUserCap - 4)
+opponentTargetMax = secondaryUserCap - 1
+```
+
+Season 1 examples therefore range from 73–76 before Wild up to 83–86 before Zeus/Raimon.
+
+The current furthest secondary node is mandatory for linear progression:
+
+- victory advances to the next node;
+- draw/loss/abandon leaves progression on that node;
+- once cleared, that secondary node remains replayable later for farming;
+- replaying an older cleared secondary can award Tokens but never changes the furthest progression position.
+
 Future rule already reserved:
 
 - Season 2 uses normal Free Agents only.
