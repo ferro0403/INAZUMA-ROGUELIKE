@@ -372,7 +372,8 @@ For a pending user encounter assert:
 - opponent card;
 - base probability bar + percentage;
 - `Normale` button;
-- compatible move button with `X/2` remaining;
+- compatible move button with `X/2` remaining only when that player has a configured compatible move;
+- for a Free Agent without a move, no empty/disabled technique slot is shown: only `Normale` is available;
 - AI choice is **not** visible before user confirmation.
 
 For resolved encounter assert:
