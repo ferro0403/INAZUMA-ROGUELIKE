@@ -11,7 +11,7 @@
   }
   function moveForPlayer(seasonId,playerOrId,explicitRole=null){
     const player=playerOrId&&typeof playerOrId==="object"?playerOrId:null;
-    const id=String(player?.playerId??player?.id??playerOrId??""),raw=catalog(seasonId)?.players?.[id];
+    const id=String(player?.playerId??player?.id??playerOrId??""),moveCatalog=catalog(seasonId),raw=moveCatalog?.players?.[id]||moveCatalog?.inheritedPlayers?.[id];
     if(!raw)return null;
     const role=normalizeRole(explicitRole||player?.position||player?.role||player?.normalizedRole||player?.activeRoleVariantId);
     const selected=role&&raw.roleMoves&&typeof raw.roleMoves==="object"?(raw.roleMoves[role]||raw):raw;

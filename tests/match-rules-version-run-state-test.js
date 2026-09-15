@@ -4,7 +4,6 @@ const c={console,localStorage,SEASON1_CONFIG:{saveKey:"testRun",legacySaveKeys:[
 vm.runInNewContext(fs.readFileSync("js/run-state.js","utf8"),c);
 assert.strictEqual(c.RunState.createRun({},"ie1").simulationRulesVersion,2);
 assert.strictEqual(c.RunState.createRun({},"ie1_s2").simulationRulesVersion,2);
-assert.strictEqual(c.RunState.createRun({},"ie1_s3").simulationRulesVersion,1);
-const oldIe1=c.RunState.createRun({},"ie1");delete oldIe1.simulationRulesVersion;c.RunState.save(oldIe1);assert.strictEqual(oldIe1.simulationRulesVersion,1);assert.strictEqual(c.RunState.load("ie1",{readOnly:true}).simulationRulesVersion,1);
-const oldIe2=c.RunState.createRun({},"ie1_s2");delete oldIe2.simulationRulesVersion;c.RunState.save(oldIe2);assert.strictEqual(oldIe2.simulationRulesVersion,1);assert.strictEqual(c.RunState.load("ie1_s2",{readOnly:true}).simulationRulesVersion,1);
-console.log("run simulation rules versioning: new IE1/IE2 V2, old saves and other seasons V1 OK");
+assert.strictEqual(c.RunState.createRun({},"ie1_s3").simulationRulesVersion,2);
+for(const seasonId of["ie1","ie1_s2","ie1_s3"]){const old=c.RunState.createRun({},seasonId);delete old.simulationRulesVersion;c.RunState.save(old);assert.strictEqual(old.simulationRulesVersion,1);assert.strictEqual(c.RunState.load(seasonId,{readOnly:true}).simulationRulesVersion,1);}
+console.log("run simulation rules versioning: new IE1/IE2/IE3 V2, old saves remain V1 OK");
