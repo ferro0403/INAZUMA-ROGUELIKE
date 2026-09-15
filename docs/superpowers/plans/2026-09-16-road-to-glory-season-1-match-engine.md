@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - This plan starts only after the Foundation and Progression/Gacha/Squad PRs are reviewed/merged.
-- Season 1 Free Agents intentionally have no move. Do not invent or synthesize one; they use normal actions only and receive no move/move-element bonus.
+- Season 1 Free Agents intentionally have no move. Do not invent or synthesize one; they use only contextual base actions (Tiro/Parata/Dribbling/Difesa) and receive no move/move-element bonus.
 - Do not change or call current `MatchSimulator.simulate()` for RTG match outcomes.
 - Regulation generates 20–28 encounter/action sequences and targets 16–20 manual choices.
 - User decisions cover both attack and defense contexts: midfield, dribble, defense, shot and save.
@@ -359,11 +359,12 @@ At match creation, deterministically choose exactly `manualTarget` regulation ac
 
 A manual index always opens the VS decision panel for the user when the user is involved in the decisive encounter.
 
-- If the user's player has a compatible configured move, the panel offers `Normale` and the move.
-- If the user's player has no compatible move — including a Season 1 Free Agent with no move at all — the panel offers only `Normale`; confirming it still counts toward the 16–20 manual interactions.
+- If the user's player has a compatible configured move, the panel offers the contextual base action plus the move.
+- If the user's player has no compatible move — including a Season 1 Free Agent with no move at all — the panel offers only the contextual base action; confirming it still counts toward the 16–20 manual interactions.
+- The base-action label is never `Normale`: use `Tiro`, `Parata`, `Dribbling` or `Difesa` according to the user's side and encounter role.
 - The absence of a move never causes RTG to synthesize one.
 
-Automatic non-manual encounters always use normal-vs-normal and never consume move uses.
+Automatic non-manual encounters always use base-action-vs-base-action resolution and never consume move uses.
 
 - [ ] **Step 5: Persist the hidden AI choice in pending encounter preparation**
 
@@ -405,7 +406,7 @@ Role-to-move compatibility:
 - defense opponent → move type `defense`;
 - midfield → only `dribble` or `defense` active-role moves are compatible; shot/save moves are never consumed in midfield.
 
-If a prepared manual encounter has no compatible user move, the user still confirms the normal action in the VS panel. No move use is consumed.
+If a prepared manual encounter has no compatible user move, the user still confirms the contextual base action in the VS panel. No move use is consumed.
 
 - [ ] **Step 7: Implement halftime boundary**
 
