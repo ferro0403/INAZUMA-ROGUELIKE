@@ -13,3 +13,13 @@ assert.deepStrictEqual([catalog.players["1981"].name,catalog.players["1981"].typ
 assert.deepStrictEqual([catalog.players["1864"].name,catalog.players["1864"].type,catalog.players["1864"].element,catalog.players["1864"].power],["Emperor Penguin X","shot","Fire",100]);
 assert.strictEqual(new Set(Object.values(catalog.players).map(move=>move.name)).size,150);
 console.log("IE3 move catalog: 296 campaign players, 19 teams and manual substitutions OK");
+
+const roleOwners=Object.entries(catalog.players).filter(([,move])=>move.roleMoves).map(([id])=>id).sort();
+assert.deepStrictEqual(roleOwners,["1","1166","1957","30"].sort());
+const roleExpected={
+  "1":{MF:["The Earth","shot","Mountain",120],GK:["God Catch","save","Mountain",130]},
+  "1166":{FW:["Cross Fire","shot","Fire",120],DF:["Land of Ice","defense","Wind",75]},
+  "30":{FW:["Emperor Penguin No. 2","shot","Forest",85],DF:["Killer Slide","defense","Forest",50]},
+  "1957":{GK:["Soul Hand","save","Fire",140],FW:["X Blast","shot","Fire",70]}
+};
+for(const[id,roles]of Object.entries(roleExpected))for(const[role,row]of Object.entries(roles)){const m=catalog.players[id].roleMoves[role];assert.deepStrictEqual([m.name,m.type,m.element,m.power],row,id+" "+role);}
