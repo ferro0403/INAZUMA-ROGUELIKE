@@ -1,11 +1,11 @@
 "use strict";
 const assert=require("assert"),fs=require("fs");
 const catalog=JSON.parse(fs.readFileSync("data/IE1_S3_moves.json","utf8")),season=JSON.parse(fs.readFileSync("data/IE1_S3_season_compact.json","utf8"));
-assert.strictEqual(catalog.schemaVersion,1);assert.strictEqual(catalog.seasonId,"ie1_s3");assert.strictEqual(Object.keys(catalog.players).length,296);
+assert.strictEqual(catalog.schemaVersion,1);assert.strictEqual(catalog.seasonId,"ie1_s3");assert.strictEqual(Object.keys(catalog.players).length,296);assert.strictEqual(Object.keys(catalog.inheritedPlayers||{}).length,288);
 const campaignTeamIds=new Set([...season.bossOrder,...season.specialMatches].map(x=>String(x.teamId)));
 assert.strictEqual(campaignTeamIds.size,19);
 const expectedIds=[...new Set(season.profiles.filter(p=>campaignTeamIds.has(String(p.teamId))).map(p=>String(p.playerId)))].sort();
-assert.strictEqual(expectedIds.length,296);assert.deepStrictEqual(Object.keys(catalog.players).sort(),expectedIds);
+assert.strictEqual(expectedIds.length,296);assert.deepStrictEqual(Object.keys(catalog.players).sort(),expectedIds);const recruitmentIds=[...new Set(season.recruitmentPool.entries.filter(entry=>entry.sourceKind==="season3_recruitment_profile").map(entry=>String(entry.playerId)))].sort();assert.strictEqual(recruitmentIds.length,288);assert.deepStrictEqual(Object.keys(catalog.inheritedPlayers).sort(),recruitmentIds);assert.strictEqual(Object.keys(catalog.inheritedPlayers).filter(id=>catalog.players[id]).length,0);
 assert.deepStrictEqual(new Set(Object.values(catalog.players).map(move=>move.element)),new Set(["Fire","Wind","Mountain","Forest"]));
 assert.deepStrictEqual([catalog.players["1828"].name,catalog.players["1828"].type,catalog.players["1828"].element,catalog.players["1828"].power],["Fire Blizzard","shot","Fire",90]);
 assert.deepStrictEqual([catalog.players["1830"].name,catalog.players["1830"].type,catalog.players["1830"].element,catalog.players["1830"].power],["Fire Blizzard","shot","Wind",90]);
