@@ -102,6 +102,7 @@
         team = null,
         runStats = null,
         albumUnlocked = false,
+        seasonId = null,
       } = {},
     ) {
       if (!player) return "";
@@ -188,7 +189,7 @@
       const equipmentMarkup = equipment
         ? `<div class="equipped-detail"><div class="equipped-detail-art">${itemIcon(equipment)}</div><div class="equipped-detail-copy"><span>${historical ? "Equipaggiamento storico" : "Oggetto assegnato"}</span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.description)}</small><em>+${Number(item.bonus || 0)} ${escapeHtml(STAT_LABELS[item.stat] || item.stat || "")}</em></div>${!readOnly && playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>`
         : `<div class="equipped-detail equipped-detail-empty"><div class="equipped-detail-copy"><span>Slot disponibile</span><strong>Nessun equipaggiamento</strong><small>Questo giocatore non ha ancora un oggetto assegnato.</small></div></div>`;
-      const moveSeasonId = [player.seasonId, player.recruitmentSource, sourceFallback.seasonId, getSeasonId()]
+      const moveSeasonId = [seasonId, player.seasonId, player.recruitmentSource, sourceFallback.seasonId, getSeasonId()]
         .find((seasonId) => global.SeasonRegistry?.isSeasonSource?.(seasonId)) || getSeasonId();
       const movePlayerId = player.legacyCanonicalPlayerId || sourceFallback.legacyCanonicalPlayerId || playerId;
       const playerMove = global.MatchMoveRuntime?.moveForPlayer?.(moveSeasonId, { playerId: movePlayerId, position: resolved.position || player.position || sourceFallback.position }) || null;

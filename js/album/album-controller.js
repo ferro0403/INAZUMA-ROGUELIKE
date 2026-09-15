@@ -219,7 +219,7 @@
         return;
       }
       const isUnlocked = unlocked.has(String(player.playerId));
-      showPlayerDetailsFor(player, { mode: "album", readOnly: true, playerId: player.playerId, level: player.maxLevel || 20, database: player.albumDatabase, equipment: null, preserveScroll: scrollSnapshot(), albumUnlocked: isUnlocked });
+      showPlayerDetailsFor(player, { mode: "album", readOnly: true, playerId: player.playerId, level: player.maxLevel || 20, database: player.albumDatabase, equipment: null, preserveScroll: scrollSnapshot(), albumUnlocked: isUnlocked, seasonId: team.freeAgents ? null : collectionId });
     });
     albumRoster?.addEventListener("click", (event) => {
       if (!event.target.closest("[data-album-load-more]")) return;
