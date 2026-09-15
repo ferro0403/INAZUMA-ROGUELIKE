@@ -191,7 +191,7 @@
       const moveSeasonId = [player.seasonId, player.recruitmentSource, sourceFallback.seasonId, getSeasonId()]
         .find((seasonId) => global.SeasonRegistry?.isSeasonSource?.(seasonId)) || getSeasonId();
       const movePlayerId = player.legacyCanonicalPlayerId || sourceFallback.legacyCanonicalPlayerId || playerId;
-      const playerMove = global.MatchMoveRuntime?.moveForPlayer?.(moveSeasonId, movePlayerId) || null;
+      const playerMove = global.MatchMoveRuntime?.moveForPlayer?.(moveSeasonId, { playerId: movePlayerId, position: resolved.position || player.position || sourceFallback.position }) || null;
       const moveSectionMarkup = playerMove && global.MovePresentationRuntime?.detailMarkup
         ? `<section class="player-detail-section player-detail-move">
               <h3><span>Mossa</span></h3>
