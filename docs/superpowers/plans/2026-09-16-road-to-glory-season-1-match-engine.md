@@ -13,6 +13,7 @@
 ## Global Constraints
 
 - This plan starts only after the Foundation and Progression/Gacha/Squad PRs are reviewed/merged.
+- **Execution blocker:** the approved “every playable player has a move” rule requires an approved Free Agent move data source/rule. Current `FREE_AGENTS_compact.json` has no move field and `IE1_moves.json` covers the 157 S1 team players only. Do not execute this plan until that data prerequisite is resolved; do not synthesize moves silently.
 - Do not change or call current `MatchSimulator.simulate()` for RTG match outcomes.
 - Regulation generates 20–28 encounter/action sequences and targets 16–20 manual choices.
 - User decisions cover both attack and defense contexts: midfield, dribble, defense, shot and save.
@@ -62,8 +63,8 @@ Modify:
 - Produces: `baseStrength(player, kind)`
 - Produces: `moveBonus(power)`
 - Produces: `elementModifier(attackerElement, defenderElement)`
-- Produces: `probability({ actor, opponent, kind, actorMove, opponentMove })`
-- Produces: `compatibleMoveType(kind, side)`
+- Produces: `probability({ actor, opponent, actorKind, opponentKind, actorMove, opponentMove })`
+- Produces: `compatibleMoveTypes(actorKind, opponentKind)`
 
 - [ ] **Step 1: Write exact formula tests**
 
@@ -100,9 +101,17 @@ baseProbability = 50 + 2.5 * scoreDelta
 
 Then add element percentage points and clamp final result to 10–90.
 
+The probability implementation must compute each side with its own action stat group. Approved matchup pairs are:
+
+- midfield vs midfield;
+- dribble vs defense;
+- shot vs save.
+
+The engine always models the possession side as the actor. If the user is defending, the user's card is the opponent side of a dribble-vs-defense or shot-vs-save encounter; the UI labels the decision from the user's perspective.
+
 Assert:
 
-- equal scores, neutral elements → 50;
+- equal effective scores, neutral elements → 50;
 - +5 strength delta → 62.5;
 - +10 strength delta → 75;
 - huge positive/negative deltas → 90 / 10;
@@ -385,11 +394,13 @@ When a side chooses move:
 
 Role-to-move compatibility:
 
-- shot → move type `shot`;
-- save → `save`;
-- defense → `defense`;
-- dribble → `dribble`;
-- midfield → the active-role move may be used if present; both sides compare their currently active role move.
+- shot actor → move type `shot`;
+- save opponent → move type `save`;
+- dribble actor → move type `dribble`;
+- defense opponent → move type `defense`;
+- midfield → only `dribble` or `defense` active-role moves are compatible; shot/save moves are never consumed in midfield.
+
+If a prepared encounter has no compatible user move, it resolves automatically and does not consume one of the 16–20 manual decision slots; the slot is transferred to the next eligible encounter as defined above.
 
 - [ ] **Step 7: Implement halftime boundary**
 
