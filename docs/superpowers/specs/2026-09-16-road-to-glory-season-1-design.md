@@ -193,18 +193,21 @@ Match constraints are revalidated against the new starting XI before the second 
 
 ## 10. Move usage
 
-### Current data prerequisite: Free Agent move coverage
+### Free Agent exception
 
-The approved gameplay assumes every playable RTG player can expose one role-compatible move (two role-specific moves only for dual-role players).
+For Season 1, Free Agents intentionally have **no move**.
 
-The current repository data does **not** yet satisfy that assumption for the initial Free Agent roster:
+RTG must not invent, synthesize or assign a fallback technique to them. A Free Agent:
 
-- `data/FREE_AGENTS_compact.json` contains 1563 Free Agents and no move field;
-- `data/IE1_moves.json` currently maps the 157 Season 1 team players, not the global Free Agent pool.
+- can participate in every compatible normal encounter;
+- receives no move-strength bonus;
+- never receives a move-element modifier;
+- never exposes a move button;
+- has no move-use counter to consume.
 
-RTG must **not invent or synthesize Free Agent techniques silently**. Before the Match Engine implementation is executed, Free Agent move coverage must be resolved by an explicitly approved data source/rule. Until that prerequisite is resolved, the Match Engine PR is blocked; Foundation and Progression/Gacha/Squad work remain independently implementable.
+A future RTG update may add Free Agent moves through an explicit data source, but that is outside Season 1 scope.
 
-Every player has **2 total move uses per match**.
+Every player who has a configured move has **2 total move uses per match**.
 
 The counter belongs to the player, not to an individual move.
 
@@ -256,9 +259,9 @@ When a manual encounter occurs:
 
 - the field remains visible underneath and is dimmed;
 - a simple **player card VS player card** panel opens;
-- the panel shows relevant player identity, role, element, overall, active move and remaining uses;
+- the panel shows relevant player identity, role, element and overall; if a configured move exists, it also shows that move and remaining uses;
 - the user sees a probability bar and percentage;
-- the user chooses normal action or the compatible move;
+- the user confirms the normal action or chooses the compatible move when one exists;
 - only after confirmation is the AI choice revealed;
 - the final probability is shown;
 - the encounter resolves;
@@ -679,7 +682,7 @@ Season 1 RTG is complete only when:
 6. S1 vending pool unlocks only defeated-team players and uses the approved rates/cost/refunds;
 7. token rewards match the approved tables and cannot be farmed through reload exploits;
 8. player level is always 20;
-9. moves have two shared uses per player and role-dependent dual-role behavior;
+9. configured moves have two shared uses per player and role-dependent dual-role behavior, while Free Agents without moves remain normal-action-only;
 10. matches are not pre-resolved and produce outcomes from encounter state;
 11. regulation produces the approved action/decision pacing;
 12. base strength, move bonus, element modifiers and 10–90 probability clamp are covered by deterministic tests;
