@@ -180,7 +180,7 @@ function minutePool(type, count, rng) { const max = type === "five" ? 30 : 90; c
   function moveForTimelineEvent(player,kind,options,usage,rng) {
     if (simulationRulesVersion(options?.rulesVersion)<2 || !player) return null;
     const expectedType=EVENT_MOVE_TYPES[kind]; if (!expectedType) return null;
-    const move=global.MatchMoveRuntime?.moveForPlayer?.(options?.seasonId,player.playerId??player.id);
+    const move=global.MatchMoveRuntime?.moveForPlayer?.(options?.seasonId,player);
     if (!move || move.type!==expectedType) return null;
     if (rng()>=.65) return null;
     const key=`${player.playerId??player.id}:${move.name}`, used=Number(usage.get(key)||0);
