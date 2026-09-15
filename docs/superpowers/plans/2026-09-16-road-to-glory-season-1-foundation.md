@@ -334,6 +334,7 @@ The test must assert this exact initial durable shape:
   campaignId:"rtg-ie-trilogy",
   campaignSeed:"seed-1",
   activeSeasonId:"ie1",
+  seasonComplete:false,
   tokens:0,
   lives:2,
   checkpointMainIndex:-1,
@@ -373,6 +374,7 @@ Use JSON-safe cloning only. `normalize` must preserve unknown forward-compatible
 - wrong campaign ID;
 - tokens < 0;
 - unsupported active Season in S1 implementation;
+- non-boolean `seasonComplete`;
 - duplicate lineup/bench IDs;
 - overlap between lineup and bench;
 - non-object activeMatch.
