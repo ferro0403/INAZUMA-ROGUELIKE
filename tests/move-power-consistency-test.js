@@ -1,0 +1,11 @@
+"use strict";
+const assert=require("assert"),fs=require("fs");
+const catalogs=["data/IE1_moves.json","data/IE1_S2_moves.json","data/IE1_S3_moves.json"].map(path=>JSON.parse(fs.readFileSync(path,"utf8")));
+const approved={"Megalodon":80,"Slice and Dice":80,"Mirage Shot":70,"Chaos Break":120,"Heel Drop":80,"Excalibur":130,"Paladin Strike":80,"Iron Wall":120,"Super Elastico":100,"Hellfire":80,"The Phoenix":100,"Grand Fenrir":110,"Unicorn Boost":95,"Colosseum Guard":90,"Odin Sword":120,"Freeze Shot":60,"Brave Shot":130,"Capoeira Grab":75,"Rolling Slide":80,"Samba Strike":120,"The End":90,"Devil Ball":80,"Shadow Ray":100,"Dark Matter":95,"Soul Hand":140,"Mega Quake":80,"Air Ride":100,"Fire Tornado":80,"Double Jaw":105,"High Voltage":120,"Sigma Zone":100,"Diabolical Cut":85,"Doom Break":130,"Field of Force":90,"Doom Rain":85,"God Catch":130,"Grand Fire":130,"The Mountain":110,"Wind God's Dance":95,"Wyvern Blizzard":95,"Emperor Penguin No. 3":120,"Cross Fire":120,"Fiend Hand":110,"Tiger Storm":100,"Vac Attack":80,"Celestial Smash":130,"Gravitation":80,"Emperor Penguin X":100};
+function rows(catalog){const out=[];for(const[id,move]of Object.entries(catalog.players||{})){if(move?.name)out.push({id,move});for(const roleMove of Object.values(move?.roleMoves||{}))if(roleMove?.name)out.push({id,move:roleMove});}return out;}
+const byName=new Map();
+for(const catalog of catalogs)for(const row of rows(catalog)){if(!byName.has(row.move.name))byName.set(row.move.name,[]);byName.get(row.move.name).push(Number(row.move.power));}
+for(const[name,powers]of byName){assert.strictEqual(new Set(powers).size,1,name+" must keep one global Power across seasons");}
+for(const[name,power]of Object.entries(approved)){const matches=byName.get(name)||[];assert(matches.length,name+" approved Power missing");for(const value of matches)assert.strictEqual(value,power,name+" approved global Power");}
+for(const[name,power]of Object.entries({"The Wall":70,"Dragon Crash":70,"Gigant Wall":80})){const matches=byName.get(name)||[];assert(matches.length,name+" historical correction missing");for(const value of matches)assert.strictEqual(value,power,name+" historical global Power");}
+console.log("move Power consistency: recurring techniques and approved overrides are global across IE1/IE2/IE3");
