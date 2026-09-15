@@ -371,9 +371,9 @@ For a pending user encounter assert:
 - user card;
 - opponent card;
 - base probability bar + percentage;
-- `Normale` button;
+- one contextual base-action button: `Tiro`, `Parata`, `Dribbling` or `Difesa`;
 - compatible move button with `X/2` remaining only when that player has a configured compatible move;
-- for a Free Agent without a move, no empty/disabled technique slot is shown: only `Normale` is available;
+- for a Free Agent without a move, no empty/disabled technique slot is shown: only the relevant contextual base-action button is available;
 - AI choice is **not** visible before user confirmation.
 
 For resolved encounter assert:
@@ -384,7 +384,7 @@ For resolved encounter assert:
 
 - [ ] **Step 3: Test penalties**
 
-Normal-vs-normal user shooting markup exposes exactly:
+When penalties use no moves, user shooting markup exposes exactly:
 
 ```
 Sinistra
