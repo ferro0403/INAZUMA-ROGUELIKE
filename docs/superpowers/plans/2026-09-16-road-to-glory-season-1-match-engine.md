@@ -13,11 +13,11 @@
 ## Global Constraints
 
 - This plan starts only after the Foundation and Progression/Gacha/Squad PRs are reviewed/merged.
-- **Execution blocker:** the approved “every playable player has a move” rule requires an approved Free Agent move data source/rule. Current `FREE_AGENTS_compact.json` has no move field and `IE1_moves.json` covers the 157 S1 team players only. Do not execute this plan until that data prerequisite is resolved; do not synthesize moves silently.
+- Season 1 Free Agents intentionally have no move. Do not invent or synthesize one; they use normal actions only and receive no move/move-element bonus.
 - Do not change or call current `MatchSimulator.simulate()` for RTG match outcomes.
 - Regulation generates 20–28 encounter/action sequences and targets 16–20 manual choices.
 - User decisions cover both attack and defense contexts: midfield, dribble, defense, shot and save.
-- Each player has 2 total move uses for the whole match, shared across role-specific moves.
+- Each player with a configured move has 2 total move uses for the whole match, shared across role-specific moves. Free Agents without moves have no move-use counter.
 - Move uses do not recharge at halftime, extra time or penalties.
 - Lineup/role changes happen only at halftime; all 4 bench players may be used under role-by-role substitution legality.
 - Encounter probability is always clamped to 10%–90%.
@@ -315,7 +315,8 @@ For fixed input assert:
 - manualTarget is 16–20 and <= actionTarget;
 - period is `first_half`;
 - score 0–0;
-- every user/opponent player begins with 2 remaining move uses;
+- every player with a configured move begins with 2 remaining move uses;
+- Free Agents without a configured move begin with no move availability and no move-use counter;
 - initial fieldZone is `midfield`;
 - same input produces same match seed/targets.
 
@@ -356,9 +357,13 @@ Weight candidates by the approved relevant stats and reduce a player's weight by
 
 At match creation, deterministically choose exactly `manualTarget` regulation action indexes from `0..actionTarget-1`.
 
-A manual index becomes a user decision only when the user's involved player has a compatible active move; otherwise resolve normal-vs-normal automatically and transfer the unused manual slot to the next eligible regulation encounter until the target is met or regulation ends.
+A manual index always opens the VS decision panel for the user when the user is involved in the decisive encounter.
 
-Automatic encounters always use normal-vs-normal and never consume move uses.
+- If the user's player has a compatible configured move, the panel offers `Normale` and the move.
+- If the user's player has no compatible move — including a Season 1 Free Agent with no move at all — the panel offers only `Normale`; confirming it still counts toward the 16–20 manual interactions.
+- The absence of a move never causes RTG to synthesize one.
+
+Automatic non-manual encounters always use normal-vs-normal and never consume move uses.
 
 - [ ] **Step 5: Persist the hidden AI choice in pending encounter preparation**
 
@@ -386,7 +391,7 @@ Test by cloning the same prepared match and resolving one copy with `normal`, th
 
 When a side chooses move:
 
-- verify a compatible active-role move exists;
+- verify a compatible active-role move exists; Free Agents without moves can never enter this branch;
 - verify remaining uses > 0;
 - decrement that canonical player's remaining uses by exactly 1;
 - use the same counter after a halftime role switch;
@@ -400,7 +405,7 @@ Role-to-move compatibility:
 - defense opponent → move type `defense`;
 - midfield → only `dribble` or `defense` active-role moves are compatible; shot/save moves are never consumed in midfield.
 
-If a prepared encounter has no compatible user move, it resolves automatically and does not consume one of the 16–20 manual decision slots; the slot is transferred to the next eligible encounter as defined above.
+If a prepared manual encounter has no compatible user move, the user still confirms the normal action in the VS panel. No move use is consumed.
 
 - [ ] **Step 7: Implement halftime boundary**
 
