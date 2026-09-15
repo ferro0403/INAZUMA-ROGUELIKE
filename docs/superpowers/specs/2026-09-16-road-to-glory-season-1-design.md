@@ -193,6 +193,17 @@ Match constraints are revalidated against the new starting XI before the second 
 
 ## 10. Move usage
 
+### Current data prerequisite: Free Agent move coverage
+
+The approved gameplay assumes every playable RTG player can expose one role-compatible move (two role-specific moves only for dual-role players).
+
+The current repository data does **not** yet satisfy that assumption for the initial Free Agent roster:
+
+- `data/FREE_AGENTS_compact.json` contains 1563 Free Agents and no move field;
+- `data/IE1_moves.json` currently maps the 157 Season 1 team players, not the global Free Agent pool.
+
+RTG must **not invent or synthesize Free Agent techniques silently**. Before the Match Engine implementation is executed, Free Agent move coverage must be resolved by an explicitly approved data source/rule. Until that prerequisite is resolved, the Match Engine PR is blocked; Foundation and Progression/Gacha/Squad work remain independently implementable.
+
 Every player has **2 total move uses per match**.
 
 The counter belongs to the player, not to an individual move.
