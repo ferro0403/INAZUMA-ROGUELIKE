@@ -97,7 +97,8 @@
   function recordSecondaryResult(inputState, { nodeId, result, attemptNumber } = {}) {
     const state = cloneState(inputState);
     const id = String(nodeId || "");
-    if (indexForNodeId(id) < 0) throw Object.assign(new Error("Unknown RTG secondary node"), { code: "rtg-secondary-node-unknown" });
+    const node = nodes().find((candidate) => candidate.id === id);
+    if (!node || node.type !== "secondary") throw Object.assign(new Error("Unknown RTG secondary node"), { code: "rtg-secondary-node-unknown" });
     const attempts = state.attemptsByNode && typeof state.attemptsByNode === "object" ? state.attemptsByNode : {};
     const previous = attempts[id] && typeof attempts[id] === "object" ? attempts[id] : {};
     const normalizedResult = String(result || "");
