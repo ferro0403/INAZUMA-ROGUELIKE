@@ -7,19 +7,19 @@ assert.strictEqual(campaignTeamIds.size,19);
 const expectedIds=[...new Set(season.profiles.filter(p=>campaignTeamIds.has(String(p.teamId))).map(p=>String(p.playerId)))].sort();
 assert.strictEqual(expectedIds.length,296);assert.deepStrictEqual(Object.keys(catalog.players).sort(),expectedIds);
 assert.deepStrictEqual(new Set(Object.values(catalog.players).map(move=>move.element)),new Set(["Fire","Wind","Mountain","Forest"]));
-assert.deepStrictEqual([catalog.players["1828"].name,catalog.players["1828"].type,catalog.players["1828"].element,catalog.players["1828"].power],["Fire Blizzard","shot","Fire",110]);
-assert.deepStrictEqual([catalog.players["1830"].name,catalog.players["1830"].type,catalog.players["1830"].element,catalog.players["1830"].power],["Fire Blizzard","shot","Wind",110]);
-assert.deepStrictEqual([catalog.players["1981"].name,catalog.players["1981"].type,catalog.players["1981"].element,catalog.players["1981"].power],["Super Elastico","dribble","Mountain",100]);
-assert.deepStrictEqual([catalog.players["1864"].name,catalog.players["1864"].type,catalog.players["1864"].element,catalog.players["1864"].power],["Emperor Penguin X","shot","Fire",100]);
+assert.deepStrictEqual([catalog.players["1828"].name,catalog.players["1828"].type,catalog.players["1828"].element,catalog.players["1828"].power],["Fire Blizzard","shot","Fire",90]);
+assert.deepStrictEqual([catalog.players["1830"].name,catalog.players["1830"].type,catalog.players["1830"].element,catalog.players["1830"].power],["Fire Blizzard","shot","Wind",90]);
+assert.deepStrictEqual([catalog.players["1981"].name,catalog.players["1981"].type,catalog.players["1981"].element,catalog.players["1981"].power],["Super Elastico","dribble","Mountain",85]);
+assert.deepStrictEqual([catalog.players["1864"].name,catalog.players["1864"].type,catalog.players["1864"].element,catalog.players["1864"].power],["Emperor Penguin X","shot","Fire",85]);
 assert.strictEqual(new Set(Object.values(catalog.players).map(move=>move.name)).size,150);
 console.log("IE3 move catalog: 296 campaign players, 19 teams and manual substitutions OK");
 
 const roleOwners=Object.entries(catalog.players).filter(([,move])=>move.roleMoves).map(([id])=>id).sort();
 assert.deepStrictEqual(roleOwners,["1","1166","1957","30"].sort());
 const roleExpected={
-  "1":{MF:["Megaton Head","shot","Mountain",70],GK:["God Catch","save","Mountain",130]},
-  "1166":{FW:["Cross Fire","shot","Fire",120],DF:["Land of Ice","defense","Wind",75]},
+  "1":{MF:["Megaton Head","shot","Mountain",70],GK:["God Catch","save","Mountain",105]},
+  "1166":{FW:["Cross Fire","shot","Fire",95],DF:["Land of Ice","defense","Wind",65]},
   "30":{FW:["Emperor Penguin No. 2","shot","Forest",85],DF:["Killer Slide","defense","Forest",50]},
-  "1957":{GK:["Soul Hand","save","Fire",140],FW:["X Blast","shot","Fire",110]}
+  "1957":{GK:["Soul Hand","save","Fire",110],FW:["X Blast","shot","Fire",90]}
 };
 for(const[id,roles]of Object.entries(roleExpected))for(const[role,row]of Object.entries(roles)){const m=catalog.players[id].roleMoves[role];assert.deepStrictEqual([m.name,m.type,m.element,m.power],row,id+" "+role);}
