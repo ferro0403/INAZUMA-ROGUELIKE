@@ -141,7 +141,8 @@ Assert:
    - furthest/current advance to the first Occult→Wild secondary;
 3. replayed Occult victory after a future rollback gives 0 additional first-clear Tokens;
 4. winning the current secondary samples one approved reward and advances furthest;
-5. replaying an older completed secondary awards Tokens but does not move furthest backward/forward incorrectly;
+5. draw/loss/abandon on the current secondary leaves progression on that node;
+6. replaying an older completed secondary awards Tokens but does not move furthest backward/forward incorrectly;
 6. secondary draw/loss awards 0 and does not consume lives;
 7. first main loss changes lives 2→1 without rollback;
 8. second main loss changes lives 1→2 and resets current progression to the node immediately after the latest checkpoint;
