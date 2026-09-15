@@ -17,4 +17,5 @@ const oldNode="secondary:occult:wild:1";const currentBefore=s.currentNodeId;s=P.
 s={...s,currentNodeId:"main:brainwashing",lives:2};s=P.recordMainVictory(s,{teamId:"brainwashing",matchId:"m-brain"});assert.strictEqual(s.checkpointMainIndex,2);assert.strictEqual(s.lives,2);assert.strictEqual(s.currentNodeId,"secondary:brainwashing:otaku:1");
 s={...s,currentNodeId:"main:otaku",furthestNodeIndex:10,lives:2};s=P.recordMainLoss(s,{nodeId:"main:otaku"});assert.strictEqual(s.lives,1);assert.strictEqual(s.currentNodeId,"main:otaku");s=P.recordMainLoss(s,{nodeId:"main:otaku"});assert.strictEqual(s.lives,2);assert.strictEqual(s.currentNodeId,"secondary:brainwashing:otaku:1");assert.strictEqual(s.furthestNodeIndex,10);
 s={...s,currentNodeId:"main:raimon"};s=P.recordMainVictory(s,{teamId:"raimon",matchId:"m-final"});assert.strictEqual(s.seasonComplete,true);
+assert.throws(()=>P.recordSecondaryResult(s,{nodeId:"main:occult",result:"victory",attemptNumber:1}),e=>e.code==="rtg-secondary-node-unknown");
 console.log("rtg-progression-test: PASS");
