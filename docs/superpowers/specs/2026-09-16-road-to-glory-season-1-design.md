@@ -199,7 +199,7 @@ For Season 1, Free Agents intentionally have **no move**.
 
 RTG must not invent, synthesize or assign a fallback technique to them. A Free Agent:
 
-- can participate in every compatible normal encounter;
+- can participate in every compatible base encounter;
 - receives no move-strength bonus;
 - never receives a move-element modifier;
 - never exposes a move button;
@@ -261,7 +261,7 @@ When a manual encounter occurs:
 - a simple **player card VS player card** panel opens;
 - the panel shows relevant player identity, role, element and overall; if a configured move exists, it also shows that move and remaining uses;
 - the user sees a probability bar and percentage;
-- the user confirms the normal action or chooses the compatible move when one exists;
+- the user confirms the contextual base action — **Tiro, Parata, Dribbling o Difesa** — or chooses the compatible move when one exists;
 - only after confirmation is the AI choice revealed;
 - the final probability is shown;
 - the encounter resolves;
@@ -419,7 +419,7 @@ If both use moves:
 
 - resolve a normal RTG shot-vs-save encounter using the approved strength, move, element and probability rules.
 
-If both use normal actions:
+If both use base actions without moves:
 
 - shooter selects **left / center / right**;
 - goalkeeper selects **left / center / right** without seeing the shooter's current choice;
@@ -429,6 +429,19 @@ If both use normal actions:
 When the user controls the goalkeeper, the same hidden-choice rule applies in reverse.
 
 Penalty AI may learn prior left/center/right tendencies from earlier kicks in the same shootout, but never reads the user's current choice.
+
+### Base-action UI labels
+
+The match UI never shows a generic button labeled `Normale`.
+
+The base-action button is contextual:
+
+- possession-side shot encounter → **Tiro**;
+- goalkeeper response → **Parata**;
+- possession-side dribble or midfield progression → **Dribbling**;
+- defensive response or midfield stop → **Difesa**.
+
+A player without a configured move, including Season 1 Free Agents, simply sees the relevant contextual base-action button.
 
 ## 19. RTG team power and lineup caps
 
