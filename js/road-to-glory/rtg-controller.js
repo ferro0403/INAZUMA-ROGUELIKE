@@ -322,6 +322,10 @@
       return commitMatchState("rtg-halftime",match=>matchEngine.confirmHalftime(match,nextSquad,{validateHalftime:(candidate)=>{
         const ids=candidate.lineup.map(player=>id(player.playerId)),benchIds=candidate.bench.map(player=>id(player.playerId));
         const candidateState=clone(campaign);candidateState.squads.ie1={formationId:candidate.formationId,lineup:ids,bench:benchIds,activeRoleVariantByPlayerId:{...(candidate.activeRoleVariantByPlayerId||{})}};
+        if(match.matchType==="secondary"){
+          const validation=squadRuntime.validateSquad({state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+          return {eligible:validation.valid,reasons:validation.reasons||[]};
+        }
         return squadRuntime.mainEligibility({teamId:nodeById(match.nodeId)?.teamId,state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
       }}));
     }
