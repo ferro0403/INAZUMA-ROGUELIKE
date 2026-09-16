@@ -148,6 +148,28 @@
       return `<section class="panel rtg-requirements"><p class="eyebrow">Accesso partita</p><h3>Requisiti</h3><div class="rtg-requirements-list">${rows.map(([label, value, ok]) => `<div class="rtg-requirement ${ok ? "ok" : "bad"}"><span>${escape(label)}</span><strong>${escape(value)}</strong></div>`).join("")}</div></section>`;
     }
 
+    function nodeModalMarkup({ node, eligibility = null, seasonDb, allowed = true } = {}) {
+      if (!node) return "";
+      if (node.type === "main") {
+        const label = teamName(seasonDb, node.teamId);
+        return `<div class="rtg-node-modal rtg-paper-modal">
+          <div class="modal-head rtg-node-modal-head">
+            <span class="rtg-node-modal-emblem">${emblem(node.teamId)}</span>
+            <div><p class="eyebrow">Partita principale</p><h2>${escape(label)}</h2><p class="muted">Prepara la squadra e rispetta i requisiti della sfida.</p></div>
+          </div>
+          ${requirementsMarkup(eligibility)}
+          <button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed || !eligibility?.eligible ? "disabled" : ""}>GIOCA</button>
+        </div>`;
+      }
+      return `<div class="rtg-node-modal rtg-paper-modal">
+        <div class="modal-head rtg-node-modal-head">
+          <span class="rtg-node-modal-secondary" aria-hidden="true">?</span>
+          <div><p class="eyebrow">Svincolati</p><h2>Partita secondaria</h2><p class="muted">Avversari generati nella fascia di potenza del percorso. Vittoria: 100–150 Gettoni RTG.</p></div>
+        </div>
+        <button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed ? "disabled" : ""}>GIOCA</button>
+      </div>`;
+    }
+
     function vendingMarkup(model = {}) {
       const rarities = model.rarities || [];
       return `<div class="rtg-vending rtg-paper-modal">
@@ -165,7 +187,7 @@
       return `<div class="rtg-pull-result rtg-paper-modal"><p class="eyebrow">${escape(result.rarity || player.category || "")}</p><h2>${escape(player.name || result.playerId || "Giocatore")}</h2><p>${result.duplicate ? `Duplicato · rimborso ${escape(result.refund)} ◈` : "Nuovo giocatore RTG!"}</p><strong class="rtg-pull-balance">Saldo: ${escape(result.balanceAfter)} ◈</strong></div>`;
     }
 
-    return Object.freeze({ tabs, lockedMarkup, runMarkup, requirementsMarkup, vendingMarkup, pullResultMarkup });
+    return Object.freeze({ tabs, lockedMarkup, runMarkup, requirementsMarkup, nodeModalMarkup, vendingMarkup, pullResultMarkup });
   }
 
   global.RoadToGloryRunView = Object.freeze({ create });
