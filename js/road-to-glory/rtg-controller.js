@@ -354,11 +354,11 @@
         bindHalftimeEditor(match);
       }else if(match.status==="penalties"){
         const context=penaltyContext(match);
-        if(overlay)overlay.innerHTML=matchView.penaltyMarkup(match,{side:context.userRole,canUseMove:context.userMoveAvailable});
+        if(overlay)overlay.innerHTML=matchView.penaltyMarkup(match,context);
       }else if(match.pendingEncounter){
         const pending=match.pendingEncounter;
         const userPlayer=findMatchPlayer(match,"user",pending.userPlayerId);
-        const opponentPlayer=findMatchPlayer(match,"opponent",pending.opponentPlayerId);
+        const opponentPlayer=findMatchPlayer(match,"opponent",pending.aiPlayerId||pending.opponentPlayerId);
         if(overlay)overlay.innerHTML=matchView.encounterMarkup(match,{userPlayer,opponentPlayer});
       }
       matchView.bind(app,{onEncounterChoice:choice=>chooseEncounter(choice),onAbandon:()=>abandonMatch(),onHalftimeConfirm:()=>confirmHalftime(halftimeDraft),onPenaltyDirection:direction=>choosePenalty({direction,useMove:false}),onPenaltyMove:()=>choosePenalty({direction:"center",useMove:true})});
@@ -410,7 +410,16 @@
         const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
         const userWon=before.userSide===before.actorSide?!!log.actorWon:!log.actorWon;
         const userProbability=before.userSide===before.actorSide?Number(log.probability):100-Number(log.probability);
-        if(overlay)overlay.innerHTML=matchView.resolvedEncounterMarkup({userWon,probability:userProbability,aiChoiceLabel:before.aiChoice==="move"?(before.aiMove?.name||"Mossa"):(before.aiKind==="save"?"Parata":before.aiKind==="defense"?"Difesa":before.aiKind==="shot"?"Tiro":"Dribbling")})+`<button type="button" class="rtg-action-button rtg-duel-continue" data-rtg-duel-continue>Continua</button>`;
+        const userPlayer=findMatchPlayer(resolvedMatch,"user",before.userPlayerId);
+        const aiPlayer=findMatchPlayer(resolvedMatch,"opponent",before.aiPlayerId||before.opponentPlayerId);
+        const userChoiceLabel=choice==="move"?(before.userMove?.name||"Mossa"):(before.userBaseActionLabel||"Azione base");
+        const aiChoiceLabel=before.aiChoice==="move"?(before.aiMove?.name||"Mossa"):(before.aiKind==="save"?"Parata":before.aiKind==="defense"?"Difesa":before.aiKind==="shot"?"Tiro":"Dribbling");
+        if(overlay)overlay.innerHTML=matchView.resolvedEncounterMarkup({
+          userWon,probability:userProbability,
+          userPlayerName:userPlayer?.name||before.userPlayerId,
+          aiPlayerName:aiPlayer?.name||before.aiPlayerId,
+          userChoiceLabel,aiChoiceLabel,
+        });
         overlay?.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>renderMatch(campaign.activeMatch));
         return resolvedMatch;
       }
@@ -461,7 +470,8 @@
       const userKind=attackingSide==="user"?"shot":"save";
       const userMove=userPlayer?.move&&String(userPlayer.move.type)===userKind?userPlayer.move:null;
       const userKey=`user:${id(userPlayer?.playerId)}`;
-      return {attackingSide,defendingSide,shooter,keeper,userRole:userKind,userMove,userMoveAvailable:!!userMove&&Number(match.moveUsesByPlayerId?.[userKey]||0)>0};
+      const userMoveUses=Number(match.moveUsesByPlayerId?.[userKey]||0);
+      return {attackingSide,defendingSide,shooter,keeper,userRole:userKind,userMove,userMoveUses,userMoveAvailable:!!userMove&&userMoveUses>0};
     }
     function previousUserDirections(match){
       return (match.shootout?.history||[]).map(item=>({userDirection:item.attackingSide==="user"?item.shooterChoice:item.goalkeeperChoice})).filter(item=>item.userDirection);
