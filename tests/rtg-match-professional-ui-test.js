@@ -7,7 +7,8 @@ const p=(id,name,role,overall)=>({playerId:id,name,normalizedRole:role,position:
 const user=p("u1","Beat Scatton","MF",70),opp=p("o1","Arnan Wheelie","MF",74);
 const match={period:"second_half",status:"active",score:{user:0,opponent:0},possession:"opponent",fieldZone:"midfield",actionIndex:5,actionTarget:20,userSquad:{lineup:[user],bench:[]},opponentSquad:{name:"Svincolati",lineup:[opp],bench:[]},moveUsesByPlayerId:{},pendingEncounter:{minute:13,kind:"midfield",actorSide:"opponent",opponentSide:"user",actorPlayerId:"o1",opponentPlayerId:"u1",userPlayerId:"u1",aiPlayerId:"o1",userKind:"defense",aiKind:"dribble",userBaseActionLabel:"Difesa",normalPreviewProbability:64.2}};
 const duel=view.encounterMarkup(match,{userPlayer:user,opponentPlayer:opp});
-assert.match(duel,/rtg-duel-odds/);
+assert.match(duel,/rtg-duel-versus-board/);
+assert.match(duel,/rtg-duel-meter-clean/);
 assert.match(duel,/PROBABILITÀ BASE/i);
 assert.match(duel,/35\.8%/);
 assert.match(duel,/64\.2%/);
@@ -24,5 +25,6 @@ assert.match(result,/0\s*-\s*0/);
 const css=fs.readFileSync("css/road-to-glory.css","utf8");
 assert.match(css,/--rtg-match-paper:\s*#fffdf6/i);
 assert.match(css,/\.rtg-match-polish-v2 \.rtg-match-ticker/);
-assert.match(css,/\.rtg-duel-odds/);
+assert.match(css,/\.rtg-duel-versus-board/);
+assert.match(css,/\.rtg-duel-meter-clean/);
 console.log("rtg-match-professional-ui-test: PASS");
