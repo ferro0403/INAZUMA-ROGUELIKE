@@ -4,6 +4,7 @@
   function create(deps = {}) {
     const escape = deps.escapeHtml || ((value) => String(value ?? ""));
     const compactPlayerCardMarkup = deps.compactPlayerCardMarkup || null;
+    const matchFormationCardMarkup = deps.matchFormationCardMarkup || null;
     const formationLayout = deps.formationLayout || global.FormationLayout || null;
     const formationById = deps.formationById || ((id) => global.SeasonRegistry?.database?.("ie1")?.formations?.eleven?.find?.((item) => String(item.id) === String(id)) || null);
     const pid = (player) => String(player?.playerId || player?.id || "");
@@ -29,6 +30,25 @@
         });
       }
       return fallbackCard(player || {}, attrs, extraClass);
+    }
+
+    function sharedMatchCard(player, side = "user", attrs = "", extraClass = "") {
+      const visualSide = side === "opponent" ? "boss" : "user";
+      if (matchFormationCardMarkup) {
+        let markup = String(matchFormationCardMarkup(player || {}, {
+          side: visualSide,
+          readonly: true,
+          showEquipment: false,
+        }) || "");
+        if (attrs) markup = markup.replace(/<button\b/, `<button ${attrs}`);
+        if (extraClass) markup = markup.replace(/class="/, `class="${escape(extraClass)} `);
+        return markup;
+      }
+      return card(
+        player,
+        attrs,
+        `run-tactical-card match-player-card match-player-card--${visualSide} boss-match-card boss-match-card--${visualSide} squad-player-card ${extraClass}`
+      );
     }
 
     function duelVisualUrl(player = {}) {
@@ -199,18 +219,22 @@
 
     function formationPitchMarkup(squad = {}, side = "user", mode = "prematch", latest = null) {
       const rows = formationRows(squad?.formationId, squad?.lineup || []);
+      const visualSide = side === "opponent" ? "boss" : "user";
       const playerAttr = mode === "prematch" ? "data-rtg-prematch-player" : "data-rtg-field-player";
-      const baseClass = mode === "prematch" ? "rtg-prematch-player-card" : "rtg-live-player-card";
-      return `<div class="${mode === "prematch" ? "rtg-prematch-single-pitch" : "rtg-live-pitch"}" data-side="${escape(side)}">
-        ${rows.map((row) => `<div class="${mode === "prematch" ? "rtg-prematch-row" : "rtg-live-row"} rtg-row--${escape(String(row.role||"").toLowerCase())}" style="--row-count:${Math.max(1,row.players.length)}">${row.players.map((player) => {
-          const currentId = pid(player);
-          const latestClass = latest?.actorId === currentId ? "is-latest-actor" : latest?.opponentId === currentId ? "is-latest-opponent" : "";
-          return card(
-            player,
-            `${playerAttr}="${escape(currentId)}" data-side="${side}"`,
-            `squad-player-card ${baseClass} ${side === "opponent" ? "boss-match-card boss-match-card--boss" : ""} ${latestClass}`
-          );
-        }).join("")}</div>`).join("")}
+      const pitchClass = mode === "prematch" ? "rtg-prematch-single-pitch" : "rtg-live-pitch";
+      return `<div class="${pitchClass} rtg-shared-match-pitch" data-side="${escape(side)}">
+        <div class="boss-match-field-side boss-match-field-side--${visualSide} boss-match-field-side--mobile rtg-shared-match-side" data-rtg-shared-side="${escape(side)}">
+          ${rows.map((row) => `<div class="match-formation-line match-formation-line--${escape(String(row.role||"").toLowerCase())} boss-match-line boss-match-line--${escape(String(row.role||"").toLowerCase())} rtg-shared-match-line" data-row-count="${row.players.length}" style="--players-in-row:${row.players.length||1};--row-count:${row.players.length||1};--boss-row-count:${row.players.length||1}">${row.players.map((player) => {
+            const currentId = pid(player);
+            const latestClass = latest?.actorId === currentId ? "is-latest-actor" : latest?.opponentId === currentId ? "is-latest-opponent" : "";
+            return sharedMatchCard(
+              player,
+              side,
+              `${playerAttr}="${escape(currentId)}" data-side="${escape(side)}"`,
+              `squad-player-card rtg-shared-match-card ${latestClass}`
+            );
+          }).join("")}</div>`).join("")}
+        </div>
       </div>`;
     }
 
@@ -240,13 +264,14 @@
       return ({shot:"save",save:"shot",defense:"dribble",dribble:"defense",midfield:"midfield"})[String(kind||"").toLowerCase()]||"midfield";
     }
 
-    function actionVerb(kind, actor = true) {
+    function actionVerb(kind) {
       const key = String(kind || "").toLowerCase();
-      if (key === "shot") return actor ? "tira" : "prova a parare";
-      if (key === "save") return actor ? "prova a parare" : "tira";
-      if (key === "defense") return actor ? "difende" : "prova il dribbling";
-      if (key === "dribble") return actor ? "prova il dribbling" : "difende";
-      return actor ? "attacca il possesso" : "contrasta";
+      if (key === "shot") return "tira";
+      if (key === "save") return "prova la parata";
+      if (key === "defense") return "difende";
+      if (key === "dribble") return "prova il dribbling";
+      if (key === "midfield") return "contrasta";
+      return "contrasta";
     }
 
     function actionCallout(pending = {}, user = {}, opponent = {}) {
@@ -254,9 +279,22 @@
       const opponentName = opponent?.name || "L'avversario";
       const userKind=inferredUserKind(pending);
       const aiKind=String(pending.aiKind||counterpartKind(userKind)).toLowerCase();
+      const bothMidfield=userKind==="midfield"&&aiKind==="midfield";
+      if(bothMidfield){
+        const userActs=pending.actorSide==="user";
+        return userActs
+          ? { user:`${userName} prova a conquistare palla`, opponent:`${opponentName} contrasta` }
+          : { user:`${userName} contrasta`, opponent:`${opponentName} prova a conquistare palla` };
+      }
+      if(userKind===aiKind){
+        const userActs=pending.actorSide==="user";
+        return userActs
+          ? { user:`${userName} ${actionVerb(userKind)}`, opponent:`${opponentName} contrasta` }
+          : { user:`${userName} contrasta`, opponent:`${opponentName} ${actionVerb(aiKind)}` };
+      }
       return {
-        user: `${userName} ${actionVerb(userKind, true)}`,
-        opponent: `${opponentName} ${actionVerb(aiKind, true)}`,
+        user: `${userName} ${actionVerb(userKind)}`,
+        opponent: `${opponentName} ${actionVerb(aiKind)}`,
       };
     }
 
@@ -350,7 +388,7 @@
           opponentId: opponentSide === side ? String(last.opponentPlayerId||"") : "",
         };
       };
-      return `<main class="screen rtg-match-shell rtg-match-polish-v2 rtg-match-revolution boss-match-screen">
+      return `<main class="screen rtg-match-shell rtg-match-polish-v2 rtg-match-revolution boss-match-screen development-squad-card-scope">
         <header class="topbar rtg-match-topbar">
           <div class="rtg-match-period"><strong class="rtg-match-clock" data-rtg-match-minute>${escape(minute)}'</strong><span>${escape(periodLabel(match.period))}</span></div>
           <div class="rtg-match-score-main"><span>Tu</span><strong>${escape(match.score?.user || 0)} - ${escape(match.score?.opponent || 0)}</strong><span title="${escape(opponentName)}">${escape(opponentName)}</span></div>
@@ -407,35 +445,35 @@
           ${selected?'<span class="rtg-choice-confirm">TOCCA DI NUOVO PER CONFERMARE</span>':""}
         </button>`;
       };
-      return `<section class="panel rtg-duel-card rtg-duel-card--revolution rtg-paper-modal development-squad-card-scope">
+      return `<section class="panel rtg-duel-card rtg-duel-card--revolution rtg-duel-card--clean rtg-paper-modal">
         <div class="rtg-duel-contextbar">
           <strong class="rtg-duel-possession ${possessionClass}">${escape(possessionText)}</strong>
           <span>${escape(currentMinute(match))}' · ${escape(({midfield:"CENTROCAMPO",attack:"TRE QUARTI",shot:"ZONA TIRO"}[pending.zone || match.fieldZone] || "AZIONE"))}</span>
         </div>
-        <header class="rtg-duel-story">
+        <header class="rtg-duel-story rtg-duel-story--clean">
           <div><p class="eyebrow">SCONTRO</p><h2>${escape(callout.user)}</h2><p>${escape(callout.opponent)}</p></div>
           <div class="rtg-duel-probability-card"><small>${selectedChoice?"SE CONFERMI":"PROBABILITÀ BASE"}</small><strong>${escape(selectedProbability.toFixed(1))}%</strong><em>${escape(selectedLabel)}</em></div>
         </header>
-        <div class="rtg-duel-stage rtg-duel-stage--revolution">
-          <article class="rtg-duel-side rtg-duel-side--user">
-            <span class="rtg-duel-side-label">TU</span>
+        <div class="rtg-duel-versus-board">
+          <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user">
+            <span class="rtg-duel-panel-tag">TU</span>
             ${duelVisualMarkup(user,"user",`data-rtg-duel-player="${escape(pid(user))}" data-side="user"`)}
-            <b>${escape(callout.user)}</b>
+            <strong>${escape(callout.user)}</strong>
+            <div class="rtg-duel-panel-probability"><small>VITTORIA</small><b>${escape(selectedProbability.toFixed(1))}%</b></div>
           </article>
-          <div class="rtg-duel-vs-mark"><span>VS</span></div>
-          <article class="rtg-duel-side rtg-duel-side--opponent">
-            <span class="rtg-duel-side-label">${escape(opponentName)}</span>
+          <div class="rtg-duel-vs-core" aria-hidden="true"><small>SCONTRO</small><span>VS</span></div>
+          <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--opponent">
+            <span class="rtg-duel-panel-tag">${escape(opponentName)}</span>
             ${duelVisualMarkup(opponent,"opponent",`data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"`)}
-            <b>${escape(callout.opponent)}</b>
+            <strong>${escape(callout.opponent)}</strong>
+            <div class="rtg-duel-panel-probability"><small>VITTORIA</small><b>${escape(opponentProbability.toFixed(1))}%</b></div>
           </article>
         </div>
-        <div class="rtg-duel-odds rtg-duel-odds--revolution" aria-label="Probabilità del duello">
-          <span class="is-user"><small>TU</small><strong>${escape(selectedProbability.toFixed(1))}%</strong></span>
-          <i><b style="width:${escape(selectedProbability.toFixed(1))}%"></b></i>
-          <span class="is-opponent"><small>${escape(opponentName)}</small><strong>${escape(opponentProbability.toFixed(1))}%</strong></span>
+        <div class="rtg-duel-meter-clean" aria-label="Probabilità del duello">
+          <span>${escape(selectedProbability.toFixed(1))}%</span><i><b style="width:${escape(selectedProbability.toFixed(1))}%"></b></i><span>${escape(opponentProbability.toFixed(1))}%</span>
         </div>
         <section class="rtg-duel-choice-section">
-          <div class="rtg-duel-choice-head"><strong>SCEGLI L'AZIONE</strong><span>Prima selezioni. Poi confermi con un secondo tocco.</span></div>
+          <div class="rtg-duel-choice-head"><strong>SCEGLI L'AZIONE</strong><span>1° tocco: anteprima · 2° tocco: conferma</span></div>
           <div class="rtg-duel-choice-grid">
             ${choiceCard("base",baseVerb,"Nessun uso consumato",baseProbability,0)}
             ${pending.userMove && uses > 0 ? choiceCard("move",pending.userMove.name,`${uses}/2 usi · Power ${pending.userMove.power || "—"}`,moveProbability,moveDelta) : ""}
@@ -484,24 +522,33 @@
       const selectedRole = selected ? role(selected) : "";
       const compatibleBench = selected ? bench.filter((player) => role(player) === selectedRole) : [];
       const rows = formationRows(model.formationId, lineup);
-      return `<section class="panel rtg-halftime rtg-paper-modal development-squad-card-scope">
-        <div class="rtg-halftime-head">
-          <div><p class="eyebrow">45' · INTERVALLO</p><h2>Formazione</h2><p class="muted">Controlla il campo. Tocca un titolare e poi una riserva dello stesso ruolo per effettuare il cambio.</p></div>
-          <strong>45:00</strong>
+      const match = options.match || {};
+      const scoreUser = Number(match.score?.user ?? 0);
+      const scoreOpponent = Number(match.score?.opponent ?? 0);
+      const lineupMarkup = `<div class="rtg-halftime-pitch rtg-shared-match-pitch">
+        <div class="boss-match-field-side boss-match-field-side--user boss-match-field-side--mobile rtg-shared-match-side">
+          ${rows.map((row) => `<div class="match-formation-line match-formation-line--${escape(String(row.role||"").toLowerCase())} boss-match-line rtg-shared-match-line" data-row-count="${row.players.length}" style="--players-in-row:${row.players.length||1};--row-count:${row.players.length||1};--boss-row-count:${row.players.length||1}">${row.players.map((player) => sharedMatchCard(
+            player,
+            "user",
+            `data-rtg-half-lineup="${escape(pid(player))}" data-role="${escape(role(player))}" aria-pressed="${pid(player)===selectedId?"true":"false"}"`,
+            `squad-player-card rtg-halftime-player-card ${pid(player)===selectedId?"selected":""}`
+          )).join("")}</div>`).join("")}
         </div>
+      </div>`;
+      return `<section class="panel rtg-halftime rtg-halftime-revolution rtg-paper-modal development-squad-card-scope">
+        <header class="rtg-halftime-scoreboard">
+          <div class="rtg-halftime-minute"><strong>45'</strong><span>INTERVALLO</span></div>
+          <div class="rtg-halftime-score"><small>TU</small><strong>${escape(scoreUser)} - ${escape(scoreOpponent)}</strong><small>${escape(match.opponentSquad?.name || "AVVERSARIO")}</small></div>
+          <div class="rtg-halftime-shape"><small>MODULO</small><strong>${escape(model.formationId || "—")}</strong></div>
+        </header>
+        <div class="rtg-halftime-tip"><strong>CAMBIO RUOLO PER RUOLO</strong><span>Tocca un titolare, poi una riserva evidenziata.</span></div>
         <div class="rtg-halftime-layout">
           <section class="rtg-halftime-field-panel">
-            <div class="rtg-halftime-section-title"><span>IN CAMPO</span><b>${escape(model.formationId || "—")}</b></div>
-            <div class="rtg-halftime-pitch">
-              ${rows.map((row) => `<div class="rtg-halftime-pitch-row" style="--row-count:${Math.max(1,row.players.length)}">${row.players.map((player) => card(
-                player,
-                `data-rtg-half-lineup="${escape(pid(player))}" data-role="${escape(role(player))}" aria-pressed="${pid(player)===selectedId?"true":"false"}"`,
-                `squad-player-card rtg-halftime-player-card ${pid(player)===selectedId?"selected":""}`
-              )).join("")}</div>`).join("")}
-            </div>
+            <div class="rtg-halftime-section-title"><span>IN CAMPO</span><b>45:00</b></div>
+            ${lineupMarkup}
           </section>
           <aside class="rtg-halftime-bench-panel">
-            <div class="rtg-halftime-section-title"><span>PANCHINA</span><b>4</b></div>
+            <div class="rtg-halftime-section-title"><span>PANCHINA</span><b>${escape(bench.length)}</b></div>
             <div class="rtg-halftime-bench-strip">
               ${bench.map((player) => {
                 const compatible = !!selected && role(player) === selectedRole;
@@ -511,15 +558,13 @@
                   compatible ? `data-rtg-half-bench="${escape(pid(player))}"` : "",
                   compatible ? 'aria-disabled="false"' : 'aria-disabled="true"',
                 ].filter(Boolean).join(" ");
-                return card(player, attrs, `squad-player-card rtg-halftime-player-card ${selected && !compatible ? "is-incompatible" : compatible ? "is-compatible" : ""}`);
+                return sharedMatchCard(player,"user",attrs,`squad-player-card rtg-halftime-player-card ${selected && !compatible ? "is-incompatible" : compatible ? "is-compatible" : ""}`);
               }).join("")}
             </div>
-            <div class="rtg-halftime-change-box">
-              ${selected ? `<p class="eyebrow">CAMBI COMPATIBILI</p><strong>${escape(selected.name || selectedId)} · ${escape(selectedRole)}</strong><span>${compatibleBench.length ? `${compatibleBench.length} riserve compatibili evidenziate` : "Nessuna riserva compatibile"}</span>` : '<strong>Seleziona un titolare sul campo</strong><span>Le riserve compatibili verranno evidenziate.</span>'}
-            </div>
+            ${selected ? `<div class="rtg-halftime-selection"><span>SELEZIONATO</span><strong>${escape(selected.name || selectedId)}</strong><em>${escape(selectedRole)} · ${compatibleBench.length ? `${compatibleBench.length} cambi disponibili` : "nessun cambio disponibile"}</em></div>` : ""}
           </aside>
         </div>
-        <button type="button" class="btn btn-yellow rtg-half-confirm" data-rtg-half-confirm>CONFERMA SECONDO TEMPO</button>
+        <button type="button" class="btn btn-yellow rtg-half-confirm" data-rtg-half-confirm><span>SECONDO TEMPO</span><b>CONFERMA E RIPARTI</b></button>
       </section>`;
     }
 

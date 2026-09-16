@@ -670,7 +670,7 @@
       const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
       if(match.status==="halftime"){
         halftimeDraft=clone(match.userSquad);
-        if(overlay)overlay.innerHTML=matchView.halftimeMarkup(halftimeDraft);
+        if(overlay)overlay.innerHTML=matchView.halftimeMarkup(halftimeDraft,{match});
         bindHalftimeEditor(match);
       }else if(match.status==="penalties"){
         const context=penaltyContext(match);
@@ -796,7 +796,7 @@
     function bindHalftimeEditor(match,selectedPlayerId=null){
       const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
       const repaint=(nextSelected=null)=>{
-        if(overlay)overlay.innerHTML=matchView.halftimeMarkup(halftimeDraft,{selectedPlayerId:nextSelected});
+        if(overlay)overlay.innerHTML=matchView.halftimeMarkup(halftimeDraft,{selectedPlayerId:nextSelected,match});
         bindHalftimeEditor(match,nextSelected);
       };
       overlay?.querySelectorAll?.("[data-rtg-half-lineup]")?.forEach(button=>button.addEventListener("click",()=>{

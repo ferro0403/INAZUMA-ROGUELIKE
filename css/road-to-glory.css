@@ -3376,3 +3376,131 @@
   .rtg-duel-choice-card {grid-template-columns:42px minmax(0,1fr) 72px;min-height:67px;}
   .rtg-choice-confirm {padding-left:50px;}
 }
+
+
+/* ============================================================
+   RTG MATCH POLISH 3 — shared normal-match formation/cards,
+   clean duel board, compact halftime.
+   ============================================================ */
+
+.rtg-prematch-revolution .rtg-shared-match-pitch,
+.rtg-match-revolution .rtg-shared-match-pitch,
+.rtg-halftime-revolution .rtg-shared-match-pitch {
+  position:relative;min-height:590px;display:block;padding:0;overflow:hidden;
+  border:2px solid var(--rtg-ink,#111216);border-radius:12px;
+  background:#087044 url("../assets/squad/tactical-pitch.svg") center/100% 100% no-repeat;
+  box-shadow:inset 0 0 38px rgba(0,0,0,.18);
+}
+.rtg-prematch-revolution .rtg-shared-match-side,
+.rtg-match-revolution .rtg-shared-match-side,
+.rtg-halftime-revolution .rtg-shared-match-side {
+  display:grid!important;grid-template-rows:repeat(4,minmax(0,1fr));
+  height:590px!important;min-height:590px!important;padding:18px 3px!important;direction:ltr!important;
+}
+.rtg-prematch-revolution .rtg-shared-match-line,
+.rtg-match-revolution .rtg-shared-match-line,
+.rtg-halftime-revolution .rtg-shared-match-line {width:100%;margin:0;padding:4px 0;background:transparent;}
+.rtg-prematch-revolution .rtg-shared-match-card,
+.rtg-match-revolution .rtg-shared-match-card,
+.rtg-halftime-revolution .rtg-shared-match-card {
+  width:100%!important;min-width:0!important;max-width:var(--boss-mobile-card-width,78px)!important;min-height:90px!important;
+}
+.rtg-prematch-revolution .rtg-shared-match-card .player-portrait-wrap,
+.rtg-match-revolution .rtg-shared-match-card .player-portrait-wrap,
+.rtg-halftime-revolution .rtg-shared-match-card .player-portrait-wrap {min-height:64px!important;height:64px!important;padding:6px 4px 0!important;}
+.rtg-prematch-revolution .rtg-shared-match-card .player-portrait,
+.rtg-match-revolution .rtg-shared-match-card .player-portrait,
+.rtg-halftime-revolution .rtg-shared-match-card .player-portrait {object-fit:contain!important;object-position:center bottom!important;transform:none!important;}
+.rtg-prematch-revolution .boss-match-line[data-row-count="5"],
+.rtg-match-revolution .boss-match-line[data-row-count="5"],
+.rtg-halftime-revolution .boss-match-line[data-row-count="5"] {--boss-mobile-card-width:clamp(56px,16.2vw,64px);}
+.rtg-prematch-revolution .boss-match-line[data-row-count="4"],
+.rtg-match-revolution .boss-match-line[data-row-count="4"],
+.rtg-halftime-revolution .boss-match-line[data-row-count="4"] {--boss-mobile-card-width:clamp(66px,19vw,74px);}
+.rtg-prematch-revolution .boss-match-line[data-row-count="3"],
+.rtg-match-revolution .boss-match-line[data-row-count="3"],
+.rtg-halftime-revolution .boss-match-line[data-row-count="3"],
+.rtg-prematch-revolution .boss-match-line[data-row-count="2"],
+.rtg-match-revolution .boss-match-line[data-row-count="2"],
+.rtg-halftime-revolution .boss-match-line[data-row-count="2"],
+.rtg-prematch-revolution .boss-match-line[data-row-count="1"],
+.rtg-match-revolution .boss-match-line[data-row-count="1"],
+.rtg-halftime-revolution .boss-match-line[data-row-count="1"] {--boss-mobile-card-width:clamp(70px,20vw,78px);}
+.rtg-match-revolution.development-squad-card-scope .rtg-shared-match-card {border-radius:4px!important;}
+.rtg-shared-match-card.is-latest-actor {outline:3px solid #ffd21f;outline-offset:2px;}
+.rtg-shared-match-card.is-latest-opponent {outline:2px solid #fff;outline-offset:2px;}
+
+.rtg-duel-card--clean {overflow:hidden;}
+.rtg-duel-story--clean {padding-bottom:9px;}
+.rtg-duel-versus-board {
+  position:relative;display:grid;grid-template-columns:minmax(0,1fr) 68px minmax(0,1fr);
+  align-items:stretch;gap:0;margin:10px 0 8px;border:3px solid var(--rtg-ink,#111216);
+  background:#111216;box-shadow:4px 5px 0 rgba(17,18,22,.17);
+}
+.rtg-duel-portrait-panel {
+  position:relative;min-width:0;display:grid;grid-template-rows:auto 180px auto auto;
+  align-items:end;justify-items:center;gap:4px;padding:9px 7px 8px;overflow:hidden;color:#111216;
+}
+.rtg-duel-portrait-panel--user {background:linear-gradient(155deg,#fffdf7 0 72%,#ffdc49 72%);}
+.rtg-duel-portrait-panel--opponent {background:linear-gradient(205deg,#fffdf7 0 72%,#e9c9c5 72%);}
+.rtg-duel-portrait-panel::after {content:"";position:absolute;width:90px;height:90px;right:-44px;bottom:-45px;border:18px solid rgba(17,18,22,.06);border-radius:50%;}
+.rtg-duel-panel-tag {justify-self:start;padding:3px 6px;border:2px solid #111216;background:#fff;font-size:.48rem;font-weight:1000;letter-spacing:.08em;text-transform:uppercase;}
+.rtg-duel-portrait-panel .rtg-duel-visual {width:100%;min-height:0;display:block;padding:0;border:0;background:transparent;box-shadow:none;}
+.rtg-duel-portrait-panel .rtg-duel-render {width:100%;height:180px;display:flex;align-items:flex-end;justify-content:center;overflow:hidden;background:transparent;}
+.rtg-duel-portrait-panel .rtg-duel-render img {width:100%;height:100%;object-fit:contain;object-position:center bottom;filter:drop-shadow(0 6px 5px rgba(0,0,0,.18));}
+.rtg-duel-portrait-panel .rtg-duel-player-copy {margin-top:-1px;color:#111216;}
+.rtg-duel-portrait-panel .rtg-duel-player-copy small {color:#726b60;}
+.rtg-duel-portrait-panel .rtg-duel-player-copy strong {color:#111216;font-size:.72rem;}
+.rtg-duel-portrait-panel > strong {z-index:1;max-width:100%;min-height:30px;display:flex;align-items:center;justify-content:center;color:#111216;font-size:.57rem;line-height:1.12;text-align:center;}
+.rtg-duel-panel-probability {z-index:1;width:100%;display:flex;align-items:center;justify-content:space-between;padding:5px 7px;border:2px solid #111216;background:#fff;}
+.rtg-duel-panel-probability small {font-size:.42rem;font-weight:1000;}
+.rtg-duel-panel-probability b {font-size:.9rem;}
+.rtg-duel-vs-core {position:relative;z-index:3;display:grid;place-items:center;align-content:center;gap:4px;background:#111216;color:#ffd21f;}
+.rtg-duel-vs-core::before,.rtg-duel-vs-core::after {content:"";position:absolute;left:50%;width:2px;height:48px;background:#ffd21f;transform:translateX(-50%);}
+.rtg-duel-vs-core::before {top:0}.rtg-duel-vs-core::after {bottom:0}
+.rtg-duel-vs-core small {font-size:.4rem;letter-spacing:.12em;}
+.rtg-duel-vs-core span {width:54px;height:54px;display:grid;place-items:center;border:3px solid #ffd21f;border-radius:50%;background:#111216;color:#ffd21f;font-size:1.05rem;font-weight:1000;box-shadow:0 0 0 4px #111216;}
+.rtg-duel-meter-clean {display:grid;grid-template-columns:52px minmax(0,1fr) 52px;align-items:center;gap:7px;margin:6px 0 12px;}
+.rtg-duel-meter-clean > span {font-size:.72rem;font-weight:1000;text-align:center;}
+.rtg-duel-meter-clean > i {height:11px;overflow:hidden;border:2px solid #111216;border-radius:999px;background:#ede6d8;}
+.rtg-duel-meter-clean > i b {display:block;height:100%;background:#ffd21f;}
+
+.rtg-match-shell .rtg-match-overlay .rtg-halftime-revolution {width:min(94vw,680px);max-height:calc(100dvh - 130px);overflow:auto;padding:12px;border-radius:3px!important;}
+.rtg-halftime-scoreboard {display:grid;grid-template-columns:86px minmax(0,1fr) 82px;align-items:stretch;border:3px solid #111216;background:#111216;color:#fff;}
+.rtg-halftime-minute,.rtg-halftime-shape {display:grid;align-content:center;justify-items:center;padding:8px;background:#ffd21f;color:#111216;}
+.rtg-halftime-minute strong {font-size:1.55rem;line-height:.9;}
+.rtg-halftime-minute span,.rtg-halftime-shape small {font-size:.45rem;font-weight:1000;letter-spacing:.08em;}
+.rtg-halftime-shape strong {font-size:.82rem;}
+.rtg-halftime-score {min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:7px;padding:8px;text-align:center;}
+.rtg-halftime-score small {overflow:hidden;font-size:.5rem;font-weight:900;text-overflow:ellipsis;white-space:nowrap;}
+.rtg-halftime-score strong {color:#ffd21f;font-size:1.35rem;}
+.rtg-halftime-tip {display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0;padding:7px 9px;border-left:5px solid #ffd21f;background:#f0ece3;color:#111216;}
+.rtg-halftime-tip strong {font-size:.58rem;}
+.rtg-halftime-tip span {font-size:.54rem;color:#615c53;text-align:right;}
+.rtg-halftime-revolution .rtg-halftime-layout {display:grid;grid-template-columns:1fr;gap:8px;}
+.rtg-halftime-revolution .rtg-halftime-field-panel,.rtg-halftime-revolution .rtg-halftime-bench-panel {padding:0;border:0;background:transparent;box-shadow:none;}
+.rtg-halftime-revolution .rtg-halftime-pitch {min-height:520px;height:auto;}
+.rtg-halftime-revolution .rtg-halftime-pitch .rtg-shared-match-side {height:520px!important;min-height:520px!important;padding:14px 3px!important;}
+.rtg-halftime-revolution .rtg-halftime-section-title {margin:0 0 5px;padding:5px 7px;border:2px solid #111216;background:#fff;}
+.rtg-halftime-revolution .rtg-halftime-section-title span {color:#111216;font-size:.55rem;}
+.rtg-halftime-revolution .rtg-halftime-section-title b {color:#8b6814;}
+.rtg-halftime-revolution .rtg-halftime-bench-strip {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:8px;border:2px solid #111216;background:#ebe6db;}
+.rtg-halftime-revolution .rtg-halftime-bench-strip .rtg-halftime-player-card {max-width:78px!important;justify-self:center;}
+.rtg-halftime-selection {display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:2px 8px;margin-top:6px;padding:7px 9px;border:2px solid #111216;background:#fff7c6;color:#111216;}
+.rtg-halftime-selection span {grid-row:1/3;font-size:.46rem;font-weight:1000;writing-mode:vertical-rl;transform:rotate(180deg);}
+.rtg-halftime-selection strong {font-size:.72rem;}
+.rtg-halftime-selection em {font-size:.52rem;font-style:normal;color:#625d54;}
+.rtg-halftime-revolution .rtg-half-confirm {width:100%;min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;padding:9px 12px;border:3px solid #111216!important;background:#ffd21f!important;color:#111216!important;box-shadow:4px 5px 0 #111216!important;}
+.rtg-halftime-revolution .rtg-half-confirm span {font-size:.5rem;letter-spacing:.08em;}
+.rtg-halftime-revolution .rtg-half-confirm b {font-size:.82rem;}
+
+@media (max-width:430px) {
+  .rtg-prematch-revolution .rtg-shared-match-pitch,.rtg-match-revolution .rtg-shared-match-pitch {min-height:570px;}
+  .rtg-prematch-revolution .rtg-shared-match-side,.rtg-match-revolution .rtg-shared-match-side {height:570px!important;min-height:570px!important;}
+  .rtg-duel-versus-board {grid-template-columns:minmax(0,1fr) 60px minmax(0,1fr);}
+  .rtg-duel-portrait-panel {grid-template-rows:auto 154px auto auto;padding:7px 5px;}
+  .rtg-duel-portrait-panel .rtg-duel-render {height:154px;}
+  .rtg-duel-vs-core span {width:48px;height:48px;font-size:.92rem;}
+  .rtg-halftime-scoreboard {grid-template-columns:76px minmax(0,1fr) 72px;}
+  .rtg-halftime-revolution .rtg-halftime-pitch,.rtg-halftime-revolution .rtg-halftime-pitch .rtg-shared-match-side {min-height:500px!important;height:500px!important;}
+}
