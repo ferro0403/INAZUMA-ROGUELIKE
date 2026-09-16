@@ -27,5 +27,6 @@ const roles=a.playerIds.map(id=>freeDb.players.find(p=>String(p.playerId)===Stri
 for(const [role,required] of Object.entries(formation.requirements)){assert.strictEqual(roles.filter(r=>r===role).length,required);}
 const next=c.RoadToGloryOpponentGenerator.generate({...input,attemptNumber:2});
 assert.notDeepStrictEqual(Array.from(next.playerIds),Array.from(a.playerIds));
+const late=c.RoadToGloryOpponentGenerator.generate({...input,seed:"late-seed",attemptNumber:1,targetMin:83,targetMax:86});assert(late.teamPower>=83&&late.teamPower<=86);
 assert.throws(()=>c.RoadToGloryOpponentGenerator.generate({...input,targetMin:99,targetMax:99}),e=>e.code==="rtg-secondary-opponent-band-unavailable");
 console.log("rtg-opponent-generator-test: PASS");
