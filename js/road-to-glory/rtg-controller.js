@@ -783,6 +783,7 @@
           userPlayerName:userPlayer?.name||before.userPlayerId,
           aiPlayerName:aiPlayer?.name||before.aiPlayerId,
           userPlayer,opponentPlayer:aiPlayer,
+          opponentLabel:resolvedMatch.opponentSquad?.name||"AVVERSARIO",
           actorSide:before.actorSide,
           userChoiceLabel,aiChoiceLabel,
           scoreBefore,scoreAfter:clone(resolvedMatch.score||scoreBefore),

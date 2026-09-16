@@ -459,14 +459,12 @@
             <span class="rtg-duel-panel-tag">TU</span>
             ${duelVisualMarkup(user,"user",`data-rtg-duel-player="${escape(pid(user))}" data-side="user"`)}
             <strong>${escape(callout.user)}</strong>
-            <div class="rtg-duel-panel-probability"><small>VITTORIA</small><b>${escape(selectedProbability.toFixed(1))}%</b></div>
           </article>
           <div class="rtg-duel-vs-core" aria-hidden="true"><small>SCONTRO</small><span>VS</span></div>
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--opponent">
             <span class="rtg-duel-panel-tag">${escape(opponentName)}</span>
             ${duelVisualMarkup(opponent,"opponent",`data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"`)}
             <strong>${escape(callout.opponent)}</strong>
-            <div class="rtg-duel-panel-probability"><small>VITTORIA</small><b>${escape(opponentProbability.toFixed(1))}%</b></div>
           </article>
         </div>
         <div class="rtg-duel-meter-clean" aria-label="Probabilità del duello">
@@ -489,24 +487,35 @@
       const resultClass = resolution.userWon ? "is-win" : "is-loss";
       const scoreUser = resolution.scoreAfter?.user ?? resolution.scoreBefore?.user ?? 0;
       const scoreOpponent = resolution.scoreAfter?.opponent ?? resolution.scoreBefore?.opponent ?? 0;
+      const userProbability = Math.max(0, Math.min(100, Number(resolution.probability ?? 50) || 0));
+      const opponentProbability = Math.max(0, 100 - userProbability);
+      const opponentLabel = resolution.opponentLabel || "AVVERSARIO";
+      const userAction = resolution.userChoiceLabel || choiceVerb(resolution.userKind);
+      const opponentAction = resolution.aiChoiceLabel || "Azione base";
       return `<section class="panel rtg-duel-card rtg-duel-result rtg-duel-result--revolution rtg-paper-modal development-squad-card-scope ${resultClass}">
         <div class="rtg-duel-result-banner ${resultClass}">
-          <span>${resolution.goalSide ? "GOL" : resolution.userWon ? "AZIONE RIUSCITA" : "AZIONE PERSA"}</span>
+          <div class="rtg-duel-result-status"><span>${resolution.goalSide ? "GOL" : resolution.userWon ? "AZIONE RIUSCITA" : "AZIONE PERSA"}</span><em>ESITO DUELLO</em></div>
           <strong>${escape(headline)}</strong>
         </div>
-        <div class="rtg-duel-stage rtg-duel-stage--result rtg-duel-stage--revolution">
-          <article class="rtg-duel-side rtg-duel-side--user">
+        <div class="rtg-duel-versus-board rtg-duel-versus-board--result">
+          <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user rtg-duel-result-player">
+            <span class="rtg-duel-panel-tag">TU</span>
             ${duelVisualMarkup(user,"user",pid(user) ? `data-rtg-duel-player="${escape(pid(user))}" data-side="user"` : "")}
-            <b>${escape(resolution.userChoiceLabel || "Azione base")}</b>
+            <strong class="rtg-duel-result-action">${escape(userAction)}</strong>
           </article>
-          <div class="rtg-duel-vs-mark"><span>VS</span></div>
-          <article class="rtg-duel-side rtg-duel-side--opponent">
+          <div class="rtg-duel-vs-core rtg-duel-result-vs" aria-hidden="true"><small>ESITO</small><span>VS</span></div>
+          <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--opponent rtg-duel-result-player">
+            <span class="rtg-duel-panel-tag">${escape(opponentLabel)}</span>
             ${duelVisualMarkup(opponent,"opponent",pid(opponent) ? `data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"` : "")}
-            <b>${escape(resolution.aiChoiceLabel || "Azione base")}</b>
+            <strong class="rtg-duel-result-action">${escape(opponentAction)}</strong>
           </article>
         </div>
-        <div class="rtg-duel-result-facts">
-          <div><small>PROBABILITÀ FINALE</small><strong>${escape(Number(resolution.probability ?? 50).toFixed(1))}%</strong></div>
+        <div class="rtg-duel-result-meter" aria-label="Probabilità finale del duello">
+          <span><small>TU</small><strong>${escape(userProbability.toFixed(1))}%</strong></span>
+          <i><b style="width:${escape(userProbability.toFixed(1))}%"></b></i>
+          <span><small>${escape(opponentLabel)}</small><strong>${escape(opponentProbability.toFixed(1))}%</strong></span>
+        </div>
+        <div class="rtg-duel-result-facts rtg-duel-result-facts--compact">
           <div class="rtg-result-score"><small>PUNTEGGIO</small><strong>${escape(scoreUser)} - ${escape(scoreOpponent)}</strong></div>
           <div><small>ESITO</small><strong>${resolution.goalSide ? "GOL" : resolution.userWon ? "VINTA" : "PERSA"}</strong></div>
         </div>
