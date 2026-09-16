@@ -62,10 +62,10 @@
             trailingMarkup: "",
           })
         : fallbackPlayerCard(player, "", attrs);
-      if (isPicker || isCatalog || options.readOnly) return cardMarkup;
-      return `<div class="rtg-squad-card-slot" data-rtg-card-slot="${escape(playerId)}">
+      if (isPicker || isCatalog) return cardMarkup;
+      return `<div class="rtg-squad-card-slot ${options.readOnly ? "rtg-squad-card-slot--readonly" : ""}" data-rtg-card-slot="${escape(playerId)}">
         ${cardMarkup}
-        <button type="button" class="rtg-squad-change-trigger" data-rtg-change-player="${escape(playerId)}" aria-label="Cambia ${escape(player?.name || playerId)}">↔</button>
+        ${options.readOnly ? "" : `<button type="button" class="rtg-squad-change-trigger" data-rtg-change-player="${escape(playerId)}" aria-label="Cambia ${escape(player?.name || playerId)}">↔</button>`}
       </div>`;
     }
 
