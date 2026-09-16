@@ -311,7 +311,7 @@
       const moveAvailable = context.userMoveAvailable ?? context.canUseMove ?? false;
       return `<section class="panel rtg-penalty-panel rtg-paper-modal development-squad-card-scope">
         <div class="rtg-penalty-head">
-          <div><p class="eyebrow">Decisione finale</p><h2>Rigori</h2><p class="muted">${userAttacks ? "Sei al tiro" : "Sei in porta"} · Rigore ${escape(currentKick)}${match.shootout?.status === "sudden-death" ? " · Sudden death" : " di 5"}</p></div>
+          <div><p class="eyebrow">Decisione finale</p><h2>RIGORI</h2><p class="muted">${userAttacks ? "Sei al tiro" : "Sei in porta"} · ${match.shootout?.status === "sudden-death" ? "Sudden death" : `Rigore ${escape(currentKick)} di 5`}</p></div>
           <strong class="rtg-penalty-score">${escape(match.shootout?.score?.user || 0)} - ${escape(match.shootout?.score?.opponent || 0)}</strong>
         </div>
         <div class="rtg-penalty-history">
@@ -324,11 +324,13 @@
           <b>VS</b>
           <article><small>Portiere</small>${card(context.keeper || {}, `data-rtg-penalty-keeper="${escape(pid(context.keeper))}"`, "squad-player-card rtg-penalty-player-card")}</article>
         </div>
-        <p class="rtg-penalty-instruction">${userAttacks ? "Scegli dove tirare." : "Scegli dove tuffarti."} La CPU decide senza vedere la tua scelta.</p>
-        <div class="rtg-penalty-directions">
-          <button class="btn" data-rtg-penalty-direction="left">← Sinistra</button>
-          <button class="btn" data-rtg-penalty-direction="center">Centro</button>
-          <button class="btn" data-rtg-penalty-direction="right">Destra →</button>
+        <div class="rtg-penalty-choice">
+          <div class="rtg-penalty-choice-copy"><strong>${userAttacks ? "DOVE TIRI?" : "DOVE TI TUFFI?"}</strong><span>La CPU sceglie in segreto.</span></div>
+          <div class="rtg-penalty-goal" aria-label="Scegli direzione">
+            <button type="button" data-rtg-penalty-direction="left"><i></i><span>Sinistra</span></button>
+            <button type="button" data-rtg-penalty-direction="center"><i></i><span>Centro</span></button>
+            <button type="button" data-rtg-penalty-direction="right"><i></i><span>Destra</span></button>
+          </div>
         </div>
         ${moveAvailable ? `<button type="button" class="btn btn-yellow rtg-penalty-move" data-rtg-penalty-move><strong>${escape(moveLabel)}</strong><small>${escape(context.userMoveUses || 0)}/2 usi rimasti</small></button>` : ""}
       </section>`;
