@@ -173,7 +173,7 @@
         }).join("");
       };
       const last = history.at?.(-1) || history[history.length - 1] || null;
-      const currentKick = Math.max(Number(match.shootout?.kicks?.user || 0), Number(match.shootout?.kicks?.opponent || 0)) + 1;
+      const currentKick = Number(match.shootout?.kicks?.[context.attackingSide] || 0) + 1;
       const userAttacks = context.attackingSide === "user";
       const moveLabel = context.userMove?.name || (context.userRole === "save" ? "Mossa di parata" : "Mossa di tiro");
       const moveAvailable = context.userMoveAvailable ?? context.canUseMove ?? false;
