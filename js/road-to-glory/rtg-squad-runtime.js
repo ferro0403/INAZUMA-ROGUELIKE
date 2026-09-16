@@ -22,7 +22,8 @@
     const reasons = [];
     const { seasonId, squad } = activeSquad(state);
     if (!squad) return { valid: false, reasons: ["missing-squad"], lineupPlayers: [], benchPlayers: [], formation: null };
-    const formation = (seasonDb?.formations?.eleven || []).find((entry) => id(entry?.id) === id(squad.formationId)) || null;
+    const formationCatalog = config().formations || seasonDb?.formations?.eleven || [];
+    const formation = formationCatalog.find((entry) => id(entry?.id) === id(squad.formationId)) || null;
     if (!formation) reasons.push("invalid-formation");
 
     const lineup = Array.isArray(squad.lineup) ? squad.lineup.map(id) : [];
@@ -99,9 +100,11 @@
     if (!constraint) return { eligible: false, reasons: ["unknown-main-team"], validation };
     const { seasonId, squad } = activeSquad(state);
     const lineup = squad?.lineup || [];
+    const bench = squad?.bench || [];
+    const activeRoster = [...lineup, ...bench];
     const power = validation.valid ? teamPower({ lineup, activeSeasonId: seasonId, playerResolver, freeAgentsDb, activeRoleVariantByPlayerId: squad.activeRoleVariantByPlayerId || {} }) : null;
     const recruitSet = new Set((state?.gachaAcquiredPlayerIds || []).map(id));
-    const recruits = lineup.map(id).filter((playerId) => recruitSet.has(playerId));
+    const recruits = activeRoster.map(id).filter((playerId) => recruitSet.has(playerId));
     const recentTeams = recentDefeatedTeamIds(teamId, state, constraint.recentWindow);
     const recentTeamSet = new Set(recentTeams);
     const recentRecruits = recruits.filter((playerId) => {
@@ -126,6 +129,7 @@
       recentCount: Number(constraint.recentCount || 0),
       recentWindow: Number(constraint.recentWindow || 0),
       recentTeamIds: recentTeams,
+      requirementRosterSize: activeRoster.length,
       validation,
     };
   }

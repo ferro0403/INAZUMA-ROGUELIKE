@@ -27,7 +27,14 @@
     let freeAgentIds=[];
     let squadDraft=null;
     let halftimeDraft=null;
+    let rawPlayerById=new Map();
     let lastRenderedHtml="";
+    let matchFlowTimer=null;
+    let displayedMinute=0;
+    const SQUAD_PICKER_PAGE_SIZE=24;
+    const ENCOUNTER_REVEAL_DELAY_MS=2200;
+    const schedule=deps.setTimeout||global.setTimeout;
+    const cancelSchedule=deps.clearTimeout||global.clearTimeout;
 
     function renderHtml(html){
       lastRenderedHtml=String(html||"");
@@ -40,7 +47,47 @@
     async function ensureData(){
       seasonDb=seasonDb||await deps.ensureSeason1Db();
       freeAgentsDb=deps.getFreeAgentsDb?.()||freeAgentsDb||{players:[]};
+      if(!rawPlayerById.size){
+        rawPlayerById=new Map();
+        for(const player of freeAgentsDb?.players||[])rawPlayerById.set(id(player.playerId||player.id),player);
+        for(const player of seasonDb?.players||[])rawPlayerById.set(id(player.playerId||player.id),player);
+      }
       return {seasonDb,freeAgentsDb};
+    }
+    function rawPlayer(playerId){return rawPlayerById.get(id(playerId))||null;}
+    function rawRole(playerId){
+      const player=rawPlayer(playerId);
+      const role=String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
+      return role||String(resolved(playerId)?.normalizedRole||resolved(playerId)?.position||"").toUpperCase();
+    }
+    function rawOverall(playerId){
+      const player=rawPlayer(playerId);
+      const value=Number(player?.overall??player?.finalOverall??player?.baseOverall);
+      return Number.isFinite(value)?value:Number(resolved(playerId)?.overall||0);
+    }
+    function rawName(playerId){return String(rawPlayer(playerId)?.name||playerId);}
+    function sourceForDraftPlayer(playerId){
+      return (campaign?.gachaAcquiredPlayerIds||[]).map(id).includes(id(playerId))?"RTG":"Svincolato";
+    }
+    function detailDatabaseFor(playerId){
+      const key=id(playerId);
+      const free=(freeAgentsDb?.players||[]).some(player=>id(player?.playerId||player?.id)===key);
+      return free?freeAgentsDb:seasonDb;
+    }
+    function openRtgPlayerDetails(playerId,side=""){
+      const key=id(playerId);
+      let player=null;
+      if(side&&campaign?.activeMatch)player=findMatchPlayer(campaign.activeMatch,side,key);
+      player=player||resolved(key,squadDraft?.activeRoleVariantByPlayerId?.[key]||null);
+      if(!player)return deps.toast?.("Giocatore non disponibile","error");
+      return deps.showPlayerDetailsFor?.(player,{
+        playerId:key,
+        level:20,
+        database:detailDatabaseFor(key),
+        equipment:null,
+        readOnly:true,
+        preserveScroll:true,
+      });
     }
     function refreshEntitlements(){
       const albumProgress=deps.getAlbumProgress?.();
@@ -66,27 +113,28 @@
         activeRoleVariantByPlayerId:{...variants},
       };
     }
-    function bestPlayersForRole(ids,role){
-      return ids.map(playerId=>resolved(playerId)).filter(Boolean).filter(player=>String(player.normalizedRole||player.position).toUpperCase()===role).sort((a,b)=>(Number(b.overall)||0)-(Number(a.overall)||0)||id(a.playerId).localeCompare(id(b.playerId)));
+    function bestPlayerIdsForRole(ids,role){
+      const target=String(role||"").toUpperCase();
+      return ids.map(id).filter(playerId=>rawRole(playerId)===target).sort((a,b)=>rawOverall(b)-rawOverall(a)||rawName(a).localeCompare(rawName(b),"it"));
     }
     function buildDefaultSquad(state,formationId=null){
       const formations=seasonDb?.formations?.eleven||[];
       const formation=formations.find(item=>id(item.id)===id(formationId))||formations.find(item=>{
         const counts={GK:0,DF:0,MF:0,FW:0};
-        for(const playerId of freeAgentIds){const player=resolved(playerId);const role=String(player?.normalizedRole||player?.position||"").toUpperCase();if(counts[role]!=null)counts[role]++;}
+        for(const playerId of freeAgentIds){const role=rawRole(playerId);if(counts[role]!=null)counts[role]++;}
         return Object.entries(item.requirements||{}).every(([role,n])=>counts[String(role).toUpperCase()]>=Number(n||0));
       })||formations[0];
       if(!formation)throw Object.assign(new Error("Nessun modulo RTG disponibile"),{code:"rtg-squad-no-formation"});
-      const accessible=squadRuntime.accessiblePlayerIds({freeAgentIds,state});
+      const accessible=squadRuntime.accessiblePlayerIds({freeAgentIds,state}).map(id);
       const selected=[];
       for(const [role,count] of Object.entries(formation.requirements||{})){
-        const candidates=bestPlayersForRole(accessible,String(role).toUpperCase()).filter(player=>!selected.includes(id(player.playerId)));
+        const candidates=bestPlayerIdsForRole(accessible,String(role).toUpperCase()).filter(playerId=>!selected.includes(playerId));
         if(candidates.length<Number(count||0))throw Object.assign(new Error("Rosa RTG insufficiente per il modulo"),{code:"rtg-squad-default-unavailable"});
-        selected.push(...candidates.slice(0,Number(count||0)).map(player=>id(player.playerId)));
+        selected.push(...candidates.slice(0,Number(count||0)));
       }
-      const remaining=accessible.filter(playerId=>!selected.includes(id(playerId))).map(playerId=>resolved(playerId)).filter(Boolean).sort((a,b)=>(Number(b.overall)||0)-(Number(a.overall)||0));
+      const remaining=accessible.filter(playerId=>!selected.includes(playerId)).sort((a,b)=>rawOverall(b)-rawOverall(a)||rawName(a).localeCompare(rawName(b),"it"));
       if(remaining.length<4)throw Object.assign(new Error("Servono 4 panchinari RTG"),{code:"rtg-squad-bench-unavailable"});
-      return {formationId:id(formation.id),lineup:selected.slice(0,11),bench:remaining.slice(0,4).map(player=>id(player.playerId)),activeRoleVariantByPlayerId:{}};
+      return {formationId:id(formation.id),lineup:selected.slice(0,11),bench:remaining.slice(0,4),activeRoleVariantByPlayerId:{}};
     }
     async function ensureInitialSquad(){
       const squad=campaign?.squads?.ie1;
@@ -121,27 +169,355 @@
       state.squads.ie1=clone(squadDraft||campaign.squads.ie1);
       return state;
     }
+    function draftRosterIds(){
+      return Array.from(new Set([...(squadDraft?.lineup||[]),...(squadDraft?.bench||[])].map(id)));
+    }
+    function roleOfDraftPlayer(playerId){
+      const variant=squadDraft?.activeRoleVariantByPlayerId?.[id(playerId)]||null;
+      const player=resolved(playerId,variant);
+      return String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
+    }
+    function accessibleDraftIds(){
+      return squadRuntime.accessiblePlayerIds({freeAgentIds,state:draftState()}).map(id);
+    }
+    function canUseDraftFormation(formation){
+      if(!formation)return false;
+      const counts={GK:0,DF:0,MF:0,FW:0};
+      for(const playerId of accessibleDraftIds()){
+        const role=rawRole(playerId);
+        if(Object.prototype.hasOwnProperty.call(counts,role))counts[role]+=1;
+      }
+      return Object.entries(formation.requirements||{}).every(([role,amount])=>Number(counts[String(role).toUpperCase()]||0)>=Number(amount||0));
+    }
+    function arrangeDraftForFormation(formation){
+      if(!formation||!canUseDraftFormation(formation))return{ok:false,reason:"formation-incompatible"};
+      const currentLineup=new Set((squadDraft?.lineup||[]).map(id));
+      const currentBench=new Set((squadDraft?.bench||[]).map(id));
+      const accessible=accessibleDraftIds().map(playerId=>({
+        playerId,
+        role:rawRole(playerId),
+        overall:rawOverall(playerId),
+        priority:currentLineup.has(playerId)?0:currentBench.has(playerId)?1:2,
+      })).filter(entry=>["GK","DF","MF","FW"].includes(entry.role));
+      accessible.sort((a,b)=>a.priority-b.priority||b.overall-a.overall||rawName(a.playerId).localeCompare(rawName(b.playerId),"it"));
+      const slotRoles=Array.isArray(formation.slotRoles)&&formation.slotRoles.length
+        ? formation.slotRoles.map(role=>String(role).toUpperCase())
+        : Object.entries(formation.requirements||{}).flatMap(([role,amount])=>Array.from({length:Number(amount)||0},()=>String(role).toUpperCase()));
+      const used=new Set(),lineup=[];
+      for(const role of slotRoles){
+        const candidate=accessible.find(entry=>entry.role===role&&!used.has(entry.playerId));
+        if(!candidate)return{ok:false,reason:"formation-incompatible"};
+        used.add(candidate.playerId);lineup.push(candidate.playerId);
+      }
+      if(lineup.length!==11)return{ok:false,reason:"formation-invalid-slots"};
+      const remaining=accessible.filter(entry=>!used.has(entry.playerId)).sort((a,b)=>{
+        const preserveA=currentLineup.has(a.playerId)||currentBench.has(a.playerId)?0:1;
+        const preserveB=currentLineup.has(b.playerId)||currentBench.has(b.playerId)?0:1;
+        return preserveA-preserveB||b.overall-a.overall||rawName(a.playerId).localeCompare(rawName(b.playerId),"it");
+      });
+      const bench=remaining.slice(0,4).map(entry=>entry.playerId);
+      if(bench.length!==4)return{ok:false,reason:"bench-unavailable"};
+      squadDraft={...squadDraft,formationId:id(formation.id),lineup,bench,activeRoleVariantByPlayerId:{...(squadDraft?.activeRoleVariantByPlayerId||{})}};
+      return{ok:true};
+    }
+    function openFormationSelector(model){
+      const body=`<div class="modal-head squad-formation-modal-head"><div><p class="eyebrow">Assetto tattico RTG</p><h2>Modifica modulo</h2><p class="muted">Catalogo completo Orion. Un modulo è disponibile se può essere costruito con tutti i giocatori sbloccati, non soltanto con i 15 attivi.</p></div></div>${squadView.formationOptionsMarkup(model,canUseDraftFormation)}`;
+      deps.openModal?.(body,{className:"squad-formation-modal rtg-formation-modal"});
+      deps.getModalRoot?.()?.querySelectorAll?.("[data-rtg-formation-option]")?.forEach(button=>button.addEventListener("click",()=>{
+        if(button.disabled)return;
+        const formation=(model.formations||[]).find(item=>id(item.id)===id(button.dataset.rtgFormationOption));
+        const result=arrangeDraftForFormation(formation);
+        if(!result.ok){deps.toast?.("Non ci sono abbastanza giocatori sbloccati nei ruoli richiesti","error");return;}
+        deps.closeModal?.();
+        renderSquad();
+      }));
+    }
+    function squadPickerCandidateIds(targetId,role){
+      const accessible=squadRuntime.accessiblePlayerIds({freeAgentIds,state:draftState()}).map(id);
+      return accessible
+        .filter(playerId=>playerId!==id(targetId))
+        .filter(playerId=>rawRole(playerId)===role)
+        .sort((a,b)=>rawOverall(b)-rawOverall(a)||rawName(a).localeCompare(rawName(b),"it"));
+    }
+    function openSquadPlayerPicker(targetId){
+      const targetLoc=locationInDraft(targetId);
+      if(!targetLoc)return;
+      const role=roleOfDraftPlayer(targetId);
+      if(!role)return deps.toast?.("Ruolo giocatore non disponibile","error");
+      const quickEntries=targetLoc.area==="lineup"
+        ? (squadDraft?.bench||[]).map(id).filter(playerId=>roleOfDraftPlayer(playerId)===role).map(playerId=>({
+            playerId,
+            source:sourceForDraftPlayer(playerId),
+            player:resolved(playerId,squadDraft?.activeRoleVariantByPlayerId?.[playerId]||null),
+          })).filter(entry=>entry.player)
+        : [];
+      const quickIds=new Set(quickEntries.map(entry=>id(entry.playerId)));
+      const candidateIds=squadPickerCandidateIds(targetId,role).filter(playerId=>!quickIds.has(id(playerId)));
+      let visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateIds.length);
+      let query="";
+      let sourceFilter="all";
+      const targetPlayer=resolved(targetId,squadDraft?.activeRoleVariantByPlayerId?.[id(targetId)]||null);
+      const target={playerId:id(targetId),source:sourceForDraftPlayer(targetId),player:targetPlayer};
+      const filteredIds=()=>candidateIds.filter(playerId=>{
+        const source=sourceForDraftPlayer(playerId);
+        if(sourceFilter==="free"&&source!=="Svincolato")return false;
+        if(sourceFilter==="rtg"&&source!=="RTG")return false;
+        const needle=query.trim().toLocaleLowerCase("it");
+        if(needle&&!rawName(playerId).toLocaleLowerCase("it").includes(needle))return false;
+        return true;
+      });
+      const entries=()=>{
+        const ids=filteredIds();
+        return ids.slice(0,visibleCount).map(playerId=>({
+          playerId,
+          source:sourceForDraftPlayer(playerId),
+          player:resolved(playerId,squadDraft?.activeRoleVariantByPlayerId?.[playerId]||null),
+        })).filter(entry=>entry.player);
+      };
+      const renderResults=()=>{
+        const modal=deps.getModalRoot?.();
+        const ids=filteredIds();
+        const results=modal?.querySelector?.("[data-rtg-picker-results]");
+        if(results)results.innerHTML=squadView.replacementPickerResultsMarkup({entries:entries(),total:ids.length,visibleCount});
+        modal?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(button=>button.classList.toggle("active",button.dataset.rtgPickerSource===sourceFilter));
+        bindResults();
+      };
+      const bindResults=()=>{
+        const modal=deps.getModalRoot?.();
+        modal?.querySelectorAll?.("[data-rtg-picker-player]")?.forEach(button=>button.addEventListener("click",()=>{
+          const candidateId=id(button.dataset.rtgPickerPlayer);
+          const result=swapSquadDraft(targetId,candidateId,{render:false});
+          if(!result.ok)return deps.toast?.("Cambio non disponibile","error");
+          deps.closeModal?.();
+          renderSquad();
+        }));
+        modal?.querySelector?.("[data-rtg-picker-load-more]")?.addEventListener("click",()=>{
+          visibleCount=Math.min(filteredIds().length,visibleCount+SQUAD_PICKER_PAGE_SIZE);
+          renderResults();
+        });
+      };
+      deps.openModal?.(squadView.replacementPickerMarkup({target,role,quickEntries,entries:entries(),total:candidateIds.length,visibleCount,query,sourceFilter}),{className:"rtg-modal rtg-squad-picker-modal"});
+      const modal=deps.getModalRoot?.();
+      modal?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",event=>{
+        query=String(event.target?.value||"");
+        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        renderResults();
+      });
+      modal?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(button=>button.addEventListener("click",()=>{
+        sourceFilter=String(button.dataset.rtgPickerSource||"all");
+        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        renderResults();
+      }));
+      bindResults();
+    }
+    function openRtgCatalog(){
+      const owned=Array.from(new Set((campaign?.gachaAcquiredPlayerIds||[]).map(id)))
+        .filter(Boolean)
+        .sort((a,b)=>rawRole(a).localeCompare(rawRole(b))||rawOverall(b)-rawOverall(a)||rawName(a).localeCompare(rawName(b),"it"));
+      let query="";
+      let visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,owned.length);
+      const filtered=()=>owned.filter(playerId=>{
+        const needle=query.trim().toLocaleLowerCase("it");
+        return !needle||rawName(playerId).toLocaleLowerCase("it").includes(needle);
+      });
+      const entries=()=>filtered().slice(0,visibleCount).map(playerId=>({
+        playerId,
+        source:"RTG",
+        player:resolved(playerId,squadDraft?.activeRoleVariantByPlayerId?.[playerId]||null),
+      })).filter(entry=>entry.player);
+      const bindCatalog=()=>{
+        const modal=deps.getModalRoot?.();
+        modal?.querySelectorAll?.("[data-rtg-catalog-player]")?.forEach(button=>button.addEventListener("click",()=>{
+          const playerId=id(button.dataset.rtgCatalogPlayer);
+          if(playerId)openRtgPlayerDetails(playerId);
+        }));
+        modal?.querySelector?.("[data-rtg-catalog-load-more]")?.addEventListener("click",()=>{
+          visibleCount=Math.min(filtered().length,visibleCount+SQUAD_PICKER_PAGE_SIZE);
+          renderCatalogResults();
+        });
+      };
+      const renderCatalogResults=()=>{
+        const modal=deps.getModalRoot?.();
+        const results=modal?.querySelector?.("[data-rtg-catalog-results]");
+        const ids=filtered();
+        if(results)results.innerHTML=squadView.catalogResultsMarkup({entries:entries(),total:ids.length});
+        bindCatalog();
+      };
+      deps.openModal?.(squadView.catalogMarkup({entries:entries(),total:owned.length,query}),{className:"rtg-modal rtg-player-catalog-modal"});
+      const modal=deps.getModalRoot?.();
+      modal?.querySelector?.("[data-rtg-catalog-search]")?.addEventListener("input",event=>{
+        query=String(event.target?.value||"");
+        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        renderCatalogResults();
+      });
+      bindCatalog();
+      return {count:owned.length};
+    }
+
+    function currentRequirementTeamId(){
+      const node=nodeById(campaign?.currentNodeId);
+      if(!node)return null;
+      if(node.type==="main")return id(node.teamId);
+      if(node.type==="secondary")return id(node.beforeTeamId);
+      return null;
+    }
+    function seasonTeamIdsForPlayer(playerId){
+      const player=(seasonDb?.players||[]).find(entry=>id(entry?.playerId||entry?.id)===id(playerId));
+      return [player?.teamId,...(player?.teamIds||[])].filter(Boolean).map(id);
+    }
+    function requirementPool(teamId){
+      const constraint=config.SEASON1?.constraints?.[teamId];
+      if(!constraint)return[];
+      const recruitSet=new Set((campaign?.gachaAcquiredPlayerIds||[]).map(id));
+      const recentTeams=new Set(squadRuntime.recentDefeatedTeamIds(teamId,draftState(),constraint.recentWindow));
+      return accessibleDraftIds().map(playerId=>{
+        const player=resolved(playerId,squadDraft?.activeRoleVariantByPlayerId?.[playerId]||null);
+        if(!player)return null;
+        const role=String(player.normalizedRole||player.position||player.role||rawRole(playerId)).toUpperCase();
+        if(!["GK","DF","MF","FW"].includes(role))return null;
+        const move=playerResolver.resolveMove?.(playerId,"ie1",role,freeAgentsDb)||null;
+        const movePower=Number(move?.power);
+        const contribution=Number(player.overall||0)+(Number.isFinite(movePower)?Math.max(0,Math.min(2,(movePower-50)/30)):0);
+        const recruit=recruitSet.has(playerId);
+        const recent=recruit&&seasonTeamIdsForPlayer(playerId).some(team=>recentTeams.has(team));
+        return{playerId,role,overall:Number(player.overall||0),contribution,recruit,recent};
+      }).filter(Boolean);
+    }
+    function buildRequirementCandidate(formation,teamId,pool){
+      const constraint=config.SEASON1?.constraints?.[teamId];
+      if(!formation||!constraint)return null;
+      const candidates=Array.from(pool||[]);
+      const required={GK:0,DF:0,MF:0,FW:0,...(formation.requirements||{})};
+      const left={GK:Number(required.GK)||0,DF:Number(required.DF)||0,MF:Number(required.MF)||0,FW:Number(required.FW)||0};
+      const selected=[],used=new Set();
+      const weakest=(a,b)=>a.contribution-b.contribution||a.playerId.localeCompare(b.playerId);
+      const strongest=(a,b)=>b.contribution-a.contribution||a.playerId.localeCompare(b.playerId);
+      const addLineupFrom=(source,needed)=>{
+        for(const entry of source){
+          if(needed<=0)break;
+          if(used.has(entry.playerId)||left[entry.role]<=0)continue;
+          selected.push(entry);used.add(entry.playerId);left[entry.role]-=1;needed-=1;
+        }
+        return needed;
+      };
+      // Composition requirements apply to all 15 active players. Only the amount
+      // that cannot fit on the four-player bench is forced into the XI.
+      const minFieldRecent=Math.max(0,Number(constraint.recentCount||0)-4);
+      const minFieldRecruit=Math.max(0,Number(constraint.minRecruit||0)-4);
+      if(addLineupFrom(candidates.filter(entry=>entry.recent).sort(weakest),minFieldRecent)>0)return null;
+      const fieldRecruitNow=selected.filter(entry=>entry.recruit).length;
+      if(addLineupFrom(candidates.filter(entry=>entry.recruit).sort(weakest),Math.max(0,minFieldRecruit-fieldRecruitNow))>0)return null;
+      for(const role of ["GK","DF","MF","FW"]){
+        if(addLineupFrom(candidates.filter(entry=>entry.role===role).sort(weakest),left[role])>0)return null;
+      }
+      if(selected.length!==11)return null;
+
+      const capTotal=Number(constraint.cap)*11;
+      let total=selected.reduce((sum,entry)=>sum+entry.contribution,0);
+      if(total>capTotal+1e-9)return null;
+
+      // Maximise the starting XI without losing the minimum composition that
+      // must remain on the field because the bench only has four slots.
+      let guard=0;
+      while(guard++<80){
+        const fieldRecruitCount=selected.filter(entry=>entry.recruit).length;
+        const fieldRecentCount=selected.filter(entry=>entry.recent).length;
+        let best=null;
+        for(let index=0;index<selected.length;index++){
+          const outgoing=selected[index];
+          for(const incoming of candidates){
+            if(used.has(incoming.playerId)||incoming.role!==outgoing.role)continue;
+            const delta=incoming.contribution-outgoing.contribution;
+            if(delta<=0||total+delta>capTotal+1e-9)continue;
+            const nextRecruit=fieldRecruitCount-(outgoing.recruit?1:0)+(incoming.recruit?1:0);
+            const nextRecent=fieldRecentCount-(outgoing.recent?1:0)+(incoming.recent?1:0);
+            if(nextRecruit<minFieldRecruit||nextRecent<minFieldRecent)continue;
+            if(!best||delta>best.delta||(delta===best.delta&&incoming.overall>best.incoming.overall))best={index,outgoing,incoming,delta};
+          }
+        }
+        if(!best)break;
+        used.delete(best.outgoing.playerId);used.add(best.incoming.playerId);
+        selected[best.index]=best.incoming;total+=best.delta;
+      }
+
+      const bench=[];
+      const benchUsed=new Set(used);
+      const addBenchFrom=(source,needed)=>{
+        for(const entry of source){
+          if(needed<=0||bench.length>=4)break;
+          if(benchUsed.has(entry.playerId))continue;
+          bench.push(entry);benchUsed.add(entry.playerId);needed-=1;
+        }
+        return needed;
+      };
+      const fieldRecruitCount=selected.filter(entry=>entry.recruit).length;
+      const fieldRecentCount=selected.filter(entry=>entry.recent).length;
+      if(addBenchFrom(candidates.filter(entry=>entry.recent).sort(strongest),Math.max(0,Number(constraint.recentCount||0)-fieldRecentCount))>0)return null;
+      const activeRecruitAfterRecent=fieldRecruitCount+bench.filter(entry=>entry.recruit).length;
+      if(addBenchFrom(candidates.filter(entry=>entry.recruit).sort(strongest),Math.max(0,Number(constraint.minRecruit||0)-activeRecruitAfterRecent))>0)return null;
+      addBenchFrom(candidates.sort(strongest),4-bench.length);
+      if(bench.length!==4)return null;
+
+      const state=clone(draftState());
+      state.squads.ie1={
+        formationId:id(formation.id),
+        lineup:selected.map(entry=>entry.playerId),
+        bench:bench.map(entry=>entry.playerId),
+        activeRoleVariantByPlayerId:{...(squadDraft?.activeRoleVariantByPlayerId||{})},
+      };
+      const eligibility=squadRuntime.mainEligibility({teamId,state,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+      if(!eligibility.eligible)return null;
+      return{squad:state.squads.ie1,eligibility};
+    }
+    function adaptSquadToCurrentRequirements(){
+      const teamId=currentRequirementTeamId();
+      if(!teamId){deps.toast?.("Nessun requisito principale attivo","error");return{ok:false,reason:"no-target"};}
+      const formations=config.SEASON1?.formations||seasonDb?.formations?.eleven||[];
+      const pool=requirementPool(teamId);
+      const currentId=id(squadDraft?.formationId||campaign?.squads?.ie1?.formationId);
+      const ordered=[...formations].sort((a,b)=>(id(a.id)===currentId?-1:0)-(id(b.id)===currentId?-1:0));
+      let best=null;
+      for(const formation of ordered){
+        const candidate=buildRequirementCandidate(formation,teamId,pool);
+        if(!candidate)continue;
+        if(!best||Number(candidate.eligibility.teamPower||0)>Number(best.eligibility.teamPower||0))best=candidate;
+      }
+      if(!best){deps.toast?.("Non riesco a costruire automaticamente una squadra valida con i giocatori disponibili","error");return{ok:false,reason:"no-valid-squad"};}
+      squadDraft=clone(best.squad);
+      renderSquad();
+      deps.toast?.(`Squadra adattata: Potenza ${best.eligibility.teamPower} / ${best.eligibility.cap}`);
+      return{ok:true,teamId,eligibility:best.eligibility,squad:clone(squadDraft)};
+    }
+
     function renderSquad(){
       squadDraft=clone(squadDraft||campaign.squads.ie1);
       const model=squadView.renderModel({state:draftState(),freeAgentIds,seasonDb,freeAgentsDb});
       renderHtml(squadView.markup(model));
       bindHomeAndTabs();
       squadView.bind(app,{
-        onFormationChange:(formationId)=>{squadDraft=buildDefaultSquad(draftState(),formationId);renderSquad();},
-        onSwap:(first,second)=>swapSquadDraft(first,second),
+        onOpenFormation:()=>openFormationSelector(model),
+        onOpenPlayer:(playerId)=>openSquadPlayerPicker(playerId),
+        onOpenDetails:(playerId)=>openRtgPlayerDetails(playerId),
+        onOpenCatalog:()=>openRtgCatalog(),
+        onAdaptRequirements:()=>adaptSquadToCurrentRequirements(),
         onSave:()=>saveSquad(squadDraft),
       });
       return model;
     }
     function locationInDraft(playerId){
       const idValue=id(playerId);
-      const lineupIndex=squadDraft.lineup.indexOf(idValue),benchIndex=squadDraft.bench.indexOf(idValue);
+      const lineupIndex=(squadDraft?.lineup||[]).map(id).indexOf(idValue),benchIndex=(squadDraft?.bench||[]).map(id).indexOf(idValue);
       return lineupIndex>=0?{area:"lineup",index:lineupIndex}:benchIndex>=0?{area:"bench",index:benchIndex}:null;
     }
-    function swapSquadDraft(firstId,secondId){
+    function swapSquadDraft(firstId,secondId,options={}){
       const first=id(firstId),second=id(secondId);
+      if(!first||!second||first===second)return{ok:false,reason:"same-player"};
+      const accessible=new Set(squadRuntime.accessiblePlayerIds({freeAgentIds,state:draftState()}).map(id));
+      if(!accessible.has(first)||!accessible.has(second))return{ok:false,reason:"inaccessible-player"};
+      const firstRole=roleOfDraftPlayer(first),secondRole=roleOfDraftPlayer(second);
+      if(!firstRole||firstRole!==secondRole)return{ok:false,reason:"role-mismatch"};
       const firstLoc=locationInDraft(first),secondLoc=locationInDraft(second);
-      if(!firstLoc&&!secondLoc)return;
+      if(!firstLoc&&!secondLoc)return{ok:false,reason:"collection-only"};
       if(firstLoc&&secondLoc){
         squadDraft[firstLoc.area][firstLoc.index]=second;
         squadDraft[secondLoc.area][secondLoc.index]=first;
@@ -150,7 +526,8 @@
         const incoming=firstLoc?second:first;
         squadDraft[loc.area][loc.index]=incoming;
       }
-      renderSquad();
+      if(options.render!==false)renderSquad();
+      return{ok:true};
     }
     async function saveSquad(nextSquad=squadDraft){
       const candidate=clone(nextSquad);
@@ -177,9 +554,13 @@
       let body="";
       if(node.type==="main"){
         const eligibility=squadRuntime.mainEligibility({teamId:node.teamId,state:campaign,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
-        body=`<div class="rtg-node-modal"><h2>${id(node.teamId)}</h2>${runView.requirementsMarkup(eligibility)}<button type="button" class="rtg-action-button" data-rtg-start-node ${!allowed||!eligibility.eligible?"disabled":""}>Gioca</button></div>`;
+        body=runView.nodeModalMarkup
+          ? runView.nodeModalMarkup({node,eligibility,seasonDb,allowed})
+          : `<div class="rtg-node-modal"><h2>${id(node.teamId)}</h2>${runView.requirementsMarkup(eligibility)}<button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed||!eligibility.eligible?"disabled":""}>GIOCA</button></div>`;
       }else{
-        body=`<div class="rtg-node-modal"><h2>Partita secondaria</h2><p>Avversari svincolati casuali. Vittoria: 100–150 Gettoni RTG.</p><button type="button" class="rtg-action-button" data-rtg-start-node ${!allowed?"disabled":""}>Gioca</button></div>`;
+        body=runView.nodeModalMarkup
+          ? runView.nodeModalMarkup({node,seasonDb,allowed})
+          : `<div class="rtg-node-modal"><h2>Partita secondaria</h2><p>Avversari svincolati casuali. Vittoria: 100–150 Gettoni RTG.</p><button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed?"disabled":""}>GIOCA</button></div>`;
       }
       deps.openModal?.(body,{className:"rtg-modal"});
       deps.getModalRoot?.()?.querySelector?.("[data-rtg-start-node]")?.addEventListener("click",()=>{deps.closeModal?.();startMatch(node.id);});
@@ -188,7 +569,7 @@
     function mainOpponent(node){
       const boss=bossFor(node.teamId);
       if(!boss)throw Object.assign(new Error("Boss RTG non trovato"),{code:"rtg-boss-missing"});
-      return {formationId:boss.bossFormation||null,lineup:(boss.startingXIPlayerIds||[]).map(playerId=>resolved(playerId)).filter(Boolean),bench:[]};
+      return {formationId:boss.bossFormation||null,lineup:(boss.startingXIPlayerIds||[]).map(playerId=>resolved(playerId)).filter(Boolean),bench:[],name:boss.teamName||node.teamId||"Avversario"};
     }
     function secondaryOpponent(node,current,attemptNumber){
       const generated=opponentGenerator.generate({seed:`${current.campaignSeed}:${node.id}`,attemptNumber,freeAgentsDb,formations:seasonDb?.formations?.eleven||[],targetMin:node.opponentTargetMin,targetMax:node.opponentTargetMax,playerResolver});
@@ -215,6 +596,7 @@
         const matchId=`rtg:${node.id}:${attemptNumber}`;
         let match=matchEngine.createMatch({matchId,nodeId:node.id,matchType:node.type,attemptNumber,seed,userSquad,opponentSquad});
         match=matchEngine.prepareNext(match);
+        match.presentation={...(match.presentation||{}),preMatchSeen:false};
         current.activeMatch=match;started=clone(match);return current;
       });
       return renderMatch(started||campaign.activeMatch);
@@ -223,9 +605,43 @@
       const squad=side==="user"?match.userSquad:match.opponentSquad;
       return [...(squad?.lineup||[]),...(squad?.bench||[])].find(player=>id(player.playerId)===id(playerId))||null;
     }
-    function renderMatch(match=campaign?.activeMatch){
+    function clearMatchFlowTimer(){
+      if(matchFlowTimer!=null&&typeof cancelSchedule==="function")cancelSchedule(matchFlowTimer);
+      matchFlowTimer=null;
+    }
+    function bindMatchViewActions(){
+      matchView.bind(app,{
+        onOpenPlayerDetails:(playerId,side)=>openRtgPlayerDetails(playerId,side),
+        onPreMatchStart:()=>confirmPreMatch(),
+        onEncounterChoice:choice=>chooseEncounter(choice),
+        onAbandon:()=>abandonMatch(),
+        onHalftimeConfirm:()=>confirmHalftime(halftimeDraft),
+        onPenaltyDirection:direction=>choosePenalty({direction,useMove:false}),
+        onPenaltyMove:()=>choosePenalty({direction:"center",useMove:true}),
+      });
+    }
+    function showEncounterOverlay(match){
+      const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
+      const pending=match?.pendingEncounter;
+      if(!overlay||!pending)return;
+      const userPlayer=findMatchPlayer(match,"user",pending.userPlayerId);
+      const opponentPlayer=findMatchPlayer(match,"opponent",pending.aiPlayerId||pending.opponentPlayerId);
+      overlay.innerHTML=matchView.encounterMarkup(match,{userPlayer,opponentPlayer});
+      bindMatchViewActions();
+    }
+    function renderMatch(match=campaign?.activeMatch,options={}){
+      clearMatchFlowTimer();
       if(!match)return renderRun();
+      if(match.presentation?.preMatchSeen===false){
+        displayedMinute=0;
+        renderHtml(matchView.preMatchMarkup(match));
+        bindMatchViewActions();
+        return match;
+      }
       renderHtml(matchView.matchMarkup(match));
+      const minute=matchView.currentMinute?.(match)??0;
+      matchView.animateClock?.(app,displayedMinute,minute);
+      displayedMinute=minute;
       const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
       if(match.status==="halftime"){
         halftimeDraft=clone(match.userSquad);
@@ -233,15 +649,28 @@
         bindHalftimeEditor(match);
       }else if(match.status==="penalties"){
         const context=penaltyContext(match);
-        if(overlay)overlay.innerHTML=matchView.penaltyMarkup(match,{side:context.userRole,canUseMove:context.userMoveAvailable});
+        if(overlay)overlay.innerHTML=matchView.penaltyMarkup(match,context);
       }else if(match.pendingEncounter){
-        const pending=match.pendingEncounter;
-        const userPlayer=findMatchPlayer(match,"user",pending.userPlayerId);
-        const opponentPlayer=findMatchPlayer(match,"opponent",pending.opponentPlayerId);
-        if(overlay)overlay.innerHTML=matchView.encounterMarkup(match,{userPlayer,opponentPlayer});
+        if(options.delayEncounter&&typeof schedule==="function"){
+          if(overlay)overlay.innerHTML="";
+          const matchId=match.matchId,encounterId=match.pendingEncounter.encounterId;
+          matchFlowTimer=schedule(()=>{
+            const live=campaign?.activeMatch;
+            if(live?.matchId===matchId&&live?.pendingEncounter?.encounterId===encounterId)showEncounterOverlay(live);
+          },ENCOUNTER_REVEAL_DELAY_MS);
+        }else showEncounterOverlay(match);
       }
-      matchView.bind(app,{onEncounterChoice:choice=>chooseEncounter(choice),onAbandon:()=>abandonMatch(),onHalftimeConfirm:()=>confirmHalftime(halftimeDraft),onPenaltyDirection:direction=>choosePenalty({direction,useMove:false}),onPenaltyMove:()=>choosePenalty({direction:"center",useMove:true})});
+      bindMatchViewActions();
       return match;
+    }
+    async function confirmPreMatch(){
+      campaign=await repository.update("rtg-prematch-start",current=>{
+        if(!current.activeMatch)throw Object.assign(new Error("Nessuna partita RTG attiva"),{code:"rtg-match-not-active"});
+        current.activeMatch.presentation={...(current.activeMatch.presentation||{}),preMatchSeen:true};
+        return current;
+      });
+      displayedMinute=0;
+      return renderMatch(campaign.activeMatch,{delayEncounter:true});
     }
     function terminalKind(match){
       if(match.matchType==="main")return match.result?.winner==="user"?"victory":"loss";
@@ -259,7 +688,7 @@
       next.activeMatch=null;
       return next;
     }
-    async function commitMatchState(label,mutator){
+    async function commitMatchState(label,mutator,renderOptions={}){
       let terminalSnapshot=null;
       campaign=await repository.update(label,current=>{
         if(!current.activeMatch)throw Object.assign(new Error("Nessuna partita RTG attiva"),{code:"rtg-match-not-active"});
@@ -271,7 +700,7 @@
         current.activeMatch=match;return current;
       });
       if(terminalSnapshot)return showMatchResult(terminalSnapshot);
-      return renderMatch(campaign.activeMatch);
+      return renderMatch(campaign.activeMatch,renderOptions);
     }
     async function chooseEncounter(choice){
       const before=clone(campaign.activeMatch?.pendingEncounter);
@@ -289,33 +718,58 @@
         const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
         const userWon=before.userSide===before.actorSide?!!log.actorWon:!log.actorWon;
         const userProbability=before.userSide===before.actorSide?Number(log.probability):100-Number(log.probability);
-        if(overlay)overlay.innerHTML=matchView.resolvedEncounterMarkup({userWon,probability:userProbability,aiChoiceLabel:before.aiChoice==="move"?(before.aiMove?.name||"Mossa"):(before.aiKind==="save"?"Parata":before.aiKind==="defense"?"Difesa":before.aiKind==="shot"?"Tiro":"Dribbling")})+`<button type="button" class="rtg-action-button rtg-duel-continue" data-rtg-duel-continue>Continua</button>`;
-        overlay?.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>renderMatch(campaign.activeMatch));
+        const userPlayer=findMatchPlayer(resolvedMatch,"user",before.userPlayerId);
+        const aiPlayer=findMatchPlayer(resolvedMatch,"opponent",before.aiPlayerId||before.opponentPlayerId);
+        const userChoiceLabel=choice==="move"?(before.userMove?.name||"Mossa"):(before.userBaseActionLabel||"Azione base");
+        const aiChoiceLabel=before.aiChoice==="move"?(before.aiMove?.name||"Mossa"):(before.aiKind==="save"?"Parata":before.aiKind==="defense"?"Difesa":before.aiKind==="shot"?"Tiro":"Dribbling");
+        const outcomeLabel=before.userKind==="shot"
+          ?(userWon?"GOAL!":"Tiro fermato")
+          :before.userKind==="save"
+            ?(userWon?"PARATA!":"Gol subito")
+            :before.userKind==="defense"
+              ?(userWon?"Palla recuperata":"Avversario superato")
+              :before.userKind==="dribble"
+                ?(userWon?"Dribbling riuscito":"Palla persa")
+                :(userWon?"Duello a centrocampo vinto":"Duello a centrocampo perso");
+        if(overlay)overlay.innerHTML=matchView.resolvedEncounterMarkup({
+          userWon,probability:userProbability,outcomeLabel,
+          userPlayerName:userPlayer?.name||before.userPlayerId,
+          aiPlayerName:aiPlayer?.name||before.aiPlayerId,
+          userPlayer,opponentPlayer:aiPlayer,
+          actorSide:before.actorSide,
+          userChoiceLabel,aiChoiceLabel,
+        });
+        overlay?.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>renderMatch(campaign.activeMatch,{delayEncounter:true}));
         return resolvedMatch;
       }
       return renderMatch(campaign.activeMatch);
     }
-    function bindHalftimeEditor(match){
+    function bindHalftimeEditor(match,selectedPlayerId=null){
       const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
-      let selected=null;
-      const click=(button,area)=>{
-        const playerId=button.dataset.rtgHalfLineup||button.dataset.rtgHalfBench;
-        if(!selected){selected={playerId,area};button.classList.add("selected");return;}
-        if(selected.area===area){selected=null;overlay?.querySelectorAll?.(".selected")?.forEach(el=>el.classList.remove("selected"));return;}
-        const firstList=selected.area==="lineup"?halftimeDraft.lineup:halftimeDraft.bench;
-        const secondList=area==="lineup"?halftimeDraft.lineup:halftimeDraft.bench;
-        const firstIndex=firstList.findIndex(p=>id(p.playerId)===id(selected.playerId));
-        const secondIndex=secondList.findIndex(p=>id(p.playerId)===id(playerId));
-        const first=firstList[firstIndex],second=secondList[secondIndex];
+      const repaint=(nextSelected=null)=>{
+        if(overlay)overlay.innerHTML=matchView.halftimeMarkup(halftimeDraft,{selectedPlayerId:nextSelected});
+        bindHalftimeEditor(match,nextSelected);
+      };
+      overlay?.querySelectorAll?.("[data-rtg-half-lineup]")?.forEach(button=>button.addEventListener("click",()=>{
+        const playerId=id(button.dataset.rtgHalfLineup);
+        repaint(selectedPlayerId===playerId?null:playerId);
+      }));
+      overlay?.querySelectorAll?.("[data-rtg-half-bench]")?.forEach(button=>button.addEventListener("click",()=>{
+        if(!selectedPlayerId)return;
+        const benchId=id(button.dataset.rtgHalfBench);
+        const firstIndex=halftimeDraft.lineup.findIndex(player=>id(player.playerId)===id(selectedPlayerId));
+        const secondIndex=halftimeDraft.bench.findIndex(player=>id(player.playerId)===benchId);
+        const first=halftimeDraft.lineup[firstIndex],second=halftimeDraft.bench[secondIndex];
         const firstRole=String(first?.normalizedRole||first?.position||"").toUpperCase();
         const secondRole=String(second?.normalizedRole||second?.position||"").toUpperCase();
-        if(firstRole!==secondRole){deps.toast?.("Cambio consentito solo ruolo per ruolo","error");selected=null;return;}
-        firstList[firstIndex]=second;secondList[secondIndex]=first;selected=null;
-        if(overlay)overlay.innerHTML=matchView.halftimeMarkup(halftimeDraft);
-        bindHalftimeEditor(match);
-      };
-      overlay?.querySelectorAll?.("[data-rtg-half-lineup]")?.forEach(button=>button.addEventListener("click",()=>click(button,"lineup")));
-      overlay?.querySelectorAll?.("[data-rtg-half-bench]")?.forEach(button=>button.addEventListener("click",()=>click(button,"bench")));
+        if(firstIndex<0||secondIndex<0||!firstRole||firstRole!==secondRole){
+          deps.toast?.("Cambio consentito solo ruolo per ruolo","error");
+          return repaint(null);
+        }
+        halftimeDraft.lineup[firstIndex]=second;
+        halftimeDraft.bench[secondIndex]=first;
+        repaint(null);
+      }));
       overlay?.querySelector?.("[data-rtg-half-confirm]")?.addEventListener("click",()=>confirmHalftime(halftimeDraft));
     }
     async function confirmHalftime(nextSquad){
@@ -327,7 +781,7 @@
           return {eligible:validation.valid,reasons:validation.reasons||[]};
         }
         return squadRuntime.mainEligibility({teamId:nodeById(match.nodeId)?.teamId,state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
-      }}));
+      }}),{delayEncounter:true});
     }
     function penaltyContext(match){
       const history=match.shootout?.history||[];
@@ -340,7 +794,8 @@
       const userKind=attackingSide==="user"?"shot":"save";
       const userMove=userPlayer?.move&&String(userPlayer.move.type)===userKind?userPlayer.move:null;
       const userKey=`user:${id(userPlayer?.playerId)}`;
-      return {attackingSide,defendingSide,shooter,keeper,userRole:userKind,userMove,userMoveAvailable:!!userMove&&Number(match.moveUsesByPlayerId?.[userKey]||0)>0};
+      const userMoveUses=Number(match.moveUsesByPlayerId?.[userKey]||0);
+      return {attackingSide,defendingSide,shooter,keeper,userRole:userKind,userMove,userMoveUses,userMoveAvailable:!!userMove&&userMoveUses>0};
     }
     function previousUserDirections(match){
       return (match.shootout?.history||[]).map(item=>({userDirection:item.attackingSide==="user"?item.shooterChoice:item.goalkeeperChoice})).filter(item=>item.userDirection);
@@ -394,7 +849,7 @@
       deps.openModal?.(runView.pullResultMarkup(result,player),{className:"rtg-modal rtg-pull-modal"});
       return result;
     }
-    async function open(){
+    async function open(options={}){
       deps.closeModal?.({invokeOnClose:false});
       await ensureData();
       const access=refreshEntitlements();
@@ -414,12 +869,25 @@
         }
         return renderMatch(campaign.activeMatch);
       }
+      const destination=String(options?.destination||"run");
+      if(destination==="squad")return renderSquad();
+      if(destination==="catalog"){
+        renderSquad();
+        openRtgCatalog();
+        return campaign;
+      }
+      if(destination==="vending"){
+        renderRun();
+        openVending();
+        return campaign;
+      }
       return renderRun();
     }
 
     return Object.freeze({
-      open,renderRun,renderSquad,openNode,startMatch,chooseEncounter,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,
-      getState:()=>clone(campaign),getRenderedHtml,
+      open,renderRun,renderSquad,openNode,startMatch,confirmPreMatch,chooseEncounter,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
+      swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,adaptSquadToCurrentRequirements,
+      getDraftSquad:()=>clone(squadDraft),getState:()=>clone(campaign),getRenderedHtml,
     });
   }
 

@@ -11,7 +11,7 @@ function squad(prefix,withMoves=true){
 }
 const input={matchId:"m1",nodeId:"main:occult",matchType:"main",attemptNumber:1,seed:"match-seed",userSquad:squad("u"),opponentSquad:squad("o")};
 const a=E.createMatch(input),b=E.createMatch(input);
-assert(a.actionTarget>=20&&a.actionTarget<=28);assert(a.manualTarget>=16&&a.manualTarget<=20&&a.manualTarget<=a.actionTarget);
+assert(a.actionTarget>=20&&a.actionTarget<=28);assert(a.manualTarget>=14&&a.manualTarget<=18&&a.manualTarget<=a.actionTarget);
 assert.strictEqual(a.period,"first_half");assert.deepStrictEqual(JSON.parse(JSON.stringify(a.score)),{user:0,opponent:0});assert.strictEqual(a.fieldZone,"midfield");
 assert.strictEqual(a.moveUsesByPlayerId["user:uf1"],2);assert.strictEqual(a.moveUsesByPlayerId["opponent:of1"],2);
 assert.deepStrictEqual(JSON.parse(JSON.stringify(a.manualIndexes)),JSON.parse(JSON.stringify(b.manualIndexes)));assert.strictEqual(a.actionTarget,b.actionTarget);

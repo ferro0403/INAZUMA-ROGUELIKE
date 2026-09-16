@@ -36,7 +36,7 @@
   function createMatch(input={}){
     const seed=id(input.seed||input.matchId||"rtg-match");
     const actionTarget=20+global.RoadToGloryRng.int(seed,"action-target",0,9);
-    const manualTarget=Math.min(actionTarget,16+global.RoadToGloryRng.int(seed,"manual-target",0,5));
+    const manualTarget=Math.min(actionTarget,14+global.RoadToGloryRng.int(seed,"manual-target",0,5));
     const userSquad=clone(input.userSquad||{lineup:[],bench:[]});
     const opponentSquad=clone(input.opponentSquad||{lineup:[],bench:[]});
     const possession=global.RoadToGloryRng.int(seed,"kickoff",0,2)===0?"user":"opponent";
@@ -122,6 +122,7 @@
       userMove:userMove?clone(userMove):null,
       aiSide,aiPlayerId:playerId(aiPlayer),aiKind,aiChoice,
       aiMove:aiChoice==="move"&&aiMove?clone(aiMove):null,
+      minute:minuteFor(state),
       preparedAtActionIndex:state.actionIndex,
     };
   }

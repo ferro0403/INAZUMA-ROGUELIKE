@@ -1,0 +1,14 @@
+"use strict";
+const assert=require("assert"),fs=require("fs");
+const controller=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const view=fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8");
+const css=fs.readFileSync("css/road-to-glory.css","utf8");
+assert.match(controller,/ENCOUNTER_REVEAL_DELAY_MS\s*=\s*2200/);
+assert.match(controller,/schedule\([\s\S]*?ENCOUNTER_REVEAL_DELAY_MS\)/);
+assert.match(view,/is-latest/);
+assert.match(view,/rtg-duel-possession/);
+assert.match(view,/rtg-duel-type/);
+assert.match(view,/rtg-duel-visual/);
+assert.match(css,/\.rtg-ticker-event\.is-latest/);
+assert.match(css,/\.rtg-duel-visual/);
+console.log("rtg-match-pacing-test: PASS");

@@ -6,6 +6,21 @@
     "farm", "kirkwood", "royal", "zeus", "raimon",
   ]);
 
+  const formations = Object.freeze([
+    Object.freeze({ id:"4-3-3", name:"4-3-3", type:"11v11", requirements:Object.freeze({GK:1,DF:4,MF:3,FW:3}), slotRoles:Object.freeze(["FW","FW","FW","MF","MF","MF","DF","DF","DF","DF","GK"]) }),
+    Object.freeze({ id:"4-4-2", name:"4-4-2", type:"11v11", requirements:Object.freeze({GK:1,DF:4,MF:4,FW:2}), slotRoles:Object.freeze(["FW","FW","MF","MF","MF","MF","DF","DF","DF","DF","GK"]) }),
+    Object.freeze({ id:"4-3-1-2", name:"4-3-1-2", type:"11v11", requirements:Object.freeze({GK:1,DF:4,MF:4,FW:2}), slotRoles:Object.freeze(["FW","FW","MF","MF","MF","MF","DF","DF","DF","DF","GK"]), displayRows:Object.freeze([Object.freeze({role:"FW",count:2}),Object.freeze({role:"MF",displayRole:"TQ",count:1}),Object.freeze({role:"MF",count:3}),Object.freeze({role:"DF",count:4}),Object.freeze({role:"GK",count:1})]) }),
+    Object.freeze({ id:"4-2-4", name:"4-2-4", type:"11v11", requirements:Object.freeze({GK:1,DF:4,MF:2,FW:4}), slotRoles:Object.freeze(["FW","FW","FW","FW","MF","MF","DF","DF","DF","DF","GK"]) }),
+    Object.freeze({ id:"3-4-3", name:"3-4-3", type:"11v11", requirements:Object.freeze({GK:1,DF:3,MF:4,FW:3}), slotRoles:Object.freeze(["FW","FW","FW","MF","MF","MF","MF","DF","DF","DF","GK"]) }),
+    Object.freeze({ id:"5-4-1", name:"5-4-1", type:"11v11", requirements:Object.freeze({GK:1,DF:5,MF:4,FW:1}), slotRoles:Object.freeze(["FW","MF","MF","MF","MF","DF","DF","DF","DF","DF","GK"]) }),
+    Object.freeze({ id:"4-5-1", name:"4-5-1", type:"11v11", requirements:Object.freeze({GK:1,DF:4,MF:5,FW:1}), slotRoles:Object.freeze(["FW","MF","MF","MF","MF","MF","DF","DF","DF","DF","GK"]) }),
+    Object.freeze({ id:"5-3-2", name:"5-3-2", type:"11v11", requirements:Object.freeze({GK:1,DF:5,MF:3,FW:2}), slotRoles:Object.freeze(["FW","FW","MF","MF","MF","DF","DF","DF","DF","DF","GK"]) }),
+    Object.freeze({ id:"2-4-4", name:"2-4-4", type:"11v11", requirements:Object.freeze({GK:1,DF:2,MF:4,FW:4}), slotRoles:Object.freeze(["FW","FW","FW","FW","MF","MF","MF","MF","DF","DF","GK"]) }),
+    Object.freeze({ id:"3-3-4", name:"3-3-4", type:"11v11", requirements:Object.freeze({GK:1,DF:3,MF:3,FW:4}), slotRoles:Object.freeze(["FW","FW","FW","FW","MF","MF","MF","DF","DF","DF","GK"]) }),
+    Object.freeze({ id:"2-5-3", name:"2-5-3", type:"11v11", requirements:Object.freeze({GK:1,DF:2,MF:5,FW:3}), slotRoles:Object.freeze(["FW","FW","FW","MF","MF","MF","MF","MF","DF","DF","GK"]) }),
+    Object.freeze({ id:"3-5-2", name:"3-5-2", type:"11v11", requirements:Object.freeze({GK:1,DF:3,MF:5,FW:2}), slotRoles:Object.freeze(["FW","FW","MF","MF","MF","MF","MF","DF","DF","DF","GK"]), displayRows:Object.freeze([Object.freeze({role:"FW",count:2}),Object.freeze({role:"MF",count:5}),Object.freeze({role:"DF",count:3}),Object.freeze({role:"GK",count:1})]) }),
+  ]);
+
   const mainRewards = Object.freeze({
     occult: 210, wild: 225, brainwashing: 240, otaku: 255, shuriken: 285,
     farm: 330, kirkwood: 390, royal: 465, zeus: 540, raimon: 630,
@@ -27,6 +42,7 @@
   const SEASON1 = Object.freeze({
     seasonId: "ie1",
     mainTeams,
+    formations,
     checkpointMainIndexes: Object.freeze([2, 5, 8]),
     visualBlocks: Object.freeze([
       Object.freeze([0, 2]), Object.freeze([3, 5]),

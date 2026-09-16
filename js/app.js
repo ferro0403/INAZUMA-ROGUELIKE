@@ -639,12 +639,20 @@
   const rtgRunView = rtgRuntimeAvailable ? global.RoadToGloryRunView.create({
     escapeHtml,
     teamEmblemMarkup: rtgTeamEmblemMarkup,
+    compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
   }) : null;
   const rtgSquadView = rtgRuntimeAvailable ? global.RoadToGlorySquadView.create({
     escapeHtml,
     playerResolver: global.RoadToGloryPlayerResolver,
+    compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
+    formationLayout: global.FormationLayout,
   }) : null;
-  const rtgMatchView = rtgRuntimeAvailable ? global.RoadToGloryMatchView.create({ escapeHtml }) : null;
+  const rtgMatchView = rtgRuntimeAvailable ? global.RoadToGloryMatchView.create({
+    escapeHtml,
+    compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
+    formationLayout: global.FormationLayout,
+    formationById: (formationId) => (global.RoadToGloryConfig?.SEASON1?.formations || global.SeasonRegistry.database("ie1")?.formations?.eleven || []).find((item) => String(item.id) === String(formationId)) || null,
+  }) : null;
   const rtgController = rtgRuntimeAvailable ? global.RoadToGloryController.create({
     app,
     repository: rtgRepository,
@@ -671,6 +679,7 @@
     rng: global.RoadToGloryRng,
     aiPolicy: global.RoadToGloryAiPolicy,
     penaltyRuntime: global.RoadToGloryPenaltyRuntime,
+    showPlayerDetailsFor: (...args) => showPlayerDetailsFor(...args),
   }) : null;
 
   const homeView = global.HomeView.create({ escapeHtml, normalizeTeamIdentity, savedTeamIdentity, seasonDisplayName, resolvedRosterPlayer, averageOverall, lifeHeartsMarkup, bossTeamLogoUrl, getSeasonDb: () => seasonDb });
