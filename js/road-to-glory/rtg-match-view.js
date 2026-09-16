@@ -96,13 +96,13 @@
       const key = `user:${String(pending.userPlayerId || "")}`;
       const uses = Number(match.moveUsesByPlayerId?.[key] || 0);
       const probability = Number(preview.probability ?? pending.normalPreviewProbability ?? 50);
-      return `<section class="panel rtg-duel-card rtg-paper-modal">
+      return `<section class="panel rtg-duel-card rtg-paper-modal development-squad-card-scope">
         <div class="rtg-duel-head"><div><p class="eyebrow">Duello</p><h2>${escape(pending.userBaseActionLabel || "Azione")}</h2></div><strong>${escape(probability.toFixed(1))}%</strong></div>
         <div class="progress-track rtg-probability"><span class="progress-bar" style="width:${Math.max(10, Math.min(90, probability))}%"></span></div>
         <div class="rtg-versus rtg-versus--cards">
-          <article><small>Tu</small>${card(user, `data-rtg-duel-user="${escape(pid(user))}"`, "run-tactical-card match-player-card match-player-card--user rtg-duel-player-card")}</article>
+          <article><small>Tu</small>${card(user, `data-rtg-duel-user="${escape(pid(user))}"`, "run-tactical-card match-player-card match-player-card--user squad-player-card rtg-duel-player-card")}</article>
           <b>VS</b>
-          <article><small>Avversario</small>${card(opponent, `data-rtg-duel-opponent="${escape(pid(opponent))}"`, "run-tactical-card match-player-card match-player-card--opponent rtg-duel-player-card")}</article>
+          <article><small>Avversario</small>${card(opponent, `data-rtg-duel-opponent="${escape(pid(opponent))}"`, "run-tactical-card match-player-card match-player-card--opponent squad-player-card rtg-duel-player-card")}</article>
         </div>
         <div class="button-row rtg-duel-actions">
           <button type="button" class="btn btn-yellow rtg-action-button" data-rtg-choice="base">${escape(pending.userBaseActionLabel || "Azione")}</button>
@@ -122,7 +122,7 @@
 
     function halftimeMarkup(model = {}) {
       const lineup = model.lineup || [], bench = model.bench || [];
-      return `<section class="panel rtg-halftime rtg-paper-modal">
+      return `<section class="panel rtg-halftime rtg-paper-modal development-squad-card-scope">
         <div class="modal-head"><div><p class="eyebrow">45° minuto</p><h2>Intervallo</h2><p class="muted">Come nella gestione squadra: seleziona due giocatori dello stesso ruolo. Le cariche delle mosse non si ricaricano.</p></div></div>
         <div class="rtg-halftime-grid">
           <div><h3>Campo</h3><div class="rtg-halftime-cards">${lineup.map((player) => card(player, `data-rtg-half-lineup="${escape(pid(player))}" data-role="${escape(role(player))}"`, "squad-player-card rtg-halftime-player-card")).join("")}</div></div>
