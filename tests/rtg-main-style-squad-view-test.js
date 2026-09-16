@@ -38,6 +38,6 @@ changeButton.fn({preventDefault(){},stopPropagation(){}});
 assert.deepStrictEqual(details,["d1"]);
 assert.deepStrictEqual(opened,["d1"]);
 const css=fs.readFileSync("css/road-to-glory.css","utf8");
-assert.match(css,/--rtg-picker-card-size:\\s*74px/);
-assert.match(css,/--rtg-picker-card-mobile:\\s*64px/);
+assert.match(css,/--rtg-picker-card-size:\s*74px/);
+assert.match(css,/--rtg-picker-card-mobile:\s*64px/);
 console.log("rtg-main-style-squad-view-test: PASS");
