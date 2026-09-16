@@ -795,6 +795,8 @@
           aiUsedMove:before.aiChoice==="move",
           userMovePower:choice==="move" ? (before.userMove?.power ?? null) : null,
           aiMovePower:before.aiChoice==="move" ? (before.aiMove?.power ?? null) : null,
+          userMoveType:choice==="move" ? (before.userMove?.type || before.userKind || null) : null,
+          aiMoveType:before.aiChoice==="move" ? (before.aiMove?.type || before.aiKind || null) : null,
           scoreBefore,scoreAfter:clone(resolvedMatch.score||scoreBefore),
           goalSide:log.goalSide||null,
         };

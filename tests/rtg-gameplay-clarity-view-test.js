@@ -19,4 +19,4 @@ assert.match(html,/rtg-penalty-history/);
 assert.match(html,/GOAL|PARATA/);
 const result=view.resolvedEncounterMarkup({userWon:false,probability:41.2,userPlayerName:"Chauncey Slim",aiPlayerName:"Shadow",userChoiceLabel:"Difesa",aiChoiceLabel:"Shadow Stitch",userUsedMove:true,userMovePower:80});
 assert.match(result,/Chauncey Slim/);assert.match(result,/Shadow/);assert.doesNotMatch(result,/Shadow Stitch/);assert.match(result,/data-rtg-duel-continue/);
-console.log("rtg-gameplay-clarity-view-test: PASS");
+const source=fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8");assert.doesNotMatch(source,/GOL CONVALIDATO/);console.log("rtg-gameplay-clarity-view-test: PASS");

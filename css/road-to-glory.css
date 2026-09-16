@@ -4139,3 +4139,248 @@
     font-size:.54rem!important;
   }
 }
+
+
+/* RTG match clarity pass — lighter duel, category-colored moves, stronger live scoreboard. */
+.rtg-duel-story--minimal{
+  min-height:72px;
+  align-items:center;
+}
+.rtg-duel-story--minimal>div:first-child{min-width:0}
+.rtg-duel-story--minimal .eyebrow{
+  margin:0 0 3px!important;
+  color:var(--rtg-match-muted,#6b675f)!important;
+  font-size:.52rem!important;
+  letter-spacing:.13em!important;
+}
+.rtg-duel-story--minimal h2{
+  margin:0!important;
+  color:#111216;
+  font-size:clamp(1.18rem,5vw,1.55rem)!important;
+  font-style:italic;
+  line-height:.96;
+  text-transform:uppercase;
+}
+.rtg-duel-story--minimal .rtg-duel-probability-card{
+  min-width:104px;
+  padding:7px 8px;
+}
+.rtg-duel-story--minimal .rtg-duel-probability-card strong{font-size:1.28rem}
+.rtg-duel-portrait-panel{grid-template-rows:auto 180px auto!important}
+.rtg-duel-portrait-panel .rtg-duel-render{height:180px!important}
+.rtg-duel-action-story{display:none!important}
+
+.rtg-duel-choice-card.is-move,
+.rtg-duel-active-move,
+.rtg-duel-resolving-action.is-move,
+.rtg-duel-result-move{
+  --category-accent:#4e535c;
+  --category-soft:#eceef1;
+}
+.rtg-duel-choice-card.is-move{
+  border-left:9px solid var(--category-accent)!important;
+  background:linear-gradient(112deg,var(--category-soft) 0 36%,#fffdf7 36% 100%)!important;
+}
+.rtg-duel-choice-card.is-move .rtg-choice-icon{
+  background:var(--category-accent)!important;
+  color:#fff!important;
+}
+.rtg-duel-choice-card.is-move .rtg-choice-copy>small,
+.rtg-duel-choice-card.is-move .rtg-choice-delta{
+  color:var(--category-accent)!important;
+}
+.rtg-duel-choice-card.is-move.is-selected{
+  box-shadow:0 0 0 3px var(--category-accent),4px 5px 0 #111216!important;
+}
+.rtg-duel-action-chip--move,
+.rtg-duel-active-move,
+.rtg-duel-resolving-action.is-move,
+.rtg-duel-result-move{
+  border-color:#111216!important;
+  background:var(--category-soft)!important;
+  color:#111216!important;
+  box-shadow:inset 6px 0 0 var(--category-accent),2px 3px 0 #111216!important;
+}
+.rtg-duel-action-chip--move{
+  box-shadow:inset 5px 0 0 var(--category-accent),2px 2px 0 #111216!important;
+}
+.rtg-duel-active-move small,
+.rtg-duel-result-move small,
+.rtg-duel-resolving-action.is-move small{
+  color:var(--category-accent)!important;
+}
+.rtg-duel-choice-card.move-category--shot,
+.rtg-duel-action-chip.move-category--shot,
+.rtg-duel-active-move.move-category--shot,
+.rtg-duel-resolving-action.move-category--shot,
+.rtg-duel-result-move.move-category--shot{--category-accent:#d94f91;--category-soft:#fbe6f0}
+.rtg-duel-choice-card.move-category--defense,
+.rtg-duel-action-chip.move-category--defense,
+.rtg-duel-active-move.move-category--defense,
+.rtg-duel-resolving-action.move-category--defense,
+.rtg-duel-result-move.move-category--defense{--category-accent:#25833d;--category-soft:#e2f3e7}
+.rtg-duel-choice-card.move-category--dribble,
+.rtg-duel-action-chip.move-category--dribble,
+.rtg-duel-active-move.move-category--dribble,
+.rtg-duel-resolving-action.move-category--dribble,
+.rtg-duel-result-move.move-category--dribble{--category-accent:#2478c5;--category-soft:#e3effb}
+.rtg-duel-choice-card.move-category--save,
+.rtg-duel-action-chip.move-category--save,
+.rtg-duel-active-move.move-category--save,
+.rtg-duel-resolving-action.move-category--save,
+.rtg-duel-result-move.move-category--save{--category-accent:#e47a00;--category-soft:#fff0d7}
+
+.rtg-match-revolution .rtg-match-scoreboard{
+  width:100%;
+  min-height:102px;
+  display:grid!important;
+  grid-template-columns:90px minmax(0,1fr) 92px;
+  align-items:center;
+  gap:10px;
+  padding:10px 14px!important;
+  border-bottom:4px solid #111216!important;
+  background:linear-gradient(100deg,#fffdf6 0 18%,#111216 18% 82%,#fffdf6 82% 100%)!important;
+  box-shadow:0 7px 0 rgba(17,18,22,.16)!important;
+}
+.rtg-match-scoreboard .rtg-match-period{
+  display:grid;
+  justify-items:start;
+  align-content:center;
+  gap:0;
+}
+.rtg-match-scoreboard .rtg-match-period small{
+  padding:2px 5px;
+  margin-bottom:2px;
+  background:#111216;
+  color:#ffd21f;
+  font-size:.43rem;
+  font-weight:1000;
+  letter-spacing:.12em;
+}
+.rtg-match-scoreboard .rtg-match-period strong{font-size:1.65rem!important;line-height:.9}
+.rtg-match-scoreboard .rtg-match-period span{
+  margin-top:4px;
+  font-size:.55rem;
+  font-weight:1000;
+  text-transform:uppercase;
+}
+.rtg-match-scoreboard .rtg-match-score-main{
+  min-width:0;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);
+  align-items:center;
+  gap:9px;
+  color:#fff!important;
+}
+.rtg-match-scoreboard .rtg-score-team{
+  min-width:0;
+  display:grid!important;
+  grid-template-columns:34px minmax(0,1fr);
+  align-items:center;
+  gap:6px;
+  color:#fff;
+}
+.rtg-match-scoreboard .rtg-score-team--opponent{grid-template-columns:minmax(0,1fr) 34px}
+.rtg-match-scoreboard .rtg-score-team--opponent .rtg-score-emblem{grid-column:2;grid-row:1}
+.rtg-match-scoreboard .rtg-score-team--opponent b{grid-column:1;grid-row:1;text-align:right}
+.rtg-match-scoreboard .rtg-score-emblem{
+  width:32px!important;
+  height:32px!important;
+  filter:drop-shadow(2px 2px 0 rgba(255,255,255,.18));
+}
+.rtg-match-scoreboard .rtg-score-team b{
+  min-width:0;
+  overflow:hidden;
+  color:#fff;
+  font-size:.68rem;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.rtg-match-scoreboard .rtg-score-capsule{
+  min-width:92px;
+  padding:10px 13px!important;
+  border:3px solid #ffd21f!important;
+  border-radius:12px!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+  box-shadow:4px 4px 0 #fffdf6!important;
+  font-size:1.55rem!important;
+  line-height:1!important;
+  text-align:center;
+}
+.rtg-match-scoreboard .rtg-abandon-button{
+  min-height:54px;
+  padding:7px 8px!important;
+  border:3px solid #b6444a!important;
+  background:#fffdf6!important;
+  font-size:.66rem;
+  font-weight:1000;
+  text-transform:uppercase;
+}
+
+.rtg-duel-goal-celebration{
+  display:grid!important;
+  grid-template-columns:94px minmax(0,1fr);
+  align-items:stretch;
+  gap:0!important;
+  padding:0!important;
+  overflow:hidden;
+  border:3px solid #111216!important;
+  background:#fff6bf!important;
+  box-shadow:4px 5px 0 rgba(17,18,22,.2)!important;
+}
+.rtg-goal-burst{
+  display:grid;
+  place-items:center;
+  min-height:82px;
+  background:#ffd21f;
+  color:#111216;
+  font-size:1.7rem;
+  font-style:italic;
+  font-weight:1000;
+  transform:skewX(-4deg);
+}
+.rtg-duel-goal-celebration>div{
+  display:grid;
+  align-content:center;
+  gap:2px;
+  padding:10px 13px;
+}
+.rtg-duel-goal-celebration small{
+  color:#8c6710;
+  font-size:.48rem;
+  font-weight:1000;
+  letter-spacing:.1em;
+}
+.rtg-duel-goal-celebration strong{
+  color:#111216;
+  font-size:1.55rem;
+  line-height:1;
+}
+.rtg-duel-goal-celebration em{
+  color:#6b675f;
+  font-size:.58rem;
+  font-style:normal;
+  font-weight:800;
+}
+@media(max-width:430px){
+  .rtg-match-revolution .rtg-match-scoreboard{
+    min-height:92px;
+    grid-template-columns:72px minmax(0,1fr) 78px;
+    gap:6px;
+    padding:8px 7px!important;
+    background:linear-gradient(100deg,#fffdf6 0 15%,#111216 15% 85%,#fffdf6 85% 100%)!important;
+  }
+  .rtg-match-scoreboard .rtg-match-period strong{font-size:1.42rem!important}
+  .rtg-match-scoreboard .rtg-match-score-main{gap:5px}
+  .rtg-match-scoreboard .rtg-score-team{grid-template-columns:26px minmax(0,1fr);gap:4px}
+  .rtg-match-scoreboard .rtg-score-team--opponent{grid-template-columns:minmax(0,1fr) 26px}
+  .rtg-match-scoreboard .rtg-score-emblem{width:25px!important;height:25px!important}
+  .rtg-match-scoreboard .rtg-score-team b{font-size:.58rem}
+  .rtg-match-scoreboard .rtg-score-capsule{min-width:74px;padding:8px 8px!important;font-size:1.25rem!important}
+  .rtg-match-scoreboard .rtg-abandon-button{min-height:48px;padding:5px!important;font-size:.55rem}
+  .rtg-duel-portrait-panel{grid-template-rows:auto 158px auto!important}
+  .rtg-duel-portrait-panel .rtg-duel-render{height:158px!important}
+  .rtg-duel-goal-celebration{grid-template-columns:78px minmax(0,1fr)}
+  .rtg-goal-burst{min-height:72px;font-size:1.45rem}
+}
