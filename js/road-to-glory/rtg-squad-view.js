@@ -28,7 +28,7 @@
       </button>`;
     }
 
-    function playerCard(entry, area) {
+    function playerCard(entry, area, options = {}) {
       const player = entry?.player || {};
       const playerId = String(entry?.playerId || playerIdOf(player));
       const role = roleOf(player);
@@ -44,12 +44,14 @@
         area === "bench" ? `data-rtg-bench-player="${escape(playerId)}"` : "",
         isPicker ? `data-rtg-picker-player="${escape(playerId)}"` : "",
         isCatalog ? `data-rtg-catalog-player="${escape(playerId)}"` : "",
+        options.dataAttr || "",
       ].filter(Boolean).join(" ");
       const extraClass = [
         "squad-player-card",
         "rtg-squad-player-card",
         isPicker ? "rtg-prematch-player-card rtg-picker-player-card" : "",
         isCatalog ? "rtg-prematch-player-card rtg-picker-player-card rtg-catalog-player-card" : "",
+        options.extraClass || "",
       ].filter(Boolean).join(" ");
       const cardMarkup = compactPlayerCardMarkup
         ? compactPlayerCardMarkup(player, {
@@ -60,7 +62,7 @@
             trailingMarkup: "",
           })
         : fallbackPlayerCard(player, "", attrs);
-      if (isPicker || isCatalog) return cardMarkup;
+      if (isPicker || isCatalog || options.readOnly) return cardMarkup;
       return `<div class="rtg-squad-card-slot" data-rtg-card-slot="${escape(playerId)}">
         ${cardMarkup}
         <button type="button" class="rtg-squad-change-trigger" data-rtg-change-player="${escape(playerId)}" aria-label="Cambia ${escape(player?.name || playerId)}">↔</button>
@@ -87,20 +89,28 @@
       return formations.find((item) => String(item.id) === String(formationId)) || null;
     }
 
-    function readOnlyMatchCard(player, attrs = "", extraClass = "") {
-      const playerId = playerIdOf(player);
-      const cardAttrs = [attrs, `data-rtg-squad-player="${escape(playerId)}"`, `data-role="${escape(roleOf(player))}"`].filter(Boolean).join(" ");
-      const classes = ["squad-player-card", "rtg-squad-player-card", "rtg-match-squad-player-card", extraClass].filter(Boolean).join(" ");
-      const markup = compactPlayerCardMarkup
-        ? compactPlayerCardMarkup(player || {}, {
-            level: 20,
-            overall: player?.overall ?? player?.finalOverall,
-            dataAttr: cardAttrs,
-            extraClass: classes,
-            trailingMarkup: "",
-          })
-        : fallbackPlayerCard(player || {}, "", cardAttrs);
-      return `<div class="rtg-squad-card-slot rtg-match-card-slot" data-rtg-card-slot="${escape(playerId)}">${markup}</div>`;
+    function lineupPitchMarkup(lineupRows = [], options = {}) {
+      const readOnly = !!options.readOnly;
+      const side = String(options.side || "user");
+      const mode = String(options.mode || "squad");
+      const selectedId = String(options.selectedId || "");
+      const latest = options.latest || null;
+      const attrName = mode === "prematch" ? "data-rtg-prematch-player" : mode === "halftime" ? "data-rtg-half-lineup" : mode === "live" ? "data-rtg-field-player" : "";
+      return `<section class="pitch rtg-squad-pitch-main">
+        ${lineupRows.map((row) => `<div class="pitch-row tactical-row" data-row-count="${Math.max(1, row.entries?.length || Number(row.count) || 1)}" style="--players-in-row:${Math.max(1, row.entries?.length || Number(row.count) || 1)};--row-count:${Math.max(1, row.entries?.length || Number(row.count) || 1)}">${(row.entries || []).map((entry) => {
+          const currentId = String(entry.playerId || "");
+          const selected = mode === "halftime" && currentId === selectedId;
+          const latestClass = latest?.actorId === currentId ? "is-latest-actor" : latest?.opponentId === currentId ? "is-latest-opponent" : "";
+          const dataAttr = !attrName ? "" : mode === "halftime"
+            ? `${attrName}="${escape(currentId)}" data-role="${escape(roleOf(entry.player))}" aria-pressed="${selected ? "true" : "false"}"`
+            : `${attrName}="${escape(currentId)}" data-side="${escape(side)}"`;
+          return playerCard(entry, "lineup", {
+            readOnly,
+            dataAttr,
+            extraClass:`${selected ? "selected" : ""} ${latestClass}`,
+          });
+        }).join("")}</div>`).join("")}
+      </section>`;
     }
 
     function matchPitchMarkup(squad = {}, options = {}) {
@@ -109,20 +119,9 @@
       const selectedId = String(options.selectedId || "");
       const latest = options.latest || null;
       const formation = formationForId(squad?.formationId) || { requirements: { FW:3, MF:3, DF:4, GK:1 } };
-      const entries = (squad?.lineup || []).map((player) => ({ playerId: playerIdOf(player), player }));
+      const entries = (squad?.lineup || []).map((player) => ({ playerId: playerIdOf(player), source:"", player }));
       const rows = formationRows(formation, entries);
-      const attrName = mode === "prematch" ? "data-rtg-prematch-player" : mode === "halftime" ? "data-rtg-half-lineup" : "data-rtg-field-player";
-      return `<section class="pitch rtg-squad-pitch-main rtg-match-squad-pitch rtg-match-squad-pitch--${escape(mode)}" data-side="${escape(side)}">
-        ${rows.map((row) => `<div class="pitch-row tactical-row rtg-match-squad-row" data-row-count="${Math.max(1,row.entries.length)}" style="--players-in-row:${Math.max(1,row.entries.length)};--row-count:${Math.max(1,row.entries.length)}">${row.entries.map((entry) => {
-          const currentId = String(entry.playerId || "");
-          const selected = mode === "halftime" && currentId === selectedId;
-          const latestClass = latest?.actorId === currentId ? "is-latest-actor" : latest?.opponentId === currentId ? "is-latest-opponent" : "";
-          const attrs = mode === "halftime"
-            ? `${attrName}="${escape(currentId)}" data-role="${escape(roleOf(entry.player))}" aria-pressed="${selected ? "true" : "false"}"`
-            : `${attrName}="${escape(currentId)}" data-side="${escape(side)}"`;
-          return readOnlyMatchCard(entry.player, attrs, `${selected ? "selected" : ""} ${latestClass}`);
-        }).join("")}</div>`).join("")}
-      </section>`;
+      return `<section class="squad-field-panel rtg-match-squad-field-shell rtg-match-squad-field-shell--${escape(mode)}" data-side="${escape(side)}">${lineupPitchMarkup(rows,{readOnly:true,side,mode,selectedId,latest})}</section>`;
     }
 
     function formationPreviewMarkup(formation) {
@@ -236,9 +235,7 @@
           <div class="squad-workspace">
             <section class="squad-field-panel" aria-label="Campo 11v11 RTG">
               <div class="squad-panel-head rtg-squad-section-head"><h2>Titolari</h2><span class="squad-field-formation" data-rtg-formation-current>${escape(model.formation?.name || model.formation?.formation || model.formationId || "—")}</span></div>
-              <section class="pitch rtg-squad-pitch-main">
-                ${lineupRows.map((row) => `<div class="pitch-row tactical-row" data-row-count="${Math.max(1, row.entries?.length || Number(row.count) || 1)}" style="--players-in-row:${Math.max(1, row.entries?.length || Number(row.count) || 1)};--row-count:${Math.max(1, row.entries?.length || Number(row.count) || 1)}">${(row.entries || []).map((entry) => playerCard(entry, "lineup")).join("")}</div>`).join("")}
-              </section>
+              ${lineupPitchMarkup(lineupRows)}
             </section>
 
             <aside class="squad-management-panel">
@@ -283,7 +280,7 @@
       root?.querySelector?.("[data-rtg-save-squad]")?.addEventListener("click", () => actions.onSave?.());
     }
 
-    return Object.freeze({ renderModel, markup, bind, playerCard, matchPitchMarkup, formationPreviewMarkup, formationOptionsMarkup, replacementPickerMarkup, replacementPickerResultsMarkup, catalogMarkup, catalogResultsMarkup });
+    return Object.freeze({ renderModel, markup, bind, playerCard, lineupPitchMarkup, matchPitchMarkup, formationPreviewMarkup, formationOptionsMarkup, replacementPickerMarkup, replacementPickerResultsMarkup, catalogMarkup, catalogResultsMarkup });
   }
 
   global.RoadToGlorySquadView = Object.freeze({ create });

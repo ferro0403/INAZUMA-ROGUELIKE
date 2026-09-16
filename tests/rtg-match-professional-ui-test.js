@@ -40,5 +40,5 @@ assert.match(css,/\.rtg-duel-meter-clean/);
 assert.match(css,/\.rtg-match-revolution \.rtg-live-commandbar/);
 assert.match(css,/\.rtg-match-event-feed \.match-event-avatar/);
 assert.match(css,/\.rtg-match-result--cabin/);
-assert.match(css,/\.rtg-prematch-revolution \.rtg-match-squad-pitch/);
+assert.match(css,/\.rtg-match-squad-field-shell/);
 console.log("rtg-match-professional-ui-test: PASS");

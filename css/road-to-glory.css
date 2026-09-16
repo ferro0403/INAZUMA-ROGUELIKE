@@ -3533,46 +3533,31 @@
    Deliberately scoped to RTG; normal run/match styles stay untouched.
    ============================================================ */
 
-.rtg-prematch-revolution .rtg-match-squad-pitch,
-.rtg-match-revolution .rtg-match-squad-pitch,
-.rtg-halftime-revolution .rtg-match-squad-pitch {
-  position:relative;
-  isolation:isolate;
-  width:100%;
-  min-height:650px;
-  display:grid;
-  grid-template-rows:repeat(4,minmax(0,1fr));
-  align-content:stretch;
-  gap:0;
-  margin:0;
-  padding:30px 42px;
-  overflow:hidden;
-  border:2px solid #111216;
-  border-radius:0;
-  background:#087044 url("../assets/squad/tactical-pitch.svg") center/100% 100% no-repeat;
-  box-shadow:inset 0 0 55px rgba(0,0,0,.28);
-}
-.rtg-prematch-revolution .rtg-match-squad-row,
-.rtg-match-revolution .rtg-match-squad-row,
-.rtg-halftime-revolution .rtg-match-squad-row {
-  align-self:stretch;
-  min-height:0;
-  margin:0;
-  overflow:visible;
-  gap:clamp(10px,2vw,24px);
-}
-.rtg-match-card-slot {width:100%;min-width:0;}
-.rtg-match-squad-player-card.is-latest-actor {outline:3px solid #ffd21f;outline-offset:3px;filter:drop-shadow(0 0 7px rgba(255,210,31,.72));}
-.rtg-match-squad-player-card.is-latest-opponent {outline:2px solid #fffdf7;outline-offset:3px;}
-.rtg-prematch-field-wrap,.rtg-live-field-wrap {padding:6px!important;}
+.rtg-prematch-field-wrap,.rtg-live-field-wrap {padding:0!important;background:transparent!important;}
+.rtg-match-squad-field-shell {margin:0!important;}
+.rtg-match-squad-field-shell .pitch {margin-top:0!important;}
+.rtg-match-squad-field-shell .squad-player-card.is-latest-actor {outline:3px solid #ffd21f;outline-offset:3px;filter:drop-shadow(0 0 7px rgba(255,210,31,.72));}
+.rtg-match-squad-field-shell .squad-player-card.is-latest-opponent {outline:2px solid #fffdf7;outline-offset:3px;}
 
-.rtg-matchup-team {grid-template-columns:38px minmax(0,1fr);align-items:center;}
-.rtg-matchup-team--opponent {grid-template-columns:minmax(0,1fr) 38px;}
+.rtg-matchup-team {
+  min-height:92px;
+  display:grid;
+  grid-template-columns:42px minmax(0,1fr);
+  align-items:center;
+  gap:10px;
+  padding:12px 14px;
+}
+.rtg-matchup-team--opponent {grid-template-columns:minmax(0,1fr) 42px;}
 .rtg-matchup-team--opponent .rtg-matchup-emblem {grid-column:2;grid-row:1;}
-.rtg-matchup-team--opponent .rtg-matchup-team-copy {grid-column:1;grid-row:1;}
-.rtg-matchup-emblem {display:grid;place-items:center;}
+.rtg-matchup-team--opponent .rtg-matchup-team-copy {grid-column:1;grid-row:1;text-align:right;}
+.rtg-matchup-emblem {display:grid;place-items:center;width:42px;height:42px;}
+.rtg-matchup-team-copy {min-width:0;display:grid;align-content:center;gap:2px;}
+.rtg-matchup-team-copy small {line-height:1;}
+.rtg-matchup-team-copy strong {min-width:0;overflow:hidden;font-size:clamp(.82rem,3.1vw,1.04rem);line-height:1.02;text-overflow:ellipsis;white-space:nowrap;}
+.rtg-matchup-team-copy span {display:flex;align-items:center;gap:7px;line-height:1;}
+.rtg-matchup-team--opponent .rtg-matchup-team-copy span {justify-content:flex-end;}
 .rtg-matchup-team-emblem,.rtg-prematch-top-emblem,.rtg-score-emblem,.rtg-final-emblem {object-fit:contain;filter:drop-shadow(2px 2px 0 rgba(17,18,22,.2));}
-.rtg-matchup-team-emblem {width:31px;height:31px;}
+.rtg-matchup-team-emblem {width:36px;height:36px;}
 .rtg-prematch-top-emblem {width:34px;height:34px;}
 .rtg-score-emblem {width:24px;height:24px;}
 .rtg-final-emblem {width:46px;height:46px;}
@@ -3703,12 +3688,15 @@
 .rtg-final-continue b {font-size:1.55rem;}
 
 @media (max-width:780px) {
-  .rtg-prematch-revolution .rtg-match-squad-pitch,.rtg-match-revolution .rtg-match-squad-pitch,.rtg-halftime-revolution .rtg-match-squad-pitch {min-height:540px;padding:22px 12px;}
   .rtg-match-revolution .rtg-live-commandbar {grid-template-columns:1.12fr .88fr 1fr;}
 }
 @media (max-width:430px) {
-  .rtg-prematch-field-wrap,.rtg-live-field-wrap {padding:4px!important;}
-  .rtg-prematch-revolution .rtg-match-squad-pitch,.rtg-match-revolution .rtg-match-squad-pitch,.rtg-halftime-revolution .rtg-match-squad-pitch {min-height:555px;padding:22px 10px;}
+  .rtg-prematch-field-wrap,.rtg-live-field-wrap {padding:0!important;}
+  .rtg-matchup-team {min-height:86px;padding:10px 9px;grid-template-columns:36px minmax(0,1fr);gap:7px;}
+  .rtg-matchup-team--opponent {grid-template-columns:minmax(0,1fr) 36px;}
+  .rtg-matchup-emblem {width:36px;height:36px;}
+  .rtg-matchup-team-emblem {width:32px;height:32px;}
+  .rtg-matchup-team-copy strong {font-size:.82rem;}
   .rtg-match-revolution .rtg-live-commandbar {grid-template-columns:1.15fr .85fr 1fr;gap:2px;padding:2px;}
   .rtg-match-revolution .rtg-live-commandbar > .rtg-live-command {min-height:62px;padding:7px 6px;gap:5px;}
   .rtg-live-command-index,.rtg-live-command em {display:none;}

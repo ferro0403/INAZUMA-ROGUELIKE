@@ -64,5 +64,10 @@ const app=fs.readFileSync("js/app.js","utf8");
 assert.match(app,/squadPitchMarkup:\s*\(\.\.\.args\)\s*=>\s*rtgSquadView\.matchPitchMarkup\(\.\.\.args\)/);
 assert.match(app,/userTeamMeta:\s*\(\)\s*=>\s*rtgUserTeamMeta\(\)/);
 assert.match(app,/teamEmblemMarkup:\s*\(\.\.\.args\)\s*=>\s*rtgMatchTeamEmblemMarkup\(\.\.\.args\)/);
+const squadSource=fs.readFileSync("js/road-to-glory/rtg-squad-view.js","utf8");
+assert.match(squadSource,/function lineupPitchMarkup/);
+assert.match(squadSource,/\$\{lineupPitchMarkup\(lineupRows\)\}/);
+assert.match(squadSource,/lineupPitchMarkup\(rows,\{readOnly:true,side,mode,selectedId,latest\}\)/);
+assert.doesNotMatch(squadSource,/function readOnlyMatchCard/);
 
 console.log("rtg-shared-match-presentation-test: PASS");
