@@ -162,15 +162,15 @@
       }
       const actorActionKind = kind === "shot" ? "shot" : kind === "dribble" ? "dribble" : "midfield";
       const opponentActionKind = kind === "shot" ? "save" : kind === "dribble" ? "defense" : "midfield";
-      const actorClause = event.actorMove ? moveOutcomeClause(actorName,opponentName,actorActionKind,event.actorMove,!!event.actorWon) : "";
-      const opponentClause = event.opponentMove ? moveOutcomeClause(opponentName,actorName,opponentActionKind,event.opponentMove,!event.actorWon) : "";
-      let copy = baseCopy;
-      if (actorClause && opponentClause) copy = event.actorWon ? `${opponentClause}. ${actorClause}.` : `${actorClause}. ${opponentClause}.`;
-      else if (actorClause) copy = event.actorWon ? `${actorClause}.` : `${actorClause}. ${baseCopy}`;
-      else if (opponentClause) copy = event.actorWon ? `${opponentClause}. ${baseCopy}` : `${opponentClause}.`;
-
-      const moveNames = [event.actorMove,event.opponentMove].filter(Boolean);
-      const moveName = moveNames[0] || null;
+      const winningMove = event.actorWon ? event.actorMove : event.opponentMove;
+      const winningKind = event.actorWon ? actorActionKind : opponentActionKind;
+      const winningName = event.actorWon ? actorName : opponentName;
+      const losingName = event.actorWon ? opponentName : actorName;
+      const copy = winningMove
+        ? `${moveOutcomeClause(winningName,losingName,winningKind,winningMove,true)}.`
+        : baseCopy;
+      const moveNames = winningMove ? [winningMove] : [];
+      const moveName = winningMove || null;
       const presented = {
         type,
         text: copy,
@@ -409,13 +409,12 @@
       const userName = user?.name || resolution.userPlayerName || "Il tuo giocatore";
       const opponentName = opponent?.name || resolution.aiPlayerName || "L'avversario";
       const userWon = !!resolution.userWon;
-      const userMove = resolution.userUsedMove ? resolution.userChoiceLabel : null;
-      const aiMove = resolution.aiUsedMove ? resolution.aiChoiceLabel : null;
-      const userClause = userMove ? moveOutcomeClause(userName,opponentName,resolution.userKind,userMove,userWon) : "";
-      const aiClause = aiMove ? moveOutcomeClause(opponentName,userName,resolution.aiKind,aiMove,!userWon) : "";
-      if (userMove && aiMove) return userWon ? `${aiClause}. ${userClause}.` : `${userClause}. ${aiClause}.`;
-      if (userMove) return userWon ? `${userClause}.` : `${userClause}. ${base}.`;
-      if (aiMove) return userWon ? `${aiClause}. ${base}.` : `${aiClause}.`;
+      if (userWon && resolution.userUsedMove && resolution.userChoiceLabel) {
+        return `${moveOutcomeClause(userName,opponentName,resolution.userKind,resolution.userChoiceLabel,true)}.`;
+      }
+      if (!userWon && resolution.aiUsedMove && resolution.aiChoiceLabel) {
+        return `${moveOutcomeClause(opponentName,userName,resolution.aiKind,resolution.aiChoiceLabel,true)}.`;
+      }
       return base;
     }
 
@@ -609,11 +608,13 @@
       const userProbability = Math.max(0, Math.min(100, Number(resolution.probability ?? 50) || 0));
       const opponentProbability = Math.max(0, 100 - userProbability);
       const opponentLabel = resolution.opponentLabel || "AVVERSARIO";
-      const userAction = resolution.userChoiceLabel || baseResultActionLabel(resolution.userKind, resolution.actorSide === "user");
-      const opponentAction = resolution.aiChoiceLabel || baseResultActionLabel(resolution.aiKind, resolution.actorSide === "opponent");
-      const userUsedMove = !!resolution.userUsedMove;
-      const aiUsedMove = !!resolution.aiUsedMove;
-      const anyMove = userUsedMove || aiUsedMove;
+      const userBaseAction = baseResultActionLabel(resolution.userKind, resolution.actorSide === "user");
+      const opponentBaseAction = baseResultActionLabel(resolution.aiKind, resolution.actorSide === "opponent");
+      const userAction = resolution.userChoiceLabel || userBaseAction;
+      const opponentAction = resolution.aiChoiceLabel || opponentBaseAction;
+      const userWinningMove = !!resolution.userWon && !!resolution.userUsedMove;
+      const aiWinningMove = !resolution.userWon && !!resolution.aiUsedMove;
+      const anyMove = userWinningMove || aiWinningMove;
       return `<section class="panel rtg-duel-card rtg-duel-result rtg-duel-result--revolution rtg-paper-modal development-squad-card-scope ${resultClass} ${anyMove ? "has-special-move" : ""}">
         <div class="rtg-duel-result-banner ${resultClass}">
           <div class="rtg-duel-result-status"><span>${resolution.goalSide ? "GOL" : resolution.userWon ? "AZIONE RIUSCITA" : "AZIONE PERSA"}</span><em>${anyMove ? "⚡ MOSSA SPECIALE USATA" : "ESITO DUELLO"}</em></div>
@@ -623,13 +624,13 @@
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user rtg-duel-result-player">
             <span class="rtg-duel-panel-tag">TU</span>
             ${duelVisualMarkup(user,"user",pid(user) ? `data-rtg-duel-player="${escape(pid(user))}" data-side="user"` : "")}
-            ${userUsedMove ? `<div class="rtg-duel-result-move"><small>⚡ MOSSA</small><strong>${escape(userAction)}</strong><em>POWER ${escape(resolution.userMovePower ?? "—")}</em></div>` : `<strong class="rtg-duel-result-action">${escape(userAction)}</strong>`}
+            ${userWinningMove ? `<div class="rtg-duel-result-move"><small>⚡ MOSSA</small><strong>${escape(userAction)}</strong><em>POWER ${escape(resolution.userMovePower ?? "—")}</em></div>` : `<strong class="rtg-duel-result-action">${escape(userBaseAction)}</strong>`}
           </article>
           <div class="rtg-duel-vs-core rtg-duel-result-vs" aria-hidden="true"><small>ESITO</small><span>VS</span></div>
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--opponent rtg-duel-result-player">
             <span class="rtg-duel-panel-tag">${escape(opponentLabel)}</span>
             ${duelVisualMarkup(opponent,"opponent",pid(opponent) ? `data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"` : "")}
-            ${aiUsedMove ? `<div class="rtg-duel-result-move rtg-duel-result-move--opponent"><small>⚡ MOSSA</small><strong>${escape(opponentAction)}</strong><em>POWER ${escape(resolution.aiMovePower ?? "—")}</em></div>` : `<strong class="rtg-duel-result-action">${escape(opponentAction)}</strong>`}
+            ${aiWinningMove ? `<div class="rtg-duel-result-move rtg-duel-result-move--opponent"><small>⚡ MOSSA</small><strong>${escape(opponentAction)}</strong><em>POWER ${escape(resolution.aiMovePower ?? "—")}</em></div>` : `<strong class="rtg-duel-result-action">${escape(opponentBaseAction)}</strong>`}
           </article>
         </div>
         <div class="rtg-duel-result-meter" aria-label="Probabilità finale del duello">
