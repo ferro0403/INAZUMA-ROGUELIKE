@@ -43,8 +43,9 @@ assert.match(live,/development-squad-card-scope/);
 
 const duelMatch={...match,pendingEncounter:{encounterId:"e1",minute:55,kind:"midfield",actorSide:"opponent",opponentSide:"user",actorPlayerId:"om1",opponentPlayerId:"mf1",userSide:"user",userPlayerId:"mf1",aiPlayerId:"om1",userKind:"midfield",aiKind:"midfield",userBaseActionLabel:"Contrasta",normalPreviewProbability:68.8}};
 const duel=view.encounterMarkup(duelMatch,{userPlayer:lineup[2],opponentPlayer:opp[3]});
-assert.match(duel,/Verne Spring contrasta/i);
-assert.match(duel,/Ram Horner prova a conquistare (?:palla|il possesso)/i);
+assert.match(duel,/DUELLO A CENTROCAMPO/i);
+assert.match(duel,/Contrasta/i);
+assert.match(duel,/Dribbling/i);
 assert.doesNotMatch(duel,/attacca il possesso/i);
 assert.match(duel,/rtg-duel-versus-board/);
 assert.match(duel,/rtg-duel-portrait-panel--user/);
