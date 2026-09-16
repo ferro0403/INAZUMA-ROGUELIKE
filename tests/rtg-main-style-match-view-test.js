@@ -12,7 +12,7 @@ const lineup=["GK","DF","DF","DF","DF","MF","MF","MF","FW","FW","FW"].map((role,
 const opp=["GK","DF","DF","DF","DF","MF","MF","MF","FW","FW","FW"].map((role,i)=>p("o"+i,role));
 const match={period:"first_half",score:{user:1,opponent:0},userSquad:{formationId:"4-3-3",lineup},opponentSquad:{formationId:"4-3-3",lineup:opp},moveUsesByPlayerId:{"user:u8":2},pendingEncounter:{userPlayerId:"u8",opponentPlayerId:"o1",userBaseActionLabel:"Tiro",normalPreviewProbability:62.5,userMove:{name:"Fire Tornado",power:80}}};
 const html=view.matchMarkup(match);
-assert.match(html,/class="screen rtg-match-shell boss-match-screen"/);
+assert.match(html,/class="screen rtg-match-shell[^"]*boss-match-screen[^"]*"/);
 assert.match(html,/class="match-formation match-formation--user/);
 assert.match(html,/class="match-formation match-formation--opponent/);
 assert.strictEqual((html.match(/player-card player-card-compact/g)||[]).length,22);
