@@ -26,6 +26,31 @@ const resolvedBase=E.resolvePendingEncounter(JSON.parse(JSON.stringify(frozen)),
 const resolvedMove=userCanMove?E.resolvePendingEncounter(JSON.parse(JSON.stringify(frozen)),"move"):resolvedBase;
 assert.strictEqual(frozenAi,prepared.pendingEncounter.aiChoice);
 if(userCanMove){const key=`${prepared.pendingEncounter.userSide}:${prepared.pendingEncounter.userPlayerId}`;assert.strictEqual(resolvedMove.moveUsesByPlayerId[key],1);}
+// Regression: automatic simulation may advance midfield/dribbling, but it must
+// never change the score invisibly. Reaching the shot zone always creates a
+// pending shot/save encounter before any goal can be scored.
+let silent=E.createMatch({...input,matchId:"no-silent-goal",seed:"no-silent-goal-seed"});
+silent.manualIndexes=[];silent.manualTarget=0;
+const silentScore=JSON.stringify(silent.score);
+silent=E.prepareNext(silent);
+assert(silent.pendingEncounter);
+assert.strictEqual(silent.pendingEncounter.kind,"shot");
+assert.strictEqual(JSON.stringify(silent.score),silentScore);
+assert.strictEqual(silent.log.some(event=>event.goalSide),false);
+// Even after resolving a non-shot duel, the following automatic flow cannot
+// award a random goal before an explicit shot/save duel is shown.
+let chain=E.createMatch({...input,matchId:"chain-no-random-goal",seed:"chain-no-random-goal-seed"});
+chain.manualIndexes=[0];chain.manualTarget=1;
+chain=E.prepareNext(chain);
+assert(chain.pendingEncounter);
+if(chain.pendingEncounter.kind!=="shot"){
+  const beforeChainScore=JSON.stringify(chain.score);
+  chain=E.resolvePendingEncounter(chain,"base");
+  chain=E.prepareNext(chain);
+  assert.strictEqual(JSON.stringify(chain.score),beforeChainScore);
+  assert(chain.pendingEncounter);
+  assert.strictEqual(chain.pendingEncounter.kind,"shot");
+}
 let match=E.createMatch({...input,matchId:"half",seed:"half-seed"});
 match=E.prepareNext(match);
 let guard=0;

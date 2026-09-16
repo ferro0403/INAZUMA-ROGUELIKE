@@ -5034,3 +5034,20 @@
     font-size:.43rem!important;
   }
 }
+
+
+/* Keep the loser dimming strictly inside its own duel card. */
+.rtg-duel-versus-board--result .rtg-duel-result-player{
+  overflow:hidden!important;
+  isolation:isolate;
+}
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser::after{
+  inset:34px 0 63px!important;
+  border-radius:0!important;
+  clip-path:inset(0)!important;
+}
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser .rtg-duel-render,
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser .rtg-duel-player-copy,
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser .rtg-duel-panel-tag{
+  max-width:100%;
+}

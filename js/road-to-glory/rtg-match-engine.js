@@ -222,7 +222,10 @@
       ensureBoundary(state);
       if(state.status!=="active")break;
       const pending=buildEncounter(state);
-      if(isManualSequence(state)){state.pendingEncounter=pending;break;}
+      // A goal must never appear as a side effect of an unrelated automatic
+      // midfield/dribbling sequence. Every shot/save duel is surfaced to the
+      // player, while non-shot actions may still advance automatically.
+      if(pending.kind==="shot"||isManualSequence(state)){state.pendingEncounter=pending;break;}
       applyEncounter(state,pending,{manual:false});
     }
     return state;
