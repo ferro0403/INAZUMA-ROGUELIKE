@@ -31,6 +31,45 @@
       return fallbackCard(player || {}, attrs, extraClass);
     }
 
+    function duelVisualUrl(player = {}) {
+      return String(
+        player?.frontFullbodyUrl ||
+        player?.frontFullBodyUrl ||
+        player?.frontFullbody ||
+        player?.fullbodyUrl ||
+        player?.fullBodyUrl ||
+        player?.portraitUrl ||
+        player?.imageUrl ||
+        player?.photoUrl ||
+        ""
+      );
+    }
+
+    function duelVisualMarkup(player = {}, side = "user", attrs = "") {
+      const name = player?.name || pid(player) || (side === "user" ? "Tu" : "Avversario");
+      const visual = duelVisualUrl(player);
+      const playerRole = role(player) || "—";
+      const overall = player?.overall ?? player?.finalOverall ?? "—";
+      return `<button type="button" class="rtg-duel-visual rtg-duel-visual--${escape(side)}" ${attrs}>
+        <span class="rtg-duel-render">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
+        <span class="rtg-duel-player-copy"><small>${escape(playerRole)} · OVR ${escape(overall)}</small><strong>${escape(name)}</strong></span>
+      </button>`;
+    }
+
+    function duelTypeLabel(pending = {}) {
+      const kind = String(pending.userKind || "").toLowerCase();
+      if (kind === "shot") return "TIRO VS PARATA";
+      if (kind === "save") return "PARATA VS TIRO";
+      if (kind === "dribble") return "DRIBBLING VS DIFESA";
+      if (kind === "defense") return "DIFESA VS DRIBBLING";
+      const action = String(pending.userBaseActionLabel || "").toLowerCase();
+      if (action.includes("tiro")) return "TIRO VS PARATA";
+      if (action.includes("parata")) return "PARATA VS TIRO";
+      if (action.includes("difesa")) return "DIFESA VS DRIBBLING";
+      if (action.includes("drib")) return "DRIBBLING VS DIFESA";
+      return "DUELLO A CENTROCAMPO";
+    }
+
     function periodLabel(period) {
       return ({
         first_half: "1° tempo",
@@ -75,7 +114,7 @@
       return [...(squad?.lineup || []), ...(squad?.bench || [])].find((player) => pid(player) === String(playerId || "")) || null;
     }
 
-    function tickerEventMarkup(match, event = {}) {
+    function tickerEventMarkup(match, event = {}, isLatest = false) {
       const actorSide = event.actorSide === "opponent" ? "opponent" : "user";
       const opponentSide = actorSide === "user" ? "opponent" : "user";
       const actor = matchPlayer(match, actorSide, event.actorPlayerId);
@@ -91,12 +130,12 @@
         copy = event.actorWon ? `${actorName} vince il duello a centrocampo` : `${opponentName} conquista il possesso`;
       }
       const move = event.actorMove || event.opponentMove;
-      return `<div class="rtg-ticker-event ${event.actorWon ? "is-success" : ""} ${event.manual ? "is-manual" : "is-auto"}"><span>${escape(event.minute ?? "—")}'</span><strong>${escape(copy)}</strong>${move ? `<em>${escape(move)}</em>` : ""}</div>`;
+      return `<div class="rtg-ticker-event ${isLatest ? "is-latest" : ""} ${event.actorWon ? "is-success" : ""} ${event.manual ? "is-manual" : "is-auto"}"><span>${escape(event.minute ?? "—")}'</span><strong>${escape(copy)}</strong>${move ? `<em>${escape(move)}</em>` : ""}</div>`;
     }
 
     function tickerMarkup(match = {}) {
       const events = Array.from(match.log || []).slice(-3);
-      return `<section class="rtg-match-ticker" aria-label="Ultime azioni"><div class="rtg-match-ticker-head"><small>Ultime azioni</small><span>${events.length ? "live" : "kick-off"}</span></div><div class="rtg-match-ticker-list">${events.length ? events.map((event) => tickerEventMarkup(match, event)).join("") : '<div class="rtg-ticker-empty">Formazioni pronte.</div>'}</div></section>`;
+      return `<section class="rtg-match-ticker" aria-label="Ultime azioni"><div class="rtg-match-ticker-head"><small>Riepilogo azioni</small><span>${events.length ? "live" : "kick-off"}</span></div><div class="rtg-match-ticker-list">${events.length ? events.map((event,index) => tickerEventMarkup(match, event, index === events.length - 1)).join("") : '<div class="rtg-ticker-empty">Formazioni pronte.</div>'}</div></section>`;
     }
 
     function formationAverage(squad = {}) {
@@ -212,15 +251,30 @@
       const uses = Number(match.moveUsesByPlayerId?.[key] || 0);
       const probability = Number(preview.probability ?? pending.normalPreviewProbability ?? 50);
       const userHasPossession = pending.actorSide === "user";
+      const opponentName = match.opponentSquad?.name || "CPU";
+      const possessionText = userHasPossession ? "TU HAI PALLA" : `${opponentName} HA PALLA`;
+      const possessionClass = userHasPossession ? "is-user" : "is-opponent";
+      const typeLabel = duelTypeLabel(pending);
       return `<section class="panel rtg-duel-card rtg-paper-modal development-squad-card-scope">
-        <div class="rtg-duel-head"><div><p class="eyebrow">${escape(currentMinute(match))}' · SCONTRO</p><h2>${escape(pending.userBaseActionLabel || "Azione")}</h2></div><strong>${escape(probability.toFixed(1))}%</strong></div>
-        <div class="rtg-duel-context"><span>${userHasPossession ? "Hai il possesso" : "CPU in possesso"}</span><span>Scelta CPU nascosta</span></div>
-        <div class="progress-track rtg-probability"><span class="progress-bar" style="width:${Math.max(10, Math.min(90, probability))}%"></span></div>
-        <div class="rtg-versus rtg-versus--cards">
-          <article><small>Tu</small>${card(user, `data-rtg-duel-user="${escape(pid(user))}"`, "run-tactical-card match-player-card match-player-card--user squad-player-card rtg-duel-player-card")}</article>
-          <b>VS</b>
-          <article><small>Avversario</small>${card(opponent, `data-rtg-duel-opponent="${escape(pid(opponent))}"`, "run-tactical-card match-player-card match-player-card--boss boss-match-card boss-match-card--boss squad-player-card rtg-duel-player-card")}</article>
+        <div class="rtg-duel-contextbar">
+          <strong class="rtg-duel-possession ${possessionClass}">${escape(possessionText)}</strong>
+          <span>${escape(currentMinute(match))}' · ${escape(({midfield:"CENTROCAMPO",attack:"ATTACCO",shot:"AREA DI TIRO"}[pending.zone || match.fieldZone] || "AZIONE"))}</span>
         </div>
+        <div class="rtg-duel-head rtg-duel-head--visual"><div><p class="eyebrow">SCONTRO</p><h2 class="rtg-duel-type">${escape(typeLabel)}</h2></div><strong>${escape(probability.toFixed(1))}%</strong></div>
+        <div class="rtg-duel-stage">
+          <article class="rtg-duel-side rtg-duel-side--user">
+            <span class="rtg-duel-side-label">TU</span>
+            ${duelVisualMarkup(user,"user",`data-rtg-duel-player="${escape(pid(user))}" data-side="user"`)}
+            <b>${escape(pending.userBaseActionLabel || "Azione")}</b>
+          </article>
+          <div class="rtg-duel-vs-mark"><span>VS</span></div>
+          <article class="rtg-duel-side rtg-duel-side--opponent">
+            <span class="rtg-duel-side-label">${escape(opponentName)}</span>
+            ${duelVisualMarkup(opponent,"opponent",`data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"`)}
+            <b>SCELTA NASCOSTA</b>
+          </article>
+        </div>
+        <div class="progress-track rtg-probability" aria-label="Probabilità ${escape(probability.toFixed(1))}%"><span class="progress-bar" style="width:${Math.max(10, Math.min(90, probability))}%"></span></div>
         <div class="button-row rtg-duel-actions">
           <button type="button" class="btn btn-yellow rtg-action-button" data-rtg-choice="base">${escape(pending.userBaseActionLabel || "Azione")}</button>
           ${pending.userMove && uses > 0 ? `<button type="button" class="btn rtg-action-button rtg-action-button--move" data-rtg-choice="move"><strong>${escape(pending.userMove.name)}</strong><small>${escape(uses)}/2 · Power ${escape(pending.userMove.power || "—")}</small></button>` : ""}
@@ -229,16 +283,27 @@
     }
 
     function resolvedEncounterMarkup(resolution = {}) {
-      return `<section class="panel rtg-duel-card rtg-duel-result rtg-paper-modal">
-        <p class="eyebrow">Esito duello</p>
-        <h2>${resolution.userWon ? "Duello vinto!" : "Duello perso"}</h2>
-        ${resolution.outcomeLabel ? `<div class="rtg-duel-consequence">${escape(resolution.outcomeLabel)}</div>` : ""}
-        <div class="rtg-duel-summary">
-          <div><small>Tu</small><strong>${escape(resolution.userPlayerName || "La tua squadra")}</strong><span>${escape(resolution.userChoiceLabel || "Azione base")}</span></div>
-          <b>VS</b>
-          <div><small>CPU</small><strong>${escape(resolution.aiPlayerName || "Avversario")}</strong><span>${escape(resolution.aiChoiceLabel || "Azione base")}</span></div>
+      const user = resolution.userPlayer || { name: resolution.userPlayerName || "La tua squadra", overall: "—" };
+      const opponent = resolution.opponentPlayer || { name: resolution.aiPlayerName || "Avversario", overall: "—" };
+      return `<section class="panel rtg-duel-card rtg-duel-result rtg-paper-modal development-squad-card-scope">
+        <div class="rtg-duel-result-kicker"><span>ESITO DUELLO</span><strong class="${resolution.userWon ? "is-win" : "is-loss"}">${resolution.userWon ? "VINTO" : "PERSO"}</strong></div>
+        <h2>${escape(resolution.outcomeLabel || (resolution.userWon ? "Duello vinto!" : "Duello perso"))}</h2>
+        <div class="rtg-duel-stage rtg-duel-stage--result">
+          <article class="rtg-duel-side rtg-duel-side--user">
+            ${duelVisualMarkup(user,"user",pid(user) ? `data-rtg-duel-player="${escape(pid(user))}" data-side="user"` : "")}
+            <b>${escape(resolution.userChoiceLabel || "Azione base")}</b>
+          </article>
+          <div class="rtg-duel-vs-mark"><span>VS</span></div>
+          <article class="rtg-duel-side rtg-duel-side--opponent">
+            ${duelVisualMarkup(opponent,"opponent",pid(opponent) ? `data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"` : "")}
+            <b>${escape(resolution.aiChoiceLabel || "Azione base")}</b>
+          </article>
         </div>
-        <p class="rtg-final-probability">Probabilità finale <strong>${escape(Number(resolution.probability || 50).toFixed(1))}%</strong></p>
+        <div class="rtg-duel-summary rtg-duel-result-summary">
+          <div><small>PROBABILITÀ FINALE</small><strong>${escape(Number(resolution.probability || 50).toFixed(1))}%</strong></div>
+          <b>•</b>
+          <div><small>RISULTATO</small><strong>${resolution.userWon ? "TU" : "CPU"}</strong></div>
+        </div>
         <button type="button" class="btn btn-yellow rtg-duel-continue" data-rtg-duel-continue>Continua</button>
       </section>`;
     }
@@ -346,6 +411,11 @@
       }));
       root?.querySelector?.("[data-rtg-prematch-start]")?.addEventListener("click", () => actions.onPreMatchStart?.());
       root?.querySelectorAll?.("[data-rtg-choice]")?.forEach((button) => button.addEventListener("click", () => actions.onEncounterChoice?.(button.dataset.rtgChoice)));
+      root?.querySelectorAll?.("[data-rtg-duel-player]")?.forEach((button) => button.addEventListener("click", () => {
+        const playerId = String(button.dataset.rtgDuelPlayer || "");
+        const side = String(button.dataset.side || "");
+        if (playerId) actions.onOpenPlayerDetails?.(playerId, side);
+      }));
       root?.querySelector?.("[data-rtg-abandon]")?.addEventListener("click", () => actions.onAbandon?.());
       root?.querySelector?.("[data-rtg-half-confirm]")?.addEventListener("click", () => actions.onHalftimeConfirm?.());
       root?.querySelectorAll?.("[data-rtg-penalty-direction]")?.forEach((button) => button.addEventListener("click", () => actions.onPenaltyDirection?.(button.dataset.rtgPenaltyDirection)));

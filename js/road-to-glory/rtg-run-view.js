@@ -206,9 +206,9 @@
     function pullResultMarkup(result = {}, player = {}) {
       const rarity = result.rarity || player.category || "";
       const card = compactPlayerCardMarkup
-        ? compactPlayerCardMarkup(player,{level:20,overall:player?.finalOverall ?? player?.overall,extraClass:"rtg-pull-player-card"})
+        ? compactPlayerCardMarkup(player,{level:20,overall:player?.finalOverall ?? player?.overall,extraClass:"squad-player-card rtg-pull-player-card",detailLayout:"stacked"})
         : `<div class="rtg-pull-player-fallback"><strong>${escape(player.name || result.playerId || "Giocatore")}</strong><span>Lv 20</span></div>`;
-      return `<div class="rtg-pull-result rtg-paper-modal">
+      return `<div class="rtg-pull-result rtg-paper-modal development-squad-card-scope">
         <div class="rtg-pull-result-head"><p class="eyebrow">${escape(rarity)}</p><strong>${result.duplicate ? "DUPLICATO" : "NUOVO GIOCATORE"}</strong></div>
         <div class="rtg-pull-result-body">
           ${card}

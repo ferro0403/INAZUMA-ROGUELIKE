@@ -33,6 +33,7 @@
       const playerId = String(entry?.playerId || playerIdOf(player));
       const role = roleOf(player);
       const isPicker = area === "picker";
+      const isCatalog = area === "catalog";
       const attrs = [
         `data-rtg-squad-player="${escape(playerId)}"`,
         `data-area="${escape(area)}"`,
@@ -42,11 +43,13 @@
         area === "lineup" ? `data-rtg-lineup-player="${escape(playerId)}"` : "",
         area === "bench" ? `data-rtg-bench-player="${escape(playerId)}"` : "",
         isPicker ? `data-rtg-picker-player="${escape(playerId)}"` : "",
+        isCatalog ? `data-rtg-catalog-player="${escape(playerId)}"` : "",
       ].filter(Boolean).join(" ");
       const extraClass = [
         "squad-player-card",
         "rtg-squad-player-card",
         isPicker ? "rtg-prematch-player-card rtg-picker-player-card" : "",
+        isCatalog ? "rtg-prematch-player-card rtg-picker-player-card rtg-catalog-player-card" : "",
       ].filter(Boolean).join(" ");
       const cardMarkup = compactPlayerCardMarkup
         ? compactPlayerCardMarkup(player, {
@@ -54,10 +57,10 @@
             overall: player?.overall ?? player?.finalOverall,
             dataAttr: attrs,
             extraClass,
-            trailingMarkup: isPicker ? "" : sourceBadge(entry?.source),
+            trailingMarkup: "",
           })
-        : fallbackPlayerCard(player, isPicker ? "" : entry?.source, attrs);
-      if (isPicker) return cardMarkup;
+        : fallbackPlayerCard(player, "", attrs);
+      if (isPicker || isCatalog) return cardMarkup;
       return `<div class="rtg-squad-card-slot" data-rtg-card-slot="${escape(playerId)}">
         ${cardMarkup}
         <button type="button" class="rtg-squad-change-trigger" data-rtg-change-player="${escape(playerId)}" aria-label="Cambia ${escape(player?.name || playerId)}">↔</button>
@@ -140,13 +143,29 @@
       return `<div class="rtg-picker-grid">${entries.map((entry) => playerCard(entry, "picker")).join("")}</div>${remaining > 0 ? `<div class="album-load-more-wrap rtg-picker-load-more-wrap"><button type="button" class="btn btn-yellow album-load-more rtg-picker-load-more" data-rtg-picker-load-more>MOSTRA ALTRI ${escape(Math.min(24, remaining))}</button><small>${escape(entries.length)} di ${escape(total)}</small></div>` : `<div class="rtg-picker-count"><small>${escape(entries.length)} di ${escape(total)}</small></div>`}`;
     }
 
-    function replacementPickerMarkup({ target = null, role = "", entries = [], total = 0, visibleCount = entries.length, query = "", sourceFilter = "all" } = {}) {
+    function catalogResultsMarkup({ entries = [], total = 0 } = {}) {
+      const remaining = Math.max(0, Number(total) - Number(entries.length));
+      return `<div class="rtg-catalog-grid">${entries.map((entry) => playerCard(entry, "catalog")).join("")}</div>${remaining > 0 ? `<div class="album-load-more-wrap rtg-picker-load-more-wrap"><button type="button" class="btn btn-yellow album-load-more rtg-picker-load-more" data-rtg-catalog-load-more>MOSTRA ALTRI ${escape(Math.min(24, remaining))}</button><small>${escape(entries.length)} di ${escape(total)}</small></div>` : `<div class="rtg-picker-count"><small>${escape(entries.length)} di ${escape(total)}</small></div>`}`;
+    }
+
+    function catalogMarkup({ entries = [], total = 0, query = "" } = {}) {
+      return `<section class="rtg-player-catalog development-squad-card-scope">
+        <div class="modal-head rtg-catalog-head">
+          <div><p class="eyebrow">Collezione Road to Glory</p><h2>Giocatori RTG</h2><p class="muted">${escape(total)} giocatori ottenuti dal percorso e dal distributore.</p></div>
+        </div>
+        <label class="rtg-picker-search rtg-catalog-search"><span>Cerca giocatore</span><input type="search" inputmode="search" autocomplete="off" placeholder="Cerca per nome…" value="${escape(query)}" data-rtg-catalog-search /></label>
+        <div data-rtg-catalog-results>${catalogResultsMarkup({ entries, total })}</div>
+      </section>`;
+    }
+
+    function replacementPickerMarkup({ target = null, role = "", quickEntries = [], entries = [], total = 0, visibleCount = entries.length, query = "", sourceFilter = "all" } = {}) {
       const targetName = target?.player?.name || target?.playerId || "Giocatore";
       const filterButton = (value,label) => `<button type="button" class="rtg-picker-filter ${sourceFilter===value?"active":""}" data-rtg-picker-source="${escape(value)}">${escape(label)}</button>`;
       return `<section class="rtg-squad-picker development-squad-card-scope">
         <div class="modal-head rtg-squad-picker-head">
           <div><p class="eyebrow">Cambio giocatore</p><h2>${escape(targetName)}</h2><p class="muted">Ruolo ${escape(role || "compatibile")} · caricamento progressivo a blocchi da 24.</p></div>
         </div>
+        ${quickEntries.length ? `<section class="rtg-picker-quick-bench"><div class="rtg-picker-quick-head"><span>PANCHINA · CAMBIO RAPIDO</span><strong>STESSO RUOLO</strong></div><div class="rtg-picker-quick-strip">${quickEntries.map((entry) => playerCard(entry, "picker")).join("")}</div></section>` : ""}
         <div class="rtg-picker-toolbar">
           <label class="rtg-picker-search"><span>Cerca per nome</span><input type="search" inputmode="search" autocomplete="off" placeholder="Es. Jude, Axel, Mark…" value="${escape(query)}" data-rtg-picker-search /></label>
           <div class="rtg-picker-source-filters" aria-label="Filtra provenienza">
@@ -180,9 +199,10 @@
             </section>
 
             <aside class="squad-management-panel">
-              <div class="squad-management-actions rtg-squad-actions rtg-squad-actions--three">
+              <div class="squad-management-actions rtg-squad-actions rtg-squad-actions--four">
                 <button type="button" class="btn btn-yellow rtg-adapt-button" data-rtg-adapt-requirements>Adatta ai requisiti</button>
                 <button type="button" class="btn squad-module-button" data-rtg-open-formation>Modifica modulo</button>
+                <button type="button" class="btn squad-info-button rtg-catalog-button" data-rtg-open-catalog>Giocatori RTG</button>
                 <button type="button" class="btn squad-info-button" data-rtg-save-squad>Salva squadra</button>
               </div>
               <section class="squad-bench-panel">
@@ -216,10 +236,11 @@
       });
       root?.querySelector?.("[data-rtg-adapt-requirements]")?.addEventListener("click", () => actions.onAdaptRequirements?.());
       root?.querySelector?.("[data-rtg-open-formation]")?.addEventListener("click", () => actions.onOpenFormation?.());
+      root?.querySelector?.("[data-rtg-open-catalog]")?.addEventListener("click", () => actions.onOpenCatalog?.());
       root?.querySelector?.("[data-rtg-save-squad]")?.addEventListener("click", () => actions.onSave?.());
     }
 
-    return Object.freeze({ renderModel, markup, bind, playerCard, formationPreviewMarkup, formationOptionsMarkup, replacementPickerMarkup, replacementPickerResultsMarkup });
+    return Object.freeze({ renderModel, markup, bind, playerCard, formationPreviewMarkup, formationOptionsMarkup, replacementPickerMarkup, replacementPickerResultsMarkup, catalogMarkup, catalogResultsMarkup });
   }
 
   global.RoadToGlorySquadView = Object.freeze({ create });

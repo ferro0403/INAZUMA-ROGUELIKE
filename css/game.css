@@ -8753,3 +8753,5 @@ body:has(#modal-root.has-open-modal) .run-dev-quick-tools {
 #clean-home .home-rtg-shortcut>small{align-self:start;color:#555960;font-size:.55rem;font-style:normal;}
 #clean-home .home-rtg-shortcut>b{grid-row:1/3;grid-column:3;font-size:1.35rem;}
 @media (min-width:781px){#clean-home .home-page-switcher{justify-content:flex-end;}#clean-home .home-rtg-shortcuts{grid-template-columns:repeat(3,minmax(0,1fr));}#clean-home .home-rtg-shortcut--wide{grid-column:auto;}#clean-home .home-rtg-hero{padding:22px 26px 25px;}}
+
+#clean-home .home-swipe-page--rtg { min-height: 1px; }

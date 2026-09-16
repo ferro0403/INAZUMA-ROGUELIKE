@@ -2532,3 +2532,327 @@
   .rtg-vending-globe-v4{height:158px}
   .rtg-vending-globe-v4 .rtg-ball{width:31px;height:31px}
 }
+
+
+/* RTG UX polish — roster catalog, quick bench swap, readable match rhythm. */
+.rtg-squad-shell,
+.rtg-squad-picker,
+.rtg-player-catalog {
+  --rtg-picker-card-size: 74px;
+  --rtg-picker-card-mobile: 64px;
+}
+.rtg-squad-actions--four {
+  grid-template-columns: repeat(2, minmax(0,1fr)) !important;
+}
+.rtg-catalog-button {
+  background: #fffdf7 !important;
+  color: #111216 !important;
+}
+.rtg-picker-quick-bench {
+  margin: 10px 0 12px;
+  padding: 10px;
+  border: 2px solid #111216;
+  background: #fff7d0;
+  box-shadow: 3px 4px 0 rgba(17,18,22,.18);
+}
+.rtg-picker-quick-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #111216;
+  font-size: .58rem;
+  font-weight: 1000;
+  letter-spacing: .06em;
+}
+.rtg-picker-quick-head strong { color: #8b6814; }
+.rtg-picker-quick-strip {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding: 2px 2px 7px;
+}
+.rtg-picker-quick-strip .rtg-picker-player-card,
+.rtg-catalog-grid .rtg-catalog-player-card {
+  width: var(--rtg-picker-card-size) !important;
+  max-width: var(--rtg-picker-card-size) !important;
+  min-width: var(--rtg-picker-card-size) !important;
+}
+.rtg-player-catalog {
+  width: min(92vw, 560px);
+  color: #111216;
+}
+.rtg-catalog-head {
+  padding-bottom: 9px;
+  border-bottom: 3px solid #111216;
+}
+.rtg-catalog-head h2 { margin: 0; color: #111216; text-transform: uppercase; }
+.rtg-catalog-head .muted { margin: 4px 0 0; color: #6a645b; }
+.rtg-catalog-search { margin: 12px 0 10px; }
+.rtg-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0,1fr));
+  gap: 18px 8px;
+  justify-items: center;
+  align-items: start;
+}
+.rtg-catalog-grid .player-portrait-wrap,
+.rtg-picker-quick-strip .player-portrait-wrap {
+  overflow: hidden !important;
+}
+.rtg-catalog-grid img.player-portrait,
+.rtg-picker-quick-strip img.player-portrait {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center bottom !important;
+  transform: none !important;
+}
+
+/* Latest action is deliberately held on screen for the controller's 2.2s breather. */
+.rtg-ticker-event {
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+.rtg-ticker-event.is-latest {
+  border-left-color: #ffd34f !important;
+  background: linear-gradient(90deg, rgba(255,211,79,.20), rgba(255,255,255,.05));
+  box-shadow: inset 0 0 0 1px rgba(255,211,79,.18);
+}
+.rtg-ticker-event.is-latest > span { color: #fff2a4; }
+.rtg-ticker-event.is-latest strong { color: #fff; }
+
+/* Duel presentation: possession first, then the actual players. */
+.rtg-duel-contextbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin: -2px 0 10px;
+}
+.rtg-duel-contextbar > span {
+  color: #9cb3cf;
+  font-size: .58rem;
+  font-weight: 900;
+  letter-spacing: .07em;
+}
+.rtg-duel-possession {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 5px 10px;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  font-size: .66rem;
+  font-weight: 1000;
+  letter-spacing: .06em;
+}
+.rtg-duel-possession.is-user { color: #8fd4ff; background: rgba(67,177,242,.12); }
+.rtg-duel-possession.is-opponent { color: #ff9aa4; background: rgba(255,91,98,.12); }
+.rtg-duel-head--visual { align-items: center; }
+.rtg-duel-type {
+  max-width: 100%;
+  margin: 2px 0 0 !important;
+  color: #fff !important;
+  font-size: clamp(1.25rem,5vw,1.8rem);
+  line-height: .95;
+  letter-spacing: -.035em;
+}
+.rtg-duel-stage {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 46px minmax(0,1fr);
+  align-items: end;
+  gap: 6px;
+  min-height: 208px;
+  margin: 14px 0 10px;
+  padding: 10px 8px 8px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.16);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 50% 100%, rgba(42,161,99,.34), transparent 48%),
+    linear-gradient(180deg, rgba(17,52,85,.92), rgba(5,17,33,.96));
+}
+.rtg-duel-stage::before {
+  content: "";
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  bottom: 8px;
+  height: 1px;
+  background: rgba(255,255,255,.24);
+}
+.rtg-duel-side {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  gap: 5px;
+}
+.rtg-duel-side-label {
+  color: #b9cbe0;
+  font-size: .56rem;
+  font-weight: 1000;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+.rtg-duel-side > b {
+  max-width: 100%;
+  padding: 4px 7px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 999px;
+  background: rgba(5,7,11,.68);
+  color: #fff;
+  font-size: .58rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rtg-duel-visual {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  grid-template-rows: 128px auto;
+  gap: 3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: #fff;
+  text-align: center;
+  box-shadow: none;
+}
+.rtg-duel-render {
+  width: 100%;
+  height: 128px;
+  display: grid;
+  place-items: end center;
+  overflow: hidden;
+}
+.rtg-duel-render img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  filter: drop-shadow(0 8px 8px rgba(0,0,0,.35));
+}
+.rtg-duel-render i {
+  width: 86px;
+  height: 86px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 8px;
+  border: 2px solid rgba(255,255,255,.36);
+  border-radius: 50%;
+  background: rgba(255,255,255,.10);
+  color: #fff;
+  font-size: 2rem;
+  font-style: normal;
+  font-weight: 1000;
+}
+.rtg-duel-player-copy {
+  width: 100%;
+  min-width: 0;
+  display: grid;
+  gap: 1px;
+}
+.rtg-duel-player-copy small {
+  color: #9cb3cf;
+  font-size: .48rem;
+  font-weight: 900;
+}
+.rtg-duel-player-copy strong {
+  overflow: hidden;
+  color: #fff;
+  font-size: .72rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rtg-duel-vs-mark {
+  z-index: 2;
+  align-self: center;
+  display: grid;
+  place-items: center;
+}
+.rtg-duel-vs-mark span {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #ffd34f;
+  border-radius: 50%;
+  background: #111722;
+  color: #ffd34f;
+  box-shadow: 0 0 22px rgba(255,211,79,.24);
+  font-size: .83rem;
+  font-weight: 1000;
+}
+.rtg-duel-result-kicker {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
+  color: #9cb3cf;
+  font-size: .58rem;
+  font-weight: 1000;
+  letter-spacing: .08em;
+}
+.rtg-duel-result-kicker strong {
+  padding: 4px 8px;
+  border-radius: 999px;
+}
+.rtg-duel-result-kicker .is-win { color: #9af0bb; background: rgba(73,200,120,.14); }
+.rtg-duel-result-kicker .is-loss { color: #ff9aa4; background: rgba(239,105,93,.14); }
+.rtg-duel-result > h2 {
+  margin: 5px 0 0;
+  font-size: 1.35rem;
+  text-transform: uppercase;
+}
+.rtg-duel-stage--result { min-height: 188px; }
+.rtg-duel-result-summary > div {
+  border: 1px solid rgba(255,255,255,.15) !important;
+  border-radius: 10px;
+  background: rgba(255,255,255,.05) !important;
+  color: #fff;
+}
+.rtg-duel-result-summary small { color: #9cb3cf !important; }
+.rtg-duel-result-summary strong { color: #fff; }
+
+/* Vending reward reuses the current formation-card language, not the retired blue pull card. */
+.rtg-pull-result.development-squad-card-scope .rtg-pull-player-card {
+  width: 74px !important;
+  max-width: 74px !important;
+  min-width: 74px !important;
+}
+.rtg-pull-result.development-squad-card-scope .rtg-pull-player-card .player-portrait-wrap {
+  overflow: hidden !important;
+}
+.rtg-pull-result.development-squad-card-scope .rtg-pull-player-card img.player-portrait {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center bottom !important;
+  transform: none !important;
+}
+
+@media (max-width: 430px) {
+  .rtg-picker-quick-strip .rtg-picker-player-card,
+  .rtg-catalog-grid .rtg-catalog-player-card {
+    width: var(--rtg-picker-card-mobile) !important;
+    max-width: var(--rtg-picker-card-mobile) !important;
+    min-width: var(--rtg-picker-card-mobile) !important;
+  }
+  .rtg-catalog-grid { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 17px 6px; }
+  .rtg-duel-card { width: min(96vw, 520px); padding: 14px; }
+  .rtg-duel-stage { min-height: 194px; grid-template-columns: minmax(0,1fr) 40px minmax(0,1fr); }
+  .rtg-duel-visual { grid-template-rows: 116px auto; }
+  .rtg-duel-render { height: 116px; }
+  .rtg-duel-vs-mark span { width: 38px; height: 38px; }
+  .rtg-pull-result.development-squad-card-scope .rtg-pull-player-card {
+    width: 64px !important;
+    max-width: 64px !important;
+    min-width: 64px !important;
+  }
+}
