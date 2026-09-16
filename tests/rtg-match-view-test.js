@@ -1,0 +1,15 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8"),c);
+const view=c.RoadToGloryMatchView.create({escapeHtml:s=>String(s)});
+const p=(id,role)=>({playerId:id,name:id,position:role,normalizedRole:role,overall:80});
+const lineup=["GK","DF","DF","DF","DF","MF","MF","MF","FW","FW","FW"].map((r,i)=>p("u"+i,r));
+const opp=["GK","DF","DF","DF","DF","MF","MF","MF","FW","FW","FW"].map((r,i)=>p("o"+i,r));
+let match={period:"first_half",status:"active",score:{user:1,opponent:0},userSquad:{lineup},opponentSquad:{lineup:opp},moveUsesByPlayerId:{"user:u8":2},pendingEncounter:{userPlayerId:"u8",opponentPlayerId:"o1",actorPlayerId:"u8",opponentPlayerId:"o1",userBaseActionLabel:"Tiro",normalPreviewProbability:62.5,userMove:{name:"Fire Tornado",power:80},aiChoice:"move"}};
+const html=view.matchMarkup(match);assert.strictEqual((html.match(/data-rtg-field-player=/g)||[]).length,22);assert.match(html,/1 - 0/);assert.doesNotMatch(html,/<canvas|webgl/i);
+const duel=view.encounterMarkup(match,{userPlayer:lineup[8],opponentPlayer:opp[1]});assert.match(duel,/Tiro/);assert.match(duel,/Fire Tornado/);assert.match(duel,/2\/2/);assert.match(duel,/62\.5%/);assert.doesNotMatch(duel,/Scelta IA|aiChoice|move/i);
+match.pendingEncounter={...match.pendingEncounter,userPlayerId:"u1",userBaseActionLabel:"Difesa",userMove:null};
+const noMove=view.encounterMarkup(match,{userPlayer:lineup[1],opponentPlayer:opp[8]});assert.match(noMove,/>Difesa</);assert.doesNotMatch(noMove,/data-rtg-choice="move"/);
+const pen=view.penaltyMarkup({...match,shootout:{history:[],score:{user:0,opponent:0}}},{side:"user",canUseMove:true});for(const label of["Sinistra","Centro","Destra"])assert.match(pen,new RegExp(label));assert.match(pen,/data-rtg-penalty-move/);
+console.log("rtg-match-view-test: PASS");
