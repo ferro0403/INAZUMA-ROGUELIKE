@@ -3135,3 +3135,244 @@
   .rtg-duel-probability-card strong { font-size: 1.16rem; }
   .rtg-duel-odds { grid-template-columns: 72px minmax(0,1fr) 72px; gap: 6px; }
 }
+
+
+/* ============================================================
+   RTG MATCH PRESENTATION REVOLUTION — match-only, mobile-first.
+   Reuses the normal run visual language: paper / ink / yellow /
+   tactical pitch, with broadcast-like hierarchy.
+   ============================================================ */
+
+.rtg-prematch-revolution,
+.rtg-match-revolution {
+  --rtg-ink:#111216;
+  --rtg-paper:#fffdf7;
+  --rtg-cream:#f1eadc;
+  --rtg-yellow:#ffd21f;
+  --rtg-gold:#8b6814;
+  --rtg-red:#b9474c;
+  --rtg-green:#0f7146;
+  --rtg-green-2:#188153;
+  --rtg-muted:#6a645a;
+}
+
+/* ---------- PRE MATCH ---------- */
+.rtg-prematch-revolution .rtg-prematch-topbar {
+  min-height:72px;
+  padding:10px 14px;
+  border-bottom:4px solid var(--rtg-ink);
+  background:rgba(255,253,247,.98);
+  color:var(--rtg-ink);
+}
+.rtg-prematch-title {display:grid;gap:1px;}
+.rtg-prematch-title small {color:var(--rtg-gold);font-size:.5rem;font-weight:1000;letter-spacing:.12em;}
+.rtg-prematch-title h1 {margin:0;font-size:clamp(1.55rem,7vw,2.25rem);line-height:.92;letter-spacing:-.04em;}
+.rtg-prematch-top-vs {display:flex;align-items:center;gap:8px;min-width:0;}
+.rtg-prematch-top-vs span {
+  width:42px;height:42px;display:grid;place-items:center;
+  border:3px solid var(--rtg-ink);border-radius:50%;
+  background:var(--rtg-yellow);font-size:.9rem;font-weight:1000;
+  box-shadow:3px 3px 0 var(--rtg-ink);
+}
+.rtg-prematch-top-vs strong {max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem;}
+.rtg-prematch-revolution .rtg-prematch-content {gap:12px;padding:12px 9px 26px;}
+.rtg-prematch-matchup {
+  position:relative;
+  display:grid;grid-template-columns:minmax(0,1fr) 46px minmax(0,1fr);align-items:stretch;
+  border:3px solid var(--rtg-ink);background:var(--rtg-paper);
+  box-shadow:5px 6px 0 rgba(17,18,22,.18);
+  overflow:hidden;
+}
+.rtg-matchup-team {min-width:0;display:grid;align-content:center;gap:3px;padding:11px 10px;}
+.rtg-matchup-team--opponent {text-align:right;}
+.rtg-matchup-team small {color:var(--rtg-gold);font-size:.48rem;font-weight:1000;letter-spacing:.1em;}
+.rtg-matchup-team strong {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.88rem;text-transform:uppercase;}
+.rtg-matchup-team span {display:flex;gap:6px;align-items:center;color:var(--rtg-muted);font-size:.61rem;}
+.rtg-matchup-team--opponent span {justify-content:flex-end;}
+.rtg-matchup-team span b {color:var(--rtg-gold);font-size:.74rem;}
+.rtg-matchup-team span em {font-style:normal;font-weight:900;}
+.rtg-matchup-vs {display:grid;place-items:center;background:var(--rtg-ink);}
+.rtg-matchup-vs span {display:grid;place-items:center;width:34px;height:34px;border:2px solid var(--rtg-yellow);border-radius:50%;color:var(--rtg-yellow);font-weight:1000;}
+.rtg-prematch-tactical {
+  overflow:hidden;border:3px solid var(--rtg-ink);background:var(--rtg-paper);
+  box-shadow:5px 6px 0 rgba(17,18,22,.18);
+}
+.rtg-prematch-tabs,
+.rtg-live-team-tabs {
+  display:grid;grid-template-columns:1fr 1fr;background:var(--rtg-ink);gap:2px;padding:2px;
+}
+.rtg-prematch-tabs button,
+.rtg-live-team-tabs button {
+  min-width:0;min-height:45px;display:flex;align-items:center;justify-content:center;gap:6px;
+  padding:7px 8px;border:0;border-radius:0;background:#2a2b2e;color:#e8e2d7;
+  font-size:.62rem;font-weight:1000;text-transform:uppercase;
+}
+.rtg-prematch-tabs button b,
+.rtg-live-team-tabs button b {color:#bcb5aa;font-size:.58rem;}
+.rtg-prematch-tabs button.active,
+.rtg-live-team-tabs button.active {background:var(--rtg-yellow);color:var(--rtg-ink);}
+.rtg-prematch-tabs button.active b,
+.rtg-live-team-tabs button.active b {color:var(--rtg-gold);}
+.rtg-prematch-field-wrap,
+.rtg-live-field-wrap {padding:8px;background:var(--rtg-paper);}
+.rtg-prematch-single-pitch,
+.rtg-live-pitch {
+  position:relative;
+  min-height:560px;
+  display:flex;flex-direction:column;justify-content:space-around;gap:10px;
+  padding:34px 8px 30px;overflow:hidden;
+  border:2px solid var(--rtg-ink);border-radius:14px;
+  background:
+    url("../assets/ui/11v11/boss-tactical-pitch.svg") center/100% 100% no-repeat,
+    repeating-linear-gradient(90deg,var(--rtg-green) 0 12.5%,var(--rtg-green-2) 12.5% 25%);
+  box-shadow:inset 0 0 38px rgba(0,0,0,.12);
+}
+.rtg-prematch-row,
+.rtg-live-row {
+  position:relative;z-index:1;
+  display:flex;align-items:center;justify-content:space-evenly;
+  gap:5px;width:100%;
+}
+.rtg-prematch-player-card,
+.rtg-live-player-card {
+  width:clamp(62px,18vw,74px)!important;
+  max-width:74px!important;
+  min-width:0!important;
+  filter:drop-shadow(3px 4px 0 rgba(10,19,15,.25));
+}
+.rtg-prematch-start {
+  position:relative;isolation:isolate;min-height:78px;
+  display:grid!important;grid-template-columns:72px minmax(0,1fr) 28px;align-items:center;
+  padding:0 10px 0 0!important;overflow:hidden;
+  border:3px solid var(--rtg-ink)!important;border-radius:2px!important;
+  background:linear-gradient(105deg,#ffc91b,#ffda32 58%,#ffc91b)!important;
+  color:var(--rtg-ink)!important;box-shadow:5px 6px 0 var(--rtg-ink)!important;
+  text-align:left;
+}
+.rtg-prematch-start::after {
+  content:"";position:absolute;right:-35px;top:50%;width:132px;height:132px;
+  transform:translateY(-50%) rotate(-8deg);opacity:.36;z-index:-1;
+  background:center/contain no-repeat url("../assets/ui/5v5/action-soccer-ball.svg");
+}
+.rtg-prematch-start-icon {align-self:stretch;display:grid;place-items:center;background:var(--rtg-ink);color:var(--rtg-yellow);font-size:1.25rem;clip-path:polygon(0 0,74% 0,100% 50%,74% 100%,0 100%);}
+.rtg-prematch-start > span:nth-child(2) {display:grid;gap:2px;}
+.rtg-prematch-start small {font-size:.48rem;letter-spacing:.09em;}
+.rtg-prematch-start strong {font-size:1.05rem;font-style:italic;}
+.rtg-prematch-start > b {font-size:1.8rem;}
+
+/* ---------- LIVE MATCH ---------- */
+.rtg-match-revolution .rtg-live-status {
+  width:min(760px,calc(100% - 18px));margin:10px auto 0;
+  display:grid;grid-template-columns:1.2fr .9fr 1fr;
+  overflow:hidden;border:2px solid var(--rtg-ink);background:var(--rtg-paper);
+  box-shadow:4px 5px 0 rgba(17,18,22,.14);
+}
+.rtg-live-status > div {
+  min-width:0;min-height:54px;display:grid;align-content:center;gap:2px;
+  padding:7px 9px;border-right:1px solid #ded7ca;
+}
+.rtg-live-status > div:last-child {border-right:0;}
+.rtg-live-status small {color:var(--rtg-muted);font-size:.48rem;font-weight:1000;letter-spacing:.1em;}
+.rtg-live-status strong {overflow:hidden;color:var(--rtg-gold);font-size:.68rem;text-overflow:ellipsis;white-space:nowrap;}
+.rtg-live-ball-state {grid-template-columns:14px minmax(0,1fr)!important;align-items:center!important;}
+.rtg-live-ball-state i {width:10px;height:10px;border:2px solid var(--rtg-ink);border-radius:50%;background:var(--rtg-yellow);box-shadow:1px 1px 0 var(--rtg-ink);}
+.rtg-match-revolution .rtg-match-ticker {margin-top:10px;}
+.rtg-match-revolution .rtg-match-content {padding:10px 9px 26px;}
+.rtg-live-formation-panel {
+  overflow:hidden;border:3px solid var(--rtg-ink);background:var(--rtg-paper);
+  box-shadow:5px 6px 0 rgba(17,18,22,.18);
+}
+.rtg-live-team-tabs button {position:relative;}
+.rtg-live-team-tabs button i {color:#1e8a55;font-style:normal;font-size:.62rem;}
+.rtg-live-team-tabs button.active i {color:var(--rtg-ink);}
+.rtg-live-pitch {min-height:560px;}
+.rtg-live-player-card.is-latest-actor {outline:3px solid var(--rtg-yellow);outline-offset:2px;filter:drop-shadow(0 0 7px rgba(255,210,31,.65));}
+.rtg-live-player-card.is-latest-opponent {outline:2px solid #fffdf7;outline-offset:2px;}
+.rtg-match-revolution [hidden],
+.rtg-prematch-revolution [hidden] {display:none!important;}
+
+/* ---------- DUEL STORY ---------- */
+.rtg-match-shell .rtg-match-overlay .rtg-duel-card--revolution {
+  width:min(94vw,620px);padding:14px;
+  border-radius:4px!important;
+}
+.rtg-duel-story {
+  display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:12px;
+  padding:8px 0 10px;border-bottom:3px solid var(--rtg-ink);
+}
+.rtg-duel-story .eyebrow {margin:0 0 4px;color:var(--rtg-gold);font-size:.58rem;}
+.rtg-duel-story h2 {margin:0;color:var(--rtg-ink);font-size:clamp(1.35rem,6vw,1.85rem);font-style:italic;line-height:.92;text-transform:none;letter-spacing:-.04em;}
+.rtg-duel-story p {margin:5px 0 0;color:var(--rtg-muted);font-size:.7rem;font-weight:850;}
+.rtg-duel-probability-card em {margin-top:2px;color:var(--rtg-ink);font-size:.46rem;font-style:normal;font-weight:900;max-width:92px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rtg-duel-stage--revolution {margin:10px 0 8px;min-height:218px;}
+.rtg-duel-stage--revolution .rtg-duel-visual {grid-template-rows:138px auto;}
+.rtg-duel-stage--revolution .rtg-duel-render {height:138px;}
+.rtg-duel-stage--revolution .rtg-duel-side > b {max-width:95%;font-size:.52rem;}
+.rtg-duel-odds--revolution {margin:8px 0 12px;}
+.rtg-duel-choice-section {
+  margin-top:8px;padding-top:10px;border-top:2px solid var(--rtg-ink);
+}
+.rtg-duel-choice-head {display:flex;align-items:flex-end;justify-content:space-between;gap:10px;margin-bottom:8px;}
+.rtg-duel-choice-head strong {font-size:.67rem;letter-spacing:.07em;}
+.rtg-duel-choice-head span {max-width:230px;color:var(--rtg-muted);font-size:.5rem;text-align:right;}
+.rtg-duel-choice-grid {display:grid;gap:8px;}
+.rtg-duel-choice-card {
+  position:relative;display:grid;grid-template-columns:46px minmax(0,1fr) 78px;align-items:center;gap:8px;
+  width:100%;min-height:70px;padding:7px 8px 7px 0;overflow:hidden;
+  border:2px solid var(--rtg-ink);border-radius:2px;background:#fff;color:var(--rtg-ink);
+  box-shadow:3px 4px 0 rgba(17,18,22,.16);text-align:left;
+}
+.rtg-duel-choice-card.is-base {background:#fffdf7;}
+.rtg-duel-choice-card.is-move {background:linear-gradient(105deg,#fff7c2,#ffd21f);}
+.rtg-duel-choice-card.is-selected {
+  border-width:3px;box-shadow:5px 6px 0 var(--rtg-ink);transform:translateY(-1px);
+}
+.rtg-choice-icon {align-self:stretch;display:grid;place-items:center;background:var(--rtg-ink);color:var(--rtg-yellow);font-size:1rem;}
+.rtg-choice-copy {min-width:0;display:grid;gap:1px;}
+.rtg-choice-copy small {color:var(--rtg-gold);font-size:.44rem;font-weight:1000;letter-spacing:.08em;}
+.rtg-choice-copy strong {overflow:hidden;font-size:.83rem;text-overflow:ellipsis;white-space:nowrap;}
+.rtg-choice-copy em {color:var(--rtg-muted);font-size:.51rem;font-style:normal;font-weight:750;}
+.rtg-choice-probability {display:grid;justify-items:end;gap:1px;}
+.rtg-choice-probability small {color:var(--rtg-muted);font-size:.42rem;font-weight:1000;}
+.rtg-choice-probability strong {font-size:1.08rem;}
+.rtg-choice-delta {padding:2px 5px;border:1px solid #bbb2a5;border-radius:999px;color:var(--rtg-muted);font-size:.46rem!important;font-style:normal!important;font-weight:1000!important;}
+.rtg-choice-delta.is-positive {border-color:#358257;background:#e7f4e9;color:#236a42;}
+.rtg-choice-delta.is-negative {border-color:#b9474c;background:#fae7e7;color:#9c383e;}
+.rtg-choice-confirm {
+  grid-column:1/-1;margin:-1px -8px -7px 0;padding:5px 8px 5px 54px;
+  background:var(--rtg-ink);color:var(--rtg-yellow);
+  font-size:.48rem;font-weight:1000;letter-spacing:.06em;
+}
+
+/* ---------- RESULT ---------- */
+.rtg-duel-result--revolution {overflow:hidden;}
+.rtg-duel-result-banner {
+  margin:-14px -14px 10px;padding:11px 14px 12px;border-bottom:3px solid var(--rtg-ink);
+  background:var(--rtg-yellow);color:var(--rtg-ink);
+}
+.rtg-duel-result-banner.is-loss {background:#f2d6d4;color:#8e3137;}
+.rtg-duel-result-banner span {display:block;font-size:.5rem;font-weight:1000;letter-spacing:.12em;}
+.rtg-duel-result-banner strong {display:block;margin-top:3px;font-size:clamp(1.2rem,5.4vw,1.65rem);font-style:italic;line-height:.95;text-transform:uppercase;}
+.rtg-duel-result-facts {
+  display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;margin:9px 0;
+  border:2px solid var(--rtg-ink);background:#fff;
+}
+.rtg-duel-result-facts > div {min-width:0;padding:8px 6px;border-right:1px solid #d8d1c4;}
+.rtg-duel-result-facts > div:last-child {border-right:0;}
+.rtg-duel-result-facts small {display:block;color:var(--rtg-muted);font-size:.43rem;font-weight:1000;letter-spacing:.06em;}
+.rtg-duel-result-facts strong {display:block;margin-top:3px;color:var(--rtg-ink);font-size:.87rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rtg-duel-result-facts .rtg-result-score strong {font-size:1.1rem;}
+.rtg-duel-continue {display:flex!important;align-items:center;justify-content:space-between!important;gap:10px;min-height:56px;border:3px solid var(--rtg-ink)!important;box-shadow:4px 5px 0 var(--rtg-ink)!important;}
+.rtg-duel-continue b {font-size:1.55rem;}
+
+@media (max-width:430px) {
+  .rtg-prematch-matchup {grid-template-columns:minmax(0,1fr) 40px minmax(0,1fr);}
+  .rtg-prematch-single-pitch,.rtg-live-pitch {min-height:520px;padding:29px 5px 25px;}
+  .rtg-prematch-player-card,.rtg-live-player-card {width:clamp(58px,17.1vw,68px)!important;}
+  .rtg-duel-story {grid-template-columns:minmax(0,1fr) 104px;gap:8px;}
+  .rtg-duel-stage--revolution {min-height:194px;}
+  .rtg-duel-stage--revolution .rtg-duel-visual {grid-template-rows:116px auto;}
+  .rtg-duel-stage--revolution .rtg-duel-render {height:116px;}
+  .rtg-duel-choice-card {grid-template-columns:42px minmax(0,1fr) 72px;min-height:67px;}
+  .rtg-choice-confirm {padding-left:50px;}
+}

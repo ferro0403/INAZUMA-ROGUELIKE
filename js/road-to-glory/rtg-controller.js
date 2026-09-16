@@ -31,6 +31,8 @@
     let lastRenderedHtml="";
     let matchFlowTimer=null;
     let displayedMinute=0;
+    let selectedEncounterChoice=null;
+    let selectedEncounterId=null;
     const SQUAD_PICKER_PAGE_SIZE=24;
     const ENCOUNTER_REVEAL_DELAY_MS=2200;
     const schedule=deps.setTimeout||global.setTimeout;
@@ -613,22 +615,45 @@
       matchView.bind(app,{
         onOpenPlayerDetails:(playerId,side)=>openRtgPlayerDetails(playerId,side),
         onPreMatchStart:()=>confirmPreMatch(),
-        onEncounterChoice:choice=>chooseEncounter(choice),
+        onEncounterChoice:choice=>handleEncounterChoiceTap(choice),
         onAbandon:()=>abandonMatch(),
         onHalftimeConfirm:()=>confirmHalftime(halftimeDraft),
         onPenaltyDirection:direction=>choosePenalty({direction,useMove:false}),
         onPenaltyMove:()=>choosePenalty({direction:"center",useMove:true}),
       });
     }
-    function showEncounterOverlay(match){
+    function showEncounterOverlay(match,selectedChoice=null){
       const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
       const pending=match?.pendingEncounter;
       if(!overlay||!pending)return;
+      const encounterId=id(pending.encounterId);
+      if(selectedEncounterId!==encounterId){
+        selectedEncounterId=encounterId;
+        selectedEncounterChoice=null;
+      }
+      if(["base","move"].includes(String(selectedChoice||"")))selectedEncounterChoice=String(selectedChoice);
       const userPlayer=findMatchPlayer(match,"user",pending.userPlayerId);
       const opponentPlayer=findMatchPlayer(match,"opponent",pending.aiPlayerId||pending.opponentPlayerId);
-      overlay.innerHTML=matchView.encounterMarkup(match,{userPlayer,opponentPlayer});
+      overlay.innerHTML=matchView.encounterMarkup(match,{userPlayer,opponentPlayer,selectedChoice:selectedEncounterChoice});
       bindMatchViewActions();
     }
+    function handleEncounterChoiceTap(choice){
+      const normalized=String(choice||"");
+      const pending=campaign?.activeMatch?.pendingEncounter;
+      if(!pending||!["base","move"].includes(normalized))return;
+      if(selectedEncounterId!==id(pending.encounterId)){
+        selectedEncounterId=id(pending.encounterId);
+        selectedEncounterChoice=null;
+      }
+      if(selectedEncounterChoice===normalized){
+        selectedEncounterChoice=null;
+        selectedEncounterId=null;
+        return chooseEncounter(normalized);
+      }
+      selectedEncounterChoice=normalized;
+      return showEncounterOverlay(campaign.activeMatch,normalized);
+    }
+
     function renderMatch(match=campaign?.activeMatch,options={}){
       clearMatchFlowTimer();
       if(!match)return renderRun();
@@ -719,6 +744,8 @@
         current.activeMatch=match;
         return current;
       });
+      selectedEncounterChoice=null;
+      selectedEncounterId=null;
       if(terminalSnapshot)return showMatchResult(terminalSnapshot);
       return renderMatch(campaign.activeMatch,{delayEncounter:true});
     }
@@ -752,7 +779,7 @@
                 ?(userWon?"Dribbling riuscito":"Palla persa")
                 :(userWon?"Duello a centrocampo vinto":"Duello a centrocampo perso");
         if(overlay)overlay.innerHTML=matchView.resolvedEncounterMarkup({
-          userWon,probability:userProbability,outcomeLabel,
+          userWon,probability:userProbability,outcomeLabel,userKind:before.userKind,
           userPlayerName:userPlayer?.name||before.userPlayerId,
           aiPlayerName:aiPlayer?.name||before.aiPlayerId,
           userPlayer,opponentPlayer:aiPlayer,
