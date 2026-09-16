@@ -70,15 +70,24 @@
     }
 
     function matchMarkup(match = {}) {
+      const opponentName = match.opponentSquad?.name || "CPU";
+      const possessionLabel = match.possession === "user" ? "TU" : opponentName;
+      const zoneLabel = ({ midfield:"Centrocampo", attack:"Attacco", shot:"Tiro" }[match.fieldZone] || "Centrocampo");
+      const actionCurrent = Math.min(Number(match.actionTarget || 0), Number(match.actionIndex || 0) + 1);
       return `<main class="screen rtg-match-shell boss-match-screen">
         <header class="topbar rtg-match-topbar">
-          <div><p class="eyebrow">Road to Glory</p><strong class="brand">${escape(periodLabel(match.period))}</strong></div>
-          <div class="rtg-match-score-main"><span>Tu</span><strong>${escape(match.score?.user || 0)} - ${escape(match.score?.opponent || 0)}</strong><span>CPU</span></div>
-          <button type="button" class="btn btn-danger" data-rtg-abandon>Abbandona</button>
+          <div class="rtg-match-period"><p class="eyebrow">Road to Glory</p><strong class="brand">${escape(periodLabel(match.period))}</strong></div>
+          <div class="rtg-match-score-main"><span>Tu</span><strong>${escape(match.score?.user || 0)} - ${escape(match.score?.opponent || 0)}</strong><span title="${escape(opponentName)}">${escape(opponentName)}</span></div>
+          <button type="button" class="btn btn-danger rtg-abandon-button" data-rtg-abandon>Abbandona</button>
         </header>
+        <div class="rtg-match-flowbar">
+          <span><small>Possesso</small><strong>${escape(possessionLabel)}</strong></span>
+          <span><small>Zona</small><strong>${escape(zoneLabel)}</strong></span>
+          <span><small>Azione</small><strong>${escape(actionCurrent)} / ${escape(match.actionTarget || "—")}</strong></span>
+        </div>
         <div class="content rtg-match-content">
           <section class="panel rtg-static-field rtg-static-field--main">
-            <div class="rtg-field-team-label rtg-field-team-label--opponent">Avversario</div>
+            <div class="rtg-field-team-label rtg-field-team-label--opponent">${escape(opponentName)}</div>
             ${fieldSide(match.opponentSquad, "opponent")}
             <div class="rtg-field-midline"><span>VS</span></div>
             ${fieldSide(match.userSquad, "user")}
@@ -96,8 +105,10 @@
       const key = `user:${String(pending.userPlayerId || "")}`;
       const uses = Number(match.moveUsesByPlayerId?.[key] || 0);
       const probability = Number(preview.probability ?? pending.normalPreviewProbability ?? 50);
+      const userHasPossession = pending.actorSide === "user";
       return `<section class="panel rtg-duel-card rtg-paper-modal development-squad-card-scope">
         <div class="rtg-duel-head"><div><p class="eyebrow">Duello</p><h2>${escape(pending.userBaseActionLabel || "Azione")}</h2></div><strong>${escape(probability.toFixed(1))}%</strong></div>
+        <div class="rtg-duel-context"><span>${userHasPossession ? "Hai il possesso" : "CPU in possesso"}</span><span>Scelta CPU nascosta</span></div>
         <div class="progress-track rtg-probability"><span class="progress-bar" style="width:${Math.max(10, Math.min(90, probability))}%"></span></div>
         <div class="rtg-versus rtg-versus--cards">
           <article><small>Tu</small>${card(user, `data-rtg-duel-user="${escape(pid(user))}"`, "run-tactical-card match-player-card match-player-card--user squad-player-card rtg-duel-player-card")}</article>
@@ -115,6 +126,7 @@
       return `<section class="panel rtg-duel-card rtg-duel-result rtg-paper-modal">
         <p class="eyebrow">Esito duello</p>
         <h2>${resolution.userWon ? "Duello vinto!" : "Duello perso"}</h2>
+        ${resolution.outcomeLabel ? `<div class="rtg-duel-consequence">${escape(resolution.outcomeLabel)}</div>` : ""}
         <div class="rtg-duel-summary">
           <div><small>Tu</small><strong>${escape(resolution.userPlayerName || "La tua squadra")}</strong><span>${escape(resolution.userChoiceLabel || "Azione base")}</span></div>
           <b>VS</b>
