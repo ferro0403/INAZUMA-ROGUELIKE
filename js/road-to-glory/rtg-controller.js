@@ -702,17 +702,37 @@
       if(terminalSnapshot)return showMatchResult(terminalSnapshot);
       return renderMatch(campaign.activeMatch,renderOptions);
     }
+    async function continueEncounterFlow(){
+      let terminalSnapshot=null;
+      campaign=await repository.update("rtg-encounter-continue",current=>{
+        if(!current.activeMatch)throw Object.assign(new Error("Nessuna partita RTG attiva"),{code:"rtg-match-not-active"});
+        let match=clone(current.activeMatch);
+        if(["completed","completed-draw"].includes(match.status)){
+          terminalSnapshot=clone(match);
+          return applyTerminal(current,match);
+        }
+        if(match.status==="active")match=matchEngine.prepareNext(match);
+        if(["completed","completed-draw"].includes(match.status)){
+          terminalSnapshot=clone(match);
+          return applyTerminal(current,match);
+        }
+        current.activeMatch=match;
+        return current;
+      });
+      if(terminalSnapshot)return showMatchResult(terminalSnapshot);
+      return renderMatch(campaign.activeMatch,{delayEncounter:true});
+    }
     async function chooseEncounter(choice){
       const before=clone(campaign.activeMatch?.pendingEncounter);
+      const scoreBefore=clone(campaign.activeMatch?.score||{user:0,opponent:0});
       let resolvedMatch=null;
       campaign=await repository.update("rtg-encounter",current=>{
-        let match=matchEngine.resolvePendingEncounter(current.activeMatch,choice);
+        const match=matchEngine.resolvePendingEncounter(current.activeMatch,choice);
         resolvedMatch=clone(match);
-        if(["completed","completed-draw"].includes(match.status))return applyTerminal(current,match);
-        current.activeMatch=match;return current;
+        current.activeMatch=match;
+        return current;
       });
-      if(!campaign.activeMatch&&resolvedMatch)return showMatchResult(resolvedMatch);
-      const log=resolvedMatch?.log?.at?.(-1);
+      const log=resolvedMatch?.log?.find?.(entry=>id(entry.encounterId)===id(before?.encounterId));
       if(before&&log){
         renderMatch(resolvedMatch);
         const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
@@ -738,11 +758,13 @@
           userPlayer,opponentPlayer:aiPlayer,
           actorSide:before.actorSide,
           userChoiceLabel,aiChoiceLabel,
+          scoreBefore,scoreAfter:clone(resolvedMatch.score||scoreBefore),
+          goalSide:log.goalSide||null,
         });
-        overlay?.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>renderMatch(campaign.activeMatch,{delayEncounter:true}));
+        overlay?.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>continueEncounterFlow());
         return resolvedMatch;
       }
-      return renderMatch(campaign.activeMatch);
+      return continueEncounterFlow();
     }
     function bindHalftimeEditor(match,selectedPlayerId=null){
       const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
@@ -885,7 +907,7 @@
     }
 
     return Object.freeze({
-      open,renderRun,renderSquad,openNode,startMatch,confirmPreMatch,chooseEncounter,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
+      open,renderRun,renderSquad,openNode,startMatch,confirmPreMatch,chooseEncounter,continueEncounterFlow,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
       swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,adaptSquadToCurrentRequirements,
       getDraftSquad:()=>clone(squadDraft),getState:()=>clone(campaign),getRenderedHtml,
     });

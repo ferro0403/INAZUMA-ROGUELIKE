@@ -2856,3 +2856,282 @@
     min-width: 64px !important;
   }
 }
+
+
+/* Match-only professional pass v2 — paper/ink/yellow, no generic blue dashboard. */
+.rtg-match-polish-v2,
+.rtg-match-shell .rtg-match-overlay {
+  --rtg-match-paper: #fffdf6;
+  --rtg-match-ink: #111216;
+  --rtg-match-yellow: #ffd21f;
+  --rtg-match-gold: #8c6710;
+  --rtg-match-muted: #6b675f;
+  --rtg-match-line: #d8d1c3;
+  --rtg-match-pitch: #13764c;
+  --rtg-match-pitch-dark: #0d5d3b;
+  --rtg-match-danger: #b6444a;
+}
+.rtg-match-polish-v2 {
+  background:
+    linear-gradient(rgba(255,253,246,.76),rgba(239,234,221,.90)),
+    url("../assets/home/inazuma-stadium-mobile-light.jpeg") center top/cover fixed;
+  color: var(--rtg-match-ink);
+}
+.rtg-match-polish-v2 .rtg-match-topbar {
+  border-bottom: 3px solid var(--rtg-match-ink);
+  background: rgba(255,253,246,.97);
+  color: var(--rtg-match-ink);
+  box-shadow: 0 5px 0 rgba(17,18,22,.12);
+  backdrop-filter: blur(10px);
+}
+.rtg-match-polish-v2 .rtg-match-period strong { color: var(--rtg-match-gold); }
+.rtg-match-polish-v2 .rtg-match-period span { color: var(--rtg-match-muted); }
+.rtg-match-polish-v2 .rtg-match-score-main { color: var(--rtg-match-ink); }
+.rtg-match-polish-v2 .rtg-match-score-main strong {
+  border: 3px solid var(--rtg-match-ink);
+  border-radius: 14px;
+  background: var(--rtg-match-yellow);
+  color: var(--rtg-match-ink);
+  box-shadow: 4px 4px 0 var(--rtg-match-ink);
+}
+.rtg-match-polish-v2 .rtg-abandon-button {
+  border: 2px solid var(--rtg-match-danger);
+  border-radius: 2px;
+  background: transparent;
+  color: var(--rtg-match-danger);
+  box-shadow: 3px 4px 0 rgba(182,68,74,.18);
+}
+.rtg-match-polish-v2 .rtg-match-flowbar {
+  width: min(760px,calc(100% - 20px));
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 0;
+  overflow: hidden;
+  border: 2px solid var(--rtg-match-ink);
+  border-radius: 3px;
+  background: var(--rtg-match-paper);
+  box-shadow: 4px 5px 0 rgba(17,18,22,.16);
+}
+.rtg-match-polish-v2 .rtg-match-flowbar > span {
+  min-height: 55px;
+  padding: 7px 8px;
+  border: 0;
+  border-right: 1px solid var(--rtg-match-line);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.rtg-match-polish-v2 .rtg-match-flowbar > span:last-child { border-right: 0; }
+.rtg-match-polish-v2 .rtg-match-flowbar small {
+  color: var(--rtg-match-muted);
+  font-size: .53rem;
+  letter-spacing: .1em;
+}
+.rtg-match-polish-v2 .rtg-match-flowbar strong {
+  color: var(--rtg-match-gold);
+  font-size: .78rem;
+}
+.rtg-match-polish-v2 .rtg-match-ticker {
+  width: min(760px,calc(100% - 20px));
+  margin-top: 10px;
+  padding: 0;
+  overflow: hidden;
+  border: 2px solid var(--rtg-match-ink);
+  border-radius: 3px;
+  background: var(--rtg-match-paper);
+  box-shadow: 4px 5px 0 rgba(17,18,22,.14);
+}
+.rtg-match-polish-v2 .rtg-match-ticker-head {
+  min-height: 32px;
+  margin: 0;
+  padding: 6px 9px;
+  align-items: center;
+  background: var(--rtg-match-ink);
+}
+.rtg-match-polish-v2 .rtg-match-ticker-head small {
+  color: var(--rtg-match-paper);
+  font-size: .61rem;
+}
+.rtg-match-polish-v2 .rtg-match-ticker-head span {
+  color: var(--rtg-match-yellow);
+  font-size: .58rem;
+}
+.rtg-match-polish-v2 .rtg-match-ticker-list { gap: 0; padding: 5px 8px 7px; }
+.rtg-match-polish-v2 .rtg-ticker-event {
+  min-height: 42px;
+  grid-template-columns: 42px minmax(0,1fr) auto;
+  gap: 7px;
+  padding: 7px 6px;
+  border-left: 4px solid #c9c3b8;
+  border-bottom: 1px solid #e2dccf;
+  background: transparent;
+}
+.rtg-match-polish-v2 .rtg-ticker-event:last-child { border-bottom: 0; }
+.rtg-match-polish-v2 .rtg-ticker-event > span {
+  color: var(--rtg-match-gold) !important;
+  font-size: .72rem;
+}
+.rtg-match-polish-v2 .rtg-ticker-event strong {
+  color: var(--rtg-match-ink) !important;
+  font-size: .72rem;
+  font-weight: 900;
+}
+.rtg-match-polish-v2 .rtg-ticker-event em {
+  color: var(--rtg-match-muted) !important;
+  font-size: .58rem;
+}
+.rtg-match-polish-v2 .rtg-ticker-event.is-latest {
+  border-left-color: var(--rtg-match-yellow) !important;
+  background: linear-gradient(90deg,rgba(255,210,31,.24),rgba(255,253,246,.82));
+  box-shadow: inset 0 0 0 1px rgba(140,103,16,.12);
+}
+.rtg-match-polish-v2 .rtg-match-content { padding-top: 12px; }
+.rtg-match-polish-v2 .rtg-static-field--main {
+  border: 3px solid var(--rtg-match-ink);
+  border-radius: 5px;
+  background:
+    linear-gradient(rgba(255,255,255,.06) 2px,transparent 2px) center/100% 50%,
+    repeating-linear-gradient(90deg,var(--rtg-match-pitch) 0 12.5%,#187e52 12.5% 25%);
+  box-shadow: 6px 7px 0 rgba(17,18,22,.18), inset 0 0 50px rgba(0,0,0,.08);
+}
+.rtg-match-polish-v2 .rtg-field-team-label {
+  border: 2px solid var(--rtg-match-ink);
+  border-radius: 999px;
+  background: var(--rtg-match-paper);
+  color: var(--rtg-match-ink);
+}
+.rtg-match-polish-v2 .rtg-field-team-label--opponent { color: var(--rtg-match-danger); }
+.rtg-match-polish-v2 .rtg-field-team-label--user { color: #176142; }
+.rtg-match-polish-v2 .rtg-field-midline span {
+  border: 2px solid var(--rtg-match-ink);
+  background: var(--rtg-match-yellow);
+  color: var(--rtg-match-ink);
+  box-shadow: 3px 3px 0 rgba(17,18,22,.28);
+}
+
+/* Duel modal: clean paper outside, pitch inside, probabilities explicit for both sides. */
+.rtg-match-shell .rtg-match-overlay { background: rgba(17,18,22,.58); backdrop-filter: blur(3px); }
+.rtg-match-shell .rtg-match-overlay .rtg-duel-card {
+  width: min(94vw,590px);
+  color: var(--rtg-match-ink);
+  background: var(--rtg-match-paper) !important;
+  border: 3px solid var(--rtg-match-ink) !important;
+  border-radius: 5px !important;
+  box-shadow: 8px 9px 0 rgba(17,18,22,.32) !important;
+}
+.rtg-match-shell .rtg-duel-contextbar > span { color: var(--rtg-match-muted); }
+.rtg-match-shell .rtg-duel-possession {
+  border: 2px solid var(--rtg-match-ink);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--rtg-match-ink);
+}
+.rtg-match-shell .rtg-duel-possession.is-user { background: #fff4b6; color: var(--rtg-match-ink); }
+.rtg-match-shell .rtg-duel-possession.is-opponent { background: #f7dfdc; color: #8f353a; }
+.rtg-match-shell .rtg-duel-head { border-bottom: 3px solid var(--rtg-match-ink); }
+.rtg-match-shell .rtg-duel-head .eyebrow { color: var(--rtg-match-gold); }
+.rtg-match-shell .rtg-duel-type { color: var(--rtg-match-ink) !important; }
+.rtg-duel-probability-card {
+  flex: 0 0 auto;
+  min-width: 112px;
+  display: grid;
+  justify-items: center;
+  padding: 7px 9px;
+  border: 3px solid var(--rtg-match-ink);
+  background: var(--rtg-match-yellow);
+  box-shadow: 4px 4px 0 var(--rtg-match-ink);
+}
+.rtg-duel-probability-card small { color: var(--rtg-match-ink); font-size: .45rem; font-weight: 1000; letter-spacing: .05em; }
+.rtg-duel-probability-card strong { color: var(--rtg-match-ink); font-size: 1.35rem; line-height: 1; }
+.rtg-match-shell .rtg-duel-stage {
+  border: 2px solid var(--rtg-match-ink);
+  border-radius: 16px;
+  background:
+    linear-gradient(rgba(255,255,255,.10),rgba(255,255,255,.03)),
+    repeating-linear-gradient(90deg,var(--rtg-match-pitch-dark) 0 16.66%,var(--rtg-match-pitch) 16.66% 33.33%);
+  box-shadow: inset 0 0 30px rgba(0,0,0,.12);
+}
+.rtg-match-shell .rtg-duel-side > b {
+  border: 1px solid rgba(255,255,255,.55);
+  background: rgba(17,18,22,.76);
+  color: #fff;
+}
+.rtg-match-shell .rtg-duel-vs-mark span {
+  border: 3px solid var(--rtg-match-yellow);
+  background: var(--rtg-match-ink);
+  color: var(--rtg-match-yellow);
+}
+.rtg-duel-odds {
+  display: grid;
+  grid-template-columns: 86px minmax(0,1fr) 86px;
+  align-items: center;
+  gap: 9px;
+  margin: 12px 0 4px;
+}
+.rtg-duel-odds > span { min-width: 0; display: grid; gap: 1px; }
+.rtg-duel-odds > span:last-child { text-align: right; }
+.rtg-duel-odds small {
+  overflow: hidden;
+  color: var(--rtg-match-muted);
+  font-size: .47rem;
+  font-weight: 1000;
+  letter-spacing: .05em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rtg-duel-odds strong { color: var(--rtg-match-ink); font-size: 1rem; }
+.rtg-duel-odds > i {
+  height: 13px;
+  overflow: hidden;
+  border: 2px solid var(--rtg-match-ink);
+  border-radius: 999px;
+  background: #e8e2d5;
+}
+.rtg-duel-odds > i > b { display: block; height: 100%; background: var(--rtg-match-yellow); }
+.rtg-match-shell .rtg-action-button {
+  border: 3px solid var(--rtg-match-ink) !important;
+  border-radius: 2px !important;
+  background: var(--rtg-match-yellow) !important;
+  color: var(--rtg-match-ink) !important;
+  box-shadow: 4px 5px 0 var(--rtg-match-ink) !important;
+}
+.rtg-match-shell .rtg-action-button--move { background: #fff !important; }
+
+/* Result values must never disappear on the paper result modal. */
+.rtg-match-shell .rtg-duel-result > h2 { color: var(--rtg-match-ink) !important; }
+.rtg-match-shell .rtg-duel-result-kicker { color: var(--rtg-match-muted); }
+.rtg-match-shell .rtg-duel-result-summary > div {
+  border: 2px solid var(--rtg-match-ink) !important;
+  border-radius: 2px;
+  background: #fff !important;
+}
+.rtg-match-shell .rtg-duel-result-summary small { color: var(--rtg-match-muted) !important; }
+.rtg-match-shell .rtg-duel-result-summary strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--rtg-match-ink) !important;
+  font-size: 1.15rem;
+}
+.rtg-match-shell .rtg-duel-result-summary > b { color: var(--rtg-match-gold) !important; }
+.rtg-duel-goal-confirm {
+  margin: 10px 0;
+  padding: 8px 10px;
+  border: 2px solid var(--rtg-match-ink);
+  background: #fff4b6;
+  color: var(--rtg-match-ink);
+}
+.rtg-duel-goal-confirm strong { display: block; font-size: .74rem; }
+.rtg-duel-goal-confirm span { color: var(--rtg-match-muted); font-size: .61rem; }
+.rtg-match-shell .rtg-duel-continue {
+  background: var(--rtg-match-yellow) !important;
+  color: var(--rtg-match-ink) !important;
+}
+
+@media (max-width:430px) {
+  .rtg-match-polish-v2 .rtg-match-flowbar strong { font-size: .72rem; }
+  .rtg-match-polish-v2 .rtg-match-ticker { margin-top: 8px; }
+  .rtg-match-polish-v2 .rtg-ticker-event { min-height: 39px; grid-template-columns: 37px minmax(0,1fr); }
+  .rtg-match-polish-v2 .rtg-ticker-event em { grid-column: 2; }
+  .rtg-duel-probability-card { min-width: 98px; padding: 6px 7px; }
+  .rtg-duel-probability-card strong { font-size: 1.16rem; }
+  .rtg-duel-odds { grid-template-columns: 72px minmax(0,1fr) 72px; gap: 6px; }
+}

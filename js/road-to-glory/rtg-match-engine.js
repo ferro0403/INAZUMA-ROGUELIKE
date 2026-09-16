@@ -51,7 +51,10 @@
       userSquad,opponentSquad,
       userRosterIds:allPlayers(userSquad).map(playerId),
       moveUsesByPlayerId:initialMoveUses(userSquad,opponentSquad),
-      pendingEncounter:null,recentParticipants:[],log:[],shootout:null,
+      pendingEncounter:null,recentParticipants:[],
+      participantHistoryBySide:{user:[],opponent:[]},
+      participantAppearances:{user:{},opponent:{}},
+      log:[],shootout:null,
     };
   }
   function squadFor(state,side){return side==="user"?state.userSquad:state.opponentSquad;}
@@ -73,13 +76,25 @@
     }
     if(!candidates.length)candidates=lineup.filter(player=>playerRole(player)!=="GK");
     if(!candidates.length)candidates=lineup.slice();
-    const recent=new Set((state.recentParticipants||[]).slice(-4));
-    const entries=candidates.map(player=>{
-      const repeated=recent.has(playerId(player));
+
+    const sideHistory=Array.from(state.participantHistoryBySide?.[side]||[]);
+    const lastId=sideHistory[sideHistory.length-1]||"";
+    const pool=candidates.length>1&&lastId
+      ? candidates.filter(player=>playerId(player)!==lastId)
+      : candidates;
+    const appearances=state.participantAppearances?.[side]||{};
+    const entries=pool.map(player=>{
+      const pid=playerId(player);
       const strength=Math.max(1,global.RoadToGloryEncounterRuntime.specificAverage(player,kind));
-      return {player,weight:strength*(repeated?0.25:1)};
+      const strengthWeight=0.8+Math.min(120,strength)/300;
+      const count=Math.max(0,Number(appearances[pid]||0));
+      const previousIndex=sideHistory.lastIndexOf(pid);
+      const distance=previousIndex<0?99:sideHistory.length-previousIndex;
+      const recencyWeight=distance<=2?0.28:distance===3?0.58:1;
+      const usageWeight=1/(1+(count*0.32));
+      return {player,weight:Math.max(0.01,strengthWeight*recencyWeight*usageWeight)};
     });
-    return global.RoadToGloryRng.weightedPick(entries,e=>e.weight,global.RoadToGloryRng.float(state.seed,stream,state.actionIndex+state.extraActionIndex))?.player||candidates[0]||null;
+    return global.RoadToGloryRng.weightedPick(entries,e=>e.weight,global.RoadToGloryRng.float(state.seed,stream,state.actionIndex+state.extraActionIndex))?.player||pool[0]||candidates[0]||null;
   }
   function encounterKinds(zone){
     if(zone==="shot")return{actorKind:"shot",opponentKind:"save",kind:"shot"};
@@ -135,23 +150,39 @@
     const roll=global.RoadToGloryRng.float(state.seed,`encounter-result:${pending.encounterId}`,0);
     const actorWon=roll<calc.probability/100;
     const zone=state.fieldZone;
+    const kind=String(pending.kind||(
+      zone==="shot"?"shot":zone==="attack"?"dribble":"midfield"
+    ));
+    const scoreBefore={...state.score};
+    let goalSide=null;
     if(actorWon){
-      if(zone==="midfield")state.fieldZone="attack";
-      else if(zone==="attack")state.fieldZone="shot";
-      else{
+      if(kind==="midfield")state.fieldZone="attack";
+      else if(kind==="dribble")state.fieldZone="shot";
+      else if(kind==="shot"){
         state.score[pending.actorSide]=(Number(state.score[pending.actorSide])||0)+1;
+        goalSide=pending.actorSide;
         state.possession=pending.opponentSide;state.fieldZone="midfield";
+      }else{
+        state.possession=pending.actorSide;
       }
     }else{
       state.possession=pending.opponentSide;state.fieldZone="midfield";
     }
+
+    state.participantHistoryBySide=state.participantHistoryBySide||{user:[],opponent:[]};
+    state.participantAppearances=state.participantAppearances||{user:{},opponent:{}};
+    for(const [side,pid] of [[pending.actorSide,pending.actorPlayerId],[pending.opponentSide,pending.opponentPlayerId]]){
+      state.participantHistoryBySide[side]=[...(state.participantHistoryBySide[side]||[]),id(pid)].slice(-6);
+      state.participantAppearances[side]=state.participantAppearances[side]||{};
+      state.participantAppearances[side][id(pid)]=Number(state.participantAppearances[side][id(pid)]||0)+1;
+    }
     state.recentParticipants=[...(state.recentParticipants||[]),pending.actorPlayerId,pending.opponentPlayerId].slice(-4);
     state.log.push({
-      encounterId:pending.encounterId,period:state.period,minute:minuteFor(state),zone,
+      encounterId:pending.encounterId,period:state.period,minute:minuteFor(state),zone,kind,
       actorSide:pending.actorSide,actorPlayerId:pending.actorPlayerId,opponentPlayerId:pending.opponentPlayerId,
       actorMove:actorMove?.name||null,opponentMove:opponentMove?.name||null,
-      probability:calc.probability,roll,actorWon,manual,
-      score:{...state.score},
+      probability:calc.probability,roll,actorWon,manual,goalSide,
+      scoreBefore,score:{...state.score},
     });
     if(state.period==="extra_first"||state.period==="extra_second")state.extraActionIndex+=1;
     else state.actionIndex+=1;
@@ -215,7 +246,8 @@
     state.pendingEncounter=null;
     state.manualResolved=(Number(state.manualResolved)||0)+1;
     applyEncounter(state,pending,{actorMove,opponentMove,manual:true});
-    return prepareNext(state);
+    ensureBoundary(state);
+    return state;
   }
   function validateHalftimeRoster(state,nextSquad){
     const all=allPlayers(nextSquad).map(playerId);

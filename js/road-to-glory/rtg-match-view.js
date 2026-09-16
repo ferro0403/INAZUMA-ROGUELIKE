@@ -122,9 +122,10 @@
       const actorName = actor?.name || event.actorPlayerId || "Giocatore";
       const opponentName = opponent?.name || event.opponentPlayerId || "Avversario";
       let copy = "";
-      if (event.zone === "shot") {
+      const eventKind = event.kind || (event.zone === "shot" ? "shot" : event.zone === "attack" ? "dribble" : "midfield");
+      if (eventKind === "shot") {
         copy = event.actorWon ? `GOAL! ${actorName}` : `${opponentName} ferma ${actorName}`;
-      } else if (event.zone === "attack") {
+      } else if (eventKind === "dribble") {
         copy = event.actorWon ? `${actorName} supera ${opponentName}` : `${opponentName} recupera palla`;
       } else {
         copy = event.actorWon ? `${actorName} vince il duello a centrocampo` : `${opponentName} conquista il possesso`;
@@ -218,7 +219,7 @@
       const zoneLabel = ({ midfield:"Centrocampo", attack:"Attacco", shot:"Tiro" }[match.fieldZone] || "Centrocampo");
       const minute = currentMinute(match);
       const phaseLabel = match.pendingEncounter ? "Duello" : "In gioco";
-      return `<main class="screen rtg-match-shell boss-match-screen">
+      return `<main class="screen rtg-match-shell rtg-match-polish-v2 boss-match-screen">
         <header class="topbar rtg-match-topbar">
           <div class="rtg-match-period"><strong class="rtg-match-clock" data-rtg-match-minute>${escape(minute)}'</strong><span>${escape(periodLabel(match.period))}</span></div>
           <div class="rtg-match-score-main"><span>Tu</span><strong>${escape(match.score?.user || 0)} - ${escape(match.score?.opponent || 0)}</strong><span title="${escape(opponentName)}">${escape(opponentName)}</span></div>
@@ -249,7 +250,10 @@
       const opponent = preview.opponentPlayer || {};
       const key = `user:${String(pending.userPlayerId || "")}`;
       const uses = Number(match.moveUsesByPlayerId?.[key] || 0);
-      const probability = Number(preview.probability ?? pending.normalPreviewProbability ?? 50);
+      const actorProbability = Number(preview.probability ?? pending.normalPreviewProbability ?? 50);
+      const userIsActor = pending.userSide ? pending.userSide === pending.actorSide : pending.actorSide !== "opponent";
+      const probability = Math.max(0,Math.min(100,userIsActor ? actorProbability : 100-actorProbability));
+      const opponentProbability = Math.max(0,100-probability);
       const userHasPossession = pending.actorSide === "user";
       const opponentName = match.opponentSquad?.name || "CPU";
       const possessionText = userHasPossession ? "TU HAI PALLA" : `${opponentName} HA PALLA`;
@@ -260,7 +264,7 @@
           <strong class="rtg-duel-possession ${possessionClass}">${escape(possessionText)}</strong>
           <span>${escape(currentMinute(match))}' · ${escape(({midfield:"CENTROCAMPO",attack:"ATTACCO",shot:"AREA DI TIRO"}[pending.zone || match.fieldZone] || "AZIONE"))}</span>
         </div>
-        <div class="rtg-duel-head rtg-duel-head--visual"><div><p class="eyebrow">SCONTRO</p><h2 class="rtg-duel-type">${escape(typeLabel)}</h2></div><strong>${escape(probability.toFixed(1))}%</strong></div>
+        <div class="rtg-duel-head rtg-duel-head--visual"><div><p class="eyebrow">SCONTRO</p><h2 class="rtg-duel-type">${escape(typeLabel)}</h2></div><div class="rtg-duel-probability-card"><small>PROBABILITÀ TU</small><strong>${escape(probability.toFixed(1))}%</strong></div></div>
         <div class="rtg-duel-stage">
           <article class="rtg-duel-side rtg-duel-side--user">
             <span class="rtg-duel-side-label">TU</span>
@@ -274,7 +278,11 @@
             <b>SCELTA NASCOSTA</b>
           </article>
         </div>
-        <div class="progress-track rtg-probability" aria-label="Probabilità ${escape(probability.toFixed(1))}%"><span class="progress-bar" style="width:${Math.max(10, Math.min(90, probability))}%"></span></div>
+        <div class="rtg-duel-odds" aria-label="Probabilità del duello">
+          <span class="is-user"><small>PROBABILITÀ TU</small><strong>${escape(probability.toFixed(1))}%</strong></span>
+          <i><b style="width:${escape(probability.toFixed(1))}%"></b></i>
+          <span class="is-opponent"><small>${escape(opponentName)}</small><strong>${escape(opponentProbability.toFixed(1))}%</strong></span>
+        </div>
         <div class="button-row rtg-duel-actions">
           <button type="button" class="btn btn-yellow rtg-action-button" data-rtg-choice="base">${escape(pending.userBaseActionLabel || "Azione")}</button>
           ${pending.userMove && uses > 0 ? `<button type="button" class="btn rtg-action-button rtg-action-button--move" data-rtg-choice="move"><strong>${escape(pending.userMove.name)}</strong><small>${escape(uses)}/2 · Power ${escape(pending.userMove.power || "—")}</small></button>` : ""}
@@ -300,10 +308,11 @@
           </article>
         </div>
         <div class="rtg-duel-summary rtg-duel-result-summary">
-          <div><small>PROBABILITÀ FINALE</small><strong>${escape(Number(resolution.probability || 50).toFixed(1))}%</strong></div>
+          <div><small>PROBABILITÀ FINALE</small><strong>${escape(Number(resolution.probability ?? 50).toFixed(1))}%</strong></div>
           <b>•</b>
-          <div><small>RISULTATO</small><strong>${resolution.userWon ? "TU" : "CPU"}</strong></div>
+          <div><small>PUNTEGGIO</small><strong>${escape(resolution.scoreAfter?.user ?? resolution.scoreBefore?.user ?? 0)} - ${escape(resolution.scoreAfter?.opponent ?? resolution.scoreBefore?.opponent ?? 0)}</strong></div>
         </div>
+        ${resolution.goalSide ? `<div class="rtg-duel-goal-confirm"><strong>GOL CONVALIDATO</strong><span>Il punteggio è stato aggiornato da un duello di tiro.</span></div>` : ""}
         <button type="button" class="btn btn-yellow rtg-duel-continue" data-rtg-duel-continue>Continua</button>
       </section>`;
     }
