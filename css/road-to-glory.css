@@ -4763,3 +4763,274 @@
     font-size:.38rem;
   }
 }
+
+
+/* RTG possession clarity + halftime break + refined abandon/result state. */
+
+/* The duel background itself now communicates who owns the ball. */
+.rtg-match-shell .rtg-match-overlay .rtg-duel-card.is-user-possession{
+  --possession-accent:#2478c5;
+  --possession-soft:#e5f1ff;
+  background:
+    linear-gradient(180deg,#eef7ff 0 118px,#fffdf6 270px)!important;
+  border-color:#174f83!important;
+  box-shadow:8px 9px 0 rgba(23,79,131,.32)!important;
+}
+.rtg-match-shell .rtg-match-overlay .rtg-duel-card.is-opponent-possession{
+  --possession-accent:#c94b52;
+  --possession-soft:#fde8e9;
+  background:
+    linear-gradient(180deg,#fdebed 0 118px,#fffdf6 270px)!important;
+  border-color:#8f353a!important;
+  box-shadow:8px 9px 0 rgba(143,53,58,.30)!important;
+}
+.rtg-duel-card.is-user-possession .rtg-duel-contextbar{
+  margin:-2px -2px 0;
+  padding:9px 10px;
+  border-bottom:3px solid #174f83;
+  background:#dcecff;
+}
+.rtg-duel-card.is-opponent-possession .rtg-duel-contextbar{
+  margin:-2px -2px 0;
+  padding:9px 10px;
+  border-bottom:3px solid #8f353a;
+  background:#f8dadd;
+}
+.rtg-duel-card.is-user-possession .rtg-duel-possession.is-user{
+  background:#2478c5!important;
+  border-color:#174f83!important;
+  color:#fff!important;
+  box-shadow:3px 3px 0 #174f83;
+}
+.rtg-duel-card.is-opponent-possession .rtg-duel-possession.is-opponent{
+  background:#c94b52!important;
+  border-color:#8f353a!important;
+  color:#fff!important;
+  box-shadow:3px 3px 0 #8f353a;
+}
+.rtg-duel-card.is-user-possession .rtg-duel-story--minimal{
+  border-bottom-color:#2478c5!important;
+}
+.rtg-duel-card.is-opponent-possession .rtg-duel-story--minimal{
+  border-bottom-color:#c94b52!important;
+}
+
+/* Probability is shown only where the player actually chooses an action. */
+.rtg-duel-probability-card,
+.rtg-duel-meter-clean{
+  display:none!important;
+}
+.rtg-duel-story--minimal{
+  min-height:64px;
+  display:flex!important;
+  align-items:center;
+  justify-content:flex-start!important;
+  padding-right:8px!important;
+}
+.rtg-duel-story--minimal>div:first-child{
+  width:100%;
+}
+.rtg-duel-choice-section{
+  margin-top:12px!important;
+}
+
+/* Result: keep identity readable, dim only the losing player, not the whole card. */
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser{
+  opacity:1!important;
+  filter:none!important;
+  transform:scale(.985)!important;
+  outline:0!important;
+  box-shadow:
+    inset 0 6px 0 var(--duel-rarity-accent,#9aa7b8),
+    3px 4px 0 rgba(17,18,22,.18)!important;
+}
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser::after{
+  content:"";
+  position:absolute;
+  z-index:3;
+  inset:34px 0 63px;
+  pointer-events:none;
+  background:rgba(17,18,22,.42);
+}
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser .rtg-duel-render{
+  filter:grayscale(.82) saturate(.35) brightness(.70)!important;
+}
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser .rtg-duel-player-copy{
+  position:relative;
+  z-index:4;
+  opacity:.72;
+}
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser .rtg-duel-panel-tag{
+  position:relative;
+  z-index:5;
+  opacity:.72;
+}
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-winner{
+  outline:4px solid #ffd21f!important;
+  outline-offset:3px!important;
+  box-shadow:
+    inset 0 7px 0 var(--duel-rarity-accent,#ffd21f),
+    6px 7px 0 rgba(17,18,22,.30),
+    0 0 0 2px rgba(255,210,31,.25)!important;
+  transform:scale(1.018)!important;
+}
+.rtg-duel-winner-mark{
+  top:48px!important;
+  right:8px!important;
+  padding:4px 8px!important;
+  background:#ffd21f!important;
+  font-size:.41rem!important;
+  box-shadow:3px 3px 0 #111216!important;
+}
+
+/* Halftime must feel like a match state change, not just another editor. */
+.rtg-halftime-break-banner{
+  position:relative;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  grid-template-rows:auto auto;
+  align-items:center;
+  gap:1px 12px;
+  margin:-2px -2px 12px;
+  padding:14px 16px 13px;
+  overflow:hidden;
+  border:3px solid #111216;
+  background:#111216;
+  color:#fff;
+  box-shadow:5px 6px 0 rgba(17,18,22,.22);
+}
+.rtg-halftime-break-banner::after{
+  content:"45";
+  position:absolute;
+  right:-4px;
+  bottom:-28px;
+  color:rgba(255,210,31,.13);
+  font-size:6rem;
+  font-weight:1000;
+  line-height:1;
+  transform:skewX(-8deg);
+}
+.rtg-halftime-break-banner>span{
+  grid-column:1/-1;
+  color:#ffd21f;
+  font-size:.52rem;
+  font-weight:1000;
+  letter-spacing:.14em;
+}
+.rtg-halftime-break-banner>strong{
+  position:relative;
+  z-index:1;
+  font-size:1.65rem;
+  font-style:italic;
+  line-height:.95;
+  letter-spacing:-.03em;
+}
+.rtg-halftime-break-banner>em{
+  position:relative;
+  z-index:1;
+  color:#e8e2d8;
+  font-size:.57rem;
+  font-style:normal;
+  font-weight:800;
+}
+.rtg-halftime-scoreboard{
+  border-top:5px solid #ffd21f!important;
+}
+.rtg-halftime-minute span{
+  color:#8b6814!important;
+  font-weight:1000!important;
+}
+.rtg-half-confirm{
+  min-height:64px!important;
+  border:3px solid #111216!important;
+  box-shadow:5px 6px 0 #111216!important;
+}
+
+/* Abandon is compact, deliberate and visually separate from the score. */
+.rtg-match-scoreboard .rtg-abandon-button{
+  position:relative;
+  min-height:54px!important;
+  margin:12px 8px!important;
+  padding:7px 7px!important;
+  gap:5px!important;
+  overflow:hidden;
+  border:3px solid #111216!important;
+  border-radius:0!important;
+  background:#b9474c!important;
+  color:#fff!important;
+  box-shadow:4px 5px 0 #111216!important;
+  clip-path:polygon(0 0,calc(100% - 10px) 0,100% 10px,100% 100%,0 100%)!important;
+}
+.rtg-match-scoreboard .rtg-abandon-button::after{
+  content:"";
+  position:absolute;
+  top:0;
+  right:0;
+  width:11px;
+  height:11px;
+  background:#ffd21f;
+  border-left:2px solid #111216;
+  border-bottom:2px solid #111216;
+}
+.rtg-match-scoreboard .rtg-abandon-button span{
+  width:20px!important;
+  height:20px!important;
+  border:2px solid #fff!important;
+  border-radius:0!important;
+  background:#8f353a;
+  font-size:.78rem!important;
+}
+.rtg-match-scoreboard .rtg-abandon-button b{
+  color:#fff!important;
+  font-size:.50rem!important;
+  letter-spacing:.06em!important;
+  line-height:1!important;
+}
+.rtg-match-scoreboard .rtg-abandon-button:hover{
+  background:#a53e44!important;
+}
+.rtg-match-scoreboard .rtg-abandon-button:active{
+  transform:translate(2px,2px);
+  box-shadow:2px 3px 0 #111216!important;
+}
+
+@media(max-width:430px){
+  .rtg-duel-card.is-user-possession .rtg-duel-contextbar,
+  .rtg-duel-card.is-opponent-possession .rtg-duel-contextbar{
+    padding:8px 8px;
+  }
+  .rtg-duel-story--minimal{
+    min-height:58px;
+  }
+  .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser::after{
+    inset:32px 0 60px;
+  }
+  .rtg-duel-winner-mark{
+    top:43px!important;
+    right:6px!important;
+  }
+  .rtg-halftime-break-banner{
+    margin-bottom:10px;
+    padding:12px 12px 11px;
+  }
+  .rtg-halftime-break-banner>strong{
+    font-size:1.4rem;
+  }
+  .rtg-halftime-break-banner>em{
+    font-size:.51rem;
+  }
+  .rtg-match-scoreboard .rtg-abandon-button{
+    min-height:48px!important;
+    margin:10px 5px!important;
+    padding:6px 4px!important;
+    gap:3px!important;
+  }
+  .rtg-match-scoreboard .rtg-abandon-button span{
+    width:17px!important;
+    height:17px!important;
+    font-size:.68rem!important;
+  }
+  .rtg-match-scoreboard .rtg-abandon-button b{
+    font-size:.43rem!important;
+  }
+}

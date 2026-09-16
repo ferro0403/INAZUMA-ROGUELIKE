@@ -534,7 +534,6 @@
       const baseProbability = previewProbability(pending,user,opponent,"base");
       const moveProbability = pending.userMove && uses > 0 ? previewProbability(pending,user,opponent,"move") : null;
       const selectedProbability = selectedChoice === "move" && moveProbability != null ? moveProbability : baseProbability;
-      const opponentProbability = Math.max(0,100-selectedProbability);
       const moveDelta = moveProbability == null ? 0 : moveProbability-baseProbability;
       const userHasPossession = pending.actorSide === "user";
       const opponentName = match.opponentSquad?.name || "CPU";
@@ -560,14 +559,13 @@
           ${selected?'<span class="rtg-choice-confirm">TOCCA DI NUOVO PER CONFERMARE</span>':""}
         </button>`;
       };
-      return `<section class="panel rtg-duel-card rtg-duel-card--revolution rtg-duel-card--clean rtg-paper-modal ${userMoveSelected ? "is-user-move-preview" : ""}">
+      return `<section class="panel rtg-duel-card rtg-duel-card--revolution rtg-duel-card--clean rtg-paper-modal ${userHasPossession ? "is-user-possession" : "is-opponent-possession"} ${userMoveSelected ? "is-user-move-preview" : ""}">
         <div class="rtg-duel-contextbar">
           <strong class="rtg-duel-possession ${possessionClass}">${escape(possessionText)}</strong>
           <span>${escape(currentMinute(match))}' · ${escape(({midfield:"CENTROCAMPO",attack:"TRE QUARTI",shot:"ZONA TIRO"}[pending.zone || match.fieldZone] || "AZIONE"))}</span>
         </div>
         <header class="rtg-duel-story rtg-duel-story--clean rtg-duel-story--minimal">
           <div><p class="eyebrow">SCONTRO</p><h2>${escape(duelTypeLabel(pending))}</h2></div>
-          <div class="rtg-duel-probability-card"><small>${selectedChoice?"SE CONFERMI":"TUA PROBABILITÀ"}</small><strong>${escape(selectedProbability.toFixed(1))}%</strong></div>
         </header>
         <div class="rtg-duel-versus-board">
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userMoveSelected ? "has-special-move" : ""}">
@@ -580,9 +578,6 @@
             <div class="rtg-duel-panel-heading"><span class="rtg-duel-panel-tag">${escape(opponentName)}</span><span class="rtg-duel-action-chip">${escape(opponentActionShort)}</span></div>
             ${duelVisualMarkup(opponent,"opponent",`data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"`)}
           </article>
-        </div>
-        <div class="rtg-duel-meter-clean" aria-label="Probabilità del duello">
-          <span>${escape(selectedProbability.toFixed(1))}%</span><i><b style="width:${escape(selectedProbability.toFixed(1))}%"></b></i><span>${escape(opponentProbability.toFixed(1))}%</span>
         </div>
         <section class="rtg-duel-choice-section">
           <div class="rtg-duel-choice-head"><strong>SCEGLI L'AZIONE</strong><span>1° tocco: anteprima · 2° tocco: conferma</span></div>
@@ -656,14 +651,14 @@
             <span class="rtg-duel-panel-tag">TU</span>
             ${resolution.userWon ? '<span class="rtg-duel-winner-mark">VINCITORE</span>' : ""}
             ${duelVisualMarkup(user,"user",pid(user) ? `data-rtg-duel-player="${escape(pid(user))}" data-side="user"` : "")}
-            ${userWinningMove ? `<div class="rtg-duel-result-move ${escape(userMoveCategory)}"><small>⚡ MOSSA</small><strong>${escape(userAction)}</strong><em>POWER ${escape(resolution.userMovePower ?? "—")}</em></div>` : `<strong class="rtg-duel-result-action">${escape(userBaseAction)}</strong>`}
+            ${userWinningMove ? `<div class="rtg-duel-result-move ${escape(userMoveCategory)}"><small>⚡ MOSSA</small><strong>${escape(userAction)}</strong><em>POWER ${escape(resolution.userMovePower ?? "—")}</em></div>` : resolution.userWon ? `<strong class="rtg-duel-result-action">${escape(userBaseAction)}</strong>` : ""}
           </article>
           <div class="rtg-duel-vs-core rtg-duel-result-vs" aria-hidden="true"><small>ESITO</small><span>VS</span></div>
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--opponent rtg-duel-result-player ${escape(opponentRarityClass)} ${resolution.userWon ? "is-duel-loser" : "is-duel-winner"}">
             <span class="rtg-duel-panel-tag">${escape(opponentLabel)}</span>
             ${resolution.userWon ? "" : '<span class="rtg-duel-winner-mark">VINCITORE</span>'}
             ${duelVisualMarkup(opponent,"opponent",pid(opponent) ? `data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"` : "")}
-            ${aiWinningMove ? `<div class="rtg-duel-result-move rtg-duel-result-move--opponent ${escape(aiMoveCategory)}"><small>⚡ MOSSA</small><strong>${escape(opponentAction)}</strong><em>POWER ${escape(resolution.aiMovePower ?? "—")}</em></div>` : `<strong class="rtg-duel-result-action">${escape(opponentBaseAction)}</strong>`}
+            ${aiWinningMove ? `<div class="rtg-duel-result-move rtg-duel-result-move--opponent ${escape(aiMoveCategory)}"><small>⚡ MOSSA</small><strong>${escape(opponentAction)}</strong><em>POWER ${escape(resolution.aiMovePower ?? "—")}</em></div>` : !resolution.userWon ? `<strong class="rtg-duel-result-action">${escape(opponentBaseAction)}</strong>` : ""}
           </article>
         </div>
         <div class="rtg-duel-result-meter" aria-label="Probabilità finale del duello">
@@ -700,8 +695,13 @@
         </div>
       </div>`;
       return `<section class="panel rtg-halftime rtg-halftime-revolution rtg-paper-modal development-squad-card-scope">
+        <div class="rtg-halftime-break-banner">
+          <span>45:00 · FINE PRIMO TEMPO</span>
+          <strong>INTERVALLO</strong>
+          <em>Controlla la formazione prima della ripresa</em>
+        </div>
         <header class="rtg-halftime-scoreboard">
-          <div class="rtg-halftime-minute"><strong>45'</strong><span>INTERVALLO</span></div>
+          <div class="rtg-halftime-minute"><strong>45'</strong><span>FINE 1° TEMPO</span></div>
           <div class="rtg-halftime-score"><small>${escape(userName)}</small><strong>${escape(scoreUser)} - ${escape(scoreOpponent)}</strong><small>${escape(match.opponentSquad?.name || "AVVERSARIO")}</small></div>
           <div class="rtg-halftime-shape"><small>MODULO</small><strong>${escape(model.formationId || "—")}</strong></div>
         </header>
