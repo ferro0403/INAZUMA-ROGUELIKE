@@ -117,7 +117,8 @@
       kind,actorKind,opponentKind,actorSide,opponentSide,
       actorPlayerId:playerId(actor),opponentPlayerId:playerId(opponent),
       normalPreviewProbability:preview.probability,
-      userSide,userPlayerId:playerId(userPlayer),userKind,userBaseActionLabel:actionLabel(userKind),
+      userSide,userPlayerId:playerId(userPlayer),userKind,
+      userBaseActionLabel:userKind==="midfield"?(userIsActor?"Dribbling":"Difesa"):actionLabel(userKind),
       userMove:userMove?clone(userMove):null,
       aiSide,aiPlayerId:playerId(aiPlayer),aiKind,aiChoice,
       aiMove:aiChoice==="move"&&aiMove?clone(aiMove):null,
@@ -238,6 +239,10 @@
   function resolvePenaltyKick(inputState,input={}){
     const state=clone(inputState);
     if(state.status!=="penalties"||!state.shootout)throw Object.assign(new Error("RTG penalties unavailable"),{code:"rtg-match-penalties-unavailable"});
+    const attackingSide=String(input.attackingSide||"");
+    const defendingSide=otherSide(attackingSide);
+    if(input.shooterMove)consumeMove(state,attackingSide,input.shooterPlayerId,input.shooterMove);
+    if(input.goalkeeperMove)consumeMove(state,defendingSide,input.goalkeeperPlayerId,input.goalkeeperMove);
     const result=global.RoadToGloryPenaltyRuntime.resolveKick(state.shootout,input);
     state.shootout=result.state;
     if(result.state.status==="completed"){
