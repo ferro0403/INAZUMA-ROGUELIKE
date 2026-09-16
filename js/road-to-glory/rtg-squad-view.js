@@ -11,8 +11,8 @@
     const playerIdOf = (player) => String(player?.playerId || player?.id || "");
 
     function sourceBadge(source) {
-      const label = source === "RTG" ? "RTG" : "SVINCOLATO";
-      return `<span class="rtg-source-badge rtg-source-badge--${source === "RTG" ? "rtg" : "free"}">${label}</span>`;
+      if (source !== "RTG") return "";
+      return '<span class="rtg-source-badge rtg-source-badge--rtg">RTG</span>';
     }
 
     function fallbackPlayerCard(player, source, attrs = "") {
@@ -32,26 +32,36 @@
       const player = entry?.player || {};
       const playerId = String(entry?.playerId || playerIdOf(player));
       const role = roleOf(player);
+      const isPicker = area === "picker";
       const attrs = [
         `data-rtg-squad-player="${escape(playerId)}"`,
         `data-area="${escape(area)}"`,
         `data-role="${escape(role)}"`,
         `data-source="${escape(entry?.source || "")}"`,
+        !isPicker ? `data-rtg-player-detail="${escape(playerId)}"` : "",
         area === "lineup" ? `data-rtg-lineup-player="${escape(playerId)}"` : "",
         area === "bench" ? `data-rtg-bench-player="${escape(playerId)}"` : "",
-        area === "picker" ? `data-rtg-picker-player="${escape(playerId)}"` : "",
+        isPicker ? `data-rtg-picker-player="${escape(playerId)}"` : "",
       ].filter(Boolean).join(" ");
-
-      if (compactPlayerCardMarkup) {
-        return compactPlayerCardMarkup(player, {
-          level: 20,
-          overall: player?.overall ?? player?.finalOverall,
-          dataAttr: attrs,
-          extraClass: "squad-player-card rtg-squad-player-card",
-          trailingMarkup: sourceBadge(entry?.source),
-        });
-      }
-      return fallbackPlayerCard(player, entry?.source, attrs);
+      const extraClass = [
+        "squad-player-card",
+        "rtg-squad-player-card",
+        isPicker ? "rtg-prematch-player-card rtg-picker-player-card" : "",
+      ].filter(Boolean).join(" ");
+      const cardMarkup = compactPlayerCardMarkup
+        ? compactPlayerCardMarkup(player, {
+            level: 20,
+            overall: player?.overall ?? player?.finalOverall,
+            dataAttr: attrs,
+            extraClass,
+            trailingMarkup: isPicker ? "" : sourceBadge(entry?.source),
+          })
+        : fallbackPlayerCard(player, isPicker ? "" : entry?.source, attrs);
+      if (isPicker) return cardMarkup;
+      return `<div class="rtg-squad-card-slot" data-rtg-card-slot="${escape(playerId)}">
+        ${cardMarkup}
+        <button type="button" class="rtg-squad-change-trigger" data-rtg-change-player="${escape(playerId)}" aria-label="Cambia ${escape(player?.name || playerId)}">↔</button>
+      </div>`;
     }
 
     function formationRows(formation, lineupEntries) {
@@ -161,10 +171,10 @@
         </header>
 
         <div class="content squad-content rtg-squad-content">
-          <div class="squad-command-deck is-valid is-roster-complete">
+          <div class="squad-command-deck is-valid is-roster-complete rtg-roster-summary">
             <span class="squad-readiness-mark" aria-hidden="true">✓</span>
-            <div><small>Road to Glory</small><strong>Formazione RTG</strong><em data-rtg-draft-status>Tocca un giocatore per cambiarlo</em></div>
-            <span class="squad-command-count"><b>11/11 titolari</b><b>4/4 riserve · ${escape(model.availableCount || 0)} disponibili</b></span>
+            <div><small>Rosa RTG</small><strong>15 giocatori attivi</strong></div>
+            <span class="squad-command-count"><b>${escape(model.availableCount || 0)} disponibili</b></span>
           </div>
 
           <div class="squad-workspace">
@@ -181,14 +191,12 @@
                   <div><small>Modulo corrente</small><strong>${escape(model.formation?.name || model.formation?.formation || model.formationId || "—")}</strong></div>
                   ${formationPreviewMarkup(model.formation || {})}
                 </div>
-                <div class="rtg-module-copy"><strong>Assetto RTG</strong><p>Tocca una card: si apre solo il suo ruolo. Nessuna lista da 1500 giocatori viene caricata nella schermata.</p></div>
               </section>
               <div class="squad-management-actions rtg-squad-actions rtg-squad-actions--three">
                 <button type="button" class="btn btn-yellow rtg-adapt-button" data-rtg-adapt-requirements>Adatta ai requisiti</button>
                 <button type="button" class="btn squad-module-button" data-rtg-open-formation>Modifica modulo</button>
                 <button type="button" class="btn squad-info-button" data-rtg-save-squad>Salva squadra</button>
               </div>
-              <p class="squad-selection-hint" data-rtg-selection-hint>Tocca un giocatore per aprire i cambi compatibili</p>
               <section class="squad-bench-panel">
                 <div class="squad-panel-head"><div><p class="eyebrow">Panchina</p><h2>Riserve</h2></div><span class="squad-bench-count">4/4</span></div>
                 <div class="bench-list squad-bench-list rtg-bench-list">${bench.map((entry) => playerCard(entry, "bench")).join("")}</div>
@@ -204,9 +212,17 @@
     }
 
     function bind(root, actions = {}) {
-      root?.querySelectorAll?.("[data-rtg-squad-player]")?.forEach((button) => {
+      root?.querySelectorAll?.("[data-rtg-player-detail]")?.forEach((button) => {
         button.addEventListener("click", () => {
-          const playerId = String(button.dataset.rtgSquadPlayer || "");
+          const playerId = String(button.dataset.rtgPlayerDetail || "");
+          if (playerId) actions.onOpenDetails?.(playerId);
+        });
+      });
+      root?.querySelectorAll?.("[data-rtg-change-player]")?.forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event?.preventDefault?.();
+          event?.stopPropagation?.();
+          const playerId = String(button.dataset.rtgChangePlayer || "");
           if (playerId) actions.onOpenPlayer?.(playerId);
         });
       });
