@@ -35,6 +35,7 @@
     let selectedEncounterId=null;
     const SQUAD_PICKER_PAGE_SIZE=24;
     const ENCOUNTER_REVEAL_DELAY_MS=2200;
+    const DUEL_RESULT_REVEAL_DELAY_MS=1150;
     const schedule=deps.setTimeout||global.setTimeout;
     const cancelSchedule=deps.clearTimeout||global.clearTimeout;
 
@@ -781,7 +782,7 @@
               :before.userKind==="dribble"
                 ?(userWon?"Dribbling riuscito":"Palla persa")
                 :(userWon?"Duello a centrocampo vinto":"Duello a centrocampo perso");
-        if(overlay)overlay.innerHTML=matchView.resolvedEncounterMarkup({
+        const presentation={
           userWon,probability:userProbability,outcomeLabel,userKind:before.userKind,
           userPlayerName:userPlayer?.name||before.userPlayerId,
           aiPlayerName:aiPlayer?.name||before.aiPlayerId,
@@ -796,12 +797,23 @@
           aiMovePower:before.aiChoice==="move" ? (before.aiMove?.power ?? null) : null,
           scoreBefore,scoreAfter:clone(resolvedMatch.score||scoreBefore),
           goalSide:log.goalSide||null,
-        });
-        overlay?.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>continueEncounterFlow());
+        };
+        const revealResult=()=>{
+          matchFlowTimer=null;
+          const live=campaign?.activeMatch;
+          if(!overlay||!live||id(live.matchId)!==id(resolvedMatch.matchId))return;
+          overlay.innerHTML=matchView.resolvedEncounterMarkup(presentation);
+          overlay?.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>continueEncounterFlow());
+        };
+        if(overlay&&typeof matchView.resolvingEncounterMarkup==="function"&&typeof schedule==="function"){
+          overlay.innerHTML=matchView.resolvingEncounterMarkup(presentation);
+          matchFlowTimer=schedule(revealResult,DUEL_RESULT_REVEAL_DELAY_MS);
+        }else revealResult();
         return resolvedMatch;
       }
       return continueEncounterFlow();
     }
+
     function bindHalftimeEditor(match,selectedPlayerId=null){
       const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
       const repaint=(nextSelected=null)=>{

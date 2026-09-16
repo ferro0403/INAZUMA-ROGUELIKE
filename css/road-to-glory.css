@@ -3857,3 +3857,156 @@
   .rtg-duel-active-move,.rtg-duel-result-move {grid-template-columns:1fr auto;margin-inline:4px;width:calc(100% - 8px);}
   .rtg-duel-active-move small,.rtg-duel-result-move small {grid-column:1/-1;}
 }
+
+
+/* RTG duel clarity + suspense. Outcome logic is unchanged; only reveal timing/presentation changes. */
+.rtg-duel-story .eyebrow{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:4px;
+  line-height:1.15;
+}
+.rtg-match-event-feed .match-sim-log>li.uses-special-move{
+  border-width:3px;
+  box-shadow:4px 5px 0 rgba(17,18,22,.22),inset 0 4px 0 var(--rtg-yellow,#ffd21f);
+}
+.rtg-match-event-feed .match-sim-log>li.uses-special-move .match-event-copy{
+  font-weight:900;
+}
+.rtg-match-event-feed .match-sim-log>li.uses-special-move .match-move-name{
+  display:inline;
+  padding:1px 4px;
+  background:var(--rtg-yellow,#ffd21f);
+  color:#111216;
+  box-decoration-break:clone;
+  -webkit-box-decoration-break:clone;
+}
+
+.rtg-duel-resolving{
+  width:min(94vw,620px)!important;
+  padding:14px!important;
+  overflow:hidden;
+  border-radius:4px!important;
+}
+.rtg-duel-resolving-head{
+  display:grid;
+  gap:2px;
+  margin:-14px -14px 10px;
+  padding:12px 14px;
+  border-bottom:3px solid #111216;
+  background:#111216;
+  color:#fff;
+  text-align:center;
+}
+.rtg-duel-resolving-head small{
+  color:var(--rtg-yellow,#ffd21f);
+  font-size:.5rem;
+  font-weight:1000;
+  letter-spacing:.14em;
+}
+.rtg-duel-resolving-head strong{
+  font-size:1.22rem;
+  font-style:italic;
+  letter-spacing:-.02em;
+}
+.rtg-duel-versus-board--resolving{
+  margin:0;
+}
+.rtg-duel-versus-board--resolving .rtg-duel-result-player{
+  grid-template-rows:auto 158px auto;
+}
+.rtg-duel-versus-board--resolving .rtg-duel-render{
+  height:158px;
+}
+.rtg-duel-resolving-action{
+  z-index:2;
+  width:calc(100% - 10px);
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:4px;
+  margin:0 5px 4px;
+  padding:5px 6px;
+  border:2px solid #111216;
+  background:#fff;
+  box-shadow:2px 3px 0 rgba(17,18,22,.25);
+}
+.rtg-duel-resolving-action.is-move{
+  background:var(--rtg-yellow,#ffd21f);
+  box-shadow:2px 3px 0 #111216;
+}
+.rtg-duel-resolving-action small{
+  font-size:.4rem;
+  font-weight:1000;
+  letter-spacing:.05em;
+}
+.rtg-duel-resolving-action strong{
+  min-width:0;
+  overflow:hidden;
+  font-size:.58rem;
+  line-height:1;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.rtg-duel-resolving-action em{
+  grid-column:1/-1;
+  font-size:.39rem;
+  font-style:normal;
+  font-weight:1000;
+  text-align:center;
+}
+.rtg-duel-vs-core--resolving span{
+  animation:rtg-duel-vs-pulse .42s ease-in-out infinite alternate;
+}
+.rtg-duel-vs-core--resolving>i{
+  width:4px;
+  height:42px;
+  background:var(--rtg-yellow,#ffd21f);
+  opacity:.75;
+}
+.rtg-duel-resolving-footer{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  margin-top:10px;
+  padding:9px 10px;
+  border:2px solid #111216;
+  background:#fff7d3;
+  color:#111216;
+  font-size:.55rem;
+  font-weight:1000;
+  letter-spacing:.09em;
+}
+.rtg-duel-resolving-footer>b{
+  display:flex;
+  gap:4px;
+}
+.rtg-duel-resolving-footer>b>i{
+  width:6px;
+  height:6px;
+  border-radius:50%;
+  background:#111216;
+  animation:rtg-duel-dot .75s ease-in-out infinite;
+}
+.rtg-duel-resolving-footer>b>i:nth-child(2){animation-delay:.14s}
+.rtg-duel-resolving-footer>b>i:nth-child(3){animation-delay:.28s}
+.rtg-duel-result.has-special-move .rtg-duel-result-banner strong{
+  font-size:clamp(1rem,4.6vw,1.38rem);
+  line-height:1;
+}
+@keyframes rtg-duel-vs-pulse{
+  from{transform:scale(.94);box-shadow:0 0 0 0 rgba(255,210,31,.15)}
+  to{transform:scale(1.06);box-shadow:0 0 0 8px rgba(255,210,31,.12)}
+}
+@keyframes rtg-duel-dot{
+  0%,100%{transform:translateY(0);opacity:.35}
+  50%{transform:translateY(-3px);opacity:1}
+}
+@media(max-width:430px){
+  .rtg-duel-versus-board--resolving .rtg-duel-result-player{grid-template-rows:auto 142px auto}
+  .rtg-duel-versus-board--resolving .rtg-duel-render{height:142px}
+  .rtg-duel-resolving-action{grid-template-columns:1fr}
+  .rtg-duel-resolving-action small,.rtg-duel-resolving-action em{text-align:center}
+}

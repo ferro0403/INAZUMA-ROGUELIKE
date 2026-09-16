@@ -149,17 +149,26 @@
       const kind = event.kind || (event.zone === "shot" ? "shot" : event.zone === "attack" ? "dribble" : "midfield");
       const winnerSide = event.actorWon ? actorSide : opponentSide;
       const focusPlayer = event.actorWon ? actor : opponent;
-      let type = "build_up", copy = "";
+      let type = "build_up", baseCopy = "";
       if (kind === "shot") {
         type = event.actorWon ? "goal" : "save";
-        copy = event.actorWon ? `GOL! ${actorName} segna.` : `${opponentName} ferma il tiro di ${actorName}.`;
+        baseCopy = event.actorWon ? `GOL! ${actorName} segna.` : `${opponentName} ferma il tiro di ${actorName}.`;
       } else if (kind === "dribble") {
         type = event.actorWon ? "dribble" : "defensive_stop";
-        copy = event.actorWon ? `${actorName} supera ${opponentName}.` : `${opponentName} ferma ${actorName} e recupera palla.`;
+        baseCopy = event.actorWon ? `${actorName} supera ${opponentName}.` : `${opponentName} ferma ${actorName} e recupera palla.`;
       } else {
         type = event.actorWon ? "build_up" : "recovery";
-        copy = event.actorWon ? `${actorName} vince il duello a centrocampo.` : `${opponentName} conquista il possesso.`;
+        baseCopy = event.actorWon ? `${actorName} vince il duello a centrocampo.` : `${opponentName} conquista il possesso.`;
       }
+      const actorActionKind = kind === "shot" ? "shot" : kind === "dribble" ? "dribble" : "midfield";
+      const opponentActionKind = kind === "shot" ? "save" : kind === "dribble" ? "defense" : "midfield";
+      const actorClause = event.actorMove ? moveOutcomeClause(actorName,opponentName,actorActionKind,event.actorMove,!!event.actorWon) : "";
+      const opponentClause = event.opponentMove ? moveOutcomeClause(opponentName,actorName,opponentActionKind,event.opponentMove,!event.actorWon) : "";
+      let copy = baseCopy;
+      if (actorClause && opponentClause) copy = event.actorWon ? `${opponentClause}. ${actorClause}.` : `${actorClause}. ${opponentClause}.`;
+      else if (actorClause) copy = event.actorWon ? `${actorClause}.` : `${actorClause}. ${baseCopy}`;
+      else if (opponentClause) copy = event.actorWon ? `${opponentClause}. ${baseCopy}` : `${opponentClause}.`;
+
       const moveNames = [event.actorMove,event.opponentMove].filter(Boolean);
       const moveName = moveNames[0] || null;
       const presented = {
@@ -177,10 +186,7 @@
       const kindLabel = ({goal:"Gol",save:"Parata",dribble:"Dribbling",defensive_stop:"Difesa",recovery:"Recupero",build_up:"Duello"}[type] || "Azione");
       const content = global.MovePresentationRuntime?.eventContentMarkup?.(presented, escape)
         || `<span class="match-event-kind">${escape(kindLabel)}</span><span class="match-event-copy">${escape(copy)}</span>`;
-      const moveNotice = moveNames.length
-        ? `<span class="rtg-match-event-move"><b>⚡ ${moveNames.length > 1 ? "MOSSE" : "MOSSA"}</b><span>${moveNames.map((name)=>escape(name)).join(" · ")}</span></span>`
-        : "";
-      return `<li class="match-event--${escape(winnerSide)} match-event-type--${escape(type)} ${moveNames.length ? "uses-special-move" : ""} ${isLatest ? "is-latest" : ""} ${event.manual ? "is-manual" : "is-auto"}"><span>${escape(event.minute ?? "—")}'</span><b class="match-event-marker">${marker}</b><p>${content}${moveNotice}</p></li>`;
+      return `<li class="match-event--${escape(winnerSide)} match-event-type--${escape(type)} ${moveNames.length ? "uses-special-move" : ""} ${isLatest ? "is-latest" : ""} ${event.manual ? "is-manual" : "is-auto"}"><span>${escape(event.minute ?? "—")}'</span><b class="match-event-marker">${marker}</b><p>${content}</p></li>`;
     }
 
     function tickerMarkup(match = {}) {
@@ -388,6 +394,31 @@
       return resolution.userWon ? `${userName} conquista il possesso` : `${opponentName} conquista il possesso`;
     }
 
+    function moveOutcomeClause(name, opponentName, kind, moveName, won) {
+      const move = String(moveName || "la mossa");
+      const action = String(kind || "").toLowerCase();
+      if (action === "shot") return won ? `${name} segna con ${move}` : `${name} non riesce a segnare con ${move}`;
+      if (action === "save") return won ? `${name} para con ${move}` : `${name} non riesce a parare con ${move}`;
+      if (action === "dribble") return won ? `${name} supera ${opponentName} con ${move}` : `${name} non supera ${opponentName} con ${move}`;
+      if (action === "defense") return won ? `${name} ferma ${opponentName} con ${move}` : `${name} non riesce a fermare ${opponentName} con ${move}`;
+      return won ? `${name} vince il duello a centrocampo con ${move}` : `${name} non vince il duello a centrocampo con ${move}`;
+    }
+
+    function moveAwareResultHeadline(resolution = {}, user = {}, opponent = {}) {
+      const base = resultHeadline(resolution,user,opponent);
+      const userName = user?.name || resolution.userPlayerName || "Il tuo giocatore";
+      const opponentName = opponent?.name || resolution.aiPlayerName || "L'avversario";
+      const userWon = !!resolution.userWon;
+      const userMove = resolution.userUsedMove ? resolution.userChoiceLabel : null;
+      const aiMove = resolution.aiUsedMove ? resolution.aiChoiceLabel : null;
+      const userClause = userMove ? moveOutcomeClause(userName,opponentName,resolution.userKind,userMove,userWon) : "";
+      const aiClause = aiMove ? moveOutcomeClause(opponentName,userName,resolution.aiKind,aiMove,!userWon) : "";
+      if (userMove && aiMove) return userWon ? `${aiClause}. ${userClause}.` : `${userClause}. ${aiClause}.`;
+      if (userMove) return userWon ? `${userClause}.` : `${userClause}. ${base}.`;
+      if (aiMove) return userWon ? `${aiClause}. ${base}.` : `${aiClause}.`;
+      return base;
+    }
+
     function preMatchMarkup(match = {}) {
       const opponentName = match.opponentSquad?.name || "Avversario";
       const userName = userNameFor(match);
@@ -511,7 +542,7 @@
           <span>${escape(currentMinute(match))}' · ${escape(({midfield:"CENTROCAMPO",attack:"TRE QUARTI",shot:"ZONA TIRO"}[pending.zone || match.fieldZone] || "AZIONE"))}</span>
         </div>
         <header class="rtg-duel-story rtg-duel-story--clean">
-          <div><p class="eyebrow">SCONTRO</p><h2>${escape(callout.user)}</h2><p>${escape(callout.opponent)}</p></div>
+          <div><p class="eyebrow">SCONTRO · ${escape(duelTypeLabel(pending))}</p><h2>${escape(callout.user)}</h2><p>${escape(callout.opponent)}</p></div>
           <div class="rtg-duel-probability-card"><small>${selectedChoice?"SE CONFERMI":"PROBABILITÀ BASE"}</small><strong>${escape(selectedProbability.toFixed(1))}%</strong><em>${escape(selectedLabel)}</em></div>
         </header>
         <div class="rtg-duel-versus-board">
@@ -541,10 +572,37 @@
       </section>`;
     }
 
+    function resolvingEncounterMarkup(resolution = {}) {
+      const user = resolution.userPlayer || { name: resolution.userPlayerName || "La tua squadra", overall:"—" };
+      const opponent = resolution.opponentPlayer || { name: resolution.aiPlayerName || "Avversario", overall:"—" };
+      const opponentLabel = resolution.opponentLabel || "AVVERSARIO";
+      const userAction = resolution.userChoiceLabel || baseResultActionLabel(resolution.userKind,resolution.actorSide==="user");
+      const aiAction = resolution.aiChoiceLabel || baseResultActionLabel(resolution.aiKind,resolution.actorSide==="opponent");
+      const userMove = !!resolution.userUsedMove;
+      const aiMove = !!resolution.aiUsedMove;
+      return `<section class="panel rtg-duel-card rtg-duel-resolving rtg-paper-modal development-squad-card-scope">
+        <div class="rtg-duel-resolving-head"><small>SCONTRO IN CORSO</small><strong>CHI AVRÀ LA MEGLIO?</strong></div>
+        <div class="rtg-duel-versus-board rtg-duel-versus-board--resolving">
+          <article class="rtg-duel-portrait-panel rtg-duel-result-player ${userMove?"has-special-move":""}">
+            <span class="rtg-duel-panel-tag">TU</span>
+            ${duelVisualMarkup(user,"user")}
+            <div class="rtg-duel-resolving-action ${userMove?"is-move":""}"><small>${userMove?"⚡ MOSSA":"AZIONE"}</small><strong>${escape(userAction)}</strong>${userMove?`<em>POWER ${escape(resolution.userMovePower ?? "—")}</em>`:""}</div>
+          </article>
+          <div class="rtg-duel-vs-core rtg-duel-vs-core--resolving" aria-hidden="true"><small>RISOLUZIONE</small><span>VS</span><i></i></div>
+          <article class="rtg-duel-portrait-panel rtg-duel-result-player ${aiMove?"has-special-move":""}">
+            <span class="rtg-duel-panel-tag">${escape(opponentLabel)}</span>
+            ${duelVisualMarkup(opponent,"opponent")}
+            <div class="rtg-duel-resolving-action ${aiMove?"is-move":""}"><small>${aiMove?"⚡ MOSSA":"AZIONE"}</small><strong>${escape(aiAction)}</strong>${aiMove?`<em>POWER ${escape(resolution.aiMovePower ?? "—")}</em>`:""}</div>
+          </article>
+        </div>
+        <div class="rtg-duel-resolving-footer"><span>CALCOLO SCONTRO</span><b><i></i><i></i><i></i></b></div>
+      </section>`;
+    }
+
     function resolvedEncounterMarkup(resolution = {}) {
       const user = resolution.userPlayer || { name: resolution.userPlayerName || "La tua squadra", overall: "—" };
       const opponent = resolution.opponentPlayer || { name: resolution.aiPlayerName || "Avversario", overall: "—" };
-      const headline = resultHeadline(resolution,user,opponent);
+      const headline = moveAwareResultHeadline(resolution,user,opponent);
       const resultClass = resolution.userWon ? "is-win" : "is-loss";
       const scoreUser = resolution.scoreAfter?.user ?? resolution.scoreBefore?.user ?? 0;
       const scoreOpponent = resolution.scoreAfter?.opponent ?? resolution.scoreBefore?.opponent ?? 0;
@@ -740,7 +798,7 @@
       root?.querySelector?.("[data-rtg-result-continue]")?.addEventListener("click", () => actions.onContinue?.());
     }
 
-    return Object.freeze({ preMatchMarkup, matchMarkup, encounterMarkup, resolvedEncounterMarkup, halftimeMarkup, penaltyMarkup, resultMarkup, currentMinute, animateClock, bind });
+    return Object.freeze({ preMatchMarkup, matchMarkup, encounterMarkup, resolvingEncounterMarkup, resolvedEncounterMarkup, halftimeMarkup, penaltyMarkup, resultMarkup, currentMinute, animateClock, bind });
   }
 
   global.RoadToGloryMatchView = Object.freeze({ create });
