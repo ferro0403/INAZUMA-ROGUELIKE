@@ -9,7 +9,7 @@ const match={period:"second_half",status:"active",score:{user:0,opponent:0},poss
 const duel=view.encounterMarkup(match,{userPlayer:user,opponentPlayer:opp});
 assert.match(duel,/rtg-duel-versus-board/);
 assert.match(duel,/rtg-duel-meter-clean/);
-assert.match(duel,/PROBABILITÀ BASE/i);
+assert.match(duel,/TUA PROBABILITÀ/i);
 assert.match(duel,/35\.8%/);
 assert.match(duel,/64\.2%/);
 assert.match(duel,/DIFESA VS DRIBBLING/);
@@ -72,6 +72,7 @@ assert.match(css,/width:calc\(100% \+ 16px\)/);
 assert.match(css,/\.rtg-prematch-revolution \.rtg-prematch-matchup/);
 assert.match(css,/\.rtg-duel-portrait-panel\.rarity-elite/);
 assert.match(css,/--duel-rarity-bg/);
+assert.match(css,/--duel-side-accent:var\(--duel-rarity-accent/);
 assert.match(css,/\.rtg-duel-choice-card\.move-category--shot/);
 assert.match(css,/\.rtg-duel-choice-card\.move-category--defense/);
 assert.match(css,/\.rtg-duel-choice-card\.move-category--dribble/);
