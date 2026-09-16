@@ -82,6 +82,49 @@
       }));
     }
 
+    function formationForId(formationId) {
+      const formations = Array.from(global.RoadToGloryConfig?.SEASON1?.formations || global.SeasonRegistry?.database?.("ie1")?.formations?.eleven || []);
+      return formations.find((item) => String(item.id) === String(formationId)) || null;
+    }
+
+    function readOnlyMatchCard(player, attrs = "", extraClass = "") {
+      const playerId = playerIdOf(player);
+      const cardAttrs = [attrs, `data-rtg-squad-player="${escape(playerId)}"`, `data-role="${escape(roleOf(player))}"`].filter(Boolean).join(" ");
+      const classes = ["squad-player-card", "rtg-squad-player-card", "rtg-match-squad-player-card", extraClass].filter(Boolean).join(" ");
+      const markup = compactPlayerCardMarkup
+        ? compactPlayerCardMarkup(player || {}, {
+            level: 20,
+            overall: player?.overall ?? player?.finalOverall,
+            dataAttr: cardAttrs,
+            extraClass: classes,
+            trailingMarkup: "",
+          })
+        : fallbackPlayerCard(player || {}, "", cardAttrs);
+      return `<div class="rtg-squad-card-slot rtg-match-card-slot" data-rtg-card-slot="${escape(playerId)}">${markup}</div>`;
+    }
+
+    function matchPitchMarkup(squad = {}, options = {}) {
+      const side = String(options.side || "user");
+      const mode = String(options.mode || "live");
+      const selectedId = String(options.selectedId || "");
+      const latest = options.latest || null;
+      const formation = formationForId(squad?.formationId) || { requirements: { FW:3, MF:3, DF:4, GK:1 } };
+      const entries = (squad?.lineup || []).map((player) => ({ playerId: playerIdOf(player), player }));
+      const rows = formationRows(formation, entries);
+      const attrName = mode === "prematch" ? "data-rtg-prematch-player" : mode === "halftime" ? "data-rtg-half-lineup" : "data-rtg-field-player";
+      return `<section class="pitch rtg-squad-pitch-main rtg-match-squad-pitch rtg-match-squad-pitch--${escape(mode)}" data-side="${escape(side)}">
+        ${rows.map((row) => `<div class="pitch-row tactical-row rtg-match-squad-row" data-row-count="${Math.max(1,row.entries.length)}" style="--players-in-row:${Math.max(1,row.entries.length)};--row-count:${Math.max(1,row.entries.length)}">${row.entries.map((entry) => {
+          const currentId = String(entry.playerId || "");
+          const selected = mode === "halftime" && currentId === selectedId;
+          const latestClass = latest?.actorId === currentId ? "is-latest-actor" : latest?.opponentId === currentId ? "is-latest-opponent" : "";
+          const attrs = mode === "halftime"
+            ? `${attrName}="${escape(currentId)}" data-role="${escape(roleOf(entry.player))}" aria-pressed="${selected ? "true" : "false"}"`
+            : `${attrName}="${escape(currentId)}" data-side="${escape(side)}"`;
+          return readOnlyMatchCard(entry.player, attrs, `${selected ? "selected" : ""} ${latestClass}`);
+        }).join("")}</div>`).join("")}
+      </section>`;
+    }
+
     function formationPreviewMarkup(formation) {
       const requirements = formation?.requirements || { FW:3, MF:3, DF:4, GK:1 };
       const rows = formationLayout?.displayRows?.(formation) || [
@@ -240,7 +283,7 @@
       root?.querySelector?.("[data-rtg-save-squad]")?.addEventListener("click", () => actions.onSave?.());
     }
 
-    return Object.freeze({ renderModel, markup, bind, playerCard, formationPreviewMarkup, formationOptionsMarkup, replacementPickerMarkup, replacementPickerResultsMarkup, catalogMarkup, catalogResultsMarkup });
+    return Object.freeze({ renderModel, markup, bind, playerCard, matchPitchMarkup, formationPreviewMarkup, formationOptionsMarkup, replacementPickerMarkup, replacementPickerResultsMarkup, catalogMarkup, catalogResultsMarkup });
   }
 
   global.RoadToGlorySquadView = Object.freeze({ create });

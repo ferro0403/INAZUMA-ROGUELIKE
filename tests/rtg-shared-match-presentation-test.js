@@ -5,6 +5,7 @@ vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-encounter-runtime.js","utf
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8"),c);
 
 const sharedCard=(player,opts={})=>`<button type="button" class="player-card player-card-compact run-tactical-card match-player-card boss-match-card SHARED-NORMAL-MATCH-CARD side-${opts.side||"user"}"><span class="player-portrait-wrap"><img class="player-portrait" src="${player.portraitUrl||""}" /></span><strong>${player.name}</strong></button>`;
+const squadPitch=(squad,opts={})=>`<section class="pitch rtg-squad-pitch-main SHARED-RTG-SQUAD-PITCH" data-mode="${opts.mode||"live"}" data-side="${opts.side||"user"}"><div class="pitch-row tactical-row" data-row-count="5">${(squad.lineup||[]).map(p=>`<button data-side="${opts.side||"user"}>${p.name}</button>`).join("")}</div></section>`;
 const formationLayout={displayRows:formation=>[
  {role:"FW",count:Number(formation.requirements.FW||0)},
  {role:"MF",count:Number(formation.requirements.MF||0)},
@@ -12,7 +13,7 @@ const formationLayout={displayRows:formation=>[
  {role:"GK",count:Number(formation.requirements.GK||0)}
 ].filter(row=>row.count)};
 const formationById=id=>id==="3-5-2"?{id,requirements:{FW:2,MF:5,DF:3,GK:1}}:{id,requirements:{FW:3,MF:3,DF:4,GK:1}};
-const view=c.RoadToGloryMatchView.create({escapeHtml:s=>String(s),matchFormationCardMarkup:sharedCard,formationLayout,formationById});
+const view=c.RoadToGloryMatchView.create({escapeHtml:s=>String(s),matchFormationCardMarkup:sharedCard,squadPitchMarkup:squadPitch,userTeamMeta:()=>({name:"Thot-team"}),teamEmblemMarkup:(_s,side)=>`<img class="TEST-EMBLEM ${side}" />`,formationLayout,formationById});
 const p=(id,name,role,overall,move=null)=>({playerId:id,name,normalizedRole:role,position:role,overall,portraitUrl:"x.webp",move});
 const lineup=[
  p("fw1","Canon Evans","FW",88),p("fw2","Johan Tassman","FW",81),
@@ -27,14 +28,17 @@ const opp=[
 const match={period:"second_half",status:"active",score:{user:1,opponent:1},possession:"opponent",fieldZone:"midfield",userSquad:{formationId:"3-5-2",lineup,bench:[]},opponentSquad:{name:"Svincolati",formationId:"4-3-3",lineup:opp,bench:[]},moveUsesByPlayerId:{},log:[]};
 
 const prematch=view.preMatchMarkup(match);
-assert.strictEqual((prematch.match(/SHARED-NORMAL-MATCH-CARD/g)||[]).length,22);
-assert.match(prematch,/boss-match-line[^"]*" data-row-count="5"/);
-assert.doesNotMatch(prematch,/rtg-prematch-player-card/);
+assert.strictEqual((prematch.match(/SHARED-RTG-SQUAD-PITCH/g)||[]).length,2);
+assert.match(prematch,/pitch rtg-squad-pitch-main/);
+assert.match(prematch,/Thot-team/);
+assert.match(prematch,/TEST-EMBLEM/);
+assert.doesNotMatch(prematch,/rtg-shared-match-pitch/);
 
 const live=view.matchMarkup(match);
-assert.strictEqual((live.match(/SHARED-NORMAL-MATCH-CARD/g)||[]).length,22);
-assert.match(live,/boss-match-line[^"]*" data-row-count="5"/);
-assert.doesNotMatch(live,/rtg-live-player-card/);
+assert.strictEqual((live.match(/SHARED-RTG-SQUAD-PITCH/g)||[]).length,2);
+assert.match(live,/pitch rtg-squad-pitch-main/);
+assert.match(live,/Thot-team/);
+assert.match(live,/rtg-live-commandbar/);
 assert.match(live,/development-squad-card-scope/);
 
 const duelMatch={...match,pendingEncounter:{encounterId:"e1",minute:55,kind:"midfield",actorSide:"opponent",opponentSide:"user",actorPlayerId:"om1",opponentPlayerId:"mf1",userSide:"user",userPlayerId:"mf1",aiPlayerId:"om1",userKind:"midfield",aiKind:"midfield",userBaseActionLabel:"Contrasta",normalPreviewProbability:68.8}};
@@ -51,12 +55,14 @@ assert.doesNotMatch(duel,/rtg-duel-stage--revolution/);
 const bench=[p("b1","Jerry Bates","FW",70),p("b2","Syon Blaze","FW",85),p("b3","Tom Skipper","FW",85),p("b4","Rob Cardson","DF",85)];
 const half=view.halftimeMarkup({formationId:"3-5-2",lineup,bench},{match});
 assert.match(half,/rtg-halftime-revolution/);
-assert.match(half,/boss-match-line[^"]*" data-row-count="5"/);
+assert.match(half,/SHARED-RTG-SQUAD-PITCH/);
 assert.doesNotMatch(half,/Controlla il campo\. Tocca un titolare/i);
 assert.doesNotMatch(half,/rtg-halftime-change-box/);
 assert.match(half,/CAMBIO RUOLO PER RUOLO/i);
 
 const app=fs.readFileSync("js/app.js","utf8");
-assert.match(app,/matchFormationCardMarkup:\s*\(\.\.\.args\)\s*=>\s*matchPresentation\.matchFormationCard\(\.\.\.args\)/);
+assert.match(app,/squadPitchMarkup:\s*\(\.\.\.args\)\s*=>\s*rtgSquadView\.matchPitchMarkup\(\.\.\.args\)/);
+assert.match(app,/userTeamMeta:\s*\(\)\s*=>\s*rtgUserTeamMeta\(\)/);
+assert.match(app,/teamEmblemMarkup:\s*\(\.\.\.args\)\s*=>\s*rtgMatchTeamEmblemMarkup\(\.\.\.args\)/);
 
 console.log("rtg-shared-match-presentation-test: PASS");

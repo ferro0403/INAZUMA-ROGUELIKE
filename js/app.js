@@ -623,6 +623,28 @@
       : `<span class="rtg-team-fallback">${escapeHtml(String(teamId || "?").slice(0, 1).toUpperCase())}</span>`;
   }
 
+  function rtgUserTeamMeta() {
+    const identity = normalizeTeamIdentity(savedTeamIdentity() || run?.teamIdentity || {});
+    return { name: identity?.name || "La tua squadra", teamIdentity: identity };
+  }
+
+  function rtgMatchTeamEmblemMarkup(squad = {}, side = "user", className = "rtg-match-team-emblem") {
+    if (!global.TeamEmblems?.resolveTeamEmblem || !global.TeamEmblems?.teamEmblemMarkup) return side === "opponent" && squad?.teamId ? rtgTeamEmblemMarkup(squad.teamId) : "";
+    let resolved;
+    if (side === "user") {
+      const identity = squad?.teamIdentity || rtgUserTeamMeta().teamIdentity;
+      resolved = global.TeamEmblems.resolveTeamEmblem({ teamIdentity: identity, seasonId: "ie1", fallbackKind: "user" });
+    } else if (squad?.specialType === "free-agents" || /svincolat/i.test(String(squad?.name || ""))) {
+      resolved = global.TeamEmblems.resolveTeamEmblem({ specialType: "free-agents", fallbackKind: "free-agents" });
+    } else {
+      const db = global.SeasonRegistry.database("ie1");
+      const team = (db?.teams || []).find((entry) => String(entry.teamId || entry.id) === String(squad?.teamId || ""))
+        || (db?.teams || []).find((entry) => String(entry.name || entry.teamName || "") === String(squad?.name || ""));
+      resolved = global.TeamEmblems.resolveTeamEmblem({ teamId: squad?.teamId || team?.teamId || team?.id, seasonId: "ie1", team, fallbackKind: "neutral" });
+    }
+    return global.TeamEmblems.teamEmblemMarkup(resolved, { escape: escapeHtml, className });
+  }
+
   const rtgRuntimeAvailable = !!(
     global.RoadToGloryStorage &&
     global.RoadToGloryRepository &&
@@ -651,6 +673,9 @@
     escapeHtml,
     compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
     matchFormationCardMarkup: (...args) => matchPresentation.matchFormationCard(...args),
+    squadPitchMarkup: (...args) => rtgSquadView.matchPitchMarkup(...args),
+    userTeamMeta: () => rtgUserTeamMeta(),
+    teamEmblemMarkup: (...args) => rtgMatchTeamEmblemMarkup(...args),
     formationLayout: global.FormationLayout,
     formationById: (formationId) => (global.RoadToGloryConfig?.SEASON1?.formations || global.SeasonRegistry.database("ie1")?.formations?.eleven || []).find((item) => String(item.id) === String(formationId)) || null,
   }) : null;
@@ -663,6 +688,7 @@
     ensureSeason1Db: ensureRtgSeason1Db,
     getFreeAgentsDb: () => freeAgentsDb,
     getAlbumProgress: () => global.AlbumProgress,
+    getUserTeamMeta: () => rtgUserTeamMeta(),
     getModalRoot: () => modalRoot,
     openModal,
     closeModal,

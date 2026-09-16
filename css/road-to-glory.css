@@ -3526,3 +3526,202 @@
   .rtg-halftime-scoreboard {grid-template-columns:76px minmax(0,1fr) 72px;}
   .rtg-halftime-revolution .rtg-halftime-pitch,.rtg-halftime-revolution .rtg-halftime-pitch .rtg-shared-match-side {min-height:500px!important;height:500px!important;}
 }
+
+
+/* ============================================================
+   RTG MATCH POLISH 6 — exact Squad pitch + run simulation feed.
+   Deliberately scoped to RTG; normal run/match styles stay untouched.
+   ============================================================ */
+
+.rtg-prematch-revolution .rtg-match-squad-pitch,
+.rtg-match-revolution .rtg-match-squad-pitch,
+.rtg-halftime-revolution .rtg-match-squad-pitch {
+  position:relative;
+  isolation:isolate;
+  width:100%;
+  min-height:650px;
+  display:grid;
+  grid-template-rows:repeat(4,minmax(0,1fr));
+  align-content:stretch;
+  gap:0;
+  margin:0;
+  padding:30px 42px;
+  overflow:hidden;
+  border:2px solid #111216;
+  border-radius:0;
+  background:#087044 url("../assets/squad/tactical-pitch.svg") center/100% 100% no-repeat;
+  box-shadow:inset 0 0 55px rgba(0,0,0,.28);
+}
+.rtg-prematch-revolution .rtg-match-squad-row,
+.rtg-match-revolution .rtg-match-squad-row,
+.rtg-halftime-revolution .rtg-match-squad-row {
+  align-self:stretch;
+  min-height:0;
+  margin:0;
+  overflow:visible;
+  gap:clamp(10px,2vw,24px);
+}
+.rtg-match-card-slot {width:100%;min-width:0;}
+.rtg-match-squad-player-card.is-latest-actor {outline:3px solid #ffd21f;outline-offset:3px;filter:drop-shadow(0 0 7px rgba(255,210,31,.72));}
+.rtg-match-squad-player-card.is-latest-opponent {outline:2px solid #fffdf7;outline-offset:3px;}
+.rtg-prematch-field-wrap,.rtg-live-field-wrap {padding:6px!important;}
+
+.rtg-matchup-team {grid-template-columns:38px minmax(0,1fr);align-items:center;}
+.rtg-matchup-team--opponent {grid-template-columns:minmax(0,1fr) 38px;}
+.rtg-matchup-team--opponent .rtg-matchup-emblem {grid-column:2;grid-row:1;}
+.rtg-matchup-team--opponent .rtg-matchup-team-copy {grid-column:1;grid-row:1;}
+.rtg-matchup-emblem {display:grid;place-items:center;}
+.rtg-matchup-team-emblem,.rtg-prematch-top-emblem,.rtg-score-emblem,.rtg-final-emblem {object-fit:contain;filter:drop-shadow(2px 2px 0 rgba(17,18,22,.2));}
+.rtg-matchup-team-emblem {width:31px;height:31px;}
+.rtg-prematch-top-emblem {width:34px;height:34px;}
+.rtg-score-emblem {width:24px;height:24px;}
+.rtg-final-emblem {width:46px;height:46px;}
+
+.rtg-match-score-main {grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;min-width:0;}
+.rtg-score-team {min-width:0;display:flex;align-items:center;gap:5px;}
+.rtg-score-team--opponent {justify-content:flex-end;text-align:right;}
+.rtg-score-team b {min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.62rem;}
+
+.rtg-match-revolution .rtg-live-commandbar {
+  width:min(760px,calc(100% - 18px));
+  display:grid;
+  grid-template-columns:1.15fr .85fr 1fr;
+  gap:2px;
+  margin:11px auto 0;
+  padding:3px;
+  overflow:hidden;
+  border:3px solid #111216;
+  background:#111216;
+  box-shadow:5px 6px 0 rgba(17,18,22,.22);
+}
+.rtg-match-revolution .rtg-live-commandbar > .rtg-live-command {
+  position:relative;
+  min-width:0;
+  min-height:68px;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:7px;
+  padding:8px 9px;
+  border:0;
+  background:#fffdf7;
+}
+.rtg-live-command::before {content:"";position:absolute;left:0;right:0;top:0;height:5px;background:#d4cbb9;}
+.rtg-live-command--possession::before {background:#ffd21f;}
+.rtg-live-command-index {align-self:start;color:#a89c89;font-size:.42rem;font-weight:1000;letter-spacing:.08em;}
+.rtg-live-command > span:last-child {min-width:0;display:grid;gap:1px;}
+.rtg-live-command small {color:#6a645a!important;font-size:.43rem!important;font-weight:1000;letter-spacing:.11em;}
+.rtg-live-command strong {overflow:hidden;color:#111216!important;font-size:.7rem!important;font-weight:1000;text-overflow:ellipsis;white-space:nowrap;}
+.rtg-live-command em {overflow:hidden;color:#8b6814;font-size:.47rem;font-style:normal;font-weight:800;text-overflow:ellipsis;white-space:nowrap;}
+.rtg-live-command--possession i {width:14px;height:14px;border:2px solid #111216;border-radius:50%;background:#ffd21f;box-shadow:2px 2px 0 #111216;}
+.rtg-live-commandbar.is-opponent-possession .rtg-live-command--possession::before {background:#d84d54;}
+.rtg-live-commandbar.is-opponent-possession .rtg-live-command--possession i {background:#d84d54;}
+
+.rtg-match-revolution .rtg-match-event-feed {
+  --sim-ink:#111216;
+  --sim-yellow:#ffd21f;
+  --sim-user:#2799c7;
+  --sim-user-soft:#e7f6fb;
+  --sim-opponent:#d84d54;
+  --sim-opponent-soft:#f9e7e8;
+  width:min(760px,calc(100% - 18px));
+  margin:11px auto 0;
+  padding:10px 11px 12px;
+  border:3px solid var(--sim-ink);
+  border-radius:0;
+  background:linear-gradient(180deg,#f7efdf,#f1e5d1);
+  box-shadow:5px 6px 0 rgba(17,18,22,.2);
+}
+.rtg-match-event-feed .panel-title-row {display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 9px;padding:0 1px 8px;border-bottom:3px solid var(--sim-ink);}
+.rtg-match-event-feed .panel-title-row h3 {margin:0;color:var(--sim-ink);font-size:.86rem;font-style:italic;font-weight:1000;letter-spacing:-.02em;text-transform:uppercase;}
+.rtg-match-event-feed .match-state-badge {padding:4px 9px;border:2px solid rgba(17,18,22,.45);border-radius:999px;background:#fff8df;color:#d6a500;font-size:.54rem;font-weight:1000;letter-spacing:.08em;}
+.rtg-match-event-feed .match-sim-log {display:grid;gap:8px;margin:0;padding:3px 2px 4px 8px;list-style:none;}
+.rtg-match-event-feed .match-sim-log>li {
+  --event-accent:#6d7178;
+  --event-soft:#f4f4f2;
+  position:relative;
+  display:grid;
+  grid-template-columns:42px 52px minmax(0,1fr);
+  align-items:center;
+  gap:7px;
+  min-height:70px;
+  padding:7px 9px 7px 7px;
+  overflow:visible;
+  border:2px solid var(--sim-ink);
+  border-left:0;
+  background:linear-gradient(110deg,var(--event-soft) 0 22%,#fff 22% 100%);
+  box-shadow:3px 4px 0 rgba(17,18,22,.14);
+  isolation:isolate;
+}
+.rtg-match-event-feed .match-sim-log>li::before {content:"";position:absolute;z-index:-1;left:-8px;top:-2px;bottom:-2px;width:12px;background:var(--event-accent);clip-path:polygon(0 0,100% 0,72% 100%,0 100%);}
+.rtg-match-event-feed .match-sim-log>li::after {content:"";position:absolute;right:0;top:0;width:46px;height:12px;opacity:.18;background:repeating-linear-gradient(120deg,var(--event-accent) 0 6px,transparent 6px 10px);}
+.rtg-match-event-feed .match-event--user {--event-accent:var(--sim-user);--event-soft:var(--sim-user-soft);}
+.rtg-match-event-feed .match-event--opponent {--event-accent:var(--sim-opponent);--event-soft:var(--sim-opponent-soft);}
+.rtg-match-event-feed .match-event--neutral {--event-accent:#8c7a4f;--event-soft:#fbf5e5;}
+.rtg-match-event-feed .match-sim-log>li>span:first-child {display:grid;place-items:center;min-height:34px;padding:4px 3px;border:2px solid var(--sim-ink);background:var(--sim-ink);color:#fff;font-size:.7rem;font-weight:1000;line-height:1;transform:skewX(-4deg);}
+.rtg-match-event-feed .match-event-marker {display:grid;place-items:center;width:50px;height:54px;min-width:50px;background:transparent;}
+.rtg-match-event-feed .match-event-avatar {display:block;width:48px;height:52px;overflow:hidden;border:2px solid var(--sim-ink);background:#f7efe2;box-shadow:2px 2px 0 var(--event-accent);clip-path:polygon(9% 0,100% 0,100% 88%,89% 100%,0 100%,0 11%);}
+.rtg-match-event-feed .match-event-avatar img {width:100%;height:100%;object-fit:cover;object-position:center top;transform:scale(1.08);}
+.rtg-match-event-feed .match-event-symbol {display:grid;place-items:center;width:46px;height:46px;border:2px solid var(--sim-ink);background:var(--sim-yellow);color:var(--sim-ink);font-size:1rem;font-weight:1000;}
+.rtg-match-event-feed .match-sim-log>li>p {display:grid;align-content:center;gap:3px;min-width:0;margin:0;color:var(--sim-ink);line-height:1.15;}
+.rtg-match-event-feed .match-event-kind {width:max-content;max-width:100%;color:var(--event-accent);font-size:.49rem;font-weight:1000;letter-spacing:.12em;line-height:1;text-transform:uppercase;}
+.rtg-match-event-feed .match-event-copy {display:block;color:var(--sim-ink);font-size:.75rem;font-weight:700;line-height:1.18;}
+.rtg-match-event-feed .match-event-type--goal {min-height:80px;border-width:3px;background:linear-gradient(110deg,var(--event-soft) 0 20%,#fff8dc 20% 100%);box-shadow:4px 5px 0 rgba(17,18,22,.22),inset 0 5px 0 var(--sim-yellow),inset 0 -3px 0 rgba(255,210,31,.62);}
+.rtg-match-event-feed .match-event-type--goal .match-event-kind {padding:3px 7px;border:2px solid var(--sim-ink);background:var(--sim-yellow);color:var(--sim-ink);}
+.rtg-match-event-feed .match-event-type--save .match-event-kind {color:#e47a00;}
+.rtg-match-event-feed .match-event-type--dribble .match-event-kind {color:#2478c5;}
+.rtg-match-event-feed .match-event-type--defensive_stop .match-event-kind {color:#25833d;}
+.rtg-match-event-feed .is-latest {transform:translateX(2px);}
+
+.rtg-result-modal.modal {padding:0!important;border:0!important;background:transparent!important;box-shadow:none!important;}
+.rtg-match-result--cabin {
+  width:min(92vw,560px)!important;
+  overflow:hidden!important;
+  padding:0!important;
+  border:4px solid #111216!important;
+  border-radius:2px!important;
+  background:#fff8e8!important;
+  color:#111216!important;
+  box-shadow:8px 9px 0 rgba(17,18,22,.35)!important;
+}
+.rtg-final-head {position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:10px;padding:15px 16px 13px;border-bottom:4px solid #111216;background:#111216;color:#fff;}
+.rtg-final-head::after {content:"";position:absolute;right:0;bottom:0;width:120px;height:100%;opacity:.18;background:repeating-linear-gradient(120deg,#ffd21f 0 9px,transparent 9px 15px);}
+.rtg-final-head .eyebrow {margin:0;color:#ffd21f;font-size:.58rem;letter-spacing:.15em;}
+.rtg-final-head h2 {margin:3px 0 0;color:#fff;font-size:clamp(1.7rem,7vw,2.5rem);font-style:italic;line-height:.92;text-transform:uppercase;}
+.rtg-final-state {position:relative;z-index:1;padding:8px 12px;border:2px solid #fff;background:#ffd21f;color:#111216;font-size:.7rem;font-weight:1000;transform:skewX(-5deg);}
+.rtg-match-result--cabin.is-loss .rtg-final-state {background:#f0c7c9;}
+.rtg-final-score-panel {display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:8px;padding:18px 14px;background:linear-gradient(135deg,rgba(255,210,31,.12),transparent 40%),#fff8e8;}
+.rtg-final-team {min-width:0;display:flex;align-items:center;gap:7px;font-size:.76rem;}
+.rtg-final-team--opponent {justify-content:flex-end;text-align:right;}
+.rtg-final-team strong {overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.rtg-final-score {display:flex;align-items:center;justify-content:center;min-width:116px;padding:8px 14px;background:#111216;color:#fff;clip-path:polygon(9% 0,100% 0,91% 100%,0 100%);}
+.rtg-final-score span {font-size:2.5rem;font-weight:1000;line-height:.9;}
+.rtg-final-score small {margin-inline:8px;color:#ffd21f;font-size:1rem;font-weight:1000;}
+.rtg-final-verdict {display:grid;place-items:center;padding:0 14px 14px;}
+.rtg-final-verdict span {padding:6px 13px;border:2px solid #111216;background:#ffd21f;font-size:.7rem;font-weight:1000;letter-spacing:.06em;transform:skewX(-4deg);}
+.rtg-final-continue {width:calc(100% - 28px);min-height:58px;display:flex!important;align-items:center;justify-content:space-between!important;margin:0 14px 16px;border:3px solid #111216!important;border-radius:1px!important;background:#ffd21f!important;color:#111216!important;box-shadow:4px 5px 0 #111216!important;font-weight:1000;}
+.rtg-final-continue b {font-size:1.55rem;}
+
+@media (max-width:780px) {
+  .rtg-prematch-revolution .rtg-match-squad-pitch,.rtg-match-revolution .rtg-match-squad-pitch,.rtg-halftime-revolution .rtg-match-squad-pitch {min-height:540px;padding:22px 12px;}
+  .rtg-match-revolution .rtg-live-commandbar {grid-template-columns:1.12fr .88fr 1fr;}
+}
+@media (max-width:430px) {
+  .rtg-prematch-field-wrap,.rtg-live-field-wrap {padding:4px!important;}
+  .rtg-prematch-revolution .rtg-match-squad-pitch,.rtg-match-revolution .rtg-match-squad-pitch,.rtg-halftime-revolution .rtg-match-squad-pitch {min-height:555px;padding:22px 10px;}
+  .rtg-match-revolution .rtg-live-commandbar {grid-template-columns:1.15fr .85fr 1fr;gap:2px;padding:2px;}
+  .rtg-match-revolution .rtg-live-commandbar > .rtg-live-command {min-height:62px;padding:7px 6px;gap:5px;}
+  .rtg-live-command-index,.rtg-live-command em {display:none;}
+  .rtg-live-command strong {font-size:.62rem!important;}
+  .rtg-match-event-feed .match-sim-log>li {grid-template-columns:38px 47px minmax(0,1fr);min-height:65px;padding:6px 7px 6px 6px;}
+  .rtg-match-event-feed .match-event-marker {width:45px;height:50px;min-width:45px;}
+  .rtg-match-event-feed .match-event-avatar {width:44px;height:48px;}
+  .rtg-match-event-feed .match-event-copy {font-size:.69rem;}
+  .rtg-score-emblem {width:20px;height:20px;}
+  .rtg-score-team b {font-size:.55rem;}
+  .rtg-final-score-panel {gap:5px;padding:14px 9px;}
+  .rtg-final-emblem {width:36px;height:36px;}
+  .rtg-final-score {min-width:92px;padding:7px 10px;}
+  .rtg-final-score span {font-size:2.1rem;}
+  .rtg-final-team {font-size:.66rem;gap:4px;}
+}

@@ -571,11 +571,11 @@
     function mainOpponent(node){
       const boss=bossFor(node.teamId);
       if(!boss)throw Object.assign(new Error("Boss RTG non trovato"),{code:"rtg-boss-missing"});
-      return {formationId:boss.bossFormation||null,lineup:(boss.startingXIPlayerIds||[]).map(playerId=>resolved(playerId)).filter(Boolean),bench:[],name:boss.teamName||node.teamId||"Avversario"};
+      return {formationId:boss.bossFormation||null,lineup:(boss.startingXIPlayerIds||[]).map(playerId=>resolved(playerId)).filter(Boolean),bench:[],name:boss.teamName||node.teamId||"Avversario",teamId:node.teamId,logoUrl:boss.logoUrl||null};
     }
     function secondaryOpponent(node,current,attemptNumber){
       const generated=opponentGenerator.generate({seed:`${current.campaignSeed}:${node.id}`,attemptNumber,freeAgentsDb,formations:seasonDb?.formations?.eleven||[],targetMin:node.opponentTargetMin,targetMax:node.opponentTargetMax,playerResolver});
-      return {formationId:generated.formationId,lineup:generated.playerIds.map(playerId=>resolved(playerId)).filter(Boolean),bench:[],teamPower:generated.teamPower,name:generated.name};
+      return {formationId:generated.formationId,lineup:generated.playerIds.map(playerId=>resolved(playerId)).filter(Boolean),bench:[],teamPower:generated.teamPower,name:generated.name,specialType:"free-agents"};
     }
     async function startMatch(nodeId){
       const node=nodeById(nodeId);
@@ -593,6 +593,9 @@
         current.attemptsByNode=current.attemptsByNode||{};
         current.attemptsByNode[node.id]={...(current.attemptsByNode[node.id]||{}),lastAttempt:attemptNumber};
         const userSquad=resolvedSquad(current.squads.ie1);
+        const userMeta=deps.getUserTeamMeta?.()||{};
+        userSquad.name=userMeta.name||userSquad.name||"La tua squadra";
+        if(userMeta.teamIdentity)userSquad.teamIdentity=clone(userMeta.teamIdentity);
         const opponentSquad=node.type==="main"?mainOpponent(node):secondaryOpponent(node,current,attemptNumber);
         const seed=`${current.campaignSeed}:${node.id}:${attemptNumber}`;
         const matchId=`rtg:${node.id}:${attemptNumber}`;
@@ -880,7 +883,7 @@
     async function abandonMatch(){return commitMatchState("rtg-abandon",match=>matchEngine.abandon(match));}
     function showMatchResult(match){
       renderRun();
-      deps.openModal?.(matchView.resultMarkup(match),{className:"rtg-modal rtg-result-modal"});
+      deps.openModal?.(matchView.resultMarkup(match),{className:"rtg-modal rtg-result-modal",closeable:false});
       deps.getModalRoot?.()?.querySelector?.("[data-rtg-result-continue]")?.addEventListener("click",()=>{deps.closeModal?.();renderRun();});
       return match;
     }

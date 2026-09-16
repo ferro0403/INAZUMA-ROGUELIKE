@@ -5,10 +5,15 @@
     const escape = deps.escapeHtml || ((value) => String(value ?? ""));
     const compactPlayerCardMarkup = deps.compactPlayerCardMarkup || null;
     const matchFormationCardMarkup = deps.matchFormationCardMarkup || null;
+    const squadPitchMarkup = deps.squadPitchMarkup || null;
+    const teamEmblemMarkup = deps.teamEmblemMarkup || null;
+    const userTeamMeta = deps.userTeamMeta || null;
     const formationLayout = deps.formationLayout || global.FormationLayout || null;
     const formationById = deps.formationById || ((id) => global.SeasonRegistry?.database?.("ie1")?.formations?.eleven?.find?.((item) => String(item.id) === String(id)) || null);
     const pid = (player) => String(player?.playerId || player?.id || "");
     const role = (player) => String(player?.normalizedRole || player?.position || player?.role || "").toUpperCase();
+    const userNameFor = (value = {}) => value?.userSquad?.name || value?.name || userTeamMeta?.()?.name || "La tua squadra";
+    const emblem = (squad = {}, side = "user", className = "rtg-match-team-emblem") => teamEmblemMarkup?.(squad, side, className) || "";
 
     function fallbackCard(player, attrs = "", extraClass = "") {
       return `<button type="button" class="player-card player-card-compact tactical-player-card mini-player ${escape(extraClass)}" ${attrs}>
@@ -141,22 +146,48 @@
       const opponent = matchPlayer(match, opponentSide, event.opponentPlayerId);
       const actorName = actor?.name || event.actorPlayerId || "Giocatore";
       const opponentName = opponent?.name || event.opponentPlayerId || "Avversario";
-      let copy = "";
-      const eventKind = event.kind || (event.zone === "shot" ? "shot" : event.zone === "attack" ? "dribble" : "midfield");
-      if (eventKind === "shot") {
-        copy = event.actorWon ? `GOAL! ${actorName}` : `${opponentName} ferma ${actorName}`;
-      } else if (eventKind === "dribble") {
-        copy = event.actorWon ? `${actorName} supera ${opponentName}` : `${opponentName} recupera palla`;
+      const kind = event.kind || (event.zone === "shot" ? "shot" : event.zone === "attack" ? "dribble" : "midfield");
+      const winnerSide = event.actorWon ? actorSide : opponentSide;
+      const focusPlayer = event.actorWon ? actor : opponent;
+      let type = "build_up", copy = "";
+      if (kind === "shot") {
+        type = event.actorWon ? "goal" : "save";
+        copy = event.actorWon ? `GOL! ${actorName} segna.` : `${opponentName} ferma il tiro di ${actorName}.`;
+      } else if (kind === "dribble") {
+        type = event.actorWon ? "dribble" : "defensive_stop";
+        copy = event.actorWon ? `${actorName} supera ${opponentName}.` : `${opponentName} ferma ${actorName} e recupera palla.`;
       } else {
-        copy = event.actorWon ? `${actorName} vince il duello a centrocampo` : `${opponentName} conquista il possesso`;
+        type = event.actorWon ? "build_up" : "recovery";
+        copy = event.actorWon ? `${actorName} vince il duello a centrocampo.` : `${opponentName} conquista il possesso.`;
       }
-      const move = event.actorMove || event.opponentMove;
-      return `<div class="rtg-ticker-event ${isLatest ? "is-latest" : ""} ${event.actorWon ? "is-success" : ""} ${event.manual ? "is-manual" : "is-auto"}"><span>${escape(event.minute ?? "—")}'</span><strong>${escape(copy)}</strong>${move ? `<em>${escape(move)}</em>` : ""}</div>`;
+      const moveName = event.actorMove || event.opponentMove || null;
+      const presented = {
+        type,
+        text: copy,
+        icon: global.MovePresentationRuntime?.eventIcon?.(type) || "◇",
+        playerId: pid(focusPlayer),
+        portraitUrl: duelVisualUrl(focusPlayer),
+        moveName,
+      };
+      const marker = global.MovePresentationRuntime?.eventMarkerMarkup?.(presented, escape)
+        || (presented.portraitUrl && presented.playerId
+          ? `<span class="match-event-avatar" aria-hidden="true"><img src="${escape(presented.portraitUrl)}" alt="" loading="lazy" /></span>`
+          : `<span class="match-event-symbol" aria-hidden="true">${escape(presented.icon)}</span>`);
+      const kindLabel = ({goal:"Gol",save:"Parata",dribble:"Dribbling",defensive_stop:"Difesa",recovery:"Recupero",build_up:"Duello"}[type] || "Azione");
+      const content = global.MovePresentationRuntime?.eventContentMarkup?.(presented, escape)
+        || `<span class="match-event-kind">${escape(kindLabel)}</span><span class="match-event-copy">${escape(copy)}</span>`;
+      return `<li class="match-event--${escape(winnerSide)} match-event-type--${escape(type)} ${isLatest ? "is-latest" : ""} ${event.manual ? "is-manual" : "is-auto"}"><span>${escape(event.minute ?? "—")}'</span><b class="match-event-marker">${marker}</b><p>${content}</p></li>`;
     }
 
     function tickerMarkup(match = {}) {
-      const events = Array.from(match.log || []).slice(-3);
-      return `<section class="rtg-match-ticker" aria-label="Ultime azioni"><div class="rtg-match-ticker-head"><small>Riepilogo azioni</small><span>${events.length ? "live" : "kick-off"}</span></div><div class="rtg-match-ticker-list">${events.length ? events.map((event,index) => tickerEventMarkup(match, event, index === events.length - 1)).join("") : '<div class="rtg-ticker-empty">Formazioni pronte.</div>'}</div></section>`;
+      const events = Array.from(match.log || []).slice(-4);
+      return `<section class="rtg-match-ticker rtg-match-event-feed" aria-label="Riepilogo azioni">
+        <div class="panel-title-row"><h3>Riepilogo azioni</h3><span class="match-state-badge">${events.length ? "LIVE" : "KICK-OFF"}</span></div>
+        <ol class="boss-match-log match-sim-log rtg-match-ticker-list">${events.length
+          ? events.map((event,index) => tickerEventMarkup(match,event,index === events.length - 1)).join("")
+          : `<li class="match-event--neutral match-event-type--build_up rtg-ticker-empty"><span>0'</span><b class="match-event-marker"><span class="match-event-symbol">◇</span></b><p><span class="match-event-kind">PARTENZA</span><span class="match-event-copy">Formazioni pronte.</span></p></li>`}
+        </ol>
+      </section>`;
     }
 
     function formationAverage(squad = {}) {
@@ -218,6 +249,7 @@
     }
 
     function formationPitchMarkup(squad = {}, side = "user", mode = "prematch", latest = null) {
+      if (squadPitchMarkup) return squadPitchMarkup(squad, { side, mode, latest });
       const rows = formationRows(squad?.formationId, squad?.lineup || []);
       const visualSide = side === "opponent" ? "boss" : "user";
       const playerAttr = mode === "prematch" ? "data-rtg-prematch-player" : "data-rtg-field-player";
@@ -239,11 +271,14 @@
     }
 
     function matchupTeamMarkup(squad = {}, side = "user") {
-      const label = side === "user" ? "LA TUA SQUADRA" : (squad?.name || "AVVERSARIO");
+      const label = side === "user" ? userNameFor(squad) : (squad?.name || "AVVERSARIO");
       return `<article class="rtg-matchup-team rtg-matchup-team--${escape(side)}">
-        <small>${escape(side === "user" ? "TU" : "AVVERSARIO")}</small>
-        <strong>${escape(label)}</strong>
-        <span><b>${escape(squad?.formationId || "—")}</b><em>OVR ${escape(formationAverage(squad) || "—")}</em></span>
+        <div class="rtg-matchup-emblem">${emblem(squad,side,"rtg-matchup-team-emblem")}</div>
+        <div class="rtg-matchup-team-copy">
+          <small>${escape(side === "user" ? "TU" : "AVVERSARIO")}</small>
+          <strong>${escape(label)}</strong>
+          <span><b>${escape(squad?.formationId || "—")}</b><em>OVR ${escape(formationAverage(squad) || "—")}</em></span>
+        </div>
       </article>`;
     }
 
@@ -351,10 +386,11 @@
 
     function preMatchMarkup(match = {}) {
       const opponentName = match.opponentSquad?.name || "Avversario";
+      const userName = userNameFor(match);
       return `<main class="screen boss-match-screen rtg-prematch-shell rtg-prematch-revolution development-squad-card-scope">
         <header class="topbar rtg-prematch-topbar">
           <div class="rtg-prematch-title"><small>ROAD TO GLORY · SEASON 1</small><h1>Pre-partita</h1></div>
-          <div class="rtg-prematch-top-vs"><span>VS</span><strong>${escape(opponentName)}</strong></div>
+          <div class="rtg-prematch-top-vs">${emblem(match.opponentSquad,"opponent","rtg-prematch-top-emblem")}<span>VS</span><strong>${escape(opponentName)}</strong></div>
         </header>
         <div class="content rtg-prematch-content">
           <section class="rtg-prematch-matchup">
@@ -364,7 +400,7 @@
           </section>
           <section class="rtg-prematch-tactical">
             <div class="rtg-prematch-tabs" role="tablist" aria-label="Formazioni">
-              <button type="button" class="active" data-rtg-prematch-tab="user" aria-selected="true">LA TUA SQUADRA <b>${escape(match.userSquad?.formationId || "—")}</b></button>
+              <button type="button" class="active" data-rtg-prematch-tab="user" aria-selected="true">${escape(userName)} <b>${escape(match.userSquad?.formationId || "—")}</b></button>
               <button type="button" data-rtg-prematch-tab="opponent" aria-selected="false">${escape(opponentName)} <b>${escape(match.opponentSquad?.formationId || "—")}</b></button>
             </div>
             <div class="rtg-prematch-field-wrap">
@@ -383,7 +419,8 @@
 
     function matchMarkup(match = {}) {
       const opponentName = match.opponentSquad?.name || "CPU";
-      const possessionLabel = match.possession === "user" ? "La tua squadra" : opponentName;
+      const userName = userNameFor(match);
+      const possessionLabel = match.possession === "user" ? userName : opponentName;
       const zoneLabel = ({ midfield:"Centrocampo", attack:"Tre quarti", shot:"Zona tiro" }[match.fieldZone] || "Centrocampo");
       const minute = currentMinute(match);
       const phaseLabel = match.pendingEncounter ? "Scontro in arrivo" : "Palla in gioco";
@@ -401,19 +438,23 @@
       return `<main class="screen rtg-match-shell rtg-match-polish-v2 rtg-match-revolution boss-match-screen development-squad-card-scope">
         <header class="topbar rtg-match-topbar">
           <div class="rtg-match-period"><strong class="rtg-match-clock" data-rtg-match-minute>${escape(minute)}'</strong><span>${escape(periodLabel(match.period))}</span></div>
-          <div class="rtg-match-score-main"><span>Tu</span><strong>${escape(match.score?.user || 0)} - ${escape(match.score?.opponent || 0)}</strong><span title="${escape(opponentName)}">${escape(opponentName)}</span></div>
+          <div class="rtg-match-score-main">
+            <span class="rtg-score-team rtg-score-team--user">${emblem(match.userSquad,"user","rtg-score-emblem")}<b title="${escape(userName)}">${escape(userName)}</b></span>
+            <strong>${escape(match.score?.user || 0)} - ${escape(match.score?.opponent || 0)}</strong>
+            <span class="rtg-score-team rtg-score-team--opponent">${emblem(match.opponentSquad,"opponent","rtg-score-emblem")}<b title="${escape(opponentName)}">${escape(opponentName)}</b></span>
+          </div>
           <button type="button" class="btn btn-danger rtg-abandon-button" data-rtg-abandon>Abbandona</button>
         </header>
-        <section class="rtg-live-status">
-          <div class="rtg-live-ball-state"><i aria-hidden="true"></i><span><small>POSSESSO</small><strong>${escape(possessionLabel)}</strong></span></div>
-          <div><small>ZONA</small><strong>${escape(zoneLabel)}</strong></div>
-          <div><small>STATO</small><strong>${escape(phaseLabel)}</strong></div>
+        <section class="rtg-live-status rtg-live-commandbar ${match.possession === "user" ? "is-user-possession" : "is-opponent-possession"}">
+          <div class="rtg-live-command rtg-live-command--possession"><span class="rtg-live-command-index">01</span><i aria-hidden="true"></i><span><small>POSSESSO</small><strong>${escape(possessionLabel)}</strong><em>${match.possession === "user" ? "Palla nostra" : "Palla avversaria"}</em></span></div>
+          <div class="rtg-live-command"><span class="rtg-live-command-index">02</span><span><small>ZONA</small><strong>${escape(zoneLabel)}</strong><em>Posizione palla</em></span></div>
+          <div class="rtg-live-command"><span class="rtg-live-command-index">03</span><span><small>STATO</small><strong>${escape(phaseLabel)}</strong><em>${match.pendingEncounter ? "Preparati alla scelta" : "Azione automatica"}</em></span></div>
         </section>
         ${tickerMarkup(match)}
         <div class="content rtg-match-content">
           <section class="rtg-live-formation-panel">
             <div class="rtg-live-team-tabs" role="tablist" aria-label="Formazioni in campo">
-              <button type="button" class="${activeSide==="user"?"active":""}" data-rtg-live-tab="user" aria-selected="${activeSide==="user"?"true":"false"}"><span>LA TUA SQUADRA</span><b>${escape(match.userSquad?.formationId||"—")}</b>${match.possession==="user"?'<i>●</i>':""}</button>
+              <button type="button" class="${activeSide==="user"?"active":""}" data-rtg-live-tab="user" aria-selected="${activeSide==="user"?"true":"false"}"><span>${escape(userName)}</span><b>${escape(match.userSquad?.formationId||"—")}</b>${match.possession==="user"?'<i>●</i>':""}</button>
               <button type="button" class="${activeSide==="opponent"?"active":""}" data-rtg-live-tab="opponent" aria-selected="${activeSide==="opponent"?"true":"false"}"><span>${escape(opponentName)}</span><b>${escape(match.opponentSquad?.formationId||"—")}</b>${match.possession==="opponent"?'<i>●</i>':""}</button>
             </div>
             <div class="rtg-live-field-wrap">
@@ -544,7 +585,10 @@
       const match = options.match || {};
       const scoreUser = Number(match.score?.user ?? 0);
       const scoreOpponent = Number(match.score?.opponent ?? 0);
-      const lineupMarkup = `<div class="rtg-halftime-pitch rtg-shared-match-pitch">
+      const userName = userNameFor(match);
+      const lineupMarkup = squadPitchMarkup
+        ? squadPitchMarkup(model, { side:"user", mode:"halftime", selectedId })
+        : `<div class="rtg-halftime-pitch rtg-shared-match-pitch">
         <div class="boss-match-field-side boss-match-field-side--user boss-match-field-side--mobile rtg-shared-match-side">
           ${rows.map((row) => `<div class="match-formation-line match-formation-line--${escape(String(row.role||"").toLowerCase())} boss-match-line rtg-shared-match-line" data-row-count="${row.players.length}" style="--players-in-row:${row.players.length||1};--row-count:${row.players.length||1};--boss-row-count:${row.players.length||1}">${row.players.map((player) => sharedMatchCard(
             player,
@@ -557,7 +601,7 @@
       return `<section class="panel rtg-halftime rtg-halftime-revolution rtg-paper-modal development-squad-card-scope">
         <header class="rtg-halftime-scoreboard">
           <div class="rtg-halftime-minute"><strong>45'</strong><span>INTERVALLO</span></div>
-          <div class="rtg-halftime-score"><small>TU</small><strong>${escape(scoreUser)} - ${escape(scoreOpponent)}</strong><small>${escape(match.opponentSquad?.name || "AVVERSARIO")}</small></div>
+          <div class="rtg-halftime-score"><small>${escape(userName)}</small><strong>${escape(scoreUser)} - ${escape(scoreOpponent)}</strong><small>${escape(match.opponentSquad?.name || "AVVERSARIO")}</small></div>
           <div class="rtg-halftime-shape"><small>MODULO</small><strong>${escape(model.formationId || "—")}</strong></div>
         </header>
         <div class="rtg-halftime-tip"><strong>CAMBIO RUOLO PER RUOLO</strong><span>Tocca un titolare, poi una riserva evidenziata.</span></div>
@@ -632,8 +676,25 @@
     }
 
     function resultMarkup(match = {}) {
-      const won = match.result?.winner === "user";
-      return `<section class="panel rtg-match-result rtg-paper-modal"><p class="eyebrow">Road to Glory</p><h2>${won ? "Vittoria!" : match.result?.winner ? "Sconfitta" : "Pareggio"}</h2><strong>${escape(match.score?.user || 0)} - ${escape(match.score?.opponent || 0)}</strong><button type="button" class="btn btn-yellow" data-rtg-result-continue>Continua</button></section>`;
+      const winner = match.result?.winner || null;
+      const won = winner === "user";
+      const lost = !!winner && winner !== "user";
+      const label = won ? "VITTORIA" : lost ? "SCONFITTA" : "PAREGGIO";
+      const userName = userNameFor(match);
+      const opponentName = match.opponentSquad?.name || "Avversario";
+      return `<section class="panel rtg-match-result rtg-match-result--cabin rtg-paper-modal ${won ? "is-win" : lost ? "is-loss" : "is-draw"}">
+        <header class="rtg-final-head">
+          <div><p class="eyebrow">ROAD TO GLORY · RISULTATO</p><h2>${escape(label)}</h2></div>
+          <strong class="rtg-final-state">${escape(label)}</strong>
+        </header>
+        <section class="rtg-final-score-panel">
+          <div class="rtg-final-team rtg-final-team--user">${emblem(match.userSquad,"user","rtg-final-emblem")}<strong>${escape(userName)}</strong></div>
+          <div class="rtg-final-score" aria-label="${escape(`${userName} ${match.score?.user || 0} - ${match.score?.opponent || 0} ${opponentName}`)}"><span>${escape(match.score?.user || 0)}</span><small>-</small><span>${escape(match.score?.opponent || 0)}</span></div>
+          <div class="rtg-final-team rtg-final-team--opponent"><strong>${escape(opponentName)}</strong>${emblem(match.opponentSquad,"opponent","rtg-final-emblem")}</div>
+        </section>
+        <div class="rtg-final-verdict"><span>${won ? "MATCH COMPLETATO" : lost ? "RIPROVA DAL PERCORSO" : "PAREGGIO REGISTRATO"}</span></div>
+        <button type="button" class="btn btn-yellow rtg-final-continue" data-rtg-result-continue><span>TORNA A ROAD TO GLORY</span><b>›</b></button>
+      </section>`;
     }
 
     function bind(root, actions = {}) {
