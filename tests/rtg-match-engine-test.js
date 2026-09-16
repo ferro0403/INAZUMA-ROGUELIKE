@@ -18,7 +18,9 @@ assert.deepStrictEqual(JSON.parse(JSON.stringify(a.manualIndexes)),JSON.parse(JS
 const noMoves=E.createMatch({...input,matchId:"m2",seed:"no-moves",userSquad:squad("n",false)});
 assert.strictEqual(Object.keys(noMoves.moveUsesByPlayerId).some(k=>k.startsWith("user:n")),false);
 let prepared=E.prepareNext(a);
-assert(prepared.pendingEncounter);const frozenAi=prepared.pendingEncounter.aiChoice;const frozen=JSON.parse(JSON.stringify(prepared));
+assert(prepared.pendingEncounter);assert(["Tiro","Parata","Dribbling","Difesa"].includes(prepared.pendingEncounter.userBaseActionLabel));
+if(prepared.pendingEncounter.kind==="midfield")assert.strictEqual(prepared.pendingEncounter.userBaseActionLabel,prepared.pendingEncounter.actorSide==="user"?"Dribbling":"Difesa");
+const frozenAi=prepared.pendingEncounter.aiChoice;const frozen=JSON.parse(JSON.stringify(prepared));
 const userCanMove=!!prepared.pendingEncounter.userMove;
 const resolvedBase=E.resolvePendingEncounter(JSON.parse(JSON.stringify(frozen)),"base");
 const resolvedMove=userCanMove?E.resolvePendingEncounter(JSON.parse(JSON.stringify(frozen)),"move"):resolvedBase;
@@ -37,5 +39,9 @@ boundary.period="second_half";boundary.actionIndex=boundary.actionTarget;boundar
 boundary=E.prepareNext(boundary);assert.strictEqual(boundary.period,"extra_first");assert.strictEqual(boundary.status,"active");
 boundary.extraActionIndex=6;boundary.period="extra_second";boundary.score={user:2,opponent:2};boundary.pendingEncounter=null;boundary=E.prepareNext(boundary);
 assert.strictEqual(boundary.status,"penalties");assert(boundary.shootout);
+const beforePenaltyUse=boundary.moveUsesByPlayerId["user:uf1"];
+const shooter=boundary.userSquad.lineup.find(p=>p.playerId==="uf1"),keeper=boundary.opponentSquad.lineup.find(p=>p.playerId==="og");
+const pen=E.resolvePenaltyKick(boundary,{attackingSide:"user",shooterPlayerId:"uf1",goalkeeperPlayerId:"og",shooterChoice:"left",goalkeeperChoice:"left",shooterMove:shooter.move,goalkeeperMove:null,encounterContext:{actor:shooter,opponent:keeper}});
+assert.strictEqual(pen.state.moveUsesByPlayerId["user:uf1"],beforePenaltyUse-1);
 const abandoned=E.abandon(a);assert.strictEqual(abandoned.status,"abandoned");assert.strictEqual(abandoned.result.winner,"opponent");
 console.log("rtg-match-engine-test: PASS");
