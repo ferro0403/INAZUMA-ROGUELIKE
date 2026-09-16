@@ -79,7 +79,7 @@
 
     function vendingMarkup(model={}){
       const rarities=model.rarities||[];
-      return `<div class="rtg-vending"><div class="rtg-vending-machine" aria-hidden="true"><span>⚽</span><i></i></div><h2>Distributore Season 1</h2><p>Ogni squadra battuta aggiunge i suoi giocatori al distributore.</p><div class="rtg-vending-rates">${rarities.map(r=>`<span><strong>${escape(r.rarity)}</strong><em>${escape(Number(r.weight).toFixed(1))}%</em></span>`).join("")}</div><div class="rtg-vending-wallet">Gettoni: <strong>${escape(Number(model.tokens)||0)}</strong></div><button type="button" data-rtg-pull ${Number(model.tokens)<300?"disabled":""}>Pesca · 300 ◈</button>`;
+      return `<div class="rtg-vending"><div class="rtg-vending-machine" aria-hidden="true"><span>⚽</span><i></i></div><h2>Distributore Season 1</h2><p>Ogni squadra battuta aggiunge i suoi giocatori al distributore.</p><div class="rtg-vending-rates">${rarities.map(r=>`<span><strong>${escape(r.rarity)}</strong><em>${escape(Number(r.weight).toFixed(1))}%</em></span>`).join("")}</div><div class="rtg-vending-wallet">Gettoni: <strong>${escape(Number(model.tokens)||0)}</strong></div><button type="button" data-rtg-pull ${Number(model.tokens)<300||!(model.candidates||[]).length?"disabled":""}>Pesca · 300 ◈</button>`;
     }
 
     function pullResultMarkup(result={},player={}){
