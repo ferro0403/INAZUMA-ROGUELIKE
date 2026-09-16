@@ -284,7 +284,7 @@
               }).join("")}
             </div>
             <div class="rtg-halftime-change-box">
-              ${selected ? `<p class="eyebrow">CAMBIO SELEZIONATO</p><strong>${escape(selected.name || selectedId)} · ${escape(selectedRole)}</strong><span>${compatibleBench.length ? `${compatibleBench.length} riserve compatibili evidenziate` : "Nessuna riserva compatibile"}</span>` : '<strong>Seleziona un titolare sul campo</strong><span>Le riserve compatibili verranno evidenziate.</span>'}
+              ${selected ? `<p class="eyebrow">CAMBI COMPATIBILI</p><strong>${escape(selected.name || selectedId)} · ${escape(selectedRole)}</strong><span>${compatibleBench.length ? `${compatibleBench.length} riserve compatibili evidenziate` : "Nessuna riserva compatibile"}</span>` : '<strong>Seleziona un titolare sul campo</strong><span>Le riserve compatibili verranno evidenziate.</span>'}
             </div>
           </aside>
         </div>
