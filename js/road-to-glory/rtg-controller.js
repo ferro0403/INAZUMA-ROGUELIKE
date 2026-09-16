@@ -68,6 +68,26 @@
     function sourceForDraftPlayer(playerId){
       return (campaign?.gachaAcquiredPlayerIds||[]).map(id).includes(id(playerId))?"RTG":"Svincolato";
     }
+    function detailDatabaseFor(playerId){
+      const key=id(playerId);
+      const free=(freeAgentsDb?.players||[]).some(player=>id(player?.playerId||player?.id)===key);
+      return free?freeAgentsDb:seasonDb;
+    }
+    function openRtgPlayerDetails(playerId,side=""){
+      const key=id(playerId);
+      let player=null;
+      if(side&&campaign?.activeMatch)player=findMatchPlayer(campaign.activeMatch,side,key);
+      player=player||resolved(key,squadDraft?.activeRoleVariantByPlayerId?.[key]||null);
+      if(!player)return deps.toast?.("Giocatore non disponibile","error");
+      return deps.showPlayerDetailsFor?.(player,{
+        playerId:key,
+        level:20,
+        database:detailDatabaseFor(key),
+        equipment:null,
+        readOnly:true,
+        preserveScroll:true,
+      });
+    }
     function refreshEntitlements(){
       const albumProgress=deps.getAlbumProgress?.();
       const access=entitlements.accessStatus({albumProgress,freeAgentsDb,formations:seasonDb?.formations?.eleven||[]});
@@ -424,6 +444,7 @@
       squadView.bind(app,{
         onOpenFormation:()=>openFormationSelector(model),
         onOpenPlayer:(playerId)=>openSquadPlayerPicker(playerId),
+        onOpenDetails:(playerId)=>openRtgPlayerDetails(playerId),
         onAdaptRequirements:()=>adaptSquadToCurrentRequirements(),
         onSave:()=>saveSquad(squadDraft),
       });
@@ -536,6 +557,7 @@
     }
     function bindMatchViewActions(){
       matchView.bind(app,{
+        onOpenPlayerDetails:(playerId,side)=>openRtgPlayerDetails(playerId,side),
         onPreMatchStart:()=>confirmPreMatch(),
         onEncounterChoice:choice=>chooseEncounter(choice),
         onAbandon:()=>abandonMatch(),
@@ -795,7 +817,7 @@
     }
 
     return Object.freeze({
-      open,renderRun,renderSquad,openNode,startMatch,confirmPreMatch,chooseEncounter,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,
+      open,renderRun,renderSquad,openNode,startMatch,confirmPreMatch,chooseEncounter,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,
       swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,adaptSquadToCurrentRequirements,
       getDraftSquad:()=>clone(squadDraft),getState:()=>clone(campaign),getRenderedHtml,
     });
