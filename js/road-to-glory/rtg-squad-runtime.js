@@ -100,9 +100,11 @@
     if (!constraint) return { eligible: false, reasons: ["unknown-main-team"], validation };
     const { seasonId, squad } = activeSquad(state);
     const lineup = squad?.lineup || [];
+    const bench = squad?.bench || [];
+    const activeRoster = [...lineup, ...bench];
     const power = validation.valid ? teamPower({ lineup, activeSeasonId: seasonId, playerResolver, freeAgentsDb, activeRoleVariantByPlayerId: squad.activeRoleVariantByPlayerId || {} }) : null;
     const recruitSet = new Set((state?.gachaAcquiredPlayerIds || []).map(id));
-    const recruits = lineup.map(id).filter((playerId) => recruitSet.has(playerId));
+    const recruits = activeRoster.map(id).filter((playerId) => recruitSet.has(playerId));
     const recentTeams = recentDefeatedTeamIds(teamId, state, constraint.recentWindow);
     const recentTeamSet = new Set(recentTeams);
     const recentRecruits = recruits.filter((playerId) => {
@@ -127,6 +129,7 @@
       recentCount: Number(constraint.recentCount || 0),
       recentWindow: Number(constraint.recentWindow || 0),
       recentTeamIds: recentTeams,
+      requirementRosterSize: activeRoster.length,
       validation,
     };
   }
