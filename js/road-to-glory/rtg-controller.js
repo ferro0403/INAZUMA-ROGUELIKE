@@ -229,7 +229,7 @@
       let body="";
       if(node.type==="main"){
         const eligibility=squadRuntime.mainEligibility({teamId:node.teamId,state:campaign,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
-        body=`<div class="rtg-node-modal"><h2>${id(node.teamId)}</h2>${runView.requirementsMarkup(eligibility)}<button type="button" class="rtg-action-button" data-rtg-start-node ${!allowed||!eligibility.eligible?"disabled":""}>Gioca</button></div>`;
+        body=`<div class="rtg-node-modal"><h2>${id(node.teamId)}</h2>${runView.requirementsMarkup(eligibility)}<button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed||!eligibility.eligible?"disabled":""}>Gioca</button></div>`;
       }else{
         body=`<div class="rtg-node-modal"><h2>Partita secondaria</h2><p>Avversari svincolati casuali. Vittoria: 100–150 Gettoni RTG.</p><button type="button" class="rtg-action-button" data-rtg-start-node ${!allowed?"disabled":""}>Gioca</button></div>`;
       }
