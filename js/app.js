@@ -643,6 +643,8 @@
   const rtgSquadView = rtgRuntimeAvailable ? global.RoadToGlorySquadView.create({
     escapeHtml,
     playerResolver: global.RoadToGloryPlayerResolver,
+    compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
+    formationLayout: global.FormationLayout,
   }) : null;
   const rtgMatchView = rtgRuntimeAvailable ? global.RoadToGloryMatchView.create({ escapeHtml }) : null;
   const rtgController = rtgRuntimeAvailable ? global.RoadToGloryController.create({
