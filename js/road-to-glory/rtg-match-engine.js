@@ -36,7 +36,7 @@
   function createMatch(input={}){
     const seed=id(input.seed||input.matchId||"rtg-match");
     const actionTarget=20+global.RoadToGloryRng.int(seed,"action-target",0,9);
-    const manualTarget=Math.min(actionTarget,16+global.RoadToGloryRng.int(seed,"manual-target",0,5));
+    const manualTarget=Math.min(actionTarget,6+global.RoadToGloryRng.int(seed,"manual-target",0,3));
     const userSquad=clone(input.userSquad||{lineup:[],bench:[]});
     const opponentSquad=clone(input.opponentSquad||{lineup:[],bench:[]});
     const possession=global.RoadToGloryRng.int(seed,"kickoff",0,2)===0?"user":"opponent";
