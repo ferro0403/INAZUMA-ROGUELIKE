@@ -60,39 +60,42 @@
   function squadFor(state,side){return side==="user"?state.userSquad:state.opponentSquad;}
   function lineupFor(state,side){return squadFor(state,side)?.lineup||[];}
   function findPlayer(state,side,pid){return allPlayers(squadFor(state,side)).find(p=>playerId(p)===id(pid))||null;}
-  function preferredRoles(kind){
-    if(kind==="save")return [["GK"]];
-    if(kind==="defense")return [["DF"],["MF"],["FW"]];
-    if(kind==="shot")return [["FW"],["MF"],["DF"]];
-    if(kind==="dribble")return [["FW"],["MF"],["DF"]];
-    return [["MF"],["FW","DF"]];
+  function roleSelectionWeight(kind,role){
+    const profiles={
+      save:{GK:1},
+      defense:{DF:1,MF:.72,FW:.16},
+      shot:{FW:1,MF:.42,DF:.08},
+      dribble:{FW:1,MF:.9,DF:.16},
+      midfield:{MF:1,FW:.55,DF:.55},
+    };
+    return Number(profiles[String(kind||"midfield")]?.[String(role||"").toUpperCase()]||0);
   }
   function pickPlayer(state,side,kind,stream){
     const lineup=lineupFor(state,side);
-    let candidates=[];
-    for(const roles of preferredRoles(kind)){
-      candidates=lineup.filter(player=>roles.includes(playerRole(player)));
-      if(candidates.length)break;
-    }
+    let candidates=lineup.filter(player=>roleSelectionWeight(kind,playerRole(player))>0);
     if(!candidates.length)candidates=lineup.filter(player=>playerRole(player)!=="GK");
     if(!candidates.length)candidates=lineup.slice();
 
     const sideHistory=Array.from(state.participantHistoryBySide?.[side]||[]);
+    const recentIds=new Set(sideHistory.slice(-2));
+    const freshPool=candidates.filter(player=>!recentIds.has(playerId(player)));
     const lastId=sideHistory[sideHistory.length-1]||"";
-    const pool=candidates.length>1&&lastId
+    const noImmediateRepeat=candidates.length>1&&lastId
       ? candidates.filter(player=>playerId(player)!==lastId)
       : candidates;
+    const pool=freshPool.length>=2?freshPool:(noImmediateRepeat.length?noImmediateRepeat:candidates);
     const appearances=state.participantAppearances?.[side]||{};
     const entries=pool.map(player=>{
       const pid=playerId(player);
+      const roleWeight=Math.max(.01,roleSelectionWeight(kind,playerRole(player)));
       const strength=Math.max(1,global.RoadToGloryEncounterRuntime.specificAverage(player,kind));
       const strengthWeight=0.8+Math.min(120,strength)/300;
       const count=Math.max(0,Number(appearances[pid]||0));
       const previousIndex=sideHistory.lastIndexOf(pid);
       const distance=previousIndex<0?99:sideHistory.length-previousIndex;
-      const recencyWeight=distance<=2?0.28:distance===3?0.58:1;
-      const usageWeight=1/(1+(count*0.32));
-      return {player,weight:Math.max(0.01,strengthWeight*recencyWeight*usageWeight)};
+      const recencyWeight=distance<=2?0.2:distance===3?0.5:1;
+      const usageWeight=1/(1+(count*0.4));
+      return {player,weight:Math.max(0.01,roleWeight*strengthWeight*recencyWeight*usageWeight)};
     });
     return global.RoadToGloryRng.weightedPick(entries,e=>e.weight,global.RoadToGloryRng.float(state.seed,stream,state.actionIndex+state.extraActionIndex))?.player||pool[0]||candidates[0]||null;
   }
