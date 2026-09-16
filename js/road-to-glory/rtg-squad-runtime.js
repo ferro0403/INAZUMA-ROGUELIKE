@@ -22,7 +22,8 @@
     const reasons = [];
     const { seasonId, squad } = activeSquad(state);
     if (!squad) return { valid: false, reasons: ["missing-squad"], lineupPlayers: [], benchPlayers: [], formation: null };
-    const formation = (seasonDb?.formations?.eleven || []).find((entry) => id(entry?.id) === id(squad.formationId)) || null;
+    const formationCatalog = config().formations || seasonDb?.formations?.eleven || [];
+    const formation = formationCatalog.find((entry) => id(entry?.id) === id(squad.formationId)) || null;
     if (!formation) reasons.push("invalid-formation");
 
     const lineup = Array.isArray(squad.lineup) ? squad.lineup.map(id) : [];
