@@ -841,6 +841,70 @@
   font-size: .76rem;
 }
 
+.rtg-match-ticker {
+  width: min(760px, calc(100% - 18px));
+  margin: 8px auto 0;
+  padding: 8px 10px;
+  border: 1px solid rgba(92,130,177,.24);
+  border-radius: 12px;
+  background: rgba(7,23,44,.76);
+  box-shadow: 0 8px 20px rgba(0,0,0,.16);
+}
+.rtg-match-ticker-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.rtg-match-ticker-head small {
+  color: #8fa9c8;
+  font-size: .58rem;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.rtg-match-ticker-head span {
+  color: #ffd34f;
+  font-size: .56rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+.rtg-match-ticker-list { display: grid; gap: 4px; }
+.rtg-ticker-event {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 30px minmax(0,1fr) auto;
+  gap: 7px;
+  align-items: center;
+  padding: 5px 6px;
+  border-left: 3px solid rgba(92,130,177,.44);
+  background: rgba(255,255,255,.035);
+}
+.rtg-ticker-event.is-manual { border-left-color: #ffd34f; }
+.rtg-ticker-event > span {
+  color: #ffd34f;
+  font-size: .62rem;
+  font-weight: 950;
+}
+.rtg-ticker-event strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #dce8f7;
+  font-size: .7rem;
+}
+.rtg-ticker-event em {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #8fd4ff;
+  font-size: .6rem;
+  font-style: normal;
+}
+.rtg-ticker-empty { color: #8fa9c8; font-size: .68rem; }
+
 .rtg-match-shell .rtg-static-field--main {
   border: 2px solid rgba(255,255,255,.28);
   border-radius: 24px;
@@ -1032,6 +1096,9 @@
   .rtg-match-shell .rtg-abandon-button { padding-inline: 8px; font-size: .62rem; }
   .rtg-match-flowbar { margin-top: 7px; }
   .rtg-match-flowbar > span { padding: 5px 4px; }
+  .rtg-match-ticker { padding: 7px 8px; }
+  .rtg-ticker-event { grid-template-columns: 28px minmax(0,1fr); }
+  .rtg-ticker-event em { grid-column: 2; max-width: 100%; }
   .rtg-match-shell .rtg-static-field--main {
     border-radius: 16px;
     padding: 8px 5px;
