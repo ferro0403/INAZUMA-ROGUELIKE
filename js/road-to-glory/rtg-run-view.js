@@ -174,7 +174,7 @@
       const rarities = model.rarities || [];
       const candidates = model.candidates || [];
       return `<div class="rtg-vending rtg-paper-modal">
-        <div class="modal-head rtg-vending-head"><div><p class="eyebrow">Road to Glory · Season 1</p><h2>DISTRIBUTORE</h2><p class="muted">Le squadre battute riempiono il distributore. Una pallina = un giocatore.</p></div><strong class="rtg-vending-pool">${escape(candidates.length)}<small>nel pool</small></strong></div>
+        <div class="modal-head rtg-vending-head"><div><p class="eyebrow">Road to Glory · Season 1</p><h2>DISTRIBUTORE S1</h2><p class="muted">Le squadre battute riempiono il distributore. Una pallina = un giocatore.</p></div><strong class="rtg-vending-pool">${escape(candidates.length)}<small>nel pool</small></strong></div>
         <div class="rtg-vending-layout">
           <div class="rtg-vending-machine-v2" aria-label="Distributore di palline Season 1">
             <div class="rtg-machine-marquee"><span>SEASON</span><strong>1</strong></div>
