@@ -24,7 +24,7 @@
       return `<header class="topbar rtg-main-topbar">
         <button type="button" class="btn rtg-home-button" data-rtg-home>← Home</button>
         <div class="rtg-main-title"><p class="eyebrow">Season 1</p><strong class="brand">Road to Glory</strong></div>
-        <div class="status-strip"><span class="status-pill rtg-token-pill">◈ ${escape(Number(state.tokens) || 0)}</span><span class="status-pill lives">♥ ${escape(Number(state.lives) || 0)}</span></div>
+        <div class="status-strip"><span class="status-pill rtg-token-pill">◈ ${escape(Number(state.tokens) || 0)}</span><span class="status-pill lives">♥ ${escape(Number(state.lives) || 0)} vite</span></div>
       </header>`;
     }
 
