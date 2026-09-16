@@ -70,6 +70,35 @@
       </div>`;
     }
 
+    function matchPlayer(match, side, playerId) {
+      const squad = side === "user" ? match?.userSquad : match?.opponentSquad;
+      return [...(squad?.lineup || []), ...(squad?.bench || [])].find((player) => pid(player) === String(playerId || "")) || null;
+    }
+
+    function tickerEventMarkup(match, event = {}) {
+      const actorSide = event.actorSide === "opponent" ? "opponent" : "user";
+      const opponentSide = actorSide === "user" ? "opponent" : "user";
+      const actor = matchPlayer(match, actorSide, event.actorPlayerId);
+      const opponent = matchPlayer(match, opponentSide, event.opponentPlayerId);
+      const actorName = actor?.name || event.actorPlayerId || "Giocatore";
+      const opponentName = opponent?.name || event.opponentPlayerId || "Avversario";
+      let copy = "";
+      if (event.zone === "shot") {
+        copy = event.actorWon ? `GOAL! ${actorName}` : `${opponentName} ferma ${actorName}`;
+      } else if (event.zone === "attack") {
+        copy = event.actorWon ? `${actorName} supera ${opponentName}` : `${opponentName} recupera palla`;
+      } else {
+        copy = event.actorWon ? `${actorName} vince il duello a centrocampo` : `${opponentName} conquista il possesso`;
+      }
+      const move = event.actorMove || event.opponentMove;
+      return `<div class="rtg-ticker-event ${event.actorWon ? "is-success" : ""} ${event.manual ? "is-manual" : "is-auto"}"><span>${escape(event.minute ?? "—")}'</span><strong>${escape(copy)}</strong>${move ? `<em>${escape(move)}</em>` : ""}</div>`;
+    }
+
+    function tickerMarkup(match = {}) {
+      const events = Array.from(match.log || []).slice(-3);
+      return `<section class="rtg-match-ticker" aria-label="Ultime azioni"><div class="rtg-match-ticker-head"><small>Ultime azioni</small><span>${events.length ? "live" : "kick-off"}</span></div><div class="rtg-match-ticker-list">${events.length ? events.map((event) => tickerEventMarkup(match, event)).join("") : '<div class="rtg-ticker-empty">Formazioni pronte.</div>'}</div></section>`;
+    }
+
     function matchMarkup(match = {}) {
       const opponentName = match.opponentSquad?.name || "CPU";
       const possessionLabel = match.possession === "user" ? "TU" : opponentName;
@@ -86,6 +115,7 @@
           <span><small>Zona</small><strong>${escape(zoneLabel)}</strong></span>
           <span><small>Azione</small><strong>${escape(actionCurrent)} / ${escape(match.actionTarget || "—")}</strong></span>
         </div>
+        ${tickerMarkup(match)}
         <div class="content rtg-match-content">
           <section class="panel rtg-static-field rtg-static-field--main">
             <div class="rtg-field-team-label rtg-field-team-label--opponent">${escape(opponentName)}</div>
