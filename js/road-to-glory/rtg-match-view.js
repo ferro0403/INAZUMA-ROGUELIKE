@@ -141,9 +141,10 @@
 
     function preMatchFormation(squad = {}, side = "user") {
       const rows = formationRows(squad?.formationId, squad?.lineup || []);
+      const teamLabel = side === "user" ? "TU" : (squad?.name || "Avversario");
       return `<section class="rtg-prematch-team rtg-prematch-team--${side}">
         <div class="rtg-prematch-team-head">
-          <div><small>${side === "user" ? "LA TUA SQUADRA" : "AVVERSARIO"}</small><strong>${escape(side === "user" ? "Road to Glory XI" : (squad?.name || "CPU"))}</strong></div>
+          <strong>${escape(teamLabel)}</strong>
           <span><b>${escape(squad?.formationId || "—")}</b><em>OVR ${escape(formationAverage(squad) || "—")}</em></span>
         </div>
         <div class="rtg-prematch-pitch">
@@ -159,7 +160,7 @@
     function preMatchMarkup(match = {}) {
       return `<main class="screen boss-match-screen rtg-prematch-shell development-squad-card-scope">
         <header class="topbar rtg-prematch-topbar">
-          <div><p class="eyebrow">Road to Glory</p><h1>Pre-partita</h1></div>
+          <div><h1>Pre-partita</h1></div>
           <div class="rtg-prematch-vs"><strong>VS</strong><span>${escape(match.opponentSquad?.name || "Avversario")}</span></div>
         </header>
         <div class="content rtg-prematch-content">

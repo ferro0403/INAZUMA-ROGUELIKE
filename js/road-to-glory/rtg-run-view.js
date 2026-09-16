@@ -180,21 +180,21 @@
       const canPull = Number(model.tokens) >= 300 && candidates.length > 0;
       return `<div class="rtg-vending rtg-paper-modal">
         <div class="rtg-vending-title">
-          <div><p class="eyebrow">Season 1</p><h2>DISTRIBUTORE S1</h2></div>
-          <div class="rtg-vending-meta"><span><small>POOL</small><strong>${escape(candidates.length)}</strong></span><span><small>GETTONI</small><strong>${escape(Number(model.tokens)||0)} ◈</strong></span></div>
+          <div><p class="eyebrow">RTG · S1</p><h2>Distributore</h2></div>
         </div>
         <div class="rtg-vending-stage">
-          <div class="rtg-vending-machine-v3" aria-label="Distributore di palline Season 1">
-            <div class="rtg-vending-sign"><span>RTG</span><strong>S1</strong></div>
-            <div class="rtg-vending-glass">
+          <div class="rtg-vending-machine-v4" aria-label="Distributore di palline Season 1">
+            <div class="rtg-vending-brand-v4"><span>INAZUMA</span><strong>RTG</strong></div>
+            <div class="rtg-vending-globe-v4">
               <i class="rtg-ball b1"></i><i class="rtg-ball b2"></i><i class="rtg-ball b3"></i><i class="rtg-ball b4"></i><i class="rtg-ball b5"></i><i class="rtg-ball b6"></i><i class="rtg-ball b7"></i><i class="rtg-ball b8"></i>
             </div>
-            <div class="rtg-vending-control">
-              <span>300 ◈</span>
-              <i aria-hidden="true">↻</i>
+            <div class="rtg-vending-cabinet-v4">
+              <div class="rtg-vending-price-v4"><small>1 PALLINA</small><strong>300 ◈</strong></div>
+              <div class="rtg-vending-crank-v4" aria-hidden="true"><i>↻</i></div>
+              <div class="rtg-vending-tray-v4" aria-hidden="true"><span>PREMIO</span><b>?</b></div>
             </div>
-            <div class="rtg-vending-mouth"><span>PALLINA</span><b>?</b></div>
           </div>
+          <div class="rtg-vending-wallet-chip"><span>GETTONI</span><strong>${escape(Number(model.tokens)||0)} ◈</strong></div>
         </div>
         <div class="rtg-vending-ratebar" aria-label="Probabilità">
           ${rarities.map((entry)=>`<span data-rarity="${escape(entry.rarity)}"><b>${escape(entry.rarity)}</b><em>${escape(Number(entry.weight).toFixed(1))}%</em></span>`).join("")}

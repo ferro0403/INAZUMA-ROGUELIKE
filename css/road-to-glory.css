@@ -2271,3 +2271,264 @@
     height:132px;
   }
 }
+
+
+/* RTG quality pass 5 — formation-scale picker, quieter squad/prematch, cartoon vending. */
+.rtg-squad-section-head{
+  min-height:36px;
+  align-items:center!important;
+}
+.rtg-squad-section-head h2{
+  margin:0!important;
+  color:#111216!important;
+  font-size:.9rem!important;
+  text-transform:uppercase;
+}
+.rtg-squad-shell .squad-management-panel{
+  align-content:start;
+}
+.rtg-squad-picker{
+  --rtg-picker-card-size: 74px;
+  --rtg-picker-card-mobile: 64px;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid{
+  grid-template-columns:repeat(5,minmax(0,1fr))!important;
+  gap:18px 8px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-picker-player-card{
+  width:var(--rtg-picker-card-size)!important;
+  max-width:var(--rtg-picker-card-size)!important;
+  min-height:90px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-picker-player-card .player-portrait-wrap{
+  height:64px!important;
+  padding:2px 2px 0!important;
+  overflow:visible!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-picker-player-card img.player-portrait{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center bottom!important;
+  transform:none!important;
+}
+.rtg-prematch-team-head{
+  align-items:center!important;
+}
+.rtg-prematch-team-head>strong{
+  color:#111216!important;
+  font-size:.86rem!important;
+  font-weight:1000!important;
+  text-transform:uppercase;
+}
+.rtg-vending{
+  width:min(92vw,430px)!important;
+  padding:14px 14px 16px!important;
+}
+.rtg-vending-title{
+  justify-content:center!important;
+  border-bottom:0!important;
+  padding:0!important;
+  text-align:center;
+}
+.rtg-vending-title .eyebrow{
+  margin:0 0 2px!important;
+}
+.rtg-vending-title h2{
+  font-size:1.35rem!important;
+  letter-spacing:-.02em;
+}
+.rtg-vending-stage{
+  gap:10px;
+  padding:12px 0 8px!important;
+}
+.rtg-vending-machine-v4{
+  position:relative;
+  width:214px;
+  padding:10px 12px 14px;
+  border:4px solid #111216;
+  border-radius:20px 20px 12px 12px;
+  background:linear-gradient(145deg,#ffd21f 0 72%,#efa31e 72% 100%);
+  box-shadow:7px 8px 0 #111216,13px 9px 0 rgba(239,163,30,.56);
+}
+.rtg-vending-machine-v4::after{
+  content:"";
+  position:absolute;
+  left:20px;
+  right:20px;
+  bottom:-13px;
+  height:10px;
+  border:3px solid #111216;
+  border-top:0;
+  background:#efa31e;
+}
+.rtg-vending-brand-v4{
+  display:flex;
+  justify-content:center;
+  align-items:baseline;
+  gap:7px;
+  margin:0 0 6px;
+  color:#111216;
+  font-weight:1000;
+  letter-spacing:.11em;
+}
+.rtg-vending-brand-v4 span{font-size:.55rem}
+.rtg-vending-brand-v4 strong{font-size:1.05rem}
+.rtg-vending-globe-v4{
+  position:relative;
+  height:174px;
+  overflow:hidden;
+  border:4px solid #111216;
+  border-radius:48% 48% 22% 22%/38% 38% 18% 18%;
+  background:
+    radial-gradient(circle at 28% 18%,rgba(255,255,255,.92),transparent 15%),
+    linear-gradient(155deg,#edfaff 0 22%,#a9def0 55%,#72bdd9 100%);
+  box-shadow:inset 0 -18px 0 rgba(17,18,22,.10);
+}
+.rtg-vending-globe-v4::before{
+  content:"";
+  position:absolute;
+  z-index:4;
+  top:13px;
+  left:25px;
+  width:22px;
+  height:74px;
+  border-radius:50%;
+  background:rgba(255,255,255,.40);
+  transform:rotate(18deg);
+}
+.rtg-vending-globe-v4::after{
+  content:"";
+  position:absolute;
+  left:9%;
+  right:9%;
+  bottom:6%;
+  height:25%;
+  border-radius:50%;
+  background:rgba(17,18,22,.11);
+}
+.rtg-vending-globe-v4 .rtg-ball{
+  width:34px;
+  height:34px;
+}
+.rtg-vending-cabinet-v4{
+  display:grid;
+  grid-template-columns:1fr 48px;
+  gap:8px;
+  align-items:center;
+  margin-top:8px;
+}
+.rtg-vending-price-v4{
+  min-height:48px;
+  display:grid;
+  place-items:center;
+  padding:5px 8px;
+  border:3px solid #111216;
+  background:#fffdf7;
+  color:#111216;
+}
+.rtg-vending-price-v4 small{
+  font-size:.48rem;
+  font-weight:1000;
+  letter-spacing:.08em;
+}
+.rtg-vending-price-v4 strong{
+  font-size:1rem;
+  line-height:1;
+}
+.rtg-vending-crank-v4{
+  display:grid;
+  place-items:center;
+  width:48px;
+  height:48px;
+  border:3px solid #111216;
+  border-radius:50%;
+  background:#fffdf7;
+  box-shadow:2px 3px 0 rgba(17,18,22,.24);
+}
+.rtg-vending-crank-v4 i{
+  display:grid;
+  place-items:center;
+  width:32px;
+  height:32px;
+  border:2px solid #111216;
+  border-radius:50%;
+  background:#ffd21f;
+  color:#111216;
+  font-style:normal;
+  font-size:1.05rem;
+  font-weight:1000;
+}
+.rtg-vending-tray-v4{
+  grid-column:1/-1;
+  width:72%;
+  min-height:34px;
+  justify-self:center;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:10px;
+  border:3px solid #111216;
+  background:#111216;
+  color:#fff;
+}
+.rtg-vending-tray-v4 span{
+  font-size:.48rem;
+  font-weight:1000;
+  letter-spacing:.08em;
+}
+.rtg-vending-tray-v4 b{
+  color:#ffd21f;
+  font-size:1.1rem;
+}
+.rtg-vending-wallet-chip{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:5px 10px;
+  border:2px solid #111216;
+  background:#fffdf7;
+  color:#111216;
+  box-shadow:2px 3px 0 rgba(17,18,22,.18);
+}
+.rtg-vending-wallet-chip span{
+  font-size:.5rem;
+  font-weight:1000;
+  letter-spacing:.08em;
+}
+.rtg-vending-wallet-chip strong{
+  font-size:.85rem;
+}
+.rtg-vending-ratebar{
+  margin:3px 0 9px!important;
+  gap:4px!important;
+}
+.rtg-vending-ratebar>span{
+  border:0!important;
+  border-bottom:2px solid #d7d0c4!important;
+  background:transparent!important;
+  padding:3px 5px!important;
+  font-size:.54rem!important;
+}
+.rtg-vending-pull{
+  min-height:46px!important;
+  font-size:.8rem!important;
+}
+@media(max-width:780px){
+  .rtg-squad-picker{--rtg-picker-card-size:var(--rtg-picker-card-mobile)}
+  .modal.rtg-squad-picker-modal .rtg-picker-grid{
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:17px 6px!important;
+  }
+  .modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-picker-player-card{
+    min-height:82px!important;
+  }
+  .modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-picker-player-card .player-portrait-wrap{
+    height:56px!important;
+  }
+}
+@media(max-width:430px){
+  .rtg-vending-machine-v4{width:194px}
+  .rtg-vending-globe-v4{height:158px}
+  .rtg-vending-globe-v4 .rtg-ball{width:31px;height:31px}
+}

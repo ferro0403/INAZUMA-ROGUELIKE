@@ -166,39 +166,27 @@
       return `<main class="screen squad-screen rtg-squad-shell">
         <header class="topbar squad-topbar rtg-squad-topbar">
           <button type="button" class="squad-back-button rtg-squad-back" data-rtg-home aria-label="Torna alla Home">←</button>
-          <div class="squad-topbar-copy"><p class="eyebrow">ROAD TO GLORY · SEASON 1</p><h1>Gestione squadra</h1></div>
+          <div class="squad-topbar-copy"><p class="eyebrow">RTG · S1</p><h1>Squadra</h1></div>
           <div class="squad-topbar-stats"><span><small>LV</small><strong>20</strong></span></div>
         </header>
 
         <div class="content squad-content rtg-squad-content">
-          <div class="squad-command-deck is-valid is-roster-complete rtg-roster-summary">
-            <span class="squad-readiness-mark" aria-hidden="true">✓</span>
-            <div><small>Rosa RTG</small><strong>15 giocatori attivi</strong></div>
-            <span class="squad-command-count"><b>${escape(model.availableCount || 0)} disponibili</b></span>
-          </div>
-
           <div class="squad-workspace">
             <section class="squad-field-panel" aria-label="Campo 11v11 RTG">
-              <div class="squad-panel-head"><div><p class="eyebrow">Formazione titolare</p><h2>Campo tattico</h2></div><span class="squad-field-formation" data-rtg-formation-current>${escape(model.formation?.name || model.formation?.formation || model.formationId || "—")}</span></div>
+              <div class="squad-panel-head rtg-squad-section-head"><h2>Titolari</h2><span class="squad-field-formation" data-rtg-formation-current>${escape(model.formation?.name || model.formation?.formation || model.formationId || "—")}</span></div>
               <section class="pitch rtg-squad-pitch-main">
                 ${lineupRows.map((row) => `<div class="pitch-row tactical-row" data-row-count="${Math.max(1, row.entries?.length || Number(row.count) || 1)}" style="--players-in-row:${Math.max(1, row.entries?.length || Number(row.count) || 1)};--row-count:${Math.max(1, row.entries?.length || Number(row.count) || 1)}">${(row.entries || []).map((entry) => playerCard(entry, "lineup")).join("")}</div>`).join("")}
               </section>
             </section>
 
             <aside class="squad-management-panel">
-              <section class="squad-module-card">
-                <div class="squad-module-head">
-                  <div><small>Modulo corrente</small><strong>${escape(model.formation?.name || model.formation?.formation || model.formationId || "—")}</strong></div>
-                  ${formationPreviewMarkup(model.formation || {})}
-                </div>
-              </section>
               <div class="squad-management-actions rtg-squad-actions rtg-squad-actions--three">
                 <button type="button" class="btn btn-yellow rtg-adapt-button" data-rtg-adapt-requirements>Adatta ai requisiti</button>
                 <button type="button" class="btn squad-module-button" data-rtg-open-formation>Modifica modulo</button>
                 <button type="button" class="btn squad-info-button" data-rtg-save-squad>Salva squadra</button>
               </div>
               <section class="squad-bench-panel">
-                <div class="squad-panel-head"><div><p class="eyebrow">Panchina</p><h2>Riserve</h2></div><span class="squad-bench-count">4/4</span></div>
+                <div class="squad-panel-head rtg-squad-section-head"><h2>Panchina</h2><span class="squad-bench-count">4/4</span></div>
                 <div class="bench-list squad-bench-list rtg-bench-list">${bench.map((entry) => playerCard(entry, "bench")).join("")}</div>
               </section>
             </aside>
