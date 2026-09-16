@@ -8,7 +8,7 @@ const lineup=["GK","DF","DF","DF","DF","MF","MF","MF","FW","FW","FW"].map((r,i)=
 const opp=["GK","DF","DF","DF","DF","MF","MF","MF","FW","FW","FW"].map((r,i)=>p("o"+i,r));
 let match={period:"first_half",status:"active",score:{user:1,opponent:0},userSquad:{lineup},opponentSquad:{lineup:opp},moveUsesByPlayerId:{"user:u8":2},pendingEncounter:{userPlayerId:"u8",opponentPlayerId:"o1",actorPlayerId:"u8",opponentPlayerId:"o1",userBaseActionLabel:"Tiro",normalPreviewProbability:62.5,userMove:{name:"Fire Tornado",power:80},aiChoice:"move"}};
 const prematch=view.preMatchMarkup(match);
-assert.doesNotMatch(prematch,/Road to Glory XI|LA TUA SQUADRA/);
+assert.doesNotMatch(prematch,/Road to Glory XI/);assert.match(prematch,/LA TUA SQUADRA/);assert.match(prematch,/data-rtg-prematch-tab="user"/);
 assert.match(prematch,/data-rtg-prematch-player="u0"/);
 const detailCard={dataset:{rtgPrematchPlayer:"u0",side:"user"},addEventListener(_type,fn){this.fn=fn;}};
 const detailCalls=[];
