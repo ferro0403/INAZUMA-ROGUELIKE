@@ -12,11 +12,15 @@
   function create(deps = {}) {
     const escape = deps.escapeHtml || ((value) => String(value ?? ""));
     const emblem = deps.teamEmblemMarkup || ((teamId) => `<span class="boss-logo-fallback boss-logo-fallback--visible">${escape(String(teamId || "?").slice(0,1).toUpperCase())}</span>`);
+    const compactPlayerCardMarkup = deps.compactPlayerCardMarkup || null;
 
     function tabs(active = "run") {
-      return `<nav class="rtg-tabs rtg-tabs--main-style" aria-label="Road to Glory">
-        <button type="button" class="rtg-tab ${active === "run" ? "active" : ""}" data-rtg-tab="run">Run</button>
-        <button type="button" class="rtg-tab ${active === "squad" ? "active" : ""}" data-rtg-tab="squad">Squadra</button>
+      const icon = (name) => name === "run"
+        ? '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5 9 4l6 2.5 5-2.5v13.5l-5 2.5-6-2.5-5 2.5V6.5Z"/><path d="M9 4v13.5M15 6.5V20"/></svg>'
+        : '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM16 10a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM3.5 19c.7-3.2 2.4-5 4.5-5s3.8 1.8 4.5 5M12.5 17.5c.7-2.2 1.9-3.4 3.5-3.4 1.8 0 3.2 1.4 4 4"/></svg>';
+      return `<nav class="bottom-nav rtg-bottom-nav" aria-label="Road to Glory">
+        <button type="button" data-rtg-tab="run" class="${active === "run" ? "active" : ""}" aria-current="${active === "run" ? "page" : "false"}"><span class="nav-icon">${icon("run")}</span><span class="nav-label">Run</span></button>
+        <button type="button" data-rtg-tab="squad" class="${active === "squad" ? "active" : ""}" aria-current="${active === "squad" ? "page" : "false"}"><span class="nav-icon">${icon("squad")}</span><span class="nav-label">Squadra</span></button>
       </nav>`;
     }
 
@@ -127,7 +131,6 @@
       }).join("");
       return `<main class="screen rtg-run-screen">
         ${header(state)}
-        ${tabs("run")}
         <div class="content narrow rtg-run-content">
           <section class="panel rtg-run-command">
             <div><p class="eyebrow">Ricompense Season 1</p><h2>Distributore giocatori</h2><p class="muted">Batti le squadre principali per ampliare il pool.</p></div>
@@ -135,6 +138,7 @@
           </section>
           <section class="rtg-map" aria-label="Percorso Season 1">${blocks}</section>
         </div>
+        ${tabs("run")}
       </main>`;
     }
 
@@ -196,7 +200,18 @@
     }
 
     function pullResultMarkup(result = {}, player = {}) {
-      return `<div class="rtg-pull-result rtg-paper-modal"><p class="eyebrow">${escape(result.rarity || player.category || "")}</p><h2>${escape(player.name || result.playerId || "Giocatore")}</h2><p>${result.duplicate ? `Duplicato · rimborso ${escape(result.refund)} ◈` : "Nuovo giocatore RTG!"}</p><strong class="rtg-pull-balance">Saldo: ${escape(result.balanceAfter)} ◈</strong></div>`;
+      const rarity = result.rarity || player.category || "";
+      const card = compactPlayerCardMarkup
+        ? compactPlayerCardMarkup(player,{level:20,overall:player?.finalOverall ?? player?.overall,extraClass:"rtg-pull-player-card"})
+        : `<div class="rtg-pull-player-fallback"><strong>${escape(player.name || result.playerId || "Giocatore")}</strong><span>Lv 20</span></div>`;
+      return `<div class="rtg-pull-result rtg-paper-modal">
+        <div class="rtg-pull-result-head"><p class="eyebrow">${escape(rarity)}</p><strong>${result.duplicate ? "DUPLICATO" : "NUOVO GIOCATORE"}</strong></div>
+        <div class="rtg-pull-result-body">
+          ${card}
+          <div class="rtg-pull-result-copy"><h2>${escape(player.name || result.playerId || "Giocatore")}</h2><p>${result.duplicate ? `Rimborso duplicato: <strong>${escape(result.refund)} ◈</strong>` : "Aggiunto alla collezione Road to Glory."}</p><span>Livello 20 · ${escape(rarity)}</span></div>
+        </div>
+        <strong class="rtg-pull-balance">Saldo RTG · ${escape(result.balanceAfter)} ◈</strong>
+      </div>`;
     }
 
     return Object.freeze({ tabs, lockedMarkup, runMarkup, requirementsMarkup, nodeModalMarkup, vendingMarkup, pullResultMarkup });
