@@ -91,7 +91,7 @@
       const gacha = new Set((state?.gachaAcquiredPlayerIds || []).map(String));
       const resolve = (playerId) => resolver?.resolveAtLevel20?.(playerId, seasonId, squad.activeRoleVariantByPlayerId?.[playerId] || null, freeAgentsDb) || { playerId, name: playerId, overall: "—", level: 20 };
       const sourceFor = (playerId) => gacha.has(String(playerId)) ? "RTG" : "Svincolato";
-      const formations = Array.from(seasonDb?.formations?.eleven || []);
+      const formations = Array.from(global.RoadToGloryConfig?.SEASON1?.formations || seasonDb?.formations?.eleven || []);
       const formation = formations.find((item) => String(item.id) === String(squad.formationId)) || formations[0] || null;
       const lineup = (squad.lineup || []).map((playerId) => ({ playerId: String(playerId), source: sourceFor(playerId), player: resolve(String(playerId)) }));
       const bench = (squad.bench || []).map((playerId) => ({ playerId: String(playerId), source: sourceFor(playerId), player: resolve(String(playerId)) }));
@@ -130,13 +130,22 @@
       return `<div class="rtg-picker-grid">${entries.map((entry) => playerCard(entry, "picker")).join("")}</div>${remaining > 0 ? `<div class="album-load-more-wrap rtg-picker-load-more-wrap"><button type="button" class="btn btn-yellow album-load-more rtg-picker-load-more" data-rtg-picker-load-more>MOSTRA ALTRI ${escape(Math.min(24, remaining))}</button><small>${escape(entries.length)} di ${escape(total)}</small></div>` : `<div class="rtg-picker-count"><small>${escape(entries.length)} di ${escape(total)}</small></div>`}`;
     }
 
-    function replacementPickerMarkup({ target = null, role = "", entries = [], total = 0, visibleCount = entries.length } = {}) {
+    function replacementPickerMarkup({ target = null, role = "", entries = [], total = 0, visibleCount = entries.length, query = "", sourceFilter = "all" } = {}) {
       const targetName = target?.player?.name || target?.playerId || "Giocatore";
+      const filterButton = (value,label) => `<button type="button" class="rtg-picker-filter ${sourceFilter===value?"active":""}" data-rtg-picker-source="${escape(value)}">${escape(label)}</button>`;
       return `<section class="rtg-squad-picker development-squad-card-scope">
         <div class="modal-head rtg-squad-picker-head">
-          <div><p class="eyebrow">Cambio giocatore</p><h2>${escape(targetName)}</h2><p class="muted">Solo ${escape(role || "ruolo compatibile")} · vengono caricati 24 giocatori alla volta.</p></div>
+          <div><p class="eyebrow">Cambio giocatore</p><h2>${escape(targetName)}</h2><p class="muted">Ruolo ${escape(role || "compatibile")} · caricamento progressivo a blocchi da 24.</p></div>
         </div>
-        <div class="rtg-picker-role-badge">SOLO ${escape(role || "—")}</div>
+        <div class="rtg-picker-toolbar">
+          <label class="rtg-picker-search"><span>Cerca per nome</span><input type="search" inputmode="search" autocomplete="off" placeholder="Es. Jude, Axel, Mark…" value="${escape(query)}" data-rtg-picker-search /></label>
+          <div class="rtg-picker-source-filters" aria-label="Filtra provenienza">
+            ${filterButton("all","Tutti")}
+            ${filterButton("free","Svincolati")}
+            ${filterButton("rtg","Giocatori RTG")}
+          </div>
+          <div class="rtg-picker-role-badge">SOLO ${escape(role || "—")}</div>
+        </div>
         <div data-rtg-picker-results>${replacementPickerResultsMarkup({ entries, total, visibleCount })}</div>
       </section>`;
     }
