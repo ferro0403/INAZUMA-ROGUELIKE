@@ -508,6 +508,34 @@
 .rtg-versus--cards article > small { color: #625e56; font-weight: 1000; text-transform: uppercase; }
 .rtg-versus--cards > b { color: #101116; font-size: 1.4rem; }
 .rtg-duel-player-card { width: min(120px,100%) !important; }
+.rtg-duel-summary {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 10px;
+  align-items: center;
+  margin-top: 14px;
+}
+.rtg-duel-summary > div {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+  padding: 10px;
+  border: 2px solid #101116;
+  background: #f4f0e5;
+}
+.rtg-duel-summary small { font-size: .62rem; font-weight: 1000; color: #746d60; }
+.rtg-duel-summary strong,
+.rtg-duel-summary span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rtg-duel-summary > b { color: #101116; font-size: 1.2rem; }
+.rtg-final-probability { margin: 14px 0; color: #101116; }
+.rtg-duel-continue {
+  width: 100%;
+  min-height: 48px;
+  border: 3px solid #101116 !important;
+  border-radius: 0 !important;
+  box-shadow: 4px 5px 0 #101116;
+}
+
 .rtg-duel-actions { margin-top: 18px; }
 .rtg-action-button { min-height: 48px; border: 3px solid #101116 !important; border-radius: 0 !important; box-shadow: 4px 5px 0 #101116; }
 .rtg-action-button--move { background: #e95f39 !important; color: #fff !important; }
@@ -522,9 +550,80 @@
 }
 .rtg-halftime-player-card { width: 88px !important; max-width: 88px !important; }
 .rtg-half-confirm { width: 100%; margin-top: 16px; border: 3px solid #101116 !important; border-radius: 0 !important; box-shadow: 5px 6px 0 #101116; }
+.rtg-penalty-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: end;
+  padding-bottom: 10px;
+  border-bottom: 3px solid #101116;
+}
+.rtg-penalty-head h2 { margin: 0; color: #101116; text-transform: uppercase; }
+.rtg-penalty-head .muted { margin: 4px 0 0; color: #666158; }
+.rtg-penalty-score {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 3px solid #101116;
+  background: #ffd21f;
+  color: #101116;
+  font-size: 1.4rem;
+  box-shadow: 4px 4px 0 #101116;
+}
+.rtg-penalty-history {
+  display: grid;
+  gap: 7px;
+  margin: 14px 0;
+}
+.rtg-penalty-history > div {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+.rtg-penalty-history b { font-size: .7rem; color: #101116; }
+.rtg-penalty-history > div > span { display: flex; gap: 6px; flex-wrap: wrap; }
+.rtg-penalty-dot {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #101116;
+  border-radius: 50%;
+  background: #fff;
+  color: #101116;
+  font-size: .7rem;
+  font-weight: 1000;
+}
+.rtg-penalty-dot--goal { background: #49c878; }
+.rtg-penalty-dot--save { background: #ef695d; }
+.rtg-penalty-dot--pending { opacity: .32; }
+.rtg-penalty-last {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 10px;
+  border: 2px solid #101116;
+  margin-bottom: 12px;
+}
+.rtg-penalty-last.is-goal { background: #dff6e7; }
+.rtg-penalty-last.is-save { background: #fde4df; }
+.rtg-penalty-last span { font-size: .7rem; color: #625e56; }
+.rtg-penalty-versus {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 10px;
+  align-items: center;
+}
+.rtg-penalty-versus article { display: grid; justify-items: center; gap: 5px; }
+.rtg-penalty-versus article > small { color: #625e56; font-weight: 1000; text-transform: uppercase; }
+.rtg-penalty-versus > b { color: #101116; font-size: 1.25rem; }
+.rtg-penalty-player-card { width: 96px !important; max-width: 96px !important; }
+.rtg-penalty-instruction { margin: 14px 0 0; color: #101116; font-weight: 750; }
 .rtg-penalty-directions { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 14px 0; }
 .rtg-penalty-directions .btn { min-height: 48px; border: 3px solid #101116; border-radius: 0; background: #fff; color: #101116; }
 .rtg-penalty-move { width: 100%; border: 3px solid #101116 !important; border-radius: 0 !important; box-shadow: 4px 5px 0 #101116; }
+.rtg-penalty-move strong,.rtg-penalty-move small { display:block; }
+.rtg-penalty-move small { font-size:.62rem; margin-top:2px; }
 .rtg-shootout-score { margin-top: 14px; text-align: center; color: #101116; font-size: 1.8rem; font-weight: 1000; }
 .rtg-match-result { text-align: center; }
 .rtg-match-result h2 { color: #101116; }
