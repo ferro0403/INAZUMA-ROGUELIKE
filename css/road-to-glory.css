@@ -4010,3 +4010,132 @@
   .rtg-duel-resolving-action{grid-template-columns:1fr}
   .rtg-duel-resolving-action small,.rtg-duel-resolving-action em{text-align:center}
 }
+
+
+/* RTG duel readability pass — keep the current structure, improve hierarchy and rarity recognition. */
+.rtg-prematch-revolution .rtg-prematch-matchup{
+  width:calc(100% + 16px);
+  margin-left:-8px;
+}
+
+.rtg-duel-portrait-panel{
+  --duel-rarity-bg:#e7e9ec;
+  --duel-rarity-accent:#9aa3ad;
+  --duel-side-accent:#ffdc49;
+  --duel-angle:155deg;
+  background:
+    linear-gradient(var(--duel-angle),rgba(255,253,247,.58) 0 70%,var(--duel-side-accent) 70%),
+    var(--duel-rarity-bg)!important;
+  box-shadow:inset 0 6px 0 var(--duel-rarity-accent);
+}
+.rtg-duel-portrait-panel--opponent{
+  --duel-side-accent:#e9c9c5;
+  --duel-angle:205deg;
+}
+.rtg-duel-portrait-panel.rarity-scarso{--duel-rarity-bg:#d8c7b6;--duel-rarity-accent:#a78969}
+.rtg-duel-portrait-panel.rarity-debole{--duel-rarity-bg:#c9d2dd;--duel-rarity-accent:#728197}
+.rtg-duel-portrait-panel.rarity-normale{--duel-rarity-bg:#dce1e8;--duel-rarity-accent:#9aa7b8}
+.rtg-duel-portrait-panel.rarity-buono{--duel-rarity-bg:#c8f0d7;--duel-rarity-accent:#4dbb7e}
+.rtg-duel-portrait-panel.rarity-forte{--duel-rarity-bg:#c5e9ff;--duel-rarity-accent:#1d93d2}
+.rtg-duel-portrait-panel.rarity-elite{--duel-rarity-bg:#dfd0ff;--duel-rarity-accent:#7a45c9}
+.rtg-duel-portrait-panel.rarity-mondiale{--duel-rarity-bg:#ffd0d3;--duel-rarity-accent:#d4212f}
+.rtg-duel-portrait-panel.rarity-leggenda{--duel-rarity-bg:#ffe8a7;--duel-rarity-accent:#c98a00}
+.rtg-duel-portrait-panel.rarity-aurico{--duel-rarity-bg:#f2eee3;--duel-rarity-accent:#111216}
+
+.rtg-duel-panel-heading{
+  min-height:30px;
+  padding-bottom:2px;
+}
+.rtg-duel-panel-tag{
+  box-shadow:2px 2px 0 rgba(17,18,22,.14);
+}
+.rtg-duel-action-chip{
+  min-width:58px;
+  max-width:68%;
+  padding:4px 7px;
+  background:#111216;
+  color:#fff;
+  box-shadow:2px 2px 0 rgba(17,18,22,.16);
+  text-align:center;
+}
+.rtg-duel-action-chip--move{
+  background:#ffd21f;
+  color:#111216;
+  box-shadow:2px 2px 0 #111216;
+}
+.rtg-duel-portrait-panel .rtg-duel-player-copy{
+  width:calc(100% - 8px);
+  margin:-2px 4px 0;
+  padding:4px 6px 5px;
+  border-top:2px solid rgba(17,18,22,.75);
+  background:rgba(255,253,247,.9);
+}
+.rtg-duel-portrait-panel .rtg-duel-player-copy small{
+  color:#5e584f;
+  font-size:.5rem;
+  font-weight:900;
+}
+.rtg-duel-portrait-panel .rtg-duel-player-copy strong{
+  font-size:.76rem;
+  line-height:1.05;
+}
+.rtg-duel-action-story{
+  min-height:36px!important;
+  margin-top:2px;
+  padding:5px 7px!important;
+  border:2px solid rgba(17,18,22,.92);
+  background:rgba(255,253,247,.92);
+  box-shadow:2px 2px 0 rgba(17,18,22,.12);
+  font-size:.57rem!important;
+  font-weight:900!important;
+}
+.rtg-duel-vs-core{
+  box-shadow:inset 1px 0 0 rgba(255,255,255,.06),inset -1px 0 0 rgba(255,255,255,.06);
+}
+.rtg-duel-meter-clean{
+  margin-top:9px;
+}
+.rtg-duel-meter-clean>i{
+  height:13px;
+}
+.rtg-duel-meter-clean>span{
+  font-size:.78rem;
+}
+.rtg-duel-story--clean{
+  align-items:center;
+}
+.rtg-duel-story--clean .eyebrow{
+  color:#111216;
+  font-size:.61rem;
+  font-weight:1000;
+  letter-spacing:.07em;
+}
+.rtg-duel-story--clean h2{
+  margin-top:2px;
+}
+.rtg-duel-story--clean>div:first-child>p:last-child{
+  color:#4f4a43;
+  font-size:.72rem;
+  font-weight:900;
+}
+
+@media(max-width:430px){
+  .rtg-prematch-revolution .rtg-prematch-matchup{
+    width:calc(100% + 18px);
+    margin-left:-9px;
+  }
+  .rtg-duel-action-chip{
+    min-width:52px;
+    max-width:66%;
+    padding:4px 5px;
+  }
+  .rtg-duel-portrait-panel .rtg-duel-player-copy{
+    width:calc(100% - 6px);
+    margin-inline:3px;
+    padding-inline:4px;
+  }
+  .rtg-duel-action-story{
+    min-height:38px!important;
+    font-size:.54rem!important;
+  }
+}
