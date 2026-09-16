@@ -223,6 +223,23 @@
       </article>`;
     }
 
+    function inferredUserKind(pending = {}) {
+      const direct=String(pending.userKind||"").toLowerCase();
+      if(["shot","save","defense","dribble","midfield"].includes(direct))return direct;
+      const label=String(pending.userBaseActionLabel||"").toLowerCase();
+      if(label.includes("tiro")||label.includes("tira"))return "shot";
+      if(label.includes("parata")||label.includes("para"))return "save";
+      if(label.includes("difesa")||label.includes("difend"))return "defense";
+      if(label.includes("drib"))return "dribble";
+      if(String(pending.kind||"").toLowerCase()==="shot")return pending.actorSide==="user"?"shot":"save";
+      if(String(pending.kind||"").toLowerCase()==="dribble")return pending.actorSide==="user"?"dribble":"defense";
+      return pending.actorSide==="user"?"midfield":"defense";
+    }
+
+    function counterpartKind(kind) {
+      return ({shot:"save",save:"shot",defense:"dribble",dribble:"defense",midfield:"midfield"})[String(kind||"").toLowerCase()]||"midfield";
+    }
+
     function actionVerb(kind, actor = true) {
       const key = String(kind || "").toLowerCase();
       if (key === "shot") return actor ? "tira" : "prova a parare";
@@ -235,14 +252,20 @@
     function actionCallout(pending = {}, user = {}, opponent = {}) {
       const userName = user?.name || "Il tuo giocatore";
       const opponentName = opponent?.name || "L'avversario";
+      const userKind=inferredUserKind(pending);
+      const aiKind=String(pending.aiKind||counterpartKind(userKind)).toLowerCase();
       return {
-        user: `${userName} ${actionVerb(pending.userKind, true)}`,
-        opponent: `${opponentName} ${actionVerb(pending.aiKind, true)}`,
+        user: `${userName} ${actionVerb(userKind, true)}`,
+        opponent: `${opponentName} ${actionVerb(aiKind, true)}`,
       };
     }
 
     function previewProbability(pending = {}, user = {}, opponent = {}, choice = "base") {
       const userIsActor = pending.userSide ? pending.userSide === pending.actorSide : pending.actorSide !== "opponent";
+      const userKind=inferredUserKind(pending);
+      const aiKind=String(pending.aiKind||counterpartKind(userKind)).toLowerCase();
+      const actorKind=String(pending.actorKind||(userIsActor?userKind:aiKind)).toLowerCase();
+      const opponentKind=String(pending.opponentKind||(userIsActor?aiKind:userKind)).toLowerCase();
       const userMove = choice === "move" ? pending.userMove : null;
       const runtime = global.RoadToGloryEncounterRuntime;
       if (!runtime?.probability) {
@@ -254,8 +277,8 @@
       const result = runtime.probability({
         actor,
         opponent:defender,
-        actorKind:pending.actorKind,
-        opponentKind:pending.opponentKind,
+        actorKind,
+        opponentKind,
         actorMove:userIsActor ? userMove : null,
         opponentMove:userIsActor ? null : userMove,
       });
@@ -372,7 +395,7 @@
       const possessionText = userHasPossession ? "TU HAI PALLA" : `${opponentName} HA PALLA`;
       const possessionClass = userHasPossession ? "is-user" : "is-opponent";
       const callout = actionCallout(pending,user,opponent);
-      const baseVerb = choiceVerb(pending.userKind);
+      const baseVerb = choiceVerb(inferredUserKind(pending));
       const selectedLabel = selectedChoice === "move" ? (pending.userMove?.name || "Mossa") : selectedChoice === "base" ? baseVerb : "AZIONE BASE";
       const choiceCard = (choice,label,sub,probability,delta=0,disabled=false) => {
         const selected = selectedChoice === choice;
