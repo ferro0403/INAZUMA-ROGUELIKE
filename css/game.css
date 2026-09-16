@@ -8723,3 +8723,33 @@ body:has(#modal-root.has-open-modal) .run-dev-quick-tools {
     min-height: 48px;
   }
 }
+
+
+/* Dual Home pager: standard club on the left, Road to Glory on the right. */
+#clean-home .home-page-switcher{width:100%;max-width:1040px;margin:0 auto -4px;display:flex;justify-content:center;gap:8px;align-items:center;}
+#clean-home .home-page-tab{min-height:30px;display:flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid rgba(16,17,20,.38);border-radius:999px;background:rgba(255,253,246,.78);font-size:.57rem;font-weight:950;letter-spacing:.08em;text-transform:uppercase;box-shadow:none;}
+#clean-home .home-page-tab b{font-size:1rem;line-height:1;}
+#clean-home .home-page-dot{width:7px;height:7px;border:1px solid var(--home-ink);border-radius:50%;background:transparent;}
+#clean-home .home-page-tab.active{background:var(--home-ink);color:var(--home-paper);}
+#clean-home .home-page-tab.active .home-page-dot{background:var(--home-yellow);border-color:var(--home-yellow);}
+#clean-home .home-swipe-viewport{width:100%;min-width:0;overflow:hidden;touch-action:pan-y;}
+#clean-home .home-swipe-track{width:200%;display:flex;align-items:flex-start;transform:translateX(0);transition:transform .34s cubic-bezier(.22,.8,.24,1);will-change:transform;}
+#clean-home[data-home-page="rtg"] .home-swipe-track{transform:translateX(-50%);}
+#clean-home .home-swipe-page{width:50%;flex:0 0 50%;min-width:0;}
+#clean-home .home-swipe-page>.home-content{width:100%;}
+#clean-home .home-rtg-hub{gap:12px;}
+#clean-home .home-rtg-hero{position:relative;overflow:hidden;padding:14px 16px 17px;display:flex;flex-direction:column;gap:13px;}
+#clean-home .home-rtg-hero::after{content:"RTG";position:absolute;right:-10px;top:34px;color:rgba(255,210,31,.16);font-size:5.4rem;font-style:italic;font-weight:1000;letter-spacing:-.08em;transform:rotate(-7deg);pointer-events:none;}
+#clean-home .home-rtg-title{position:relative;z-index:1;}
+#clean-home .home-rtg-title small{color:var(--home-gold);font-size:.62rem;font-weight:1000;letter-spacing:.18em;}
+#clean-home .home-rtg-title h1{margin:3px 0 5px;font-size:clamp(2rem,10vw,2.8rem);line-height:.9;text-transform:uppercase;letter-spacing:-.055em;}
+#clean-home .home-rtg-title p{max-width:31rem;margin:0;color:#45484d;font-size:.78rem;font-style:normal;font-weight:750;}
+#clean-home .home-rtg-primary{position:relative;z-index:1;}
+#clean-home .home-rtg-shortcuts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;}
+#clean-home .home-rtg-shortcut{position:relative;min-width:0;min-height:84px;display:grid;grid-template-columns:34px minmax(0,1fr) auto;grid-template-rows:auto auto;align-items:center;column-gap:8px;padding:11px 10px 11px 12px;border:2px solid var(--home-ink);border-radius:2px;background:var(--home-paper);box-shadow:4px 5px 0 var(--home-ink);text-align:left;}
+#clean-home .home-rtg-shortcut--wide{grid-column:1/-1;}
+#clean-home .home-rtg-shortcut>span{grid-row:1/3;display:grid;place-items:center;font-size:1.25rem;}
+#clean-home .home-rtg-shortcut>strong{align-self:end;font-size:.76rem;text-transform:uppercase;}
+#clean-home .home-rtg-shortcut>small{align-self:start;color:#555960;font-size:.55rem;font-style:normal;}
+#clean-home .home-rtg-shortcut>b{grid-row:1/3;grid-column:3;font-size:1.35rem;}
+@media (min-width:781px){#clean-home .home-page-switcher{justify-content:flex-end;}#clean-home .home-rtg-shortcuts{grid-template-columns:repeat(3,minmax(0,1fr));}#clean-home .home-rtg-shortcut--wide{grid-column:auto;}#clean-home .home-rtg-hero{padding:22px 26px 25px;}}

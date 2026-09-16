@@ -2,9 +2,13 @@
 const assert=require("assert"),fs=require("fs");
 const view=fs.readFileSync("js/home/home-view.js","utf8");
 const controller=fs.readFileSync("js/home/home-controller.js","utf8");
-assert.match(view,/id:\s*"open-rtg-home"/);
-assert.match(view,/label:\s*"Road to Glory"/);
-assert.match(controller,/getElementById\("open-rtg-home"\)/);
-assert.match(controller,/deps\.renderRoadToGlory/);
-assert.match(view,/Negozio[\s\S]*Centro di Sviluppo[\s\S]*Album[\s\S]*Albo d’Oro[\s\S]*Road to Glory[\s\S]*Modalità/);
+assert.match(view,/home-swipe-page--main/);
+assert.match(view,/home-swipe-page--rtg/);
+assert.match(view,/data-rtg-home-open="run"/);
+assert.match(view,/data-rtg-home-open="squad"/);
+assert.match(view,/data-rtg-home-open="catalog"/);
+assert.match(view,/data-rtg-home-open="vending"/);
+assert.match(controller,/bindHomePager/);
+assert.match(controller,/deps\.renderRoadToGlory\(\{ destination:/);
+assert.doesNotMatch(view,/id:\s*"open-rtg-home"/);
 console.log("rtg-home-entry-test: PASS");
