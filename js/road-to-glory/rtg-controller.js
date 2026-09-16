@@ -27,7 +27,9 @@
     let freeAgentIds=[];
     let squadDraft=null;
     let halftimeDraft=null;
+    let rawPlayerById=new Map();
     let lastRenderedHtml="";
+    const SQUAD_PICKER_PAGE_SIZE=24;
 
     function renderHtml(html){
       lastRenderedHtml=String(html||"");
@@ -40,7 +42,27 @@
     async function ensureData(){
       seasonDb=seasonDb||await deps.ensureSeason1Db();
       freeAgentsDb=deps.getFreeAgentsDb?.()||freeAgentsDb||{players:[]};
+      if(!rawPlayerById.size){
+        rawPlayerById=new Map();
+        for(const player of freeAgentsDb?.players||[])rawPlayerById.set(id(player.playerId||player.id),player);
+        for(const player of seasonDb?.players||[])rawPlayerById.set(id(player.playerId||player.id),player);
+      }
       return {seasonDb,freeAgentsDb};
+    }
+    function rawPlayer(playerId){return rawPlayerById.get(id(playerId))||null;}
+    function rawRole(playerId){
+      const player=rawPlayer(playerId);
+      const role=String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
+      return role||String(resolved(playerId)?.normalizedRole||resolved(playerId)?.position||"").toUpperCase();
+    }
+    function rawOverall(playerId){
+      const player=rawPlayer(playerId);
+      const value=Number(player?.overall??player?.finalOverall??player?.baseOverall);
+      return Number.isFinite(value)?value:Number(resolved(playerId)?.overall||0);
+    }
+    function rawName(playerId){return String(rawPlayer(playerId)?.name||playerId);}
+    function sourceForDraftPlayer(playerId){
+      return (campaign?.gachaAcquiredPlayerIds||[]).map(id).includes(id(playerId))?"RTG":"Svincolato";
     }
     function refreshEntitlements(){
       const albumProgress=deps.getAlbumProgress?.();
@@ -166,6 +188,50 @@
         renderSquad();
       }));
     }
+    function squadPickerCandidateIds(targetId,role){
+      const accessible=squadRuntime.accessiblePlayerIds({freeAgentIds,state:draftState()}).map(id);
+      return accessible
+        .filter(playerId=>playerId!==id(targetId))
+        .filter(playerId=>rawRole(playerId)===role)
+        .sort((a,b)=>rawOverall(b)-rawOverall(a)||rawName(a).localeCompare(rawName(b),"it"));
+    }
+    function openSquadPlayerPicker(targetId){
+      const targetLoc=locationInDraft(targetId);
+      if(!targetLoc)return;
+      const role=roleOfDraftPlayer(targetId);
+      if(!role)return deps.toast?.("Ruolo giocatore non disponibile","error");
+      const candidateIds=squadPickerCandidateIds(targetId,role);
+      let visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateIds.length);
+      const targetPlayer=resolved(targetId,squadDraft?.activeRoleVariantByPlayerId?.[id(targetId)]||null);
+      const target={playerId:id(targetId),source:sourceForDraftPlayer(targetId),player:targetPlayer};
+      const entries=()=>candidateIds.slice(0,visibleCount).map(playerId=>({
+        playerId,
+        source:sourceForDraftPlayer(playerId),
+        player:resolved(playerId,squadDraft?.activeRoleVariantByPlayerId?.[playerId]||null),
+      })).filter(entry=>entry.player);
+      const renderResults=()=>{
+        const modal=deps.getModalRoot?.();
+        const results=modal?.querySelector?.("[data-rtg-picker-results]");
+        if(results)results.innerHTML=squadView.replacementPickerResultsMarkup({entries:entries(),total:candidateIds.length,visibleCount});
+        bindResults();
+      };
+      const bindResults=()=>{
+        const modal=deps.getModalRoot?.();
+        modal?.querySelectorAll?.("[data-rtg-picker-player]")?.forEach(button=>button.addEventListener("click",()=>{
+          const candidateId=id(button.dataset.rtgPickerPlayer);
+          const result=swapSquadDraft(targetId,candidateId,{render:false});
+          if(!result.ok)return deps.toast?.("Cambio non disponibile","error");
+          deps.closeModal?.();
+          renderSquad();
+        }));
+        modal?.querySelector?.("[data-rtg-picker-load-more]")?.addEventListener("click",()=>{
+          visibleCount=Math.min(candidateIds.length,visibleCount+SQUAD_PICKER_PAGE_SIZE);
+          renderResults();
+        });
+      };
+      deps.openModal?.(squadView.replacementPickerMarkup({target,role,entries:entries(),total:candidateIds.length,visibleCount}),{className:"rtg-modal rtg-squad-picker-modal"});
+      bindResults();
+    }
     function renderSquad(){
       squadDraft=clone(squadDraft||campaign.squads.ie1);
       const model=squadView.renderModel({state:draftState(),freeAgentIds,seasonDb,freeAgentsDb});
@@ -173,8 +239,7 @@
       bindHomeAndTabs();
       squadView.bind(app,{
         onOpenFormation:()=>openFormationSelector(model),
-        onSwap:(first,second)=>swapSquadDraft(first,second),
-        onIncompatible:()=>deps.toast?.("Questa destinazione non è compatibile: scegli un giocatore dello stesso ruolo","error"),
+        onOpenPlayer:(playerId)=>openSquadPlayerPicker(playerId),
         onSave:()=>saveSquad(squadDraft),
       });
       return model;
@@ -184,7 +249,7 @@
       const lineupIndex=(squadDraft?.lineup||[]).map(id).indexOf(idValue),benchIndex=(squadDraft?.bench||[]).map(id).indexOf(idValue);
       return lineupIndex>=0?{area:"lineup",index:lineupIndex}:benchIndex>=0?{area:"bench",index:benchIndex}:null;
     }
-    function swapSquadDraft(firstId,secondId){
+    function swapSquadDraft(firstId,secondId,options={}){
       const first=id(firstId),second=id(secondId);
       if(!first||!second||first===second)return{ok:false,reason:"same-player"};
       const accessible=new Set(squadRuntime.accessiblePlayerIds({freeAgentIds,state:draftState()}).map(id));
@@ -201,7 +266,7 @@
         const incoming=firstLoc?second:first;
         squadDraft[loc.area][loc.index]=incoming;
       }
-      renderSquad();
+      if(options.render!==false)renderSquad();
       return{ok:true};
     }
     async function saveSquad(nextSquad=squadDraft){
@@ -475,7 +540,7 @@
 
     return Object.freeze({
       open,renderRun,renderSquad,openNode,startMatch,chooseEncounter,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,
-      swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,
+      swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,
       getDraftSquad:()=>clone(squadDraft),getState:()=>clone(campaign),getRenderedHtml,
     });
   }
