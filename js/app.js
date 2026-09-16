@@ -623,21 +623,29 @@
       : `<span class="rtg-team-fallback">${escapeHtml(String(teamId || "?").slice(0, 1).toUpperCase())}</span>`;
   }
 
-  const rtgStorage = global.RoadToGloryStorage.create();
-  const rtgRepository = global.RoadToGloryRepository.create({
+  const rtgRuntimeAvailable = !!(
+    global.RoadToGloryStorage &&
+    global.RoadToGloryRepository &&
+    global.RoadToGloryRunView &&
+    global.RoadToGlorySquadView &&
+    global.RoadToGloryMatchView &&
+    global.RoadToGloryController
+  );
+  const rtgStorage = rtgRuntimeAvailable ? global.RoadToGloryStorage.create() : null;
+  const rtgRepository = rtgRuntimeAvailable ? global.RoadToGloryRepository.create({
     storage: rtgStorage,
     seedFactory: () => global.crypto?.randomUUID?.() || `rtg-${Date.now()}`,
-  });
-  const rtgRunView = global.RoadToGloryRunView.create({
+  }) : null;
+  const rtgRunView = rtgRuntimeAvailable ? global.RoadToGloryRunView.create({
     escapeHtml,
     teamEmblemMarkup: rtgTeamEmblemMarkup,
-  });
-  const rtgSquadView = global.RoadToGlorySquadView.create({
+  }) : null;
+  const rtgSquadView = rtgRuntimeAvailable ? global.RoadToGlorySquadView.create({
     escapeHtml,
     playerResolver: global.RoadToGloryPlayerResolver,
-  });
-  const rtgMatchView = global.RoadToGloryMatchView.create({ escapeHtml });
-  const rtgController = global.RoadToGloryController.create({
+  }) : null;
+  const rtgMatchView = rtgRuntimeAvailable ? global.RoadToGloryMatchView.create({ escapeHtml }) : null;
+  const rtgController = rtgRuntimeAvailable ? global.RoadToGloryController.create({
     app,
     repository: rtgRepository,
     runView: rtgRunView,
@@ -663,7 +671,7 @@
     rng: global.RoadToGloryRng,
     aiPolicy: global.RoadToGloryAiPolicy,
     penaltyRuntime: global.RoadToGloryPenaltyRuntime,
-  });
+  }) : null;
 
   const homeView = global.HomeView.create({ escapeHtml, normalizeTeamIdentity, savedTeamIdentity, seasonDisplayName, resolvedRosterPlayer, averageOverall, lifeHeartsMarkup, bossTeamLogoUrl, getSeasonDb: () => seasonDb });
   const homeController = global.HomeController.create({
@@ -682,7 +690,13 @@
   });
   const newRunController = global.NewRunController.create({ getRun: () => run, setRun, getActiveSeason: () => activeSeason, getSeasonDb: () => seasonDb, normalizeTeamIdentity, savedTeamIdentity, seasonDisplayName, openTeamNameModal: (...args) => openTeamNameModal(...args), openModal, closeModal, toast, renderFormationChoice: (...args) => renderFormationChoice(...args), escapeHtml, inazumaLogoMarkup });
   function renderHome(...args) { return homeController.renderHome(...args); }
-  function renderRoadToGlory(...args) { return rtgController.open(...args); }
+  function renderRoadToGlory(...args) {
+    if (!rtgController) {
+      toast("Road to Glory non disponibile", "error");
+      return null;
+    }
+    return rtgController.open(...args);
+  }
   function renderSeasonSelect(...args) { return seasonSelectionController.renderSeasonSelect(...args); }
   function selectSeason(...args) { return seasonSelectionController.selectSeason(...args); }
   function startRunWithIdentity(...args) { return newRunController.startRunWithIdentity(...args); }
