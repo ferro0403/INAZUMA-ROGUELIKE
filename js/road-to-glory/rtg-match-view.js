@@ -180,8 +180,8 @@
       const opponentName = match.opponentSquad?.name || "CPU";
       const possessionLabel = match.possession === "user" ? "TU" : opponentName;
       const zoneLabel = ({ midfield:"Centrocampo", attack:"Attacco", shot:"Tiro" }[match.fieldZone] || "Centrocampo");
-      const actionCurrent = Math.min(Number(match.actionTarget || 0), Number(match.actionIndex || 0) + 1);
       const minute = currentMinute(match);
+      const phaseLabel = match.pendingEncounter ? "Duello" : "In gioco";
       return `<main class="screen rtg-match-shell boss-match-screen">
         <header class="topbar rtg-match-topbar">
           <div class="rtg-match-period"><strong class="rtg-match-clock" data-rtg-match-minute>${escape(minute)}'</strong><span>${escape(periodLabel(match.period))}</span></div>
@@ -191,7 +191,7 @@
         <div class="rtg-match-flowbar">
           <span><small>Possesso</small><strong>${escape(possessionLabel)}</strong></span>
           <span><small>Zona</small><strong>${escape(zoneLabel)}</strong></span>
-          <span><small>Azione</small><strong>${escape(actionCurrent)} / ${escape(match.actionTarget || "—")}</strong></span>
+          <span><small>Stato</small><strong>${escape(phaseLabel)}</strong></span>
         </div>
         ${tickerMarkup(match)}
         <div class="content rtg-match-content">
