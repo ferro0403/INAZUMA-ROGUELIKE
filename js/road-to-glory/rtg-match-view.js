@@ -125,13 +125,23 @@
       </section>`;
     }
 
-    function halftimeMarkup(model = {}) {
+    function halftimeMarkup(model = {}, options = {}) {
       const lineup = model.lineup || [], bench = model.bench || [];
+      const selectedId = String(options.selectedPlayerId || "");
+      const selected = lineup.find((player) => pid(player) === selectedId) || null;
+      const selectedRole = selected ? role(selected) : "";
+      const compatibleBench = selected ? bench.filter((player) => role(player) === selectedRole) : [];
       return `<section class="panel rtg-halftime rtg-paper-modal development-squad-card-scope">
-        <div class="modal-head"><div><p class="eyebrow">45° minuto</p><h2>Intervallo</h2><p class="muted">Come nella gestione squadra: seleziona due giocatori dello stesso ruolo. Le cariche delle mosse non si ricaricano.</p></div></div>
-        <div class="rtg-halftime-grid">
-          <div><h3>Campo</h3><div class="rtg-halftime-cards">${lineup.map((player) => card(player, `data-rtg-half-lineup="${escape(pid(player))}" data-role="${escape(role(player))}"`, "squad-player-card rtg-halftime-player-card")).join("")}</div></div>
-          <div><h3>Panchina</h3><div class="rtg-halftime-cards">${bench.map((player) => card(player, `data-rtg-half-bench="${escape(pid(player))}" data-role="${escape(role(player))}"`, "squad-player-card rtg-halftime-player-card")).join("")}</div></div>
+        <div class="modal-head"><div><p class="eyebrow">45° minuto</p><h2>Intervallo</h2><p class="muted">Tocca un titolare: vedrai soltanto le riserve compatibili con il suo ruolo. Le cariche delle mosse non si ricaricano.</p></div></div>
+        <div class="rtg-halftime-active">
+          <h3>Campo</h3>
+          <div class="rtg-halftime-cards rtg-halftime-lineup">
+            ${lineup.map((player) => card(player, `data-rtg-half-lineup="${escape(pid(player))}" data-role="${escape(role(player))}" aria-pressed="${pid(player)===selectedId?"true":"false"}"`, `squad-player-card rtg-halftime-player-card ${pid(player)===selectedId?"selected":""}`)).join("")}
+          </div>
+        </div>
+        <div class="rtg-halftime-compatible">
+          ${selected ? `<div class="rtg-halftime-compatible-head"><div><p class="eyebrow">Cambi compatibili</p><h3>${escape(selected.name || selectedId)} · ${escape(selectedRole)}</h3></div><span>${escape(compatibleBench.length)} opzioni</span></div>
+          ${compatibleBench.length ? `<div class="rtg-halftime-cards rtg-halftime-bench-options">${compatibleBench.map((player) => card(player, `data-rtg-half-bench="${escape(pid(player))}" data-role="${escape(role(player))}"`, "squad-player-card rtg-halftime-player-card")).join("")}</div>` : '<p class="rtg-halftime-empty">Nessuna riserva compatibile per questo ruolo.</p>'}` : '<p class="rtg-halftime-empty">Tocca un titolare per vedere soltanto i cambi possibili.</p>'}
         </div>
         <button type="button" class="btn btn-yellow rtg-half-confirm" data-rtg-half-confirm>Conferma secondo tempo</button>
       </section>`;
