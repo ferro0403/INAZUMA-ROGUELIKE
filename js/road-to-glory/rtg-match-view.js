@@ -153,6 +153,7 @@
       const currentKick = Math.max(Number(match.shootout?.kicks?.user || 0), Number(match.shootout?.kicks?.opponent || 0)) + 1;
       const userAttacks = context.attackingSide === "user";
       const moveLabel = context.userMove?.name || (context.userRole === "save" ? "Mossa di parata" : "Mossa di tiro");
+      const moveAvailable = context.userMoveAvailable ?? context.canUseMove ?? false;
       return `<section class="panel rtg-penalty-panel rtg-paper-modal development-squad-card-scope">
         <div class="rtg-penalty-head">
           <div><p class="eyebrow">Decisione finale</p><h2>Rigori</h2><p class="muted">${userAttacks ? "Sei al tiro" : "Sei in porta"} · Rigore ${escape(currentKick)}${match.shootout?.status === "sudden-death" ? " · Sudden death" : " di 5"}</p></div>
@@ -174,7 +175,7 @@
           <button class="btn" data-rtg-penalty-direction="center">Centro</button>
           <button class="btn" data-rtg-penalty-direction="right">Destra →</button>
         </div>
-        ${context.userMoveAvailable ? `<button type="button" class="btn btn-yellow rtg-penalty-move" data-rtg-penalty-move><strong>${escape(moveLabel)}</strong><small>${escape(context.userMoveUses || 0)}/2 usi rimasti</small></button>` : ""}
+        ${moveAvailable ? `<button type="button" class="btn btn-yellow rtg-penalty-move" data-rtg-penalty-move><strong>${escape(moveLabel)}</strong><small>${escape(context.userMoveUses || 0)}/2 usi rimasti</small></button>` : ""}
       </section>`;
     }
 
