@@ -114,9 +114,14 @@
     function resolvedEncounterMarkup(resolution = {}) {
       return `<section class="panel rtg-duel-card rtg-duel-result rtg-paper-modal">
         <p class="eyebrow">Esito duello</p>
-        <small>Scelta IA: <strong>${escape(resolution.aiChoiceLabel || "Azione base")}</strong></small>
         <h2>${resolution.userWon ? "Duello vinto!" : "Duello perso"}</h2>
-        <p>Probabilità finale <strong>${escape(Number(resolution.probability || 50).toFixed(1))}%</strong></p>
+        <div class="rtg-duel-summary">
+          <div><small>Tu</small><strong>${escape(resolution.userPlayerName || "La tua squadra")}</strong><span>${escape(resolution.userChoiceLabel || "Azione base")}</span></div>
+          <b>VS</b>
+          <div><small>CPU</small><strong>${escape(resolution.aiPlayerName || "Avversario")}</strong><span>${escape(resolution.aiChoiceLabel || "Azione base")}</span></div>
+        </div>
+        <p class="rtg-final-probability">Probabilità finale <strong>${escape(Number(resolution.probability || 50).toFixed(1))}%</strong></p>
+        <button type="button" class="btn btn-yellow rtg-duel-continue" data-rtg-duel-continue>Continua</button>
       </section>`;
     }
 
@@ -133,15 +138,43 @@
     }
 
     function penaltyMarkup(match = {}, context = {}) {
-      return `<section class="panel rtg-penalty-panel rtg-paper-modal">
-        <p class="eyebrow">Decisione finale</p><h2>Rigori</h2><p class="muted">Scegli la direzione senza vedere la scelta avversaria.</p>
-        <div class="rtg-penalty-directions">
-          <button class="btn" data-rtg-penalty-direction="left">Sinistra</button>
-          <button class="btn" data-rtg-penalty-direction="center">Centro</button>
-          <button class="btn" data-rtg-penalty-direction="right">Destra</button>
+      const history = match.shootout?.history || [];
+      const row = (side) => {
+        const kicks = history.filter((item) => item.attackingSide === side);
+        const slots = Math.max(5, kicks.length + (match.shootout?.status === "sudden-death" ? 1 : 0));
+        return Array.from({ length: slots }, (_, index) => {
+          const item = kicks[index];
+          const state = !item ? "pending" : item.outcome === "goal" ? "goal" : "save";
+          const label = !item ? "•" : item.outcome === "goal" ? "✓" : "✕";
+          return `<span class="rtg-penalty-dot rtg-penalty-dot--${state}" aria-label="${state}">${label}</span>`;
+        }).join("");
+      };
+      const last = history.at?.(-1) || history[history.length - 1] || null;
+      const currentKick = Math.max(Number(match.shootout?.kicks?.user || 0), Number(match.shootout?.kicks?.opponent || 0)) + 1;
+      const userAttacks = context.attackingSide === "user";
+      const moveLabel = context.userMove?.name || (context.userRole === "save" ? "Mossa di parata" : "Mossa di tiro");
+      return `<section class="panel rtg-penalty-panel rtg-paper-modal development-squad-card-scope">
+        <div class="rtg-penalty-head">
+          <div><p class="eyebrow">Decisione finale</p><h2>Rigori</h2><p class="muted">${userAttacks ? "Sei al tiro" : "Sei in porta"} · Rigore ${escape(currentKick)}${match.shootout?.status === "sudden-death" ? " · Sudden death" : " di 5"}</p></div>
+          <strong class="rtg-penalty-score">${escape(match.shootout?.score?.user || 0)} - ${escape(match.shootout?.score?.opponent || 0)}</strong>
         </div>
-        ${context.canUseMove ? `<button type="button" class="btn btn-yellow rtg-penalty-move" data-rtg-penalty-move>Usa mossa</button>` : ""}
-        <div class="rtg-shootout-score">${escape(match.shootout?.score?.user || 0)} - ${escape(match.shootout?.score?.opponent || 0)}</div>
+        <div class="rtg-penalty-history">
+          <div><b>TU</b><span>${row("user")}</span></div>
+          <div><b>CPU</b><span>${row("opponent")}</span></div>
+        </div>
+        ${last ? `<div class="rtg-penalty-last ${last.outcome === "goal" ? "is-goal" : "is-save"}"><strong>${last.outcome === "goal" ? "GOAL" : "PARATA"}</strong><span>Ultimo rigore</span></div>` : ""}
+        <div class="rtg-penalty-versus">
+          <article><small>Tiratore</small>${card(context.shooter || {}, `data-rtg-penalty-shooter="${escape(pid(context.shooter))}"`, "squad-player-card rtg-penalty-player-card")}</article>
+          <b>VS</b>
+          <article><small>Portiere</small>${card(context.keeper || {}, `data-rtg-penalty-keeper="${escape(pid(context.keeper))}"`, "squad-player-card rtg-penalty-player-card")}</article>
+        </div>
+        <p class="rtg-penalty-instruction">${userAttacks ? "Scegli dove tirare." : "Scegli dove tuffarti."} La CPU decide senza vedere la tua scelta.</p>
+        <div class="rtg-penalty-directions">
+          <button class="btn" data-rtg-penalty-direction="left">← Sinistra</button>
+          <button class="btn" data-rtg-penalty-direction="center">Centro</button>
+          <button class="btn" data-rtg-penalty-direction="right">Destra →</button>
+        </div>
+        ${context.userMoveAvailable ? `<button type="button" class="btn btn-yellow rtg-penalty-move" data-rtg-penalty-move><strong>${escape(moveLabel)}</strong><small>${escape(context.userMoveUses || 0)}/2 usi rimasti</small></button>` : ""}
       </section>`;
     }
 
