@@ -17,8 +17,8 @@ view.bind(detailRoot,{onOpenPlayerDetails:(playerId,side)=>detailCalls.push([pla
 detailCard.fn();
 assert.deepStrictEqual(detailCalls,[["u0","user"]]);
 const html=view.matchMarkup(match);assert.strictEqual((html.match(/data-rtg-field-player=/g)||[]).length,22);assert.match(html,/1 - 0/);assert.doesNotMatch(html,/<canvas|webgl/i);
-const duel=view.encounterMarkup(match,{userPlayer:lineup[8],opponentPlayer:opp[1]});assert.match(duel,/Tiro/);assert.match(duel,/Fire Tornado/);assert.match(duel,/2\/2/);assert.match(duel,/62\.5%/);assert.doesNotMatch(duel,/Scelta IA|aiChoice/i);
+const duel=view.encounterMarkup(match,{userPlayer:lineup[8],opponentPlayer:opp[1]});assert.match(duel,/tira/i);assert.match(duel,/Fire Tornado/);assert.match(duel,/2\/2/);assert.match(duel,/62\.5%/);assert.doesNotMatch(duel,/Scelta IA|aiChoice/i);
 match.pendingEncounter={...match.pendingEncounter,userPlayerId:"u1",userBaseActionLabel:"Difesa",userMove:null};
-const noMove=view.encounterMarkup(match,{userPlayer:lineup[1],opponentPlayer:opp[8]});assert.match(noMove,/>Difesa</);assert.doesNotMatch(noMove,/data-rtg-choice="move"/);
+const noMove=view.encounterMarkup(match,{userPlayer:lineup[1],opponentPlayer:opp[8]});assert.match(noMove,/difende|DIFENDI/i);assert.doesNotMatch(noMove,/data-rtg-choice="move"/);
 const pen=view.penaltyMarkup({...match,shootout:{history:[],score:{user:0,opponent:0}}},{side:"user",canUseMove:true});for(const label of["Sinistra","Centro","Destra"])assert.match(pen,new RegExp(label));assert.match(pen,/data-rtg-penalty-move/);
 console.log("rtg-match-view-test: PASS");
