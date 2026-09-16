@@ -58,12 +58,13 @@
 
     function fieldSide(squad, side) {
       const rows = formationRows(squad?.formationId, squad?.lineup || []);
+      const visualSide = side === "opponent" ? "boss" : "user";
       return `<div class="match-formation match-formation--${side} rtg-match-formation rtg-match-formation--${side}">
         ${rows.map((row) => `<div class="match-formation-line match-formation-line--${String(row.role).toLowerCase()} rtg-match-line" data-row-count="${row.players.length}" style="--players-in-row:${row.players.length || 1};--row-count:${row.players.length || 1}">
           ${row.players.map((player) => card(
             player,
             `data-rtg-field-player="${escape(pid(player))}" data-role="${escape(role(player))}" data-side="${side}"`,
-            `run-tactical-card match-player-card match-player-card--${side} boss-match-card boss-match-card--${side} rtg-field-card`
+            `run-tactical-card match-player-card match-player-card--${visualSide} boss-match-card boss-match-card--${visualSide} rtg-field-card`
           )).join("")}
         </div>`).join("")}
       </div>`;
@@ -113,7 +114,7 @@
         <div class="rtg-versus rtg-versus--cards">
           <article><small>Tu</small>${card(user, `data-rtg-duel-user="${escape(pid(user))}"`, "run-tactical-card match-player-card match-player-card--user squad-player-card rtg-duel-player-card")}</article>
           <b>VS</b>
-          <article><small>Avversario</small>${card(opponent, `data-rtg-duel-opponent="${escape(pid(opponent))}"`, "run-tactical-card match-player-card match-player-card--opponent squad-player-card rtg-duel-player-card")}</article>
+          <article><small>Avversario</small>${card(opponent, `data-rtg-duel-opponent="${escape(pid(opponent))}"`, "run-tactical-card match-player-card match-player-card--boss boss-match-card boss-match-card--boss squad-player-card rtg-duel-player-card")}</article>
         </div>
         <div class="button-row rtg-duel-actions">
           <button type="button" class="btn btn-yellow rtg-action-button" data-rtg-choice="base">${escape(pending.userBaseActionLabel || "Azione")}</button>
