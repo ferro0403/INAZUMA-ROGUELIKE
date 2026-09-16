@@ -12,13 +12,13 @@ for (const absent of ['La tua squadra', 'Gestisci squadra', 'manage-team-home', 
 for (const [id, handler] of [
   ['open-shop-home', 'renderShop'], ['open-development-home', 'renderDevelopmentCenter'],
   ['open-album-home', 'renderAlbumCollections'], ['open-hall-home', 'renderHallOfFame'],
-  ['open-modes-home', 'renderSeasonSelect'],
+  ['open-rtg-home', 'renderRoadToGlory'], ['open-modes-home', 'renderSeasonSelect'],
 ]) {
   assert.match(home, new RegExp(`getElementById\\("${id}"\\)[\\s\\S]*?${handler}`), `${id} reuses ${handler}`);
 }
 assert.match(home, /savedRun\?\.teamIdentity \|\| profileIdentity \|\| \{\}/, 'team identity is null-safe');
 assert.match(home, /savedRun \? `<p>[\s\S]*?` : ""/, 'run metadata is omitted in the empty state');
-assert.match(home, /HOME_SECONDARY_ACTIONS = \[[\s\S]*?Negozio[\s\S]*?Centro di Sviluppo[\s\S]*?Album[\s\S]*?Albo d’Oro[\s\S]*?Modalità/, 'club actions preserve the approved order');
+assert.match(home, /HOME_SECONDARY_ACTIONS = \[[\s\S]*?Negozio[\s\S]*?Centro di Sviluppo[\s\S]*?Album[\s\S]*?Albo d’Oro[\s\S]*?Road to Glory[\s\S]*?Modalità/, 'club actions preserve the approved order');
 assert.match(css, /#clean-home \{[\s\S]*inazuma-stadium-mobile-light\.jpeg/);
 assert.match(css, /@media \(min-width: 781px\)[\s\S]*inazuma-stadium-desktop-light\.jpeg/);
 assert.match(css, /#clean-home \.home-club-actions \{[^}]*grid-template-columns: repeat\(2, minmax\(0, 1fr\)\)/);
