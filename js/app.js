@@ -646,7 +646,12 @@
     compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
     formationLayout: global.FormationLayout,
   }) : null;
-  const rtgMatchView = rtgRuntimeAvailable ? global.RoadToGloryMatchView.create({ escapeHtml }) : null;
+  const rtgMatchView = rtgRuntimeAvailable ? global.RoadToGloryMatchView.create({
+    escapeHtml,
+    compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
+    formationLayout: global.FormationLayout,
+    formationById: (formationId) => global.SeasonRegistry.database("ie1")?.formations?.eleven?.find((item) => String(item.id) === String(formationId)) || null,
+  }) : null;
   const rtgController = rtgRuntimeAvailable ? global.RoadToGloryController.create({
     app,
     repository: rtgRepository,
