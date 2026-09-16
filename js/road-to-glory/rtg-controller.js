@@ -88,27 +88,28 @@
         activeRoleVariantByPlayerId:{...variants},
       };
     }
-    function bestPlayersForRole(ids,role){
-      return ids.map(playerId=>resolved(playerId)).filter(Boolean).filter(player=>String(player.normalizedRole||player.position).toUpperCase()===role).sort((a,b)=>(Number(b.overall)||0)-(Number(a.overall)||0)||id(a.playerId).localeCompare(id(b.playerId)));
+    function bestPlayerIdsForRole(ids,role){
+      const target=String(role||"").toUpperCase();
+      return ids.map(id).filter(playerId=>rawRole(playerId)===target).sort((a,b)=>rawOverall(b)-rawOverall(a)||rawName(a).localeCompare(rawName(b),"it"));
     }
     function buildDefaultSquad(state,formationId=null){
       const formations=seasonDb?.formations?.eleven||[];
       const formation=formations.find(item=>id(item.id)===id(formationId))||formations.find(item=>{
         const counts={GK:0,DF:0,MF:0,FW:0};
-        for(const playerId of freeAgentIds){const player=resolved(playerId);const role=String(player?.normalizedRole||player?.position||"").toUpperCase();if(counts[role]!=null)counts[role]++;}
+        for(const playerId of freeAgentIds){const role=rawRole(playerId);if(counts[role]!=null)counts[role]++;}
         return Object.entries(item.requirements||{}).every(([role,n])=>counts[String(role).toUpperCase()]>=Number(n||0));
       })||formations[0];
       if(!formation)throw Object.assign(new Error("Nessun modulo RTG disponibile"),{code:"rtg-squad-no-formation"});
-      const accessible=squadRuntime.accessiblePlayerIds({freeAgentIds,state});
+      const accessible=squadRuntime.accessiblePlayerIds({freeAgentIds,state}).map(id);
       const selected=[];
       for(const [role,count] of Object.entries(formation.requirements||{})){
-        const candidates=bestPlayersForRole(accessible,String(role).toUpperCase()).filter(player=>!selected.includes(id(player.playerId)));
+        const candidates=bestPlayerIdsForRole(accessible,String(role).toUpperCase()).filter(playerId=>!selected.includes(playerId));
         if(candidates.length<Number(count||0))throw Object.assign(new Error("Rosa RTG insufficiente per il modulo"),{code:"rtg-squad-default-unavailable"});
-        selected.push(...candidates.slice(0,Number(count||0)).map(player=>id(player.playerId)));
+        selected.push(...candidates.slice(0,Number(count||0)));
       }
-      const remaining=accessible.filter(playerId=>!selected.includes(id(playerId))).map(playerId=>resolved(playerId)).filter(Boolean).sort((a,b)=>(Number(b.overall)||0)-(Number(a.overall)||0));
+      const remaining=accessible.filter(playerId=>!selected.includes(playerId)).sort((a,b)=>rawOverall(b)-rawOverall(a)||rawName(a).localeCompare(rawName(b),"it"));
       if(remaining.length<4)throw Object.assign(new Error("Servono 4 panchinari RTG"),{code:"rtg-squad-bench-unavailable"});
-      return {formationId:id(formation.id),lineup:selected.slice(0,11),bench:remaining.slice(0,4).map(player=>id(player.playerId)),activeRoleVariantByPlayerId:{}};
+      return {formationId:id(formation.id),lineup:selected.slice(0,11),bench:remaining.slice(0,4),activeRoleVariantByPlayerId:{}};
     }
     async function ensureInitialSquad(){
       const squad=campaign?.squads?.ie1;
