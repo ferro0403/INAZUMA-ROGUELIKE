@@ -159,10 +159,7 @@
           <div class="squad-topbar-copy"><p class="eyebrow">ROAD TO GLORY · SEASON 1</p><h1>Gestione squadra</h1></div>
           <div class="squad-topbar-stats"><span><small>LV</small><strong>20</strong></span></div>
         </header>
-        <nav class="rtg-tabs rtg-tabs--main-style" aria-label="Road to Glory">
-          <button type="button" class="rtg-tab" data-rtg-tab="run">Run</button>
-          <button type="button" class="rtg-tab active" data-rtg-tab="squad">Squadra</button>
-        </nav>
+
         <div class="content squad-content rtg-squad-content">
           <div class="squad-command-deck is-valid is-roster-complete">
             <span class="squad-readiness-mark" aria-hidden="true">✓</span>
@@ -199,6 +196,10 @@
             </aside>
           </div>
         </div>
+                <nav class="bottom-nav rtg-bottom-nav" aria-label="Road to Glory">
+          <button type="button" data-rtg-tab="run"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 6.5 9 4l6 2.5 5-2.5v13.5l-5 2.5-6-2.5-5 2.5V6.5Z"/><path d="M9 4v13.5M15 6.5V20"/></svg></span><span class="nav-label">Run</span></button>
+          <button type="button" data-rtg-tab="squad" class="active" aria-current="page"><span class="nav-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 11a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM16 10a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM3.5 19c.7-3.2 2.4-5 4.5-5s3.8 1.8 4.5 5M12.5 17.5c.7-2.2 1.9-3.4 3.5-3.4 1.8 0 3.2 1.4 4 4"/></svg></span><span class="nav-label">Squadra</span></button>
+        </nav>
       </main>`;
     }
 
