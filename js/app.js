@@ -605,6 +605,66 @@
   function setRun(nextRun) { run = nextRun; global.run = nextRun; }
   global.AlbumPermanentEffects?.bindRuntimeRunAccessor?.(() => run);
 
+  async function ensureRtgSeason1Db() {
+    const previousSeasonId = global.SeasonRegistry.activeId();
+    try {
+      return global.SeasonRegistry.database("ie1") || await global.SeasonRegistry.loadDatabase("ie1");
+    } finally {
+      global.SeasonRegistry.setActive(previousSeasonId);
+    }
+  }
+
+  function rtgTeamEmblemMarkup(teamId) {
+    const db = global.SeasonRegistry.database("ie1");
+    const team = (db?.teams || []).find((entry) => String(entry.teamId || entry.id) === String(teamId));
+    const logo = team?.logoUrl || db?.bossOrder?.find((entry) => String(entry.teamId) === String(teamId))?.logoUrl || "";
+    return logo
+      ? `<img src="${escapeHtml(logo)}" alt="" loading="lazy" />`
+      : `<span class="rtg-team-fallback">${escapeHtml(String(teamId || "?").slice(0, 1).toUpperCase())}</span>`;
+  }
+
+  const rtgStorage = global.RoadToGloryStorage.create();
+  const rtgRepository = global.RoadToGloryRepository.create({
+    storage: rtgStorage,
+    seedFactory: () => global.crypto?.randomUUID?.() || `rtg-${Date.now()}`,
+  });
+  const rtgRunView = global.RoadToGloryRunView.create({
+    escapeHtml,
+    teamEmblemMarkup: rtgTeamEmblemMarkup,
+  });
+  const rtgSquadView = global.RoadToGlorySquadView.create({
+    escapeHtml,
+    playerResolver: global.RoadToGloryPlayerResolver,
+  });
+  const rtgMatchView = global.RoadToGloryMatchView.create({ escapeHtml });
+  const rtgController = global.RoadToGloryController.create({
+    app,
+    repository: rtgRepository,
+    runView: rtgRunView,
+    squadView: rtgSquadView,
+    matchView: rtgMatchView,
+    ensureSeason1Db: ensureRtgSeason1Db,
+    getFreeAgentsDb: () => freeAgentsDb,
+    getAlbumProgress: () => global.AlbumProgress,
+    getModalRoot: () => modalRoot,
+    openModal,
+    closeModal,
+    toast,
+    renderHome: (...args) => renderHome(...args),
+    resetRenderedViewScroll,
+    entitlements: global.RoadToGloryEntitlements,
+    config: global.RoadToGloryConfig,
+    progression: global.RoadToGloryProgression,
+    gacha: global.RoadToGloryGacha,
+    squadRuntime: global.RoadToGlorySquadRuntime,
+    matchEngine: global.RoadToGloryMatchEngine,
+    opponentGenerator: global.RoadToGloryOpponentGenerator,
+    playerResolver: global.RoadToGloryPlayerResolver,
+    rng: global.RoadToGloryRng,
+    aiPolicy: global.RoadToGloryAiPolicy,
+    penaltyRuntime: global.RoadToGloryPenaltyRuntime,
+  });
+
   const homeView = global.HomeView.create({ escapeHtml, normalizeTeamIdentity, savedTeamIdentity, seasonDisplayName, resolvedRosterPlayer, averageOverall, lifeHeartsMarkup, bossTeamLogoUrl, getSeasonDb: () => seasonDb });
   const homeController = global.HomeController.create({
     view: homeView, app, getRun: () => run, setRun, getSeasonDb: () => seasonDb, getActiveSeason: () => activeSeason,
@@ -612,6 +672,7 @@
     renderSeasonSelect: (...args) => renderSeasonSelect(...args), resumeRun: (...args) => resumeRun(...args), renderShop: (...args) => renderShop(...args),
     renderHallOfFame: (...args) => renderHallOfFame(...args), renderAlbumCollections: (...args) => renderAlbumCollections(...args),
     renderDevelopmentCenter: (...args) => renderDevelopmentCenter(...args), renderSettings: (...args) => renderSettings(...args),
+    renderRoadToGlory: (...args) => renderRoadToGlory(...args),
   });
   const seasonSelectionView = global.SeasonSelectionView.create({ escapeHtml, sectionRootButton });
   const seasonSelectionController = global.SeasonSelectionController.create({
@@ -621,6 +682,7 @@
   });
   const newRunController = global.NewRunController.create({ getRun: () => run, setRun, getActiveSeason: () => activeSeason, getSeasonDb: () => seasonDb, normalizeTeamIdentity, savedTeamIdentity, seasonDisplayName, openTeamNameModal: (...args) => openTeamNameModal(...args), openModal, closeModal, toast, renderFormationChoice: (...args) => renderFormationChoice(...args), escapeHtml, inazumaLogoMarkup });
   function renderHome(...args) { return homeController.renderHome(...args); }
+  function renderRoadToGlory(...args) { return rtgController.open(...args); }
   function renderSeasonSelect(...args) { return seasonSelectionController.renderSeasonSelect(...args); }
   function selectSeason(...args) { return seasonSelectionController.selectSeason(...args); }
   function startRunWithIdentity(...args) { return newRunController.startRunWithIdentity(...args); }
@@ -1472,7 +1534,7 @@
     setFreeAgentsById: (value) => { freeAgentsById = value; },
     uiApi: {
       bindAlbumRosterInteractions, configureAlbumForBootstrap, setPermanentClubTestContext, persistenceWritesAllowed,
-      repairResultMessage, showLoadError, renderHome, renderAlbumCollections, renderAlbumTeams, renderAlbumRoster,
+      repairResultMessage, showLoadError, renderHome, renderRoadToGlory, renderAlbumCollections, renderAlbumTeams, renderAlbumRoster,
       renderHallOfFame, renderHallOfFameDetail, renderDevelopmentCenter, developmentCurrencyIcon, bindHallPlayerDetails,
       startNewRunFromHome, startRunWithIdentity, renderSeasonSelect, selectSeason, resumeRun,
     },
