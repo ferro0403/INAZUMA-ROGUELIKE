@@ -86,6 +86,9 @@
           .getElementById("open-modes-home")
           ?.addEventListener("click", deps.renderSeasonSelect);
         document
+          .getElementById("open-rtg-home")
+          ?.addEventListener("click", () => deps.renderRoadToGlory());
+        document
           .getElementById("open-shop-home")
           ?.addEventListener("click", () => deps.renderShop());
         document
