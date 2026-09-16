@@ -21,5 +21,5 @@ assert.doesNotMatch(html,/rtg-node--main/);
 const req=view.requirementsMarkup({teamPower:74,cap:75,recruitCount:1,minRecruit:1,recentRecruitCount:0,recentCount:0,reasons:[]});
 assert.match(req,/class="panel rtg-requirements/);assert.match(req,/btn|Requisiti/);
 const vend=view.vendingMarkup({tokens:600,candidates:[{}],rarities:[{rarity:"Normale",weight:40}]});
-assert.match(vend,/btn btn-yellow/);assert.match(vend,/DISTRIBUTORE S1/);
+assert.match(vend,/btn btn-yellow/);assert.match(vend,/rtg-vending-machine-v4/);assert.match(vend,/>Distributore</);assert.doesNotMatch(vend,/DISTRIBUTORE S1|<small>POOL<\/small>/);
 console.log("rtg-main-style-run-view-test: PASS");
