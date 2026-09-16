@@ -13,13 +13,13 @@ const opp=["GK","DF","DF","DF","DF","MF","MF","MF","FW","FW","FW"].map((role,i)=
 const match={period:"first_half",score:{user:1,opponent:0},userSquad:{formationId:"4-3-3",lineup},opponentSquad:{formationId:"4-3-3",lineup:opp},moveUsesByPlayerId:{"user:u8":2},pendingEncounter:{userPlayerId:"u8",opponentPlayerId:"o1",userBaseActionLabel:"Tiro",normalPreviewProbability:62.5,userMove:{name:"Fire Tornado",power:80}}};
 const html=view.matchMarkup(match);
 assert.match(html,/class="screen rtg-match-shell[^"]*boss-match-screen[^"]*"/);
-assert.match(html,/class="match-formation match-formation--user/);
-assert.match(html,/class="match-formation match-formation--opponent/);
+assert.match(html,/data-rtg-live-field="user"/);
+assert.match(html,/data-rtg-live-field="opponent"/);
 assert.strictEqual((html.match(/player-card player-card-compact/g)||[]).length,22);
 const duel=view.encounterMarkup(match,{userPlayer:lineup[8],opponentPlayer:opp[1]});
 assert.match(duel,/development-squad-card-scope/);
 assert.match(duel,/rtg-duel-visual/);
-assert.match(duel,/rtg-duel-type/);
+assert.match(duel,/rtg-duel-story/);
 assert.match(duel,/rtg-duel-possession/);
-assert.match(duel,/btn btn-yellow rtg-action-button/);
+assert.match(duel,/rtg-duel-choice-card/);
 console.log("rtg-main-style-match-view-test: PASS");

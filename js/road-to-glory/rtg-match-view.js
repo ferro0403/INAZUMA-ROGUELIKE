@@ -235,10 +235,9 @@
     function actionCallout(pending = {}, user = {}, opponent = {}) {
       const userName = user?.name || "Il tuo giocatore";
       const opponentName = opponent?.name || "L'avversario";
-      const userIsActor = pending.userSide ? pending.userSide === pending.actorSide : pending.actorSide !== "opponent";
       return {
-        user: `${userName} ${actionVerb(pending.userKind, userIsActor)}`,
-        opponent: `${opponentName} ${actionVerb(pending.aiKind, !userIsActor)}`,
+        user: `${userName} ${actionVerb(pending.userKind, true)}`,
+        opponent: `${opponentName} ${actionVerb(pending.aiKind, true)}`,
       };
     }
 
