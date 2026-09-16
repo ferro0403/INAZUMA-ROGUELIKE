@@ -39,7 +39,7 @@
         `data-source="${escape(entry?.source || "")}"`,
         area === "lineup" ? `data-rtg-lineup-player="${escape(playerId)}"` : "",
         area === "bench" ? `data-rtg-bench-player="${escape(playerId)}"` : "",
-        area === "collection" ? `data-rtg-collection-player="${escape(playerId)}"` : "",
+        area === "picker" ? `data-rtg-picker-player="${escape(playerId)}"` : "",
       ].filter(Boolean).join(" ");
 
       if (compactPlayerCardMarkup) {
@@ -89,12 +89,8 @@
       const seasonId = String(state?.activeSeasonId || "ie1");
       const squad = state?.squads?.[seasonId] || state?.squads?.ie1 || { formationId: null, lineup: [], bench: [], activeRoleVariantByPlayerId: {} };
       const gacha = new Set((state?.gachaAcquiredPlayerIds || []).map(String));
-      const accessible = Array.from(new Set([...(freeAgentIds || []).map(String), ...gacha]));
       const resolve = (playerId) => resolver?.resolveAtLevel20?.(playerId, seasonId, squad.activeRoleVariantByPlayerId?.[playerId] || null, freeAgentsDb) || { playerId, name: playerId, overall: "—", level: 20 };
       const sourceFor = (playerId) => gacha.has(String(playerId)) ? "RTG" : "Svincolato";
-      const collection = accessible
-        .map((playerId) => ({ playerId, source: sourceFor(playerId), player: resolve(playerId) }))
-        .sort((a, b) => (Number(b.player?.overall) || 0) - (Number(a.player?.overall) || 0) || String(a.player?.name || "").localeCompare(String(b.player?.name || "")));
       const formations = Array.from(seasonDb?.formations?.eleven || []);
       const formation = formations.find((item) => String(item.id) === String(squad.formationId)) || formations[0] || null;
       const lineup = (squad.lineup || []).map((playerId) => ({ playerId: String(playerId), source: sourceFor(playerId), player: resolve(String(playerId)) }));
@@ -107,7 +103,7 @@
         lineup: Object.freeze(lineup),
         bench: Object.freeze(bench),
         lineupRows: Object.freeze(formationRows(formation, lineup)),
-        collection: Object.freeze(collection),
+        availableCount: new Set([...(freeAgentIds || []).map(String), ...gacha]).size,
         activeRoleVariantByPlayerId: { ...(squad.activeRoleVariantByPlayerId || {}) },
       });
     }
@@ -129,10 +125,25 @@
       </div>`;
     }
 
+    function replacementPickerResultsMarkup({ entries = [], total = 0, visibleCount = entries.length } = {}) {
+      const remaining = Math.max(0, Number(total) - Number(entries.length));
+      return `<div class="rtg-picker-grid">${entries.map((entry) => playerCard(entry, "picker")).join("")}</div>${remaining > 0 ? `<div class="album-load-more-wrap rtg-picker-load-more-wrap"><button type="button" class="btn btn-yellow album-load-more rtg-picker-load-more" data-rtg-picker-load-more>MOSTRA ALTRI ${escape(Math.min(24, remaining))}</button><small>${escape(entries.length)} di ${escape(total)}</small></div>` : `<div class="rtg-picker-count"><small>${escape(entries.length)} di ${escape(total)}</small></div>`}`;
+    }
+
+    function replacementPickerMarkup({ target = null, role = "", entries = [], total = 0, visibleCount = entries.length } = {}) {
+      const targetName = target?.player?.name || target?.playerId || "Giocatore";
+      return `<section class="rtg-squad-picker">
+        <div class="modal-head rtg-squad-picker-head">
+          <div><p class="eyebrow">Cambio giocatore</p><h2>${escape(targetName)}</h2><p class="muted">Solo ${escape(role || "ruolo compatibile")} · vengono caricati 24 giocatori alla volta.</p></div>
+        </div>
+        <div class="rtg-picker-role-badge">SOLO ${escape(role || "—")}</div>
+        <div data-rtg-picker-results>${replacementPickerResultsMarkup({ entries, total, visibleCount })}</div>
+      </section>`;
+    }
+
     function markup(model = {}) {
       const lineupRows = model.lineupRows || [];
       const bench = model.bench || [];
-      const collection = model.collection || [];
       return `<main class="screen squad-screen rtg-squad-shell">
         <header class="topbar squad-topbar rtg-squad-topbar">
           <button type="button" class="squad-back-button rtg-squad-back" data-rtg-home aria-label="Torna alla Home">←</button>
@@ -146,8 +157,8 @@
         <div class="content squad-content rtg-squad-content">
           <div class="squad-command-deck is-valid is-roster-complete">
             <span class="squad-readiness-mark" aria-hidden="true">✓</span>
-            <div><small>Road to Glory</small><strong>Formazione RTG</strong><em data-rtg-draft-status>Modifiche non salvate: no</em></div>
-            <span class="squad-command-count"><b>11/11 titolari</b><b>Rosa completa · 4/4 riserve</b></span>
+            <div><small>Road to Glory</small><strong>Formazione RTG</strong><em data-rtg-draft-status>Tocca un giocatore per cambiarlo</em></div>
+            <span class="squad-command-count"><b>11/11 titolari</b><b>4/4 riserve · ${escape(model.availableCount || 0)} disponibili</b></span>
           </div>
 
           <div class="squad-workspace">
@@ -164,30 +175,19 @@
                   <div><small>Modulo corrente</small><strong>${escape(model.formation?.name || model.formation?.formation || model.formationId || "—")}</strong></div>
                   ${formationPreviewMarkup(model.formation || {})}
                 </div>
-                <div class="rtg-module-copy"><strong>Assetto RTG</strong><p>Gli scambi sono consentiti solo tra giocatori dello stesso ruolo. Il modulo usa le stesse regole della squadra delle run.</p></div>
+                <div class="rtg-module-copy"><strong>Assetto RTG</strong><p>Tocca una card: si apre solo il suo ruolo. Nessuna lista da 1500 giocatori viene caricata nella schermata.</p></div>
               </section>
               <div class="squad-management-actions rtg-squad-actions">
                 <button type="button" class="btn squad-module-button" data-rtg-open-formation>Modifica modulo</button>
                 <button type="button" class="btn btn-yellow squad-info-button" data-rtg-save-squad>Salva squadra</button>
               </div>
-              <p class="squad-selection-hint" data-rtg-selection-hint>Seleziona un giocatore</p>
+              <p class="squad-selection-hint" data-rtg-selection-hint>Tocca un giocatore per aprire i cambi compatibili</p>
               <section class="squad-bench-panel">
                 <div class="squad-panel-head"><div><p class="eyebrow">Panchina</p><h2>Riserve</h2></div><span class="squad-bench-count">4/4</span></div>
                 <div class="bench-list squad-bench-list rtg-bench-list">${bench.map((entry) => playerCard(entry, "bench")).join("")}</div>
               </section>
             </aside>
           </div>
-
-          <section class="rtg-collection-main">
-            <div class="rtg-collection-main-head">
-              <div><p class="eyebrow">Rosa disponibile</p><h2>Giocatori disponibili</h2></div>
-              <div class="rtg-collection-filters">
-                <select data-rtg-role-filter aria-label="Filtra per ruolo"><option value="all">Tutti i ruoli</option><option value="GK">GK</option><option value="DF">DF</option><option value="MF">MF</option><option value="FW">FW</option></select>
-                <select data-rtg-source-filter aria-label="Filtra per fonte"><option value="all">Tutte le fonti</option><option value="Svincolato">Svincolati</option><option value="RTG">RTG</option></select>
-              </div>
-            </div>
-            <div class="rtg-collection-card-grid">${collection.map((entry) => playerCard(entry, "collection")).join("")}</div>
-          </section>
         </div>
       </main>`;
     }
@@ -216,62 +216,21 @@
           area: String(button.dataset.area || ""),
         };
         cards().forEach((card) => {
-          const cardId = String(card.dataset.rtgSquadPlayer || "");
-          const role = String(card.dataset.role || "").toUpperCase();
-          const isSelected = cardId === selected.playerId && String(card.dataset.area || "") === selected.area;
-          const compatible = !isSelected && cardId !== selected.playerId && role && role === selected.role;
-          card.classList?.toggle?.("selected", isSelected);
-          card.classList?.toggle?.("is-compatible", compatible);
-          card.classList?.toggle?.("is-incompatible", !isSelected && !compatible);
-          card.setAttribute?.("aria-pressed", isSelected ? "true" : "false");
-        });
-        const hint = root?.querySelector?.("[data-rtg-selection-hint]");
-        if (hint) hint.textContent = `Seleziona un altro ${selected.role} da scambiare`;
-      }
-
-      cards().forEach((button) => {
+          const car    function bind(root, actions = {}) {
+      root?.querySelectorAll?.("[data-rtg-squad-player]")?.forEach((button) => {
         button.addEventListener("click", () => {
-          const current = {
-            playerId: String(button.dataset.rtgSquadPlayer || ""),
-            role: String(button.dataset.role || "").toUpperCase(),
-            area: String(button.dataset.area || ""),
-          };
-          if (!selected) {
-            selectCard(button);
-            actions.onOpenPlayer?.(current.playerId);
-            return;
-          }
-          if (selected.playerId === current.playerId && selected.area === current.area) {
-            clearSelection();
-            return;
-          }
-          if (!selected.role || selected.role !== current.role) {
-            actions.onIncompatible?.(selected.playerId, current.playerId);
-            return;
-          }
-          const first = selected.playerId;
-          clearSelection();
-          actions.onSwap?.(first, current.playerId);
+          const playerId = String(button.dataset.rtgSquadPlayer || "");
+          if (playerId) actions.onOpenPlayer?.(playerId);
         });
       });
-
       root?.querySelector?.("[data-rtg-open-formation]")?.addEventListener("click", () => actions.onOpenFormation?.());
       root?.querySelector?.("[data-rtg-save-squad]")?.addEventListener("click", () => actions.onSave?.());
-
-      const applyFilters = () => {
-        const role = root?.querySelector?.("[data-rtg-role-filter]")?.value || "all";
-        const source = root?.querySelector?.("[data-rtg-source-filter]")?.value || "all";
-        cards().filter((card) => card.dataset.area === "collection").forEach((card) => {
-          card.hidden = (role !== "all" && card.dataset.role !== role) || (source !== "all" && card.dataset.source !== source);
-        });
-      };
-      root?.querySelector?.("[data-rtg-role-filter]")?.addEventListener("change", applyFilters);
-      root?.querySelector?.("[data-rtg-source-filter]")?.addEventListener("change", applyFilters);
-
-      return Object.freeze({ clearSelection });
     }
 
-    return Object.freeze({ renderModel, markup, bind, playerCard, formationPreviewMarkup, formationOptionsMarkup });
+    return Object.freeze({ clearSelection });
+    }
+
+    return Object.freeze({ renderModel, markup, bind, playerCard, formationPreviewMarkup, formationOptionsMarkup, replacementPickerMarkup, replacementPickerResultsMarkup });
   }
 
   global.RoadToGlorySquadView = Object.freeze({ create });
