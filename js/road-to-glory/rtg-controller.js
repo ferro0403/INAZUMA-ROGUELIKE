@@ -29,7 +29,11 @@
     let halftimeDraft=null;
     let rawPlayerById=new Map();
     let lastRenderedHtml="";
+    let matchFlowTimer=null;
+    let displayedMinute=0;
     const SQUAD_PICKER_PAGE_SIZE=24;
+    const schedule=deps.setTimeout||global.setTimeout;
+    const cancelSchedule=deps.clearTimeout||global.clearTimeout;
 
     function renderHtml(html){
       lastRenderedHtml=String(html||"");
@@ -233,6 +237,111 @@
       deps.openModal?.(squadView.replacementPickerMarkup({target,role,entries:entries(),total:candidateIds.length,visibleCount}),{className:"rtg-modal rtg-squad-picker-modal"});
       bindResults();
     }
+    function currentRequirementTeamId(){
+      const node=nodeById(campaign?.currentNodeId);
+      if(!node)return null;
+      if(node.type==="main")return id(node.teamId);
+      if(node.type==="secondary")return id(node.beforeTeamId);
+      return null;
+    }
+    function seasonTeamIdsForPlayer(playerId){
+      const player=(seasonDb?.players||[]).find(entry=>id(entry?.playerId||entry?.id)===id(playerId));
+      return [player?.teamId,...(player?.teamIds||[])].filter(Boolean).map(id);
+    }
+    function buildRequirementCandidate(formation,teamId){
+      const constraint=config.SEASON1?.constraints?.[teamId];
+      if(!formation||!constraint)return null;
+      const accessible=squadRuntime.accessiblePlayerIds({freeAgentIds,state:draftState()}).map(id);
+      const recruitSet=new Set((campaign?.gachaAcquiredPlayerIds||[]).map(id));
+      const recentTeams=new Set(squadRuntime.recentDefeatedTeamIds(teamId,draftState(),constraint.recentWindow));
+      const candidates=accessible.map(playerId=>({
+        playerId,
+        role:rawRole(playerId),
+        overall:rawOverall(playerId),
+        recruit:recruitSet.has(playerId),
+        recent:recruitSet.has(playerId)&&seasonTeamIdsForPlayer(playerId).some(team=>recentTeams.has(team)),
+      })).filter(entry=>["GK","DF","MF","FW"].includes(entry.role));
+      const required={GK:0,DF:0,MF:0,FW:0,...(formation.requirements||{})};
+      const left={GK:Number(required.GK)||0,DF:Number(required.DF)||0,MF:Number(required.MF)||0,FW:Number(required.FW)||0};
+      const selected=[];
+      const used=new Set();
+      const addFrom=(pool,needed)=>{
+        for(const entry of pool){
+          if(needed<=0)break;
+          if(used.has(entry.playerId)||left[entry.role]<=0)continue;
+          selected.push(entry);used.add(entry.playerId);left[entry.role]-=1;needed-=1;
+        }
+        return needed;
+      };
+      const strongest=(a,b)=>b.overall-a.overall||a.playerId.localeCompare(b.playerId);
+      let missingRecent=addFrom(candidates.filter(entry=>entry.recent).sort(strongest),Number(constraint.recentCount||0));
+      if(missingRecent>0)return null;
+      const recruitAlready=selected.filter(entry=>entry.recruit).length;
+      let missingRecruit=addFrom(candidates.filter(entry=>entry.recruit).sort(strongest),Math.max(0,Number(constraint.minRecruit||0)-recruitAlready));
+      if(missingRecruit>0)return null;
+      for(const role of ["GK","DF","MF","FW"]){
+        const need=left[role];
+        if(need>0&&addFrom(candidates.filter(entry=>entry.role===role).sort(strongest),need)>0)return null;
+      }
+      const counts=()=>({
+        recruit:selected.filter(entry=>entry.recruit).length,
+        recent:selected.filter(entry=>entry.recent).length,
+      });
+      const candidateState=()=>{
+        const state=clone(draftState());
+        state.squads.ie1={
+          formationId:id(formation.id),
+          lineup:selected.map(entry=>entry.playerId),
+          bench:candidates.filter(entry=>!used.has(entry.playerId)).sort(strongest).slice(0,4).map(entry=>entry.playerId),
+          activeRoleVariantByPlayerId:{...(squadDraft?.activeRoleVariantByPlayerId||{})},
+        };
+        return state;
+      };
+      let eligibility=squadRuntime.mainEligibility({teamId,state:candidateState(),seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+      let guard=0;
+      while(!eligibility.eligible&&eligibility.reasons?.includes("team-power-cap")&&guard++<40){
+        const currentCounts=counts();
+        let bestSwap=null;
+        for(let i=0;i<selected.length;i++){
+          const outgoing=selected[i];
+          for(const incoming of candidates){
+            if(used.has(incoming.playerId)||incoming.role!==outgoing.role||incoming.overall>=outgoing.overall)continue;
+            const nextRecruit=currentCounts.recruit-(outgoing.recruit?1:0)+(incoming.recruit?1:0);
+            const nextRecent=currentCounts.recent-(outgoing.recent?1:0)+(incoming.recent?1:0);
+            if(nextRecruit<Number(constraint.minRecruit||0)||nextRecent<Number(constraint.recentCount||0))continue;
+            const drop=outgoing.overall-incoming.overall;
+            if(!bestSwap||drop<bestSwap.drop)bestSwap={i,outgoing,incoming,drop};
+          }
+        }
+        if(!bestSwap)break;
+        used.delete(bestSwap.outgoing.playerId);
+        used.add(bestSwap.incoming.playerId);
+        selected[bestSwap.i]=bestSwap.incoming;
+        eligibility=squadRuntime.mainEligibility({teamId,state:candidateState(),seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+      }
+      if(!eligibility.eligible)return null;
+      const state=candidateState();
+      return {squad:state.squads.ie1,eligibility};
+    }
+    function adaptSquadToCurrentRequirements(){
+      const teamId=currentRequirementTeamId();
+      if(!teamId){deps.toast?.("Nessun requisito principale attivo","error");return{ok:false,reason:"no-target"};}
+      const formations=seasonDb?.formations?.eleven||[];
+      const currentId=id(squadDraft?.formationId||campaign?.squads?.ie1?.formationId);
+      const ordered=[...formations].sort((a,b)=>(id(a.id)===currentId?-1:0)-(id(b.id)===currentId?-1:0));
+      let best=null;
+      for(const formation of ordered){
+        const candidate=buildRequirementCandidate(formation,teamId);
+        if(!candidate)continue;
+        if(!best||Number(candidate.eligibility.teamPower||0)>Number(best.eligibility.teamPower||0))best=candidate;
+      }
+      if(!best){deps.toast?.("Non riesco a costruire automaticamente una squadra valida con i giocatori disponibili","error");return{ok:false,reason:"no-valid-squad"};}
+      squadDraft=clone(best.squad);
+      renderSquad();
+      deps.toast?.(`Squadra adattata: Potenza ${best.eligibility.teamPower} / ${best.eligibility.cap}`);
+      return{ok:true,teamId,eligibility:best.eligibility,squad:clone(squadDraft)};
+    }
+
     function renderSquad(){
       squadDraft=clone(squadDraft||campaign.squads.ie1);
       const model=squadView.renderModel({state:draftState(),freeAgentIds,seasonDb,freeAgentsDb});
@@ -241,6 +350,7 @@
       squadView.bind(app,{
         onOpenFormation:()=>openFormationSelector(model),
         onOpenPlayer:(playerId)=>openSquadPlayerPicker(playerId),
+        onAdaptRequirements:()=>adaptSquadToCurrentRequirements(),
         onSave:()=>saveSquad(squadDraft),
       });
       return model;
@@ -337,6 +447,7 @@
         const matchId=`rtg:${node.id}:${attemptNumber}`;
         let match=matchEngine.createMatch({matchId,nodeId:node.id,matchType:node.type,attemptNumber,seed,userSquad,opponentSquad});
         match=matchEngine.prepareNext(match);
+        match.presentation={...(match.presentation||{}),preMatchSeen:false};
         current.activeMatch=match;started=clone(match);return current;
       });
       return renderMatch(started||campaign.activeMatch);
@@ -345,9 +456,42 @@
       const squad=side==="user"?match.userSquad:match.opponentSquad;
       return [...(squad?.lineup||[]),...(squad?.bench||[])].find(player=>id(player.playerId)===id(playerId))||null;
     }
-    function renderMatch(match=campaign?.activeMatch){
+    function clearMatchFlowTimer(){
+      if(matchFlowTimer!=null&&typeof cancelSchedule==="function")cancelSchedule(matchFlowTimer);
+      matchFlowTimer=null;
+    }
+    function bindMatchViewActions(){
+      matchView.bind(app,{
+        onPreMatchStart:()=>confirmPreMatch(),
+        onEncounterChoice:choice=>chooseEncounter(choice),
+        onAbandon:()=>abandonMatch(),
+        onHalftimeConfirm:()=>confirmHalftime(halftimeDraft),
+        onPenaltyDirection:direction=>choosePenalty({direction,useMove:false}),
+        onPenaltyMove:()=>choosePenalty({direction:"center",useMove:true}),
+      });
+    }
+    function showEncounterOverlay(match){
+      const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
+      const pending=match?.pendingEncounter;
+      if(!overlay||!pending)return;
+      const userPlayer=findMatchPlayer(match,"user",pending.userPlayerId);
+      const opponentPlayer=findMatchPlayer(match,"opponent",pending.aiPlayerId||pending.opponentPlayerId);
+      overlay.innerHTML=matchView.encounterMarkup(match,{userPlayer,opponentPlayer});
+      bindMatchViewActions();
+    }
+    function renderMatch(match=campaign?.activeMatch,options={}){
+      clearMatchFlowTimer();
       if(!match)return renderRun();
+      if(match.presentation?.preMatchSeen===false){
+        displayedMinute=0;
+        renderHtml(matchView.preMatchMarkup(match));
+        bindMatchViewActions();
+        return match;
+      }
       renderHtml(matchView.matchMarkup(match));
+      const minute=matchView.currentMinute?.(match)??0;
+      matchView.animateClock?.(app,displayedMinute,minute);
+      displayedMinute=minute;
       const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
       if(match.status==="halftime"){
         halftimeDraft=clone(match.userSquad);
@@ -357,13 +501,26 @@
         const context=penaltyContext(match);
         if(overlay)overlay.innerHTML=matchView.penaltyMarkup(match,context);
       }else if(match.pendingEncounter){
-        const pending=match.pendingEncounter;
-        const userPlayer=findMatchPlayer(match,"user",pending.userPlayerId);
-        const opponentPlayer=findMatchPlayer(match,"opponent",pending.aiPlayerId||pending.opponentPlayerId);
-        if(overlay)overlay.innerHTML=matchView.encounterMarkup(match,{userPlayer,opponentPlayer});
+        if(options.delayEncounter&&typeof schedule==="function"){
+          if(overlay)overlay.innerHTML="";
+          const matchId=match.matchId,encounterId=match.pendingEncounter.encounterId;
+          matchFlowTimer=schedule(()=>{
+            const live=campaign?.activeMatch;
+            if(live?.matchId===matchId&&live?.pendingEncounter?.encounterId===encounterId)showEncounterOverlay(live);
+          },900);
+        }else showEncounterOverlay(match);
       }
-      matchView.bind(app,{onEncounterChoice:choice=>chooseEncounter(choice),onAbandon:()=>abandonMatch(),onHalftimeConfirm:()=>confirmHalftime(halftimeDraft),onPenaltyDirection:direction=>choosePenalty({direction,useMove:false}),onPenaltyMove:()=>choosePenalty({direction:"center",useMove:true})});
+      bindMatchViewActions();
       return match;
+    }
+    async function confirmPreMatch(){
+      campaign=await repository.update("rtg-prematch-start",current=>{
+        if(!current.activeMatch)throw Object.assign(new Error("Nessuna partita RTG attiva"),{code:"rtg-match-not-active"});
+        current.activeMatch.presentation={...(current.activeMatch.presentation||{}),preMatchSeen:true};
+        return current;
+      });
+      displayedMinute=0;
+      return renderMatch(campaign.activeMatch,{delayEncounter:true});
     }
     function terminalKind(match){
       if(match.matchType==="main")return match.result?.winner==="user"?"victory":"loss";
@@ -381,7 +538,7 @@
       next.activeMatch=null;
       return next;
     }
-    async function commitMatchState(label,mutator){
+    async function commitMatchState(label,mutator,renderOptions={}){
       let terminalSnapshot=null;
       campaign=await repository.update(label,current=>{
         if(!current.activeMatch)throw Object.assign(new Error("Nessuna partita RTG attiva"),{code:"rtg-match-not-active"});
@@ -393,7 +550,7 @@
         current.activeMatch=match;return current;
       });
       if(terminalSnapshot)return showMatchResult(terminalSnapshot);
-      return renderMatch(campaign.activeMatch);
+      return renderMatch(campaign.activeMatch,renderOptions);
     }
     async function chooseEncounter(choice){
       const before=clone(campaign.activeMatch?.pendingEncounter);
@@ -430,7 +587,7 @@
           aiPlayerName:aiPlayer?.name||before.aiPlayerId,
           userChoiceLabel,aiChoiceLabel,
         });
-        overlay?.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>renderMatch(campaign.activeMatch));
+        overlay?.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>renderMatch(campaign.activeMatch,{delayEncounter:true}));
         return resolvedMatch;
       }
       return renderMatch(campaign.activeMatch);
@@ -472,7 +629,7 @@
           return {eligible:validation.valid,reasons:validation.reasons||[]};
         }
         return squadRuntime.mainEligibility({teamId:nodeById(match.nodeId)?.teamId,state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
-      }}));
+      }}),{delayEncounter:true});
     }
     function penaltyContext(match){
       const history=match.shootout?.history||[];
@@ -564,8 +721,8 @@
     }
 
     return Object.freeze({
-      open,renderRun,renderSquad,openNode,startMatch,chooseEncounter,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,
-      swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,
+      open,renderRun,renderSquad,openNode,startMatch,confirmPreMatch,chooseEncounter,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,
+      swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,adaptSquadToCurrentRequirements,
       getDraftSquad:()=>clone(squadDraft),getState:()=>clone(campaign),getRenderedHtml,
     });
   }

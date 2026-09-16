@@ -99,14 +99,92 @@
       return `<section class="rtg-match-ticker" aria-label="Ultime azioni"><div class="rtg-match-ticker-head"><small>Ultime azioni</small><span>${events.length ? "live" : "kick-off"}</span></div><div class="rtg-match-ticker-list">${events.length ? events.map((event) => tickerEventMarkup(match, event)).join("") : '<div class="rtg-ticker-empty">Formazioni pronte.</div>'}</div></section>`;
     }
 
+    function formationAverage(squad = {}) {
+      const players = squad?.lineup || [];
+      if (!players.length) return 0;
+      return Math.round(players.reduce((sum, player) => sum + (Number(player?.overall ?? player?.finalOverall) || 0), 0) / players.length);
+    }
+
+    function currentMinute(match = {}) {
+      if (match.status === "penalties") return 120;
+      if (match.status === "halftime" || match.period === "halftime") return 45;
+      const pending = Number(match.pendingEncounter?.minute);
+      if (Number.isFinite(pending)) return Math.max(0, Math.round(pending));
+      const log = match.log || [];
+      const last = Number(log[log.length - 1]?.minute);
+      if (Number.isFinite(last)) return Math.max(0, Math.round(last));
+      if (match.period === "extra_first" || match.period === "extra_second") {
+        return 90 + Math.round((Math.min(6, Number(match.extraActionIndex) || 0) / 6) * 30);
+      }
+      return Math.round((Math.min(Number(match.actionTarget) || 0, Number(match.actionIndex) || 0) / Math.max(1, Number(match.actionTarget) || 1)) * 90);
+    }
+
+    function animateClock(root, fromMinute, toMinute, duration = 720) {
+      const element = root?.querySelector?.("[data-rtg-match-minute]");
+      if (!element) return;
+      const from = Math.max(0, Number(fromMinute) || 0);
+      const to = Math.max(from, Number(toMinute) || 0);
+      const raf = global.requestAnimationFrame;
+      if (typeof raf !== "function" || to <= from) {
+        element.textContent = `${Math.round(to)}'`;
+        return;
+      }
+      const started = Date.now();
+      const frame = () => {
+        const progress = Math.min(1, (Date.now() - started) / Math.max(120, duration));
+        const eased = 1 - Math.pow(1 - progress, 3);
+        element.textContent = `${Math.round(from + (to - from) * eased)}'`;
+        if (progress < 1) raf(frame);
+      };
+      raf(frame);
+    }
+
+    function preMatchFormation(squad = {}, side = "user") {
+      const rows = formationRows(squad?.formationId, squad?.lineup || []);
+      return `<section class="rtg-prematch-team rtg-prematch-team--${side}">
+        <div class="rtg-prematch-team-head">
+          <div><small>${side === "user" ? "LA TUA SQUADRA" : "AVVERSARIO"}</small><strong>${escape(side === "user" ? "Road to Glory XI" : (squad?.name || "CPU"))}</strong></div>
+          <span><b>${escape(squad?.formationId || "—")}</b><em>OVR ${escape(formationAverage(squad) || "—")}</em></span>
+        </div>
+        <div class="rtg-prematch-pitch">
+          ${rows.map((row) => `<div class="rtg-prematch-row" style="--row-count:${Math.max(1,row.players.length)}">${row.players.map((player) => card(
+            player,
+            `data-rtg-prematch-player="${escape(pid(player))}" data-side="${side}"`,
+            `squad-player-card rtg-prematch-player-card ${side === "opponent" ? "boss-match-card boss-match-card--boss" : ""}`
+          )).join("")}</div>`).join("")}
+        </div>
+      </section>`;
+    }
+
+    function preMatchMarkup(match = {}) {
+      return `<main class="screen boss-match-screen rtg-prematch-shell development-squad-card-scope">
+        <header class="topbar rtg-prematch-topbar">
+          <div><p class="eyebrow">Road to Glory</p><h1>Pre-partita</h1></div>
+          <div class="rtg-prematch-vs"><strong>VS</strong><span>${escape(match.opponentSquad?.name || "Avversario")}</span></div>
+        </header>
+        <div class="content rtg-prematch-content">
+          <div class="rtg-prematch-banner">
+            <span>FORMAZIONI UFFICIALI</span>
+            <strong>Controlla gli undici prima del calcio d'inizio</strong>
+          </div>
+          <div class="rtg-prematch-grid">
+            ${preMatchFormation(match.userSquad, "user")}
+            ${preMatchFormation(match.opponentSquad, "opponent")}
+          </div>
+          <button type="button" class="btn btn-yellow rtg-prematch-start" data-rtg-prematch-start>INIZIA PARTITA</button>
+        </div>
+      </main>`;
+    }
+
     function matchMarkup(match = {}) {
       const opponentName = match.opponentSquad?.name || "CPU";
       const possessionLabel = match.possession === "user" ? "TU" : opponentName;
       const zoneLabel = ({ midfield:"Centrocampo", attack:"Attacco", shot:"Tiro" }[match.fieldZone] || "Centrocampo");
       const actionCurrent = Math.min(Number(match.actionTarget || 0), Number(match.actionIndex || 0) + 1);
+      const minute = currentMinute(match);
       return `<main class="screen rtg-match-shell boss-match-screen">
         <header class="topbar rtg-match-topbar">
-          <div class="rtg-match-period"><p class="eyebrow">Road to Glory</p><strong class="brand">${escape(periodLabel(match.period))}</strong></div>
+          <div class="rtg-match-period"><strong class="rtg-match-clock" data-rtg-match-minute>${escape(minute)}'</strong><span>${escape(periodLabel(match.period))}</span></div>
           <div class="rtg-match-score-main"><span>Tu</span><strong>${escape(match.score?.user || 0)} - ${escape(match.score?.opponent || 0)}</strong><span title="${escape(opponentName)}">${escape(opponentName)}</span></div>
           <button type="button" class="btn btn-danger rtg-abandon-button" data-rtg-abandon>Abbandona</button>
         </header>
@@ -138,7 +216,7 @@
       const probability = Number(preview.probability ?? pending.normalPreviewProbability ?? 50);
       const userHasPossession = pending.actorSide === "user";
       return `<section class="panel rtg-duel-card rtg-paper-modal development-squad-card-scope">
-        <div class="rtg-duel-head"><div><p class="eyebrow">Duello</p><h2>${escape(pending.userBaseActionLabel || "Azione")}</h2></div><strong>${escape(probability.toFixed(1))}%</strong></div>
+        <div class="rtg-duel-head"><div><p class="eyebrow">${escape(currentMinute(match))}' · SCONTRO</p><h2>${escape(pending.userBaseActionLabel || "Azione")}</h2></div><strong>${escape(probability.toFixed(1))}%</strong></div>
         <div class="rtg-duel-context"><span>${userHasPossession ? "Hai il possesso" : "CPU in possesso"}</span><span>Scelta CPU nascosta</span></div>
         <div class="progress-track rtg-probability"><span class="progress-bar" style="width:${Math.max(10, Math.min(90, probability))}%"></span></div>
         <div class="rtg-versus rtg-versus--cards">
@@ -174,19 +252,43 @@
       const selected = lineup.find((player) => pid(player) === selectedId) || null;
       const selectedRole = selected ? role(selected) : "";
       const compatibleBench = selected ? bench.filter((player) => role(player) === selectedRole) : [];
+      const rows = formationRows(model.formationId, lineup);
       return `<section class="panel rtg-halftime rtg-paper-modal development-squad-card-scope">
-        <div class="modal-head"><div><p class="eyebrow">45° minuto</p><h2>Intervallo</h2><p class="muted">Tocca un titolare: vedrai soltanto le riserve compatibili con il suo ruolo. Le cariche delle mosse non si ricaricano.</p></div></div>
-        <div class="rtg-halftime-active">
-          <h3>Campo</h3>
-          <div class="rtg-halftime-cards rtg-halftime-lineup">
-            ${lineup.map((player) => card(player, `data-rtg-half-lineup="${escape(pid(player))}" data-role="${escape(role(player))}" aria-pressed="${pid(player)===selectedId?"true":"false"}"`, `squad-player-card rtg-halftime-player-card ${pid(player)===selectedId?"selected":""}`)).join("")}
-          </div>
+        <div class="rtg-halftime-head">
+          <div><p class="eyebrow">45' · INTERVALLO</p><h2>Formazione</h2><p class="muted">Controlla il campo. Tocca un titolare e poi una riserva dello stesso ruolo per effettuare il cambio.</p></div>
+          <strong>45:00</strong>
         </div>
-        <div class="rtg-halftime-compatible">
-          ${selected ? `<div class="rtg-halftime-compatible-head"><div><p class="eyebrow">Cambi compatibili</p><h3>${escape(selected.name || selectedId)} · ${escape(selectedRole)}</h3></div><span>${escape(compatibleBench.length)} opzioni</span></div>
-          ${compatibleBench.length ? `<div class="rtg-halftime-cards rtg-halftime-bench-options">${compatibleBench.map((player) => card(player, `data-rtg-half-bench="${escape(pid(player))}" data-role="${escape(role(player))}"`, "squad-player-card rtg-halftime-player-card")).join("")}</div>` : '<p class="rtg-halftime-empty">Nessuna riserva compatibile per questo ruolo.</p>'}` : '<p class="rtg-halftime-empty">Tocca un titolare per vedere soltanto i cambi possibili.</p>'}
+        <div class="rtg-halftime-layout">
+          <section class="rtg-halftime-field-panel">
+            <div class="rtg-halftime-section-title"><span>IN CAMPO</span><b>${escape(model.formationId || "—")}</b></div>
+            <div class="rtg-halftime-pitch">
+              ${rows.map((row) => `<div class="rtg-halftime-pitch-row" style="--row-count:${Math.max(1,row.players.length)}">${row.players.map((player) => card(
+                player,
+                `data-rtg-half-lineup="${escape(pid(player))}" data-role="${escape(role(player))}" aria-pressed="${pid(player)===selectedId?"true":"false"}"`,
+                `squad-player-card rtg-halftime-player-card ${pid(player)===selectedId?"selected":""}`
+              )).join("")}</div>`).join("")}
+            </div>
+          </section>
+          <aside class="rtg-halftime-bench-panel">
+            <div class="rtg-halftime-section-title"><span>PANCHINA</span><b>4</b></div>
+            <div class="rtg-halftime-bench-strip">
+              ${bench.map((player) => {
+                const compatible = !!selected && role(player) === selectedRole;
+                const attrs = [
+                  `data-rtg-half-bench-player="${escape(pid(player))}"`,
+                  `data-role="${escape(role(player))}"`,
+                  compatible ? `data-rtg-half-bench="${escape(pid(player))}"` : "",
+                  compatible ? 'aria-disabled="false"' : 'aria-disabled="true"',
+                ].filter(Boolean).join(" ");
+                return card(player, attrs, `squad-player-card rtg-halftime-player-card ${selected && !compatible ? "is-incompatible" : compatible ? "is-compatible" : ""}`);
+              }).join("")}
+            </div>
+            <div class="rtg-halftime-change-box">
+              ${selected ? `<p class="eyebrow">CAMBIO SELEZIONATO</p><strong>${escape(selected.name || selectedId)} · ${escape(selectedRole)}</strong><span>${compatibleBench.length ? `${compatibleBench.length} riserve compatibili evidenziate` : "Nessuna riserva compatibile"}</span>` : '<strong>Seleziona un titolare sul campo</strong><span>Le riserve compatibili verranno evidenziate.</span>'}
+            </div>
+          </aside>
         </div>
-        <button type="button" class="btn btn-yellow rtg-half-confirm" data-rtg-half-confirm>Conferma secondo tempo</button>
+        <button type="button" class="btn btn-yellow rtg-half-confirm" data-rtg-half-confirm>CONFERMA SECONDO TEMPO</button>
       </section>`;
     }
 
@@ -238,6 +340,7 @@
     }
 
     function bind(root, actions = {}) {
+      root?.querySelector?.("[data-rtg-prematch-start]")?.addEventListener("click", () => actions.onPreMatchStart?.());
       root?.querySelectorAll?.("[data-rtg-choice]")?.forEach((button) => button.addEventListener("click", () => actions.onEncounterChoice?.(button.dataset.rtgChoice)));
       root?.querySelector?.("[data-rtg-abandon]")?.addEventListener("click", () => actions.onAbandon?.());
       root?.querySelector?.("[data-rtg-half-confirm]")?.addEventListener("click", () => actions.onHalftimeConfirm?.());
@@ -246,7 +349,7 @@
       root?.querySelector?.("[data-rtg-result-continue]")?.addEventListener("click", () => actions.onContinue?.());
     }
 
-    return Object.freeze({ matchMarkup, encounterMarkup, resolvedEncounterMarkup, halftimeMarkup, penaltyMarkup, resultMarkup, bind });
+    return Object.freeze({ preMatchMarkup, matchMarkup, encounterMarkup, resolvedEncounterMarkup, halftimeMarkup, penaltyMarkup, resultMarkup, currentMinute, animateClock, bind });
   }
 
   global.RoadToGloryMatchView = Object.freeze({ create });

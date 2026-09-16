@@ -1115,3 +1115,285 @@
   .rtg-duel-context { font-size: .62rem; }
   .rtg-match-shell .rtg-penalty-player-card { width: 82px !important; max-width: 82px !important; }
 }
+
+
+/* RTG UX pass: pre-match, match clock, formation halftime, requirement auto-fit. */
+.rtg-squad-actions--three {
+  grid-template-columns: 1.35fr 1fr 1fr;
+}
+.rtg-adapt-button {
+  min-height: 48px;
+  border: 3px solid var(--squad-ink,#101116) !important;
+  box-shadow: 4px 5px 0 var(--squad-ink,#101116);
+  text-transform: uppercase;
+}
+.rtg-picker-grid .rtg-source-badge { display: none; }
+.modal.rtg-squad-picker-modal .rtg-picker-grid {
+  grid-template-columns: repeat(auto-fill,minmax(94px,1fr));
+  gap: 24px 18px;
+  padding: 8px 4px 14px;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card {
+  width: 94px !important;
+  max-width: 94px !important;
+}
+
+.rtg-prematch-shell {
+  min-height: 100dvh;
+  background:
+    radial-gradient(circle at 15% 5%, rgba(255,211,79,.15), transparent 28rem),
+    radial-gradient(circle at 90% 15%, rgba(54,169,255,.12), transparent 30rem),
+    #07172c;
+  color: #f8fbff;
+}
+.rtg-prematch-topbar {
+  min-height: 78px;
+  border-bottom: 1px solid rgba(255,211,79,.30);
+  background: linear-gradient(135deg,rgba(7,23,44,.98),rgba(12,37,70,.98));
+  color: #fff;
+}
+.rtg-prematch-topbar h1,
+.rtg-prematch-topbar p { margin: 0; }
+.rtg-prematch-topbar .eyebrow { color: #ffd34f; }
+.rtg-prematch-vs {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.rtg-prematch-vs strong {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border: 1px solid rgba(255,211,79,.44);
+  border-radius: 50%;
+  background: #ffd34f;
+  color: #172033;
+}
+.rtg-prematch-vs span { color: #cfe1f5; font-weight: 900; }
+.rtg-prematch-content {
+  width: min(1050px,calc(100% - 24px));
+  margin: 0 auto;
+  padding: 18px 0 80px;
+}
+.rtg-prematch-banner {
+  display: grid;
+  gap: 3px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border-left: 5px solid #ffd34f;
+  background: rgba(10,28,54,.84);
+}
+.rtg-prematch-banner span {
+  color: #ffd34f;
+  font-size: .68rem;
+  font-weight: 950;
+  letter-spacing: .12em;
+}
+.rtg-prematch-banner strong { color: #f8fbff; }
+.rtg-prematch-grid {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 14px;
+}
+.rtg-prematch-team {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid rgba(92,130,177,.34);
+  border-radius: 18px;
+  background: rgba(7,23,44,.84);
+  box-shadow: 0 16px 34px rgba(0,0,0,.24);
+}
+.rtg-prematch-team--user { border-color: rgba(54,169,255,.48); }
+.rtg-prematch-team--opponent { border-color: rgba(255,91,98,.44); }
+.rtg-prematch-team-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+.rtg-prematch-team-head > div,
+.rtg-prematch-team-head > span { display: grid; gap: 2px; }
+.rtg-prematch-team-head small { color: #8fa9c8; font-size: .58rem; font-weight: 950; letter-spacing: .08em; }
+.rtg-prematch-team-head strong { color: #fff; }
+.rtg-prematch-team-head > span { justify-items: end; }
+.rtg-prematch-team-head b { color: #ffd34f; }
+.rtg-prematch-team-head em { color: #a9bdd4; font-size: .68rem; font-style: normal; font-weight: 850; }
+.rtg-prematch-pitch {
+  min-height: 430px;
+  display: grid;
+  align-content: space-evenly;
+  gap: 5px;
+  padding: 14px 8px;
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: 16px;
+  background:
+    linear-gradient(rgba(255,255,255,.10) 2px,transparent 2px) center/100% 50%,
+    repeating-linear-gradient(90deg,#14633f 0 12.5%,#176c45 12.5% 25%);
+  box-shadow: inset 0 0 55px rgba(0,0,0,.26);
+}
+.rtg-prematch-row {
+  display: grid;
+  grid-template-columns: repeat(var(--row-count,1),minmax(0,1fr));
+  justify-items: center;
+  gap: 6px;
+}
+.rtg-prematch-player-card {
+  width: 74px !important;
+  max-width: 74px !important;
+  min-height: 90px;
+}
+.rtg-prematch-start {
+  width: min(520px,100%);
+  min-height: 54px;
+  display: block;
+  margin: 18px auto 0;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 24px rgba(255,211,79,.14);
+  font-size: 1rem;
+  letter-spacing: .04em;
+}
+
+.rtg-match-period {
+  min-width: 72px;
+  display: grid;
+  line-height: 1;
+}
+.rtg-match-clock {
+  color: #ffd34f;
+  font-size: clamp(1.35rem,5vw,2rem);
+  font-weight: 1000;
+  font-variant-numeric: tabular-nums;
+}
+.rtg-match-period > span {
+  margin-top: 3px;
+  color: #8fa9c8;
+  font-size: .58rem;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+.rtg-match-overlay .rtg-duel-card {
+  width: min(92vw,540px);
+}
+.rtg-match-overlay .rtg-duel-card .rtg-versus--cards {
+  margin-block: 8px 4px;
+}
+
+.rtg-halftime {
+  width: min(96vw,900px);
+}
+.rtg-halftime-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: end;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(92,130,177,.30);
+}
+.rtg-halftime-head h2,
+.rtg-halftime-head p { margin: 0; }
+.rtg-halftime-head > strong {
+  color: #ffd34f;
+  font-size: 1.55rem;
+  font-variant-numeric: tabular-nums;
+}
+.rtg-halftime-layout {
+  display: grid;
+  grid-template-columns: minmax(0,1.6fr) minmax(220px,.7fr);
+  gap: 14px;
+  margin-top: 12px;
+}
+.rtg-halftime-field-panel,
+.rtg-halftime-bench-panel { min-width: 0; }
+.rtg-halftime-section-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+.rtg-halftime-section-title span { color: #8fa9c8; font-size: .62rem; font-weight: 950; letter-spacing: .08em; }
+.rtg-halftime-section-title b { color: #ffd34f; }
+.rtg-halftime-pitch {
+  min-height: 500px;
+  display: grid;
+  align-content: space-evenly;
+  gap: 4px;
+  padding: 12px 7px;
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: 16px;
+  background:
+    linear-gradient(rgba(255,255,255,.10) 2px,transparent 2px) center/100% 50%,
+    repeating-linear-gradient(90deg,#14633f 0 12.5%,#176c45 12.5% 25%);
+}
+.rtg-halftime-pitch-row {
+  display: grid;
+  grid-template-columns: repeat(var(--row-count,1),minmax(0,1fr));
+  justify-items: center;
+  gap: 5px;
+}
+.rtg-halftime-player-card {
+  width: 72px !important;
+  max-width: 72px !important;
+  min-height: 88px;
+}
+.rtg-halftime-bench-strip {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  justify-items: center;
+  gap: 14px 8px;
+  padding: 10px;
+  border: 1px solid rgba(92,130,177,.26);
+  border-radius: 14px;
+  background: rgba(7,23,44,.68);
+}
+.rtg-halftime-player-card.is-incompatible {
+  opacity: .28;
+  filter: grayscale(.8);
+}
+.rtg-halftime-player-card.is-compatible {
+  outline: 3px solid #ffd34f;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(255,211,79,.12);
+}
+.rtg-halftime-change-box {
+  display: grid;
+  gap: 4px;
+  min-height: 96px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid rgba(92,130,177,.26);
+  border-radius: 12px;
+  background: rgba(7,23,44,.66);
+}
+.rtg-halftime-change-box p,
+.rtg-halftime-change-box strong,
+.rtg-halftime-change-box span { margin: 0; }
+.rtg-halftime-change-box span { color: #9ab2cf; font-size: .72rem; }
+
+@media (max-width:780px) {
+  .rtg-squad-actions--three {
+    grid-template-columns: 1fr 1fr;
+  }
+  .rtg-adapt-button { grid-column: 1 / -1; }
+  .modal.rtg-squad-picker-modal .rtg-picker-grid {
+    grid-template-columns: repeat(3,minmax(0,1fr));
+    gap: 22px 12px;
+  }
+  .modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card {
+    width: 92px !important;
+    max-width: 92px !important;
+  }
+  .rtg-prematch-grid { grid-template-columns: 1fr; }
+  .rtg-prematch-pitch { min-height: 360px; }
+  .rtg-prematch-player-card { width: 64px !important; max-width: 64px !important; min-height: 82px; }
+  .rtg-halftime-layout { grid-template-columns: 1fr; }
+  .rtg-halftime-pitch { min-height: 430px; }
+  .rtg-halftime-bench-strip { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px 4px; }
+  .rtg-halftime-player-card { width: 66px !important; max-width: 66px !important; min-height: 84px; }
+}
+@media (max-width:390px) {
+  .modal.rtg-squad-picker-modal .rtg-picker-grid { grid-template-columns: repeat(3,minmax(0,1fr)); }
+  .modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card { width: 84px !important; max-width: 84px !important; }
+  .rtg-halftime-bench-strip { grid-template-columns: repeat(2,minmax(0,1fr)); }
+}

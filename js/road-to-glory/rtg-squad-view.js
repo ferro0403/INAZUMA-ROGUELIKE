@@ -132,7 +132,7 @@
 
     function replacementPickerMarkup({ target = null, role = "", entries = [], total = 0, visibleCount = entries.length } = {}) {
       const targetName = target?.player?.name || target?.playerId || "Giocatore";
-      return `<section class="rtg-squad-picker">
+      return `<section class="rtg-squad-picker development-squad-card-scope">
         <div class="modal-head rtg-squad-picker-head">
           <div><p class="eyebrow">Cambio giocatore</p><h2>${escape(targetName)}</h2><p class="muted">Solo ${escape(role || "ruolo compatibile")} · vengono caricati 24 giocatori alla volta.</p></div>
         </div>
@@ -177,9 +177,10 @@
                 </div>
                 <div class="rtg-module-copy"><strong>Assetto RTG</strong><p>Tocca una card: si apre solo il suo ruolo. Nessuna lista da 1500 giocatori viene caricata nella schermata.</p></div>
               </section>
-              <div class="squad-management-actions rtg-squad-actions">
+              <div class="squad-management-actions rtg-squad-actions rtg-squad-actions--three">
+                <button type="button" class="btn btn-yellow rtg-adapt-button" data-rtg-adapt-requirements>Adatta ai requisiti</button>
                 <button type="button" class="btn squad-module-button" data-rtg-open-formation>Modifica modulo</button>
-                <button type="button" class="btn btn-yellow squad-info-button" data-rtg-save-squad>Salva squadra</button>
+                <button type="button" class="btn squad-info-button" data-rtg-save-squad>Salva squadra</button>
               </div>
               <p class="squad-selection-hint" data-rtg-selection-hint>Tocca un giocatore per aprire i cambi compatibili</p>
               <section class="squad-bench-panel">
@@ -199,6 +200,7 @@
           if (playerId) actions.onOpenPlayer?.(playerId);
         });
       });
+      root?.querySelector?.("[data-rtg-adapt-requirements]")?.addEventListener("click", () => actions.onAdaptRequirements?.());
       root?.querySelector?.("[data-rtg-open-formation]")?.addEventListener("click", () => actions.onOpenFormation?.());
       root?.querySelector?.("[data-rtg-save-squad]")?.addEventListener("click", () => actions.onSave?.());
     }

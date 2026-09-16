@@ -122,6 +122,7 @@
       userMove:userMove?clone(userMove):null,
       aiSide,aiPlayerId:playerId(aiPlayer),aiKind,aiChoice,
       aiMove:aiChoice==="move"&&aiMove?clone(aiMove):null,
+      minute:minuteFor(state),
       preparedAtActionIndex:state.actionIndex,
     };
   }
