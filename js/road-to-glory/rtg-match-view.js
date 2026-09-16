@@ -163,10 +163,6 @@
           <div class="rtg-prematch-vs"><strong>VS</strong><span>${escape(match.opponentSquad?.name || "Avversario")}</span></div>
         </header>
         <div class="content rtg-prematch-content">
-          <div class="rtg-prematch-banner">
-            <span>FORMAZIONI UFFICIALI</span>
-            <strong>Controlla gli undici prima del calcio d'inizio</strong>
-          </div>
           <div class="rtg-prematch-grid">
             ${preMatchFormation(match.userSquad, "user")}
             ${preMatchFormation(match.opponentSquad, "opponent")}
@@ -342,6 +338,11 @@
     }
 
     function bind(root, actions = {}) {
+      root?.querySelectorAll?.("[data-rtg-prematch-player]")?.forEach((button) => button.addEventListener("click", () => {
+        const playerId = String(button.dataset.rtgPrematchPlayer || "");
+        const side = String(button.dataset.side || "");
+        if (playerId) actions.onOpenPlayerDetails?.(playerId, side);
+      }));
       root?.querySelector?.("[data-rtg-prematch-start]")?.addEventListener("click", () => actions.onPreMatchStart?.());
       root?.querySelectorAll?.("[data-rtg-choice]")?.forEach((button) => button.addEventListener("click", () => actions.onEncounterChoice?.(button.dataset.rtgChoice)));
       root?.querySelector?.("[data-rtg-abandon]")?.addEventListener("click", () => actions.onAbandon?.());
