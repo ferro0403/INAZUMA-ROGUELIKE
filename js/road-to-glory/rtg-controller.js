@@ -156,39 +156,57 @@
       const player=resolved(playerId,variant);
       return String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
     }
+    function accessibleDraftIds(){
+      return squadRuntime.accessiblePlayerIds({freeAgentIds,state:draftState()}).map(id);
+    }
     function canUseDraftFormation(formation){
       if(!formation)return false;
       const counts={GK:0,DF:0,MF:0,FW:0};
-      for(const playerId of draftRosterIds()){
-        const role=roleOfDraftPlayer(playerId);
+      for(const playerId of accessibleDraftIds()){
+        const role=rawRole(playerId);
         if(Object.prototype.hasOwnProperty.call(counts,role))counts[role]+=1;
       }
       return Object.entries(formation.requirements||{}).every(([role,amount])=>Number(counts[String(role).toUpperCase()]||0)>=Number(amount||0));
     }
     function arrangeDraftForFormation(formation){
       if(!formation||!canUseDraftFormation(formation))return{ok:false,reason:"formation-incompatible"};
-      const available=draftRosterIds().map(playerId=>({playerId,role:roleOfDraftPlayer(playerId)}));
-      const used=new Set(),lineup=[];
+      const currentLineup=new Set((squadDraft?.lineup||[]).map(id));
+      const currentBench=new Set((squadDraft?.bench||[]).map(id));
+      const accessible=accessibleDraftIds().map(playerId=>({
+        playerId,
+        role:rawRole(playerId),
+        overall:rawOverall(playerId),
+        priority:currentLineup.has(playerId)?0:currentBench.has(playerId)?1:2,
+      })).filter(entry=>["GK","DF","MF","FW"].includes(entry.role));
+      accessible.sort((a,b)=>a.priority-b.priority||b.overall-a.overall||rawName(a.playerId).localeCompare(rawName(b.playerId),"it"));
       const slotRoles=Array.isArray(formation.slotRoles)&&formation.slotRoles.length
         ? formation.slotRoles.map(role=>String(role).toUpperCase())
         : Object.entries(formation.requirements||{}).flatMap(([role,amount])=>Array.from({length:Number(amount)||0},()=>String(role).toUpperCase()));
+      const used=new Set(),lineup=[];
       for(const role of slotRoles){
-        const candidate=available.find(entry=>entry.role===role&&!used.has(entry.playerId));
+        const candidate=accessible.find(entry=>entry.role===role&&!used.has(entry.playerId));
         if(!candidate)return{ok:false,reason:"formation-incompatible"};
         used.add(candidate.playerId);lineup.push(candidate.playerId);
       }
       if(lineup.length!==11)return{ok:false,reason:"formation-invalid-slots"};
-      squadDraft={...squadDraft,formationId:id(formation.id),lineup,bench:available.map(entry=>entry.playerId).filter(playerId=>!used.has(playerId)),activeRoleVariantByPlayerId:{...(squadDraft?.activeRoleVariantByPlayerId||{})}};
+      const remaining=accessible.filter(entry=>!used.has(entry.playerId)).sort((a,b)=>{
+        const preserveA=currentLineup.has(a.playerId)||currentBench.has(a.playerId)?0:1;
+        const preserveB=currentLineup.has(b.playerId)||currentBench.has(b.playerId)?0:1;
+        return preserveA-preserveB||b.overall-a.overall||rawName(a.playerId).localeCompare(rawName(b.playerId),"it");
+      });
+      const bench=remaining.slice(0,4).map(entry=>entry.playerId);
+      if(bench.length!==4)return{ok:false,reason:"bench-unavailable"};
+      squadDraft={...squadDraft,formationId:id(formation.id),lineup,bench,activeRoleVariantByPlayerId:{...(squadDraft?.activeRoleVariantByPlayerId||{})}};
       return{ok:true};
     }
     function openFormationSelector(model){
-      const body=`<div class="modal-head squad-formation-modal-head"><div><p class="eyebrow">Assetto tattico RTG</p><h2>Modifica modulo</h2><p class="muted">Come nelle run normali, puoi scegliere solo moduli coperti dai 15 giocatori della rosa attiva.</p></div></div>${squadView.formationOptionsMarkup(model,canUseDraftFormation)}`;
+      const body=`<div class="modal-head squad-formation-modal-head"><div><p class="eyebrow">Assetto tattico RTG</p><h2>Modifica modulo</h2><p class="muted">Catalogo completo Orion. Un modulo è disponibile se può essere costruito con tutti i giocatori sbloccati, non soltanto con i 15 attivi.</p></div></div>${squadView.formationOptionsMarkup(model,canUseDraftFormation)}`;
       deps.openModal?.(body,{className:"squad-formation-modal rtg-formation-modal"});
       deps.getModalRoot?.()?.querySelectorAll?.("[data-rtg-formation-option]")?.forEach(button=>button.addEventListener("click",()=>{
         if(button.disabled)return;
         const formation=(model.formations||[]).find(item=>id(item.id)===id(button.dataset.rtgFormationOption));
         const result=arrangeDraftForFormation(formation);
-        if(!result.ok){deps.toast?.("La rosa attiva non copre questo modulo","error");return;}
+        if(!result.ok){deps.toast?.("Non ci sono abbastanza giocatori sbloccati nei ruoli richiesti","error");return;}
         deps.closeModal?.();
         renderSquad();
       }));
@@ -207,17 +225,32 @@
       if(!role)return deps.toast?.("Ruolo giocatore non disponibile","error");
       const candidateIds=squadPickerCandidateIds(targetId,role);
       let visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateIds.length);
+      let query="";
+      let sourceFilter="all";
       const targetPlayer=resolved(targetId,squadDraft?.activeRoleVariantByPlayerId?.[id(targetId)]||null);
       const target={playerId:id(targetId),source:sourceForDraftPlayer(targetId),player:targetPlayer};
-      const entries=()=>candidateIds.slice(0,visibleCount).map(playerId=>({
-        playerId,
-        source:sourceForDraftPlayer(playerId),
-        player:resolved(playerId,squadDraft?.activeRoleVariantByPlayerId?.[playerId]||null),
-      })).filter(entry=>entry.player);
+      const filteredIds=()=>candidateIds.filter(playerId=>{
+        const source=sourceForDraftPlayer(playerId);
+        if(sourceFilter==="free"&&source!=="Svincolato")return false;
+        if(sourceFilter==="rtg"&&source!=="RTG")return false;
+        const needle=query.trim().toLocaleLowerCase("it");
+        if(needle&&!rawName(playerId).toLocaleLowerCase("it").includes(needle))return false;
+        return true;
+      });
+      const entries=()=>{
+        const ids=filteredIds();
+        return ids.slice(0,visibleCount).map(playerId=>({
+          playerId,
+          source:sourceForDraftPlayer(playerId),
+          player:resolved(playerId,squadDraft?.activeRoleVariantByPlayerId?.[playerId]||null),
+        })).filter(entry=>entry.player);
+      };
       const renderResults=()=>{
         const modal=deps.getModalRoot?.();
+        const ids=filteredIds();
         const results=modal?.querySelector?.("[data-rtg-picker-results]");
-        if(results)results.innerHTML=squadView.replacementPickerResultsMarkup({entries:entries(),total:candidateIds.length,visibleCount});
+        if(results)results.innerHTML=squadView.replacementPickerResultsMarkup({entries:entries(),total:ids.length,visibleCount});
+        modal?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(button=>button.classList.toggle("active",button.dataset.rtgPickerSource===sourceFilter));
         bindResults();
       };
       const bindResults=()=>{
@@ -230,11 +263,22 @@
           renderSquad();
         }));
         modal?.querySelector?.("[data-rtg-picker-load-more]")?.addEventListener("click",()=>{
-          visibleCount=Math.min(candidateIds.length,visibleCount+SQUAD_PICKER_PAGE_SIZE);
+          visibleCount=Math.min(filteredIds().length,visibleCount+SQUAD_PICKER_PAGE_SIZE);
           renderResults();
         });
       };
-      deps.openModal?.(squadView.replacementPickerMarkup({target,role,entries:entries(),total:candidateIds.length,visibleCount}),{className:"rtg-modal rtg-squad-picker-modal"});
+      deps.openModal?.(squadView.replacementPickerMarkup({target,role,entries:entries(),total:candidateIds.length,visibleCount,query,sourceFilter}),{className:"rtg-modal rtg-squad-picker-modal"});
+      const modal=deps.getModalRoot?.();
+      modal?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",event=>{
+        query=String(event.target?.value||"");
+        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        renderResults();
+      });
+      modal?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(button=>button.addEventListener("click",()=>{
+        sourceFilter=String(button.dataset.rtgPickerSource||"all");
+        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        renderResults();
+      }));
       bindResults();
     }
     function currentRequirementTeamId(){
@@ -248,90 +292,95 @@
       const player=(seasonDb?.players||[]).find(entry=>id(entry?.playerId||entry?.id)===id(playerId));
       return [player?.teamId,...(player?.teamIds||[])].filter(Boolean).map(id);
     }
-    function buildRequirementCandidate(formation,teamId){
+    function requirementPool(teamId){
       const constraint=config.SEASON1?.constraints?.[teamId];
-      if(!formation||!constraint)return null;
-      const accessible=squadRuntime.accessiblePlayerIds({freeAgentIds,state:draftState()}).map(id);
+      if(!constraint)return[];
       const recruitSet=new Set((campaign?.gachaAcquiredPlayerIds||[]).map(id));
       const recentTeams=new Set(squadRuntime.recentDefeatedTeamIds(teamId,draftState(),constraint.recentWindow));
-      const candidates=accessible.map(playerId=>({
-        playerId,
-        role:rawRole(playerId),
-        overall:rawOverall(playerId),
-        recruit:recruitSet.has(playerId),
-        recent:recruitSet.has(playerId)&&seasonTeamIdsForPlayer(playerId).some(team=>recentTeams.has(team)),
-      })).filter(entry=>["GK","DF","MF","FW"].includes(entry.role));
+      return accessibleDraftIds().map(playerId=>{
+        const player=resolved(playerId,squadDraft?.activeRoleVariantByPlayerId?.[playerId]||null);
+        if(!player)return null;
+        const role=String(player.normalizedRole||player.position||player.role||rawRole(playerId)).toUpperCase();
+        if(!["GK","DF","MF","FW"].includes(role))return null;
+        const move=playerResolver.resolveMove?.(playerId,"ie1",role,freeAgentsDb)||null;
+        const movePower=Number(move?.power);
+        const contribution=Number(player.overall||0)+(Number.isFinite(movePower)?Math.max(0,Math.min(2,(movePower-50)/30)):0);
+        const recruit=recruitSet.has(playerId);
+        const recent=recruit&&seasonTeamIdsForPlayer(playerId).some(team=>recentTeams.has(team));
+        return{playerId,role,overall:Number(player.overall||0),contribution,recruit,recent};
+      }).filter(Boolean);
+    }
+    function buildRequirementCandidate(formation,teamId,pool){
+      const constraint=config.SEASON1?.constraints?.[teamId];
+      if(!formation||!constraint)return null;
+      const candidates=Array.from(pool||[]);
       const required={GK:0,DF:0,MF:0,FW:0,...(formation.requirements||{})};
       const left={GK:Number(required.GK)||0,DF:Number(required.DF)||0,MF:Number(required.MF)||0,FW:Number(required.FW)||0};
-      const selected=[];
-      const used=new Set();
-      const addFrom=(pool,needed)=>{
-        for(const entry of pool){
+      const selected=[],used=new Set();
+      const weakest=(a,b)=>a.contribution-b.contribution||a.playerId.localeCompare(b.playerId);
+      const addFrom=(source,needed)=>{
+        for(const entry of source){
           if(needed<=0)break;
           if(used.has(entry.playerId)||left[entry.role]<=0)continue;
           selected.push(entry);used.add(entry.playerId);left[entry.role]-=1;needed-=1;
         }
         return needed;
       };
-      const strongest=(a,b)=>b.overall-a.overall||a.playerId.localeCompare(b.playerId);
-      let missingRecent=addFrom(candidates.filter(entry=>entry.recent).sort(strongest),Number(constraint.recentCount||0));
-      if(missingRecent>0)return null;
+      if(addFrom(candidates.filter(entry=>entry.recent).sort(weakest),Number(constraint.recentCount||0))>0)return null;
       const recruitAlready=selected.filter(entry=>entry.recruit).length;
-      let missingRecruit=addFrom(candidates.filter(entry=>entry.recruit).sort(strongest),Math.max(0,Number(constraint.minRecruit||0)-recruitAlready));
-      if(missingRecruit>0)return null;
+      if(addFrom(candidates.filter(entry=>entry.recruit).sort(weakest),Math.max(0,Number(constraint.minRecruit||0)-recruitAlready))>0)return null;
       for(const role of ["GK","DF","MF","FW"]){
-        const need=left[role];
-        if(need>0&&addFrom(candidates.filter(entry=>entry.role===role).sort(strongest),need)>0)return null;
+        if(addFrom(candidates.filter(entry=>entry.role===role).sort(weakest),left[role])>0)return null;
       }
-      const counts=()=>({
-        recruit:selected.filter(entry=>entry.recruit).length,
-        recent:selected.filter(entry=>entry.recent).length,
-      });
-      const candidateState=()=>{
-        const state=clone(draftState());
-        state.squads.ie1={
-          formationId:id(formation.id),
-          lineup:selected.map(entry=>entry.playerId),
-          bench:candidates.filter(entry=>!used.has(entry.playerId)).sort(strongest).slice(0,4).map(entry=>entry.playerId),
-          activeRoleVariantByPlayerId:{...(squadDraft?.activeRoleVariantByPlayerId||{})},
-        };
-        return state;
-      };
-      let eligibility=squadRuntime.mainEligibility({teamId,state:candidateState(),seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+      if(selected.length!==11)return null;
+      const capTotal=Number(constraint.cap)*11;
+      let total=selected.reduce((sum,entry)=>sum+entry.contribution,0);
+      if(total>capTotal+1e-9)return null;
       let guard=0;
-      while(!eligibility.eligible&&eligibility.reasons?.includes("team-power-cap")&&guard++<40){
-        const currentCounts=counts();
-        let bestSwap=null;
-        for(let i=0;i<selected.length;i++){
-          const outgoing=selected[i];
+      while(guard++<80){
+        const recruitCount=selected.filter(entry=>entry.recruit).length;
+        const recentCount=selected.filter(entry=>entry.recent).length;
+        let best=null;
+        for(let index=0;index<selected.length;index++){
+          const outgoing=selected[index];
           for(const incoming of candidates){
-            if(used.has(incoming.playerId)||incoming.role!==outgoing.role||incoming.overall>=outgoing.overall)continue;
-            const nextRecruit=currentCounts.recruit-(outgoing.recruit?1:0)+(incoming.recruit?1:0);
-            const nextRecent=currentCounts.recent-(outgoing.recent?1:0)+(incoming.recent?1:0);
+            if(used.has(incoming.playerId)||incoming.role!==outgoing.role)continue;
+            const delta=incoming.contribution-outgoing.contribution;
+            if(delta<=0||total+delta>capTotal+1e-9)continue;
+            const nextRecruit=recruitCount-(outgoing.recruit?1:0)+(incoming.recruit?1:0);
+            const nextRecent=recentCount-(outgoing.recent?1:0)+(incoming.recent?1:0);
             if(nextRecruit<Number(constraint.minRecruit||0)||nextRecent<Number(constraint.recentCount||0))continue;
-            const drop=outgoing.overall-incoming.overall;
-            if(!bestSwap||drop<bestSwap.drop)bestSwap={i,outgoing,incoming,drop};
+            if(!best||delta>best.delta||(delta===best.delta&&incoming.overall>best.incoming.overall))best={index,outgoing,incoming,delta};
           }
         }
-        if(!bestSwap)break;
-        used.delete(bestSwap.outgoing.playerId);
-        used.add(bestSwap.incoming.playerId);
-        selected[bestSwap.i]=bestSwap.incoming;
-        eligibility=squadRuntime.mainEligibility({teamId,state:candidateState(),seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+        if(!best)break;
+        used.delete(best.outgoing.playerId);used.add(best.incoming.playerId);
+        selected[best.index]=best.incoming;total+=best.delta;
       }
+      const strongest=(a,b)=>b.contribution-a.contribution||a.playerId.localeCompare(b.playerId);
+      const bench=candidates.filter(entry=>!used.has(entry.playerId)).sort(strongest).slice(0,4).map(entry=>entry.playerId);
+      if(bench.length!==4)return null;
+      const state=clone(draftState());
+      state.squads.ie1={
+        formationId:id(formation.id),
+        lineup:selected.map(entry=>entry.playerId),
+        bench,
+        activeRoleVariantByPlayerId:{...(squadDraft?.activeRoleVariantByPlayerId||{})},
+      };
+      const eligibility=squadRuntime.mainEligibility({teamId,state,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
       if(!eligibility.eligible)return null;
-      const state=candidateState();
-      return {squad:state.squads.ie1,eligibility};
+      return{squad:state.squads.ie1,eligibility};
     }
     function adaptSquadToCurrentRequirements(){
       const teamId=currentRequirementTeamId();
       if(!teamId){deps.toast?.("Nessun requisito principale attivo","error");return{ok:false,reason:"no-target"};}
-      const formations=seasonDb?.formations?.eleven||[];
+      const formations=config.SEASON1?.formations||seasonDb?.formations?.eleven||[];
+      const pool=requirementPool(teamId);
       const currentId=id(squadDraft?.formationId||campaign?.squads?.ie1?.formationId);
       const ordered=[...formations].sort((a,b)=>(id(a.id)===currentId?-1:0)-(id(b.id)===currentId?-1:0));
       let best=null;
       for(const formation of ordered){
-        const candidate=buildRequirementCandidate(formation,teamId);
+        const candidate=buildRequirementCandidate(formation,teamId,pool);
         if(!candidate)continue;
         if(!best||Number(candidate.eligibility.teamPower||0)>Number(best.eligibility.teamPower||0))best=candidate;
       }
