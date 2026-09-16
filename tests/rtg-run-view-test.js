@@ -8,7 +8,7 @@ const view=c.RoadToGloryRunView.create({escapeHtml:s=>String(s),teamEmblemMarkup
 assert.match(view.lockedMarkup({count:7}),/Road to Glory/);assert.match(view.lockedMarkup({count:7}),/15 svincolati/);
 const state={tokens:600,lives:2,currentNodeId:"secondary:occult:wild:2",furthestNodeIndex:2,defeatedTeamIds:["occult"],attemptsByNode:{"secondary:occult:wild:1":{clears:2}},seasonComplete:false};
 const html=view.runMarkup({state,nodes,seasonDb:{teams:teams.map(teamId=>({teamId,name:teamId}))}});
-assert.strictEqual((html.match(/class="rtg-tab/g)||[]).length,2);
+assert.strictEqual((html.match(/data-rtg-tab=/g)||[]).length,2);
 assert.match(html,/>Run</);assert.match(html,/>Squadra</);
 assert.match(html,/600/);assert.match(html,/2 vite/);
 assert.strictEqual((html.match(/data-rtg-node-id=/g)||[]).length,28);
