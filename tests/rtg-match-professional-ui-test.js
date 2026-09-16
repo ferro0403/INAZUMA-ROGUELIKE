@@ -19,7 +19,7 @@ assert.match(shell,/rtg-match-polish-v2/);
 assert.match(shell,/Riepilogo azioni/i);
 const result=view.resolvedEncounterMarkup({userWon:true,probability:35.8,userKind:"defense",outcomeLabel:"Palla recuperata",userPlayer:user,opponentPlayer:opp,userChoiceLabel:"Difesa",aiChoiceLabel:"Dribbling",scoreBefore:{user:0,opponent:0},scoreAfter:{user:0,opponent:0}});
 assert.match(result,/Beat Scatton recupera palla/i);
-assert.match(result,/35\\.8%/);
+assert.match(result,/35\.8%/);
 assert.match(result,/0\s*-\s*0/);
 const css=fs.readFileSync("css/road-to-glory.css","utf8");
 assert.match(css,/--rtg-match-paper:\s*#fffdf6/i);
