@@ -9,7 +9,7 @@ const bench=[p("bg","GK"),p("bd","DF"),p("bm","MF"),p("bf","FW")];
 const view=c.RoadToGloryMatchView.create({escapeHtml:s=>String(s),formationById:()=>({requirements:{GK:1,DF:4,MF:3,FW:3}})});
 const match={period:"first_half",status:"active",score:{user:0,opponent:0},actionIndex:2,actionTarget:22,pendingEncounter:{minute:9,userBaseActionLabel:"Difesa"},userSquad:{formationId:"4-3-3",lineup,bench},opponentSquad:{formationId:"4-3-3",lineup:opp,bench:[],name:"Occult"},log:[]};
 const pre=view.preMatchMarkup(match);
-assert.match(pre,/FORMAZIONI UFFICIALI/);
+assert.doesNotMatch(pre,/Controlla gli undici prima del calcio d'inizio/);
 assert.match(pre,/data-rtg-prematch-start/);
 assert.strictEqual((pre.match(/data-rtg-prematch-player=/g)||[]).length,22);
 const live=view.matchMarkup(match);
