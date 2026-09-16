@@ -763,3 +763,288 @@
 @media (prefers-reduced-motion: reduce) {
   .rtg-route-node.reachable .node-icon { animation: none; }
 }
+
+
+/* RTG match v2 — use the real boss-match visual language, not the paper menu skin. */
+.rtg-match-shell.boss-match-screen {
+  background:
+    radial-gradient(circle at 82% 8%, rgba(255,91,98,.16), transparent 30rem),
+    radial-gradient(circle at 12% 18%, rgba(255,211,79,.12), transparent 24rem),
+    #07172c;
+  color: #f8fbff;
+}
+.rtg-match-shell .rtg-match-topbar {
+  border-bottom: 1px solid rgba(255,211,79,.34);
+  background: linear-gradient(135deg, rgba(7,23,44,.98), rgba(12,37,70,.98));
+  color: #f8fbff;
+  box-shadow: 0 10px 28px rgba(0,0,0,.28);
+}
+.rtg-match-shell .rtg-match-topbar .eyebrow { color: #ffd34f; }
+.rtg-match-shell .rtg-match-topbar .brand { color: #f8fbff; text-transform: uppercase; }
+.rtg-match-shell .rtg-match-score-main {
+  min-width: 0;
+  color: #dce8f7;
+}
+.rtg-match-shell .rtg-match-score-main > span {
+  max-width: 96px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-weight: 900;
+}
+.rtg-match-shell .rtg-match-score-main strong {
+  border: 1px solid rgba(255,211,79,.5);
+  border-radius: 12px;
+  background: #ffd34f;
+  color: #172033;
+  box-shadow: 0 0 24px rgba(255,211,79,.18);
+}
+.rtg-match-shell .rtg-abandon-button {
+  min-height: 40px;
+  padding-inline: 12px;
+  border: 1px solid rgba(255,91,98,.62);
+  border-radius: 12px;
+  background: rgba(255,91,98,.12);
+  color: #ff7b89;
+  box-shadow: none;
+}
+.rtg-match-flowbar {
+  width: min(760px, calc(100% - 18px));
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  gap: 7px;
+  margin: 10px auto 0;
+}
+.rtg-match-flowbar > span {
+  min-width: 0;
+  display: grid;
+  justify-items: center;
+  padding: 7px 6px;
+  border: 1px solid rgba(92,130,177,.30);
+  border-radius: 11px;
+  background: rgba(7,23,44,.86);
+  box-shadow: 0 8px 22px rgba(0,0,0,.18);
+}
+.rtg-match-flowbar small {
+  color: #8fa9c8;
+  font-size: .56rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.rtg-match-flowbar strong {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #ffd34f;
+  font-size: .76rem;
+}
+
+.rtg-match-shell .rtg-static-field--main {
+  border: 2px solid rgba(255,255,255,.28);
+  border-radius: 24px;
+  background:
+    linear-gradient(180deg, rgba(5,7,11,.06), rgba(5,7,11,.20)),
+    linear-gradient(rgba(255,255,255,.08) 2px, transparent 2px) center/100% 50%,
+    repeating-linear-gradient(90deg, #14633f 0 12.5%, #176c45 12.5% 25%);
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.07), inset 0 0 80px rgba(5,7,11,.34), 0 20px 42px rgba(0,0,0,.28);
+}
+.rtg-match-shell .rtg-field-team-label {
+  border: 1px solid rgba(255,255,255,.18);
+  border-radius: 999px;
+  background: rgba(5,7,11,.62);
+  color: #dcefff;
+  box-shadow: none;
+}
+.rtg-match-shell .rtg-field-team-label--opponent { color: #ffb0b8; }
+.rtg-match-shell .rtg-field-team-label--user { color: #8fd4ff; }
+.rtg-match-shell .rtg-field-midline {
+  border-color: rgba(255,255,255,.35);
+}
+.rtg-match-shell .rtg-field-midline span {
+  border: 1px solid rgba(255,211,79,.45);
+  background: rgba(5,7,11,.72);
+  color: #ffd34f;
+  box-shadow: 0 0 24px rgba(255,211,79,.18);
+}
+
+.rtg-match-shell .rtg-match-overlay {
+  background: rgba(3,8,18,.76);
+}
+.rtg-match-shell .rtg-match-overlay .rtg-paper-modal,
+.rtg-match-shell .rtg-match-overlay .rtg-duel-card,
+.rtg-match-shell .rtg-match-overlay .rtg-halftime,
+.rtg-match-shell .rtg-match-overlay .rtg-penalty-panel,
+.rtg-match-shell .rtg-match-overlay .rtg-match-result {
+  color: #f8fbff;
+  background: linear-gradient(180deg, rgba(10,28,54,.98), rgba(5,7,11,.98)) !important;
+  border: 1px solid rgba(255,211,79,.30) !important;
+  border-radius: 20px !important;
+  box-shadow: 0 24px 70px rgba(0,0,0,.58) !important;
+}
+.rtg-match-shell .rtg-match-overlay .eyebrow { color: #ffd34f; }
+.rtg-match-shell .rtg-match-overlay h2,
+.rtg-match-shell .rtg-match-overlay h3,
+.rtg-match-shell .rtg-match-overlay p { color: #f8fbff; }
+.rtg-match-shell .rtg-match-overlay .muted { color: #a8bdd6; }
+.rtg-match-shell .rtg-duel-head {
+  padding-bottom: 9px;
+  border-bottom: 1px solid rgba(92,130,177,.28);
+}
+.rtg-match-shell .rtg-duel-head > strong,
+.rtg-match-shell .rtg-penalty-score {
+  border: 1px solid rgba(255,211,79,.45);
+  border-radius: 10px;
+  background: #ffd34f;
+  color: #172033;
+  box-shadow: none;
+}
+.rtg-duel-context {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin: 10px 0;
+}
+.rtg-duel-context span {
+  padding: 5px 8px;
+  border: 1px solid rgba(92,130,177,.30);
+  border-radius: 999px;
+  background: rgba(7,23,44,.72);
+  color: #bcd1e8;
+  font-size: .66rem;
+  font-weight: 850;
+}
+.rtg-match-shell .rtg-probability {
+  height: 12px;
+  background: rgba(255,255,255,.08);
+}
+.rtg-match-shell .rtg-probability .progress-bar {
+  background: linear-gradient(90deg,#36a9ff,#ffd34f);
+}
+.rtg-match-shell .rtg-versus--cards article > small,
+.rtg-match-shell .rtg-penalty-versus article > small { color: #9ab2cf; }
+.rtg-match-shell .rtg-versus--cards > b,
+.rtg-match-shell .rtg-penalty-versus > b { color: #ffd34f; }
+.rtg-match-shell .rtg-action-button {
+  border: 1px solid rgba(255,255,255,.18) !important;
+  border-radius: 12px !important;
+  box-shadow: none;
+}
+.rtg-match-shell .rtg-action-button.btn-yellow {
+  background: #ffd34f !important;
+  color: #172033 !important;
+}
+.rtg-match-shell .rtg-action-button--move {
+  border-color: rgba(255,91,98,.48) !important;
+  background: linear-gradient(135deg,#b52e43,#ff6a58) !important;
+  color: #fff !important;
+}
+.rtg-match-shell .rtg-duel-result h2 { margin-bottom: 8px; }
+.rtg-duel-consequence {
+  display: inline-block;
+  margin-bottom: 12px;
+  padding: 5px 9px;
+  border: 1px solid rgba(255,211,79,.38);
+  border-radius: 999px;
+  background: rgba(255,211,79,.10);
+  color: #ffd34f;
+  font-weight: 950;
+  text-transform: uppercase;
+}
+.rtg-match-shell .rtg-duel-summary > div {
+  border: 1px solid rgba(92,130,177,.28);
+  border-radius: 12px;
+  background: rgba(7,23,44,.72);
+}
+.rtg-match-shell .rtg-duel-summary small { color: #8fa9c8; }
+.rtg-match-shell .rtg-duel-summary > b { color: #ffd34f; }
+.rtg-match-shell .rtg-final-probability { color: #dce8f7; }
+.rtg-match-shell .rtg-duel-continue {
+  border: 1px solid rgba(255,211,79,.45) !important;
+  border-radius: 12px !important;
+  box-shadow: none;
+}
+
+.rtg-match-shell .rtg-halftime-compatible {
+  border: 1px solid rgba(92,130,177,.28);
+  border-radius: 14px;
+  background: rgba(7,23,44,.72);
+}
+.rtg-match-shell .rtg-halftime-empty { color: #9ab2cf; }
+.rtg-match-shell .rtg-halftime-compatible-head > span {
+  border: 1px solid rgba(255,211,79,.42);
+  border-radius: 999px;
+  background: rgba(255,211,79,.12);
+  color: #ffd34f;
+}
+.rtg-match-shell .rtg-half-confirm {
+  border: 1px solid rgba(255,211,79,.45) !important;
+  border-radius: 12px !important;
+  box-shadow: none;
+}
+
+.rtg-match-shell .rtg-penalty-head {
+  border-bottom: 1px solid rgba(92,130,177,.28);
+}
+.rtg-match-shell .rtg-penalty-history b,
+.rtg-match-shell .rtg-penalty-instruction { color: #dce8f7; }
+.rtg-match-shell .rtg-penalty-dot {
+  border: 1px solid rgba(255,255,255,.20);
+  background: rgba(255,255,255,.06);
+  color: #f8fbff;
+}
+.rtg-match-shell .rtg-penalty-dot--goal { background: #2f9d61; }
+.rtg-match-shell .rtg-penalty-dot--save { background: #c84c5a; }
+.rtg-match-shell .rtg-penalty-last {
+  border: 1px solid rgba(92,130,177,.28);
+  border-radius: 12px;
+  color: #f8fbff;
+}
+.rtg-match-shell .rtg-penalty-last.is-goal { background: rgba(52,211,153,.12); }
+.rtg-match-shell .rtg-penalty-last.is-save { background: rgba(255,91,98,.13); }
+.rtg-match-shell .rtg-penalty-last span { color: #9ab2cf; }
+.rtg-match-shell .rtg-penalty-directions .btn {
+  border: 1px solid rgba(92,130,177,.32);
+  border-radius: 12px;
+  background: #0b1c37;
+  color: #f8fbff;
+}
+.rtg-match-shell .rtg-penalty-directions .btn:active {
+  border-color: #ffd34f;
+  background: #ffd34f;
+  color: #172033;
+}
+.rtg-match-shell .rtg-penalty-move {
+  border: 1px solid rgba(255,211,79,.45) !important;
+  border-radius: 12px !important;
+  box-shadow: none;
+}
+.rtg-match-shell .rtg-match-result > strong { color: #ffd34f; }
+
+@media (max-width: 780px) {
+  .rtg-match-shell .rtg-match-topbar {
+    min-height: 68px;
+    padding: 8px 9px;
+  }
+  .rtg-match-shell .rtg-match-score-main > span { max-width: 64px; font-size: .58rem; }
+  .rtg-match-shell .rtg-match-score-main strong { font-size: 1.05rem; }
+  .rtg-match-shell .rtg-abandon-button { padding-inline: 8px; font-size: .62rem; }
+  .rtg-match-flowbar { margin-top: 7px; }
+  .rtg-match-flowbar > span { padding: 5px 4px; }
+  .rtg-match-shell .rtg-static-field--main {
+    border-radius: 16px;
+    padding: 8px 5px;
+  }
+  .rtg-match-shell .rtg-match-overlay { padding: 10px; }
+  .rtg-match-shell .rtg-match-overlay .rtg-paper-modal,
+  .rtg-match-shell .rtg-match-overlay .rtg-duel-card,
+  .rtg-match-shell .rtg-match-overlay .rtg-halftime,
+  .rtg-match-shell .rtg-match-overlay .rtg-penalty-panel {
+    width: min(96vw, 600px);
+    padding: 16px;
+    border-radius: 16px !important;
+  }
+  .rtg-duel-context { font-size: .62rem; }
+  .rtg-match-shell .rtg-penalty-player-card { width: 82px !important; max-width: 82px !important; }
+}
