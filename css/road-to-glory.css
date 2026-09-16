@@ -1477,3 +1477,338 @@
 .modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card{width:94px!important;max-width:94px!important}
 .modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card .player-portrait-wrap{height:88px!important}
 }
+
+
+/* RTG quality pass 3 — remove blue chrome, reuse normal-run bunker, compact cards, cleaner penalties/pulls. */
+
+/* RUN / SQUADRA bottom bunker: same interaction language as normal runs, reduced to two destinations. */
+.rtg-bottom-nav.bottom-nav{
+  position:fixed;
+  z-index:70;
+  left:50%;
+  right:auto;
+  bottom:calc(env(safe-area-inset-bottom,0px) + 10px);
+  width:min(292px,calc(100vw - 28px));
+  transform:translateX(-50%);
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  padding:5px;
+  border:3px solid #111216;
+  border-radius:16px;
+  background:#fffdf7;
+  box-shadow:5px 6px 0 rgba(17,18,22,.72);
+}
+.rtg-bottom-nav.bottom-nav button{
+  min-height:50px;
+  display:grid;
+  grid-template-columns:24px auto;
+  justify-content:center;
+  align-items:center;
+  gap:7px;
+  border:0;
+  border-radius:11px;
+  background:transparent;
+  color:#111216;
+  font-weight:950;
+  text-transform:uppercase;
+}
+.rtg-bottom-nav.bottom-nav button.active{
+  background:#ffd21f;
+  color:#111216;
+  box-shadow:inset 0 0 0 2px #111216;
+}
+.rtg-bottom-nav .nav-icon{width:22px;height:22px;display:grid;place-items:center}
+.rtg-bottom-nav .nav-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.rtg-bottom-nav .nav-label{font-size:.72rem;letter-spacing:.03em}
+.rtg-run-content,.rtg-squad-content{padding-bottom:92px!important}
+
+/* PRE-MATCH: remove navy shell, reuse paper/ink/yellow + stadium. */
+.rtg-prematch-shell{
+  background:
+    linear-gradient(rgba(255,255,255,.72),rgba(255,255,255,.72)),
+    url("../assets/home/inazuma-stadium-desktop-light.jpeg") center/cover fixed!important;
+  color:#111216!important;
+}
+.rtg-prematch-topbar{
+  border-bottom:4px solid #111216!important;
+  background:#fffdf7!important;
+  color:#111216!important;
+  box-shadow:0 5px 0 rgba(17,18,22,.16)!important;
+}
+.rtg-prematch-topbar .eyebrow{color:#8b6814!important}
+.rtg-prematch-vs span{color:#111216!important}
+.rtg-prematch-vs strong{border:3px solid #111216!important;background:#ffd21f!important;color:#111216!important}
+.rtg-prematch-banner{
+  border:3px solid #111216!important;
+  border-left:8px solid #ffd21f!important;
+  background:#fffdf7!important;
+  box-shadow:5px 6px 0 rgba(17,18,22,.18);
+}
+.rtg-prematch-banner span{color:#8b6814!important}
+.rtg-prematch-banner strong{color:#111216!important}
+.rtg-prematch-team{
+  border:3px solid #111216!important;
+  border-radius:2px!important;
+  background:#fffdf7!important;
+  box-shadow:6px 7px 0 rgba(17,18,22,.22)!important;
+}
+.rtg-prematch-team--user,.rtg-prematch-team--opponent{border-color:#111216!important}
+.rtg-prematch-team-head small{color:#6f675d!important}
+.rtg-prematch-team-head strong{color:#111216!important}
+.rtg-prematch-team-head b{color:#8b6814!important}
+.rtg-prematch-team-head em{color:#5f594f!important}
+
+/* MATCH / DUELS / RESULTS: no dark-blue cards anywhere. */
+.rtg-match-shell .rtg-match-overlay .rtg-paper-modal,
+.rtg-match-shell .rtg-match-overlay .rtg-duel-card,
+.rtg-match-shell .rtg-match-overlay .rtg-duel-result,
+.rtg-match-shell .rtg-match-overlay .rtg-halftime,
+.rtg-match-shell .rtg-match-overlay .rtg-penalty-panel,
+.rtg-match-shell .rtg-match-overlay .rtg-match-result{
+  background:#fffdf7!important;
+  color:#111216!important;
+  border:4px solid #111216!important;
+  border-radius:2px!important;
+  box-shadow:8px 9px 0 rgba(17,18,22,.48)!important;
+}
+.rtg-match-shell .rtg-match-overlay .rtg-paper-modal h2,
+.rtg-match-shell .rtg-match-overlay .rtg-paper-modal h3,
+.rtg-match-shell .rtg-match-overlay .rtg-paper-modal p,
+.rtg-match-shell .rtg-match-overlay .rtg-duel-card h2,
+.rtg-match-shell .rtg-match-overlay .rtg-duel-card p,
+.rtg-match-shell .rtg-match-overlay .rtg-penalty-panel h2,
+.rtg-match-shell .rtg-match-overlay .rtg-penalty-panel p{
+  color:#111216!important;
+}
+.rtg-match-shell .rtg-match-overlay .eyebrow{color:#8b6814!important}
+.rtg-match-shell .rtg-match-overlay .muted{color:#6d665d!important}
+.rtg-match-shell .rtg-duel-context span{
+  border:2px solid #111216!important;
+  background:#fff!important;
+  color:#111216!important;
+}
+.rtg-match-shell .rtg-duel-head{border-bottom:3px solid #111216!important}
+.rtg-match-shell .rtg-duel-head>strong{
+  border:3px solid #111216!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+  box-shadow:3px 3px 0 #111216!important;
+}
+.rtg-match-shell .rtg-duel-summary>div{
+  border:2px solid #111216!important;
+  background:#fff!important;
+  color:#111216!important;
+}
+.rtg-match-shell .rtg-duel-summary small{color:#6f675d!important}
+.rtg-match-shell .rtg-duel-summary>b{color:#8b6814!important}
+.rtg-match-shell .rtg-final-probability{color:#111216!important}
+.rtg-match-shell .rtg-duel-consequence{
+  border:2px solid #111216!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+}
+
+/* Compact player browser: smaller cards, complete portrait, actual breathing room. */
+.modal.rtg-squad-picker-modal{width:min(94vw,680px)!important}
+.modal.rtg-squad-picker-modal .rtg-picker-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:22px 16px!important;
+  padding:8px 4px 18px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card{
+  width:86px!important;
+  max-width:86px!important;
+  min-height:118px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card .player-portrait-wrap{
+  height:76px!important;
+  padding:5px 4px 0!important;
+  overflow:visible!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card img.player-portrait{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center bottom!important;
+  transform:none!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card .player-info{
+  min-height:30px!important;
+  padding:4px 3px 6px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card .player-title strong{
+  font-size:.58rem!important;
+  line-height:1.05!important;
+}
+
+/* Pull result: player is the reward, not a wall of text. */
+.modal.rtg-pull-modal{width:min(90vw,420px)!important}
+.rtg-pull-result{
+  width:100%!important;
+  padding:16px!important;
+  text-align:left!important;
+}
+.rtg-pull-result-head{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:center;
+  padding-bottom:9px;
+  border-bottom:3px solid #111216;
+}
+.rtg-pull-result-head p{margin:0!important}
+.rtg-pull-result-head>strong{
+  padding:4px 7px;
+  border:2px solid #111216;
+  background:#ffd21f;
+  font-size:.62rem;
+  letter-spacing:.06em;
+}
+.rtg-pull-result-body{
+  display:grid;
+  grid-template-columns:92px minmax(0,1fr);
+  gap:14px;
+  align-items:center;
+  margin:14px 0;
+}
+.rtg-pull-player-card{
+  width:88px!important;
+  max-width:88px!important;
+  min-height:112px!important;
+  margin:0 auto;
+}
+.rtg-pull-result-copy h2{margin:0 0 5px!important;font-size:1.45rem}
+.rtg-pull-result-copy p{margin:0 0 5px!important;line-height:1.25}
+.rtg-pull-result-copy>span{color:#6d665d;font-size:.72rem;font-weight:800}
+.rtg-pull-balance{
+  display:block!important;
+  margin:0!important;
+  padding:8px 10px!important;
+  border:3px solid #111216!important;
+  background:#ffd21f!important;
+  text-align:center!important;
+}
+
+/* Penalties: paper scoreboard + a real goal target instead of three app buttons. */
+.rtg-match-shell .rtg-penalty-head{
+  border-bottom:3px solid #111216!important;
+}
+.rtg-match-shell .rtg-penalty-score{
+  border:3px solid #111216!important;
+  border-radius:1px!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+  box-shadow:3px 3px 0 #111216!important;
+}
+.rtg-match-shell .rtg-penalty-history b{color:#111216!important}
+.rtg-match-shell .rtg-penalty-dot{
+  border:2px solid #111216!important;
+  background:#fff!important;
+  color:#111216!important;
+}
+.rtg-match-shell .rtg-penalty-dot--goal{background:#69c987!important}
+.rtg-match-shell .rtg-penalty-dot--save{background:#ef6d67!important}
+.rtg-match-shell .rtg-penalty-versus article>small{color:#655e55!important}
+.rtg-match-shell .rtg-penalty-versus>b{color:#8b6814!important}
+.rtg-penalty-choice{margin-top:14px}
+.rtg-penalty-choice-copy{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:end;
+  margin-bottom:7px;
+}
+.rtg-penalty-choice-copy strong{font-size:.78rem;letter-spacing:.06em}
+.rtg-penalty-choice-copy span{color:#70685e;font-size:.68rem;font-weight:750}
+.rtg-penalty-goal{
+  min-height:126px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  align-items:stretch;
+  padding:8px 8px 0;
+  border:4px solid #111216;
+  border-bottom-width:8px;
+  background:
+    linear-gradient(90deg,transparent 33%,rgba(17,18,22,.13) 33% 34%,transparent 34% 66%,rgba(17,18,22,.13) 66% 67%,transparent 67%),
+    linear-gradient(#f7f3e7,#fffdf7);
+}
+.rtg-penalty-goal button{
+  position:relative;
+  display:grid;
+  place-items:end center;
+  gap:5px;
+  border:0;
+  border-right:1px dashed #9e968a;
+  background:transparent;
+  color:#111216;
+  padding:10px 4px 8px;
+  font:inherit;
+  font-weight:900;
+}
+.rtg-penalty-goal button:last-child{border-right:0}
+.rtg-penalty-goal button i{
+  position:absolute;
+  top:24px;
+  width:22px;
+  height:22px;
+  border:3px solid #111216;
+  border-radius:50%;
+  background:#ffd21f;
+  box-shadow:2px 2px 0 rgba(17,18,22,.24);
+}
+.rtg-penalty-goal button:active i{transform:scale(.88)}
+.rtg-penalty-goal button span{font-size:.68rem;text-transform:uppercase}
+.rtg-match-shell .rtg-penalty-move{
+  border:3px solid #111216!important;
+  border-radius:1px!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+  box-shadow:4px 4px 0 #111216!important;
+}
+
+/* Dispenser: compact pseudo-3D cabinet; no full-screen blue monolith. */
+.rtg-vending{width:min(94vw,620px)!important;padding:16px!important}
+.rtg-vending-head{padding-bottom:9px;border-bottom:3px solid #111216}
+.rtg-vending-head h2{font-size:1.6rem!important;margin:2px 0!important}
+.rtg-vending-head .muted{font-size:.78rem;line-height:1.3}
+.rtg-vending-layout{
+  grid-template-columns:180px minmax(0,1fr)!important;
+  gap:14px!important;
+  align-items:start!important;
+  margin-top:12px;
+}
+.rtg-vending-machine-v2{
+  width:180px!important;
+  padding:9px 12px 12px!important;
+  box-shadow:5px 6px 0 #111216!important;
+}
+.rtg-machine-marquee{margin:-2px auto 5px!important;font-size:.72rem}
+.rtg-machine-globe{height:150px!important;border-radius:42% 42% 18% 18%/34% 34% 16% 16%!important}
+.rtg-machine-badge{top:9px!important;width:38px!important;height:38px!important;font-size:1rem!important}
+.rtg-capsule{width:31px!important;height:31px!important;border-width:2px!important}
+.rtg-machine-console{margin-top:7px!important;padding:7px!important;gap:6px!important}
+.rtg-machine-knob{width:38px!important;height:38px!important;border-width:2px!important;font-size:1.1rem!important}
+.rtg-machine-tray{margin-top:7px!important;padding:5px 7px!important}
+.rtg-vending-info{gap:7px!important}
+.rtg-vending-wallet{min-width:0!important;padding:6px 9px!important}
+.rtg-vending-wallet strong{font-size:1.1rem!important}
+.rtg-vending-rates{justify-content:flex-start!important}
+.rtg-vending-rates span{font-size:.62rem!important;padding:4px 6px!important}
+.rtg-vending-note{font-size:.68rem!important}
+.rtg-vending-pull{min-height:44px!important;margin-top:10px!important}
+
+@media(max-width:430px){
+  .rtg-bottom-nav.bottom-nav{width:250px}
+  .rtg-bottom-nav.bottom-nav button{min-height:46px}
+  .modal.rtg-squad-picker-modal .rtg-picker-grid{gap:20px 12px!important}
+  .modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card{width:82px!important;max-width:82px!important}
+  .modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card .player-portrait-wrap{height:72px!important}
+  .rtg-vending-layout{grid-template-columns:156px minmax(0,1fr)!important;gap:10px!important}
+  .rtg-vending-machine-v2{width:156px!important;padding:8px 9px 10px!important}
+  .rtg-machine-globe{height:132px!important}
+  .rtg-vending-head .muted{display:none}
+  .rtg-vending-pool{min-width:58px!important}
+  .rtg-vending-pool small{font-size:.48rem!important}
+  .rtg-pull-result-body{grid-template-columns:82px minmax(0,1fr);gap:10px}
+  .rtg-pull-player-card{width:78px!important;max-width:78px!important}
+}
