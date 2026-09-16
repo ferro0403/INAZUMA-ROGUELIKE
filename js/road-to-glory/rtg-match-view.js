@@ -443,7 +443,11 @@
       return `<main class="screen boss-match-screen rtg-prematch-shell rtg-prematch-revolution development-squad-card-scope">
         <header class="topbar rtg-prematch-topbar">
           <div class="rtg-prematch-title"><small>ROAD TO GLORY · SEASON 1</small><h1>Pre-partita</h1></div>
-          <div class="rtg-prematch-top-vs">${emblem(match.opponentSquad,"opponent","rtg-prematch-top-emblem")}<span>VS</span><strong>${escape(opponentName)}</strong></div>
+          <div class="rtg-prematch-top-match" aria-label="${escape(userName)} contro ${escape(opponentName)}">
+            <span class="rtg-prematch-top-team rtg-prematch-top-team--user">${emblem(match.userSquad,"user","rtg-prematch-top-emblem")}<b>${escape(userName)}</b></span>
+            <i>VS</i>
+            <span class="rtg-prematch-top-team rtg-prematch-top-team--opponent"><b>${escape(opponentName)}</b>${emblem(match.opponentSquad,"opponent","rtg-prematch-top-emblem")}</span>
+          </div>
         </header>
         <div class="content rtg-prematch-content">
           <section class="rtg-prematch-matchup">
@@ -496,7 +500,7 @@
             <strong class="rtg-score-capsule">${escape(match.score?.user || 0)} - ${escape(match.score?.opponent || 0)}</strong>
             <span class="rtg-score-team rtg-score-team--opponent">${emblem(match.opponentSquad,"opponent","rtg-score-emblem")}<b title="${escape(opponentName)}">${escape(opponentName)}</b></span>
           </div>
-          <button type="button" class="btn btn-danger rtg-abandon-button" data-rtg-abandon>Abbandona</button>
+          <button type="button" class="btn btn-danger rtg-abandon-button" data-rtg-abandon><span aria-hidden="true">×</span><b>ABBANDONA</b></button>
         </header>
         <section class="rtg-live-status rtg-live-commandbar ${match.possession === "user" ? "is-user-possession" : "is-opponent-possession"}">
           <div class="rtg-live-command rtg-live-command--possession"><span class="rtg-live-command-index">01</span><i aria-hidden="true"></i><span><small>POSSESSO</small><strong>${escape(possessionLabel)}</strong><em>${match.possession === "user" ? "Palla nostra" : "Palla avversaria"}</em></span></div>
@@ -648,14 +652,16 @@
           <strong>${escape(headline)}</strong>
         </div>
         <div class="rtg-duel-versus-board rtg-duel-versus-board--result">
-          <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user rtg-duel-result-player ${escape(userRarityClass)}">
+          <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user rtg-duel-result-player ${escape(userRarityClass)} ${resolution.userWon ? "is-duel-winner" : "is-duel-loser"}">
             <span class="rtg-duel-panel-tag">TU</span>
+            ${resolution.userWon ? '<span class="rtg-duel-winner-mark">VINCITORE</span>' : ""}
             ${duelVisualMarkup(user,"user",pid(user) ? `data-rtg-duel-player="${escape(pid(user))}" data-side="user"` : "")}
             ${userWinningMove ? `<div class="rtg-duel-result-move ${escape(userMoveCategory)}"><small>⚡ MOSSA</small><strong>${escape(userAction)}</strong><em>POWER ${escape(resolution.userMovePower ?? "—")}</em></div>` : `<strong class="rtg-duel-result-action">${escape(userBaseAction)}</strong>`}
           </article>
           <div class="rtg-duel-vs-core rtg-duel-result-vs" aria-hidden="true"><small>ESITO</small><span>VS</span></div>
-          <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--opponent rtg-duel-result-player ${escape(opponentRarityClass)}">
+          <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--opponent rtg-duel-result-player ${escape(opponentRarityClass)} ${resolution.userWon ? "is-duel-loser" : "is-duel-winner"}">
             <span class="rtg-duel-panel-tag">${escape(opponentLabel)}</span>
+            ${resolution.userWon ? "" : '<span class="rtg-duel-winner-mark">VINCITORE</span>'}
             ${duelVisualMarkup(opponent,"opponent",pid(opponent) ? `data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"` : "")}
             ${aiWinningMove ? `<div class="rtg-duel-result-move rtg-duel-result-move--opponent ${escape(aiMoveCategory)}"><small>⚡ MOSSA</small><strong>${escape(opponentAction)}</strong><em>POWER ${escape(resolution.aiMovePower ?? "—")}</em></div>` : `<strong class="rtg-duel-result-action">${escape(opponentBaseAction)}</strong>`}
           </article>
@@ -664,10 +670,6 @@
           <span><small>TU</small><strong>${escape(userProbability.toFixed(1))}%</strong></span>
           <i><b style="width:${escape(userProbability.toFixed(1))}%"></b></i>
           <span><small>${escape(opponentLabel)}</small><strong>${escape(opponentProbability.toFixed(1))}%</strong></span>
-        </div>
-        <div class="rtg-duel-result-facts rtg-duel-result-facts--compact">
-          <div class="rtg-result-score"><small>PUNTEGGIO</small><strong>${escape(scoreUser)} - ${escape(scoreOpponent)}</strong></div>
-          <div><small>ESITO</small><strong>${resolution.goalSide ? "GOL" : resolution.userWon ? "VINTA" : "PERSA"}</strong></div>
         </div>
         ${resolution.goalSide ? `<div class="rtg-duel-goal-confirm rtg-duel-goal-celebration"><span class="rtg-goal-burst">GOL!</span><div><small>PUNTEGGIO AGGIORNATO</small><strong>${escape(scoreUser)} - ${escape(scoreOpponent)}</strong><em>Ripresa dal centrocampo</em></div></div>` : ""}
         <button type="button" class="btn btn-yellow rtg-duel-continue" data-rtg-duel-continue><span>CONTINUA PARTITA</span><b>›</b></button>

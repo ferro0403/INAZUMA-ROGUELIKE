@@ -4521,3 +4521,245 @@
     font-size:.54rem;
   }
 }
+
+
+/* RTG pre-match hero + cleaner abandon + winner/loser duel result. */
+.rtg-prematch-revolution .rtg-prematch-topbar{
+  min-height:94px;
+  display:grid!important;
+  grid-template-columns:minmax(132px,.78fr) minmax(0,1.22fr);
+  gap:0!important;
+  padding:0!important;
+  overflow:hidden;
+  border-top:3px solid #111216;
+  border-bottom:4px solid #111216;
+  background:#111216!important;
+  box-shadow:0 7px 0 rgba(17,18,22,.16);
+}
+.rtg-prematch-revolution .rtg-prematch-title{
+  position:relative;
+  min-width:0;
+  display:grid;
+  align-content:center;
+  padding:13px 14px;
+  background:#fffdf7;
+  box-shadow:inset 0 6px 0 #ffd21f;
+}
+.rtg-prematch-revolution .rtg-prematch-title::after{
+  content:"";
+  position:absolute;
+  top:0;
+  right:-12px;
+  width:24px;
+  height:100%;
+  background:#fffdf7;
+  transform:skewX(-10deg);
+  border-right:3px solid #111216;
+}
+.rtg-prematch-revolution .rtg-prematch-title>*{
+  position:relative;
+  z-index:1;
+}
+.rtg-prematch-revolution .rtg-prematch-title small{
+  color:#8b6814;
+  font-size:.47rem;
+  font-weight:1000;
+  letter-spacing:.13em;
+}
+.rtg-prematch-revolution .rtg-prematch-title h1{
+  margin:2px 0 0;
+  font-size:clamp(1.48rem,6.6vw,2.05rem);
+  line-height:.9;
+  letter-spacing:-.04em;
+}
+.rtg-prematch-top-match{
+  min-width:0;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 46px minmax(0,1fr);
+  align-items:center;
+  gap:7px;
+  padding:11px 12px 11px 20px;
+  background:#111216;
+  color:#fff;
+}
+.rtg-prematch-top-team{
+  min-width:0;
+  display:grid;
+  grid-template-columns:34px minmax(0,1fr);
+  align-items:center;
+  gap:6px;
+}
+.rtg-prematch-top-team--opponent{
+  grid-template-columns:minmax(0,1fr) 34px;
+}
+.rtg-prematch-top-team--opponent b{
+  text-align:right;
+}
+.rtg-prematch-top-team b{
+  min-width:0;
+  overflow:hidden;
+  color:#fff;
+  font-size:.66rem;
+  font-weight:1000;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  text-transform:uppercase;
+}
+.rtg-prematch-top-match>i{
+  width:42px;
+  height:42px;
+  display:grid;
+  place-items:center;
+  border:3px solid #111216;
+  border-radius:50%;
+  background:#ffd21f;
+  color:#111216;
+  box-shadow:3px 3px 0 #fffdf7;
+  font-size:.82rem;
+  font-style:normal;
+  font-weight:1000;
+}
+.rtg-prematch-top-match .rtg-prematch-top-emblem{
+  width:34px!important;
+  height:34px!important;
+  filter:drop-shadow(2px 2px 0 rgba(255,255,255,.12));
+}
+
+.rtg-match-scoreboard .rtg-abandon-button{
+  display:flex!important;
+  align-items:center;
+  justify-content:center;
+  gap:5px;
+  min-height:56px;
+  margin:10px 8px!important;
+  padding:7px 9px!important;
+  border:3px solid #111216!important;
+  border-radius:2px!important;
+  background:#b9474c!important;
+  color:#fff!important;
+  box-shadow:4px 5px 0 #111216!important;
+}
+.rtg-match-scoreboard .rtg-abandon-button span{
+  width:22px;
+  height:22px;
+  display:grid;
+  place-items:center;
+  border:2px solid #fff;
+  border-radius:50%;
+  font-size:.9rem;
+  line-height:1;
+}
+.rtg-match-scoreboard .rtg-abandon-button b{
+  color:#fff;
+  font-size:.58rem;
+  font-weight:1000;
+  letter-spacing:.05em;
+}
+.rtg-match-scoreboard .rtg-abandon-button:active{
+  transform:translate(2px,2px);
+  box-shadow:2px 3px 0 #111216!important;
+}
+
+.rtg-duel-versus-board--result .rtg-duel-result-player{
+  position:relative;
+  transition:filter .18s ease,opacity .18s ease,transform .18s ease,box-shadow .18s ease;
+}
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser{
+  opacity:.44;
+  filter:grayscale(.58) saturate(.48) brightness(.86);
+  transform:scale(.965);
+}
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-winner{
+  z-index:2;
+  outline:3px solid #ffd21f;
+  outline-offset:2px;
+  filter:saturate(1.08) contrast(1.03);
+  box-shadow:
+    inset 0 6px 0 var(--duel-rarity-accent,#ffd21f),
+    5px 6px 0 rgba(17,18,22,.28),
+    0 0 0 1px rgba(255,210,31,.24);
+  transform:scale(1.015);
+}
+.rtg-duel-winner-mark{
+  position:absolute;
+  z-index:5;
+  top:8px;
+  right:7px;
+  padding:4px 7px;
+  border:2px solid #111216;
+  background:#ffd21f;
+  color:#111216;
+  box-shadow:2px 2px 0 #111216;
+  font-size:.42rem;
+  font-weight:1000;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+}
+.rtg-duel-result-facts--compact{
+  display:none!important;
+}
+.rtg-duel-result-meter{
+  margin-bottom:12px;
+}
+.rtg-duel-result.is-win .rtg-duel-result-banner,
+.rtg-duel-result.is-loss .rtg-duel-result-banner{
+  margin-bottom:13px;
+}
+
+@media(max-width:430px){
+  .rtg-prematch-revolution .rtg-prematch-topbar{
+    min-height:88px;
+    grid-template-columns:minmax(128px,.82fr) minmax(0,1.18fr);
+  }
+  .rtg-prematch-revolution .rtg-prematch-title{
+    padding:11px 10px;
+  }
+  .rtg-prematch-revolution .rtg-prematch-title h1{
+    font-size:1.5rem;
+  }
+  .rtg-prematch-top-match{
+    grid-template-columns:minmax(0,1fr) 38px minmax(0,1fr);
+    gap:4px;
+    padding:9px 7px 9px 14px;
+  }
+  .rtg-prematch-top-team{
+    grid-template-columns:27px minmax(0,1fr);
+    gap:4px;
+  }
+  .rtg-prematch-top-team--opponent{
+    grid-template-columns:minmax(0,1fr) 27px;
+  }
+  .rtg-prematch-top-team b{
+    font-size:.52rem;
+  }
+  .rtg-prematch-top-match .rtg-prematch-top-emblem{
+    width:27px!important;
+    height:27px!important;
+  }
+  .rtg-prematch-top-match>i{
+    width:36px;
+    height:36px;
+    font-size:.72rem;
+    box-shadow:2px 3px 0 #fffdf7;
+  }
+  .rtg-match-scoreboard .rtg-abandon-button{
+    min-height:52px;
+    margin:9px 5px!important;
+    padding:6px 5px!important;
+    gap:3px;
+  }
+  .rtg-match-scoreboard .rtg-abandon-button span{
+    width:19px;
+    height:19px;
+    font-size:.78rem;
+  }
+  .rtg-match-scoreboard .rtg-abandon-button b{
+    font-size:.49rem;
+  }
+  .rtg-duel-winner-mark{
+    top:6px;
+    right:5px;
+    padding:3px 5px;
+    font-size:.38rem;
+  }
+}
