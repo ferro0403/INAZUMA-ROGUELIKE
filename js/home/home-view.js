@@ -31,6 +31,13 @@
       className: "home-club-action--gold",
     },
     {
+      id: "open-rtg-home",
+      label: "Road to Glory",
+      description: "Costruisci la tua leggenda",
+      icon: "⚽",
+      className: "home-club-action--wide",
+    },
+    {
       id: "open-modes-home",
       label: "Modalità",
       description: "Altre modalità di gioco",
