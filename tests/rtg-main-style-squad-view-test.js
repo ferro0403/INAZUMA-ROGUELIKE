@@ -19,7 +19,7 @@ const model=view.renderModel({state,freeAgentIds:[...lineup,...bench,"x1"],seaso
 const html=view.markup(model);
 assert.match(html,/class="screen squad-screen rtg-squad-shell"/);
 assert.match(html,/class="squad-field-panel"/);
-assert.match(html,/class="pitch"/);
+assert.match(html,/class="pitch(?:\s|")/);
 assert.match(html,/class="squad-module-card"/);
 assert.match(html,/data-rtg-open-formation/);
 assert.strictEqual(calls.some(x=>x.opts.extraClass.includes("squad-player-card")),true);
