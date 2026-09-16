@@ -160,7 +160,8 @@
         type = event.actorWon ? "build_up" : "recovery";
         copy = event.actorWon ? `${actorName} vince il duello a centrocampo.` : `${opponentName} conquista il possesso.`;
       }
-      const moveName = event.actorMove || event.opponentMove || null;
+      const moveNames = [event.actorMove,event.opponentMove].filter(Boolean);
+      const moveName = moveNames[0] || null;
       const presented = {
         type,
         text: copy,
@@ -176,7 +177,10 @@
       const kindLabel = ({goal:"Gol",save:"Parata",dribble:"Dribbling",defensive_stop:"Difesa",recovery:"Recupero",build_up:"Duello"}[type] || "Azione");
       const content = global.MovePresentationRuntime?.eventContentMarkup?.(presented, escape)
         || `<span class="match-event-kind">${escape(kindLabel)}</span><span class="match-event-copy">${escape(copy)}</span>`;
-      return `<li class="match-event--${escape(winnerSide)} match-event-type--${escape(type)} ${isLatest ? "is-latest" : ""} ${event.manual ? "is-manual" : "is-auto"}"><span>${escape(event.minute ?? "—")}'</span><b class="match-event-marker">${marker}</b><p>${content}</p></li>`;
+      const moveNotice = moveNames.length
+        ? `<span class="rtg-match-event-move"><b>⚡ ${moveNames.length > 1 ? "MOSSE" : "MOSSA"}</b><span>${moveNames.map((name)=>escape(name)).join(" · ")}</span></span>`
+        : "";
+      return `<li class="match-event--${escape(winnerSide)} match-event-type--${escape(type)} ${moveNames.length ? "uses-special-move" : ""} ${isLatest ? "is-latest" : ""} ${event.manual ? "is-manual" : "is-auto"}"><span>${escape(event.minute ?? "—")}'</span><b class="match-event-marker">${marker}</b><p>${content}${moveNotice}</p></li>`;
     }
 
     function tickerMarkup(match = {}) {
@@ -486,6 +490,11 @@
       const callout = actionCallout(pending,user,opponent);
       const baseVerb = choiceVerb(inferredUserKind(pending));
       const selectedLabel = selectedChoice === "move" ? (pending.userMove?.name || "Mossa") : selectedChoice === "base" ? baseVerb : "AZIONE BASE";
+      const userKind = inferredUserKind(pending);
+      const aiKind = String(pending.aiKind || counterpartKind(userKind)).toLowerCase();
+      const userMoveSelected = selectedChoice === "move" && !!pending.userMove && uses > 0;
+      const userActionShort = userMoveSelected ? pending.userMove.name : baseResultActionLabel(userKind,pending.actorSide==="user");
+      const opponentActionShort = baseResultActionLabel(aiKind,pending.actorSide==="opponent");
       const choiceCard = (choice,label,sub,probability,delta=0,disabled=false) => {
         const selected = selectedChoice === choice;
         const deltaText = delta > 0.05 ? `+${delta.toFixed(1)}%` : delta < -0.05 ? `${delta.toFixed(1)}%` : "BASE";
@@ -496,7 +505,7 @@
           ${selected?'<span class="rtg-choice-confirm">TOCCA DI NUOVO PER CONFERMARE</span>':""}
         </button>`;
       };
-      return `<section class="panel rtg-duel-card rtg-duel-card--revolution rtg-duel-card--clean rtg-paper-modal">
+      return `<section class="panel rtg-duel-card rtg-duel-card--revolution rtg-duel-card--clean rtg-paper-modal ${userMoveSelected ? "is-user-move-preview" : ""}">
         <div class="rtg-duel-contextbar">
           <strong class="rtg-duel-possession ${possessionClass}">${escape(possessionText)}</strong>
           <span>${escape(currentMinute(match))}' · ${escape(({midfield:"CENTROCAMPO",attack:"TRE QUARTI",shot:"ZONA TIRO"}[pending.zone || match.fieldZone] || "AZIONE"))}</span>
@@ -506,16 +515,17 @@
           <div class="rtg-duel-probability-card"><small>${selectedChoice?"SE CONFERMI":"PROBABILITÀ BASE"}</small><strong>${escape(selectedProbability.toFixed(1))}%</strong><em>${escape(selectedLabel)}</em></div>
         </header>
         <div class="rtg-duel-versus-board">
-          <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user">
-            <span class="rtg-duel-panel-tag">TU</span>
+          <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user ${userMoveSelected ? "has-special-move" : ""}">
+            <div class="rtg-duel-panel-heading"><span class="rtg-duel-panel-tag">TU</span><span class="rtg-duel-action-chip ${userMoveSelected ? "rtg-duel-action-chip--move" : ""}">${userMoveSelected ? "⚡ " : ""}${escape(userActionShort)}</span></div>
             ${duelVisualMarkup(user,"user",`data-rtg-duel-player="${escape(pid(user))}" data-side="user"`)}
-            <strong>${escape(callout.user)}</strong>
+            ${userMoveSelected ? `<div class="rtg-duel-active-move"><small>MOSSA SPECIALE</small><strong>${escape(pending.userMove.name)}</strong><em>POWER ${escape(pending.userMove.power ?? "—")}</em></div>` : ""}
+            <strong class="rtg-duel-action-story">${escape(callout.user)}</strong>
           </article>
           <div class="rtg-duel-vs-core" aria-hidden="true"><small>SCONTRO</small><span>VS</span></div>
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--opponent">
-            <span class="rtg-duel-panel-tag">${escape(opponentName)}</span>
+            <div class="rtg-duel-panel-heading"><span class="rtg-duel-panel-tag">${escape(opponentName)}</span><span class="rtg-duel-action-chip">${escape(opponentActionShort)}</span></div>
             ${duelVisualMarkup(opponent,"opponent",`data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"`)}
-            <strong>${escape(callout.opponent)}</strong>
+            <strong class="rtg-duel-action-story">${escape(callout.opponent)}</strong>
           </article>
         </div>
         <div class="rtg-duel-meter-clean" aria-label="Probabilità del duello">
@@ -543,22 +553,25 @@
       const opponentLabel = resolution.opponentLabel || "AVVERSARIO";
       const userAction = resolution.userChoiceLabel || baseResultActionLabel(resolution.userKind, resolution.actorSide === "user");
       const opponentAction = resolution.aiChoiceLabel || baseResultActionLabel(resolution.aiKind, resolution.actorSide === "opponent");
-      return `<section class="panel rtg-duel-card rtg-duel-result rtg-duel-result--revolution rtg-paper-modal development-squad-card-scope ${resultClass}">
+      const userUsedMove = !!resolution.userUsedMove;
+      const aiUsedMove = !!resolution.aiUsedMove;
+      const anyMove = userUsedMove || aiUsedMove;
+      return `<section class="panel rtg-duel-card rtg-duel-result rtg-duel-result--revolution rtg-paper-modal development-squad-card-scope ${resultClass} ${anyMove ? "has-special-move" : ""}">
         <div class="rtg-duel-result-banner ${resultClass}">
-          <div class="rtg-duel-result-status"><span>${resolution.goalSide ? "GOL" : resolution.userWon ? "AZIONE RIUSCITA" : "AZIONE PERSA"}</span><em>ESITO DUELLO</em></div>
+          <div class="rtg-duel-result-status"><span>${resolution.goalSide ? "GOL" : resolution.userWon ? "AZIONE RIUSCITA" : "AZIONE PERSA"}</span><em>${anyMove ? "⚡ MOSSA SPECIALE USATA" : "ESITO DUELLO"}</em></div>
           <strong>${escape(headline)}</strong>
         </div>
         <div class="rtg-duel-versus-board rtg-duel-versus-board--result">
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user rtg-duel-result-player">
             <span class="rtg-duel-panel-tag">TU</span>
             ${duelVisualMarkup(user,"user",pid(user) ? `data-rtg-duel-player="${escape(pid(user))}" data-side="user"` : "")}
-            <strong class="rtg-duel-result-action">${escape(userAction)}</strong>
+            ${userUsedMove ? `<div class="rtg-duel-result-move"><small>⚡ MOSSA</small><strong>${escape(userAction)}</strong><em>POWER ${escape(resolution.userMovePower ?? "—")}</em></div>` : `<strong class="rtg-duel-result-action">${escape(userAction)}</strong>`}
           </article>
           <div class="rtg-duel-vs-core rtg-duel-result-vs" aria-hidden="true"><small>ESITO</small><span>VS</span></div>
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--opponent rtg-duel-result-player">
             <span class="rtg-duel-panel-tag">${escape(opponentLabel)}</span>
             ${duelVisualMarkup(opponent,"opponent",pid(opponent) ? `data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"` : "")}
-            <strong class="rtg-duel-result-action">${escape(opponentAction)}</strong>
+            ${aiUsedMove ? `<div class="rtg-duel-result-move rtg-duel-result-move--opponent"><small>⚡ MOSSA</small><strong>${escape(opponentAction)}</strong><em>POWER ${escape(resolution.aiMovePower ?? "—")}</em></div>` : `<strong class="rtg-duel-result-action">${escape(opponentAction)}</strong>`}
           </article>
         </div>
         <div class="rtg-duel-result-meter" aria-label="Probabilità finale del duello">

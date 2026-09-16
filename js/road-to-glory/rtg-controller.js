@@ -790,6 +790,10 @@
           actorSide:before.actorSide,
           aiKind:before.aiKind,
           userChoiceLabel,aiChoiceLabel,
+          userUsedMove:choice==="move",
+          aiUsedMove:before.aiChoice==="move",
+          userMovePower:choice==="move" ? (before.userMove?.power ?? null) : null,
+          aiMovePower:before.aiChoice==="move" ? (before.aiMove?.power ?? null) : null,
           scoreBefore,scoreAfter:clone(resolvedMatch.score||scoreBefore),
           goalSide:log.goalSide||null,
         });
