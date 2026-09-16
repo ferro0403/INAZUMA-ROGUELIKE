@@ -456,6 +456,30 @@
   color: #101116;
   text-align: center;
 }
+.rtg-node-modal-head {
+  display: grid;
+  grid-template-columns: 76px minmax(0,1fr);
+  gap: 14px;
+  align-items: center;
+  text-align: left;
+  padding-bottom: 12px;
+  border-bottom: 3px solid #101116;
+}
+.rtg-node-modal-emblem,
+.rtg-node-modal-secondary {
+  width: 70px;
+  height: 70px;
+  display: grid;
+  place-items: center;
+  border: 3px solid #101116;
+  background: #fff;
+  box-shadow: 4px 4px 0 #101116;
+}
+.rtg-node-modal-emblem img { width: 82%; height: 82%; object-fit: contain; }
+.rtg-node-modal-secondary { background: #153f62; color: #ffd21f; font-size: 2rem; font-weight: 1000; }
+.rtg-node-modal-head h2,
+.rtg-node-modal-head p { margin: 0; }
+.rtg-node-modal-head .muted { margin-top: 4px; color: #666158; font-size: .78rem; }
 .rtg-node-modal h2 { color: #101116; text-transform: uppercase; }
 .rtg-node-modal > .btn { width: 100%; margin-top: 14px; border: 3px solid #101116; border-radius: 0; box-shadow: 5px 6px 0 #101116; }
 
