@@ -146,8 +146,8 @@
       if (!eligibility) return "";
       const rows = [
         ["Potenza RTG", eligibility.teamPower == null ? "—" : `${eligibility.teamPower} / ${eligibility.cap}`, !eligibility.reasons?.includes("team-power-cap")],
-        ["Reclute S1", `${eligibility.recruitCount || 0} / ${eligibility.minRecruit || 0}`, !eligibility.reasons?.includes("min-s1-recruits")],
-        ["Reclute recenti", `${eligibility.recentRecruitCount || 0} / ${eligibility.recentCount || 0}`, !eligibility.reasons?.includes("recent-s1-recruits")],
+        ["Reclute S1 · rosa", `${eligibility.recruitCount || 0} / ${eligibility.minRecruit || 0}`, !eligibility.reasons?.includes("min-s1-recruits")],
+        ["Recenti · rosa", `${eligibility.recentRecruitCount || 0} / ${eligibility.recentCount || 0}`, !eligibility.reasons?.includes("recent-s1-recruits")],
       ];
       return `<section class="panel rtg-requirements"><p class="eyebrow">Accesso partita</p><h3>Requisiti</h3><div class="rtg-requirements-list">${rows.map(([label, value, ok]) => `<div class="rtg-requirement ${ok ? "ok" : "bad"}"><span>${escape(label)}</span><strong>${escape(value)}</strong></div>`).join("")}</div></section>`;
     }
@@ -177,25 +177,29 @@
     function vendingMarkup(model = {}) {
       const rarities = model.rarities || [];
       const candidates = model.candidates || [];
+      const canPull = Number(model.tokens) >= 300 && candidates.length > 0;
       return `<div class="rtg-vending rtg-paper-modal">
-        <div class="modal-head rtg-vending-head"><div><p class="eyebrow">Road to Glory · Season 1</p><h2>DISTRIBUTORE S1</h2><p class="muted">Le squadre battute riempiono il distributore. Una pallina = un giocatore.</p></div><strong class="rtg-vending-pool">${escape(candidates.length)}<small>nel pool</small></strong></div>
-        <div class="rtg-vending-layout">
-          <div class="rtg-vending-machine-v2" aria-label="Distributore di palline Season 1">
-            <div class="rtg-machine-marquee"><span>SEASON</span><strong>1</strong></div>
-            <div class="rtg-machine-globe">
-              <i class="rtg-capsule c1"></i><i class="rtg-capsule c2"></i><i class="rtg-capsule c3"></i><i class="rtg-capsule c4"></i><i class="rtg-capsule c5"></i><i class="rtg-capsule c6"></i><i class="rtg-capsule c7"></i>
-              <span class="rtg-machine-badge">⚡</span>
+        <div class="rtg-vending-title">
+          <div><p class="eyebrow">Season 1</p><h2>DISTRIBUTORE S1</h2></div>
+          <div class="rtg-vending-meta"><span><small>POOL</small><strong>${escape(candidates.length)}</strong></span><span><small>GETTONI</small><strong>${escape(Number(model.tokens)||0)} ◈</strong></span></div>
+        </div>
+        <div class="rtg-vending-stage">
+          <div class="rtg-vending-machine-v3" aria-label="Distributore di palline Season 1">
+            <div class="rtg-vending-sign"><span>RTG</span><strong>S1</strong></div>
+            <div class="rtg-vending-glass">
+              <i class="rtg-ball b1"></i><i class="rtg-ball b2"></i><i class="rtg-ball b3"></i><i class="rtg-ball b4"></i><i class="rtg-ball b5"></i><i class="rtg-ball b6"></i><i class="rtg-ball b7"></i><i class="rtg-ball b8"></i>
             </div>
-            <div class="rtg-machine-console"><span class="rtg-machine-price">300 ◈</span><i class="rtg-machine-knob" aria-hidden="true">↻</i></div>
-            <div class="rtg-machine-tray"><span>PALLINA</span><b>?</b></div>
-          </div>
-          <div class="rtg-vending-info">
-            <div class="rtg-vending-wallet"><small>GETTONI RTG</small><strong>${escape(Number(model.tokens) || 0)} ◈</strong></div>
-            <div class="rtg-vending-rates">${rarities.map((entry) => `<span data-rarity="${escape(entry.rarity)}"><strong>${escape(entry.rarity)}</strong><em>${escape(Number(entry.weight).toFixed(1))}%</em></span>`).join("")}</div>
-            <p class="rtg-vending-note">I duplicati rimborsano gettoni. Le probabilità si ricalcolano se una fascia non è disponibile.</p>
+            <div class="rtg-vending-control">
+              <span>300 ◈</span>
+              <i aria-hidden="true">↻</i>
+            </div>
+            <div class="rtg-vending-mouth"><span>PALLINA</span><b>?</b></div>
           </div>
         </div>
-        <button type="button" class="btn btn-yellow rtg-vending-pull" data-rtg-pull ${Number(model.tokens) < 300 || !candidates.length ? "disabled" : ""}>GIRA IL DISTRIBUTORE · 300 ◈</button>
+        <div class="rtg-vending-ratebar" aria-label="Probabilità">
+          ${rarities.map((entry)=>`<span data-rarity="${escape(entry.rarity)}"><b>${escape(entry.rarity)}</b><em>${escape(Number(entry.weight).toFixed(1))}%</em></span>`).join("")}
+        </div>
+        <button type="button" class="btn btn-yellow rtg-vending-pull" data-rtg-pull ${canPull?"":"disabled"}>${canPull?"GIRA · 300 ◈":"SERVONO 300 ◈"}</button>
       </div>`;
     }
 
