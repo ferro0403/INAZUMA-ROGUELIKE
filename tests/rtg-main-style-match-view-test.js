@@ -17,7 +17,7 @@ assert.match(html,/data-rtg-live-field="user"/);
 assert.match(html,/data-rtg-live-field="opponent"/);
 assert.strictEqual((html.match(/player-card player-card-compact/g)||[]).length,22);
 const duel=view.encounterMarkup(match,{userPlayer:lineup[8],opponentPlayer:opp[1]});
-assert.match(duel,/development-squad-card-scope/);
+assert.match(duel,/rtg-duel-versus-board/);
 assert.match(duel,/rtg-duel-visual/);
 assert.match(duel,/rtg-duel-story/);
 assert.match(duel,/rtg-duel-possession/);
