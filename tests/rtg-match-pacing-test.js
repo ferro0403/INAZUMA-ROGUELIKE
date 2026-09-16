@@ -7,7 +7,7 @@ assert.match(controller,/ENCOUNTER_REVEAL_DELAY_MS\s*=\s*2200/);
 assert.match(controller,/schedule\([\s\S]*?ENCOUNTER_REVEAL_DELAY_MS\)/);
 assert.match(view,/is-latest/);
 assert.match(view,/rtg-duel-possession/);
-assert.match(view,/rtg-duel-type/);
+assert.match(view,/rtg-duel-story/);
 assert.match(view,/rtg-duel-visual/);
 assert.match(css,/\.rtg-ticker-event\.is-latest/);
 assert.match(css,/\.rtg-duel-visual/);
