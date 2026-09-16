@@ -3167,14 +3167,14 @@
 .rtg-prematch-title {display:grid;gap:1px;}
 .rtg-prematch-title small {color:var(--rtg-gold);font-size:.5rem;font-weight:1000;letter-spacing:.12em;}
 .rtg-prematch-title h1 {margin:0;font-size:clamp(1.55rem,7vw,2.25rem);line-height:.92;letter-spacing:-.04em;}
-.rtg-prematch-top-vs {display:flex;align-items:center;gap:8px;min-width:0;}
+.rtg-prematch-top-vs {display:grid;grid-template-columns:34px 42px minmax(0,auto);align-items:center;gap:8px;min-width:0;}
 .rtg-prematch-top-vs span {
   width:42px;height:42px;display:grid;place-items:center;
   border:3px solid var(--rtg-ink);border-radius:50%;
   background:var(--rtg-yellow);font-size:.9rem;font-weight:1000;
   box-shadow:3px 3px 0 var(--rtg-ink);
 }
-.rtg-prematch-top-vs strong {max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem;}
+.rtg-prematch-top-vs strong {max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.9rem;line-height:1;text-align:left;}
 .rtg-prematch-revolution .rtg-prematch-content {gap:12px;padding:12px 9px 26px;}
 .rtg-prematch-matchup {
   position:relative;
