@@ -56,11 +56,12 @@
 
     function formationRows(formation, lineupEntries) {
       const byRole = new Map(["FW", "MF", "DF", "GK"].map((role) => [role, lineupEntries.filter((entry) => roleOf(entry.player) === role)]));
+      const requirements = formation?.requirements || { FW:3, MF:3, DF:4, GK:1 };
       const rows = formationLayout?.displayRows?.(formation) || [
-        { role: "FW", count: Number(formation?.requirements?.FW || 0) },
-        { role: "MF", count: Number(formation?.requirements?.MF || 0) },
-        { role: "DF", count: Number(formation?.requirements?.DF || 0) },
-        { role: "GK", count: Number(formation?.requirements?.GK || 0) },
+        { role: "FW", count: Number(requirements.FW || 0) },
+        { role: "MF", count: Number(requirements.MF || 0) },
+        { role: "DF", count: Number(requirements.DF || 0) },
+        { role: "GK", count: Number(requirements.GK || 0) },
       ];
       return rows.map((row) => ({
         ...row,
@@ -69,11 +70,12 @@
     }
 
     function formationPreviewMarkup(formation) {
+      const requirements = formation?.requirements || { FW:3, MF:3, DF:4, GK:1 };
       const rows = formationLayout?.displayRows?.(formation) || [
-        { role: "FW", count: Number(formation?.requirements?.FW || 0) },
-        { role: "MF", count: Number(formation?.requirements?.MF || 0) },
-        { role: "DF", count: Number(formation?.requirements?.DF || 0) },
-        { role: "GK", count: Number(formation?.requirements?.GK || 0) },
+        { role: "FW", count: Number(requirements.FW || 0) },
+        { role: "MF", count: Number(requirements.MF || 0) },
+        { role: "DF", count: Number(requirements.DF || 0) },
+        { role: "GK", count: Number(requirements.GK || 0) },
       ];
       return `<div class="squad-formation-mini" style="--mini-rows:${rows.length}" aria-hidden="true">
         ${rows.map((row) => {
