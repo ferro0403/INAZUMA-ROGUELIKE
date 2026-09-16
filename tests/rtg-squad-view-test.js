@@ -1,0 +1,16 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-view.js","utf8"),c);
+const resolver={resolveAtLevel20:(id)=>({playerId:id,name:id,overall:80,level:20,normalizedRole:id.startsWith("g")?"GK":id.startsWith("d")?"DF":id.startsWith("m")?"MF":"FW",category:"Buono",portraitUrl:""})};
+const view=c.RoadToGlorySquadView.create({escapeHtml:s=>String(s),playerResolver:resolver});
+const lineup=["g1","d1","d2","d3","d4","m1","m2","m3","f1","f2","f3"],bench=["g2","d5","m4","f4"];
+const state={activeSeasonId:"ie1",gachaAcquiredPlayerIds:["f1","f9"],squads:{ie1:{formationId:"4-3-3",lineup,bench,activeRoleVariantByPlayerId:{m1:"MF"}}}};
+const model=view.renderModel({state,freeAgentIds:[...lineup,...bench,"x1"],seasonDb:{formations:{eleven:[{id:"4-3-3",formation:"4-3-3"}]}},freeAgentsDb:{players:[]}});
+assert.strictEqual(model.lineup.length,11);assert.strictEqual(model.bench.length,4);
+assert(model.collection.some(x=>x.playerId==="f9"&&x.source==="RTG"));
+assert(model.collection.some(x=>x.playerId==="x1"&&x.source==="Svincolato"));
+assert.strictEqual(model.collection.filter(x=>x.playerId==="f1").length,1);
+assert(model.collection.every(x=>x.player.level===20));
+const html=view.markup(model);assert.match(html,/>Run</);assert.match(html,/>Squadra</);assert.match(html,/data-rtg-formation/);assert.strictEqual((html.match(/data-rtg-lineup-player=/g)||[]).length,11);assert.strictEqual((html.match(/data-rtg-bench-player=/g)||[]).length,4);
+console.log("rtg-squad-view-test: PASS");
