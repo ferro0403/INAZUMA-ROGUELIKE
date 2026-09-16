@@ -425,27 +425,32 @@
       }
       return renderMatch(campaign.activeMatch);
     }
-    function bindHalftimeEditor(match){
+    function bindHalftimeEditor(match,selectedPlayerId=null){
       const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
-      let selected=null;
-      const click=(button,area)=>{
-        const playerId=button.dataset.rtgHalfLineup||button.dataset.rtgHalfBench;
-        if(!selected){selected={playerId,area};button.classList.add("selected");return;}
-        if(selected.area===area){selected=null;overlay?.querySelectorAll?.(".selected")?.forEach(el=>el.classList.remove("selected"));return;}
-        const firstList=selected.area==="lineup"?halftimeDraft.lineup:halftimeDraft.bench;
-        const secondList=area==="lineup"?halftimeDraft.lineup:halftimeDraft.bench;
-        const firstIndex=firstList.findIndex(p=>id(p.playerId)===id(selected.playerId));
-        const secondIndex=secondList.findIndex(p=>id(p.playerId)===id(playerId));
-        const first=firstList[firstIndex],second=secondList[secondIndex];
+      const repaint=(nextSelected=null)=>{
+        if(overlay)overlay.innerHTML=matchView.halftimeMarkup(halftimeDraft,{selectedPlayerId:nextSelected});
+        bindHalftimeEditor(match,nextSelected);
+      };
+      overlay?.querySelectorAll?.("[data-rtg-half-lineup]")?.forEach(button=>button.addEventListener("click",()=>{
+        const playerId=id(button.dataset.rtgHalfLineup);
+        repaint(selectedPlayerId===playerId?null:playerId);
+      }));
+      overlay?.querySelectorAll?.("[data-rtg-half-bench]")?.forEach(button=>button.addEventListener("click",()=>{
+        if(!selectedPlayerId)return;
+        const benchId=id(button.dataset.rtgHalfBench);
+        const firstIndex=halftimeDraft.lineup.findIndex(player=>id(player.playerId)===id(selectedPlayerId));
+        const secondIndex=halftimeDraft.bench.findIndex(player=>id(player.playerId)===benchId);
+        const first=halftimeDraft.lineup[firstIndex],second=halftimeDraft.bench[secondIndex];
         const firstRole=String(first?.normalizedRole||first?.position||"").toUpperCase();
         const secondRole=String(second?.normalizedRole||second?.position||"").toUpperCase();
-        if(firstRole!==secondRole){deps.toast?.("Cambio consentito solo ruolo per ruolo","error");selected=null;return;}
-        firstList[firstIndex]=second;secondList[secondIndex]=first;selected=null;
-        if(overlay)overlay.innerHTML=matchView.halftimeMarkup(halftimeDraft);
-        bindHalftimeEditor(match);
-      };
-      overlay?.querySelectorAll?.("[data-rtg-half-lineup]")?.forEach(button=>button.addEventListener("click",()=>click(button,"lineup")));
-      overlay?.querySelectorAll?.("[data-rtg-half-bench]")?.forEach(button=>button.addEventListener("click",()=>click(button,"bench")));
+        if(firstIndex<0||secondIndex<0||!firstRole||firstRole!==secondRole){
+          deps.toast?.("Cambio consentito solo ruolo per ruolo","error");
+          return repaint(null);
+        }
+        halftimeDraft.lineup[firstIndex]=second;
+        halftimeDraft.bench[secondIndex]=first;
+        repaint(null);
+      }));
       overlay?.querySelector?.("[data-rtg-half-confirm]")?.addEventListener("click",()=>confirmHalftime(halftimeDraft));
     }
     async function confirmHalftime(nextSquad){
