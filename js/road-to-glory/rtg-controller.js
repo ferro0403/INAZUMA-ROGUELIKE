@@ -310,7 +310,7 @@
     function mainOpponent(node){
       const boss=bossFor(node.teamId);
       if(!boss)throw Object.assign(new Error("Boss RTG non trovato"),{code:"rtg-boss-missing"});
-      return {formationId:boss.bossFormation||null,lineup:(boss.startingXIPlayerIds||[]).map(playerId=>resolved(playerId)).filter(Boolean),bench:[]};
+      return {formationId:boss.bossFormation||null,lineup:(boss.startingXIPlayerIds||[]).map(playerId=>resolved(playerId)).filter(Boolean),bench:[],name:boss.teamName||node.teamId||"Avversario"};
     }
     function secondaryOpponent(node,current,attemptNumber){
       const generated=opponentGenerator.generate({seed:`${current.campaignSeed}:${node.id}`,attemptNumber,freeAgentsDb,formations:seasonDb?.formations?.eleven||[],targetMin:node.opponentTargetMin,targetMax:node.opponentTargetMax,playerResolver});
@@ -415,8 +415,17 @@
         const aiPlayer=findMatchPlayer(resolvedMatch,"opponent",before.aiPlayerId||before.opponentPlayerId);
         const userChoiceLabel=choice==="move"?(before.userMove?.name||"Mossa"):(before.userBaseActionLabel||"Azione base");
         const aiChoiceLabel=before.aiChoice==="move"?(before.aiMove?.name||"Mossa"):(before.aiKind==="save"?"Parata":before.aiKind==="defense"?"Difesa":before.aiKind==="shot"?"Tiro":"Dribbling");
+        const outcomeLabel=before.userKind==="shot"
+          ?(userWon?"GOAL!":"Tiro fermato")
+          :before.userKind==="save"
+            ?(userWon?"PARATA!":"Gol subito")
+            :before.userKind==="defense"
+              ?(userWon?"Palla recuperata":"Avversario superato")
+              :before.userKind==="dribble"
+                ?(userWon?"Dribbling riuscito":"Palla persa")
+                :(userWon?"Duello a centrocampo vinto":"Duello a centrocampo perso");
         if(overlay)overlay.innerHTML=matchView.resolvedEncounterMarkup({
-          userWon,probability:userProbability,
+          userWon,probability:userProbability,outcomeLabel,
           userPlayerName:userPlayer?.name||before.userPlayerId,
           aiPlayerName:aiPlayer?.name||before.aiPlayerId,
           userChoiceLabel,aiChoiceLabel,
