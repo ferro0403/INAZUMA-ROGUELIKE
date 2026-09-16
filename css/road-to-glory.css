@@ -540,15 +540,43 @@
 .rtg-action-button { min-height: 48px; border: 3px solid #101116 !important; border-radius: 0 !important; box-shadow: 4px 5px 0 #101116; }
 .rtg-action-button--move { background: #e95f39 !important; color: #fff !important; }
 .rtg-action-button--move small { display: block; font-size: .65rem; }
-.rtg-halftime-grid { display: grid; grid-template-columns: 1.5fr .7fr; gap: 14px; }
-.rtg-halftime-grid h3 { color: #101116; }
+.rtg-halftime-active h3,
+.rtg-halftime-compatible h3 { color: #101116; }
 .rtg-halftime-cards {
   display: grid;
   grid-template-columns: repeat(auto-fill,minmax(88px,1fr));
   justify-items: center;
   gap: 16px 10px;
 }
+.rtg-halftime-lineup { margin-bottom: 14px; }
 .rtg-halftime-player-card { width: 88px !important; max-width: 88px !important; }
+.rtg-halftime-compatible {
+  min-height: 118px;
+  padding: 12px;
+  border: 3px solid #101116;
+  background: #f4f0e5;
+}
+.rtg-halftime-compatible-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+.rtg-halftime-compatible-head p,
+.rtg-halftime-compatible-head h3 { margin: 0; }
+.rtg-halftime-compatible-head > span {
+  padding: 4px 7px;
+  border: 2px solid #101116;
+  background: #ffd21f;
+  font-size: .65rem;
+  font-weight: 1000;
+}
+.rtg-halftime-empty {
+  margin: 0;
+  color: #666158;
+  font-weight: 750;
+}
 .rtg-half-confirm { width: 100%; margin-top: 16px; border: 3px solid #101116 !important; border-radius: 0 !important; box-shadow: 5px 6px 0 #101116; }
 .rtg-penalty-head {
   display: flex;
@@ -722,7 +750,6 @@
   .rtg-field-card { width: 58px !important; max-width: 58px !important; }
   .rtg-versus--cards { grid-template-columns: 1fr auto 1fr; gap: 7px; }
   .rtg-duel-player-card { width: 96px !important; }
-  .rtg-halftime-grid { grid-template-columns: 1fr; }
   .rtg-halftime-cards { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px 6px; }
   .rtg-halftime-player-card { width: 70px !important; max-width: 70px !important; }
 }
