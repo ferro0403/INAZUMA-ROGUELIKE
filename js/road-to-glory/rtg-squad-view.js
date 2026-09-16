@@ -193,30 +193,6 @@
     }
 
     function bind(root, actions = {}) {
-      let selected = null;
-
-      function cards() {
-        return Array.from(root?.querySelectorAll?.("[data-rtg-squad-player]") || []);
-      }
-
-      function clearSelection() {
-        selected = null;
-        cards().forEach((card) => {
-          card.classList?.remove?.("selected", "is-compatible", "is-incompatible");
-          card.setAttribute?.("aria-pressed", "false");
-        });
-        const hint = root?.querySelector?.("[data-rtg-selection-hint]");
-        if (hint) hint.textContent = "Seleziona un giocatore";
-      }
-
-      function selectCard(button) {
-        selected = {
-          playerId: String(button.dataset.rtgSquadPlayer || ""),
-          role: String(button.dataset.role || "").toUpperCase(),
-          area: String(button.dataset.area || ""),
-        };
-        cards().forEach((card) => {
-          const car    function bind(root, actions = {}) {
       root?.querySelectorAll?.("[data-rtg-squad-player]")?.forEach((button) => {
         button.addEventListener("click", () => {
           const playerId = String(button.dataset.rtgSquadPlayer || "");
@@ -225,9 +201,6 @@
       });
       root?.querySelector?.("[data-rtg-open-formation]")?.addEventListener("click", () => actions.onOpenFormation?.());
       root?.querySelector?.("[data-rtg-save-squad]")?.addEventListener("click", () => actions.onSave?.());
-    }
-
-    return Object.freeze({ clearSelection });
     }
 
     return Object.freeze({ renderModel, markup, bind, playerCard, formationPreviewMarkup, formationOptionsMarkup, replacementPickerMarkup, replacementPickerResultsMarkup });
