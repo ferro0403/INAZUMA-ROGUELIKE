@@ -328,6 +328,16 @@
       return ({shot:"TIRA",save:"PARA",defense:"DIFENDI",dribble:"DRIBBLA",midfield:"CONTRASTA"})[String(kind||"").toLowerCase()] || "GIOCA";
     }
 
+    function baseResultActionLabel(kind, isActor = false) {
+      const key = String(kind || "").toLowerCase();
+      if (key === "shot") return "Tiro";
+      if (key === "save") return "Parata";
+      if (key === "dribble") return "Dribbling";
+      if (key === "defense") return "Difesa";
+      if (key === "midfield") return isActor ? "Dribbling" : "Difesa";
+      return "Azione base";
+    }
+
     function resultHeadline(resolution = {}, user = {}, opponent = {}) {
       const userName = user?.name || resolution.userPlayerName || "Il tuo giocatore";
       const opponentName = opponent?.name || resolution.aiPlayerName || "L'avversario";
@@ -490,8 +500,8 @@
       const userProbability = Math.max(0, Math.min(100, Number(resolution.probability ?? 50) || 0));
       const opponentProbability = Math.max(0, 100 - userProbability);
       const opponentLabel = resolution.opponentLabel || "AVVERSARIO";
-      const userAction = resolution.userChoiceLabel || choiceVerb(resolution.userKind);
-      const opponentAction = resolution.aiChoiceLabel || "Azione base";
+      const userAction = resolution.userChoiceLabel || baseResultActionLabel(resolution.userKind, resolution.actorSide === "user");
+      const opponentAction = resolution.aiChoiceLabel || baseResultActionLabel(resolution.aiKind, resolution.actorSide === "opponent");
       return `<section class="panel rtg-duel-card rtg-duel-result rtg-duel-result--revolution rtg-paper-modal development-squad-card-scope ${resultClass}">
         <div class="rtg-duel-result-banner ${resultClass}">
           <div class="rtg-duel-result-status"><span>${resolution.goalSide ? "GOL" : resolution.userWon ? "AZIONE RIUSCITA" : "AZIONE PERSA"}</span><em>ESITO DUELLO</em></div>

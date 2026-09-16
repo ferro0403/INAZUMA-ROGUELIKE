@@ -768,7 +768,7 @@
         const userPlayer=findMatchPlayer(resolvedMatch,"user",before.userPlayerId);
         const aiPlayer=findMatchPlayer(resolvedMatch,"opponent",before.aiPlayerId||before.opponentPlayerId);
         const userChoiceLabel=choice==="move"?(before.userMove?.name||"Mossa"):(before.userBaseActionLabel||"Azione base");
-        const aiChoiceLabel=before.aiChoice==="move"?(before.aiMove?.name||"Mossa"):(before.aiKind==="save"?"Parata":before.aiKind==="defense"?"Difesa":before.aiKind==="shot"?"Tiro":"Dribbling");
+        const aiChoiceLabel=before.aiChoice==="move"?(before.aiMove?.name||"Mossa"):null;
         const outcomeLabel=before.userKind==="shot"
           ?(userWon?"GOAL!":"Tiro fermato")
           :before.userKind==="save"
@@ -785,6 +785,7 @@
           userPlayer,opponentPlayer:aiPlayer,
           opponentLabel:resolvedMatch.opponentSquad?.name||"AVVERSARIO",
           actorSide:before.actorSide,
+          aiKind:before.aiKind,
           userChoiceLabel,aiChoiceLabel,
           scoreBefore,scoreAfter:clone(resolvedMatch.score||scoreBefore),
           goalSide:log.goalSide||null,
