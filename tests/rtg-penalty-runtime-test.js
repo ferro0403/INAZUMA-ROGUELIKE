@@ -19,7 +19,7 @@ let shoot=P.createShootout("sequence");
 const seq=[
  ["user",true],["opponent",false],
  ["user",true],["opponent",false],
- ["user",true]
+ ["user",true],["opponent",false]
 ];
 for(const [side,goal] of seq){
   const kick=P.resolveKick(shoot,{attackingSide:side,shooterChoice:"left",goalkeeperChoice:goal?"right":"left",shooterMove:null,goalkeeperMove:null,encounterContext:{actor:flat(80),opponent:flat(80)}});
