@@ -627,36 +627,35 @@
       const resultClass = resolution.userWon ? "is-win" : "is-loss";
       const scoreUser = resolution.scoreAfter?.user ?? resolution.scoreBefore?.user ?? 0;
       const scoreOpponent = resolution.scoreAfter?.opponent ?? resolution.scoreBefore?.opponent ?? 0;
-      const userProbability = Math.max(0, Math.min(100, Number(resolution.probability ?? 50) || 0));
-      const opponentProbability = Math.max(0, 100 - userProbability);
       const opponentLabel = resolution.opponentLabel || "AVVERSARIO";
-      const userBaseAction = baseResultActionLabel(resolution.userKind, resolution.actorSide === "user");
-      const opponentBaseAction = baseResultActionLabel(resolution.aiKind, resolution.actorSide === "opponent");
-      const userAction = resolution.userChoiceLabel || userBaseAction;
-      const opponentAction = resolution.aiChoiceLabel || opponentBaseAction;
-      const userWinningMove = !!resolution.userWon && !!resolution.userUsedMove;
-      const aiWinningMove = !resolution.userWon && !!resolution.aiUsedMove;
-      const anyMove = userWinningMove || aiWinningMove;
-      const userMoveCategory = moveCategoryClass({type:resolution.userMoveType},resolution.userKind);
-      const aiMoveCategory = moveCategoryClass({type:resolution.aiMoveType},resolution.aiKind);
-      const userRarityClass = duelRarityClass(user);
-      const opponentRarityClass = duelRarityClass(opponent);
-      return `<section class="panel rtg-duel-card rtg-duel-result rtg-duel-result--revolution rtg-paper-modal development-squad-card-scope ${resultClass} ${anyMove ? "has-special-move" : ""}">
+      const winnerIsUser = !!resolution.userWon;
+      const winner = winnerIsUser ? user : opponent;
+      const winnerSide = winnerIsUser ? "user" : "opponent";
+      const winnerLabel = winnerIsUser ? "TU" : opponentLabel;
+      const winnerKind = winnerIsUser ? resolution.userKind : resolution.aiKind;
+      const winnerBaseAction = winnerIsUser
+        ? baseResultActionLabel(resolution.userKind, resolution.actorSide === "user")
+        : baseResultActionLabel(resolution.aiKind, resolution.actorSide === "opponent");
+      const winnerUsedMove = winnerIsUser ? !!resolution.userUsedMove : !!resolution.aiUsedMove;
+      const winnerAction = winnerIsUser
+        ? (resolution.userChoiceLabel || winnerBaseAction)
+        : (resolution.aiChoiceLabel || winnerBaseAction);
+      const winnerMovePower = winnerIsUser ? resolution.userMovePower : resolution.aiMovePower;
+      const winnerMoveType = winnerIsUser ? resolution.userMoveType : resolution.aiMoveType;
+      const winnerMoveCategory = moveCategoryClass({type:winnerMoveType},winnerKind);
+      const winnerRarityClass = duelRarityClass(winner);
+      return `<section class="panel rtg-duel-card rtg-duel-result rtg-duel-result--revolution rtg-paper-modal development-squad-card-scope ${resultClass} ${winnerUsedMove ? "has-special-move" : ""}">
         <div class="rtg-duel-result-banner ${resultClass}">
-          <div class="rtg-duel-result-status"><span>${resolution.goalSide ? "GOL" : resolution.userWon ? "AZIONE RIUSCITA" : "AZIONE PERSA"}</span><em>${anyMove ? "⚡ MOSSA SPECIALE USATA" : "ESITO DUELLO"}</em></div>
+          <div class="rtg-duel-result-status"><span>${resolution.goalSide ? "GOL" : winnerIsUser ? "AZIONE RIUSCITA" : "AZIONE PERSA"}</span><em>${winnerUsedMove ? "⚡ MOSSA SPECIALE USATA" : "ESITO DUELLO"}</em></div>
           <strong>${escape(headline)}</strong>
         </div>
-        <div class="rtg-duel-versus-board rtg-duel-versus-board--result">
-          <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user rtg-duel-result-player ${escape(userRarityClass)} ${resolution.userWon ? "is-duel-winner" : "is-duel-loser"}">
-            <span class="rtg-duel-panel-tag">TU</span>
-            ${duelVisualMarkup(user,"user",pid(user) ? `data-rtg-duel-player="${escape(pid(user))}" data-side="user"` : "")}
-            ${userWinningMove ? `<div class="rtg-duel-result-move ${escape(userMoveCategory)}"><small>⚡ MOSSA</small><strong>${escape(userAction)}</strong><em>POWER ${escape(resolution.userMovePower ?? "—")}</em></div>` : resolution.userWon ? `<strong class="rtg-duel-result-action">${escape(userBaseAction)}</strong>` : ""}
-          </article>
-          <div class="rtg-duel-vs-core rtg-duel-result-vs" aria-hidden="true"><small>ESITO</small><span>VS</span></div>
-          <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--opponent rtg-duel-result-player ${escape(opponentRarityClass)} ${resolution.userWon ? "is-duel-loser" : "is-duel-winner"}">
-            <span class="rtg-duel-panel-tag">${escape(opponentLabel)}</span>
-            ${duelVisualMarkup(opponent,"opponent",pid(opponent) ? `data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"` : "")}
-            ${aiWinningMove ? `<div class="rtg-duel-result-move rtg-duel-result-move--opponent ${escape(aiMoveCategory)}"><small>⚡ MOSSA</small><strong>${escape(opponentAction)}</strong><em>POWER ${escape(resolution.aiMovePower ?? "—")}</em></div>` : !resolution.userWon ? `<strong class="rtg-duel-result-action">${escape(opponentBaseAction)}</strong>` : ""}
+        <div class="rtg-duel-versus-board rtg-duel-versus-board--result rtg-duel-result-solo">
+          <article class="rtg-duel-portrait-panel rtg-duel-result-player is-duel-winner rtg-duel-portrait-panel--${escape(winnerSide)} ${escape(winnerRarityClass)}">
+            <span class="rtg-duel-panel-tag">${escape(winnerLabel)}</span>
+            ${duelVisualMarkup(winner,winnerSide,pid(winner) ? `data-rtg-duel-player="${escape(pid(winner))}" data-side="${escape(winnerSide)}"` : "")}
+            ${winnerUsedMove
+              ? `<div class="rtg-duel-result-move ${winnerIsUser ? "" : "rtg-duel-result-move--opponent"} ${escape(winnerMoveCategory)}"><small>⚡ MOSSA</small><strong>${escape(winnerAction)}</strong><em>POWER ${escape(winnerMovePower ?? "—")}</em></div>`
+              : `<strong class="rtg-duel-result-action">${escape(winnerBaseAction)}</strong>`}
           </article>
         </div>
         ${resolution.goalSide ? `<div class="rtg-duel-goal-confirm rtg-duel-goal-celebration"><span class="rtg-goal-burst">GOL!</span><div><small>PUNTEGGIO AGGIORNATO</small><strong>${escape(scoreUser)} - ${escape(scoreOpponent)}</strong><em>Ripresa dal centrocampo</em></div></div>` : ""}

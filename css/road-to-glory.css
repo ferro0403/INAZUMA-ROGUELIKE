@@ -5169,3 +5169,53 @@
 .rtg-duel-versus-board--result{
   margin-bottom:13px!important;
 }
+
+
+/* RTG duel result v3 — only the winner remains, centered and illuminated. */
+.rtg-duel-versus-board--result.rtg-duel-result-solo{
+  width:100%!important;
+  min-height:0!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  grid-template-columns:none!important;
+  gap:0!important;
+  margin:0 0 14px!important;
+  padding:12px 0 16px!important;
+  overflow:visible!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.rtg-duel-result-solo .rtg-duel-result-player{
+  width:min(72%,300px)!important;
+  max-width:300px!important;
+  flex:0 0 auto!important;
+  margin:0 auto!important;
+}
+.rtg-duel-result-solo .rtg-duel-result-player.is-duel-winner{
+  outline:4px solid #ffd21f!important;
+  outline-offset:3px!important;
+  box-shadow:
+    inset 0 7px 0 var(--duel-rarity-accent,#ffd21f),
+    0 0 0 5px rgba(255,210,31,.18),
+    0 0 26px rgba(255,210,31,.48),
+    6px 7px 0 rgba(17,18,22,.24)!important;
+  transform:translateY(-2px) scale(1.018)!important;
+  animation:rtg-duel-winner-pop .30s cubic-bezier(.2,.8,.2,1) both!important;
+}
+.rtg-duel-result-solo .rtg-duel-result-player.is-duel-winner .rtg-duel-render{
+  filter:saturate(1.08) contrast(1.03)!important;
+}
+.rtg-duel-result-solo .rtg-duel-result-vs,
+.rtg-duel-result-solo .is-duel-loser,
+.rtg-duel-result-meter,
+.rtg-duel-winner-mark{
+  display:none!important;
+}
+@media(max-width:430px){
+  .rtg-duel-result-solo .rtg-duel-result-player{
+    width:min(76%,270px)!important;
+    max-width:270px!important;
+  }
+}
