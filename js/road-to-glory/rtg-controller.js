@@ -121,27 +121,78 @@
       state.squads.ie1=clone(squadDraft||campaign.squads.ie1);
       return state;
     }
+    function draftRosterIds(){
+      return Array.from(new Set([...(squadDraft?.lineup||[]),...(squadDraft?.bench||[])].map(id)));
+    }
+    function roleOfDraftPlayer(playerId){
+      const variant=squadDraft?.activeRoleVariantByPlayerId?.[id(playerId)]||null;
+      const player=resolved(playerId,variant);
+      return String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
+    }
+    function canUseDraftFormation(formation){
+      if(!formation)return false;
+      const counts={GK:0,DF:0,MF:0,FW:0};
+      for(const playerId of draftRosterIds()){
+        const role=roleOfDraftPlayer(playerId);
+        if(Object.prototype.hasOwnProperty.call(counts,role))counts[role]+=1;
+      }
+      return Object.entries(formation.requirements||{}).every(([role,amount])=>Number(counts[String(role).toUpperCase()]||0)>=Number(amount||0));
+    }
+    function arrangeDraftForFormation(formation){
+      if(!formation||!canUseDraftFormation(formation))return{ok:false,reason:"formation-incompatible"};
+      const available=draftRosterIds().map(playerId=>({playerId,role:roleOfDraftPlayer(playerId)}));
+      const used=new Set(),lineup=[];
+      const slotRoles=Array.isArray(formation.slotRoles)&&formation.slotRoles.length
+        ? formation.slotRoles.map(role=>String(role).toUpperCase())
+        : Object.entries(formation.requirements||{}).flatMap(([role,amount])=>Array.from({length:Number(amount)||0},()=>String(role).toUpperCase()));
+      for(const role of slotRoles){
+        const candidate=available.find(entry=>entry.role===role&&!used.has(entry.playerId));
+        if(!candidate)return{ok:false,reason:"formation-incompatible"};
+        used.add(candidate.playerId);lineup.push(candidate.playerId);
+      }
+      if(lineup.length!==11)return{ok:false,reason:"formation-invalid-slots"};
+      squadDraft={...squadDraft,formationId:id(formation.id),lineup,bench:available.map(entry=>entry.playerId).filter(playerId=>!used.has(playerId)),activeRoleVariantByPlayerId:{...(squadDraft?.activeRoleVariantByPlayerId||{})}};
+      return{ok:true};
+    }
+    function openFormationSelector(model){
+      const body=`<div class="modal-head squad-formation-modal-head"><div><p class="eyebrow">Assetto tattico RTG</p><h2>Modifica modulo</h2><p class="muted">Come nelle run normali, puoi scegliere solo moduli coperti dai 15 giocatori della rosa attiva.</p></div></div>${squadView.formationOptionsMarkup(model,canUseDraftFormation)}`;
+      deps.openModal?.(body,{className:"squad-formation-modal rtg-formation-modal"});
+      deps.getModalRoot?.()?.querySelectorAll?.("[data-rtg-formation-option]")?.forEach(button=>button.addEventListener("click",()=>{
+        if(button.disabled)return;
+        const formation=(model.formations||[]).find(item=>id(item.id)===id(button.dataset.rtgFormationOption));
+        const result=arrangeDraftForFormation(formation);
+        if(!result.ok){deps.toast?.("La rosa attiva non copre questo modulo","error");return;}
+        deps.closeModal?.();
+        renderSquad();
+      }));
+    }
     function renderSquad(){
       squadDraft=clone(squadDraft||campaign.squads.ie1);
       const model=squadView.renderModel({state:draftState(),freeAgentIds,seasonDb,freeAgentsDb});
       renderHtml(squadView.markup(model));
       bindHomeAndTabs();
       squadView.bind(app,{
-        onFormationChange:(formationId)=>{squadDraft=buildDefaultSquad(draftState(),formationId);renderSquad();},
+        onOpenFormation:()=>openFormationSelector(model),
         onSwap:(first,second)=>swapSquadDraft(first,second),
+        onIncompatible:()=>deps.toast?.("Questa destinazione non è compatibile: scegli un giocatore dello stesso ruolo","error"),
         onSave:()=>saveSquad(squadDraft),
       });
       return model;
     }
     function locationInDraft(playerId){
       const idValue=id(playerId);
-      const lineupIndex=squadDraft.lineup.indexOf(idValue),benchIndex=squadDraft.bench.indexOf(idValue);
+      const lineupIndex=(squadDraft?.lineup||[]).map(id).indexOf(idValue),benchIndex=(squadDraft?.bench||[]).map(id).indexOf(idValue);
       return lineupIndex>=0?{area:"lineup",index:lineupIndex}:benchIndex>=0?{area:"bench",index:benchIndex}:null;
     }
     function swapSquadDraft(firstId,secondId){
       const first=id(firstId),second=id(secondId);
+      if(!first||!second||first===second)return{ok:false,reason:"same-player"};
+      const accessible=new Set(squadRuntime.accessiblePlayerIds({freeAgentIds,state:draftState()}).map(id));
+      if(!accessible.has(first)||!accessible.has(second))return{ok:false,reason:"inaccessible-player"};
+      const firstRole=roleOfDraftPlayer(first),secondRole=roleOfDraftPlayer(second);
+      if(!firstRole||firstRole!==secondRole)return{ok:false,reason:"role-mismatch"};
       const firstLoc=locationInDraft(first),secondLoc=locationInDraft(second);
-      if(!firstLoc&&!secondLoc)return;
+      if(!firstLoc&&!secondLoc)return{ok:false,reason:"collection-only"};
       if(firstLoc&&secondLoc){
         squadDraft[firstLoc.area][firstLoc.index]=second;
         squadDraft[secondLoc.area][secondLoc.index]=first;
@@ -151,6 +202,7 @@
         squadDraft[loc.area][loc.index]=incoming;
       }
       renderSquad();
+      return{ok:true};
     }
     async function saveSquad(nextSquad=squadDraft){
       const candidate=clone(nextSquad);
@@ -419,7 +471,8 @@
 
     return Object.freeze({
       open,renderRun,renderSquad,openNode,startMatch,chooseEncounter,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,
-      getState:()=>clone(campaign),getRenderedHtml,
+      swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,
+      getDraftSquad:()=>clone(squadDraft),getState:()=>clone(campaign),getRenderedHtml,
     });
   }
 
