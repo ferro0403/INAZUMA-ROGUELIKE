@@ -649,22 +649,15 @@
         <div class="rtg-duel-versus-board rtg-duel-versus-board--result">
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user rtg-duel-result-player ${escape(userRarityClass)} ${resolution.userWon ? "is-duel-winner" : "is-duel-loser"}">
             <span class="rtg-duel-panel-tag">TU</span>
-            ${resolution.userWon ? '<span class="rtg-duel-winner-mark">VINCITORE</span>' : ""}
             ${duelVisualMarkup(user,"user",pid(user) ? `data-rtg-duel-player="${escape(pid(user))}" data-side="user"` : "")}
             ${userWinningMove ? `<div class="rtg-duel-result-move ${escape(userMoveCategory)}"><small>⚡ MOSSA</small><strong>${escape(userAction)}</strong><em>POWER ${escape(resolution.userMovePower ?? "—")}</em></div>` : resolution.userWon ? `<strong class="rtg-duel-result-action">${escape(userBaseAction)}</strong>` : ""}
           </article>
           <div class="rtg-duel-vs-core rtg-duel-result-vs" aria-hidden="true"><small>ESITO</small><span>VS</span></div>
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--opponent rtg-duel-result-player ${escape(opponentRarityClass)} ${resolution.userWon ? "is-duel-loser" : "is-duel-winner"}">
             <span class="rtg-duel-panel-tag">${escape(opponentLabel)}</span>
-            ${resolution.userWon ? "" : '<span class="rtg-duel-winner-mark">VINCITORE</span>'}
             ${duelVisualMarkup(opponent,"opponent",pid(opponent) ? `data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"` : "")}
             ${aiWinningMove ? `<div class="rtg-duel-result-move rtg-duel-result-move--opponent ${escape(aiMoveCategory)}"><small>⚡ MOSSA</small><strong>${escape(opponentAction)}</strong><em>POWER ${escape(resolution.aiMovePower ?? "—")}</em></div>` : !resolution.userWon ? `<strong class="rtg-duel-result-action">${escape(opponentBaseAction)}</strong>` : ""}
           </article>
-        </div>
-        <div class="rtg-duel-result-meter" aria-label="Probabilità finale del duello">
-          <span><small>TU</small><strong>${escape(userProbability.toFixed(1))}%</strong></span>
-          <i><b style="width:${escape(userProbability.toFixed(1))}%"></b></i>
-          <span><small>${escape(opponentLabel)}</small><strong>${escape(opponentProbability.toFixed(1))}%</strong></span>
         </div>
         ${resolution.goalSide ? `<div class="rtg-duel-goal-confirm rtg-duel-goal-celebration"><span class="rtg-goal-burst">GOL!</span><div><small>PUNTEGGIO AGGIORNATO</small><strong>${escape(scoreUser)} - ${escape(scoreOpponent)}</strong><em>Ripresa dal centrocampo</em></div></div>` : ""}
         <button type="button" class="btn btn-yellow rtg-duel-continue" data-rtg-duel-continue><span>CONTINUA PARTITA</span><b>›</b></button>
