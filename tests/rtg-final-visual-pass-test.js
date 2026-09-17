@@ -6,6 +6,7 @@ const assert = require("assert");
 
 const root = path.resolve(__dirname, "..");
 const css = fs.readFileSync(path.join(root, "css", "rtg-theme.css"), "utf8");
+const squadView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-squad-view.js"), "utf8");
 
 assert(
   css.includes('url("../assets/home/inazuma-stadium-mobile-light.jpeg")'),
@@ -20,12 +21,20 @@ assert(
   "Pre-match must remove the redundant Road to Glory title band"
 );
 assert(
-  /\.rtg-modal\s+\.rtg-catalog-grid\s*\{[^}]*grid-template-columns\s*:\s*repeat\(2\s*,\s*minmax\(0\s*,\s*1fr\)\)\s*!important/s.test(css),
-  "RTG player catalog must use a readable two-column mobile grid"
+  /\.rtg-modal\s+\.rtg-catalog-grid\s*\{[^}]*grid-template-columns\s*:\s*repeat\(auto-fit\s*,\s*minmax\(76px\s*,\s*1fr\)\)\s*!important/s.test(css),
+  "RTG catalog should lay out the normal compact game cards without enlarging them"
 );
 assert(
-  /\.rtg-modal\s+\.rtg-catalog-grid\s+\.rtg-catalog-player-card\s*\{[^}]*width\s*:\s*min\(152px\s*,\s*100%\)\s*!important/s.test(css),
-  "RTG catalog cards must not be forced into the old 64/66px tiny format"
+  !/\.rtg-modal\s+\.rtg-catalog-grid\s+\.rtg-catalog-player-card\s+\.player-portrait-wrap/.test(css),
+  "RTG catalog must not override the normal game's compact-card portrait anatomy"
+);
+assert(
+  !css.includes("width:min(152px,100%)!important"),
+  "RTG catalog must not force oversized 152px cards"
+);
+assert(
+  /const extraClass = isCatalog\s*\?\s*\[\s*"rtg-catalog-player-card"/s.test(squadView),
+  "RTG catalog must reuse compactPlayerCardMarkup without RTG squad/picker sizing classes"
 );
 assert(
   /\.rtg-vending-machine-v4\s*\{[^}]*width\s*:\s*230px\s*!important/s.test(css),
