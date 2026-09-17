@@ -10,6 +10,7 @@ assert.match(html,/Beat Scatton/);
 assert.match(html,/Arnan Wheelie/);
 assert.match(html,/is-duel-winner/);
 assert.match(html,/is-duel-loser/);
+assert.match(html,/rtg-duel-result-vs/);
 assert.doesNotMatch(html,/rtg-duel-result-solo/);
 assert.doesNotMatch(html,/rtg-duel-result-meter/);
 assert.doesNotMatch(html,/VINCITORE/i);
