@@ -35,5 +35,13 @@ assert(
   /\.rtg-vending-globe-v4\s*\{[^}]*border-radius\s*:\s*48%\s+48%\s+44%\s+44%/s.test(css),
   "RTG vending globe should read as a real capsule-machine globe"
 );
+assert(
+  /\.rtg-match-shell\s+\.rtg-duel-result-banner\.is-win\s*\{[^}]*background\s*:\s*#d9efff\s*!important/s.test(css),
+  "A duel won by the user should use the blue success banner background"
+);
+assert(
+  /\.rtg-match-shell\s+\.rtg-duel-result-banner\.is-loss\s*\{[^}]*background\s*:\s*#ffe0dc\s*!important/s.test(css),
+  "A duel won by the opponent should use the red loss banner background"
+);
 
 console.log("rtg-final-visual-pass-test: PASS");
