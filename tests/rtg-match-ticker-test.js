@@ -11,7 +11,9 @@ const match={period:"first_half",score:{user:1,opponent:0},possession:"user",fie
  {minute:24,zone:"shot",actorSide:"user",actorPlayerId:"u1",opponentPlayerId:"o1",actorWon:true,manual:false,score:{user:1,opponent:0}}
 ]};
 const html=view.matchMarkup(match);
-assert.match(html,/Ultime azioni/i);
+assert.match(html,/Riepilogo azioni/i);
+assert.match(html,/match-sim-log/);
+assert.match(html,/match-event-kind/);
 assert.match(html,/Axel/);
 assert.match(html,/GOAL/i);
 assert.match(html,/24'/);

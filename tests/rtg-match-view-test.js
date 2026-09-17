@@ -8,7 +8,7 @@ const lineup=["GK","DF","DF","DF","DF","MF","MF","MF","FW","FW","FW"].map((r,i)=
 const opp=["GK","DF","DF","DF","DF","MF","MF","MF","FW","FW","FW"].map((r,i)=>p("o"+i,r));
 let match={period:"first_half",status:"active",score:{user:1,opponent:0},userSquad:{lineup},opponentSquad:{lineup:opp},moveUsesByPlayerId:{"user:u8":2},pendingEncounter:{userPlayerId:"u8",opponentPlayerId:"o1",actorPlayerId:"u8",opponentPlayerId:"o1",userBaseActionLabel:"Tiro",normalPreviewProbability:62.5,userMove:{name:"Fire Tornado",power:80},aiChoice:"move"}};
 const prematch=view.preMatchMarkup(match);
-assert.doesNotMatch(prematch,/Road to Glory XI|LA TUA SQUADRA/);
+assert.doesNotMatch(prematch,/Road to Glory XI/);assert.match(prematch,/La tua squadra/i);assert.match(prematch,/data-rtg-prematch-tab="user"/);
 assert.match(prematch,/data-rtg-prematch-player="u0"/);
 const detailCard={dataset:{rtgPrematchPlayer:"u0",side:"user"},addEventListener(_type,fn){this.fn=fn;}};
 const detailCalls=[];
@@ -16,9 +16,13 @@ const detailRoot={querySelector:()=>null,querySelectorAll:sel=>sel==="[data-rtg-
 view.bind(detailRoot,{onOpenPlayerDetails:(playerId,side)=>detailCalls.push([playerId,side])});
 detailCard.fn();
 assert.deepStrictEqual(detailCalls,[["u0","user"]]);
-const html=view.matchMarkup(match);assert.strictEqual((html.match(/data-rtg-field-player=/g)||[]).length,22);assert.match(html,/1 - 0/);assert.doesNotMatch(html,/<canvas|webgl/i);
-const duel=view.encounterMarkup(match,{userPlayer:lineup[8],opponentPlayer:opp[1]});assert.match(duel,/Tiro/);assert.match(duel,/Fire Tornado/);assert.match(duel,/2\/2/);assert.match(duel,/62\.5%/);assert.doesNotMatch(duel,/Scelta IA|aiChoice/i);
+const html=view.matchMarkup(match);assert.strictEqual((html.match(/data-rtg-field-player=/g)||[]).length,22);assert.match(html,/1 - 0/);assert.match(html,/data-rtg-abandon/);assert.match(html,/ABBANDONA/);assert.doesNotMatch(html,/<canvas|webgl/i);
+const halftime=view.halftimeMarkup({...match.userSquad,formationId:"4-3-3",bench:[]},{match:{...match,status:"halftime",period:"halftime",score:{user:1,opponent:0}}});
+assert.match(halftime,/FINE PRIMO TEMPO/i);
+assert.match(halftime,/INTERVALLO/i);
+assert.match(halftime,/data-rtg-half-confirm/);
+const duel=view.encounterMarkup(match,{userPlayer:lineup[8],opponentPlayer:opp[1]});assert.match(duel,/tira/i);assert.match(duel,/Fire Tornado/);assert.match(duel,/2\/2/);assert.match(duel,/62\.5%/);assert.doesNotMatch(duel,/Scelta IA|aiChoice/i);
 match.pendingEncounter={...match.pendingEncounter,userPlayerId:"u1",userBaseActionLabel:"Difesa",userMove:null};
-const noMove=view.encounterMarkup(match,{userPlayer:lineup[1],opponentPlayer:opp[8]});assert.match(noMove,/>Difesa</);assert.doesNotMatch(noMove,/data-rtg-choice="move"/);
+const noMove=view.encounterMarkup(match,{userPlayer:lineup[1],opponentPlayer:opp[8]});assert.match(noMove,/difende|DIFENDI/i);assert.doesNotMatch(noMove,/data-rtg-choice="move"/);
 const pen=view.penaltyMarkup({...match,shootout:{history:[],score:{user:0,opponent:0}}},{side:"user",canUseMove:true});for(const label of["Sinistra","Centro","Destra"])assert.match(pen,new RegExp(label));assert.match(pen,/data-rtg-penalty-move/);
 console.log("rtg-match-view-test: PASS");

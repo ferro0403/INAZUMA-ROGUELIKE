@@ -1,0 +1,749 @@
+/* Road to Glory — Duel UI derived from the approved Figma Ivory/Gold direction.
+   Scope is intentionally limited to RTG match/duel presentation. */
+
+.rtg-match-shell,
+.rtg-match-shell .rtg-match-overlay {
+  --rtg-duel-bg: #f4eedc;
+  --rtg-duel-surface: #fffdf7;
+  --rtg-duel-ink: #111214;
+  --rtg-duel-gold: #e5c65b;
+  --rtg-duel-gold-deep: #c9a227;
+  --rtg-duel-gold-soft: #f2e3af;
+  --rtg-duel-warm: #f8f2e5;
+  --rtg-duel-muted: #7a7164;
+  --rtg-duel-line: #d8cebc;
+  --rtg-duel-soft-muted: #b8ad9c;
+}
+
+/* Match header: the same black / ivory / gold hierarchy used by the Figma frame. */
+.rtg-match-shell .rtg-match-topbar {
+  background: var(--rtg-duel-ink) !important;
+  color: var(--rtg-duel-surface) !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+.rtg-match-shell .rtg-match-period small,
+.rtg-match-shell .rtg-match-period strong {
+  color: var(--rtg-duel-gold) !important;
+}
+.rtg-match-shell .rtg-match-period span,
+.rtg-match-shell .rtg-score-team b {
+  color: var(--rtg-duel-surface) !important;
+}
+.rtg-match-shell .rtg-score-capsule,
+.rtg-match-shell .rtg-match-score-main > strong {
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--rtg-duel-gold) !important;
+  color: var(--rtg-duel-ink) !important;
+  box-shadow: none !important;
+}
+
+/* Full-screen duel canvas. The duel itself becomes the screen instead of a dark-blue popup. */
+.rtg-match-shell .rtg-match-overlay {
+  place-items: start center !important;
+  overflow-y: auto;
+  padding: max(14px, env(safe-area-inset-top)) 16px max(24px, env(safe-area-inset-bottom)) !important;
+  background: rgba(244, 238, 220, .98) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.rtg-match-shell .rtg-match-overlay .rtg-duel-card,
+.rtg-match-shell .rtg-match-overlay .rtg-duel-card--revolution,
+.rtg-match-shell .rtg-match-overlay .rtg-duel-resolving,
+.rtg-match-shell .rtg-match-overlay .rtg-duel-result {
+  width: min(100%, 390px) !important;
+  max-width: 390px !important;
+  margin: 0 auto !important;
+  padding: 0 !important;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  color: var(--rtg-duel-ink) !important;
+  box-shadow: none !important;
+}
+
+/* Context / possession bar. */
+.rtg-match-shell .rtg-duel-contextbar {
+  min-height: 40px;
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin: 0 0 10px !important;
+  padding: 6px 10px 6px 8px !important;
+  border: 2px solid var(--rtg-duel-ink) !important;
+  border-radius: 8px !important;
+  background: var(--rtg-duel-surface) !important;
+  color: var(--rtg-duel-ink) !important;
+  box-shadow: none !important;
+}
+.rtg-match-shell .rtg-duel-contextbar > span {
+  color: var(--rtg-duel-muted) !important;
+  font-size: .63rem !important;
+  font-weight: 800 !important;
+}
+.rtg-match-shell .rtg-duel-possession {
+  min-height: 26px;
+  display: inline-grid;
+  place-items: center;
+  padding: 4px 14px !important;
+  border: 1px solid var(--rtg-duel-ink) !important;
+  border-radius: 999px !important;
+  background: var(--rtg-duel-gold) !important;
+  color: var(--rtg-duel-ink) !important;
+  box-shadow: none !important;
+  font-size: .52rem !important;
+  font-weight: 1000 !important;
+  letter-spacing: .01em !important;
+}
+
+/* Title block. */
+.rtg-match-shell .rtg-duel-story--minimal {
+  min-height: 48px !important;
+  display: block !important;
+  margin: 0 0 10px !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+.rtg-match-shell .rtg-duel-story--minimal .eyebrow {
+  margin: 0 0 2px !important;
+  color: var(--rtg-duel-gold-deep) !important;
+  font-size: .5rem !important;
+  font-weight: 1000 !important;
+  letter-spacing: .03em !important;
+}
+.rtg-match-shell .rtg-duel-story--minimal h2 {
+  margin: 0 !important;
+  color: var(--rtg-duel-ink) !important;
+  font-size: clamp(1.16rem, 5.1vw, 1.28rem) !important;
+  font-style: normal !important;
+  font-weight: 1000 !important;
+  line-height: 1.05 !important;
+  text-transform: uppercase !important;
+}
+
+/* Two-player VS board. */
+.rtg-match-shell .rtg-duel-versus-board,
+.rtg-match-shell .rtg-duel-versus-board--resolving,
+.rtg-match-shell .rtg-duel-versus-board--result {
+  width: 100%;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 6px !important;
+  margin: 0 0 10px !important;
+  overflow: visible !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.rtg-match-shell .rtg-duel-portrait-panel,
+.rtg-match-shell .rtg-duel-result-player {
+  position: relative !important;
+  min-width: 0;
+  min-height: 236px !important;
+  display: grid !important;
+  grid-template-rows: 20px minmax(0, 1fr) !important;
+  gap: 6px !important;
+  padding: 8px 8px 56px !important;
+  overflow: hidden !important;
+  isolation: isolate;
+  border: 2px solid var(--rtg-duel-ink) !important;
+  border-radius: 8px !important;
+  background: var(--rtg-duel-surface) !important;
+  color: var(--rtg-duel-ink) !important;
+  outline: 0 !important;
+  box-shadow: 0 4px 0 rgba(17,18,20,.12) !important;
+}
+
+.rtg-match-shell .rtg-duel-panel-heading {
+  min-height: 20px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 6px !important;
+  padding: 0 !important;
+}
+.rtg-match-shell .rtg-duel-panel-tag {
+  min-width: 42px;
+  min-height: 20px;
+  display: inline-grid !important;
+  place-items: center !important;
+  padding: 2px 9px !important;
+  border: 0 !important;
+  border-radius: 999px !important;
+  background: var(--rtg-duel-gold) !important;
+  color: var(--rtg-duel-ink) !important;
+  font-size: .5rem !important;
+  font-weight: 1000 !important;
+  line-height: 1 !important;
+  box-shadow: none !important;
+}
+.rtg-match-shell .rtg-duel-portrait-panel--opponent .rtg-duel-panel-tag,
+.rtg-match-shell .rtg-duel-versus-board--result .rtg-duel-portrait-panel--opponent .rtg-duel-panel-tag {
+  min-width: 72px;
+  background: var(--rtg-duel-ink) !important;
+  color: var(--rtg-duel-surface) !important;
+}
+
+.rtg-match-shell .rtg-duel-visual {
+  min-width: 0;
+  min-height: 0;
+  display: grid !important;
+  grid-template-rows: 126px auto !important;
+  gap: 6px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--rtg-duel-ink) !important;
+  box-shadow: none !important;
+}
+.rtg-match-shell .rtg-duel-render,
+.rtg-match-shell .rtg-duel-portrait-panel .rtg-duel-render,
+.rtg-match-shell .rtg-duel-versus-board--result .rtg-duel-render,
+.rtg-match-shell .rtg-duel-versus-board--resolving .rtg-duel-render {
+  width: 100% !important;
+  height: 126px !important;
+  min-height: 126px !important;
+  display: grid !important;
+  place-items: end center !important;
+  overflow: hidden !important;
+  border: 1px solid var(--rtg-duel-line) !important;
+  border-radius: 7px !important;
+  background: var(--rtg-duel-warm) !important;
+  box-shadow: none !important;
+}
+.rtg-match-shell .rtg-duel-render img {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center bottom !important;
+  filter: none !important;
+}
+.rtg-match-shell .rtg-duel-player-copy {
+  min-width: 0;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 1px !important;
+  color: var(--rtg-duel-ink) !important;
+  text-align: center !important;
+}
+.rtg-match-shell .rtg-duel-player-copy small {
+  color: var(--rtg-duel-muted) !important;
+  font-size: .5rem !important;
+  font-weight: 900 !important;
+}
+.rtg-match-shell .rtg-duel-player-copy strong {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--rtg-duel-ink) !important;
+  font-size: .74rem !important;
+  font-weight: 1000 !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Base action and special move become the bottom strip of the player card. */
+.rtg-match-shell .rtg-duel-portrait-panel:not(.has-special-move) .rtg-duel-action-chip {
+  position: absolute !important;
+  z-index: 4;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  min-height: 42px;
+  display: grid !important;
+  place-items: center !important;
+  padding: 15px 6px 5px !important;
+  border: 1px solid var(--rtg-duel-ink) !important;
+  border-radius: 7px !important;
+  background: var(--rtg-duel-warm) !important;
+  color: var(--rtg-duel-ink) !important;
+  font-size: .61rem !important;
+  font-weight: 1000 !important;
+  line-height: 1 !important;
+  text-align: center !important;
+  box-shadow: none !important;
+}
+.rtg-match-shell .rtg-duel-portrait-panel:not(.has-special-move) .rtg-duel-action-chip::before {
+  content: "AZIONE";
+  position: absolute;
+  top: 6px;
+  color: var(--rtg-duel-muted);
+  font-size: .42rem;
+  font-weight: 1000;
+}
+.rtg-match-shell .rtg-duel-portrait-panel.has-special-move .rtg-duel-action-chip {
+  display: none !important;
+}
+
+.rtg-match-shell .rtg-duel-active-move,
+.rtg-match-shell .rtg-duel-resolving-action.is-move,
+.rtg-match-shell .rtg-duel-result-move {
+  --category-accent: var(--rtg-duel-gold-deep) !important;
+  --category-soft: var(--rtg-duel-gold-soft) !important;
+  border-color: var(--rtg-duel-ink) !important;
+  background: var(--rtg-duel-gold-soft) !important;
+  color: var(--rtg-duel-ink) !important;
+}
+.rtg-match-shell .rtg-duel-active-move {
+  position: absolute !important;
+  z-index: 4;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 8px !important;
+  width: auto !important;
+  min-height: 42px !important;
+  display: grid !important;
+  place-items: center !important;
+  gap: 0 !important;
+  padding: 5px 6px !important;
+  border: 1px solid var(--rtg-duel-ink) !important;
+  border-radius: 7px !important;
+  box-shadow: none !important;
+  text-align: center !important;
+}
+.rtg-match-shell .rtg-duel-active-move small,
+.rtg-match-shell .rtg-duel-result-move small,
+.rtg-match-shell .rtg-duel-resolving-action.is-move small {
+  color: var(--rtg-duel-gold-deep) !important;
+  font-size: .43rem !important;
+}
+.rtg-match-shell .rtg-duel-active-move strong,
+.rtg-match-shell .rtg-duel-result-move strong,
+.rtg-match-shell .rtg-duel-resolving-action.is-move strong {
+  color: var(--rtg-duel-ink) !important;
+}
+.rtg-match-shell .rtg-duel-active-move em,
+.rtg-match-shell .rtg-duel-result-move em,
+.rtg-match-shell .rtg-duel-resolving-action.is-move em {
+  color: var(--rtg-duel-muted) !important;
+}
+
+/* Neutralize shot/defense/dribble/save category colors inside RTG duels. */
+.rtg-match-shell .rtg-duel-choice-card.is-move,
+.rtg-match-shell .rtg-duel-action-chip--move,
+.rtg-match-shell .rtg-duel-active-move,
+.rtg-match-shell .rtg-duel-resolving-action.is-move,
+.rtg-match-shell .rtg-duel-result-move,
+.rtg-match-shell .move-category--shot,
+.rtg-match-shell .move-category--defense,
+.rtg-match-shell .move-category--dribble,
+.rtg-match-shell .move-category--save {
+  --category-accent: var(--rtg-duel-gold-deep) !important;
+  --category-soft: var(--rtg-duel-gold-soft) !important;
+}
+
+/* VS mark. */
+.rtg-match-shell .rtg-duel-vs-core,
+.rtg-match-shell .rtg-duel-result-vs {
+  width: 36px !important;
+  min-width: 36px !important;
+  display: grid !important;
+  place-items: center !important;
+  gap: 2px !important;
+  overflow: visible !important;
+  color: var(--rtg-duel-muted) !important;
+}
+.rtg-match-shell .rtg-duel-vs-core small,
+.rtg-match-shell .rtg-duel-result-vs small {
+  color: var(--rtg-duel-muted) !important;
+  font-size: .38rem !important;
+  font-weight: 1000 !important;
+}
+.rtg-match-shell .rtg-duel-vs-core span,
+.rtg-match-shell .rtg-duel-result-vs span,
+.rtg-match-shell .rtg-duel-versus-board--result .rtg-duel-result-vs span {
+  width: 36px !important;
+  height: 36px !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 2px solid var(--rtg-duel-ink) !important;
+  border-radius: 50% !important;
+  background: var(--rtg-duel-gold) !important;
+  color: var(--rtg-duel-ink) !important;
+  box-shadow: none !important;
+  font-size: .75rem !important;
+  font-weight: 1000 !important;
+}
+
+/* Choice area. */
+.rtg-match-shell .rtg-duel-choice-section {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+.rtg-match-shell .rtg-duel-choice-head {
+  min-height: 20px;
+  display: flex !important;
+  align-items: flex-start !important;
+  justify-content: space-between !important;
+  gap: 8px !important;
+  margin: 0 0 8px !important;
+}
+.rtg-match-shell .rtg-duel-choice-head strong {
+  color: var(--rtg-duel-ink) !important;
+  font-size: .56rem !important;
+  font-weight: 1000 !important;
+  letter-spacing: 0 !important;
+}
+.rtg-match-shell .rtg-duel-choice-head span {
+  color: var(--rtg-duel-muted) !important;
+  font-size: .48rem !important;
+}
+.rtg-match-shell .rtg-duel-choice-grid {
+  display: grid !important;
+  gap: 8px !important;
+}
+.rtg-match-shell .rtg-duel-choice-card {
+  width: 100% !important;
+  min-height: 55px !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  align-items: center !important;
+  gap: 8px !important;
+  padding: 7px 10px !important;
+  overflow: hidden !important;
+  border: 2px solid var(--rtg-duel-ink) !important;
+  border-radius: 8px !important;
+  background: var(--rtg-duel-surface) !important;
+  color: var(--rtg-duel-ink) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.rtg-match-shell .rtg-duel-choice-card.is-move {
+  border-left: 2px solid var(--rtg-duel-ink) !important;
+  background: var(--rtg-duel-surface) !important;
+}
+.rtg-match-shell .rtg-duel-choice-card.is-selected {
+  border: 3px solid #c9a227 !important;
+  background: var(--rtg-duel-gold-soft) !important;
+  box-shadow: none !important;
+}
+.rtg-match-shell .rtg-choice-icon {
+  display: none !important;
+}
+.rtg-match-shell .rtg-choice-copy {
+  min-width: 0;
+  display: grid !important;
+  gap: 0 !important;
+}
+.rtg-match-shell .rtg-choice-copy small {
+  color: var(--rtg-duel-muted) !important;
+  font-size: .43rem !important;
+  font-weight: 1000 !important;
+}
+.rtg-match-shell .rtg-duel-choice-card.is-move .rtg-choice-copy small {
+  color: var(--rtg-duel-gold-deep) !important;
+}
+.rtg-match-shell .rtg-choice-copy strong {
+  color: var(--rtg-duel-ink) !important;
+  font-size: .75rem !important;
+  font-weight: 1000 !important;
+}
+.rtg-match-shell .rtg-choice-copy em {
+  color: var(--rtg-duel-muted) !important;
+  font-size: .48rem !important;
+}
+.rtg-match-shell .rtg-choice-probability {
+  min-width: 68px;
+  display: grid !important;
+  justify-items: end !important;
+  gap: 0 !important;
+}
+.rtg-match-shell .rtg-choice-probability small {
+  color: var(--rtg-duel-muted) !important;
+  font-size: .4rem !important;
+}
+.rtg-match-shell .rtg-choice-probability strong {
+  color: var(--rtg-duel-ink) !important;
+  font-size: .9rem !important;
+}
+.rtg-match-shell .rtg-choice-delta {
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--rtg-duel-gold-deep) !important;
+  font-size: .42rem !important;
+}
+.rtg-match-shell .rtg-choice-confirm {
+  grid-column: 1 / -1 !important;
+  margin: 0 !important;
+  padding: 2px 0 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--rtg-duel-gold-deep) !important;
+  font-size: .41rem !important;
+  font-weight: 1000 !important;
+  text-align: right !important;
+}
+
+/* Resolving state. */
+.rtg-match-shell .rtg-duel-resolving-head {
+  min-height: 58px;
+  display: grid !important;
+  align-content: center !important;
+  gap: 2px !important;
+  margin: 0 0 10px !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  color: var(--rtg-duel-ink) !important;
+}
+.rtg-match-shell .rtg-duel-resolving-head small {
+  color: var(--rtg-duel-gold-deep) !important;
+  font-size: .5rem !important;
+  font-weight: 1000 !important;
+}
+.rtg-match-shell .rtg-duel-resolving-head strong {
+  color: var(--rtg-duel-ink) !important;
+  font-size: 1.24rem !important;
+  font-style: normal !important;
+  font-weight: 1000 !important;
+}
+.rtg-match-shell .rtg-duel-resolving .rtg-duel-result-player {
+  padding-bottom: 56px !important;
+}
+.rtg-match-shell .rtg-duel-resolving-action {
+  position: absolute !important;
+  z-index: 4;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 8px !important;
+  width: auto !important;
+  min-height: 42px !important;
+  display: grid !important;
+  place-items: center !important;
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+  padding: 5px 6px !important;
+  border: 1px solid var(--rtg-duel-ink) !important;
+  border-radius: 7px !important;
+  background: var(--rtg-duel-warm) !important;
+  color: var(--rtg-duel-ink) !important;
+  box-shadow: none !important;
+  text-align: center !important;
+}
+.rtg-match-shell .rtg-duel-resolving-footer {
+  min-height: 80px !important;
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  align-items: center !important;
+  gap: 8px !important;
+  margin: 0 !important;
+  padding: 10px 12px !important;
+  overflow: hidden !important;
+  border: 2px solid var(--rtg-duel-ink) !important;
+  border-radius: 8px !important;
+  background: var(--rtg-duel-ink) !important;
+  color: var(--rtg-duel-surface) !important;
+  box-shadow: none !important;
+}
+.rtg-match-shell .rtg-duel-resolving-footer > span {
+  color: var(--rtg-duel-gold) !important;
+  font-size: .5rem !important;
+  font-weight: 1000 !important;
+}
+.rtg-match-shell .rtg-duel-resolving-footer b i {
+  background: var(--rtg-duel-gold) !important;
+}
+
+/* Result state — winner is gold, loser simply recedes. */
+.rtg-match-shell .rtg-duel-result-banner {
+  min-height: 76px !important;
+  display: grid !important;
+  align-content: center !important;
+  gap: 3px !important;
+  margin: 0 0 10px !important;
+  padding: 10px 12px !important;
+  border: 2px solid var(--rtg-duel-ink) !important;
+  border-radius: 8px !important;
+  background: var(--rtg-duel-surface) !important;
+  color: var(--rtg-duel-ink) !important;
+  box-shadow: 0 4px 0 rgba(17,18,20,.12) !important;
+}
+.rtg-match-shell .rtg-duel-result-banner.is-win,
+.rtg-match-shell .rtg-duel-result-banner.is-loss {
+  background: var(--rtg-duel-surface) !important;
+  color: var(--rtg-duel-ink) !important;
+}
+.rtg-match-shell .rtg-duel-result-status span {
+  color: var(--rtg-duel-gold-deep) !important;
+}
+.rtg-match-shell .rtg-duel-result-status em {
+  color: var(--rtg-duel-muted) !important;
+  opacity: 1 !important;
+}
+.rtg-match-shell .rtg-duel-result-banner > strong {
+  color: var(--rtg-duel-ink) !important;
+  font-size: clamp(1.1rem, 5vw, 1.2rem) !important;
+  font-style: normal !important;
+  line-height: 1.05 !important;
+}
+
+.rtg-match-shell .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-winner {
+  opacity: 1 !important;
+  filter: none !important;
+  transform: none !important;
+  border: 4px solid #c9a227 !important;
+  outline: 0 !important;
+  box-shadow: 0 0 10px 1px rgba(201,162,39,.18), 0 5px 0 rgba(17,18,20,.18) !important;
+}
+.rtg-match-shell .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser {
+  opacity: .58 !important;
+  filter: grayscale(.16) saturate(.72) !important;
+  transform: none !important;
+  border: 2px solid var(--rtg-duel-ink) !important;
+  outline: 0 !important;
+  box-shadow: 0 4px 0 rgba(17,18,20,.12) !important;
+}
+.rtg-match-shell .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser::after {
+  content: none !important;
+  display: none !important;
+}
+.rtg-match-shell .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser .rtg-duel-render,
+.rtg-match-shell .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser .rtg-duel-player-copy,
+.rtg-match-shell .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser .rtg-duel-panel-tag {
+  opacity: 1 !important;
+  filter: none !important;
+  transform: none !important;
+}
+
+.rtg-match-shell .rtg-duel-result-action,
+.rtg-match-shell .rtg-duel-result-move {
+  position: absolute !important;
+  z-index: 4;
+  left: 8px !important;
+  right: 8px !important;
+  bottom: 8px !important;
+  width: auto !important;
+  min-height: 42px !important;
+  display: grid !important;
+  place-items: center !important;
+  padding: 5px 6px !important;
+  border: 1px solid var(--rtg-duel-ink) !important;
+  border-radius: 7px !important;
+  background: var(--rtg-duel-warm) !important;
+  color: var(--rtg-duel-ink) !important;
+  box-shadow: none !important;
+  font-size: .61rem !important;
+  text-align: center !important;
+}
+.rtg-match-shell .rtg-duel-result-move {
+  background: var(--rtg-duel-gold-soft) !important;
+}
+
+.rtg-match-shell .rtg-duel-goal-confirm {
+  margin: 0 0 10px !important;
+  border: 2px solid var(--rtg-duel-ink) !important;
+  border-radius: 8px !important;
+  background: var(--rtg-duel-surface) !important;
+  color: var(--rtg-duel-ink) !important;
+  box-shadow: none !important;
+}
+.rtg-match-shell .rtg-duel-goal-confirm strong,
+.rtg-match-shell .rtg-duel-goal-confirm small,
+.rtg-match-shell .rtg-duel-goal-confirm em {
+  color: var(--rtg-duel-ink) !important;
+}
+.rtg-match-shell .rtg-goal-burst {
+  color: var(--rtg-duel-gold-deep) !important;
+}
+
+.rtg-match-shell .rtg-duel-continue {
+  width: 100% !important;
+  min-height: 52px !important;
+  margin: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  padding: 8px 12px 8px 14px !important;
+  border: 3px solid var(--rtg-duel-ink) !important;
+  border-radius: 8px !important;
+  background: var(--rtg-duel-gold) !important;
+  color: var(--rtg-duel-ink) !important;
+  box-shadow: 0 5px 0 rgba(17,18,20,.25) !important;
+  font-size: .76rem !important;
+  font-weight: 1000 !important;
+}
+.rtg-match-shell .rtg-duel-continue span,
+.rtg-match-shell .rtg-duel-continue b {
+  color: var(--rtg-duel-ink) !important;
+}
+
+/* Keep the approved palette even when old category-specific rules appear later in the legacy stylesheet. */
+.rtg-match-shell .rtg-duel-choice-card.move-category--shot,
+.rtg-match-shell .rtg-duel-choice-card.move-category--defense,
+.rtg-match-shell .rtg-duel-choice-card.move-category--dribble,
+.rtg-match-shell .rtg-duel-choice-card.move-category--save,
+.rtg-match-shell .rtg-duel-action-chip.move-category--shot,
+.rtg-match-shell .rtg-duel-action-chip.move-category--defense,
+.rtg-match-shell .rtg-duel-action-chip.move-category--dribble,
+.rtg-match-shell .rtg-duel-action-chip.move-category--save,
+.rtg-match-shell .rtg-duel-active-move.move-category--shot,
+.rtg-match-shell .rtg-duel-active-move.move-category--defense,
+.rtg-match-shell .rtg-duel-active-move.move-category--dribble,
+.rtg-match-shell .rtg-duel-active-move.move-category--save,
+.rtg-match-shell .rtg-duel-resolving-action.move-category--shot,
+.rtg-match-shell .rtg-duel-resolving-action.move-category--defense,
+.rtg-match-shell .rtg-duel-resolving-action.move-category--dribble,
+.rtg-match-shell .rtg-duel-resolving-action.move-category--save,
+.rtg-match-shell .rtg-duel-result-move.move-category--shot,
+.rtg-match-shell .rtg-duel-result-move.move-category--defense,
+.rtg-match-shell .rtg-duel-result-move.move-category--dribble,
+.rtg-match-shell .rtg-duel-result-move.move-category--save {
+  --category-accent: var(--rtg-duel-gold-deep) !important;
+  --category-soft: var(--rtg-duel-gold-soft) !important;
+}
+
+@media (max-width: 430px) {
+  .rtg-match-shell .rtg-match-overlay {
+    padding: max(12px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom)) !important;
+  }
+  .rtg-match-shell .rtg-match-overlay .rtg-duel-card,
+  .rtg-match-shell .rtg-match-overlay .rtg-duel-card--revolution,
+  .rtg-match-shell .rtg-match-overlay .rtg-duel-resolving,
+  .rtg-match-shell .rtg-match-overlay .rtg-duel-result {
+    width: 100% !important;
+  }
+  .rtg-match-shell .rtg-duel-versus-board,
+  .rtg-match-shell .rtg-duel-versus-board--resolving,
+  .rtg-match-shell .rtg-duel-versus-board--result {
+    grid-template-columns: minmax(0, 1fr) 36px minmax(0, 1fr) !important;
+    gap: 6px !important;
+  }
+  .rtg-match-shell .rtg-duel-portrait-panel,
+  .rtg-match-shell .rtg-duel-result-player {
+    min-height: 236px !important;
+    padding: 8px 8px 56px !important;
+  }
+  .rtg-match-shell .rtg-duel-render,
+  .rtg-match-shell .rtg-duel-portrait-panel .rtg-duel-render,
+  .rtg-match-shell .rtg-duel-versus-board--result .rtg-duel-render,
+  .rtg-match-shell .rtg-duel-versus-board--resolving .rtg-duel-render {
+    height: 126px !important;
+    min-height: 126px !important;
+  }
+}
+
+@media (max-width: 360px) {
+  .rtg-match-shell .rtg-match-overlay { padding-inline: 10px !important; }
+  .rtg-match-shell .rtg-duel-versus-board,
+  .rtg-match-shell .rtg-duel-versus-board--resolving,
+  .rtg-match-shell .rtg-duel-versus-board--result {
+    grid-template-columns: minmax(0, 1fr) 32px minmax(0, 1fr) !important;
+    gap: 4px !important;
+  }
+  .rtg-match-shell .rtg-duel-vs-core,
+  .rtg-match-shell .rtg-duel-result-vs,
+  .rtg-match-shell .rtg-duel-vs-core span,
+  .rtg-match-shell .rtg-duel-result-vs span {
+    width: 32px !important;
+    min-width: 32px !important;
+  }
+  .rtg-match-shell .rtg-duel-vs-core span,
+  .rtg-match-shell .rtg-duel-result-vs span { height: 32px !important; }
+}
