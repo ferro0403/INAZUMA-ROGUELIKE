@@ -160,7 +160,8 @@
   box-shadow:5px 6px 0 #111216!important;
 }
 
-/* RTG collection: two proper mobile columns instead of four 64px cards. */
+/* RTG collection: the cards are the exact compact game cards already used by the squad.
+   Only the catalog grid is arranged here; card anatomy stays owned by the shared renderer/styles. */
 .rtg-modal .rtg-player-catalog {
   width:min(92vw,560px)!important;
   max-width:560px!important;
@@ -185,56 +186,13 @@
 }
 .rtg-modal .rtg-catalog-grid {
   display:grid!important;
-  grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  gap:14px 12px!important;
+  grid-template-columns:repeat(4,minmax(0,84px))!important;
+  gap:12px 8px!important;
   align-items:start!important;
-  justify-items:center!important;
+  justify-content:center!important;
+  justify-items:stretch!important;
   padding:14px 0 4px!important;
 }
-.rtg-modal .rtg-catalog-grid .rtg-catalog-player-card {
-  width:min(152px,100%)!important;
-  max-width:152px!important;
-  min-width:0!important;
-  height:auto!important;
-  border-width:3px!important;
-  border-radius:4px!important;
-  box-shadow:3px 4px 0 #11121638!important;
-}
-.rtg-modal .rtg-catalog-grid .rtg-catalog-player-card .player-portrait-wrap {
-  width:100%!important;
-  height:108px!important;
-  padding:8px 7px 0!important;
-  overflow:hidden!important;
-}
-.rtg-modal .rtg-catalog-grid .rtg-catalog-player-card img.player-portrait {
-  width:100%!important;
-  height:100%!important;
-  object-fit:contain!important;
-  object-position:center bottom!important;
-  transform:none!important;
-}
-.rtg-modal .rtg-catalog-grid .rtg-catalog-player-card .player-info {
-  min-height:42px!important;
-  padding:7px 5px 8px!important;
-}
-.rtg-modal .rtg-catalog-grid .rtg-catalog-player-card .player-title strong {
-  height:auto!important;
-  min-height:28px;
-  font-size:12px!important;
-  line-height:1.15!important;
-  -webkit-line-clamp:2;
-}
-.rtg-modal .rtg-catalog-grid .rtg-catalog-player-card :is(.player-role,.player-overall) {
-  top:5px!important;
-  min-width:32px!important;
-  height:27px!important;
-  padding:4px 6px!important;
-  font-size:12px!important;
-  line-height:17px!important;
-  border:2px solid #111216!important;
-}
-.rtg-modal .rtg-catalog-grid .rtg-catalog-player-card .player-role { left:5px!important; background:#fff!important; color:#111216!important; }
-.rtg-modal .rtg-catalog-grid .rtg-catalog-player-card .player-overall { right:5px!important; background:#ffd21f!important; color:#111216!important; }
 .rtg-modal .rtg-picker-count { padding:12px 0 2px; text-align:center; font-size:13px; color:#66645d; }
 
 /* Vending: turn the existing semantic markup into a real capsule machine. */
@@ -394,9 +352,7 @@
 @media (max-width:430px) {
   .rtg-squad-shell .squad-field-panel,
   .rtg-squad-shell .squad-bench-panel { box-shadow:4px 5px 0 #111216!important; }
-  .rtg-modal .rtg-catalog-grid { gap:12px 10px!important; }
-  .rtg-modal .rtg-catalog-grid .rtg-catalog-player-card { width:min(152px,100%)!important; max-width:152px!important; }
-  .rtg-modal .rtg-catalog-grid .rtg-catalog-player-card .player-portrait-wrap { height:102px!important; }
+  .rtg-modal .rtg-catalog-grid { gap:10px 6px!important; }
   .rtg-vending-machine-v4 { width:218px!important; }
   .rtg-vending-globe-v4 { height:202px!important; }
   .rtg-vending-globe-v4 .rtg-ball { width:35px!important; height:35px!important; }
