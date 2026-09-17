@@ -2,22 +2,22 @@
    Loaded after the legacy RTG sheet. All rules are scoped to RTG surfaces;
    shared player rarity colours and canonical card markup remain authoritative. */
 :is(.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal,.rtg-formation-modal) {
-  --rtg-ink:#191a1c; --rtg-paper:#f8f4e9; --rtg-paper-2:#eee7d7;
-  --rtg-gold:#d9b85f; --rtg-yellow:#e7c76d; --rtg-line:#d3c9b2;
+  --rtg-ink:#111216; --rtg-paper:#fffdf7; --rtg-paper-2:#f1f1ed;
+  --rtg-gold:#ffd21f; --rtg-yellow:#ffd21f; --rtg-line:#d8d8d2;
   --rtg-muted:#6a655b;
   color:var(--rtg-ink);
 }
 :is(.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell) {
-  min-height:100dvh; background:#f1ecdf!important;
+  min-height:100dvh; background:#fafaf7!important;
   background-image:radial-gradient(ellipse at 80% 0,rgba(219,188,112,.18),transparent 50%)!important;
 }
 :is(.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal,.rtg-formation-modal) .btn {
   min-height:44px; border:1px solid #bdb4a2!important; border-radius:8px!important;
-  background:#faf7ef!important; color:#252522!important; box-shadow:none!important;
+  background:#ffffff!important; color:#252522!important; box-shadow:none!important;
   font-weight:800; letter-spacing:.02em; text-transform:none; transform:none!important;
 }
 :is(.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .btn-yellow {
-  background:#e6c66e!important; border-color:#c5a148!important; color:#201e18!important;
+  background:#ffd21f!important; border-color:#c5a148!important; color:#201e18!important;
   box-shadow:0 2px 0 #b89747!important;
 }
 :is(.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) button:disabled { opacity:.5; cursor:not-allowed; }
@@ -27,10 +27,10 @@
 :is(.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell) .eyebrow { color:#7b693e; font-size:10px; letter-spacing:.13em; }
 .rtg-main-topbar,.rtg-squad-topbar,.rtg-prematch-topbar {
   position:relative!important; top:auto!important; display:flex!important; align-items:center; gap:14px;
-  min-height:76px!important; padding:16px 24px!important; color:#f8f4e9!important;
-  background:#191a1c!important; border:0!important; border-bottom:3px solid #d9b85f!important; box-shadow:none!important;
+  min-height:76px!important; padding:16px 24px!important; color:#fffdf7!important;
+  background:#111216!important; border:0!important; border-bottom:3px solid #ffd21f!important; box-shadow:none!important;
 }
-.rtg-main-topbar .brand,.rtg-squad-topbar h1,.rtg-prematch-topbar h1 { color:#f8f4e9!important; font-size:22px!important; line-height:1.1; }
+.rtg-main-topbar .brand,.rtg-squad-topbar h1,.rtg-prematch-topbar h1 { color:#fffdf7!important; font-size:22px!important; line-height:1.1; }
 .rtg-main-topbar .eyebrow,.rtg-squad-topbar .eyebrow,.rtg-prematch-title small { color:#dcc27e!important; }
 .rtg-main-topbar .status-strip { margin-left:auto; gap:6px; }
 .rtg-main-topbar .status-pill { border:1px solid #5c5340; border-radius:6px; padding:7px 10px; background:#272724; color:#f2dfaf; font-size:12px; }
@@ -39,7 +39,7 @@
 .rtg-squad-topbar .squad-topbar-stats { margin-left:auto; border:0; color:#f7edda; background:transparent; }
 .rtg-squad-topbar .squad-topbar-stats span { border:1px solid #544d3c; background:#242423; border-radius:7px; padding:7px 12px; }
 .rtg-squad-topbar .squad-topbar-stats small { color:#cdbb8c; }
-.rtg-bottom-nav.bottom-nav { width:min(480px,calc(100% - 24px)); bottom:calc(10px + env(safe-area-inset-bottom)); left:50%; right:auto; transform:translateX(-50%); border:1px solid #383832!important; border-radius:12px!important; background:#20211f!important; padding:5px!important; box-shadow:0 5px 22px #191a1c35!important; min-height:58px; }
+.rtg-bottom-nav.bottom-nav { width:min(480px,calc(100% - 24px)); bottom:calc(10px + env(safe-area-inset-bottom)); left:50%; right:auto; transform:translateX(-50%); border:1px solid #383832!important; border-radius:12px!important; background:#20211f!important; padding:5px!important; box-shadow:0 5px 22px #11121635!important; min-height:58px; }
 .rtg-bottom-nav.bottom-nav button { color:#c2bcae!important; background:transparent!important; border:0!important; box-shadow:none!important; border-radius:8px!important; min-height:48px; }
 .rtg-bottom-nav.bottom-nav button.active { color:#f2d88c!important; background:#39372d!important; }
 .rtg-bottom-nav.bottom-nav button::after { display:none!important; }
@@ -49,7 +49,7 @@
 .rtg-squad-shell .squad-content { width:min(1100px,100%)!important; max-width:1100px!important; padding:20px 24px 110px!important; margin:0 auto; }
 .rtg-squad-help { display:flex; justify-content:space-between; gap:8px; margin:0 0 12px; color:#6a655b; font-size:11px; }
 .rtg-squad-shell .squad-workspace { display:grid!important; grid-template-columns:minmax(0,1.45fr) minmax(280px,1fr)!important; gap:20px!important; align-items:start; }
-.rtg-squad-shell .squad-field-panel,.rtg-squad-shell .squad-bench-panel { min-width:0; padding:14px!important; background:#faf7ee!important; border:1px solid #d3c9b2!important; border-radius:12px!important; box-shadow:0 3px 12px #24201908!important; }
+.rtg-squad-shell .squad-field-panel,.rtg-squad-shell .squad-bench-panel { min-width:0; padding:14px!important; background:#ffffff!important; border:1px solid #d8d8d2!important; border-radius:12px!important; box-shadow:0 3px 12px #24201908!important; }
 .rtg-squad-section-head { margin:0 0 12px!important; padding:0!important; border:0!important; }
 .rtg-squad-section-head h2 { font-size:13px!important; letter-spacing:.08em; text-transform:uppercase; color:#332f25!important; }
 .rtg-squad-section-head .squad-field-formation,.rtg-squad-section-head .squad-bench-count { border:1px solid #d8ceb7; border-radius:5px; color:#75613a; background:#f0e9d7; padding:4px 8px; font-size:11px; transform:none; }
@@ -69,11 +69,11 @@
 .rtg-squad-card-slot { min-width:0!important; width:100%!important; max-width:84px; display:flex!important; flex-direction:column!important; align-items:stretch!important; gap:4px!important; }
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card {
   position:relative!important; width:100%!important; min-width:0!important; max-width:84px!important; height:auto!important; min-height:0!important;
-  margin:0!important; padding:0!important; border-radius:7px!important; overflow:hidden!important; transform:none!important;
+  margin:0!important; padding:0!important; border-radius:3px!important; overflow:hidden!important; transform:none!important;
   box-sizing:border-box; box-shadow:0 2px 4px #0003!important;
 }
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card .player-portrait-wrap {
-  width:100%!important; height:auto!important; min-height:0!important; aspect-ratio:1/1; padding:9px 3px 0!important; overflow:hidden!important; margin:0!important;
+  width:100%!important; height:62px!important; min-height:0!important; aspect-ratio:auto; padding:4px 3px 0!important; overflow:hidden!important; margin:0!important;
 }
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card img.player-portrait {
   width:100%!important; height:100%!important; object-fit:contain!important; object-position:center bottom!important; transform:none!important; max-width:100%!important; min-height:0!important;
@@ -91,40 +91,40 @@
 .rtg-squad-shell .squad-bench-list { display:grid!important; grid-template-columns:repeat(4,minmax(0,84px))!important; gap:8px!important; justify-content:center; padding:0!important; }
 .rtg-squad-shell .squad-management-actions { display:grid!important; grid-template-columns:1fr 1fr!important; gap:8px!important; width:100%; }
 .rtg-squad-shell .squad-management-actions .btn { font-size:12px!important; padding:10px!important; }
-.rtg-squad-next { width:100%; border:1px solid #d3c9b2; border-radius:12px; background:#faf7ef; padding:16px; }
+.rtg-squad-next { width:100%; border:1px solid #d8d8d2; border-radius:12px; background:#ffffff; padding:16px; }
 .rtg-squad-next>.eyebrow { margin:0 0 5px; }.rtg-squad-next>h2 { margin:0 0 12px; font-size:23px; color:#25251f; }
 .rtg-squad-next .rtg-requirements { padding:0!important; border:0!important; background:none!important; box-shadow:none!important; }
 .rtg-squad-next .rtg-requirements>.eyebrow,.rtg-squad-next .rtg-requirements>h3 { display:none; }
 .rtg-squad-next>.btn { margin-top:10px; width:100%; }
-.rtg-squad-savebar { display:flex; justify-content:space-between; align-items:center; gap:12px; width:100%; padding:12px 0; border-top:1px solid #d3c9b2; }
+.rtg-squad-savebar { display:flex; justify-content:space-between; align-items:center; gap:12px; width:100%; padding:12px 0; border-top:1px solid #d8d8d2; }
 .rtg-squad-savebar>span { font-size:11px; color:#6a655b; }.rtg-squad-savebar .btn { font-size:12px; padding:12px 16px; }
 /* Campaign: clear next action and a calm, vertical route with real team emblems. */
 .rtg-run-content { width:min(760px,100%)!important; max-width:760px!important; padding:24px 20px 110px!important; gap:18px!important; }
-.rtg-journey-summary { position:relative; display:flex; align-items:center; justify-content:space-between; gap:18px; padding:24px; background:#22231f; color:#f8f4e9; border-radius:12px; overflow:hidden; }
-.rtg-journey-summary .eyebrow { color:#d9bf7c!important; margin:0 0 7px; }.rtg-journey-summary h1 { font-size:30px; color:#f8f4e9; margin:0 0 6px; letter-spacing:-.035em; }
+.rtg-journey-summary { position:relative; display:flex; align-items:center; justify-content:space-between; gap:18px; padding:24px; background:#22231f; color:#fffdf7; border-radius:12px; overflow:hidden; }
+.rtg-journey-summary .eyebrow { color:#d9bf7c!important; margin:0 0 7px; }.rtg-journey-summary h1 { font-size:30px; color:#fffdf7; margin:0 0 6px; letter-spacing:-.035em; }
 .rtg-journey-summary p:not(.eyebrow) { font-size:12px; color:#c8c1b1; margin:0; }.rtg-journey-summary .btn { flex-shrink:0; font-size:12px; }
 .rtg-journey-progress { position:absolute; bottom:0; left:0; width:100%; height:4px; background:#494838; }.rtg-journey-progress span { display:block; height:100%; background:#dfc271; }
-.rtg-run-command { grid-template-columns:1fr auto!important; padding:16px!important; border:1px solid #d3c9b2!important; border-radius:10px!important; box-shadow:none!important; background:#faf7ef!important; gap:12px!important; }
+.rtg-run-command { grid-template-columns:1fr auto!important; padding:16px!important; border:1px solid #d8d8d2!important; border-radius:10px!important; box-shadow:none!important; background:#ffffff!important; gap:12px!important; }
 .rtg-run-command h2 { font-size:16px!important; text-transform:none!important; margin:2px 0 5px!important; }.rtg-run-command .muted { font-size:11px; }.rtg-run-command .eyebrow { margin:0; font-size:9px; }
 .rtg-run-command .rtg-vending-button { padding:10px!important; font-size:11px!important; min-height:44px!important; }
-.rtg-map { gap:24px!important; }.rtg-map-block { padding:16px!important; background:#f9f5e9!important; border:1px solid #d3c9b2!important; border-radius:12px!important; box-shadow:none!important; }
+.rtg-map { gap:24px!important; }.rtg-map-block { padding:16px!important; background:#fffdf7!important; border:1px solid #d8d8d2!important; border-radius:12px!important; box-shadow:none!important; }
 .rtg-route-heading { margin:0!important; padding:0 0 14px!important; border-bottom:1px solid #dcd2bc!important; }
 .rtg-route-heading h2 { font-size:20px!important; text-transform:none!important; letter-spacing:-.025em; }.rtg-route-count { background:#eee6d3!important; color:#7f6b40!important; border:0!important; border-radius:5px; transform:none!important; font-size:10px; }
-.rtg-map-block .route-map.rtg-route-stage { height:var(--rtg-route-height)!important; min-height:0!important; border:0!important; background:radial-gradient(ellipse at center,#e4dcc5 0,transparent 68%),#f9f5e9!important; filter:none!important; box-shadow:none!important; overflow:visible!important; margin:0!important; }
+.rtg-map-block .route-map.rtg-route-stage { height:var(--rtg-route-height)!important; min-height:0!important; border:0!important; background:radial-gradient(ellipse at center,#e4dcc5 0,transparent 68%),#fffdf7!important; filter:none!important; box-shadow:none!important; overflow:visible!important; margin:0!important; }
 .rtg-map-lines line { stroke:#b0a485!important; stroke-width:1!important; stroke-dasharray:2 2!important; }
 .rtg-route-node { width:120px!important; background:transparent!important; border:0!important; box-shadow:none!important; overflow:visible!important; }
 .rtg-route-node .node-icon { width:64px!important; height:64px!important; border-radius:16px!important; background:#fffdf5!important; border:1px solid #b8aa89!important; box-shadow:0 3px 0 #c4b99b!important; color:#9e8544!important; transform:none!important; }
 .rtg-route-node .node-icon img { width:76%!important; height:76%!important; object-fit:contain; filter:none!important; }
 .rtg-route-node--secondary .node-icon { width:42px!important; height:42px!important; border-radius:50%!important; font-size:20px!important; }
-.rtg-route-node .node-label { font-size:11px!important; color:#343329!important; background:#f9f5e9!important; border:0!important; border-radius:4px; box-shadow:none!important; padding:4px 5px!important; text-shadow:none!important; margin-top:7px!important; font-weight:800; white-space:normal; }
+.rtg-route-node .node-label { font-size:11px!important; color:#343329!important; background:#fffdf7!important; border:0!important; border-radius:4px; box-shadow:none!important; padding:4px 5px!important; text-shadow:none!important; margin-top:7px!important; font-weight:800; white-space:normal; }
 .rtg-node-status { display:block; color:#7b725d; font-size:8px; font-weight:700; letter-spacing:.08em; margin-top:2px; }
 .rtg-route-node.reachable .node-icon { border:2px solid #a48635!important; background:#f5e4ad!important; box-shadow:0 0 0 5px #dfc16c33,0 4px 0 #b49a56!important; animation:none!important; }
 .rtg-route-node.reachable .rtg-node-status { color:#6c4e0c; font-weight:900; }
 .rtg-route-node.completed .node-icon { background:#ece8d9!important; border-color:#9d9c7e!important; }
 .rtg-route-node.locked { opacity:.48!important; filter:grayscale(.65)!important; }
-.rtg-node-checkpoint { background:#22251f!important; color:#ecd08a!important; border:1px solid #d9b85f!important; border-radius:5px!important; width:21px!important; height:21px!important; font-size:13px!important; }
+.rtg-node-checkpoint { background:#22251f!important; color:#ecd08a!important; border:1px solid #ffd21f!important; border-radius:5px!important; width:21px!important; height:21px!important; font-size:13px!important; }
 /* Modals, requirements and compact pickers. */
-.modal.rtg-modal,.modal.rtg-formation-modal { width:min(680px,calc(100vw - 24px))!important; max-width:680px!important; max-height:calc(100dvh - 32px)!important; padding:20px!important; border:1px solid #c5b897!important; border-radius:14px!important; background:#f8f4e9!important; color:#292820!important; box-shadow:0 16px 70px #0004!important; }
+.modal.rtg-modal,.modal.rtg-formation-modal { width:min(680px,calc(100vw - 24px))!important; max-width:680px!important; max-height:calc(100dvh - 32px)!important; padding:20px!important; border:1px solid #c5b897!important; border-radius:14px!important; background:#fffdf7!important; color:#292820!important; box-shadow:0 16px 70px #0004!important; }
 .rtg-modal :is(.rtg-paper-modal,.rtg-squad-picker,.rtg-player-catalog) { width:100%!important; max-width:100%!important; color:#292820!important; background:transparent!important; }
 .rtg-modal .modal-head { border-bottom:1px solid #d9ceb5!important; padding-bottom:12px; margin-bottom:12px; }
 .rtg-modal .modal-head h2 { color:#292820!important; font-size:24px!important; text-transform:none!important; }.rtg-modal .muted { color:#6a655b!important; font-size:12px; }
@@ -133,45 +133,45 @@
 .rtg-modal .rtg-picker-role-badge { display:none; }.rtg-modal .rtg-picker-source-filters { display:flex; gap:6px; }
 .rtg-modal .rtg-picker-filter { border:1px solid #c8bda5; background:#f3eddf; color:#655b44; border-radius:6px; min-height:36px; padding:6px 12px; font-size:11px; }
 .rtg-modal .rtg-picker-filter.active { background:#262820!important; color:#efd996!important; border-color:#262820; }
-.modal.rtg-squad-picker-modal .rtg-picker-grid,.rtg-modal .rtg-catalog-grid { display:grid!important; grid-template-columns:repeat(auto-fill,minmax(72px,1fr))!important; gap:16px 10px!important; justify-items:center; padding:14px 0!important; }
-.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card,.rtg-modal .rtg-catalog-grid .rtg-squad-player-card,.rtg-modal .rtg-picker-quick-strip .rtg-squad-player-card { width:78px!important; max-width:78px!important; min-width:0!important; min-height:0!important; }
-.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card .player-portrait-wrap { height:78px!important; padding:9px 3px 0!important; }
+.modal.rtg-squad-picker-modal .rtg-picker-grid,.rtg-modal .rtg-catalog-grid { display:grid!important; grid-template-columns:repeat(auto-fill,minmax(60px,1fr))!important; gap:16px 10px!important; justify-items:center; padding:14px 0!important; }
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card,.rtg-modal .rtg-catalog-grid .rtg-squad-player-card,.rtg-modal .rtg-picker-quick-strip .rtg-squad-player-card { width:66px!important; max-width:66px!important; min-width:0!important; min-height:0!important; }
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card .player-portrait-wrap { height:48px!important; padding:4px 3px 0!important; }
 .rtg-modal .rtg-picker-quick-bench { border:1px solid #d6c69b; border-radius:8px; background:#eee5cc; box-shadow:none; }
-.rtg-requirements { border:1px solid #d7ccb3!important; border-radius:9px!important; background:#f7f2e5!important; box-shadow:none!important; padding:14px!important; }
+.rtg-requirements { border:1px solid #d7ccb3!important; border-radius:9px!important; background:#fffdf7!important; box-shadow:none!important; padding:14px!important; }
 .rtg-requirements .rtg-requirement { padding:9px 0!important; border:0!important; border-bottom:1px solid #ddd4bf!important; background:transparent!important; color:#494435!important; font-size:11px!important; }
 .rtg-requirement i { font-style:normal; display:inline-grid; place-items:center; width:16px; height:16px; border-radius:50%; font-size:11px; background:#e1e6d8; color:#466042; }.rtg-requirement.bad i { color:#94442d; background:#f1ddd0; }
 .rtg-requirement.bad strong { color:#97442e; }.rtg-requirements-note { margin:10px 0 0; color:#776e5c; font-size:10px; line-height:1.6; }
 /* Match: one visual language around the green playing surface. */
 .rtg-prematch-content,.rtg-match-content { width:min(760px,100%)!important; max-width:760px!important; margin:auto!important; padding:18px!important; }
-.rtg-prematch-matchup { display:grid!important; grid-template-columns:1fr 40px 1fr!important; background:#fbf8ef!important; border:1px solid #d0c6af!important; border-radius:12px!important; box-shadow:none!important; padding:20px 12px!important; }
+.rtg-prematch-matchup { display:grid!important; grid-template-columns:1fr 40px 1fr!important; background:#ffffff!important; border:1px solid #d0c6af!important; border-radius:12px!important; box-shadow:none!important; padding:20px 12px!important; }
 .rtg-matchup-team { background:transparent!important; border:0!important; box-shadow:none!important; padding:0!important; }
 .rtg-matchup-team-copy strong { color:#262720!important; font-size:18px!important; }.rtg-matchup-team-copy small { color:#71664d!important; }
 .rtg-matchup-emblem { width:66px!important; height:66px!important; background:none!important; border:0!important; box-shadow:none!important; }.rtg-matchup-emblem img { max-height:100%; object-fit:contain; }
 .rtg-matchup-vs { color:#aa8c42!important; font-size:20px!important; background:none!important; box-shadow:none!important; border:0!important; transform:none!important; }
-.rtg-prematch-tactical,.rtg-live-formation-panel { padding:12px!important; border:1px solid #cec3aa!important; border-radius:12px!important; background:#faf7ed!important; box-shadow:none!important; }
+.rtg-prematch-tactical,.rtg-live-formation-panel { padding:12px!important; border:1px solid #cec3aa!important; border-radius:12px!important; background:#ffffff!important; box-shadow:none!important; }
 .rtg-prematch-tabs,.rtg-live-team-tabs { background:#eae3d1!important; border:0!important; border-radius:7px!important; padding:4px!important; gap:4px!important; margin-bottom:12px!important; }
 :is(.rtg-prematch-tabs,.rtg-live-team-tabs) button { padding:10px 8px!important; min-height:42px!important; color:#6b6048!important; background:transparent!important; border:0!important; border-radius:5px!important; box-shadow:none!important; font-size:12px!important; }
 :is(.rtg-prematch-tabs,.rtg-live-team-tabs) button.active { background:#282a23!important; color:#f3df9d!important; }.rtg-live-team-tabs button b,.rtg-prematch-tabs button b { color:inherit!important; }
 .rtg-match-squad-field-shell { border:0!important; padding:0!important; background:none!important; box-shadow:none!important; }
 .rtg-prematch-field-wrap,.rtg-live-field-wrap { background:none!important; border:0!important; padding:0!important; box-shadow:none!important; }
 .rtg-prematch-start { width:100%; font-size:15px!important; }.rtg-prematch-start small { color:#675624!important; }
-.rtg-match-scoreboard.rtg-match-topbar { position:relative!important; display:grid!important; grid-template-columns:70px minmax(0,1fr) 50px!important; gap:8px!important; min-height:84px!important; padding:12px 18px!important; background:#1f211d!important; border:0!important; border-bottom:3px solid #d9b85f!important; box-shadow:none!important; }
+.rtg-match-scoreboard.rtg-match-topbar { position:relative!important; display:grid!important; grid-template-columns:70px minmax(0,1fr) 50px!important; gap:8px!important; min-height:84px!important; padding:12px 18px!important; background:#1f211d!important; border:0!important; border-bottom:3px solid #ffd21f!important; box-shadow:none!important; }
 .rtg-match-scoreboard .rtg-match-period { background:none!important; padding:0!important; border:0!important; box-shadow:none!important; }.rtg-match-period small { color:#d7ba72!important; }.rtg-match-period span { color:#c8c1af!important; font-size:9px!important; }.rtg-match-clock { font-size:28px!important; color:#f6efd9!important; }
 .rtg-match-score-main { display:grid!important; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important; gap:10px!important; align-items:center; }.rtg-score-team { min-width:0; flex-direction:column!important; gap:4px!important; }.rtg-score-team b { font-size:10px!important; color:#f1ecdd!important; text-transform:none!important; line-height:1.1; }.rtg-score-emblem { width:26px!important; height:26px!important; object-fit:contain; }
 .rtg-score-capsule { min-width:70px!important; padding:8px 12px!important; font-size:26px!important; background:#33372b!important; color:#f0d080!important; border:1px solid #5d624c!important; border-radius:7px!important; box-shadow:none!important; transform:none!important; }
 .rtg-match-scoreboard .rtg-abandon-button { min-height:36px!important; height:36px!important; width:36px!important; margin:0!important; padding:0!important; align-self:center; background:#37332b!important; border:1px solid #6b5a43!important; color:#d8c9aa!important; }.rtg-abandon-button b { display:none!important; }.rtg-abandon-button span { background:none!important; color:inherit!important; border:0!important; font-size:20px!important; }
-.rtg-live-commandbar { max-width:724px!important; margin:14px auto 0!important; padding:10px 0!important; border:1px solid #d8cdb4!important; border-radius:9px!important; background:#f9f5e9!important; box-shadow:none!important; gap:0!important; grid-template-columns:1fr 1fr 1fr!important; }
+.rtg-live-commandbar { max-width:724px!important; margin:14px auto 0!important; padding:10px 0!important; border:1px solid #d8cdb4!important; border-radius:9px!important; background:#fffdf7!important; box-shadow:none!important; gap:0!important; grid-template-columns:1fr 1fr 1fr!important; }
 .rtg-live-command { padding:0 12px!important; border-right:1px solid #d5cab0!important; background:none!important; }.rtg-live-command:last-child { border-right:0!important; }.rtg-live-command-index,.rtg-live-command em,.rtg-live-command>i { display:none!important; }.rtg-live-command small { color:#857650!important; font-size:8px!important; }.rtg-live-command strong { color:#383b2a!important; font-size:11px!important; }
 .rtg-match-overlay { background:#171a16b8!important; backdrop-filter:blur(5px); padding:16px!important; }
 .rtg-match-overlay:empty { display:none!important; }
-.rtg-match-shell.rtg-match-revolution .rtg-match-overlay>.panel { width:min(640px,100%)!important; max-width:640px!important; max-height:calc(100dvh - 32px)!important; overflow-y:auto!important; overscroll-behavior:contain; border:1px solid #c7b793!important; border-radius:14px!important; padding:18px!important; background:#f8f4e9!important; color:#27271f!important; box-shadow:0 18px 70px #0005!important; }
+.rtg-match-shell.rtg-match-revolution .rtg-match-overlay>.panel { width:min(640px,100%)!important; max-width:640px!important; max-height:calc(100dvh - 32px)!important; overflow-y:auto!important; overscroll-behavior:contain; border:1px solid #c7b793!important; border-radius:14px!important; padding:18px!important; background:#fffdf7!important; color:#27271f!important; box-shadow:0 18px 70px #0005!important; }
 /* Duel panels keep rarity accents; no full-card black overlay or tilted bars. */
-.rtg-match-shell .rtg-duel-card { --rtg-ink:#24271f; --rtg-paper:#f8f4e9; }
+.rtg-match-shell .rtg-duel-card { --rtg-ink:#24271f; --rtg-paper:#fffdf7; }
 .rtg-duel-card .rtg-duel-contextbar { border:0!important; border-bottom:1px solid #d5cab1!important; background:transparent!important; padding:0 0 10px!important; box-shadow:none!important; }
 .rtg-duel-card .rtg-duel-possession { font-size:10px!important; color:#746039!important; background:#eee4cb!important; border:0!important; border-radius:5px!important; padding:5px 8px!important; }
 .rtg-duel-card .rtg-duel-story { margin:12px 0!important; padding:0!important; background:none!important; border:0!important; box-shadow:none!important; }.rtg-duel-story h2 { font-size:22px!important; color:#22251e!important; }.rtg-duel-story .eyebrow { font-size:9px!important; }
 .rtg-duel-versus-board { display:grid!important; grid-template-columns:minmax(0,1fr) 32px minmax(0,1fr)!important; gap:8px!important; align-items:stretch!important; padding:4px!important; background:none!important; border:0!important; box-shadow:none!important; overflow:hidden!important; }
-.rtg-duel-versus-board .rtg-duel-portrait-panel { min-width:0!important; border:1px solid #cabd9e!important; border-top:4px solid var(--duel-rarity-accent,#c4ad72)!important; border-radius:9px!important; background:#eee8d8!important; box-shadow:none!important; padding:8px!important; overflow:hidden!important; isolation:isolate; transform:none!important; }
+.rtg-duel-versus-board .rtg-duel-portrait-panel { min-width:0!important; border:1px solid #cabd9e!important; border-top:4px solid var(--duel-rarity-accent,#c4ad72)!important; border-radius:9px!important; background:#ffffff!important; box-shadow:none!important; padding:8px!important; overflow:hidden!important; isolation:isolate; transform:none!important; }
 .rtg-duel-portrait-panel::before,.rtg-duel-portrait-panel::after { display:none!important; }
 .rtg-duel-panel-heading { display:flex!important; flex-wrap:wrap; gap:4px!important; margin:0!important; padding:0!important; background:none!important; border:0!important; }
 .rtg-duel-panel-tag { position:relative!important; background:none!important; color:#736348!important; border:0!important; box-shadow:none!important; padding:0!important; font-size:9px!important; }
@@ -185,7 +185,7 @@
 .rtg-duel-vs-core small,.rtg-duel-result-vs small { display:none!important; }.rtg-duel-vs-core span,.rtg-duel-result-vs span { width:auto!important; height:auto!important; background:none!important; border:0!important; box-shadow:none!important; color:#927632!important; font-size:16px!important; transform:none!important; }
 .rtg-duel-choice-head { margin:14px 0 8px!important; gap:6px; flex-wrap:wrap; }.rtg-duel-choice-head strong { color:#5d5034!important; font-size:10px!important; }.rtg-duel-choice-head span { color:#766d59!important; font-size:9px!important; }
 .rtg-duel-choice-grid { display:grid!important; grid-template-columns:1fr 1fr!important; gap:8px!important; }
-.rtg-duel-choice-card { display:grid!important; grid-template-columns:1fr!important; gap:5px!important; min-height:102px!important; padding:12px!important; border:1px solid #c7b896!important; border-radius:8px!important; background:#fffcf2!important; box-shadow:none!important; transform:none!important; }
+.rtg-duel-choice-card { display:grid!important; grid-template-columns:1fr!important; gap:5px!important; min-height:102px!important; padding:12px!important; border:1px solid #c7b896!important; border-radius:8px!important; background:#ffffff!important; box-shadow:none!important; transform:none!important; }
 .rtg-choice-icon { display:none!important; }.rtg-choice-copy small { color:#8d794b!important; font-size:8px!important; }.rtg-choice-copy strong { color:#302f24!important; font-size:14px!important; }.rtg-choice-copy em { color:#776d53!important; font-size:10px!important; }
 .rtg-choice-probability { display:flex!important; align-items:baseline; gap:6px; padding:0!important; background:none!important; border:0!important; }.rtg-choice-probability small { color:#877751!important; font-size:8px!important; }.rtg-choice-probability strong { color:#4a472b!important; font-size:20px!important; }.rtg-choice-delta { font-size:9px!important; }
 .rtg-duel-choice-card.is-selected { border:2px solid #a58739!important; background:#f1e3bb!important; }.rtg-choice-confirm { color:#66521d!important; font-size:8px!important; background:none!important; padding:4px 0 0!important; border-top:1px solid #c8b477!important; }
@@ -201,15 +201,15 @@
 .rtg-halftime-scoreboard,.rtg-final-score-panel { background:#ebe3ce!important; color:#302f22!important; border:1px solid #cdbc91!important; border-radius:9px!important; box-shadow:none!important; }.rtg-halftime-score strong,.rtg-final-score { color:#65501e!important; }
 .rtg-halftime-tip,.rtg-halftime-break-banner { background:#ede2c5!important; color:#665631!important; border:0!important; box-shadow:none!important; border-radius:6px; }.rtg-halftime-field-panel,.rtg-halftime-bench-panel { background:none!important; border:0!important; box-shadow:none!important; padding:8px!important; }.rtg-halftime-section-title { color:#6d5e3c!important; }
 .rtg-final-head h2,.rtg-final-team strong,.rtg-final-verdict { color:#443a24!important; }.rtg-final-state { background:#e9d89e!important; color:#6c5722!important; border:0!important; border-radius:6px!important; }
-.rtg-vending-stage { border:1px solid #d9cba8!important; border-radius:12px!important; background:radial-gradient(ellipse,#e5d8b4,#f8f4e9 75%)!important; box-shadow:none!important; }.rtg-vending-ratebar { border:1px solid #d7c9a7!important; border-radius:8px!important; overflow:hidden; background:#eee5cf!important; }.rtg-vending-ratebar span { background:transparent!important; }.rtg-vending-wallet-chip { border:1px solid #bda76e!important; border-radius:7px!important; background:#f8edca!important; box-shadow:none!important; }
+.rtg-vending-stage { border:1px solid #d9cba8!important; border-radius:12px!important; background:radial-gradient(ellipse,#e5d8b4,#fffdf7 75%)!important; box-shadow:none!important; }.rtg-vending-ratebar { border:1px solid #d7c9a7!important; border-radius:8px!important; overflow:hidden; background:#eee5cf!important; }.rtg-vending-ratebar span { background:transparent!important; }.rtg-vending-wallet-chip { border:1px solid #bda76e!important; border-radius:7px!important; background:#f8edca!important; box-shadow:none!important; }
 @media(max-width:780px) {
   .rtg-main-topbar,.rtg-squad-topbar,.rtg-prematch-topbar { min-height:68px!important; padding:12px 14px!important; gap:10px; }
   .rtg-main-topbar .brand,.rtg-squad-topbar h1 { font-size:18px!important; }.rtg-main-topbar .status-strip { flex-direction:column; gap:3px; }.rtg-main-topbar .status-pill { padding:3px 7px; font-size:10px; }
   .rtg-squad-shell .squad-content { padding:14px 12px 110px!important; }.rtg-squad-shell .squad-workspace { grid-template-columns:1fr!important; gap:12px!important; }.rtg-squad-shell .squad-field-panel,.rtg-squad-shell .squad-bench-panel { padding:12px!important; }
   .rtg-squad-help { font-size:9px; margin-bottom:10px; }.rtg-squad-help span { text-align:right; }
   :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-pitch-main.pitch { padding:18px 7px!important; gap:14px!important; }
-  :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-pitch-main .pitch-row { grid-template-columns:repeat(var(--row-count),minmax(0,72px))!important; gap:7px!important; }
-  .rtg-squad-shell .squad-bench-list { grid-template-columns:repeat(4,minmax(0,72px))!important; }
+  :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-pitch-main .pitch-row { grid-template-columns:repeat(var(--row-count),minmax(0,66px))!important; gap:7px!important; }
+  .rtg-squad-shell .squad-bench-list { grid-template-columns:repeat(4,minmax(0,66px))!important; }
   .rtg-squad-shell .squad-management-panel { gap:12px!important; }
   .rtg-run-content { padding:16px 12px 110px!important; }.rtg-journey-summary { display:block; padding:20px; }.rtg-journey-summary h1 { font-size:28px; }.rtg-journey-summary .btn { margin-top:16px; width:100%; }
   .rtg-run-command { padding:12px!important; gap:8px!important; }.rtg-run-command h2 { font-size:14px!important; }.rtg-run-command .muted { display:none; }.rtg-map-block { padding:12px!important; }
@@ -227,7 +227,7 @@
 /* Clear normal-run grid placement inherited by the shared squad components. */
 .rtg-squad-shell .squad-workspace>.squad-field-panel { grid-area:auto!important; order:0!important; }
 .rtg-squad-shell .squad-workspace>.squad-management-panel { grid-area:auto!important; order:1!important; }
-.rtg-squad-shell .squad-back-button { background:#e6c66e!important; border:1px solid #c5a148!important; color:#28251c!important; }
+.rtg-squad-shell .squad-back-button { background:#ffd21f!important; border:1px solid #c5a148!important; color:#28251c!important; }
 .rtg-match-scoreboard .rtg-score-emblem img { width:100%; height:100%; object-fit:contain; }
 .rtg-formation-modal .squad-formation-option { border:1px solid #d1c3a1!important; border-radius:7px!important; background:#faf6eb!important; box-shadow:none!important; transform:none!important; }
 .rtg-formation-modal .squad-formation-option.active { border:2px solid #b89a43!important; background:#f0e4bd!important; }
@@ -247,7 +247,7 @@
 .rtg-map-lines line { filter:none!important; }
 .rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-title { width:auto!important; flex:1!important; padding:0!important; min-height:0!important; background:none!important; clip-path:none!important; border:0!important; }
 .rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-title::after,.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-topbar::before,.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-topbar::after { display:none!important; }
-.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-title h1 { color:#f8f4e9!important; font-size:24px!important; }.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-title small { color:#d8bc75!important; font-size:9px!important; }
+.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-title h1 { color:#fffdf7!important; font-size:24px!important; }.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-title small { color:#d8bc75!important; font-size:9px!important; }
 .rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-top-match { display:none!important; }
 .rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-content { display:grid!important; gap:14px!important; padding:16px!important; }
 .rtg-prematch-shell.rtg-prematch-revolution .rtg-matchup-team { display:flex!important; flex-direction:column!important; justify-content:center!important; align-items:center!important; gap:8px!important; text-align:center!important; overflow:visible!important; }
@@ -263,3 +263,71 @@
 .rtg-duel-choice-card:only-child { grid-template-columns:1fr auto!important; align-items:center; min-height:76px!important; }
 .rtg-match-shell.rtg-match-revolution .rtg-score-capsule { background:#303629!important; color:#ecd28a!important; border:1px solid #64694b!important; border-radius:7px!important; box-shadow:none!important; }
 .rtg-match-shell.rtg-match-revolution .rtg-match-scoreboard::before,.rtg-match-shell.rtg-match-revolution .rtg-match-scoreboard::after { display:none!important; }
+
+/* Screenshot follow-up: white paper, canonical compact cards and readable mobile duels. */
+.rtg-main-topbar,.rtg-squad-topbar,.rtg-prematch-topbar { background:#fffdf7!important; color:#111216!important; border-bottom:3px solid #111216!important; }
+.rtg-main-topbar .brand,.rtg-squad-topbar h1,.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-title h1 { color:#111216!important; }
+.rtg-main-topbar .eyebrow,.rtg-squad-topbar .eyebrow,.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-title small { color:#64645e!important; }
+.rtg-main-topbar .status-pill,.rtg-squad-topbar .squad-topbar-stats span { background:#fff!important; color:#111216!important; border:2px solid #111216; border-radius:3px; }
+.rtg-squad-topbar .squad-topbar-stats small { color:#64645e!important; }
+.rtg-duel-choice-grid { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
+.rtg-duel-choice-card,.rtg-choice-copy,.rtg-choice-probability { min-width:0!important; max-width:100%; }
+.rtg-choice-copy strong,.rtg-choice-copy em { overflow-wrap:anywhere; white-space:normal!important; }
+.rtg-choice-probability { flex-wrap:wrap!important; gap:3px 6px!important; justify-content:flex-start!important; }
+.rtg-choice-probability small { flex-basis:100%; }
+.rtg-choice-delta { max-width:100%; white-space:normal!important; }
+.rtg-duel-active-move,.rtg-duel-result-move { display:flex!important; flex-wrap:wrap!important; gap:4px 8px!important; min-width:0; background:#fff!important; border-color:#d5d7d2!important; }
+.rtg-duel-active-move strong,.rtg-duel-result-move strong { min-width:0; overflow-wrap:anywhere; flex:1 1 75px; }
+.rtg-duel-active-move em,.rtg-duel-result-move em { white-space:normal!important; }
+.rtg-duel-versus-board .rtg-duel-portrait-panel { border:2px solid var(--duel-rarity-accent,#929ba8)!important; border-left-width:6px!important; background:linear-gradient(145deg,var(--duel-rarity-bg,#dce1e8) 0 38%,#fff 78%)!important; border-radius:5px!important; }
+.rtg-duel-action-chip { background:#fff!important; color:#111216!important; }
+.rtg-duel-player-copy small,.rtg-duel-panel-tag { color:#4e5359!important; }
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-winner { outline:0!important; background:linear-gradient(145deg,var(--duel-rarity-bg,#dce1e8) 0 40%,#fff 80%)!important; box-shadow:0 0 0 2px #ffd21f,inset 0 -4px #ffd21f!important; }
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser { background:#f0f1f2!important; }
+.rtg-duel-result-vs::before,.rtg-duel-result-vs::after { display:none!important; }
+.rtg-duel-result-banner { background:#fff5bc!important; border-left-color:#ffd21f!important; }
+.rtg-duel-result-banner.is-user-loss { background:#f9e9e8!important; border-left-color:#b3443d!important; }
+.rtg-duel-result-banner strong { display:block; white-space:normal; overflow-wrap:anywhere; line-height:1.25; }
+.rtg-duel-choice-card.is-selected { border-color:#111216!important; background:#fff7ce!important; }
+.rtg-modal .rtg-pull-result .rtg-pull-player-card { width:66px!important; max-width:66px!important; }
+.rtg-modal .rtg-pull-result .rtg-pull-player-card .player-portrait-wrap { height:48px!important; }
+@media(max-width:780px) {
+  :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card { max-width:66px!important; border-width:2px!important; box-shadow:3px 4px 0 #11121640!important; }
+  :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card .player-portrait-wrap { height:48px!important; }
+  :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card .player-info { padding:3px 2px 5px!important; min-height:0!important; }
+  :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card .player-title strong { font-size:clamp(.49rem,1.8vw,.56rem)!important; height:20px; }
+  :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card :is(.player-role,.player-overall) { top:2px!important; font-size:.48rem!important; min-width:19px!important; height:17px!important; line-height:13px!important; padding:1px 2px!important; border-width:1px!important; }
+}
+/* A compact white cabinet with a black fascia and a yellow mechanical control. */
+.rtg-vending-stage { padding:16px 12px!important; gap:16px!important; background:radial-gradient(ellipse at center,#fff4b8,transparent 68%),#fff!important; border-color:#e1e1dc!important; }
+.rtg-vending-machine-v4 { width:190px!important; padding:0 10px 12px!important; border:3px solid #111216!important; border-radius:14px 14px 7px 7px!important; background:#fff!important; box-shadow:5px 6px 0 #111216,9px 9px 0 #ffd21f!important; }
+.rtg-vending-machine-v4::after { height:5px!important; bottom:-9px!important; background:#111216!important; }
+.rtg-vending-brand-v4 { margin:0 -10px 10px!important; padding:10px 0!important; background:#111216!important; color:#ffd21f!important; border-radius:9px 9px 0 0; }
+.rtg-vending-brand-v4 span { color:#fff; }
+.rtg-vending-globe-v4 { height:140px!important; border:2px solid #111216!important; border-radius:7px!important; background:linear-gradient(135deg,#fff 0 25%,#e6f4f8 26% 65%,#c5dbe2)!important; box-shadow:inset 0 -10px 0 #1112160d!important; }
+.rtg-vending-globe-v4 .rtg-ball { width:29px!important; height:29px!important; }
+.rtg-vending-price-v4 { border:0!important; background:#f3f3ef!important; border-radius:4px; }
+.rtg-vending-crank-v4 { background:#ffd21f!important; box-shadow:2px 3px 0 #111216!important; }
+.rtg-vending-tray-v4 { width:100%!important; border-radius:4px; min-height:30px!important; }
+.rtg-vending-wallet-chip { background:#fff!important; border-color:#111216!important; color:#111216!important; }
+.rtg-vending-ratebar { display:flex!important; flex-wrap:wrap!important; justify-content:center; gap:6px!important; padding:8px!important; background:#fff!important; border-color:#e1e1dc!important; }
+.rtg-vending-ratebar span { flex:1 1 80px; min-width:0; padding:6px!important; border-bottom:3px solid #929ba8; }
+.rtg-vending-ratebar span[data-rarity="Buono"] { border-bottom-color:#2fa866; }
+.rtg-vending-ratebar span[data-rarity="Forte"] { border-bottom-color:#27a8e8; }
+.rtg-vending-ratebar span[data-rarity="Elite"] { border-bottom-color:#8254d1; }
+.rtg-vending-ratebar span[data-rarity="Mondiale"] { border-bottom-color:#d93842; }
+.rtg-vending-ratebar span[data-rarity="Leggenda"] { border-bottom-color:#d4a017; }
+@keyframes rtg-result-arrive { from { opacity:0; translate:0 18px; } to { opacity:1; translate:0 0; } }
+@keyframes rtg-winner-impact { 0% { scale:.9; } 55% { scale:1.025; } 100% { scale:1; } }
+@keyframes rtg-loser-retreat { from { translate:0 -5px; opacity:1; } to { translate:0 0; opacity:.38; } }
+@media(prefers-reduced-motion:no-preference) {
+  .rtg-duel-result-banner { animation:rtg-result-arrive .38s ease-out both!important; }
+  .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-winner { animation:rtg-winner-impact .65s cubic-bezier(.2,.8,.2,1) both!important; }
+  .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser .rtg-duel-render { animation:rtg-loser-retreat .65s ease-out both!important; }
+  .rtg-duel-continue { animation:rtg-result-arrive .35s .18s ease-out both!important; }
+  .rtg-final-score-panel { animation:rtg-winner-impact .65s ease-out both!important; }
+}
+.rtg-duel-versus-board--result .rtg-duel-result-vs span { width:auto!important; height:auto!important; box-shadow:none!important; }
+.rtg-modal .rtg-catalog-grid .rtg-squad-player-card .player-portrait-wrap,.rtg-modal .rtg-picker-quick-strip .rtg-squad-player-card .player-portrait-wrap { height:48px!important; }
+.rtg-vending-ratebar span[data-rarity="Buono" i] { border-bottom:3px solid #2fa866!important; }
+.rtg-vending-ratebar span[data-rarity="Forte" i] { border-bottom:3px solid #27a8e8!important; }

@@ -208,14 +208,14 @@
         <div class="rtg-vending-ratebar" aria-label="Probabilità">
           ${rarities.map((entry)=>`<span data-rarity="${escape(entry.rarity)}"><b>${escape(entry.rarity)}</b><em>${escape(Number(entry.weight).toFixed(1))}%</em></span>`).join("")}
         </div>
-        <button type="button" class="btn btn-yellow rtg-vending-pull" data-rtg-pull ${canPull?"":"disabled"}>${canPull?"GIRA · 300 ◈":"SERVONO 300 ◈"}</button>
+        <button type="button" class="btn btn-yellow rtg-vending-pull" data-rtg-pull ${canPull?"":"disabled"}>${canPull?"GIRA · 300 ◈":candidates.length?`MANCANO ${escape(Math.max(0,300-(Number(model.tokens)||0)))} ◈`:"VINCI UNA SFIDA PER SBLOCCARE GIOCATORI"}</button>
       </div>`;
     }
 
     function pullResultMarkup(result = {}, player = {}) {
       const rarity = result.rarity || player.category || "";
       const card = compactPlayerCardMarkup
-        ? compactPlayerCardMarkup(player,{level:20,overall:player?.finalOverall ?? player?.overall,extraClass:"squad-player-card rtg-pull-player-card",detailLayout:"stacked"})
+        ? compactPlayerCardMarkup(player,{level:20,overall:player?.finalOverall ?? player?.overall,extraClass:"squad-player-card rtg-squad-player-card rtg-pull-player-card",detailLayout:"stacked"})
         : `<div class="rtg-pull-player-fallback"><strong>${escape(player.name || result.playerId || "Giocatore")}</strong><span>Lv 20</span></div>`;
       return `<div class="rtg-pull-result rtg-paper-modal development-squad-card-scope">
         <div class="rtg-pull-result-head"><p class="eyebrow">${escape(rarity)}</p><strong>${result.duplicate ? "DUPLICATO" : "NUOVO GIOCATORE"}</strong></div>

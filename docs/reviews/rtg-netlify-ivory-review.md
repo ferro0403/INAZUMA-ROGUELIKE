@@ -29,3 +29,15 @@ Nessuna modifica a save schema, IndexedDB, repository, migrazioni, cloud, regole
 
 ## Limiti prima del merge
 Candidata per review visiva, non release certificata. Restano prova Safari/iPhone, campagna RTG completa e gate CI dello stack. I due soak da 500 campagne non sono stati eseguiti. La fixture sostituisce entitlement e apertura dettaglio, quindi non certifica login e scheda completa. Alcuni loghi esterni non caricano nel browser QA; asset canonici invariati. Adattamento automatico con tutti gli svincolati potenzialmente lento: algoritmo preesistente non modificato. Le 48 failure preesistenti richiedono triage separato prima di dichiarare verde l'intera suite.
+
+## Follow-up screenshot utente — 17 settembre 2026
+
+- Superfici più bianche, intestazioni chiare, nero e giallo del gioco originale.
+- Probabilità e delta a capo su mobile, nomi delle mosse adattabili senza taglio.
+- Cornice e sfondo della rarità nei duelli; vincitore a colori, sconfitto attenuato.
+- Ingresso del banner, impatto del vincitore e arretramento del perdente; rispetta reduced motion, senza modificare le tempistiche del motore.
+- Card canoniche compatte: ritratti mobile da 48 px, carta da 66 px anche nei cambi/catalogo/estrazione.
+- Distributore compatto bianco/nero/giallo, probabilità adattabili e gettoni mancanti espliciti.
+- Nessuna modifica a motore, RNG, salvataggi, cloud o costo estrazione.
+
+Verifica follow-up: cinque test esistenti PASS (vending-restyle, pull-card-style, main-style-squad-view, match-presentation-revolution, duel-result-two-cards), sintassi JS e diff whitespace PASS. Browser Chromium con fixture isolata: squadra, duello, esito e distributore a 390 px; probabilità/delta senza overflow a 320 px. Animazione vincitore applicata verificata via computed style. Non ripetuta la suite completa; restano le limitazioni e i gate documentati sopra, incluso Safari reale.
