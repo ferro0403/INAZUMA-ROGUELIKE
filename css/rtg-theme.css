@@ -402,3 +402,19 @@
   .rtg-vending-globe-v4 .rtg-ball { width:35px!important; height:35px!important; }
   .rtg-vending-ratebar { grid-template-columns:repeat(2,minmax(0,1fr))!important; }
 }
+
+/* Duel result: colour only the outcome banner based on who won. */
+.rtg-match-shell .rtg-duel-result-banner.is-win {
+  background:#d9efff!important;
+  border-left-color:#2b8ed6!important;
+}
+.rtg-match-shell .rtg-duel-result-banner.is-win .rtg-duel-result-status {
+  color:#216a9c!important;
+}
+.rtg-match-shell .rtg-duel-result-banner.is-loss {
+  background:#ffe0dc!important;
+  border-left-color:#d4473f!important;
+}
+.rtg-match-shell .rtg-duel-result-banner.is-loss .rtg-duel-result-status {
+  color:#a9342f!important;
+}
