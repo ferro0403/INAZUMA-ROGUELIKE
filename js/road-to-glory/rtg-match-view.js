@@ -209,7 +209,7 @@
     }
 
     function tickerMarkup(match = {}) {
-      const events = Array.from(match.log || []).slice(-4);
+      const events = Array.from(match.log || []);
       return `<section class="rtg-match-ticker rtg-match-event-feed" aria-label="Riepilogo azioni">
         <div class="panel-title-row"><h3>Riepilogo azioni</h3><span class="match-state-badge">${events.length ? "LIVE" : "KICK-OFF"}</span></div>
         <ol class="boss-match-log match-sim-log rtg-match-ticker-list">${events.length
