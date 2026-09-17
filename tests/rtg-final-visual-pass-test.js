@@ -7,6 +7,7 @@ const assert = require("assert");
 const root = path.resolve(__dirname, "..");
 const css = fs.readFileSync(path.join(root, "css", "rtg-theme.css"), "utf8");
 const squadView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-squad-view.js"), "utf8");
+const matchView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-match-view.js"), "utf8");
 
 assert(
   css.includes('url("../assets/home/inazuma-stadium-mobile-light.jpeg")'),
@@ -19,6 +20,10 @@ assert(
 assert(
   /\.rtg-prematch-shell\.rtg-prematch-revolution\s*>\s*\.rtg-prematch-topbar\s*\{[^}]*display\s*:\s*none\s*!important/s.test(css),
   "Pre-match must remove the redundant Road to Glory title band"
+);
+assert(
+  /\.rtg-prematch-matchup::before\s*\{[^}]*background\s*:\s*#ffd21f/s.test(css),
+  "Pre-match matchup banner should use a strong gold graphic rail instead of a blank white panel"
 );
 assert(
   /compactPlayerCardMarkup\(player,\s*\{/s.test(squadView) && /playerCard\(entry,\s*"catalog"\)/s.test(squadView),
@@ -44,13 +49,42 @@ assert(
   /\.rtg-vending-globe-v4\s*\{[^}]*border-radius\s*:\s*48%\s+48%\s+44%\s+44%/s.test(css),
   "RTG vending globe should read as a real capsule-machine globe"
 );
+
 assert(
-  /\.rtg-match-shell\s+\.rtg-duel-result-banner\.is-win\s*\{[^}]*background\s*:\s*#d9efff\s*!important/s.test(css),
-  "A duel won by the user should use the blue success banner background"
+  /const events = Array\.from\(match\.log \|\| \[\]\);/.test(matchView),
+  "RTG action recap must retain and render the complete match log instead of only the last four actions"
 );
 assert(
-  /\.rtg-match-shell\s+\.rtg-duel-result-banner\.is-loss\s*\{[^}]*background\s*:\s*#ffe0dc\s*!important/s.test(css),
-  "A duel won by the opponent should use the red loss banner background"
+  !/Array\.from\(match\.log \|\| \[\]\)\.slice\(-4\)/.test(matchView),
+  "RTG action recap must not truncate the match log to four entries"
+);
+assert(
+  /\.rtg-match-shell\.rtg-match-revolution\s*\{[^}]*background\s*:\s*#fff\s*!important/s.test(css),
+  "Live RTG match should use true white as its main surface instead of the old cream background"
+);
+assert(
+  /\.rtg-match-scoreboard\.rtg-match-topbar\s*\{[^}]*background\s*:\s*#111216\s*!important/s.test(css),
+  "Live scoreboard should use the game's true black treatment"
+);
+assert(
+  /\.rtg-match-scoreboard\s+\.rtg-score-capsule\s*\{[^}]*background\s*:\s*#ffd21f\s*!important/s.test(css),
+  "Live scoreboard score capsule should use the strong game gold"
+);
+assert(
+  /\.rtg-live-commandbar\s*\{[^}]*background\s*:\s*#fff\s*!important[^}]*border\s*:\s*3px solid #111216\s*!important/s.test(css),
+  "Possession/zone/status banner should be true white with a hard black frame"
+);
+assert(
+  /\.rtg-match-event-feed\s*\{[^}]*background\s*:\s*#fff\s*!important[^}]*border\s*:\s*3px solid #111216\s*!important/s.test(css),
+  "Action recap should use the white/black/gold live-match treatment"
+);
+assert(
+  /\.rtg-match-shell\s+\.rtg-duel-result-banner\.is-win\s*\{[^}]*linear-gradient\([^}]*#d9efff/s.test(css),
+  "A duel won by the user should use a redesigned blue result banner"
+);
+assert(
+  /\.rtg-match-shell\s+\.rtg-duel-result-banner\.is-loss\s*\{[^}]*linear-gradient\([^}]*#ffe0dc/s.test(css),
+  "A duel won by the opponent should use a redesigned red result banner"
 );
 
 console.log("rtg-final-visual-pass-test: PASS");
