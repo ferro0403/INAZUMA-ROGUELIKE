@@ -65,7 +65,7 @@
       if (isPicker || isCatalog) return cardMarkup;
       return `<div class="rtg-squad-card-slot ${options.readOnly ? "rtg-squad-card-slot--readonly" : ""}" data-rtg-card-slot="${escape(playerId)}">
         ${cardMarkup}
-        ${options.readOnly ? "" : `<button type="button" class="rtg-squad-change-trigger" data-rtg-change-player="${escape(playerId)}" aria-label="Cambia ${escape(player?.name || playerId)}">↔</button>`}
+        ${options.readOnly ? "" : `<button type="button" class="rtg-squad-change-trigger" data-rtg-change-player="${escape(playerId)}" aria-label="Cambia ${escape(player?.name || playerId)}"><span aria-hidden="true">↔</span><span>Cambia</span></button>`}
       </div>`;
     }
 
@@ -205,7 +205,7 @@
       const filterButton = (value,label) => `<button type="button" class="rtg-picker-filter ${sourceFilter===value?"active":""}" data-rtg-picker-source="${escape(value)}">${escape(label)}</button>`;
       return `<section class="rtg-squad-picker development-squad-card-scope">
         <div class="modal-head rtg-squad-picker-head">
-          <div><p class="eyebrow">Cambio giocatore</p><h2>${escape(targetName)}</h2><p class="muted">Ruolo ${escape(role || "compatibile")} · caricamento progressivo a blocchi da 24.</p></div>
+          <div><p class="eyebrow">Cambio giocatore</p><h2>${escape(targetName)}</h2><p class="muted">Scegli un sostituto · ${escape(role || "stesso ruolo")}</p></div>
         </div>
         ${quickEntries.length ? `<section class="rtg-picker-quick-bench"><div class="rtg-picker-quick-head"><span>PANCHINA · CAMBIO RAPIDO</span><strong>STESSO RUOLO</strong></div><div class="rtg-picker-quick-strip">${quickEntries.map((entry) => playerCard(entry, "picker")).join("")}</div></section>` : ""}
         <div class="rtg-picker-toolbar">
@@ -221,17 +221,18 @@
       </section>`;
     }
 
-    function markup(model = {}) {
+    function markup(model = {}, context = {}) {
       const lineupRows = model.lineupRows || [];
       const bench = model.bench || [];
       return `<main class="screen squad-screen rtg-squad-shell">
         <header class="topbar squad-topbar rtg-squad-topbar">
           <button type="button" class="squad-back-button rtg-squad-back" data-rtg-home aria-label="Torna alla Home">←</button>
           <div class="squad-topbar-copy"><p class="eyebrow">RTG · S1</p><h1>Squadra</h1></div>
-          <div class="squad-topbar-stats"><span><small>LV</small><strong>20</strong></span></div>
+          <div class="squad-topbar-stats"><span><small>ROSA</small><strong>${(model.lineup || []).length + bench.length}/15</strong></span></div>
         </header>
 
         <div class="content squad-content rtg-squad-content">
+          <p class="rtg-squad-help">Card: dettagli giocatore <span>↔ Cambia: scegli un sostituto</span></p>
           <div class="squad-workspace">
             <section class="squad-field-panel" aria-label="Campo 11v11 RTG">
               <div class="squad-panel-head rtg-squad-section-head"><h2>Titolari</h2><span class="squad-field-formation" data-rtg-formation-current>${escape(model.formation?.name || model.formation?.formation || model.formationId || "—")}</span></div>
@@ -239,16 +240,16 @@
             </section>
 
             <aside class="squad-management-panel">
-              <div class="squad-management-actions rtg-squad-actions rtg-squad-actions--four">
-                <button type="button" class="btn btn-yellow rtg-adapt-button" data-rtg-adapt-requirements>Adatta ai requisiti</button>
-                <button type="button" class="btn squad-module-button" data-rtg-open-formation>Modifica modulo</button>
-                <button type="button" class="btn squad-info-button rtg-catalog-button" data-rtg-open-catalog>Giocatori RTG</button>
-                <button type="button" class="btn squad-info-button" data-rtg-save-squad>Salva squadra</button>
-              </div>
               <section class="squad-bench-panel">
-                <div class="squad-panel-head rtg-squad-section-head"><h2>Panchina</h2><span class="squad-bench-count">4/4</span></div>
+                <div class="squad-panel-head rtg-squad-section-head"><h2>Panchina</h2><span class="squad-bench-count">${bench.length}/4</span></div>
                 <div class="bench-list squad-bench-list rtg-bench-list">${bench.map((entry) => playerCard(entry, "bench")).join("")}</div>
               </section>
+              <div class="squad-management-actions rtg-squad-actions rtg-squad-actions--four">
+                <button type="button" class="btn squad-module-button" data-rtg-open-formation>Modifica modulo</button>
+                <button type="button" class="btn squad-info-button rtg-catalog-button" data-rtg-open-catalog>Giocatori RTG</button>
+              </div>
+              ${context.requirementsMarkup ? `<section class="rtg-squad-next"><p class="eyebrow">Prossima sfida principale</p><h2>${escape(context.nextTeamName || "Season 1")}</h2>${context.requirementsMarkup}<button type="button" class="btn rtg-adapt-button" data-rtg-adapt-requirements>Adatta ai requisiti</button></section>` : '<button type="button" class="btn rtg-adapt-button" data-rtg-adapt-requirements disabled>Adatta ai requisiti</button>'}
+              <div class="rtg-squad-savebar"><span>${context.dirty ? "Modifiche da salvare" : "Squadra salvata"}</span><button type="button" class="btn btn-yellow" data-rtg-save-squad>Salva squadra</button></div>
             </aside>
           </div>
         </div>

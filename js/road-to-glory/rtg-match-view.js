@@ -500,7 +500,7 @@
             <strong class="rtg-score-capsule">${escape(match.score?.user || 0)} - ${escape(match.score?.opponent || 0)}</strong>
             <span class="rtg-score-team rtg-score-team--opponent">${emblem(match.opponentSquad,"opponent","rtg-score-emblem")}<b title="${escape(opponentName)}">${escape(opponentName)}</b></span>
           </div>
-          <button type="button" class="btn btn-danger rtg-abandon-button" data-rtg-abandon><span aria-hidden="true">×</span><b>ABBANDONA</b></button>
+          <button type="button" class="btn btn-danger rtg-abandon-button" aria-label="Abbandona partita" title="Abbandona partita" data-rtg-abandon><span aria-hidden="true">×</span><b>ABBANDONA</b></button>
         </header>
         <section class="rtg-live-status rtg-live-commandbar ${match.possession === "user" ? "is-user-possession" : "is-opponent-possession"}">
           <div class="rtg-live-command rtg-live-command--possession"><span class="rtg-live-command-index">01</span><i aria-hidden="true"></i><span><small>POSSESSO</small><strong>${escape(possessionLabel)}</strong><em>${match.possession === "user" ? "Palla nostra" : "Palla avversaria"}</em></span></div>

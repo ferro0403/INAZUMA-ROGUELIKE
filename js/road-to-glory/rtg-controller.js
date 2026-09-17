@@ -159,6 +159,7 @@
     function bindRun(){
       bindHomeAndTabs();
       app?.querySelector?.("[data-rtg-open-vending]")?.addEventListener("click",()=>openVending());
+      app?.querySelector?.("[data-rtg-current-node]")?.addEventListener("click",event=>openNode(event.currentTarget.dataset.rtgCurrentNode));
       app?.querySelectorAll?.("[data-rtg-node-id]")?.forEach(button=>button.addEventListener("click",()=>openNode(button.dataset.rtgNodeId)));
     }
     function renderRun(){
@@ -224,7 +225,7 @@
       return{ok:true};
     }
     function openFormationSelector(model){
-      const body=`<div class="modal-head squad-formation-modal-head"><div><p class="eyebrow">Assetto tattico RTG</p><h2>Modifica modulo</h2><p class="muted">Catalogo completo Orion. Un modulo è disponibile se può essere costruito con tutti i giocatori sbloccati, non soltanto con i 15 attivi.</p></div></div>${squadView.formationOptionsMarkup(model,canUseDraftFormation)}`;
+      const body=`<div class="modal-head squad-formation-modal-head"><div><p class="eyebrow">Assetto tattico RTG</p><h2>Modifica modulo</h2><p class="muted">Scegli il modulo. I giocatori già in rosa hanno la precedenza; i posti mancanti vengono coperti dalla tua collezione.</p></div></div>${squadView.formationOptionsMarkup(model,canUseDraftFormation)}`;
       deps.openModal?.(body,{className:"squad-formation-modal rtg-formation-modal"});
       deps.getModalRoot?.()?.querySelectorAll?.("[data-rtg-formation-option]")?.forEach(button=>button.addEventListener("click",()=>{
         if(button.disabled)return;
@@ -495,7 +496,14 @@
     function renderSquad(){
       squadDraft=clone(squadDraft||campaign.squads.ie1);
       const model=squadView.renderModel({state:draftState(),freeAgentIds,seasonDb,freeAgentsDb});
-      renderHtml(squadView.markup(model));
+      const teamId=currentRequirementTeamId();
+      const eligibility=teamId?squadRuntime.mainEligibility?.({teamId,state:draftState(),seasonDb,freeAgentIds,freeAgentsDb,playerResolver}):null;
+      const nextTeam=(seasonDb?.teams||[]).find(team=>id(team.teamId||team.id)===teamId);
+      renderHtml(squadView.markup(model,{
+        nextTeamName:nextTeam?.name||nextTeam?.teamName||teamId,
+        requirementsMarkup:eligibility?runView.requirementsMarkup(eligibility):"",
+        dirty:JSON.stringify(squadDraft)!==JSON.stringify(campaign.squads.ie1),
+      }));
       bindHomeAndTabs();
       squadView.bind(app,{
         onOpenFormation:()=>openFormationSelector(model),

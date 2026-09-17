@@ -91,9 +91,9 @@
       const status = nodeState(state, node, index);
       const disabled = status === "locked" ? " disabled" : "";
       const label = teamName(seasonDb, node.teamId);
-      return `<button type="button" class="map-node rtg-route-node rtg-route-node--main ${status}" style="left:${point.x}%;top:${point.y}%" data-rtg-node-id="${escape(node.id)}" data-rtg-state="${status}"${disabled}>
+      return `<button type="button" class="map-node rtg-route-node rtg-route-node--main ${status}" style="left:${point.x}%;top:${point.y}%" data-rtg-node-id="${escape(node.id)}" data-rtg-state="${status}" aria-label="${escape(label)} · ${status === "reachable" ? "Prossima partita" : status === "completed" ? "Completata" : "Da sbloccare"}"${status === "reachable" ? ' aria-current="step"' : ""}${disabled}>
         <span class="node-icon rtg-main-node-icon">${emblem(node.teamId)}</span>
-        <span class="node-label">${escape(label)}</span>
+        <span class="node-label">${escape(label)}</span><span class="rtg-node-status">${status === "reachable" ? "GIOCA" : status === "completed" ? "COMPLETATA" : "DA SBLOCCARE"}</span>
         ${node.checkpointAfter ? `<span class="rtg-node-checkpoint" data-rtg-checkpoint="${escape(node.teamId)}">⚑</span>` : ""}
       </button>`;
     }
@@ -112,7 +112,7 @@
       const points = positions(entries.length);
       return `<section class="rtg-map-block rtg-map-block--${block.index + 1}" data-rtg-map-block="${block.index + 1}">
         <div class="section-head rtg-route-heading"><div><p class="eyebrow">${escape(block.eyebrow)}</p><h2>${escape(block.label)}</h2></div><span class="rtg-route-count">${entries.length} tappe</span></div>
-        <div class="route-map rtg-route-stage">
+        <div class="route-map rtg-route-stage" style="--rtg-route-height:${Math.max(260, entries.length * 110)}px">
           ${pathSvg(points)}
           ${entries.map(({ node, index }, localIndex) => node.type === "main"
             ? mainNodeMarkup(state, node, index, seasonDb, points[localIndex])
@@ -129,11 +129,20 @@
         const entries = list.map((node, index) => ({ node, index })).filter((entry) => blockForNode(entry.node).index === block.index);
         return blockMarkup(block, entries, viewState, seasonDb);
       }).join("");
+      const currentNode = list[currentIndex];
+      const currentLabel = currentNode?.type === "main" ? teamName(seasonDb,currentNode.teamId) : "Svincolati";
+      const complete = !!state?.seasonComplete;
+      const cleared = complete ? list.length : Math.max(0,currentIndex);
       return `<main class="screen rtg-run-screen">
         ${header(state)}
         <div class="content narrow rtg-run-content">
+          <section class="rtg-journey-summary" aria-label="Avanzamento percorso">
+            <div><p class="eyebrow">${complete ? "Season 1 completata" : "La tua prossima partita"}</p><h1>${complete ? "Traguardo raggiunto" : escape(currentLabel)}</h1><p>${complete ? "Hai completato il percorso della Season 1." : `Tappa ${Math.max(1,currentIndex+1)} di ${list.length} · ${currentNode?.type === "main" ? "Sfida principale" : "Partita secondaria"}`}</p></div>
+            ${!complete && currentNode ? `<button type="button" class="btn btn-yellow" data-rtg-current-node="${escape(currentNode.id)}">Prepara partita <span aria-hidden="true">→</span></button>` : ""}
+            <div class="rtg-journey-progress" role="progressbar" aria-label="Tappe completate nel percorso attuale" aria-valuenow="${cleared}" aria-valuemin="0" aria-valuemax="${list.length}"><span style="width:${list.length ? cleared/list.length*100 : 0}%"></span></div>
+          </section>
           <section class="panel rtg-run-command">
-            <div><p class="eyebrow">Ricompense Season 1</p><h2>Distributore giocatori</h2><p class="muted">Batti le squadre principali per ampliare il pool.</p></div>
+            <div><p class="eyebrow">La tua collezione</p><h2>Rinforza la squadra</h2><p class="muted">Nuovi giocatori dalle squadre sconfitte.</p></div>
             <button type="button" class="btn btn-yellow rtg-vending-button" data-rtg-open-vending>Distributore S1 <span>300 ◈</span></button>
           </section>
           <section class="rtg-map" aria-label="Percorso Season 1">${blocks}</section>
@@ -145,11 +154,11 @@
     function requirementsMarkup(eligibility = {}) {
       if (!eligibility) return "";
       const rows = [
-        ["Potenza RTG", eligibility.teamPower == null ? "—" : `${eligibility.teamPower} / ${eligibility.cap}`, !eligibility.reasons?.includes("team-power-cap")],
-        ["Reclute S1 · rosa", `${eligibility.recruitCount || 0} / ${eligibility.minRecruit || 0}`, !eligibility.reasons?.includes("min-s1-recruits")],
-        ["Recenti · rosa", `${eligibility.recentRecruitCount || 0} / ${eligibility.recentCount || 0}`, !eligibility.reasons?.includes("recent-s1-recruits")],
+        ["Potenza titolari · max", eligibility.teamPower == null ? "—" : `${eligibility.teamPower} / ${eligibility.cap}`, !eligibility.reasons?.includes("team-power-cap")],
+        ["Reclute S1 · min", `${eligibility.recruitCount || 0} / ${eligibility.minRecruit || 0}`, !eligibility.reasons?.includes("min-s1-recruits")],
+        ["Reclute recenti · min", `${eligibility.recentRecruitCount || 0} / ${eligibility.recentCount || 0}`, !eligibility.reasons?.includes("recent-s1-recruits")],
       ];
-      return `<section class="panel rtg-requirements"><p class="eyebrow">Accesso partita</p><h3>Requisiti</h3><div class="rtg-requirements-list">${rows.map(([label, value, ok]) => `<div class="rtg-requirement ${ok ? "ok" : "bad"}"><span>${escape(label)}</span><strong>${escape(value)}</strong></div>`).join("")}</div></section>`;
+      return `<section class="panel rtg-requirements"><p class="eyebrow">Accesso partita</p><h3>Requisiti</h3><div class="rtg-requirements-list">${rows.map(([label, value, ok]) => `<div class="rtg-requirement ${ok ? "ok" : "bad"}"><span><i aria-hidden="true">${ok ? "✓" : "!"}</i> ${escape(label)}</span><strong>${escape(value)}</strong></div>`).join("")}</div><p class="rtg-requirements-note">Le reclute contano anche in panchina. La potenza riguarda gli 11 titolari.</p></section>`;
     }
 
     function nodeModalMarkup({ node, eligibility = null, seasonDb, allowed = true } = {}) {
