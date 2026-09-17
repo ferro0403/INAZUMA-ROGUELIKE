@@ -41,3 +41,9 @@ Candidata per review visiva, non release certificata. Restano prova Safari/iPhon
 - Nessuna modifica a motore, RNG, salvataggi, cloud o costo estrazione.
 
 Verifica follow-up: cinque test esistenti PASS (vending-restyle, pull-card-style, main-style-squad-view, match-presentation-revolution, duel-result-two-cards), sintassi JS e diff whitespace PASS. Browser Chromium con fixture isolata: squadra, duello, esito e distributore a 390 px; probabilità/delta senza overflow a 320 px. Animazione vincitore applicata verificata via computed style. Non ripetuta la suite completa; restano le limitazioni e i gate documentati sopra, incluso Safari reale.
+
+## Follow-up percorso e stile originale
+
+Ripristinata la grammatica grafica del gioco su percorso, squadra, prepartita e modali: bordi neri, ombre nette, pulsanti squadrati e giallo acceso. Percorso su fondo scuro a griglia, targhe bianche, collegamenti gialli e scudetti per gli svincolati. Scontri esclusi dai nuovi override. Requisiti squadra raccolti in un controllo info nativo details/summary, chiuso inizialmente; conserva l'adattamento automatico e tutti i valori.
+
+Verifiche: quattro test esistenti PASS (main-style-squad-view, vending-restyle, main-style-run-view, run-view), sintassi delle due view e git diff --check. Browser mobile 390 px: controllo visivo percorso e apertura/chiusura requisiti, con pulsante Adatta visibile solo quando aperto. Nessuna modifica alla logica di progressione, eleggibilità o salvataggio. Safari reale ancora da verificare.

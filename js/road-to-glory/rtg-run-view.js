@@ -103,8 +103,8 @@
       const farmable = Number(state?.attemptsByNode?.[node.id]?.clears || 0) > 0;
       const disabled = status === "locked" ? " disabled" : "";
       return `<button type="button" class="map-node rtg-route-node rtg-route-node--secondary ${status}" style="left:${point.x}%;top:${point.y}%" data-rtg-node-id="${escape(node.id)}" data-rtg-state="${status}" data-rtg-farmable="${farmable ? "true" : "false"}"${disabled}>
-        <span class="node-icon rtg-free-agent-mark">?</span>
-        <span class="node-label">${farmable ? "Svincolati · rigiocabile" : "Svincolati"}</span>
+        <span class="node-icon rtg-free-agent-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 3 34 9v12c0 8-14 16-14 16S6 29 6 21V9Z" fill="currentColor"/><path d="m20 12 7 5-3 8h-8l-3-8Z" fill="#fff"/></svg></span>
+        <span class="node-label">Svincolati</span><span class="rtg-node-status">${status === "reachable" ? "GIOCA" : farmable ? "RIGIOCA" : status === "completed" ? "COMPLETATA" : "DA SBLOCCARE"}</span>
       </button>`;
     }
 
@@ -112,7 +112,7 @@
       const points = positions(entries.length);
       return `<section class="rtg-map-block rtg-map-block--${block.index + 1}" data-rtg-map-block="${block.index + 1}">
         <div class="section-head rtg-route-heading"><div><p class="eyebrow">${escape(block.eyebrow)}</p><h2>${escape(block.label)}</h2></div><span class="rtg-route-count">${entries.length} tappe</span></div>
-        <div class="route-map rtg-route-stage" style="--rtg-route-height:${Math.max(260, entries.length * 110)}px">
+        <div class="route-map rtg-route-stage" style="--rtg-route-height:${Math.max(260, entries.length * 100)}px">
           ${pathSvg(points)}
           ${entries.map(({ node, index }, localIndex) => node.type === "main"
             ? mainNodeMarkup(state, node, index, seasonDb, points[localIndex])

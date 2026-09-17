@@ -331,3 +331,60 @@
 .rtg-modal .rtg-catalog-grid .rtg-squad-player-card .player-portrait-wrap,.rtg-modal .rtg-picker-quick-strip .rtg-squad-player-card .player-portrait-wrap { height:48px!important; }
 .rtg-vending-ratebar span[data-rarity="Buono" i] { border-bottom:3px solid #2fa866!important; }
 .rtg-vending-ratebar span[data-rarity="Forte" i] { border-bottom:3px solid #27a8e8!important; }
+
+/* Original-game chrome: hard ink outlines, offset shadows, yellow accents.
+   Deliberately excludes the approved duel surfaces. */
+:is(.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell,.rtg-modal,.rtg-formation-modal) .btn {
+  border:2px solid #111216!important; border-radius:2px!important; background:#fffdf7!important;
+  color:#111216!important; box-shadow:3px 4px 0 #111216!important; font-weight:900;
+}
+:is(.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell,.rtg-modal) .btn-yellow { background:#ffd21f!important; border-color:#111216!important; box-shadow:3px 4px 0 #111216!important; }
+:is(.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell,.rtg-modal) .btn:active { translate:2px 2px; box-shadow:1px 2px 0 #111216!important; }
+.rtg-squad-card-slot .rtg-squad-change-trigger { border:1px solid #111216!important; border-radius:2px!important; background:#fffdf7!important; color:#111216!important; box-shadow:2px 2px 0 #111216!important; }
+.rtg-squad-shell .squad-field-panel,.rtg-squad-shell .squad-bench-panel,.rtg-prematch-tactical,.rtg-prematch-matchup,.rtg-run-command { border:2px solid #111216!important; border-radius:2px!important; box-shadow:4px 5px 0 #111216!important; }
+.rtg-squad-section-head h2 { color:#111216!important; font-weight:950; }
+.rtg-squad-section-head .squad-field-formation,.rtg-squad-section-head .squad-bench-count { background:#ffd21f!important; color:#111216!important; border:2px solid #111216!important; border-radius:1px!important; }
+.rtg-bottom-nav.bottom-nav { border:3px solid #111216!important; border-radius:3px!important; background:#fffdf7!important; box-shadow:4px 5px 0 #111216!important; }
+.rtg-bottom-nav.bottom-nav button { color:#111216!important; border-radius:1px!important; }
+.rtg-bottom-nav.bottom-nav button.active { color:#111216!important; background:#ffd21f!important; box-shadow:inset 0 -3px #111216!important; }
+.rtg-bottom-nav.bottom-nav::after { display:none!important; }
+.rtg-run-screen,.rtg-squad-shell,.rtg-prematch-shell { background:#fffdf7!important; background-image:none!important; }
+.rtg-run-screen .eyebrow,.rtg-squad-shell .eyebrow { color:#5d5e59!important; }
+.rtg-journey-summary { border:3px solid #111216; border-radius:2px; background:linear-gradient(115deg,#111216 0 78%,#25272d 78%); box-shadow:5px 5px 0 #ffd21f; padding:20px; }
+.rtg-journey-summary .eyebrow { color:#ffd21f!important; }
+.rtg-journey-summary h1 { text-transform:uppercase; font-style:italic; font-weight:950; }
+.rtg-journey-summary p:not(.eyebrow) { color:#eee!important; }
+.rtg-journey-progress { background:#42454c; height:5px; }.rtg-journey-progress span { background:#ffd21f; }
+.rtg-map { gap:24px!important; }
+.rtg-map-block { padding:0!important; border:3px solid #111216!important; border-radius:2px!important; background:#111216!important; box-shadow:5px 5px 0 #111216!important; overflow:hidden; }
+.rtg-route-heading { padding:14px!important; border-bottom:4px solid #ffd21f!important; background:#111216; }
+.rtg-route-heading h2 { color:#fffdf7!important; text-transform:uppercase!important; font-style:italic; font-weight:950; font-size:22px!important; }
+.rtg-route-heading .eyebrow { color:#ffd21f!important; margin-bottom:4px; }
+.rtg-route-count { background:#ffd21f!important; color:#111216!important; border:2px solid #fffdf7!important; border-radius:0!important; padding:5px 8px; font-weight:900; }
+.rtg-map-block .route-map.rtg-route-stage { background:linear-gradient(115deg,transparent 35%,#ffffff06 35% 60%,transparent 60%),repeating-linear-gradient(0deg,transparent 0 39px,#ffffff07 39px 40px),repeating-linear-gradient(90deg,transparent 0 39px,#ffffff07 39px 40px),#20262c!important; }
+.rtg-map-lines line { stroke:#ffd21f!important; stroke-width:1.5!important; stroke-dasharray:2 1!important; opacity:.8; }
+.rtg-route-node .node-icon { border:3px solid #111216!important; border-radius:3px!important; background:#fffdf7!important; box-shadow:4px 5px 0 #000!important; color:#111216!important; }
+.rtg-route-node--secondary .node-icon { width:42px!important; height:46px!important; border-radius:3px!important; background:#fff!important; }
+.rtg-free-agent-mark svg { width:30px; height:34px; }
+.rtg-route-node .node-label { background:#fffdf7!important; color:#111216!important; border:2px solid #111216!important; border-radius:1px!important; box-shadow:2px 2px 0 #111216!important; font-size:11px!important; padding:4px 7px!important; }
+.rtg-node-status { color:#e0e3e8!important; font-size:8px; letter-spacing:.08em; margin-top:5px; }
+.rtg-route-node.completed .node-icon { background:#fffdf7!important; border-color:#111216!important; }
+.rtg-route-node.completed .rtg-node-status { color:#ffe16a!important; }
+.rtg-route-node.reachable .node-icon { background:#ffd21f!important; border:3px solid #111216!important; outline:3px solid #fffdf7; outline-offset:3px; box-shadow:5px 6px 0 #000!important; }
+.rtg-route-node.reachable .node-label { background:#ffd21f!important; }
+.rtg-route-node.reachable .rtg-node-status { color:#ffd21f!important; font-weight:950; }
+.rtg-route-node.locked { opacity:.6!important; filter:grayscale(.7)!important; }
+.rtg-node-checkpoint { background:#ffd21f!important; color:#111216!important; border:2px solid #111216!important; border-radius:0!important; }
+.rtg-squad-next { padding:12px!important; border:2px solid #111216; border-radius:2px; background:#fffdf7; }
+.rtg-next-heading { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.rtg-next-heading>div { flex:1; min-width:100px; }.rtg-next-heading .eyebrow { font-size:9px; margin:0 0 3px; }.rtg-next-heading h2 { margin:0; font-size:19px; color:#111216; }
+.rtg-requirements-disclosure { display:contents; }
+.rtg-requirements-disclosure summary { display:flex; align-items:center; gap:5px; cursor:pointer; min-height:44px; padding:6px; font-size:10px; font-weight:800; list-style:none; color:#111216; }
+.rtg-requirements-disclosure summary::-webkit-details-marker { display:none; }
+.rtg-requirements-disclosure summary>span { display:grid; place-items:center; width:24px; height:24px; background:#ffd21f; border:2px solid #111216; font-size:16px; font-weight:950; }
+.rtg-requirements-disclosure summary:focus-visible { outline:3px solid #111216; outline-offset:2px; }
+.rtg-requirements-drawer { flex-basis:100%; width:100%; padding-top:10px; border-top:2px solid #111216; }
+.rtg-requirements-disclosure:not([open])>.rtg-requirements-drawer { display:none; }
+.rtg-requirements-drawer>.btn { width:100%; margin-top:10px; }
+.modal.rtg-modal,.modal.rtg-formation-modal { border:3px solid #111216!important; border-radius:3px!important; box-shadow:6px 7px 0 #111216!important; }
+.rtg-vending-stage,.rtg-vending-ratebar,.rtg-vending-wallet-chip { border-radius:3px!important; }

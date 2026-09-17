@@ -248,7 +248,7 @@
                 <button type="button" class="btn squad-module-button" data-rtg-open-formation>Modifica modulo</button>
                 <button type="button" class="btn squad-info-button rtg-catalog-button" data-rtg-open-catalog>Giocatori RTG</button>
               </div>
-              ${context.requirementsMarkup ? `<section class="rtg-squad-next"><p class="eyebrow">Prossima sfida principale</p><h2>${escape(context.nextTeamName || "Season 1")}</h2>${context.requirementsMarkup}<button type="button" class="btn rtg-adapt-button" data-rtg-adapt-requirements>Adatta ai requisiti</button></section>` : '<button type="button" class="btn rtg-adapt-button" data-rtg-adapt-requirements disabled>Adatta ai requisiti</button>'}
+              ${context.requirementsMarkup ? `<section class="rtg-squad-next"><div class="rtg-next-heading"><div><p class="eyebrow">Prossima sfida</p><h2>${escape(context.nextTeamName || "Season 1")}</h2></div><details class="rtg-requirements-disclosure"><summary aria-label="Informazioni sui requisiti della prossima sfida"><span aria-hidden="true">i</span> Requisiti</summary><div class="rtg-requirements-drawer">${context.requirementsMarkup}<button type="button" class="btn rtg-adapt-button" data-rtg-adapt-requirements>Adatta ai requisiti</button></div></details></div></section>` : '<button type="button" class="btn rtg-adapt-button" data-rtg-adapt-requirements disabled>Adatta ai requisiti</button>'}
               <div class="rtg-squad-savebar"><span>${context.dirty ? "Modifiche da salvare" : "Squadra salvata"}</span><button type="button" class="btn btn-yellow" data-rtg-save-squad>Salva squadra</button></div>
             </aside>
           </div>
