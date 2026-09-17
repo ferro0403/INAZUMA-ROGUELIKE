@@ -26,6 +26,14 @@ assert(
   "Pre-match matchup banner should use a strong gold graphic rail instead of a blank white panel"
 );
 assert(
+  /\.rtg-prematch-matchup::after\s*\{[^}]*display\s*:\s*none\s*!important/s.test(css),
+  "Pre-match banner must remove the decorative black wedge that overlaps the opponent side"
+);
+assert(
+  /\.rtg-prematch-matchup\s+\.rtg-matchup-vs\s+span\s*\{[^}]*background\s*:\s*#111216\s*!important[^}]*color\s*:\s*#ffd21f\s*!important/s.test(css),
+  "Pre-match VS must be a deliberate black/gold centerpiece"
+);
+assert(
   /compactPlayerCardMarkup\(player,\s*\{/s.test(squadView) && /playerCard\(entry,\s*"catalog"\)/s.test(squadView),
   "RTG catalog must reuse the game's existing compactPlayerCardMarkup renderer"
 );
@@ -67,8 +75,12 @@ assert(
   "Live scoreboard should use the game's true black treatment"
 );
 assert(
-  /\.rtg-match-scoreboard\s+\.rtg-score-capsule\s*\{[^}]*background\s*:\s*#ffd21f\s*!important/s.test(css),
-  "Live scoreboard score capsule should use the strong game gold"
+  /\.rtg-match-shell\.rtg-match-revolution\s+\.rtg-match-scoreboard\s+\.rtg-score-capsule\s*\{[^}]*background\s*:\s*#ffd21f\s*!important/s.test(css),
+  "Live scoreboard score capsule should keep the strong game gold even against legacy specificity"
+);
+assert(
+  /\.rtg-match-shell\.rtg-match-revolution\s+\.rtg-match-scoreboard\s+\.rtg-score-team\s+b\s*\{[^}]*white-space\s*:\s*nowrap\s*!important[^}]*overflow\s*:\s*visible\s*!important/s.test(css),
+  "Live scoreboard must show team names instead of ellipsizing them"
 );
 assert(
   /\.rtg-live-commandbar\s*\{[^}]*background\s*:\s*#fff\s*!important[^}]*border\s*:\s*3px solid #111216\s*!important/s.test(css),
