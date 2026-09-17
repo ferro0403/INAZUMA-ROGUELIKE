@@ -21,20 +21,20 @@ assert(
   "Pre-match must remove the redundant Road to Glory title band"
 );
 assert(
-  /\.rtg-modal\s+\.rtg-catalog-grid\s*\{[^}]*grid-template-columns\s*:\s*repeat\(auto-fit\s*,\s*minmax\(76px\s*,\s*1fr\)\)\s*!important/s.test(css),
-  "RTG catalog should lay out the normal compact game cards without enlarging them"
+  /compactPlayerCardMarkup\(player,\s*\{/s.test(squadView) && /playerCard\(entry,\s*"catalog"\)/s.test(squadView),
+  "RTG catalog must reuse the game's existing compactPlayerCardMarkup renderer"
+);
+assert(
+  /\.rtg-modal\s+\.rtg-catalog-grid\s*\{[^}]*grid-template-columns\s*:\s*repeat\(4\s*,\s*minmax\(0\s*,\s*84px\)\)\s*!important/s.test(css),
+  "RTG catalog should use the same four-across compact-card footprint as the squad"
 );
 assert(
   !/\.rtg-modal\s+\.rtg-catalog-grid\s+\.rtg-catalog-player-card\s+\.player-portrait-wrap/.test(css),
-  "RTG catalog must not override the normal game's compact-card portrait anatomy"
+  "RTG catalog must not override the normal card portrait anatomy"
 );
 assert(
   !css.includes("width:min(152px,100%)!important"),
   "RTG catalog must not force oversized 152px cards"
-);
-assert(
-  /const extraClass = isCatalog\s*\?\s*\[\s*"rtg-catalog-player-card"/s.test(squadView),
-  "RTG catalog must reuse compactPlayerCardMarkup without RTG squad/picker sizing classes"
 );
 assert(
   /\.rtg-vending-machine-v4\s*\{[^}]*width\s*:\s*230px\s*!important/s.test(css),
