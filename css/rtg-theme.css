@@ -1,4 +1,4 @@
-@import url("./rtg-theme-base.css?v=20260918-ui-polish-3");
+@import url("./rtg-theme-base.css?v=20260918-duel-cards-1");
 
 /* RTG presentation: one ink / white / yellow grammar around unchanged cards.
    Edit these owners instead of adding competing finishing sheets.
@@ -829,7 +829,9 @@
   white-space:nowrap!important;
 }
 .rtg-match-shell.rtg-match-revolution .rtg-match-scoreboard .rtg-match-score-main {
-  grid-template-columns:minmax(0,1fr) 82px minmax(0,1fr)!important;
+  grid-template-columns:minmax(0,88px) 82px minmax(0,88px)!important;
+  justify-content:center!important;
+  width:100%;
   gap:10px!important;
   align-items:center!important;
   min-width:0!important;
@@ -839,6 +841,7 @@
 .rtg-match-shell.rtg-match-revolution .rtg-match-scoreboard .rtg-score-team {
   display:grid!important;
   grid-template-rows:40px auto!important;
+  width:100%;
   grid-template-columns:minmax(0,1fr)!important;
   justify-items:center!important;
   align-items:center!important;

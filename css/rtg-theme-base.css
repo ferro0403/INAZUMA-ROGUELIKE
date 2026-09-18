@@ -173,14 +173,14 @@
 .rtg-duel-versus-board { display:grid!important; grid-template-columns:minmax(0,1fr) 32px minmax(0,1fr)!important; gap:8px!important; align-items:stretch!important; padding:4px!important; background:none!important; border:0!important; box-shadow:none!important; overflow:hidden!important; }
 .rtg-duel-versus-board .rtg-duel-portrait-panel { min-width:0!important; border:1px solid #cabd9e!important; border-top:4px solid var(--duel-rarity-accent,#c4ad72)!important; border-radius:9px!important; background:#ffffff!important; box-shadow:none!important; padding:8px!important; overflow:hidden!important; isolation:isolate; transform:none!important; }
 .rtg-duel-portrait-panel::before,.rtg-duel-portrait-panel::after { display:none!important; }
-.rtg-duel-panel-heading { display:flex!important; flex-wrap:wrap; gap:4px!important; margin:0!important; padding:0!important; background:none!important; border:0!important; }
+.rtg-duel-panel-heading { display:flex!important; flex-wrap:wrap; gap:4px!important; margin:0!important; padding:5px!important; background:#111216!important; border:0!important;  align-items:center; justify-content:space-between; min-height:30px; }
 .rtg-duel-panel-tag { position:relative!important; background:none!important; color:#736348!important; border:0!important; box-shadow:none!important; padding:0!important; font-size:9px!important; }
 .rtg-duel-action-chip { background:#e2d6b8!important; color:#584a2e!important; border:0!important; border-radius:4px!important; font-size:9px!important; padding:3px 5px!important; }
 .rtg-duel-visual { width:100%!important; padding:0!important; background:none!important; border:0!important; box-shadow:none!important; display:flex!important; flex-direction:column!important; }
 .rtg-duel-render { position:relative!important; width:100%!important; height:clamp(115px,23vh,205px)!important; min-height:0!important; background:none!important; overflow:hidden!important; margin:0!important; }
 .rtg-duel-render img { position:relative!important; inset:auto!important; width:100%!important; height:100%!important; object-fit:contain!important; object-position:center bottom!important; transform:none!important; }
 .rtg-duel-player-copy { position:relative!important; inset:auto!important; width:100%!important; margin:0!important; padding:7px 2px!important; background:none!important; border:0!important; box-shadow:none!important; transform:none!important; }
-.rtg-duel-player-copy small { font-size:9px!important; color:#786b4e!important; }.rtg-duel-player-copy strong { font-size:13px!important; color:#292a20!important; line-height:1.2; white-space:normal!important; text-shadow:none!important; }
+.rtg-duel-player-copy small { font-size:9px!important; color:#786b4e!important; }.rtg-duel-player-copy strong { font-size:13px!important; color:#111216!important; line-height:1.2; font-weight:950; white-space:normal!important; text-shadow:none!important; }
 .rtg-duel-vs-core,.rtg-duel-result-vs { display:flex!important; justify-content:center!important; align-items:center!important; background:none!important; border:0!important; box-shadow:none!important; transform:none!important; color:#9c803b!important; }
 .rtg-duel-vs-core small,.rtg-duel-result-vs small { display:none!important; }.rtg-duel-vs-core span,.rtg-duel-result-vs span { width:auto!important; height:auto!important; background:none!important; border:0!important; box-shadow:none!important; color:#927632!important; font-size:16px!important; transform:none!important; }
 .rtg-duel-choice-head { margin:14px 0 8px!important; gap:6px; flex-wrap:wrap; }.rtg-duel-choice-head strong { color:#5d5034!important; font-size:10px!important; }.rtg-duel-choice-head span { color:#766d59!important; font-size:9px!important; }
@@ -194,7 +194,7 @@
 .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-winner { outline:2px solid #bd9c42!important; outline-offset:-2px!important; background:#f3e8c8!important; box-shadow:inset 0 0 20px #dabb6333!important; transform:none!important; animation:none!important; }
 .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser { opacity:1!important; filter:none!important; background:#e6e2d7!important; outline:0!important; box-shadow:none!important; transform:none!important; }
 .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser .rtg-duel-render { opacity:.38!important; filter:grayscale(1) brightness(.75)!important; transform:none!important; animation:none!important; }
-.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser .rtg-duel-player-copy { opacity:.7!important; filter:none!important; }
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser .rtg-duel-player-copy { opacity:.7!important; filter:none!important;  background:#fff!important; border-top:2px solid #111216!important; padding:8px 3px!important; min-height:54px; display:flex; flex-direction:column; gap:3px; justify-content:center; }
 .rtg-duel-result-action { color:#746037!important; font-size:11px!important; }.rtg-duel-continue { margin-top:12px!important; min-height:46px!important; }
 .rtg-duel-resolving-head,.rtg-duel-resolving-footer { color:#76633c!important; background:none!important; border:0!important; box-shadow:none!important; }
 .rtg-duel-goal-confirm { background:#e9d69c!important; color:#3d3520!important; border:0!important; border-radius:8px!important; box-shadow:none!important; padding:10px!important; }.rtg-goal-burst { font-size:28px!important; color:#6f5927!important; transform:none!important; text-shadow:none!important; }
@@ -279,9 +279,10 @@
 .rtg-duel-active-move,.rtg-duel-result-move { display:flex!important; flex-wrap:wrap!important; gap:4px 8px!important; min-width:0; background:#fff!important; border-color:#d5d7d2!important; }
 .rtg-duel-active-move strong,.rtg-duel-result-move strong { min-width:0; overflow-wrap:anywhere; flex:1 1 75px; }
 .rtg-duel-active-move em,.rtg-duel-result-move em { white-space:normal!important; }
-.rtg-duel-versus-board .rtg-duel-portrait-panel { border:2px solid var(--duel-rarity-accent,#929ba8)!important; border-left-width:6px!important; background:linear-gradient(145deg,var(--duel-rarity-bg,#dce1e8) 0 38%,#fff 78%)!important; border-radius:5px!important; }
-.rtg-duel-action-chip { background:#fff!important; color:#111216!important; }
-.rtg-duel-player-copy small,.rtg-duel-panel-tag { color:#4e5359!important; }
+.rtg-duel-versus-board .rtg-duel-portrait-panel { border:2px solid #111216!important; border-left-width:2px!important; background:repeating-linear-gradient(125deg,transparent 0 22px,#ffffff45 22px 24px),linear-gradient(150deg,var(--duel-rarity-bg,#dce1e8) 0 52%,#fff 52%)!important; border-radius:2px!important;  border-top:5px solid var(--duel-rarity-accent,#929ba8)!important; box-shadow:2px 3px 0 #111216!important; }
+.rtg-duel-action-chip { background:#ffd21f!important; color:#111216!important;  border-radius:1px!important; }
+.rtg-duel-player-copy small { color:#55575c!important; }
+.rtg-duel-panel-tag { color:#fff!important; min-width:0; overflow-wrap:anywhere; letter-spacing:.04em; }
 .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-winner { outline:0!important; background:linear-gradient(145deg,var(--duel-rarity-bg,#dce1e8) 0 40%,#fff 80%)!important; box-shadow:0 0 0 2px #ffd21f,inset 0 -4px #ffd21f!important; }
 .rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser { background:#f0f1f2!important; }
 .rtg-duel-result-vs::before,.rtg-duel-result-vs::after { display:none!important; }
