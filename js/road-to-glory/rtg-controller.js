@@ -943,15 +943,17 @@
       const pool=gacha.previewPool(campaign,seasonDb);
       deps.openModal?.(runView.vendingMarkup({...pool,tokens:campaign.tokens}),{className:"rtg-modal rtg-vending-modal"});
       const modalRoot=deps.getModalRoot?.();
-      global.RoadToGloryVending3D?.mount?.(modalRoot);
       modalRoot?.querySelector?.("[data-rtg-pull]")?.addEventListener("click",async(event)=>{
         const button=event.currentTarget;
         if(button?.disabled)return;
+        const machine=modalRoot?.querySelector?.("[data-rtg-vending-machine]");
         button.disabled=true;
+        machine?.classList?.add("is-turning");
         try{
-          await global.RoadToGloryVending3D?.spin?.(modalRoot);
+          await new Promise(resolve=>setTimeout(resolve,520));
           await pull();
         }finally{
+          machine?.classList?.remove("is-turning");
           if(button?.isConnected)button.disabled=false;
         }
       });
