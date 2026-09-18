@@ -667,6 +667,7 @@
     escapeHtml,
     playerResolver: global.RoadToGloryPlayerResolver,
     compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
+    teamEmblemMarkup: (...args) => rtgMatchTeamEmblemMarkup(...args),
     formationLayout: global.FormationLayout,
   }) : null;
   const rtgMatchView = rtgRuntimeAvailable ? global.RoadToGloryMatchView.create({
