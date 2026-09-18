@@ -52,7 +52,7 @@ assert.doesNotMatch(result,/rtg-duel-result-meter/);
 assert.doesNotMatch(result,/rtg-duel-result-facts rtg-duel-result-facts--compact/);
 const midfieldResult=view.resolvedEncounterMarkup({userWon:false,probability:52,userKind:"midfield",aiKind:"midfield",actorSide:"user",userPlayer:user,opponentPlayer:opp,userChoiceLabel:"Dribbling",scoreBefore:{user:0,opponent:0},scoreAfter:{user:0,opponent:0}});
 assert.doesNotMatch(midfieldResult,/Dribbling/i);
-assert.match(midfieldResult,/Difesa/i);
+assert.doesNotMatch(midfieldResult,/Difesa/i);
 const opponentMoveLoss=view.resolvedEncounterMarkup({userWon:true,probability:63,userKind:"midfield",aiKind:"midfield",actorSide:"opponent",userPlayer:user,opponentPlayer:opp,userChoiceLabel:"Dribbling",aiChoiceLabel:"Ultra Moon",aiUsedMove:true,aiMovePower:80,scoreBefore:{user:0,opponent:0},scoreAfter:{user:0,opponent:0}});
 assert.match(opponentMoveLoss,/Beat Scatton conquista il possesso/i);
 assert.doesNotMatch(opponentMoveLoss,/Ultra Moon/i);
