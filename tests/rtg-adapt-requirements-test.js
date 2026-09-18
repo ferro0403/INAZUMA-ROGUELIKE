@@ -28,9 +28,10 @@ const make=(prefix,overall)=>{
     overall,
   }));
 };
-const strong=make("s",85);
+const strong=make("s",86);
 const weak=make("w",70);
-const players=[...strong,...weak];
+const medium=make("m",75);
+const players=[...strong,...weak,...medium];
 const freeDb={players};
 const seasonDb={formations:{eleven:[formation]},players:[],teams:[],bossOrder:[]};
 
@@ -101,7 +102,7 @@ const controller=c.RoadToGloryController.create({
     teamId:"occult",state:current,seasonDb,freeAgentIds:players.map(player=>player.playerId),freeAgentsDb:freeDb,playerResolver:resolver,
   });
   assert.strictEqual(before.eligible,false);
-  assert.strictEqual(before.teamPower,85);
+  assert.strictEqual(before.teamPower,86);
 
   const adapted=controller.adaptSquadToCurrentRequirements();
   assert.strictEqual(adapted.ok,true);
@@ -112,6 +113,11 @@ const controller=c.RoadToGloryController.create({
   assert.strictEqual(squad.lineup.length,11);
   assert.strictEqual(squad.bench.length,4);
   assert.strictEqual(new Set([...squad.lineup,...squad.bench]).size,15);
+  assert.deepStrictEqual(
+    [...squad.lineup,...squad.bench].every(playerId=>String(playerId).startsWith("m")),
+    true,
+    "Adatta ai requisiti deve preferire 15 giocatori vicini a 75 invece di mischiare 86 e 70"
+  );
 
   const probe={...current,squads:{...current.squads,ie1:clone(squad)}};
   const after=c.RoadToGlorySquadRuntime.mainEligibility({
