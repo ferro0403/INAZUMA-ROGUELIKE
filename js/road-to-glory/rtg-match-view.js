@@ -687,19 +687,17 @@
         </div>
         <div class="rtg-duel-versus-board rtg-duel-versus-board--result">
           <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userWon ? "is-duel-winner" : "is-duel-loser"}" ${userWon ? "" : `style="${loserStyle}"`}>
-            <span class="rtg-duel-panel-tag">TU</span>
-            ${duelVisualMarkup(user,"user",pid(user) ? `data-rtg-duel-player="${escape(pid(user))}" data-side="user"` : "")}
-            ${userWon ? (userWinningMove
+            ${duelCompareVisualMarkup(user,"user",pid(user) ? `data-rtg-duel-player="${escape(pid(user))}" data-side="user"` : "")}
+            ${userWon && userWinningMove
               ? `<div class="rtg-duel-result-move ${escape(userMoveCategory)}"><small>⚡ MOSSA</small><strong>${escape(userAction)}</strong><em>POWER ${escape(resolution.userMovePower ?? "—")}</em></div>`
-              : `<strong class="rtg-duel-result-action">${escape(userBaseAction)}</strong>`) : ""}
+              : ""}
           </article>
           <div class="rtg-duel-result-vs" aria-hidden="true"><small>ESITO</small><span>VS</span></div>
           <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)} ${userWon ? "is-duel-loser" : "is-duel-winner"}" ${userWon ? `style="${loserStyle}"` : ""}>
-            <span class="rtg-duel-panel-tag">${escape(opponentLabel)}</span>
-            ${duelVisualMarkup(opponent,"opponent",pid(opponent) ? `data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"` : "")}
-            ${!userWon ? (opponentWinningMove
+            ${duelCompareVisualMarkup(opponent,"opponent",pid(opponent) ? `data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"` : "")}
+            ${!userWon && opponentWinningMove
               ? `<div class="rtg-duel-result-move rtg-duel-result-move--opponent ${escape(opponentMoveCategory)}"><small>⚡ MOSSA</small><strong>${escape(opponentAction)}</strong><em>POWER ${escape(resolution.aiMovePower ?? "—")}</em></div>`
-              : `<strong class="rtg-duel-result-action">${escape(opponentBaseAction)}</strong>`) : ""}
+              : ""}
           </article>
         </div>
         ${resolution.goalSide ? `<div class="rtg-duel-goal-confirm rtg-duel-goal-celebration"><span class="rtg-goal-burst">GOL!</span><div><small>PUNTEGGIO AGGIORNATO</small><strong>${escape(scoreUser)} - ${escape(scoreOpponent)}</strong><em>Ripresa dal centrocampo</em></div></div>` : ""}
