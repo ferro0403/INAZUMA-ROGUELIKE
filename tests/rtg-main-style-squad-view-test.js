@@ -40,4 +40,13 @@ assert.deepStrictEqual(opened,["d1"]);
 const css=fs.readFileSync("css/road-to-glory.css","utf8");
 assert.match(css,/--rtg-picker-card-size:\s*74px/);
 assert.match(css,/--rtg-picker-card-mobile:\s*64px/);
+const themeCss=fs.readFileSync("css/rtg-theme.css","utf8");
+assert(
+  /\.rtg-squad-shell\s+\.squad-bench-list\s*>\s*\.rtg-squad-card-slot\s*\{[^}]*grid-template-rows\s*:\s*minmax\(0,1fr\)\s+32px\s*!important/s.test(themeCss),
+  "RTG bench buttons must share one baseline under equal-height card slots"
+);
+assert(
+  /\.rtg-squad-shell\s+\.squad-bench-list\s*>\s*\.rtg-squad-card-slot\s*>\s*\.rtg-squad-change-trigger\s*\{[^}]*align-self\s*:\s*end\s*!important/s.test(themeCss),
+  "RTG bench Cambia buttons must stay pinned below their cards"
+);
 console.log("rtg-main-style-squad-view-test: PASS");
