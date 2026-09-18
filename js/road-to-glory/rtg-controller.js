@@ -83,7 +83,10 @@
       if(side&&campaign?.activeMatch)player=findMatchPlayer(campaign.activeMatch,side,key);
       player=player||resolved(key,squadDraft?.activeRoleVariantByPlayerId?.[key]||null);
       if(!player)return deps.toast?.("Giocatore non disponibile","error");
-      return deps.showPlayerDetailsFor?.(player,{
+      const detailPlayer=player?.stats&&!player?.baseStats
+        ? {...player,baseStats:{...player.stats}}
+        : player;
+      return deps.showPlayerDetailsFor?.(detailPlayer,{
         playerId:key,
         level:20,
         database:detailDatabaseFor(key),
