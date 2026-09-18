@@ -192,16 +192,20 @@
           <div><p class="eyebrow">RTG · S1</p><h2>Distributore</h2></div>
         </div>
         <div class="rtg-vending-stage">
-          <div class="rtg-vending-machine-v4" aria-label="Distributore di palline Season 1">
-            <div class="rtg-vending-brand-v4"><span>INAZUMA</span><strong>RTG</strong></div>
-            <div class="rtg-vending-globe-v4">
-              <i class="rtg-ball b1"></i><i class="rtg-ball b2"></i><i class="rtg-ball b3"></i><i class="rtg-ball b4"></i><i class="rtg-ball b5"></i><i class="rtg-ball b6"></i><i class="rtg-ball b7"></i><i class="rtg-ball b8"></i>
+          <div class="rtg-vending-3d-shell" data-rtg-vending-3d aria-label="Distributore 3D di palline Season 1">
+            <div class="rtg-vending-3d-loading" aria-hidden="true"><span></span><b>CARICAMENTO 3D</b></div>
+            <div class="rtg-vending-machine-v4 rtg-vending-fallback" aria-hidden="true">
+              <div class="rtg-vending-brand-v4"><span>INAZUMA</span><strong>RTG</strong></div>
+              <div class="rtg-vending-globe-v4">
+                <i class="rtg-ball b1"></i><i class="rtg-ball b2"></i><i class="rtg-ball b3"></i><i class="rtg-ball b4"></i><i class="rtg-ball b5"></i><i class="rtg-ball b6"></i><i class="rtg-ball b7"></i><i class="rtg-ball b8"></i>
+              </div>
+              <div class="rtg-vending-cabinet-v4">
+                <div class="rtg-vending-price-v4"><small>1 PALLINA</small><strong>300 ◈</strong></div>
+                <div class="rtg-vending-crank-v4" aria-hidden="true"><i>↻</i></div>
+                <div class="rtg-vending-tray-v4" aria-hidden="true"><span>PREMIO</span><b>?</b></div>
+              </div>
             </div>
-            <div class="rtg-vending-cabinet-v4">
-              <div class="rtg-vending-price-v4"><small>1 PALLINA</small><strong>300 ◈</strong></div>
-              <div class="rtg-vending-crank-v4" aria-hidden="true"><i>↻</i></div>
-              <div class="rtg-vending-tray-v4" aria-hidden="true"><span>PREMIO</span><b>?</b></div>
-            </div>
+            <div class="rtg-vending-3d-caption" aria-hidden="true"><span>TRASCINA PER RUOTARE</span><b>3D</b></div>
           </div>
           <div class="rtg-vending-wallet-chip"><span>GETTONI</span><strong>${escape(Number(model.tokens)||0)} ◈</strong></div>
         </div>
