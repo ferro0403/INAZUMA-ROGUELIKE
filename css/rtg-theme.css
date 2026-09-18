@@ -1547,6 +1547,10 @@
   line-height:1!important;
 }
 
+.rtg-duel-card--clean .rtg-choice-confirm {
+  display:none!important;
+}
+
 .rtg-duel-card--clean .rtg-duel-choice-card.is-selected::before {
   content:"CONFERMA";
   position:absolute;
