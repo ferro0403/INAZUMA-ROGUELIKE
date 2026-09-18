@@ -4,10 +4,10 @@ const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalT
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),c);
 const view=c.RoadToGloryRunView.create({escapeHtml:s=>String(s)});
 const html=view.vendingMarkup({tokens:900,candidates:["a","b","c"],rarities:[{rarity:"Normale",weight:40},{rarity:"Forte",weight:18}]});
-assert.match(html,/rtg-vending-machine-v6/);
-assert.match(html,/rtg-vending-machine-art/);
-assert.match(html,/rtgMachineGlobeClip/);
-assert.doesNotMatch(html,/rtg-vending-machine-v3|rtg-vending-machine-v4|rtg-vending-machine-v5|rtg-vending-3d/);
+assert.match(html,/rtg-vending-machine-v7/);
+assert.match(html,/assets\/rtg\/rtg-gacha-machine\.webp/);
+assert.doesNotMatch(html,/rtg-vending-machine-art|rtgMachineGlobeClip/);
+assert.doesNotMatch(html,/rtg-vending-machine-v3|rtg-vending-machine-v4|rtg-vending-machine-v5|rtg-vending-machine-v6|rtg-vending-3d/);
 assert.match(html,/rtg-vending-wallet-chip/);
 assert.match(html,/GIRA · 300/);
 assert.doesNotMatch(html,/<small>POOL<\/small>/);
