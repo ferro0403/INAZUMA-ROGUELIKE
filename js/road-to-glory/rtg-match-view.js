@@ -639,18 +639,16 @@
       const aiMoveCategory = moveCategoryClass({type:resolution.aiMoveType},resolution.aiKind);
       const userRarityClass = duelRarityClass(user);
       const opponentRarityClass = duelRarityClass(opponent);
-      return `<section class="panel rtg-duel-card rtg-duel-resolving rtg-paper-modal development-squad-card-scope">
+      return `<section class="panel rtg-duel-card rtg-duel-card--clean rtg-duel-resolving rtg-paper-modal development-squad-card-scope">
         <div class="rtg-duel-resolving-head"><small>SCONTRO IN CORSO</small><strong>CHI AVRÀ LA MEGLIO?</strong></div>
         <div class="rtg-duel-versus-board rtg-duel-versus-board--resolving">
-          <article class="rtg-duel-portrait-panel rtg-duel-result-player ${escape(userRarityClass)} ${userMove?"has-special-move":""}">
-            <span class="rtg-duel-panel-tag">TU</span>
-            ${duelVisualMarkup(user,"user")}
+          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userMove?"has-special-move":""}">
+            ${duelCompareVisualMarkup(user,"user")}
             <div class="rtg-duel-resolving-action ${userMove?`is-move ${escape(userMoveCategory)}`:""}"><small>${userMove?"⚡ MOSSA":"AZIONE"}</small><strong>${escape(userAction)}</strong>${userMove?`<em>POWER ${escape(resolution.userMovePower ?? "—")}</em>`:""}</div>
           </article>
           <div class="rtg-duel-vs-core rtg-duel-vs-core--resolving" aria-hidden="true"><small>RISOLUZIONE</small><span>VS</span><i></i></div>
-          <article class="rtg-duel-portrait-panel rtg-duel-result-player ${escape(opponentRarityClass)} ${aiMove?"has-special-move":""}">
-            <span class="rtg-duel-panel-tag">${escape(opponentLabel)}</span>
-            ${duelVisualMarkup(opponent,"opponent")}
+          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)} ${aiMove?"has-special-move":""}">
+            ${duelCompareVisualMarkup(opponent,"opponent")}
             <div class="rtg-duel-resolving-action ${aiMove?`is-move ${escape(aiMoveCategory)}`:""}"><small>${aiMove?"⚡ MOSSA":"AZIONE"}</small><strong>${escape(aiAction)}</strong>${aiMove?`<em>POWER ${escape(resolution.aiMovePower ?? "—")}</em>`:""}</div>
           </article>
         </div>
