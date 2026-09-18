@@ -47,6 +47,8 @@ assert.match(duel,/rtg-choice-delta/);
 assert.match(duel,/rtg-duel-visual--compare/);
 assert.match(duel,/TERRA/);
 assert.match(duel,/FUOCO/);
+assert.match(duel,/is-earth/);
+assert.match(duel,/is-fire/);
 assert.doesNotMatch(duel,/AZIONE BASE/i);
 assert.doesNotMatch(duel,/>VITTORIA</i);
 assert.match(duel,/is-selected/);
