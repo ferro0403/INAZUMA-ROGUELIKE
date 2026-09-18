@@ -2345,3 +2345,110 @@
     max-width:138px!important;
   }
 }
+
+
+/* RTG duel cards v7: rarity-led backgrounds, no element header band. */
+.rtg-duel-card--clean .rtg-duel-portrait-panel {
+  --duel-rarity-bg-vivid:#e5e9ef;
+  --duel-rarity-accent-vivid:#8795a8;
+}
+.rtg-duel-card--clean .rtg-duel-portrait-panel.rarity-scarso {
+  --duel-rarity-bg-vivid:#e1c3a8;
+  --duel-rarity-accent-vivid:#9f6f45;
+}
+.rtg-duel-card--clean .rtg-duel-portrait-panel.rarity-debole {
+  --duel-rarity-bg-vivid:#d4dde9;
+  --duel-rarity-accent-vivid:#71839a;
+}
+.rtg-duel-card--clean .rtg-duel-portrait-panel.rarity-normale {
+  --duel-rarity-bg-vivid:#e2e7ee;
+  --duel-rarity-accent-vivid:#93a3b8;
+}
+.rtg-duel-card--clean .rtg-duel-portrait-panel.rarity-buono {
+  --duel-rarity-bg-vivid:#bceccb;
+  --duel-rarity-accent-vivid:#2fae69;
+}
+.rtg-duel-card--clean .rtg-duel-portrait-panel.rarity-forte {
+  --duel-rarity-bg-vivid:#b8e3ff;
+  --duel-rarity-accent-vivid:#1687c8;
+}
+.rtg-duel-card--clean .rtg-duel-portrait-panel.rarity-elite {
+  --duel-rarity-bg-vivid:#d7c3ff;
+  --duel-rarity-accent-vivid:#6d3bc2;
+}
+.rtg-duel-card--clean .rtg-duel-portrait-panel.rarity-mondiale {
+  --duel-rarity-bg-vivid:#ffc4ca;
+  --duel-rarity-accent-vivid:#c91f2c;
+}
+.rtg-duel-card--clean .rtg-duel-portrait-panel.rarity-leggenda {
+  --duel-rarity-bg-vivid:#ffe08a;
+  --duel-rarity-accent-vivid:#c98a00;
+}
+.rtg-duel-card--clean .rtg-duel-portrait-panel.rarity-aurico {
+  --duel-rarity-bg-vivid:#efe7c9;
+  --duel-rarity-accent-vivid:#111216;
+}
+
+/* Rarity is now the visual identity of the portrait area; element remains only in its badge. */
+.rtg-duel-card--clean .rtg-duel-card-accent {
+  display:none!important;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-render {
+  padding-top:7px!important;
+  background:
+    linear-gradient(145deg,rgba(255,255,255,.72) 0 10%,transparent 10% 100%),
+    repeating-linear-gradient(126deg,transparent 0 25px,rgba(255,255,255,.34) 25px 28px),
+    radial-gradient(circle at 76% 18%,rgba(255,255,255,.78) 0 5%,transparent 6% 100%),
+    linear-gradient(
+      150deg,
+      color-mix(in srgb,var(--duel-rarity-bg-vivid) 90%,#fff) 0 48%,
+      var(--duel-rarity-bg-vivid) 48% 76%,
+      color-mix(in srgb,var(--duel-rarity-bg-vivid) 54%,#fff) 76% 100%
+    )!important;
+  box-shadow:
+    inset 0 0 0 2px color-mix(in srgb,var(--duel-rarity-accent-vivid) 28%,transparent),
+    inset 0 -10px 28px color-mix(in srgb,var(--duel-rarity-accent-vivid) 16%,transparent)!important;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-render::before {
+  width:88%;
+  border-color:color-mix(in srgb,var(--duel-rarity-accent-vivid) 34%,transparent)!important;
+  opacity:.7!important;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-render::after {
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb,var(--duel-rarity-accent-vivid) 24%,transparent),
+      transparent 74%
+    )!important;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-copy {
+  background:
+    linear-gradient(
+      110deg,
+      #fff 0 70%,
+      color-mix(in srgb,var(--duel-rarity-bg-vivid) 34%,#fff) 70% 100%
+    )!important;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-copy::before {
+  border-color:color-mix(in srgb,var(--duel-rarity-accent-vivid) 26%,transparent)!important;
+}
+.rtg-duel-card--clean .rtg-duel-portrait-panel {
+  box-shadow:
+    5px 6px 0 #111216,
+    0 0 0 1px rgba(255,255,255,.9) inset,
+    0 0 0 2px color-mix(in srgb,var(--duel-rarity-accent-vivid) 16%,transparent) inset!important;
+}
+
+/* Keep rarity visible in the compact result state too, without touching win/loss animations. */
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-winner {
+  box-shadow:
+    0 0 0 3px #ffd21f,
+    5px 6px 0 #111216,
+    0 0 0 2px color-mix(in srgb,var(--duel-rarity-accent-vivid) 22%,transparent) inset!important;
+}
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser {
+  box-shadow:
+    4px 5px 0 #111216,
+    0 0 0 2px color-mix(in srgb,var(--duel-rarity-accent-vivid) 16%,transparent) inset!important;
+}
