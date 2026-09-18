@@ -99,4 +99,21 @@ assert(
   "A duel won by the opponent should use a redesigned red result banner"
 );
 
+assert(
+  /\.rtg-duel-versus-board\s+\.rtg-duel-panel-heading\s*\{[^}]*display\s*:\s*none\s*!important/s.test(css),
+  "Live duel should remove the redundant TU/DIFESA and opponent/action banner"
+);
+assert(
+  /\.rtg-duel-choice-head\s*>\s*span\s*\{[^}]*display\s*:\s*none\s*!important/s.test(css),
+  "Live duel should hide the redundant first-tap/second-tap explanation"
+);
+assert(
+  /\.rtg-duel-versus-board\s+\.rtg-duel-portrait-panel\s*\{[^}]*border-radius\s*:\s*8px\s*!important/s.test(css),
+  "Live duel player cards should use subtly rounded corners"
+);
+assert(
+  /\.rtg-match-shell\.rtg-match-revolution\s+\.rtg-match-scoreboard\s+\.rtg-abandon-button\s*\{[^}]*height\s*:\s*34px\s*!important[^}]*background\s*:\s*#c94b52\s*!important[^}]*border-radius\s*:\s*6px\s*!important/s.test(css),
+  "Live match abandon control should be a compact red labeled button"
+);
+
 console.log("rtg-final-visual-pass-test: PASS");
