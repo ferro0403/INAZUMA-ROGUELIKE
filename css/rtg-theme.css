@@ -1597,3 +1597,165 @@
     font-size:18px!important;
   }
 }
+
+
+/* RTG duel compare v4: element badges on own row, stable action layout, cleaner result cards. */
+
+/* Element moves to its own line under role / OVR. */
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta {
+  min-width:0;
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  align-items:start!important;
+  justify-items:start!important;
+  gap:4px!important;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta small {
+  width:100%;
+  min-width:0;
+  font-size:8px!important;
+  white-space:nowrap!important;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-element {
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:18px;
+  padding:2px 6px!important;
+  border:2px solid #111216!important;
+  border-radius:2px!important;
+  color:#111216!important;
+  font-size:7px!important;
+  font-style:normal!important;
+  font-weight:1000!important;
+  letter-spacing:.05em!important;
+  line-height:1!important;
+  text-transform:uppercase!important;
+  box-shadow:1px 2px 0 #111216!important;
+}
+.rtg-duel-card--clean .rtg-duel-player-element.is-fire {
+  background:#ff8050!important;
+  border-color:#a93220!important;
+}
+.rtg-duel-card--clean .rtg-duel-player-element.is-wind {
+  background:#82ddd3!important;
+  border-color:#258b82!important;
+}
+.rtg-duel-card--clean .rtg-duel-player-element.is-earth {
+  background:#d8b15b!important;
+  border-color:#8a6425!important;
+}
+.rtg-duel-card--clean .rtg-duel-player-element.is-wood {
+  background:#7bd46f!important;
+  border-color:#2e8737!important;
+}
+.rtg-duel-card--clean .rtg-duel-player-element.is-neutral {
+  background:#d7d9dd!important;
+  border-color:#777b82!important;
+}
+
+/* Stable action card: copy on the left, probability locked to bottom-right. */
+.rtg-duel-card--clean .rtg-duel-choice-card {
+  min-height:92px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  grid-template-rows:auto auto!important;
+  grid-template-areas:
+    "copy probability"
+    "copy probability"!important;
+  align-items:end!important;
+  column-gap:12px!important;
+  row-gap:0!important;
+  padding:14px 14px 13px!important;
+}
+.rtg-duel-card--clean .rtg-choice-copy {
+  grid-area:copy!important;
+  align-self:end!important;
+  display:grid!important;
+  gap:5px!important;
+  min-width:0!important;
+  padding:0!important;
+  text-align:left!important;
+}
+.rtg-duel-card--clean .rtg-choice-copy strong {
+  display:block!important;
+  margin:0!important;
+  font-size:15px!important;
+  line-height:1!important;
+  text-align:left!important;
+}
+.rtg-duel-card--clean .rtg-choice-copy em {
+  display:block!important;
+  min-width:0!important;
+  margin:0!important;
+  overflow:hidden;
+  color:#5f6167!important;
+  font-size:10px!important;
+  font-style:normal!important;
+  font-weight:850!important;
+  line-height:1.15!important;
+  text-align:left!important;
+  text-overflow:ellipsis;
+  white-space:nowrap!important;
+}
+.rtg-duel-card--clean .rtg-choice-probability {
+  grid-area:probability!important;
+  align-self:end!important;
+  justify-self:end!important;
+  display:grid!important;
+  grid-template-columns:auto auto!important;
+  align-items:end!important;
+  gap:6px!important;
+  min-width:max-content!important;
+  padding:0!important;
+  margin:0!important;
+}
+.rtg-duel-card--clean .rtg-choice-probability strong {
+  display:block!important;
+  margin:0!important;
+  color:#111216!important;
+  font-size:20px!important;
+  font-weight:1000!important;
+  letter-spacing:-.025em!important;
+  line-height:.9!important;
+  white-space:nowrap!important;
+}
+.rtg-duel-card--clean .rtg-choice-delta {
+  align-self:end!important;
+  margin:0!important;
+  padding:3px 7px!important;
+  white-space:nowrap!important;
+}
+
+/* Result: preserve win/loss banner and animations, remove only the white TU/OCCULT labels and base-action pill. */
+.rtg-duel-versus-board--result .rtg-duel-panel-tag {
+  display:none!important;
+}
+.rtg-duel-versus-board--result .rtg-duel-result-action {
+  display:none!important;
+}
+
+@media(max-width:430px) {
+  .rtg-duel-card--clean .rtg-duel-choice-card {
+    min-height:90px!important;
+    column-gap:9px!important;
+    padding:12px!important;
+  }
+  .rtg-duel-card--clean .rtg-choice-copy strong {
+    font-size:14px!important;
+  }
+  .rtg-duel-card--clean .rtg-choice-copy em {
+    max-width:150px;
+    font-size:9px!important;
+  }
+  .rtg-duel-card--clean .rtg-choice-probability {
+    gap:4px!important;
+  }
+  .rtg-duel-card--clean .rtg-choice-probability strong {
+    font-size:17px!important;
+  }
+  .rtg-duel-card--clean .rtg-choice-delta {
+    padding:3px 6px!important;
+    font-size:8px!important;
+  }
+}
