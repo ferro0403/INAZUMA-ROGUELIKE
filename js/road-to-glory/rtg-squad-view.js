@@ -15,10 +15,10 @@
       return '<span class="rtg-source-badge rtg-source-badge--rtg">RTG</span>';
     }
 
-    function fallbackPlayerCard(player, source, attrs = "") {
+    function fallbackPlayerCard(player, source, attrs = "", extraClass = "") {
       const role = roleOf(player) || "—";
       const portrait = player?.portraitUrl || player?.portrait || player?.imageUrl || "";
-      return `<button type="button" class="player-card player-card-compact tactical-player-card mini-player squad-player-card rtg-squad-player-card" ${attrs}>
+      return `<button type="button" class="player-card player-card-compact tactical-player-card mini-player ${escape(extraClass)}" ${attrs}>
         <span class="player-corner player-role">${escape(role)}</span>
         <span class="player-corner player-overall">${escape(player?.overall ?? player?.finalOverall ?? "—")}</span>
         <div class="player-portrait-wrap">${portrait ? `<img class="player-portrait" src="${escape(portrait)}" alt="" loading="lazy" />` : "<span class=\"player-portrait rtg-player-fallback\">⚡</span>"}</div>
@@ -61,7 +61,7 @@
             extraClass,
             trailingMarkup: "",
           })
-        : fallbackPlayerCard(player, "", attrs);
+        : fallbackPlayerCard(player, "", attrs, extraClass);
       if (isPicker || isCatalog) return cardMarkup;
       return `<div class="rtg-squad-card-slot ${options.readOnly ? "rtg-squad-card-slot--readonly" : ""}" data-rtg-card-slot="${escape(playerId)}">
         ${cardMarkup}
