@@ -27,4 +27,18 @@ assert.match(picker,/<option value="Elite" selected>Elite<\/option>/);
 assert.match(picker,/<option value="Mondiale"/);
 assert.match(picker,/<option value="Leggenda"/);
 assert.match(picker,/<option value="Aurico"/);
+const pickerWithCard=view.replacementPickerMarkup({
+  target:{playerId:"g1",player:{name:"GK One"}},
+  role:"GK",
+  entries:[{playerId:"g9",source:"Svincolato",player:{playerId:"g9",name:"GK Nine",overall:84,normalizedRole:"GK",category:"Elite",portraitUrl:""}}],
+  total:1,
+  query:"",
+  sourceFilter:"all",
+  rarityFilter:"Elite",
+  rarityOptions:["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"]
+});
+assert.match(pickerWithCard,/squad-player-card/);
+assert.match(pickerWithCard,/rtg-picker-squad-card/);
+assert.doesNotMatch(pickerWithCard,/rtg-squad-player-card/);
+assert.doesNotMatch(pickerWithCard,/rtg-picker-player-card/);
 console.log("rtg-squad-view-test: PASS");
