@@ -116,4 +116,9 @@ assert(
   "Live match abandon control should be a compact red labeled button"
 );
 
+assert(
+  /\.rtg-duel-card--clean\s+\.rtg-duel-versus-board:not\([^}]*\)\s+\.rtg-duel-portrait-panel\s*\{[^}]*grid-template-rows\s*:\s*auto\s*!important[^}]*height\s*:\s*auto\s*!important[^}]*min-height\s*:\s*0\s*!important/s.test(css),
+  "Live duel cards should collapse the orphaned fixed row after hiding the panel heading"
+);
+
 console.log("rtg-final-visual-pass-test: PASS");
