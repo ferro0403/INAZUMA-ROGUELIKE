@@ -2751,3 +2751,57 @@
     font-size:8px!important;
   }
 }
+
+
+/* RTG squad final polish: clean squad top and rarity filter in replacement picker. */
+.rtg-squad-shell .rtg-squad-content {
+  padding-top:14px!important;
+}
+
+.rtg-modal .rtg-picker-rarity-filter {
+  grid-column:1/-1;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  align-items:center;
+  gap:10px;
+  min-width:0;
+  margin-top:1px;
+}
+.rtg-modal .rtg-picker-rarity-filter > span {
+  color:#5f574c;
+  font-size:.62rem;
+  font-weight:1000;
+  letter-spacing:.09em;
+  text-transform:uppercase;
+}
+.rtg-modal .rtg-picker-rarity-filter select {
+  width:100%;
+  min-width:0;
+  min-height:38px;
+  padding:0 34px 0 10px;
+  border:2px solid #111216;
+  border-radius:2px;
+  background:
+    linear-gradient(135deg,transparent 0 calc(100% - 31px),#ffd21f calc(100% - 31px) 100%),
+    #fff;
+  color:#111216;
+  box-shadow:2px 3px 0 rgba(17,18,22,.18);
+  font:inherit;
+  font-size:.72rem;
+  font-weight:950;
+  outline:none;
+  appearance:auto;
+}
+.rtg-modal .rtg-picker-rarity-filter select:focus {
+  box-shadow:3px 4px 0 #ffd21f;
+}
+@media(max-width:430px) {
+  .rtg-modal .rtg-picker-rarity-filter {
+    grid-template-columns:1fr;
+    gap:5px;
+  }
+  .rtg-modal .rtg-picker-rarity-filter select {
+    min-height:36px;
+    font-size:.69rem;
+  }
+}
