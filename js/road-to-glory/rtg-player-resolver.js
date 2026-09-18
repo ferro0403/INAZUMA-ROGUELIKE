@@ -24,6 +24,60 @@
     return (freeAgentsDb?.players || []).find((player) => id(player?.playerId || player?.id) === id(playerId)) || null;
   }
 
+  function developmentState() {
+    try {
+      return global.DevelopmentAccountV3?.read?.() || null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function evolvedFreeAgent(playerId, freeAgentsDb) {
+    const base = freeAgentById(playerId, freeAgentsDb);
+    if (!base) return null;
+    const playerIdKey = id(base.playerId || base.id || playerId);
+    const state = developmentState();
+    const chain = state?.players?.[playerIdKey];
+    const active = chain?.steps?.at?.(-1) || chain?.legacyNormale || null;
+    const profile = active?.profile || null;
+    if (!profile) return null;
+    return { base, playerId: playerIdKey, state, active, profile };
+  }
+
+  function resolveEvolvedFreeAgent(playerId, freeAgentsDb, level = 20) {
+    const evolved = evolvedFreeAgent(playerId, freeAgentsDb);
+    if (!evolved) return null;
+    let player = null;
+    if (global.DevelopmentRuntime?.resolveAccountPlayer) {
+      try {
+        player = global.DevelopmentRuntime.resolveAccountPlayer(
+          evolved.base,
+          level,
+          freeAgentsDb,
+          { state: evolved.state }
+        );
+      } catch (_) {
+        player = null;
+      }
+    }
+    if (!player && global.DevelopmentV3?.resolveValidatedMaterializedPlayer) {
+      try {
+        player = global.DevelopmentV3.resolveValidatedMaterializedPlayer(evolved.base, evolved.profile, level);
+      } catch (_) {
+        player = null;
+      }
+    }
+    if (!player) return null;
+    return {
+      ...player,
+      playerId: evolved.playerId,
+      level,
+      category: evolved.profile.category || evolved.active?.rarity || player.category,
+      resolvedSeasonId: "free_agents",
+      developmentApplied: true,
+    };
+  }
+
   function resolveVersion(playerId, activeSeasonId = "ie1", freeAgentsDb = null) {
     const requestedId = id(playerId);
     if (!requestedId) return null;
@@ -47,6 +101,8 @@
   }
 
   function resolveAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null) {
+    const evolved = resolveEvolvedFreeAgent(playerId, freeAgentsDb, 20);
+    if (evolved) return evolved;
     const resolved = resolveVersion(playerId, activeSeasonId, freeAgentsDb);
     if (!resolved) return null;
     const database = resolved.seasonId === "free_agents"
@@ -81,6 +137,8 @@
   }
 
   function rarity(playerId, activeSeasonId = "ie1", freeAgentsDb = null) {
+    const evolved = evolvedFreeAgent(playerId, freeAgentsDb);
+    if (evolved) return evolved.profile?.category || evolved.active?.rarity || evolved.base?.category || null;
     return resolveVersion(playerId, activeSeasonId, freeAgentsDb)?.player?.category || null;
   }
 
