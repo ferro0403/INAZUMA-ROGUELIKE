@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "purpose": "Remote GLB loading prototype only. Not production player data.",
   "models": [
     {
@@ -16,7 +16,170 @@
       "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Fox/glTF-Binary/Fox.glb",
       "expectedBytes": 162852,
       "source": "KhronosGroup/glTF-Sample-Assets - Fox",
-      "license": "CC0 / CC BY 4.0 components; see upstream README"
+      "license": "See upstream model README"
+    }
+  ],
+  "stressRounds": 5,
+  "stressModels": [
+    {
+      "id": "stress_boxtextured",
+      "label": "BoxTextured",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/BoxTextured/glTF-Binary/BoxTextured.glb",
+      "expectedBytes": 5956,
+      "source": "KhronosGroup/glTF-Sample-Assets - BoxTextured",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_animatedmorphcube",
+      "label": "AnimatedMorphCube",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/AnimatedMorphCube/glTF-Binary/AnimatedMorphCube.glb",
+      "expectedBytes": 6752,
+      "source": "KhronosGroup/glTF-Sample-Assets - AnimatedMorphCube",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_interpolationtest",
+      "label": "InterpolationTest",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/InterpolationTest/glTF-Binary/InterpolationTest.glb",
+      "expectedBytes": 7952,
+      "source": "KhronosGroup/glTF-Sample-Assets - InterpolationTest",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_boxanimated",
+      "label": "BoxAnimated",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/BoxAnimated/glTF-Binary/BoxAnimated.glb",
+      "expectedBytes": 11944,
+      "source": "KhronosGroup/glTF-Sample-Assets - BoxAnimated",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_riggedsimple",
+      "label": "RiggedSimple",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/RiggedSimple/glTF-Binary/RiggedSimple.glb",
+      "expectedBytes": 15104,
+      "source": "KhronosGroup/glTF-Sample-Assets - RiggedSimple",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_animatedcolorscube",
+      "label": "AnimatedColorsCube",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/AnimatedColorsCube/glTF-Binary/AnimatedColorsCube.glb",
+      "expectedBytes": 15184,
+      "source": "KhronosGroup/glTF-Sample-Assets - AnimatedColorsCube",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_textureencodingtest",
+      "label": "TextureEncodingTest",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/TextureEncodingTest/glTF-Binary/TextureEncodingTest.glb",
+      "expectedBytes": 21612,
+      "source": "KhronosGroup/glTF-Sample-Assets - TextureEncodingTest",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_riggedfigure",
+      "label": "RiggedFigure",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/RiggedFigure/glTF-Binary/RiggedFigure.glb",
+      "expectedBytes": 50116,
+      "source": "KhronosGroup/glTF-Sample-Assets - RiggedFigure",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_attenuationtest",
+      "label": "AttenuationTest",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/AttenuationTest/glTF-Binary/AttenuationTest.glb",
+      "expectedBytes": 57532,
+      "source": "KhronosGroup/glTF-Sample-Assets - AttenuationTest",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_duck",
+      "label": "Duck",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Duck/glTF-Binary/Duck.glb",
+      "expectedBytes": 120484,
+      "source": "KhronosGroup/glTF-Sample-Assets - Duck",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_compareroughness",
+      "label": "CompareRoughness",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CompareRoughness/glTF-Binary/CompareRoughness.glb",
+      "expectedBytes": 155660,
+      "source": "KhronosGroup/glTF-Sample-Assets - CompareRoughness",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_fox",
+      "label": "Fox",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Fox/glTF-Binary/Fox.glb",
+      "expectedBytes": 162852,
+      "source": "KhronosGroup/glTF-Sample-Assets - Fox",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_comparemetallic",
+      "label": "CompareMetallic",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CompareMetallic/glTF-Binary/CompareMetallic.glb",
+      "expectedBytes": 172180,
+      "source": "KhronosGroup/glTF-Sample-Assets - CompareMetallic",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_comparenormal",
+      "label": "CompareNormal",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CompareNormal/glTF-Binary/CompareNormal.glb",
+      "expectedBytes": 220900,
+      "source": "KhronosGroup/glTF-Sample-Assets - CompareNormal",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_speculartest",
+      "label": "SpecularTest",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/SpecularTest/glTF-Binary/SpecularTest.glb",
+      "expectedBytes": 223376,
+      "source": "KhronosGroup/glTF-Sample-Assets - SpecularTest",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_clearcoattest",
+      "label": "ClearCoatTest",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/ClearCoatTest/glTF-Binary/ClearCoatTest.glb",
+      "expectedBytes": 258048,
+      "source": "KhronosGroup/glTF-Sample-Assets - ClearCoatTest",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_cesiummilktruck",
+      "label": "CesiumMilkTruck",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CesiumMilkTruck/glTF-Binary/CesiumMilkTruck.glb",
+      "expectedBytes": 369980,
+      "source": "KhronosGroup/glTF-Sample-Assets - CesiumMilkTruck",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_cesiumman",
+      "label": "CesiumMan",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CesiumMan/glTF-Binary/CesiumMan.glb",
+      "expectedBytes": 438044,
+      "source": "KhronosGroup/glTF-Sample-Assets - CesiumMan",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_recursiveskeletons",
+      "label": "RecursiveSkeletons",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/RecursiveSkeletons/glTF-Binary/RecursiveSkeletons.glb",
+      "expectedBytes": 561620,
+      "source": "KhronosGroup/glTF-Sample-Assets - RecursiveSkeletons",
+      "license": "See upstream model README"
+    },
+    {
+      "id": "stress_morphstresstest",
+      "label": "MorphStressTest",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/MorphStressTest/glTF-Binary/MorphStressTest.glb",
+      "expectedBytes": 575900,
+      "source": "KhronosGroup/glTF-Sample-Assets - MorphStressTest",
+      "license": "See upstream model README"
     }
   ]
 }

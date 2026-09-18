@@ -16,7 +16,11 @@ assert(
   "The production index must remain completely unaware of the 3D lab.",
 );
 
-assert.strictEqual(manifest.version, 1, "Unexpected prototype manifest version.");
+assert.strictEqual(manifest.version, 2, "Unexpected prototype manifest version.");
+assert.strictEqual(manifest.stressRounds, 5, "Stress test must use five rounds.");
+assert(Array.isArray(manifest.stressModels), "stressModels must be an array.");
+assert.strictEqual(manifest.stressModels.length, 20, "Stress test must use 20 distinct models.");
+assert.strictEqual(new Set(manifest.stressModels.map((model) => model.modelUrl)).size, 20, "Stress model URLs must be distinct.");
 assert(Array.isArray(manifest.models) && manifest.models.length >= 2, "Need at least two remote model entries.");
 
 for (const model of manifest.models) {
@@ -32,7 +36,9 @@ assert(labIndex.includes('id="stress-test"'), "Lab must expose the 100-cycle str
 assert(labApp.includes('fetch(entry.modelUrl, { mode: "cors", cache: "default" })'), "GLB must be fetched from the manifest URL.");
 assert(labApp.includes('dom.load.addEventListener("click", loadSelectedModel)'), "GLB loading must be user-triggered.");
 assert(labApp.includes('dom.stress.addEventListener("click", runStressTest)'), "Stress test must be explicitly user-triggered.");
-assert(labApp.includes("const STRESS_CYCLES = 100"), "Stress test must run 100 cycles.");
+assert(labApp.includes("const DEFAULT_STRESS_ROUNDS = 5"), "Stress test must default to five rounds.");
+assert(labApp.includes("const plan = []"), "Stress test must build a multi-model plan.");
+assert(labApp.includes("seenUrls.add(entry.modelUrl)"), "Stress test must track distinct model URLs.");
 assert(labApp.includes("geometry.dispose?.()"), "Geometry disposal is required.");
 assert(labApp.includes("texture.dispose?.()"), "Texture disposal is required.");
 assert(labApp.includes("material.dispose?.()"), "Material disposal is required.");

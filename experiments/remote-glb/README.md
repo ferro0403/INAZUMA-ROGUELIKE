@@ -36,16 +36,25 @@ Rilascia memoria rimuove il modello dalla scena e libera:
 - ImageBitmap quando il browser li espone;
 - cache interna del parser GLTF.
 
-## Stress test
+## Stress test multi-modello
 
-Il pulsante Stress test ×100 esegue 100 cicli consecutivi:
+Il pulsante **Stress multi 20×5** usa **20 URL GLB realmente diversi** e li percorre per
+**5 giri completi**, per un totale di 100 caricamenti:
 
-    carica -> render -> rilascia -> misura
+    modello A -> release
+    modello B -> release
+    ...
+    modello T -> release
+    ripeti per 5 giri
 
-Prima del ciclo 1 viene misurato il baseline GPU della pagina vuota. Alla fine il test è PASS
-solo se geometrie e texture GPU tornano allo stesso baseline o sotto. L'heap JavaScript viene
-mostrato come dato diagnostico ma non determina il PASS, perché il momento della garbage
-collection è deciso dal browser.
+Il set include asset statici, animati, riggati/skinned, texturizzati e con materiali differenti.
+Prima del primo modello viene misurato il baseline GPU della pagina vuota. Alla fine il test è
+PASS solo se geometrie e texture GPU tornano allo stesso baseline o sotto.
+
+Questo test è più severo del precedente perché la prima tornata deve realmente scaricare e
+parsare 20 file distinti; i giri successivi possono beneficiare della cache HTTP del browser.
+L'heap JavaScript resta diagnostico e non determina il PASS, perché il garbage collector è
+gestito dal browser.
 
 ## Asset di test
 

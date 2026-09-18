@@ -3,7 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const MANIFEST_URL = "../../data/REMOTE_3D_PROTOTYPE.json";
-const STRESS_CYCLES = 100;
+const DEFAULT_STRESS_ROUNDS = 5;
 
 const dom = {
   viewer: document.querySelector("#viewer"),
@@ -474,23 +474,47 @@ async function loadSelectedModel() {
 
 async function runStressTest() {
   if (state.busy) return;
-  const entry = selectedEntry();
-  if (!entry) {
-    setStatus("Nessun modello selezionato.", true);
+
+  const stressModels = Array.isArray(state.manifest?.stressModels)
+    ? state.manifest.stressModels
+    : [];
+  const rounds = Number.isInteger(state.manifest?.stressRounds)
+    ? state.manifest.stressRounds
+    : DEFAULT_STRESS_ROUNDS;
+
+  if (stressModels.length === 0 || rounds < 1) {
+    setStatus("Manifest stress multi-modello non valido.", true);
     return;
   }
 
+  const plan = [];
+  for (let round = 0; round < rounds; round += 1) {
+    for (const model of stressModels) {
+      plan.push({ ...model, stressRound: round + 1 });
+    }
+  }
+
+  const totalCycles = plan.length;
   state.busy = true;
   updateControls();
-  dom.metrics.stressCycles.textContent = "0/" + STRESS_CYCLES;
+  dom.metrics.stressCycles.textContent = "0/" + totalCycles;
   dom.metrics.stressResult.textContent = "IN CORSO";
   dom.metrics.stressResult.className = "";
-  dom.stressStatus.textContent = "Preparazione baseline GPU…";
+  dom.stressStatus.textContent =
+    "Baseline GPU · " +
+    stressModels.length +
+    " modelli diversi × " +
+    rounds +
+    " giri = " +
+    totalCycles +
+    " caricamenti…";
 
   let baseline = null;
   let after = null;
   let totalNetworkMs = 0;
   let totalParseMs = 0;
+  let totalBytes = 0;
+  const seenUrls = new Set();
 
   try {
     await releaseCurrentModel({ quiet: true, settleFrames: 3 });
@@ -498,21 +522,37 @@ async function runStressTest() {
     await waitFrames(2);
     baseline = runtimeSnapshot();
 
-    for (let cycle = 1; cycle <= STRESS_CYCLES; cycle += 1) {
+    for (let index = 0; index < plan.length; index += 1) {
+      const entry = plan[index];
+      const cycle = index + 1;
       const result = await loadEntry(entry, { announce: false });
+
+      seenUrls.add(entry.modelUrl);
       totalNetworkMs += result.networkMs;
       totalParseMs += result.parseMs;
+      totalBytes += result.bytes;
 
       await releaseCurrentModel({ quiet: true, settleFrames: 2 });
 
-      if (cycle === 1 || cycle % 5 === 0 || cycle === STRESS_CYCLES) {
+      if (
+        cycle === 1 ||
+        cycle % stressModels.length === 0 ||
+        cycle % 5 === 0 ||
+        cycle === totalCycles
+      ) {
         const current = runtimeSnapshot();
-        dom.metrics.stressCycles.textContent = cycle + "/" + STRESS_CYCLES;
+        dom.metrics.stressCycles.textContent = cycle + "/" + totalCycles;
         dom.stressStatus.textContent =
           "Ciclo " +
           cycle +
           "/" +
-          STRESS_CYCLES +
+          totalCycles +
+          " · giro " +
+          entry.stressRound +
+          "/" +
+          rounds +
+          " · " +
+          entry.label +
           " · GPU geo " +
           current.geometries +
           " · texture " +
@@ -538,12 +578,16 @@ async function runStressTest() {
     dom.metrics.stressResult.textContent = gpuStable ? "PASS" : "ATTENZIONE";
     dom.metrics.stressResult.className = gpuStable ? "metric-pass" : "metric-warn";
 
-    const heapPart = heapDelta == null
-      ? "heap n/d"
-      : "heap Δ " + (heapDelta >= 0 ? "+" : "") + formatBytes(Math.abs(heapDelta));
+    const heapPart =
+      heapDelta == null
+        ? "heap n/d"
+        : "heap Δ " + (heapDelta >= 0 ? "+" : "-") + formatBytes(Math.abs(heapDelta));
 
     dom.stressStatus.textContent =
-      "100 cicli completati · GPU Δ geometrie " +
+      totalCycles +
+      " cicli multi-modello · " +
+      seenUrls.size +
+      " URL distinti · GPU Δ geometrie " +
       (geometryDelta >= 0 ? "+" : "") +
       geometryDelta +
       " · texture " +
@@ -551,23 +595,27 @@ async function runStressTest() {
       textureDelta +
       " · " +
       heapPart +
+      " · dati processati " +
+      formatBytes(totalBytes) +
       " · media download " +
-      (totalNetworkMs / STRESS_CYCLES).toFixed(1) +
+      (totalNetworkMs / totalCycles).toFixed(1) +
       " ms · media parsing " +
-      (totalParseMs / STRESS_CYCLES).toFixed(1) +
+      (totalParseMs / totalCycles).toFixed(1) +
       " ms.";
 
     setStatus(
       gpuStable
-        ? "Stress test completato: le risorse GPU sono tornate al baseline."
-        : "Stress test completato: restano risorse GPU sopra il baseline.",
+        ? "Stress multi-modello completato: le risorse GPU sono tornate al baseline."
+        : "Stress multi-modello completato: restano risorse GPU sopra il baseline.",
       !gpuStable,
     );
   } catch (error) {
     dom.metrics.stressResult.textContent = "ERRORE";
     dom.metrics.stressResult.className = "metric-warn";
-    dom.stressStatus.textContent = error instanceof Error ? error.message : String(error);
-    setStatus("Stress test interrotto.", true);
+    dom.stressStatus.textContent =
+      "Stress multi-modello interrotto: " +
+      (error instanceof Error ? error.message : String(error));
+    setStatus("Stress multi-modello interrotto.", true);
     await releaseCurrentModel({ quiet: true, settleFrames: 2 });
   } finally {
     state.busy = false;
