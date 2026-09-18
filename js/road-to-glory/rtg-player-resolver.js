@@ -130,6 +130,7 @@
   }
 
   function resolveMove(playerId, activeSeasonId = "ie1", role = null, freeAgentsDb = null) {
+    if (evolvedFreeAgent(playerId, freeAgentsDb)) return null;
     const resolved = resolveVersion(playerId, activeSeasonId, freeAgentsDb);
     if (!resolved || resolved.seasonId === "free_agents") return null;
     const player = resolveAtLevel20(playerId, activeSeasonId, role ? String(role).toLowerCase() : null, freeAgentsDb) || resolved.player;
