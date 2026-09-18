@@ -414,11 +414,19 @@
       const constraint=config.SEASON1?.constraints?.[teamId];
       if(!formation||!constraint)return null;
       const candidates=Array.from(pool||[]);
+      const targetPower=Number(constraint.cap);
       const required={GK:0,DF:0,MF:0,FW:0,...(formation.requirements||{})};
       const left={GK:Number(required.GK)||0,DF:Number(required.DF)||0,MF:Number(required.MF)||0,FW:Number(required.FW)||0};
       const selected=[],used=new Set();
-      const weakest=(a,b)=>a.contribution-b.contribution||a.playerId.localeCompare(b.playerId);
-      const strongest=(a,b)=>b.contribution-a.contribution||a.playerId.localeCompare(b.playerId);
+      const distanceToTarget=entry=>Math.abs(Number(entry.contribution||0)-targetPower);
+      const balanced=(a,b)=>{
+        const distanceDelta=distanceToTarget(a)-distanceToTarget(b);
+        if(Math.abs(distanceDelta)>1e-9)return distanceDelta;
+        const aAbove=Number(a.contribution)>targetPower?1:0;
+        const bAbove=Number(b.contribution)>targetPower?1:0;
+        if(aAbove!==bAbove)return aAbove-bAbove;
+        return Number(b.contribution)-Number(a.contribution)||a.playerId.localeCompare(b.playerId);
+      };
       const addLineupFrom=(source,needed)=>{
         for(const entry of source){
           if(needed<=0)break;
@@ -431,11 +439,11 @@
       // that cannot fit on the four-player bench is forced into the XI.
       const minFieldRecent=Math.max(0,Number(constraint.recentCount||0)-4);
       const minFieldRecruit=Math.max(0,Number(constraint.minRecruit||0)-4);
-      if(addLineupFrom(candidates.filter(entry=>entry.recent).sort(weakest),minFieldRecent)>0)return null;
+      if(addLineupFrom(candidates.filter(entry=>entry.recent).sort(balanced),minFieldRecent)>0)return null;
       const fieldRecruitNow=selected.filter(entry=>entry.recruit).length;
-      if(addLineupFrom(candidates.filter(entry=>entry.recruit).sort(weakest),Math.max(0,minFieldRecruit-fieldRecruitNow))>0)return null;
+      if(addLineupFrom(candidates.filter(entry=>entry.recruit).sort(balanced),Math.max(0,minFieldRecruit-fieldRecruitNow))>0)return null;
       for(const role of ["GK","DF","MF","FW"]){
-        if(addLineupFrom(candidates.filter(entry=>entry.role===role).sort(weakest),left[role])>0)return null;
+        if(addLineupFrom(candidates.filter(entry=>entry.role===role).sort(balanced),left[role])>0)return null;
       }
       if(selected.length!==11)return null;
 
@@ -451,25 +459,41 @@
       };
       const fieldRecruitCount=selected.filter(entry=>entry.recruit).length;
       const fieldRecentCount=selected.filter(entry=>entry.recent).length;
-      if(addBenchFrom(candidates.filter(entry=>entry.recent).sort(weakest),Math.max(0,Number(constraint.recentCount||0)-fieldRecentCount))>0)return null;
+      if(addBenchFrom(candidates.filter(entry=>entry.recent).sort(balanced),Math.max(0,Number(constraint.recentCount||0)-fieldRecentCount))>0)return null;
       const activeRecruitAfterRecent=fieldRecruitCount+bench.filter(entry=>entry.recruit).length;
-      if(addBenchFrom(candidates.filter(entry=>entry.recruit).sort(weakest),Math.max(0,Number(constraint.minRecruit||0)-activeRecruitAfterRecent))>0)return null;
-      addBenchFrom(candidates.sort(weakest),4-bench.length);
+      if(addBenchFrom(candidates.filter(entry=>entry.recruit).sort(balanced),Math.max(0,Number(constraint.minRecruit||0)-activeRecruitAfterRecent))>0)return null;
+      addBenchFrom(candidates.sort(balanced),4-bench.length);
       if(bench.length!==4)return null;
 
-      // The match requirement is now a full 15-player roster cap. Build the
-      // weakest valid roster first, then spend the remaining cap headroom on
-      // the strongest legal upgrades. This makes the result stable across
-      // halftime swaps because moving a player between XI and bench does not
-      // change the 15-player total.
-      const capTotal=Number(constraint.cap)*15;
+      // Prefer players individually close to the requested level. Afterwards,
+      // use any remaining cap headroom while keeping the roster as homogeneous
+      // as possible. This avoids solutions such as a few 86 OVR players mixed
+      // with many 70 OVR players when 75 OVR alternatives are available.
+      const capTotal=targetPower*15;
       const roster=()=>[...selected,...bench];
-      let total=roster().reduce((sum,entry)=>sum+entry.contribution,0);
-      if(total>capTotal+1e-9)return null;
+      const spreadOf=entries=>entries.reduce((sum,entry)=>{
+        const delta=Number(entry.contribution||0)-targetPower;
+        return sum+(delta*delta);
+      },0);
+      const metric=(total,spread)=>({
+        overage:Math.max(0,total-capTotal),
+        shortfall:Math.max(0,capTotal-total),
+        spread,
+      });
+      const betterMetric=(candidate,current)=>{
+        if(candidate.overage!==current.overage)return candidate.overage<current.overage;
+        if(candidate.shortfall!==current.shortfall)return candidate.shortfall<current.shortfall;
+        if(Math.abs(candidate.spread-current.spread)>1e-9)return candidate.spread<current.spread;
+        return false;
+      };
+      let active=roster();
+      let total=active.reduce((sum,entry)=>sum+entry.contribution,0);
+      let spread=spreadOf(active);
+      let currentMetric=metric(total,spread);
 
       let guard=0;
-      while(guard++<120){
-        const active=roster();
+      while(guard++<180){
+        active=roster();
         const activeRecruitCount=active.filter(entry=>entry.recruit).length;
         const activeRecentCount=active.filter(entry=>entry.recent).length;
         const activeIds=new Set(active.map(entry=>entry.playerId));
@@ -480,19 +504,26 @@
           for(const incoming of candidates){
             if(activeIds.has(incoming.playerId))continue;
             if(isLineup&&incoming.role!==outgoing.role)continue;
-            const delta=incoming.contribution-outgoing.contribution;
-            if(delta<=0||total+delta>capTotal+1e-9)continue;
             const nextRecruit=activeRecruitCount-(outgoing.recruit?1:0)+(incoming.recruit?1:0);
             const nextRecent=activeRecentCount-(outgoing.recent?1:0)+(incoming.recent?1:0);
             if(nextRecruit<Number(constraint.minRecruit||0)||nextRecent<Number(constraint.recentCount||0))continue;
-            if(!best||delta>best.delta||(delta===best.delta&&incoming.overall>best.incoming.overall))best={index,outgoing,incoming,delta};
+            const nextTotal=total-outgoing.contribution+incoming.contribution;
+            const outgoingDelta=Number(outgoing.contribution||0)-targetPower;
+            const incomingDelta=Number(incoming.contribution||0)-targetPower;
+            const nextSpread=spread-(outgoingDelta*outgoingDelta)+(incomingDelta*incomingDelta);
+            const nextMetric=metric(nextTotal,nextSpread);
+            if(!betterMetric(nextMetric,currentMetric))continue;
+            if(!best||betterMetric(nextMetric,best.metric))best={index,incoming,nextTotal,nextSpread,metric:nextMetric};
           }
         }
         if(!best)break;
         if(best.index<selected.length)selected[best.index]=best.incoming;
         else bench[best.index-selected.length]=best.incoming;
-        total+=best.delta;
+        total=best.nextTotal;
+        spread=best.nextSpread;
+        currentMetric=best.metric;
       }
+      if(total>capTotal+1e-9)return null;
 
       const state=clone(draftState());
       state.squads.ie1={
@@ -503,7 +534,12 @@
       };
       const eligibility=squadRuntime.mainEligibility({teamId,state,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
       if(!eligibility.eligible)return null;
-      return{squad:state.squads.ie1,eligibility};
+      return{
+        squad:state.squads.ie1,
+        eligibility,
+        targetShortfall:Math.max(0,capTotal-total),
+        balanceSpread:spread,
+      };
     }
     function adaptSquadToCurrentRequirements(){
       const teamId=currentRequirementTeamId();
@@ -516,7 +552,7 @@
       for(const formation of ordered){
         const candidate=buildRequirementCandidate(formation,teamId,pool);
         if(!candidate)continue;
-        if(!best||Number(candidate.eligibility.teamPower||0)>Number(best.eligibility.teamPower||0))best=candidate;
+        if(!best||candidate.targetShortfall<best.targetShortfall-1e-9||(Math.abs(candidate.targetShortfall-best.targetShortfall)<=1e-9&&candidate.balanceSpread<best.balanceSpread-1e-9))best=candidate;
       }
       if(!best){deps.toast?.("Non riesco a costruire automaticamente una squadra valida con i giocatori disponibili","error");return{ok:false,reason:"no-valid-squad"};}
       squadDraft=clone(best.squad);
