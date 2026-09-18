@@ -102,7 +102,7 @@
 
     function duelElementLabel(player = {}) {
       const raw = String(player?.element || "").trim();
-      return raw ? raw.toUpperCase() : "—";
+      return raw || "—";
     }
 
     function duelElementClass(player = {}) {
