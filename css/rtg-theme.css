@@ -2002,3 +2002,346 @@
     font-size:10px!important;
   }
 }
+
+
+/* RTG duel cards v6: release-quality collectible card treatment. */
+.rtg-duel-card--clean .rtg-duel-visual--compare {
+  --duel-element:#6f7782;
+  --duel-element-dark:#343940;
+  --duel-element-soft:#eef1f4;
+  position:relative!important;
+  isolation:isolate;
+  width:100%!important;
+  overflow:hidden!important;
+  border:0!important;
+  border-radius:0!important;
+  background:#fff!important;
+  color:#111216!important;
+  text-align:left!important;
+  -webkit-tap-highlight-color:transparent;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare.is-fire {
+  --duel-element:#cf4435;
+  --duel-element-dark:#8f261d;
+  --duel-element-soft:#fff0ec;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare.is-wind {
+  --duel-element:#2794bd;
+  --duel-element-dark:#176a8b;
+  --duel-element-soft:#e8f6fb;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare.is-forest {
+  --duel-element:#3f9c5e;
+  --duel-element-dark:#23683b;
+  --duel-element-soft:#e6f5e9;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare.is-mountain {
+  --duel-element:#9b7344;
+  --duel-element-dark:#654522;
+  --duel-element-soft:#f3e6d6;
+}
+
+.rtg-duel-card--clean .rtg-duel-card-accent {
+  position:absolute;
+  inset:0 0 auto 0;
+  z-index:4;
+  height:9px;
+  display:block!important;
+  overflow:hidden;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,var(--duel-element-dark) 0 22%,var(--duel-element) 22% 82%,rgba(255,255,255,.85) 82% 86%,var(--duel-element) 86% 100%);
+  box-shadow:0 2px 0 rgba(17,18,22,.16);
+}
+.rtg-duel-card--clean .rtg-duel-card-accent i {
+  position:absolute;
+  left:10px;
+  top:1px;
+  width:18px;
+  height:7px;
+  display:block;
+  opacity:.92;
+  background:
+    linear-gradient(135deg,transparent 0 34%,#fff 35% 49%,transparent 50% 100%),
+    linear-gradient(45deg,transparent 0 42%,#fff 43% 56%,transparent 57% 100%);
+}
+.rtg-duel-card--clean .rtg-duel-card-accent b {
+  position:absolute;
+  right:8px;
+  top:2px;
+  width:23px;
+  height:5px;
+  display:block;
+  opacity:.65;
+  background:repeating-linear-gradient(120deg,#fff 0 3px,transparent 3px 7px);
+}
+
+.rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-portrait-panel {
+  width:clamp(124px,33vw,140px)!important;
+  max-width:140px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:3px solid #111216!important;
+  border-radius:9px 3px 9px 3px!important;
+  background:#fff!important;
+  box-shadow:
+    5px 6px 0 #111216,
+    0 0 0 1px rgba(255,255,255,.9) inset!important;
+}
+.rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-portrait-panel::after {
+  display:none!important;
+}
+
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-render {
+  position:relative;
+  z-index:1;
+  width:100%!important;
+  aspect-ratio:1 / .92!important;
+  min-height:0!important;
+  max-height:none!important;
+  display:flex!important;
+  align-items:flex-end!important;
+  justify-content:center!important;
+  margin:0!important;
+  padding:12px 7px 0!important;
+  overflow:hidden!important;
+  border-bottom:3px solid #111216!important;
+  background:
+    linear-gradient(150deg,rgba(255,255,255,.68) 0 10%,transparent 10% 100%),
+    repeating-linear-gradient(126deg,transparent 0 24px,rgba(255,255,255,.32) 24px 27px),
+    radial-gradient(circle at 70% 20%,rgba(255,255,255,.82) 0 5%,transparent 6% 100%),
+    linear-gradient(150deg,var(--duel-element-soft) 0 68%,#fff 68% 100%)!important;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-render::before {
+  content:"";
+  position:absolute;
+  inset:auto -12% -36% auto;
+  width:85%;
+  aspect-ratio:1;
+  border:14px solid color-mix(in srgb,var(--duel-element) 28%,transparent);
+  border-radius:50%;
+  opacity:.62;
+  pointer-events:none;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-render::after {
+  content:"";
+  position:absolute;
+  left:-18%;
+  bottom:-52%;
+  width:105%;
+  height:74%;
+  transform:rotate(-13deg);
+  background:linear-gradient(90deg,color-mix(in srgb,var(--duel-element) 20%,transparent),transparent 72%);
+  pointer-events:none;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-render img {
+  position:relative;
+  z-index:2;
+  width:105%!important;
+  height:105%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  object-position:center bottom!important;
+  filter:drop-shadow(0 5px 4px rgba(17,18,22,.22))!important;
+}
+
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-copy {
+  position:relative;
+  z-index:2;
+  width:100%!important;
+  min-height:76px!important;
+  display:grid!important;
+  grid-template-rows:auto auto!important;
+  gap:6px!important;
+  margin:0!important;
+  padding:9px 9px 10px!important;
+  overflow:hidden;
+  border:0!important;
+  background:
+    linear-gradient(110deg,#fff 0 74%,color-mix(in srgb,var(--duel-element-soft) 86%,#fff) 74% 100%)!important;
+  text-align:left!important;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-copy::before {
+  content:"";
+  position:absolute;
+  right:-14px;
+  bottom:-18px;
+  width:54px;
+  height:54px;
+  border:8px solid color-mix(in srgb,var(--duel-element) 18%,transparent);
+  transform:rotate(18deg);
+  pointer-events:none;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-copy::after {
+  content:"";
+  position:absolute;
+  left:9px;
+  right:9px;
+  top:34px;
+  height:1px;
+  background:linear-gradient(90deg,#111216 0 62%,transparent 62% 100%);
+  opacity:.55;
+  pointer-events:none;
+}
+
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-name {
+  position:relative;
+  z-index:1;
+  display:block!important;
+  min-width:0;
+  margin:0!important;
+  overflow:hidden;
+  color:#111216!important;
+  font-size:12.5px!important;
+  font-weight:1000!important;
+  line-height:1.05!important;
+  letter-spacing:-.025em!important;
+  text-overflow:ellipsis;
+  white-space:nowrap!important;
+}
+
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta {
+  position:relative;
+  z-index:1;
+  min-width:0;
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:6px!important;
+  align-items:start!important;
+  justify-items:start!important;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta small {
+  width:100%;
+  display:flex!important;
+  align-items:center!important;
+  gap:5px!important;
+  min-width:0;
+  color:#555960!important;
+  font-size:8px!important;
+  font-weight:900!important;
+  line-height:1!important;
+  letter-spacing:.03em!important;
+  white-space:nowrap!important;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta small b {
+  display:inline-grid;
+  place-items:center;
+  min-width:24px;
+  min-height:17px;
+  padding:2px 5px;
+  border:2px solid #111216;
+  border-radius:3px;
+  background:#111216;
+  color:#fff;
+  font-size:7px;
+  font-weight:1000;
+  letter-spacing:.04em;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta small span {
+  font-size:8px;
+  font-weight:1000;
+  color:#555960;
+}
+
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-element {
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  min-width:66px;
+  min-height:21px!important;
+  padding:4px 8px!important;
+  border:2px solid var(--duel-element-dark)!important;
+  border-radius:999px!important;
+  background:var(--duel-element-soft)!important;
+  color:var(--duel-element-dark)!important;
+  box-shadow:2px 2px 0 var(--duel-element-dark)!important;
+  font-size:7px!important;
+  font-style:normal!important;
+  font-weight:1000!important;
+  letter-spacing:.07em!important;
+  line-height:1!important;
+  text-transform:uppercase!important;
+}
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-element::before {
+  content:"";
+  width:7px;
+  height:7px;
+  flex:0 0 7px;
+  margin-right:5px;
+  border:2px solid currentColor;
+  transform:rotate(45deg);
+  background:color-mix(in srgb,var(--duel-element) 22%,#fff);
+}
+
+.rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-vs-core span {
+  width:34px!important;
+  height:34px!important;
+  border:3px solid #111216!important;
+  border-radius:5px!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+  box-shadow:3px 4px 0 #111216!important;
+  font-size:11px!important;
+  font-weight:1000!important;
+  transform:rotate(-4deg)!important;
+}
+
+/* The result state reuses the same card anatomy. Result banner/animation selectors remain untouched. */
+.rtg-duel-versus-board--result .rtg-duel-result-player {
+  width:clamp(128px,36vw,146px)!important;
+  max-width:146px!important;
+  min-height:0!important;
+  height:auto!important;
+  overflow:hidden!important;
+  padding:0!important;
+  border:3px solid #111216!important;
+  border-radius:9px 3px 9px 3px!important;
+  background:#fff!important;
+}
+.rtg-duel-versus-board--result .rtg-duel-visual--compare .rtg-duel-render {
+  aspect-ratio:1 / .92!important;
+}
+.rtg-duel-versus-board--result .rtg-duel-visual--compare .rtg-duel-player-copy {
+  min-height:76px!important;
+}
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-winner {
+  box-shadow:
+    0 0 0 3px #ffd21f,
+    5px 6px 0 #111216!important;
+}
+.rtg-duel-versus-board--result .rtg-duel-result-player.is-duel-loser {
+  box-shadow:4px 5px 0 #111216!important;
+}
+
+@media(max-width:430px) {
+  .rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-portrait-panel {
+    width:clamp(120px,33vw,134px)!important;
+    max-width:134px!important;
+  }
+  .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-copy {
+    min-height:72px!important;
+    padding:8px 8px 9px!important;
+  }
+  .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-copy::after {
+    left:8px;
+    right:8px;
+    top:32px;
+  }
+  .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-name {
+    font-size:11.5px!important;
+  }
+  .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-meta {
+    gap:5px!important;
+  }
+  .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-element {
+    min-width:62px;
+    min-height:20px!important;
+    padding:3px 7px!important;
+    font-size:6.5px!important;
+  }
+  .rtg-duel-versus-board--result .rtg-duel-result-player {
+    width:clamp(120px,36vw,138px)!important;
+    max-width:138px!important;
+  }
+}
