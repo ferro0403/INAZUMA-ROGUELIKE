@@ -2805,3 +2805,54 @@
     font-size:.69rem;
   }
 }
+
+
+/* RTG replacement picker final fix: canonical card size + stable sparse grids. */
+.modal.rtg-squad-picker-modal .rtg-picker-grid {
+  grid-template-columns:repeat(auto-fit,66px)!important;
+  justify-content:center!important;
+  justify-items:stretch!important;
+  align-items:start!important;
+  gap:18px 14px!important;
+  width:100%!important;
+  min-height:96px;
+  padding:16px 0 10px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-picker-player-card,
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card {
+  width:66px!important;
+  max-width:66px!important;
+  min-width:66px!important;
+  height:auto!important;
+  min-height:0!important;
+  align-self:start!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-picker-player-card .player-portrait-wrap,
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card .player-portrait-wrap {
+  width:100%!important;
+  height:48px!important;
+  min-height:48px!important;
+  padding:4px 3px 0!important;
+  overflow:hidden!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-picker-player-card .player-info,
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card .player-info {
+  min-height:25px!important;
+  height:auto!important;
+  padding:3px 2px 5px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-picker-player-card .player-title strong,
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card .player-title strong {
+  height:20px!important;
+  font-size:clamp(.49rem,1.8vw,.56rem)!important;
+  line-height:1.05!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-picker-count {
+  grid-column:1/-1;
+}
+@media(max-width:430px) {
+  .modal.rtg-squad-picker-modal .rtg-picker-grid {
+    grid-template-columns:repeat(auto-fit,66px)!important;
+    gap:18px 12px!important;
+  }
+}
