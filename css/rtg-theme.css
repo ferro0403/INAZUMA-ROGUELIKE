@@ -2946,84 +2946,70 @@
   }
 }
 
-/* RTG vending v11: illustrated capsule-machine asset inspired by the approved visual reference. */
+/* RTG vending v12: approved gachapon artwork used directly as the in-game machine asset. */
 .rtg-vending .rtg-vending-stage{
   position:relative!important;
   display:grid!important;
   justify-items:center!important;
   gap:10px!important;
-  padding:12px 8px 20px!important;
+  padding:14px 8px 22px!important;
   border-bottom:3px solid #111216!important;
   background:
-    radial-gradient(circle at 50% 38%,rgba(255,210,31,.18),transparent 43%),
-    repeating-conic-gradient(from 4deg at 50% 42%,rgba(17,18,22,.022) 0deg 8deg,transparent 8deg 22deg),
+    radial-gradient(circle at 50% 38%,rgba(255,210,31,.16),transparent 43%),
+    repeating-conic-gradient(from 4deg at 50% 42%,rgba(17,18,22,.018) 0deg 8deg,transparent 8deg 22deg),
     #fff!important;
 }
-.rtg-vending-machine-v6{
+.rtg-vending-machine-v7{
   position:relative;
   z-index:2;
-  width:min(318px,88vw);
+  width:min(270px,78vw);
+  margin:0 auto;
   display:grid;
   place-items:center;
-  margin:0 auto;
-  filter:drop-shadow(0 10px 0 rgba(17,18,22,.07));
   transform-origin:center 82%;
 }
-.rtg-vending-machine-art{
+.rtg-vending-machine-v7::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:12%;
+  right:8%;
+  bottom:5px;
+  height:18px;
+  border-radius:50%;
+  background:rgba(17,18,22,.14);
+  filter:blur(7px);
+}
+.rtg-vending-machine-image{
   display:block;
   width:100%;
   height:auto;
-  max-height:620px;
-  overflow:visible;
+  user-select:none;
+  -webkit-user-drag:none;
+  filter:drop-shadow(0 8px 0 rgba(17,18,22,.05));
 }
-.rtg-vending-machine-v6.is-turning{
-  animation:rtg-vending-machine-bump .52s cubic-bezier(.22,.85,.35,1);
+.rtg-vending-machine-v7.is-turning{
+  animation:rtg-vending-image-pull .52s cubic-bezier(.22,.85,.35,1);
 }
-.rtg-vending-machine-v6.is-turning .rtg-vending-crank-v6{
-  transform-box:fill-box;
-  transform-origin:center;
-  animation:rtg-vending-svg-crank .52s cubic-bezier(.2,.8,.3,1);
-}
-.rtg-vending-machine-v6.is-turning .rtg-vending-capsules-v6 .rtg-capsule{
-  transform-box:fill-box;
-  transform-origin:center;
-  animation:rtg-vending-svg-capsule .52s ease-in-out;
-}
-.rtg-vending-machine-v6.is-turning .rtg-vending-capsules-v6 .rtg-capsule:nth-child(2n){animation-delay:.025s}
-.rtg-vending-machine-v6.is-turning .rtg-vending-capsules-v6 .rtg-capsule:nth-child(3n){animation-delay:.05s}
-@keyframes rtg-vending-machine-bump{
+@keyframes rtg-vending-image-pull{
   0%,100%{transform:translateY(0) rotate(0)}
-  35%{transform:translateY(-3px) rotate(-.35deg)}
-  70%{transform:translateY(1px) rotate(.3deg)}
-}
-@keyframes rtg-vending-svg-crank{
-  from{rotate:0deg}
-  to{rotate:360deg}
-}
-@keyframes rtg-vending-svg-capsule{
-  0%,100%{translate:0 0}
-  25%{translate:-3px 2px}
-  55%{translate:3px -3px}
-  78%{translate:-1px 1px}
+  25%{transform:translateY(-3px) rotate(-.7deg)}
+  55%{transform:translateY(1px) rotate(.8deg)}
+  78%{transform:translateY(-1px) rotate(-.3deg)}
 }
 .rtg-vending-wallet-chip{
   position:relative;
   z-index:5;
   min-width:170px;
-  margin-top:-4px!important;
+  margin-top:-2px!important;
 }
 @media(max-width:430px){
-  .rtg-vending-machine-v6{
-    width:min(300px,88vw);
-  }
-  .rtg-vending-machine-art{
-    max-height:570px;
+  .rtg-vending-machine-v7{
+    width:min(250px,76vw);
   }
 }
 @media(prefers-reduced-motion:reduce){
-  .rtg-vending-machine-v6.is-turning,
-  .rtg-vending-machine-v6.is-turning .rtg-vending-crank-v6,
-  .rtg-vending-machine-v6.is-turning .rtg-vending-capsules-v6 .rtg-capsule{
+  .rtg-vending-machine-v7.is-turning{
     animation:none!important;
   }
 }
