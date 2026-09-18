@@ -100,6 +100,33 @@
       </button>`;
     }
 
+    function duelElementLabel(player = {}) {
+      const raw = String(player?.element || "").trim();
+      const key = raw.toLowerCase();
+      const labels = {
+        fire:"FUOCO", fuoco:"FUOCO",
+        wind:"VENTO", vento:"VENTO", air:"VENTO", aria:"VENTO",
+        earth:"TERRA", terra:"TERRA", mountain:"TERRA", montagna:"TERRA",
+        wood:"BOSCO", bosco:"BOSCO", forest:"BOSCO",
+      };
+      return labels[key] || (raw ? raw.toUpperCase() : "—");
+    }
+
+    function duelCompareVisualMarkup(player = {}, side = "user", attrs = "") {
+      const name = player?.name || pid(player) || (side === "user" ? "Tu" : "Avversario");
+      const visual = duelVisualUrl(player);
+      const playerRole = role(player) || "—";
+      const overall = player?.overall ?? player?.finalOverall ?? "—";
+      const element = duelElementLabel(player);
+      return `<button type="button" class="rtg-duel-visual rtg-duel-visual--compare rtg-duel-visual--${escape(side)}" ${attrs}>
+        <span class="rtg-duel-render">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
+        <span class="rtg-duel-player-copy">
+          <strong class="rtg-duel-player-name">${escape(name)}</strong>
+          <span class="rtg-duel-player-meta"><small>${escape(playerRole)} · OVR ${escape(overall)}</small><em class="rtg-duel-player-element">${escape(element)}</em></span>
+        </span>
+      </button>`;
+    }
+
     function duelTypeLabel(pending = {}) {
       const kind = String(pending.userKind || "").toLowerCase();
       if (kind === "shot") return "TIRO VS PARATA";
@@ -554,8 +581,8 @@
         const deltaText = delta > 0.05 ? `+${delta.toFixed(1)}%` : delta < -0.05 ? `${delta.toFixed(1)}%` : "BASE";
         return `<button type="button" class="rtg-duel-choice-card ${choice==="move"?"is-move":"is-base"} ${escape(categoryClass)} ${selected?"is-selected":""}" data-rtg-choice="${choice}" ${disabled?"disabled":""}>
           <span class="rtg-choice-icon" aria-hidden="true">${choice==="move"?"⚡":"●"}</span>
-          <span class="rtg-choice-copy"><small>${choice==="move"?"MOSSA SPECIALE":"AZIONE BASE"}</small><strong>${escape(label)}</strong><em>${escape(sub)}</em></span>
-          <span class="rtg-choice-probability"><small>VITTORIA</small><strong>${escape(Number(probability).toFixed(1))}%</strong><em class="rtg-choice-delta ${delta>0?"is-positive":delta<0?"is-negative":""}">${escape(deltaText)}</em></span>
+          <span class="rtg-choice-copy"><strong>${escape(label)}</strong><em>${escape(sub)}</em></span>
+          <span class="rtg-choice-probability"><strong>${escape(Number(probability).toFixed(1))}%</strong><em class="rtg-choice-delta ${delta>0?"is-positive":delta<0?"is-negative":""}">${escape(deltaText)}</em></span>
           ${selected?'<span class="rtg-choice-confirm">TOCCA DI NUOVO PER CONFERMARE</span>':""}
         </button>`;
       };
@@ -570,13 +597,13 @@
         <div class="rtg-duel-versus-board">
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userMoveSelected ? "has-special-move" : ""}">
             <div class="rtg-duel-panel-heading"><span class="rtg-duel-panel-tag">TU</span><span class="rtg-duel-action-chip ${userMoveSelected ? `rtg-duel-action-chip--move ${moveCategoryClass(pending.userMove,userKind)}` : ""}">${userMoveSelected ? "⚡ " : ""}${escape(userActionShort)}</span></div>
-            ${duelVisualMarkup(user,"user",`data-rtg-duel-player="${escape(pid(user))}" data-side="user"`)}
+            ${duelCompareVisualMarkup(user,"user",`data-rtg-duel-player="${escape(pid(user))}" data-side="user"`)}
             ${userMoveSelected ? `<div class="rtg-duel-active-move ${moveCategoryClass(pending.userMove,userKind)}"><small>MOSSA SPECIALE</small><strong>${escape(pending.userMove.name)}</strong><em>POWER ${escape(pending.userMove.power ?? "—")}</em></div>` : ""}
           </article>
           <div class="rtg-duel-vs-core" aria-hidden="true"><small>SCONTRO</small><span>VS</span></div>
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)}">
             <div class="rtg-duel-panel-heading"><span class="rtg-duel-panel-tag">${escape(opponentName)}</span><span class="rtg-duel-action-chip">${escape(opponentActionShort)}</span></div>
-            ${duelVisualMarkup(opponent,"opponent",`data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"`)}
+            ${duelCompareVisualMarkup(opponent,"opponent",`data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"`)}
           </article>
         </div>
         <section class="rtg-duel-choice-section">
