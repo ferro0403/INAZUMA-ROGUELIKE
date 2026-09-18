@@ -37,8 +37,8 @@ assert(labApp.includes('fetch(entry.modelUrl, { mode: "cors", cache: "default" }
 assert(labApp.includes('dom.load.addEventListener("click", loadSelectedModel)'), "GLB loading must be user-triggered.");
 assert(labApp.includes('dom.stress.addEventListener("click", runStressTest)'), "Stress test must be explicitly user-triggered.");
 assert(labApp.includes("const DEFAULT_STRESS_ROUNDS = 5"), "Stress test must default to five rounds.");
-assert(labApp.includes("const plan = []"), "Stress test must build a multi-model plan.");
 assert(labApp.includes("seenUrls.add(entry.modelUrl)"), "Stress test must track distinct model URLs.");
+assert(labApp.includes("validationCycles = stressModels.length * validationRounds"), "Stress test must measure post-warm-up cycles separately.");
 assert(labApp.includes("coldBaseline = runtimeSnapshot()"), "Stress test must capture a cold renderer baseline.");
 assert(labApp.includes("warmBaseline = runtimeSnapshot()"), "Stress test must capture a post-warm-up baseline.");
 assert(labApp.includes("after.textures - warmBaseline.textures"), "Texture leak detection must use the warmed baseline.");
