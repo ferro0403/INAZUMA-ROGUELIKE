@@ -251,15 +251,8 @@
         || ""
       ).trim();
     }
-    function squadPickerRarityOptions(playerIds=[]){
-      const order=["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"];
-      const values=Array.from(new Set(playerIds.map(squadPickerRarity).filter(Boolean)));
-      return values.sort((a,b)=>{
-        const ai=order.findIndex(value=>value.toLocaleLowerCase("it")===a.toLocaleLowerCase("it"));
-        const bi=order.findIndex(value=>value.toLocaleLowerCase("it")===b.toLocaleLowerCase("it"));
-        if(ai>=0||bi>=0)return (ai<0?999:ai)-(bi<0?999:bi)||a.localeCompare(b,"it");
-        return a.localeCompare(b,"it");
-      });
+    function squadPickerRarityOptions(){
+      return ["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"];
     }
 
     function openSquadPlayerPicker(targetId){
