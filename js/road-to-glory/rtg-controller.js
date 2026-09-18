@@ -243,6 +243,25 @@
         .filter(playerId=>rawRole(playerId)===role)
         .sort((a,b)=>rawOverall(b)-rawOverall(a)||rawName(a).localeCompare(rawName(b),"it"));
     }
+    function squadPickerRarity(playerId){
+      return String(
+        playerResolver.rarity?.(playerId,"ie1",freeAgentsDb)
+        || rawPlayer(playerId)?.category
+        || resolved(playerId,squadDraft?.activeRoleVariantByPlayerId?.[id(playerId)]||null)?.category
+        || ""
+      ).trim();
+    }
+    function squadPickerRarityOptions(playerIds=[]){
+      const order=["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"];
+      const values=Array.from(new Set(playerIds.map(squadPickerRarity).filter(Boolean)));
+      return values.sort((a,b)=>{
+        const ai=order.findIndex(value=>value.toLocaleLowerCase("it")===a.toLocaleLowerCase("it"));
+        const bi=order.findIndex(value=>value.toLocaleLowerCase("it")===b.toLocaleLowerCase("it"));
+        if(ai>=0||bi>=0)return (ai<0?999:ai)-(bi<0?999:bi)||a.localeCompare(b,"it");
+        return a.localeCompare(b,"it");
+      });
+    }
+
     function openSquadPlayerPicker(targetId){
       const targetLoc=locationInDraft(targetId);
       if(!targetLoc)return;
@@ -260,12 +279,15 @@
       let visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateIds.length);
       let query="";
       let sourceFilter="all";
+      let rarityFilter="all";
+      const rarityOptions=squadPickerRarityOptions(candidateIds);
       const targetPlayer=resolved(targetId,squadDraft?.activeRoleVariantByPlayerId?.[id(targetId)]||null);
       const target={playerId:id(targetId),source:sourceForDraftPlayer(targetId),player:targetPlayer};
       const filteredIds=()=>candidateIds.filter(playerId=>{
         const source=sourceForDraftPlayer(playerId);
         if(sourceFilter==="free"&&source!=="Svincolato")return false;
         if(sourceFilter==="rtg"&&source!=="RTG")return false;
+        if(rarityFilter!=="all"&&squadPickerRarity(playerId).toLocaleLowerCase("it")!==rarityFilter.toLocaleLowerCase("it"))return false;
         const needle=query.trim().toLocaleLowerCase("it");
         if(needle&&!rawName(playerId).toLocaleLowerCase("it").includes(needle))return false;
         return true;
@@ -300,7 +322,7 @@
           renderResults();
         });
       };
-      deps.openModal?.(squadView.replacementPickerMarkup({target,role,quickEntries,entries:entries(),total:candidateIds.length,visibleCount,query,sourceFilter}),{className:"rtg-modal rtg-squad-picker-modal"});
+      deps.openModal?.(squadView.replacementPickerMarkup({target,role,quickEntries,entries:entries(),total:candidateIds.length,visibleCount,query,sourceFilter,rarityFilter,rarityOptions}),{className:"rtg-modal rtg-squad-picker-modal"});
       const modal=deps.getModalRoot?.();
       modal?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",event=>{
         query=String(event.target?.value||"");
@@ -312,6 +334,11 @@
         visibleCount=SQUAD_PICKER_PAGE_SIZE;
         renderResults();
       }));
+      modal?.querySelector?.("[data-rtg-picker-rarity]")?.addEventListener("change",event=>{
+        rarityFilter=String(event.target?.value||"all");
+        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        renderResults();
+      });
       bindResults();
     }
     function openRtgCatalog(){
