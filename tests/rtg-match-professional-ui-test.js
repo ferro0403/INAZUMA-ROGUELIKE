@@ -63,6 +63,8 @@ assert.match(opponentMoveWin,/MOSSA SPECIALE USATA/i);
 const suspense=view.resolvingEncounterMarkup({userKind:"midfield",aiKind:"midfield",actorSide:"opponent",userPlayer:user,opponentPlayer:opp,opponentLabel:"Occult",userChoiceLabel:"Dribbling",aiChoiceLabel:"Ultra Moon",aiUsedMove:true,aiMovePower:80});
 assert.match(suspense,/CHI AVRÀ LA MEGLIO/i);
 assert.match(suspense,/Ultra Moon/i);
+assert.match(suspense,/rtg-duel-visual--compare/);
+assert.doesNotMatch(suspense,/rtg-duel-panel-tag/);
 assert.doesNotMatch(suspense,/VINTA|PERSA|AZIONE RIUSCITA|AZIONE PERSA/i);
 const css=fs.readFileSync("css/road-to-glory.css","utf8");
 assert.match(css,/--rtg-match-paper:\s*#fffdf6/i);
