@@ -51,20 +51,20 @@ assert(
   "RTG catalog must not force oversized 152px cards"
 );
 assert(
-  /data-rtg-vending-machine/.test(runView) && /rtg-vending-machine-v5/.test(runView),
-  "RTG vending should expose the polished lightweight 2.5D machine"
+  /data-rtg-vending-machine/.test(runView) && /rtg-vending-machine-v6/.test(runView),
+  "RTG vending should expose the illustrated capsule machine"
 );
 assert(
-  /\.rtg-vending-machine-v5\s*\{[^}]*perspective\(900px\)/s.test(css),
-  "RTG vending should use subtle perspective rather than a full WebGL model"
+  /rtg-vending-machine-art/.test(runView) && /rtgMachineGlobeClip/.test(runView),
+  "RTG vending should use the approved illustrated machine as an inline SVG asset"
 );
 assert(
-  /\.rtg-vending-window-v5\s*\{[^}]*box-shadow/s.test(css) && /\.rtg-vending-depth-v5\s*\{/s.test(css),
-  "RTG vending should keep dimensional glass and cabinet depth"
+  /\.rtg-vending-machine-v6\s*\{[^}]*width\s*:\s*min\(318px,88vw\)/s.test(css),
+  "RTG vending illustrated machine should keep a stable mobile-friendly footprint"
 );
 assert(
-  /rtg-vending-crank-turn/.test(css) && /rtg-vending-capsule-rattle/.test(css),
-  "RTG vending pull should retain a lightweight crank and capsule animation"
+  /rtg-vending-svg-crank/.test(css) && /rtg-vending-svg-capsule/.test(css),
+  "RTG vending pull should retain lightweight crank and capsule animation"
 );
 
 assert(
