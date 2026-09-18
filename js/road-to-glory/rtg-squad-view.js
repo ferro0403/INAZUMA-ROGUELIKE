@@ -49,7 +49,7 @@
       const extraClass = [
         "squad-player-card",
         "rtg-squad-player-card",
-        isPicker ? "rtg-prematch-player-card rtg-picker-player-card" : "",
+        isPicker ? "rtg-picker-squad-card" : "",
         isCatalog ? "rtg-prematch-player-card rtg-picker-player-card rtg-catalog-player-card" : "",
         options.extraClass || "",
       ].filter(Boolean).join(" ");
