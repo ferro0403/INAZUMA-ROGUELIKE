@@ -482,84 +482,96 @@ async function runStressTest() {
     ? state.manifest.stressRounds
     : DEFAULT_STRESS_ROUNDS;
 
-  if (stressModels.length === 0 || rounds < 1) {
+  if (stressModels.length === 0 || rounds < 2) {
     setStatus("Manifest stress multi-modello non valido.", true);
     return;
   }
 
-  const plan = [];
-  for (let round = 0; round < rounds; round += 1) {
-    for (const model of stressModels) {
-      plan.push({ ...model, stressRound: round + 1 });
-    }
-  }
+  const totalCycles = stressModels.length * rounds;
+  const validationRounds = rounds - 1;
+  const validationCycles = stressModels.length * validationRounds;
 
-  const totalCycles = plan.length;
   state.busy = true;
   updateControls();
   dom.metrics.stressCycles.textContent = "0/" + totalCycles;
   dom.metrics.stressResult.textContent = "IN CORSO";
   dom.metrics.stressResult.className = "";
   dom.stressStatus.textContent =
-    "Baseline GPU · " +
+    "Warm-up renderer con " +
     stressModels.length +
-    " modelli diversi × " +
-    rounds +
-    " giri = " +
-    totalCycles +
-    " caricamenti…";
+    " GLB diversi; poi " +
+    validationRounds +
+    " giri misurati…";
 
-  let baseline = null;
+  let coldBaseline = null;
+  let warmBaseline = null;
   let after = null;
   let totalNetworkMs = 0;
   let totalParseMs = 0;
   let totalBytes = 0;
   const seenUrls = new Set();
 
+  async function runOne(entry, cycle, roundLabel) {
+    const result = await loadEntry(entry, { announce: false });
+
+    seenUrls.add(entry.modelUrl);
+    totalNetworkMs += result.networkMs;
+    totalParseMs += result.parseMs;
+    totalBytes += result.bytes;
+
+    await releaseCurrentModel({ quiet: true, settleFrames: 2 });
+
+    if (
+      cycle === 1 ||
+      cycle % stressModels.length === 0 ||
+      cycle % 5 === 0 ||
+      cycle === totalCycles
+    ) {
+      const current = runtimeSnapshot();
+      dom.metrics.stressCycles.textContent = cycle + "/" + totalCycles;
+      dom.stressStatus.textContent =
+        "Ciclo " +
+        cycle +
+        "/" +
+        totalCycles +
+        " · " +
+        roundLabel +
+        " · " +
+        entry.label +
+        " · GPU geo " +
+        current.geometries +
+        " · texture " +
+        current.textures +
+        " · heap " +
+        (current.heap == null ? "n/d" : formatBytes(current.heap));
+      await waitFrames(1);
+    }
+  }
+
   try {
     await releaseCurrentModel({ quiet: true, settleFrames: 3 });
     renderer.render(scene, camera);
     await waitFrames(2);
-    baseline = runtimeSnapshot();
+    coldBaseline = runtimeSnapshot();
 
-    for (let index = 0; index < plan.length; index += 1) {
-      const entry = plan[index];
-      const cycle = index + 1;
-      const result = await loadEntry(entry, { announce: false });
+    let cycle = 0;
 
-      seenUrls.add(entry.modelUrl);
-      totalNetworkMs += result.networkMs;
-      totalParseMs += result.parseMs;
-      totalBytes += result.bytes;
+    // Giro 1: warm-up. Questo permette a Three.js di allocare una sola volta
+    // eventuali risorse interne lazy (es. render target per materiali avanzati).
+    for (const entry of stressModels) {
+      cycle += 1;
+      await runOne(entry, cycle, "warm-up 1/" + rounds);
+    }
 
-      await releaseCurrentModel({ quiet: true, settleFrames: 2 });
+    await waitFrames(4);
+    renderer.render(scene, camera);
+    warmBaseline = runtimeSnapshot();
 
-      if (
-        cycle === 1 ||
-        cycle % stressModels.length === 0 ||
-        cycle % 5 === 0 ||
-        cycle === totalCycles
-      ) {
-        const current = runtimeSnapshot();
-        dom.metrics.stressCycles.textContent = cycle + "/" + totalCycles;
-        dom.stressStatus.textContent =
-          "Ciclo " +
-          cycle +
-          "/" +
-          totalCycles +
-          " · giro " +
-          entry.stressRound +
-          "/" +
-          rounds +
-          " · " +
-          entry.label +
-          " · GPU geo " +
-          current.geometries +
-          " · texture " +
-          current.textures +
-          " · heap " +
-          (current.heap == null ? "n/d" : formatBytes(current.heap));
-        await waitFrames(1);
+    // Giri 2..N: qui misuriamo la vera stabilità del lifecycle player-to-player.
+    for (let round = 2; round <= rounds; round += 1) {
+      for (const entry of stressModels) {
+        cycle += 1;
+        await runOne(entry, cycle, "giro " + round + "/" + rounds);
       }
     }
 
@@ -567,15 +579,18 @@ async function runStressTest() {
     renderer.render(scene, camera);
     after = runtimeSnapshot();
 
-    const geometryDelta = after.geometries - baseline.geometries;
-    const textureDelta = after.textures - baseline.textures;
+    const coldWarmGeometryDelta = warmBaseline.geometries - coldBaseline.geometries;
+    const coldWarmTextureDelta = warmBaseline.textures - coldBaseline.textures;
+    const geometryDelta = after.geometries - warmBaseline.geometries;
+    const textureDelta = after.textures - warmBaseline.textures;
     const heapDelta =
-      baseline.heap != null && after.heap != null
-        ? after.heap - baseline.heap
+      warmBaseline.heap != null && after.heap != null
+        ? after.heap - warmBaseline.heap
         : null;
+
     const gpuStable = geometryDelta <= 0 && textureDelta <= 0;
 
-    dom.metrics.stressResult.textContent = gpuStable ? "PASS" : "ATTENZIONE";
+    dom.metrics.stressResult.textContent = gpuStable ? "PASS STABILE" : "ATTENZIONE";
     dom.metrics.stressResult.className = gpuStable ? "metric-pass" : "metric-warn";
 
     const heapPart =
@@ -585,12 +600,20 @@ async function runStressTest() {
 
     dom.stressStatus.textContent =
       totalCycles +
-      " cicli multi-modello · " +
+      " caricamenti · " +
       seenUrls.size +
-      " URL distinti · GPU Δ geometrie " +
+      " URL distinti · warm-up cold→warm GPU geo " +
+      (coldWarmGeometryDelta >= 0 ? "+" : "") +
+      coldWarmGeometryDelta +
+      ", texture " +
+      (coldWarmTextureDelta >= 0 ? "+" : "") +
+      coldWarmTextureDelta +
+      " · successivi " +
+      validationCycles +
+      " cicli warm→final GPU geo " +
       (geometryDelta >= 0 ? "+" : "") +
       geometryDelta +
-      " · texture " +
+      ", texture " +
       (textureDelta >= 0 ? "+" : "") +
       textureDelta +
       " · " +
@@ -605,8 +628,8 @@ async function runStressTest() {
 
     setStatus(
       gpuStable
-        ? "Stress multi-modello completato: le risorse GPU sono tornate al baseline."
-        : "Stress multi-modello completato: restano risorse GPU sopra il baseline.",
+        ? "Stress multi-modello stabile: dopo il warm-up non crescono le risorse GPU."
+        : "Stress multi-modello: le risorse GPU continuano a crescere dopo il warm-up.",
       !gpuStable,
     );
   } catch (error) {

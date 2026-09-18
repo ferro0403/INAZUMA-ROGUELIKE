@@ -48,13 +48,23 @@ Il pulsante **Stress multi 20×5** usa **20 URL GLB realmente diversi** e li per
     ripeti per 5 giri
 
 Il set include asset statici, animati, riggati/skinned, texturizzati e con materiali differenti.
-Prima del primo modello viene misurato il baseline GPU della pagina vuota. Alla fine il test è
-PASS solo se geometrie e texture GPU tornano allo stesso baseline o sotto.
+Il primo giro sui 20 modelli è un **warm-up controllato**. Serve a far creare a Three.js le
+eventuali risorse interne lazy necessarie a materiali o pipeline che non erano mai stati usati
+prima (per esempio render target interni). Subito dopo il warm-up viene registrato un nuovo
+baseline GPU.
 
-Questo test è più severo del precedente perché la prima tornata deve realmente scaricare e
-parsare 20 file distinti; i giri successivi possono beneficiare della cache HTTP del browser.
-L'heap JavaScript resta diagnostico e non determina il PASS, perché il garbage collector è
-gestito dal browser.
+I successivi 4 giri, cioè 80 caricamenti/rilasci, sono la parte che decide il risultato:
+il test è **PASS STABILE** soltanto se geometrie e texture GPU non crescono rispetto al baseline
+post-warm-up.
+
+Il report mostra separatamente:
+
+- delta cold -> warm-up, che può includere allocazioni one-shot del renderer;
+- delta warm-up -> finale, che deve restare a 0 o sotto.
+
+In questo modo una singola texture interna persistente di Three.js non viene confusa con un leak
+che cresce a ogni giocatore. L'heap JavaScript resta diagnostico e non determina il PASS, perché
+il garbage collector è gestito dal browser.
 
 ## Asset di test
 

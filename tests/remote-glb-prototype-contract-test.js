@@ -39,6 +39,11 @@ assert(labApp.includes('dom.stress.addEventListener("click", runStressTest)'), "
 assert(labApp.includes("const DEFAULT_STRESS_ROUNDS = 5"), "Stress test must default to five rounds.");
 assert(labApp.includes("const plan = []"), "Stress test must build a multi-model plan.");
 assert(labApp.includes("seenUrls.add(entry.modelUrl)"), "Stress test must track distinct model URLs.");
+assert(labApp.includes("coldBaseline = runtimeSnapshot()"), "Stress test must capture a cold renderer baseline.");
+assert(labApp.includes("warmBaseline = runtimeSnapshot()"), "Stress test must capture a post-warm-up baseline.");
+assert(labApp.includes("after.textures - warmBaseline.textures"), "Texture leak detection must use the warmed baseline.");
+assert(labApp.includes("after.geometries - warmBaseline.geometries"), "Geometry leak detection must use the warmed baseline.");
+assert(labApp.includes("PASS STABILE"), "Stable post-warm-up lifecycle must have an explicit result.");
 assert(labApp.includes("geometry.dispose?.()"), "Geometry disposal is required.");
 assert(labApp.includes("texture.dispose?.()"), "Texture disposal is required.");
 assert(labApp.includes("material.dispose?.()"), "Material disposal is required.");
@@ -46,8 +51,8 @@ assert(labApp.includes("skeleton.dispose?.()"), "Skeleton / bone texture disposa
 assert(labApp.includes('typeof image.close === "function"'), "ImageBitmap cleanup is required.");
 assert(labApp.includes("current.parser?.cache?.removeAll"), "GLTF parser cache cleanup is required.");
 assert(labApp.includes('magic !== "glTF"'), "Downloaded binary must be validated as GLB.");
-assert(labApp.includes("textureDelta <= 0"), "Stress result must compare textures against the pre-test baseline.");
-assert(labApp.includes("geometryDelta <= 0"), "Stress result must compare geometries against the pre-test baseline.");
+assert(labApp.includes("textureDelta <= 0"), "Stress result must compare textures against the warmed baseline.");
+assert(labApp.includes("geometryDelta <= 0"), "Stress result must compare geometries against the warmed baseline.");
 
 const syntax = spawnSync(process.execPath, ["--check", path.join(root, "experiments/remote-glb/app.js")], {
   encoding: "utf8",

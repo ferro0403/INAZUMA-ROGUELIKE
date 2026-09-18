@@ -42,7 +42,7 @@
               <button id="load-model" type="button" disabled>Carica modello</button>
               <button id="reload-model" type="button" disabled>Ricarica stesso URL</button>
               <button id="release-model" type="button" class="secondary" disabled>Rilascia memoria</button>
-              <button id="stress-test" type="button" class="stress" disabled>Stress multi 20×5</button>
+              <button id="stress-test" type="button" class="stress" disabled>Stress 20×5 stabile</button>
             </div>
           </div>
 
@@ -79,8 +79,7 @@
             <strong>Architettura provata</strong>
             <code>playerId → modelUrl → fetch on-demand → GLTFLoader → dispose</code>
             <p>
-              Il manifest contiene URL, non file 3D. Il cleanup ora include geometrie, materiali,
-              texture annidate, skeleton/bone texture e ImageBitmap.
+              Il manifest contiene URL, non file 3D. Il cleanup include geometrie, materiali, texture annidate, skeleton/bone texture e ImageBitmap. Il test separa le allocazioni one-shot del renderer dai leak progressivi.
             </p>
           </div>
 
