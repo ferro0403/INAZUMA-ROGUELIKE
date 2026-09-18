@@ -5,6 +5,7 @@
     const escape = deps.escapeHtml || ((value) => String(value ?? ""));
     const resolver = deps.playerResolver || global.RoadToGloryPlayerResolver;
     const compactPlayerCardMarkup = deps.compactPlayerCardMarkup || null;
+    const teamEmblemMarkup = deps.teamEmblemMarkup || null;
     const formationLayout = deps.formationLayout || global.FormationLayout || null;
 
     const roleOf = (player) => String(player?.normalizedRole || player?.position || player?.role || "").toUpperCase();
@@ -229,11 +230,19 @@
     function markup(model = {}, context = {}) {
       const lineupRows = model.lineupRows || [];
       const bench = model.bench || [];
+      const teamName = String(context.teamName || "La tua squadra");
+      const teamIdentity = context.teamIdentity || null;
+      const teamEmblem = teamEmblemMarkup
+        ? teamEmblemMarkup({ name:teamName, teamIdentity }, "user", "rtg-squad-team-emblem")
+        : "";
       return `<main class="screen squad-screen rtg-squad-shell">
         <header class="topbar squad-topbar rtg-squad-topbar">
           <button type="button" class="squad-back-button rtg-squad-back" data-rtg-home aria-label="Torna alla Home">←</button>
           <div class="squad-topbar-copy"><p class="eyebrow">RTG · S1</p><h1>Squadra</h1></div>
-          <div class="squad-topbar-stats"><span><small>ROSA</small><strong>${(model.lineup || []).length + bench.length}/15</strong></span></div>
+          <div class="rtg-squad-team-identity" aria-label="Squadra ${escape(teamName)}">
+            <span class="rtg-squad-team-logo">${teamEmblem}</span>
+            <strong title="${escape(teamName)}">${escape(teamName)}</strong>
+          </div>
         </header>
 
         <div class="content squad-content rtg-squad-content">
