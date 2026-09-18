@@ -79,8 +79,8 @@ assert(
   "Live scoreboard score capsule should keep the strong game gold even against legacy specificity"
 );
 assert(
-  /\.rtg-match-shell\.rtg-match-revolution\s+\.rtg-match-scoreboard\s+\.rtg-score-team\s+b\s*\{[^}]*white-space\s*:\s*nowrap\s*!important[^}]*overflow\s*:\s*visible\s*!important/s.test(css),
-  "Live scoreboard must show team names instead of ellipsizing them"
+  /\.rtg-match-shell\.rtg-match-revolution\s+\.rtg-match-scoreboard\s+\.rtg-score-team\s+b\s*\{[^}]*white-space\s*:\s*normal\s*!important[^}]*overflow\s*:\s*visible\s*!important/s.test(css),
+  "Live scoreboard must wrap long team names without ellipsis or overlapping the score"
 );
 assert(
   /\.rtg-live-commandbar\s*\{[^}]*background\s*:\s*#fff\s*!important[^}]*border\s*:\s*3px solid #111216\s*!important/s.test(css),

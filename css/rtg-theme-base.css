@@ -46,7 +46,7 @@
 .rtg-bottom-nav .nav-icon { width:20px; height:20px; }
 .rtg-bottom-nav .nav-label { font-size:11px; letter-spacing:.06em; }
 /* Squad: the same canonical card on the pitch, bench and in replacement lists. */
-.rtg-squad-shell .squad-content { width:min(1100px,100%)!important; max-width:1100px!important; padding:20px 24px 110px!important; margin:0 auto; }
+.rtg-squad-shell .squad-content { width:min(1100px,100%)!important; max-width:1100px!important; padding:20px 24px calc(100px + env(safe-area-inset-bottom))!important; margin:0 auto; }
 .rtg-squad-help { display:flex; justify-content:space-between; gap:8px; margin:0 0 12px; color:#6a655b; font-size:11px; }
 .rtg-squad-shell .squad-workspace { display:grid!important; grid-template-columns:minmax(0,1.45fr) minmax(280px,1fr)!important; gap:20px!important; align-items:start; }
 .rtg-squad-shell .squad-field-panel,.rtg-squad-shell .squad-bench-panel { min-width:0; padding:14px!important; background:#ffffff!important; border:1px solid #d8d8d2!important; border-radius:12px!important; box-shadow:0 3px 12px #24201908!important; }
@@ -56,9 +56,9 @@
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-pitch-main.pitch {
   position:relative; display:flex!important; flex-direction:column!important; justify-content:space-around!important;
   min-height:0!important; height:auto!important; gap:18px!important; padding:24px 8px!important; overflow:visible!important;
-  border:1px solid #64715b!important; border-radius:9px!important;
-  background:repeating-linear-gradient(180deg,#414f3d 0,#414f3d 12.5%,#465441 12.5%,#465441 25%)!important;
-  box-shadow:inset 0 0 0 6px #414d3b,inset 0 0 0 7px #acb19955!important;
+  border:2px solid #111216!important; border-radius:9px!important;
+  background:radial-gradient(circle at center,transparent 0 44px,#ffffff40 45px 46px,transparent 47px),linear-gradient(transparent calc(50% - 1px),#ffffff40 50%,transparent calc(50% + 1px)),repeating-linear-gradient(180deg,#2f6a40 0,#2f6a40 12.5%,#285f39 12.5%,#285f39 25%)!important;
+  box-shadow:inset 0 0 0 6px #244f31,inset 0 0 0 7px #ffffff40!important;
 }
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-pitch-main::before { border-color:#c9cfb633!important; opacity:.65; pointer-events:none; }
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-pitch-main::after { border-color:#c9cfb633!important; pointer-events:none; }
@@ -84,7 +84,7 @@
 }
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card :is(.player-meta,.player-level) { display:none!important; }
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card :is(.player-role,.player-overall) { font-size:10px!important; line-height:16px!important; min-width:20px!important; height:18px!important; padding:1px 3px!important; top:0!important; z-index:3; }
-.rtg-squad-card-slot .rtg-squad-change-trigger { position:static!important; inset:auto!important; width:100%!important; height:26px!important; min-height:26px; border:1px solid #c7bd9f!important; border-radius:5px!important; background:#eee7d5!important; color:#413c2c!important; display:flex!important; align-items:center; justify-content:center; gap:3px; font-size:8px!important; box-shadow:none!important; transform:none!important; }
+.rtg-squad-card-slot .rtg-squad-change-trigger { position:static!important; inset:auto!important; width:100%!important; height:32px!important; min-height:32px; border:1px solid #c7bd9f!important; border-radius:5px!important; background:#eee7d5!important; color:#413c2c!important; display:flex!important; align-items:center; justify-content:center; gap:3px; font-size:8px!important; box-shadow:none!important; transform:none!important; }
 .rtg-squad-change-trigger span:first-child { font-size:13px; }
 .rtg-squad-shell .squad-management-panel { display:flex!important; flex-direction:column!important; gap:14px!important; padding:0!important; background:transparent!important; border:0!important; box-shadow:none!important; }
 .rtg-squad-shell .squad-bench-panel { width:100%; }
@@ -124,15 +124,15 @@
 .rtg-route-node.locked { opacity:.48!important; filter:grayscale(.65)!important; }
 .rtg-node-checkpoint { background:#22251f!important; color:#ecd08a!important; border:1px solid #ffd21f!important; border-radius:5px!important; width:21px!important; height:21px!important; font-size:13px!important; }
 /* Modals, requirements and compact pickers. */
-.modal.rtg-modal,.modal.rtg-formation-modal { width:min(680px,calc(100vw - 24px))!important; max-width:680px!important; max-height:calc(100dvh - 32px)!important; padding:20px!important; border:1px solid #c5b897!important; border-radius:14px!important; background:#fffdf7!important; color:#292820!important; box-shadow:0 16px 70px #0004!important; }
+.modal.rtg-modal,.modal.rtg-formation-modal { width:min(680px,calc(100vw - 24px))!important; max-width:680px!important; max-height:calc(100dvh - 32px - env(safe-area-inset-top) - env(safe-area-inset-bottom))!important; padding:20px!important; border:1px solid #c5b897!important; border-radius:14px!important; background:#fff!important; color:#111216!important; box-shadow:0 16px 70px #0004!important; }
 .rtg-modal :is(.rtg-paper-modal,.rtg-squad-picker,.rtg-player-catalog) { width:100%!important; max-width:100%!important; color:#292820!important; background:transparent!important; }
-.rtg-modal .modal-head { border-bottom:1px solid #d9ceb5!important; padding-bottom:12px; margin-bottom:12px; }
+.rtg-modal .modal-head { border-bottom:3px solid #111216!important; padding-bottom:12px; margin-bottom:12px; }
 .rtg-modal .modal-head h2 { color:#292820!important; font-size:24px!important; text-transform:none!important; }.rtg-modal .muted { color:#6a655b!important; font-size:12px; }
 .rtg-modal .rtg-picker-toolbar { display:grid; grid-template-columns:1fr; gap:10px; border:0; padding:0; }
-.rtg-modal .rtg-picker-search input { background:#fffdf7!important; color:#292820!important; border:1px solid #c7bda5!important; border-radius:7px!important; min-height:44px; }
+.rtg-modal .rtg-picker-search input { background:#fffdf7!important; color:#292820!important; border:2px solid #111216!important; border-radius:2px!important; min-height:48px; font-size:16px; }
 .rtg-modal .rtg-picker-role-badge { display:none; }.rtg-modal .rtg-picker-source-filters { display:flex; gap:6px; }
-.rtg-modal .rtg-picker-filter { border:1px solid #c8bda5; background:#f3eddf; color:#655b44; border-radius:6px; min-height:36px; padding:6px 12px; font-size:11px; }
-.rtg-modal .rtg-picker-filter.active { background:#262820!important; color:#efd996!important; border-color:#262820; }
+.rtg-modal .rtg-picker-filter { border:2px solid #111216; background:#fff; color:#111216; border-radius:2px; min-height:44px; padding:6px 9px; font-size:11px; }
+.rtg-modal .rtg-picker-filter.active { background:#111216!important; color:#ffd21f!important; border-color:#262820; }
 .modal.rtg-squad-picker-modal .rtg-picker-grid,.rtg-modal .rtg-catalog-grid { display:grid!important; grid-template-columns:repeat(auto-fill,minmax(60px,1fr))!important; gap:16px 10px!important; justify-items:center; padding:14px 0!important; }
 .modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card,.rtg-modal .rtg-catalog-grid .rtg-squad-player-card,.rtg-modal .rtg-picker-quick-strip .rtg-squad-player-card { width:66px!important; max-width:66px!important; min-width:0!important; min-height:0!important; }
 .modal.rtg-squad-picker-modal .rtg-picker-grid .rtg-squad-player-card .player-portrait-wrap { height:48px!important; padding:4px 3px 0!important; }
@@ -205,7 +205,7 @@
 @media(max-width:780px) {
   .rtg-main-topbar,.rtg-squad-topbar,.rtg-prematch-topbar { min-height:68px!important; padding:12px 14px!important; gap:10px; }
   .rtg-main-topbar .brand,.rtg-squad-topbar h1 { font-size:18px!important; }.rtg-main-topbar .status-strip { flex-direction:column; gap:3px; }.rtg-main-topbar .status-pill { padding:3px 7px; font-size:10px; }
-  .rtg-squad-shell .squad-content { padding:14px 12px 110px!important; }.rtg-squad-shell .squad-workspace { grid-template-columns:1fr!important; gap:12px!important; }.rtg-squad-shell .squad-field-panel,.rtg-squad-shell .squad-bench-panel { padding:12px!important; }
+  .rtg-squad-shell .squad-content { padding:14px 12px calc(100px + env(safe-area-inset-bottom))!important; }.rtg-squad-shell .squad-workspace { grid-template-columns:1fr!important; gap:12px!important; }.rtg-squad-shell .squad-field-panel,.rtg-squad-shell .squad-bench-panel { padding:12px!important; }
   .rtg-squad-help { font-size:9px; margin-bottom:10px; }.rtg-squad-help span { text-align:right; }
   :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-pitch-main.pitch { padding:18px 7px!important; gap:14px!important; }
   :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-pitch-main .pitch-row { grid-template-columns:repeat(var(--row-count),minmax(0,66px))!important; gap:7px!important; }
@@ -229,8 +229,8 @@
 .rtg-squad-shell .squad-workspace>.squad-management-panel { grid-area:auto!important; order:1!important; }
 .rtg-squad-shell .squad-back-button { background:#ffd21f!important; border:1px solid #c5a148!important; color:#28251c!important; }
 .rtg-match-scoreboard .rtg-score-emblem img { width:100%; height:100%; object-fit:contain; }
-.rtg-formation-modal .squad-formation-option { border:1px solid #d1c3a1!important; border-radius:7px!important; background:#faf6eb!important; box-shadow:none!important; transform:none!important; }
-.rtg-formation-modal .squad-formation-option.active { border:2px solid #b89a43!important; background:#f0e4bd!important; }
+.rtg-formation-modal .squad-formation-option { border:1px solid #d1c3a1!important; border-radius:7px!important; background:#fff!important; box-shadow:none!important; transform:none!important; }
+.rtg-formation-modal .squad-formation-option.active { border:2px solid #111216!important; background:#ffd21f!important; }
 .rtg-formation-modal .squad-formation-option::before,.rtg-formation-modal .squad-formation-option::after { display:none!important; }
 .rtg-formation-modal .squad-formation-options { border:0!important; background:none!important; padding:0!important; }
 .rtg-formation-modal .squad-formation-option-copy strong { color:#292b22!important; }
