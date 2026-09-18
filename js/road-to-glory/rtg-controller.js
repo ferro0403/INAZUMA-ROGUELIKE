@@ -942,7 +942,19 @@
     function openVending(){
       const pool=gacha.previewPool(campaign,seasonDb);
       deps.openModal?.(runView.vendingMarkup({...pool,tokens:campaign.tokens}),{className:"rtg-modal rtg-vending-modal"});
-      deps.getModalRoot?.()?.querySelector?.("[data-rtg-pull]")?.addEventListener("click",()=>pull());
+      const modalRoot=deps.getModalRoot?.();
+      global.RoadToGloryVending3D?.mount?.(modalRoot);
+      modalRoot?.querySelector?.("[data-rtg-pull]")?.addEventListener("click",async(event)=>{
+        const button=event.currentTarget;
+        if(button?.disabled)return;
+        button.disabled=true;
+        try{
+          await global.RoadToGloryVending3D?.spin?.(modalRoot);
+          await pull();
+        }finally{
+          if(button?.isConnected)button.disabled=false;
+        }
+      });
     }
     async function pull(){
       let result=null;
