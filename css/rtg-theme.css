@@ -2846,3 +2846,38 @@
     max-width:82px!important;
   }
 }
+
+
+/* RTG replacement picker portrait fix: keep exact Squad card, restore run-style uncropped portrait window. */
+.modal.rtg-squad-picker-modal .rtg-picker-squad-card .player-portrait-wrap,
+.rtg-picker-quick-strip .rtg-picker-squad-card .player-portrait-wrap {
+  height:auto!important;
+  min-height:0!important;
+  aspect-ratio:1.05!important;
+  padding:7px 6px 4px!important;
+  overflow:visible!important;
+  place-items:end center!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-squad-card img.player-portrait,
+.rtg-picker-quick-strip .rtg-picker-squad-card img.player-portrait {
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center bottom!important;
+  transform:none!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-squad-card .player-portrait-wrap::after,
+.rtg-picker-quick-strip .rtg-picker-squad-card .player-portrait-wrap::after {
+  top:17px!important;
+  height:51px!important;
+}
+@media(max-width:430px) {
+  .modal.rtg-squad-picker-modal .rtg-picker-squad-card .player-portrait-wrap,
+  .rtg-picker-quick-strip .rtg-picker-squad-card .player-portrait-wrap {
+    height:auto!important;
+    aspect-ratio:1.05!important;
+    padding:6px 5px 3px!important;
+  }
+}
