@@ -29,6 +29,37 @@
         if (cleanup?.cleaned) deps.setRun(null);
         else if (cleanup?.ok === false) console.warn("Terminal run cleanup incomplete", cleanup);
       }
+      function activateHomePage(page = "main") {
+        const root = document.getElementById("clean-home");
+        if (!root) return;
+        const normalized = page === "rtg" ? "rtg" : "main";
+        root.dataset.homePage = normalized;
+        root.querySelectorAll("[data-home-page-target]").forEach((button) => {
+          const active = button.dataset.homePageTarget === normalized;
+          button.classList.toggle("active", active);
+          button.setAttribute("aria-current", active ? "page" : "false");
+        });
+      }
+      function bindHomePager() {
+        const root = document.getElementById("clean-home");
+        const viewport = root?.querySelector?.("[data-home-swipe-viewport]");
+        if (!root || !viewport) return;
+        let touchStartX = null;
+        viewport.addEventListener("touchstart", (event) => {
+          touchStartX = Number(event.touches?.[0]?.clientX);
+        }, { passive: true });
+        viewport.addEventListener("touchend", (event) => {
+          const endX = Number(event.changedTouches?.[0]?.clientX);
+          if (!Number.isFinite(touchStartX) || !Number.isFinite(endX)) return;
+          const delta = endX - touchStartX;
+          touchStartX = null;
+          if (delta <= -48) activateHomePage("rtg");
+          else if (delta >= 48) activateHomePage("main");
+        }, { passive: true });
+        root.querySelectorAll("[data-home-page-target]").forEach((button) => button.addEventListener("click", () => activateHomePage(button.dataset.homePageTarget)));
+        root.querySelectorAll("[data-rtg-home-open]").forEach((button) => button.addEventListener("click", () => deps.renderRoadToGlory({ destination: button.dataset.rtgHomeOpen || "run" })));
+        activateHomePage("main");
+      }
       async function renderHome() {
         deps.closeModal({ invokeOnClose: false });
         maintainStorageBeforeHome();
@@ -80,8 +111,9 @@
             deps.getRun()?.teamIdentity || profileIdentity || {},
           ),
         );
-        deps.app.innerHTML = `<main class="home-screen modern-home" id="clean-home" data-run-state="${deps.getRun() ? "active" : "empty"}"><header class="home-masthead"><div class="home-wordmark" aria-label="Inazuma Roguelike · Road to Raimon"><span>Ina<span>z</span>uma</span><small>Roguelike</small><i class="home-road-label">Road to Raimon</i></div><div class="home-profile-actions">${global.InazumaAccountUI?.buttonMarkup?.() || '<button type="button" class="account-header-button" data-account-trigger disabled><span>ACCOUNT</span></button>'}<button type="button" class="home-settings-button" id="open-settings-home" aria-label="Impostazioni"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 3h4.8l.6 2.3 2 .9 2.1-1.2 2.4 4.1-1.8 1.6.2 2.2 1.8 1.6-2.4 4.1-2.3-.7-1.8 1.3-.5 2.3H9.6L9 18.3l-2-.9-2.1 1.2-2.4-4.1 1.8-1.6-.2-2.2-1.8-1.6L4.7 5l2.3.7 2-1.3L9.6 3Zm2.4 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg></button></div></header>${deps.view.homeRunCardMarkup(deps.getRun())}</main>`;
+        deps.app.innerHTML = `<main class="home-screen modern-home" id="clean-home" data-run-state="${deps.getRun() ? "active" : "empty"}"><header class="home-masthead"><div class="home-wordmark" aria-label="Inazuma Roguelike · Road to Raimon"><span>Ina<span>z</span>uma</span><small>Roguelike</small><i class="home-road-label">Road to Raimon</i></div><div class="home-profile-actions">${global.InazumaAccountUI?.buttonMarkup?.() || '<button type="button" class="account-header-button" data-account-trigger disabled><span>ACCOUNT</span></button>'}<button type="button" class="home-settings-button" id="open-settings-home" aria-label="Impostazioni"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9.6 3h4.8l.6 2.3 2 .9 2.1-1.2 2.4 4.1-1.8 1.6.2 2.2 1.8 1.6-2.4 4.1-2.3-.7-1.8 1.3-.5 2.3H9.6L9 18.3l-2-.9-2.1 1.2-2.4-4.1 1.8-1.6-.2-2.2-1.8-1.6L4.7 5l2.3.7 2-1.3L9.6 3Zm2.4 6a3 3 0 1 0 0 6 3 3 0 0 0 0-6Z"/></svg></button></div></header>${deps.view.homePagerMarkup(deps.view.homeRunCardMarkup(deps.getRun()))}</main>`;
         deps.resetRenderedViewScroll();
+        bindHomePager();
         document
           .getElementById("open-modes-home")
           ?.addEventListener("click", deps.renderSeasonSelect);
