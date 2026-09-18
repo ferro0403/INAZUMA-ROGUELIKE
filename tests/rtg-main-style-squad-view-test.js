@@ -27,6 +27,15 @@ assert.match(html,/data-rtg-player-detail="d1"/);
 assert.match(html,/data-rtg-change-player="d1"/);
 assert.doesNotMatch(html,/Nessuna lista da 1500|Tocca un giocatore per aprire/i);
 assert.doesNotMatch(html,/rtg-collection-card-grid/);
+const freeBenchPicker=view.replacementPickerMarkup({
+  target:{playerId:"d5",player:{name:"Difensore panchina"}},
+  allowAnyRole:true,
+  entries:[],
+  total:0,
+});
+assert.match(freeBenchPicker,/qualsiasi ruolo/);
+assert.match(freeBenchPicker,/TUTTI I RUOLI/);
+assert.doesNotMatch(freeBenchPicker,/SOLO DF/);
 
 const detailCard={dataset:{rtgPlayerDetail:"d1"},addEventListener(_type,fn){this.fn=fn;}};
 const changeButton={dataset:{rtgChangePlayer:"d1"},addEventListener(_type,fn){this.fn=fn;}};
