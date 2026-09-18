@@ -522,7 +522,10 @@
       const teamId=currentRequirementTeamId();
       const eligibility=teamId?squadRuntime.mainEligibility?.({teamId,state:draftState(),seasonDb,freeAgentIds,freeAgentsDb,playerResolver}):null;
       const nextTeam=(seasonDb?.teams||[]).find(team=>id(team.teamId||team.id)===teamId);
+      const userMeta=deps.getUserTeamMeta?.()||{};
       renderHtml(squadView.markup(model,{
+        teamName:userMeta.name||"La tua squadra",
+        teamIdentity:userMeta.teamIdentity||null,
         nextTeamName:nextTeam?.name||nextTeam?.teamName||teamId,
         requirementsMarkup:eligibility?runView.requirementsMarkup(eligibility):"",
         dirty:JSON.stringify(squadDraft)!==JSON.stringify(campaign.squads.ie1),
