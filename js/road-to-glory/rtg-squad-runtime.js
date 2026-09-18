@@ -102,7 +102,7 @@
     const lineup = squad?.lineup || [];
     const bench = squad?.bench || [];
     const activeRoster = [...lineup, ...bench];
-    const power = validation.valid ? teamPower({ lineup, activeSeasonId: seasonId, playerResolver, freeAgentsDb, activeRoleVariantByPlayerId: squad.activeRoleVariantByPlayerId || {} }) : null;
+    const power = validation.valid ? teamPower({ lineup: activeRoster, activeSeasonId: seasonId, playerResolver, freeAgentsDb, activeRoleVariantByPlayerId: squad.activeRoleVariantByPlayerId || {} }) : null;
     const recruitSet = new Set((state?.gachaAcquiredPlayerIds || []).map(id));
     const recruits = activeRoster.map(id).filter((playerId) => recruitSet.has(playerId));
     const recentTeams = recentDefeatedTeamIds(teamId, state, constraint.recentWindow);
