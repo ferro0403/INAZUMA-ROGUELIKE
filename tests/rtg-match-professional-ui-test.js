@@ -41,7 +41,7 @@ const result=view.resolvedEncounterMarkup({userWon:true,probability:35.8,userKin
 assert.match(result,/Beat Scatton recupera palla/i);
 assert.doesNotMatch(result,/35\.8%/);
 assert.doesNotMatch(result,/Dribbling/i);
-assert.match(result,/Difesa/i);
+assert.doesNotMatch(result,/Difesa/i);
 assert.match(result,/Beat Scatton/);
 assert.match(result,/Arnan Wheelie/);
 assert.match(result,/is-duel-winner/);
