@@ -201,13 +201,13 @@
       </section>`;
     }
 
-    function replacementPickerMarkup({ target = null, role = "", quickEntries = [], entries = [], total = 0, visibleCount = entries.length, query = "", sourceFilter = "all", rarityFilter = "all", rarityOptions = [] } = {}) {
+    function replacementPickerMarkup({ target = null, role = "", allowAnyRole = false, quickEntries = [], entries = [], total = 0, visibleCount = entries.length, query = "", sourceFilter = "all", rarityFilter = "all", rarityOptions = [] } = {}) {
       const targetName = target?.player?.name || target?.playerId || "Giocatore";
       const filterButton = (value,label) => `<button type="button" class="rtg-picker-filter ${sourceFilter===value?"active":""}" data-rtg-picker-source="${escape(value)}">${escape(label)}</button>`;
       const rarityOptionMarkup = ['<option value="all">Tutte</option>', ...rarityOptions.map((rarity) => `<option value="${escape(rarity)}" ${String(rarityFilter)===String(rarity)?"selected":""}>${escape(rarity)}</option>`)].join("");
       return `<section class="rtg-squad-picker development-squad-card-scope">
         <div class="modal-head rtg-squad-picker-head">
-          <div><p class="eyebrow">Cambio giocatore</p><h2>${escape(targetName)}</h2><p class="muted">Scegli un sostituto · ${escape(role || "stesso ruolo")}</p></div>
+          <div><p class="eyebrow">Cambio giocatore</p><h2>${escape(targetName)}</h2><p class="muted">Scegli un sostituto · ${escape(allowAnyRole ? "qualsiasi ruolo" : (role || "stesso ruolo"))}</p></div>
         </div>
         ${quickEntries.length ? `<section class="rtg-picker-quick-bench"><div class="rtg-picker-quick-head"><span>PANCHINA · CAMBIO RAPIDO</span><strong>STESSO RUOLO</strong></div><div class="rtg-picker-quick-strip">${quickEntries.map((entry) => playerCard(entry, "picker")).join("")}</div></section>` : ""}
         <div class="rtg-picker-toolbar">
@@ -221,7 +221,7 @@
             <span>Rarità</span>
             <select data-rtg-picker-rarity aria-label="Filtra per rarità">${rarityOptionMarkup}</select>
           </label>
-          <div class="rtg-picker-role-badge">SOLO ${escape(role || "—")}</div>
+          <div class="rtg-picker-role-badge">${allowAnyRole ? "TUTTI I RUOLI" : `SOLO ${escape(role || "—")}`}</div>
         </div>
         <div data-rtg-picker-results>${replacementPickerResultsMarkup({ entries, total, visibleCount })}</div>
       </section>`;
