@@ -1,4 +1,4 @@
-@import url("./rtg-theme-base.css?v=20260918-ui-polish-2");
+@import url("./rtg-theme-base.css?v=20260918-ui-polish-3");
 
 /* RTG presentation: one ink / white / yellow grammar around unchanged cards.
    Edit these owners instead of adding competing finishing sheets.
@@ -521,7 +521,7 @@
 .rtg-live-commandbar.is-opponent-possession .rtg-live-command--possession::before { background:#d4473f!important; }
 .rtg-live-commandbar.is-user-possession .rtg-live-command--possession::before { background:#2b8ed6!important; }
 .rtg-live-command small { color:#55575c!important; font-size:9px!important; font-weight:950!important; letter-spacing:.08em!important; }
-.rtg-live-command strong { color:#111216!important; font-size:12px!important; font-weight:950!important;
+.rtg-live-command strong { white-space:normal; text-overflow:clip; color:#111216!important; font-size:12px!important; font-weight:950!important;
   overflow-wrap:anywhere;}
 
 .rtg-match-event-feed {
@@ -839,17 +839,19 @@
 .rtg-match-shell.rtg-match-revolution .rtg-match-scoreboard .rtg-score-team {
   display:grid!important;
   grid-template-rows:40px auto!important;
-  grid-template-columns:minmax(0,1fr);
+  grid-template-columns:minmax(0,1fr)!important;
   justify-items:center!important;
   align-items:center!important;
   gap:7px!important;
   min-width:0!important;
 }
 .rtg-match-shell.rtg-match-revolution .rtg-match-scoreboard .rtg-score-emblem {
+  grid-column:1; grid-row:1;
   width:38px!important;
   height:38px!important;
 }
 .rtg-match-shell.rtg-match-revolution .rtg-match-scoreboard .rtg-score-team b {
+  grid-column:1; grid-row:2; text-align:center;
   color:#fff!important;
   font-size:10px!important;
   line-height:1.2!important;
@@ -972,13 +974,22 @@
   margin:-16px -16px 14px; padding:18px 64px 14px 16px;
   background:#111216; border-bottom:4px solid #ffd21f; min-height:84px;
 }
-.rtg-modal .rtg-squad-picker-head h2 { color:#fff; font-style:italic; }
+.rtg-modal .rtg-squad-picker-head h2 { color:#fff!important; font-style:italic; }
 .rtg-modal :is(.rtg-catalog-head,.rtg-squad-picker-head,.rtg-vending-title) .eyebrow { color:#ffd21f!important; }
-.rtg-modal .rtg-squad-picker-head .muted { color:#ddd!important; }
+.rtg-modal :is(.rtg-squad-picker-head,.rtg-catalog-head) .muted { color:#ddd!important; }
 .rtg-modal .rtg-vending-title p { color:#ddd; }
 .rtg-live-team-tabs button { min-height:48px; }
 .rtg-squad-shell .squad-management-panel { gap:12px; }
 .rtg-squad-shell .squad-bench-grid { padding:6px 0; }
 @media(min-width:701px) {
   .rtg-squad-section-head { margin:-14px -14px 12px!important; }
+}
+
+@media(max-width:360px) {
+  .rtg-modal .rtg-catalog-grid { grid-template-columns:repeat(3,minmax(0,66px))!important; }
+  .rtg-squad-shell .squad-bench-list { grid-template-columns:repeat(2,66px)!important; }
+  :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell) .rtg-squad-pitch-main .pitch-row[data-row-count="4"] {
+    display:flex!important; flex-wrap:wrap; justify-content:center!important; gap:8px!important;
+  }
+  :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell) .pitch-row[data-row-count="4"]>.rtg-squad-card-slot { flex:0 0 66px; }
 }

@@ -84,7 +84,7 @@
 }
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card :is(.player-meta,.player-level) { display:none!important; }
 :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell,.rtg-modal) .rtg-squad-player-card :is(.player-role,.player-overall) { font-size:10px!important; line-height:16px!important; min-width:20px!important; height:18px!important; padding:1px 3px!important; top:0!important; z-index:3; }
-.rtg-squad-card-slot .rtg-squad-change-trigger { position:static!important; inset:auto!important; width:100%!important; height:36px!important; min-height:36px; border:1px solid #c7bd9f!important; border-radius:5px!important; background:#eee7d5!important; color:#413c2c!important; display:flex!important; align-items:center; justify-content:center; gap:3px; font-size:8px!important; box-shadow:none!important; transform:none!important; }
+.rtg-squad-card-slot .rtg-squad-change-trigger { position:static!important; inset:auto!important; width:100%!important; height:32px!important; min-height:32px; border:1px solid #c7bd9f!important; border-radius:5px!important; background:#eee7d5!important; color:#413c2c!important; display:flex!important; align-items:center; justify-content:center; gap:3px; font-size:8px!important; box-shadow:none!important; transform:none!important; }
 .rtg-squad-change-trigger span:first-child { font-size:13px; }
 .rtg-squad-shell .squad-management-panel { display:flex!important; flex-direction:column!important; gap:14px!important; padding:0!important; background:transparent!important; border:0!important; box-shadow:none!important; }
 .rtg-squad-shell .squad-bench-panel { width:100%; }

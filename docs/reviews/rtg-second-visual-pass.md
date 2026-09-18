@@ -32,3 +32,11 @@ writes no saves, and is not linked from the game. Widths: 320/390/430/768.
 
 Native Safari/iPhone interaction remains a manual gate. Do not merge this draft
 until the deployed preview has been checked on the target device.
+
+## Rendered follow-up
+
+Reviewed deployed fixture screenshots for squad, prematch, match, catalog, picker,
+vending and Hub at 390px. This exposed inherited opponent crest/name grid placement
+and dark picker/catalog text. Corrected both before handoff. Added 320px grid
+adaptation around unchanged cards. Full suite: 285/332 pass, the same 47 failures
+as the pristine baseline; no new failing test. Native Safari is not verified.
