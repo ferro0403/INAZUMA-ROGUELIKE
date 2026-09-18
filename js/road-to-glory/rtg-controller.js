@@ -239,11 +239,13 @@
         renderSquad();
       }));
     }
-    function squadPickerCandidateIds(targetId,role){
+    function squadPickerCandidateIds(targetId,role,{benchTarget=false}={}){
       const accessible=squadRuntime.accessiblePlayerIds({freeAgentIds,state:draftState()}).map(id);
+      const rosterIds=new Set(draftRosterIds());
       return accessible
         .filter(playerId=>playerId!==id(targetId))
-        .filter(playerId=>rawRole(playerId)===role)
+        .filter(playerId=>!benchTarget||!rosterIds.has(playerId))
+        .filter(playerId=>!role||rawRole(playerId)===role)
         .sort((a,b)=>rawOverall(b)-rawOverall(a)||rawName(a).localeCompare(rawName(b),"it"));
     }
     function squadPickerRarity(playerId){
@@ -261,9 +263,10 @@
     function openSquadPlayerPicker(targetId){
       const targetLoc=locationInDraft(targetId);
       if(!targetLoc)return;
-      const role=roleOfDraftPlayer(targetId);
-      if(!role)return deps.toast?.("Ruolo giocatore non disponibile","error");
-      const quickEntries=targetLoc.area==="lineup"
+      const strictRole=targetLoc.area==="lineup";
+      const role=strictRole?roleOfDraftPlayer(targetId):"";
+      if(strictRole&&!role)return deps.toast?.("Ruolo giocatore non disponibile","error");
+      const quickEntries=strictRole
         ? (squadDraft?.bench||[]).map(id).filter(playerId=>roleOfDraftPlayer(playerId)===role).map(playerId=>({
             playerId,
             source:sourceForDraftPlayer(playerId),
@@ -271,7 +274,7 @@
           })).filter(entry=>entry.player)
         : [];
       const quickIds=new Set(quickEntries.map(entry=>id(entry.playerId)));
-      const candidateIds=squadPickerCandidateIds(targetId,role).filter(playerId=>!quickIds.has(id(playerId)));
+      const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(id(playerId)));
       let visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateIds.length);
       let query="";
       let sourceFilter="all";
@@ -318,7 +321,7 @@
           renderResults();
         });
       };
-      deps.openModal?.(squadView.replacementPickerMarkup({target,role,quickEntries,entries:entries(),total:candidateIds.length,visibleCount,query,sourceFilter,rarityFilter,rarityOptions}),{className:"rtg-modal rtg-squad-picker-modal"});
+      deps.openModal?.(squadView.replacementPickerMarkup({target,role,allowAnyRole:!strictRole,quickEntries,entries:entries(),total:candidateIds.length,visibleCount,query,sourceFilter,rarityFilter,rarityOptions}),{className:"rtg-modal rtg-squad-picker-modal"});
       const modal=deps.getModalRoot?.();
       modal?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",event=>{
         query=String(event.target?.value||"");
@@ -597,9 +600,12 @@
       const accessible=new Set(squadRuntime.accessiblePlayerIds({freeAgentIds,state:draftState()}).map(id));
       if(!accessible.has(first)||!accessible.has(second))return{ok:false,reason:"inaccessible-player"};
       const firstRole=roleOfDraftPlayer(first),secondRole=roleOfDraftPlayer(second);
-      if(!firstRole||firstRole!==secondRole)return{ok:false,reason:"role-mismatch"};
       const firstLoc=locationInDraft(first),secondLoc=locationInDraft(second);
       if(!firstLoc&&!secondLoc)return{ok:false,reason:"collection-only"};
+      // The XI must preserve the role required by the formation. Bench slots are
+      // role-free: replacing a bench DF with a FW/MF/GK is always allowed.
+      if(firstLoc?.area==="lineup"&&(!secondRole||secondRole!==firstRole))return{ok:false,reason:"role-mismatch"};
+      if(secondLoc?.area==="lineup"&&(!firstRole||firstRole!==secondRole))return{ok:false,reason:"role-mismatch"};
       if(firstLoc&&secondLoc){
         squadDraft[firstLoc.area][firstLoc.index]=second;
         squadDraft[secondLoc.area][secondLoc.index]=first;
