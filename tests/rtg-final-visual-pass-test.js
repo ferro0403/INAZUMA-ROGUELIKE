@@ -51,20 +51,20 @@ assert(
   "RTG catalog must not force oversized 152px cards"
 );
 assert(
-  /data-rtg-vending-machine/.test(runView) && /rtg-vending-machine-v6/.test(runView),
-  "RTG vending should expose the illustrated capsule machine"
+  /data-rtg-vending-machine/.test(runView) && /rtg-vending-machine-v7/.test(runView),
+  "RTG vending should expose the approved gachapon artwork wrapper"
 );
 assert(
-  /rtg-vending-machine-art/.test(runView) && /rtgMachineGlobeClip/.test(runView),
-  "RTG vending should use the approved illustrated machine as an inline SVG asset"
+  /assets\/rtg\/rtg-gacha-machine\.webp/.test(runView),
+  "RTG vending should render the approved gachapon image asset"
 );
 assert(
-  /\.rtg-vending-machine-v6\s*\{[^}]*width\s*:\s*min\(318px,88vw\)/s.test(css),
-  "RTG vending illustrated machine should keep a stable mobile-friendly footprint"
+  /\.rtg-vending-machine-v7\s*\{[^}]*width\s*:\s*min\(270px,78vw\)/s.test(css),
+  "RTG gachapon artwork should keep a compact mobile-friendly footprint"
 );
 assert(
-  /rtg-vending-svg-crank/.test(css) && /rtg-vending-svg-capsule/.test(css),
-  "RTG vending pull should retain lightweight crank and capsule animation"
+  /rtg-vending-image-pull/.test(css),
+  "RTG vending pull should retain a lightweight machine animation"
 );
 
 assert(
