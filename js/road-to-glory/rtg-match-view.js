@@ -102,23 +102,16 @@
 
     function duelElementLabel(player = {}) {
       const raw = String(player?.element || "").trim();
-      const key = raw.toLowerCase();
-      const labels = {
-        fire:"FUOCO", fuoco:"FUOCO",
-        wind:"VENTO", vento:"VENTO", air:"VENTO", aria:"VENTO",
-        earth:"TERRA", terra:"TERRA", mountain:"TERRA", montagna:"TERRA",
-        wood:"BOSCO", bosco:"BOSCO", forest:"BOSCO",
-      };
-      return labels[key] || (raw ? raw.toUpperCase() : "—");
+      return raw ? raw.toUpperCase() : "—";
     }
 
     function duelElementClass(player = {}) {
       const key = String(player?.element || "").trim().toLowerCase();
       if (["fire","fuoco"].includes(key)) return "is-fire";
-      if (["wind","vento","air","aria"].includes(key)) return "is-wind";
-      if (["earth","terra","mountain","montagna"].includes(key)) return "is-earth";
-      if (["wood","bosco","forest"].includes(key)) return "is-wood";
-      return "is-neutral";
+      if (["mountain","montagna"].includes(key)) return "is-mountain";
+      if (["forest","albero","wood","bosco"].includes(key)) return "is-forest";
+      if (["wind","vento"].includes(key)) return "is-wind";
+      return "";
     }
 
     function duelCompareVisualMarkup(player = {}, side = "user", attrs = "") {
