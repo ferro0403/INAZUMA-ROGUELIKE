@@ -996,3 +996,64 @@
   }
   :is(.rtg-squad-shell,.rtg-prematch-shell,.rtg-match-shell) .pitch-row[data-row-count="4"]>.rtg-squad-card-slot { flex:0 0 66px; }
 }
+
+
+/* RTG duel cleanup: remove redundant duel banners, simplify choice hint, soften cards and compact abandon. */
+.rtg-duel-versus-board .rtg-duel-panel-heading {
+  display:none!important;
+}
+.rtg-duel-choice-head {
+  justify-content:flex-start!important;
+}
+.rtg-duel-choice-head > span {
+  display:none!important;
+}
+.rtg-duel-versus-board .rtg-duel-portrait-panel {
+  border-radius:8px!important;
+}
+.rtg-match-scoreboard.rtg-match-topbar {
+  grid-template-columns:minmax(0,1fr) auto!important;
+}
+.rtg-match-shell.rtg-match-revolution .rtg-match-scoreboard .rtg-abandon-button {
+  grid-column:2;
+  grid-row:1;
+  width:auto!important;
+  height:34px!important;
+  min-height:34px!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:0 10px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:0!important;
+  overflow:visible!important;
+  border:2px solid #8f2f35!important;
+  border-radius:6px!important;
+  background:#c94b52!important;
+  color:#fff!important;
+  box-shadow:2px 3px 0 #000!important;
+  clip-path:none!important;
+}
+.rtg-match-scoreboard .rtg-abandon-button::after,
+.rtg-match-scoreboard .rtg-abandon-button > span {
+  display:none!important;
+}
+.rtg-match-scoreboard .rtg-abandon-button > b {
+  display:block!important;
+  color:#fff!important;
+  font-size:9px!important;
+  font-weight:950!important;
+  letter-spacing:.06em!important;
+  line-height:1!important;
+}
+@media(max-width:430px) {
+  .rtg-match-shell.rtg-match-revolution .rtg-match-scoreboard .rtg-abandon-button {
+    height:32px!important;
+    min-height:32px!important;
+    padding:0 8px!important;
+  }
+  .rtg-match-scoreboard .rtg-abandon-button > b {
+    font-size:8px!important;
+  }
+}
