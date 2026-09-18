@@ -193,7 +193,7 @@
         </div>
         <div class="rtg-vending-stage">
           <div class="rtg-vending-machine-v7" data-rtg-vending-machine aria-label="Distributore di palline Season 1">
-            <img class="rtg-vending-machine-image" src="assets/rtg/rtg-gacha-machine.webp" alt="Distributore RTG" draggable="false" />
+            <img class="rtg-vending-machine-image" src="assets/rtg/rtg-gacha-machine.webp?v=2" alt="Distributore RTG" draggable="false" />
           </div>
           <div class="rtg-vending-wallet-chip"><span>GETTONI</span><strong>${escape(Number(model.tokens)||0)} ◈</strong></div>
         </div>
