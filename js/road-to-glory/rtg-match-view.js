@@ -102,6 +102,11 @@
 
     function duelElementLabel(player = {}) {
       const raw = String(player?.element || "").trim();
+      const key = raw.toLowerCase();
+      if (["fire","fuoco"].includes(key)) return "Fuoco";
+      if (["wind","vento"].includes(key)) return "Vento";
+      if (["forest","albero","wood","bosco"].includes(key)) return "Albero";
+      if (["mountain","montagna","earth","terra"].includes(key)) return "Montagna";
       return raw || "—";
     }
 
