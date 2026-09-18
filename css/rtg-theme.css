@@ -1634,20 +1634,24 @@
   box-shadow:1px 2px 0 #111216!important;
 }
 .rtg-duel-card--clean .rtg-duel-player-element.is-fire {
-  background:#ff8050!important;
-  border-color:#a93220!important;
+  background:#fff0ec!important;
+  border-color:#b82323!important;
+  color:#b82323!important;
 }
 .rtg-duel-card--clean .rtg-duel-player-element.is-wind {
-  background:#82ddd3!important;
-  border-color:#258b82!important;
+  background:#e8f6fb!important;
+  border-color:#197ca9!important;
+  color:#197ca9!important;
 }
-.rtg-duel-card--clean .rtg-duel-player-element.is-earth {
-  background:#d8b15b!important;
-  border-color:#8a6425!important;
+.rtg-duel-card--clean .rtg-duel-player-element.is-mountain {
+  background:#f3e6d6!important;
+  border-color:#76502f!important;
+  color:#76502f!important;
 }
-.rtg-duel-card--clean .rtg-duel-player-element.is-wood {
-  background:#7bd46f!important;
-  border-color:#2e8737!important;
+.rtg-duel-card--clean .rtg-duel-player-element.is-forest {
+  background:#e6f5e9!important;
+  border-color:#23713f!important;
+  color:#23713f!important;
 }
 .rtg-duel-card--clean .rtg-duel-player-element.is-neutral {
   background:#d7d9dd!important;
@@ -1939,10 +1943,10 @@
   letter-spacing:.05em!important;
   box-shadow:1px 2px 0 #111216!important;
 }
-.rtg-duel-versus-board--result .rtg-duel-player-element.is-fire { background:#ff8050!important; border-color:#a93220!important; }
-.rtg-duel-versus-board--result .rtg-duel-player-element.is-wind { background:#82ddd3!important; border-color:#258b82!important; }
-.rtg-duel-versus-board--result .rtg-duel-player-element.is-earth { background:#d8b15b!important; border-color:#8a6425!important; }
-.rtg-duel-versus-board--result .rtg-duel-player-element.is-wood { background:#7bd46f!important; border-color:#2e8737!important; }
+.rtg-duel-versus-board--result .rtg-duel-player-element.is-fire { background:#fff0ec!important; border-color:#b82323!important; color:#b82323!important; }
+.rtg-duel-versus-board--result .rtg-duel-player-element.is-wind { background:#e8f6fb!important; border-color:#197ca9!important; color:#197ca9!important; }
+.rtg-duel-versus-board--result .rtg-duel-player-element.is-mountain { background:#f3e6d6!important; border-color:#76502f!important; color:#76502f!important; }
+.rtg-duel-versus-board--result .rtg-duel-player-element.is-forest { background:#e6f5e9!important; border-color:#23713f!important; color:#23713f!important; }
 .rtg-duel-versus-board--result .rtg-duel-player-element.is-neutral { background:#d7d9dd!important; border-color:#777b82!important; }
 
 .rtg-duel-versus-board--result .rtg-duel-panel-tag,
