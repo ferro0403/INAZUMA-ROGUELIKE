@@ -1,0 +1,22 @@
+{
+  "version": 1,
+  "purpose": "Remote GLB loading prototype only. Not production player data.",
+  "models": [
+    {
+      "id": "prototype_humanoid",
+      "label": "Humanoid skinned test",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/CesiumMan/glTF-Binary/CesiumMan.glb",
+      "expectedBytes": 438044,
+      "source": "KhronosGroup/glTF-Sample-Assets - CesiumMan",
+      "license": "CC BY 4.0"
+    },
+    {
+      "id": "prototype_light",
+      "label": "Light animated test",
+      "modelUrl": "https://raw.githubusercontent.com/KhronosGroup/glTF-Sample-Assets/main/Models/Fox/glTF-Binary/Fox.glb",
+      "expectedBytes": 162852,
+      "source": "KhronosGroup/glTF-Sample-Assets - Fox",
+      "license": "CC0 / CC BY 4.0 components; see upstream README"
+    }
+  ]
+}

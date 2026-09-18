@@ -1,0 +1,93 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="theme-color" content="#f4c430" />
+    <title>Remote GLB Prototype · Inazuma Roguelike</title>
+    <link rel="stylesheet" href="./style.css" />
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body>
+    <main class="lab-shell">
+      <header class="lab-header">
+        <div>
+          <p class="eyebrow">LAB 3D · PR ISOLATA</p>
+          <h1>Remote GLB player prototype</h1>
+          <p class="subtitle">
+            Il modello non è nel repository: il browser riceve soltanto un URL e scarica il GLB
+            quando premi <strong>Carica modello</strong>.
+          </p>
+        </div>
+        <a class="back-link" href="../../index.html">← Gioco principale</a>
+      </header>
+
+      <section class="lab-grid">
+        <article class="viewer-card">
+          <div class="viewer-toolbar">
+            <label>
+              Modello di prova
+              <select id="model-select" disabled>
+                <option>Caricamento manifest…</option>
+              </select>
+            </label>
+            <div class="actions">
+              <button id="load-model" type="button" disabled>Carica modello</button>
+              <button id="reload-model" type="button" disabled>Ricarica stesso URL</button>
+              <button id="release-model" type="button" class="secondary" disabled>Rilascia memoria</button>
+            </div>
+          </div>
+
+          <div id="viewer" class="viewer" aria-label="Viewer 3D">
+            <div id="empty-state" class="empty-state">
+              <strong>0 GLB caricati</strong>
+              <span>Aprire questa pagina non scarica nessun modello giocatore.</span>
+            </div>
+          </div>
+
+          <p id="status" class="status" role="status">Inizializzazione laboratorio…</p>
+        </article>
+
+        <aside class="metrics-card">
+          <h2>Misure</h2>
+          <dl class="metrics">
+            <div><dt>Richieste GLB</dt><dd id="metric-fetches">0</dd></div>
+            <div><dt>Byte ultimo GLB</dt><dd id="metric-bytes">—</dd></div>
+            <div><dt>Download</dt><dd id="metric-network">—</dd></div>
+            <div><dt>Parsing</dt><dd id="metric-parse">—</dd></div>
+            <div><dt>Mesh</dt><dd id="metric-meshes">—</dd></div>
+            <div><dt>Skinned mesh</dt><dd id="metric-skinned">—</dd></div>
+            <div><dt>Ossa</dt><dd id="metric-bones">—</dd></div>
+            <div><dt>Animazioni</dt><dd id="metric-animations">—</dd></div>
+            <div><dt>GPU geometrie</dt><dd id="metric-gpu-geometries">0</dd></div>
+            <div><dt>GPU texture</dt><dd id="metric-gpu-textures">0</dd></div>
+            <div><dt>JS heap</dt><dd id="metric-heap">n/d</dd></div>
+          </dl>
+
+          <div class="architecture-note">
+            <strong>Architettura provata</strong>
+            <code>playerId → modelUrl → fetch on-demand → GLTFLoader → dispose</code>
+            <p>
+              Il manifest contiene URL, non file 3D. Il pulsante “Rilascia memoria” distrugge
+              geometrie, materiali e texture GPU del modello corrente.
+            </p>
+          </div>
+
+          <div class="source-note">
+            <span id="model-source">Fonte modello: —</span>
+            <span>Three.js 0.186.0 caricato come dipendenza del solo laboratorio.</span>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
