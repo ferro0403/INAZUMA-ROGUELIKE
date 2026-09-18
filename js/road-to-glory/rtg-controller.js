@@ -439,34 +439,6 @@
       }
       if(selected.length!==11)return null;
 
-      const capTotal=Number(constraint.cap)*11;
-      let total=selected.reduce((sum,entry)=>sum+entry.contribution,0);
-      if(total>capTotal+1e-9)return null;
-
-      // Maximise the starting XI without losing the minimum composition that
-      // must remain on the field because the bench only has four slots.
-      let guard=0;
-      while(guard++<80){
-        const fieldRecruitCount=selected.filter(entry=>entry.recruit).length;
-        const fieldRecentCount=selected.filter(entry=>entry.recent).length;
-        let best=null;
-        for(let index=0;index<selected.length;index++){
-          const outgoing=selected[index];
-          for(const incoming of candidates){
-            if(used.has(incoming.playerId)||incoming.role!==outgoing.role)continue;
-            const delta=incoming.contribution-outgoing.contribution;
-            if(delta<=0||total+delta>capTotal+1e-9)continue;
-            const nextRecruit=fieldRecruitCount-(outgoing.recruit?1:0)+(incoming.recruit?1:0);
-            const nextRecent=fieldRecentCount-(outgoing.recent?1:0)+(incoming.recent?1:0);
-            if(nextRecruit<minFieldRecruit||nextRecent<minFieldRecent)continue;
-            if(!best||delta>best.delta||(delta===best.delta&&incoming.overall>best.incoming.overall))best={index,outgoing,incoming,delta};
-          }
-        }
-        if(!best)break;
-        used.delete(best.outgoing.playerId);used.add(best.incoming.playerId);
-        selected[best.index]=best.incoming;total+=best.delta;
-      }
-
       const bench=[];
       const benchUsed=new Set(used);
       const addBenchFrom=(source,needed)=>{
@@ -479,11 +451,48 @@
       };
       const fieldRecruitCount=selected.filter(entry=>entry.recruit).length;
       const fieldRecentCount=selected.filter(entry=>entry.recent).length;
-      if(addBenchFrom(candidates.filter(entry=>entry.recent).sort(strongest),Math.max(0,Number(constraint.recentCount||0)-fieldRecentCount))>0)return null;
+      if(addBenchFrom(candidates.filter(entry=>entry.recent).sort(weakest),Math.max(0,Number(constraint.recentCount||0)-fieldRecentCount))>0)return null;
       const activeRecruitAfterRecent=fieldRecruitCount+bench.filter(entry=>entry.recruit).length;
-      if(addBenchFrom(candidates.filter(entry=>entry.recruit).sort(strongest),Math.max(0,Number(constraint.minRecruit||0)-activeRecruitAfterRecent))>0)return null;
-      addBenchFrom(candidates.sort(strongest),4-bench.length);
+      if(addBenchFrom(candidates.filter(entry=>entry.recruit).sort(weakest),Math.max(0,Number(constraint.minRecruit||0)-activeRecruitAfterRecent))>0)return null;
+      addBenchFrom(candidates.sort(weakest),4-bench.length);
       if(bench.length!==4)return null;
+
+      // The match requirement is now a full 15-player roster cap. Build the
+      // weakest valid roster first, then spend the remaining cap headroom on
+      // the strongest legal upgrades. This makes the result stable across
+      // halftime swaps because moving a player between XI and bench does not
+      // change the 15-player total.
+      const capTotal=Number(constraint.cap)*15;
+      const roster=()=>[...selected,...bench];
+      let total=roster().reduce((sum,entry)=>sum+entry.contribution,0);
+      if(total>capTotal+1e-9)return null;
+
+      let guard=0;
+      while(guard++<120){
+        const active=roster();
+        const activeRecruitCount=active.filter(entry=>entry.recruit).length;
+        const activeRecentCount=active.filter(entry=>entry.recent).length;
+        const activeIds=new Set(active.map(entry=>entry.playerId));
+        let best=null;
+        for(let index=0;index<active.length;index++){
+          const outgoing=active[index];
+          const isLineup=index<selected.length;
+          for(const incoming of candidates){
+            if(activeIds.has(incoming.playerId))continue;
+            if(isLineup&&incoming.role!==outgoing.role)continue;
+            const delta=incoming.contribution-outgoing.contribution;
+            if(delta<=0||total+delta>capTotal+1e-9)continue;
+            const nextRecruit=activeRecruitCount-(outgoing.recruit?1:0)+(incoming.recruit?1:0);
+            const nextRecent=activeRecentCount-(outgoing.recent?1:0)+(incoming.recent?1:0);
+            if(nextRecruit<Number(constraint.minRecruit||0)||nextRecent<Number(constraint.recentCount||0))continue;
+            if(!best||delta>best.delta||(delta===best.delta&&incoming.overall>best.incoming.overall))best={index,outgoing,incoming,delta};
+          }
+        }
+        if(!best)break;
+        if(best.index<selected.length)selected[best.index]=best.incoming;
+        else bench[best.index-selected.length]=best.incoming;
+        total+=best.delta;
+      }
 
       const state=clone(draftState());
       state.squads.ie1={
