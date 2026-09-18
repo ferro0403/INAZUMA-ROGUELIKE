@@ -1,0 +1,72 @@
+name: Probe public Victory Road 3D sources
+
+on:
+  push:
+    branches:
+      - experiment/remote-glb-player-prototype
+    paths:
+      - ".github/workflows/probe-public-victory-road-3d.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Probe public NIE and CDN surfaces
+        shell: bash
+        run: |
+          set -u
+          mkdir -p probe
+          report="probe/report.txt"
+          : > "$report"
+
+          probe_url() {
+            label="$1"
+            url="$2"
+            out="$(mktemp)"
+            headers="$(mktemp)"
+            start="$(date +%s%3N)"
+            status="$(curl -L -sS --connect-timeout 8 --max-time 35 -D "$headers" -o "$out" -w "%{http_code}" "$url" || true)"
+            end="$(date +%s%3N)"
+            ms=$((end-start))
+            bytes="$(wc -c < "$out" 2>/dev/null || echo 0)"
+            ctype="$(awk 'BEGIN{IGNORECASE=1} /^content-type:/{gsub("\r",""); value=$0} END{sub(/^[^:]*:[ ]*/,"",value); print value}' "$headers")"
+            cache="$(awk 'BEGIN{IGNORECASE=1} /^cache-control:/{gsub("\r",""); value=$0} END{sub(/^[^:]*:[ ]*/,"",value); print value}' "$headers")"
+            cors="$(awk 'BEGIN{IGNORECASE=1} /^access-control-allow-origin:/{gsub("\r",""); value=$0} END{sub(/^[^:]*:[ ]*/,"",value); print value}' "$headers")"
+            magic="$(head -c 12 "$out" 2>/dev/null | xxd -p -c 12 || true)"
+            sha="$(sha256sum "$out" 2>/dev/null | awk '{print $1}')"
+            printf '=== %s ===\nURL: %s\nHTTP: %s\nTIME_MS: %s\nBYTES: %s\nCONTENT_TYPE: %s\nCACHE: %s\nCORS: %s\nMAGIC12_HEX: %s\nSHA256: %s\n\n'               "$label" "$url" "$status" "$ms" "$bytes" "$ctype" "$cache" "$cors" "$magic" "$sha" | tee -a "$report"
+            rm -f "$out" "$headers"
+          }
+
+          probe_url "NIE health" "https://nie.aphrody.com/health"
+          probe_url "NIE api health" "https://nie.aphrody.com/api/v1/health"
+
+          probe_url "Mark raw G4MD" "https://nie.aphrody.com/f/data/common/chr/_face/01_IE1/c01000010/c01000010.g4md"
+          probe_url "Mark raw G4MG" "https://nie.aphrody.com/f/data/common/chr/_face/01_IE1/c01000010/c01000010.g4mg"
+          probe_url "Shared Mark skeleton G4SK" "https://nie.aphrody.com/f/data/common/chr/c000101/c000101.g4sk"
+
+          probe_url "Mark full GLB new CDN" "https://cdn.aphrody.com/model-full/c01000010.glb"
+          probe_url "Mark full GLB old CDN" "https://cdn.rosegriffon.fr/model-full/c01000010.glb"
+          probe_url "Mark full GLB via NIE proxy" "https://nie.aphrody.com/assets/model-full/c01000010.glb"
+
+          probe_url "Mark assembly report new CDN" "https://cdn.aphrody.com/model-report/c01000010.json"
+          probe_url "Mark assembly report via NIE proxy" "https://nie.aphrody.com/assets/model-report/c01000010.json"
+          probe_url "Mark 3D catalogue record" "https://nie.aphrody.com/api/v1/3d/modeles/perso/c01000010"
+
+          probe_url "Search Raimon uniform paths" "https://nie.aphrody.com/api/v1/recherche?q=u011001&per_page=20"
+          probe_url "Browse uniform folder candidate" "https://nie.aphrody.com/b/data/common/chr/_uniform/u011001?page=1&per_page=20"
+
+      - name: Show report
+        run: cat probe/report.txt
+
+      - name: Upload text report only
+        uses: actions/upload-artifact@v4
+        with:
+          name: public-victory-road-3d-probe
+          path: probe/report.txt
+          if-no-files-found: error
