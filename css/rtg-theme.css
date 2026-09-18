@@ -1057,3 +1057,18 @@
     font-size:8px!important;
   }
 }
+
+
+/* RTG duel compact cards: remove the orphaned fixed grid row left after hiding the panel heading. */
+.rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) {
+  align-items:start!important;
+}
+.rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-portrait-panel {
+  grid-template-rows:auto!important;
+  align-self:start!important;
+  height:auto!important;
+  min-height:0!important;
+}
+.rtg-duel-card--clean .rtg-duel-versus-board:not(.rtg-duel-versus-board--result):not(.rtg-duel-versus-board--resolving) .rtg-duel-vs-core {
+  align-self:center!important;
+}
