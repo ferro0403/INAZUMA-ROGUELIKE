@@ -57,3 +57,7 @@ Keep this PR DRAFT and do not merge until the new preview has passed the request
 10-screen visual review on iPhone/Safari, including both formation tabs, 3-5-2 at 320px,
 long team names, picker/modal scroll, keyboard-open search, requirements disclosure,
 save strip and bottom navigation. The baseline PR is preserved and is not updated.
+
+## Deploy preview
+
+Netlify Deploy Preview retrigger requested for PR #451 on 2026-09-18.
