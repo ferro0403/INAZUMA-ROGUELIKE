@@ -1,0 +1,12 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+let opts=null;
+const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),c);
+const view=c.RoadToGloryRunView.create({escapeHtml:s=>String(s),compactPlayerCardMarkup:(player,o)=>{opts=o;return `<button class="${o.extraClass||""}">${player.name}</button>`;}});
+const html=view.pullResultMarkup({rarity:"Forte",duplicate:false,balanceAfter:70},{playerId:"p1",name:"Johan",overall:81,category:"Forte"});
+assert(opts);
+assert.match(opts.extraClass,/squad-player-card/);
+assert.match(opts.extraClass,/rtg-pull-player-card/);
+assert.match(html,/development-squad-card-scope/);
+console.log("rtg-pull-card-style-test: PASS");
