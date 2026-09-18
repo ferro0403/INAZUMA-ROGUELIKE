@@ -126,12 +126,13 @@
       const overall = player?.overall ?? player?.finalOverall ?? "—";
       const element = duelElementLabel(player);
       const elementClass = duelElementClass(player);
-      return `<button type="button" class="rtg-duel-visual rtg-duel-visual--compare rtg-duel-visual--${escape(side)}" ${attrs}>
+      return `<button type="button" class="rtg-duel-visual rtg-duel-visual--compare rtg-duel-visual--${escape(side)} ${escape(elementClass)}" ${attrs}>
+        <span class="rtg-duel-card-accent" aria-hidden="true"><i></i><b></b></span>
         <span class="rtg-duel-render">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
         <span class="rtg-duel-player-copy">
           <strong class="rtg-duel-player-name">${escape(name)}</strong>
           <span class="rtg-duel-player-meta">
-            <small>${escape(playerRole)} · OVR ${escape(overall)}</small>
+            <small><b>${escape(playerRole)}</b><span>OVR ${escape(overall)}</span></small>
             <em class="rtg-duel-player-element ${escape(elementClass)}">${escape(element)}</em>
           </span>
         </span>
