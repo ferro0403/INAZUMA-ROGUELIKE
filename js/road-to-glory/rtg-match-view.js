@@ -127,7 +127,6 @@
       const element = duelElementLabel(player);
       const elementClass = duelElementClass(player);
       return `<button type="button" class="rtg-duel-visual rtg-duel-visual--compare rtg-duel-visual--${escape(side)} ${escape(elementClass)}" ${attrs}>
-        <span class="rtg-duel-card-accent" aria-hidden="true"><i></i><b></b></span>
         <span class="rtg-duel-render">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
         <span class="rtg-duel-player-copy">
           <strong class="rtg-duel-player-name">${escape(name)}</strong>
