@@ -1,0 +1,32 @@
+name: Remote GLB prototype check
+
+on:
+  push:
+    branches:
+      - experiment/remote-glb-player-prototype
+    paths:
+      - "experiments/remote-glb/**"
+      - "data/REMOTE_3D_PROTOTYPE.json"
+      - "tests/remote-glb-prototype-contract-test.js"
+      - ".github/workflows/remote-glb-prototype.yml"
+  pull_request:
+    paths:
+      - "experiments/remote-glb/**"
+      - "data/REMOTE_3D_PROTOTYPE.json"
+      - "tests/remote-glb-prototype-contract-test.js"
+      - ".github/workflows/remote-glb-prototype.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  contract:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Validate isolated remote GLB prototype
+        run: node tests/remote-glb-prototype-contract-test.js
