@@ -200,9 +200,10 @@
       </section>`;
     }
 
-    function replacementPickerMarkup({ target = null, role = "", quickEntries = [], entries = [], total = 0, visibleCount = entries.length, query = "", sourceFilter = "all" } = {}) {
+    function replacementPickerMarkup({ target = null, role = "", quickEntries = [], entries = [], total = 0, visibleCount = entries.length, query = "", sourceFilter = "all", rarityFilter = "all", rarityOptions = [] } = {}) {
       const targetName = target?.player?.name || target?.playerId || "Giocatore";
       const filterButton = (value,label) => `<button type="button" class="rtg-picker-filter ${sourceFilter===value?"active":""}" data-rtg-picker-source="${escape(value)}">${escape(label)}</button>`;
+      const rarityOptionMarkup = ['<option value="all">Tutte</option>', ...rarityOptions.map((rarity) => `<option value="${escape(rarity)}" ${String(rarityFilter)===String(rarity)?"selected":""}>${escape(rarity)}</option>`)].join("");
       return `<section class="rtg-squad-picker development-squad-card-scope">
         <div class="modal-head rtg-squad-picker-head">
           <div><p class="eyebrow">Cambio giocatore</p><h2>${escape(targetName)}</h2><p class="muted">Scegli un sostituto · ${escape(role || "stesso ruolo")}</p></div>
@@ -215,6 +216,10 @@
             ${filterButton("free","Svincolati")}
             ${filterButton("rtg","Giocatori RTG")}
           </div>
+          <label class="rtg-picker-rarity-filter">
+            <span>Rarità</span>
+            <select data-rtg-picker-rarity aria-label="Filtra per rarità">${rarityOptionMarkup}</select>
+          </label>
           <div class="rtg-picker-role-badge">SOLO ${escape(role || "—")}</div>
         </div>
         <div data-rtg-picker-results>${replacementPickerResultsMarkup({ entries, total, visibleCount })}</div>
@@ -232,7 +237,6 @@
         </header>
 
         <div class="content squad-content rtg-squad-content">
-          <p class="rtg-squad-help">Card: dettagli giocatore <span>↔ Cambia: scegli un sostituto</span></p>
           <div class="squad-workspace">
             <section class="squad-field-panel" aria-label="Campo 11v11 RTG">
               <div class="squad-panel-head rtg-squad-section-head"><h2>Titolari</h2><span class="squad-field-formation" data-rtg-formation-current>${escape(model.formation?.name || model.formation?.formation || model.formationId || "—")}</span></div>
