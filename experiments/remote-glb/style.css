@@ -8,6 +8,7 @@
   --line: #111216;
   --muted: #625f58;
   --danger: #a02f28;
+  --success: #167444;
 }
 
 * { box-sizing: border-box; }
@@ -143,6 +144,7 @@ button:hover:not(:disabled) { transform: translate(-1px, -1px); box-shadow: 4px 
 button:disabled { opacity: .45; cursor: not-allowed; box-shadow: none; }
 button.secondary { background: #fff; }
 button.secondary:not(:disabled) { color: var(--danger); }
+button.stress { background: var(--ink); color: #fff; }
 
 .viewer {
   position: relative;
@@ -170,7 +172,8 @@ button.secondary:not(:disabled) { color: var(--danger); }
 .empty-state span { color: var(--muted); font-weight: 750; }
 .empty-state.hidden { display: none; }
 
-.status {
+.status,
+.stress-status {
   min-height: 24px;
   margin: 10px 2px 0;
   color: var(--muted);
@@ -178,6 +181,7 @@ button.secondary:not(:disabled) { color: var(--danger); }
   font-weight: 800;
 }
 
+.stress-status { margin-top: 3px; font-size: .8rem; }
 .status.error { color: var(--danger); }
 
 .metrics-card {
@@ -205,6 +209,8 @@ button.secondary:not(:disabled) { color: var(--danger); }
   background: #fff;
 }
 
+.metrics > .metric-wide { grid-column: 1 / -1; }
+
 .metrics dt {
   color: var(--muted);
   font-size: .65rem;
@@ -218,6 +224,9 @@ button.secondary:not(:disabled) { color: var(--danger); }
   font-size: 1rem;
   font-weight: 950;
 }
+
+.metric-pass { color: var(--success); }
+.metric-warn { color: var(--danger); }
 
 .architecture-note,
 .source-note {

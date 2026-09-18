@@ -3,6 +3,7 @@ import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 
 const MANIFEST_URL = "../../data/REMOTE_3D_PROTOTYPE.json";
+const STRESS_CYCLES = 100;
 
 const dom = {
   viewer: document.querySelector("#viewer"),
@@ -11,7 +12,9 @@ const dom = {
   load: document.querySelector("#load-model"),
   reload: document.querySelector("#reload-model"),
   release: document.querySelector("#release-model"),
+  stress: document.querySelector("#stress-test"),
   status: document.querySelector("#status"),
+  stressStatus: document.querySelector("#stress-status"),
   source: document.querySelector("#model-source"),
   metrics: {
     fetches: document.querySelector("#metric-fetches"),
@@ -25,6 +28,8 @@ const dom = {
     gpuGeometries: document.querySelector("#metric-gpu-geometries"),
     gpuTextures: document.querySelector("#metric-gpu-textures"),
     heap: document.querySelector("#metric-heap"),
+    stressCycles: document.querySelector("#metric-stress-cycles"),
+    stressResult: document.querySelector("#metric-stress-result"),
   },
 };
 
@@ -33,7 +38,7 @@ const state = {
   current: null,
   mixer: null,
   fetches: 0,
-  loading: false,
+  busy: false,
 };
 
 const scene = new THREE.Scene();
@@ -42,7 +47,11 @@ scene.background = new THREE.Color(0xf3eedf);
 const camera = new THREE.PerspectiveCamera(36, 1, 0.01, 500);
 camera.position.set(2.6, 1.8, 3.4);
 
-const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false, powerPreference: "high-performance" });
+const renderer = new THREE.WebGLRenderer({
+  antialias: true,
+  alpha: false,
+  powerPreference: "high-performance",
+});
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.75));
 dom.viewer.prepend(renderer.domElement);
@@ -76,21 +85,43 @@ function setStatus(message, error = false) {
 
 function formatBytes(bytes) {
   if (!Number.isFinite(bytes)) return "—";
-  if (bytes < 1024) return `${bytes} B`;
-  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-  return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
+  if (bytes < 1024) return String(bytes) + " B";
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB";
+  return (bytes / (1024 * 1024)).toFixed(2) + " MB";
+}
+
+function heapBytes() {
+  const memory = performance.memory;
+  if (!memory || !Number.isFinite(memory.usedJSHeapSize)) return null;
+  return memory.usedJSHeapSize;
 }
 
 function heapText() {
-  const memory = performance.memory;
-  if (!memory || !Number.isFinite(memory.usedJSHeapSize)) return "n/d";
-  return formatBytes(memory.usedJSHeapSize);
+  const bytes = heapBytes();
+  return bytes == null ? "n/d" : formatBytes(bytes);
+}
+
+function runtimeSnapshot() {
+  return {
+    geometries: renderer.info.memory.geometries,
+    textures: renderer.info.memory.textures,
+    heap: heapBytes(),
+  };
 }
 
 function updateRendererMetrics() {
   dom.metrics.gpuGeometries.textContent = String(renderer.info.memory.geometries);
   dom.metrics.gpuTextures.textContent = String(renderer.info.memory.textures);
   dom.metrics.heap.textContent = heapText();
+}
+
+function updateControls() {
+  const ready = Boolean(state.manifest) && !state.busy;
+  dom.select.disabled = !ready;
+  dom.load.disabled = !ready;
+  dom.reload.disabled = !ready;
+  dom.stress.disabled = !ready;
+  dom.release.disabled = state.busy || !state.current;
 }
 
 function resizeRenderer() {
@@ -108,52 +139,162 @@ function resizeRenderer() {
   }
 }
 
-function disposeMaterial(material, disposedTextures) {
-  if (!material) return;
-  for (const value of Object.values(material)) {
-    if (value?.isTexture && !disposedTextures.has(value)) {
-      disposedTextures.add(value);
-      value.dispose();
+function waitFrames(count = 2) {
+  return new Promise((resolve) => {
+    let remaining = Math.max(1, count);
+    function next() {
+      remaining -= 1;
+      if (remaining <= 0) {
+        resolve();
+        return;
+      }
+      requestAnimationFrame(next);
     }
-  }
-  material.dispose?.();
+    requestAnimationFrame(next);
+  });
 }
 
-function releaseCurrentModel({ quiet = false } = {}) {
-  if (!state.current) {
-    if (!quiet) setStatus("Nessun modello GLB attualmente residente.");
-    updateRendererMetrics();
+function collectTextures(value, textures, seen) {
+  if (!value || typeof value !== "object") return;
+  if (value.isTexture) {
+    textures.add(value);
+    return;
+  }
+  if (seen.has(value)) return;
+  seen.add(value);
+
+  if (Array.isArray(value)) {
+    for (const entry of value) collectTextures(entry, textures, seen);
     return;
   }
 
-  if (state.mixer) {
-    state.mixer.stopAllAction();
-    state.mixer.uncacheRoot(state.current.scene);
-    state.mixer = null;
+  for (const entry of Object.values(value)) {
+    collectTextures(entry, textures, seen);
   }
+}
 
-  const disposedTextures = new Set();
-  state.current.scene.traverse((node) => {
-    node.geometry?.dispose?.();
-    if (Array.isArray(node.material)) {
-      node.material.forEach((material) => disposeMaterial(material, disposedTextures));
-    } else {
-      disposeMaterial(node.material, disposedTextures);
+function closeTextureImages(texture, closedImages) {
+  const candidates = [];
+  if (texture && texture.source && texture.source.data) candidates.push(texture.source.data);
+  if (texture && texture.image) candidates.push(texture.image);
+
+  for (const candidate of candidates) {
+    const images = Array.isArray(candidate) ? candidate : [candidate];
+    for (const image of images) {
+      if (!image || closedImages.has(image)) continue;
+      closedImages.add(image);
+      if (typeof image.close === "function") {
+        try {
+          image.close();
+        } catch {
+          // Some browser-backed image objects may already be closed.
+        }
+      }
+    }
+  }
+}
+
+function disposeModelResources(root) {
+  const geometries = new Set();
+  const materials = new Set();
+  const skeletons = new Set();
+  const textures = new Set();
+  const seen = new WeakSet();
+  const closedImages = new Set();
+
+  root.traverse((node) => {
+    if (node.geometry) geometries.add(node.geometry);
+    if (node.skeleton) skeletons.add(node.skeleton);
+
+    const nodeMaterials = Array.isArray(node.material)
+      ? node.material
+      : node.material
+        ? [node.material]
+        : [];
+
+    for (const material of nodeMaterials) {
+      materials.add(material);
+      collectTextures(material, textures, seen);
     }
   });
 
-  scene.remove(state.current.scene);
+  for (const skeleton of skeletons) {
+    if (skeleton.boneTexture) textures.add(skeleton.boneTexture);
+    skeleton.dispose?.();
+  }
+
+  for (const texture of textures) {
+    closeTextureImages(texture, closedImages);
+    texture.dispose?.();
+  }
+
+  for (const geometry of geometries) {
+    geometry.dispose?.();
+  }
+
+  for (const material of materials) {
+    material.dispose?.();
+  }
+
+  return {
+    geometries: geometries.size,
+    materials: materials.size,
+    skeletons: skeletons.size,
+    textures: textures.size,
+  };
+}
+
+async function releaseCurrentModel({ quiet = false, settleFrames = 2 } = {}) {
+  if (!state.current) {
+    if (!quiet) setStatus("Nessun modello GLB attualmente residente.");
+    updateRendererMetrics();
+    updateControls();
+    return null;
+  }
+
+  const current = state.current;
+
+  if (state.mixer) {
+    state.mixer.stopAllAction();
+    state.mixer.uncacheRoot(current.scene);
+    state.mixer = null;
+  }
+
+  scene.remove(current.scene);
+  const disposed = disposeModelResources(current.scene);
+
+  if (current.parser?.cache?.removeAll) {
+    current.parser.cache.removeAll();
+  }
+
   state.current = null;
   renderer.renderLists.dispose();
-  dom.empty.classList.remove("hidden");
-  dom.release.disabled = true;
-  dom.reload.disabled = state.loading;
   renderer.render(scene, camera);
+
+  if (settleFrames > 0) {
+    await waitFrames(settleFrames);
+    renderer.render(scene, camera);
+  }
+
+  dom.empty.classList.remove("hidden");
   updateRendererMetrics();
+  updateControls();
 
   if (!quiet) {
-    setStatus("Modello rimosso dalla scena; geometrie, materiali e texture sono stati disposed.");
+    setStatus(
+      "Modello rimosso: disposed " +
+        disposed.geometries +
+        " geometrie, " +
+        disposed.materials +
+        " materiali, " +
+        disposed.textures +
+        " texture e " +
+        disposed.skeletons +
+        " skeleton.",
+    );
   }
+
+  return disposed;
 }
 
 function inspectModel(gltf) {
@@ -163,6 +304,7 @@ function inspectModel(gltf) {
   let bones = 0;
   const materials = new Set();
   const textures = new Set();
+  const seen = new WeakSet();
 
   gltf.scene.traverse((node) => {
     nodes += 1;
@@ -173,9 +315,7 @@ function inspectModel(gltf) {
     const list = Array.isArray(node.material) ? node.material : node.material ? [node.material] : [];
     for (const material of list) {
       materials.add(material);
-      for (const value of Object.values(material)) {
-        if (value?.isTexture) textures.add(value);
-      }
+      collectTextures(material, textures, seen);
     }
   });
 
@@ -220,7 +360,7 @@ function assertGlb(buffer) {
   }
   const magic = new TextDecoder("ascii").decode(new Uint8Array(buffer, 0, 4));
   if (magic !== "glTF") {
-    throw new Error(`Firma GLB non valida: "${magic}".`);
+    throw new Error('Firma GLB non valida: "' + magic + '".');
   }
 }
 
@@ -229,19 +369,8 @@ function selectedEntry() {
   return state.manifest.models.find((model) => model.id === dom.select.value) || null;
 }
 
-async function loadSelectedModel() {
-  if (state.loading) return;
-  const entry = selectedEntry();
-  if (!entry) {
-    setStatus("Nessun modello selezionato.", true);
-    return;
-  }
-
-  state.loading = true;
-  dom.load.disabled = true;
-  dom.reload.disabled = true;
-  dom.release.disabled = true;
-  releaseCurrentModel({ quiet: true });
+async function loadEntry(entry, { announce = true } = {}) {
+  await releaseCurrentModel({ quiet: true, settleFrames: 1 });
 
   state.fetches += 1;
   dom.metrics.fetches.textContent = String(state.fetches);
@@ -252,61 +381,197 @@ async function loadSelectedModel() {
   dom.metrics.skinned.textContent = "…";
   dom.metrics.bones.textContent = "…";
   dom.metrics.animations.textContent = "…";
-  dom.source.textContent = `Fonte modello: ${entry.source} · ${entry.license}`;
-  setStatus(`Download on-demand di ${entry.label}…`);
+  dom.source.textContent = "Fonte modello: " + entry.source + " · " + entry.license;
+  if (announce) setStatus("Download on-demand di " + entry.label + "…");
+
+  const networkStart = performance.now();
+  const response = await fetch(entry.modelUrl, { mode: "cors", cache: "default" });
+  if (!response.ok) {
+    throw new Error("HTTP " + response.status + " durante il download GLB.");
+  }
+  const buffer = await response.arrayBuffer();
+  const networkMs = performance.now() - networkStart;
+  assertGlb(buffer);
+
+  const parseStart = performance.now();
+  const baseUrl = entry.modelUrl.slice(0, entry.modelUrl.lastIndexOf("/") + 1);
+  const gltf = await parseGlb(buffer, baseUrl);
+  const parseMs = performance.now() - parseStart;
+
+  state.current = gltf;
+  scene.add(gltf.scene);
+  fitCamera(gltf.scene);
+
+  if (gltf.animations.length > 0) {
+    state.mixer = new THREE.AnimationMixer(gltf.scene);
+    state.mixer.clipAction(gltf.animations[0]).play();
+  }
+
+  const report = inspectModel(gltf);
+  dom.metrics.bytes.textContent = formatBytes(buffer.byteLength);
+  dom.metrics.network.textContent = networkMs.toFixed(0) + " ms";
+  dom.metrics.parse.textContent = parseMs.toFixed(0) + " ms";
+  dom.metrics.meshes.textContent = String(report.meshes);
+  dom.metrics.skinned.textContent = String(report.skinned);
+  dom.metrics.bones.textContent = String(report.bones);
+  dom.metrics.animations.textContent = String(report.animations);
+  dom.empty.classList.add("hidden");
+
+  renderer.render(scene, camera);
+  await waitFrames(1);
+  updateRendererMetrics();
+
+  const expected = Number(entry.expectedBytes);
+  const sizeNote =
+    Number.isFinite(expected) && expected !== buffer.byteLength
+      ? " · attesi " + formatBytes(expected) + " nel manifest"
+      : "";
+
+  if (announce) {
+    setStatus(
+      "GLB caricato da URL: " +
+        formatBytes(buffer.byteLength) +
+        " in " +
+        networkMs.toFixed(0) +
+        " ms, parsing " +
+        parseMs.toFixed(0) +
+        " ms" +
+        sizeNote +
+        ".",
+    );
+  }
+
+  return {
+    bytes: buffer.byteLength,
+    networkMs,
+    parseMs,
+    report,
+  };
+}
+
+async function loadSelectedModel() {
+  if (state.busy) return;
+  const entry = selectedEntry();
+  if (!entry) {
+    setStatus("Nessun modello selezionato.", true);
+    return;
+  }
+
+  state.busy = true;
+  updateControls();
 
   try {
-    const networkStart = performance.now();
-    const response = await fetch(entry.modelUrl, { mode: "cors", cache: "default" });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status} durante il download GLB.`);
-    }
-    const buffer = await response.arrayBuffer();
-    const networkMs = performance.now() - networkStart;
-    assertGlb(buffer);
-
-    const parseStart = performance.now();
-    const baseUrl = entry.modelUrl.slice(0, entry.modelUrl.lastIndexOf("/") + 1);
-    const gltf = await parseGlb(buffer, baseUrl);
-    const parseMs = performance.now() - parseStart;
-
-    state.current = gltf;
-    scene.add(gltf.scene);
-    fitCamera(gltf.scene);
-
-    if (gltf.animations.length > 0) {
-      state.mixer = new THREE.AnimationMixer(gltf.scene);
-      state.mixer.clipAction(gltf.animations[0]).play();
-    }
-
-    const report = inspectModel(gltf);
-    dom.metrics.bytes.textContent = formatBytes(buffer.byteLength);
-    dom.metrics.network.textContent = `${networkMs.toFixed(0)} ms`;
-    dom.metrics.parse.textContent = `${parseMs.toFixed(0)} ms`;
-    dom.metrics.meshes.textContent = String(report.meshes);
-    dom.metrics.skinned.textContent = String(report.skinned);
-    dom.metrics.bones.textContent = String(report.bones);
-    dom.metrics.animations.textContent = String(report.animations);
-    dom.empty.classList.add("hidden");
-
-    renderer.render(scene, camera);
-    updateRendererMetrics();
-
-    const expected = Number(entry.expectedBytes);
-    const sizeNote = Number.isFinite(expected) && expected !== buffer.byteLength
-      ? ` · attesi ${formatBytes(expected)} nel manifest`
-      : "";
-    setStatus(
-      `GLB caricato da URL: ${formatBytes(buffer.byteLength)} in ${networkMs.toFixed(0)} ms, parsing ${parseMs.toFixed(0)} ms${sizeNote}.`,
-    );
+    await loadEntry(entry, { announce: true });
   } catch (error) {
-    releaseCurrentModel({ quiet: true });
+    await releaseCurrentModel({ quiet: true, settleFrames: 1 });
     setStatus(error instanceof Error ? error.message : String(error), true);
   } finally {
-    state.loading = false;
-    dom.load.disabled = false;
-    dom.reload.disabled = false;
-    dom.release.disabled = !state.current;
+    state.busy = false;
+    updateControls();
+    updateRendererMetrics();
+  }
+}
+
+async function runStressTest() {
+  if (state.busy) return;
+  const entry = selectedEntry();
+  if (!entry) {
+    setStatus("Nessun modello selezionato.", true);
+    return;
+  }
+
+  state.busy = true;
+  updateControls();
+  dom.metrics.stressCycles.textContent = "0/" + STRESS_CYCLES;
+  dom.metrics.stressResult.textContent = "IN CORSO";
+  dom.metrics.stressResult.className = "";
+  dom.stressStatus.textContent = "Preparazione baseline GPU…";
+
+  let baseline = null;
+  let after = null;
+  let totalNetworkMs = 0;
+  let totalParseMs = 0;
+
+  try {
+    await releaseCurrentModel({ quiet: true, settleFrames: 3 });
+    renderer.render(scene, camera);
+    await waitFrames(2);
+    baseline = runtimeSnapshot();
+
+    for (let cycle = 1; cycle <= STRESS_CYCLES; cycle += 1) {
+      const result = await loadEntry(entry, { announce: false });
+      totalNetworkMs += result.networkMs;
+      totalParseMs += result.parseMs;
+
+      await releaseCurrentModel({ quiet: true, settleFrames: 2 });
+
+      if (cycle === 1 || cycle % 5 === 0 || cycle === STRESS_CYCLES) {
+        const current = runtimeSnapshot();
+        dom.metrics.stressCycles.textContent = cycle + "/" + STRESS_CYCLES;
+        dom.stressStatus.textContent =
+          "Ciclo " +
+          cycle +
+          "/" +
+          STRESS_CYCLES +
+          " · GPU geo " +
+          current.geometries +
+          " · texture " +
+          current.textures +
+          " · heap " +
+          (current.heap == null ? "n/d" : formatBytes(current.heap));
+        await waitFrames(1);
+      }
+    }
+
+    await waitFrames(4);
+    renderer.render(scene, camera);
+    after = runtimeSnapshot();
+
+    const geometryDelta = after.geometries - baseline.geometries;
+    const textureDelta = after.textures - baseline.textures;
+    const heapDelta =
+      baseline.heap != null && after.heap != null
+        ? after.heap - baseline.heap
+        : null;
+    const gpuStable = geometryDelta <= 0 && textureDelta <= 0;
+
+    dom.metrics.stressResult.textContent = gpuStable ? "PASS" : "ATTENZIONE";
+    dom.metrics.stressResult.className = gpuStable ? "metric-pass" : "metric-warn";
+
+    const heapPart = heapDelta == null
+      ? "heap n/d"
+      : "heap Δ " + (heapDelta >= 0 ? "+" : "") + formatBytes(Math.abs(heapDelta));
+
+    dom.stressStatus.textContent =
+      "100 cicli completati · GPU Δ geometrie " +
+      (geometryDelta >= 0 ? "+" : "") +
+      geometryDelta +
+      " · texture " +
+      (textureDelta >= 0 ? "+" : "") +
+      textureDelta +
+      " · " +
+      heapPart +
+      " · media download " +
+      (totalNetworkMs / STRESS_CYCLES).toFixed(1) +
+      " ms · media parsing " +
+      (totalParseMs / STRESS_CYCLES).toFixed(1) +
+      " ms.";
+
+    setStatus(
+      gpuStable
+        ? "Stress test completato: le risorse GPU sono tornate al baseline."
+        : "Stress test completato: restano risorse GPU sopra il baseline.",
+      !gpuStable,
+    );
+  } catch (error) {
+    dom.metrics.stressResult.textContent = "ERRORE";
+    dom.metrics.stressResult.className = "metric-warn";
+    dom.stressStatus.textContent = error instanceof Error ? error.message : String(error);
+    setStatus("Stress test interrotto.", true);
+    await releaseCurrentModel({ quiet: true, settleFrames: 2 });
+  } finally {
+    state.busy = false;
+    updateControls();
     updateRendererMetrics();
   }
 }
@@ -314,7 +579,7 @@ async function loadSelectedModel() {
 async function loadManifest() {
   const response = await fetch(MANIFEST_URL, { cache: "no-store" });
   if (!response.ok) {
-    throw new Error(`Manifest HTTP ${response.status}`);
+    throw new Error("Manifest HTTP " + response.status);
   }
   const manifest = await response.json();
   if (!manifest || !Array.isArray(manifest.models) || manifest.models.length === 0) {
@@ -330,22 +595,36 @@ async function loadManifest() {
       return option;
     }),
   );
-  dom.select.disabled = false;
-  dom.load.disabled = false;
-  dom.reload.disabled = false;
   dom.source.textContent = "Fonte modello: seleziona un asset e premi Carica modello.";
   setStatus("Manifest pronto. Nessun GLB è stato scaricato.");
+  updateControls();
 }
 
 dom.load.addEventListener("click", loadSelectedModel);
 dom.reload.addEventListener("click", loadSelectedModel);
-dom.release.addEventListener("click", () => releaseCurrentModel());
+dom.release.addEventListener("click", async () => {
+  if (state.busy) return;
+  state.busy = true;
+  updateControls();
+  try {
+    await releaseCurrentModel();
+  } finally {
+    state.busy = false;
+    updateControls();
+  }
+});
+dom.stress.addEventListener("click", runStressTest);
 dom.select.addEventListener("change", () => {
   const entry = selectedEntry();
-  if (entry) dom.source.textContent = `Fonte modello: ${entry.source} · ${entry.license}`;
+  if (entry) dom.source.textContent = "Fonte modello: " + entry.source + " · " + entry.license;
 });
 
-window.addEventListener("beforeunload", () => releaseCurrentModel({ quiet: true }));
+window.addEventListener("beforeunload", () => {
+  if (!state.current) return;
+  scene.remove(state.current.scene);
+  disposeModelResources(state.current.scene);
+  state.current = null;
+});
 
 function animate() {
   requestAnimationFrame(animate);
@@ -357,7 +636,11 @@ function animate() {
 }
 
 loadManifest().catch((error) => {
-  setStatus(`Impossibile leggere il manifest: ${error instanceof Error ? error.message : String(error)}`, true);
+  setStatus(
+    "Impossibile leggere il manifest: " +
+      (error instanceof Error ? error.message : String(error)),
+    true,
+  );
 });
 
 animate();

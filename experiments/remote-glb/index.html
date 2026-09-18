@@ -42,6 +42,7 @@
               <button id="load-model" type="button" disabled>Carica modello</button>
               <button id="reload-model" type="button" disabled>Ricarica stesso URL</button>
               <button id="release-model" type="button" class="secondary" disabled>Rilascia memoria</button>
+              <button id="stress-test" type="button" class="stress" disabled>Stress test ×100</button>
             </div>
           </div>
 
@@ -53,6 +54,7 @@
           </div>
 
           <p id="status" class="status" role="status">Inizializzazione laboratorio…</p>
+          <p id="stress-status" class="stress-status" role="status">Stress test non eseguito.</p>
         </article>
 
         <aside class="metrics-card">
@@ -69,14 +71,16 @@
             <div><dt>GPU geometrie</dt><dd id="metric-gpu-geometries">0</dd></div>
             <div><dt>GPU texture</dt><dd id="metric-gpu-textures">0</dd></div>
             <div><dt>JS heap</dt><dd id="metric-heap">n/d</dd></div>
+            <div><dt>Stress cicli</dt><dd id="metric-stress-cycles">0/100</dd></div>
+            <div class="metric-wide"><dt>Stress GPU</dt><dd id="metric-stress-result">—</dd></div>
           </dl>
 
           <div class="architecture-note">
             <strong>Architettura provata</strong>
             <code>playerId → modelUrl → fetch on-demand → GLTFLoader → dispose</code>
             <p>
-              Il manifest contiene URL, non file 3D. Il pulsante “Rilascia memoria” distrugge
-              geometrie, materiali e texture GPU del modello corrente.
+              Il manifest contiene URL, non file 3D. Il cleanup ora include geometrie, materiali,
+              texture annidate, skeleton/bone texture e ImageBitmap.
             </p>
           </div>
 

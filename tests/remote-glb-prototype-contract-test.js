@@ -20,20 +20,28 @@ assert.strictEqual(manifest.version, 1, "Unexpected prototype manifest version."
 assert(Array.isArray(manifest.models) && manifest.models.length >= 2, "Need at least two remote model entries.");
 
 for (const model of manifest.models) {
-  assert(/^https:\/\//.test(model.modelUrl), `${model.id}: modelUrl must be remote HTTPS.`);
-  assert(/\.glb(?:$|\?)/i.test(model.modelUrl), `${model.id}: expected a GLB URL.`);
+  assert(/^https:\/\//.test(model.modelUrl), model.id + ": modelUrl must be remote HTTPS.");
+  assert(/\.glb(?:$|\?)/i.test(model.modelUrl), model.id + ": expected a GLB URL.");
 }
 
 assert(labIndex.includes('type="importmap"'), "Lab page must pin browser module imports.");
 assert(labIndex.includes("three@0.186.0"), "Three.js version must remain pinned for reproducibility.");
 assert(labIndex.includes('src="./app.js"'), "Lab page must load its isolated module.");
+assert(labIndex.includes('id="stress-test"'), "Lab must expose the 100-cycle stress action.");
 
 assert(labApp.includes('fetch(entry.modelUrl, { mode: "cors", cache: "default" })'), "GLB must be fetched from the manifest URL.");
 assert(labApp.includes('dom.load.addEventListener("click", loadSelectedModel)'), "GLB loading must be user-triggered.");
-assert(labApp.includes("node.geometry?.dispose?.()"), "Geometry disposal is required.");
-assert(labApp.includes("value.dispose()"), "Texture disposal is required.");
+assert(labApp.includes('dom.stress.addEventListener("click", runStressTest)'), "Stress test must be explicitly user-triggered.");
+assert(labApp.includes("const STRESS_CYCLES = 100"), "Stress test must run 100 cycles.");
+assert(labApp.includes("geometry.dispose?.()"), "Geometry disposal is required.");
+assert(labApp.includes("texture.dispose?.()"), "Texture disposal is required.");
 assert(labApp.includes("material.dispose?.()"), "Material disposal is required.");
+assert(labApp.includes("skeleton.dispose?.()"), "Skeleton / bone texture disposal is required.");
+assert(labApp.includes('typeof image.close === "function"'), "ImageBitmap cleanup is required.");
+assert(labApp.includes("current.parser?.cache?.removeAll"), "GLTF parser cache cleanup is required.");
 assert(labApp.includes('magic !== "glTF"'), "Downloaded binary must be validated as GLB.");
+assert(labApp.includes("textureDelta <= 0"), "Stress result must compare textures against the pre-test baseline.");
+assert(labApp.includes("geometryDelta <= 0"), "Stress result must compare geometries against the pre-test baseline.");
 
 const syntax = spawnSync(process.execPath, ["--check", path.join(root, "experiments/remote-glb/app.js")], {
   encoding: "utf8",
