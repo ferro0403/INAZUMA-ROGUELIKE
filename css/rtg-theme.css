@@ -3016,3 +3016,29 @@
     animation:none!important;
   }
 }
+
+/* RTG squad bench alignment — keep every Cambia control on the same baseline. */
+.rtg-squad-shell .squad-bench-list{
+  align-items:stretch!important;
+}
+.rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot{
+  align-self:stretch!important;
+  height:100%!important;
+  display:grid!important;
+  grid-template-rows:minmax(0,1fr) 32px!important;
+  align-items:stretch!important;
+  gap:8px!important;
+}
+.rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-player-card{
+  height:100%!important;
+  min-height:0!important;
+  align-self:stretch!important;
+}
+.rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-change-trigger{
+  width:100%!important;
+  height:32px!important;
+  min-height:32px!important;
+  margin:0!important;
+  align-self:end!important;
+}
+
