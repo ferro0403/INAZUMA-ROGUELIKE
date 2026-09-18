@@ -7,6 +7,8 @@ const assert = require("assert");
 const root = path.resolve(__dirname, "..");
 const css = fs.readFileSync(path.join(root, "css", "rtg-theme.css"), "utf8");
 const squadView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-squad-view.js"), "utf8");
+const runView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-run-view.js"), "utf8");
+const vending3d = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-vending-3d.js"), "utf8");
 const matchView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-match-view.js"), "utf8");
 
 assert(
@@ -50,12 +52,20 @@ assert(
   "RTG catalog must not force oversized 152px cards"
 );
 assert(
-  /\.rtg-vending-machine-v4\s*\{[^}]*width\s*:\s*230px\s*!important/s.test(css),
-  "RTG vending machine should use the larger premium cabinet treatment"
+  /data-rtg-vending-3d/.test(runView),
+  "RTG vending should expose the real 3D viewport host"
 );
 assert(
-  /\.rtg-vending-globe-v4\s*\{[^}]*border-radius\s*:\s*48%\s+48%\s+44%\s+44%/s.test(css),
-  "RTG vending globe should read as a real capsule-machine globe"
+  /new THREE\.WebGLRenderer/.test(vending3d) && /createMachine\(THREE\)/.test(vending3d),
+  "RTG vending should render a true WebGL 3D capsule machine instead of only a CSS illustration"
+);
+assert(
+  /\.rtg-vending-3d-shell\s*\{[^}]*height\s*:\s*440px/s.test(css),
+  "RTG vending should reserve a stable mobile-friendly 3D stage"
+);
+assert(
+  /\.is-3d-ready\s+\.rtg-vending-fallback/.test(css),
+  "RTG vending must retain the old CSS machine only as a graceful fallback"
 );
 
 assert(
