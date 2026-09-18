@@ -112,17 +112,30 @@
       return labels[key] || (raw ? raw.toUpperCase() : "—");
     }
 
+    function duelElementClass(player = {}) {
+      const key = String(player?.element || "").trim().toLowerCase();
+      if (["fire","fuoco"].includes(key)) return "is-fire";
+      if (["wind","vento","air","aria"].includes(key)) return "is-wind";
+      if (["earth","terra","mountain","montagna"].includes(key)) return "is-earth";
+      if (["wood","bosco","forest"].includes(key)) return "is-wood";
+      return "is-neutral";
+    }
+
     function duelCompareVisualMarkup(player = {}, side = "user", attrs = "") {
       const name = player?.name || pid(player) || (side === "user" ? "Tu" : "Avversario");
       const visual = duelVisualUrl(player);
       const playerRole = role(player) || "—";
       const overall = player?.overall ?? player?.finalOverall ?? "—";
       const element = duelElementLabel(player);
+      const elementClass = duelElementClass(player);
       return `<button type="button" class="rtg-duel-visual rtg-duel-visual--compare rtg-duel-visual--${escape(side)}" ${attrs}>
         <span class="rtg-duel-render">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
         <span class="rtg-duel-player-copy">
           <strong class="rtg-duel-player-name">${escape(name)}</strong>
-          <span class="rtg-duel-player-meta"><small>${escape(playerRole)} · OVR ${escape(overall)}</small><em class="rtg-duel-player-element">${escape(element)}</em></span>
+          <span class="rtg-duel-player-meta">
+            <small>${escape(playerRole)} · OVR ${escape(overall)}</small>
+            <em class="rtg-duel-player-element ${escape(elementClass)}">${escape(element)}</em>
+          </span>
         </span>
       </button>`;
     }
