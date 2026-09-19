@@ -63,15 +63,24 @@
   function roleSelectionWeight(kind,role){
     const profiles={
       save:{GK:1},
-      defense:{DF:1,MF:.72,FW:.16},
-      shot:{FW:1,MF:.42,DF:.08},
-      dribble:{FW:1,MF:.9,DF:.16},
-      midfield:{MF:1,FW:.55,DF:.55},
+      defense:{DF:1,MF:.38,FW:.04},
+      shot:{FW:1,MF:.28,DF:.02},
+      dribble:{FW:1,MF:.62,DF:.05},
+      midfield:{MF:1,FW:.38,DF:.28},
     };
     return Number(profiles[String(kind||"midfield")]?.[String(role||"").toUpperCase()]||0);
   }
+  function continuationPlayer(state,side,kind){
+    if(String(kind)!=="shot")return null;
+    const last=(state.log||[])[(state.log||[]).length-1];
+    if(!last||last.kind!=="dribble"||!last.actorWon||last.actorSide!==side)return null;
+    const player=findPlayer(state,side,last.actorPlayerId);
+    return player&&lineupFor(state,side).some(candidate=>playerId(candidate)===playerId(player))?player:null;
+  }
   function pickPlayer(state,side,kind,stream){
     const lineup=lineupFor(state,side);
+    const continuation=continuationPlayer(state,side,kind);
+    if(continuation)return continuation;
     let candidates=lineup.filter(player=>roleSelectionWeight(kind,playerRole(player))>0);
     if(!candidates.length)candidates=lineup.filter(player=>playerRole(player)!=="GK");
     if(!candidates.length)candidates=lineup.slice();
@@ -147,15 +156,11 @@
   function applyEncounter(state,pending,{actorMove=null,opponentMove=null,manual=false}={}){
     const actor=findPlayer(state,pending.actorSide,pending.actorPlayerId);
     const opponent=findPlayer(state,pending.opponentSide,pending.opponentPlayerId);
-    const calc=global.RoadToGloryEncounterRuntime.probability({
-      actor,opponent,actorKind:pending.actorKind,opponentKind:pending.opponentKind,actorMove,opponentMove,
-    });
+    const calc=global.RoadToGloryEncounterRuntime.probability({actor,opponent,actorKind:pending.actorKind,opponentKind:pending.opponentKind,actorMove,opponentMove});
     const roll=global.RoadToGloryRng.float(state.seed,`encounter-result:${pending.encounterId}`,0);
     const actorWon=roll<calc.probability/100;
     const zone=state.fieldZone;
-    const kind=String(pending.kind||(
-      zone==="shot"?"shot":zone==="attack"?"dribble":"midfield"
-    ));
+    const kind=String(pending.kind||(zone==="shot"?"shot":zone==="attack"?"dribble":"midfield"));
     const scoreBefore={...state.score};
     let goalSide=null;
     if(actorWon){
@@ -165,11 +170,10 @@
         state.score[pending.actorSide]=(Number(state.score[pending.actorSide])||0)+1;
         goalSide=pending.actorSide;
         state.possession=pending.opponentSide;state.fieldZone="midfield";
-      }else{
-        state.possession=pending.actorSide;
-      }
+      }else state.possession=pending.actorSide;
     }else{
-      state.possession=pending.opponentSide;state.fieldZone="midfield";
+      state.possession=pending.opponentSide;
+      state.fieldZone=kind==="midfield"?"attack":"midfield";
     }
 
     state.participantHistoryBySide=state.participantHistoryBySide||{user:[],opponent:[]};
@@ -180,15 +184,8 @@
       state.participantAppearances[side][id(pid)]=Number(state.participantAppearances[side][id(pid)]||0)+1;
     }
     state.recentParticipants=[...(state.recentParticipants||[]),pending.actorPlayerId,pending.opponentPlayerId].slice(-4);
-    state.log.push({
-      encounterId:pending.encounterId,period:state.period,minute:minuteFor(state),zone,kind,
-      actorSide:pending.actorSide,actorPlayerId:pending.actorPlayerId,opponentPlayerId:pending.opponentPlayerId,
-      actorMove:actorMove?.name||null,opponentMove:opponentMove?.name||null,
-      probability:calc.probability,roll,actorWon,manual,goalSide,
-      scoreBefore,score:{...state.score},
-    });
-    if(state.period==="extra_first"||state.period==="extra_second")state.extraActionIndex+=1;
-    else state.actionIndex+=1;
+    state.log.push({encounterId:pending.encounterId,period:state.period,minute:minuteFor(state),zone,kind,actorSide:pending.actorSide,actorPlayerId:pending.actorPlayerId,opponentPlayerId:pending.opponentPlayerId,actorMove:actorMove?.name||null,opponentMove:opponentMove?.name||null,probability:calc.probability,roll,actorWon,manual,goalSide,scoreBefore,score:{...state.score}});
+    if(state.period==="extra_first"||state.period==="extra_second")state.extraActionIndex+=1;else state.actionIndex+=1;
     return state;
   }
   function completeByScore(state){
@@ -199,15 +196,10 @@
   }
   function ensureBoundary(state){
     if(state.status!=="active")return state;
-    if(state.period==="first_half"&&state.actionIndex>=state.firstHalfTarget){
-      state.period="halftime";state.status="halftime";return state;
-    }
+    if(state.period==="first_half"&&state.actionIndex>=state.firstHalfTarget){state.period="halftime";state.status="halftime";return state;}
     if(state.period==="second_half"&&state.actionIndex>=state.actionTarget){completeByScore(state);return state;}
     if(state.period==="extra_first"&&state.extraActionIndex>=3){state.period="extra_second";return state;}
-    if(state.period==="extra_second"&&state.extraActionIndex>=6){
-      if(state.score.user!==state.score.opponent){completeByScore(state);}
-      else{state.status="penalties";state.shootout=global.RoadToGloryPenaltyRuntime.createShootout(`${state.seed}:shootout`);}
-    }
+    if(state.period==="extra_second"&&state.extraActionIndex>=6){if(state.score.user!==state.score.opponent)completeByScore(state);else{state.status="penalties";state.shootout=global.RoadToGloryPenaltyRuntime.createShootout(`${state.seed}:shootout`);}}
     return state;
   }
   function isManualSequence(state){
@@ -222,9 +214,6 @@
       ensureBoundary(state);
       if(state.status!=="active")break;
       const pending=buildEncounter(state);
-      // A goal must never appear as a side effect of an unrelated automatic
-      // midfield/dribbling sequence. Every shot/save duel is surfaced to the
-      // player, while non-shot actions may still advance automatically.
       if(pending.kind==="shot"||isManualSequence(state)){state.pendingEncounter=pending;break;}
       applyEncounter(state,pending,{manual:false});
     }
@@ -269,9 +258,7 @@
     const external=typeof deps.validateHalftime==="function"?deps.validateHalftime(nextSquad,state):{eligible:true};
     if(external===false||external?.eligible===false)throw Object.assign(new Error("RTG halftime constraints invalid"),{code:"rtg-match-halftime-constraints-invalid",details:external});
     state.userSquad=clone(nextSquad);
-    for(const player of allPlayers(state.userSquad)){
-      if((player?.activeMove||player?.move||player?.roleMoves)&&state.moveUsesByPlayerId[moveKey("user",playerId(player))]==null)state.moveUsesByPlayerId[moveKey("user",playerId(player))]=2;
-    }
+    for(const player of allPlayers(state.userSquad))if((player?.activeMove||player?.move||player?.roleMoves)&&state.moveUsesByPlayerId[moveKey("user",playerId(player))]==null)state.moveUsesByPlayerId[moveKey("user",playerId(player))]=2;
     state.period="second_half";state.status="active";
     return prepareNext(state);
   }
@@ -284,17 +271,10 @@
     if(input.goalkeeperMove)consumeMove(state,defendingSide,input.goalkeeperPlayerId,input.goalkeeperMove);
     const result=global.RoadToGloryPenaltyRuntime.resolveKick(state.shootout,input);
     state.shootout=result.state;
-    if(result.state.status==="completed"){
-      state.status="completed";
-      state.result={winner:result.state.winner,score:{...state.score},shootoutScore:{...result.state.score}};
-    }
+    if(result.state.status==="completed"){state.status="completed";state.result={winner:result.state.winner,score:{...state.score},shootoutScore:{...result.state.score}};}
     return {state,outcome:result.outcome,reason:result.reason,probability:result.probability};
   }
-  function abandon(inputState){
-    const state=clone(inputState);state.pendingEncounter=null;state.status="abandoned";state.result={winner:"opponent",reason:"abandoned",score:{...state.score}};return state;
-  }
+  function abandon(inputState){const state=clone(inputState);state.pendingEncounter=null;state.status="abandoned";state.result={winner:"opponent",reason:"abandoned",score:{...state.score}};return state;}
 
-  global.RoadToGloryMatchEngine=Object.freeze({
-    createMatch,prepareNext,resolvePendingEncounter,confirmHalftime,resolvePenaltyKick,abandon,
-  });
+  global.RoadToGloryMatchEngine=Object.freeze({createMatch,prepareNext,resolvePendingEncounter,confirmHalftime,resolvePenaltyKick,abandon});
 })(globalThis);
