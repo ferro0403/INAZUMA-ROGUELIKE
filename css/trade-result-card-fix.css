@@ -117,8 +117,19 @@
   }
 }
 
-/* RTG halftime: keep the selected-player state, but remove the decorative yellow strip. */
-.rtg-halftime .rtg-halftime-player-card.selected::after {
-  display: none !important;
+/* RTG halftime uses the shared development card scope. That scope globally creates
+   a yellow `SELEZIONATO` ::after marker on selected squad cards; suppress that
+   marker only here while preserving the selected/aria-pressed state itself. */
+.rtg-halftime.development-squad-card-scope .squad-player-card.rtg-halftime-player-card.selected::after,
+.rtg-halftime.development-squad-card-scope .squad-player-card.rtg-halftime-player-card[aria-pressed="true"]::after,
+.rtg-halftime .squad-player-card.rtg-halftime-player-card.selected::after,
+.rtg-halftime .squad-player-card.rtg-halftime-player-card[aria-pressed="true"]::after {
   content: none !important;
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
 }
