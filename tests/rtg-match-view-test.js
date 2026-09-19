@@ -21,8 +21,19 @@ const halftime=view.halftimeMarkup({...match.userSquad,formationId:"4-3-3",bench
 assert.match(halftime,/FINE PRIMO TEMPO/i);
 assert.match(halftime,/INTERVALLO/i);
 assert.match(halftime,/data-rtg-half-confirm/);
+assert.doesNotMatch(halftime,/rtg-halftime-section-title[^>]*>\s*<span>IN CAMPO<\/span>/i,"halftime must not show the redundant IN CAMPO 45:00 banner");
 const duel=view.encounterMarkup(match,{userPlayer:lineup[8],opponentPlayer:opp[1]});assert.match(duel,/tira/i);assert.match(duel,/Fire Tornado/);assert.match(duel,/2\/2/);assert.match(duel,/62\.5%/);assert.doesNotMatch(duel,/Scelta IA|aiChoice/i);
 match.pendingEncounter={...match.pendingEncounter,userPlayerId:"u1",userBaseActionLabel:"Difesa",userMove:null};
 const noMove=view.encounterMarkup(match,{userPlayer:lineup[1],opponentPlayer:opp[8]});assert.match(noMove,/difende|DIFENDI/i);assert.doesNotMatch(noMove,/data-rtg-choice="move"/);
 const pen=view.penaltyMarkup({...match,shootout:{history:[],score:{user:0,opponent:0}}},{side:"user",canUseMove:true});for(const label of["Sinistra","Centro","Destra"])assert.match(pen,new RegExp(label));assert.match(pen,/data-rtg-penalty-move/);
+const tickerMatch={...match,pendingEncounter:null,log:[
+  {minute:5,actorSide:"user",actorPlayerId:"u8",opponentPlayerId:"o1",kind:"dribble",actorWon:true},
+  {minute:9,actorSide:"opponent",actorPlayerId:"o8",opponentPlayerId:"u1",kind:"shot",actorWon:true},
+]};
+const tickerHtml=view.matchMarkup(tickerMatch);
+assert.match(tickerHtml,/match-event--user/);assert.match(tickerHtml,/match-event--opponent/);
+const tickerList={scrollTop:0,scrollHeight:840};
+const bindRoot={querySelector:sel=>sel===".rtg-match-ticker-list"?tickerList:null,querySelectorAll:()=>[]};
+view.bind(bindRoot,{});
+assert.strictEqual(tickerList.scrollTop,840,"ticker must follow the newest action after each render");
 console.log("rtg-match-view-test: PASS");
