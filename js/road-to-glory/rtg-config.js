@@ -22,8 +22,8 @@
   ]);
 
   const mainRewards = Object.freeze({
-    occult: 210, wild: 225, brainwashing: 240, otaku: 255, shuriken: 285,
-    farm: 330, kirkwood: 390, royal: 465, zeus: 540, raimon: 630,
+    occult: 250, wild: 275, brainwashing: 300, otaku: 325, shuriken: 350,
+    farm: 400, kirkwood: 450, royal: 500, zeus: 575, raimon: 650,
   });
 
   const constraints = Object.freeze({
@@ -52,10 +52,10 @@
     pullCost: 300,
     mainRewards,
     secondaryRewards: Object.freeze([
-      Object.freeze({ amount: 100, weight: 70 }),
-      Object.freeze({ amount: 110, weight: 20 }),
-      Object.freeze({ amount: 125, weight: 8 }),
-      Object.freeze({ amount: 150, weight: 2 }),
+      Object.freeze({ amount: 150, weight: 55 }),
+      Object.freeze({ amount: 165, weight: 25 }),
+      Object.freeze({ amount: 180, weight: 15 }),
+      Object.freeze({ amount: 200, weight: 5 }),
     ]),
     rarityWeights: Object.freeze({ Normale: 40, Buono: 27, Forte: 18, Elite: 10, Mondiale: 5, Leggenda: 0 }),
     duplicateRefunds: Object.freeze({ Normale: 40, Buono: 60, Forte: 85, Elite: 120, Mondiale: 160, Leggenda: 300 }),
