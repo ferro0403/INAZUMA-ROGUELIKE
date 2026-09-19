@@ -56,12 +56,13 @@
     if (mainIndex < 0) throw Object.assign(new Error("Unknown RTG main team"), { code: "rtg-main-team-unknown" });
     const mainNodeId = `main:${teamId}`;
     const defeated = new Set(state.defeatedTeamIds || []);
-    if (!defeated.has(String(teamId))) {
+    const firstClear = !defeated.has(String(teamId));
+    if (firstClear) {
       defeated.add(String(teamId));
       state.defeatedTeamIds = Array.from(defeated);
       if (matchId != null) state.firstClearMatchIds = Array.from(new Set([...(state.firstClearMatchIds || []), String(matchId)]));
-      state.tokens = Math.max(0, Number(state.tokens) || 0) + Number(cfg.mainRewards[String(teamId)] || 0);
     }
+    state.tokens = Math.max(0, Number(state.tokens) || 0) + Number(cfg.mainRewards[String(teamId)] || 0);
     if (cfg.checkpointMainIndexes.includes(mainIndex)) {
       state.checkpointMainIndex = mainIndex;
       state.lives = cfg.livesPerCheckpoint;
