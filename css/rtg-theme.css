@@ -76,6 +76,28 @@
 .rtg-vending-wallet-chip strong,
 .rtg-vending-pull{align-items:center!important;}
 
+/* Squad picker overall order toggle. */
+.rtg-picker-overall-order{
+  justify-self:start;
+  min-height:34px;
+  padding:6px 11px;
+  border:2px solid #111216;
+  border-radius:0;
+  background:#fffdf6;
+  color:#111216;
+  box-shadow:2px 3px 0 #111216;
+  font:800 .78rem/1 system-ui,sans-serif;
+  letter-spacing:.04em;
+  cursor:pointer;
+}
+.rtg-picker-overall-order[aria-pressed="true"]{
+  background:#ffd21f;
+}
+.rtg-picker-overall-order:active{
+  transform:translate(1px,1px);
+  box-shadow:1px 2px 0 #111216;
+}
+
 /* Duel reveal order: the engine resolves immediately, but the UI must not spoil the outcome.
    While the "SCONTRO IN CORSO" card is visible, hide the newly resolved feed row and score.
    They become visible as soon as the duel result card replaces the resolving card. */
@@ -121,5 +143,10 @@
     min-height:18px!important;
     max-height:18px!important;
     flex-basis:18px!important;
+  }
+  .rtg-picker-overall-order{
+    min-height:32px;
+    padding:5px 9px;
+    font-size:.72rem;
   }
 }
