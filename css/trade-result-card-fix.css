@@ -117,16 +117,20 @@
   }
 }
 
-/* RTG halftime: selected cards must not inherit the normal Squad "SELEZIONATO" marker. */
-.rtg-halftime-revolution.development-squad-card-scope .rtg-halftime-player-card.selected::after,
-.rtg-halftime-revolution.development-squad-card-scope .rtg-halftime-player-card[aria-pressed="true"]::after {
+/* RTG halftime: squadPitchMarkup renders the pitch with shared cards, so do not
+   depend on rtg-halftime-player-card being present. Suppress the global selected
+   marker for every selected/pressed squad card inside the halftime surface. */
+.rtg-halftime-revolution.development-squad-card-scope .squad-player-card.selected::after,
+.rtg-halftime-revolution.development-squad-card-scope .squad-player-card[aria-pressed="true"]::after,
+.rtg-halftime-revolution .squad-player-card.selected::after,
+.rtg-halftime-revolution .squad-player-card[aria-pressed="true"]::after {
   content: none !important;
   display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
 }
 
-/* The visible yellow strip reported in halftime is the dedicated selection summary
-   emitted by rtg-match-view.js, not the card pseudo-element. Keep the selected card
-   state for swap logic but remove this redundant strip entirely. */
+/* Remove the separate selection summary as well. */
 .rtg-halftime-revolution .rtg-halftime-selection {
   display: none !important;
 }
