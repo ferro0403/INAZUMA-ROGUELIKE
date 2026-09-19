@@ -76,6 +76,16 @@
 .rtg-vending-wallet-chip strong,
 .rtg-vending-pull{align-items:center!important;}
 
+/* Duel reveal order: the engine resolves immediately, but the UI must not spoil the outcome.
+   While the "SCONTRO IN CORSO" card is visible, hide the newly resolved feed row and score.
+   They become visible as soon as the duel result card replaces the resolving card. */
+.rtg-match-shell:has(.rtg-duel-resolving) .rtg-match-ticker-list > li.is-latest{
+  visibility:hidden!important;
+}
+.rtg-match-shell:has(.rtg-duel-resolving) .rtg-score-capsule{
+  visibility:hidden!important;
+}
+
 @media(max-width:430px){
   .rtg-main-topbar .status-strip{gap:7px!important;}
   .rtg-main-topbar .status-pill{
