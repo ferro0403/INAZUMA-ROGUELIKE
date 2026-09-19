@@ -30,9 +30,13 @@
     return result;
   }
 
-  function availableRarityWeights(state, seasonDb) {
-    const candidates = unlockedCandidates(state, seasonDb);
-    const available = new Set(candidates.map((player) => String(player?.category || "")));
+  function unownedCandidates(state, seasonDb, accessiblePlayerIds = []) {
+    const owned = new Set([...(accessiblePlayerIds || []).map(id), ...(state?.gachaAcquiredPlayerIds || []).map(id)]);
+    return unlockedCandidates(state, seasonDb).filter((player) => !owned.has(id(player?.playerId || player?.id)));
+  }
+
+  function rarityWeightsForCandidates(candidates) {
+    const available = new Set((candidates || []).map((player) => String(player?.category || "")));
     const entries = Object.entries(cfg().rarityWeights)
       .map(([rarity, rawWeight]) => ({ rarity, rawWeight: Math.max(0, Number(rawWeight) || 0) }))
       .filter((entry) => entry.rawWeight > 0 && available.has(entry.rarity));
@@ -41,9 +45,13 @@
     return entries.map((entry) => Object.freeze({ rarity: entry.rarity, weight: entry.rawWeight * 100 / total }));
   }
 
-  function previewPool(state, seasonDb) {
-    const candidates = unlockedCandidates(state, seasonDb);
-    const rarities = availableRarityWeights(state, seasonDb);
+  function availableRarityWeights(state, seasonDb) {
+    return rarityWeightsForCandidates(unlockedCandidates(state, seasonDb));
+  }
+
+  function previewPool(state, seasonDb, accessiblePlayerIds = []) {
+    const candidates = unownedCandidates(state, seasonDb, accessiblePlayerIds);
+    const rarities = rarityWeightsForCandidates(candidates);
     return Object.freeze({ candidates: Object.freeze(candidates.slice()), rarities: Object.freeze(rarities.slice()), totalCandidates: candidates.length });
   }
 
@@ -54,11 +62,11 @@
     if ((Number(state.tokens) || 0) < cost) {
       throw Object.assign(new Error("Gettoni RTG insufficienti"), { code: "rtg-gacha-insufficient-tokens" });
     }
-    const candidates = unlockedCandidates(state, seasonDb);
+    const candidates = unownedCandidates(state, seasonDb, accessiblePlayerIds);
     if (!candidates.length) {
-      throw Object.assign(new Error("Nessun giocatore disponibile nel distributore RTG"), { code: "rtg-gacha-empty-pool" });
+      throw Object.assign(new Error("Nessun nuovo giocatore disponibile nel distributore RTG"), { code: "rtg-gacha-empty-pool" });
     }
-    const activeRarities = availableRarityWeights(state, seasonDb);
+    const activeRarities = rarityWeightsForCandidates(candidates);
     if (!activeRarities.length) {
       throw Object.assign(new Error("Nessuna rarità disponibile nel distributore RTG"), { code: "rtg-gacha-empty-rarity-pool" });
     }
@@ -72,11 +80,8 @@
     const playerRoll = rng().float(state.campaignSeed, `gacha-player:${rarity}`, pullIndex);
     const player = rarityCandidates[Math.min(rarityCandidates.length - 1, Math.floor(playerRoll * rarityCandidates.length))];
     const playerId = id(player?.playerId || player?.id);
-    const ownedBefore = new Set([...(accessiblePlayerIds || []).map(id), ...(state.gachaAcquiredPlayerIds || []).map(id)]);
-    const duplicate = ownedBefore.has(playerId);
-    const refund = duplicate ? Number(config.duplicateRefunds[rarity] || 0) : 0;
 
-    state.tokens = (Number(state.tokens) || 0) - cost + refund;
+    state.tokens = (Number(state.tokens) || 0) - cost;
     state.gacha = { ...(state.gacha || {}), pullCount: pullIndex + 1 };
     state.gachaAcquiredPlayerIds = Array.from(new Set([...(state.gachaAcquiredPlayerIds || []).map(id), playerId]));
 
@@ -85,8 +90,8 @@
       result: Object.freeze({
         playerId,
         rarity,
-        duplicate,
-        refund,
+        duplicate: false,
+        refund: 0,
         cost,
         balanceAfter: state.tokens,
         pullNumber: pullIndex + 1,
@@ -94,5 +99,5 @@
     };
   }
 
-  global.RoadToGloryGacha = Object.freeze({ unlockedCandidates, availableRarityWeights, previewPool, pull });
+  global.RoadToGloryGacha = Object.freeze({ unlockedCandidates, unownedCandidates, availableRarityWeights, previewPool, pull });
 })(globalThis);
