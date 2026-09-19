@@ -13,7 +13,25 @@
 
     async function ensureCampaign() {
       return storage.update((currentRaw) => {
-        if (currentRaw != null) return stateApi.validate(currentRaw);
+        if (currentRaw != null) {
+          const current = stateApi.validate(currentRaw);
+          const match = current.activeMatch;
+          const matchEngine = global.RoadToGloryMatchEngine;
+          // A reload used to render an active match exactly at its persisted
+          // minute without restarting the simulation flow. Advance only when
+          // the match is genuinely waiting for the engine: never skip the
+          // prematch, a duel, halftime or penalties that require user input.
+          if (
+            match &&
+            match.status === "active" &&
+            match.presentation?.preMatchSeen !== false &&
+            !match.pendingEncounter &&
+            typeof matchEngine?.prepareNext === "function"
+          ) {
+            current.activeMatch = matchEngine.prepareNext(stateApi.clone(match));
+          }
+          return stateApi.validate(current);
+        }
         return stateApi.validate(stateApi.createInitial({ campaignSeed: seedFactory() }));
       });
     }
