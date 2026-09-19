@@ -1,6 +1,6 @@
 @import url("./rtg-theme-core.css?v=20260920-token-hud-1");
 
-/* RTG token HUD hotfix: keep the Zukan Ramen Sticker at icon scale and split resources into two cards. */
+/* RTG token HUD: compact Ramen Sticker currency and separate resource cards. */
 .rtg-token-icon{
   display:inline-block!important;
   width:22px!important;
@@ -37,44 +37,28 @@
   border:2px solid #111216!important;
   box-shadow:3px 4px 0 #111216!important;
 }
-.rtg-main-topbar .rtg-token-pill{
-  min-width:82px!important;
-}
+.rtg-main-topbar .rtg-token-pill{min-width:82px!important;}
+
+/* Lives: use the single heart already present in the markup. No generated heart, so nothing can overlap. */
 .rtg-main-topbar .status-pill.lives{
+  display:inline-block!important;
   min-width:88px!important;
-  padding-left:11px!important;
+  padding:10px 11px!important;
   color:#111216!important;
-  font-size:0!important;
-  gap:0!important;
-}
-/* Hide the original heart glyph together with the text, then render one clean red heart + the dynamic lives count. */
-.rtg-main-topbar .status-pill.lives::before{
-  content:"♥";
-  display:inline-block;
-  margin-right:7px;
-  color:#e23b3b;
-  font-size:20px;
-  line-height:1;
-  text-shadow:none;
-}
-.rtg-main-topbar .status-pill.lives::after{
-  content:attr(data-lives) " vite";
-  display:inline-block;
-  color:#111216;
-  font-size:.86rem;
-  font-weight:800;
-  line-height:1;
-}
-/* Current markup has no data-lives attribute: recover the visible count without duplicating the heart. */
-.rtg-main-topbar .status-pill.lives:not([data-lives]){
   font-size:.86rem!important;
-  color:#111216!important;
+  font-weight:800!important;
+  line-height:1.15!important;
+  text-align:center!important;
+  letter-spacing:0!important;
 }
-.rtg-main-topbar .status-pill.lives:not([data-lives])::after{
-  content:none;
+.rtg-main-topbar .status-pill.lives::before,
+.rtg-main-topbar .status-pill.lives::after{
+  content:none!important;
+  display:none!important;
 }
-.rtg-main-topbar .status-pill.lives:not([data-lives])::before{
-  flex:0 0 auto;
+.rtg-main-topbar .status-pill.lives::first-letter{
+  color:#e23b3b!important;
+  font-size:1.28em!important;
 }
 .rtg-vending-button .rtg-token-icon,
 .rtg-vending-wallet-chip .rtg-token-icon,
@@ -90,32 +74,20 @@
 }
 .rtg-vending-button span,
 .rtg-vending-wallet-chip strong,
-.rtg-vending-pull{
-  align-items:center!important;
-}
+.rtg-vending-pull{align-items:center!important;}
 
 @media(max-width:430px){
-  .rtg-main-topbar .status-strip{
-    gap:7px!important;
-  }
+  .rtg-main-topbar .status-strip{gap:7px!important;}
   .rtg-main-topbar .status-pill{
     min-height:38px!important;
     padding:6px 8px!important;
     font-size:.72rem!important;
     box-shadow:2px 3px 0 #111216!important;
   }
-  .rtg-main-topbar .rtg-token-pill{
-    min-width:72px!important;
-  }
+  .rtg-main-topbar .rtg-token-pill{min-width:72px!important;}
   .rtg-main-topbar .status-pill.lives{
     min-width:78px!important;
-    padding-left:8px!important;
-  }
-  .rtg-main-topbar .status-pill.lives::before{
-    margin-right:6px;
-    font-size:17px;
-  }
-  .rtg-main-topbar .status-pill.lives:not([data-lives]){
+    padding:9px 8px!important;
     font-size:.72rem!important;
   }
   .rtg-token-icon{
