@@ -11,7 +11,8 @@ assert(G.availableRarityWeights({...state,defeatedTeamIds:["shuriken"]},db).some
 const artificial=JSON.parse(JSON.stringify(db));artificial.players.push({playerId:"l1",teamId:"occult",teamIds:["occult"],category:"Leggenda"});artificial.teams[0].playerIds.push("l1");assert(!G.availableRarityWeights(state,artificial).some(x=>x.rarity==="Leggenda"));
 const first=G.pull(state,{seasonDb:db,accessiblePlayerIds:[]});assert.strictEqual(first.state.tokens,0);assert.strictEqual(first.state.gacha.pullCount,1);assert(first.state.gachaAcquiredPlayerIds.includes(first.result.playerId));
 const repeat=G.pull(state,{seasonDb:db,accessiblePlayerIds:[]});assert.strictEqual(repeat.result.playerId,first.result.playerId);assert.strictEqual(repeat.result.rarity,first.result.rarity);
-const dup=G.pull(state,{seasonDb:db,accessiblePlayerIds:[first.result.playerId]});assert.strictEqual(dup.result.duplicate,true);assert.strictEqual(dup.result.refund,config.SEASON1.duplicateRefunds[dup.result.rarity]);assert.strictEqual(dup.state.tokens,dup.result.refund);assert(dup.state.gachaAcquiredPlayerIds.includes(first.result.playerId));
+const ownedPull=G.pull(state,{seasonDb:db,accessiblePlayerIds:[first.result.playerId]});assert.notStrictEqual(ownedPull.result.playerId,first.result.playerId);assert.strictEqual(ownedPull.result.duplicate,false);assert.strictEqual(ownedPull.result.refund,0);assert.strictEqual(ownedPull.state.tokens,0);
+const allOwned=candidates.map(p=>String(p.playerId||p.id));assert.throws(()=>G.pull(state,{seasonDb:db,accessiblePlayerIds:allOwned}),e=>e.code==="rtg-gacha-empty-pool");
 const low={...state,tokens:299};assert.throws(()=>G.pull(low,{seasonDb:db,accessiblePlayerIds:[]}),e=>e.code==="rtg-gacha-insufficient-tokens");assert.strictEqual(low.tokens,299);
 assert.throws(()=>G.pull({...state,defeatedTeamIds:[]},{seasonDb:db,accessiblePlayerIds:[]}),e=>e.code==="rtg-gacha-empty-pool");
 console.log("rtg-gacha-test: PASS");
