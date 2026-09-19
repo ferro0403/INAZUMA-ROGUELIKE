@@ -1,0 +1,17 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const db=JSON.parse(fs.readFileSync("data/IE1_season_compact.json","utf8"));
+const config={SEASON1:{pullCost:300,rarityWeights:{Normale:40,Buono:27,Forte:18,Elite:10,Mondiale:5,Leggenda:0},duplicateRefunds:{Normale:40,Buono:60,Forte:85,Elite:120,Mondiale:160,Leggenda:300}}};
+function hash(s){let h=2166136261>>>0;for(const ch of String(s)){h^=ch.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}const rng={float:(seed,stream,index)=>((hash(`${seed}:${stream}:${index}`)%100000)/100000),weightedPick:(items,w,roll)=>{const a=items.filter(x=>w(x)>0),t=a.reduce((s,x)=>s+w(x),0);let c=roll*t;for(const x of a){if(c<w(x))return x;c-=w(x);}return a.at(-1)||null;}};
+const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON,RoadToGloryConfig:config,RoadToGloryRng:rng};c.globalThis=c;vm.createContext(c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-gacha.js","utf8"),c);const G=c.RoadToGloryGacha;
+let state={campaignSeed:"seed",tokens:300,defeatedTeamIds:["occult"],gachaAcquiredPlayerIds:[],gacha:{pullCount:0}};
+let candidates=G.unlockedCandidates(state,db);assert(candidates.length>0);assert(candidates.every(p=>p.teamId==="occult"||(p.teamIds||[]).includes("occult")));assert.deepStrictEqual(Array.from(new Set(candidates.map(p=>p.category))).sort(),["Buono","Forte","Normale"]);
+let weights=G.availableRarityWeights(state,db);assert.strictEqual(weights.reduce((s,x)=>s+x.weight,0).toFixed(6),"100.000000");const wm=Object.fromEntries(weights.map(x=>[x.rarity,x.weight]));assert(Math.abs((wm.Normale/wm.Buono)-(40/27))<1e-9);assert(!("Elite" in wm));
+assert(G.availableRarityWeights({...state,defeatedTeamIds:["shuriken"]},db).some(x=>x.rarity==="Elite"));assert(G.availableRarityWeights({...state,defeatedTeamIds:["royal"]},db).some(x=>x.rarity==="Mondiale"));
+const artificial=JSON.parse(JSON.stringify(db));artificial.players.push({playerId:"l1",teamId:"occult",teamIds:["occult"],category:"Leggenda"});artificial.teams[0].playerIds.push("l1");assert(!G.availableRarityWeights(state,artificial).some(x=>x.rarity==="Leggenda"));
+const first=G.pull(state,{seasonDb:db,accessiblePlayerIds:[]});assert.strictEqual(first.state.tokens,0);assert.strictEqual(first.state.gacha.pullCount,1);assert(first.state.gachaAcquiredPlayerIds.includes(first.result.playerId));
+const repeat=G.pull(state,{seasonDb:db,accessiblePlayerIds:[]});assert.strictEqual(repeat.result.playerId,first.result.playerId);assert.strictEqual(repeat.result.rarity,first.result.rarity);
+const dup=G.pull(state,{seasonDb:db,accessiblePlayerIds:[first.result.playerId]});assert.strictEqual(dup.result.duplicate,true);assert.strictEqual(dup.result.refund,config.SEASON1.duplicateRefunds[dup.result.rarity]);assert.strictEqual(dup.state.tokens,dup.result.refund);assert(dup.state.gachaAcquiredPlayerIds.includes(first.result.playerId));
+const low={...state,tokens:299};assert.throws(()=>G.pull(low,{seasonDb:db,accessiblePlayerIds:[]}),e=>e.code==="rtg-gacha-insufficient-tokens");assert.strictEqual(low.tokens,299);
+assert.throws(()=>G.pull({...state,defeatedTeamIds:[]},{seasonDb:db,accessiblePlayerIds:[]}),e=>e.code==="rtg-gacha-empty-pool");
+console.log("rtg-gacha-test: PASS");

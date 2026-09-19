@@ -116,3 +116,21 @@
     flex-basis: 94px;
   }
 }
+
+/* RTG halftime: squadPitchMarkup renders the pitch with shared cards, so do not
+   depend on rtg-halftime-player-card being present. Suppress the global selected
+   marker for every selected/pressed squad card inside the halftime surface. */
+.rtg-halftime-revolution.development-squad-card-scope .squad-player-card.selected::after,
+.rtg-halftime-revolution.development-squad-card-scope .squad-player-card[aria-pressed="true"]::after,
+.rtg-halftime-revolution .squad-player-card.selected::after,
+.rtg-halftime-revolution .squad-player-card[aria-pressed="true"]::after {
+  content: none !important;
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+}
+
+/* Remove the separate selection summary as well. */
+.rtg-halftime-revolution .rtg-halftime-selection {
+  display: none !important;
+}

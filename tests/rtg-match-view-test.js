@@ -1,0 +1,39 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8"),c);
+const view=c.RoadToGloryMatchView.create({escapeHtml:s=>String(s)});
+const p=(id,role)=>({playerId:id,name:id,position:role,normalizedRole:role,overall:80});
+const lineup=["GK","DF","DF","DF","DF","MF","MF","MF","FW","FW","FW"].map((r,i)=>p("u"+i,r));
+const opp=["GK","DF","DF","DF","DF","MF","MF","MF","FW","FW","FW"].map((r,i)=>p("o"+i,r));
+let match={period:"first_half",status:"active",score:{user:1,opponent:0},userSquad:{lineup},opponentSquad:{lineup:opp},moveUsesByPlayerId:{"user:u8":2},pendingEncounter:{userPlayerId:"u8",opponentPlayerId:"o1",actorPlayerId:"u8",opponentPlayerId:"o1",userBaseActionLabel:"Tiro",normalPreviewProbability:62.5,userMove:{name:"Fire Tornado",power:80},aiChoice:"move"}};
+const prematch=view.preMatchMarkup(match);
+assert.doesNotMatch(prematch,/Road to Glory XI/);assert.match(prematch,/La tua squadra/i);assert.match(prematch,/data-rtg-prematch-tab="user"/);
+assert.match(prematch,/data-rtg-prematch-player="u0"/);
+const detailCard={dataset:{rtgPrematchPlayer:"u0",side:"user"},addEventListener(_type,fn){this.fn=fn;}};
+const detailCalls=[];
+const detailRoot={querySelector:()=>null,querySelectorAll:sel=>sel==="[data-rtg-prematch-player]"?[detailCard]:[]};
+view.bind(detailRoot,{onOpenPlayerDetails:(playerId,side)=>detailCalls.push([playerId,side])});
+detailCard.fn();
+assert.deepStrictEqual(detailCalls,[["u0","user"]]);
+const html=view.matchMarkup(match);assert.strictEqual((html.match(/data-rtg-field-player=/g)||[]).length,22);assert.match(html,/1 - 0/);assert.match(html,/data-rtg-abandon/);assert.match(html,/ABBANDONA/);assert.doesNotMatch(html,/<canvas|webgl/i);
+const halftime=view.halftimeMarkup({...match.userSquad,formationId:"4-3-3",bench:[]},{match:{...match,status:"halftime",period:"halftime",score:{user:1,opponent:0}}});
+assert.match(halftime,/FINE PRIMO TEMPO/i);
+assert.match(halftime,/INTERVALLO/i);
+assert.match(halftime,/data-rtg-half-confirm/);
+assert.doesNotMatch(halftime,/rtg-halftime-section-title[^>]*>\s*<span>IN CAMPO<\/span>/i,"halftime must not show the redundant IN CAMPO 45:00 banner");
+const duel=view.encounterMarkup(match,{userPlayer:lineup[8],opponentPlayer:opp[1]});assert.match(duel,/tira/i);assert.match(duel,/Fire Tornado/);assert.match(duel,/2\/2/);assert.match(duel,/62\.5%/);assert.doesNotMatch(duel,/Scelta IA|aiChoice/i);
+match.pendingEncounter={...match.pendingEncounter,userPlayerId:"u1",userBaseActionLabel:"Difesa",userMove:null};
+const noMove=view.encounterMarkup(match,{userPlayer:lineup[1],opponentPlayer:opp[8]});assert.match(noMove,/difende|DIFENDI/i);assert.doesNotMatch(noMove,/data-rtg-choice="move"/);
+const pen=view.penaltyMarkup({...match,shootout:{history:[],score:{user:0,opponent:0}}},{side:"user",canUseMove:true});for(const label of["Sinistra","Centro","Destra"])assert.match(pen,new RegExp(label));assert.match(pen,/data-rtg-penalty-move/);
+const tickerMatch={...match,pendingEncounter:null,log:[
+  {minute:5,actorSide:"user",actorPlayerId:"u8",opponentPlayerId:"o1",kind:"dribble",actorWon:true},
+  {minute:9,actorSide:"opponent",actorPlayerId:"o8",opponentPlayerId:"u1",kind:"shot",actorWon:true},
+]};
+const tickerHtml=view.matchMarkup(tickerMatch);
+assert.match(tickerHtml,/match-event--user/);assert.match(tickerHtml,/match-event--opponent/);
+const tickerList={scrollTop:0,scrollHeight:840};
+const bindRoot={querySelector:sel=>sel===".rtg-match-ticker-list"?tickerList:null,querySelectorAll:()=>[]};
+view.bind(bindRoot,{});
+assert.strictEqual(tickerList.scrollTop,840,"ticker must follow the newest action after each render");
+console.log("rtg-match-view-test: PASS");
