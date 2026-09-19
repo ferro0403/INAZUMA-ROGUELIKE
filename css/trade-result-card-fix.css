@@ -116,3 +116,9 @@
     flex-basis: 94px;
   }
 }
+
+/* RTG halftime: keep the selected-player state, but remove the decorative yellow strip. */
+.rtg-halftime .rtg-halftime-player-card.selected::after {
+  display: none !important;
+  content: none !important;
+}
