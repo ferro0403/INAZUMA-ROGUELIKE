@@ -11,6 +11,7 @@ const html=view.runMarkup({state,nodes,seasonDb:{teams:teams.map(teamId=>({teamI
 assert.strictEqual((html.match(/data-rtg-tab=/g)||[]).length,2);
 assert.match(html,/>Run</);assert.match(html,/>Squadra</);
 assert.match(html,/600/);assert.match(html,/2 vite/);
+assert.match(html,/rtg-token-icon/);assert.match(html,/zqioogobuek\.png/);assert.doesNotMatch(html,/◈/);
 assert.strictEqual((html.match(/data-rtg-node-id=/g)||[]).length,28);
 assert.strictEqual((html.match(/class="rtg-map-block /g)||[]).length,4);
 for(const team of["brainwashing","farm","zeus"])assert.match(html,new RegExp(`data-rtg-checkpoint="${team}"`));
