@@ -42,26 +42,39 @@
 }
 .rtg-main-topbar .status-pill.lives{
   min-width:88px!important;
-  padding-left:34px!important;
+  padding-left:11px!important;
   color:#111216!important;
+  font-size:0!important;
+  gap:0!important;
 }
-/* Cover the original monochrome heart only, then redraw it red; the dynamic lives text remains untouched. */
+/* Hide the original heart glyph together with the text, then render one clean red heart + the dynamic lives count. */
 .rtg-main-topbar .status-pill.lives::before{
   content:"♥";
-  position:absolute;
-  left:9px;
-  top:50%;
-  width:21px;
-  height:24px;
-  display:grid;
-  place-items:center;
-  transform:translateY(-50%);
-  background:#fffdf6;
+  display:inline-block;
+  margin-right:7px;
   color:#e23b3b;
   font-size:20px;
   line-height:1;
-  text-shadow:0 1px 0 #9d2020;
-  z-index:2;
+  text-shadow:none;
+}
+.rtg-main-topbar .status-pill.lives::after{
+  content:attr(data-lives) " vite";
+  display:inline-block;
+  color:#111216;
+  font-size:.86rem;
+  font-weight:800;
+  line-height:1;
+}
+/* Current markup has no data-lives attribute: recover the visible count without duplicating the heart. */
+.rtg-main-topbar .status-pill.lives:not([data-lives]){
+  font-size:.86rem!important;
+  color:#111216!important;
+}
+.rtg-main-topbar .status-pill.lives:not([data-lives])::after{
+  content:none;
+}
+.rtg-main-topbar .status-pill.lives:not([data-lives])::before{
+  flex:0 0 auto;
 }
 .rtg-vending-button .rtg-token-icon,
 .rtg-vending-wallet-chip .rtg-token-icon,
@@ -96,13 +109,14 @@
   }
   .rtg-main-topbar .status-pill.lives{
     min-width:78px!important;
-    padding-left:29px!important;
+    padding-left:8px!important;
   }
   .rtg-main-topbar .status-pill.lives::before{
-    left:7px;
-    width:18px;
-    height:21px;
+    margin-right:6px;
     font-size:17px;
+  }
+  .rtg-main-topbar .status-pill.lives:not([data-lives]){
+    font-size:.72rem!important;
   }
   .rtg-token-icon{
     width:19px!important;
