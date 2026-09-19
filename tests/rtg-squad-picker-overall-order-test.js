@@ -2,8 +2,10 @@ const fs = require('fs');
 const path = require('path');
 const assert = require('assert');
 
-const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'road-to-glory', 'rtg-squad-view.js'), 'utf8');
+const loader = fs.readFileSync(path.join(__dirname, '..', 'js', 'road-to-glory', 'rtg-squad-view.js'), 'utf8');
+const source = fs.readFileSync(path.join(__dirname, '..', 'js', 'road-to-glory', 'rtg-squad-view-order.js'), 'utf8');
 
+assert(loader.indexOf('rtg-squad-view-base.js') < loader.indexOf('rtg-squad-view-order.js'), 'base squad view must load before overall order extension');
 assert(source.includes('data-rtg-picker-overall-order'), 'replacement picker should expose an overall order toggle');
 assert(source.includes('OVR ↓'), 'replacement picker should default to strongest-first label');
 assert(source.includes('OVR ↑'), 'replacement picker should expose weakest-first label');
