@@ -7,7 +7,7 @@
   global.RoadToGlorySquadView = Object.freeze({
     create(deps = {}) {
       const base = baseFactory.create(deps);
-      let pickerOverallAscending = true;
+      let pickerOverallAscending = false;
       let pickerOrderListenerBound = false;
 
       function overallOfEntry(entry) {
@@ -89,12 +89,12 @@
       }
 
       function replacementPickerMarkup(options = {}) {
-        pickerOverallAscending = true;
+        pickerOverallAscending = false;
         bindPickerOrderToggle();
         const ordered = orderedEntries(options.entries || []);
         let html = base.replacementPickerMarkup({ ...options, entries: ordered });
         html = decorateOverallAttributes(html, ordered);
-        const orderButton = '<button type="button" class="rtg-picker-overall-order" data-rtg-picker-overall-order aria-pressed="true" aria-label="Overall: più scarsi in cima">OVR ↑</button>';
+        const orderButton = '<button type="button" class="rtg-picker-overall-order" data-rtg-picker-overall-order aria-pressed="false" aria-label="Overall: più forti in cima">OVR ↓</button>';
         return html.replace('<div class="rtg-picker-role-badge">', `${orderButton}<div class="rtg-picker-role-badge">`);
       }
 
