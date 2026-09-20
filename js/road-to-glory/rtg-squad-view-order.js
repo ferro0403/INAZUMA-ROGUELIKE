@@ -7,7 +7,7 @@
   global.RoadToGlorySquadView = Object.freeze({
     create(deps = {}) {
       const base = baseFactory.create(deps);
-      let pickerOverallAscending = false;
+      let pickerOverallAscending = !!global.__rtgPickerOverallAscending;
       let pickerOrderListenerBound = false;
 
       function overallOfEntry(entry) {
@@ -41,64 +41,33 @@
         return output;
       }
 
-      function readCardOverall(node) {
-        const direct = Number(node?.dataset?.rtgPickerOverall);
-        if (Number.isFinite(direct)) return direct;
-        const selectors = [".player-overall", ".squad-player-overall", ".player-card-overall", "[data-player-overall]"];
-        for (const selector of selectors) {
-          const element = node?.querySelector?.(selector);
-          const value = Number(String(element?.dataset?.playerOverall ?? element?.textContent ?? "").replace(/[^0-9.-]/g, ""));
-          if (Number.isFinite(value)) return value;
-        }
-        return Number.POSITIVE_INFINITY;
-      }
-
-      function reorderVisibleCards(root) {
-        const grid = root?.querySelector?.("[data-rtg-picker-results] .rtg-picker-grid");
-        if (!grid) return;
-        const cards = Array.from(grid.children);
-        cards.sort((a, b) => {
-          const delta = readCardOverall(a) - readCardOverall(b);
-          if (delta) return pickerOverallAscending ? delta : -delta;
-          return String(a.textContent || "").localeCompare(String(b.textContent || ""), "it");
-        });
-        cards.forEach((card) => grid.appendChild(card));
-      }
-
-      function syncOrderButton(root) {
-        const button = root?.querySelector?.("[data-rtg-picker-overall-order]");
-        if (!button) return;
-        button.textContent = pickerOverallAscending ? "OVR ↑" : "OVR ↓";
-        button.setAttribute("aria-label", pickerOverallAscending ? "Overall: più scarsi in cima" : "Overall: più forti in cima");
-        button.setAttribute("aria-pressed", pickerOverallAscending ? "true" : "false");
-      }
-
       function bindPickerOrderToggle() {
         if (pickerOrderListenerBound || !global.document) return;
         pickerOrderListenerBound = true;
         global.document.addEventListener("click", (event) => {
           const button = event.target?.closest?.("[data-rtg-picker-overall-order]");
-          if (!button) return;
-          const picker = button.closest?.(".rtg-squad-picker");
-          if (!picker) return;
+          if (!button || !button.closest?.(".rtg-squad-picker")) return;
           event.preventDefault();
-          pickerOverallAscending = !pickerOverallAscending;
-          syncOrderButton(picker);
-          reorderVisibleCards(picker);
-        });
+          event.stopImmediatePropagation?.();
+          const nextAscending = !pickerOverallAscending;
+          global.document.dispatchEvent(new CustomEvent("rtg-picker-overall-order", { detail: { ascending: nextAscending } }));
+        }, true);
       }
 
       function replacementPickerMarkup(options = {}) {
-        pickerOverallAscending = false;
+        pickerOverallAscending = !!global.__rtgPickerOverallAscending;
         bindPickerOrderToggle();
         const ordered = orderedEntries(options.entries || []);
         let html = base.replacementPickerMarkup({ ...options, entries: ordered });
         html = decorateOverallAttributes(html, ordered);
-        const orderButton = '<button type="button" class="rtg-picker-overall-order" data-rtg-picker-overall-order aria-pressed="false" aria-label="Overall: più forti in cima">OVR ↓</button>';
+        const orderButton = pickerOverallAscending
+          ? '<button type="button" class="rtg-picker-overall-order" data-rtg-picker-overall-order aria-pressed="true" aria-label="Overall: più scarsi in cima">OVR ↑</button>'
+          : '<button type="button" class="rtg-picker-overall-order" data-rtg-picker-overall-order aria-pressed="false" aria-label="Overall: più forti in cima">OVR ↓</button>';
         return html.replace('<div class="rtg-picker-role-badge">', `${orderButton}<div class="rtg-picker-role-badge">`);
       }
 
       function replacementPickerResultsMarkup(options = {}) {
+        pickerOverallAscending = !!global.__rtgPickerOverallAscending;
         const entries = orderedEntries(options.entries || []);
         const html = base.replacementPickerResultsMarkup({ ...options, entries });
         return decorateOverallAttributes(html, entries);
