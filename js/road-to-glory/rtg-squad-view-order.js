@@ -7,12 +7,12 @@
   global.RoadToGlorySquadView = Object.freeze({
     create(deps = {}) {
       const base = baseFactory.create(deps);
-      let pickerOverallAscending = false;
+      let pickerOverallAscending = true;
       let pickerOrderListenerBound = false;
 
       function overallOfEntry(entry) {
         const value = Number(entry?.player?.overall ?? entry?.player?.finalOverall);
-        return Number.isFinite(value) ? value : -Infinity;
+        return Number.isFinite(value) ? value : Number.POSITIVE_INFINITY;
       }
 
       function orderedEntries(entries = []) {
@@ -27,14 +27,30 @@
         return copy;
       }
 
+      function decorateOverallAttributes(html, entries = []) {
+        let output = String(html || "");
+        for (const entry of entries) {
+          const playerId = String(entry?.playerId || entry?.player?.playerId || entry?.player?.id || "");
+          if (!playerId) continue;
+          const overall = overallOfEntry(entry);
+          if (!Number.isFinite(overall)) continue;
+          const escapedId = playerId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+          const pattern = new RegExp(`(data-rtg-picker-player=["']${escapedId}["'])`);
+          output = output.replace(pattern, `$1 data-rtg-picker-overall="${overall}"`);
+        }
+        return output;
+      }
+
       function reorderVisibleCards(root) {
         const grid = root?.querySelector?.("[data-rtg-picker-results] .rtg-picker-grid");
         if (!grid) return;
         const cards = Array.from(grid.children);
         cards.sort((a, b) => {
           const readOverall = (node) => {
-            const value = Number(String(node.querySelector?.(".player-overall")?.textContent || "").replace(/[^0-9.-]/g, ""));
-            return Number.isFinite(value) ? value : -Infinity;
+            const direct = Number(node?.dataset?.rtgPickerOverall);
+            if (Number.isFinite(direct)) return direct;
+            const fallback = Number(String(node.querySelector?.(".player-overall")?.textContent || "").replace(/[^0-9.-]/g, ""));
+            return Number.isFinite(fallback) ? fallback : Number.POSITIVE_INFINITY;
           };
           const delta = readOverall(a) - readOverall(b);
           if (delta) return pickerOverallAscending ? delta : -delta;
@@ -67,18 +83,17 @@
       }
 
       function replacementPickerMarkup(options = {}) {
-        pickerOverallAscending = false;
+        pickerOverallAscending = true;
         bindPickerOrderToggle();
         const html = base.replacementPickerMarkup(options);
-        const orderButton = '<button type="button" class="rtg-picker-overall-order" data-rtg-picker-overall-order aria-pressed="false" aria-label="Overall: più forti in cima">OVR ↓</button>';
+        const orderButton = '<button type="button" class="rtg-picker-overall-order" data-rtg-picker-overall-order aria-pressed="true" aria-label="Overall: più scarsi in cima">OVR ↑</button>';
         return html.replace('<div class="rtg-picker-role-badge">', `${orderButton}<div class="rtg-picker-role-badge">`);
       }
 
       function replacementPickerResultsMarkup(options = {}) {
-        return base.replacementPickerResultsMarkup({
-          ...options,
-          entries: orderedEntries(options.entries || []),
-        });
+        const entries = orderedEntries(options.entries || []);
+        const html = base.replacementPickerResultsMarkup({ ...options, entries });
+        return decorateOverallAttributes(html, entries);
       }
 
       return Object.freeze({
