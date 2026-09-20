@@ -9,7 +9,10 @@
 
   function rememberTarget(event) {
     const button = event.target?.closest?.("[data-rtg-change-player]");
-    if (button?.dataset?.rtgChangePlayer) lastTargetId = String(button.dataset.rtgChangePlayer);
+    if (!button?.dataset?.rtgChangePlayer) return;
+    lastTargetId = String(button.dataset.rtgChangePlayer);
+    pickerAscending = false;
+    global.__rtgPickerOverallAscending = false;
   }
 
   function withCandidateOrder(ascending, callback) {
@@ -38,8 +41,7 @@
 
   global.document?.addEventListener?.("click", rememberTarget, true);
   global.document?.addEventListener?.("rtg-picker-overall-order", (event) => {
-    const nextAscending = !!event?.detail?.ascending;
-    reopenPicker(nextAscending);
+    reopenPicker(!!event?.detail?.ascending);
   });
 
   let assignedFactory = global.RoadToGloryController || null;
