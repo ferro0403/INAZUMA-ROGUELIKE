@@ -1,4 +1,4 @@
-@import url("./rtg-theme-core.css?v=20260920-token-hud-1");
+@import url("./rtg-theme-core.css?v=20260920-mobile-consistency-1");
 
 /* RTG token HUD: compact Ramen Sticker currency and separate resource cards. */
 .rtg-token-icon{
@@ -90,63 +90,43 @@
   letter-spacing:.04em;
   cursor:pointer;
 }
-.rtg-picker-overall-order[aria-pressed="true"]{
-  background:#ffd21f;
-}
-.rtg-picker-overall-order:active{
-  transform:translate(1px,1px);
-  box-shadow:1px 2px 0 #111216;
+.rtg-picker-overall-order[aria-pressed="true"]{background:#ffd21f;}
+.rtg-picker-overall-order:active{transform:translate(1px,1px);box-shadow:1px 2px 0 #111216;}
+
+/* Keep the approved RTG collection footprint identical across mobile browsers. */
+.rtg-modal .rtg-catalog-grid{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,84px))!important;
+  gap:12px 8px!important;
+  align-items:start!important;
+  justify-content:center!important;
+  justify-items:stretch!important;
+  padding:14px 0 4px!important;
 }
 
-/* Duel reveal order: the engine resolves immediately, but the UI must not spoil the outcome.
-   While the "SCONTRO IN CORSO" card is visible, hide the newly resolved feed row and score.
-   They become visible as soon as the duel result card replaces the resolving card. */
-.rtg-match-shell:has(.rtg-duel-resolving) .rtg-match-ticker-list > li.is-latest{
-  visibility:hidden!important;
+/* Move labels may wrap between words, never inside a word. */
+.rtg-duel-card--clean .rtg-choice-copy strong{
+  min-width:0!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+  white-space:normal!important;
+  hyphens:none!important;
 }
-.rtg-match-shell:has(.rtg-duel-resolving) .rtg-score-capsule{
-  visibility:hidden!important;
-}
+
+/* Duel reveal order: the engine resolves immediately, but the UI must not spoil the outcome. */
+.rtg-match-shell:has(.rtg-duel-resolving) .rtg-match-ticker-list > li.is-latest{visibility:hidden!important;}
+.rtg-match-shell:has(.rtg-duel-resolving) .rtg-score-capsule{visibility:hidden!important;}
 
 @media(max-width:430px){
   .rtg-main-topbar .status-strip{gap:7px!important;}
-  .rtg-main-topbar .status-pill{
-    min-height:38px!important;
-    padding:6px 8px!important;
-    font-size:.72rem!important;
-    box-shadow:2px 3px 0 #111216!important;
-  }
+  .rtg-main-topbar .status-pill{min-height:38px!important;padding:6px 8px!important;font-size:.72rem!important;box-shadow:2px 3px 0 #111216!important;}
   .rtg-main-topbar .rtg-token-pill{min-width:72px!important;}
-  .rtg-main-topbar .status-pill.lives{
-    min-width:78px!important;
-    padding:9px 8px!important;
-    font-size:.72rem!important;
-  }
-  .rtg-token-icon{
-    width:19px!important;
-    height:19px!important;
-    min-width:19px!important;
-    max-width:19px!important;
-    min-height:19px!important;
-    max-height:19px!important;
-    flex-basis:19px!important;
-    margin-right:3px!important;
-    vertical-align:-4px!important;
-  }
-  .rtg-vending-button .rtg-token-icon,
-  .rtg-vending-wallet-chip .rtg-token-icon,
-  .rtg-vending-pull .rtg-token-icon{
-    width:18px!important;
-    height:18px!important;
-    min-width:18px!important;
-    max-width:18px!important;
-    min-height:18px!important;
-    max-height:18px!important;
-    flex-basis:18px!important;
-  }
-  .rtg-picker-overall-order{
-    min-height:32px;
-    padding:5px 9px;
-    font-size:.72rem;
-  }
+  .rtg-main-topbar .status-pill.lives{min-width:78px!important;padding:9px 8px!important;font-size:.72rem!important;}
+  .rtg-token-icon{width:19px!important;height:19px!important;min-width:19px!important;max-width:19px!important;min-height:19px!important;max-height:19px!important;flex-basis:19px!important;margin-right:3px!important;vertical-align:-4px!important;}
+  .rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;min-height:18px!important;max-height:18px!important;flex-basis:18px!important;}
+  .rtg-picker-overall-order{min-height:32px;padding:5px 9px;font-size:.72rem;}
+}
+
+@media(max-width:360px){
+  .rtg-modal .rtg-catalog-grid{grid-template-columns:repeat(3,minmax(0,66px))!important;}
 }
