@@ -1,14 +1,19 @@
 "use strict";
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
-vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-view.js","utf8"),c);
-const compact=(player,opts={})=>`<button class="CANONICAL ${opts.extraClass||""}" ${opts.dataAttr||""}>${player.name}</button>`;
-const view=c.RoadToGlorySquadView.create({escapeHtml:s=>String(s),compactPlayerCardMarkup:compact});
-const entry={playerId:"p1",source:"RTG",player:{playerId:"p1",name:"Player One",overall:75,normalizedRole:"DF"}};
-const catalog=view.catalogResultsMarkup({entries:[entry],total:1});
-assert.match(catalog,/CANONICAL/);
-assert.match(catalog,/squad-player-card/);
-assert.match(catalog,/rtg-squad-player-card/);
-assert.match(catalog,/data-rtg-catalog-player="p1"/);
-assert.doesNotMatch(catalog,/rtg-prematch-player-card|rtg-picker-player-card|rtg-catalog-player-card/);
+c.RoadToGlorySquadView=Object.freeze({create(){return Object.freeze({
+  catalogResultsMarkup(){return '<div><button class="CANONICAL squad-player-card rtg-squad-player-card rtg-prematch-player-card rtg-picker-player-card rtg-catalog-player-card" data-rtg-catalog-player="p1">Player One</button></div>';},
+  catalogMarkup(){return '<section><button class="CANONICAL squad-player-card rtg-squad-player-card rtg-prematch-player-card rtg-picker-player-card rtg-catalog-player-card" data-rtg-catalog-player="p1">Player One</button></section>';}
+});}});
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-view-catalog-canonical.js","utf8"),c);
+const view=c.RoadToGlorySquadView.create({});
+for(const catalog of [view.catalogResultsMarkup({}),view.catalogMarkup({})]){
+  assert.match(catalog,/CANONICAL/);
+  assert.match(catalog,/squad-player-card/);
+  assert.match(catalog,/rtg-squad-player-card/);
+  assert.match(catalog,/data-rtg-catalog-player="p1"/);
+  assert.doesNotMatch(catalog,/rtg-prematch-player-card|rtg-picker-player-card|rtg-catalog-player-card/);
+}
+const loader=fs.readFileSync("js/road-to-glory/rtg-squad-view.js","utf8");
+assert.match(loader,/rtg-squad-view-catalog-canonical\.js/);
 console.log("rtg-catalog-canonical-card-test: PASS");
