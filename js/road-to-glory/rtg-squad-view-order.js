@@ -80,23 +80,23 @@
 
       function expandAndOrderCompletePool(picker) {
         if (!picker || expandingPicker) return;
-        const loadMore = picker.querySelector?.("[data-rtg-picker-load-more]");
-        if (!loadMore) {
-          reorderVisibleCards(picker);
-          syncOrderButton(picker);
-          return;
-        }
         expandingPicker = true;
-        loadMore.click();
+        let loadMore = picker.querySelector?.("[data-rtg-picker-load-more]");
+        let guard = 0;
+        while (loadMore && guard++ < 500) {
+          loadMore.click();
+          loadMore = picker.querySelector?.("[data-rtg-picker-load-more]");
+        }
+        reorderVisibleCards(picker);
+        syncOrderButton(picker);
         expandingPicker = false;
-        global.queueMicrotask?.(() => expandAndOrderCompletePool(picker));
       }
 
       function observePickerResults() {
         if (pickerObserver || !global.MutationObserver || !global.document) return;
         pickerObserver = new global.MutationObserver(() => {
           const picker = global.document.querySelector?.(".rtg-squad-picker");
-          if (!picker) return;
+          if (!picker || !picker.querySelector?.("[data-rtg-picker-load-more]")) return;
           expandAndOrderCompletePool(picker);
         });
         pickerObserver.observe(global.document.documentElement || global.document.body, { childList: true, subtree: true });
