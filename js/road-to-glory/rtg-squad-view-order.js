@@ -9,8 +9,6 @@
       const base = baseFactory.create(deps);
       let pickerOverallAscending = true;
       let pickerOrderListenerBound = false;
-      let pickerObserver = null;
-      let expandingPicker = false;
 
       function overallOfEntry(entry) {
         const value = Number(entry?.player?.overall ?? entry?.player?.finalOverall);
@@ -52,10 +50,7 @@
           const value = Number(String(element?.dataset?.playerOverall ?? element?.textContent ?? "").replace(/[^0-9.-]/g, ""));
           if (Number.isFinite(value)) return value;
         }
-        const badgeValues = Array.from(node?.querySelectorAll?.("strong, span, b") || [])
-          .map((element) => Number(String(element.textContent || "").trim()))
-          .filter((value) => Number.isFinite(value) && value >= 1 && value <= 99);
-        return badgeValues.length ? badgeValues[0] : Number.POSITIVE_INFINITY;
+        return Number.POSITIVE_INFINITY;
       }
 
       function reorderVisibleCards(root) {
@@ -78,34 +73,9 @@
         button.setAttribute("aria-pressed", pickerOverallAscending ? "true" : "false");
       }
 
-      function expandAndOrderCompletePool(picker) {
-        if (!picker || expandingPicker) return;
-        expandingPicker = true;
-        let loadMore = picker.querySelector?.("[data-rtg-picker-load-more]");
-        let guard = 0;
-        while (loadMore && guard++ < 500) {
-          loadMore.click();
-          loadMore = picker.querySelector?.("[data-rtg-picker-load-more]");
-        }
-        reorderVisibleCards(picker);
-        syncOrderButton(picker);
-        expandingPicker = false;
-      }
-
-      function observePickerResults() {
-        if (pickerObserver || !global.MutationObserver || !global.document) return;
-        pickerObserver = new global.MutationObserver(() => {
-          const picker = global.document.querySelector?.(".rtg-squad-picker");
-          if (!picker || !picker.querySelector?.("[data-rtg-picker-load-more]")) return;
-          expandAndOrderCompletePool(picker);
-        });
-        pickerObserver.observe(global.document.documentElement || global.document.body, { childList: true, subtree: true });
-      }
-
       function bindPickerOrderToggle() {
         if (pickerOrderListenerBound || !global.document) return;
         pickerOrderListenerBound = true;
-        observePickerResults();
         global.document.addEventListener("click", (event) => {
           const button = event.target?.closest?.("[data-rtg-picker-overall-order]");
           if (!button) return;
@@ -114,7 +84,7 @@
           event.preventDefault();
           pickerOverallAscending = !pickerOverallAscending;
           syncOrderButton(picker);
-          expandAndOrderCompletePool(picker);
+          reorderVisibleCards(picker);
         });
       }
 
@@ -134,11 +104,7 @@
         return decorateOverallAttributes(html, entries);
       }
 
-      return Object.freeze({
-        ...base,
-        replacementPickerMarkup,
-        replacementPickerResultsMarkup,
-      });
+      return Object.freeze({ ...base, replacementPickerMarkup, replacementPickerResultsMarkup });
     },
   });
 })(globalThis);
