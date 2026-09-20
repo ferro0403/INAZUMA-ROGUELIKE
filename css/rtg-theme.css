@@ -1,4 +1,4 @@
-@import url("./rtg-theme-core.css?v=20260920-picker-catalog-fix-2");
+@import url("./rtg-theme-core.css?v=20260921-duel-actions-mobile-1");
 
 /* RTG token HUD: compact Ramen Sticker currency and separate resource cards. */
 .rtg-token-icon{display:inline-block!important;width:22px!important;height:22px!important;min-width:22px!important;max-width:22px!important;min-height:22px!important;max-height:22px!important;object-fit:contain!important;object-position:center!important;vertical-align:-5px!important;flex:0 0 22px!important;margin:0 4px 0 0!important;}
@@ -19,8 +19,94 @@
 /* Catalog controls only layout. Card appearance is the canonical squad card. */
 .rtg-modal .rtg-player-catalog .rtg-catalog-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-auto-flow:row!important;gap:12px 8px!important;align-items:start!important;justify-content:center!important;width:100%!important;padding:14px 0 4px!important;}
 
-/* Move labels wrap only at word boundaries. */
-.rtg-duel-card--clean .rtg-choice-copy strong{min-width:0!important;overflow-wrap:normal!important;word-break:normal!important;white-space:normal!important;hyphens:none!important;}
+/* Duel action cards: the previous grid forced the action copy and probability into the same narrow row.
+   Long special-move names were therefore squeezed to a few characters on iPhone. Keep the two choices
+   side by side, but give the label its own full-width row and the probability a separate footer row. */
+.rtg-duel-card--clean .rtg-duel-choice-card{
+  min-width:0!important;
+  min-height:108px!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto!important;
+  grid-template-rows:minmax(42px,auto) auto!important;
+  grid-template-areas:"copy copy" "probability probability"!important;
+  align-content:space-between!important;
+  align-items:start!important;
+  gap:10px 8px!important;
+  padding:12px!important;
+}
+.rtg-duel-card--clean .rtg-choice-icon{display:none!important;}
+.rtg-duel-card--clean .rtg-choice-copy{
+  grid-area:copy!important;
+  align-self:start!important;
+  display:grid!important;
+  gap:4px!important;
+  min-width:0!important;
+  width:100%!important;
+  padding:0!important;
+  overflow:visible!important;
+  text-align:left!important;
+}
+.rtg-duel-card--clean .rtg-choice-copy strong{
+  display:-webkit-box!important;
+  min-width:0!important;
+  width:100%!important;
+  margin:0!important;
+  overflow:hidden!important;
+  color:#111216!important;
+  font-size:clamp(12px,3.3vw,15px)!important;
+  font-weight:1000!important;
+  line-height:1.08!important;
+  letter-spacing:-.01em!important;
+  overflow-wrap:break-word!important;
+  word-break:normal!important;
+  white-space:normal!important;
+  hyphens:none!important;
+  -webkit-box-orient:vertical!important;
+  -webkit-line-clamp:2!important;
+}
+.rtg-duel-card--clean .rtg-choice-copy em{
+  display:block!important;
+  min-width:0!important;
+  max-width:100%!important;
+  margin:0!important;
+  overflow:hidden!important;
+  color:#5f6167!important;
+  font-size:9px!important;
+  font-style:normal!important;
+  font-weight:850!important;
+  line-height:1.15!important;
+  text-align:left!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.rtg-duel-card--clean .rtg-choice-probability{
+  grid-area:probability!important;
+  align-self:end!important;
+  justify-self:stretch!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:6px!important;
+  min-width:0!important;
+  width:100%!important;
+  padding:0!important;
+  margin:0!important;
+}
+.rtg-duel-card--clean .rtg-choice-probability strong{
+  flex:0 1 auto!important;
+  min-width:0!important;
+  margin:0!important;
+  font-size:clamp(18px,5vw,22px)!important;
+  line-height:.95!important;
+  white-space:nowrap!important;
+}
+.rtg-duel-card--clean .rtg-choice-delta{
+  flex:0 0 auto!important;
+  margin:0!important;
+  padding:3px 6px!important;
+  font-size:8px!important;
+  white-space:nowrap!important;
+}
 
 .rtg-match-shell:has(.rtg-duel-resolving) .rtg-match-ticker-list > li.is-latest{visibility:hidden!important;}
 .rtg-match-shell:has(.rtg-duel-resolving) .rtg-score-capsule{visibility:hidden!important;}
@@ -33,8 +119,17 @@
   .rtg-token-icon{width:19px!important;height:19px!important;min-width:19px!important;max-width:19px!important;min-height:19px!important;max-height:19px!important;flex-basis:19px!important;margin-right:3px!important;vertical-align:-4px!important;}
   .rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;min-height:18px!important;max-height:18px!important;flex-basis:18px!important;}
   .rtg-picker-overall-order{min-height:32px;padding:5px 9px;font-size:.72rem;}
+  .rtg-duel-card--clean .rtg-duel-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;}
+  .rtg-duel-card--clean .rtg-duel-choice-card{min-height:112px!important;padding:11px 10px!important;}
+  .rtg-duel-card--clean .rtg-choice-copy strong{font-size:12px!important;line-height:1.08!important;}
+  .rtg-duel-card--clean .rtg-choice-copy em{font-size:8px!important;}
+  .rtg-duel-card--clean .rtg-choice-probability strong{font-size:18px!important;}
 }
 
 @media(max-width:360px){
   .rtg-modal .rtg-player-catalog .rtg-catalog-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+  .rtg-duel-card--clean .rtg-duel-choice-grid{gap:7px!important;}
+  .rtg-duel-card--clean .rtg-duel-choice-card{min-height:116px!important;padding:10px 8px!important;}
+  .rtg-duel-card--clean .rtg-choice-copy strong{font-size:11px!important;}
+  .rtg-duel-card--clean .rtg-choice-delta{padding:3px 5px!important;font-size:7px!important;}
 }
