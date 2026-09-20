@@ -1,119 +1,28 @@
-@import url("./rtg-theme-core.css?v=20260920-mobile-consistency-1");
+@import url("./rtg-theme-core.css?v=20260920-picker-catalog-fix-1");
 
 /* RTG token HUD: compact Ramen Sticker currency and separate resource cards. */
-.rtg-token-icon{
-  display:inline-block!important;
-  width:22px!important;
-  height:22px!important;
-  min-width:22px!important;
-  max-width:22px!important;
-  min-height:22px!important;
-  max-height:22px!important;
-  object-fit:contain!important;
-  object-position:center!important;
-  vertical-align:-5px!important;
-  flex:0 0 22px!important;
-  margin:0 4px 0 0!important;
-}
-.rtg-main-topbar .status-strip{
-  display:flex!important;
-  flex-direction:row!important;
-  align-items:center!important;
-  justify-content:flex-end!important;
-  gap:10px!important;
-  flex-wrap:nowrap!important;
-}
-.rtg-main-topbar .status-pill{
-  position:relative!important;
-  display:inline-flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:5px!important;
-  min-height:42px!important;
-  padding:7px 11px!important;
-  white-space:nowrap!important;
-  background:#fffdf6!important;
-  color:#111216!important;
-  border:2px solid #111216!important;
-  box-shadow:3px 4px 0 #111216!important;
-}
+.rtg-token-icon{display:inline-block!important;width:22px!important;height:22px!important;min-width:22px!important;max-width:22px!important;min-height:22px!important;max-height:22px!important;object-fit:contain!important;object-position:center!important;vertical-align:-5px!important;flex:0 0 22px!important;margin:0 4px 0 0!important;}
+.rtg-main-topbar .status-strip{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-end!important;gap:10px!important;flex-wrap:nowrap!important;}
+.rtg-main-topbar .status-pill{position:relative!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;min-height:42px!important;padding:7px 11px!important;white-space:nowrap!important;background:#fffdf6!important;color:#111216!important;border:2px solid #111216!important;box-shadow:3px 4px 0 #111216!important;}
 .rtg-main-topbar .rtg-token-pill{min-width:82px!important;}
+.rtg-main-topbar .status-pill.lives{display:inline-block!important;min-width:88px!important;padding:10px 11px!important;color:#111216!important;font-size:.86rem!important;font-weight:800!important;line-height:1.15!important;text-align:center!important;letter-spacing:0!important;}
+.rtg-main-topbar .status-pill.lives::before,.rtg-main-topbar .status-pill.lives::after{content:none!important;display:none!important;}
+.rtg-main-topbar .status-pill.lives::first-letter{color:#e23b3b!important;font-size:1.28em!important;}
+.rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:20px!important;height:20px!important;min-width:20px!important;max-width:20px!important;min-height:20px!important;max-height:20px!important;flex-basis:20px!important;vertical-align:-4px!important;}
+.rtg-vending-button span,.rtg-vending-wallet-chip strong,.rtg-vending-pull{align-items:center!important;}
 
-/* Lives: use the single heart already present in the markup. No generated heart, so nothing can overlap. */
-.rtg-main-topbar .status-pill.lives{
-  display:inline-block!important;
-  min-width:88px!important;
-  padding:10px 11px!important;
-  color:#111216!important;
-  font-size:.86rem!important;
-  font-weight:800!important;
-  line-height:1.15!important;
-  text-align:center!important;
-  letter-spacing:0!important;
-}
-.rtg-main-topbar .status-pill.lives::before,
-.rtg-main-topbar .status-pill.lives::after{
-  content:none!important;
-  display:none!important;
-}
-.rtg-main-topbar .status-pill.lives::first-letter{
-  color:#e23b3b!important;
-  font-size:1.28em!important;
-}
-.rtg-vending-button .rtg-token-icon,
-.rtg-vending-wallet-chip .rtg-token-icon,
-.rtg-vending-pull .rtg-token-icon{
-  width:20px!important;
-  height:20px!important;
-  min-width:20px!important;
-  max-width:20px!important;
-  min-height:20px!important;
-  max-height:20px!important;
-  flex-basis:20px!important;
-  vertical-align:-4px!important;
-}
-.rtg-vending-button span,
-.rtg-vending-wallet-chip strong,
-.rtg-vending-pull{align-items:center!important;}
-
-/* Squad picker overall order toggle. */
-.rtg-picker-overall-order{
-  justify-self:start;
-  min-height:34px;
-  padding:6px 11px;
-  border:2px solid #111216;
-  border-radius:0;
-  background:#fffdf6;
-  color:#111216;
-  box-shadow:2px 3px 0 #111216;
-  font:800 .78rem/1 system-ui,sans-serif;
-  letter-spacing:.04em;
-  cursor:pointer;
-}
+/* Squad replacement picker: weakest-first is the default state. */
+.rtg-picker-overall-order{justify-self:start;min-height:34px;padding:6px 11px;border:2px solid #111216;border-radius:0;background:#fffdf6;color:#111216;box-shadow:2px 3px 0 #111216;font:800 .78rem/1 system-ui,sans-serif;letter-spacing:.04em;cursor:pointer;}
 .rtg-picker-overall-order[aria-pressed="true"]{background:#ffd21f;}
 .rtg-picker-overall-order:active{transform:translate(1px,1px);box-shadow:1px 2px 0 #111216;}
 
-/* Keep the approved RTG collection footprint identical across mobile browsers. */
-.rtg-modal .rtg-catalog-grid{
-  display:grid!important;
-  grid-template-columns:repeat(4,minmax(0,84px))!important;
-  gap:12px 8px!important;
-  align-items:start!important;
-  justify-content:center!important;
-  justify-items:stretch!important;
-  padding:14px 0 4px!important;
-}
+/* One authoritative compact layout for the RTG collection. */
+.rtg-modal .rtg-player-catalog .rtg-catalog-grid{display:grid!important;grid-template-columns:repeat(4,84px)!important;grid-auto-flow:row!important;gap:12px 8px!important;align-items:start!important;justify-content:center!important;justify-items:stretch!important;width:100%!important;padding:14px 0 4px!important;}
+.rtg-modal .rtg-player-catalog .rtg-catalog-player-card{width:84px!important;min-width:84px!important;max-width:84px!important;margin:0!important;}
 
-/* Move labels may wrap between words, never inside a word. */
-.rtg-duel-card--clean .rtg-choice-copy strong{
-  min-width:0!important;
-  overflow-wrap:normal!important;
-  word-break:normal!important;
-  white-space:normal!important;
-  hyphens:none!important;
-}
+/* Move labels wrap only at word boundaries. */
+.rtg-duel-card--clean .rtg-choice-copy strong{min-width:0!important;overflow-wrap:normal!important;word-break:normal!important;white-space:normal!important;hyphens:none!important;}
 
-/* Duel reveal order: the engine resolves immediately, but the UI must not spoil the outcome. */
 .rtg-match-shell:has(.rtg-duel-resolving) .rtg-match-ticker-list > li.is-latest{visibility:hidden!important;}
 .rtg-match-shell:has(.rtg-duel-resolving) .rtg-score-capsule{visibility:hidden!important;}
 
@@ -128,5 +37,6 @@
 }
 
 @media(max-width:360px){
-  .rtg-modal .rtg-catalog-grid{grid-template-columns:repeat(3,minmax(0,66px))!important;}
+  .rtg-modal .rtg-player-catalog .rtg-catalog-grid{grid-template-columns:repeat(3,66px)!important;}
+  .rtg-modal .rtg-player-catalog .rtg-catalog-player-card{width:66px!important;min-width:66px!important;max-width:66px!important;}
 }
