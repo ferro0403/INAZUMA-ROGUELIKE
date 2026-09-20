@@ -85,7 +85,9 @@
       function replacementPickerMarkup(options = {}) {
         pickerOverallAscending = true;
         bindPickerOrderToggle();
-        const html = base.replacementPickerMarkup(options);
+        const ordered = orderedEntries(options.entries || []);
+        let html = base.replacementPickerMarkup({ ...options, entries: ordered });
+        html = decorateOverallAttributes(html, ordered);
         const orderButton = '<button type="button" class="rtg-picker-overall-order" data-rtg-picker-overall-order aria-pressed="true" aria-label="Overall: più scarsi in cima">OVR ↑</button>';
         return html.replace('<div class="rtg-picker-role-badge">', `${orderButton}<div class="rtg-picker-role-badge">`);
       }
