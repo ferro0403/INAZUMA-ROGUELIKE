@@ -19,6 +19,11 @@ function selectedUniformId(manifest) {
   return String(params.get("rtg3dUniform") || manifest?.defaultUniformId || "").trim();
 }
 
+function selectedServerBase(manifest) {
+  const params = new URLSearchParams(globalThis.location?.search || "");
+  return String(params.get("rtg3dServer") || manifest?.serverBaseUrl || "").trim().replace(/\/$/, "");
+}
+
 async function manifest() {
   if (!manifestPromise) {
     manifestPromise = fetch(MANIFEST_URL, { cache: "no-store" }).then(async (response) => {
@@ -247,7 +252,7 @@ async function portraitFor({ playerId, player, uniformId = null } = {}) {
     };
   }
 
-  const base = String(config.serverBaseUrl || "").replace(/\/$/, "");
+  const base = selectedServerBase(config);
   if (!base) throw new Error("serverBaseUrl nie-model mancante");
 
   const modelUrl = base + "/model-full/" + encodeURIComponent(playerConfig.internalCode) + ".glb?uniform=" + encodeURIComponent(uniformCrc);
