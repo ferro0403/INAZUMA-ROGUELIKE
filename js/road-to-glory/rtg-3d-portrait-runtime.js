@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
-const CACHE_NAME = "rtg-3d-portrait-v1";
+const CACHE_NAME = "rtg-3d-portrait-v2";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -39,7 +39,7 @@ function roleOf(player) {
 }
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc) {
-  return ["v1", playerId, internalCode, uniformId, uniformCrc].map((value) => String(value || "")).join("__");
+  return ["v2", playerId, internalCode, uniformId, uniformCrc].map((value) => String(value || "")).join("__");
 }
 
 function cacheRequest(key) {
@@ -133,27 +133,87 @@ function disposeModel(root) {
   for (const material of materials) material.dispose?.();
 }
 
-function fitFrontCamera(camera, root) {
+function cloneColorLike(value, fallback = 0xffffff) {
+  if (value?.isColor) return value.clone();
+  return new THREE.Color(fallback);
+}
+
+function buildToonMaterial(sourceMaterial) {
+  const toon = new THREE.MeshToonMaterial({
+    color: cloneColorLike(sourceMaterial?.color, 0xffffff),
+    map: sourceMaterial?.map || null,
+    transparent: !!sourceMaterial?.transparent,
+    opacity: Number.isFinite(sourceMaterial?.opacity) ? sourceMaterial.opacity : 1,
+    alphaMap: sourceMaterial?.alphaMap || null,
+    alphaTest: Number(sourceMaterial?.alphaTest || 0),
+    side: sourceMaterial?.side ?? THREE.FrontSide,
+    depthWrite: sourceMaterial?.depthWrite !== false,
+    depthTest: sourceMaterial?.depthTest !== false,
+    fog: false,
+  });
+
+  if (sourceMaterial?.emissive?.isColor) {
+    toon.emissive.copy(sourceMaterial.emissive);
+    toon.emissiveIntensity = 0.12;
+  }
+  if (sourceMaterial?.emissiveMap) toon.emissiveMap = sourceMaterial.emissiveMap;
+  if (sourceMaterial?.normalMap) {
+    toon.normalMap = sourceMaterial.normalMap;
+    if (sourceMaterial.normalScale?.clone) toon.normalScale.copy(sourceMaterial.normalScale);
+  }
+  if (sourceMaterial?.aoMap) {
+    toon.aoMap = sourceMaterial.aoMap;
+    toon.aoMapIntensity = sourceMaterial.aoMapIntensity ?? 1;
+  }
+  if (sourceMaterial?.lightMap) {
+    toon.lightMap = sourceMaterial.lightMap;
+    toon.lightMapIntensity = sourceMaterial.lightMapIntensity ?? 1;
+  }
+  if (sourceMaterial?.name) toon.name = sourceMaterial.name + "__rtg_toon";
+  return toon;
+}
+
+function toonifyModel(root) {
+  root?.traverse?.((node) => {
+    if (!node.isMesh || !node.material) return;
+    const sources = Array.isArray(node.material) ? node.material : [node.material];
+    const toonMaterials = sources.map(buildToonMaterial);
+    node.material = Array.isArray(node.material) ? toonMaterials : toonMaterials[0];
+    node.castShadow = false;
+    node.receiveShadow = false;
+  });
+}
+
+function fitFrontOrthoCamera(camera, root) {
   root.updateWorldMatrix(true, true);
   const box = new THREE.Box3().setFromObject(root);
   if (box.isEmpty()) throw new Error("Bounding box modello vuota");
 
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
-  const verticalFov = THREE.MathUtils.degToRad(camera.fov);
-  const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * camera.aspect);
-  const heightDistance = size.y / Math.max(0.001, 2 * Math.tan(verticalFov / 2));
-  const widthDistance = size.x / Math.max(0.001, 2 * Math.tan(horizontalFov / 2));
-  const distance = Math.max(heightDistance, widthDistance, 0.5) * 1.08;
-  const targetY = center.y + size.y * 0.015;
+  const aspect = RENDER_WIDTH / RENDER_HEIGHT;
+  const margin = 1.10;
 
-  camera.near = Math.max(0.01, distance / 100);
-  camera.far = Math.max(100, distance * 20);
+  let viewHeight = Math.max(size.y * margin, 0.1);
+  let viewWidth = viewHeight * aspect;
+  if (size.x * margin > viewWidth) {
+    viewWidth = size.x * margin;
+    viewHeight = viewWidth / aspect;
+  }
+
+  camera.left = -viewWidth / 2;
+  camera.right = viewWidth / 2;
+  camera.top = viewHeight / 2;
+  camera.bottom = -viewHeight / 2;
+
+  const targetY = center.y + size.y * 0.015;
+  const distance = Math.max(size.z * 4, size.y * 2, 6);
+  camera.near = 0.01;
+  camera.far = Math.max(200, distance * 10);
   camera.position.set(center.x, targetY, center.z + distance);
   camera.lookAt(center.x, targetY, center.z);
   camera.updateProjectionMatrix();
 }
-
 function canvasBlob(canvas) {
   return new Promise((resolve, reject) => {
     const finish = (blob) => blob ? resolve(blob) : reject(new Error("Impossibile creare il render frontale"));
@@ -187,19 +247,22 @@ async function renderGlbToBlob(buffer, sourceUrl) {
   renderer.setClearColor(0x000000, 0);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(28, RENDER_WIDTH / RENDER_HEIGHT, 0.01, 500);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x666666, 2.5));
+  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 200);
 
-  const key = new THREE.DirectionalLight(0xffffff, 3.1);
-  key.position.set(4, 7, 6);
+  const ambient = new THREE.AmbientLight(0xffffff, 1.35);
+  scene.add(ambient);
+
+  const key = new THREE.DirectionalLight(0xffffff, 2.15);
+  key.position.set(3, 6, 6);
   scene.add(key);
 
-  const fill = new THREE.DirectionalLight(0xffffff, 1.5);
-  fill.position.set(-4, 3, 4);
+  const fill = new THREE.DirectionalLight(0xffffff, 0.55);
+  fill.position.set(-3, 2.5, 4);
   scene.add(fill);
 
+  toonifyModel(gltf.scene);
   scene.add(gltf.scene);
-  fitFrontCamera(camera, gltf.scene);
+  fitFrontOrthoCamera(camera, gltf.scene);
 
   const renderStart = performance.now();
   renderer.render(scene, camera);
