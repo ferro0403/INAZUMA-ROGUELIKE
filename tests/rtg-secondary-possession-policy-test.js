@@ -1,7 +1,12 @@
 "use strict";
 const assert=require("assert"),fs=require("fs");
-const source=fs.readFileSync("js/road-to-glory/rtg-match-engine.js","utf8");
-assert.match(source,/const possessionBefore=state\.possession;/,"secondary encounters must snapshot possession");
-assert.match(source,/if\(!manual&&!goalSide\)state\.possession=possessionBefore;/,"automatic secondary actions must restore possession");
-assert.match(source,/17\+global\.RoadToGloryRng\.int\(seed,"manual-target",0,5\)/,"matches should expose a few more manual choices");
+const engine=fs.readFileSync("js/road-to-glory/rtg-match-engine.js","utf8");
+const view=fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8");
+assert.match(engine,/const possessionBefore=state\.possession/,"secondary encounters must snapshot possession");
+assert.match(engine,/if\(!manual&&!goalSide\)state\.possession=possessionBefore/,"automatic secondary actions must restore possession");
+assert.match(engine,/possessionAfter:state\.possession/,"log must store effective possession after the encounter");
+assert.match(engine,/possessionChanged:state\.possession!==possessionBefore/,"log must distinguish raw duel result from an actual turnover");
+assert.match(view,/const actualTurnover=event\.possessionChanged===true/,"feed must use actual turnover semantics");
+assert.match(view,/mantiene il possesso/,"automatic lost duel copy must not claim a turnover that never happened");
+assert.match(engine,/17\+global\.RoadToGloryRng\.int\(seed,"manual-target",0,5\)/,"matches should expose a few more manual choices");
 console.log("rtg-secondary-possession-policy-test: PASS");
