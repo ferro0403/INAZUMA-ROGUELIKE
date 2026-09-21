@@ -21,6 +21,7 @@ assert(runtime.includes("uniform.uniformFielderModelIdCrc"), "Fielder CRC path m
 assert(runtime.includes('"/model-full/"'), "Runtime must call the patched model-full endpoint.");
 assert(runtime.includes('".glb?uniform="'), "Runtime must pass the uniform CRC query.");
 assert(runtime.includes('get("rtg3d")'), "Prototype must remain explicitly opt-in.");
+assert(runtime.includes('get("rtg3dServer")'), "Prototype must allow the model server origin to be overridden without a code change.");
 assert(runtime.includes("Cache Storage is an optimization only"), "Cache must remain non-critical.");
 assert(runtime.includes("disposeModel(gltf.scene)"), "Loaded GLB resources must be released.");
 assert(runtime.includes("renderer.forceContextLoss?.()"), "WebGL context cleanup is required.");
