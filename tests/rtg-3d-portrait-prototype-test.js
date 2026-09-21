@@ -36,7 +36,7 @@ assert(!runtime.includes("g4ShadowDeep"), "RTG portrait must not double-apply sy
 assert(runtime.includes("PerspectiveCamera"), "RTG portrait must restore depth with a perspective camera.");
 assert(!runtime.includes("MeshToonMaterial"), "Generic MeshToonMaterial must not be used for Victory Road portraits.");
 assert(!runtime.includes("OrthographicCamera"), "Flat orthographic portrait camera must not be used.");
-assert(runtime.includes('rtg-3d-portrait-v4'), "Character shader tuning must invalidate previous portrait caches.");
+assert(runtime.includes('rtg-3d-portrait-v5'), "Character shader tuning must invalidate previous portrait caches.");
 
 assert(controller.includes("RoadToGlory3DPortrait?.renderIntoDetail"), "RTG player detail must invoke the isolated 3D portrait runtime.");
 assert(controller.includes('get("rtgCheatMark")'), "Prototype must expose the opt-in Mark cheat.");
