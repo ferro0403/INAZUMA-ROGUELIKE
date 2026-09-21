@@ -30,10 +30,6 @@
     const identityId = options.teamIdentity?.emblemId;
     const encodedTeam = parseTeamEmblemId(identityId);
     const teamId = options.teamId || encodedTeam?.teamId;
-    // If the selected emblem encodes its source season (team:<seasonId>:<teamId>),
-    // that source season must win over the current run season. Otherwise a crest
-    // bought in IE1 and used in IE2/IE3/Ares is looked up in the wrong database
-    // and falls back to the default lightning emblem.
     const seasonId = encodedTeam?.seasonId || options.seasonId || global.SeasonRegistry?.activeId?.() || "ie1";
     if (teamId) return resolveTeamById(teamId, seasonId, { team: options.team, fallbackKind: options.fallbackKind });
     const definition = getDefinition(identityId);
@@ -55,5 +51,46 @@
     image.src = image.dataset.emblemFallback || getFallback().src;
   }
 
-  global.TeamEmblems = { DEFINITIONS, getDefinition, getFallback, parseTeamEmblemId, resolveTeamById, resolveTeamEmblem, teamEmblemMarkup, handleImageError };
+  function syncPenaltyHistoryEmblems(root = document) {
+    const history = root.querySelector?.(".rtg-penalty-history");
+    if (!history) return;
+    const rows = history.querySelectorAll(":scope > div");
+    if (rows.length < 2) return;
+    const sources = [
+      document.querySelector(".rtg-score-team--user .rtg-score-emblem, .rtg-score-team--user img"),
+      document.querySelector(".rtg-score-team--opponent .rtg-score-emblem, .rtg-score-team--opponent img"),
+    ];
+    rows.forEach((row, index) => {
+      const label = row.querySelector("b");
+      const source = sources[index];
+      if (!label || !source?.src) return;
+      let image = label.querySelector(".rtg-penalty-team-emblem");
+      if (!image) {
+        label.textContent = "";
+        image = document.createElement("img");
+        image.className = "rtg-penalty-team-emblem";
+        image.alt = "";
+        image.setAttribute("aria-hidden", "true");
+        label.appendChild(image);
+      }
+      image.src = source.src;
+      image.dataset.emblemFallback = source.dataset?.emblemFallback || getFallback(index === 0 ? "user" : "neutral").src;
+      image.onerror = () => handleImageError(image);
+    });
+  }
+
+  function installPenaltyHistoryEmblems() {
+    if (typeof document === "undefined" || typeof MutationObserver === "undefined") return;
+    const sync = () => syncPenaltyHistoryEmblems(document);
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", sync, { once:true });
+    else sync();
+    const observer = new MutationObserver((mutations) => {
+      if (mutations.some((mutation) => Array.from(mutation.addedNodes || []).some((node) => node?.nodeType === 1 && (node.matches?.(".rtg-penalty-panel") || node.querySelector?.(".rtg-penalty-panel"))))) sync();
+    });
+    const start = () => document.body && observer.observe(document.body, { childList:true, subtree:true });
+    if (document.body) start(); else document.addEventListener("DOMContentLoaded", start, { once:true });
+  }
+
+  global.TeamEmblems = { DEFINITIONS, getDefinition, getFallback, parseTeamEmblemId, resolveTeamById, resolveTeamEmblem, teamEmblemMarkup, handleImageError, syncPenaltyHistoryEmblems };
+  installPenaltyHistoryEmblems();
 })(globalThis);
