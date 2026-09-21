@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "purpose": "RTG live 3D portrait prototype. Expanded player/uniform maps will replace this test manifest after timing validation.",
+  "serverBaseUrl": "http://127.0.0.1:8790",
+  "defaultUniformId": "zeus",
+  "players": {
+    "1": {
+      "internalCode": "c01000010",
+      "label": "Mark Evans"
+    }
+  },
+  "uniforms": {
+    "zeus": {
+      "label": "Zeus",
+      "uniformFielderModelIdCrc": "0xF0006501",
+      "uniformKeeperModelIdCrc": "0x38E0EA71"
+    }
+  }
+}

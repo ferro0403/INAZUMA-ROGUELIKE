@@ -1,0 +1,18 @@
+"use strict";
+const assert=require("assert"),fs=require("fs");
+const view=fs.readFileSync("js/home/home-view.js","utf8");
+const controller=fs.readFileSync("js/home/home-controller.js","utf8");
+const css=fs.readFileSync("css/game.css","utf8");
+assert.match(view,/home-swipe-viewport/);
+assert.match(view,/data-home-page="main"/);
+assert.match(view,/data-home-page="rtg"/);
+assert.match(view,/home-rtg-hub/);
+for(const target of["run","squad","catalog","vending"]) assert.match(view,new RegExp(`data-rtg-home-open="${target}"`));
+assert.match(controller,/activateHomePage/);
+assert.match(controller,/touchstart/);
+assert.match(controller,/touchend/);
+assert.match(controller,/renderRoadToGlory\(\{\s*destination:/);
+assert.match(css,/\.home-swipe-track/);
+assert.match(css,/\.home-swipe-page--rtg/);
+assert.match(css,/\.home-page-dot/);
+console.log("rtg-home-swipe-test: PASS");

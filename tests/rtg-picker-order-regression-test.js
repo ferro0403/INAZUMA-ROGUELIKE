@@ -1,0 +1,10 @@
+"use strict";
+const fs=require("fs"),assert=require("assert");
+const order=fs.readFileSync("js/road-to-glory/rtg-squad-view-order.js","utf8");
+const theme=fs.readFileSync("css/rtg-theme-core.css","utf8");
+assert.match(order,/let pickerOverallAscending = true;/,"picker must open weakest-first");
+assert.match(order,/data-rtg-picker-overall=/,"picker cards need a stable numeric overall attribute");
+assert.match(order,/dataset\.rtgPickerOverall/,"DOM reorder must read the stable overall attribute");
+assert.match(order,/OVR ↑/,"weakest-first state must be visible on the button");
+assert.match(theme,/\.rtg-modal \.rtg-catalog-grid[\s\S]*repeat\(4,minmax\(0,84px\)\)/,"RTG catalog keeps approved four-column compact layout");
+console.log("rtg-picker-order-regression-test: PASS");

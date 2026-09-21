@@ -1,0 +1,28 @@
+.rtg-3d-generated-portrait {
+  object-fit: contain;
+}
+
+.rtg-3d-fallback-hidden {
+  visibility: hidden !important;
+  position: absolute !important;
+  pointer-events: none !important;
+}
+
+.rtg-3d-portrait-status {
+  position: absolute;
+  left: 10px;
+  bottom: 8px;
+  z-index: 4;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: rgba(16, 17, 22, 0.82);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
+.rtg-3d-portrait-status[data-state="error"] {
+  opacity: 0.72;
+}
