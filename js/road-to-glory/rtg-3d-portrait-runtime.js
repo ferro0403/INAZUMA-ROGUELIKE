@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
-const CACHE_NAME = "rtg-3d-portrait-v2";
+const CACHE_NAME = "rtg-3d-portrait-v3";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -39,7 +39,7 @@ function roleOf(player) {
 }
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc) {
-  return ["v2", playerId, internalCode, uniformId, uniformCrc].map((value) => String(value || "")).join("__");
+  return ["v3", playerId, internalCode, uniformId, uniformCrc].map((value) => String(value || "")).join("__");
 }
 
 function cacheRequest(key) {
@@ -133,87 +133,194 @@ function disposeModel(root) {
   for (const material of materials) material.dispose?.();
 }
 
-function cloneColorLike(value, fallback = 0xffffff) {
-  if (value?.isColor) return value.clone();
-  return new THREE.Color(fallback);
+function copyTextureSettings(texture, { color = false } = {}) {
+  if (!texture) return texture;
+  texture.colorSpace = color ? THREE.SRGBColorSpace : THREE.NoColorSpace;
+  texture.needsUpdate = true;
+  return texture;
 }
 
-function buildToonMaterial(sourceMaterial) {
-  const toon = new THREE.MeshToonMaterial({
-    color: cloneColorLike(sourceMaterial?.color, 0xffffff),
-    map: sourceMaterial?.map || null,
+async function loadNieAuxTextures(gltf, sourceMaterial) {
+  const descriptors = sourceMaterial?.userData?.nie?.textures;
+  if (!descriptors || typeof descriptors !== "object") return {};
+
+  const entries = await Promise.all(
+    Object.entries(descriptors).map(async ([role, descriptor]) => {
+      const index = Number(descriptor?.texture);
+      if (!Number.isInteger(index) || index < 0) return [role, null];
+      try {
+        const texture = await gltf.parser.getDependency("texture", index);
+        return [role, copyTextureSettings(texture, { color: false })];
+      } catch (error) {
+        console.warn("[RTG 3D portrait] texture Character non disponibile", role, error);
+        return [role, null];
+      }
+    }),
+  );
+
+  return Object.fromEntries(entries.filter(([, texture]) => texture));
+}
+
+function buildCharacterMaterial(sourceMaterial, aux) {
+  const material = new THREE.MeshPhongMaterial({
+    color: sourceMaterial?.color?.clone?.() || new THREE.Color(0xffffff),
+    map: copyTextureSettings(sourceMaterial?.map || null, { color: true }),
+    alphaMap: sourceMaterial?.alphaMap || null,
     transparent: !!sourceMaterial?.transparent,
     opacity: Number.isFinite(sourceMaterial?.opacity) ? sourceMaterial.opacity : 1,
-    alphaMap: sourceMaterial?.alphaMap || null,
     alphaTest: Number(sourceMaterial?.alphaTest || 0),
     side: sourceMaterial?.side ?? THREE.FrontSide,
     depthWrite: sourceMaterial?.depthWrite !== false,
     depthTest: sourceMaterial?.depthTest !== false,
+    shininess: aux.specular || aux.specular_mask ? 18 : 10,
+    specular: new THREE.Color(0x4a4650),
     fog: false,
   });
 
-  if (sourceMaterial?.emissive?.isColor) {
-    toon.emissive.copy(sourceMaterial.emissive);
-    toon.emissiveIntensity = 0.12;
-  }
-  if (sourceMaterial?.emissiveMap) toon.emissiveMap = sourceMaterial.emissiveMap;
   if (sourceMaterial?.normalMap) {
-    toon.normalMap = sourceMaterial.normalMap;
-    if (sourceMaterial.normalScale?.clone) toon.normalScale.copy(sourceMaterial.normalScale);
+    material.normalMap = copyTextureSettings(sourceMaterial.normalMap, { color: false });
+    if (sourceMaterial.normalScale?.clone) material.normalScale.copy(sourceMaterial.normalScale);
   }
-  if (sourceMaterial?.aoMap) {
-    toon.aoMap = sourceMaterial.aoMap;
-    toon.aoMapIntensity = sourceMaterial.aoMapIntensity ?? 1;
+
+  if (aux.specular_mask) {
+    material.specularMap = aux.specular_mask;
   }
-  if (sourceMaterial?.lightMap) {
-    toon.lightMap = sourceMaterial.lightMap;
-    toon.lightMapIntensity = sourceMaterial.lightMapIntensity ?? 1;
-  }
-  if (sourceMaterial?.name) toon.name = sourceMaterial.name + "__rtg_toon";
-  return toon;
+
+  material.name = (sourceMaterial?.name || "Character") + "__rtg_character";
+  material.userData = {
+    ...(sourceMaterial?.userData || {}),
+    rtgAuxTextures: aux,
+  };
+
+  material.onBeforeCompile = (shader) => {
+    const hasOcclusion = !!aux.occlusion;
+    const hasSpecularShape = !!aux.specular;
+    const hasSpecularMask = !!aux.specular_mask;
+    const hasLine = !!aux.line;
+
+    shader.uniforms.g4OcclusionMap = { value: aux.occlusion || null };
+    shader.uniforms.g4SpecularShapeMap = { value: aux.specular || null };
+    shader.uniforms.g4SpecularMaskMap = { value: aux.specular_mask || null };
+    shader.uniforms.g4LineMap = { value: aux.line || null };
+
+    const declarations = [
+      hasOcclusion ? "uniform sampler2D g4OcclusionMap;" : "",
+      hasSpecularShape ? "uniform sampler2D g4SpecularShapeMap;" : "",
+      hasSpecularMask ? "uniform sampler2D g4SpecularMaskMap;" : "",
+      hasLine ? "uniform sampler2D g4LineMap;" : "",
+    ].filter(Boolean).join("\n");
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <map_pars_fragment>",
+      "#include <map_pars_fragment>\n" + declarations,
+    );
+
+    const characterComposite = [
+      "#ifdef USE_MAP",
+      "  vec2 g4Uv = vMapUv;",
+      "#else",
+      "  vec2 g4Uv = vec2(0.5);",
+      "#endif",
+      "  vec3 g4Normal = normalize(normal);",
+      "  vec3 g4View = normalize(vViewPosition);",
+      "  float g4Facing = clamp(abs(dot(g4Normal, g4View)), 0.0, 1.0);",
+      "  float g4Rim = pow(1.0 - g4Facing, 3.2);",
+      "  float g4Luma = dot(outgoingLight, vec3(0.29891, 0.58661, 0.11448));",
+      "  float g4BandA = smoothstep(0.34, 0.47, g4Luma);",
+      "  float g4BandB = smoothstep(0.50, 0.64, g4Luma);",
+      "  vec3 g4ShadowDeep = vec3(0.730, 0.530, 0.700);",
+      "  vec3 g4ShadowSoft = vec3(0.750, 0.600, 0.780);",
+      "  vec3 g4ShadowTint = mix(g4ShadowDeep, g4ShadowSoft, g4BandA);",
+      "  vec3 g4Toon = outgoingLight * mix(g4ShadowTint, vec3(1.0), g4BandB);",
+      "  outgoingLight = mix(outgoingLight, g4Toon, 0.46);",
+      hasOcclusion
+        ? "  float g4Occlusion = texture2D(g4OcclusionMap, g4Uv).r; outgoingLight *= mix(0.78, 1.0, g4Occlusion);"
+        : "",
+      hasSpecularShape
+        ? "  vec2 g4SphereUv = g4Normal.xy * vec2(0.5, -0.5) + 0.5; float g4SpecShape = dot(texture2D(g4SpecularShapeMap, g4SphereUv).rgb, vec3(0.333333));"
+        : "  float g4SpecShape = 0.0;",
+      hasSpecularMask
+        ? "  float g4SpecMask = texture2D(g4SpecularMaskMap, g4Uv).r;"
+        : "  float g4SpecMask = 1.0;",
+      "  float g4Spec = g4SpecShape * g4SpecMask * (0.35 + 0.65 * g4BandB);",
+      "  outgoingLight += vec3(0.18, 0.17, 0.19) * g4Spec;",
+      "  outgoingLight += vec3(0.30) * g4Rim * 0.14;",
+      "  outgoingLight += vec3(0.020, 0.075, 0.100) * g4Rim * (1.0 - g4BandA) * 0.42;",
+      hasLine
+        ? "  float g4Line = texture2D(g4LineMap, g4Uv).b; float g4Edge = pow(1.0 - g4Facing, 4.0) * g4Line; outgoingLight = mix(outgoingLight, outgoingLight * vec3(0.42, 0.35, 0.40), clamp(g4Edge * 0.38, 0.0, 0.38));"
+        : "",
+    ].filter(Boolean).join("\n");
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <opaque_fragment>",
+      characterComposite + "\n#include <opaque_fragment>",
+    );
+  };
+
+  material.customProgramCacheKey = () => [
+    "rtg-character-v1",
+    aux.occlusion ? "oc" : "",
+    aux.specular ? "sp" : "",
+    aux.specular_mask ? "spm" : "",
+    aux.line ? "line" : "",
+  ].join("-");
+
+  return material;
 }
 
-function toonifyModel(root) {
-  root?.traverse?.((node) => {
+async function applyCharacterShader(gltf) {
+  const converted = new Map();
+  const replacements = [];
+
+  gltf.scene?.traverse?.((node) => {
     if (!node.isMesh || !node.material) return;
     const sources = Array.isArray(node.material) ? node.material : [node.material];
-    const toonMaterials = sources.map(buildToonMaterial);
-    node.material = Array.isArray(node.material) ? toonMaterials : toonMaterials[0];
-    node.castShadow = false;
-    node.receiveShadow = false;
+
+    replacements.push((async () => {
+      const next = [];
+      for (const source of sources) {
+        if (!source) {
+          next.push(source);
+          continue;
+        }
+        if (!converted.has(source.uuid)) {
+          converted.set(source.uuid, (async () => {
+            const aux = await loadNieAuxTextures(gltf, source);
+            return buildCharacterMaterial(source, aux);
+          })());
+        }
+        next.push(await converted.get(source.uuid));
+      }
+      node.material = Array.isArray(node.material) ? next : next[0];
+      node.castShadow = false;
+      node.receiveShadow = false;
+    })());
   });
+
+  await Promise.all(replacements);
 }
 
-function fitFrontOrthoCamera(camera, root) {
+function fitFrontCamera(camera, root) {
   root.updateWorldMatrix(true, true);
   const box = new THREE.Box3().setFromObject(root);
   if (box.isEmpty()) throw new Error("Bounding box modello vuota");
 
   const size = box.getSize(new THREE.Vector3());
   const center = box.getCenter(new THREE.Vector3());
-  const aspect = RENDER_WIDTH / RENDER_HEIGHT;
-  const margin = 1.10;
-
-  let viewHeight = Math.max(size.y * margin, 0.1);
-  let viewWidth = viewHeight * aspect;
-  if (size.x * margin > viewWidth) {
-    viewWidth = size.x * margin;
-    viewHeight = viewWidth / aspect;
-  }
-
-  camera.left = -viewWidth / 2;
-  camera.right = viewWidth / 2;
-  camera.top = viewHeight / 2;
-  camera.bottom = -viewHeight / 2;
-
+  const verticalFov = THREE.MathUtils.degToRad(camera.fov);
+  const horizontalFov = 2 * Math.atan(Math.tan(verticalFov / 2) * camera.aspect);
+  const heightDistance = size.y / Math.max(0.001, 2 * Math.tan(verticalFov / 2));
+  const widthDistance = size.x / Math.max(0.001, 2 * Math.tan(horizontalFov / 2));
+  const distance = Math.max(heightDistance, widthDistance, 0.5) * 1.10;
   const targetY = center.y + size.y * 0.015;
-  const distance = Math.max(size.z * 4, size.y * 2, 6);
-  camera.near = 0.01;
-  camera.far = Math.max(200, distance * 10);
+
+  camera.near = Math.max(0.01, distance / 100);
+  camera.far = Math.max(100, distance * 20);
   camera.position.set(center.x, targetY, center.z + distance);
   camera.lookAt(center.x, targetY, center.z);
   camera.updateProjectionMatrix();
 }
+
 function canvasBlob(canvas) {
   return new Promise((resolve, reject) => {
     const finish = (blob) => blob ? resolve(blob) : reject(new Error("Impossibile creare il render frontale"));
@@ -247,22 +354,21 @@ async function renderGlbToBlob(buffer, sourceUrl) {
   renderer.setClearColor(0x000000, 0);
 
   const scene = new THREE.Scene();
-  const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.01, 200);
+  const camera = new THREE.PerspectiveCamera(26, RENDER_WIDTH / RENDER_HEIGHT, 0.01, 500);
 
-  const ambient = new THREE.AmbientLight(0xffffff, 1.35);
-  scene.add(ambient);
+  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7890, 1.15));
 
-  const key = new THREE.DirectionalLight(0xffffff, 2.15);
-  key.position.set(3, 6, 6);
+  const key = new THREE.DirectionalLight(0xffffff, 1.65);
+  key.position.set(3.5, 6.5, 6);
   scene.add(key);
 
-  const fill = new THREE.DirectionalLight(0xffffff, 0.55);
-  fill.position.set(-3, 2.5, 4);
+  const fill = new THREE.DirectionalLight(0xfff3ee, 0.38);
+  fill.position.set(-4, 2.5, 4);
   scene.add(fill);
 
-  toonifyModel(gltf.scene);
+  await applyCharacterShader(gltf);
   scene.add(gltf.scene);
-  fitFrontOrthoCamera(camera, gltf.scene);
+  fitFrontCamera(camera, gltf.scene);
 
   const renderStart = performance.now();
   renderer.render(scene, camera);
