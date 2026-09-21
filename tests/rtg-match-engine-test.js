@@ -26,47 +26,28 @@ const resolvedBase=E.resolvePendingEncounter(JSON.parse(JSON.stringify(frozen)),
 const resolvedMove=userCanMove?E.resolvePendingEncounter(JSON.parse(JSON.stringify(frozen)),"move"):resolvedBase;
 assert.strictEqual(frozenAi,prepared.pendingEncounter.aiChoice);
 if(userCanMove){const key=`${prepared.pendingEncounter.userSide}:${prepared.pendingEncounter.userPlayerId}`;assert.strictEqual(resolvedMove.moveUsesByPlayerId[key],1);}
-// Regression: automatic simulation may advance midfield/dribbling, but it must
-// never change the score invisibly. Reaching the shot zone always creates a
-// pending shot/save encounter before any goal can be scored.
 let silent=E.createMatch({...input,matchId:"no-silent-goal",seed:"no-silent-goal-seed"});
 silent.manualIndexes=[];silent.manualTarget=0;
 const silentScore=JSON.stringify(silent.score);
 silent=E.prepareNext(silent);
-assert(silent.pendingEncounter);
-assert.strictEqual(silent.pendingEncounter.kind,"shot");
-assert.strictEqual(JSON.stringify(silent.score),silentScore);
-assert.strictEqual(silent.log.some(event=>event.goalSide),false);
-// Even after resolving a non-shot duel, the following automatic flow cannot
-// award a random goal before an explicit shot/save duel is shown.
+assert(silent.pendingEncounter);assert.strictEqual(silent.pendingEncounter.kind,"shot");assert.strictEqual(JSON.stringify(silent.score),silentScore);assert.strictEqual(silent.log.some(event=>event.goalSide),false);
 let chain=E.createMatch({...input,matchId:"chain-no-random-goal",seed:"chain-no-random-goal-seed"});
-chain.manualIndexes=[0];chain.manualTarget=1;
-chain=E.prepareNext(chain);
-assert(chain.pendingEncounter);
-if(chain.pendingEncounter.kind!=="shot"){
-  const beforeChainScore=JSON.stringify(chain.score);
-  chain=E.resolvePendingEncounter(chain,"base");
-  chain=E.prepareNext(chain);
-  assert.strictEqual(JSON.stringify(chain.score),beforeChainScore);
-  assert(chain.pendingEncounter);
-  assert.strictEqual(chain.pendingEncounter.kind,"shot");
-}
+chain.manualIndexes=[0];chain.manualTarget=1;chain=E.prepareNext(chain);assert(chain.pendingEncounter);
+if(chain.pendingEncounter.kind!=="shot"){const beforeChainScore=JSON.stringify(chain.score);chain=E.resolvePendingEncounter(chain,"base");chain=E.prepareNext(chain);assert.strictEqual(JSON.stringify(chain.score),beforeChainScore);assert(chain.pendingEncounter);assert.strictEqual(chain.pendingEncounter.kind,"shot");}
 let match=E.createMatch({...input,matchId:"half",seed:"half-seed"});
-match=E.prepareNext(match);
-let guard=0;
-while(match.status!=="halftime"&&guard++<80){if(match.pendingEncounter)match=E.resolvePendingEncounter(match,"base");else match=E.prepareNext(match);}
-assert.strictEqual(match.status,"halftime");
-const usesBefore=JSON.stringify(match.moveUsesByPlayerId);
-match=E.confirmHalftime(match,match.userSquad,{validateHalftime:()=>({eligible:true})});
-assert.notStrictEqual(match.status,"halftime");assert.strictEqual(JSON.stringify(match.moveUsesByPlayerId),usesBefore);
+match=E.prepareNext(match);let guard=0;while(match.status!=="halftime"&&guard++<80){if(match.pendingEncounter)match=E.resolvePendingEncounter(match,"base");else match=E.prepareNext(match);}assert.strictEqual(match.status,"halftime");
+const usesBefore=JSON.stringify(match.moveUsesByPlayerId);match=E.confirmHalftime(match,match.userSquad,{validateHalftime:()=>({eligible:true})});assert.notStrictEqual(match.status,"halftime");assert.strictEqual(JSON.stringify(match.moveUsesByPlayerId),usesBefore);
 let boundary=E.createMatch({...input,matchId:"extra",seed:"extra-seed"});
-boundary.period="second_half";boundary.actionIndex=boundary.actionTarget;boundary.score={user:1,opponent:1};boundary.pendingEncounter=null;boundary.status="active";
-boundary=E.prepareNext(boundary);assert.strictEqual(boundary.period,"extra_first");assert.strictEqual(boundary.status,"active");
-boundary.extraActionIndex=6;boundary.period="extra_second";boundary.score={user:2,opponent:2};boundary.pendingEncounter=null;boundary=E.prepareNext(boundary);
-assert.strictEqual(boundary.status,"penalties");assert(boundary.shootout);
-const beforePenaltyUse=boundary.moveUsesByPlayerId["user:uf1"];
-const shooter=boundary.userSquad.lineup.find(p=>p.playerId==="uf1"),keeper=boundary.opponentSquad.lineup.find(p=>p.playerId==="og");
-const pen=E.resolvePenaltyKick(boundary,{attackingSide:"user",shooterPlayerId:"uf1",goalkeeperPlayerId:"og",shooterChoice:"left",goalkeeperChoice:"left",shooterMove:shooter.move,goalkeeperMove:null,encounterContext:{actor:shooter,opponent:keeper}});
-assert.strictEqual(pen.state.moveUsesByPlayerId["user:uf1"],beforePenaltyUse-1);
+boundary.period="second_half";boundary.actionIndex=boundary.actionTarget;boundary.score={user:1,opponent:1};boundary.pendingEncounter=null;boundary.status="active";boundary=E.prepareNext(boundary);assert.strictEqual(boundary.period,"extra_first");assert.strictEqual(boundary.status,"active");
+boundary.extraActionIndex=6;boundary.period="extra_second";boundary.score={user:2,opponent:2};boundary.pendingEncounter=null;boundary=E.prepareNext(boundary);assert.strictEqual(boundary.status,"penalties");assert(boundary.shootout);
+// Svincolati / secondary matches must also produce a winner: a draw after 90'
+// enters extra time and, if still level, reaches the same penalty shootout.
+let secondary=E.createMatch({...input,matchId:"secondary-extra",nodeId:"secondary:free-agents",matchType:"secondary",seed:"secondary-extra-seed"});
+secondary.period="second_half";secondary.actionIndex=secondary.actionTarget;secondary.score={user:0,opponent:0};secondary.pendingEncounter=null;secondary.status="active";
+secondary=E.prepareNext(secondary);assert.strictEqual(secondary.period,"extra_first");assert.strictEqual(secondary.status,"active");
+secondary.period="extra_second";secondary.extraActionIndex=6;secondary.score={user:1,opponent:1};secondary.pendingEncounter=null;secondary.status="active";
+secondary=E.prepareNext(secondary);assert.strictEqual(secondary.status,"penalties");assert(secondary.shootout);
+const beforePenaltyUse=boundary.moveUsesByPlayerId["user:uf1"];const shooter=boundary.userSquad.lineup.find(p=>p.playerId==="uf1"),keeper=boundary.opponentSquad.lineup.find(p=>p.playerId==="og");
+const pen=E.resolvePenaltyKick(boundary,{attackingSide:"user",shooterPlayerId:"uf1",goalkeeperPlayerId:"og",shooterChoice:"left",goalkeeperChoice:"left",shooterMove:shooter.move,goalkeeperMove:null,encounterContext:{actor:shooter,opponent:keeper}});assert.strictEqual(pen.state.moveUsesByPlayerId["user:uf1"],beforePenaltyUse-1);
 const abandoned=E.abandon(a);assert.strictEqual(abandoned.status,"abandoned");assert.strictEqual(abandoned.result.winner,"opponent");
 console.log("rtg-match-engine-test: PASS");
