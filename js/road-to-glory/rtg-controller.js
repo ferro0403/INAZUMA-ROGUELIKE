@@ -46,6 +46,15 @@
       return lastRenderedHtml;
     }
     function getRenderedHtml(){return app?.innerHTML||lastRenderedHtml;}
+    function debugMarkCheatEnabled(){
+      try{
+        const params=new URLSearchParams(global.location?.search||"");
+        const value=params.get("rtgCheatMark");
+        return value!==null&&value!=="0"&&value!=="false";
+      }catch(_){
+        return false;
+      }
+    }
 
     async function ensureData(){
       seasonDb=seasonDb||await deps.ensureSeason1Db();
@@ -158,6 +167,32 @@
         if(existing?.formationId&&existing.lineup?.length===11&&existing.bench?.length===4)return current;
         current.squads=current.squads||{};
         current.squads.ie1=buildDefaultSquad(current);
+        return current;
+      });
+      return campaign;
+    }
+
+    async function applyDebugMarkCheat(){
+      if(!debugMarkCheatEnabled())return campaign;
+      const markId="1";
+      campaign=await repository.update("rtg-debug-mark-cheat",current=>{
+        current.gachaAcquiredPlayerIds=Array.from(new Set([...(current.gachaAcquiredPlayerIds||[]).map(id),markId]));
+        const squad=current?.squads?.ie1;
+        if(!squad||!Array.isArray(squad.lineup)||!Array.isArray(squad.bench))return current;
+
+        const lineup=squad.lineup.map(id);
+        const bench=squad.bench.map(id);
+        if(lineup.includes(markId))return current;
+
+        const benchMarkIndex=bench.indexOf(markId);
+        const keeperIndex=lineup.findIndex(playerId=>rawRole(playerId)==="GK");
+        if(keeperIndex<0)return current;
+
+        const displacedKeeper=lineup[keeperIndex];
+        lineup[keeperIndex]=markId;
+        if(benchMarkIndex>=0)bench[benchMarkIndex]=displacedKeeper;
+
+        current.squads.ie1={...squad,lineup,bench};
         return current;
       });
       return campaign;
@@ -1039,6 +1074,7 @@
       }
       campaign=await repository.ensureCampaign();
       await ensureInitialSquad();
+      await applyDebugMarkCheat();
       if(campaign.activeMatch){
         const status=campaign.activeMatch.status;
         if(["completed","completed-draw","abandoned"].includes(status)){
