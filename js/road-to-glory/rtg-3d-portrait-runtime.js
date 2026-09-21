@@ -549,7 +549,7 @@ async function portraitFor({ playerId, player, uniformId = null } = {}) {
   const selectedCacheName = cacheName(shaderMode);
   const memoryUrl = memoryUrls.get(key);
   if (memoryUrl) {
-    return { url: memoryUrl, cache: "memory", totalMs: 0, uniformId: chosenUniformId, uniformCrc, isKeeper };
+    return { url: memoryUrl, cache: "memory", totalMs: 0, uniformId: chosenUniformId, uniformCrc, isKeeper, shaderMode };
   }
 
   const persistentBlob = await readCachedBlob(key, selectedCacheName);
