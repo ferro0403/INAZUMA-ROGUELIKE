@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
-const CACHE_NAME = "rtg-3d-portrait-v3";
+const CACHE_NAME = "rtg-3d-portrait-v4";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -39,7 +39,7 @@ function roleOf(player) {
 }
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc) {
-  return ["v3", playerId, internalCode, uniformId, uniformCrc].map((value) => String(value || "")).join("__");
+  return ["v4", playerId, internalCode, uniformId, uniformCrc].map((value) => String(value || "")).join("__");
 }
 
 function cacheRequest(key) {
@@ -224,17 +224,9 @@ function buildCharacterMaterial(sourceMaterial, aux) {
       "  vec3 g4Normal = normalize(normal);",
       "  vec3 g4View = normalize(vViewPosition);",
       "  float g4Facing = clamp(abs(dot(g4Normal, g4View)), 0.0, 1.0);",
-      "  float g4Rim = pow(1.0 - g4Facing, 3.2);",
-      "  float g4Luma = dot(outgoingLight, vec3(0.29891, 0.58661, 0.11448));",
-      "  float g4BandA = smoothstep(0.34, 0.47, g4Luma);",
-      "  float g4BandB = smoothstep(0.50, 0.64, g4Luma);",
-      "  vec3 g4ShadowDeep = vec3(0.730, 0.530, 0.700);",
-      "  vec3 g4ShadowSoft = vec3(0.750, 0.600, 0.780);",
-      "  vec3 g4ShadowTint = mix(g4ShadowDeep, g4ShadowSoft, g4BandA);",
-      "  vec3 g4Toon = outgoingLight * mix(g4ShadowTint, vec3(1.0), g4BandB);",
-      "  outgoingLight = mix(outgoingLight, g4Toon, 0.46);",
+      "  float g4Rim = pow(1.0 - g4Facing, 3.6);",
       hasOcclusion
-        ? "  float g4Occlusion = texture2D(g4OcclusionMap, g4Uv).r; outgoingLight *= mix(0.78, 1.0, g4Occlusion);"
+        ? "  float g4Occlusion = texture2D(g4OcclusionMap, g4Uv).r; outgoingLight *= mix(0.94, 1.0, g4Occlusion);"
         : "",
       hasSpecularShape
         ? "  vec2 g4SphereUv = g4Normal.xy * vec2(0.5, -0.5) + 0.5; float g4SpecShape = dot(texture2D(g4SpecularShapeMap, g4SphereUv).rgb, vec3(0.333333));"
@@ -242,12 +234,12 @@ function buildCharacterMaterial(sourceMaterial, aux) {
       hasSpecularMask
         ? "  float g4SpecMask = texture2D(g4SpecularMaskMap, g4Uv).r;"
         : "  float g4SpecMask = 1.0;",
-      "  float g4Spec = g4SpecShape * g4SpecMask * (0.35 + 0.65 * g4BandB);",
-      "  outgoingLight += vec3(0.18, 0.17, 0.19) * g4Spec;",
-      "  outgoingLight += vec3(0.30) * g4Rim * 0.14;",
-      "  outgoingLight += vec3(0.020, 0.075, 0.100) * g4Rim * (1.0 - g4BandA) * 0.42;",
+      "  float g4Spec = g4SpecShape * g4SpecMask;",
+      "  outgoingLight += vec3(0.10, 0.095, 0.11) * g4Spec;",
+      "  outgoingLight += vec3(0.16, 0.15, 0.17) * g4Rim * 0.10;",
+      "  outgoingLight += vec3(0.015, 0.035, 0.045) * g4Rim * 0.10;",
       hasLine
-        ? "  float g4Line = texture2D(g4LineMap, g4Uv).b; float g4Edge = pow(1.0 - g4Facing, 4.0) * g4Line; outgoingLight = mix(outgoingLight, outgoingLight * vec3(0.42, 0.35, 0.40), clamp(g4Edge * 0.38, 0.0, 0.38));"
+        ? "  float g4Line = texture2D(g4LineMap, g4Uv).b; float g4Edge = pow(1.0 - g4Facing, 4.5) * g4Line; outgoingLight = mix(outgoingLight, outgoingLight * vec3(0.82, 0.78, 0.80), clamp(g4Edge * 0.12, 0.0, 0.12));"
         : "",
     ].filter(Boolean).join("\n");
 
@@ -356,13 +348,13 @@ async function renderGlbToBlob(buffer, sourceUrl) {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(26, RENDER_WIDTH / RENDER_HEIGHT, 0.01, 500);
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0x8a7890, 1.15));
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b0bd, 1.45));
 
-  const key = new THREE.DirectionalLight(0xffffff, 1.65);
+  const key = new THREE.DirectionalLight(0xffffff, 1.35);
   key.position.set(3.5, 6.5, 6);
   scene.add(key);
 
-  const fill = new THREE.DirectionalLight(0xfff3ee, 0.38);
+  const fill = new THREE.DirectionalLight(0xfff7f2, 0.52);
   fill.position.set(-4, 2.5, 4);
   scene.add(fill);
 
