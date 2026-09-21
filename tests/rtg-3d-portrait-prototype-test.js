@@ -31,10 +31,12 @@ assert(runtime.includes('getDependency("texture", index)'), "RTG portrait render
 assert(runtime.includes("g4SpecularShapeMap"), "RTG Character shader must use the native specular-shape texture when available.");
 assert(runtime.includes("g4SpecularMaskMap"), "RTG Character shader must use the native specular mask when available.");
 assert(runtime.includes("g4OcclusionMap"), "RTG Character shader must use native occlusion when available.");
+assert(runtime.includes("mix(0.94, 1.0, g4Occlusion)"), "Character occlusion must stay subtle and must not crush portrait brightness.");
+assert(!runtime.includes("g4ShadowDeep"), "RTG portrait must not double-apply synthetic shadow bands on top of Three.js lighting.");
 assert(runtime.includes("PerspectiveCamera"), "RTG portrait must restore depth with a perspective camera.");
 assert(!runtime.includes("MeshToonMaterial"), "Generic MeshToonMaterial must not be used for Victory Road portraits.");
 assert(!runtime.includes("OrthographicCamera"), "Flat orthographic portrait camera must not be used.");
-assert(runtime.includes('rtg-3d-portrait-v3'), "Character shader render must invalidate previous portrait caches.");
+assert(runtime.includes('rtg-3d-portrait-v4'), "Character shader tuning must invalidate previous portrait caches.");
 
 assert(controller.includes("RoadToGlory3DPortrait?.renderIntoDetail"), "RTG player detail must invoke the isolated 3D portrait runtime.");
 assert(controller.includes('get("rtgCheatMark")'), "Prototype must expose the opt-in Mark cheat.");
