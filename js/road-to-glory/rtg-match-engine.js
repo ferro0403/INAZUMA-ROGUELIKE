@@ -67,7 +67,7 @@
     const userMove=choice==="move"?pending.userMove:null,aiMove=pending.aiChoice==="move"?pending.aiMove:null;let actorMove=null,opponentMove=null;if(pending.userSide===pending.actorSide)actorMove=userMove;else opponentMove=userMove;if(pending.aiSide===pending.actorSide)actorMove=aiMove;else opponentMove=aiMove;
     state.pendingEncounter=null;state.manualResolved=(Number(state.manualResolved)||0)+1;const outcome=applyEncounter(state,pending,{actorMove,opponentMove,manual:true}),actorWon=outcome.actorWon;
     const userWon=pending.userSide===pending.actorSide?actorWon:!actorWon,aiWon=pending.aiSide===pending.actorSide?actorWon:!actorWon;
-    const userMoveSucceeded=!!userMove&&(pending.userKind==="shot"||userWon),aiMoveSucceeded=!!aiMove&&(pending.aiKind==="shot"||aiWon);
+    const userMoveSucceeded=!!userMove&&(["shot","save"].includes(pending.userKind)||userWon),aiMoveSucceeded=!!aiMove&&(["shot","save"].includes(pending.aiKind)||aiWon);
     if(userMove&&userMoveSucceeded)consumeMove(state,pending.userSide,pending.userPlayerId,userMove);if(aiMove&&aiMoveSucceeded)consumeMove(state,pending.aiSide,pending.aiPlayerId,aiMove);
     ensureBoundary(state);return state;
   }
