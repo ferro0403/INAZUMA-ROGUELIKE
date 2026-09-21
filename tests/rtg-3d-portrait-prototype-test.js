@@ -36,7 +36,19 @@ assert(!runtime.includes("g4ShadowDeep"), "RTG portrait must not double-apply sy
 assert(runtime.includes("PerspectiveCamera"), "RTG portrait must restore depth with a perspective camera.");
 assert(!runtime.includes("MeshToonMaterial"), "Generic MeshToonMaterial must not be used for Victory Road portraits.");
 assert(!runtime.includes("OrthographicCamera"), "Flat orthographic portrait camera must not be used.");
-assert(runtime.includes('rtg-3d-portrait-v5'), "Character shader tuning must invalidate previous portrait caches.");
+assert(runtime.includes('rtg-3d-portrait-v5'), "Legacy Character shader cache must remain available as fallback.");
+assert(runtime.includes('rtg-3d-portrait-v6-g4'), "Capture-derived G4 shader must use an isolated cache.");
+assert(runtime.includes('get("rtg3dShader")'), "Capture-derived G4 shader must remain explicitly selectable.");
+assert(runtime.includes('function buildG4CaptureMaterial'), "Capture-derived G4 material path missing.");
+assert(runtime.includes('vec3(0.74995, 0.60020, 0.77992)'), "G4 shadow color 0 from capture-derived profile is missing.");
+assert(runtime.includes('vec3(0.72967, 0.52992, 0.69982)'), "G4 shadow color 1 from capture-derived profile is missing.");
+assert(runtime.includes('smoothstep(0.751, 0.757, g4Grad0)'), "G4 primary gradient cutoff must follow capture-derived values.");
+assert(runtime.includes('smoothstep(0.527, 0.533, g4Grad1)'), "G4 secondary gradient cutoff must follow capture-derived values.");
+assert(runtime.includes('g4Oc.r * 2.0'), "G4 capture-derived occlusion weight is missing.");
+assert(runtime.includes('g4SpecShape * g4SpecMask * g4ShadowMix'), "G4 capture-derived specular composition is missing.");
+assert(runtime.includes('g4HighSignal - 1.5999'), "G4 capture-derived highlight threshold is missing.");
+assert(runtime.includes('g4Under + 1.0 - 1.45'), "G4 capture-derived under-light threshold is missing.");
+assert(runtime.includes('rtg-g4-capture-v6'), "G4 shader program cache version is missing.");
 
 assert(controller.includes("RoadToGlory3DPortrait?.renderIntoDetail"), "RTG player detail must invoke the isolated 3D portrait runtime.");
 assert(controller.includes('get("rtgCheatMark")'), "Prototype must expose the opt-in Mark cheat.");
