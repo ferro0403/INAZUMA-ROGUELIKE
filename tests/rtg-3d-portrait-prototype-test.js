@@ -27,6 +27,9 @@ assert(runtime.includes("disposeModel(gltf.scene)"), "Loaded GLB resources must 
 assert(runtime.includes("renderer.forceContextLoss?.()"), "WebGL context cleanup is required.");
 
 assert(controller.includes("RoadToGlory3DPortrait?.renderIntoDetail"), "RTG player detail must invoke the isolated 3D portrait runtime.");
+assert(controller.includes('get("rtgCheatMark")'), "Prototype must expose the opt-in Mark cheat.");
+assert(controller.includes('repository.update("rtg-debug-mark-cheat"'), "Mark cheat must use the RTG repository transaction.");
+assert(controller.includes('rawRole(playerId)==="GK"'), "Mark cheat must replace the current goalkeeper slot only.");
 assert(index.includes("rtg-3d-portrait-runtime.js"), "RTG 3D runtime must be loaded.");
 assert(index.includes("three@0.186.0"), "Three.js prototype version must remain pinned.");
 
