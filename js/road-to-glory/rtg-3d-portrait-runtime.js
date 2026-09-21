@@ -2,7 +2,8 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
-const CACHE_NAME = "rtg-3d-portrait-v5";
+const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
+const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -24,6 +25,11 @@ function selectedServerBase(manifest) {
   return String(params.get("rtg3dServer") || manifest?.serverBaseUrl || "").trim().replace(/\/$/, "");
 }
 
+function selectedShaderMode() {
+  const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
+  return value === "g4" || value === "v6" ? "g4" : "legacy";
+}
+
 async function manifest() {
   if (!manifestPromise) {
     manifestPromise = fetch(MANIFEST_URL, { cache: "no-store" }).then(async (response) => {
@@ -38,18 +44,23 @@ function roleOf(player) {
   return String(player?.normalizedRole || player?.position || player?.role || "").toUpperCase();
 }
 
-function cacheKey(playerId, internalCode, uniformId, uniformCrc) {
-  return ["v5", playerId, internalCode, uniformId, uniformCrc].map((value) => String(value || "")).join("__");
+function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
+  const version = shaderMode === "g4" ? "v6-g4" : "v5";
+  return [version, playerId, internalCode, uniformId, uniformCrc].map((value) => String(value || "")).join("__");
+}
+
+function cacheName(shaderMode) {
+  return shaderMode === "g4" ? G4_CACHE_NAME : LEGACY_CACHE_NAME;
 }
 
 function cacheRequest(key) {
   return new Request(new URL(CACHE_PREFIX + encodeURIComponent(key) + ".webp", globalThis.location?.origin || "https://localhost").href);
 }
 
-async function readCachedBlob(key) {
+async function readCachedBlob(key, name) {
   if (!globalThis.caches) return null;
   try {
-    const cache = await caches.open(CACHE_NAME);
+    const cache = await caches.open(name);
     const response = await cache.match(cacheRequest(key));
     return response?.ok ? await response.blob() : null;
   } catch (_) {
@@ -57,10 +68,10 @@ async function readCachedBlob(key) {
   }
 }
 
-async function writeCachedBlob(key, blob) {
+async function writeCachedBlob(key, blob, name) {
   if (!globalThis.caches || !blob) return;
   try {
-    const cache = await caches.open(CACHE_NAME);
+    const cache = await caches.open(name);
     await cache.put(cacheRequest(key), new Response(blob, {
       headers: { "Content-Type": blob.type || "image/webp", "Cache-Control": "public, max-age=31536000, immutable" },
     }));
@@ -260,7 +271,143 @@ function buildCharacterMaterial(sourceMaterial, aux) {
   return material;
 }
 
-async function applyCharacterShader(gltf) {
+
+function buildG4CaptureMaterial(sourceMaterial, aux) {
+  const material = new THREE.MeshPhongMaterial({
+    color: sourceMaterial?.color?.clone?.() || new THREE.Color(0xffffff),
+    map: copyTextureSettings(sourceMaterial?.map || null, { color: true }),
+    alphaMap: sourceMaterial?.alphaMap || null,
+    transparent: !!sourceMaterial?.transparent,
+    opacity: Number.isFinite(sourceMaterial?.opacity) ? sourceMaterial.opacity : 1,
+    alphaTest: Number(sourceMaterial?.alphaTest || 0),
+    side: sourceMaterial?.side ?? THREE.FrontSide,
+    depthWrite: sourceMaterial?.depthWrite !== false,
+    depthTest: sourceMaterial?.depthTest !== false,
+    shininess: 0,
+    specular: new THREE.Color(0x000000),
+    fog: false,
+  });
+
+  if (sourceMaterial?.normalMap) {
+    material.normalMap = copyTextureSettings(sourceMaterial.normalMap, { color: false });
+    if (sourceMaterial.normalScale?.clone) material.normalScale.copy(sourceMaterial.normalScale);
+  }
+
+  material.name = (sourceMaterial?.name || "Character") + "__rtg_g4_capture";
+  material.userData = {
+    ...(sourceMaterial?.userData || {}),
+    rtgAuxTextures: aux,
+    rtgShaderMode: "g4",
+  };
+
+  material.onBeforeCompile = (shader) => {
+    const hasOcclusion = !!aux.occlusion;
+    const hasSpecularShape = !!aux.specular;
+    const hasSpecularMask = !!aux.specular_mask;
+
+    shader.uniforms.g4OcclusionMap = { value: aux.occlusion || null };
+    shader.uniforms.g4SpecularShapeMap = { value: aux.specular || null };
+    shader.uniforms.g4SpecularMaskMap = { value: aux.specular_mask || null };
+    shader.uniforms.g4LightDirView = { value: new THREE.Vector3(0.32, 0.50, 0.80).normalize() };
+
+    const declarations = [
+      "uniform vec3 g4LightDirView;",
+      hasOcclusion ? "uniform sampler2D g4OcclusionMap;" : "",
+      hasSpecularShape ? "uniform sampler2D g4SpecularShapeMap;" : "",
+      hasSpecularMask ? "uniform sampler2D g4SpecularMaskMap;" : "",
+      "vec3 g4LinearToUnorm(vec3 c) {",
+      "  c = max(c, vec3(0.0));",
+      "  vec3 low = c * 12.92;",
+      "  vec3 high = 1.055 * pow(c, vec3(1.0 / 2.4)) - 0.055;",
+      "  return mix(high, low, lessThanEqual(c, vec3(0.0031308)));",
+      "}",
+      "vec3 g4UnormToLinear(vec3 c) {",
+      "  c = max(c, vec3(0.0));",
+      "  vec3 low = c / 12.92;",
+      "  vec3 high = pow((c + 0.055) / 1.055, vec3(2.4));",
+      "  return mix(high, low, lessThanEqual(c, vec3(0.04045)));",
+      "}",
+    ].filter(Boolean).join("\n");
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <map_pars_fragment>",
+      "#include <map_pars_fragment>\n" + declarations,
+    );
+
+    const g4Composite = [
+      "#ifdef USE_MAP",
+      "  vec2 g4Uv = vMapUv;",
+      "#else",
+      "  vec2 g4Uv = vec2(0.5);",
+      "#endif",
+      "  vec3 g4N = normalize(normal);",
+      "  vec3 g4V = normalize(vViewPosition);",
+      "  float g4Signed = clamp(dot(g4N, normalize(g4LightDirView)), -1.0, 1.0);",
+      hasOcclusion
+        ? "  vec3 g4Oc = texture2D(g4OcclusionMap, g4Uv).rgb;"
+        : "  vec3 g4Oc = vec3(1.0, 0.0, 0.0);",
+      "  float g4OcWeight = clamp(g4Oc.r * 2.0, 0.0, 1.0);",
+      "  float g4Offset = g4OcWeight * 0.90 - 0.25;",
+      "  float g4Main = g4Signed * 0.35 + g4Offset;",
+      "  g4Main = g4Main * 0.5 + 0.5;",
+      "  float g4Second = g4Oc.g * (1.0 - g4Main) + g4Main;",
+      "  float g4Grad0 = g4Main - 0.50 + 0.50;",
+      "  float g4Grad1 = g4Second - 0.54 + 0.50;",
+      "  float g4Cover0 = 1.0 - smoothstep(0.751, 0.757, g4Grad0);",
+      "  float g4Cover1 = 1.0 - smoothstep(0.527, 0.533, g4Grad1);",
+      "  vec3 g4Shadow0 = vec3(0.74995, 0.60020, 0.77992);",
+      "  vec3 g4Shadow1 = vec3(0.72967, 0.52992, 0.69982);",
+      "  vec3 g4ShadowMix = mix(g4Shadow0, g4Shadow1, g4Cover1);",
+      "  vec3 g4Base = g4LinearToUnorm(diffuseColor.rgb);",
+      "  float g4Lum = dot(g4Base, vec3(0.29891, 0.58661, 0.11448));",
+      "  vec3 g4Shade = g4ShadowMix + vec3(g4Lum * 0.10);",
+      "  vec3 g4AmbientColor = vec3(0.924925, 0.874975, 0.874975);",
+      "  vec3 g4Ambient = mix(g4Base, g4AmbientColor, 0.04995);",
+      "  vec3 g4AmbientMul = g4Ambient * g4AmbientColor;",
+      "  float g4AddRate = g4Cover0 * -0.10;",
+      "  float g4MulRate = g4Cover0 * 1.30;",
+      "  vec3 g4Added = g4AmbientMul + (g4Shade - g4AmbientMul) * g4AddRate;",
+      "  vec3 g4Multiplied = g4Added * g4Shade;",
+      "  vec3 g4Shaded = g4Added + (g4Multiplied - g4Added) * g4MulRate;",
+      "  float g4Recovery = clamp(g4Lum * 0.20 + g4Oc.b, 0.0, 1.0);",
+      "  vec3 g4Color = mix(g4Shaded, g4Base, g4Recovery);",
+      hasSpecularShape
+        ? "  vec2 g4SphereUv = g4N.xy * vec2(0.5, -0.5) + 0.5; vec3 g4SpecShape = texture2D(g4SpecularShapeMap, g4SphereUv).rgb;"
+        : "  vec3 g4SpecShape = vec3(0.0);",
+      hasSpecularMask
+        ? "  vec3 g4SpecMask = texture2D(g4SpecularMaskMap, g4Uv).rgb;"
+        : "  vec3 g4SpecMask = vec3(1.0);",
+      "  vec3 g4LitSpec = g4SpecShape * g4SpecMask * g4ShadowMix;",
+      "  g4LitSpec *= mix(1.0, 0.42, 0.22);",
+      "  g4Color += g4LitSpec;",
+      "  float g4Facing = clamp(abs(dot(g4N, g4V)), 0.0, 1.0);",
+      "  float g4Grazing = 1.0 - g4Facing;",
+      "  float g4HighSignal = g4Grazing * g4Signed + g4Main;",
+      "  float g4High = clamp((g4HighSignal - 1.5999) * 10000.0, 0.0, 1.0);",
+      "  float g4Under = clamp(-g4Signed, 0.0, 1.0) * g4Grazing;",
+      "  g4Under = clamp((g4Under + 1.0 - 1.45) * 300.0, 0.0, 1.0);",
+      "  g4Color += vec3(0.30) * g4High;",
+      "  g4Color += vec3(0.02, 0.075, 0.10) * g4Under;",
+      "  outgoingLight = g4UnormToLinear(max(g4Color, vec3(0.0)));",
+    ].filter(Boolean).join("\n");
+
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <opaque_fragment>",
+      g4Composite + "\n#include <opaque_fragment>",
+    );
+  };
+
+  material.customProgramCacheKey = () => [
+    "rtg-g4-capture-v6",
+    aux.occlusion ? "oc" : "",
+    aux.specular ? "sp" : "",
+    aux.specular_mask ? "spm" : "",
+  ].join("-");
+
+  return material;
+}
+
+async function applyCharacterShader(gltf, shaderMode = "legacy") {
   const converted = new Map();
   const replacements = [];
 
@@ -278,7 +425,9 @@ async function applyCharacterShader(gltf) {
         if (!converted.has(source.uuid)) {
           converted.set(source.uuid, (async () => {
             const aux = await loadNieAuxTextures(gltf, source);
-            return buildCharacterMaterial(source, aux);
+            return shaderMode === "g4"
+              ? buildG4CaptureMaterial(source, aux)
+              : buildCharacterMaterial(source, aux);
           })());
         }
         next.push(await converted.get(source.uuid));
@@ -324,7 +473,7 @@ function canvasBlob(canvas) {
   });
 }
 
-async function renderGlbToBlob(buffer, sourceUrl) {
+async function renderGlbToBlob(buffer, sourceUrl, shaderMode = "legacy") {
   const parseStart = performance.now();
   const gltf = await parseGlb(buffer, sourceUrl.slice(0, sourceUrl.lastIndexOf("/") + 1));
   const parseMs = performance.now() - parseStart;
@@ -358,7 +507,7 @@ async function renderGlbToBlob(buffer, sourceUrl) {
   fill.position.set(-4, 2.5, 4);
   scene.add(fill);
 
-  await applyCharacterShader(gltf);
+  await applyCharacterShader(gltf, shaderMode);
   scene.add(gltf.scene);
   fitFrontCamera(camera, gltf.scene);
 
@@ -395,13 +544,15 @@ async function portraitFor({ playerId, player, uniformId = null } = {}) {
 
   if (!uniformCrc) throw new Error("CRC uniforme mancante per " + (isKeeper ? "GK" : "giocatore di campo"));
 
-  const key = cacheKey(playerId, playerConfig.internalCode, chosenUniformId, uniformCrc);
+  const shaderMode = selectedShaderMode();
+  const key = cacheKey(playerId, playerConfig.internalCode, chosenUniformId, uniformCrc, shaderMode);
+  const selectedCacheName = cacheName(shaderMode);
   const memoryUrl = memoryUrls.get(key);
   if (memoryUrl) {
     return { url: memoryUrl, cache: "memory", totalMs: 0, uniformId: chosenUniformId, uniformCrc, isKeeper };
   }
 
-  const persistentBlob = await readCachedBlob(key);
+  const persistentBlob = await readCachedBlob(key, selectedCacheName);
   if (persistentBlob) {
     return {
       url: objectUrlFor(key, persistentBlob),
@@ -410,6 +561,7 @@ async function portraitFor({ playerId, player, uniformId = null } = {}) {
       uniformId: chosenUniformId,
       uniformCrc,
       isKeeper,
+      shaderMode,
     };
   }
 
@@ -425,8 +577,8 @@ async function portraitFor({ playerId, player, uniformId = null } = {}) {
   const networkMs = performance.now() - networkStart;
   assertGlb(buffer);
 
-  const rendered = await renderGlbToBlob(buffer, modelUrl);
-  await writeCachedBlob(key, rendered.blob);
+  const rendered = await renderGlbToBlob(buffer, modelUrl, shaderMode);
+  await writeCachedBlob(key, rendered.blob, selectedCacheName);
   const totalMs = performance.now() - totalStart;
 
   return {
@@ -441,6 +593,7 @@ async function portraitFor({ playerId, player, uniformId = null } = {}) {
     uniformId: chosenUniformId,
     uniformCrc,
     isKeeper,
+    shaderMode,
   };
 }
 
@@ -485,9 +638,10 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
     visual.prepend(img);
 
     status.dataset.state = "ready";
+    const shaderLabel = result.shaderMode === "g4" ? "G4" : "3D";
     status.textContent = result.cache === "miss"
-      ? "3D · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
-      : "3D · cache " + result.cache + " · " + (result.isKeeper ? "GK" : "campo");
+      ? shaderLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
+      : shaderLabel + " · cache " + result.cache + " · " + (result.isKeeper ? "GK" : "campo");
     return result;
   } catch (error) {
     status.dataset.state = "error";
