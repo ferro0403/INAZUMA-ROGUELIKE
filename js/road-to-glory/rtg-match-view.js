@@ -206,16 +206,28 @@
       const kind = event.kind || (event.zone === "shot" ? "shot" : event.zone === "attack" ? "dribble" : "midfield");
       const winnerSide = event.actorWon ? actorSide : opponentSide;
       const focusPlayer = event.actorWon ? actor : opponent;
+      const automaticNoTurnover = !event.manual && !event.goalSide;
+      const possessionTeamName = actorSide === "user"
+        ? userNameFor(match)
+        : (match?.opponentSquad?.name || "la squadra avversaria");
       let type = "build_up", baseCopy = "";
       if (kind === "shot") {
         type = event.actorWon ? "goal" : "save";
         baseCopy = event.actorWon ? `GOL! ${actorName} segna.` : `${opponentName} ferma il tiro di ${actorName}.`;
       } else if (kind === "dribble") {
-        type = event.actorWon ? "dribble" : "defensive_stop";
-        baseCopy = event.actorWon ? `${actorName} supera ${opponentName}.` : `${opponentName} ferma ${actorName} e recupera palla.`;
+        type = event.actorWon ? "dribble" : (automaticNoTurnover ? "build_up" : "defensive_stop");
+        baseCopy = event.actorWon
+          ? `${actorName} supera ${opponentName}.`
+          : automaticNoTurnover
+            ? `${opponentName} ferma ${actorName}. Possesso invariato per ${possessionTeamName}.`
+            : `${opponentName} ferma ${actorName} e recupera palla.`;
       } else {
-        type = event.actorWon ? "build_up" : "recovery";
-        baseCopy = event.actorWon ? `${actorName} vince il duello a centrocampo.` : `${opponentName} conquista il possesso.`;
+        type = event.actorWon || automaticNoTurnover ? "build_up" : "recovery";
+        baseCopy = event.actorWon
+          ? `${actorName} vince il duello a centrocampo.`
+          : automaticNoTurnover
+            ? `${opponentName} vince il duello a centrocampo, ma il possesso resta a ${possessionTeamName}.`
+            : `${opponentName} conquista il possesso.`;
       }
       const actorActionKind = kind === "shot" ? "shot" : kind === "dribble" ? "dribble" : "midfield";
       const opponentActionKind = kind === "shot" ? "save" : kind === "dribble" ? "defense" : "midfield";
@@ -223,9 +235,13 @@
       const winningKind = event.actorWon ? actorActionKind : opponentActionKind;
       const winningName = event.actorWon ? actorName : opponentName;
       const losingName = event.actorWon ? opponentName : actorName;
-      const copy = winningMove
-        ? `${moveOutcomeClause(winningName,losingName,winningKind,winningMove,true)}.`
-        : baseCopy;
+      const copy = automaticNoTurnover && !event.actorWon && kind !== "shot"
+        ? winningMove
+          ? `${winningName} vince il duello con ${winningMove}, ma il possesso resta a ${possessionTeamName}.`
+          : baseCopy
+        : winningMove
+          ? `${moveOutcomeClause(winningName,losingName,winningKind,winningMove,true)}.`
+          : baseCopy;
       const moveNames = winningMove ? [winningMove] : [];
       const moveName = winningMove || null;
       const presented = {
