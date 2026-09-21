@@ -86,7 +86,7 @@
       const detailPlayer=player?.stats&&!player?.baseStats
         ? {...player,baseStats:{...player.stats}}
         : player;
-      return deps.showPlayerDetailsFor?.(detailPlayer,{
+      const result=deps.showPlayerDetailsFor?.(detailPlayer,{
         playerId:key,
         level:20,
         database:detailDatabaseFor(key),
@@ -94,6 +94,14 @@
         readOnly:true,
         preserveScroll:true,
       });
+      Promise.resolve().then(()=>{
+        global.RoadToGlory3DPortrait?.renderIntoDetail?.({
+          playerId:key,
+          player:detailPlayer,
+          modalRoot:deps.getModalRoot?.(),
+        });
+      });
+      return result;
     }
     function refreshEntitlements(){
       const albumProgress=deps.getAlbumProgress?.();
