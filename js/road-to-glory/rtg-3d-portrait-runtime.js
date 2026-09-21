@@ -2,7 +2,7 @@ import * as THREE from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 
 const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
-const CACHE_NAME = "rtg-3d-portrait-v4";
+const CACHE_NAME = "rtg-3d-portrait-v5";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -39,7 +39,7 @@ function roleOf(player) {
 }
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc) {
-  return ["v4", playerId, internalCode, uniformId, uniformCrc].map((value) => String(value || "")).join("__");
+  return ["v5", playerId, internalCode, uniformId, uniformCrc].map((value) => String(value || "")).join("__");
 }
 
 function cacheRequest(key) {
@@ -235,11 +235,11 @@ function buildCharacterMaterial(sourceMaterial, aux) {
         ? "  float g4SpecMask = texture2D(g4SpecularMaskMap, g4Uv).r;"
         : "  float g4SpecMask = 1.0;",
       "  float g4Spec = g4SpecShape * g4SpecMask;",
-      "  outgoingLight += vec3(0.10, 0.095, 0.11) * g4Spec;",
-      "  outgoingLight += vec3(0.16, 0.15, 0.17) * g4Rim * 0.10;",
-      "  outgoingLight += vec3(0.015, 0.035, 0.045) * g4Rim * 0.10;",
+      "  outgoingLight += vec3(0.055, 0.052, 0.060) * g4Spec;",
+      "  outgoingLight += vec3(0.10, 0.095, 0.11) * g4Rim * 0.055;",
+      "  outgoingLight += vec3(0.010, 0.022, 0.028) * g4Rim * 0.055;",
       hasLine
-        ? "  float g4Line = texture2D(g4LineMap, g4Uv).b; float g4Edge = pow(1.0 - g4Facing, 4.5) * g4Line; outgoingLight = mix(outgoingLight, outgoingLight * vec3(0.82, 0.78, 0.80), clamp(g4Edge * 0.12, 0.0, 0.12));"
+        ? "  float g4Line = texture2D(g4LineMap, g4Uv).b; float g4Edge = pow(1.0 - g4Facing, 5.2) * g4Line; outgoingLight = mix(outgoingLight, outgoingLight * vec3(0.88, 0.85, 0.87), clamp(g4Edge * 0.07, 0.0, 0.07));"
         : "",
     ].filter(Boolean).join("\n");
 
@@ -348,13 +348,13 @@ async function renderGlbToBlob(buffer, sourceUrl) {
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(26, RENDER_WIDTH / RENDER_HEIGHT, 0.01, 500);
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xb8b0bd, 1.45));
+  scene.add(new THREE.HemisphereLight(0xffffff, 0xc2bcc6, 1.38));
 
-  const key = new THREE.DirectionalLight(0xffffff, 1.35);
+  const key = new THREE.DirectionalLight(0xffffff, 1.22);
   key.position.set(3.5, 6.5, 6);
   scene.add(key);
 
-  const fill = new THREE.DirectionalLight(0xfff7f2, 0.52);
+  const fill = new THREE.DirectionalLight(0xfff8f4, 0.46);
   fill.position.set(-4, 2.5, 4);
   scene.add(fill);
 
