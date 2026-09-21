@@ -25,9 +25,16 @@ assert(runtime.includes('get("rtg3dServer")'), "Prototype must allow the model s
 assert(runtime.includes("Cache Storage is an optimization only"), "Cache must remain non-critical.");
 assert(runtime.includes("disposeModel(gltf.scene)"), "Loaded GLB resources must be released.");
 assert(runtime.includes("renderer.forceContextLoss?.()"), "WebGL context cleanup is required.");
-assert(runtime.includes("MeshToonMaterial"), "RTG portrait renderer must use toon shading.");
-assert(runtime.includes("OrthographicCamera"), "RTG portrait renderer must use a flatter orthographic camera.");
-assert(runtime.includes('rtg-3d-portrait-v2'), "Toon render must invalidate the previous portrait cache.");
+assert(runtime.includes("MeshPhongMaterial"), "RTG portrait renderer must use the Character-style material base.");
+assert(runtime.includes("userData?.nie?.textures"), "RTG portrait renderer must consume NIE Character texture metadata.");
+assert(runtime.includes('getDependency("texture", index)'), "RTG portrait renderer must load embedded Character auxiliary textures.");
+assert(runtime.includes("g4SpecularShapeMap"), "RTG Character shader must use the native specular-shape texture when available.");
+assert(runtime.includes("g4SpecularMaskMap"), "RTG Character shader must use the native specular mask when available.");
+assert(runtime.includes("g4OcclusionMap"), "RTG Character shader must use native occlusion when available.");
+assert(runtime.includes("PerspectiveCamera"), "RTG portrait must restore depth with a perspective camera.");
+assert(!runtime.includes("MeshToonMaterial"), "Generic MeshToonMaterial must not be used for Victory Road portraits.");
+assert(!runtime.includes("OrthographicCamera"), "Flat orthographic portrait camera must not be used.");
+assert(runtime.includes('rtg-3d-portrait-v3'), "Character shader render must invalidate previous portrait caches.");
 
 assert(controller.includes("RoadToGlory3DPortrait?.renderIntoDetail"), "RTG player detail must invoke the isolated 3D portrait runtime.");
 assert(controller.includes('get("rtgCheatMark")'), "Prototype must expose the opt-in Mark cheat.");
