@@ -25,6 +25,9 @@ assert(runtime.includes('get("rtg3dServer")'), "Prototype must allow the model s
 assert(runtime.includes("Cache Storage is an optimization only"), "Cache must remain non-critical.");
 assert(runtime.includes("disposeModel(gltf.scene)"), "Loaded GLB resources must be released.");
 assert(runtime.includes("renderer.forceContextLoss?.()"), "WebGL context cleanup is required.");
+assert(runtime.includes("MeshToonMaterial"), "RTG portrait renderer must use toon shading.");
+assert(runtime.includes("OrthographicCamera"), "RTG portrait renderer must use a flatter orthographic camera.");
+assert(runtime.includes('rtg-3d-portrait-v2'), "Toon render must invalidate the previous portrait cache.");
 
 assert(controller.includes("RoadToGlory3DPortrait?.renderIntoDetail"), "RTG player detail must invoke the isolated 3D portrait runtime.");
 assert(controller.includes('get("rtgCheatMark")'), "Prototype must expose the opt-in Mark cheat.");
