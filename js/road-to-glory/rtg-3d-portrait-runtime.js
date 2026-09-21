@@ -310,7 +310,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
     img.decoding = "async";
     img.src = result.url;
 
-    await img.decode?.().catch(() => {});
+    if (typeof img.decode === "function") await img.decode().catch(() => {});
     if (!visual.isConnected) return result;
 
     visual.querySelectorAll(".rtg-3d-generated-portrait").forEach((old) => old.remove());
