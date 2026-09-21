@@ -8,6 +8,14 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="apple-mobile-web-app-title" content="Inazuma Roguelike" />
     <title>Inazuma Roguelike</title>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.186.0/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.0/examples/jsm/"
+        }
+      }
+    </script>
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon-180.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
     <link rel="stylesheet" href="css/game.css?v=20260918-rtg-ui-polish-3" />
@@ -50,6 +58,7 @@
     <link rel="stylesheet" href="css/album-roster.css?v=20260914-album-roster-1" />
     <link rel="stylesheet" href="css/road-to-glory.css?v=20260916-rtg-match-polish-6" />
     <link rel="stylesheet" href="css/rtg-theme.css?v=20260918-vending-sharp-1" />
+    <link rel="stylesheet" href="css/rtg-3d-portrait.css?v=20260921-rtg3d-prototype-1" />
   </head>
   <body>
     <div id="app" class="app-shell">
@@ -130,6 +139,7 @@
     <script src="js/road-to-glory/rtg-repository.js?v=20260916-rtg-foundation-1"></script>
     <script src="js/road-to-glory/rtg-entitlements.js?v=20260916-rtg-foundation-1"></script>
     <script src="js/road-to-glory/rtg-player-resolver.js?v=20260918-development-link-1"></script>
+    <script type="module" src="js/road-to-glory/rtg-3d-portrait-runtime.js?v=20260921-rtg3d-prototype-1"></script>
     <script src="js/road-to-glory/rtg-rng.js?v=20260916-rtg-progression-1"></script>
     <script src="js/road-to-glory/rtg-progression.js?v=20260916-rtg-progression-1"></script>
     <script src="js/road-to-glory/rtg-gacha.js?v=20260916-rtg-progression-1"></script>
