@@ -7,7 +7,7 @@ const formationLayout={displayRows:()=>[
 ]};
 const resolver={resolveAtLevel20:(id)=>({playerId:id,name:id,overall:80,level:20,normalizedRole:id.startsWith("g")?"GK":id.startsWith("d")?"DF":id.startsWith("m")?"MF":"FW",position:id.startsWith("g")?"GK":id.startsWith("d")?"DF":id.startsWith("m")?"MF":"FW",category:"Buono"})};
 const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
-vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-view.js","utf8"),c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-view-base.js","utf8"),c);
 const view=c.RoadToGlorySquadView.create({escapeHtml:s=>String(s),playerResolver:resolver,compactPlayerCardMarkup:compact,formationLayout});
 const lineup=["g1","d1","d2","d3","d4","m1","m2","m3","f1","f2","f3"],bench=["g2","d5","m4","f4"];
 const state={activeSeasonId:"ie1",gachaAcquiredPlayerIds:["f9"],squads:{ie1:{formationId:"4-3-3",lineup,bench,activeRoleVariantByPlayerId:{}}}};
@@ -49,7 +49,10 @@ assert.deepStrictEqual(opened,["d1"]);
 const css=fs.readFileSync("css/road-to-glory.css","utf8");
 assert.match(css,/--rtg-picker-card-size:\s*74px/);
 assert.match(css,/--rtg-picker-card-mobile:\s*64px/);
-const themeCss=fs.readFileSync("css/rtg-theme.css","utf8");
+const themeCss=[
+  fs.readFileSync("css/rtg-theme-core.css","utf8"),
+  fs.readFileSync("css/rtg-theme.css","utf8"),
+].join("\n");
 assert(
   /\.rtg-squad-shell\s+\.squad-bench-list\s*>\s*\.rtg-squad-card-slot\s*\{[^}]*grid-template-rows\s*:\s*minmax\(0,1fr\)\s+32px\s*!important/s.test(themeCss),
   "RTG bench buttons must share one baseline under equal-height card slots"
