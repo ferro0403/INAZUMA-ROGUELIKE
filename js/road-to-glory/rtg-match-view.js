@@ -796,31 +796,83 @@
     function penaltyGoalSvg() {
       return `<svg viewBox="0 0 900 300" preserveAspectRatio="none" aria-hidden="true" focusable="false"
         style="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none">
-        <rect width="900" height="300" fill="#eaf6fb"/>
-        <path d="M0 212H900V300H0Z" fill="#78a15f"/>
-        <path d="M0 230H900V244H0Z" fill="#dce6d8" opacity=".82"/>
-        <path d="M0 246H900V300H0Z" fill="#71995b"/>
+        <defs>
+          <linearGradient id="rtgPenaltySky" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#eef9fd"/>
+            <stop offset=".72" stop-color="#d7edf5"/>
+            <stop offset="1" stop-color="#cfe6ed"/>
+          </linearGradient>
+          <linearGradient id="rtgPenaltyGrass" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="#86ad6d"/>
+            <stop offset="1" stop-color="#678f53"/>
+          </linearGradient>
+        </defs>
 
-        <g opacity=".42" stroke="#a7c8d7" stroke-width="2">
-          <path d="M70 55H830M70 87H830M70 119H830M70 151H830M70 183H830M70 215H830"/>
-          <path d="M124 46V220M202 46V220M280 46V220M358 46V220M436 46V220M514 46V220M592 46V220M670 46V220M748 46V220"/>
+        <rect width="900" height="300" fill="url(#rtgPenaltySky)"/>
+        <path d="M0 201H900V300H0Z" fill="url(#rtgPenaltyGrass)"/>
+        <path d="M0 201H900V214H0Z" fill="#dce8d7" opacity=".9"/>
+        <path d="M0 236H900" stroke="#5d844c" stroke-width="3" opacity=".35"/>
+
+        <!-- soft cast shadow behind the frame -->
+        <path d="M51 224V31H849V224" fill="none" stroke="#111216" stroke-width="19" stroke-linejoin="round" opacity=".13"/>
+
+        <!-- recessed back of the net gives the goal actual depth -->
+        <path d="M111 66H789L770 207H130Z" fill="#ffffff" opacity=".20" stroke="#b7d0d9" stroke-width="2"/>
+
+        <!-- back net: vertical strands converge slightly with perspective -->
+        <g fill="none" stroke="#9ec2d0" stroke-width="2" opacity=".52">
+          <path d="M151 66 164 207"/>
+          <path d="M218 66 228 207"/>
+          <path d="M285 66 292 207"/>
+          <path d="M352 66 356 207"/>
+          <path d="M419 66 420 207"/>
+          <path d="M486 66 484 207"/>
+          <path d="M553 66 548 207"/>
+          <path d="M620 66 612 207"/>
+          <path d="M687 66 676 207"/>
+          <path d="M754 66 740 207"/>
         </g>
 
-        <g opacity=".34" stroke="#fff" stroke-width="3">
-          <path d="M70 215 150 55M190 215 245 55M310 215 340 55M430 215 435 55M550 215 530 55M670 215 625 55M790 215 720 55"/>
+        <!-- back net: horizontal strands get wider toward the front -->
+        <g fill="none" stroke="#a7cad7" stroke-width="2" opacity=".50">
+          <path d="M108 82H792"/>
+          <path d="M106 104H794"/>
+          <path d="M104 128H796"/>
+          <path d="M101 154H799"/>
+          <path d="M98 181H802"/>
+          <path d="M94 207H806"/>
         </g>
 
-        <path d="M58 222V42H842V222" fill="none" stroke="#111216" stroke-width="15" stroke-linejoin="round" opacity=".18"/>
-        <path d="M64 216V36H836V216" fill="none" stroke="#fffdf7" stroke-width="12" stroke-linejoin="round"/>
-        <path d="M70 216V46H830V216" fill="none" stroke="#d5d9d7" stroke-width="3" stroke-linejoin="round"/>
+        <!-- side netting -->
+        <g fill="none" stroke="#a7cad7" stroke-width="2" opacity=".48">
+          <path d="M64 43 111 66M64 78 108 82M64 113 106 104M64 148 103 128M64 181 99 154M64 214 94 207"/>
+          <path d="M836 43 789 66M836 78 792 82M836 113 794 104M836 148 797 128M836 181 801 154M836 214 806 207"/>
+          <path d="M64 43 94 207M836 43 806 207"/>
+        </g>
 
-        <path d="M62 217 18 251M838 217 882 251" stroke="#fffdf7" stroke-width="9" stroke-linecap="round"/>
-        <path d="M18 251H882" stroke="#fffdf7" stroke-width="8" stroke-linecap="round"/>
-        <path d="M450 248V300" stroke="#fff" stroke-width="4" stroke-dasharray="11 10" opacity=".8"/>
-        <ellipse cx="450" cy="274" rx="13" ry="4" fill="#eef3eb" opacity=".75"/>
+        <!-- floor of the net -->
+        <g fill="none" stroke="#c5d8d0" stroke-width="2" opacity=".58">
+          <path d="M94 207 130 224M175 207 196 224M256 207 262 224M337 207 328 224M418 207 394 224M499 207 460 224M580 207 526 224M661 207 592 224M742 207 658 224M806 207 724 224"/>
+          <path d="M130 224H770"/>
+        </g>
 
-        <path d="M65 39H835" stroke="#fff" stroke-width="3" opacity=".7"/>
-        <path d="M70 216H830" stroke="#5e8651" stroke-width="6" opacity=".45"/>
+        <!-- goal frame -->
+        <path d="M64 216V37H836V216" fill="none" stroke="#c9cece" stroke-width="18" stroke-linejoin="round"/>
+        <path d="M64 216V37H836V216" fill="none" stroke="#fffdf7" stroke-width="13" stroke-linejoin="round"/>
+        <path d="M70 211V44H830V211" fill="none" stroke="#f5f6f2" stroke-width="3" stroke-linejoin="round"/>
+
+        <!-- highlights make the white tubing look rounded instead of flat -->
+        <path d="M69 207V47M77 44H824M831 47V207" fill="none" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity=".95"/>
+        <path d="M61 219 91 219M809 219 839 219" stroke="#d9ddd8" stroke-width="5" stroke-linecap="round"/>
+
+        <!-- pitch markings -->
+        <path d="M0 222H900" stroke="#edf3e9" stroke-width="5" opacity=".88"/>
+        <path d="M450 224V300" stroke="#f3f7ef" stroke-width="4" stroke-dasharray="12 11" opacity=".82"/>
+        <ellipse cx="450" cy="272" rx="13" ry="4" fill="#edf3e9" opacity=".82"/>
+
+        <!-- subtle grounding under the posts -->
+        <ellipse cx="67" cy="221" rx="24" ry="5" fill="#405d39" opacity=".18"/>
+        <ellipse cx="833" cy="221" rx="24" ry="5" fill="#405d39" opacity=".18"/>
       </svg>`;
     }
 
