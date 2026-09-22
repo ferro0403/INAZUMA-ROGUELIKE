@@ -1758,6 +1758,30 @@
 }
 .rtg-penalty-goal button:active i{transform:scale(.88)}
 .rtg-penalty-goal button span{font-size:.68rem;text-transform:uppercase}
+
+/* Illustrated penalty goal: neutralize the old CSS target artwork.
+   The ball is now a real sprite, so no legacy circle, yellow fill,
+   shadow, tap-scale or dashed column dividers should sit on top of it. */
+.rtg-penalty-goal--illustrated button{
+  border-right:0!important;
+}
+.rtg-penalty-goal--illustrated button i{
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+}
+.rtg-penalty-goal--illustrated button:active i{
+  transform:none!important;
+}
+.rtg-penalty-goal--illustrated .rtg-penalty-ball-sprite{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  background:transparent;
+  box-shadow:none;
+}
 .rtg-match-shell .rtg-penalty-move{
   border:3px solid #111216!important;
   border-radius:1px!important;
