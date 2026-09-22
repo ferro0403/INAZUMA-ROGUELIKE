@@ -2,7 +2,7 @@
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 let calls=0;
 const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
-vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-view.js","utf8"),c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-view-base.js","utf8"),c);
 const resolver={resolveAtLevel20:(id)=>{calls++;return{playerId:id,name:id,overall:80,level:20,normalizedRole:id.startsWith("g")?"GK":id.startsWith("d")?"DF":id.startsWith("m")?"MF":"FW",category:"Buono",portraitUrl:""};}};
 const view=c.RoadToGlorySquadView.create({escapeHtml:s=>String(s),playerResolver:resolver,teamEmblemMarkup:(_squad,_side,className)=>`<img class="${className}" src="crest.png" alt="" />`});
 const lineup=["g1","d1","d2","d3","d4","m1","m2","m3","f1","f2","f3"],bench=["g2","d5","m4","f4"];
