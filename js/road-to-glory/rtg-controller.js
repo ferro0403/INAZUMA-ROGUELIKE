@@ -78,7 +78,7 @@
       const free=(freeAgentsDb?.players||[]).some(player=>id(player?.playerId||player?.id)===key);
       return free?freeAgentsDb:seasonDb;
     }
-    function openRtgPlayerDetails(playerId,side=""){
+    function openRtgPlayerDetails(playerId,side="",options={}){
       const key=id(playerId);
       let player=null;
       if(side&&campaign?.activeMatch)player=findMatchPlayer(campaign.activeMatch,side,key);
@@ -94,6 +94,7 @@
         equipment:null,
         readOnly:true,
         preserveScroll:true,
+        onClose:typeof options?.onClose==="function"?options.onClose:null,
       });
     }
     function refreshEntitlements(){
@@ -1126,6 +1127,18 @@
         }
       });
     }
+    function showPullResult(result,player){
+      if(!result||!player)return null;
+      deps.openModal?.(runView.pullResultMarkup(result,player),{className:"rtg-modal rtg-pull-modal"});
+      deps.getModalRoot?.()?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",event=>{
+        const playerId=id(event.currentTarget?.dataset?.rtgPullPlayerDetail||result.playerId);
+        if(!playerId)return;
+        openRtgPlayerDetails(playerId,"",{
+          onClose:()=>showPullResult(result,player),
+        });
+      });
+      return result;
+    }
     async function pull(){
       let result=null;
       campaign=await repository.update("rtg-gacha-pull",current=>{
@@ -1134,11 +1147,7 @@
       });
       if(!result)return campaign;
       const player=(seasonDb?.players||[]).find(p=>id(p.playerId)===id(result.playerId))||{playerId:result.playerId,name:result.playerId};
-      deps.openModal?.(runView.pullResultMarkup(result,player),{className:"rtg-modal rtg-pull-modal"});
-      deps.getModalRoot?.()?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",event=>{
-        const playerId=id(event.currentTarget?.dataset?.rtgPullPlayerDetail||result.playerId);
-        if(playerId)openRtgPlayerDetails(playerId);
-      });
+      showPullResult(result,player);
       return result;
     }
     async function open(options={}){

@@ -40,7 +40,8 @@ const controller=c.RoadToGloryController.create({
 
 (async()=>{
   await controller.open();
-  controller.openRtgPlayerDetails("d1");
+  const restoreUnlock=()=>{};
+  controller.openRtgPlayerDetails("d1","",{onClose:restoreUnlock});
   assert.strictEqual(detailCalls.length,1);
   assert.strictEqual(detailCalls[0].player.playerId,"d1");
   assert.strictEqual(detailCalls[0].player.level,20);
@@ -48,5 +49,6 @@ const controller=c.RoadToGloryController.create({
   assert.strictEqual(detailCalls[0].options.readOnly,true);
   assert.strictEqual(detailCalls[0].options.equipment,null);
   assert.strictEqual(detailCalls[0].options.database,freeDb);
+  assert.strictEqual(detailCalls[0].options.onClose,restoreUnlock);
   console.log("rtg-player-detail-wiring-test: PASS");
 })().catch(error=>{console.error(error);process.exitCode=1;});
