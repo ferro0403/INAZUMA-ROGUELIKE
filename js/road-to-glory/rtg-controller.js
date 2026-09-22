@@ -38,6 +38,7 @@
     const DUEL_RESULT_REVEAL_DELAY_MS=1150;
     const schedule=deps.setTimeout||global.setTimeout;
     const cancelSchedule=deps.clearTimeout||global.clearTimeout;
+    const DEV_MODE=deps.devMode===true||(typeof global.URLSearchParams==="function"&&new global.URLSearchParams(global.location?.search||"").get("dev")==="1");
 
     function renderHtml(html){
       lastRenderedHtml=String(html||"");
@@ -99,7 +100,119 @@
       const albumProgress=deps.getAlbumProgress?.();
       const access=entitlements.accessStatus({albumProgress,freeAgentsDb,formations:seasonDb?.formations?.eleven||[]});
       freeAgentIds=entitlements.unlockedFreeAgentIds({albumProgress,freeAgentsDb});
-      return access;
+      if(!DEV_MODE||access.unlocked)return access;
+      freeAgentIds=Array.from(new Set((freeAgentsDb?.players||[]).map(player=>id(player?.playerId||player?.id)).filter(Boolean)));
+      return Object.freeze({
+        unlocked:true,
+        count:freeAgentIds.length,
+        reason:"dev-bypass",
+        formationIds:Object.freeze((seasonDb?.formations?.eleven||[]).map(formation=>id(formation?.id)).filter(Boolean)),
+      });
+    }
+
+    function devRenderCurrentSurface(){
+      if(campaign?.activeMatch)return renderMatch(campaign.activeMatch);
+      if(app?.querySelector?.(".rtg-squad-shell"))return renderSquad();
+      return renderRun();
+    }
+    async function devUpdateCampaign(label,mutator,message){
+      if(!DEV_MODE||!campaign)return campaign;
+      campaign=await repository.update(label,current=>{
+        mutator?.(current);
+        return current;
+      });
+      if(message)deps.toast?.(message);
+      return devRenderCurrentSurface();
+    }
+    async function devJumpMatchBoundary(kind){
+      if(!DEV_MODE||!campaign?.activeMatch)return campaign;
+      campaign=await repository.update(`rtg-dev-${kind}`,current=>{
+        const match=clone(current.activeMatch);
+        if(!match)return current;
+        const tiedScore=Math.max(0,Number(match.score?.user)||0,Number(match.score?.opponent)||0);
+        match.presentation={...(match.presentation||{}),preMatchSeen:true};
+        match.pendingEncounter=null;
+        match.result=null;
+        match.score={user:tiedScore,opponent:tiedScore};
+        if(kind==="halftime"){
+          match.period="halftime";
+          match.status="halftime";
+          match.shootout=null;
+        }else if(kind==="extra"){
+          match.period="extra_first";
+          match.status="active";
+          match.extraActionIndex=0;
+          match.shootout=null;
+          current.activeMatch=matchEngine.prepareNext(match);
+          return current;
+        }else if(kind==="penalties"){
+          match.period="extra_second";
+          match.status="penalties";
+          match.extraActionIndex=6;
+          match.shootout=penaltyRuntime.createShootout(`${match.seed}:shootout:dev`);
+        }
+        current.activeMatch=match;
+        return current;
+      });
+      displayedMinute=kind==="halftime"?45:kind==="penalties"?120:90;
+      deps.toast?.(kind==="halftime"?"Intervallo DEV":kind==="extra"?"Supplementari DEV":"Rigori DEV");
+      return renderMatch(campaign.activeMatch);
+    }
+    async function devForceMatchOutcome(winner){
+      if(!DEV_MODE||!campaign?.activeMatch)return campaign;
+      const side=winner==="opponent"?"opponent":"user";
+      return commitMatchState(`rtg-dev-force-${side}`,match=>{
+        match.presentation={...(match.presentation||{}),preMatchSeen:true};
+        match.pendingEncounter=null;
+        match.status="completed";
+        const user=Math.max(0,Number(match.score?.user)||0);
+        const opponent=Math.max(0,Number(match.score?.opponent)||0);
+        match.score=side==="user"
+          ?{user:Math.max(user,opponent+1),opponent}
+          :{user,opponent:Math.max(opponent,user+1)};
+        match.result={winner:side,score:{...match.score},devForced:true};
+        return match;
+      });
+    }
+    function mountDevQuickTools(){
+      if(!DEV_MODE||!global.document||!campaign)return;
+      const mount=()=>{
+        const doc=global.document;
+        doc.getElementById("run-dev-quick-tools")?.remove();
+        doc.getElementById("rtg-dev-quick-tools")?.remove();
+        const panel=doc.createElement("details");
+        panel.id="rtg-dev-quick-tools";
+        panel.className="run-dev-quick-tools";
+        panel.dataset.rtgDevTools="true";
+        const active=campaign?.activeMatch;
+        const routeButtons=active?"":'<button type="button" data-dev-rtg="next-node">TAPPA SUCCESSIVA</button>';
+        const matchButtons=!active?"":'<button type="button" data-dev-rtg="halftime">VAI ALL\'INTERVALLO</button><button type="button" data-dev-rtg="extra">VAI AI SUPPLEMENTARI</button><button type="button" data-dev-rtg="penalties">VAI AI RIGORI</button><button type="button" data-dev-rtg="moves">RICARICA MOSSE</button><button type="button" data-dev-rtg="win">FORZA VITTORIA</button><button type="button" class="danger" data-dev-rtg="loss">FORZA SCONFITTA</button>';
+        panel.innerHTML=`<summary>DEV RTG</summary><div><p><b>Gettoni: ${Number(campaign.tokens)||0}</b><br>Vite: ${Number(campaign.lives)||0}${active?` · ${active.status} / ${active.period}`:""}</p><button type="button" data-dev-rtg="tokens">999.999 GETTONI</button><button type="button" data-dev-rtg="lives">RIPRISTINA VITE</button><button type="button" data-dev-rtg="pool">SBLOCCA TUTTO IL POOL</button>${routeButtons}${matchButtons}</div>`;
+        doc.body?.appendChild(panel);
+
+        panel.querySelector('[data-dev-rtg="tokens"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-tokens",state=>{state.tokens=999999;},"Gettoni RTG portati a 999.999"));
+        panel.querySelector('[data-dev-rtg="lives"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-lives",state=>{state.lives=Number(config.SEASON1?.livesPerCheckpoint)||2;},"Vite RTG ripristinate"));
+        panel.querySelector('[data-dev-rtg="pool"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-pool",state=>{state.defeatedTeamIds=Array.from(new Set(config.SEASON1?.mainTeams||[]));},"Pool distributore RTG sbloccato"));
+        panel.querySelector('[data-dev-rtg="next-node"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-next-node",state=>{
+          const nodes=Array.from(config.buildSeasonNodes?.("ie1")||[]);
+          const currentIndex=nodes.findIndex(node=>id(node.id)===id(state.currentNodeId));
+          const next=nodes[Math.min(nodes.length-1,Math.max(0,currentIndex+1))];
+          if(next){
+            state.currentNodeId=next.id;
+            state.furthestNodeIndex=Math.max(Number(state.furthestNodeIndex)||0,Math.max(0,currentIndex+1));
+          }
+        },"Avanzamento RTG spostato alla tappa successiva"));
+        panel.querySelector('[data-dev-rtg="halftime"]')?.addEventListener("click",()=>devJumpMatchBoundary("halftime"));
+        panel.querySelector('[data-dev-rtg="extra"]')?.addEventListener("click",()=>devJumpMatchBoundary("extra"));
+        panel.querySelector('[data-dev-rtg="penalties"]')?.addEventListener("click",()=>devJumpMatchBoundary("penalties"));
+        panel.querySelector('[data-dev-rtg="moves"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-moves",state=>{
+          const uses=state.activeMatch?.moveUsesByPlayerId||{};
+          Object.keys(uses).forEach(key=>{uses[key]=2;});
+        },"Mosse RTG ricaricate"));
+        panel.querySelector('[data-dev-rtg="win"]')?.addEventListener("click",()=>devForceMatchOutcome("user"));
+        panel.querySelector('[data-dev-rtg="loss"]')?.addEventListener("click",()=>devForceMatchOutcome("opponent"));
+      };
+      if(typeof schedule==="function")schedule(mount,0);else mount();
     }
     function resolved(playerId,roleVariantId=null){
       const player=playerResolver.resolveAtLevel20(playerId,"ie1",roleVariantId,freeAgentsDb);
@@ -169,6 +282,7 @@
       const nodes=config.buildSeasonNodes("ie1");
       renderHtml(runView.runMarkup({state:campaign,nodes,seasonDb}));
       bindRun();
+      mountDevQuickTools();
       return campaign;
     }
     function draftState(){
@@ -587,6 +701,7 @@
         onAdaptRequirements:()=>adaptSquadToCurrentRequirements(),
         onSave:()=>saveSquad(squadDraft),
       });
+      mountDevQuickTools();
       return model;
     }
     function locationInDraft(playerId){
@@ -750,6 +865,7 @@
         displayedMinute=0;
         renderHtml(matchView.preMatchMarkup(match));
         bindMatchViewActions();
+        mountDevQuickTools();
         return match;
       }
       renderHtml(matchView.matchMarkup(match));
@@ -775,6 +891,7 @@
         }else showEncounterOverlay(match);
       }
       bindMatchViewActions();
+      mountDevQuickTools();
       return match;
     }
     async function confirmPreMatch(){
