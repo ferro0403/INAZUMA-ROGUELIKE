@@ -6,16 +6,17 @@ const assert = require("assert");
 
 const root = path.resolve(__dirname, "..");
 const css = fs.readFileSync(path.join(root, "css", "rtg-theme.css"), "utf8");
+const baseCss = fs.readFileSync(path.join(root, "css", "road-to-glory.css"), "utf8");
 const squadView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-squad-view.js"), "utf8");
 const runView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-run-view.js"), "utf8");
 const matchView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-match-view.js"), "utf8");
 
 assert(
-  css.includes('url("../assets/home/inazuma-stadium-mobile-light.jpeg")'),
+  baseCss.includes('url("../assets/home/inazuma-stadium-mobile-light.jpeg")'),
   "RTG run/squad/prematch should reuse the real mobile stadium background from the game assets"
 );
 assert(
-  css.includes('url("../assets/home/inazuma-stadium-desktop-light.jpeg")'),
+  baseCss.includes('url("../assets/home/inazuma-stadium-desktop-light.jpeg")'),
   "RTG should switch to the real desktop stadium background on wider screens"
 );
 assert(
