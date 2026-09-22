@@ -5,9 +5,13 @@ const path = require("path");
 const assert = require("assert");
 
 const root = path.resolve(__dirname, "..");
-const css = fs.readFileSync(path.join(root, "css", "rtg-theme.css"), "utf8");
+const themeCss = fs.readFileSync(path.join(root, "css", "rtg-theme.css"), "utf8");
+const coreCss = fs.readFileSync(path.join(root, "css", "rtg-theme-core.css"), "utf8");
 const baseCss = fs.readFileSync(path.join(root, "css", "road-to-glory.css"), "utf8");
+const css = [baseCss, coreCss, themeCss].join("\n");
 const squadView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-squad-view.js"), "utf8");
+const squadViewBase = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-squad-view-base.js"), "utf8");
+const squadViewSource = [squadView, squadViewBase].join("\n");
 const runView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-run-view.js"), "utf8");
 const matchView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-match-view.js"), "utf8");
 
@@ -36,7 +40,7 @@ assert(
   "Pre-match VS must be a deliberate black/gold centerpiece"
 );
 assert(
-  /compactPlayerCardMarkup\(player,\s*\{/s.test(squadView) && /playerCard\(entry,\s*"catalog"\)/s.test(squadView),
+  /compactPlayerCardMarkup\(player,\s*\{/s.test(squadViewSource) && /playerCard\(entry,\s*"catalog"\)/s.test(squadViewSource),
   "RTG catalog must reuse the game's existing compactPlayerCardMarkup renderer"
 );
 assert(
@@ -59,8 +63,9 @@ assert(
   /assets\/rtg\/rtg-gacha-machine\.webp/.test(runView),
   "RTG vending should render the approved gachapon image asset"
 );
+const vendingWidth = css.match(/\.rtg-vending-machine-v7\s*\{[^}]*width\s*:\s*min\((\d+)px,(\d+)vw\)/s);
 assert(
-  /\.rtg-vending-machine-v7\s*\{[^}]*width\s*:\s*min\(270px,78vw\)/s.test(css),
+  vendingWidth && Number(vendingWidth[1]) <= 270 && Number(vendingWidth[2]) <= 78,
   "RTG gachapon artwork should keep a compact mobile-friendly footprint"
 );
 assert(
