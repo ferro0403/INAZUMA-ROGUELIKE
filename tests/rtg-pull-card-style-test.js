@@ -19,6 +19,8 @@ assert.match(opts.extraClass,/rtg-pull-player-card/);
 assert.doesNotMatch(opts.extraClass,/rtg-penalty-player-card/);
 assert.strictEqual(opts.detailLayout,undefined);
 assert.strictEqual(opts.trailingMarkup,"");
+assert.match(opts.dataAttr,/data-rtg-pull-player-detail="p1"/);
+assert.match(opts.dataAttr,/aria-label="Apri scheda di Johan"/);
 assert.strictEqual(opts.overall,81);
 assert.strictEqual(emblemTeam,"brainwashing");
 assert.match(html,/development-squad-card-scope/);

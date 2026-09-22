@@ -60,6 +60,7 @@
         ? compactPlayerCardMarkup(player,{
             level:20,
             overall:player?.overall??player?.finalOverall,
+            dataAttr:`data-rtg-pull-player-detail="${escape(player?.playerId||player?.id||result.playerId||"")}" aria-label="Apri scheda di ${escape(playerName)}"`,
             extraClass:"squad-player-card rtg-picker-squad-card rtg-pull-player-card",
             trailingMarkup:"",
           })

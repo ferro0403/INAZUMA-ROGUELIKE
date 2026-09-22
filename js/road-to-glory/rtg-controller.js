@@ -1135,6 +1135,10 @@
       if(!result)return campaign;
       const player=(seasonDb?.players||[]).find(p=>id(p.playerId)===id(result.playerId))||{playerId:result.playerId,name:result.playerId};
       deps.openModal?.(runView.pullResultMarkup(result,player),{className:"rtg-modal rtg-pull-modal"});
+      deps.getModalRoot?.()?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",event=>{
+        const playerId=id(event.currentTarget?.dataset?.rtgPullPlayerDetail||result.playerId);
+        if(playerId)openRtgPlayerDetails(playerId);
+      });
       return result;
     }
     async function open(options={}){
