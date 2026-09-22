@@ -917,16 +917,16 @@
           <div class="rtg-penalty-goal rtg-penalty-goal--illustrated" aria-label="Scegli direzione" style="position:relative;min-height:158px;overflow:hidden;background:#eaf6fb;padding:0 8px;border-bottom-width:8px">
             ${penaltyGoalSvg()}
             <button type="button" aria-label="Tira a sinistra" data-rtg-penalty-direction="left" style="z-index:2;min-height:150px">
-              <i style="top:27px;width:46px;height:46px;border:0;background:transparent;box-shadow:none;transform:none">${penaltyBallSvg()}</i>
-              <span>Sinistra</span>
+              <span class="rtg-penalty-ball-wrap">${penaltyBallSvg()}</span>
+              <span class="rtg-penalty-direction-label">Sinistra</span>
             </button>
             <button type="button" aria-label="Tira al centro" data-rtg-penalty-direction="center" style="z-index:2;min-height:150px">
-              <i style="top:27px;width:46px;height:46px;border:0;background:transparent;box-shadow:none;transform:none">${penaltyBallSvg()}</i>
-              <span>Centro</span>
+              <span class="rtg-penalty-ball-wrap">${penaltyBallSvg()}</span>
+              <span class="rtg-penalty-direction-label">Centro</span>
             </button>
             <button type="button" aria-label="Tira a destra" data-rtg-penalty-direction="right" style="z-index:2;min-height:150px">
-              <i style="top:27px;width:46px;height:46px;border:0;background:transparent;box-shadow:none;transform:none">${penaltyBallSvg()}</i>
-              <span>Destra</span>
+              <span class="rtg-penalty-ball-wrap">${penaltyBallSvg()}</span>
+              <span class="rtg-penalty-direction-label">Destra</span>
             </button>
           </div>
         </div>

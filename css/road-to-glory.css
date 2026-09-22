@@ -1759,28 +1759,74 @@
 .rtg-penalty-goal button:active i{transform:scale(.88)}
 .rtg-penalty-goal button span{font-size:.68rem;text-transform:uppercase}
 
-/* Illustrated penalty goal: neutralize the old CSS target artwork.
-   The ball is now a real sprite, so no legacy circle, yellow fill,
-   shadow, tap-scale or dashed column dividers should sit on top of it. */
+/* Illustrated penalty goal: the new sprite is completely isolated from the
+   legacy <i> target artwork. Do not reuse the old CSS-drawn circle here. */
 .rtg-penalty-goal--illustrated button{
   border-right:0!important;
 }
-.rtg-penalty-goal--illustrated button i{
+.rtg-penalty-goal--illustrated button::before,
+.rtg-penalty-goal--illustrated button::after{
+  content:none!important;
+  display:none!important;
+}
+.rtg-penalty-goal--illustrated button>i{
+  display:none!important;
+}
+.rtg-penalty-goal--illustrated .rtg-penalty-ball-wrap{
+  position:absolute!important;
+  top:27px!important;
+  left:50%!important;
+  width:46px!important;
+  height:46px!important;
+  display:block!important;
+  padding:0!important;
+  margin:0!important;
   border:0!important;
   border-radius:0!important;
   background:transparent!important;
   box-shadow:none!important;
+  outline:0!important;
+  transform:translateX(-50%)!important;
+  filter:none!important;
+  font-size:0!important;
+  line-height:0!important;
+  text-transform:none!important;
+  pointer-events:none!important;
 }
-.rtg-penalty-goal--illustrated button:active i{
-  transform:none!important;
+.rtg-penalty-goal--illustrated .rtg-penalty-ball-wrap::before,
+.rtg-penalty-goal--illustrated .rtg-penalty-ball-wrap::after{
+  content:none!important;
+  display:none!important;
 }
 .rtg-penalty-goal--illustrated .rtg-penalty-ball-sprite{
-  display:block;
-  width:100%;
-  height:100%;
-  object-fit:contain;
-  background:transparent;
-  box-shadow:none;
+  position:static!important;
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  outline:0!important;
+  transform:none!important;
+  filter:none!important;
+  opacity:1!important;
+}
+.rtg-penalty-goal--illustrated button:active .rtg-penalty-ball-wrap,
+.rtg-penalty-goal--illustrated button:active .rtg-penalty-ball-sprite{
+  transform:translateX(-50%)!important;
+}
+.rtg-penalty-goal--illustrated button:active .rtg-penalty-ball-sprite{
+  transform:none!important;
+}
+.rtg-penalty-goal--illustrated .rtg-penalty-direction-label{
+  font-size:.68rem!important;
+  text-transform:uppercase!important;
 }
 .rtg-match-shell .rtg-penalty-move{
   border:3px solid #111216!important;
