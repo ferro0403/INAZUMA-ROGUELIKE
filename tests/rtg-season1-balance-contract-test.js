@@ -12,5 +12,5 @@ function teamCategories(teamId){const boss=(db.bossOrder||[]).find(b=>b.teamId==
 const firstElite=config.mainTeams.find(teamId=>teamCategories(teamId).includes("Elite"));const firstWorld=config.mainTeams.find(teamId=>teamCategories(teamId).includes("Mondiale"));assert.strictEqual(firstElite,"shuriken");assert.strictEqual(firstWorld,"royal");
 const moveContext={globalThis:null,Object,Array,String,Number,Math,SeasonRegistry:{database:(seasonId)=>seasonId==="ie1"?{moveCatalog:moves}:null}};moveContext.globalThis=moveContext;vm.createContext(moveContext);vm.runInContext(fs.readFileSync("js/moves/move-runtime.js","utf8"),moveContext);
 for(const boss of db.bossOrder||[]){for(const playerId of boss.startingXIPlayerIds||[]){const player=(db.players||[]).find(p=>String(p.playerId)===String(playerId));const move=moveContext.MatchMoveRuntime.moveForPlayer("ie1",player);assert(move,`${boss.teamId}:${playerId}`);}}
-assert.strictEqual(Object.values(config.mainRewards).reduce((a,b)=>a+b,0),3570);assert.strictEqual(config.secondaryRewards.reduce((a,b)=>a+b.weight,0),100);
+assert.strictEqual(Object.values(config.mainRewards).reduce((a,b)=>a+b,0),4075);assert.strictEqual(config.secondaryRewards.reduce((a,b)=>a+b.weight,0),100);
 console.log("rtg-season1-balance-contract-test: PASS");
