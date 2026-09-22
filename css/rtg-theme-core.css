@@ -3012,7 +3012,7 @@
   backface-visibility:hidden;
 }
 .rtg-vending-machine-v7.is-turning{
-  animation:rtg-vending-cabinet-pull .52s cubic-bezier(.2,.82,.28,1) both;
+  animation:rtg-vending-image-pull .52s cubic-bezier(.2,.82,.28,1) both;
 }
 .rtg-vending-machine-v7.is-turning::before{
   border-color:#ffd21f rgba(17,18,22,.56) #ffd21f rgba(17,18,22,.24);
@@ -3025,7 +3025,7 @@
 .rtg-vending:has(.rtg-vending-machine-v7.is-turning) .rtg-vending-pull{
   animation:rtg-vending-button-pulse .52s ease-in-out both;
 }
-@keyframes rtg-vending-cabinet-pull{
+@keyframes rtg-vending-image-pull{
   0%,100%{transform:translate3d(0,0,0) rotate(0deg)}
   13%{transform:translate3d(-5px,-3px,0) rotate(-1.7deg)}
   28%{transform:translate3d(5px,1px,0) rotate(1.6deg)}
