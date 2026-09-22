@@ -59,9 +59,9 @@
       const card=compactPlayerCardMarkup
         ? compactPlayerCardMarkup(player,{
             level:20,
-            overall:player?.overall??player?.finalOverall??"—",
-            extraClass:"squad-player-card rtg-penalty-player-card rtg-pull-player-card",
-            detailLayout:"stacked",
+            overall:player?.overall??player?.finalOverall,
+            extraClass:"squad-player-card rtg-picker-squad-card rtg-pull-player-card",
+            trailingMarkup:"",
           })
         : `<div class="rtg-pull-player-fallback"><strong>${escape(playerName)}</strong><span>Lv 20</span></div>`;
       const revealLabel=duplicate?"DUPLICATO":"NUOVO GIOCATORE";
@@ -72,7 +72,7 @@
         </div>
         <div class="rtg-pull-reveal-label"><span>${escape(revealLabel)}</span></div>
         <div class="rtg-pull-result-body">
-          <div class="rtg-pull-card-stage" aria-label="Carta giocatore sbloccata">
+          <div class="rtg-pull-card-stage rtg-picker-grid" aria-label="Carta giocatore sbloccata">
             ${card}
           </div>
           <div class="rtg-pull-result-copy">

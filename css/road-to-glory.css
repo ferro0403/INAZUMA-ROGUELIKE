@@ -3116,15 +3116,42 @@
   place-items:center;
   min-height:152px;
 }
-/* Same canonical compact card used by the penalty shooter/keeper.
-   No pull-only scale, rotation, glow or anatomy overrides. */
-.rtg-pull-result.development-squad-card-scope .rtg-pull-player-card.rtg-penalty-player-card{
-  width:96px!important;
-  max-width:96px!important;
-  min-width:96px!important;
+/* Exact clone of the cards in Cambio giocatore.
+   Same renderer options, same 86/82px footprint and same inner anatomy. */
+.rtg-pull-card-stage.rtg-picker-grid{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  justify-items:center!important;
+  gap:0!important;
+}
+.rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card{
+  width:86px!important;
+  max-width:86px!important;
+  min-width:86px!important;
+  min-height:118px!important;
   margin:0 auto!important;
   transform:none!important;
   animation:none!important;
+}
+.rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card .player-portrait-wrap{
+  height:76px!important;
+  padding:5px 4px 0!important;
+  overflow:visible!important;
+}
+.rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card img.player-portrait{
+  width:100%!important;
+  height:100%!important;
+  object-fit:contain!important;
+  object-position:center bottom!important;
+  transform:none!important;
+}
+.rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card .player-info{
+  min-height:30px!important;
+  padding:4px 3px 6px!important;
+}
+.rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card .player-title strong{
+  font-size:.58rem!important;
+  line-height:1.05!important;
 }
 .rtg-pull-result-copy{
   min-width:0;
@@ -3293,10 +3320,13 @@
     padding:14px 13px 16px!important;
   }
   .rtg-pull-card-stage{min-height:140px}
-  .rtg-pull-result.development-squad-card-scope .rtg-pull-player-card.rtg-penalty-player-card{
+  .rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card{
     width:82px!important;
     max-width:82px!important;
     min-width:82px!important;
+  }
+  .rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card .player-portrait-wrap{
+    height:72px!important;
   }
   .rtg-pull-result-copy h2{font-size:1.55rem!important}
   .rtg-pull-team{min-height:34px;padding:3px 7px 3px 4px}
