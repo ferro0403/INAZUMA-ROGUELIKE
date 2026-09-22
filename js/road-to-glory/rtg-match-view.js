@@ -783,14 +783,18 @@
     }
 
     function penaltyBallSvg() {
-      return `<svg viewBox="0 0 100 100" class="rtg-penalty-ball-svg" aria-hidden="true" focusable="false">
-        <circle cx="50" cy="50" r="43" fill="#fffdf7" stroke="#111216" stroke-width="5"/>
-        <polygon points="50,25 62,34 57,49 43,49 38,34" fill="#111216"/>
-        <path d="M38 34 24 31 14 43 20 58 36 60 43 49M62 34 76 31 86 43 80 58 64 60 57 49M36 60 31 75 42 88 58 88 69 75 64 60M24 31 29 17 46 8M76 31 71 17 54 8M20 58 12 70 22 85M80 58 88 70 78 85M42 88 50 94 58 88"
-          fill="none" stroke="#111216" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M31 75 20 58M69 75 80 58" stroke="#111216" stroke-width="4" stroke-linecap="round"/>
-        <path d="M18 35c10-17 27-27 46-25" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".75"/>
-      </svg>`;
+      // CC0 sprite by gothicfan95 / OpenGameArt. Kept as a real raster sprite
+      // instead of drawing another synthetic ball in CSS/SVG.
+      return `<img
+        src="https://opengameart.org/sites/default/files/SoccerBall.png"
+        alt=""
+        aria-hidden="true"
+        draggable="false"
+        decoding="async"
+        referrerpolicy="no-referrer"
+        class="rtg-penalty-ball-sprite"
+        style="display:block;width:100%;height:100%;object-fit:contain;image-rendering:auto"
+      >`;
     }
 
     function penaltyGoalSvg() {
