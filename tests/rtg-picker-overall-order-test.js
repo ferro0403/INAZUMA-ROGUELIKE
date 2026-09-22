@@ -7,8 +7,9 @@ const compact=(player,opts={})=>`<button class="player-card ${opts.extraClass||"
 const view=c.RoadToGlorySquadView.create({escapeHtml:s=>String(s),compactPlayerCardMarkup:compact});
 const entries=[80,73,74].map((overall,i)=>({playerId:`p${i}`,source:i?"Svincolato":"RTG",player:{playerId:`p${i}`,name:`P${i}`,overall,normalizedRole:"DF"}}));
 const html=view.replacementPickerMarkup({target:{playerId:"x",player:{name:"X"}},role:"",allowAnyRole:true,entries,total:3,sourceFilter:"all",rarityFilter:"all",rarityOptions:[]});
-assert(html.indexOf(">73<")<html.indexOf(">74<"));
-assert(html.indexOf(">74<")<html.indexOf(">80<"));
+assert(html.indexOf(">80<")<html.indexOf(">74<"));
+assert(html.indexOf(">74<")<html.indexOf(">73<"));
 assert.match(html,/data-rtg-picker-overall="73"/);
 assert.match(html,/data-rtg-picker-overall-order/);
+assert.match(html,/OVR ↓/);
 console.log("rtg-picker-overall-order-test: PASS");
