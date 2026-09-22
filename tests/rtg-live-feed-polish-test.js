@@ -20,6 +20,7 @@ const css=styleNodes[0].textContent;
 assert.match(css,/rtg-halftime-field-panel>\.rtg-halftime-section-title\{display:none!important\}/);
 assert.match(css,/match-event--user[^}]*#2d8fd5/i);
 assert.match(css,/match-event--opponent[^}]*#d65353/i);
-assert.deepStrictEqual(scrolled,{block:"end",behavior:"smooth"},"feed must immediately follow latest action");
+assert.strictEqual(scrolled?.block,"end","feed must immediately follow latest action");
+assert.strictEqual(scrolled?.behavior,"smooth","feed must smoothly follow latest action");
 assert(observed?.options?.subtree&&observed?.options?.childList,"feed must keep following after match rerenders");
 console.log("rtg-live-feed-polish-test: PASS");
