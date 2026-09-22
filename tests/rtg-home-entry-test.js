@@ -6,7 +6,7 @@ assert.match(view,/home-swipe-page--main/);
 assert.match(view,/home-swipe-page--rtg/);
 assert.match(view,/data-rtg-home-open="run"/);
 assert.match(view,/data-rtg-home-open="squad"/);
-assert.match(view,/data-rtg-home-open="catalog"/);
+assert.doesNotMatch(view,/data-rtg-home-open="catalog"/);
 assert.match(view,/data-rtg-home-open="vending"/);
 assert.match(controller,/bindHomePager/);
 assert.match(controller,/deps\.renderRoadToGlory\(\{ destination:/);
