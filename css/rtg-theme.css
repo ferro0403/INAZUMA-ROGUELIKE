@@ -64,12 +64,13 @@
   .rtg-duel-card--clean .rtg-choice-delta{padding:3px 5px!important;font-size:7px!important;}
 }
 
-/* RTG route artwork — same illustrated map across the whole Season 1 route. */
+/* RTG route artwork — verified JPEG across the whole Season 1 route. */
 .rtg-map .rtg-map-block .route-map.rtg-route-stage {
   background-color:#082c52!important;
-  background-image:url("../assets/rtg/rtg-season1-route-map-v3.jpg?v=3")!important;
-  background-position:center center!important;
-  background-size:112% auto!important;
+  background-image:url("../assets/rtg/rtg-season1-route-map.jpg?v=4")!important;
+  background-position:50% 48%!important;
+  background-size:cover!important;
   background-repeat:no-repeat!important;
+  background-blend-mode:normal!important;
   filter:none!important;
 }
