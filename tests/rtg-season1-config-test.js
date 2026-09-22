@@ -11,9 +11,9 @@ assert.deepStrictEqual(Array.from(SEASON1.mainTeams), ["occult","wild","brainwas
 assert.strictEqual(SEASON1.pullCost, 300);
 assert.deepStrictEqual(JSON.parse(JSON.stringify(SEASON1.rarityWeights)), {Normale:40,Buono:27,Forte:18,Elite:10,Mondiale:5,Leggenda:0});
 assert.deepStrictEqual(JSON.parse(JSON.stringify(SEASON1.duplicateRefunds)), {Normale:40,Buono:60,Forte:85,Elite:120,Mondiale:160,Leggenda:300});
-assert.strictEqual(SEASON1.mainRewards.occult, 210);
-assert.strictEqual(SEASON1.mainRewards.raimon, 630);
-assert.deepStrictEqual(JSON.parse(JSON.stringify(SEASON1.secondaryRewards)), [{amount:100,weight:70},{amount:110,weight:20},{amount:125,weight:8},{amount:150,weight:2}]);
+assert.strictEqual(SEASON1.mainRewards.occult, 250);
+assert.strictEqual(SEASON1.mainRewards.raimon, 650);
+assert.deepStrictEqual(JSON.parse(JSON.stringify(SEASON1.secondaryRewards)), [{amount:150,weight:55},{amount:165,weight:25},{amount:180,weight:15},{amount:200,weight:5}]);
 const nodes = Array.from(buildSeasonNodes("ie1"));
 assert.strictEqual(nodes.length, 28);
 assert.strictEqual(nodes[0].id, "main:occult");
