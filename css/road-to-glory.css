@@ -3104,7 +3104,7 @@
   position:relative;
   z-index:2;
   display:grid!important;
-  grid-template-columns:132px minmax(0,1fr)!important;
+  grid-template-columns:118px minmax(0,1fr)!important;
   gap:17px!important;
   align-items:center!important;
   margin:0!important;
@@ -3114,68 +3114,95 @@
   position:relative;
   display:grid;
   place-items:center;
-  min-height:174px;
+  min-height:152px;
 }
-.rtg-pull-card-halo{
-  position:absolute;
-  width:128px;
-  height:128px;
-  border-radius:50%;
-  background:radial-gradient(circle,var(--unlock-soft) 0 34%,var(--unlock-glow) 55%,transparent 72%);
-  box-shadow:0 0 34px var(--unlock-glow);
-  filter:saturate(1.08);
-}
-.rtg-pull-result.development-squad-card-scope .rtg-pull-player-card{
-  position:relative;
-  z-index:2;
-  width:108px!important;
-  max-width:108px!important;
-  min-width:108px!important;
-  min-height:0!important;
+/* Same canonical compact card used by the penalty shooter/keeper.
+   No pull-only scale, rotation, glow or anatomy overrides. */
+.rtg-pull-result.development-squad-card-scope .rtg-pull-player-card.rtg-penalty-player-card{
+  width:96px!important;
+  max-width:96px!important;
+  min-width:96px!important;
   margin:0 auto!important;
-  transform:rotate(-1.5deg);
-  box-shadow:
-    5px 7px 0 rgba(17,18,22,.28),
-    0 0 0 3px rgba(255,255,255,.56),
-    0 0 25px var(--unlock-glow)!important;
-  animation:rtg-pull-card-pop .46s .08s cubic-bezier(.18,.9,.2,1.14) both;
-}
-.rtg-pull-result.development-squad-card-scope .rtg-pull-player-card .player-portrait-wrap{
-  overflow:hidden!important;
-}
-.rtg-pull-result.development-squad-card-scope .rtg-pull-player-card img.player-portrait{
-  width:100%!important;
-  height:100%!important;
-  object-fit:contain!important;
-  object-position:center bottom!important;
   transform:none!important;
+  animation:none!important;
 }
-
 .rtg-pull-result-copy{
   min-width:0;
 }
-.rtg-pull-kicker{
-  margin:0 0 4px!important;
-  color:var(--unlock-deep)!important;
-  font-size:.62rem!important;
-  font-weight:1000!important;
-  letter-spacing:.12em!important;
-  text-transform:uppercase;
-}
 .rtg-pull-result-copy h2{
-  margin:0 0 8px!important;
+  margin:0 0 10px!important;
   color:#111216!important;
   font-size:clamp(1.65rem,7vw,2.2rem)!important;
   line-height:.94!important;
   letter-spacing:-.035em;
   overflow-wrap:anywhere;
 }
-.rtg-pull-result-copy>p:not(.rtg-pull-kicker){
-  margin:0!important;
-  color:#4f4a43!important;
-  font-size:.82rem!important;
-  font-weight:720;
-  line-height:1.32!important;
+.rtg-pull-player-identity{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+}
+.rtg-pull-team{
+  min-width:0;
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  min-height:38px;
+  padding:4px 9px 4px 5px;
+  border:2px solid #111216;
+  border-radius:9px;
+  background:rgba(255,253,247,.94);
+  box-shadow:2px 3px 0 rgba(17,18,22,.18);
+}
+.rtg-pull-team-logo{
+  width:28px;
+  height:28px;
+  flex:0 0 28px;
+  display:grid;
+  place-items:center;
+}
+.rtg-pull-team-logo img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.rtg-pull-team-logo .rtg-team-fallback{
+  width:26px;
+  height:26px;
+  display:grid;
+  place-items:center;
+  border:2px solid #111216;
+  border-radius:50%;
+  background:#fff;
+  font-size:.6rem;
+  font-weight:1000;
+}
+.rtg-pull-team strong{
+  min-width:0;
+  max-width:118px;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  color:#111216;
+  font-size:.66rem;
+  font-weight:1000;
+}
+.rtg-pull-role{
+  display:inline-grid;
+  place-items:center;
+  min-width:38px;
+  min-height:38px;
+  padding:5px 8px;
+  border:2px solid #111216;
+  border-radius:9px;
+  background:var(--unlock-accent);
+  color:var(--unlock-on-accent);
+  box-shadow:2px 3px 0 rgba(17,18,22,.18);
+  font-size:.7rem;
+  font-weight:1000;
+  letter-spacing:.06em;
 }
 .rtg-pull-meta{
   display:flex;
@@ -3251,11 +3278,6 @@
   from{opacity:0;transform:translateY(14px) scale(.975)}
   to{opacity:1;transform:translateY(0) scale(1)}
 }
-@keyframes rtg-pull-card-pop{
-  from{opacity:0;transform:translateY(12px) scale(.82) rotate(-4deg)}
-  to{opacity:1;transform:translateY(0) scale(1) rotate(-1.5deg)}
-}
-
 @media (max-width:430px){
   .modal.rtg-pull-modal{
     width:calc(100vw - 24px)!important;
@@ -3266,26 +3288,27 @@
   }
   .rtg-pull-series{font-size:.5rem;letter-spacing:.07em}
   .rtg-pull-result-body{
-    grid-template-columns:108px minmax(0,1fr)!important;
+    grid-template-columns:96px minmax(0,1fr)!important;
     gap:12px!important;
     padding:14px 13px 16px!important;
   }
-  .rtg-pull-card-stage{min-height:154px}
-  .rtg-pull-card-halo{width:112px;height:112px}
-  .rtg-pull-result.development-squad-card-scope .rtg-pull-player-card{
-    width:92px!important;
-    max-width:92px!important;
-    min-width:92px!important;
+  .rtg-pull-card-stage{min-height:140px}
+  .rtg-pull-result.development-squad-card-scope .rtg-pull-player-card.rtg-penalty-player-card{
+    width:82px!important;
+    max-width:82px!important;
+    min-width:82px!important;
   }
   .rtg-pull-result-copy h2{font-size:1.55rem!important}
-  .rtg-pull-result-copy>p:not(.rtg-pull-kicker){font-size:.76rem!important}
+  .rtg-pull-team{min-height:34px;padding:3px 7px 3px 4px}
+  .rtg-pull-team-logo{width:25px;height:25px;flex-basis:25px}
+  .rtg-pull-team strong{max-width:92px;font-size:.59rem}
+  .rtg-pull-role{min-width:34px;min-height:34px;padding:4px 7px;font-size:.64rem}
   .rtg-pull-meta{gap:5px;margin-top:9px}
   .rtg-pull-meta span{padding:4px 6px;font-size:.55rem}
   .rtg-pull-balance{margin:0 13px 14px!important}
 }
 @media (prefers-reduced-motion:reduce){
-  .rtg-pull-result,
-  .rtg-pull-result.development-squad-card-scope .rtg-pull-player-card{
+  .rtg-pull-result{
     animation:none!important;
   }
 }

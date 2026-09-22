@@ -53,18 +53,18 @@
       const rarityKey=pullRaritySlug(rarity);
       const duplicate=!!result.duplicate;
       const playerName=player.name||result.playerId||"Giocatore";
+      const playerRole=String(player.normalizedRole||player.position||player.role||"—").toUpperCase();
+      const teamId=String(player.teamId||player.teamIds?.[0]||"");
+      const teamLabel=String(player.teamName||player.teams?.[0]||"Squadra");
       const card=compactPlayerCardMarkup
         ? compactPlayerCardMarkup(player,{
             level:20,
-            overall:player?.finalOverall??player?.overall,
-            extraClass:"squad-player-card rtg-squad-player-card rtg-pull-player-card",
+            overall:player?.overall??player?.finalOverall??"—",
+            extraClass:"squad-player-card rtg-penalty-player-card rtg-pull-player-card",
             detailLayout:"stacked",
           })
         : `<div class="rtg-pull-player-fallback"><strong>${escape(playerName)}</strong><span>Lv 20</span></div>`;
       const revealLabel=duplicate?"DUPLICATO":"NUOVO GIOCATORE";
-      const description=duplicate
-        ? `Rimborso duplicato: <strong>${escape(result.refund)} ◈</strong>`
-        : "Sbloccato e aggiunto alla collezione Road to Glory.";
       return `<div class="rtg-pull-result rtg-paper-modal development-squad-card-scope rtg-pull-result--${rarityKey} ${duplicate?"is-duplicate":"is-new"}" data-rtg-pull-rarity="${escape(rarityKey)}">
         <div class="rtg-pull-result-head">
           <span class="rtg-pull-rarity"><i aria-hidden="true"></i>${escape(rarity)}</span>
@@ -73,13 +73,17 @@
         <div class="rtg-pull-reveal-label"><span>${escape(revealLabel)}</span></div>
         <div class="rtg-pull-result-body">
           <div class="rtg-pull-card-stage" aria-label="Carta giocatore sbloccata">
-            <span class="rtg-pull-card-halo" aria-hidden="true"></span>
             ${card}
           </div>
           <div class="rtg-pull-result-copy">
-            <p class="rtg-pull-kicker">${duplicate?"RICOMPENSA":"SBLOCCATO"}</p>
             <h2>${escape(playerName)}</h2>
-            <p>${description}</p>
+            <div class="rtg-pull-player-identity">
+              <span class="rtg-pull-team">
+                <span class="rtg-pull-team-logo" aria-hidden="true">${teamId?emblem(teamId):""}</span>
+                <strong>${escape(teamLabel)}</strong>
+              </span>
+              <span class="rtg-pull-role">${escape(playerRole)}</span>
+            </div>
             <div class="rtg-pull-meta">
               <span>LV 20</span>
               <span>${escape(rarity)}</span>

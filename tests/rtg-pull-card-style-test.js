@@ -1,17 +1,32 @@
 "use strict";
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
-let opts=null;
+let opts=null,emblemTeam=null;
 const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),c);
-const view=c.RoadToGloryRunView.create({escapeHtml:s=>String(s),compactPlayerCardMarkup:(player,o)=>{opts=o;return `<button class="${o.extraClass||""}">${player.name}</button>`;}});
-const html=view.pullResultMarkup({rarity:"Forte",duplicate:false,balanceAfter:70},{playerId:"p1",name:"Johan",overall:81,category:"Forte"});
+const view=c.RoadToGloryRunView.create({
+  escapeHtml:s=>String(s),
+  teamEmblemMarkup:teamId=>{emblemTeam=teamId;return `<img data-team-logo="${teamId}">`;},
+  compactPlayerCardMarkup:(player,o)=>{opts=o;return `<button class="${o.extraClass||""}">${player.name}</button>`;}
+});
+const html=view.pullResultMarkup(
+  {rarity:"Forte",duplicate:false,balanceAfter:70},
+  {playerId:"p1",name:"Johan",finalOverall:81,category:"Forte",normalizedRole:"MF",teamId:"brainwashing",teamName:"Brainwashing"}
+);
 assert(opts);
 assert.match(opts.extraClass,/squad-player-card/);
+assert.match(opts.extraClass,/rtg-penalty-player-card/);
 assert.match(opts.extraClass,/rtg-pull-player-card/);
+assert.strictEqual(opts.overall,81);
+assert.strictEqual(emblemTeam,"brainwashing");
 assert.match(html,/development-squad-card-scope/);
 assert.match(html,/rtg-pull-result--forte/);
 assert.match(html,/rtg-pull-rarity/);
 assert.match(html,/rtg-pull-card-stage/);
+assert.match(html,/data-team-logo="brainwashing"/);
+assert.match(html,/Brainwashing/);
+assert.match(html,/rtg-pull-role">MF</);
 assert.match(html,/rtg-pull-meta/);
 assert.match(html,/NUOVO GIOCATORE/);
+assert.doesNotMatch(html,/>SBLOCCATO</);
+assert.doesNotMatch(html,/Sbloccato e aggiunto alla collezione Road to Glory/);
 console.log("rtg-pull-card-style-test: PASS");
