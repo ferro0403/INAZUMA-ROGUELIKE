@@ -63,3 +63,8 @@
   .rtg-duel-card--clean .rtg-choice-copy strong{font-size:11px!important;}
   .rtg-duel-card--clean .rtg-choice-delta{padding:3px 5px!important;font-size:7px!important;}
 }
+
+/* RTG route artwork — Season 1 / Chapter 1. */
+.rtg-map-block--1 .route-map.rtg-route-stage {
+  background:#082c52 url("../assets/rtg/rtg-season1-route-map.avif?v=1") center center / cover no-repeat!important;
+}
