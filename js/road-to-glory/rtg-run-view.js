@@ -43,7 +43,55 @@
     function requirementsMarkup(eligibility={}){if(!eligibility)return"";const rows=[["Potenza rosa · max",eligibility.teamPower==null?"—":`${eligibility.teamPower} / ${eligibility.cap}`,!eligibility.reasons?.includes("team-power-cap")],["Reclute S1 · min",`${eligibility.recruitCount||0} / ${eligibility.minRecruit||0}`,!eligibility.reasons?.includes("min-s1-recruits")],["Reclute recenti · min",`${eligibility.recentRecruitCount||0} / ${eligibility.recentCount||0}`,!eligibility.reasons?.includes("recent-s1-recruits")]];return `<section class="panel rtg-requirements"><p class="eyebrow">Accesso partita</p><h3>Requisiti</h3><div class="rtg-requirements-list">${rows.map(([label,value,ok])=>`<div class="rtg-requirement ${ok?"ok":"bad"}"><span><i aria-hidden="true">${ok?"✓":"!"}</i> ${escape(label)}</span><strong>${escape(value)}</strong></div>`).join("")}</div><p class="rtg-requirements-note">Reclute e potenza considerano tutti i 15 giocatori: titolari + panchina.</p></section>`;}
     function nodeModalMarkup({node,eligibility=null,seasonDb,allowed=true}={}){if(!node)return"";if(node.type==="main"){const label=teamName(seasonDb,node.teamId);return `<div class="rtg-node-modal rtg-paper-modal"><div class="modal-head rtg-node-modal-head"><span class="rtg-node-modal-emblem">${emblem(node.teamId)}</span><div><p class="eyebrow">Partita principale</p><h2>${escape(label)}</h2><p class="muted">Prepara la squadra e rispetta i requisiti della sfida.</p></div></div>${requirementsMarkup(eligibility)}<button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed||!eligibility?.eligible?"disabled":""}>GIOCA</button></div>`;}return `<div class="rtg-node-modal rtg-paper-modal"><div class="modal-head rtg-node-modal-head"><span class="rtg-node-modal-secondary" aria-hidden="true">?</span><div><p class="eyebrow">Svincolati</p><h2>Partita secondaria</h2><p class="muted">Avversari generati nella fascia di potenza del percorso. Vittoria: 100–150 Gettoni RTG.</p></div></div><button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed?"disabled":""}>GIOCA</button></div>`;}
     function vendingMarkup(model={}){const rarities=model.rarities||[],candidates=model.candidates||[],canPull=Number(model.tokens)>=300&&candidates.length>0;return `<div class="rtg-vending rtg-paper-modal"><div class="rtg-vending-title"><div><p class="eyebrow">RTG · S1</p><h2>Distributore</h2></div></div><div class="rtg-vending-stage"><div class="rtg-vending-machine-v7" data-rtg-vending-machine aria-label="Distributore di palline Season 1"><img class="rtg-vending-machine-image" src="assets/rtg/rtg-gacha-machine.webp?v=2" alt="Distributore RTG" draggable="false" /></div><div class="rtg-vending-wallet-chip"><span>GETTONI</span><strong>${escape(Number(model.tokens)||0)} ◈</strong></div></div><div class="rtg-vending-ratebar" aria-label="Probabilità">${rarities.map((entry)=>`<span data-rarity="${escape(entry.rarity)}"><b>${escape(entry.rarity)}</b><em>${escape(Number(entry.weight).toFixed(1))}%</em></span>`).join("")}</div><button type="button" class="btn btn-yellow rtg-vending-pull" data-rtg-pull ${canPull?"":"disabled"}>${canPull?"GIRA · 300 ◈":candidates.length?`MANCANO ${escape(Math.max(0,300-(Number(model.tokens)||0)))} ◈`:"VINCI UNA SFIDA PER SBLOCCARE GIOCATORI"}</button></div>`;}
-    function pullResultMarkup(result={},player={}){const rarity=result.rarity||player.category||"";const card=compactPlayerCardMarkup?compactPlayerCardMarkup(player,{level:20,overall:player?.finalOverall??player?.overall,extraClass:"squad-player-card rtg-squad-player-card rtg-pull-player-card",detailLayout:"stacked"}):`<div class="rtg-pull-player-fallback"><strong>${escape(player.name||result.playerId||"Giocatore")}</strong><span>Lv 20</span></div>`;return `<div class="rtg-pull-result rtg-paper-modal development-squad-card-scope"><div class="rtg-pull-result-head"><p class="eyebrow">${escape(rarity)}</p><strong>${result.duplicate?"DUPLICATO":"NUOVO GIOCATORE"}</strong></div><div class="rtg-pull-result-body">${card}<div class="rtg-pull-result-copy"><h2>${escape(player.name||result.playerId||"Giocatore")}</h2><p>${result.duplicate?`Rimborso duplicato: <strong>${escape(result.refund)} ◈</strong>`:"Aggiunto alla collezione Road to Glory."}</p><span>Livello 20 · ${escape(rarity)}</span></div></div><strong class="rtg-pull-balance">Saldo RTG · ${escape(result.balanceAfter)} ◈</strong></div>`;}
+    function pullRaritySlug(value){
+      const key=String(value||"Normale").trim().toLowerCase();
+      return ["scarso","debole","normale","buono","forte","elite","mondiale","leggenda","aurico"].includes(key)?key:"normale";
+    }
+
+    function pullResultMarkup(result={},player={}){
+      const rarity=String(result.rarity||player.category||"Normale").trim()||"Normale";
+      const rarityKey=pullRaritySlug(rarity);
+      const duplicate=!!result.duplicate;
+      const playerName=player.name||result.playerId||"Giocatore";
+      const card=compactPlayerCardMarkup
+        ? compactPlayerCardMarkup(player,{
+            level:20,
+            overall:player?.finalOverall??player?.overall,
+            extraClass:"squad-player-card rtg-squad-player-card rtg-pull-player-card",
+            detailLayout:"stacked",
+          })
+        : `<div class="rtg-pull-player-fallback"><strong>${escape(playerName)}</strong><span>Lv 20</span></div>`;
+      const revealLabel=duplicate?"DUPLICATO":"NUOVO GIOCATORE";
+      const description=duplicate
+        ? `Rimborso duplicato: <strong>${escape(result.refund)} ◈</strong>`
+        : "Sbloccato e aggiunto alla collezione Road to Glory.";
+      return `<div class="rtg-pull-result rtg-paper-modal development-squad-card-scope rtg-pull-result--${rarityKey} ${duplicate?"is-duplicate":"is-new"}" data-rtg-pull-rarity="${escape(rarityKey)}">
+        <div class="rtg-pull-result-head">
+          <span class="rtg-pull-rarity"><i aria-hidden="true"></i>${escape(rarity)}</span>
+          <span class="rtg-pull-series">ROAD TO GLORY · S1</span>
+        </div>
+        <div class="rtg-pull-reveal-label"><span>${escape(revealLabel)}</span></div>
+        <div class="rtg-pull-result-body">
+          <div class="rtg-pull-card-stage" aria-label="Carta giocatore sbloccata">
+            <span class="rtg-pull-card-halo" aria-hidden="true"></span>
+            ${card}
+          </div>
+          <div class="rtg-pull-result-copy">
+            <p class="rtg-pull-kicker">${duplicate?"RICOMPENSA":"SBLOCCATO"}</p>
+            <h2>${escape(playerName)}</h2>
+            <p>${description}</p>
+            <div class="rtg-pull-meta">
+              <span>LV 20</span>
+              <span>${escape(rarity)}</span>
+            </div>
+          </div>
+        </div>
+        <div class="rtg-pull-balance">
+          <span>SALDO RTG</span>
+          <strong>${escape(result.balanceAfter)} ◈</strong>
+        </div>
+      </div>`;
+    }
 
     return Object.freeze({tabs,lockedMarkup:(...args)=>skinTokens(lockedMarkup(...args)),runMarkup:(...args)=>skinTokens(runMarkup(...args)),requirementsMarkup,nodeModalMarkup,vendingMarkup:(...args)=>skinTokens(vendingMarkup(...args)),pullResultMarkup:(...args)=>skinTokens(pullResultMarkup(...args))});
   }
