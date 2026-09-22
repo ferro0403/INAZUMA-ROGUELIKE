@@ -10,6 +10,9 @@ const html=view.runMarkup({state,nodes,seasonDb:{teams:teams.map(teamId=>({teamI
 assert.match(html,/class="screen rtg-run-screen"/);
 assert.match(html,/class="route-map rtg-route-stage/);
 assert.match(html,/class="map-lines rtg-map-lines"/);
+assert.match(html,/class="rtg-route-line-shadow"/);
+assert.match(html,/class="rtg-route-line"/);
+assert.doesNotMatch(html,/<line x1=/);
 assert.match(html,/class="map-node[^"]*reachable/);
 assert.match(html,/class="node-icon/);
 assert.match(html,/class="node-label/);

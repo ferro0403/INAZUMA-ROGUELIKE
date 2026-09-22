@@ -74,3 +74,23 @@
   background-blend-mode:normal!important;
   filter:none!important;
 }
+
+/* Route fitted to the illustrated island map. */
+.rtg-route-stage .rtg-map-lines{pointer-events:none!important;}
+.rtg-route-stage .rtg-map-lines .rtg-route-line-shadow{
+  fill:none!important;
+  stroke:#111216!important;
+  stroke-width:2.45!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  opacity:.72!important;
+}
+.rtg-route-stage .rtg-map-lines .rtg-route-line{
+  fill:none!important;
+  stroke:#ffd21f!important;
+  stroke-width:1.5!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  opacity:.94!important;
+}
+
