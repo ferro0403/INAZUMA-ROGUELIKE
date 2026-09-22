@@ -782,6 +782,48 @@
       </section>`;
     }
 
+    function penaltyBallSvg() {
+      return `<svg viewBox="0 0 100 100" class="rtg-penalty-ball-svg" aria-hidden="true" focusable="false">
+        <circle cx="50" cy="50" r="43" fill="#fffdf7" stroke="#111216" stroke-width="5"/>
+        <polygon points="50,25 62,34 57,49 43,49 38,34" fill="#111216"/>
+        <path d="M38 34 24 31 14 43 20 58 36 60 43 49M62 34 76 31 86 43 80 58 64 60 57 49M36 60 31 75 42 88 58 88 69 75 64 60M24 31 29 17 46 8M76 31 71 17 54 8M20 58 12 70 22 85M80 58 88 70 78 85M42 88 50 94 58 88"
+          fill="none" stroke="#111216" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M31 75 20 58M69 75 80 58" stroke="#111216" stroke-width="4" stroke-linecap="round"/>
+        <path d="M18 35c10-17 27-27 46-25" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".75"/>
+      </svg>`;
+    }
+
+    function penaltyGoalSvg() {
+      return `<svg viewBox="0 0 900 300" preserveAspectRatio="none" aria-hidden="true" focusable="false"
+        style="position:absolute;inset:0;width:100%;height:100%;display:block;pointer-events:none">
+        <rect width="900" height="300" fill="#eaf6fb"/>
+        <path d="M0 212H900V300H0Z" fill="#78a15f"/>
+        <path d="M0 230H900V244H0Z" fill="#dce6d8" opacity=".82"/>
+        <path d="M0 246H900V300H0Z" fill="#71995b"/>
+
+        <g opacity=".42" stroke="#a7c8d7" stroke-width="2">
+          <path d="M70 55H830M70 87H830M70 119H830M70 151H830M70 183H830M70 215H830"/>
+          <path d="M124 46V220M202 46V220M280 46V220M358 46V220M436 46V220M514 46V220M592 46V220M670 46V220M748 46V220"/>
+        </g>
+
+        <g opacity=".34" stroke="#fff" stroke-width="3">
+          <path d="M70 215 150 55M190 215 245 55M310 215 340 55M430 215 435 55M550 215 530 55M670 215 625 55M790 215 720 55"/>
+        </g>
+
+        <path d="M58 222V42H842V222" fill="none" stroke="#111216" stroke-width="15" stroke-linejoin="round" opacity=".18"/>
+        <path d="M64 216V36H836V216" fill="none" stroke="#fffdf7" stroke-width="12" stroke-linejoin="round"/>
+        <path d="M70 216V46H830V216" fill="none" stroke="#d5d9d7" stroke-width="3" stroke-linejoin="round"/>
+
+        <path d="M62 217 18 251M838 217 882 251" stroke="#fffdf7" stroke-width="9" stroke-linecap="round"/>
+        <path d="M18 251H882" stroke="#fffdf7" stroke-width="8" stroke-linecap="round"/>
+        <path d="M450 248V300" stroke="#fff" stroke-width="4" stroke-dasharray="11 10" opacity=".8"/>
+        <ellipse cx="450" cy="274" rx="13" ry="4" fill="#eef3eb" opacity=".75"/>
+
+        <path d="M65 39H835" stroke="#fff" stroke-width="3" opacity=".7"/>
+        <path d="M70 216H830" stroke="#5e8651" stroke-width="6" opacity=".45"/>
+      </svg>`;
+    }
+
     function penaltyMarkup(match = {}, context = {}) {
       const history = match.shootout?.history || [];
       const row = (side) => {
@@ -816,10 +858,20 @@
         </div>
         <div class="rtg-penalty-choice">
           <div class="rtg-penalty-choice-copy"><strong>${userAttacks ? "DOVE TIRI?" : "DOVE TI TUFFI?"}</strong><span>La CPU sceglie in segreto.</span></div>
-          <div class="rtg-penalty-goal" aria-label="Scegli direzione">
-            <button type="button" data-rtg-penalty-direction="left"><i></i><span>Sinistra</span></button>
-            <button type="button" data-rtg-penalty-direction="center"><i></i><span>Centro</span></button>
-            <button type="button" data-rtg-penalty-direction="right"><i></i><span>Destra</span></button>
+          <div class="rtg-penalty-goal rtg-penalty-goal--illustrated" aria-label="Scegli direzione" style="position:relative;min-height:158px;overflow:hidden;background:#eaf6fb;padding:0 8px;border-bottom-width:8px">
+            ${penaltyGoalSvg()}
+            <button type="button" aria-label="Tira a sinistra" data-rtg-penalty-direction="left" style="z-index:2;min-height:150px">
+              <i style="top:27px;width:46px;height:46px;border:0;background:transparent;box-shadow:none;transform:none">${penaltyBallSvg()}</i>
+              <span>Sinistra</span>
+            </button>
+            <button type="button" aria-label="Tira al centro" data-rtg-penalty-direction="center" style="z-index:2;min-height:150px">
+              <i style="top:27px;width:46px;height:46px;border:0;background:transparent;box-shadow:none;transform:none">${penaltyBallSvg()}</i>
+              <span>Centro</span>
+            </button>
+            <button type="button" aria-label="Tira a destra" data-rtg-penalty-direction="right" style="z-index:2;min-height:150px">
+              <i style="top:27px;width:46px;height:46px;border:0;background:transparent;box-shadow:none;transform:none">${penaltyBallSvg()}</i>
+              <span>Destra</span>
+            </button>
           </div>
         </div>
         ${moveAvailable ? `<button type="button" class="btn btn-yellow rtg-penalty-move" data-rtg-penalty-move><strong>${escape(moveLabel)}</strong><small>${escape(context.userMoveUses || 0)}/2 usi rimasti</small></button>` : ""}
