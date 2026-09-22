@@ -25,7 +25,7 @@ const userCanMove=!!prepared.pendingEncounter.userMove;
 const resolvedBase=E.resolvePendingEncounter(JSON.parse(JSON.stringify(frozen)),"base");
 const resolvedMove=userCanMove?E.resolvePendingEncounter(JSON.parse(JSON.stringify(frozen)),"move"):resolvedBase;
 assert.strictEqual(frozenAi,prepared.pendingEncounter.aiChoice);
-if(userCanMove){const key=`${prepared.pendingEncounter.userSide}:${prepared.pendingEncounter.userPlayerId}`;assert.strictEqual(resolvedMove.moveUsesByPlayerId[key],1);}
+if(userCanMove){const key=`${prepared.pendingEncounter.userSide}:${prepared.pendingEncounter.userPlayerId}`;const beforeUses=Number(frozen.moveUsesByPlayerId[key]||0);const moveEvent=resolvedMove.log[resolvedMove.log.length-1];const userWon=prepared.pendingEncounter.userSide===prepared.pendingEncounter.actorSide?!!moveEvent.actorWon:!moveEvent.actorWon;const shouldConsume=["shot","save"].includes(prepared.pendingEncounter.userKind)||userWon;assert.strictEqual(resolvedMove.moveUsesByPlayerId[key],beforeUses-(shouldConsume?1:0));}
 let silent=E.createMatch({...input,matchId:"no-silent-goal",seed:"no-silent-goal-seed"});
 silent.manualIndexes=[];silent.manualTarget=0;
 const silentScore=JSON.stringify(silent.score);
