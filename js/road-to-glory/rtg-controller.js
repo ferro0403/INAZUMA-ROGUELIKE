@@ -88,7 +88,11 @@
     function detailDatabaseFor(cardRef){
       const resolvedVersion=playerResolver.resolveVersion?.(cardRef,campaign?.activeSeasonId||"ie1",freeAgentsDb);
       if(resolvedVersion?.seasonId==="free_agents")return freeAgentsDb;
-      return global.SeasonRegistry?.database?.(resolvedVersion?.seasonId)||(resolvedVersion?.seasonId==="ie1"?seasonDb:seasonDb);
+      if(resolvedVersion?.seasonId)return global.SeasonRegistry?.database?.(resolvedVersion.seasonId)||seasonDb;
+      const meta=cardMeta(cardRef);
+      if(meta.sourceKind===cardIdentity?.FREE_AGENTS)return freeAgentsDb;
+      if(!meta.legacySeasonId&&(freeAgentsDb?.players||[]).some(player=>id(player?.playerId||player?.id)===id(meta.playerId)))return freeAgentsDb;
+      return global.SeasonRegistry?.database?.(meta.legacySeasonId)||seasonDb;
     }
     function openRtgPlayerDetails(cardRef,side="",options={}){
       const key=id(cardRef);
