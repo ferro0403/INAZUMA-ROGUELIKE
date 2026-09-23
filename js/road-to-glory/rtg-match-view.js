@@ -28,8 +28,16 @@
       return global.PlayerView?.rarityClass?.(category) || DUEL_RARITY_CLASS[category] || "rarity-normale";
     }
     function moveCategoryClass(move = null, fallbackKind = "") {
-      const type = String(move?.type || fallbackKind || "").toLowerCase();
-      return ["shot","defense","dribble","save"].includes(type) ? `move-category--${type}` : "move-category--neutral";
+      const raw = String(move?.type || "").trim().toLowerCase();
+      const fallback = String(fallbackKind || "").trim().toLowerCase();
+      const aliases = {
+        shot:"shot",shoot:"shot",tiro:"shot",
+        defense:"defense",defence:"defense",block:"defense",contrast:"defense",contrasto:"defense",
+        dribble:"dribble",dribbling:"dribble",
+        save:"save",catch:"save",keeper:"save",parata:"save"
+      };
+      const type = aliases[raw] || aliases[fallback] || "neutral";
+      return `move-category--${type}`;
     }
     const userNameFor = (value = {}) => value?.userSquad?.name || value?.name || userTeamMeta?.()?.name || "La tua squadra";
     const emblem = (squad = {}, side = "user", className = "rtg-match-team-emblem") => teamEmblemMarkup?.(squad, side, className) || "";
