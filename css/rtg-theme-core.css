@@ -3186,3 +3186,40 @@
   line-height:1.2!important;
   font-weight:900!important;
 }
+
+
+/* Move element identity: dedicated badge under uses/power. */
+.rtg-duel-choice-card .rtg-choice-copy{align-content:start!important}
+.rtg-duel-choice-card .rtg-move-element-badge{
+  --move-element:#777;
+  width:max-content;
+  max-width:100%;
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  margin-top:5px;
+  padding:3px 7px 3px 5px;
+  border:2px solid var(--move-element);
+  border-radius:999px;
+  background:color-mix(in srgb,var(--move-element) 12%,#fff);
+  color:var(--move-element);
+  font-size:8px;
+  font-weight:1000;
+  line-height:1;
+  letter-spacing:.08em;
+  white-space:nowrap;
+}
+.rtg-duel-choice-card .rtg-move-element-badge i{
+  width:9px;height:9px;display:block;transform:rotate(45deg);
+  border:2px solid currentColor;border-radius:1px;
+}
+.rtg-duel-choice-card .rtg-move-element-badge.element-fire,
+.rtg-duel-choice-card .rtg-move-element-badge.element-fuoco{--move-element:#d94a3d}
+.rtg-duel-choice-card .rtg-move-element-badge.element-forest,
+.rtg-duel-choice-card .rtg-move-element-badge.element-wood,
+.rtg-duel-choice-card .rtg-move-element-badge.element-tree,
+.rtg-duel-choice-card .rtg-move-element-badge.element-albero{--move-element:#27894b}
+.rtg-duel-choice-card .rtg-move-element-badge.element-wind,
+.rtg-duel-choice-card .rtg-move-element-badge.element-vento{--move-element:#1683a9}
+.rtg-duel-choice-card .rtg-move-element-badge.element-mountain,
+.rtg-duel-choice-card .rtg-move-element-badge.element-montagna{--move-element:#8a6030}
