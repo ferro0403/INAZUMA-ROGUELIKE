@@ -8,6 +8,8 @@ assert.match(html,/rtg-vending-machine-v9/);
 assert.match(html,/rtg-vending-window-v9/);
 assert.match(html,/rtg-vending-crank-v9/);
 assert.match(html,/rtg-vending-prize-v9/);
+assert.match(html,/rtg-vending-chute-well-v9/);
+assert.match(html,/rtg-vending-chute-v9[^>]*>[\s\S]*rtg-vending-prize-track-v9/);
 assert.strictEqual((html.match(/rtg-vending-capsule-v9/g)||[]).length,10);
 assert.doesNotMatch(html,/assets\/rtg\/rtg-gacha-machine\.webp/);
 assert.doesNotMatch(html,/rtg-vending-machine-v3|rtg-vending-machine-v4|rtg-vending-machine-v5|rtg-vending-machine-v6|rtg-vending-machine-v7|rtg-vending-3d/);
