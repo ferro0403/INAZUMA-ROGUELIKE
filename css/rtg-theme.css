@@ -797,16 +797,26 @@ button.player-card:has(> .rtg-legacy-badge),
 
 
 /* RTG Album: center the arrow inside the yellow action rectangles. */
-.rtg-album-collections-screen .album-collection-action,
-.rtg-album-teams-screen .album-team-card__open{
+.rtg-album-collections-screen .album-collection-action{
+  position:relative;
   display:flex;
   align-items:center;
   justify-content:center;
   text-align:center;
 }
 .rtg-album-collections-screen .album-collection-action > span{
+  position:absolute;
+  left:50%;
+  top:50%;
   display:flex;
   align-items:center;
   justify-content:center;
   margin:0;
+  transform:translate(-50%,-50%);
+}
+.rtg-album-teams-screen .album-team-card__open{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
 }
