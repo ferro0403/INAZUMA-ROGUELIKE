@@ -950,7 +950,7 @@
       matchView.bind(app,{
         onOpenPlayerDetails:(playerId,side)=>openRtgPlayerDetails(playerId,side),
         onPreMatchStart:()=>confirmPreMatch(),
-        onEncounterChoice:choice=>handleEncounterChoiceTap(choice),
+        onEncounterChoice:(choice,isConfirm)=>handleEncounterChoiceTap(choice,isConfirm),
         onAbandon:()=>abandonMatch(),
         onHalftimeConfirm:()=>confirmHalftime(halftimeDraft),
         onPenaltyDirection:direction=>choosePenalty({direction,useMove:false}),
@@ -972,21 +972,21 @@
       overlay.innerHTML=matchView.encounterMarkup(match,{userPlayer,opponentPlayer,selectedChoice:selectedEncounterChoice});
       bindMatchViewActions();
     }
-    function handleEncounterChoiceTap(choice){
+    function handleEncounterChoiceTap(choice,isConfirm=false){
       const normalized=String(choice||"");
       const pending=campaign?.activeMatch?.pendingEncounter;
       if(!pending||!["base","move"].includes(normalized))return;
-      if(selectedEncounterId!==id(pending.encounterId)){
-        selectedEncounterId=id(pending.encounterId);
-        selectedEncounterChoice=null;
-      }
       const encounterId=id(pending.encounterId);
-      const isConfirmedSecondTap=selectedEncounterId===encounterId&&selectedEncounterChoice===normalized;
-      if(isConfirmedSecondTap){
+
+      // Confirmation is accepted only from a button that was rendered in the
+      // selected state. A stale JS selection can therefore never resolve on
+      // the first visible tap of a new/updated duel.
+      if(isConfirm===true&&selectedEncounterId===encounterId&&selectedEncounterChoice===normalized){
         selectedEncounterChoice=null;
         selectedEncounterId=null;
         return chooseEncounter(normalized);
       }
+
       selectedEncounterId=encounterId;
       selectedEncounterChoice=normalized;
       return showEncounterOverlay(campaign.activeMatch,normalized);
