@@ -109,6 +109,292 @@
     background:url("../assets/home/inazuma-stadium-desktop-light.jpeg") center / cover no-repeat!important;
   }
 }
+/* =========================================================
+   RTG vending machine v8 — kinetic gacha sequence
+   ========================================================= */
+.rtg-vending-machine-v8{
+  --rtg-vending-reveal:#ffd21f;
+  position:relative;
+  z-index:2;
+  width:min(244px,68vw);
+  margin:0 auto;
+  padding-top:22px;
+  display:grid;
+  place-items:center;
+  isolation:isolate;
+  transform-origin:center 82%;
+}
+.rtg-vending-sign-v8{
+  position:absolute;
+  z-index:7;
+  top:0;
+  left:50%;
+  width:112px;
+  min-height:44px;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  transform:translateX(-50%);
+  border:4px solid #111216;
+  border-radius:50% 50% 9px 9px/42% 42% 9px 9px;
+  background:#ffd21f;
+  color:#111216;
+  box-shadow:3px 4px 0 #111216;
+  text-align:center;
+  text-transform:uppercase;
+}
+.rtg-vending-sign-v8 span{font:950 7px/1 system-ui,sans-serif;letter-spacing:.18em;}
+.rtg-vending-sign-v8 strong{font:1000 19px/.92 system-ui,sans-serif;letter-spacing:.06em;}
+.rtg-vending-globe-v8{
+  position:relative;
+  z-index:4;
+  width:206px;
+  height:184px;
+  overflow:hidden;
+  border:5px solid #111216;
+  border-radius:49% 49% 24% 24%/43% 43% 17% 17%;
+  background:
+    radial-gradient(circle at 29% 19%,rgba(255,255,255,.98) 0 7%,transparent 8%),
+    linear-gradient(155deg,#f7fdff 0 18%,#d7f0f9 45%,#9bd6ea 100%);
+  box-shadow:inset 0 -18px 0 rgba(17,18,22,.11),5px 6px 0 rgba(17,18,22,.14);
+}
+.rtg-vending-globe-v8::after{
+  content:"";
+  position:absolute;
+  z-index:2;
+  left:7%;
+  right:7%;
+  bottom:4%;
+  height:29%;
+  border-radius:50%;
+  background:rgba(17,18,22,.10);
+}
+.rtg-vending-glass-shine-v8{
+  position:absolute;
+  z-index:8;
+  top:20px;
+  left:27px;
+  width:19px;
+  height:84px;
+  border-radius:999px;
+  background:rgba(255,255,255,.43);
+  transform:rotate(17deg);
+  pointer-events:none;
+}
+.rtg-vending-ball-v8{
+  position:absolute;
+  z-index:5;
+  width:39px;
+  height:39px;
+  border:3px solid #111216;
+  border-radius:50%;
+  background:linear-gradient(160deg,#fff 0 48%,#ffd21f 49% 100%);
+  box-shadow:inset -4px -5px 0 rgba(17,18,22,.12),2px 3px 0 rgba(17,18,22,.15);
+  transform:rotate(var(--ball-r,0deg));
+  transform-origin:center;
+}
+.rtg-vending-ball-v8::after{
+  content:"";
+  position:absolute;
+  left:-2px;
+  right:-2px;
+  top:46%;
+  height:4px;
+  background:#111216;
+  transform:rotate(-8deg);
+  opacity:.8;
+}
+.rtg-vending-ball-v8.b1{left:13%;bottom:12%;--mx:31px;--my:-41px;--spin:118deg;--delay:-.08s}
+.rtg-vending-ball-v8.b2{left:29%;bottom:9%;--mx:-20px;--my:-55px;--spin:-145deg;--delay:-.19s}
+.rtg-vending-ball-v8.b3{left:47%;bottom:10%;--mx:24px;--my:-46px;--spin:166deg;--delay:-.28s}
+.rtg-vending-ball-v8.b4{left:65%;bottom:13%;--mx:-27px;--my:-61px;--spin:-128deg;--delay:-.12s}
+.rtg-vending-ball-v8.b5{left:20%;bottom:31%;--mx:47px;--my:-16px;--spin:154deg;--delay:-.33s}
+.rtg-vending-ball-v8.b6{left:39%;bottom:29%;--mx:-34px;--my:-33px;--spin:-173deg;--delay:-.21s}
+.rtg-vending-ball-v8.b7{left:58%;bottom:33%;--mx:27px;--my:-28px;--spin:142deg;--delay:-.04s}
+.rtg-vending-ball-v8.b8{left:70%;bottom:34%;--mx:-45px;--my:-22px;--spin:-151deg;--delay:-.25s}
+.rtg-vending-ball-v8.b9{left:28%;bottom:49%;--mx:39px;--my:24px;--spin:177deg;--delay:-.15s}
+.rtg-vending-ball-v8.b10{left:48%;bottom:50%;--mx:-29px;--my:18px;--spin:-163deg;--delay:-.29s}
+.rtg-vending-ball-v8.b11{left:61%;bottom:52%;--mx:18px;--my:27px;--spin:136deg;--delay:-.10s}
+.rtg-vending-ball-v8.b12{left:41%;bottom:66%;--mx:-36px;--my:31px;--spin:-149deg;--delay:-.35s}
+.rtg-vending-cabinet-v8{
+  position:relative;
+  z-index:6;
+  width:222px;
+  min-height:124px;
+  margin-top:-8px;
+  padding:15px 14px 13px;
+  display:grid;
+  grid-template-columns:1fr 63px;
+  grid-template-rows:auto 46px;
+  gap:9px 12px;
+  border:5px solid #111216;
+  border-radius:9px 9px 18px 18px;
+  background:linear-gradient(145deg,#ffd21f 0 71%,#efaa20 71% 100%);
+  box-shadow:7px 8px 0 #111216;
+}
+.rtg-vending-price-v8{
+  min-height:55px;
+  display:grid;
+  place-items:center;
+  align-content:center;
+  padding:5px 8px;
+  border:3px solid #111216;
+  border-radius:4px;
+  background:#fffdf7;
+  color:#111216;
+  box-shadow:inset 0 -4px 0 #e5dfd2;
+}
+.rtg-vending-price-v8 small{font:950 7px/1 system-ui,sans-serif;letter-spacing:.12em;}
+.rtg-vending-price-v8 strong{font:1000 22px/.95 system-ui,sans-serif;}
+.rtg-vending-knob-v8{
+  position:relative;
+  width:58px;
+  height:58px;
+  display:grid;
+  place-items:center;
+  align-self:center;
+  justify-self:center;
+  border:4px solid #111216;
+  border-radius:50%;
+  background:radial-gradient(circle at 40% 32%,#f6f6f1 0 18%,#888 19% 58%,#444 59% 100%);
+  box-shadow:2px 3px 0 rgba(17,18,22,.38);
+}
+.rtg-vending-knob-v8 span{
+  width:11px;
+  height:37px;
+  border:3px solid #111216;
+  border-radius:6px;
+  background:#ffd21f;
+  box-shadow:inset 0 -7px 0 #e6a413;
+}
+.rtg-vending-mouth-v8{
+  grid-column:1 / 3;
+  position:relative;
+  min-height:43px;
+  display:grid;
+  place-items:center;
+  border:4px solid #111216;
+  border-radius:8px 8px 18px 18px;
+  background:#111216;
+  overflow:hidden;
+}
+.rtg-vending-mouth-v8 span{
+  width:86px;
+  height:24px;
+  border-radius:0 0 44px 44px;
+  background:#050607;
+  box-shadow:inset 0 7px 0 #2c2e31;
+}
+.rtg-vending-drop-v8{
+  position:absolute;
+  z-index:10;
+  left:50%;
+  top:39%;
+  width:52px;
+  height:177px;
+  transform:translateX(-50%);
+  pointer-events:none;
+}
+.rtg-vending-prize-ball-v8{
+  position:absolute;
+  left:50%;
+  top:0;
+  width:42px;
+  height:42px;
+  opacity:0;
+  border:4px solid #111216;
+  border-radius:50%;
+  background:linear-gradient(160deg,#fff 0 48%,#ffd21f 49% 100%);
+  box-shadow:0 0 0 0 var(--rtg-vending-reveal),3px 4px 0 rgba(17,18,22,.25);
+  transform:translate(-50%,-18px) scale(.72);
+}
+.rtg-vending-machine-v8.is-turning{
+  animation:rtg-vending-v8-body 1.05s cubic-bezier(.2,.8,.25,1) both;
+}
+.rtg-vending-machine-v8.is-turning .rtg-vending-knob-v8{
+  animation:rtg-vending-v8-knob .86s cubic-bezier(.16,.76,.22,1) both;
+}
+.rtg-vending-machine-v8.is-turning .rtg-vending-ball-v8{
+  animation:rtg-vending-v8-mix .36s ease-in-out var(--delay,0s) infinite alternate;
+}
+.rtg-vending-machine-v8.is-revealing .rtg-vending-ball-v8{
+  animation-play-state:paused;
+}
+.rtg-vending-machine-v8.is-revealing .rtg-vending-prize-ball-v8{
+  animation:rtg-vending-v8-drop .72s cubic-bezier(.15,.72,.28,1) both;
+}
+.rtg-vending-machine-v8.is-revealing .rtg-vending-mouth-v8{
+  animation:rtg-vending-v8-mouth .72s ease-out both;
+}
+.rtg-vending-machine-v8[data-pull-rarity="elite"]{--rtg-vending-reveal:#8254d1;}
+.rtg-vending-machine-v8[data-pull-rarity="mondiale"]{--rtg-vending-reveal:#d93842;}
+.rtg-vending-machine-v8[data-pull-rarity="forte"]{--rtg-vending-reveal:#27a8e8;}
+.rtg-vending-machine-v8[data-pull-rarity="buono"]{--rtg-vending-reveal:#2fa866;}
+.rtg-vending-machine-v8[data-pull-rarity="normale"]{--rtg-vending-reveal:#929ba8;}
+.rtg-vending-machine-v8[data-pull-rarity="leggenda"]{--rtg-vending-reveal:#d4a017;}
+.rtg-vending-machine-v8[data-pull-rarity="aurico"]{--rtg-vending-reveal:#f5c842;}
+@keyframes rtg-vending-v8-knob{
+  0%{transform:rotate(0deg)}
+  68%{transform:rotate(610deg)}
+  84%{transform:rotate(690deg)}
+  100%{transform:rotate(720deg)}
+}
+@keyframes rtg-vending-v8-mix{
+  0%{transform:translate3d(0,0,0) rotate(0deg)}
+  52%{transform:translate3d(var(--mx,22px),var(--my,-36px),0) rotate(var(--spin,140deg))}
+  100%{transform:translate3d(calc(var(--mx,22px) * -.55),calc(var(--my,-36px) * -.35),0) rotate(calc(var(--spin,140deg) * -1))}
+}
+@keyframes rtg-vending-v8-body{
+  0%,100%{transform:translate3d(0,0,0) rotate(0deg)}
+  18%{transform:translate3d(-3px,-2px,0) rotate(-.7deg)}
+  36%{transform:translate3d(4px,1px,0) rotate(.8deg)}
+  56%{transform:translate3d(-2px,0,0) rotate(-.4deg)}
+  72%{transform:translate3d(2px,0,0) rotate(.3deg)}
+}
+@keyframes rtg-vending-v8-drop{
+  0%{opacity:0;transform:translate(-50%,-22px) scale(.72);box-shadow:0 0 0 0 var(--rtg-vending-reveal),3px 4px 0 rgba(17,18,22,.25)}
+  18%{opacity:1}
+  68%{opacity:1;transform:translate(-50%,98px) scale(1);box-shadow:0 0 0 4px var(--rtg-vending-reveal),0 0 24px 8px color-mix(in srgb,var(--rtg-vending-reveal) 66%,transparent)}
+  100%{opacity:1;transform:translate(-50%,119px) scale(.9);box-shadow:0 0 0 2px var(--rtg-vending-reveal),0 0 18px 5px color-mix(in srgb,var(--rtg-vending-reveal) 48%,transparent)}
+}
+@keyframes rtg-vending-v8-mouth{
+  0%,32%{box-shadow:inset 0 0 0 0 var(--rtg-vending-reveal)}
+  58%,100%{box-shadow:inset 0 0 0 4px var(--rtg-vending-reveal),0 0 18px color-mix(in srgb,var(--rtg-vending-reveal) 58%,transparent)}
+}
+
+/* Rarity chips: Elite and Mondiale use their actual rarity colours. */
+.rtg-vending-ratebar>span[data-rarity="Elite"]{
+  background:#8254d1!important;
+  border-color:#5f389f!important;
+  color:#fff!important;
+  box-shadow:inset 0 -4px 0 #5f389f!important;
+}
+.rtg-vending-ratebar>span[data-rarity="Elite"] em{color:#f3eaff!important;}
+.rtg-vending-ratebar>span[data-rarity="Mondiale"]{
+  background:#d93842!important;
+  border-color:#9f222b!important;
+  color:#fff!important;
+  box-shadow:inset 0 -4px 0 #9f222b!important;
+}
+.rtg-vending-ratebar>span[data-rarity="Mondiale"] em{color:#ffe8e9!important;}
+
+@media(max-width:430px){
+  .rtg-vending-machine-v8{width:min(226px,66vw);}
+  .rtg-vending-globe-v8{width:190px;height:169px;}
+  .rtg-vending-cabinet-v8{width:205px;}
+  .rtg-vending-drop-v8{height:164px;}
+}
+@media(prefers-reduced-motion:reduce){
+  .rtg-vending-machine-v8.is-turning,
+  .rtg-vending-machine-v8.is-turning .rtg-vending-knob-v8,
+  .rtg-vending-machine-v8.is-turning .rtg-vending-ball-v8,
+  .rtg-vending-machine-v8.is-revealing .rtg-vending-prize-ball-v8,
+  .rtg-vending-machine-v8.is-revealing .rtg-vending-mouth-v8{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+  }
+}
+
 /* RTG Legacy marker: sits outside the bottom-right card corner so it never covers role, OVR, portrait or name. */
 button.player-card:has(> .rtg-legacy-badge),
 .player-card:has(> .rtg-legacy-badge){
