@@ -138,7 +138,7 @@
     const parsed = exactCard ? api.parse(rawRef) : null;
 
     if (!exactCard || parsed?.sourceKind === api.FREE_AGENTS) {
-      const evolvedId = parsed?.sourceKind === api?.FREE_AGENTS ? parsed.playerId : id(playerId?.playerId || playerId);
+      const evolvedId = parsed && parsed.sourceKind === api?.FREE_AGENTS ? parsed.playerId : id(playerId?.playerId || playerId);
       const evolved = resolveEvolvedFreeAgent(evolvedId, freeAgentsDb, 20);
       if (evolved) {
         return exactCard ? { ...evolved, cardId: parsed.cardId, legacySeasonId: api.FREE_AGENTS } : evolved;
