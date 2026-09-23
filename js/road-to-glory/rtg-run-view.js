@@ -82,7 +82,7 @@
             overall:player?.overall??player?.finalOverall,
             dataAttr:`data-rtg-pull-player-detail="${escape(result.cardId||player?.cardId||player?.playerId||player?.id||result.playerId||"")}" aria-label="Apri scheda di ${escape(playerName)}"`,
             extraClass:"squad-player-card rtg-picker-squad-card rtg-pull-player-card",
-            trailingMarkup:`<span class="rtg-legacy-badge" title="Legacy ${escape(global.RoadToGloryCardIdentity?.legacyLabel?.(result.legacySeasonId||player?.legacySeasonId)||"")}">${escape(global.RoadToGloryCardIdentity?.legacyLabel?.(result.legacySeasonId||player?.legacySeasonId)||"")}</span>`,
+            trailingMarkup:(()=>{const label=global.RoadToGloryCardIdentity?.legacyLabel?.(result.legacySeasonId||player?.legacySeasonId)||"";return label?`<span class="rtg-legacy-badge" title="Legacy ${escape(label)}">${escape(label)}</span>`:"";})(),
           })
         : `<div class="rtg-pull-player-fallback"><strong>${escape(playerName)}</strong><span>Lv 20</span></div>`;
       const revealLabel=duplicate?"DUPLICATO":"NUOVO GIOCATORE";
