@@ -3952,3 +3952,12 @@
 .rtg-live-commandbar .rtg-live-command small{
   margin-bottom:7px!important;
 }
+
+
+/* RTG live HUD now has only Possesso + Zona. */
+.rtg-live-status.rtg-live-commandbar{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+}
+.rtg-live-commandbar .rtg-live-command:nth-child(2){
+  background:linear-gradient(145deg,#fff 0 72%,#fff4c9 72% 100%)!important;
+}
