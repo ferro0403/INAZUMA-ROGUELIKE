@@ -4119,3 +4119,25 @@
 .rtg-halftime-revolution .rtg-halftime-bench-panel .rtg-halftime-section-title b{
   display:none!important;
 }
+
+
+/* Halftime score: team emblems replace truncated names. */
+.rtg-halftime-revolution .rtg-halftime-score-emblem{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:44px!important;
+  height:44px!important;
+  min-width:0!important;
+  justify-self:center!important;
+}
+.rtg-halftime-revolution .rtg-halftime-score-emblem .rtg-halftime-team-logo,
+.rtg-halftime-revolution .rtg-halftime-score-emblem img,
+.rtg-halftime-revolution .rtg-halftime-score-emblem svg{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:44px!important;
+  max-height:44px!important;
+  object-fit:contain!important;
+}
