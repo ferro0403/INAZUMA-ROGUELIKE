@@ -131,8 +131,8 @@ button.player-card:has(> .rtg-legacy-badge),
   padding:0 5px!important;
   border:2px solid #111216!important;
   border-radius:0!important;
-  background:#ffd21f!important;
-  color:#111216!important;
+  background:var(--rtg-legacy-color,#ffd21f)!important;
+  color:var(--rtg-legacy-ink,#111216)!important;
   box-shadow:1px 2px 0 #111216!important;
   font:1000 7px/1 system-ui,sans-serif!important;
   letter-spacing:.04em!important;
@@ -143,6 +143,23 @@ button.player-card:has(> .rtg-legacy-badge),
   right:-4px!important;
   top:auto!important;
   bottom:-11px!important;
+}
+
+/* Legacy season palette: same color language on cards and player detail. */
+.rtg-legacy-badge[data-legacy-season="S1"],
+.player-detail-rtg-legacy-badge[data-legacy-season="S1"]{
+  --rtg-legacy-color:#ffd21f;
+  --rtg-legacy-ink:#111216;
+}
+.rtg-legacy-badge[data-legacy-season="S2"],
+.player-detail-rtg-legacy-badge[data-legacy-season="S2"]{
+  --rtg-legacy-color:#35b8f4;
+  --rtg-legacy-ink:#07131b;
+}
+.rtg-legacy-badge[data-legacy-season="S3"],
+.player-detail-rtg-legacy-badge[data-legacy-season="S3"]{
+  --rtg-legacy-color:#a678ff;
+  --rtg-legacy-ink:#130b24;
 }
 
 /* Give the protruding Legacy tab a clean lane below dense card grids. */
@@ -169,8 +186,8 @@ button.player-card:has(> .rtg-legacy-badge),
   align-content:center;
   padding:5px 5px 4px;
   border:3px solid #111216;
-  background:#ffd21f;
-  color:#111216;
+  background:var(--rtg-legacy-color,#ffd21f);
+  color:var(--rtg-legacy-ink,#111216);
   box-shadow:4px 4px 0 #111216;
   transform:skew(-4deg);
   text-transform:uppercase;
