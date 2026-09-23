@@ -1,0 +1,95 @@
+/* RTG vending v15 — explicit cabinet depth.
+   Adds a visible right-hand side/extrusion instead of relying only on flat shadows. */
+.rtg-vending-machine-v12{
+  perspective:760px!important;
+  transform-style:preserve-3d!important;
+  filter:drop-shadow(0 19px 20px rgba(8,10,14,.22)) drop-shadow(12px 10px 10px rgba(8,10,14,.15))!important;
+}
+
+/* Physical right side of the cabinet: visible from head to lower body. */
+.rtg-vending-machine-v12::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  top:13px;
+  right:7px;
+  width:25px;
+  height:356px;
+  border-radius:0 13px 15px 0;
+  background:
+    linear-gradient(90deg,#31353c 0%,#25292f 38%,#171a1f 100%);
+  box-shadow:
+    inset 2px 0 0 rgba(255,255,255,.10),
+    inset -5px 0 8px rgba(0,0,0,.30),
+    7px 7px 11px rgba(8,10,14,.18);
+  transform:translateX(9px) skewY(2deg);
+  transform-origin:left center;
+  pointer-events:none;
+}
+
+.rtg-vending-head-v9{
+  box-shadow:
+    inset 3px 0 0 rgba(255,255,255,.12),
+    inset -8px 0 10px rgba(0,0,0,.22),
+    inset 0 2px 0 rgba(255,255,255,.18),
+    inset 0 -9px 13px rgba(0,0,0,.23),
+    5px 5px 0 #15181d,
+    0 8px 12px rgba(8,10,14,.16)!important;
+}
+
+.rtg-vending-window-v9{
+  box-shadow:
+    inset 10px 0 14px rgba(255,255,255,.27),
+    inset -18px 0 22px rgba(35,68,82,.21),
+    inset 0 11px 16px rgba(255,255,255,.40),
+    inset 0 -27px 29px rgba(36,72,87,.21),
+    6px 3px 0 #171b20,
+    8px 8px 12px rgba(8,10,14,.13)!important;
+}
+.rtg-vending-window-v9::before{
+  width:19px!important;
+  background:linear-gradient(90deg,transparent 0%,rgba(54,96,113,.08) 30%,rgba(27,55,68,.20) 100%)!important;
+}
+
+.rtg-vending-body-v9{
+  box-shadow:
+    inset 4px 2px 0 rgba(255,255,255,.92),
+    inset -14px 0 18px rgba(71,62,49,.13),
+    inset 0 -13px 16px rgba(71,62,49,.10),
+    6px 5px 0 #b9b4aa,
+    9px 13px 19px rgba(9,11,14,.19)!important;
+}
+.rtg-vending-body-v9::before{
+  box-shadow:
+    inset 3px 2px 0 rgba(255,255,255,.56),
+    inset -10px -9px 14px rgba(122,73,0,.19),
+    4px 4px 0 #c58d13,
+    5px 6px 8px rgba(17,18,22,.11)!important;
+}
+
+.rtg-vending-info-v9{
+  transform:translateZ(5px)!important;
+  box-shadow:inset 2px 2px 3px rgba(255,255,255,.86),inset -4px -5px 7px rgba(90,77,55,.09),3px 5px 7px rgba(17,18,22,.15)!important;
+}
+.rtg-vending-crank-v9{
+  transform:translateZ(9px)!important;
+  box-shadow:inset 5px 5px 7px rgba(255,255,255,.48),inset -7px -8px 10px rgba(17,18,22,.28),5px 8px 11px rgba(17,18,22,.24)!important;
+}
+.rtg-vending-chute-v9{
+  transform:translateZ(4px)!important;
+  box-shadow:inset 5px 4px 8px rgba(255,255,255,.06),inset -7px -9px 11px rgba(0,0,0,.30),inset 0 -14px 16px rgba(0,0,0,.44),3px 6px 8px rgba(17,18,22,.18)!important;
+}
+.rtg-vending-brand-v9{
+  transform:translateZ(6px)!important;
+  box-shadow:3px 5px 6px rgba(17,18,22,.18)!important;
+}
+
+@media(max-width:430px){
+  .rtg-vending-machine-v12::after{
+    top:12px;
+    right:10px;
+    width:22px;
+    height:328px;
+    transform:translateX(8px) skewY(2deg);
+  }
+}
