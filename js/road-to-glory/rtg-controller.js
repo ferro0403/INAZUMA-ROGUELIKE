@@ -1151,10 +1151,19 @@
           if(!prepared?.result||!prepared?.player)return;
           const rarityKey=String(prepared.result.rarity||prepared.player.category||"normale").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-");
           if(machine){
+            const capsules=Array.from(machine.querySelectorAll?.("[data-capsule-rarity]")||[]);
+            capsules.forEach(capsule=>capsule.classList.remove("is-selected"));
+            const matching=capsules.filter(capsule=>capsule.dataset.capsuleRarity===rarityKey);
+            const choices=matching.length?matching:capsules;
+            const selected=choices.length?choices[Math.floor(Math.random()*choices.length)]:null;
+            if(selected){
+              selected.dataset.capsuleRarity=rarityKey;
+              selected.classList.add("is-selected");
+            }
             machine.dataset.pullRarity=rarityKey;
             machine.classList.add("is-revealing");
           }
-          await new Promise(resolve=>setTimeout(resolve,720));
+          await new Promise(resolve=>setTimeout(resolve,980));
           showPullResult(prepared.result,prepared.player);
         }finally{
           machine?.classList?.remove("is-turning","is-revealing");
