@@ -3619,3 +3619,21 @@
   border-color:#747981!important;
   color:#555a61!important;
 }
+
+
+/* Result element pills: same style, slightly more compact. */
+.rtg-duel-result--revolution .rtg-duel-player-element.has-native-element-icon{
+  min-height:23px!important;
+  padding:3px 9px!important;
+  gap:5px!important;
+  border-width:2px!important;
+}
+.rtg-duel-result--revolution .rtg-duel-player-element.has-native-element-icon svg{
+  width:12px!important;
+  height:12px!important;
+  flex-basis:12px!important;
+}
+.rtg-duel-result--revolution .rtg-duel-player-element.has-native-element-icon>span{
+  font-size:7px!important;
+  letter-spacing:.1em!important;
+}
