@@ -625,7 +625,7 @@
       return `<section class="panel rtg-duel-card rtg-duel-card--revolution rtg-duel-card--clean rtg-paper-modal ${userHasPossession ? "is-user-possession" : "is-opponent-possession"} ${userMoveSelected ? "is-user-move-preview" : ""}">
         <div class="rtg-duel-contextbar">
           <strong class="rtg-duel-possession ${possessionClass}">${escape(possessionText)}</strong>
-          <span>${escape(currentMinute(match))}' · ${escape(({midfield:"CENTROCAMPO",attack:"TRE QUARTI",shot:"ZONA TIRO"}[pending.zone || match.fieldZone] || "AZIONE"))}</span>
+          <span class="rtg-duel-context-meta"><b class="rtg-duel-minute">${escape(currentMinute(match))}'</b><b class="rtg-duel-zone">${escape(({midfield:"CENTROCAMPO",attack:"TRE QUARTI",shot:"ZONA TIRO"}[pending.zone || match.fieldZone] || "AZIONE"))}</b></span>
         </div>
         <header class="rtg-duel-story rtg-duel-story--clean rtg-duel-story--minimal">
           <div><p class="eyebrow">SCONTRO</p><h2>${escape(duelTypeLabel(pending))}</h2></div>
