@@ -3223,3 +3223,31 @@
 .rtg-duel-choice-card .rtg-move-element-badge.element-vento{--move-element:#1683a9}
 .rtg-duel-choice-card .rtg-move-element-badge.element-mountain,
 .rtg-duel-choice-card .rtg-move-element-badge.element-montagna{--move-element:#8a6030}
+
+
+/* RTG duel polish: clean special-move command and stronger possession yellow. */
+.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-action.is-move{
+  background:#ffd21f!important;
+  border-color:#111216!important;
+  color:#111216!important;
+  box-shadow:2px 3px 0 #111216!important;
+}
+.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-action.is-move::before{
+  width:5px!important;
+  background:var(--duel-rarity-accent-vivid,#111216)!important;
+}
+.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-action.is-move small,
+.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-action.is-move strong,
+.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-action.is-move em{
+  max-width:100%!important;
+  overflow:hidden!important;
+  color:#111216!important;
+  text-overflow:ellipsis!important;
+  white-space:nowrap!important;
+}
+.rtg-duel-card--clean .rtg-duel-contextbar .rtg-duel-possession{
+  background:#ffd21f!important;
+  color:#111216!important;
+  border:2px solid #111216!important;
+  box-shadow:2px 2px 0 rgba(255,255,255,.18)!important;
+}
