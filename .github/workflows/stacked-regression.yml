@@ -53,7 +53,8 @@ jobs:
         run: |
           set -euo pipefail
           tests=(
-            tests/app-gameplay-persistence-callsite-ownership-test.js
+            tests/legacy-card-identity-foundation-test.js
+          tests/app-gameplay-persistence-callsite-ownership-test.js
             tests/final-persistence-audit-production-test.js
             tests/app-gameplay-persistence-transactions-test.js
             tests/navigation-persistence-hardening-test.js
