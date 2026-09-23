@@ -788,8 +788,9 @@ button.player-card:has(> .rtg-legacy-badge),
 
 
 
-/* RTG Album reuses the canonical Album collection + roster design. */
-.rtg-album-collections-screen .album-collection-card{cursor:pointer;}
+
+/* RTG Album intentionally inherits the canonical Album team/roster UI verbatim. */
+.rtg-album-teams-screen .album-team-card--modern{cursor:pointer;}
 .rtg-album-roster-screen .album-player-entry.is-unlocked .album-player-card{cursor:pointer;}
 .rtg-album-roster-screen .album-player-entry.is-locked .album-player-card{pointer-events:none;}
 .rtg-album-roster-screen .album-player-grid{padding-bottom:42px;}
