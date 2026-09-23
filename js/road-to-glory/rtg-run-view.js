@@ -134,6 +134,7 @@
           <span>SALDO RTG</span>
           <strong>${escape(result.balanceAfter)} ◈</strong>
         </div>
+        <button type="button" class="btn btn-yellow rtg-pull-continue" data-rtg-pull-continue>CONTINUA</button>
       </div>`;
     }
 
