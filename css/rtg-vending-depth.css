@@ -1,95 +1,131 @@
-/* RTG vending v15 — explicit cabinet depth.
-   Adds a visible right-hand side/extrusion instead of relying only on flat shadows. */
+/* RTG vending v16 — coherent cabinet depth.
+   Keep the existing front artwork/capsule pile, but make the whole machine read as one physical object. */
 .rtg-vending-machine-v12{
-  perspective:760px!important;
+  --rtg-depth:14px;
+  perspective:900px!important;
   transform-style:preserve-3d!important;
-  filter:drop-shadow(0 19px 20px rgba(8,10,14,.22)) drop-shadow(12px 10px 10px rgba(8,10,14,.15))!important;
+  overflow:visible!important;
+  filter:drop-shadow(0 17px 18px rgba(8,10,14,.18)) drop-shadow(10px 9px 9px rgba(8,10,14,.10))!important;
 }
 
-/* Physical right side of the cabinet: visible from head to lower body. */
+/* Continuous side shell. It follows the materials of the FRONT instead of becoming a black bar. */
 .rtg-vending-machine-v12::after{
   content:"";
   position:absolute;
   z-index:-1;
-  top:13px;
-  right:7px;
-  width:25px;
-  height:356px;
+  top:9px;
+  right:10px;
+  width:var(--rtg-depth);
+  height:354px;
   border-radius:0 13px 15px 0;
   background:
-    linear-gradient(90deg,#31353c 0%,#25292f 38%,#171a1f 100%);
+    linear-gradient(180deg,
+      #252a31 0 13%,
+      #536d78 13.2% 57.5%,
+      #c8c3b9 57.8% 96%,
+      #3b4047 96.2% 100%);
   box-shadow:
-    inset 2px 0 0 rgba(255,255,255,.10),
-    inset -5px 0 8px rgba(0,0,0,.30),
-    7px 7px 11px rgba(8,10,14,.18);
-  transform:translateX(9px) skewY(2deg);
+    inset 2px 0 2px rgba(255,255,255,.22),
+    inset -5px 0 7px rgba(0,0,0,.16),
+    6px 5px 9px rgba(8,10,14,.13);
+  transform:translateX(8px) skewY(2deg);
   transform-origin:left center;
   pointer-events:none;
 }
 
-.rtg-vending-head-v9{
-  box-shadow:
-    inset 3px 0 0 rgba(255,255,255,.12),
-    inset -8px 0 10px rgba(0,0,0,.22),
-    inset 0 2px 0 rgba(255,255,255,.18),
-    inset 0 -9px 13px rgba(0,0,0,.23),
-    5px 5px 0 #15181d,
-    0 8px 12px rgba(8,10,14,.16)!important;
+/* Move the face slightly left so the side is clearly visible without widening the modal. */
+.rtg-vending-head-v9,
+.rtg-vending-window-v9,
+.rtg-vending-body-v9{
+  transform:translateX(-4px)!important;
 }
 
-.rtg-vending-window-v9{
+/* Header is a rounded cap with a real right edge, not a flat rectangle. */
+.rtg-vending-head-v9{
+  border-right-color:#171b20!important;
   box-shadow:
-    inset 10px 0 14px rgba(255,255,255,.27),
-    inset -18px 0 22px rgba(35,68,82,.21),
-    inset 0 11px 16px rgba(255,255,255,.40),
-    inset 0 -27px 29px rgba(36,72,87,.21),
-    6px 3px 0 #171b20,
-    8px 8px 12px rgba(8,10,14,.13)!important;
+    inset 3px 2px 3px rgba(255,255,255,.15),
+    inset -9px 0 12px rgba(0,0,0,.22),
+    inset 0 -8px 12px rgba(0,0,0,.20),
+    4px 2px 0 #171b20,
+    7px 6px 9px rgba(8,10,14,.11)!important;
+}
+
+/* Recessed glass: bright front lip on the left, darker inner wall on the right. */
+.rtg-vending-window-v9{
+  border-left-width:4px!important;
+  border-right-width:5px!important;
+  border-right-color:#171c21!important;
+  box-shadow:
+    inset 8px 0 11px rgba(255,255,255,.31),
+    inset -17px 0 18px rgba(35,67,81,.20),
+    inset 0 9px 12px rgba(255,255,255,.36),
+    inset 0 -22px 24px rgba(34,69,84,.18),
+    4px 0 0 #526975,
+    7px 4px 8px rgba(8,10,14,.09)!important;
 }
 .rtg-vending-window-v9::before{
-  width:19px!important;
-  background:linear-gradient(90deg,transparent 0%,rgba(54,96,113,.08) 30%,rgba(27,55,68,.20) 100%)!important;
+  width:17px!important;
+  background:linear-gradient(90deg,transparent 0%,rgba(45,80,94,.07) 38%,rgba(25,48,58,.18) 100%)!important;
 }
 
+/* Lower cabinet is thicker than the glass and keeps the ivory material around the side. */
 .rtg-vending-body-v9{
+  border-right-color:#9e9a92!important;
   box-shadow:
-    inset 4px 2px 0 rgba(255,255,255,.92),
-    inset -14px 0 18px rgba(71,62,49,.13),
-    inset 0 -13px 16px rgba(71,62,49,.10),
-    6px 5px 0 #b9b4aa,
-    9px 13px 19px rgba(9,11,14,.19)!important;
+    inset 4px 2px 4px rgba(255,255,255,.92),
+    inset -11px 0 15px rgba(88,76,58,.12),
+    inset 0 -10px 13px rgba(72,63,49,.09),
+    4px 0 0 #c7c2b8,
+    7px 7px 11px rgba(8,10,14,.12)!important;
 }
 .rtg-vending-body-v9::before{
   box-shadow:
     inset 3px 2px 0 rgba(255,255,255,.56),
-    inset -10px -9px 14px rgba(122,73,0,.19),
-    4px 4px 0 #c58d13,
-    5px 6px 8px rgba(17,18,22,.11)!important;
+    inset -8px -8px 12px rgba(122,73,0,.16),
+    2px 3px 0 #c99419,
+    4px 5px 7px rgba(17,18,22,.09)!important;
 }
 
+/* Front controls live on different physical planes. */
 .rtg-vending-info-v9{
-  transform:translateZ(5px)!important;
-  box-shadow:inset 2px 2px 3px rgba(255,255,255,.86),inset -4px -5px 7px rgba(90,77,55,.09),3px 5px 7px rgba(17,18,22,.15)!important;
+  transform:translate(-2px,-2px)!important;
+  box-shadow:inset 2px 2px 3px rgba(255,255,255,.90),inset -3px -4px 6px rgba(90,77,55,.08),3px 5px 7px rgba(17,18,22,.13)!important;
 }
 .rtg-vending-crank-v9{
-  transform:translateZ(9px)!important;
-  box-shadow:inset 5px 5px 7px rgba(255,255,255,.48),inset -7px -8px 10px rgba(17,18,22,.28),5px 8px 11px rgba(17,18,22,.24)!important;
+  transform:translate(2px,-3px)!important;
+  box-shadow:inset 5px 5px 7px rgba(255,255,255,.50),inset -7px -8px 10px rgba(17,18,22,.27),4px 7px 9px rgba(17,18,22,.21)!important;
 }
 .rtg-vending-chute-v9{
-  transform:translateZ(4px)!important;
-  box-shadow:inset 5px 4px 8px rgba(255,255,255,.06),inset -7px -9px 11px rgba(0,0,0,.30),inset 0 -14px 16px rgba(0,0,0,.44),3px 6px 8px rgba(17,18,22,.18)!important;
+  transform:translate(-2px,1px)!important;
+  box-shadow:inset 4px 4px 7px rgba(255,255,255,.05),inset -6px -8px 10px rgba(0,0,0,.29),inset 0 -14px 16px rgba(0,0,0,.43),3px 5px 7px rgba(17,18,22,.15)!important;
 }
 .rtg-vending-brand-v9{
-  transform:translateZ(6px)!important;
-  box-shadow:3px 5px 6px rgba(17,18,22,.18)!important;
+  transform:translate(1px,1px)!important;
+  box-shadow:inset 1px 1px 1px rgba(255,255,255,.08),3px 4px 5px rgba(17,18,22,.16)!important;
+}
+
+/* Bottom foot projects behind the fascia and visually closes the cabinet. */
+.rtg-vending-body-v9::after{
+  content:""!important;
+  position:absolute!important;
+  z-index:-1!important;
+  left:14px!important;
+  right:2px!important;
+  bottom:-11px!important;
+  height:13px!important;
+  border-radius:0 0 12px 12px!important;
+  background:linear-gradient(180deg,#4b5057 0%,#272c32 100%)!important;
+  box-shadow:6px 4px 8px rgba(8,10,14,.14)!important;
+  transform:skewX(-3deg)!important;
 }
 
 @media(max-width:430px){
+  .rtg-vending-machine-v12{--rtg-depth:12px;}
   .rtg-vending-machine-v12::after{
-    top:12px;
-    right:10px;
-    width:22px;
-    height:328px;
-    transform:translateX(8px) skewY(2deg);
+    top:9px;
+    right:12px;
+    height:326px;
+    transform:translateX(7px) skewY(2deg);
   }
 }
