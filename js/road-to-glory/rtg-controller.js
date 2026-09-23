@@ -1173,13 +1173,20 @@
     }
     function showPullResult(result,player){
       if(!result||!player)return null;
-      deps.openModal?.(runView.pullResultMarkup(result,player),{className:"rtg-modal rtg-pull-modal"});
-      deps.getModalRoot?.()?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",event=>{
+      deps.openModal?.(runView.pullResultMarkup(result,player),{
+        className:"rtg-modal rtg-pull-modal",
+        onClose:()=>openVending(),
+      });
+      const modalRoot=deps.getModalRoot?.();
+      modalRoot?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",event=>{
         const playerId=id(event.currentTarget?.dataset?.rtgPullPlayerDetail||result.playerId);
         if(!playerId)return;
         openRtgPlayerDetails(playerId,"",{
           onClose:()=>showPullResult(result,player),
         });
+      });
+      modalRoot?.querySelector?.("[data-rtg-pull-continue]")?.addEventListener("click",()=>{
+        deps.closeModal?.();
       });
       return result;
     }
