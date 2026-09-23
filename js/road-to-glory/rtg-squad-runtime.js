@@ -2,8 +2,24 @@
   "use strict";
 
   const config = () => global.RoadToGloryConfig.SEASON1;
-  const cards = () => global.RoadToGloryCardIdentity;
   const id = (value) => String(value ?? "");
+  const legacyCardApi = Object.freeze({
+    FREE_AGENTS: "free_agents",
+    cardIdForFreeAgent: (playerId) => id(playerId),
+    parse(value) {
+      if (value && typeof value === "object") {
+        const cardId = id(value.cardId || value.playerId || value.id);
+        const playerId = id(value.playerId || value.id || cardId);
+        return { cardId, playerId, legacySeasonId: value.legacySeasonId || null, sourceKind: value.sourceKind || "legacy" };
+      }
+      const raw = id(value);
+      const split = raw.indexOf("::");
+      return split > 0
+        ? { cardId: raw, playerId: raw.slice(split + 2), legacySeasonId: raw.slice(0, split), sourceKind: raw.startsWith("free_agents::") ? "free_agents" : "season" }
+        : { cardId: raw, playerId: raw, legacySeasonId: null, sourceKind: "legacy" };
+    },
+  });
+  const cards = () => global.RoadToGloryCardIdentity || legacyCardApi;
   const round1 = (value) => Math.round(Number(value || 0) * 10) / 10;
 
   function accessibleCardIds({ freeAgentIds = [], state } = {}) {
