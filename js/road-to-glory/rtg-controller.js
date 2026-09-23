@@ -36,7 +36,7 @@
     let selectedEncounterId=null;
     const SQUAD_PICKER_PAGE_SIZE=24;
     const ENCOUNTER_REVEAL_DELAY_MS=2200;
-    const FINAL_COMPARISON_DELAY_MS=3000;
+    const FINAL_COMPARISON_DELAY_MS=1700;
     const DUEL_RESULT_REVEAL_DELAY_MS=1150;
     const schedule=deps.setTimeout||global.setTimeout;
     const cancelSchedule=deps.clearTimeout||global.clearTimeout;
@@ -1144,6 +1144,8 @@
           aiMovePower:before.aiChoice==="move" ? (before.aiMove?.power ?? null) : null,
           userMoveType:choice==="move" ? (before.userMove?.type || before.userKind || null) : null,
           aiMoveType:before.aiChoice==="move" ? (before.aiMove?.type || before.aiKind || null) : null,
+          userMoveElement:choice==="move" ? (before.userMove?.element || null) : null,
+          aiMoveElement:before.aiChoice==="move" ? (before.aiMove?.element || null) : null,
           scoreBefore,scoreAfter:clone(resolvedMatch.score||scoreBefore),
           goalSide:log.goalSide||null,
         };
