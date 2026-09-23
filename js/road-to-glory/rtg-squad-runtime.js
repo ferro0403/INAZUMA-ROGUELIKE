@@ -125,7 +125,10 @@
     const bench = squad?.bench || [];
     const activeRoster = [...lineup, ...bench];
     const power = validation.valid ? teamPower({ lineup: activeRoster, activeSeasonId: seasonId, playerResolver, freeAgentsDb, activeRoleVariantByCardId: squad.activeRoleVariantByCardId || {} }) : null;
-    const recruitSet = new Set((state?.gachaAcquiredCards || []).map((entry) => cards().parse(entry).cardId));
+    const recruitSet = new Set([
+      ...(state?.gachaAcquiredCards || []).map((entry) => cards().parse(entry).cardId),
+      ...(state?.gachaAcquiredPlayerIds || []).map(id),
+    ].filter(Boolean));
     const recruits = activeRoster.map(id).filter((cardId) => recruitSet.has(cardId));
     const recentTeams = recentDefeatedTeamIds(teamId, state, constraint.recentWindow);
     const recentTeamSet = new Set(recentTeams);
