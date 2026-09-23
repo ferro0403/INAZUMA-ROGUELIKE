@@ -819,7 +819,7 @@
         </div>
         <header class="rtg-halftime-scoreboard">
           <div class="rtg-halftime-minute"><small>FINE 1° TEMPO</small><strong>45'</strong></div>
-          <div class="rtg-halftime-score"><small>${escape(userName)}</small><strong>${escape(scoreUser)} - ${escape(scoreOpponent)}</strong><small>${escape(match.opponentSquad?.name || "AVVERSARIO")}</small></div>
+          <div class="rtg-halftime-score"><span class="rtg-halftime-score-emblem rtg-halftime-score-emblem--user">${emblem(match.userSquad || {}, "user", "rtg-halftime-team-logo")}</span><strong>${escape(scoreUser)} - ${escape(scoreOpponent)}</strong><span class="rtg-halftime-score-emblem rtg-halftime-score-emblem--opponent">${emblem(match.opponentSquad || {}, "opponent", "rtg-halftime-team-logo")}</span></div>
           <div class="rtg-halftime-shape"><small>MODULO</small><strong>${escape(model.formationId || "—")}</strong></div>
         </header>
         <div class="rtg-halftime-layout">
