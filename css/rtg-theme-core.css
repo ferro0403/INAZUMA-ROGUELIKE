@@ -3357,3 +3357,18 @@
 .rtg-duel-result-move small,.rtg-duel-result-move strong,.rtg-duel-result-move em{
   color:#111216!important;
 }
+
+
+/* RTG possession badge: fill by possession side, not just border. */
+.rtg-duel-card--clean.is-user-possession .rtg-duel-contextbar .rtg-duel-possession{
+  background:#2f8ed3!important;
+  background-image:none!important;
+  border-color:#2f8ed3!important;
+  color:#fff!important;
+}
+.rtg-duel-card--clean.is-opponent-possession .rtg-duel-contextbar .rtg-duel-possession{
+  background:#d94f58!important;
+  background-image:none!important;
+  border-color:#d94f58!important;
+  color:#fff!important;
+}
