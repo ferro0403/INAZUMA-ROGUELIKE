@@ -109,52 +109,55 @@
     background:url("../assets/home/inazuma-stadium-desktop-light.jpeg") center / cover no-repeat!important;
   }
 }
-/* RTG Legacy marker: keep role and OVR corners unobstructed. */
+/* RTG Legacy marker: sits outside the card corner so it never covers role, OVR or portrait. */
+button.player-card:has(> .rtg-legacy-badge),
+.player-card:has(> .rtg-legacy-badge){
+  overflow:visible!important;
+}
 .rtg-legacy-badge{
   position:absolute!important;
-  z-index:16!important;
-  left:50%!important;
-  right:auto!important;
-  top:3px!important;
-  transform:translateX(-50%) skew(-4deg)!important;
+  z-index:24!important;
+  left:auto!important;
+  right:-4px!important;
+  top:-15px!important;
+  transform:rotate(2deg)!important;
   display:grid!important;
   place-items:center!important;
   width:auto!important;
   min-width:27px!important;
-  height:18px!important;
-  min-height:18px!important;
+  height:16px!important;
+  min-height:16px!important;
   padding:0 5px!important;
   border:2px solid #111216!important;
   border-radius:0!important;
   background:#ffd21f!important;
   color:#111216!important;
   box-shadow:1px 2px 0 #111216!important;
-  font:1000 8px/1 system-ui,sans-serif!important;
+  font:1000 7px/1 system-ui,sans-serif!important;
   letter-spacing:.04em!important;
   pointer-events:none!important;
 }
-.rtg-pull-player-card .rtg-legacy-badge{left:50%!important;right:auto!important;top:3px!important;}
+.rtg-pull-player-card .rtg-legacy-badge{
+  left:auto!important;
+  right:-4px!important;
+  top:-15px!important;
+}
 
-/* RTG player detail: Legacy identity lives beside the team banner, never on free agents. */
-.player-detail-top-badges{
-  display:flex;
-  align-items:stretch;
-  gap:9px;
-  width:100%;
-  max-width:96%;
+/* Give the protruding Legacy tab a clean lane in dense card grids. */
+.rtg-modal .rtg-picker-grid,
+.rtg-modal .rtg-catalog-grid{
+  row-gap:22px!important;
+  padding-top:17px!important;
 }
-.player-detail-top-badges .player-detail-team{
-  flex:1 1 auto;
-  min-width:0;
-  max-width:none;
-}
-.player-detail-top-badges .player-detail-team strong{
-  min-width:0;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
+
+/* Player detail: Legacy badge is independent from the team banner.
+   It has a reserved safe area to the left of the close button and never compresses the team name. */
 .player-detail-rtg-legacy-badge{
-  flex:0 0 50px;
+  position:absolute;
+  z-index:8;
+  top:18px;
+  right:82px;
+  width:50px;
   min-width:50px;
   min-height:48px;
   display:grid;
@@ -168,6 +171,7 @@
   box-shadow:4px 4px 0 #111216;
   transform:skew(-4deg);
   text-transform:uppercase;
+  pointer-events:none;
 }
 .player-detail-rtg-legacy-badge > *{transform:skew(4deg);}
 .player-detail-rtg-legacy-badge small{
@@ -181,9 +185,10 @@
 }
 
 @media(max-width:520px){
-  .player-detail-top-badges{gap:6px;max-width:100%;}
   .player-detail-rtg-legacy-badge{
-    flex-basis:42px;
+    top:16px;
+    right:72px;
+    width:42px;
     min-width:42px;
     min-height:42px;
     padding:4px 3px 3px;
@@ -192,4 +197,15 @@
   }
   .player-detail-rtg-legacy-badge small{font-size:5px;}
   .player-detail-rtg-legacy-badge strong{font-size:16px;}
+}
+
+@media(max-width:370px){
+  .player-detail-rtg-legacy-badge{
+    top:14px;
+    right:68px;
+    width:38px;
+    min-width:38px;
+    min-height:38px;
+  }
+  .player-detail-rtg-legacy-badge strong{font-size:15px;}
 }
