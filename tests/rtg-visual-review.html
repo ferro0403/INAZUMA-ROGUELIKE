@@ -1,0 +1,40 @@
+<!doctype html><html lang="it"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>RTG — visual review</title>
+<style>body{margin:0;background:#d4d5d8;font:14px system-ui;color:#111}header{display:flex;gap:12px;align-items:center;padding:12px;flex-wrap:wrap;background:#111;color:white}select{font:inherit;padding:8px}iframe{display:block;border:0;margin:18px auto;background:white;height:844px;max-width:100%}small{color:#ddd}</style>
+<header><strong>RTG · Review UI</strong><select id="screen" aria-label="Schermata"></select><select id="width" aria-label="Larghezza"><option>320</option><option selected>390</option><option>430</option><option>768</option></select><small>Fixture sintetiche · nessun salvataggio · pulsanti di gioco non attivi</small></header><iframe title="Schermata RTG"></iframe>
+<script src="/js/formation-layout.js"></script>
+<script src="/js/player/player-view.js"></script>
+<script src="/js/road-to-glory/rtg-squad-view.js"></script>
+<script src="/js/road-to-glory/rtg-run-view.js"></script>
+<script src="/js/road-to-glory/rtg-match-view.js"></script>
+<script src="/js/road-to-glory/rtg-config.js"></script>
+<script type="module">
+const ctx=window;
+const db=await fetch('/data/IE1_season_compact.json').then(r=>r.json());const free=await fetch('/data/FREE_AGENTS_compact.json').then(r=>r.json());
+const esc=s=>String(s??'').replaceAll('&','&amp;').replaceAll('"','&quot;').replaceAll('<','&lt;');
+const players=db.players.map(p=>({...p,normalizedRole:p.position||p.role,overall:p.overall||75}));
+
+const form=db.formations.eleven.find(x=>x.id==='4-5-1')||db.formations.eleven[0];
+const byRole=r=>players.filter(p=>(p.normalizedRole||'').toUpperCase()===r);
+const lineup=['GK','DF','MF','FW'].flatMap(r=>byRole(r).slice(0,form.requirements[r]||0));const bench=['GK','DF','MF','FW'].map(r=>byRole(r).at(-1));
+const pv=ctx.PlayerView.create({escapeHtml:esc,visuals:{portraitUrl:p=>p.portraitUrl||p.portrait||'',resolve:()=>({cardFallbacks:[]}),imageFallbackAttributes:()=>''}});
+const sv=ctx.RoadToGlorySquadView.create({escapeHtml:esc,compactPlayerCardMarkup:pv.compactCard,formationLayout:ctx.FormationLayout});
+const rv=ctx.RoadToGloryRunView.create({escapeHtml:esc});
+const emblem=(sq,side,cls)=>`<span class="${cls}"><img src="${db.teams.find(t=>t.teamId===(side==='user'?'raimon':'occult'))?.logoUrl||'/assets/logos/raimon.png'}" alt=""></span>`;
+const mv=ctx.RoadToGloryMatchView.create({escapeHtml:esc,compactPlayerCardMarkup:pv.compactCard,squadPitchMarkup:sv.matchPitchMarkup,formationById:id=>db.formations.eleven.find(f=>f.id===id),teamEmblemMarkup:emblem});
+const entries=lineup.map(player=>({player,playerId:player.playerId,source:'FREE'}));
+const rows=ctx.FormationLayout.displayRows(form).map(row=>({...row,entries:entries.filter(e=>e.player.normalizedRole===row.role)}));
+const model={formation:form,formationId:form.id,lineup:entries,lineupRows:rows,bench:bench.map(player=>({player,playerId:player.playerId,source:'RTG'}))};
+const eligibility={teamPower:75,cap:75,recruitCount:4,minRecruit:4,recentRecruitCount:2,recentCount:2,eligible:true};
+const match={period:2,minute:59,score:{user:2,opponent:1},possession:'user',zone:'midfield',phase:'playing',userSquad:{name:'Thot-Tenam',formationId:form.id,lineup,bench},opponentSquad:{name:'Occult',formationId:form.id,lineup:lineup.slice().reverse(),bench},log:Array.from({length:9},(_,i)=>({minute:i*6+4,kind:i%3?'dribble':'shot',actorSide:'user',actorPlayerId:lineup.at(-1).playerId,opponentPlayerId:lineup[0].playerId,actorWon:i%2===0}))};
+const modal=(body,picker=false)=>`<div class="modal-backdrop"><section class="modal rtg-modal ${picker ? 'rtg-squad-picker-modal' : ''}"><button class="modal-close" aria-label="Chiudi">✕</button>${body}</section></div>`;
+const views={squad:sv.markup(model,{requirementsMarkup:rv.requirementsMarkup(eligibility),nextTeamName:'Occult'}),prematch:mv.preMatchMarkup(match),match:mv.matchMarkup(match),catalog:modal(sv.catalogMarkup({entries:model.bench,total:4})),picker:modal(sv.replacementPickerMarkup({entries:players.filter(p=>p.normalizedRole==='GK').slice(0,24).map(player=>({player,playerId:player.playerId})),total:35,role:'GK',currentPlayer:lineup[0]}),true),vending:modal(rv.vendingMarkup({tokens:340,candidates:[1],rarities:[{rarity:'Normale',weight:47.1},{rarity:'Buono',weight:31.8},{rarity:'Forte',weight:15},{rarity:'Elite',weight:6.1}]}))};
+views.hub='<main id="clean-home">'+(await fetch('/js/home/home-view.js').then(r=>r.text())).match(/function homeRtgHubMarkup\(\) \{\s*return `([^`]+)`/)[1]+'</main>';
+views.opponent=views.prematch.replace('data-rtg-prematch-field="user"','data-rtg-prematch-field="user" hidden').replace('data-rtg-prematch-field="opponent" hidden','data-rtg-prematch-field="opponent"');
+views.requirements=views.squad.replace('<details class="rtg-requirements-disclosure">','<details open class="rtg-requirements-disclosure">');
+
+const head=(await fetch('/index.html').then(r=>r.text())).split('</head>')[0].replace('<head>','<head><base href="/">');
+const screen=document.querySelector('#screen'),width=document.querySelector('#width'),frame=document.querySelector('iframe');
+for(const name of Object.keys(views)){const o=document.createElement('option');o.value=name;o.textContent=name;screen.append(o);}
+function render(){frame.style.width=width.value+'px';frame.srcdoc=head+'</head><body>'+views[screen.value]+'</body></html>';}
+screen.onchange=render;width.onchange=render;render();
+</script></html>

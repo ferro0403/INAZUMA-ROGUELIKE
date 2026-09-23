@@ -1,0 +1,111 @@
+@import url("./rtg-theme-core.css?v=20260921-duel-actions-mobile-1");
+
+/* RTG token HUD: compact Ramen Sticker currency and separate resource cards. */
+.rtg-token-icon{display:inline-block!important;width:22px!important;height:22px!important;min-width:22px!important;max-width:22px!important;min-height:22px!important;max-height:22px!important;object-fit:contain!important;object-position:center!important;vertical-align:-5px!important;flex:0 0 22px!important;margin:0 4px 0 0!important;}
+.rtg-main-topbar .status-strip{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-end!important;gap:10px!important;flex-wrap:nowrap!important;}
+.rtg-main-topbar .status-pill{position:relative!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;min-height:42px!important;padding:7px 11px!important;white-space:nowrap!important;background:#fffdf6!important;color:#111216!important;border:2px solid #111216!important;box-shadow:3px 4px 0 #111216!important;}
+.rtg-main-topbar .rtg-token-pill{min-width:82px!important;}
+.rtg-main-topbar .status-pill.lives{display:inline-block!important;min-width:88px!important;padding:10px 11px!important;color:#111216!important;font-size:.86rem!important;font-weight:800!important;line-height:1.15!important;text-align:center!important;letter-spacing:0!important;}
+.rtg-main-topbar .status-pill.lives::before,.rtg-main-topbar .status-pill.lives::after{content:none!important;display:none!important;}
+.rtg-main-topbar .status-pill.lives::first-letter{color:#e23b3b!important;font-size:1.28em!important;}
+.rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:20px!important;height:20px!important;min-width:20px!important;max-width:20px!important;min-height:20px!important;max-height:20px!important;flex-basis:20px!important;vertical-align:-4px!important;}
+.rtg-vending-button span,.rtg-vending-wallet-chip strong,.rtg-vending-pull{align-items:center!important;}
+
+/* Squad replacement picker. */
+.rtg-picker-overall-order{justify-self:start;min-height:34px;padding:6px 11px;border:2px solid #111216;border-radius:0;background:#fffdf6;color:#111216;box-shadow:2px 3px 0 #111216;font:800 .78rem/1 system-ui,sans-serif;letter-spacing:.04em;cursor:pointer;}
+.rtg-picker-overall-order[aria-pressed="true"]{background:#ffd21f;}
+.rtg-picker-overall-order:active{transform:translate(1px,1px);box-shadow:1px 2px 0 #111216;}
+
+/* Catalog controls only layout. Card appearance is the canonical squad card. */
+.rtg-modal .rtg-player-catalog .rtg-catalog-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-auto-flow:row!important;gap:12px 8px!important;align-items:start!important;justify-content:center!important;width:100%!important;padding:14px 0 4px!important;}
+
+/* Duel action cards: give long move labels their own full-width row. */
+.rtg-duel-card--clean .rtg-duel-choice-card{min-width:0!important;min-height:108px!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:minmax(42px,auto) auto!important;grid-template-areas:"copy copy" "probability probability"!important;align-content:space-between!important;align-items:start!important;gap:10px 8px!important;padding:12px!important;}
+.rtg-duel-card--clean .rtg-choice-icon{display:none!important;}
+.rtg-duel-card--clean .rtg-choice-copy{grid-area:copy!important;align-self:start!important;display:grid!important;gap:4px!important;min-width:0!important;width:100%!important;padding:0!important;overflow:visible!important;text-align:left!important;}
+.rtg-duel-card--clean .rtg-choice-copy strong{display:-webkit-box!important;min-width:0!important;width:100%!important;margin:0!important;overflow:hidden!important;color:#111216!important;font-size:clamp(12px,3.3vw,15px)!important;font-weight:1000!important;line-height:1.08!important;letter-spacing:-.01em!important;overflow-wrap:break-word!important;word-break:normal!important;white-space:normal!important;hyphens:none!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;}
+.rtg-duel-card--clean .rtg-choice-copy em{display:block!important;min-width:0!important;max-width:100%!important;margin:0!important;overflow:hidden!important;color:#5f6167!important;font-size:9px!important;font-style:normal!important;font-weight:850!important;line-height:1.15!important;text-align:left!important;text-overflow:ellipsis!important;white-space:nowrap!important;}
+.rtg-duel-card--clean .rtg-choice-probability{grid-area:probability!important;align-self:end!important;justify-self:stretch!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px!important;min-width:0!important;width:100%!important;padding:0!important;margin:0!important;}
+.rtg-duel-card--clean .rtg-choice-probability strong{flex:0 1 auto!important;min-width:0!important;margin:0!important;font-size:clamp(18px,5vw,22px)!important;line-height:.95!important;white-space:nowrap!important;}
+.rtg-duel-card--clean .rtg-choice-delta{flex:0 0 auto!important;margin:0!important;padding:3px 6px!important;font-size:8px!important;white-space:nowrap!important;}
+
+/* Automatic secondary encounters may win/lose their internal duel, but by rule they never transfer the ball.
+   The engine already restores possession; prevent the ticker from claiming a fake recovery/turnover. */
+.rtg-match-ticker-list > li.is-auto.match-event-type--recovery .match-event-kind,
+.rtg-match-ticker-list > li.is-auto.match-event-type--recovery .match-event-copy,
+.rtg-match-ticker-list > li.is-auto.match-event-type--defensive-stop .match-event-kind,
+.rtg-match-ticker-list > li.is-auto.match-event-type--defensive-stop .match-event-copy{display:none!important;}
+.rtg-match-ticker-list > li.is-auto.match-event-type--recovery p::after,
+.rtg-match-ticker-list > li.is-auto.match-event-type--defensive-stop p::after{content:"Duello secondario · Possesso invariato";display:block;font-weight:850;line-height:1.2;}
+
+.rtg-match-shell:has(.rtg-duel-resolving) .rtg-match-ticker-list > li.is-latest{visibility:hidden!important;}
+.rtg-match-shell:has(.rtg-duel-resolving) .rtg-score-capsule{visibility:hidden!important;}
+
+@media(max-width:430px){
+  .rtg-main-topbar .status-strip{gap:7px!important;}
+  .rtg-main-topbar .status-pill{min-height:38px!important;padding:6px 8px!important;font-size:.72rem!important;box-shadow:2px 3px 0 #111216!important;}
+  .rtg-main-topbar .rtg-token-pill{min-width:72px!important;}
+  .rtg-main-topbar .status-pill.lives{min-width:78px!important;padding:9px 8px!important;font-size:.72rem!important;}
+  .rtg-token-icon{width:19px!important;height:19px!important;min-width:19px!important;max-width:19px!important;min-height:19px!important;max-height:19px!important;flex-basis:19px!important;margin-right:3px!important;vertical-align:-4px!important;}
+  .rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;min-height:18px!important;max-height:18px!important;flex-basis:18px!important;}
+  .rtg-picker-overall-order{min-height:32px;padding:5px 9px;font-size:.72rem;}
+  .rtg-duel-card--clean .rtg-duel-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;}
+  .rtg-duel-card--clean .rtg-duel-choice-card{min-height:112px!important;padding:11px 10px!important;}
+  .rtg-duel-card--clean .rtg-choice-copy strong{font-size:12px!important;line-height:1.08!important;}
+  .rtg-duel-card--clean .rtg-choice-copy em{font-size:8px!important;}
+  .rtg-duel-card--clean .rtg-choice-probability strong{font-size:18px!important;}
+}
+
+@media(max-width:360px){
+  .rtg-modal .rtg-player-catalog .rtg-catalog-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+  .rtg-duel-card--clean .rtg-duel-choice-grid{gap:7px!important;}
+  .rtg-duel-card--clean .rtg-duel-choice-card{min-height:116px!important;padding:10px 8px!important;}
+  .rtg-duel-card--clean .rtg-choice-copy strong{font-size:11px!important;}
+  .rtg-duel-card--clean .rtg-choice-delta{padding:3px 5px!important;font-size:7px!important;}
+}
+
+/* RTG route artwork — verified JPEG across the whole Season 1 route. */
+.rtg-map .rtg-map-block .route-map.rtg-route-stage {
+  background-color:#082c52!important;
+  background-image:url("../assets/rtg/rtg-season1-route-map.jpg?v=5")!important;
+  background-position:50% 48%!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+  background-blend-mode:normal!important;
+  filter:none!important;
+}
+
+/* Route fitted to the illustrated island map. */
+.rtg-route-stage .rtg-map-lines{pointer-events:none!important;}
+.rtg-route-stage .rtg-map-lines .rtg-route-line-shadow{
+  fill:none!important;
+  stroke:#111216!important;
+  stroke-width:2.45!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  opacity:.72!important;
+}
+.rtg-route-stage .rtg-map-lines .rtg-route-line{
+  fill:none!important;
+  stroke:#ffd21f!important;
+  stroke-width:1.5!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  opacity:.94!important;
+}
+
+/* RTG screens reuse the exact Home stadium background. */
+.rtg-run-screen,
+.rtg-squad-shell{
+  background:url("../assets/home/inazuma-stadium-mobile-light.jpeg") center top / cover no-repeat!important;
+}
+.rtg-run-content,
+.rtg-squad-content{
+  background:transparent!important;
+}
+@media (min-width:781px){
+  .rtg-run-screen,
+  .rtg-squad-shell{
+    background:url("../assets/home/inazuma-stadium-desktop-light.jpeg") center / cover no-repeat!important;
+  }
+}
