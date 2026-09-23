@@ -3585,3 +3585,37 @@
   height:14px!important;
   flex:0 0 14px!important;
 }
+
+
+/* Result cards keep the same rounded element pills used in the initial duel. */
+.rtg-duel-result--revolution .rtg-duel-player-element.has-native-element-icon{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  width:max-content!important;
+  min-height:27px!important;
+  padding:4px 11px!important;
+  gap:7px!important;
+  border:3px solid currentColor!important;
+  border-radius:999px!important;
+  background:var(--duel-element-soft,#fff)!important;
+  box-shadow:none!important;
+  line-height:1!important;
+  transform:none!important;
+}
+.rtg-duel-result--revolution .rtg-duel-player-element.has-native-element-icon svg{
+  width:14px!important;
+  height:14px!important;
+  flex:0 0 14px!important;
+}
+.rtg-duel-result--revolution .rtg-duel-player-element.has-native-element-icon>span{
+  font-size:8px!important;
+  font-weight:950!important;
+  letter-spacing:.12em!important;
+  text-transform:uppercase!important;
+}
+.rtg-duel-result--revolution .rtg-duel-player-element.has-native-element-icon.is-element-disadvantaged{
+  background:#eceef0!important;
+  border-color:#747981!important;
+  color:#555a61!important;
+}
