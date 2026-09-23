@@ -4,7 +4,8 @@ const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalT
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),c);
 const view=c.RoadToGloryRunView.create({escapeHtml:s=>String(s)});
 const html=view.vendingMarkup({tokens:900,candidates:["a","b","c"],rarities:[{rarity:"Normale",weight:40},{rarity:"Forte",weight:18}]});
-assert.match(html,/rtg-vending-machine-v9/);\nassert.match(html,/rtg-vending-machine-v12/);
+assert.match(html,/rtg-vending-machine-v9/);
+assert.match(html,/rtg-vending-machine-v12/);
 assert.match(html,/rtg-vending-window-v9/);
 assert.match(html,/rtg-vending-crank-v9/);
 assert.match(html,/rtg-vending-prize-v9/);
@@ -13,7 +14,7 @@ assert.match(html,/rtg-vending-funnel-v10/);
 assert.match(html,/rtg-vending-chute-flap-v10/);
 assert.match(html,/rtg-vending-chute-v9[^>]*>[\s\S]*rtg-vending-prize-track-v9/);
 assert.strictEqual((html.match(/rtg-vending-capsule-v9/g)||[]).length,14);
-assert.strictEqual((html.match(/data-capsule-rarity=/g)||[]).length,10);
+assert.strictEqual((html.match(/data-capsule-rarity=/g)||[]).length,14);
 assert.match(html,/data-capsule-rarity="normale"/);
 assert.match(html,/data-capsule-rarity="forte"/);
 const theme=fs.readFileSync("css/rtg-theme.css","utf8");
