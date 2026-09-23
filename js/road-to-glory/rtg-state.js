@@ -140,6 +140,14 @@
     if (!ACTIVE_SEASON_IDS.includes(id(raw.activeSeasonId || "ie1"))) fail("rtg-state-invalid-season", "Season RTG non supportata");
     if (typeof raw.seasonComplete !== "boolean") fail("rtg-state-invalid-season-complete", "Flag completamento Season non valido");
     if (raw.activeMatch != null && typeof raw.activeMatch !== "object") fail("rtg-state-invalid-active-match", "Partita RTG attiva non valida");
+    for (const [seasonId, rawSquad] of Object.entries(raw.squads || {})) {
+      const rawLineup = (Array.isArray(rawSquad?.lineup) ? rawSquad.lineup : []).map(id).filter(Boolean);
+      const rawBench = (Array.isArray(rawSquad?.bench) ? rawSquad.bench : []).map(id).filter(Boolean);
+      if (new Set(rawLineup).size !== rawLineup.length) fail("rtg-state-duplicate-lineup", "Titolari RTG duplicati", { seasonId });
+      if (new Set(rawBench).size !== rawBench.length) fail("rtg-state-duplicate-bench", "Panchina RTG duplicata", { seasonId });
+      const rawLineupSet = new Set(rawLineup);
+      if (rawBench.some((cardId) => rawLineupSet.has(cardId))) fail("rtg-state-lineup-bench-overlap", "Carta presente sia tra titolari sia in panchina", { seasonId });
+    }
     const normalized = normalize(raw);
     const ownedIds = normalized.gachaAcquiredCards.map((entry) => id(entry.cardId));
     if (new Set(ownedIds).size !== ownedIds.length) fail("rtg-state-duplicate-card", "Carta RTG duplicata nella collezione");
