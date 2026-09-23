@@ -66,7 +66,7 @@
       const allowed=["normale","buono","forte","elite","mondiale","leggenda","aurico"];
       const available=[...new Set(Array.from(rarities||[]).map(entry=>pullRaritySlug(entry?.rarity)).filter(key=>allowed.includes(key)))];
       const palette=available.length?available:["normale","buono","forte","elite","mondiale"];
-      const colors=Array.from({length:10},(_,index)=>index<palette.length?palette[index]:palette[Math.floor(Math.random()*palette.length)]);
+      const colors=Array.from({length:14},(_,index)=>index<palette.length?palette[index]:palette[Math.floor(Math.random()*palette.length)]);
       for(let i=colors.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[colors[i],colors[j]]=[colors[j],colors[i]];}
       return colors;
     }
