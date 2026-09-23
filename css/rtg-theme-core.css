@@ -3251,3 +3251,49 @@
   border:2px solid #111216!important;
   box-shadow:2px 2px 0 rgba(255,255,255,.18)!important;
 }
+
+
+/* RTG context bar v3: vivid yellow possession + proper minute/zone badges. */
+.rtg-duel-card--clean .rtg-duel-contextbar .rtg-duel-possession,
+.rtg-duel-card--clean.is-user-possession .rtg-duel-contextbar .rtg-duel-possession,
+.rtg-duel-card--clean.is-opponent-possession .rtg-duel-contextbar .rtg-duel-possession{
+  background:#ffd21f!important;
+  background-image:none!important;
+  color:#111216!important;
+}
+.rtg-duel-card--clean .rtg-duel-contextbar .rtg-duel-context-meta{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-end!important;
+  gap:6px!important;
+  color:#111216!important;
+  text-align:right!important;
+}
+.rtg-duel-card--clean .rtg-duel-contextbar .rtg-duel-context-meta b{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-height:28px!important;
+  padding:5px 8px!important;
+  border:2px solid #ffd21f!important;
+  border-radius:4px!important;
+  background:#fff!important;
+  color:#111216!important;
+  box-shadow:2px 2px 0 #ffd21f!important;
+  font-size:8px!important;
+  font-weight:1000!important;
+  letter-spacing:.08em!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+.rtg-duel-card--clean .rtg-duel-contextbar .rtg-duel-context-meta .rtg-duel-minute{
+  min-width:36px!important;
+  background:#ffd21f!important;
+  border-color:#ffd21f!important;
+  box-shadow:2px 2px 0 #fff!important;
+  font-size:10px!important;
+}
+@media(max-width:390px){
+  .rtg-duel-card--clean .rtg-duel-contextbar .rtg-duel-context-meta{gap:4px!important}
+  .rtg-duel-card--clean .rtg-duel-contextbar .rtg-duel-context-meta b{padding:5px 6px!important;font-size:7px!important}
+}
