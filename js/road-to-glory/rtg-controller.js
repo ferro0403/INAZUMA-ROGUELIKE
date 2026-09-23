@@ -494,12 +494,14 @@
           })).filter(entry=>entry.player)
         : [];
       const quickIds=new Set(quickEntries.map(entry=>id(entry.playerId)));
-      const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(id(playerId)));
-      let visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateIds.length);
+      // Open the picker shell immediately. Building the full accessible-card list can
+      // be expensive on mobile, so defer it until after the modal has painted.
+      let candidateIds=[];
+      let visibleCount=0;
       let query="";
       let sourceFilter="all";
       let rarityFilter="all";
-      const rarityOptions=squadPickerRarityOptions(candidateIds);
+      const rarityOptions=squadPickerRarityOptions();
       const targetPlayer=resolved(targetId,squadDraft?.activeRoleVariantByCardId?.[id(targetId)]||null);
       const target={playerId:id(targetId),source:sourceForDraftPlayer(targetId),player:targetPlayer};
       const filteredIds=()=>candidateIds.filter(playerId=>{
@@ -541,7 +543,7 @@
           renderResults();
         });
       };
-      deps.openModal?.(squadView.replacementPickerMarkup({target,role,allowAnyRole:!strictRole,quickEntries,entries:entries(),total:candidateIds.length,visibleCount,query,sourceFilter,rarityFilter,rarityOptions}),{className:"rtg-modal rtg-squad-picker-modal"});
+      deps.openModal?.(squadView.replacementPickerMarkup({target,role,allowAnyRole:!strictRole,quickEntries,entries:[],total:0,visibleCount:0,query,sourceFilter,rarityFilter,rarityOptions}),{className:"rtg-modal rtg-squad-picker-modal"});
       const modal=deps.getModalRoot?.();
       modal?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",event=>{
         query=String(event.target?.value||"");
@@ -559,6 +561,15 @@
         renderResults();
       });
       bindResults();
+      const hydratePicker=()=>{
+        // The modal is already visible here: do the heavier roster resolution after
+        // the first paint instead of blocking the Cambia tap.
+        candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(id(playerId)));
+        visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateIds.length);
+        renderResults();
+      };
+      if(typeof requestAnimationFrame==="function")requestAnimationFrame(()=>setTimeout(hydratePicker,0));
+      else setTimeout(hydratePicker,0);
     }
     function openRtgCatalog(){
       const owned=Array.from(acquiredCardIdSet())
