@@ -1145,10 +1145,19 @@
         button.disabled=true;
         machine?.classList?.add("is-turning");
         try{
-          await new Promise(resolve=>setTimeout(resolve,520));
-          await pull();
+          const preparedPromise=pull({reveal:false});
+          await new Promise(resolve=>setTimeout(resolve,620));
+          const prepared=await preparedPromise;
+          if(!prepared?.result||!prepared?.player)return;
+          const rarityKey=String(prepared.result.rarity||prepared.player.category||"normale").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-");
+          if(machine){
+            machine.dataset.pullRarity=rarityKey;
+            machine.classList.add("is-revealing");
+          }
+          await new Promise(resolve=>setTimeout(resolve,720));
+          showPullResult(prepared.result,prepared.player);
         }finally{
-          machine?.classList?.remove("is-turning");
+          machine?.classList?.remove("is-turning","is-revealing");
           if(button?.isConnected)button.disabled=false;
         }
       });
@@ -1165,7 +1174,7 @@
       });
       return result;
     }
-    async function pull(){
+    async function pull(options={}){
       let result=null;
       campaign=await repository.update("rtg-gacha-pull",current=>{
         const pulled=gacha.pull(current,{seasonDb,accessibleCardIds:accessibleCards(current)});
@@ -1173,6 +1182,7 @@
       });
       if(!result)return campaign;
       const player=playerResolver.resolveAtLevel20(result.cardId,campaign?.activeSeasonId||"ie1",null,freeAgentsDb)||{playerId:result.playerId,cardId:result.cardId,legacySeasonId:result.legacySeasonId,name:result.playerId};
+      if(options?.reveal===false)return {result,player};
       showPullResult(result,player);
       return result;
     }
