@@ -1158,14 +1158,7 @@
         };
         if(overlay&&typeof matchView.finalComparisonMarkup==="function"&&typeof schedule==="function"){
           overlay.innerHTML=matchView.finalComparisonMarkup(presentation);
-          matchFlowTimer=schedule(()=>{
-            const live=campaign?.activeMatch;
-            if(!overlay||!live||id(live.matchId)!==id(resolvedMatch.matchId))return;
-            if(typeof matchView.resolvingEncounterMarkup==="function"){
-              overlay.innerHTML=matchView.resolvingEncounterMarkup(presentation);
-              matchFlowTimer=schedule(revealResult,DUEL_RESULT_REVEAL_DELAY_MS);
-            }else revealResult();
-          },FINAL_COMPARISON_DELAY_MS);
+          matchFlowTimer=schedule(revealResult,FINAL_COMPARISON_DELAY_MS);
         }else if(overlay&&typeof matchView.resolvingEncounterMarkup==="function"&&typeof schedule==="function"){
           overlay.innerHTML=matchView.resolvingEncounterMarkup(presentation);
           matchFlowTimer=schedule(revealResult,DUEL_RESULT_REVEAL_DELAY_MS);
