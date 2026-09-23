@@ -123,7 +123,7 @@
   display:grid;
   grid-template-rows:auto auto auto;
   justify-items:center;
-  filter:drop-shadow(7px 9px 0 #111216);
+  filter:drop-shadow(9px 11px 0 #111216) drop-shadow(0 16px 20px rgba(17,18,22,.18));
   isolation:isolate;
 }
 .rtg-vending-head-v9{
@@ -136,8 +136,9 @@
   border:4px solid #111216;
   border-bottom:0;
   border-radius:10px 10px 0 0;
-  background:#ffd21f;
+  background:linear-gradient(145deg,#ffe45c 0 16%,#ffd21f 17% 72%,#e8a91c 73% 100%);
   color:#111216;
+  box-shadow:inset 0 5px 0 rgba(255,255,255,.26),inset -9px 0 0 rgba(174,116,8,.16);
   text-align:center;
   text-transform:uppercase;
 }
@@ -150,8 +151,23 @@
   overflow:hidden;
   border:4px solid #111216;
   background:
-    linear-gradient(160deg,rgba(255,255,255,.94),rgba(226,245,251,.82) 38%,rgba(170,215,231,.92));
-  box-shadow:inset 0 -15px 0 rgba(17,18,22,.08);
+    linear-gradient(160deg,rgba(255,255,255,.96),rgba(226,245,251,.84) 38%,rgba(170,215,231,.94));
+  box-shadow:
+    inset 10px 0 0 rgba(255,255,255,.20),
+    inset -13px 0 0 rgba(60,105,122,.20),
+    inset 0 -18px 0 rgba(17,18,22,.11),
+    4px 0 0 #111216;
+}
+.rtg-vending-window-v9::before{
+  content:"";
+  position:absolute;
+  z-index:7;
+  top:0;
+  right:0;
+  bottom:0;
+  width:17px;
+  background:linear-gradient(90deg,transparent,rgba(17,18,22,.16));
+  pointer-events:none;
 }
 .rtg-vending-window-v9::after{
   content:"";
@@ -215,7 +231,13 @@
   border:5px solid #111216;
   border-radius:0 0 12px 12px;
   background:
-    linear-gradient(145deg,#ffd21f 0 69%,#f0ad22 69% 100%);
+    linear-gradient(145deg,#ffe45c 0 9%,#ffd21f 10% 63%,#f0ad22 64% 84%,#d69413 85% 100%);
+  box-shadow:
+    inset 0 7px 0 rgba(255,255,255,.20),
+    inset -15px 0 0 rgba(145,88,5,.16),
+    inset 0 -12px 0 rgba(145,88,5,.13),
+    8px 10px 0 #111216,
+    13px 16px 18px rgba(17,18,22,.16);
 }
 .rtg-vending-info-v9{
   display:grid;
@@ -225,7 +247,7 @@
   border-radius:5px;
   background:#fffdf7;
   color:#111216;
-  box-shadow:inset 0 -5px 0 #e9e3d5;
+  box-shadow:inset 0 -5px 0 #e9e3d5,inset 5px 0 0 rgba(255,255,255,.72),3px 4px 0 rgba(17,18,22,.24);
 }
 .rtg-vending-info-v9 small{font:950 7px/1 system-ui,sans-serif;letter-spacing:.11em;}
 .rtg-vending-info-v9 strong{font:1000 25px/.92 system-ui,sans-serif;}
@@ -237,7 +259,7 @@
   border:4px solid #111216;
   border-radius:50%;
   background:radial-gradient(circle at 37% 30%,#f4f4ee 0 17%,#8b8b87 18% 58%,#4d4d4b 59% 100%);
-  box-shadow:2px 3px 0 rgba(17,18,22,.36);
+  box-shadow:inset 5px 5px 0 rgba(255,255,255,.20),inset -7px -8px 0 rgba(17,18,22,.20),4px 5px 0 rgba(17,18,22,.38);
 }
 .rtg-vending-crank-v9 span{
   position:absolute;
@@ -258,13 +280,14 @@
   background:#191a1d;
   box-shadow:inset 0 7px 0 #34363a;
 }
-.rtg-vending-chute-v9 span{
+.rtg-vending-chute-well-v9{
   position:absolute;
   left:50%;bottom:-5px;
   width:88px;height:30px;
   transform:translateX(-50%);
   border-radius:50% 50% 0 0;
   background:#050607;
+  box-shadow:inset 0 8px 0 #2f3135;
 }
 .rtg-vending-brand-v9{
   grid-column:2;
@@ -278,24 +301,22 @@
 }
 .rtg-vending-prize-track-v9{
   position:absolute;
-  z-index:12;
-  left:22px;
-  bottom:22px;
-  width:126px;
-  height:100px;
+  z-index:5;
+  inset:0;
+  overflow:hidden;
   pointer-events:none;
 }
 .rtg-vending-prize-v9{
   position:absolute;
   left:50%;
-  top:-52px;
+  bottom:-29px;
   width:43px;height:43px;
   opacity:0;
   border:4px solid #111216;
   border-radius:50%;
   background:linear-gradient(165deg,#fff 0 47%,#ffd21f 48% 100%);
   box-shadow:0 0 0 0 var(--rtg-vending-reveal),3px 4px 0 rgba(17,18,22,.24);
-  transform:translate(-50%,0) scale(.82);
+  transform:translateX(-50%) translateY(15px) scale(.78);
 }
 
 .rtg-vending-machine-v9.is-turning{animation:rtg-vending-v9-body .98s ease-out both;}
@@ -331,10 +352,11 @@
   72%{transform:translate3d(-1px,0,0)}
 }
 @keyframes rtg-vending-v9-drop{
-  0%{opacity:0;transform:translate(-50%,-18px) scale(.8);box-shadow:0 0 0 0 var(--rtg-vending-reveal)}
-  18%{opacity:1}
-  72%{opacity:1;transform:translate(-50%,79px) scale(1);box-shadow:0 0 0 4px var(--rtg-vending-reveal),0 0 24px 8px color-mix(in srgb,var(--rtg-vending-reveal) 64%,transparent)}
-  100%{opacity:1;transform:translate(-50%,86px) scale(.92);box-shadow:0 0 0 2px var(--rtg-vending-reveal),0 0 17px 5px color-mix(in srgb,var(--rtg-vending-reveal) 45%,transparent)}
+  0%{opacity:0;transform:translateX(-50%) translateY(15px) scale(.78);box-shadow:0 0 0 0 var(--rtg-vending-reveal)}
+  16%{opacity:1}
+  58%{opacity:1;transform:translateX(-50%) translateY(-13px) scale(1.02);box-shadow:0 0 0 4px var(--rtg-vending-reveal),0 0 22px 7px color-mix(in srgb,var(--rtg-vending-reveal) 62%,transparent)}
+  78%{opacity:1;transform:translateX(-50%) translateY(-18px) scale(1)}
+  100%{opacity:1;transform:translateX(-50%) translateY(-11px) scale(.94);box-shadow:0 0 0 2px var(--rtg-vending-reveal),0 0 16px 5px color-mix(in srgb,var(--rtg-vending-reveal) 44%,transparent)}
 }
 @keyframes rtg-vending-v9-chute{
   0%,35%{box-shadow:inset 0 7px 0 #34363a}
@@ -364,6 +386,16 @@
   background:#f5c842!important;border-color:#b98d13!important;color:#171006!important;box-shadow:inset 0 -4px 0 #b98d13!important;
 }
 .rtg-vending-ratebar>span em{color:inherit!important;opacity:.92;}
+
+/* Wallet is a separate HUD chip, not part of the machine cabinet. */
+.rtg-vending-stage{
+  row-gap:0!important;
+}
+.rtg-vending-wallet-chip{
+  margin-top:26px!important;
+  min-width:178px!important;
+  box-shadow:4px 5px 0 #111216!important;
+}
 
 @media(max-width:430px){
   .rtg-vending-machine-v9{width:min(222px,66vw);}
