@@ -3409,3 +3409,88 @@
   color:#555a61!important;
   filter:grayscale(1)!important;
 }
+
+
+/* RTG result/event pass: same visual language as the duel and real element glyphs. */
+.rtg-duel-result--revolution .rtg-duel-result-banner{
+  --result-accent:#2f8ed3;
+  --result-soft:#dcefff;
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:0!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:3px solid #111216!important;
+  border-top:7px solid var(--result-accent)!important;
+  border-radius:4px!important;
+  background:var(--result-soft)!important;
+  box-shadow:4px 5px 0 #111216!important;
+}
+.rtg-duel-result--revolution .rtg-duel-result-banner.is-loss{
+  --result-accent:#d94f58;
+  --result-soft:#ffe1e3;
+}
+.rtg-duel-result--revolution .rtg-duel-result-banner.has-move.move-category--defense{--result-accent:#54c878;--result-soft:#def5e5}
+.rtg-duel-result--revolution .rtg-duel-result-banner.has-move.move-category--dribble{--result-accent:#4da7e8;--result-soft:#dcefff}
+.rtg-duel-result--revolution .rtg-duel-result-banner.has-move.move-category--save{--result-accent:#f3a43b;--result-soft:#fff0d8}
+.rtg-duel-result--revolution .rtg-duel-result-banner.has-move.move-category--shot{--result-accent:#ef6f9a;--result-soft:#fde1ea}
+.rtg-duel-result--revolution .rtg-duel-result-status{
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:8px!important;
+  padding:9px 12px!important;
+  border-radius:0!important;
+  background:#111216!important;
+}
+.rtg-duel-result--revolution .rtg-duel-result-status span{
+  color:#ffd21f!important;
+  font-size:11px!important;
+}
+.rtg-duel-result--revolution .rtg-duel-result-status em{
+  color:#fff!important;
+  font-size:7px!important;
+}
+.rtg-duel-result--revolution .rtg-duel-result-banner>strong{
+  padding:13px 14px 15px!important;
+  font-size:clamp(19px,5.4vw,24px)!important;
+  line-height:1.08!important;
+}
+
+/* Element badges use the same diamond glyph as the established duel badges. */
+.rtg-duel-result--revolution .rtg-duel-player-element{
+  position:relative!important;
+  gap:6px!important;
+  padding-left:7px!important;
+}
+.rtg-duel-result--revolution .rtg-duel-player-element::before{
+  content:""!important;
+  display:block!important;
+  width:9px!important;
+  height:9px!important;
+  flex:0 0 9px!important;
+  border:2px solid currentColor!important;
+  border-radius:1px!important;
+  transform:rotate(45deg)!important;
+  box-sizing:border-box!important;
+}
+.rtg-duel-result--revolution .rtg-duel-player-element.is-element-disadvantaged::before{
+  border-color:#747981!important;
+}
+
+/* Clean up the final event layout on phones. */
+@media(max-width:430px){
+  .rtg-duel-result--revolution .rtg-duel-versus-board--result{
+    align-items:center!important;
+  }
+  .rtg-duel-result--revolution .rtg-duel-result-player{
+    min-width:0!important;
+  }
+  .rtg-duel-result--revolution .rtg-duel-result-status{
+    padding:8px 10px!important;
+  }
+  .rtg-duel-result--revolution .rtg-duel-result-banner>strong{
+    padding:12px!important;
+  }
+}
