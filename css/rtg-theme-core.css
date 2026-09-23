@@ -3854,3 +3854,13 @@
     font-size:6px!important;
   }
 }
+
+
+/* Keep the live ZONA value on one line (e.g. CENTROCAMPO). */
+.rtg-live-commandbar .rtg-live-command:nth-child(2) strong{
+  white-space:nowrap!important;
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+  font-size:clamp(10px,3.05vw,15px)!important;
+  letter-spacing:-.045em!important;
+}
