@@ -794,3 +794,19 @@ button.player-card:has(> .rtg-legacy-badge),
 .rtg-album-roster-screen .album-player-entry.is-unlocked .album-player-card{cursor:pointer;}
 .rtg-album-roster-screen .album-player-entry.is-locked .album-player-card{pointer-events:none;}
 .rtg-album-roster-screen .album-player-grid{padding-bottom:42px;}
+
+
+/* RTG Album: center the arrow inside the yellow action rectangles. */
+.rtg-album-collections-screen .album-collection-action,
+.rtg-album-teams-screen .album-team-card__open{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+.rtg-album-collections-screen .album-collection-action > span{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  margin:0;
+}
