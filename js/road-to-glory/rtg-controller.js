@@ -337,13 +337,32 @@
       mountDevQuickTools();
       return campaign;
     }
-    function renderAlbum(){
+    function rtgAlbumEntries(){
       syncCurrentPullsIntoAlbum();
-      const entries=readRtgAlbum().cardIds.map(cardId=>playerResolver.resolveAtLevel20(cardId,campaign?.activeSeasonId||"ie1",null,freeAgentsDb)).filter(Boolean);
-      entries.sort((a,b)=>String(a?.name||"").localeCompare(String(b?.name||""),"it"));
-      renderHtml(runView.albumMarkup({state:campaign,entries}));
-      bindHomeAndTabs();
-      app?.querySelector?.("[data-rtg-album-vending]")?.addEventListener("click",()=>openVending());
+      return readRtgAlbum().cardIds.map(cardId=>playerResolver.resolveAtLevel20(cardId,campaign?.activeSeasonId||"ie1",null,freeAgentsDb)).filter(Boolean);
+    }
+    function rtgAlbumCatalog(){
+      const seen=new Set();
+      return (seasonDb?.players||[]).map(raw=>{
+        const playerId=id(raw?.playerId||raw?.id);
+        const cardId=cardIdentity?.cardIdForSeason?.(playerId,"ie1")||playerId;
+        if(!playerId||seen.has(cardId))return null;
+        seen.add(cardId);
+        return playerResolver.resolveAtLevel20(cardId,"ie1",null,freeAgentsDb)||{...raw,playerId,cardId};
+      }).filter(Boolean).sort((a,b)=>String(a?.name||"").localeCompare(String(b?.name||""),"it"));
+    }
+    function renderAlbum(){
+      const entries=rtgAlbumEntries();
+      renderHtml(runView.albumMarkup({state:campaign,entries,allEntries:rtgAlbumCatalog()}));
+      app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.());
+      app?.querySelector?.("[data-rtg-album-collection]")?.addEventListener("click",()=>renderAlbumRoster());
+      mountDevQuickTools();
+      return campaign;
+    }
+    function renderAlbumRoster(){
+      const entries=rtgAlbumEntries();
+      renderHtml(runView.albumRosterMarkup({state:campaign,entries,allEntries:rtgAlbumCatalog()}));
+      app?.querySelector?.("[data-rtg-album-back]")?.addEventListener("click",()=>renderAlbum());
       app?.querySelectorAll?.("[data-rtg-album-player]")?.forEach(card=>card.addEventListener("click",()=>openRtgPlayerDetails(card.dataset.rtgAlbumPlayer)));
       mountDevQuickTools();
       return campaign;
@@ -1280,7 +1299,7 @@
     }
 
     return Object.freeze({
-      open,renderRun,renderSquad,renderAlbum,openNode,startMatch,confirmPreMatch,chooseEncounter,continueEncounterFlow,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
+      open,renderRun,renderSquad,renderAlbum,renderAlbumRoster,openNode,startMatch,confirmPreMatch,chooseEncounter,continueEncounterFlow,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
       swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,adaptSquadToCurrentRequirements,
       getDraftSquad:()=>clone(squadDraft),getState:()=>clone(campaign),getRenderedHtml,
     });
