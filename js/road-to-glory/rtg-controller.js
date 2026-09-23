@@ -60,6 +60,13 @@
       return {seasonDb,freeAgentsDb};
     }
     function cardMeta(cardRef){return cardIdentity?.parse?.(cardRef)||{cardId:id(cardRef),playerId:id(cardRef),legacySeasonId:null,sourceKind:"legacy"};}
+    function freeAgentCardId(playerId){return cardIdentity?.cardIdForFreeAgent?.(playerId)||id(playerId);}
+    function accessibleCards(state){
+      const args={freeAgentIds,state};
+      const direct=squadRuntime?.accessibleCardIds?.(args);
+      if(Array.isArray(direct))return direct.map(id);
+      return (squadRuntime?.accessiblePlayerIds?.(args)||freeAgentIds).map(freeAgentCardId);
+    }
     function rawPlayer(cardRef){
       const meta=cardMeta(cardRef);
       if(meta.sourceKind===cardIdentity?.FREE_AGENTS)return (freeAgentsDb?.players||[]).find(player=>id(player?.playerId||player?.id)===id(meta.playerId))||null;
@@ -72,7 +79,11 @@
     function rawRole(cardRef){const player=resolved(cardRef)||rawPlayer(cardRef);return String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();}
     function rawOverall(cardRef){const player=resolved(cardRef)||rawPlayer(cardRef);const value=Number(player?.overall??player?.finalOverall??player?.baseOverall);return Number.isFinite(value)?value:0;}
     function rawName(cardRef){const meta=cardMeta(cardRef);return String((resolved(cardRef)||rawPlayer(cardRef))?.name||meta.playerId||cardRef);}
-    function acquiredCardIdSet(state=campaign){return new Set((state?.gachaAcquiredCards||[]).map(entry=>cardIdentity.parse(entry).cardId));}
+    function acquiredCardIdSet(state=campaign){
+      const modern=(state?.gachaAcquiredCards||[]).map(entry=>cardIdentity?.parse?.(entry)?.cardId||id(entry?.cardId||entry?.playerId||entry));
+      const legacy=(state?.gachaAcquiredPlayerIds||[]).map(playerId=>cardIdentity?.cardIdForSeason?.(playerId,state?.activeSeasonId||"ie1")||id(playerId));
+      return new Set([...modern,...legacy].filter(Boolean));
+    }
     function sourceForDraftPlayer(cardRef){return acquiredCardIdSet().has(cardMeta(cardRef).cardId)?"RTG":"Svincolato";}
     function detailDatabaseFor(cardRef){
       const resolvedVersion=playerResolver.resolveVersion?.(cardRef,campaign?.activeSeasonId||"ie1",freeAgentsDb);
@@ -217,7 +228,11 @@
       if(typeof schedule==="function")schedule(mount,0);else mount();
     }
     function resolved(cardRef,roleVariantId=null){
-      const player=playerResolver.resolveAtLevel20(cardRef,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
+      let player=playerResolver.resolveAtLevel20(cardRef,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
+      if(!player&&!cardIdentity){
+        const fallback=cardMeta(cardRef).playerId;
+        player=playerResolver.resolveAtLevel20(fallback,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
+      }
       if(!player)return null;
       const stats=player.stats||player.finalStats||{};
       const meta=cardMeta(player.cardId||cardRef);
@@ -243,11 +258,11 @@
       const formations=seasonDb?.formations?.eleven||[];
       const formation=formations.find(item=>id(item.id)===id(formationId))||formations.find(item=>{
         const counts={GK:0,DF:0,MF:0,FW:0};
-        for(const playerId of freeAgentIds){const role=rawRole(playerId);if(counts[role]!=null)counts[role]++;}
+        for(const playerId of freeAgentIds){const role=rawRole(freeAgentCardId(playerId));if(counts[role]!=null)counts[role]++;}
         return Object.entries(item.requirements||{}).every(([role,n])=>counts[String(role).toUpperCase()]>=Number(n||0));
       })||formations[0];
       if(!formation)throw Object.assign(new Error("Nessun modulo RTG disponibile"),{code:"rtg-squad-no-formation"});
-      const accessible=squadRuntime.accessibleCardIds({freeAgentIds,state}).map(id);
+      const accessible=accessibleCards(state).map(id);
       const selected=[];
       for(const [role,count] of Object.entries(formation.requirements||{})){
         const candidates=bestPlayerIdsForRole(accessible,String(role).toUpperCase()).filter(playerId=>!selected.includes(playerId));
@@ -302,7 +317,7 @@
       return String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
     }
     function accessibleDraftIds(){
-      return squadRuntime.accessibleCardIds({freeAgentIds,state:draftState()}).map(id);
+      return accessibleCards(draftState()).map(id);
     }
     function canUseDraftFormation(formation){
       if(!formation)return false;
@@ -357,7 +372,7 @@
       }));
     }
     function squadPickerCandidateIds(targetId,role,{benchTarget=false}={}){
-      const accessible=squadRuntime.accessibleCardIds({freeAgentIds,state:draftState()}).map(id);
+      const accessible=accessibleCards(draftState()).map(id);
       const rosterIds=new Set(draftRosterIds());
       return accessible
         .filter(playerId=>playerId!==id(targetId))
@@ -715,7 +730,7 @@
     function swapSquadDraft(firstId,secondId,options={}){
       const first=id(firstId),second=id(secondId);
       if(!first||!second||first===second)return{ok:false,reason:"same-player"};
-      const accessible=new Set(squadRuntime.accessibleCardIds({freeAgentIds,state:draftState()}).map(id));
+      const accessible=new Set(accessibleCards(draftState()).map(id));
       if(!accessible.has(first)||!accessible.has(second))return{ok:false,reason:"inaccessible-player"};
       const firstRole=roleOfDraftPlayer(first),secondRole=roleOfDraftPlayer(second);
       const firstLoc=locationInDraft(first),secondLoc=locationInDraft(second);
@@ -1144,7 +1159,7 @@
     async function pull(){
       let result=null;
       campaign=await repository.update("rtg-gacha-pull",current=>{
-        const pulled=gacha.pull(current,{seasonDb,accessibleCardIds:squadRuntime.accessibleCardIds({freeAgentIds,state:current})});
+        const pulled=gacha.pull(current,{seasonDb,accessibleCardIds:accessibleCards(current)});
         result=pulled.result;return pulled.state;
       });
       if(!result)return campaign;
