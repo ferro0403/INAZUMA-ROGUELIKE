@@ -3864,3 +3864,91 @@
   font-size:clamp(10px,3.05vw,15px)!important;
   letter-spacing:-.045em!important;
 }
+
+
+/* RTG scoreboard refresh: stronger match identity, less empty black space. */
+.rtg-match-revolution .rtg-match-scoreboard{
+  position:relative!important;
+  padding:14px 14px 18px!important;
+  border-bottom:5px solid #ffd21f!important;
+  background:
+    linear-gradient(115deg,rgba(255,210,31,.09) 0 18%,transparent 18% 72%,rgba(255,210,31,.06) 72% 100%),
+    #111216!important;
+  overflow:hidden!important;
+}
+.rtg-match-revolution .rtg-match-scoreboard::after{
+  content:""!important;
+  position:absolute!important;
+  left:14px!important;
+  right:14px!important;
+  bottom:9px!important;
+  height:2px!important;
+  background:rgba(255,255,255,.08)!important;
+}
+.rtg-match-revolution .rtg-match-period{
+  position:relative!important;
+  z-index:1!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:10px!important;
+}
+.rtg-match-revolution .rtg-match-period small{
+  padding:5px 9px!important;
+  border-radius:2px!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+}
+.rtg-match-revolution .rtg-match-score-main{
+  position:relative!important;
+  z-index:1!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:12px!important;
+  margin-top:13px!important;
+}
+.rtg-match-revolution .rtg-score-capsule{
+  min-width:100px!important;
+  padding:12px 15px!important;
+  border:3px solid #fff!important;
+  border-radius:7px!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+  box-shadow:4px 5px 0 rgba(0,0,0,.55)!important;
+  font-size:clamp(29px,8vw,42px)!important;
+  line-height:1!important;
+}
+.rtg-match-revolution .rtg-score-team{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  gap:5px!important;
+  min-width:0!important;
+}
+.rtg-match-revolution .rtg-score-team b{
+  max-width:100%!important;
+  font-size:clamp(11px,3.3vw,16px)!important;
+  line-height:1.05!important;
+  text-align:center!important;
+  overflow-wrap:anywhere!important;
+}
+.rtg-match-revolution .rtg-score-team--user::after,
+.rtg-match-revolution .rtg-score-team--opponent::after{
+  content:""!important;
+  width:72%!important;
+  height:3px!important;
+  border-radius:999px!important;
+}
+.rtg-match-revolution .rtg-score-team--user::after{background:#2f8ed3!important}
+.rtg-match-revolution .rtg-score-team--opponent::after{background:#d94f58!important}
+
+/* With subtitles removed, the three command cards are tighter and vertically centered. */
+.rtg-live-commandbar .rtg-live-command{
+  min-height:61px!important;
+}
+.rtg-live-commandbar .rtg-live-command>span:last-child{
+  justify-content:center!important;
+}
+.rtg-live-commandbar .rtg-live-command small{
+  margin-bottom:7px!important;
+}
