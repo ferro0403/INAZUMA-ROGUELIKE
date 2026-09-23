@@ -36,6 +36,7 @@
     let selectedEncounterId=null;
     const SQUAD_PICKER_PAGE_SIZE=24;
     const ENCOUNTER_REVEAL_DELAY_MS=2200;
+    const FINAL_COMPARISON_DELAY_MS=3000;
     const DUEL_RESULT_REVEAL_DELAY_MS=1150;
     const schedule=deps.setTimeout||global.setTimeout;
     const cancelSchedule=deps.clearTimeout||global.clearTimeout;
@@ -1114,8 +1115,22 @@
               :before.userKind==="dribble"
                 ?(userWon?"Dribbling riuscito":"Palla persa")
                 :(userWon?"Duello a centrocampo vinto":"Duello a centrocampo perso");
+        const userIsActor=before.userSide===before.actorSide;
+        const previewActor=userIsActor?userPlayer:aiPlayer;
+        const previewOpponent=userIsActor?aiPlayer:userPlayer;
+        const previewUserMove=choice==="move"?before.userMove:null;
+        const previewCalc=global.RoadToGloryEncounterRuntime?.probability?.({
+          actor:previewActor,
+          opponent:previewOpponent,
+          actorKind:before.actorKind,
+          opponentKind:before.opponentKind,
+          actorMove:userIsActor?previewUserMove:null,
+          opponentMove:userIsActor?null:previewUserMove,
+        });
+        const previewActorProbability=Number(previewCalc?.probability ?? before.normalPreviewProbability ?? 50);
+        const previewUserProbability=userIsActor?previewActorProbability:100-previewActorProbability;
         const presentation={
-          userWon,probability:userProbability,outcomeLabel,userKind:before.userKind,
+          userWon,probability:userProbability,previewProbability:previewUserProbability,outcomeLabel,userKind:before.userKind,
           userPlayerName:userPlayer?.name||before.userPlayerId,
           aiPlayerName:aiPlayer?.name||before.aiPlayerId,
           userPlayer,opponentPlayer:aiPlayer,
@@ -1139,7 +1154,17 @@
           overlay.innerHTML=matchView.resolvedEncounterMarkup(presentation);
           overlay?.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>continueEncounterFlow());
         };
-        if(overlay&&typeof matchView.resolvingEncounterMarkup==="function"&&typeof schedule==="function"){
+        if(overlay&&typeof matchView.finalComparisonMarkup==="function"&&typeof schedule==="function"){
+          overlay.innerHTML=matchView.finalComparisonMarkup(presentation);
+          matchFlowTimer=schedule(()=>{
+            const live=campaign?.activeMatch;
+            if(!overlay||!live||id(live.matchId)!==id(resolvedMatch.matchId))return;
+            if(typeof matchView.resolvingEncounterMarkup==="function"){
+              overlay.innerHTML=matchView.resolvingEncounterMarkup(presentation);
+              matchFlowTimer=schedule(revealResult,DUEL_RESULT_REVEAL_DELAY_MS);
+            }else revealResult();
+          },FINAL_COMPARISON_DELAY_MS);
+        }else if(overlay&&typeof matchView.resolvingEncounterMarkup==="function"&&typeof schedule==="function"){
           overlay.innerHTML=matchView.resolvingEncounterMarkup(presentation);
           matchFlowTimer=schedule(revealResult,DUEL_RESULT_REVEAL_DELAY_MS);
         }else revealResult();
