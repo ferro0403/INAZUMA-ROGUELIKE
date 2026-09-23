@@ -787,39 +787,9 @@ button.player-card:has(> .rtg-legacy-badge),
 }
 
 
-/* RTG permanent distributor album */
-.rtg-bottom-nav{grid-template-columns:repeat(3,minmax(0,1fr));}
-.rtg-album-content{padding-bottom:96px;}
-.rtg-album-hero{
-  display:flex;align-items:flex-end;justify-content:space-between;gap:18px;
-  margin:14px 0 18px;padding:18px 18px 16px;
-  border:2px solid #111318;border-radius:16px;
-  background:linear-gradient(145deg,#fff 0%,#f6f3eb 100%);
-  box-shadow:0 7px 0 #111318;
-}
-.rtg-album-hero h1{margin:2px 0 6px;font-size:clamp(30px,7vw,44px);font-style:italic;text-transform:uppercase;}
-.rtg-album-hero p{max-width:520px;margin:0;color:#555b64;font-weight:700;line-height:1.4;}
-.rtg-album-count{
-  min-width:94px;padding:12px 10px;border-radius:12px;background:#111318;color:#ffd21f;
-  text-align:center;font-size:30px;line-height:1;box-shadow:4px 4px 0 #ffd21f;
-}
-.rtg-album-count small{display:block;margin-top:7px;color:#fff;font-size:10px;letter-spacing:.13em;}
-.rtg-album-grid{
-  display:grid!important;grid-template-columns:repeat(auto-fill,minmax(112px,1fr));gap:12px!important;
-  align-items:start;
-}
-.rtg-album-player-card{cursor:pointer;}
-.rtg-album-empty{text-align:center;padding:28px 18px;}
-.rtg-album-fallback{min-height:140px;border:2px solid #111318;border-radius:12px;background:#fff;display:grid;place-items:center;padding:10px;}
-.rtg-vending-album-link{
-  width:100%;margin:10px 0 8px;border:2px solid #111318!important;border-radius:10px!important;
-  background:#fff!important;color:#111318!important;font-weight:1000!important;letter-spacing:.09em!important;
-  box-shadow:0 4px 0 #111318!important;
-}
-.rtg-vending-album-link:active{transform:translateY(3px);box-shadow:0 1px 0 #111318!important;}
-@media(max-width:430px){
-  .rtg-album-hero{align-items:center;padding:15px 14px;}
-  .rtg-album-hero p{font-size:12px;}
-  .rtg-album-count{min-width:76px;font-size:25px;}
-  .rtg-album-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px!important;}
-}
+
+/* RTG Album reuses the canonical Album collection + roster design. */
+.rtg-album-collections-screen .album-collection-card{cursor:pointer;}
+.rtg-album-roster-screen .album-player-entry.is-unlocked .album-player-card{cursor:pointer;}
+.rtg-album-roster-screen .album-player-entry.is-locked .album-player-card{pointer-events:none;}
+.rtg-album-roster-screen .album-player-grid{padding-bottom:42px;}
