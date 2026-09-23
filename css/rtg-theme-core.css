@@ -3692,3 +3692,64 @@
   margin-left:0!important;
   margin-right:auto!important;
 }
+
+
+/* Final result metadata must mirror the normal duel card exactly. */
+.rtg-duel-result--revolution .rtg-duel-result-player .rtg-duel-visual--compare{
+  text-align:left!important;
+}
+.rtg-duel-result--revolution .rtg-duel-result-player .rtg-duel-player-copy{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  width:100%!important;
+  text-align:left!important;
+}
+.rtg-duel-result--revolution .rtg-duel-result-player .rtg-duel-player-meta{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:flex-start!important;
+  justify-content:flex-start!important;
+  width:100%!important;
+  text-align:left!important;
+}
+.rtg-duel-result--revolution .rtg-duel-result-player .rtg-duel-player-meta>small{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:8px!important;
+  width:100%!important;
+  margin:0 0 7px!important;
+  text-align:left!important;
+}
+.rtg-duel-result--revolution .rtg-duel-result-player .rtg-duel-player-meta>small>b{
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:38px!important;
+  min-height:25px!important;
+  padding:4px 9px!important;
+  margin:0!important;
+  border-radius:4px!important;
+  background:#111216!important;
+  color:#fff!important;
+  font-size:8px!important;
+  font-weight:950!important;
+  line-height:1!important;
+  letter-spacing:.08em!important;
+}
+.rtg-duel-result--revolution .rtg-duel-result-player .rtg-duel-player-meta>small>span{
+  display:inline-block!important;
+  width:auto!important;
+  margin:0!important;
+  color:#666a72!important;
+  font-size:9px!important;
+  font-weight:950!important;
+  line-height:1!important;
+  letter-spacing:.06em!important;
+  white-space:nowrap!important;
+}
+.rtg-duel-result--revolution .rtg-duel-result-player .rtg-duel-player-meta>.rtg-duel-player-element.has-native-element-icon{
+  align-self:flex-start!important;
+  margin:0!important;
+}
