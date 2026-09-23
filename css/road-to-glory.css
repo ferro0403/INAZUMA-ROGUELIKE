@@ -5704,3 +5704,11 @@
     max-width:270px!important;
   }
 }
+
+
+/* RTG compact two-item navigation — Run / Squadra only. */
+.rtg-bottom-nav.bottom-nav{width:min(238px,calc(100vw - 44px))!important;padding:4px!important;border-radius:13px!important;}
+.rtg-bottom-nav.bottom-nav button{min-height:43px!important;grid-template-columns:20px auto!important;gap:5px!important;border-radius:9px!important;}
+.rtg-bottom-nav .nav-icon,.rtg-bottom-nav .nav-icon svg{width:19px!important;height:19px!important;}
+.rtg-bottom-nav .nav-label{font-size:.66rem!important;}
+@media(max-width:430px){.rtg-bottom-nav.bottom-nav{width:218px!important;}}
