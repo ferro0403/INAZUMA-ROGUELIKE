@@ -3335,3 +3335,25 @@
 .rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-action.is-move.move-category--dribble{
   --rtg-move-color:#4da7e8;
 }
+
+
+/* RTG move category palette across preview + final result. */
+.rtg-duel-active-move,
+.rtg-duel-result-move{
+  --rtg-move-color:#ffd21f;
+  background:var(--rtg-move-color)!important;
+  background-image:none!important;
+  color:#111216!important;
+}
+.rtg-duel-active-move.move-category--defense,
+.rtg-duel-result-move.move-category--defense{--rtg-move-color:#54c878}
+.rtg-duel-active-move.move-category--dribble,
+.rtg-duel-result-move.move-category--dribble{--rtg-move-color:#4da7e8}
+.rtg-duel-active-move.move-category--save,
+.rtg-duel-result-move.move-category--save{--rtg-move-color:#f3a43b}
+.rtg-duel-active-move.move-category--shot,
+.rtg-duel-result-move.move-category--shot{--rtg-move-color:#ef6f9a}
+.rtg-duel-active-move small,.rtg-duel-active-move strong,.rtg-duel-active-move em,
+.rtg-duel-result-move small,.rtg-duel-result-move strong,.rtg-duel-result-move em{
+  color:#111216!important;
+}
