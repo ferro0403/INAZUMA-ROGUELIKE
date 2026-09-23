@@ -3961,3 +3961,161 @@
 .rtg-live-commandbar .rtg-live-command:nth-child(2){
   background:linear-gradient(145deg,#fff 0 72%,#fff4c9 72% 100%)!important;
 }
+
+
+/* RTG halftime refresh */
+.rtg-halftime-revolution .rtg-halftime-break-banner{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:1fr auto!important;
+  grid-template-areas:"eyebrow eyebrow" "title note"!important;
+  align-items:end!important;
+  gap:5px 14px!important;
+  min-height:96px!important;
+  padding:18px 20px!important;
+  border:3px solid #111216!important;
+  border-radius:8px!important;
+  background:
+    linear-gradient(115deg,#111216 0 72%,#29230f 72% 100%)!important;
+  box-shadow:5px 6px 0 #ffd21f!important;
+  overflow:hidden!important;
+}
+.rtg-halftime-revolution .rtg-halftime-break-banner::after{
+  content:"45"!important;
+  position:absolute!important;
+  right:12px!important;
+  top:-25px!important;
+  color:rgba(255,210,31,.12)!important;
+  font-size:108px!important;
+  font-weight:1000!important;
+  line-height:1!important;
+  pointer-events:none!important;
+}
+.rtg-halftime-revolution .rtg-halftime-break-banner>span{
+  grid-area:eyebrow!important;
+  position:relative!important;
+  z-index:1!important;
+  color:#ffd21f!important;
+  font-size:8px!important;
+  font-weight:950!important;
+  letter-spacing:.18em!important;
+}
+.rtg-halftime-revolution .rtg-halftime-break-banner>strong{
+  grid-area:title!important;
+  position:relative!important;
+  z-index:1!important;
+  color:#fff!important;
+  font-size:clamp(27px,8vw,42px)!important;
+  font-style:italic!important;
+  font-weight:1000!important;
+  line-height:.92!important;
+}
+.rtg-halftime-revolution .rtg-halftime-break-banner>em{
+  grid-area:note!important;
+  position:relative!important;
+  z-index:1!important;
+  max-width:210px!important;
+  color:#d9dbe0!important;
+  font-size:7px!important;
+  font-style:normal!important;
+  font-weight:900!important;
+  line-height:1.2!important;
+  letter-spacing:.09em!important;
+  text-align:right!important;
+}
+
+.rtg-halftime-revolution .rtg-halftime-scoreboard{
+  display:grid!important;
+  grid-template-columns:88px minmax(0,1fr) 92px!important;
+  align-items:stretch!important;
+  margin-top:20px!important;
+  border:3px solid #111216!important;
+  border-radius:8px!important;
+  background:#111216!important;
+  box-shadow:5px 6px 0 rgba(17,18,22,.18)!important;
+  overflow:hidden!important;
+}
+.rtg-halftime-revolution .rtg-halftime-minute{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:10px 7px!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+}
+.rtg-halftime-revolution .rtg-halftime-minute small{
+  order:2!important;
+  margin-top:3px!important;
+  font-size:6px!important;
+  font-weight:950!important;
+  letter-spacing:.09em!important;
+  text-align:center!important;
+}
+.rtg-halftime-revolution .rtg-halftime-minute strong{
+  order:1!important;
+  font-size:29px!important;
+  font-weight:1000!important;
+  line-height:1!important;
+}
+.rtg-halftime-revolution .rtg-halftime-score{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:7px!important;
+  padding:10px!important;
+  background:#fff!important;
+  color:#111216!important;
+}
+.rtg-halftime-revolution .rtg-halftime-score small{
+  min-width:0!important;
+  font-size:8px!important;
+  font-weight:950!important;
+  line-height:1.1!important;
+  text-align:center!important;
+  overflow-wrap:anywhere!important;
+}
+.rtg-halftime-revolution .rtg-halftime-score strong{
+  padding:5px 8px!important;
+  border-radius:4px!important;
+  background:#111216!important;
+  color:#ffd21f!important;
+  font-size:22px!important;
+  font-weight:1000!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+.rtg-halftime-revolution .rtg-halftime-shape{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:8px!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+}
+.rtg-halftime-revolution .rtg-halftime-shape small{
+  font-size:7px!important;
+  font-weight:950!important;
+  letter-spacing:.12em!important;
+}
+.rtg-halftime-revolution .rtg-halftime-shape strong{
+  margin-top:3px!important;
+  font-size:17px!important;
+  font-weight:1000!important;
+}
+
+.rtg-halftime-revolution .rtg-halftime-section-title{
+  border:3px solid #111216!important;
+  border-radius:5px!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+  box-shadow:3px 4px 0 #111216!important;
+}
+.rtg-halftime-revolution .rtg-halftime-section-title span{
+  color:#111216!important;
+  font-weight:1000!important;
+}
+.rtg-halftime-revolution .rtg-halftime-bench-panel .rtg-halftime-section-title b{
+  display:none!important;
+}
