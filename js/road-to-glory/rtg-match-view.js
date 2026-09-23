@@ -39,6 +39,11 @@
       const type = aliases[raw] || aliases[fallback] || "neutral";
       return `move-category--${type}`;
     }
+    function duelActionCategory(kind = "", side = "user", actorSide = "user") {
+      const normalized = String(kind || "").trim().toLowerCase();
+      if (normalized === "midfield") return side === actorSide ? "move-category--dribble" : "move-category--defense";
+      return moveCategoryClass(null, normalized);
+    }
     const userNameFor = (value = {}) => value?.userSquad?.name || value?.name || userTeamMeta?.()?.name || "La tua squadra";
     const emblem = (squad = {}, side = "user", className = "rtg-match-team-emblem") => teamEmblemMarkup?.(squad, side, className) || "";
 
@@ -668,8 +673,8 @@
       const final=Math.max(0,Math.min(100,Number(resolution.probability??50)));
       const other=100-final;
       const userMove=!!resolution.userUsedMove, aiMove=!!resolution.aiUsedMove;
-      const userMoveCategory=moveCategoryClass(null,resolution.userKind);
-      const aiMoveCategory=moveCategoryClass(null,resolution.aiKind);
+      const userMoveCategory=duelActionCategory(resolution.userKind,"user",resolution.actorSide);
+      const aiMoveCategory=duelActionCategory(resolution.aiKind,"opponent",resolution.actorSide);
       const userRarityClass=duelRarityClass(user), opponentRarityClass=duelRarityClass(opponent);
       return `<section class="panel rtg-duel-card rtg-duel-card--clean rtg-duel-resolving rtg-paper-modal development-squad-card-scope">
         <div class="rtg-duel-resolving-head"><small>SCELTE BLOCCATE</small><strong>CONFRONTO FINALE</strong></div>
@@ -691,8 +696,8 @@
       const aiAction = resolution.aiChoiceLabel || baseResultActionLabel(resolution.aiKind,resolution.actorSide==="opponent");
       const userMove = !!resolution.userUsedMove;
       const aiMove = !!resolution.aiUsedMove;
-      const userMoveCategory = moveCategoryClass(null,resolution.userKind);
-      const aiMoveCategory = moveCategoryClass(null,resolution.aiKind);
+      const userMoveCategory = duelActionCategory(resolution.userKind,"user",resolution.actorSide);
+      const aiMoveCategory = duelActionCategory(resolution.aiKind,"opponent",resolution.actorSide);
       const userRarityClass = duelRarityClass(user);
       const opponentRarityClass = duelRarityClass(opponent);
       return `<section class="panel rtg-duel-card rtg-duel-card--clean rtg-duel-resolving rtg-paper-modal development-squad-card-scope">
