@@ -10,6 +10,8 @@
 
     const roleOf = (player) => String(player?.normalizedRole || player?.position || player?.role || "").toUpperCase();
     const playerIdOf = (player) => String(player?.playerId || player?.id || "");
+    const cardIdOf = (value) => String(value?.cardId || value?.player?.cardId || value?.playerId || playerIdOf(value?.player || value) || "");
+    const legacyBadge = (entry) => { const label=global.RoadToGloryCardIdentity?.legacyLabel?.(entry?.player || entry); return label ? `<span class="rtg-legacy-badge" title="Legacy ${escape(label)}">${escape(label)}</span>` : ""; };
 
     function sourceBadge(source) {
       if (source !== "RTG") return "";
@@ -31,20 +33,21 @@
 
     function playerCard(entry, area, options = {}) {
       const player = entry?.player || {};
+      const cardId = cardIdOf(entry);
       const playerId = String(entry?.playerId || playerIdOf(player));
       const role = roleOf(player);
       const isPicker = area === "picker";
       const isCatalog = area === "catalog";
       const attrs = [
-        `data-rtg-squad-player="${escape(playerId)}"`,
+        `data-rtg-squad-player="${escape(cardId)}"`,
         `data-area="${escape(area)}"`,
         `data-role="${escape(role)}"`,
         `data-source="${escape(entry?.source || "")}"`,
-        !isPicker ? `data-rtg-player-detail="${escape(playerId)}"` : "",
-        area === "lineup" ? `data-rtg-lineup-player="${escape(playerId)}"` : "",
-        area === "bench" ? `data-rtg-bench-player="${escape(playerId)}"` : "",
-        isPicker ? `data-rtg-picker-player="${escape(playerId)}"` : "",
-        isCatalog ? `data-rtg-catalog-player="${escape(playerId)}"` : "",
+        !isPicker ? `data-rtg-player-detail="${escape(cardId)}"` : "",
+        area === "lineup" ? `data-rtg-lineup-player="${escape(cardId)}"` : "",
+        area === "bench" ? `data-rtg-bench-player="${escape(cardId)}"` : "",
+        isPicker ? `data-rtg-picker-player="${escape(cardId)}"` : "",
+        isCatalog ? `data-rtg-catalog-player="${escape(cardId)}"` : "",
         options.dataAttr || "",
       ].filter(Boolean).join(" ");
       const extraClass = [
@@ -60,13 +63,13 @@
             overall: player?.overall ?? player?.finalOverall,
             dataAttr: attrs,
             extraClass,
-            trailingMarkup: "",
+            trailingMarkup: legacyBadge({ ...entry, player }),
           })
         : fallbackPlayerCard(player, "", attrs, extraClass);
       if (isPicker || isCatalog) return cardMarkup;
-      return `<div class="rtg-squad-card-slot ${options.readOnly ? "rtg-squad-card-slot--readonly" : ""}" data-rtg-card-slot="${escape(playerId)}">
+      return `<div class="rtg-squad-card-slot ${options.readOnly ? "rtg-squad-card-slot--readonly" : ""}" data-rtg-card-slot="${escape(cardId)}">
         ${cardMarkup}
-        ${options.readOnly ? "" : `<button type="button" class="rtg-squad-change-trigger" data-rtg-change-player="${escape(playerId)}" aria-label="Cambia ${escape(player?.name || playerId)}"><span aria-hidden="true">↔</span><span>Cambia</span></button>`}
+        ${options.readOnly ? "" : `<button type="button" class="rtg-squad-change-trigger" data-rtg-change-player="${escape(cardId)}" aria-label="Cambia ${escape(player?.name || playerId)}"><span aria-hidden="true">↔</span><span>Cambia</span></button>`}
       </div>`;
     }
 
@@ -99,7 +102,7 @@
       const attrName = mode === "prematch" ? "data-rtg-prematch-player" : mode === "halftime" ? "data-rtg-half-lineup" : mode === "live" ? "data-rtg-field-player" : "";
       return `<section class="pitch rtg-squad-pitch-main">
         ${lineupRows.map((row) => `<div class="pitch-row tactical-row" data-row-count="${Math.max(1, row.entries?.length || Number(row.count) || 1)}" style="--players-in-row:${Math.max(1, row.entries?.length || Number(row.count) || 1)};--row-count:${Math.max(1, row.entries?.length || Number(row.count) || 1)}">${(row.entries || []).map((entry) => {
-          const currentId = String(entry.playerId || "");
+          const currentId = cardIdOf(entry);
           const selected = mode === "halftime" && currentId === selectedId;
           const latestClass = latest?.actorId === currentId ? "is-latest-actor" : latest?.opponentId === currentId ? "is-latest-opponent" : "";
           const dataAttr = !attrName ? "" : mode === "halftime"
@@ -120,7 +123,7 @@
       const selectedId = String(options.selectedId || "");
       const latest = options.latest || null;
       const formation = formationForId(squad?.formationId) || { requirements: { FW:3, MF:3, DF:4, GK:1 } };
-      const entries = (squad?.lineup || []).map((player) => ({ playerId: playerIdOf(player), source:"", player }));
+      const entries = (squad?.lineup || []).map((player) => ({ cardId: cardIdOf(player), playerId: playerIdOf(player), source:"", player }));
       const rows = formationRows(formation, entries);
       return `<section class="squad-field-panel rtg-match-squad-field-shell rtg-match-squad-field-shell--${escape(mode)}" data-side="${escape(side)}">${lineupPitchMarkup(rows,{readOnly:true,side,mode,selectedId,latest})}</section>`;
     }
@@ -143,14 +146,16 @@
 
     function renderModel({ state, freeAgentIds = [], seasonDb, freeAgentsDb = null } = {}) {
       const seasonId = String(state?.activeSeasonId || "ie1");
-      const squad = state?.squads?.[seasonId] || state?.squads?.ie1 || { formationId: null, lineup: [], bench: [], activeRoleVariantByPlayerId: {} };
-      const gacha = new Set((state?.gachaAcquiredPlayerIds || []).map(String));
-      const resolve = (playerId) => resolver?.resolveAtLevel20?.(playerId, seasonId, squad.activeRoleVariantByPlayerId?.[playerId] || null, freeAgentsDb) || { playerId, name: playerId, overall: "—", level: 20 };
-      const sourceFor = (playerId) => gacha.has(String(playerId)) ? "RTG" : "Svincolato";
+      const squad = state?.squads?.[seasonId] || state?.squads?.ie1 || { formationId: null, lineup: [], bench: [], activeRoleVariantByCardId: {} };
+      const gacha = new Set((state?.gachaAcquiredCards || []).map((entry) => global.RoadToGloryCardIdentity?.parse?.(entry)?.cardId).filter(Boolean));
+      const resolve = (cardId) => resolver?.resolveAtLevel20?.(cardId, seasonId, squad.activeRoleVariantByCardId?.[cardId] || null, freeAgentsDb) || { cardId, playerId:global.RoadToGloryCardIdentity?.parse?.(cardId)?.playerId || cardId, name: cardId, overall: "—", level: 20 };
+      const sourceFor = (cardId) => gacha.has(String(cardId)) ? "RTG" : "Svincolato";
       const formations = Array.from(global.RoadToGloryConfig?.SEASON1?.formations || seasonDb?.formations?.eleven || []);
       const formation = formations.find((item) => String(item.id) === String(squad.formationId)) || formations[0] || null;
-      const lineup = (squad.lineup || []).map((playerId) => ({ playerId: String(playerId), source: sourceFor(playerId), player: resolve(String(playerId)) }));
-      const bench = (squad.bench || []).map((playerId) => ({ playerId: String(playerId), source: sourceFor(playerId), player: resolve(String(playerId)) }));
+      const toEntry = (cardId) => { const player=resolve(String(cardId)); return { cardId:String(cardId), playerId:String(player?.playerId || global.RoadToGloryCardIdentity?.parse?.(cardId)?.playerId || cardId), source:sourceFor(cardId), player }; };
+      const lineup = (squad.lineup || []).map(toEntry);
+      const bench = (squad.bench || []).map(toEntry);
+      const freeCards=(freeAgentIds||[]).map((playerId)=>global.RoadToGloryCardIdentity?.cardIdForFreeAgent?.(playerId)||String(playerId));
       return Object.freeze({
         seasonId,
         formationId: squad.formationId,
@@ -159,8 +164,8 @@
         lineup: Object.freeze(lineup),
         bench: Object.freeze(bench),
         lineupRows: Object.freeze(formationRows(formation, lineup)),
-        availableCount: new Set([...(freeAgentIds || []).map(String), ...gacha]).size,
-        activeRoleVariantByPlayerId: { ...(squad.activeRoleVariantByPlayerId || {}) },
+        availableCount: new Set([...freeCards, ...gacha]).size,
+        activeRoleVariantByCardId: { ...(squad.activeRoleVariantByCardId || {}) },
       });
     }
 

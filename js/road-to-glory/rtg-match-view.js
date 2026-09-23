@@ -10,7 +10,7 @@
     const userTeamMeta = deps.userTeamMeta || null;
     const formationLayout = deps.formationLayout || global.FormationLayout || null;
     const formationById = deps.formationById || ((id) => global.SeasonRegistry?.database?.("ie1")?.formations?.eleven?.find?.((item) => String(item.id) === String(id)) || null);
-    const pid = (player) => String(player?.playerId || player?.id || "");
+    const pid = (player) => String(player?.cardId || player?.playerId || player?.id || "");
     const role = (player) => String(player?.normalizedRole || player?.position || player?.role || "").toUpperCase();
     const DUEL_RARITY_CLASS = Object.freeze({
       Scarso:"rarity-scarso",

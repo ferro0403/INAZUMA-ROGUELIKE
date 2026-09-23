@@ -80,16 +80,16 @@
         ? compactPlayerCardMarkup(player,{
             level:20,
             overall:player?.overall??player?.finalOverall,
-            dataAttr:`data-rtg-pull-player-detail="${escape(player?.playerId||player?.id||result.playerId||"")}" aria-label="Apri scheda di ${escape(playerName)}"`,
+            dataAttr:`data-rtg-pull-player-detail="${escape(result.cardId||player?.cardId||player?.playerId||player?.id||result.playerId||"")}" aria-label="Apri scheda di ${escape(playerName)}"`,
             extraClass:"squad-player-card rtg-picker-squad-card rtg-pull-player-card",
-            trailingMarkup:"",
+            trailingMarkup:`<span class="rtg-legacy-badge" title="Legacy ${escape(global.RoadToGloryCardIdentity?.legacyLabel?.(result.legacySeasonId||player?.legacySeasonId)||"")}">${escape(global.RoadToGloryCardIdentity?.legacyLabel?.(result.legacySeasonId||player?.legacySeasonId)||"")}</span>`,
           })
         : `<div class="rtg-pull-player-fallback"><strong>${escape(playerName)}</strong><span>Lv 20</span></div>`;
       const revealLabel=duplicate?"DUPLICATO":"NUOVO GIOCATORE";
       return `<div class="rtg-pull-result rtg-paper-modal development-squad-card-scope rtg-pull-result--${rarityKey} ${duplicate?"is-duplicate":"is-new"}" data-rtg-pull-rarity="${escape(rarityKey)}">
         <div class="rtg-pull-result-head">
           <span class="rtg-pull-rarity"><i aria-hidden="true"></i>${escape(rarity)}</span>
-          <span class="rtg-pull-series">ROAD TO GLORY · S1</span>
+          <span class="rtg-pull-series">ROAD TO GLORY · LEGACY ${escape(global.RoadToGloryCardIdentity?.legacyLabel?.(result.legacySeasonId||player?.legacySeasonId)||"S1")}</span>
         </div>
         <div class="rtg-pull-reveal-label"><span>${escape(revealLabel)}</span></div>
         <div class="rtg-pull-result-body">

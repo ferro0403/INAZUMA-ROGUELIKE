@@ -3,8 +3,9 @@
 
   const cfg = () => global.RoadToGloryConfig.SEASON1;
   const rng = () => global.RoadToGloryRng;
-  const clone = (value) => JSON.parse(JSON.stringify(value));
+  const cards = () => global.RoadToGloryCardIdentity;
   const id = (value) => String(value ?? "");
+  const clone = (value) => JSON.parse(JSON.stringify(value));
 
   function teamPlayerIds(seasonDb, teamId) {
     const team = (seasonDb?.teams || []).find((entry) => id(entry?.teamId || entry?.id) === id(teamId));
@@ -14,90 +15,112 @@
   }
 
   function unlockedCandidates(state, seasonDb) {
+    const api = cards();
+    const seasonId = api.normalizeSeasonId(state?.activeSeasonId || seasonDb?.seasonId || "ie1");
     const defeated = new Set((state?.defeatedTeamIds || []).map(id));
     const allowedIds = new Set();
     for (const teamId of defeated) {
       for (const playerId of teamPlayerIds(seasonDb, teamId)) allowedIds.add(playerId);
     }
     const seen = new Set();
-    const result = [];
+    const output = [];
     for (const player of seasonDb?.players || []) {
       const playerId = id(player?.playerId || player?.id);
-      if (!allowedIds.has(playerId) || seen.has(playerId)) continue;
-      seen.add(playerId);
-      result.push(player);
+      if (!allowedIds.has(playerId)) continue;
+      const cardId = api.cardIdForSeason(playerId, seasonId);
+      if (!cardId || seen.has(cardId)) continue;
+      seen.add(cardId);
+      output.push(Object.freeze({
+        ...player,
+        playerId: api.parse(cardId).playerId,
+        cardId,
+        legacySeasonId: seasonId,
+      }));
     }
-    return result;
+    return output;
   }
 
-  function unownedCandidates(state, seasonDb, accessiblePlayerIds = []) {
-    const owned = new Set([...(accessiblePlayerIds || []).map(id), ...(state?.gachaAcquiredPlayerIds || []).map(id)]);
-    return unlockedCandidates(state, seasonDb).filter((player) => !owned.has(id(player?.playerId || player?.id)));
+  function ownedCardIds(state, accessibleCardIds = []) {
+    return new Set([
+      ...(accessibleCardIds || []).map((value) => cards().parse(value).cardId || id(value)),
+      ...(state?.gachaAcquiredCards || []).map((entry) => cards().parse(entry).cardId),
+    ].filter(Boolean));
+  }
+
+  function unownedCandidates(state, seasonDb, accessibleCardIds = []) {
+    const owned = ownedCardIds(state, accessibleCardIds);
+    return unlockedCandidates(state, seasonDb).filter((player) => !owned.has(id(player?.cardId)));
   }
 
   function rarityWeightsForCandidates(candidates) {
-    const available = new Set((candidates || []).map((player) => String(player?.category || "")));
-    const entries = Object.entries(cfg().rarityWeights)
-      .map(([rarity, rawWeight]) => ({ rarity, rawWeight: Math.max(0, Number(rawWeight) || 0) }))
-      .filter((entry) => entry.rawWeight > 0 && available.has(entry.rarity));
-    const total = entries.reduce((sum, entry) => sum + entry.rawWeight, 0);
-    if (!(total > 0)) return [];
-    return entries.map((entry) => Object.freeze({ rarity: entry.rarity, weight: entry.rawWeight * 100 / total }));
+    const configured = cfg().rarityWeights || {};
+    const available = new Set((candidates || []).map((player) => String(player?.category || "Normale")));
+    const entries = Object.entries(configured)
+      .filter(([rarity, weight]) => Number(weight) > 0 && available.has(rarity))
+      .map(([rarity, weight]) => ({ rarity, weight: Number(weight) }));
+    const total = entries.reduce((sum, entry) => sum + entry.weight, 0);
+    if (!total) return [];
+    return entries.map((entry) => Object.freeze({ rarity: entry.rarity, weight: entry.weight / total * 100 }));
   }
 
   function availableRarityWeights(state, seasonDb) {
     return rarityWeightsForCandidates(unlockedCandidates(state, seasonDb));
   }
 
-  function previewPool(state, seasonDb, accessiblePlayerIds = []) {
-    const candidates = unownedCandidates(state, seasonDb, accessiblePlayerIds);
-    const rarities = rarityWeightsForCandidates(candidates);
-    return Object.freeze({ candidates: Object.freeze(candidates.slice()), rarities: Object.freeze(rarities.slice()), totalCandidates: candidates.length });
+  function previewPool(state, seasonDb, accessibleCardIds = []) {
+    const candidates = unownedCandidates(state, seasonDb, accessibleCardIds);
+    return Object.freeze({
+      candidates: Object.freeze(candidates),
+      rarities: Object.freeze(rarityWeightsForCandidates(candidates)),
+    });
   }
 
-  function pull(inputState, { seasonDb, accessiblePlayerIds = [] } = {}) {
+  function pull(inputState, { seasonDb, accessibleCardIds = [], accessiblePlayerIds = [] } = {}) {
     const state = clone(inputState || {});
-    const config = cfg();
-    const cost = Number(config.pullCost || 0);
+    const cost = Number(cfg().pullCost || 300);
     if ((Number(state.tokens) || 0) < cost) {
       throw Object.assign(new Error("Gettoni RTG insufficienti"), { code: "rtg-gacha-insufficient-tokens" });
     }
-    const candidates = unownedCandidates(state, seasonDb, accessiblePlayerIds);
+    const accessible = accessibleCardIds.length
+      ? accessibleCardIds
+      : (accessiblePlayerIds || []).map((playerId) => cards().cardIdForFreeAgent(playerId));
+    const candidates = unownedCandidates(state, seasonDb, accessible);
     if (!candidates.length) {
-      throw Object.assign(new Error("Nessun nuovo giocatore disponibile nel distributore RTG"), { code: "rtg-gacha-empty-pool" });
+      throw Object.assign(new Error("Nessun nuovo giocatore RTG disponibile"), { code: "rtg-gacha-empty-pool" });
     }
-    const activeRarities = rarityWeightsForCandidates(candidates);
+    const rarities = rarityWeightsForCandidates(candidates);
+    const activeRarities = rarities.filter((entry) => Number(entry.weight) > 0);
     if (!activeRarities.length) {
-      throw Object.assign(new Error("Nessuna rarità disponibile nel distributore RTG"), { code: "rtg-gacha-empty-rarity-pool" });
+      throw Object.assign(new Error("Nessuna rarità RTG disponibile"), { code: "rtg-gacha-empty-pool" });
     }
-
     const pullIndex = Math.max(0, Number(state.gacha?.pullCount) || 0);
     const rarity = rng().weightedPick(activeRarities, (entry) => entry.weight, rng().float(state.campaignSeed, "gacha-rarity", pullIndex))?.rarity;
-    const rarityCandidates = candidates.filter((player) => String(player?.category || "") === rarity);
-    if (!rarityCandidates.length) {
-      throw Object.assign(new Error("Pool rarità RTG inconsistente"), { code: "rtg-gacha-rarity-pool-empty", rarity });
-    }
+    const rarityPool = candidates.filter((player) => String(player?.category || "Normale") === String(rarity));
     const playerRoll = rng().float(state.campaignSeed, `gacha-player:${rarity}`, pullIndex);
-    const player = rarityCandidates[Math.min(rarityCandidates.length - 1, Math.floor(playerRoll * rarityCandidates.length))];
-    const playerId = id(player?.playerId || player?.id);
+    const player = rarityPool[Math.min(rarityPool.length - 1, Math.floor(playerRoll * rarityPool.length))] || rarityPool[0];
+    if (!player) throw Object.assign(new Error("Nessun giocatore RTG disponibile"), { code: "rtg-gacha-empty-pool" });
 
+    const card = cards().record(player);
     state.tokens = (Number(state.tokens) || 0) - cost;
     state.gacha = { ...(state.gacha || {}), pullCount: pullIndex + 1 };
-    state.gachaAcquiredPlayerIds = Array.from(new Set([...(state.gachaAcquiredPlayerIds || []).map(id), playerId]));
+    state.gachaAcquiredCards = [
+      ...(state.gachaAcquiredCards || []).filter((entry) => cards().parse(entry).cardId !== card.cardId),
+      clone(card),
+    ];
 
     return {
       state,
       result: Object.freeze({
-        playerId,
-        rarity,
+        cardId: card.cardId,
+        playerId: card.playerId,
+        legacySeasonId: card.legacySeasonId,
+        rarity: String(player.category || rarity || "Normale"),
         duplicate: false,
         refund: 0,
-        cost,
         balanceAfter: state.tokens,
-        pullNumber: pullIndex + 1,
       }),
     };
   }
 
-  global.RoadToGloryGacha = Object.freeze({ unlockedCandidates, unownedCandidates, availableRarityWeights, previewPool, pull });
+  global.RoadToGloryGacha = Object.freeze({ unlockedCandidates, ownedCardIds, unownedCandidates, availableRarityWeights, previewPool, pull });
 })(globalThis);
