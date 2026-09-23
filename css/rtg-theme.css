@@ -109,7 +109,7 @@
     background:url("../assets/home/inazuma-stadium-desktop-light.jpeg") center / cover no-repeat!important;
   }
 }
-/* RTG Legacy marker: sits outside the card corner so it never covers role, OVR or portrait. */
+/* RTG Legacy marker: sits outside the bottom-right card corner so it never covers role, OVR, portrait or name. */
 button.player-card:has(> .rtg-legacy-badge),
 .player-card:has(> .rtg-legacy-badge){
   overflow:visible!important;
@@ -119,7 +119,8 @@ button.player-card:has(> .rtg-legacy-badge),
   z-index:24!important;
   left:auto!important;
   right:-4px!important;
-  top:-15px!important;
+  top:auto!important;
+  bottom:-15px!important;
   transform:rotate(2deg)!important;
   display:grid!important;
   place-items:center!important;
@@ -140,14 +141,16 @@ button.player-card:has(> .rtg-legacy-badge),
 .rtg-pull-player-card .rtg-legacy-badge{
   left:auto!important;
   right:-4px!important;
-  top:-15px!important;
+  top:auto!important;
+  bottom:-15px!important;
 }
 
-/* Give the protruding Legacy tab a clean lane in dense card grids. */
+/* Give the protruding Legacy tab a clean lane below dense card grids. */
 .rtg-modal .rtg-picker-grid,
 .rtg-modal .rtg-catalog-grid{
   row-gap:22px!important;
-  padding-top:17px!important;
+  padding-top:14px!important;
+  padding-bottom:18px!important;
 }
 
 /* Player detail: Legacy badge is independent from the team banner.
