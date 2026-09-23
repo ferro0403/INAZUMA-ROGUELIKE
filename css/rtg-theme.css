@@ -342,7 +342,7 @@
 @keyframes rtg-vending-v8-mix{
   0%{transform:translate3d(0,0,0) rotate(0deg)}
   52%{transform:translate3d(var(--mx,22px),var(--my,-36px),0) rotate(var(--spin,140deg))}
-  100%{transform:translate3d(calc(var(--mx,22px) * -.55),calc(var(--my,-36px) * -.35),0) rotate(calc(var(--spin,140deg) * -1))}
+  100%{transform:translate3d(-12px,9px,0) rotate(-72deg)}
 }
 @keyframes rtg-vending-v8-body{
   0%,100%{transform:translate3d(0,0,0) rotate(0deg)}
