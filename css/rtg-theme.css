@@ -110,8 +110,8 @@
   }
 }
 /* =========================================================
-   RTG vending machine v12 — premium arcade / gashapon hybrid
-   Clean physical materials, restrained depth and readable mechanics.
+   RTG vending machine v13 — cabinet polish
+   Same capsule pile; improved head, cabinet, crank and retrieval materials.
    ========================================================= */
 .rtg-vending-machine-v12{
   --rtg-vending-reveal:#929ba8;
@@ -144,32 +144,35 @@
   position:relative;
   z-index:5;
   width:208px;
-  min-height:44px;
+  min-height:48px;
   display:grid;
   place-items:center;
   align-content:center;
-  padding:7px 12px 6px;
-  border:1px solid rgba(255,255,255,.08);
+  padding:8px 12px 7px;
+  border:2px solid #202329;
   border-bottom:0;
-  border-radius:14px 14px 0 0;
+  border-radius:15px 15px 0 0;
   background:
-    linear-gradient(180deg,#2b2e34 0%,#181a1f 100%);
+    radial-gradient(circle at 30% 0%,rgba(255,255,255,.10),transparent 28%),
+    linear-gradient(180deg,#343840 0%,#202329 58%,#16181c 100%);
   color:#fff;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,.16),
-    0 5px 10px rgba(8,10,14,.18);
+    inset 0 -7px 10px rgba(0,0,0,.18),
+    0 5px 9px rgba(8,10,14,.16);
   text-align:center;
   text-transform:uppercase;
 }
 .rtg-vending-head-v9::after{
   content:"";
   position:absolute;
-  left:12px;
-  right:12px;
-  bottom:0;
-  height:3px;
+  left:18px;
+  right:18px;
+  bottom:2px;
+  height:2px;
   border-radius:999px;
-  background:linear-gradient(90deg,transparent,#ffd21f 12%,#ffd21f 88%,transparent);
+  background:linear-gradient(90deg,transparent,#ffe16b 18%,#ffd21f 50%,#ffe16b 82%,transparent);
+  box-shadow:0 0 7px rgba(255,210,31,.45);
   opacity:.95;
 }
 .rtg-vending-head-v9 span{
@@ -314,22 +317,24 @@
 .rtg-vending-body-v9{
   position:relative;
   width:208px;
-  min-height:142px;
+  min-height:144px;
   margin-top:0;
   display:grid;
   grid-template-columns:minmax(0,1fr) 68px;
-  grid-template-rows:70px 52px;
+  grid-template-rows:71px 53px;
   gap:9px 11px;
-  padding:13px 13px 12px;
-  border:2px solid #25282d;
+  padding:13px 13px 13px;
+  border:2px solid #24272c;
   border-top:0;
-  border-radius:0 0 17px 17px;
+  border-radius:0 0 18px 18px;
   background:
-    linear-gradient(165deg,#fffefa 0%,#f4f1e9 48%,#ded9ce 100%);
+    radial-gradient(circle at 24% 10%,rgba(255,255,255,.78),transparent 31%),
+    linear-gradient(165deg,#fffefa 0%,#f5f2ea 50%,#ddd8ce 100%);
   box-shadow:
-    inset 4px 4px 7px rgba(255,255,255,.72),
-    inset -7px -9px 12px rgba(72,64,49,.09),
-    0 9px 16px rgba(9,11,14,.18);
+    inset 2px 2px 0 rgba(255,255,255,.86),
+    inset -8px -10px 14px rgba(71,62,49,.10),
+    inset 0 -2px 0 rgba(132,122,105,.16),
+    0 10px 18px rgba(9,11,14,.18);
   isolation:isolate;
 }
 .rtg-vending-body-v9::before{
@@ -339,25 +344,29 @@
   top:8px;
   right:8px;
   width:68px;
-  height:124px;
-  border-radius:12px;
-  background:linear-gradient(160deg,#ffe66a 0%,#ffd234 44%,#eca817 100%);
+  height:126px;
+  border-radius:13px;
+  background:
+    radial-gradient(circle at 30% 13%,rgba(255,255,255,.36),transparent 24%),
+    linear-gradient(180deg,#ffe66b 0%,#ffd439 48%,#edae1b 100%);
   box-shadow:
-    inset 4px 4px 6px rgba(255,255,255,.34),
-    inset -6px -8px 10px rgba(151,91,0,.12),
-    0 3px 6px rgba(17,18,22,.10);
+    inset 1px 1px 0 rgba(255,255,255,.50),
+    inset -5px -7px 10px rgba(139,82,0,.13),
+    0 2px 5px rgba(17,18,22,.10);
 }
 .rtg-vending-body-v9::after{
   content:"";
   position:absolute;
   z-index:-1;
-  left:15px;
-  right:15px;
-  bottom:-9px;
-  height:10px;
-  border-radius:0 0 12px 12px;
-  background:#2a2d32;
-  box-shadow:0 4px 8px rgba(9,11,14,.16);
+  left:14px;
+  right:14px;
+  bottom:-10px;
+  height:11px;
+  border-radius:0 0 13px 13px;
+  background:linear-gradient(180deg,#353941,#202329);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 5px 9px rgba(9,11,14,.17);
 }
 .rtg-vending-body-v9>*{position:relative;z-index:2;}
 
@@ -365,13 +374,16 @@
   display:grid;
   place-items:center;
   align-content:center;
-  border:1px solid #c9c2b4;
-  border-radius:10px;
-  background:linear-gradient(180deg,#fffefa,#f2efe7);
+  border:1px solid #c8c1b4;
+  border-radius:11px;
+  background:
+    radial-gradient(circle at 30% 8%,rgba(255,255,255,.86),transparent 35%),
+    linear-gradient(180deg,#fffefa,#f1ede4);
   color:#111216;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.95),
-    0 2px 5px rgba(17,18,22,.10);
+    inset 0 1px 0 rgba(255,255,255,.98),
+    inset 0 -3px 6px rgba(90,77,55,.06),
+    0 3px 6px rgba(17,18,22,.11);
 }
 .rtg-vending-info-v9 small{font:900 7px/1 system-ui,sans-serif;letter-spacing:.13em;color:#55514a;}
 .rtg-vending-info-v9 strong{font:1000 25px/.92 system-ui,sans-serif;color:#17181b;}
@@ -381,14 +393,14 @@
   width:58px;height:58px;
   align-self:center;
   justify-self:center;
-  border:2px solid #292d32;
+  border:2px solid #24272c;
   border-radius:50%;
   background:
-    radial-gradient(circle at 34% 29%,#ffffff 0 11%,#cfd1d0 12% 32%,#8a8d8d 33% 67%,#505253 68% 100%);
+    radial-gradient(circle at 31% 25%,#ffffff 0 9%,#d7d8d5 10% 27%,#a3a5a3 28% 48%,#737675 49% 70%,#444647 71% 100%);
   box-shadow:
-    inset 2px 2px 4px rgba(255,255,255,.34),
-    inset -4px -5px 7px rgba(17,18,22,.18),
-    0 4px 7px rgba(17,18,22,.17);
+    inset 3px 3px 5px rgba(255,255,255,.42),
+    inset -5px -6px 8px rgba(17,18,22,.22),
+    0 5px 8px rgba(17,18,22,.19);
 }
 .rtg-vending-crank-v9::before{
   content:"";
@@ -399,7 +411,8 @@
   transform:translate(-50%,-50%);
   border:2px solid #292d32;
   border-radius:50%;
-  background:radial-gradient(circle at 35% 30%,#fff,#b9bbb9 60%,#696b6a 61%);
+  background:radial-gradient(circle at 33% 28%,#fff 0 12%,#d5d6d3 13% 42%,#8a8c8b 43% 72%,#595b5b 73% 100%);
+  box-shadow:inset 1px 1px 2px rgba(255,255,255,.45),0 1px 2px rgba(0,0,0,.16);
 }
 .rtg-vending-crank-v9::after{
   content:"";
@@ -409,8 +422,12 @@
   width:16px;height:16px;
   border:2px solid #292d32;
   border-radius:50%;
-  background:#ffd21f;
-  box-shadow:0 2px 4px rgba(17,18,22,.18);
+  background:
+    radial-gradient(circle at 34% 26%,#fff1a0 0 12%,transparent 13%),
+    linear-gradient(160deg,#ffe86f 0%,#ffd21f 52%,#e5a817 100%);
+  box-shadow:
+    inset -2px -3px 4px rgba(113,71,0,.16),
+    0 3px 5px rgba(17,18,22,.18);
 }
 .rtg-vending-crank-v9 span{
   position:absolute;
@@ -427,13 +444,15 @@
   grid-column:1 / 2;
   position:relative;
   overflow:hidden;
-  border:2px solid #282b30;
-  border-radius:10px 10px 15px 15px;
-  background:linear-gradient(180deg,#373a40 0%,#1b1d21 55%,#0d0f12 100%);
+  border:2px solid #25282d;
+  border-radius:11px 11px 16px 16px;
+  background:
+    radial-gradient(ellipse at 50% 22%,rgba(255,255,255,.07),transparent 42%),
+    linear-gradient(180deg,#41454c 0%,#23262b 48%,#0d0f12 100%);
   box-shadow:
-    inset 0 4px 6px rgba(255,255,255,.05),
-    inset 0 -8px 10px rgba(0,0,0,.32),
-    0 2px 5px rgba(17,18,22,.13);
+    inset 0 5px 8px rgba(255,255,255,.05),
+    inset 0 -10px 12px rgba(0,0,0,.38),
+    0 3px 6px rgba(17,18,22,.14);
 }
 .rtg-vending-chute-well-v9{
   position:absolute;
@@ -441,8 +460,10 @@
   width:86px;height:29px;
   transform:translateX(-50%);
   border-radius:50% 50% 0 0;
-  background:#08090b;
-  box-shadow:inset 0 7px 0 #2d3035;
+  background:linear-gradient(180deg,#111318,#050607);
+  box-shadow:
+    inset 0 8px 0 #33373d,
+    inset 0 -4px 8px rgba(0,0,0,.65);
 }
 .rtg-vending-chute-flap-v10{
   position:absolute!important;
