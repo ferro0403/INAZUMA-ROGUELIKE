@@ -3326,3 +3326,12 @@
 .rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-action.is-move::before{
   background:#111216!important;
 }
+
+
+/* RTG correction: dribbling special moves are blue, defense stays green. */
+.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-action.is-move.move-category--defense{
+  --rtg-move-color:#54c878;
+}
+.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-action.is-move.move-category--dribble{
+  --rtg-move-color:#4da7e8;
+}
