@@ -647,7 +647,7 @@
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userMoveSelected ? "has-special-move" : ""}">
             <div class="rtg-duel-panel-heading"><span class="rtg-duel-panel-tag">TU</span><span class="rtg-duel-action-chip ${userMoveSelected ? `rtg-duel-action-chip--move ${moveCategoryClass(pending.userMove,userKind)}` : ""}">${userMoveSelected ? "⚡ " : ""}${escape(userActionShort)}</span></div>
             ${duelCompareVisualMarkup(user,"user",`data-rtg-duel-player="${escape(pid(user))}" data-side="user"`)}
-            ${userMoveSelected ? `<div class="rtg-duel-active-move ${moveCategoryClass(pending.userMove,userKind)}"><small>MOSSA SPECIALE</small><strong>${escape(pending.userMove.name)}</strong><em>POWER ${escape(pending.userMove.power ?? "—")}</em></div>` : ""}
+            ${userMoveSelected ? `<div class="rtg-duel-active-move ${duelActionCategory(userKind,"user",pending.actorSide)}"><small>MOSSA SPECIALE</small><strong>${escape(pending.userMove.name)}</strong><em>POWER ${escape(pending.userMove.power ?? "—")}</em></div>` : ""}
           </article>
           <div class="rtg-duel-vs-core" aria-hidden="true"><small>SCONTRO</small><span>VS</span></div>
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)}">
@@ -732,8 +732,8 @@
       const opponentWinningMove = !userWon && !!resolution.aiUsedMove;
       const userAction = resolution.userChoiceLabel || userBaseAction;
       const opponentAction = resolution.aiChoiceLabel || opponentBaseAction;
-      const userMoveCategory = moveCategoryClass({type:resolution.userMoveType},resolution.userKind);
-      const opponentMoveCategory = moveCategoryClass({type:resolution.aiMoveType},resolution.aiKind);
+      const userMoveCategory = duelActionCategory(resolution.userKind,"user",resolution.actorSide);
+      const opponentMoveCategory = duelActionCategory(resolution.aiKind,"opponent",resolution.actorSide);
       const userRarityClass = duelRarityClass(user);
       const opponentRarityClass = duelRarityClass(opponent);
       const loserStyle = "opacity:.46;filter:grayscale(.92) saturate(.28) brightness(.82);transform:scale(.985);";
