@@ -603,7 +603,6 @@
         <section class="rtg-live-status rtg-live-commandbar ${match.possession === "user" ? "is-user-possession" : "is-opponent-possession"}">
           <div class="rtg-live-command rtg-live-command--possession"><span class="rtg-live-command-index">01</span><i aria-hidden="true"></i><span><small>POSSESSO</small><strong>${escape(possessionLabel)}</strong></span></div>
           <div class="rtg-live-command"><span class="rtg-live-command-index">02</span><span><small>ZONA</small><strong>${escape(zoneLabel)}</strong></span></div>
-          <div class="rtg-live-command"><span class="rtg-live-command-index">03</span><span><small>STATO</small><strong>${escape(phaseLabel)}</strong></span></div>
         </section>
         ${tickerMarkup(match)}
         <div class="content rtg-match-content">
