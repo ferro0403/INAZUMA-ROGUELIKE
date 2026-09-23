@@ -67,20 +67,20 @@
       const rarity=String(category||"debole").trim().toLowerCase();
       return `rarity-${["scarso","debole","normale","buono","forte","elite","mondiale","leggenda","aurico"].includes(rarity)?rarity:"debole"}`;
     }
-    function albumCoverUrl(){
-      return global.SeasonRegistry?.database?.("ie1")?.presentation?.menuImageUrl
-        || "https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiTljpQy0-8hZqy9NP7BmOZwijtzN9VGYbXEN4bR2bPW8GiaccWADFA3RAlYclPfO8HSr9aEgR8H_NWF-al-1MLXlH6ToD-mMNUKwTsaSKlKvUCEY1xzg_2auQvhA3usKf5qPwV8Iawi6pm/s1600/wallpapers_inazuma11_1_1024x768.jpg";
+    function albumTeamLogoMarkup(team={}){
+      return team?.teamId ? emblem(team.teamId) : '<span class="album-free-agent-logo" aria-hidden="true">⚡</span>';
     }
-    function albumMarkup({state,entries=[],allEntries=[]}={}){
-      const unlockedIds=new Set(Array.from(entries||[]).map(player=>String(player?.cardId||player?.playerId||player?.id||"")));
-      const catalog=Array.from(allEntries||[]);
-      const total=catalog.length;
-      const unlocked=catalog.filter(player=>unlockedIds.has(String(player?.cardId||player?.playerId||player?.id||""))).length;
-      const percent=total?Math.round(unlocked/total*100):0;
-      const cover=albumCoverUrl();
-      return `<main class="album-screen album-collections-screen rtg-album-collections-screen"><header class="topbar album-topbar album-collections-topbar"><button type="button" class="btn section-root-button album-collections-home-button" data-rtg-home aria-label="Torna alla Home"><span aria-hidden="true">←</span></button><div class="album-collections-heading"><p class="eyebrow">ROAD TO GLORY</p><h1>COLLEZIONI</h1><p class="muted">Progressi permanenti del Road to Glory.</p></div><span class="album-collections-topbar-spacer" aria-hidden="true"></span></header><section class="album-collection-grid"><button type="button" class="panel album-collection-card" data-rtg-album-collection aria-label="Apri collezione Road to Glory Season 1"><span class="album-collection-cover album-collection-cover--hero"><img src="${escape(cover)}" alt="" loading="lazy" decoding="async"></span><span class="album-collection-content album-collection-content--hero"><span class="album-collection-title">Road to Glory · Season 1</span><span class="album-collection-progress-copy"><span>${escape(unlocked)} / ${escape(total)} giocatori sbloccati</span><strong>${escape(percent)}%</strong></span><span class="album-collection-progress-bar" aria-hidden="true"><span style="width:${percent}%"></span></span><span class="album-collection-action">Apri collezione <span aria-hidden="true">→</span></span></span></button></section></main>`;
+    function albumTeamsMarkup({teams=[]}={}){
+      const cards=Array.from(teams||[]).map(team=>{
+        const total=Number(team.total)||0,unlocked=Number(team.unlocked)||0;
+        const percent=total?Math.round(unlocked/total*100):0;
+        const complete=total>0&&unlocked===total;
+        const logo=albumTeamLogoMarkup(team);
+        return `<button type="button" class="panel album-team-card album-team-card--modern ${complete?"album-complete":""}" data-rtg-album-team="${escape(team.teamId)}" aria-label="${escape(team.teamName)}: ${escape(unlocked)} su ${escape(total)} giocatori sbloccati, ${escape(percent)}%"><span class="album-team-card__stage"><span class="album-team-card__watermark" aria-hidden="true">${logo}</span><span class="album-team-logo album-team-card__logo">${logo}</span></span><span class="album-team-card__footer"><span class="album-team-card__heading"><strong class="album-team-card__name">${escape(team.teamName)}</strong><span class="album-team-card__open" aria-hidden="true">→</span></span><span class="album-team-card__progress"><span>${escape(unlocked)} / ${escape(total)} sbloccati</span>${complete?'<b class="album-team-card__complete-state"><span class="album-team-card__complete-check" aria-hidden="true">✓</span>COMPLETA</b>':`<b>${escape(percent)}%</b>`}</span><span class="album-team-card__bar" aria-hidden="true"><span style="width:${percent}%"></span></span></span></button>`;
+      }).join("");
+      return `<main class="album-screen album-teams-screen rtg-album-teams-screen"><header class="topbar album-topbar album-teams-topbar"><button type="button" class="btn section-root-button album-teams-back-button" data-rtg-home aria-label="Torna a Road to Glory"><span aria-hidden="true">←</span></button><div class="album-teams-heading"><p class="eyebrow">ALBUM → ROAD TO GLORY S1</p><h1>SQUADRE</h1></div><span class="album-teams-topbar-spacer" aria-hidden="true"></span></header><section class="album-team-grid album-team-grid--modern">${cards}</section></main>`;
     }
-    function albumRosterMarkup({state,entries=[],allEntries=[]}={}){
+    function albumRosterMarkup({team={},entries=[],allEntries=[]}={}){
       const unlockedIds=new Set(Array.from(entries||[]).map(player=>String(player?.cardId||player?.playerId||player?.id||"")));
       const catalog=Array.from(allEntries||[]);
       const cards=catalog.map(player=>{
@@ -90,7 +90,8 @@
         return `<div class="album-player-entry ${albumRarityClass(player?.category)} ${isUnlocked?"is-unlocked":"is-locked"}" data-album-unlocked="${isUnlocked?"true":"false"}">${card}${isUnlocked?"":'<span class="album-player-lock"><span aria-hidden="true">🔒</span>NON SBLOCCATO</span>'}</div>`;
       }).join("");
       const total=catalog.length,unlocked=catalog.filter(player=>unlockedIds.has(String(player?.cardId||player?.playerId||player?.id||""))).length,percent=total?Math.round(unlocked/total*100):0;
-      return `<main class="album-screen album-roster-screen album-roster-screen--modern rtg-album-roster-screen"><header class="album-roster-hero"><div class="album-roster-hero__nav"><button type="button" class="btn section-root-button album-roster-back-button" data-rtg-album-back aria-label="Torna alle collezioni"><span aria-hidden="true">←</span></button></div><div class="album-roster-hero__identity"><span class="album-team-logo album-roster-hero__logo"><span class="album-free-agent-logo" aria-hidden="true">⚡</span></span><h1 class="album-roster-hero__name">Road to Glory · Season 1</h1></div><div class="album-roster-hero__stats"><span>${escape(unlocked)} / ${escape(total)} giocatori sbloccati</span><strong class="album-roster-percent">${escape(percent)}%</strong></div><span class="album-roster-hero__bar" aria-hidden="true"><span style="width:${percent}%"></span></span></header><section class="album-player-grid album-player-grid--modern development-squad-card-scope" data-rtg-album-roster>${cards}</section></main>`;
+      const logo=albumTeamLogoMarkup(team);
+      return `<main class="album-screen album-roster-screen album-roster-screen--modern rtg-album-roster-screen"><header class="album-roster-hero"><div class="album-roster-hero__nav"><button type="button" class="btn section-root-button album-roster-back-button" data-rtg-album-back aria-label="Torna alle squadre"><span aria-hidden="true">←</span></button></div><div class="album-roster-hero__identity"><span class="album-team-logo album-roster-hero__logo">${logo}</span><h1 class="album-roster-hero__name">${escape(team.teamName||"Squadra")}</h1></div><div class="album-roster-hero__stats"><span>${escape(unlocked)} / ${escape(total)} giocatori sbloccati</span><strong class="album-roster-percent">${escape(percent)}%</strong></div><span class="album-roster-hero__bar" aria-hidden="true"><span style="width:${percent}%"></span></span></header><section class="album-player-grid album-player-grid--modern" data-rtg-album-roster>${cards}</section></main>`;
     }
 
     function requirementsMarkup(eligibility={}){if(!eligibility)return"";const rows=[["Potenza rosa · max",eligibility.teamPower==null?"—":`${eligibility.teamPower} / ${eligibility.cap}`,!eligibility.reasons?.includes("team-power-cap")],["Reclute S1 · min",`${eligibility.recruitCount||0} / ${eligibility.minRecruit||0}`,!eligibility.reasons?.includes("min-s1-recruits")],["Reclute recenti · min",`${eligibility.recentRecruitCount||0} / ${eligibility.recentCount||0}`,!eligibility.reasons?.includes("recent-s1-recruits")]];return `<section class="panel rtg-requirements"><p class="eyebrow">Accesso partita</p><h3>Requisiti</h3><div class="rtg-requirements-list">${rows.map(([label,value,ok])=>`<div class="rtg-requirement ${ok?"ok":"bad"}"><span><i aria-hidden="true">${ok?"✓":"!"}</i> ${escape(label)}</span><strong>${escape(value)}</strong></div>`).join("")}</div><p class="rtg-requirements-note">Reclute e potenza considerano tutti i 15 giocatori: titolari + panchina.</p></section>`;}
@@ -171,7 +172,7 @@
       </div>`;
     }
 
-    return Object.freeze({tabs,lockedMarkup:(...args)=>skinTokens(lockedMarkup(...args)),runMarkup:(...args)=>skinTokens(runMarkup(...args)),albumMarkup:(...args)=>skinTokens(albumMarkup(...args)),albumRosterMarkup:(...args)=>skinTokens(albumRosterMarkup(...args)),requirementsMarkup,nodeModalMarkup,vendingMarkup:(...args)=>skinTokens(vendingMarkup(...args)),pullResultMarkup:(...args)=>skinTokens(pullResultMarkup(...args))});
+    return Object.freeze({tabs,lockedMarkup:(...args)=>skinTokens(lockedMarkup(...args)),runMarkup:(...args)=>skinTokens(runMarkup(...args)),albumTeamsMarkup:(...args)=>skinTokens(albumTeamsMarkup(...args)),albumRosterMarkup:(...args)=>skinTokens(albumRosterMarkup(...args)),requirementsMarkup,nodeModalMarkup,vendingMarkup:(...args)=>skinTokens(vendingMarkup(...args)),pullResultMarkup:(...args)=>skinTokens(pullResultMarkup(...args))});
   }
   global.RoadToGloryRunView=Object.freeze({create});
 })(globalThis);
