@@ -172,7 +172,7 @@
           <strong class="rtg-duel-player-name">${escape(name)}</strong>
           <span class="rtg-duel-player-meta">
             <small><b>${escape(playerRole)}</b><span>OVR ${escape(overall)}</span></small>
-            <em class="rtg-duel-player-element ${escape(elementClass)} ${escape(elementStateClass)}">${duelElementIcon(player)}<span>${escape(element)}</span></em>
+            <em class="rtg-duel-player-element has-native-element-icon ${escape(elementClass)} ${escape(elementStateClass)}">${duelElementIcon(player)}<span>${escape(element)}</span></em>
           </span>
         </span>
       </button>`;
