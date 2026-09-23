@@ -3494,3 +3494,80 @@
     padding:12px!important;
   }
 }
+
+
+/* RTG probability scoreboard v2: readable two-side layout, no clipped opponent label. */
+.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-final-probability{
+  padding:9px 10px 10px!important;
+  background:linear-gradient(90deg,#e3f2fc 0 49.7%,#111216 49.7% 50.3%,#fde8ea 50.3% 100%)!important;
+}
+.rtg-duel-final-probability .rtg-duel-prob-sides{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:0!important;
+  width:100%!important;
+}
+.rtg-duel-final-probability .rtg-duel-prob-sides>span{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:0!important;
+  padding:3px 4px 1px!important;
+}
+.rtg-duel-final-probability .rtg-duel-prob-sides em{
+  display:block!important;
+  margin-bottom:2px!important;
+  color:#555b64!important;
+  font-size:7px!important;
+  font-style:normal!important;
+  font-weight:950!important;
+  letter-spacing:.1em!important;
+}
+.rtg-duel-final-probability .rtg-duel-prob-sides strong{
+  display:block!important;
+  color:#111216!important;
+  font-size:clamp(23px,7vw,31px)!important;
+  font-weight:1000!important;
+  line-height:1!important;
+  letter-spacing:-.045em!important;
+  white-space:nowrap!important;
+}
+.rtg-duel-final-probability .rtg-duel-prob-sides>i{
+  display:grid!important;
+  place-items:center!important;
+  width:25px!important;
+  height:25px!important;
+  border:2px solid #111216!important;
+  border-radius:4px!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+  font-size:8px!important;
+  font-style:italic!important;
+  font-weight:1000!important;
+  transform:rotate(-3deg)!important;
+}
+
+/* Canonical element glyphs: exactly the same SVG language used in player detail cards. */
+.rtg-duel-player-element svg{
+  display:block!important;
+  width:13px!important;
+  height:13px!important;
+  flex:0 0 13px!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:2!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+}
+.rtg-duel-player-element{
+  gap:5px!important;
+}
+.rtg-duel-player-element>span{
+  display:inline-block!important;
+}
+.rtg-duel-result--revolution .rtg-duel-player-element::before{
+  content:none!important;
+  display:none!important;
+}
