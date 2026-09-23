@@ -3168,3 +3168,21 @@
     font-size:17px!important;
   }
 }
+
+
+/* RTG duel continuity: keep the same category colors through locked/final calculation. */
+.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-action:not(.is-move){
+  background:#111216!important;
+}
+.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-portrait-panel:has(.rtg-duel-resolving-action){
+  transition:none!important;
+}
+.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-action em{
+  font-size:8px!important;
+  line-height:1.1!important;
+}
+.rtg-duel-card--clean .rtg-choice-copy em{
+  font-size:10px!important;
+  line-height:1.2!important;
+  font-weight:900!important;
+}
