@@ -103,11 +103,16 @@
       const detailPlayer=player?.stats&&!player?.baseStats
         ? {...player,baseStats:{...player.stats}}
         : player;
+      const detailMeta=cardMeta(player?.cardId||key);
+      const rtgLegacyLabel=detailMeta.sourceKind==="season"
+        ? (cardIdentity?.legacyLabel?.(detailMeta.legacySeasonId)||"")
+        : "";
       return deps.showPlayerDetailsFor?.(detailPlayer,{
         playerId:id(player.playerId||cardMeta(key).playerId),
         level:20,
         database:detailDatabaseFor(key),
         equipment:null,
+        rtgLegacyLabel,
         readOnly:true,
         preserveScroll:true,
         onClose:typeof options?.onClose==="function"?options.onClose:null,
