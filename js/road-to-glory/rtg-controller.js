@@ -66,10 +66,30 @@
       return writeRtgAlbum([...readRtgAlbum().cardIds,...current]);
     }
 
-    function renderHtml(html){
+    function matchTimelineAnchor(){
+      if(!app)return null;
+      const items=app.querySelectorAll?.(".rtg-match-ticker-item, .rtg-match-log-item, [data-rtg-log-entry]")||[];
+      return items.length ? items[items.length-1] : (app.querySelector?.(".rtg-match-ticker, .rtg-match-log, .rtg-match-timeline")||null);
+    }
+    function keepLatestMatchActionVisible(){
+      const anchor=matchTimelineAnchor();
+      if(!anchor)return;
+      const rect=anchor.getBoundingClientRect?.();
+      const viewport=global.innerHeight||global.document?.documentElement?.clientHeight||0;
+      if(rect&&viewport&&rect.bottom>viewport-24){
+        global.scrollBy?.({top:rect.bottom-(viewport-24),behavior:"auto"});
+      }else if(rect&&rect.top<8){
+        global.scrollBy?.({top:rect.top-8,behavior:"auto"});
+      }
+    }
+    function renderHtml(html,options={}){
       lastRenderedHtml=String(html||"");
       if(app)app.innerHTML=lastRenderedHtml;
-      deps.resetRenderedViewScroll?.();
+      if(options.preserveMatchTimeline===true){
+        global.requestAnimationFrame?.(()=>keepLatestMatchActionVisible());
+      }else{
+        deps.resetRenderedViewScroll?.();
+      }
       return lastRenderedHtml;
     }
     function getRenderedHtml(){return app?.innerHTML||lastRenderedHtml;}
@@ -1002,7 +1022,7 @@
         mountDevQuickTools();
         return match;
       }
-      renderHtml(matchView.matchMarkup(match));
+      renderHtml(matchView.matchMarkup(match),{preserveMatchTimeline:true});
       const minute=matchView.currentMinute?.(match)??0;
       matchView.animateClock?.(app,displayedMinute,minute);
       displayedMinute=minute;
