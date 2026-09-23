@@ -120,8 +120,8 @@ button.player-card:has(> .rtg-legacy-badge),
   left:auto!important;
   right:-4px!important;
   top:auto!important;
-  bottom:-15px!important;
-  transform:rotate(2deg)!important;
+  bottom:-11px!important;
+  transform:none!important;
   display:grid!important;
   place-items:center!important;
   width:auto!important;
@@ -142,7 +142,7 @@ button.player-card:has(> .rtg-legacy-badge),
   left:auto!important;
   right:-4px!important;
   top:auto!important;
-  bottom:-15px!important;
+  bottom:-11px!important;
 }
 
 /* Give the protruding Legacy tab a clean lane below dense card grids. */
