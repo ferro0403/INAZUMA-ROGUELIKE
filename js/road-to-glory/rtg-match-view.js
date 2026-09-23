@@ -601,9 +601,9 @@
           <button type="button" class="btn btn-danger rtg-abandon-button" aria-label="Abbandona partita" title="Abbandona partita" data-rtg-abandon><span aria-hidden="true">×</span><b>ABBANDONA</b></button>
         </header>
         <section class="rtg-live-status rtg-live-commandbar ${match.possession === "user" ? "is-user-possession" : "is-opponent-possession"}">
-          <div class="rtg-live-command rtg-live-command--possession"><span class="rtg-live-command-index">01</span><i aria-hidden="true"></i><span><small>POSSESSO</small><strong>${escape(possessionLabel)}</strong><em>${match.possession === "user" ? "Palla nostra" : "Palla avversaria"}</em></span></div>
-          <div class="rtg-live-command"><span class="rtg-live-command-index">02</span><span><small>ZONA</small><strong>${escape(zoneLabel)}</strong><em>Posizione palla</em></span></div>
-          <div class="rtg-live-command"><span class="rtg-live-command-index">03</span><span><small>STATO</small><strong>${escape(phaseLabel)}</strong><em>${match.pendingEncounter ? "Preparati alla scelta" : "Azione automatica"}</em></span></div>
+          <div class="rtg-live-command rtg-live-command--possession"><span class="rtg-live-command-index">01</span><i aria-hidden="true"></i><span><small>POSSESSO</small><strong>${escape(possessionLabel)}</strong></span></div>
+          <div class="rtg-live-command"><span class="rtg-live-command-index">02</span><span><small>ZONA</small><strong>${escape(zoneLabel)}</strong></span></div>
+          <div class="rtg-live-command"><span class="rtg-live-command-index">03</span><span><small>STATO</small><strong>${escape(phaseLabel)}</strong></span></div>
         </section>
         ${tickerMarkup(match)}
         <div class="content rtg-match-content">
