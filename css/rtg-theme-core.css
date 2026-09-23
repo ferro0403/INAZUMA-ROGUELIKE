@@ -3571,3 +3571,17 @@
   content:none!important;
   display:none!important;
 }
+
+
+/* Native element SVG replaces every legacy decorative diamond in duel/player badges. */
+.rtg-duel-player-element.has-native-element-icon::before,
+.rtg-duel-player-element.has-native-element-icon::after{
+  content:none!important;
+  display:none!important;
+}
+.rtg-duel-player-element.has-native-element-icon svg{
+  display:block!important;
+  width:14px!important;
+  height:14px!important;
+  flex:0 0 14px!important;
+}
