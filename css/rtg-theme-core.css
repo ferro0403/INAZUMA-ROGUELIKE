@@ -3637,3 +3637,20 @@
   font-size:7px!important;
   letter-spacing:.1em!important;
 }
+
+
+/* Result element pills: one more compact step. */
+.rtg-duel-result--revolution .rtg-duel-player-element.has-native-element-icon{
+  min-height:20px!important;
+  padding:2px 7px!important;
+  gap:4px!important;
+}
+.rtg-duel-result--revolution .rtg-duel-player-element.has-native-element-icon svg{
+  width:10px!important;
+  height:10px!important;
+  flex-basis:10px!important;
+}
+.rtg-duel-result--revolution .rtg-duel-player-element.has-native-element-icon>span{
+  font-size:6.5px!important;
+  letter-spacing:.09em!important;
+}
