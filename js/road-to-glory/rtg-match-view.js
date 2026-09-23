@@ -655,7 +655,7 @@
       const choiceCard = (choice,label,sub,probability,delta=0,disabled=false,categoryClass="") => {
         const selected = selectedChoice === choice;
         const deltaText = delta > 0.05 ? `+${delta.toFixed(1)}%` : delta < -0.05 ? `${delta.toFixed(1)}%` : "BASE";
-        return `<button type="button" class="rtg-duel-choice-card ${choice==="move"?"is-move":"is-base"} ${escape(categoryClass)} ${selected?"is-selected":""}" data-rtg-choice="${choice}" ${disabled?"disabled":""}>
+        return `<button type="button" class="rtg-duel-choice-card ${choice==="move"?"is-move":"is-base"} ${escape(categoryClass)} ${selected?"is-selected":""}" data-rtg-choice="${choice}" data-rtg-confirm="${selected?"1":"0"}" ${disabled?"disabled":""}>
           <span class="rtg-choice-icon" aria-hidden="true">${choice==="move"?"⚡":"●"}</span>
           <span class="rtg-choice-copy"><strong>${escape(label)}</strong>${String(sub).includes("|ELEMENT|")?(()=>{const [main,el,key]=String(sub).split("|ELEMENT|");const parts=String(el||"").split("|");return `<em>${escape(main)}</em><span class="rtg-move-element-badge element-${escape(parts[1]||key||"")}"><i></i>${escape(parts[0]||"")}</span>`;})():`<em>${escape(sub)}</em>`}</span>
           <span class="rtg-choice-probability"><strong>${escape(Number(probability).toFixed(1))}%</strong><em class="rtg-choice-delta ${delta>0?"is-positive":delta<0?"is-negative":""}">${escape(deltaText)}</em></span>
@@ -1041,7 +1041,7 @@
         root.querySelectorAll("[data-rtg-live-field]").forEach((field)=>{field.hidden=field.dataset.rtgLiveField!==side;});
       }));
       root?.querySelector?.("[data-rtg-prematch-start]")?.addEventListener("click", () => actions.onPreMatchStart?.());
-      root?.querySelectorAll?.("[data-rtg-choice]")?.forEach((button) => button.addEventListener("click", () => actions.onEncounterChoice?.(button.dataset.rtgChoice)));
+      root?.querySelectorAll?.("[data-rtg-choice]")?.forEach((button) => button.addEventListener("click", () => actions.onEncounterChoice?.(button.dataset.rtgChoice, button.dataset.rtgConfirm === "1")));
       root?.querySelectorAll?.("[data-rtg-duel-player]")?.forEach((button) => button.addEventListener("click", () => {
         const playerId = String(button.dataset.rtgDuelPlayer || "");
         const side = String(button.dataset.side || "");
