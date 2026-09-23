@@ -364,7 +364,7 @@
       const total=teams.reduce((sum,team)=>sum+(Number(team.total)||0),0);
       const unlocked=teams.reduce((sum,team)=>sum+(Number(team.unlocked)||0),0);
       renderHtml(runView.albumCollectionMarkup({state:campaign,unlocked,total}));
-      app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.());
+      app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>renderRun());
       app?.querySelector?.("[data-rtg-album-collection]")?.addEventListener("click",()=>renderAlbumTeams());
       mountDevQuickTools();
       return campaign;
