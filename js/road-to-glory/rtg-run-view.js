@@ -26,7 +26,6 @@
       return `<nav class="bottom-nav rtg-bottom-nav" aria-label="Road to Glory">
         <button type="button" data-rtg-tab="run" class="${active === "run" ? "active" : ""}" aria-current="${active === "run" ? "page" : "false"}"><span class="nav-icon">${icon("run")}</span><span class="nav-label">Run</span></button>
         <button type="button" data-rtg-tab="squad" class="${active === "squad" ? "active" : ""}" aria-current="${active === "squad" ? "page" : "false"}"><span class="nav-icon">${icon("squad")}</span><span class="nav-label">Squadra</span></button>
-        <button type="button" data-rtg-tab="album" class="${active === "album" ? "active" : ""}" aria-current="${active === "album" ? "page" : "false"}"><span class="nav-icon">${icon("album")}</span><span class="nav-label">Album</span></button>
       </nav>`;
     }
 
