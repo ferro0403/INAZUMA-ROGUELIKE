@@ -110,56 +110,93 @@
   }
 }
 /* =========================================================
-   RTG vending machine v11 — cleaner physical materials
-   Softer realistic lighting, cleaner depth and less illustrated shading.
+   RTG vending machine v12 — premium arcade / gashapon hybrid
+   Clean physical materials, restrained depth and readable mechanics.
    ========================================================= */
-.rtg-vending-machine-v9{
+.rtg-vending-machine-v12{
   --rtg-vending-reveal:#929ba8;
   position:relative;
   z-index:2;
-  width:min(238px,68vw);
+  width:min(246px,69vw);
   margin:0 auto;
   display:grid;
   grid-template-rows:auto auto auto;
   justify-items:center;
-  filter:drop-shadow(0 18px 22px rgba(17,18,22,.24));
   isolation:isolate;
+  filter:drop-shadow(0 20px 24px rgba(8,10,14,.24));
+}
+.rtg-vending-machine-v12::before{
+  content:"";
+  position:absolute;
+  z-index:-2;
+  left:50%;
+  bottom:-16px;
+  width:78%;
+  height:20px;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:rgba(7,9,12,.20);
+  filter:blur(8px);
 }
 .rtg-vending-head-v9{
-  width:206px;
-  min-height:42px;
+  position:relative;
+  z-index:5;
+  width:208px;
+  min-height:44px;
   display:grid;
   place-items:center;
   align-content:center;
-  padding:6px 10px 5px;
-  border:3px solid #17181b;
+  padding:7px 12px 6px;
+  border:1px solid rgba(255,255,255,.08);
   border-bottom:0;
-  border-radius:12px 12px 0 0;
-  background:linear-gradient(180deg,#ffe96d 0%,#ffd63a 46%,#f2bd21 100%);
-  color:#111216;
+  border-radius:14px 14px 0 0;
+  background:
+    linear-gradient(180deg,#2b2e34 0%,#181a1f 100%);
+  color:#fff;
   box-shadow:
-    inset 0 2px 0 rgba(255,255,255,.55),
-    inset 0 -5px 8px rgba(166,106,4,.12),
-    0 2px 5px rgba(17,18,22,.16);
+    inset 0 1px 0 rgba(255,255,255,.16),
+    0 5px 10px rgba(8,10,14,.18);
   text-align:center;
   text-transform:uppercase;
 }
-.rtg-vending-head-v9 span{font:950 6px/1 system-ui,sans-serif;letter-spacing:.16em;}
-.rtg-vending-head-v9 strong{font:1000 16px/.95 system-ui,sans-serif;letter-spacing:.04em;}
+.rtg-vending-head-v9::after{
+  content:"";
+  position:absolute;
+  left:12px;
+  right:12px;
+  bottom:0;
+  height:3px;
+  border-radius:999px;
+  background:linear-gradient(90deg,transparent,#ffd21f 12%,#ffd21f 88%,transparent);
+  opacity:.95;
+}
+.rtg-vending-head-v9 span{
+  color:#ffd21f;
+  font:900 6px/1 system-ui,sans-serif;
+  letter-spacing:.18em;
+}
+.rtg-vending-head-v9 strong{
+  margin-top:3px;
+  font:1000 15px/.95 system-ui,sans-serif;
+  letter-spacing:.06em;
+}
+
 .rtg-vending-window-v9{
   position:relative;
-  width:206px;
-  height:172px;
+  width:208px;
+  height:176px;
   overflow:hidden;
-  border:3px solid #17181b;
+  border:3px solid #20242a;
+  border-top-width:2px;
+  border-radius:0 0 15px 15px;
   background:
-    radial-gradient(circle at 28% 18%,rgba(255,255,255,.72),transparent 28%),
-    linear-gradient(180deg,rgba(238,250,255,.96) 0%,rgba(204,231,240,.92) 58%,rgba(157,200,217,.95) 100%);
+    radial-gradient(circle at 27% 17%,rgba(255,255,255,.76),transparent 26%),
+    linear-gradient(180deg,#edf8fb 0%,#d9edf4 52%,#b9dbe7 100%);
   box-shadow:
-    inset 0 0 0 1px rgba(255,255,255,.62),
-    inset -8px 0 12px rgba(66,111,128,.13),
-    inset 0 -15px 18px rgba(28,62,76,.13),
-    0 3px 7px rgba(17,18,22,.14);
+    inset 0 0 0 1px rgba(255,255,255,.52),
+    inset -10px 0 18px rgba(67,113,130,.10),
+    inset 0 -17px 20px rgba(42,79,94,.13),
+    0 4px 8px rgba(8,10,14,.12);
 }
 .rtg-vending-window-v9::before{
   content:"";
@@ -168,32 +205,30 @@
   top:0;
   right:0;
   bottom:0;
-  width:10px;
-  background:linear-gradient(90deg,transparent,rgba(42,79,94,.10));
+  width:12px;
+  background:linear-gradient(90deg,transparent,rgba(49,91,107,.09));
   pointer-events:none;
 }
 .rtg-vending-window-v9::after{
   content:"";
   position:absolute;
+  z-index:2;
   left:0;right:0;bottom:0;
-  height:34px;
-  background:linear-gradient(to top,rgba(42,79,94,.13),transparent);
+  height:31px;
+  background:linear-gradient(to top,rgba(52,91,108,.12),transparent);
   pointer-events:none;
 }
 .rtg-vending-funnel-v10{
   position:absolute;
   z-index:3;
-  left:14px;
-  right:14px;
-  bottom:-2px;
-  height:67px;
-  clip-path:polygon(0 10%,100% 10%,66% 100%,34% 100%);
+  left:18px;
+  right:18px;
+  bottom:-1px;
+  height:60px;
+  clip-path:polygon(0 12%,100% 12%,67% 100%,33% 100%);
   background:
-    linear-gradient(155deg,rgba(255,255,255,.35) 0 33%,transparent 34%),
-    linear-gradient(205deg,rgba(17,18,22,.18) 0 34%,transparent 35%),
-    linear-gradient(180deg,rgba(110,158,175,.16),rgba(17,18,22,.18));
-  border-top:3px solid rgba(17,18,22,.30);
-  box-shadow:inset 0 -8px 0 rgba(17,18,22,.12);
+    linear-gradient(180deg,rgba(117,160,177,.10),rgba(49,82,96,.17));
+  border-top:1px solid rgba(44,75,89,.22);
   pointer-events:none;
 }
 .rtg-vending-funnel-v10::after{
@@ -201,224 +236,227 @@
   position:absolute;
   left:50%;
   bottom:-1px;
-  width:42px;
-  height:13px;
+  width:38px;
+  height:10px;
   transform:translateX(-50%);
   border-radius:50% 50% 0 0;
-  background:#2a2c30;
-  box-shadow:inset 0 5px 0 #0b0c0e;
+  background:#30343a;
+  box-shadow:inset 0 4px 0 #14171b;
 }
 .rtg-vending-window-glare-v9{
   position:absolute;
   z-index:8;
-  top:15px;
-  left:25px;
-  width:11px;
-  height:96px;
+  top:18px;
+  left:27px;
+  width:9px;
+  height:88px;
   border-radius:999px;
-  background:linear-gradient(180deg,rgba(255,255,255,.62),rgba(255,255,255,.10));
-  filter:blur(.2px);
-  transform:rotate(12deg);
+  background:linear-gradient(180deg,rgba(255,255,255,.70),rgba(255,255,255,.04));
+  transform:rotate(11deg);
   pointer-events:none;
 }
+
 .rtg-vending-capsule-v9{
   position:absolute;
   z-index:5;
-  width:40px;
-  height:40px;
-  border:2px solid #1b1c1f;
+  width:39px;
+  height:39px;
+  border:1.5px solid #25292e;
   border-radius:50%;
   background:
-    radial-gradient(circle at 32% 24%,rgba(255,255,255,.95) 0 10%,transparent 11%),
-    linear-gradient(165deg,#fffdf8 0 47%,#ffd21f 48% 100%);
+    radial-gradient(circle at 30% 24%,rgba(255,255,255,.98) 0 10%,transparent 11%),
+    linear-gradient(165deg,#fffefb 0 48%,#ffd21f 49% 100%);
   box-shadow:
-    inset -3px -4px 6px rgba(17,18,22,.12),
-    0 3px 6px rgba(17,18,22,.17);
+    inset -3px -4px 5px rgba(17,18,22,.10),
+    0 4px 7px rgba(17,18,22,.15);
   transform:rotate(var(--r,0deg)) scale(var(--s,1));
 }
 .rtg-vending-capsule-v9::after{
   content:"";
   position:absolute;
   left:1px;right:1px;top:47%;
-  height:3px;
-  border-radius:2px;
-  background:#26272a;
-  opacity:.9;
+  height:2px;
+  border-radius:999px;
+  background:#363a40;
+  opacity:.88;
 }
-.rtg-vending-capsule-v9.c1{left:15px;bottom:13px;--tx:36px;--ty:-43px;--r:17deg;--d:-.04s;--s:.94;z-index:6}
-.rtg-vending-capsule-v9.c2{left:49px;bottom:5px;--tx:-27px;--ty:-52px;--r:-25deg;--d:-.18s;--s:1.04;z-index:7}
-.rtg-vending-capsule-v9.c3{left:91px;bottom:17px;--tx:30px;--ty:-44px;--r:9deg;--d:-.30s;--s:.90;z-index:5}
-.rtg-vending-capsule-v9.c4{left:135px;bottom:8px;--tx:-31px;--ty:-58px;--r:-16deg;--d:-.11s;--s:1.06;z-index:8}
-.rtg-vending-capsule-v9.c5{left:23px;bottom:49px;--tx:43px;--ty:-18px;--r:24deg;--d:-.25s;--s:.88;z-index:4}
-.rtg-vending-capsule-v9.c6{left:60px;bottom:57px;--tx:-34px;--ty:-29px;--r:-11deg;--d:-.08s;--s:1.08;z-index:8}
-.rtg-vending-capsule-v9.c7{left:101px;bottom:43px;--tx:25px;--ty:-27px;--r:19deg;--d:-.21s;--s:.96;z-index:6}
-.rtg-vending-capsule-v9.c8{left:143px;bottom:57px;--tx:-36px;--ty:-17px;--r:-22deg;--d:-.34s;--s:.91;z-index:5}
-.rtg-vending-capsule-v9.c9{left:45px;bottom:92px;--tx:29px;--ty:22px;--r:14deg;--d:-.13s;--s:.93;z-index:3}
-.rtg-vending-capsule-v9.c10{left:112px;bottom:99px;--tx:-31px;--ty:19px;--r:-17deg;--d:-.28s;--s:1.02;z-index:4}
+.rtg-vending-capsule-v9.c1{left:16px;bottom:14px;--tx:34px;--ty:-41px;--r:18deg;--d:-.04s;--s:.93;z-index:6}
+.rtg-vending-capsule-v9.c2{left:50px;bottom:6px;--tx:-25px;--ty:-49px;--r:-24deg;--d:-.18s;--s:1.03;z-index:7}
+.rtg-vending-capsule-v9.c3{left:93px;bottom:18px;--tx:28px;--ty:-42px;--r:8deg;--d:-.30s;--s:.90;z-index:5}
+.rtg-vending-capsule-v9.c4{left:137px;bottom:9px;--tx:-29px;--ty:-55px;--r:-15deg;--d:-.11s;--s:1.05;z-index:8}
+.rtg-vending-capsule-v9.c5{left:25px;bottom:50px;--tx:40px;--ty:-18px;--r:22deg;--d:-.25s;--s:.87;z-index:4}
+.rtg-vending-capsule-v9.c6{left:62px;bottom:59px;--tx:-31px;--ty:-28px;--r:-10deg;--d:-.08s;--s:1.07;z-index:8}
+.rtg-vending-capsule-v9.c7{left:102px;bottom:44px;--tx:23px;--ty:-25px;--r:18deg;--d:-.21s;--s:.95;z-index:6}
+.rtg-vending-capsule-v9.c8{left:145px;bottom:59px;--tx:-34px;--ty:-16px;--r:-21deg;--d:-.34s;--s:.90;z-index:5}
+.rtg-vending-capsule-v9.c9{left:46px;bottom:94px;--tx:27px;--ty:21px;--r:13deg;--d:-.13s;--s:.92;z-index:3}
+.rtg-vending-capsule-v9.c10{left:113px;bottom:101px;--tx:-29px;--ty:18px;--r:-16deg;--d:-.28s;--s:1.01;z-index:4}
 
 .rtg-vending-body-v9{
   position:relative;
-  width:222px;
-  min-height:138px;
-  margin-top:-1px;
+  width:224px;
+  min-height:142px;
+  margin-top:9px;
   display:grid;
-  grid-template-columns:1fr 66px;
-  grid-template-rows:68px 50px;
-  gap:8px 10px;
-  padding:12px 12px 11px;
-  border:3px solid #17181b;
-  border-radius:0 0 16px 16px;
+  grid-template-columns:minmax(0,1fr) 68px;
+  grid-template-rows:70px 52px;
+  gap:9px 11px;
+  padding:13px 13px 12px;
+  border:2px solid #25282d;
+  border-radius:17px;
   background:
-    radial-gradient(circle at 24% 16%,rgba(255,255,255,.30),transparent 30%),
-    linear-gradient(180deg,#ffdd43 0%,#ffd21f 52%,#efb21f 100%);
+    linear-gradient(180deg,#f7f5ef 0%,#ece8df 100%);
   box-shadow:
-    inset 0 2px 0 rgba(255,255,255,.42),
-    inset -8px 0 14px rgba(153,92,0,.10),
-    inset 0 -7px 10px rgba(153,92,0,.10),
-    0 8px 14px rgba(17,18,22,.18);
+    inset 0 1px 0 rgba(255,255,255,.98),
+    inset 0 -5px 10px rgba(72,64,49,.07),
+    0 7px 13px rgba(9,11,14,.15);
   isolation:isolate;
 }
 .rtg-vending-body-v9::before{
   content:"";
   position:absolute;
-  z-index:-1;
-  top:8px;
-  right:-9px;
-  bottom:10px;
-  width:9px;
-  border-radius:0 8px 8px 0;
-  background:linear-gradient(180deg,#d69b17,#b77b12);
-  box-shadow:2px 3px 7px rgba(17,18,22,.18);
+  z-index:0;
+  top:10px;
+  right:10px;
+  width:73px;
+  height:122px;
+  border-radius:12px;
+  background:linear-gradient(180deg,#ffd944,#f1b91f);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.42),
+    inset 0 -6px 10px rgba(151,91,0,.08);
 }
 .rtg-vending-body-v9::after{
   content:"";
   position:absolute;
   z-index:-1;
-  left:8px;
-  right:8px;
-  bottom:-8px;
-  height:8px;
-  border-radius:0 0 10px 10px;
-  background:#a86d0f;
-  box-shadow:0 5px 8px rgba(17,18,22,.14);
+  left:15px;
+  right:15px;
+  bottom:-9px;
+  height:10px;
+  border-radius:0 0 12px 12px;
+  background:#2a2d32;
+  box-shadow:0 4px 8px rgba(9,11,14,.16);
 }
 .rtg-vending-body-v9>*{position:relative;z-index:2;}
+
 .rtg-vending-info-v9{
   display:grid;
   place-items:center;
   align-content:center;
-  border:2px solid #222326;
-  border-radius:7px;
-  background:linear-gradient(180deg,#fffefa,#f4f0e5);
+  border:1px solid #c9c2b4;
+  border-radius:10px;
+  background:linear-gradient(180deg,#fffefa,#f2efe7);
   color:#111216;
   box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.9),
-    inset 0 -3px 5px rgba(102,89,59,.08),
-    0 3px 6px rgba(17,18,22,.14);
+    inset 0 1px 0 rgba(255,255,255,.95),
+    0 2px 5px rgba(17,18,22,.10);
 }
-.rtg-vending-info-v9 small{font:950 7px/1 system-ui,sans-serif;letter-spacing:.11em;}
-.rtg-vending-info-v9 strong{font:1000 25px/.92 system-ui,sans-serif;}
+.rtg-vending-info-v9 small{font:900 7px/1 system-ui,sans-serif;letter-spacing:.13em;color:#55514a;}
+.rtg-vending-info-v9 strong{font:1000 25px/.92 system-ui,sans-serif;color:#17181b;}
+
 .rtg-vending-crank-v9{
   position:relative;
-  width:60px;height:60px;
+  width:58px;height:58px;
   align-self:center;
   justify-self:center;
-  border:3px solid #202124;
+  border:2px solid #292d32;
   border-radius:50%;
   background:
-    radial-gradient(circle at 34% 29%,#fafaf7 0 12%,#bfc0bc 13% 34%,#7c7e7c 35% 68%,#4b4c4b 69% 100%);
+    radial-gradient(circle at 34% 29%,#ffffff 0 11%,#cfd1d0 12% 32%,#8a8d8d 33% 67%,#505253 68% 100%);
   box-shadow:
-    inset 3px 3px 5px rgba(255,255,255,.34),
-    inset -5px -6px 8px rgba(17,18,22,.22),
-    0 5px 8px rgba(17,18,22,.22);
+    inset 2px 2px 4px rgba(255,255,255,.34),
+    inset -4px -5px 7px rgba(17,18,22,.18),
+    0 4px 7px rgba(17,18,22,.17);
 }
 .rtg-vending-crank-v9::before{
   content:"";
   position:absolute;
-  left:50%;top:50%;
-  width:20px;height:20px;
-  transform:translate(-50%,-50%);
-  border:3px solid #111216;
-  border-radius:50%;
-  background:radial-gradient(circle at 35% 30%,#f7f7f1,#b7b7b1 58%,#666 59%);
   z-index:2;
+  left:50%;top:50%;
+  width:18px;height:18px;
+  transform:translate(-50%,-50%);
+  border:2px solid #292d32;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#fff,#b9bbb9 60%,#696b6a 61%);
 }
 .rtg-vending-crank-v9::after{
   content:"";
   position:absolute;
-  right:-7px;
-  bottom:5px;
-  width:17px;height:17px;
-  border:3px solid #111216;
+  right:-5px;
+  bottom:7px;
+  width:16px;height:16px;
+  border:2px solid #292d32;
   border-radius:50%;
   background:#ffd21f;
-  box-shadow:2px 3px 0 rgba(17,18,22,.28);
+  box-shadow:0 2px 4px rgba(17,18,22,.18);
 }
 .rtg-vending-crank-v9 span{
   position:absolute;
   left:50%;top:50%;
-  width:12px;height:39px;
-  margin:-19px 0 0 -6px;
-  border:3px solid #111216;
+  width:9px;height:35px;
+  margin:-17px 0 0 -4.5px;
+  border:2px solid #292d32;
   border-radius:5px;
-  background:#ffd21f;
-  box-shadow:inset 0 -8px 0 #e7a415;
+  background:linear-gradient(180deg,#ffdf4b,#efb91f);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.35);
 }
+
 .rtg-vending-chute-v9{
   grid-column:1 / 2;
   position:relative;
   overflow:hidden;
-  border:3px solid #202124;
-  border-radius:8px 8px 14px 14px;
-  background:linear-gradient(180deg,#2b2d31 0%,#17181b 62%,#0b0c0e 100%);
+  border:2px solid #282b30;
+  border-radius:10px 10px 15px 15px;
+  background:linear-gradient(180deg,#373a40 0%,#1b1d21 55%,#0d0f12 100%);
   box-shadow:
-    inset 0 5px 7px rgba(255,255,255,.06),
-    inset 0 -9px 12px rgba(0,0,0,.38),
-    0 3px 6px rgba(17,18,22,.17);
+    inset 0 4px 6px rgba(255,255,255,.05),
+    inset 0 -8px 10px rgba(0,0,0,.32),
+    0 2px 5px rgba(17,18,22,.13);
 }
 .rtg-vending-chute-well-v9{
   position:absolute;
   left:50%;bottom:-5px;
-  width:88px;height:30px;
+  width:86px;height:29px;
   transform:translateX(-50%);
   border-radius:50% 50% 0 0;
-  background:#050607;
-  box-shadow:inset 0 8px 0 #2f3135;
+  background:#08090b;
+  box-shadow:inset 0 7px 0 #2d3035;
 }
 .rtg-vending-chute-flap-v10{
   position:absolute!important;
   z-index:7!important;
   left:50%!important;
   top:5px!important;
-  width:92px!important;
-  height:18px!important;
+  width:90px!important;
+  height:17px!important;
   transform:translateX(-50%) perspective(120px) rotateX(0deg)!important;
   transform-origin:50% 0%!important;
-  border:3px solid #111216!important;
+  border:1px solid rgba(255,255,255,.06)!important;
   border-top:0!important;
   border-radius:0 0 13px 13px!important;
-  background:linear-gradient(180deg,#383a3f,#111216)!important;
-  box-shadow:inset 0 -4px 0 rgba(0,0,0,.35)!important;
+  background:linear-gradient(180deg,#44474d,#17191d)!important;
+  box-shadow:inset 0 -3px 0 rgba(0,0,0,.30)!important;
   pointer-events:none!important;
 }
+
 .rtg-vending-brand-v9{
   grid-column:2;
-  align-self:center;
+  align-self:end;
   justify-self:center;
-  width:54px;
-  min-height:34px;
+  width:51px;
+  min-height:28px;
   display:grid;
   place-items:center;
-  padding:4px 5px;
-  border:2px solid #232427;
-  border-radius:5px;
-  background:linear-gradient(180deg,#1d1e21,#0f1012);
+  padding:4px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:6px;
+  background:linear-gradient(180deg,#2b2e34,#17191d);
   color:#ffd21f;
-  box-shadow:0 3px 6px rgba(17,18,22,.18);
-  transform:none;
-  font:1000 12px/1 system-ui,sans-serif;
-  letter-spacing:.09em;
+  box-shadow:0 2px 4px rgba(17,18,22,.13);
+  font:1000 11px/1 system-ui,sans-serif;
+  letter-spacing:.10em;
 }
+
 .rtg-vending-prize-track-v9{
   position:absolute;
   z-index:5;
@@ -429,65 +467,67 @@
 .rtg-vending-prize-v9{
   position:absolute;
   left:50%;
-  bottom:-29px;
-  width:43px;height:43px;
+  bottom:-28px;
+  width:42px;height:42px;
   opacity:0;
-  border:4px solid #111216;
+  border:2px solid #262a2f;
   border-radius:50%;
-  background:linear-gradient(165deg,#fff 0 47%,#ffd21f 48% 100%);
-  box-shadow:0 0 0 0 var(--rtg-vending-reveal),3px 4px 0 rgba(17,18,22,.24);
+  background:
+    radial-gradient(circle at 30% 24%,rgba(255,255,255,.98) 0 10%,transparent 11%),
+    linear-gradient(165deg,#fffefb 0 48%,#ffd21f 49% 100%);
+  box-shadow:0 0 0 0 var(--rtg-vending-reveal),0 4px 7px rgba(17,18,22,.20);
   transform:translateX(-50%) translateY(15px) scale(.78);
 }
 
-.rtg-vending-machine-v9.is-turning{animation:rtg-vending-v9-body .98s ease-out both;}
-.rtg-vending-machine-v9.is-turning .rtg-vending-crank-v9{animation:rtg-vending-v9-crank .88s cubic-bezier(.18,.72,.22,1) both;}
-.rtg-vending-machine-v9.is-turning .rtg-vending-capsule-v9{animation:rtg-vending-v9-mix .34s ease-in-out var(--d,0s) infinite alternate;}
-.rtg-vending-machine-v9.is-revealing .rtg-vending-capsule-v9{animation-play-state:paused;}
-.rtg-vending-machine-v9.is-revealing .rtg-vending-prize-v9{animation:rtg-vending-v9-drop .72s cubic-bezier(.18,.72,.28,1) both;}
-.rtg-vending-machine-v9.is-revealing .rtg-vending-chute-v9{animation:rtg-vending-v9-chute .72s ease-out both;}
-.rtg-vending-machine-v9.is-revealing .rtg-vending-chute-flap-v10{animation:rtg-vending-v10-flap .72s cubic-bezier(.2,.75,.28,1) both;}
+.rtg-vending-machine-v12.is-turning{animation:rtg-vending-v12-body .98s ease-out both;}
+.rtg-vending-machine-v12.is-turning .rtg-vending-crank-v9{animation:rtg-vending-v12-crank .88s cubic-bezier(.18,.72,.22,1) both;}
+.rtg-vending-machine-v12.is-turning .rtg-vending-capsule-v9{animation:rtg-vending-v12-mix .34s ease-in-out var(--d,0s) infinite alternate;}
+.rtg-vending-machine-v12.is-revealing .rtg-vending-capsule-v9{animation-play-state:paused;}
+.rtg-vending-machine-v12.is-revealing .rtg-vending-prize-v9{animation:rtg-vending-v12-drop .72s cubic-bezier(.18,.72,.28,1) both;}
+.rtg-vending-machine-v12.is-revealing .rtg-vending-chute-v9{animation:rtg-vending-v12-chute .72s ease-out both;}
+.rtg-vending-machine-v12.is-revealing .rtg-vending-chute-flap-v10{animation:rtg-vending-v12-flap .72s cubic-bezier(.2,.75,.28,1) both;}
 
-.rtg-vending-machine-v9[data-pull-rarity="normale"]{--rtg-vending-reveal:#929ba8}
-.rtg-vending-machine-v9[data-pull-rarity="buono"]{--rtg-vending-reveal:#2fa866}
-.rtg-vending-machine-v9[data-pull-rarity="forte"]{--rtg-vending-reveal:#27a8e8}
-.rtg-vending-machine-v9[data-pull-rarity="elite"]{--rtg-vending-reveal:#8254d1}
-.rtg-vending-machine-v9[data-pull-rarity="mondiale"]{--rtg-vending-reveal:#d93842}
-.rtg-vending-machine-v9[data-pull-rarity="leggenda"]{--rtg-vending-reveal:#d4a017}
-.rtg-vending-machine-v9[data-pull-rarity="aurico"]{--rtg-vending-reveal:#f5c842}
+.rtg-vending-machine-v12[data-pull-rarity="normale"]{--rtg-vending-reveal:#929ba8}
+.rtg-vending-machine-v12[data-pull-rarity="buono"]{--rtg-vending-reveal:#2fa866}
+.rtg-vending-machine-v12[data-pull-rarity="forte"]{--rtg-vending-reveal:#27a8e8}
+.rtg-vending-machine-v12[data-pull-rarity="elite"]{--rtg-vending-reveal:#8254d1}
+.rtg-vending-machine-v12[data-pull-rarity="mondiale"]{--rtg-vending-reveal:#d93842}
+.rtg-vending-machine-v12[data-pull-rarity="leggenda"]{--rtg-vending-reveal:#d4a017}
+.rtg-vending-machine-v12[data-pull-rarity="aurico"]{--rtg-vending-reveal:#f5c842}
 
-@keyframes rtg-vending-v9-crank{
+@keyframes rtg-vending-v12-crank{
   0%{transform:rotate(0deg)}
   70%{transform:rotate(590deg)}
   86%{transform:rotate(675deg)}
   100%{transform:rotate(720deg)}
 }
-@keyframes rtg-vending-v9-mix{
+@keyframes rtg-vending-v12-mix{
   0%{transform:translate3d(0,0,0) rotate(var(--r,0deg)) scale(var(--s,1))}
   55%{transform:translate3d(var(--tx,28px),var(--ty,-34px),0) rotate(130deg) scale(var(--s,1))}
-  100%{transform:translate3d(-10px,8px,0) rotate(-62deg) scale(var(--s,1))}
+  100%{transform:translate3d(-9px,7px,0) rotate(-58deg) scale(var(--s,1))}
 }
-@keyframes rtg-vending-v9-body{
+@keyframes rtg-vending-v12-body{
   0%,100%{transform:translate3d(0,0,0)}
-  25%{transform:translate3d(-2px,0,0)}
-  48%{transform:translate3d(2px,0,0)}
+  26%{transform:translate3d(-1px,0,0)}
+  48%{transform:translate3d(1px,0,0)}
   72%{transform:translate3d(-1px,0,0)}
 }
-@keyframes rtg-vending-v9-drop{
+@keyframes rtg-vending-v12-drop{
   0%{opacity:0;transform:translateX(-50%) translateY(15px) scale(.78);box-shadow:0 0 0 0 var(--rtg-vending-reveal)}
   16%{opacity:1}
-  58%{opacity:1;transform:translateX(-50%) translateY(-13px) scale(1.02);box-shadow:0 0 0 4px var(--rtg-vending-reveal),0 0 22px 7px color-mix(in srgb,var(--rtg-vending-reveal) 62%,transparent)}
+  58%{opacity:1;transform:translateX(-50%) translateY(-13px) scale(1.02);box-shadow:0 0 0 3px var(--rtg-vending-reveal),0 0 20px 6px color-mix(in srgb,var(--rtg-vending-reveal) 56%,transparent)}
   78%{opacity:1;transform:translateX(-50%) translateY(-18px) scale(1)}
-  100%{opacity:1;transform:translateX(-50%) translateY(-11px) scale(.94);box-shadow:0 0 0 2px var(--rtg-vending-reveal),0 0 16px 5px color-mix(in srgb,var(--rtg-vending-reveal) 44%,transparent)}
+  100%{opacity:1;transform:translateX(-50%) translateY(-11px) scale(.94);box-shadow:0 0 0 2px var(--rtg-vending-reveal),0 0 14px 4px color-mix(in srgb,var(--rtg-vending-reveal) 40%,transparent)}
 }
-@keyframes rtg-vending-v9-chute{
-  0%,35%{box-shadow:inset 0 7px 0 #34363a}
-  62%,100%{box-shadow:inset 0 7px 0 #34363a,0 0 0 4px var(--rtg-vending-reveal),0 0 18px color-mix(in srgb,var(--rtg-vending-reveal) 52%,transparent)}
+@keyframes rtg-vending-v12-chute{
+  0%,35%{box-shadow:inset 0 4px 6px rgba(255,255,255,.05),inset 0 -8px 10px rgba(0,0,0,.32)}
+  62%,100%{box-shadow:inset 0 4px 6px rgba(255,255,255,.05),inset 0 -8px 10px rgba(0,0,0,.32),0 0 0 3px var(--rtg-vending-reveal),0 0 14px color-mix(in srgb,var(--rtg-vending-reveal) 44%,transparent)}
 }
-@keyframes rtg-vending-v10-flap{
+@keyframes rtg-vending-v12-flap{
   0%,20%{transform:translateX(-50%) perspective(120px) rotateX(0deg)}
-  48%{transform:translateX(-50%) perspective(120px) rotateX(72deg)}
-  72%{transform:translateX(-50%) perspective(120px) rotateX(46deg)}
-  100%{transform:translateX(-50%) perspective(120px) rotateX(20deg)}
+  48%{transform:translateX(-50%) perspective(120px) rotateX(70deg)}
+  72%{transform:translateX(-50%) perspective(120px) rotateX(44deg)}
+  100%{transform:translateX(-50%) perspective(120px) rotateX(18deg)}
 }
 
 /* Rarity rate chips — every rarity uses the same full-colour treatment. */
@@ -515,29 +555,29 @@
 .rtg-vending-ratebar>span em{color:inherit!important;opacity:.92;}
 
 /* Wallet is a separate HUD chip, not part of the machine cabinet. */
-.rtg-vending-stage{
-  row-gap:0!important;
-}
+.rtg-vending-stage{row-gap:0!important;}
 .rtg-vending-wallet-chip{
-  margin-top:28px!important;
+  margin-top:31px!important;
   min-width:178px!important;
-  box-shadow:0 7px 14px rgba(17,18,22,.20)!important;
+  border-radius:8px!important;
+  box-shadow:0 8px 15px rgba(17,18,22,.17)!important;
 }
 
 @media(max-width:430px){
-  .rtg-vending-machine-v9{width:min(222px,66vw);}
-  .rtg-vending-head-v9,.rtg-vending-window-v9{width:190px;}
-  .rtg-vending-window-v9{height:158px;}
-  .rtg-vending-body-v9{width:205px;min-height:130px;}
-  .rtg-vending-capsule-v9{width:37px;height:37px;}
+  .rtg-vending-machine-v12{width:min(228px,67vw);}
+  .rtg-vending-head-v9,.rtg-vending-window-v9{width:192px;}
+  .rtg-vending-window-v9{height:162px;}
+  .rtg-vending-body-v9{width:208px;min-height:132px;padding:12px;}
+  .rtg-vending-body-v9::before{right:9px;width:68px;height:112px;}
+  .rtg-vending-capsule-v9{width:36px;height:36px;}
 }
 @media(prefers-reduced-motion:reduce){
-  .rtg-vending-machine-v9.is-turning,
-  .rtg-vending-machine-v9.is-turning .rtg-vending-crank-v9,
-  .rtg-vending-machine-v9.is-turning .rtg-vending-capsule-v9,
-  .rtg-vending-machine-v9.is-revealing .rtg-vending-prize-v9,
-  .rtg-vending-machine-v9.is-revealing .rtg-vending-chute-v9,
-  .rtg-vending-machine-v9.is-revealing .rtg-vending-chute-flap-v10{
+  .rtg-vending-machine-v12.is-turning,
+  .rtg-vending-machine-v12.is-turning .rtg-vending-crank-v9,
+  .rtg-vending-machine-v12.is-turning .rtg-vending-capsule-v9,
+  .rtg-vending-machine-v12.is-revealing .rtg-vending-prize-v9,
+  .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-v9,
+  .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-flap-v10{
     animation-duration:.01ms!important;
     animation-iteration-count:1!important;
   }
