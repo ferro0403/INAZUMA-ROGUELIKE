@@ -141,6 +141,16 @@
       return "";
     }
 
+    function duelElementIcon(player = {}) {
+      const key = duelElementKey(player);
+      return ({
+        fire:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1.4 3.6 5 5.2 5 9.4A5 5 0 1 1 7 12c0-2.3 1.2-4.3 3.4-6.3-.1 2.2.5 3.7 1.6 4.7.9-2 .7-4.5 0-7.4Z"/></svg>',
+        mountain:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 19 6.2-10 3.1 4.6L15.5 9 21 19H3Z"/><path d="m7.5 12 1.8 1.1 1.4-1.1"/></svg>',
+        forest:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 7.5 9h2.3L6 14h4v4H8v3h8v-3h-2v-4h4l-3.8-5h2.3L12 3Z"/></svg>',
+        wind:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h10.5c2 0 2.5-3 0-3-1.1 0-1.8.5-2.2 1.2"/><path d="M3 12h15c2.4 0 2.8 3.5.2 3.5-1.2 0-2-.6-2.4-1.4"/><path d="M3 16h8"/></svg>'
+      })[key] || "";
+    }
+
     function duelElementDisadvantaged(player = {}, opponent = {}) {
       const mine = duelElementKey(player);
       const theirs = duelElementKey(opponent);
@@ -162,7 +172,7 @@
           <strong class="rtg-duel-player-name">${escape(name)}</strong>
           <span class="rtg-duel-player-meta">
             <small><b>${escape(playerRole)}</b><span>OVR ${escape(overall)}</span></small>
-            <em class="rtg-duel-player-element ${escape(elementClass)} ${escape(elementStateClass)}">${escape(element)}</em>
+            <em class="rtg-duel-player-element ${escape(elementClass)} ${escape(elementStateClass)}">${duelElementIcon(player)}<span>${escape(element)}</span></em>
           </span>
         </span>
       </button>`;
@@ -700,7 +710,7 @@
           <div class="rtg-duel-vs-core rtg-duel-vs-core--resolving"><small>PROBABILITÀ</small><span>VS</span></div>
           <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)} ${aiMove?"has-special-move":""}">${duelCompareVisualMarkup(opponent,"opponent","",user)}<div class="rtg-duel-resolving-action ${aiMove?`is-move ${escape(aiMoveCategory)}`:""}"><small>${aiMove?"MOSSA":"AZIONE"}</small><strong>${escape(aiAction)}</strong>${aiMove?`<em>POWER ${escape(resolution.aiMovePower??"—")}${resolution.aiMoveElement?` · ${escape(moveElementLabel(resolution.aiMoveElement))}`:""}</em>`:""}</div></article>
         </div>
-        <div class="rtg-duel-final-probability rtg-duel-final-probability--persistent"><small>PROBABILITÀ EFFETTIVA</small><strong>TU ${escape(final.toFixed(1))}% — ${escape(other.toFixed(1))}% AVVERSARIO</strong></div>
+        <div class="rtg-duel-final-probability rtg-duel-final-probability--persistent"><small>PROBABILITÀ EFFETTIVA</small><div class="rtg-duel-prob-sides"><span><em>TU</em><strong>${escape(final.toFixed(1))}%</strong></span><i>VS</i><span><em>AVVERSARIO</em><strong>${escape(other.toFixed(1))}%</strong></span></div></div>
         <div class="rtg-duel-resolving-footer"><span>RISOLUZIONE AUTOMATICA</span><b><i></i><i></i><i></i></b></div>
       </section>`;
     }
