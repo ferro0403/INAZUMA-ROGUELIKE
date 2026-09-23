@@ -647,6 +647,28 @@
       </section>`;
     }
 
+    function finalComparisonMarkup(resolution = {}) {
+      const user=resolution.userPlayer||{name:resolution.userPlayerName||"La tua squadra",overall:"—"};
+      const opponent=resolution.opponentPlayer||{name:resolution.aiPlayerName||"Avversario",overall:"—"};
+      const userAction=resolution.userChoiceLabel||baseResultActionLabel(resolution.userKind,resolution.actorSide==="user");
+      const aiAction=resolution.aiChoiceLabel||baseResultActionLabel(resolution.aiKind,resolution.actorSide==="opponent");
+      const preview=Math.max(0,Math.min(100,Number(resolution.previewProbability??resolution.probability??50)));
+      const final=Math.max(0,Math.min(100,Number(resolution.probability??50)));
+      const other=100-final;
+      const delta=final-preview;
+      const deltaText=Math.abs(delta)<0.05?"INVARIATA":`${delta>0?"+":""}${delta.toFixed(1)}%`;
+      return `<section class="panel rtg-duel-card rtg-duel-card--clean rtg-duel-resolving rtg-paper-modal development-squad-card-scope">
+        <div class="rtg-duel-resolving-head"><small>SCELTE BLOCCATE</small><strong>CONFRONTO FINALE</strong></div>
+        <div class="rtg-duel-versus-board rtg-duel-versus-board--resolving">
+          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--user">${duelCompareVisualMarkup(user,"user")}<div class="rtg-duel-resolving-action"><small>${resolution.userUsedMove?"MOSSA":"AZIONE"}</small><strong>${escape(userAction)}</strong></div></article>
+          <div class="rtg-duel-vs-core rtg-duel-vs-core--resolving"><small>PROBABILITÀ</small><span>VS</span></div>
+          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent">${duelCompareVisualMarkup(opponent,"opponent")}<div class="rtg-duel-resolving-action"><small>${resolution.aiUsedMove?"MOSSA":"AZIONE"}</small><strong>${escape(aiAction)}</strong></div></article>
+        </div>
+        <div class="rtg-duel-final-probability"><small>PROBABILITÀ EFFETTIVA</small><strong>TU ${escape(final.toFixed(1))}% — ${escape(other.toFixed(1))}% AVVERSARIO</strong><em>Anteprima ${escape(preview.toFixed(1))}% → finale ${escape(final.toFixed(1))}% · ${escape(deltaText)}</em></div>
+        <div class="rtg-duel-resolving-footer"><span>RISOLUZIONE AUTOMATICA</span><b><i></i><i></i><i></i></b></div>
+      </section>`;
+    }
+
     function resolvingEncounterMarkup(resolution = {}) {
       const user = resolution.userPlayer || { name: resolution.userPlayerName || "La tua squadra", overall:"—" };
       const opponent = resolution.opponentPlayer || { name: resolution.aiPlayerName || "Avversario", overall:"—" };
@@ -986,7 +1008,7 @@
       root?.querySelector?.("[data-rtg-result-continue]")?.addEventListener("click", () => actions.onContinue?.());
     }
 
-    return Object.freeze({ preMatchMarkup, matchMarkup, encounterMarkup, resolvingEncounterMarkup, resolvedEncounterMarkup, halftimeMarkup, penaltyMarkup, resultMarkup, currentMinute, animateClock, bind });
+    return Object.freeze({ preMatchMarkup, matchMarkup, encounterMarkup, finalComparisonMarkup, resolvingEncounterMarkup, resolvedEncounterMarkup, halftimeMarkup, penaltyMarkup, resultMarkup, currentMinute, animateClock, bind });
   }
 
   global.RoadToGloryMatchView = Object.freeze({ create });
