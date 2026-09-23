@@ -94,3 +94,32 @@
   opacity:.94!important;
 }
 
+/* RTG finale: same Home background below the map + cloud curtain after Raimon. */
+.rtg-run-screen{
+  background:url("../assets/home/inazuma-stadium-mobile-light.jpeg") center top / cover no-repeat!important;
+}
+.rtg-run-content{background:transparent!important;}
+.rtg-map-block--4 .rtg-finale-clouds{
+  position:relative;
+  z-index:5;
+  height:118px;
+  margin-top:-28px;
+  background:
+    linear-gradient(180deg,transparent 0 4%,rgba(219,244,255,.14) 22%,rgba(210,239,252,.48) 100%),
+    url("../assets/rtg/rtg-finale-clouds.svg?v=1") center bottom / cover no-repeat;
+  pointer-events:none;
+}
+.rtg-map-block--4 .rtg-finale-clouds::after{
+  content:"";
+  position:absolute;
+  inset:auto 0 0;
+  height:38px;
+  background:linear-gradient(180deg,transparent,#d7f1fb 72%,#caeaf7);
+}
+@media (min-width:781px){
+  .rtg-run-screen{
+    background:url("../assets/home/inazuma-stadium-desktop-light.jpeg") center / cover no-repeat!important;
+  }
+  .rtg-map-block--4 .rtg-finale-clouds{height:142px;margin-top:-34px;}
+}
+

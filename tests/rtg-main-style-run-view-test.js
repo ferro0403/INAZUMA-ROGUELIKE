@@ -17,6 +17,7 @@ assert.match(html,/class="map-node[^"]*reachable/);
 assert.match(html,/class="node-icon/);
 assert.match(html,/class="node-label/);
 assert.strictEqual((html.match(/data-rtg-map-block=/g)||[]).length,4);
+assert.strictEqual((html.match(/class="rtg-finale-clouds"/g)||[]).length,1);
 assert.strictEqual((html.match(/data-rtg-node-id=/g)||[]).length,28);
 assert.match(html,/btn btn-yellow rtg-vending-button/);
 assert.match(html,/data-emblem="occult"/);
