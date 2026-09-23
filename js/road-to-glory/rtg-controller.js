@@ -501,6 +501,7 @@
       let query="";
       let sourceFilter="all";
       let rarityFilter="all";
+      let overallDescending=true;
       const rarityOptions=squadPickerRarityOptions();
       const targetPlayer=resolved(targetId,squadDraft?.activeRoleVariantByCardId?.[id(targetId)]||null);
       const target={playerId:id(targetId),source:sourceForDraftPlayer(targetId),player:targetPlayer};
@@ -512,6 +513,9 @@
         const needle=query.trim().toLocaleLowerCase("it");
         if(needle&&!rawName(playerId).toLocaleLowerCase("it").includes(needle))return false;
         return true;
+      }).sort((a,b)=>{
+        const delta=rawOverall(b)-rawOverall(a);
+        return (overallDescending?delta:-delta)||rawName(a).localeCompare(rawName(b),"it");
       });
       const entries=()=>{
         const ids=filteredIds();
@@ -558,6 +562,15 @@
       modal?.querySelector?.("[data-rtg-picker-rarity]")?.addEventListener("change",event=>{
         rarityFilter=String(event.target?.value||"all");
         visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        renderResults();
+      });
+      modal?.querySelector?.("[data-rtg-picker-sort]")?.addEventListener("click",event=>{
+        overallDescending=!overallDescending;
+        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        const button=event.currentTarget;
+        button.textContent=overallDescending?"OVR ↓":"OVR ↑";
+        button.setAttribute("aria-label",overallDescending?"Ordina per overall decrescente":"Ordina per overall crescente");
+        button.setAttribute("aria-pressed",overallDescending?"true":"false");
         renderResults();
       });
       bindResults();
