@@ -11,7 +11,14 @@
     const roleOf = (player) => String(player?.normalizedRole || player?.position || player?.role || "").toUpperCase();
     const playerIdOf = (player) => String(player?.playerId || player?.id || "");
     const cardIdOf = (value) => String(value?.cardId || value?.player?.cardId || value?.playerId || playerIdOf(value?.player || value) || "");
-    const legacyBadge = (entry) => { const label=global.RoadToGloryCardIdentity?.legacyLabel?.(entry?.player || entry); return label ? `<span class="rtg-legacy-badge" title="Legacy ${escape(label)}">${escape(label)}</span>` : ""; };
+    const legacyBadge = (entry) => {
+      const identity = global.RoadToGloryCardIdentity;
+      const ref = entry?.cardId || entry?.player?.cardId || entry?.player || entry;
+      const meta = identity?.parse?.(ref);
+      if (meta?.sourceKind !== "season") return "";
+      const label = identity?.legacyLabel?.(meta.legacySeasonId) || "";
+      return label ? `<span class="rtg-legacy-badge rtg-legacy-tab" title="Legacy ${escape(label)}">${escape(label)}</span>` : "";
+    };
 
     function sourceBadge(source) {
       if (source !== "RTG") return "";
