@@ -28,6 +28,7 @@
         <div class="player-info"><div class="player-title"><strong>${escape(player?.name || playerIdOf(player) || "Giocatore")}</strong></div><div class="player-meta"><span>${escape(role)}</span><span>Lv 20</span></div></div>
         <span class="player-corner player-level">Lv 20</span>
         ${sourceBadge(source)}
+        ${legacyBadge({ player })}
       </button>`;
     }
 
