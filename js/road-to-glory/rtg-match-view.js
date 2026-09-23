@@ -755,8 +755,8 @@
       const opponentRarityClass = duelRarityClass(opponent);
       const loserStyle = "opacity:.46;filter:grayscale(.92) saturate(.28) brightness(.82);transform:scale(.985);";
       return `<section class="panel rtg-duel-card rtg-duel-result rtg-duel-result--revolution rtg-paper-modal development-squad-card-scope ${resultClass} ${(userWinningMove || opponentWinningMove) ? "has-special-move" : ""}">
-        <div class="rtg-duel-result-banner ${resultClass}">
-          <div class="rtg-duel-result-status"><span>${resolution.goalSide ? "GOL" : userWon ? "AZIONE RIUSCITA" : "AZIONE PERSA"}</span><em>${(userWinningMove || opponentWinningMove) ? "⚡ MOSSA SPECIALE USATA" : "ESITO DUELLO"}</em></div>
+        <div class="rtg-duel-result-banner ${resultClass} ${(userWinningMove||opponentWinningMove)?`has-move ${escape(userWinningMove?userMoveCategory:opponentMoveCategory)}`:""}">
+          <div class="rtg-duel-result-status"><span>${resolution.goalSide ? "GOL" : userWon ? "AZIONE RIUSCITA" : "AZIONE PERSA"}</span><em>${(userWinningMove || opponentWinningMove) ? "MOSSA SPECIALE USATA" : "ESITO DUELLO"}</em></div>
           <strong>${escape(headline)}</strong>
         </div>
         <div class="rtg-duel-versus-board rtg-duel-versus-board--result">
