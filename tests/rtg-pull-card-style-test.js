@@ -30,6 +30,8 @@ assert.match(html,/data-team-logo="brainwashing"/);
 assert.match(html,/Brainwashing/);
 assert.match(html,/rtg-pull-role">MF</);
 assert.match(html,/NUOVO GIOCATORE/);
+assert.match(html,/data-rtg-pull-continue/);
+assert.match(html,/>CONTINUA<\/button>/);
 assert.doesNotMatch(html,/>SBLOCCATO</);
 assert.doesNotMatch(html,/Sbloccato e aggiunto alla collezione Road to Glory/);
 console.log("rtg-pull-card-style-test: PASS");
