@@ -980,11 +980,14 @@
         selectedEncounterId=id(pending.encounterId);
         selectedEncounterChoice=null;
       }
-      if(selectedEncounterChoice===normalized){
+      const encounterId=id(pending.encounterId);
+      const isConfirmedSecondTap=selectedEncounterId===encounterId&&selectedEncounterChoice===normalized;
+      if(isConfirmedSecondTap){
         selectedEncounterChoice=null;
         selectedEncounterId=null;
         return chooseEncounter(normalized);
       }
+      selectedEncounterId=encounterId;
       selectedEncounterChoice=normalized;
       return showEncounterOverlay(campaign.activeMatch,normalized);
     }
