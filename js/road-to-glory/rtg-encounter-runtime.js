@@ -36,7 +36,7 @@
   }
   function moveBonus(power){
     const numeric=Math.max(50,Math.min(110,Number(power)||50));
-    return 5+((numeric-50)*7/60);
+    return 6+((numeric-50)*7/60);
   }
   function normalizeElement(value){return ELEMENT_ALIASES[String(value||"").trim().toLowerCase()]||"";}
   function elementModifier(actorElement,opponentElement){
@@ -46,7 +46,7 @@
     if(BEATS[opponent]===actor) return -5;
     return 0;
   }
-  function clampProbability(value){return Math.max(10,Math.min(90,Number(value)||0));}
+  function clampProbability(value){return Math.max(5,Math.min(95,Number(value)||0));}
   function compatibleMoveTypes(actorKind,opponentKind){
     return Object.freeze({actor:String(actorKind||""),opponent:String(opponentKind||"")});
   }
