@@ -4182,3 +4182,11 @@
   content:none!important;
   display:none!important;
 }
+
+
+/* Duel preview: remove the actual horizontal decorative rule under the player name. */
+.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-player-copy::after{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+}
