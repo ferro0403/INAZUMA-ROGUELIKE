@@ -617,7 +617,7 @@
         const deltaText = delta > 0.05 ? `+${delta.toFixed(1)}%` : delta < -0.05 ? `${delta.toFixed(1)}%` : "BASE";
         return `<button type="button" class="rtg-duel-choice-card ${choice==="move"?"is-move":"is-base"} ${escape(categoryClass)} ${selected?"is-selected":""}" data-rtg-choice="${choice}" ${disabled?"disabled":""}>
           <span class="rtg-choice-icon" aria-hidden="true">${choice==="move"?"⚡":"●"}</span>
-          <span class="rtg-choice-copy"><strong>${escape(label)}</strong><em>${escape(sub)}</em></span>
+          <span class="rtg-choice-copy"><strong>${escape(label)}</strong>${String(sub).includes("|ELEMENT|")?(()=>{const [main,el,key]=String(sub).split("|ELEMENT|");const parts=String(el||"").split("|");return `<em>${escape(main)}</em><span class="rtg-move-element-badge element-${escape(parts[1]||key||"")}"><i></i>${escape(parts[0]||"")}</span>`;})():`<em>${escape(sub)}</em>`}</span>
           <span class="rtg-choice-probability"><strong>${escape(Number(probability).toFixed(1))}%</strong><em class="rtg-choice-delta ${delta>0?"is-positive":delta<0?"is-negative":""}">${escape(deltaText)}</em></span>
           ${selected?'<span class="rtg-choice-confirm">TOCCA DI NUOVO PER CONFERMARE</span>':""}
         </button>`;
@@ -646,7 +646,7 @@
           <div class="rtg-duel-choice-head"><strong>SCEGLI L'AZIONE</strong><span>1° tocco: anteprima · 2° tocco: conferma</span></div>
           <div class="rtg-duel-choice-grid">
             ${choiceCard("base",baseVerb,"Nessun uso consumato",baseProbability,0)}
-            ${pending.userMove && uses > 0 ? choiceCard("move",pending.userMove.name,`${uses}/2 USI · POWER ${pending.userMove.power || "—"}${pending.userMove.element ? ` · ${moveElementLabel(pending.userMove.element)}` : ""}`,moveProbability,moveDelta,false,moveCategoryClass(pending.userMove,userKind)) : ""}
+            ${pending.userMove && uses > 0 ? choiceCard("move",pending.userMove.name,`${uses}/2 USI · POWER ${pending.userMove.power || "—"}${pending.userMove.element ? `|ELEMENT|${moveElementLabel(pending.userMove.element)}|${String(pending.userMove.element).toLowerCase()}` : ""}`,moveProbability,moveDelta,false,moveCategoryClass(pending.userMove,userKind)) : ""}
           </div>
         </section>
       </section>`;
@@ -670,7 +670,7 @@
           <div class="rtg-duel-vs-core rtg-duel-vs-core--resolving"><small>PROBABILITÀ</small><span>VS</span></div>
           <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)} ${aiMove?"has-special-move":""}">${duelCompareVisualMarkup(opponent,"opponent")}<div class="rtg-duel-resolving-action ${aiMove?`is-move ${escape(aiMoveCategory)}`:""}"><small>${aiMove?"MOSSA":"AZIONE"}</small><strong>${escape(aiAction)}</strong>${aiMove?`<em>POWER ${escape(resolution.aiMovePower??"—")}${resolution.aiMoveElement?` · ${escape(moveElementLabel(resolution.aiMoveElement))}`:""}</em>`:""}</div></article>
         </div>
-        <div class="rtg-duel-final-probability"><small>PROBABILITÀ EFFETTIVA</small><strong>TU ${escape(final.toFixed(1))}% — ${escape(other.toFixed(1))}% AVVERSARIO</strong></div>
+        <div class="rtg-duel-final-probability rtg-duel-final-probability--persistent"><small>PROBABILITÀ EFFETTIVA</small><strong>TU ${escape(final.toFixed(1))}% — ${escape(other.toFixed(1))}% AVVERSARIO</strong></div>
         <div class="rtg-duel-resolving-footer"><span>RISOLUZIONE AUTOMATICA</span><b><i></i><i></i><i></i></b></div>
       </section>`;
     }
