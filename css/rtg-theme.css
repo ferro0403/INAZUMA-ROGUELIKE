@@ -110,9 +110,9 @@
   }
 }
 /* =========================================================
-   RTG vending machine v9 — capsule-station proportions
-   Based on real Japanese gashapon geometry: rectangular stock window,
-   right-side crank and lower retrieval chute.
+   RTG vending machine v10 — premium capsule station
+   Real gashapon geometry plus internal funnel, mechanical retrieval flap,
+   irregular capsule pile and cleaner cabinet depth.
    ========================================================= */
 .rtg-vending-machine-v9{
   --rtg-vending-reveal:#929ba8;
@@ -177,6 +177,34 @@
   background:linear-gradient(to top,rgba(17,18,22,.15),transparent);
   pointer-events:none;
 }
+.rtg-vending-funnel-v10{
+  position:absolute;
+  z-index:3;
+  left:14px;
+  right:14px;
+  bottom:-2px;
+  height:67px;
+  clip-path:polygon(0 10%,100% 10%,66% 100%,34% 100%);
+  background:
+    linear-gradient(155deg,rgba(255,255,255,.35) 0 33%,transparent 34%),
+    linear-gradient(205deg,rgba(17,18,22,.18) 0 34%,transparent 35%),
+    linear-gradient(180deg,rgba(110,158,175,.16),rgba(17,18,22,.18));
+  border-top:3px solid rgba(17,18,22,.30);
+  box-shadow:inset 0 -8px 0 rgba(17,18,22,.12);
+  pointer-events:none;
+}
+.rtg-vending-funnel-v10::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:-1px;
+  width:42px;
+  height:13px;
+  transform:translateX(-50%);
+  border-radius:50% 50% 0 0;
+  background:#2a2c30;
+  box-shadow:inset 0 5px 0 #0b0c0e;
+}
 .rtg-vending-window-glare-v9{
   position:absolute;
   z-index:8;
@@ -198,7 +226,7 @@
   border-radius:50%;
   background:linear-gradient(165deg,#fff 0 47%,#ffd21f 48% 100%);
   box-shadow:inset -4px -5px 0 rgba(17,18,22,.11),1px 2px 0 rgba(17,18,22,.18);
-  transform:rotate(var(--r,0deg));
+  transform:rotate(var(--r,0deg)) scale(var(--s,1));
 }
 .rtg-vending-capsule-v9::after{
   content:"";
@@ -207,16 +235,16 @@
   height:4px;
   background:#111216;
 }
-.rtg-vending-capsule-v9.c1{left:11px;bottom:10px;--tx:38px;--ty:-44px;--r:14deg;--d:-.04s}
-.rtg-vending-capsule-v9.c2{left:48px;bottom:13px;--tx:-28px;--ty:-56px;--r:-21deg;--d:-.18s}
-.rtg-vending-capsule-v9.c3{left:88px;bottom:9px;--tx:31px;--ty:-42px;--r:7deg;--d:-.30s}
-.rtg-vending-capsule-v9.c4{left:130px;bottom:12px;--tx:-33px;--ty:-61px;--r:-12deg;--d:-.11s}
-.rtg-vending-capsule-v9.c5{left:31px;bottom:48px;--tx:47px;--ty:-19px;--r:20deg;--d:-.25s}
-.rtg-vending-capsule-v9.c6{left:71px;bottom:51px;--tx:-35px;--ty:-31px;--r:-9deg;--d:-.08s}
-.rtg-vending-capsule-v9.c7{left:112px;bottom:48px;--tx:26px;--ty:-28px;--r:17deg;--d:-.21s}
-.rtg-vending-capsule-v9.c8{left:146px;bottom:52px;--tx:-39px;--ty:-16px;--r:-19deg;--d:-.34s}
-.rtg-vending-capsule-v9.c9{left:54px;bottom:89px;--tx:31px;--ty:24px;--r:11deg;--d:-.13s}
-.rtg-vending-capsule-v9.c10{left:106px;bottom:91px;--tx:-34px;--ty:20px;--r:-15deg;--d:-.28s}
+.rtg-vending-capsule-v9.c1{left:15px;bottom:13px;--tx:36px;--ty:-43px;--r:17deg;--d:-.04s;--s:.94;z-index:6}
+.rtg-vending-capsule-v9.c2{left:49px;bottom:5px;--tx:-27px;--ty:-52px;--r:-25deg;--d:-.18s;--s:1.04;z-index:7}
+.rtg-vending-capsule-v9.c3{left:91px;bottom:17px;--tx:30px;--ty:-44px;--r:9deg;--d:-.30s;--s:.90;z-index:5}
+.rtg-vending-capsule-v9.c4{left:135px;bottom:8px;--tx:-31px;--ty:-58px;--r:-16deg;--d:-.11s;--s:1.06;z-index:8}
+.rtg-vending-capsule-v9.c5{left:23px;bottom:49px;--tx:43px;--ty:-18px;--r:24deg;--d:-.25s;--s:.88;z-index:4}
+.rtg-vending-capsule-v9.c6{left:60px;bottom:57px;--tx:-34px;--ty:-29px;--r:-11deg;--d:-.08s;--s:1.08;z-index:8}
+.rtg-vending-capsule-v9.c7{left:101px;bottom:43px;--tx:25px;--ty:-27px;--r:19deg;--d:-.21s;--s:.96;z-index:6}
+.rtg-vending-capsule-v9.c8{left:143px;bottom:57px;--tx:-36px;--ty:-17px;--r:-22deg;--d:-.34s;--s:.91;z-index:5}
+.rtg-vending-capsule-v9.c9{left:45px;bottom:92px;--tx:29px;--ty:22px;--r:14deg;--d:-.13s;--s:.93;z-index:3}
+.rtg-vending-capsule-v9.c10{left:112px;bottom:99px;--tx:-31px;--ty:19px;--r:-17deg;--d:-.28s;--s:1.02;z-index:4}
 
 .rtg-vending-body-v9{
   position:relative;
@@ -234,11 +262,39 @@
     linear-gradient(145deg,#ffe45c 0 9%,#ffd21f 10% 63%,#f0ad22 64% 84%,#d69413 85% 100%);
   box-shadow:
     inset 0 7px 0 rgba(255,255,255,.20),
-    inset -15px 0 0 rgba(145,88,5,.16),
-    inset 0 -12px 0 rgba(145,88,5,.13),
-    8px 10px 0 #111216,
-    13px 16px 18px rgba(17,18,22,.16);
+    inset -13px 0 0 rgba(145,88,5,.15),
+    inset 0 -10px 0 rgba(145,88,5,.12),
+    5px 7px 0 #111216,
+    10px 14px 16px rgba(17,18,22,.15);
+  isolation:isolate;
 }
+.rtg-vending-body-v9::before{
+  content:"";
+  position:absolute;
+  z-index:0;
+  top:9px;
+  right:-12px;
+  bottom:9px;
+  width:12px;
+  border:4px solid #111216;
+  border-left:0;
+  border-radius:0 7px 7px 0;
+  background:linear-gradient(180deg,#dfa116,#b9780d);
+}
+.rtg-vending-body-v9::after{
+  content:"";
+  position:absolute;
+  z-index:0;
+  left:10px;
+  right:4px;
+  bottom:-11px;
+  height:11px;
+  border:4px solid #111216;
+  border-top:0;
+  border-radius:0 0 9px 9px;
+  background:#b7770d;
+}
+.rtg-vending-body-v9>*{position:relative;z-index:2;}
 .rtg-vending-info-v9{
   display:grid;
   place-items:center;
@@ -260,6 +316,28 @@
   border-radius:50%;
   background:radial-gradient(circle at 37% 30%,#f4f4ee 0 17%,#8b8b87 18% 58%,#4d4d4b 59% 100%);
   box-shadow:inset 5px 5px 0 rgba(255,255,255,.20),inset -7px -8px 0 rgba(17,18,22,.20),4px 5px 0 rgba(17,18,22,.38);
+}
+.rtg-vending-crank-v9::before{
+  content:"";
+  position:absolute;
+  left:50%;top:50%;
+  width:20px;height:20px;
+  transform:translate(-50%,-50%);
+  border:3px solid #111216;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 30%,#f7f7f1,#b7b7b1 58%,#666 59%);
+  z-index:2;
+}
+.rtg-vending-crank-v9::after{
+  content:"";
+  position:absolute;
+  right:-7px;
+  bottom:5px;
+  width:17px;height:17px;
+  border:3px solid #111216;
+  border-radius:50%;
+  background:#ffd21f;
+  box-shadow:2px 3px 0 rgba(17,18,22,.28);
 }
 .rtg-vending-crank-v9 span{
   position:absolute;
@@ -289,15 +367,39 @@
   background:#050607;
   box-shadow:inset 0 8px 0 #2f3135;
 }
+.rtg-vending-chute-flap-v10{
+  position:absolute!important;
+  z-index:7!important;
+  left:50%!important;
+  top:5px!important;
+  width:92px!important;
+  height:18px!important;
+  transform:translateX(-50%) perspective(120px) rotateX(0deg)!important;
+  transform-origin:50% 0%!important;
+  border:3px solid #111216!important;
+  border-top:0!important;
+  border-radius:0 0 13px 13px!important;
+  background:linear-gradient(180deg,#383a3f,#111216)!important;
+  box-shadow:inset 0 -4px 0 rgba(0,0,0,.35)!important;
+  pointer-events:none!important;
+}
 .rtg-vending-brand-v9{
   grid-column:2;
+  align-self:center;
+  justify-self:center;
+  width:54px;
+  min-height:34px;
   display:grid;
   place-items:center;
+  padding:4px 5px;
   border:3px solid #111216;
+  border-radius:4px;
   background:#111216;
   color:#ffd21f;
-  font:1000 15px/1 system-ui,sans-serif;
-  letter-spacing:.08em;
+  box-shadow:2px 3px 0 rgba(17,18,22,.26);
+  transform:rotate(-1deg);
+  font:1000 12px/1 system-ui,sans-serif;
+  letter-spacing:.09em;
 }
 .rtg-vending-prize-track-v9{
   position:absolute;
@@ -325,6 +427,7 @@
 .rtg-vending-machine-v9.is-revealing .rtg-vending-capsule-v9{animation-play-state:paused;}
 .rtg-vending-machine-v9.is-revealing .rtg-vending-prize-v9{animation:rtg-vending-v9-drop .72s cubic-bezier(.18,.72,.28,1) both;}
 .rtg-vending-machine-v9.is-revealing .rtg-vending-chute-v9{animation:rtg-vending-v9-chute .72s ease-out both;}
+.rtg-vending-machine-v9.is-revealing .rtg-vending-chute-flap-v10{animation:rtg-vending-v10-flap .72s cubic-bezier(.2,.75,.28,1) both;}
 
 .rtg-vending-machine-v9[data-pull-rarity="normale"]{--rtg-vending-reveal:#929ba8}
 .rtg-vending-machine-v9[data-pull-rarity="buono"]{--rtg-vending-reveal:#2fa866}
@@ -341,9 +444,9 @@
   100%{transform:rotate(720deg)}
 }
 @keyframes rtg-vending-v9-mix{
-  0%{transform:translate3d(0,0,0) rotate(var(--r,0deg))}
-  55%{transform:translate3d(var(--tx,28px),var(--ty,-34px),0) rotate(130deg)}
-  100%{transform:translate3d(-10px,8px,0) rotate(-62deg)}
+  0%{transform:translate3d(0,0,0) rotate(var(--r,0deg)) scale(var(--s,1))}
+  55%{transform:translate3d(var(--tx,28px),var(--ty,-34px),0) rotate(130deg) scale(var(--s,1))}
+  100%{transform:translate3d(-10px,8px,0) rotate(-62deg) scale(var(--s,1))}
 }
 @keyframes rtg-vending-v9-body{
   0%,100%{transform:translate3d(0,0,0)}
@@ -361,6 +464,12 @@
 @keyframes rtg-vending-v9-chute{
   0%,35%{box-shadow:inset 0 7px 0 #34363a}
   62%,100%{box-shadow:inset 0 7px 0 #34363a,0 0 0 4px var(--rtg-vending-reveal),0 0 18px color-mix(in srgb,var(--rtg-vending-reveal) 52%,transparent)}
+}
+@keyframes rtg-vending-v10-flap{
+  0%,20%{transform:translateX(-50%) perspective(120px) rotateX(0deg)}
+  48%{transform:translateX(-50%) perspective(120px) rotateX(72deg)}
+  72%{transform:translateX(-50%) perspective(120px) rotateX(46deg)}
+  100%{transform:translateX(-50%) perspective(120px) rotateX(20deg)}
 }
 
 /* Rarity rate chips — every rarity uses the same full-colour treatment. */
@@ -409,7 +518,8 @@
   .rtg-vending-machine-v9.is-turning .rtg-vending-crank-v9,
   .rtg-vending-machine-v9.is-turning .rtg-vending-capsule-v9,
   .rtg-vending-machine-v9.is-revealing .rtg-vending-prize-v9,
-  .rtg-vending-machine-v9.is-revealing .rtg-vending-chute-v9{
+  .rtg-vending-machine-v9.is-revealing .rtg-vending-chute-v9,
+  .rtg-vending-machine-v9.is-revealing .rtg-vending-chute-flap-v10{
     animation-duration:.01ms!important;
     animation-iteration-count:1!important;
   }
