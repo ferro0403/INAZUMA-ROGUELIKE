@@ -102,6 +102,7 @@
         team = null,
         runStats = null,
         albumUnlocked = false,
+        rtgLegacyLabel = "",
       } = {},
     ) {
       if (!player) return "";
@@ -122,6 +123,12 @@
       const teamBadge = teamIdentity.name
         ? `<div class="player-detail-team" aria-label="Squadra ${escapeHtml(teamIdentity.name)}">${teamLogoMarkup(teamIdentity)}<strong>${escapeHtml(teamIdentity.name)}</strong></div>`
         : "";
+      const rtgLegacyBadge = rtgLegacyLabel
+        ? `<span class="player-detail-rtg-legacy-badge" aria-label="Legacy ${escapeHtml(rtgLegacyLabel)}"><small>Legacy</small><strong>${escapeHtml(rtgLegacyLabel)}</strong></span>`
+        : "";
+      const detailTopBadges = rtgLegacyBadge
+        ? `<div class="player-detail-top-badges">${teamBadge}${rtgLegacyBadge}</div>`
+        : teamBadge;
       const resolved = historical
         ? {
             ...sourceFallback,
@@ -215,7 +222,7 @@
         <div class="player-detail-layout ${rarityClass(resolved.category)} ${historical ? "player-detail-historical" : ""}">
           <section class="player-detail-hero ${String(resolved.name || "").length > 18 ? "player-detail-hero--extra-long-name" : String(resolved.name || "").length > 12 ? "player-detail-hero--long-name" : ""}">
             <div class="player-detail-identity">
-              ${teamBadge}
+              ${detailTopBadges}
               <div class="player-detail-heading">
                 <p class="eyebrow">Scheda giocatore</p>
                 ${contextLabel ? `<span>${escapeHtml(contextLabel)}</span>` : ""}
