@@ -319,7 +319,7 @@
       return campaign;
     }
     function bindHomeAndTabs(){
-      app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.());
+      app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
       app?.querySelector?.('[data-rtg-tab="run"]')?.addEventListener("click",()=>renderRun());
       app?.querySelector?.('[data-rtg-tab="squad"]')?.addEventListener("click",()=>renderSquad());
       app?.querySelector?.('[data-rtg-tab="album"]')?.addEventListener("click",()=>renderAlbum());
@@ -364,7 +364,7 @@
       const total=teams.reduce((sum,team)=>sum+(Number(team.total)||0),0);
       const unlocked=teams.reduce((sum,team)=>sum+(Number(team.unlocked)||0),0);
       renderHtml(runView.albumCollectionMarkup({state:campaign,unlocked,total}));
-      app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.());
+      app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
       app?.querySelector?.("[data-rtg-album-collection]")?.addEventListener("click",()=>renderAlbumTeams());
       mountDevQuickTools();
       return campaign;
@@ -1292,7 +1292,7 @@
       const access=refreshEntitlements();
       if(!access.unlocked){
         renderHtml(runView.lockedMarkup(access));
-        app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.());
+        app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
         return {locked:true,access};
       }
       campaign=await repository.ensureCampaign();
