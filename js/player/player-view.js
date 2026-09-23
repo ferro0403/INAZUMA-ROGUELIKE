@@ -124,7 +124,7 @@
         ? `<div class="player-detail-team" aria-label="Squadra ${escapeHtml(teamIdentity.name)}">${teamLogoMarkup(teamIdentity)}<strong>${escapeHtml(teamIdentity.name)}</strong></div>`
         : "";
       const rtgLegacyBadge = rtgLegacyLabel
-        ? `<span class="player-detail-rtg-legacy-badge" aria-label="Legacy ${escapeHtml(rtgLegacyLabel)}"><small>Legacy</small><strong>${escapeHtml(rtgLegacyLabel)}</strong></span>`
+        ? `<span class="player-detail-rtg-legacy-badge" data-legacy-season="${escapeHtml(rtgLegacyLabel)}" aria-label="Legacy ${escapeHtml(rtgLegacyLabel)}"><small>Legacy</small><strong>${escapeHtml(rtgLegacyLabel)}</strong></span>`
         : "";
       const resolved = historical
         ? {
