@@ -4170,3 +4170,15 @@
   transform:none!important;
   object-fit:contain!important;
 }
+
+
+/* Duel cards: remove the decorative rule leaking from the role badge into OVR. */
+.rtg-duel-card--clean .rtg-duel-player-role::before,
+.rtg-duel-card--clean .rtg-duel-player-role::after,
+.rtg-duel-card--clean .rtg-duel-player-stats::before,
+.rtg-duel-card--clean .rtg-duel-player-stats::after,
+.rtg-duel-card--clean .rtg-duel-player-meta>small::before,
+.rtg-duel-card--clean .rtg-duel-player-meta>small::after{
+  content:none!important;
+  display:none!important;
+}
