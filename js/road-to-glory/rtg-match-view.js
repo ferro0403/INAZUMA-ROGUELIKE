@@ -582,6 +582,11 @@
       </main>`;
     }
 
+    function moveElementLabel(value){
+      const key=String(value||"").trim().toLowerCase();
+      return ({fire:"FUOCO",fuoco:"FUOCO",forest:"ALBERO",wood:"ALBERO",tree:"ALBERO",albero:"ALBERO",wind:"VENTO",vento:"VENTO",mountain:"MONTAGNA",montagna:"MONTAGNA"})[key]||String(value||"").toUpperCase();
+    }
+
     function encounterMarkup(match = {}, preview = {}) {
       const pending = match.pendingEncounter || {};
       const user = preview.userPlayer || {};
@@ -641,7 +646,7 @@
           <div class="rtg-duel-choice-head"><strong>SCEGLI L'AZIONE</strong><span>1° tocco: anteprima · 2° tocco: conferma</span></div>
           <div class="rtg-duel-choice-grid">
             ${choiceCard("base",baseVerb,"Nessun uso consumato",baseProbability,0)}
-            ${pending.userMove && uses > 0 ? choiceCard("move",pending.userMove.name,`${uses}/2 usi · Power ${pending.userMove.power || "—"}`,moveProbability,moveDelta,false,moveCategoryClass(pending.userMove,userKind)) : ""}
+            ${pending.userMove && uses > 0 ? choiceCard("move",pending.userMove.name,`${uses}/2 USI · POWER ${pending.userMove.power || "—"}${pending.userMove.element ? ` · ${moveElementLabel(pending.userMove.element)}` : ""}`,moveProbability,moveDelta,false,moveCategoryClass(pending.userMove,userKind)) : ""}
           </div>
         </section>
       </section>`;
@@ -652,19 +657,20 @@
       const opponent=resolution.opponentPlayer||{name:resolution.aiPlayerName||"Avversario",overall:"—"};
       const userAction=resolution.userChoiceLabel||baseResultActionLabel(resolution.userKind,resolution.actorSide==="user");
       const aiAction=resolution.aiChoiceLabel||baseResultActionLabel(resolution.aiKind,resolution.actorSide==="opponent");
-      const preview=Math.max(0,Math.min(100,Number(resolution.previewProbability??resolution.probability??50)));
       const final=Math.max(0,Math.min(100,Number(resolution.probability??50)));
       const other=100-final;
-      const delta=final-preview;
-      const deltaText=Math.abs(delta)<0.05?"INVARIATA":`${delta>0?"+":""}${delta.toFixed(1)}%`;
+      const userMove=!!resolution.userUsedMove, aiMove=!!resolution.aiUsedMove;
+      const userMoveCategory=moveCategoryClass({type:resolution.userMoveType},resolution.userKind);
+      const aiMoveCategory=moveCategoryClass({type:resolution.aiMoveType},resolution.aiKind);
+      const userRarityClass=duelRarityClass(user), opponentRarityClass=duelRarityClass(opponent);
       return `<section class="panel rtg-duel-card rtg-duel-card--clean rtg-duel-resolving rtg-paper-modal development-squad-card-scope">
         <div class="rtg-duel-resolving-head"><small>SCELTE BLOCCATE</small><strong>CONFRONTO FINALE</strong></div>
         <div class="rtg-duel-versus-board rtg-duel-versus-board--resolving">
-          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--user">${duelCompareVisualMarkup(user,"user")}<div class="rtg-duel-resolving-action"><small>${resolution.userUsedMove?"MOSSA":"AZIONE"}</small><strong>${escape(userAction)}</strong></div></article>
+          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userMove?"has-special-move":""}">${duelCompareVisualMarkup(user,"user")}<div class="rtg-duel-resolving-action ${userMove?`is-move ${escape(userMoveCategory)}`:""}"><small>${userMove?"MOSSA":"AZIONE"}</small><strong>${escape(userAction)}</strong>${userMove?`<em>POWER ${escape(resolution.userMovePower??"—")}${resolution.userMoveElement?` · ${escape(moveElementLabel(resolution.userMoveElement))}`:""}</em>`:""}</div></article>
           <div class="rtg-duel-vs-core rtg-duel-vs-core--resolving"><small>PROBABILITÀ</small><span>VS</span></div>
-          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent">${duelCompareVisualMarkup(opponent,"opponent")}<div class="rtg-duel-resolving-action"><small>${resolution.aiUsedMove?"MOSSA":"AZIONE"}</small><strong>${escape(aiAction)}</strong></div></article>
+          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)} ${aiMove?"has-special-move":""}">${duelCompareVisualMarkup(opponent,"opponent")}<div class="rtg-duel-resolving-action ${aiMove?`is-move ${escape(aiMoveCategory)}`:""}"><small>${aiMove?"MOSSA":"AZIONE"}</small><strong>${escape(aiAction)}</strong>${aiMove?`<em>POWER ${escape(resolution.aiMovePower??"—")}${resolution.aiMoveElement?` · ${escape(moveElementLabel(resolution.aiMoveElement))}`:""}</em>`:""}</div></article>
         </div>
-        <div class="rtg-duel-final-probability"><small>PROBABILITÀ EFFETTIVA</small><strong>TU ${escape(final.toFixed(1))}% — ${escape(other.toFixed(1))}% AVVERSARIO</strong><em>Anteprima ${escape(preview.toFixed(1))}% → finale ${escape(final.toFixed(1))}% · ${escape(deltaText)}</em></div>
+        <div class="rtg-duel-final-probability"><small>PROBABILITÀ EFFETTIVA</small><strong>TU ${escape(final.toFixed(1))}% — ${escape(other.toFixed(1))}% AVVERSARIO</strong></div>
         <div class="rtg-duel-resolving-footer"><span>RISOLUZIONE AUTOMATICA</span><b><i></i><i></i><i></i></b></div>
       </section>`;
     }
