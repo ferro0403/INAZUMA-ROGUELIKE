@@ -180,7 +180,7 @@
       </div>`;
     }
 
-    return Object.freeze({tabs,lockedMarkup:(...args)=>skinTokens(lockedMarkup(...args)),runMarkup:(...args)=>skinTokens(runMarkup(...args)),albumTeamsMarkup:(...args)=>skinTokens(albumTeamsMarkup(...args)),albumRosterMarkup:(...args)=>skinTokens(albumRosterMarkup(...args)),requirementsMarkup,nodeModalMarkup,vendingMarkup:(...args)=>skinTokens(vendingMarkup(...args)),pullResultMarkup:(...args)=>skinTokens(pullResultMarkup(...args))});
+    return Object.freeze({tabs,lockedMarkup:(...args)=>skinTokens(lockedMarkup(...args)),runMarkup:(...args)=>skinTokens(runMarkup(...args)),albumCollectionMarkup:(...args)=>skinTokens(albumCollectionMarkup(...args)),albumTeamsMarkup:(...args)=>skinTokens(albumTeamsMarkup(...args)),albumRosterMarkup:(...args)=>skinTokens(albumRosterMarkup(...args)),requirementsMarkup,nodeModalMarkup,vendingMarkup:(...args)=>skinTokens(vendingMarkup(...args)),pullResultMarkup:(...args)=>skinTokens(pullResultMarkup(...args))});
   }
   global.RoadToGloryRunView=Object.freeze({create});
 })(globalThis);
