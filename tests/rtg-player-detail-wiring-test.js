@@ -79,6 +79,9 @@ const controller=c.RoadToGloryController.create({
   assert.strictEqual(legacyCalls[1].options.rtgLegacyLabel,"");
   const playerViewSource=fs.readFileSync("js/player/player-view.js","utf8");
   assert.match(playerViewSource,/player-detail-rtg-legacy-badge/);
-  assert.match(playerViewSource,/detailTopBadges/);
+  assert.doesNotMatch(playerViewSource,/detailTopBadges/);
+  const themeSource=fs.readFileSync("css/rtg-theme.css","utf8");
+  assert.match(themeSource,/right:72px/);
+  assert.match(themeSource,/top:16px/);
   console.log("rtg-player-detail-wiring-test: PASS");
 })().catch(error=>{console.error(error);process.exitCode=1;});
