@@ -815,3 +815,7 @@ button.player-card:has(> .rtg-legacy-badge),
   line-height:1 !important;
   transform:translate(-50%,-50%) !important;
 }
+
+/* Replacement picker: single OVR control, matching RTG black/yellow controls. */
+.rtg-squad-picker .rtg-picker-ovr-sort{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:auto!important;min-width:112px!important;min-height:52px!important;padding:10px 18px!important;margin:12px 0 18px!important;border:3px solid #111216!important;border-radius:0!important;background:#111216!important;color:#ffd21f!important;box-shadow:5px 6px 0 #ffd21f!important;font:900 20px/1 system-ui,sans-serif!important;letter-spacing:.02em!important;cursor:pointer!important;}
+.rtg-squad-picker .rtg-picker-ovr-sort:active{transform:translate(2px,2px)!important;box-shadow:3px 4px 0 #ffd21f!important;}
