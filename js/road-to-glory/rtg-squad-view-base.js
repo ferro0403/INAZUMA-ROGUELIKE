@@ -17,7 +17,7 @@
       const meta = identity?.parse?.(ref);
       if (meta?.sourceKind !== "season") return "";
       const label = identity?.legacyLabel?.(meta.legacySeasonId) || "";
-      return label ? `<span class="rtg-legacy-badge rtg-legacy-tab" title="Legacy ${escape(label)}">${escape(label)}</span>` : "";
+      return label ? `<span class="rtg-legacy-badge rtg-legacy-tab" data-legacy-season="${escape(label)}" title="Legacy ${escape(label)}">${escape(label)}</span>` : "";
     };
 
     function sourceBadge(source) {
