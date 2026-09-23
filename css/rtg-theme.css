@@ -110,286 +110,274 @@
   }
 }
 /* =========================================================
-   RTG vending machine v8 — kinetic gacha sequence
+   RTG vending machine v9 — capsule-station proportions
+   Based on real Japanese gashapon geometry: rectangular stock window,
+   right-side crank and lower retrieval chute.
    ========================================================= */
-.rtg-vending-machine-v8{
-  --rtg-vending-reveal:#ffd21f;
+.rtg-vending-machine-v9{
+  --rtg-vending-reveal:#929ba8;
   position:relative;
   z-index:2;
-  width:min(244px,68vw);
+  width:min(238px,68vw);
   margin:0 auto;
-  padding-top:22px;
   display:grid;
-  place-items:center;
+  grid-template-rows:auto auto auto;
+  justify-items:center;
+  filter:drop-shadow(7px 9px 0 #111216);
   isolation:isolate;
-  transform-origin:center 82%;
 }
-.rtg-vending-sign-v8{
-  position:absolute;
-  z-index:7;
-  top:0;
-  left:50%;
-  width:112px;
-  min-height:44px;
+.rtg-vending-head-v9{
+  width:206px;
+  min-height:42px;
   display:grid;
   place-items:center;
   align-content:center;
-  transform:translateX(-50%);
+  padding:6px 10px 5px;
   border:4px solid #111216;
-  border-radius:50% 50% 9px 9px/42% 42% 9px 9px;
+  border-bottom:0;
+  border-radius:10px 10px 0 0;
   background:#ffd21f;
   color:#111216;
-  box-shadow:3px 4px 0 #111216;
   text-align:center;
   text-transform:uppercase;
 }
-.rtg-vending-sign-v8 span{font:950 7px/1 system-ui,sans-serif;letter-spacing:.18em;}
-.rtg-vending-sign-v8 strong{font:1000 19px/.92 system-ui,sans-serif;letter-spacing:.06em;}
-.rtg-vending-globe-v8{
+.rtg-vending-head-v9 span{font:950 6px/1 system-ui,sans-serif;letter-spacing:.16em;}
+.rtg-vending-head-v9 strong{font:1000 16px/.95 system-ui,sans-serif;letter-spacing:.04em;}
+.rtg-vending-window-v9{
   position:relative;
-  z-index:4;
   width:206px;
-  height:184px;
+  height:172px;
   overflow:hidden;
-  border:5px solid #111216;
-  border-radius:49% 49% 24% 24%/43% 43% 17% 17%;
+  border:4px solid #111216;
   background:
-    radial-gradient(circle at 29% 19%,rgba(255,255,255,.98) 0 7%,transparent 8%),
-    linear-gradient(155deg,#f7fdff 0 18%,#d7f0f9 45%,#9bd6ea 100%);
-  box-shadow:inset 0 -18px 0 rgba(17,18,22,.11),5px 6px 0 rgba(17,18,22,.14);
+    linear-gradient(160deg,rgba(255,255,255,.94),rgba(226,245,251,.82) 38%,rgba(170,215,231,.92));
+  box-shadow:inset 0 -15px 0 rgba(17,18,22,.08);
 }
-.rtg-vending-globe-v8::after{
+.rtg-vending-window-v9::after{
   content:"";
   position:absolute;
-  z-index:2;
-  left:7%;
-  right:7%;
-  bottom:4%;
-  height:29%;
-  border-radius:50%;
-  background:rgba(17,18,22,.10);
-}
-.rtg-vending-glass-shine-v8{
-  position:absolute;
-  z-index:8;
-  top:20px;
-  left:27px;
-  width:19px;
-  height:84px;
-  border-radius:999px;
-  background:rgba(255,255,255,.43);
-  transform:rotate(17deg);
+  left:0;right:0;bottom:0;
+  height:34px;
+  background:linear-gradient(to top,rgba(17,18,22,.15),transparent);
   pointer-events:none;
 }
-.rtg-vending-ball-v8{
+.rtg-vending-window-glare-v9{
+  position:absolute;
+  z-index:8;
+  top:12px;
+  left:22px;
+  width:17px;
+  height:105px;
+  border-radius:999px;
+  background:rgba(255,255,255,.46);
+  transform:rotate(13deg);
+  pointer-events:none;
+}
+.rtg-vending-capsule-v9{
   position:absolute;
   z-index:5;
-  width:39px;
-  height:39px;
+  width:40px;
+  height:40px;
   border:3px solid #111216;
   border-radius:50%;
-  background:linear-gradient(160deg,#fff 0 48%,#ffd21f 49% 100%);
-  box-shadow:inset -4px -5px 0 rgba(17,18,22,.12),2px 3px 0 rgba(17,18,22,.15);
-  transform:rotate(var(--ball-r,0deg));
-  transform-origin:center;
+  background:linear-gradient(165deg,#fff 0 47%,#ffd21f 48% 100%);
+  box-shadow:inset -4px -5px 0 rgba(17,18,22,.11),1px 2px 0 rgba(17,18,22,.18);
+  transform:rotate(var(--r,0deg));
 }
-.rtg-vending-ball-v8::after{
+.rtg-vending-capsule-v9::after{
   content:"";
   position:absolute;
-  left:-2px;
-  right:-2px;
-  top:46%;
+  left:0;right:0;top:46%;
   height:4px;
   background:#111216;
-  transform:rotate(-8deg);
-  opacity:.8;
 }
-.rtg-vending-ball-v8.b1{left:13%;bottom:12%;--mx:31px;--my:-41px;--spin:118deg;--delay:-.08s}
-.rtg-vending-ball-v8.b2{left:29%;bottom:9%;--mx:-20px;--my:-55px;--spin:-145deg;--delay:-.19s}
-.rtg-vending-ball-v8.b3{left:47%;bottom:10%;--mx:24px;--my:-46px;--spin:166deg;--delay:-.28s}
-.rtg-vending-ball-v8.b4{left:65%;bottom:13%;--mx:-27px;--my:-61px;--spin:-128deg;--delay:-.12s}
-.rtg-vending-ball-v8.b5{left:20%;bottom:31%;--mx:47px;--my:-16px;--spin:154deg;--delay:-.33s}
-.rtg-vending-ball-v8.b6{left:39%;bottom:29%;--mx:-34px;--my:-33px;--spin:-173deg;--delay:-.21s}
-.rtg-vending-ball-v8.b7{left:58%;bottom:33%;--mx:27px;--my:-28px;--spin:142deg;--delay:-.04s}
-.rtg-vending-ball-v8.b8{left:70%;bottom:34%;--mx:-45px;--my:-22px;--spin:-151deg;--delay:-.25s}
-.rtg-vending-ball-v8.b9{left:28%;bottom:49%;--mx:39px;--my:24px;--spin:177deg;--delay:-.15s}
-.rtg-vending-ball-v8.b10{left:48%;bottom:50%;--mx:-29px;--my:18px;--spin:-163deg;--delay:-.29s}
-.rtg-vending-ball-v8.b11{left:61%;bottom:52%;--mx:18px;--my:27px;--spin:136deg;--delay:-.10s}
-.rtg-vending-ball-v8.b12{left:41%;bottom:66%;--mx:-36px;--my:31px;--spin:-149deg;--delay:-.35s}
-.rtg-vending-cabinet-v8{
+.rtg-vending-capsule-v9.c1{left:11px;bottom:10px;--tx:38px;--ty:-44px;--r:14deg;--d:-.04s}
+.rtg-vending-capsule-v9.c2{left:48px;bottom:13px;--tx:-28px;--ty:-56px;--r:-21deg;--d:-.18s}
+.rtg-vending-capsule-v9.c3{left:88px;bottom:9px;--tx:31px;--ty:-42px;--r:7deg;--d:-.30s}
+.rtg-vending-capsule-v9.c4{left:130px;bottom:12px;--tx:-33px;--ty:-61px;--r:-12deg;--d:-.11s}
+.rtg-vending-capsule-v9.c5{left:31px;bottom:48px;--tx:47px;--ty:-19px;--r:20deg;--d:-.25s}
+.rtg-vending-capsule-v9.c6{left:71px;bottom:51px;--tx:-35px;--ty:-31px;--r:-9deg;--d:-.08s}
+.rtg-vending-capsule-v9.c7{left:112px;bottom:48px;--tx:26px;--ty:-28px;--r:17deg;--d:-.21s}
+.rtg-vending-capsule-v9.c8{left:146px;bottom:52px;--tx:-39px;--ty:-16px;--r:-19deg;--d:-.34s}
+.rtg-vending-capsule-v9.c9{left:54px;bottom:89px;--tx:31px;--ty:24px;--r:11deg;--d:-.13s}
+.rtg-vending-capsule-v9.c10{left:106px;bottom:91px;--tx:-34px;--ty:20px;--r:-15deg;--d:-.28s}
+
+.rtg-vending-body-v9{
   position:relative;
-  z-index:6;
   width:222px;
-  min-height:124px;
-  margin-top:-8px;
-  padding:15px 14px 13px;
+  min-height:138px;
+  margin-top:-1px;
   display:grid;
-  grid-template-columns:1fr 63px;
-  grid-template-rows:auto 46px;
-  gap:9px 12px;
+  grid-template-columns:1fr 66px;
+  grid-template-rows:68px 50px;
+  gap:8px 10px;
+  padding:12px 12px 11px;
   border:5px solid #111216;
-  border-radius:9px 9px 18px 18px;
-  background:linear-gradient(145deg,#ffd21f 0 71%,#efaa20 71% 100%);
-  box-shadow:7px 8px 0 #111216;
+  border-radius:0 0 12px 12px;
+  background:
+    linear-gradient(145deg,#ffd21f 0 69%,#f0ad22 69% 100%);
 }
-.rtg-vending-price-v8{
-  min-height:55px;
+.rtg-vending-info-v9{
   display:grid;
   place-items:center;
   align-content:center;
-  padding:5px 8px;
   border:3px solid #111216;
-  border-radius:4px;
+  border-radius:5px;
   background:#fffdf7;
   color:#111216;
-  box-shadow:inset 0 -4px 0 #e5dfd2;
+  box-shadow:inset 0 -5px 0 #e9e3d5;
 }
-.rtg-vending-price-v8 small{font:950 7px/1 system-ui,sans-serif;letter-spacing:.12em;}
-.rtg-vending-price-v8 strong{font:1000 22px/.95 system-ui,sans-serif;}
-.rtg-vending-knob-v8{
+.rtg-vending-info-v9 small{font:950 7px/1 system-ui,sans-serif;letter-spacing:.11em;}
+.rtg-vending-info-v9 strong{font:1000 25px/.92 system-ui,sans-serif;}
+.rtg-vending-crank-v9{
   position:relative;
-  width:58px;
-  height:58px;
-  display:grid;
-  place-items:center;
+  width:60px;height:60px;
   align-self:center;
   justify-self:center;
   border:4px solid #111216;
   border-radius:50%;
-  background:radial-gradient(circle at 40% 32%,#f6f6f1 0 18%,#888 19% 58%,#444 59% 100%);
-  box-shadow:2px 3px 0 rgba(17,18,22,.38);
+  background:radial-gradient(circle at 37% 30%,#f4f4ee 0 17%,#8b8b87 18% 58%,#4d4d4b 59% 100%);
+  box-shadow:2px 3px 0 rgba(17,18,22,.36);
 }
-.rtg-vending-knob-v8 span{
-  width:11px;
-  height:37px;
+.rtg-vending-crank-v9 span{
+  position:absolute;
+  left:50%;top:50%;
+  width:12px;height:39px;
+  margin:-19px 0 0 -6px;
   border:3px solid #111216;
-  border-radius:6px;
+  border-radius:5px;
   background:#ffd21f;
-  box-shadow:inset 0 -7px 0 #e6a413;
+  box-shadow:inset 0 -8px 0 #e7a415;
 }
-.rtg-vending-mouth-v8{
-  grid-column:1 / 3;
+.rtg-vending-chute-v9{
+  grid-column:1 / 2;
   position:relative;
-  min-height:43px;
+  overflow:hidden;
+  border:4px solid #111216;
+  border-radius:6px 6px 12px 12px;
+  background:#191a1d;
+  box-shadow:inset 0 7px 0 #34363a;
+}
+.rtg-vending-chute-v9 span{
+  position:absolute;
+  left:50%;bottom:-5px;
+  width:88px;height:30px;
+  transform:translateX(-50%);
+  border-radius:50% 50% 0 0;
+  background:#050607;
+}
+.rtg-vending-brand-v9{
+  grid-column:2;
   display:grid;
   place-items:center;
-  border:4px solid #111216;
-  border-radius:8px 8px 18px 18px;
+  border:3px solid #111216;
   background:#111216;
-  overflow:hidden;
+  color:#ffd21f;
+  font:1000 15px/1 system-ui,sans-serif;
+  letter-spacing:.08em;
 }
-.rtg-vending-mouth-v8 span{
-  width:86px;
-  height:24px;
-  border-radius:0 0 44px 44px;
-  background:#050607;
-  box-shadow:inset 0 7px 0 #2c2e31;
-}
-.rtg-vending-drop-v8{
+.rtg-vending-prize-track-v9{
   position:absolute;
-  z-index:10;
-  left:50%;
-  top:39%;
-  width:52px;
-  height:177px;
-  transform:translateX(-50%);
+  z-index:12;
+  left:22px;
+  bottom:22px;
+  width:126px;
+  height:100px;
   pointer-events:none;
 }
-.rtg-vending-prize-ball-v8{
+.rtg-vending-prize-v9{
   position:absolute;
   left:50%;
-  top:0;
-  width:42px;
-  height:42px;
+  top:-52px;
+  width:43px;height:43px;
   opacity:0;
   border:4px solid #111216;
   border-radius:50%;
-  background:linear-gradient(160deg,#fff 0 48%,#ffd21f 49% 100%);
-  box-shadow:0 0 0 0 var(--rtg-vending-reveal),3px 4px 0 rgba(17,18,22,.25);
-  transform:translate(-50%,-18px) scale(.72);
+  background:linear-gradient(165deg,#fff 0 47%,#ffd21f 48% 100%);
+  box-shadow:0 0 0 0 var(--rtg-vending-reveal),3px 4px 0 rgba(17,18,22,.24);
+  transform:translate(-50%,0) scale(.82);
 }
-.rtg-vending-machine-v8.is-turning{
-  animation:rtg-vending-v8-body 1.05s cubic-bezier(.2,.8,.25,1) both;
-}
-.rtg-vending-machine-v8.is-turning .rtg-vending-knob-v8{
-  animation:rtg-vending-v8-knob .86s cubic-bezier(.16,.76,.22,1) both;
-}
-.rtg-vending-machine-v8.is-turning .rtg-vending-ball-v8{
-  animation:rtg-vending-v8-mix .36s ease-in-out var(--delay,0s) infinite alternate;
-}
-.rtg-vending-machine-v8.is-revealing .rtg-vending-ball-v8{
-  animation-play-state:paused;
-}
-.rtg-vending-machine-v8.is-revealing .rtg-vending-prize-ball-v8{
-  animation:rtg-vending-v8-drop .72s cubic-bezier(.15,.72,.28,1) both;
-}
-.rtg-vending-machine-v8.is-revealing .rtg-vending-mouth-v8{
-  animation:rtg-vending-v8-mouth .72s ease-out both;
-}
-.rtg-vending-machine-v8[data-pull-rarity="elite"]{--rtg-vending-reveal:#8254d1;}
-.rtg-vending-machine-v8[data-pull-rarity="mondiale"]{--rtg-vending-reveal:#d93842;}
-.rtg-vending-machine-v8[data-pull-rarity="forte"]{--rtg-vending-reveal:#27a8e8;}
-.rtg-vending-machine-v8[data-pull-rarity="buono"]{--rtg-vending-reveal:#2fa866;}
-.rtg-vending-machine-v8[data-pull-rarity="normale"]{--rtg-vending-reveal:#929ba8;}
-.rtg-vending-machine-v8[data-pull-rarity="leggenda"]{--rtg-vending-reveal:#d4a017;}
-.rtg-vending-machine-v8[data-pull-rarity="aurico"]{--rtg-vending-reveal:#f5c842;}
-@keyframes rtg-vending-v8-knob{
+
+.rtg-vending-machine-v9.is-turning{animation:rtg-vending-v9-body .98s ease-out both;}
+.rtg-vending-machine-v9.is-turning .rtg-vending-crank-v9{animation:rtg-vending-v9-crank .88s cubic-bezier(.18,.72,.22,1) both;}
+.rtg-vending-machine-v9.is-turning .rtg-vending-capsule-v9{animation:rtg-vending-v9-mix .34s ease-in-out var(--d,0s) infinite alternate;}
+.rtg-vending-machine-v9.is-revealing .rtg-vending-capsule-v9{animation-play-state:paused;}
+.rtg-vending-machine-v9.is-revealing .rtg-vending-prize-v9{animation:rtg-vending-v9-drop .72s cubic-bezier(.18,.72,.28,1) both;}
+.rtg-vending-machine-v9.is-revealing .rtg-vending-chute-v9{animation:rtg-vending-v9-chute .72s ease-out both;}
+
+.rtg-vending-machine-v9[data-pull-rarity="normale"]{--rtg-vending-reveal:#929ba8}
+.rtg-vending-machine-v9[data-pull-rarity="buono"]{--rtg-vending-reveal:#2fa866}
+.rtg-vending-machine-v9[data-pull-rarity="forte"]{--rtg-vending-reveal:#27a8e8}
+.rtg-vending-machine-v9[data-pull-rarity="elite"]{--rtg-vending-reveal:#8254d1}
+.rtg-vending-machine-v9[data-pull-rarity="mondiale"]{--rtg-vending-reveal:#d93842}
+.rtg-vending-machine-v9[data-pull-rarity="leggenda"]{--rtg-vending-reveal:#d4a017}
+.rtg-vending-machine-v9[data-pull-rarity="aurico"]{--rtg-vending-reveal:#f5c842}
+
+@keyframes rtg-vending-v9-crank{
   0%{transform:rotate(0deg)}
-  68%{transform:rotate(610deg)}
-  84%{transform:rotate(690deg)}
+  70%{transform:rotate(590deg)}
+  86%{transform:rotate(675deg)}
   100%{transform:rotate(720deg)}
 }
-@keyframes rtg-vending-v8-mix{
-  0%{transform:translate3d(0,0,0) rotate(0deg)}
-  52%{transform:translate3d(var(--mx,22px),var(--my,-36px),0) rotate(var(--spin,140deg))}
-  100%{transform:translate3d(-12px,9px,0) rotate(-72deg)}
+@keyframes rtg-vending-v9-mix{
+  0%{transform:translate3d(0,0,0) rotate(var(--r,0deg))}
+  55%{transform:translate3d(var(--tx,28px),var(--ty,-34px),0) rotate(130deg)}
+  100%{transform:translate3d(-10px,8px,0) rotate(-62deg)}
 }
-@keyframes rtg-vending-v8-body{
-  0%,100%{transform:translate3d(0,0,0) rotate(0deg)}
-  18%{transform:translate3d(-3px,-2px,0) rotate(-.7deg)}
-  36%{transform:translate3d(4px,1px,0) rotate(.8deg)}
-  56%{transform:translate3d(-2px,0,0) rotate(-.4deg)}
-  72%{transform:translate3d(2px,0,0) rotate(.3deg)}
+@keyframes rtg-vending-v9-body{
+  0%,100%{transform:translate3d(0,0,0)}
+  25%{transform:translate3d(-2px,0,0)}
+  48%{transform:translate3d(2px,0,0)}
+  72%{transform:translate3d(-1px,0,0)}
 }
-@keyframes rtg-vending-v8-drop{
-  0%{opacity:0;transform:translate(-50%,-22px) scale(.72);box-shadow:0 0 0 0 var(--rtg-vending-reveal),3px 4px 0 rgba(17,18,22,.25)}
+@keyframes rtg-vending-v9-drop{
+  0%{opacity:0;transform:translate(-50%,-18px) scale(.8);box-shadow:0 0 0 0 var(--rtg-vending-reveal)}
   18%{opacity:1}
-  68%{opacity:1;transform:translate(-50%,98px) scale(1);box-shadow:0 0 0 4px var(--rtg-vending-reveal),0 0 24px 8px color-mix(in srgb,var(--rtg-vending-reveal) 66%,transparent)}
-  100%{opacity:1;transform:translate(-50%,119px) scale(.9);box-shadow:0 0 0 2px var(--rtg-vending-reveal),0 0 18px 5px color-mix(in srgb,var(--rtg-vending-reveal) 48%,transparent)}
+  72%{opacity:1;transform:translate(-50%,79px) scale(1);box-shadow:0 0 0 4px var(--rtg-vending-reveal),0 0 24px 8px color-mix(in srgb,var(--rtg-vending-reveal) 64%,transparent)}
+  100%{opacity:1;transform:translate(-50%,86px) scale(.92);box-shadow:0 0 0 2px var(--rtg-vending-reveal),0 0 17px 5px color-mix(in srgb,var(--rtg-vending-reveal) 45%,transparent)}
 }
-@keyframes rtg-vending-v8-mouth{
-  0%,32%{box-shadow:inset 0 0 0 0 var(--rtg-vending-reveal)}
-  58%,100%{box-shadow:inset 0 0 0 4px var(--rtg-vending-reveal),0 0 18px color-mix(in srgb,var(--rtg-vending-reveal) 58%,transparent)}
+@keyframes rtg-vending-v9-chute{
+  0%,35%{box-shadow:inset 0 7px 0 #34363a}
+  62%,100%{box-shadow:inset 0 7px 0 #34363a,0 0 0 4px var(--rtg-vending-reveal),0 0 18px color-mix(in srgb,var(--rtg-vending-reveal) 52%,transparent)}
 }
 
-/* Rarity chips: Elite and Mondiale use their actual rarity colours. */
+/* Rarity rate chips — every rarity uses the same full-colour treatment. */
+.rtg-vending-ratebar>span[data-rarity="Normale"]{
+  background:#929ba8!important;border-color:#68717d!important;color:#fff!important;box-shadow:inset 0 -4px 0 #68717d!important;
+}
+.rtg-vending-ratebar>span[data-rarity="Buono"]{
+  background:#2fa866!important;border-color:#1e7446!important;color:#fff!important;box-shadow:inset 0 -4px 0 #1e7446!important;
+}
+.rtg-vending-ratebar>span[data-rarity="Forte"]{
+  background:#27a8e8!important;border-color:#176f9e!important;color:#fff!important;box-shadow:inset 0 -4px 0 #176f9e!important;
+}
 .rtg-vending-ratebar>span[data-rarity="Elite"]{
-  background:#8254d1!important;
-  border-color:#5f389f!important;
-  color:#fff!important;
-  box-shadow:inset 0 -4px 0 #5f389f!important;
+  background:#8254d1!important;border-color:#5f389f!important;color:#fff!important;box-shadow:inset 0 -4px 0 #5f389f!important;
 }
-.rtg-vending-ratebar>span[data-rarity="Elite"] em{color:#f3eaff!important;}
 .rtg-vending-ratebar>span[data-rarity="Mondiale"]{
-  background:#d93842!important;
-  border-color:#9f222b!important;
-  color:#fff!important;
-  box-shadow:inset 0 -4px 0 #9f222b!important;
+  background:#d93842!important;border-color:#9f222b!important;color:#fff!important;box-shadow:inset 0 -4px 0 #9f222b!important;
 }
-.rtg-vending-ratebar>span[data-rarity="Mondiale"] em{color:#ffe8e9!important;}
+.rtg-vending-ratebar>span[data-rarity="Leggenda"]{
+  background:#d4a017!important;border-color:#946f0d!important;color:#171006!important;box-shadow:inset 0 -4px 0 #946f0d!important;
+}
+.rtg-vending-ratebar>span[data-rarity="Aurico"]{
+  background:#f5c842!important;border-color:#b98d13!important;color:#171006!important;box-shadow:inset 0 -4px 0 #b98d13!important;
+}
+.rtg-vending-ratebar>span em{color:inherit!important;opacity:.92;}
 
 @media(max-width:430px){
-  .rtg-vending-machine-v8{width:min(226px,66vw);}
-  .rtg-vending-globe-v8{width:190px;height:169px;}
-  .rtg-vending-cabinet-v8{width:205px;}
-  .rtg-vending-drop-v8{height:164px;}
+  .rtg-vending-machine-v9{width:min(222px,66vw);}
+  .rtg-vending-head-v9,.rtg-vending-window-v9{width:190px;}
+  .rtg-vending-window-v9{height:158px;}
+  .rtg-vending-body-v9{width:205px;min-height:130px;}
+  .rtg-vending-capsule-v9{width:37px;height:37px;}
 }
 @media(prefers-reduced-motion:reduce){
-  .rtg-vending-machine-v8.is-turning,
-  .rtg-vending-machine-v8.is-turning .rtg-vending-knob-v8,
-  .rtg-vending-machine-v8.is-turning .rtg-vending-ball-v8,
-  .rtg-vending-machine-v8.is-revealing .rtg-vending-prize-ball-v8,
-  .rtg-vending-machine-v8.is-revealing .rtg-vending-mouth-v8{
+  .rtg-vending-machine-v9.is-turning,
+  .rtg-vending-machine-v9.is-turning .rtg-vending-crank-v9,
+  .rtg-vending-machine-v9.is-turning .rtg-vending-capsule-v9,
+  .rtg-vending-machine-v9.is-revealing .rtg-vending-prize-v9,
+  .rtg-vending-machine-v9.is-revealing .rtg-vending-chute-v9{
     animation-duration:.01ms!important;
     animation-iteration-count:1!important;
   }
