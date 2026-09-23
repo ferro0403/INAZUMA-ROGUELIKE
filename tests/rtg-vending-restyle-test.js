@@ -4,11 +4,11 @@ const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalT
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),c);
 const view=c.RoadToGloryRunView.create({escapeHtml:s=>String(s)});
 const html=view.vendingMarkup({tokens:900,candidates:["a","b","c"],rarities:[{rarity:"Normale",weight:40},{rarity:"Forte",weight:18}]});
-assert.match(html,/rtg-vending-machine-v8/);
-assert.match(html,/rtg-vending-globe-v8/);
-assert.match(html,/rtg-vending-knob-v8/);
-assert.match(html,/rtg-vending-prize-ball-v8/);
-assert.strictEqual((html.match(/rtg-vending-ball-v8/g)||[]).length,12);
+assert.match(html,/rtg-vending-machine-v9/);
+assert.match(html,/rtg-vending-window-v9/);
+assert.match(html,/rtg-vending-crank-v9/);
+assert.match(html,/rtg-vending-prize-v9/);
+assert.strictEqual((html.match(/rtg-vending-capsule-v9/g)||[]).length,10);
 assert.doesNotMatch(html,/assets\/rtg\/rtg-gacha-machine\.webp/);
 assert.doesNotMatch(html,/rtg-vending-machine-v3|rtg-vending-machine-v4|rtg-vending-machine-v5|rtg-vending-machine-v6|rtg-vending-machine-v7|rtg-vending-3d/);
 assert.match(html,/rtg-vending-wallet-chip/);
