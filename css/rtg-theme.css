@@ -822,3 +822,30 @@ button.player-card:has(> .rtg-legacy-badge),
 
 /* Compact left-aligned OVR sorter in replacement picker. */
 .rtg-squad-picker .rtg-picker-ovr-sort{display:inline-flex!important;width:auto!important;min-width:0!important;min-height:0!important;padding:9px 14px!important;margin:10px 0 18px!important;align-self:flex-start!important;font-size:16px!important;line-height:1!important;box-shadow:4px 4px 0 #ffd21f!important;}
+
+/* Final compact OVR sort: override toolbar/grid stretching explicitly. */
+.rtg-picker-toolbar>.rtg-picker-ovr-sort,
+.rtg-squad-picker .rtg-picker-toolbar>.rtg-picker-ovr-sort{
+  display:flex!important;
+  box-sizing:border-box!important;
+  width:88px!important;
+  min-width:88px!important;
+  max-width:88px!important;
+  height:42px!important;
+  min-height:42px!important;
+  max-height:42px!important;
+  padding:0!important;
+  margin:10px auto 18px 0!important;
+  justify-self:start!important;
+  align-self:start!important;
+  align-items:center!important;
+  justify-content:center!important;
+  flex:0 0 88px!important;
+  grid-column:auto!important;
+  border:3px solid #111216!important;
+  background:#111216!important;
+  color:#ffd21f!important;
+  box-shadow:4px 4px 0 #ffd21f!important;
+  font-size:16px!important;
+  line-height:1!important;
+}
