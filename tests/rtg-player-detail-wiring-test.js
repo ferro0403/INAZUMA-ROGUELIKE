@@ -49,6 +49,36 @@ const controller=c.RoadToGloryController.create({
   assert.strictEqual(detailCalls[0].options.readOnly,true);
   assert.strictEqual(detailCalls[0].options.equipment,null);
   assert.strictEqual(detailCalls[0].options.database,freeDb);
+  assert.strictEqual(detailCalls[0].options.rtgLegacyLabel,"");
   assert.strictEqual(detailCalls[0].options.onClose,restoreUnlock);
+
+  const legacyCalls=[];
+  const legacyIdentity={
+    FREE_AGENTS:"free_agents",
+    parse:(ref)=>{
+      const raw=String(ref?.cardId||ref||"");
+      if(raw.startsWith("free_agents::"))return{cardId:raw,playerId:raw.slice(13),legacySeasonId:"free_agents",sourceKind:"free_agents"};
+      if(raw.startsWith("ie1::"))return{cardId:raw,playerId:raw.slice(5),legacySeasonId:"ie1",sourceKind:"season"};
+      return{cardId:raw,playerId:raw,legacySeasonId:null,sourceKind:"legacy"};
+    },
+    legacyLabel:(seasonId)=>seasonId==="ie1"?"S1":"",
+  };
+  const legacyController=c.RoadToGloryController.create({
+    cardIdentity:legacyIdentity,
+    playerResolver:{
+      resolveAtLevel20:(ref)=>({playerId:"d1",cardId:String(ref),legacySeasonId:String(ref).startsWith("ie1::")?"ie1":"free_agents",name:"D1",normalizedRole:"DF",position:"DF",finalOverall:70,overall:70,level:20}),
+      resolveVersion:(ref)=>({seasonId:String(ref).startsWith("free_agents::")?"free_agents":"ie1"}),
+      resolveMove:()=>null,
+    },
+    showPlayerDetailsFor:(player,options)=>legacyCalls.push({player,options}),
+    toast:()=>{},
+  });
+  legacyController.openRtgPlayerDetails("ie1::d1");
+  legacyController.openRtgPlayerDetails("free_agents::d1");
+  assert.strictEqual(legacyCalls[0].options.rtgLegacyLabel,"S1");
+  assert.strictEqual(legacyCalls[1].options.rtgLegacyLabel,"");
+  const playerViewSource=fs.readFileSync("js/player/player-view.js","utf8");
+  assert.match(playerViewSource,/player-detail-rtg-legacy-badge/);
+  assert.match(playerViewSource,/detailTopBadges/);
   console.log("rtg-player-detail-wiring-test: PASS");
 })().catch(error=>{console.error(error);process.exitCode=1;});
