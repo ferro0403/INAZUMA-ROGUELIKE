@@ -668,8 +668,8 @@
       const final=Math.max(0,Math.min(100,Number(resolution.probability??50)));
       const other=100-final;
       const userMove=!!resolution.userUsedMove, aiMove=!!resolution.aiUsedMove;
-      const userMoveCategory=moveCategoryClass({type:resolution.userMoveType},resolution.userKind);
-      const aiMoveCategory=moveCategoryClass({type:resolution.aiMoveType},resolution.aiKind);
+      const userMoveCategory=moveCategoryClass(null,resolution.userKind);
+      const aiMoveCategory=moveCategoryClass(null,resolution.aiKind);
       const userRarityClass=duelRarityClass(user), opponentRarityClass=duelRarityClass(opponent);
       return `<section class="panel rtg-duel-card rtg-duel-card--clean rtg-duel-resolving rtg-paper-modal development-squad-card-scope">
         <div class="rtg-duel-resolving-head"><small>SCELTE BLOCCATE</small><strong>CONFRONTO FINALE</strong></div>
@@ -691,8 +691,8 @@
       const aiAction = resolution.aiChoiceLabel || baseResultActionLabel(resolution.aiKind,resolution.actorSide==="opponent");
       const userMove = !!resolution.userUsedMove;
       const aiMove = !!resolution.aiUsedMove;
-      const userMoveCategory = moveCategoryClass({type:resolution.userMoveType},resolution.userKind);
-      const aiMoveCategory = moveCategoryClass({type:resolution.aiMoveType},resolution.aiKind);
+      const userMoveCategory = moveCategoryClass(null,resolution.userKind);
+      const aiMoveCategory = moveCategoryClass(null,resolution.aiKind);
       const userRarityClass = duelRarityClass(user);
       const opponentRarityClass = duelRarityClass(opponent);
       return `<section class="panel rtg-duel-card rtg-duel-card--clean rtg-duel-resolving rtg-paper-modal development-squad-card-scope">
