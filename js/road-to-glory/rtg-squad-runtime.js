@@ -110,10 +110,17 @@
     return teams.slice(Math.max(0, targetIndex - Math.max(0, Number(window) || 0)), targetIndex).filter((entry) => defeated.has(entry));
   }
 
-  function teamIdsForCard(cardId, activeSeasonId, playerResolver, freeAgentsDb) {
+  function teamIdsForCard(cardId, activeSeasonId, playerResolver, freeAgentsDb, seasonDb = null) {
+    const parsed = cards().parse(cardId);
     const resolved = playerResolver?.resolveVersion?.(cardId, activeSeasonId, freeAgentsDb);
     const player = resolved?.player || playerResolver?.resolveAtLevel20?.(cardId, activeSeasonId, null, freeAgentsDb);
-    return [player?.teamId, ...(player?.teamIds || [])].filter(Boolean).map(id);
+    const seasonPlayer = (seasonDb?.players || []).find((entry) => id(entry?.playerId || entry?.id) === id(parsed.playerId));
+    return [
+      player?.teamId,
+      ...(player?.teamIds || []),
+      seasonPlayer?.teamId,
+      ...(seasonPlayer?.teamIds || []),
+    ].filter(Boolean).map(id);
   }
 
   function mainEligibility({ teamId, state, seasonDb, freeAgentIds = [], freeAgentsDb = null, playerResolver } = {}) {
@@ -132,7 +139,7 @@
     const recruits = activeRoster.map(id).filter((cardId) => recruitSet.has(cardId));
     const recentTeams = recentDefeatedTeamIds(teamId, state, constraint.recentWindow);
     const recentTeamSet = new Set(recentTeams);
-    const recentRecruits = recruits.filter((cardId) => teamIdsForCard(cardId, seasonId, playerResolver, freeAgentsDb).some((team) => recentTeamSet.has(team)));
+    const recentRecruits = recruits.filter((cardId) => teamIdsForCard(cardId, seasonId, playerResolver, freeAgentsDb, seasonDb).some((team) => recentTeamSet.has(team)));
     const reasons = [...(validation.reasons || [])];
     if (power != null && power > Number(constraint.cap)) reasons.push("team-power-cap");
     if (recruits.length < Number(constraint.minRecruit || 0)) reasons.push("min-s1-recruits");
