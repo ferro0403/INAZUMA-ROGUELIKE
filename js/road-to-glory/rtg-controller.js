@@ -360,8 +360,19 @@
     }
     function renderAlbum(){
       syncCurrentPullsIntoAlbum();
-      renderHtml(runView.albumTeamsMarkup({state:campaign,teams:rtgAlbumTeams()}));
+      const teams=rtgAlbumTeams();
+      const total=teams.reduce((sum,team)=>sum+(Number(team.total)||0),0);
+      const unlocked=teams.reduce((sum,team)=>sum+(Number(team.unlocked)||0),0);
+      renderHtml(runView.albumCollectionMarkup({state:campaign,unlocked,total}));
       app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.());
+      app?.querySelector?.("[data-rtg-album-collection]")?.addEventListener("click",()=>renderAlbumTeams());
+      mountDevQuickTools();
+      return campaign;
+    }
+    function renderAlbumTeams(){
+      syncCurrentPullsIntoAlbum();
+      renderHtml(runView.albumTeamsMarkup({state:campaign,teams:rtgAlbumTeams()}));
+      app?.querySelector?.("[data-rtg-album-collection-back]")?.addEventListener("click",()=>renderAlbum());
       app?.querySelectorAll?.("[data-rtg-album-team]")?.forEach(button=>button.addEventListener("click",()=>renderAlbumRoster(button.dataset.rtgAlbumTeam)));
       mountDevQuickTools();
       return campaign;
