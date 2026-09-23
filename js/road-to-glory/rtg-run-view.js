@@ -87,7 +87,7 @@
               const meta=identity?.parse?.(result.cardId||player?.cardId||{playerId:result.playerId||player?.playerId,legacySeasonId:result.legacySeasonId||player?.legacySeasonId});
               if(meta?.sourceKind!=="season")return "";
               const label=identity?.legacyLabel?.(meta.legacySeasonId)||"";
-              return label?`<span class="rtg-legacy-badge rtg-legacy-tab" title="Legacy ${escape(label)}">${escape(label)}</span>`:"";
+              return label?`<span class="rtg-legacy-badge rtg-legacy-tab" data-legacy-season="${escape(label)}" title="Legacy ${escape(label)}">${escape(label)}</span>`:"";
             })(),
           })
         : `<div class="rtg-pull-player-fallback"><strong>${escape(playerName)}</strong><span>Lv 20</span></div>`;
