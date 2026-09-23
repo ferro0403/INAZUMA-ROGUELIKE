@@ -813,23 +813,22 @@
       </div>`;
       return `<section class="panel rtg-halftime rtg-halftime-revolution rtg-paper-modal development-squad-card-scope">
         <div class="rtg-halftime-break-banner">
-          <span>45:00 · FINE PRIMO TEMPO</span>
+          <span>45' · FINE PRIMO TEMPO</span>
           <strong>INTERVALLO</strong>
-          <em>Controlla la formazione prima della ripresa</em>
+          <em>PREPARA LA SQUADRA PER LA RIPRESA</em>
         </div>
         <header class="rtg-halftime-scoreboard">
-          <div class="rtg-halftime-minute"><strong>45'</strong><span>FINE 1° TEMPO</span></div>
+          <div class="rtg-halftime-minute"><small>FINE 1° TEMPO</small><strong>45'</strong></div>
           <div class="rtg-halftime-score"><small>${escape(userName)}</small><strong>${escape(scoreUser)} - ${escape(scoreOpponent)}</strong><small>${escape(match.opponentSquad?.name || "AVVERSARIO")}</small></div>
           <div class="rtg-halftime-shape"><small>MODULO</small><strong>${escape(model.formationId || "—")}</strong></div>
         </header>
-        <div class="rtg-halftime-tip"><strong>CAMBIO RUOLO PER RUOLO</strong><span>Tocca un titolare, poi una riserva evidenziata.</span></div>
         <div class="rtg-halftime-layout">
           <section class="rtg-halftime-field-panel">
             <div class="rtg-halftime-section-title"><span>IN CAMPO</span><b>45:00</b></div>
             ${lineupMarkup}
           </section>
           <aside class="rtg-halftime-bench-panel">
-            <div class="rtg-halftime-section-title"><span>PANCHINA</span><b>${escape(bench.length)}</b></div>
+            <div class="rtg-halftime-section-title"><span>PANCHINA</span></div>
             <div class="rtg-halftime-bench-strip">
               ${bench.map((player) => {
                 const compatible = !!selected && role(player) === selectedRole;
