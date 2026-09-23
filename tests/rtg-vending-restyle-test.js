@@ -12,7 +12,7 @@ assert.match(html,/rtg-vending-chute-well-v9/);
 assert.match(html,/rtg-vending-funnel-v10/);
 assert.match(html,/rtg-vending-chute-flap-v10/);
 assert.match(html,/rtg-vending-chute-v9[^>]*>[\s\S]*rtg-vending-prize-track-v9/);
-assert.strictEqual((html.match(/rtg-vending-capsule-v9/g)||[]).length,10);
+assert.strictEqual((html.match(/rtg-vending-capsule-v9/g)||[]).length,14);
 assert.strictEqual((html.match(/data-capsule-rarity=/g)||[]).length,10);
 assert.match(html,/data-capsule-rarity="normale"/);
 assert.match(html,/data-capsule-rarity="forte"/);
