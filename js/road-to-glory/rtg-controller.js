@@ -40,6 +40,30 @@
     const schedule=deps.setTimeout||global.setTimeout;
     const cancelSchedule=deps.clearTimeout||global.clearTimeout;
     const DEV_MODE=deps.devMode===true||(typeof global.URLSearchParams==="function"&&new global.URLSearchParams(global.location?.search||"").get("dev")==="1");
+    const RTG_ALBUM_STORAGE_KEY="inazuma.rtg.album.v1";
+
+    function readRtgAlbum(){
+      try{
+        const raw=global.localStorage?.getItem?.(RTG_ALBUM_STORAGE_KEY);
+        const parsed=raw?JSON.parse(raw):{};
+        return {cardIds:Array.from(new Set(Array.isArray(parsed?.cardIds)?parsed.cardIds.map(id).filter(Boolean):[]))};
+      }catch(_error){return {cardIds:[]};}
+    }
+    function writeRtgAlbum(cardIds){
+      const normalized=Array.from(new Set(Array.from(cardIds||[]).map(id).filter(Boolean)));
+      try{global.localStorage?.setItem?.(RTG_ALBUM_STORAGE_KEY,JSON.stringify({version:1,cardIds:normalized}));}catch(_error){}
+      return normalized;
+    }
+    function rememberRtgAlbumCard(cardRef){
+      const cardId=cardMeta(cardRef).cardId;
+      if(!cardId)return readRtgAlbum().cardIds;
+      return writeRtgAlbum([...readRtgAlbum().cardIds,cardId]);
+    }
+    function syncCurrentPullsIntoAlbum(){
+      const current=Array.from(acquiredCardIdSet(campaign));
+      if(!current.length)return readRtgAlbum().cardIds;
+      return writeRtgAlbum([...readRtgAlbum().cardIds,...current]);
+    }
 
     function renderHtml(html){
       lastRenderedHtml=String(html||"");
@@ -298,6 +322,7 @@
       app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.());
       app?.querySelector?.('[data-rtg-tab="run"]')?.addEventListener("click",()=>renderRun());
       app?.querySelector?.('[data-rtg-tab="squad"]')?.addEventListener("click",()=>renderSquad());
+      app?.querySelector?.('[data-rtg-tab="album"]')?.addEventListener("click",()=>renderAlbum());
     }
     function bindRun(){
       bindHomeAndTabs();
@@ -309,6 +334,17 @@
       const nodes=config.buildSeasonNodes("ie1");
       renderHtml(runView.runMarkup({state:campaign,nodes,seasonDb}));
       bindRun();
+      mountDevQuickTools();
+      return campaign;
+    }
+    function renderAlbum(){
+      syncCurrentPullsIntoAlbum();
+      const entries=readRtgAlbum().cardIds.map(cardId=>playerResolver.resolveAtLevel20(cardId,campaign?.activeSeasonId||"ie1",null,freeAgentsDb)).filter(Boolean);
+      entries.sort((a,b)=>String(a?.name||"").localeCompare(String(b?.name||""),"it"));
+      renderHtml(runView.albumMarkup({state:campaign,entries}));
+      bindHomeAndTabs();
+      app?.querySelector?.("[data-rtg-album-vending]")?.addEventListener("click",()=>openVending());
+      app?.querySelectorAll?.("[data-rtg-album-player]")?.forEach(card=>card.addEventListener("click",()=>openRtgPlayerDetails(card.dataset.rtgAlbumPlayer)));
       mountDevQuickTools();
       return campaign;
     }
@@ -1138,6 +1174,10 @@
       const pool=gacha.previewPool(campaign,seasonDb);
       deps.openModal?.(runView.vendingMarkup({...pool,tokens:campaign.tokens}),{className:"rtg-modal rtg-vending-modal"});
       const modalRoot=deps.getModalRoot?.();
+      modalRoot?.querySelector?.("[data-rtg-vending-album]")?.addEventListener("click",()=>{
+        deps.closeModal?.({invokeOnClose:false});
+        renderAlbum();
+      });
       modalRoot?.querySelector?.("[data-rtg-pull]")?.addEventListener("click",async(event)=>{
         const button=event.currentTarget;
         if(button?.disabled)return;
@@ -1197,6 +1237,7 @@
         result=pulled.result;return pulled.state;
       });
       if(!result)return campaign;
+      rememberRtgAlbumCard(result.cardId||result.playerId);
       const player=playerResolver.resolveAtLevel20(result.cardId,campaign?.activeSeasonId||"ie1",null,freeAgentsDb)||{playerId:result.playerId,cardId:result.cardId,legacySeasonId:result.legacySeasonId,name:result.playerId};
       if(options?.reveal===false)return {result,player};
       showPullResult(result,player);
@@ -1234,11 +1275,12 @@
         openVending();
         return campaign;
       }
+      if(destination==="album")return renderAlbum();
       return renderRun();
     }
 
     return Object.freeze({
-      open,renderRun,renderSquad,openNode,startMatch,confirmPreMatch,chooseEncounter,continueEncounterFlow,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
+      open,renderRun,renderSquad,renderAlbum,openNode,startMatch,confirmPreMatch,chooseEncounter,continueEncounterFlow,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
       swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,adaptSquadToCurrentRequirements,
       getDraftSquad:()=>clone(squadDraft),getState:()=>clone(campaign),getRenderedHtml,
     });
