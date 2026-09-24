@@ -76,9 +76,11 @@ const controller=c.RoadToGloryController.create({
   legacyController.openRtgPlayerDetails("ie1::d1");
   legacyController.openRtgPlayerDetails("free_agents::d1");
   assert.strictEqual(legacyCalls[0].options.rtgLegacyLabel,"S1");
+  assert.strictEqual(legacyCalls[0].options.moveSeasonId,"ie1");
   assert.strictEqual(legacyCalls[1].options.rtgLegacyLabel,"");
   const playerViewSource=fs.readFileSync("js/player/player-view.js","utf8");
   assert.match(playerViewSource,/player-detail-rtg-legacy-badge/);
+  assert.match(playerViewSource,/moveSeasonId, player\.resolvedSeasonId, player\.legacySeasonId/);
   assert.match(playerViewSource,/data-legacy-season/);
   assert.doesNotMatch(playerViewSource,/detailTopBadges/);
   const themeSource=fs.readFileSync("css/rtg-theme.css","utf8");
