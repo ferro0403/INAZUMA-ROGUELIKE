@@ -4,16 +4,18 @@
   const configApi = global.RoadToGloryConfig;
   const rng = global.RoadToGloryRng;
 
-  function nodes() {
-    return Array.from(configApi?.buildSeasonNodes?.("ie1") || []);
-  }
+  let seasonContext = "ie1";
+  function activeSeasonId(state=null){ return String(state?.activeSeasonId||seasonContext||"ie1"); }
+  function cfg(state=null){ return configApi?.season?.(activeSeasonId(state)) || configApi.SEASON1; }
+  function nodes(state=null) { return Array.from(configApi?.buildSeasonNodes?.(activeSeasonId(state)) || []); }
+  function setSeasonContext(state){ seasonContext=activeSeasonId(state); return seasonContext; }
 
   function cloneState(state) {
     return JSON.parse(JSON.stringify(state || {}));
   }
 
   function indexForNodeId(nodeId) {
-    return nodes().findIndex((node) => node.id === String(nodeId || ""));
+    return nodes(state).findIndex((node) => node.id === String(nodeId || ""));
   }
 
   function nodeIndex(state) {
@@ -29,14 +31,14 @@
   }
 
   function nextNodeId(state) {
-    const list = nodes();
+    const list = nodes(state);
     const current = nodeIndex(state);
     if (current < 0 || current >= list.length - 1) return null;
     return list[current + 1].id;
   }
 
   function advanceIfCurrent(state, completedNodeId) {
-    const list = nodes();
+    const list = nodes(state);
     if (String(state.currentNodeId || "") !== String(completedNodeId || "")) return state;
     const completedIndex = indexForNodeId(completedNodeId);
     const next = completedIndex >= 0 ? list[completedIndex + 1] : null;
@@ -51,8 +53,8 @@
 
   function recordMainVictory(inputState, { teamId, matchId } = {}) {
     const state = cloneState(inputState);
-    const cfg = configApi.SEASON1;
-    const mainIndex = cfg.mainTeams.indexOf(String(teamId || ""));
+    const seasonCfg = cfg(state);
+    const mainIndex = seasonCfg.mainTeams.indexOf(String(teamId || ""));
     if (mainIndex < 0) throw Object.assign(new Error("Unknown RTG main team"), { code: "rtg-main-team-unknown" });
     const mainNodeId = `main:${teamId}`;
     const defeated = new Set(state.defeatedTeamIds || []);
@@ -62,12 +64,12 @@
       state.defeatedTeamIds = Array.from(defeated);
       if (matchId != null) state.firstClearMatchIds = Array.from(new Set([...(state.firstClearMatchIds || []), String(matchId)]));
     }
-    state.tokens = Math.max(0, Number(state.tokens) || 0) + Number(cfg.mainRewards[String(teamId)] || 0);
-    if (cfg.checkpointMainIndexes.includes(mainIndex)) {
+    state.tokens = Math.max(0, Number(state.tokens) || 0) + Number(seasonCfg.mainRewards[String(teamId)] || 0);
+    if (seasonCfg.checkpointMainIndexes.includes(mainIndex)) {
       state.checkpointMainIndex = mainIndex;
-      state.lives = cfg.livesPerCheckpoint;
+      state.lives = seasonCfg.livesPerCheckpoint;
     }
-    if (mainIndex === cfg.mainTeams.length - 1) state.seasonComplete = true;
+    if (mainIndex === seasonCfg.mainTeams.length - 1) state.seasonComplete = true;
     advanceIfCurrent(state, mainNodeId);
     return state;
   }
@@ -75,15 +77,15 @@
   function rollbackNodeId(state) {
     const checkpointIndex = Number(state?.checkpointMainIndex);
     if (!Number.isInteger(checkpointIndex) || checkpointIndex < 0) return "main:occult";
-    const checkpointTeam = configApi.SEASON1.mainTeams[checkpointIndex];
+    const checkpointTeam = cfg(state).mainTeams[checkpointIndex];
     const checkpointNodeIndex = indexForNodeId(`main:${checkpointTeam}`);
-    const list = nodes();
+    const list = nodes(state);
     return list[checkpointNodeIndex + 1]?.id || `main:${checkpointTeam}`;
   }
 
   function recordMainLoss(inputState, { nodeId } = {}) {
     const state = cloneState(inputState);
-    const maxLives = configApi.SEASON1.livesPerCheckpoint;
+    const maxLives = cfg(state).livesPerCheckpoint;
     const currentLives = Math.max(0, Number(state.lives) || 0);
     if (currentLives > 1) {
       state.lives = currentLives - 1;
@@ -98,7 +100,7 @@
   function recordSecondaryResult(inputState, { nodeId, result, attemptNumber } = {}) {
     const state = cloneState(inputState);
     const id = String(nodeId || "");
-    const node = nodes().find((candidate) => candidate.id === id);
+    const node = nodes(state).find((candidate) => candidate.id === id);
     if (!node || node.type !== "secondary") throw Object.assign(new Error("Unknown RTG secondary node"), { code: "rtg-secondary-node-unknown" });
     const attempts = state.attemptsByNode && typeof state.attemptsByNode === "object" ? state.attemptsByNode : {};
     const previous = attempts[id] && typeof attempts[id] === "object" ? attempts[id] : {};
@@ -111,7 +113,7 @@
     };
     if (normalizedResult === "victory") {
       const reward = rng.weightedPick(
-        configApi.SEASON1.secondaryRewards,
+        cfg(state).secondaryRewards,
         (item) => item.weight,
         rng.float(state.campaignSeed, `secondary-reward:${id}`, attemptNumber)
       );
@@ -125,6 +127,7 @@
   }
 
   global.RoadToGloryProgression = Object.freeze({
+    setSeasonContext,
     nodeIndex,
     isNodeUnlocked,
     nextNodeId,
