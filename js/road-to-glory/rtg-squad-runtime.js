@@ -114,10 +114,15 @@
     const parsed = cards().parse(cardId);
     const resolved = playerResolver?.resolveVersion?.(cardId, activeSeasonId, freeAgentsDb);
     const player = resolved?.player || playerResolver?.resolveAtLevel20?.(cardId, activeSeasonId, null, freeAgentsDb);
-    const seasonPlayer = (seasonDb?.players || []).find((entry) => id(entry?.playerId || entry?.id) === id(parsed.playerId));
+    const profileId=id(parsed.profileId||parsed.playerId);
+    const seasonProfile=(seasonDb?.profiles||[]).find((entry)=>id(entry?.profileId||entry?.id)===profileId);
+    const canonicalId=id(seasonProfile?.playerId||parsed.canonicalPlayerId||parsed.playerId).split("@")[0];
+    const seasonPlayer = (seasonDb?.players || []).find((entry) => id(entry?.playerId || entry?.id) === canonicalId);
     return [
       player?.teamId,
       ...(player?.teamIds || []),
+      seasonProfile?.teamId,
+      ...(seasonProfile?.teamIds || []),
       seasonPlayer?.teamId,
       ...(seasonPlayer?.teamIds || []),
     ].filter(Boolean).map(id);
