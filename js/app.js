@@ -569,7 +569,22 @@
     return drainPermanentEffects();
   }
 
-  function renderAlbumCollections(...args) { return albumController.renderCollections(...args); }
+  async function renderAlbumCollections(...args) {
+    try {
+      return await albumController.renderCollections(...args);
+    } catch (error) {
+      console.error("Album open failed", error);
+      // The permanent Album is a Home mode. If its legacy/backfill bootstrap is
+      // unavailable, open the Album surface without routing through RTG.
+      closeModal({ invokeOnClose: false });
+      const collections=Object.values(global.AlbumProgress?.ALBUM_COLLECTIONS||{});
+      app.innerHTML=`<main class="album-screen album-collections-screen"><header class="topbar album-topbar album-collections-topbar">${sectionRootButton("albumRoot","album-collections-home-button")}<div class="album-collections-heading"><p class="eyebrow">ALBUM</p><h1>COLLEZIONI</h1></div><span class="album-collections-topbar-spacer" aria-hidden="true"></span></header><section class="album-collection-grid">${collections.map(collection=>`<button type="button" class="panel album-collection-card" data-album-collection="${escapeHtml(collection.id)}"><span class="album-collection-content album-collection-content--hero"><span class="album-collection-title">${escapeHtml(collection.name)}</span><span class="album-collection-action">Apri collezione <span aria-hidden="true">→</span></span></span></button>`).join("")}</section></main>`;
+      resetRenderedViewScroll();
+      bindSectionRootNav();
+      document.querySelectorAll("[data-album-collection]").forEach(button=>button.addEventListener("click",()=>renderAlbumTeams(button.dataset.albumCollection)));
+      return null;
+    }
+  }
   function renderAlbumTeams(...args) { return albumController.renderTeams(...args); }
   function renderAlbumRoster(...args) { return albumController.renderRoster(...args); }
   function bindAlbumRosterInteractions(...args) { return albumController.bindRosterInteractions(...args); }
