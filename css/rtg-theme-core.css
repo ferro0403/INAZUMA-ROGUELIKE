@@ -4576,3 +4576,50 @@
  }
  .rtg-prematch-shell .rtg-matchup-vs{width:44px!important}
 }
+
+/* RTG pre-match final centering fix: team axes at exact 25% / 75%, VS at exact 50%. */
+.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-matchup{
+  position:relative!important;
+  display:grid!important;
+  grid-template-columns:1fr 1fr!important;
+  grid-template-areas:"user opponent"!important;
+  gap:0!important;
+  padding-left:0!important;
+  padding-right:0!important;
+}
+.rtg-prematch-shell .rtg-matchup-team--user{
+  grid-area:user!important;
+  width:100%!important;
+}
+.rtg-prematch-shell .rtg-matchup-team--opponent{
+  grid-area:opponent!important;
+  width:100%!important;
+}
+.rtg-prematch-shell .rtg-matchup-vs{
+  position:absolute!important;
+  z-index:4!important;
+  left:50%!important;
+  top:50%!important;
+  width:50px!important;
+  margin:0!important;
+  transform:translate(-50%,-50%)!important;
+}
+.rtg-prematch-shell .rtg-matchup-team,
+.rtg-prematch-shell .rtg-matchup-team-copy{
+  align-items:center!important;
+  justify-items:center!important;
+  text-align:center!important;
+}
+.rtg-prematch-shell .rtg-matchup-emblem,
+.rtg-prematch-shell .rtg-matchup-team-copy > *{
+  margin-left:auto!important;
+  margin-right:auto!important;
+}
+@media(max-width:430px){
+ .rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-matchup{
+   grid-template-columns:1fr 1fr!important;
+   padding-left:0!important;
+   padding-right:0!important;
+ }
+ .rtg-prematch-shell .rtg-matchup-vs{width:44px!important}
+}
