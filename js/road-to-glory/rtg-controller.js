@@ -742,7 +742,7 @@
       }).filter(Boolean);
     }
     function buildRequirementCandidate(formation,teamId,pool){
-      const constraint=config.SEASON1?.constraints?.[teamId];
+      const constraint=activeConfig()?.constraints?.[teamId];
       if(!formation||!constraint)return null;
       const candidates=Array.from(pool||[]);
       const targetPower=Number(constraint.cap);
@@ -962,7 +962,7 @@
       if(!options.quiet)deps.toast?.(`Squadra ${activeSquadSlot} salvata`);
       return renderSquad();
     }
-    function nodeById(nodeId){return Array.from(config.buildSeasonNodes("ie1")).find(node=>node.id===id(nodeId))||null;}
+    function nodeById(nodeId){return Array.from(config.buildSeasonNodes(activeSeasonId())).find(node=>node.id===id(nodeId))||null;}
     function canStartNode(node){
       if(!node)return false;
       if(node.id===campaign.currentNodeId)return true;
