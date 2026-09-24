@@ -995,7 +995,11 @@
     function mainOpponent(node){
       const boss=bossFor(node.teamId);
       if(!boss)throw Object.assign(new Error("Boss RTG non trovato"),{code:"rtg-boss-missing"});
-      return {formationId:boss.bossFormation||null,lineup:(boss.startingXIPlayerIds||[]).map(playerId=>resolvedForTeam(playerId,node.teamId)).filter(Boolean),bench:[],name:boss.teamName||node.teamId||"Avversario",teamId:node.teamId,logoUrl:boss.logoUrl||null};
+      const profileIds=Array.from(boss.startingXIProfileIds||[]);
+      const lineup=profileIds.length
+        ? profileIds.map(profileId=>resolved(cardIdentity?.cardIdForSeason?.(profileId,activeSeasonId())||profileId)).filter(Boolean)
+        : (boss.startingXIPlayerIds||[]).map(playerId=>resolvedForTeam(playerId,node.teamId)).filter(Boolean);
+      return {formationId:boss.bossFormation||boss.matchFormation||null,lineup,bench:[],name:boss.teamName||node.teamId||"Avversario",teamId:node.teamId,logoUrl:boss.logoUrl||null};
     }
     function secondaryOpponent(node,current,attemptNumber){
       const generated=opponentGenerator.generate({seed:`${current.campaignSeed}:${node.id}`,attemptNumber,freeAgentsDb,formations:seasonDb?.formations?.eleven||[],targetMin:node.opponentTargetMin,targetMax:node.opponentTargetMax,playerResolver});
