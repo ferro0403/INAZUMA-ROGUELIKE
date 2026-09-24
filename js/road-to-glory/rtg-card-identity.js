@@ -17,9 +17,8 @@
     const pid = id(playerId);
     if (!pid) return "";
     if (!sid || sid === FREE_AGENTS) return pid;
-    if (pid.includes("@") && global.ProfiledSeasonRuntime?.resolveProfile?.(sid,pid)) {
-      return pid;
-    }
+    const explicitProfile = pid.includes("@") ? global.ProfiledSeasonRuntime?.resolveProfile?.(sid,pid) : null;
+    if (explicitProfile) return id(explicitProfile.playerId || pid);
     return id(
       global.ProfiledSeasonRuntime?.canonicalPlayerId?.(sid, pid)
       || global.SeasonRegistry?.player?.(pid, sid)?.legacyCanonicalPlayerId
@@ -34,7 +33,9 @@
   }
 
   function cardIdForProfile(profileId, seasonId) {
-    return cardIdForSeason(profileId, seasonId);
+    const sid = normalizeSeasonId(seasonId);
+    const pid = id(profileId);
+    return sid && pid ? `${sid}${SEP}${pid}` : "";
   }
 
   function cardIdForFreeAgent(playerId) {
@@ -58,8 +59,17 @@
         return Object.freeze({ cardId: cardIdForFreeAgent(playerId), playerId, legacySeasonId: FREE_AGENTS, sourceKind: FREE_AGENTS });
       }
       if (source && playerId) {
+        const profile = playerId.includes("@") ? global.ProfiledSeasonRuntime?.resolveProfile?.(source, playerId) : null;
         const canonical = canonicalPlayerId(source, playerId);
-        return Object.freeze({ cardId: cardIdForSeason(canonical, source), playerId: canonical, legacySeasonId: source, sourceKind: "season" });
+        const exactPlayerId = profile?.profileId || playerId;
+        return Object.freeze({
+          cardId: profile ? cardIdForProfile(exactPlayerId, source) : cardIdForSeason(canonical, source),
+          playerId: profile ? exactPlayerId : canonical,
+          profileId: profile?.profileId || null,
+          canonicalPlayerId: profile?.playerId || canonical,
+          legacySeasonId: source,
+          sourceKind: "season"
+        });
       }
       return Object.freeze({ cardId: playerId, playerId, legacySeasonId: null, sourceKind: "legacy" });
     }
@@ -74,10 +84,11 @@
         return Object.freeze({ cardId: cardIdForFreeAgent(rawPlayerId), playerId: rawPlayerId, legacySeasonId: FREE_AGENTS, sourceKind: FREE_AGENTS });
       }
       const profile = rawPlayerId.includes("@") ? global.ProfiledSeasonRuntime?.resolveProfile?.(source, rawPlayerId) : null;
-      const canonical = profile ? rawPlayerId : canonicalPlayerId(source, rawPlayerId);
+      const canonical = canonicalPlayerId(source, rawPlayerId);
+      const exactPlayerId = profile?.profileId || rawPlayerId;
       return Object.freeze({
-        cardId: cardIdForSeason(canonical, source),
-        playerId: canonical,
+        cardId: profile ? cardIdForProfile(exactPlayerId, source) : cardIdForSeason(canonical, source),
+        playerId: profile ? exactPlayerId : canonical,
         profileId: profile?.profileId || (rawPlayerId.includes("@") ? rawPlayerId : null),
         canonicalPlayerId: profile?.playerId || canonical,
         legacySeasonId: source,
