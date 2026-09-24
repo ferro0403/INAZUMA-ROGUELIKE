@@ -13,11 +13,13 @@
   // renderer still references this constant; its declaration was accidentally
   // dropped during the Season 2 view refactor, causing a ReferenceError on open.
   const RTG_ALBUM_COVER_URL="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiTljpQy0-8hZqy9NP7BmOZwijtzN9VGYbXEN4bR2bPW8GiaccWADFA3RAlYclPfO8HSr9aEgR8H_NWF-al-1MLXlH6ToD-mMNUKwTsaSKlKvUCEY1xzg_2auQvhA3usKf5qPwV8Iawi6pm/s1600/wallpapers_inazuma11_1_1024x768.jpg";
+  const RTG_ALBUM_S2_COVER_URL="https://static.wikia.nocookie.net/inazuma-eleven/images/9/9b/%28Artwork%29_Aliea_Gakuen_captains.jpg/revision/latest?cb=20120722223451";
 
   function create(deps = {}) {
     const escape = deps.escapeHtml || ((value) => String(value ?? ""));
     const emblem = deps.teamEmblemMarkup || ((teamId) => `<span class="boss-logo-fallback boss-logo-fallback--visible">${escape(String(teamId || "?").slice(0,1).toUpperCase())}</span>`);
     const compactPlayerCardMarkup = deps.compactPlayerCardMarkup || null;
+    const playerCardMarkup = deps.playerCardMarkup || null;
     const tokenIcon=()=>`<img class="rtg-token-icon" src="${RAMEN_STICKER_URL}" alt="" aria-hidden="true" draggable="false">`;
     const skinTokens=(markup)=>String(markup||"").replaceAll("◈",tokenIcon());
     function albumRarityClass(category){
@@ -25,6 +27,7 @@
       return `rarity-${["scarso","debole","normale","buono","forte","elite","mondiale","leggenda","aurico"].includes(rarity)?rarity:"debole"}`;
     }
     function albumTeamLogoMarkup(team={}){
+      if(team?.logoUrl)return `<img src="${escape(team.logoUrl)}" alt="${escape(team.teamName||team.name||"Squadra")}" loading="lazy" decoding="async">`;
       return team?.teamId ? emblem(team.teamId) : '<span class="album-free-agent-logo" aria-hidden="true">⚡</span>';
     }
 
@@ -101,9 +104,9 @@
         const seasonNo=sid==="ie1_s2"?2:1;
         const safeTotal=Math.max(0,Number(collection?.total)||0),safeUnlocked=Math.max(0,Number(collection?.unlocked)||0);
         const percent=safeTotal?Math.round(safeUnlocked/safeTotal*100):0;
-        const cover=sid==="ie1"
-          ? `<span class="album-collection-cover album-collection-cover--hero"><img src="${escape(RTG_ALBUM_COVER_URL)}" alt="" style="object-position:center" loading="lazy" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('is-fallback');"></span>`
-          : '<span class="album-collection-cover album-collection-cover--hero is-fallback" aria-hidden="true"></span>';
+        const coverUrl=sid==="ie1_s2"?RTG_ALBUM_S2_COVER_URL:RTG_ALBUM_COVER_URL;
+        const focalPoint=sid==="ie1_s2"?"center 42%":"center";
+        const cover=`<span class="album-collection-cover album-collection-cover--hero"><img src="${escape(coverUrl)}" alt="" style="object-position:${escape(focalPoint)}" loading="lazy" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('is-fallback');"></span>`;
         return `<button type="button" class="panel album-collection-card" data-rtg-album-collection="${escape(sid)}" aria-label="Apri collezione Inazuma Eleven ${seasonNo}: ${escape(safeUnlocked)} su ${escape(safeTotal)} giocatori sbloccati, ${escape(percent)}%">${cover}<span class="album-collection-content album-collection-content--hero"><span class="album-collection-title">Inazuma Eleven ${seasonNo}</span><span class="album-collection-progress-copy"><span>${escape(safeUnlocked)} / ${escape(safeTotal)} giocatori sbloccati</span><strong>${escape(percent)}%</strong></span><span class="album-collection-progress-bar" aria-hidden="true"><span style="width:${percent}%"></span></span><span class="album-collection-action">Apri collezione <span aria-hidden="true">→</span></span></span></button>`;
       }).join("");
       return `<main class="album-screen album-collections-screen rtg-album-collections-screen"><header class="topbar album-topbar album-collections-topbar"><button type="button" class="btn section-root-button album-collections-home-button" data-rtg-home aria-label="Torna a Road to Glory"><span aria-hidden="true">←</span></button><div class="album-collections-heading"><p class="eyebrow">ALBUM</p><h1>COLLEZIONI</h1></div><span class="album-collections-topbar-spacer" aria-hidden="true"></span></header><section class="album-collection-grid">${cards}</section></main>`;
@@ -119,16 +122,18 @@
       }).join("");
       return `<main class="album-screen album-teams-screen rtg-album-teams-screen"><header class="topbar album-topbar album-teams-topbar"><button type="button" class="btn section-root-button album-teams-back-button" data-rtg-album-collection-back aria-label="Torna alle collezioni"><span aria-hidden="true">←</span></button><div class="album-teams-heading"><p class="eyebrow">ALBUM → INAZUMA ELEVEN ${sid==="ie1_s2"?"2":"1"}</p><h1>SQUADRE</h1></div><span class="album-teams-topbar-spacer" aria-hidden="true"></span></header><section class="album-team-grid album-team-grid--modern">${cards}</section></main>`;
     }
-    function albumRosterMarkup({team={},entries=[],allEntries=[]}={}){
+    function albumRosterMarkup({team={},entries=[],allEntries=[],database=null}={}){
       const unlockedIds=new Set(Array.from(entries||[]).map(player=>String(player?.cardId||player?.playerId||player?.id||"")));
       const catalog=Array.from(allEntries||[]);
       const cards=catalog.map(player=>{
         const cardId=String(player?.cardId||player?.playerId||player?.id||"");
         const isUnlocked=unlockedIds.has(cardId);
         const role=String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
-        const portrait=player?.portraitUrl||player?.portrait||player?.imageUrl||"";
-        const card=`<button type="button" class="player-card player-card-large pull-player-card pull-player-card--desktop pull-player-card--mobile album-player-card ${albumRarityClass(player?.category)}" data-rtg-album-player="${escape(cardId)}" aria-label="Apri scheda di ${escape(player?.name||cardId)}${isUnlocked?"":" · non sbloccato"}"><span class="player-corner player-role" aria-label="Ruolo ${escape(role)}">${escape(role)}</span><span class="player-corner player-overall" aria-label="Overall ${escape(player?.overall??player?.finalOverall??"—")}">${escape(player?.overall??player?.finalOverall??"—")}</span><div class="player-portrait-wrap">${portrait?`<img class="player-portrait" src="${escape(portrait)}" alt="${escape(player?.name||cardId)}" loading="lazy">`:""}</div><div class="player-info"><div class="player-title"><strong>${escape(player?.name||cardId)}</strong></div><div class="player-meta" aria-label="Dettagli giocatore"><span>${escape(player?.element||player?.type||"")}</span><span>${escape(player?.category||"")}</span></div></div><span class="player-corner player-level" aria-label="Livello 20">Lv 20</span></button>`;
-        return `<div class="album-player-entry ${albumRarityClass(player?.category)} ${isUnlocked?"is-unlocked":"is-locked"}" data-album-unlocked="${isUnlocked?"true":"false"}">${card}${isUnlocked?"":'<span class="album-player-lock"><span aria-hidden="true">🔒</span>NON SBLOCCATO</span>'}</div>`;
+        const fallbackCard=`<button type="button" class="player-card player-card-large pull-player-card pull-player-card--desktop pull-player-card--mobile album-player-card ${albumRarityClass(player?.category)}" data-rtg-album-player-card aria-label="Apri scheda di ${escape(player?.name||cardId)}"><span class="player-corner player-role" aria-label="Ruolo ${escape(role)}">${escape(role)}</span><span class="player-corner player-overall" aria-label="Overall ${escape(player?.overall??player?.finalOverall??"—")}">${escape(player?.overall??player?.finalOverall??"—")}</span><div class="player-portrait-wrap">${player?.portraitUrl||player?.frontFullbodyUrl||player?.imageUrl?`<img class="player-portrait" src="${escape(player?.portraitUrl||player?.frontFullbodyUrl||player?.imageUrl)}" alt="${escape(player?.name||cardId)}" loading="lazy">`:""}</div><div class="player-info"><div class="player-title"><strong>${escape(player?.name||cardId)}</strong></div><div class="player-meta" aria-label="Dettagli giocatore"><span>${escape(player?.element||player?.type||"")}</span><span>${escape(player?.category||"")}</span></div></div><span class="player-corner player-level" aria-label="Livello 20">Lv 20</span></button>`;
+        const card=playerCardMarkup
+          ? playerCardMarkup(player,{button:true,dataAttribute:"data-rtg-album-player-card",level:20,database,resolvedPlayer:player,extraClass:"album-player-card"})
+          : fallbackCard;
+        return `<div class="album-player-entry ${albumRarityClass(player?.category)} ${isUnlocked?"is-unlocked":"is-locked"}" data-rtg-album-player-entry="${escape(cardId)}" data-album-unlocked="${isUnlocked?"true":"false"}">${card}${isUnlocked?"":'<span class="album-player-lock"><span aria-hidden="true">🔒</span>NON SBLOCCATO</span>'}</div>`;
       }).join("");
       const total=catalog.length,unlocked=catalog.filter(player=>unlockedIds.has(String(player?.cardId||player?.playerId||player?.id||""))).length,percent=total?Math.round(unlocked/total*100):0;
       const logo=albumTeamLogoMarkup(team);
