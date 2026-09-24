@@ -917,6 +917,7 @@
       squadView.bind(app,{
         onOpenFormation:()=>openFormationSelector(model),
         onOpenPlayer:(playerId)=>openSquadPlayerPicker(playerId),
+        onSwitchRole:(playerId)=>switchBenchRole(playerId),
         onOpenDetails:(playerId)=>openRtgPlayerDetails(playerId),
         onOpenCatalog:()=>openRtgCatalog(),
         onAdaptRequirements:()=>adaptSquadToCurrentRequirements(),
@@ -925,6 +926,20 @@
       });
       mountDevQuickTools();
       return model;
+    }
+    function switchBenchRole(cardRef){
+      const cardId=id(cardRef),loc=locationInDraft(cardId);
+      if(!loc||loc.area!=="bench")return deps.toast?.("Il ruolo si può cambiare solo dalla panchina","error");
+      const current=resolved(cardId,squadDraft?.activeRoleVariantByCardId?.[cardId]||null);
+      const variants=Array.from(current?.roleVariants||[]);
+      if(variants.length<2)return deps.toast?.("Questo giocatore non ha un secondo ruolo","error");
+      const active=id(squadDraft?.activeRoleVariantByCardId?.[cardId]||current?.roleVariantId||current?.defaultRoleVariantId);
+      const next=variants.find(v=>id(v?.roleVariantId||v?.variantId)!==active)||variants[0];
+      const nextId=id(next?.roleVariantId||next?.variantId);
+      if(!nextId)return deps.toast?.("Ruolo alternativo non disponibile","error");
+      squadDraft={...squadDraft,activeRoleVariantByCardId:{...(squadDraft?.activeRoleVariantByCardId||{}),[cardId]:nextId}};
+      renderSquad();
+      return {ok:true,cardId,roleVariantId:nextId};
     }
     function locationInDraft(playerId){
       const idValue=id(playerId);
