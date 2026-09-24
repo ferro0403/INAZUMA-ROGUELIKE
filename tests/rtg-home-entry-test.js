@@ -8,6 +8,7 @@ assert.match(view,/data-rtg-home-open="run"/);
 assert.match(view,/data-rtg-home-open="squad"/);
 assert.doesNotMatch(view,/data-rtg-home-open="catalog"/);
 assert.match(view,/data-rtg-home-open="vending"/);
+assert.match(view,/data-rtg-home-open="album"/);
 assert.match(controller,/bindHomePager/);
 assert.match(controller,/deps\.renderRoadToGlory\(\{ destination:/);
 assert.doesNotMatch(view,/id:\s*"open-rtg-home"/);
