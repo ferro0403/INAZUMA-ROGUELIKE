@@ -851,7 +851,7 @@
                 return sharedMatchCard(player,"user",attrs,`squad-player-card rtg-halftime-player-card ${selected && !compatible ? "is-incompatible" : compatible ? "is-compatible" : ""}`);
               }).join("")}
             </div>
-            ${selected ? `<div class="rtg-halftime-selection"><span>SELEZIONATO</span><strong>${escape(selected.name || selectedId)}</strong><em>${escape(selectedRole)} · ${compatibleBench.length ? `${compatibleBench.length} cambi disponibili` : "nessun cambio disponibile"}</em></div>` : ""}
+            ${selected ? `<div class="rtg-halftime-selection"><span>SELEZIONATO</span><strong>${escape(selected.name || selectedId)}</strong><em>${escape(selectedRole)} · ${compatibleBench.length ? `${compatibleBench.length} cambi disponibili` : "nessun cambio disponibile"}</em></div>` : `<div class="rtg-halftime-selection"><em>Tocca un titolare per scegliere chi sostituire.</em></div>`}
           </aside>
         </div>
         <button type="button" class="btn btn-yellow rtg-half-confirm" data-rtg-half-confirm><span>SECONDO TEMPO</span><b>CONFERMA E RIPARTI</b></button>
