@@ -1,7 +1,7 @@
 (function (global) {
   "use strict";
 
-  const cfg = () => global.RoadToGloryConfig.SEASON1;
+  const cfg = (state=null) => global.RoadToGloryConfig.season?.(state?.activeSeasonId||"ie1") || global.RoadToGloryConfig.SEASON1;
   const rng = () => global.RoadToGloryRng;
   const id = (value) => String(value ?? "");
   const legacyCardApi = Object.freeze({
@@ -72,7 +72,7 @@
   }
 
   function rarityWeightsForCandidates(candidates) {
-    const configured = cfg().rarityWeights || {};
+    const configured = cfg(state).rarityWeights || {};
     const available = new Set((candidates || []).map((player) => String(player?.category || "Normale")));
     const entries = Object.entries(configured)
       .filter(([rarity, weight]) => Number(weight) > 0 && available.has(rarity))
@@ -96,7 +96,7 @@
 
   function pull(inputState, { seasonDb, accessibleCardIds = [], accessiblePlayerIds = [] } = {}) {
     const state = clone(inputState || {});
-    const cost = Number(cfg().pullCost || 300);
+    const cost = Number(cfg(state).pullCost || 300);
     if ((Number(state.tokens) || 0) < cost) {
       throw Object.assign(new Error("Gettoni RTG insufficienti"), { code: "rtg-gacha-insufficient-tokens" });
     }
