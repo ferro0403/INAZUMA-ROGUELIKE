@@ -665,8 +665,9 @@
         visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateIds.length);
         renderResults();
       };
-      if(typeof requestAnimationFrame==="function")requestAnimationFrame(()=>setTimeout(hydratePicker,0));
-      else setTimeout(hydratePicker,0);
+      if(typeof requestAnimationFrame==="function")requestAnimationFrame(()=>typeof setTimeout==="function"?setTimeout(hydratePicker,0):hydratePicker());
+      else if(typeof setTimeout==="function")setTimeout(hydratePicker,0);
+      else hydratePicker();
     }
     function openRtgCatalog(){
       const owned=Array.from(acquiredCardIdSet())
