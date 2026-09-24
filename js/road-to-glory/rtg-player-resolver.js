@@ -180,14 +180,14 @@
     return result;
   }
 
-  function resolveMove(playerId, activeSeasonId = "ie1", role = null, freeAgentsDb = null) {
+  function resolveMove(playerId, activeSeasonId = "ie1", role = null, freeAgentsDb = null, roleVariantId = null) {
     const api = cardIdentity();
     const rawRef = id(playerId?.cardId || playerId);
     const parsed = api?.isCardId?.(rawRef) ? api.parse(rawRef) : null;
     if ((parsed?.sourceKind === api?.FREE_AGENTS || !parsed) && evolvedFreeAgent(parsed?.playerId || id(playerId?.playerId || playerId), freeAgentsDb)) return null;
     const resolved = resolveVersion(playerId, activeSeasonId, freeAgentsDb);
     if (!resolved || resolved.seasonId === "free_agents") return null;
-    const player = resolveAtLevel20(playerId, activeSeasonId, role ? String(role).toLowerCase() : null, freeAgentsDb) || resolved.player;
+    const player = resolveAtLevel20(playerId, activeSeasonId, roleVariantId, freeAgentsDb) || resolved.player;
     return global.MatchMoveRuntime?.moveForPlayer?.(resolved.seasonId, player, role) || null;
   }
 
