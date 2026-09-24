@@ -1,9 +1,9 @@
 (function (global) {
   "use strict";
 
-  const SCHEMA_VERSION = 2;
+  const SCHEMA_VERSION = 3;
   const CAMPAIGN_ID = "rtg-ie-trilogy";
-  const ACTIVE_SEASON_IDS = Object.freeze(["ie1"]);
+  const ACTIVE_SEASON_IDS = Object.freeze(["ie1", "ie1_s2"]);
   const cards = () => global.RoadToGloryCardIdentity;
 
   const clone = (value) => value == null ? value : JSON.parse(JSON.stringify(value));
@@ -100,7 +100,7 @@
     const initial = createInitial({ campaignSeed: source.campaignSeed || "invalid-seed" });
     const acquiredCards = normalizeOwnedCards(source);
     const squadsSource = source.squads && typeof source.squads === "object" ? source.squads : {};
-    const squadKeys = new Set(["ie1", ...Object.keys(squadsSource)]);
+    const squadKeys = new Set(["ie1", "ie1_s2", ...Object.keys(squadsSource)]);
     const squads = {};
     for (const seasonId of squadKeys) squads[seasonId] = normalizeSquad(squadsSource[seasonId], acquiredCards);
     const attemptsByNode = source.attemptsByNode && typeof source.attemptsByNode === "object" ? clone(source.attemptsByNode) : {};
