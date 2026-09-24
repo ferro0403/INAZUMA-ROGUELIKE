@@ -42,6 +42,13 @@
     const cancelSchedule=deps.clearTimeout||global.clearTimeout;
     const DEV_MODE=deps.devMode===true||(typeof global.URLSearchParams==="function"&&new global.URLSearchParams(global.location?.search||"").get("dev")==="1");
     const RTG_ALBUM_STORAGE_KEY="inazuma.rtg.album.v1";
+    const RTG_SQUAD_SLOTS_KEY="inazuma.rtg.squad-slots.v1";
+    let activeSquadSlot=1;
+    function readSquadSlots(){try{const parsed=JSON.parse(global.localStorage?.getItem?.(RTG_SQUAD_SLOTS_KEY)||"{}");return parsed&&typeof parsed==="object"?parsed:{}}catch(_e){return{}}}
+    function writeSquadSlots(slots){try{global.localStorage?.setItem?.(RTG_SQUAD_SLOTS_KEY,JSON.stringify(slots||{}));}catch(_e){}}
+    function storeSquadSlot(slot,squad){const slots=readSquadSlots();slots[String(slot)]=clone(squad);writeSquadSlots(slots);}
+    function squadForSlot(slot){return clone(readSquadSlots()?.[String(slot)]||campaign?.squads?.ie1||squadDraft);}
+    async function selectSquadSlot(slot){const next=Math.max(1,Math.min(3,Number(slot)||1));if(next===activeSquadSlot)return;storeSquadSlot(activeSquadSlot,squadDraft||campaign?.squads?.ie1);activeSquadSlot=next;squadDraft=squadForSlot(next);await saveSquad(squadDraft,{quiet:true});}
 
     function readRtgAlbum(){
       try{
@@ -842,6 +849,7 @@
         nextTeamName:nextTeam?.name||nextTeam?.teamName||teamId,
         requirementsMarkup:eligibility?runView.requirementsMarkup(eligibility):"",
         dirty:JSON.stringify(squadDraft)!==JSON.stringify(campaign.squads.ie1),
+        activeSquadSlot,
       }));
       bindHomeAndTabs();
       squadView.bind(app,{
@@ -851,6 +859,7 @@
         onOpenCatalog:()=>openRtgCatalog(),
         onAdaptRequirements:()=>adaptSquadToCurrentRequirements(),
         onSave:()=>saveSquad(squadDraft),
+        onSelectSquadSlot:(slot)=>selectSquadSlot(slot),
       });
       mountDevQuickTools();
       return model;
@@ -883,7 +892,7 @@
       if(options.render!==false)renderSquad();
       return{ok:true};
     }
-    async function saveSquad(nextSquad=squadDraft){
+    async function saveSquad(nextSquad=squadDraft,options={}){
       const candidate=clone(nextSquad);
       campaign=await repository.update("rtg-save-squad",current=>{
         const probe=clone(current);probe.squads.ie1=candidate;
@@ -892,7 +901,8 @@
         current.squads.ie1=candidate;return current;
       });
       squadDraft=clone(campaign.squads.ie1);
-      deps.toast?.("Squadra Road to Glory salvata");
+      storeSquadSlot(activeSquadSlot,squadDraft);
+      if(!options.quiet)deps.toast?.(`Squadra ${activeSquadSlot} salvata`);
       return renderSquad();
     }
     function nodeById(nodeId){return Array.from(config.buildSeasonNodes("ie1")).find(node=>node.id===id(nodeId))||null;}
