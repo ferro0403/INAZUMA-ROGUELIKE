@@ -346,7 +346,7 @@
       const meta=cardMeta(player.cardId||cardRef);
       const normalized={...player,...stats,playerId:id(player.playerId||meta.playerId),cardId:id(player.cardId||meta.cardId),legacySeasonId:player.legacySeasonId||meta.legacySeasonId,overall:Number(player.overall??player.finalOverall??0),level:20};
       const role=normalized.normalizedRole||normalized.position||normalized.role;
-      const move=playerResolver.resolveMove(cardRef,campaign?.activeSeasonId||"ie1",role,freeAgentsDb);
+      const move=playerResolver.resolveMove(cardRef,campaign?.activeSeasonId||"ie1",role,freeAgentsDb,roleVariantId);
       return move?{...normalized,move:clone(move)}:{...normalized,move:null};
     }
     function resolvedSquad(snapshot){
