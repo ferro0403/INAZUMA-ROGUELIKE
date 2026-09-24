@@ -9,6 +9,10 @@
     Object.freeze({ index:3, start:9, end:9, label:"Finale", eyebrow:"Capitolo 4" }),
   ]);
   const RAMEN_STICKER_URL="https://dxi4wb638ujep.cloudfront.net/1/k/z/q/zqioogobuek.png";
+  // Restored from the original RTG Album implementation. The Album collection
+  // renderer still references this constant; its declaration was accidentally
+  // dropped during the Season 2 view refactor, causing a ReferenceError on open.
+  const RTG_ALBUM_COVER_URL="https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiTljpQy0-8hZqy9NP7BmOZwijtzN9VGYbXEN4bR2bPW8GiaccWADFA3RAlYclPfO8HSr9aEgR8H_NWF-al-1MLXlH6ToD-mMNUKwTsaSKlKvUCEY1xzg_2auQvhA3usKf5qPwV8Iawi6pm/s1600/wallpapers_inazuma11_1_1024x768.jpg";
 
   function create(deps = {}) {
     const escape = deps.escapeHtml || ((value) => String(value ?? ""));
