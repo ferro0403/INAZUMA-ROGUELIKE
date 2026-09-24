@@ -4,7 +4,7 @@ const db=JSON.parse(fs.readFileSync("data/IE1_S2_season_compact.json","utf8"));
 const ctx={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};ctx.globalThis=ctx;vm.createContext(ctx);
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-config.js","utf8"),ctx);
 ctx.RoadToGloryCardIdentity={
- normalizeSeasonId:s=>String(s),cardIdForSeason:(p,s)=>`${s}::${p}`,cardIdForFreeAgent:p=>`free_agents::${p}`,
+ normalizeSeasonId:s=>String(s),cardIdForSeason:(p,s)=>`${s}::${p}`,cardIdForProfile:(p,s)=>`${s}::${p}`,cardIdForFreeAgent:p=>`free_agents::${p}`,
  parse(v){const raw=String(v?.cardId||v||""),i=raw.indexOf("::");return i>0?{cardId:raw,playerId:raw.slice(i+2),profileId:raw.slice(i+2),legacySeasonId:raw.slice(0,i)}:{cardId:raw,playerId:raw,legacySeasonId:null};}
 };
 ctx.RoadToGloryRng={weightedPick:a=>a[0],float:()=>0};
