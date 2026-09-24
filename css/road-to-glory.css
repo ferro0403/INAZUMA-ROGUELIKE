@@ -5736,3 +5736,6 @@
 .rtg-run-screen--s2 .rtg-route-stage--season2 .rtg-route-node{z-index:3}
 .rtg-run-screen--s2 .rtg-route-stage--season2 .rtg-map-lines{z-index:2}
 .rtg-season-transition{width:100%;margin-top:14px}
+
+.rtg-squad-role-trigger{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:30px;margin-top:5px;border:1px solid currentColor;border-radius:9px;background:transparent;font:inherit;font-size:10px;font-weight:900;letter-spacing:.04em;cursor:pointer}
+.rtg-squad-role-trigger strong{font-size:12px}
