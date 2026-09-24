@@ -314,7 +314,10 @@
         panel.className="run-dev-quick-tools";
         panel.dataset.rtgDevTools="true";
         const active=campaign?.activeMatch;
-        const routeButtons=active?"":'<button type="button" data-dev-rtg="next-node">TAPPA SUCCESSIVA</button>';
+        const previousSeasonButton=!active&&activeSeasonId()==="ie1_s2"
+          ? '<button type="button" data-dev-rtg="previous-season">TORNA ALLA SEASON 1</button>'
+          : "";
+        const routeButtons=active?"":`<button type="button" data-dev-rtg="next-node">TAPPA SUCCESSIVA</button>${previousSeasonButton}`;
         const matchButtons=!active?"":'<button type="button" data-dev-rtg="halftime">VAI ALL\'INTERVALLO</button><button type="button" data-dev-rtg="extra">VAI AI SUPPLEMENTARI</button><button type="button" data-dev-rtg="penalties">VAI AI RIGORI</button><button type="button" data-dev-rtg="moves">RICARICA MOSSE</button><button type="button" data-dev-rtg="win">FORZA VITTORIA</button><button type="button" class="danger" data-dev-rtg="loss">FORZA SCONFITTA</button>';
         panel.innerHTML=`<summary>DEV RTG</summary><div><p><b>Gettoni: ${Number(campaign.tokens)||0}</b><br>Vite: ${Number(campaign.lives)||0}${active?` · ${active.status} / ${active.period}`:""}</p><button type="button" data-dev-rtg="tokens">999.999 GETTONI</button><button type="button" data-dev-rtg="lives">RIPRISTINA VITE</button><button type="button" data-dev-rtg="pool">SBLOCCA TUTTO IL POOL</button>${routeButtons}${matchButtons}</div>`;
         doc.body?.appendChild(panel);
@@ -323,7 +326,7 @@
         panel.querySelector('[data-dev-rtg="lives"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-lives",state=>{state.lives=Number(activeConfig()?.livesPerCheckpoint)||2;},"Vite RTG ripristinate"));
         panel.querySelector('[data-dev-rtg="pool"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-pool",state=>{state.defeatedTeamIds=Array.from(new Set(activeConfig()?.mainTeams||[]));},"Pool distributore RTG sbloccato"));
         panel.querySelector('[data-dev-rtg="next-node"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-next-node",state=>{
-          const nodes=Array.from(config.buildSeasonNodes?.("ie1")||[]);
+          const nodes=Array.from(config.buildSeasonNodes?.(activeSeasonId())||[]);
           const currentIndex=nodes.findIndex(node=>id(node.id)===id(state.currentNodeId));
           const next=nodes[Math.min(nodes.length-1,Math.max(0,currentIndex+1))];
           if(next){
@@ -331,6 +334,26 @@
             state.furthestNodeIndex=Math.max(Number(state.furthestNodeIndex)||0,Math.max(0,currentIndex+1));
           }
         },"Avanzamento RTG spostato alla tappa successiva"));
+        panel.querySelector('[data-dev-rtg="previous-season"]')?.addEventListener("click",async()=>{
+          if(activeSeasonId()!=="ie1_s2")return;
+          const previousDb=global.SeasonRegistry?.database?.("ie1")||await global.SeasonRegistry?.loadDatabase?.("ie1");
+          const previousNodes=Array.from(config.buildSeasonNodes?.("ie1")||[]);
+          campaign=await repository.update("rtg-dev-return-season1",state=>{
+            state.activeSeasonId="ie1";
+            state.currentNodeId=previousNodes.at(-1)?.id||"main:raimon";
+            state.furthestNodeIndex=Math.max(0,previousNodes.length-1);
+            state.seasonComplete=true;
+            state.defeatedTeamIds=Array.from(config.SEASON1?.mainTeams||[]);
+            state.lives=Number(config.SEASON1?.livesPerCheckpoint)||2;
+            state.activeMatch=null;
+            return state;
+          });
+          seasonDb=previousDb;
+          selectedAlbumSeasonId="ie1";
+          initSquadDraft();
+          deps.toast?.("DEV: ritorno alla Season 1");
+          renderRun();
+        });
         panel.querySelector('[data-dev-rtg="halftime"]')?.addEventListener("click",()=>devJumpMatchBoundary("halftime"));
         panel.querySelector('[data-dev-rtg="extra"]')?.addEventListener("click",()=>devJumpMatchBoundary("extra"));
         panel.querySelector('[data-dev-rtg="penalties"]')?.addEventListener("click",()=>devJumpMatchBoundary("penalties"));
@@ -1128,6 +1151,7 @@
       deps.openModal?.(body,{className:"rtg-modal"});
       deps.getModalRoot?.()?.querySelector?.("[data-rtg-start-node]")?.addEventListener("click",()=>{deps.closeModal?.();startMatch(node.id);});
     }
+    function teamRecordForId(teamId){return (seasonDb?.teams||[]).find(team=>id(team?.teamId||team?.id)===id(teamId))||null;}
     function bossFor(teamId){return [...(seasonDb?.bossOrder||[]),...(seasonDb?.specialMatches||[])].find(boss=>id(boss.teamId)===id(teamId))||null;}
     function resolvedForTeam(playerId,teamId){
       const profile=(seasonDb?.profiles||[]).find(entry=>id(entry?.playerId)===id(playerId)&&id(entry?.teamId)===id(teamId));
@@ -1141,7 +1165,7 @@
       const lineup=profileIds.length
         ? profileIds.map(profileId=>resolved(cardIdentity?.cardIdForSeason?.(profileId,activeSeasonId())||profileId)).filter(Boolean)
         : (boss.startingXIPlayerIds||[]).map(playerId=>resolvedForTeam(playerId,node.teamId)).filter(Boolean);
-      return {formationId:boss.bossFormation||boss.matchFormation||null,lineup,bench:[],name:boss.teamName||node.teamId||"Avversario",teamId:node.teamId,logoUrl:boss.logoUrl||null};
+      return {formationId:boss.bossFormation||boss.matchFormation||null,lineup,bench:[],name:boss.teamName||node.teamId||"Avversario",teamId:node.teamId,seasonId:activeSeasonId(),logoUrl:boss.logoUrl||teamRecordForId(node.teamId)?.logoUrl||null};
     }
     function secondaryOpponent(node,current,attemptNumber){
       const generated=opponentGenerator.generate({seed:`${current.campaignSeed}:${node.id}`,attemptNumber,freeAgentsDb,formations:seasonDb?.formations?.eleven||[],targetMin:node.opponentTargetMin,targetMax:node.opponentTargetMax,playerResolver});
@@ -1554,7 +1578,7 @@
     }
     function showPullResult(result,player){
       if(!result||!player)return null;
-      deps.openModal?.(runView.pullResultMarkup(result,player),{
+      deps.openModal?.(runView.pullResultMarkup(result,player,seasonDb),{
         className:"rtg-modal rtg-pull-modal",
         onClose:()=>openVending(),
       });
