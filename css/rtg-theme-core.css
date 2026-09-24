@@ -4623,3 +4623,28 @@
  }
  .rtg-prematch-shell .rtg-matchup-vs{width:44px!important}
 }
+
+/* RTG pre-match: make the matchup card actually span the mobile content width. */
+.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-content{
+  width:100%!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+}
+.rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-matchup{
+  width:100%!important;
+  max-width:none!important;
+  box-sizing:border-box!important;
+  justify-self:stretch!important;
+  margin-left:0!important;
+  margin-right:0!important;
+}
+@media(max-width:430px){
+ .rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-content{
+   padding-left:8px!important;
+   padding-right:8px!important;
+ }
+ .rtg-prematch-shell.rtg-prematch-revolution .rtg-prematch-matchup{
+   width:100%!important;
+   max-width:100%!important;
+ }
+}
