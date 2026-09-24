@@ -91,14 +91,17 @@
       });
     }
     const seasonId = parsed.legacySeasonId;
-    const canonicalId = canonicalIdFor(seasonId, parsed.playerId);
-    const player = playerInSeason(canonicalId, seasonId) || playerInSeason(parsed.playerId, seasonId);
+    const explicitProfile = parsed.playerId.includes("@") ? global.ProfiledSeasonRuntime?.resolveProfile?.(seasonId,parsed.playerId) : null;
+    const sourcePlayerId = explicitProfile?.playerId || parsed.playerId;
+    const canonicalId = canonicalIdFor(seasonId, sourcePlayerId);
+    const player = playerInSeason(canonicalId, seasonId) || playerInSeason(sourcePlayerId, seasonId);
     if (!player) return null;
     const playerId = canonicalIdFor(seasonId, player.playerId || parsed.playerId);
     const cardId = api.cardIdForSeason(playerId, seasonId);
     return Object.freeze({
       cardId,
       playerId,
+      profileId: explicitProfile?.profileId || null,
       legacySeasonId: seasonId,
       seasonId,
       player: Object.freeze({ ...player, playerId, cardId, legacySeasonId: seasonId }),
@@ -153,6 +156,7 @@
     if (database?.requiresProfileAwareRuntime && global.ProfiledSeasonRuntime?.resolveEffectivePlayerAtLevel) {
       player = global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel({
         playerId: canonicalPlayerId,
+        activeProfileId: resolved.profileId || resolved.player?.profileId || undefined,
         level: 20,
         levelUnits: 0,
         activeRoleVariantId: roleVariantId || undefined,
