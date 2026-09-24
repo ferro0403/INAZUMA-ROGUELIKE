@@ -100,8 +100,9 @@
       }));
     }
 
-    function formationForId(formationId) {
-      const formations = Array.from(global.RoadToGloryConfig?.SEASON1?.formations || global.SeasonRegistry?.database?.("ie1")?.formations?.eleven || []);
+    function formationForId(formationId, seasonId = "ie1") {
+      const sid=String(seasonId||"ie1");
+      const formations = Array.from(global.RoadToGloryConfig?.season?.(sid)?.formations || global.SeasonRegistry?.database?.(sid)?.formations?.eleven || global.RoadToGloryConfig?.SEASON1?.formations || []);
       return formations.find((item) => String(item.id) === String(formationId)) || null;
     }
 
