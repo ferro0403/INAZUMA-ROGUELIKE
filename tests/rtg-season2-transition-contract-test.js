@@ -5,6 +5,9 @@ assert(ctl.includes('if(activeSeasonId()!=="ie1"||!campaign?.seasonComplete)retu
 assert(ctl.includes('current.activeSeasonId="ie1_s2"'));
 assert(ctl.includes('current.currentNodeId="main:secret_service"'));
 assert(ctl.includes('querySelectorAll?.("[data-rtg-enter-season2]")?.forEach'));
+assert(ctl.includes('data-dev-rtg="previous-season"'));
+assert(ctl.includes('state.activeSeasonId="ie1"'));
+assert(ctl.includes('config.buildSeasonNodes?.(activeSeasonId())'));
 assert(ctl.includes("current.defeatedTeamIds=[]"));
 assert(ctl.includes("current.squads.ie1_s2=current.squads.ie1_s2?.lineup?.length?current.squads.ie1_s2:previous"));
 assert(!/current\.gachaAcquiredCards\s*=\s*\[\]/.test(ctl.slice(ctl.indexOf("async function enterSeason2"),ctl.indexOf("function rtgAlbumEntries"))));
