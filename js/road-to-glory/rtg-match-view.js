@@ -263,7 +263,7 @@
         baseCopy = event.actorWon
           ? `${actorName} supera ${opponentName}.`
           : effectiveNoTurnover
-            ? `${opponentName} ferma ${actorName}. Il possesso resta a ${possessionTeamName}.`
+            ? `${opponentName} ferma ${actorName}. Possesso invariato per ${possessionTeamName}.`
             : `${opponentName} ferma ${actorName} e recupera palla.`;
       } else {
         type = event.actorWon || effectiveNoTurnover ? "build_up" : "recovery";
@@ -285,7 +285,7 @@
       const simulatedNoTurnoverLoss = effectiveNoTurnover && !event.manual && !event.actorWon && kind !== "shot";
       const copy = simulatedNoTurnoverLoss
         ? kind === "dribble"
-          ? `${opponentName} prova il tackle su ${actorName}, ma non riesce a recuperare palla. Il possesso resta a ${possessionTeamName}.`
+          ? `${opponentName} prova il tackle su ${actorName}, ma non riesce a recuperare palla. Possesso invariato per ${possessionTeamName}.`
           : `${opponentName} prova a recuperare palla su ${actorName}, ma non ci riesce. Il possesso resta a ${possessionTeamName}.`
         : effectiveNoTurnover && !event.actorWon && kind !== "shot"
           ? `${opponentName} prova a fermare ${actorName}, ma il possesso resta a ${possessionTeamName}.`
