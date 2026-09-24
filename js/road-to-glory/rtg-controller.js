@@ -218,6 +218,8 @@
         equipment:null,
         rtgLegacyLabel,
         readOnly:true,
+        mode:options?.mode||undefined,
+        albumUnlocked:options?.albumUnlocked,
         preserveScroll:true,
         onClose:typeof options?.onClose==="function"?options.onClose:null,
       });
@@ -544,9 +546,20 @@
       const unlocked=rtgAlbumUnlockedSet();
       const allEntries=rtgAlbumTeamPlayers(team,sid);
       const entries=allEntries.filter(player=>unlocked.has(id(player?.cardId||player?.playerId||player?.id)));
-      renderHtml(runView.albumRosterMarkup({state:{...(campaign||{}),activeSeasonId:sid},seasonId:sid,team,entries,allEntries}));
+      renderHtml(runView.albumRosterMarkup({state:{...(campaign||{}),activeSeasonId:sid},seasonId:sid,team,entries,allEntries,database:db}));
       app?.querySelector?.("[data-rtg-album-back]")?.addEventListener("click",()=>renderAlbumTeams(sid));
-      app?.querySelectorAll?.("[data-rtg-album-player]")?.forEach(card=>card.addEventListener("click",()=>openRtgPlayerDetails(card.dataset.rtgAlbumPlayer)));
+      const albumRoster=app?.querySelector?.("[data-rtg-album-roster]");
+      albumRoster?.addEventListener("click",event=>{
+        const origin=typeof event.target?.closest==="function"?event.target:event.target?.parentElement;
+        const entry=origin?.closest?.("[data-rtg-album-player-entry]");
+        const cardButton=origin?.closest?.("[data-rtg-album-player-card]");
+        if(!entry&&!cardButton)return;
+        const wrapper=entry||cardButton?.closest?.("[data-rtg-album-player-entry]");
+        const cardId=id(wrapper?.dataset?.rtgAlbumPlayerEntry);
+        if(!cardId)return;
+        event.preventDefault?.();
+        openRtgPlayerDetails(cardId,"",{mode:"album",albumUnlocked:unlocked.has(cardId)});
+      });
       mountDevQuickTools();
       return campaign;
     }
