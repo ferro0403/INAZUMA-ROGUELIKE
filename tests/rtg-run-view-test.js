@@ -24,4 +24,18 @@ const albumHtml=view.albumCollectionMarkup({state:{activeSeasonId:"ie1"},unlocke
 assert.match(albumHtml,/ALBUM/);
 assert.match(albumHtml,/Inazuma Eleven 1/);
 assert.match(albumHtml,/wallpapers_inazuma11_1_1024x768\.jpg/);
+const albumTeamsHtml=view.albumTeamsMarkup({state:{activeSeasonId:"ie1"},teams:[{teamId:"raimon",teamName:"Raimon",total:2,unlocked:1}]});
+assert.match(albumTeamsHtml,/data-rtg-album-team="raimon"/);
+assert.match(albumTeamsHtml,/data-emblem="raimon"/);
+const albumRosterHtml=view.albumRosterMarkup({
+  team:{teamId:"raimon",teamName:"Raimon"},
+  entries:[{cardId:"ie1::mark",name:"Mark",category:"Forte",normalizedRole:"GK",overall:80}],
+  allEntries:[
+    {cardId:"ie1::mark",name:"Mark",category:"Forte",normalizedRole:"GK",overall:80},
+    {cardId:"ie1::axel",name:"Axel",category:"Elite",normalizedRole:"FW",overall:84},
+  ],
+});
+assert.match(albumRosterHtml,/data-rtg-album-player="ie1::mark"/);
+assert.match(albumRosterHtml,/rarity-forte/);
+assert.match(albumRosterHtml,/NON SBLOCCATO/);
 console.log("rtg-run-view-test: PASS");
