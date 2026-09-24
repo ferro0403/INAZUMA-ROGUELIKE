@@ -297,6 +297,14 @@
           if (playerId) actions.onOpenDetails?.(playerId);
         });
       });
+      root?.querySelectorAll?.("[data-rtg-switch-role]")?.forEach((button) => {
+        button.addEventListener("click", (event) => {
+          event?.preventDefault?.();
+          event?.stopPropagation?.();
+          const cardId = String(button.dataset.rtgSwitchRole || "");
+          if (cardId) actions.onSwitchRole?.(cardId);
+        });
+      });
       root?.querySelectorAll?.("[data-rtg-change-player]")?.forEach((button) => {
         button.addEventListener("click", (event) => {
           event?.preventDefault?.();
