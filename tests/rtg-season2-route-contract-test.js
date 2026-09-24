@@ -19,5 +19,10 @@ const expected={
 for(const [teamId,v] of Object.entries(expected)){const x=S.constraints[teamId];assert.deepStrictEqual([x.cap,x.minRecruit,x.recentCount,x.recentWindow],v,teamId);}
 assert.deepStrictEqual(Array.from(S.checkpointMainIndexes),[2,5,8,11,14]);
 assert.strictEqual(S.routeBackground,"assets/rtg/rtg-season2-route-map.webp");
+const runView=fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8");
+const routeCss=fs.readFileSync("css/road-to-glory.css","utf8");
+assert(runView.includes('style="--rtg-route-height:2500px"'),"S2 route must request the 2500px stage");
+assert(runView.includes("y:3.5+t*93"),"S2 nodes must stay inside the route stage");
+assert(routeCss.includes("height:var(--rtg-route-height,2500px)"),"S2 stage must override the legacy fixed 760/660px height");
 assert.strictEqual(C.buildSeasonNodes("ie1").length,28);
 console.log("rtg-season2-route-contract-test: PASS");
