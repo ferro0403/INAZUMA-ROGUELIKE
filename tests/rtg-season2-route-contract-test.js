@@ -17,7 +17,7 @@ const expected={
  mary_times:[82,7,3,5],dark_emperors:[87,7,3,5],zeus:[84,8,3,5],raimon_inazuma_eleven_2:[89,8,4,6]
 };
 for(const [teamId,v] of Object.entries(expected)){const x=S.constraints[teamId];assert.deepStrictEqual([x.cap,x.minRecruit,x.recentCount,x.recentWindow],v,teamId);}
-assert.deepStrictEqual(S.checkpointMainIndexes,[4,10,14]);
+assert.deepStrictEqual(Array.from(S.checkpointMainIndexes),[2,5,8,11,14]);
 assert.strictEqual(S.routeBackground,"assets/rtg/rtg-season2-route-map.webp");
 assert.strictEqual(C.buildSeasonNodes("ie1").length,28);
 console.log("rtg-season2-route-contract-test: PASS");
