@@ -417,7 +417,7 @@
       const nodes=config.buildSeasonNodes(activeSeasonId());
       renderHtml(runView.runMarkup({state:campaign,nodes,seasonDb,seasonConfig:activeConfig()}));
       bindRun();
-      app?.querySelector?.("[data-rtg-enter-season2]")?.addEventListener("click",()=>enterSeason2());
+      app?.querySelectorAll?.("[data-rtg-enter-season2]")?.forEach(button=>button.addEventListener("click",()=>enterSeason2()));
       mountDevQuickTools();
       return campaign;
     }
