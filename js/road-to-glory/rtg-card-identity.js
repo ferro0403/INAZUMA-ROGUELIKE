@@ -18,7 +18,7 @@
     if (!pid) return "";
     if (!sid || sid === FREE_AGENTS) return pid;
     if (pid.includes("@") && global.ProfiledSeasonRuntime?.resolveProfile?.(sid,pid)) {
-      return id(global.ProfiledSeasonRuntime.canonicalProfileId?.(sid,pid)||pid);
+      return pid;
     }
     return id(
       global.ProfiledSeasonRuntime?.canonicalPlayerId?.(sid, pid)
@@ -73,8 +73,16 @@
       if (source === FREE_AGENTS) {
         return Object.freeze({ cardId: cardIdForFreeAgent(rawPlayerId), playerId: rawPlayerId, legacySeasonId: FREE_AGENTS, sourceKind: FREE_AGENTS });
       }
-      const canonical = canonicalPlayerId(source, rawPlayerId);
-      return Object.freeze({ cardId: cardIdForSeason(canonical, source), playerId: canonical, legacySeasonId: source, sourceKind: "season" });
+      const profile = rawPlayerId.includes("@") ? global.ProfiledSeasonRuntime?.resolveProfile?.(source, rawPlayerId) : null;
+      const canonical = profile ? rawPlayerId : canonicalPlayerId(source, rawPlayerId);
+      return Object.freeze({
+        cardId: cardIdForSeason(canonical, source),
+        playerId: canonical,
+        profileId: profile?.profileId || (rawPlayerId.includes("@") ? rawPlayerId : null),
+        canonicalPlayerId: profile?.playerId || canonical,
+        legacySeasonId: source,
+        sourceKind: "season"
+      });
     }
 
     const fallback = normalizeSeasonId(fallbackSeasonId);
