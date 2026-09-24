@@ -1,7 +1,7 @@
 (function (global) {
   "use strict";
 
-  const config = () => global.RoadToGloryConfig.SEASON1;
+  const config = (seasonId="ie1") => global.RoadToGloryConfig.season?.(seasonId) || global.RoadToGloryConfig.SEASON1;
   const id = (value) => String(value ?? "");
   const legacyCardApi = Object.freeze({
     FREE_AGENTS: "free_agents",
@@ -42,7 +42,7 @@
     const reasons = [];
     const { seasonId, squad } = activeSquad(state);
     if (!squad) return { valid: false, reasons: ["missing-squad"], lineupPlayers: [], benchPlayers: [], formation: null };
-    const formationCatalog = config().formations || seasonDb?.formations?.eleven || [];
+    const formationCatalog = config(seasonId).formations || seasonDb?.formations?.eleven || [];
     const formation = formationCatalog.find((entry) => id(entry?.id) === id(squad.formationId)) || null;
     if (!formation) reasons.push("missing-formation");
     const lineup = Array.isArray(squad.lineup) ? squad.lineup.map(id) : [];
@@ -103,7 +103,7 @@
   }
 
   function recentDefeatedTeamIds(teamId, state, window) {
-    const teams = config().mainTeams || [];
+    const teams = config(state?.activeSeasonId).mainTeams || [];
     const targetIndex = teams.indexOf(id(teamId));
     if (targetIndex <= 0) return [];
     const defeated = new Set((state?.defeatedTeamIds || []).map(id));
@@ -125,7 +125,7 @@
 
   function mainEligibility({ teamId, state, seasonDb, freeAgentIds = [], freeAgentsDb = null, playerResolver } = {}) {
     const validation = validateSquad({ state, seasonDb, freeAgentIds, freeAgentsDb, playerResolver });
-    const constraint = config().constraints?.[id(teamId)];
+    const constraint = config(state?.activeSeasonId).constraints?.[id(teamId)];
     if (!constraint) return { eligible: false, reasons: ["missing-constraint"] };
     const { seasonId, squad } = activeSquad(state);
     const lineup = squad?.lineup || [];
@@ -142,16 +142,20 @@
     const recentRecruits = recruits.filter((cardId) => teamIdsForCard(cardId, seasonId, playerResolver, freeAgentsDb, seasonDb).some((team) => recentTeamSet.has(team)));
     const reasons = [...(validation.reasons || [])];
     if (power != null && power > Number(constraint.cap)) reasons.push("team-power-cap");
-    if (recruits.length < Number(constraint.minRecruit || 0)) reasons.push("min-s1-recruits");
-    if (recentRecruits.length < Number(constraint.recentCount || 0)) reasons.push("recent-s1-recruits");
+    const activeSeason=id(state?.activeSeasonId||"ie1");
+    const seasonRecruits=recruits.filter(cardId=>cards().parse(cardId).legacySeasonId===activeSeason);
+    const eligibleRecruits=activeSeason==="ie1"?recruits:seasonRecruits;
+    const eligibleRecent=recentRecruits.filter(cardId=>activeSeason==="ie1"||cards().parse(cardId).legacySeasonId===activeSeason);
+    if (eligibleRecruits.length < Number(constraint.minRecruit || 0)) reasons.push("min-season-recruits");
+    if (eligibleRecent.length < Number(constraint.recentCount || 0)) reasons.push("recent-season-recruits");
     return {
       eligible: reasons.length === 0,
       reasons,
       teamPower: power,
       cap: Number(constraint.cap),
-      recruitCount: recruits.length,
+      recruitCount: eligibleRecruits.length,
       minRecruit: Number(constraint.minRecruit || 0),
-      recentRecruitCount: recentRecruits.length,
+      recentRecruitCount: eligibleRecent.length,
       recentCount: Number(constraint.recentCount || 0),
       recentWindow: Number(constraint.recentWindow || 0),
       recentTeamIds: recentTeams,
