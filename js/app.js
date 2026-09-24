@@ -662,6 +662,7 @@
     escapeHtml,
     teamEmblemMarkup: rtgTeamEmblemMarkup,
     compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
+    playerCardMarkup: (...args) => playerCard(...args),
   }) : null;
   const rtgSquadView = rtgRuntimeAvailable ? global.RoadToGlorySquadView.create({
     escapeHtml,
