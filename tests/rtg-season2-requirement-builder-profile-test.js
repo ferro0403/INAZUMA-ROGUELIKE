@@ -1,0 +1,13 @@
+"use strict";
+const assert=require("assert"),fs=require("fs");
+const src=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const start=src.indexOf("function seasonTeamIdsForPlayer");
+const end=src.indexOf("function requirementPool",start);
+assert(start>=0&&end>start);
+const fn=src.slice(start,end);
+assert(fn.includes("cardIdentity?.parse?.(cardRef,activeSeasonId())"));
+assert(fn.includes("seasonDb?.profiles||[]"));
+assert(fn.includes("profile?.teamId"));
+assert(fn.includes("parsed.canonicalPlayerId"));
+assert(fn.includes("seasonDb?.players||[]"));
+console.log("rtg-season2-requirement-builder-profile-test: PASS");
