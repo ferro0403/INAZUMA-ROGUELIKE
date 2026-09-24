@@ -86,5 +86,71 @@
     return Object.freeze(nodes);
   }
 
-  global.RoadToGloryConfig = Object.freeze({ SEASON1, buildSeasonNodes });
+  const season2Matches = Object.freeze([
+    Object.freeze({ teamId:"secret_service", special:true, cap:74, minRecruit:0, recentCount:0, recentWindow:0 }),
+    Object.freeze({ teamId:"gemini_storm", cap:76, minRecruit:1, recentCount:0, recentWindow:0 }),
+    Object.freeze({ teamId:"alpine_ie2", special:true, cap:78, minRecruit:1, recentCount:0, recentWindow:0 }),
+    Object.freeze({ teamId:"epsilon", cap:78, minRecruit:2, recentCount:1, recentWindow:3 }),
+    Object.freeze({ teamId:"royal_academy_redux", cap:80, minRecruit:2, recentCount:1, recentWindow:3 }),
+    Object.freeze({ teamId:"cloister_divinity", special:true, cap:79, minRecruit:3, recentCount:1, recentWindow:3 }),
+    Object.freeze({ teamId:"epsilon_plus", cap:81, minRecruit:3, recentCount:1, recentWindow:3 }),
+    Object.freeze({ teamId:"super_triple_c", special:true, cap:79, minRecruit:4, recentCount:2, recentWindow:4 }),
+    Object.freeze({ teamId:"diamond_dust", cap:82, minRecruit:4, recentCount:2, recentWindow:4 }),
+    Object.freeze({ teamId:"fauxshore", special:true, cap:81, minRecruit:5, recentCount:2, recentWindow:4 }),
+    Object.freeze({ teamId:"prominence", cap:82, minRecruit:5, recentCount:2, recentWindow:4 }),
+    Object.freeze({ teamId:"chaos", cap:85, minRecruit:6, recentCount:2, recentWindow:4 }),
+    Object.freeze({ teamId:"genesis", cap:86, minRecruit:6, recentCount:3, recentWindow:5 }),
+    Object.freeze({ teamId:"mary_times", special:true, cap:82, minRecruit:7, recentCount:3, recentWindow:5 }),
+    Object.freeze({ teamId:"dark_emperors", cap:87, minRecruit:7, recentCount:3, recentWindow:5 }),
+    Object.freeze({ teamId:"zeus", special:true, cap:84, minRecruit:8, recentCount:3, recentWindow:5 }),
+    Object.freeze({ teamId:"raimon_inazuma_eleven_2", cap:89, minRecruit:8, recentCount:4, recentWindow:6 }),
+  ]);
+  const season2Teams = Object.freeze(season2Matches.map(entry=>entry.teamId));
+  const season2Constraints = Object.freeze(Object.fromEntries(season2Matches.map(entry=>[
+    entry.teamId,
+    Object.freeze({cap:entry.cap,minRecruit:entry.minRecruit,recentCount:entry.recentCount,recentWindow:entry.recentWindow})
+  ])));
+  const season2Rewards = Object.freeze(Object.fromEntries(season2Matches.map((entry,index)=>[entry.teamId,275+index*30])));
+  const SEASON2 = Object.freeze({
+    seasonId:"ie1_s2",
+    mainTeams:season2Teams,
+    importantMatches:season2Matches,
+    formations,
+    checkpointMainIndexes:Object.freeze([4,10,14]),
+    visualBlocks:Object.freeze([Object.freeze([0,4]),Object.freeze([5,10]),Object.freeze([11,14]),Object.freeze([15,16])]),
+    livesPerCheckpoint:2,
+    pullCost:300,
+    mainRewards:season2Rewards,
+    secondaryRewards:SEASON1.secondaryRewards,
+    rarityWeights:SEASON1.rarityWeights,
+    duplicateRefunds:SEASON1.duplicateRefunds,
+    constraints:season2Constraints,
+    routeBackground:"assets/rtg/rtg-season2-route-map.webp",
+  });
+  function season(seasonId){
+    return String(seasonId||"")==="ie1_s2"?SEASON2:SEASON1;
+  }
+  const buildSeason1Nodes=buildSeasonNodes;
+  function buildAnySeasonNodes(seasonId){
+    const sid=String(seasonId||"ie1");
+    if(sid==="ie1")return buildSeason1Nodes("ie1");
+    if(sid!=="ie1_s2")return Object.freeze([]);
+    const nodes=[];
+    season2Matches.forEach((match,index)=>{
+      nodes.push(Object.freeze({
+        id:`main:${match.teamId}`,type:"main",teamId:match.teamId,mainIndex:index,special:!!match.special,
+        checkpointAfter:SEASON2.checkpointMainIndexes.includes(index),
+      }));
+      if(index>=season2Matches.length-1)return;
+      const beforeTeamId=season2Matches[index+1].teamId;
+      const userCap=season2Constraints[beforeTeamId].cap;
+      nodes.push(Object.freeze({
+        id:`secondary:${match.teamId}:${beforeTeamId}:1`,type:"secondary",afterTeamId:match.teamId,beforeTeamId,slot:1,
+        userCap,opponentTargetMin:Math.max(70,userCap-4),opponentTargetMax:userCap-1,
+      }));
+    });
+    return Object.freeze(nodes);
+  }
+
+  global.RoadToGloryConfig = Object.freeze({ SEASON1, SEASON2, season, buildSeasonNodes:buildAnySeasonNodes });
 })(globalThis);
