@@ -51,7 +51,7 @@
     for (const player of sourcePlayers) {
       const playerId = id(player?.profileId || player?.playerId || player?.id);
       if (!allowedIds.has(playerId)) continue;
-      const cardId = api.cardIdForSeason(playerId, seasonId);
+      const cardId = seasonDb?.requiresProfileAwareRuntime ? api.cardIdForProfile(playerId, seasonId) : api.cardIdForSeason(playerId, seasonId);
       if (!cardId || seen.has(cardId)) continue;
       seen.add(cardId);
       output.push(Object.freeze({
