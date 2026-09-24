@@ -5712,3 +5712,27 @@
 .rtg-bottom-nav .nav-icon,.rtg-bottom-nav .nav-icon svg{width:19px!important;height:19px!important;}
 .rtg-bottom-nav .nav-label{font-size:.66rem!important;}
 @media(max-width:430px){.rtg-bottom-nav.bottom-nav{width:218px!important;}}
+
+
+/* Season 2 route is isolated from the Season 1 map so legacy layout stays unchanged. */
+.rtg-run-screen--s2 .rtg-route-stage--season2{
+  position:relative;
+  min-height:var(--rtg-route-height,2500px);
+  background-image:linear-gradient(rgba(4,31,72,.12),rgba(4,31,72,.12)),var(--rtg-season-route-bg);
+  background-size:cover;
+  background-position:center top;
+  background-repeat:no-repeat;
+  border-radius:24px;
+  overflow:hidden;
+}
+.rtg-run-screen--s2 .rtg-route-stage--season2::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.18);
+  border-radius:inherit;
+}
+.rtg-run-screen--s2 .rtg-route-stage--season2 .rtg-route-node{z-index:3}
+.rtg-run-screen--s2 .rtg-route-stage--season2 .rtg-map-lines{z-index:2}
+.rtg-season-transition{width:100%;margin-top:14px}
