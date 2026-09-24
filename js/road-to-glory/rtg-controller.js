@@ -419,7 +419,16 @@
       for(const player of seasonDb?.players||[])rawPlayerById.set(id(player.playerId||player.id),player);
       for(const profile of seasonDb?.profiles||[])rawPlayerById.set(id(profile.profileId||profile.id),profile);
       progression?.setSeasonContext?.(campaign);
-      squadDraft=clone(activeSquad(campaign));
+      // Seed the three S2 slots once from the squad carried over from S1.
+      // Afterwards every slot is an independent S2 snapshot.
+      const season2Slots=readSquadSlots("ie1_s2");
+      if(!season2Slots["1"]){
+        const carried=clone(activeSquad(campaign));
+        writeSquadSlots({"1":carried,"2":clone(carried),"3":clone(carried)},"ie1_s2");
+      }
+      activeSquadSlot=1;
+      writeActiveSquadSlot(1);
+      squadDraft=squadForSlot(1);
       return renderRun();
     }
     function rtgAlbumEntries(){
