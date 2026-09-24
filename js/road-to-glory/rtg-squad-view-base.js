@@ -75,8 +75,12 @@
           })
         : fallbackPlayerCard(player, "", attrs, extraClass);
       if (isPicker || isCatalog) return cardMarkup;
+      const roleSwitch = area === "bench" && Array.isArray(player?.roleVariants) && player.roleVariants.length > 1
+        ? `<button type="button" class="rtg-squad-role-trigger" data-rtg-switch-role="${escape(cardId)}" aria-label="Cambia ruolo di ${escape(player?.name || playerId)}"><span>RUOLO</span><strong>${escape(role || "—")}</strong></button>`
+        : "";
       return `<div class="rtg-squad-card-slot ${options.readOnly ? "rtg-squad-card-slot--readonly" : ""}" data-rtg-card-slot="${escape(cardId)}">
         ${cardMarkup}
+        ${roleSwitch}
         ${options.readOnly ? "" : `<button type="button" class="rtg-squad-change-trigger" data-rtg-change-player="${escape(cardId)}" aria-label="Cambia ${escape(player?.name || playerId)}"><span aria-hidden="true">↔</span><span>Cambia</span></button>`}
       </div>`;
     }
