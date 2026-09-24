@@ -4335,3 +4335,32 @@
  .rtg-main-topbar .rtg-main-title .eyebrow{font-size:.62rem!important}
  .rtg-main-topbar .status-pill{min-height:40px!important;padding:6px 8px!important;font-size:.78rem!important}
 }
+
+/* RTG squad header + three team presets */
+.rtg-squad-topbar{
+ position:relative!important;display:grid!important;grid-template-columns:54px minmax(0,1fr) auto!important;
+ align-items:center!important;gap:14px!important;padding:14px 18px!important;background:#111216!important;
+ border-bottom:7px solid #ffd21f!important;box-shadow:0 5px 0 rgba(17,18,22,.18)!important;color:#fff!important;
+}
+.rtg-squad-topbar .rtg-squad-back{
+ width:50px!important;height:46px!important;min-width:50px!important;padding:0!important;
+ display:grid!important;place-items:center!important;background:#ffd21f!important;color:#111216!important;
+ border:3px solid #111216!important;border-radius:4px!important;box-shadow:4px 4px 0 #050506!important;
+ font-size:27px!important;font-weight:1000!important;line-height:1!important;
+}
+.rtg-squad-topbar .squad-topbar-copy .eyebrow{color:#ffd21f!important;font-size:.68rem!important;letter-spacing:.16em!important;margin:0 0 2px!important}
+.rtg-squad-topbar .squad-topbar-copy h1{color:#fff!important;font-size:1.55rem!important;line-height:1!important;margin:0!important}
+.rtg-squad-topbar .rtg-squad-team-identity{background:#fff!important;color:#111216!important;border:3px solid #111216!important;box-shadow:4px 4px 0 #050506!important;max-width:210px!important}
+.rtg-squad-slots{margin:0 0 18px;background:#111216;border:3px solid #111216;box-shadow:5px 6px 0 rgba(17,18,22,.18);padding:10px}
+.rtg-squad-slots-label{display:block;color:#ffd21f;font-weight:1000;font-size:.72rem;letter-spacing:.18em;margin:0 0 8px 3px}
+.rtg-squad-slot-buttons{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.rtg-squad-slot{min-height:44px;border:2px solid #fff;background:#fff;color:#111216;font:900 .78rem/1 inherit;letter-spacing:.04em;box-shadow:2px 3px 0 #050506}
+.rtg-squad-slot.active{background:#ffd21f;border-color:#ffd21f}
+@media(max-width:420px){
+ .rtg-squad-topbar{grid-template-columns:46px minmax(0,1fr) 112px!important;gap:9px!important;padding:12px 10px!important}
+ .rtg-squad-topbar .rtg-squad-back{width:44px!important;height:42px!important;min-width:44px!important;font-size:24px!important}
+ .rtg-squad-topbar .squad-topbar-copy h1{font-size:1.28rem!important}
+ .rtg-squad-topbar .squad-topbar-copy .eyebrow{font-size:.58rem!important}
+ .rtg-squad-topbar .rtg-squad-team-identity{max-width:112px!important}
+ .rtg-squad-slot{font-size:.68rem!important;padding:6px 3px!important}
+}
