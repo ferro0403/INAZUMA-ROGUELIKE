@@ -4190,3 +4190,23 @@
   display:none!important;
   background:none!important;
 }
+
+
+/* RTG vending: compact standalone Album button, visually detached from the pull CTA. */
+.rtg-vending-album-link{
+  display:block!important;
+  width:max-content!important;
+  min-width:0!important;
+  max-width:72%!important;
+  margin:18px auto 14px!important;
+  padding:10px 22px!important;
+  border:2px solid #111216!important;
+  border-radius:7px!important;
+  box-shadow:3px 4px 0 #111216!important;
+  font-size:14px!important;
+  line-height:1!important;
+  text-align:center!important;
+}
+.rtg-vending-album-link + .rtg-vending-pull{
+  margin-top:0!important;
+}
