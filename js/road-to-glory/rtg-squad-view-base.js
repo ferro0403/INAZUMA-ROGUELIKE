@@ -251,14 +251,14 @@
       return `<main class="screen squad-screen rtg-squad-shell">
         <header class="topbar squad-topbar rtg-squad-topbar">
           <button type="button" class="squad-back-button rtg-squad-back" data-rtg-home aria-label="Torna alla Home">←</button>
-          <div class="squad-topbar-copy"><p class="eyebrow">RTG · S1</p><h1>Squadra</h1></div>
+          <div class="squad-topbar-copy"><p class="eyebrow">ROAD TO GLORY · S1</p><h1>Squadra</h1></div>
           <div class="rtg-squad-team-identity" aria-label="Squadra ${escape(teamName)}">
             <span class="rtg-squad-team-logo">${teamEmblem}</span>
             <strong title="${escape(teamName)}">${escape(teamName)}</strong>
           </div>
         </header>
 
-        <div class="content squad-content rtg-squad-content">
+        <div class="content squad-content rtg-squad-content"><div class="rtg-squad-slots" aria-label="Slot squadra"><span class="rtg-squad-slots-label">LE MIE SQUADRE</span><div class="rtg-squad-slot-buttons">${[1,2,3].map(slot=>`<button type="button" class="rtg-squad-slot ${Number(context.activeSquadSlot||1)===slot?"active":""}" data-rtg-squad-slot="${slot}" aria-pressed="${Number(context.activeSquadSlot||1)===slot?"true":"false"}">SQUADRA ${slot}</button>`).join("")}</div></div>
           <div class="squad-workspace">
             <section class="squad-field-panel" aria-label="Campo 11v11 RTG">
               <div class="squad-panel-head rtg-squad-section-head"><h2>Titolari</h2><span class="squad-field-formation" data-rtg-formation-current>${escape(model.formation?.name || model.formation?.formation || model.formationId || "—")}</span></div>
@@ -305,6 +305,7 @@
       root?.querySelector?.("[data-rtg-open-formation]")?.addEventListener("click", () => actions.onOpenFormation?.());
       root?.querySelector?.("[data-rtg-open-catalog]")?.addEventListener("click", () => actions.onOpenCatalog?.());
       root?.querySelector?.("[data-rtg-save-squad]")?.addEventListener("click", () => actions.onSave?.());
+      root?.querySelectorAll?.("[data-rtg-squad-slot]")?.forEach((button)=>button.addEventListener("click",()=>actions.onSelectSquadSlot?.(Number(button.dataset.rtgSquadSlot)||1)));
     }
 
     return Object.freeze({ renderModel, markup, bind, playerCard, lineupPitchMarkup, matchPitchMarkup, formationPreviewMarkup, formationOptionsMarkup, replacementPickerMarkup, replacementPickerResultsMarkup, catalogMarkup, catalogResultsMarkup });
