@@ -468,11 +468,11 @@
         const team=(seasonDb?.teams||[]).find(entry=>id(entry?.teamId||entry?.id)===id(teamId));
         if(!team)return null;
         const playerIds=Array.from(team?.playerIds||[]).map(id).filter(Boolean);
-        const profileIds=activeConfig()?.requiresProfileAwareRuntime
+        const profileIds=seasonDb?.requiresProfileAwareRuntime
           ? Array.from(seasonDb?.profiles||[]).filter(profile=>id(profile?.teamId)===id(teamId)).map(profile=>id(profile?.profileId||profile?.id)).filter(Boolean)
           : [];
         const sourceIds=profileIds.length?profileIds:playerIds;
-        const cardIds=sourceIds.map(playerId=>activeConfig()?.requiresProfileAwareRuntime
+        const cardIds=sourceIds.map(playerId=>seasonDb?.requiresProfileAwareRuntime
           ? (cardIdentity?.cardIdForProfile?.(playerId,activeSeasonId())||playerId)
           : (cardIdentity?.cardIdForSeason?.(playerId,activeSeasonId())||playerId));
         return {teamId:id(teamId),teamName:team?.teamName||team?.name||teamId,logoUrl:team?.logoUrl||"",playerIds,profileIds,cardIds,total:cardIds.length,unlocked:cardIds.filter(cardId=>unlocked.has(cardId)).length};
@@ -506,12 +506,12 @@
       await ensureData();
       syncCurrentPullsIntoAlbum();
       const team=rtgAlbumTeams().find(entry=>id(entry.teamId)===id(teamId));
-      if(!team)return renderAlbum();
+      if(!team)return renderAlbumTeams();
       const unlocked=rtgAlbumUnlockedSet();
       const allEntries=rtgAlbumTeamPlayers(team);
       const entries=allEntries.filter(player=>unlocked.has(id(player?.cardId||player?.playerId||player?.id)));
       renderHtml(runView.albumRosterMarkup({state:campaign,team,entries,allEntries}));
-      app?.querySelector?.("[data-rtg-album-back]")?.addEventListener("click",()=>renderAlbum());
+      app?.querySelector?.("[data-rtg-album-back]")?.addEventListener("click",()=>renderAlbumTeams());
       app?.querySelectorAll?.("[data-rtg-album-player]")?.forEach(card=>card.addEventListener("click",()=>openRtgPlayerDetails(card.dataset.rtgAlbumPlayer)));
       mountDevQuickTools();
       return campaign;
