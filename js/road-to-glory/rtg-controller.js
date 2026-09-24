@@ -803,7 +803,7 @@
         if(!player)return null;
         const role=String(player.normalizedRole||player.position||player.role||rawRole(playerId)).toUpperCase();
         if(!["GK","DF","MF","FW"].includes(role))return null;
-        const move=playerResolver.resolveMove?.(playerId,activeSeasonId(),role,freeAgentsDb)||null;
+        const move=playerResolver.resolveMove?.(playerId,activeSeasonId(),role,freeAgentsDb,squadDraft?.activeRoleVariantByCardId?.[playerId]||null)||null;
         const movePower=Number(move?.power);
         const contribution=Number(player.overall||0)+(Number.isFinite(movePower)?Math.max(0,Math.min(2,(movePower-50)/30)):0);
         const recruit=recruitSet.has(playerId);
