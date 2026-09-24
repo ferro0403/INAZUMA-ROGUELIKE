@@ -23,6 +23,11 @@ assert.match(opts.dataAttr,/data-rtg-pull-player-detail="p1"/);
 assert.match(opts.dataAttr,/aria-label="Apri scheda di Johan"/);
 assert.strictEqual(opts.overall,81);
 assert.strictEqual(emblemTeam,"brainwashing");
+view.pullResultMarkup(
+  {rarity:"Elite",duplicate:false,balanceAfter:70},
+  {playerId:"23",name:"Peter Drent",finalOverall:88,category:"Elite",normalizedRole:"DF",teamId:"royal-academy",teamIds:["royal"],teamName:"Royal Academy"}
+);
+assert.strictEqual(emblemTeam,"royal");
 assert.match(html,/development-squad-card-scope/);
 assert.match(html,/rtg-pull-result--forte/);
 assert.match(html,/rtg-pull-card-stage rtg-picker-grid/);
