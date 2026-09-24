@@ -75,6 +75,18 @@
   filter:none!important;
 }
 
+/* Season 2 must override the global Season 1 artwork rule above.
+   Keep !important here because the legacy S1 selector is also !important. */
+.rtg-run-screen--s2 .rtg-map .rtg-map-block--season2-part .route-map.rtg-route-stage--season2 {
+  background-color:#082c52!important;
+  background-image:var(--rtg-season-route-bg)!important;
+  background-position:var(--rtg-route-bg-position,center)!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+  background-blend-mode:normal!important;
+  filter:none!important;
+}
+
 /* Route fitted to the illustrated island map. */
 .rtg-route-stage .rtg-map-lines{pointer-events:none!important;}
 .rtg-route-stage .rtg-map-lines .rtg-route-line-shadow{
