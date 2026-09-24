@@ -171,7 +171,11 @@
       if(meta.sourceKind===cardIdentity?.FREE_AGENTS)return (freeAgentsDb?.players||[]).find(player=>id(player?.playerId||player?.id)===id(meta.playerId))||null;
       if(meta.legacySeasonId){
         const db=global.SeasonRegistry?.database?.(meta.legacySeasonId)||(meta.legacySeasonId==="ie1"?seasonDb:null);
-        return (db?.players||[]).find(player=>id(player?.playerId||player?.id)===id(meta.playerId))||null;
+        const profileId=id(meta.profileId||meta.playerId);
+        const profile=(db?.profiles||[]).find(entry=>id(entry?.profileId||entry?.id)===profileId);
+        if(profile)return profile;
+        const canonicalId=id(meta.canonicalPlayerId||meta.playerId);
+        return (db?.players||[]).find(player=>id(player?.playerId||player?.id)===canonicalId)||null;
       }
       return rawPlayerById.get(id(meta.playerId))||null;
     }
@@ -207,7 +211,7 @@
         ? (cardIdentity?.legacyLabel?.(detailMeta.legacySeasonId)||"")
         : "";
       return deps.showPlayerDetailsFor?.(detailPlayer,{
-        playerId:id(player.playerId||cardMeta(key).playerId),
+        playerId:id(detailMeta.canonicalPlayerId||player.playerId||detailMeta.playerId),
         level:20,
         database:detailDatabaseFor(key),
         equipment:null,
