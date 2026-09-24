@@ -8,6 +8,15 @@
     Object.freeze({ index:2, start:6, end:8, label:"Verso l'élite", eyebrow:"Capitolo 3" }),
     Object.freeze({ index:3, start:9, end:9, label:"Finale", eyebrow:"Capitolo 4" }),
   ]);
+  const S2_BLOCKS = Object.freeze([
+    Object.freeze({ index:0, start:0,  end:5,  label:"Primo contatto",       eyebrow:"Capitolo 1", height:640, bg:"center 10%" }),
+    Object.freeze({ index:1, start:6,  end:9,  label:"Controffensiva",       eyebrow:"Capitolo 2", height:500, bg:"center 24%" }),
+    Object.freeze({ index:2, start:10, end:15, label:"La minaccia cresce",   eyebrow:"Capitolo 3", height:640, bg:"center 40%" }),
+    Object.freeze({ index:3, start:16, end:21, label:"Fuoco e ghiaccio",     eyebrow:"Capitolo 4", height:640, bg:"center 56%" }),
+    Object.freeze({ index:4, start:22, end:25, label:"Verso il Genesis",     eyebrow:"Capitolo 5", height:500, bg:"center 70%" }),
+    Object.freeze({ index:5, start:26, end:29, label:"L'ultima resistenza",  eyebrow:"Capitolo 6", height:500, bg:"center 84%" }),
+    Object.freeze({ index:6, start:30, end:32, label:"Finale",               eyebrow:"Capitolo 7", height:430, bg:"center bottom" }),
+  ]);
   const RAMEN_STICKER_URL="https://dxi4wb638ujep.cloudfront.net/1/k/z/q/zqioogobuek.png";
   // Restored from the original RTG Album implementation. The Album collection
   // renderer still references this constant; its declaration was accidentally
@@ -48,7 +57,19 @@
     }
     function lockedMarkup(access = {}) { const count=Math.max(0,Number(access.count)||0); return `<main class="screen rtg-run-screen rtg-locked">${header({tokens:0,lives:0})}<div class="content narrow rtg-locked-content"><section class="panel rtg-lock-card"><p class="eyebrow">Road to Glory</p><h1>La strada non è ancora aperta</h1><p class="muted">Sblocca almeno <strong>15 svincolati</strong> nelle run normali e assicurati di poter formare un undici valido con un portiere.</p><div class="progress-track rtg-lock-progress"><span class="progress-bar" style="width:${Math.min(100,Math.round(count/15*100))}%"></span></div><strong>${escape(count)}/15 svincolati</strong></section></div></main>`; }
     function nodeState(state,node,index){if(state?.seasonComplete)return"completed";if(node.id===state?.currentNodeId)return"reachable";const currentIndex=Math.max(0,Number(state?.currentNodeIndex??-1));if(index<currentIndex)return"completed";const clearedSecondary=Number(state?.attemptsByNode?.[node.id]?.clears||0)>0;const defeatedMain=node.type==="main"&&(state?.defeatedTeamIds||[]).includes(node.teamId);if(clearedSecondary||defeatedMain)return"completed";return"locked";}
-    function teamName(seasonDb,teamId){const team=(seasonDb?.teams||[]).find((entry)=>String(entry.teamId||entry.id)===String(teamId));return team?.name||team?.teamName||String(teamId||"Squadra");}
+    function teamRecord(seasonDb,teamId){
+      const key=String(teamId||"");
+      return (seasonDb?.teams||[]).find((entry)=>String(entry.teamId||entry.id)===key)
+        || (seasonDb?.bossOrder||[]).find((entry)=>String(entry.teamId||entry.id)===key)
+        || (seasonDb?.specialMatches||[]).find((entry)=>String(entry.teamId||entry.id)===key)
+        || null;
+    }
+    function teamName(seasonDb,teamId){const team=teamRecord(seasonDb,teamId);return team?.name||team?.teamName||String(teamId||"Squadra");}
+    function teamLogoMarkup(seasonDb,teamId){
+      const team=teamRecord(seasonDb,teamId);
+      if(team?.logoUrl)return `<img src="${escape(team.logoUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`;
+      return emblem(teamId);
+    }
     function blockForNode(node){if(node.type==="main")return BLOCKS.find((block)=>node.mainIndex>=block.start&&node.mainIndex<=block.end)||BLOCKS[0];const nextIndex=MAIN_TEAMS.indexOf(node.beforeTeamId);return BLOCKS.find((block)=>nextIndex>=block.start&&nextIndex<=block.end)||BLOCKS[0];}
     const ROUTE_PRESETS=Object.freeze([
       Object.freeze([{x:29,y:9},{x:30,y:26},{x:48,y:39},{x:27,y:58},{x:47,y:69},{x:43,y:81},{x:66,y:91}]),
@@ -72,24 +93,37 @@
       },`M ${points[0].x} ${points[0].y}`);
       return `<svg class="map-lines rtg-map-lines" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true"><path class="rtg-route-line-shadow" d="${d}" /><path class="rtg-route-line" d="${d}" /></svg>`;
     }
-    function mainNodeMarkup(state,node,index,seasonDb,point){const status=nodeState(state,node,index),disabled=status==="locked"?" disabled":"",label=teamName(seasonDb,node.teamId);return `<button type="button" class="map-node rtg-route-node rtg-route-node--main ${status}" style="left:${point.x}%;top:${point.y}%" data-rtg-node-id="${escape(node.id)}" data-rtg-state="${status}" aria-label="${escape(label)} · ${status==="reachable"?"Prossima partita":status==="completed"?"Completata":"Da sbloccare"}"${status==="reachable"?' aria-current="step"':""}${disabled}><span class="node-icon rtg-main-node-icon">${emblem(node.teamId)}</span><span class="node-label">${escape(label)}</span><span class="rtg-node-status">${status==="reachable"?"GIOCA":status==="completed"?"COMPLETATA":"DA SBLOCCARE"}</span>${node.checkpointAfter?`<span class="rtg-node-checkpoint" data-rtg-checkpoint="${escape(node.teamId)}">⚑</span>`:""}</button>`;}
+    function mainNodeMarkup(state,node,index,seasonDb,point){const status=nodeState(state,node,index),disabled=status==="locked"?" disabled":"",label=teamName(seasonDb,node.teamId);return `<button type="button" class="map-node rtg-route-node rtg-route-node--main ${status}" style="left:${point.x}%;top:${point.y}%" data-rtg-node-id="${escape(node.id)}" data-rtg-state="${status}" aria-label="${escape(label)} · ${status==="reachable"?"Prossima partita":status==="completed"?"Completata":"Da sbloccare"}"${status==="reachable"?' aria-current="step"':""}${disabled}><span class="node-icon rtg-main-node-icon">${teamLogoMarkup(seasonDb,node.teamId)}</span><span class="node-label">${escape(label)}</span><span class="rtg-node-status">${status==="reachable"?"GIOCA":status==="completed"?"COMPLETATA":"DA SBLOCCARE"}</span>${node.checkpointAfter?`<span class="rtg-node-checkpoint" data-rtg-checkpoint="${escape(node.teamId)}">⚑</span>`:""}</button>`;}
     function secondaryNodeMarkup(state,node,index,point){const status=nodeState(state,node,index),farmable=Number(state?.attemptsByNode?.[node.id]?.clears||0)>0,disabled=status==="locked"?" disabled":"";return `<button type="button" class="map-node rtg-route-node rtg-route-node--secondary ${status}" style="left:${point.x}%;top:${point.y}%" data-rtg-node-id="${escape(node.id)}" data-rtg-state="${status}" data-rtg-farmable="${farmable?"true":"false"}"${disabled}><span class="node-icon rtg-free-agent-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 3 34 9v12c0 8-14 16-14 16S6 29 6 21V9Z" fill="currentColor"/><path d="m20 12 7 5-3 8h-8l-3-8Z" fill="#fff"/></svg></span><span class="node-label">Svincolati</span><span class="rtg-node-status">${status==="reachable"?"GIOCA":farmable?"RIGIOCA":status==="completed"?"COMPLETATA":"DA SBLOCCARE"}</span></button>`;}
     function blockMarkup(block,entries,state,seasonDb){const points=positions(block.index,entries.length);return `<section class="rtg-map-block rtg-map-block--${block.index+1}" data-rtg-map-block="${block.index+1}"><div class="section-head rtg-route-heading"><div><p class="eyebrow">${escape(block.eyebrow)}</p><h2>${escape(block.label)}</h2></div><span class="rtg-route-count">${entries.length} tappe</span></div><div class="route-map rtg-route-stage" style="--rtg-route-height:${Math.max(260,entries.length*100)}px">${pathSvg(points)}${entries.map(({node,index},localIndex)=>node.type==="main"?mainNodeMarkup(state,node,index,seasonDb,points[localIndex]):secondaryNodeMarkup(state,node,index,points[localIndex])).join("")}</div></section>`;}
+    function season2Positions(blockIndex,count){
+      const left=blockIndex%2===0;
+      const six=left
+        ? [{x:31,y:9},{x:64,y:24},{x:42,y:41},{x:70,y:58},{x:35,y:75},{x:62,y:91}]
+        : [{x:67,y:9},{x:36,y:24},{x:62,y:41},{x:31,y:58},{x:66,y:75},{x:39,y:91}];
+      const four=left
+        ? [{x:31,y:14},{x:68,y:38},{x:37,y:63},{x:65,y:86}]
+        : [{x:67,y:14},{x:34,y:38},{x:64,y:63},{x:37,y:86}];
+      const three=left
+        ? [{x:31,y:18},{x:58,y:50},{x:68,y:82}]
+        : [{x:67,y:18},{x:40,y:50},{x:31,y:82}];
+      const preset=count===6?six:count===4?four:count===3?three:null;
+      return preset||positions(blockIndex,count);
+    }
     function season2MapMarkup(list,state,seasonDb){
-      const points=Array.from({length:list.length},(_,index)=>{
-        const t=index/Math.max(1,list.length-1);
-        const lanes=[34,58,42,68,52,29,61,39];
-        return {x:lanes[index%lanes.length],y:3.5+t*93};
-      });
-      const entries=list.map((node,index)=>({node,index}));
-      return `<section class="rtg-map-block rtg-map-block--season2" data-rtg-map-block="season2"><div class="section-head rtg-route-heading"><div><p class="eyebrow">Inazuma Eleven 2</p><h2>Il nuovo viaggio</h2></div><span class="rtg-route-count">${entries.length} tappe</span></div><div class="route-map rtg-route-stage rtg-route-stage--season2" style="--rtg-route-height:2500px">${pathSvg(points)}${entries.map(({node,index},localIndex)=>node.type==="main"?mainNodeMarkup(state,node,index,seasonDb,points[localIndex]):secondaryNodeMarkup(state,node,index,points[localIndex])).join("")}</div></section>`;
+      const indexed=list.map((node,index)=>({node,index}));
+      return S2_BLOCKS.map((block)=>{
+        const entries=indexed.filter(({index})=>index>=block.start&&index<=block.end);
+        const points=season2Positions(block.index,entries.length);
+        return `<section class="rtg-map-block rtg-map-block--season2-part rtg-map-block--season2-${block.index+1}" data-rtg-map-block="season2-${block.index+1}"><div class="section-head rtg-route-heading"><div><p class="eyebrow">${escape(block.eyebrow)}</p><h2>${escape(block.label)}</h2></div><span class="rtg-route-count">${entries.length} tappe</span></div><div class="route-map rtg-route-stage rtg-route-stage--season2" style="--rtg-route-height:${block.height}px;--rtg-route-bg-position:${escape(block.bg)}">${pathSvg(points)}${entries.map(({node,index},localIndex)=>node.type==="main"?mainNodeMarkup(state,node,index,seasonDb,points[localIndex]):secondaryNodeMarkup(state,node,index,points[localIndex])).join("")}</div></section>`;
+      }).join("");
     }
     function runMarkup({state,nodes,seasonDb,seasonConfig=null}={}){
       const list=Array.from(nodes||[]),sid=String(state?.activeSeasonId||"ie1"),seasonNo=sid==="ie1_s2"?2:1;
       const currentIndex=list.findIndex((node)=>node.id===state?.currentNodeId),viewState={...(state||{}),currentNodeIndex:currentIndex};
       const blocks=sid==="ie1_s2"?season2MapMarkup(list,viewState,seasonDb):BLOCKS.map((block)=>{const entries=list.map((node,index)=>({node,index})).filter((entry)=>blockForNode(entry.node).index===block.index);return blockMarkup(block,entries,viewState,seasonDb);}).join("");
       const currentNode=list[currentIndex],currentLabel=currentNode?.type==="main"?teamName(seasonDb,currentNode.teamId):"Svincolati",complete=!!state?.seasonComplete,cleared=complete?list.length:Math.max(0,currentIndex);
-      const currentMark=currentNode?.type==="main"?emblem(currentNode.teamId):`<span class="rtg-journey-free-agent" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 3 34 9v12c0 8-14 16-14 16S6 29 6 21V9Z" fill="currentColor"/><path d="m20 12 7 5-3 8h-8l-3-8Z" fill="#fff"/></svg></span>`;
+      const currentMark=currentNode?.type==="main"?teamLogoMarkup(seasonDb,currentNode.teamId):`<span class="rtg-journey-free-agent" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 3 34 9v12c0 8-14 16-14 16S6 29 6 21V9Z" fill="currentColor"/><path d="m20 12 7 5-3 8h-8l-3-8Z" fill="#fff"/></svg></span>`;
       const transition=complete&&sid==="ie1"?`<button type="button" class="btn btn-yellow rtg-season-transition" data-rtg-enter-season2>ENTRA NELLA SEASON 2 <span aria-hidden="true">→</span></button>`:"";
       const routeStyle=seasonConfig?.routeBackground?` style="--rtg-season-route-bg:url('${escape(seasonConfig.routeBackground)}')"`:"";
       return `<main class="screen rtg-run-screen${seasonNo===2?" rtg-run-screen--s2":""}${complete?" rtg-run-screen--complete":""}"${routeStyle}>${header(state)}<div class="content narrow rtg-run-content"><section class="rtg-journey-summary ${complete?"rtg-journey-summary--complete":""}" aria-label="Avanzamento percorso"><div class="rtg-journey-main"><div class="rtg-journey-copy">${complete?`<div class="rtg-complete-kicker"><span class="rtg-complete-check" aria-hidden="true">✓</span><span>Season ${seasonNo} completata</span></div>`:`<p class="eyebrow">La tua prossima partita</p>`}<h1>${complete?"Traguardo raggiunto":escape(currentLabel)}</h1><p>${complete?`Percorso concluso · ${list.length} tappe completate`:`Tappa ${Math.max(1,currentIndex+1)} di ${list.length} · ${currentNode?.type==="main"?(currentNode.special?"Partita speciale":"Sfida principale"):"Partita Svincolati"}`}</p></div>${complete?`<div class="rtg-complete-trophy" aria-hidden="true"><span>★</span><b>S${seasonNo}</b></div>`:`<div class="rtg-journey-opponent" aria-hidden="true">${currentMark}</div>`}</div>${!complete&&currentNode?`<button type="button" class="btn btn-yellow" data-rtg-current-node="${escape(currentNode.id)}">Prepara partita <span aria-hidden="true">→</span></button>`:""}${transition}<div class="rtg-journey-progress" role="progressbar" aria-label="Tappe completate nel percorso attuale" aria-valuenow="${cleared}" aria-valuemin="0" aria-valuemax="${list.length}"><span style="width:${list.length?cleared/list.length*100:0}%"></span></div></section><section class="panel rtg-run-command"><div><p class="eyebrow">La tua collezione</p><h2>Rinforza la squadra</h2><p class="muted">Nuovi giocatori dalle squadre sconfitte.</p></div><button type="button" class="btn btn-yellow rtg-vending-button" data-rtg-open-vending>Distributore S${seasonNo} <span>300 ◈</span></button></section><section class="rtg-map rtg-map--season-${seasonNo}" aria-label="Percorso Season ${seasonNo}">${blocks}</section>${complete&&sid==="ie1"?`<section class="rtg-season-complete-footer" aria-label="Continua nella Season 2"><div class="rtg-season-complete-footer__head"><div class="rtg-season-complete-footer__badge" aria-hidden="true"><small>PROSSIMA</small><b>S2</b></div><div class="rtg-season-complete-footer__copy"><p class="eyebrow">SEASON 1 COMPLETATA</p><strong>Continua il viaggio</strong><span>La Season 2 riparte dalla tua squadra attuale.</span></div></div><button type="button" class="btn btn-yellow rtg-season-transition rtg-season-transition--footer" data-rtg-enter-season2><span>ENTRA NELLA SEASON 2</span><b aria-hidden="true">→</b></button></section>`:""}</div>${tabs("run")}</main>`;
@@ -141,7 +175,7 @@
     }
 
     function requirementsMarkup(eligibility={}){if(!eligibility)return"";const seasonLabel=eligibility.seasonId==="ie1_s2"?"S2":"S1";const rows=[["Potenza rosa · max",eligibility.teamPower==null?"—":`${eligibility.teamPower} / ${eligibility.cap}`,!eligibility.reasons?.includes("team-power-cap")],[`Reclute ${seasonLabel} · min`,`${eligibility.recruitCount||0} / ${eligibility.minRecruit||0}`,!eligibility.reasons?.some(code=>code==="min-season-recruits"||code==="min-s1-recruits")],["Reclute recenti · min",`${eligibility.recentRecruitCount||0} / ${eligibility.recentCount||0}`,!eligibility.reasons?.some(code=>code==="recent-season-recruits"||code==="recent-s1-recruits")]];return `<section class="panel rtg-requirements"><p class="eyebrow">Accesso partita</p><h3>Requisiti</h3><div class="rtg-requirements-list">${rows.map(([label,value,ok])=>`<div class="rtg-requirement ${ok?"ok":"bad"}"><span><i aria-hidden="true">${ok?"✓":"!"}</i> ${escape(label)}</span><strong>${escape(value)}</strong></div>`).join("")}</div><p class="rtg-requirements-note">Reclute e potenza considerano tutti i 15 giocatori: titolari + panchina.</p></section>`;}
-    function nodeModalMarkup({node,eligibility=null,seasonDb,allowed=true}={}){if(!node)return"";if(node.type==="main"){const label=teamName(seasonDb,node.teamId);return `<div class="rtg-node-modal rtg-paper-modal"><div class="modal-head rtg-node-modal-head"><span class="rtg-node-modal-emblem">${emblem(node.teamId)}</span><div><p class="eyebrow">Partita principale</p><h2>${escape(label)}</h2><p class="muted">Prepara la squadra e rispetta i requisiti della sfida.</p></div></div>${requirementsMarkup(eligibility)}<button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed||!eligibility?.eligible?"disabled":""}>GIOCA</button></div>`;}return `<div class="rtg-node-modal rtg-paper-modal"><div class="modal-head rtg-node-modal-head"><span class="rtg-node-modal-secondary" aria-hidden="true">?</span><div><p class="eyebrow">Svincolati</p><h2>Partita secondaria</h2><p class="muted">Avversari generati nella fascia di potenza del percorso. Vittoria: 100–150 Gettoni RTG.</p></div></div><button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed?"disabled":""}>GIOCA</button></div>`;}
+    function nodeModalMarkup({node,eligibility=null,seasonDb,allowed=true}={}){if(!node)return"";if(node.type==="main"){const label=teamName(seasonDb,node.teamId);return `<div class="rtg-node-modal rtg-paper-modal"><div class="modal-head rtg-node-modal-head"><span class="rtg-node-modal-emblem">${teamLogoMarkup(seasonDb,node.teamId)}</span><div><p class="eyebrow">Partita principale</p><h2>${escape(label)}</h2><p class="muted">Prepara la squadra e rispetta i requisiti della sfida.</p></div></div>${requirementsMarkup(eligibility)}<button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed||!eligibility?.eligible?"disabled":""}>GIOCA</button></div>`;}return `<div class="rtg-node-modal rtg-paper-modal"><div class="modal-head rtg-node-modal-head"><span class="rtg-node-modal-secondary" aria-hidden="true">?</span><div><p class="eyebrow">Svincolati</p><h2>Partita secondaria</h2><p class="muted">Avversari generati nella fascia di potenza del percorso. Vittoria: 100–150 Gettoni RTG.</p></div></div><button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed?"disabled":""}>GIOCA</button></div>`;}
     function vendingCapsulePalette(rarities=[]){
       const allowed=["normale","buono","forte","elite","mondiale","leggenda","aurico"];
       const available=[...new Set(Array.from(rarities||[]).map(entry=>pullRaritySlug(entry?.rarity)).filter(key=>allowed.includes(key)))];
@@ -162,7 +196,7 @@
       return ["scarso","debole","normale","buono","forte","elite","mondiale","leggenda","aurico"].includes(key)?key:"normale";
     }
 
-    function pullResultMarkup(result={},player={}){
+    function pullResultMarkup(result={},player={},seasonDb=null){
       const rarity=String(result.rarity||player.category||"Normale").trim()||"Normale";
       const rarityKey=pullRaritySlug(rarity);
       const duplicate=!!result.duplicate;
@@ -203,7 +237,7 @@
             <h2>${escape(playerName)}</h2>
             <div class="rtg-pull-player-identity">
               <span class="rtg-pull-team">
-                <span class="rtg-pull-team-logo" aria-hidden="true">${teamId?emblem(teamId):""}</span>
+                <span class="rtg-pull-team-logo" aria-hidden="true">${teamId?teamLogoMarkup(seasonDb,teamId):""}</span>
                 <strong>${escape(teamLabel)}</strong>
               </span>
               <span class="rtg-pull-role">${escape(playerRole)}</span>
