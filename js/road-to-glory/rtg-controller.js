@@ -46,10 +46,29 @@
     const DEV_MODE=deps.devMode===true||(typeof global.URLSearchParams==="function"&&new global.URLSearchParams(global.location?.search||"").get("dev")==="1");
     const RTG_ALBUM_STORAGE_KEY="inazuma.rtg.album.v1";
     const RTG_SQUAD_SLOTS_KEY="inazuma.rtg.squad-slots.v2";
+    const RTG_LEGACY_SQUAD_SLOTS_KEY="inazuma.rtg.squad-slots.v1";
     let activeSquadSlot=1;
     const RTG_ACTIVE_SQUAD_SLOT_KEY="inazuma.rtg.active-squad-slot.v1";
     function squadSlotsKey(seasonId=activeSeasonId()){return `${RTG_SQUAD_SLOTS_KEY}.${id(seasonId||"ie1")}`;}
-    function readSquadSlots(seasonId=activeSeasonId()){try{const parsed=JSON.parse(global.localStorage?.getItem?.(squadSlotsKey(seasonId))||"{}");return parsed&&typeof parsed==="object"?parsed:{}}catch(_e){return{}}}
+    function readSquadSlots(seasonId=activeSeasonId()){
+      try{
+        const sid=id(seasonId||"ie1"),key=squadSlotsKey(sid),raw=global.localStorage?.getItem?.(key);
+        if(raw){const parsed=JSON.parse(raw);return parsed&&typeof parsed==="object"?parsed:{};}
+        // One-time compatibility bridge: old previews stored all three S1 slots
+        // in the unsuffixed v1 key. Import them only into S1; never into S2.
+        if(sid==="ie1"){
+          const legacyRaw=global.localStorage?.getItem?.(RTG_LEGACY_SQUAD_SLOTS_KEY);
+          if(legacyRaw){
+            const legacy=JSON.parse(legacyRaw);
+            if(legacy&&typeof legacy==="object"){
+              global.localStorage?.setItem?.(key,JSON.stringify(legacy));
+              return legacy;
+            }
+          }
+        }
+        return{};
+      }catch(_e){return{}}
+    }
     function writeSquadSlots(slots,seasonId=activeSeasonId()){try{global.localStorage?.setItem?.(squadSlotsKey(seasonId),JSON.stringify(slots||{}));}catch(_e){}}
     function storeSquadSlot(slot,squad){const slots=readSquadSlots();slots[String(slot)]=clone(squad);writeSquadSlots(slots);}
     function readActiveSquadSlot(){try{return Math.max(1,Math.min(3,Number(global.localStorage?.getItem?.(RTG_ACTIVE_SQUAD_SLOT_KEY))||1));}catch(_e){return 1}}
