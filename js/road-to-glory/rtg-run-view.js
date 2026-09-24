@@ -20,6 +20,13 @@
     const compactPlayerCardMarkup = deps.compactPlayerCardMarkup || null;
     const tokenIcon=()=>`<img class="rtg-token-icon" src="${RAMEN_STICKER_URL}" alt="" aria-hidden="true" draggable="false">`;
     const skinTokens=(markup)=>String(markup||"").replaceAll("◈",tokenIcon());
+    function albumRarityClass(category){
+      const rarity=String(category||"debole").trim().toLowerCase();
+      return `rarity-${["scarso","debole","normale","buono","forte","elite","mondiale","leggenda","aurico"].includes(rarity)?rarity:"debole"}`;
+    }
+    function albumTeamLogoMarkup(team={}){
+      return team?.teamId ? emblem(team.teamId) : '<span class="album-free-agent-logo" aria-hidden="true">⚡</span>';
+    }
 
     function tabs(active = "run") {
       const icon = (name) => name === "run"
