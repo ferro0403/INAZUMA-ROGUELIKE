@@ -1,0 +1,11 @@
+"use strict";
+const assert=require("assert"),fs=require("fs");
+const view=fs.readFileSync("js/road-to-glory/rtg-squad-view-base.js","utf8");
+const ctl=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+assert(view.includes('area === "bench" && Array.isArray(player?.roleVariants) && player.roleVariants.length > 1'));
+assert(view.includes("data-rtg-switch-role"));
+assert(view.includes("actions.onSwitchRole?.(cardId)"));
+assert(ctl.includes('if(!loc||loc.area!=="bench")'));
+assert(ctl.includes("activeRoleVariantByCardId"));
+assert(ctl.includes("onSwitchRole:(playerId)=>switchBenchRole(playerId)"));
+console.log("rtg-season2-bench-role-switch-test: PASS");
