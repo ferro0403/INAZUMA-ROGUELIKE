@@ -5739,3 +5739,7 @@
 
 .rtg-squad-role-trigger{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:30px;margin-top:5px;border:1px solid currentColor;border-radius:9px;background:transparent;font:inherit;font-size:10px;font-weight:900;letter-spacing:.04em;cursor:pointer}
 .rtg-squad-role-trigger strong{font-size:12px}
+
+.rtg-version-choice-list{display:grid;gap:10px;margin-top:14px}
+.rtg-version-choice{display:grid;grid-template-columns:1fr auto;gap:3px 12px;width:100%;padding:12px 14px;text-align:left;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(8,25,48,.78);color:inherit;cursor:pointer}
+.rtg-version-choice strong{font-size:15px}.rtg-version-choice span{grid-column:1/-1;font-size:12px;font-weight:800}.rtg-version-choice em{grid-column:1/-1;font-size:11px;opacity:.72}
