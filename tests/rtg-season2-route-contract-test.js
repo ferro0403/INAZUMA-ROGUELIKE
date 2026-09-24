@@ -18,7 +18,7 @@ const expected={
 };
 for(const [teamId,v] of Object.entries(expected)){const x=S.constraints[teamId];assert.deepStrictEqual([x.cap,x.minRecruit,x.recentCount,x.recentWindow],v,teamId);}
 assert.deepStrictEqual(Array.from(S.checkpointMainIndexes),[2,5,8,11,14]);
-assert.strictEqual(S.routeBackground,"assets/rtg/rtg-season2-route-map-user.webp?v=20260924-user-map-final");
+assert.strictEqual(S.routeBackground,"assets/rtg/rtg-season2-route-map-user.webp?v=20260924-user-map-correct");
 const runView=fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8");
 const routeCss=fs.readFileSync("css/road-to-glory.css","utf8");
 assert(runView.includes("const S2_BLOCKS"),"S2 route must use chapter blocks");
