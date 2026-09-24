@@ -5809,24 +5809,36 @@
   padding-left:8px;
 }
 .rtg-season-complete-footer__badge{
-  display:grid;
-  place-items:center;
-  min-height:76px;
-  padding:8px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  width:88px;
+  min-width:88px;
+  min-height:82px;
+  padding:8px 6px;
   background:#ffd326;
   color:#111318;
   border:3px solid #fffdf6;
   box-shadow:5px 5px 0 #111318;
   transform:skew(-3deg);
+  overflow:hidden;
+  text-align:center;
 }
 .rtg-season-complete-footer__badge small{
-  font-size:.56rem;
+  display:block;
+  max-width:100%;
+  margin:0 0 3px;
+  font-size:.52rem;
   font-weight:1000;
-  letter-spacing:.14em;
+  letter-spacing:.06em;
+  line-height:1;
+  white-space:nowrap;
 }
 .rtg-season-complete-footer__badge b{
-  margin-top:-3px;
-  font-size:2.05rem;
+  display:block;
+  margin:0;
+  font-size:1.9rem;
   line-height:1;
 }
 .rtg-season-complete-footer__copy{display:grid;gap:4px}
@@ -5873,9 +5885,18 @@
 }
 @media(max-width:640px){
   .rtg-season-complete-footer{gap:14px;padding:16px 14px 16px}
-  .rtg-season-complete-footer__head{grid-template-columns:72px minmax(0,1fr);gap:12px;padding-left:6px}
-  .rtg-season-complete-footer__badge{min-height:68px}
-  .rtg-season-complete-footer__badge b{font-size:1.8rem}
+  .rtg-season-complete-footer__head{grid-template-columns:78px minmax(0,1fr);gap:12px;padding-left:6px}
+  .rtg-season-complete-footer__badge{
+    width:78px;
+    min-width:78px;
+    min-height:72px;
+    padding:7px 5px;
+  }
+  .rtg-season-complete-footer__badge small{
+    font-size:.48rem;
+    letter-spacing:.045em;
+  }
+  .rtg-season-complete-footer__badge b{font-size:1.72rem}
   .rtg-season-complete-footer__copy>strong{font-size:1.55rem}
   .rtg-season-complete-footer__copy>span{font-size:.84rem}
   .rtg-season-transition--footer{min-height:55px}
