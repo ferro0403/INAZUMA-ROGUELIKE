@@ -766,8 +766,13 @@
       return null;
     }
     function seasonTeamIdsForPlayer(cardRef){
+      const parsed=cardIdentity?.parse?.(cardRef,activeSeasonId())||{};
       const player=playerResolver.resolveVersion?.(cardRef,campaign?.activeSeasonId||"ie1",freeAgentsDb)?.player||rawPlayer(cardRef);
-      return [player?.teamId,...(player?.teamIds||[])].filter(Boolean).map(id);
+      const profileId=id(parsed.profileId||parsed.playerId);
+      const profile=(seasonDb?.profiles||[]).find(entry=>id(entry?.profileId||entry?.id)===profileId);
+      const canonicalId=id(profile?.playerId||parsed.canonicalPlayerId||parsed.playerId).split("@")[0];
+      const canonical=(seasonDb?.players||[]).find(entry=>id(entry?.playerId||entry?.id)===canonicalId);
+      return [player?.teamId,...(player?.teamIds||[]),profile?.teamId,...(profile?.teamIds||[]),canonical?.teamId,...(canonical?.teamIds||[])].filter(Boolean).map(id);
     }
     function requirementPool(teamId){
       const constraint=activeConfig()?.constraints?.[teamId];
