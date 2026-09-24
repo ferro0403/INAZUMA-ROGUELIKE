@@ -5744,3 +5744,49 @@
 .rtg-version-choice-list{display:grid;gap:10px;margin-top:14px}
 .rtg-version-choice{display:grid;grid-template-columns:1fr auto;gap:3px 12px;width:100%;padding:12px 14px;text-align:left;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(8,25,48,.78);color:inherit;cursor:pointer}
 .rtg-version-choice strong{font-size:15px}.rtg-version-choice span{grid-column:1/-1;font-size:12px;font-weight:800}.rtg-version-choice em{grid-column:1/-1;font-size:11px;opacity:.72}
+
+
+/* Completed Season 1: compact celebration and repeated continuation CTA. */
+.rtg-journey-summary:has([data-rtg-enter-season2]){
+  position:relative;
+  overflow:hidden;
+  border-top:4px solid #ffd326;
+  box-shadow:8px 10px 0 rgba(14,16,20,.12);
+}
+.rtg-journey-summary:has([data-rtg-enter-season2])::after{
+  content:"";
+  position:absolute;
+  right:-38px;
+  top:-64px;
+  width:210px;
+  height:210px;
+  border:22px solid rgba(255,211,38,.10);
+  border-radius:50%;
+  pointer-events:none;
+}
+.rtg-journey-summary:has([data-rtg-enter-season2]) .rtg-journey-copy h1{
+  letter-spacing:-.035em;
+  text-shadow:3px 3px 0 rgba(255,211,38,.14);
+}
+.rtg-season-complete-footer{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+  margin:24px 0 92px;
+  padding:18px 20px;
+  background:#111318;
+  color:#fff;
+  border:3px solid #111318;
+  border-left:8px solid #ffd326;
+  box-shadow:8px 8px 0 rgba(17,19,24,.16);
+}
+.rtg-season-complete-footer>div{display:grid;gap:3px}
+.rtg-season-complete-footer .eyebrow{margin:0;color:#ffd326}
+.rtg-season-complete-footer strong{font-size:1.15rem}
+.rtg-season-complete-footer span{opacity:.82}
+.rtg-season-transition--footer{flex:0 0 auto}
+@media(max-width:640px){
+  .rtg-season-complete-footer{align-items:stretch;flex-direction:column;margin-bottom:104px}
+  .rtg-season-transition--footer{width:100%}
+}
