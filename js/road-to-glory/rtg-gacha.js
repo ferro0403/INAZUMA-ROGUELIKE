@@ -124,7 +124,10 @@
     const player = rarityPool[Math.min(rarityPool.length - 1, Math.floor(playerRoll * rarityPool.length))] || rarityPool[0];
     if (!player) throw Object.assign(new Error("Nessun giocatore RTG disponibile"), { code: "rtg-gacha-empty-pool" });
 
-    const card = cards().record(player);
+    // Preserve the exact profile card selected from a profiled season.
+    // record(player) can only be trusted when the object already carries the
+    // season-qualified cardId produced by unlockedCandidates.
+    const card = cards().record(player?.cardId || player, state?.activeSeasonId || seasonDb?.seasonId || "ie1");
     state.tokens = (Number(state.tokens) || 0) - cost;
     state.gacha = { ...(state.gacha || {}), pullCount: pullIndex + 1 };
     state.gachaAcquiredCards = [
