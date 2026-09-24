@@ -217,6 +217,7 @@
         database:detailDatabaseFor(key),
         equipment:null,
         rtgLegacyLabel,
+        moveSeasonId:id(detailMeta.legacySeasonId||player.resolvedSeasonId||campaign?.activeSeasonId||"ie1"),
         readOnly:true,
         mode:options?.mode||undefined,
         albumUnlocked:options?.albumUnlocked,
