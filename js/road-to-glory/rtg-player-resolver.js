@@ -96,15 +96,17 @@
     const canonicalId = canonicalIdFor(seasonId, sourcePlayerId);
     const player = playerInSeason(canonicalId, seasonId) || playerInSeason(sourcePlayerId, seasonId);
     if (!player) return null;
-    const playerId = canonicalIdFor(seasonId, player.playerId || parsed.playerId);
-    const cardId = api.cardIdForSeason(playerId, seasonId);
+    const canonicalPlayerId = canonicalIdFor(seasonId, player.playerId || explicitProfile?.playerId || parsed.canonicalPlayerId || parsed.playerId);
+    const exactPlayerId = explicitProfile?.profileId || parsed.profileId || parsed.playerId;
+    const cardId = parsed.cardId;
     return Object.freeze({
       cardId,
-      playerId,
-      profileId: explicitProfile?.profileId || null,
+      playerId: exactPlayerId,
+      canonicalPlayerId,
+      profileId: explicitProfile?.profileId || parsed.profileId || null,
       legacySeasonId: seasonId,
       seasonId,
-      player: Object.freeze({ ...player, playerId, cardId, legacySeasonId: seasonId }),
+      player: Object.freeze({ ...player, playerId: canonicalPlayerId, cardId, legacySeasonId: seasonId }),
     });
   }
 
@@ -151,7 +153,7 @@
     const resolved = resolveVersion(playerId, activeSeasonId, freeAgentsDb);
     if (!resolved) return null;
     const database = resolved.seasonId === "free_agents" ? freeAgentsDb : (global.SeasonRegistry?.database?.(resolved.seasonId) || null);
-    const canonicalPlayerId = id(resolved.player.playerId || parsed?.playerId || playerId);
+    const canonicalPlayerId = id(resolved.canonicalPlayerId || resolved.player.playerId || parsed?.canonicalPlayerId || parsed?.playerId || playerId);
     let player;
     if (database?.requiresProfileAwareRuntime && global.ProfiledSeasonRuntime?.resolveEffectivePlayerAtLevel) {
       player = global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel({
