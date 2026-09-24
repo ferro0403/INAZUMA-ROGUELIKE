@@ -5717,6 +5717,7 @@
 /* Season 2 route is isolated from the Season 1 map so legacy layout stays unchanged. */
 .rtg-run-screen--s2 .rtg-route-stage--season2{
   position:relative;
+  height:var(--rtg-route-height,2500px);
   min-height:var(--rtg-route-height,2500px);
   background-image:linear-gradient(rgba(4,31,72,.12),rgba(4,31,72,.12)),var(--rtg-season-route-bg);
   background-size:cover;
