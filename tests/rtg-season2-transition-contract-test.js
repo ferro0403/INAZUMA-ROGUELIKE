@@ -4,6 +4,7 @@ const ctl=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
 assert(ctl.includes('if(activeSeasonId()!=="ie1"||!campaign?.seasonComplete)return campaign'));
 assert(ctl.includes('current.activeSeasonId="ie1_s2"'));
 assert(ctl.includes('current.currentNodeId="main:secret_service"'));
+assert(ctl.includes('querySelectorAll?.("[data-rtg-enter-season2]")?.forEach'));
 assert(ctl.includes("current.defeatedTeamIds=[]"));
 assert(ctl.includes("current.squads.ie1_s2=current.squads.ie1_s2?.lineup?.length?current.squads.ie1_s2:previous"));
 assert(!/current\.gachaAcquiredCards\s*=\s*\[\]/.test(ctl.slice(ctl.indexOf("async function enterSeason2"),ctl.indexOf("function rtgAlbumEntries"))));
