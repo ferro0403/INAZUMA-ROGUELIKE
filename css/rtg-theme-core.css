@@ -4661,5 +4661,16 @@
 .rtg-squad-section-head .rtg-squad-live-overall{background:#ffd21f!important;border-color:#111216!important;color:#111216!important}
 .rtg-squad-section-head .rtg-squad-live-overall small,.rtg-squad-section-head .rtg-squad-live-overall strong{color:#111216!important}
 
-/* RTG squad header: overall and formation use the same compact control height. */
-.rtg-squad-section-head .rtg-squad-live-overall,.rtg-squad-section-head .squad-field-formation{height:46px!important;min-height:46px!important;box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
+/* RTG squad header: keep formation at its original compact size; overall matches it. */
+.rtg-squad-section-head .rtg-squad-live-overall{
+  min-height:0!important;
+  height:auto!important;
+  padding:4px 8px!important;
+  gap:5px!important;
+  box-sizing:border-box!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+.rtg-squad-section-head .rtg-squad-live-overall small{font-size:.5rem!important}
+.rtg-squad-section-head .rtg-squad-live-overall strong{font-size:.82rem!important}
