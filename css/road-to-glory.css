@@ -5790,3 +5790,118 @@
   .rtg-season-complete-footer{align-items:stretch;flex-direction:column;margin-bottom:104px}
   .rtg-season-transition--footer{width:100%}
 }
+
+/* Completed-season hero: graphic treatment uses CSS only. */
+.rtg-journey-summary--complete{
+  position:relative;
+  isolation:isolate;
+  overflow:hidden;
+  padding:28px 30px 24px;
+  background:
+    linear-gradient(118deg,#101217 0 62%,#191c22 62% 100%);
+  color:#fff;
+  border:3px solid #101217;
+  border-top:0;
+  box-shadow:9px 10px 0 #ffd326;
+}
+.rtg-journey-summary--complete::before{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  inset:0 auto 0 0;
+  width:9px;
+  background:#ffd326;
+}
+.rtg-journey-summary--complete::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  right:-72px;
+  top:-110px;
+  width:330px;
+  height:330px;
+  border:44px solid rgba(255,211,38,.075);
+  border-radius:50%;
+  box-shadow:0 0 0 26px rgba(255,255,255,.025);
+}
+.rtg-journey-summary--complete .rtg-journey-main{align-items:center;gap:24px}
+.rtg-journey-summary--complete .rtg-journey-copy{position:relative;z-index:1}
+.rtg-complete-kicker{
+  display:inline-flex;
+  align-items:center;
+  gap:9px;
+  margin-bottom:10px;
+  color:#ffd326;
+  font-weight:900;
+  font-size:.78rem;
+  letter-spacing:.16em;
+  text-transform:uppercase;
+}
+.rtg-complete-check{
+  display:grid;
+  place-items:center;
+  width:24px;
+  height:24px;
+  background:#ffd326;
+  color:#111318;
+  border:2px solid #fff;
+  border-radius:50%;
+  font-size:.85rem;
+  letter-spacing:0;
+}
+.rtg-journey-summary--complete .rtg-journey-copy h1{
+  margin:.05em 0 .12em;
+  max-width:620px;
+  color:#fff;
+  font-size:clamp(2.35rem,7vw,4.8rem);
+  line-height:.84;
+  letter-spacing:-.055em;
+  text-transform:uppercase;
+  text-shadow:none;
+}
+.rtg-journey-summary--complete .rtg-journey-copy>p{
+  margin:12px 0 0;
+  color:rgba(255,255,255,.72);
+  font-weight:700;
+}
+.rtg-complete-trophy{
+  position:relative;
+  z-index:1;
+  flex:0 0 112px;
+  width:112px;
+  height:112px;
+  display:grid;
+  place-items:center;
+  background:#ffd326;
+  color:#111318;
+  border:5px solid #fff;
+  border-radius:50%;
+  box-shadow:7px 7px 0 rgba(0,0,0,.3);
+  transform:rotate(4deg);
+}
+.rtg-complete-trophy span{font-size:2rem;line-height:1;transform:translateY(-11px)}
+.rtg-complete-trophy b{position:absolute;bottom:21px;font-size:1.15rem;letter-spacing:.08em}
+.rtg-journey-summary--complete .rtg-season-transition{
+  position:relative;
+  z-index:1;
+  width:100%;
+  margin-top:22px;
+  min-height:62px;
+  font-size:1rem;
+  letter-spacing:.055em;
+}
+.rtg-journey-summary--complete .rtg-journey-progress{
+  position:relative;
+  z-index:1;
+  margin-top:18px;
+  height:7px;
+  background:rgba(255,255,255,.13);
+}
+@media(max-width:640px){
+  .rtg-journey-summary--complete{padding:23px 20px 20px}
+  .rtg-journey-summary--complete .rtg-journey-main{align-items:flex-start}
+  .rtg-complete-trophy{flex-basis:78px;width:78px;height:78px;border-width:4px}
+  .rtg-complete-trophy span{font-size:1.45rem;transform:translateY(-9px)}
+  .rtg-complete-trophy b{bottom:12px;font-size:.88rem}
+  .rtg-journey-summary--complete .rtg-journey-copy h1{font-size:clamp(2.3rem,12vw,3.45rem)}
+}
