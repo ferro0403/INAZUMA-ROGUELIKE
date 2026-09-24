@@ -37,6 +37,7 @@
     let displayedMinute=0;
     let selectedEncounterChoice=null;
     let selectedEncounterId=null;
+    let selectedAlbumSeasonId="ie1";
     const SQUAD_PICKER_PAGE_SIZE=24;
     const ENCOUNTER_REVEAL_DELAY_MS=2200;
     const FINAL_COMPARISON_DELAY_MS=1700;
@@ -461,57 +462,90 @@
     function rtgAlbumUnlockedSet(){
       return new Set(readRtgAlbum().cardIds.map(id));
     }
-    function rtgAlbumTeams(){
+    async function ensureAlbumSeasonDb(seasonId){
+      const sid=id(seasonId||"ie1");
+      const previous=global.SeasonRegistry?.activeId?.();
+      let db=global.SeasonRegistry?.database?.(sid)||null;
+      if(!db){
+        db=sid==="ie1"
+          ? await deps.ensureSeason1Db?.()
+          : await global.SeasonRegistry?.loadDatabase?.(sid);
+      }
+      if(previous&&previous!==sid)global.SeasonRegistry?.setActive?.(previous);
+      return db;
+    }
+    function albumConfigFor(seasonId){
+      const sid=id(seasonId||"ie1");
+      return config?.season?.(sid)||(sid==="ie1_s2"?config.SEASON2:config.SEASON1);
+    }
+    function rtgAlbumTeams(seasonId=selectedAlbumSeasonId,albumDb=null){
+      const sid=id(seasonId||"ie1");
+      const db=albumDb||global.SeasonRegistry?.database?.(sid)||(sid===activeSeasonId()?seasonDb:null);
       const unlocked=rtgAlbumUnlockedSet();
-      const configured=Array.from(activeConfig()?.mainTeams||[]);
+      const configured=Array.from(albumConfigFor(sid)?.mainTeams||[]);
       return configured.map(teamId=>{
-        const team=(seasonDb?.teams||[]).find(entry=>id(entry?.teamId||entry?.id)===id(teamId));
+        const team=(db?.teams||[]).find(entry=>id(entry?.teamId||entry?.id)===id(teamId));
         if(!team)return null;
         const playerIds=Array.from(team?.playerIds||[]).map(id).filter(Boolean);
-        const profileIds=seasonDb?.requiresProfileAwareRuntime
-          ? Array.from(seasonDb?.profiles||[]).filter(profile=>id(profile?.teamId)===id(teamId)).map(profile=>id(profile?.profileId||profile?.id)).filter(Boolean)
+        const profileIds=db?.requiresProfileAwareRuntime
+          ? Array.from(db?.profiles||[]).filter(profile=>id(profile?.teamId)===id(teamId)).map(profile=>id(profile?.profileId||profile?.id)).filter(Boolean)
           : [];
         const sourceIds=profileIds.length?profileIds:playerIds;
-        const cardIds=sourceIds.map(playerId=>seasonDb?.requiresProfileAwareRuntime
-          ? (cardIdentity?.cardIdForProfile?.(playerId,activeSeasonId())||playerId)
-          : (cardIdentity?.cardIdForSeason?.(playerId,activeSeasonId())||playerId));
-        return {teamId:id(teamId),teamName:team?.teamName||team?.name||teamId,logoUrl:team?.logoUrl||"",playerIds,profileIds,cardIds,total:cardIds.length,unlocked:cardIds.filter(cardId=>unlocked.has(cardId)).length};
+        const cardIds=sourceIds.map(playerId=>db?.requiresProfileAwareRuntime
+          ? (cardIdentity?.cardIdForProfile?.(playerId,sid)||playerId)
+          : (cardIdentity?.cardIdForSeason?.(playerId,sid)||playerId));
+        return {seasonId:sid,teamId:id(teamId),teamName:team?.teamName||team?.name||teamId,logoUrl:team?.logoUrl||"",playerIds,profileIds,cardIds,total:cardIds.length,unlocked:cardIds.filter(cardId=>unlocked.has(cardId)).length};
       }).filter(team=>team&&team.total>0);
     }
-    function rtgAlbumTeamPlayers(team){
-      return Array.from(team?.cardIds||[]).map(cardId=>playerResolver.resolveAtLevel20(cardId,activeSeasonId(),null,freeAgentsDb)).filter(Boolean);
+    function rtgAlbumTeamPlayers(team,seasonId=selectedAlbumSeasonId){
+      const sid=id(seasonId||team?.seasonId||"ie1");
+      return Array.from(team?.cardIds||[]).map(cardId=>playerResolver.resolveAtLevel20(cardId,sid,null,freeAgentsDb)).filter(Boolean);
+    }
+    async function albumCollectionSummary(seasonId){
+      const sid=id(seasonId||"ie1");
+      const db=await ensureAlbumSeasonDb(sid);
+      const teams=rtgAlbumTeams(sid,db);
+      return {
+        seasonId:sid,
+        unlocked:teams.reduce((sum,team)=>sum+(Number(team.unlocked)||0),0),
+        total:teams.reduce((sum,team)=>sum+(Number(team.total)||0),0),
+      };
     }
     async function renderAlbum(){
       await ensureData();
       syncCurrentPullsIntoAlbum();
-      const teams=rtgAlbumTeams();
-      const total=teams.reduce((sum,team)=>sum+(Number(team.total)||0),0);
-      const unlocked=teams.reduce((sum,team)=>sum+(Number(team.unlocked)||0),0);
-      renderHtml(runView.albumCollectionMarkup({state:campaign,unlocked,total}));
+      const collections=await Promise.all(["ie1","ie1_s2"].map(albumCollectionSummary));
+      renderHtml(runView.albumCollectionMarkup({state:campaign,collections}));
       app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
-      app?.querySelector?.("[data-rtg-album-collection]")?.addEventListener("click",()=>renderAlbumTeams());
+      app?.querySelectorAll?.("[data-rtg-album-collection]")?.forEach(button=>button.addEventListener("click",()=>renderAlbumTeams(button.dataset.rtgAlbumCollection)));
       mountDevQuickTools();
       return campaign;
     }
-    async function renderAlbumTeams(){
+    async function renderAlbumTeams(seasonId=selectedAlbumSeasonId){
       await ensureData();
       syncCurrentPullsIntoAlbum();
-      renderHtml(runView.albumTeamsMarkup({state:campaign,teams:rtgAlbumTeams()}));
+      const sid=["ie1","ie1_s2"].includes(id(seasonId))?id(seasonId):activeSeasonId();
+      selectedAlbumSeasonId=sid;
+      const db=await ensureAlbumSeasonDb(sid);
+      renderHtml(runView.albumTeamsMarkup({state:{...(campaign||{}),activeSeasonId:sid},seasonId:sid,teams:rtgAlbumTeams(sid,db)}));
       app?.querySelector?.("[data-rtg-album-collection-back]")?.addEventListener("click",()=>renderAlbum());
-      app?.querySelectorAll?.("[data-rtg-album-team]")?.forEach(button=>button.addEventListener("click",()=>renderAlbumRoster(button.dataset.rtgAlbumTeam)));
+      app?.querySelectorAll?.("[data-rtg-album-team]")?.forEach(button=>button.addEventListener("click",()=>renderAlbumRoster(button.dataset.rtgAlbumTeam,sid)));
       mountDevQuickTools();
       return campaign;
     }
-    async function renderAlbumRoster(teamId){
+    async function renderAlbumRoster(teamId,seasonId=selectedAlbumSeasonId){
       await ensureData();
       syncCurrentPullsIntoAlbum();
-      const team=rtgAlbumTeams().find(entry=>id(entry.teamId)===id(teamId));
-      if(!team)return renderAlbumTeams();
+      const sid=["ie1","ie1_s2"].includes(id(seasonId))?id(seasonId):selectedAlbumSeasonId;
+      selectedAlbumSeasonId=sid;
+      const db=await ensureAlbumSeasonDb(sid);
+      const team=rtgAlbumTeams(sid,db).find(entry=>id(entry.teamId)===id(teamId));
+      if(!team)return renderAlbumTeams(sid);
       const unlocked=rtgAlbumUnlockedSet();
-      const allEntries=rtgAlbumTeamPlayers(team);
+      const allEntries=rtgAlbumTeamPlayers(team,sid);
       const entries=allEntries.filter(player=>unlocked.has(id(player?.cardId||player?.playerId||player?.id)));
-      renderHtml(runView.albumRosterMarkup({state:campaign,team,entries,allEntries}));
-      app?.querySelector?.("[data-rtg-album-back]")?.addEventListener("click",()=>renderAlbumTeams());
+      renderHtml(runView.albumRosterMarkup({state:{...(campaign||{}),activeSeasonId:sid},seasonId:sid,team,entries,allEntries}));
+      app?.querySelector?.("[data-rtg-album-back]")?.addEventListener("click",()=>renderAlbumTeams(sid));
       app?.querySelectorAll?.("[data-rtg-album-player]")?.forEach(card=>card.addEventListener("click",()=>openRtgPlayerDetails(card.dataset.rtgAlbumPlayer)));
       mountDevQuickTools();
       return campaign;
