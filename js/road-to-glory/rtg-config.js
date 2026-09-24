@@ -116,7 +116,7 @@
     mainTeams:season2Teams,
     importantMatches:season2Matches,
     formations,
-    checkpointMainIndexes:Object.freeze([4,10,14]),
+    checkpointMainIndexes:Object.freeze([2,5,8,11,14]),
     visualBlocks:Object.freeze([Object.freeze([0,4]),Object.freeze([5,10]),Object.freeze([11,14]),Object.freeze([15,16])]),
     livesPerCheckpoint:2,
     pullCost:300,
