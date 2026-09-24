@@ -673,26 +673,53 @@
       else if(typeof setTimeout==="function")setTimeout(hydratePicker,0);
       else hydratePicker();
     }
+    function canonicalCardPlayerId(cardRef){
+      const meta=cardMeta(cardRef);
+      return id(meta.canonicalPlayerId||global.ProfiledSeasonRuntime?.canonicalPlayerId?.(meta.legacySeasonId,meta.profileId||meta.playerId)||meta.playerId);
+    }
+    function openRtgVersionPicker(cardIds=[]){
+      const versions=Array.from(new Set(cardIds.map(id))).filter(Boolean);
+      if(versions.length<=1)return versions[0]?openRtgPlayerDetails(versions[0]):null;
+      const cards=versions.map(cardId=>{
+        const player=resolved(cardId,squadDraft?.activeRoleVariantByCardId?.[cardId]||null);
+        const meta=cardMeta(cardId),seasonLabel=cardIdentity?.legacyLabel?.(meta.legacySeasonId)||String(meta.legacySeasonId||"").toUpperCase();
+        const profileLabel=String(player?.teamName||player?.team||player?.profileName||player?.profileId||"").trim();
+        return `<button type="button" class="rtg-version-choice" data-rtg-version-card="${escape(cardId)}"><strong>${escape(player?.name||rawName(cardId))}</strong><span>${escape(seasonLabel)} · ${escape(String(player?.normalizedRole||player?.position||"—").toUpperCase())} · OVR ${escape(player?.overall??"—")}</span>${profileLabel?`<em>${escape(profileLabel)}</em>`:""}</button>`;
+      }).join("");
+      deps.openModal?.(`<section class="rtg-version-picker"><div class="modal-head"><div><p class="eyebrow">Versioni possedute</p><h2>Scegli la versione</h2><p class="muted">Ogni versione resta una carta distinta e può essere schierata insieme alle altre.</p></div></div><div class="rtg-version-choice-list">${cards}</div></section>`,{className:"rtg-modal rtg-version-picker-modal"});
+      const modal=deps.getModalRoot?.();
+      modal?.querySelectorAll?.("[data-rtg-version-card]")?.forEach(button=>button.addEventListener("click",()=>openRtgPlayerDetails(id(button.dataset.rtgVersionCard))));
+      return {count:versions.length};
+    }
     function openRtgCatalog(){
-      const owned=Array.from(acquiredCardIdSet())
-        .filter(Boolean)
+      const owned=Array.from(acquiredCardIdSet()).filter(Boolean);
+      const groups=new Map();
+      for(const cardId of owned){
+        const key=canonicalCardPlayerId(cardId);
+        if(!groups.has(key))groups.set(key,[]);
+        groups.get(key).push(cardId);
+      }
+      const representatives=Array.from(groups.values()).map(cards=>cards.slice().sort((a,b)=>rawOverall(b)-rawOverall(a))[0])
         .sort((a,b)=>rawRole(a).localeCompare(rawRole(b))||rawOverall(b)-rawOverall(a)||rawName(a).localeCompare(rawName(b),"it"));
       let query="";
-      let visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,owned.length);
-      const filtered=()=>owned.filter(playerId=>{
+      let visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,representatives.length);
+      const filtered=()=>representatives.filter(cardId=>{
         const needle=query.trim().toLocaleLowerCase("it");
-        return !needle||rawName(playerId).toLocaleLowerCase("it").includes(needle);
+        return !needle||rawName(cardId).toLocaleLowerCase("it").includes(needle);
       });
-      const entries=()=>filtered().slice(0,visibleCount).map(playerId=>({
-        playerId,
+      const entries=()=>filtered().slice(0,visibleCount).map(cardId=>({
+        cardId,
+        playerId:cardId,
         source:"RTG",
-        player:resolved(playerId,squadDraft?.activeRoleVariantByCardId?.[playerId]||null),
+        player:resolved(cardId,squadDraft?.activeRoleVariantByCardId?.[cardId]||null),
       })).filter(entry=>entry.player);
       const bindCatalog=()=>{
         const modal=deps.getModalRoot?.();
         modal?.querySelectorAll?.("[data-rtg-catalog-player]")?.forEach(button=>button.addEventListener("click",()=>{
-          const playerId=id(button.dataset.rtgCatalogPlayer);
-          if(playerId)openRtgPlayerDetails(playerId);
+          const cardId=id(button.dataset.rtgCatalogPlayer);
+          if(!cardId)return;
+          const versions=groups.get(canonicalCardPlayerId(cardId))||[cardId];
+          openRtgVersionPicker(versions);
         }));
         modal?.querySelector?.("[data-rtg-catalog-load-more]")?.addEventListener("click",()=>{
           visibleCount=Math.min(filtered().length,visibleCount+SQUAD_PICKER_PAGE_SIZE);
@@ -706,7 +733,7 @@
         if(results)results.innerHTML=squadView.catalogResultsMarkup({entries:entries(),total:ids.length});
         bindCatalog();
       };
-      deps.openModal?.(squadView.catalogMarkup({entries:entries(),total:owned.length,query}),{className:"rtg-modal rtg-player-catalog-modal"});
+      deps.openModal?.(squadView.catalogMarkup({entries:entries(),total:representatives.length,query}),{className:"rtg-modal rtg-player-catalog-modal"});
       const modal=deps.getModalRoot?.();
       modal?.querySelector?.("[data-rtg-catalog-search]")?.addEventListener("input",event=>{
         query=String(event.target?.value||"");
@@ -714,7 +741,7 @@
         renderCatalogResults();
       });
       bindCatalog();
-      return {count:owned.length};
+      return {count:representatives.length,versionCount:owned.length};
     }
 
     function currentRequirementTeamId(){
