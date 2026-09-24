@@ -1,7 +1,7 @@
 (function (global) {
   "use strict";
 
-  const SCHEMA_VERSION = 3;
+  const SCHEMA_VERSION = 2;
   const CAMPAIGN_ID = "rtg-ie-trilogy";
   const ACTIVE_SEASON_IDS = Object.freeze(["ie1", "ie1_s2"]);
   const cards = () => global.RoadToGloryCardIdentity;
