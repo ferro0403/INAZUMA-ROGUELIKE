@@ -290,7 +290,9 @@
             ? `${opponentName} prova il tackle su ${actorName}, ma non riesce a recuperare palla. Possesso invariato per ${possessionTeamName}.`
             : `${opponentName} prova a recuperare palla su ${actorName}, ma non ci riesce. Il possesso resta a ${possessionTeamName}.`
         : effectiveNoTurnover && !event.actorWon && kind !== "shot"
-          ? `${opponentName} prova a fermare ${actorName}, ma il possesso resta a ${possessionTeamName}.`
+          ? kind === "dribble"
+            ? `${opponentName} prova a fermare ${actorName}, ma fallisce. Possesso invariato per ${possessionTeamName}.`
+            : `${opponentName} prova a fermare ${actorName}, ma il possesso resta a ${possessionTeamName}.`
           : winningMove
             ? `${moveOutcomeClause(winningName,losingName,winningKind,winningMove,true)}.`
             : baseCopy;
