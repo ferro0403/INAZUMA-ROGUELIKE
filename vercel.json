@@ -3,7 +3,8 @@
   "git": {
     "deploymentEnabled": {
       "feat/rtg-s1-main-style": false,
-      "preview/rtg-netlify": false
+      "preview/rtg-netlify": false,
+      "feature/rtg-legacy-cards": false
     }
   }
 }
