@@ -4660,3 +4660,6 @@
 /* RTG squad overall: yellow live power badge. */
 .rtg-squad-section-head .rtg-squad-live-overall{background:#ffd21f!important;border-color:#111216!important;color:#111216!important}
 .rtg-squad-section-head .rtg-squad-live-overall small,.rtg-squad-section-head .rtg-squad-live-overall strong{color:#111216!important}
+
+/* RTG squad header: overall and formation use the same compact control height. */
+.rtg-squad-section-head .rtg-squad-live-overall,.rtg-squad-section-head .squad-field-formation{height:46px!important;min-height:46px!important;box-sizing:border-box!important;display:inline-flex!important;align-items:center!important;justify-content:center!important}
