@@ -168,7 +168,10 @@
       const duplicate=!!result.duplicate;
       const playerName=player.name||result.playerId||"Giocatore";
       const playerRole=String(player.normalizedRole||player.position||player.role||"—").toUpperCase();
-      const teamId=String(player.teamId||player.teamIds?.[0]||"");
+      // Some IE1 player records keep a legacy display teamId (for example
+      // "royal-academy") while teamIds[0] stores the canonical runtime id ("royal").
+      // Emblems must use the canonical id or the renderer falls back to the initial.
+      const teamId=String(player.teamIds?.[0]||player.teamId||"");
       const teamLabel=String(player.teamName||player.teams?.[0]||"Squadra");
       const card=compactPlayerCardMarkup
         ? compactPlayerCardMarkup(player,{
