@@ -405,6 +405,7 @@
     }
     function bindRun(){
       bindHomeAndTabs();
+      app?.querySelector?.("[data-rtg-open-album]")?.addEventListener("click",()=>renderAlbum());
       app?.querySelector?.("[data-rtg-open-vending]")?.addEventListener("click",()=>openVending());
       app?.querySelector?.("[data-rtg-current-node]")?.addEventListener("click",event=>openNode(event.currentTarget.dataset.rtgCurrentNode));
       app?.querySelectorAll?.("[data-rtg-node-id]")?.forEach(button=>button.addEventListener("click",()=>openNode(button.dataset.rtgNodeId)));
