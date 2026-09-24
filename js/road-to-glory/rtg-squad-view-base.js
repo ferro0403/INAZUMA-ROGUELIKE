@@ -163,7 +163,7 @@
       const gacha = new Set((state?.gachaAcquiredCards || []).map((entry) => global.RoadToGloryCardIdentity?.parse?.(entry)?.cardId).filter(Boolean));
       const resolve = (cardId) => resolver?.resolveAtLevel20?.(cardId, seasonId, squad.activeRoleVariantByCardId?.[cardId] || null, freeAgentsDb) || { cardId, playerId:global.RoadToGloryCardIdentity?.parse?.(cardId)?.playerId || cardId, name: cardId, overall: "—", level: 20 };
       const sourceFor = (cardId) => gacha.has(String(cardId)) ? "RTG" : "Svincolato";
-      const formations = Array.from(global.RoadToGloryConfig?.SEASON1?.formations || seasonDb?.formations?.eleven || []);
+      const formations = Array.from(global.RoadToGloryConfig?.season?.(seasonId)?.formations || seasonDb?.formations?.eleven || global.RoadToGloryConfig?.SEASON1?.formations || []);
       const formation = formations.find((item) => String(item.id) === String(squad.formationId)) || formations[0] || null;
       const toEntry = (cardId) => { const player=resolve(String(cardId)); return { cardId:String(cardId), playerId:String(player?.playerId || global.RoadToGloryCardIdentity?.parse?.(cardId)?.playerId || cardId), source:sourceFor(cardId), player }; };
       const lineup = (squad.lineup || []).map(toEntry);
