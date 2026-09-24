@@ -48,7 +48,7 @@
     function writeSquadSlots(slots){try{global.localStorage?.setItem?.(RTG_SQUAD_SLOTS_KEY,JSON.stringify(slots||{}));}catch(_e){}}
     function storeSquadSlot(slot,squad){const slots=readSquadSlots();slots[String(slot)]=clone(squad);writeSquadSlots(slots);}
     function squadForSlot(slot){return clone(readSquadSlots()?.[String(slot)]||campaign?.squads?.ie1||squadDraft);}
-    async function selectSquadSlot(slot){const next=Math.max(1,Math.min(3,Number(slot)||1));if(next===activeSquadSlot)return;storeSquadSlot(activeSquadSlot,squadDraft||campaign?.squads?.ie1);activeSquadSlot=next;squadDraft=squadForSlot(next);await saveSquad(squadDraft,{quiet:true});}
+    async function selectSquadSlot(slot){const next=Math.max(1,Math.min(3,Number(slot)||1));if(next===activeSquadSlot)return;storeSquadSlot(activeSquadSlot,squadDraft||campaign?.squads?.ie1);activeSquadSlot=next;squadDraft=squadForSlot(next);return renderSquad();}
 
     function readRtgAlbum(){
       try{
@@ -901,7 +901,7 @@
         if(!validation.valid)throw Object.assign(new Error("Squadra RTG non valida"),{code:"rtg-squad-invalid",reasons:validation.reasons});
         current.squads.ie1=candidate;return current;
       });
-      squadDraft=clone(campaign.squads.ie1);
+      squadDraft=clone(candidate);
       storeSquadSlot(activeSquadSlot,squadDraft);
       if(!options.quiet)deps.toast?.(`Squadra ${activeSquadSlot} salvata`);
       return renderSquad();
