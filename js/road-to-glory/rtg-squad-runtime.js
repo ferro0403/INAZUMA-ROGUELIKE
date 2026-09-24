@@ -146,8 +146,8 @@
     const seasonRecruits=recruits.filter(cardId=>cards().parse(cardId).legacySeasonId===activeSeason);
     const eligibleRecruits=activeSeason==="ie1"?recruits:seasonRecruits;
     const eligibleRecent=recentRecruits.filter(cardId=>activeSeason==="ie1"||cards().parse(cardId).legacySeasonId===activeSeason);
-    if (eligibleRecruits.length < Number(constraint.minRecruit || 0)) reasons.push("min-season-recruits");
-    if (eligibleRecent.length < Number(constraint.recentCount || 0)) reasons.push("recent-season-recruits");
+    if (eligibleRecruits.length < Number(constraint.minRecruit || 0)) reasons.push(activeSeason==="ie1"?"min-s1-recruits":"min-season-recruits");
+    if (eligibleRecent.length < Number(constraint.recentCount || 0)) reasons.push(activeSeason==="ie1"?"recent-s1-recruits":"recent-season-recruits");
     return {
       eligible: reasons.length === 0,
       reasons,
