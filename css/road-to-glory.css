@@ -5715,13 +5715,29 @@
 
 
 /* Season 2 route is isolated from the Season 1 map so legacy layout stays unchanged. */
+.rtg-run-screen--s2 .rtg-map--season-2{
+  gap:22px;
+}
+.rtg-run-screen--s2 .rtg-map-block--season2-part{
+  background:#111318;
+  border-color:#111318;
+}
+.rtg-run-screen--s2 .rtg-map-block--season2-part .rtg-route-heading{
+  border-bottom-color:#ffd326;
+}
+.rtg-run-screen--s2 .rtg-map-block--season2-part .rtg-route-heading h2{
+  color:#fff;
+}
+.rtg-run-screen--s2 .rtg-map-block--season2-part .rtg-route-heading .eyebrow{
+  color:#ffd326;
+}
 .rtg-run-screen--s2 .rtg-route-stage--season2{
   position:relative;
-  height:var(--rtg-route-height,2500px);
-  min-height:var(--rtg-route-height,2500px);
-  background-image:linear-gradient(rgba(4,31,72,.12),rgba(4,31,72,.12)),var(--rtg-season-route-bg);
+  height:var(--rtg-route-height,640px);
+  min-height:var(--rtg-route-height,640px);
+  background-image:linear-gradient(rgba(4,31,72,.10),rgba(4,31,72,.10)),var(--rtg-season-route-bg);
   background-size:cover;
-  background-position:center top;
+  background-position:var(--rtg-route-bg-position,center);
   background-repeat:no-repeat;
   border-radius:24px;
   overflow:hidden;
