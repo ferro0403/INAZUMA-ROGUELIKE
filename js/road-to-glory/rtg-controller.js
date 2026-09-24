@@ -631,7 +631,11 @@
           renderResults();
         });
       };
-      deps.openModal?.(squadView.replacementPickerMarkup({target,role,allowAnyRole:!strictRole,quickEntries,entries:[],total:0,visibleCount:0,query,sourceFilter,rarityFilter,rarityOptions}),{className:"rtg-modal rtg-squad-picker-modal"});
+      if(!deps.getModalRoot){
+        candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(id(playerId)));
+        visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateIds.length);
+      }
+      deps.openModal?.(squadView.replacementPickerMarkup({target,role,allowAnyRole:!strictRole,quickEntries,entries:deps.getModalRoot?[]:entries(),total:deps.getModalRoot?0:candidateIds.length,visibleCount:deps.getModalRoot?0:visibleCount,query,sourceFilter,rarityFilter,rarityOptions}),{className:"rtg-modal rtg-squad-picker-modal"});
       const modal=deps.getModalRoot?.();
       modal?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",event=>{
         query=String(event.target?.value||"");
