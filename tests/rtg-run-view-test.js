@@ -20,9 +20,16 @@ assert.match(html,/rtg-free-agent-mark/);
 assert.match(html,/data-rtg-farmable="true"/);
 assert.match(html,/data-rtg-state="locked"[^>]*disabled/);
 assert.doesNotMatch(html,/>Negozio</);
-const albumHtml=view.albumCollectionMarkup({state:{activeSeasonId:"ie1"},unlocked:3,total:10});
+const albumHtml=view.albumCollectionMarkup({state:{activeSeasonId:"ie1"},collections:[
+  {seasonId:"ie1",unlocked:3,total:10},
+  {seasonId:"ie1_s2",unlocked:0,total:230},
+]});
 assert.match(albumHtml,/ALBUM/);
 assert.match(albumHtml,/Inazuma Eleven 1/);
+assert.match(albumHtml,/Inazuma Eleven 2/);
+assert.strictEqual((albumHtml.match(/data-rtg-album-collection=/g)||[]).length,2);
+assert.match(albumHtml,/data-rtg-album-collection="ie1"/);
+assert.match(albumHtml,/data-rtg-album-collection="ie1_s2"/);
 assert.match(albumHtml,/wallpapers_inazuma11_1_1024x768\.jpg/);
 const albumTeamsHtml=view.albumTeamsMarkup({state:{activeSeasonId:"ie1"},teams:[{teamId:"raimon",teamName:"Raimon",total:2,unlocked:1}]});
 assert.match(albumTeamsHtml,/data-rtg-album-team="raimon"/);
@@ -36,6 +43,8 @@ const albumRosterHtml=view.albumRosterMarkup({
   ],
 });
 assert.match(albumRosterHtml,/data-rtg-album-player="ie1::mark"/);
+assert.match(albumRosterHtml,/data-rtg-album-player="ie1::axel"/);
+assert.doesNotMatch(albumRosterHtml,/data-rtg-album-player="ie1::axel"[^>]*disabled/);
 assert.match(albumRosterHtml,/rarity-forte/);
 assert.match(albumRosterHtml,/NON SBLOCCATO/);
 console.log("rtg-run-view-test: PASS");
