@@ -4656,3 +4656,7 @@
 .rtg-squad-section-head .rtg-squad-live-overall small{font-size:.56rem;letter-spacing:.12em;color:#65656b;font-weight:1000}
 .rtg-squad-section-head .rtg-squad-live-overall strong{font-size:1rem;color:#111216}
 @media(max-width:600px){.rtg-squad-section-head .rtg-squad-head-stats{gap:6px}.rtg-squad-section-head .rtg-squad-live-overall{padding:5px 7px;gap:5px}.rtg-squad-section-head .rtg-squad-live-overall small{font-size:.5rem}}
+
+/* RTG squad overall: yellow live power badge. */
+.rtg-squad-section-head .rtg-squad-live-overall{background:#ffd21f!important;border-color:#111216!important;color:#111216!important}
+.rtg-squad-section-head .rtg-squad-live-overall small,.rtg-squad-section-head .rtg-squad-live-overall strong{color:#111216!important}
