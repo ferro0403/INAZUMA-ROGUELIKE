@@ -101,6 +101,8 @@
     return Object.freeze({
       cardId: parsed.cardId,
       playerId: parsed.playerId,
+      profileId: parsed.profileId || undefined,
+      canonicalPlayerId: parsed.canonicalPlayerId || parsed.playerId,
       legacySeasonId: parsed.legacySeasonId,
       sourceKind: parsed.sourceKind,
     });
