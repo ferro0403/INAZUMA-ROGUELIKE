@@ -11,7 +11,7 @@ assert(pool.every(x=>x.teamId==="gemini_storm"));
 assert(pool.every(x=>String(x.cardId).startsWith("ie1_s2::")));
 assert(pool.every(x=>String(C.parse(x.cardId).playerId).includes("@gemini_storm")));
 assert(pool.every(x=>C.parse(x.cardId).profileId===x.profileId),"S2 pool must preserve the exact profile identity");
-assert(pool.every(x=>C.parse(x.cardId).canonicalPlayerId===String(x.playerId).split("@")[0] || C.parse(x.cardId).canonicalPlayerId===String((db.profiles||[]).find(p=>p.profileId===x.profileId)?.playerId||"")),"S2 cards must expose canonical identity separately");
+assert(pool.every(x=>C.parse(x.cardId).canonicalPlayerId===String((db.profiles||[]).find(p=>String(p.profileId)===String(x.profileId))?.playerId||"")),"S2 cards must expose canonical identity separately");
 const first=pool[0].cardId;
 const state2={...state,gachaAcquiredCards:[first]};
 assert(!G.unownedCandidates(state2,db).some(x=>x.cardId===first));
