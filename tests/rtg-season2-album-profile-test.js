@@ -1,0 +1,11 @@
+"use strict";
+const assert=require("assert"),fs=require("fs");
+const ctl=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const view=fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8");
+assert(ctl.includes("activeConfig()?.requiresProfileAwareRuntime"));
+assert(ctl.includes("seasonDb?.profiles||[]"));
+assert(ctl.includes("profileIds.length?profileIds:playerIds"));
+assert(ctl.includes("playerIds,profileIds,cardIds"));
+assert(view.includes('state?.activeSeasonId||"ie1")==="ie1_s2"?"2":"1"'));
+assert(!view.includes("ALBUM → INAZUMA ELEVEN 1</p>"));
+console.log("rtg-season2-album-profile-test: PASS");
