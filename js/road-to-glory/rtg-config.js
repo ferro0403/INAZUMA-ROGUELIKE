@@ -125,7 +125,7 @@
     rarityWeights:SEASON1.rarityWeights,
     duplicateRefunds:SEASON1.duplicateRefunds,
     constraints:season2Constraints,
-    routeBackground:"assets/rtg/rtg-season2-route-map.webp?v=20260924-user-map-1",
+    routeBackground:"assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-only-map-1",
   });
   function season(seasonId){
     return String(seasonId||"")==="ie1_s2"?SEASON2:SEASON1;
