@@ -20,4 +20,8 @@ assert.match(html,/rtg-free-agent-mark/);
 assert.match(html,/data-rtg-farmable="true"/);
 assert.match(html,/data-rtg-state="locked"[^>]*disabled/);
 assert.doesNotMatch(html,/>Negozio</);
+const albumHtml=view.albumCollectionMarkup({state:{activeSeasonId:"ie1"},unlocked:3,total:10});
+assert.match(albumHtml,/ALBUM/);
+assert.match(albumHtml,/Inazuma Eleven 1/);
+assert.match(albumHtml,/wallpapers_inazuma11_1_1024x768\.jpg/);
 console.log("rtg-run-view-test: PASS");
