@@ -18,12 +18,12 @@ const c={
     resolveEffectivePlayerAtLevel:(entry,ctx)=>{
       const profile=(ctx.database.profiles||[]).find(x=>x.profileId===entry.activeProfileId);
       const p=profile||ctx.database.players.find(x=>x.playerId===entry.playerId);
-      return{...p,playerId:entry.playerId,profileId:profile?.profileId,level:20};
+      return{...p,playerId:entry.playerId,profileId:profile?.profileId,roleVariantId:entry.activeRoleVariantId||null,level:20};
     }
   },
   DevelopmentAccountV3:{read:()=>({players:{}})},DevelopmentRuntime:{},
   InazumaProgression:{getPlayerAtLevel:(player,level)=>({...player,level})},
-  MatchMoveRuntime:{moveForPlayer:(seasonId)=>({name:seasonId,power:80,type:"save"})}
+  MatchMoveRuntime:{moveForPlayer:(seasonId,player)=>({name:seasonId,power:80,type:"save",roleVariantId:player?.roleVariantId||null})}
 };
 c.globalThis=c;vm.createContext(c);
 for(const file of["js/road-to-glory/rtg-card-identity.js","js/road-to-glory/rtg-player-resolver.js"])vm.runInContext(fs.readFileSync(file,"utf8"),c,{filename:file});
@@ -45,4 +45,6 @@ assert.strictEqual(exactPlayer.cardId,exactCard);
 assert.strictEqual(exactPlayer.playerId,"mark","effective player keeps canonical gameplay identity");
 assert.strictEqual(exactPlayer.profileId,s2Profile.profileId);
 assert.strictEqual(exactPlayer.overall,96,"exact profile statistics must be used");
+const exactMove=r.resolveMove(exactCard,"ie1_s2","MF",{players:[]},"mark-midfield");
+assert.strictEqual(exactMove.roleVariantId,"mark-midfield","move resolution must use the selected role variant, not the normalized role label");
 console.log("rtg-legacy-player-resolver-test: PASS");
