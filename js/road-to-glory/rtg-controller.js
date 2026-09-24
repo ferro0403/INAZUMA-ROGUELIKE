@@ -45,11 +45,12 @@
     const cancelSchedule=deps.clearTimeout||global.clearTimeout;
     const DEV_MODE=deps.devMode===true||(typeof global.URLSearchParams==="function"&&new global.URLSearchParams(global.location?.search||"").get("dev")==="1");
     const RTG_ALBUM_STORAGE_KEY="inazuma.rtg.album.v1";
-    const RTG_SQUAD_SLOTS_KEY="inazuma.rtg.squad-slots.v1";
+    const RTG_SQUAD_SLOTS_KEY="inazuma.rtg.squad-slots.v2";
     let activeSquadSlot=1;
     const RTG_ACTIVE_SQUAD_SLOT_KEY="inazuma.rtg.active-squad-slot.v1";
-    function readSquadSlots(){try{const parsed=JSON.parse(global.localStorage?.getItem?.(RTG_SQUAD_SLOTS_KEY)||"{}");return parsed&&typeof parsed==="object"?parsed:{}}catch(_e){return{}}}
-    function writeSquadSlots(slots){try{global.localStorage?.setItem?.(RTG_SQUAD_SLOTS_KEY,JSON.stringify(slots||{}));}catch(_e){}}
+    function squadSlotsKey(seasonId=activeSeasonId()){return `${RTG_SQUAD_SLOTS_KEY}.${id(seasonId||"ie1")}`;}
+    function readSquadSlots(seasonId=activeSeasonId()){try{const parsed=JSON.parse(global.localStorage?.getItem?.(squadSlotsKey(seasonId))||"{}");return parsed&&typeof parsed==="object"?parsed:{}}catch(_e){return{}}}
+    function writeSquadSlots(slots,seasonId=activeSeasonId()){try{global.localStorage?.setItem?.(squadSlotsKey(seasonId),JSON.stringify(slots||{}));}catch(_e){}}
     function storeSquadSlot(slot,squad){const slots=readSquadSlots();slots[String(slot)]=clone(squad);writeSquadSlots(slots);}
     function readActiveSquadSlot(){try{return Math.max(1,Math.min(3,Number(global.localStorage?.getItem?.(RTG_ACTIVE_SQUAD_SLOT_KEY))||1));}catch(_e){return 1}}
     function writeActiveSquadSlot(slot){try{global.localStorage?.setItem?.(RTG_ACTIVE_SQUAD_SLOT_KEY,String(slot));}catch(_e){}}
