@@ -1363,7 +1363,7 @@
     }
     function openVending(){
       const pool=gacha.previewPool(campaign,seasonDb);
-      deps.openModal?.(runView.vendingMarkup({...pool,tokens:campaign.tokens}),{className:"rtg-modal rtg-vending-modal"});
+      deps.openModal?.(runView.vendingMarkup({...pool,tokens:campaign.tokens,seasonId:activeSeasonId()}),{className:"rtg-modal rtg-vending-modal"});
       const modalRoot=deps.getModalRoot?.();
       modalRoot?.querySelector?.("[data-rtg-vending-album]")?.addEventListener("click",()=>{
         deps.closeModal?.({invokeOnClose:false});
