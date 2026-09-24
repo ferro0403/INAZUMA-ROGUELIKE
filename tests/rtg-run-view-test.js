@@ -25,6 +25,11 @@ assert.match(html,/rtg-free-agent-mark/);
 assert.match(html,/data-rtg-farmable="true"/);
 assert.match(html,/data-rtg-state="locked"[^>]*disabled/);
 assert.doesNotMatch(html,/>Negozio</);
+const completedHtml=view.runMarkup({state:{...state,currentNodeId:"main:raimon",seasonComplete:true},nodes,seasonDb:{teams:teams.map(teamId=>({teamId,name:teamId}))}});
+assert.match(completedHtml,/rtg-run-screen--complete/);
+assert.match(completedHtml,/rtg-season-complete-footer__badge/);
+assert.match(completedHtml,/Continua il viaggio/);
+assert.strictEqual((completedHtml.match(/data-rtg-enter-season2/g)||[]).length,2);
 const albumHtml=view.albumCollectionMarkup({state:{activeSeasonId:"ie1"},collections:[
   {seasonId:"ie1",unlocked:3,total:10},
   {seasonId:"ie1_s2",unlocked:0,total:230},
