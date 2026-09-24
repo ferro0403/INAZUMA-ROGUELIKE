@@ -28,6 +28,12 @@ view.pullResultMarkup(
   {playerId:"23",name:"Peter Drent",finalOverall:88,category:"Elite",normalizedRole:"DF",teamId:"royal-academy",teamIds:["royal"],teamName:"Royal Academy"}
 );
 assert.strictEqual(emblemTeam,"royal");
+const s2Html=view.pullResultMarkup(
+  {rarity:"Elite",duplicate:false,balanceAfter:70},
+  {playerId:"s2",name:"S2 Player",finalOverall:80,category:"Elite",normalizedRole:"MF",teamId:"gemini_storm",teamName:"Gemini Storm"},
+  {teams:[{teamId:"gemini_storm",teamName:"Gemini Storm",logoUrl:"https://assets.test/gemini.png"}]}
+);
+assert.match(s2Html,/https:\/\/assets\.test\/gemini\.png/);
 assert.match(html,/development-squad-card-scope/);
 assert.match(html,/rtg-pull-result--forte/);
 assert.match(html,/rtg-pull-card-stage rtg-picker-grid/);
