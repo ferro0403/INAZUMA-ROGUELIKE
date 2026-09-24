@@ -44,11 +44,30 @@
     const RTG_ALBUM_STORAGE_KEY="inazuma.rtg.album.v1";
     const RTG_SQUAD_SLOTS_KEY="inazuma.rtg.squad-slots.v1";
     let activeSquadSlot=1;
+    const RTG_ACTIVE_SQUAD_SLOT_KEY="inazuma.rtg.active-squad-slot.v1";
     function readSquadSlots(){try{const parsed=JSON.parse(global.localStorage?.getItem?.(RTG_SQUAD_SLOTS_KEY)||"{}");return parsed&&typeof parsed==="object"?parsed:{}}catch(_e){return{}}}
     function writeSquadSlots(slots){try{global.localStorage?.setItem?.(RTG_SQUAD_SLOTS_KEY,JSON.stringify(slots||{}));}catch(_e){}}
     function storeSquadSlot(slot,squad){const slots=readSquadSlots();slots[String(slot)]=clone(squad);writeSquadSlots(slots);}
-    function squadForSlot(slot){return clone(readSquadSlots()?.[String(slot)]||campaign?.squads?.ie1||squadDraft);}
-    async function selectSquadSlot(slot){const next=Math.max(1,Math.min(3,Number(slot)||1));if(next===activeSquadSlot)return;storeSquadSlot(activeSquadSlot,squadDraft||campaign?.squads?.ie1);activeSquadSlot=next;squadDraft=squadForSlot(next);return renderSquad();}
+    function readActiveSquadSlot(){try{return Math.max(1,Math.min(3,Number(global.localStorage?.getItem?.(RTG_ACTIVE_SQUAD_SLOT_KEY))||1));}catch(_e){return 1}}
+    function writeActiveSquadSlot(slot){try{global.localStorage?.setItem?.(RTG_ACTIVE_SQUAD_SLOT_KEY,String(slot));}catch(_e){}}
+    function squadForSlot(slot){
+      const slots=readSquadSlots();
+      const saved=slots?.[String(slot)];
+      if(saved)return clone(saved);
+      /* Only slot 1 inherits the legacy campaign squad. New slots must start as
+         independent snapshots, never aliases of whatever squad is currently official. */
+      if(Number(slot)===1)return clone(campaign?.squads?.ie1||squadDraft);
+      return clone(slots?.["1"]||campaign?.squads?.ie1||squadDraft);
+    }
+    async function selectSquadSlot(slot){
+      const next=Math.max(1,Math.min(3,Number(slot)||1));
+      if(next===activeSquadSlot)return;
+      storeSquadSlot(activeSquadSlot,squadDraft||campaign?.squads?.ie1);
+      activeSquadSlot=next;
+      writeActiveSquadSlot(next);
+      squadDraft=squadForSlot(next);
+      return renderSquad();
+    }
 
     function readRtgAlbum(){
       try{
@@ -1375,6 +1394,10 @@
       }
       campaign=await repository.ensureCampaign();
       await ensureInitialSquad();
+      activeSquadSlot=readActiveSquadSlot();
+      const existingSlots=readSquadSlots();
+      if(!existingSlots["1"])storeSquadSlot(1,campaign.squads.ie1);
+      squadDraft=squadForSlot(activeSquadSlot);
       if(campaign.activeMatch){
         const status=campaign.activeMatch.status;
         if(["completed","completed-draw","abandoned"].includes(status)){
