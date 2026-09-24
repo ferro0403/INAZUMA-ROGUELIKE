@@ -848,6 +848,7 @@
         teamIdentity:userMeta.teamIdentity||null,
         nextTeamName:nextTeam?.name||nextTeam?.teamName||teamId,
         requirementsMarkup:eligibility?runView.requirementsMarkup(eligibility):"",
+        teamPower:eligibility?.teamPower ?? squadRuntime.teamPower?.({lineup:squadDraft.lineup||[],activeSeasonId:campaign.activeSeasonId||"ie1",playerResolver,freeAgentsDb,activeRoleVariantByCardId:squadDraft.activeRoleVariantByCardId||{}}) ?? null,
         dirty:JSON.stringify(squadDraft)!==JSON.stringify(campaign.squads.ie1),
         activeSquadSlot,
       }));
