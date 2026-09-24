@@ -481,7 +481,8 @@
     function rtgAlbumTeamPlayers(team){
       return Array.from(team?.cardIds||[]).map(cardId=>playerResolver.resolveAtLevel20(cardId,activeSeasonId(),null,freeAgentsDb)).filter(Boolean);
     }
-    function renderAlbum(){
+    async function renderAlbum(){
+      await ensureData();
       syncCurrentPullsIntoAlbum();
       const teams=rtgAlbumTeams();
       const total=teams.reduce((sum,team)=>sum+(Number(team.total)||0),0);
@@ -492,7 +493,8 @@
       mountDevQuickTools();
       return campaign;
     }
-    function renderAlbumTeams(){
+    async function renderAlbumTeams(){
+      await ensureData();
       syncCurrentPullsIntoAlbum();
       renderHtml(runView.albumTeamsMarkup({state:campaign,teams:rtgAlbumTeams()}));
       app?.querySelector?.("[data-rtg-album-collection-back]")?.addEventListener("click",()=>renderAlbum());
@@ -500,7 +502,8 @@
       mountDevQuickTools();
       return campaign;
     }
-    function renderAlbumRoster(teamId){
+    async function renderAlbumRoster(teamId){
+      await ensureData();
       syncCurrentPullsIntoAlbum();
       const team=rtgAlbumTeams().find(entry=>id(entry.teamId)===id(teamId));
       if(!team)return renderAlbum();
