@@ -17,6 +17,9 @@
     const pid = id(playerId);
     if (!pid) return "";
     if (!sid || sid === FREE_AGENTS) return pid;
+    if (pid.includes("@") && global.ProfiledSeasonRuntime?.resolveProfile?.(sid,pid)) {
+      return id(global.ProfiledSeasonRuntime.canonicalProfileId?.(sid,pid)||pid);
+    }
     return id(
       global.ProfiledSeasonRuntime?.canonicalPlayerId?.(sid, pid)
       || global.SeasonRegistry?.player?.(pid, sid)?.legacyCanonicalPlayerId
@@ -28,6 +31,10 @@
     const sid = normalizeSeasonId(seasonId);
     const pid = canonicalPlayerId(sid, playerId);
     return sid && pid ? `${sid}${SEP}${pid}` : "";
+  }
+
+  function cardIdForProfile(profileId, seasonId) {
+    return cardIdForSeason(profileId, seasonId);
   }
 
   function cardIdForFreeAgent(playerId) {
@@ -109,6 +116,7 @@
     normalizeSeasonId,
     canonicalPlayerId,
     cardIdForSeason,
+    cardIdForProfile,
     cardIdForFreeAgent,
     isCardId,
     parse,
