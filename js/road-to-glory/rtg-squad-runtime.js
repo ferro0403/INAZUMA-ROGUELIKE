@@ -95,7 +95,7 @@
       const overall = Number(player.overall ?? player.displayOverall ?? player.finalOverall ?? 0);
       overallTotal += Number.isFinite(overall) ? overall : 0;
       const role = String(player.normalizedRole || player.position || player.role || "").toUpperCase();
-      const move = playerResolver?.resolveMove?.(cardId, activeSeasonId, role, freeAgentsDb) || null;
+      const move = playerResolver?.resolveMove?.(cardId, activeSeasonId, role, freeAgentsDb, variant) || null;
       const power = Number(move?.power);
       moveBonusTotal += Number.isFinite(power) ? Math.max(0, Math.min(2, (power - 50) / 30)) : 0;
     }
