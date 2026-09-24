@@ -614,12 +614,17 @@
     }
   }
 
-  function rtgTeamEmblemMarkup(teamId) {
-    const db = global.SeasonRegistry.database("ie1");
+  function rtgTeamEmblemMarkup(teamId, seasonSource = "ie1") {
+    const db = seasonSource && typeof seasonSource === "object"
+      ? seasonSource
+      : global.SeasonRegistry.database(String(seasonSource || "ie1"));
     const team = (db?.teams || []).find((entry) => String(entry.teamId || entry.id) === String(teamId));
-    const logo = team?.logoUrl || db?.bossOrder?.find((entry) => String(entry.teamId) === String(teamId))?.logoUrl || "";
+    const logo = team?.logoUrl
+      || db?.bossOrder?.find((entry) => String(entry.teamId) === String(teamId))?.logoUrl
+      || db?.specialMatches?.find((entry) => String(entry.teamId) === String(teamId))?.logoUrl
+      || "";
     return logo
-      ? `<img src="${escapeHtml(logo)}" alt="" loading="lazy" />`
+      ? `<img src="${escapeHtml(logo)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
       : `<span class="rtg-team-fallback">${escapeHtml(String(teamId || "?").slice(0, 1).toUpperCase())}</span>`;
   }
 
@@ -637,10 +642,18 @@
     } else if (squad?.specialType === "free-agents" || /svincolat/i.test(String(squad?.name || ""))) {
       resolved = global.TeamEmblems.resolveTeamEmblem({ specialType: "free-agents", fallbackKind: "free-agents" });
     } else {
-      const db = global.SeasonRegistry.database("ie1");
-      const team = (db?.teams || []).find((entry) => String(entry.teamId || entry.id) === String(squad?.teamId || ""))
-        || (db?.teams || []).find((entry) => String(entry.name || entry.teamName || "") === String(squad?.name || ""));
-      resolved = global.TeamEmblems.resolveTeamEmblem({ teamId: squad?.teamId || team?.teamId || team?.id, seasonId: "ie1", team, fallbackKind: "neutral" });
+      const requestedSeasonId = String(squad?.seasonId || "");
+      const candidateSeasonIds = [requestedSeasonId, "ie1_s2", "ie1"].filter(Boolean);
+      let seasonId = candidateSeasonIds[0] || "ie1";
+      let team = null;
+      for (const sid of candidateSeasonIds) {
+        const db = global.SeasonRegistry.database(sid);
+        const found = (db?.teams || []).find((entry) => String(entry.teamId || entry.id) === String(squad?.teamId || ""))
+          || (db?.teams || []).find((entry) => String(entry.name || entry.teamName || "") === String(squad?.name || ""));
+        if (found) { seasonId = sid; team = found; break; }
+      }
+      if (squad?.logoUrl) team = { ...(team || {}), teamId:squad?.teamId || team?.teamId, teamName:squad?.name || team?.teamName, logoUrl:squad.logoUrl };
+      resolved = global.TeamEmblems.resolveTeamEmblem({ teamId: squad?.teamId || team?.teamId || team?.id, seasonId, team, fallbackKind: "neutral" });
     }
     return global.TeamEmblems.teamEmblemMarkup(resolved, { escape: escapeHtml, className });
   }
