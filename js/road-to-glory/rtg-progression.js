@@ -14,16 +14,16 @@
     return JSON.parse(JSON.stringify(state || {}));
   }
 
-  function indexForNodeId(nodeId) {
+  function indexForNodeId(nodeId, state=null) {
     return nodes(state).findIndex((node) => node.id === String(nodeId || ""));
   }
 
   function nodeIndex(state) {
-    return indexForNodeId(state?.currentNodeId);
+    return indexForNodeId(state?.currentNodeId, state);
   }
 
   function isNodeUnlocked(state, nodeId) {
-    const target = indexForNodeId(nodeId);
+    const target = indexForNodeId(nodeId, state);
     if (target < 0) return false;
     if (state?.seasonComplete) return true;
     const current = nodeIndex(state);
@@ -40,7 +40,7 @@
   function advanceIfCurrent(state, completedNodeId) {
     const list = nodes(state);
     if (String(state.currentNodeId || "") !== String(completedNodeId || "")) return state;
-    const completedIndex = indexForNodeId(completedNodeId);
+    const completedIndex = indexForNodeId(completedNodeId, state);
     const next = completedIndex >= 0 ? list[completedIndex + 1] : null;
     if (next) {
       state.currentNodeId = next.id;
@@ -76,9 +76,9 @@
 
   function rollbackNodeId(state) {
     const checkpointIndex = Number(state?.checkpointMainIndex);
-    if (!Number.isInteger(checkpointIndex) || checkpointIndex < 0) return "main:occult";
+    if (!Number.isInteger(checkpointIndex) || checkpointIndex < 0) return `main:${cfg(state).mainTeams[0]}`;
     const checkpointTeam = cfg(state).mainTeams[checkpointIndex];
-    const checkpointNodeIndex = indexForNodeId(`main:${checkpointTeam}`);
+    const checkpointNodeIndex = indexForNodeId(`main:${checkpointTeam}`, state);
     const list = nodes(state);
     return list[checkpointNodeIndex + 1]?.id || `main:${checkpointTeam}`;
   }
