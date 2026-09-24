@@ -47,7 +47,7 @@
     }
     const seen = new Set();
     const output = [];
-    const sourcePlayers=seasonDb?.requiresProfileAwareRuntime?(seasonDb?.profiles||[]):(seasonDb?.players||[]);
+    const sourcePlayers=seasonDb?.requiresProfileAwareRuntime&&Array.isArray(seasonDb?.profiles)&&seasonDb.profiles.length?(seasonDb.profiles):(seasonDb?.players||[]);
     for (const player of sourcePlayers) {
       const playerId = id(player?.profileId || player?.playerId || player?.id);
       if (!allowedIds.has(playerId)) continue;
