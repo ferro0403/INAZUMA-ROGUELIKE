@@ -279,13 +279,19 @@
       const winningKind = event.actorWon ? actorActionKind : opponentActionKind;
       const winningName = event.actorWon ? actorName : opponentName;
       const losingName = event.actorWon ? opponentName : actorName;
-      const copy = effectiveNoTurnover && !event.actorWon && kind !== "shot"
-        ? winningMove
-          ? `${winningName} vince il duello con ${winningMove}, ma il possesso resta a ${possessionTeamName}.`
-          : baseCopy
-        : winningMove
-          ? `${moveOutcomeClause(winningName,losingName,winningKind,winningMove,true)}.`
-          : baseCopy;
+      // Automatic simulation is not allowed to create a turnover. If its internal
+      // duel roll favours the defending player, describe it as a failed pressure/tackle
+      // instead of claiming that the defender stopped/won while possession stayed put.
+      const simulatedNoTurnoverLoss = effectiveNoTurnover && !event.manual && !event.actorWon && kind !== "shot";
+      const copy = simulatedNoTurnoverLoss
+        ? kind === "dribble"
+          ? `${opponentName} prova il tackle su ${actorName}, ma non riesce a recuperare palla. Possesso invariato per ${possessionTeamName}.`
+          : `${opponentName} prova a recuperare palla su ${actorName}, ma non ci riesce. Possesso invariato per ${possessionTeamName}.`
+        : effectiveNoTurnover && !event.actorWon && kind !== "shot"
+          ? `${opponentName} prova a fermare ${actorName}, ma il possesso resta a ${possessionTeamName}.`
+          : winningMove
+            ? `${moveOutcomeClause(winningName,losingName,winningKind,winningMove,true)}.`
+            : baseCopy;
       const moveNames = winningMove ? [winningMove] : [];
       const moveName = winningMove || null;
       const presented = {
