@@ -435,8 +435,12 @@
         const team=(seasonDb?.teams||[]).find(entry=>id(entry?.teamId||entry?.id)===id(teamId));
         if(!team)return null;
         const playerIds=Array.from(team?.playerIds||[]).map(id).filter(Boolean);
-        const cardIds=playerIds.map(playerId=>cardIdentity?.cardIdForSeason?.(playerId,activeSeasonId())||playerId);
-        return {teamId:id(teamId),teamName:team?.teamName||team?.name||teamId,logoUrl:team?.logoUrl||"",playerIds,cardIds,total:cardIds.length,unlocked:cardIds.filter(cardId=>unlocked.has(cardId)).length};
+        const profileIds=activeConfig()?.requiresProfileAwareRuntime
+          ? Array.from(seasonDb?.profiles||[]).filter(profile=>id(profile?.teamId)===id(teamId)).map(profile=>id(profile?.profileId||profile?.id)).filter(Boolean)
+          : [];
+        const sourceIds=profileIds.length?profileIds:playerIds;
+        const cardIds=sourceIds.map(playerId=>cardIdentity?.cardIdForSeason?.(playerId,activeSeasonId())||playerId);
+        return {teamId:id(teamId),teamName:team?.teamName||team?.name||teamId,logoUrl:team?.logoUrl||"",playerIds,profileIds,cardIds,total:cardIds.length,unlocked:cardIds.filter(cardId=>unlocked.has(cardId)).length};
       }).filter(team=>team&&team.total>0);
     }
     function rtgAlbumTeamPlayers(team){
