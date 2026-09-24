@@ -27,5 +27,14 @@ assert(runView.includes('data-rtg-map-block="season2-${block.index+1}"'),"S2 mus
 assert(!runView.includes('style="--rtg-route-height:2500px"'),"S2 must not return to one giant 2500px stage");
 assert(routeCss.includes("height:var(--rtg-route-height,640px)"),"S2 blocks must honor their individual heights");
 assert(routeCss.includes("background-position:var(--rtg-route-bg-position,center)"),"S2 blocks must be able to frame repeated map art independently");
+const viewCtx={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};viewCtx.globalThis=viewCtx;vm.createContext(viewCtx);
+vm.runInContext(runView,viewCtx);
+const view=viewCtx.RoadToGloryRunView.create({escapeHtml:String,teamEmblemMarkup:teamId=>`<i data-fallback="${teamId}"></i>`});
+const seasonDb={teams:order.map(teamId=>({teamId,teamName:teamId,logoUrl:`https://assets.test/${teamId}.png`}))};
+const rendered=view.runMarkup({state:{activeSeasonId:"ie1_s2",currentNodeId:nodes[0].id,tokens:0,lives:2,attemptsByNode:{},defeatedTeamIds:[]},nodes,seasonDb,seasonConfig:S});
+assert.strictEqual((rendered.match(/data-rtg-map-block="season2-/g)||[]).length,7);
+assert.strictEqual((rendered.match(/data-rtg-node-id=/g)||[]).length,33);
+assert.match(rendered,/assets\.test\/secret_service\.png/);
+assert.match(rendered,/assets\.test\/raimon_inazuma_eleven_2\.png/);
 assert.strictEqual(C.buildSeasonNodes("ie1").length,28);
 console.log("rtg-season2-route-contract-test: PASS");
