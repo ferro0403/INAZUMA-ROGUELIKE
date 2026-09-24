@@ -27,6 +27,10 @@
   const clone = (value) => JSON.parse(JSON.stringify(value));
 
   function teamPlayerIds(seasonDb, teamId) {
+    if(seasonDb?.requiresProfileAwareRuntime){
+      const profiles=(seasonDb?.profiles||[]).filter(entry=>id(entry?.teamId)===id(teamId));
+      if(profiles.length)return profiles.map(entry=>id(entry.profileId||entry.id)).filter(Boolean);
+    }
     const team = (seasonDb?.teams || []).find((entry) => id(entry?.teamId || entry?.id) === id(teamId));
     if (team?.playerIds?.length) return team.playerIds.map(id);
     const boss = (seasonDb?.bossOrder || []).find((entry) => id(entry?.teamId) === id(teamId));
@@ -43,8 +47,9 @@
     }
     const seen = new Set();
     const output = [];
-    for (const player of seasonDb?.players || []) {
-      const playerId = id(player?.playerId || player?.id);
+    const sourcePlayers=seasonDb?.requiresProfileAwareRuntime?(seasonDb?.profiles||[]):(seasonDb?.players||[]);
+    for (const player of sourcePlayers) {
+      const playerId = id(player?.profileId || player?.playerId || player?.id);
       if (!allowedIds.has(playerId)) continue;
       const cardId = api.cardIdForSeason(playerId, seasonId);
       if (!cardId || seen.has(cardId)) continue;
@@ -71,7 +76,7 @@
     return unlockedCandidates(state, seasonDb).filter((player) => !owned.has(id(player?.cardId)));
   }
 
-  function rarityWeightsForCandidates(candidates) {
+  function rarityWeightsForCandidates(candidates, state=null) {
     const configured = cfg(state).rarityWeights || {};
     const available = new Set((candidates || []).map((player) => String(player?.category || "Normale")));
     const entries = Object.entries(configured)
@@ -83,14 +88,14 @@
   }
 
   function availableRarityWeights(state, seasonDb) {
-    return rarityWeightsForCandidates(unlockedCandidates(state, seasonDb));
+    return rarityWeightsForCandidates(unlockedCandidates(state, seasonDb),state);
   }
 
   function previewPool(state, seasonDb, accessibleCardIds = []) {
     const candidates = unownedCandidates(state, seasonDb, accessibleCardIds);
     return Object.freeze({
       candidates: Object.freeze(candidates),
-      rarities: Object.freeze(rarityWeightsForCandidates(candidates)),
+      rarities: Object.freeze(rarityWeightsForCandidates(candidates,state)),
     });
   }
 
@@ -107,7 +112,7 @@
     if (!candidates.length) {
       throw Object.assign(new Error("Nessun nuovo giocatore RTG disponibile"), { code: "rtg-gacha-empty-pool" });
     }
-    const rarities = rarityWeightsForCandidates(candidates);
+    const rarities = rarityWeightsForCandidates(candidates,state);
     const activeRarities = rarities.filter((entry) => Number(entry.weight) > 0);
     if (!activeRarities.length) {
       throw Object.assign(new Error("Nessuna rarità RTG disponibile"), { code: "rtg-gacha-empty-pool" });
