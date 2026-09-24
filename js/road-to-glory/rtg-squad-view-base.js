@@ -251,7 +251,7 @@
       return `<main class="screen squad-screen rtg-squad-shell">
         <header class="topbar squad-topbar rtg-squad-topbar">
           <button type="button" class="squad-back-button rtg-squad-back" data-rtg-home aria-label="Torna alla Home">←</button>
-          <div class="squad-topbar-copy"><p class="eyebrow">ROAD TO GLORY · S1</p><h1>Squadra</h1></div>
+          <div class="squad-topbar-copy"><p class="eyebrow">ROAD TO GLORY · ${escape(model.seasonId === "ie1_s2" ? "S2" : "S1")}</p><h1>Squadra</h1></div>
           <div class="rtg-squad-team-identity" aria-label="Squadra ${escape(teamName)}">
             <span class="rtg-squad-team-logo">${teamEmblem}</span>
             <strong title="${escape(teamName)}">${escape(teamName)}</strong>
@@ -274,7 +274,7 @@
                 <button type="button" class="btn squad-module-button" data-rtg-open-formation>Modifica modulo</button>
                 <button type="button" class="btn squad-info-button rtg-catalog-button" data-rtg-open-catalog>Giocatori RTG</button>
               </div>
-              ${context.requirementsMarkup ? `<section class="rtg-squad-next"><div class="rtg-next-heading"><div><p class="eyebrow">Prossima sfida</p><h2>${escape(context.nextTeamName || "Season 1")}</h2></div><details class="rtg-requirements-disclosure"><summary aria-label="Informazioni sui requisiti della prossima sfida"><span aria-hidden="true">i</span> Requisiti</summary><div class="rtg-requirements-drawer">${context.requirementsMarkup}<button type="button" class="btn rtg-adapt-button" data-rtg-adapt-requirements>Adatta ai requisiti</button></div></details></div></section>` : '<button type="button" class="btn rtg-adapt-button" data-rtg-adapt-requirements disabled>Adatta ai requisiti</button>'}
+              ${context.requirementsMarkup ? `<section class="rtg-squad-next"><div class="rtg-next-heading"><div><p class="eyebrow">Prossima sfida</p><h2>${escape(context.nextTeamName || (model.seasonId === "ie1_s2" ? "Season 2" : "Season 1"))}</h2></div><details class="rtg-requirements-disclosure"><summary aria-label="Informazioni sui requisiti della prossima sfida"><span aria-hidden="true">i</span> Requisiti</summary><div class="rtg-requirements-drawer">${context.requirementsMarkup}<button type="button" class="btn rtg-adapt-button" data-rtg-adapt-requirements>Adatta ai requisiti</button></div></details></div></section>` : '<button type="button" class="btn rtg-adapt-button" data-rtg-adapt-requirements disabled>Adatta ai requisiti</button>'}
               <div class="rtg-squad-savebar"><span>${context.dirty ? "Modifiche da salvare" : "Squadra salvata"}</span><button type="button" class="btn btn-yellow" data-rtg-save-squad>Salva squadra</button></div>
             </aside>
           </div>
