@@ -1454,12 +1454,14 @@
       const pool=gacha.previewPool(campaign,seasonDb);
       deps.openModal?.(runView.vendingMarkup({...pool,tokens:campaign.tokens,seasonId:activeSeasonId()}),{className:"rtg-modal rtg-vending-modal"});
       const modalRoot=deps.getModalRoot?.();
-      modalRoot?.querySelector?.("[data-rtg-vending-album]")?.addEventListener("click",async()=>{
-        /* The vending modal owns the foreground layer. Render Album first, then
-           dismiss only that modal: some modal managers restore the underlying
-           view on close, which made the old close-then-render flow appear inert. */
+      modalRoot?.querySelector?.("[data-rtg-vending-album]")?.addEventListener("click",async(event)=>{
+        event.preventDefault?.();
+        event.stopPropagation?.();
+        /* Remove the foreground modal before Album data loading. Keeping the
+           modal mounted while renderAlbum awaits ensureData leaves it above the
+           newly rendered Album, so the UI appears not to navigate at all. */
+        deps.closeModal?.({invokeOnClose:false});
         await renderAlbum();
-        deps.closeModal?.({invokeOnClose:false,preserveView:true});
       });
       modalRoot?.querySelector?.("[data-rtg-pull]")?.addEventListener("click",async(event)=>{
         const button=event.currentTarget;
