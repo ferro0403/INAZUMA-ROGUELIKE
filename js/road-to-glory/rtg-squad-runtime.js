@@ -151,6 +151,7 @@
     return {
       eligible: reasons.length === 0,
       reasons,
+      seasonId,
       teamPower: power,
       cap: Number(constraint.cap),
       recruitCount: eligibleRecruits.length,
