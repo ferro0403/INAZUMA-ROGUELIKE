@@ -261,7 +261,7 @@
         <div class="content squad-content rtg-squad-content"><div class="rtg-squad-slots" aria-label="Slot squadra"><span class="rtg-squad-slots-label">LE MIE SQUADRE</span><div class="rtg-squad-slot-buttons">${[1,2,3].map(slot=>`<button type="button" class="rtg-squad-slot ${Number(context.activeSquadSlot||1)===slot?"active":""}" data-rtg-squad-slot="${slot}" aria-pressed="${Number(context.activeSquadSlot||1)===slot?"true":"false"}">SQUADRA ${slot}</button>`).join("")}</div></div>
           <div class="squad-workspace">
             <section class="squad-field-panel" aria-label="Campo 11v11 RTG">
-              <div class="squad-panel-head rtg-squad-section-head"><h2>Titolari</h2><span class="squad-field-formation" data-rtg-formation-current>${escape(model.formation?.name || model.formation?.formation || model.formationId || "—")}</span></div>
+              <div class="squad-panel-head rtg-squad-section-head"><h2>Titolari</h2><div class="rtg-squad-head-stats"><span class="rtg-squad-live-overall"><small>OVERALL</small><strong>${context.teamPower == null ? "—" : escape(context.teamPower)}</strong></span><span class="squad-field-formation" data-rtg-formation-current>${escape(model.formation?.name || model.formation?.formation || model.formationId || "—")}</span></div></div>
               ${lineupPitchMarkup(lineupRows)}
             </section>
 
