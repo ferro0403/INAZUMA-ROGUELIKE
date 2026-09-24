@@ -472,7 +472,9 @@
           ? Array.from(seasonDb?.profiles||[]).filter(profile=>id(profile?.teamId)===id(teamId)).map(profile=>id(profile?.profileId||profile?.id)).filter(Boolean)
           : [];
         const sourceIds=profileIds.length?profileIds:playerIds;
-        const cardIds=sourceIds.map(playerId=>cardIdentity?.cardIdForSeason?.(playerId,activeSeasonId())||playerId);
+        const cardIds=sourceIds.map(playerId=>activeConfig()?.requiresProfileAwareRuntime
+          ? (cardIdentity?.cardIdForProfile?.(playerId,activeSeasonId())||playerId)
+          : (cardIdentity?.cardIdForSeason?.(playerId,activeSeasonId())||playerId));
         return {teamId:id(teamId),teamName:team?.teamName||team?.name||teamId,logoUrl:team?.logoUrl||"",playerIds,profileIds,cardIds,total:cardIds.length,unlocked:cardIds.filter(cardId=>unlocked.has(cardId)).length};
       }).filter(team=>team&&team.total>0);
     }
