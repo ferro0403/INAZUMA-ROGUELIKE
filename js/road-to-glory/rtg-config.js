@@ -122,7 +122,7 @@
     pullCost:300,
     mainRewards:season2Rewards,
     secondaryRewards:SEASON1.secondaryRewards,
-    rarityWeights:SEASON1.rarityWeights,
+    rarityWeights:Object.freeze({ Normale:40, Buono:27, Forte:18, Elite:10, Mondiale:5, Leggenda:1 }),
     duplicateRefunds:SEASON1.duplicateRefunds,
     constraints:season2Constraints,
     routeBackground:"assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-map-hq-1",
