@@ -107,6 +107,14 @@
     return Object.freeze({ cardId: raw, playerId: raw, legacySeasonId: null, sourceKind: "legacy" });
   }
 
+  function versionGroupKey(value, fallbackSeasonId = null) {
+    const parsed = parse(value, fallbackSeasonId);
+    if (parsed.sourceKind === "season") {
+      const canonical = id(parsed.canonicalPlayerId || canonicalPlayerId(parsed.legacySeasonId, parsed.profileId || parsed.playerId) || parsed.playerId);
+      return canonical ? `season${SEP}${canonical}` : `card${SEP}${parsed.cardId}`;
+    }
+    return `card${SEP}${parsed.cardId || parsed.playerId || id(value)}`;
+  }
   function record(value, fallbackSeasonId = null) {
     const parsed = parse(value, fallbackSeasonId);
     return Object.freeze({
@@ -141,6 +149,7 @@
     cardIdForFreeAgent,
     isCardId,
     parse,
+    versionGroupKey,
     record,
     legacyLabel,
   });
