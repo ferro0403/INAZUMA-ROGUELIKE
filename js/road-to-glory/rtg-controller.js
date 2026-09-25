@@ -43,6 +43,8 @@
     let selectedDevelopmentCardId=null;
     let developmentQuery="";
     let developmentRarity="Tutti";
+    let developmentPage=1;
+    const DEVELOPMENT_PLAYER_PAGE_SIZE=24;
     const SQUAD_PICKER_PAGE_SIZE=24;
     const ENCOUNTER_REVEAL_DELAY_MS=2200;
     const FINAL_COMPARISON_DELAY_MS=1700;
@@ -547,24 +549,26 @@
     function bindDevelopmentGrid(players){
       const results=app?.querySelector?.("[data-rtg-development-results]");
       if(!results)return;
+      const refresh=()=>{
+        const filtered=filteredDevelopmentPlayers(players);
+        const totalPages=Math.max(1,Math.ceil(filtered.length/DEVELOPMENT_PLAYER_PAGE_SIZE));
+        developmentPage=Math.max(1,Math.min(developmentPage,totalPages));
+        const start=(developmentPage-1)*DEVELOPMENT_PLAYER_PAGE_SIZE;
+        const pagePlayers=filtered.slice(start,start+DEVELOPMENT_PLAYER_PAGE_SIZE);
+        results.innerHTML=economyView.playerGrid(pagePlayers)+economyView.playerPaginationMarkup?.(developmentPage,totalPages,filtered.length);
+      };
       results.onclick=(event)=>{
+        const pageButton=event.target?.closest?.("[data-rtg-development-page]");
+        if(pageButton){developmentPage=Math.max(1,Number(pageButton.dataset.rtgDevelopmentPage)||1);refresh();return;}
         const element=event.target?.closest?.("[data-rtg-development-player]");
         if(!element)return;
         selectedDevelopmentCardId=id(element.dataset.rtgDevelopmentPlayer);
         renderDevelopment("players");
       };
-      const refresh=()=>{
-        results.innerHTML=economyView.playerGrid(filteredDevelopmentPlayers(players));
-      };
       const search=app?.querySelector?.("[data-rtg-development-search]");
-      search?.addEventListener("input",(event)=>{
-        developmentQuery=event.currentTarget.value||"";
-        refresh();
-      });
-      app?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",(event)=>{
-        developmentRarity=event.currentTarget.value||"Tutti";
-        refresh();
-      });
+      search?.addEventListener("input",(event)=>{developmentQuery=event.currentTarget.value||"";developmentPage=1;refresh();});
+      app?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",(event)=>{developmentRarity=event.currentTarget.value||"Tutti";developmentPage=1;refresh();});
+      refresh();
     }
     function renderDevelopment(tab="players"){
       if(!economyView||!economy)return renderRun();

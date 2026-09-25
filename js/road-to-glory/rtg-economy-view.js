@@ -8,7 +8,7 @@
     const compactPlayerCardMarkup=deps.compactPlayerCardMarkup||null;
     const economy=deps.economy||global.RoadToGloryEconomy;
 
-    const tokenIcon=(className="")=>`<img class="rtg-token-icon ${escape(className)}" src="${TOKEN_URL}" alt="" aria-hidden="true" draggable="false">`;
+    const rtgTokenIcon=(className="")=>`<img class="rtg-token-icon ${escape(className)}" src="${TOKEN_URL}" alt="" aria-hidden="true" draggable="false">`;
     const rarityClass=(rarity)=>`rarity-${String(rarity||"debole").trim().toLowerCase()}`;
 
     function projectImage(rarity){
@@ -22,7 +22,7 @@
           <img src="${escape(projectImage(rarity))}" alt="">
           <h3>PROGETTO ${escape(rarity.toUpperCase())}</h3>
           <p>Posseduti <b>×${escape(state.projects?.[rarity]||0)}</b></p>
-          <strong class="rtg-shop-price">${tokenIcon("rtg-shop-price-icon")}${escape(price)} GETTONI</strong>
+          <strong class="rtg-shop-price">${rtgTokenIcon("rtg-shop-price-icon")}${escape(price)} GETTONI</strong>
           <button class="btn btn-yellow" data-rtg-buy-project="${escape(rarity)}" ${Number(state.tokens||0)<price?"disabled":""}>ACQUISTA</button>
         </article>`;
       }).join("");
@@ -32,7 +32,7 @@
           <div><p class="eyebrow">ROAD TO GLORY</p><h1>NEGOZIO</h1></div>
         </header>
         <section class="shop-wallet rtg-shop-wallet">
-          <div class="shop-coins">${tokenIcon()}<span><small>GETTONI RTG</small><b>${escape(Number(state.tokens)||0)}</b></span></div>
+          <div class="shop-coins">${rtgTokenIcon()}<span><small>GETTONI RTG</small><b>${escape(Number(state.tokens)||0)}</b></span></div>
         </section>
         <section class="shop-grid">${cards}</section>
         <section class="rtg-economy-crosslink"><button type="button" class="btn btn-yellow" data-rtg-open-development>CENTRO DI SVILUPPO</button></section>
@@ -64,7 +64,7 @@
       if(type==="project"){
         return `<span class="development-resource-icon project-image-frame"><img src="${escape(projectImage(rarity))}" alt="" loading="lazy" decoding="async"></span>`;
       }
-      return `<span class="development-resource-icon rtg-development-token-icon">${tokenIcon()}</span>`;
+      return `<span class="development-resource-icon rtg-development-token-icon">${rtgTokenIcon()}</span>`;
     }
 
     function requirement({type,rarity="",label,current=null,required=0,ready=true,compact=false}={}){
@@ -83,6 +83,14 @@
         const key=player.cardId||player.playerId;
         return `<div data-rtg-development-player="${escape(key)}">${squadCard(player,`data-rtg-development-card="${escape(key)}" aria-label="Seleziona ${escape(player.name||"giocatore")}"`)}${player.category==="Aurico"?'<span class="development-max" aria-label="Rarità massima">MAX</span>':""}</div>`;
       }).join("");
+    }
+
+
+    function playerPaginationMarkup(page=1,totalPages=1,total=0){
+      if(totalPages<=1)return "";
+      const prev=page>1?`<button type="button" class="btn btn-ghost" data-rtg-development-page="${page-1}">← PRECEDENTI</button>`:"";
+      const next=page<totalPages?`<button type="button" class="btn btn-ghost" data-rtg-development-page="${page+1}">SUCCESSIVI →</button>`:"";
+      return `<nav class="development-pagination" aria-label="Pagine giocatori">${prev}<strong>${escape(page)} / ${escape(totalPages)}</strong>${next}<small>${escape(total)} giocatori</small></nav>`;
     }
 
     function selectedMarkup(model={}){
@@ -199,7 +207,9 @@
       projectInventoryMarkup,
       playerGrid,
       squadCard,
-      tokenIcon,
+      tokenIcon:rtgTokenIcon,
+      rtgTokenIcon,
+      playerPaginationMarkup,
       rarityClass,
     });
   }
