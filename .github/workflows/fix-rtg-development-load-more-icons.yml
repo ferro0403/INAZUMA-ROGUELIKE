@@ -1,10 +1,5 @@
 name: Fix RTG development lazy loading
-on:
-  push:
-    branches:
-      - feature/rtg-shop-development
-    paths:
-      - .github/workflows/fix-rtg-development-load-more-icons.yml
+"on": push
 jobs:
   fix:
     runs-on: ubuntu-latest
@@ -48,15 +43,13 @@ jobs:
 '''
           s=s[:a]+block+s[b:]
           p.write_text(s)
-
           p=Path('js/road-to-glory/rtg-economy-view.js')
           s=p.read_text()
           old='      return `<span class="development-resource-icon rtg-development-token-icon">${rtgTokenIcon()}</span>`;'
           new='      return `<span class="development-resource-icon rtg-development-token-icon" style="width:64px;height:64px;min-width:64px;display:inline-flex;align-items:center;justify-content:center;overflow:visible"><img class="rtg-token-icon" style="width:58px;height:58px;max-width:none;object-fit:contain;display:block" src="${TOKEN_URL}" alt="" aria-hidden="true" draggable="false"></span>`;'
           if old not in s: raise SystemExit('token icon anchor missing')
           p.write_text(s.replace(old,new))
-
-          Path('tests/rtg-development-pagination-test.js').write_text('''const fs=require("fs");\nconst c=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");\nconst v=fs.readFileSync("js/road-to-glory/rtg-economy-view.js","utf8");\nif(!/DEVELOPMENT_PLAYER_PAGE_SIZE\\s*=\\s*24/.test(c))throw Error("batch != 24");\nif(!/developmentVisibleCount/.test(c)||!/data-rtg-development-load-more/.test(c))throw Error("load more missing");\nif(/data-rtg-development-page/.test(c))throw Error("old pages remain");\nif(!/width:58px;height:58px/.test(v))throw Error("token sizing missing");\nconsole.log("RTG development focused regression passed");\n''')
+          Path('tests/rtg-development-pagination-test.js').write_text('const fs=require("fs");\nconst c=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8"),v=fs.readFileSync("js/road-to-glory/rtg-economy-view.js","utf8");\nif(!/DEVELOPMENT_PLAYER_PAGE_SIZE\\s*=\\s*24/.test(c)||!/developmentVisibleCount/.test(c)||!/data-rtg-development-load-more/.test(c))throw Error("lazy batches missing");\nif(/data-rtg-development-page/.test(c))throw Error("old pages remain");\nif(!/width:58px;height:58px/.test(v))throw Error("token sizing missing");\nconsole.log("RTG development focused regression passed");\n')
           PY
           node tests/rtg-development-pagination-test.js
           rm .github/workflows/fix-rtg-development-load-more-icons.yml
