@@ -2,7 +2,7 @@
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 const ctx={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};ctx.globalThis=ctx;vm.createContext(ctx);
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),ctx);
-const V=ctx.RoadToGloryRunView;
+const V=ctx.RoadToGloryRunView.create({escapeHtml:s=>String(s),teamEmblemMarkup:teamId=>`<i data-emblem="${teamId}"></i>`});
 assert(V&&typeof V.runMarkup==="function");
 const nodes=Array.from({length:33},(_,i)=>({id:i===32?"main:raimon_inazuma_eleven_2":`secondary:x:y:${i}`,type:i===32?"main":"secondary",teamId:i===32?"raimon_inazuma_eleven_2":undefined}));
 const db={teams:[{teamId:"raimon_inazuma_eleven_2",name:"Raimon S2"}]};
