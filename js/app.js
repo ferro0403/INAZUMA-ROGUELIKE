@@ -661,6 +661,8 @@
   const rtgRuntimeAvailable = !!(
     global.RoadToGloryStorage &&
     global.RoadToGloryRepository &&
+    global.RoadToGloryEconomy &&
+    global.RoadToGloryEconomyView &&
     global.RoadToGloryRunView &&
     global.RoadToGlorySquadView &&
     global.RoadToGloryMatchView &&
@@ -676,6 +678,11 @@
     teamEmblemMarkup: rtgTeamEmblemMarkup,
     compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
     playerCardMarkup: (...args) => playerCard(...args),
+  }) : null;
+  const rtgEconomyView = rtgRuntimeAvailable ? global.RoadToGloryEconomyView.create({
+    escapeHtml,
+    economy: global.RoadToGloryEconomy,
+    compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
   }) : null;
   const rtgSquadView = rtgRuntimeAvailable ? global.RoadToGlorySquadView.create({
     escapeHtml,
@@ -718,6 +725,8 @@
     matchEngine: global.RoadToGloryMatchEngine,
     opponentGenerator: global.RoadToGloryOpponentGenerator,
     playerResolver: global.RoadToGloryPlayerResolver,
+    economy: global.RoadToGloryEconomy,
+    economyView: rtgEconomyView,
     rng: global.RoadToGloryRng,
     aiPolicy: global.RoadToGloryAiPolicy,
     penaltyRuntime: global.RoadToGloryPenaltyRuntime,
