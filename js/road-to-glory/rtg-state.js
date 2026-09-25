@@ -162,6 +162,27 @@
     if (rawVersion > SCHEMA_VERSION) fail("rtg-state-unsupported-schema", "Versione RTG non supportata", { schemaVersion: rawVersion });
     if (id(raw.campaignId || CAMPAIGN_ID) !== CAMPAIGN_ID) fail("rtg-state-invalid-campaign", "Campagna RTG non valida");
     if (Number(raw.tokens) < 0) fail("rtg-state-invalid-tokens", "Gettoni RTG non validi");
+    if (raw.projects != null) {
+      if (typeof raw.projects !== "object" || Array.isArray(raw.projects)) fail("rtg-state-invalid-projects", "Inventario Progetti RTG non valido");
+      for (const rarity of PROJECT_RARITIES) {
+        const value = raw.projects[rarity] ?? 0;
+        if (!Number.isInteger(Number(value)) || Number(value) < 0) fail("rtg-state-invalid-projects", "Inventario Progetti RTG non valido", { rarity });
+      }
+    }
+    if (raw.developmentByCardId != null) {
+      if (typeof raw.developmentByCardId !== "object" || Array.isArray(raw.developmentByCardId)) fail("rtg-state-invalid-development", "Sviluppo RTG non valido");
+      for (const [cardId, record] of Object.entries(raw.developmentByCardId)) {
+        if (!id(cardId) || !record || typeof record !== "object") fail("rtg-state-invalid-development-card", "Carta evoluta RTG non valida");
+        const potential = Number(record.targetPotential);
+        if (!Number.isInteger(potential) || potential < 1 || potential > 99) fail("rtg-state-invalid-development-potential", "Potenziale evoluzione RTG non valido", { cardId });
+        if (!DEVELOPMENT_RARITIES.includes(id(record.currentRarity))) fail("rtg-state-invalid-development-rarity", "Rarità evoluzione RTG non valida", { cardId });
+      }
+    }
+    if (raw.seasonTransitionRewardedIds != null) {
+      if (!Array.isArray(raw.seasonTransitionRewardedIds)) fail("rtg-state-invalid-season-reward", "Storico bonus Season RTG non valido");
+      const rewardIds = raw.seasonTransitionRewardedIds.map(id).filter(Boolean);
+      if (new Set(rewardIds).size !== rewardIds.length) fail("rtg-state-duplicate-season-reward", "Bonus cambio Season RTG duplicato");
+    }
     if (!ACTIVE_SEASON_IDS.includes(id(raw.activeSeasonId || "ie1"))) fail("rtg-state-invalid-season", "Season RTG non supportata");
     if (typeof raw.seasonComplete !== "boolean") fail("rtg-state-invalid-season-complete", "Flag completamento Season non valido");
     if (raw.activeMatch != null && typeof raw.activeMatch !== "object") fail("rtg-state-invalid-active-match", "Partita RTG attiva non valida");
