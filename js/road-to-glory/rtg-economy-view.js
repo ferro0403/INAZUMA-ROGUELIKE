@@ -197,6 +197,7 @@
       developmentMarkup,
       evolutionConfirmMarkup,
       projectInventoryMarkup,
+      playerGrid,
       squadCard,
       tokenIcon,
       rarityClass,
