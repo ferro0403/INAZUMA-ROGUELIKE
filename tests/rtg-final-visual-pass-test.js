@@ -69,7 +69,7 @@ assert(
   "RTG capsule station should keep a compact mobile-friendly footprint"
 );
 assert(
-  /rtg-vending-v12-body/.test(css) && /rtg-vending-v12-crank/.test(css) && /rtg-vending-v12-drop/.test(css),
+  /rtg-vending-dispense-v14/.test(css) && /rtg-vending-capsule-v14/.test(css) && /rtg-vending-capsule-drop/.test(css) && /rtg-vending-capsule-open/.test(css),
   "RTG vending pull should retain the current machine and capsule animations"
 );
 
