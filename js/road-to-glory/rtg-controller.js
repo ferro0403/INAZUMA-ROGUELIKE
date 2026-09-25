@@ -419,12 +419,25 @@
       }
       return normalizeResolvedPlayer(cardRef,player,roleVariantId);
     }
-    function resolvedSquad(snapshot){
+    function playerResolverForState(state=campaign){
+      if(typeof playerResolver.resolveOwnedAtLevel20!=="function")return playerResolver;
+      return {
+        ...playerResolver,
+        resolveAtLevel20:(cardRef,seasonId,roleVariantId,database)=>playerResolver.resolveOwnedAtLevel20(
+          cardRef,
+          seasonId,
+          roleVariantId,
+          database,
+          state?.developmentByCardId||{}
+        ),
+      };
+    }
+    function resolvedSquad(snapshot,state=campaign){
       const variants=snapshot?.activeRoleVariantByCardId||{};
       return {
         formationId:snapshot?.formationId||null,
-        lineup:(snapshot?.lineup||[]).map(cardId=>resolved(cardId,variants[cardId]||null)).filter(Boolean),
-        bench:(snapshot?.bench||[]).map(cardId=>resolved(cardId,variants[cardId]||null)).filter(Boolean),
+        lineup:(snapshot?.lineup||[]).map(cardId=>resolvedWithDevelopment(cardId,variants[cardId]||null,state?.developmentByCardId||{})).filter(Boolean),
+        bench:(snapshot?.bench||[]).map(cardId=>resolvedWithDevelopment(cardId,variants[cardId]||null,state?.developmentByCardId||{})).filter(Boolean),
         activeRoleVariantByCardId:{...variants},
       };
     }
@@ -636,8 +649,16 @@
       if(activeSeasonId()!=="ie1"||!campaign?.seasonComplete)return campaign;
       const nextDb=await global.SeasonRegistry?.loadDatabase?.("ie1_s2");
       if(!nextDb)throw new Error("Database Season 2 non disponibile");
+      let transitionRewarded=false;
       campaign=await repository.update("rtg-enter-season2",current=>{
         if(id(current.activeSeasonId)!=="ie1"||!current.seasonComplete)return current;
+        const rewardId="ie1->ie1_s2";
+        current.seasonTransitionRewardedIds=Array.from(new Set(current.seasonTransitionRewardedIds||[]));
+        if(!current.seasonTransitionRewardedIds.includes(rewardId)){
+          current.tokens=Math.max(0,Number(current.tokens)||0)+Number(config.SEASON_TRANSITION_REWARD||1000);
+          current.seasonTransitionRewardedIds.push(rewardId);
+          transitionRewarded=true;
+        }
         const previous=clone(current.squads?.ie1||{formationId:null,lineup:[],bench:[],activeRoleVariantByCardId:{}});
         current.activeSeasonId="ie1_s2";
         current.seasonComplete=false;
@@ -667,6 +688,7 @@
       activeSquadSlot=1;
       writeActiveSquadSlot(1);
       squadDraft=squadForSlot(1);
+      if(transitionRewarded)deps.toast?.(`BONUS SEASON: +${Number(config.SEASON_TRANSITION_REWARD||1000)} GETTONI RTG`);
       return renderRun();
     }
     function rtgAlbumEntries(){
@@ -1254,7 +1276,7 @@
         bench:bench.map(entry=>entry.playerId),
         activeRoleVariantByCardId:{...(squadDraft?.activeRoleVariantByCardId||{})},
       };
-      const eligibility=squadRuntime.mainEligibility({teamId,state,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+      const eligibility=squadRuntime.mainEligibility({teamId,state,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(state)});
       if(!eligibility.eligible)return null;
       return{
         squad:state.squads[activeSeasonId()],
@@ -1358,7 +1380,7 @@
       const candidate=clone(nextSquad);
       campaign=await repository.update("rtg-save-squad",current=>{
         const probe=clone(current);probe.squads[activeSeasonId()]=candidate;
-        const validation=squadRuntime.validateSquad({state:probe,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+        const validation=squadRuntime.validateSquad({state:probe,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(probe)});
         if(!validation.valid)throw Object.assign(new Error("Squadra RTG non valida"),{code:"rtg-squad-invalid",reasons:validation.reasons});
         current.squads[id(current.activeSeasonId||activeSeasonId())]=candidate;return current;
       });
@@ -1379,14 +1401,14 @@
       const allowed=canStartNode(node);
       let body="";
       if(node.type==="main"){
-        const eligibility=squadRuntime.mainEligibility({teamId:node.teamId,state:campaign,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+        const eligibility=squadRuntime.mainEligibility({teamId:node.teamId,state:campaign,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(campaign)});
         body=runView.nodeModalMarkup
           ? runView.nodeModalMarkup({node,eligibility,seasonDb,allowed})
           : `<div class="rtg-node-modal"><h2>${id(node.teamId)}</h2>${runView.requirementsMarkup(eligibility)}<button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed||!eligibility.eligible?"disabled":""}>GIOCA</button></div>`;
       }else{
         body=runView.nodeModalMarkup
           ? runView.nodeModalMarkup({node,seasonDb,allowed})
-          : `<div class="rtg-node-modal"><h2>Partita secondaria</h2><p>Avversari svincolati casuali. Vittoria: 100–150 Gettoni RTG.</p><button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed?"disabled":""}>GIOCA</button></div>`;
+          : `<div class="rtg-node-modal"><h2>Partita secondaria</h2><p>Avversari svincolati casuali. Vittoria: 200 Gettoni RTG.</p><button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed?"disabled":""}>GIOCA</button></div>`;
       }
       deps.openModal?.(body,{className:"rtg-modal"});
       deps.getModalRoot?.()?.querySelector?.("[data-rtg-start-node]")?.addEventListener("click",()=>{deps.closeModal?.();startMatch(node.id);});
@@ -1419,14 +1441,14 @@
         const allowed=node?.id===current.currentNodeId||(node?.type==="secondary"&&Number(current.attemptsByNode?.[node.id]?.clears||0)>0);
         if(!node||!allowed)throw Object.assign(new Error("Nodo RTG non disponibile"),{code:"rtg-node-not-available"});
         if(node.type==="main"){
-          const eligibility=squadRuntime.mainEligibility({teamId:node.teamId,state:current,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+          const eligibility=squadRuntime.mainEligibility({teamId:node.teamId,state:current,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(current)});
           if(!eligibility.eligible)throw Object.assign(new Error("Requisiti RTG non rispettati"),{code:"rtg-main-ineligible",details:eligibility});
         }
         const previousAttempt=Math.max(0,Number(current.attemptsByNode?.[node.id]?.lastAttempt)||0);
         const attemptNumber=previousAttempt+1;
         current.attemptsByNode=current.attemptsByNode||{};
         current.attemptsByNode[node.id]={...(current.attemptsByNode[node.id]||{}),lastAttempt:attemptNumber};
-        const userSquad=resolvedSquad(current.squads[id(current.activeSeasonId||activeSeasonId())]);
+        const userSquad=resolvedSquad(current.squads[id(current.activeSeasonId||activeSeasonId())],current);
         const userMeta=deps.getUserTeamMeta?.()||{};
         userSquad.name=userMeta.name||userSquad.name||"La tua squadra";
         if(userMeta.teamIdentity)userSquad.teamIdentity=clone(userMeta.teamIdentity);
@@ -1706,10 +1728,10 @@
         const ids=candidate.lineup.map(player=>id(player.cardId||player.playerId)),benchIds=candidate.bench.map(player=>id(player.cardId||player.playerId));
         const candidateState=clone(campaign);candidateState.squads[activeSeasonId()]={formationId:candidate.formationId,lineup:ids,bench:benchIds,activeRoleVariantByCardId:{...(candidate.activeRoleVariantByCardId||{})}};
         if(match.matchType==="secondary"){
-          const validation=squadRuntime.validateSquad({state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+          const validation=squadRuntime.validateSquad({state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(candidateState)});
           return {eligible:validation.valid,reasons:validation.reasons||[]};
         }
-        return squadRuntime.mainEligibility({teamId:nodeById(match.nodeId)?.teamId,state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+        return squadRuntime.mainEligibility({teamId:nodeById(match.nodeId)?.teamId,state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(candidateState)});
       }}),{delayEncounter:true});
     }
     function penaltyContext(match){
@@ -1882,11 +1904,13 @@
         return campaign;
       }
       if(destination==="album")return renderAlbum();
+      if(destination==="shop")return renderShop();
+      if(destination==="development")return renderDevelopment("players");
       return renderRun();
     }
 
     return Object.freeze({
-      open,renderRun,renderSquad,renderAlbum,renderAlbumRoster,openNode,startMatch,confirmPreMatch,chooseEncounter,continueEncounterFlow,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
+      open,renderRun,renderSquad,renderAlbum,renderAlbumRoster,renderShop,renderDevelopment,openNode,startMatch,confirmPreMatch,chooseEncounter,continueEncounterFlow,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
       swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,adaptSquadToCurrentRequirements,
       getDraftSquad:()=>clone(squadDraft),getState:()=>clone(campaign),getRenderedHtml,
     });
