@@ -463,6 +463,153 @@
       });
       return campaign;
     }
+    function developmentRoleVariant(cardId){
+      const variants=squadDraft?.activeRoleVariantByCardId||activeSquad(campaign)?.activeRoleVariantByCardId||{};
+      return variants?.[id(cardId)]||null;
+    }
+    function developmentCardIds(state=campaign){
+      if(!economy)return[];
+      return Array.from(economy.ownedCardIds(state)||[]).filter((cardId)=>economy.isEligibleOwnedCard(state,cardId));
+    }
+    function developmentPlayers(){
+      return developmentCardIds().map((cardId)=>resolved(cardId,developmentRoleVariant(cardId))).filter(Boolean)
+        .sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"it"));
+    }
+    function filteredDevelopmentPlayers(players){
+      const needle=String(developmentQuery||"").trim().toLocaleLowerCase("it");
+      return players.filter((player)=>{
+        const matchesName=!needle||String(player.name||"").toLocaleLowerCase("it").includes(needle);
+        const matchesRarity=developmentRarity==="Tutti"||String(player.category||"")===developmentRarity;
+        return matchesName&&matchesRarity;
+      });
+    }
+    function developmentModelFor(cardId){
+      const key=id(cardId);
+      if(!key||!economy)return null;
+      const player=resolved(key,developmentRoleVariant(key));
+      const standard=resolvedStandard(key,developmentRoleVariant(key));
+      if(!player||!standard)return null;
+      const preview=economy.previewEvolution(campaign,{
+        cardId:key,
+        basePotential:Number(standard.potential??standard.finalOverall??standard.overall??0),
+        baseRarity:standard.category,
+      });
+      let after=null;
+      if(preview?.ok){
+        const developmentByCardId={...(campaign?.developmentByCardId||{}),[key]:{
+          ...(campaign?.developmentByCardId?.[key]||{}),
+          targetPotential:preview.targetPotential,
+          currentRarity:preview.target,
+        }};
+        after=resolvedWithDevelopment(key,developmentRoleVariant(key),developmentByCardId);
+      }
+      return {player,standard,preview,after};
+    }
+    function renderShop(){
+      if(!economyView||!economy)return renderRun();
+      selectedDevelopmentCardId=null;
+      renderHtml(economyView.shopMarkup({state:campaign}));
+      app?.querySelector?.("[data-rtg-economy-back]")?.addEventListener("click",()=>renderRun());
+      app?.querySelector?.("[data-rtg-open-development]")?.addEventListener("click",()=>renderDevelopment("players"));
+      app?.querySelectorAll?.("[data-rtg-buy-project]")?.forEach((button)=>button.addEventListener("click",async()=>{
+        if(button.disabled)return;
+        button.disabled=true;
+        let outcome=null;
+        campaign=await repository.update("rtg-buy-project",current=>{
+          outcome=economy.purchaseProject(current,button.dataset.rtgBuyProject);
+          return outcome?.ok?outcome.state:current;
+        });
+        deps.toast?.(outcome?.ok?"PROGETTO ACQUISTATO":outcome?.reason==="tokens"?"GETTONI RTG INSUFFICIENTI":"ACQUISTO NON COMPLETATO",outcome?.ok?undefined:"error");
+        return renderShop();
+      }));
+      mountDevQuickTools();
+      return campaign;
+    }
+    function bindDevelopmentGrid(players){
+      const results=app?.querySelector?.("[data-rtg-development-results]");
+      if(!results)return;
+      results.onclick=(event)=>{
+        const element=event.target?.closest?.("[data-rtg-development-player]");
+        if(!element)return;
+        selectedDevelopmentCardId=id(element.dataset.rtgDevelopmentPlayer);
+        renderDevelopment("players");
+      };
+      const refresh=()=>{
+        results.innerHTML=economyView.playerGrid(filteredDevelopmentPlayers(players));
+      };
+      const search=app?.querySelector?.("[data-rtg-development-search]");
+      search?.addEventListener("input",(event)=>{
+        developmentQuery=event.currentTarget.value||"";
+        refresh();
+      });
+      app?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",(event)=>{
+        developmentRarity=event.currentTarget.value||"Tutti";
+        refresh();
+      });
+    }
+    function renderDevelopment(tab="players"){
+      if(!economyView||!economy)return renderRun();
+      const players=developmentPlayers();
+      if(selectedDevelopmentCardId&&!players.some((player)=>id(player.cardId||player.playerId)===id(selectedDevelopmentCardId)))selectedDevelopmentCardId=null;
+      const selected=selectedDevelopmentCardId?developmentModelFor(selectedDevelopmentCardId):null;
+      const filtered=filteredDevelopmentPlayers(players);
+      renderHtml(economyView.developmentMarkup({
+        state:campaign,
+        players,
+        filteredPlayers:filtered,
+        selected,
+        tab,
+        query:developmentQuery,
+        rarity:developmentRarity,
+      }));
+      app?.querySelector?.("[data-rtg-economy-back]")?.addEventListener("click",()=>{
+        selectedDevelopmentCardId=null;
+        renderRun();
+      });
+      app?.querySelectorAll?.("[data-rtg-development-tab]")?.forEach((button)=>button.addEventListener("click",()=>renderDevelopment(button.dataset.rtgDevelopmentTab)));
+      app?.querySelector?.("[data-rtg-open-shop]")?.addEventListener("click",()=>renderShop());
+      app?.querySelectorAll?.("[data-rtg-change-development-player]")?.forEach((button)=>button.addEventListener("click",()=>{
+        selectedDevelopmentCardId=null;
+        renderDevelopment("players");
+      }));
+      app?.querySelector?.("[data-rtg-development-selected-card]")?.addEventListener("click",()=>openRtgPlayerDetails(selectedDevelopmentCardId));
+      app?.querySelector?.("[data-rtg-prepare-evolution]")?.addEventListener("click",()=>openEvolutionConfirmation());
+      if(!selectedDevelopmentCardId&&tab==="players")bindDevelopmentGrid(players);
+      mountDevQuickTools();
+      return campaign;
+    }
+    function openEvolutionConfirmation(){
+      const model=developmentModelFor(selectedDevelopmentCardId);
+      if(!model?.preview?.ok||!model.preview.ready)return deps.toast?.("RISORSE RTG INSUFFICIENTI","error");
+      deps.openModal?.(economyView.evolutionConfirmMarkup(model),{closeable:false,className:"development-confirm-modal rtg-development-confirm-modal"});
+      const modalRoot=deps.getModalRoot?.();
+      modalRoot?.querySelector?.("[data-rtg-cancel-evolution]")?.addEventListener("click",()=>deps.closeModal?.());
+      modalRoot?.querySelector?.("[data-rtg-confirm-evolution]")?.addEventListener("click",async(event)=>{
+        const button=event.currentTarget;
+        if(button.disabled)return;
+        button.disabled=true;
+        let outcome=null;
+        const basePotential=Number(model.standard.potential??model.standard.finalOverall??model.standard.overall??0);
+        const baseRarity=model.standard.category;
+        campaign=await repository.update("rtg-evolve-card",current=>{
+          outcome=economy.evolve(current,{
+            cardId:selectedDevelopmentCardId,
+            basePotential,
+            baseRarity,
+            expectedTarget:model.preview.target,
+          });
+          return outcome?.ok?outcome.state:current;
+        });
+        deps.closeModal?.({invokeOnClose:false});
+        if(!outcome?.ok){
+          deps.toast?.(outcome?.reason==="stale"?"EVOLUZIONE CAMBIATA: RIPROVA":"RISORSE RTG CAMBIATE: EVOLUZIONE NON COMPLETATA","error");
+          return renderDevelopment("players");
+        }
+        deps.toast?.(`${model.player.name}: ${outcome.target}`);
+        return renderDevelopment("players");
+      });
+    }
+
     function bindHomeAndTabs(){
       app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
       app?.querySelector?.('[data-rtg-tab="run"]')?.addEventListener("click",()=>renderRun());
@@ -472,6 +619,8 @@
     function bindRun(){
       bindHomeAndTabs();
       app?.querySelector?.("[data-rtg-open-vending]")?.addEventListener("click",()=>openVending());
+      app?.querySelector?.("[data-rtg-open-shop]")?.addEventListener("click",()=>renderShop());
+      app?.querySelector?.("[data-rtg-open-development]")?.addEventListener("click",()=>renderDevelopment("players"));
       app?.querySelector?.("[data-rtg-current-node]")?.addEventListener("click",event=>openNode(event.currentTarget.dataset.rtgCurrentNode));
       app?.querySelectorAll?.("[data-rtg-node-id]")?.forEach(button=>button.addEventListener("click",()=>openNode(button.dataset.rtgNodeId)));
     }
