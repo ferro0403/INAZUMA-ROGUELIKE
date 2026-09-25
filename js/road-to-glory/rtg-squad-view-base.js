@@ -89,8 +89,10 @@
         ? `<button type="button" class="rtg-squad-role-trigger" data-rtg-switch-role="${escape(cardId)}" aria-label="Cambia ruolo di ${escape(player?.name || playerId)}"><span aria-hidden="true">↻</span><strong>${escape(role || "—")}</strong></button>`
         : "";
       return `<div class="rtg-squad-card-slot ${options.readOnly ? "rtg-squad-card-slot--readonly" : ""}" data-rtg-card-slot="${escape(cardId)}">
-        ${cardMarkup}
-        ${roleSwitch}
+        <div class="rtg-squad-card-frame">
+          ${cardMarkup}
+          ${roleSwitch}
+        </div>
         ${options.readOnly ? "" : `<button type="button" class="rtg-squad-change-trigger" data-rtg-change-player="${escape(cardId)}" aria-label="Cambia ${escape(player?.name || playerId)}"><span aria-hidden="true">↔</span><span>Cambia</span></button>`}
       </div>`;
     }
