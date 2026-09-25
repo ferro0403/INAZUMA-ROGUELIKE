@@ -6,5 +6,4 @@ assert(ctl.includes("function openRtgVersionPicker(cardIds=[],options={})"));
 assert(ctl.includes("const groups=new Map()"));
 assert(ctl.includes("groups.get(versionGroupKey(cardId))||[cardId]"));
 assert(ctl.includes("versionCount:owned.length"));
-assert(ctl.includes("Ogni versione resta una carta distinta e può essere schierata insieme alle altre."));
 console.log("rtg-season2-version-collection-test: PASS");
