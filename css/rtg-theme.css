@@ -680,3 +680,136 @@
     height:60px!important;
   }
 }
+
+
+/* RTG Legacy marker: sits outside the bottom-right card corner so it never covers role, OVR, portrait or name. */
+button.player-card:has(> .rtg-legacy-badge),
+.player-card:has(> .rtg-legacy-badge){
+  overflow:visible!important;
+}
+.rtg-legacy-badge{
+  position:absolute!important;
+  z-index:24!important;
+  left:auto!important;
+  right:-4px!important;
+  top:auto!important;
+  bottom:-11px!important;
+  transform:none!important;
+  display:grid!important;
+  place-items:center!important;
+  width:auto!important;
+  min-width:27px!important;
+  height:16px!important;
+  min-height:16px!important;
+  padding:0 5px!important;
+  border:2px solid #111216!important;
+  border-radius:0!important;
+  background:var(--rtg-legacy-color,#ffd21f)!important;
+  color:var(--rtg-legacy-ink,#111216)!important;
+  box-shadow:1px 2px 0 #111216!important;
+  font:1000 7px/1 system-ui,sans-serif!important;
+  letter-spacing:.04em!important;
+  pointer-events:none!important;
+}
+.rtg-pull-player-card .rtg-legacy-badge{
+  left:auto!important;
+  right:-4px!important;
+  top:auto!important;
+  bottom:-11px!important;
+}
+
+/* Legacy season palette: same color language on cards and player detail. */
+.rtg-legacy-badge[data-legacy-season="S1"],
+.player-detail-rtg-legacy-badge[data-legacy-season="S1"]{
+  --rtg-legacy-color:#ffd21f;
+  --rtg-legacy-ink:#111216;
+}
+.rtg-legacy-badge[data-legacy-season="S2"],
+.player-detail-rtg-legacy-badge[data-legacy-season="S2"]{
+  --rtg-legacy-color:#35b8f4;
+  --rtg-legacy-ink:#07131b;
+}
+.rtg-legacy-badge[data-legacy-season="S3"],
+.player-detail-rtg-legacy-badge[data-legacy-season="S3"]{
+  --rtg-legacy-color:#a678ff;
+  --rtg-legacy-ink:#130b24;
+}
+
+/* Give the protruding Legacy tab a clean lane below dense card grids. */
+.rtg-modal .rtg-picker-grid,
+.rtg-modal .rtg-catalog-grid{
+  row-gap:22px!important;
+  padding-top:14px!important;
+  padding-bottom:18px!important;
+}
+
+
+
+/* RTG development token sizing: selected-player requirement and confirmation use
+   different artwork sizes; wallet keeps the larger presentation. */
+.rtg-development-screen .development-selected .development-requirement .rtg-development-token-icon{
+  width:54px!important;
+  height:54px!important;
+  min-width:54px!important;
+  min-height:54px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  margin:0!important;
+  overflow:visible!important;
+}
+.rtg-development-screen .development-selected .development-requirement .rtg-development-token-icon>.rtg-token-icon{
+  width:48px!important;
+  height:48px!important;
+  min-width:48px!important;
+  max-width:48px!important;
+  min-height:48px!important;
+  max-height:48px!important;
+  flex:0 0 48px!important;
+  margin:0!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  vertical-align:middle!important;
+}
+.rtg-development-confirm .development-confirm-costs .rtg-development-token-icon{
+  width:64px!important;
+  height:64px!important;
+  min-width:64px!important;
+  min-height:64px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  margin:0!important;
+  overflow:visible!important;
+}
+.rtg-development-confirm .development-confirm-costs .rtg-development-token-icon>.rtg-token-icon{
+  width:58px!important;
+  height:58px!important;
+  min-width:58px!important;
+  max-width:58px!important;
+  min-height:58px!important;
+  max-height:58px!important;
+  flex:0 0 58px!important;
+  margin:0!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  vertical-align:middle!important;
+}
+@media(max-width:430px){
+  .rtg-development-screen .development-selected .development-requirement .rtg-development-token-icon{
+    width:50px!important;height:50px!important;min-width:50px!important;min-height:50px!important;
+  }
+  .rtg-development-screen .development-selected .development-requirement .rtg-development-token-icon>.rtg-token-icon{
+    width:44px!important;height:44px!important;min-width:44px!important;max-width:44px!important;
+    min-height:44px!important;max-height:44px!important;flex-basis:44px!important;
+  }
+  .rtg-development-confirm .development-confirm-costs .rtg-development-token-icon{
+    width:62px!important;height:62px!important;min-width:62px!important;min-height:62px!important;
+  }
+  .rtg-development-confirm .development-confirm-costs .rtg-development-token-icon>.rtg-token-icon{
+    width:56px!important;height:56px!important;min-width:56px!important;max-width:56px!important;
+    min-height:56px!important;max-height:56px!important;flex-basis:56px!important;
+  }
+}
