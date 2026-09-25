@@ -22,7 +22,7 @@ assert.doesNotMatch(html,/Nessuna lista da 1500|Tocca un giocatore per aprire/i)
 
 const entries=Array.from({length:24},(_,i)=>({playerId:"d"+(100+i),source:"Svincolato",player:{playerId:"d"+(100+i),name:"Difensore "+i,overall:70+i%10,normalizedRole:"DF",position:"DF",level:20}}));
 const picker=view.replacementPickerMarkup({target:{playerId:"d1",source:"Svincolato",player:{playerId:"d1",name:"D1",overall:80,normalizedRole:"DF",position:"DF"}},role:"DF",entries,total:240,visibleCount:24});
-assert.match(picker,/Solo DF/i);
+assert.match(picker,/Scegli un sostituto · DF/i);
 assert.match(picker,/data-rtg-picker-search/);
 assert.match(picker,/data-rtg-picker-source="free"/);
 assert.match(picker,/data-rtg-picker-source="rtg"/);
