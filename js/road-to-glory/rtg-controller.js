@@ -691,9 +691,9 @@
           })).filter(entry=>entry.player)
         : [];
       const quickIds=new Set(quickEntries.map(entry=>id(entry.playerId)));
-      // Open the picker shell immediately. Building the full accessible-card list can
-      // be expensive on mobile, so defer it until after the modal has painted.
-      let candidateIds=[];
+      // The full picker keeps one lightweight representative per canonical player.
+      // Other S1/S2 versions are resolved/rendered only when that grouped card is opened.
+      let candidateGroups=[];
       let visibleCount=0;
       let query="";
       let sourceFilter="all";
@@ -702,53 +702,73 @@
       const rarityOptions=squadPickerRarityOptions();
       const targetPlayer=resolved(targetId,squadDraft?.activeRoleVariantByCardId?.[id(targetId)]||null);
       const target={playerId:id(targetId),source:sourceForDraftPlayer(targetId),player:targetPlayer};
-      const filteredIds=()=>candidateIds.filter(playerId=>{
+      const buildGroups=(cardIds)=>Array.from(groupVersionCards(cardIds).entries()).map(([key,cardIds])=>({
+        key,
+        cardIds,
+        representativeId:preferredVersionCardId(cardIds),
+      })).filter(group=>group.representativeId);
+      const filteredGroups=()=>candidateGroups.filter(group=>{
+        const playerId=group.representativeId;
         const source=sourceForDraftPlayer(playerId);
         if(sourceFilter==="free"&&source!=="Svincolato")return false;
         if(sourceFilter==="rtg"&&source!=="RTG")return false;
-        if(rarityFilter!=="all"&&squadPickerRarity(playerId).toLocaleLowerCase("it")!==rarityFilter.toLocaleLowerCase("it"))return false;
+        if(rarityFilter!=="all"&&!group.cardIds.some(cardId=>squadPickerRarity(cardId).toLocaleLowerCase("it")===rarityFilter.toLocaleLowerCase("it")))return false;
         const needle=query.trim().toLocaleLowerCase("it");
         if(needle&&!rawName(playerId).toLocaleLowerCase("it").includes(needle))return false;
         return true;
       }).sort((a,b)=>{
-        const delta=rawOverall(b)-rawOverall(a);
-        return (overallDescending?delta:-delta)||rawName(a).localeCompare(rawName(b),"it");
+        const delta=rawOverall(b.representativeId)-rawOverall(a.representativeId);
+        return (overallDescending?delta:-delta)||rawName(a.representativeId).localeCompare(rawName(b.representativeId),"it");
       });
       const entries=()=>{
-        const ids=filteredIds();
-        return ids.slice(0,visibleCount).map(playerId=>({
-          playerId,
-          source:sourceForDraftPlayer(playerId),
-          player:resolved(playerId,squadDraft?.activeRoleVariantByCardId?.[playerId]||null),
+        const groups=filteredGroups();
+        return groups.slice(0,visibleCount).map(group=>({
+          cardId:group.representativeId,
+          playerId:group.representativeId,
+          source:sourceForDraftPlayer(group.representativeId),
+          versionCount:group.cardIds.length,
+          player:resolved(group.representativeId,squadDraft?.activeRoleVariantByCardId?.[group.representativeId]||null),
         })).filter(entry=>entry.player);
+      };
+      const chooseCandidate=(candidateId)=>{
+        const result=swapSquadDraft(targetId,candidateId,{render:false});
+        if(!result.ok)return deps.toast?.("Cambio non disponibile","error");
+        deps.closeModal?.();
+        renderSquad();
+        return result;
       };
       const renderResults=()=>{
         const modal=deps.getModalRoot?.();
-        const ids=filteredIds();
+        const groups=filteredGroups();
         const results=modal?.querySelector?.("[data-rtg-picker-results]");
-        if(results)results.innerHTML=squadView.replacementPickerResultsMarkup({entries:entries(),total:ids.length,visibleCount});
+        if(results)results.innerHTML=squadView.replacementPickerResultsMarkup({entries:entries(),total:groups.length,visibleCount});
         modal?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(button=>button.classList.toggle("active",button.dataset.rtgPickerSource===sourceFilter));
         bindResults();
       };
       const bindResults=()=>{
         const modal=deps.getModalRoot?.();
         modal?.querySelectorAll?.("[data-rtg-picker-player]")?.forEach(button=>button.addEventListener("click",()=>{
-          const candidateId=id(button.dataset.rtgPickerPlayer);
-          const result=swapSquadDraft(targetId,candidateId,{render:false});
-          if(!result.ok)return deps.toast?.("Cambio non disponibile","error");
-          deps.closeModal?.();
-          renderSquad();
+          const representativeId=id(button.dataset.rtgPickerPlayer);
+          if(!representativeId)return;
+          const group=candidateGroups.find(entry=>entry.key===versionGroupKey(representativeId));
+          const versions=group?.cardIds||[representativeId];
+          if(versions.length>1){
+            openRtgVersionPicker(versions,{onSelect:chooseCandidate});
+            return;
+          }
+          chooseCandidate(representativeId);
         }));
         modal?.querySelector?.("[data-rtg-picker-load-more]")?.addEventListener("click",()=>{
-          visibleCount=Math.min(filteredIds().length,visibleCount+SQUAD_PICKER_PAGE_SIZE);
+          visibleCount=Math.min(filteredGroups().length,visibleCount+SQUAD_PICKER_PAGE_SIZE);
           renderResults();
         });
       };
       if(!deps.getModalRoot){
-        candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(id(playerId)));
-        visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateIds.length);
+        const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(id(playerId)));
+        candidateGroups=buildGroups(candidateIds);
+        visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateGroups.length);
       }
-      deps.openModal?.(squadView.replacementPickerMarkup({target,role,allowAnyRole:!strictRole,quickEntries,entries:deps.getModalRoot?[]:entries(),total:deps.getModalRoot?0:candidateIds.length,visibleCount:deps.getModalRoot?0:visibleCount,query,sourceFilter,rarityFilter,rarityOptions}),{className:"rtg-modal rtg-squad-picker-modal"});
+      deps.openModal?.(squadView.replacementPickerMarkup({target,role,allowAnyRole:!strictRole,quickEntries,entries:deps.getModalRoot?[]:entries(),total:deps.getModalRoot?0:candidateGroups.length,visibleCount:deps.getModalRoot?0:visibleCount,query,sourceFilter,rarityFilter,rarityOptions}),{className:"rtg-modal rtg-squad-picker-modal"});
       const modal=deps.getModalRoot?.();
       modal?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",event=>{
         query=String(event.target?.value||"");
@@ -776,10 +796,9 @@
       });
       bindResults();
       const hydratePicker=()=>{
-        // The modal is already visible here: do the heavier roster resolution after
-        // the first paint instead of blocking the Cambia tap.
-        candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(id(playerId)));
-        visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateIds.length);
+        const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(id(playerId)));
+        candidateGroups=buildGroups(candidateIds);
+        visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateGroups.length);
         renderResults();
       };
       if(typeof requestAnimationFrame==="function")requestAnimationFrame(()=>typeof setTimeout==="function"?setTimeout(hydratePicker,0):hydratePicker());
