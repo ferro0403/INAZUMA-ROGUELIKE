@@ -1,10 +1,6 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "git": {
-    "deploymentEnabled": {
-      "feat/rtg-s1-main-style": false,
-      "preview/rtg-netlify": false,
-      "feature/rtg-legacy-cards": false
-    }
+    "deploymentEnabled": false
   }
 }
