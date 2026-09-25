@@ -35,17 +35,12 @@ jobs:
           s=s.replace(marker,insert+'\n'+marker)
           s=s.replace('      tokenIcon,\n      rarityClass,','      tokenIcon:rtgTokenIcon,\n      rtgTokenIcon,\n      playerPaginationMarkup,\n      rarityClass,')
           p.write_text(s)
-          css=Path('styles.css')
-          if css.exists():
-            c=css.read_text()+'''\n.rtg-development-token-sprite{width:42px!important;height:42px!important;object-fit:contain!important;display:block!important}\n.development-pagination{grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap;margin:22px 0 8px}\n.development-pagination small{flex-basis:100%;text-align:center;font-weight:800}\n'''
-            css.write_text(c)
       - name: Run focused regression
         run: node tests/rtg-development-pagination-test.js
       - name: Commit fix
         run: |
           git config user.name github-actions[bot]
           git config user.email 41898282+github-actions[bot]@users.noreply.github.com
-          git add js/road-to-glory/rtg-controller.js js/road-to-glory/rtg-economy-view.js styles.css
+          git add js/road-to-glory/rtg-controller.js js/road-to-glory/rtg-economy-view.js
           git commit -m "fix(RTG): paginate development players and token sprite"
           git push origin HEAD:feature/rtg-shop-development
-# trigger 2
