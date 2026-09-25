@@ -526,6 +526,7 @@
       app?.querySelector?.("[data-rtg-open-development]")?.addEventListener("click",()=>renderDevelopment("players"));
       app?.querySelectorAll?.("[data-rtg-buy-project]")?.forEach((button)=>button.addEventListener("click",async()=>{
         if(button.disabled)return;
+        const shopScrollY=Number(global.scrollY||global.pageYOffset||0);
         button.disabled=true;
         let outcome=null;
         campaign=await repository.update("rtg-buy-project",current=>{
@@ -533,7 +534,12 @@
           return outcome?.ok?outcome.state:current;
         });
         deps.toast?.(outcome?.ok?"PROGETTO ACQUISTATO":outcome?.reason==="tokens"?"GETTONI RTG INSUFFICIENTI":"ACQUISTO NON COMPLETATO",outcome?.ok?undefined:"error");
-        return renderShop();
+        renderShop();
+        const restoreShopScroll=()=>global.scrollTo?.(0,shopScrollY);
+        if(typeof global.requestAnimationFrame==="function")global.requestAnimationFrame(restoreShopScroll);
+        else if(typeof global.setTimeout==="function")global.setTimeout(restoreShopScroll,0);
+        else restoreShopScroll();
+        return campaign;
       }));
       mountDevQuickTools();
       return campaign;
@@ -1305,7 +1311,7 @@
 
     function renderSquad(){
       squadDraft=clone(squadDraft||activeSquad(campaign));
-      const model=squadView.renderModel({state:draftState(),freeAgentIds,seasonDb,freeAgentsDb});
+      const model=squadView.renderModel({state:draftState(),freeAgentIds,seasonDb,freeAgentsDb,playerResolver:playerResolverForState(draftState())});
       const teamId=currentRequirementTeamId();
       const eligibility=teamId?squadRuntime.mainEligibility?.({teamId,state:draftState(),seasonDb,freeAgentIds,freeAgentsDb,playerResolver}):null;
       const nextTeam=(seasonDb?.teams||[]).find(team=>id(team.teamId||team.id)===teamId);
