@@ -18,25 +18,29 @@
     };
   }
 
-  // Alternate-role control: same footprint/alignment as the S1/S2 tab,
-  // mirrored onto the lower-left corner of the card.
+  // The role switch is a sibling of the card while the S1/S2 tab lives inside
+  // the card. Compensate for the 32px Change button + 4px slot gap, then hang
+  // this tab below the opposite (left) card corner at the same visual level.
   const roleBadgeStyle=document.createElement("style");
   roleBadgeStyle.id="rtg-role-badge-hotfix";
   roleBadgeStyle.textContent=`
+    .rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot{
+      position:relative!important;
+    }
     .rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-role-trigger{
       position:absolute!important;
       z-index:26!important;
       left:-1px!important;
       right:auto!important;
       top:auto!important;
-      bottom:43px!important;
+      bottom:26px!important;
       box-sizing:border-box!important;
-      width:28px!important;
-      min-width:28px!important;
-      max-width:28px!important;
-      height:22px!important;
-      min-height:22px!important;
-      max-height:22px!important;
+      width:24px!important;
+      min-width:24px!important;
+      max-width:24px!important;
+      height:18px!important;
+      min-height:18px!important;
+      max-height:18px!important;
       margin:0!important;
       padding:0!important;
       overflow:hidden!important;
@@ -59,7 +63,7 @@
       justify-content:center!important;
       width:100%!important;
       height:100%!important;
-      font-size:14px!important;
+      font-size:12px!important;
       line-height:1!important;
     }
     .rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-role-trigger strong{
@@ -76,7 +80,7 @@
   // loader runs, so the halftime correction can safely wrap it before the
   // match view/controller start using it.
   document.write('<script src="js/road-to-glory/rtg-match-halftime-fix.js?v=20260920-halftime-restart-1"><\/script>');
-  document.write('<script src="js/road-to-glory/rtg-squad-view-base.js?v=20260925-role-tab-aligned-1"><\/script>');
+  document.write('<script src="js/road-to-glory/rtg-squad-view-base.js?v=20260925-role-tab-mirror-2"><\/script>');
   document.write('<script src="js/road-to-glory/rtg-squad-picker-order-runtime.js?v=20260920-full-pool-order-1"><\/script>');
   document.write('<script src="js/road-to-glory/rtg-squad-view-order.js?v=20260920-full-pool-order-1"><\/script>');
   document.write('<script src="js/road-to-glory/rtg-squad-view-catalog-canonical.js?v=20260920-canonical-card-1"><\/script>');
