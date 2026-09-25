@@ -25,5 +25,7 @@ assert.strictEqual(nodes[1].type,"secondary");
 assert.strictEqual(nodes[2].id,"main:gemini_storm");
 assert.strictEqual(nodes[4].id,"main:alpine_ie2");
 assert.strictEqual(nodes.at(-1).id,"main:raimon_inazuma_eleven_2");
-assert.strictEqual(SEASON2.routeBackground,"assets/rtg/rtg-season2-route-map-user.webp?v=20260924-user-map-2");
+assert.strictEqual(SEASON2.routeBackground,"assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-map-hq-1");
+assert.strictEqual(SEASON1.rarityWeights.Leggenda,0,"Season 1 pull rates must remain unchanged");
+assert.strictEqual(SEASON2.rarityWeights.Leggenda,1,"Season 2 distributor must give Leggenda a non-zero yellow rate");
 console.log("rtg-season2-config-test: PASS");
