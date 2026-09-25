@@ -1580,21 +1580,11 @@
       deps.openModal?.(runView.vendingMarkup({...pool,tokens:campaign.tokens,seasonId:activeSeasonId()}),{className:"rtg-modal rtg-vending-modal"});
       const modalRoot=deps.getModalRoot?.();
       const albumButton=modalRoot?.querySelector?.("[data-rtg-vending-album]");
-      if(albumButton)albumButton.onclick=(event)=>{
+      if(albumButton)albumButton.onclick=async(event)=>{
         event?.preventDefault?.();
         event?.stopPropagation?.();
-        /* Album data is already loaded when the vending modal can be opened.
-           Navigate synchronously so the destination cannot be lost behind, or
-           overwritten by, modal close/async lifecycle work. */
-        syncCurrentPullsIntoAlbum();
-        const teams=rtgAlbumTeams();
-        const total=teams.reduce((sum,team)=>sum+(Number(team.total)||0),0);
-        const unlocked=teams.reduce((sum,team)=>sum+(Number(team.unlocked)||0),0);
         deps.closeModal?.({invokeOnClose:false});
-        renderHtml(runView.albumCollectionMarkup({state:campaign,unlocked,total}));
-        app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
-        app?.querySelector?.("[data-rtg-album-collection]")?.addEventListener("click",()=>renderAlbumTeams());
-        mountDevQuickTools();
+        await renderAlbum();
       };
       modalRoot?.querySelector?.("[data-rtg-pull]")?.addEventListener("click",async(event)=>{
         const button=event.currentTarget;
