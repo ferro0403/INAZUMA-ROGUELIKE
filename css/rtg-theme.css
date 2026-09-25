@@ -738,6 +738,65 @@ button.player-card:has(> .rtg-legacy-badge),
   padding-bottom:18px!important;
 }
 
+/* Unified Legacy versions: one card in lists, real cards only when the group is opened. */
+button.player-card:has(> .rtg-version-count-badge),
+.player-card:has(> .rtg-version-count-badge){
+  overflow:visible!important;
+}
+.rtg-version-count-badge{
+  position:absolute!important;
+  z-index:25!important;
+  left:-4px!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:-11px!important;
+  display:grid!important;
+  place-items:center!important;
+  min-width:42px!important;
+  height:16px!important;
+  padding:0 6px!important;
+  border:2px solid #111216!important;
+  border-radius:0!important;
+  background:#fffdf7!important;
+  color:#111216!important;
+  box-shadow:1px 2px 0 #111216!important;
+  font:1000 7px/1 system-ui,sans-serif!important;
+  letter-spacing:.04em!important;
+  pointer-events:none!important;
+  white-space:nowrap!important;
+}
+.rtg-version-picker-modal{
+  width:min(92vw,620px)!important;
+}
+.rtg-version-picker-head{
+  margin-bottom:10px!important;
+}
+.rtg-version-card-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  justify-items:center!important;
+  gap:26px 14px!important;
+  padding:14px 4px 18px!important;
+}
+.rtg-version-card-grid .rtg-version-player-card{
+  width:min(150px,100%)!important;
+  max-width:150px!important;
+  cursor:pointer!important;
+}
+.rtg-version-card-grid .rtg-version-player-card:active{
+  transform:translate(2px,2px)!important;
+}
+@media(max-width:430px){
+  .rtg-version-card-grid{
+    gap:24px 10px!important;
+    padding-inline:0!important;
+  }
+  .rtg-version-card-grid .rtg-version-player-card{
+    width:min(132px,100%)!important;
+    max-width:132px!important;
+  }
+}
+
 /* Player detail: Legacy badge is independent from the team banner.
    It has a reserved safe area to the left of the close button and never compresses the team name. */
 .player-detail-rtg-legacy-badge{
