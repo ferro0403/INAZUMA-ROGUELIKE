@@ -103,6 +103,7 @@
         runStats = null,
         albumUnlocked = false,
         rtgLegacyLabel = "",
+        rtgRoleSwitch = null,
         moveSeasonId = null,
       } = {},
     ) {
@@ -126,6 +127,9 @@
         : "";
       const rtgLegacyBadge = rtgLegacyLabel
         ? `<span class="player-detail-rtg-legacy-badge" data-legacy-season="${escapeHtml(rtgLegacyLabel)}" aria-label="Legacy ${escapeHtml(rtgLegacyLabel)}"><small>Legacy</small><strong>${escapeHtml(rtgLegacyLabel)}</strong></span>`
+        : "";
+      const rtgRoleSwitchButton = rtgRoleSwitch?.enabled
+        ? `<button type="button" class="player-detail-rtg-role-switch" data-detail-rtg-role-switch aria-label="Cambia ruolo di ${escapeHtml(player.name || "giocatore")}"><small>Ruolo</small><strong aria-hidden="true">↻</strong></button>`
         : "";
       const resolved = historical
         ? {
@@ -219,6 +223,7 @@
       return `
         <div class="player-detail-layout ${rarityClass(resolved.category)} ${historical ? "player-detail-historical" : ""}">
           <section class="player-detail-hero ${String(resolved.name || "").length > 18 ? "player-detail-hero--extra-long-name" : String(resolved.name || "").length > 12 ? "player-detail-hero--long-name" : ""}">
+            ${rtgRoleSwitchButton}
             ${rtgLegacyBadge}
             <div class="player-detail-identity">
               ${teamBadge}
