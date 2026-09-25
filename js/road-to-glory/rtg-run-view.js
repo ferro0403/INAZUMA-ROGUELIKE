@@ -214,7 +214,7 @@
       if(!pullTeam&&player.teamName){
         pullTeam=(seasonDb?.teams||[]).find((entry)=>String(entry.teamName||entry.name||"")===String(player.teamName))||null;
       }
-      const teamId=String(pullTeam?.teamId||pullTeam?.id||player.resolvedTeamId||player.teamId||player.teamIds?.[0]||"");
+      const teamId=String(pullTeam?.teamId||pullTeam?.id||player.resolvedTeamId||(seasonDb?.requiresProfileAwareRuntime?player.teamId:(player.teamIds?.[0]||player.teamId))||"");
       const teamLabel=String(player.teamName||pullTeam?.teamName||pullTeam?.name||player.teams?.[0]||"Squadra");
       const card=compactPlayerCardMarkup
         ? compactPlayerCardMarkup(player,{
