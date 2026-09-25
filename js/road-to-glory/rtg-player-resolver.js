@@ -136,6 +136,19 @@
     });
   }
 
+  function teamPresentation(player, database) {
+    if (!player || !database) return { resolvedTeamId:"", teamName:player?.teamName || "", teamLogoUrl:player?.teamLogoUrl || "" };
+    const ids=[player.resolvedTeamId,player.teamId,...(player.teamIds||[])].map(id).filter(Boolean);
+    let team=ids.map(teamId=>(database?.teams||[]).find(entry=>id(entry?.teamId||entry?.id)===teamId)).find(Boolean)||null;
+    const playerTeamName=id(player.teamName);
+    if(!team&&playerTeamName)team=(database?.teams||[]).find(entry=>id(entry?.teamName||entry?.name)===playerTeamName)||null;
+    return {
+      resolvedTeamId:id(team?.teamId||team?.id||player.teamId||player.teamIds?.[0]),
+      teamName:id(player.teamName||team?.teamName||team?.name),
+      teamLogoUrl:id(team?.logoUrl||player.teamLogoUrl),
+    };
+  }
+
   function resolveAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null) {
     const api = cardIdentity();
     const rawRef = id(playerId?.cardId || playerId);
@@ -172,7 +185,14 @@
       player = { ...resolved.player, level: 20 };
     }
     if (!player) return null;
-    const result = { ...player, playerId: canonicalPlayerId, level: 20, resolvedSeasonId: resolved.seasonId };
+    const teamMeta=teamPresentation(player,database);
+    const result = {
+      ...player,
+      ...teamMeta,
+      playerId: canonicalPlayerId,
+      level: 20,
+      resolvedSeasonId: resolved.seasonId,
+    };
     if (resolved.cardId) {
       result.cardId = resolved.cardId;
       result.legacySeasonId = resolved.legacySeasonId;
