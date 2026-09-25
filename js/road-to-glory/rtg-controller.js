@@ -142,7 +142,7 @@
       if(app)app.innerHTML=lastRenderedHtml;
       if(options.preserveMatchTimeline===true){
         global.requestAnimationFrame?.(()=>keepLatestMatchActionVisible());
-      }else{
+      }else if(options.preserveScroll!==true){
         deps.resetRenderedViewScroll?.();
       }
       return lastRenderedHtml;
@@ -518,10 +518,10 @@
       }
       return {player,standard,preview,after};
     }
-    function renderShop(){
+    function renderShop(options={}){
       if(!economyView||!economy)return renderRun();
       selectedDevelopmentCardId=null;
-      renderHtml(economyView.shopMarkup({state:campaign}));
+      renderHtml(economyView.shopMarkup({state:campaign}),{preserveScroll:options.preserveScroll===true});
       app?.querySelector?.("[data-rtg-economy-back]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
       app?.querySelector?.("[data-rtg-open-development]")?.addEventListener("click",()=>renderDevelopment("players"));
       app?.querySelectorAll?.("[data-rtg-buy-project]")?.forEach((button)=>button.addEventListener("click",async()=>{
@@ -534,9 +534,9 @@
           return outcome?.ok?outcome.state:current;
         });
         deps.toast?.(outcome?.ok?"PROGETTO ACQUISTATO":outcome?.reason==="tokens"?"GETTONI RTG INSUFFICIENTI":"ACQUISTO NON COMPLETATO",outcome?.ok?undefined:"error");
-        renderShop();
+        renderShop({preserveScroll:true});
         const restoreShopScroll=()=>global.scrollTo?.(0,shopScrollY);
-        if(typeof global.requestAnimationFrame==="function")global.requestAnimationFrame(restoreShopScroll);
+        if(typeof global.requestAnimationFrame==="function")global.requestAnimationFrame(()=>global.requestAnimationFrame(restoreShopScroll));
         else if(typeof global.setTimeout==="function")global.setTimeout(restoreShopScroll,0);
         else restoreShopScroll();
         return campaign;
