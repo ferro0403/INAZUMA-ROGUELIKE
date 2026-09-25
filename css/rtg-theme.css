@@ -1012,3 +1012,128 @@ button.player-card:has(> .rtg-version-count-badge),
 /* Slightly smaller final OVR sorter. */
 .rtg-picker-toolbar>.rtg-picker-ovr-sort,
 .rtg-squad-picker .rtg-picker-toolbar>.rtg-picker-ovr-sort{width:76px!important;min-width:76px!important;max-width:76px!important;height:36px!important;min-height:36px!important;max-height:36px!important;flex-basis:76px!important;font-size:14px!important;border-width:2px!important;box-shadow:3px 3px 0 #ffd21f!important;}
+
+
+/* RTG Shop + Development intentionally inherit the canonical run Shop/Development UI.
+   These rules only adapt the RTG wallet, entry actions and mobile composition. */
+.rtg-run-command-actions{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  justify-content:flex-end;
+  gap:10px;
+}
+.rtg-run-command-actions .rtg-economy-button{
+  min-height:46px;
+  border:3px solid #111216;
+  background:#fffdf7;
+  color:#111216;
+  box-shadow:4px 4px 0 #111216;
+  font-weight:900;
+  text-transform:uppercase;
+}
+.rtg-run-command-actions .rtg-economy-button:active{
+  transform:translate(2px,2px);
+  box-shadow:2px 2px 0 #111216;
+}
+
+.rtg-token-icon{
+  width:32px;
+  height:32px;
+  object-fit:contain;
+  flex:0 0 auto;
+}
+.rtg-shop-screen .shop-coins,
+.rtg-development-screen .development-wallet>span:first-child{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.rtg-shop-price{
+  display:flex!important;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+.rtg-shop-price .rtg-shop-price-icon{
+  width:24px;
+  height:24px;
+}
+.rtg-shop-screen .shop-back,
+.rtg-development-screen .development-back-button{
+  display:grid;
+  place-items:center;
+  min-width:46px;
+  width:46px;
+  height:46px;
+  padding:0;
+  border:3px solid #111216;
+  background:#ffd21f;
+  color:#111216;
+  box-shadow:4px 4px 0 #111216;
+  font:1000 25px/1 system-ui,sans-serif;
+}
+.rtg-economy-crosslink{
+  display:flex;
+  justify-content:center;
+  padding:4px 16px 44px;
+}
+.rtg-development-note{
+  width:min(100% - 28px,980px);
+  margin:0 auto 18px;
+  padding:10px 14px;
+  border:2px solid #111216;
+  background:#fff7cd;
+  font-weight:800;
+  text-align:center;
+}
+.rtg-development-screen [data-rtg-development-player]{
+  position:relative;
+  cursor:pointer;
+}
+.rtg-development-screen [data-rtg-development-player]:active{
+  transform:translate(1px,1px);
+}
+.rtg-development-screen .rtg-development-token-icon{
+  display:grid;
+  place-items:center;
+}
+.rtg-development-screen .rtg-development-token-icon .rtg-token-icon{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+}
+.rtg-development-screen .development-projects>[data-rtg-open-shop]{
+  display:block;
+  margin:22px auto 0;
+}
+.rtg-development-confirm .development-evolution-preview>div{
+  min-width:0;
+}
+.rtg-development-confirm .development-confirm-costs .rtg-token-icon{
+  width:100%;
+  height:100%;
+}
+.rtg-development-screen .development-selected-card{
+  cursor:pointer;
+}
+
+@media(max-width:700px){
+  .rtg-run-command{
+    align-items:stretch!important;
+  }
+  .rtg-run-command-actions{
+    width:100%;
+    justify-content:stretch;
+  }
+  .rtg-run-command-actions .btn{
+    flex:1 1 100%;
+  }
+  .rtg-shop-screen .shop-header,
+  .rtg-development-screen .topbar{
+    gap:12px;
+  }
+  .rtg-development-note{
+    width:calc(100% - 20px);
+  }
+}
