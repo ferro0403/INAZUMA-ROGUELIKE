@@ -522,7 +522,7 @@
       if(!economyView||!economy)return renderRun();
       selectedDevelopmentCardId=null;
       renderHtml(economyView.shopMarkup({state:campaign}));
-      app?.querySelector?.("[data-rtg-economy-back]")?.addEventListener("click",()=>renderRun());
+      app?.querySelector?.("[data-rtg-economy-back]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
       app?.querySelector?.("[data-rtg-open-development]")?.addEventListener("click",()=>renderDevelopment("players"));
       app?.querySelectorAll?.("[data-rtg-buy-project]")?.forEach((button)=>button.addEventListener("click",async()=>{
         if(button.disabled)return;
@@ -577,7 +577,7 @@
       }));
       app?.querySelector?.("[data-rtg-economy-back]")?.addEventListener("click",()=>{
         selectedDevelopmentCardId=null;
-        renderRun();
+        deps.renderHome?.({initialPage:"rtg"});
       });
       app?.querySelectorAll?.("[data-rtg-development-tab]")?.forEach((button)=>button.addEventListener("click",()=>renderDevelopment(button.dataset.rtgDevelopmentTab)));
       app?.querySelector?.("[data-rtg-open-shop]")?.addEventListener("click",()=>renderShop());
@@ -632,8 +632,6 @@
     function bindRun(){
       bindHomeAndTabs();
       app?.querySelector?.("[data-rtg-open-vending]")?.addEventListener("click",()=>openVending());
-      app?.querySelector?.("[data-rtg-open-shop]")?.addEventListener("click",()=>renderShop());
-      app?.querySelector?.("[data-rtg-open-development]")?.addEventListener("click",()=>renderDevelopment("players"));
       app?.querySelector?.("[data-rtg-current-node]")?.addEventListener("click",event=>openNode(event.currentTarget.dataset.rtgCurrentNode));
       app?.querySelectorAll?.("[data-rtg-node-id]")?.forEach(button=>button.addEventListener("click",()=>openNode(button.dataset.rtgNodeId)));
     }
