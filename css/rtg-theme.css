@@ -828,49 +828,45 @@ button.player-card:has(> .rtg-version-count-badge),
   }
 }
 
-/* Bench role switch: compact tab attached to the player card, never a separate row. */
-.rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-role-trigger{
-  position:absolute!important;
-  z-index:24!important;
-  top:40%!important;
-  right:-8px!important;
-  left:auto!important;
-  bottom:auto!important;
-  width:46px!important;
-  min-width:46px!important;
-  max-width:46px!important;
-  height:25px!important;
-  min-height:25px!important;
-  margin:0!important;
-  padding:0 5px!important;
-  display:flex!important;
-  align-items:center!important;
-  justify-content:center!important;
-  gap:4px!important;
-  border:2px solid #111216!important;
-  border-radius:0!important;
-  background:#ffd21f!important;
-  color:#111216!important;
-  box-shadow:2px 3px 0 #111216!important;
-  font:1000 9px/1 system-ui,sans-serif!important;
-  letter-spacing:0!important;
-  transform:none!important;
-}
-.rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-role-trigger span{
-  font-size:12px!important;
-  line-height:1!important;
-}
-.rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-role-trigger strong{
-  font-size:10px!important;
-  line-height:1!important;
-}
-.rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-role-trigger:active{
-  transform:translate(1px,1px)!important;
-  box-shadow:1px 2px 0 #111216!important;
-}
-
 /* Player detail: Legacy badge is independent from the team banner.
    It has a reserved safe area to the left of the close button and never compresses the team name. */
+/* RTG role switch now lives inside player detail, immediately left of Legacy. */
+.player-detail-rtg-role-switch{
+  position:absolute;
+  z-index:9;
+  top:18px;
+  right:140px;
+  width:50px;
+  min-width:50px;
+  min-height:48px;
+  display:grid;
+  grid-template-rows:auto 1fr;
+  place-items:center;
+  align-content:center;
+  padding:5px 5px 4px;
+  border:3px solid #111216;
+  background:#ffd21f;
+  color:#111216;
+  box-shadow:4px 4px 0 #111216;
+  transform:skew(-4deg);
+  text-transform:uppercase;
+  cursor:pointer;
+}
+.player-detail-rtg-role-switch > *{transform:skew(4deg);}
+.player-detail-rtg-role-switch small{
+  font:950 6px/1 system-ui,sans-serif;
+  letter-spacing:.12em;
+}
+.player-detail-rtg-role-switch strong{
+  align-self:end;
+  font:1000 20px/.9 system-ui,sans-serif;
+  letter-spacing:-.04em;
+}
+.player-detail-rtg-role-switch:active{
+  translate:2px 2px;
+  box-shadow:2px 2px 0 #111216;
+}
+
 .player-detail-rtg-legacy-badge{
   position:absolute;
   z-index:8;
@@ -904,6 +900,18 @@ button.player-card:has(> .rtg-version-count-badge),
 }
 
 @media(max-width:520px){
+  .player-detail-rtg-role-switch{
+    top:16px;
+    right:122px;
+    width:42px;
+    min-width:42px;
+    min-height:42px;
+    padding:4px 3px 3px;
+    border-width:2px;
+    box-shadow:3px 3px 0 #111216;
+  }
+  .player-detail-rtg-role-switch small{font-size:5px;}
+  .player-detail-rtg-role-switch strong{font-size:17px;}
   .player-detail-rtg-legacy-badge{
     top:16px;
     right:72px;
@@ -919,6 +927,14 @@ button.player-card:has(> .rtg-version-count-badge),
 }
 
 @media(max-width:370px){
+  .player-detail-rtg-role-switch{
+    top:14px;
+    right:114px;
+    width:38px;
+    min-width:38px;
+    min-height:38px;
+  }
+  .player-detail-rtg-role-switch strong{font-size:16px;}
   .player-detail-rtg-legacy-badge{
     top:14px;
     right:68px;
