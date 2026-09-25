@@ -813,3 +813,247 @@ button.player-card:has(> .rtg-legacy-badge),
     min-height:56px!important;max-height:56px!important;flex-basis:56px!important;
   }
 }
+
+/* RTG final detail legacy + development wallet polish 20260926 */
+
+/* Restore the original RTG Legacy card on player details. */
+.player-detail-rtg-legacy-badge{
+  position:absolute!important;
+  z-index:8!important;
+  top:18px!important;
+  right:82px!important;
+  width:50px!important;
+  min-width:50px!important;
+  min-height:48px!important;
+  display:grid!important;
+  grid-template-rows:auto 1fr!important;
+  place-items:center!important;
+  align-content:center!important;
+  padding:5px 5px 4px!important;
+  border:3px solid #111216!important;
+  border-radius:0!important;
+  background:var(--rtg-legacy-color,#ffd21f)!important;
+  color:var(--rtg-legacy-ink,#111216)!important;
+  box-shadow:4px 4px 0 #111216!important;
+  transform:skew(-4deg)!important;
+  text-transform:uppercase!important;
+  pointer-events:none!important;
+  white-space:nowrap!important;
+}
+.player-detail-rtg-legacy-badge > *{transform:skew(4deg)!important;}
+.player-detail-rtg-legacy-badge small{
+  display:block!important;
+  font:950 6px/1 system-ui,sans-serif!important;
+  letter-spacing:.12em!important;
+}
+.player-detail-rtg-legacy-badge strong{
+  display:block!important;
+  align-self:end!important;
+  font:1000 19px/.9 system-ui,sans-serif!important;
+  letter-spacing:-.04em!important;
+}
+.player-detail-rtg-legacy-badge[data-legacy-season="S1"]{
+  --rtg-legacy-color:#ffd21f;
+  --rtg-legacy-ink:#111216;
+}
+.player-detail-rtg-legacy-badge[data-legacy-season="S2"]{
+  --rtg-legacy-color:#35b8f4;
+  --rtg-legacy-ink:#07131b;
+}
+.player-detail-rtg-legacy-badge[data-legacy-season="S3"]{
+  --rtg-legacy-color:#a678ff;
+  --rtg-legacy-ink:#130b24;
+}
+
+/* RTG development wallet: purpose-built 2-cell banner instead of the generic development wallet grid. */
+.rtg-development-screen .rtg-development-wallet{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.6fr) minmax(108px,.75fr)!important;
+  gap:0!important;
+  width:100%!important;
+  margin:16px 0 18px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:3px solid #111216!important;
+  border-radius:0!important;
+  background:#fffdf6!important;
+  box-shadow:5px 6px 0 #111216!important;
+}
+.rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell{
+  min-width:0!important;
+  min-height:116px!important;
+  margin:0!important;
+  padding:14px 16px!important;
+  border:0!important;
+  background:#fffdf6!important;
+  color:#111216!important;
+  transform:none!important;
+}
+.rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell--tokens{
+  display:grid!important;
+  grid-template-columns:82px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:14px!important;
+  border-right:3px solid #111216!important;
+}
+.rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell--projects{
+  display:grid!important;
+  place-items:center!important;
+  text-align:center!important;
+}
+.rtg-development-screen .rtg-development-wallet-copy{
+  display:grid!important;
+  align-content:center!important;
+  justify-items:start!important;
+  min-width:0!important;
+  gap:5px!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:#111216!important;
+  transform:none!important;
+}
+.rtg-development-screen .rtg-development-wallet-cell--projects .rtg-development-wallet-copy{
+  justify-items:center!important;
+}
+.rtg-development-screen .rtg-development-wallet-copy small{
+  display:block!important;
+  color:#111216!important;
+  font:900 12px/1.05 system-ui,sans-serif!important;
+  letter-spacing:.06em!important;
+  white-space:normal!important;
+}
+.rtg-development-screen .rtg-development-wallet-copy strong{
+  display:block!important;
+  max-width:100%!important;
+  color:#9b6b00!important;
+  font:1000 clamp(24px,4.8vw,38px)/.92 system-ui,sans-serif!important;
+  letter-spacing:-.035em!important;
+  white-space:nowrap!important;
+}
+.rtg-development-screen .rtg-development-wallet .rtg-development-token-icon{
+  width:74px!important;
+  height:74px!important;
+  min-width:74px!important;
+  min-height:74px!important;
+  display:grid!important;
+  place-items:center!important;
+  align-self:center!important;
+  justify-self:center!important;
+  padding:0!important;
+  margin:0!important;
+  border:2px solid #111216!important;
+  background:#f7f1df!important;
+  overflow:hidden!important;
+}
+.rtg-development-screen .rtg-development-wallet .rtg-development-token-icon>.rtg-token-icon{
+  width:66px!important;
+  height:66px!important;
+  min-width:66px!important;
+  max-width:66px!important;
+  min-height:66px!important;
+  max-height:66px!important;
+  flex:0 0 66px!important;
+  margin:0!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  vertical-align:middle!important;
+}
+
+/* Selected-player requirement stays medium; confirmation is deliberately a little smaller. */
+.rtg-development-screen .development-selected .development-requirement .rtg-development-token-icon{
+  width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;
+  display:grid!important;place-items:center!important;padding:0!important;margin:0!important;overflow:visible!important;
+}
+.rtg-development-screen .development-selected .development-requirement .rtg-development-token-icon>.rtg-token-icon{
+  width:42px!important;height:42px!important;min-width:42px!important;max-width:42px!important;
+  min-height:42px!important;max-height:42px!important;flex:0 0 42px!important;margin:0!important;
+  object-fit:contain!important;object-position:center!important;vertical-align:middle!important;
+}
+.rtg-development-confirm .development-confirm-costs .development-requirement--compact{
+  grid-template-columns:48px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:10px!important;
+}
+.rtg-development-confirm .development-confirm-costs .rtg-development-token-icon{
+  width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;
+  display:grid!important;place-items:center!important;padding:0!important;margin:0!important;overflow:visible!important;
+}
+.rtg-development-confirm .development-confirm-costs .rtg-development-token-icon>.rtg-token-icon{
+  width:42px!important;height:42px!important;min-width:42px!important;max-width:42px!important;
+  min-height:42px!important;max-height:42px!important;flex:0 0 42px!important;margin:0!important;
+  object-fit:contain!important;object-position:center!important;vertical-align:middle!important;
+}
+
+@media(max-width:520px){
+  .player-detail-rtg-legacy-badge{
+    top:16px!important;
+    right:72px!important;
+    width:42px!important;
+    min-width:42px!important;
+    min-height:42px!important;
+    padding:4px 3px 3px!important;
+    border-width:2px!important;
+    box-shadow:3px 3px 0 #111216!important;
+  }
+  .player-detail-rtg-legacy-badge small{font-size:5px!important;}
+  .player-detail-rtg-legacy-badge strong{font-size:16px!important;}
+
+  .rtg-development-screen .rtg-development-wallet{
+    grid-template-columns:minmax(0,1.55fr) minmax(94px,.72fr)!important;
+    margin:12px 0 16px!important;
+  }
+  .rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell{
+    min-height:100px!important;
+    padding:10px 11px!important;
+  }
+  .rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell--tokens{
+    grid-template-columns:66px minmax(0,1fr)!important;
+    gap:10px!important;
+  }
+  .rtg-development-screen .rtg-development-wallet .rtg-development-token-icon{
+    width:62px!important;height:62px!important;min-width:62px!important;min-height:62px!important;
+  }
+  .rtg-development-screen .rtg-development-wallet .rtg-development-token-icon>.rtg-token-icon{
+    width:56px!important;height:56px!important;min-width:56px!important;max-width:56px!important;
+    min-height:56px!important;max-height:56px!important;flex-basis:56px!important;
+  }
+  .rtg-development-screen .rtg-development-wallet-copy{gap:4px!important;}
+  .rtg-development-screen .rtg-development-wallet-copy small{
+    font-size:10px!important;
+    line-height:1.05!important;
+  }
+  .rtg-development-screen .rtg-development-wallet-copy strong{
+    font-size:clamp(21px,6.2vw,29px)!important;
+    line-height:.95!important;
+  }
+  .rtg-development-confirm .development-confirm-costs .development-requirement--compact{
+    grid-template-columns:44px minmax(0,1fr)!important;
+    gap:8px!important;
+  }
+  .rtg-development-confirm .development-confirm-costs .rtg-development-token-icon{
+    width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;
+  }
+  .rtg-development-confirm .development-confirm-costs .rtg-development-token-icon>.rtg-token-icon{
+    width:38px!important;height:38px!important;min-width:38px!important;max-width:38px!important;
+    min-height:38px!important;max-height:38px!important;flex-basis:38px!important;
+  }
+}
+@media(max-width:370px){
+  .player-detail-rtg-legacy-badge{
+    top:14px!important;right:68px!important;width:38px!important;min-width:38px!important;min-height:38px!important;
+  }
+  .player-detail-rtg-legacy-badge strong{font-size:15px!important;}
+  .rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell--tokens{
+    grid-template-columns:58px minmax(0,1fr)!important;
+    gap:8px!important;
+  }
+  .rtg-development-screen .rtg-development-wallet .rtg-development-token-icon{
+    width:54px!important;height:54px!important;min-width:54px!important;min-height:54px!important;
+  }
+  .rtg-development-screen .rtg-development-wallet .rtg-development-token-icon>.rtg-token-icon{
+    width:48px!important;height:48px!important;min-width:48px!important;max-width:48px!important;
+    min-height:48px!important;max-height:48px!important;flex-basis:48px!important;
+  }
+}
