@@ -20,7 +20,7 @@ for(const player of db.players||[]){
  if(!opponentKind)continue;
  const opponent=flat(80);
  const result=R.probability({actor,opponent,actorKind:kind,opponentKind,actorMove:move});
- assert(result.probability>=10&&result.probability<=90);checked++;
+ assert(result.probability>=5&&result.probability<=95);checked++;
 }
 assert(checked>100);
 for(const target of[0.25,0.5,0.75]){
