@@ -64,13 +64,13 @@
       if(type==="project"){
         return `<span class="development-resource-icon project-image-frame"><img src="${escape(projectImage(rarity))}" alt="" loading="lazy" decoding="async"></span>`;
       }
-      return `<span class="development-resource-icon rtg-development-token-icon" style="width:64px;height:64px;min-width:64px;display:inline-flex;align-items:center;justify-content:center;overflow:visible"><img class="rtg-token-icon" style="width:58px;height:58px;max-width:none;object-fit:contain;display:block" src="${TOKEN_URL}" alt="" aria-hidden="true" draggable="false"></span>`;
+      return `<span class="development-resource-icon rtg-development-token-icon"><img class="rtg-token-icon" src="${TOKEN_URL}" alt="" aria-hidden="true" draggable="false"></span>`;
     }
 
     function requirement({type,rarity="",label,current=null,required=0,ready=true,compact=false}={}){
       const tag=compact?"span":"article";
       const value=current==null?`×${escape(required)}`:`${escape(current)} / ${escape(required)}`;
-      return `<${tag} class="development-requirement ${ready?"is-ready":"is-missing"}">
+      return `<${tag} class="development-requirement ${compact?"development-requirement--compact":""} ${ready?"is-ready":"is-missing"}">
         ${resourceIcon(type,rarity)}
         <span><small>${escape(label)}</small><strong>${value}</strong></span>
         ${compact?"":`<b aria-label="${ready?"Requisito soddisfatto":"Requisito mancante"}">${ready?"✓":"!"}</b>`}
@@ -156,9 +156,14 @@
           <button type="button" class="btn btn-ghost development-back-button" data-rtg-economy-back aria-label="Torna a Road to Glory">←</button>
           <div><p class="eyebrow">ROAD TO GLORY · CRESCITA PERMANENTE</p><h1>CENTRO DI SVILUPPO</h1></div>
         </header>
-        <section class="development-wallet">
-          <span>${resourceIcon("tokens")}<span>GETTONI RTG <strong>${escape(Number(state.tokens)||0)}</strong></span></span>
-          <span><span>PROGETTI <strong>${escape(projectTotal)}</strong></span></span>
+        <section class="development-wallet rtg-development-wallet">
+          <span class="rtg-development-wallet-cell rtg-development-wallet-cell--tokens">
+            ${resourceIcon("tokens")}
+            <span class="rtg-development-wallet-copy"><small>GETTONI RTG</small><strong>${escape(Number(state.tokens)||0)}</strong></span>
+          </span>
+          <span class="rtg-development-wallet-cell rtg-development-wallet-cell--projects">
+            <span class="rtg-development-wallet-copy"><small>PROGETTI</small><strong>${escape(projectTotal)}</strong></span>
+          </span>
         </section>
         <nav class="development-tabs">
           <button class="${tab==="players"?"active":""}" data-rtg-development-tab="players">GIOCATORI</button>
