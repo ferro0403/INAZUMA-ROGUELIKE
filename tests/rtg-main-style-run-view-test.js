@@ -24,5 +24,5 @@ assert.doesNotMatch(html,/rtg-node--main/);
 const req=view.requirementsMarkup({teamPower:74,cap:75,recruitCount:1,minRecruit:1,recentRecruitCount:0,recentCount:0,reasons:[]});
 assert.match(req,/class="panel rtg-requirements/);assert.match(req,/btn|Requisiti/);
 const vend=view.vendingMarkup({tokens:600,candidates:[{}],rarities:[{rarity:"Normale",weight:40}]});
-assert.match(vend,/btn btn-yellow/);assert.match(vend,/rtg-vending-machine-v7/);assert.match(vend,/assets\/rtg\/rtg-gacha-machine\.webp/);assert.match(vend,/>Distributore</);assert.doesNotMatch(vend,/DISTRIBUTORE S1|<small>POOL<\/small>/);
+assert.match(vend,/btn btn-yellow/);assert.match(vend,/rtg-vending-machine-v12/);assert.match(vend,/rtg-vending-window-v9/);assert.match(vend,/rtg-vending-capsule-v9/);assert.match(vend,/rtg-vending-chute-v9/);assert.match(vend,/>Distributore</);assert.doesNotMatch(vend,/DISTRIBUTORE S1|<small>POOL<\\/small>/);
 console.log("rtg-main-style-run-view-test: PASS");
