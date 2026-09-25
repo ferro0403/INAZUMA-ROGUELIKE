@@ -80,11 +80,17 @@ const controller=c.RoadToGloryController.create({
   assert.strictEqual(legacyCalls[1].options.rtgLegacyLabel,"");
   const playerViewSource=fs.readFileSync("js/player/player-view.js","utf8");
   assert.match(playerViewSource,/player-detail-rtg-legacy-badge/);
+  assert.match(playerViewSource,/player-detail-rtg-role-switch/);
+  assert.match(playerViewSource,/data-detail-rtg-role-switch/);
   assert.match(playerViewSource,/moveSeasonId, player\.resolvedSeasonId, player\.legacySeasonId/);
   assert.match(playerViewSource,/data-legacy-season/);
   assert.doesNotMatch(playerViewSource,/detailTopBadges/);
   const themeSource=fs.readFileSync("css/rtg-theme.css","utf8");
   assert.match(themeSource,/right:72px/);
   assert.match(themeSource,/top:16px/);
+  assert.match(themeSource,/\.player-detail-rtg-role-switch/);
+  const detailControllerSource=fs.readFileSync("js/player/player-detail-controller.js","utf8");
+  assert.match(detailControllerSource,/data-detail-rtg-role-switch/);
+  assert.match(detailControllerSource,/onRtgRoleSwitch/);
   console.log("rtg-player-detail-wiring-test: PASS");
 })().catch(error=>{console.error(error);process.exitCode=1;});
