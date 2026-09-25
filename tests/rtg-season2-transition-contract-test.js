@@ -3,7 +3,7 @@ const assert=require("assert"),fs=require("fs");
 const ctl=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
 assert(ctl.includes('if(activeSeasonId()!=="ie1"||!campaign?.seasonComplete)return campaign'));
 assert(ctl.includes('current.activeSeasonId="ie1_s2"'));
-assert(ctl.includes('current.currentNodeId="main:secret_service"'));
+assert(ctl.includes('current.currentNodeId="main:secret_service"'));assert(ctl.includes('const rewardId="ie1->ie1_s2"'));assert(ctl.includes('config.SEASON_TRANSITION_REWARD||1000'));assert(ctl.includes("current.seasonTransitionRewardedIds.includes(rewardId)"));
 assert(ctl.includes('querySelectorAll?.("[data-rtg-enter-season2]")?.forEach'));
 assert(ctl.includes('data-dev-rtg="previous-season"'));
 assert(ctl.includes('state.activeSeasonId="ie1"'));
