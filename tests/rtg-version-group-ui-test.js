@@ -36,6 +36,8 @@ const picker=view.versionPickerMarkup({
 assert.strictEqual((picker.match(/data-rtg-version-card=/g)||[]).length,2,"opening the unified Erik card must lazily show both versions");
 assert.match(picker,/data-legacy-season="S1"/);
 assert.match(picker,/data-legacy-season="S2"/);
+assert.match(picker,/rtg-picker-player-card/,"version chooser must reuse the large replacement-picker card style");
+assert.match(picker,/rtg-version-player-card/,"version chooser must keep its dedicated interaction hook");
 assert.doesNotMatch(picker,/rtg-version-choice/,"old grey version buttons must be gone");
 
 const controller=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
