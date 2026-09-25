@@ -1,0 +1,73 @@
+name: Fix RTG evolved pitch and shop scroll
+
+on:
+  push:
+    branches: [feature/rtg-shop-development]
+    paths: [.github/workflows/fix-rtg-evolved-pitch-scroll.yml]
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/rtg-shop-development
+      - name: Apply focused RTG fixes
+        shell: python
+        run: |
+          from pathlib import Path
+
+          # 1) Squad pitch must resolve owned cards with RTG development applied.
+          p=Path('js/road-to-glory/rtg-squad-view-base.js')
+          s=p.read_text()
+          old='function renderModel({ state, freeAgentIds = [], seasonDb, freeAgentsDb = null } = {}) {'
+          new='function renderModel({ state, freeAgentIds = [], seasonDb, freeAgentsDb = null, playerResolver: resolverOverride = null } = {}) {'
+          assert old in s
+          s=s.replace(old,new,1)
+          old='const resolve = (cardId) => resolver?.resolveAtLevel20?.(cardId, seasonId, squad.activeRoleVariantByCardId?.[cardId] || null, freeAgentsDb) ||'
+          new='const activeResolver = resolverOverride || resolver;\n      const resolve = (cardId) => activeResolver?.resolveAtLevel20?.(cardId, seasonId, squad.activeRoleVariantByCardId?.[cardId] || null, freeAgentsDb) ||'
+          assert old in s
+          s=s.replace(old,new,1)
+          p.write_text(s)
+
+          p=Path('js/road-to-glory/rtg-controller.js')
+          s=p.read_text()
+          old='const model=squadView.renderModel({state:draftState(),freeAgentIds,seasonDb,freeAgentsDb});'
+          new='const model=squadView.renderModel({state:draftState(),freeAgentIds,seasonDb,freeAgentsDb,playerResolver:playerResolverForState(draftState())});'
+          assert old in s
+          s=s.replace(old,new,1)
+
+          # 2) Buying a project must preserve the exact shop scroll position.
+          old='''      app?.querySelectorAll?.("[data-rtg-buy-project]")?.forEach((button)=>button.addEventListener("click",async()=>{\n        if(button.disabled)return;\n        button.disabled=true;'''
+          new='''      app?.querySelectorAll?.("[data-rtg-buy-project]")?.forEach((button)=>button.addEventListener("click",async()=>{\n        if(button.disabled)return;\n        const shopScrollY=Number(global.scrollY||global.pageYOffset||0);\n        button.disabled=true;'''
+          assert old in s
+          s=s.replace(old,new,1)
+          old='''        deps.toast?.(outcome?.ok?"PROGETTO ACQUISTATO":outcome?.reason==="tokens"?"GETTONI RTG INSUFFICIENTI":"ACQUISTO NON COMPLETATO",outcome?.ok?undefined:"error");\n        return renderShop();'''
+          new='''        deps.toast?.(outcome?.ok?"PROGETTO ACQUISTATO":outcome?.reason==="tokens"?"GETTONI RTG INSUFFICIENTI":"ACQUISTO NON COMPLETATO",outcome?.ok?undefined:"error");\n        renderShop();\n        const restoreShopScroll=()=>global.scrollTo?.(0,shopScrollY);\n        if(typeof global.requestAnimationFrame==="function")global.requestAnimationFrame(restoreShopScroll);\n        else if(typeof global.setTimeout==="function")global.setTimeout(restoreShopScroll,0);\n        else restoreShopScroll();\n        return campaign;'''
+          assert old in s
+          s=s.replace(old,new,1)
+          p.write_text(s)
+
+          # Regression contracts: field uses developed resolver; shop restores scroll.
+          t=Path('tests/rtg-squad-view-test.js')
+          if t.exists():
+            x=t.read_text()
+            x += '\n// RTG developed pitch regression contract\nconst squadBaseSource=require("fs").readFileSync("js/road-to-glory/rtg-squad-view-base.js","utf8");\nif(!/resolverOverride \\|\\| resolver/.test(squadBaseSource))throw new Error("RTG squad pitch must accept developed resolver override");\n'
+            t.write_text(x)
+          t=Path('tests/rtg-economy-integration-test.js')
+          if t.exists():
+            x=t.read_text()
+            x += '\n// RTG shop scroll regression contract\nconst rtgControllerScrollSource=require("fs").readFileSync("js/road-to-glory/rtg-controller.js","utf8");\nif(!/shopScrollY/.test(rtgControllerScrollSource)||!/restoreShopScroll/.test(rtgControllerScrollSource))throw new Error("RTG shop purchases must preserve scroll position");\n'
+            t.write_text(x)
+
+          Path('.github/workflows/fix-rtg-evolved-pitch-scroll.yml').unlink()
+      - name: Commit patch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "fix(RTG): evolved pitch rarity and shop scroll"
+          git push origin HEAD:feature/rtg-shop-development
