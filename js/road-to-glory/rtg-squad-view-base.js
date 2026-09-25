@@ -68,10 +68,10 @@
       ].filter(Boolean).join(" ");
       const extraClass = [
         "squad-player-card",
-        isPicker ? "" : "rtg-squad-player-card",
+        (isPicker || isVersion) ? "" : "rtg-squad-player-card",
         isPicker ? "rtg-picker-squad-card" : "",
         isCatalog ? "rtg-prematch-player-card rtg-picker-player-card rtg-catalog-player-card" : "",
-        isVersion ? "rtg-version-player-card" : "",
+        isVersion ? "rtg-picker-squad-card rtg-picker-player-card rtg-version-player-card" : "",
         Number(entry?.versionCount) > 1 ? "rtg-version-group-card" : "",
         options.extraClass || "",
       ].filter(Boolean).join(" ");
