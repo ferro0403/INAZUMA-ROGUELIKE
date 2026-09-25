@@ -1,0 +1,96 @@
+name: Fix RTG development load-more and token icons
+on:
+  push:
+    branches: [feature/rtg-shop-development]
+    paths: [.github/workflows/fix-rtg-development-load-more-icons.yml]
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/rtg-shop-development
+      - name: Apply fix
+        shell: python
+        run: |
+          from pathlib import Path
+
+          controller = Path('js/road-to-glory/rtg-controller.js')
+          c = controller.read_text()
+          c = c.replace('    let developmentPage=1;\n    const DEVELOPMENT_PLAYER_PAGE_SIZE=24;', '    let developmentVisibleCount=24;\n    const DEVELOPMENT_PLAYER_PAGE_SIZE=24;')
+
+          old = '''    function bindDevelopmentGrid(players){
+      const results=app?.querySelector?.("[data-rtg-development-results]");
+      if(!results)return;
+      const refresh=()=>{
+        const filtered=filteredDevelopmentPlayers(players);
+        const totalPages=Math.max(1,Math.ceil(filtered.length/DEVELOPMENT_PLAYER_PAGE_SIZE));
+        developmentPage=Math.max(1,Math.min(developmentPage,totalPages));
+        const start=(developmentPage-1)*DEVELOPMENT_PLAYER_PAGE_SIZE;
+        const pagePlayers=filtered.slice(start,start+DEVELOPMENT_PLAYER_PAGE_SIZE);
+        results.innerHTML=economyView.playerGrid(pagePlayers)+economyView.playerPaginationMarkup?.(developmentPage,totalPages,filtered.length);
+      };
+      results.onclick=(event)=>{
+        const pageButton=event.target?.closest?.("[data-rtg-development-page]");
+        if(pageButton){developmentPage=Math.max(1,Number(pageButton.dataset.rtgDevelopmentPage)||1);refresh();return;}
+        const element=event.target?.closest?.("[data-rtg-development-player]");
+        if(!element)return;
+        selectedDevelopmentCardId=id(element.dataset.rtgDevelopmentPlayer);
+        renderDevelopment("players");
+      };
+      const search=app?.querySelector?.("[data-rtg-development-search]");
+      search?.addEventListener("input",(event)=>{developmentQuery=event.currentTarget.value||"";developmentPage=1;refresh();});
+      app?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",(event)=>{developmentRarity=event.currentTarget.value||"Tutti";developmentPage=1;refresh();});
+      refresh();
+    }'''
+          new = '''    function bindDevelopmentGrid(players){
+      const results=app?.querySelector?.("[data-rtg-development-results]");
+      if(!results)return;
+      const refresh=()=>{
+        const filtered=filteredDevelopmentPlayers(players);
+        const visible=filtered.slice(0,developmentVisibleCount);
+        const remaining=Math.max(0,filtered.length-visible.length);
+        results.innerHTML=economyView.playerGrid(visible)+(remaining>0?`<div class="development-load-more-wrap"><button type="button" class="btn btn-yellow development-load-more" data-rtg-development-load-more><span>MOSTRA ALTRI <b>${Math.min(DEVELOPMENT_PLAYER_PAGE_SIZE,remaining)}</b></span><small>${visible.length} di ${filtered.length}</small></button></div>`:"");
+      };
+      results.onclick=(event)=>{
+        const loadMore=event.target?.closest?.("[data-rtg-development-load-more]");
+        if(loadMore){developmentVisibleCount+=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();return;}
+        const element=event.target?.closest?.("[data-rtg-development-player]");
+        if(!element)return;
+        selectedDevelopmentCardId=id(element.dataset.rtgDevelopmentPlayer);
+        renderDevelopment("players");
+      };
+      const search=app?.querySelector?.("[data-rtg-development-search]");
+      search?.addEventListener("input",(event)=>{developmentQuery=event.currentTarget.value||"";developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();});
+      app?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",(event)=>{developmentRarity=event.currentTarget.value||"Tutti";developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();});
+      refresh();
+    }'''
+          if old not in c:
+              raise SystemExit('old RTG pagination block not found')
+          c = c.replace(old, new)
+          controller.write_text(c)
+
+          view = Path('js/road-to-glory/rtg-economy-view.js')
+          v = view.read_text()
+          old_icon = '      return `<span class="development-resource-icon rtg-development-token-icon">${rtgTokenIcon()}</span>`;'
+          new_icon = '      return `<span class="development-resource-icon rtg-development-token-icon" style="width:64px;height:64px;min-width:64px;display:inline-flex;align-items:center;justify-content:center;overflow:visible"><img class="rtg-token-icon" style="width:58px;height:58px;max-width:none;object-fit:contain;display:block" src="${TOKEN_URL}" alt="" aria-hidden="true" draggable="false"></span>`;'
+          if old_icon not in v:
+              raise SystemExit('RTG token resource icon block not found')
+          v = v.replace(old_icon, new_icon)
+          view.write_text(v)
+
+          test = Path('tests/rtg-development-pagination-test.js')
+          test.write_text('''const fs=require("fs");\nconst controller=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");\nconst view=fs.readFileSync("js/road-to-glory/rtg-economy-view.js","utf8");\nif(!/DEVELOPMENT_PLAYER_PAGE_SIZE\\s*=\\s*24/.test(controller))throw new Error("RTG development batch must be 24");\nif(!/developmentVisibleCount/.test(controller))throw new Error("RTG development visible-count state missing");\nif(!/data-rtg-development-load-more/.test(controller))throw new Error("RTG development load-more control missing");\nif(/data-rtg-development-page/.test(controller))throw new Error("old RTG page navigation still present");\nif(!/width:58px;height:58px/.test(view))throw new Error("RTG requirement token icon sizing missing");\nconsole.log("rtg development load-more/icon regression passed");\n''')
+
+          Path('.github/workflows/fix-rtg-development-load-more-icons.yml').unlink()
+      - name: Verify focused regression
+        run: node tests/rtg-development-pagination-test.js
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add js/road-to-glory/rtg-controller.js js/road-to-glory/rtg-economy-view.js tests/rtg-development-pagination-test.js .github/workflows/fix-rtg-development-load-more-icons.yml
+          git commit -m "fix(RTG): match development lazy loading and token sizing"
+          git push origin HEAD:feature/rtg-shop-development
