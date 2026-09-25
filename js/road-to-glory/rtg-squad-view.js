@@ -18,6 +18,16 @@
     };
   }
 
+  // Load the visual restoration after the RTG theme so the approved Legacy
+  // and multi-version banners win without touching identity/grouping logic.
+  if(!document.querySelector('link[data-rtg-version-banners]')){
+    const style=document.createElement('link');
+    style.rel='stylesheet';
+    style.href='css/rtg-version-banners.css?v=20260926-restore-1';
+    style.dataset.rtgVersionBanners='1';
+    document.head.appendChild(style);
+  }
+
   // Parser-ordered RTG extensions. The match engine already exists when this
   // loader runs, so the halftime correction can safely wrap it before the
   // match view/controller start using it.
