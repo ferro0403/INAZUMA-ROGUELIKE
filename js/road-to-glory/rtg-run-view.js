@@ -202,11 +202,20 @@
       const duplicate=!!result.duplicate;
       const playerName=player.name||result.playerId||"Giocatore";
       const playerRole=String(player.normalizedRole||player.position||player.role||"—").toUpperCase();
-      // Some IE1 player records keep a legacy display teamId (for example
-      // "royal-academy") while teamIds[0] stores the canonical runtime id ("royal").
-      // Emblems must use the canonical id or the renderer falls back to the initial.
-      const teamId=String(player.teamIds?.[0]||player.teamId||"");
-      const teamLabel=String(player.teamName||player.teams?.[0]||"Squadra");
+      // Resolve the exact team represented by this card/profile. Profile-aware
+      // Seasons (S2+) can keep historical teamIds on the canonical player, so
+      // player.teamIds[0] is not necessarily the team of the pulled version.
+      const teamCandidates=[
+        player.resolvedTeamId,
+        player.teamId,
+        ...(player.teamIds||[]),
+      ].map((value)=>String(value||"")).filter(Boolean);
+      let pullTeam=teamCandidates.map((candidate)=>teamRecord(seasonDb,candidate)).find(Boolean)||null;
+      if(!pullTeam&&player.teamName){
+        pullTeam=(seasonDb?.teams||[]).find((entry)=>String(entry.teamName||entry.name||"")===String(player.teamName))||null;
+      }
+      const teamId=String(pullTeam?.teamId||pullTeam?.id||player.resolvedTeamId||player.teamId||player.teamIds?.[0]||"");
+      const teamLabel=String(player.teamName||pullTeam?.teamName||pullTeam?.name||player.teams?.[0]||"Squadra");
       const card=compactPlayerCardMarkup
         ? compactPlayerCardMarkup(player,{
             level:20,
@@ -237,7 +246,7 @@
             <h2>${escape(playerName)}</h2>
             <div class="rtg-pull-player-identity">
               <span class="rtg-pull-team">
-                <span class="rtg-pull-team-logo" aria-hidden="true">${teamId?teamLogoMarkup(seasonDb,teamId):""}</span>
+                <span class="rtg-pull-team-logo" aria-hidden="true">${player.teamLogoUrl?`<img src="${escape(player.teamLogoUrl)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer">`:(teamId?teamLogoMarkup(seasonDb,teamId):"")}</span>
                 <strong>${escape(teamLabel)}</strong>
               </span>
               <span class="rtg-pull-role">${escape(playerRole)}</span>
