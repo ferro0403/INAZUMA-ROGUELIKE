@@ -59,7 +59,7 @@ assert.match(half,/rtg-halftime-revolution/);
 assert.match(half,/SHARED-RTG-SQUAD-PITCH/);
 assert.doesNotMatch(half,/Controlla il campo\. Tocca un titolare/i);
 assert.doesNotMatch(half,/rtg-halftime-change-box/);
-assert.match(half,/CAMBIO RUOLO PER RUOLO/i);
+assert.match(half,/Tocca un titolare per scegliere chi sostituire/i);
 
 const app=fs.readFileSync("js/app.js","utf8");
 assert.match(app,/squadPitchMarkup:\s*\(\.\.\.args\)\s*=>\s*rtgSquadView\.matchPitchMarkup\(\.\.\.args\)/);
