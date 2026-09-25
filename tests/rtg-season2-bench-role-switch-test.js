@@ -17,5 +17,5 @@ assert.match(ctl,/allowRoleSwitch:true/,"squad detail opening must explicitly al
 assert.match(ctl,/rtgRoleSwitch:/,"RTG detail options must expose role-switch metadata");
 assert.match(ctl,/onRtgRoleSwitch:/,"RTG detail options must expose the role-switch action");
 assert.match(theme,/\.player-detail-rtg-role-switch/,"theme must style the role switch inside player detail");
-assert.match(theme,/right:134px/,"mobile role switch must sit immediately left of the S2 Legacy banner");
+assert.match(theme,/right:122px/,"mobile role switch must sit immediately left of the S2 Legacy banner");
 console.log("rtg-season2-bench-role-switch-test: PASS");
