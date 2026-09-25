@@ -11,6 +11,34 @@
 .rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:20px!important;height:20px!important;min-width:20px!important;max-width:20px!important;min-height:20px!important;max-height:20px!important;flex-basis:20px!important;vertical-align:-4px!important;}
 .rtg-vending-button span,.rtg-vending-wallet-chip strong,.rtg-vending-pull{align-items:center!important;}
 
+/* Development currency artwork is intentionally much larger than the compact HUD token.
+   This wins over the global .rtg-token-icon !important rule and keeps the sticker centered
+   in the selected-player requirement, confirmation cost, and development wallet. */
+.rtg-development-screen .rtg-development-token-icon{
+  width:74px!important;height:74px!important;min-width:74px!important;min-height:74px!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  padding:0!important;margin:0!important;overflow:visible!important;
+}
+.rtg-development-screen .rtg-development-token-icon>.rtg-token-icon{
+  display:block!important;width:66px!important;height:66px!important;min-width:66px!important;max-width:66px!important;
+  min-height:66px!important;max-height:66px!important;flex:0 0 66px!important;margin:0!important;
+  object-fit:contain!important;object-position:center!important;vertical-align:middle!important;
+}
+.rtg-development-screen .development-requirement .rtg-development-token-icon{
+  align-self:center!important;justify-self:center!important;
+}
+.rtg-development-screen .development-wallet>span:first-child{
+  align-items:center!important;
+}
+.rtg-development-screen .development-wallet .rtg-development-token-icon{
+  width:82px!important;height:82px!important;min-width:82px!important;min-height:82px!important;
+  align-self:center!important;justify-self:center!important;
+}
+.rtg-development-screen .development-wallet .rtg-development-token-icon>.rtg-token-icon{
+  width:74px!important;height:74px!important;min-width:74px!important;max-width:74px!important;
+  min-height:74px!important;max-height:74px!important;flex-basis:74px!important;
+}
+
 /* Squad replacement picker. */
 .rtg-picker-overall-order{justify-self:start;min-height:34px;padding:6px 11px;border:2px solid #111216;border-radius:0;background:#fffdf6;color:#111216;box-shadow:2px 3px 0 #111216;font:800 .78rem/1 system-ui,sans-serif;letter-spacing:.04em;cursor:pointer;}
 .rtg-picker-overall-order[aria-pressed="true"]{background:#ffd21f;}
@@ -48,6 +76,10 @@
   .rtg-main-topbar .status-pill.lives{min-width:78px!important;padding:9px 8px!important;font-size:.72rem!important;}
   .rtg-token-icon{width:19px!important;height:19px!important;min-width:19px!important;max-width:19px!important;min-height:19px!important;max-height:19px!important;flex-basis:19px!important;margin-right:3px!important;vertical-align:-4px!important;}
   .rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;min-height:18px!important;max-height:18px!important;flex-basis:18px!important;}
+  .rtg-development-screen .rtg-development-token-icon{width:70px!important;height:70px!important;min-width:70px!important;min-height:70px!important;}
+  .rtg-development-screen .rtg-development-token-icon>.rtg-token-icon{width:62px!important;height:62px!important;min-width:62px!important;max-width:62px!important;min-height:62px!important;max-height:62px!important;flex-basis:62px!important;margin:0!important;}
+  .rtg-development-screen .development-wallet .rtg-development-token-icon{width:78px!important;height:78px!important;min-width:78px!important;min-height:78px!important;}
+  .rtg-development-screen .development-wallet .rtg-development-token-icon>.rtg-token-icon{width:70px!important;height:70px!important;min-width:70px!important;max-width:70px!important;min-height:70px!important;max-height:70px!important;flex-basis:70px!important;}
   .rtg-picker-overall-order{min-height:32px;padding:5px 9px;font-size:.72rem;}
   .rtg-duel-card--clean .rtg-duel-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;}
   .rtg-duel-card--clean .rtg-duel-choice-card{min-height:112px!important;padding:11px 10px!important;}
@@ -223,917 +255,428 @@
 .rtg-vending-window-v9::before{
   content:"";
   position:absolute;
-  z-index:7;
-  top:0;
-  right:0;
-  bottom:0;
-  width:12px;
-  background:linear-gradient(90deg,transparent,rgba(49,91,107,.09));
+  z-index:5;
+  top:-18px;
+  left:18px;
+  width:28px;
+  height:145px;
+  border-radius:50%;
+  background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.50),rgba(255,255,255,.08));
+  transform:rotate(11deg);
+  filter:blur(.2px);
   pointer-events:none;
 }
 .rtg-vending-window-v9::after{
   content:"";
   position:absolute;
+  z-index:1;
+  left:0;
+  right:0;
+  bottom:0;
+  height:38px;
+  background:linear-gradient(180deg,rgba(48,78,88,.05),rgba(25,52,62,.19));
+  box-shadow:inset 0 8px 12px rgba(29,57,68,.12);
+  pointer-events:none;
+}
+.rtg-vending-window-v9 .rtg-ball{
+  width:34px!important;
+  height:34px!important;
+  border:2px solid #20242a!important;
+  box-shadow:
+    inset 4px 3px 0 rgba(255,255,255,.33),
+    inset -5px -6px 0 rgba(0,0,0,.08),
+    2px 4px 0 rgba(32,36,42,.22)!important;
+}
+.rtg-vending-window-v9 .rtg-ball::after{
+  height:2px!important;
+  background:#20242a!important;
+}
+.rtg-vending-window-v9 .rtg-ball::before{
+  content:"";
+  position:absolute;
   z-index:2;
+  top:6px;
+  left:8px;
+  width:8px;
+  height:5px;
+  border-radius:50%;
+  background:rgba(255,255,255,.76);
+  transform:rotate(-24deg);
+}
+.rtg-vending-window-v9 .b1{left:5%!important;bottom:5%!important;transform:rotate(-14deg)!important}
+.rtg-vending-window-v9 .b2{left:23%!important;bottom:4%!important;transform:rotate(7deg)!important}
+.rtg-vending-window-v9 .b3{left:42%!important;bottom:6%!important;transform:rotate(-4deg)!important}
+.rtg-vending-window-v9 .b4{right:20%!important;bottom:4%!important;transform:rotate(12deg)!important}
+.rtg-vending-window-v9 .b5{right:3%!important;bottom:6%!important;transform:rotate(-8deg)!important}
+.rtg-vending-window-v9 .b6{left:12%!important;bottom:21%!important;transform:rotate(5deg)!important}
+.rtg-vending-window-v9 .b7{left:31%!important;bottom:20%!important;transform:rotate(-11deg)!important}
+.rtg-vending-window-v9 .b8{left:50%!important;bottom:22%!important;transform:rotate(9deg)!important}
+.rtg-vending-window-v9 .b9{right:13%!important;bottom:21%!important;transform:rotate(-5deg)!important}
+.rtg-vending-window-v9 .b10{left:21%!important;bottom:37%!important;transform:rotate(13deg)!important}
+.rtg-vending-window-v9 .b11{left:40%!important;bottom:38%!important;transform:rotate(-7deg)!important}
+.rtg-vending-window-v9 .b12{right:21%!important;bottom:37%!important;transform:rotate(6deg)!important}
+.rtg-vending-window-v9 .b13{left:31%!important;bottom:53%!important;transform:rotate(-12deg)!important}
+.rtg-vending-window-v9 .b14{right:31%!important;bottom:53%!important;transform:rotate(8deg)!important}
+.rtg-vending-window-v9 .b15{left:42%!important;bottom:68%!important;transform:rotate(-3deg)!important}
+.rtg-vending-base-v9{
+  position:relative;
+  z-index:4;
+  width:224px;
+  min-height:138px;
+  margin-top:-1px;
+  padding:13px 14px 12px;
+  border:3px solid #202329;
+  border-top-width:4px;
+  border-radius:0 0 15px 15px;
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.16) 0 4%,transparent 12% 82%,rgba(0,0,0,.16) 100%),
+    linear-gradient(180deg,#ffe65c 0%,#ffd21f 54%,#e8aa13 100%);
+  box-shadow:
+    inset 2px 0 0 rgba(255,255,255,.15),
+    inset -7px 0 11px rgba(120,75,0,.12),
+    inset 0 3px 0 rgba(255,255,255,.28),
+    inset 0 -12px 16px rgba(123,76,0,.13),
+    0 6px 0 #202329,
+    7px 9px 0 rgba(32,35,41,.12);
+}
+.rtg-vending-base-v9::before{
+  content:"";
+  position:absolute;
   left:8px;
   right:8px;
-  bottom:2px;
-  height:38px;
-  border-radius:50%;
-  background:radial-gradient(ellipse at center,rgba(35,61,72,.24) 0%,rgba(35,61,72,.12) 46%,transparent 74%);
-  filter:blur(1px);
-  pointer-events:none;
+  top:7px;
+  height:1px;
+  background:rgba(255,255,255,.45);
 }
-.rtg-vending-funnel-v10{
-  position:absolute;
-  z-index:3;
-  left:18px;
-  right:18px;
-  bottom:-1px;
-  height:60px;
-  clip-path:polygon(0 12%,100% 12%,67% 100%,33% 100%);
-  background:
-    linear-gradient(180deg,rgba(117,160,177,.10),rgba(49,82,96,.17));
-  border-top:1px solid rgba(44,75,89,.22);
-  pointer-events:none;
-}
-.rtg-vending-funnel-v10::after{
-  content:"";
-  position:absolute;
-  left:50%;
-  bottom:-1px;
-  width:38px;
-  height:10px;
-  transform:translateX(-50%);
-  border-radius:50% 50% 0 0;
-  background:#30343a;
-  box-shadow:inset 0 4px 0 #14171b;
-}
-.rtg-vending-window-glare-v9{
-  position:absolute;
-  z-index:8;
-  top:18px;
-  left:27px;
-  width:9px;
-  height:88px;
-  border-radius:999px;
-  background:linear-gradient(180deg,rgba(255,255,255,.70),rgba(255,255,255,.04));
-  transform:rotate(11deg);
-  pointer-events:none;
-}
-
-.rtg-vending-capsule-v9{
-  --rtg-capsule-color:#d9dee4;
-  position:absolute;
-  z-index:5;
-  width:39px;
-  height:39px;
-  border:1.5px solid #25292e;
-  border-radius:50%;
-  background:
-    radial-gradient(circle at 30% 24%,rgba(255,255,255,.98) 0 10%,transparent 11%),
-    linear-gradient(to bottom,#fffefb 0 49%,var(--rtg-capsule-color) 50% 100%);
-  box-shadow:
-    inset 3px 3px 4px rgba(255,255,255,.44),
-    inset -4px -5px 6px rgba(17,18,22,.14),
-    0 5px 7px rgba(17,18,22,.18);
-  transform:rotate(var(--r,0deg)) scale(var(--s,1));
-}
-.rtg-vending-capsule-v9::after{
-  content:"";
-  position:absolute;
-  left:1px;right:1px;top:calc(50% - 1px);
-  height:2px;
-  border-radius:999px;
-  background:#363a40;
-  opacity:.88;
-}
-.rtg-vending-capsule-v9[data-capsule-rarity="normale"]{--rtg-capsule-color:#d9dee4;}
-.rtg-vending-capsule-v9[data-capsule-rarity="buono"]{--rtg-capsule-color:#2fa866;}
-.rtg-vending-capsule-v9[data-capsule-rarity="forte"]{--rtg-capsule-color:#27a8e8;}
-.rtg-vending-capsule-v9[data-capsule-rarity="elite"]{--rtg-capsule-color:#8254d1;}
-.rtg-vending-capsule-v9[data-capsule-rarity="mondiale"]{--rtg-capsule-color:#d93842;}
-.rtg-vending-capsule-v9[data-capsule-rarity="leggenda"]{--rtg-capsule-color:#d4a017;}
-.rtg-vending-capsule-v9[data-capsule-rarity="aurico"]{--rtg-capsule-color:#050506;}
-.rtg-vending-capsule-v9.c1{left:8px;bottom:5px;--tx:31px;--ty:-35px;--r:15deg;--d:-.04s;--s:1.04;z-index:11}
-.rtg-vending-capsule-v9.c2{left:43px;bottom:1px;--tx:-24px;--ty:-39px;--r:-19deg;--d:-.18s;--s:1.06;z-index:12}
-.rtg-vending-capsule-v9.c3{left:80px;bottom:7px;--tx:28px;--ty:-37px;--r:8deg;--d:-.30s;--s:1.01;z-index:13}
-.rtg-vending-capsule-v9.c4{left:116px;bottom:2px;--tx:-27px;--ty:-41px;--r:-13deg;--d:-.11s;--s:1.06;z-index:12}
-.rtg-vending-capsule-v9.c5{left:151px;bottom:7px;--tx:-31px;--ty:-32px;--r:20deg;--d:-.25s;--s:.99;z-index:11}
-.rtg-vending-capsule-v9.c6{left:24px;bottom:34px;--tx:38px;--ty:-24px;--r:-12deg;--d:-.08s;--s:.99;z-index:9}
-.rtg-vending-capsule-v9.c7{left:61px;bottom:38px;--tx:-29px;--ty:-28px;--r:18deg;--d:-.21s;--s:1.05;z-index:10}
-.rtg-vending-capsule-v9.c8{left:100px;bottom:34px;--tx:26px;--ty:-27px;--r:-17deg;--d:-.34s;--s:1.03;z-index:10}
-.rtg-vending-capsule-v9.c9{left:137px;bottom:37px;--tx:-32px;--ty:-24px;--r:11deg;--d:-.13s;--s:.98;z-index:9}
-.rtg-vending-capsule-v9.c10{left:44px;bottom:66px;--tx:28px;--ty:18px;--r:14deg;--d:-.28s;--s:.96;z-index:7}
-.rtg-vending-capsule-v9.c11{left:82px;bottom:69px;--tx:-27px;--ty:19px;--r:-15deg;--d:-.16s;--s:1.03;z-index:8}
-.rtg-vending-capsule-v9.c12{left:121px;bottom:64px;--tx:25px;--ty:17px;--r:21deg;--d:-.31s;--s:.97;z-index:7}
-.rtg-vending-capsule-v9.c13{left:64px;bottom:94px;--tx:22px;--ty:21px;--r:-8deg;--d:-.09s;--s:.92;z-index:5}
-.rtg-vending-capsule-v9.c14{left:105px;bottom:91px;--tx:-24px;--ty:20px;--r:12deg;--d:-.23s;--s:.96;z-index:6}
-
-.rtg-vending-body-v9{
-  position:relative;
-  width:208px;
-  min-height:144px;
-  margin-top:0;
+.rtg-vending-control-v9{
   display:grid;
-  grid-template-columns:minmax(0,1fr) 68px;
-  grid-template-rows:71px 53px;
-  gap:9px 11px;
-  padding:13px 13px 13px;
-  border:2px solid #24272c;
-  border-top:0;
-  border-radius:0 0 18px 18px;
-  background:
-    linear-gradient(90deg,rgba(255,255,255,.48) 0 3%,transparent 13% 84%,rgba(91,78,57,.12) 100%),
-    radial-gradient(circle at 23% 8%,rgba(255,255,255,.82),transparent 31%),
-    linear-gradient(165deg,#fffefa 0%,#f5f2ea 50%,#ddd8ce 100%);
-  box-shadow:
-    inset 3px 2px 0 rgba(255,255,255,.90),
-    inset -10px 0 16px rgba(71,62,49,.10),
-    inset 0 -11px 14px rgba(71,62,49,.08),
-    inset 0 -2px 0 rgba(132,122,105,.16),
-    0 11px 19px rgba(9,11,14,.19);
-  isolation:isolate;
+  grid-template-columns:1fr 54px;
+  align-items:center;
+  gap:10px;
+  padding:8px 9px;
+  border:2px solid #202329;
+  border-radius:8px;
+  background:linear-gradient(180deg,#fdfcf7,#e7e3d7);
+  box-shadow:inset 0 2px 0 #fff,0 3px 0 rgba(32,35,41,.14);
 }
-.rtg-vending-body-v9::before{
-  content:"";
-  position:absolute;
-  z-index:0;
-  top:8px;
-  right:8px;
-  width:68px;
-  height:126px;
-  border-radius:13px;
-  background:
-    linear-gradient(90deg,rgba(255,255,255,.26) 0 8%,transparent 24% 76%,rgba(111,69,0,.16) 100%),
-    radial-gradient(circle at 28% 12%,rgba(255,255,255,.40),transparent 25%),
-    linear-gradient(180deg,#ffe86f 0%,#ffd439 48%,#eba617 100%);
-  box-shadow:
-    inset 2px 2px 0 rgba(255,255,255,.52),
-    inset -7px -8px 12px rgba(122,73,0,.15),
-    0 3px 6px rgba(17,18,22,.11);
-}
-.rtg-vending-body-v9::after{
-  content:"";
-  position:absolute;
-  z-index:-1;
-  left:14px;
-  right:14px;
-  bottom:-10px;
-  height:11px;
-  border-radius:0 0 13px 13px;
-  background:linear-gradient(180deg,#353941,#202329);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.08),
-    0 5px 9px rgba(9,11,14,.17);
-}
-.rtg-vending-body-v9>*{position:relative;z-index:2;}
-
-.rtg-vending-info-v9{
+.rtg-vending-price-v9{
   display:grid;
-  place-items:center;
-  align-content:center;
-  border:1px solid #c8c1b4;
-  border-radius:11px;
-  background:
-    radial-gradient(circle at 30% 8%,rgba(255,255,255,.86),transparent 35%),
-    linear-gradient(180deg,#fffefa,#f1ede4);
-  color:#111216;
-  box-shadow:
-    inset 2px 2px 3px rgba(255,255,255,.82),
-    inset -3px -4px 6px rgba(90,77,55,.07),
-    0 4px 7px rgba(17,18,22,.12);
+  justify-items:center;
+  gap:1px;
+  color:#202329;
 }
-.rtg-vending-info-v9 small{font:900 7px/1 system-ui,sans-serif;letter-spacing:.13em;color:#55514a;}
-.rtg-vending-info-v9 strong{font:1000 25px/.92 system-ui,sans-serif;color:#17181b;}
-
+.rtg-vending-price-v9 small{
+  color:#766b57;
+  font:900 7px/1 system-ui,sans-serif;
+  letter-spacing:.10em;
+}
+.rtg-vending-price-v9 strong{
+  display:flex;
+  align-items:center;
+  gap:4px;
+  font:1000 17px/1 system-ui,sans-serif;
+}
+.rtg-vending-price-v9 strong::before{
+  content:"";
+  width:13px;
+  height:13px;
+  border:2px solid #202329;
+  border-radius:50%;
+  background:radial-gradient(circle at 35% 32%,#fff8b6 0 18%,#ffd21f 20% 58%,#d49a14 60% 100%);
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.35);
+}
 .rtg-vending-crank-v9{
   position:relative;
-  width:58px;height:58px;
-  align-self:center;
-  justify-self:center;
-  border:2px solid #24272c;
+  width:48px;
+  height:48px;
+  border:2px solid #202329;
   border-radius:50%;
-  background:
-    radial-gradient(circle at 31% 25%,#ffffff 0 9%,#d7d8d5 10% 27%,#a3a5a3 28% 48%,#737675 49% 70%,#444647 71% 100%);
-  box-shadow:
-    inset 4px 4px 6px rgba(255,255,255,.46),
-    inset -6px -7px 9px rgba(17,18,22,.24),
-    0 6px 10px rgba(17,18,22,.21);
+  background:radial-gradient(circle at 38% 32%,#fff 0 14%,#d8d9da 16% 54%,#8c9094 56% 100%);
+  box-shadow:inset 3px 3px 0 rgba(255,255,255,.52),inset -4px -5px 0 rgba(0,0,0,.12),2px 3px 0 rgba(32,35,41,.18);
 }
 .rtg-vending-crank-v9::before{
   content:"";
   position:absolute;
-  z-index:2;
-  left:50%;top:50%;
-  width:18px;height:18px;
-  transform:translate(-50%,-50%);
-  border:2px solid #292d32;
-  border-radius:50%;
-  background:radial-gradient(circle at 33% 28%,#fff 0 12%,#d5d6d3 13% 42%,#8a8c8b 43% 72%,#595b5b 73% 100%);
-  box-shadow:inset 1px 1px 2px rgba(255,255,255,.45),0 1px 2px rgba(0,0,0,.16);
+  left:50%;
+  top:50%;
+  width:30px;
+  height:7px;
+  border:2px solid #202329;
+  border-radius:999px;
+  background:#ffe45b;
+  transform:translate(-50%,-50%) rotate(-18deg);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.45);
 }
 .rtg-vending-crank-v9::after{
   content:"";
   position:absolute;
-  right:-5px;
-  bottom:7px;
-  width:16px;height:16px;
-  border:2px solid #292d32;
+  right:4px;
+  bottom:5px;
+  width:9px;
+  height:9px;
+  border:2px solid #202329;
   border-radius:50%;
-  background:
-    radial-gradient(circle at 34% 26%,#fff1a0 0 12%,transparent 13%),
-    linear-gradient(160deg,#ffe86f 0%,#ffd21f 52%,#e5a817 100%);
-  box-shadow:
-    inset -2px -3px 4px rgba(113,71,0,.16),
-    0 3px 5px rgba(17,18,22,.18);
+  background:#f8f7f0;
 }
-.rtg-vending-crank-v9 span{
-  position:absolute;
-  left:50%;top:50%;
-  width:9px;height:35px;
-  margin:-17px 0 0 -4.5px;
-  border:2px solid #292d32;
-  border-radius:5px;
-  background:linear-gradient(180deg,#ffdf4b,#efb91f);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.35);
-}
-
-.rtg-vending-chute-v9{
-  grid-column:1 / 2;
-  position:relative;
-  overflow:hidden;
-  border:2px solid #25282d;
-  border-radius:11px 11px 16px 16px;
-  background:
-    radial-gradient(ellipse at 50% 22%,rgba(255,255,255,.07),transparent 42%),
-    linear-gradient(180deg,#41454c 0%,#23262b 48%,#0d0f12 100%);
-  box-shadow:
-    inset 4px 3px 7px rgba(255,255,255,.05),
-    inset -5px -7px 9px rgba(0,0,0,.24),
-    inset 0 -12px 14px rgba(0,0,0,.40),
-    0 4px 7px rgba(17,18,22,.15);
-}
-.rtg-vending-chute-well-v9{
-  position:absolute;
-  left:50%;bottom:-5px;
-  width:86px;height:29px;
-  transform:translateX(-50%);
-  border-radius:50% 50% 0 0;
-  background:linear-gradient(180deg,#111318,#050607);
-  box-shadow:
-    inset 0 8px 0 #33373d,
-    inset 0 -4px 8px rgba(0,0,0,.65);
-}
-.rtg-vending-chute-flap-v10{
-  position:absolute!important;
-  z-index:7!important;
-  left:50%!important;
-  top:5px!important;
-  width:90px!important;
-  height:17px!important;
-  transform:translateX(-50%) perspective(120px) rotateX(0deg)!important;
-  transform-origin:50% 0%!important;
-  border:1px solid rgba(255,255,255,.06)!important;
-  border-top:0!important;
-  border-radius:0 0 13px 13px!important;
-  background:linear-gradient(180deg,#44474d,#17191d)!important;
-  box-shadow:inset 0 -3px 0 rgba(0,0,0,.30)!important;
-  pointer-events:none!important;
-}
-
-.rtg-vending-brand-v9{
-  grid-column:2;
-  align-self:end;
-  justify-self:center;
-  width:51px;
-  min-height:28px;
+.rtg-vending-tray-v9{
+  width:82%;
+  min-height:31px;
   display:grid;
   place-items:center;
-  padding:4px;
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:6px;
-  background:linear-gradient(180deg,#2b2e34,#17191d);
-  color:#ffd21f;
-  box-shadow:0 2px 4px rgba(17,18,22,.13);
-  font:1000 11px/1 system-ui,sans-serif;
-  letter-spacing:.10em;
+  margin:10px auto 0;
+  border:2px solid #202329;
+  border-radius:6px 6px 11px 11px;
+  background:linear-gradient(180deg,#16191e,#2a2e35);
+  color:#f6f3e8;
+  box-shadow:inset 0 4px 7px rgba(0,0,0,.42),inset 0 -1px 0 rgba(255,255,255,.08);
 }
-
-.rtg-vending-prize-track-v9{
+.rtg-vending-tray-v9 span{
+  font:900 7px/1 system-ui,sans-serif;
+  letter-spacing:.11em;
+}
+.rtg-vending-foot-v9{
   position:absolute;
-  z-index:5;
-  inset:0;
-  overflow:hidden;
-  pointer-events:none;
+  z-index:-1;
+  bottom:-13px;
+  width:40px;
+  height:16px;
+  border:3px solid #202329;
+  border-top:0;
+  border-radius:0 0 7px 7px;
+  background:#30343b;
+  box-shadow:inset 0 -4px 0 rgba(0,0,0,.18);
 }
-.rtg-vending-prize-v9{
+.rtg-vending-foot-v9--left{left:24px}
+.rtg-vending-foot-v9--right{right:24px}
+
+/* Vending result now reveals a capsule below the machine before the player card. */
+.rtg-vending-dispense-v14{
+  position:relative;
+  z-index:1;
+  min-height:74px;
+  display:grid;
+  place-items:center;
+  margin-top:-6px;
+  padding-top:9px;
+}
+.rtg-vending-dispense-v14::before{
+  content:"";
   position:absolute;
   left:50%;
-  bottom:-28px;
-  width:42px;height:42px;
-  opacity:0;
-  border:2px solid #262a2f;
+  bottom:5px;
+  width:86px;
+  height:15px;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:rgba(10,12,16,.16);
+  filter:blur(5px);
+}
+.rtg-vending-capsule-v14{
+  --capsule-accent:var(--rtg-vending-reveal,#929ba8);
+  position:relative;
+  width:58px;
+  height:58px;
+  border:3px solid #202329;
   border-radius:50%;
   background:
-    radial-gradient(circle at 30% 24%,rgba(255,255,255,.98) 0 10%,transparent 11%),
-    linear-gradient(to bottom,#fffefb 0 49%,var(--rtg-prize-color,#d9dee4) 50% 100%);
-  box-shadow:0 0 0 0 var(--rtg-vending-reveal),0 4px 7px rgba(17,18,22,.20);
-  transform:translateX(-50%) translateY(15px) scale(.78);
+    radial-gradient(circle at 33% 25%,rgba(255,255,255,.96) 0 11%,transparent 12%),
+    linear-gradient(180deg,rgba(255,255,255,.92) 0 46%,var(--capsule-accent) 47% 100%);
+  box-shadow:
+    inset 5px 4px 0 rgba(255,255,255,.28),
+    inset -5px -6px 0 rgba(0,0,0,.08),
+    0 7px 0 rgba(32,35,41,.16),
+    0 12px 18px rgba(8,10,14,.14);
+}
+.rtg-vending-capsule-v14::before{
+  content:"";
+  position:absolute;
+  left:-2px;
+  right:-2px;
+  top:44%;
+  height:5px;
+  border-top:2px solid #202329;
+  border-bottom:1px solid rgba(32,35,41,.35);
+  background:rgba(255,255,255,.24);
+}
+.rtg-vending-capsule-v14::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:12px;
+  height:12px;
+  transform:translate(-50%,-50%);
+  border:2px solid #202329;
+  border-radius:50%;
+  background:#f8f6ed;
+  box-shadow:inset 0 0 0 2px rgba(255,255,255,.55);
+}
+.rtg-vending-dispense-v14.is-rolling .rtg-vending-capsule-v14{
+  animation:rtg-vending-capsule-drop .72s cubic-bezier(.18,.76,.2,1) both;
+}
+.rtg-vending-dispense-v14.is-open .rtg-vending-capsule-v14{
+  animation:rtg-vending-capsule-open .42s ease-out both;
+}
+@keyframes rtg-vending-capsule-drop{
+  0%{opacity:0;transform:translateY(-24px) rotate(-24deg) scale(.82)}
+  56%{opacity:1;transform:translateY(4px) rotate(13deg) scale(1.04)}
+  78%{transform:translateY(-2px) rotate(-7deg) scale(.99)}
+  100%{opacity:1;transform:translateY(0) rotate(0) scale(1)}
+}
+@keyframes rtg-vending-capsule-open{
+  0%{transform:scale(1);filter:brightness(1)}
+  55%{transform:scale(1.08);filter:brightness(1.2)}
+  100%{transform:scale(.96);filter:brightness(1.08)}
 }
 
-.rtg-vending-machine-v12.is-turning{animation:rtg-vending-v12-body .98s ease-out both;}
-.rtg-vending-machine-v12.is-turning .rtg-vending-crank-v9{animation:rtg-vending-v12-crank .88s cubic-bezier(.18,.72,.22,1) both;}
-.rtg-vending-machine-v12.is-turning .rtg-vending-capsule-v9{animation:rtg-vending-v12-mix .34s ease-in-out var(--d,0s) infinite alternate;}
-.rtg-vending-machine-v12.is-revealing .rtg-vending-capsule-v9{animation-play-state:paused;}
-.rtg-vending-machine-v12.is-revealing .rtg-vending-capsule-v9.is-selected{animation:rtg-vending-v13-feed .58s ease-in both!important;}
-.rtg-vending-machine-v12.is-revealing .rtg-vending-prize-v9{animation:rtg-vending-v12-drop .95s cubic-bezier(.18,.72,.28,1) both;}
-.rtg-vending-machine-v12.is-revealing .rtg-vending-chute-v9{animation:rtg-vending-v12-chute .95s ease-out both;}
-.rtg-vending-machine-v12.is-revealing .rtg-vending-chute-flap-v10{animation:rtg-vending-v12-flap .95s cubic-bezier(.2,.75,.28,1) both;}
-
-.rtg-vending-machine-v12[data-pull-rarity="normale"]{--rtg-vending-reveal:#929ba8;--rtg-prize-color:#d9dee4}
-.rtg-vending-machine-v12[data-pull-rarity="buono"]{--rtg-vending-reveal:#2fa866;--rtg-prize-color:#2fa866}
-.rtg-vending-machine-v12[data-pull-rarity="forte"]{--rtg-vending-reveal:#27a8e8;--rtg-prize-color:#27a8e8}
-.rtg-vending-machine-v12[data-pull-rarity="elite"]{--rtg-vending-reveal:#8254d1;--rtg-prize-color:#8254d1}
-.rtg-vending-machine-v12[data-pull-rarity="mondiale"]{--rtg-vending-reveal:#d93842;--rtg-prize-color:#d93842}
-.rtg-vending-machine-v12[data-pull-rarity="leggenda"]{--rtg-vending-reveal:#d4a017;--rtg-prize-color:#d4a017}
-.rtg-vending-machine-v12[data-pull-rarity="aurico"]{--rtg-vending-reveal:#050506;--rtg-prize-color:#050506}
-
-@keyframes rtg-vending-v12-crank{
-  0%{transform:rotate(0deg)}
-  70%{transform:rotate(590deg)}
-  86%{transform:rotate(675deg)}
-  100%{transform:rotate(720deg)}
+/* Result card: keep the same compact player-card anatomy, but present it as a machine reward. */
+.rtg-pull-result{
+  width:min(100%,420px)!important;
+  margin:0 auto!important;
+  border:3px solid #202329!important;
+  border-radius:12px!important;
+  background:
+    linear-gradient(90deg,rgba(255,255,255,.28),transparent 15% 85%,rgba(0,0,0,.05)),
+    linear-gradient(180deg,#fffdf7,#f1eee4)!important;
+  box-shadow:
+    0 9px 0 rgba(32,35,41,.15),
+    0 15px 30px rgba(8,10,14,.12)!important;
 }
-@keyframes rtg-vending-v12-mix{
-  0%{transform:translate3d(0,0,0) rotate(var(--r,0deg)) scale(var(--s,1))}
-  55%{transform:translate3d(var(--tx,28px),var(--ty,-34px),0) rotate(130deg) scale(var(--s,1))}
-  100%{transform:translate3d(-9px,7px,0) rotate(-58deg) scale(var(--s,1))}
+.rtg-pull-result::before{
+  opacity:.16!important;
 }
-@keyframes rtg-vending-v12-body{
-  0%,100%{transform:translate3d(0,0,0)}
-  26%{transform:translate3d(-1px,0,0)}
-  48%{transform:translate3d(1px,0,0)}
-  72%{transform:translate3d(-1px,0,0)}
+.rtg-pull-result::after{
+  height:5px!important;
+  background:linear-gradient(90deg,#202329,var(--unlock-accent,#929ba8),#ffd21f)!important;
 }
-@keyframes rtg-vending-v13-feed{
-  0%{opacity:1;transform:rotate(var(--r,0deg)) scale(var(--s,1));filter:brightness(1)}
-  58%{opacity:1;transform:translateY(22px) rotate(96deg) scale(calc(var(--s,1) * .72));filter:brightness(1.08)}
-  100%{opacity:0;transform:translateY(48px) rotate(145deg) scale(.34);filter:brightness(.9)}
+.rtg-pull-result-head{
+  min-height:58px!important;
+  padding:13px 54px 10px 13px!important;
+  border-bottom:2px solid #202329!important;
+  background:linear-gradient(180deg,#fffefb,#f1eee5)!important;
 }
-@keyframes rtg-vending-v12-drop{
-  0%{opacity:0;transform:translateX(-50%) translateY(15px) scale(.78);box-shadow:0 0 0 0 var(--rtg-vending-reveal)}
-  16%{opacity:1}
-  58%{opacity:1;transform:translateX(-50%) translateY(-13px) scale(1.02);box-shadow:0 0 0 3px var(--rtg-vending-reveal),0 0 20px 6px color-mix(in srgb,var(--rtg-vending-reveal) 56%,transparent)}
-  78%{opacity:1;transform:translateX(-50%) translateY(-18px) scale(1)}
-  100%{opacity:1;transform:translateX(-50%) translateY(-11px) scale(.94);box-shadow:0 0 0 2px var(--rtg-vending-reveal),0 0 14px 4px color-mix(in srgb,var(--rtg-vending-reveal) 40%,transparent)}
+.rtg-pull-rarity{
+  min-height:27px!important;
+  padding:5px 9px!important;
+  border:2px solid #202329!important;
+  box-shadow:2px 2px 0 #202329!important;
+  font-size:.61rem!important;
 }
-@keyframes rtg-vending-v12-chute{
-  0%,35%{box-shadow:inset 0 4px 6px rgba(255,255,255,.05),inset 0 -8px 10px rgba(0,0,0,.32)}
-  62%,100%{box-shadow:inset 0 4px 6px rgba(255,255,255,.05),inset 0 -8px 10px rgba(0,0,0,.32),0 0 0 3px var(--rtg-vending-reveal),0 0 14px color-mix(in srgb,var(--rtg-vending-reveal) 44%,transparent)}
+.rtg-pull-reveal-label{
+  margin:11px 12px 0!important;
 }
-@keyframes rtg-vending-v12-flap{
-  0%,20%{transform:translateX(-50%) perspective(120px) rotateX(0deg)}
-  48%{transform:translateX(-50%) perspective(120px) rotateX(70deg)}
-  72%{transform:translateX(-50%) perspective(120px) rotateX(44deg)}
-  100%{transform:translateX(-50%) perspective(120px) rotateX(18deg)}
+.rtg-pull-reveal-label span{
+  padding:4px 9px 5px!important;
+  border:2px solid #202329!important;
+  background:#202329!important;
+  box-shadow:2px 2px 0 var(--unlock-accent,#929ba8)!important;
+  font-size:.58rem!important;
 }
-
-/* Rarity rate chips — every rarity uses the same full-colour treatment. */
-.rtg-vending-ratebar>span[data-rarity="Normale"]{
-  background:#929ba8!important;border-color:#68717d!important;color:#fff!important;box-shadow:inset 0 -4px 0 #68717d!important;
+.rtg-pull-result-body{
+  grid-template-columns:102px minmax(0,1fr)!important;
+  gap:13px!important;
+  padding:13px 14px 14px!important;
 }
-.rtg-vending-ratebar>span[data-rarity="Buono"]{
-  background:#2fa866!important;border-color:#1e7446!important;color:#fff!important;box-shadow:inset 0 -4px 0 #1e7446!important;
+.rtg-pull-card-stage{
+  min-height:132px!important;
 }
-.rtg-vending-ratebar>span[data-rarity="Forte"]{
-  background:#27a8e8!important;border-color:#176f9e!important;color:#fff!important;box-shadow:inset 0 -4px 0 #176f9e!important;
+.rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card{
+  width:76px!important;
+  max-width:76px!important;
+  min-width:76px!important;
+  min-height:102px!important;
+  box-shadow:3px 4px 0 rgba(32,35,41,.20)!important;
 }
-.rtg-vending-ratebar>span[data-rarity="Elite"]{
-  background:#8254d1!important;border-color:#5f389f!important;color:#fff!important;box-shadow:inset 0 -4px 0 #5f389f!important;
+.rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card .player-portrait-wrap{
+  height:66px!important;
+  padding:3px 3px 0!important;
 }
-.rtg-vending-ratebar>span[data-rarity="Mondiale"]{
-  background:#d93842!important;border-color:#9f222b!important;color:#fff!important;box-shadow:inset 0 -4px 0 #9f222b!important;
+.rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card .player-info{
+  min-height:27px!important;
+  padding:3px 3px 5px!important;
 }
-.rtg-vending-ratebar>span[data-rarity="Leggenda"]{
-  background:#d4a017!important;border-color:#946f0d!important;color:#171006!important;box-shadow:inset 0 -4px 0 #946f0d!important;
+.rtg-pull-result-copy h2{
+  margin-bottom:7px!important;
+  font-size:clamp(1.45rem,6.5vw,1.95rem)!important;
 }
-.rtg-vending-ratebar>span[data-rarity="Aurico"]{
-  background:#f5c842!important;border-color:#b98d13!important;color:#171006!important;box-shadow:inset 0 -4px 0 #b98d13!important;
+.rtg-pull-team{
+  min-height:33px!important;
+  padding:3px 7px 3px 4px!important;
+  border:2px solid #202329!important;
+  border-radius:6px!important;
+  box-shadow:2px 2px 0 rgba(32,35,41,.13)!important;
 }
-.rtg-vending-ratebar>span em{color:inherit!important;opacity:.92;}
-
-/* Wallet is a separate HUD chip, not part of the machine cabinet. */
-.rtg-vending-stage{row-gap:0!important;}
-.rtg-vending-wallet-chip{
-  margin-top:14px!important;
-  min-width:178px!important;
-  border-radius:8px!important;
-  box-shadow:0 8px 15px rgba(17,18,22,.17)!important;
+.rtg-pull-team-logo{
+  width:24px!important;
+  height:24px!important;
+  flex-basis:24px!important;
 }
-.rtg-vending-stage > .rtg-vending-pull{
-  width:min(100%,360px)!important;
-  margin:24px auto 0!important;
+.rtg-pull-role{
+  min-width:31px!important;
+  min-height:31px!important;
+  padding:4px 6px!important;
+  border:2px solid #202329!important;
+  border-radius:6px!important;
 }
-.rtg-vending-stage > .rtg-vending-wallet-chip{
-  margin-bottom:0!important;
+.rtg-pull-meta{
+  gap:4px!important;
+  margin-top:7px!important;
 }
-
-@media(max-width:430px){
-  .rtg-vending-machine-v12{width:min(228px,67vw);}
-  .rtg-vending-head-v9,.rtg-vending-window-v9{width:192px;}
-  .rtg-vending-window-v9{height:162px;}
-  .rtg-vending-body-v9{width:192px;min-height:132px;padding:11px;}
-  .rtg-vending-body-v9::before{right:7px;width:62px;height:114px;}
-  .rtg-vending-capsule-v9{width:36px;height:36px;}
+.rtg-pull-meta span{
+  padding:3px 5px!important;
+  border:1px solid #202329!important;
+  border-radius:4px!important;
+  font-size:.51rem!important;
 }
-@media(prefers-reduced-motion:reduce){
-  .rtg-vending-machine-v12.is-turning,
-  .rtg-vending-machine-v12.is-turning .rtg-vending-crank-v9,
-  .rtg-vending-machine-v12.is-turning .rtg-vending-capsule-v9,
-  .rtg-vending-machine-v12.is-revealing .rtg-vending-prize-v9,
-  .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-v9,
-  .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-flap-v10{
-    animation-duration:.01ms!important;
-    animation-iteration-count:1!important;
-  }
-}
-
-/* Pull result continues the gacha loop instead of dropping back to the route. */
-.rtg-pull-continue{
-  display:block!important;
-  width:calc(100% - 36px)!important;
-  min-height:46px!important;
-  margin:0 18px 18px!important;
-  border:2px solid #111216!important;
-  border-radius:8px!important;
+.rtg-pull-balance{
+  margin:0 12px 12px!important;
+  padding:7px 9px!important;
+  border:2px solid #202329!important;
   background:#ffd21f!important;
-  color:#111216!important;
-  box-shadow:3px 4px 0 #111216!important;
-  font-weight:1000!important;
-  letter-spacing:.08em!important;
+  color:#202329!important;
 }
-.rtg-pull-continue:active{
-  transform:translate(2px,2px);
-  box-shadow:1px 2px 0 #111216!important;
-}
+
 @media(max-width:430px){
-  .rtg-pull-continue{
-    width:calc(100% - 26px)!important;
-    margin:0 13px 14px!important;
+  .rtg-vending-machine-v12{
+    width:min(226px,72vw);
   }
-}
-
-/* RTG Legacy marker: sits outside the bottom-right card corner so it never covers role, OVR, portrait or name. */
-button.player-card:has(> .rtg-legacy-badge),
-.player-card:has(> .rtg-legacy-badge){
-  overflow:visible!important;
-}
-.rtg-legacy-badge{
-  position:absolute!important;
-  z-index:24!important;
-  left:auto!important;
-  right:-4px!important;
-  top:auto!important;
-  bottom:-11px!important;
-  transform:none!important;
-  display:grid!important;
-  place-items:center!important;
-  width:auto!important;
-  min-width:27px!important;
-  height:16px!important;
-  min-height:16px!important;
-  padding:0 5px!important;
-  border:2px solid #111216!important;
-  border-radius:0!important;
-  background:var(--rtg-legacy-color,#ffd21f)!important;
-  color:var(--rtg-legacy-ink,#111216)!important;
-  box-shadow:1px 2px 0 #111216!important;
-  font:1000 7px/1 system-ui,sans-serif!important;
-  letter-spacing:.04em!important;
-  pointer-events:none!important;
-}
-.rtg-pull-player-card .rtg-legacy-badge{
-  left:auto!important;
-  right:-4px!important;
-  top:auto!important;
-  bottom:-11px!important;
-}
-
-/* Legacy season palette: same color language on cards and player detail. */
-.rtg-legacy-badge[data-legacy-season="S1"],
-.player-detail-rtg-legacy-badge[data-legacy-season="S1"]{
-  --rtg-legacy-color:#ffd21f;
-  --rtg-legacy-ink:#111216;
-}
-.rtg-legacy-badge[data-legacy-season="S2"],
-.player-detail-rtg-legacy-badge[data-legacy-season="S2"]{
-  --rtg-legacy-color:#35b8f4;
-  --rtg-legacy-ink:#07131b;
-}
-.rtg-legacy-badge[data-legacy-season="S3"],
-.player-detail-rtg-legacy-badge[data-legacy-season="S3"]{
-  --rtg-legacy-color:#a678ff;
-  --rtg-legacy-ink:#130b24;
-}
-
-/* Give the protruding Legacy tab a clean lane below dense card grids. */
-.rtg-modal .rtg-picker-grid,
-.rtg-modal .rtg-catalog-grid{
-  row-gap:22px!important;
-  padding-top:14px!important;
-  padding-bottom:18px!important;
-}
-
-/* Unified Legacy versions: one card in lists, real cards only when the group is opened. */
-button.player-card:has(> .rtg-version-count-badge),
-.player-card:has(> .rtg-version-count-badge){
-  overflow:visible!important;
-}
-.rtg-version-count-badge{
-  position:absolute!important;
-  z-index:25!important;
-  left:-4px!important;
-  right:auto!important;
-  top:auto!important;
-  bottom:-11px!important;
-  display:grid!important;
-  place-items:center!important;
-  min-width:42px!important;
-  height:16px!important;
-  padding:0 6px!important;
-  border:2px solid #111216!important;
-  border-radius:0!important;
-  background:#fffdf7!important;
-  color:#111216!important;
-  box-shadow:1px 2px 0 #111216!important;
-  font:1000 7px/1 system-ui,sans-serif!important;
-  letter-spacing:.04em!important;
-  pointer-events:none!important;
-  white-space:nowrap!important;
-}
-.rtg-version-picker-modal{
-  width:min(92vw,620px)!important;
-}
-.rtg-version-picker-head{
-  margin-bottom:10px!important;
-}
-.rtg-version-card-grid{
-  display:grid!important;
-  grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  justify-items:center!important;
-  gap:26px 14px!important;
-  padding:14px 4px 18px!important;
-}
-.rtg-version-card-grid .rtg-version-player-card{
-  width:108px!important;
-  max-width:108px!important;
-  min-width:108px!important;
-  min-height:142px!important;
-  cursor:pointer!important;
-}
-.rtg-version-card-grid .rtg-version-player-card .player-portrait-wrap{
-  height:100px!important;
-  padding:12px 7px 0!important;
-  overflow:hidden!important;
-}
-.rtg-version-card-grid .rtg-version-player-card img.player-portrait{
-  width:100%!important;
-  height:100%!important;
-  object-fit:contain!important;
-  object-position:center bottom!important;
-  transform:none!important;
-}
-.rtg-version-card-grid .rtg-version-player-card .player-info{
-  min-height:34px!important;
-  padding:6px 5px 9px!important;
-}
-.rtg-version-card-grid .rtg-version-player-card .player-title strong{
-  font-size:.68rem!important;
-  line-height:1.05!important;
-}
-.rtg-version-card-grid .rtg-version-player-card .player-meta,
-.rtg-version-card-grid .rtg-version-player-card .player-level{
-  display:none!important;
-}
-.rtg-version-card-grid .rtg-version-player-card:active{
-  transform:translate(2px,2px)!important;
-}
-@media(max-width:430px){
-  .rtg-version-card-grid{
-    grid-template-columns:repeat(2,108px)!important;
-    justify-content:center!important;
-    gap:26px 18px!important;
-    padding:18px 0 20px!important;
+  .rtg-vending-head-v9,
+  .rtg-vending-window-v9{
+    width:192px;
   }
-}
-
-/* Player detail: Legacy badge is independent from the team banner.
-   It has a reserved safe area to the left of the close button and never compresses the team name. */
-/* RTG role switch now lives inside player detail, immediately left of Legacy. */
-.player-detail-rtg-role-switch{
-  position:absolute;
-  z-index:9;
-  top:18px;
-  right:140px;
-  width:50px;
-  min-width:50px;
-  min-height:48px;
-  display:grid;
-  grid-template-rows:auto 1fr;
-  place-items:center;
-  align-content:center;
-  padding:5px 5px 4px;
-  border:3px solid #111216;
-  background:#ffd21f;
-  color:#111216;
-  box-shadow:4px 4px 0 #111216;
-  transform:skew(-4deg);
-  text-transform:uppercase;
-  cursor:pointer;
-}
-.player-detail-rtg-role-switch > *{transform:skew(4deg);}
-.player-detail-rtg-role-switch small{
-  font:950 6px/1 system-ui,sans-serif;
-  letter-spacing:.12em;
-}
-.player-detail-rtg-role-switch strong{
-  align-self:end;
-  font:1000 20px/.9 system-ui,sans-serif;
-  letter-spacing:-.04em;
-}
-.player-detail-rtg-role-switch:active{
-  translate:2px 2px;
-  box-shadow:2px 2px 0 #111216;
-}
-
-.player-detail-rtg-legacy-badge{
-  position:absolute;
-  z-index:8;
-  top:18px;
-  right:82px;
-  width:50px;
-  min-width:50px;
-  min-height:48px;
-  display:grid;
-  grid-template-rows:auto 1fr;
-  place-items:center;
-  align-content:center;
-  padding:5px 5px 4px;
-  border:3px solid #111216;
-  background:var(--rtg-legacy-color,#ffd21f);
-  color:var(--rtg-legacy-ink,#111216);
-  box-shadow:4px 4px 0 #111216;
-  transform:skew(-4deg);
-  text-transform:uppercase;
-  pointer-events:none;
-}
-.player-detail-rtg-legacy-badge > *{transform:skew(4deg);}
-.player-detail-rtg-legacy-badge small{
-  font:950 6px/1 system-ui,sans-serif;
-  letter-spacing:.12em;
-}
-.player-detail-rtg-legacy-badge strong{
-  align-self:end;
-  font:1000 19px/.9 system-ui,sans-serif;
-  letter-spacing:-.04em;
-}
-
-@media(max-width:520px){
-  .player-detail-rtg-role-switch{
-    top:16px;
-    right:122px;
-    width:42px;
-    min-width:42px;
-    min-height:42px;
-    padding:4px 3px 3px;
-    border-width:2px;
-    box-shadow:3px 3px 0 #111216;
+  .rtg-vending-window-v9{
+    height:162px;
   }
-  .player-detail-rtg-role-switch small{font-size:5px;}
-  .player-detail-rtg-role-switch strong{font-size:17px;}
-  .player-detail-rtg-legacy-badge{
-    top:16px;
-    right:72px;
-    width:42px;
-    min-width:42px;
-    min-height:42px;
-    padding:4px 3px 3px;
-    border-width:2px;
-    box-shadow:3px 3px 0 #111216;
+  .rtg-vending-base-v9{
+    width:208px;
+    min-height:132px;
   }
-  .player-detail-rtg-legacy-badge small{font-size:5px;}
-  .player-detail-rtg-legacy-badge strong{font-size:16px;}
-}
-
-@media(max-width:370px){
-  .player-detail-rtg-role-switch{
-    top:14px;
-    right:114px;
-    width:38px;
-    min-width:38px;
-    min-height:38px;
+  .rtg-vending-window-v9 .rtg-ball{
+    width:31px!important;
+    height:31px!important;
   }
-  .player-detail-rtg-role-switch strong{font-size:16px;}
-  .player-detail-rtg-legacy-badge{
-    top:14px;
-    right:68px;
-    width:38px;
-    min-width:38px;
-    min-height:38px;
+  .rtg-vending-dispense-v14{
+    min-height:68px;
   }
-  .player-detail-rtg-legacy-badge strong{font-size:15px;}
-}
-
-
-
-
-/* RTG Album intentionally inherits the canonical Album team/roster UI verbatim. */
-.rtg-album-teams-screen .album-team-card--modern{cursor:pointer;}
-.rtg-album-roster-screen .album-player-entry.is-unlocked .album-player-card{cursor:pointer;}
-.rtg-album-roster-screen .album-player-entry.is-locked .album-player-card{pointer-events:none;}
-.rtg-album-roster-screen .album-player-grid{padding-bottom:42px;}
-
-
-/* RTG Album: force every top-left BACK arrow to the exact center of its yellow square. */
-.rtg-album-collections-screen .album-collections-home-button,
-.rtg-album-teams-screen .album-teams-back-button,
-.rtg-album-roster-screen .album-roster-back-button{
-  position:relative !important;
-}
-.rtg-album-collections-screen .album-collections-home-button > span[aria-hidden="true"],
-.rtg-album-teams-screen .album-teams-back-button > span[aria-hidden="true"],
-.rtg-album-roster-screen .album-roster-back-button > span[aria-hidden="true"]{
-  position:absolute !important;
-  left:50% !important;
-  top:50% !important;
-  width:auto !important;
-  height:auto !important;
-  margin:0 !important;
-  padding:0 !important;
-  line-height:1 !important;
-  transform:translate(-50%,-50%) !important;
-}
-
-/* Replacement picker: single OVR control, matching RTG black/yellow controls. */
-.rtg-squad-picker .rtg-picker-ovr-sort{display:inline-flex!important;align-items:center!important;justify-content:center!important;width:auto!important;min-width:112px!important;min-height:52px!important;padding:10px 18px!important;margin:12px 0 18px!important;border:3px solid #111216!important;border-radius:0!important;background:#111216!important;color:#ffd21f!important;box-shadow:5px 6px 0 #ffd21f!important;font:900 20px/1 system-ui,sans-serif!important;letter-spacing:.02em!important;cursor:pointer!important;}
-.rtg-squad-picker .rtg-picker-ovr-sort:active{transform:translate(2px,2px)!important;box-shadow:3px 4px 0 #ffd21f!important;}
-
-/* Compact left-aligned OVR sorter in replacement picker. */
-.rtg-squad-picker .rtg-picker-ovr-sort{display:inline-flex!important;width:auto!important;min-width:0!important;min-height:0!important;padding:9px 14px!important;margin:10px 0 18px!important;align-self:flex-start!important;font-size:16px!important;line-height:1!important;box-shadow:4px 4px 0 #ffd21f!important;}
-
-/* Final compact OVR sort: override toolbar/grid stretching explicitly. */
-.rtg-picker-toolbar>.rtg-picker-ovr-sort,
-.rtg-squad-picker .rtg-picker-toolbar>.rtg-picker-ovr-sort{
-  display:flex!important;
-  box-sizing:border-box!important;
-  width:88px!important;
-  min-width:88px!important;
-  max-width:88px!important;
-  height:42px!important;
-  min-height:42px!important;
-  max-height:42px!important;
-  padding:0!important;
-  margin:10px auto 18px 0!important;
-  justify-self:start!important;
-  align-self:start!important;
-  align-items:center!important;
-  justify-content:center!important;
-  flex:0 0 88px!important;
-  grid-column:auto!important;
-  border:3px solid #111216!important;
-  background:#111216!important;
-  color:#ffd21f!important;
-  box-shadow:4px 4px 0 #ffd21f!important;
-  font-size:16px!important;
-  line-height:1!important;
-}
-
-/* Slightly smaller final OVR sorter. */
-.rtg-picker-toolbar>.rtg-picker-ovr-sort,
-.rtg-squad-picker .rtg-picker-toolbar>.rtg-picker-ovr-sort{width:76px!important;min-width:76px!important;max-width:76px!important;height:36px!important;min-height:36px!important;max-height:36px!important;flex-basis:76px!important;font-size:14px!important;border-width:2px!important;box-shadow:3px 3px 0 #ffd21f!important;}
-
-
-/* RTG Shop + Development intentionally inherit the canonical run Shop/Development UI.
-   These rules only adapt the RTG wallet, entry actions and mobile composition. */
-.rtg-run-command-actions{
-  display:flex;
-  flex-wrap:wrap;
-  align-items:center;
-  justify-content:flex-end;
-  gap:10px;
-}
-.rtg-run-command-actions .rtg-economy-button{
-  min-height:46px;
-  border:3px solid #111216;
-  background:#fffdf7;
-  color:#111216;
-  box-shadow:4px 4px 0 #111216;
-  font-weight:900;
-  text-transform:uppercase;
-}
-.rtg-run-command-actions .rtg-economy-button:active{
-  transform:translate(2px,2px);
-  box-shadow:2px 2px 0 #111216;
-}
-
-.rtg-token-icon{
-  width:32px;
-  height:32px;
-  object-fit:contain;
-  flex:0 0 auto;
-}
-.rtg-shop-screen .shop-coins,
-.rtg-development-screen .development-wallet>span:first-child{
-  display:flex;
-  align-items:center;
-  gap:10px;
-}
-.rtg-shop-price{
-  display:flex!important;
-  align-items:center;
-  justify-content:center;
-  gap:6px;
-}
-.rtg-shop-price .rtg-shop-price-icon{
-  width:24px;
-  height:24px;
-}
-.rtg-shop-screen .shop-back,
-.rtg-development-screen .development-back-button{
-  display:grid;
-  place-items:center;
-  min-width:46px;
-  width:46px;
-  height:46px;
-  padding:0;
-  border:3px solid #111216;
-  background:#ffd21f;
-  color:#111216;
-  box-shadow:4px 4px 0 #111216;
-  font:1000 25px/1 system-ui,sans-serif;
-}
-.rtg-economy-crosslink{
-  display:flex;
-  justify-content:center;
-  padding:4px 16px 44px;
-}
-.rtg-development-note{
-  width:min(100% - 28px,980px);
-  margin:0 auto 18px;
-  padding:10px 14px;
-  border:2px solid #111216;
-  background:#fff7cd;
-  font-weight:800;
-  text-align:center;
-}
-.rtg-development-screen [data-rtg-development-player]{
-  position:relative;
-  cursor:pointer;
-}
-.rtg-development-screen [data-rtg-development-player]:active{
-  transform:translate(1px,1px);
-}
-.rtg-development-screen .rtg-development-token-icon{
-  display:grid;
-  place-items:center;
-}
-.rtg-development-screen .rtg-development-token-icon .rtg-token-icon{
-  width:100%;
-  height:100%;
-  object-fit:contain;
-}
-.rtg-development-screen .development-projects>[data-rtg-open-shop]{
-  display:block;
-  margin:22px auto 0;
-}
-.rtg-development-confirm .development-evolution-preview>div{
-  min-width:0;
-}
-.rtg-development-confirm .development-confirm-costs .rtg-token-icon{
-  width:100%;
-  height:100%;
-}
-.rtg-development-screen .development-selected-card{
-  cursor:pointer;
-}
-
-@media(max-width:700px){
-  .rtg-run-command{
-    align-items:stretch!important;
+  .rtg-vending-capsule-v14{
+    width:54px;
+    height:54px;
   }
-  .rtg-run-command-actions{
-    width:100%;
-    justify-content:stretch;
+  .rtg-pull-result-body{
+    grid-template-columns:92px minmax(0,1fr)!important;
+    gap:11px!important;
+    padding:12px!important;
   }
-  .rtg-run-command-actions .btn{
-    flex:1 1 100%;
+  .rtg-pull-card-stage{
+    min-height:122px!important;
   }
-  .rtg-shop-screen .shop-header,
-  .rtg-development-screen .topbar{
-    gap:12px;
+  .rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card{
+    width:70px!important;
+    max-width:70px!important;
+    min-width:70px!important;
+    min-height:96px!important;
   }
-  .rtg-development-note{
-    width:calc(100% - 20px);
+  .rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card .player-portrait-wrap{
+    height:60px!important;
   }
 }
