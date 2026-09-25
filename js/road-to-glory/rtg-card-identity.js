@@ -18,11 +18,12 @@
     if (!pid) return "";
     if (!sid || sid === FREE_AGENTS) return pid;
     const explicitProfile = pid.includes("@") ? global.ProfiledSeasonRuntime?.resolveProfile?.(sid,pid) : null;
-    if (explicitProfile) return id(explicitProfile.playerId || pid);
+    const resolvedPlayerId = id(explicitProfile?.playerId || pid);
+    const registered = global.SeasonRegistry?.player?.(resolvedPlayerId, sid);
     return id(
-      global.ProfiledSeasonRuntime?.canonicalPlayerId?.(sid, pid)
-      || global.SeasonRegistry?.player?.(pid, sid)?.legacyCanonicalPlayerId
-      || pid
+      registered?.legacyCanonicalPlayerId
+      || global.ProfiledSeasonRuntime?.canonicalPlayerId?.(sid, resolvedPlayerId)
+      || resolvedPlayerId
     );
   }
 
@@ -66,7 +67,7 @@
           cardId: profile ? cardIdForProfile(exactPlayerId, source) : cardIdForSeason(canonical, source),
           playerId: profile ? exactPlayerId : canonical,
           profileId: profile?.profileId || null,
-          canonicalPlayerId: profile?.playerId || canonical,
+          canonicalPlayerId: canonical,
           legacySeasonId: source,
           sourceKind: "season"
         });
@@ -90,7 +91,7 @@
         cardId: profile ? cardIdForProfile(exactPlayerId, source) : cardIdForSeason(canonical, source),
         playerId: profile ? exactPlayerId : canonical,
         profileId: profile?.profileId || (rawPlayerId.includes("@") ? rawPlayerId : null),
-        canonicalPlayerId: profile?.playerId || canonical,
+        canonicalPlayerId: canonical,
         legacySeasonId: source,
         sourceKind: "season"
       });
@@ -102,7 +103,7 @@
     }
     if (fallback) {
       const canonical = canonicalPlayerId(fallback, raw);
-      return Object.freeze({ cardId: cardIdForSeason(canonical, fallback), playerId: canonical, legacySeasonId: fallback, sourceKind: "season" });
+      return Object.freeze({ cardId: cardIdForSeason(canonical, fallback), playerId: canonical, canonicalPlayerId: canonical, legacySeasonId: fallback, sourceKind: "season" });
     }
     return Object.freeze({ cardId: raw, playerId: raw, legacySeasonId: null, sourceKind: "legacy" });
   }
