@@ -43,7 +43,7 @@
     let selectedDevelopmentCardId=null;
     let developmentQuery="";
     let developmentRarity="Tutti";
-    let developmentPage=1;
+    let developmentVisibleCount=24;
     const DEVELOPMENT_PLAYER_PAGE_SIZE=24;
     const SQUAD_PICKER_PAGE_SIZE=24;
     const ENCOUNTER_REVEAL_DELAY_MS=2200;
@@ -551,23 +551,21 @@
       if(!results)return;
       const refresh=()=>{
         const filtered=filteredDevelopmentPlayers(players);
-        const totalPages=Math.max(1,Math.ceil(filtered.length/DEVELOPMENT_PLAYER_PAGE_SIZE));
-        developmentPage=Math.max(1,Math.min(developmentPage,totalPages));
-        const start=(developmentPage-1)*DEVELOPMENT_PLAYER_PAGE_SIZE;
-        const pagePlayers=filtered.slice(start,start+DEVELOPMENT_PLAYER_PAGE_SIZE);
-        results.innerHTML=economyView.playerGrid(pagePlayers)+economyView.playerPaginationMarkup?.(developmentPage,totalPages,filtered.length);
+        const visible=filtered.slice(0,developmentVisibleCount);
+        const remaining=Math.max(0,filtered.length-visible.length);
+        results.innerHTML=economyView.playerGrid(visible)+(remaining>0?`<div class="development-load-more-wrap"><button type="button" class="btn btn-yellow development-load-more" data-rtg-development-load-more><span>MOSTRA ALTRI <b>${Math.min(DEVELOPMENT_PLAYER_PAGE_SIZE,remaining)}</b></span><small>${visible.length} di ${filtered.length}</small></button></div>`:"");
       };
       results.onclick=(event)=>{
-        const pageButton=event.target?.closest?.("[data-rtg-development-page]");
-        if(pageButton){developmentPage=Math.max(1,Number(pageButton.dataset.rtgDevelopmentPage)||1);refresh();return;}
+        const loadMore=event.target?.closest?.("[data-rtg-development-load-more]");
+        if(loadMore){developmentVisibleCount+=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();return;}
         const element=event.target?.closest?.("[data-rtg-development-player]");
         if(!element)return;
         selectedDevelopmentCardId=id(element.dataset.rtgDevelopmentPlayer);
         renderDevelopment("players");
       };
       const search=app?.querySelector?.("[data-rtg-development-search]");
-      search?.addEventListener("input",(event)=>{developmentQuery=event.currentTarget.value||"";developmentPage=1;refresh();});
-      app?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",(event)=>{developmentRarity=event.currentTarget.value||"Tutti";developmentPage=1;refresh();});
+      search?.addEventListener("input",(event)=>{developmentQuery=event.currentTarget.value||"";developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();});
+      app?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",(event)=>{developmentRarity=event.currentTarget.value||"Tutti";developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();});
       refresh();
     }
     function renderDevelopment(tab="players"){

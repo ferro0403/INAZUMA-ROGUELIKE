@@ -64,7 +64,7 @@
       if(type==="project"){
         return `<span class="development-resource-icon project-image-frame"><img src="${escape(projectImage(rarity))}" alt="" loading="lazy" decoding="async"></span>`;
       }
-      return `<span class="development-resource-icon rtg-development-token-icon">${rtgTokenIcon()}</span>`;
+      return `<span class="development-resource-icon rtg-development-token-icon" style="width:64px;height:64px;min-width:64px;display:inline-flex;align-items:center;justify-content:center;overflow:visible"><img class="rtg-token-icon" style="width:58px;height:58px;max-width:none;object-fit:contain;display:block" src="${TOKEN_URL}" alt="" aria-hidden="true" draggable="false"></span>`;
     }
 
     function requirement({type,rarity="",label,current=null,required=0,ready=true,compact=false}={}){
