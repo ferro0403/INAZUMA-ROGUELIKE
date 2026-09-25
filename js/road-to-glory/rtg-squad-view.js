@@ -30,40 +30,40 @@
     .rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-role-trigger{
       position:absolute!important;
       z-index:26!important;
-      left:-1px!important;
+      left:-4px!important;
       right:auto!important;
       top:auto!important;
-      bottom:26px!important;
+      /* Exact mirror of the S1/S2 badge: 32px Cambia + 4px slot gap = card bottom
+         36px above the slot bottom; S2 protrudes 11px below the card. */
+      bottom:25px!important;
       box-sizing:border-box!important;
-      width:24px!important;
-      min-width:24px!important;
-      max-width:24px!important;
-      height:18px!important;
-      min-height:18px!important;
-      max-height:18px!important;
+      width:auto!important;
+      min-width:27px!important;
+      max-width:none!important;
+      height:16px!important;
+      min-height:16px!important;
+      max-height:16px!important;
       margin:0!important;
-      padding:0!important;
+      padding:0 5px!important;
       overflow:hidden!important;
-      display:flex!important;
-      align-items:center!important;
-      justify-content:center!important;
+      display:grid!important;
+      place-items:center!important;
       gap:0!important;
       border:2px solid #111216!important;
       border-radius:0!important;
       background:#ffd21f!important;
       color:#111216!important;
-      box-shadow:2px 2px 0 #111216!important;
-      font:1000 0/1 system-ui,sans-serif!important;
-      letter-spacing:0!important;
+      box-shadow:1px 2px 0 #111216!important;
+      font:1000 7px/1 system-ui,sans-serif!important;
+      letter-spacing:.04em!important;
       transform:none!important;
     }
     .rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-role-trigger span{
-      display:flex!important;
-      align-items:center!important;
-      justify-content:center!important;
-      width:100%!important;
-      height:100%!important;
-      font-size:12px!important;
+      display:grid!important;
+      place-items:center!important;
+      width:auto!important;
+      height:auto!important;
+      font:1000 10px/1 system-ui,sans-serif!important;
       line-height:1!important;
     }
     .rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-role-trigger strong{
