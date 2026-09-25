@@ -211,12 +211,26 @@
       const rtgLegacyLabel=detailMeta.sourceKind==="season"
         ? (cardIdentity?.legacyLabel?.(detailMeta.legacySeasonId)||"")
         : "";
+      const draftLocation=!side?locationInDraft(key):null;
+      const canSwitchRole=options?.allowRoleSwitch===true
+        && draftLocation?.area==="bench"
+        && Array.isArray(player?.roleVariants)
+        && player.roleVariants.length>1;
+      const reopenOptions={...options,allowRoleSwitch:true};
       return deps.showPlayerDetailsFor?.(detailPlayer,{
         playerId:id(detailMeta.canonicalPlayerId||player.playerId||detailMeta.playerId),
         level:20,
         database:detailDatabaseFor(key),
         equipment:null,
         rtgLegacyLabel,
+        rtgRoleSwitch:canSwitchRole?{enabled:true}:null,
+        onRtgRoleSwitch:canSwitchRole?()=>{
+          const switched=switchBenchRole(key,{render:false});
+          if(!switched?.ok)return switched;
+          deps.closeModal?.({invokeOnClose:false});
+          renderSquad();
+          return openRtgPlayerDetails(key,"",reopenOptions);
+        }:null,
         moveSeasonId:id(detailMeta.legacySeasonId||player.resolvedSeasonId||campaign?.activeSeasonId||"ie1"),
         readOnly:true,
         mode:options?.mode||undefined,
@@ -1115,8 +1129,7 @@
       squadView.bind(app,{
         onOpenFormation:()=>openFormationSelector(model),
         onOpenPlayer:(playerId)=>openSquadPlayerPicker(playerId),
-        onSwitchRole:(playerId)=>switchBenchRole(playerId),
-        onOpenDetails:(playerId)=>openRtgPlayerDetails(playerId),
+        onOpenDetails:(playerId)=>openRtgPlayerDetails(playerId,"",{allowRoleSwitch:true}),
         onOpenCatalog:()=>openRtgCatalog(),
         onAdaptRequirements:()=>adaptSquadToCurrentRequirements(),
         onSave:()=>saveSquad(squadDraft),
@@ -1125,7 +1138,7 @@
       mountDevQuickTools();
       return model;
     }
-    function switchBenchRole(cardRef){
+    function switchBenchRole(cardRef,options={}){
       const cardId=id(cardRef),loc=locationInDraft(cardId);
       if(!loc||loc.area!=="bench")return deps.toast?.("Il ruolo si può cambiare solo dalla panchina","error");
       const current=resolved(cardId,squadDraft?.activeRoleVariantByCardId?.[cardId]||null);
@@ -1136,7 +1149,7 @@
       const nextId=id(next?.roleVariantId||next?.variantId);
       if(!nextId)return deps.toast?.("Ruolo alternativo non disponibile","error");
       squadDraft={...squadDraft,activeRoleVariantByCardId:{...(squadDraft?.activeRoleVariantByCardId||{}),[cardId]:nextId}};
-      renderSquad();
+      if(options.render!==false)renderSquad();
       return {ok:true,cardId,roleVariantId:nextId};
     }
     function locationInDraft(playerId){
