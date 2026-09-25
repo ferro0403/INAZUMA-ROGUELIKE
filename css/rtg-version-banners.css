@@ -1,0 +1,23 @@
+/* Restores the approved Legacy S1/S2 and multi-version presentation without changing card identity logic. */
+.rtg-legacy-badge,.rtg-legacy-tab{position:absolute!important;z-index:20!important;left:50%!important;right:auto!important;top:auto!important;bottom:-12px!important;transform:translateX(-50%)!important;display:flex!important;align-items:center!important;justify-content:center!important;min-width:42px!important;height:24px!important;padding:2px 8px!important;border:3px solid #111216!important;border-radius:0!important;background:#ffd21f!important;color:#111216!important;box-shadow:3px 3px 0 #111216!important;font-size:11px!important;line-height:1!important;font-weight:1000!important;letter-spacing:.04em!important;text-transform:uppercase!important;white-space:nowrap!important;pointer-events:none!important}
+.rtg-legacy-badge::before,.rtg-legacy-tab::before{content:"LEGACY ";margin-right:3px}
+.rtg-legacy-badge[data-legacy-season="S2"],.rtg-legacy-tab[data-legacy-season="S2"]{background:#28aee8!important}
+
+/* Grouped card in the replacement picker: one player card + the old 2 VERS. banner. */
+.rtg-version-group-card{overflow:visible!important}
+.rtg-version-group-card .rtg-legacy-badge,.rtg-version-group-card .rtg-legacy-tab{display:none!important}
+.rtg-version-count-badge{position:absolute!important;z-index:22!important;left:50%!important;right:auto!important;top:auto!important;bottom:-14px!important;transform:translateX(-50%)!important;display:flex!important;align-items:center!important;justify-content:center!important;min-width:64px!important;height:28px!important;padding:3px 8px!important;border:3px solid #111216!important;border-radius:0!important;background:#ffd21f!important;color:#111216!important;box-shadow:3px 3px 0 #111216!important;font-size:12px!important;line-height:1!important;font-weight:1000!important;letter-spacing:.03em!important;white-space:nowrap!important;pointer-events:none!important}
+
+/* Version chooser: use the normal card anatomy and show each season banner clearly. */
+.rtg-version-picker{overflow:visible!important}
+.rtg-version-card-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(112px,132px))!important;justify-content:start!important;align-items:start!important;gap:30px 14px!important;padding:14px 0 20px!important;overflow:visible!important}
+.rtg-version-card-grid .rtg-version-player-card{position:relative!important;width:126px!important;max-width:126px!important;min-width:126px!important;overflow:visible!important;transform:none!important}
+.rtg-version-card-grid .rtg-version-player-card .player-portrait-wrap{height:92px!important}
+.rtg-version-card-grid .rtg-version-player-card .player-title strong{font-size:11px!important;line-height:1.1!important}
+.rtg-version-card-grid .rtg-version-player-card .rtg-version-count-badge{display:none!important}
+.rtg-version-card-grid .rtg-version-player-card .rtg-legacy-badge,.rtg-version-card-grid .rtg-version-player-card .rtg-legacy-tab{display:flex!important;bottom:-15px!important}
+
+/* Player sheets: the season identity is a proper banner, never raw LegacyS1 text. */
+.rtg-player-detail .rtg-legacy-badge,.rtg-player-detail .rtg-legacy-tab,.rtg-player-sheet .rtg-legacy-badge,.rtg-player-sheet .rtg-legacy-tab,.player-detail-modal .rtg-legacy-badge,.player-detail-modal .rtg-legacy-tab{left:18px!important;top:18px!important;bottom:auto!important;transform:none!important;min-width:78px!important}
+
+@media(max-width:780px){.rtg-version-card-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:32px 12px!important}.rtg-version-card-grid .rtg-version-player-card{width:100%!important;max-width:132px!important;min-width:0!important;justify-self:center!important}}
