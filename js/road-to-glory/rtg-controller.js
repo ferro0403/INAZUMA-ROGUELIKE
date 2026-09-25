@@ -15,6 +15,8 @@
     const matchEngine=deps.matchEngine||global.RoadToGloryMatchEngine;
     const opponentGenerator=deps.opponentGenerator||global.RoadToGloryOpponentGenerator;
     const playerResolver=deps.playerResolver||global.RoadToGloryPlayerResolver;
+    const economy=deps.economy||global.RoadToGloryEconomy;
+    const economyView=deps.economyView||null;
     const cardIdentity=deps.cardIdentity||global.RoadToGloryCardIdentity;
     const rng=deps.rng||global.RoadToGloryRng;
     const aiPolicy=deps.aiPolicy||global.RoadToGloryAiPolicy;
@@ -38,6 +40,9 @@
     let selectedEncounterChoice=null;
     let selectedEncounterId=null;
     let selectedAlbumSeasonId="ie1";
+    let selectedDevelopmentCardId=null;
+    let developmentQuery="";
+    let developmentRarity="Tutti";
     const SQUAD_PICKER_PAGE_SIZE=24;
     const ENCOUNTER_REVEAL_DELAY_MS=2200;
     const FINAL_COMPARISON_DELAY_MS=1700;
@@ -380,12 +385,7 @@
       };
       if(typeof schedule==="function")schedule(mount,0);else mount();
     }
-    function resolved(cardRef,roleVariantId=null){
-      let player=playerResolver.resolveAtLevel20(cardRef,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
-      if(!player&&!cardIdentity){
-        const fallback=cardMeta(cardRef).playerId;
-        player=playerResolver.resolveAtLevel20(fallback,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
-      }
+    function normalizeResolvedPlayer(cardRef,player,roleVariantId=null){
       if(!player)return null;
       const stats=player.stats||player.finalStats||{};
       const meta=cardMeta(player.cardId||cardRef);
@@ -393,6 +393,31 @@
       const role=normalized.normalizedRole||normalized.position||normalized.role;
       const move=playerResolver.resolveMove(cardRef,campaign?.activeSeasonId||"ie1",role,freeAgentsDb,roleVariantId);
       return move?{...normalized,move:clone(move)}:{...normalized,move:null};
+    }
+    function resolvedWithDevelopment(cardRef,roleVariantId=null,developmentByCardId=null){
+      let player;
+      if(typeof playerResolver.resolveOwnedAtLevel20==="function"){
+        player=playerResolver.resolveOwnedAtLevel20(cardRef,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb,developmentByCardId||{});
+      }else{
+        player=playerResolver.resolveAtLevel20(cardRef,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
+      }
+      if(!player&&!cardIdentity){
+        const fallback=cardMeta(cardRef).playerId;
+        player=playerResolver.resolveAtLevel20(fallback,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
+      }
+      return normalizeResolvedPlayer(cardRef,player,roleVariantId);
+    }
+    function resolved(cardRef,roleVariantId=null){
+      return resolvedWithDevelopment(cardRef,roleVariantId,campaign?.developmentByCardId||{});
+    }
+    function resolvedStandard(cardRef,roleVariantId=null){
+      let player;
+      if(typeof playerResolver.resolveStandardAtLevel20==="function"){
+        player=playerResolver.resolveStandardAtLevel20(cardRef,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
+      }else{
+        player=playerResolver.resolveAtLevel20(cardRef,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
+      }
+      return normalizeResolvedPlayer(cardRef,player,roleVariantId);
     }
     function resolvedSquad(snapshot){
       const variants=snapshot?.activeRoleVariantByCardId||{};
@@ -1222,20 +1247,20 @@
     function resolvedForTeam(playerId,teamId){
       const profile=(seasonDb?.profiles||[]).find(entry=>id(entry?.playerId)===id(playerId)&&id(entry?.teamId)===id(teamId));
       const ref=profile?cardIdentity?.cardIdForSeason?.(profile.profileId,activeSeasonId()):playerId;
-      return resolved(ref||playerId);
+      return resolvedStandard(ref||playerId);
     }
     function mainOpponent(node){
       const boss=bossFor(node.teamId);
       if(!boss)throw Object.assign(new Error("Boss RTG non trovato"),{code:"rtg-boss-missing"});
       const profileIds=Array.from(boss.startingXIProfileIds||[]);
       const lineup=profileIds.length
-        ? profileIds.map(profileId=>resolved(cardIdentity?.cardIdForSeason?.(profileId,activeSeasonId())||profileId)).filter(Boolean)
+        ? profileIds.map(profileId=>resolvedStandard(cardIdentity?.cardIdForSeason?.(profileId,activeSeasonId())||profileId)).filter(Boolean)
         : (boss.startingXIPlayerIds||[]).map(playerId=>resolvedForTeam(playerId,node.teamId)).filter(Boolean);
       return {formationId:boss.bossFormation||boss.matchFormation||null,lineup,bench:[],name:boss.teamName||node.teamId||"Avversario",teamId:node.teamId,seasonId:activeSeasonId(),logoUrl:boss.logoUrl||teamRecordForId(node.teamId)?.logoUrl||null};
     }
     function secondaryOpponent(node,current,attemptNumber){
       const generated=opponentGenerator.generate({seed:`${current.campaignSeed}:${node.id}`,attemptNumber,freeAgentsDb,formations:seasonDb?.formations?.eleven||[],targetMin:node.opponentTargetMin,targetMax:node.opponentTargetMax,playerResolver});
-      return {formationId:generated.formationId,lineup:generated.playerIds.map(playerId=>resolved(playerId)).filter(Boolean),bench:[],teamPower:generated.teamPower,name:generated.name,specialType:"free-agents"};
+      return {formationId:generated.formationId,lineup:generated.playerIds.map(playerId=>resolvedStandard(playerId)).filter(Boolean),bench:[],teamPower:generated.teamPower,name:generated.name,specialType:"free-agents"};
     }
     async function startMatch(nodeId){
       const node=nodeById(nodeId);
