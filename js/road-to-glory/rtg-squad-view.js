@@ -18,45 +18,48 @@
     };
   }
 
-  // Keep the alternate-role control as a small functional badge, matching the
-  // footprint of the S1/S2 season tabs and anchored to the lower-left corner.
+  // Alternate-role control: arrow only, tucked onto the lower-left card corner
+  // like the S1/S2 version tab so it never covers the portrait/name area.
   const roleBadgeStyle=document.createElement("style");
   roleBadgeStyle.id="rtg-role-badge-hotfix";
   roleBadgeStyle.textContent=`
     .rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-role-trigger{
       position:absolute!important;
       z-index:26!important;
-      left:7px!important;
+      left:-2px!important;
       right:auto!important;
       top:auto!important;
-      bottom:47px!important;
-      width:auto!important;
-      min-width:30px!important;
-      max-width:none!important;
+      bottom:45px!important;
+      width:24px!important;
+      min-width:24px!important;
+      max-width:24px!important;
       height:18px!important;
       min-height:18px!important;
       margin:0!important;
-      padding:0 5px!important;
+      padding:0!important;
+      overflow:hidden!important;
       display:inline-flex!important;
       align-items:center!important;
       justify-content:center!important;
-      gap:2px!important;
+      gap:0!important;
       border:2px solid #111216!important;
       border-radius:2px!important;
       background:#ffd21f!important;
       color:#111216!important;
       box-shadow:1px 2px 0 #111216!important;
-      font:1000 8px/1 system-ui,sans-serif!important;
+      font:1000 0/1 system-ui,sans-serif!important;
       letter-spacing:0!important;
       transform:none!important;
     }
     .rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-role-trigger span{
-      font-size:9px!important;
+      display:inline-flex!important;
+      align-items:center!important;
+      justify-content:center!important;
+      font-size:14px!important;
       line-height:1!important;
     }
     .rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-role-trigger strong{
-      font-size:8px!important;
-      line-height:1!important;
+      display:none!important;
     }
     .rtg-squad-shell .squad-bench-list > .rtg-squad-card-slot > .rtg-squad-role-trigger:active{
       transform:translate(1px,1px)!important;
@@ -69,7 +72,7 @@
   // loader runs, so the halftime correction can safely wrap it before the
   // match view/controller start using it.
   document.write('<script src="js/road-to-glory/rtg-match-halftime-fix.js?v=20260920-halftime-restart-1"><\/script>');
-  document.write('<script src="js/road-to-glory/rtg-squad-view-base.js?v=20260925-quick-bench-role-badge-1"><\/script>');
+  document.write('<script src="js/road-to-glory/rtg-squad-view-base.js?v=20260925-role-corner-arrow-1"><\/script>');
   document.write('<script src="js/road-to-glory/rtg-squad-picker-order-runtime.js?v=20260920-full-pool-order-1"><\/script>');
   document.write('<script src="js/road-to-glory/rtg-squad-view-order.js?v=20260920-full-pool-order-1"><\/script>');
   document.write('<script src="js/road-to-glory/rtg-squad-view-catalog-canonical.js?v=20260920-canonical-card-1"><\/script>');
