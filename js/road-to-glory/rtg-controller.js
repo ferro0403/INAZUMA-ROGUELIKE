@@ -790,29 +790,63 @@
       const meta=cardMeta(cardRef);
       return id(meta.canonicalPlayerId||global.ProfiledSeasonRuntime?.canonicalPlayerId?.(meta.legacySeasonId,meta.profileId||meta.playerId)||meta.playerId);
     }
-    function openRtgVersionPicker(cardIds=[]){
+    function versionGroupKey(cardRef){
+      return id(cardIdentity?.versionGroupKey?.(cardRef,activeSeasonId())||`card::${cardMeta(cardRef).cardId||id(cardRef)}`);
+    }
+    function groupVersionCards(cardIds=[]){
+      const groups=new Map();
+      for(const cardId of Array.from(new Set(cardIds.map(id))).filter(Boolean)){
+        const key=versionGroupKey(cardId);
+        if(!groups.has(key))groups.set(key,[]);
+        groups.get(key).push(cardId);
+      }
+      return groups;
+    }
+    function preferredVersionCardId(cardIds=[]){
       const versions=Array.from(new Set(cardIds.map(id))).filter(Boolean);
-      if(versions.length<=1)return versions[0]?openRtgPlayerDetails(versions[0]):null;
-      const cards=versions.map(cardId=>{
-        const player=resolved(cardId,squadDraft?.activeRoleVariantByCardId?.[cardId]||null);
-        const meta=cardMeta(cardId),seasonLabel=cardIdentity?.legacyLabel?.(meta.legacySeasonId)||String(meta.legacySeasonId||"").toUpperCase();
-        const profileLabel=String(player?.teamName||player?.team||player?.profileName||player?.profileId||"").trim();
-        return `<button type="button" class="rtg-version-choice" data-rtg-version-card="${escape(cardId)}"><strong>${escape(player?.name||rawName(cardId))}</strong><span>${escape(seasonLabel)} · ${escape(String(player?.normalizedRole||player?.position||"—").toUpperCase())} · OVR ${escape(player?.overall??"—")}</span>${profileLabel?`<em>${escape(profileLabel)}</em>`:""}</button>`;
-      }).join("");
-      deps.openModal?.(`<section class="rtg-version-picker"><div class="modal-head"><div><p class="eyebrow">Versioni possedute</p><h2>Scegli la versione</h2><p class="muted">Ogni versione resta una carta distinta e può essere schierata insieme alle altre.</p></div></div><div class="rtg-version-choice-list">${cards}</div></section>`,{className:"rtg-modal rtg-version-picker-modal"});
+      const active=activeSeasonId();
+      return versions.find(cardId=>id(cardMeta(cardId).legacySeasonId)===active)||versions[0]||"";
+    }
+    function openRtgVersionPicker(cardIds=[],options={}){
+      const versions=Array.from(new Set(cardIds.map(id))).filter(Boolean);
+      const onSelect=typeof options.onSelect==="function"?options.onSelect:null;
+      if(versions.length<=1){
+        const only=versions[0];
+        if(!only)return null;
+        return onSelect?onSelect(only):openRtgPlayerDetails(only);
+      }
+      // Resolve/render every version only after the unified player card is opened.
+      const entries=versions.map(cardId=>({
+        cardId,
+        playerId:cardId,
+        source:"RTG",
+        player:resolved(cardId,squadDraft?.activeRoleVariantByCardId?.[cardId]||null),
+      })).filter(entry=>entry.player);
+      deps.openModal?.(
+        squadView.versionPickerMarkup
+          ? squadView.versionPickerMarkup({entries,mode:onSelect?"select":"details"})
+          : `<section class="rtg-version-picker"><div class="modal-head"><div><p class="eyebrow">Versioni possedute</p><h2>Scegli la versione</h2></div></div></section>`,
+        {className:"rtg-modal rtg-version-picker-modal"}
+      );
       const modal=deps.getModalRoot?.();
-      modal?.querySelectorAll?.("[data-rtg-version-card]")?.forEach(button=>button.addEventListener("click",()=>openRtgPlayerDetails(id(button.dataset.rtgVersionCard))));
+      modal?.querySelectorAll?.("[data-rtg-version-card]")?.forEach(button=>button.addEventListener("click",()=>{
+        const selected=id(button.dataset.rtgVersionCard);
+        if(!selected)return;
+        deps.closeModal?.();
+        if(onSelect){
+          onSelect(selected);
+          return;
+        }
+        const open=()=>openRtgPlayerDetails(selected);
+        if(typeof setTimeout==="function")setTimeout(open,0);else open();
+      }));
       return {count:versions.length};
     }
     function openRtgCatalog(){
       const owned=Array.from(acquiredCardIdSet()).filter(Boolean);
-      const groups=new Map();
-      for(const cardId of owned){
-        const key=canonicalCardPlayerId(cardId);
-        if(!groups.has(key))groups.set(key,[]);
-        groups.get(key).push(cardId);
-      }
-      const representatives=Array.from(groups.values()).map(cards=>cards.slice().sort((a,b)=>rawOverall(b)-rawOverall(a))[0])
+      const groups=groupVersionCards(owned);
+      const representatives=Array.from(groups.values()).map(preferredVersionCardId)
+        .filter(Boolean)
         .sort((a,b)=>rawRole(a).localeCompare(rawRole(b))||rawOverall(b)-rawOverall(a)||rawName(a).localeCompare(rawName(b),"it"));
       let query="";
       let visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,representatives.length);
@@ -824,6 +858,7 @@
         cardId,
         playerId:cardId,
         source:"RTG",
+        versionCount:(groups.get(versionGroupKey(cardId))||[cardId]).length,
         player:resolved(cardId,squadDraft?.activeRoleVariantByCardId?.[cardId]||null),
       })).filter(entry=>entry.player);
       const bindCatalog=()=>{
@@ -831,8 +866,7 @@
         modal?.querySelectorAll?.("[data-rtg-catalog-player]")?.forEach(button=>button.addEventListener("click",()=>{
           const cardId=id(button.dataset.rtgCatalogPlayer);
           if(!cardId)return;
-          const versions=groups.get(canonicalCardPlayerId(cardId))||[cardId];
-          openRtgVersionPicker(versions);
+          openRtgVersionPicker(groups.get(versionGroupKey(cardId))||[cardId]);
         }));
         modal?.querySelector?.("[data-rtg-catalog-load-more]")?.addEventListener("click",()=>{
           visibleCount=Math.min(filtered().length,visibleCount+SQUAD_PICKER_PAGE_SIZE);
