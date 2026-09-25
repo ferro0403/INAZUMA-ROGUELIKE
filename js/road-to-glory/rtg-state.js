@@ -1,10 +1,12 @@
 (function (global) {
   "use strict";
 
-  const SCHEMA_VERSION = 2;
+  const SCHEMA_VERSION = 3;
   const CAMPAIGN_ID = "rtg-ie-trilogy";
   const ACTIVE_SEASON_IDS = Object.freeze(["ie1", "ie1_s2"]);
   const cards = () => global.RoadToGloryCardIdentity;
+  const PROJECT_RARITIES = Object.freeze(["Buono","Forte","Elite","Mondiale","Leggenda","Aurico"]);
+  const DEVELOPMENT_RARITIES = Object.freeze(["Normale",...PROJECT_RARITIES]);
 
   const clone = (value) => value == null ? value : JSON.parse(JSON.stringify(value));
   const id = (value) => String(value ?? "").trim();
@@ -28,6 +30,9 @@
       activeSeasonId: "ie1",
       seasonComplete: false,
       tokens: 0,
+      projects: Object.fromEntries(PROJECT_RARITIES.map((rarity) => [rarity, 0])),
+      developmentByCardId: {},
+      seasonTransitionRewardedIds: [],
       lives: 2,
       checkpointMainIndex: -1,
       currentNodeId: "main:occult",
@@ -105,6 +110,23 @@
     for (const seasonId of squadKeys) squads[seasonId] = normalizeSquad(squadsSource[seasonId], acquiredCards);
     const attemptsByNode = source.attemptsByNode && typeof source.attemptsByNode === "object" ? clone(source.attemptsByNode) : {};
     const gachaSource = source.gacha && typeof source.gacha === "object" ? source.gacha : {};
+    const rawProjects = source.projects && typeof source.projects === "object" ? source.projects : {};
+    const projects = Object.fromEntries(PROJECT_RARITIES.map((rarity) => [rarity, Math.max(0, integer(rawProjects[rarity], 0))]));
+    const rawDevelopment = source.developmentByCardId && typeof source.developmentByCardId === "object" ? source.developmentByCardId : {};
+    const developmentByCardId = {};
+    for (const [cardId, rawRecord] of Object.entries(rawDevelopment)) {
+      const key = id(cardId);
+      if (!key || !rawRecord || typeof rawRecord !== "object") continue;
+      const targetPotential = Math.max(0, Math.min(99, integer(rawRecord.targetPotential, 0)));
+      const currentRarity = DEVELOPMENT_RARITIES.includes(id(rawRecord.currentRarity)) ? id(rawRecord.currentRarity) : null;
+      if (!targetPotential || !currentRarity) continue;
+      developmentByCardId[key] = {
+        targetPotential,
+        currentRarity,
+        evolutionCount: Math.max(0, integer(rawRecord.evolutionCount, 0)),
+        updatedAt: rawRecord.updatedAt == null ? null : id(rawRecord.updatedAt),
+      };
+    }
     return {
       ...initial,
       schemaVersion: SCHEMA_VERSION,
@@ -113,6 +135,9 @@
       activeSeasonId: id(source.activeSeasonId || "ie1"),
       seasonComplete: typeof source.seasonComplete === "boolean" ? source.seasonComplete : false,
       tokens: Math.max(0, integer(source.tokens, 0)),
+      projects,
+      developmentByCardId,
+      seasonTransitionRewardedIds: uniqueIds(source.seasonTransitionRewardedIds),
       lives: Math.max(0, Math.min(2, integer(source.lives, 2))),
       checkpointMainIndex: Math.max(-1, integer(source.checkpointMainIndex, -1)),
       currentNodeId: id(source.currentNodeId || "main:occult"),
@@ -149,6 +174,17 @@
       if (rawBench.some((cardId) => rawLineupSet.has(cardId))) fail("rtg-state-lineup-bench-overlap", "Carta presente sia tra titolari sia in panchina", { seasonId });
     }
     const normalized = normalize(raw);
+    for (const rarity of PROJECT_RARITIES) {
+      const value = normalized.projects?.[rarity];
+      if (!Number.isInteger(value) || value < 0) fail("rtg-state-invalid-projects", "Inventario Progetti RTG non valido", { rarity });
+    }
+    for (const [cardId, record] of Object.entries(normalized.developmentByCardId || {})) {
+      if (!id(cardId)) fail("rtg-state-invalid-development-card", "Carta evoluta RTG non valida");
+      if (!Number.isInteger(record.targetPotential) || record.targetPotential < 1 || record.targetPotential > 99) fail("rtg-state-invalid-development-potential", "Potenziale evoluzione RTG non valido", { cardId });
+      if (!DEVELOPMENT_RARITIES.includes(record.currentRarity)) fail("rtg-state-invalid-development-rarity", "Rarità evoluzione RTG non valida", { cardId });
+      if (!Number.isInteger(record.evolutionCount) || record.evolutionCount < 0) fail("rtg-state-invalid-development-count", "Conteggio evoluzioni RTG non valido", { cardId });
+    }
+    if (new Set(normalized.seasonTransitionRewardedIds || []).size !== (normalized.seasonTransitionRewardedIds || []).length) fail("rtg-state-duplicate-season-reward", "Bonus cambio Season RTG duplicato");
     const ownedIds = normalized.gachaAcquiredCards.map((entry) => id(entry.cardId));
     if (new Set(ownedIds).size !== ownedIds.length) fail("rtg-state-duplicate-card", "Carta RTG duplicata nella collezione");
     for (const [seasonId, squad] of Object.entries(normalized.squads || {})) {
@@ -162,5 +198,5 @@
     return normalized;
   }
 
-  global.RoadToGloryState = Object.freeze({ SCHEMA_VERSION, CAMPAIGN_ID, ACTIVE_SEASON_IDS, createInitial, normalize, validate, clone });
+  global.RoadToGloryState = Object.freeze({ SCHEMA_VERSION, CAMPAIGN_ID, ACTIVE_SEASON_IDS, PROJECT_RARITIES, DEVELOPMENT_RARITIES, createInitial, normalize, validate, clone });
 })(globalThis);
