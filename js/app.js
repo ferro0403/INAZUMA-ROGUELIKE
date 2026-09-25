@@ -605,6 +605,125 @@
   function setRun(nextRun) { run = nextRun; global.run = nextRun; }
   global.AlbumPermanentEffects?.bindRuntimeRunAccessor?.(() => run);
 
+  async function ensureRtgSeason1Db() {
+    const previousSeasonId = global.SeasonRegistry.activeId();
+    try {
+      return global.SeasonRegistry.database("ie1") || await global.SeasonRegistry.loadDatabase("ie1");
+    } finally {
+      global.SeasonRegistry.setActive(previousSeasonId);
+    }
+  }
+
+  function rtgTeamEmblemMarkup(teamId, seasonSource = "ie1") {
+    const db = seasonSource && typeof seasonSource === "object"
+      ? seasonSource
+      : global.SeasonRegistry.database(String(seasonSource || "ie1"));
+    const team = (db?.teams || []).find((entry) => String(entry.teamId || entry.id) === String(teamId));
+    const logo = team?.logoUrl
+      || db?.bossOrder?.find((entry) => String(entry.teamId) === String(teamId))?.logoUrl
+      || db?.specialMatches?.find((entry) => String(entry.teamId) === String(teamId))?.logoUrl
+      || "";
+    return logo
+      ? `<img src="${escapeHtml(logo)}" alt="" loading="lazy" decoding="async" referrerpolicy="no-referrer" />`
+      : `<span class="rtg-team-fallback">${escapeHtml(String(teamId || "?").slice(0, 1).toUpperCase())}</span>`;
+  }
+
+  function rtgUserTeamMeta() {
+    const identity = normalizeTeamIdentity(savedTeamIdentity() || run?.teamIdentity || {});
+    return { name: identity?.name || "La tua squadra", teamIdentity: identity };
+  }
+
+  function rtgMatchTeamEmblemMarkup(squad = {}, side = "user", className = "rtg-match-team-emblem") {
+    if (!global.TeamEmblems?.resolveTeamEmblem || !global.TeamEmblems?.teamEmblemMarkup) return side === "opponent" && squad?.teamId ? rtgTeamEmblemMarkup(squad.teamId) : "";
+    let resolved;
+    if (side === "user") {
+      const identity = squad?.teamIdentity || rtgUserTeamMeta().teamIdentity;
+      resolved = global.TeamEmblems.resolveTeamEmblem({ teamIdentity: identity, seasonId: "ie1", fallbackKind: "user" });
+    } else if (squad?.specialType === "free-agents" || /svincolat/i.test(String(squad?.name || ""))) {
+      resolved = global.TeamEmblems.resolveTeamEmblem({ specialType: "free-agents", fallbackKind: "free-agents" });
+    } else {
+      const requestedSeasonId = String(squad?.seasonId || "");
+      const candidateSeasonIds = [requestedSeasonId, "ie1_s2", "ie1"].filter(Boolean);
+      let seasonId = candidateSeasonIds[0] || "ie1";
+      let team = null;
+      for (const sid of candidateSeasonIds) {
+        const db = global.SeasonRegistry.database(sid);
+        const found = (db?.teams || []).find((entry) => String(entry.teamId || entry.id) === String(squad?.teamId || ""))
+          || (db?.teams || []).find((entry) => String(entry.name || entry.teamName || "") === String(squad?.name || ""));
+        if (found) { seasonId = sid; team = found; break; }
+      }
+      if (squad?.logoUrl) team = { ...(team || {}), teamId:squad?.teamId || team?.teamId, teamName:squad?.name || team?.teamName, logoUrl:squad.logoUrl };
+      resolved = global.TeamEmblems.resolveTeamEmblem({ teamId: squad?.teamId || team?.teamId || team?.id, seasonId, team, fallbackKind: "neutral" });
+    }
+    return global.TeamEmblems.teamEmblemMarkup(resolved, { escape: escapeHtml, className });
+  }
+
+  const rtgRuntimeAvailable = !!(
+    global.RoadToGloryStorage &&
+    global.RoadToGloryRepository &&
+    global.RoadToGloryRunView &&
+    global.RoadToGlorySquadView &&
+    global.RoadToGloryMatchView &&
+    global.RoadToGloryController
+  );
+  const rtgStorage = rtgRuntimeAvailable ? global.RoadToGloryStorage.create() : null;
+  const rtgRepository = rtgRuntimeAvailable ? global.RoadToGloryRepository.create({
+    storage: rtgStorage,
+    seedFactory: () => global.crypto?.randomUUID?.() || `rtg-${Date.now()}`,
+  }) : null;
+  const rtgRunView = rtgRuntimeAvailable ? global.RoadToGloryRunView.create({
+    escapeHtml,
+    teamEmblemMarkup: rtgTeamEmblemMarkup,
+    compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
+    playerCardMarkup: (...args) => playerCard(...args),
+  }) : null;
+  const rtgSquadView = rtgRuntimeAvailable ? global.RoadToGlorySquadView.create({
+    escapeHtml,
+    playerResolver: global.RoadToGloryPlayerResolver,
+    compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
+    teamEmblemMarkup: (...args) => rtgMatchTeamEmblemMarkup(...args),
+    formationLayout: global.FormationLayout,
+  }) : null;
+  const rtgMatchView = rtgRuntimeAvailable ? global.RoadToGloryMatchView.create({
+    escapeHtml,
+    compactPlayerCardMarkup: (...args) => compactPlayerCardMarkup(...args),
+    matchFormationCardMarkup: (...args) => matchPresentation.matchFormationCard(...args),
+    squadPitchMarkup: (...args) => rtgSquadView.matchPitchMarkup(...args),
+    userTeamMeta: () => rtgUserTeamMeta(),
+    teamEmblemMarkup: (...args) => rtgMatchTeamEmblemMarkup(...args),
+    formationLayout: global.FormationLayout,
+    formationById: (formationId) => (global.RoadToGloryConfig?.SEASON1?.formations || global.SeasonRegistry.database("ie1")?.formations?.eleven || []).find((item) => String(item.id) === String(formationId)) || null,
+  }) : null;
+  const rtgController = rtgRuntimeAvailable ? global.RoadToGloryController.create({
+    app,
+    repository: rtgRepository,
+    runView: rtgRunView,
+    squadView: rtgSquadView,
+    matchView: rtgMatchView,
+    ensureSeason1Db: ensureRtgSeason1Db,
+    getFreeAgentsDb: () => freeAgentsDb,
+    getAlbumProgress: () => global.AlbumProgress,
+    getUserTeamMeta: () => rtgUserTeamMeta(),
+    getModalRoot: () => modalRoot,
+    openModal,
+    closeModal,
+    toast,
+    renderHome: (...args) => renderHome(...args),
+    resetRenderedViewScroll,
+    entitlements: global.RoadToGloryEntitlements,
+    config: global.RoadToGloryConfig,
+    progression: global.RoadToGloryProgression,
+    gacha: global.RoadToGloryGacha,
+    squadRuntime: global.RoadToGlorySquadRuntime,
+    matchEngine: global.RoadToGloryMatchEngine,
+    opponentGenerator: global.RoadToGloryOpponentGenerator,
+    playerResolver: global.RoadToGloryPlayerResolver,
+    rng: global.RoadToGloryRng,
+    aiPolicy: global.RoadToGloryAiPolicy,
+    penaltyRuntime: global.RoadToGloryPenaltyRuntime,
+    showPlayerDetailsFor: (...args) => showPlayerDetailsFor(...args),
+  }) : null;
+
   const homeView = global.HomeView.create({ escapeHtml, normalizeTeamIdentity, savedTeamIdentity, seasonDisplayName, resolvedRosterPlayer, averageOverall, lifeHeartsMarkup, bossTeamLogoUrl, getSeasonDb: () => seasonDb });
   const homeController = global.HomeController.create({
     view: homeView, app, getRun: () => run, setRun, getSeasonDb: () => seasonDb, getActiveSeason: () => activeSeason,
@@ -612,6 +731,7 @@
     renderSeasonSelect: (...args) => renderSeasonSelect(...args), resumeRun: (...args) => resumeRun(...args), renderShop: (...args) => renderShop(...args),
     renderHallOfFame: (...args) => renderHallOfFame(...args), renderAlbumCollections: (...args) => renderAlbumCollections(...args),
     renderDevelopmentCenter: (...args) => renderDevelopmentCenter(...args), renderSettings: (...args) => renderSettings(...args),
+    renderRoadToGlory: (...args) => renderRoadToGlory(...args),
   });
   const seasonSelectionView = global.SeasonSelectionView.create({ escapeHtml, sectionRootButton });
   const seasonSelectionController = global.SeasonSelectionController.create({
@@ -621,6 +741,13 @@
   });
   const newRunController = global.NewRunController.create({ getRun: () => run, setRun, getActiveSeason: () => activeSeason, getSeasonDb: () => seasonDb, normalizeTeamIdentity, savedTeamIdentity, seasonDisplayName, openTeamNameModal: (...args) => openTeamNameModal(...args), openModal, closeModal, toast, renderFormationChoice: (...args) => renderFormationChoice(...args), escapeHtml, inazumaLogoMarkup });
   function renderHome(...args) { return homeController.renderHome(...args); }
+  function renderRoadToGlory(...args) {
+    if (!rtgController) {
+      toast("Road to Glory non disponibile", "error");
+      return null;
+    }
+    return rtgController.open(...args);
+  }
   function renderSeasonSelect(...args) { return seasonSelectionController.renderSeasonSelect(...args); }
   function selectSeason(...args) { return seasonSelectionController.selectSeason(...args); }
   function startRunWithIdentity(...args) { return newRunController.startRunWithIdentity(...args); }
@@ -1472,7 +1599,7 @@
     setFreeAgentsById: (value) => { freeAgentsById = value; },
     uiApi: {
       bindAlbumRosterInteractions, configureAlbumForBootstrap, setPermanentClubTestContext, persistenceWritesAllowed,
-      repairResultMessage, showLoadError, renderHome, renderAlbumCollections, renderAlbumTeams, renderAlbumRoster,
+      repairResultMessage, showLoadError, renderHome, renderRoadToGlory, renderAlbumCollections, renderAlbumTeams, renderAlbumRoster,
       renderHallOfFame, renderHallOfFameDetail, renderDevelopmentCenter, developmentCurrencyIcon, bindHallPlayerDetails,
       startNewRunFromHome, startRunWithIdentity, renderSeasonSelect, selectSeason, resumeRun,
     },

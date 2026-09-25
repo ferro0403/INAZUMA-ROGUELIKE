@@ -30,6 +30,12 @@
         onClose: opts.onClose,
         preserveScroll: opts.preserveScroll,
       });
+      const roleSwitchButton = getModalRoot()?.querySelector?.("[data-detail-rtg-role-switch]");
+      roleSwitchButton?.addEventListener("click", (event) => {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        opts.onRtgRoleSwitch?.();
+      });
       if (!opts.readOnly) {
         const unequipButton = getModalRoot().querySelector(
           "[data-detail-unequip]",

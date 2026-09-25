@@ -1,0 +1,10 @@
+"use strict";
+const assert=require("assert"),fs=require("fs");
+const ctl=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+assert(ctl.includes("function canonicalCardPlayerId(cardRef)"));
+assert(ctl.includes("function openRtgVersionPicker(cardIds=[])"));
+assert(ctl.includes("const groups=new Map()"));
+assert(ctl.includes("groups.get(canonicalCardPlayerId(cardId))||[cardId]"));
+assert(ctl.includes("versionCount:owned.length"));
+assert(ctl.includes("Ogni versione resta una carta distinta e può essere schierata insieme alle altre."));
+console.log("rtg-season2-version-collection-test: PASS");

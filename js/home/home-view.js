@@ -132,6 +132,13 @@
       function homeEmptyRunMarkup() {
         return `<div class="home-content"><section class="home-hero home-empty-dashboard" aria-label="Home senza run attiva">${homeIdentityMarkup(null)}<article class="home-empty-panel anime-panel"><div class="home-panel-kicker"><span>⚡</span> Nessuna run attiva</div><div class="home-empty-copy"><h1>Scrivi la tua leggenda</h1><p>Una nuova avventura ti aspetta.</p></div><button type="button" class="home-main-cta" id="home-primary-cta"><span aria-hidden="true">⚡</span><strong id="choose-run">Entra nel torneo »</strong></button></article>${homeQuickActionsMarkup()}</section></div>`;
       }
+      function homeRtgHubMarkup() {
+        return `<div class="home-content home-rtg-content"><section class="home-hero home-rtg-hub" aria-label="Road to Glory"><article class="home-rtg-hero anime-panel"><div class="home-panel-kicker"><span>⚡</span> Road to Glory</div><div class="home-rtg-title"><small>SEASON 1</small><h1>Road to Glory</h1><p>La tua rosa. Il tuo percorso. Una modalità tutta sua.</p></div><button type="button" class="home-main-cta home-rtg-primary" data-rtg-home-open="run"><span aria-hidden="true">⚡</span><strong>Apri Road to Glory »</strong></button></article><section class="home-rtg-shortcuts" style="width:100%;max-width:none;grid-template-columns:minmax(0,1fr);justify-self:stretch;" aria-label="Sezioni Road to Glory"><button type="button" class="home-rtg-shortcut home-rtg-shortcut--wide" style="width:100%;max-width:none;grid-column:1/-1;justify-self:stretch;" data-rtg-home-open="squad"><span>♟</span><strong>Squadra</strong><small>Formazione e panchina</small><b>»</b></button><button type="button" class="home-rtg-shortcut home-rtg-shortcut--wide" style="width:100%;max-width:none;grid-column:1/-1;justify-self:stretch;" data-rtg-home-open="vending"><span>◉</span><strong>Distributore</strong><small>Palline Season 1</small><b>»</b></button><button type="button" class="home-rtg-shortcut home-rtg-shortcut--wide" style="width:100%;max-width:none;grid-column:1/-1;justify-self:stretch;" data-rtg-home-open="album"><span>▤</span><strong>Album</strong><small>Collezione Road to Glory</small><b>»</b></button></section></section></div>`;
+      }
+      function homePagerMarkup(mainMarkup, initialPage = "main") {
+        const rtgActive = initialPage === "rtg";
+        return `<div class="home-page-switcher" aria-label="Cambia Home"><button type="button" class="home-page-tab${rtgActive ? "" : " active"}" data-home-page-target="main" aria-current="${rtgActive ? "false" : "page"}"><i class="home-page-dot"></i><span>HOME</span></button><button type="button" class="home-page-tab${rtgActive ? " active" : ""}" data-home-page-target="rtg" aria-current="${rtgActive ? "page" : "false"}"><i class="home-page-dot"></i><span>RTG</span><b aria-hidden="true">›</b></button></div><div class="home-swipe-viewport" data-home-swipe-viewport><div class="home-swipe-track" data-home-swipe-track><section class="home-swipe-page home-swipe-page--main" data-home-page="main">${mainMarkup}</section><section class="home-swipe-page home-swipe-page--rtg" data-home-page="rtg">${homeRtgHubMarkup()}</section></div></div>`;
+      }
       return {
         runFormationLabel,
         runHeartsMarkup,
@@ -142,6 +149,8 @@
         homeIdentityMarkup,
         homeActiveRunMarkup,
         homeEmptyRunMarkup,
+        homeRtgHubMarkup,
+        homePagerMarkup,
         homeRunCardMarkup: (run) =>
           run ? homeActiveRunMarkup(run) : homeEmptyRunMarkup(),
       };

@@ -1,0 +1,17 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const ctx={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};ctx.globalThis=ctx;vm.createContext(ctx);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),ctx);
+const V=ctx.RoadToGloryRunView;
+assert(V&&typeof V.runMarkup==="function");
+const nodes=Array.from({length:33},(_,i)=>({id:i===32?"main:raimon_inazuma_eleven_2":`secondary:x:y:${i}`,type:i===32?"main":"secondary",teamId:i===32?"raimon_inazuma_eleven_2":undefined}));
+const db={teams:[{teamId:"raimon_inazuma_eleven_2",name:"Raimon S2"}]};
+const base={activeSeasonId:"ie1_s2",currentNodeId:"main:raimon_inazuma_eleven_2",seasonComplete:true,attemptsByNode:{},defeatedTeamIds:["raimon_inazuma_eleven_2"],tokens:0,lives:2};
+const html=V.runMarkup({state:base,nodes,seasonDb:db,seasonConfig:{routeBackground:"assets/rtg/rtg-season2-route-map-user.webp?v=20260924-user-map-2"}});
+assert(html.includes("Season 2 completata"));
+assert(html.includes("Hai completato il percorso della Season 2."));
+assert(html.includes("Distributore S2"));
+assert(!html.includes("data-rtg-enter-season2"),"S2 completion must not offer another season transition");
+assert(!html.includes("data-rtg-current-node"),"completed S2 must not offer another match");
+assert(html.includes("--rtg-season-route-bg:url('assets/rtg/rtg-season2-route-map-user.webp?v=20260924-user-map-2')"));
+console.log("rtg-season2-final-state-ui-test: PASS");

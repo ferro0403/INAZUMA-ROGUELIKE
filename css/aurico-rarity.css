@@ -1,3 +1,5 @@
+@import url("./rtg-vending-depth.css?v=20260923-v19-visible-extrusion");
+
 /* Aurico is the unique 99 OVR rarity. Keep the same ivory card anatomy as the other rarities and use black only as the rarity accent. */
 .rarity-aurico {
   --rarity-bg: #fffdf6;

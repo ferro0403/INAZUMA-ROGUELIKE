@@ -1,0 +1,12 @@
+"use strict";
+const assert=require("assert"),fs=require("fs");
+const src=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+assert(src.includes('RTG_LEGACY_SQUAD_SLOTS_KEY="inazuma.rtg.squad-slots.v1"'));
+const start=src.indexOf("function readSquadSlots");
+const end=src.indexOf("function writeSquadSlots",start);
+const fn=src.slice(start,end);
+assert(fn.includes('if(sid==="ie1")'),"legacy slots may only migrate into S1");
+assert(fn.includes("RTG_LEGACY_SQUAD_SLOTS_KEY"));
+assert(fn.includes("setItem?.(key,JSON.stringify(legacy))"));
+assert(!fn.includes('sid==="ie1_s2"'),"S2 must never inherit the legacy shared storage key");
+console.log("rtg-squad-slot-v1-migration-test: PASS");

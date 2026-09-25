@@ -1,0 +1,10 @@
+"use strict";
+const assert=require("assert"),fs=require("fs");
+const src=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+assert(src.includes('const RTG_SQUAD_SLOTS_KEY="inazuma.rtg.squad-slots.v2"'));
+assert(src.includes('function squadSlotsKey(seasonId=activeSeasonId())'));
+assert(src.includes('RTG_SQUAD_SLOTS_KEY}.'));
+assert(src.includes('function readSquadSlots(seasonId=activeSeasonId())'));
+assert(src.includes('function writeSquadSlots(slots,seasonId=activeSeasonId())'));
+assert(src.includes("storeSquadSlot(activeSquadSlot,squadDraft)"));
+console.log("rtg-season-squad-slot-isolation-test: PASS");
