@@ -28,6 +28,26 @@ for (const name of rtgCssFiles) {
   assert.ok(!forbiddenNewLayerName.test(name), `RTG finishing/override layer is forbidden: ${name}`);
 }
 
+// Domain ownership contract. During migration these assertions intentionally go RED
+// until the legacy selectors have been removed from road-to-glory.css.
+const legacyRoadPath = path.join(CSS_DIR, 'road-to-glory.css');
+if (fs.existsSync(legacyRoadPath)) {
+  const legacyRoad = fs.readFileSync(legacyRoadPath, 'utf8');
+  const vendingSelectorsOwnedElsewhere = [
+    '.rtg-vending-machine',
+    '.rtg-vending-machine-v2',
+    '.rtg-machine-globe',
+    '.rtg-machine-console',
+    '.rtg-machine-knob',
+    '.rtg-machine-tray',
+    '.rtg-capsule'
+  ];
+
+  for (const selector of vendingSelectorsOwnedElsewhere) {
+    assert.ok(!legacyRoad.includes(selector), `Vending selector must be owned by rtg-vending.css, not road-to-glory.css: ${selector}`);
+  }
+}
+
 // The migration is allowed to carry existing !important debt, but it must never grow.
 // These ceilings are intentionally baseline-oriented and should only move downward as owners migrate.
 const debtFiles = [
