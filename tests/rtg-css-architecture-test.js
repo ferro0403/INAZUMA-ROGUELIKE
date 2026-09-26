@@ -11,6 +11,7 @@ assert.ok(fs.existsSync(ARCH), 'RTG CSS architecture contract must exist');
 const forbiddenNewLayerName = /(?:^|[-_.])(fix|final|polish|tuning|override|depth|perspective)(?:[-_.]|$)/i;
 const retiredDisconnectedLayers = [
   'rtg-theme-core.css',
+  'rtg-theme-base.css',
   'rtg-match-final.css',
   'rtg-vending-depth.css',
   'rtg-vending-perspective.css'
@@ -31,7 +32,6 @@ for (const name of rtgCssFiles) {
 // These ceilings are intentionally baseline-oriented and should only move downward as owners migrate.
 const debtFiles = [
   'road-to-glory.css',
-  'rtg-theme-base.css',
   'rtg-theme.css',
   'rtg-version-banners.css'
 ].filter(name => fs.existsSync(path.join(CSS_DIR, name)));
@@ -45,7 +45,6 @@ const importantDebt = Object.fromEntries(debtFiles.map(name => {
 const baselineCeilings = {
   // Temporary migration ceilings. They only move downward as ownership migrates.
   'road-to-glory.css': 10000,
-  'rtg-theme-base.css': 10000,
   'rtg-theme.css': 10000,
   'rtg-version-banners.css': 10000
 };
