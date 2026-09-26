@@ -1,6 +1,33 @@
 /* Road to Glory — run/route owner.
    Owns run journey surfaces, route-map artwork and route-line presentation. */
 
+/* Run/route structural ownership migrated from road-to-glory.css. */
+.rtg-run-content { display: grid; gap: 22px; padding-bottom: 72px; }
+.rtg-run-command { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 16px; align-items: center; border: 4px solid #101116; border-radius: 0; background: #fffdf5; color: #101116; box-shadow: 7px 8px 0 #101116; }
+.rtg-run-command h2 { margin-bottom: 4px; color: #101116; text-transform: uppercase; }
+.rtg-run-command .muted { margin: 0; color: #69645b; }
+.rtg-map { display: grid; gap: 26px; }
+.rtg-map-block { min-width: 0; padding: 14px; border: 4px solid #101116; background: #fffdf5; box-shadow: 8px 9px 0 rgba(16,17,22,.3); }
+.rtg-route-heading { margin: 0 0 12px; padding: 8px 10px; border-bottom: 3px solid #101116; }
+.rtg-route-heading h2 { margin: 0; color: #101116; text-transform: uppercase; }
+.rtg-route-heading .eyebrow { margin-bottom: 2px; color: #7a5b11; }
+.rtg-route-count { padding: 5px 8px; border: 2px solid #101116; background: #ffd21f; color: #101116; font-size: .7rem; font-weight: 1000; transform: skewX(-8deg); }
+.route-map.rtg-route-stage { min-width: 0; width: 100%; height: 760px; border: 3px solid #101116; border-radius: 0; box-shadow: inset 0 0 80px rgba(0,0,0,.26); }
+.rtg-map-block--2 .rtg-route-stage { filter: saturate(.92) brightness(.95); }
+.rtg-map-block--3 .rtg-route-stage { filter: saturate(.84) brightness(.88); }
+.rtg-map-block--4 .rtg-route-stage { filter: saturate(.78) brightness(.83); }
+.rtg-map-lines line { stroke-width: 1.5; stroke: rgba(255,255,255,.88); stroke-dasharray: 4 5; }
+.rtg-route-node { width: 92px; }
+.rtg-route-node .node-icon { width: 62px; height: 62px; border: 4px solid #fff; background: #153f62; box-shadow: 0 6px 0 rgba(16,17,22,.55), 0 8px 18px rgba(0,0,0,.3); }
+.rtg-route-node--main .node-icon { background: #fffdf5; border-color: #101116; }
+.rtg-route-node--main .node-icon img { width: 72%; height: 72%; object-fit: contain; }
+.rtg-route-node--secondary .node-icon { background: #153f62; color: #ffd21f; border-color: #e8f4ff; }
+.rtg-route-node.reachable .node-icon { border-color: #ffd21f; outline: 3px solid #101116; box-shadow: 0 0 0 5px #ffd21f, 5px 7px 0 #101116; }
+.rtg-route-node.completed .node-icon { box-shadow: 0 0 0 5px rgba(52,211,153,.45), 4px 6px 0 rgba(16,17,22,.55); }
+.rtg-route-node.locked { opacity: .35; filter: grayscale(1); }
+.rtg-route-node .node-label { color: #fff; font-size: .72rem; font-weight: 1000; text-shadow: 0 2px 4px #000, 0 0 8px #000; }
+.rtg-node-checkpoint { position: absolute; top: -8px; right: 2px; padding: 3px 5px; border: 2px solid #101116; background: #ffd21f; color: #101116; font-size: .65rem; font-weight: 1000; }
+
 /* Final next-match journey hero migrated from legacy core. */
 .rtg-journey-summary{position:relative!important;overflow:hidden!important;padding:22px 22px 18px!important;border:3px solid #111216!important;background:linear-gradient(118deg,#111216 0 68%,#191b21 68% 100%)!important;box-shadow:6px 7px 0 #ffd21f!important;}
 .rtg-journey-summary::before{content:"";position:absolute;width:180px;height:180px;right:-45px;top:-58px;border:24px solid rgba(255,210,31,.06);transform:rotate(18deg);pointer-events:none;}
