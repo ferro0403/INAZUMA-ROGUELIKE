@@ -11,14 +11,21 @@ button.player-card:has(> .rtg-version-count-badge),
 .rtg-version-count-badge{position:absolute!important;z-index:25!important;left:-4px!important;right:auto!important;top:auto!important;bottom:-11px!important;display:grid!important;place-items:center!important;min-width:42px!important;height:16px!important;padding:0 6px!important;border:2px solid #111216!important;border-radius:0!important;background:#fffdf7!important;color:#111216!important;box-shadow:1px 2px 0 #111216!important;font:1000 7px/1 system-ui,sans-serif!important;letter-spacing:.04em!important;pointer-events:none!important;white-space:nowrap!important;}
 .rtg-version-picker-modal{width:min(92vw,620px)!important;}
 .rtg-version-picker-head{margin-bottom:10px!important;}
-/* Version choices must use the same compact visual scale as the substitution cards. */
-.rtg-version-card-grid{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;justify-items:center!important;align-items:start!important;gap:24px 8px!important;padding:14px 0 20px!important;overflow:visible!important;}
-.rtg-version-card-grid .rtg-version-player-card{position:relative!important;width:100%!important;min-width:0!important;max-width:96px!important;cursor:pointer!important;overflow:visible!important;transform:none!important;}
+/* The version chooser must render exactly at the same visual scale as the
+   replacement picker cards (screen 1), without changing the replacement
+   picker itself. The shared card renderer already emits rtg-picker-squad-card;
+   these rules only mirror the picker's 66px mobile geometry inside this grid. */
+.rtg-version-card-grid{display:grid!important;grid-template-columns:repeat(3,minmax(60px,1fr))!important;justify-items:center!important;align-items:start!important;gap:16px 10px!important;padding:14px 0 20px!important;overflow:visible!important;}
+.rtg-version-card-grid .rtg-version-player-card{position:relative!important;width:66px!important;max-width:66px!important;min-width:0!important;min-height:0!important;cursor:pointer!important;overflow:visible!important;transform:none!important;}
+.rtg-version-card-grid .rtg-version-player-card .player-portrait-wrap{height:48px!important;min-height:0!important;padding:4px 3px 0!important;}
+.rtg-version-card-grid .rtg-version-player-card .player-info{padding:4px 3px!important;min-height:25px!important;}
+.rtg-version-card-grid .rtg-version-player-card .player-title strong{font-size:9px!important;line-height:1.16!important;white-space:normal!important;display:-webkit-box!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow:hidden!important;height:21px!important;text-align:center!important;text-overflow:ellipsis!important;}
+.rtg-version-card-grid .rtg-version-player-card :is(.player-meta,.player-level){display:none!important;}
+.rtg-version-card-grid .rtg-version-player-card :is(.player-role,.player-overall){font-size:10px!important;line-height:16px!important;min-width:20px!important;height:18px!important;padding:1px 3px!important;top:0!important;z-index:3!important;}
 .rtg-version-card-grid .rtg-version-player-card .rtg-version-count-badge{display:none!important;}
 .rtg-version-card-grid .rtg-version-player-card .rtg-legacy-badge{display:grid!important;}
 .rtg-version-card-grid .rtg-version-player-card:active{transform:translate(2px,2px)!important;}
 @media(max-width:430px){
   .rtg-version-picker-modal{width:calc(100vw - 28px)!important;}
-  .rtg-version-card-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:24px 8px!important;padding-inline:0!important;}
-  .rtg-version-card-grid .rtg-version-player-card{width:100%!important;max-width:96px!important;}
+  .rtg-version-card-grid{grid-template-columns:repeat(3,minmax(60px,1fr))!important;gap:16px 10px!important;padding-inline:0!important;}
 }
