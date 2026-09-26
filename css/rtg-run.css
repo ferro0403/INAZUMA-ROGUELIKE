@@ -1,43 +1,26 @@
 /* Road to Glory — run/route owner.
-   Owns route-map artwork and route-line presentation.
-   Loaded after the legacy theme during migration with equivalent declarations. */
+   Owns run journey surfaces, route-map artwork and route-line presentation. */
 
-.rtg-map .rtg-map-block .route-map.rtg-route-stage {
-  background-color:#082c52!important;
-  background-image:url("../assets/rtg/rtg-season1-route-map.jpg?v=5")!important;
-  background-position:50% 48%!important;
-  background-size:cover!important;
-  background-repeat:no-repeat!important;
-  background-blend-mode:normal!important;
-  filter:none!important;
-}
+/* Final next-match journey hero migrated from legacy core. */
+.rtg-journey-summary{position:relative!important;overflow:hidden!important;padding:22px 22px 18px!important;border:3px solid #111216!important;background:linear-gradient(118deg,#111216 0 68%,#191b21 68% 100%)!important;box-shadow:6px 7px 0 #ffd21f!important;}
+.rtg-journey-summary::before{content:"";position:absolute;width:180px;height:180px;right:-45px;top:-58px;border:24px solid rgba(255,210,31,.06);transform:rotate(18deg);pointer-events:none;}
+.rtg-journey-main{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:16px;align-items:center;}
+.rtg-journey-copy{min-width:0;}
+.rtg-journey-summary .rtg-journey-copy .eyebrow{color:#ffd21f!important;}
+.rtg-journey-summary .rtg-journey-copy h1{margin:5px 0 7px!important;color:#fff!important;font-size:clamp(2rem,8vw,3rem)!important;font-style:italic;line-height:.95!important;text-transform:uppercase;}
+.rtg-journey-summary .rtg-journey-copy p:not(.eyebrow){margin:0!important;color:#e9e9e9!important;}
+.rtg-journey-opponent{width:88px;height:88px;display:grid;place-items:center;justify-self:end;border:3px solid #ffd21f;background:#fffdf7;box-shadow:5px 5px 0 #111216;transform:rotate(2deg);}
+.rtg-journey-opponent img{width:72px!important;height:72px!important;object-fit:contain!important;}
+.rtg-journey-opponent .boss-logo-fallback{display:grid!important;place-items:center;width:100%;height:100%;color:#111216;font-size:2rem;font-weight:1000;}
+.rtg-journey-free-agent{width:62px;height:62px;color:#111216;}
+.rtg-journey-free-agent svg{width:100%;height:100%;display:block;}
+.rtg-journey-summary>[data-rtg-current-node]{position:relative;z-index:1;width:100%;margin-top:18px!important;min-height:56px;border:3px solid #111216!important;box-shadow:5px 6px 0 #050506!important;}
+.rtg-journey-summary .rtg-journey-progress{position:relative;z-index:1;margin-top:18px!important;}
 
-/* Temporary important dependency: legacy S1 route artwork is also important.
-   Remove this flag when the historical owner is retired. */
-.rtg-run-screen--s2 .rtg-map .rtg-map-block--season2-part .route-map.rtg-route-stage--season2 {
-  background-color:#082c52!important;
-  background-image:url("../assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-map-hq-1")!important;
-  background-position:var(--rtg-route-bg-position,center)!important;
-  background-size:cover!important;
-  background-repeat:no-repeat!important;
-  background-blend-mode:normal!important;
-  filter:none!important;
-}
-
+.rtg-map .rtg-map-block .route-map.rtg-route-stage{background-color:#082c52!important;background-image:url("../assets/rtg/rtg-season1-route-map.jpg?v=5")!important;background-position:50% 48%!important;background-size:cover!important;background-repeat:no-repeat!important;background-blend-mode:normal!important;filter:none!important;}
+.rtg-run-screen--s2 .rtg-map .rtg-map-block--season2-part .route-map.rtg-route-stage--season2{background-color:#082c52!important;background-image:url("../assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-map-hq-1")!important;background-position:var(--rtg-route-bg-position,center)!important;background-size:cover!important;background-repeat:no-repeat!important;background-blend-mode:normal!important;filter:none!important;}
 .rtg-route-stage .rtg-map-lines{pointer-events:none!important;}
-.rtg-route-stage .rtg-map-lines .rtg-route-line-shadow{
-  fill:none!important;
-  stroke:#111216!important;
-  stroke-width:2.45!important;
-  stroke-linecap:round!important;
-  stroke-linejoin:round!important;
-  opacity:.72!important;
-}
-.rtg-route-stage .rtg-map-lines .rtg-route-line{
-  fill:none!important;
-  stroke:#ffd21f!important;
-  stroke-width:1.5!important;
-  stroke-linecap:round!important;
-  stroke-linejoin:round!important;
-  opacity:.94!important;
-}
+.rtg-route-stage .rtg-map-lines .rtg-route-line-shadow{fill:none!important;stroke:#111216!important;stroke-width:2.45!important;stroke-linecap:round!important;stroke-linejoin:round!important;opacity:.72!important;}
+.rtg-route-stage .rtg-map-lines .rtg-route-line{fill:none!important;stroke:#ffd21f!important;stroke-width:1.5!important;stroke-linecap:round!important;stroke-linejoin:round!important;opacity:.94!important;}
+
+@media(max-width:420px){.rtg-journey-summary{padding:18px 16px 16px!important;}.rtg-journey-main{grid-template-columns:minmax(0,1fr) 74px;gap:10px;}.rtg-journey-opponent{width:70px;height:70px;}.rtg-journey-opponent img{width:58px!important;height:58px!important;}}
