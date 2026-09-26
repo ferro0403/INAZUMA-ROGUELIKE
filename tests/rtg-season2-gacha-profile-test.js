@@ -1,0 +1,25 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const ctx={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};ctx.globalThis=ctx;
+const db=JSON.parse(fs.readFileSync("data/IE1_S2_season_compact.json","utf8"));
+ctx.ProfiledSeasonRuntime={
+ resolveProfile:(sid,pid)=>(db.profiles||[]).find(p=>String(p.profileId)===String(pid))||null,
+ canonicalPlayerId:(sid,pid)=>(db.profiles||[]).find(p=>String(p.profileId)===String(pid))?.playerId||pid
+};
+vm.createContext(ctx);
+for(const p of ["js/road-to-glory/rtg-config.js","js/road-to-glory/rtg-card-identity.js","js/road-to-glory/rtg-gacha.js"])vm.runInContext(fs.readFileSync(p,"utf8"),ctx);
+const G=ctx.RoadToGloryGacha,C=ctx.RoadToGloryCardIdentity;
+const state={activeSeasonId:"ie1_s2",defeatedTeamIds:["gemini_storm"],gachaAcquiredCards:[]};
+const pool=G.unlockedCandidates(state,db);
+assert(pool.length>0);
+assert(pool.every(x=>x.teamId==="gemini_storm"));
+assert(pool.every(x=>String(x.cardId).startsWith("ie1_s2::")));
+assert(pool.every(x=>String(C.parse(x.cardId).playerId).includes("@gemini_storm")));
+assert(pool.every(x=>C.parse(x.cardId).profileId===x.profileId),"S2 pool must preserve the exact profile identity");
+assert(pool.every(x=>C.parse(x.cardId).canonicalPlayerId===String((db.profiles||[]).find(p=>String(p.profileId)===String(x.profileId))?.playerId||"")),"S2 cards must expose canonical identity separately");
+const first=pool[0].cardId;
+const state2={...state,gachaAcquiredCards:[first]};
+assert(!G.unownedCandidates(state2,db).some(x=>x.cardId===first));
+const s1=C.cardIdForSeason(C.parse(first).playerId.split("@")[0],"ie1");
+assert.notStrictEqual(first,s1);
+console.log("rtg-season2-gacha-profile-test: PASS");

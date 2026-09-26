@@ -102,6 +102,9 @@
         team = null,
         runStats = null,
         albumUnlocked = false,
+        rtgLegacyLabel = "",
+        rtgRoleSwitch = null,
+        moveSeasonId = null,
       } = {},
     ) {
       if (!player) return "";
@@ -121,6 +124,12 @@
         : playerTeamIdentity(player, playerId);
       const teamBadge = teamIdentity.name
         ? `<div class="player-detail-team" aria-label="Squadra ${escapeHtml(teamIdentity.name)}">${teamLogoMarkup(teamIdentity)}<strong>${escapeHtml(teamIdentity.name)}</strong></div>`
+        : "";
+      const rtgLegacyBadge = rtgLegacyLabel
+        ? `<span class="player-detail-rtg-legacy-badge" data-legacy-season="${escapeHtml(rtgLegacyLabel)}" aria-label="Legacy ${escapeHtml(rtgLegacyLabel)}"><small>Legacy</small><strong>${escapeHtml(rtgLegacyLabel)}</strong></span>`
+        : "";
+      const rtgRoleSwitchButton = rtgRoleSwitch?.enabled
+        ? `<button type="button" class="player-detail-rtg-role-switch" data-detail-rtg-role-switch aria-label="Cambia ruolo di ${escapeHtml(player.name || "giocatore")}"><small>Ruolo</small><strong aria-hidden="true">↻</strong></button>`
         : "";
       const resolved = historical
         ? {
@@ -188,10 +197,10 @@
       const equipmentMarkup = equipment
         ? `<div class="equipped-detail"><div class="equipped-detail-art">${itemIcon(equipment)}</div><div class="equipped-detail-copy"><span>${historical ? "Equipaggiamento storico" : "Oggetto assegnato"}</span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.description)}</small><em>+${Number(item.bonus || 0)} ${escapeHtml(STAT_LABELS[item.stat] || item.stat || "")}</em></div>${!readOnly && playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>`
         : `<div class="equipped-detail equipped-detail-empty"><div class="equipped-detail-copy"><span>Slot disponibile</span><strong>Nessun equipaggiamento</strong><small>Questo giocatore non ha ancora un oggetto assegnato.</small></div></div>`;
-      const moveSeasonId = [player.seasonId, player.recruitmentSource, sourceFallback.seasonId, getSeasonId()]
+      const resolvedMoveSeasonId = [moveSeasonId, player.resolvedSeasonId, player.legacySeasonId, player.seasonId, player.recruitmentSource, sourceFallback.seasonId, getSeasonId()]
         .find((seasonId) => global.SeasonRegistry?.isSeasonSource?.(seasonId)) || getSeasonId();
       const movePlayerId = player.legacyCanonicalPlayerId || sourceFallback.legacyCanonicalPlayerId || playerId;
-      const playerMove = global.MatchMoveRuntime?.moveForPlayer?.(moveSeasonId, { playerId: movePlayerId, position: resolved.position || player.position || sourceFallback.position }) || null;
+      const playerMove = global.MatchMoveRuntime?.moveForPlayer?.(resolvedMoveSeasonId, { playerId: movePlayerId, position: resolved.position || player.position || sourceFallback.position }) || null;
       const moveSectionMarkup = playerMove && global.MovePresentationRuntime?.detailMarkup
         ? `<section class="player-detail-section player-detail-move">
               <h3><span>Mossa</span></h3>
@@ -214,6 +223,8 @@
       return `
         <div class="player-detail-layout ${rarityClass(resolved.category)} ${historical ? "player-detail-historical" : ""}">
           <section class="player-detail-hero ${String(resolved.name || "").length > 18 ? "player-detail-hero--extra-long-name" : String(resolved.name || "").length > 12 ? "player-detail-hero--long-name" : ""}">
+            ${rtgRoleSwitchButton}
+            ${rtgLegacyBadge}
             <div class="player-detail-identity">
               ${teamBadge}
               <div class="player-detail-heading">

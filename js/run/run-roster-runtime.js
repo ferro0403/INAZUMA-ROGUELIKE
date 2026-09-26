@@ -119,14 +119,32 @@
 
     function playerTeamIdentity(player, playerId, currentRun = getRun()) {
       const entry = playerId && Array.isArray(currentRun?.roster) ? rosterEntry(playerId, currentRun) : null;
-      const ids = [entry?.teamId, player.teamId, ...(player.teamIds || [])].filter(Boolean);
-      const seasonTeamsById = getSeasonTeamsById();
-      const seasonDb = getSeasonDb();
-      let team = ids.map((id) => seasonTeamsById.get(String(id))).find(Boolean);
-      let teamName = team?.teamName || entry?.teamName || player.teamName || (player.teams || []).find((name) => name && name !== "Unaffiliated") || (player.teamId === "unaffiliated" ? "Svincolato" : "");
-      if (!team && teamName) team = (seasonDb?.teams || []).find((candidate) => candidate.teamName === teamName);
+      const playerSeasonId = String(player?.resolvedSeasonId || player?.legacySeasonId || currentRun?.seasonId || "");
+      const playerSeasonDb = global.SeasonRegistry?.database?.(playerSeasonId) || null;
+      const currentSeasonDb = getSeasonDb();
+      const ids = [player?.resolvedTeamId, player?.teamId, entry?.teamId, ...(player?.teamIds || [])].filter(Boolean).map(String);
+      const findTeam = (database) => {
+        if (!database) return null;
+        return ids.map((teamId) => (database?.teams || []).find((candidate) => String(candidate?.teamId || candidate?.id) === teamId)).find(Boolean)
+          || null;
+      };
+      let team = findTeam(playerSeasonDb);
+      if (!team) {
+        const seasonTeamsById = getSeasonTeamsById();
+        team = ids.map((teamId) => seasonTeamsById.get(teamId)).find(Boolean) || findTeam(currentSeasonDb);
+      }
+      let teamName = player?.teamName || team?.teamName || entry?.teamName || (player?.teams || []).find((name) => name && name !== "Unaffiliated") || (player?.teamId === "unaffiliated" ? "Svincolato" : "");
+      if (!team && teamName) {
+        team = (playerSeasonDb?.teams || []).find((candidate) => String(candidate?.teamName || candidate?.name || "") === String(teamName))
+          || (currentSeasonDb?.teams || []).find((candidate) => String(candidate?.teamName || candidate?.name || "") === String(teamName))
+          || null;
+      }
       if (!teamName) teamName = "Svincolato";
-      return { name: teamName === "Unaffiliated" ? "Svincolato" : teamName, logoUrl: team?.logoUrl || "", logo: team?.logo || "" };
+      return {
+        name: teamName === "Unaffiliated" ? "Svincolato" : teamName,
+        logoUrl: player?.teamLogoUrl || team?.logoUrl || "",
+        logo: player?.teamLogo || team?.logo || "",
+      };
     }
 
     function historicalTeamIdentity(player, team, sourceFallback) {

@@ -1,0 +1,13 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const db={ie1:{players:[{playerId:"mark",name:"Mark S1",overall:94}]},ie1_s2:{players:[{playerId:"mark",name:"Mark S2",overall:95}]}};
+const c={globalThis:null,Object,Array,String,Number,Set,Map,JSON,SeasonRegistry:{normalizeSeasonId:v=>String(v),database:s=>db[s]||null,player:(p,s)=>(db[s]?.players||[]).find(x=>String(x.playerId)===String(p))||null},ProfiledSeasonRuntime:{canonicalPlayerId:(_s,p)=>String(p)}};c.globalThis=c;vm.createContext(c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),c);
+const C=c.RoadToGloryCardIdentity;
+assert.strictEqual(C.cardIdForSeason("mark","ie1"),"ie1::mark");
+assert.strictEqual(C.cardIdForSeason("mark","ie1_s2"),"ie1_s2::mark");
+assert.notStrictEqual(C.cardIdForSeason("mark","ie1"),C.cardIdForSeason("mark","ie1_s2"));
+assert.strictEqual(C.cardIdForFreeAgent("mark"),"free_agents::mark");
+assert.strictEqual(C.parse("ie1_s2::mark").playerId,"mark");
+assert.strictEqual(C.parse("ie1_s2::mark").legacySeasonId,"ie1_s2");
+assert.strictEqual(C.legacyLabel("ie1"),"S1");assert.strictEqual(C.legacyLabel("ie1_s2"),"S2");assert.strictEqual(C.legacyLabel("ie1_s3"),"S3");
+console.log("rtg-legacy-card-identity-test: PASS");

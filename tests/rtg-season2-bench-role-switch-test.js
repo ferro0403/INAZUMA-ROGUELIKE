@@ -1,0 +1,21 @@
+"use strict";
+const assert=require("assert"),fs=require("fs");
+const squadView=fs.readFileSync("js/road-to-glory/rtg-squad-view-base.js","utf8");
+const playerView=fs.readFileSync("js/player/player-view.js","utf8");
+const detailController=fs.readFileSync("js/player/player-detail-controller.js","utf8");
+const ctl=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const theme=fs.readFileSync("css/rtg-theme.css","utf8");
+
+assert.doesNotMatch(squadView,/rtg-squad-role-trigger/,"role switch must no longer be rendered outside bench cards");
+assert.doesNotMatch(squadView,/data-rtg-switch-role/,"bench cards must not own a role-switch control anymore");
+assert.match(playerView,/data-detail-rtg-role-switch/,"player detail must render the RTG role switch");
+assert.match(playerView,/player-detail-rtg-role-switch/,"player detail must expose a dedicated role-switch class");
+assert.match(detailController,/data-detail-rtg-role-switch/,"player detail controller must bind the role switch");
+assert.match(detailController,/opts\.onRtgRoleSwitch/,"player detail controller must delegate the role switch callback");
+assert.match(ctl,/if\(!loc\|\|loc\.area!==["']bench["']\)/,"role switching stays bench-only");
+assert.match(ctl,/allowRoleSwitch:true/,"squad detail opening must explicitly allow role switching");
+assert.match(ctl,/rtgRoleSwitch:/,"RTG detail options must expose role-switch metadata");
+assert.match(ctl,/onRtgRoleSwitch:/,"RTG detail options must expose the role-switch action");
+assert.match(theme,/\.player-detail-rtg-role-switch/,"theme must style the role switch inside player detail");
+assert.match(theme,/right:122px/,"mobile role switch must sit immediately left of the S2 Legacy banner");
+console.log("rtg-season2-bench-role-switch-test: PASS");

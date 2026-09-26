@@ -1,0 +1,11 @@
+"use strict";
+const assert=require("assert"),fs=require("fs");
+const engine=fs.readFileSync("js/road-to-glory/rtg-match-engine.js","utf8");
+const theme=fs.readFileSync("css/rtg-theme.css","utf8");
+assert.match(engine,/const possessionBefore=state\.possession/,"secondary encounters must snapshot possession");
+assert.match(engine,/if\(!manual&&!goalSide\)state\.possession=possessionBefore/,"automatic secondary actions must restore possession");
+assert.match(theme,/\.is-auto\.match-event-type--recovery/,"automatic midfield losses need non-turnover feed treatment");
+assert.match(theme,/\.is-auto\.match-event-type--defensive-stop/,"automatic stopped dribbles need non-turnover feed treatment");
+assert.match(theme,/Possesso invariato/,"feed must explicitly describe the effective possession rule");
+assert.match(engine,/17\+global\.RoadToGloryRng\.int\(seed,"manual-target",0,5\)/,"matches should expose a few more manual choices");
+console.log("rtg-secondary-possession-policy-test: PASS");

@@ -1,0 +1,15 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-view-base.js","utf8"),c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-view-order.js","utf8"),c);
+const compact=(player,opts={})=>`<button class="player-card ${opts.extraClass||""}" ${opts.dataAttr||""}><span class="player-overall">${player.overall}</span><strong>${player.name}</strong></button>`;
+const view=c.RoadToGlorySquadView.create({escapeHtml:s=>String(s),compactPlayerCardMarkup:compact});
+const entries=[80,73,74].map((overall,i)=>({playerId:`p${i}`,source:i?"Svincolato":"RTG",player:{playerId:`p${i}`,name:`P${i}`,overall,normalizedRole:"DF"}}));
+const html=view.replacementPickerMarkup({target:{playerId:"x",player:{name:"X"}},role:"",allowAnyRole:true,entries,total:3,sourceFilter:"all",rarityFilter:"all",rarityOptions:[]});
+assert(html.indexOf(">80<")<html.indexOf(">74<"));
+assert(html.indexOf(">74<")<html.indexOf(">73<"));
+assert.match(html,/data-rtg-picker-overall="73"/);
+assert.match(html,/data-rtg-picker-sort/);
+assert.match(html,/OVR ↓/);
+console.log("rtg-picker-overall-order-test: PASS");

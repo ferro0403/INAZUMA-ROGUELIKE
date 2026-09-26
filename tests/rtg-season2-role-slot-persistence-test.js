@@ -1,0 +1,15 @@
+"use strict";
+const assert=require("assert"),fs=require("fs");
+const src=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const swStart=src.indexOf("function switchBenchRole");
+const swEnd=src.indexOf("function locationInDraft",swStart);
+const saveStart=src.indexOf("async function saveSquad");
+const saveEnd=src.indexOf("function nodeById",saveStart);
+assert(swStart>=0&&swEnd>swStart&&saveStart>=0&&saveEnd>saveStart);
+const sw=src.slice(swStart,swEnd),save=src.slice(saveStart,saveEnd);
+assert(sw.includes('loc.area!=="bench"'),"role switch must reject starters");
+assert(sw.includes("activeRoleVariantByCardId"),"chosen role variant must live in squad draft");
+assert(save.includes("current.squads[id(current.activeSeasonId||activeSeasonId())]=candidate"),"role variant map must persist in campaign squad");
+assert(save.includes("storeSquadSlot(activeSquadSlot,squadDraft)"),"saved role variant map must persist in selected slot snapshot");
+assert(src.includes("squadDraft=squadForSlot(next)"),"switching slots must hydrate that slot's own role map");
+console.log("rtg-season2-role-slot-persistence-test: PASS");

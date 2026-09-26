@@ -10,7 +10,7 @@
     <title>Inazuma Roguelike</title>
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/icons/apple-touch-icon-180.png" />
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="stylesheet" href="css/game.css?v=20260829-development-v3-pr6-2" />
+    <link rel="stylesheet" href="css/game.css?v=20260918-rtg-ui-polish-3" />
     <link rel="stylesheet" href="css/season-delete-modal-restyle.css?v=20260818-delete-modal-1" />
     <link rel="stylesheet" href="css/inventory-redesign.css?v=20260819-inventory-v2-2" />
     <link rel="stylesheet" href="css/squad-formation-picker-restyle.css?v=20260817-moduli-2" />
@@ -44,10 +44,12 @@
     <link rel="stylesheet" href="css/shop-ui-polish.css?v=20260816-shop-ui-polish-1" />
     <link rel="stylesheet" href="css/shop-ui-fixes.css?v=20260816-shop-wallet-two-rows-2" />
     <link rel="stylesheet" href="css/ie3-secondary-reward-ui.css?v=20260816-ie3-secondary-reward-4" />
-    <link rel="stylesheet" href="css/aurico-rarity.css?v=20260909-aurico-1" />
+    <link rel="stylesheet" href="css/aurico-rarity.css?v=20260923-rtg-vending-depth-v19" />
     <link rel="stylesheet" href="css/album-collection-hero.css?v=20260914-album-collection-hero-3" />
     <link rel="stylesheet" href="css/album-teams.css?v=20260914-album-teams-1" />
     <link rel="stylesheet" href="css/album-roster.css?v=20260914-album-roster-1" />
+    <link rel="stylesheet" href="css/road-to-glory.css?v=20260924-rtg-s2-route-blocks-1" />
+    <link rel="stylesheet" href="css/rtg-theme.css?v=20260926-rtg-detail-wallet-polish-3" />
   </head>
   <body>
     <div id="app" class="app-shell">
@@ -122,6 +124,28 @@
     <script src="js/smart-lineup.js?v=20260819-full-roster-1"></script>
     <script src="js/smart-lineup-runtime.js?v=20260823-persistence-final-1"></script>
     <script src="js/moves/move-runtime.js?v=20260915-ie3-inherited-moves-1"></script>
+    <script src="js/road-to-glory/rtg-config.js?v=20260925-rtg-shop-development-1"></script>
+    <script src="js/road-to-glory/rtg-card-identity.js?v=20260925-rtg-version-groups-1"></script>
+    <script src="js/road-to-glory/rtg-economy.js?v=20260925-rtg-shop-development-1"></script>
+    <script src="js/road-to-glory/rtg-storage.js?v=20260916-rtg-foundation-1"></script>
+    <script src="js/road-to-glory/rtg-state.js?v=20260925-rtg-shop-development-1"></script>
+    <script src="js/road-to-glory/rtg-repository.js?v=20260916-rtg-foundation-1"></script>
+    <script src="js/road-to-glory/rtg-entitlements.js?v=20260916-rtg-foundation-1"></script>
+    <script src="js/road-to-glory/rtg-player-resolver.js?v=20260925-rtg-shop-development-1"></script>
+    <script src="js/road-to-glory/rtg-rng.js?v=20260916-rtg-progression-1"></script>
+    <script src="js/road-to-glory/rtg-progression.js?v=20260916-rtg-progression-1"></script>
+    <script src="js/road-to-glory/rtg-gacha.js?v=20260924-rtg-s2-profile-gacha-1"></script>
+    <script src="js/road-to-glory/rtg-squad-runtime.js?v=20260924-rtg-s2-role-runtime-1"></script>
+    <script src="js/road-to-glory/rtg-encounter-runtime.js?v=20260916-rtg-match-1"></script>
+    <script src="js/road-to-glory/rtg-ai-policy.js?v=20260916-rtg-match-1"></script>
+    <script src="js/road-to-glory/rtg-opponent-generator.js?v=20260916-rtg-match-1"></script>
+    <script src="js/road-to-glory/rtg-penalty-runtime.js?v=20260916-rtg-match-1"></script>
+    <script src="js/road-to-glory/rtg-match-engine.js?v=20260923-rtg-legacy-cards-p2"></script>
+    <script src="js/road-to-glory/rtg-run-view.js?v=20260925-rtg-shop-development-1"></script>
+    <script src="js/road-to-glory/rtg-economy-view.js?v=20260925-rtg-shop-development-1"></script>
+    <script src="js/road-to-glory/rtg-squad-view.js?v=20260925-rtg-role-detail-1"></script>
+    <script src="js/road-to-glory/rtg-match-view.js?v=20260924-rtg-s2-match-1"></script>
+    <script src="js/road-to-glory/rtg-controller.js?v=20260925-rtg-shop-development-1"></script>
     <script src="js/moves/move-presentation.js?v=20260914-season-visual-fix-1"></script>
     <script src="js/match-simulator-config.js?v=20260914-match-moves-v2-1"></script>
     <script src="js/match-simulator.js?v=20260915-ie2-moves-v2-1"></script>
@@ -168,8 +192,8 @@
     <script src="js/development/development-center-view.js?v=20260902-permanent-club-ui-1"></script>
     <script src="js/development/development-center-controller.js?v=20260909-aurico-1"></script>
     <script src="js/development/development-indexeddb-controller-adapter.js?v=20260910-development-indexeddb-1"></script>
-    <script src="js/home/home-view.js?v=20260902-home-season-resume-1"></script>
-    <script src="js/home/home-controller.js?v=20260902-home-season-resume-1"></script>
+    <script src="js/home/home-view.js?v=20260923-rtg-direct-paint-p1"></script>
+    <script src="js/home/home-controller.js?v=20260923-rtg-initial-dom-p3"></script>
     <script src="js/shop/shop-view.js?v=20260902-shop-settings-domain-1"></script>
     <script src="js/shop/shop-controller.js?v=20260910-development-indexeddb-1"></script>
     <script src="js/settings/settings-view.js?v=20260907-game-diagnostics-domain-1"></script>
@@ -190,11 +214,11 @@
     <script src="js/diagnostics/diagnostics-bootstrap.js?v=20260907-game-diagnostics-domain-1"></script>
     <script src="js/app/test-seams.js?v=20260903-test-seams-1"></script>
     <script src="js/profile/team-profile-runtime.js?v=20260903-team-profile-1"></script>
-    <script src="js/run/run-roster-runtime.js?v=20260903-run-roster-runtime-1"></script>
+    <script src="js/run/run-roster-runtime.js?v=20260925-rtg-team-logos-1"></script>
     <script src="js/player/player-visuals.js?v=20260902-player-presentation-1"></script>
-    <script src="js/player/player-view.js?v=20260915-ie2-moves-v2-1"></script>
-    <script src="js/player/player-detail-controller.js?v=20260902-player-presentation-1"></script>
-    <script src="js/app.js?v=20260914-season-visual-fix-1"></script>
+    <script src="js/player/player-view.js?v=20260925-rtg-role-detail-1"></script>
+    <script src="js/player/player-detail-controller.js?v=20260925-rtg-role-detail-1"></script>
+    <script src="js/app.js?v=20260925-rtg-shop-development-1"></script>
     <script src="js/inventory-pull-detail-copy.js?v=20260820-pull-detail-copy-1"></script>
     <script src="js/notification-preferences.js?v=20260907-diagnostics-order-2"></script>
     <script src="js/shop-ui-polish.js?v=20260910-development-indexeddb-1"></script>
