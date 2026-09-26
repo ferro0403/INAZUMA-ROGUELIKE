@@ -8,7 +8,7 @@ const ARCH = path.join(ROOT, 'docs', 'RTG_CSS_ARCHITECTURE.md');
 
 assert.ok(fs.existsSync(ARCH), 'RTG CSS architecture contract must exist');
 
-const forbiddenNewLayerName = /(?:^|[-_.])(fix|polish|tuning|override|depth|perspective)(?:[-_.]|$)/i;
+const forbiddenNewLayerName = /(?:^|[-_.])(fix|final|polish|tuning|override|depth|perspective)(?:[-_.]|$)/i;
 const retiredDisconnectedLayers = [
   'rtg-vending-depth.css',
   'rtg-vending-perspective.css'
