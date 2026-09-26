@@ -45,3 +45,696 @@
 
 @media(max-width:430px){.rtg-match-shell.rtg-match-revolution .rtg-match-scoreboard .rtg-abandon-button{height:32px!important;min-height:32px!important;padding:0 8px!important;}.rtg-match-scoreboard .rtg-abandon-button>b{font-size:8px!important;}.rtg-match-event-feed{margin:16px 12px!important;padding:10px!important;box-shadow:4px 5px 0 #111216!important;}.rtg-live-commandbar{margin:12px 12px 0!important;box-shadow:4px 5px 0 #111216!important;}.rtg-live-command{min-height:70px!important;padding:14px 8px 10px!important;}.rtg-live-command strong{font-size:14px!important;}.rtg-live-formation-panel{margin:0 -2px!important;padding:12px!important;box-shadow:4px 5px 0 #111216!important;}.rtg-match-shell .rtg-duel-result-banner{grid-template-columns:1fr!important;gap:8px!important;padding:10px!important;box-shadow:4px 5px 0 #111216!important;}.rtg-match-shell .rtg-duel-result-status{min-height:52px!important;}.rtg-match-shell .rtg-duel-result-banner>strong{font-size:19px!important;}.rtg-duel-card--clean .rtg-duel-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;}.rtg-duel-card--clean .rtg-duel-choice-card{min-height:112px!important;padding:11px 10px!important;}.rtg-duel-card--clean .rtg-choice-copy strong{font-size:12px!important;line-height:1.08!important;}.rtg-duel-card--clean .rtg-choice-copy em{font-size:8px!important;}.rtg-duel-card--clean .rtg-choice-probability strong{font-size:18px!important;}.rtg-match-shell .rtg-match-overlay .rtg-duel-resolving.rtg-duel-card--clean{padding:13px!important;}.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-head{margin-bottom:13px!important;padding:11px 12px 12px!important;}.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-head strong{font-size:1.38rem!important;}.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-versus-board--resolving{grid-template-columns:minmax(0,1fr) 30px minmax(0,1fr)!important;gap:6px!important;}.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-versus-board--resolving .rtg-duel-result-player{width:clamp(118px,35vw,134px)!important;max-width:134px!important;}.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-action{min-height:40px!important;margin:6px 5px 6px!important;width:calc(100% - 10px)!important;padding:6px 7px!important;}.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-action strong{font-size:9px!important;}.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-vs-core--resolving span{width:30px!important;height:30px!important;font-size:10px!important;}.rtg-duel-resolving.rtg-duel-card--clean .rtg-duel-resolving-footer{min-height:39px!important;margin-top:12px!important;font-size:8px!important;}}
 @media(max-width:360px){.rtg-duel-card--clean .rtg-duel-choice-grid{gap:7px!important;}.rtg-duel-card--clean .rtg-duel-choice-card{min-height:116px!important;padding:10px 8px!important;}.rtg-duel-card--clean .rtg-choice-copy strong{font-size:11px!important;}.rtg-duel-card--clean .rtg-choice-delta{padding:3px 5px!important;font-size:7px!important;}}
+
+/* Residual match ownership migrated from road-to-glory.css. */
+
+.rtg-static-field--main {
+  display: grid;
+  gap: 10px;
+  padding: 18px;
+  border: 4px solid #101116;
+  border-radius: 0;
+  background: #087044 url("../assets/squad/tactical-pitch.svg") center / 100% 100% no-repeat;
+  box-shadow: 8px 9px 0 #101116, inset 0 0 70px rgba(0,0,0,.25);
+}
+
+.rtg-field-card { max-width: 80px !important; }
+
+.rtg-field-midline {
+  display: grid;
+  place-items: center;
+  min-height: 44px;
+  border-top: 3px solid rgba(255,255,255,.7);
+  border-bottom: 3px solid rgba(255,255,255,.7);
+}
+
+.rtg-field-midline span {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border: 3px solid #101116;
+  border-radius: 50%;
+  background: #ffd21f;
+  color: #101116;
+  font-weight: 1000;
+}
+
+.rtg-field-team-label {
+  justify-self: center;
+  padding: 4px 8px;
+  border: 2px solid #101116;
+  background: #fffdf5;
+  color: #101116;
+  font-size: .65rem;
+  font-weight: 1000;
+  text-transform: uppercase;
+}
+
+.rtg-probability { margin: 12px 0 16px; }
+
+.rtg-versus--cards {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 14px;
+}
+
+.rtg-versus--cards article { display: grid; justify-items: center; gap: 6px; min-width: 0; }
+
+.rtg-versus--cards article > small { color: #625e56; font-weight: 1000; text-transform: uppercase; }
+
+.rtg-versus--cards > b { color: #101116; font-size: 1.4rem; }
+
+.rtg-final-probability { margin: 14px 0; color: #101116; }
+
+.rtg-action-button { min-height: 48px; border: 3px solid #101116 !important; border-radius: 0 !important; box-shadow: 4px 5px 0 #101116; }
+
+.rtg-action-button--move { background: #e95f39 !important; color: #fff !important; }
+
+.rtg-action-button--move small { display: block; font-size: .65rem; }
+
+.rtg-halftime-active h3,
+.rtg-halftime-compatible h3 { color: #101116; }
+
+.rtg-halftime-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill,minmax(88px,1fr));
+  justify-items: center;
+  gap: 16px 10px;
+}
+
+.rtg-halftime-lineup { margin-bottom: 14px; }
+
+.rtg-halftime-player-card { width: 88px !important; max-width: 88px !important; }
+
+.rtg-halftime-compatible {
+  min-height: 118px;
+  padding: 12px;
+  border: 3px solid #101116;
+  background: #f4f0e5;
+}
+
+.rtg-halftime-compatible-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: end;
+  margin-bottom: 10px;
+}
+
+.rtg-halftime-compatible-head p,
+.rtg-halftime-compatible-head h3 { margin: 0; }
+
+.rtg-halftime-compatible-head > span {
+  padding: 4px 7px;
+  border: 2px solid #101116;
+  background: #ffd21f;
+  font-size: .65rem;
+  font-weight: 1000;
+}
+
+.rtg-halftime-empty {
+  margin: 0;
+  color: #666158;
+  font-weight: 750;
+}
+
+.rtg-half-confirm { width: 100%; margin-top: 16px; border: 3px solid #101116 !important; border-radius: 0 !important; box-shadow: 5px 6px 0 #101116; }
+
+.rtg-penalty-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: end;
+  padding-bottom: 10px;
+  border-bottom: 3px solid #101116;
+}
+
+.rtg-penalty-head h2 { margin: 0; color: #101116; text-transform: uppercase; }
+
+.rtg-penalty-head .muted { margin: 4px 0 0; color: #666158; }
+
+.rtg-penalty-score {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 3px solid #101116;
+  background: #ffd21f;
+  color: #101116;
+  font-size: 1.4rem;
+  box-shadow: 4px 4px 0 #101116;
+}
+
+.rtg-penalty-history {
+  display: grid;
+  gap: 7px;
+  margin: 14px 0;
+}
+
+.rtg-penalty-history > div {
+  display: grid;
+  grid-template-columns: 42px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.rtg-penalty-history b { font-size: .7rem; color: #101116; }
+
+.rtg-penalty-history > div > span { display: flex; gap: 6px; flex-wrap: wrap; }
+
+.rtg-penalty-dot {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #101116;
+  border-radius: 50%;
+  background: #fff;
+  color: #101116;
+  font-size: .7rem;
+  font-weight: 1000;
+}
+
+.rtg-penalty-dot--goal { background: #49c878; }
+
+.rtg-penalty-dot--save { background: #ef695d; }
+
+.rtg-penalty-dot--pending { opacity: .32; }
+
+.rtg-penalty-last {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 7px 10px;
+  border: 2px solid #101116;
+  margin-bottom: 12px;
+}
+
+.rtg-penalty-last.is-goal { background: #dff6e7; }
+
+.rtg-penalty-last.is-save { background: #fde4df; }
+
+.rtg-penalty-last span { font-size: .7rem; color: #625e56; }
+
+.rtg-penalty-versus {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.rtg-penalty-versus article { display: grid; justify-items: center; gap: 5px; }
+
+.rtg-penalty-versus article > small { color: #625e56; font-weight: 1000; text-transform: uppercase; }
+
+.rtg-penalty-versus > b { color: #101116; font-size: 1.25rem; }
+
+.rtg-penalty-player-card { width: 96px !important; max-width: 96px !important; }
+
+.rtg-penalty-instruction { margin: 14px 0 0; color: #101116; font-weight: 750; }
+
+.rtg-penalty-directions { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; margin: 14px 0; }
+
+.rtg-penalty-directions .btn { min-height: 48px; border: 3px solid #101116; border-radius: 0; background: #fff; color: #101116; }
+
+.rtg-penalty-move { width: 100%; border: 3px solid #101116 !important; border-radius: 0 !important; box-shadow: 4px 5px 0 #101116; }
+
+.rtg-penalty-move strong,.rtg-penalty-move small { display:block; }
+
+.rtg-penalty-move small { font-size:.62rem; margin-top:2px; }
+
+.rtg-shootout-score { margin-top: 14px; text-align: center; color: #101116; font-size: 1.8rem; font-weight: 1000; }
+
+
+@media (max-width: 780px) {
+  .rtg-static-field--main { padding: 10px 6px; gap: 6px; box-shadow: 5px 6px 0 #101116, inset 0 0 55px rgba(0,0,0,.22); }
+  .rtg-field-card { width: 58px !important; max-width: 58px !important; }
+  .rtg-versus--cards { grid-template-columns: 1fr auto 1fr; gap: 7px; }
+  .rtg-halftime-cards { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 14px 6px; }
+  .rtg-halftime-player-card { width: 70px !important; max-width: 70px !important; }}
+
+
+@media (max-width: 380px) {
+  .rtg-penalty-directions { grid-template-columns: 1fr; }}
+
+.rtg-ticker-event {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 30px minmax(0,1fr) auto;
+  gap: 7px;
+  align-items: center;
+  padding: 5px 6px;
+  border-left: 3px solid rgba(92,130,177,.44);
+  background: rgba(255,255,255,.035);
+}
+
+.rtg-ticker-event.is-manual { border-left-color: #ffd34f; }
+
+.rtg-ticker-event > span {
+  color: #ffd34f;
+  font-size: .62rem;
+  font-weight: 950;
+}
+
+.rtg-ticker-event strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #dce8f7;
+  font-size: .7rem;
+}
+
+.rtg-ticker-event em {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: #8fd4ff;
+  font-size: .6rem;
+  font-style: normal;
+}
+
+
+@media (max-width: 780px) {
+  .rtg-ticker-event { grid-template-columns: 28px minmax(0,1fr); }
+  .rtg-ticker-event em { grid-column: 2; max-width: 100%; }}
+
+.rtg-halftime-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: end;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(92,130,177,.30);
+}
+
+.rtg-halftime-head h2,
+.rtg-halftime-head p { margin: 0; }
+
+.rtg-halftime-head > strong {
+  color: #ffd34f;
+  font-size: 1.55rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.rtg-halftime-layout {
+  display: grid;
+  grid-template-columns: minmax(0,1.6fr) minmax(220px,.7fr);
+  gap: 14px;
+  margin-top: 12px;
+}
+
+.rtg-halftime-field-panel,
+.rtg-halftime-bench-panel { min-width: 0; }
+
+.rtg-halftime-section-title {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.rtg-halftime-section-title span { color: #8fa9c8; font-size: .62rem; font-weight: 950; letter-spacing: .08em; }
+
+.rtg-halftime-section-title b { color: #ffd34f; }
+
+.rtg-halftime-pitch {
+  min-height: 500px;
+  display: grid;
+  align-content: space-evenly;
+  gap: 4px;
+  padding: 12px 7px;
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: 16px;
+  background:
+    linear-gradient(rgba(255,255,255,.10) 2px,transparent 2px) center/100% 50%,
+    repeating-linear-gradient(90deg,#14633f 0 12.5%,#176c45 12.5% 25%);
+}
+
+.rtg-halftime-pitch-row {
+  display: grid;
+  grid-template-columns: repeat(var(--row-count,1),minmax(0,1fr));
+  justify-items: center;
+  gap: 5px;
+}
+
+.rtg-halftime-player-card {
+  width: 72px !important;
+  max-width: 72px !important;
+  min-height: 88px;
+}
+
+.rtg-halftime-bench-strip {
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  justify-items: center;
+  gap: 14px 8px;
+  padding: 10px;
+  border: 1px solid rgba(92,130,177,.26);
+  border-radius: 14px;
+  background: rgba(7,23,44,.68);
+}
+
+.rtg-halftime-player-card.is-incompatible {
+  opacity: .28;
+  filter: grayscale(.8);
+}
+
+.rtg-halftime-player-card.is-compatible {
+  outline: 3px solid #ffd34f;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(255,211,79,.12);
+}
+
+.rtg-halftime-change-box {
+  display: grid;
+  gap: 4px;
+  min-height: 96px;
+  margin-top: 10px;
+  padding: 10px;
+  border: 1px solid rgba(92,130,177,.26);
+  border-radius: 12px;
+  background: rgba(7,23,44,.66);
+}
+
+.rtg-halftime-change-box p,
+.rtg-halftime-change-box strong,
+.rtg-halftime-change-box span { margin: 0; }
+
+.rtg-halftime-change-box span { color: #9ab2cf; font-size: .72rem; }
+
+
+@media (max-width:780px) {
+  .rtg-halftime-layout { grid-template-columns: 1fr; }
+  .rtg-halftime-pitch { min-height: 430px; }
+  .rtg-halftime-bench-strip { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 10px 4px; }
+  .rtg-halftime-player-card { width: 66px !important; max-width: 66px !important; min-height: 84px; }}
+
+@media (max-width:390px) {
+  .rtg-halftime-bench-strip { grid-template-columns: repeat(2,minmax(0,1fr)); }}
+
+.rtg-ticker-event{border-bottom:1px solid #d8d1c4;color:var(--rtg-match-ink)}
+
+.rtg-ticker-event>span{color:var(--rtg-match-gold)}
+
+.rtg-penalty-choice{margin-top:14px}
+
+.rtg-penalty-choice-copy{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:end;
+  margin-bottom:7px;
+}
+
+.rtg-penalty-choice-copy strong{font-size:.78rem;letter-spacing:.06em}
+
+.rtg-penalty-choice-copy span{color:#70685e;font-size:.68rem;font-weight:750}
+
+.rtg-penalty-goal{
+  min-height:126px;
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  align-items:stretch;
+  padding:8px 8px 0;
+  border:4px solid #111216;
+  border-bottom-width:8px;
+  background:
+    linear-gradient(90deg,transparent 33%,rgba(17,18,22,.13) 33% 34%,transparent 34% 66%,rgba(17,18,22,.13) 66% 67%,transparent 67%),
+    linear-gradient(#f7f3e7,#fffdf7);
+}
+
+.rtg-penalty-goal button{
+  position:relative;
+  display:grid;
+  place-items:end center;
+  gap:5px;
+  border:0;
+  border-right:1px dashed #9e968a;
+  background:transparent;
+  color:#111216;
+  padding:10px 4px 8px;
+  font:inherit;
+  font-weight:900;
+}
+
+.rtg-penalty-goal button:last-child{border-right:0}
+
+.rtg-penalty-goal button i{
+  position:absolute;
+  top:24px;
+  width:22px;
+  height:22px;
+  border:3px solid #111216;
+  border-radius:50%;
+  background:#ffd21f;
+  box-shadow:2px 2px 0 rgba(17,18,22,.24);
+}
+
+.rtg-penalty-goal button:active i{transform:scale(.88)}
+
+.rtg-penalty-goal button span{font-size:.68rem;text-transform:uppercase}
+
+
+/* Illustrated penalty goal: the new sprite is completely isolated from the
+   legacy <i> target artwork. Do not reuse the old CSS-drawn circle here. */
+.rtg-penalty-goal--illustrated button{
+  border-right:0!important;
+}
+
+.rtg-penalty-goal--illustrated button::before,
+.rtg-penalty-goal--illustrated button::after{
+  content:none!important;
+  display:none!important;
+}
+
+.rtg-penalty-goal--illustrated button>i{
+  display:none!important;
+}
+
+.rtg-penalty-goal--illustrated .rtg-penalty-ball-wrap{
+  position:absolute!important;
+  top:29px!important;
+  left:50%!important;
+  width:38px!important;
+  height:38px!important;
+  display:block!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  outline:0!important;
+  transform:translateX(-50%)!important;
+  filter:none!important;
+  font-size:0!important;
+  line-height:0!important;
+  text-transform:none!important;
+  pointer-events:none!important;
+}
+
+.rtg-penalty-goal--illustrated .rtg-penalty-ball-wrap::before,
+.rtg-penalty-goal--illustrated .rtg-penalty-ball-wrap::after{
+  content:none!important;
+  display:none!important;
+}
+
+.rtg-penalty-goal--illustrated .rtg-penalty-ball-sprite{
+  position:static!important;
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:none!important;
+  max-height:none!important;
+  object-fit:contain!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  outline:0!important;
+  transform:none!important;
+  filter:none!important;
+  opacity:1!important;
+}
+
+.rtg-penalty-goal--illustrated button:active .rtg-penalty-ball-wrap,
+.rtg-penalty-goal--illustrated button:active .rtg-penalty-ball-sprite{
+  transform:translateX(-50%)!important;
+}
+
+.rtg-penalty-goal--illustrated button:active .rtg-penalty-ball-sprite{
+  transform:none!important;
+}
+
+.rtg-penalty-goal--illustrated .rtg-penalty-direction-label{
+  font-size:.68rem!important;
+  text-transform:uppercase!important;
+}
+
+
+/* Latest action is deliberately held on screen for the controller's 2.2s breather. */
+.rtg-ticker-event {
+  transition: background .18s ease, border-color .18s ease, transform .18s ease;
+}
+
+.rtg-ticker-event.is-latest {
+  border-left-color: #ffd34f !important;
+  background: linear-gradient(90deg, rgba(255,211,79,.20), rgba(255,255,255,.05));
+  box-shadow: inset 0 0 0 1px rgba(255,211,79,.18);
+}
+
+.rtg-ticker-event.is-latest > span { color: #fff2a4; }
+
+.rtg-ticker-event.is-latest strong { color: #fff; }
+
+.rtg-halftime-scoreboard {display:grid;grid-template-columns:86px minmax(0,1fr) 82px;align-items:stretch;border:3px solid #111216;background:#111216;color:#fff;}
+
+.rtg-halftime-minute,.rtg-halftime-shape {display:grid;align-content:center;justify-items:center;padding:8px;background:#ffd21f;color:#111216;}
+
+.rtg-halftime-minute strong {font-size:1.55rem;line-height:.9;}
+
+.rtg-halftime-minute span,.rtg-halftime-shape small {font-size:.45rem;font-weight:1000;letter-spacing:.08em;}
+
+.rtg-halftime-shape strong {font-size:.82rem;}
+
+.rtg-halftime-score {min-width:0;display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:7px;padding:8px;text-align:center;}
+
+.rtg-halftime-score small {overflow:hidden;font-size:.5rem;font-weight:900;text-overflow:ellipsis;white-space:nowrap;}
+
+.rtg-halftime-score strong {color:#ffd21f;font-size:1.35rem;}
+
+.rtg-halftime-tip {display:flex;align-items:center;justify-content:space-between;gap:10px;margin:8px 0;padding:7px 9px;border-left:5px solid #ffd21f;background:#f0ece3;color:#111216;}
+
+.rtg-halftime-tip strong {font-size:.58rem;}
+
+.rtg-halftime-tip span {font-size:.54rem;color:#615c53;text-align:right;}
+
+.rtg-halftime-revolution .rtg-halftime-layout {display:grid;grid-template-columns:1fr;gap:8px;}
+
+.rtg-halftime-revolution .rtg-halftime-field-panel,.rtg-halftime-revolution .rtg-halftime-bench-panel {padding:0;border:0;background:transparent;box-shadow:none;}
+
+.rtg-halftime-revolution .rtg-halftime-pitch {min-height:520px;height:auto;}
+
+.rtg-halftime-revolution .rtg-halftime-pitch .rtg-shared-match-side {height:520px!important;min-height:520px!important;padding:14px 3px!important;}
+
+.rtg-halftime-revolution .rtg-halftime-section-title {margin:0 0 5px;padding:5px 7px;border:2px solid #111216;background:#fff;}
+
+.rtg-halftime-revolution .rtg-halftime-section-title span {color:#111216;font-size:.55rem;}
+
+.rtg-halftime-revolution .rtg-halftime-section-title b {color:#8b6814;}
+
+.rtg-halftime-revolution .rtg-halftime-bench-strip {display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;padding:8px;border:2px solid #111216;background:#ebe6db;}
+
+.rtg-halftime-revolution .rtg-halftime-bench-strip .rtg-halftime-player-card {max-width:78px!important;justify-self:center;}
+
+.rtg-halftime-selection {display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:2px 8px;margin-top:6px;padding:7px 9px;border:2px solid #111216;background:#fff7c6;color:#111216;}
+
+.rtg-halftime-selection span {grid-row:1/3;font-size:.46rem;font-weight:1000;writing-mode:vertical-rl;transform:rotate(180deg);}
+
+.rtg-halftime-selection strong {font-size:.72rem;}
+
+.rtg-halftime-selection em {font-size:.52rem;font-style:normal;color:#625d54;}
+
+.rtg-halftime-revolution .rtg-half-confirm {width:100%;min-height:58px;display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;padding:9px 12px;border:3px solid #111216!important;background:#ffd21f!important;color:#111216!important;box-shadow:4px 5px 0 #111216!important;}
+
+.rtg-halftime-revolution .rtg-half-confirm span {font-size:.5rem;letter-spacing:.08em;}
+
+.rtg-halftime-revolution .rtg-half-confirm b {font-size:.82rem;}
+
+
+@media (max-width:430px) {
+  .rtg-halftime-scoreboard {grid-template-columns:76px minmax(0,1fr) 72px;}
+  .rtg-halftime-revolution .rtg-halftime-pitch,.rtg-halftime-revolution .rtg-halftime-pitch .rtg-shared-match-side {min-height:500px!important;height:500px!important;}}
+
+.rtg-halftime-revolution .rtg-halftime-field-panel {
+  width:calc(100% + 16px);
+  margin-left:-8px;
+}
+
+
+/* Halftime must feel like a match state change, not just another editor. */
+.rtg-halftime-break-banner{
+  position:relative;
+  display:grid;
+  grid-template-columns:auto minmax(0,1fr);
+  grid-template-rows:auto auto;
+  align-items:center;
+  gap:1px 12px;
+  margin:-2px -2px 12px;
+  padding:14px 16px 13px;
+  overflow:hidden;
+  border:3px solid #111216;
+  background:#111216;
+  color:#fff;
+  box-shadow:5px 6px 0 rgba(17,18,22,.22);
+}
+
+.rtg-halftime-break-banner::after{
+  content:"45";
+  position:absolute;
+  right:-4px;
+  bottom:-28px;
+  color:rgba(255,210,31,.13);
+  font-size:6rem;
+  font-weight:1000;
+  line-height:1;
+  transform:skewX(-8deg);
+}
+
+.rtg-halftime-break-banner>span{
+  grid-column:1/-1;
+  color:#ffd21f;
+  font-size:.52rem;
+  font-weight:1000;
+  letter-spacing:.14em;
+}
+
+.rtg-halftime-break-banner>strong{
+  position:relative;
+  z-index:1;
+  font-size:1.65rem;
+  font-style:italic;
+  line-height:.95;
+  letter-spacing:-.03em;
+}
+
+.rtg-halftime-break-banner>em{
+  position:relative;
+  z-index:1;
+  color:#e8e2d8;
+  font-size:.57rem;
+  font-style:normal;
+  font-weight:800;
+}
+
+.rtg-halftime-scoreboard{
+  border-top:5px solid #ffd21f!important;
+}
+
+.rtg-halftime-minute span{
+  color:#8b6814!important;
+  font-weight:1000!important;
+}
+
+.rtg-half-confirm{
+  min-height:64px!important;
+  border:3px solid #111216!important;
+  box-shadow:5px 6px 0 #111216!important;
+}
+
+
+@media(max-width:430px){
+  .rtg-halftime-break-banner{
+    margin-bottom:10px;
+    padding:12px 12px 11px;
+  }
+  .rtg-halftime-break-banner>strong{
+    font-size:1.4rem;
+  }
+  .rtg-halftime-break-banner>em{
+    font-size:.51rem;
+  }}
