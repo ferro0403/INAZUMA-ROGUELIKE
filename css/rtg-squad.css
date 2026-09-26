@@ -33,7 +33,21 @@
 .player-detail-rtg-role-switch strong{align-self:end!important;font:1000 20px/.9 system-ui,sans-serif!important;letter-spacing:-.04em!important;}
 .player-detail-rtg-role-switch:active{translate:2px 2px!important;box-shadow:2px 2px 0 #111216!important;}
 
+/* Final replacement-picker ownership migrated from the historical core. */
+.rtg-squad-shell .rtg-squad-content{padding-top:14px!important;}
+.rtg-modal .rtg-picker-rarity-filter{grid-column:1/-1;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;min-width:0;margin-top:1px;}
+.rtg-modal .rtg-picker-rarity-filter>span{color:#5f574c;font-size:.62rem;font-weight:1000;letter-spacing:.09em;text-transform:uppercase;}
+.rtg-modal .rtg-picker-rarity-filter select{width:100%;min-width:0;min-height:38px;padding:0 34px 0 10px;border:2px solid #111216;border-radius:2px;background:linear-gradient(135deg,transparent 0 calc(100% - 31px),#ffd21f calc(100% - 31px) 100%),#fff;color:#111216;box-shadow:2px 3px 0 rgba(17,18,22,.18);font:inherit;font-size:.72rem;font-weight:950;outline:none;appearance:auto;}
+.rtg-modal .rtg-picker-rarity-filter select:focus{box-shadow:3px 4px 0 #ffd21f;}
+.modal.rtg-squad-picker-modal .rtg-picker-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(72px,88px))!important;justify-content:center!important;justify-items:stretch!important;align-items:start!important;gap:18px 10px!important;width:100%!important;min-height:106px;padding:16px 0 10px!important;}
+.modal.rtg-squad-picker-modal .rtg-picker-grid>[data-rtg-picker-player]{width:100%!important;max-width:88px!important;justify-self:center!important;}
+.modal.rtg-squad-picker-modal .rtg-picker-count{grid-column:1/-1;}
+.rtg-picker-quick-strip>[data-rtg-picker-player]{flex:0 0 88px!important;width:88px!important;max-width:88px!important;}
+.modal.rtg-squad-picker-modal .rtg-picker-squad-card .player-portrait-wrap,.rtg-picker-quick-strip .rtg-picker-squad-card .player-portrait-wrap{height:auto!important;min-height:0!important;aspect-ratio:1.05!important;padding:7px 6px 4px!important;overflow:visible!important;place-items:end center!important;}
+.modal.rtg-squad-picker-modal .rtg-picker-squad-card img.player-portrait,.rtg-picker-quick-strip .rtg-picker-squad-card img.player-portrait{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center bottom!important;transform:none!important;}
+.modal.rtg-squad-picker-modal .rtg-picker-squad-card .player-portrait-wrap::after,.rtg-picker-quick-strip .rtg-picker-squad-card .player-portrait-wrap::after{top:17px!important;height:51px!important;}
+
 @media(max-width:520px){.player-detail-rtg-role-switch{top:16px!important;right:122px!important;width:42px!important;min-width:42px!important;min-height:42px!important;padding:4px 3px 3px!important;border-width:2px!important;box-shadow:3px 3px 0 #111216!important;}.player-detail-rtg-role-switch small{font-size:5px!important;}.player-detail-rtg-role-switch strong{font-size:17px!important;}}
-@media(max-width:430px){.rtg-picker-overall-order{min-height:32px;padding:5px 9px;font-size:.72rem;}}
+@media(max-width:430px){.rtg-picker-overall-order{min-height:32px;padding:5px 9px;font-size:.72rem;}.rtg-modal .rtg-picker-rarity-filter{grid-template-columns:1fr;gap:5px;}.rtg-modal .rtg-picker-rarity-filter select{min-height:36px;font-size:.69rem;}.modal.rtg-squad-picker-modal .rtg-picker-grid{grid-template-columns:repeat(auto-fit,minmax(68px,82px))!important;gap:18px 8px!important;}.modal.rtg-squad-picker-modal .rtg-picker-grid>[data-rtg-picker-player]{max-width:82px!important;}.rtg-picker-quick-strip>[data-rtg-picker-player]{flex-basis:82px!important;width:82px!important;max-width:82px!important;}}
 @media(max-width:370px){.player-detail-rtg-role-switch{top:14px!important;right:114px!important;width:38px!important;min-width:38px!important;min-height:38px!important;}.player-detail-rtg-role-switch strong{font-size:16px!important;}}
 @media(max-width:360px){.rtg-modal .rtg-player-catalog .rtg-catalog-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}}
