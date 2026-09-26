@@ -1,0 +1,70 @@
+/* Road to Glory — economy owner.
+   Owns RTG-specific Shop/Development/Legacy economy presentation.
+   Shared HUD currency presentation remains in rtg-shell.css. */
+
+/* Development uses deliberately larger currency artwork than the compact HUD token. */
+.rtg-development-screen .rtg-development-token-icon{
+  width:74px!important;
+  height:74px!important;
+  min-width:74px!important;
+  min-height:74px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  margin:0!important;
+  overflow:visible!important;
+}
+.rtg-development-screen .rtg-development-token-icon>.rtg-token-icon{
+  display:block!important;
+  width:66px!important;
+  height:66px!important;
+  min-width:66px!important;
+  max-width:66px!important;
+  min-height:66px!important;
+  max-height:66px!important;
+  flex:0 0 66px!important;
+  margin:0!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  vertical-align:middle!important;
+}
+.rtg-development-screen .development-requirement .rtg-development-token-icon{
+  align-self:center!important;
+  justify-self:center!important;
+}
+.rtg-development-screen .development-wallet>span:first-child{align-items:center!important;}
+.rtg-development-screen .development-wallet .rtg-development-token-icon{
+  width:82px!important;
+  height:82px!important;
+  min-width:82px!important;
+  min-height:82px!important;
+  align-self:center!important;
+  justify-self:center!important;
+}
+.rtg-development-screen .development-wallet .rtg-development-token-icon>.rtg-token-icon{
+  width:74px!important;
+  height:74px!important;
+  min-width:74px!important;
+  max-width:74px!important;
+  min-height:74px!important;
+  max-height:74px!important;
+  flex-basis:74px!important;
+}
+
+@media(max-width:430px){
+  .rtg-development-screen .rtg-development-token-icon{
+    width:70px!important;height:70px!important;min-width:70px!important;min-height:70px!important;
+  }
+  .rtg-development-screen .rtg-development-token-icon>.rtg-token-icon{
+    width:62px!important;height:62px!important;min-width:62px!important;max-width:62px!important;
+    min-height:62px!important;max-height:62px!important;flex-basis:62px!important;margin:0!important;
+  }
+  .rtg-development-screen .development-wallet .rtg-development-token-icon{
+    width:78px!important;height:78px!important;min-width:78px!important;min-height:78px!important;
+  }
+  .rtg-development-screen .development-wallet .rtg-development-token-icon>.rtg-token-icon{
+    width:70px!important;height:70px!important;min-width:70px!important;max-width:70px!important;
+    min-height:70px!important;max-height:70px!important;flex-basis:70px!important;
+  }
+}
