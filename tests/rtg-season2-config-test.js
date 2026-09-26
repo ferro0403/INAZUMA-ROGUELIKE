@@ -28,4 +28,6 @@ assert.strictEqual(nodes.at(-1).id,"main:raimon_inazuma_eleven_2");
 assert.strictEqual(SEASON2.routeBackground,"assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-map-hq-1");
 assert.strictEqual(SEASON1.rarityWeights.Leggenda,0,"Season 1 pull rates must remain unchanged");
 assert.strictEqual(SEASON2.rarityWeights.Leggenda,1,"Season 2 distributor must give Leggenda a non-zero yellow rate");
+assert(Object.values(SEASON2.mainRewards).every(value=>value===350),"Every Season 2 boss must award 350 RTG tokens");
+assert.deepStrictEqual(JSON.parse(JSON.stringify(SEASON2.secondaryRewards)),[{amount:200,weight:100}]);
 console.log("rtg-season2-config-test: PASS");

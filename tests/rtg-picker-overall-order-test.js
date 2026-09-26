@@ -10,6 +10,6 @@ const html=view.replacementPickerMarkup({target:{playerId:"x",player:{name:"X"}}
 assert(html.indexOf(">80<")<html.indexOf(">74<"));
 assert(html.indexOf(">74<")<html.indexOf(">73<"));
 assert.match(html,/data-rtg-picker-overall="73"/);
-assert.match(html,/data-rtg-picker-overall-order/);
+assert.match(html,/data-rtg-picker-sort/);
 assert.match(html,/OVR ↓/);
 console.log("rtg-picker-overall-order-test: PASS");

@@ -7,7 +7,7 @@ const order=["secret_service","gemini_storm","alpine_ie2","epsilon","royal_acade
 assert.strictEqual(S.seasonId,"ie1_s2");
 assert.deepStrictEqual(Array.from(S.mainTeams),order);
 assert.strictEqual(nodes.length,33);
-assert.deepStrictEqual(nodes.filter(n=>n.type==="main").map(n=>n.teamId),order);
+assert.deepStrictEqual(Array.from(nodes.filter(n=>n.type==="main"),n=>n.teamId),order);
 assert.strictEqual(nodes.filter(n=>n.type==="secondary").length,16);
 for(let i=0;i<nodes.length;i++)assert.strictEqual(nodes[i].type,i%2===0?"main":"secondary");
 const expected={

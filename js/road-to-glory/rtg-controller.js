@@ -15,6 +15,8 @@
     const matchEngine=deps.matchEngine||global.RoadToGloryMatchEngine;
     const opponentGenerator=deps.opponentGenerator||global.RoadToGloryOpponentGenerator;
     const playerResolver=deps.playerResolver||global.RoadToGloryPlayerResolver;
+    const economy=deps.economy||global.RoadToGloryEconomy;
+    const economyView=deps.economyView||null;
     const cardIdentity=deps.cardIdentity||global.RoadToGloryCardIdentity;
     const rng=deps.rng||global.RoadToGloryRng;
     const aiPolicy=deps.aiPolicy||global.RoadToGloryAiPolicy;
@@ -38,6 +40,11 @@
     let selectedEncounterChoice=null;
     let selectedEncounterId=null;
     let selectedAlbumSeasonId="ie1";
+    let selectedDevelopmentCardId=null;
+    let developmentQuery="";
+    let developmentRarity="Tutti";
+    let developmentVisibleCount=24;
+    const DEVELOPMENT_PLAYER_PAGE_SIZE=24;
     const SQUAD_PICKER_PAGE_SIZE=24;
     const ENCOUNTER_REVEAL_DELAY_MS=2200;
     const FINAL_COMPARISON_DELAY_MS=1700;
@@ -137,7 +144,7 @@
       if(app)app.innerHTML=lastRenderedHtml;
       if(options.preserveMatchTimeline===true){
         global.requestAnimationFrame?.(()=>keepLatestMatchActionVisible());
-      }else{
+      }else if(options.preserveScroll!==true){
         deps.resetRenderedViewScroll?.();
       }
       return lastRenderedHtml;
@@ -380,12 +387,7 @@
       };
       if(typeof schedule==="function")schedule(mount,0);else mount();
     }
-    function resolved(cardRef,roleVariantId=null){
-      let player=playerResolver.resolveAtLevel20(cardRef,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
-      if(!player&&!cardIdentity){
-        const fallback=cardMeta(cardRef).playerId;
-        player=playerResolver.resolveAtLevel20(fallback,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
-      }
+    function normalizeResolvedPlayer(cardRef,player,roleVariantId=null){
       if(!player)return null;
       const stats=player.stats||player.finalStats||{};
       const meta=cardMeta(player.cardId||cardRef);
@@ -394,12 +396,50 @@
       const move=playerResolver.resolveMove(cardRef,campaign?.activeSeasonId||"ie1",role,freeAgentsDb,roleVariantId);
       return move?{...normalized,move:clone(move)}:{...normalized,move:null};
     }
-    function resolvedSquad(snapshot){
+    function resolvedWithDevelopment(cardRef,roleVariantId=null,developmentByCardId=null){
+      let player;
+      if(typeof playerResolver.resolveOwnedAtLevel20==="function"){
+        player=playerResolver.resolveOwnedAtLevel20(cardRef,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb,developmentByCardId||{});
+      }else{
+        player=playerResolver.resolveAtLevel20(cardRef,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
+      }
+      if(!player&&!cardIdentity){
+        const fallback=cardMeta(cardRef).playerId;
+        player=playerResolver.resolveAtLevel20(fallback,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
+      }
+      return normalizeResolvedPlayer(cardRef,player,roleVariantId);
+    }
+    function resolved(cardRef,roleVariantId=null){
+      return resolvedWithDevelopment(cardRef,roleVariantId,campaign?.developmentByCardId||{});
+    }
+    function resolvedStandard(cardRef,roleVariantId=null){
+      let player;
+      if(typeof playerResolver.resolveStandardAtLevel20==="function"){
+        player=playerResolver.resolveStandardAtLevel20(cardRef,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
+      }else{
+        player=playerResolver.resolveAtLevel20(cardRef,campaign?.activeSeasonId||"ie1",roleVariantId,freeAgentsDb);
+      }
+      return normalizeResolvedPlayer(cardRef,player,roleVariantId);
+    }
+    function playerResolverForState(state=campaign){
+      if(typeof playerResolver.resolveOwnedAtLevel20!=="function")return playerResolver;
+      return {
+        ...playerResolver,
+        resolveAtLevel20:(cardRef,seasonId,roleVariantId,database)=>playerResolver.resolveOwnedAtLevel20(
+          cardRef,
+          seasonId,
+          roleVariantId,
+          database,
+          state?.developmentByCardId||{}
+        ),
+      };
+    }
+    function resolvedSquad(snapshot,state=campaign){
       const variants=snapshot?.activeRoleVariantByCardId||{};
       return {
         formationId:snapshot?.formationId||null,
-        lineup:(snapshot?.lineup||[]).map(cardId=>resolved(cardId,variants[cardId]||null)).filter(Boolean),
-        bench:(snapshot?.bench||[]).map(cardId=>resolved(cardId,variants[cardId]||null)).filter(Boolean),
+        lineup:(snapshot?.lineup||[]).map(cardId=>resolvedWithDevelopment(cardId,variants[cardId]||null,state?.developmentByCardId||{})).filter(Boolean),
+        bench:(snapshot?.bench||[]).map(cardId=>resolvedWithDevelopment(cardId,variants[cardId]||null,state?.developmentByCardId||{})).filter(Boolean),
         activeRoleVariantByCardId:{...variants},
       };
     }
@@ -438,6 +478,159 @@
       });
       return campaign;
     }
+    function developmentRoleVariant(cardId){
+      const variants=squadDraft?.activeRoleVariantByCardId||activeSquad(campaign)?.activeRoleVariantByCardId||{};
+      return variants?.[id(cardId)]||null;
+    }
+    function developmentCardIds(state=campaign){
+      if(!economy)return[];
+      return Array.from(economy.ownedCardIds(state)||[]).filter((cardId)=>economy.isEligibleOwnedCard(state,cardId));
+    }
+    function developmentPlayers(){
+      return developmentCardIds().map((cardId)=>resolved(cardId,developmentRoleVariant(cardId))).filter(Boolean)
+        .sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"it"));
+    }
+    function filteredDevelopmentPlayers(players){
+      const needle=String(developmentQuery||"").trim().toLocaleLowerCase("it");
+      return players.filter((player)=>{
+        const matchesName=!needle||String(player.name||"").toLocaleLowerCase("it").includes(needle);
+        const matchesRarity=developmentRarity==="Tutti"||String(player.category||"")===developmentRarity;
+        return matchesName&&matchesRarity;
+      });
+    }
+    function developmentModelFor(cardId){
+      const key=id(cardId);
+      if(!key||!economy)return null;
+      const player=resolved(key,developmentRoleVariant(key));
+      const standard=resolvedStandard(key,developmentRoleVariant(key));
+      if(!player||!standard)return null;
+      const preview=economy.previewEvolution(campaign,{
+        cardId:key,
+        basePotential:Number(standard.potential??standard.finalOverall??standard.overall??0),
+        baseRarity:standard.category,
+      });
+      let after=null;
+      if(preview?.ok){
+        const developmentByCardId={...(campaign?.developmentByCardId||{}),[key]:{
+          ...(campaign?.developmentByCardId?.[key]||{}),
+          targetPotential:preview.targetPotential,
+          currentRarity:preview.target,
+        }};
+        after=resolvedWithDevelopment(key,developmentRoleVariant(key),developmentByCardId);
+      }
+      return {player,standard,preview,after};
+    }
+    function renderShop(options={}){
+      if(!economyView||!economy)return renderRun();
+      selectedDevelopmentCardId=null;
+      renderHtml(economyView.shopMarkup({state:campaign}),{preserveScroll:options.preserveScroll===true});
+      app?.querySelector?.("[data-rtg-economy-back]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
+      app?.querySelector?.("[data-rtg-open-development]")?.addEventListener("click",()=>renderDevelopment("players"));
+      app?.querySelectorAll?.("[data-rtg-buy-project]")?.forEach((button)=>button.addEventListener("click",async()=>{
+        if(button.disabled)return;
+        const shopScrollY=Number(global.scrollY||global.pageYOffset||0);
+        button.disabled=true;
+        let outcome=null;
+        campaign=await repository.update("rtg-buy-project",current=>{
+          outcome=economy.purchaseProject(current,button.dataset.rtgBuyProject);
+          return outcome?.ok?outcome.state:current;
+        });
+        deps.toast?.(outcome?.ok?"PROGETTO ACQUISTATO":outcome?.reason==="tokens"?"GETTONI RTG INSUFFICIENTI":"ACQUISTO NON COMPLETATO",outcome?.ok?undefined:"error");
+        renderShop({preserveScroll:true});
+        const restoreShopScroll=()=>global.scrollTo?.(0,shopScrollY);
+        if(typeof global.requestAnimationFrame==="function")global.requestAnimationFrame(()=>global.requestAnimationFrame(restoreShopScroll));
+        else if(typeof global.setTimeout==="function")global.setTimeout(restoreShopScroll,0);
+        else restoreShopScroll();
+        return campaign;
+      }));
+      mountDevQuickTools();
+      return campaign;
+    }
+    function bindDevelopmentGrid(players){
+      const results=app?.querySelector?.("[data-rtg-development-results]");
+      if(!results)return;
+      const refresh=()=>{
+        const filtered=filteredDevelopmentPlayers(players);
+        const visible=filtered.slice(0,developmentVisibleCount);
+        const remaining=Math.max(0,filtered.length-visible.length);
+        results.innerHTML=economyView.playerGrid(visible)+(remaining>0?`<div class="development-load-more-wrap"><button type="button" class="btn btn-yellow development-load-more" data-rtg-development-load-more><span>MOSTRA ALTRI <b>${Math.min(DEVELOPMENT_PLAYER_PAGE_SIZE,remaining)}</b></span><small>${visible.length} di ${filtered.length}</small></button></div>`:"");
+      };
+      results.onclick=(event)=>{
+        const loadMore=event.target?.closest?.("[data-rtg-development-load-more]");
+        if(loadMore){developmentVisibleCount+=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();return;}
+        const element=event.target?.closest?.("[data-rtg-development-player]");
+        if(!element)return;
+        selectedDevelopmentCardId=id(element.dataset.rtgDevelopmentPlayer);
+        renderDevelopment("players");
+      };
+      const search=app?.querySelector?.("[data-rtg-development-search]");
+      search?.addEventListener("input",(event)=>{developmentQuery=event.currentTarget.value||"";developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();});
+      app?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",(event)=>{developmentRarity=event.currentTarget.value||"Tutti";developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();});
+      refresh();
+    }
+    function renderDevelopment(tab="players"){
+      if(!economyView||!economy)return renderRun();
+      const players=developmentPlayers();
+      if(selectedDevelopmentCardId&&!players.some((player)=>id(player.cardId||player.playerId)===id(selectedDevelopmentCardId)))selectedDevelopmentCardId=null;
+      const selected=selectedDevelopmentCardId?developmentModelFor(selectedDevelopmentCardId):null;
+      const filtered=filteredDevelopmentPlayers(players);
+      renderHtml(economyView.developmentMarkup({
+        state:campaign,
+        players,
+        filteredPlayers:filtered,
+        selected,
+        tab,
+        query:developmentQuery,
+        rarity:developmentRarity,
+      }));
+      app?.querySelector?.("[data-rtg-economy-back]")?.addEventListener("click",()=>{
+        selectedDevelopmentCardId=null;
+        deps.renderHome?.({initialPage:"rtg"});
+      });
+      app?.querySelectorAll?.("[data-rtg-development-tab]")?.forEach((button)=>button.addEventListener("click",()=>renderDevelopment(button.dataset.rtgDevelopmentTab)));
+      app?.querySelector?.("[data-rtg-open-shop]")?.addEventListener("click",()=>renderShop());
+      app?.querySelectorAll?.("[data-rtg-change-development-player]")?.forEach((button)=>button.addEventListener("click",()=>{
+        selectedDevelopmentCardId=null;
+        renderDevelopment("players");
+      }));
+      app?.querySelector?.("[data-rtg-development-selected-card]")?.addEventListener("click",()=>openRtgPlayerDetails(selectedDevelopmentCardId));
+      app?.querySelector?.("[data-rtg-prepare-evolution]")?.addEventListener("click",()=>openEvolutionConfirmation());
+      if(!selectedDevelopmentCardId&&tab==="players")bindDevelopmentGrid(players);
+      mountDevQuickTools();
+      return campaign;
+    }
+    function openEvolutionConfirmation(){
+      const model=developmentModelFor(selectedDevelopmentCardId);
+      if(!model?.preview?.ok||!model.preview.ready)return deps.toast?.("RISORSE RTG INSUFFICIENTI","error");
+      deps.openModal?.(economyView.evolutionConfirmMarkup(model),{closeable:false,className:"development-confirm-modal rtg-development-confirm-modal"});
+      const modalRoot=deps.getModalRoot?.();
+      modalRoot?.querySelector?.("[data-rtg-cancel-evolution]")?.addEventListener("click",()=>deps.closeModal?.());
+      modalRoot?.querySelector?.("[data-rtg-confirm-evolution]")?.addEventListener("click",async(event)=>{
+        const button=event.currentTarget;
+        if(button.disabled)return;
+        button.disabled=true;
+        let outcome=null;
+        const basePotential=Number(model.standard.potential??model.standard.finalOverall??model.standard.overall??0);
+        const baseRarity=model.standard.category;
+        campaign=await repository.update("rtg-evolve-card",current=>{
+          outcome=economy.evolve(current,{
+            cardId:selectedDevelopmentCardId,
+            basePotential,
+            baseRarity,
+            expectedTarget:model.preview.target,
+          });
+          return outcome?.ok?outcome.state:current;
+        });
+        deps.closeModal?.({invokeOnClose:false});
+        if(!outcome?.ok){
+          deps.toast?.(outcome?.reason==="stale"?"EVOLUZIONE CAMBIATA: RIPROVA":"RISORSE RTG CAMBIATE: EVOLUZIONE NON COMPLETATA","error");
+          return renderDevelopment("players");
+        }
+        deps.toast?.(`${model.player.name}: ${outcome.target}`);
+        return renderDevelopment("players");
+      });
+    }
+
     function bindHomeAndTabs(){
       app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
       app?.querySelector?.('[data-rtg-tab="run"]')?.addEventListener("click",()=>renderRun());
@@ -462,8 +655,16 @@
       if(activeSeasonId()!=="ie1"||!campaign?.seasonComplete)return campaign;
       const nextDb=await global.SeasonRegistry?.loadDatabase?.("ie1_s2");
       if(!nextDb)throw new Error("Database Season 2 non disponibile");
+      let transitionRewarded=false;
       campaign=await repository.update("rtg-enter-season2",current=>{
         if(id(current.activeSeasonId)!=="ie1"||!current.seasonComplete)return current;
+        const rewardId="ie1->ie1_s2";
+        current.seasonTransitionRewardedIds=Array.from(new Set(current.seasonTransitionRewardedIds||[]));
+        if(!current.seasonTransitionRewardedIds.includes(rewardId)){
+          current.tokens=Math.max(0,Number(current.tokens)||0)+Number(config.SEASON_TRANSITION_REWARD||1000);
+          current.seasonTransitionRewardedIds.push(rewardId);
+          transitionRewarded=true;
+        }
         const previous=clone(current.squads?.ie1||{formationId:null,lineup:[],bench:[],activeRoleVariantByCardId:{}});
         current.activeSeasonId="ie1_s2";
         current.seasonComplete=false;
@@ -493,6 +694,7 @@
       activeSquadSlot=1;
       writeActiveSquadSlot(1);
       squadDraft=squadForSlot(1);
+      if(transitionRewarded)deps.toast?.(`BONUS SEASON: +${Number(config.SEASON_TRANSITION_REWARD||1000)} GETTONI RTG`);
       return renderRun();
     }
     function rtgAlbumEntries(){
@@ -1080,7 +1282,7 @@
         bench:bench.map(entry=>entry.playerId),
         activeRoleVariantByCardId:{...(squadDraft?.activeRoleVariantByCardId||{})},
       };
-      const eligibility=squadRuntime.mainEligibility({teamId,state,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+      const eligibility=squadRuntime.mainEligibility({teamId,state,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(state)});
       if(!eligibility.eligible)return null;
       return{
         squad:state.squads[activeSeasonId()],
@@ -1111,7 +1313,7 @@
 
     function renderSquad(){
       squadDraft=clone(squadDraft||activeSquad(campaign));
-      const model=squadView.renderModel({state:draftState(),freeAgentIds,seasonDb,freeAgentsDb});
+      const model=squadView.renderModel({state:draftState(),freeAgentIds,seasonDb,freeAgentsDb,playerResolver:playerResolverForState(draftState())});
       const teamId=currentRequirementTeamId();
       const eligibility=teamId?squadRuntime.mainEligibility?.({teamId,state:draftState(),seasonDb,freeAgentIds,freeAgentsDb,playerResolver}):null;
       const nextTeam=(seasonDb?.teams||[]).find(team=>id(team.teamId||team.id)===teamId);
@@ -1184,7 +1386,7 @@
       const candidate=clone(nextSquad);
       campaign=await repository.update("rtg-save-squad",current=>{
         const probe=clone(current);probe.squads[activeSeasonId()]=candidate;
-        const validation=squadRuntime.validateSquad({state:probe,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+        const validation=squadRuntime.validateSquad({state:probe,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(probe)});
         if(!validation.valid)throw Object.assign(new Error("Squadra RTG non valida"),{code:"rtg-squad-invalid",reasons:validation.reasons});
         current.squads[id(current.activeSeasonId||activeSeasonId())]=candidate;return current;
       });
@@ -1205,14 +1407,14 @@
       const allowed=canStartNode(node);
       let body="";
       if(node.type==="main"){
-        const eligibility=squadRuntime.mainEligibility({teamId:node.teamId,state:campaign,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+        const eligibility=squadRuntime.mainEligibility({teamId:node.teamId,state:campaign,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(campaign)});
         body=runView.nodeModalMarkup
           ? runView.nodeModalMarkup({node,eligibility,seasonDb,allowed})
           : `<div class="rtg-node-modal"><h2>${id(node.teamId)}</h2>${runView.requirementsMarkup(eligibility)}<button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed||!eligibility.eligible?"disabled":""}>GIOCA</button></div>`;
       }else{
         body=runView.nodeModalMarkup
           ? runView.nodeModalMarkup({node,seasonDb,allowed})
-          : `<div class="rtg-node-modal"><h2>Partita secondaria</h2><p>Avversari svincolati casuali. Vittoria: 100–150 Gettoni RTG.</p><button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed?"disabled":""}>GIOCA</button></div>`;
+          : `<div class="rtg-node-modal"><h2>Partita secondaria</h2><p>Avversari svincolati casuali. Vittoria: 200 Gettoni RTG.</p><button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed?"disabled":""}>GIOCA</button></div>`;
       }
       deps.openModal?.(body,{className:"rtg-modal"});
       deps.getModalRoot?.()?.querySelector?.("[data-rtg-start-node]")?.addEventListener("click",()=>{deps.closeModal?.();startMatch(node.id);});
@@ -1222,20 +1424,20 @@
     function resolvedForTeam(playerId,teamId){
       const profile=(seasonDb?.profiles||[]).find(entry=>id(entry?.playerId)===id(playerId)&&id(entry?.teamId)===id(teamId));
       const ref=profile?cardIdentity?.cardIdForSeason?.(profile.profileId,activeSeasonId()):playerId;
-      return resolved(ref||playerId);
+      return resolvedStandard(ref||playerId);
     }
     function mainOpponent(node){
       const boss=bossFor(node.teamId);
       if(!boss)throw Object.assign(new Error("Boss RTG non trovato"),{code:"rtg-boss-missing"});
       const profileIds=Array.from(boss.startingXIProfileIds||[]);
       const lineup=profileIds.length
-        ? profileIds.map(profileId=>resolved(cardIdentity?.cardIdForSeason?.(profileId,activeSeasonId())||profileId)).filter(Boolean)
+        ? profileIds.map(profileId=>resolvedStandard(cardIdentity?.cardIdForSeason?.(profileId,activeSeasonId())||profileId)).filter(Boolean)
         : (boss.startingXIPlayerIds||[]).map(playerId=>resolvedForTeam(playerId,node.teamId)).filter(Boolean);
       return {formationId:boss.bossFormation||boss.matchFormation||null,lineup,bench:[],name:boss.teamName||node.teamId||"Avversario",teamId:node.teamId,seasonId:activeSeasonId(),logoUrl:boss.logoUrl||teamRecordForId(node.teamId)?.logoUrl||null};
     }
     function secondaryOpponent(node,current,attemptNumber){
       const generated=opponentGenerator.generate({seed:`${current.campaignSeed}:${node.id}`,attemptNumber,freeAgentsDb,formations:seasonDb?.formations?.eleven||[],targetMin:node.opponentTargetMin,targetMax:node.opponentTargetMax,playerResolver});
-      return {formationId:generated.formationId,lineup:generated.playerIds.map(playerId=>resolved(playerId)).filter(Boolean),bench:[],teamPower:generated.teamPower,name:generated.name,specialType:"free-agents"};
+      return {formationId:generated.formationId,lineup:generated.playerIds.map(playerId=>resolvedStandard(playerId)).filter(Boolean),bench:[],teamPower:generated.teamPower,name:generated.name,specialType:"free-agents"};
     }
     async function startMatch(nodeId){
       const node=nodeById(nodeId);
@@ -1245,14 +1447,14 @@
         const allowed=node?.id===current.currentNodeId||(node?.type==="secondary"&&Number(current.attemptsByNode?.[node.id]?.clears||0)>0);
         if(!node||!allowed)throw Object.assign(new Error("Nodo RTG non disponibile"),{code:"rtg-node-not-available"});
         if(node.type==="main"){
-          const eligibility=squadRuntime.mainEligibility({teamId:node.teamId,state:current,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+          const eligibility=squadRuntime.mainEligibility({teamId:node.teamId,state:current,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(current)});
           if(!eligibility.eligible)throw Object.assign(new Error("Requisiti RTG non rispettati"),{code:"rtg-main-ineligible",details:eligibility});
         }
         const previousAttempt=Math.max(0,Number(current.attemptsByNode?.[node.id]?.lastAttempt)||0);
         const attemptNumber=previousAttempt+1;
         current.attemptsByNode=current.attemptsByNode||{};
         current.attemptsByNode[node.id]={...(current.attemptsByNode[node.id]||{}),lastAttempt:attemptNumber};
-        const userSquad=resolvedSquad(current.squads[id(current.activeSeasonId||activeSeasonId())]);
+        const userSquad=resolvedSquad(current.squads[id(current.activeSeasonId||activeSeasonId())],current);
         const userMeta=deps.getUserTeamMeta?.()||{};
         userSquad.name=userMeta.name||userSquad.name||"La tua squadra";
         if(userMeta.teamIdentity)userSquad.teamIdentity=clone(userMeta.teamIdentity);
@@ -1532,10 +1734,10 @@
         const ids=candidate.lineup.map(player=>id(player.cardId||player.playerId)),benchIds=candidate.bench.map(player=>id(player.cardId||player.playerId));
         const candidateState=clone(campaign);candidateState.squads[activeSeasonId()]={formationId:candidate.formationId,lineup:ids,bench:benchIds,activeRoleVariantByCardId:{...(candidate.activeRoleVariantByCardId||{})}};
         if(match.matchType==="secondary"){
-          const validation=squadRuntime.validateSquad({state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+          const validation=squadRuntime.validateSquad({state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(candidateState)});
           return {eligible:validation.valid,reasons:validation.reasons||[]};
         }
-        return squadRuntime.mainEligibility({teamId:nodeById(match.nodeId)?.teamId,state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver});
+        return squadRuntime.mainEligibility({teamId:nodeById(match.nodeId)?.teamId,state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(candidateState)});
       }}),{delayEncounter:true});
     }
     function penaltyContext(match){
@@ -1708,11 +1910,13 @@
         return campaign;
       }
       if(destination==="album")return renderAlbum();
+      if(destination==="shop")return renderShop();
+      if(destination==="development")return renderDevelopment("players");
       return renderRun();
     }
 
     return Object.freeze({
-      open,renderRun,renderSquad,renderAlbum,renderAlbumRoster,openNode,startMatch,confirmPreMatch,chooseEncounter,continueEncounterFlow,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
+      open,renderRun,renderSquad,renderAlbum,renderAlbumRoster,renderShop,renderDevelopment,openNode,startMatch,confirmPreMatch,chooseEncounter,continueEncounterFlow,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
       swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,adaptSquadToCurrentRequirements,
       getDraftSquad:()=>clone(squadDraft),getState:()=>clone(campaign),getRenderedHtml,
     });

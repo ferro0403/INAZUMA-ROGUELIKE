@@ -1,0 +1,12 @@
+const fs=require("fs");
+const c=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const v=fs.readFileSync("js/road-to-glory/rtg-economy-view.js","utf8");
+const css=fs.readFileSync("css/rtg-theme.css","utf8");
+if(!/DEVELOPMENT_PLAYER_PAGE_SIZE\s*=\s*24/.test(c)||!/developmentVisibleCount/.test(c)||!/data-rtg-development-load-more/.test(c))throw Error("lazy batches missing");
+if(/data-rtg-development-page/.test(c))throw Error("old pages remain");
+if(!/rtg-development-wallet/.test(v)||!/rtg-development-wallet-cell--tokens/.test(v)||!/rtg-development-wallet-cell--projects/.test(v))throw Error("RTG wallet structure missing");
+if(!/development-requirement--compact/.test(v))throw Error("compact requirement context missing");
+if(/style="width:64px;height:64px/.test(v))throw Error("token sizing must not be hard-coded inline");
+if(!/\.rtg-development-confirm[\s\S]*\.rtg-development-token-icon/.test(css))throw Error("confirmation token sizing missing");
+if(!/\.rtg-development-screen \.rtg-development-wallet[\s\S]*grid-template-columns/.test(css))throw Error("RTG wallet layout missing");
+console.log("RTG development focused regression passed");

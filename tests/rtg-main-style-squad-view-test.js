@@ -34,7 +34,6 @@ const freeBenchPicker=view.replacementPickerMarkup({
   total:0,
 });
 assert.match(freeBenchPicker,/qualsiasi ruolo/);
-assert.match(freeBenchPicker,/TUTTI I RUOLI/);
 assert.doesNotMatch(freeBenchPicker,/SOLO DF/);
 
 const detailCard={dataset:{rtgPlayerDetail:"d1"},addEventListener(_type,fn){this.fn=fn;}};

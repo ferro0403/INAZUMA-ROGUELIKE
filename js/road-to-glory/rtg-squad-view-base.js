@@ -163,11 +163,12 @@
       </div>`;
     }
 
-    function renderModel({ state, freeAgentIds = [], seasonDb, freeAgentsDb = null } = {}) {
+    function renderModel({ state, freeAgentIds = [], seasonDb, freeAgentsDb = null, playerResolver: resolverOverride = null } = {}) {
       const seasonId = String(state?.activeSeasonId || "ie1");
       const squad = state?.squads?.[seasonId] || state?.squads?.ie1 || { formationId: null, lineup: [], bench: [], activeRoleVariantByCardId: {} };
       const gacha = new Set((state?.gachaAcquiredCards || []).map((entry) => global.RoadToGloryCardIdentity?.parse?.(entry)?.cardId).filter(Boolean));
-      const resolve = (cardId) => resolver?.resolveAtLevel20?.(cardId, seasonId, squad.activeRoleVariantByCardId?.[cardId] || null, freeAgentsDb) || { cardId, playerId:global.RoadToGloryCardIdentity?.parse?.(cardId)?.playerId || cardId, name: cardId, overall: "—", level: 20 };
+      const activeResolver = resolverOverride || resolver;
+      const resolve = (cardId) => activeResolver?.resolveAtLevel20?.(cardId, seasonId, squad.activeRoleVariantByCardId?.[cardId] || null, freeAgentsDb) || { cardId, playerId:global.RoadToGloryCardIdentity?.parse?.(cardId)?.playerId || cardId, name: cardId, overall: "—", level: 20 };
       const sourceFor = (cardId) => gacha.has(String(cardId)) ? "RTG" : "Svincolato";
       const formations = Array.from(global.RoadToGloryConfig?.season?.(seasonId)?.formations || seasonDb?.formations?.eleven || global.RoadToGloryConfig?.SEASON1?.formations || []);
       const formation = formations.find((item) => String(item.id) === String(squad.formationId)) || formations[0] || null;

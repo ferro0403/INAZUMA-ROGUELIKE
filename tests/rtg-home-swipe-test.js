@@ -7,7 +7,7 @@ assert.match(view,/home-swipe-viewport/);
 assert.match(view,/data-home-page="main"/);
 assert.match(view,/data-home-page="rtg"/);
 assert.match(view,/home-rtg-hub/);
-for(const target of["run","squad","vending"]) assert.match(view,new RegExp(`data-rtg-home-open="${target}"`));
+for(const target of["run","squad","vending","album","shop","development"]) assert.match(view,new RegExp(`data-rtg-home-open="${target}"`));
 assert.doesNotMatch(view,/data-rtg-home-open="catalog"/);
 assert.match(controller,/activateHomePage/);
 assert.match(controller,/touchstart/);

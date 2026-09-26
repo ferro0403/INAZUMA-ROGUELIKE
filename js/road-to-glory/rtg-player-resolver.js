@@ -149,24 +149,16 @@
     };
   }
 
-  function resolveAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null) {
+  function resolveBaseAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null, progressionOptions = null) {
     const api = cardIdentity();
     const rawRef = id(playerId?.cardId || playerId);
     const exactCard = api?.isCardId?.(rawRef);
     const parsed = exactCard ? api.parse(rawRef) : null;
-
-    if (!exactCard || parsed?.sourceKind === api.FREE_AGENTS) {
-      const evolvedId = parsed && parsed.sourceKind === api?.FREE_AGENTS ? parsed.playerId : id(playerId?.playerId || playerId);
-      const evolved = resolveEvolvedFreeAgent(evolvedId, freeAgentsDb, 20);
-      if (evolved) {
-        return exactCard ? { ...evolved, cardId: parsed.cardId, legacySeasonId: api.FREE_AGENTS } : evolved;
-      }
-    }
-
     const resolved = resolveVersion(playerId, activeSeasonId, freeAgentsDb);
     if (!resolved) return null;
     const database = resolved.seasonId === "free_agents" ? freeAgentsDb : (global.SeasonRegistry?.database?.(resolved.seasonId) || null);
     const canonicalPlayerId = id(resolved.canonicalPlayerId || resolved.player.playerId || parsed?.canonicalPlayerId || parsed?.playerId || playerId);
+    const options = progressionOptions && typeof progressionOptions === "object" ? progressionOptions : {};
     let player;
     if (database?.requiresProfileAwareRuntime && global.ProfiledSeasonRuntime?.resolveEffectivePlayerAtLevel) {
       player = global.ProfiledSeasonRuntime.resolveEffectivePlayerAtLevel({
@@ -175,12 +167,13 @@
         level: 20,
         levelUnits: 0,
         activeRoleVariantId: roleVariantId || undefined,
+        ...options,
       }, {
         seasonId: resolved.seasonId,
         database,
       });
     } else if (global.InazumaProgression?.getPlayerAtLevel) {
-      player = global.InazumaProgression.getPlayerAtLevel(resolved.player, 20, database);
+      player = global.InazumaProgression.getPlayerAtLevel(resolved.player, 20, database, options);
     } else {
       player = { ...resolved.player, level: 20 };
     }
@@ -198,6 +191,45 @@
       result.legacySeasonId = resolved.legacySeasonId;
     }
     return result;
+  }
+
+  function resolveStandardAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null) {
+    return resolveBaseAtLevel20(playerId, activeSeasonId, roleVariantId, freeAgentsDb, null);
+  }
+
+  function resolveAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null) {
+    const api = cardIdentity();
+    const rawRef = id(playerId?.cardId || playerId);
+    const exactCard = api?.isCardId?.(rawRef);
+    const parsed = exactCard ? api.parse(rawRef) : null;
+
+    if (!exactCard || parsed?.sourceKind === api.FREE_AGENTS) {
+      const evolvedId = parsed && parsed.sourceKind === api?.FREE_AGENTS ? parsed.playerId : id(playerId?.playerId || playerId);
+      const evolved = resolveEvolvedFreeAgent(evolvedId, freeAgentsDb, 20);
+      if (evolved) {
+        return exactCard ? { ...evolved, cardId: parsed.cardId, legacySeasonId: api.FREE_AGENTS } : evolved;
+      }
+    }
+    return resolveBaseAtLevel20(playerId, activeSeasonId, roleVariantId, freeAgentsDb, null);
+  }
+
+  function resolveOwnedAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null, developmentByCardId = null) {
+    const standard = resolveStandardAtLevel20(playerId, activeSeasonId, roleVariantId, freeAgentsDb);
+    if (!standard) return null;
+    const api = cardIdentity();
+    const rawRef = id(playerId?.cardId || playerId);
+    const parsed = api?.isCardId?.(rawRef) ? api.parse(rawRef) : null;
+    const cardId = id(standard.cardId || parsed?.cardId || rawRef);
+    const upgrade = developmentByCardId && typeof developmentByCardId === "object" ? developmentByCardId[cardId] : null;
+    const targetPotential = Math.max(0, Math.min(99, Number(upgrade?.targetPotential) || 0));
+    const currentPotential = Math.max(0, Number(standard.potential ?? standard.finalOverall ?? standard.overall) || 0);
+    const boost = Math.max(0, targetPotential - currentPotential);
+    if (!boost) return standard;
+    return resolveBaseAtLevel20(playerId, activeSeasonId, roleVariantId, freeAgentsDb, {
+      potentialBoost: boost,
+      currentOverallBoost: boost,
+      potentialBoostApplications: [{ amount: boost, appliedLevel: 0, permanent: true }],
+    });
   }
 
   function resolveMove(playerId, activeSeasonId = "ie1", role = null, freeAgentsDb = null, roleVariantId = null) {
@@ -222,5 +254,5 @@
     return resolveVersion(playerId, activeSeasonId, freeAgentsDb)?.player?.category || null;
   }
 
-  global.RoadToGloryPlayerResolver = Object.freeze({ ORDER, resolveExactCard, resolveVersion, resolveAtLevel20, resolveMove, rarity });
+  global.RoadToGloryPlayerResolver = Object.freeze({ ORDER, resolveExactCard, resolveVersion, resolveBaseAtLevel20, resolveStandardAtLevel20, resolveAtLevel20, resolveOwnedAtLevel20, resolveMove, rarity });
 })(globalThis);

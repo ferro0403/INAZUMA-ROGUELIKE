@@ -20,6 +20,7 @@ assert(squadRuntime.includes("resolveAtLevel20?.(cardId, activeSeasonId, variant
 assert(squadRuntime.includes("resolveMove?.(cardId, activeSeasonId, role, freeAgentsDb, variant)"),"team power move must use the selected role variant");
 const controller=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
 assert(controller.includes('resolveMove(cardRef,campaign?.activeSeasonId||"ie1",role,freeAgentsDb,roleVariantId)'),"resolved squad cards must use the selected role variant for moves");
-const view=fs.readFileSync("js/road-to-glory/rtg-squad-view-base.js","utf8");
-assert(view.includes('area === "bench" && Array.isArray(player?.roleVariants) && player.roleVariants.length > 1'));
+assert(controller.includes('draftLocation?.area==="bench"'));
+assert(controller.includes('Array.isArray(player?.roleVariants)'));
+assert(controller.includes('player.roleVariants.length>1'));
 console.log("rtg-season2-real-role-variants-test: PASS");

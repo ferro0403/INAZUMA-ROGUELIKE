@@ -21,10 +21,10 @@
     Object.freeze({ id:"3-5-2", name:"3-5-2", type:"11v11", requirements:Object.freeze({GK:1,DF:3,MF:5,FW:2}), slotRoles:Object.freeze(["FW","FW","MF","MF","MF","MF","MF","DF","DF","DF","GK"]), displayRows:Object.freeze([Object.freeze({role:"FW",count:2}),Object.freeze({role:"MF",count:5}),Object.freeze({role:"DF",count:3}),Object.freeze({role:"GK",count:1})]) }),
   ]);
 
-  const mainRewards = Object.freeze({
-    occult: 250, wild: 275, brainwashing: 300, otaku: 325, shuriken: 350,
-    farm: 400, kirkwood: 450, royal: 500, zeus: 575, raimon: 650,
-  });
+  const MAIN_WIN_REWARD = 350;
+  const SECONDARY_WIN_REWARD = 200;
+  const SEASON_TRANSITION_REWARD = 1000;
+  const mainRewards = Object.freeze(Object.fromEntries(mainTeams.map((teamId)=>[teamId,MAIN_WIN_REWARD])));
 
   const constraints = Object.freeze({
     occult: Object.freeze({ cap: 75, minRecruit: 0, recentCount: 0, recentWindow: 0 }),
@@ -52,10 +52,7 @@
     pullCost: 300,
     mainRewards,
     secondaryRewards: Object.freeze([
-      Object.freeze({ amount: 150, weight: 55 }),
-      Object.freeze({ amount: 165, weight: 25 }),
-      Object.freeze({ amount: 180, weight: 15 }),
-      Object.freeze({ amount: 200, weight: 5 }),
+      Object.freeze({ amount: SECONDARY_WIN_REWARD, weight: 100 }),
     ]),
     rarityWeights: Object.freeze({ Normale: 40, Buono: 27, Forte: 18, Elite: 10, Mondiale: 5, Leggenda: 0 }),
     duplicateRefunds: Object.freeze({ Normale: 40, Buono: 60, Forte: 85, Elite: 120, Mondiale: 160, Leggenda: 300 }),
@@ -110,7 +107,7 @@
     entry.teamId,
     Object.freeze({cap:entry.cap,minRecruit:entry.minRecruit,recentCount:entry.recentCount,recentWindow:entry.recentWindow})
   ])));
-  const season2Rewards = Object.freeze(Object.fromEntries(season2Matches.map((entry,index)=>[entry.teamId,275+index*30])));
+  const season2Rewards = Object.freeze(Object.fromEntries(season2Matches.map((entry)=>[entry.teamId,MAIN_WIN_REWARD])));
   const SEASON2 = Object.freeze({
     seasonId:"ie1_s2",
     mainTeams:season2Teams,
@@ -152,5 +149,5 @@
     return Object.freeze(nodes);
   }
 
-  global.RoadToGloryConfig = Object.freeze({ SEASON1, SEASON2, season, buildSeasonNodes:buildAnySeasonNodes });
+  global.RoadToGloryConfig = Object.freeze({ MAIN_WIN_REWARD, SECONDARY_WIN_REWARD, SEASON_TRANSITION_REWARD, SEASON1, SEASON2, season, buildSeasonNodes:buildAnySeasonNodes });
 })(globalThis);
