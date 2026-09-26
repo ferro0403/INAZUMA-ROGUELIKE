@@ -2,8 +2,7 @@
    RTG presentation now belongs to explicit domain owners loaded by index.html.
    Keep the historical core import here until rtg-theme-core.css is migrated.
 
-   rtg-match-final.css is intentionally loaded immediately after the legacy core:
-   it contains the consolidated final Prematch state (25% / 50% / 75% axes and
-   full-width mobile card) without retaining the superseded centering attempts. */
+   Prematch geometry now has an explicit domain owner instead of a temporary
+   finishing/final override layer. */
 @import url("./rtg-theme-core.css?v=20260921-duel-actions-mobile-1");
-@import url("./rtg-match-final.css?v=20260926-rtg-css-cleanup-1");
+@import url("./rtg-prematch.css?v=20260926-rtg-css-cleanup-1");
