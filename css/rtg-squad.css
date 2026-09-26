@@ -1,5 +1,26 @@
 /* Road to Glory — squad owner.
-   Owns squad replacement controls, catalog layout and RTG role switching. */
+   Owns squad screen, replacement controls, catalog layout and RTG role switching. */
+
+.rtg-squad-shell .squad-content{position:relative;}
+.rtg-squad-shell .squad-field-panel,.rtg-squad-shell .squad-bench-panel{position:relative;background:#fff!important;border:3px solid #111216!important;border-radius:2px!important;box-shadow:6px 7px 0 #111216!important;overflow:hidden;}
+.rtg-squad-shell .squad-field-panel::after,.rtg-squad-shell .squad-bench-panel::after{content:"";position:absolute;z-index:0;top:0;right:0;width:86px;height:8px;background:#ffd21f;transform:skewX(-28deg) translateX(12px);pointer-events:none;}
+.rtg-squad-shell .squad-field-panel>*,.rtg-squad-shell .squad-bench-panel>*{position:relative;z-index:1;}
+.rtg-squad-section-head{padding-bottom:10px!important;border-bottom:4px solid #ffd21f!important;background:#111216;gap:8px;padding:10px 12px!important;margin:-12px -12px 12px!important;}
+.rtg-squad-section-head h2{color:#fff!important;font-size:16px!important;letter-spacing:.09em;font-style:italic;}
+.rtg-squad-section-head .squad-field-formation,.rtg-squad-section-head .squad-bench-count{background:#ffd21f!important;color:#111216!important;border:2px solid #111216!important;box-shadow:2px 2px 0 #111216!important;}
+.rtg-squad-shell .rtg-squad-pitch-main.pitch{border:3px solid #173a25!important;background:radial-gradient(circle at center,transparent 0 42px,#ffffff66 43px 44px,transparent 45px),linear-gradient(transparent calc(50% - 1px),#ffffff66 50%,transparent calc(50% + 1px)),repeating-linear-gradient(180deg,#2f6a40 0 12.5%,#285f39 12.5% 25%)!important;box-shadow:inset 0 0 0 5px #244f31,inset 0 0 0 7px #d9e7cf55,0 5px 0 #11121626!important;}
+.rtg-squad-shell .squad-management-actions .btn,.rtg-squad-shell .rtg-squad-change-trigger{background:#fff!important;color:#111216!important;}
+.rtg-squad-next{background:linear-gradient(115deg,#fff 0 85%,#ffd21f 85%)!important;border:3px solid #111216!important;border-radius:2px!important;box-shadow:3px 4px 0 #111216!important;}
+.rtg-squad-next h2{color:#111216!important;}
+.rtg-squad-savebar{margin-top:4px;padding:10px!important;border-top:2px solid #111216!important;background:#111216;border:3px solid #111216;box-shadow:4px 5px 0 #111216;color:#fff;gap:10px;}
+.rtg-squad-savebar .btn{min-width:156px;}
+
+.rtg-modal .rtg-player-catalog{width:100%!important;max-width:100%!important;}
+.rtg-modal .rtg-catalog-head{border-bottom:4px solid #ffd21f!important;background:#111216;margin:-16px -16px 14px;padding:18px 64px 14px 16px!important;min-height:84px;}
+.rtg-modal .rtg-catalog-head h2{color:#fff!important;font-size:24px!important;font-weight:950;letter-spacing:-.035em;font-style:italic;}
+.rtg-modal .rtg-catalog-search input{min-height:48px!important;background:#fff!important;border:2px solid #111216!important;border-radius:2px!important;font-size:16px!important;font-weight:750;}
+.rtg-modal .rtg-catalog-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,84px))!important;gap:12px 8px!important;align-items:start!important;justify-content:center!important;justify-items:stretch!important;padding:14px 0 4px!important;}
+.rtg-modal .rtg-picker-count{padding:12px 0 2px;text-align:center;font-size:13px;color:#66645d;}
 
 .rtg-picker-overall-order{justify-self:start;min-height:34px;padding:6px 11px;border:2px solid #111216;border-radius:0;background:#fffdf6;color:#111216;box-shadow:2px 3px 0 #111216;font:800 .78rem/1 system-ui,sans-serif;letter-spacing:.04em;cursor:pointer;}
 .rtg-picker-overall-order[aria-pressed="true"]{background:#ffd21f;}
@@ -7,7 +28,7 @@
 .rtg-modal .rtg-player-catalog .rtg-catalog-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-auto-flow:row!important;gap:12px 8px!important;align-items:start!important;justify-content:center!important;width:100%!important;padding:14px 0 4px!important;}
 
 .player-detail-rtg-role-switch{position:absolute!important;z-index:9!important;top:18px!important;right:140px!important;width:50px!important;min-width:50px!important;min-height:48px!important;display:grid!important;grid-template-rows:auto 1fr!important;place-items:center!important;align-content:center!important;padding:5px 5px 4px!important;border:3px solid #111216!important;border-radius:0!important;background:#ffd21f!important;color:#111216!important;box-shadow:4px 4px 0 #111216!important;transform:skew(-4deg)!important;text-transform:uppercase!important;cursor:pointer!important;}
-.player-detail-rtg-role-switch > *{transform:skew(4deg)!important;}
+.player-detail-rtg-role-switch>*{transform:skew(4deg)!important;}
 .player-detail-rtg-role-switch small{font:950 6px/1 system-ui,sans-serif!important;letter-spacing:.12em!important;}
 .player-detail-rtg-role-switch strong{align-self:end!important;font:1000 20px/.9 system-ui,sans-serif!important;letter-spacing:-.04em!important;}
 .player-detail-rtg-role-switch:active{translate:2px 2px!important;box-shadow:2px 2px 0 #111216!important;}
