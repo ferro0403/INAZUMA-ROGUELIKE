@@ -1,0 +1,26 @@
+/* Road to Glory — foundation owner.
+   Only shared RTG design tokens and cross-surface primitives belong here.
+   Component presentation belongs to its dedicated owner. */
+
+:is(
+  .rtg-run-screen,
+  .rtg-squad-shell,
+  .rtg-prematch-shell,
+  .rtg-match-shell,
+  .rtg-modal,
+  .rtg-formation-modal,
+  .rtg-shop-screen,
+  .rtg-development-screen
+) {
+  --rtg-ink: #111216;
+  --rtg-white: #ffffff;
+  --rtg-paper: #fffdf6;
+  --rtg-paper-2: #f3f1ea;
+  --rtg-gold: #b78a22;
+  --rtg-yellow: #ffd21f;
+  --rtg-line: #111216;
+  --rtg-muted: #55575c;
+  --rtg-border: 3px solid var(--rtg-ink);
+  --rtg-shadow: 4px 5px 0 var(--rtg-ink);
+  color-scheme: light;
+}
