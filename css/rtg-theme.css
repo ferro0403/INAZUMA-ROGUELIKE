@@ -4,5 +4,6 @@
    historical rtg-theme-core.css monolith.
 
    Prematch geometry has its own domain owner until it is folded into the final
-   match/prematch architecture. */
+   match/prematch architecture.
+   Preview trigger: 2026-09-26. */
 @import url("./rtg-prematch.css?v=20260926-rtg-css-cleanup-1");
