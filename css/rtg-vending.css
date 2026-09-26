@@ -1,43 +1,42 @@
 /* Road to Glory — vending owner.
-   All vending-machine presentation belongs here.
-   Migration note: the complete historical v14/v15 block is still present in
-   rtg-theme.css until visual parity is verified. New vending work must target
-   this owner instead of adding another depth/perspective/polish layer. */
-
-.rtg-vending-machine-v12 {
-  --rtg-vending-reveal: #929ba8;
-}
+   All vending-machine presentation belongs here. */
 
 /* Currency/icon sizing belongs to vending rather than the global RTG HUD. */
-.rtg-vending-button .rtg-token-icon,
-.rtg-vending-wallet-chip .rtg-token-icon,
-.rtg-vending-pull .rtg-token-icon {
-  width: 20px !important;
-  height: 20px !important;
-  min-width: 20px !important;
-  max-width: 20px !important;
-  min-height: 20px !important;
-  max-height: 20px !important;
-  flex-basis: 20px !important;
-  vertical-align: -4px !important;
-}
+.rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:20px!important;height:20px!important;min-width:20px!important;max-width:20px!important;min-height:20px!important;max-height:20px!important;flex-basis:20px!important;vertical-align:-4px!important;}
+.rtg-vending-button span,.rtg-vending-wallet-chip strong,.rtg-vending-pull{align-items:center!important;}
 
-.rtg-vending-button span,
-.rtg-vending-wallet-chip strong,
-.rtg-vending-pull {
-  align-items: center !important;
-}
+/* =========================================================
+   RTG vending machine v14 — dimensional polish
+   Same capsule pile; stronger bevels, side depth and material separation.
+   ========================================================= */
+.rtg-vending-machine-v12{--rtg-vending-reveal:#929ba8;position:relative;z-index:2;width:min(246px,69vw);margin:0 auto;display:grid;grid-template-rows:auto auto auto;justify-items:center;isolation:isolate;filter:drop-shadow(0 18px 20px rgba(8,10,14,.21)) drop-shadow(9px 11px 11px rgba(8,10,14,.14));}
+.rtg-vending-machine-v12::before{content:"";position:absolute;z-index:-2;left:50%;bottom:-16px;width:78%;height:20px;transform:translateX(-50%);border-radius:50%;background:rgba(7,9,12,.20);filter:blur(8px);}
+.rtg-vending-head-v9{position:relative;z-index:5;width:208px;min-height:48px;display:grid;place-items:center;align-content:center;padding:8px 12px 7px;border:2px solid #202329;border-bottom:0;border-radius:15px 15px 0 0;background:linear-gradient(90deg,rgba(255,255,255,.10) 0 4%,transparent 14% 83%,rgba(0,0,0,.18) 100%),radial-gradient(circle at 28% 2%,rgba(255,255,255,.13),transparent 30%),linear-gradient(180deg,#3a3f48 0%,#242830 56%,#15181d 100%);color:#fff;box-shadow:inset 2px 0 0 rgba(255,255,255,.10),inset -5px 0 8px rgba(0,0,0,.16),inset 0 1px 0 rgba(255,255,255,.18),inset 0 -8px 12px rgba(0,0,0,.20),0 6px 10px rgba(8,10,14,.17);text-align:center;text-transform:uppercase;}
+.rtg-vending-head-v9::after{content:"";position:absolute;left:18px;right:18px;bottom:2px;height:2px;border-radius:999px;background:linear-gradient(90deg,transparent,#ffe16b 18%,#ffd21f 50%,#ffe16b 82%,transparent);box-shadow:0 0 7px rgba(255,210,31,.45);opacity:.95;}
+.rtg-vending-head-v9 span{color:#ffd21f;font:900 6px/1 system-ui,sans-serif;letter-spacing:.18em;}
+.rtg-vending-head-v9 strong{margin-top:3px;font:1000 15px/.95 system-ui,sans-serif;letter-spacing:.06em;}
+.rtg-vending-window-v9{position:relative;width:208px;height:176px;overflow:hidden;border:3px solid #20242a;border-top-width:2px;border-radius:0;background:radial-gradient(circle at 26% 13%,rgba(255,255,255,.86),transparent 24%),linear-gradient(180deg,#f3fbfd 0%,#d9edf4 48%,#afd3e1 100%);box-shadow:inset 9px 0 13px rgba(255,255,255,.23),inset -14px 0 20px rgba(42,78,94,.16),inset 0 9px 15px rgba(255,255,255,.38),inset 0 -24px 26px rgba(36,72,87,.19),inset 0 0 0 1px rgba(255,255,255,.22),0 5px 9px rgba(8,10,14,.13);}
+.rtg-vending-window-v9::before{content:"";position:absolute;z-index:5;top:-18px;left:18px;width:28px;height:145px;border-radius:50%;background:linear-gradient(90deg,rgba(255,255,255,.06),rgba(255,255,255,.50),rgba(255,255,255,.08));transform:rotate(11deg);filter:blur(.2px);pointer-events:none;}
+.rtg-vending-window-v9::after{content:"";position:absolute;z-index:1;left:0;right:0;bottom:0;height:38px;background:linear-gradient(180deg,rgba(48,78,88,.05),rgba(25,52,62,.19));box-shadow:inset 0 8px 12px rgba(29,57,68,.12);pointer-events:none;}
+.rtg-vending-window-v9 .rtg-ball{width:34px!important;height:34px!important;border:2px solid #20242a!important;box-shadow:inset 4px 3px 0 rgba(255,255,255,.33),inset -5px -6px 0 rgba(0,0,0,.08),2px 4px 0 rgba(32,36,42,.22)!important;}
+.rtg-vending-window-v9 .rtg-ball::after{height:2px!important;background:#20242a!important;}
+.rtg-vending-window-v9 .rtg-ball::before{content:"";position:absolute;z-index:2;top:6px;left:8px;width:8px;height:5px;border-radius:50%;background:rgba(255,255,255,.76);transform:rotate(-24deg);}
+.rtg-vending-window-v9 .b1{left:5%!important;bottom:5%!important;transform:rotate(-14deg)!important}.rtg-vending-window-v9 .b2{left:23%!important;bottom:4%!important;transform:rotate(7deg)!important}.rtg-vending-window-v9 .b3{left:42%!important;bottom:6%!important;transform:rotate(-4deg)!important}.rtg-vending-window-v9 .b4{right:20%!important;bottom:4%!important;transform:rotate(12deg)!important}.rtg-vending-window-v9 .b5{right:3%!important;bottom:6%!important;transform:rotate(-8deg)!important}.rtg-vending-window-v9 .b6{left:12%!important;bottom:21%!important;transform:rotate(5deg)!important}.rtg-vending-window-v9 .b7{left:31%!important;bottom:20%!important;transform:rotate(-11deg)!important}.rtg-vending-window-v9 .b8{left:50%!important;bottom:22%!important;transform:rotate(9deg)!important}.rtg-vending-window-v9 .b9{right:13%!important;bottom:21%!important;transform:rotate(-5deg)!important}.rtg-vending-window-v9 .b10{left:21%!important;bottom:37%!important;transform:rotate(13deg)!important}.rtg-vending-window-v9 .b11{left:40%!important;bottom:38%!important;transform:rotate(-7deg)!important}.rtg-vending-window-v9 .b12{right:21%!important;bottom:37%!important;transform:rotate(6deg)!important}.rtg-vending-window-v9 .b13{left:31%!important;bottom:53%!important;transform:rotate(-12deg)!important}.rtg-vending-window-v9 .b14{right:31%!important;bottom:53%!important;transform:rotate(8deg)!important}.rtg-vending-window-v9 .b15{left:42%!important;bottom:68%!important;transform:rotate(-3deg)!important}
+.rtg-vending-base-v9{position:relative;z-index:4;width:224px;min-height:138px;margin-top:-1px;padding:13px 14px 12px;border:3px solid #202329;border-top-width:4px;border-radius:0 0 15px 15px;background:linear-gradient(90deg,rgba(255,255,255,.16) 0 4%,transparent 12% 82%,rgba(0,0,0,.16) 100%),linear-gradient(180deg,#ffe65c 0%,#ffd21f 54%,#e8aa13 100%);box-shadow:inset 2px 0 0 rgba(255,255,255,.15),inset -7px 0 11px rgba(120,75,0,.12),inset 0 3px 0 rgba(255,255,255,.28),inset 0 -12px 16px rgba(123,76,0,.13),0 6px 0 #202329,7px 9px 0 rgba(32,35,41,.12);}
+.rtg-vending-base-v9::before{content:"";position:absolute;left:8px;right:8px;top:7px;height:1px;background:rgba(255,255,255,.45);}
+.rtg-vending-control-v9{display:grid;grid-template-columns:1fr 54px;align-items:center;gap:10px;padding:8px 9px;border:2px solid #202329;border-radius:8px;background:linear-gradient(180deg,#fdfcf7,#e7e3d7);box-shadow:inset 0 2px 0 #fff,0 3px 0 rgba(32,35,41,.14);}
+.rtg-vending-price-v9{display:grid;justify-items:center;gap:1px;color:#202329;}.rtg-vending-price-v9 small{color:#766b57;font:900 7px/1 system-ui,sans-serif;letter-spacing:.10em;}.rtg-vending-price-v9 strong{display:flex;align-items:center;gap:4px;font:1000 17px/1 system-ui,sans-serif;}.rtg-vending-price-v9 strong::before{content:"";width:13px;height:13px;border:2px solid #202329;border-radius:50%;background:radial-gradient(circle at 35% 32%,#fff8b6 0 18%,#ffd21f 20% 58%,#d49a14 60% 100%);box-shadow:inset 0 0 0 2px rgba(255,255,255,.35);}
+.rtg-vending-crank-v9{position:relative;width:48px;height:48px;border:2px solid #202329;border-radius:50%;background:radial-gradient(circle at 38% 32%,#fff 0 14%,#d8d9da 16% 54%,#8c9094 56% 100%);box-shadow:inset 3px 3px 0 rgba(255,255,255,.52),inset -4px -5px 0 rgba(0,0,0,.12),2px 3px 0 rgba(32,35,41,.18);}.rtg-vending-crank-v9::before{content:"";position:absolute;left:50%;top:50%;width:30px;height:7px;border:2px solid #202329;border-radius:999px;background:#ffe45b;transform:translate(-50%,-50%) rotate(-18deg);box-shadow:inset 0 1px 0 rgba(255,255,255,.45);}.rtg-vending-crank-v9::after{content:"";position:absolute;right:4px;bottom:5px;width:9px;height:9px;border:2px solid #202329;border-radius:50%;background:#f8f7f0;}
+.rtg-vending-tray-v9{width:82%;min-height:31px;display:grid;place-items:center;margin:10px auto 0;border:2px solid #202329;border-radius:6px 6px 11px 11px;background:linear-gradient(180deg,#16191e,#2a2e35);color:#f6f3e8;box-shadow:inset 0 4px 7px rgba(0,0,0,.42),inset 0 -1px 0 rgba(255,255,255,.08);}.rtg-vending-tray-v9 span{font:900 7px/1 system-ui,sans-serif;letter-spacing:.11em;}
+.rtg-vending-foot-v9{position:absolute;z-index:-1;bottom:-13px;width:40px;height:16px;border:3px solid #202329;border-top:0;border-radius:0 0 7px 7px;background:#30343b;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18);}.rtg-vending-foot-v9--left{left:24px}.rtg-vending-foot-v9--right{right:24px}
 
-@media (max-width: 430px) {
-  .rtg-vending-button .rtg-token-icon,
-  .rtg-vending-wallet-chip .rtg-token-icon,
-  .rtg-vending-pull .rtg-token-icon {
-    width: 18px !important;
-    height: 18px !important;
-    min-width: 18px !important;
-    max-width: 18px !important;
-    min-height: 18px !important;
-    max-height: 18px !important;
-    flex-basis: 18px !important;
-  }
-}
+/* Vending result reveals a capsule below the machine before the player card. */
+.rtg-vending-dispense-v14{position:relative;z-index:1;min-height:74px;display:grid;place-items:center;margin-top:-6px;padding-top:9px;}.rtg-vending-dispense-v14::before{content:"";position:absolute;left:50%;bottom:5px;width:86px;height:15px;transform:translateX(-50%);border-radius:50%;background:rgba(10,12,16,.16);filter:blur(5px);}
+.rtg-vending-capsule-v14{--capsule-accent:var(--rtg-vending-reveal,#929ba8);position:relative;width:58px;height:58px;border:3px solid #202329;border-radius:50%;background:radial-gradient(circle at 33% 25%,rgba(255,255,255,.96) 0 11%,transparent 12%),linear-gradient(180deg,rgba(255,255,255,.92) 0 46%,var(--capsule-accent) 47% 100%);box-shadow:inset 5px 4px 0 rgba(255,255,255,.28),inset -5px -6px 0 rgba(0,0,0,.08),0 7px 0 rgba(32,35,41,.16),0 12px 18px rgba(8,10,14,.14);}.rtg-vending-capsule-v14::before{content:"";position:absolute;left:-2px;right:-2px;top:44%;height:5px;border-top:2px solid #202329;border-bottom:1px solid rgba(32,35,41,.35);background:rgba(255,255,255,.24);}.rtg-vending-capsule-v14::after{content:"";position:absolute;left:50%;top:50%;width:12px;height:12px;transform:translate(-50%,-50%);border:2px solid #202329;border-radius:50%;background:#f8f6ed;box-shadow:inset 0 0 0 2px rgba(255,255,255,.55);}
+.rtg-vending-dispense-v14.is-rolling .rtg-vending-capsule-v14{animation:rtg-vending-capsule-drop .72s cubic-bezier(.18,.76,.2,1) both;}.rtg-vending-dispense-v14.is-open .rtg-vending-capsule-v14{animation:rtg-vending-capsule-open .42s ease-out both;}
+@keyframes rtg-vending-capsule-drop{0%{opacity:0;transform:translateY(-24px) rotate(-24deg) scale(.82)}56%{opacity:1;transform:translateY(4px) rotate(13deg) scale(1.04)}78%{transform:translateY(-2px) rotate(-7deg) scale(.99)}100%{opacity:1;transform:translateY(0) rotate(0) scale(1)}}
+@keyframes rtg-vending-capsule-open{0%{transform:scale(1);filter:brightness(1)}55%{transform:scale(1.08);filter:brightness(1.2)}100%{transform:scale(.96);filter:brightness(1.08)}}
+
+.rtg-pull-result{width:min(100%,420px)!important;margin:0 auto!important;border:3px solid #202329!important;border-radius:12px!important;background:linear-gradient(90deg,rgba(255,255,255,.28),transparent 15% 85%,rgba(0,0,0,.05)),linear-gradient(180deg,#fffdf7,#f1eee4)!important;box-shadow:0 9px 0 rgba(32,35,41,.15),0 15px 30px rgba(8,10,14,.12)!important;}.rtg-pull-result::before{opacity:.16!important;}.rtg-pull-result::after{height:5px!important;background:linear-gradient(90deg,#202329,var(--unlock-accent,#929ba8),#ffd21f)!important;}.rtg-pull-result-head{min-height:58px!important;padding:13px 54px 10px 13px!important;border-bottom:2px solid #202329!important;background:linear-gradient(180deg,#fffefb,#f1eee5)!important;}.rtg-pull-rarity{min-height:27px!important;padding:5px 9px!important;border:2px solid #202329!important;box-shadow:2px 2px 0 #202329!important;font-size:.61rem!important;}.rtg-pull-reveal-label{margin:11px 12px 0!important;}.rtg-pull-reveal-label span{padding:4px 9px 5px!important;border:2px solid #202329!important;background:#202329!important;box-shadow:2px 2px 0 var(--unlock-accent,#929ba8)!important;font-size:.58rem!important;}.rtg-pull-result-body{grid-template-columns:102px minmax(0,1fr)!important;gap:13px!important;padding:13px 14px 14px!important;}.rtg-pull-card-stage{min-height:132px!important;}.rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card{width:76px!important;max-width:76px!important;min-width:76px!important;min-height:102px!important;box-shadow:3px 4px 0 rgba(32,35,41,.20)!important;}.rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card .player-portrait-wrap{height:66px!important;padding:3px 3px 0!important;}.rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card .player-info{min-height:27px!important;padding:3px 3px 5px!important;}.rtg-pull-result-copy h2{margin-bottom:7px!important;font-size:clamp(1.45rem,6.5vw,1.95rem)!important;}.rtg-pull-team{min-height:33px!important;padding:3px 7px 3px 4px!important;border:2px solid #202329!important;border-radius:6px!important;box-shadow:2px 2px 0 rgba(32,35,41,.13)!important;}.rtg-pull-team-logo{width:24px!important;height:24px!important;flex-basis:24px!important;}.rtg-pull-role{min-width:31px!important;min-height:31px!important;padding:4px 6px!important;border:2px solid #202329!important;border-radius:6px!important;}.rtg-pull-meta{gap:4px!important;margin-top:7px!important;}.rtg-pull-meta span{padding:3px 5px!important;border:1px solid #202329!important;border-radius:4px!important;font-size:.51rem!important;}.rtg-pull-balance{margin:0 12px 12px!important;padding:7px 9px!important;border:2px solid #202329!important;background:#ffd21f!important;color:#202329!important;}
+
+@media(max-width:430px){.rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;min-height:18px!important;max-height:18px!important;flex-basis:18px!important;}.rtg-vending-machine-v12{width:min(226px,72vw);}.rtg-vending-head-v9,.rtg-vending-window-v9{width:192px;}.rtg-vending-window-v9{height:162px;}.rtg-vending-base-v9{width:208px;min-height:132px;}.rtg-vending-window-v9 .rtg-ball{width:31px!important;height:31px!important;}.rtg-vending-dispense-v14{min-height:68px;}.rtg-vending-capsule-v14{width:54px;height:54px;}.rtg-pull-result-body{grid-template-columns:92px minmax(0,1fr)!important;gap:11px!important;padding:12px!important;}.rtg-pull-card-stage{min-height:122px!important;}.rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card{width:70px!important;max-width:70px!important;min-width:70px!important;min-height:96px!important;}.rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card .player-portrait-wrap{height:60px!important;}}
