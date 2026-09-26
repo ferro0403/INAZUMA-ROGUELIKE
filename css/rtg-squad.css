@@ -1,49 +1,18 @@
 /* Road to Glory — squad owner.
-   Owns squad replacement controls and RTG catalog layout.
-   Canonical player-card anatomy remains shared; this file owns only RTG placement/controls.
-   During migration these declarations mirror the final legacy theme so visual output stays stable. */
+   Owns squad replacement controls, catalog layout and RTG role switching. */
 
-.rtg-picker-overall-order{
-  justify-self:start;
-  min-height:34px;
-  padding:6px 11px;
-  border:2px solid #111216;
-  border-radius:0;
-  background:#fffdf6;
-  color:#111216;
-  box-shadow:2px 3px 0 #111216;
-  font:800 .78rem/1 system-ui,sans-serif;
-  letter-spacing:.04em;
-  cursor:pointer;
-}
+.rtg-picker-overall-order{justify-self:start;min-height:34px;padding:6px 11px;border:2px solid #111216;border-radius:0;background:#fffdf6;color:#111216;box-shadow:2px 3px 0 #111216;font:800 .78rem/1 system-ui,sans-serif;letter-spacing:.04em;cursor:pointer;}
 .rtg-picker-overall-order[aria-pressed="true"]{background:#ffd21f;}
-.rtg-picker-overall-order:active{
-  transform:translate(1px,1px);
-  box-shadow:1px 2px 0 #111216;
-}
+.rtg-picker-overall-order:active{transform:translate(1px,1px);box-shadow:1px 2px 0 #111216;}
+.rtg-modal .rtg-player-catalog .rtg-catalog-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-auto-flow:row!important;gap:12px 8px!important;align-items:start!important;justify-content:center!important;width:100%!important;padding:14px 0 4px!important;}
 
-/* Catalog controls/layout only. Player-card visuals are not owned here. */
-.rtg-modal .rtg-player-catalog .rtg-catalog-grid{
-  display:grid!important;
-  grid-template-columns:repeat(4,minmax(0,1fr))!important;
-  grid-auto-flow:row!important;
-  gap:12px 8px!important;
-  align-items:start!important;
-  justify-content:center!important;
-  width:100%!important;
-  padding:14px 0 4px!important;
-}
+.player-detail-rtg-role-switch{position:absolute!important;z-index:9!important;top:18px!important;right:140px!important;width:50px!important;min-width:50px!important;min-height:48px!important;display:grid!important;grid-template-rows:auto 1fr!important;place-items:center!important;align-content:center!important;padding:5px 5px 4px!important;border:3px solid #111216!important;border-radius:0!important;background:#ffd21f!important;color:#111216!important;box-shadow:4px 4px 0 #111216!important;transform:skew(-4deg)!important;text-transform:uppercase!important;cursor:pointer!important;}
+.player-detail-rtg-role-switch > *{transform:skew(4deg)!important;}
+.player-detail-rtg-role-switch small{font:950 6px/1 system-ui,sans-serif!important;letter-spacing:.12em!important;}
+.player-detail-rtg-role-switch strong{align-self:end!important;font:1000 20px/.9 system-ui,sans-serif!important;letter-spacing:-.04em!important;}
+.player-detail-rtg-role-switch:active{translate:2px 2px!important;box-shadow:2px 2px 0 #111216!important;}
 
-@media(max-width:430px){
-  .rtg-picker-overall-order{
-    min-height:32px;
-    padding:5px 9px;
-    font-size:.72rem;
-  }
-}
-
-@media(max-width:360px){
-  .rtg-modal .rtg-player-catalog .rtg-catalog-grid{
-    grid-template-columns:repeat(3,minmax(0,1fr))!important;
-  }
-}
+@media(max-width:520px){.player-detail-rtg-role-switch{top:16px!important;right:122px!important;width:42px!important;min-width:42px!important;min-height:42px!important;padding:4px 3px 3px!important;border-width:2px!important;box-shadow:3px 3px 0 #111216!important;}.player-detail-rtg-role-switch small{font-size:5px!important;}.player-detail-rtg-role-switch strong{font-size:17px!important;}}
+@media(max-width:430px){.rtg-picker-overall-order{min-height:32px;padding:5px 9px;font-size:.72rem;}}
+@media(max-width:370px){.player-detail-rtg-role-switch{top:14px!important;right:114px!important;width:38px!important;min-width:38px!important;min-height:38px!important;}.player-detail-rtg-role-switch strong{font-size:16px!important;}}
+@media(max-width:360px){.rtg-modal .rtg-player-catalog .rtg-catalog-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}}
