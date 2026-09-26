@@ -9,16 +9,19 @@ const ARCH = path.join(ROOT, 'docs', 'RTG_CSS_ARCHITECTURE.md');
 assert.ok(fs.existsSync(ARCH), 'RTG CSS architecture contract must exist');
 
 const forbiddenNewLayerName = /(?:^|[-_.])(fix|polish|tuning|override|depth|perspective)(?:[-_.]|$)/i;
-const allowlistedLegacyLayers = new Set([
+const retiredDisconnectedLayers = [
   'rtg-vending-depth.css',
   'rtg-vending-perspective.css'
-]);
+];
 
 const rtgCssFiles = fs.readdirSync(CSS_DIR)
   .filter(name => /^rtg-.*\.css$/i.test(name));
 
+for (const name of retiredDisconnectedLayers) {
+  assert.ok(!rtgCssFiles.includes(name), `Disconnected legacy RTG stylesheet must stay retired: ${name}`);
+}
+
 for (const name of rtgCssFiles) {
-  if (allowlistedLegacyLayers.has(name)) continue;
   assert.ok(!forbiddenNewLayerName.test(name), `RTG finishing/override layer is forbidden: ${name}`);
 }
 
@@ -29,8 +32,6 @@ const debtFiles = [
   'rtg-theme-base.css',
   'rtg-theme-core.css',
   'rtg-theme.css',
-  'rtg-vending-depth.css',
-  'rtg-vending-perspective.css',
   'rtg-version-banners.css'
 ].filter(name => fs.existsSync(path.join(CSS_DIR, name)));
 
@@ -41,13 +42,11 @@ const importantDebt = Object.fromEntries(debtFiles.map(name => {
 }));
 
 const baselineCeilings = {
-  // Filled from the frozen cleanup baseline. If a migrated file disappears, that is a pass.
+  // Temporary migration ceilings. They only move downward as ownership migrates.
   'road-to-glory.css': 10000,
   'rtg-theme-base.css': 10000,
   'rtg-theme-core.css': 10000,
   'rtg-theme.css': 10000,
-  'rtg-vending-depth.css': 10000,
-  'rtg-vending-perspective.css': 10000,
   'rtg-version-banners.css': 10000
 };
 
