@@ -42,9 +42,29 @@ if (fs.existsSync(legacyRoadPath)) {
     '.rtg-machine-tray',
     '.rtg-capsule'
   ];
+  const squadSelectorsOwnedElsewhere = [
+    '.rtg-squad-shell',
+    '.rtg-squad-topbar',
+    '.rtg-squad-back',
+    '.rtg-squad-content',
+    '.rtg-squad-pitch-main',
+    '.rtg-squad-actions',
+    '.rtg-squad-player-card',
+    '.rtg-squad-picker-modal',
+    '.rtg-squad-picker',
+    '.rtg-picker-grid',
+    '.rtg-picker-role-badge',
+    '.rtg-picker-load-more',
+    '.rtg-collection-main',
+    '.rtg-collection-card-grid',
+    '.rtg-formation-modal'
+  ];
 
   for (const selector of vendingSelectorsOwnedElsewhere) {
     assert.ok(!legacyRoad.includes(selector), `Vending selector must be owned by rtg-vending.css, not road-to-glory.css: ${selector}`);
+  }
+  for (const selector of squadSelectorsOwnedElsewhere) {
+    assert.ok(!legacyRoad.includes(selector), `Squad selector must be owned by rtg-squad.css, not road-to-glory.css: ${selector}`);
   }
 }
 
