@@ -1,79 +1,24 @@
-/* Exact restoration from the approved RTG version-group implementation (2026-09-25, d3cb8de). */
+/* RTG Legacy/version presentation. Restored from the approved 2026-09-25 implementation. */
 button.player-card:has(> .rtg-legacy-badge),
 .player-card:has(> .rtg-legacy-badge),
 button.player-card:has(> .rtg-version-count-badge),
-.player-card:has(> .rtg-version-count-badge){
-  overflow:visible!important;
-}
-.rtg-legacy-badge{
-  position:absolute!important;
-  z-index:24!important;
-  left:auto!important;
-  right:-4px!important;
-  top:auto!important;
-  bottom:-11px!important;
-  transform:none!important;
-  display:grid!important;
-  place-items:center!important;
-  width:auto!important;
-  min-width:27px!important;
-  height:16px!important;
-  min-height:16px!important;
-  padding:0 5px!important;
-  border:2px solid #111216!important;
-  border-radius:0!important;
-  background:var(--rtg-legacy-color,#ffd21f)!important;
-  color:var(--rtg-legacy-ink,#111216)!important;
-  box-shadow:1px 2px 0 #111216!important;
-  font:1000 7px/1 system-ui,sans-serif!important;
-  letter-spacing:.04em!important;
-  pointer-events:none!important;
-}
+.player-card:has(> .rtg-version-count-badge){overflow:visible!important;}
+.rtg-legacy-badge{position:absolute!important;z-index:24!important;left:auto!important;right:-4px!important;top:auto!important;bottom:-11px!important;transform:none!important;display:grid!important;place-items:center!important;width:auto!important;min-width:27px!important;height:16px!important;min-height:16px!important;padding:0 5px!important;border:2px solid #111216!important;border-radius:0!important;background:var(--rtg-legacy-color,#ffd21f)!important;color:var(--rtg-legacy-ink,#111216)!important;box-shadow:1px 2px 0 #111216!important;font:1000 7px/1 system-ui,sans-serif!important;letter-spacing:.04em!important;pointer-events:none!important;}
 .rtg-legacy-badge::before{content:none!important;}
 .rtg-legacy-badge[data-legacy-season="S1"]{--rtg-legacy-color:#ffd21f;--rtg-legacy-ink:#111216;}
 .rtg-legacy-badge[data-legacy-season="S2"]{--rtg-legacy-color:#35b8f4;--rtg-legacy-ink:#07131b;}
 .rtg-legacy-badge[data-legacy-season="S3"]{--rtg-legacy-color:#a678ff;--rtg-legacy-ink:#130b24;}
-.rtg-version-count-badge{
-  position:absolute!important;
-  z-index:25!important;
-  left:-4px!important;
-  right:auto!important;
-  top:auto!important;
-  bottom:-11px!important;
-  display:grid!important;
-  place-items:center!important;
-  min-width:42px!important;
-  height:16px!important;
-  padding:0 6px!important;
-  border:2px solid #111216!important;
-  border-radius:0!important;
-  background:#fffdf7!important;
-  color:#111216!important;
-  box-shadow:1px 2px 0 #111216!important;
-  font:1000 7px/1 system-ui,sans-serif!important;
-  letter-spacing:.04em!important;
-  pointer-events:none!important;
-  white-space:nowrap!important;
-}
+.rtg-version-count-badge{position:absolute!important;z-index:25!important;left:-4px!important;right:auto!important;top:auto!important;bottom:-11px!important;display:grid!important;place-items:center!important;min-width:42px!important;height:16px!important;padding:0 6px!important;border:2px solid #111216!important;border-radius:0!important;background:#fffdf7!important;color:#111216!important;box-shadow:1px 2px 0 #111216!important;font:1000 7px/1 system-ui,sans-serif!important;letter-spacing:.04em!important;pointer-events:none!important;white-space:nowrap!important;}
 .rtg-version-picker-modal{width:min(92vw,620px)!important;}
 .rtg-version-picker-head{margin-bottom:10px!important;}
-.rtg-version-card-grid{
-  display:grid!important;
-  grid-template-columns:repeat(2,minmax(0,1fr))!important;
-  justify-items:center!important;
-  gap:26px 14px!important;
-  padding:14px 4px 18px!important;
-}
-.rtg-version-card-grid .rtg-version-player-card{
-  width:min(150px,100%)!important;
-  min-width:0!important;
-  max-width:150px!important;
-  cursor:pointer!important;
-  overflow:visible!important;
-}
-.rtg-version-card-grid .rtg-version-player-card:active{transform:translate(2px,2px)!important;}
+.rtg-version-card-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;justify-items:center!important;align-items:start!important;gap:30px 14px!important;padding:14px 4px 20px!important;overflow:visible!important;}
+.rtg-version-card-grid .rtg-version-player-card{position:relative!important;width:min(150px,100%)!important;min-width:0!important;max-width:150px!important;cursor:pointer!important;overflow:visible!important;transform:none!important;}
+/* Pin the chooser anatomy to the approved full card proportions so later compact-card rules cannot squash it. */
+.rtg-version-card-grid .rtg-version-player-card .player-portrait-wrap{height:92px!important;min-height:92px!important;overflow:hidden!important;}
+.rtg-version-card-grid .rtg-version-player-card .player-portrait-wrap img,.rtg-version-card-grid .rtg-version-player-card .player-portrait{width:100%!important;height:100%!important;object-fit:contain!important;object-position:center bottom!important;}
+.rtg-version-card-grid .rtg-version-player-card .player-title{min-height:28px!important;display:flex!important;align-items:center!important;justify-content:center!important;}
+.rtg-version-card-grid .rtg-version-player-card .player-title strong{font-size:11px!important;line-height:1.1!important;}
 .rtg-version-card-grid .rtg-version-player-card .rtg-version-count-badge{display:none!important;}
-@media(max-width:430px){
-  .rtg-version-card-grid{gap:24px 10px!important;padding-inline:0!important;}
-  .rtg-version-card-grid .rtg-version-player-card{width:min(132px,100%)!important;max-width:132px!important;}
-}
+.rtg-version-card-grid .rtg-version-player-card .rtg-legacy-badge{display:grid!important;}
+.rtg-version-card-grid .rtg-version-player-card:active{transform:translate(2px,2px)!important;}
+@media(max-width:430px){.rtg-version-card-grid{gap:30px 10px!important;padding-inline:0!important;}.rtg-version-card-grid .rtg-version-player-card{width:min(132px,100%)!important;max-width:132px!important;}.rtg-version-card-grid .rtg-version-player-card .player-portrait-wrap{height:92px!important;min-height:92px!important;}}
