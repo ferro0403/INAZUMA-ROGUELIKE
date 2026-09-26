@@ -1,0 +1,43 @@
+/* Road to Glory — run/route owner.
+   Owns route-map artwork and route-line presentation.
+   Loaded after the legacy theme during migration with equivalent declarations. */
+
+.rtg-map .rtg-map-block .route-map.rtg-route-stage {
+  background-color:#082c52!important;
+  background-image:url("../assets/rtg/rtg-season1-route-map.jpg?v=5")!important;
+  background-position:50% 48%!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+  background-blend-mode:normal!important;
+  filter:none!important;
+}
+
+/* Temporary important dependency: legacy S1 route artwork is also important.
+   Remove this flag when the historical owner is retired. */
+.rtg-run-screen--s2 .rtg-map .rtg-map-block--season2-part .route-map.rtg-route-stage--season2 {
+  background-color:#082c52!important;
+  background-image:url("../assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-map-hq-1")!important;
+  background-position:var(--rtg-route-bg-position,center)!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+  background-blend-mode:normal!important;
+  filter:none!important;
+}
+
+.rtg-route-stage .rtg-map-lines{pointer-events:none!important;}
+.rtg-route-stage .rtg-map-lines .rtg-route-line-shadow{
+  fill:none!important;
+  stroke:#111216!important;
+  stroke-width:2.45!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  opacity:.72!important;
+}
+.rtg-route-stage .rtg-map-lines .rtg-route-line{
+  fill:none!important;
+  stroke:#ffd21f!important;
+  stroke-width:1.5!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  opacity:.94!important;
+}
