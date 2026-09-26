@@ -1,8 +1,8 @@
-/* Transitional compatibility entrypoint.
-   RTG presentation now belongs to explicit domain owners loaded by index.html.
-   Keep the historical core import here until rtg-theme-core.css is migrated.
+/* Road to Glory compatibility entrypoint.
+   Shared tokens and component presentation are owned by the explicit RTG domain
+   stylesheets loaded by index.html. Keep this file intentionally free of the
+   historical rtg-theme-core.css monolith.
 
-   Prematch geometry now has an explicit domain owner instead of a temporary
-   finishing/final override layer. */
-@import url("./rtg-theme-core.css?v=20260921-duel-actions-mobile-1");
+   Prematch geometry has its own domain owner until it is folded into the final
+   match/prematch architecture. */
 @import url("./rtg-prematch.css?v=20260926-rtg-css-cleanup-1");
