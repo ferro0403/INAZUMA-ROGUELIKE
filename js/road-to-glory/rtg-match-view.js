@@ -98,10 +98,12 @@
       return value.split("::").pop().split("@")[0];
     }
 
+    function isShawn1162Fw(player = {}) {
+      return canonicalVisualPlayerId(player) === "1162" && role(player) === "FW";
+    }
+
     function duelVisualUrl(player = {}) {
-      const canonicalPlayerId = canonicalVisualPlayerId(player);
-      const activeRole = role(player);
-      if (canonicalPlayerId === "1162" && activeRole === "FW") return SHAWN_1162_FW_PORTRAIT;
+      if (isShawn1162Fw(player)) return SHAWN_1162_FW_PORTRAIT;
       return String(
         player?.frontFullbodyUrl ||
         player?.frontFullBodyUrl ||
@@ -120,8 +122,9 @@
       const visual = duelVisualUrl(player);
       const playerRole = role(player) || "—";
       const overall = player?.overall ?? player?.finalOverall ?? "—";
+      const shawnFwClass = isShawn1162Fw(player) ? " rtg-duel-render--shawn-1162-fw" : "";
       return `<button type="button" class="rtg-duel-visual rtg-duel-visual--${escape(side)}" ${attrs}>
-        <span class="rtg-duel-render">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
+        <span class="rtg-duel-render${shawnFwClass}">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
         <span class="rtg-duel-player-copy"><small>${escape(playerRole)} · OVR ${escape(overall)}</small><strong>${escape(name)}</strong></span>
       </button>`;
     }
@@ -179,8 +182,9 @@
       const element = duelElementLabel(player);
       const elementClass = duelElementClass(player);
       const elementStateClass = opponent && duelElementDisadvantaged(player,opponent) ? "is-element-disadvantaged" : "";
+      const shawnFwClass = isShawn1162Fw(player) ? " rtg-duel-render--shawn-1162-fw" : "";
       return `<button type="button" class="rtg-duel-visual rtg-duel-visual--compare rtg-duel-visual--${escape(side)} ${escape(elementClass)}" ${attrs}>
-        <span class="rtg-duel-render">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
+        <span class="rtg-duel-render${shawnFwClass}">${visual ? `<img src="${escape(visual)}" alt="${escape(name)}" loading="eager" />` : `<i aria-hidden="true">${escape(String(name).slice(0,1).toUpperCase())}</i>`}</span>
         <span class="rtg-duel-player-copy">
           <strong class="rtg-duel-player-name">${escape(name)}</strong>
           <span class="rtg-duel-player-meta">
