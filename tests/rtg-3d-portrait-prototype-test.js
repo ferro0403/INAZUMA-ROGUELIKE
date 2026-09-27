@@ -66,6 +66,8 @@ assert(runtime.includes('shaderModeOverride'), "Portrait comparison must render 
 assert(runtime.includes('G4 v6'), "Portrait comparison must label the G4 side.");
 assert(runtime.includes('NATIVE v7'), "Portrait comparison must label the native-data side.");
 assert(runtime.includes('rtg-3d-compare-wrap'), "Portrait comparison wrapper is missing.");
+const compareCss = fs.readFileSync(path.join(root, "css", "rtg-3d-portrait.css"), "utf8");
+assert(!/\.rtg-3d-compare-host\s*\{[^}]*position\s*:\s*relative/i.test(compareCss), "Portrait compare host must not override the absolute player-detail visual positioning.");
 
 assert(controller.includes("RoadToGlory3DPortrait?.renderIntoDetail"), "RTG player detail must invoke the isolated 3D portrait runtime.");
 assert(controller.includes('get("rtgCheatMark")'), "Prototype must expose the opt-in Mark cheat.");
