@@ -16,10 +16,10 @@ button.player-card:has(> .rtg-version-count-badge),
 /* The replacement picker gets its card dimensions from selectors scoped to
    .rtg-squad-picker-modal. The version modal is a sibling modal, so reproduce
    that container contract verbatim instead of inventing a second card style. */
-.rtg-version-picker-modal{width:min(92vw,620px)!important;--rtg-picker-card-size:74px;--rtg-picker-card-mobile:64px;}
+.rtg-version-picker-modal{width:min(92vw,620px)!important;--rtg-picker-card-size:80px;--rtg-picker-card-mobile:70px;}
 .rtg-version-picker-head{margin-bottom:10px!important;}
-.rtg-version-card-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(72px,88px))!important;justify-content:center!important;justify-items:stretch!important;align-items:start!important;gap:18px 10px!important;width:100%!important;min-height:106px;padding:16px 0 20px!important;overflow:visible!important;}
-.rtg-version-card-grid>[data-rtg-version-card]{width:100%!important;max-width:88px!important;justify-self:center!important;cursor:pointer!important;overflow:visible!important;transform:none!important;}
+.rtg-version-card-grid{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(78px,96px))!important;justify-content:center!important;justify-items:stretch!important;align-items:start!important;gap:18px 12px!important;width:100%!important;min-height:112px;padding:16px 0 20px!important;overflow:visible!important;}
+.rtg-version-card-grid>[data-rtg-version-card]{width:100%!important;max-width:96px!important;justify-self:center!important;cursor:pointer!important;overflow:visible!important;transform:none!important;}
 .rtg-version-card-grid .rtg-picker-squad-card .player-portrait-wrap{height:auto!important;min-height:0!important;aspect-ratio:1.05!important;padding:7px 6px 4px!important;overflow:visible!important;place-items:end center!important;}
 .rtg-version-card-grid .rtg-picker-squad-card img.player-portrait{width:100%!important;height:100%!important;max-width:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center bottom!important;transform:none!important;}
 .rtg-version-card-grid .rtg-picker-squad-card .player-portrait-wrap::after{top:17px!important;height:51px!important;}
@@ -27,6 +27,6 @@ button.player-card:has(> .rtg-version-count-badge),
 .rtg-version-card-grid>[data-rtg-version-card] .rtg-legacy-badge{display:grid!important;}
 .rtg-version-card-grid>[data-rtg-version-card]:active{transform:translate(2px,2px)!important;}
 @media(max-width:430px){
-  .rtg-version-card-grid{grid-template-columns:repeat(auto-fit,minmax(68px,82px))!important;gap:18px 8px!important;}
-  .rtg-version-card-grid>[data-rtg-version-card]{max-width:82px!important;}
+  .rtg-version-card-grid{grid-template-columns:repeat(auto-fit,minmax(74px,90px))!important;gap:18px 10px!important;}
+  .rtg-version-card-grid>[data-rtg-version-card]{max-width:90px!important;}
 }
