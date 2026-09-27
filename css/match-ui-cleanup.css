@@ -4,25 +4,29 @@
   display: none;
 }
 
-/* RTG S2 — Shawn Froste FW 90 (card 1166).
-   Use the exact portrait supplied for Shawn in both live duel cards and the
-   action ticker. The ticker image has an empty alt attribute, so targeting it
-   by alt/name cannot work; target the old Shawn asset source there instead. */
-.rtg-duel-visual--user .rtg-duel-render > img[alt="Shawn Froste"] {
+/* RTG S2 — Shawn Froste card 1162 has two role variants.
+   Only the FW variant uses the legacy 3D asset wk5ezxf-7dm.png, so target that
+   exact source instead of the player's name. This deliberately leaves both
+   1162 DF and the separate Raimon card 1166 completely untouched. */
+.rtg-duel-render > img[src*="wk5ezxf-7dm.png"] {
   content: url("https://dxi4wb638ujep.cloudfront.net/1/k/v/t/vtvoof1qo6m_r0.webp") !important;
   width: 100% !important;
   height: 100% !important;
   object-fit: contain !important;
-  object-position: center bottom !important;
-  transform: none !important;
+  object-position: center center !important;
+  transform: scale(1.72) !important;
+  transform-origin: center 42% !important;
 }
 
+/* Same identity rule in the live action recap: replace only 1162 FW's old 3D
+   source. Other Shawn variants/cards keep the render already resolved for them. */
 .rtg-match-ticker img[src*="wk5ezxf-7dm.png"],
 .rtg-match-event-feed img[src*="wk5ezxf-7dm.png"] {
   content: url("https://dxi4wb638ujep.cloudfront.net/1/k/v/t/vtvoof1qo6m_r0.webp") !important;
   width: 100% !important;
   height: 100% !important;
   object-fit: contain !important;
-  object-position: center !important;
-  transform: none !important;
+  object-position: center center !important;
+  transform: scale(1.75) !important;
+  transform-origin: center 40% !important;
 }
