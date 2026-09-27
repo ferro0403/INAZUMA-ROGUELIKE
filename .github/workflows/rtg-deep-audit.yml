@@ -35,22 +35,15 @@ jobs:
             grep -q "$item" index.html
           done
           ! grep -q 'css/road-to-glory.css' index.html
-      - name: Run every RTG regression test
+      - name: Run complete RTG and bootstrap test audit
         shell: bash
         run: |
-          set -euo pipefail
+          set +e
+          failures=0
+          total=0
           shopt -s nullglob
           tests=(tests/rtg-*-test.js)
-          for test_file in "${tests[@]}"; do
-            echo "::group::$test_file"
-            node "$test_file"
-            echo "::endgroup::"
-          done
-      - name: Run core bootstrap integration tests
-        shell: bash
-        run: |
-          set -euo pipefail
-          tests=(
+          tests+=(
             tests/app-ui-shell-domain-test.js
             tests/app-bootstrap-domain-test.js
             tests/home-season-resume-production-path-test.js
@@ -59,9 +52,19 @@ jobs:
             tests/permanent-club-ui-production-path-test.js
           )
           for test_file in "${tests[@]}"; do
+            total=$((total+1))
             echo "::group::$test_file"
             node "$test_file"
+            code=$?
             echo "::endgroup::"
+            if [ $code -ne 0 ]; then
+              failures=$((failures+1))
+              echo "::error file=$test_file::FAILED ($code)"
+            fi
           done
+          echo "AUDIT_TOTAL=$total"
+          echo "AUDIT_FAILURES=$failures"
+          [ $failures -eq 0 ]
       - name: Final whitespace check
+        if: always()
         run: git diff --check
