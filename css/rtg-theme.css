@@ -1109,10 +1109,9 @@ button.player-card:has(> .rtg-legacy-badge),
 }
 
 /* Shawn 1162 FW duel-only portrait zoom.
-   rtg-theme.css is loaded after the imported RTG base/core sheets, so this
-   rule intentionally owns the final transform only for this one duel render.
-   The action recap uses a different element and is not affected. */
-.rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-render.rtg-duel-render--shawn-1162-fw > img {
+   Apply the exact same framing in every duel state: choice, resolving and
+   win/loss result. The action recap uses a different element and is excluded. */
+.rtg-duel-render.rtg-duel-render--shawn-1162-fw > img {
   transform: scale(1.80) !important;
   transform-origin: center bottom !important;
 }
