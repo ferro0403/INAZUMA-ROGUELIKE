@@ -3,3 +3,19 @@
 .boss-match-result-panel .result-badges {
   display: none;
 }
+
+/* S2 Shawn Froste (canonical player 1166) deliberately uses the tall source
+   asset wk5ezxf-7dm.png. The squad card already frames that asset as a portrait;
+   match surfaces otherwise expose its transparent full-body canvas. Scope the
+   framing to this exact asset so every other player keeps the original match
+   presentation unchanged. */
+.rtg-match-shell img[src*="wk5ezxf-7dm.png"] {
+  object-fit: cover !important;
+  object-position: 50% 10% !important;
+  transform: scale(2.15) !important;
+  transform-origin: 50% 12% !important;
+}
+.rtg-match-shell .rtg-duel-render:has(> img[src*="wk5ezxf-7dm.png"]),
+.rtg-match-shell .match-event-avatar:has(> img[src*="wk5ezxf-7dm.png"]) {
+  overflow: hidden !important;
+}
