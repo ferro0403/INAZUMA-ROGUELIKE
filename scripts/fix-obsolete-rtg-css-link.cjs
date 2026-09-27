@@ -9,3 +9,4 @@ if (!target.test(source)) {
 const updated = source.replace(target, '');
 fs.writeFileSync(path, updated, 'utf8');
 console.log('Removed obsolete road-to-glory.css link from index.html');
+// workflow trigger
