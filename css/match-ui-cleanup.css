@@ -3,11 +3,3 @@
 .boss-match-result-panel .result-badges {
   display: none;
 }
-
-/* Only Shawn Froste S2 card 1162 while its active role is FW needs extra
-   portrait magnification in duel cards. The action recap is intentionally
-   excluded: its portrait framing is already correct. */
-.rtg-duel-render--shawn-1162-fw > img {
-  transform: scale(1.32) !important;
-  transform-origin: center 46% !important;
-}
