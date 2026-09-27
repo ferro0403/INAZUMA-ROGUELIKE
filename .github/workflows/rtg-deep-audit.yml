@@ -6,6 +6,8 @@ on:
     paths:
       - .github/workflows/rtg-deep-audit.yml
       - scripts/rtg-browser-bootstrap-diagnostics.mjs
+      - css/aurico-rarity.css
+      - css/rtg-*.css
 permissions:
   contents: read
 jobs:
