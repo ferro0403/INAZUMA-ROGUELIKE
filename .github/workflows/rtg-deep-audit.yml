@@ -6,6 +6,7 @@ on:
     paths:
       - .github/workflows/rtg-deep-audit.yml
       - scripts/rtg-browser-bootstrap-diagnostics.mjs
+      - scripts/verify-css-local-assets.cjs
       - css/aurico-rarity.css
       - css/rtg-*.css
 permissions:
@@ -23,6 +24,8 @@ jobs:
           node-version: 22
       - name: Verify index local references
         run: node scripts/verify-index-local-assets.cjs
+      - name: Verify CSS local asset references
+        run: node scripts/verify-css-local-assets.cjs
       - name: Syntax check all production JavaScript
         shell: bash
         run: |
