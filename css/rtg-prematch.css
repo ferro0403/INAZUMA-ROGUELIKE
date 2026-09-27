@@ -74,3 +74,28 @@
   }
   .rtg-prematch-shell .rtg-matchup-vs{width:44px!important;}
 }
+
+/* Preserve the approved pre-match graphic rail from the legacy cascade. */
+.rtg-prematch-matchup::before{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:10px;
+  background:#ffd21f;
+  border-bottom:3px solid #111216;
+  z-index:2;
+}
+.rtg-prematch-matchup::after{
+  content:"";
+  position:absolute;
+  top:10px;
+  right:-26px;
+  width:120px;
+  height:20px;
+  background:#111216;
+  transform:skewX(-35deg);
+  opacity:.96;
+  z-index:1;
+}
