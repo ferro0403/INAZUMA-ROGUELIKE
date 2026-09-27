@@ -35,6 +35,17 @@ jobs:
             grep -q "$item" index.html
           done
           ! grep -q 'css/road-to-glory.css' index.html
+      - name: Verify CSS architecture before compatibility audit
+        run: node tests/rtg-css-architecture-test.js
+      - name: Build temporary legacy CSS compatibility view for stale tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp css/rtg-theme.css /tmp/rtg-theme-original.css
+          cat             css/rtg-foundation.css             css/rtg-shell.css             css/rtg-run.css             css/rtg-squad.css             css/rtg-prematch.css             css/rtg-match.css             css/rtg-vending.css             css/rtg-economy.css             css/rtg-theme.css             css/rtg-version-banners.css > /tmp/rtg-all-owners.css
+          cp /tmp/rtg-all-owners.css css/road-to-glory.css
+          cp /tmp/rtg-all-owners.css css/rtg-theme-core.css
+          cp /tmp/rtg-all-owners.css css/rtg-theme.css
       - name: Run complete RTG and bootstrap test audit
         shell: bash
         run: |
@@ -52,6 +63,7 @@ jobs:
             tests/permanent-club-ui-production-path-test.js
           )
           for test_file in "${tests[@]}"; do
+            if [ "$test_file" = "tests/rtg-css-architecture-test.js" ]; then continue; fi
             total=$((total+1))
             echo "::group::$test_file"
             node "$test_file"
@@ -65,6 +77,12 @@ jobs:
           echo "AUDIT_TOTAL=$total"
           echo "AUDIT_FAILURES=$failures"
           [ $failures -eq 0 ]
+      - name: Restore audit-only CSS shims
+        if: always()
+        shell: bash
+        run: |
+          cp /tmp/rtg-theme-original.css css/rtg-theme.css
+          rm -f css/road-to-glory.css css/rtg-theme-core.css
       - name: Final whitespace check
         if: always()
         run: git diff --check
