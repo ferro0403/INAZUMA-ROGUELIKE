@@ -1,0 +1,67 @@
+name: RTG deep branch audit
+on:
+  push:
+    branches:
+      - refactor/rtg-css-cleanup
+    paths:
+      - .github/workflows/rtg-deep-audit.yml
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/rtg-css-cleanup
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify index local references
+        run: node scripts/verify-index-local-assets.cjs
+      - name: Syntax check all production JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find js -type f -name '*.js' -print0 | sort -z)
+      - name: Verify critical application bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          for item in             js/app/ui-shell.js             js/app/app-bootstrap.js             js/home/home-view.js             js/home/home-controller.js             js/run/run-roster-runtime.js             js/player/player-visuals.js             js/player/player-view.js             js/player/player-detail-controller.js             js/app.js; do
+            grep -q "$item" index.html
+          done
+          ! grep -q 'css/road-to-glory.css' index.html
+      - name: Run every RTG regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          tests=(tests/rtg-*-test.js)
+          for test_file in "${tests[@]}"; do
+            echo "::group::$test_file"
+            node "$test_file"
+            echo "::endgroup::"
+          done
+      - name: Run core bootstrap integration tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          tests=(
+            tests/app-ui-shell-domain-test.js
+            tests/app-bootstrap-domain-test.js
+            tests/home-season-resume-production-path-test.js
+            tests/run-roster-runtime-domain-test.js
+            tests/player-presentation-production-path-test.js
+            tests/permanent-club-ui-production-path-test.js
+          )
+          for test_file in "${tests[@]}"; do
+            echo "::group::$test_file"
+            node "$test_file"
+            echo "::endgroup::"
+          done
+      - name: Final whitespace check
+        run: git diff --check
