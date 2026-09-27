@@ -60,6 +60,14 @@ assert(runtime.includes('g4HighSignal - 1.50'), "Native highlight threshold must
 assert(runtime.includes('vec3(0.10) * g4High'), "Native highlight color must come from light_data.cfg.bin.");
 assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must come from light_data.cfg.bin.");
 assert(runtime.includes('rtg-g4-native-data-v7'), "Native-data shader program cache version is missing.");
+assert(runtime.includes('rtg-3d-portrait-v8-native-edge'), "Native edge portrait mode must use an isolated cache.");
+assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8"'), "Native edge portrait mode must be selectable.");
+assert(runtime.includes('function renderNativeEdgeComposite'), "Native edge portrait post-process is missing.");
+assert(runtime.includes('outlinePixels: { value: 1.65 }'), "Native edge portrait must use the capture-derived outline width.");
+assert(runtime.includes('normalThreshold: { value: 0.30 }'), "Native edge portrait normal threshold is missing.");
+assert(runtime.includes('depthThreshold: { value: 0.015 }'), "Native edge portrait depth threshold is missing.");
+assert(runtime.includes('new THREE.Color(0.018, 0.012, 0.018)'), "Native edge portrait dark edge color is missing.");
+assert(runtime.includes('NATIVE+EDGE'), "Native edge portrait status label is missing.");
 assert(runtime.includes('function compareEnabled()'), "Portrait comparison query helper is missing.");
 assert(runtime.includes('rtg3dCompare'), "Portrait comparison query parameter is missing.");
 assert(runtime.includes('shaderModeOverride'), "Portrait comparison must render explicit shader modes.");
