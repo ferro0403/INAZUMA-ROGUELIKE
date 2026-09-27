@@ -62,3 +62,208 @@
 @media(max-width:420px){.rtg-squad-slots{padding:10px!important;margin-inline:0!important;}.rtg-squad-slots-label{font-size:.62rem!important;margin-bottom:8px!important;}.rtg-squad-slot{min-height:38px!important;font-size:.62rem!important;padding:6px 2px!important;}}
 @media(max-width:370px){.player-detail-rtg-role-switch{top:14px!important;right:114px!important;width:38px!important;min-width:38px!important;min-height:38px!important;}.player-detail-rtg-role-switch strong{font-size:16px!important;}}
 @media(max-width:360px){.rtg-modal .rtg-player-catalog .rtg-catalog-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}}
+
+/* Final ownership migrated from road-to-glory.css. */
+
+.rtg-adapt-button {
+  min-height: 48px;
+  border: 3px solid var(--squad-ink,#101116) !important;
+  box-shadow: 4px 5px 0 var(--squad-ink,#101116);
+  text-transform: uppercase;
+}
+
+
+
+/* RTG quality pass 2 */
+.rtg-picker-toolbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:10px;align-items:end}
+
+.rtg-picker-search{display:grid;gap:5px;min-width:0}
+
+.rtg-picker-search span{color:#5f574c;font-size:.66rem;font-weight:1000;letter-spacing:.08em;text-transform:uppercase}
+
+.rtg-picker-search input{width:100%;min-height:44px;padding:0 12px;border:3px solid #101116;border-radius:0;background:#fff;color:#101116;font:inherit;font-weight:850;outline:none;box-shadow:3px 4px 0 rgba(16,17,22,.18)}
+
+.rtg-picker-search input:focus{box-shadow:4px 5px 0 #ffd21f}
+
+.rtg-picker-source-filters{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:6px}
+
+.rtg-picker-filter{min-height:36px;padding:6px 10px;border:2px solid #101116;border-radius:0;background:#fffdf5;color:#101116;font-weight:950}
+
+.rtg-picker-filter.active{background:#ffd21f;box-shadow:2px 3px 0 #101116}
+
+
+@media(max-width:780px){
+.rtg-picker-toolbar{grid-template-columns:1fr}}
+
+.rtg-roster-summary{
+  min-height:64px;
+  grid-template-columns:auto 1fr auto!important;
+}
+
+.rtg-roster-summary em{display:none!important}
+
+.rtg-roster-summary .squad-command-count b{font-size:.68rem!important}
+
+.rtg-squad-card-slot{
+  position:relative;
+  display:grid;
+  justify-items:center;
+  align-items:start;
+  min-width:0;
+}
+
+.rtg-squad-change-trigger{
+  position:absolute;
+  z-index:12;
+  right:-7px;
+  bottom:-8px;
+  width:25px;
+  height:25px;
+  display:grid;
+  place-items:center;
+  padding:0;
+  border:2px solid var(--rtg-ink,#111216);
+  border-radius:50%;
+  background:var(--rtg-yellow,#ffd21f);
+  color:var(--rtg-ink,#111216);
+  box-shadow:2px 2px 0 var(--rtg-ink,#111216);
+  font:900 .8rem/1 system-ui,sans-serif;
+}
+
+.rtg-squad-change-trigger:active{
+  transform:translate(1px,1px);
+  box-shadow:1px 1px 0 var(--rtg-ink,#111216);
+}
+
+.rtg-picker-toolbar{
+  gap:7px!important;
+}
+
+.rtg-picker-search span{
+  font-size:.58rem!important;
+}
+
+.rtg-picker-search input{
+  min-height:40px!important;
+  border-width:2px!important;
+  box-shadow:2px 3px 0 rgba(17,18,22,.18)!important;
+  font-size:.78rem!important;
+}
+
+.rtg-picker-filter{
+  min-height:32px!important;
+  padding:4px 8px!important;
+  border-width:2px!important;
+  font-size:.68rem!important;
+}
+
+
+@media(max-width:430px){
+  .rtg-roster-summary{
+    min-height:58px;
+  }}
+
+
+
+/* RTG quality pass 5 — formation-scale picker, quieter squad/prematch, cartoon vending. */
+.rtg-squad-section-head{
+  min-height:36px;
+  align-items:center!important;
+}
+
+.rtg-squad-section-head h2{
+  margin:0!important;
+  color:#111216!important;
+  font-size:.9rem!important;
+  text-transform:uppercase;
+}
+
+.rtg-catalog-button {
+  background: #fffdf7 !important;
+  color: #111216 !important;
+}
+
+.rtg-picker-quick-bench {
+  margin: 10px 0 12px;
+  padding: 10px;
+  border: 2px solid #111216;
+  background: #fff7d0;
+  box-shadow: 3px 4px 0 rgba(17,18,22,.18);
+}
+
+.rtg-picker-quick-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+  color: #111216;
+  font-size: .58rem;
+  font-weight: 1000;
+  letter-spacing: .06em;
+}
+
+.rtg-picker-quick-head strong { color: #8b6814; }
+
+.rtg-picker-quick-strip {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  overflow-x: auto;
+  padding: 2px 2px 7px;
+}
+
+.rtg-picker-quick-strip .rtg-picker-player-card,
+.rtg-catalog-grid .rtg-catalog-player-card {
+  width: var(--rtg-picker-card-size) !important;
+  max-width: var(--rtg-picker-card-size) !important;
+  min-width: var(--rtg-picker-card-size) !important;
+}
+
+.rtg-player-catalog {
+  width: min(92vw, 560px);
+  color: #111216;
+}
+
+.rtg-catalog-head {
+  padding-bottom: 9px;
+  border-bottom: 3px solid #111216;
+}
+
+.rtg-catalog-head h2 { margin: 0; color: #111216; text-transform: uppercase; }
+
+.rtg-catalog-head .muted { margin: 4px 0 0; color: #6a645b; }
+
+.rtg-catalog-search { margin: 12px 0 10px; }
+
+.rtg-catalog-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0,1fr));
+  gap: 18px 8px;
+  justify-items: center;
+  align-items: start;
+}
+
+.rtg-catalog-grid .player-portrait-wrap,
+.rtg-picker-quick-strip .player-portrait-wrap {
+  overflow: hidden !important;
+}
+
+.rtg-catalog-grid img.player-portrait,
+.rtg-picker-quick-strip img.player-portrait {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain !important;
+  object-position: center bottom !important;
+  transform: none !important;
+}
+
+
+@media (max-width: 430px) {
+  .rtg-picker-quick-strip .rtg-picker-player-card,
+  .rtg-catalog-grid .rtg-catalog-player-card {
+    width: var(--rtg-picker-card-mobile) !important;
+    max-width: var(--rtg-picker-card-mobile) !important;
+    min-width: var(--rtg-picker-card-mobile) !important;
+  }
+  .rtg-catalog-grid { grid-template-columns: repeat(4,minmax(0,1fr)); gap: 17px 6px; }}
