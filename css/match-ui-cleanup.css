@@ -4,17 +4,12 @@
   display: none;
 }
 
-/* S2 Shawn Froste has two distinct canonical cards (1162 DF and 1166 FW).
-   The FW card 1166 owns this portrait asset in the season database:
-   https://dxi4wb638ujep.cloudfront.net/1/k/w/k/wk5ezxf-7dm.png
-
-   The match duel renderer prefers frontFullbodyUrl before portraitUrl, unlike
-   the squad card, so the live resolved player can display the 3D/full-body
-   render even though the squad card displays the portrait. On the user duel
-   surfaces where the active Shawn is the FW card, force the canonical 1166
-   portrait itself rather than trying to crop/zoom the wrong source image. */
+/* RTG S2 — Shawn Froste FW 90 (card 1166).
+   Use the exact portrait supplied for Shawn in both live duel cards and the
+   action ticker. The ticker image has an empty alt attribute, so targeting it
+   by alt/name cannot work; target the old Shawn asset source there instead. */
 .rtg-duel-visual--user .rtg-duel-render > img[alt="Shawn Froste"] {
-  content: url("https://dxi4wb638ujep.cloudfront.net/1/k/w/k/wk5ezxf-7dm.png") !important;
+  content: url("https://dxi4wb638ujep.cloudfront.net/1/k/v/t/vtvoof1qo6m_r0.webp") !important;
   width: 100% !important;
   height: 100% !important;
   object-fit: contain !important;
@@ -22,13 +17,12 @@
   transform: none !important;
 }
 
-/* The action ticker is fed by the same resolved match player. Keep Shawn's
-   avatar consistent with the squad portrait as well. */
-.match-event-avatar > img[alt="Shawn Froste"] {
-  content: url("https://dxi4wb638ujep.cloudfront.net/1/k/w/k/wk5ezxf-7dm.png") !important;
+.rtg-match-ticker img[src*="wk5ezxf-7dm.png"],
+.rtg-match-event-feed img[src*="wk5ezxf-7dm.png"] {
+  content: url("https://dxi4wb638ujep.cloudfront.net/1/k/v/t/vtvoof1qo6m_r0.webp") !important;
   width: 100% !important;
   height: 100% !important;
   object-fit: contain !important;
-  object-position: center bottom !important;
+  object-position: center !important;
   transform: none !important;
 }
