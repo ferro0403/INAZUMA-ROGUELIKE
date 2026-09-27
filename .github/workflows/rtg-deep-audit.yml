@@ -35,6 +35,36 @@ jobs:
             grep -q "$item" index.html
           done
           ! grep -q 'css/road-to-glory.css' index.html
+      - name: Browser bootstrap smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 -m http.server 4173 >/tmp/rtg-http.log 2>&1 &
+          server_pid=$!
+          trap 'kill $server_pid 2>/dev/null || true' EXIT
+          sleep 1
+          chrome=""
+          for candidate in google-chrome google-chrome-stable chromium chromium-browser; do
+            if command -v "$candidate" >/dev/null 2>&1; then chrome="$candidate"; break; fi
+          done
+          if [ -z "$chrome" ]; then
+            echo "::error::No headless Chrome/Chromium found on runner"
+            exit 1
+          fi
+          set +e
+          timeout 35s "$chrome" --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --virtual-time-budget=15000 --dump-dom "http://127.0.0.1:4173/" >/tmp/rtg-dom.html 2>/tmp/rtg-chrome.log
+          chrome_code=$?
+          set -e
+          if [ $chrome_code -ne 0 ] && [ $chrome_code -ne 124 ]; then
+            cat /tmp/rtg-chrome.log
+            exit $chrome_code
+          fi
+          if grep -q '<section class="loading-screen">' /tmp/rtg-dom.html; then
+            echo "::error::Application is still on the database loading screen after browser bootstrap"
+            tail -n 120 /tmp/rtg-chrome.log || true
+            exit 1
+          fi
+          echo "Browser bootstrap smoke: loading screen exited successfully"
       - name: Verify CSS architecture before compatibility audit
         run: node tests/rtg-css-architecture-test.js
       - name: Build temporary legacy CSS compatibility view for stale tests
