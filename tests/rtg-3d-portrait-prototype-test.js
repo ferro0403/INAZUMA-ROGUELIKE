@@ -49,6 +49,17 @@ assert(runtime.includes('g4SpecShape * g4SpecMask * g4ShadowMix'), "G4 capture-d
 assert(runtime.includes('g4HighSignal - 1.5999'), "G4 capture-derived highlight threshold is missing.");
 assert(runtime.includes('g4Under + 1.0 - 1.45'), "G4 capture-derived under-light threshold is missing.");
 assert(runtime.includes('rtg-g4-capture-v6'), "G4 shader program cache version is missing.");
+assert(runtime.includes('rtg-3d-portrait-v7-native-data'), "Native-data portrait mode must use an isolated cache.");
+assert(runtime.includes('value === "native" || value === "v7"'), "Native-data portrait mode must be selectable.");
+assert(runtime.includes('function buildNativeGradientTexture()'), "Native-data portrait must reconstruct the extracted chrGrd_01 rows.");
+assert(runtime.includes('new THREE.Vector3(0.83, 0.40, 0.37)'), "Native charaLightDir from light_data.cfg.bin is missing.");
+assert(runtime.includes('vec3(0.67, 0.60, 0.55)'), "Native charaShadowColor1 is missing.");
+assert(runtime.includes('vec3(0.52, 0.44, 0.40)'), "Native charaShadowColor2 is missing.");
+assert(runtime.includes('texture2D(g4NativeGradientMap'), "Native portrait must sample the extracted chrGrd_01 gradient rows.");
+assert(runtime.includes('g4HighSignal - 1.50'), "Native highlight threshold must come from charaHighLightColor.w.");
+assert(runtime.includes('vec3(0.10) * g4High'), "Native highlight color must come from light_data.cfg.bin.");
+assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must come from light_data.cfg.bin.");
+assert(runtime.includes('rtg-g4-native-data-v7'), "Native-data shader program cache version is missing.");
 
 assert(controller.includes("RoadToGlory3DPortrait?.renderIntoDetail"), "RTG player detail must invoke the isolated 3D portrait runtime.");
 assert(controller.includes('get("rtgCheatMark")'), "Prototype must expose the opt-in Mark cheat.");
