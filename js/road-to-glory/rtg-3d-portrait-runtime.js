@@ -5,6 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v8-native-edge";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -28,6 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
+  if (value === "native-edge" || value === "edge2" || value === "v8") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -52,11 +54,18 @@ function roleOf(player) {
 }
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
-  const version = shaderMode === "native" ? "v7-native-data" : shaderMode === "g4" ? "v6-g4" : "v5";
+  const version = shaderMode === "native-edge"
+    ? "v8-native-edge"
+    : shaderMode === "native"
+      ? "v7-native-data"
+      : shaderMode === "g4"
+        ? "v6-g4"
+        : "v5";
   return [version, playerId, internalCode, uniformId, uniformCrc].map((value) => String(value || "")).join("__");
 }
 
 function cacheName(shaderMode) {
+  if (shaderMode === "native-edge") return NATIVE_EDGE_CACHE_NAME;
   if (shaderMode === "native") return NATIVE_CACHE_NAME;
   return shaderMode === "g4" ? G4_CACHE_NAME : LEGACY_CACHE_NAME;
 }
@@ -632,7 +641,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
         if (!converted.has(source.uuid)) {
           converted.set(source.uuid, (async () => {
             const aux = await loadNieAuxTextures(gltf, source);
-            return shaderMode === "native"
+            return shaderMode === "native" || shaderMode === "native-edge"
               ? buildG4NativeDataMaterial(source, aux)
               : shaderMode === "g4"
                 ? buildG4CaptureMaterial(source, aux)
@@ -669,6 +678,207 @@ function fitFrontCamera(camera, root) {
   camera.position.set(center.x, targetY, center.z + distance);
   camera.lookAt(center.x, targetY, center.z);
   camera.updateProjectionMatrix();
+}
+
+
+function diagnosticMaterialFrom(source, kind) {
+  const common = {
+    side: source?.side ?? THREE.FrontSide,
+    transparent: !!source?.transparent,
+    opacity: Number.isFinite(source?.opacity) ? source.opacity : 1,
+    alphaTest: Number(source?.alphaTest || 0),
+  };
+
+  const material = kind === "depth"
+    ? new THREE.MeshDepthMaterial({ ...common, depthPacking: THREE.RGBADepthPacking })
+    : new THREE.MeshNormalMaterial(common);
+
+  // Preserve alpha cutouts from the exported game materials. Mark's face is MASK
+  // in the patched NIE exporter; keeping map/alphaMap avoids outlining transparent quads.
+  material.map = source?.map || null;
+  material.alphaMap = source?.alphaMap || null;
+
+  if (kind === "normal" && source?.normalMap) {
+    material.normalMap = source.normalMap;
+    if (source.normalScale?.clone) material.normalScale.copy(source.normalScale);
+  }
+
+  material.skinning = true;
+  material.morphTargets = true;
+  material.morphNormals = true;
+  material.needsUpdate = true;
+  return material;
+}
+
+function renderDiagnosticPass(renderer, scene, camera, root, target, kind, clearColor, clearAlpha) {
+  const originals = [];
+  const diagnostics = [];
+
+  root.traverse?.((node) => {
+    if (!node.isMesh || !node.material) return;
+    const original = node.material;
+    originals.push([node, original]);
+    const sources = Array.isArray(original) ? original : [original];
+    const replacements = sources.map((source) => {
+      const material = diagnosticMaterialFrom(source, kind);
+      diagnostics.push(material);
+      return material;
+    });
+    node.material = Array.isArray(original) ? replacements : replacements[0];
+  });
+
+  const previousColor = renderer.getClearColor(new THREE.Color()).clone();
+  const previousAlpha = renderer.getClearAlpha();
+  try {
+    renderer.setRenderTarget(target);
+    renderer.setClearColor(clearColor, clearAlpha);
+    renderer.clear(true, true, true);
+    renderer.render(scene, camera);
+  } finally {
+    for (const [node, original] of originals) node.material = original;
+    for (const material of diagnostics) material.dispose();
+    renderer.setClearColor(previousColor, previousAlpha);
+  }
+}
+
+function renderNativeEdgeComposite(renderer, scene, camera, root) {
+  const targetOptions = {
+    format: THREE.RGBAFormat,
+    type: THREE.UnsignedByteType,
+    minFilter: THREE.LinearFilter,
+    magFilter: THREE.LinearFilter,
+    depthBuffer: true,
+    stencilBuffer: false,
+  };
+
+  const beautyTarget = new THREE.WebGLRenderTarget(RENDER_WIDTH, RENDER_HEIGHT, targetOptions);
+  const normalTarget = new THREE.WebGLRenderTarget(RENDER_WIDTH, RENDER_HEIGHT, targetOptions);
+  const depthTarget = new THREE.WebGLRenderTarget(RENDER_WIDTH, RENDER_HEIGHT, targetOptions);
+  beautyTarget.texture.colorSpace = THREE.LinearSRGBColorSpace;
+  normalTarget.texture.colorSpace = THREE.NoColorSpace;
+  depthTarget.texture.colorSpace = THREE.NoColorSpace;
+
+  const previousColor = renderer.getClearColor(new THREE.Color()).clone();
+  const previousAlpha = renderer.getClearAlpha();
+
+  renderer.setRenderTarget(beautyTarget);
+  renderer.setClearColor(0x000000, 0);
+  renderer.clear(true, true, true);
+  renderer.render(scene, camera);
+
+  renderDiagnosticPass(renderer, scene, camera, root, normalTarget, "normal", 0x000000, 0);
+  renderDiagnosticPass(renderer, scene, camera, root, depthTarget, "depth", 0xffffff, 0);
+
+  const postScene = new THREE.Scene();
+  const postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+  const postMaterial = new THREE.ShaderMaterial({
+    transparent: true,
+    depthTest: false,
+    depthWrite: false,
+    uniforms: {
+      tBeauty: { value: beautyTarget.texture },
+      tNormal: { value: normalTarget.texture },
+      tDepth: { value: depthTarget.texture },
+      texelSize: { value: new THREE.Vector2(1 / RENDER_WIDTH, 1 / RENDER_HEIGHT) },
+      outlinePixels: { value: 1.65 },
+      normalThreshold: { value: 0.30 },
+      depthThreshold: { value: 0.015 },
+      outlineStrength: { value: 0.88 },
+      outlineColor: { value: new THREE.Color(0.018, 0.012, 0.018) },
+      cameraNear: { value: camera.near },
+      cameraFar: { value: camera.far },
+    },
+    vertexShader: [
+      "varying vec2 vUv;",
+      "void main() {",
+      "  vUv = uv;",
+      "  gl_Position = vec4(position.xy, 0.0, 1.0);",
+      "}",
+    ].join("\n"),
+    fragmentShader: [
+      "#include <packing>",
+      "uniform sampler2D tBeauty;",
+      "uniform sampler2D tNormal;",
+      "uniform sampler2D tDepth;",
+      "uniform vec2 texelSize;",
+      "uniform float outlinePixels;",
+      "uniform float normalThreshold;",
+      "uniform float depthThreshold;",
+      "uniform float outlineStrength;",
+      "uniform vec3 outlineColor;",
+      "uniform float cameraNear;",
+      "uniform float cameraFar;",
+      "varying vec2 vUv;",
+      "vec3 decodeNormal(vec4 packed) {",
+      "  return normalize(packed.rgb * 2.0 - 1.0);",
+      "}",
+      "float linearDepth(vec2 uv) {",
+      "  float d = unpackRGBAToDepth(texture2D(tDepth, uv));",
+      "  float viewZ = perspectiveDepthToViewZ(d, cameraNear, cameraFar);",
+      "  return clamp((-viewZ - cameraNear) / max(0.0001, cameraFar - cameraNear), 0.0, 1.0);",
+      "}",
+      "void main() {",
+      "  vec2 d = texelSize * outlinePixels;",
+      "  vec2 uvL = clamp(vUv - vec2(d.x, 0.0), vec2(0.0), vec2(1.0));",
+      "  vec2 uvR = clamp(vUv + vec2(d.x, 0.0), vec2(0.0), vec2(1.0));",
+      "  vec2 uvU = clamp(vUv + vec2(0.0, d.y), vec2(0.0), vec2(1.0));",
+      "  vec2 uvD = clamp(vUv - vec2(0.0, d.y), vec2(0.0), vec2(1.0));",
+      "  vec4 beauty = texture2D(tBeauty, vUv);",
+      "  vec4 nC = texture2D(tNormal, vUv);",
+      "  vec4 nL = texture2D(tNormal, uvL);",
+      "  vec4 nR = texture2D(tNormal, uvR);",
+      "  vec4 nU = texture2D(tNormal, uvU);",
+      "  vec4 nD = texture2D(tNormal, uvD);",
+      "  float mC = step(0.01, nC.a);",
+      "  float mL = step(0.01, nL.a);",
+      "  float mR = step(0.01, nR.a);",
+      "  float mU = step(0.01, nU.a);",
+      "  float mD = step(0.01, nD.a);",
+      "  float silhouette = max(max(abs(mC - mL), abs(mC - mR)), max(abs(mC - mU), abs(mC - mD)));",
+      "  vec3 cN = decodeNormal(nC);",
+      "  float normalDelta = 0.0;",
+      "  normalDelta = max(normalDelta, (1.0 - dot(cN, decodeNormal(nL))) * mC * mL);",
+      "  normalDelta = max(normalDelta, (1.0 - dot(cN, decodeNormal(nR))) * mC * mR);",
+      "  normalDelta = max(normalDelta, (1.0 - dot(cN, decodeNormal(nU))) * mC * mU);",
+      "  normalDelta = max(normalDelta, (1.0 - dot(cN, decodeNormal(nD))) * mC * mD);",
+      "  float normalEdge = smoothstep(normalThreshold, normalThreshold + 0.12, normalDelta);",
+      "  float zC = linearDepth(vUv);",
+      "  float depthDelta = 0.0;",
+      "  depthDelta = max(depthDelta, abs(zC - linearDepth(uvL)) * mC * mL);",
+      "  depthDelta = max(depthDelta, abs(zC - linearDepth(uvR)) * mC * mR);",
+      "  depthDelta = max(depthDelta, abs(zC - linearDepth(uvU)) * mC * mU);",
+      "  depthDelta = max(depthDelta, abs(zC - linearDepth(uvD)) * mC * mD);",
+      "  float depthEdge = smoothstep(depthThreshold, depthThreshold * 1.75, depthDelta);",
+      "  float internalEdge = max(normalEdge * 0.72, depthEdge * 0.78);",
+      "  float edge = clamp(max(silhouette, internalEdge), 0.0, 1.0);",
+      "  float coverage = clamp(max(beauty.a, silhouette * 0.96), 0.0, 1.0);",
+      "  vec3 color = beauty.rgb;",
+      "  if (beauty.a > 0.001) {",
+      "    color = mix(color, outlineColor, edge * outlineStrength);",
+      "  } else if (edge > 0.0) {",
+      "    color = outlineColor;",
+      "  }",
+      "  gl_FragColor = vec4(color, coverage);",
+      "}",
+    ].join("\n"),
+  });
+  postMaterial.toneMapped = false;
+
+  const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), postMaterial);
+  quad.frustumCulled = false;
+  postScene.add(quad);
+
+  renderer.setRenderTarget(null);
+  renderer.setClearColor(0x000000, 0);
+  renderer.clear(true, true, true);
+  renderer.render(postScene, postCamera);
+
+  quad.geometry.dispose();
+  postMaterial.dispose();
+  beautyTarget.dispose();
+  normalTarget.dispose();
+  depthTarget.dispose();
+  renderer.setClearColor(previousColor, previousAlpha);
 }
 
 function canvasBlob(canvas) {
@@ -721,7 +931,11 @@ async function renderGlbToBlob(buffer, sourceUrl, shaderMode = "legacy") {
   fitFrontCamera(camera, gltf.scene);
 
   const renderStart = performance.now();
-  renderer.render(scene, camera);
+  if (shaderMode === "native-edge") {
+    renderNativeEdgeComposite(renderer, scene, camera, gltf.scene);
+  } else {
+    renderer.render(scene, camera);
+  }
   const blob = await canvasBlob(canvas);
   const renderMs = performance.now() - renderStart;
 
@@ -904,7 +1118,13 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
     visual.prepend(img);
 
     status.dataset.state = "ready";
-    const shaderLabel = result.shaderMode === "native" ? "NATIVE" : result.shaderMode === "g4" ? "G4" : "3D";
+    const shaderLabel = result.shaderMode === "native-edge"
+      ? "NATIVE+EDGE"
+      : result.shaderMode === "native"
+        ? "NATIVE"
+        : result.shaderMode === "g4"
+          ? "G4"
+          : "3D";
     status.textContent = result.cache === "miss"
       ? shaderLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
       : shaderLabel + " · cache " + result.cache + " · " + (result.isKeeper ? "GK" : "campo");
