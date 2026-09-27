@@ -34,4 +34,4 @@ for (const item of required) {
 
 fs.writeFileSync(path, repaired, 'utf8');
 console.log('Restored application bootstrap tail from pre-regression commit ' + baselineRef);
-// diagnostic rerun 2
+// diagnostic rerun 3
