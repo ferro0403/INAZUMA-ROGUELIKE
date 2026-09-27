@@ -27,7 +27,7 @@
     const portraitUrl=String(event?.portraitUrl||"");
     if(portraitUrl&&event?.playerId){
       const fallbacks=[...new Set([portraitUrl,...(Array.isArray(event.portraitFallbacks)?event.portraitFallbacks:[])].filter(Boolean))];
-      return `<span class="match-event-avatar" aria-hidden="true"><img src="${escapeHtml(portraitUrl)}" alt="" loading="lazy" data-image-fallbacks="${escapeHtml(JSON.stringify(fallbacks))}" data-image-fallback-index="0" onerror="globalThis.handlePlayerImageError && globalThis.handlePlayerImageError(this)" /></span>`;
+      return `<span class="match-event-avatar" aria-hidden="true" data-player-id="${escapeHtml(String(event.playerId))}"><img src="${escapeHtml(portraitUrl)}" alt="" loading="lazy" data-image-fallbacks="${escapeHtml(JSON.stringify(fallbacks))}" data-image-fallback-index="0" onerror="globalThis.handlePlayerImageError && globalThis.handlePlayerImageError(this)" /></span>`;
     }
     return `<span class="match-event-symbol" aria-hidden="true">${escapeHtml(event?.icon||eventIcon(event?.type))}</span>`;
   }
