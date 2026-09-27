@@ -3,22 +3,3 @@
 .boss-match-result-panel .result-badges {
   display: none;
 }
-
-/* RTG duel cards are portrait cards, not full-body showcases.
-   Some canonical season assets (notably S2 Shawn Froste) are tall character
-   renders even when they are the card visual. Crop every duel visual to the
-   same head-and-shoulders framing used by the squad cards instead of exposing
-   the whole transparent canvas. Identity/source resolution stays untouched. */
-.rtg-match-shell .rtg-match-overlay .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-render {
-  overflow: hidden !important;
-}
-.rtg-match-shell .rtg-match-overlay .rtg-duel-card--clean .rtg-duel-visual--compare .rtg-duel-render > img {
-  width: 100% !important;
-  height: 100% !important;
-  max-width: none !important;
-  max-height: none !important;
-  object-fit: cover !important;
-  object-position: 50% 16% !important;
-  transform: scale(1.42) !important;
-  transform-origin: 50% 18% !important;
-}
