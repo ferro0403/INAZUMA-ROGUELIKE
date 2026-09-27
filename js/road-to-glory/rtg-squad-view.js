@@ -18,45 +18,16 @@
     };
   }
 
-  // Shawn Froste has distinct S2 visual records for his DF and FW incarnations.
-  // Keep the compact-card portrait tied to the resolved role instead of letting
-  // a visual from the other same-name record leak into the selected version.
-  const rtgResolver=globalThis.RoadToGloryPlayerResolver;
-  if(rtgResolver&&!rtgResolver.__rtgShawnRoleVisualFix){
-    const roleOf=(player)=>String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
-    const fixShawnVisual=(player,seasonId)=>{
-      if(!player||String(player.name||"").trim().toLowerCase()!=="shawn froste")return player;
-      const role=roleOf(player);
-      if(!role)return player;
-      const db=globalThis.SeasonRegistry?.database?.(player.resolvedSeasonId||seasonId||"ie1_s2");
-      const visualSource=(db?.players||[]).find(candidate=>
-        String(candidate?.name||"").trim().toLowerCase()==="shawn froste"&&roleOf(candidate)===role&&candidate?.portraitUrl
-      );
-      return visualSource?.portraitUrl?{...player,portraitUrl:visualSource.portraitUrl}:player;
-    };
-    const wrap=(name)=>{
-      const original=rtgResolver[name];
-      if(typeof original!=="function")return original;
-      return function(playerId,seasonId,...rest){
-        return fixShawnVisual(original.call(rtgResolver,playerId,seasonId,...rest),seasonId);
-      };
-    };
-    globalThis.RoadToGloryPlayerResolver=Object.freeze({
-      ...rtgResolver,
-      resolveBaseAtLevel20:wrap("resolveBaseAtLevel20"),
-      resolveStandardAtLevel20:wrap("resolveStandardAtLevel20"),
-      resolveAtLevel20:wrap("resolveAtLevel20"),
-      resolveOwnedAtLevel20:wrap("resolveOwnedAtLevel20"),
-      __rtgShawnRoleVisualFix:true,
-    });
-  }
+  // Do not remap player visuals by display name. S2 legitimately contains
+  // different canonical Shawn Froste IDs (1162 and 1166), each with its own
+  // portrait/profile. The canonical/profile resolver is the source of truth.
 
   // Load the visual restoration after the RTG theme so the approved Legacy
   // and multi-version banners win without touching identity/grouping logic.
   if(!document.querySelector('link[data-rtg-version-banners]')){
     const style=document.createElement('link');
     style.rel='stylesheet';
-    style.href='css/rtg-version-banners.css?v=20260926-restore-1';
+    style.href='css/rtg-version-banners.css?v=20260927-version-picker-parity-1';
     style.dataset.rtgVersionBanners='1';
     document.head.appendChild(style);
   }
@@ -68,5 +39,5 @@
   document.write('<script src="js/road-to-glory/rtg-squad-view-base.js?v=20260925-role-switch-detail-1"><\/script>');
   document.write('<script src="js/road-to-glory/rtg-squad-picker-order-runtime.js?v=20260920-full-pool-order-1"><\/script>');
   document.write('<script src="js/road-to-glory/rtg-squad-view-order.js?v=20260920-full-pool-order-1"><\/script>');
-  document.write('<script src="js/road-to-glory/rtg-squad-view-catalog-canonical.js?v=20260927-version-picker-top-cards-1"><\/script>');
+  document.write('<script src="js/road-to-glory/rtg-squad-view-catalog-canonical.js?v=20260927-version-picker-parity-1"><\/script>');
 })();
