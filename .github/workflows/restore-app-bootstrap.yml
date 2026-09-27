@@ -1,0 +1,48 @@
+name: Restore app bootstrap wiring
+on:
+  push:
+    branches:
+      - refactor/rtg-css-cleanup
+    paths:
+      - scripts/restore-index-bootstrap-tail.cjs
+permissions:
+  contents: write
+jobs:
+  restore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/rtg-css-cleanup
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Restore known-good bootstrap tail
+        run: node scripts/restore-index-bootstrap-tail.cjs
+      - name: Verify referenced local assets
+        run: node scripts/verify-index-local-assets.cjs
+      - name: Verify critical bootstrap wiring
+        run: |
+          grep -q 'js/app/app-bootstrap.js' index.html
+          grep -q 'js/home/home-controller.js' index.html
+          grep -q 'js/app.js' index.html
+          grep -q 'js/run/run-roster-runtime.js' index.html
+          ! grep -q 'js/storage/development-permanent-storage.js' index.html
+      - name: Run focused regression tests
+        run: |
+          node tests/rtg-production-integration-test.js
+          node tests/rtg-home-entry-test.js
+          node tests/rtg-foundation-load-order-test.js
+          node tests/rtg-css-architecture-test.js
+          node tests/home-layout-regression-test.js
+      - name: Verify diff
+        run: git diff --check
+      - name: Commit repair
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "fix: restore application bootstrap wiring"
+          git push
