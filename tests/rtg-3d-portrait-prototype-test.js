@@ -60,6 +60,12 @@ assert(runtime.includes('g4HighSignal - 1.50'), "Native highlight threshold must
 assert(runtime.includes('vec3(0.10) * g4High'), "Native highlight color must come from light_data.cfg.bin.");
 assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must come from light_data.cfg.bin.");
 assert(runtime.includes('rtg-g4-native-data-v7'), "Native-data shader program cache version is missing.");
+assert(runtime.includes('function compareEnabled()'), "Portrait comparison query helper is missing.");
+assert(runtime.includes('rtg3dCompare'), "Portrait comparison query parameter is missing.");
+assert(runtime.includes('shaderModeOverride'), "Portrait comparison must render explicit shader modes.");
+assert(runtime.includes('G4 v6'), "Portrait comparison must label the G4 side.");
+assert(runtime.includes('NATIVE v7'), "Portrait comparison must label the native-data side.");
+assert(runtime.includes('rtg-3d-compare-wrap'), "Portrait comparison wrapper is missing.");
 
 assert(controller.includes("RoadToGlory3DPortrait?.renderIntoDetail"), "RTG player detail must invoke the isolated 3D portrait runtime.");
 assert(controller.includes('get("rtgCheatMark")'), "Prototype must expose the opt-in Mark cheat.");
