@@ -1,6 +1,9 @@
 /* Road to Glory — squad owner.
    Owns squad screen, replacement controls, catalog layout and RTG role switching. */
 
+/* Preserve the approved picker scale from the pre-cleanup cascade. */
+.rtg-squad-picker{--rtg-picker-card-size:74px;--rtg-picker-card-mobile:64px;}
+
 .rtg-squad-shell .squad-content{position:relative;}
 .rtg-squad-shell .squad-field-panel,.rtg-squad-shell .squad-bench-panel{position:relative;background:#fff!important;border:3px solid #111216!important;border-radius:2px!important;box-shadow:6px 7px 0 #111216!important;overflow:hidden;}
 .rtg-squad-shell .squad-field-panel::after,.rtg-squad-shell .squad-bench-panel::after{content:"";position:absolute;z-index:0;top:0;right:0;width:86px;height:8px;background:#ffd21f;transform:skewX(-28deg) translateX(12px);pointer-events:none;}
