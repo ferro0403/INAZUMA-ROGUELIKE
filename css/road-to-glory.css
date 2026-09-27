@@ -1,156 +1,6 @@
 
-.rtg-main-title { min-width: 0; display: grid; }
-.rtg-main-title .brand { color: #101116; text-transform: uppercase; font-size: clamp(1.05rem,4vw,1.45rem); }
-.rtg-home-button {
-  border: 3px solid #101116;
-  border-radius: 0;
-  background: #ffd21f;
-  color: #101116;
-  box-shadow: 4px 4px 0 #101116;
-  text-transform: uppercase;
-}
-.rtg-token-pill { color: #101116; background: #ffd21f; border: 2px solid #101116; border-radius: 0; }
-.rtg-main-topbar .lives { color: #d92631; background: #fff; border: 2px solid #101116; border-radius: 0; }
-
-.rtg-tabs--main-style {
-  position: sticky;
-  top: 72px;
-  z-index: 28;
-  width: min(760px, calc(100% - 24px));
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  margin: 12px auto;
-  padding: 4px;
-  background: #101116;
-  box-shadow: 5px 6px 0 rgba(16,17,22,.2);
-}
-.rtg-tabs--main-style .rtg-tab {
-  min-height: 46px;
-  border: 0;
-  border-radius: 0;
-  background: #fffdf5;
-  color: #101116;
-  font-weight: 1000;
-  text-transform: uppercase;
-}
-.rtg-tabs--main-style .rtg-tab.active {
-  position: relative;
-  background: #ffd21f;
-  transform: translateY(-2px);
-}
-.rtg-tabs--main-style .rtg-tab.active::after {
-  content: "";
-  position: absolute;
-  left: 14%;
-  right: 14%;
-  bottom: -7px;
-  height: 5px;
-  background: #ffd21f;
-  transform: skewX(-28deg);
-}
 
 .rtg-map { display: grid; gap: 26px; }
-
-.rtg-locked-content { padding-top: 12vh; }
-.rtg-lock-card {
-  border: 4px solid #101116;
-  border-radius: 0;
-  background: #fffdf5;
-  color: #101116;
-  box-shadow: 9px 10px 0 #101116;
-}
-.rtg-lock-card h1 { color: #101116; }
-.rtg-lock-progress { margin: 18px 0 10px; }
-
-/* Modal shell parity: remove the old rounded blue web-app container. */
-.modal.rtg-modal {
-  width: min(92vw, 620px);
-  padding: 18px;
-  border: 4px solid #101116;
-  border-radius: 0;
-  background: #fffdf5;
-  color: #101116;
-  box-shadow: 10px 11px 0 #101116;
-}
-.modal.rtg-modal > .modal-close {
-  position: relative;
-  z-index: 5;
-  float: right;
-  width: 40px;
-  height: 40px;
-  margin: 0 0 8px 10px;
-  border: 3px solid #101116;
-  border-radius: 0;
-  background: #ffd21f;
-  color: #101116;
-  box-shadow: 3px 4px 0 #101116;
-  font-size: 1.05rem;
-  font-weight: 1000;
-}
-.modal.rtg-modal .rtg-paper-modal {
-  width: 100%;
-  border: 0 !important;
-  box-shadow: none !important;
-  padding: 0;
-}
-
-/* Main-game paper modals used by requirements and vending. */
-.rtg-paper-modal,
-.rtg-requirements {
-  color: #101116;
-  background: #fffdf5 !important;
-  border: 4px solid #101116 !important;
-  border-radius: 0 !important;
-  box-shadow: 9px 10px 0 #101116 !important;
-}
-.rtg-paper-modal .eyebrow,
-.rtg-requirements .eyebrow { color: #7a5b11; }
-.rtg-paper-modal .muted { color: #666158; }
-.rtg-requirements h3 { margin: 0 0 12px; color: #101116; text-transform: uppercase; }
-.rtg-requirements-list { display: grid; gap: 8px; }
-.rtg-requirement {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 10px 12px;
-  border: 2px solid #101116;
-  background: #f4f0e5;
-}
-.rtg-requirement.ok strong { color: #17723b; }
-.rtg-requirement.bad strong { color: #d3313a; }
-
-/* Node modal uses the same paper/ink language. */
-.rtg-node-modal {
-  color: #101116;
-  text-align: center;
-}
-.rtg-node-modal-head {
-  display: grid;
-  grid-template-columns: 76px minmax(0,1fr);
-  gap: 14px;
-  align-items: center;
-  text-align: left;
-  padding-bottom: 12px;
-  border-bottom: 3px solid #101116;
-}
-.rtg-node-modal-emblem,
-.rtg-node-modal-secondary {
-  width: 70px;
-  height: 70px;
-  display: grid;
-  place-items: center;
-  border: 3px solid #101116;
-  background: #fff;
-  box-shadow: 4px 4px 0 #101116;
-}
-.rtg-node-modal-emblem img { width: 82%; height: 82%; object-fit: contain; }
-.rtg-node-modal-secondary { background: #153f62; color: #ffd21f; font-size: 2rem; font-weight: 1000; }
-.rtg-node-modal-head h2,
-.rtg-node-modal-head p { margin: 0; }
-.rtg-node-modal-head .muted { margin-top: 4px; color: #666158; font-size: .78rem; }
-.rtg-node-modal h2 { color: #101116; text-transform: uppercase; }
-.rtg-node-modal > .btn { width: 100%; margin-top: 14px; border: 3px solid #101116; border-radius: 0; box-shadow: 5px 6px 0 #101116; }
 .rtg-ticker-empty { color: #8fa9c8; font-size: .68rem; }
 .rtg-adapt-button {
   min-height: 48px;
@@ -178,55 +28,7 @@
 .rtg-picker-toolbar{grid-template-columns:1fr}
 }
 
-
-/* RTG quality pass 3 — remove blue chrome, reuse normal-run bunker, compact cards, cleaner penalties/pulls. */
-
-/* RUN / SQUADRA bottom bunker: same interaction language as normal runs, reduced to two destinations. */
-.rtg-bottom-nav.bottom-nav{
-  position:fixed;
-  z-index:70;
-  left:50%;
-  right:auto;
-  bottom:calc(env(safe-area-inset-bottom,0px) + 10px);
-  width:min(292px,calc(100vw - 28px));
-  transform:translateX(-50%);
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  padding:5px;
-  border:3px solid #111216;
-  border-radius:16px;
-  background:#fffdf7;
-  box-shadow:5px 6px 0 rgba(17,18,22,.72);
-}
-.rtg-bottom-nav.bottom-nav button{
-  min-height:50px;
-  display:grid;
-  grid-template-columns:24px auto;
-  justify-content:center;
-  align-items:center;
-  gap:7px;
-  border:0;
-  border-radius:11px;
-  background:transparent;
-  color:#111216;
-  font-weight:950;
-  text-transform:uppercase;
-}
-.rtg-bottom-nav.bottom-nav button.active{
-  background:#ffd21f;
-  color:#111216;
-  box-shadow:inset 0 0 0 2px #111216;
-}
-.rtg-bottom-nav .nav-icon{width:22px;height:22px;display:grid;place-items:center}
-.rtg-bottom-nav .nav-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
-.rtg-bottom-nav .nav-label{font-size:.72rem;letter-spacing:.03em}
-
 /* Dispenser: compact pseudo-3D cabinet;
-
-@media(max-width:430px){
-  .rtg-bottom-nav.bottom-nav{width:250px}
-  .rtg-bottom-nav.bottom-nav button{min-height:46px}
-}
 .rtg-roster-summary{
   min-height:64px;
   grid-template-columns:auto 1fr auto!important;
@@ -282,25 +84,7 @@
 
 /* Pre-match: formations are the content;
 
-/* Requirements: composition is a 15-player-roster check; power remains XI-only. */
-.rtg-requirements{
-  padding:12px!important;
-}
-.rtg-requirements h3{
-  display:none!important;
-}
-.rtg-requirements>.eyebrow{
-  margin-bottom:8px!important;
-}
-.rtg-requirements-list{
-  gap:5px!important;
-}
-.rtg-requirement{
-  padding:7px 9px!important;
-  border-width:2px!important;
-  background:#fff!important;
-  font-size:.75rem!important;
-}
+/* Requirements: composition is a 15-player-roster check;
 
 @media(max-width:430px){
   .rtg-roster-summary{
@@ -532,14 +316,6 @@
   65%{transform:translateY(-3px) scale(1.02)}
   100%{transform:translateY(-2px) scale(1.012)}
 }
-
-
-/* RTG compact two-item navigation — Run / Squadra only. */
-.rtg-bottom-nav.bottom-nav{width:min(238px,calc(100vw - 44px))!important;padding:4px!important;border-radius:13px!important;}
-.rtg-bottom-nav.bottom-nav button{min-height:43px!important;grid-template-columns:20px auto!important;gap:5px!important;border-radius:9px!important;}
-.rtg-bottom-nav .nav-icon,.rtg-bottom-nav .nav-icon svg{width:19px!important;height:19px!important;}
-.rtg-bottom-nav .nav-label{font-size:.66rem!important;}
-@media(max-width:430px){.rtg-bottom-nav.bottom-nav{width:218px!important;}}
 
 
 /* Season 2 route is isolated from the Season 1 map so legacy layout stays unchanged. */

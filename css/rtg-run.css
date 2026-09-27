@@ -51,3 +51,101 @@
 .rtg-route-stage .rtg-map-lines .rtg-route-line{fill:none!important;stroke:#ffd21f!important;stroke-width:1.5!important;stroke-linecap:round!important;stroke-linejoin:round!important;opacity:.94!important;}
 
 @media(max-width:420px){.rtg-journey-summary{padding:18px 16px 16px!important;}.rtg-journey-main{grid-template-columns:minmax(0,1fr) 74px;gap:10px;}.rtg-journey-opponent{width:70px;height:70px;}.rtg-journey-opponent img{width:58px!important;height:58px!important;}}
+
+/* Run shared ownership migrated from road-to-glory.css. */
+
+
+.rtg-locked-content { padding-top: 12vh; }
+
+.rtg-lock-card {
+  border: 4px solid #101116;
+  border-radius: 0;
+  background: #fffdf5;
+  color: #101116;
+  box-shadow: 9px 10px 0 #101116;
+}
+
+.rtg-lock-card h1 { color: #101116; }
+
+.rtg-lock-progress { margin: 18px 0 10px; }
+
+.rtg-requirements h3 { margin: 0 0 12px; color: #101116; text-transform: uppercase; }
+
+.rtg-requirements-list { display: grid; gap: 8px; }
+
+.rtg-requirement {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 2px solid #101116;
+  background: #f4f0e5;
+}
+
+.rtg-requirement.ok strong { color: #17723b; }
+
+.rtg-requirement.bad strong { color: #d3313a; }
+
+
+/* Node modal uses the same paper/ink language. */
+.rtg-node-modal {
+  color: #101116;
+  text-align: center;
+}
+
+.rtg-node-modal-head {
+  display: grid;
+  grid-template-columns: 76px minmax(0,1fr);
+  gap: 14px;
+  align-items: center;
+  text-align: left;
+  padding-bottom: 12px;
+  border-bottom: 3px solid #101116;
+}
+
+.rtg-node-modal-emblem,
+.rtg-node-modal-secondary {
+  width: 70px;
+  height: 70px;
+  display: grid;
+  place-items: center;
+  border: 3px solid #101116;
+  background: #fff;
+  box-shadow: 4px 4px 0 #101116;
+}
+
+.rtg-node-modal-emblem img { width: 82%; height: 82%; object-fit: contain; }
+
+.rtg-node-modal-secondary { background: #153f62; color: #ffd21f; font-size: 2rem; font-weight: 1000; }
+
+.rtg-node-modal-head h2,
+.rtg-node-modal-head p { margin: 0; }
+
+.rtg-node-modal-head .muted { margin-top: 4px; color: #666158; font-size: .78rem; }
+
+.rtg-node-modal h2 { color: #101116; text-transform: uppercase; }
+
+.rtg-node-modal > .btn { width: 100%; margin-top: 14px; border: 3px solid #101116; border-radius: 0; box-shadow: 5px 6px 0 #101116; }
+ power remains XI-only. */
+.rtg-requirements{
+  padding:12px!important;
+}
+
+.rtg-requirements h3{
+  display:none!important;
+}
+
+.rtg-requirements>.eyebrow{
+  margin-bottom:8px!important;
+}
+
+.rtg-requirements-list{
+  gap:5px!important;
+}
+
+.rtg-requirement{
+  padding:7px 9px!important;
+  border-width:2px!important;
+  background:#fff!important;
+  font-size:.75rem!important;
+}
