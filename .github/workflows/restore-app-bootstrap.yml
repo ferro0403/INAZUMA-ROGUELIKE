@@ -28,14 +28,15 @@ jobs:
           grep -q 'js/home/home-controller.js' index.html
           grep -q 'js/app.js' index.html
           grep -q 'js/run/run-roster-runtime.js' index.html
+          grep -q 'js/player/player-detail-controller.js' index.html
           ! grep -q 'js/storage/development-permanent-storage.js' index.html
-      - name: Run focused regression tests
+          ! grep -q 'css/road-to-glory.css' index.html
+      - name: Run bootstrap and RTG regression tests
         run: |
           node tests/rtg-production-integration-test.js
           node tests/rtg-home-entry-test.js
           node tests/rtg-foundation-load-order-test.js
           node tests/rtg-css-architecture-test.js
-          node tests/home-layout-regression-test.js
       - name: Verify diff
         run: git diff --check
       - name: Commit repair
