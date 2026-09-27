@@ -77,3 +77,14 @@
 .rtg-requirements .eyebrow { color: #7a5b11; }
 
 .rtg-paper-modal .muted { color: #666158; }
+
+/* Last legacy ownership migrated from road-to-glory.css. */
+
+
+.rtg-version-choice-list{display:grid;gap:10px;margin-top:14px}
+
+.rtg-version-choice{display:grid;grid-template-columns:1fr auto;gap:3px 12px;width:100%;padding:12px 14px;text-align:left;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(8,25,48,.78);color:inherit;cursor:pointer}
+
+.rtg-version-choice strong{font-size:15px}
+.rtg-version-choice span{grid-column:1/-1;font-size:12px;font-weight:800}
+.rtg-version-choice em{grid-column:1/-1;font-size:11px;opacity:.72}
