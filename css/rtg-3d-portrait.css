@@ -26,3 +26,65 @@
 .rtg-3d-portrait-status[data-state="error"] {
   opacity: 0.72;
 }
+
+
+.rtg-3d-compare-host {
+  position: relative;
+}
+
+.rtg-3d-compare-wrap {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.rtg-3d-compare-image {
+  position: absolute !important;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: contain;
+}
+
+.rtg-3d-compare-left {
+  clip-path: inset(0 50% 0 0);
+}
+
+.rtg-3d-compare-right {
+  clip-path: inset(0 0 0 50%);
+}
+
+.rtg-3d-compare-divider {
+  position: absolute;
+  left: 50%;
+  top: 4%;
+  bottom: 4%;
+  width: 2px;
+  transform: translateX(-1px);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 0 1px rgba(10, 10, 15, 0.55);
+}
+
+.rtg-3d-compare-label {
+  position: absolute;
+  top: 8px;
+  z-index: 3;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: rgba(16, 17, 22, 0.84);
+  color: #fff;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 900;
+  letter-spacing: 0.03em;
+}
+
+.rtg-3d-compare-label-left {
+  left: 8px;
+}
+
+.rtg-3d-compare-label-right {
+  right: 8px;
+}
