@@ -9,38 +9,58 @@ const which = (name) => {
   return r.status === 0 ? r.stdout.trim() : "";
 };
 
+const appUrl = "http://127.0.0.1:4173/";
 const chrome = ["google-chrome", "google-chrome-stable", "chromium", "chromium-browser"].map(which).find(Boolean);
 if (!chrome) throw new Error("Chrome/Chromium not found");
 
 const profile = mkdtempSync(join(tmpdir(), "rtg-chrome-"));
 const server = spawn("python3", ["-m", "http.server", "4173"], { stdio: ["ignore", "pipe", "pipe"] });
-const browser = spawn(chrome, [
-  "--headless=new","--no-sandbox","--disable-gpu","--disable-dev-shm-usage",
-  "--remote-debugging-port=9222","--remote-debugging-address=127.0.0.1",
-  "--user-data-dir=" + profile,"about:blank"
-], { stdio: ["ignore", "pipe", "pipe"] });
+let serverStderr = "";
+server.stderr.on("data", (d) => { serverStderr += d.toString(); });
 
 const cleanup = () => {
   try { server.kill("SIGTERM"); } catch {}
-  try { browser.kill("SIGTERM"); } catch {}
+  try { browser?.kill("SIGTERM"); } catch {}
   try { rmSync(profile, { recursive: true, force: true }); } catch {}
 };
 
+let browser;
 try {
+  let serverReady = false;
+  for (let i = 0; i < 40; i++) {
+    try {
+      const res = await fetch(appUrl);
+      if (res.ok) { serverReady = true; break; }
+    } catch {}
+    await sleep(250);
+  }
+  if (!serverReady) throw new Error("Local HTTP server did not become ready: " + serverStderr);
+
+  browser = spawn(chrome, [
+    "--headless=new","--no-sandbox","--disable-gpu","--disable-dev-shm-usage",
+    "--remote-debugging-port=9222","--remote-debugging-address=127.0.0.1",
+    "--user-data-dir=" + profile,"about:blank"
+  ], { stdio: ["ignore", "pipe", "pipe"] });
+
+  let browserStderr = "";
+  browser.stderr.on("data", (d) => { browserStderr += d.toString(); });
+
   let targets = null;
   for (let i = 0; i < 60; i++) {
     try {
       const res = await fetch("http://127.0.0.1:9222/json/list");
       if (res.ok) {
         targets = await res.json();
-        if (targets?.[0]?.webSocketDebuggerUrl) break;
+        const page = targets.find((t) => t.type === "page" && t.webSocketDebuggerUrl);
+        if (page) break;
       }
     } catch {}
     await sleep(250);
   }
-  if (!targets?.[0]?.webSocketDebuggerUrl) throw new Error("DevTools endpoint did not start");
+  const initialPage = targets?.find((t) => t.type === "page" && t.webSocketDebuggerUrl);
+  if (!initialPage) throw new Error("DevTools page target did not start: " + browserStderr);
 
-  const ws = new WebSocket(targets[0].webSocketDebuggerUrl);
+  const ws = new WebSocket(initialPage.webSocketDebuggerUrl);
   await new Promise((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error("CDP websocket timeout")), 5000);
     ws.addEventListener("open", () => { clearTimeout(timer); resolve(); }, { once: true });
@@ -78,7 +98,12 @@ try {
       consoleErrors.push(msg.params.entry.text);
     }
     if (msg.method === "Network.loadingFailed") {
-      networkFailures.push({ requestId: msg.params.requestId, errorText: msg.params.errorText, type: msg.params.type, blockedReason: msg.params.blockedReason || "" });
+      networkFailures.push({
+        requestId: msg.params.requestId,
+        errorText: msg.params.errorText,
+        type: msg.params.type,
+        blockedReason: msg.params.blockedReason || ""
+      });
     }
     if (msg.method === "Network.responseReceived") {
       const response = msg.params?.response;
@@ -96,23 +121,38 @@ try {
   await send("Log.enable");
   await send("Network.enable");
   await send("Page.enable");
-  await send("Page.navigate", { url: "http://127.0.0.1:4173/" });
-  await sleep(15000);
+  const navigation = await send("Page.navigate", { url: appUrl });
+  console.log("NAVIGATION", JSON.stringify(navigation));
+  if (navigation?.errorText) throw new Error("Page.navigate failed: " + navigation.errorText);
 
-  const expression = '(() => ({readyState:document.readyState,title:document.title,bodyText:document.body?.innerText||"",loading:!!document.querySelector(".loading-screen"),appHtml:document.getElementById("app")?.innerHTML||"",globals:{AppUiShell:!!globalThis.AppUiShell,AppBootstrapRuntime:!!globalThis.AppBootstrapRuntime,HomeController:!!globalThis.HomeController,RunRosterRuntime:!!globalThis.RunRosterRuntime,PlayerView:!!globalThis.PlayerView,RoadToGloryController:!!globalThis.RoadToGloryController}}))()';
+  for (let i = 0; i < 60; i++) {
+    const state = await send("Runtime.evaluate", {
+      expression: '({href:location.href,readyState:document.readyState})',
+      returnByValue: true
+    });
+    const value = state?.result?.value || {};
+    if (value.href === appUrl && value.readyState === "complete") break;
+    await sleep(250);
+  }
+  await sleep(5000);
+
+  const expression = '(() => ({href:location.href,readyState:document.readyState,title:document.title,bodyText:document.body?.innerText||"",loading:!!document.querySelector(".loading-screen"),appHtml:document.getElementById("app")?.innerHTML||"",globals:{AppUiShell:!!globalThis.AppUiShell,AppBootstrapRuntime:!!globalThis.AppBootstrapRuntime,HomeController:!!globalThis.HomeController,RunRosterRuntime:!!globalThis.RunRosterRuntime,PlayerView:!!globalThis.PlayerView,RoadToGloryController:!!globalThis.RoadToGloryController}}))()';
   const state = await send("Runtime.evaluate", { expression, returnByValue: true });
   const value = state?.result?.value || {};
+
   console.log("BOOT_STATE", JSON.stringify(value, null, 2));
   console.log("EXCEPTIONS", JSON.stringify(exceptions, null, 2));
-  console.log("CONSOLE_ERRORS", JSON.stringify(consoleErrors.slice(-30), null, 2));
-  console.log("HTTP_ERRORS", JSON.stringify(responses.slice(-30), null, 2));
-  console.log("NETWORK_FAILURES", JSON.stringify(networkFailures.slice(-30), null, 2));
+  console.log("CONSOLE_ERRORS", JSON.stringify(consoleErrors.slice(-40), null, 2));
+  console.log("HTTP_ERRORS", JSON.stringify(responses.slice(-40), null, 2));
+  console.log("NETWORK_FAILURES", JSON.stringify(networkFailures.slice(-40), null, 2));
 
-  if (value.loading) {
-    console.error("BOOTSTRAP_STUCK_LOADING");
+  const requiredGlobals = value.globals && Object.values(value.globals).every(Boolean);
+  const healthy = value.href === appUrl && value.readyState === "complete" && !value.loading && !!value.appHtml && requiredGlobals;
+  if (!healthy) {
+    console.error("BOOTSTRAP_UNHEALTHY");
     process.exitCode = 1;
   } else {
-    console.log("BOOTSTRAP_EXITED_LOADING_SCREEN");
+    console.log("BOOTSTRAP_HEALTHY");
   }
 } finally {
   cleanup();
