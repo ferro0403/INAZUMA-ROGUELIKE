@@ -32,6 +32,11 @@ function selectedShaderMode() {
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
 
+function compareEnabled() {
+  const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dCompare") || "").trim().toLowerCase();
+  return value === "1" || value === "true" || value === "g4-native";
+}
+
 async function manifest() {
   if (!manifestPromise) {
     manifestPromise = fetch(MANIFEST_URL, { cache: "no-store" }).then(async (response) => {
@@ -730,7 +735,7 @@ async function renderGlbToBlob(buffer, sourceUrl, shaderMode = "legacy") {
   return { blob, parseMs, renderMs, animations: Number(gltf.animations?.length || 0) };
 }
 
-async function portraitFor({ playerId, player, uniformId = null } = {}) {
+async function portraitFor({ playerId, player, uniformId = null, shaderModeOverride = null } = {}) {
   if (!enabled()) return { skipped: "disabled" };
 
   const config = await manifest();
@@ -748,7 +753,7 @@ async function portraitFor({ playerId, player, uniformId = null } = {}) {
 
   if (!uniformCrc) throw new Error("CRC uniforme mancante per " + (isKeeper ? "GK" : "giocatore di campo"));
 
-  const shaderMode = selectedShaderMode();
+  const shaderMode = shaderModeOverride || selectedShaderMode();
   const key = cacheKey(playerId, playerConfig.internalCode, chosenUniformId, uniformCrc, shaderMode);
   const selectedCacheName = cacheName(shaderMode);
   const memoryUrl = memoryUrls.get(key);
@@ -817,10 +822,66 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
   if (!visual) return { skipped: "no-detail-visual" };
 
   const status = statusNode(visual);
-  status.textContent = "3D · generazione…";
+  status.textContent = compareEnabled() ? "G4 ↔ NATIVE · caricamento…" : "3D · generazione…";
   status.dataset.state = "loading";
 
   try {
+    if (compareEnabled()) {
+      const [g4Result, nativeResult] = await Promise.all([
+        portraitFor({ playerId, player, uniformId, shaderModeOverride: "g4" }),
+        portraitFor({ playerId, player, uniformId, shaderModeOverride: "native" }),
+      ]);
+      if (g4Result?.skipped || nativeResult?.skipped) {
+        status.remove();
+        return g4Result?.skipped ? g4Result : nativeResult;
+      }
+
+      const makeImage = (result, side) => {
+        const img = document.createElement("img");
+        img.className = "player-fullbody rtg-3d-generated-portrait rtg-3d-compare-image rtg-3d-compare-" + side;
+        img.alt = String(player?.name || "") + " " + (side === "left" ? "G4 v6" : "NATIVE v7");
+        img.decoding = "async";
+        img.src = result.url;
+        return img;
+      };
+
+      const g4Image = makeImage(g4Result, "left");
+      const nativeImage = makeImage(nativeResult, "right");
+      await Promise.all([
+        typeof g4Image.decode === "function" ? g4Image.decode().catch(() => {}) : Promise.resolve(),
+        typeof nativeImage.decode === "function" ? nativeImage.decode().catch(() => {}) : Promise.resolve(),
+      ]);
+      if (!visual.isConnected) return { g4: g4Result, native: nativeResult };
+
+      visual.querySelectorAll(".rtg-3d-generated-portrait, .rtg-3d-compare-wrap").forEach((old) => old.remove());
+      const fallback = visual.querySelector("img.player-fullbody:not(.rtg-3d-generated-portrait), .player-fullbody-placeholder");
+      fallback?.classList?.add("rtg-3d-fallback-hidden");
+      visual.classList.add("rtg-3d-compare-host");
+
+      const wrap = document.createElement("div");
+      wrap.className = "rtg-3d-compare-wrap";
+      wrap.append(g4Image, nativeImage);
+
+      const divider = document.createElement("span");
+      divider.className = "rtg-3d-compare-divider";
+      wrap.append(divider);
+
+      const leftLabel = document.createElement("strong");
+      leftLabel.className = "rtg-3d-compare-label rtg-3d-compare-label-left";
+      leftLabel.textContent = "G4 v6";
+      wrap.append(leftLabel);
+
+      const rightLabel = document.createElement("strong");
+      rightLabel.className = "rtg-3d-compare-label rtg-3d-compare-label-right";
+      rightLabel.textContent = "NATIVE v7";
+      wrap.append(rightLabel);
+
+      visual.prepend(wrap);
+      status.dataset.state = "ready";
+      status.textContent = "50/50 · G4 v6 ↔ NATIVE v7 · " + (nativeResult.isKeeper ? "GK" : "campo");
+      return { compare: true, g4: g4Result, native: nativeResult };
+    }
+
     const result = await portraitFor({ playerId, player, uniformId });
     if (result?.skipped) {
       status.remove();
@@ -836,7 +897,8 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
     if (typeof img.decode === "function") await img.decode().catch(() => {});
     if (!visual.isConnected) return result;
 
-    visual.querySelectorAll(".rtg-3d-generated-portrait").forEach((old) => old.remove());
+    visual.querySelectorAll(".rtg-3d-generated-portrait, .rtg-3d-compare-wrap").forEach((old) => old.remove());
+    visual.classList.remove("rtg-3d-compare-host");
     const fallback = visual.querySelector("img.player-fullbody:not(.rtg-3d-generated-portrait), .player-fullbody-placeholder");
     fallback?.classList?.add("rtg-3d-fallback-hidden");
     visual.prepend(img);
@@ -857,6 +919,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
 globalThis.RoadToGlory3DPortrait = Object.freeze({
   enabled,
+  compareEnabled,
   portraitFor,
   renderIntoDetail,
 });
