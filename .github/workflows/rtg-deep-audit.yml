@@ -5,6 +5,7 @@ on:
       - refactor/rtg-css-cleanup
     paths:
       - .github/workflows/rtg-deep-audit.yml
+      - scripts/rtg-browser-bootstrap-diagnostics.mjs
 permissions:
   contents: read
 jobs:
