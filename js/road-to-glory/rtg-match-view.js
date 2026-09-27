@@ -88,7 +88,20 @@
       );
     }
 
+    const SHAWN_1162_FW_PORTRAIT = "https://dxi4wb638ujep.cloudfront.net/1/k/v/t/vtvoof1qo6m_r0.webp";
+
+    function canonicalVisualPlayerId(player = {}) {
+      const rawPlayerId = String(player?.playerId || player?.id || "");
+      if (rawPlayerId && !rawPlayerId.includes("::")) return rawPlayerId.split("@")[0];
+      const parsed = global.RoadToGloryCardIdentity?.parse?.(player?.cardId || rawPlayerId) || null;
+      const value = String(parsed?.canonicalPlayerId || parsed?.playerId || rawPlayerId || "");
+      return value.split("::").pop().split("@")[0];
+    }
+
     function duelVisualUrl(player = {}) {
+      const canonicalPlayerId = canonicalVisualPlayerId(player);
+      const activeRole = role(player);
+      if (canonicalPlayerId === "1162" && activeRole === "FW") return SHAWN_1162_FW_PORTRAIT;
       return String(
         player?.frontFullbodyUrl ||
         player?.frontFullBodyUrl ||
