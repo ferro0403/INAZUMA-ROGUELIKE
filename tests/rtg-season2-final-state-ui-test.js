@@ -13,5 +13,5 @@ assert(html.includes("Percorso concluso · 33 tappe completate"));
 assert(html.includes("Distributore S2"));
 assert(!html.includes("data-rtg-enter-season2"),"S2 completion must not offer another season transition");
 assert(!html.includes("data-rtg-current-node"),"completed S2 must not offer another match");
-assert(html.includes("--rtg-season-route-bg:url('assets/rtg/rtg-season2-route-map-user.webp?v=20260924-user-map-2')"));
+assert(html.includes("--rtg-route-image:url('/assets/rtg/rtg-season2-route-map-user.webp?v=20260924-user-map-2')"));
 console.log("rtg-season2-final-state-ui-test: PASS");

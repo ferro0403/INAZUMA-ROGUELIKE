@@ -335,8 +335,9 @@
         panel.className="run-dev-quick-tools";
         panel.dataset.rtgDevTools="true";
         const active=campaign?.activeMatch;
-        const previousSeasonButton=!active&&activeSeasonId()==="ie1_s2"
-          ? '<button type="button" data-dev-rtg="previous-season">TORNA ALLA SEASON 1</button>'
+        const previousSeasonId=activeConfig()?.previousSeasonId;
+        const previousSeasonButton=!active&&previousSeasonId
+          ? `<button type="button" data-dev-rtg="previous-season">TORNA ALLA SEASON ${config.season(previousSeasonId)?.seasonNumber||"PRECEDENTE"}</button>`
           : "";
         const routeButtons=active?"":`<button type="button" data-dev-rtg="next-node">TAPPA SUCCESSIVA</button>${previousSeasonButton}`;
         const matchButtons=!active?"":'<button type="button" data-dev-rtg="halftime">VAI ALL\'INTERVALLO</button><button type="button" data-dev-rtg="extra">VAI AI SUPPLEMENTARI</button><button type="button" data-dev-rtg="penalties">VAI AI RIGORI</button><button type="button" data-dev-rtg="moves">RICARICA MOSSE</button><button type="button" data-dev-rtg="win">FORZA VITTORIA</button><button type="button" class="danger" data-dev-rtg="loss">FORZA SCONFITTA</button>';
@@ -356,24 +357,15 @@
           }
         },"Avanzamento RTG spostato alla tappa successiva"));
         panel.querySelector('[data-dev-rtg="previous-season"]')?.addEventListener("click",async()=>{
-          if(activeSeasonId()!=="ie1_s2")return;
-          const previousDb=global.SeasonRegistry?.database?.("ie1")||await global.SeasonRegistry?.loadDatabase?.("ie1");
-          const previousNodes=Array.from(config.buildSeasonNodes?.("ie1")||[]);
-          campaign=await repository.update("rtg-dev-return-season1",state=>{
-            state.activeSeasonId="ie1";
-            state.currentNodeId=previousNodes.at(-1)?.id||"main:raimon";
-            state.furthestNodeIndex=Math.max(0,previousNodes.length-1);
-            state.seasonComplete=true;
-            state.defeatedTeamIds=Array.from(config.SEASON1?.mainTeams||[]);
-            state.lives=Number(config.SEASON1?.livesPerCheckpoint)||2;
-            state.activeMatch=null;
-            return state;
+          const previousId=activeConfig()?.previousSeasonId;if(!previousId)return;
+          const previousConfig=config.season(previousId),previousDb=global.SeasonRegistry?.database?.(previousId)||await global.SeasonRegistry?.loadDatabase?.(previousId);
+          const previousNodes=Array.from(config.buildSeasonNodes?.(previousId)||[]);
+          campaign=await repository.update("rtg-dev-return-previous-season",state=>{
+            state.activeSeasonId=previousId;state.currentNodeId=previousNodes.at(-1)?.id||`main:${previousConfig.mainTeams.at(-1)}`;
+            state.furthestNodeIndex=Math.max(0,previousNodes.length-1);state.seasonComplete=true;
+            state.defeatedTeamIds=Array.from(previousConfig.mainTeams||[]);state.lives=Number(previousConfig.livesPerCheckpoint)||2;state.activeMatch=null;return state;
           });
-          seasonDb=previousDb;
-          selectedAlbumSeasonId="ie1";
-          initSquadDraft();
-          deps.toast?.("DEV: ritorno alla Season 1");
-          renderRun();
+          seasonDb=previousDb;selectedAlbumSeasonId=previousId;initSquadDraft();deps.toast?.(`DEV: ritorno alla Season ${previousConfig.seasonNumber}`);renderRun();
         });
         panel.querySelector('[data-dev-rtg="halftime"]')?.addEventListener("click",()=>devJumpMatchBoundary("halftime"));
         panel.querySelector('[data-dev-rtg="extra"]')?.addEventListener("click",()=>devJumpMatchBoundary("extra"));
@@ -647,53 +639,42 @@
       const nodes=config.buildSeasonNodes(activeSeasonId());
       renderHtml(runView.runMarkup({state:campaign,nodes,seasonDb,seasonConfig:activeConfig()}));
       bindRun();
-      app?.querySelectorAll?.("[data-rtg-enter-season2]")?.forEach(button=>button.addEventListener("click",()=>enterSeason2()));
+      app?.querySelectorAll?.("[data-rtg-enter-next-season]")?.forEach(button=>button.addEventListener("click",()=>enterNextSeason()));
       mountDevQuickTools();
       return campaign;
     }
-    async function enterSeason2(){
-      if(activeSeasonId()!=="ie1"||!campaign?.seasonComplete)return campaign;
-      const nextDb=await global.SeasonRegistry?.loadDatabase?.("ie1_s2");
-      if(!nextDb)throw new Error("Database Season 2 non disponibile");
+    async function enterNextSeason(){
+      const fromId=activeSeasonId(),fromConfig=config.season?.(fromId),nextSeasonId=id(fromConfig?.nextSeasonId);
+      if(!nextSeasonId||!campaign?.seasonComplete)return campaign;
+      const nextConfig=config.season?.(nextSeasonId);
+      const nextDb=await global.SeasonRegistry?.loadDatabase?.(nextSeasonId);
+      if(!nextDb||!nextConfig)throw new Error(`Database ${nextSeasonId} non disponibile`);
+      const firstNode=config.buildSeasonNodes(nextSeasonId)?.[0]?.id;
       let transitionRewarded=false;
-      campaign=await repository.update("rtg-enter-season2",current=>{
-        if(id(current.activeSeasonId)!=="ie1"||!current.seasonComplete)return current;
-        const rewardId="ie1->ie1_s2";
+      campaign=await repository.update("rtg-enter-next-season",current=>{
+        if(id(current.activeSeasonId)!==fromId||!current.seasonComplete)return current;
+        const rewardId=`${fromId}->${nextSeasonId}`;
         current.seasonTransitionRewardedIds=Array.from(new Set(current.seasonTransitionRewardedIds||[]));
         if(!current.seasonTransitionRewardedIds.includes(rewardId)){
           current.tokens=Math.max(0,Number(current.tokens)||0)+Number(config.SEASON_TRANSITION_REWARD||1000);
-          current.seasonTransitionRewardedIds.push(rewardId);
-          transitionRewarded=true;
+          current.seasonTransitionRewardedIds.push(rewardId);transitionRewarded=true;
         }
-        const previous=clone(current.squads?.ie1||{formationId:null,lineup:[],bench:[],activeRoleVariantByCardId:{}});
-        current.activeSeasonId="ie1_s2";
-        current.seasonComplete=false;
-        current.lives=Number(config.SEASON2?.livesPerCheckpoint)||2;
-        current.checkpointMainIndex=-1;
-        current.currentNodeId="main:secret_service";
-        current.furthestNodeIndex=0;
-        current.defeatedTeamIds=[];
-        current.firstClearMatchIds=[];
-        current.attemptsByNode={};
-        current.activeMatch=null;
+        const previous=clone(current.squads?.[fromId]||{formationId:null,lineup:[],bench:[],activeRoleVariantByCardId:{}});
+        current.activeSeasonId=nextSeasonId;current.seasonComplete=false;
+        current.lives=Number(nextConfig.livesPerCheckpoint)||2;current.checkpointMainIndex=-1;
+        current.currentNodeId=firstNode;current.furthestNodeIndex=0;current.defeatedTeamIds=[];
+        current.firstClearMatchIds=[];current.attemptsByNode={};current.activeMatch=null;
         current.squads=current.squads||{};
-        current.squads.ie1_s2=current.squads.ie1_s2?.lineup?.length?current.squads.ie1_s2:previous;
+        current.squads[nextSeasonId]=current.squads[nextSeasonId]?.lineup?.length?current.squads[nextSeasonId]:previous;
         return current;
       });
-      seasonDb=nextDb; rawPlayerById=new Map();
+      seasonDb=nextDb;rawPlayerById=new Map();
       for(const player of seasonDb?.players||[])rawPlayerById.set(id(player.playerId||player.id),player);
       for(const profile of seasonDb?.profiles||[])rawPlayerById.set(id(profile.profileId||profile.id),profile);
       progression?.setSeasonContext?.(campaign);
-      // Seed the three S2 slots once from the squad carried over from S1.
-      // Afterwards every slot is an independent S2 snapshot.
-      const season2Slots=readSquadSlots("ie1_s2");
-      if(!season2Slots["1"]){
-        const carried=clone(activeSquad(campaign));
-        writeSquadSlots({"1":carried,"2":clone(carried),"3":clone(carried)},"ie1_s2");
-      }
-      activeSquadSlot=1;
-      writeActiveSquadSlot(1);
-      squadDraft=squadForSlot(1);
+      const nextSlots=readSquadSlots(nextSeasonId);
+      if(!nextSlots["1"]){const carried=clone(activeSquad(campaign));writeSquadSlots({"1":carried,"2":clone(carried),"3":clone(carried)},nextSeasonId);}
+      activeSquadSlot=1;writeActiveSquadSlot(1);squadDraft=squadForSlot(1);
       if(transitionRewarded)deps.toast?.(`BONUS SEASON: +${Number(config.SEASON_TRANSITION_REWARD||1000)} GETTONI RTG`);
       return renderRun();
     }
@@ -718,7 +699,7 @@
     }
     function albumConfigFor(seasonId){
       const sid=id(seasonId||"ie1");
-      return config?.season?.(sid)||(sid==="ie1_s2"?config.SEASON2:config.SEASON1);
+      return config?.season?.(sid)||config.SEASON1;
     }
     function rtgAlbumTeams(seasonId=selectedAlbumSeasonId,albumDb=null){
       const sid=id(seasonId||"ie1");
@@ -756,7 +737,7 @@
     async function renderAlbum(){
       await ensureData();
       syncCurrentPullsIntoAlbum();
-      const collections=await Promise.all(["ie1","ie1_s2"].map(albumCollectionSummary));
+      const collections=await Promise.all((config.SEASON_IDS||["ie1"]).map(albumCollectionSummary));
       renderHtml(runView.albumCollectionMarkup({state:campaign,collections}));
       app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
       app?.querySelectorAll?.("[data-rtg-album-collection]")?.forEach(button=>button.addEventListener("click",()=>renderAlbumTeams(button.dataset.rtgAlbumCollection)));
@@ -766,7 +747,7 @@
     async function renderAlbumTeams(seasonId=selectedAlbumSeasonId){
       await ensureData();
       syncCurrentPullsIntoAlbum();
-      const sid=["ie1","ie1_s2"].includes(id(seasonId))?id(seasonId):activeSeasonId();
+      const sid=(config.SEASON_IDS||[]).includes(id(seasonId))?id(seasonId):activeSeasonId();
       selectedAlbumSeasonId=sid;
       const db=await ensureAlbumSeasonDb(sid);
       renderHtml(runView.albumTeamsMarkup({state:{...(campaign||{}),activeSeasonId:sid},seasonId:sid,teams:rtgAlbumTeams(sid,db)}));
@@ -778,7 +759,7 @@
     async function renderAlbumRoster(teamId,seasonId=selectedAlbumSeasonId){
       await ensureData();
       syncCurrentPullsIntoAlbum();
-      const sid=["ie1","ie1_s2"].includes(id(seasonId))?id(seasonId):selectedAlbumSeasonId;
+      const sid=(config.SEASON_IDS||[]).includes(id(seasonId))?id(seasonId):selectedAlbumSeasonId;
       selectedAlbumSeasonId=sid;
       const db=await ensureAlbumSeasonDb(sid);
       const team=rtgAlbumTeams(sid,db).find(entry=>id(entry.teamId)===id(teamId));
@@ -1431,12 +1412,12 @@
       if(!boss)throw Object.assign(new Error("Boss RTG non trovato"),{code:"rtg-boss-missing"});
       const profileIds=Array.from(boss.startingXIProfileIds||[]);
       const lineup=profileIds.length
-        ? profileIds.map(profileId=>resolvedStandard(cardIdentity?.cardIdForSeason?.(profileId,activeSeasonId())||profileId)).filter(Boolean)
+        ? profileIds.map(profileId=>resolvedStandard(cardIdentity?.cardIdForProfile?.(profileId,activeSeasonId())||profileId)).filter(Boolean)
         : (boss.startingXIPlayerIds||[]).map(playerId=>resolvedForTeam(playerId,node.teamId)).filter(Boolean);
       return {formationId:boss.bossFormation||boss.matchFormation||null,lineup,bench:[],name:boss.teamName||node.teamId||"Avversario",teamId:node.teamId,seasonId:activeSeasonId(),logoUrl:boss.logoUrl||teamRecordForId(node.teamId)?.logoUrl||null};
     }
     function secondaryOpponent(node,current,attemptNumber){
-      const generated=opponentGenerator.generate({seed:`${current.campaignSeed}:${node.id}`,attemptNumber,freeAgentsDb,formations:seasonDb?.formations?.eleven||[],targetMin:node.opponentTargetMin,targetMax:node.opponentTargetMax,playerResolver});
+      const generated=opponentGenerator.generate({seed:`${current.campaignSeed}:${node.id}`,attemptNumber,freeAgentsDb,formations:seasonDb?.formations?.eleven||[],targetMin:node.opponentTargetMin,targetMax:node.opponentTargetMax,playerResolver,seasonId:id(current?.activeSeasonId||activeSeasonId())});
       return {formationId:generated.formationId,lineup:generated.playerIds.map(playerId=>resolvedStandard(playerId)).filter(Boolean),bench:[],teamPower:generated.teamPower,name:generated.name,specialType:"free-agents"};
     }
     async function startMatch(nodeId){
@@ -1790,10 +1771,13 @@
       deps.getModalRoot?.()?.querySelector?.("[data-rtg-result-continue]")?.addEventListener("click",()=>{deps.closeModal?.();renderRun();});
       return match;
     }
-    function openVending(){
-      const pool=gacha.previewPool(campaign,seasonDb);
-      deps.openModal?.(runView.vendingMarkup({...pool,tokens:campaign.tokens,seasonId:activeSeasonId()}),{className:"rtg-modal rtg-vending-modal"});
+    function openVending(mode="team"){
+      const selectedMode=mode==="recruitment"&&activeSeasonId()==="ie1_s3"?"recruitment":"team";
+      const pool=gacha.previewPool(campaign,seasonDb,accessibleCards(campaign),selectedMode);
+      const cost=selectedMode==="recruitment"?activeConfig()?.recruitmentPullCost:activeConfig()?.pullCost;
+      deps.openModal?.(runView.vendingMarkup({...pool,tokens:campaign.tokens,seasonId:activeSeasonId(),mode:selectedMode,cost}),{className:"rtg-modal rtg-vending-modal"});
       const modalRoot=deps.getModalRoot?.();
+      modalRoot?.querySelectorAll?.("[data-rtg-vending-mode]")?.forEach(toggle=>toggle.addEventListener("click",()=>openVending(toggle.dataset.rtgVendingMode)));
       const albumButton=modalRoot?.querySelector?.("[data-rtg-vending-album]");
       if(albumButton)albumButton.onclick=async(event)=>{
         event?.preventDefault?.();
@@ -1808,7 +1792,7 @@
         button.disabled=true;
         machine?.classList?.add("is-turning");
         try{
-          const preparedPromise=pull({reveal:false});
+          const preparedPromise=pull({reveal:false,mode:selectedMode});
           await new Promise(resolve=>setTimeout(resolve,620));
           const prepared=await preparedPromise;
           if(!prepared?.result||!prepared?.player)return;
@@ -1827,18 +1811,18 @@
             machine.classList.add("is-revealing");
           }
           await new Promise(resolve=>setTimeout(resolve,980));
-          showPullResult(prepared.result,prepared.player);
+          showPullResult(prepared.result,prepared.player,selectedMode);
         }finally{
           machine?.classList?.remove("is-turning","is-revealing");
           if(button?.isConnected)button.disabled=false;
         }
       });
     }
-    function showPullResult(result,player){
+    function showPullResult(result,player,mode="team"){
       if(!result||!player)return null;
       deps.openModal?.(runView.pullResultMarkup(result,player,seasonDb),{
         className:"rtg-modal rtg-pull-modal",
-        onClose:()=>openVending(),
+        onClose:()=>openVending(mode),
       });
       const modalRoot=deps.getModalRoot?.();
       modalRoot?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",event=>{
@@ -1854,9 +1838,9 @@
       return result;
     }
     async function pull(options={}){
-      let result=null;
+      let result=null;const mode=options?.mode==="recruitment"?"recruitment":"team";
       campaign=await repository.update("rtg-gacha-pull",current=>{
-        const pulled=gacha.pull(current,{seasonDb,accessibleCardIds:accessibleCards(current)});
+        const pulled=gacha.pull(current,{seasonDb,accessibleCardIds:accessibleCards(current),mode});
         result=pulled.result;return pulled.state;
       });
       if(!result)return campaign;
