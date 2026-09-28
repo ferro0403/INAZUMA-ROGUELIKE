@@ -45,3 +45,7 @@
 .rtg-vending-mode-toggle{display:grid;grid-template-columns:1fr 1fr;gap:.4rem;margin:.65rem 0;padding:.25rem;border-radius:999px;background:rgba(9,25,54,.12)}
 .rtg-vending-mode-toggle button{min-height:38px;border:0;border-radius:999px;background:transparent;color:inherit;font:800 .72rem/1 system-ui;letter-spacing:.04em;cursor:pointer}
 .rtg-vending-mode-toggle button.active{background:#173b70;color:#fff;box-shadow:0 3px 10px rgba(9,25,54,.24)}
+.rtg-vending-mode-toggle{border:3px solid #111216!important;border-radius:8px!important;background:#e7e3d7!important;box-shadow:4px 5px 0 rgba(17,18,22,.2)!important}
+.rtg-vending-mode-toggle button{min-height:46px!important;padding:8px 10px!important;border:2px solid transparent!important;border-radius:4px!important;background:#fffdf7!important;color:#30333a!important;box-shadow:inset 0 -3px 0 #d4cfc2!important;font-weight:1000!important;touch-action:manipulation}
+.rtg-vending-mode-toggle button.active,.rtg-vending-mode-toggle button[aria-pressed="true"]{border-color:#111216!important;background:#ffd21f!important;color:#111216!important;box-shadow:inset 0 -4px 0 #d49a14,3px 3px 0 #111216!important}
+.rtg-vending-stage>.rtg-vending-pull{margin-top:18px!important}

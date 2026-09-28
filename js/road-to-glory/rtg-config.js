@@ -62,6 +62,9 @@
     duplicateRefunds: Object.freeze({ Normale: 40, Buono: 60, Forte: 85, Elite: 120, Mondiale: 160, Leggenda: 300 }),
     constraints,
     routeBackground:"assets/rtg/rtg-season1-route-map-v3.jpg",
+    routeClass:"rtg-route--season-1",
+    albumCover:"https://blogger.googleusercontent.com/img/b/R29vZ2xl/AVvXsEiTljpQy0-8hZqy9NP7BmOZwijtzN9VGYbXEN4bR2bPW8GiaccWADFA3RAlYclPfO8HSr9aEgR8H_NWF-al-1MLXlH6ToD-mMNUKwTsaSKlKvUCEY1xzg_2auQvhA3usKf5qPwV8Iawi6pm/s1600/wallpapers_inazuma11_1_1024x768.jpg",
+    albumCoverPosition:"center",
     secondaryMatchesPerGap:2,
   });
 
@@ -133,6 +136,9 @@
     duplicateRefunds:SEASON1.duplicateRefunds,
     constraints:season2Constraints,
     routeBackground:"assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-map-hq-1",
+    routeClass:"rtg-route--season-2",
+    albumCover:"https://static.wikia.nocookie.net/inazuma-eleven/images/9/9b/%28Artwork%29_Aliea_Gakuen_captains.jpg/revision/latest?cb=20120722223451",
+    albumCoverPosition:"center 42%",
     secondaryMatchesPerGap:1,
   });
 
@@ -163,7 +169,11 @@
     secondaryRewards:SEASON1.secondaryRewards,
     rarityWeights:Object.freeze({Normale:40,Buono:27,Forte:18,Elite:10,Mondiale:5,Leggenda:1}),
     duplicateRefunds:SEASON1.duplicateRefunds,constraints:season3Constraints,
-    routeBackground:"assets/rtg/rtg-season3-route-map-user.webp",secondaryMatchesPerGap:1,
+    routeBackground:"assets/rtg/rtg-season3-route-map-user.webp",
+    routeClass:"rtg-route--season-3",
+    albumCover:"https://static.wikia.nocookie.net/inazuma-eleven-fanon/images/6/67/Inazuma-boys-inazuma-eleven-35597232-1600-1200_%281%29.jpg/revision/latest?cb=20140310150638",
+    albumCoverPosition:"center",
+    secondaryMatchesPerGap:1,
   });
   const SEASONS=Object.freeze({ie1:SEASON1,ie1_s2:SEASON2,ie1_s3:SEASON3});
   const SEASON_IDS=Object.freeze(Object.keys(SEASONS));

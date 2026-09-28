@@ -111,7 +111,7 @@
    Keep !important here because the legacy S1 selector is also !important. */
 .rtg-run-screen--s2 .rtg-map .rtg-map-block--season2-part .route-map.rtg-route-stage--season2 {
   background-color:#082c52!important;
-  background-image:var(--rtg-season-route-bg,url("../assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-map-hq-1"))!important;
+  background-image:var(--rtg-route-image,url("../assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-map-hq-1"))!important;
   background-position:var(--rtg-route-bg-position,center)!important;
   background-size:cover!important;
   background-repeat:no-repeat!important;
@@ -1115,3 +1115,22 @@ button.player-card:has(> .rtg-legacy-badge),
   transform: scale(1.80) !important;
   transform-origin: center bottom !important;
 }
+
+/* S3 vending mode selector: tactile RTG segmented control. */
+.rtg-vending-mode-toggle{
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:5px!important;
+  width:100%;margin:10px 0 14px!important;padding:5px!important;border:3px solid #111216!important;
+  border-radius:8px!important;background:#e7e3d7!important;box-shadow:4px 5px 0 rgba(17,18,22,.2)!important;
+}
+.rtg-vending-mode-toggle button{
+  min-height:46px!important;padding:8px 10px!important;border:2px solid transparent!important;border-radius:4px!important;
+  background:#fffdf7!important;color:#30333a!important;box-shadow:inset 0 -3px 0 #d4cfc2!important;
+  font:1000 .68rem/1.05 system-ui,sans-serif!important;letter-spacing:.045em!important;cursor:pointer;touch-action:manipulation;
+}
+.rtg-vending-mode-toggle button.active,.rtg-vending-mode-toggle button[aria-pressed="true"]{
+  border-color:#111216!important;background:#ffd21f!important;color:#111216!important;
+  box-shadow:inset 0 -4px 0 #d49a14,3px 3px 0 #111216!important;transform:translate(-1px,-1px);
+}
+.rtg-vending-mode-toggle button:focus-visible{outline:3px solid #2584dc!important;outline-offset:3px;}
+.rtg-vending-stage>.rtg-vending-pull{margin-top:18px!important;}
+@media(max-width:430px){.rtg-vending-mode-toggle button{min-height:48px!important;font-size:.64rem!important}.rtg-vending-stage>.rtg-vending-pull{margin-top:16px!important}}
