@@ -1,7 +1,7 @@
 "use strict";
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON,Promise,Error,TypeError};c.globalThis=c;vm.createContext(c);
-vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8"),c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-slot-runtime.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-season-transition-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-album-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-development-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-vending-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8"),c);
 const roles={g1:"GK",g2:"GK",d1:"DF",d2:"DF",d3:"DF",d4:"DF",d5:"DF",m1:"MF",m2:"MF",m3:"MF",m4:"MF",f1:"FW",f2:"FW",f3:"FW",f4:"FW",f5:"FW"};
 const players=Object.entries(roles).map(([playerId,position])=>({playerId,name:playerId,position,normalizedRole:position,overall:80,finalOverall:80}));
 const lineup=["g1","d1","d2","d3","d4","m1","m2","m3","f1","f2","f3"],bench=["g2","d5","m4","f4"];

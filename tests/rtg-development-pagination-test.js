@@ -1,5 +1,5 @@
 const fs=require("fs");
-const c=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const c=["js/road-to-glory/rtg-development-controller.js","js/road-to-glory/rtg-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n");
 const v=fs.readFileSync("js/road-to-glory/rtg-economy-view.js","utf8");
 const css=fs.readFileSync("css/rtg-theme.css","utf8");
 if(!/DEVELOPMENT_PLAYER_PAGE_SIZE\s*=\s*24/.test(c)||!/developmentVisibleCount/.test(c)||!/data-rtg-development-load-more/.test(c))throw Error("lazy batches missing");

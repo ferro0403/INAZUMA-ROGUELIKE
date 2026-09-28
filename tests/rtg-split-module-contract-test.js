@@ -2,8 +2,13 @@
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 const index=fs.readFileSync("index.html","utf8");
 const ordered=[
+  "js/road-to-glory/rtg-route-view.js",
   "js/road-to-glory/rtg-album-view.js",
   "js/road-to-glory/rtg-run-view.js",
+  "js/road-to-glory/rtg-squad-slot-runtime.js",
+  "js/road-to-glory/rtg-season-transition-controller.js",
+  "js/road-to-glory/rtg-album-controller.js",
+  "js/road-to-glory/rtg-development-controller.js",
   "js/road-to-glory/rtg-vending-controller.js",
   "js/road-to-glory/rtg-controller.js",
 ];

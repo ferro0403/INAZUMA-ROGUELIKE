@@ -39,12 +39,6 @@
     let displayedMinute=0;
     let selectedEncounterChoice=null;
     let selectedEncounterId=null;
-    let selectedAlbumSeasonId="ie1";
-    let selectedDevelopmentCardId=null;
-    let developmentQuery="";
-    let developmentRarity="Tutti";
-    let developmentVisibleCount=24;
-    const DEVELOPMENT_PLAYER_PAGE_SIZE=24;
     const SQUAD_PICKER_PAGE_SIZE=24;
     const ENCOUNTER_REVEAL_DELAY_MS=2200;
     const FINAL_COMPARISON_DELAY_MS=1700;
@@ -52,44 +46,20 @@
     const schedule=deps.setTimeout||global.setTimeout;
     const cancelSchedule=deps.clearTimeout||global.clearTimeout;
     const DEV_MODE=deps.devMode===true||(typeof global.URLSearchParams==="function"&&new global.URLSearchParams(global.location?.search||"").get("dev")==="1");
-    const RTG_ALBUM_STORAGE_KEY="inazuma.rtg.album.v1";
-    const RTG_SQUAD_SLOTS_KEY="inazuma.rtg.squad-slots.v2";
-    const RTG_LEGACY_SQUAD_SLOTS_KEY="inazuma.rtg.squad-slots.v1";
     let activeSquadSlot=1;
-    const RTG_ACTIVE_SQUAD_SLOT_KEY="inazuma.rtg.active-squad-slot.v1";
-    function squadSlotsKey(seasonId=activeSeasonId()){return `${RTG_SQUAD_SLOTS_KEY}.${id(seasonId||"ie1")}`;}
-    function readSquadSlots(seasonId=activeSeasonId()){
-      try{
-        const sid=id(seasonId||"ie1"),key=squadSlotsKey(sid),raw=global.localStorage?.getItem?.(key);
-        if(raw){const parsed=JSON.parse(raw);return parsed&&typeof parsed==="object"?parsed:{};}
-        // One-time compatibility bridge: old previews stored all three S1 slots
-        // in the unsuffixed v1 key. Import them only into S1; never into S2.
-        if(sid==="ie1"){
-          const legacyRaw=global.localStorage?.getItem?.(RTG_LEGACY_SQUAD_SLOTS_KEY);
-          if(legacyRaw){
-            const legacy=JSON.parse(legacyRaw);
-            if(legacy&&typeof legacy==="object"){
-              global.localStorage?.setItem?.(key,JSON.stringify(legacy));
-              return legacy;
-            }
-          }
-        }
-        return{};
-      }catch(_e){return{}}
+    let squadSlotRuntime=null;
+    function getSquadSlotRuntime(){
+      if(!squadSlotRuntime)squadSlotRuntime=global.RoadToGlorySquadSlotRuntime.create({
+        localStorage:global.localStorage,id,clone,activeSeasonId,activeSquad,getCampaign:()=>campaign,getSquadDraft:()=>squadDraft,
+      });
+      return squadSlotRuntime;
     }
-    function writeSquadSlots(slots,seasonId=activeSeasonId()){try{global.localStorage?.setItem?.(squadSlotsKey(seasonId),JSON.stringify(slots||{}));}catch(_e){}}
-    function storeSquadSlot(slot,squad){const slots=readSquadSlots();slots[String(slot)]=clone(squad);writeSquadSlots(slots);}
-    function readActiveSquadSlot(){try{return Math.max(1,Math.min(3,Number(global.localStorage?.getItem?.(RTG_ACTIVE_SQUAD_SLOT_KEY))||1));}catch(_e){return 1}}
-    function writeActiveSquadSlot(slot){try{global.localStorage?.setItem?.(RTG_ACTIVE_SQUAD_SLOT_KEY,String(slot));}catch(_e){}}
-    function squadForSlot(slot){
-      const slots=readSquadSlots();
-      const saved=slots?.[String(slot)];
-      if(saved)return clone(saved);
-      /* Only slot 1 inherits the legacy campaign squad. New slots must start as
-         independent snapshots, never aliases of whatever squad is currently official. */
-      if(Number(slot)===1)return clone(activeSquad(campaign)||squadDraft);
-      return clone(slots?.["1"]||activeSquad(campaign)||squadDraft);
-    }
+    function readSquadSlots(seasonId){return getSquadSlotRuntime().readSquadSlots(seasonId);}
+    function writeSquadSlots(slots,seasonId){return getSquadSlotRuntime().writeSquadSlots(slots,seasonId);}
+    function storeSquadSlot(slot,squad){return getSquadSlotRuntime().storeSquadSlot(slot,squad);}
+    function readActiveSquadSlot(){return getSquadSlotRuntime().readActiveSquadSlot();}
+    function writeActiveSquadSlot(slot){return getSquadSlotRuntime().writeActiveSquadSlot(slot);}
+    function squadForSlot(slot){return getSquadSlotRuntime().squadForSlot(slot);}
     async function selectSquadSlot(slot){
       const next=Math.max(1,Math.min(3,Number(slot)||1));
       if(next===activeSquadSlot)return;
@@ -100,28 +70,22 @@
       return renderSquad();
     }
 
-    function readRtgAlbum(){
-      try{
-        const raw=global.localStorage?.getItem?.(RTG_ALBUM_STORAGE_KEY);
-        const parsed=raw?JSON.parse(raw):{};
-        return {cardIds:Array.from(new Set(Array.isArray(parsed?.cardIds)?parsed.cardIds.map(id).filter(Boolean):[]))};
-      }catch(_error){return {cardIds:[]};}
+
+    let albumController=null;
+    function getAlbumController(){
+      if(!albumController)albumController=global.RoadToGloryAlbumController.create({
+        app,localStorage:global.localStorage,id,cardMeta,acquiredCardIdSet,getCampaign:()=>campaign,
+        getSeasonDb:()=>seasonDb,getFreeAgentsDb:()=>freeAgentsDb,activeSeasonId,config,cardIdentity,
+        playerResolver,ensureSeason1Db:deps.ensureSeason1Db,ensureData,renderHtml,runView,
+        mountDevQuickTools,renderHome:deps.renderHome,openPlayerDetails:openRtgPlayerDetails,
+      });
+      return albumController;
     }
-    function writeRtgAlbum(cardIds){
-      const normalized=Array.from(new Set(Array.from(cardIds||[]).map(id).filter(Boolean)));
-      try{global.localStorage?.setItem?.(RTG_ALBUM_STORAGE_KEY,JSON.stringify({version:1,cardIds:normalized}));}catch(_error){}
-      return normalized;
-    }
-    function rememberRtgAlbumCard(cardRef){
-      const cardId=cardMeta(cardRef).cardId;
-      if(!cardId)return readRtgAlbum().cardIds;
-      return writeRtgAlbum([...readRtgAlbum().cardIds,cardId]);
-    }
-    function syncCurrentPullsIntoAlbum(){
-      const current=Array.from(acquiredCardIdSet(campaign));
-      if(!current.length)return readRtgAlbum().cardIds;
-      return writeRtgAlbum([...readRtgAlbum().cardIds,...current]);
-    }
+    function rememberRtgAlbumCard(cardRef){return getAlbumController().rememberRtgAlbumCard(cardRef);}
+    function syncCurrentPullsIntoAlbum(){return getAlbumController().syncCurrentPullsIntoAlbum();}
+    function renderAlbum(){return getAlbumController().renderAlbum();}
+    function renderAlbumTeams(seasonId){return getAlbumController().renderAlbumTeams(seasonId);}
+    function renderAlbumRoster(teamId,seasonId){return getAlbumController().renderAlbumRoster(teamId,seasonId);}
 
     function matchTimelineAnchor(){
       if(!app)return null;
@@ -365,7 +329,7 @@
             state.furthestNodeIndex=Math.max(0,previousNodes.length-1);state.seasonComplete=true;
             state.defeatedTeamIds=Array.from(previousConfig.mainTeams||[]);state.lives=Number(previousConfig.livesPerCheckpoint)||2;state.activeMatch=null;return state;
           });
-          seasonDb=previousDb;selectedAlbumSeasonId=previousId;initSquadDraft();deps.toast?.(`DEV: ritorno alla Season ${previousConfig.seasonNumber}`);renderRun();
+          seasonDb=previousDb;getAlbumController().setSelectedSeason(previousId);initSquadDraft();deps.toast?.(`DEV: ritorno alla Season ${previousConfig.seasonNumber}`);renderRun();
         });
         panel.querySelector('[data-dev-rtg="halftime"]')?.addEventListener("click",()=>devJumpMatchBoundary("halftime"));
         panel.querySelector('[data-dev-rtg="extra"]')?.addEventListener("click",()=>devJumpMatchBoundary("extra"));
@@ -470,158 +434,18 @@
       });
       return campaign;
     }
-    function developmentRoleVariant(cardId){
-      const variants=squadDraft?.activeRoleVariantByCardId||activeSquad(campaign)?.activeRoleVariantByCardId||{};
-      return variants?.[id(cardId)]||null;
-    }
-    function developmentCardIds(state=campaign){
-      if(!economy)return[];
-      return Array.from(economy.ownedCardIds(state)||[]).filter((cardId)=>economy.isEligibleOwnedCard(state,cardId));
-    }
-    function developmentPlayers(){
-      return developmentCardIds().map((cardId)=>resolved(cardId,developmentRoleVariant(cardId))).filter(Boolean)
-        .sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"it"));
-    }
-    function filteredDevelopmentPlayers(players){
-      const needle=String(developmentQuery||"").trim().toLocaleLowerCase("it");
-      return players.filter((player)=>{
-        const matchesName=!needle||String(player.name||"").toLocaleLowerCase("it").includes(needle);
-        const matchesRarity=developmentRarity==="Tutti"||String(player.category||"")===developmentRarity;
-        return matchesName&&matchesRarity;
+    let developmentController=null;
+    function getDevelopmentController(){
+      if(!developmentController)developmentController=global.RoadToGloryDevelopmentController.create({
+        app,economy,economyView,repository,id,getCampaign:()=>campaign,setCampaign:(next)=>{campaign=next;},
+        getSquadDraft:()=>squadDraft,activeSquad,resolved,resolvedStandard,resolvedWithDevelopment,
+        renderRun,renderHtml,mountDevQuickTools,openPlayerDetails:openRtgPlayerDetails,
+        renderHome:deps.renderHome,toast:deps.toast,openModal:deps.openModal,getModalRoot:deps.getModalRoot,closeModal:deps.closeModal,
       });
+      return developmentController;
     }
-    function developmentModelFor(cardId){
-      const key=id(cardId);
-      if(!key||!economy)return null;
-      const player=resolved(key,developmentRoleVariant(key));
-      const standard=resolvedStandard(key,developmentRoleVariant(key));
-      if(!player||!standard)return null;
-      const preview=economy.previewEvolution(campaign,{
-        cardId:key,
-        basePotential:Number(standard.potential??standard.finalOverall??standard.overall??0),
-        baseRarity:standard.category,
-      });
-      let after=null;
-      if(preview?.ok){
-        const developmentByCardId={...(campaign?.developmentByCardId||{}),[key]:{
-          ...(campaign?.developmentByCardId?.[key]||{}),
-          targetPotential:preview.targetPotential,
-          currentRarity:preview.target,
-        }};
-        after=resolvedWithDevelopment(key,developmentRoleVariant(key),developmentByCardId);
-      }
-      return {player,standard,preview,after};
-    }
-    function renderShop(options={}){
-      if(!economyView||!economy)return renderRun();
-      selectedDevelopmentCardId=null;
-      renderHtml(economyView.shopMarkup({state:campaign}),{preserveScroll:options.preserveScroll===true});
-      app?.querySelector?.("[data-rtg-economy-back]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
-      app?.querySelector?.("[data-rtg-open-development]")?.addEventListener("click",()=>renderDevelopment("players"));
-      app?.querySelectorAll?.("[data-rtg-buy-project]")?.forEach((button)=>button.addEventListener("click",async()=>{
-        if(button.disabled)return;
-        const shopScrollY=Number(global.scrollY||global.pageYOffset||0);
-        button.disabled=true;
-        let outcome=null;
-        campaign=await repository.update("rtg-buy-project",current=>{
-          outcome=economy.purchaseProject(current,button.dataset.rtgBuyProject);
-          return outcome?.ok?outcome.state:current;
-        });
-        deps.toast?.(outcome?.ok?"PROGETTO ACQUISTATO":outcome?.reason==="tokens"?"GETTONI RTG INSUFFICIENTI":"ACQUISTO NON COMPLETATO",outcome?.ok?undefined:"error");
-        renderShop({preserveScroll:true});
-        const restoreShopScroll=()=>global.scrollTo?.(0,shopScrollY);
-        if(typeof global.requestAnimationFrame==="function")global.requestAnimationFrame(()=>global.requestAnimationFrame(restoreShopScroll));
-        else if(typeof global.setTimeout==="function")global.setTimeout(restoreShopScroll,0);
-        else restoreShopScroll();
-        return campaign;
-      }));
-      mountDevQuickTools();
-      return campaign;
-    }
-    function bindDevelopmentGrid(players){
-      const results=app?.querySelector?.("[data-rtg-development-results]");
-      if(!results)return;
-      const refresh=()=>{
-        const filtered=filteredDevelopmentPlayers(players);
-        const visible=filtered.slice(0,developmentVisibleCount);
-        const remaining=Math.max(0,filtered.length-visible.length);
-        results.innerHTML=economyView.playerGrid(visible)+(remaining>0?`<div class="development-load-more-wrap"><button type="button" class="btn btn-yellow development-load-more" data-rtg-development-load-more><span>MOSTRA ALTRI <b>${Math.min(DEVELOPMENT_PLAYER_PAGE_SIZE,remaining)}</b></span><small>${visible.length} di ${filtered.length}</small></button></div>`:"");
-      };
-      results.onclick=(event)=>{
-        const loadMore=event.target?.closest?.("[data-rtg-development-load-more]");
-        if(loadMore){developmentVisibleCount+=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();return;}
-        const element=event.target?.closest?.("[data-rtg-development-player]");
-        if(!element)return;
-        selectedDevelopmentCardId=id(element.dataset.rtgDevelopmentPlayer);
-        renderDevelopment("players");
-      };
-      const search=app?.querySelector?.("[data-rtg-development-search]");
-      search?.addEventListener("input",(event)=>{developmentQuery=event.currentTarget.value||"";developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();});
-      app?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",(event)=>{developmentRarity=event.currentTarget.value||"Tutti";developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();});
-      refresh();
-    }
-    function renderDevelopment(tab="players"){
-      if(!economyView||!economy)return renderRun();
-      const players=developmentPlayers();
-      if(selectedDevelopmentCardId&&!players.some((player)=>id(player.cardId||player.playerId)===id(selectedDevelopmentCardId)))selectedDevelopmentCardId=null;
-      const selected=selectedDevelopmentCardId?developmentModelFor(selectedDevelopmentCardId):null;
-      const filtered=filteredDevelopmentPlayers(players);
-      renderHtml(economyView.developmentMarkup({
-        state:campaign,
-        players,
-        filteredPlayers:filtered,
-        selected,
-        tab,
-        query:developmentQuery,
-        rarity:developmentRarity,
-      }));
-      app?.querySelector?.("[data-rtg-economy-back]")?.addEventListener("click",()=>{
-        selectedDevelopmentCardId=null;
-        deps.renderHome?.({initialPage:"rtg"});
-      });
-      app?.querySelectorAll?.("[data-rtg-development-tab]")?.forEach((button)=>button.addEventListener("click",()=>renderDevelopment(button.dataset.rtgDevelopmentTab)));
-      app?.querySelector?.("[data-rtg-open-shop]")?.addEventListener("click",()=>renderShop());
-      app?.querySelectorAll?.("[data-rtg-change-development-player]")?.forEach((button)=>button.addEventListener("click",()=>{
-        selectedDevelopmentCardId=null;
-        renderDevelopment("players");
-      }));
-      app?.querySelector?.("[data-rtg-development-selected-card]")?.addEventListener("click",()=>openRtgPlayerDetails(selectedDevelopmentCardId));
-      app?.querySelector?.("[data-rtg-prepare-evolution]")?.addEventListener("click",()=>openEvolutionConfirmation());
-      if(!selectedDevelopmentCardId&&tab==="players")bindDevelopmentGrid(players);
-      mountDevQuickTools();
-      return campaign;
-    }
-    function openEvolutionConfirmation(){
-      const model=developmentModelFor(selectedDevelopmentCardId);
-      if(!model?.preview?.ok||!model.preview.ready)return deps.toast?.("RISORSE RTG INSUFFICIENTI","error");
-      deps.openModal?.(economyView.evolutionConfirmMarkup(model),{closeable:false,className:"development-confirm-modal rtg-development-confirm-modal"});
-      const modalRoot=deps.getModalRoot?.();
-      modalRoot?.querySelector?.("[data-rtg-cancel-evolution]")?.addEventListener("click",()=>deps.closeModal?.());
-      modalRoot?.querySelector?.("[data-rtg-confirm-evolution]")?.addEventListener("click",async(event)=>{
-        const button=event.currentTarget;
-        if(button.disabled)return;
-        button.disabled=true;
-        let outcome=null;
-        const basePotential=Number(model.standard.potential??model.standard.finalOverall??model.standard.overall??0);
-        const baseRarity=model.standard.category;
-        campaign=await repository.update("rtg-evolve-card",current=>{
-          outcome=economy.evolve(current,{
-            cardId:selectedDevelopmentCardId,
-            basePotential,
-            baseRarity,
-            expectedTarget:model.preview.target,
-          });
-          return outcome?.ok?outcome.state:current;
-        });
-        deps.closeModal?.({invokeOnClose:false});
-        if(!outcome?.ok){
-          deps.toast?.(outcome?.reason==="stale"?"EVOLUZIONE CAMBIATA: RIPROVA":"RISORSE RTG CAMBIATE: EVOLUZIONE NON COMPLETATA","error");
-          return renderDevelopment("players");
-        }
-        deps.toast?.(`${model.player.name}: ${outcome.target}`);
-        return renderDevelopment("players");
-      });
-    }
+    function renderShop(options={}){return getDevelopmentController().renderShop(options);}
+    function renderDevelopment(tab="players"){return getDevelopmentController().renderDevelopment(tab);}
 
     function bindHomeAndTabs(){
       app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
@@ -643,147 +467,24 @@
       mountDevQuickTools();
       return campaign;
     }
-    async function enterNextSeason(){
-      const fromId=activeSeasonId(),fromConfig=config.season?.(fromId),nextSeasonId=id(fromConfig?.nextSeasonId);
-      if(!nextSeasonId||!campaign?.seasonComplete)return campaign;
-      const nextConfig=config.season?.(nextSeasonId);
-      const nextDb=await global.SeasonRegistry?.loadDatabase?.(nextSeasonId);
-      if(!nextDb||!nextConfig)throw new Error(`Database ${nextSeasonId} non disponibile`);
-      const firstNode=config.buildSeasonNodes(nextSeasonId)?.[0]?.id;
-      let transitionRewarded=false;
-      campaign=await repository.update("rtg-enter-next-season",current=>{
-        if(id(current.activeSeasonId)!==fromId||!current.seasonComplete)return current;
-        const rewardId=`${fromId}->${nextSeasonId}`;
-        current.seasonTransitionRewardedIds=Array.from(new Set(current.seasonTransitionRewardedIds||[]));
-        if(!current.seasonTransitionRewardedIds.includes(rewardId)){
-          current.tokens=Math.max(0,Number(current.tokens)||0)+Number(config.SEASON_TRANSITION_REWARD||1000);
-          current.seasonTransitionRewardedIds.push(rewardId);transitionRewarded=true;
-        }
-        const previous=clone(current.squads?.[fromId]||{formationId:null,lineup:[],bench:[],activeRoleVariantByCardId:{}});
-        current.activeSeasonId=nextSeasonId;current.seasonComplete=false;
-        current.lives=Number(nextConfig.livesPerCheckpoint)||2;current.checkpointMainIndex=-1;
-        current.currentNodeId=firstNode;current.furthestNodeIndex=0;current.defeatedTeamIds=[];
-        current.firstClearMatchIds=[];current.attemptsByNode={};current.activeMatch=null;
-        current.squads=current.squads||{};
-        current.squads[nextSeasonId]=current.squads[nextSeasonId]?.lineup?.length?current.squads[nextSeasonId]:previous;
-        return current;
+    let seasonTransitionController=null;
+    function enterNextSeason(){
+      if(!seasonTransitionController)seasonTransitionController=global.RoadToGlorySeasonTransitionController.create({
+        getCampaign:()=>campaign,activeSeasonId,config,id,repository,clone,renderRun,
+        applyTransition:({campaign:nextCampaign,seasonDb:nextDb,nextSeasonId,transitionRewarded})=>{
+          campaign=nextCampaign;seasonDb=nextDb;rawPlayerById=new Map();
+          for(const player of seasonDb?.players||[])rawPlayerById.set(id(player.playerId||player.id),player);
+          for(const profile of seasonDb?.profiles||[])rawPlayerById.set(id(profile.profileId||profile.id),profile);
+          progression?.setSeasonContext?.(campaign);
+          const nextSlots=readSquadSlots(nextSeasonId);
+          if(!nextSlots["1"]){const carried=clone(activeSquad(campaign));writeSquadSlots({"1":carried,"2":clone(carried),"3":clone(carried)},nextSeasonId);}
+          activeSquadSlot=1;writeActiveSquadSlot(1);squadDraft=squadForSlot(1);
+          if(transitionRewarded)deps.toast?.(`BONUS SEASON: +${Number(config.SEASON_TRANSITION_REWARD||1000)} GETTONI RTG`);
+        },
       });
-      seasonDb=nextDb;rawPlayerById=new Map();
-      for(const player of seasonDb?.players||[])rawPlayerById.set(id(player.playerId||player.id),player);
-      for(const profile of seasonDb?.profiles||[])rawPlayerById.set(id(profile.profileId||profile.id),profile);
-      progression?.setSeasonContext?.(campaign);
-      const nextSlots=readSquadSlots(nextSeasonId);
-      if(!nextSlots["1"]){const carried=clone(activeSquad(campaign));writeSquadSlots({"1":carried,"2":clone(carried),"3":clone(carried)},nextSeasonId);}
-      activeSquadSlot=1;writeActiveSquadSlot(1);squadDraft=squadForSlot(1);
-      if(transitionRewarded)deps.toast?.(`BONUS SEASON: +${Number(config.SEASON_TRANSITION_REWARD||1000)} GETTONI RTG`);
-      return renderRun();
+      return seasonTransitionController.enterNextSeason();
     }
-    function rtgAlbumEntries(){
-      syncCurrentPullsIntoAlbum();
-      return readRtgAlbum().cardIds.map(cardId=>playerResolver.resolveAtLevel20(cardId,campaign?.activeSeasonId||"ie1",null,freeAgentsDb)).filter(Boolean);
-    }
-    function rtgAlbumUnlockedSet(){
-      return new Set(readRtgAlbum().cardIds.map(id));
-    }
-    async function ensureAlbumSeasonDb(seasonId){
-      const sid=id(seasonId||"ie1");
-      const previous=global.SeasonRegistry?.activeId?.();
-      let db=global.SeasonRegistry?.database?.(sid)||null;
-      if(!db){
-        db=sid==="ie1"
-          ? await deps.ensureSeason1Db?.()
-          : await global.SeasonRegistry?.loadDatabase?.(sid);
-      }
-      if(previous&&previous!==sid)global.SeasonRegistry?.setActive?.(previous);
-      return db;
-    }
-    function albumConfigFor(seasonId){
-      const sid=id(seasonId||"ie1");
-      return config?.season?.(sid)||config.SEASON1;
-    }
-    function rtgAlbumTeams(seasonId=selectedAlbumSeasonId,albumDb=null){
-      const sid=id(seasonId||"ie1");
-      const db=albumDb||global.SeasonRegistry?.database?.(sid)||(sid===activeSeasonId()?seasonDb:null);
-      const unlocked=rtgAlbumUnlockedSet();
-      const configured=Array.from(albumConfigFor(sid)?.mainTeams||[]);
-      return configured.map(teamId=>{
-        const team=(db?.teams||[]).find(entry=>id(entry?.teamId||entry?.id)===id(teamId));
-        if(!team)return null;
-        const playerIds=Array.from(team?.playerIds||[]).map(id).filter(Boolean);
-        const profileIds=db?.requiresProfileAwareRuntime
-          ? Array.from(db?.profiles||[]).filter(profile=>id(profile?.teamId)===id(teamId)).map(profile=>id(profile?.profileId||profile?.id)).filter(Boolean)
-          : [];
-        const sourceIds=profileIds.length?profileIds:playerIds;
-        const cardIds=sourceIds.map(playerId=>db?.requiresProfileAwareRuntime
-          ? (cardIdentity?.cardIdForProfile?.(playerId,sid)||playerId)
-          : (cardIdentity?.cardIdForSeason?.(playerId,sid)||playerId));
-        return {seasonId:sid,teamId:id(teamId),teamName:team?.teamName||team?.name||teamId,logoUrl:team?.logoUrl||"",playerIds,profileIds,cardIds,total:cardIds.length,unlocked:cardIds.filter(cardId=>unlocked.has(cardId)).length};
-      }).filter(team=>team&&team.total>0);
-    }
-    function rtgAlbumTeamPlayers(team,seasonId=selectedAlbumSeasonId){
-      const sid=id(seasonId||team?.seasonId||"ie1");
-      return Array.from(team?.cardIds||[]).map(cardId=>playerResolver.resolveAtLevel20(cardId,sid,null,freeAgentsDb)).filter(Boolean);
-    }
-    async function albumCollectionSummary(seasonId){
-      const sid=id(seasonId||"ie1");
-      const db=await ensureAlbumSeasonDb(sid);
-      const teams=rtgAlbumTeams(sid,db);
-      return {
-        seasonId:sid,
-        unlocked:teams.reduce((sum,team)=>sum+(Number(team.unlocked)||0),0),
-        total:teams.reduce((sum,team)=>sum+(Number(team.total)||0),0),
-      };
-    }
-    async function renderAlbum(){
-      await ensureData();
-      syncCurrentPullsIntoAlbum();
-      const collections=await Promise.all((config.SEASON_IDS||["ie1"]).map(albumCollectionSummary));
-      renderHtml(runView.albumCollectionMarkup({state:campaign,collections}));
-      app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
-      app?.querySelectorAll?.("[data-rtg-album-collection]")?.forEach(button=>button.addEventListener("click",()=>renderAlbumTeams(button.dataset.rtgAlbumCollection)));
-      mountDevQuickTools();
-      return campaign;
-    }
-    async function renderAlbumTeams(seasonId=selectedAlbumSeasonId){
-      await ensureData();
-      syncCurrentPullsIntoAlbum();
-      const sid=(config.SEASON_IDS||[]).includes(id(seasonId))?id(seasonId):activeSeasonId();
-      selectedAlbumSeasonId=sid;
-      const db=await ensureAlbumSeasonDb(sid);
-      renderHtml(runView.albumTeamsMarkup({state:{...(campaign||{}),activeSeasonId:sid},seasonId:sid,teams:rtgAlbumTeams(sid,db)}));
-      app?.querySelector?.("[data-rtg-album-collection-back]")?.addEventListener("click",()=>renderAlbum());
-      app?.querySelectorAll?.("[data-rtg-album-team]")?.forEach(button=>button.addEventListener("click",()=>renderAlbumRoster(button.dataset.rtgAlbumTeam,sid)));
-      mountDevQuickTools();
-      return campaign;
-    }
-    async function renderAlbumRoster(teamId,seasonId=selectedAlbumSeasonId){
-      await ensureData();
-      syncCurrentPullsIntoAlbum();
-      const sid=(config.SEASON_IDS||[]).includes(id(seasonId))?id(seasonId):selectedAlbumSeasonId;
-      selectedAlbumSeasonId=sid;
-      const db=await ensureAlbumSeasonDb(sid);
-      const team=rtgAlbumTeams(sid,db).find(entry=>id(entry.teamId)===id(teamId));
-      if(!team)return renderAlbumTeams(sid);
-      const unlocked=rtgAlbumUnlockedSet();
-      const allEntries=rtgAlbumTeamPlayers(team,sid);
-      const entries=allEntries.filter(player=>unlocked.has(id(player?.cardId||player?.playerId||player?.id)));
-      renderHtml(runView.albumRosterMarkup({state:{...(campaign||{}),activeSeasonId:sid},seasonId:sid,team,entries,allEntries,database:db}));
-      app?.querySelector?.("[data-rtg-album-back]")?.addEventListener("click",()=>renderAlbumTeams(sid));
-      const albumRoster=app?.querySelector?.("[data-rtg-album-roster]");
-      albumRoster?.addEventListener("click",event=>{
-        const origin=typeof event.target?.closest==="function"?event.target:event.target?.parentElement;
-        const entry=origin?.closest?.("[data-rtg-album-player-entry]");
-        const cardButton=origin?.closest?.("[data-rtg-album-player-card]");
-        if(!entry&&!cardButton)return;
-        const wrapper=entry||cardButton?.closest?.("[data-rtg-album-player-entry]");
-        const cardId=id(wrapper?.dataset?.rtgAlbumPlayerEntry);
-        if(!cardId)return;
-        event.preventDefault?.();
-        openRtgPlayerDetails(cardId,"",{mode:"album",albumUnlocked:unlocked.has(cardId)});
-      });
-      mountDevQuickTools();
-      return campaign;
-    }
+
 
     function draftState(){
       const state=clone(campaign);

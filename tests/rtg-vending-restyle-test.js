@@ -1,7 +1,7 @@
 "use strict";
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
-vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-album-view.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-route-view.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-album-view.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),c);
 const view=c.RoadToGloryRunView.create({escapeHtml:s=>String(s)});
 const html=view.vendingMarkup({tokens:900,candidates:["a","b","c"],rarities:[{rarity:"Normale",weight:39.6},{rarity:"Forte",weight:17.8},{rarity:"Leggenda",weight:1.0}]});
 assert.match(html,/rtg-vending-machine-v9/);

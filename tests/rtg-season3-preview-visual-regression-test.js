@@ -1,7 +1,7 @@
 "use strict";
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 const context={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};context.globalThis=context;vm.createContext(context);
-for(const file of ["js/road-to-glory/rtg-config.js","js/road-to-glory/rtg-album-view.js","js/road-to-glory/rtg-run-view.js"])vm.runInContext(fs.readFileSync(file,"utf8"),context,{filename:file});
+for(const file of ["js/road-to-glory/rtg-config.js","js/road-to-glory/rtg-route-view.js","js/road-to-glory/rtg-album-view.js","js/road-to-glory/rtg-run-view.js"])vm.runInContext(fs.readFileSync(file,"utf8"),context,{filename:file});
 const C=context.RoadToGloryConfig,V=context.RoadToGloryRunView.create({escapeHtml:String,teamEmblemMarkup:id=>`<i>${id}</i>`});
 assert.strictEqual(C.SEASON1.routeBackground,"assets/rtg/rtg-season1-route-map-v3.jpg");assert(C.SEASON1.albumCover.includes("wallpapers_inazuma11_1_1024x768"));assert(C.SEASON2.albumCover.includes("Aliea_Gakuen_captains"));
 assert.strictEqual(C.SEASON2.routeBackground,"assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-map-hq-1");

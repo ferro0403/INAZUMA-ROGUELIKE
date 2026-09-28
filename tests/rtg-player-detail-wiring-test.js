@@ -1,7 +1,7 @@
 "use strict";
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON,Promise,Error,TypeError};c.globalThis=c;vm.createContext(c);
-vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8"),c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-slot-runtime.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-season-transition-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-album-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-development-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-vending-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8"),c);
 
 const players=[
   {playerId:"g1",name:"G1",normalizedRole:"GK",position:"GK",finalOverall:70},
