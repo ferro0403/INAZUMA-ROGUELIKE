@@ -41,6 +41,9 @@
 
   const SEASON1 = Object.freeze({
     seasonId: "ie1",
+    seasonNumber: 1,
+    previousSeasonId: null,
+    nextSeasonId: "ie1_s2",
     mainTeams,
     formations,
     checkpointMainIndexes: Object.freeze([2, 5, 8]),
@@ -50,6 +53,7 @@
     ]),
     livesPerCheckpoint: 2,
     pullCost: 300,
+    recruitmentPullCost: null,
     mainRewards,
     secondaryRewards: Object.freeze([
       Object.freeze({ amount: SECONDARY_WIN_REWARD, weight: 100 }),
@@ -57,6 +61,8 @@
     rarityWeights: Object.freeze({ Normale: 40, Buono: 27, Forte: 18, Elite: 10, Mondiale: 5, Leggenda: 0 }),
     duplicateRefunds: Object.freeze({ Normale: 40, Buono: 60, Forte: 85, Elite: 120, Mondiale: 160, Leggenda: 300 }),
     constraints,
+    routeBackground:"assets/rtg/rtg-season1-route-map-v3.jpg",
+    secondaryMatchesPerGap:2,
   });
 
   function buildSeasonNodes(seasonId) {
@@ -110,6 +116,9 @@
   const season2Rewards = Object.freeze(Object.fromEntries(season2Matches.map((entry)=>[entry.teamId,MAIN_WIN_REWARD])));
   const SEASON2 = Object.freeze({
     seasonId:"ie1_s2",
+    seasonNumber:2,
+    previousSeasonId:"ie1",
+    nextSeasonId:"ie1_s3",
     mainTeams:season2Teams,
     importantMatches:season2Matches,
     formations,
@@ -117,30 +126,64 @@
     visualBlocks:Object.freeze([Object.freeze([0,4]),Object.freeze([5,10]),Object.freeze([11,14]),Object.freeze([15,16])]),
     livesPerCheckpoint:2,
     pullCost:300,
+    recruitmentPullCost:null,
     mainRewards:season2Rewards,
     secondaryRewards:SEASON1.secondaryRewards,
     rarityWeights:Object.freeze({ Normale:40, Buono:27, Forte:18, Elite:10, Mondiale:5, Leggenda:1 }),
     duplicateRefunds:SEASON1.duplicateRefunds,
     constraints:season2Constraints,
     routeBackground:"assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-map-hq-1",
+    secondaryMatchesPerGap:1,
   });
-  function season(seasonId){
-    return String(seasonId||"")==="ie1_s2"?SEASON2:SEASON1;
-  }
+
+  const season3Order = Object.freeze([
+    ["big_waves",80,0,false], ["neo_national",82,1,true], ["desert_lions",82,1,false],
+    ["fire_dragon",84,2,false], ["brocken_brigade",84,2,true], ["queen_s_knights",84,3,false],
+    ["the_cape_crusaders",82,3,true], ["the_empire",85,4,false], ["rose_griffons",83,4,true],
+    ["unicorn",86,5,false], ["team_d",83,5,true], ["orpheus",87,6,false],
+    ["team_zoolan",84,6,true], ["the_kingdom",87,7,false], ["red_matador",84,7,true],
+    ["dark_angels",88,8,false], ["little_gigantes",89,8,false], ["team_ogre",91,9,false],
+    ["inazuma_national",93,9,false],
+  ]);
+  const season3Matches=Object.freeze(season3Order.map(([teamId,cap,minRecruit,special])=>{
+    const recentCount=Math.floor(minRecruit/2);
+    return Object.freeze({teamId,cap,minRecruit,special,recentCount,recentWindow:recentCount===0?0:recentCount+2});
+  }));
+  const season3Teams=Object.freeze(season3Matches.map(entry=>entry.teamId));
+  const season3Constraints=Object.freeze(Object.fromEntries(season3Matches.map(entry=>[
+    entry.teamId,Object.freeze({cap:entry.cap,minRecruit:entry.minRecruit,recentCount:entry.recentCount,recentWindow:entry.recentWindow})
+  ])));
+  const SEASON3=Object.freeze({
+    seasonId:"ie1_s3",seasonNumber:3,previousSeasonId:"ie1_s2",nextSeasonId:null,
+    mainTeams:season3Teams,importantMatches:season3Matches,formations,
+    checkpointMainIndexes:Object.freeze([2,5,8,11,14,17]),
+    visualBlocks:Object.freeze([Object.freeze([0,5]),Object.freeze([6,11]),Object.freeze([12,17]),Object.freeze([18,18])]),
+    livesPerCheckpoint:2,pullCost:300,recruitmentPullCost:150,
+    mainRewards:Object.freeze(Object.fromEntries(season3Teams.map(teamId=>[teamId,MAIN_WIN_REWARD]))),
+    secondaryRewards:SEASON1.secondaryRewards,
+    rarityWeights:Object.freeze({Normale:40,Buono:27,Forte:18,Elite:10,Mondiale:5,Leggenda:1}),
+    duplicateRefunds:SEASON1.duplicateRefunds,constraints:season3Constraints,
+    routeBackground:"assets/rtg/rtg-season3-route-map-user.webp",secondaryMatchesPerGap:1,
+  });
+  const SEASONS=Object.freeze({ie1:SEASON1,ie1_s2:SEASON2,ie1_s3:SEASON3});
+  const SEASON_IDS=Object.freeze(Object.keys(SEASONS));
+  function season(seasonId){ return SEASONS[String(seasonId||"ie1")]||null; }
   const buildSeason1Nodes=buildSeasonNodes;
   function buildAnySeasonNodes(seasonId){
     const sid=String(seasonId||"ie1");
     if(sid==="ie1")return buildSeason1Nodes("ie1");
-    if(sid!=="ie1_s2")return Object.freeze([]);
+    const seasonConfig=season(sid);
+    if(!seasonConfig)return Object.freeze([]);
+    const matches=seasonConfig.importantMatches||[];
     const nodes=[];
-    season2Matches.forEach((match,index)=>{
+    matches.forEach((match,index)=>{
       nodes.push(Object.freeze({
         id:`main:${match.teamId}`,type:"main",teamId:match.teamId,mainIndex:index,special:!!match.special,
-        checkpointAfter:SEASON2.checkpointMainIndexes.includes(index),
+        checkpointAfter:seasonConfig.checkpointMainIndexes.includes(index),
       }));
-      if(index>=season2Matches.length-1)return;
-      const beforeTeamId=season2Matches[index+1].teamId;
-      const userCap=season2Constraints[beforeTeamId].cap;
+      if(index>=matches.length-1)return;
+      const beforeTeamId=matches[index+1].teamId;
+      const userCap=seasonConfig.constraints[beforeTeamId].cap;
       nodes.push(Object.freeze({
         id:`secondary:${match.teamId}:${beforeTeamId}:1`,type:"secondary",afterTeamId:match.teamId,beforeTeamId,slot:1,
         userCap,opponentTargetMin:Math.max(70,userCap-4),opponentTargetMax:userCap-1,
@@ -149,5 +192,5 @@
     return Object.freeze(nodes);
   }
 
-  global.RoadToGloryConfig = Object.freeze({ MAIN_WIN_REWARD, SECONDARY_WIN_REWARD, SEASON_TRANSITION_REWARD, SEASON1, SEASON2, season, buildSeasonNodes:buildAnySeasonNodes });
+  global.RoadToGloryConfig = Object.freeze({ MAIN_WIN_REWARD, SECONDARY_WIN_REWARD, SEASON_TRANSITION_REWARD, SEASON1, SEASON2, SEASON3, SEASONS, SEASON_IDS, season, buildSeasonNodes:buildAnySeasonNodes });
 })(globalThis);

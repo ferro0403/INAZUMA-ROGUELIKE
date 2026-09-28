@@ -20,7 +20,7 @@
     return ranked[pickIndex]?.player||ranked[0].player;
   }
 
-  function buildCandidate({seed,attemptNumber,buildAttempt,freeAgentsDb,formations,targetMin,targetMax,playerResolver}){
+  function buildCandidate({seed,attemptNumber,buildAttempt,freeAgentsDb,formations,targetMin,targetMax,playerResolver,seasonId}){
     const formationList=(formations||[]).filter((formation)=>Array.isArray(formation?.slotRoles)&&formation.slotRoles.length===11);
     if(!formationList.length)throw Object.assign(new Error("No RTG secondary formation"),{code:"rtg-secondary-formation-unavailable"});
     const formation=formationList[global.RoadToGloryRng.int(seed,`secondary-formation:${attemptNumber}`,buildAttempt,formationList.length)];
@@ -41,19 +41,19 @@
     }
     const teamPower=global.RoadToGlorySquadRuntime.teamPower({
       lineup:playerIds,
-      activeSeasonId:"ie1",
+      activeSeasonId:id(seasonId||"ie1"),
       playerResolver,
       freeAgentsDb,
     });
     return Object.freeze({formationId:id(formation.id),playerIds:Object.freeze(playerIds),teamPower,name:"Svincolati"});
   }
 
-  function generate({seed,attemptNumber=1,freeAgentsDb,formations,targetMin,targetMax,playerResolver}={}){
+  function generate({seed,attemptNumber=1,freeAgentsDb,formations,targetMin,targetMax,playerResolver,seasonId}={}){
     const min=Number(targetMin),max=Number(targetMax);
     if(!Number.isFinite(min)||!Number.isFinite(max)||min>max)throw Object.assign(new Error("Invalid RTG secondary band"),{code:"rtg-secondary-opponent-band-invalid"});
     let closest=null,closestDistance=Infinity;
     for(let buildAttempt=0;buildAttempt<64;buildAttempt+=1){
-      const candidate=buildCandidate({seed,attemptNumber,buildAttempt,freeAgentsDb,formations,targetMin:min,targetMax:max,playerResolver});
+      const candidate=buildCandidate({seed,attemptNumber,buildAttempt,freeAgentsDb,formations,targetMin:min,targetMax:max,playerResolver,seasonId});
       if(!candidate)continue;
       if(candidate.teamPower>=min&&candidate.teamPower<=max)return candidate;
       const distance=candidate.teamPower<min?min-candidate.teamPower:candidate.teamPower-max;

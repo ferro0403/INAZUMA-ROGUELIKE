@@ -6,7 +6,7 @@ assert(ctl.includes("db?.requiresProfileAwareRuntime"));
 assert(ctl.includes("db?.profiles||[]"));
 assert(ctl.includes("profileIds.length?profileIds:playerIds"));
 assert(ctl.includes("cardIdForProfile?.(playerId,sid)"));
-assert(ctl.includes('["ie1","ie1_s2"].map(albumCollectionSummary)'));
+assert(ctl.includes('(config.SEASON_IDS||["ie1"]).map(albumCollectionSummary)'));
 assert(ctl.includes("selectedAlbumSeasonId"));
 assert(ctl.includes('renderAlbumTeams(button.dataset.rtgAlbumCollection)'));
 assert(ctl.includes('app?.querySelector?.("[data-rtg-album-back]")?.addEventListener("click",()=>renderAlbumTeams(sid))'));

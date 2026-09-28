@@ -30,7 +30,7 @@ const completedHtml=view.runMarkup({state:{...state,currentNodeId:"main:raimon",
 assert.match(completedHtml,/rtg-run-screen--complete/);
 assert.match(completedHtml,/rtg-season-complete-footer__badge/);
 assert.match(completedHtml,/Continua il viaggio/);
-assert.strictEqual((completedHtml.match(/data-rtg-enter-season2/g)||[]).length,2);
+assert.strictEqual((completedHtml.match(/data-rtg-enter-next-season/g)||[]).length,2);
 const albumHtml=view.albumCollectionMarkup({state:{activeSeasonId:"ie1"},collections:[
   {seasonId:"ie1",unlocked:3,total:10},
   {seasonId:"ie1_s2",unlocked:0,total:230},
