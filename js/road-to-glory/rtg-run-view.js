@@ -35,10 +35,7 @@
       const rarity=String(category||"debole").trim().toLowerCase();
       return `rarity-${["scarso","debole","normale","buono","forte","elite","mondiale","leggenda","aurico"].includes(rarity)?rarity:"debole"}`;
     }
-    function albumTeamLogoMarkup(team={}){
-      if(team?.logoUrl)return `<img src="${escape(team.logoUrl)}" alt="${escape(team.teamName||team.name||"Squadra")}" loading="lazy" decoding="async">`;
-      return team?.teamId ? emblem(team.teamId) : '<span class="album-free-agent-logo" aria-hidden="true">⚡</span>';
-    }
+
 
     function tabs(active = "run") {
       const icon = (name) => name === "run"
@@ -137,52 +134,16 @@
       const transition=complete&&nextSeasonId?`<button type="button" class="btn btn-yellow rtg-season-transition" data-rtg-enter-next-season>ENTRA NELLA SEASON ${nextSeasonNo} <span aria-hidden="true">→</span></button>`:"";
       return `<main class="screen rtg-run-screen${seasonNo>=2?" rtg-run-screen--s2":""}${seasonConfig?.routeClass?` ${escape(seasonConfig.routeClass)}`:""}${complete?" rtg-run-screen--complete":""}">${header(state)}<div class="content narrow rtg-run-content"><section class="rtg-journey-summary ${complete?"rtg-journey-summary--complete":""}" aria-label="Avanzamento percorso"><div class="rtg-journey-main"><div class="rtg-journey-copy">${complete?`<div class="rtg-complete-kicker"><span class="rtg-complete-check" aria-hidden="true">✓</span><span>Season ${seasonNo} completata</span></div>`:`<p class="eyebrow">La tua prossima partita</p>`}<h1>${complete?"Traguardo raggiunto":escape(currentLabel)}</h1><p>${complete?`Percorso concluso · ${list.length} tappe completate`:`Tappa ${Math.max(1,currentIndex+1)} di ${list.length} · ${currentNode?.type==="main"?(currentNode.special?"Partita speciale":"Sfida principale"):"Partita Svincolati"}`}</p></div>${complete?`<div class="rtg-complete-trophy" aria-hidden="true"><span>★</span><b>S${seasonNo}</b></div>`:`<div class="rtg-journey-opponent" aria-hidden="true">${currentMark}</div>`}</div>${!complete&&currentNode?`<button type="button" class="btn btn-yellow" data-rtg-current-node="${escape(currentNode.id)}">Prepara partita <span aria-hidden="true">→</span></button>`:""}${transition}<div class="rtg-journey-progress" role="progressbar" aria-label="Tappe completate nel percorso attuale" aria-valuenow="${cleared}" aria-valuemin="0" aria-valuemax="${list.length}"><span style="width:${list.length?cleared/list.length*100:0}%"></span></div></section><section class="panel rtg-run-command"><div><p class="eyebrow">La tua collezione</p><h2>Rinforza la squadra</h2><p class="muted">Nuovi giocatori dalle squadre sconfitte.</p></div><button type="button" class="btn btn-yellow rtg-vending-button" data-rtg-open-vending>Distributore S${seasonNo} <span>300 ◈</span></button></section><section class="rtg-map rtg-map--season-${seasonNo}" aria-label="Percorso Season ${seasonNo}">${blocks}</section>${complete&&nextSeasonId?`<section class="rtg-season-complete-footer" aria-label="Continua nella Season ${nextSeasonNo}"><div class="rtg-season-complete-footer__head"><div class="rtg-season-complete-footer__badge" aria-hidden="true"><small>PROSSIMA</small><b>S${nextSeasonNo}</b></div><div class="rtg-season-complete-footer__copy"><p class="eyebrow">SEASON ${seasonNo} COMPLETATA</p><strong>Continua il viaggio</strong><span>La Season ${nextSeasonNo} riparte dalla tua squadra attuale. Entrando ricevi <b>+1.000 Gettoni RTG</b>.</span></div></div><button type="button" class="btn btn-yellow rtg-season-transition rtg-season-transition--footer" data-rtg-enter-next-season><span>ENTRA NELLA SEASON ${nextSeasonNo}</span><b aria-hidden="true">→</b></button></section>`:""}</div>${tabs("run")}</main>`;
     }
-    function albumCollectionMarkup({state={},unlocked=0,total=0,collections=null}={}){
-      const fallbackSeasonId=String(state?.activeSeasonId||"ie1");
-      const source=Array.isArray(collections)&&collections.length
-        ? collections
-        : [{seasonId:fallbackSeasonId,unlocked,total}];
-      const cards=source.map((collection)=>{
-        const sid=String(collection?.seasonId||"ie1");
-        const seasonNo=seasonNumber(sid);
-        const safeTotal=Math.max(0,Number(collection?.total)||0),safeUnlocked=Math.max(0,Number(collection?.unlocked)||0);
-        const percent=safeTotal?Math.round(safeUnlocked/safeTotal*100):0;
-        const presentation=global.RoadToGloryConfig?.season?.(sid)||{};
-        const coverUrl=presentation.albumCover||(sid==="ie1_s2"?RTG_ALBUM_S2_COVER_URL:RTG_ALBUM_COVER_URL);
-        const focalPoint=presentation.albumCoverPosition||(sid==="ie1_s2"?"center 42%":"center");
-        const cover=`<span class="album-collection-cover album-collection-cover--hero"><img src="${escape(coverUrl)}" alt="" style="object-position:${escape(focalPoint)}" loading="lazy" decoding="async" onerror="this.hidden=true; this.parentElement.classList.add('is-fallback');"></span>`;
-        return `<button type="button" class="panel album-collection-card" data-rtg-album-collection="${escape(sid)}" aria-label="Apri collezione Inazuma Eleven ${seasonNo}: ${escape(safeUnlocked)} su ${escape(safeTotal)} giocatori sbloccati, ${escape(percent)}%">${cover}<span class="album-collection-content album-collection-content--hero"><span class="album-collection-title">Inazuma Eleven ${seasonNo}</span><span class="album-collection-progress-copy"><span>${escape(safeUnlocked)} / ${escape(safeTotal)} giocatori sbloccati</span><strong>${escape(percent)}%</strong></span><span class="album-collection-progress-bar" aria-hidden="true"><span style="width:${percent}%"></span></span><span class="album-collection-action">Apri collezione <span aria-hidden="true">→</span></span></span></button>`;
-      }).join("");
-      return `<main class="album-screen album-collections-screen rtg-album-collections-screen"><header class="topbar album-topbar album-collections-topbar"><button type="button" class="btn section-root-button album-collections-home-button" data-rtg-home aria-label="Torna a Road to Glory"><span aria-hidden="true">←</span></button><div class="album-collections-heading"><p class="eyebrow">ALBUM</p><h1>COLLEZIONI</h1></div><span class="album-collections-topbar-spacer" aria-hidden="true"></span></header><section class="album-collection-grid">${cards}</section></main>`;
-    }
-    function albumTeamsMarkup({state={},seasonId=null,teams=[]}={}){
-      const sid=String(seasonId||state?.activeSeasonId||"ie1");
-      const cards=Array.from(teams||[]).map(team=>{
-        const total=Number(team.total)||0,unlocked=Number(team.unlocked)||0;
-        const percent=total?Math.round(unlocked/total*100):0;
-        const complete=total>0&&unlocked===total;
-        const logo=albumTeamLogoMarkup(team);
-        return `<button type="button" class="panel album-team-card album-team-card--modern ${complete?"album-complete":""}" data-rtg-album-team="${escape(team.teamId)}" aria-label="${escape(team.teamName)}: ${escape(unlocked)} su ${escape(total)} giocatori sbloccati, ${escape(percent)}%"><span class="album-team-card__stage"><span class="album-team-card__watermark" aria-hidden="true">${logo}</span><span class="album-team-logo album-team-card__logo">${logo}</span></span><span class="album-team-card__footer"><span class="album-team-card__heading"><strong class="album-team-card__name">${escape(team.teamName)}</strong><span class="album-team-card__open" aria-hidden="true">→</span></span><span class="album-team-card__progress"><span>${escape(unlocked)} / ${escape(total)} sbloccati</span>${complete?'<b class="album-team-card__complete-state"><span class="album-team-card__complete-check" aria-hidden="true">✓</span>COMPLETA</b>':`<b>${escape(percent)}%</b>`}</span><span class="album-team-card__bar" aria-hidden="true"><span style="width:${percent}%"></span></span></span></button>`;
-      }).join("");
-      return `<main class="album-screen album-teams-screen rtg-album-teams-screen"><header class="topbar album-topbar album-teams-topbar"><button type="button" class="btn section-root-button album-teams-back-button" data-rtg-album-collection-back aria-label="Torna alle collezioni"><span aria-hidden="true">←</span></button><div class="album-teams-heading"><p class="eyebrow">ALBUM → INAZUMA ELEVEN ${seasonNumber(sid)}</p><h1>SQUADRE</h1></div><span class="album-teams-topbar-spacer" aria-hidden="true"></span></header><section class="album-team-grid album-team-grid--modern">${cards}</section></main>`;
-    }
-    function albumRosterMarkup({team={},entries=[],allEntries=[],database=null}={}){
-      const unlockedIds=new Set(Array.from(entries||[]).map(player=>String(player?.cardId||player?.playerId||player?.id||"")));
-      const catalog=Array.from(allEntries||[]);
-      const cards=catalog.map(player=>{
-        const cardId=String(player?.cardId||player?.playerId||player?.id||"");
-        const isUnlocked=unlockedIds.has(cardId);
-        const role=String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
-        const fallbackCard=`<button type="button" class="player-card player-card-large pull-player-card pull-player-card--desktop pull-player-card--mobile album-player-card ${albumRarityClass(player?.category)}" data-rtg-album-player-card aria-label="Apri scheda di ${escape(player?.name||cardId)}"><span class="player-corner player-role" aria-label="Ruolo ${escape(role)}">${escape(role)}</span><span class="player-corner player-overall" aria-label="Overall ${escape(player?.overall??player?.finalOverall??"—")}">${escape(player?.overall??player?.finalOverall??"—")}</span><div class="player-portrait-wrap">${player?.portraitUrl||player?.frontFullbodyUrl||player?.imageUrl?`<img class="player-portrait" src="${escape(player?.portraitUrl||player?.frontFullbodyUrl||player?.imageUrl)}" alt="${escape(player?.name||cardId)}" loading="lazy">`:""}</div><div class="player-info"><div class="player-title"><strong>${escape(player?.name||cardId)}</strong></div><div class="player-meta" aria-label="Dettagli giocatore"><span>${escape(player?.element||player?.type||"")}</span><span>${escape(player?.category||"")}</span></div></div><span class="player-corner player-level" aria-label="Livello 20">Lv 20</span></button>`;
-        const card=playerCardMarkup
-          ? playerCardMarkup(player,{button:true,dataAttribute:"data-rtg-album-player-card",level:20,database,resolvedPlayer:player,extraClass:"album-player-card"})
-          : fallbackCard;
-        return `<div class="album-player-entry ${albumRarityClass(player?.category)} ${isUnlocked?"is-unlocked":"is-locked"}" data-rtg-album-player-entry="${escape(cardId)}" data-album-unlocked="${isUnlocked?"true":"false"}">${card}${isUnlocked?"":'<span class="album-player-lock"><span aria-hidden="true">🔒</span>NON SBLOCCATO</span>'}</div>`;
-      }).join("");
-      const total=catalog.length,unlocked=catalog.filter(player=>unlockedIds.has(String(player?.cardId||player?.playerId||player?.id||""))).length,percent=total?Math.round(unlocked/total*100):0;
-      const logo=albumTeamLogoMarkup(team);
-      return `<main class="album-screen album-roster-screen album-roster-screen--modern rtg-album-roster-screen"><header class="album-roster-hero"><div class="album-roster-hero__nav"><button type="button" class="btn section-root-button album-roster-back-button" data-rtg-album-back aria-label="Torna alle squadre"><span aria-hidden="true">←</span></button></div><div class="album-roster-hero__identity"><span class="album-team-logo album-roster-hero__logo">${logo}</span><h1 class="album-roster-hero__name">${escape(team.teamName||"Squadra")}</h1></div><div class="album-roster-hero__stats"><span>${escape(unlocked)} / ${escape(total)} giocatori sbloccati</span><strong class="album-roster-percent">${escape(percent)}%</strong></div><span class="album-roster-hero__bar" aria-hidden="true"><span style="width:${percent}%"></span></span></header><section class="album-player-grid album-player-grid--modern" data-rtg-album-roster>${cards}</section></main>`;
-    }
+    const albumView=global.RoadToGloryAlbumView.create({
+      escapeHtml:escape,
+      teamEmblemMarkup:emblem,
+      playerCardMarkup,
+      seasonNumber,
+      albumRarityClass,
+      albumCoverUrl:RTG_ALBUM_COVER_URL,
+      albumSeason2CoverUrl:RTG_ALBUM_S2_COVER_URL,
+    });
+    const {albumCollectionMarkup,albumTeamsMarkup,albumRosterMarkup}=albumView;
 
     function requirementsMarkup(eligibility={}){if(!eligibility)return"";const seasonLabel=`S${seasonNumber(eligibility.seasonId)}`;const rows=[["Potenza rosa · max",eligibility.teamPower==null?"—":`${eligibility.teamPower} / ${eligibility.cap}`,!eligibility.reasons?.includes("team-power-cap")],[`Reclute ${seasonLabel} · min`,`${eligibility.recruitCount||0} / ${eligibility.minRecruit||0}`,!eligibility.reasons?.some(code=>code==="min-season-recruits"||code==="min-s1-recruits")],["Reclute recenti · min",`${eligibility.recentRecruitCount||0} / ${eligibility.recentCount||0}`,!eligibility.reasons?.some(code=>code==="recent-season-recruits"||code==="recent-s1-recruits")]];return `<section class="panel rtg-requirements"><p class="eyebrow">Accesso partita</p><h3>Requisiti</h3><div class="rtg-requirements-list">${rows.map(([label,value,ok])=>`<div class="rtg-requirement ${ok?"ok":"bad"}"><span><i aria-hidden="true">${ok?"✓":"!"}</i> ${escape(label)}</span><strong>${escape(value)}</strong></div>`).join("")}</div><p class="rtg-requirements-note">Reclute e potenza considerano tutti i 15 giocatori: titolari + panchina.</p></section>`;}
     function nodeModalMarkup({node,eligibility=null,seasonDb,allowed=true}={}){if(!node)return"";if(node.type==="main"){const label=teamName(seasonDb,node.teamId);return `<div class="rtg-node-modal rtg-paper-modal"><div class="modal-head rtg-node-modal-head"><span class="rtg-node-modal-emblem">${teamLogoMarkup(seasonDb,node.teamId)}</span><div><p class="eyebrow">Partita principale</p><h2>${escape(label)}</h2><p class="muted">Prepara la squadra e rispetta i requisiti della sfida. Vittoria: 350 Gettoni RTG.</p></div></div>${requirementsMarkup(eligibility)}<button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed||!eligibility?.eligible?"disabled":""}>GIOCA</button></div>`;}return `<div class="rtg-node-modal rtg-paper-modal"><div class="modal-head rtg-node-modal-head"><span class="rtg-node-modal-secondary" aria-hidden="true">?</span><div><p class="eyebrow">Svincolati</p><h2>Partita secondaria</h2><p class="muted">Avversari generati nella fascia di potenza del percorso. Vittoria: 200 Gettoni RTG.</p></div></div><button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed?"disabled":""}>GIOCA</button></div>`;}

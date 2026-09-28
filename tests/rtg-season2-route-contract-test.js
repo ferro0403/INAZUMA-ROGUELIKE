@@ -32,6 +32,7 @@ assert(themeCss.includes(".rtg-run-screen--s2 .rtg-map .rtg-map-block--season2-p
 assert(themeCss.includes('background-image:var(--rtg-route-image,url("../assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-map-hq-1"))!important'),"Profiled seasons must use their configured artwork while retaining the S2 fallback");
 assert(themeCss.includes("background-position:var(--rtg-route-bg-position,center)!important"),"S2 theme must preserve per-chapter framing after the override");
 const viewCtx={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};viewCtx.globalThis=viewCtx;vm.createContext(viewCtx);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-album-view.js","utf8"),viewCtx);
 vm.runInContext(runView,viewCtx);
 const view=viewCtx.RoadToGloryRunView.create({escapeHtml:String,teamEmblemMarkup:teamId=>`<i data-fallback="${teamId}"></i>`});
 const seasonDb={teams:order.map(teamId=>({teamId,teamName:teamId,logoUrl:`https://assets.test/${teamId}.png`}))};

@@ -1,7 +1,7 @@
 "use strict";
 const assert=require("assert"),fs=require("fs");
 const ctl=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
-const view=fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8");
+const view=["js/road-to-glory/rtg-album-view.js","js/road-to-glory/rtg-run-view.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n");
 assert(ctl.includes("db?.requiresProfileAwareRuntime"));
 assert(ctl.includes("db?.profiles||[]"));
 assert(ctl.includes("profileIds.length?profileIds:playerIds"));

@@ -2,7 +2,7 @@
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 let opts=null,emblemTeam=null;
 const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
-vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-album-view.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),c);
 const view=c.RoadToGloryRunView.create({
   escapeHtml:s=>String(s),
   teamEmblemMarkup:teamId=>{emblemTeam=teamId;return `<img data-team-logo="${teamId}">`;},

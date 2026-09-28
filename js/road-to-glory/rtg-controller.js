@@ -1771,72 +1771,18 @@
       deps.getModalRoot?.()?.querySelector?.("[data-rtg-result-continue]")?.addEventListener("click",()=>{deps.closeModal?.();renderRun();});
       return match;
     }
-    function openVending(mode="team"){
-      const selectedMode=mode==="recruitment"&&activeSeasonId()==="ie1_s3"?"recruitment":"team";
-      const pool=gacha.previewPool(campaign,seasonDb,accessibleCards(campaign),selectedMode);
-      const cost=selectedMode==="recruitment"?activeConfig()?.recruitmentPullCost:activeConfig()?.pullCost;
-      deps.openModal?.(runView.vendingMarkup({...pool,tokens:campaign.tokens,seasonId:activeSeasonId(),mode:selectedMode,cost}),{className:"rtg-modal rtg-vending-modal"});
-      const modalRoot=deps.getModalRoot?.();
-      modalRoot?.querySelectorAll?.("[data-rtg-vending-mode]")?.forEach(toggle=>toggle.addEventListener("click",()=>openVending(toggle.dataset.rtgVendingMode)));
-      const albumButton=modalRoot?.querySelector?.("[data-rtg-vending-album]");
-      if(albumButton)albumButton.onclick=async(event)=>{
-        event?.preventDefault?.();
-        event?.stopPropagation?.();
-        deps.closeModal?.({invokeOnClose:false});
-        await renderAlbum();
-      };
-      modalRoot?.querySelector?.("[data-rtg-pull]")?.addEventListener("click",async(event)=>{
-        const button=event.currentTarget;
-        if(button?.disabled)return;
-        const machine=modalRoot?.querySelector?.("[data-rtg-vending-machine]");
-        button.disabled=true;
-        machine?.classList?.add("is-turning");
-        try{
-          const preparedPromise=pull({reveal:false,mode:selectedMode});
-          await new Promise(resolve=>setTimeout(resolve,620));
-          const prepared=await preparedPromise;
-          if(!prepared?.result||!prepared?.player)return;
-          const rarityKey=String(prepared.result.rarity||prepared.player.category||"normale").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-");
-          if(machine){
-            const capsules=Array.from(machine.querySelectorAll?.("[data-capsule-rarity]")||[]);
-            capsules.forEach(capsule=>capsule.classList.remove("is-selected"));
-            const matching=capsules.filter(capsule=>capsule.dataset.capsuleRarity===rarityKey);
-            const choices=matching.length?matching:capsules;
-            const selected=choices.length?choices[Math.floor(Math.random()*choices.length)]:null;
-            if(selected){
-              selected.dataset.capsuleRarity=rarityKey;
-              selected.classList.add("is-selected");
-            }
-            machine.dataset.pullRarity=rarityKey;
-            machine.classList.add("is-revealing");
-          }
-          await new Promise(resolve=>setTimeout(resolve,980));
-          showPullResult(prepared.result,prepared.player,selectedMode);
-        }finally{
-          machine?.classList?.remove("is-turning","is-revealing");
-          if(button?.isConnected)button.disabled=false;
-        }
+    let vendingRuntime=null;
+    function getVendingRuntime(){
+      if(!vendingRuntime)vendingRuntime=global.RoadToGloryVendingController.create({
+        getCampaign:()=>campaign,getSeasonDb:()=>seasonDb,activeSeasonId,activeConfig,
+        gacha,accessibleCards,runView,openModal:deps.openModal,getModalRoot:deps.getModalRoot,
+        closeModal:deps.closeModal,renderAlbum,pull,id,openPlayerDetails:openRtgPlayerDetails,
       });
+      return vendingRuntime;
     }
-    function showPullResult(result,player,mode="team"){
-      if(!result||!player)return null;
-      deps.openModal?.(runView.pullResultMarkup(result,player,seasonDb),{
-        className:"rtg-modal rtg-pull-modal",
-        onClose:()=>openVending(mode),
-      });
-      const modalRoot=deps.getModalRoot?.();
-      modalRoot?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",event=>{
-        const playerId=id(event.currentTarget?.dataset?.rtgPullPlayerDetail||result.playerId);
-        if(!playerId)return;
-        openRtgPlayerDetails(playerId,"",{
-          onClose:()=>showPullResult(result,player),
-        });
-      });
-      modalRoot?.querySelector?.("[data-rtg-pull-continue]")?.addEventListener("click",()=>{
-        deps.closeModal?.();
-      });
-      return result;
-    }
+    function openVending(mode="team"){return getVendingRuntime().openVending(mode);}
+    function showPullResult(result,player,mode="team"){return getVendingRuntime().showPullResult(result,player,mode);}
+
     async function pull(options={}){
       let result=null;const mode=options?.mode==="recruitment"?"recruitment":"team";
       campaign=await repository.update("rtg-gacha-pull",current=>{
