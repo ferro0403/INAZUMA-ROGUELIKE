@@ -1,6 +1,6 @@
 "use strict";
 const assert=require("assert"),fs=require("fs");
-const ctl=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const ctl=["js/road-to-glory/rtg-squad-controller.js","js/road-to-glory/rtg-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n").replaceAll("deps.","");
 assert(ctl.includes("function canonicalCardPlayerId(cardRef)"));
 assert(ctl.includes("function openRtgVersionPicker(cardIds=[],options={})"));
 assert(ctl.includes("const groups=new Map()"));

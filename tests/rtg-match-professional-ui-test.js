@@ -98,7 +98,7 @@ assert.match(css,/\.rtg-duel-card\.is-user-possession/);
 assert.match(css,/\.rtg-duel-card\.is-opponent-possession/);
 assert.match(css,/\.rtg-halftime-break-banner/);
 assert.match(css,/\.rtg-match-scoreboard \.rtg-abandon-button/);
-const controllerSource=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const controllerSource=["js/road-to-glory/rtg-controller.js","js/road-to-glory/rtg-match-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n").replaceAll("deps.","");
 assert.match(controllerSource,/userUsedMove:choice==="move"/);
 assert.match(controllerSource,/aiUsedMove:before\.aiChoice==="move"/);
 console.log("rtg-match-professional-ui-test: PASS");

@@ -1,6 +1,6 @@
 "use strict";
 const assert=require("assert"),fs=require("fs");
-const src=["js/road-to-glory/rtg-squad-slot-runtime.js","js/road-to-glory/rtg-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n").replaceAll("deps.","");
+const src=["js/road-to-glory/rtg-squad-slot-runtime.js","js/road-to-glory/rtg-squad-controller.js","js/road-to-glory/rtg-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n").replaceAll("deps.","");
 assert(src.includes('const RTG_SQUAD_SLOTS_KEY="inazuma.rtg.squad-slots.v2"'));
 assert(src.includes('function squadSlotsKey(seasonId=activeSeasonId())'));
 assert(src.includes('RTG_SQUAD_SLOTS_KEY}.'));

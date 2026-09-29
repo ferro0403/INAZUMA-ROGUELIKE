@@ -1,6 +1,6 @@
 "use strict";
 const assert=require("assert"),fs=require("fs");
-const src=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const src=["js/road-to-glory/rtg-squad-controller.js","js/road-to-glory/rtg-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n").replaceAll("deps.","");
 const start=src.indexOf("function seasonTeamIdsForPlayer");
 const end=src.indexOf("function requirementPool",start);
 assert(start>=0&&end>start);

@@ -1,0 +1,15 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const index=fs.readFileSync("index.html","utf8");
+for(const file of ["rtg-squad-controller.js","rtg-match-controller.js","rtg-controller.js"])assert(index.includes(file),`${file} registered`);
+assert(index.indexOf("rtg-squad-controller.js")<index.indexOf("rtg-controller.js"));
+assert(index.indexOf("rtg-match-controller.js")<index.indexOf("rtg-controller.js"));
+const context={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON,Promise,Error,TypeError};context.globalThis=context;vm.createContext(context);
+for(const file of ["js/road-to-glory/rtg-squad-controller.js","js/road-to-glory/rtg-match-controller.js"])vm.runInContext(fs.readFileSync(file,"utf8"),context,{filename:file});
+const squad=context.RoadToGlorySquadController.create({clone:value=>value,squadDraft:null});
+for(const method of ["renderSquad","saveSquad","openRtgCatalog","swapSquadDraft","canUseDraftFormation","arrangeDraftForFormation","openSquadPlayerPicker","adaptSquadToCurrentRequirements","getDraftSquad"])assert.strictEqual(typeof squad[method],"function",`squad ${method}`);
+const match=context.RoadToGloryMatchController.create({});
+for(const method of ["nodeById","openNode","startMatch","confirmPreMatch","chooseEncounter","continueEncounterFlow","confirmHalftime","choosePenalty","abandonMatch","renderMatch","applyTerminal","showMatchResult","clearMatchFlowTimer"])assert.strictEqual(typeof match[method],"function",`match ${method}`);
+const source=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+for(const field of ["campaign","squadDraft","activeSquadSlot","halftimeDraft","matchFlowTimer","displayedMinute","selectedEncounterChoice","selectedEncounterId"])assert(source.includes(`${field}:{get:`),`${field} must delegate to the facade-owned state`);
+console.log("rtg-orchestration-split-contract-test: load order, APIs and single mutable state PASS");

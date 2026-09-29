@@ -10,7 +10,7 @@ for(const teamId of expected){
  assert(m.bossFormation||m.matchFormation,teamId+" must have an authored formation");
  assert.strictEqual(new Set(m.startingXIProfileIds).size,11,teamId+" XI contains duplicate profile ids");
 }
-const ctl=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const ctl=["js/road-to-glory/rtg-controller.js","js/road-to-glory/rtg-match-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n").replaceAll("deps.","");
 assert(ctl.includes("...(seasonDb?.specialMatches||[])"));
 assert(ctl.includes("const profileIds=Array.from(boss.startingXIProfileIds||[])"));
 assert(ctl.includes("boss.bossFormation||boss.matchFormation"));

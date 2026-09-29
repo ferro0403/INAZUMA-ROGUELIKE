@@ -5,7 +5,7 @@ function load(fake){
   const c={globalThis:null,window:null,console,Error,TypeError,Object,Array,String,Number,Promise,JSON,Math,RegExp,Set,Map,indexedDB:fake};
   c.globalThis=c;c.window=c;c.SeasonRegistry={normalizeSeasonId:v=>String(v),player:()=>null};c.ProfiledSeasonRuntime={canonicalPlayerId:(_s,p)=>String(p)};
   vm.createContext(c);
-  for(const file of["js/road-to-glory/rtg-card-identity.js","js/road-to-glory/rtg-storage.js","js/road-to-glory/rtg-state.js","js/road-to-glory/rtg-repository.js","js/road-to-glory/rtg-squad-slot-runtime.js","js/road-to-glory/rtg-season-transition-controller.js","js/road-to-glory/rtg-album-controller.js","js/road-to-glory/rtg-development-controller.js","js/road-to-glory/rtg-vending-controller.js","js/road-to-glory/rtg-controller.js"]) vm.runInContext(fs.readFileSync(file,"utf8"),c,{filename:file});
+  for(const file of["js/road-to-glory/rtg-card-identity.js","js/road-to-glory/rtg-storage.js","js/road-to-glory/rtg-state.js","js/road-to-glory/rtg-repository.js","js/road-to-glory/rtg-squad-slot-runtime.js","js/road-to-glory/rtg-season-transition-controller.js","js/road-to-glory/rtg-album-controller.js","js/road-to-glory/rtg-development-controller.js","js/road-to-glory/rtg-vending-controller.js","js/road-to-glory/rtg-squad-controller.js","js/road-to-glory/rtg-match-controller.js","js/road-to-glory/rtg-controller.js"]) vm.runInContext(fs.readFileSync(file,"utf8"),c,{filename:file});
   return c;
 }
 function appStub(){return{innerHTML:"",querySelector:()=>null,querySelectorAll:()=>[]};}

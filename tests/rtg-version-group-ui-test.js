@@ -40,11 +40,11 @@ assert.match(picker,/rtg-picker-player-card/,"version chooser must reuse the lar
 assert.match(picker,/rtg-version-player-card/,"version chooser must keep its dedicated interaction hook");
 assert.doesNotMatch(picker,/rtg-version-choice/,"old grey version buttons must be gone");
 
-const controller=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const controller=["js/road-to-glory/rtg-squad-controller.js","js/road-to-glory/rtg-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n").replaceAll("deps.","");
 assert.match(controller,/const buildGroups=\(cardIds\)=>Array\.from\(groupVersionCards\(cardIds\)\.entries\(\)\)/,"replacement picker must group canonical versions before rendering");
 assert.match(controller,/versionCount:group\.cardIds\.length/,"replacement picker must mark unified cards");
 assert.match(controller,/openRtgVersionPicker\(versions,\{onSelect:chooseCandidate\}\)/,"choosing a unified card in a squad change must open the version selector");
 assert.match(controller,/Resolve\/render every version only after the unified player card is opened/,"all versions must stay lazy until the group is opened");
-assert.match(controller,/deps\.closeModal\?\.\(\);[\s\S]*openRtgPlayerDetails\(selected\)/,"catalog version selection must close the chooser before opening details");
+assert.match(controller,/closeModal\?\.\(\);[\s\S]*openRtgPlayerDetails\(selected\)/,"catalog version selection must close the chooser before opening details");
 
 console.log("rtg-version-group-ui-test: PASS");

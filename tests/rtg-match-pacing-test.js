@@ -1,6 +1,6 @@
 "use strict";
 const assert=require("assert"),fs=require("fs");
-const controller=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const controller=["js/road-to-glory/rtg-controller.js","js/road-to-glory/rtg-match-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n").replaceAll("deps.","");
 const view=fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8");
 const css=fs.readFileSync("css/road-to-glory.css","utf8");
 assert.match(controller,/ENCOUNTER_REVEAL_DELAY_MS\s*=\s*2200/);
