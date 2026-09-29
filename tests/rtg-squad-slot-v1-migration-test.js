@@ -1,6 +1,6 @@
 "use strict";
 const assert=require("assert"),fs=require("fs");
-const src=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const src=["js/road-to-glory/rtg-squad-slot-runtime.js","js/road-to-glory/rtg-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n");
 assert(src.includes('RTG_LEGACY_SQUAD_SLOTS_KEY="inazuma.rtg.squad-slots.v1"'));
 const start=src.indexOf("function readSquadSlots");
 const end=src.indexOf("function writeSquadSlots",start);

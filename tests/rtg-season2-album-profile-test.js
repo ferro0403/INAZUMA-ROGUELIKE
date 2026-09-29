@@ -1,7 +1,7 @@
 "use strict";
 const assert=require("assert"),fs=require("fs");
-const ctl=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
-const view=fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8");
+const ctl=["js/road-to-glory/rtg-album-controller.js","js/road-to-glory/rtg-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n").replaceAll("deps.","");
+const view=["js/road-to-glory/rtg-album-view.js","js/road-to-glory/rtg-run-view.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n");
 assert(ctl.includes("db?.requiresProfileAwareRuntime"));
 assert(ctl.includes("db?.profiles||[]"));
 assert(ctl.includes("profileIds.length?profileIds:playerIds"));
@@ -12,7 +12,7 @@ assert(ctl.includes('renderAlbumTeams(button.dataset.rtgAlbumCollection)'));
 assert(ctl.includes('app?.querySelector?.("[data-rtg-album-back]")?.addEventListener("click",()=>renderAlbumTeams(sid))'));
 assert(ctl.includes('const albumRoster=app?.querySelector?.("[data-rtg-album-roster]")'));
 assert(ctl.includes('origin?.closest?.("[data-rtg-album-player-entry]")'));
-assert(ctl.includes('openRtgPlayerDetails(cardId,"",{mode:"album",albumUnlocked:unlocked.has(cardId)})'));
+assert(ctl.includes('openPlayerDetails(cardId,"",{mode:"album",albumUnlocked:unlocked.has(cardId)})'));
 assert(view.includes('data-rtg-album-collection="${escape(sid)}"'));
 assert(view.includes('Inazuma Eleven ${seasonNo}'));
 assert(view.includes("RTG_ALBUM_S2_COVER_URL"));

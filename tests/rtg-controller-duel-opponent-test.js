@@ -1,7 +1,7 @@
 "use strict";
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON,Promise,Error,TypeError};c.globalThis=c;vm.createContext(c);
-vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8"),c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-slot-runtime.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-season-transition-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-album-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-development-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-vending-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8"),c);
 const p=(id,role)=>({playerId:id,name:id,normalizedRole:role,position:role,overall:80});
 const userLineup=[p("ug","GK"),p("u1","DF"),p("u2","DF"),p("u3","DF"),p("u4","DF"),p("um1","MF"),p("um2","MF"),p("um3","MF"),p("uf1","FW"),p("uf2","FW"),p("uf3","FW")];
 const userBench=[p("ubg","GK"),p("ubd","DF"),p("ubm","MF"),p("ubf","FW")];

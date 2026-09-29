@@ -3135,8 +3135,8 @@
 }
 .rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card .player-portrait-wrap{
   height:76px!important;
-  padding:5px 4px 0!important;
-  overflow:visible!important;
+  padding:5px 4px 4px!important;
+  overflow:hidden!important;
 }
 .rtg-pull-result.development-squad-card-scope .rtg-pull-card-stage .rtg-picker-squad-card img.player-portrait{
   width:100%!important;

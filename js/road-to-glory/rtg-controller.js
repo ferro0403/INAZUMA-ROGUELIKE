@@ -39,12 +39,6 @@
     let displayedMinute=0;
     let selectedEncounterChoice=null;
     let selectedEncounterId=null;
-    let selectedAlbumSeasonId="ie1";
-    let selectedDevelopmentCardId=null;
-    let developmentQuery="";
-    let developmentRarity="Tutti";
-    let developmentVisibleCount=24;
-    const DEVELOPMENT_PLAYER_PAGE_SIZE=24;
     const SQUAD_PICKER_PAGE_SIZE=24;
     const ENCOUNTER_REVEAL_DELAY_MS=2200;
     const FINAL_COMPARISON_DELAY_MS=1700;
@@ -52,44 +46,20 @@
     const schedule=deps.setTimeout||global.setTimeout;
     const cancelSchedule=deps.clearTimeout||global.clearTimeout;
     const DEV_MODE=deps.devMode===true||(typeof global.URLSearchParams==="function"&&new global.URLSearchParams(global.location?.search||"").get("dev")==="1");
-    const RTG_ALBUM_STORAGE_KEY="inazuma.rtg.album.v1";
-    const RTG_SQUAD_SLOTS_KEY="inazuma.rtg.squad-slots.v2";
-    const RTG_LEGACY_SQUAD_SLOTS_KEY="inazuma.rtg.squad-slots.v1";
     let activeSquadSlot=1;
-    const RTG_ACTIVE_SQUAD_SLOT_KEY="inazuma.rtg.active-squad-slot.v1";
-    function squadSlotsKey(seasonId=activeSeasonId()){return `${RTG_SQUAD_SLOTS_KEY}.${id(seasonId||"ie1")}`;}
-    function readSquadSlots(seasonId=activeSeasonId()){
-      try{
-        const sid=id(seasonId||"ie1"),key=squadSlotsKey(sid),raw=global.localStorage?.getItem?.(key);
-        if(raw){const parsed=JSON.parse(raw);return parsed&&typeof parsed==="object"?parsed:{};}
-        // One-time compatibility bridge: old previews stored all three S1 slots
-        // in the unsuffixed v1 key. Import them only into S1; never into S2.
-        if(sid==="ie1"){
-          const legacyRaw=global.localStorage?.getItem?.(RTG_LEGACY_SQUAD_SLOTS_KEY);
-          if(legacyRaw){
-            const legacy=JSON.parse(legacyRaw);
-            if(legacy&&typeof legacy==="object"){
-              global.localStorage?.setItem?.(key,JSON.stringify(legacy));
-              return legacy;
-            }
-          }
-        }
-        return{};
-      }catch(_e){return{}}
+    let squadSlotRuntime=null;
+    function getSquadSlotRuntime(){
+      if(!squadSlotRuntime)squadSlotRuntime=global.RoadToGlorySquadSlotRuntime.create({
+        localStorage:global.localStorage,id,clone,activeSeasonId,activeSquad,getCampaign:()=>campaign,getSquadDraft:()=>squadDraft,
+      });
+      return squadSlotRuntime;
     }
-    function writeSquadSlots(slots,seasonId=activeSeasonId()){try{global.localStorage?.setItem?.(squadSlotsKey(seasonId),JSON.stringify(slots||{}));}catch(_e){}}
-    function storeSquadSlot(slot,squad){const slots=readSquadSlots();slots[String(slot)]=clone(squad);writeSquadSlots(slots);}
-    function readActiveSquadSlot(){try{return Math.max(1,Math.min(3,Number(global.localStorage?.getItem?.(RTG_ACTIVE_SQUAD_SLOT_KEY))||1));}catch(_e){return 1}}
-    function writeActiveSquadSlot(slot){try{global.localStorage?.setItem?.(RTG_ACTIVE_SQUAD_SLOT_KEY,String(slot));}catch(_e){}}
-    function squadForSlot(slot){
-      const slots=readSquadSlots();
-      const saved=slots?.[String(slot)];
-      if(saved)return clone(saved);
-      /* Only slot 1 inherits the legacy campaign squad. New slots must start as
-         independent snapshots, never aliases of whatever squad is currently official. */
-      if(Number(slot)===1)return clone(activeSquad(campaign)||squadDraft);
-      return clone(slots?.["1"]||activeSquad(campaign)||squadDraft);
-    }
+    function readSquadSlots(seasonId){return getSquadSlotRuntime().readSquadSlots(seasonId);}
+    function writeSquadSlots(slots,seasonId){return getSquadSlotRuntime().writeSquadSlots(slots,seasonId);}
+    function storeSquadSlot(slot,squad){return getSquadSlotRuntime().storeSquadSlot(slot,squad);}
+    function readActiveSquadSlot(){return getSquadSlotRuntime().readActiveSquadSlot();}
+    function writeActiveSquadSlot(slot){return getSquadSlotRuntime().writeActiveSquadSlot(slot);}
+    function squadForSlot(slot){return getSquadSlotRuntime().squadForSlot(slot);}
     async function selectSquadSlot(slot){
       const next=Math.max(1,Math.min(3,Number(slot)||1));
       if(next===activeSquadSlot)return;
@@ -100,28 +70,22 @@
       return renderSquad();
     }
 
-    function readRtgAlbum(){
-      try{
-        const raw=global.localStorage?.getItem?.(RTG_ALBUM_STORAGE_KEY);
-        const parsed=raw?JSON.parse(raw):{};
-        return {cardIds:Array.from(new Set(Array.isArray(parsed?.cardIds)?parsed.cardIds.map(id).filter(Boolean):[]))};
-      }catch(_error){return {cardIds:[]};}
+
+    let albumController=null;
+    function getAlbumController(){
+      if(!albumController)albumController=global.RoadToGloryAlbumController.create({
+        app,localStorage:global.localStorage,id,cardMeta,acquiredCardIdSet,getCampaign:()=>campaign,
+        getSeasonDb:()=>seasonDb,getFreeAgentsDb:()=>freeAgentsDb,activeSeasonId,config,cardIdentity,
+        playerResolver,ensureSeason1Db:deps.ensureSeason1Db,ensureData,renderHtml,runView,
+        mountDevQuickTools,renderHome:deps.renderHome,openPlayerDetails:openRtgPlayerDetails,
+      });
+      return albumController;
     }
-    function writeRtgAlbum(cardIds){
-      const normalized=Array.from(new Set(Array.from(cardIds||[]).map(id).filter(Boolean)));
-      try{global.localStorage?.setItem?.(RTG_ALBUM_STORAGE_KEY,JSON.stringify({version:1,cardIds:normalized}));}catch(_error){}
-      return normalized;
-    }
-    function rememberRtgAlbumCard(cardRef){
-      const cardId=cardMeta(cardRef).cardId;
-      if(!cardId)return readRtgAlbum().cardIds;
-      return writeRtgAlbum([...readRtgAlbum().cardIds,cardId]);
-    }
-    function syncCurrentPullsIntoAlbum(){
-      const current=Array.from(acquiredCardIdSet(campaign));
-      if(!current.length)return readRtgAlbum().cardIds;
-      return writeRtgAlbum([...readRtgAlbum().cardIds,...current]);
-    }
+    function rememberRtgAlbumCard(cardRef){return getAlbumController().rememberRtgAlbumCard(cardRef);}
+    function syncCurrentPullsIntoAlbum(){return getAlbumController().syncCurrentPullsIntoAlbum();}
+    function renderAlbum(){return getAlbumController().renderAlbum();}
+    function renderAlbumTeams(seasonId){return getAlbumController().renderAlbumTeams(seasonId);}
+    function renderAlbumRoster(teamId,seasonId){return getAlbumController().renderAlbumRoster(teamId,seasonId);}
 
     function matchTimelineAnchor(){
       if(!app)return null;
@@ -365,7 +329,7 @@
             state.furthestNodeIndex=Math.max(0,previousNodes.length-1);state.seasonComplete=true;
             state.defeatedTeamIds=Array.from(previousConfig.mainTeams||[]);state.lives=Number(previousConfig.livesPerCheckpoint)||2;state.activeMatch=null;return state;
           });
-          seasonDb=previousDb;selectedAlbumSeasonId=previousId;initSquadDraft();deps.toast?.(`DEV: ritorno alla Season ${previousConfig.seasonNumber}`);renderRun();
+          seasonDb=previousDb;getAlbumController().setSelectedSeason(previousId);initSquadDraft();deps.toast?.(`DEV: ritorno alla Season ${previousConfig.seasonNumber}`);renderRun();
         });
         panel.querySelector('[data-dev-rtg="halftime"]')?.addEventListener("click",()=>devJumpMatchBoundary("halftime"));
         panel.querySelector('[data-dev-rtg="extra"]')?.addEventListener("click",()=>devJumpMatchBoundary("extra"));
@@ -470,158 +434,18 @@
       });
       return campaign;
     }
-    function developmentRoleVariant(cardId){
-      const variants=squadDraft?.activeRoleVariantByCardId||activeSquad(campaign)?.activeRoleVariantByCardId||{};
-      return variants?.[id(cardId)]||null;
-    }
-    function developmentCardIds(state=campaign){
-      if(!economy)return[];
-      return Array.from(economy.ownedCardIds(state)||[]).filter((cardId)=>economy.isEligibleOwnedCard(state,cardId));
-    }
-    function developmentPlayers(){
-      return developmentCardIds().map((cardId)=>resolved(cardId,developmentRoleVariant(cardId))).filter(Boolean)
-        .sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"it"));
-    }
-    function filteredDevelopmentPlayers(players){
-      const needle=String(developmentQuery||"").trim().toLocaleLowerCase("it");
-      return players.filter((player)=>{
-        const matchesName=!needle||String(player.name||"").toLocaleLowerCase("it").includes(needle);
-        const matchesRarity=developmentRarity==="Tutti"||String(player.category||"")===developmentRarity;
-        return matchesName&&matchesRarity;
+    let developmentController=null;
+    function getDevelopmentController(){
+      if(!developmentController)developmentController=global.RoadToGloryDevelopmentController.create({
+        app,economy,economyView,repository,id,getCampaign:()=>campaign,setCampaign:(next)=>{campaign=next;},
+        getSquadDraft:()=>squadDraft,activeSquad,resolved,resolvedStandard,resolvedWithDevelopment,
+        renderRun,renderHtml,mountDevQuickTools,openPlayerDetails:openRtgPlayerDetails,
+        renderHome:deps.renderHome,toast:deps.toast,openModal:deps.openModal,getModalRoot:deps.getModalRoot,closeModal:deps.closeModal,
       });
+      return developmentController;
     }
-    function developmentModelFor(cardId){
-      const key=id(cardId);
-      if(!key||!economy)return null;
-      const player=resolved(key,developmentRoleVariant(key));
-      const standard=resolvedStandard(key,developmentRoleVariant(key));
-      if(!player||!standard)return null;
-      const preview=economy.previewEvolution(campaign,{
-        cardId:key,
-        basePotential:Number(standard.potential??standard.finalOverall??standard.overall??0),
-        baseRarity:standard.category,
-      });
-      let after=null;
-      if(preview?.ok){
-        const developmentByCardId={...(campaign?.developmentByCardId||{}),[key]:{
-          ...(campaign?.developmentByCardId?.[key]||{}),
-          targetPotential:preview.targetPotential,
-          currentRarity:preview.target,
-        }};
-        after=resolvedWithDevelopment(key,developmentRoleVariant(key),developmentByCardId);
-      }
-      return {player,standard,preview,after};
-    }
-    function renderShop(options={}){
-      if(!economyView||!economy)return renderRun();
-      selectedDevelopmentCardId=null;
-      renderHtml(economyView.shopMarkup({state:campaign}),{preserveScroll:options.preserveScroll===true});
-      app?.querySelector?.("[data-rtg-economy-back]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
-      app?.querySelector?.("[data-rtg-open-development]")?.addEventListener("click",()=>renderDevelopment("players"));
-      app?.querySelectorAll?.("[data-rtg-buy-project]")?.forEach((button)=>button.addEventListener("click",async()=>{
-        if(button.disabled)return;
-        const shopScrollY=Number(global.scrollY||global.pageYOffset||0);
-        button.disabled=true;
-        let outcome=null;
-        campaign=await repository.update("rtg-buy-project",current=>{
-          outcome=economy.purchaseProject(current,button.dataset.rtgBuyProject);
-          return outcome?.ok?outcome.state:current;
-        });
-        deps.toast?.(outcome?.ok?"PROGETTO ACQUISTATO":outcome?.reason==="tokens"?"GETTONI RTG INSUFFICIENTI":"ACQUISTO NON COMPLETATO",outcome?.ok?undefined:"error");
-        renderShop({preserveScroll:true});
-        const restoreShopScroll=()=>global.scrollTo?.(0,shopScrollY);
-        if(typeof global.requestAnimationFrame==="function")global.requestAnimationFrame(()=>global.requestAnimationFrame(restoreShopScroll));
-        else if(typeof global.setTimeout==="function")global.setTimeout(restoreShopScroll,0);
-        else restoreShopScroll();
-        return campaign;
-      }));
-      mountDevQuickTools();
-      return campaign;
-    }
-    function bindDevelopmentGrid(players){
-      const results=app?.querySelector?.("[data-rtg-development-results]");
-      if(!results)return;
-      const refresh=()=>{
-        const filtered=filteredDevelopmentPlayers(players);
-        const visible=filtered.slice(0,developmentVisibleCount);
-        const remaining=Math.max(0,filtered.length-visible.length);
-        results.innerHTML=economyView.playerGrid(visible)+(remaining>0?`<div class="development-load-more-wrap"><button type="button" class="btn btn-yellow development-load-more" data-rtg-development-load-more><span>MOSTRA ALTRI <b>${Math.min(DEVELOPMENT_PLAYER_PAGE_SIZE,remaining)}</b></span><small>${visible.length} di ${filtered.length}</small></button></div>`:"");
-      };
-      results.onclick=(event)=>{
-        const loadMore=event.target?.closest?.("[data-rtg-development-load-more]");
-        if(loadMore){developmentVisibleCount+=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();return;}
-        const element=event.target?.closest?.("[data-rtg-development-player]");
-        if(!element)return;
-        selectedDevelopmentCardId=id(element.dataset.rtgDevelopmentPlayer);
-        renderDevelopment("players");
-      };
-      const search=app?.querySelector?.("[data-rtg-development-search]");
-      search?.addEventListener("input",(event)=>{developmentQuery=event.currentTarget.value||"";developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();});
-      app?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",(event)=>{developmentRarity=event.currentTarget.value||"Tutti";developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();});
-      refresh();
-    }
-    function renderDevelopment(tab="players"){
-      if(!economyView||!economy)return renderRun();
-      const players=developmentPlayers();
-      if(selectedDevelopmentCardId&&!players.some((player)=>id(player.cardId||player.playerId)===id(selectedDevelopmentCardId)))selectedDevelopmentCardId=null;
-      const selected=selectedDevelopmentCardId?developmentModelFor(selectedDevelopmentCardId):null;
-      const filtered=filteredDevelopmentPlayers(players);
-      renderHtml(economyView.developmentMarkup({
-        state:campaign,
-        players,
-        filteredPlayers:filtered,
-        selected,
-        tab,
-        query:developmentQuery,
-        rarity:developmentRarity,
-      }));
-      app?.querySelector?.("[data-rtg-economy-back]")?.addEventListener("click",()=>{
-        selectedDevelopmentCardId=null;
-        deps.renderHome?.({initialPage:"rtg"});
-      });
-      app?.querySelectorAll?.("[data-rtg-development-tab]")?.forEach((button)=>button.addEventListener("click",()=>renderDevelopment(button.dataset.rtgDevelopmentTab)));
-      app?.querySelector?.("[data-rtg-open-shop]")?.addEventListener("click",()=>renderShop());
-      app?.querySelectorAll?.("[data-rtg-change-development-player]")?.forEach((button)=>button.addEventListener("click",()=>{
-        selectedDevelopmentCardId=null;
-        renderDevelopment("players");
-      }));
-      app?.querySelector?.("[data-rtg-development-selected-card]")?.addEventListener("click",()=>openRtgPlayerDetails(selectedDevelopmentCardId));
-      app?.querySelector?.("[data-rtg-prepare-evolution]")?.addEventListener("click",()=>openEvolutionConfirmation());
-      if(!selectedDevelopmentCardId&&tab==="players")bindDevelopmentGrid(players);
-      mountDevQuickTools();
-      return campaign;
-    }
-    function openEvolutionConfirmation(){
-      const model=developmentModelFor(selectedDevelopmentCardId);
-      if(!model?.preview?.ok||!model.preview.ready)return deps.toast?.("RISORSE RTG INSUFFICIENTI","error");
-      deps.openModal?.(economyView.evolutionConfirmMarkup(model),{closeable:false,className:"development-confirm-modal rtg-development-confirm-modal"});
-      const modalRoot=deps.getModalRoot?.();
-      modalRoot?.querySelector?.("[data-rtg-cancel-evolution]")?.addEventListener("click",()=>deps.closeModal?.());
-      modalRoot?.querySelector?.("[data-rtg-confirm-evolution]")?.addEventListener("click",async(event)=>{
-        const button=event.currentTarget;
-        if(button.disabled)return;
-        button.disabled=true;
-        let outcome=null;
-        const basePotential=Number(model.standard.potential??model.standard.finalOverall??model.standard.overall??0);
-        const baseRarity=model.standard.category;
-        campaign=await repository.update("rtg-evolve-card",current=>{
-          outcome=economy.evolve(current,{
-            cardId:selectedDevelopmentCardId,
-            basePotential,
-            baseRarity,
-            expectedTarget:model.preview.target,
-          });
-          return outcome?.ok?outcome.state:current;
-        });
-        deps.closeModal?.({invokeOnClose:false});
-        if(!outcome?.ok){
-          deps.toast?.(outcome?.reason==="stale"?"EVOLUZIONE CAMBIATA: RIPROVA":"RISORSE RTG CAMBIATE: EVOLUZIONE NON COMPLETATA","error");
-          return renderDevelopment("players");
-        }
-        deps.toast?.(`${model.player.name}: ${outcome.target}`);
-        return renderDevelopment("players");
-      });
-    }
+    function renderShop(options={}){return getDevelopmentController().renderShop(options);}
+    function renderDevelopment(tab="players"){return getDevelopmentController().renderDevelopment(tab);}
 
     function bindHomeAndTabs(){
       app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
@@ -643,739 +467,56 @@
       mountDevQuickTools();
       return campaign;
     }
-    async function enterNextSeason(){
-      const fromId=activeSeasonId(),fromConfig=config.season?.(fromId),nextSeasonId=id(fromConfig?.nextSeasonId);
-      if(!nextSeasonId||!campaign?.seasonComplete)return campaign;
-      const nextConfig=config.season?.(nextSeasonId);
-      const nextDb=await global.SeasonRegistry?.loadDatabase?.(nextSeasonId);
-      if(!nextDb||!nextConfig)throw new Error(`Database ${nextSeasonId} non disponibile`);
-      const firstNode=config.buildSeasonNodes(nextSeasonId)?.[0]?.id;
-      let transitionRewarded=false;
-      campaign=await repository.update("rtg-enter-next-season",current=>{
-        if(id(current.activeSeasonId)!==fromId||!current.seasonComplete)return current;
-        const rewardId=`${fromId}->${nextSeasonId}`;
-        current.seasonTransitionRewardedIds=Array.from(new Set(current.seasonTransitionRewardedIds||[]));
-        if(!current.seasonTransitionRewardedIds.includes(rewardId)){
-          current.tokens=Math.max(0,Number(current.tokens)||0)+Number(config.SEASON_TRANSITION_REWARD||1000);
-          current.seasonTransitionRewardedIds.push(rewardId);transitionRewarded=true;
-        }
-        const previous=clone(current.squads?.[fromId]||{formationId:null,lineup:[],bench:[],activeRoleVariantByCardId:{}});
-        current.activeSeasonId=nextSeasonId;current.seasonComplete=false;
-        current.lives=Number(nextConfig.livesPerCheckpoint)||2;current.checkpointMainIndex=-1;
-        current.currentNodeId=firstNode;current.furthestNodeIndex=0;current.defeatedTeamIds=[];
-        current.firstClearMatchIds=[];current.attemptsByNode={};current.activeMatch=null;
-        current.squads=current.squads||{};
-        current.squads[nextSeasonId]=current.squads[nextSeasonId]?.lineup?.length?current.squads[nextSeasonId]:previous;
-        return current;
+    let seasonTransitionController=null;
+    function enterNextSeason(){
+      if(!seasonTransitionController)seasonTransitionController=global.RoadToGlorySeasonTransitionController.create({
+        getCampaign:()=>campaign,activeSeasonId,config,id,repository,clone,renderRun,
+        applyTransition:({campaign:nextCampaign,seasonDb:nextDb,nextSeasonId,transitionRewarded})=>{
+          campaign=nextCampaign;seasonDb=nextDb;rawPlayerById=new Map();
+          for(const player of seasonDb?.players||[])rawPlayerById.set(id(player.playerId||player.id),player);
+          for(const profile of seasonDb?.profiles||[])rawPlayerById.set(id(profile.profileId||profile.id),profile);
+          progression?.setSeasonContext?.(campaign);
+          const nextSlots=readSquadSlots(nextSeasonId);
+          if(!nextSlots["1"]){const carried=clone(activeSquad(campaign));writeSquadSlots({"1":carried,"2":clone(carried),"3":clone(carried)},nextSeasonId);}
+          activeSquadSlot=1;writeActiveSquadSlot(1);squadDraft=squadForSlot(1);
+          if(transitionRewarded)deps.toast?.(`BONUS SEASON: +${Number(config.SEASON_TRANSITION_REWARD||1000)} GETTONI RTG`);
+        },
       });
-      seasonDb=nextDb;rawPlayerById=new Map();
-      for(const player of seasonDb?.players||[])rawPlayerById.set(id(player.playerId||player.id),player);
-      for(const profile of seasonDb?.profiles||[])rawPlayerById.set(id(profile.profileId||profile.id),profile);
-      progression?.setSeasonContext?.(campaign);
-      const nextSlots=readSquadSlots(nextSeasonId);
-      if(!nextSlots["1"]){const carried=clone(activeSquad(campaign));writeSquadSlots({"1":carried,"2":clone(carried),"3":clone(carried)},nextSeasonId);}
-      activeSquadSlot=1;writeActiveSquadSlot(1);squadDraft=squadForSlot(1);
-      if(transitionRewarded)deps.toast?.(`BONUS SEASON: +${Number(config.SEASON_TRANSITION_REWARD||1000)} GETTONI RTG`);
-      return renderRun();
-    }
-    function rtgAlbumEntries(){
-      syncCurrentPullsIntoAlbum();
-      return readRtgAlbum().cardIds.map(cardId=>playerResolver.resolveAtLevel20(cardId,campaign?.activeSeasonId||"ie1",null,freeAgentsDb)).filter(Boolean);
-    }
-    function rtgAlbumUnlockedSet(){
-      return new Set(readRtgAlbum().cardIds.map(id));
-    }
-    async function ensureAlbumSeasonDb(seasonId){
-      const sid=id(seasonId||"ie1");
-      const previous=global.SeasonRegistry?.activeId?.();
-      let db=global.SeasonRegistry?.database?.(sid)||null;
-      if(!db){
-        db=sid==="ie1"
-          ? await deps.ensureSeason1Db?.()
-          : await global.SeasonRegistry?.loadDatabase?.(sid);
-      }
-      if(previous&&previous!==sid)global.SeasonRegistry?.setActive?.(previous);
-      return db;
-    }
-    function albumConfigFor(seasonId){
-      const sid=id(seasonId||"ie1");
-      return config?.season?.(sid)||config.SEASON1;
-    }
-    function rtgAlbumTeams(seasonId=selectedAlbumSeasonId,albumDb=null){
-      const sid=id(seasonId||"ie1");
-      const db=albumDb||global.SeasonRegistry?.database?.(sid)||(sid===activeSeasonId()?seasonDb:null);
-      const unlocked=rtgAlbumUnlockedSet();
-      const configured=Array.from(albumConfigFor(sid)?.mainTeams||[]);
-      return configured.map(teamId=>{
-        const team=(db?.teams||[]).find(entry=>id(entry?.teamId||entry?.id)===id(teamId));
-        if(!team)return null;
-        const playerIds=Array.from(team?.playerIds||[]).map(id).filter(Boolean);
-        const profileIds=db?.requiresProfileAwareRuntime
-          ? Array.from(db?.profiles||[]).filter(profile=>id(profile?.teamId)===id(teamId)).map(profile=>id(profile?.profileId||profile?.id)).filter(Boolean)
-          : [];
-        const sourceIds=profileIds.length?profileIds:playerIds;
-        const cardIds=sourceIds.map(playerId=>db?.requiresProfileAwareRuntime
-          ? (cardIdentity?.cardIdForProfile?.(playerId,sid)||playerId)
-          : (cardIdentity?.cardIdForSeason?.(playerId,sid)||playerId));
-        return {seasonId:sid,teamId:id(teamId),teamName:team?.teamName||team?.name||teamId,logoUrl:team?.logoUrl||"",playerIds,profileIds,cardIds,total:cardIds.length,unlocked:cardIds.filter(cardId=>unlocked.has(cardId)).length};
-      }).filter(team=>team&&team.total>0);
-    }
-    function rtgAlbumTeamPlayers(team,seasonId=selectedAlbumSeasonId){
-      const sid=id(seasonId||team?.seasonId||"ie1");
-      return Array.from(team?.cardIds||[]).map(cardId=>playerResolver.resolveAtLevel20(cardId,sid,null,freeAgentsDb)).filter(Boolean);
-    }
-    async function albumCollectionSummary(seasonId){
-      const sid=id(seasonId||"ie1");
-      const db=await ensureAlbumSeasonDb(sid);
-      const teams=rtgAlbumTeams(sid,db);
-      return {
-        seasonId:sid,
-        unlocked:teams.reduce((sum,team)=>sum+(Number(team.unlocked)||0),0),
-        total:teams.reduce((sum,team)=>sum+(Number(team.total)||0),0),
-      };
-    }
-    async function renderAlbum(){
-      await ensureData();
-      syncCurrentPullsIntoAlbum();
-      const collections=await Promise.all((config.SEASON_IDS||["ie1"]).map(albumCollectionSummary));
-      renderHtml(runView.albumCollectionMarkup({state:campaign,collections}));
-      app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
-      app?.querySelectorAll?.("[data-rtg-album-collection]")?.forEach(button=>button.addEventListener("click",()=>renderAlbumTeams(button.dataset.rtgAlbumCollection)));
-      mountDevQuickTools();
-      return campaign;
-    }
-    async function renderAlbumTeams(seasonId=selectedAlbumSeasonId){
-      await ensureData();
-      syncCurrentPullsIntoAlbum();
-      const sid=(config.SEASON_IDS||[]).includes(id(seasonId))?id(seasonId):activeSeasonId();
-      selectedAlbumSeasonId=sid;
-      const db=await ensureAlbumSeasonDb(sid);
-      renderHtml(runView.albumTeamsMarkup({state:{...(campaign||{}),activeSeasonId:sid},seasonId:sid,teams:rtgAlbumTeams(sid,db)}));
-      app?.querySelector?.("[data-rtg-album-collection-back]")?.addEventListener("click",()=>renderAlbum());
-      app?.querySelectorAll?.("[data-rtg-album-team]")?.forEach(button=>button.addEventListener("click",()=>renderAlbumRoster(button.dataset.rtgAlbumTeam,sid)));
-      mountDevQuickTools();
-      return campaign;
-    }
-    async function renderAlbumRoster(teamId,seasonId=selectedAlbumSeasonId){
-      await ensureData();
-      syncCurrentPullsIntoAlbum();
-      const sid=(config.SEASON_IDS||[]).includes(id(seasonId))?id(seasonId):selectedAlbumSeasonId;
-      selectedAlbumSeasonId=sid;
-      const db=await ensureAlbumSeasonDb(sid);
-      const team=rtgAlbumTeams(sid,db).find(entry=>id(entry.teamId)===id(teamId));
-      if(!team)return renderAlbumTeams(sid);
-      const unlocked=rtgAlbumUnlockedSet();
-      const allEntries=rtgAlbumTeamPlayers(team,sid);
-      const entries=allEntries.filter(player=>unlocked.has(id(player?.cardId||player?.playerId||player?.id)));
-      renderHtml(runView.albumRosterMarkup({state:{...(campaign||{}),activeSeasonId:sid},seasonId:sid,team,entries,allEntries,database:db}));
-      app?.querySelector?.("[data-rtg-album-back]")?.addEventListener("click",()=>renderAlbumTeams(sid));
-      const albumRoster=app?.querySelector?.("[data-rtg-album-roster]");
-      albumRoster?.addEventListener("click",event=>{
-        const origin=typeof event.target?.closest==="function"?event.target:event.target?.parentElement;
-        const entry=origin?.closest?.("[data-rtg-album-player-entry]");
-        const cardButton=origin?.closest?.("[data-rtg-album-player-card]");
-        if(!entry&&!cardButton)return;
-        const wrapper=entry||cardButton?.closest?.("[data-rtg-album-player-entry]");
-        const cardId=id(wrapper?.dataset?.rtgAlbumPlayerEntry);
-        if(!cardId)return;
-        event.preventDefault?.();
-        openRtgPlayerDetails(cardId,"",{mode:"album",albumUnlocked:unlocked.has(cardId)});
-      });
-      mountDevQuickTools();
-      return campaign;
+      return seasonTransitionController.enterNextSeason();
     }
 
-    function draftState(){
-      const state=clone(campaign);
-      state.squads[activeSeasonId()]=clone(squadDraft||activeSquad(campaign));
-      return state;
-    }
-    function draftRosterIds(){
-      return Array.from(new Set([...(squadDraft?.lineup||[]),...(squadDraft?.bench||[])].map(id)));
-    }
-    function roleOfDraftPlayer(playerId){
-      const variant=squadDraft?.activeRoleVariantByCardId?.[id(playerId)]||null;
-      const player=resolved(playerId,variant);
-      return String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
-    }
-    function accessibleDraftIds(){
-      return accessibleCards(draftState()).map(id);
-    }
-    function canUseDraftFormation(formation){
-      if(!formation)return false;
-      const counts={GK:0,DF:0,MF:0,FW:0};
-      for(const playerId of accessibleDraftIds()){
-        const role=rawRole(playerId);
-        if(Object.prototype.hasOwnProperty.call(counts,role))counts[role]+=1;
-      }
-      return Object.entries(formation.requirements||{}).every(([role,amount])=>Number(counts[String(role).toUpperCase()]||0)>=Number(amount||0));
-    }
-    function arrangeDraftForFormation(formation){
-      if(!formation||!canUseDraftFormation(formation))return{ok:false,reason:"formation-incompatible"};
-      const currentLineup=new Set((squadDraft?.lineup||[]).map(id));
-      const currentBench=new Set((squadDraft?.bench||[]).map(id));
-      const accessible=accessibleDraftIds().map(playerId=>({
-        playerId,
-        role:rawRole(playerId),
-        overall:rawOverall(playerId),
-        priority:currentLineup.has(playerId)?0:currentBench.has(playerId)?1:2,
-      })).filter(entry=>["GK","DF","MF","FW"].includes(entry.role));
-      accessible.sort((a,b)=>a.priority-b.priority||b.overall-a.overall||rawName(a.playerId).localeCompare(rawName(b.playerId),"it"));
-      const slotRoles=Array.isArray(formation.slotRoles)&&formation.slotRoles.length
-        ? formation.slotRoles.map(role=>String(role).toUpperCase())
-        : Object.entries(formation.requirements||{}).flatMap(([role,amount])=>Array.from({length:Number(amount)||0},()=>String(role).toUpperCase()));
-      const used=new Set(),lineup=[];
-      for(const role of slotRoles){
-        const candidate=accessible.find(entry=>entry.role===role&&!used.has(entry.playerId));
-        if(!candidate)return{ok:false,reason:"formation-incompatible"};
-        used.add(candidate.playerId);lineup.push(candidate.playerId);
-      }
-      if(lineup.length!==11)return{ok:false,reason:"formation-invalid-slots"};
-      const remaining=accessible.filter(entry=>!used.has(entry.playerId)).sort((a,b)=>{
-        const preserveA=currentLineup.has(a.playerId)||currentBench.has(a.playerId)?0:1;
-        const preserveB=currentLineup.has(b.playerId)||currentBench.has(b.playerId)?0:1;
-        return preserveA-preserveB||b.overall-a.overall||rawName(a.playerId).localeCompare(rawName(b.playerId),"it");
-      });
-      const bench=remaining.slice(0,4).map(entry=>entry.playerId);
-      if(bench.length!==4)return{ok:false,reason:"bench-unavailable"};
-      squadDraft={...squadDraft,formationId:id(formation.id),lineup,bench,activeRoleVariantByCardId:{...(squadDraft?.activeRoleVariantByCardId||{})}};
-      return{ok:true};
-    }
-    function openFormationSelector(model){
-      const body=`<div class="modal-head squad-formation-modal-head"><div><p class="eyebrow">Assetto tattico RTG</p><h2>Modifica modulo</h2><p class="muted">Scegli il modulo. I giocatori già in rosa hanno la precedenza; i posti mancanti vengono coperti dalla tua collezione.</p></div></div>${squadView.formationOptionsMarkup(model,canUseDraftFormation)}`;
-      deps.openModal?.(body,{className:"squad-formation-modal rtg-formation-modal"});
-      deps.getModalRoot?.()?.querySelectorAll?.("[data-rtg-formation-option]")?.forEach(button=>button.addEventListener("click",()=>{
-        if(button.disabled)return;
-        const formation=(model.formations||[]).find(item=>id(item.id)===id(button.dataset.rtgFormationOption));
-        const result=arrangeDraftForFormation(formation);
-        if(!result.ok){deps.toast?.("Non ci sono abbastanza giocatori sbloccati nei ruoli richiesti","error");return;}
-        deps.closeModal?.();
-        renderSquad();
-      }));
-    }
-    function squadPickerCandidateIds(targetId,role,{benchTarget=false}={}){
-      const accessible=accessibleCards(draftState()).map(id);
-      const rosterIds=new Set(draftRosterIds());
-      return accessible
-        .filter(playerId=>playerId!==id(targetId))
-        .filter(playerId=>!benchTarget||!rosterIds.has(playerId))
-        .filter(playerId=>!role||rawRole(playerId)===role)
-        .sort((a,b)=>rawOverall(b)-rawOverall(a)||rawName(a).localeCompare(rawName(b),"it"));
-    }
-    function squadPickerRarity(playerId){
-      return String(
-        playerResolver.rarity?.(playerId,"ie1",freeAgentsDb)
-        || rawPlayer(playerId)?.category
-        || resolved(playerId,squadDraft?.activeRoleVariantByCardId?.[id(playerId)]||null)?.category
-        || ""
-      ).trim();
-    }
-    function squadPickerRarityOptions(){
-      return ["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"];
-    }
 
-    function openSquadPlayerPicker(targetId){
-      const targetLoc=locationInDraft(targetId);
-      if(!targetLoc)return;
-      const strictRole=targetLoc.area==="lineup";
-      const role=strictRole?roleOfDraftPlayer(targetId):"";
-      if(strictRole&&!role)return deps.toast?.("Ruolo giocatore non disponibile","error");
-      const quickEntries=strictRole
-        ? (squadDraft?.bench||[]).map(id).filter(playerId=>roleOfDraftPlayer(playerId)===role).map(playerId=>({
-            playerId,
-            source:sourceForDraftPlayer(playerId),
-            player:resolved(playerId,squadDraft?.activeRoleVariantByCardId?.[playerId]||null),
-          })).filter(entry=>entry.player)
-        : [];
-      const quickIds=new Set(quickEntries.map(entry=>id(entry.playerId)));
-      // The full picker keeps one lightweight representative per canonical player.
-      // Other S1/S2 versions are resolved/rendered only when that grouped card is opened.
-      let candidateGroups=[];
-      let visibleCount=0;
-      let query="";
-      let sourceFilter="all";
-      let rarityFilter="all";
-      let overallDescending=true;
-      const rarityOptions=squadPickerRarityOptions();
-      const targetPlayer=resolved(targetId,squadDraft?.activeRoleVariantByCardId?.[id(targetId)]||null);
-      const target={playerId:id(targetId),source:sourceForDraftPlayer(targetId),player:targetPlayer};
-      const buildGroups=(cardIds)=>Array.from(groupVersionCards(cardIds).entries()).map(([key,cardIds])=>({
-        key,
-        cardIds,
-        representativeId:preferredVersionCardId(cardIds),
-      })).filter(group=>group.representativeId);
-      const filteredGroups=()=>candidateGroups.filter(group=>{
-        const playerId=group.representativeId;
-        const source=sourceForDraftPlayer(playerId);
-        if(sourceFilter==="free"&&source!=="Svincolato")return false;
-        if(sourceFilter==="rtg"&&source!=="RTG")return false;
-        if(rarityFilter!=="all"&&!group.cardIds.some(cardId=>squadPickerRarity(cardId).toLocaleLowerCase("it")===rarityFilter.toLocaleLowerCase("it")))return false;
-        const needle=query.trim().toLocaleLowerCase("it");
-        if(needle&&!rawName(playerId).toLocaleLowerCase("it").includes(needle))return false;
-        return true;
-      }).sort((a,b)=>{
-        const delta=rawOverall(b.representativeId)-rawOverall(a.representativeId);
-        return (overallDescending?delta:-delta)||rawName(a.representativeId).localeCompare(rawName(b.representativeId),"it");
-      });
-      const entries=()=>{
-        const groups=filteredGroups();
-        return groups.slice(0,visibleCount).map(group=>({
-          cardId:group.representativeId,
-          playerId:group.representativeId,
-          source:sourceForDraftPlayer(group.representativeId),
-          versionCount:group.cardIds.length,
-          player:resolved(group.representativeId,squadDraft?.activeRoleVariantByCardId?.[group.representativeId]||null),
-        })).filter(entry=>entry.player);
-      };
-      const chooseCandidate=(candidateId)=>{
-        const result=swapSquadDraft(targetId,candidateId,{render:false});
-        if(!result.ok)return deps.toast?.("Cambio non disponibile","error");
-        deps.closeModal?.();
-        renderSquad();
-        return result;
-      };
-      const renderResults=()=>{
-        const modal=deps.getModalRoot?.();
-        const groups=filteredGroups();
-        const results=modal?.querySelector?.("[data-rtg-picker-results]");
-        if(results)results.innerHTML=squadView.replacementPickerResultsMarkup({entries:entries(),total:groups.length,visibleCount});
-        modal?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(button=>button.classList.toggle("active",button.dataset.rtgPickerSource===sourceFilter));
-        bindResults();
-      };
-      const bindResults=()=>{
-        const modal=deps.getModalRoot?.();
-        modal?.querySelectorAll?.("[data-rtg-picker-player]")?.forEach(button=>button.addEventListener("click",()=>{
-          const representativeId=id(button.dataset.rtgPickerPlayer);
-          if(!representativeId)return;
-          const group=candidateGroups.find(entry=>entry.key===versionGroupKey(representativeId));
-          const versions=group?.cardIds||[representativeId];
-          if(versions.length>1){
-            openRtgVersionPicker(versions,{onSelect:chooseCandidate});
-            return;
-          }
-          chooseCandidate(representativeId);
-        }));
-        modal?.querySelector?.("[data-rtg-picker-load-more]")?.addEventListener("click",()=>{
-          visibleCount=Math.min(filteredGroups().length,visibleCount+SQUAD_PICKER_PAGE_SIZE);
-          renderResults();
+    let squadController=null;
+    function getSquadController(){
+      if(!squadController){
+        const context={
+          app,config,squadRuntime,runView,squadView,economy,repository,cardIdentity,playerResolver,
+          clone,id,activeSeasonId,activeConfig,activeSquad,resolved,resolvedStandard,resolvedWithDevelopment,resolvedSquad,playerResolverForState,bestPlayerIdsForRole,
+          rawRole,rawOverall,rawName,rawPlayer,cardMeta,accessibleCards,acquiredCardIdSet,sourceForDraftPlayer,detailDatabaseFor,openRtgPlayerDetails,
+          renderHtml,bindHomeAndTabs,mountDevQuickTools,readSquadSlots,writeSquadSlots,storeSquadSlot,readActiveSquadSlot,
+          writeActiveSquadSlot,squadForSlot,selectSquadSlot,freeAgentCardId,nodeById,openModal:deps.openModal,getModalRoot:deps.getModalRoot,
+          closeModal:deps.closeModal,toast:deps.toast,renderHome:deps.renderHome,getUserTeamMeta:deps.getUserTeamMeta,compactPlayerCardMarkup:deps.compactPlayerCardMarkup,
+        };
+        Object.defineProperties(context,{
+          campaign:{get:()=>campaign,set:value=>{campaign=value;}},squadDraft:{get:()=>squadDraft,set:value=>{squadDraft=value;}},
+          activeSquadSlot:{get:()=>activeSquadSlot,set:value=>{activeSquadSlot=value;}},seasonDb:{get:()=>seasonDb},
+          freeAgentsDb:{get:()=>freeAgentsDb},entitlementStatus:{get:()=>entitlementStatus},freeAgentIds:{get:()=>freeAgentIds},
         });
-      };
-      if(!deps.getModalRoot){
-        const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(id(playerId)));
-        candidateGroups=buildGroups(candidateIds);
-        visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateGroups.length);
+        squadController=global.RoadToGlorySquadController.create(context);
       }
-      deps.openModal?.(squadView.replacementPickerMarkup({target,role,allowAnyRole:!strictRole,quickEntries,entries:deps.getModalRoot?[]:entries(),total:deps.getModalRoot?0:candidateGroups.length,visibleCount:deps.getModalRoot?0:visibleCount,query,sourceFilter,rarityFilter,rarityOptions}),{className:"rtg-modal rtg-squad-picker-modal"});
-      const modal=deps.getModalRoot?.();
-      modal?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",event=>{
-        query=String(event.target?.value||"");
-        visibleCount=SQUAD_PICKER_PAGE_SIZE;
-        renderResults();
-      });
-      modal?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(button=>button.addEventListener("click",()=>{
-        sourceFilter=String(button.dataset.rtgPickerSource||"all");
-        visibleCount=SQUAD_PICKER_PAGE_SIZE;
-        renderResults();
-      }));
-      modal?.querySelector?.("[data-rtg-picker-rarity]")?.addEventListener("change",event=>{
-        rarityFilter=String(event.target?.value||"all");
-        visibleCount=SQUAD_PICKER_PAGE_SIZE;
-        renderResults();
-      });
-      modal?.querySelector?.("[data-rtg-picker-sort]")?.addEventListener("click",event=>{
-        overallDescending=!overallDescending;
-        visibleCount=SQUAD_PICKER_PAGE_SIZE;
-        const button=event.currentTarget;
-        button.textContent=overallDescending?"OVR ↓":"OVR ↑";
-        button.setAttribute("aria-label",overallDescending?"Ordina per overall decrescente":"Ordina per overall crescente");
-        button.setAttribute("aria-pressed",overallDescending?"true":"false");
-        renderResults();
-      });
-      bindResults();
-      const hydratePicker=()=>{
-        const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(id(playerId)));
-        candidateGroups=buildGroups(candidateIds);
-        visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateGroups.length);
-        renderResults();
-      };
-      if(typeof requestAnimationFrame==="function")requestAnimationFrame(()=>typeof setTimeout==="function"?setTimeout(hydratePicker,0):hydratePicker());
-      else if(typeof setTimeout==="function")setTimeout(hydratePicker,0);
-      else hydratePicker();
+      return squadController;
     }
-    function canonicalCardPlayerId(cardRef){
-      const meta=cardMeta(cardRef);
-      return id(meta.canonicalPlayerId||global.ProfiledSeasonRuntime?.canonicalPlayerId?.(meta.legacySeasonId,meta.profileId||meta.playerId)||meta.playerId);
-    }
-    function versionGroupKey(cardRef){
-      return id(cardIdentity?.versionGroupKey?.(cardRef,activeSeasonId())||`card::${cardMeta(cardRef).cardId||id(cardRef)}`);
-    }
-    function groupVersionCards(cardIds=[]){
-      const groups=new Map();
-      for(const cardId of Array.from(new Set(cardIds.map(id))).filter(Boolean)){
-        const key=versionGroupKey(cardId);
-        if(!groups.has(key))groups.set(key,[]);
-        groups.get(key).push(cardId);
-      }
-      return groups;
-    }
-    function preferredVersionCardId(cardIds=[]){
-      const versions=Array.from(new Set(cardIds.map(id))).filter(Boolean);
-      const active=activeSeasonId();
-      return versions.find(cardId=>id(cardMeta(cardId).legacySeasonId)===active)||versions[0]||"";
-    }
-    function openRtgVersionPicker(cardIds=[],options={}){
-      const versions=Array.from(new Set(cardIds.map(id))).filter(Boolean);
-      const onSelect=typeof options.onSelect==="function"?options.onSelect:null;
-      if(versions.length<=1){
-        const only=versions[0];
-        if(!only)return null;
-        return onSelect?onSelect(only):openRtgPlayerDetails(only);
-      }
-      // Resolve/render every version only after the unified player card is opened.
-      const entries=versions.map(cardId=>({
-        cardId,
-        playerId:cardId,
-        source:"RTG",
-        player:resolved(cardId,squadDraft?.activeRoleVariantByCardId?.[cardId]||null),
-      })).filter(entry=>entry.player);
-      deps.openModal?.(
-        squadView.versionPickerMarkup
-          ? squadView.versionPickerMarkup({entries,mode:onSelect?"select":"details"})
-          : `<section class="rtg-version-picker"><div class="modal-head"><div><p class="eyebrow">Versioni possedute</p><h2>Scegli la versione</h2></div></div></section>`,
-        {className:"rtg-modal rtg-version-picker-modal"}
-      );
-      const modal=deps.getModalRoot?.();
-      modal?.querySelectorAll?.("[data-rtg-version-card]")?.forEach(button=>button.addEventListener("click",()=>{
-        const selected=id(button.dataset.rtgVersionCard);
-        if(!selected)return;
-        deps.closeModal?.();
-        if(onSelect){
-          onSelect(selected);
-          return;
-        }
-        const open=()=>openRtgPlayerDetails(selected);
-        if(typeof setTimeout==="function")setTimeout(open,0);else open();
-      }));
-      return {count:versions.length};
-    }
-    function openRtgCatalog(){
-      const owned=Array.from(acquiredCardIdSet()).filter(Boolean);
-      const groups=groupVersionCards(owned);
-      const representatives=Array.from(groups.values()).map(preferredVersionCardId)
-        .filter(Boolean)
-        .sort((a,b)=>rawRole(a).localeCompare(rawRole(b))||rawOverall(b)-rawOverall(a)||rawName(a).localeCompare(rawName(b),"it"));
-      let query="";
-      let visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,representatives.length);
-      const filtered=()=>representatives.filter(cardId=>{
-        const needle=query.trim().toLocaleLowerCase("it");
-        return !needle||rawName(cardId).toLocaleLowerCase("it").includes(needle);
-      });
-      const entries=()=>filtered().slice(0,visibleCount).map(cardId=>({
-        cardId,
-        playerId:cardId,
-        source:"RTG",
-        versionCount:(groups.get(versionGroupKey(cardId))||[cardId]).length,
-        player:resolved(cardId,squadDraft?.activeRoleVariantByCardId?.[cardId]||null),
-      })).filter(entry=>entry.player);
-      const bindCatalog=()=>{
-        const modal=deps.getModalRoot?.();
-        modal?.querySelectorAll?.("[data-rtg-catalog-player]")?.forEach(button=>button.addEventListener("click",()=>{
-          const cardId=id(button.dataset.rtgCatalogPlayer);
-          if(!cardId)return;
-          openRtgVersionPicker(groups.get(versionGroupKey(cardId))||[cardId]);
-        }));
-        modal?.querySelector?.("[data-rtg-catalog-load-more]")?.addEventListener("click",()=>{
-          visibleCount=Math.min(filtered().length,visibleCount+SQUAD_PICKER_PAGE_SIZE);
-          renderCatalogResults();
-        });
-      };
-      const renderCatalogResults=()=>{
-        const modal=deps.getModalRoot?.();
-        const results=modal?.querySelector?.("[data-rtg-catalog-results]");
-        const ids=filtered();
-        if(results)results.innerHTML=squadView.catalogResultsMarkup({entries:entries(),total:ids.length});
-        bindCatalog();
-      };
-      deps.openModal?.(squadView.catalogMarkup({entries:entries(),total:representatives.length,query}),{className:"rtg-modal rtg-player-catalog-modal"});
-      const modal=deps.getModalRoot?.();
-      modal?.querySelector?.("[data-rtg-catalog-search]")?.addEventListener("input",event=>{
-        query=String(event.target?.value||"");
-        visibleCount=SQUAD_PICKER_PAGE_SIZE;
-        renderCatalogResults();
-      });
-      bindCatalog();
-      return {count:representatives.length,versionCount:owned.length};
-    }
+    function renderSquad(){return getSquadController().renderSquad();}
+    function saveSquad(nextSquad=squadDraft,options={}){return getSquadController().saveSquad(nextSquad,options);}
+    function swapSquadDraft(firstId,secondId,options={}){return getSquadController().swapSquadDraft(firstId,secondId,options);}
+    function canUseDraftFormation(formation){return getSquadController().canUseDraftFormation(formation);}
+    function arrangeDraftForFormation(formation){return getSquadController().arrangeDraftForFormation(formation);}
+    function openSquadPlayerPicker(targetId){return getSquadController().openSquadPlayerPicker(targetId);}
+    function openRtgCatalog(){return getSquadController().openRtgCatalog();}
+    function locationInDraft(playerId){return getSquadController().locationInDraft(playerId);}
+    function switchBenchRole(cardRef,options={}){return getSquadController().switchBenchRole(cardRef,options);}
+    function adaptSquadToCurrentRequirements(){return getSquadController().adaptSquadToCurrentRequirements();}
 
-    function currentRequirementTeamId(){
-      const node=nodeById(campaign?.currentNodeId);
-      if(!node)return null;
-      if(node.type==="main")return id(node.teamId);
-      if(node.type==="secondary")return id(node.beforeTeamId);
-      return null;
-    }
-    function seasonTeamIdsForPlayer(cardRef){
-      const parsed=cardIdentity?.parse?.(cardRef,activeSeasonId())||{};
-      const player=playerResolver.resolveVersion?.(cardRef,campaign?.activeSeasonId||"ie1",freeAgentsDb)?.player||rawPlayer(cardRef);
-      const profileId=id(parsed.profileId||parsed.playerId);
-      const profile=(seasonDb?.profiles||[]).find(entry=>id(entry?.profileId||entry?.id)===profileId);
-      const canonicalId=id(profile?.playerId||parsed.canonicalPlayerId||parsed.playerId).split("@")[0];
-      const canonical=(seasonDb?.players||[]).find(entry=>id(entry?.playerId||entry?.id)===canonicalId);
-      return [player?.teamId,...(player?.teamIds||[]),profile?.teamId,...(profile?.teamIds||[]),canonical?.teamId,...(canonical?.teamIds||[])].filter(Boolean).map(id);
-    }
-    function requirementPool(teamId){
-      const constraint=activeConfig()?.constraints?.[teamId];
-      if(!constraint)return[];
-      const recruitSet=acquiredCardIdSet();
-      const recentTeams=new Set(squadRuntime.recentDefeatedTeamIds(teamId,draftState(),constraint.recentWindow));
-      return accessibleDraftIds().map(playerId=>{
-        const player=resolved(playerId,squadDraft?.activeRoleVariantByCardId?.[playerId]||null);
-        if(!player)return null;
-        const role=String(player.normalizedRole||player.position||player.role||rawRole(playerId)).toUpperCase();
-        if(!["GK","DF","MF","FW"].includes(role))return null;
-        const move=playerResolver.resolveMove?.(playerId,activeSeasonId(),role,freeAgentsDb,squadDraft?.activeRoleVariantByCardId?.[playerId]||null)||null;
-        const movePower=Number(move?.power);
-        const contribution=Number(player.overall||0)+(Number.isFinite(movePower)?Math.max(0,Math.min(2,(movePower-50)/30)):0);
-        const recruit=recruitSet.has(playerId);
-        const recent=recruit&&seasonTeamIdsForPlayer(playerId).some(team=>recentTeams.has(team));
-        return{playerId,role,overall:Number(player.overall||0),contribution,recruit,recent};
-      }).filter(Boolean);
-    }
-    function buildRequirementCandidate(formation,teamId,pool){
-      const constraint=activeConfig()?.constraints?.[teamId];
-      if(!formation||!constraint)return null;
-      const candidates=Array.from(pool||[]);
-      const targetPower=Number(constraint.cap);
-      const required={GK:0,DF:0,MF:0,FW:0,...(formation.requirements||{})};
-      const left={GK:Number(required.GK)||0,DF:Number(required.DF)||0,MF:Number(required.MF)||0,FW:Number(required.FW)||0};
-      const selected=[],used=new Set();
-      const distanceToTarget=entry=>Math.abs(Number(entry.contribution||0)-targetPower);
-      const balanced=(a,b)=>{
-        const distanceDelta=distanceToTarget(a)-distanceToTarget(b);
-        if(Math.abs(distanceDelta)>1e-9)return distanceDelta;
-        const aAbove=Number(a.contribution)>targetPower?1:0;
-        const bAbove=Number(b.contribution)>targetPower?1:0;
-        if(aAbove!==bAbove)return aAbove-bAbove;
-        return Number(b.contribution)-Number(a.contribution)||a.playerId.localeCompare(b.playerId);
-      };
-      const addLineupFrom=(source,needed)=>{
-        for(const entry of source){
-          if(needed<=0)break;
-          if(used.has(entry.playerId)||left[entry.role]<=0)continue;
-          selected.push(entry);used.add(entry.playerId);left[entry.role]-=1;needed-=1;
-        }
-        return needed;
-      };
-      // Composition requirements apply to all 15 active players. Only the amount
-      // that cannot fit on the four-player bench is forced into the XI.
-      const minFieldRecent=Math.max(0,Number(constraint.recentCount||0)-4);
-      const minFieldRecruit=Math.max(0,Number(constraint.minRecruit||0)-4);
-      if(addLineupFrom(candidates.filter(entry=>entry.recent).sort(balanced),minFieldRecent)>0)return null;
-      const fieldRecruitNow=selected.filter(entry=>entry.recruit).length;
-      if(addLineupFrom(candidates.filter(entry=>entry.recruit).sort(balanced),Math.max(0,minFieldRecruit-fieldRecruitNow))>0)return null;
-      for(const role of ["GK","DF","MF","FW"]){
-        if(addLineupFrom(candidates.filter(entry=>entry.role===role).sort(balanced),left[role])>0)return null;
-      }
-      if(selected.length!==11)return null;
-
-      const bench=[];
-      const benchUsed=new Set(used);
-      const addBenchFrom=(source,needed)=>{
-        for(const entry of source){
-          if(needed<=0||bench.length>=4)break;
-          if(benchUsed.has(entry.playerId))continue;
-          bench.push(entry);benchUsed.add(entry.playerId);needed-=1;
-        }
-        return needed;
-      };
-      const fieldRecruitCount=selected.filter(entry=>entry.recruit).length;
-      const fieldRecentCount=selected.filter(entry=>entry.recent).length;
-      if(addBenchFrom(candidates.filter(entry=>entry.recent).sort(balanced),Math.max(0,Number(constraint.recentCount||0)-fieldRecentCount))>0)return null;
-      const activeRecruitAfterRecent=fieldRecruitCount+bench.filter(entry=>entry.recruit).length;
-      if(addBenchFrom(candidates.filter(entry=>entry.recruit).sort(balanced),Math.max(0,Number(constraint.minRecruit||0)-activeRecruitAfterRecent))>0)return null;
-      addBenchFrom(candidates.sort(balanced),4-bench.length);
-      if(bench.length!==4)return null;
-
-      // Prefer players individually close to the requested level. Afterwards,
-      // use any remaining cap headroom while keeping the roster as homogeneous
-      // as possible. This avoids solutions such as a few 86 OVR players mixed
-      // with many 70 OVR players when 75 OVR alternatives are available.
-      const capTotal=targetPower*15;
-      const roster=()=>[...selected,...bench];
-      const spreadOf=entries=>entries.reduce((sum,entry)=>{
-        const delta=Number(entry.contribution||0)-targetPower;
-        return sum+(delta*delta);
-      },0);
-      const metric=(total,spread)=>({
-        overage:Math.max(0,total-capTotal),
-        shortfall:Math.max(0,capTotal-total),
-        spread,
-      });
-      const betterMetric=(candidate,current)=>{
-        if(candidate.overage!==current.overage)return candidate.overage<current.overage;
-        if(candidate.shortfall!==current.shortfall)return candidate.shortfall<current.shortfall;
-        if(Math.abs(candidate.spread-current.spread)>1e-9)return candidate.spread<current.spread;
-        return false;
-      };
-      let active=roster();
-      let total=active.reduce((sum,entry)=>sum+entry.contribution,0);
-      let spread=spreadOf(active);
-      let currentMetric=metric(total,spread);
-
-      let guard=0;
-      while(guard++<180){
-        active=roster();
-        const activeRecruitCount=active.filter(entry=>entry.recruit).length;
-        const activeRecentCount=active.filter(entry=>entry.recent).length;
-        const activeIds=new Set(active.map(entry=>entry.playerId));
-        let best=null;
-        for(let index=0;index<active.length;index++){
-          const outgoing=active[index];
-          const isLineup=index<selected.length;
-          for(const incoming of candidates){
-            if(activeIds.has(incoming.playerId))continue;
-            if(isLineup&&incoming.role!==outgoing.role)continue;
-            const nextRecruit=activeRecruitCount-(outgoing.recruit?1:0)+(incoming.recruit?1:0);
-            const nextRecent=activeRecentCount-(outgoing.recent?1:0)+(incoming.recent?1:0);
-            if(nextRecruit<Number(constraint.minRecruit||0)||nextRecent<Number(constraint.recentCount||0))continue;
-            const nextTotal=total-outgoing.contribution+incoming.contribution;
-            const outgoingDelta=Number(outgoing.contribution||0)-targetPower;
-            const incomingDelta=Number(incoming.contribution||0)-targetPower;
-            const nextSpread=spread-(outgoingDelta*outgoingDelta)+(incomingDelta*incomingDelta);
-            const nextMetric=metric(nextTotal,nextSpread);
-            if(!betterMetric(nextMetric,currentMetric))continue;
-            if(!best||betterMetric(nextMetric,best.metric))best={index,incoming,nextTotal,nextSpread,metric:nextMetric};
-          }
-        }
-        if(!best)break;
-        if(best.index<selected.length)selected[best.index]=best.incoming;
-        else bench[best.index-selected.length]=best.incoming;
-        total=best.nextTotal;
-        spread=best.nextSpread;
-        currentMetric=best.metric;
-      }
-      if(total>capTotal+1e-9)return null;
-
-      const state=clone(draftState());
-      state.squads[activeSeasonId()]={
-        formationId:id(formation.id),
-        lineup:selected.map(entry=>entry.playerId),
-        bench:bench.map(entry=>entry.playerId),
-        activeRoleVariantByCardId:{...(squadDraft?.activeRoleVariantByCardId||{})},
-      };
-      const eligibility=squadRuntime.mainEligibility({teamId,state,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(state)});
-      if(!eligibility.eligible)return null;
-      return{
-        squad:state.squads[activeSeasonId()],
-        eligibility,
-        targetShortfall:Math.max(0,capTotal-total),
-        balanceSpread:spread,
-      };
-    }
-    function adaptSquadToCurrentRequirements(){
-      const teamId=currentRequirementTeamId();
-      if(!teamId){deps.toast?.("Nessun requisito principale attivo","error");return{ok:false,reason:"no-target"};}
-      const formations=activeConfig()?.formations||seasonDb?.formations?.eleven||[];
-      const pool=requirementPool(teamId);
-      const currentId=id(squadDraft?.formationId||activeSquad(campaign)?.formationId);
-      const ordered=[...formations].sort((a,b)=>(id(a.id)===currentId?-1:0)-(id(b.id)===currentId?-1:0));
-      let best=null;
-      for(const formation of ordered){
-        const candidate=buildRequirementCandidate(formation,teamId,pool);
-        if(!candidate)continue;
-        if(!best||candidate.targetShortfall<best.targetShortfall-1e-9||(Math.abs(candidate.targetShortfall-best.targetShortfall)<=1e-9&&candidate.balanceSpread<best.balanceSpread-1e-9))best=candidate;
-      }
-      if(!best){deps.toast?.("Non riesco a costruire automaticamente una squadra valida con i giocatori disponibili","error");return{ok:false,reason:"no-valid-squad"};}
-      squadDraft=clone(best.squad);
-      renderSquad();
-      deps.toast?.(`Squadra adattata: Potenza ${best.eligibility.teamPower} / ${best.eligibility.cap}`);
-      return{ok:true,teamId,eligibility:best.eligibility,squad:clone(squadDraft)};
-    }
-
-    function renderSquad(){
-      squadDraft=clone(squadDraft||activeSquad(campaign));
-      const model=squadView.renderModel({state:draftState(),freeAgentIds,seasonDb,freeAgentsDb,playerResolver:playerResolverForState(draftState())});
-      const teamId=currentRequirementTeamId();
-      const eligibility=teamId?squadRuntime.mainEligibility?.({teamId,state:draftState(),seasonDb,freeAgentIds,freeAgentsDb,playerResolver}):null;
-      const nextTeam=(seasonDb?.teams||[]).find(team=>id(team.teamId||team.id)===teamId);
-      const userMeta=deps.getUserTeamMeta?.()||{};
-      renderHtml(squadView.markup(model,{
-        teamName:userMeta.name||"La tua squadra",
-        teamIdentity:userMeta.teamIdentity||null,
-        nextTeamName:nextTeam?.name||nextTeam?.teamName||teamId,
-        requirementsMarkup:eligibility?runView.requirementsMarkup(eligibility):"",
-        teamPower:eligibility?.teamPower ?? squadRuntime.teamPower?.({lineup:squadDraft.lineup||[],activeSeasonId:campaign.activeSeasonId||"ie1",playerResolver,freeAgentsDb,activeRoleVariantByCardId:squadDraft.activeRoleVariantByCardId||{}}) ?? null,
-        dirty:JSON.stringify(squadDraft)!==JSON.stringify(activeSquad(campaign)),
-        activeSquadSlot,
-      }));
-      bindHomeAndTabs();
-      squadView.bind(app,{
-        onOpenFormation:()=>openFormationSelector(model),
-        onOpenPlayer:(playerId)=>openSquadPlayerPicker(playerId),
-        onOpenDetails:(playerId)=>openRtgPlayerDetails(playerId,"",{allowRoleSwitch:true}),
-        onOpenCatalog:()=>openRtgCatalog(),
-        onAdaptRequirements:()=>adaptSquadToCurrentRequirements(),
-        onSave:()=>saveSquad(squadDraft),
-        onSelectSquadSlot:(slot)=>selectSquadSlot(slot),
-      });
-      mountDevQuickTools();
-      return model;
-    }
-    function switchBenchRole(cardRef,options={}){
-      const cardId=id(cardRef),loc=locationInDraft(cardId);
-      if(!loc||loc.area!=="bench")return deps.toast?.("Il ruolo si può cambiare solo dalla panchina","error");
-      const current=resolved(cardId,squadDraft?.activeRoleVariantByCardId?.[cardId]||null);
-      const variants=Array.from(current?.roleVariants||[]);
-      if(variants.length<2)return deps.toast?.("Questo giocatore non ha un secondo ruolo","error");
-      const active=id(squadDraft?.activeRoleVariantByCardId?.[cardId]||current?.roleVariantId||current?.defaultRoleVariantId);
-      const next=variants.find(v=>id(v?.roleVariantId||v?.variantId)!==active)||variants[0];
-      const nextId=id(next?.roleVariantId||next?.variantId);
-      if(!nextId)return deps.toast?.("Ruolo alternativo non disponibile","error");
-      squadDraft={...squadDraft,activeRoleVariantByCardId:{...(squadDraft?.activeRoleVariantByCardId||{}),[cardId]:nextId}};
-      if(options.render!==false)renderSquad();
-      return {ok:true,cardId,roleVariantId:nextId};
-    }
-    function locationInDraft(playerId){
-      const idValue=id(playerId);
-      const lineupIndex=(squadDraft?.lineup||[]).map(id).indexOf(idValue),benchIndex=(squadDraft?.bench||[]).map(id).indexOf(idValue);
-      return lineupIndex>=0?{area:"lineup",index:lineupIndex}:benchIndex>=0?{area:"bench",index:benchIndex}:null;
-    }
-    function swapSquadDraft(firstId,secondId,options={}){
-      const first=id(firstId),second=id(secondId);
-      if(!first||!second||first===second)return{ok:false,reason:"same-player"};
-      const accessible=new Set(accessibleCards(draftState()).map(id));
-      if(!accessible.has(first)||!accessible.has(second))return{ok:false,reason:"inaccessible-player"};
-      const firstRole=roleOfDraftPlayer(first),secondRole=roleOfDraftPlayer(second);
-      const firstLoc=locationInDraft(first),secondLoc=locationInDraft(second);
-      if(!firstLoc&&!secondLoc)return{ok:false,reason:"collection-only"};
-      // The XI must preserve the role required by the formation. Bench slots are
-      // role-free: replacing a bench DF with a FW/MF/GK is always allowed.
-      if(firstLoc?.area==="lineup"&&(!secondRole||secondRole!==firstRole))return{ok:false,reason:"role-mismatch"};
-      if(secondLoc?.area==="lineup"&&(!firstRole||firstRole!==secondRole))return{ok:false,reason:"role-mismatch"};
-      if(firstLoc&&secondLoc){
-        squadDraft[firstLoc.area][firstLoc.index]=second;
-        squadDraft[secondLoc.area][secondLoc.index]=first;
-      }else{
-        const loc=firstLoc||secondLoc;
-        const incoming=firstLoc?second:first;
-        squadDraft[loc.area][loc.index]=incoming;
-      }
-      if(options.render!==false)renderSquad();
-      return{ok:true};
-    }
-    async function saveSquad(nextSquad=squadDraft,options={}){
-      const candidate=clone(nextSquad);
-      campaign=await repository.update("rtg-save-squad",current=>{
-        const probe=clone(current);probe.squads[activeSeasonId()]=candidate;
-        const validation=squadRuntime.validateSquad({state:probe,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(probe)});
-        if(!validation.valid)throw Object.assign(new Error("Squadra RTG non valida"),{code:"rtg-squad-invalid",reasons:validation.reasons});
-        current.squads[id(current.activeSeasonId||activeSeasonId())]=candidate;return current;
-      });
-      squadDraft=clone(candidate);
-      storeSquadSlot(activeSquadSlot,squadDraft);
-      if(!options.quiet)deps.toast?.(`Squadra ${activeSquadSlot} salvata`);
-      return renderSquad();
-    }
     function nodeById(nodeId){return Array.from(config.buildSeasonNodes(activeSeasonId())).find(node=>node.id===id(nodeId))||null;}
     function canStartNode(node){
       if(!node)return false;
@@ -1771,72 +912,18 @@
       deps.getModalRoot?.()?.querySelector?.("[data-rtg-result-continue]")?.addEventListener("click",()=>{deps.closeModal?.();renderRun();});
       return match;
     }
-    function openVending(mode="team"){
-      const selectedMode=mode==="recruitment"&&activeSeasonId()==="ie1_s3"?"recruitment":"team";
-      const pool=gacha.previewPool(campaign,seasonDb,accessibleCards(campaign),selectedMode);
-      const cost=selectedMode==="recruitment"?activeConfig()?.recruitmentPullCost:activeConfig()?.pullCost;
-      deps.openModal?.(runView.vendingMarkup({...pool,tokens:campaign.tokens,seasonId:activeSeasonId(),mode:selectedMode,cost}),{className:"rtg-modal rtg-vending-modal"});
-      const modalRoot=deps.getModalRoot?.();
-      modalRoot?.querySelectorAll?.("[data-rtg-vending-mode]")?.forEach(toggle=>toggle.addEventListener("click",()=>openVending(toggle.dataset.rtgVendingMode)));
-      const albumButton=modalRoot?.querySelector?.("[data-rtg-vending-album]");
-      if(albumButton)albumButton.onclick=async(event)=>{
-        event?.preventDefault?.();
-        event?.stopPropagation?.();
-        deps.closeModal?.({invokeOnClose:false});
-        await renderAlbum();
-      };
-      modalRoot?.querySelector?.("[data-rtg-pull]")?.addEventListener("click",async(event)=>{
-        const button=event.currentTarget;
-        if(button?.disabled)return;
-        const machine=modalRoot?.querySelector?.("[data-rtg-vending-machine]");
-        button.disabled=true;
-        machine?.classList?.add("is-turning");
-        try{
-          const preparedPromise=pull({reveal:false,mode:selectedMode});
-          await new Promise(resolve=>setTimeout(resolve,620));
-          const prepared=await preparedPromise;
-          if(!prepared?.result||!prepared?.player)return;
-          const rarityKey=String(prepared.result.rarity||prepared.player.category||"normale").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-");
-          if(machine){
-            const capsules=Array.from(machine.querySelectorAll?.("[data-capsule-rarity]")||[]);
-            capsules.forEach(capsule=>capsule.classList.remove("is-selected"));
-            const matching=capsules.filter(capsule=>capsule.dataset.capsuleRarity===rarityKey);
-            const choices=matching.length?matching:capsules;
-            const selected=choices.length?choices[Math.floor(Math.random()*choices.length)]:null;
-            if(selected){
-              selected.dataset.capsuleRarity=rarityKey;
-              selected.classList.add("is-selected");
-            }
-            machine.dataset.pullRarity=rarityKey;
-            machine.classList.add("is-revealing");
-          }
-          await new Promise(resolve=>setTimeout(resolve,980));
-          showPullResult(prepared.result,prepared.player,selectedMode);
-        }finally{
-          machine?.classList?.remove("is-turning","is-revealing");
-          if(button?.isConnected)button.disabled=false;
-        }
+    let vendingRuntime=null;
+    function getVendingRuntime(){
+      if(!vendingRuntime)vendingRuntime=global.RoadToGloryVendingController.create({
+        getCampaign:()=>campaign,getSeasonDb:()=>seasonDb,activeSeasonId,activeConfig,
+        gacha,accessibleCards,runView,openModal:deps.openModal,getModalRoot:deps.getModalRoot,
+        closeModal:deps.closeModal,renderAlbum,pull,id,openPlayerDetails:openRtgPlayerDetails,
       });
+      return vendingRuntime;
     }
-    function showPullResult(result,player,mode="team"){
-      if(!result||!player)return null;
-      deps.openModal?.(runView.pullResultMarkup(result,player,seasonDb),{
-        className:"rtg-modal rtg-pull-modal",
-        onClose:()=>openVending(mode),
-      });
-      const modalRoot=deps.getModalRoot?.();
-      modalRoot?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",event=>{
-        const playerId=id(event.currentTarget?.dataset?.rtgPullPlayerDetail||result.playerId);
-        if(!playerId)return;
-        openRtgPlayerDetails(playerId,"",{
-          onClose:()=>showPullResult(result,player),
-        });
-      });
-      modalRoot?.querySelector?.("[data-rtg-pull-continue]")?.addEventListener("click",()=>{
-        deps.closeModal?.();
-      });
-      return result;
-    }
+    function openVending(mode="team"){return getVendingRuntime().openVending(mode);}
+    function showPullResult(result,player,mode="team"){return getVendingRuntime().showPullResult(result,player,mode);}
+
     async function pull(options={}){
       let result=null;const mode=options?.mode==="recruitment"?"recruitment":"team";
       campaign=await repository.update("rtg-gacha-pull",current=>{

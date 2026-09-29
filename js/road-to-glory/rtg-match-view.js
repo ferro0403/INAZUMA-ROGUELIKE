@@ -105,14 +105,14 @@
     function duelVisualUrl(player = {}) {
       if (isShawn1162Fw(player)) return SHAWN_1162_FW_PORTRAIT;
       return String(
+        player?.portraitUrl ||
+        player?.imageUrl ||
+        player?.photoUrl ||
         player?.frontFullbodyUrl ||
         player?.frontFullBodyUrl ||
         player?.frontFullbody ||
         player?.fullbodyUrl ||
         player?.fullBodyUrl ||
-        player?.portraitUrl ||
-        player?.imageUrl ||
-        player?.photoUrl ||
         ""
       );
     }

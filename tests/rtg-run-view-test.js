@@ -1,7 +1,7 @@
 "use strict";
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
-vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-route-view.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-album-view.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),c);
 const nodes=[];const teams=["occult","wild","brainwashing","otaku","shuriken","farm","kirkwood","royal","zeus","raimon"];
 teams.forEach((teamId,i)=>{nodes.push({id:`main:${teamId}`,type:"main",teamId,mainIndex:i,checkpointAfter:[2,5,8].includes(i)});if(i<9)for(let slot=1;slot<=2;slot++)nodes.push({id:`secondary:${teamId}:${teams[i+1]}:${slot}`,type:"secondary",afterTeamId:teamId,beforeTeamId:teams[i+1],slot});});
 const playerCardCalls=[];

@@ -56,7 +56,7 @@ const dvalin=R.resolveAtLevel20(dvalinCard,"ie1_s2",null,null);
 assert.strictEqual(dvalin.resolvedTeamId,"epsilon");
 assert.strictEqual(dvalin.teamLogoUrl,teamById.get("epsilon").logoUrl);
 
-vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),ctx,{filename:"rtg-run-view.js"});
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-route-view.js","utf8"),ctx);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-album-view.js","utf8"),ctx);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-run-view.js","utf8"),ctx,{filename:"rtg-run-view.js"});
 const view=ctx.RoadToGloryRunView.create({
   escapeHtml:value=>String(value??""),
   compactPlayerCardMarkup:(player,options)=>`<button ${options.dataAttr||""}>${player.name}</button>`,
