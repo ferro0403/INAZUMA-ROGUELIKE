@@ -15,7 +15,7 @@ const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON,Promise,Er
 c.globalThis=c;
 vm.createContext(c);
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-runtime.js","utf8"),c);
-vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-slot-runtime.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-season-transition-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-album-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-development-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-vending-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8"),c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-slot-runtime.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-season-transition-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-album-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-development-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-vending-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8"),c);
 
 const make=(prefix,overall)=>{
   const roles=["GK","DF","DF","DF","DF","MF","MF","MF","FW","FW","FW","GK","DF","MF","FW"];
