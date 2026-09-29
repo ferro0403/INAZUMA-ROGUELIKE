@@ -1,7 +1,19 @@
 "use strict";
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
 const c={console};c.globalThis=c;
-c.SeasonRegistry={database:()=>({moveCatalog:{players:{"2":{name:"Fire Tornado",type:"shot",element:"Fire",power:80}}}}),isSeasonSource:(value)=>value==="ie1"};
+const moveCatalogs={
+  ie1:{players:{
+    "1":{name:"God Hand",type:"save",element:"Mountain",power:65},
+    "2":{name:"Fire Tornado",type:"shot",element:"Fire",power:80}
+  }},
+  ie1_s2:{players:{
+    "1":{name:"Majin the Hand",type:"save",element:"Mountain",power:75,roleMoves:{
+      GK:{name:"Majin the Hand",type:"save",element:"Mountain",power:75},
+      MF:{name:"The Earth",type:"shot",element:"Mountain",power:95}
+    }}
+  }}
+};
+c.SeasonRegistry={database:(seasonId)=>({moveCatalog:moveCatalogs[seasonId]||{players:{}}}),isSeasonSource:(value)=>["ie1","ie1_s2"].includes(value)};
 vm.runInNewContext(fs.readFileSync("js/moves/move-runtime.js","utf8"),c);
 vm.runInNewContext(fs.readFileSync("js/moves/move-presentation.js","utf8"),c);
 const move=c.MatchMoveRuntime.moveForPlayer("ie1","2");
@@ -40,6 +52,11 @@ const view=vc.PlayerView.create({
 const player={playerId:"2",name:"Axel Blaze",position:"FW",element:"Fuoco",category:"Elite",finalOverall:80,stats:{attack:80,control:80,speed:80,grit:80,physical:80,stamina:80,defense:20,save:10}};
 const html=view.detailMarkup(player,{playerId:"2",level:20,database:{}});
 assert(html.includes("player-detail-move"));assert(html.indexOf("player-detail-move")<html.indexOf("player-detail-equipment"));assert(html.includes("Fire Tornado"));
+const mark={playerId:"1",name:"Mark Evans",position:"MF",element:"Mountain",category:"Leggenda",finalOverall:95,stats:{attack:80,control:90,speed:80,grit:90,physical:80,stamina:90,defense:90,save:90}};
+const crossSeasonHtml=view.detailMarkup(mark,{playerId:"1",level:20,database:{},mode:"album",seasonId:"ie1_s2"});
+assert(crossSeasonHtml.includes("The Earth"),"album IE2 must resolve the IE2 move even when the active run is IE1");
+assert(crossSeasonHtml.includes("95"),"album IE2 must show The Earth balanced Power");
+assert(!crossSeasonHtml.includes("God Hand"),"album IE2 must not leak the active run season move");
 const css=fs.readFileSync("css/move-presentation.css","utf8");
 for(const token of [".move-element--fire",".move-element--wind",".move-element--mountain",".move-element--forest","move-category--save","move-category--defense","move-category--dribble","move-category--shot","--category-accent:#d94f91","--category-accent:#e47a00",".player-move-element b{color:var(--element-accent"])assert(css.includes(token),`move css includes ${token}`);
 assert(!css.includes(".player-move-card{--move-accent:#4e535c"),"old gray element-dominant card contract must stay removed");
@@ -61,4 +78,6 @@ assert((app.match(/resolveMatchEventPlayer:/g)||[]).length>=2,"full player sourc
 const index=fs.readFileSync("index.html","utf8");
 assert(index.includes("css/match-simulation-modern.css?v=20260914-match-redesign-1"));
 assert(index.includes("js/moves/move-presentation.js?v=20260914-season-visual-fix-1"));
+assert(index.includes("js/player/player-view.js?v=20260916-album-move-season-1"));
+assert(index.includes("js/album/album-controller.js?v=20260916-album-move-season-1"));
 console.log("move presentation UI: category-dominant move cards, element text colors, redesigned match timeline and portraits OK");
