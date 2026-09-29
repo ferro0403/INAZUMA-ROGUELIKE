@@ -3,7 +3,7 @@ const assert=require("assert"),fs=require("fs");
 const squadView=fs.readFileSync("js/road-to-glory/rtg-squad-view-base.js","utf8");
 const playerView=fs.readFileSync("js/player/player-view.js","utf8");
 const detailController=fs.readFileSync("js/player/player-detail-controller.js","utf8");
-const ctl=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const ctl=["js/road-to-glory/rtg-squad-controller.js","js/road-to-glory/rtg-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n").replaceAll("deps.","");
 const theme=fs.readFileSync("css/rtg-theme.css","utf8");
 
 assert.doesNotMatch(squadView,/rtg-squad-role-trigger/,"role switch must no longer be rendered outside bench cards");
