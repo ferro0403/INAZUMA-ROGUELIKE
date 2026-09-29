@@ -13,6 +13,9 @@ const prematch=view.preMatchMarkup(match);assert.match(prematch,/La tua squadra/
 const html=view.matchMarkup(match);assert.strictEqual((html.match(/data-rtg-field-player=/g)||[]).length,22);assert.match(html,/1 - 0/);
 const halftime=view.halftimeMarkup({...match.userSquad,formationId:"4-3-3",bench:[]},{match:{...match,status:"halftime",period:"halftime",score:{user:1,opponent:0}}});assert.match(halftime,/INTERVALLO/i);assert.match(halftime,/data-rtg-half-confirm/);
 const duel=view.encounterMarkup(match,{userPlayer:lineup[8],opponentPlayer:opp[1]});assert.match(duel,/Fire Tornado/);assert.match(duel,/62\.5%/);
+const portraitFirst=view.encounterMarkup(match,{userPlayer:{...lineup[8],portraitUrl:"nakata-bust.webp",frontFullbodyUrl:"nakata-fullbody.webp"},opponentPlayer:opp[1]});
+assert.match(portraitFirst,/nakata-bust\.webp/,"duel cards must prefer the portrait/bust when both portrait and full-body artwork exist");
+assert.doesNotMatch(portraitFirst,/nakata-fullbody\.webp/,"full-body artwork is only a fallback for duel cards");
 const pen=view.penaltyMarkup({...match,shootout:{history:[],score:{user:0,opponent:0},kicks:{user:0,opponent:0}}},{attackingSide:"user",shooter:lineup[8],keeper:opp[0],canUseMove:true});
 for(const label of["Sinistra","Centro","Destra"])assert.match(pen,new RegExp(label));
 assert.match(pen,/data-rtg-penalty-move/);
