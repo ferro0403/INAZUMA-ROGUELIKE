@@ -45,4 +45,6 @@ assert.match(html,/data-rtg-pull-continue/);
 assert.match(html,/>CONTINUA<\/button>/);
 assert.doesNotMatch(html,/>SBLOCCATO</);
 assert.doesNotMatch(html,/Sbloccato e aggiunto alla collezione Road to Glory/);
+const pullCss=fs.readFileSync("css/road-to-glory.css","utf8");
+assert.match(pullCss,/\.rtg-pull-result\.development-squad-card-scope \.rtg-pull-card-stage \.rtg-picker-squad-card \.player-portrait-wrap\{[\s\S]*?padding:5px 4px 4px!important;[\s\S]*?overflow:hidden!important;/,"vending pull cards must keep the body artwork contained above the name strip");
 console.log("rtg-pull-card-style-test: PASS");
