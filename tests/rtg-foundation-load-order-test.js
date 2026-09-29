@@ -1,0 +1,6 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const index=fs.readFileSync("index.html","utf8");
+const scripts=["js/road-to-glory/rtg-config.js","js/road-to-glory/rtg-storage.js","js/road-to-glory/rtg-state.js","js/road-to-glory/rtg-repository.js","js/road-to-glory/rtg-entitlements.js","js/road-to-glory/rtg-player-resolver.js"];
+let previous=index.indexOf("js/moves/move-runtime.js");assert(previous>=0,"move runtime must exist");for(const script of scripts){const pos=index.indexOf(script);assert(pos>previous,`${script} must load after previous dependency`);previous=pos;}assert(previous<index.indexOf("js/app.js"),"RTG foundation must load before app.js");
+let openCalls=0;const indexedDB={open(){openCalls++;throw new Error("module load must not open IndexedDB");}};const c={globalThis:null,window:null,console,Error,TypeError,Object,Array,String,Number,Promise,JSON,Math,RegExp,Set,Map,indexedDB};c.globalThis=c;c.window=c;vm.createContext(c);for(const script of scripts)vm.runInContext(fs.readFileSync(script,"utf8"),c,{filename:script});assert.strictEqual(openCalls,0);console.log("rtg-foundation-load-order-test: PASS");
