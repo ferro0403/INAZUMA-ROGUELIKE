@@ -48,6 +48,22 @@ jobs:
           set -euo pipefail
           git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
 
+      - name: Road to Glory regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          tests=(tests/rtg-*-test.js)
+          if (( ${#tests[@]} == 0 )); then
+            echo "No RTG tests found."
+            exit 0
+          fi
+          for test_file in "${tests[@]}"; do
+            echo "::group::$test_file"
+            node "$test_file"
+            echo "::endgroup::"
+          done
+
       - name: Core persistence and ownership regressions
         shell: bash
         run: |
