@@ -1,10 +1,10 @@
 "use strict";
 const assert=require("assert"),fs=require("fs");
-const src=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+const src=["js/road-to-glory/rtg-squad-controller.js","js/road-to-glory/rtg-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n").replaceAll("deps.","");
 const swStart=src.indexOf("function switchBenchRole");
 const swEnd=src.indexOf("function locationInDraft",swStart);
 const saveStart=src.indexOf("async function saveSquad");
-const saveEnd=src.indexOf("function nodeById",saveStart);
+const saveEnd=src.indexOf("return Object.freeze",saveStart);
 assert(swStart>=0&&swEnd>swStart&&saveStart>=0&&saveEnd>saveStart);
 const sw=src.slice(swStart,swEnd),save=src.slice(saveStart,saveEnd);
 assert(sw.includes('loc.area!=="bench"'),"role switch must reject starters");
