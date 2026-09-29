@@ -136,4 +136,19 @@ assert(
   "Live duel cards should collapse the orphaned fixed row after hiding the panel heading"
 );
 
+
+assert(
+  /\.rtg-shop-screen\s+\.rtg-economy-crosslink\s*\{[^}]*margin\s*:\s*26px auto 8px/s.test(themeCss) &&
+  /\.rtg-development-screen\s+\.development-projects\s*>\s*\[data-rtg-open-shop\]\s*\{[^}]*margin\s*:\s*26px 0 8px/s.test(themeCss),
+  "RTG Shop and Development cross-links should be visually detached from the card grids"
+);
+assert(
+  /\[data-rtg-open-development\][^,{]*,\s*\.rtg-development-screen\s+\.development-projects\s*>\s*\[data-rtg-open-shop\]\s*\{[^}]*border\s*:\s*3px solid #111216!important[^}]*border-radius\s*:\s*0!important[^}]*background\s*:\s*#ffd21f!important/s.test(themeCss),
+  "RTG economy cross-links should use the normal squared black/yellow CTA treatment"
+);
+assert(
+  /:is\(\.rtg-album-collections-screen,\.rtg-album-teams-screen,\.rtg-album-roster-screen\)\s+\.section-root-button\s*>\s*span\s*\{[^}]*transform\s*:\s*translateX\(-2px\)/s.test(themeCss),
+  "RTG Album back arrows should be optically centered inside the yellow back button"
+);
+
 console.log("rtg-final-visual-pass-test: PASS");
