@@ -1170,3 +1170,14 @@ button.player-card:has(> .rtg-legacy-badge),
   line-height:1;
   transform:translateX(-2px);
 }
+
+.rtg-legacy-badge[data-legacy-season="AR"],
+.player-detail-rtg-legacy-badge[data-legacy-season="AR"]{
+  --rtg-legacy-color:#ff6b35;
+  --rtg-legacy-ink:#1b0b05;
+}
+.rtg-legacy-badge[data-legacy-season="OR"],
+.player-detail-rtg-legacy-badge[data-legacy-season="OR"]{
+  --rtg-legacy-color:#46d7c8;
+  --rtg-legacy-ink:#061817;
+}
