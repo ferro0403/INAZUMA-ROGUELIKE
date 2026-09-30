@@ -1181,3 +1181,10 @@ button.player-card:has(> .rtg-legacy-badge),
   --rtg-legacy-color:#46d7c8;
   --rtg-legacy-ink:#061817;
 }
+
+.rtg-squad-shell.rtg-squad-shell--ares{
+  background-image:linear-gradient(rgba(245,247,242,.80),rgba(245,247,242,.88)),url("https://image.tmdb.org/t/p/original/kqFVCKdKz20EFk8lFf7TZgyqhMw.jpg")!important;
+  background-position:center!important;
+  background-size:cover!important;
+  background-attachment:fixed!important;
+}
