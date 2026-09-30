@@ -270,7 +270,7 @@
       const teamEmblem = teamEmblemMarkup
         ? teamEmblemMarkup({ name:teamName, teamIdentity }, "user", "rtg-squad-team-emblem")
         : "";
-      return `<main class="screen squad-screen rtg-squad-shell">
+      return `<main class="screen squad-screen rtg-squad-shell ${model.seasonId==="ie2"?"rtg-squad-shell--ares":model.seasonId==="orion"?"rtg-squad-shell--orion":""}">
         <header class="topbar squad-topbar rtg-squad-topbar">
           <button type="button" class="squad-back-button rtg-squad-back" data-rtg-home aria-label="Torna alla Home">←</button>
           <div class="squad-topbar-copy"><p class="eyebrow">ROAD TO GLORY · ${escape(model.seasonId==="ie2"?"ARES":model.seasonId==="orion"?"ORION":`S${global.RoadToGloryConfig?.season?.(model.seasonId)?.seasonNumber||1}`)}</p><h1>Squadra</h1></div>
