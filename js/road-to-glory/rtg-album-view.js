@@ -20,7 +20,8 @@
         : [{seasonId:fallbackSeasonId,unlocked,total}];
       const cards=source.map((collection)=>{
         const sid=String(collection?.seasonId||"ie1");
-        const seasonNo=seasonNumber(sid);\n        const seasonTitle=sid==="ie2"?"Inazuma Eleven Ares":sid==="orion"?"Inazuma Eleven Orion":`Inazuma Eleven ${seasonNo}`;
+        const seasonNo=seasonNumber(sid);
+        const seasonTitle=sid==="ie2"?"Inazuma Eleven Ares":sid==="orion"?"Inazuma Eleven Orion":`Inazuma Eleven ${seasonNo}`;
         const safeTotal=Math.max(0,Number(collection?.total)||0),safeUnlocked=Math.max(0,Number(collection?.unlocked)||0);
         const percent=safeTotal?Math.round(safeUnlocked/safeTotal*100):0;
         const presentation=global.RoadToGloryConfig?.season?.(sid)||{};
