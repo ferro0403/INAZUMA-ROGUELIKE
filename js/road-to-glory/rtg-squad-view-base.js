@@ -273,7 +273,7 @@
       return `<main class="screen squad-screen rtg-squad-shell">
         <header class="topbar squad-topbar rtg-squad-topbar">
           <button type="button" class="squad-back-button rtg-squad-back" data-rtg-home aria-label="Torna alla Home">←</button>
-          <div class="squad-topbar-copy"><p class="eyebrow">ROAD TO GLORY · ${escape(`S${global.RoadToGloryConfig?.season?.(model.seasonId)?.seasonNumber||1}`)}</p><h1>Squadra</h1></div>
+          <div class="squad-topbar-copy"><p class="eyebrow">ROAD TO GLORY · ${escape(model.seasonId==="ie2"?"ARES":model.seasonId==="orion"?"ORION":`S${global.RoadToGloryConfig?.season?.(model.seasonId)?.seasonNumber||1}`)}</p><h1>Squadra</h1></div>
           <div class="rtg-squad-team-identity" aria-label="Squadra ${escape(teamName)}">
             <span class="rtg-squad-team-logo">${teamEmblem}</span>
             <strong title="${escape(teamName)}">${escape(teamName)}</strong>
