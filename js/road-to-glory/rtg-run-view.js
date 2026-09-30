@@ -143,7 +143,13 @@
       </div>`;
     }
 
-    return Object.freeze({tabs,lockedMarkup:(...args)=>skinTokens(lockedMarkup(...args)),runMarkup:(...args)=>skinTokens(runMarkup(...args)),albumCollectionMarkup:(...args)=>skinTokens(albumCollectionMarkup(...args)),albumTeamsMarkup:(...args)=>skinTokens(albumTeamsMarkup(...args)),albumRosterMarkup:(...args)=>skinTokens(albumRosterMarkup(...args)),requirementsMarkup,nodeModalMarkup,vendingMarkup:(...args)=>skinTokens(vendingMarkup(...args)),pullResultMarkup:(...args)=>skinTokens(pullResultMarkup(...args))});
+    function campaignSelectorMarkup(){
+      const orionCover="https://i0.wp.com/nicolaraccasceneggiature.altervista.org/wp-content/uploads/2019/05/Dlhck3sVAAA2Lgd-1.jpg?fit=1200%2C896&ssl=1";
+      const trilogyCover="assets/rtg/rtg-season3-route-map-user.webp";
+      return `<main class="screen rtg-campaign-select"><header class="topbar rtg-main-topbar"><button type="button" class="btn rtg-home-button" data-rtg-campaign-home aria-label="Torna alla Home"><span aria-hidden="true">←</span></button><div class="rtg-main-title"><p class="eyebrow">Road to Glory</p><strong class="brand">Scegli l'avventura</strong></div></header><div class="content narrow rtg-campaign-select-content"><section class="rtg-campaign-intro"><p class="eyebrow">DUE STORIE · DUE RUN</p><h1>ROAD TO GLORY</h1><p>Le campagne avanzano separatamente. Giocatori ottenuti e Gettoni RTG sono condivisi.</p></section><div class="rtg-campaign-grid"><button type="button" class="rtg-campaign-card" data-rtg-campaign="rtg-ie-trilogy" style="--rtg-campaign-image:url('${trilogyCover}')"><span class="rtg-campaign-shade"></span><span class="rtg-campaign-copy"><small>ROAD TO GLORY</small><strong>Inazuma Eleven 1-2-3</strong><em><b>S1</b><b>S2</b><b>S3</b></em><i>APRI RUN »</i></span></button><button type="button" class="rtg-campaign-card" data-rtg-campaign="rtg-ares-orion" style="--rtg-campaign-image:url('${orionCover}')"><span class="rtg-campaign-shade"></span><span class="rtg-campaign-copy"><small>ROAD TO GLORY</small><strong>Inazuma Eleven Ares-Orion</strong><em><b>AR</b><b>OR</b></em><i>APRI RUN »</i></span></button></div></div></main>`;
+    }
+
+    return Object.freeze({ campaignSelectorMarkup,tabs,lockedMarkup:(...args)=>skinTokens(lockedMarkup(...args)),runMarkup:(...args)=>skinTokens(runMarkup(...args)),albumCollectionMarkup:(...args)=>skinTokens(albumCollectionMarkup(...args)),albumTeamsMarkup:(...args)=>skinTokens(albumTeamsMarkup(...args)),albumRosterMarkup:(...args)=>skinTokens(albumRosterMarkup(...args)),requirementsMarkup,nodeModalMarkup,vendingMarkup:(...args)=>skinTokens(vendingMarkup(...args)),pullResultMarkup:(...args)=>skinTokens(pullResultMarkup(...args))});
   }
   global.RoadToGloryRunView=Object.freeze({create});
 })(globalThis);
