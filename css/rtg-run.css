@@ -558,11 +558,12 @@ button.rtg-campaign-card .rtg-campaign-shade{
   background-image:none!important;
 }
 .rtg-route--ares .rtg-map .rtg-map-block--season2-part .route-map.rtg-route-stage--season2::before{
-  content:"";
-  position:absolute;
-  z-index:0;
-  inset:-1px;
-  pointer-events:none;
+  content:""!important;
+  display:block!important;
+  position:absolute!important;
+  z-index:0!important;
+  inset:-1px!important;
+  pointer-events:none!important;
   background-color:#082c52;
   background-image:var(--rtg-route-image,none);
   background-position:var(--rtg-route-bg-position,center);
