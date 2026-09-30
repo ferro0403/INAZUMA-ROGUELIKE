@@ -488,3 +488,20 @@ button.rtg-campaign-card .rtg-campaign-shade{z-index:1}
 button.rtg-campaign-card .rtg-campaign-copy{z-index:2}
 .rtg-campaign-intro h1{font-size:clamp(3rem,15vw,5.4rem)!important;line-height:.82!important}
 @media(min-width:760px){button.rtg-campaign-card{min-height:470px!important}}
+
+/* Mobile campaign gateway: compact editorial banners, never full-screen cover art. */
+@media(max-width:759px){
+  .rtg-campaign-select-content{gap:14px;padding:18px 16px 42px!important}
+  .rtg-campaign-intro{padding:6px 0 2px}
+  .rtg-campaign-intro h1{font-size:clamp(2.65rem,13vw,4rem)!important;line-height:.86!important;margin:5px 0 10px!important}
+  .rtg-campaign-grid{gap:18px}
+  button.rtg-campaign-card{min-height:218px!important;max-height:218px!important;border-width:3px!important;box-shadow:6px 7px 0 #111216!important}
+  .rtg-campaign-card__image{object-position:center 38%!important}
+  button.rtg-campaign-card .rtg-campaign-shade{background:linear-gradient(180deg,rgba(8,10,14,.04) 0%,rgba(8,10,14,.16) 36%,rgba(8,10,14,.94) 100%)!important}
+  button.rtg-campaign-card .rtg-campaign-copy{inset:auto 0 0!important;display:grid!important;gap:5px!important;padding:48px 15px 14px!important}
+  .rtg-campaign-copy small{font-size:.58rem!important}
+  .rtg-campaign-copy strong{font-size:clamp(1.45rem,7vw,2rem)!important;line-height:.9!important;max-width:100%!important}
+  .rtg-campaign-copy em{gap:5px!important}
+  .rtg-campaign-copy em b{min-width:34px!important;height:24px!important;font-size:.61rem!important}
+  .rtg-campaign-copy i{margin-top:2px!important;padding:9px 12px!important;font-size:.72rem!important;border-width:2px!important;box-shadow:3px 3px 0 #111216!important}
+}
