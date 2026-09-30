@@ -937,8 +937,21 @@
       showPullResult(result,player);
       return result;
     }
+    function renderCampaignSelect(){
+      renderHtml(runView.campaignSelectorMarkup());
+      app?.querySelector?.("[data-rtg-campaign-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
+      app?.querySelectorAll?.("[data-rtg-campaign]")?.forEach(button=>button.addEventListener("click",async()=>{
+        const campaignId=id(button.dataset.rtgCampaign);
+        repository.selectCampaign?.(campaignId);
+        campaign=null;seasonDb=null;rawPlayerById=new Map();squadSlotRuntime=null;albumController=null;vendingRuntime=null;
+        await open({destination:"run"});
+      }));
+      return {selector:true};
+    }
     async function open(options={}){
       deps.closeModal?.({invokeOnClose:false});
+      if(options?.destination==="campaigns")return renderCampaignSelect();
+      if(options?.campaignId)repository.selectCampaign?.(options.campaignId);
       await ensureData();
       const access=refreshEntitlements();
       if(!access.unlocked){
