@@ -199,7 +199,7 @@
     duplicateRefunds:SEASON1.duplicateRefunds,constraints:aresConstraints,
     routeBackground:"assets/rtg/rtg-ares-route-map-user.jpeg",
     routeClass:"rtg-route--ares",
-    albumCover:"https://i0.wp.com/nicolaraccasceneggiature.altervista.org/wp-content/uploads/2019/05/Dlhck3sVAAA2Lgd-1.jpg?fit=1200%2C896&ssl=1",
+    albumCover:"https://image.tmdb.org/t/p/original/kqFVCKdKz20EFk8lFf7TZgyqhMw.jpg",
     albumCoverPosition:"center",secondaryMatchesPerGap:1,
   });
   const SEASONS=Object.freeze({ie1:SEASON1,ie1_s2:SEASON2,ie1_s3:SEASON3,ie2:ARES});
