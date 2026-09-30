@@ -3,7 +3,12 @@
 
   const SCHEMA_VERSION = 3;
   const CAMPAIGN_ID = "rtg-ie-trilogy";
-  const ACTIVE_SEASON_IDS = Object.freeze(Array.from(global.RoadToGloryConfig?.SEASON_IDS || ["ie1", "ie1_s2", "ie1_s3"]));
+  const CAMPAIGN_IDS = Object.freeze(["rtg-ie-trilogy","rtg-ares-orion"]);
+  const CAMPAIGN_SEASONS = Object.freeze({
+    "rtg-ie-trilogy": Object.freeze(["ie1","ie1_s2","ie1_s3"]),
+    "rtg-ares-orion": Object.freeze(["ie2","orion"]),
+  });
+  const ACTIVE_SEASON_IDS = Object.freeze(Array.from(new Set([...Array.from(global.RoadToGloryConfig?.SEASON_IDS || ["ie1","ie1_s2","ie1_s3","ie2"]),"orion"])));
   const cards = () => global.RoadToGloryCardIdentity;
   const PROJECT_RARITIES = Object.freeze(["Buono","Forte","Elite","Mondiale","Leggenda","Aurico"]);
   const DEVELOPMENT_RARITIES = Object.freeze(["Normale",...PROJECT_RARITIES]);
@@ -20,14 +25,17 @@
     return { formationId: null, lineup: [], bench: [], activeRoleVariantByCardId: {} };
   }
 
-  function createInitial({ campaignSeed } = {}) {
+  function createInitial({ campaignSeed, campaignId = CAMPAIGN_ID } = {}) {
     const seed = id(campaignSeed);
+    const normalizedCampaignId = CAMPAIGN_IDS.includes(id(campaignId)) ? id(campaignId) : CAMPAIGN_ID;
+    const startSeasonId = normalizedCampaignId === "rtg-ares-orion" ? "ie2" : "ie1";
+    const startNodeId = normalizedCampaignId === "rtg-ares-orion" ? "main:rampart_junior_high" : "main:occult";
     if (!seed) throw Object.assign(new Error("RTG campaign seed required"), { code: "rtg-state-missing-seed" });
     return {
       schemaVersion: SCHEMA_VERSION,
-      campaignId: CAMPAIGN_ID,
+      campaignId: normalizedCampaignId,
       campaignSeed: seed,
-      activeSeasonId: "ie1",
+      activeSeasonId: startSeasonId,
       seasonComplete: false,
       tokens: 0,
       projects: Object.fromEntries(PROJECT_RARITIES.map((rarity) => [rarity, 0])),
@@ -35,13 +43,13 @@
       seasonTransitionRewardedIds: [],
       lives: 2,
       checkpointMainIndex: -1,
-      currentNodeId: "main:occult",
+      currentNodeId: startNodeId,
       furthestNodeIndex: 0,
       defeatedTeamIds: [],
       firstClearMatchIds: [],
       gachaAcquiredCards: [],
       gacha: { pullCount: 0 },
-      squads: { ie1: squadDefaults() },
+      squads: { [startSeasonId]: squadDefaults() },
       attemptsByNode: {},
       activeMatch: null,
     };
@@ -102,7 +110,7 @@
         schemaVersion: version,
       });
     }
-    const initial = createInitial({ campaignSeed: source.campaignSeed || "invalid-seed" });
+    const initial = createInitial({ campaignSeed: source.campaignSeed || "invalid-seed", campaignId: source.campaignId || CAMPAIGN_ID });
     const acquiredCards = normalizeOwnedCards(source);
     const squadsSource = source.squads && typeof source.squads === "object" ? source.squads : {};
     const squadKeys = new Set([...ACTIVE_SEASON_IDS, ...Object.keys(squadsSource)]);
@@ -132,7 +140,7 @@
       schemaVersion: SCHEMA_VERSION,
       campaignId: id(source.campaignId || CAMPAIGN_ID),
       campaignSeed: id(source.campaignSeed || initial.campaignSeed),
-      activeSeasonId: id(source.activeSeasonId || "ie1"),
+      activeSeasonId: id(source.activeSeasonId || initial.activeSeasonId),
       seasonComplete: typeof source.seasonComplete === "boolean" ? source.seasonComplete : false,
       tokens: Math.max(0, integer(source.tokens, 0)),
       projects,
@@ -140,7 +148,7 @@
       seasonTransitionRewardedIds: uniqueIds(source.seasonTransitionRewardedIds),
       lives: Math.max(0, Math.min(2, integer(source.lives, 2))),
       checkpointMainIndex: Math.max(-1, integer(source.checkpointMainIndex, -1)),
-      currentNodeId: id(source.currentNodeId || "main:occult"),
+      currentNodeId: id(source.currentNodeId || initial.currentNodeId),
       furthestNodeIndex: Math.max(0, integer(source.furthestNodeIndex, 0)),
       defeatedTeamIds: uniqueIds(source.defeatedTeamIds),
       firstClearMatchIds: uniqueIds(source.firstClearMatchIds),
@@ -160,7 +168,8 @@
     if (!raw || typeof raw !== "object") fail("rtg-state-invalid", "Stato RTG non valido");
     const rawVersion = integer(raw.schemaVersion, 1);
     if (rawVersion > SCHEMA_VERSION) fail("rtg-state-unsupported-schema", "Versione RTG non supportata", { schemaVersion: rawVersion });
-    if (id(raw.campaignId || CAMPAIGN_ID) !== CAMPAIGN_ID) fail("rtg-state-invalid-campaign", "Campagna RTG non valida");
+    const rawCampaignId=id(raw.campaignId||CAMPAIGN_ID);
+    if (!CAMPAIGN_IDS.includes(rawCampaignId)) fail("rtg-state-invalid-campaign", "Campagna RTG non valida");
     if (Number(raw.tokens) < 0) fail("rtg-state-invalid-tokens", "Gettoni RTG non validi");
     if (raw.projects != null) {
       if (typeof raw.projects !== "object" || Array.isArray(raw.projects)) fail("rtg-state-invalid-projects", "Inventario Progetti RTG non valido");
@@ -183,7 +192,8 @@
       const rewardIds = raw.seasonTransitionRewardedIds.map(id).filter(Boolean);
       if (new Set(rewardIds).size !== rewardIds.length) fail("rtg-state-duplicate-season-reward", "Bonus cambio Season RTG duplicato");
     }
-    if (!ACTIVE_SEASON_IDS.includes(id(raw.activeSeasonId || "ie1"))) fail("rtg-state-invalid-season", "Season RTG non supportata");
+    const rawSeasonId=id(raw.activeSeasonId || (rawCampaignId==="rtg-ares-orion"?"ie2":"ie1"));
+    if (!ACTIVE_SEASON_IDS.includes(rawSeasonId) || !(CAMPAIGN_SEASONS[rawCampaignId]||[]).includes(rawSeasonId)) fail("rtg-state-invalid-season", "Season RTG non supportata");
     if (typeof raw.seasonComplete !== "boolean") fail("rtg-state-invalid-season-complete", "Flag completamento Season non valido");
     if (raw.activeMatch != null && typeof raw.activeMatch !== "object") fail("rtg-state-invalid-active-match", "Partita RTG attiva non valida");
     for (const [seasonId, rawSquad] of Object.entries(raw.squads || {})) {
@@ -219,5 +229,5 @@
     return normalized;
   }
 
-  global.RoadToGloryState = Object.freeze({ SCHEMA_VERSION, CAMPAIGN_ID, ACTIVE_SEASON_IDS, PROJECT_RARITIES, DEVELOPMENT_RARITIES, createInitial, normalize, validate, clone });
+  global.RoadToGloryState = Object.freeze({ SCHEMA_VERSION, CAMPAIGN_ID, CAMPAIGN_IDS, CAMPAIGN_SEASONS, ACTIVE_SEASON_IDS, PROJECT_RARITIES, DEVELOPMENT_RARITIES, createInitial, normalize, validate, clone });
 })(globalThis);
