@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v11-native-material-parser";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v12-native-glb-source";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -55,7 +55,7 @@ function roleOf(player) {
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "native-edge"
-    ? "v11-native-material-parser"
+    ? "v12-native-glb-source"
     : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
@@ -113,6 +113,62 @@ function assertGlb(buffer) {
   if (magic !== "glTF") throw new Error("Risposta nie-model non e un GLB valido");
 }
 
+function inspectGlbNativePayload(buffer) {
+  try {
+    const view = new DataView(buffer);
+    let offset = 12;
+    let json = null;
+    while (offset + 8 <= buffer.byteLength) {
+      const length = view.getUint32(offset, true);
+      const type = view.getUint32(offset + 4, true);
+      const start = offset + 8;
+      const end = start + length;
+      if (end > buffer.byteLength) break;
+      if (type === 0x4E4F534A) {
+        const text = new TextDecoder("utf-8").decode(new Uint8Array(buffer, start, length)).replace(/\u0000+$/g, "").trim();
+        json = JSON.parse(text);
+        break;
+      }
+      offset = end;
+    }
+    if (!json) return null;
+
+    const usedMaterials = new Set();
+    const nativeMaterials = new Set();
+    let primitiveCount = 0;
+    let colorPrimitives = 0;
+
+    for (const mesh of json.meshes || []) {
+      for (const primitive of mesh?.primitives || []) {
+        primitiveCount += 1;
+        if (primitive?.attributes?.COLOR_0 !== undefined) colorPrimitives += 1;
+        const materialIndex = Number(primitive?.material);
+        if (!Number.isInteger(materialIndex) || materialIndex < 0) continue;
+        usedMaterials.add(materialIndex);
+        const nie = json.materials?.[materialIndex]?.extras?.nie;
+        if (nie && typeof nie === "object" && (
+          nie.shader_hash !== undefined
+          || Array.isArray(nie.shader_parameters)
+          || Array.isArray(nie.native_colors)
+          || Array.isArray(nie.render_states)
+        )) {
+          nativeMaterials.add(materialIndex);
+        }
+      }
+    }
+
+    return {
+      usedMaterials: usedMaterials.size,
+      nativeMaterials: nativeMaterials.size,
+      primitiveCount,
+      colorPrimitives,
+    };
+  } catch (error) {
+    console.warn("[RTG 3D portrait] diagnostica JSON GLB non disponibile", error);
+    return null;
+  }
+}
+
 function parseGlb(buffer, baseUrl) {
   return new Promise((resolve, reject) => {
     const loader = new GLTFLoader();
@@ -168,20 +224,34 @@ function copyTextureSettings(texture, { color = false } = {}) {
   return texture;
 }
 
-function nieMaterialExtras(gltf, sourceMaterial) {
+function materialIndexForNode(gltf, node) {
+  const association = gltf?.parser?.associations?.get?.(node);
+  const meshIndex = Number(association?.meshes);
+  const primitiveIndex = Number(association?.primitives);
+  if (!Number.isInteger(meshIndex) || meshIndex < 0 || !Number.isInteger(primitiveIndex) || primitiveIndex < 0) {
+    return null;
+  }
+  const materialIndex = Number(gltf?.parser?.json?.meshes?.[meshIndex]?.primitives?.[primitiveIndex]?.material);
+  return Number.isInteger(materialIndex) && materialIndex >= 0 ? materialIndex : null;
+}
+
+function nieMaterialExtras(gltf, sourceMaterial, materialIndexHint = null) {
   const direct = sourceMaterial?.userData?.nie;
   if (direct && typeof direct === "object") return direct;
 
-  const association = gltf?.parser?.associations?.get?.(sourceMaterial);
-  const materialIndex = Number(association?.materials);
+  let materialIndex = Number(materialIndexHint);
+  if (!Number.isInteger(materialIndex) || materialIndex < 0) {
+    const association = gltf?.parser?.associations?.get?.(sourceMaterial);
+    materialIndex = Number(association?.materials);
+  }
   if (!Number.isInteger(materialIndex) || materialIndex < 0) return null;
 
   const fromJson = gltf?.parser?.json?.materials?.[materialIndex]?.extras?.nie;
   return fromJson && typeof fromJson === "object" ? fromJson : null;
 }
 
-async function loadNieAuxTextures(gltf, sourceMaterial) {
-  const descriptors = nieMaterialExtras(gltf, sourceMaterial)?.textures;
+async function loadNieAuxTextures(gltf, sourceMaterial, materialIndexHint = null) {
+  const descriptors = nieMaterialExtras(gltf, sourceMaterial, materialIndexHint)?.textures;
   if (!descriptors || typeof descriptors !== "object") return {};
 
   const entries = await Promise.all(
@@ -215,8 +285,8 @@ function normalizeNativeRenderStates(value) {
     .map((entry) => [Number(entry[0]) || 0, Number(entry[1]) || 0]);
 }
 
-function readNieNativeMaterial(gltf, sourceMaterial) {
-  const nie = nieMaterialExtras(gltf, sourceMaterial);
+function readNieNativeMaterial(gltf, sourceMaterial, materialIndexHint = null) {
+  const nie = nieMaterialExtras(gltf, sourceMaterial, materialIndexHint);
   if (!nie) return null;
 
   const shaderHash = Number(nie.shader_hash);
@@ -715,6 +785,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
   gltf.scene?.traverse?.((node) => {
     if (!node.isMesh || !node.material) return;
     const sources = Array.isArray(node.material) ? node.material : [node.material];
+    const materialIndexHint = materialIndexForNode(gltf, node);
 
     replacements.push((async () => {
       const next = [];
@@ -723,11 +794,12 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
           next.push(source);
           continue;
         }
+        const conversionKey = source.uuid + ":" + String(materialIndexHint ?? "na");
         const native = (shaderMode === "native" || shaderMode === "native-edge")
-          ? readNieNativeMaterial(gltf, source)
+          ? readNieNativeMaterial(gltf, source, materialIndexHint)
           : null;
-        if (!nativeSourceUuids.has(source.uuid) && (shaderMode === "native" || shaderMode === "native-edge")) {
-          nativeSourceUuids.add(source.uuid);
+        if (!nativeSourceUuids.has(conversionKey) && (shaderMode === "native" || shaderMode === "native-edge")) {
+          nativeSourceUuids.add(conversionKey);
           if (native) {
             nativeMaterials += 1;
             if (native.shaderHashHex) nativeShaderHashes.add(native.shaderHashHex);
@@ -735,9 +807,9 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
             missingNativeMaterials += 1;
           }
         }
-        if (!converted.has(source.uuid)) {
-          converted.set(source.uuid, (async () => {
-            const aux = await loadNieAuxTextures(gltf, source);
+        if (!converted.has(conversionKey)) {
+          converted.set(conversionKey, (async () => {
+            const aux = await loadNieAuxTextures(gltf, source, materialIndexHint);
             return shaderMode === "native-edge"
               ? buildG4NativeDataMaterial(source, aux, "capture", native)
               : shaderMode === "native"
@@ -747,7 +819,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
                   : buildCharacterMaterial(source, aux);
           })());
         }
-        next.push(await converted.get(source.uuid));
+        next.push(await converted.get(conversionKey));
       }
       node.material = Array.isArray(node.material) ? next : next[0];
       node.castShadow = false;
@@ -946,6 +1018,7 @@ function canvasBlob(canvas) {
 }
 
 async function renderGlbToBlob(buffer, sourceUrl, shaderMode = "legacy") {
+  const glbPayload = inspectGlbNativePayload(buffer);
   const parseStart = performance.now();
   const gltf = await parseGlb(buffer, sourceUrl.slice(0, sourceUrl.lastIndexOf("/") + 1));
   const parseMs = performance.now() - parseStart;
@@ -1008,7 +1081,7 @@ async function renderGlbToBlob(buffer, sourceUrl, shaderMode = "legacy") {
   renderer.dispose();
   renderer.forceContextLoss?.();
 
-  return { blob, parseMs, renderMs, animations: Number(gltf.animations?.length || 0), edge2, nativeMaterials };
+  return { blob, parseMs, renderMs, animations: Number(gltf.animations?.length || 0), edge2, nativeMaterials, glbPayload };
 }
 
 async function portraitFor({ playerId, player, uniformId = null, shaderModeOverride = null } = {}) {
@@ -1056,7 +1129,7 @@ async function portraitFor({ playerId, player, uniformId = null, shaderModeOverr
   const modelUrl = base + "/model-full/" + encodeURIComponent(playerConfig.internalCode) + ".glb?uniform=" + encodeURIComponent(uniformCrc);
   const totalStart = performance.now();
   const networkStart = performance.now();
-  const response = await fetch(modelUrl, { mode: "cors", cache: "default" });
+  const response = await fetch(modelUrl, { mode: "cors", cache: "no-store" });
   if (!response.ok) throw new Error("nie-model HTTP " + response.status);
   const buffer = await response.arrayBuffer();
   const networkMs = performance.now() - networkStart;
@@ -1077,6 +1150,7 @@ async function portraitFor({ playerId, player, uniformId = null, shaderModeOverr
     animations: rendered.animations,
     edge2: rendered.edge2,
     nativeMaterials: rendered.nativeMaterials,
+    glbPayload: rendered.glbPayload,
     uniformId: chosenUniformId,
     uniformCrc,
     isKeeper,
@@ -1183,7 +1257,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE+EDGE2 V11"
+      ? "NATIVE+EDGE2 V12"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
@@ -1193,9 +1267,13 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
       ? " · MAT " + result.nativeMaterials.materials
         + "/" + (result.nativeMaterials.materials + result.nativeMaterials.missing)
       : "";
+    const rawGlbLabel = result.glbPayload
+      ? " · RAW " + result.glbPayload.nativeMaterials + "/" + result.glbPayload.usedMaterials
+        + " · C " + result.glbPayload.colorPrimitives + "/" + result.glbPayload.primitiveCount
+      : "";
     status.textContent = result.cache === "miss"
-      ? shaderLabel + nativeMaterialLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
-      : shaderLabel + nativeMaterialLabel + " · cache " + result.cache + " · " + (result.isKeeper ? "GK" : "campo");
+      ? shaderLabel + nativeMaterialLabel + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
+      : shaderLabel + nativeMaterialLabel + rawGlbLabel + " · cache " + result.cache + " · " + (result.isKeeper ? "GK" : "campo");
     return result;
   } catch (error) {
     status.dataset.state = "error";
