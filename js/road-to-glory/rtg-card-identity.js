@@ -3,7 +3,7 @@
 
   const SEP = "::";
   const FREE_AGENTS = "free_agents";
-  const SEASON_ORDER = Object.freeze(["ie1", "ie1_s2", "ie1_s3"]);
+  const SEASON_ORDER = Object.freeze(["ie1", "ie1_s2", "ie1_s3", "ie2", "orion"]);
   const id = (value) => String(value ?? "").trim();
 
   function normalizeSeasonId(value) {
@@ -133,6 +133,8 @@
       ie1: "S1",
       ie1_s2: "S2",
       ie1_s3: "S3",
+      ie2: "AR",
+      orion: "OR",
       [FREE_AGENTS]: "FA",
     })[seasonId] || (seasonId ? seasonId.toUpperCase() : "");
   }

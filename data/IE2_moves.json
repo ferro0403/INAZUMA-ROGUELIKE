@@ -1,0 +1,1566 @@
+{
+  "schemaVersion": 1,
+  "seasonId": "ie2",
+  "players": {
+    "4390": {
+      "moveId": "4390_2",
+      "name": "Golden Gull",
+      "jpName": "シャイニングバード",
+      "type": "shot",
+      "element": "Fire",
+      "power": 90,
+      "tension": 60,
+      "source": "database"
+    },
+    "4391": {
+      "moveId": "4391_1",
+      "name": "Fire Tornado A",
+      "jpName": "ファイアトルネードＡ",
+      "type": "shot",
+      "element": "Fire",
+      "power": 70,
+      "tension": 60,
+      "source": "database"
+    },
+    "4392": {
+      "moveId": "4392_1",
+      "name": "Fire Lemonade",
+      "jpName": "ファイアレモネード",
+      "type": "shot",
+      "element": "Forest",
+      "power": 80,
+      "tension": 70,
+      "source": "database"
+    },
+    "4393": {
+      "moveId": "4393_1",
+      "name": "Maelstrom the Hand",
+      "jpName": "ウズマキ・ザ・ハンド",
+      "type": "save",
+      "element": "Wind",
+      "power": 85,
+      "tension": 80,
+      "source": "database"
+    },
+    "4394": {
+      "moveId": "4394_1",
+      "name": "Twister Trap",
+      "jpName": "シューティングカット",
+      "type": "defense",
+      "element": "Wind",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4395": {
+      "moveId": "4395_2",
+      "name": "Short Circuit",
+      "jpName": "ザ・ラビリンス",
+      "type": "dribble",
+      "element": "Fire",
+      "power": 85,
+      "tension": 80,
+      "source": "database"
+    },
+    "4396": {
+      "moveId": "4396_1",
+      "name": "Sparky Spin",
+      "jpName": "スパークウィンド",
+      "type": "dribble",
+      "element": "Fire",
+      "power": 85,
+      "tension": 80,
+      "source": "database"
+    },
+    "4397": {
+      "moveId": "4397_2",
+      "name": "Spinning Cut",
+      "jpName": "スピニングカット",
+      "type": "defense",
+      "element": "Wind",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4398": {
+      "moveId": "4398_1",
+      "name": "The Wall",
+      "jpName": "ザ・ウォール",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 65,
+      "tension": 60,
+      "source": "database"
+    },
+    "4399": {
+      "moveId": "4399_4",
+      "name": "Aurora Dribble",
+      "jpName": "オーロラドリブル",
+      "type": "dribble",
+      "element": "Wind",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4400": {
+      "moveId": "4400_3",
+      "name": "Illusory Ball",
+      "jpName": "イリュージョンボール",
+      "type": "dribble",
+      "element": "Forest",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4406": {
+      "moveId": "4406_1",
+      "name": "Fur Trapper",
+      "jpName": "もじゃキャッチ",
+      "type": "save",
+      "element": "Forest",
+      "power": 80,
+      "tension": 60,
+      "source": "database"
+    },
+    "4407": {
+      "moveId": "4407_1",
+      "name": "Spinning Cut",
+      "jpName": "スピニングカット",
+      "type": "defense",
+      "element": "Wind",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4408": {
+      "moveId": "4408_2",
+      "name": "Flame Dance",
+      "jpName": "フレイムダンス",
+      "type": "defense",
+      "element": "Fire",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4409": {
+      "moveId": "4409_1",
+      "name": "Killer Slide",
+      "jpName": "キラースライド",
+      "type": "defense",
+      "element": "Forest",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4410": {
+      "moveId": "4410_1",
+      "name": "Containment Field",
+      "jpName": "ゾーン・オブ・ペンタグラム",
+      "type": "defense",
+      "element": "Forest",
+      "power": 95,
+      "tension": 80,
+      "source": "database"
+    },
+    "4411": {
+      "moveId": "4411_1",
+      "name": "Foul Offence",
+      "jpName": "ジャッジスルー",
+      "type": "dribble",
+      "element": "Fire",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4412": {
+      "moveId": "4412_5",
+      "name": "Mole Fake",
+      "jpName": "モグラフェイント",
+      "type": "dribble",
+      "element": "Mountain",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4413": {
+      "moveId": "4413_1",
+      "name": "Divine Dummy",
+      "jpName": "エンジェルレイ",
+      "type": "dribble",
+      "element": "Forest",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4414": {
+      "moveId": "4414_4",
+      "name": "Illusory Ball",
+      "jpName": "イリュージョンボール",
+      "type": "dribble",
+      "element": "Forest",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4415": {
+      "moveId": "4415_3",
+      "name": "Foul Offence",
+      "jpName": "ジャッジスルー",
+      "type": "dribble",
+      "element": "Fire",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4416": {
+      "moveId": "4416_2",
+      "name": "Perfect Penguin",
+      "jpName": "パーフェクトペンギン",
+      "type": "shot",
+      "element": "Forest",
+      "power": 95,
+      "tension": 80,
+      "source": "database"
+    },
+    "4417": {
+      "moveId": "4417_13",
+      "name": "Final Death Zone",
+      "jpName": "ラスト・デスゾーン",
+      "type": "shot",
+      "element": "Forest",
+      "power": 100,
+      "tension": 100,
+      "source": "database"
+    },
+    "4418": {
+      "moveId": "4418_1",
+      "name": "Containment Field",
+      "jpName": "ゾーン・オブ・ペンタグラム",
+      "type": "defense",
+      "element": "Forest",
+      "power": 95,
+      "tension": 80,
+      "source": "database"
+    },
+    "4419": {
+      "moveId": "4419_1",
+      "name": "Reflect Buster",
+      "jpName": "リフレクトバスター",
+      "type": "shot",
+      "element": "Mountain",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4420": {
+      "moveId": "4420_2",
+      "name": "Pincer Pinch",
+      "jpName": "ビッグシザース",
+      "type": "defense",
+      "element": "Fire",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4421": {
+      "moveId": "4421_2",
+      "name": "Dash Accelerator",
+      "jpName": "ダッシュアクセル",
+      "type": "dribble",
+      "element": "Mountain",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4425": {
+      "moveId": "4425_1",
+      "name": "Lunar Eclipse",
+      "jpName": "王家の盾",
+      "type": "save",
+      "element": "Forest",
+      "power": 90,
+      "tension": 80,
+      "source": "database"
+    },
+    "4426": {
+      "moveId": "4426_1",
+      "name": "Spinning Cut",
+      "jpName": "スピニングカット",
+      "type": "defense",
+      "element": "Wind",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4427": {
+      "moveId": "4427_1",
+      "name": "Twister Trap",
+      "jpName": "シューティングカット",
+      "type": "defense",
+      "element": "Wind",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4428": {
+      "moveId": "4428_3",
+      "name": "Shooting Star",
+      "jpName": "シューティングスター",
+      "type": "defense",
+      "element": "Fire",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4429": {
+      "moveId": "4429_3",
+      "name": "Harvest",
+      "jpName": "ハーヴェスト",
+      "type": "defense",
+      "element": "Forest",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4430": {
+      "moveId": "4430_2",
+      "name": "Twister Trap",
+      "jpName": "シューティングカット",
+      "type": "defense",
+      "element": "Wind",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4431": {
+      "moveId": "4431_1",
+      "name": "Celestial Saw",
+      "jpName": "天空の刃",
+      "type": "shot",
+      "element": "Wind",
+      "power": 85,
+      "tension": 70,
+      "source": "database"
+    },
+    "4432": {
+      "moveId": "4432_1",
+      "name": "Dance on Air",
+      "jpName": "スカイウォーク",
+      "type": "dribble",
+      "element": "Mountain",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4433": {
+      "moveId": "4433_2",
+      "name": "Divine Dummy",
+      "jpName": "エンジェルレイ",
+      "type": "dribble",
+      "element": "Forest",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4434": {
+      "moveId": "4434_1",
+      "name": "Royal Lancer",
+      "jpName": "キングス・ランス",
+      "type": "shot",
+      "element": "Mountain",
+      "power": 100,
+      "tension": 100,
+      "source": "database"
+    },
+    "4435": {
+      "moveId": "4435_1",
+      "name": "Fire Tornado",
+      "jpName": "ファイアトルネード",
+      "type": "shot",
+      "element": "Fire",
+      "power": 70,
+      "tension": 60,
+      "source": "database"
+    },
+    "4436": {
+      "moveId": "4436_1",
+      "name": "Southern Cross",
+      "jpName": "サザンクロスカット",
+      "type": "dribble",
+      "element": "Forest",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4437": {
+      "moveId": "4437_1",
+      "name": "Shot Pocket",
+      "jpName": "シュートポケット",
+      "type": "save",
+      "element": "Forest",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4438": {
+      "moveId": "4438_2",
+      "name": "Coil Turn",
+      "jpName": "コイルターン",
+      "type": "defense",
+      "element": "Wind",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4439": {
+      "moveId": "4439_1",
+      "name": "Dance on Air",
+      "jpName": "スカイウォーク",
+      "type": "dribble",
+      "element": "Mountain",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4440": {
+      "moveId": "4440_2",
+      "name": "Ghost Pull",
+      "jpName": "怨霊",
+      "type": "defense",
+      "element": "Forest",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4442": {
+      "moveId": "4442_1",
+      "name": "Toughness Block",
+      "jpName": "タフネスブロック",
+      "type": "save",
+      "element": "Mountain",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4443": {
+      "moveId": "4443_1",
+      "name": "The Wall",
+      "jpName": "ザ・ウォール",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 65,
+      "tension": 60,
+      "source": "database"
+    },
+    "4444": {
+      "moveId": "4444_1",
+      "name": "Frankenstun",
+      "jpName": "フランケン守タイン",
+      "type": "defense",
+      "element": "Fire",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4445": {
+      "moveId": "4445_1",
+      "name": "Easter Island Header",
+      "jpName": "もっこり丘のモアイ",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4446": {
+      "moveId": "4446_1",
+      "name": "The Wall",
+      "jpName": "ザ・ウォール",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 65,
+      "tension": 60,
+      "source": "database"
+    },
+    "4447": {
+      "moveId": "4447_1",
+      "name": "The Wall",
+      "jpName": "ザ・ウォール",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 65,
+      "tension": 60,
+      "source": "database"
+    },
+    "4448": {
+      "moveId": "4448_1",
+      "name": "The Wall",
+      "jpName": "ザ・ウォール",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 65,
+      "tension": 60,
+      "source": "database"
+    },
+    "4449": {
+      "moveId": "4449_2",
+      "name": "Aikido",
+      "jpName": "合気道",
+      "type": "dribble",
+      "element": "Wind",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4450": {
+      "moveId": "4450_1",
+      "name": "Reflect Buster",
+      "jpName": "リフレクトバスター",
+      "type": "shot",
+      "element": "Mountain",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4451": {
+      "moveId": "4451_2",
+      "name": "Super Armadillo",
+      "jpName": "スーパーアルマジロ",
+      "type": "dribble",
+      "element": "Mountain",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4452": {
+      "moveId": "4452_1",
+      "name": "Dragon Crash",
+      "jpName": "ドラゴンクラッシュ",
+      "type": "shot",
+      "element": "Forest",
+      "power": 65,
+      "tension": 50,
+      "source": "database"
+    },
+    "4453": {
+      "moveId": "4453_1",
+      "name": "The Wall",
+      "jpName": "ザ・ウォール",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 65,
+      "tension": 60,
+      "source": "database"
+    },
+    "4454": {
+      "moveId": "4454_1",
+      "name": "The Wall",
+      "jpName": "ザ・ウォール",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 65,
+      "tension": 60,
+      "source": "database"
+    },
+    "4455": {
+      "moveId": "4455_1",
+      "name": "Flower Power",
+      "jpName": "花吹雪",
+      "type": "save",
+      "element": "Wind",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4456": {
+      "moveId": "4456_1",
+      "name": "Utter Gutsiness Club",
+      "jpName": "ド根性クラブ",
+      "type": "shot",
+      "element": "Mountain",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4457": {
+      "moveId": "4457_4",
+      "name": "Mole Fake",
+      "jpName": "モグラフェイント",
+      "type": "dribble",
+      "element": "Mountain",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4460": {
+      "moveId": "4460_2",
+      "name": "Spatial Portal",
+      "jpName": "ディメンションカット",
+      "type": "defense",
+      "element": "Forest",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4461": {
+      "moveId": "4461_1",
+      "name": "Toughness Block",
+      "jpName": "タフネスブロック",
+      "type": "save",
+      "element": "Mountain",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4462": {
+      "moveId": "4462_2",
+      "name": "Spinning Cut",
+      "jpName": "スピニングカット",
+      "type": "defense",
+      "element": "Wind",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4463": {
+      "moveId": "4463_1",
+      "name": "Quick Draw",
+      "jpName": "クイックドロウ",
+      "type": "defense",
+      "element": "Forest",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4464": {
+      "moveId": "4464_1",
+      "name": "Spinning Cut",
+      "jpName": "スピニングカット",
+      "type": "defense",
+      "element": "Wind",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4465": {
+      "moveId": "4465_1",
+      "name": "Coil Turn",
+      "jpName": "コイルターン",
+      "type": "defense",
+      "element": "Wind",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4466": {
+      "moveId": "4466_1",
+      "name": "Moonsault",
+      "jpName": "ムーンサルト",
+      "type": "dribble",
+      "element": "Wind",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4467": {
+      "moveId": "4467_1",
+      "name": "Boost Glider",
+      "jpName": "ブーストグライダー",
+      "type": "dribble",
+      "element": "Fire",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4468": {
+      "moveId": "4468_2",
+      "name": "Illusory Ball",
+      "jpName": "イリュージョンボール",
+      "type": "dribble",
+      "element": "Forest",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4469": {
+      "moveId": "4469_2",
+      "name": "Triangle Z",
+      "jpName": "トライアングルＺ",
+      "type": "shot",
+      "element": "Fire",
+      "power": 75,
+      "tension": 70,
+      "source": "database"
+    },
+    "4470": {
+      "moveId": "4470_1",
+      "name": "Back Tornado",
+      "jpName": "バックトルネード",
+      "type": "shot",
+      "element": "Wind",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4471": {
+      "moveId": "4471_1",
+      "name": "Back Tornado",
+      "jpName": "バックトルネード",
+      "type": "shot",
+      "element": "Wind",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4472": {
+      "moveId": "4472_1",
+      "name": "Fire Tornado",
+      "jpName": "ファイアトルネード",
+      "type": "shot",
+      "element": "Fire",
+      "power": 70,
+      "tension": 60,
+      "source": "database"
+    },
+    "4473": {
+      "moveId": "4473_3",
+      "name": "Boost Glider",
+      "jpName": "ブーストグライダー",
+      "type": "dribble",
+      "element": "Fire",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4474": {
+      "moveId": "4474_1",
+      "name": "Hurricane Arrows",
+      "jpName": "ハリケーンアロー",
+      "type": "defense",
+      "element": "Wind",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4498": {
+      "moveId": "4498_2",
+      "name": "Savage Beast Fang",
+      "jpName": "ハイビーストファング",
+      "type": "save",
+      "element": "Fire",
+      "power": 85,
+      "tension": 70,
+      "source": "database"
+    },
+    "4499": {
+      "moveId": "4499_1",
+      "name": "Earthquake",
+      "jpName": "アースクェイク",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4500": {
+      "moveId": "4500_1",
+      "name": "Cyclone",
+      "jpName": "サイクロン",
+      "type": "defense",
+      "element": "Wind",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4502": {
+      "moveId": "4502_1",
+      "name": "Killer Slide",
+      "jpName": "キラースライド",
+      "type": "defense",
+      "element": "Forest",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4503": {
+      "moveId": "4503_2",
+      "name": "Foul Offence",
+      "jpName": "ジャッジスルー",
+      "type": "dribble",
+      "element": "Fire",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4504": {
+      "moveId": "4504_2",
+      "name": "Foul Offence",
+      "jpName": "ジャッジスルー",
+      "type": "dribble",
+      "element": "Fire",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4505": {
+      "moveId": "4505_1",
+      "name": "Clone Faker",
+      "jpName": "分身フェイント",
+      "type": "dribble",
+      "element": "Forest",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4506": {
+      "moveId": "4506_1",
+      "name": "Wrath Shot",
+      "jpName": "百烈ショット",
+      "type": "shot",
+      "element": "Forest",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4507": {
+      "moveId": "4507_1",
+      "name": "Emperor Penguin No. 2",
+      "jpName": "皇帝ペンギン２号",
+      "type": "shot",
+      "element": "Forest",
+      "power": 85,
+      "tension": 80,
+      "source": "database"
+    },
+    "4508": {
+      "moveId": "4508_2",
+      "name": "Clone Defence",
+      "jpName": "分身ディフェンス",
+      "type": "defense",
+      "element": "Forest",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4510": {
+      "moveId": "4510_1",
+      "name": "Mistral",
+      "jpName": "木枯らし",
+      "type": "save",
+      "element": "Wind",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4511": {
+      "moveId": "4511_2",
+      "name": "Triple Boost",
+      "jpName": "トリプルブースト",
+      "type": "shot",
+      "element": "Fire",
+      "power": 85,
+      "tension": 80,
+      "source": "database"
+    },
+    "4517": {
+      "moveId": "4517_1",
+      "name": "Tsunami Wall",
+      "jpName": "つなみウォール",
+      "type": "save",
+      "element": "Wind",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4518": {
+      "moveId": "4518_1",
+      "name": "Divine Stamp",
+      "jpName": "裁きの鉄槌",
+      "type": "defense",
+      "element": "Fire",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4519": {
+      "moveId": "4519_1",
+      "name": "Divine Stamp",
+      "jpName": "裁きの鉄槌",
+      "type": "defense",
+      "element": "Fire",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4520": {
+      "moveId": "4520_1",
+      "name": "Divine Stamp",
+      "jpName": "裁きの鉄槌",
+      "type": "defense",
+      "element": "Fire",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4521": {
+      "moveId": "4521_1",
+      "name": "Mega Quake",
+      "jpName": "メガクェイク",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4522": {
+      "moveId": "4522_1",
+      "name": "Heaven's Time",
+      "jpName": "ヘブンズタイム",
+      "type": "dribble",
+      "element": "Wind",
+      "power": 85,
+      "tension": 80,
+      "source": "database"
+    },
+    "4523": {
+      "moveId": "4523_1",
+      "name": "Heaven's Time",
+      "jpName": "ヘブンズタイム",
+      "type": "dribble",
+      "element": "Wind",
+      "power": 85,
+      "tension": 80,
+      "source": "database"
+    },
+    "4524": {
+      "moveId": "4524_1",
+      "name": "Dash Storm",
+      "jpName": "ダッシュストーム",
+      "type": "dribble",
+      "element": "Wind",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4525": {
+      "moveId": "4525_1",
+      "name": "Reflect Buster",
+      "jpName": "リフレクトバスター",
+      "type": "shot",
+      "element": "Mountain",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4526": {
+      "moveId": "4526_3",
+      "name": "God Knows",
+      "jpName": "ゴッドノウズ",
+      "type": "shot",
+      "element": "Wind",
+      "power": 85,
+      "tension": 70,
+      "source": "database"
+    },
+    "4527": {
+      "moveId": "4527_1",
+      "name": "Celestial Saw",
+      "jpName": "天空の刃",
+      "type": "shot",
+      "element": "Wind",
+      "power": 85,
+      "tension": 70,
+      "source": "database"
+    },
+    "4530": {
+      "moveId": "4530_1",
+      "name": "Aurora Curtain",
+      "jpName": "オーロラカーテン",
+      "type": "save",
+      "element": "Wind",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4531": {
+      "moveId": "4531_1",
+      "name": "Land of Ice",
+      "jpName": "アイスグランド",
+      "type": "defense",
+      "element": "Wind",
+      "power": 65,
+      "tension": 60,
+      "source": "database"
+    },
+    "4532": {
+      "moveId": "4532_1",
+      "name": "Ghost Pull",
+      "jpName": "怨霊",
+      "type": "defense",
+      "element": "Forest",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4533": {
+      "moveId": "4533_2",
+      "name": "Doppelganger",
+      "jpName": "ドッペルゲンガー",
+      "type": "defense",
+      "element": "Forest",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4534": {
+      "moveId": "4534_1",
+      "name": "About Face",
+      "jpName": "後ろの正面",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4535": {
+      "moveId": "4535_1",
+      "name": "Whirlwind Twister",
+      "jpName": "竜巻旋風",
+      "type": "dribble",
+      "element": "Wind",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4536": {
+      "moveId": "4536_1",
+      "name": "Deceptor Dribble",
+      "jpName": "まぼろしドリブル",
+      "type": "dribble",
+      "element": "Forest",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4537": {
+      "moveId": "4537_4",
+      "name": "Deceptor Dribble",
+      "jpName": "まぼろしドリブル",
+      "type": "dribble",
+      "element": "Forest",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4538": {
+      "moveId": "4538_1",
+      "name": "Cold Front",
+      "jpName": "ホワイト・ダブルインパクト",
+      "type": "shot",
+      "element": "Wind",
+      "power": 90,
+      "tension": 70,
+      "source": "database"
+    },
+    "4539": {
+      "moveId": "4539_2",
+      "name": "Ursa Rager",
+      "jpName": "必殺クマゴロシ斬",
+      "type": "shot",
+      "element": "Mountain",
+      "power": 85,
+      "tension": 60,
+      "source": "database"
+    },
+    "4540": {
+      "moveId": "4540_1",
+      "name": "Freeze Shot",
+      "jpName": "フリーズショット",
+      "type": "shot",
+      "element": "Forest",
+      "power": 55,
+      "tension": 50,
+      "source": "database"
+    },
+    "4541": {
+      "moveId": "4541_1",
+      "name": "Freeze Shot",
+      "jpName": "フリーズショット",
+      "type": "shot",
+      "element": "Forest",
+      "power": 55,
+      "tension": 50,
+      "source": "database"
+    },
+    "4542": {
+      "moveId": "4542_1",
+      "name": "Rabbit Run",
+      "jpName": "シロウサギダッシュート",
+      "type": "shot",
+      "element": "Forest",
+      "power": 70,
+      "tension": 60,
+      "source": "database"
+    },
+    "4543": {
+      "moveId": "4543_4",
+      "name": "Wyvern Blizzard",
+      "jpName": "ワイバーンブリザード",
+      "type": "shot",
+      "element": "Wind",
+      "power": 80,
+      "tension": 70,
+      "source": "database"
+    },
+    "4546": {
+      "moveId": "4546_1",
+      "name": "Wormhole",
+      "jpName": "ワームホール",
+      "type": "save",
+      "element": "Forest",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4547": {
+      "moveId": "4547_1",
+      "name": "Gravitation",
+      "jpName": "グラビテイション",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4548": {
+      "moveId": "4548_3",
+      "name": "Photon Crash",
+      "jpName": "フォトンフラッシュ",
+      "type": "defense",
+      "element": "Fire",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4549": {
+      "moveId": "4549_3",
+      "name": "Cosmic Blast",
+      "jpName": "ユニバースブラスト",
+      "type": "shot",
+      "element": "Forest",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4550": {
+      "moveId": "4550_1",
+      "name": "Ignited Steal",
+      "jpName": "イグナイトスティール",
+      "type": "defense",
+      "element": "Fire",
+      "power": 70,
+      "tension": 60,
+      "source": "database"
+    },
+    "4551": {
+      "moveId": "4551_1",
+      "name": "Astro Break",
+      "jpName": "アストロブレイク",
+      "type": "shot",
+      "element": "Forest",
+      "power": 70,
+      "tension": 60,
+      "source": "database"
+    },
+    "4552": {
+      "moveId": "4552_1",
+      "name": "Ganymede Ray",
+      "jpName": "ガニメデプロトン",
+      "type": "shot",
+      "element": "Forest",
+      "power": 65,
+      "tension": 60,
+      "source": "database"
+    },
+    "4553": {
+      "moveId": "4553_1",
+      "name": "Atomic Flare",
+      "jpName": "アトミックフレア",
+      "type": "shot",
+      "element": "Fire",
+      "power": 85,
+      "tension": 70,
+      "source": "database"
+    },
+    "4554": {
+      "moveId": "4554_1",
+      "name": "Northern Impact",
+      "jpName": "ノーザンインパクト",
+      "type": "shot",
+      "element": "Wind",
+      "power": 85,
+      "tension": 70,
+      "source": "database"
+    },
+    "4555": {
+      "moveId": "4555_1",
+      "name": "Meteor Blade",
+      "jpName": "流星ブレード",
+      "type": "shot",
+      "element": "Fire",
+      "power": 85,
+      "tension": 70,
+      "source": "database"
+    },
+    "4556": {
+      "moveId": "4556_1",
+      "name": "The Detonator",
+      "jpName": "ザ・エクスプロージョン",
+      "type": "shot",
+      "element": "Forest",
+      "power": 95,
+      "tension": 80,
+      "source": "database"
+    },
+    "4557": {
+      "moveId": "4557_2",
+      "name": "Warp Drive",
+      "jpName": "ワープドライブ",
+      "type": "dribble",
+      "element": "Forest",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4558": {
+      "moveId": "4558_1",
+      "name": "Ganymede Ray",
+      "jpName": "ガニメデプロトン",
+      "type": "shot",
+      "element": "Forest",
+      "power": 65,
+      "tension": 60,
+      "source": "database"
+    },
+    "4559": {
+      "moveId": "4559_1",
+      "name": "Ignited Steal",
+      "jpName": "イグナイトスティール",
+      "type": "defense",
+      "element": "Fire",
+      "power": 70,
+      "tension": 60,
+      "source": "database"
+    },
+    "4561": {
+      "moveId": "4561_2",
+      "name": "Mega Majin",
+      "jpName": "風神雷神",
+      "type": "save",
+      "element": "Wind",
+      "power": 90,
+      "tension": 80,
+      "source": "database"
+    },
+    "4562": {
+      "moveId": "4562_1",
+      "name": "Volcano Cut",
+      "jpName": "ボルケイノカット",
+      "type": "defense",
+      "element": "Fire",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4563": {
+      "moveId": "4563_2",
+      "name": "Flurry Dash",
+      "jpName": "疾風ダッシュ",
+      "type": "dribble",
+      "element": "Wind",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4564": {
+      "moveId": "4564_2",
+      "name": "Quick Draw",
+      "jpName": "クイックドロウ",
+      "type": "defense",
+      "element": "Forest",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4565": {
+      "moveId": "4565_3",
+      "name": "Stone Wall",
+      "jpName": "ロックウォールダム",
+      "type": "defense",
+      "element": "Forest",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4566": {
+      "moveId": "4566_1",
+      "name": "Whirlwind Cut",
+      "jpName": "カマイタチ",
+      "type": "dribble",
+      "element": "Wind",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4567": {
+      "moveId": "4567_1",
+      "name": "Big Fan",
+      "jpName": "オオウチワ",
+      "type": "dribble",
+      "element": "Wind",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4568": {
+      "moveId": "4568_1",
+      "name": "Gravestone",
+      "jpName": "グレイブストーン",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4569": {
+      "moveId": "4569_2",
+      "name": "Monkey Turn",
+      "jpName": "モンキーターン",
+      "type": "dribble",
+      "element": "Mountain",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4570": {
+      "moveId": "4570_1",
+      "name": "Heavenly Tianlong",
+      "jpName": "天竜",
+      "type": "shot",
+      "element": "Mountain",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4571": {
+      "moveId": "4571_1",
+      "name": "Heavenly Tianlong",
+      "jpName": "天竜",
+      "type": "shot",
+      "element": "Mountain",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4572": {
+      "moveId": "4572_2",
+      "name": "Ninja Toad",
+      "jpName": "忍法ガマガエル",
+      "type": "shot",
+      "element": "Mountain",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4574": {
+      "moveId": "4574_1",
+      "name": "Clone Shot",
+      "jpName": "分身シュート",
+      "type": "shot",
+      "element": "Forest",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4575": {
+      "moveId": "4575_1",
+      "name": "Three-Legged Rush",
+      "jpName": "ニニンサンキャク",
+      "type": "dribble",
+      "element": "Mountain",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4576": {
+      "moveId": "4576_1",
+      "name": "Big Fan",
+      "jpName": "オオウチワ",
+      "type": "dribble",
+      "element": "Wind",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4577": {
+      "moveId": "4577_2",
+      "name": "Trina Tumble",
+      "jpName": "このはロール",
+      "type": "defense",
+      "element": "Forest",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4588": {
+      "moveId": "4588_1",
+      "name": "Killer Slide",
+      "jpName": "キラースライド",
+      "type": "defense",
+      "element": "Forest",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4589": {
+      "moveId": "4589_1",
+      "name": "Wetsuit",
+      "jpName": "ザ・ボヨン",
+      "type": "save",
+      "element": "Wind",
+      "power": 95,
+      "tension": 70,
+      "source": "database"
+    },
+    "4590": {
+      "moveId": "4590_1",
+      "name": "Stone Prison",
+      "jpName": "ストーンプリズン",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4591": {
+      "moveId": "4591_1",
+      "name": "Stone Prison",
+      "jpName": "ストーンプリズン",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4592": {
+      "moveId": "4592_2",
+      "name": "Gravestone",
+      "jpName": "グレイブストーン",
+      "type": "defense",
+      "element": "Mountain",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4593": {
+      "moveId": "4593_3",
+      "name": "Yo-Yo Ball",
+      "jpName": "ウェルカムバック",
+      "type": "defense",
+      "element": "Forest",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4594": {
+      "moveId": "4594_1",
+      "name": "Kangaroo Kick",
+      "jpName": "カンガルーキック",
+      "type": "dribble",
+      "element": "Mountain",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4595": {
+      "moveId": "4595_2",
+      "name": "Ultra Moon",
+      "jpName": "ウルトラムーン",
+      "type": "dribble",
+      "element": "Forest",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4596": {
+      "moveId": "4596_1",
+      "name": "Kangaroo Kick",
+      "jpName": "カンガルーキック",
+      "type": "dribble",
+      "element": "Mountain",
+      "power": 50,
+      "tension": 50,
+      "source": "database"
+    },
+    "4597": {
+      "moveId": "4597_1",
+      "name": "Double-Trouble",
+      "jpName": "ツインランサー",
+      "type": "shot",
+      "element": "Fire",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4598": {
+      "moveId": "4598_1",
+      "name": "Diamond Ray",
+      "jpName": "ダイヤモンドレイ",
+      "type": "shot",
+      "element": "Mountain",
+      "power": 100,
+      "tension": 80,
+      "source": "database"
+    },
+    "4599": {
+      "moveId": "4599_1",
+      "name": "Double-Trouble",
+      "jpName": "ツインランサー",
+      "type": "shot",
+      "element": "Fire",
+      "power": 70,
+      "tension": 70,
+      "source": "database"
+    },
+    "4600": {
+      "moveId": "4600_3",
+      "name": "Bewilder Blast",
+      "jpName": "シザース・ボム",
+      "type": "dribble",
+      "element": "Mountain",
+      "power": 60,
+      "tension": 60,
+      "source": "database"
+    },
+    "4601": {
+      "moveId": "4601_2",
+      "name": "Slingshot",
+      "jpName": "スリングショット",
+      "type": "shot",
+      "element": "Mountain",
+      "power": 85,
+      "tension": 80,
+      "source": "database"
+    },
+    "4638": {
+      "moveId": "4638_1",
+      "name": "God Hand",
+      "jpName": "ゴッドハンド",
+      "type": "save",
+      "element": "Mountain",
+      "power": 65,
+      "tension": 60,
+      "source": "database"
+    }
+  }
+}

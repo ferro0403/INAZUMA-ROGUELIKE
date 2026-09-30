@@ -37,6 +37,7 @@
     let lastRenderedHtml="";
     let matchFlowTimer=null;
     let displayedMinute=0;
+    let aresRouteMapPromise=null;
     let selectedEncounterChoice=null;
     let selectedEncounterId=null;
     const SQUAD_PICKER_PAGE_SIZE=24;
@@ -114,6 +115,30 @@
       return lastRenderedHtml;
     }
     function getRenderedHtml(){return app?.innerHTML||lastRenderedHtml;}
+
+    async function ensureAresRouteMap(){
+      if(global.__RTG_ARES_ROUTE_MAP_DATA_URL)return global.__RTG_ARES_ROUTE_MAP_DATA_URL;
+      if(aresRouteMapPromise)return aresRouteMapPromise;
+      const fetcher=deps.fetch||global.fetch;
+      if(typeof fetcher!=="function")throw new Error("RTG Ares route map fetch unavailable");
+      const partUrls=Array.from({length:9},(_,index)=>`assets/rtg/ares-map/part-${String(index).padStart(2,"0")}.txt?v=20260930-ares-route-1`);
+      aresRouteMapPromise=(async()=>{
+        const parts=await Promise.all(partUrls.map(async(url)=>{
+          const response=await fetcher(url);
+          if(!response?.ok)throw new Error(`RTG Ares route map asset missing: ${url}`);
+          return String(await response.text()).trim();
+        }));
+        const payload=parts.join("");
+        if(!payload.startsWith("UklGR"))throw new Error("RTG Ares route map asset invalid");
+        const dataUrl=`data:image/webp;base64,${payload}`;
+        global.__RTG_ARES_ROUTE_MAP_DATA_URL=dataUrl;
+        return dataUrl;
+      })().catch((error)=>{
+        aresRouteMapPromise=null;
+        throw error;
+      });
+      return aresRouteMapPromise;
+    }
 
     async function ensureData(){
       const sid=activeSeasonId();
@@ -937,8 +962,21 @@
       showPullResult(result,player);
       return result;
     }
+    function renderCampaignSelect(){
+      renderHtml(runView.campaignSelectorMarkup());
+      app?.querySelector?.("[data-rtg-campaign-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
+      app?.querySelectorAll?.("[data-rtg-campaign]")?.forEach(button=>button.addEventListener("click",async()=>{
+        const campaignId=id(button.dataset.rtgCampaign);
+        repository.selectCampaign?.(campaignId);
+        campaign=null;seasonDb=null;rawPlayerById=new Map();squadSlotRuntime=null;albumController=null;vendingRuntime=null;
+        await open({destination:"run"});
+      }));
+      return {selector:true};
+    }
     async function open(options={}){
       deps.closeModal?.({invokeOnClose:false});
+      if(options?.destination==="campaigns")return renderCampaignSelect();
+      if(options?.campaignId)repository.selectCampaign?.(options.campaignId);
       await ensureData();
       const access=refreshEntitlements();
       if(!access.unlocked){
@@ -948,6 +986,10 @@
       }
       campaign=await repository.ensureCampaign();
       progression?.setSeasonContext?.(campaign);
+      if(activeSeasonId()==="ie2"){
+        try{await ensureAresRouteMap();}
+        catch(error){global.console?.error?.("[RTG] Impossibile caricare lo sfondo Ares",error);}
+      }
       if(activeSeasonId()!=="ie1"){
         seasonDb=await global.SeasonRegistry?.loadDatabase?.(activeSeasonId());
         rawPlayerById=new Map();

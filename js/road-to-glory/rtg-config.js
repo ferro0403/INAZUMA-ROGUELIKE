@@ -175,7 +175,34 @@
     albumCoverPosition:"center",
     secondaryMatchesPerGap:1,
   });
-  const SEASONS=Object.freeze({ie1:SEASON1,ie1_s2:SEASON2,ie1_s3:SEASON3});
+  const aresOrder=Object.freeze([
+    ["rampart_junior_high",76,0],["kirkwood",78,1],["everytown",80,2],["royal_academy_ares",82,3],
+    ["alpine",83,3],["polestar_academy",84,4],["zeus_ares",85,4],["alia_academy",86,5],
+    ["lunar_prime_academy",87,5],["raimon_2",88,6],["barcelona_orb",90,7],
+  ]);
+  const aresMatches=Object.freeze(aresOrder.map(([teamId,cap,minRecruit])=>{
+    const recentCount=Math.floor(minRecruit/2);
+    return Object.freeze({teamId,cap,minRecruit,recentCount,recentWindow:recentCount?recentCount+2:0});
+  }));
+  const aresTeams=Object.freeze(aresMatches.map(entry=>entry.teamId));
+  const aresConstraints=Object.freeze(Object.fromEntries(aresMatches.map(entry=>[
+    entry.teamId,Object.freeze({cap:entry.cap,minRecruit:entry.minRecruit,recentCount:entry.recentCount,recentWindow:entry.recentWindow})
+  ])));
+  const ARES=Object.freeze({
+    seasonId:"ie2",seasonNumber:"AR",previousSeasonId:null,nextSeasonId:null,
+    campaignId:"rtg-ares-orion",mainTeams:aresTeams,importantMatches:aresMatches,formations,
+    checkpointMainIndexes:Object.freeze([2,5,8]),visualBlocks:Object.freeze([Object.freeze([0,2]),Object.freeze([3,5]),Object.freeze([6,8]),Object.freeze([9,10])]),
+    livesPerCheckpoint:2,pullCost:300,recruitmentPullCost:null,
+    mainRewards:Object.freeze(Object.fromEntries(aresTeams.map(teamId=>[teamId,MAIN_WIN_REWARD]))),
+    secondaryRewards:SEASON1.secondaryRewards,
+    rarityWeights:Object.freeze({Normale:40,Buono:27,Forte:18,Elite:10,Mondiale:5,Leggenda:1}),
+    duplicateRefunds:SEASON1.duplicateRefunds,constraints:aresConstraints,
+    routeBackground:"assets/rtg/rtg-ares-route-map-user.jpeg",
+    routeClass:"rtg-route--ares",
+    albumCover:"https://image.tmdb.org/t/p/original/kqFVCKdKz20EFk8lFf7TZgyqhMw.jpg",
+    albumCoverPosition:"center",secondaryMatchesPerGap:1,
+  });
+  const SEASONS=Object.freeze({ie1:SEASON1,ie1_s2:SEASON2,ie1_s3:SEASON3,ie2:ARES});
   const SEASON_IDS=Object.freeze(Object.keys(SEASONS));
   function season(seasonId){ return SEASONS[String(seasonId||"ie1")]||null; }
   const buildSeason1Nodes=buildSeasonNodes;
@@ -202,5 +229,5 @@
     return Object.freeze(nodes);
   }
 
-  global.RoadToGloryConfig = Object.freeze({ MAIN_WIN_REWARD, SECONDARY_WIN_REWARD, SEASON_TRANSITION_REWARD, SEASON1, SEASON2, SEASON3, SEASONS, SEASON_IDS, season, buildSeasonNodes:buildAnySeasonNodes });
+  global.RoadToGloryConfig = Object.freeze({ MAIN_WIN_REWARD, SECONDARY_WIN_REWARD, SEASON_TRANSITION_REWARD, SEASON1, SEASON2, SEASON3, ARES, SEASONS, SEASON_IDS, season, buildSeasonNodes:buildAnySeasonNodes });
 })(globalThis);
