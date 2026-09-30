@@ -505,3 +505,45 @@ button.rtg-campaign-card .rtg-campaign-copy{z-index:2}
   .rtg-campaign-copy em b{min-width:34px!important;height:24px!important;font-size:.61rem!important}
   .rtg-campaign-copy i{margin-top:2px!important;padding:9px 12px!important;font-size:.72rem!important;border-width:2px!important;box-shadow:3px 3px 0 #111216!important}
 }
+
+
+/* Campaign gateway polish: same ink / gold / deep-blue visual language as RTG. */
+.rtg-campaign-select{
+  background:
+    radial-gradient(circle at 88% 10%,rgba(255,210,31,.13),transparent 28%),
+    linear-gradient(145deg,rgba(8,23,38,.97),rgba(10,17,28,.98) 58%,rgba(17,18,22,.99))!important;
+  color:#fff!important;
+}
+.rtg-campaign-select::before{
+  content:"";position:fixed;inset:0;pointer-events:none;opacity:.16;
+  background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);
+  background-size:32px 32px;
+}
+.rtg-campaign-select-content{position:relative;z-index:1}
+.rtg-campaign-intro{
+  position:relative;padding:18px 18px 17px!important;
+  border-left:6px solid #ffd21f;
+  background:linear-gradient(100deg,rgba(255,255,255,.075),rgba(255,255,255,.018));
+}
+.rtg-campaign-intro .eyebrow{margin:0 0 8px!important;color:#ffd21f!important;text-shadow:none!important}
+.rtg-campaign-intro h1{margin:0 0 11px!important;color:#fff!important;text-shadow:3px 3px 0 rgba(0,0,0,.34)!important}
+.rtg-campaign-intro p{color:#dfe7ee!important;font-weight:750!important}
+button.rtg-campaign-card{
+  border-color:#f7f7f2!important;
+  outline:3px solid #111216;
+  box-shadow:8px 9px 0 #ffd21f!important;
+}
+button.rtg-campaign-card .rtg-campaign-shade{
+  background:linear-gradient(180deg,rgba(4,9,15,.04) 0%,rgba(4,9,15,.18) 35%,rgba(5,9,15,.96) 100%)!important;
+}
+.rtg-campaign-copy small{color:#ffd21f!important;text-shadow:0 2px 4px #000}
+.rtg-campaign-copy strong{color:#fff!important;text-shadow:0 3px 5px #000!important}
+.rtg-campaign-copy em b{border-color:#fff!important;background:#101116!important;color:#ffd21f!important;box-shadow:2px 2px 0 #ffd21f!important}
+.rtg-campaign-copy i{border-color:#fff!important;background:#ffd21f!important;color:#101116!important;box-shadow:4px 4px 0 #101116!important}
+@media(max-width:759px){
+  .rtg-campaign-select-content{padding-top:20px!important}
+  .rtg-campaign-intro{padding:15px 14px 16px!important;margin-bottom:3px}
+  .rtg-campaign-intro h1{font-size:clamp(2.45rem,12vw,3.55rem)!important}
+  .rtg-campaign-intro p{font-size:.91rem!important;line-height:1.4!important}
+  button.rtg-campaign-card{box-shadow:6px 7px 0 #ffd21f!important}
+}
