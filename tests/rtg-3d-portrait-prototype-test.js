@@ -62,8 +62,8 @@ assert(runtime.includes('vec3(0.10) * g4High'), "Native highlight color must rem
 assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must remain tied to the extracted Character profile.");
 assert(runtime.includes('rtg-g4-native-data-v7'), "Native-data shader program cache version is missing.");
 
-assert(runtime.includes('rtg-3d-portrait-v11-native-material-parser'), "Native edge2 portrait mode must invalidate cached portraits after parser-backed native material wiring.");
-assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11"'), "Native edge2 portrait mode aliases are missing.");
+assert(runtime.includes('rtg-3d-portrait-v12-native-glb-source'), "Native edge2 portrait mode must invalidate cached portraits after raw GLB source diagnostics.");
+assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12"'), "Native edge2 portrait mode aliases are missing.");
 assert(runtime.includes('profile === "capture"'), "Native edge2 must select the extracted capture lighting profile.");
 assert(runtime.includes('source: "light_2d_capture.cfg.bin"'), "Native edge2 beauty pass must use light_2d_capture.cfg.bin.");
 assert(runtime.includes('charaLightDir: [0.358, 0.614, 0.703]'), "Capture charaLightDir is missing.");
@@ -72,6 +72,9 @@ assert(runtime.includes('charaShadowColor2: [0.62, 0.54, 0.50, 0.55]'), "Capture
 assert(runtime.includes('charaGrTParam: [0.0, 1.0, 1.0, 0.0]'), "Capture charaGrTParam is missing.");
 assert(runtime.includes('buildG4NativeDataMaterial(source, aux, "capture")'), "Native edge2 must route beauty through the capture profile.");
 assert(runtime.includes('rtg-g4-native-capture-v9'), "Capture-profile shader program cache key is missing.");
+assert(runtime.includes('function inspectGlbNativePayload'), "Native portrait must inspect the raw GLB JSON before GLTFLoader transforms it.");
+assert(runtime.includes('cache: "no-store"'), "Native portrait must bypass stale browser HTTP cache for model GLBs.");
+assert(runtime.includes('function materialIndexForNode'), "Native portrait must resolve the original glTF material from the mesh/primitive association.");
 assert(runtime.includes('function nieMaterialExtras'), "Native portrait must resolve material extras through GLTFLoader associations when needed.");
 assert(runtime.includes('parser?.associations?.get?.(sourceMaterial)'), "Native portrait must use the GLTF material association for cloned vertex-color materials.");
 assert(runtime.includes('parser?.json?.materials?.[materialIndex]?.extras?.nie'), "Native portrait must be able to read preserved extras directly from parser JSON.");
@@ -84,7 +87,9 @@ assert(runtime.includes('nie.render_states'), "Native portrait must preserve ori
 assert(runtime.includes('rtgNativeMaterial: nativeMaterial'), "Native material metadata must remain attached to the runtime Character material.");
 assert(runtime.includes('nativeMaterial?.shaderHashHex || "no-native-hash"'), "Native shader hash must participate in the Three program cache identity.");
 assert(runtime.includes('nativeMaterials: rendered.nativeMaterials'), "Portrait diagnostics must report how many native materials reached the browser.");
-assert(runtime.includes('"NATIVE+EDGE2 V11"'), "RTG prototype must identify the parser-backed v11 native path in the status badge.");
+assert(runtime.includes('"NATIVE+EDGE2 V12"'), "RTG prototype must identify the raw-source v12 native path in the status badge.");
+assert(runtime.includes('" · RAW " + result.glbPayload.nativeMaterials'), "RTG prototype must expose native metadata found in the raw GLB.");
+assert(runtime.includes('" · C " + result.glbPayload.colorPrimitives'), "RTG prototype must expose raw COLOR_0 primitive coverage.");
 assert(runtime.includes('" · MAT " + result.nativeMaterials.materials'), "RTG prototype must expose native-material ingestion in the portrait status badge.");
 
 assert(runtime.includes('const NATIVE_EDGE2_CAPTURE_PROFILE = Object.freeze'), "Extracted edge2 capture profile is missing.");
