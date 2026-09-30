@@ -87,7 +87,7 @@
     function season2MapMarkup(list,state,seasonDb,seasonConfig){
       const indexed=list.map((node,index)=>({node,index}));
       const blocks=list.length<=33?S2_BLOCKS:Array.from({length:Math.ceil(list.length/6)},(_,index)=>Object.freeze({index,start:index*6,end:Math.min(list.length-1,index*6+5),label:index===Math.ceil(list.length/6)-1?"Finale":`Tappa ${index+1}`,eyebrow:`Capitolo ${index+1}`,height:640,bg:`center ${Math.round(index/Math.max(1,Math.ceil(list.length/6)-1)*100)}%`}));
-      return blocks.map((block)=>{
+      return blocks.filter((block)=>block.start<list.length).map((block)=>{
         const entries=indexed.filter(({index})=>index>=block.start&&index<=block.end);
         const points=season2Positions(block.index,entries.length);
         return `<section class="rtg-map-block rtg-map-block--season2-part rtg-map-block--season2-${block.index+1}" data-rtg-map-block="season2-${block.index+1}"><div class="section-head rtg-route-heading"><div><p class="eyebrow">${escape(block.eyebrow)}</p><h2>${escape(block.label)}</h2></div><span class="rtg-route-count">${entries.length} tappe</span></div><div class="route-map rtg-route-stage rtg-route-stage--season2" style="${routeBackgroundValue(seasonConfig)}--rtg-route-height:${block.height}px;--rtg-route-bg-position:${escape(block.bg)}">${pathSvg(points)}${entries.map(({node,index},localIndex)=>node.type==="main"?mainNodeMarkup(state,node,index,seasonDb,points[localIndex]):secondaryNodeMarkup(state,node,index,points[localIndex])).join("")}</div></section>`;
