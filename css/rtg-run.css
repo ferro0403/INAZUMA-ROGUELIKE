@@ -548,3 +548,29 @@ button.rtg-campaign-card .rtg-campaign-shade{
   .rtg-campaign-intro p{font-size:.91rem!important;line-height:1.4!important}
   button.rtg-campaign-card{box-shadow:6px 7px 0 #ffd21f!important}
 }
+
+
+/* Ares map focus pass: sharpen only the artwork layer, never nodes or route lines. */
+.rtg-route--ares .rtg-map .rtg-map-block--season2-part .route-map.rtg-route-stage--season2{
+  position:relative!important;
+  isolation:isolate;
+  overflow:hidden!important;
+  background-image:none!important;
+}
+.rtg-route--ares .rtg-map .rtg-map-block--season2-part .route-map.rtg-route-stage--season2::before{
+  content:"";
+  position:absolute;
+  z-index:0;
+  inset:-1px;
+  pointer-events:none;
+  background-color:#082c52;
+  background-image:var(--rtg-route-image,none);
+  background-position:var(--rtg-route-bg-position,center);
+  background-size:cover;
+  background-repeat:no-repeat;
+  filter:contrast(1.085) saturate(1.055) brightness(1.01);
+  transform:scale(1.002);
+  transform-origin:center;
+}
+.rtg-route--ares .rtg-route-stage--season2 .rtg-map-lines{position:absolute;z-index:2}
+.rtg-route--ares .rtg-route-stage--season2 .rtg-route-node{z-index:3}
