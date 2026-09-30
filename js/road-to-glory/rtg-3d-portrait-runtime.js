@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v10-native-material";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v11-native-material-parser";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -55,7 +55,7 @@ function roleOf(player) {
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "native-edge"
-    ? "v10-native-material"
+    ? "v11-native-material-parser"
     : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
@@ -168,8 +168,20 @@ function copyTextureSettings(texture, { color = false } = {}) {
   return texture;
 }
 
+function nieMaterialExtras(gltf, sourceMaterial) {
+  const direct = sourceMaterial?.userData?.nie;
+  if (direct && typeof direct === "object") return direct;
+
+  const association = gltf?.parser?.associations?.get?.(sourceMaterial);
+  const materialIndex = Number(association?.materials);
+  if (!Number.isInteger(materialIndex) || materialIndex < 0) return null;
+
+  const fromJson = gltf?.parser?.json?.materials?.[materialIndex]?.extras?.nie;
+  return fromJson && typeof fromJson === "object" ? fromJson : null;
+}
+
 async function loadNieAuxTextures(gltf, sourceMaterial) {
-  const descriptors = sourceMaterial?.userData?.nie?.textures;
+  const descriptors = nieMaterialExtras(gltf, sourceMaterial)?.textures;
   if (!descriptors || typeof descriptors !== "object") return {};
 
   const entries = await Promise.all(
@@ -203,9 +215,9 @@ function normalizeNativeRenderStates(value) {
     .map((entry) => [Number(entry[0]) || 0, Number(entry[1]) || 0]);
 }
 
-function readNieNativeMaterial(sourceMaterial) {
-  const nie = sourceMaterial?.userData?.nie;
-  if (!nie || typeof nie !== "object") return null;
+function readNieNativeMaterial(gltf, sourceMaterial) {
+  const nie = nieMaterialExtras(gltf, sourceMaterial);
+  if (!nie) return null;
 
   const shaderHash = Number(nie.shader_hash);
   const shaderParameters = normalizeNativeVec4List(nie.shader_parameters);
@@ -516,10 +528,9 @@ function buildNativeGradientTexture() {
   return texture;
 }
 
-function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general") {
+function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nativeMaterial = null) {
   const gradient = buildNativeGradientTexture();
   const useCaptureProfile = profile === "capture";
-  const nativeMaterial = readNieNativeMaterial(sourceMaterial);
   const nativeLightData = useCaptureProfile
     ? {
         source: "light_2d_capture.cfg.bin",
@@ -712,9 +723,11 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
           next.push(source);
           continue;
         }
+        const native = (shaderMode === "native" || shaderMode === "native-edge")
+          ? readNieNativeMaterial(gltf, source)
+          : null;
         if (!nativeSourceUuids.has(source.uuid) && (shaderMode === "native" || shaderMode === "native-edge")) {
           nativeSourceUuids.add(source.uuid);
-          const native = readNieNativeMaterial(source);
           if (native) {
             nativeMaterials += 1;
             if (native.shaderHashHex) nativeShaderHashes.add(native.shaderHashHex);
@@ -726,9 +739,9 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
           converted.set(source.uuid, (async () => {
             const aux = await loadNieAuxTextures(gltf, source);
             return shaderMode === "native-edge"
-              ? buildG4NativeDataMaterial(source, aux, "capture")
+              ? buildG4NativeDataMaterial(source, aux, "capture", native)
               : shaderMode === "native"
-                ? buildG4NativeDataMaterial(source, aux, "general")
+                ? buildG4NativeDataMaterial(source, aux, "general", native)
                 : shaderMode === "g4"
                   ? buildG4CaptureMaterial(source, aux)
                   : buildCharacterMaterial(source, aux);
@@ -1170,15 +1183,15 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE+EDGE2"
+      ? "NATIVE+EDGE2 V11"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
           ? "G4"
           : "3D";
-    const nativeMaterialLabel = result.nativeMaterials?.materials
+    const nativeMaterialLabel = result.nativeMaterials
       ? " · MAT " + result.nativeMaterials.materials
-        + (result.nativeMaterials.missing ? "/" + (result.nativeMaterials.materials + result.nativeMaterials.missing) : "")
+        + "/" + (result.nativeMaterials.materials + result.nativeMaterials.missing)
       : "";
     status.textContent = result.cache === "miss"
       ? shaderLabel + nativeMaterialLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
