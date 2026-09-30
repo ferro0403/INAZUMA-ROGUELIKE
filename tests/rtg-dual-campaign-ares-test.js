@@ -19,4 +19,16 @@ assert.match(repository,/state:\$\{selectedCampaignId\}/);assert.match(repositor
 assert.match(repository,/gachaAcquiredCards/);assert.match(repository,/tokens/);
 const controller=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
 assert.match(controller,/destination==="campaigns"/);assert.match(controller,/selectCampaign/);
+assert.match(controller,/__RTG_ARES_ROUTE_MAP_DATA_URL/);
+assert.match(controller,/length:4/);
+assert.match(controller,/ares-map\/part-/);
+const routeView=fs.readFileSync("js/road-to-glory/rtg-route-view.js","utf8");
+assert.match(routeView,/global\.__RTG_ARES_ROUTE_MAP_DATA_URL/);
+const css=fs.readFileSync("css/rtg-run.css","utf8");
+assert.match(css,/\.rtg-route--season-1 \.rtg-map \.rtg-map-block \.route-map\.rtg-route-stage/);
+assert.match(css,/\.rtg-route--ares \.rtg-map \.rtg-map-block--season2-part \.route-map\.rtg-route-stage--season2/);
+assert.doesNotMatch(css,/(?:^|\n)\.rtg-map \.rtg-map-block \.route-map\.rtg-route-stage\{[^}]*rtg-season1-route-map/s);
+const aresImagePayload=Array.from({length:4},(_,index)=>fs.readFileSync(`assets/rtg/ares-map/part-${String(index).padStart(2,"0")}.txt`,"utf8").trim()).join("");
+assert(aresImagePayload.startsWith("UklGR"),"Ares route map WebP payload invalid");
+assert(aresImagePayload.length>30000,"Ares route map payload unexpectedly short");
 console.log("rtg-dual-campaign-ares-test: PASS");
