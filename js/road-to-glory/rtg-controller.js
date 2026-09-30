@@ -121,7 +121,7 @@
       if(aresRouteMapPromise)return aresRouteMapPromise;
       const fetcher=deps.fetch||global.fetch;
       if(typeof fetcher!=="function")throw new Error("RTG Ares route map fetch unavailable");
-      const partUrls=Array.from({length:4},(_,index)=>`assets/rtg/ares-map/part-${String(index).padStart(2,"0")}.txt?v=20260930-ares-route-1`);
+      const partUrls=Array.from({length:9},(_,index)=>`assets/rtg/ares-map/part-${String(index).padStart(2,"0")}.txt?v=20260930-ares-route-1`);
       aresRouteMapPromise=(async()=>{
         const parts=await Promise.all(partUrls.map(async(url)=>{
           const response=await fetcher(url);
