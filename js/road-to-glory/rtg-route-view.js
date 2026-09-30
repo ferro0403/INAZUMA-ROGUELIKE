@@ -79,7 +79,8 @@
       return preset||positions(blockIndex,count);
     }
     function routeBackgroundValue(seasonConfig){
-      const source=String(seasonConfig?.routeBackground||"").trim();
+      const runtimeAresSource=seasonConfig?.seasonId==="ie2" ? global.__RTG_ARES_ROUTE_MAP_DATA_URL : "";
+      const source=String(runtimeAresSource||seasonConfig?.routeBackground||"").trim();
       if(!source)return "";
       const absolute=/^(?:https?:|data:|\/)/.test(source)?source:`/${source.replace(/^\.\//,"")}`;
       return `--rtg-route-image:url('${escape(absolute)}');`;
