@@ -480,3 +480,11 @@
 .rtg-campaign-copy em b{display:grid;place-items:center;min-width:40px;height:29px;padding:0 8px;border:2px solid #fff;background:#111216;color:#ffd21f;font-size:.7rem;letter-spacing:.06em;box-shadow:2px 2px 0 #ffd21f}
 .rtg-campaign-copy i{justify-self:stretch;margin-top:4px;padding:13px 15px;border:3px solid #111216;background:#ffd21f;color:#111216;box-shadow:4px 4px 0 #111216;font-size:.82rem;font-style:normal;font-weight:1000;text-align:center}
 @media(min-width:760px){.rtg-campaign-select{background-image:linear-gradient(rgba(246,247,243,.88),rgba(246,247,243,.94)),url('../assets/home/inazuma-stadium-desktop-light.jpeg')}.rtg-campaign-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.rtg-campaign-card{min-height:480px}}
+
+/* Campaign banners: force the same graphic-card language used by RTG run panels. */
+button.rtg-campaign-card{position:relative!important;display:block!important;overflow:hidden!important;width:100%!important;min-height:330px!important;padding:0!important;border:4px solid #111216!important;border-radius:0!important;background:#111216!important;box-shadow:8px 9px 0 #111216!important;color:#fff!important;text-align:left!important}
+.rtg-campaign-card__image{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center;z-index:0}
+button.rtg-campaign-card .rtg-campaign-shade{z-index:1}
+button.rtg-campaign-card .rtg-campaign-copy{z-index:2}
+.rtg-campaign-intro h1{font-size:clamp(3rem,15vw,5.4rem)!important;line-height:.82!important}
+@media(min-width:760px){button.rtg-campaign-card{min-height:470px!important}}
