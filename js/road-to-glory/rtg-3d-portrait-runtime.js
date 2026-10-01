@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v17-toon-variable-default";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v18-toon-variable-glsl-fix";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -90,7 +90,7 @@ function nativeRecolorForUniform(uniform, isKeeper, uniformCrc) {
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "native-edge"
-    ? "v17-toon-variable-default"
+    ? "v18-toon-variable-glsl-fix"
     : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
@@ -558,12 +558,6 @@ function buildG4CaptureMaterial(sourceMaterial, aux) {
       hasOcclusion ? "uniform sampler2D g4OcclusionMap;" : "",
       hasSpecularShape ? "uniform sampler2D g4SpecularShapeMap;" : "",
       hasSpecularMask ? "uniform sampler2D g4SpecularMaskMap;" : "",
-      useEditRecolor ? "uniform sampler2D g4EditMaskMap;" : "",
-      useEditRecolor ? "uniform vec4 g4ShaderParam0;" : "",
-      useEditRecolor ? "uniform vec4 g4ShaderParam1;" : "",
-      useEditRecolor ? "uniform vec4 g4EditSubColor1;" : "",
-      useEditRecolor ? "uniform vec4 g4EditSubColor2;" : "",
-      useVariableAtlas ? "uniform vec4 g4ShaderParam4;" : "",
       "vec3 g4LinearToUnorm(vec3 c) {",
       "  c = max(c, vec3(0.0));",
       "  vec3 low = c * 12.92;",
@@ -608,21 +602,6 @@ function buildG4CaptureMaterial(sourceMaterial, aux) {
       "  vec3 g4Shadow1 = vec3(0.72967, 0.52992, 0.69982);",
       "  vec3 g4ShadowMix = mix(g4Shadow0, g4Shadow1, g4Cover1);",
       "  vec3 g4Base = g4LinearToUnorm(diffuseColor.rgb);",
-      useEditRecolor
-        ? "  vec3 g4EditMask = texture2D(g4EditMaskMap, g4Uv).rgb;"
-        : "",
-      useEditRecolor
-        ? "  vec3 g4EditColor1 = mix(g4ShaderParam0.rgb, g4EditSubColor1.rgb, g4EditSubColor1.a);"
-        : "",
-      useEditRecolor
-        ? "  vec3 g4EditColor2 = mix(g4ShaderParam1.rgb, g4EditSubColor2.rgb, g4EditSubColor2.a);"
-        : "",
-      useEditRecolor
-        ? "  g4Base *= mix(vec3(1.0), g4EditColor1, g4EditMask.g);"
-        : "",
-      useEditRecolor
-        ? "  g4Base *= mix(vec3(1.0), g4EditColor2, g4EditMask.b);"
-        : "",
       "  float g4Lum = dot(g4Base, vec3(0.29891, 0.58661, 0.11448));",
       "  vec3 g4Shade = g4ShadowMix + vec3(g4Lum * 0.10);",
       "  vec3 g4AmbientColor = vec3(0.924925, 0.874975, 0.874975);",
@@ -873,6 +852,12 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
       hasOcclusion ? "uniform sampler2D g4OcclusionMap;" : "",
       hasSpecularShape ? "uniform sampler2D g4SpecularShapeMap;" : "",
       hasSpecularMask ? "uniform sampler2D g4SpecularMaskMap;" : "",
+      useEditRecolor ? "uniform sampler2D g4EditMaskMap;" : "",
+      useEditRecolor ? "uniform vec4 g4ShaderParam0;" : "",
+      useEditRecolor ? "uniform vec4 g4ShaderParam1;" : "",
+      useEditRecolor ? "uniform vec4 g4EditSubColor1;" : "",
+      useEditRecolor ? "uniform vec4 g4EditSubColor2;" : "",
+      useVariableAtlas ? "uniform vec4 g4ShaderParam4;" : "",
       "vec3 g4LinearToUnorm(vec3 c) {",
       "  c = max(c, vec3(0.0));",
       "  vec3 low = c * 12.92;",
@@ -942,6 +927,21 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
       "  vec3 g4Shadow1 = vec3(" + nativeLightData.charaShadowColor2.slice(0, 3).join(", ") + ");",
       "  vec3 g4ShadowMix = mix(g4Shadow0, g4Shadow1, g4Cover1);",
       "  vec3 g4Base = g4LinearToUnorm(diffuseColor.rgb);",
+      useEditRecolor
+        ? "  vec3 g4EditMask = texture2D(g4EditMaskMap, g4Uv).rgb;"
+        : "",
+      useEditRecolor
+        ? "  vec3 g4EditColor1 = mix(g4ShaderParam0.rgb, g4EditSubColor1.rgb, g4EditSubColor1.a);"
+        : "",
+      useEditRecolor
+        ? "  vec3 g4EditColor2 = mix(g4ShaderParam1.rgb, g4EditSubColor2.rgb, g4EditSubColor2.a);"
+        : "",
+      useEditRecolor
+        ? "  g4Base *= mix(vec3(1.0), g4EditColor1, g4EditMask.g);"
+        : "",
+      useEditRecolor
+        ? "  g4Base *= mix(vec3(1.0), g4EditColor2, g4EditMask.b);"
+        : "",
       "  float g4Lum = dot(g4Base, vec3(0.29891, 0.58661, 0.11448));",
       "  vec3 g4Shade = g4ShadowMix + vec3(g4Lum * 0.10);",
       "  vec3 g4AmbientColor = vec3(1.0);",
@@ -981,7 +981,7 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
   };
 
   material.customProgramCacheKey = () => [
-    useCaptureProfile ? "rtg-g4-native-capture-v17-toon-variable" : "rtg-g4-native-data-v17-toon-variable",
+    useCaptureProfile ? "rtg-g4-native-capture-v18-toon-variable-glsl" : "rtg-g4-native-data-v18-toon-variable-glsl",
     shaderFamily.id,
     useEditRecolor ? "editmask" : "no-editmask",
     useVariableAtlas ? "toonvar-default" : "no-toonvar",
@@ -1502,7 +1502,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE CORE V17 · TOONVAR · EDITMASK · EDGE2 EXP"
+      ? "NATIVE CORE V18 · TOONVAR · EDITMASK · EDGE2 EXP"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
