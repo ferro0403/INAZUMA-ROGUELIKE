@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v13-native-gradient";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v14-native-gradient-data";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -55,7 +55,7 @@ function roleOf(player) {
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "native-edge"
-    ? "v13-native-gradient"
+    ? "v14-native-gradient-data"
     : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
@@ -554,39 +554,65 @@ function buildG4CaptureMaterial(sourceMaterial, aux) {
 
 
 const NATIVE_GRADIENT_URL = new URL("../../assets/rtg/chrGrd_01.png", import.meta.url).href;
-let nativeGradientSourcePromise = null;
+let nativeGradientPixelsPromise = null;
 
-function configureNativeGradientTexture(texture) {
+function loadNativeGradientPixels() {
+  if (!nativeGradientPixelsPromise) {
+    nativeGradientPixelsPromise = new Promise((resolve, reject) => {
+      const image = new Image();
+      image.decoding = "async";
+      image.onload = () => {
+        try {
+          const width = Number(image.naturalWidth || image.width);
+          const height = Number(image.naturalHeight || image.height);
+          if (width !== 512 || height !== 256) {
+            throw new Error("chrGrd_01 inattesa: " + width + "x" + height);
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const context = canvas.getContext("2d", { willReadFrequently: false });
+          if (!context) throw new Error("Canvas 2D non disponibile per chrGrd_01");
+          context.drawImage(image, 0, 0);
+          const imageData = context.getImageData(0, 0, width, height);
+          resolve({
+            width,
+            height,
+            pixels: new Uint8Array(imageData.data),
+          });
+        } catch (error) {
+          reject(error);
+        }
+      };
+      image.onerror = () => reject(new Error("Impossibile decodificare chrGrd_01"));
+      image.src = NATIVE_GRADIENT_URL;
+    });
+  }
+  return nativeGradientPixelsPromise;
+}
+
+async function buildNativeGradientTexture() {
+  // Full original chrGrd_01 decoded losslessly from the game's
+  // data/dx11/chr/shader/texture/chr_tex.g4tx (512x256 BC3/DXT5, no mip chain).
+  // Keep row 0 first in the typed array: G4/D3D material V coordinates near 1.0
+  // must address the bottom rows (Mark: 254/256 and 250/256), not their flipped top rows.
+  const source = await loadNativeGradientPixels();
+  const texture = new THREE.DataTexture(
+    source.pixels,
+    source.width,
+    source.height,
+    THREE.RGBAFormat,
+    THREE.UnsignedByteType,
+  );
   texture.colorSpace = THREE.NoColorSpace;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
   texture.generateMipmaps = false;
-  texture.flipY = true;
+  texture.flipY = false;
   texture.needsUpdate = true;
   return texture;
-}
-
-function loadNativeGradientSource() {
-  if (!nativeGradientSourcePromise) {
-    nativeGradientSourcePromise = new Promise((resolve, reject) => {
-      new THREE.TextureLoader().load(
-        NATIVE_GRADIENT_URL,
-        (texture) => resolve(configureNativeGradientTexture(texture)),
-        undefined,
-        reject,
-      );
-    });
-  }
-  return nativeGradientSourcePromise;
-}
-
-async function buildNativeGradientTexture() {
-  // Full original chrGrd_01 decoded losslessly from the game's
-  // data/dx11/chr/shader/texture/chr_tex.g4tx (512x256 BC3/DXT5, no mip chain).
-  const source = await loadNativeGradientSource();
-  return configureNativeGradientTexture(source.clone());
 }
 
 function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nativeMaterial = null, gradient = null) {
@@ -1262,7 +1288,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE+EDGE2 V13"
+      ? "NATIVE+EDGE2 V14"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
