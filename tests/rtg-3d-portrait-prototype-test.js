@@ -14,6 +14,10 @@ const index = read("index.html");
 assert.strictEqual(manifest.players?.["1"]?.internalCode, "c01000010", "Mark Evans must map to c01000010.");
 assert.strictEqual(manifest.uniforms?.zeus?.uniformFielderModelIdCrc, "0xF0006501", "Zeus fielder CRC mismatch.");
 assert.strictEqual(manifest.uniforms?.zeus?.uniformKeeperModelIdCrc, "0x38E0EA71", "Zeus keeper CRC mismatch.");
+assert.deepStrictEqual(manifest.uniforms?.zeus?.nativeRecolor?.fielder?.subColor1, [35, 99, 134, 255], "Zeus fielder CHARA_PARTS_COLOR primary tint mismatch.");
+assert.deepStrictEqual(manifest.uniforms?.zeus?.nativeRecolor?.keeper?.subColor1, [225, 211, 184, 255], "Zeus keeper CHARA_PARTS_COLOR primary tint mismatch.");
+assert.deepStrictEqual(manifest.uniforms?.zeus?.nativeRecolor?.keeper?.subColor2, [5, 5, 5, 255], "Zeus keeper CHARA_PARTS_COLOR secondary tint mismatch.");
+assert.strictEqual(manifest.uniforms?.zeus?.nativeRecolor?.redChannelMode, "server-baked-skin", "Current NIE server skin-tint contract must be explicit.");
 
 assert(runtime.includes('roleOf(player) === "GK"'), "Runtime must distinguish goalkeeper from field players.");
 assert(runtime.includes("uniform.uniformKeeperModelIdCrc"), "Keeper CRC path missing.");
@@ -66,10 +70,10 @@ assert(runtime.includes('texture2D(g4NativeGradientMap'), "Native portrait must 
 assert(runtime.includes('g4HighSignal - 1.50'), "Native highlight threshold must come from charaHighLightColor.w.");
 assert(runtime.includes('vec3(0.10) * g4High'), "Native highlight color must remain tied to the extracted Character profile.");
 assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must remain tied to the extracted Character profile.");
-assert(runtime.includes('rtg-g4-native-data-v15-family'), "Native-data shader program cache must include the proven shader-family identity.");
+assert(runtime.includes('rtg-g4-native-data-v16-edit-recolor'), "Native-data shader program cache must include the proven shader-family identity.");
 
-assert(runtime.includes('rtg-3d-portrait-v15-native-shader-family-core'), "Native portrait mode must invalidate cached portraits after shader-family routing.");
-assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15"'), "Native edge portrait mode aliases are missing.");
+assert(runtime.includes('rtg-3d-portrait-v16-native-edit-recolor'), "Native portrait mode must invalidate cached portraits after shader-family routing.");
+assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16"'), "Native edge portrait mode aliases are missing.");
 assert(runtime.includes('profile === "capture"'), "Native edge2 must select the extracted capture lighting profile.");
 assert(runtime.includes('source: "light_2d_capture.cfg.bin"'), "Native edge2 beauty pass must use light_2d_capture.cfg.bin.");
 assert(runtime.includes('charaLightDir: [0.358, 0.614, 0.703]'), "Capture charaLightDir is missing.");
@@ -77,7 +81,7 @@ assert(runtime.includes('charaShadowColor1: [0.77, 0.70, 0.65, 0.50]'), "Capture
 assert(runtime.includes('charaShadowColor2: [0.62, 0.54, 0.50, 0.55]'), "Capture charaShadowColor2 is missing.");
 assert(runtime.includes('charaGrTParam: [0.0, 1.0, 1.0, 0.0]'), "Capture charaGrTParam is missing.");
 assert(runtime.includes('buildG4NativeDataMaterial(source, aux, "capture", native, gradient)'), "Native edge path must route beauty through the capture profile with native material metadata.");
-assert(runtime.includes('rtg-g4-native-capture-v15-family'), "Capture-profile shader cache key must include shader-family routing.");
+assert(runtime.includes('rtg-g4-native-capture-v16-edit-recolor'), "Capture-profile shader cache key must include shader-family routing.");
 assert(runtime.includes('function inspectGlbNativePayload'), "Native portrait must inspect the raw GLB JSON before GLTFLoader transforms it.");
 assert(runtime.includes('cache: "no-store"'), "Native portrait must bypass stale browser HTTP cache for model GLBs.");
 assert(runtime.includes('function materialIndexForNode'), "Native portrait must resolve the original glTF material from the mesh/primitive association.");
@@ -99,9 +103,21 @@ assert(runtime.includes('[0x5B442961]') && runtime.includes('shaderFx: "Chr_Toon
 assert(runtime.includes('[0xFBCE9C2D]') && runtime.includes('shaderFx: "Chr_EditToon"'), "0xFBCE9C2D must route to Chr_EditToon.");
 assert(runtime.includes('[0xC94BC3EA]') && runtime.includes('shaderFx: "Chr_Toon"'), "0xC94BC3EA must route to Chr_Toon.");
 assert(runtime.includes('const useMetalTextures = shaderFamily.id === "toon-metal"'), "Only Chr_ToonMetal may consume the metal auxiliary texture pair.");
+assert(runtime.includes('function nativeRecolorForUniform'), "Native uniform recolor must resolve exact manifest colors by uniform CRC.");
+assert(runtime.includes('shaderFamily.id === "edit-toon"'), "EditToon family gate is missing.");
+assert(runtime.includes('nativeRecolor?.redChannelMode === "server-baked-skin"'), "EditToon must acknowledge the current server-baked skin channel.");
+assert(runtime.includes('uniform sampler2D g4EditMaskMap;'), "EditToon must bind the preserved G4 mask texture.");
+assert(runtime.includes('g4EditMask.g'), "EditToon must consume the mask green channel.");
+assert(runtime.includes('g4EditMask.b'), "EditToon must consume the mask blue channel.");
+assert(runtime.includes('mix(g4ShaderParam0.rgb, g4EditSubColor1.rgb, g4EditSubColor1.a)'), "EditToon subColor1 formula must mirror the native DXBC.");
+assert(runtime.includes('mix(g4ShaderParam1.rgb, g4EditSubColor2.rgb, g4EditSubColor2.a)'), "EditToon subColor2 formula must mirror the native DXBC.");
+assert(runtime.includes('g4Base *= mix(vec3(1.0), g4EditColor1, g4EditMask.g)'), "EditToon green-channel multiplication is missing.");
+assert(runtime.includes('g4Base *= mix(vec3(1.0), g4EditColor2, g4EditMask.b)'), "EditToon blue-channel multiplication is missing.");
+assert(!runtime.includes('g4EditMask.r)'), "Browser must not double-apply the red skin channel while nie-model-serve bakes it.");
+assert(runtime.includes('editRecolor: editRecolorMaterials'), "Native diagnostics must report EditToon recolor coverage.");
 assert(runtime.includes('rtgNativeShaderFamily: shaderFamily.id'), "Resolved native shader family must remain attached to the runtime material.");
 assert(runtime.includes('shaderFamilies: Object.fromEntries'), "Portrait diagnostics must report resolved shader-family coverage.");
-assert(runtime.includes('"NATIVE CORE V15 · EDGE2 EXP"'), "RTG prototype must identify the shader-family v15 path and keep EDGE2 explicitly experimental.");
+assert(runtime.includes('"NATIVE CORE V16 · EDITMASK · EDGE2 EXP"'), "RTG prototype must identify the shader-family v15 path and keep EDGE2 explicitly experimental.");
 assert(runtime.includes('new THREE.DataTexture('), "Native gradient must upload decoded RGBA bytes, not an HTML image source.");
 assert(runtime.includes('texture.flipY = false'), "Native gradient must preserve G4/D3D row orientation.");
 assert(runtime.includes('assets/rtg/chrGrd_01.png'), "Native portrait must load the full original chrGrd_01 texture asset.");
