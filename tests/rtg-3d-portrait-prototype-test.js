@@ -80,7 +80,7 @@ assert(runtime.includes('charaLightDir: [0.358, 0.614, 0.703]'), "Capture charaL
 assert(runtime.includes('charaShadowColor1: [0.77, 0.70, 0.65, 0.50]'), "Capture charaShadowColor1 is missing.");
 assert(runtime.includes('charaShadowColor2: [0.62, 0.54, 0.50, 0.55]'), "Capture charaShadowColor2 is missing.");
 assert(runtime.includes('charaGrTParam: [0.0, 1.0, 1.0, 0.0]'), "Capture charaGrTParam is missing.");
-assert(runtime.includes('buildG4NativeDataMaterial(source, aux, "capture", native, gradient)'), "Native edge path must route beauty through the capture profile with native material metadata.");
+assert(runtime.includes('buildG4NativeDataMaterial(source, aux, "capture", native, gradient, nativeRecolor)'), "Native edge path must route beauty through capture lighting plus the selected native recolor record.");
 assert(runtime.includes('rtg-g4-native-capture-v16-edit-recolor'), "Capture-profile shader cache key must include shader-family routing.");
 assert(runtime.includes('function inspectGlbNativePayload'), "Native portrait must inspect the raw GLB JSON before GLTFLoader transforms it.");
 assert(runtime.includes('cache: "no-store"'), "Native portrait must bypass stale browser HTTP cache for model GLBs.");
@@ -151,7 +151,7 @@ assert(!runtime.includes('normalThreshold'), "Native edge2 must not use guessed 
 assert(!runtime.includes('depthThreshold'), "Native edge2 must not use guessed depth-edge thresholds.");
 assert(!runtime.includes('outlinePixels'), "Native edge2 must not use guessed screen-space outline width.");
 assert(!runtime.includes('new THREE.Color(0.018, 0.012, 0.018)'), "Native edge2 must not hard-code the old guessed near-black outline.");
-assert(runtime.includes('NATIVE CORE V15 · EDGE2 EXP'), "Native shader-family status must keep EDGE2 explicitly experimental.");
+assert(runtime.includes('NATIVE CORE V16 · EDITMASK · EDGE2 EXP'), "Native v16 status must expose EditToon recolor while keeping EDGE2 explicitly experimental.");
 assert(runtime.includes('function compareEnabled()'), "Portrait comparison query helper is missing.");
 assert(runtime.includes('rtg3dCompare'), "Portrait comparison query parameter is missing.");
 assert(runtime.includes('shaderModeOverride'), "Portrait comparison must render explicit shader modes.");
