@@ -51,7 +51,7 @@ assert(runtime.includes('g4Under + 1.0 - 1.45'), "G4 capture-derived under-light
 assert(runtime.includes('rtg-g4-capture-v6'), "G4 shader program cache version is missing.");
 assert(runtime.includes('rtg-3d-portrait-v7-native-data'), "Native-data portrait mode must keep its isolated v7 cache.");
 assert(runtime.includes('value === "native" || value === "v7"'), "Native-data portrait mode must remain selectable.");
-assert(runtime.includes('function buildNativeGradientTexture()'), "Native-data portrait must reconstruct the extracted chrGrd_01 rows.");
+assert(runtime.includes('async function buildNativeGradientTexture()'), "Native-data portrait must load and clone the original chrGrd_01 texture.");
 assert(runtime.includes('source: "light_data.cfg.bin"'), "Native v7 must preserve the general light_data.cfg.bin profile.");
 assert(runtime.includes('charaLightDir: [0.83, 0.40, 0.37]'), "Native v7 general charaLightDir is missing.");
 assert(runtime.includes('charaShadowColor1: [0.67, 0.60, 0.55, 0.50]'), "Native v7 general charaShadowColor1 is missing.");
@@ -62,8 +62,8 @@ assert(runtime.includes('vec3(0.10) * g4High'), "Native highlight color must rem
 assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must remain tied to the extracted Character profile.");
 assert(runtime.includes('rtg-g4-native-data-v7'), "Native-data shader program cache version is missing.");
 
-assert(runtime.includes('rtg-3d-portrait-v12-native-glb-source'), "Native edge2 portrait mode must invalidate cached portraits after raw GLB source diagnostics.");
-assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12"'), "Native edge2 portrait mode aliases are missing.");
+assert(runtime.includes('rtg-3d-portrait-v13-native-gradient'), "Native edge2 portrait mode must invalidate cached portraits after original chrGrd_01 wiring.");
+assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13"'), "Native edge2 portrait mode aliases are missing.");
 assert(runtime.includes('profile === "capture"'), "Native edge2 must select the extracted capture lighting profile.");
 assert(runtime.includes('source: "light_2d_capture.cfg.bin"'), "Native edge2 beauty pass must use light_2d_capture.cfg.bin.");
 assert(runtime.includes('charaLightDir: [0.358, 0.614, 0.703]'), "Capture charaLightDir is missing.");
@@ -87,7 +87,13 @@ assert(runtime.includes('nie.render_states'), "Native portrait must preserve ori
 assert(runtime.includes('rtgNativeMaterial: nativeMaterial'), "Native material metadata must remain attached to the runtime Character material.");
 assert(runtime.includes('nativeMaterial?.shaderHashHex || "no-native-hash"'), "Native shader hash must participate in the Three program cache identity.");
 assert(runtime.includes('nativeMaterials: rendered.nativeMaterials'), "Portrait diagnostics must report how many native materials reached the browser.");
-assert(runtime.includes('"NATIVE+EDGE2 V12"'), "RTG prototype must identify the raw-source v12 native path in the status badge.");
+assert(runtime.includes('"NATIVE+EDGE2 V13"'), "RTG prototype must identify the original-gradient v13 native path in the status badge.");
+assert(runtime.includes('assets/rtg/chrGrd_01.png'), "Native portrait must load the full original chrGrd_01 texture asset.");
+assert(runtime.includes('texture.generateMipmaps = false'), "Original chrGrd_01 texture must remain non-mipmapped like the extracted DDS.");
+assert(runtime.includes('uniform vec4 g4ShaderParam2;'), "Native beauty shader must expose the preserved G4MD u_shaderParam2 vector.");
+assert(runtime.includes('g4ShaderParam2.x'), "Primary native gradient row must come from u_shaderParam2.x.");
+assert(runtime.includes('g4ShaderParam2.y'), "Secondary native gradient row must come from u_shaderParam2.y.");
+assert(runtime.includes('" · P2 " + result.nativeMaterials.shaderParam2'), "RTG prototype must expose shaderParam2 coverage in the portrait status badge.");
 assert(runtime.includes('" · RAW " + result.glbPayload.nativeMaterials'), "RTG prototype must expose native metadata found in the raw GLB.");
 assert(runtime.includes('" · C " + result.glbPayload.colorPrimitives'), "RTG prototype must expose raw COLOR_0 primitive coverage.");
 assert(runtime.includes('" · MAT " + result.nativeMaterials.materials'), "RTG prototype must expose native-material ingestion in the portrait status badge.");
