@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v14-native-gradient-data";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v15-native-shader-family-core";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -55,7 +55,7 @@ function roleOf(player) {
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "native-edge"
-    ? "v14-native-gradient-data"
+    ? "v15-native-shader-family-core"
     : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
@@ -315,6 +315,47 @@ function readNieNativeMaterial(gltf, sourceMaterial, materialIndexHint = null) {
     nativeColors,
     renderStates,
   });
+}
+
+const NATIVE_SHADER_FAMILIES = Object.freeze({
+  [0xC94BC3EA]: Object.freeze({
+    id: "toon",
+    shaderFx: "Chr_Toon",
+    fxbin: "chr_toon.fxbin",
+    pixelShader: "chr_toon.pfxo",
+  }),
+  [0x61C84B7D]: Object.freeze({
+    id: "toon-metal",
+    shaderFx: "Chr_ToonMetal",
+    fxbin: "chr_toon_metal.fxbin",
+    pixelShader: "chr_toon_metal.pfxo",
+  }),
+  [0x5B442961]: Object.freeze({
+    id: "toon-variable",
+    shaderFx: "Chr_ToonVariable",
+    fxbin: "chr_toon_variable.fxbin",
+    pixelShader: "chr_toon_variable.pfxo",
+  }),
+  [0xFBCE9C2D]: Object.freeze({
+    id: "edit-toon",
+    shaderFx: "Chr_EditToon",
+    fxbin: "chr_edit_toon.fxbin",
+    pixelShader: "chr_toon_edit.pfxo",
+  }),
+});
+
+const UNKNOWN_NATIVE_SHADER_FAMILY = Object.freeze({
+  id: "unknown",
+  shaderFx: "",
+  fxbin: "",
+  pixelShader: "",
+});
+
+function nativeShaderFamily(nativeMaterial) {
+  const hash = Number(nativeMaterial?.shaderHash);
+  return Number.isInteger(hash)
+    ? NATIVE_SHADER_FAMILIES[hash >>> 0] || UNKNOWN_NATIVE_SHADER_FAMILY
+    : UNKNOWN_NATIVE_SHADER_FAMILY;
 }
 
 function buildCharacterMaterial(sourceMaterial, aux) {
@@ -618,6 +659,12 @@ async function buildNativeGradientTexture() {
 function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nativeMaterial = null, gradient = null) {
   if (!gradient) throw new Error("chrGrd_01 nativa non disponibile");
   const useCaptureProfile = profile === "capture";
+  const shaderFamily = nativeShaderFamily(nativeMaterial);
+  // DXBC/resource-table evidence: only Chr_ToonMetal declares in_tex2 + in_tex3 as its metal extras.
+  // Do not feed those textures into Toon, ToonVariable or EditToon as synthetic specular maps.
+  const useMetalTextures = shaderFamily.id === "toon-metal";
+  const nativeSpecularShape = useMetalTextures ? aux.specular || null : null;
+  const nativeSpecularMask = useMetalTextures ? aux.specular_mask || null : null;
   const param2 = nativeMaterial?.shaderParameters?.[2];
   const shaderParam2 = Array.isArray(param2) && param2.length >= 4
     ? param2.slice(0, 4).map((value) => Number(value) || 0)
@@ -681,6 +728,10 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
     rtgAuxTextures: aux,
     rtgNativeGradientTexture: gradient,
     rtgNativeMaterial: nativeMaterial,
+    rtgNativeShaderFamily: shaderFamily.id,
+    rtgNativeShaderFx: shaderFamily.shaderFx,
+    rtgNativeFxbin: shaderFamily.fxbin,
+    rtgNativePixelShader: shaderFamily.pixelShader,
     rtgNativeShaderParam2: shaderParam2,
     rtgShaderMode: useCaptureProfile ? "native-edge" : "native",
     rtgNativeLightData: nativeLightData,
@@ -688,12 +739,12 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
 
   material.onBeforeCompile = (shader) => {
     const hasOcclusion = !!aux.occlusion;
-    const hasSpecularShape = !!aux.specular;
-    const hasSpecularMask = !!aux.specular_mask;
+    const hasSpecularShape = !!nativeSpecularShape;
+    const hasSpecularMask = !!nativeSpecularMask;
 
     shader.uniforms.g4OcclusionMap = { value: aux.occlusion || null };
-    shader.uniforms.g4SpecularShapeMap = { value: aux.specular || null };
-    shader.uniforms.g4SpecularMaskMap = { value: aux.specular_mask || null };
+    shader.uniforms.g4SpecularShapeMap = { value: nativeSpecularShape };
+    shader.uniforms.g4SpecularMaskMap = { value: nativeSpecularMask };
     shader.uniforms.g4NativeGradientMap = { value: gradient };
     shader.uniforms.g4ShaderParam2 = { value: new THREE.Vector4(...shaderParam2) };
     shader.uniforms.g4LightDirView = { value: new THREE.Vector3(...nativeLightData.charaLightDir).normalize() };
@@ -788,7 +839,8 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
   };
 
   material.customProgramCacheKey = () => [
-    useCaptureProfile ? "rtg-g4-native-capture-v9" : "rtg-g4-native-data-v7",
+    useCaptureProfile ? "rtg-g4-native-capture-v15-family" : "rtg-g4-native-data-v15-family",
+    shaderFamily.id,
     nativeMaterial?.shaderHashHex || "no-native-hash",
     aux.occlusion ? "oc" : "",
     aux.specular ? "sp" : "",
@@ -803,6 +855,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
   const replacements = [];
   const nativeSourceUuids = new Set();
   const nativeShaderHashes = new Set();
+  const nativeShaderFamilies = new Map();
   let nativeMaterials = 0;
   let missingNativeMaterials = 0;
   let shaderParam2Materials = 0;
@@ -831,6 +884,8 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
               shaderParam2Materials += 1;
             }
             if (native.shaderHashHex) nativeShaderHashes.add(native.shaderHashHex);
+            const familyId = nativeShaderFamily(native).id;
+            nativeShaderFamilies.set(familyId, (nativeShaderFamilies.get(familyId) || 0) + 1);
           } else {
             missingNativeMaterials += 1;
           }
@@ -863,6 +918,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
     missing: missingNativeMaterials,
     shaderParam2: shaderParam2Materials,
     shaderHashes: [...nativeShaderHashes].sort(),
+    shaderFamilies: Object.fromEntries([...nativeShaderFamilies.entries()].sort(([a], [b]) => a.localeCompare(b))),
   };
 }
 
@@ -889,12 +945,11 @@ function fitFrontCamera(camera, root) {
 
 
 const NATIVE_EDGE2_CAPTURE_PROFILE = Object.freeze({
-  // light_2d_capture.cfg.bin supplies edge2OutlineScale=2.5.
-  // The depth pair is the inherited edge2 default observed across the extracted
-  // EventMap profiles and in the native-shader reconstruction; the capture file
-  // does not override it.
-  depthScaleMax: 7.0,
-  depthScaleOffset: 0.10,
+  // light_2d_capture.cfg.bin proves edge2OutlineScale=2.5, but it does not
+  // provide the edge2 depth max/offset pair. Keep the native shader's explicit
+  // max <= 0 fallback branch instead of inventing EventMap values for RTG.
+  depthScaleMax: 0.0,
+  depthScaleOffset: 0.0,
   edgeScale: 2.5,
   shaderParam7: Object.freeze([0.30, 0.30, 0.30, 1.0]),
 });
@@ -1288,7 +1343,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE+EDGE2 V14"
+      ? "NATIVE CORE V15 · EDGE2 EXP"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
@@ -1301,12 +1356,17 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
     const param2Label = result.nativeMaterials
       ? " · P2 " + result.nativeMaterials.shaderParam2 + "/" + result.nativeMaterials.materials
       : "";
+    const familyLabel = result.nativeMaterials?.shaderFamilies
+      ? " · FX " + Object.entries(result.nativeMaterials.shaderFamilies)
+        .map(([family, count]) => family + ":" + count)
+        .join(",")
+      : "";
     const rawGlbLabel = result.glbPayload
       ? " · RAW " + result.glbPayload.nativeMaterials + "/" + result.glbPayload.usedMaterials
         + " · C " + result.glbPayload.colorPrimitives + "/" + result.glbPayload.primitiveCount
       : "";
     status.textContent = result.cache === "miss"
-      ? shaderLabel + nativeMaterialLabel + param2Label + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
+      ? shaderLabel + nativeMaterialLabel + param2Label + familyLabel + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
       : shaderLabel + nativeMaterialLabel + param2Label + rawGlbLabel + " · cache " + result.cache + " · " + (result.isKeeper ? "GK" : "campo");
     return result;
   } catch (error) {
