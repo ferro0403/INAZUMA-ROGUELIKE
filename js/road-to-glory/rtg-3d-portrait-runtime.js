@@ -39,6 +39,11 @@ function compareEnabled() {
   return value === "1" || value === "true" || value === "g4-native";
 }
 
+function freshRenderEnabled() {
+  const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dFresh") || "").trim().toLowerCase();
+  return value === "1" || value === "true";
+}
+
 async function manifest() {
   if (!manifestPromise) {
     manifestPromise = fetch(MANIFEST_URL, { cache: "no-store" }).then(async (response) => {
@@ -135,6 +140,7 @@ function inspectGlbNativePayload(buffer) {
 
     const usedMaterials = new Set();
     const nativeMaterials = new Set();
+    const materialDebug = new Map();
     let primitiveCount = 0;
     let colorPrimitives = 0;
 
@@ -153,6 +159,22 @@ function inspectGlbNativePayload(buffer) {
           || Array.isArray(nie.render_states)
         )) {
           nativeMaterials.add(materialIndex);
+          if (!materialDebug.has(materialIndex)) {
+            const textures = nie.textures && typeof nie.textures === "object"
+              ? Object.keys(nie.textures).sort()
+              : [];
+            materialDebug.set(materialIndex, {
+              materialIndex,
+              name: String(json.materials?.[materialIndex]?.name || ""),
+              sourceMaterial: String(nie.source_material || ""),
+              shaderHash: typeof nie.shader_hash_hex === "string"
+                ? nie.shader_hash_hex
+                : Number.isInteger(Number(nie.shader_hash))
+                  ? "0x" + (Number(nie.shader_hash) >>> 0).toString(16).toUpperCase().padStart(8, "0")
+                  : "",
+              textures,
+            });
+          }
         }
       }
     }
@@ -162,6 +184,7 @@ function inspectGlbNativePayload(buffer) {
       nativeMaterials: nativeMaterials.size,
       primitiveCount,
       colorPrimitives,
+      materialDebug: [...materialDebug.values()],
     };
   } catch (error) {
     console.warn("[RTG 3D portrait] diagnostica JSON GLB non disponibile", error);
@@ -1191,12 +1214,13 @@ async function portraitFor({ playerId, player, uniformId = null, shaderModeOverr
   const shaderMode = shaderModeOverride || selectedShaderMode();
   const key = cacheKey(playerId, playerConfig.internalCode, chosenUniformId, uniformCrc, shaderMode);
   const selectedCacheName = cacheName(shaderMode);
-  const memoryUrl = memoryUrls.get(key);
+  const forceFresh = freshRenderEnabled();
+  const memoryUrl = forceFresh ? null : memoryUrls.get(key);
   if (memoryUrl) {
     return { url: memoryUrl, cache: "memory", totalMs: 0, uniformId: chosenUniformId, uniformCrc, isKeeper, shaderMode };
   }
 
-  const persistentBlob = await readCachedBlob(key, selectedCacheName);
+  const persistentBlob = forceFresh ? null : await readCachedBlob(key, selectedCacheName);
   if (persistentBlob) {
     return {
       url: objectUrlFor(key, persistentBlob),
@@ -1223,6 +1247,9 @@ async function portraitFor({ playerId, player, uniformId = null, shaderModeOverr
 
   const rendered = await renderGlbToBlob(buffer, modelUrl, shaderMode);
   await writeCachedBlob(key, rendered.blob, selectedCacheName);
+  if (forceFresh && rendered.glbPayload?.materialDebug) {
+    console.info("[RTG 3D portrait] native material debug", rendered.glbPayload.materialDebug);
+  }
   const totalMs = performance.now() - totalStart;
 
   return {
