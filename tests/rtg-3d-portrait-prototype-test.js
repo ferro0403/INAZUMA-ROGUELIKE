@@ -26,7 +26,7 @@ assert(runtime.includes("Cache Storage is an optimization only"), "Cache must re
 assert(runtime.includes("disposeModel(gltf.scene)"), "Loaded GLB resources must be released.");
 assert(runtime.includes("renderer.forceContextLoss?.()"), "WebGL context cleanup is required.");
 assert(runtime.includes("MeshPhongMaterial"), "RTG portrait renderer must use the Character-style material base.");
-assert(runtime.includes("userData?.nie?.textures"), "RTG portrait renderer must consume NIE Character texture metadata.");
+assert(runtime.includes("nieMaterialExtras(gltf, sourceMaterial, materialIndexHint)?.textures"), "RTG portrait renderer must consume NIE Character texture metadata through the resolved glTF material extras.");
 assert(runtime.includes('getDependency("texture", index)'), "RTG portrait renderer must load embedded Character auxiliary textures.");
 assert(runtime.includes("g4SpecularShapeMap"), "RTG Character shader must use the native specular-shape texture when available.");
 assert(runtime.includes("g4SpecularMaskMap"), "RTG Character shader must use the native specular mask when available.");
@@ -129,7 +129,7 @@ assert(!runtime.includes('normalThreshold'), "Native edge2 must not use guessed 
 assert(!runtime.includes('depthThreshold'), "Native edge2 must not use guessed depth-edge thresholds.");
 assert(!runtime.includes('outlinePixels'), "Native edge2 must not use guessed screen-space outline width.");
 assert(!runtime.includes('new THREE.Color(0.018, 0.012, 0.018)'), "Native edge2 must not hard-code the old guessed near-black outline.");
-assert(runtime.includes('NATIVE+EDGE2'), "Native edge2 portrait status label is missing.");
+assert(runtime.includes('NATIVE CORE V15 · EDGE2 EXP'), "Native shader-family status must keep EDGE2 explicitly experimental.");
 assert(runtime.includes('function compareEnabled()'), "Portrait comparison query helper is missing.");
 assert(runtime.includes('rtg3dCompare'), "Portrait comparison query parameter is missing.");
 assert(runtime.includes('shaderModeOverride'), "Portrait comparison must render explicit shader modes.");
