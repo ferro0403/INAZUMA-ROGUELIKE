@@ -199,7 +199,7 @@
     duplicateRefunds:SEASON1.duplicateRefunds,constraints:aresConstraints,
     routeBackground:"assets/rtg/rtg-ares-route-map-user.jpeg",
     routeClass:"rtg-route--ares",
-    albumCover:"https://image.tmdb.org/t/p/original/kqFVCKdKz20EFk8lFf7TZgyqhMw.jpg",
+    albumCover:"https://www.akibagamers.it/wp-content/uploads/2019/12/inazuma-eleven-great-road-of-heroes-cover.jpg",
     albumCoverPosition:"center",secondaryMatchesPerGap:1,
   });
   const SEASONS=Object.freeze({ie1:SEASON1,ie1_s2:SEASON2,ie1_s3:SEASON3,ie2:ARES});
