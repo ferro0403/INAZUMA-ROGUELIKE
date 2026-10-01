@@ -39,6 +39,9 @@ assert(!runtime.includes("OrthographicCamera"), "Flat orthographic portrait came
 assert(runtime.includes('rtg-3d-portrait-v5'), "Legacy Character shader cache must remain available as fallback.");
 assert(runtime.includes('rtg-3d-portrait-v6-g4'), "Capture-derived G4 shader must use an isolated cache.");
 assert(runtime.includes('get("rtg3dShader")'), "Capture-derived G4 shader must remain explicitly selectable.");
+assert(runtime.includes('get("rtg3dFresh")'), "RTG portrait must expose an explicit fresh-render cache bypass for native diagnostics.");
+assert(runtime.includes('materialDebug: [...materialDebug.values()]'), "Fresh native diagnostics must expose material hash and texture-role coverage.");
+assert(runtime.includes('[RTG 3D portrait] native material debug'), "Fresh native diagnostics must be visible in the browser console.");
 assert(runtime.includes('function buildG4CaptureMaterial'), "Capture-derived G4 material path missing.");
 assert(runtime.includes('vec3(0.74995, 0.60020, 0.77992)'), "G4 shadow color 0 from capture-derived profile is missing.");
 assert(runtime.includes('vec3(0.72967, 0.52992, 0.69982)'), "G4 shadow color 1 from capture-derived profile is missing.");
