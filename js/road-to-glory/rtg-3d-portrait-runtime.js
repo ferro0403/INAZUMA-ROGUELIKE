@@ -173,6 +173,10 @@ function inspectGlbNativePayload(buffer) {
                   ? "0x" + (Number(nie.shader_hash) >>> 0).toString(16).toUpperCase().padStart(8, "0")
                   : "",
               textures,
+              textureDescriptors: nie.textures && typeof nie.textures === "object" ? nie.textures : {},
+              nativeColors: Array.isArray(nie.native_colors) ? nie.native_colors : [],
+              shaderParameters: Array.isArray(nie.shader_parameters) ? nie.shader_parameters : [],
+              extraKeys: Object.keys(nie).sort(),
             });
           }
         }
