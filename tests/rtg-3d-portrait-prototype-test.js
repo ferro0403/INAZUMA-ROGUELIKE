@@ -60,18 +60,18 @@ assert(runtime.includes('texture2D(g4NativeGradientMap'), "Native portrait must 
 assert(runtime.includes('g4HighSignal - 1.50'), "Native highlight threshold must come from charaHighLightColor.w.");
 assert(runtime.includes('vec3(0.10) * g4High'), "Native highlight color must remain tied to the extracted Character profile.");
 assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must remain tied to the extracted Character profile.");
-assert(runtime.includes('rtg-g4-native-data-v7'), "Native-data shader program cache version is missing.");
+assert(runtime.includes('rtg-g4-native-data-v15-family'), "Native-data shader program cache must include the proven shader-family identity.");
 
-assert(runtime.includes('rtg-3d-portrait-v14-native-gradient-data'), "Native edge2 portrait mode must invalidate cached portraits after unflipped DataTexture wiring.");
-assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14"'), "Native edge2 portrait mode aliases are missing.");
+assert(runtime.includes('rtg-3d-portrait-v15-native-shader-family-core'), "Native portrait mode must invalidate cached portraits after shader-family routing.");
+assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15"'), "Native edge portrait mode aliases are missing.");
 assert(runtime.includes('profile === "capture"'), "Native edge2 must select the extracted capture lighting profile.");
 assert(runtime.includes('source: "light_2d_capture.cfg.bin"'), "Native edge2 beauty pass must use light_2d_capture.cfg.bin.");
 assert(runtime.includes('charaLightDir: [0.358, 0.614, 0.703]'), "Capture charaLightDir is missing.");
 assert(runtime.includes('charaShadowColor1: [0.77, 0.70, 0.65, 0.50]'), "Capture charaShadowColor1 is missing.");
 assert(runtime.includes('charaShadowColor2: [0.62, 0.54, 0.50, 0.55]'), "Capture charaShadowColor2 is missing.");
 assert(runtime.includes('charaGrTParam: [0.0, 1.0, 1.0, 0.0]'), "Capture charaGrTParam is missing.");
-assert(runtime.includes('buildG4NativeDataMaterial(source, aux, "capture")'), "Native edge2 must route beauty through the capture profile.");
-assert(runtime.includes('rtg-g4-native-capture-v9'), "Capture-profile shader program cache key is missing.");
+assert(runtime.includes('buildG4NativeDataMaterial(source, aux, "capture", native, gradient)'), "Native edge path must route beauty through the capture profile with native material metadata.");
+assert(runtime.includes('rtg-g4-native-capture-v15-family'), "Capture-profile shader cache key must include shader-family routing.");
 assert(runtime.includes('function inspectGlbNativePayload'), "Native portrait must inspect the raw GLB JSON before GLTFLoader transforms it.");
 assert(runtime.includes('cache: "no-store"'), "Native portrait must bypass stale browser HTTP cache for model GLBs.");
 assert(runtime.includes('function materialIndexForNode'), "Native portrait must resolve the original glTF material from the mesh/primitive association.");
@@ -87,7 +87,15 @@ assert(runtime.includes('nie.render_states'), "Native portrait must preserve ori
 assert(runtime.includes('rtgNativeMaterial: nativeMaterial'), "Native material metadata must remain attached to the runtime Character material.");
 assert(runtime.includes('nativeMaterial?.shaderHashHex || "no-native-hash"'), "Native shader hash must participate in the Three program cache identity.");
 assert(runtime.includes('nativeMaterials: rendered.nativeMaterials'), "Portrait diagnostics must report how many native materials reached the browser.");
-assert(runtime.includes('"NATIVE+EDGE2 V14"'), "RTG prototype must identify the corrected native-gradient v14 path in the status badge.");
+assert(runtime.includes('const NATIVE_SHADER_FAMILIES = Object.freeze'), "Native shader-family registry is missing.");
+assert(runtime.includes('[0x61C84B7D]') && runtime.includes('shaderFx: "Chr_ToonMetal"'), "0x61C84B7D must route to Chr_ToonMetal.");
+assert(runtime.includes('[0x5B442961]') && runtime.includes('shaderFx: "Chr_ToonVariable"'), "0x5B442961 must route to Chr_ToonVariable.");
+assert(runtime.includes('[0xFBCE9C2D]') && runtime.includes('shaderFx: "Chr_EditToon"'), "0xFBCE9C2D must route to Chr_EditToon.");
+assert(runtime.includes('[0xC94BC3EA]') && runtime.includes('shaderFx: "Chr_Toon"'), "0xC94BC3EA must route to Chr_Toon.");
+assert(runtime.includes('const useMetalTextures = shaderFamily.id === "toon-metal"'), "Only Chr_ToonMetal may consume the metal auxiliary texture pair.");
+assert(runtime.includes('rtgNativeShaderFamily: shaderFamily.id'), "Resolved native shader family must remain attached to the runtime material.");
+assert(runtime.includes('shaderFamilies: Object.fromEntries'), "Portrait diagnostics must report resolved shader-family coverage.");
+assert(runtime.includes('"NATIVE CORE V15 · EDGE2 EXP"'), "RTG prototype must identify the shader-family v15 path and keep EDGE2 explicitly experimental.");
 assert(runtime.includes('new THREE.DataTexture('), "Native gradient must upload decoded RGBA bytes, not an HTML image source.");
 assert(runtime.includes('texture.flipY = false'), "Native gradient must preserve G4/D3D row orientation.");
 assert(runtime.includes('assets/rtg/chrGrd_01.png'), "Native portrait must load the full original chrGrd_01 texture asset.");
@@ -101,8 +109,8 @@ assert(runtime.includes('" · C " + result.glbPayload.colorPrimitives'), "RTG pr
 assert(runtime.includes('" · MAT " + result.nativeMaterials.materials'), "RTG prototype must expose native-material ingestion in the portrait status badge.");
 
 assert(runtime.includes('const NATIVE_EDGE2_CAPTURE_PROFILE = Object.freeze'), "Extracted edge2 capture profile is missing.");
-assert(runtime.includes('depthScaleMax: 7.0'), "edge2 inherited depth max is missing.");
-assert(runtime.includes('depthScaleOffset: 0.10'), "edge2 inherited depth offset is missing.");
+assert(runtime.includes('depthScaleMax: 0.0'), "edge2 must use the native max<=0 fallback when RTG depth max is not proven.");
+assert(runtime.includes('depthScaleOffset: 0.0'), "edge2 must not invent an RTG depth offset that is absent from the capture config.");
 assert(runtime.includes('edgeScale: 2.5'), "edge2 capture outline scale is missing.");
 assert(runtime.includes('shaderParam7: Object.freeze([0.30, 0.30, 0.30, 1.0])'), "edge2 extracted edgeColor/u_shaderParam7 values are missing.");
 assert(runtime.includes('function geometryHasNativeEdge2Weight'), "Native edge2 must validate original vertex weights.");
