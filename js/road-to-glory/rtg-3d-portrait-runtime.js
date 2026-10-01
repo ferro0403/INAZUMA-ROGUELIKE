@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v15-native-shader-family-core";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v16-native-edit-recolor";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -58,9 +58,39 @@ function roleOf(player) {
   return String(player?.normalizedRole || player?.position || player?.role || "").toUpperCase();
 }
 
+function normalizedRgbaBytes(value) {
+  if (!Array.isArray(value) || value.length < 4) return null;
+  const bytes = value.slice(0, 4).map((component) => {
+    const numeric = Number(component);
+    return Number.isFinite(numeric) ? Math.min(255, Math.max(0, Math.round(numeric))) : 0;
+  });
+  return bytes.map((component) => component / 255);
+}
+
+function nativeRecolorForUniform(uniform, isKeeper, uniformCrc) {
+  const config = uniform?.nativeRecolor;
+  const record = isKeeper ? config?.keeper : config?.fielder;
+  if (!config || !record) return null;
+  if (String(record.crc || "").toUpperCase() !== String(uniformCrc || "").toUpperCase()) return null;
+
+  const subColor1 = normalizedRgbaBytes(record.subColor1);
+  const subColor2 = normalizedRgbaBytes(record.subColor2);
+  if (!subColor1 || !subColor2) return null;
+
+  return Object.freeze({
+    source: String(config.source || ""),
+    record: String(config.record || ""),
+    logicalCode: String(record.logicalCode || ""),
+    crc: String(record.crc || ""),
+    redChannelMode: String(config.redChannelMode || ""),
+    subColor1,
+    subColor2,
+  });
+}
+
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "native-edge"
-    ? "v15-native-shader-family-core"
+    ? "v16-native-edit-recolor"
     : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
@@ -528,6 +558,11 @@ function buildG4CaptureMaterial(sourceMaterial, aux) {
       hasOcclusion ? "uniform sampler2D g4OcclusionMap;" : "",
       hasSpecularShape ? "uniform sampler2D g4SpecularShapeMap;" : "",
       hasSpecularMask ? "uniform sampler2D g4SpecularMaskMap;" : "",
+      useEditRecolor ? "uniform sampler2D g4EditMaskMap;" : "",
+      useEditRecolor ? "uniform vec4 g4ShaderParam0;" : "",
+      useEditRecolor ? "uniform vec4 g4ShaderParam1;" : "",
+      useEditRecolor ? "uniform vec4 g4EditSubColor1;" : "",
+      useEditRecolor ? "uniform vec4 g4EditSubColor2;" : "",
       "vec3 g4LinearToUnorm(vec3 c) {",
       "  c = max(c, vec3(0.0));",
       "  vec3 low = c * 12.92;",
@@ -572,6 +607,21 @@ function buildG4CaptureMaterial(sourceMaterial, aux) {
       "  vec3 g4Shadow1 = vec3(0.72967, 0.52992, 0.69982);",
       "  vec3 g4ShadowMix = mix(g4Shadow0, g4Shadow1, g4Cover1);",
       "  vec3 g4Base = g4LinearToUnorm(diffuseColor.rgb);",
+      useEditRecolor
+        ? "  vec3 g4EditMask = texture2D(g4EditMaskMap, g4Uv).rgb;"
+        : "",
+      useEditRecolor
+        ? "  vec3 g4EditColor1 = mix(g4ShaderParam0.rgb, g4EditSubColor1.rgb, g4EditSubColor1.a);"
+        : "",
+      useEditRecolor
+        ? "  vec3 g4EditColor2 = mix(g4ShaderParam1.rgb, g4EditSubColor2.rgb, g4EditSubColor2.a);"
+        : "",
+      useEditRecolor
+        ? "  g4Base *= mix(vec3(1.0), g4EditColor1, g4EditMask.g);"
+        : "",
+      useEditRecolor
+        ? "  g4Base *= mix(vec3(1.0), g4EditColor2, g4EditMask.b);"
+        : "",
       "  float g4Lum = dot(g4Base, vec3(0.29891, 0.58661, 0.11448));",
       "  vec3 g4Shade = g4ShadowMix + vec3(g4Lum * 0.10);",
       "  vec3 g4AmbientColor = vec3(0.924925, 0.874975, 0.874975);",
@@ -683,7 +733,7 @@ async function buildNativeGradientTexture() {
   return texture;
 }
 
-function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nativeMaterial = null, gradient = null) {
+function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nativeMaterial = null, gradient = null, nativeRecolor = null) {
   if (!gradient) throw new Error("chrGrd_01 nativa non disponibile");
   const useCaptureProfile = profile === "capture";
   const shaderFamily = nativeShaderFamily(nativeMaterial);
@@ -692,6 +742,22 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
   const useMetalTextures = shaderFamily.id === "toon-metal";
   const nativeSpecularShape = useMetalTextures ? aux.specular || null : null;
   const nativeSpecularMask = useMetalTextures ? aux.specular_mask || null : null;
+  // nie-model-serve currently bakes the mask's red-channel skin tint into the emitted
+  // uniform base texture. Applying u_skinColor again here would double-tint skin.
+  // The green/blue channels remain untouched and map to the two CHARA_PARTS_COLOR words.
+  const useEditRecolor = shaderFamily.id === "edit-toon"
+    && !!aux.mask
+    && nativeRecolor?.redChannelMode === "server-baked-skin";
+  const param0 = nativeMaterial?.shaderParameters?.[0];
+  const param1 = nativeMaterial?.shaderParameters?.[1];
+  const shaderParam0 = Array.isArray(param0) && param0.length >= 4
+    ? param0.slice(0, 4).map((value) => Number(value) || 0)
+    : [1.0, 1.0, 1.0, 0.0];
+  const shaderParam1 = Array.isArray(param1) && param1.length >= 4
+    ? param1.slice(0, 4).map((value) => Number(value) || 0)
+    : [1.0, 1.0, 1.0, 0.0];
+  const editSubColor1 = useEditRecolor ? nativeRecolor.subColor1 : [1.0, 1.0, 1.0, 0.0];
+  const editSubColor2 = useEditRecolor ? nativeRecolor.subColor2 : [1.0, 1.0, 1.0, 0.0];
   const param2 = nativeMaterial?.shaderParameters?.[2];
   const shaderParam2 = Array.isArray(param2) && param2.length >= 4
     ? param2.slice(0, 4).map((value) => Number(value) || 0)
@@ -760,6 +826,8 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
     rtgNativeFxbin: shaderFamily.fxbin,
     rtgNativePixelShader: shaderFamily.pixelShader,
     rtgNativeShaderParam2: shaderParam2,
+    rtgNativeEditRecolorApplied: useEditRecolor,
+    rtgNativeEditRecolor: useEditRecolor ? nativeRecolor : null,
     rtgShaderMode: useCaptureProfile ? "native-edge" : "native",
     rtgNativeLightData: nativeLightData,
   };
@@ -772,6 +840,11 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
     shader.uniforms.g4OcclusionMap = { value: aux.occlusion || null };
     shader.uniforms.g4SpecularShapeMap = { value: nativeSpecularShape };
     shader.uniforms.g4SpecularMaskMap = { value: nativeSpecularMask };
+    shader.uniforms.g4EditMaskMap = { value: useEditRecolor ? aux.mask : null };
+    shader.uniforms.g4ShaderParam0 = { value: new THREE.Vector4(...shaderParam0) };
+    shader.uniforms.g4ShaderParam1 = { value: new THREE.Vector4(...shaderParam1) };
+    shader.uniforms.g4EditSubColor1 = { value: new THREE.Vector4(...editSubColor1) };
+    shader.uniforms.g4EditSubColor2 = { value: new THREE.Vector4(...editSubColor2) };
     shader.uniforms.g4NativeGradientMap = { value: gradient };
     shader.uniforms.g4ShaderParam2 = { value: new THREE.Vector4(...shaderParam2) };
     shader.uniforms.g4LightDirView = { value: new THREE.Vector3(...nativeLightData.charaLightDir).normalize() };
@@ -866,8 +939,9 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
   };
 
   material.customProgramCacheKey = () => [
-    useCaptureProfile ? "rtg-g4-native-capture-v15-family" : "rtg-g4-native-data-v15-family",
+    useCaptureProfile ? "rtg-g4-native-capture-v16-edit-recolor" : "rtg-g4-native-data-v16-edit-recolor",
     shaderFamily.id,
+    useEditRecolor ? "editmask" : "no-editmask",
     nativeMaterial?.shaderHashHex || "no-native-hash",
     aux.occlusion ? "oc" : "",
     aux.specular ? "sp" : "",
@@ -877,7 +951,7 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
   return material;
 }
 
-async function applyCharacterShader(gltf, shaderMode = "legacy") {
+async function applyCharacterShader(gltf, shaderMode = "legacy", nativeRecolor = null) {
   const converted = new Map();
   const replacements = [];
   const nativeSourceUuids = new Set();
@@ -886,6 +960,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
   let nativeMaterials = 0;
   let missingNativeMaterials = 0;
   let shaderParam2Materials = 0;
+  let editRecolorMaterials = 0;
 
   gltf.scene?.traverse?.((node) => {
     if (!node.isMesh || !node.material) return;
@@ -922,9 +997,11 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
             const aux = await loadNieAuxTextures(gltf, source, materialIndexHint);
             if (shaderMode === "native-edge" || shaderMode === "native") {
               const gradient = await buildNativeGradientTexture();
-              return shaderMode === "native-edge"
-                ? buildG4NativeDataMaterial(source, aux, "capture", native, gradient)
-                : buildG4NativeDataMaterial(source, aux, "general", native, gradient);
+              const material = shaderMode === "native-edge"
+                ? buildG4NativeDataMaterial(source, aux, "capture", native, gradient, nativeRecolor)
+                : buildG4NativeDataMaterial(source, aux, "general", native, gradient, nativeRecolor);
+              if (material?.userData?.rtgNativeEditRecolorApplied) editRecolorMaterials += 1;
+              return material;
             }
             return shaderMode === "g4"
               ? buildG4CaptureMaterial(source, aux)
@@ -944,6 +1021,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
     materials: nativeMaterials,
     missing: missingNativeMaterials,
     shaderParam2: shaderParam2Materials,
+    editRecolor: editRecolorMaterials,
     shaderHashes: [...nativeShaderHashes].sort(),
     shaderFamilies: Object.fromEntries([...nativeShaderFamilies.entries()].sort(([a], [b]) => a.localeCompare(b))),
   };
@@ -1130,7 +1208,7 @@ function canvasBlob(canvas) {
   });
 }
 
-async function renderGlbToBlob(buffer, sourceUrl, shaderMode = "legacy") {
+async function renderGlbToBlob(buffer, sourceUrl, shaderMode = "legacy", nativeRecolor = null) {
   const glbPayload = inspectGlbNativePayload(buffer);
   const parseStart = performance.now();
   const gltf = await parseGlb(buffer, sourceUrl.slice(0, sourceUrl.lastIndexOf("/") + 1));
@@ -1165,7 +1243,7 @@ async function renderGlbToBlob(buffer, sourceUrl, shaderMode = "legacy") {
   fill.position.set(-4, 2.5, 4);
   scene.add(fill);
 
-  const nativeMaterials = await applyCharacterShader(gltf, shaderMode);
+  const nativeMaterials = await applyCharacterShader(gltf, shaderMode, nativeRecolor);
   scene.add(gltf.scene);
   fitFrontCamera(camera, gltf.scene);
 
@@ -1216,6 +1294,9 @@ async function portraitFor({ playerId, player, uniformId = null, shaderModeOverr
   if (!uniformCrc) throw new Error("CRC uniforme mancante per " + (isKeeper ? "GK" : "giocatore di campo"));
 
   const shaderMode = shaderModeOverride || selectedShaderMode();
+  const nativeRecolor = shaderMode === "native-edge"
+    ? nativeRecolorForUniform(uniform, isKeeper, uniformCrc)
+    : null;
   const key = cacheKey(playerId, playerConfig.internalCode, chosenUniformId, uniformCrc, shaderMode);
   const selectedCacheName = cacheName(shaderMode);
   const forceFresh = freshRenderEnabled();
@@ -1249,7 +1330,7 @@ async function portraitFor({ playerId, player, uniformId = null, shaderModeOverr
   const networkMs = performance.now() - networkStart;
   assertGlb(buffer);
 
-  const rendered = await renderGlbToBlob(buffer, modelUrl, shaderMode);
+  const rendered = await renderGlbToBlob(buffer, modelUrl, shaderMode, nativeRecolor);
   await writeCachedBlob(key, rendered.blob, selectedCacheName);
   if (forceFresh && rendered.glbPayload?.materialDebug) {
     console.info("[RTG 3D portrait] native material debug JSON " + JSON.stringify(rendered.glbPayload.materialDebug));
@@ -1268,6 +1349,7 @@ async function portraitFor({ playerId, player, uniformId = null, shaderModeOverr
     edge2: rendered.edge2,
     nativeMaterials: rendered.nativeMaterials,
     glbPayload: rendered.glbPayload,
+    nativeRecolor,
     uniformId: chosenUniformId,
     uniformCrc,
     isKeeper,
@@ -1374,7 +1456,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE CORE V15 · EDGE2 EXP"
+      ? "NATIVE CORE V16 · EDITMASK · EDGE2 EXP"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
@@ -1392,12 +1474,15 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
         .map(([family, count]) => family + ":" + count)
         .join(",")
       : "";
+    const recolorLabel = result.nativeMaterials
+      ? " · RC " + result.nativeMaterials.editRecolor + "/3"
+      : "";
     const rawGlbLabel = result.glbPayload
       ? " · RAW " + result.glbPayload.nativeMaterials + "/" + result.glbPayload.usedMaterials
         + " · C " + result.glbPayload.colorPrimitives + "/" + result.glbPayload.primitiveCount
       : "";
     status.textContent = result.cache === "miss"
-      ? shaderLabel + nativeMaterialLabel + param2Label + familyLabel + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
+      ? shaderLabel + nativeMaterialLabel + param2Label + recolorLabel + familyLabel + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
       : shaderLabel + nativeMaterialLabel + param2Label + rawGlbLabel + " · cache " + result.cache + " · " + (result.isKeeper ? "GK" : "campo");
     return result;
   } catch (error) {
