@@ -159,7 +159,7 @@ assert(!runtime.includes('normalThreshold'), "Native edge2 must not use guessed 
 assert(!runtime.includes('depthThreshold'), "Native edge2 must not use guessed depth-edge thresholds.");
 assert(!runtime.includes('outlinePixels'), "Native edge2 must not use guessed screen-space outline width.");
 assert(!runtime.includes('new THREE.Color(0.018, 0.012, 0.018)'), "Native edge2 must not hard-code the old guessed near-black outline.");
-assert(runtime.includes('NATIVE CORE V16 · EDITMASK · EDGE2 EXP'), "Native v16 status must expose EditToon recolor while keeping EDGE2 explicitly experimental.");
+assert(runtime.includes('NATIVE CORE V17 · TOONVAR · EDITMASK · EDGE2 EXP'), "Native v17 status must expose ToonVariable + EditToon while keeping EDGE2 explicitly experimental.");
 assert(runtime.includes('function compareEnabled()'), "Portrait comparison query helper is missing.");
 assert(runtime.includes('rtg3dCompare'), "Portrait comparison query parameter is missing.");
 assert(runtime.includes('shaderModeOverride'), "Portrait comparison must render explicit shader modes.");
