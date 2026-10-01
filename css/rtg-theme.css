@@ -1,5 +1,5 @@
 @import url("./rtg-theme-core.css?v=20260921-duel-actions-mobile-1");
-@import url("./rtg-run.css?v=20260930-ares-hq-1");
+@import url("./rtg-run.css?v=20261001-rtg-qol-1");
 
 /* RTG token HUD: compact Ramen Sticker currency and separate resource cards. */
 .rtg-token-icon{display:inline-block!important;width:22px!important;height:22px!important;min-width:22px!important;max-width:22px!important;min-height:22px!important;max-height:22px!important;object-fit:contain!important;object-position:center!important;vertical-align:-5px!important;flex:0 0 22px!important;margin:0 4px 0 0!important;}
@@ -1183,9 +1183,3 @@ button.player-card:has(> .rtg-legacy-badge),
   --rtg-legacy-ink:#061817;
 }
 
-.rtg-squad-shell.rtg-squad-shell--ares{
-  background-image:linear-gradient(rgba(245,247,242,.80),rgba(245,247,242,.88)),url("https://image.tmdb.org/t/p/original/kqFVCKdKz20EFk8lFf7TZgyqhMw.jpg")!important;
-  background-position:center!important;
-  background-size:cover!important;
-  background-attachment:fixed!important;
-}
