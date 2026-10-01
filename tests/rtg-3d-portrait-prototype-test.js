@@ -62,8 +62,8 @@ assert(runtime.includes('vec3(0.10) * g4High'), "Native highlight color must rem
 assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must remain tied to the extracted Character profile.");
 assert(runtime.includes('rtg-g4-native-data-v7'), "Native-data shader program cache version is missing.");
 
-assert(runtime.includes('rtg-3d-portrait-v13-native-gradient'), "Native edge2 portrait mode must invalidate cached portraits after original chrGrd_01 wiring.");
-assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13"'), "Native edge2 portrait mode aliases are missing.");
+assert(runtime.includes('rtg-3d-portrait-v14-native-gradient-data'), "Native edge2 portrait mode must invalidate cached portraits after unflipped DataTexture wiring.");
+assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14"'), "Native edge2 portrait mode aliases are missing.");
 assert(runtime.includes('profile === "capture"'), "Native edge2 must select the extracted capture lighting profile.");
 assert(runtime.includes('source: "light_2d_capture.cfg.bin"'), "Native edge2 beauty pass must use light_2d_capture.cfg.bin.");
 assert(runtime.includes('charaLightDir: [0.358, 0.614, 0.703]'), "Capture charaLightDir is missing.");
@@ -87,7 +87,9 @@ assert(runtime.includes('nie.render_states'), "Native portrait must preserve ori
 assert(runtime.includes('rtgNativeMaterial: nativeMaterial'), "Native material metadata must remain attached to the runtime Character material.");
 assert(runtime.includes('nativeMaterial?.shaderHashHex || "no-native-hash"'), "Native shader hash must participate in the Three program cache identity.");
 assert(runtime.includes('nativeMaterials: rendered.nativeMaterials'), "Portrait diagnostics must report how many native materials reached the browser.");
-assert(runtime.includes('"NATIVE+EDGE2 V13"'), "RTG prototype must identify the original-gradient v13 native path in the status badge.");
+assert(runtime.includes('"NATIVE+EDGE2 V14"'), "RTG prototype must identify the corrected native-gradient v14 path in the status badge.");
+assert(runtime.includes('new THREE.DataTexture('), "Native gradient must upload decoded RGBA bytes, not an HTML image source.");
+assert(runtime.includes('texture.flipY = false'), "Native gradient must preserve G4/D3D row orientation.");
 assert(runtime.includes('assets/rtg/chrGrd_01.png'), "Native portrait must load the full original chrGrd_01 texture asset.");
 assert(runtime.includes('texture.generateMipmaps = false'), "Original chrGrd_01 texture must remain non-mipmapped like the extracted DDS.");
 assert(runtime.includes('uniform vec4 g4ShaderParam2;'), "Native beauty shader must expose the preserved G4MD u_shaderParam2 vector.");
