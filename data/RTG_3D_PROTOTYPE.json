@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "purpose": "RTG live 3D portrait prototype. Expanded player/uniform maps will replace this test manifest after timing validation.",
   "serverBaseUrl": "http://127.0.0.1:8790",
   "defaultUniformId": "zeus",
@@ -13,7 +13,44 @@
     "zeus": {
       "label": "Zeus",
       "uniformFielderModelIdCrc": "0xF0006501",
-      "uniformKeeperModelIdCrc": "0x38E0EA71"
+      "uniformKeeperModelIdCrc": "0x38E0EA71",
+      "nativeRecolor": {
+        "source": "data/common/gamedata/character/chara_parts_0.07.22.cfg.bin",
+        "record": "CHARA_PARTS_COLOR",
+        "redChannelMode": "server-baked-skin",
+        "fielder": {
+          "logicalCode": "u011001_10",
+          "crc": "0xF0006501",
+          "subColor1": [
+            35,
+            99,
+            134,
+            255
+          ],
+          "subColor2": [
+            5,
+            5,
+            5,
+            255
+          ]
+        },
+        "keeper": {
+          "logicalCode": "u011051_10",
+          "crc": "0x38E0EA71",
+          "subColor1": [
+            225,
+            211,
+            184,
+            255
+          ],
+          "subColor2": [
+            5,
+            5,
+            5,
+            255
+          ]
+        }
+      }
     }
   }
 }
