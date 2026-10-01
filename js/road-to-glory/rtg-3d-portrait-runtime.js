@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v16-native-edit-recolor";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v17-toon-variable-default";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -90,7 +90,7 @@ function nativeRecolorForUniform(uniform, isKeeper, uniformCrc) {
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "native-edge"
-    ? "v16-native-edit-recolor"
+    ? "v17-toon-variable-default"
     : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
@@ -563,6 +563,7 @@ function buildG4CaptureMaterial(sourceMaterial, aux) {
       useEditRecolor ? "uniform vec4 g4ShaderParam1;" : "",
       useEditRecolor ? "uniform vec4 g4EditSubColor1;" : "",
       useEditRecolor ? "uniform vec4 g4EditSubColor2;" : "",
+      useVariableAtlas ? "uniform vec4 g4ShaderParam4;" : "",
       "vec3 g4LinearToUnorm(vec3 c) {",
       "  c = max(c, vec3(0.0));",
       "  vec3 low = c * 12.92;",
@@ -758,6 +759,19 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
     : [1.0, 1.0, 1.0, 0.0];
   const editSubColor1 = useEditRecolor ? nativeRecolor.subColor1 : [1.0, 1.0, 1.0, 0.0];
   const editSubColor2 = useEditRecolor ? nativeRecolor.subColor2 : [1.0, 1.0, 1.0, 0.0];
+  const param4 = nativeMaterial?.shaderParameters?.[4];
+  const shaderParam4 = Array.isArray(param4) && param4.length >= 4
+    ? param4.slice(0, 4).map((value) => Number(value) || 0)
+    : null;
+  // chr_toon_variable.pfxo first computes the atlas cell from u_shaderParam4.
+  // u_varableParam can dynamically override it at runtime; that user-data buffer is
+  // not present in the exported GLB, so v17 implements only the native default branch
+  // (override blend = 0), never an invented expression value.
+  const useVariableAtlas = shaderFamily.id === "toon-variable"
+    && !!sourceMaterial?.map
+    && !!shaderParam4
+    && shaderParam4[1] > 0
+    && shaderParam4[2] !== 0;
   const param2 = nativeMaterial?.shaderParameters?.[2];
   const shaderParam2 = Array.isArray(param2) && param2.length >= 4
     ? param2.slice(0, 4).map((value) => Number(value) || 0)
@@ -828,6 +842,8 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
     rtgNativeShaderParam2: shaderParam2,
     rtgNativeEditRecolorApplied: useEditRecolor,
     rtgNativeEditRecolor: useEditRecolor ? nativeRecolor : null,
+    rtgNativeVariableAtlasApplied: useVariableAtlas,
+    rtgNativeShaderParam4: shaderParam4,
     rtgShaderMode: useCaptureProfile ? "native-edge" : "native",
     rtgNativeLightData: nativeLightData,
   };
@@ -845,6 +861,7 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
     shader.uniforms.g4ShaderParam1 = { value: new THREE.Vector4(...shaderParam1) };
     shader.uniforms.g4EditSubColor1 = { value: new THREE.Vector4(...editSubColor1) };
     shader.uniforms.g4EditSubColor2 = { value: new THREE.Vector4(...editSubColor2) };
+    shader.uniforms.g4ShaderParam4 = { value: new THREE.Vector4(...(shaderParam4 || [0, 1, 1, 0])) };
     shader.uniforms.g4NativeGradientMap = { value: gradient };
     shader.uniforms.g4ShaderParam2 = { value: new THREE.Vector4(...shaderParam2) };
     shader.uniforms.g4LightDirView = { value: new THREE.Vector3(...nativeLightData.charaLightDir).normalize() };
@@ -874,6 +891,31 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
       "#include <map_pars_fragment>",
       "#include <map_pars_fragment>\n" + declarations,
     );
+
+    if (useVariableAtlas) {
+      // chr_toon_variable.pfxo native default path:
+      // columns = uint(param4.y), slot = uint(param4.x),
+      // col = slot % columns, row = slot / columns,
+      // uv += (col / columns, row / (columns * param4.z)).
+      // Mark: eye [0,4,0.5,0] => slot 0; mouth [4,4,0.5,0] => +0.5 V.
+      const variableMapFragment = [
+        "#ifdef USE_MAP",
+        "  float g4VarColumns = max(floor(g4ShaderParam4.y), 1.0);",
+        "  float g4VarSlot = max(floor(g4ShaderParam4.x), 0.0);",
+        "  float g4VarRow = floor(g4VarSlot / g4VarColumns);",
+        "  float g4VarColumn = g4VarSlot - g4VarRow * g4VarColumns;",
+        "  float g4VarCellWidth = 1.0 / g4VarColumns;",
+        "  float g4VarVScale = max(abs(g4ShaderParam4.z), 0.000001);",
+        "  vec2 g4VariableUv = vMapUv + vec2(g4VarColumn * g4VarCellWidth, g4VarRow * g4VarCellWidth / g4VarVScale);",
+        "  vec4 sampledDiffuseColor = texture2D(map, g4VariableUv);",
+        "  #ifdef DECODE_VIDEO_TEXTURE",
+        "    sampledDiffuseColor = sRGBTransferEOTF(sampledDiffuseColor);",
+        "  #endif",
+        "  diffuseColor *= sampledDiffuseColor;",
+        "#endif",
+      ].join("\n");
+      shader.fragmentShader = shader.fragmentShader.replace("#include <map_fragment>", variableMapFragment);
+    }
 
     const nativeComposite = [
       "#ifdef USE_MAP",
@@ -939,9 +981,10 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
   };
 
   material.customProgramCacheKey = () => [
-    useCaptureProfile ? "rtg-g4-native-capture-v16-edit-recolor" : "rtg-g4-native-data-v16-edit-recolor",
+    useCaptureProfile ? "rtg-g4-native-capture-v17-toon-variable" : "rtg-g4-native-data-v17-toon-variable",
     shaderFamily.id,
     useEditRecolor ? "editmask" : "no-editmask",
+    useVariableAtlas ? "toonvar-default" : "no-toonvar",
     nativeMaterial?.shaderHashHex || "no-native-hash",
     aux.occlusion ? "oc" : "",
     aux.specular ? "sp" : "",
@@ -961,6 +1004,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy", nativeRecolor =
   let missingNativeMaterials = 0;
   let shaderParam2Materials = 0;
   let editRecolorMaterials = 0;
+  let variableAtlasMaterials = 0;
 
   gltf.scene?.traverse?.((node) => {
     if (!node.isMesh || !node.material) return;
@@ -1001,6 +1045,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy", nativeRecolor =
                 ? buildG4NativeDataMaterial(source, aux, "capture", native, gradient, nativeRecolor)
                 : buildG4NativeDataMaterial(source, aux, "general", native, gradient, nativeRecolor);
               if (material?.userData?.rtgNativeEditRecolorApplied) editRecolorMaterials += 1;
+              if (material?.userData?.rtgNativeVariableAtlasApplied) variableAtlasMaterials += 1;
               return material;
             }
             return shaderMode === "g4"
@@ -1022,6 +1067,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy", nativeRecolor =
     missing: missingNativeMaterials,
     shaderParam2: shaderParam2Materials,
     editRecolor: editRecolorMaterials,
+    variableAtlas: variableAtlasMaterials,
     shaderHashes: [...nativeShaderHashes].sort(),
     shaderFamilies: Object.fromEntries([...nativeShaderFamilies.entries()].sort(([a], [b]) => a.localeCompare(b))),
   };
@@ -1456,7 +1502,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE CORE V16 · EDITMASK · EDGE2 EXP"
+      ? "NATIVE CORE V17 · TOONVAR · EDITMASK · EDGE2 EXP"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
@@ -1477,12 +1523,15 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
     const recolorLabel = result.nativeMaterials
       ? " · RC " + result.nativeMaterials.editRecolor + "/3"
       : "";
+    const variableLabel = result.nativeMaterials
+      ? " · VAR " + result.nativeMaterials.variableAtlas + "/2"
+      : "";
     const rawGlbLabel = result.glbPayload
       ? " · RAW " + result.glbPayload.nativeMaterials + "/" + result.glbPayload.usedMaterials
         + " · C " + result.glbPayload.colorPrimitives + "/" + result.glbPayload.primitiveCount
       : "";
     status.textContent = result.cache === "miss"
-      ? shaderLabel + nativeMaterialLabel + param2Label + recolorLabel + familyLabel + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
+      ? shaderLabel + nativeMaterialLabel + param2Label + recolorLabel + variableLabel + familyLabel + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
       : shaderLabel + nativeMaterialLabel + param2Label + rawGlbLabel + " · cache " + result.cache + " · " + (result.isKeeper ? "GK" : "campo");
     return result;
   } catch (error) {
