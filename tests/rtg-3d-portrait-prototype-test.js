@@ -41,6 +41,9 @@ assert(runtime.includes('rtg-3d-portrait-v6-g4'), "Capture-derived G4 shader mus
 assert(runtime.includes('get("rtg3dShader")'), "Capture-derived G4 shader must remain explicitly selectable.");
 assert(runtime.includes('get("rtg3dFresh")'), "RTG portrait must expose an explicit fresh-render cache bypass for native diagnostics.");
 assert(runtime.includes('materialDebug: [...materialDebug.values()]'), "Fresh native diagnostics must expose material hash and texture-role coverage.");
+assert(runtime.includes("nativeColors: Array.isArray(nie.native_colors) ? nie.native_colors : []"), "Native diagnostics must expose preserved material colors.");
+assert(runtime.includes("shaderParameters: Array.isArray(nie.shader_parameters) ? nie.shader_parameters : []"), "Native diagnostics must expose preserved shader parameters.");
+assert(runtime.includes("textureDescriptors: nie.textures"), "Native diagnostics must expose texture-role descriptors.");
 assert(runtime.includes('console.info("[RTG 3D portrait] native material debug JSON " + JSON.stringify(rendered.glbPayload.materialDebug))'), "Fresh native diagnostics must be emitted as a copyable JSON line in the browser console.");
 assert(runtime.includes('function buildG4CaptureMaterial'), "Capture-derived G4 material path missing.");
 assert(runtime.includes('vec3(0.74995, 0.60020, 0.77992)'), "G4 shadow color 0 from capture-derived profile is missing.");
