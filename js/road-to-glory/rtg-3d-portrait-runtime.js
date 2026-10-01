@@ -1248,7 +1248,7 @@ async function portraitFor({ playerId, player, uniformId = null, shaderModeOverr
   const rendered = await renderGlbToBlob(buffer, modelUrl, shaderMode);
   await writeCachedBlob(key, rendered.blob, selectedCacheName);
   if (forceFresh && rendered.glbPayload?.materialDebug) {
-    console.info("[RTG 3D portrait] native material debug", rendered.glbPayload.materialDebug);
+    console.info("[RTG 3D portrait] native material debug JSON " + JSON.stringify(rendered.glbPayload.materialDebug));
   }
   const totalMs = performance.now() - totalStart;
 
