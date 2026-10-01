@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v12-native-glb-source";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v13-native-gradient";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -55,7 +55,7 @@ function roleOf(player) {
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "native-edge"
-    ? "v12-native-glb-source"
+    ? "v13-native-gradient"
     : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
@@ -553,54 +553,49 @@ function buildG4CaptureMaterial(sourceMaterial, aux) {
 }
 
 
-function buildNativeGradientTexture() {
-  // Exact RGBA alpha rows decoded from the user's untouched
-  // data/dx11/chr/shader/texture/chr_tex.g4tx -> chrGrd_01 (512x256 DXT5).
-  // Native shaderParam2 selects rows 254 and 250; RGB is pure white on both.
-  const width = 512;
-  const pixels = new Uint8Array(width * 2 * 4);
-  const row0 = new Uint8Array(width);
-  const row1 = new Uint8Array(width);
-  row0.fill(0);
-  row1.fill(0);
-  row0.fill(255, 0, 381);
-  row0.fill(254, 381, 384);
-  row0[384] = 255;
-  row0[385] = 225;
-  row0[386] = 135;
-  row0[387] = 45;
-  row0[392] = 3;
-  row0[393] = 1;
-  row1.fill(255, 0, 270);
-  row1[270] = 230;
-  row1[271] = 139;
-  row1[272] = 37;
+const NATIVE_GRADIENT_URL = new URL("../../assets/rtg/chrGrd_01.png", import.meta.url).href;
+let nativeGradientSourcePromise = null;
 
-  for (let y = 0; y < 2; y += 1) {
-    const alpha = y === 0 ? row0 : row1;
-    for (let x = 0; x < width; x += 1) {
-      const offset = (y * width + x) * 4;
-      pixels[offset] = 255;
-      pixels[offset + 1] = 255;
-      pixels[offset + 2] = 255;
-      pixels[offset + 3] = alpha[x];
-    }
-  }
-
-  const texture = new THREE.DataTexture(pixels, width, 2, THREE.RGBAFormat, THREE.UnsignedByteType);
+function configureNativeGradientTexture(texture) {
   texture.colorSpace = THREE.NoColorSpace;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
   texture.minFilter = THREE.LinearFilter;
   texture.magFilter = THREE.LinearFilter;
   texture.generateMipmaps = false;
+  texture.flipY = true;
   texture.needsUpdate = true;
   return texture;
 }
 
-function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nativeMaterial = null) {
-  const gradient = buildNativeGradientTexture();
+function loadNativeGradientSource() {
+  if (!nativeGradientSourcePromise) {
+    nativeGradientSourcePromise = new Promise((resolve, reject) => {
+      new THREE.TextureLoader().load(
+        NATIVE_GRADIENT_URL,
+        (texture) => resolve(configureNativeGradientTexture(texture)),
+        undefined,
+        reject,
+      );
+    });
+  }
+  return nativeGradientSourcePromise;
+}
+
+async function buildNativeGradientTexture() {
+  // Full original chrGrd_01 decoded losslessly from the game's
+  // data/dx11/chr/shader/texture/chr_tex.g4tx (512x256 BC3/DXT5, no mip chain).
+  const source = await loadNativeGradientSource();
+  return configureNativeGradientTexture(source.clone());
+}
+
+function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nativeMaterial = null, gradient = null) {
+  if (!gradient) throw new Error("chrGrd_01 nativa non disponibile");
   const useCaptureProfile = profile === "capture";
+  const param2 = nativeMaterial?.shaderParameters?.[2];
+  const shaderParam2 = Array.isArray(param2) && param2.length >= 4
+    ? param2.slice(0, 4).map((value) => Number(value) || 0)
+    : [0.9921875, 0.9765625, 0.0, 0.0];
   const nativeLightData = useCaptureProfile
     ? {
         source: "light_2d_capture.cfg.bin",
@@ -660,6 +655,7 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
     rtgAuxTextures: aux,
     rtgNativeGradientTexture: gradient,
     rtgNativeMaterial: nativeMaterial,
+    rtgNativeShaderParam2: shaderParam2,
     rtgShaderMode: useCaptureProfile ? "native-edge" : "native",
     rtgNativeLightData: nativeLightData,
   };
@@ -673,11 +669,13 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
     shader.uniforms.g4SpecularShapeMap = { value: aux.specular || null };
     shader.uniforms.g4SpecularMaskMap = { value: aux.specular_mask || null };
     shader.uniforms.g4NativeGradientMap = { value: gradient };
+    shader.uniforms.g4ShaderParam2 = { value: new THREE.Vector4(...shaderParam2) };
     shader.uniforms.g4LightDirView = { value: new THREE.Vector3(...nativeLightData.charaLightDir).normalize() };
 
     const declarations = [
       "uniform vec3 g4LightDirView;",
       "uniform sampler2D g4NativeGradientMap;",
+      "uniform vec4 g4ShaderParam2;",
       hasOcclusion ? "uniform sampler2D g4OcclusionMap;" : "",
       hasSpecularShape ? "uniform sampler2D g4SpecularShapeMap;" : "",
       hasSpecularMask ? "uniform sampler2D g4SpecularMaskMap;" : "",
@@ -719,8 +717,8 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
       "  float g4Second = g4Oc.g * (1.0 - g4Main) + g4Main;",
       "  float g4Grad0 = g4Main - 0.50 + 0.50;",
       "  float g4Grad1 = g4Second - 0.55 + 0.50;",
-      "  float g4Cover0 = texture2D(g4NativeGradientMap, vec2(clamp(g4Grad0, 0.0, 1.0), 0.25)).a;",
-      "  float g4Cover1 = texture2D(g4NativeGradientMap, vec2(clamp(g4Grad1, 0.0, 1.0), 0.75)).a;",
+      "  float g4Cover0 = texture2D(g4NativeGradientMap, vec2(clamp(g4Grad0, 0.0, 1.0), g4ShaderParam2.x)).a;",
+      "  float g4Cover1 = texture2D(g4NativeGradientMap, vec2(clamp(g4Grad1, 0.0, 1.0), g4ShaderParam2.y)).a;",
       "  vec3 g4Shadow0 = vec3(" + nativeLightData.charaShadowColor1.slice(0, 3).join(", ") + ");",
       "  vec3 g4Shadow1 = vec3(" + nativeLightData.charaShadowColor2.slice(0, 3).join(", ") + ");",
       "  vec3 g4ShadowMix = mix(g4Shadow0, g4Shadow1, g4Cover1);",
@@ -781,6 +779,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
   const nativeShaderHashes = new Set();
   let nativeMaterials = 0;
   let missingNativeMaterials = 0;
+  let shaderParam2Materials = 0;
 
   gltf.scene?.traverse?.((node) => {
     if (!node.isMesh || !node.material) return;
@@ -802,6 +801,9 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
           nativeSourceUuids.add(conversionKey);
           if (native) {
             nativeMaterials += 1;
+            if (Array.isArray(native.shaderParameters?.[2]) && native.shaderParameters[2].length >= 4) {
+              shaderParam2Materials += 1;
+            }
             if (native.shaderHashHex) nativeShaderHashes.add(native.shaderHashHex);
           } else {
             missingNativeMaterials += 1;
@@ -810,13 +812,15 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
         if (!converted.has(conversionKey)) {
           converted.set(conversionKey, (async () => {
             const aux = await loadNieAuxTextures(gltf, source, materialIndexHint);
-            return shaderMode === "native-edge"
-              ? buildG4NativeDataMaterial(source, aux, "capture", native)
-              : shaderMode === "native"
-                ? buildG4NativeDataMaterial(source, aux, "general", native)
-                : shaderMode === "g4"
-                  ? buildG4CaptureMaterial(source, aux)
-                  : buildCharacterMaterial(source, aux);
+            if (shaderMode === "native-edge" || shaderMode === "native") {
+              const gradient = await buildNativeGradientTexture();
+              return shaderMode === "native-edge"
+                ? buildG4NativeDataMaterial(source, aux, "capture", native, gradient)
+                : buildG4NativeDataMaterial(source, aux, "general", native, gradient);
+            }
+            return shaderMode === "g4"
+              ? buildG4CaptureMaterial(source, aux)
+              : buildCharacterMaterial(source, aux);
           })());
         }
         next.push(await converted.get(conversionKey));
@@ -831,6 +835,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy") {
   return {
     materials: nativeMaterials,
     missing: missingNativeMaterials,
+    shaderParam2: shaderParam2Materials,
     shaderHashes: [...nativeShaderHashes].sort(),
   };
 }
@@ -1257,7 +1262,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE+EDGE2 V12"
+      ? "NATIVE+EDGE2 V13"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
@@ -1267,13 +1272,16 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
       ? " · MAT " + result.nativeMaterials.materials
         + "/" + (result.nativeMaterials.materials + result.nativeMaterials.missing)
       : "";
+    const param2Label = result.nativeMaterials
+      ? " · P2 " + result.nativeMaterials.shaderParam2 + "/" + result.nativeMaterials.materials
+      : "";
     const rawGlbLabel = result.glbPayload
       ? " · RAW " + result.glbPayload.nativeMaterials + "/" + result.glbPayload.usedMaterials
         + " · C " + result.glbPayload.colorPrimitives + "/" + result.glbPayload.primitiveCount
       : "";
     status.textContent = result.cache === "miss"
-      ? shaderLabel + nativeMaterialLabel + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
-      : shaderLabel + nativeMaterialLabel + rawGlbLabel + " · cache " + result.cache + " · " + (result.isKeeper ? "GK" : "campo");
+      ? shaderLabel + nativeMaterialLabel + param2Label + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
+      : shaderLabel + nativeMaterialLabel + param2Label + rawGlbLabel + " · cache " + result.cache + " · " + (result.isKeeper ? "GK" : "campo");
     return result;
   } catch (error) {
     status.dataset.state = "error";
