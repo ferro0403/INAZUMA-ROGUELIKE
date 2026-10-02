@@ -200,8 +200,7 @@
       return"all";
     }
 
-    async function openSquadPlayerPicker(targetId){
-      try{await ensureSquadFilterSeasonData();}catch(error){deps.toast?.("Impossibile caricare i filtri Season/Squadra","error");}
+    function openSquadPlayerPicker(targetId){
       const targetLoc=locationInDraft(targetId);
       if(!targetLoc)return;
       const strictRole=targetLoc.area==="lineup";
@@ -417,8 +416,7 @@
       }));
       return {count:versions.length};
     }
-    async function openRtgCatalog(){
-      try{await ensureSquadFilterSeasonData();}catch(error){deps.toast?.("Impossibile caricare i filtri Season/Squadra","error");}
+    function openRtgCatalog(){
       const owned=Array.from(deps.acquiredCardIdSet()).filter(Boolean);
       const groups=groupVersionCards(owned);
       const catalogGroups=Array.from(groups.entries()).map(([key,cardIds])=>({key,cardIds,representativeId:preferredVersionCardId(cardIds)})).filter(group=>group.representativeId);
@@ -767,7 +765,7 @@
       if(!options.quiet)deps.toast?.(`Squadra ${deps.activeSquadSlot} salvata`);
       return renderSquad();
     }
-    return Object.freeze({renderSquad,saveSquad,openRtgCatalog,locationInDraft,switchBenchRole,swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,adaptSquadToCurrentRequirements,getDraftSquad:()=>deps.clone(deps.squadDraft)});
+    return Object.freeze({renderSquad,saveSquad,openRtgCatalog,preloadFilterData:ensureSquadFilterSeasonData,locationInDraft,switchBenchRole,swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,adaptSquadToCurrentRequirements,getDraftSquad:()=>deps.clone(deps.squadDraft)});
   }
   global.RoadToGlorySquadController=Object.freeze({create});
 })(globalThis);
