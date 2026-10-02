@@ -531,12 +531,7 @@
       }
       return squadController;
     }
-    async function renderSquad(){
-      const controller=getSquadController();
-      try{await controller.preloadFilterData?.();}
-      catch(error){global.console?.error?.("[RTG] Impossibile caricare i dati dei filtri Season/Squadra",error);deps.toast?.("Filtri Season/Squadra parzialmente disponibili","error");}
-      return controller.renderSquad();
-    }
+    function renderSquad(){return getSquadController().renderSquad();}
     function saveSquad(nextSquad=squadDraft,options={}){return getSquadController().saveSquad(nextSquad,options);}
     function swapSquadDraft(firstId,secondId,options={}){return getSquadController().swapSquadDraft(firstId,secondId,options);}
     function canUseDraftFormation(formation){return getSquadController().canUseDraftFormation(formation);}
@@ -1018,7 +1013,7 @@
       const destination=String(options?.destination||"run");
       if(destination==="squad")return renderSquad();
       if(destination==="catalog"){
-        await renderSquad();
+        renderSquad();
         openRtgCatalog();
         return campaign;
       }
