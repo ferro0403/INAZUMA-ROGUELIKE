@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v24-screen-edge-base";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v25-screen-edge-data-lut";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23" || value === "v24") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23" || value === "v24" || value === "v25") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -90,7 +90,7 @@ function nativeRecolorForUniform(uniform, isKeeper, uniformCrc) {
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "native-edge"
-    ? "v24-screen-edge-base"
+    ? "v25-screen-edge-data-lut"
     : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
@@ -1164,24 +1164,68 @@ const NATIVE_SCREEN_EDGE_PROFILE = Object.freeze({
   edgeToneUrl: "assets/rtg/edgeTone01.png",
 });
 
+let nativeEdgeTonePixelsPromise = null;
 let nativeEdgeToneTexturePromise = null;
+
+function loadNativeEdgeTonePixels() {
+  if (!nativeEdgeTonePixelsPromise) {
+    nativeEdgeTonePixelsPromise = new Promise((resolve, reject) => {
+      const image = new Image();
+      image.decoding = "async";
+      image.onload = () => {
+        try {
+          const width = Number(image.naturalWidth || image.width);
+          const height = Number(image.naturalHeight || image.height);
+          if (width !== 128 || height !== 64) {
+            throw new Error("edgeTone01 inattesa: " + width + "x" + height);
+          }
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const context = canvas.getContext("2d", { willReadFrequently: false });
+          if (!context) throw new Error("Canvas 2D non disponibile per edgeTone01");
+          context.drawImage(image, 0, 0);
+          const imageData = context.getImageData(0, 0, width, height);
+          resolve({
+            width,
+            height,
+            pixels: new Uint8Array(imageData.data),
+          });
+        } catch (error) {
+          reject(error);
+        }
+      };
+      image.onerror = () => reject(new Error("Impossibile decodificare edgeTone01"));
+      image.src = NATIVE_SCREEN_EDGE_PROFILE.edgeToneUrl;
+    });
+  }
+  return nativeEdgeTonePixelsPromise;
+}
 
 async function nativeEdgeToneTexture() {
   if (!nativeEdgeToneTexturePromise) {
-    nativeEdgeToneTexturePromise = new THREE.TextureLoader()
-      .loadAsync(NATIVE_SCREEN_EDGE_PROFILE.edgeToneUrl)
-      .then((texture) => {
-        texture.name = "edgeTone01";
-        texture.colorSpace = THREE.NoColorSpace;
-        texture.flipY = false;
-        texture.wrapS = THREE.ClampToEdgeWrapping;
-        texture.wrapT = THREE.ClampToEdgeWrapping;
-        texture.minFilter = THREE.LinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.generateMipmaps = false;
-        texture.needsUpdate = true;
-        return texture;
-      });
+    nativeEdgeToneTexturePromise = loadNativeEdgeTonePixels().then((source) => {
+      // Do not upload the HTMLImageElement directly. Chromium/WebGL rejected the
+      // extracted LUT with texSubImage2D bad image data in V24. Like chrGrd_01,
+      // upload the decoded RGBA bytes through DataTexture instead.
+      const texture = new THREE.DataTexture(
+        source.pixels,
+        source.width,
+        source.height,
+        THREE.RGBAFormat,
+        THREE.UnsignedByteType,
+      );
+      texture.name = "edgeTone01";
+      texture.colorSpace = THREE.NoColorSpace;
+      texture.flipY = false;
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.minFilter = THREE.LinearFilter;
+      texture.magFilter = THREE.LinearFilter;
+      texture.generateMipmaps = false;
+      texture.needsUpdate = true;
+      return texture;
+    });
   }
   return nativeEdgeToneTexturePromise;
 }
@@ -1858,7 +1902,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE CORE V24 · SS EDGE BASE · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP"
+      ? "NATIVE CORE V25 · SS EDGE DATA · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
