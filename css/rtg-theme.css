@@ -47,6 +47,12 @@
 
 /* Catalog controls only layout. Card appearance is the canonical squad card. */
 .rtg-modal .rtg-player-catalog .rtg-catalog-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-auto-flow:row!important;gap:12px 8px!important;align-items:start!important;justify-content:center!important;width:100%!important;padding:14px 0 4px!important;}
+.rtg-picker-season-team-filters,.rtg-catalog-filter-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;min-width:0!important;}
+.rtg-picker-season-team-filters{grid-column:1/-1!important;}
+.rtg-catalog-filter-grid{margin:0 0 10px!important;}
+.rtg-picker-season-team-filters .rtg-picker-rarity-filter,.rtg-catalog-filter-grid .rtg-picker-rarity-filter{grid-column:auto!important;grid-template-columns:1fr!important;gap:5px!important;margin-top:0!important;}
+.rtg-picker-season-team-filters .rtg-picker-rarity-filter select,.rtg-catalog-filter-grid .rtg-picker-rarity-filter select{min-width:0!important;text-overflow:ellipsis!important;}
+@media(max-width:430px){.rtg-picker-season-team-filters,.rtg-catalog-filter-grid{grid-template-columns:1fr!important;}}
 
 /* Duel action cards: give long move labels their own full-width row. */
 .rtg-duel-card--clean .rtg-duel-choice-card{min-width:0!important;min-height:108px!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:minmax(42px,auto) auto!important;grid-template-areas:"copy copy" "probability probability"!important;align-content:space-between!important;align-items:start!important;gap:10px 8px!important;padding:12px!important;}
