@@ -70,10 +70,10 @@ assert(runtime.includes('texture2D(g4NativeGradientMap'), "Native portrait must 
 assert(runtime.includes('g4PositiveRim + g4Main - 1.50'), "Native highlight threshold must come from charaHighLightColor.w.");
 assert(runtime.includes('vec3(0.10) * g4High'), "Native highlight color must remain tied to the extracted Character profile.");
 assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must remain tied to the extracted Character profile.");
-assert(runtime.includes('rtg-g4-native-data-v22-linear-dxbc'), "Native-data shader program cache must include the proven shader-family identity.");
+assert(runtime.includes('rtg-g4-native-data-v23-metal-shadow'), "Native-data shader program cache must include the proven shader-family identity.");
 
-assert(runtime.includes('rtg-3d-portrait-v22-linear-dxbc'), "Native portrait mode must invalidate cached portraits after shader-family routing.");
-assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22"'), "Native edge portrait mode aliases are missing.");
+assert(runtime.includes('rtg-3d-portrait-v23-metal-shadow'), "Native portrait mode must invalidate cached portraits after shader-family routing.");
+assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23"'), "Native edge portrait mode aliases are missing.");
 assert(runtime.includes('profile === "capture"'), "Native edge2 must select the extracted capture lighting profile.");
 assert(runtime.includes('source: "light_2d_capture.cfg.bin"'), "Native edge2 beauty pass must use light_2d_capture.cfg.bin.");
 assert(runtime.includes('charaLightDir: [0.358, 0.614, 0.703]'), "Capture charaLightDir is missing.");
@@ -81,7 +81,7 @@ assert(runtime.includes('charaShadowColor1: [0.77, 0.70, 0.65, 0.50]'), "Capture
 assert(runtime.includes('charaShadowColor2: [0.62, 0.54, 0.50, 0.55]'), "Capture charaShadowColor2 is missing.");
 assert(runtime.includes('charaGrTParam: [0.0, 1.0, 1.0, 0.0]'), "Capture charaGrTParam is missing.");
 assert(runtime.includes('buildG4NativeDataMaterial(source, aux, "capture", native, gradient, nativeRecolor)'), "Native edge path must route beauty through capture lighting plus the selected native recolor record.");
-assert(runtime.includes('rtg-g4-native-capture-v22-linear-dxbc'), "Capture-profile shader cache key must include shader-family routing.");
+assert(runtime.includes('rtg-g4-native-capture-v23-metal-shadow'), "Capture-profile shader cache key must include shader-family routing.");
 assert(runtime.includes('function inspectGlbNativePayload'), "Native portrait must inspect the raw GLB JSON before GLTFLoader transforms it.");
 assert(runtime.includes('cache: "no-store"'), "Native portrait must bypass stale browser HTTP cache for model GLBs.");
 assert(runtime.includes('function materialIndexForNode'), "Native portrait must resolve the original glTF material from the mesh/primitive association.");
@@ -135,8 +135,10 @@ assert(runtime.includes('const useMetalBranch = useMetalTextures && !!nativeSpec
 assert(runtime.includes('const nativeAmbientX = Number(nativeMaterial?.nativeColors?.[1]?.[0]) || 0.0'), "ToonMetal tail must preserve material ambient.x.");
 assert(runtime.includes('g4MetalSphere = texture2D(g4SpecularShapeMap, g4SphereUv).rgb'), "ToonMetal must sample the native sphere/specular texture.");
 assert(runtime.includes('g4MetalMask = texture2D(g4SpecularMaskMap, g4Uv).rgb'), "ToonMetal must sample the native RGB mask.");
-assert(runtime.includes('g4MetalShadowScale = 1.0 + g4ShadowSignal *'), "ToonMetal metal scale must depend on the native shadow signal.");
-assert(runtime.includes('g4MetalSphere * g4MetalMask * g4MetalShadowScale'), "ToonMetal additive tail must mirror the DXBC texture product.");
+assert(runtime.includes('g4MetalShadow = clamp(g4ShadowSignal *'), "ToonMetal must saturate the native shadow contribution before attenuating metal.");
+assert(runtime.includes('g4MetalScale = 1.0 - g4MetalShadow'), "ToonMetal metal scale must be one minus the saturated shadow term.");
+assert(runtime.includes('g4MetalSphere * g4MetalMask * g4MetalScale'), "ToonMetal additive tail must mirror the standalone chr_toon_metal DXBC.");
+assert(!nativeChunk.includes('1.0 + g4ShadowSignal'), "Rejected positive metal-shadow scale must not remain in the native core.");
 assert(!nativeChunk.includes('g4SpecShape * g4SpecMask * g4ShadowMix'), "Rejected synthetic metal/shadow multiplication must not remain.");
 assert(!nativeChunk.includes('g4LitSpec *= mix(1.0, 0.42, 0.22)'), "Rejected synthetic metal attenuation must not remain.");
 assert(runtime.includes('metalBranch: metalBranchMaterials'), "Native diagnostics must report ToonMetal coverage.");
@@ -166,7 +168,7 @@ assert(!captureChunk.includes("useVariableAtlas"), "Legacy G4 capture must not r
 assert(runtime.includes('" · VAR " + result.nativeMaterials.variableAtlas + "/2"'), "Portrait badge must report ToonVariable coverage.");
 assert(runtime.includes('rtgNativeShaderFamily: shaderFamily.id'), "Resolved native shader family must remain attached to the runtime material.");
 assert(runtime.includes('shaderFamilies: Object.fromEntries'), "Portrait diagnostics must report resolved shader-family coverage.");
-assert(runtime.includes('"NATIVE CORE V22 · LINEAR DXBC · METAL · TOONVAR · EDITMASK · EDGE2 EXP"'), "RTG prototype must identify the shader-family v15 path and keep EDGE2 explicitly experimental.");
+assert(runtime.includes('"NATIVE CORE V23 · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP"'), "RTG prototype must identify the shader-family v15 path and keep EDGE2 explicitly experimental.");
 assert(runtime.includes('new THREE.DataTexture('), "Native gradient must upload decoded RGBA bytes, not an HTML image source.");
 assert(runtime.includes('texture.flipY = false'), "Native gradient must preserve G4/D3D row orientation.");
 assert(runtime.includes('assets/rtg/chrGrd_01.png'), "Native portrait must load the full original chrGrd_01 texture asset.");
@@ -200,7 +202,7 @@ assert(!runtime.includes('normalThreshold'), "Native edge2 must not use guessed 
 assert(!runtime.includes('depthThreshold'), "Native edge2 must not use guessed depth-edge thresholds.");
 assert(!runtime.includes('outlinePixels'), "Native edge2 must not use guessed screen-space outline width.");
 assert(!runtime.includes('new THREE.Color(0.018, 0.012, 0.018)'), "Native edge2 must not hard-code the old guessed near-black outline.");
-assert(runtime.includes('NATIVE CORE V22 · LINEAR DXBC · METAL · TOONVAR · EDITMASK · EDGE2 EXP'), "Native v18 status must expose ToonVariable + EditToon while keeping EDGE2 explicitly experimental.");
+assert(runtime.includes('NATIVE CORE V23 · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP'), "Native v18 status must expose ToonVariable + EditToon while keeping EDGE2 explicitly experimental.");
 assert(runtime.includes('function compareEnabled()'), "Portrait comparison query helper is missing.");
 assert(runtime.includes('rtg3dCompare'), "Portrait comparison query parameter is missing.");
 assert(runtime.includes('shaderModeOverride'), "Portrait comparison must render explicit shader modes.");
