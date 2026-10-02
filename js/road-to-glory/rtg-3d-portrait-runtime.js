@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v20-toon-metal-dxbc";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v21-light-space";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -833,6 +833,7 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
     rtgNativeAmbientX: nativeAmbientX,
     rtgShaderMode: useCaptureProfile ? "native-edge" : "native",
     rtgNativeLightData: nativeLightData,
+    rtgNativeLightDirWorld: new THREE.Vector3(...nativeLightData.charaLightDir).normalize(),
   };
 
   material.onBeforeCompile = (shader) => {
@@ -860,7 +861,8 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
     shader.uniforms.g4ShaderParam4 = { value: new THREE.Vector4(...(shaderParam4 || [0, 1, 1, 0])) };
     shader.uniforms.g4NativeGradientMap = { value: gradient };
     shader.uniforms.g4ShaderParam2 = { value: new THREE.Vector4(...shaderParam2) };
-    shader.uniforms.g4LightDirView = { value: new THREE.Vector3(...nativeLightData.charaLightDir).normalize() };
+    shader.uniforms.g4LightDirView = { value: material.userData.rtgNativeLightDirWorld.clone() };
+    material.userData.rtgNativeCompiledShader = shader;
 
     const declarations = [
       "uniform vec3 g4LightDirView;",
@@ -1022,8 +1024,18 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
     );
   };
 
+  material.onBeforeRender = (_renderer, _scene, camera) => {
+    const shader = material.userData?.rtgNativeCompiledShader;
+    const worldLight = material.userData?.rtgNativeLightDirWorld;
+    if (!shader?.uniforms?.g4LightDirView || !worldLight || !camera?.matrixWorldInverse) return;
+    shader.uniforms.g4LightDirView.value
+      .copy(worldLight)
+      .transformDirection(camera.matrixWorldInverse)
+      .normalize();
+  };
+
   material.customProgramCacheKey = () => [
-    useCaptureProfile ? "rtg-g4-native-capture-v20-toon-metal" : "rtg-g4-native-data-v20-toon-metal",
+    useCaptureProfile ? "rtg-g4-native-capture-v21-light-space" : "rtg-g4-native-data-v21-light-space",
     shaderFamily.id,
     useEditRecolor ? "editmask" : "no-editmask",
     useVariableAtlas ? "toonvar-default" : "no-toonvar",
@@ -1547,7 +1559,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE CORE V20 · DXBC METAL · TOONVAR · EDITMASK · EDGE2 EXP"
+      ? "NATIVE CORE V21 · LIGHT SPACE · DXBC METAL · TOONVAR · EDITMASK · EDGE2 EXP"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
