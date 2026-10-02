@@ -126,6 +126,19 @@
       });
       return squadFilterDataPromise;
     }
+    function squadFilterDataReady(){
+      return squadFilterSeasonIds().every(seasonId=>!!global.SeasonRegistry?.database?.(seasonId));
+    }
+    function waitForSquadFilterData(reopen){
+      if(squadFilterDataReady())return false;
+      ensureSquadFilterSeasonData()
+        .then(()=>reopen?.())
+        .catch(error=>{
+          global.console?.error?.("[RTG] Impossibile caricare i dati dei filtri Season/Squadra",error);
+          deps.toast?.("Filtri Season/Squadra non disponibili","error");
+        });
+      return true;
+    }
     function humanizeTeamId(teamId){
       return deps.id(teamId).split("_").filter(Boolean).map(part=>part.charAt(0).toUpperCase()+part.slice(1)).join(" ");
     }
@@ -201,6 +214,7 @@
     }
 
     function openSquadPlayerPicker(targetId){
+      if(waitForSquadFilterData(()=>openSquadPlayerPicker(targetId)))return{loading:true};
       const targetLoc=locationInDraft(targetId);
       if(!targetLoc)return;
       const strictRole=targetLoc.area==="lineup";
@@ -417,6 +431,7 @@
       return {count:versions.length};
     }
     function openRtgCatalog(){
+      if(waitForSquadFilterData(()=>openRtgCatalog()))return{loading:true};
       const owned=Array.from(deps.acquiredCardIdSet()).filter(Boolean);
       const groups=groupVersionCards(owned);
       const catalogGroups=Array.from(groups.entries()).map(([key,cardIds])=>({key,cardIds,representativeId:preferredVersionCardId(cardIds)})).filter(group=>group.representativeId);
@@ -682,6 +697,7 @@
     }
 
     function renderSquad(){
+      ensureSquadFilterSeasonData().catch(error=>global.console?.error?.("[RTG] Preload filtri Season/Squadra fallito",error));
       deps.squadDraft=deps.clone(deps.squadDraft||deps.activeSquad(deps.campaign));
       const model=deps.squadView.renderModel({state:draftState(),freeAgentIds:deps.freeAgentIds,seasonDb:deps.seasonDb,freeAgentsDb:deps.freeAgentsDb,playerResolver:deps.playerResolverForState(draftState())});
       const teamId=currentRequirementTeamId();
