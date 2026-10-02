@@ -72,8 +72,8 @@ assert(runtime.includes('vec3(0.10) * g4High'), "Native highlight color must rem
 assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must remain tied to the extracted Character profile.");
 assert(runtime.includes('rtg-g4-native-data-v23-metal-shadow'), "Native-data shader program cache must include the proven shader-family identity.");
 
-assert(runtime.includes('rtg-3d-portrait-v24-screen-edge-base'), "Native portrait mode must invalidate cached portraits for the screen-space edge base pass.");
-assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23" || value === "v24"'), "Native edge portrait mode aliases are missing.");
+assert(runtime.includes('rtg-3d-portrait-v25-screen-edge-data-lut'), "Native portrait mode must invalidate cached portraits for the screen-space edge base pass.");
+assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23" || value === "v24" || value === "v25"'), "Native edge portrait mode aliases are missing.");
 assert(runtime.includes('profile === "capture"'), "Native edge2 must select the extracted capture lighting profile.");
 assert(runtime.includes('source: "light_2d_capture.cfg.bin"'), "Native edge2 beauty pass must use light_2d_capture.cfg.bin.");
 assert(runtime.includes('charaLightDir: [0.358, 0.614, 0.703]'), "Capture charaLightDir is missing.");
@@ -168,7 +168,7 @@ assert(!captureChunk.includes("useVariableAtlas"), "Legacy G4 capture must not r
 assert(runtime.includes('" · VAR " + result.nativeMaterials.variableAtlas + "/2"'), "Portrait badge must report ToonVariable coverage.");
 assert(runtime.includes('rtgNativeShaderFamily: shaderFamily.id'), "Resolved native shader family must remain attached to the runtime material.");
 assert(runtime.includes('shaderFamilies: Object.fromEntries'), "Portrait diagnostics must report resolved shader-family coverage.");
-assert(runtime.includes('"NATIVE CORE V24 · SS EDGE BASE · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP"'), "RTG prototype must identify the V24 screen-space edge base path and keep EDGE2 explicitly experimental.");
+assert(runtime.includes('"NATIVE CORE V25 · SS EDGE DATA · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP"'), "RTG prototype must identify the V24 screen-space edge base path and keep EDGE2 explicitly experimental.");
 assert(runtime.includes('new THREE.DataTexture('), "Native gradient must upload decoded RGBA bytes, not an HTML image source.");
 assert(runtime.includes('texture.flipY = false'), "Native gradient must preserve G4/D3D row orientation.");
 assert(runtime.includes('assets/rtg/chrGrd_01.png'), "Native portrait must load the full original chrGrd_01 texture asset.");
@@ -208,6 +208,11 @@ assert(!runtime.includes('new THREE.Color(0.018, 0.012, 0.018)'), "Old guessed n
 
 assert(runtime.includes('const NATIVE_SCREEN_EDGE_PROFILE = Object.freeze'), "V24 native screen-space edge profile is missing.");
 assert(runtime.includes('edgeToneUrl: "assets/rtg/edgeTone01.png"'), "V24 must use the extracted edgeTone01 LUT.");
+assert(runtime.includes('function loadNativeEdgeTonePixels()'), "V25 must decode edgeTone01 pixels before WebGL upload.");
+assert(runtime.includes('width !== 128 || height !== 64'), "V25 must validate the extracted edgeTone01 dimensions.");
+assert(runtime.includes('new THREE.DataTexture('), "V25 edgeTone01 must use typed RGBA upload instead of TextureLoader image upload.");
+assert(runtime.includes('source.pixels'), "V25 DataTexture must consume decoded edgeTone01 RGBA bytes.");
+assert(!runtime.includes('new THREE.TextureLoader()\n      .loadAsync(NATIVE_SCREEN_EDGE_PROFILE.edgeToneUrl)'), "V25 must not directly upload edgeTone01 as HTML image data.");
 assert(fs.existsSync(path.join(root, "assets", "rtg", "edgeTone01.png")), "Extracted edgeTone01.png asset is missing.");
 assert(runtime.includes('toneVertexParam: Object.freeze([0.005, 0.10])'), "edge_tone.vfxo constants must remain exact.");
 assert(runtime.includes('edgeWeight0: Object.freeze([0.30, 0.30, 0.0, 0.05])'), "Original edgeWeight0 values are missing.");
@@ -223,7 +228,7 @@ assert(runtime.includes('rate > (1.0 / 255.0)'), "edge_composi sub-1/255 discard
 assert(runtime.includes('#include <colorspace_fragment>'), "Fullscreen V24 composite must encode linear beauty exactly once for display.");
 assert(runtime.includes('screenEdge = await renderNativeScreenSpaceEdgePass'), "V24 screen-space edge pass must run after beauty + EDGE2.");
 assert(runtime.includes('" · SS 1/1"'), "Portrait badge must expose V24 screen-space edge coverage.");
-assert(runtime.includes('NATIVE CORE V24 · SS EDGE BASE · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP'), "Native V24 status must expose the screen-space edge base plus the retained native material branches.");
+assert(runtime.includes('NATIVE CORE V25 · SS EDGE DATA · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP'), "Native V24 status must expose the screen-space edge base plus the retained native material branches.");
 assert(runtime.includes('function compareEnabled()'), "Portrait comparison query helper is missing.");
 assert(runtime.includes('rtg3dCompare'), "Portrait comparison query parameter is missing.");
 assert(runtime.includes('shaderModeOverride'), "Portrait comparison must render explicit shader modes.");
