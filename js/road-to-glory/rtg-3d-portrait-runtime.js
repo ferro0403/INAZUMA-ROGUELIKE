@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v23-metal-shadow";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v24-screen-edge-base";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23" || value === "v24") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -90,7 +90,7 @@ function nativeRecolorForUniform(uniform, isKeeper, uniformCrc) {
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "native-edge"
-    ? "v19-dxbc-base-core"
+    ? "v24-screen-edge-base"
     : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
@@ -1154,6 +1154,295 @@ const NATIVE_EDGE2_CAPTURE_PROFILE = Object.freeze({
   shaderParam7: Object.freeze([0.30, 0.30, 0.30, 1.0]),
 });
 
+const NATIVE_SCREEN_EDGE_PROFILE = Object.freeze({
+  // light_data.cfg.bin
+  edgeColor: Object.freeze([0.30, 0.30, 0.30, 1.0]),
+  edgeWeight0: Object.freeze([0.30, 0.30, 0.0, 0.05]),
+  edgeWeight1: Object.freeze([0.30, 1.0, 1.50, 0.0]),
+  // edge_tone.vfxo writes these constants straight into TEXCOORD.zw.
+  toneVertexParam: Object.freeze([0.005, 0.10]),
+  edgeToneUrl: "assets/rtg/edgeTone01.png",
+});
+
+let nativeEdgeToneTexturePromise = null;
+
+async function nativeEdgeToneTexture() {
+  if (!nativeEdgeToneTexturePromise) {
+    nativeEdgeToneTexturePromise = new THREE.TextureLoader()
+      .loadAsync(NATIVE_SCREEN_EDGE_PROFILE.edgeToneUrl)
+      .then((texture) => {
+        texture.name = "edgeTone01";
+        texture.colorSpace = THREE.NoColorSpace;
+        texture.flipY = false;
+        texture.wrapS = THREE.ClampToEdgeWrapping;
+        texture.wrapT = THREE.ClampToEdgeWrapping;
+        texture.minFilter = THREE.LinearFilter;
+        texture.magFilter = THREE.LinearFilter;
+        texture.generateMipmaps = false;
+        texture.needsUpdate = true;
+        return texture;
+      });
+  }
+  return nativeEdgeToneTexturePromise;
+}
+
+function makeFullscreenPass(fragmentShader, uniforms, name) {
+  const material = new THREE.ShaderMaterial({
+    name,
+    uniforms,
+    vertexShader: [
+      "varying vec2 vUv;",
+      "void main() {",
+      "  vUv = uv;",
+      "  gl_Position = vec4(position.xy, 0.0, 1.0);",
+      "}",
+    ].join("\n"),
+    fragmentShader,
+    depthTest: false,
+    depthWrite: false,
+    transparent: false,
+    toneMapped: false,
+  });
+  const scene = new THREE.Scene();
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material);
+  mesh.frustumCulled = false;
+  scene.add(mesh);
+  return { scene, camera: new THREE.Camera(), material, mesh };
+}
+
+function disposeFullscreenPass(pass) {
+  pass?.mesh?.geometry?.dispose?.();
+  pass?.material?.dispose?.();
+}
+
+function buildNativeScreenEdgePasses({ normalTexture, depthTexture, beautyTexture, edgeTone, camera }) {
+  const texel = new THREE.Vector2(1 / RENDER_WIDTH, 1 / RENDER_HEIGHT);
+  const edgeColor = new THREE.Color().setRGB(
+    NATIVE_SCREEN_EDGE_PROFILE.edgeColor[0],
+    NATIVE_SCREEN_EDGE_PROFILE.edgeColor[1],
+    NATIVE_SCREEN_EDGE_PROFILE.edgeColor[2],
+    THREE.SRGBColorSpace,
+  );
+
+  // edge.pfxo is substantially larger than the tone/composite stages. V24 keeps
+  // its proven inputs (normal + depth), original edge thresholds/weights and
+  // downstream native LUT, but marks this first packing stage as BASE rather than
+  // claiming byte-for-byte parity before the complete in_texMask packing is known.
+  const edgeParam = makeFullscreenPass([
+    "varying vec2 vUv;",
+    "uniform sampler2D uNormal;",
+    "uniform sampler2D uDepth;",
+    "uniform vec2 uTexel;",
+    "uniform float uNear;",
+    "uniform float uFar;",
+    "uniform vec4 uEdgeWeight0;",
+    "uniform vec4 uEdgeWeight1;",
+    "float viewDepth(float d) {",
+    "  float z = d * 2.0 - 1.0;",
+    "  return (2.0 * uNear * uFar) / max(uFar + uNear - z * (uFar - uNear), 1e-6);",
+    "}",
+    "vec3 normalAt(vec2 uv) {",
+    "  return normalize(texture2D(uNormal, uv).xyz * 2.0 - 1.0);",
+    "}",
+    "void main() {",
+    "  float rawDepth = texture2D(uDepth, vUv).x;",
+    "  if (rawDepth >= 0.999999) { gl_FragColor = vec4(0.0); return; }",
+    "  float centerDepth = viewDepth(rawDepth);",
+    "  vec3 centerNormal = normalAt(vUv);",
+    "  float normalMetric = 0.0;",
+    "  float depthMetric = 0.0;",
+    "  for (int y = -1; y <= 1; ++y) {",
+    "    for (int x = -1; x <= 1; ++x) {",
+    "      if (x == 0 && y == 0) continue;",
+    "      vec2 uv = vUv + vec2(float(x), float(y)) * uTexel;",
+    "      float nd = texture2D(uDepth, uv).x;",
+    "      if (nd >= 0.999999) {",
+    "        normalMetric = 2.0;",
+    "        depthMetric = 1.0;",
+    "        continue;",
+    "      }",
+    "      vec3 nn = normalAt(uv);",
+    "      normalMetric = max(normalMetric, length(centerNormal - nn));",
+    "      float neighborDepth = viewDepth(nd);",
+    "      depthMetric = max(depthMetric, abs(neighborDepth - centerDepth) / max(centerDepth, 1e-5));",
+    "    }",
+    "  }",
+    "  float normalEdge = clamp((normalMetric - uEdgeWeight0.x) * uEdgeWeight1.z, 0.0, 1.0);",
+    "  float depthEdge = clamp((depthMetric - uEdgeWeight0.w) * uEdgeWeight1.y, 0.0, 1.0);",
+    "  float edge = max(normalEdge, depthEdge);",
+    "  gl_FragColor = vec4(edge, edge, edge, centerDepth / max(uFar, 1e-5));",
+    "}",
+  ].join("\n"), {
+    uNormal: { value: normalTexture },
+    uDepth: { value: depthTexture },
+    uTexel: { value: texel },
+    uNear: { value: camera.near },
+    uFar: { value: camera.far },
+    uEdgeWeight0: { value: new THREE.Vector4(...NATIVE_SCREEN_EDGE_PROFILE.edgeWeight0) },
+    uEdgeWeight1: { value: new THREE.Vector4(...NATIVE_SCREEN_EDGE_PROFILE.edgeWeight1) },
+  }, "RTG__edge_param_v24");
+
+  const tone = makeFullscreenPass([
+    "varying vec2 vUv;",
+    "uniform sampler2D uEdgeParam;",
+    "uniform sampler2D uDepth;",
+    "uniform sampler2D uEdgeTone;",
+    "uniform vec2 uTexel;",
+    "uniform float uNear;",
+    "uniform float uFar;",
+    "uniform float uDepthToneParam;",
+    "float viewDepth(float d) {",
+    "  float z = d * 2.0 - 1.0;",
+    "  return (2.0 * uNear * uFar) / max(uFar + uNear - z * (uFar - uNear), 1e-6);",
+    "}",
+    "float edgeAt(vec2 uv) { return texture2D(uEdgeParam, uv).r; }",
+    "void main() {",
+    "  float center = edgeAt(vUv);",
+    // edge_tone.pfxo: center*0.2 + all eight neighbours*0.1.
+    "  float filtered = center * 0.2;",
+    "  float promoted = center;",
+    "  float centerRawDepth = texture2D(uDepth, vUv).x;",
+    "  if (centerRawDepth >= 0.999999) { gl_FragColor = vec4(0.0); return; }",
+    "  float centerDepth = viewDepth(centerRawDepth);",
+    "  float depthThreshold = centerDepth * (1.0 + 0.85 * uDepthToneParam);",
+    "  for (int y = -1; y <= 1; ++y) {",
+    "    for (int x = -1; x <= 1; ++x) {",
+    "      if (x == 0 && y == 0) continue;",
+    "      vec2 uv = vUv + vec2(float(x), float(y)) * uTexel;",
+    "      float neighborEdge = edgeAt(uv);",
+    "      filtered += neighborEdge * 0.1;",
+    "      float nd = texture2D(uDepth, uv).x;",
+    "      if (nd < 0.999999 && viewDepth(nd) > depthThreshold) promoted = max(promoted, neighborEdge);",
+    "    }",
+    "  }",
+    "  filtered = clamp(filtered, 0.0, 1.0);",
+    // The native LUT consumes geometric edge on X and the filtered response on Y.
+    // Our edge.pfxo BASE packing uses 1-filtered as the smoothness coordinate so
+    // the proven native tail remains monotonic with the reconstructed edge strength.
+    "  float smoothness = 1.0 - filtered;",
+    "  vec4 lut = texture2D(uEdgeTone, vec2(clamp(promoted, 0.0, 1.0), smoothness));",
+    // edge_tone.pfxo exact tail: (1-LUT.r) * LUT.a * 2*(1-filteredNative).
+    "  float tone = (1.0 - lut.r) * lut.a * clamp(2.0 * filtered, 0.0, 1.0);",
+    "  gl_FragColor = vec4(vec3(tone), 1.0);",
+    "}",
+  ].join("\n"), {
+    uEdgeParam: { value: null },
+    uDepth: { value: depthTexture },
+    uEdgeTone: { value: edgeTone },
+    uTexel: { value: texel },
+    uNear: { value: camera.near },
+    uFar: { value: camera.far },
+    uDepthToneParam: { value: NATIVE_SCREEN_EDGE_PROFILE.toneVertexParam[0] },
+  }, "RTG__edge_tone_v24");
+
+  const composite = makeFullscreenPass([
+    "varying vec2 vUv;",
+    "uniform sampler2D uBeauty;",
+    "uniform sampler2D uEdgeRate;",
+    "uniform vec3 uEdgeColor;",
+    "void main() {",
+    "  vec4 beauty = texture2D(uBeauty, vUv);",
+    "  float rate = texture2D(uEdgeRate, vUv).r;",
+    // edge_composi.pfxo discards sub-1/255 rates.
+    "  rate = rate > (1.0 / 255.0) ? clamp(rate, 0.0, 1.0) : 0.0;",
+    "  vec3 rgb = mix(beauty.rgb, uEdgeColor, rate);",
+    "  gl_FragColor = vec4(rgb, beauty.a);",
+    "}",
+  ].join("\n"), {
+    uBeauty: { value: beautyTexture },
+    uEdgeRate: { value: null },
+    uEdgeColor: { value: edgeColor },
+  }, "RTG__edge_composi_v24");
+
+  return { edgeParam, tone, composite };
+}
+
+async function renderNativeScreenSpaceEdgePass(renderer, scene, camera, root, beautyTarget) {
+  const edgeTone = await nativeEdgeToneTexture();
+  const normalTarget = new THREE.WebGLRenderTarget(RENDER_WIDTH, RENDER_HEIGHT, {
+    format: THREE.RGBAFormat,
+    type: THREE.UnsignedByteType,
+    depthBuffer: true,
+    stencilBuffer: false,
+  });
+  normalTarget.texture.colorSpace = THREE.NoColorSpace;
+
+  const edgeParamTarget = new THREE.WebGLRenderTarget(RENDER_WIDTH, RENDER_HEIGHT, {
+    format: THREE.RGBAFormat,
+    type: THREE.UnsignedByteType,
+    depthBuffer: false,
+    stencilBuffer: false,
+  });
+  edgeParamTarget.texture.colorSpace = THREE.NoColorSpace;
+
+  const edgeToneTarget = new THREE.WebGLRenderTarget(RENDER_WIDTH, RENDER_HEIGHT, {
+    format: THREE.RGBAFormat,
+    type: THREE.UnsignedByteType,
+    depthBuffer: false,
+    stencilBuffer: false,
+  });
+  edgeToneTarget.texture.colorSpace = THREE.NoColorSpace;
+
+  const normalMaterial = new THREE.MeshNormalMaterial({
+    side: THREE.DoubleSide,
+    depthTest: true,
+    depthWrite: true,
+  });
+  normalMaterial.toneMapped = false;
+
+  const passes = buildNativeScreenEdgePasses({
+    normalTexture: normalTarget.texture,
+    depthTexture: beautyTarget.depthTexture,
+    beautyTexture: beautyTarget.texture,
+    edgeTone,
+    camera,
+  });
+  passes.tone.material.uniforms.uEdgeParam.value = edgeParamTarget.texture;
+  passes.composite.material.uniforms.uEdgeRate.value = edgeToneTarget.texture;
+
+  const previousTarget = renderer.getRenderTarget();
+  const previousOverride = scene.overrideMaterial;
+  try {
+    scene.overrideMaterial = normalMaterial;
+    renderer.setRenderTarget(normalTarget);
+    renderer.setClearColor(0x8080ff, 0);
+    renderer.clear(true, true, true);
+    renderer.render(scene, camera);
+    scene.overrideMaterial = previousOverride;
+
+    renderer.setRenderTarget(edgeParamTarget);
+    renderer.setClearColor(0x000000, 0);
+    renderer.clear(true, false, false);
+    renderer.render(passes.edgeParam.scene, passes.edgeParam.camera);
+
+    renderer.setRenderTarget(edgeToneTarget);
+    renderer.clear(true, false, false);
+    renderer.render(passes.tone.scene, passes.tone.camera);
+
+    renderer.setRenderTarget(null);
+    renderer.setClearColor(0x000000, 0);
+    renderer.clear(true, true, true);
+    renderer.render(passes.composite.scene, passes.composite.camera);
+  } finally {
+    scene.overrideMaterial = previousOverride;
+    renderer.setRenderTarget(previousTarget);
+    normalMaterial.dispose();
+    disposeFullscreenPass(passes.edgeParam);
+    disposeFullscreenPass(passes.tone);
+    disposeFullscreenPass(passes.composite);
+    normalTarget.dispose();
+    edgeParamTarget.dispose();
+    edgeToneTarget.dispose();
+  }
+
+  return {
+    enabled: true,
+    source: "edge.pfxo BASE + edge_tone.pfxo + edge_composi.pfxo",
+    lut: "edgeTone01 128x64",
+    toneVertexParam: [...NATIVE_SCREEN_EDGE_PROFILE.toneVertexParam],
+  };
+}
+
 function geometryHasNativeEdge2Weight(geometry) {
   const color = geometry?.getAttribute?.("color");
   const normal = geometry?.getAttribute?.("normal");
@@ -1344,15 +1633,31 @@ async function renderGlbToBlob(buffer, sourceUrl, shaderMode = "legacy", nativeR
 
   const renderStart = performance.now();
   let edge2 = null;
+  let screenEdge = null;
   if (shaderMode === "native-edge") {
+    const beautyTarget = new THREE.WebGLRenderTarget(RENDER_WIDTH, RENDER_HEIGHT, {
+      format: THREE.RGBAFormat,
+      type: THREE.UnsignedByteType,
+      depthBuffer: true,
+      stencilBuffer: false,
+    });
+    beautyTarget.texture.colorSpace = THREE.NoColorSpace;
+    beautyTarget.depthTexture = new THREE.DepthTexture(RENDER_WIDTH, RENDER_HEIGHT, THREE.UnsignedIntType);
+    beautyTarget.depthTexture.format = THREE.DepthFormat;
+
     const previousAutoClear = renderer.autoClear;
     try {
       renderer.autoClear = false;
+      renderer.setRenderTarget(beautyTarget);
+      renderer.setClearColor(0x000000, 0);
       renderer.clear(true, true, true);
       renderer.render(scene, camera);
       edge2 = renderNativeEdge2Pass(renderer, scene, camera, gltf.scene);
+      screenEdge = await renderNativeScreenSpaceEdgePass(renderer, scene, camera, gltf.scene, beautyTarget);
     } finally {
+      renderer.setRenderTarget(null);
       renderer.autoClear = previousAutoClear;
+      beautyTarget.dispose();
     }
   } else {
     renderer.render(scene, camera);
@@ -1367,7 +1672,7 @@ async function renderGlbToBlob(buffer, sourceUrl, shaderMode = "legacy", nativeR
   renderer.dispose();
   renderer.forceContextLoss?.();
 
-  return { blob, parseMs, renderMs, animations: Number(gltf.animations?.length || 0), edge2, nativeMaterials, glbPayload };
+  return { blob, parseMs, renderMs, animations: Number(gltf.animations?.length || 0), edge2, screenEdge, nativeMaterials, glbPayload };
 }
 
 async function portraitFor({ playerId, player, uniformId = null, shaderModeOverride = null } = {}) {
@@ -1442,6 +1747,7 @@ async function portraitFor({ playerId, player, uniformId = null, shaderModeOverr
     bytes: buffer.byteLength,
     animations: rendered.animations,
     edge2: rendered.edge2,
+    screenEdge: rendered.screenEdge,
     nativeMaterials: rendered.nativeMaterials,
     glbPayload: rendered.glbPayload,
     nativeRecolor,
@@ -1551,7 +1857,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE CORE V23 · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP"
+      ? "NATIVE CORE V24 · SS EDGE BASE · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
@@ -1578,12 +1884,13 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
     const metalLabel = result.nativeMaterials
       ? " · MET " + result.nativeMaterials.metalBranch + "/1"
       : "";
+    const screenEdgeLabel = result.screenEdge?.enabled ? " · SS 1/1" : " · SS 0/1";
     const rawGlbLabel = result.glbPayload
       ? " · RAW " + result.glbPayload.nativeMaterials + "/" + result.glbPayload.usedMaterials
         + " · C " + result.glbPayload.colorPrimitives + "/" + result.glbPayload.primitiveCount
       : "";
     status.textContent = result.cache === "miss"
-      ? shaderLabel + nativeMaterialLabel + param2Label + recolorLabel + variableLabel + metalLabel + familyLabel + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
+      ? shaderLabel + nativeMaterialLabel + param2Label + recolorLabel + variableLabel + metalLabel + screenEdgeLabel + familyLabel + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
       : shaderLabel + nativeMaterialLabel + param2Label + rawGlbLabel + " · cache " + result.cache + " · " + (result.isKeeper ? "GK" : "campo");
     return result;
   } catch (error) {
