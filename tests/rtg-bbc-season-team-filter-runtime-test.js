@@ -56,7 +56,8 @@ const vm=require("vm");
     openModal:markup=>{html=String(markup);},
   });
 
-  const result=await controller.openRtgCatalog();
+  await controller.preloadFilterData();
+  const result=controller.openRtgCatalog();
   assert.strictEqual(result.count,4,"Tutte must keep every owned RTG player group");
   assert.strictEqual(active,"ie1","loading filter databases must restore the registry active season");
   for(const label of["Season 1","Season 2","Season 3","Ares"])assert(html.includes(label),`missing season option: ${label}`);
