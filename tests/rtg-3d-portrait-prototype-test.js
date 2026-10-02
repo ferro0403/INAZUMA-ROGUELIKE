@@ -67,7 +67,7 @@ assert(runtime.includes('charaLightDir: [0.83, 0.40, 0.37]'), "Native v7 general
 assert(runtime.includes('charaShadowColor1: [0.67, 0.60, 0.55, 0.50]'), "Native v7 general charaShadowColor1 is missing.");
 assert(runtime.includes('charaShadowColor2: [0.52, 0.44, 0.40, 0.55]'), "Native v7 general charaShadowColor2 is missing.");
 assert(runtime.includes('texture2D(g4NativeGradientMap'), "Native portrait must sample the extracted chrGrd_01 gradient rows.");
-assert(runtime.includes('g4HighSignal - 1.50'), "Native highlight threshold must come from charaHighLightColor.w.");
+assert(runtime.includes('g4PositiveRim + g4Main - 1.50'), "Native highlight threshold must come from charaHighLightColor.w.");
 assert(runtime.includes('vec3(0.10) * g4High'), "Native highlight color must remain tied to the extracted Character profile.");
 assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must remain tied to the extracted Character profile.");
 assert(runtime.includes('rtg-g4-native-data-v19-dxbc-base'), "Native-data shader program cache must include the proven shader-family identity.");
@@ -131,14 +131,17 @@ assert(runtime.includes('g4Grad1.rgb * g4Shadow1'), "Native toon must multiply g
 assert(runtime.includes('mix(g4ToonShade0, g4ToonShade1, g4Grad1.a)'), "Native toon shadow-color blend must use gradient1 alpha like the DXBC.");
 assert(runtime.includes('float g4ShadowSignal = g4Grad0.a;'), "Browser fallback without the external shadow RT must preserve the DXBC gradient0-alpha shadow signal.");
 assert(runtime.includes('g4Rim * (vec3(1.0) - g4Color * 0.50)'), "Native rim blend must preserve charaBlendRateParam.x from the DXBC.");
-assert(!runtime.includes('float g4AddRate = g4Cover0 * -0.10;'), "Rejected heuristic toon additive rate must not remain in the native core.");
-assert(!runtime.includes('float g4MulRate = g4Cover0 * 1.30;'), "Rejected heuristic toon multiplicative rate must not remain in the native core.");
+assert(!nativeChunk.includes('float g4AddRate = g4Cover0 * -0.10;'), "Rejected heuristic toon additive rate must not remain in the native core.");
+assert(!nativeChunk.includes('float g4MulRate = g4Cover0 * 1.30;'), "Rejected heuristic toon multiplicative rate must not remain in the native core.");
 assert(runtime.includes('useVariableAtlas ? "uniform vec4 g4ShaderParam4;" : ""'), "Native ToonVariable GLSL must declare g4ShaderParam4.");
 assert(runtime.includes('useEditRecolor ? "uniform sampler2D g4EditMaskMap;" : ""'), "Native EditToon GLSL must declare its mask sampler.");
 assert(runtime.includes('function buildG4CaptureMaterial'), "G4 capture function missing.");
 const captureStart = runtime.indexOf("function buildG4CaptureMaterial");
 const captureEnd = runtime.indexOf("const NATIVE_GRADIENT_URL", captureStart);
 const captureChunk = runtime.slice(captureStart, captureEnd);
+const nativeStart = runtime.indexOf("function buildG4NativeDataMaterial");
+const nativeEnd = runtime.indexOf("async function applyCharacterShader", nativeStart);
+const nativeChunk = runtime.slice(nativeStart, nativeEnd);
 assert(!captureChunk.includes("useEditRecolor"), "Legacy G4 capture must not reference native EditToon-only state.");
 assert(!captureChunk.includes("useVariableAtlas"), "Legacy G4 capture must not reference native ToonVariable-only state.");
 assert(runtime.includes('" · VAR " + result.nativeMaterials.variableAtlas + "/2"'), "Portrait badge must report ToonVariable coverage.");
