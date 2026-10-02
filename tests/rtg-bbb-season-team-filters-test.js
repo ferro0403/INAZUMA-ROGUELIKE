@@ -9,7 +9,7 @@ context.globalThis = context;
 vm.createContext(context);
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-view-base.js","utf8"), context, { filename:"rtg-squad-view-base.js" });
 
-const view = context.RoadToGlorySquadViewBase.create({ escapeHtml:String });
+const view = context.RoadToGlorySquadView.create({ escapeHtml:String });
 const seasonOptions = [
   {value:"all",label:"Tutte"},
   {value:"ie1",label:"Season 1"},
