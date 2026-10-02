@@ -1347,6 +1347,7 @@ function buildNativeScreenEdgePasses({ normalTexture, depthTexture, beautyTextur
     "  rate = rate > (1.0 / 255.0) ? clamp(rate, 0.0, 1.0) : 0.0;",
     "  vec3 rgb = mix(beauty.rgb, uEdgeColor, rate);",
     "  gl_FragColor = vec4(rgb, beauty.a);",
+    "  #include <colorspace_fragment>",
     "}",
   ].join("\n"), {
     uBeauty: { value: beautyTexture },
