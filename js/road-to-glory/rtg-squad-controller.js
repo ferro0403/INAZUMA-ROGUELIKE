@@ -106,6 +106,26 @@
     function squadFilterSeasonOptions(){
       return [{value:"all",label:"Tutte"},...squadFilterSeasonIds().map(seasonId=>({value:seasonId,label:squadFilterSeasonLabel(seasonId)}))];
     }
+    let squadFilterDataPromise=null;
+    function ensureSquadFilterSeasonData(){
+      if(squadFilterDataPromise)return squadFilterDataPromise;
+      const registry=global.SeasonRegistry;
+      const previous=registry?.activeId?.();
+      squadFilterDataPromise=(async()=>{
+        for(const seasonId of squadFilterSeasonIds()){
+          if(registry?.database?.(seasonId))continue;
+          if(typeof registry?.loadDatabase!=="function")continue;
+          await registry.loadDatabase(seasonId);
+        }
+        if(previous)registry?.setActive?.(previous);
+        return true;
+      })().catch(error=>{
+        if(previous)registry?.setActive?.(previous);
+        squadFilterDataPromise=null;
+        throw error;
+      });
+      return squadFilterDataPromise;
+    }
     function humanizeTeamId(teamId){
       return deps.id(teamId).split("_").filter(Boolean).map(part=>part.charAt(0).toUpperCase()+part.slice(1)).join(" ");
     }
@@ -129,19 +149,23 @@
       }
       return{seasonId,teamIds,teamNames};
     }
-    function squadFilterTeamOptions(groups,seasonFilter,metaFor){
+    function squadFilterTeamOptions(seasonFilter="all"){
       const seasonIds=squadFilterSeasonIds();
       const records=new Map();
-      for(const group of groups||[]){
-        for(const cardId of group.cardIds||[]){
-          const meta=metaFor(cardId);
-          if(!meta?.seasonId)continue;
-          if(seasonFilter!=="all"&&meta.seasonId!==seasonFilter)continue;
-          for(const teamId of meta.teamIds||[]){
-            const value=`${meta.seasonId}::${teamId}`;
-            if(records.has(value))continue;
-            records.set(value,{value,seasonId:meta.seasonId,baseLabel:meta.teamNames?.get?.(teamId)||humanizeTeamId(teamId)});
-          }
+      for(const seasonId of seasonIds){
+        if(seasonFilter!=="all"&&seasonId!==seasonFilter)continue;
+        const database=global.SeasonRegistry?.database?.(seasonId);
+        for(const team of database?.teams||[]){
+          const teamId=deps.id(team?.teamId||team?.id);
+          if(!teamId)continue;
+          const value=`${seasonId}::${teamId}`;
+          if(records.has(value))continue;
+          records.set(value,{
+            value,
+            seasonId,
+            teamId,
+            baseLabel:deps.id(team?.teamName||team?.name||humanizeTeamId(teamId)),
+          });
         }
       }
       const rows=Array.from(records.values());
@@ -176,7 +200,8 @@
       return"all";
     }
 
-    function openSquadPlayerPicker(targetId){
+    async function openSquadPlayerPicker(targetId){
+      try{await ensureSquadFilterSeasonData();}catch(error){deps.toast?.("Impossibile caricare i filtri Season/Squadra","error");}
       const targetLoc=locationInDraft(targetId);
       if(!targetLoc)return;
       const strictRole=targetLoc.area==="lineup";
@@ -274,7 +299,7 @@
           renderResults();
         });
       };
-      const currentTeamOptions=()=>squadFilterTeamOptions(candidateGroups,seasonFilter,filterMetaFor);
+      const currentTeamOptions=()=>squadFilterTeamOptions(seasonFilter);
       const refreshTeamFilterControl=()=>{
         const options=currentTeamOptions();
         teamFilter=reconcileSquadTeamFilter(teamFilter,options);
@@ -392,7 +417,8 @@
       }));
       return {count:versions.length};
     }
-    function openRtgCatalog(){
+    async function openRtgCatalog(){
+      try{await ensureSquadFilterSeasonData();}catch(error){deps.toast?.("Impossibile caricare i filtri Season/Squadra","error");}
       const owned=Array.from(deps.acquiredCardIdSet()).filter(Boolean);
       const groups=groupVersionCards(owned);
       const catalogGroups=Array.from(groups.entries()).map(([key,cardIds])=>({key,cardIds,representativeId:preferredVersionCardId(cardIds)})).filter(group=>group.representativeId);
@@ -422,7 +448,7 @@
         versionCount:group.matchingCardIds?.length||group.cardIds.length,
         player:deps.resolved(group.representativeId,deps.squadDraft?.activeRoleVariantByCardId?.[group.representativeId]||null),
       })).filter(entry=>entry.player);
-      const currentTeamOptions=()=>squadFilterTeamOptions(catalogGroups,seasonFilter,filterMetaFor);
+      const currentTeamOptions=()=>squadFilterTeamOptions(seasonFilter);
       const refreshTeamFilterControl=()=>{
         const options=currentTeamOptions();
         teamFilter=reconcileSquadTeamFilter(teamFilter,options);
