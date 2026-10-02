@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v18-toon-variable-glsl-fix";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v19-dxbc-base-core";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -90,7 +90,7 @@ function nativeRecolorForUniform(uniform, isKeeper, uniformCrc) {
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "native-edge"
-    ? "v18-toon-variable-glsl-fix"
+    ? "v19-dxbc-base-core"
     : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
@@ -829,6 +829,15 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
 
   material.onBeforeCompile = (shader) => {
     const hasOcclusion = !!aux.occlusion;
+
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <common>",
+      "#include <common>\nattribute vec4 color;\nvarying float g4NativeVertexAlpha;",
+    );
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <begin_vertex>",
+      "#include <begin_vertex>\n  g4NativeVertexAlpha = color.a;",
+    );
     const hasSpecularShape = !!nativeSpecularShape;
     const hasSpecularMask = !!nativeSpecularMask;
 
@@ -847,6 +856,7 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
 
     const declarations = [
       "uniform vec3 g4LightDirView;",
+      "varying float g4NativeVertexAlpha;",
       "uniform sampler2D g4NativeGradientMap;",
       "uniform vec4 g4ShaderParam2;",
       hasOcclusion ? "uniform sampler2D g4OcclusionMap;" : "",
@@ -910,22 +920,33 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
       "#endif",
       "  vec3 g4N = normalize(normal);",
       "  vec3 g4V = normalize(vViewPosition);",
-      "  float g4Signed = clamp(dot(g4N, normalize(g4LightDirView)), -1.0, 1.0);",
+      "  float g4NdotV = clamp(dot(g4N, g4V), 0.0, 1.0);",
+      "  float g4NdotL = clamp(dot(g4N, normalize(g4LightDirView)), -1.0, 1.0);",
       hasOcclusion
         ? "  vec3 g4Oc = texture2D(g4OcclusionMap, g4Uv).rgb;"
         : "  vec3 g4Oc = vec3(1.0, 0.0, 0.0);",
-      "  float g4OcWeight = clamp(g4Oc.r * 2.0, 0.0, 1.0);",
-      "  float g4Offset = g4OcWeight * 0.90 - 0.25;",
-      "  float g4Main = g4Signed * 0.35 + g4Offset;",
-      "  g4Main = g4Main * 0.5 + 0.5;",
-      "  float g4Second = g4Oc.g * (1.0 - g4Main) + g4Main;",
-      "  float g4Grad0 = g4Main - 0.50 + 0.50;",
-      "  float g4Grad1 = g4Second - 0.55 + 0.50;",
-      "  float g4Cover0 = texture2D(g4NativeGradientMap, vec2(clamp(g4Grad0, 0.0, 1.0), g4ShaderParam2.x)).a;",
-      "  float g4Cover1 = texture2D(g4NativeGradientMap, vec2(clamp(g4Grad1, 0.0, 1.0), g4ShaderParam2.y)).a;",
+      // chr_toon.pfxo: dp2_sat r6.x, r4.xxxx, v1.wwww
+      // = saturate(2 * occlusion.r * COLOR_0.a).
+      "  float g4OcWeight = clamp(g4Oc.r * g4NativeVertexAlpha * 2.0, 0.0, 1.0);",
+      "  float g4OcBase = g4OcWeight * 0.90 - 0.25;",
+      "  float g4Grazing = 1.0 - g4NdotV;",
+      "  float g4PositiveRim = clamp(g4Grazing * g4NdotL, 0.0, 1.0);",
+      "  float g4NegativeRim = clamp(-g4Grazing * g4NdotL, 0.0, 1.0);",
+      "  float g4Main = (g4OcBase + g4NdotL * 0.35) * 0.5 + 0.5;",
+      "  float g4Second = g4Main + g4Oc.g * (1.0 - g4Main);",
+      // DXBC swaps the temporary pair before adding 0.5:
+      // row0 X = saturate(main), row1 X = saturate(second - 0.05).
+      "  float g4Grad0X = clamp(g4Main, 0.0, 1.0);",
+      "  float g4Grad1X = clamp(g4Second - 0.05, 0.0, 1.0);",
+      "  vec4 g4Grad0 = texture2D(g4NativeGradientMap, vec2(g4Grad0X, g4ShaderParam2.x));",
+      "  vec4 g4Grad1 = texture2D(g4NativeGradientMap, vec2(g4Grad1X, g4ShaderParam2.y));",
       "  vec3 g4Shadow0 = vec3(" + nativeLightData.charaShadowColor1.slice(0, 3).join(", ") + ");",
       "  vec3 g4Shadow1 = vec3(" + nativeLightData.charaShadowColor2.slice(0, 3).join(", ") + ");",
-      "  vec3 g4ShadowMix = mix(g4Shadow0, g4Shadow1, g4Cover1);",
+      // chr_toon.pfxo 1875..1894: gradient RGB participates directly;
+      // gradient1.a blends the two shadow-colored gradient samples.
+      "  vec3 g4ToonShade0 = g4Grad0.rgb * g4Shadow0;",
+      "  vec3 g4ToonShade1 = g4Grad1.rgb * g4Shadow1;",
+      "  vec3 g4ShadowMix = mix(g4ToonShade0, g4ToonShade1, g4Grad1.a);",
       "  vec3 g4Base = g4LinearToUnorm(diffuseColor.rgb);",
       useEditRecolor
         ? "  vec3 g4EditMask = texture2D(g4EditMaskMap, g4Uv).rgb;"
@@ -943,15 +964,18 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
         ? "  g4Base *= mix(vec3(1.0), g4EditColor2, g4EditMask.b);"
         : "",
       "  float g4Lum = dot(g4Base, vec3(0.29891, 0.58661, 0.11448));",
+      // No external shadow RT is bound in the browser portrait. Native PS takes
+      // max(shadowRT, gradient0.a), so the exact available fallback is gradient0.a.
+      "  float g4ShadowSignal = g4Grad0.a;",
       "  vec3 g4Shade = g4ShadowMix + vec3(g4Lum * 0.10);",
-      "  vec3 g4AmbientColor = vec3(1.0);",
-      "  vec3 g4Ambient = mix(g4Base, g4AmbientColor, 0.04995);",
-      "  vec3 g4AmbientMul = g4Ambient * g4AmbientColor;",
-      "  float g4AddRate = g4Cover0 * -0.10;",
-      "  float g4MulRate = g4Cover0 * 1.30;",
-      "  vec3 g4Added = g4AmbientMul + (g4Shade - g4AmbientMul) * g4AddRate;",
-      "  vec3 g4Multiplied = g4Added * g4Shade;",
-      "  vec3 g4Shaded = g4Added + (g4Multiplied - g4Added) * g4MulRate;",
+      // light_2d_capture: charaAmbLightParam=(0,1), charaAmbient=(1,1,1).
+      // This reduces the native ambient branch exactly to the base color.
+      "  vec3 g4AmbientBase = g4Base;",
+      // light_2d_capture: charaShadowParam.zw=(0,1).
+      "  float g4ShadowAdd = g4ShadowSignal * 0.0;",
+      "  float g4ShadowMul = g4ShadowSignal * 1.0;",
+      "  vec3 g4Shaded = mix(g4AmbientBase, g4Shade, g4ShadowAdd) * mix(vec3(1.0), g4Shade, g4ShadowMul);",
+      // chr_toon.pfxo 2054..2082: base-color recovery from luminance + occlusion B.
       "  float g4Recovery = clamp(g4Lum * 0.20 + g4Oc.b, 0.0, 1.0);",
       "  vec3 g4Color = mix(g4Shaded, g4Base, g4Recovery);",
       hasSpecularShape
@@ -960,17 +984,19 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
       hasSpecularMask
         ? "  vec3 g4SpecMask = texture2D(g4SpecularMaskMap, g4Uv).rgb;"
         : "  vec3 g4SpecMask = vec3(1.0);",
+      // Metal extras remain isolated to Chr_ToonMetal; their exact PS branch will
+      // be ported separately. Do not let them affect the other three families.
       "  vec3 g4LitSpec = g4SpecShape * g4SpecMask * g4ShadowMix;",
       "  g4LitSpec *= mix(1.0, 0.42, 0.22);",
       "  g4Color += g4LitSpec;",
-      "  float g4Facing = clamp(abs(dot(g4N, g4V)), 0.0, 1.0);",
-      "  float g4Grazing = 1.0 - g4Facing;",
-      "  float g4HighSignal = g4Grazing * g4Signed + g4Main;",
-      "  float g4High = clamp((g4HighSignal - 1.50) * 10000.0, 0.0, 1.0);",
-      "  float g4Under = clamp(-g4Signed, 0.0, 1.0) * g4Grazing;",
-      "  g4Under = clamp((g4Under + 1.0 - 1.45) * 300.0, 0.0, 1.0);",
-      "  g4Color += vec3(0.10) * g4High;",
-      "  g4Color += vec3(0.07) * g4Under;",
+      // Native highlight mask: saturate((grazing*NdotL + main - 1.5) * 10000).
+      "  float g4High = clamp((g4PositiveRim + g4Main - 1.50) * 10000.0, 0.0, 1.0);",
+      // Native under-rim signal from chr_toon.pfxo 354..371 / 2118..2134.
+      "  float g4UnderSignal = (g4OcBase + g4NdotL * (0.65 - 1.0)) * 0.5 + g4NegativeRim;",
+      "  float g4Under = clamp((g4UnderSignal + 0.5 - 1.45) * 300.0, 0.0, 1.0);",
+      "  vec3 g4Rim = vec3(0.10) * g4High + vec3(0.07) * g4Under;",
+      // charaBlendRateParam.x = 0.5: native rim is attenuated by current color.
+      "  g4Color += g4Rim * (vec3(1.0) - g4Color * 0.50);",
       "  outgoingLight = g4UnormToLinear(max(g4Color, vec3(0.0)));",
     ].filter(Boolean).join("\n");
 
@@ -981,7 +1007,7 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
   };
 
   material.customProgramCacheKey = () => [
-    useCaptureProfile ? "rtg-g4-native-capture-v18-toon-variable-glsl" : "rtg-g4-native-data-v18-toon-variable-glsl",
+    useCaptureProfile ? "rtg-g4-native-capture-v19-dxbc-base" : "rtg-g4-native-data-v19-dxbc-base",
     shaderFamily.id,
     useEditRecolor ? "editmask" : "no-editmask",
     useVariableAtlas ? "toonvar-default" : "no-toonvar",
@@ -1502,7 +1528,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE CORE V18 · TOONVAR · EDITMASK · EDGE2 EXP"
+      ? "NATIVE CORE V19 · DXBC BASE · TOONVAR · EDITMASK · EDGE2 EXP"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
