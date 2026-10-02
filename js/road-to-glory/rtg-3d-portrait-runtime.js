@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v22-linear-dxbc";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v23-metal-shadow";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -724,8 +724,9 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
   const nativeSpecularMask = useMetalTextures ? aux.specular_mask || null : null;
   const useMetalBranch = useMetalTextures && !!nativeSpecularShape && !!nativeSpecularMask;
   const nativeAmbientX = Number(nativeMaterial?.nativeColors?.[1]?.[0]) || 0.0;
-  // chr_toon_metal.pfxo:
-  // metalScale = 1 + shadowSignal * (u_charaShadowParam.z + u_charaShadowParam.w).
+  // chr_toon_metal.pfxo instructions 311-321:
+  // shadowMetal = saturate(shadowSignal * (u_charaShadowParam.z + u_charaShadowParam.w));
+  // metalScale = 1 - shadowMetal.
   // RTG capture proves u_charaShadowParam=[1,1,0,1], so z+w=1.
   const nativeMetalShadowZW = useCaptureProfile ? 1.0 : 0.0;
   // nie-model-serve currently bakes the mask's red-channel skin tint into the emitted
@@ -998,10 +999,13 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
         ? "  vec3 g4MetalMask = texture2D(g4SpecularMaskMap, g4Uv).rgb;"
         : "",
       useMetalBranch
-        ? "  float g4MetalShadowScale = 1.0 + g4ShadowSignal * " + nativeMetalShadowZW.toFixed(1) + ";"
+        ? "  float g4MetalShadow = clamp(g4ShadowSignal * " + nativeMetalShadowZW.toFixed(1) + ", 0.0, 1.0);"
         : "",
       useMetalBranch
-        ? "  g4Color = g4Color * " + (1.0 + nativeAmbientX).toFixed(6) + " + g4MetalSphere * g4MetalMask * g4MetalShadowScale;"
+        ? "  float g4MetalScale = 1.0 - g4MetalShadow;"
+        : "",
+      useMetalBranch
+        ? "  g4Color = g4Color * " + (1.0 + nativeAmbientX).toFixed(6) + " + g4MetalSphere * g4MetalMask * g4MetalScale;"
         : "",
       "  outgoingLight = max(g4Color, vec3(0.0));",
     ].filter(Boolean).join("\n");
@@ -1023,7 +1027,7 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
   };
 
   material.customProgramCacheKey = () => [
-    useCaptureProfile ? "rtg-g4-native-capture-v22-linear-dxbc" : "rtg-g4-native-data-v22-linear-dxbc",
+    useCaptureProfile ? "rtg-g4-native-capture-v23-metal-shadow" : "rtg-g4-native-data-v23-metal-shadow",
     shaderFamily.id,
     useEditRecolor ? "editmask" : "no-editmask",
     useVariableAtlas ? "toonvar-default" : "no-toonvar",
@@ -1547,7 +1551,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE CORE V22 · LINEAR DXBC · METAL · TOONVAR · EDITMASK · EDGE2 EXP"
+      ? "NATIVE CORE V23 · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
