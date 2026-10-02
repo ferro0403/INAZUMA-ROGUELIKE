@@ -164,6 +164,17 @@
       if(teamFilter!=="all"&&!Array.from(meta.teamIds||[]).some(teamId=>teamFilter===`${meta.seasonId}::${teamId}`))return false;
       return true;
     }
+    function reconcileSquadTeamFilter(teamFilter,options){
+      const current=deps.id(teamFilter||"all");
+      if(current==="all"||options.some(option=>option.value===current))return current;
+      const separator=current.indexOf("::");
+      const teamId=separator>=0?current.slice(separator+2):"";
+      if(teamId){
+        const sameTeam=options.find(option=>option.value!=="all"&&deps.id(option.value).slice(deps.id(option.value).indexOf("::")+2)===teamId);
+        if(sameTeam)return sameTeam.value;
+      }
+      return"all";
+    }
 
     function openSquadPlayerPicker(targetId){
       const targetLoc=locationInDraft(targetId);
@@ -266,7 +277,7 @@
       const currentTeamOptions=()=>squadFilterTeamOptions(candidateGroups,seasonFilter,filterMetaFor);
       const refreshTeamFilterControl=()=>{
         const options=currentTeamOptions();
-        if(teamFilter!=="all"&&!options.some(option=>option.value===teamFilter))teamFilter="all";
+        teamFilter=reconcileSquadTeamFilter(teamFilter,options);
         const select=deps.getModalRoot?.()?.querySelector?.("[data-rtg-picker-team]");
         if(select)select.innerHTML=deps.squadView.filterOptionsMarkup(options,teamFilter);
         return options;
@@ -414,7 +425,7 @@
       const currentTeamOptions=()=>squadFilterTeamOptions(catalogGroups,seasonFilter,filterMetaFor);
       const refreshTeamFilterControl=()=>{
         const options=currentTeamOptions();
-        if(teamFilter!=="all"&&!options.some(option=>option.value===teamFilter))teamFilter="all";
+        teamFilter=reconcileSquadTeamFilter(teamFilter,options);
         const select=deps.getModalRoot?.()?.querySelector?.("[data-rtg-catalog-team]");
         if(select)select.innerHTML=deps.squadView.filterOptionsMarkup(options,teamFilter);
         return options;
