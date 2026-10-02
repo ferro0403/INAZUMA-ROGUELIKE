@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v19-dxbc-base-core";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v20-toon-metal-dxbc";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -722,6 +722,12 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
   const useMetalTextures = shaderFamily.id === "toon-metal";
   const nativeSpecularShape = useMetalTextures ? aux.specular || null : null;
   const nativeSpecularMask = useMetalTextures ? aux.specular_mask || null : null;
+  const useMetalBranch = useMetalTextures && !!nativeSpecularShape && !!nativeSpecularMask;
+  const nativeAmbientX = Number(nativeMaterial?.nativeColors?.[1]?.[0]) || 0.0;
+  // chr_toon_metal.pfxo:
+  // metalScale = 1 + shadowSignal * (u_charaShadowParam.z + u_charaShadowParam.w).
+  // RTG capture proves u_charaShadowParam=[1,1,0,1], so z+w=1.
+  const nativeMetalShadowZW = useCaptureProfile ? 1.0 : 0.0;
   // nie-model-serve currently bakes the mask's red-channel skin tint into the emitted
   // uniform base texture. Applying u_skinColor again here would double-tint skin.
   // The green/blue channels remain untouched and map to the two CHARA_PARTS_COLOR words.
@@ -823,6 +829,8 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
     rtgNativeEditRecolor: useEditRecolor ? nativeRecolor : null,
     rtgNativeVariableAtlasApplied: useVariableAtlas,
     rtgNativeShaderParam4: shaderParam4,
+    rtgNativeMetalBranchApplied: useMetalBranch,
+    rtgNativeAmbientX: nativeAmbientX,
     rtgShaderMode: useCaptureProfile ? "native-edge" : "native",
     rtgNativeLightData: nativeLightData,
   };
@@ -978,17 +986,7 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
       // chr_toon.pfxo 2054..2082: base-color recovery from luminance + occlusion B.
       "  float g4Recovery = clamp(g4Lum * 0.20 + g4Oc.b, 0.0, 1.0);",
       "  vec3 g4Color = mix(g4Shaded, g4Base, g4Recovery);",
-      hasSpecularShape
-        ? "  vec2 g4SphereUv = g4N.xy * vec2(0.5, -0.5) + 0.5; vec3 g4SpecShape = texture2D(g4SpecularShapeMap, g4SphereUv).rgb;"
-        : "  vec3 g4SpecShape = vec3(0.0);",
-      hasSpecularMask
-        ? "  vec3 g4SpecMask = texture2D(g4SpecularMaskMap, g4Uv).rgb;"
-        : "  vec3 g4SpecMask = vec3(1.0);",
-      // Metal extras remain isolated to Chr_ToonMetal; their exact PS branch will
-      // be ported separately. Do not let them affect the other three families.
-      "  vec3 g4LitSpec = g4SpecShape * g4SpecMask * g4ShadowMix;",
-      "  g4LitSpec *= mix(1.0, 0.42, 0.22);",
-      "  g4Color += g4LitSpec;",
+
       // Native highlight mask: saturate((grazing*NdotL + main - 1.5) * 10000).
       "  float g4High = clamp((g4PositiveRim + g4Main - 1.50) * 10000.0, 0.0, 1.0);",
       // Native under-rim signal from chr_toon.pfxo 354..371 / 2118..2134.
@@ -997,6 +995,24 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
       "  vec3 g4Rim = vec3(0.10) * g4High + vec3(0.07) * g4Under;",
       // charaBlendRateParam.x = 0.5: native rim is attenuated by current color.
       "  g4Color += g4Rim * (vec3(1.0) - g4Color * 0.50);",
+      // chr_toon_metal.pfxo samples t3/t4 only at the very end of beauty.
+      // u_mtxEyeSphere is not yet exported; Three's view-space normal keeps the
+      // existing sphere projection isolated until that camera matrix is proven.
+      useMetalBranch
+        ? "  vec2 g4SphereUv = g4N.xy * vec2(0.5, -0.5) + 0.5;"
+        : "",
+      useMetalBranch
+        ? "  vec3 g4MetalSphere = texture2D(g4SpecularShapeMap, g4SphereUv).rgb;"
+        : "",
+      useMetalBranch
+        ? "  vec3 g4MetalMask = texture2D(g4SpecularMaskMap, g4Uv).rgb;"
+        : "",
+      useMetalBranch
+        ? "  float g4MetalShadowScale = 1.0 + g4ShadowSignal * " + nativeMetalShadowZW.toFixed(1) + ";"
+        : "",
+      useMetalBranch
+        ? "  g4Color = g4Color * " + (1.0 + nativeAmbientX).toFixed(6) + " + g4MetalSphere * g4MetalMask * g4MetalShadowScale;"
+        : "",
       "  outgoingLight = g4UnormToLinear(max(g4Color, vec3(0.0)));",
     ].filter(Boolean).join("\n");
 
@@ -1007,7 +1023,7 @@ function buildG4NativeDataMaterial(sourceMaterial, aux, profile = "general", nat
   };
 
   material.customProgramCacheKey = () => [
-    useCaptureProfile ? "rtg-g4-native-capture-v19-dxbc-base" : "rtg-g4-native-data-v19-dxbc-base",
+    useCaptureProfile ? "rtg-g4-native-capture-v20-toon-metal" : "rtg-g4-native-data-v20-toon-metal",
     shaderFamily.id,
     useEditRecolor ? "editmask" : "no-editmask",
     useVariableAtlas ? "toonvar-default" : "no-toonvar",
@@ -1031,6 +1047,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy", nativeRecolor =
   let shaderParam2Materials = 0;
   let editRecolorMaterials = 0;
   let variableAtlasMaterials = 0;
+  let metalBranchMaterials = 0;
 
   gltf.scene?.traverse?.((node) => {
     if (!node.isMesh || !node.material) return;
@@ -1072,6 +1089,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy", nativeRecolor =
                 : buildG4NativeDataMaterial(source, aux, "general", native, gradient, nativeRecolor);
               if (material?.userData?.rtgNativeEditRecolorApplied) editRecolorMaterials += 1;
               if (material?.userData?.rtgNativeVariableAtlasApplied) variableAtlasMaterials += 1;
+              if (material?.userData?.rtgNativeMetalBranchApplied) metalBranchMaterials += 1;
               return material;
             }
             return shaderMode === "g4"
@@ -1094,6 +1112,7 @@ async function applyCharacterShader(gltf, shaderMode = "legacy", nativeRecolor =
     shaderParam2: shaderParam2Materials,
     editRecolor: editRecolorMaterials,
     variableAtlas: variableAtlasMaterials,
+    metalBranch: metalBranchMaterials,
     shaderHashes: [...nativeShaderHashes].sort(),
     shaderFamilies: Object.fromEntries([...nativeShaderFamilies.entries()].sort(([a], [b]) => a.localeCompare(b))),
   };
@@ -1528,7 +1547,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE CORE V19 · DXBC BASE · TOONVAR · EDITMASK · EDGE2 EXP"
+      ? "NATIVE CORE V20 · DXBC METAL · TOONVAR · EDITMASK · EDGE2 EXP"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
@@ -1552,12 +1571,15 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
     const variableLabel = result.nativeMaterials
       ? " · VAR " + result.nativeMaterials.variableAtlas + "/2"
       : "";
+    const metalLabel = result.nativeMaterials
+      ? " · MET " + result.nativeMaterials.metalBranch + "/1"
+      : "";
     const rawGlbLabel = result.glbPayload
       ? " · RAW " + result.glbPayload.nativeMaterials + "/" + result.glbPayload.usedMaterials
         + " · C " + result.glbPayload.colorPrimitives + "/" + result.glbPayload.primitiveCount
       : "";
     status.textContent = result.cache === "miss"
-      ? shaderLabel + nativeMaterialLabel + param2Label + recolorLabel + variableLabel + familyLabel + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
+      ? shaderLabel + nativeMaterialLabel + param2Label + recolorLabel + variableLabel + metalLabel + familyLabel + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
       : shaderLabel + nativeMaterialLabel + param2Label + rawGlbLabel + " · cache " + result.cache + " · " + (result.isKeeper ? "GK" : "campo");
     return result;
   } catch (error) {
