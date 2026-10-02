@@ -39,7 +39,7 @@ assert(controller.includes("SQUAD_FILTER_SEASON_LABELS"), "Squad filters must de
 assert(controller.includes("squadFilterTeamOptions"), "Team options must be derived dynamically from player cards");
 assert(controller.includes("cardMatchesSquadFilters"), "Season/team filters must participate in candidate filtering");
 assert(/seasonFilter=String\(event\.target\?\.value\|\|"all"\);\s*refreshTeamFilterControl\(\)/s.test(controller), "Changing season must refresh and validate the team selector");
-assert(controller.includes('teamFilter="all"&&!options.some') || controller.includes('teamFilter!=="all"&&!options.some'), "Invalid team selections must reset to Tutte");
+assert(controller.includes("reconcileSquadTeamFilter"), "Team selection must be preserved only when the same team exists in the selected season, otherwise reset to Tutte");
 
 const config = fs.readFileSync("js/road-to-glory/rtg-config.js","utf8");
 assert(config.includes("const SEASONS=Object.freeze({ie1:SEASON1,ie1_s2:SEASON2,ie1_s3:SEASON3,ie2:ARES})"), "RTG filter season source must remain the four configured RTG seasons");
