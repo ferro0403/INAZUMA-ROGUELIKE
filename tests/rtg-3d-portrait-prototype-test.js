@@ -72,7 +72,7 @@ assert(runtime.includes('vec3(0.10) * g4High'), "Native highlight color must rem
 assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must remain tied to the extracted Character profile.");
 assert(runtime.includes('rtg-g4-native-data-v23-metal-shadow'), "Native-data shader program cache must include the proven shader-family identity.");
 
-assert(runtime.includes('rtg-3d-portrait-v26-native-mask-depthparam'), "Native portrait mode must invalidate cached portraits for the V26 native depth-edge mask pass.");
+assert(runtime.includes('rtg-3d-portrait-v26-edge-tone-dxbc-exact'), "Native portrait mode must invalidate cached portraits for the exact edge_tone DXBC port.");
 assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23" || value === "v24" || value === "v25" || value === "v26"'), "Native edge portrait mode aliases are missing.");
 assert(runtime.includes('profile === "capture"'), "Native edge2 must select the extracted capture lighting profile.");
 assert(runtime.includes('source: "light_2d_capture.cfg.bin"'), "Native edge2 beauty pass must use light_2d_capture.cfg.bin.");
@@ -231,15 +231,21 @@ assert(runtime.includes('accumulateNeighbor(vUv + xh'), "V26 must use the proven
 assert(runtime.includes('float maskRFactor = 1.0 - clamp(sumMaskR * 5.0'), "V26 must preserve edge.pfxo mask-R continuity math.");
 assert(runtime.includes('float maskGFactor = clamp((0.25 - 0.5 * sumMaskG) * 256.0'), "V26 must preserve edge.pfxo mask-G continuity math.");
 assert(runtime.includes('float facingScore = clamp((facingThreshold - 0.5 * sumFacing) * 256.0'), "V26 must preserve edge.pfxo facing threshold math.");
-assert(runtime.includes('float edgeParamZ(vec2 uv) { return texture2D(uEdgeParam, uv).b; }'), "V26 edge_tone must consume edge.pfxo Target Z rather than the rejected scalar R proxy.");
-assert(runtime.includes('2.0 * (1.0 - filtered)'), "V26 edge_tone tail must keep the proven inverted filtered-edge term.");
+assert(runtime.includes('float lutX = center.y * (1.0 - anyPromoted) + promotedY;'), "V26 edge_tone LUT X must come from selected edgeParam.Y exactly like DXBC.");
+assert(runtime.includes('float thresholdW = center.w + center.w * uToneVertexParamZ * 0.85;'), "V26 edge_tone must preserve the original W promotion threshold.");
+assert(runtime.includes('float promotedY = max(max(xp.y * fxp, xm.y * fxm), max(yp.y * fyp, ym.y * fym));'), "V26 edge_tone must promote LUT X from full-radius neighbour Y.");
+assert(runtime.includes('vec2 dpp = vec2( 0.5 * uTexel.x,  0.5 * uTexel.y);'), "V26 edge_tone must use the original half-diagonal sampling topology.");
+assert(runtime.includes('if (centerXYW2 <= 0.0 && center.z >= 1.0)'), "V26 edge_tone must preserve the original sentinel early-out.");
+assert(!runtime.includes('for (int y = -1; y <= 1; ++y)'), "V26 edge_tone must not regress to a generic 3x3 filter.");
+
+assert(runtime.includes('float tail = clamp(2.0 * (1.0 - filteredZ), 0.0, 1.0);'), "V26 edge_tone tail must use filtered edgeParam.Z exactly like DXBC.");
 assert(!runtime.includes('normalMetric = max(normalMetric, length(centerNormal - nn))'), "Rejected V25 generic normal 3x3 detector must remain removed.");
 assert(!runtime.includes('depthMetric = max(depthMetric'), "Rejected V25 neighbour-depth detector must remain removed.");
 
 assert(runtime.includes('new THREE.DepthTexture(RENDER_WIDTH, RENDER_HEIGHT'), "V24 must preserve portrait depth for the edge stage.");
 assert(runtime.includes('new THREE.MeshNormalMaterial'), "V26 must render the proven Target3 normal encoding.");
 assert(runtime.includes('center * 0.2'), "edge_tone center weight must match the DXBC.");
-assert(runtime.includes('filtered += edgeParamZ(vUv + vec2(float(x), float(y)) * uTexel) * 0.1'), "V26 edge_tone neighbour weight must match the DXBC.");
+assert(runtime.includes('filteredZ += texture2D(uEdgeParam, vUv + dpp).z * 0.1'), "V26 edge_tone must include the proven half-texel diagonal Z samples.");
 assert(!runtime.includes('0.85 * uDepthToneParam'), "V26 must not retain the unproven V25 tone depth-promotion branch.");
 assert(runtime.includes('(1.0 - lut.r) * lut.a'), "edge_tone LUT tail must use red and alpha like the original shader.");
 assert(runtime.includes('rate > (1.0 / 255.0)'), "edge_composi sub-1/255 discard threshold must be preserved.");
