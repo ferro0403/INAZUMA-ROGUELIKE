@@ -357,7 +357,9 @@
         overallDescending=!overallDescending;
         visibleCount=SQUAD_PICKER_PAGE_SIZE;
         const button=event.currentTarget;
-        button.textContent=overallDescending?"OVR ↓":"OVR ↑";
+        const arrow=button.querySelector?.("[data-rtg-picker-sort-arrow]");
+        if(arrow)arrow.textContent=overallDescending?"↓":"↑";
+        else button.textContent=overallDescending?"OVR ↓":"OVR ↑";
         button.setAttribute("aria-label",overallDescending?"Ordina per overall decrescente":"Ordina per overall crescente");
         button.setAttribute("aria-pressed",overallDescending?"true":"false");
         renderResults();
