@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v26-native-mask-normal-edge";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v26-native-mask-depthparam";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -90,7 +90,7 @@ function nativeRecolorForUniform(uniform, isKeeper, uniformCrc) {
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "native-edge"
-    ? "v26-native-mask-normal-edge"
+    ? "v26-native-mask-depthparam"
     : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
@@ -1159,6 +1159,9 @@ const NATIVE_SCREEN_EDGE_PROFILE = Object.freeze({
   edgeColor: Object.freeze([0.30, 0.30, 0.30, 1.0]),
   edgeWeight0: Object.freeze([0.30, 0.30, 0.0, 0.05]),
   edgeWeight1: Object.freeze([0.30, 1.0, 1.50, 0.0]),
+  // light_2d_group_capture.cfg.bin
+  depthEdgeParam: Object.freeze([0.50, 0.50, 0.80, 1.10]),
+  edgePixel: 1.0,
   // edge_tone.vfxo writes these constants straight into TEXCOORD.zw.
   toneVertexParam: Object.freeze([0.005, 0.10]),
   edgeToneUrl: "assets/rtg/edgeTone01.png",
@@ -1277,10 +1280,33 @@ function buildNativeEdgeMaskMaterial(sourceMaterial) {
   material.userData = {
     ...(sourceMaterial?.userData || {}),
     rtgSourcePixelShader: "chr_toon*.pfxo Target2",
-    rtgMaskPacking: "R=COLOR_0.g G=COLOR_0.r B=7/255 A=COLOR_0.b fallback",
+    rtgMaskPacking: "R=COLOR_0.g G=COLOR_0.r B=7/255 A=depthEdgeParam*COLOR_0.b",
   };
 
   material.onBeforeCompile = (shader) => {
+    shader.uniforms.rtgDepthEdgeParam = {
+      value: new THREE.Vector4(...NATIVE_SCREEN_EDGE_PROFILE.depthEdgeParam),
+    };
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <common>",
+      "#include <common>\nvarying float rtgEdgeDepthFade;",
+    );
+    shader.vertexShader = shader.vertexShader.replace(
+      "#include <project_vertex>",
+      [
+        "#include <project_vertex>",
+        // chr_toon.vfxo: TEXCOORD0.w from clip-W.
+        "float rtgEdgeClipW = gl_Position.w;",
+        "float rtgEdgeDepthBase = clamp((25.5 - rtgEdgeClipW) / 25.5, 0.0, 1.0);",
+        "float rtgEdgeDepthStep = (1.0 - rtgEdgeDepthBase) * 2.5;",
+        "rtgEdgeDepthStep = min(min(rtgEdgeDepthStep, 1.0), 0.6);",
+        "rtgEdgeDepthFade = 1.0 - rtgEdgeDepthStep;",
+      ].join("\n"),
+    );
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <common>",
+      "#include <common>\nuniform vec4 rtgDepthEdgeParam;\nvarying float rtgEdgeDepthFade;",
+    );
     shader.fragmentShader = shader.fragmentShader.replace(
       "#include <opaque_fragment>",
       [
@@ -1293,15 +1319,21 @@ function buildNativeEdgeMaskMaterial(sourceMaterial) {
         "#endif",
         // chr_toon / chr_toon_variable / chr_toon_metal / chr_toon_edit:
         // Target2.RG = COLOR0.GR and Target2.B = 7/255.
-        // Target2.A also contains u_depthEdgeParam, whose runtime vector is not
-        // present in the exported GLB. Preserve COLOR0.B instead of inventing it.
         "  outgoingLight = vec3(",
         "    clamp(rtgEdgeMaskColor.g, 0.0, 1.0),",
         "    clamp(rtgEdgeMaskColor.r, 0.0, 1.0),",
         "    7.0 / 255.0",
         "  );",
-        "  diffuseColor.a = clamp(rtgEdgeMaskColor.b, 0.0, 1.0);",
+        // Capture depthEdgeParam=(.5,.5,.8,1.1): x==y, so the native
+        // lerp(y,x,NdotV) collapses exactly to .5 and needs no guessed NdotV.
+        "  float rtgMaskA = rtgDepthEdgeParam.y + rtgEdgeDepthFade;",
+        "  rtgMaskA = clamp(rtgMaskA * rtgDepthEdgeParam.z, 0.0, 1.0);",
+        "  rtgMaskA *= rtgDepthEdgeParam.w;",
+        "  rtgMaskA = clamp(rtgMaskA * rtgEdgeMaskColor.b, 0.0, 1.0);",
         "#include <opaque_fragment>",
+        // opaque_fragment forces alpha=1 for opaque Three materials. Restore the
+        // native Target2.A after that chunk so the packed render target survives.
+        "  diffuseColor.a = rtgMaskA;",
       ].join("\n"),
     );
   };
@@ -1373,9 +1405,9 @@ function renderNativeEdgeDataPass(renderer, scene, camera, root, maskTarget, nor
   return {
     colorMeshes,
     maskMeshes,
-    maskPacking: "COLOR_0.gr + 7/255 + COLOR_0.b fallback",
+    maskPacking: "COLOR_0.gr + 7/255 + native depthEdgeParam alpha",
     normalPacking: "view normal * 0.5 + 0.5",
-    unresolved: "u_depthEdgeParam runtime vector",
+    depthEdgeParam: [...NATIVE_SCREEN_EDGE_PROFILE.depthEdgeParam],
   };
 }
 
@@ -1423,7 +1455,7 @@ function summarizeUnsignedByteRenderTarget(renderer, target, label) {
 }
 
 function buildNativeScreenEdgePasses({ maskTexture, normalTexture, depthTexture, beautyTexture, edgeTone, camera }) {
-  const texel = new THREE.Vector2(1 / RENDER_WIDTH, 1 / RENDER_HEIGHT);
+  const texel = new THREE.Vector2(NATIVE_SCREEN_EDGE_PROFILE.edgePixel / RENDER_WIDTH, NATIVE_SCREEN_EDGE_PROFILE.edgePixel / RENDER_HEIGHT);
   const edgeColor = new THREE.Color().setRGB(
     NATIVE_SCREEN_EDGE_PROFILE.edgeColor[0],
     NATIVE_SCREEN_EDGE_PROFILE.edgeColor[1],
