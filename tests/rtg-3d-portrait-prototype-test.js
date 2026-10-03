@@ -73,6 +73,7 @@ assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must re
 assert(runtime.includes('rtg-g4-native-data-v23-metal-shadow'), "Native-data shader program cache must include the proven shader-family identity.");
 
 assert(runtime.includes('rtg-3d-portrait-v26-edge-tone-dxbc-exact'), "Native portrait mode must invalidate cached portraits for the exact edge_tone DXBC port.");
+assert(runtime.includes('if (value === "viewer-soft" || value === "soft-studio" || value === "v28") return "viewer-soft";'), "V28 soft-studio alias is missing.");
 assert(runtime.includes('if (value === "viewer" || value === "glb-viewer" || value === "v27") return "viewer";'), "V27 raw GLB viewer alias is missing.");
 assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23" || value === "v24" || value === "v25" || value === "v26"'), "Native edge portrait mode aliases are missing.");
 assert(runtime.includes('profile === "capture"'), "Native edge2 must select the extracted capture lighting profile.");
@@ -265,6 +266,13 @@ assert(runtime.includes('renderer.shadowMap.type = THREE.PCFSoftShadowMap'), "V2
 assert(runtime.includes('node.castShadow = true'), "V27 meshes must cast shadows.");
 assert(runtime.includes('node.receiveShadow = true'), "V27 meshes must receive shadows.");
 assert(runtime.includes('GLB VIEWER V27 · PBR AO · SOFT SELF-SHADOW'), "V27 status badge must identify the viewer path.");
+assert(runtime.includes('const VIEWER_SOFT_CACHE_NAME = "rtg-3d-portrait-v28-soft-studio";'), "V28 must use an isolated cache namespace.");
+assert(runtime.includes('viewerSoftMode ? 1.05 : (viewerMode ? 0.72 : 1.38)'), "V28 must use the bounded soft-studio hemisphere intensity.");
+assert(runtime.includes('viewerSoftMode ? 1.15 : (viewerMode ? 1.75 : 1.22)'), "V28 must lower the hard key light.");
+assert(runtime.includes('viewerSoftMode ? 0.55 : (viewerMode ? 0.22 : 0.46)'), "V28 must raise the fill light.");
+assert(runtime.includes('keyLight.shadow.radius = softStudio ? 5 : 3'), "V28 must soften only the shadow radius.");
+assert(runtime.includes('GLB VIEWER V28 · SOFT STUDIO · PBR AO · SELF-SHADOW'), "V28 status badge must identify the bounded soft-studio path.");
+
 assert(runtime.includes('viewerMode ? prepareGlbViewerMaterials(gltf) : null'), "V27 must skip custom character material replacement in viewer mode.");
 assert(runtime.includes('function compareEnabled()'), "Portrait comparison query helper is missing.");
 assert(runtime.includes('rtg3dCompare'), "Portrait comparison query parameter is missing.");
