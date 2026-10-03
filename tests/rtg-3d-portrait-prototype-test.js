@@ -72,8 +72,8 @@ assert(runtime.includes('vec3(0.10) * g4High'), "Native highlight color must rem
 assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must remain tied to the extracted Character profile.");
 assert(runtime.includes('rtg-g4-native-data-v23-metal-shadow'), "Native-data shader program cache must include the proven shader-family identity.");
 
-assert(runtime.includes('rtg-3d-portrait-v25-screen-edge-data-lut'), "Native portrait mode must invalidate cached portraits for the screen-space edge base pass.");
-assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23" || value === "v24" || value === "v25"'), "Native edge portrait mode aliases are missing.");
+assert(runtime.includes('rtg-3d-portrait-v26-native-mask-normal-edge'), "Native portrait mode must invalidate cached portraits for the V26 native mask/normal edge pass.");
+assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23" || value === "v24" || value === "v25" || value === "v26"'), "Native edge portrait mode aliases are missing.");
 assert(runtime.includes('profile === "capture"'), "Native edge2 must select the extracted capture lighting profile.");
 assert(runtime.includes('source: "light_2d_capture.cfg.bin"'), "Native edge2 beauty pass must use light_2d_capture.cfg.bin.");
 assert(runtime.includes('charaLightDir: [0.358, 0.614, 0.703]'), "Capture charaLightDir is missing.");
@@ -168,7 +168,7 @@ assert(!captureChunk.includes("useVariableAtlas"), "Legacy G4 capture must not r
 assert(runtime.includes('" · VAR " + result.nativeMaterials.variableAtlas + "/2"'), "Portrait badge must report ToonVariable coverage.");
 assert(runtime.includes('rtgNativeShaderFamily: shaderFamily.id'), "Resolved native shader family must remain attached to the runtime material.");
 assert(runtime.includes('shaderFamilies: Object.fromEntries'), "Portrait diagnostics must report resolved shader-family coverage.");
-assert(runtime.includes('"NATIVE CORE V25 · SS EDGE DATA · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP"'), "RTG prototype must identify the V24 screen-space edge base path and keep EDGE2 explicitly experimental.");
+assert(runtime.includes('"NATIVE CORE V26 · SS MASK+NRM · EDGE DXBC · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP"'), "RTG prototype must identify the V26 native mask/normal edge path and keep EDGE2 explicitly experimental.");
 assert(runtime.includes('new THREE.DataTexture('), "Native gradient must upload decoded RGBA bytes, not an HTML image source.");
 assert(runtime.includes('texture.flipY = false'), "Native gradient must preserve G4/D3D row orientation.");
 assert(runtime.includes('assets/rtg/chrGrd_01.png'), "Native portrait must load the full original chrGrd_01 texture asset.");
@@ -218,17 +218,30 @@ assert(runtime.includes('toneVertexParam: Object.freeze([0.005, 0.10])'), "edge_
 assert(runtime.includes('edgeWeight0: Object.freeze([0.30, 0.30, 0.0, 0.05])'), "Original edgeWeight0 values are missing.");
 assert(runtime.includes('edgeWeight1: Object.freeze([0.30, 1.0, 1.50, 0.0])'), "Original edgeWeight1 values are missing.");
 assert(runtime.includes('new THREE.WebGLRenderTarget(RENDER_WIDTH, RENDER_HEIGHT'), "V24 must allocate screen-space buffers.");
+assert(runtime.includes('function buildNativeEdgeMaskMaterial'), "V26 must build the original COLOR_0-driven edge mask target.");
+assert(runtime.includes('7.0 / 255.0'), "V26 mask Target2.B must preserve the original packed byte 7/255.");
+assert(runtime.includes('uMask: { value: maskTexture }'), "V26 edge.pfxo port must consume the packed mask target.");
+assert(runtime.includes('accumulateNeighbor(vUv + x1'), "V26 must use the proven axial full-radius edge samples.");
+assert(runtime.includes('accumulateNeighbor(vUv + xh'), "V26 must use the proven axial half-radius edge samples.");
+assert(runtime.includes('float maskRFactor = 1.0 - clamp(sumMaskR * 5.0'), "V26 must preserve edge.pfxo mask-R continuity math.");
+assert(runtime.includes('float maskGFactor = clamp((0.25 - 0.5 * sumMaskG) * 256.0'), "V26 must preserve edge.pfxo mask-G continuity math.");
+assert(runtime.includes('float facingScore = clamp((facingThreshold - 0.5 * sumFacing) * 256.0'), "V26 must preserve edge.pfxo facing threshold math.");
+assert(runtime.includes('float edgeParamZ(vec2 uv) { return texture2D(uEdgeParam, uv).b; }'), "V26 edge_tone must consume edge.pfxo Target Z rather than the rejected scalar R proxy.");
+assert(runtime.includes('2.0 * (1.0 - filtered)'), "V26 edge_tone tail must keep the proven inverted filtered-edge term.");
+assert(!runtime.includes('normalMetric = max(normalMetric, length(centerNormal - nn))'), "Rejected V25 generic normal 3x3 detector must remain removed.");
+assert(!runtime.includes('depthMetric = max(depthMetric'), "Rejected V25 neighbour-depth detector must remain removed.");
+
 assert(runtime.includes('new THREE.DepthTexture(RENDER_WIDTH, RENDER_HEIGHT'), "V24 must preserve portrait depth for the edge stage.");
-assert(runtime.includes('new THREE.MeshNormalMaterial'), "V24 must render a normal buffer.");
+assert(runtime.includes('new THREE.MeshNormalMaterial'), "V26 must render the proven Target3 normal encoding.");
 assert(runtime.includes('center * 0.2'), "edge_tone center weight must match the DXBC.");
 assert(runtime.includes('neighborEdge * 0.1'), "edge_tone neighbour weight must match the DXBC.");
 assert(runtime.includes('0.85 * uDepthToneParam'), "edge_tone depth threshold coefficient must match the DXBC.");
 assert(runtime.includes('(1.0 - lut.r) * lut.a'), "edge_tone LUT tail must use red and alpha like the original shader.");
 assert(runtime.includes('rate > (1.0 / 255.0)'), "edge_composi sub-1/255 discard threshold must be preserved.");
 assert(runtime.includes('#include <colorspace_fragment>'), "Fullscreen V24 composite must encode linear beauty exactly once for display.");
-assert(runtime.includes('screenEdge = await renderNativeScreenSpaceEdgePass'), "V24 screen-space edge pass must run after beauty + EDGE2.");
+assert(runtime.includes('screenEdge = await renderNativeScreenSpaceEdgePass'), "V26 screen-space edge pass must run after beauty + EDGE2.");
 assert(runtime.includes('" · SS 1/1"'), "Portrait badge must expose V24 screen-space edge coverage.");
-assert(runtime.includes('NATIVE CORE V25 · SS EDGE DATA · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP'), "Native V24 status must expose the screen-space edge base plus the retained native material branches.");
+assert(runtime.includes('NATIVE CORE V26 · SS MASK+NRM · EDGE DXBC · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP'), "Native V26 status must expose the native mask/normal edge core plus the retained material branches.");
 assert(runtime.includes('function compareEnabled()'), "Portrait comparison query helper is missing.");
 assert(runtime.includes('rtg3dCompare'), "Portrait comparison query parameter is missing.");
 assert(runtime.includes('shaderModeOverride'), "Portrait comparison must render explicit shader modes.");
