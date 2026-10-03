@@ -255,9 +255,11 @@ assert(runtime.includes('screenEdge = await renderNativeScreenSpaceEdgePass'), "
 assert(runtime.includes('" · SS 1/1"'), "Portrait badge must expose V24 screen-space edge coverage.");
 assert(runtime.includes('NATIVE CORE V26 · SS MASK+NRM · EDGE DXBC · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP'), "Native V26 status must expose the native mask/normal edge core plus the retained material branches.");
 
-assert(runtime.includes('const VIEWER_CACHE_NAME = "rtg-3d-portrait-v27-glb-viewer-pbr-shadow";'), "V27 must use an isolated cache namespace.");
+assert(runtime.includes('const VIEWER_CACHE_NAME = "rtg-3d-portrait-v27-glb-viewer-no-g4-vertex-color";'), "V27 must use an isolated cache namespace.");
 assert(runtime.includes('function prepareGlbViewerMaterials'), "V27 must preserve and prepare the raw GLB materials.");
 assert(runtime.includes('material.aoMapIntensity = 1.0'), "V27 must preserve glTF occlusion strength.");
+assert(runtime.includes('material.vertexColors = false'), "V27 must not treat G4 COLOR_0 metadata as glTF albedo/alpha vertex colour.");
+
 assert(runtime.includes('renderer.shadowMap.enabled = true'), "V27 must enable renderer self-shadowing.");
 assert(runtime.includes('renderer.shadowMap.type = THREE.PCFSoftShadowMap'), "V27 must use soft PCF shadows.");
 assert(runtime.includes('node.castShadow = true'), "V27 meshes must cast shadows.");
