@@ -73,6 +73,7 @@ assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must re
 assert(runtime.includes('rtg-g4-native-data-v23-metal-shadow'), "Native-data shader program cache must include the proven shader-family identity.");
 
 assert(runtime.includes('rtg-3d-portrait-v26-edge-tone-dxbc-exact'), "Native portrait mode must invalidate cached portraits for the exact edge_tone DXBC port.");
+assert(runtime.includes('if (value === "viewer-cartoon" || value === "soft-cartoon" || value === "v29") return "viewer-cartoon";'), "V29 soft-cartoon alias is missing.");
 assert(runtime.includes('if (value === "viewer-soft" || value === "soft-studio" || value === "v28") return "viewer-soft";'), "V28 soft-studio alias is missing.");
 assert(runtime.includes('if (value === "viewer" || value === "glb-viewer" || value === "v27") return "viewer";'), "V27 raw GLB viewer alias is missing.");
 assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23" || value === "v24" || value === "v25" || value === "v26"'), "Native edge portrait mode aliases are missing.");
@@ -272,6 +273,17 @@ assert(runtime.includes('viewerSoftMode ? 1.15 : (viewerMode ? 1.75 : 1.22)'), "
 assert(runtime.includes('viewerSoftMode ? 0.55 : (viewerMode ? 0.22 : 0.46)'), "V28 must raise the fill light.");
 assert(runtime.includes('keyLight.shadow.radius = softStudio ? 5 : 3'), "V28 must soften only the shadow radius.");
 assert(runtime.includes('GLB VIEWER V28 · SOFT STUDIO · PBR AO · SELF-SHADOW'), "V28 status badge must identify the bounded soft-studio path.");
+assert(runtime.includes('const VIEWER_CARTOON_CACHE_NAME = "rtg-3d-portrait-v29-soft-cartoon";'), "V29 must use an isolated cache namespace.");
+assert(runtime.includes('function prepareGlbViewerMaterials(gltf, softCartoon = false)'), "V29 material tuning must be gated behind the soft-cartoon mode.");
+assert(runtime.includes('material.metalness = 0.0'), "V29 must suppress metallic response.");
+assert(runtime.includes('material.roughness = 0.95'), "V29 must use the bounded matte roughness.");
+assert(runtime.includes('material.aoMapIntensity = softCartoon ? 0.85 : 1.0'), "V29 must reduce AO without changing V27/V28.");
+assert(runtime.includes('viewerCartoonMode ? 1.18 : (viewerSoftMode ? 1.05 : (viewerMode ? 0.72 : 1.38))'), "V29 must use the bounded brighter hemisphere light.");
+assert(runtime.includes('viewerCartoonMode ? 1.02 : (viewerSoftMode ? 1.15 : (viewerMode ? 1.75 : 1.22))'), "V29 must use the bounded softer key light.");
+assert(runtime.includes('viewerCartoonMode ? 0.68 : (viewerSoftMode ? 0.55 : (viewerMode ? 0.22 : 0.46))'), "V29 must use the bounded stronger fill light.");
+assert(runtime.includes('keyLight.shadow.radius = softCartoon ? 6 : (softStudio ? 5 : 3)'), "V29 must soften only the shadow radius.");
+assert(runtime.includes('GLB VIEWER V29 · SOFT CARTOON · PBR AO · SELF-SHADOW'), "V29 status badge must identify the soft-cartoon path.");
+
 
 assert(runtime.includes('viewerMode ? prepareGlbViewerMaterials(gltf) : null'), "V27 must skip custom character material replacement in viewer mode.");
 assert(runtime.includes('function compareEnabled()'), "Portrait comparison query helper is missing.");
