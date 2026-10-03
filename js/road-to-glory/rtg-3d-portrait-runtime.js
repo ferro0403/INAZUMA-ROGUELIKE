@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v25-screen-edge-data-lut";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v26-native-mask-normal-edge";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,7 +29,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
-  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23" || value === "v24" || value === "v25") return "native-edge";
+  if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23" || value === "v24" || value === "v25" || value === "v26") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
 }
@@ -90,7 +90,7 @@ function nativeRecolorForUniform(uniform, isKeeper, uniformCrc) {
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "native-edge"
-    ? "v25-screen-edge-data-lut"
+    ? "v26-native-mask-normal-edge"
     : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
@@ -1259,7 +1259,127 @@ function disposeFullscreenPass(pass) {
   pass?.material?.dispose?.();
 }
 
-function buildNativeScreenEdgePasses({ normalTexture, depthTexture, beautyTexture, edgeTone, camera }) {
+function buildNativeEdgeMaskMaterial(sourceMaterial) {
+  const material = new THREE.MeshBasicMaterial({
+    color: 0xffffff,
+    map: sourceMaterial?.map || null,
+    alphaMap: sourceMaterial?.alphaMap || null,
+    alphaTest: Number(sourceMaterial?.alphaTest || 0),
+    side: sourceMaterial?.side ?? THREE.FrontSide,
+    depthTest: true,
+    depthWrite: true,
+    transparent: false,
+    vertexColors: true,
+    fog: false,
+  });
+  material.toneMapped = false;
+  material.name = (sourceMaterial?.name || "Character") + "__rtg_native_edge_mask_v26";
+  material.userData = {
+    ...(sourceMaterial?.userData || {}),
+    rtgSourcePixelShader: "chr_toon*.pfxo Target2",
+    rtgMaskPacking: "R=COLOR_0.g G=COLOR_0.r B=7/255 A=COLOR_0.b fallback",
+  };
+
+  material.onBeforeCompile = (shader) => {
+    shader.fragmentShader = shader.fragmentShader.replace(
+      "#include <opaque_fragment>",
+      [
+        "#ifdef USE_COLOR_ALPHA",
+        "  vec4 rtgEdgeMaskColor = vColor;",
+        "#elif defined(USE_COLOR)",
+        "  vec4 rtgEdgeMaskColor = vec4(vColor, 1.0);",
+        "#else",
+        "  vec4 rtgEdgeMaskColor = vec4(0.0, 0.0, 0.0, 1.0);",
+        "#endif",
+        // chr_toon / chr_toon_variable / chr_toon_metal / chr_toon_edit:
+        // Target2.RG = COLOR0.GR and Target2.B = 7/255.
+        // Target2.A also contains u_depthEdgeParam, whose runtime vector is not
+        // present in the exported GLB. Preserve COLOR0.B instead of inventing it.
+        "  outgoingLight = vec3(",
+        "    clamp(rtgEdgeMaskColor.g, 0.0, 1.0),",
+        "    clamp(rtgEdgeMaskColor.r, 0.0, 1.0),",
+        "    7.0 / 255.0",
+        "  );",
+        "  diffuseColor.a = clamp(rtgEdgeMaskColor.b, 0.0, 1.0);",
+        "#include <opaque_fragment>",
+      ].join("\n"),
+    );
+  };
+  material.customProgramCacheKey = () => "rtg-native-edge-mask-v26";
+  return material;
+}
+
+function renderNativeEdgeDataPass(renderer, scene, camera, root, maskTarget, normalTarget) {
+  const originals = [];
+  const maskMaterials = new Set();
+  let maskMeshes = 0;
+  let colorMeshes = 0;
+
+  root.traverse?.((node) => {
+    if (!node.isMesh || !node.material) return;
+    const color = node.geometry?.getAttribute?.("color");
+    originals.push({ node, material: node.material, visible: node.visible });
+    if (!color || color.itemSize < 3) {
+      node.visible = false;
+      return;
+    }
+
+    colorMeshes += 1;
+    const list = Array.isArray(node.material) ? node.material : [node.material];
+    const replacements = list.map((source) => {
+      const mask = buildNativeEdgeMaskMaterial(source);
+      maskMaterials.add(mask);
+      return mask;
+    });
+    node.material = Array.isArray(node.material) ? replacements : replacements[0];
+    maskMeshes += 1;
+  });
+
+  const normalMaterial = new THREE.MeshNormalMaterial({
+    side: THREE.DoubleSide,
+    depthTest: true,
+    depthWrite: true,
+  });
+  normalMaterial.toneMapped = false;
+  normalMaterial.name = "RTG__chr_toon_target3_normal_v26";
+
+  const previousOverride = scene.overrideMaterial;
+  try {
+    renderer.setRenderTarget(maskTarget);
+    renderer.setClearColor(0x000000, 0);
+    renderer.clear(true, true, true);
+    renderer.render(scene, camera);
+
+    for (const original of originals) {
+      original.node.material = original.material;
+      original.node.visible = original.visible;
+    }
+
+    scene.overrideMaterial = normalMaterial;
+    renderer.setRenderTarget(normalTarget);
+    renderer.setClearColor(0x8080ff, 0);
+    renderer.clear(true, true, true);
+    renderer.render(scene, camera);
+  } finally {
+    scene.overrideMaterial = previousOverride;
+    for (const original of originals) {
+      original.node.material = original.material;
+      original.node.visible = original.visible;
+    }
+    for (const material of maskMaterials) material.dispose();
+    normalMaterial.dispose();
+  }
+
+  return {
+    colorMeshes,
+    maskMeshes,
+    maskPacking: "COLOR_0.gr + 7/255 + COLOR_0.b fallback",
+    normalPacking: "view normal * 0.5 + 0.5",
+    unresolved: "u_depthEdgeParam runtime vector",
+  };
+}
+
+function buildNativeScreenEdgePasses({ maskTexture, normalTexture, depthTexture, beautyTexture, edgeTone, camera }) {
   const texel = new THREE.Vector2(1 / RENDER_WIDTH, 1 / RENDER_HEIGHT);
   const edgeColor = new THREE.Color().setRGB(
     NATIVE_SCREEN_EDGE_PROFILE.edgeColor[0],
@@ -1268,63 +1388,118 @@ function buildNativeScreenEdgePasses({ normalTexture, depthTexture, beautyTextur
     THREE.SRGBColorSpace,
   );
 
-  // edge.pfxo is substantially larger than the tone/composite stages. V24 keeps
-  // its proven inputs (normal + depth), original edge thresholds/weights and
-  // downstream native LUT, but marks this first packing stage as BASE rather than
-  // claiming byte-for-byte parity before the complete in_texMask packing is known.
+  // V26 ports the proven edge.pfxo data semantics:
+  // - t0 in_texMask: COLOR_0 packed Target2
+  // - t1 in_texNrm: view normal Target3
+  // - t2 in_texDep: center depth only
+  // - axial full/half-radius sampling, no diagonal 3x3 gradient.
   const edgeParam = makeFullscreenPass([
     "varying vec2 vUv;",
+    "uniform sampler2D uMask;",
     "uniform sampler2D uNormal;",
     "uniform sampler2D uDepth;",
     "uniform vec2 uTexel;",
-    "uniform float uNear;",
-    "uniform float uFar;",
+    "uniform mat4 uProjectionInverse;",
     "uniform vec4 uEdgeWeight0;",
     "uniform vec4 uEdgeWeight1;",
-    "float viewDepth(float d) {",
-    "  float z = d * 2.0 - 1.0;",
-    "  return (2.0 * uNear * uFar) / max(uFar + uNear - z * (uFar - uNear), 1e-6);",
+    "float packedByte(vec4 m) { return floor(m.b * 255.0 + 0.5); }",
+    "float maskBit0(vec4 m) { return mod(packedByte(m), 2.0); }",
+    "float maskBit3(vec4 m) { return mod(floor(packedByte(m) / 8.0), 2.0); }",
+    "vec3 rawNormalAt(vec2 uv) { return texture2D(uNormal, uv).xyz; }",
+    "vec3 normalAt(vec2 uv) { return normalize(rawNormalAt(uv) * 2.0 - 1.0); }",
+    "vec3 viewPositionAt(vec2 uv, float d) {",
+    "  vec4 clip = vec4(uv * 2.0 - 1.0, d * 2.0 - 1.0, 1.0);",
+    "  vec4 view = uProjectionInverse * clip;",
+    "  return view.xyz / max(abs(view.w), 1e-6);",
     "}",
-    "vec3 normalAt(vec2 uv) {",
-    "  return normalize(texture2D(uNormal, uv).xyz * 2.0 - 1.0);",
+    "void accumulateNeighbor(",
+    "  vec2 uv, vec4 centerMask, float centerFacing, vec3 toEye,",
+    "  inout float sumFacing, inout float sumMaskR, inout float sumMaskG, inout float bit3Sum",
+    ") {",
+    "  vec4 m = texture2D(uMask, uv);",
+    "  vec3 n = normalAt(uv);",
+    "  sumFacing += abs(centerFacing - dot(toEye, n));",
+    "  sumMaskR += abs(centerMask.r - m.r);",
+    "  sumMaskG += abs(centerMask.g - m.g);",
+    "  bit3Sum += maskBit3(m);",
+    "}",
+    "float stableHalfNormal(vec3 centerRaw, vec2 uv, float threshold) {",
+    "  vec3 delta = abs(centerRaw - rawNormalAt(uv));",
+    "  return all(lessThanEqual(delta, vec3(threshold))) ? 1.0 : 0.0;",
     "}",
     "void main() {",
+    "  vec4 centerMask = texture2D(uMask, vUv);",
+    "  if (maskBit0(centerMask) < 0.5) discard;",
     "  float rawDepth = texture2D(uDepth, vUv).x;",
-    "  if (rawDepth >= 0.999999) { gl_FragColor = vec4(0.0); return; }",
-    "  float centerDepth = viewDepth(rawDepth);",
-    "  vec3 centerNormal = normalAt(vUv);",
-    "  float normalMetric = 0.0;",
-    "  float depthMetric = 0.0;",
-    "  for (int y = -1; y <= 1; ++y) {",
-    "    for (int x = -1; x <= 1; ++x) {",
-    "      if (x == 0 && y == 0) continue;",
-    "      vec2 uv = vUv + vec2(float(x), float(y)) * uTexel;",
-    "      float nd = texture2D(uDepth, uv).x;",
-    "      if (nd >= 0.999999) {",
-    "        normalMetric = 2.0;",
-    "        depthMetric = 1.0;",
-    "        continue;",
-    "      }",
-    "      vec3 nn = normalAt(uv);",
-    "      normalMetric = max(normalMetric, length(centerNormal - nn));",
-    "      float neighborDepth = viewDepth(nd);",
-    "      depthMetric = max(depthMetric, abs(neighborDepth - centerDepth) / max(centerDepth, 1e-5));",
-    "    }",
-    "  }",
-    "  float normalEdge = clamp((normalMetric - uEdgeWeight0.x) * uEdgeWeight1.z, 0.0, 1.0);",
-    "  float depthEdge = clamp((depthMetric - uEdgeWeight0.w) * uEdgeWeight1.y, 0.0, 1.0);",
-    "  float edge = max(normalEdge, depthEdge);",
-    "  gl_FragColor = vec4(edge, edge, edge, centerDepth / max(uFar, 1e-5));",
+    "  if (rawDepth >= 0.999999) discard;",
+    "",
+    "  vec3 viewPos = viewPositionAt(vUv, rawDepth);",
+    "  vec3 toEye = normalize(-viewPos);",
+    "  vec3 centerRaw = rawNormalAt(vUv);",
+    "  vec3 centerNormal = normalize(centerRaw * 2.0 - 1.0);",
+    "  float centerFacing = dot(toEye, centerNormal);",
+    "",
+    // edge.pfxo: dx = windowParamForEdge.z;
+    // dy = lerp(windowParamForEdge.z, windowParamForEdge.w, edgeWeight1.w).
+    // In the extracted profile edgeWeight1.w == 0, therefore both axes use z.
+    "  float dx = uTexel.x;",
+    "  float dy = mix(uTexel.x, uTexel.y, uEdgeWeight1.w);",
+    "  vec2 x1 = vec2(dx, 0.0);",
+    "  vec2 y1 = vec2(0.0, dy);",
+    "  vec2 xh = x1 * 0.5;",
+    "  vec2 yh = y1 * 0.5;",
+    "",
+    "  float sumFacing = 0.0;",
+    "  float sumMaskR = 0.0;",
+    "  float sumMaskG = 0.0;",
+    "  float bit3Sum = 0.0;",
+    "  accumulateNeighbor(vUv + x1, centerMask, centerFacing, toEye, sumFacing, sumMaskR, sumMaskG, bit3Sum);",
+    "  accumulateNeighbor(vUv - x1, centerMask, centerFacing, toEye, sumFacing, sumMaskR, sumMaskG, bit3Sum);",
+    "  accumulateNeighbor(vUv + y1, centerMask, centerFacing, toEye, sumFacing, sumMaskR, sumMaskG, bit3Sum);",
+    "  accumulateNeighbor(vUv - y1, centerMask, centerFacing, toEye, sumFacing, sumMaskR, sumMaskG, bit3Sum);",
+    "  accumulateNeighbor(vUv + xh, centerMask, centerFacing, toEye, sumFacing, sumMaskR, sumMaskG, bit3Sum);",
+    "  accumulateNeighbor(vUv - xh, centerMask, centerFacing, toEye, sumFacing, sumMaskR, sumMaskG, bit3Sum);",
+    "  accumulateNeighbor(vUv + yh, centerMask, centerFacing, toEye, sumFacing, sumMaskR, sumMaskG, bit3Sum);",
+    "  accumulateNeighbor(vUv - yh, centerMask, centerFacing, toEye, sumFacing, sumMaskR, sumMaskG, bit3Sum);",
+    "",
+    // edge.pfxo reconstructs a negative view-space Z-like metric and fades it
+    // over the proven 25.5 / 2.5 / 0.6 constants.
+    "  float q = clamp((viewPos.z + 25.5) / 25.5, 0.0, 1.0);",
+    "  float depthFade = 1.0 - min((1.0 - q) * 2.5, 0.6);",
+    "  float rawThreshold = mix(uEdgeWeight0.x, uEdgeWeight0.y, depthFade);",
+    "  float normalStable = 1.0;",
+    "  normalStable *= stableHalfNormal(centerRaw, vUv + xh, rawThreshold);",
+    "  normalStable *= stableHalfNormal(centerRaw, vUv - xh, rawThreshold);",
+    "  normalStable *= stableHalfNormal(centerRaw, vUv + yh, rawThreshold);",
+    "  normalStable *= stableHalfNormal(centerRaw, vUv - yh, rawThreshold);",
+    "",
+    "  float facingThreshold = mix(uEdgeWeight1.x, uEdgeWeight1.y, depthFade);",
+    "  float facingScore = clamp((facingThreshold - 0.5 * sumFacing) * 256.0, 0.0, 1.0);",
+    "  float maskGFactor = clamp((0.25 - 0.5 * sumMaskG) * 256.0, 0.0, 1.0);",
+    "  float detailedScore = facingScore * maskGFactor * normalStable;",
+    "  float maskRFactor = 1.0 - clamp(sumMaskR * 5.0, 0.0, 1.0);",
+    "  float depthMix = clamp(clamp(depthFade * uEdgeWeight1.z, 0.0, 1.0) * 1.33329999 - 0.333249986, 0.0, 1.0);",
+    "  float edgeValue = maskRFactor * mix(1.0, detailedScore, depthMix);",
+    "  float gate = 1.0 - step(0.5, bit3Sum);",
+    "",
+    // edge.pfxo structured output. Z is the smoothness/edge parameter consumed
+    // by edge_tone; a discontinuity drives it toward zero.
+    "  gl_FragColor = vec4(",
+    "    clamp(centerFacing, 0.0, 1.0),",
+    "    gate * centerMask.a,",
+    "    gate * edgeValue,",
+    "    clamp(centerFacing, 0.0, 1.0)",
+    "  );",
     "}",
   ].join("\n"), {
+    uMask: { value: maskTexture },
     uNormal: { value: normalTexture },
     uDepth: { value: depthTexture },
     uTexel: { value: texel },
-    uNear: { value: camera.near },
-    uFar: { value: camera.far },
+    uProjectionInverse: { value: camera.projectionMatrixInverse.clone() },
     uEdgeWeight0: { value: new THREE.Vector4(...NATIVE_SCREEN_EDGE_PROFILE.edgeWeight0) },
     uEdgeWeight1: { value: new THREE.Vector4(...NATIVE_SCREEN_EDGE_PROFILE.edgeWeight1) },
-  }, "RTG__edge_param_v24");
+  }, "RTG__edge_param_v26_native_data");
 
   const tone = makeFullscreenPass([
     "varying vec2 vUv;",
@@ -1332,41 +1507,24 @@ function buildNativeScreenEdgePasses({ normalTexture, depthTexture, beautyTextur
     "uniform sampler2D uDepth;",
     "uniform sampler2D uEdgeTone;",
     "uniform vec2 uTexel;",
-    "uniform float uNear;",
-    "uniform float uFar;",
-    "uniform float uDepthToneParam;",
-    "float viewDepth(float d) {",
-    "  float z = d * 2.0 - 1.0;",
-    "  return (2.0 * uNear * uFar) / max(uFar + uNear - z * (uFar - uNear), 1e-6);",
-    "}",
-    "float edgeAt(vec2 uv) { return texture2D(uEdgeParam, uv).r; }",
+    "float edgeParamZ(vec2 uv) { return texture2D(uEdgeParam, uv).b; }",
     "void main() {",
-    "  float center = edgeAt(vUv);",
-    // edge_tone.pfxo: center*0.2 + all eight neighbours*0.1.
+    "  float rawDepth = texture2D(uDepth, vUv).x;",
+    "  if (rawDepth >= 0.999999) { gl_FragColor = vec4(0.0); return; }",
+    // edge_tone.pfxo filters edgeParam.Z: center .20 + eight neighbors .10.
+    "  float center = edgeParamZ(vUv);",
     "  float filtered = center * 0.2;",
-    "  float promoted = center;",
-    "  float centerRawDepth = texture2D(uDepth, vUv).x;",
-    "  if (centerRawDepth >= 0.999999) { gl_FragColor = vec4(0.0); return; }",
-    "  float centerDepth = viewDepth(centerRawDepth);",
-    "  float depthThreshold = centerDepth * (1.0 + 0.85 * uDepthToneParam);",
     "  for (int y = -1; y <= 1; ++y) {",
     "    for (int x = -1; x <= 1; ++x) {",
     "      if (x == 0 && y == 0) continue;",
-    "      vec2 uv = vUv + vec2(float(x), float(y)) * uTexel;",
-    "      float neighborEdge = edgeAt(uv);",
-    "      filtered += neighborEdge * 0.1;",
-    "      float nd = texture2D(uDepth, uv).x;",
-    "      if (nd < 0.999999 && viewDepth(nd) > depthThreshold) promoted = max(promoted, neighborEdge);",
+    "      filtered += edgeParamZ(vUv + vec2(float(x), float(y)) * uTexel) * 0.1;",
     "    }",
     "  }",
     "  filtered = clamp(filtered, 0.0, 1.0);",
-    // The native LUT consumes geometric edge on X and the filtered response on Y.
-    // Our edge.pfxo BASE packing uses 1-filtered as the smoothness coordinate so
-    // the proven native tail remains monotonic with the reconstructed edge strength.
-    "  float smoothness = 1.0 - filtered;",
-    "  vec4 lut = texture2D(uEdgeTone, vec2(clamp(promoted, 0.0, 1.0), smoothness));",
-    // edge_tone.pfxo exact tail: (1-LUT.r) * LUT.a * 2*(1-filteredNative).
-    "  float tone = (1.0 - lut.r) * lut.a * clamp(2.0 * filtered, 0.0, 1.0);",
+    // Extracted edgeTone01 is addressed by the geometric parameter and its
+    // filtered response. The proven tail is (1-LUT.r)*LUT.a*2*(1-filtered).
+    "  vec4 lut = texture2D(uEdgeTone, vec2(clamp(center, 0.0, 1.0), filtered));",
+    "  float tone = (1.0 - lut.r) * lut.a * clamp(2.0 * (1.0 - filtered), 0.0, 1.0);",
     "  gl_FragColor = vec4(vec3(tone), 1.0);",
     "}",
   ].join("\n"), {
@@ -1374,10 +1532,7 @@ function buildNativeScreenEdgePasses({ normalTexture, depthTexture, beautyTextur
     uDepth: { value: depthTexture },
     uEdgeTone: { value: edgeTone },
     uTexel: { value: texel },
-    uNear: { value: camera.near },
-    uFar: { value: camera.far },
-    uDepthToneParam: { value: NATIVE_SCREEN_EDGE_PROFILE.toneVertexParam[0] },
-  }, "RTG__edge_tone_v24");
+  }, "RTG__edge_tone_v26_native_data");
 
   const composite = makeFullscreenPass([
     "varying vec2 vUv;",
@@ -1387,7 +1542,6 @@ function buildNativeScreenEdgePasses({ normalTexture, depthTexture, beautyTextur
     "void main() {",
     "  vec4 beauty = texture2D(uBeauty, vUv);",
     "  float rate = texture2D(uEdgeRate, vUv).r;",
-    // edge_composi.pfxo discards sub-1/255 rates.
     "  rate = rate > (1.0 / 255.0) ? clamp(rate, 0.0, 1.0) : 0.0;",
     "  vec3 rgb = mix(beauty.rgb, uEdgeColor, rate);",
     "  gl_FragColor = vec4(rgb, beauty.a);",
@@ -1397,13 +1551,22 @@ function buildNativeScreenEdgePasses({ normalTexture, depthTexture, beautyTextur
     uBeauty: { value: beautyTexture },
     uEdgeRate: { value: null },
     uEdgeColor: { value: edgeColor },
-  }, "RTG__edge_composi_v24");
+  }, "RTG__edge_composi_v26");
 
   return { edgeParam, tone, composite };
 }
 
 async function renderNativeScreenSpaceEdgePass(renderer, scene, camera, root, beautyTarget) {
   const edgeTone = await nativeEdgeToneTexture();
+
+  const maskTarget = new THREE.WebGLRenderTarget(RENDER_WIDTH, RENDER_HEIGHT, {
+    format: THREE.RGBAFormat,
+    type: THREE.UnsignedByteType,
+    depthBuffer: true,
+    stencilBuffer: false,
+  });
+  maskTarget.texture.colorSpace = THREE.NoColorSpace;
+
   const normalTarget = new THREE.WebGLRenderTarget(RENDER_WIDTH, RENDER_HEIGHT, {
     format: THREE.RGBAFormat,
     type: THREE.UnsignedByteType,
@@ -1428,14 +1591,17 @@ async function renderNativeScreenSpaceEdgePass(renderer, scene, camera, root, be
   });
   edgeToneTarget.texture.colorSpace = THREE.NoColorSpace;
 
-  const normalMaterial = new THREE.MeshNormalMaterial({
-    side: THREE.DoubleSide,
-    depthTest: true,
-    depthWrite: true,
-  });
-  normalMaterial.toneMapped = false;
+  const edgeData = renderNativeEdgeDataPass(
+    renderer,
+    scene,
+    camera,
+    root,
+    maskTarget,
+    normalTarget,
+  );
 
   const passes = buildNativeScreenEdgePasses({
+    maskTexture: maskTarget.texture,
     normalTexture: normalTarget.texture,
     depthTexture: beautyTarget.depthTexture,
     beautyTexture: beautyTarget.texture,
@@ -1446,15 +1612,7 @@ async function renderNativeScreenSpaceEdgePass(renderer, scene, camera, root, be
   passes.composite.material.uniforms.uEdgeRate.value = edgeToneTarget.texture;
 
   const previousTarget = renderer.getRenderTarget();
-  const previousOverride = scene.overrideMaterial;
   try {
-    scene.overrideMaterial = normalMaterial;
-    renderer.setRenderTarget(normalTarget);
-    renderer.setClearColor(0x8080ff, 0);
-    renderer.clear(true, true, true);
-    renderer.render(scene, camera);
-    scene.overrideMaterial = previousOverride;
-
     renderer.setRenderTarget(edgeParamTarget);
     renderer.setClearColor(0x000000, 0);
     renderer.clear(true, false, false);
@@ -1469,12 +1627,11 @@ async function renderNativeScreenSpaceEdgePass(renderer, scene, camera, root, be
     renderer.clear(true, true, true);
     renderer.render(passes.composite.scene, passes.composite.camera);
   } finally {
-    scene.overrideMaterial = previousOverride;
     renderer.setRenderTarget(previousTarget);
-    normalMaterial.dispose();
     disposeFullscreenPass(passes.edgeParam);
     disposeFullscreenPass(passes.tone);
     disposeFullscreenPass(passes.composite);
+    maskTarget.dispose();
     normalTarget.dispose();
     edgeParamTarget.dispose();
     edgeToneTarget.dispose();
@@ -1482,9 +1639,10 @@ async function renderNativeScreenSpaceEdgePass(renderer, scene, camera, root, be
 
   return {
     enabled: true,
-    source: "edge.pfxo BASE + edge_tone.pfxo + edge_composi.pfxo",
+    source: "chr_toon Target2/3 + edge.pfxo V26 + edge_tone.pfxo + edge_composi.pfxo",
     lut: "edgeTone01 128x64",
     toneVertexParam: [...NATIVE_SCREEN_EDGE_PROFILE.toneVertexParam],
+    edgeData,
   };
 }
 
@@ -1902,7 +2060,7 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
 
     status.dataset.state = "ready";
     const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE CORE V25 · SS EDGE DATA · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP"
+      ? "NATIVE CORE V26 · SS MASK+NRM · EDGE DXBC · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP"
       : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
