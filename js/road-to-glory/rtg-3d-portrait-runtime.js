@@ -5,7 +5,7 @@ const MANIFEST_URL = "data/RTG_3D_PROTOTYPE.json";
 const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
-const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v26-native-mask-depthparam";
+const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v26-edge-tone-dxbc-exact";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -90,7 +90,7 @@ function nativeRecolorForUniform(uniform, isKeeper, uniformCrc) {
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "native-edge"
-    ? "v26-native-mask-depthparam"
+    ? "v26-edge-tone-dxbc-exact"
     : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
@@ -1579,35 +1579,62 @@ function buildNativeScreenEdgePasses({ maskTexture, normalTexture, depthTexture,
   const tone = makeFullscreenPass([
     "varying vec2 vUv;",
     "uniform sampler2D uEdgeParam;",
-    "uniform sampler2D uDepth;",
     "uniform sampler2D uEdgeTone;",
     "uniform vec2 uTexel;",
-    "float edgeParamZ(vec2 uv) { return texture2D(uEdgeParam, uv).b; }",
+    "uniform float uToneVertexParamZ;",
     "void main() {",
-    "  float rawDepth = texture2D(uDepth, vUv).x;",
-    "  if (rawDepth >= 0.999999) { gl_FragColor = vec4(0.0); return; }",
-    // edge_tone.pfxo filters edgeParam.Z: center .20 + eight neighbors .10.
-    "  float center = edgeParamZ(vUv);",
-    "  float filtered = center * 0.2;",
-    "  for (int y = -1; y <= 1; ++y) {",
-    "    for (int x = -1; x <= 1; ++x) {",
-    "      if (x == 0 && y == 0) continue;",
-    "      filtered += edgeParamZ(vUv + vec2(float(x), float(y)) * uTexel) * 0.1;",
-    "    }",
-    "  }",
-    "  filtered = clamp(filtered, 0.0, 1.0);",
-    // Extracted edgeTone01 is addressed by the geometric parameter and its
-    // filtered response. The proven tail is (1-LUT.r)*LUT.a*2*(1-filtered).
-    "  vec4 lut = texture2D(uEdgeTone, vec2(clamp(center, 0.0, 1.0), filtered));",
-    "  float tone = (1.0 - lut.r) * lut.a * clamp(2.0 * (1.0 - filtered), 0.0, 1.0);",
-    "  gl_FragColor = vec4(vec3(tone), 1.0);",
+    "  vec4 center = texture2D(uEdgeParam, vUv);",
+    // edge_tone.pfxo 32..109: early-out only for the native sentinel
+    // X=Y=W=0 with Z>=1. No depth texture participates in this pass.
+    "  float centerXYW2 = dot(center.xyw, center.xyw);",
+    "  if (centerXYW2 <= 0.0 && center.z >= 1.0) { gl_FragColor = vec4(0.0); return; }",
+    "",
+    "  vec2 x1 = vec2(uTexel.x, 0.0);",
+    "  vec2 y1 = vec2(0.0, uTexel.y);",
+    // edge_tone.pfxo uses four half-texel DIAGONALS, not a generic 3x3.
+    "  vec2 dpp = vec2( 0.5 * uTexel.x,  0.5 * uTexel.y);",
+    "  vec2 dmp = vec2(-0.5 * uTexel.x,  0.5 * uTexel.y);",
+    "  vec2 dpm = vec2( 0.5 * uTexel.x, -0.5 * uTexel.y);",
+    "  vec2 dmm = vec2(-0.5 * uTexel.x, -0.5 * uTexel.y);",
+    "",
+    "  vec4 xp = texture2D(uEdgeParam, vUv + x1);",
+    "  vec4 xm = texture2D(uEdgeParam, vUv - x1);",
+    "  vec4 yp = texture2D(uEdgeParam, vUv + y1);",
+    "  vec4 ym = texture2D(uEdgeParam, vUv - y1);",
+    "",
+    // r3.y = center.z*.2 + 0.1*(four axial full Z + four diagonal half Z)
+    "  float filteredZ = center.z * 0.2;",
+    "  filteredZ += (xp.z + xm.z + yp.z + ym.z) * 0.1;",
+    "  filteredZ += texture2D(uEdgeParam, vUv + dpp).z * 0.1;",
+    "  filteredZ += texture2D(uEdgeParam, vUv + dmp).z * 0.1;",
+    "  filteredZ += texture2D(uEdgeParam, vUv + dpm).z * 0.1;",
+    "  filteredZ += texture2D(uEdgeParam, vUv + dmm).z * 0.1;",
+    "",
+    // edge_tone.vfxo supplies TEXCOORD.z = .005. The PS promotes Y from a
+    // full-radius axial neighbour only when neighbour.W exceeds this threshold.
+    "  float thresholdW = center.w + center.w * uToneVertexParamZ * 0.85;",
+    "  float fxp = clamp((xp.w - thresholdW) * 100000.0, 0.0, 1.0);",
+    "  float fxm = clamp((xm.w - thresholdW) * 100000.0, 0.0, 1.0);",
+    "  float fyp = clamp((yp.w - thresholdW) * 100000.0, 0.0, 1.0);",
+    "  float fym = clamp((ym.w - thresholdW) * 100000.0, 0.0, 1.0);",
+    "  float anyPromoted = min(fxp + fxm + fyp + fym, 1.0);",
+    "  float promotedY = max(max(xp.y * fxp, xm.y * fxm), max(yp.y * fyp, ym.y * fym));",
+    "  float lutX = center.y * (1.0 - anyPromoted) + promotedY;",
+    "",
+    // DXBC sample t4.xw: LUT coordinate=(selected edgeParam.Y, filtered Z),
+    // and only LUT.R/LUT.A feed the final rate.
+    "  vec2 lutUv = clamp(vec2(lutX, filteredZ), 0.0, 1.0);",
+    "  vec4 lut = texture2D(uEdgeTone, lutUv);",
+    "  float tail = clamp(2.0 * (1.0 - filteredZ), 0.0, 1.0);",
+    "  float toneRate = (1.0 - lut.r) * lut.a * tail;",
+    "  gl_FragColor = vec4(vec3(toneRate), 1.0);",
     "}",
   ].join("\n"), {
     uEdgeParam: { value: null },
-    uDepth: { value: depthTexture },
     uEdgeTone: { value: edgeTone },
     uTexel: { value: texel },
-  }, "RTG__edge_tone_v26_native_data");
+    uToneVertexParamZ: { value: NATIVE_SCREEN_EDGE_PROFILE.toneVertexParam[0] },
+  }, "RTG__edge_tone_v26_dxbc_exact");
 
   const composite = makeFullscreenPass([
     "varying vec2 vUv;",
