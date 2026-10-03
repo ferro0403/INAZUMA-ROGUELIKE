@@ -6,6 +6,7 @@ const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
 const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v26-edge-tone-dxbc-exact";
+const VIEWER_CACHE_NAME = "rtg-3d-portrait-v27-glb-viewer-pbr-shadow";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -29,6 +30,7 @@ function selectedServerBase(manifest) {
 
 function selectedShaderMode() {
   const value = String(new URLSearchParams(globalThis.location?.search || "").get("rtg3dShader") || "").trim().toLowerCase();
+  if (value === "viewer" || value === "glb-viewer" || value === "v27") return "viewer";
   if (value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23" || value === "v24" || value === "v25" || value === "v26") return "native-edge";
   if (value === "native" || value === "v7") return "native";
   return value === "g4" || value === "v6" ? "g4" : "legacy";
@@ -89,9 +91,11 @@ function nativeRecolorForUniform(uniform, isKeeper, uniformCrc) {
 }
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
-  const version = shaderMode === "native-edge"
-    ? "v26-edge-tone-dxbc-exact"
-    : shaderMode === "native"
+  const version = shaderMode === "viewer"
+    ? "v27-glb-viewer-pbr-shadow"
+    : shaderMode === "native-edge"
+      ? "v26-edge-tone-dxbc-exact"
+      : shaderMode === "native"
       ? "v7-native-data"
       : shaderMode === "g4"
         ? "v6-g4"
@@ -100,6 +104,7 @@ function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
 }
 
 function cacheName(shaderMode) {
+  if (shaderMode === "viewer") return VIEWER_CACHE_NAME;
   if (shaderMode === "native-edge") return NATIVE_EDGE_CACHE_NAME;
   if (shaderMode === "native") return NATIVE_CACHE_NAME;
   return shaderMode === "g4" ? G4_CACHE_NAME : LEGACY_CACHE_NAME;
@@ -1122,6 +1127,86 @@ async function applyCharacterShader(gltf, shaderMode = "legacy", nativeRecolor =
   };
 }
 
+
+function prepareGlbViewerMaterials(gltf) {
+  let meshes = 0;
+  let standardMaterials = 0;
+  let aoMaterials = 0;
+  let uv1Clones = 0;
+  const seen = new Set();
+
+  gltf.scene?.traverse?.((node) => {
+    if (!node.isMesh || !node.material) return;
+    meshes += 1;
+    node.castShadow = true;
+    node.receiveShadow = true;
+
+    const uv = node.geometry?.getAttribute?.("uv");
+    if (uv && !node.geometry?.getAttribute?.("uv1")) {
+      node.geometry.setAttribute("uv1", uv.clone());
+      uv1Clones += 1;
+    }
+
+    const materials = Array.isArray(node.material) ? node.material : [node.material];
+    for (const material of materials) {
+      if (!material || seen.has(material.uuid)) continue;
+      seen.add(material.uuid);
+      material.toneMapped = true;
+      if (material.isMeshStandardMaterial) {
+        standardMaterials += 1;
+        if (material.aoMap) {
+          aoMaterials += 1;
+          // glTF default occlusion strength is 1.0. Keep it exact.
+          material.aoMapIntensity = 1.0;
+        }
+        material.needsUpdate = true;
+      }
+    }
+  });
+
+  return {
+    meshes,
+    standardMaterials,
+    aoMaterials,
+    uv1Clones,
+    source: "raw GLB MeshStandardMaterial + glTF occlusionTexture",
+  };
+}
+
+function configureGlbViewerShadow(scene, root, keyLight) {
+  root.updateWorldMatrix(true, true);
+  const box = new THREE.Box3().setFromObject(root);
+  if (box.isEmpty()) return null;
+
+  const size = box.getSize(new THREE.Vector3());
+  const center = box.getCenter(new THREE.Vector3());
+  const extent = Math.max(size.x, size.y, size.z, 0.5);
+
+  keyLight.castShadow = true;
+  keyLight.position.copy(center).add(new THREE.Vector3(extent * 1.6, extent * 2.4, extent * 2.8));
+  keyLight.target.position.copy(center);
+  scene.add(keyLight.target);
+
+  keyLight.shadow.mapSize.set(2048, 2048);
+  keyLight.shadow.camera.left = -extent * 1.15;
+  keyLight.shadow.camera.right = extent * 1.15;
+  keyLight.shadow.camera.top = extent * 1.35;
+  keyLight.shadow.camera.bottom = -extent * 1.35;
+  keyLight.shadow.camera.near = Math.max(0.01, extent * 0.05);
+  keyLight.shadow.camera.far = extent * 8.0;
+  keyLight.shadow.bias = -0.00035;
+  keyLight.shadow.normalBias = extent * 0.0025;
+  keyLight.shadow.radius = 3;
+  keyLight.shadow.camera.updateProjectionMatrix();
+
+  return {
+    mapSize: 2048,
+    extent: Number(extent.toFixed(4)),
+    bias: keyLight.shadow.bias,
+    normalBias: Number(keyLight.shadow.normalBias.toFixed(6)),
+  };
+}
+
 function fitFrontCamera(camera, root) {
   root.updateWorldMatrix(true, true);
   const box = new THREE.Box3().setFromObject(root);
@@ -1931,22 +2016,37 @@ async function renderGlbToBlob(buffer, sourceUrl, shaderMode = "legacy", nativeR
   renderer.setSize(RENDER_WIDTH, RENDER_HEIGHT, false);
   renderer.setClearColor(0x000000, 0);
 
+  const viewerMode = shaderMode === "viewer";
+  if (viewerMode) {
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  }
+
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(26, RENDER_WIDTH / RENDER_HEIGHT, 0.01, 500);
 
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xc2bcc6, 1.38));
+  const hemi = new THREE.HemisphereLight(
+    0xffffff,
+    viewerMode ? 0x77727a : 0xc2bcc6,
+    viewerMode ? 0.72 : 1.38,
+  );
+  scene.add(hemi);
 
-  const key = new THREE.DirectionalLight(0xffffff, 1.22);
+  const key = new THREE.DirectionalLight(0xffffff, viewerMode ? 1.75 : 1.22);
   key.position.set(3.5, 6.5, 6);
   scene.add(key);
 
-  const fill = new THREE.DirectionalLight(0xfff8f4, 0.46);
+  const fill = new THREE.DirectionalLight(0xfff8f4, viewerMode ? 0.22 : 0.46);
   fill.position.set(-4, 2.5, 4);
   scene.add(fill);
 
-  const nativeMaterials = await applyCharacterShader(gltf, shaderMode, nativeRecolor);
+  const viewerMaterials = viewerMode ? prepareGlbViewerMaterials(gltf) : null;
+  const nativeMaterials = viewerMode
+    ? null
+    : await applyCharacterShader(gltf, shaderMode, nativeRecolor);
   scene.add(gltf.scene);
   fitFrontCamera(camera, gltf.scene);
+  const viewerShadow = viewerMode ? configureGlbViewerShadow(scene, gltf.scene, key) : null;
 
   const renderStart = performance.now();
   let edge2 = null;
@@ -1989,7 +2089,18 @@ async function renderGlbToBlob(buffer, sourceUrl, shaderMode = "legacy", nativeR
   renderer.dispose();
   renderer.forceContextLoss?.();
 
-  return { blob, parseMs, renderMs, animations: Number(gltf.animations?.length || 0), edge2, screenEdge, nativeMaterials, glbPayload };
+  return {
+    blob,
+    parseMs,
+    renderMs,
+    animations: Number(gltf.animations?.length || 0),
+    edge2,
+    screenEdge,
+    nativeMaterials,
+    viewerMaterials,
+    viewerShadow,
+    glbPayload,
+  };
 }
 
 async function portraitFor({ playerId, player, uniformId = null, shaderModeOverride = null } = {}) {
@@ -2066,6 +2177,8 @@ async function portraitFor({ playerId, player, uniformId = null, shaderModeOverr
     edge2: rendered.edge2,
     screenEdge: rendered.screenEdge,
     nativeMaterials: rendered.nativeMaterials,
+    viewerMaterials: rendered.viewerMaterials,
+    viewerShadow: rendered.viewerShadow,
     glbPayload: rendered.glbPayload,
     nativeRecolor,
     uniformId: chosenUniformId,
@@ -2173,9 +2286,11 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
     visual.prepend(img);
 
     status.dataset.state = "ready";
-    const shaderLabel = result.shaderMode === "native-edge"
-      ? "NATIVE CORE V26 · SS MASK+NRM · EDGE DXBC · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP"
-      : result.shaderMode === "native"
+    const shaderLabel = result.shaderMode === "viewer"
+      ? "GLB VIEWER V27 · PBR AO · SOFT SELF-SHADOW"
+      : result.shaderMode === "native-edge"
+        ? "NATIVE CORE V26 · SS MASK+NRM · EDGE DXBC · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP"
+        : result.shaderMode === "native"
         ? "NATIVE"
         : result.shaderMode === "g4"
           ? "G4"
@@ -2206,9 +2321,13 @@ async function renderIntoDetail({ playerId, player, modalRoot, uniformId = null 
       ? " · RAW " + result.glbPayload.nativeMaterials + "/" + result.glbPayload.usedMaterials
         + " · C " + result.glbPayload.colorPrimitives + "/" + result.glbPayload.primitiveCount
       : "";
+    const viewerLabel = result.viewerMaterials
+      ? " · AO " + result.viewerMaterials.aoMaterials + "/" + result.viewerMaterials.standardMaterials
+        + " · SH " + (result.viewerShadow ? "1/1" : "0/1")
+      : "";
     status.textContent = result.cache === "miss"
-      ? shaderLabel + nativeMaterialLabel + param2Label + recolorLabel + variableLabel + metalLabel + screenEdgeLabel + familyLabel + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
-      : shaderLabel + nativeMaterialLabel + param2Label + rawGlbLabel + " · cache " + result.cache + " · " + (result.isKeeper ? "GK" : "campo");
+      ? shaderLabel + nativeMaterialLabel + param2Label + recolorLabel + variableLabel + metalLabel + screenEdgeLabel + familyLabel + viewerLabel + rawGlbLabel + " · " + Math.round(result.totalMs) + " ms · " + (result.isKeeper ? "GK" : "campo")
+      : shaderLabel + nativeMaterialLabel + param2Label + viewerLabel + rawGlbLabel + " · cache " + result.cache + " · " + (result.isKeeper ? "GK" : "campo");
     return result;
   } catch (error) {
     status.dataset.state = "error";
