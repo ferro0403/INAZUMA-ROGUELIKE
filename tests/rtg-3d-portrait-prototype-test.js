@@ -234,8 +234,8 @@ assert(!runtime.includes('depthMetric = max(depthMetric'), "Rejected V25 neighbo
 assert(runtime.includes('new THREE.DepthTexture(RENDER_WIDTH, RENDER_HEIGHT'), "V24 must preserve portrait depth for the edge stage.");
 assert(runtime.includes('new THREE.MeshNormalMaterial'), "V26 must render the proven Target3 normal encoding.");
 assert(runtime.includes('center * 0.2'), "edge_tone center weight must match the DXBC.");
-assert(runtime.includes('neighborEdge * 0.1'), "edge_tone neighbour weight must match the DXBC.");
-assert(runtime.includes('0.85 * uDepthToneParam'), "edge_tone depth threshold coefficient must match the DXBC.");
+assert(runtime.includes('filtered += edgeParamZ(vUv + vec2(float(x), float(y)) * uTexel) * 0.1'), "V26 edge_tone neighbour weight must match the DXBC.");
+assert(!runtime.includes('0.85 * uDepthToneParam'), "V26 must not retain the unproven V25 tone depth-promotion branch.");
 assert(runtime.includes('(1.0 - lut.r) * lut.a'), "edge_tone LUT tail must use red and alpha like the original shader.");
 assert(runtime.includes('rate > (1.0 / 255.0)'), "edge_composi sub-1/255 discard threshold must be preserved.");
 assert(runtime.includes('#include <colorspace_fragment>'), "Fullscreen V24 composite must encode linear beauty exactly once for display.");
