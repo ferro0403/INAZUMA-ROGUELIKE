@@ -16,6 +16,43 @@
       if(!deps.economy)return[];
       return Array.from(deps.economy.ownedCardIds(state)||[]).filter((cardId)=>deps.economy.isEligibleOwnedCard(state,cardId));
     }
+    function developmentCardSeasonIds(state=campaign){
+      const registry=global.SeasonRegistry;
+      const ids=new Set();
+      for(const cardId of developmentCardIds(state)){
+        const raw=deps.id(cardId);
+        const separator=raw.indexOf("::");
+        const source=separator>0?raw.slice(0,separator):"";
+        if(source&&source!=="free_agents"&&registry?.get?.(source)?.id===source)ids.add(source);
+      }
+      return Array.from(ids);
+    }
+    async function ensureDevelopmentCardDatabases(state=campaign){
+      const registry=global.SeasonRegistry;
+      if(!registry?.loadDatabase)return{loaded:[],failed:[]};
+      const required=developmentCardSeasonIds(state);
+      const missing=required.filter((seasonId)=>!registry.database?.(seasonId));
+      if(!missing.length)return{loaded:[],failed:[]};
+      const previous=registry.activeId?.();
+      const loaded=[],failed=[];
+      try{
+        for(const seasonId of missing){
+          try{
+            await registry.loadDatabase(seasonId);
+            loaded.push(seasonId);
+          }catch(error){
+            failed.push({seasonId,error});
+          }
+        }
+      }finally{
+        if(previous)registry.setActive?.(previous);
+      }
+      if(failed.length){
+        global.console?.error?.("[RTG] Database giocatori Centro di sviluppo incompleti",failed);
+        deps.toast?.("ALCUNI GIOCATORI RTG NON SONO STATI CARICATI","error");
+      }
+      return{loaded,failed};
+    }
     function developmentPlayers(){
       return developmentCardIds().map((cardId)=>deps.resolved(cardId,developmentRoleVariant(cardId))).filter(Boolean)
         .sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"it"));
@@ -100,9 +137,11 @@
       deps.app?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",(event)=>{developmentRarity=event.currentTarget.value||"Tutti";developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();});
       refresh();
     }
-    function renderDevelopment(tab="players"){
+    async function renderDevelopment(tab="players"){
       campaign=deps.getCampaign();
       if(!deps.economyView||!deps.economy)return deps.renderRun();
+      await ensureDevelopmentCardDatabases(campaign);
+      campaign=deps.getCampaign();
       const players=developmentPlayers();
       if(selectedDevelopmentCardId&&!players.some((player)=>deps.id(player.cardId||player.playerId)===deps.id(selectedDevelopmentCardId)))selectedDevelopmentCardId=null;
       const selected=selectedDevelopmentCardId?developmentModelFor(selectedDevelopmentCardId):null;
@@ -166,7 +205,7 @@
       });
     }
 
-    return Object.freeze({renderShop,renderDevelopment});
+    return Object.freeze({renderShop,renderDevelopment,ensureDevelopmentCardDatabases});
   }
   global.RoadToGloryDevelopmentController=Object.freeze({create});
 })(globalThis);
