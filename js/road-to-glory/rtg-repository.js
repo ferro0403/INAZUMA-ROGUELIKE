@@ -19,14 +19,65 @@
     }
     function activeCampaignId(){return selectedCampaignId;}
 
+    function normalizeDevelopmentRecord(record){
+      if(!record||typeof record!=="object"||Array.isArray(record))return null;
+      const targetPotential=Number(record.targetPotential);
+      const evolutionCount=Number(record.evolutionCount);
+      const rarity=String(record.currentRarity||"");
+      const rarities=Array.from(stateApi.DEVELOPMENT_RARITIES||["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"]);
+      if(!Number.isInteger(targetPotential)||targetPotential<1||targetPotential>99||!rarities.includes(rarity))return null;
+      return{
+        targetPotential,
+        currentRarity:rarity,
+        evolutionCount:Number.isInteger(evolutionCount)&&evolutionCount>=0?evolutionCount:0,
+        updatedAt:record.updatedAt?String(record.updatedAt):null,
+      };
+    }
+    function developmentRecordWins(candidate,current){
+      if(!current)return true;
+      const rarities=Array.from(stateApi.DEVELOPMENT_RARITIES||["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"]);
+      const candidateRank=rarities.indexOf(candidate.currentRarity);
+      const currentRank=rarities.indexOf(current.currentRarity);
+      if(candidateRank!==currentRank)return candidateRank>currentRank;
+      if(candidate.targetPotential!==current.targetPotential)return candidate.targetPotential>current.targetPotential;
+      if(candidate.evolutionCount!==current.evolutionCount)return candidate.evolutionCount>current.evolutionCount;
+      return String(candidate.updatedAt||"")>String(current.updatedAt||"");
+    }
+    function mergeDevelopmentMaps(...sources){
+      const merged={};
+      for(const source of sources){
+        if(!source||typeof source!=="object"||Array.isArray(source))continue;
+        for(const [cardId,rawRecord] of Object.entries(source)){
+          const key=String(cardId||"");
+          const record=normalizeDevelopmentRecord(rawRecord);
+          if(!key||!record)continue;
+          if(developmentRecordWins(record,merged[key]))merged[key]=record;
+        }
+      }
+      return merged;
+    }
+
     async function sharedFor(state){
       let shared=await storage.read(SHARED_KEY);
+      const legacyShared=!shared||!Object.prototype.hasOwnProperty.call(shared,"developmentByCardId");
       if(!shared){
         const legacy=await storage.read("state");
         const source=legacy&&typeof legacy==="object"?legacy:state;
         shared={
           tokens:Math.max(0,Number(source?.tokens||0)),
           gachaAcquiredCards:Array.isArray(source?.gachaAcquiredCards)?stateApi.clone(source.gachaAcquiredCards):[],
+        };
+      }
+      if(legacyShared){
+        const trilogy=await storage.read("state");
+        const aresOrion=await storage.read(`state:${ARES_ORION_ID}`);
+        shared={
+          ...shared,
+          developmentByCardId:mergeDevelopmentMaps(
+            trilogy?.developmentByCardId,
+            aresOrion?.developmentByCardId,
+            state?.developmentByCardId
+          ),
         };
         await storage.write(shared,SHARED_KEY);
       }
@@ -36,12 +87,14 @@
       if(!state)return state;
       state.tokens=Math.max(0,Number(shared?.tokens||0));
       state.gachaAcquiredCards=Array.isArray(shared?.gachaAcquiredCards)?stateApi.clone(shared.gachaAcquiredCards):[];
+      state.developmentByCardId=mergeDevelopmentMaps(shared?.developmentByCardId);
       return stateApi.validate(state);
     }
     async function persistShared(state){
       await storage.write({
         tokens:Math.max(0,Number(state?.tokens||0)),
         gachaAcquiredCards:Array.isArray(state?.gachaAcquiredCards)?stateApi.clone(state.gachaAcquiredCards):[],
+        developmentByCardId:mergeDevelopmentMaps(state?.developmentByCardId),
       },SHARED_KEY);
     }
 
