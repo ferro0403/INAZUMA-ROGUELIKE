@@ -37,7 +37,6 @@
   // match view/controller start using it.
   document.write('<script src="js/road-to-glory/rtg-match-halftime-fix.js?v=20260920-halftime-restart-1"><\/script>');
   document.write('<script src="js/road-to-glory/rtg-squad-view-base.js?v=20261003-season-team-filters-4"><\/script>');
-  document.write('<script src="js/road-to-glory/rtg-squad-picker-order-runtime.js?v=20260920-full-pool-order-1"><\/script>');
-  document.write('<script src="js/road-to-glory/rtg-squad-view-order.js?v=20260920-full-pool-order-1"><\/script>');
+  // OVR ordering is owned by rtg-squad-controller.js so filtering, sorting and pagination share one state.
   document.write('<script src="js/road-to-glory/rtg-squad-view-catalog-canonical.js?v=20260927-version-picker-parity-1"><\/script>');
 })();
