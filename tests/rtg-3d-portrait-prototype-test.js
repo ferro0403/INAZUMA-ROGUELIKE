@@ -274,9 +274,13 @@ assert(runtime.includes('viewerSoftMode ? 0.55 : (viewerMode ? 0.22 : 0.46)'), "
 assert(runtime.includes('keyLight.shadow.radius = softCartoon ? 6 : (softStudio ? 5 : 3)'), "V27/V28/V29 shadow radius must remain mode-bounded.");
 assert(runtime.includes('GLB VIEWER V28 · SOFT STUDIO · PBR AO · SELF-SHADOW'), "V28 status badge must identify the bounded soft-studio path.");
 assert(runtime.includes('const VIEWER_CARTOON_CACHE_NAME = "rtg-3d-portrait-v29-soft-cartoon";'), "V29 must use an isolated cache namespace.");
+assert(runtime.includes('? "v29-soft-cartoon"'), "V29 cache key must use its own v29-soft-cartoon version.");
+assert(runtime.includes('const viewerMode = shaderMode === "viewer" || shaderMode === "viewer-soft" || shaderMode === "viewer-cartoon";'), "Viewer mode must include V27, V28 and V29 without replacing the older paths.");
+assert(runtime.includes('const viewerCartoonMode = shaderMode === "viewer-cartoon";'), "V29 must have an explicit viewerCartoonMode gate.");
 assert(runtime.includes('function prepareGlbViewerMaterials(gltf, softCartoon = false)'), "V29 material tuning must be gated behind the soft-cartoon mode.");
 assert(runtime.includes('material.metalness = 0.0'), "V29 must suppress metallic response.");
 assert(runtime.includes('material.roughness = 0.95'), "V29 must use the bounded matte roughness.");
+assert(/if \\(softCartoon\\) \\{[\\s\\S]{0,500}material\\.metalness = 0\\.0;[\\s\\S]{0,500}material\\.roughness = 0\\.95;/.test(runtime), "V29 metalness/roughness tuning must stay inside the softCartoon-only gate.");
 assert(runtime.includes('material.aoMapIntensity = softCartoon ? 0.85 : 1.0'), "V29 must reduce AO without changing V27/V28.");
 assert(runtime.includes('viewerCartoonMode ? 1.18 : (viewerSoftMode ? 1.05 : (viewerMode ? 0.72 : 1.38))'), "V29 must use the bounded brighter hemisphere light.");
 assert(runtime.includes('viewerCartoonMode ? 1.02 : (viewerSoftMode ? 1.15 : (viewerMode ? 1.75 : 1.22))'), "V29 must use the bounded softer key light.");
