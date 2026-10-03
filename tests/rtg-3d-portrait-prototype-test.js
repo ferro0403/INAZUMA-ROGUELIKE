@@ -73,6 +73,7 @@ assert(runtime.includes('vec3(0.07) * g4Under'), "Native under-rim color must re
 assert(runtime.includes('rtg-g4-native-data-v23-metal-shadow'), "Native-data shader program cache must include the proven shader-family identity.");
 
 assert(runtime.includes('rtg-3d-portrait-v26-edge-tone-dxbc-exact'), "Native portrait mode must invalidate cached portraits for the exact edge_tone DXBC port.");
+assert(runtime.includes('if (value === "viewer" || value === "glb-viewer" || value === "v27") return "viewer";'), "V27 raw GLB viewer alias is missing.");
 assert(runtime.includes('value === "native-edge" || value === "edge2" || value === "v8" || value === "v9" || value === "v10" || value === "v11" || value === "v12" || value === "v13" || value === "v14" || value === "v15" || value === "v16" || value === "v17" || value === "v18" || value === "v19" || value === "v20" || value === "v21" || value === "v22" || value === "v23" || value === "v24" || value === "v25" || value === "v26"'), "Native edge portrait mode aliases are missing.");
 assert(runtime.includes('profile === "capture"'), "Native edge2 must select the extracted capture lighting profile.");
 assert(runtime.includes('source: "light_2d_capture.cfg.bin"'), "Native edge2 beauty pass must use light_2d_capture.cfg.bin.");
@@ -253,6 +254,16 @@ assert(runtime.includes('#include <colorspace_fragment>'), "Fullscreen V24 compo
 assert(runtime.includes('screenEdge = await renderNativeScreenSpaceEdgePass'), "V26 screen-space edge pass must run after beauty + EDGE2.");
 assert(runtime.includes('" · SS 1/1"'), "Portrait badge must expose V24 screen-space edge coverage.");
 assert(runtime.includes('NATIVE CORE V26 · SS MASK+NRM · EDGE DXBC · METAL SHADOW · LINEAR DXBC · TOONVAR · EDITMASK · EDGE2 EXP'), "Native V26 status must expose the native mask/normal edge core plus the retained material branches.");
+
+assert(runtime.includes('const VIEWER_CACHE_NAME = "rtg-3d-portrait-v27-glb-viewer-pbr-shadow";'), "V27 must use an isolated cache namespace.");
+assert(runtime.includes('function prepareGlbViewerMaterials'), "V27 must preserve and prepare the raw GLB materials.");
+assert(runtime.includes('material.aoMapIntensity = 1.0'), "V27 must preserve glTF occlusion strength.");
+assert(runtime.includes('renderer.shadowMap.enabled = true'), "V27 must enable renderer self-shadowing.");
+assert(runtime.includes('renderer.shadowMap.type = THREE.PCFSoftShadowMap'), "V27 must use soft PCF shadows.");
+assert(runtime.includes('node.castShadow = true'), "V27 meshes must cast shadows.");
+assert(runtime.includes('node.receiveShadow = true'), "V27 meshes must receive shadows.");
+assert(runtime.includes('GLB VIEWER V27 · PBR AO · SOFT SELF-SHADOW'), "V27 status badge must identify the viewer path.");
+assert(runtime.includes('viewerMode ? prepareGlbViewerMaterials(gltf) : null'), "V27 must skip custom character material replacement in viewer mode.");
 assert(runtime.includes('function compareEnabled()'), "Portrait comparison query helper is missing.");
 assert(runtime.includes('rtg3dCompare'), "Portrait comparison query parameter is missing.");
 assert(runtime.includes('shaderModeOverride'), "Portrait comparison must render explicit shader modes.");
