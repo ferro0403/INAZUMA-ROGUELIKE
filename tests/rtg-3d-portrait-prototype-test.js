@@ -141,6 +141,9 @@ assert(runtime.includes('g4MetalMask = texture2D(g4SpecularMaskMap, g4Uv).rgb'),
 assert(runtime.includes('g4MetalShadow = clamp(g4ShadowSignal *'), "ToonMetal must saturate the native shadow contribution before attenuating metal.");
 assert(runtime.includes('g4MetalScale = 1.0 - g4MetalShadow'), "ToonMetal metal scale must be one minus the saturated shadow term.");
 assert(runtime.includes('g4MetalSphere * g4MetalMask * g4MetalScale'), "ToonMetal additive tail must mirror the standalone chr_toon_metal DXBC.");
+const nativeStart = runtime.indexOf("function buildG4NativeDataMaterial");
+const nativeEnd = runtime.indexOf("async function applyCharacterShader", nativeStart);
+const nativeChunk = runtime.slice(nativeStart, nativeEnd);
 assert(!nativeChunk.includes('1.0 + g4ShadowSignal'), "Rejected positive metal-shadow scale must not remain in the native core.");
 assert(!nativeChunk.includes('g4SpecShape * g4SpecMask * g4ShadowMix'), "Rejected synthetic metal/shadow multiplication must not remain.");
 assert(!nativeChunk.includes('g4LitSpec *= mix(1.0, 0.42, 0.22)'), "Rejected synthetic metal attenuation must not remain.");
@@ -163,9 +166,6 @@ assert(runtime.includes('function buildG4CaptureMaterial'), "G4 capture function
 const captureStart = runtime.indexOf("function buildG4CaptureMaterial");
 const captureEnd = runtime.indexOf("const NATIVE_GRADIENT_URL", captureStart);
 const captureChunk = runtime.slice(captureStart, captureEnd);
-const nativeStart = runtime.indexOf("function buildG4NativeDataMaterial");
-const nativeEnd = runtime.indexOf("async function applyCharacterShader", nativeStart);
-const nativeChunk = runtime.slice(nativeStart, nativeEnd);
 assert(!captureChunk.includes("useEditRecolor"), "Legacy G4 capture must not reference native EditToon-only state.");
 assert(!captureChunk.includes("useVariableAtlas"), "Legacy G4 capture must not reference native ToonVariable-only state.");
 assert(runtime.includes('" · VAR " + result.nativeMaterials.variableAtlas + "/2"'), "Portrait badge must report ToonVariable coverage.");
