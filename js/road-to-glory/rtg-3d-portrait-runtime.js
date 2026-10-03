@@ -1379,6 +1379,49 @@ function renderNativeEdgeDataPass(renderer, scene, camera, root, maskTarget, nor
   };
 }
 
+
+function summarizeUnsignedByteRenderTarget(renderer, target, label) {
+  if (!freshRenderEnabled() || !target) return null;
+  try {
+    const width = Number(target.width || RENDER_WIDTH);
+    const height = Number(target.height || RENDER_HEIGHT);
+    const pixels = new Uint8Array(width * height * 4);
+    renderer.readRenderTargetPixels(target, 0, 0, width, height, pixels);
+
+    const min = [255, 255, 255, 255];
+    const max = [0, 0, 0, 0];
+    const sum = [0, 0, 0, 0];
+    let nonZero = 0;
+    const count = width * height;
+    for (let index = 0; index < pixels.length; index += 4) {
+      let any = false;
+      for (let channel = 0; channel < 4; channel += 1) {
+        const value = pixels[index + channel];
+        if (value < min[channel]) min[channel] = value;
+        if (value > max[channel]) max[channel] = value;
+        sum[channel] += value;
+        if (value !== 0) any = true;
+      }
+      if (any) nonZero += 1;
+    }
+
+    return {
+      label,
+      min,
+      max,
+      mean: sum.map((value) => Number((value / Math.max(count, 1)).toFixed(3))),
+      nonZeroPixels: nonZero,
+      pixelCount: count,
+      nonZeroRate: Number((nonZero / Math.max(count, 1)).toFixed(6)),
+    };
+  } catch (error) {
+    return {
+      label,
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 function buildNativeScreenEdgePasses({ maskTexture, normalTexture, depthTexture, beautyTexture, edgeTone, camera }) {
   const texel = new THREE.Vector2(1 / RENDER_WIDTH, 1 / RENDER_HEIGHT);
   const edgeColor = new THREE.Color().setRGB(
@@ -1599,6 +1642,12 @@ async function renderNativeScreenSpaceEdgePass(renderer, scene, camera, root, be
     maskTarget,
     normalTarget,
   );
+  const edgeDebug = {
+    mask: summarizeUnsignedByteRenderTarget(renderer, maskTarget, "mask"),
+    normal: summarizeUnsignedByteRenderTarget(renderer, normalTarget, "normal"),
+    edgeParam: null,
+    edgeTone: null,
+  };
 
   const passes = buildNativeScreenEdgePasses({
     maskTexture: maskTarget.texture,
@@ -1617,10 +1666,15 @@ async function renderNativeScreenSpaceEdgePass(renderer, scene, camera, root, be
     renderer.setClearColor(0x000000, 0);
     renderer.clear(true, false, false);
     renderer.render(passes.edgeParam.scene, passes.edgeParam.camera);
+    edgeDebug.edgeParam = summarizeUnsignedByteRenderTarget(renderer, edgeParamTarget, "edgeParam");
 
     renderer.setRenderTarget(edgeToneTarget);
     renderer.clear(true, false, false);
     renderer.render(passes.tone.scene, passes.tone.camera);
+    edgeDebug.edgeTone = summarizeUnsignedByteRenderTarget(renderer, edgeToneTarget, "edgeTone");
+    if (freshRenderEnabled()) {
+      console.info("[RTG 3D portrait] V26 edge buffers " + JSON.stringify(edgeDebug));
+    }
 
     renderer.setRenderTarget(null);
     renderer.setClearColor(0x000000, 0);
@@ -1643,6 +1697,7 @@ async function renderNativeScreenSpaceEdgePass(renderer, scene, camera, root, be
     lut: "edgeTone01 128x64",
     toneVertexParam: [...NATIVE_SCREEN_EDGE_PROFILE.toneVertexParam],
     edgeData,
+    edgeDebug,
   };
 }
 
