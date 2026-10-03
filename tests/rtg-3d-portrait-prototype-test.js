@@ -244,7 +244,7 @@ assert(!runtime.includes('depthMetric = max(depthMetric'), "Rejected V25 neighbo
 
 assert(runtime.includes('new THREE.DepthTexture(RENDER_WIDTH, RENDER_HEIGHT'), "V24 must preserve portrait depth for the edge stage.");
 assert(runtime.includes('new THREE.MeshNormalMaterial'), "V26 must render the proven Target3 normal encoding.");
-assert(runtime.includes('center * 0.2'), "edge_tone center weight must match the DXBC.");
+assert(runtime.includes('center.z * 0.2'), "edge_tone center-Z weight must match the DXBC.");
 assert(runtime.includes('filteredZ += texture2D(uEdgeParam, vUv + dpp).z * 0.1'), "V26 edge_tone must include the proven half-texel diagonal Z samples.");
 assert(!runtime.includes('0.85 * uDepthToneParam'), "V26 must not retain the unproven V25 tone depth-promotion branch.");
 assert(runtime.includes('(1.0 - lut.r) * lut.a'), "edge_tone LUT tail must use red and alpha like the original shader.");
