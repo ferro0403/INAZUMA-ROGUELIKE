@@ -6,7 +6,7 @@ const LEGACY_CACHE_NAME = "rtg-3d-portrait-v5";
 const G4_CACHE_NAME = "rtg-3d-portrait-v6-g4";
 const NATIVE_CACHE_NAME = "rtg-3d-portrait-v7-native-data";
 const NATIVE_EDGE_CACHE_NAME = "rtg-3d-portrait-v26-edge-tone-dxbc-exact";
-const VIEWER_CACHE_NAME = "rtg-3d-portrait-v27-glb-viewer-pbr-shadow";
+const VIEWER_CACHE_NAME = "rtg-3d-portrait-v27-glb-viewer-no-g4-vertex-color";
 const CACHE_PREFIX = "/__rtg3d_portrait_cache__/";
 const RENDER_WIDTH = 512;
 const RENDER_HEIGHT = 640;
@@ -92,7 +92,7 @@ function nativeRecolorForUniform(uniform, isKeeper, uniformCrc) {
 
 function cacheKey(playerId, internalCode, uniformId, uniformCrc, shaderMode) {
   const version = shaderMode === "viewer"
-    ? "v27-glb-viewer-pbr-shadow"
+    ? "v27-glb-viewer-no-g4-vertex-color"
     : shaderMode === "native-edge"
       ? "v26-edge-tone-dxbc-exact"
       : shaderMode === "native"
@@ -1154,6 +1154,11 @@ function prepareGlbViewerMaterials(gltf) {
       material.toneMapped = true;
       if (material.isMeshStandardMaterial) {
         standardMaterials += 1;
+        // NIE/G4 COLOR_0 is shader metadata, not albedo vertex colour.
+        // All Mark MASK primitives carry COLOR_0.a < 0.5, which Three's
+        // standard glTF path would multiply into diffuse alpha and then
+        // discard at alphaCutoff=0.5. Disable vertex-colour modulation here.
+        material.vertexColors = false;
         if (material.aoMap) {
           aoMaterials += 1;
           // glTF default occlusion strength is 1.0. Keep it exact.
@@ -1169,7 +1174,7 @@ function prepareGlbViewerMaterials(gltf) {
     standardMaterials,
     aoMaterials,
     uv1Clones,
-    source: "raw GLB MeshStandardMaterial + glTF occlusionTexture",
+    source: "raw GLB MeshStandardMaterial + glTF occlusionTexture; G4 COLOR_0 ignored as albedo",
   };
 }
 
