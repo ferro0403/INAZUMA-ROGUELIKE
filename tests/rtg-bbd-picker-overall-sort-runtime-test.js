@@ -1,13 +1,13 @@
 "use strict";
 
 const assert=require("assert");
+const fs=require("fs");
+const vm=require("vm");
 const loaderSource=fs.readFileSync("js/road-to-glory/rtg-squad-view.js","utf8");
 const themeSource=fs.readFileSync("css/rtg-theme.css","utf8");
 assert(!loaderSource.includes("rtg-squad-view-order.js"),"legacy view sorter must not be loaded");
 assert(!loaderSource.includes("rtg-squad-picker-order-runtime.js"),"legacy Array.sort interception must not be loaded");
 assert(themeSource.includes(".rtg-picker-ovr-sort"),"canonical OVR control must be styled by the RTG theme");
-const fs=require("fs");
-const vm=require("vm");
 
 function makeHarness(overalls){
   const context={
