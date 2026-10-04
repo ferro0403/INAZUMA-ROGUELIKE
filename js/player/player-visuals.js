@@ -4,6 +4,7 @@
   const PLAYER_IMAGE_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='22' fill='%2311213f'/%3E%3Ccircle cx='60' cy='42' r='22' fill='%23ffd34f'/%3E%3Cpath d='M22 108c6-28 24-42 38-42s32 14 38 42' fill='%2385cdf5'/%3E%3C/svg%3E";
 
   function create({ getPlayerVisualsById, escapeHtml }) {
+    const modularVisuals = global.PlayerKitVisuals?.create?.({ escapeHtml }) || null;
     function candidates(player, playerId = player?.playerId) {
       const id = playerId != null ? String(playerId) : "";
       const globalVisual = id ? (getPlayerVisualsById()?.get(id) || {}) : {};
@@ -65,7 +66,41 @@
       return resolve(player).cardImageUrl || PLAYER_IMAGE_PLACEHOLDER;
     }
 
-    return { candidates, resolve, imageFallbackAttributes, handleImageError, portraitUrl, placeholder: PLAYER_IMAGE_PLACEHOLDER };
+    function detailMarkup(
+      player,
+      {
+        playerId = player?.playerId,
+        kitId = null,
+        alt = player?.name || "",
+        resolved = null,
+      } = {},
+    ) {
+      const visual = resolved || resolve(player, { playerId });
+      const fallbackMarkup = visual.detailImageUrl
+        ? `<img class="player-fullbody player-fullbody--${escapeHtml(visual.detailImageKind)}" src="${escapeHtml(visual.detailImageUrl)}" alt="${escapeHtml(alt)}" loading="lazy" decoding="async" ${imageFallbackAttributes(visual.detailFallbacks)} />`
+        : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`;
+      if (!modularVisuals) return fallbackMarkup;
+      return modularVisuals.markup(player, {
+        playerId,
+        kitId,
+        alt,
+        fallbackUrl: visual.detailImageUrl,
+        fallbackAttributes: visual.detailImageUrl
+          ? imageFallbackAttributes(visual.detailFallbacks)
+          : "",
+      }) || fallbackMarkup;
+    }
+
+    return {
+      candidates,
+      resolve,
+      imageFallbackAttributes,
+      handleImageError,
+      portraitUrl,
+      detailMarkup,
+      modularResolve: (player, options) => modularVisuals?.resolve?.(player, options) || null,
+      placeholder: PLAYER_IMAGE_PLACEHOLDER,
+    };
   }
 
   global.PlayerVisuals = { create, PLAYER_IMAGE_PLACEHOLDER };

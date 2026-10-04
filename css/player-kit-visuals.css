@@ -1,0 +1,43 @@
+.player-fullbody--modular {
+  display: block;
+  overflow: visible;
+}
+
+.modular-player-visual__layer,
+.modular-player-visual__fallback {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  max-height: none;
+  object-fit: contain;
+  object-position: center bottom;
+  pointer-events: none;
+}
+
+.modular-player-visual__layer {
+  z-index: var(--modular-layer-z, 1);
+}
+
+.modular-player-visual__fallback {
+  display: none;
+  z-index: 999;
+}
+
+.modular-player-visual__fallback--empty {
+  place-items: center;
+  font-size: 4rem;
+}
+
+.modular-player-visual--failed .modular-player-visual__layer {
+  display: none;
+}
+
+.modular-player-visual--failed .modular-player-visual__fallback {
+  display: block;
+}
+
+.modular-player-visual--failed .modular-player-visual__fallback--empty {
+  display: grid;
+}
