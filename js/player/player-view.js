@@ -211,6 +211,14 @@
         : historical
           ? "Squadra campione"
           : "";
+      const detailArtwork = typeof visuals.detailMarkup === "function"
+        ? visuals.detailMarkup(
+            { ...sourceFallback, ...player },
+            { playerId, alt: resolved.name, resolved: detailVisual },
+          )
+        : detailVisual.detailImageUrl
+          ? `<img class="player-fullbody player-fullbody--${escapeHtml(detailVisual.detailImageKind)}" src="${escapeHtml(detailVisual.detailImageUrl)}" alt="${escapeHtml(resolved.name)}" loading="lazy" decoding="async" ${visuals.imageFallbackAttributes(detailVisual.detailFallbacks)} />`
+          : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`;
       return `
         <div class="player-detail-layout ${rarityClass(resolved.category)} ${historical ? "player-detail-historical" : ""}">
           <section class="player-detail-hero ${String(resolved.name || "").length > 18 ? "player-detail-hero--extra-long-name" : String(resolved.name || "").length > 12 ? "player-detail-hero--long-name" : ""}">
@@ -234,7 +242,7 @@
               <p class="detail-category"><span aria-hidden="true">★</span><small>Rarità</small><strong>${escapeHtml(resolved.category)}</strong></p>
             </div>
             <div class="player-detail-visual ${rarityClass(resolved.category)}">
-              ${detailVisual.detailImageUrl ? `<img class="player-fullbody player-fullbody--${escapeHtml(detailVisual.detailImageKind)}" src="${escapeHtml(detailVisual.detailImageUrl)}" alt="${escapeHtml(resolved.name)}" loading="lazy" decoding="async" ${visuals.imageFallbackAttributes(detailVisual.detailFallbacks)} />` : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`}
+              ${detailArtwork}
             </div>
           </section>
           <section class="player-detail-content">
