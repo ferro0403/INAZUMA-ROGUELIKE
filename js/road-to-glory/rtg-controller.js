@@ -228,6 +228,7 @@
           return openRtgPlayerDetails(key,"",reopenOptions);
         }:null,
         moveSeasonId:id(detailMeta.legacySeasonId||player.resolvedSeasonId||campaign?.activeSeasonId||"ie1"),
+        rtgKitPreview:true,
         readOnly:true,
         mode:options?.mode||undefined,
         albumUnlocked:options?.albumUnlocked,
