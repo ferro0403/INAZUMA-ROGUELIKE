@@ -112,6 +112,7 @@ jobs:
             tests/app-test-seams-domain-test.js
             tests/team-profile-runtime-domain-test.js
             tests/run-roster-runtime-domain-test.js
+            tests/rtg-player-kit-preview-test.js
             tests/player-presentation-production-path-test.js
             tests/permanent-club-ui-production-path-test.js
             tests/champion-hall-presentation-domain-test.js
