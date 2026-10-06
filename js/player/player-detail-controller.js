@@ -13,6 +13,7 @@
       databaseForEntry,
       unequipPlayerItem,
       renderSquad,
+      kitVisuals = null,
     } = deps;
     function showFor(player, options = {}) {
       if (!player) return toast("Giocatore non disponibile");
@@ -43,6 +44,19 @@
           });
         });
       }
+      const kitSelect = getModalRoot().querySelector("[data-detail-kit-select]");
+      kitSelect?.addEventListener("change", () => {
+        const kitId = String(kitSelect.value || "");
+        const changed = kitId
+          ? kitVisuals?.select?.(opts.playerId, kitId)
+          : kitVisuals?.clear?.(opts.playerId);
+        if (changed === false) return toast("DIVISA VR NON DISPONIBILE");
+        const label = kitId
+          ? kitVisuals?.optionsFor?.(opts.playerId)?.find((kit) => kit.kitId === kitId)?.label || kitId
+          : "Visuale originale";
+        toast(`DIVISA TEST: ${label}`);
+        showFor(player, opts);
+      });
     }
     function showRosterPlayer(playerId, onClose = null) {
       const entry = getRosterEntry(playerId);

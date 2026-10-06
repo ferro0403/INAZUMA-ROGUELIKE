@@ -3,10 +3,12 @@
 
   const PLAYER_IMAGE_PLACEHOLDER = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='22' fill='%2311213f'/%3E%3Ccircle cx='60' cy='42' r='22' fill='%23ffd34f'/%3E%3Cpath d='M22 108c6-28 24-42 38-42s32 14 38 42' fill='%2385cdf5'/%3E%3C/svg%3E";
 
-  function create({ getPlayerVisualsById, escapeHtml }) {
+  function create({ getPlayerVisualsById, escapeHtml, resolveKitVisual = null }) {
     function candidates(player, playerId = player?.playerId) {
       const id = playerId != null ? String(playerId) : "";
       const globalVisual = id ? (getPlayerVisualsById()?.get(id) || {}) : {};
+      const kitVisual = id && typeof resolveKitVisual === "function" ? resolveKitVisual(id) : null;
+      const kitFront = kitVisual?.fullbodyUrl || null;
       const seasonalFront = player?.frontFullbodyUrl || player?.fullbodyUrl || null;
       const globalFront = globalVisual.frontFullbodyUrl || globalVisual.fullbodyUrl || null;
       const seasonalPortrait = player?.portraitUrl || null;
@@ -15,7 +17,9 @@
       return {
         playerId: id,
         portraitUrl: seasonalPortrait || globalPortrait || compatibleImage || null,
-        frontFullbodyUrl: seasonalFront || globalFront || null,
+        frontFullbodyUrl: kitFront || seasonalFront || globalFront || null,
+        kitVisual,
+        kitFront,
         seasonalPortrait,
         globalPortrait,
         compatibleImage,
@@ -26,7 +30,7 @@
 
     function resolve(player, { playerId = player?.playerId, placeholder = PLAYER_IMAGE_PLACEHOLDER } = {}) {
       const visual = candidates(player, playerId);
-      const detailFallbacks = [visual.frontFullbodyUrl, visual.portraitUrl, placeholder].filter(Boolean);
+      const detailFallbacks = [visual.kitFront, visual.seasonalFront, visual.globalFront, visual.portraitUrl, placeholder].filter(Boolean);
       const cardFallbacks = [visual.portraitUrl, visual.frontFullbodyUrl, placeholder].filter(Boolean);
       return {
         playerId: visual.playerId,

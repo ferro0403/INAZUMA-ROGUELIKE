@@ -87,6 +87,7 @@
   let seasonPlayersById = new Map();
   let seasonTeamsById = new Map();
   let playerVisualsById = new Map();
+  const playerKitVisuals = global.PlayerKitVisuals?.create?.({ enabled: DEV_MODE, storage: global.localStorage }) || null;
   let sharedRunRosterRuntime = null;
   function runRosterRuntime() {
     sharedRunRosterRuntime ||= global.RunRosterRuntime.create({
@@ -100,7 +101,7 @@
     return sharedRunRosterRuntime;
   }
   function isProfileAwareSeason(...args) { return runRosterRuntime().isProfileAwareSeason(...args); }
-  const playerVisuals = global.PlayerVisuals.create({ getPlayerVisualsById: () => playerVisualsById, escapeHtml });
+  const playerVisuals = global.PlayerVisuals.create({ getPlayerVisualsById: () => playerVisualsById, escapeHtml, resolveKitVisual: (playerId) => playerKitVisuals?.resolve?.(playerId) || null });
   global.handlePlayerImageError = playerVisuals.handleImageError;
   const playerView = global.PlayerView.create({
     visuals: playerVisuals, escapeHtml, resolveItem, itemIcon,
@@ -108,6 +109,7 @@
     applyEquipment: (stats, equipment) => global.RoguelikeRules.applyEquipment(stats, equipment),
     formatLevel: (...args) => global.LevelProgression.formatLevel(...args), getSeasonId: () => run?.seasonId,
     sourcePlayer, playerTeamIdentity, historicalTeamIdentity, teamLogoMarkup, playerStatsMarkup,
+    kitVisuals: playerKitVisuals, devMode: DEV_MODE,
   });
   const { rarityClass, statIcon, STAT_LABELS } = playerView;
   let run = null;
@@ -436,6 +438,7 @@
     getFreeAgentsDb: () => freeAgentsDb, getRosterEntry: rosterEntry, resolveRosterPlayer: resolvedRosterPlayer,
     databaseForEntry: (entry) => global.SeasonRegistry?.isSeasonSource?.(entry.source) ? (global.SeasonRegistry.database(entry.source) || seasonDb) : freeAgentsDb,
     unequipPlayerItem: (...args) => unequipPlayerItem(...args), renderSquad: (...args) => renderSquad(...args),
+    kitVisuals: playerKitVisuals,
   });
   function showPlayerDetailsFor(...args) { return playerDetailController.showFor(...args); }
   function showPlayerDetails(...args) { return playerDetailController.showRosterPlayer(...args); }
@@ -1499,5 +1502,15 @@
       inventoryModel, ensureCurrentZoneMutation, devSkipCurrentBoss, devSkipToCompletedBosses, devGameOverNow,
     },
   });
-  appBootstrap.init();
+  async function initAppRuntime() {
+    if (playerKitVisuals?.load) {
+      try {
+        await playerKitVisuals.load("data/PLAYER_KIT_VISUALS.json");
+      } catch (error) {
+        console.warn("VR kit visual manifest unavailable; legacy player visuals remain active", error);
+      }
+    }
+    return appBootstrap.init();
+  }
+  initAppRuntime();
 })(globalThis);

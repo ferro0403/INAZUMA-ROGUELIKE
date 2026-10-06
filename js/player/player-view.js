@@ -55,6 +55,8 @@
       historicalTeamIdentity,
       teamLogoMarkup,
       playerStatsMarkup,
+      kitVisuals = null,
+      devMode = false,
     } = deps;
     function compactCard(
       player,
@@ -188,6 +190,33 @@
       const equipmentMarkup = equipment
         ? `<div class="equipped-detail"><div class="equipped-detail-art">${itemIcon(equipment)}</div><div class="equipped-detail-copy"><span>${historical ? "Equipaggiamento storico" : "Oggetto assegnato"}</span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.description)}</small><em>+${Number(item.bonus || 0)} ${escapeHtml(STAT_LABELS[item.stat] || item.stat || "")}</em></div>${!readOnly && playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>`
         : `<div class="equipped-detail equipped-detail-empty"><div class="equipped-detail-copy"><span>Slot disponibile</span><strong>Nessun equipaggiamento</strong><small>Questo giocatore non ha ancora un oggetto assegnato.</small></div></div>`;
+      const kitOptions = devMode && !historical && !albumMode && kitVisuals?.optionsFor
+        ? kitVisuals.optionsFor(playerId)
+        : [];
+      const selectedKitId = kitVisuals?.selectedKitId?.(playerId) || "";
+      const selectedKit = selectedKitId
+        ? kitOptions.find((kit) => kit.kitId === selectedKitId) || null
+        : null;
+      const kitTestMarkup = kitOptions.length
+        ? `<section class="player-detail-section player-detail-kit-test">
+              <h3><span>Divisa VR · DEV</span></h3>
+              <div class="equipped-detail">
+                <div class="equipped-detail-copy">
+                  <span>Bridge playerId + kitId</span>
+                  <strong>${escapeHtml(selectedKit?.label || "Visuale originale")}</strong>
+                  <small>${selectedKit
+                    ? escapeHtml(selectedKit.diagnostic
+                      ? `Routing verificato · render atteso: ${selectedKit.expectedAssetUrl || "da generare"}`
+                      : `Render collegato: ${selectedKit.fullbodyUrl || selectedKit.expectedAssetUrl || "asset"}`)
+                    : "Nessun override: usa la visuale attuale del giocatore."}</small>
+                </div>
+                <select data-detail-kit-select="${escapeHtml(playerId)}" aria-label="Seleziona divisa VR di test">
+                  <option value="">Visuale originale</option>
+                  ${kitOptions.map((kit) => `<option value="${escapeHtml(kit.kitId)}" ${kit.kitId === selectedKitId ? "selected" : ""}>${escapeHtml(kit.label)}</option>`).join("")}
+                </select>
+              </div>
+            </section>`
+        : "";
       const moveSeasonId = [player.seasonId, player.recruitmentSource, sourceFallback.seasonId, getSeasonId()]
         .find((seasonId) => global.SeasonRegistry?.isSeasonSource?.(seasonId)) || getSeasonId();
       const movePlayerId = player.legacyCanonicalPlayerId || sourceFallback.legacyCanonicalPlayerId || playerId;
@@ -243,6 +272,7 @@
               <div class="detail-stats">${stats}</div>
             </section>
             ${moveSectionMarkup}
+            ${kitTestMarkup}
             <section class="player-detail-section player-detail-equipment">
               <h3><span>Equipaggiamento</span></h3>
               ${equipmentMarkup}
