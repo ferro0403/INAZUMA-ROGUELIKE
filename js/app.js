@@ -1503,7 +1503,7 @@
     },
   });
   async function initAppRuntime() {
-    if (playerKitVisuals?.load) {
+    if (playerKitVisuals?.enabled && playerKitVisuals?.load) {
       try {
         await playerKitVisuals.load("data/PLAYER_KIT_VISUALS.json");
       } catch (error) {
