@@ -55,6 +55,8 @@
       historicalTeamIdentity,
       teamLogoMarkup,
       playerStatsMarkup,
+      kitVisuals = null,
+      devMode = false,
     } = deps;
     function compactCard(
       player,
@@ -105,6 +107,7 @@
         rtgLegacyLabel = "",
         rtgRoleSwitch = null,
         moveSeasonId = null,
+        rtgKitPreview = false,
       } = {},
     ) {
       if (!player) return "";
@@ -115,9 +118,14 @@
           sourcePlayer(playerId) ||
           {}
         : {};
+      const kitPreviewEnabled = Boolean(devMode && rtgKitPreview && !historical && !albumMode);
+      const selectedKitVisual = kitPreviewEnabled ? (kitVisuals?.resolve?.(playerId) || null) : null;
       const detailVisual = visuals.resolve(
         { ...sourceFallback, ...player },
-        { playerId },
+        {
+          playerId,
+          detailFullbodyOverride: selectedKitVisual?.fullbodyUrl || null,
+        },
       );
       const teamIdentity = historical
         ? historicalTeamIdentity(player, team, sourceFallback)
@@ -207,6 +215,33 @@
               ${global.MovePresentationRuntime.detailMarkup(playerMove, escapeHtml)}
             </section>`
         : "";
+      const kitOptions = kitPreviewEnabled && kitVisuals?.optionsFor
+        ? kitVisuals.optionsFor(playerId)
+        : [];
+      const selectedKitId = kitPreviewEnabled ? (kitVisuals?.selectedKitId?.(playerId) || "") : "";
+      const selectedKit = selectedKitId
+        ? kitOptions.find((kit) => kit.kitId === selectedKitId) || null
+        : null;
+      const kitTestMarkup = kitOptions.length
+        ? `<section class="player-detail-section player-detail-kit-test">
+              <h3><span>Divisa VR · DEV</span></h3>
+              <div class="equipped-detail">
+                <div class="equipped-detail-copy">
+                  <span>Preview RTG · playerId + kitId</span>
+                  <strong>${escapeHtml(selectedKit?.label || "Visuale originale")}</strong>
+                  <small>${selectedKit
+                    ? escapeHtml(selectedKit.diagnostic
+                      ? `Routing verificato · render atteso: ${selectedKit.expectedAssetUrl || "da generare"}`
+                      : `Render collegato: ${selectedKit.fullbodyUrl || selectedKit.expectedAssetUrl || "asset"}`)
+                    : "Nessun override: usa la visuale attuale del giocatore."}</small>
+                </div>
+                <select data-detail-kit-select="${escapeHtml(playerId)}" aria-label="Seleziona divisa VR di test">
+                  <option value="">Visuale originale</option>
+                  ${kitOptions.map((kit) => `<option value="${escapeHtml(kit.kitId)}" ${kit.kitId === selectedKitId ? "selected" : ""}>${escapeHtml(kit.label)}</option>`).join("")}
+                </select>
+              </div>
+            </section>`
+        : "";
       const displayLevel = historical
         ? formatLevel(
             player.finalLevel ?? 0,
@@ -254,6 +289,7 @@
               <div class="detail-stats">${stats}</div>
             </section>
             ${moveSectionMarkup}
+            ${kitTestMarkup}
             <section class="player-detail-section player-detail-equipment">
               <h3><span>Equipaggiamento</span></h3>
               ${equipmentMarkup}
