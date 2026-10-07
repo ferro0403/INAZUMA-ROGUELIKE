@@ -1,0 +1,90 @@
+/* Road to Glory — foundation owner.
+   Only shared RTG design tokens and cross-surface primitives belong here.
+   Component presentation belongs to its dedicated owner. */
+
+:is(
+  .rtg-run-screen,
+  .rtg-squad-shell,
+  .rtg-prematch-shell,
+  .rtg-match-shell,
+  .rtg-modal,
+  .rtg-formation-modal,
+  .rtg-shop-screen,
+  .rtg-development-screen
+) {
+  --rtg-ink: #111216;
+  --rtg-white: #ffffff;
+  --rtg-paper: #fffdf6;
+  --rtg-paper-2: #f3f1ea;
+  --rtg-gold: #b78a22;
+  --rtg-yellow: #ffd21f;
+  --rtg-line: #111216;
+  --rtg-muted: #55575c;
+  --rtg-border: 3px solid var(--rtg-ink);
+  --rtg-shadow: 4px 5px 0 var(--rtg-ink);
+  color-scheme: light;
+}
+
+/* Foundation ownership migrated from road-to-glory.css. */
+
+
+/* Modal shell parity: remove the old rounded blue web-app container. */
+.modal.rtg-modal {
+  width: min(92vw, 620px);
+  padding: 18px;
+  border: 4px solid #101116;
+  border-radius: 0;
+  background: #fffdf5;
+  color: #101116;
+  box-shadow: 10px 11px 0 #101116;
+}
+
+.modal.rtg-modal > .modal-close {
+  position: relative;
+  z-index: 5;
+  float: right;
+  width: 40px;
+  height: 40px;
+  margin: 0 0 8px 10px;
+  border: 3px solid #101116;
+  border-radius: 0;
+  background: #ffd21f;
+  color: #101116;
+  box-shadow: 3px 4px 0 #101116;
+  font-size: 1.05rem;
+  font-weight: 1000;
+}
+
+.modal.rtg-modal .rtg-paper-modal {
+  width: 100%;
+  border: 0 !important;
+  box-shadow: none !important;
+  padding: 0;
+}
+
+
+/* Main-game paper modals used by requirements and vending. */
+.rtg-paper-modal,
+.rtg-requirements {
+  color: #101116;
+  background: #fffdf5 !important;
+  border: 4px solid #101116 !important;
+  border-radius: 0 !important;
+  box-shadow: 9px 10px 0 #101116 !important;
+}
+
+.rtg-paper-modal .eyebrow,
+.rtg-requirements .eyebrow { color: #7a5b11; }
+
+.rtg-paper-modal .muted { color: #666158; }
+
+/* Last legacy ownership migrated from road-to-glory.css. */
+
+
+.rtg-version-choice-list{display:grid;gap:10px;margin-top:14px}
+
+.rtg-version-choice{display:grid;grid-template-columns:1fr auto;gap:3px 12px;width:100%;padding:12px 14px;text-align:left;border:1px solid rgba(255,255,255,.16);border-radius:12px;background:rgba(8,25,48,.78);color:inherit;cursor:pointer}
+
+.rtg-version-choice strong{font-size:15px}
+.rtg-version-choice span{grid-column:1/-1;font-size:12px;font-weight:800}
+.rtg-version-choice em{grid-column:1/-1;font-size:11px;opacity:.72}
