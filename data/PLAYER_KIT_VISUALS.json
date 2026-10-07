@@ -1,6 +1,6 @@
 {
   "schema": "inazuma-player-kit-visuals-v1",
-  "note": "Diagnostic routing fixtures only. No extracted Victory Road render assets are committed. Replace diagnostic entries with generated fullbodyUrl assets after the Blender batch pipeline is connected.",
+  "note": "RTG kit visual fixtures. Mark Evans / Raimon GK Home uses a real Blender-generated render; remaining entries are diagnostic until their generated fullbody assets are connected.",
   "players": {
     "1": {
       "name": "Mark Evans",
@@ -9,7 +9,8 @@
           "kitId": "raimon-gk-home",
           "label": "Raimon GK · Home",
           "variant": "home",
-          "diagnostic": true,
+          "diagnostic": false,
+          "fullbodyUrl": "assets/vr-players/1/raimon-gk-home.webp",
           "expectedAssetUrl": "assets/vr-players/1/raimon-gk-home.webp"
         },
         {
