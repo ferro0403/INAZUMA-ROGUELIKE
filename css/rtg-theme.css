@@ -1,5 +1,5 @@
 @import url("./rtg-theme-core.css?v=20260921-duel-actions-mobile-1");
-@import url("./rtg-run.css?v=20260930-ares-hq-1");
+@import url("./rtg-run.css?v=20261001-rtg-qol-1");
 
 /* RTG token HUD: compact Ramen Sticker currency and separate resource cards. */
 .rtg-token-icon{display:inline-block!important;width:22px!important;height:22px!important;min-width:22px!important;max-width:22px!important;min-height:22px!important;max-height:22px!important;object-fit:contain!important;object-position:center!important;vertical-align:-5px!important;flex:0 0 22px!important;margin:0 4px 0 0!important;}
@@ -40,13 +40,43 @@
   min-height:74px!important;max-height:74px!important;flex-basis:74px!important;
 }
 
-/* Squad replacement picker. */
-.rtg-picker-overall-order{justify-self:start;min-height:34px;padding:6px 11px;border:2px solid #111216;border-radius:0;background:#fffdf6;color:#111216;box-shadow:2px 3px 0 #111216;font:800 .78rem/1 system-ui,sans-serif;letter-spacing:.04em;cursor:pointer;}
-.rtg-picker-overall-order[aria-pressed="true"]{background:#ffd21f;}
-.rtg-picker-overall-order:active{transform:translate(1px,1px);box-shadow:1px 2px 0 #111216;}
+/* Squad replacement picker. One canonical OVR control, matching the RTG filter language. */
+.rtg-picker-ovr-sort{
+  grid-column:1/-1!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 42px!important;
+  align-items:stretch!important;
+  width:100%!important;
+  min-height:38px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:2px solid #111216!important;
+  border-radius:2px!important;
+  background:#fff!important;
+  color:#111216!important;
+  box-shadow:2px 3px 0 rgba(17,18,22,.18)!important;
+  font:950 .76rem/1 system-ui,sans-serif!important;
+  letter-spacing:.06em!important;
+  cursor:pointer!important;
+  appearance:none!important;
+}
+.rtg-picker-ovr-sort>span{display:grid!important;place-items:center!important;min-width:0!important;padding:8px 10px!important;}
+.rtg-picker-ovr-sort>[data-rtg-picker-sort-arrow]{display:grid!important;place-items:center!important;min-width:42px!important;border-left:2px solid #111216!important;background:#ffd21f!important;font:1000 1.05rem/1 system-ui,sans-serif!important;}
+.rtg-picker-ovr-sort:active{transform:translate(1px,1px)!important;box-shadow:1px 2px 0 rgba(17,18,22,.24)!important;}
+.rtg-picker-ovr-sort:focus-visible{outline:3px solid #ffd21f!important;outline-offset:2px!important;}
 
 /* Catalog controls only layout. Card appearance is the canonical squad card. */
 .rtg-modal .rtg-player-catalog .rtg-catalog-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-auto-flow:row!important;gap:12px 8px!important;align-items:start!important;justify-content:center!important;width:100%!important;padding:14px 0 4px!important;}
+.rtg-picker-season-team-filters,.rtg-catalog-filter-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;min-width:0!important;}
+.rtg-picker-season-team-filters{grid-column:1/-1!important;}
+.rtg-catalog-filter-grid{margin:0 0 10px!important;}
+.rtg-picker-season-team-filters .rtg-picker-rarity-filter,.rtg-catalog-filter-grid .rtg-picker-rarity-filter{grid-column:auto!important;grid-template-columns:1fr!important;gap:5px!important;margin-top:0!important;}
+.rtg-picker-season-team-filters .rtg-picker-rarity-filter select,.rtg-catalog-filter-grid .rtg-picker-rarity-filter select{min-width:0!important;text-overflow:ellipsis!important;}
+@media(max-width:430px){
+  .rtg-picker-season-team-filters,.rtg-catalog-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;}
+  .rtg-picker-season-team-filters .rtg-picker-rarity-filter>span,.rtg-catalog-filter-grid .rtg-picker-rarity-filter>span{font-size:.56rem!important;}
+  .rtg-picker-season-team-filters .rtg-picker-rarity-filter select,.rtg-catalog-filter-grid .rtg-picker-rarity-filter select{min-height:34px!important;padding-left:8px!important;padding-right:26px!important;font-size:.64rem!important;}
+}
 
 /* Duel action cards: give long move labels their own full-width row. */
 .rtg-duel-card--clean .rtg-duel-choice-card{min-width:0!important;min-height:108px!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:minmax(42px,auto) auto!important;grid-template-areas:"copy copy" "probability probability"!important;align-content:space-between!important;align-items:start!important;gap:10px 8px!important;padding:12px!important;}
@@ -81,7 +111,8 @@
   .rtg-development-screen .rtg-development-token-icon>.rtg-token-icon{width:62px!important;height:62px!important;min-width:62px!important;max-width:62px!important;min-height:62px!important;max-height:62px!important;flex-basis:62px!important;margin:0!important;}
   .rtg-development-screen .development-wallet .rtg-development-token-icon{width:78px!important;height:78px!important;min-width:78px!important;min-height:78px!important;}
   .rtg-development-screen .development-wallet .rtg-development-token-icon>.rtg-token-icon{width:70px!important;height:70px!important;min-width:70px!important;max-width:70px!important;min-height:70px!important;max-height:70px!important;flex-basis:70px!important;}
-  .rtg-picker-overall-order{min-height:32px;padding:5px 9px;font-size:.72rem;}
+  .rtg-picker-ovr-sort{min-height:36px!important;grid-template-columns:minmax(0,1fr) 38px!important;font-size:.7rem!important;}
+  .rtg-picker-ovr-sort>[data-rtg-picker-sort-arrow]{min-width:38px!important;font-size:1rem!important;}
   .rtg-duel-card--clean .rtg-duel-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;}
   .rtg-duel-card--clean .rtg-duel-choice-card{min-height:112px!important;padding:11px 10px!important;}
   .rtg-duel-card--clean .rtg-choice-copy strong{font-size:12px!important;line-height:1.08!important;}
@@ -1181,11 +1212,4 @@ button.player-card:has(> .rtg-legacy-badge),
 .player-detail-rtg-legacy-badge[data-legacy-season="OR"]{
   --rtg-legacy-color:#46d7c8;
   --rtg-legacy-ink:#061817;
-}
-
-.rtg-squad-shell.rtg-squad-shell--ares{
-  background-image:linear-gradient(rgba(245,247,242,.80),rgba(245,247,242,.88)),url("https://image.tmdb.org/t/p/original/kqFVCKdKz20EFk8lFf7TZgyqhMw.jpg")!important;
-  background-position:center!important;
-  background-size:cover!important;
-  background-attachment:fixed!important;
 }

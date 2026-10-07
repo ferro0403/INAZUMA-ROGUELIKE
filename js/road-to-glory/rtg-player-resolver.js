@@ -193,24 +193,27 @@
     return result;
   }
 
+  // "Standard" means before RTG-local card development, not before the
+  // permanent Run Development Center. Free agents therefore keep their
+  // account-wide evolved profile everywhere in RTG.
   function resolveStandardAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null) {
-    return resolveBaseAtLevel20(playerId, activeSeasonId, roleVariantId, freeAgentsDb, null);
-  }
-
-  function resolveAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null) {
     const api = cardIdentity();
     const rawRef = id(playerId?.cardId || playerId);
     const exactCard = api?.isCardId?.(rawRef);
     const parsed = exactCard ? api.parse(rawRef) : null;
 
-    if (!exactCard || parsed?.sourceKind === api.FREE_AGENTS) {
-      const evolvedId = parsed && parsed.sourceKind === api?.FREE_AGENTS ? parsed.playerId : id(playerId?.playerId || playerId);
+    if (!exactCard || parsed?.sourceKind === api?.FREE_AGENTS) {
+      const evolvedId = parsed?.sourceKind === api?.FREE_AGENTS ? parsed.playerId : id(playerId?.playerId || playerId);
       const evolved = resolveEvolvedFreeAgent(evolvedId, freeAgentsDb, 20);
       if (evolved) {
         return exactCard ? { ...evolved, cardId: parsed.cardId, legacySeasonId: api.FREE_AGENTS } : evolved;
       }
     }
     return resolveBaseAtLevel20(playerId, activeSeasonId, roleVariantId, freeAgentsDb, null);
+  }
+
+  function resolveAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null) {
+    return resolveStandardAtLevel20(playerId, activeSeasonId, roleVariantId, freeAgentsDb);
   }
 
   function resolveOwnedAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null, developmentByCardId = null) {
@@ -225,6 +228,10 @@
     const currentPotential = Math.max(0, Number(standard.potential ?? standard.finalOverall ?? standard.overall) || 0);
     const boost = Math.max(0, targetPotential - currentPotential);
     if (!boost) return standard;
+    // RTG card development deliberately excludes free-agent cards. If an old
+    // campaign contains a stale local record for one, never replace the
+    // permanent Development Center profile with the immutable base player.
+    if (standard.developmentApplied === true) return standard;
     return resolveBaseAtLevel20(playerId, activeSeasonId, roleVariantId, freeAgentsDb, {
       potentialBoost: boost,
       currentOverallBoost: boost,
