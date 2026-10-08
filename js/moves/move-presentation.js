@@ -5,6 +5,7 @@
     wind:Object.freeze({key:"wind",label:"Vento"}),
     mountain:Object.freeze({key:"mountain",label:"Montagna"}),
     forest:Object.freeze({key:"forest",label:"Albero"}),
+    void:Object.freeze({key:"void",label:"Void"}),
   });
   const TYPE_LABELS=Object.freeze({shot:"Tiro",defense:"Difesa",dribble:"Dribbling",save:"Parata"});
   const EVENT_ICONS=Object.freeze({goal:"⚽",save:"🧤",counter:"⚡",long_shot:"🎯",post:"🥅",crossbar:"🥅",shot:"👟",defensive_stop:"🛡️",dribble:"↝",recovery:"↺",key_pass:"➜",build_up:"◆",first_half_start:"▶",second_half_start:"▶"});
