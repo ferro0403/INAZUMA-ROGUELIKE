@@ -11,6 +11,7 @@ assert.strictEqual(rich,'Axel Blaze tira con <strong class="match-move-name move
 for(const type of ["dribble","recovery","key_pass","build_up"])assert.notStrictEqual(c.MovePresentationRuntime.eventIcon(type),"•");
 assert.strictEqual(c.MovePresentationRuntime.typeLabel("shot"),"Tiro");
 assert.strictEqual(c.MovePresentationRuntime.typeLabel("save"),"Parata");
+assert.strictEqual(c.MovePresentationRuntime.normalizeElement("Void").label,"Void");
 const decorated=c.MovePresentationRuntime.decorateEventVisual({playerId:"2",icon:"⚽"},()=>({cardImageUrl:"https://example.com/axel.png",cardFallbacks:["https://example.com/axel.png","fallback.png"]}));
 assert.strictEqual(decorated.portraitUrl,"https://example.com/axel.png");
 const nakataSource={playerId:"custom_0001",name:"Nakata",portraitUrl:"assets/players/season3/custom_0001_nakata_portrait.webp",frontFullbodyUrl:"assets/players/season3/custom_0001_nakata_fullbody.webp"};
@@ -41,7 +42,7 @@ const player={playerId:"2",name:"Axel Blaze",position:"FW",element:"Fuoco",categ
 const html=view.detailMarkup(player,{playerId:"2",level:20,database:{}});
 assert(html.includes("player-detail-move"));assert(html.indexOf("player-detail-move")<html.indexOf("player-detail-equipment"));assert(html.includes("Fire Tornado"));
 const css=fs.readFileSync("css/move-presentation.css","utf8");
-for(const token of [".move-element--fire",".move-element--wind",".move-element--mountain",".move-element--forest","move-category--save","move-category--defense","move-category--dribble","move-category--shot","--category-accent:#d94f91","--category-accent:#e47a00",".player-move-element b{color:var(--element-accent"])assert(css.includes(token),`move css includes ${token}`);
+for(const token of [".move-element--fire",".move-element--wind",".move-element--mountain",".move-element--forest",".move-element--void","move-category--save","move-category--defense","move-category--dribble","move-category--shot","--category-accent:#d94f91","--category-accent:#e47a00",".player-move-element b{color:var(--element-accent"])assert(css.includes(token),`move css includes ${token}`);
 assert(!css.includes(".player-move-card{--move-accent:#4e535c"),"old gray element-dominant card contract must stay removed");
 const matchCss=fs.readFileSync("css/match-simulation-modern.css","utf8");
 for(const token of [".five-simulation-modal .five-simulation-head",".five-simulation-modal .five-simulation-score",".five-simulation-modal .match-sim-log>li","match-event-kind","clip-path:polygon","match-event-avatar"])assert(matchCss.includes(token),`match redesign css includes ${token}`);
