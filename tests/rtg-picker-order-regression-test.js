@@ -1,0 +1,14 @@
+"use strict";
+const fs=require("fs"),assert=require("assert");
+const order=fs.readFileSync("js/road-to-glory/rtg-squad-view-order.js","utf8");
+const runtime=fs.readFileSync("js/road-to-glory/rtg-squad-picker-order-runtime.js","utf8");
+const theme=fs.readFileSync("css/rtg-theme-core.css","utf8");
+assert.match(runtime,/global\.__rtgPickerOverallAscending = false;/,"picker must open strongest-first");
+assert.match(order,/let pickerOverallAscending = !!global\.__rtgPickerOverallAscending;/,"picker view must read the shared order state");
+assert.match(order,/data-rtg-picker-overall=/,"picker cards need a stable numeric overall attribute");
+assert.doesNotMatch(order,/reorderVisibleCards/,"picker order must not be limited to visible cards");
+assert.match(runtime,/openSquadPlayerPicker\(lastTargetId\)/,"picker order must reopen and reorder the full candidate pool");
+assert.match(order,/OVR ↓/,"strongest-first state must be visible on the button");
+assert.match(order,/OVR ↑/,"weakest-first toggle state must remain available");
+assert.match(theme,/\.rtg-modal \.rtg-catalog-grid[\s\S]*repeat\(4,minmax\(0,84px\)\)/,"RTG catalog keeps approved four-column compact layout");
+console.log("rtg-picker-order-regression-test: PASS");
