@@ -106,7 +106,7 @@ console.log("RTG QoL vending: 150-token mode persists through player details for
     const handler=modalOptions.onClose;modalMode="";modalOptions={};
     if(invokeOnClose&&handler)handler();
    },
-   renderHtml:()=>{squadRenderCount++;},bindHomeAndTabs:()=>{},mountDevQuickTools:()=>{},
+   nodeById:()=>null,renderHtml:()=>{squadRenderCount++;},bindHomeAndTabs:()=>{},mountDevQuickTools:()=>{},
    playerResolverForState:()=>({}),squadRuntime:{teamPower:()=>90},getUserTeamMeta:()=>({}),
  };
  const controller=c.RoadToGlorySquadController.create(deps);
