@@ -9,8 +9,12 @@ assert.deepStrictEqual(Array.from(S.mainTeams),db.bossOrder.map(x=>x.teamId));
 assert.strictEqual(S.mainTeams.length,13);
 assert.deepStrictEqual(Array.from(S.mainTeams).slice(-3),["orion_eclipse","inazuma_national_2","zhao_eclipse"]);
 const nodes=Array.from(cfg.buildSeasonNodes("orion"));
-assert.strictEqual(nodes.length,13);assert(nodes.every((n,i)=>n.type==="main"&&n.teamId===S.mainTeams[i]));
-assert.strictEqual(S.secondaryMatchesPerGap,0);
+assert.strictEqual(nodes.length,25);
+assert.strictEqual(nodes.filter(n=>n.type==="main").length,13);
+assert.strictEqual(nodes.filter(n=>n.type==="secondary").length,12);
+assert(nodes.every((n,i)=>i%2===0?n.type==="main"&&n.teamId===S.mainTeams[i/2]:n.type==="secondary"));
+
+assert.strictEqual(S.secondaryMatchesPerGap,1);
 assert.deepStrictEqual(Array.from(S.checkpointMainIndexes),[2,5,8,11]);
 assert.deepStrictEqual(Array.from(S.importantMatches,x=>x.cap),[79,81,82,83,84,87,87,89,90,91,92,93,94]);
 assert.deepStrictEqual(Array.from(S.importantMatches,x=>x.minRecruit),[0,1,1,2,3,3,4,4,5,5,6,7,8]);
@@ -35,8 +39,13 @@ assert.strictEqual(new Set(cards).size,5);
 seasons.forEach((id,i)=>assert.strictEqual(I.parse(cards[i]).legacySeasonId,id));
 assert.deepStrictEqual(seasons.map(id=>I.legacyLabel(id)),["S1","S2","S3","AR","OR"]);
 let progress={...seed,currentNodeId:nodes[0].id,lives:2,checkpointMainIndex:-1,firstClearMatchIds:[],attemptsByNode:{}};
-nodes.forEach(n=>{progress=c.RoadToGloryProgression.recordMainVictory(progress,{teamId:n.teamId,matchId:n.id});});
+nodes.forEach(n=>{
+ assert.strictEqual(progress.currentNodeId,n.id,`Orion route stalled at ${n.id}`);
+ progress=n.type==="main"
+  ?c.RoadToGloryProgression.recordMainVictory(progress,{teamId:n.teamId,matchId:n.id})
+  :c.RoadToGloryProgression.recordSecondaryResult(progress,{nodeId:n.id,result:"victory",attemptNumber:1});
+});
 assert.strictEqual(progress.seasonComplete,true);assert.strictEqual(progress.defeatedTeamIds.length,13);
 assert(fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8").includes("ensureOwnedCardSeasons"));
 assert(fs.readFileSync("css/rtg-version-banners.css","utf8").includes('.rtg-legacy-badge[data-legacy-season="OR"]'));
-console.log("RTG Orion: 13 bosses, zero secondaries, all approved caps, 300/150 pull, 5 season card IDs OK");
+console.log("RTG Orion: 13 bosses + 12 free-agent matches, approved caps, 300/150 pull, 5 season card IDs OK");
