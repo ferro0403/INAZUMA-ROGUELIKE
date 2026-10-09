@@ -64,7 +64,7 @@
     function mainNodeMarkup(state,node,index,seasonDb,point){const status=nodeState(state,node,index),disabled=status==="locked"?" disabled":"",label=teamName(seasonDb,node.teamId);return `<button type="button" class="map-node rtg-route-node rtg-route-node--main ${status}" style="left:${point.x}%;top:${point.y}%" data-rtg-node-id="${escape(node.id)}" data-rtg-state="${status}" aria-label="${escape(label)} · ${status==="reachable"?"Prossima partita":status==="completed"?"Completata":"Da sbloccare"}"${status==="reachable"?' aria-current="step"':""}${disabled}><span class="node-icon rtg-main-node-icon">${teamLogoMarkup(seasonDb,node.teamId)}</span><span class="node-label">${escape(label)}</span><span class="rtg-node-status">${status==="reachable"?"GIOCA":status==="completed"?"COMPLETATA":"DA SBLOCCARE"}</span>${node.checkpointAfter?`<span class="rtg-node-checkpoint" data-rtg-checkpoint="${escape(node.teamId)}">⚑</span>`:""}</button>`;}
     function secondaryNodeMarkup(state,node,index,point){const status=nodeState(state,node,index),farmable=Number(state?.attemptsByNode?.[node.id]?.clears||0)>0,disabled=status==="locked"?" disabled":"";return `<button type="button" class="map-node rtg-route-node rtg-route-node--secondary ${status}" style="left:${point.x}%;top:${point.y}%" data-rtg-node-id="${escape(node.id)}" data-rtg-state="${status}" data-rtg-farmable="${farmable?"true":"false"}"${disabled}><span class="node-icon rtg-free-agent-mark" aria-hidden="true"><svg viewBox="0 0 40 40"><path d="M20 3 34 9v12c0 8-14 16-14 16S6 29 6 21V9Z" fill="currentColor"/><path d="m20 12 7 5-3 8h-8l-3-8Z" fill="#fff"/></svg></span><span class="node-label">Svincolati</span><span class="rtg-node-status">${status==="reachable"?"GIOCA":farmable?"RIGIOCA":status==="completed"?"COMPLETATA":"DA SBLOCCARE"}</span></button>`;}
     function blockMarkup(block,entries,state,seasonDb){const points=positions(block.index,entries.length);return `<section class="rtg-map-block rtg-map-block--${block.index+1}" data-rtg-map-block="${block.index+1}"><div class="section-head rtg-route-heading"><div><p class="eyebrow">${escape(block.eyebrow)}</p><h2>${escape(block.label)}</h2></div><span class="rtg-route-count">${entries.length} tappe</span></div><div class="route-map rtg-route-stage" style="--rtg-route-height:${Math.max(260,entries.length*100)}px">${pathSvg(points)}${entries.map(({node,index},localIndex)=>node.type==="main"?mainNodeMarkup(state,node,index,seasonDb,points[localIndex]):secondaryNodeMarkup(state,node,index,points[localIndex])).join("")}</div></section>`;}
-    function season2Positions(blockIndex,count){
+    function season2Positions(blockIndex,count,seasonId=null){
       const left=blockIndex%2===0;
       const six=left
         ? [{x:31,y:9},{x:64,y:24},{x:42,y:41},{x:70,y:58},{x:35,y:75},{x:62,y:91}]
@@ -76,7 +76,12 @@
         ? [{x:31,y:18},{x:58,y:50},{x:68,y:82}]
         : [{x:67,y:18},{x:40,y:50},{x:31,y:82}];
       const preset=count===6?six:count===4?four:count===3?three:null;
-      return preset||positions(blockIndex,count);
+      const points=preset||positions(blockIndex,count);
+      // Orion chapter 1: leave breathing room above the first large boss badge.
+      // Move both route nodes and SVG anchors, without changing Ares/IE2/IE3.
+      return seasonId==="orion"&&blockIndex===0&&count===6
+        ?points.map(point=>({x:point.x,y:20+(point.y-9)*64/82}))
+        :points;
     }
     function routeBackgroundValue(seasonConfig){
       const runtimeAresSource=["ie2","orion"].includes(seasonConfig?.seasonId) ? global.__RTG_ARES_ROUTE_MAP_DATA_URL : "";
@@ -90,7 +95,7 @@
       const blocks=list.length<=33?S2_BLOCKS:Array.from({length:Math.ceil(list.length/6)},(_,index)=>Object.freeze({index,start:index*6,end:Math.min(list.length-1,index*6+5),label:index===Math.ceil(list.length/6)-1?"Finale":`Tappa ${index+1}`,eyebrow:`Capitolo ${index+1}`,height:640,bg:`center ${Math.round(index/Math.max(1,Math.ceil(list.length/6)-1)*100)}%`}));
       return blocks.filter((block)=>block.start<list.length).map((block)=>{
         const entries=indexed.filter(({index})=>index>=block.start&&index<=block.end);
-        const points=season2Positions(block.index,entries.length);
+        const points=season2Positions(block.index,entries.length,seasonConfig?.seasonId);
         return `<section class="rtg-map-block rtg-map-block--season2-part rtg-map-block--season2-${block.index+1}" data-rtg-map-block="season2-${block.index+1}"><div class="section-head rtg-route-heading"><div><p class="eyebrow">${escape(block.eyebrow)}</p><h2>${escape(block.label)}</h2></div><span class="rtg-route-count">${entries.length} tappe</span></div><div class="route-map rtg-route-stage rtg-route-stage--season2" style="${routeBackgroundValue(seasonConfig)}--rtg-route-height:${block.height}px;--rtg-route-bg-position:${escape(block.bg)}">${pathSvg(points)}${entries.map(({node,index},localIndex)=>node.type==="main"?mainNodeMarkup(state,node,index,seasonDb,points[localIndex]):secondaryNodeMarkup(state,node,index,points[localIndex])).join("")}</div></section>`;
       }).join("");
     }

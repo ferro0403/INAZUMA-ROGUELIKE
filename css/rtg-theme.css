@@ -1187,3 +1187,25 @@ button.player-card:has(> .rtg-legacy-badge),
   --rtg-legacy-color:#A8DDB5;
   --rtg-legacy-ink:#234A34;
 }
+/* RTG detail: reserve the Role + Legacy controls before laying out long team names. */
+.player-detail-hero:has(.player-detail-rtg-role-switch) .player-detail-team{
+  box-sizing:border-box!important;
+  min-width:0!important;
+  max-width:calc(100% - 208px)!important;
+  margin-right:0!important;
+  overflow:hidden!important;
+}
+.player-detail-hero:has(.player-detail-rtg-role-switch) .player-detail-team strong{
+  display:block!important;
+  flex:1 1 auto!important;
+  min-width:0!important;
+  max-width:100%!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+@media(max-width:520px){
+  .player-detail-hero:has(.player-detail-rtg-role-switch) .player-detail-team{
+    max-width:calc(100% - 188px)!important;
+  }
+}

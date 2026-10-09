@@ -66,7 +66,7 @@
         const playerId=deps.id(event.currentTarget?.dataset?.rtgPullPlayerDetail||result.playerId);
         if(!playerId)return;
         deps.openPlayerDetails(playerId,"",{
-          onClose:()=>showPullResult(result,player),
+          onClose:()=>showPullResult(result,player,mode),
         });
       });
       modalRoot?.querySelector?.("[data-rtg-pull-continue]")?.addEventListener("click",()=>{
