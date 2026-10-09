@@ -186,73 +186,72 @@
   }
 }
 /* =========================================================
-   RTG vending machine v14 — dimensional polish
-   Same capsule pile; stronger bevels, side depth and material separation.
+   RTG capsule cabinet — shared by all seasons and both pull modes.
+   Presentation only: existing DOM hooks, rarity colors and controller timing.
+   Light comes from the upper left; the right-hand shell supplies real depth.
    ========================================================= */
 .rtg-vending-machine-v12{
-  --rtg-vending-reveal:#929ba8;
+--rtg-vending-reveal:#929ba8;
+  --rtg-cabinet-width:208px;
   position:relative;
   z-index:2;
   width:min(246px,69vw);
-  margin:0 auto;
+  margin:8px auto 0;
   display:grid;
   grid-template-rows:auto auto auto;
   justify-items:center;
   isolation:isolate;
-  filter:
-    drop-shadow(0 18px 20px rgba(8,10,14,.21))
-    drop-shadow(9px 11px 11px rgba(8,10,14,.14));
+  filter:drop-shadow(8px 16px 12px rgba(20,27,32,.22));
 }
 .rtg-vending-machine-v12::before{
-  content:"";
+content:"";
   position:absolute;
   z-index:-2;
-  left:50%;
-  bottom:-16px;
-  width:78%;
-  height:20px;
-  transform:translateX(-50%);
+  left:50%;bottom:-13px;
+  width:92%;height:22px;
+  transform:translateX(-46%);
   border-radius:50%;
-  background:rgba(7,9,12,.20);
-  filter:blur(8px);
+  background:radial-gradient(ellipse,rgba(15,22,28,.38),transparent 70%);
+  pointer-events:none;
 }
-.rtg-vending-head-v9{
-  position:relative;
-  z-index:5;
-  width:208px;
-  min-height:48px;
-  display:grid;
-  place-items:center;
-  align-content:center;
-  padding:8px 12px 7px;
-  border:2px solid #202329;
-  border-bottom:0;
-  border-radius:15px 15px 0 0;
-  background:
-    linear-gradient(90deg,rgba(255,255,255,.10) 0 4%,transparent 14% 83%,rgba(0,0,0,.18) 100%),
-    radial-gradient(circle at 28% 2%,rgba(255,255,255,.13),transparent 30%),
-    linear-gradient(180deg,#3a3f48 0%,#242830 56%,#15181d 100%);
-  color:#fff;
-  box-shadow:
-    inset 2px 0 0 rgba(255,255,255,.10),
-    inset -5px 0 8px rgba(0,0,0,.16),
-    inset 0 1px 0 rgba(255,255,255,.18),
-    inset 0 -8px 12px rgba(0,0,0,.20),
-    0 6px 10px rgba(8,10,14,.17);
-  text-align:center;
-  text-transform:uppercase;
-}
-.rtg-vending-head-v9::after{
+.rtg-vending-machine-v12::after{
   content:"";
   position:absolute;
-  left:18px;
-  right:18px;
-  bottom:2px;
+  z-index:-1;
+  top:5px;bottom:0;
+  left:calc(50% - var(--rtg-cabinet-width) / 2 + 9px);
+  width:var(--rtg-cabinet-width);
+  border:1px solid #232a30;
+  border-radius:26px 26px 23px 23px;
+  background:linear-gradient(90deg,#606970,#a4aba9 84%,#727c7f 91%,#343d43);
+  box-shadow:inset -2px 0 2px #ffffff50,3px 5px 0 #172027;
+  pointer-events:none;
+}
+.rtg-vending-head-v9{
+position:relative;
+  z-index:5;
+  width:var(--rtg-cabinet-width);
+  min-height:52px;
+  display:grid;place-items:center;align-content:center;
+  padding:12px 12px 10px;
+  border:1px solid #242e35;
+  border-bottom:4px solid #171f26;
+  border-radius:24px 24px 7px 7px / 20px 20px 5px 5px;
+  background:
+    linear-gradient(100deg,#ffffff26,transparent 28% 76%,#00000050),
+    linear-gradient(180deg,#606a74 0%,#2c3640 16%,#1c242c 80%,#3e4850);
+  color:#fff;
+  box-shadow:inset 0 2px 1px #ffffff80,inset 3px 0 3px #ffffff20,inset -4px 0 5px #00000050,0 3px 3px #15212b55;
+  text-align:center;text-transform:uppercase;
+}
+.rtg-vending-head-v9::after{
+content:"";
+  position:absolute;
+  left:13px;right:13px;bottom:0;
   height:2px;
-  border-radius:999px;
-  background:linear-gradient(90deg,transparent,#ffe16b 18%,#ffd21f 50%,#ffe16b 82%,transparent);
-  box-shadow:0 0 7px rgba(255,210,31,.45);
-  opacity:.95;
+  border-radius:50%;
+  background:linear-gradient(90deg,#9d7617,#fff2a9 20%,#ffd34a 80%,#936712);
+  box-shadow:0 1px 6px #ffd34a66;
 }
 .rtg-vending-head-v9 span{
   color:#ffd21f;
@@ -266,59 +265,50 @@
 }
 
 .rtg-vending-window-v9{
-  position:relative;
-  width:208px;
-  height:176px;
+position:relative;
+  width:var(--rtg-cabinet-width);
+  height:180px;
   overflow:hidden;
-  border:3px solid #20242a;
-  border-top-width:2px;
-  border-radius:0;
+  isolation:isolate;
+  border:4px solid #3a4952;
+  border-top:0;
+  border-bottom:6px solid #53606a;
+  border-radius:8px 8px 28px 28px / 5px 5px 12px 12px;
   background:
-    radial-gradient(circle at 26% 13%,rgba(255,255,255,.86),transparent 24%),
-    linear-gradient(180deg,#f3fbfd 0%,#d9edf4 48%,#afd3e1 100%);
-  box-shadow:
-    inset 9px 0 13px rgba(255,255,255,.23),
-    inset -14px 0 20px rgba(42,78,94,.16),
-    inset 0 9px 15px rgba(255,255,255,.38),
-    inset 0 -24px 26px rgba(36,72,87,.19),
-    inset 0 0 0 1px rgba(255,255,255,.22),
-    0 5px 9px rgba(8,10,14,.13);
+    radial-gradient(ellipse at 48% 18%,#f6fdff 0%,#d3e7e9 48%,#8ba9b0 100%);
+  box-shadow:inset 6px 0 6px #ffffffbb,inset -9px 0 12px #253f5266,inset 0 8px 10px #17283355,inset 0 -10px 12px #425c6655,0 1px 0 #e9f0ec;
 }
 .rtg-vending-window-v9::before{
-  content:"";
+content:"";
   position:absolute;
-  z-index:7;
-  top:0;
-  right:0;
-  bottom:0;
-  width:12px;
-  background:linear-gradient(90deg,transparent,rgba(49,91,107,.09));
+  z-index:20;
+  inset:0;
+  width:auto;
+  height:auto;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#ffffff55,transparent 8% 85%,#173f4e33);
+  box-shadow:inset 2px 0 0 #ffffffaa,inset -2px 0 0 #d8f4fa77;
   pointer-events:none;
 }
 .rtg-vending-window-v9::after{
-  content:"";
+content:"";
   position:absolute;
   z-index:2;
-  left:8px;
-  right:8px;
-  bottom:2px;
-  height:38px;
+  left:0;right:0;bottom:-6px;
+  height:32px;
   border-radius:50%;
-  background:radial-gradient(ellipse at center,rgba(35,61,72,.24) 0%,rgba(35,61,72,.12) 46%,transparent 74%);
-  filter:blur(1px);
+  background:radial-gradient(ellipse,#23343f 10%,#6d8991 58%,#b6c9c8 68%,#4b626f 73%);
+  box-shadow:0 -2px 4px #f1ffff80;
   pointer-events:none;
 }
 .rtg-vending-funnel-v10{
-  position:absolute;
+position:absolute;
   z-index:3;
-  left:18px;
-  right:18px;
-  bottom:-1px;
-  height:60px;
-  clip-path:polygon(0 12%,100% 12%,67% 100%,33% 100%);
-  background:
-    linear-gradient(180deg,rgba(117,160,177,.10),rgba(49,82,96,.17));
-  border-top:1px solid rgba(44,75,89,.22);
+  left:12px;right:12px;bottom:0;
+  height:38px;
+  clip-path:polygon(0 12%,100% 12%,65% 100%,35% 100%);
+  background:linear-gradient(110deg,#b1c9cc66,#eaf4ecaa 30%,#667d8988 65%,#213a49aa);
+  border-top:1px solid #efffff88;
   pointer-events:none;
 }
 .rtg-vending-funnel-v10::after{
@@ -334,43 +324,37 @@
   box-shadow:inset 0 4px 0 #14171b;
 }
 .rtg-vending-window-glare-v9{
-  position:absolute;
-  z-index:8;
-  top:18px;
-  left:27px;
-  width:9px;
-  height:88px;
-  border-radius:999px;
-  background:linear-gradient(180deg,rgba(255,255,255,.70),rgba(255,255,255,.04));
-  transform:rotate(11deg);
+position:absolute;
+  z-index:21;
+  top:9px;left:12px;
+  width:24px;height:76%;
+  border-radius:70% 20% 30% 50%;
+  background:linear-gradient(90deg,#ffffff88,#ffffff22 65%,transparent);
+  transform:rotate(7deg);
   pointer-events:none;
 }
 
 .rtg-vending-capsule-v9{
-  --rtg-capsule-color:#d9dee4;
+--rtg-capsule-color:#d9dee4;
   position:absolute;
   z-index:5;
-  width:39px;
-  height:39px;
-  border:1.5px solid #25292e;
+  width:39px;height:39px;
+  border:1px solid #293845bb;
   border-radius:50%;
   background:
-    radial-gradient(circle at 30% 24%,rgba(255,255,255,.98) 0 10%,transparent 11%),
+    radial-gradient(ellipse at 29% 19%,#fff 0 4%,#ffffffa0 5%,transparent 26%),
+    radial-gradient(circle at 34% 26%,transparent 33%,#16223222 62%,#10172288 100%),
     linear-gradient(to bottom,#fffefb 0 49%,var(--rtg-capsule-color) 50% 100%);
-  box-shadow:
-    inset 3px 3px 4px rgba(255,255,255,.44),
-    inset -4px -5px 6px rgba(17,18,22,.14),
-    0 5px 7px rgba(17,18,22,.18);
+  box-shadow:inset 1px 2px 2px #ffffffcc,inset -3px -4px 5px #0c172044,2px 4px 4px #152c3c55;
   transform:rotate(var(--r,0deg)) scale(var(--s,1));
 }
 .rtg-vending-capsule-v9::after{
-  content:"";
+content:"";
   position:absolute;
-  left:1px;right:1px;top:calc(50% - 1px);
-  height:2px;
-  border-radius:999px;
-  background:#363a40;
-  opacity:.88;
+  left:0;right:0;top:calc(50% - 1px);
+  height:3px;
+  border-radius:50%;
+  background:linear-gradient(#ffffffaa,#2b354dcc 60%,#ffffff66);
 }
 .rtg-vending-capsule-v9[data-capsule-rarity="normale"]{--rtg-capsule-color:#d9dee4;}
 .rtg-vending-capsule-v9[data-capsule-rarity="buono"]{--rtg-capsule-color:#2fa866;}
@@ -395,193 +379,153 @@
 .rtg-vending-capsule-v9.c14{left:105px;bottom:91px;--tx:-24px;--ty:20px;--r:12deg;--d:-.23s;--s:.96;z-index:6}
 
 .rtg-vending-body-v9{
-  position:relative;
-  width:208px;
-  min-height:144px;
-  margin-top:0;
+position:relative;
+  width:var(--rtg-cabinet-width);
+  min-height:150px;
+  margin-top:-3px;
   display:grid;
   grid-template-columns:minmax(0,1fr) 68px;
-  grid-template-rows:71px 53px;
+  grid-template-rows:69px 53px;
   gap:9px 11px;
-  padding:13px 13px 13px;
-  border:2px solid #24272c;
-  border-top:0;
-  border-radius:0 0 18px 18px;
+  padding:14px 13px 13px;
+  border:1px solid #68706d;
+  border-top:3px solid #d2d5cb;
+  border-radius:9px 9px 22px 22px / 5px 5px 18px 18px;
   background:
-    linear-gradient(90deg,rgba(255,255,255,.48) 0 3%,transparent 13% 84%,rgba(91,78,57,.12) 100%),
-    radial-gradient(circle at 23% 8%,rgba(255,255,255,.82),transparent 31%),
-    linear-gradient(165deg,#fffefa 0%,#f5f2ea 50%,#ddd8ce 100%);
-  box-shadow:
-    inset 3px 2px 0 rgba(255,255,255,.90),
-    inset -10px 0 16px rgba(71,62,49,.10),
-    inset 0 -11px 14px rgba(71,62,49,.08),
-    inset 0 -2px 0 rgba(132,122,105,.16),
-    0 11px 19px rgba(9,11,14,.19);
+    radial-gradient(circle at 8px 9px,#eff1e9 0 1px,#8b928e 1.5px 2px,transparent 2.5px),
+    radial-gradient(circle at calc(100% - 8px) 9px,#eff1e9 0 1px,#8b928e 1.5px 2px,transparent 2.5px),
+    linear-gradient(90deg,#bec3b8,#fffdf0 6%,#f1f0e5 45%,#d3d5c9 92%,#a4aca5);
+  box-shadow:inset 0 2px 1px #fffef9,inset 3px 0 4px #ffffffbb,inset -4px -6px 7px #555c5733,0 3px 0 #59635f;
   isolation:isolate;
 }
 .rtg-vending-body-v9::before{
-  content:"";
+content:"";
   position:absolute;
   z-index:0;
-  top:8px;
-  right:8px;
-  width:68px;
-  height:126px;
-  border-radius:13px;
+  top:9px;right:8px;
+  width:70px;height:128px;
+  border:1px solid #b69026;
+  border-radius:35px 35px 12px 12px;
   background:
-    linear-gradient(90deg,rgba(255,255,255,.26) 0 8%,transparent 24% 76%,rgba(111,69,0,.16) 100%),
-    radial-gradient(circle at 28% 12%,rgba(255,255,255,.40),transparent 25%),
-    linear-gradient(180deg,#ffe86f 0%,#ffd439 48%,#eba617 100%);
-  box-shadow:
-    inset 2px 2px 0 rgba(255,255,255,.52),
-    inset -7px -8px 12px rgba(122,73,0,.15),
-    0 3px 6px rgba(17,18,22,.11);
+    linear-gradient(90deg,#a57116,#f3c541 5%,#ffe997 22%,#efbc30 80%,#aa7514),
+    #efbc30;
+  box-shadow:inset 0 2px 1px #ffffc1,inset 0 -3px 5px #8a550044,0 1px 2px #474a4655;
 }
 .rtg-vending-body-v9::after{
-  content:"";
+content:"";
   position:absolute;
   z-index:-1;
-  left:14px;
-  right:14px;
-  bottom:-10px;
-  height:11px;
-  border-radius:0 0 13px 13px;
-  background:linear-gradient(180deg,#353941,#202329);
-  box-shadow:
-    inset 0 1px 0 rgba(255,255,255,.08),
-    0 5px 9px rgba(9,11,14,.17);
+  left:10px;right:7px;bottom:-9px;height:13px;
+  border-radius:2px 2px 12px 12px;
+  background:linear-gradient(#606968,#303a3d 35%,#18242b);
+  box-shadow:inset 0 1px 0 #ffffff66,2px 3px 3px #0d1c2855;
 }
 .rtg-vending-body-v9>*{position:relative;z-index:2;}
 
 .rtg-vending-info-v9{
-  display:grid;
-  place-items:center;
-  align-content:center;
-  border:1px solid #c8c1b4;
-  border-radius:11px;
-  background:
-    radial-gradient(circle at 30% 8%,rgba(255,255,255,.86),transparent 35%),
-    linear-gradient(180deg,#fffefa,#f1ede4);
-  color:#111216;
-  box-shadow:
-    inset 2px 2px 3px rgba(255,255,255,.82),
-    inset -3px -4px 6px rgba(90,77,55,.07),
-    0 4px 7px rgba(17,18,22,.12);
+display:grid;place-items:center;align-content:center;gap:3px;
+  margin:6px 0;
+  border:1px solid #979e92;
+  border-radius:6px;
+  background:linear-gradient(120deg,#e5e5d8,#faf9ef 48%,#d8ddcd);
+  color:#202d2d;
+  box-shadow:inset 1px 2px 3px #454e4033,0 1px 0 #ffffffcc;
 }
 .rtg-vending-info-v9 small{font:900 7px/1 system-ui,sans-serif;letter-spacing:.13em;color:#55514a;}
 .rtg-vending-info-v9 strong{font:1000 25px/.92 system-ui,sans-serif;color:#17181b;}
 
 .rtg-vending-crank-v9{
-  position:relative;
+position:relative;
   width:58px;height:58px;
-  align-self:center;
-  justify-self:center;
-  border:2px solid #24272c;
+  align-self:center;justify-self:center;
+  border:2px solid #485457;
   border-radius:50%;
-  background:
-    radial-gradient(circle at 31% 25%,#ffffff 0 9%,#d7d8d5 10% 27%,#a3a5a3 28% 48%,#737675 49% 70%,#444647 71% 100%);
-  box-shadow:
-    inset 4px 4px 6px rgba(255,255,255,.46),
-    inset -6px -7px 9px rgba(17,18,22,.24),
-    0 6px 10px rgba(17,18,22,.21);
+  background:conic-gradient(from 20deg,#9ca8a8,#f8fff9 12%,#727f83 26%,#dce5dc 42%,#67767a 56%,#f5fff9 76%,#9ca8a8);
+  box-shadow:0 0 0 3px #293638,0 0 0 4px #fff1a3,inset 0 0 0 3px #d4dddaaa,inset 0 0 4px 4px #263c4655,1px 5px 6px #573e1f77;
 }
 .rtg-vending-crank-v9::before{
-  content:"";
+content:"";
   position:absolute;
-  z-index:2;
+  z-index:3;
   left:50%;top:50%;
-  width:18px;height:18px;
+  width:16px;height:16px;
   transform:translate(-50%,-50%);
-  border:2px solid #292d32;
+  border:1px solid #657273;
   border-radius:50%;
-  background:radial-gradient(circle at 33% 28%,#fff 0 12%,#d5d6d3 13% 42%,#8a8c8b 43% 72%,#595b5b 73% 100%);
-  box-shadow:inset 1px 1px 2px rgba(255,255,255,.45),0 1px 2px rgba(0,0,0,.16);
+  background:radial-gradient(circle at 30% 25%,#fffef0,#cbd5d0 52%,#637274);
+  box-shadow:0 1px 2px #15222d88,inset 0 1px 1px #fff;
 }
 .rtg-vending-crank-v9::after{
-  content:"";
+content:"";
   position:absolute;
-  right:-5px;
-  bottom:7px;
-  width:16px;height:16px;
-  border:2px solid #292d32;
+  z-index:4;
+  right:-2px;bottom:7px;
+  width:18px;height:18px;
+  border:1px solid #4d380e;
   border-radius:50%;
-  background:
-    radial-gradient(circle at 34% 26%,#fff1a0 0 12%,transparent 13%),
-    linear-gradient(160deg,#ffe86f 0%,#ffd21f 52%,#e5a817 100%);
-  box-shadow:
-    inset -2px -3px 4px rgba(113,71,0,.16),
-    0 3px 5px rgba(17,18,22,.18);
+  background:radial-gradient(circle at 32% 23%,#fffbd6,#ffdf54 28%,#e8aa15 64%,#8b5b14);
+  box-shadow:inset 0 1px 1px #fffbd1,2px 3px 3px #18252c80;
 }
 .rtg-vending-crank-v9 span{
-  position:absolute;
-  left:50%;top:50%;
-  width:9px;height:35px;
-  margin:-17px 0 0 -4.5px;
-  border:2px solid #292d32;
+position:absolute;
+  z-index:2;
+  left:24px;top:22px;
+  width:29px;height:12px;
+  margin:0;
+  transform:rotate(28deg);
+  transform-origin:5px 50%;
+  border:1px solid #596864;
   border-radius:5px;
-  background:linear-gradient(180deg,#ffdf4b,#efb91f);
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.35);
+  background:linear-gradient(#fffceb,#c0cbc1 40%,#647677);
+  box-shadow:0 3px 2px #27373966;
 }
 
 .rtg-vending-chute-v9{
-  grid-column:1 / 2;
+grid-column:1 / 2;
   position:relative;
   overflow:hidden;
-  border:2px solid #25282d;
-  border-radius:11px 11px 16px 16px;
-  background:
-    radial-gradient(ellipse at 50% 22%,rgba(255,255,255,.07),transparent 42%),
-    linear-gradient(180deg,#41454c 0%,#23262b 48%,#0d0f12 100%);
-  box-shadow:
-    inset 4px 3px 7px rgba(255,255,255,.05),
-    inset -5px -7px 9px rgba(0,0,0,.24),
-    inset 0 -12px 14px rgba(0,0,0,.40),
-    0 4px 7px rgba(17,18,22,.15);
+  border:3px solid #646e6c;
+  border-radius:9px 9px 16px 16px;
+  background:linear-gradient(#0b171e 8%,#1a2c36 65%,#455355);
+  box-shadow:0 1px 0 #ffffff,inset 0 4px 6px #000000bb,inset 3px 0 3px #050f1880,0 0 0 1px #b3b9ab;
 }
 .rtg-vending-chute-well-v9{
-  position:absolute;
-  left:50%;bottom:-5px;
-  width:86px;height:29px;
+position:absolute;
+  left:50%;bottom:-3px;
+  width:100%;height:17px;
   transform:translateX(-50%);
   border-radius:50% 50% 0 0;
-  background:linear-gradient(180deg,#111318,#050607);
-  box-shadow:
-    inset 0 8px 0 #33373d,
-    inset 0 -4px 8px rgba(0,0,0,.65);
+  background:linear-gradient(#6b7d7b,#26393e 30%,#0a1820);
+  box-shadow:inset 0 2px 0 #9fada266;
 }
 .rtg-vending-chute-flap-v10{
-  position:absolute!important;
-  z-index:7!important;
-  left:50%!important;
-  top:5px!important;
-  width:90px!important;
-  height:17px!important;
-  transform:translateX(-50%) perspective(120px) rotateX(0deg)!important;
-  transform-origin:50% 0%!important;
-  border:1px solid rgba(255,255,255,.06)!important;
-  border-top:0!important;
-  border-radius:0 0 13px 13px!important;
-  background:linear-gradient(180deg,#44474d,#17191d)!important;
-  box-shadow:inset 0 -3px 0 rgba(0,0,0,.30)!important;
-  pointer-events:none!important;
+position:absolute;
+  z-index:7;
+  left:50%;top:0;
+  width:100%;height:18px;
+  transform:translateX(-50%) perspective(120px) rotateX(0deg);
+  transform-origin:50% 0%;
+  border:1px solid #8b9b9c88;
+  border-top:2px solid #d6dfd388;
+  border-radius:0 0 7px 7px;
+  background:linear-gradient(#859492,#526466 35%,#2b3d44);
+  box-shadow:0 4px 5px #00000088,inset 0 -2px 0 #a1b6ad55;
+  pointer-events:none;
 }
 
 .rtg-vending-brand-v9{
-  grid-column:2;
-  align-self:end;
-  justify-self:center;
-  width:51px;
-  min-height:28px;
-  display:grid;
-  place-items:center;
+grid-column:2;
+  align-self:end;justify-self:center;
+  width:49px;min-height:26px;
+  display:grid;place-items:center;
   padding:4px;
-  border:1px solid rgba(255,255,255,.10);
-  border-radius:6px;
-  background:linear-gradient(180deg,#2b2e34,#17191d);
-  color:#ffd21f;
-  box-shadow:0 2px 4px rgba(17,18,22,.13);
-  font:1000 11px/1 system-ui,sans-serif;
-  letter-spacing:.10em;
+  border:1px solid #c0aa5d;
+  border-radius:5px;
+  background:linear-gradient(#263238,#17232c);
+  color:#ffe48a;
+  box-shadow:0 1px 0 #fff1ae,inset 0 1px 3px #0009;
+  font:900 10px/1 system-ui,sans-serif;
+  letter-spacing:.16em;
 }
 
 .rtg-vending-prize-track-v9{
@@ -592,25 +536,25 @@
   pointer-events:none;
 }
 .rtg-vending-prize-v9{
-  position:absolute;
-  left:50%;
-  bottom:-28px;
-  width:42px;height:42px;
+position:absolute;
+  left:50%;bottom:3px;
+  width:34px;height:34px;
   opacity:0;
-  border:2px solid #262a2f;
+  border:1px solid #263743;
   border-radius:50%;
   background:
-    radial-gradient(circle at 30% 24%,rgba(255,255,255,.98) 0 10%,transparent 11%),
-    linear-gradient(to bottom,#fffefb 0 49%,var(--rtg-prize-color,#d9dee4) 50% 100%);
-  box-shadow:0 0 0 0 var(--rtg-vending-reveal),0 4px 7px rgba(17,18,22,.20);
-  transform:translateX(-50%) translateY(15px) scale(.78);
+    radial-gradient(ellipse at 28% 19%,#fff 0 4%,#ffffff99 5%,transparent 28%),
+    radial-gradient(circle at 34% 26%,transparent 33%,#16223222 62%,#10172288 100%),
+    linear-gradient(to bottom,#fffefb 0 47%,#45505b 48% 51%,var(--rtg-prize-color,#d9dee4) 52% 100%);
+  box-shadow:inset 1px 2px 2px #ffffffaa,inset -3px -4px 5px #0c172044,1px 3px 3px #00000088;
+  transform:translateX(-50%) translateY(-55px) rotate(-90deg);
 }
 
 .rtg-vending-machine-v12.is-turning{animation:rtg-vending-v12-body .98s ease-out both;}
-.rtg-vending-machine-v12.is-turning .rtg-vending-crank-v9{animation:rtg-vending-v12-crank .88s cubic-bezier(.18,.72,.22,1) both;}
-.rtg-vending-machine-v12.is-turning .rtg-vending-capsule-v9{animation:rtg-vending-v12-mix .34s ease-in-out var(--d,0s) infinite alternate;}
+.rtg-vending-machine-v12.is-turning .rtg-vending-crank-v9{animation:rtg-vending-v12-crank .62s cubic-bezier(.18,.72,.22,1) both;}
+.rtg-vending-machine-v12.is-turning .rtg-vending-capsule-v9{animation:rtg-vending-v12-mix .42s ease-in-out var(--d,0s) infinite alternate;}
 .rtg-vending-machine-v12.is-revealing .rtg-vending-capsule-v9{animation-play-state:paused;}
-.rtg-vending-machine-v12.is-revealing .rtg-vending-capsule-v9.is-selected{animation:rtg-vending-v13-feed .58s ease-in both!important;}
+.rtg-vending-machine-v12.is-revealing .rtg-vending-capsule-v9.is-selected{animation:rtg-vending-v13-feed .48s ease-in both!important;}
 .rtg-vending-machine-v12.is-revealing .rtg-vending-prize-v9{animation:rtg-vending-v12-drop .95s cubic-bezier(.18,.72,.28,1) both;}
 .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-v9{animation:rtg-vending-v12-chute .95s ease-out both;}
 .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-flap-v10{animation:rtg-vending-v12-flap .95s cubic-bezier(.2,.75,.28,1) both;}
@@ -625,9 +569,10 @@
 
 @keyframes rtg-vending-v12-crank{
   0%{transform:rotate(0deg)}
-  70%{transform:rotate(590deg)}
-  86%{transform:rotate(675deg)}
-  100%{transform:rotate(720deg)}
+  18%{transform:rotate(12deg)}
+  80%{transform:rotate(350deg)}
+  92%{transform:rotate(363deg)}
+  100%{transform:rotate(360deg)}
 }
 @keyframes rtg-vending-v12-mix{
   0%{transform:translate3d(0,0,0) rotate(var(--r,0deg)) scale(var(--s,1))}
@@ -640,28 +585,35 @@
   48%{transform:translate3d(1px,0,0)}
   72%{transform:translate3d(-1px,0,0)}
 }
+/* The selected ball converges on the centre funnel from any pile position. */
 @keyframes rtg-vending-v13-feed{
-  0%{opacity:1;transform:rotate(var(--r,0deg)) scale(var(--s,1));filter:brightness(1)}
-  58%{opacity:1;transform:translateY(22px) rotate(96deg) scale(calc(var(--s,1) * .72));filter:brightness(1.08)}
-  100%{opacity:0;transform:translateY(48px) rotate(145deg) scale(.34);filter:brightness(.9)}
+  0%{opacity:1;transform:rotate(var(--r,0deg)) scale(var(--s,1))}
+  65%{opacity:1;left:calc(50% - 19px);bottom:0;transform:rotate(100deg) scale(.82)}
+  100%{opacity:0;left:calc(50% - 19px);bottom:-38px;transform:rotate(150deg) scale(.65)}
 }
 @keyframes rtg-vending-v12-drop{
-  0%{opacity:0;transform:translateX(-50%) translateY(15px) scale(.78);box-shadow:0 0 0 0 var(--rtg-vending-reveal)}
-  16%{opacity:1}
-  58%{opacity:1;transform:translateX(-50%) translateY(-13px) scale(1.02);box-shadow:0 0 0 3px var(--rtg-vending-reveal),0 0 20px 6px color-mix(in srgb,var(--rtg-vending-reveal) 56%,transparent)}
-  78%{opacity:1;transform:translateX(-50%) translateY(-18px) scale(1)}
-  100%{opacity:1;transform:translateX(-50%) translateY(-11px) scale(.94);box-shadow:0 0 0 2px var(--rtg-vending-reveal),0 0 14px 4px color-mix(in srgb,var(--rtg-vending-reveal) 40%,transparent)}
+  0%,48%{opacity:0;transform:translateX(-50%) translateY(-55px) rotate(-90deg)}
+  52%{opacity:1;transform:translateX(-50%) translateY(-48px) rotate(-80deg)}
+  76%{opacity:1;transform:translateX(-50%) translateY(1px) rotate(14deg)}
+  88%{opacity:1;transform:translateX(-50%) translateY(-7px) rotate(3deg)}
+  100%{opacity:1;transform:translateX(-50%) translateY(0) rotate(10deg)}
 }
 @keyframes rtg-vending-v12-chute{
-  0%,35%{box-shadow:inset 0 4px 6px rgba(255,255,255,.05),inset 0 -8px 10px rgba(0,0,0,.32)}
-  62%,100%{box-shadow:inset 0 4px 6px rgba(255,255,255,.05),inset 0 -8px 10px rgba(0,0,0,.32),0 0 0 3px var(--rtg-vending-reveal),0 0 14px color-mix(in srgb,var(--rtg-vending-reveal) 44%,transparent)}
+  0%,48%{border-color:#646e6c}
+  76%,100%{border-color:var(--rtg-vending-reveal)}
 }
 @keyframes rtg-vending-v12-flap{
-  0%,20%{transform:translateX(-50%) perspective(120px) rotateX(0deg)}
-  48%{transform:translateX(-50%) perspective(120px) rotateX(70deg)}
-  72%{transform:translateX(-50%) perspective(120px) rotateX(44deg)}
-  100%{transform:translateX(-50%) perspective(120px) rotateX(18deg)}
+  0%,46%{transform:translateX(-50%) perspective(120px) rotateX(0deg)}
+  62%{transform:translateX(-50%) perspective(120px) rotateX(76deg)}
+  80%{transform:translateX(-50%) perspective(120px) rotateX(58deg)}
+  100%{transform:translateX(-50%) perspective(120px) rotateX(48deg)}
 }
+
+.rtg-vending-pull:focus-visible{
+  outline:3px solid #236492;
+  outline-offset:4px;
+}
+
 
 /* Rarity rate chips — every rarity uses the same full-colour treatment. */
 .rtg-vending-ratebar>span[data-rarity="Normale"]{
@@ -697,17 +649,18 @@
 }
 
 @media(max-width:430px){
-  .rtg-vending-machine-v12{width:min(228px,67vw);}
+  .rtg-vending-machine-v12{--rtg-cabinet-width:192px;width:min(228px,67vw);}
   .rtg-vending-head-v9,.rtg-vending-window-v9{width:192px;}
   .rtg-vending-window-v9{height:162px;}
   .rtg-vending-body-v9{width:192px;min-height:132px;padding:11px;}
-  .rtg-vending-body-v9::before{right:7px;width:62px;height:114px;}
+  .rtg-vending-body-v9::before{right:7px;width:68px;height:122px;}
   .rtg-vending-capsule-v9{width:36px;height:36px;}
 }
 @media(prefers-reduced-motion:reduce){
   .rtg-vending-machine-v12.is-turning,
   .rtg-vending-machine-v12.is-turning .rtg-vending-crank-v9,
   .rtg-vending-machine-v12.is-turning .rtg-vending-capsule-v9,
+  .rtg-vending-machine-v12.is-revealing .rtg-vending-capsule-v9.is-selected,
   .rtg-vending-machine-v12.is-revealing .rtg-vending-prize-v9,
   .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-v9,
   .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-flap-v10{
