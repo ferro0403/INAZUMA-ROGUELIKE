@@ -14,7 +14,7 @@ const rt=c.RoadToGlorySeasonTransitionController.create({
 });
 (async()=>{
  await rt.enterNextSeason();assert.strictEqual(state.activeSeasonId,"orion");assert.strictEqual(state.tokens,1410);
- assert.deepStrictEqual(state.seasonTransitionRewardedIds,["ie2->orion"]);assert.strictEqual(state.currentNodeId,"main:raging_bulls");
+ assert.deepStrictEqual(Array.from(state.seasonTransitionRewardedIds),["ie2->orion"]);assert.strictEqual(state.currentNodeId,"main:raging_bulls");
  assert.strictEqual(state.lives,2);assert.strictEqual(state.seasonComplete,false);
  assert.deepStrictEqual(state.squads.orion,old.squads.ie2);assert.deepStrictEqual(state.squads.ie2,old.squads.ie2);
  assert.deepStrictEqual(state.gachaAcquiredCards,old.gachaAcquiredCards);assert.deepStrictEqual(state.developmentByCardId,old.developmentByCardId);
