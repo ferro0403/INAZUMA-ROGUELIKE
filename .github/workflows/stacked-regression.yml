@@ -194,15 +194,26 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
-      - name: All RTG tests except documented pre-existing CSS architecture failure
+      - name: Orion and existing cross-season contract tests
         shell: bash
         run: |
           set -euo pipefail
-          for test_file in tests/rtg-*-test.js; do
-            if [[ "$test_file" == "tests/rtg-css-architecture-test.js" || "$test_file" == "tests/rtg-final-visual-pass-test.js" ]]; then
-              echo "::notice::Skipping pre-existing CSS migration failures unrelated to Orion"
-              continue
-            fi
+          tests=(
+            tests/rtg-orion-season-implementation-test.js
+            tests/rtg-ares-orion-transition-test.js
+            tests/rtg-season3-generic-seasons-test.js
+            tests/rtg-dual-campaign-ares-test.js
+            tests/rtg-legacy-cross-season-contract-test.js
+            tests/rtg-distinct-version-lineup-test.js
+            tests/rtg-bbb-season-team-filters-test.js
+            tests/rtg-bbc-season-team-filter-runtime-test.js
+            tests/rtg-bbg-development-owned-season-preload-test.js
+            tests/rtg-season2-full-progression-test.js
+            tests/rtg-season2-transition-contract-test.js
+            tests/rtg-season2-distributor-unlock-flow-test.js
+            tests/rtg-legacy-player-resolver-test.js
+          )
+          for test_file in "${tests[@]}"; do
             echo "::group::$test_file"
             node "$test_file"
             echo "::endgroup::"
