@@ -16,7 +16,7 @@
         event?.preventDefault?.();
         event?.stopPropagation?.();
         deps.closeModal?.({invokeOnClose:false});
-        await deps.renderAlbum();
+        await deps.renderAlbum({source:"vending",mode:selectedMode});
       };
       modalRoot?.querySelector?.("[data-rtg-pull]")?.addEventListener("click",async(event)=>{
         const button=event.currentTarget;

@@ -77,6 +77,11 @@
         : [{x:67,y:18},{x:40,y:50},{x:31,y:82}];
       const preset=count===6?six:count===4?four:count===3?three:null;
       const points=preset||positions(blockIndex,count);
+      // Orion chapters 3/4: lower Los Invencibles and Guardians of the Queen with the SVG anchor.
+      // Keep every other chapter and Season's route geometry unchanged.
+      if(seasonId==="orion"&&(blockIndex===2||blockIndex===3)&&count===6){
+        return points.map((point,index)=>index===0?{x:point.x,y:15}:point);
+      }
       // Orion chapter 1: leave breathing room above the first large boss badge.
       // Move both route nodes and SVG anchors, without changing Ares/IE2/IE3.
       return seasonId==="orion"&&blockIndex===0&&count===6

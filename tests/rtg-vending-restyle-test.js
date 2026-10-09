@@ -38,6 +38,6 @@ const albumIndex=html.indexOf("data-rtg-vending-album");
 assert(machineIndex>=0&&pullIndex>machineIndex&&walletIndex>pullIndex&&ratebarIndex>walletIndex&&albumIndex>ratebarIndex,"layout order must be machine -> Gira -> gettoni -> rates -> Album");
 assert.doesNotMatch(html,/onclick="document\.querySelector\('\[data-rtg-open-album\]'\)/);
 const controller=["js/road-to-glory/rtg-vending-controller.js","js/road-to-glory/rtg-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n");
-assert.match(controller,/\[data-rtg-vending-album\][\s\S]*await (?:deps\.)?renderAlbum\(\)/,"vending Album button must open the normal multi-collection Album");
+assert.match(controller,/\[data-rtg-vending-album\][\s\S]*await (?:deps\.)?renderAlbum\(\{source:"vending",mode:selectedMode\}\)/,"vending Album button must open the multi-collection Album with its return context");
 assert.doesNotMatch(html,/I duplicati rimborsano|Le squadre battute riempiono/);
 console.log("rtg-vending-restyle-test: PASS");
