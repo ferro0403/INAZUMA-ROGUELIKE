@@ -1,0 +1,18 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const ctx={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};ctx.globalThis=ctx;vm.createContext(ctx);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-config.js","utf8"),ctx);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),ctx);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-runtime.js","utf8"),ctx);
+const C=ctx.RoadToGloryCardIdentity,R=ctx.RoadToGlorySquadRuntime;
+const s1=C.cardIdForSeason("same-player","ie1");
+const s2=C.cardIdForSeason("same-player","ie1_s2");
+const dd=C.cardIdForSeason("same-player@diamond_dust","ie1_s2");
+const pro=C.cardIdForSeason("same-player@prominence","ie1_s2");
+assert.notStrictEqual(s1,s2,"same canonical player must remain a distinct card across seasons");
+assert.notStrictEqual(dd,pro,"same canonical player must remain a distinct card across S2 team profiles");
+const state={activeSeasonId:"ie1_s2",gachaAcquiredCards:[s1,s2,dd,pro],squads:{ie1_s2:{formationId:"x",lineup:[],bench:[],activeRoleVariantByCardId:{}}}};
+const accessible=R.accessibleCardIds({state,freeAgentIds:[]});
+assert.strictEqual(new Set(accessible).size,4);
+assert(accessible.includes(s1)&&accessible.includes(s2)&&accessible.includes(dd)&&accessible.includes(pro));
+console.log("rtg-distinct-version-lineup-test: PASS");

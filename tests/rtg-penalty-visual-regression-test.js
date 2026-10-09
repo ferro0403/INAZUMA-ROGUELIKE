@@ -1,0 +1,12 @@
+"use strict";
+const assert=require("assert"),fs=require("fs");
+const view=fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8");
+const css=fs.readFileSync("css/road-to-glory.css","utf8");
+assert.match(view,/rtg-penalty-versus/,"penalties need a dedicated duel board");
+assert.match(view,/rtg-penalty-player-card/,"penalties must render canonical player cards");
+assert.match(view,/Tiratore/,"penalty shooter role needs a clear label");
+assert.match(view,/Portiere/,"penalty keeper role needs a clear label");
+assert.match(css,/\.rtg-penalty-versus/,"penalty duel board must be styled");
+assert.match(css,/\.rtg-penalty-player-card/,"penalty player cards must be styled");
+assert.match(css,/\.rtg-penalty-goal button/,"direction controls must remain styled and tappable");
+console.log("rtg-penalty-visual-regression-test: PASS");
