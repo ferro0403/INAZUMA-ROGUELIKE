@@ -9,6 +9,7 @@
       const cost=selectedMode==="recruitment"?deps.activeConfig()?.recruitmentPullCost:deps.activeConfig()?.pullCost;
       deps.openModal?.(deps.runView.vendingMarkup({...pool,tokens:campaign.tokens,seasonId:deps.activeSeasonId(),mode:selectedMode,cost}),{className:"rtg-modal rtg-vending-modal"});
       const modalRoot=deps.getModalRoot?.();
+      const motion=global.RoadToGloryVendingMotion?.mount(modalRoot?.querySelector?.("[data-rtg-vending-machine]"));
       modalRoot?.querySelectorAll?.("[data-rtg-vending-mode]")?.forEach(toggle=>toggle.addEventListener("click",()=>openVending(toggle.dataset.rtgVendingMode)));
       const albumButton=modalRoot?.querySelector?.("[data-rtg-vending-album]");
       if(albumButton)albumButton.onclick=async(event)=>{
@@ -24,6 +25,7 @@
         button.disabled=true;
         machine?.classList?.add("is-turning");
         try{
+          motion?.start();
           const preparedPromise=deps.pull({reveal:false,mode:selectedMode});
           await new Promise(resolve=>setTimeout(resolve,620));
           const prepared=await preparedPromise;
@@ -34,10 +36,12 @@
             capsules.forEach(capsule=>capsule.classList.remove("is-selected"));
             const matching=capsules.filter(capsule=>capsule.dataset.capsuleRarity===rarityKey);
             const choices=matching.length?matching:capsules;
-            const selected=choices.length?choices[Math.floor(Math.random()*choices.length)]:null;
+            const visualChoice=choices.length?choices[Math.floor(Math.random()*choices.length)]:null;
+            const selected=motion?.select(choices)||visualChoice;
             if(selected){
               selected.dataset.capsuleRarity=rarityKey;
               selected.classList.add("is-selected");
+              motion?.release(selected);
             }
             machine.dataset.pullRarity=rarityKey;
             machine.classList.add("is-revealing");
@@ -45,6 +49,7 @@
           await new Promise(resolve=>setTimeout(resolve,980));
           showPullResult(prepared.result,prepared.player,selectedMode);
         }finally{
+          motion?.stop();
           machine?.classList?.remove("is-turning","is-revealing");
           if(button?.isConnected)button.disabled=false;
         }
