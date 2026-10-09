@@ -183,6 +183,26 @@ jobs:
           set -euo pipefail
           node tests/500-run-soak-fuzz-gate.js
 
+  orion_focus:
+    name: RTG Orion focused regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Orion and historical season checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          node tests/rtg-orion-season-implementation-test.js
+          node tests/rtg-ares-orion-transition-test.js
+          node tests/rtg-season3-generic-seasons-test.js
+          node tests/rtg-dual-campaign-ares-test.js
+
   complete_soak:
     name: 500 complete stateful campaigns
     needs: regression
