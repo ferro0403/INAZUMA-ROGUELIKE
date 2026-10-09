@@ -68,7 +68,7 @@ console.log("RTG QoL vending: 150-token mode persists through player details for
   querySelector(selector){
    if(selector===".modal")return modal;
    if(selector==="[data-rtg-picker-results]")return results;
-   if(selector==="[data-rtg-picker-team]")return{innerHTML:""};
+   if(selector==="[data-rtg-picker-team]")return Object.assign(elm(selector),{innerHTML:""});
    if(["[data-rtg-picker-sort]","[data-rtg-picker-search]","[data-rtg-picker-season]","[data-rtg-picker-rarity]","[data-rtg-picker-sort-arrow]"].includes(selector))return elm(selector);
    return null;
   },
