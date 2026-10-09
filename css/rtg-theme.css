@@ -559,6 +559,20 @@ position:absolute;
 .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-v9{animation:rtg-vending-v12-chute .95s ease-out both;}
 .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-flap-v10{animation:rtg-vending-v12-flap .95s cubic-bezier(.2,.75,.28,1) both;}
 
+/* The DOM capsules retain their bicolour material; only their poses are simulated.
+   The selected capsule rolls towards the rear funnel, behind the remaining pile. */
+.rtg-vending-machine-v12.has-capsule-physics .rtg-vending-capsule-v9:not(.is-selected){animation:none!important;}
+.rtg-vending-machine-v12.has-capsule-physics.is-revealing .rtg-vending-capsule-v9.is-selected{
+  z-index:4;
+  animation:rtg-vending-physical-feed .48s ease-in both!important;
+}
+@keyframes rtg-vending-physical-feed{
+  0%{opacity:1;transform:translate3d(var(--feed-x),var(--feed-y),0) rotate(var(--feed-angle)) scale(1)}
+  45%{opacity:1;transform:translate3d(var(--feed-x),var(--feed-y),0) rotate(calc(var(--feed-angle) + 25deg)) scale(.76)}
+  75%{opacity:1;transform:translate3d(var(--outlet-x),var(--outlet-y),0) rotate(calc(var(--feed-angle) + 60deg)) scale(.7)}
+  100%{opacity:0;transform:translate3d(var(--outlet-x),calc(var(--outlet-y) + 38px),0) rotate(calc(var(--feed-angle) + 100deg)) scale(.65)}
+}
+
 .rtg-vending-machine-v12[data-pull-rarity="normale"]{--rtg-vending-reveal:#929ba8;--rtg-prize-color:#d9dee4}
 .rtg-vending-machine-v12[data-pull-rarity="buono"]{--rtg-vending-reveal:#2fa866;--rtg-prize-color:#2fa866}
 .rtg-vending-machine-v12[data-pull-rarity="forte"]{--rtg-vending-reveal:#27a8e8;--rtg-prize-color:#27a8e8}
@@ -657,6 +671,7 @@ position:absolute;
   .rtg-vending-capsule-v9{width:36px;height:36px;}
 }
 @media(prefers-reduced-motion:reduce){
+  .rtg-vending-machine-v12.has-capsule-physics.is-revealing .rtg-vending-capsule-v9.is-selected,
   .rtg-vending-machine-v12.is-turning,
   .rtg-vending-machine-v12.is-turning .rtg-vending-crank-v9,
   .rtg-vending-machine-v12.is-turning .rtg-vending-capsule-v9,
@@ -1171,4 +1186,26 @@ button.player-card:has(> .rtg-legacy-badge),
 .player-detail-rtg-legacy-badge[data-legacy-season="OR"]{
   --rtg-legacy-color:#A8DDB5;
   --rtg-legacy-ink:#234A34;
+}
+/* RTG detail: reserve the Role + Legacy controls before laying out long team names. */
+.player-detail-hero:has(.player-detail-rtg-role-switch) .player-detail-team{
+  box-sizing:border-box!important;
+  min-width:0!important;
+  max-width:calc(100% - 208px)!important;
+  margin-right:0!important;
+  overflow:hidden!important;
+}
+.player-detail-hero:has(.player-detail-rtg-role-switch) .player-detail-team strong{
+  display:block!important;
+  flex:1 1 auto!important;
+  min-width:0!important;
+  max-width:100%!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+@media(max-width:520px){
+  .player-detail-hero:has(.player-detail-rtg-role-switch) .player-detail-team{
+    max-width:calc(100% - 188px)!important;
+  }
 }

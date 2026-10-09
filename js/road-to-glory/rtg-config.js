@@ -228,7 +228,7 @@
     rarityWeights:ARES.rarityWeights,duplicateRefunds:SEASON1.duplicateRefunds,constraints:orionConstraints,
     routeBackground:ARES.routeBackground,routeClass:"rtg-route--ares rtg-route--orion",
     albumCover:"https://i0.wp.com/nicolaraccasceneggiature.altervista.org/wp-content/uploads/2019/05/Dlhck3sVAAA2Lgd-1.jpg?fit=1200%2C896&ssl=1",
-    albumCoverPosition:"center",secondaryMatchesPerGap:0,
+    albumCoverPosition:"center",secondaryMatchesPerGap:1,
   });
   const SEASONS=Object.freeze({ie1:SEASON1,ie1_s2:SEASON2,ie1_s3:SEASON3,ie2:ARES,orion:ORION});
   const SEASON_IDS=Object.freeze(Object.keys(SEASONS));

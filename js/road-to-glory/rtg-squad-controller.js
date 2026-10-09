@@ -213,8 +213,8 @@
       return"all";
     }
 
-    function openSquadPlayerPicker(targetId){
-      if(waitForSquadFilterData(()=>openSquadPlayerPicker(targetId)))return{loading:true};
+    function openSquadPlayerPicker(targetId,restoreState=null){
+      if(waitForSquadFilterData(()=>openSquadPlayerPicker(targetId,restoreState)))return{loading:true};
       const targetLoc=locationInDraft(targetId);
       if(!targetLoc)return;
       const strictRole=targetLoc.area==="lineup";
@@ -232,12 +232,12 @@
       // Other S1/S2 versions are deps.resolved/rendered only when that grouped card is opened.
       let candidateGroups=[];
       let visibleCount=0;
-      let query="";
-      let sourceFilter="all";
-      let rarityFilter="all";
-      let seasonFilter="all";
-      let teamFilter="all";
-      let overallDescending=true;
+      let query=String(restoreState?.query||"");
+      let sourceFilter=restoreState?.sourceFilter||"all";
+      let rarityFilter=restoreState?.rarityFilter||"all";
+      let seasonFilter=restoreState?.seasonFilter||"all";
+      let teamFilter=restoreState?.teamFilter||"all";
+      let overallDescending=restoreState?.overallDescending!==false;
       const rarityOptions=squadPickerRarityOptions();
       const seasonOptions=squadFilterSeasonOptions();
       const filterMetaCache=new Map();
@@ -302,7 +302,15 @@
           const group=filteredGroups().find(entry=>entry.key===versionGroupKey(representativeId));
           const versions=group?.matchingCardIds||group?.cardIds||[representativeId];
           if(versions.length>1){
-            openRtgVersionPicker(versions,{onSelect:chooseCandidate});
+            const pickerModal=deps.getModalRoot?.()?.querySelector?.(".modal");
+            const stateToRestore={
+              query,sourceFilter,rarityFilter,seasonFilter,teamFilter,overallDescending,visibleCount,
+              scrollTop:pickerModal?.scrollTop||0,scrollLeft:pickerModal?.scrollLeft||0,
+            };
+            openRtgVersionPicker(versions,{
+              onSelect:chooseCandidate,
+              onClose:()=>openSquadPlayerPicker(targetId,stateToRestore),
+            });
             return;
           }
           chooseCandidate(representativeId);
@@ -327,6 +335,13 @@
       }
       deps.openModal?.(deps.squadView.replacementPickerMarkup({target,role,allowAnyRole:!strictRole,quickEntries,entries:deps.getModalRoot?[]:entries(),total:deps.getModalRoot?0:candidateGroups.length,visibleCount:deps.getModalRoot?0:visibleCount,query,sourceFilter,rarityFilter,rarityOptions,seasonFilter,teamFilter,seasonOptions,teamOptions:currentTeamOptions()}),{className:"rtg-modal rtg-squad-picker-modal"});
       const modal=deps.getModalRoot?.();
+      if(!overallDescending){
+        const sortButton=modal?.querySelector?.("[data-rtg-picker-sort]");
+        sortButton?.setAttribute?.("aria-label","Ordina per overall crescente");
+        sortButton?.setAttribute?.("aria-pressed","false");
+        const arrow=sortButton?.querySelector?.("[data-rtg-picker-sort-arrow]");
+        if(arrow)arrow.textContent="↑";
+      }
       modal?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",event=>{
         query=String(event.target?.value||"");
         visibleCount=SQUAD_PICKER_PAGE_SIZE;
@@ -368,9 +383,19 @@
       const hydratePicker=()=>{
         const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(deps.id(playerId)));
         candidateGroups=buildGroups(candidateIds);
-        visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateGroups.length);
+        visibleCount=Math.min(candidateGroups.length,Math.max(SQUAD_PICKER_PAGE_SIZE,Number(restoreState?.visibleCount)||0));
         refreshTeamFilterControl();
         renderResults();
+        if(restoreState){
+          const scroller=deps.getModalRoot?.()?.querySelector?.(".modal");
+          const restoreScroll=()=>{
+            if(!scroller||scroller.isConnected===false)return;
+            scroller.scrollTop=Number(restoreState.scrollTop)||0;
+            scroller.scrollLeft=Number(restoreState.scrollLeft)||0;
+          };
+          if(typeof requestAnimationFrame==="function")requestAnimationFrame(()=>requestAnimationFrame(restoreScroll));
+          else restoreScroll();
+        }
       };
       if(typeof requestAnimationFrame==="function")requestAnimationFrame(()=>typeof setTimeout==="function"?setTimeout(hydratePicker,0):hydratePicker());
       else if(typeof setTimeout==="function")setTimeout(hydratePicker,0);
@@ -416,13 +441,13 @@
         deps.squadView.versionPickerMarkup
           ? deps.squadView.versionPickerMarkup({entries,mode:onSelect?"select":"details"})
           : `<section class="rtg-version-picker"><div class="modal-head"><div><p class="eyebrow">Versioni possedute</p><h2>Scegli la versione</h2></div></div></section>`,
-        {className:"rtg-modal rtg-version-picker-modal"}
+        {className:"rtg-modal rtg-version-picker-modal",onClose:typeof options.onClose==="function"?options.onClose:null}
       );
       const modal=deps.getModalRoot?.();
       modal?.querySelectorAll?.("[data-rtg-version-card]")?.forEach(button=>button.addEventListener("click",()=>{
         const selected=deps.id(button.dataset.rtgVersionCard);
         if(!selected)return;
-        deps.closeModal?.();
+        deps.closeModal?.({invokeOnClose:false});
         if(onSelect){
           onSelect(selected);
           return;
