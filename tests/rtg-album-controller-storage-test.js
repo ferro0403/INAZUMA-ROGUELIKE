@@ -1,0 +1,12 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const values=new Map(),localStorage={getItem:key=>values.get(key)||null,setItem:(key,value)=>values.set(key,String(value))};
+const context={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON,Promise,Error,TypeError,localStorage};context.globalThis=context;vm.createContext(context);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-album-controller.js","utf8"),context);
+let campaign={activeSeasonId:"ie1",gachaAcquiredCards:[]};
+const controller=context.RoadToGloryAlbumController.create({localStorage,id:String,cardMeta:ref=>({cardId:String(ref)}),acquiredCardIdSet:()=>new Set(["ie1::a","ie1::b"]),getCampaign:()=>campaign});
+assert.deepStrictEqual(Array.from(controller.rememberRtgAlbumCard("ie1::a")),["ie1::a"]);
+assert.deepStrictEqual(Array.from(controller.rememberRtgAlbumCard("ie1::a")),["ie1::a"]);
+assert.deepStrictEqual(Array.from(controller.syncCurrentPullsIntoAlbum()),["ie1::a","ie1::b"]);
+assert.strictEqual(values.has("inazuma.rtg.album.v1"),true);assert.deepStrictEqual(JSON.parse(values.get("inazuma.rtg.album.v1")),{version:1,cardIds:["ie1::a","ie1::b"]});
+console.log("rtg-album-controller-storage-test: key, shape, dedupe and pull sync PASS");

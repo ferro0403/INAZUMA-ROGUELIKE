@@ -18,7 +18,7 @@ const roleOwners=Object.entries(catalog.players).filter(([,move])=>move.roleMove
 assert.deepStrictEqual(roleOwners,["1","1166","1957","30"].sort());
 const roleExpected={
   "1":{MF:["Megaton Head","shot","Mountain",70],GK:["God Catch","save","Mountain",105]},
-  "1166":{FW:["Cross Fire","shot","Fire",95],DF:["Land of Ice","defense","Wind",65]},
+  "1166":{FW:["Cross Fire","shot","Fire",95],DF:["Land of Ice","defense","Wind",85]},
   "30":{FW:["Emperor Penguin No. 2","shot","Forest",85],DF:["Killer Slide","defense","Forest",50]},
   "1957":{GK:["Soul Hand","save","Fire",110],FW:["X Blast","shot","Fire",90]}
 };
