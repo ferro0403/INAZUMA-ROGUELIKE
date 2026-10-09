@@ -79,12 +79,13 @@
         getSeasonDb:()=>seasonDb,getFreeAgentsDb:()=>freeAgentsDb,activeSeasonId,config,cardIdentity,
         playerResolver,ensureSeason1Db:deps.ensureSeason1Db,ensureData,renderHtml,runView,
         mountDevQuickTools,renderHome:deps.renderHome,openPlayerDetails:openRtgPlayerDetails,
+        returnToVending:(mode)=>{renderRun();return openVending(mode);},
       });
       return albumController;
     }
     function rememberRtgAlbumCard(cardRef){return getAlbumController().rememberRtgAlbumCard(cardRef);}
     function syncCurrentPullsIntoAlbum(){return getAlbumController().syncCurrentPullsIntoAlbum();}
-    function renderAlbum(){return getAlbumController().renderAlbum();}
+    function renderAlbum(options={}){return getAlbumController().renderAlbum(options);}
     function renderAlbumTeams(seasonId){return getAlbumController().renderAlbumTeams(seasonId);}
     function renderAlbumRoster(teamId,seasonId){return getAlbumController().renderAlbumRoster(teamId,seasonId);}
 
