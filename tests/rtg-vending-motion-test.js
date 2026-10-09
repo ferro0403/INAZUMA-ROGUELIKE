@@ -51,6 +51,16 @@ function harness(reduce=false){
  vm.createContext(c);vm.runInContext(fs.readFileSync(file,'utf8'),c);
  return {c,frames,timers,machine,elements};
 }
+{
+ const h=harness(),motion=h.c.RoadToGloryVendingMotion.mount(h.machine);
+ const before=h.elements.map(e=>e.style.transform);
+ motion.start();
+ for(let i=0;i<37;i++){
+  const [id,tick]=h.frames.entries().next().value;h.frames.delete(id);tick(1000+i*1000/60);
+ }
+ assert(h.elements.filter((e,i)=>e.style.transform!==before[i]).length>=10,'real RAF lifecycle updates visible capsule transforms');
+ motion.stop();
+}
 for(const reduced of [false,true]){
  const h=harness(reduced),motion=h.c.RoadToGloryVendingMotion.mount(h.machine);
  motion.start();motion.start();assert.equal(h.frames.size,reduced?0:1,'double start cannot leak animation loops');
