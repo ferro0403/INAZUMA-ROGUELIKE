@@ -36,11 +36,20 @@
     const realView=RoadToGloryRunView.create({escapeHtml:s=>String(s)});
     const campaign={tokens:900};
     let pulls=0;
+    let observedCapsules=[];
+    const pose=el=>{const match=el.style.transform.match(/translate3d\\(([-.0-9]+)px,\\s*([-.0-9]+)px/);return match?[Number(match[1]),Number(match[2])]:[0,0];};
+    root.addEventListener('click',event=>{
+      if(event.target.closest('[data-rtg-pull]'))observedCapsules=Array.from(root.querySelectorAll('[data-capsule-rarity]'),el=>({el,start:pose(el),peak:0}));
+    });
+    new MutationObserver(()=>{
+      for(const item of observedCapsules){const current=pose(item.el);item.peak=Math.max(item.peak,Math.hypot(current[0]-item.start[0],current[1]-item.start[1]));}
+    }).observe(root,{subtree:true,attributes:true,attributeFilter:['style']});
+    const motionReport=()=>'<p>Capsule mosse: '+observedCapsules.filter(item=>item.peak>20).length+'/14 · Spostamento massimo medio: '+(observedCapsules.reduce((sum,item)=>sum+item.peak,0)/14).toFixed(1)+' px</p>';
     const runtime=RoadToGloryVendingController.create({
       getCampaign:()=>campaign,getSeasonDb:()=>({}),activeSeasonId:()=>${JSON.stringify(seasonId)},
       activeConfig:()=>RoadToGloryConfig.season(${JSON.stringify(seasonId)}),accessibleCards:()=>[],
       gacha:{previewPool:()=>({candidates:['fixture'],rarities:['Normale','Buono','Forte','Elite','Mondiale','Leggenda','Aurico'].map(rarity=>({rarity,weight:100/7}))})},
-      runView:{...realView,pullResultMarkup:()=>'<div class="rtg-paper-modal" style="padding:24px"><h2>Sequenza completata</h2><p>Richieste di estrazione: '+pulls+'</p><p>Risultato simulato: ${rarity}</p><button class="btn btn-yellow" data-rtg-pull-continue>Riprova</button></div>'},
+      runView:{...realView,pullResultMarkup:()=>'<div class="rtg-paper-modal" style="padding:24px"><h2>Sequenza completata</h2><p>Richieste di estrazione: '+pulls+'</p><p>Risultato simulato: ${rarity}</p>'+motionReport()+'<button class="btn btn-yellow" data-rtg-pull-continue>Riprova</button></div>'},
       getModalRoot:()=>root,
       openModal:html=>{root.innerHTML='<div class="modal-backdrop"><section class="modal rtg-modal rtg-vending-modal">'+html+'</section></div>'},
       closeModal:()=>runtime.openVending(),renderAlbum:()=>{},
