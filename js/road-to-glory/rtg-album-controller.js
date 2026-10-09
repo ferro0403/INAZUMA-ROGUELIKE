@@ -5,6 +5,10 @@
   function create(deps={}){
     const id=deps.id;
     let selectedAlbumSeasonId="ie1";
+    let albumReturnContext=null;
+    let albumNavigationEpoch=0;
+    let cachedCollections=null;
+    let cachedCollectionsForCards=null;
     function readRtgAlbum(){
       try{
         const raw=deps.localStorage?.getItem?.(RTG_ALBUM_STORAGE_KEY);
@@ -54,13 +58,23 @@
       const sid=deps.id(seasonId||"ie1");
       const db=albumDb||global.SeasonRegistry?.database?.(sid)||(sid===deps.activeSeasonId()?deps.getSeasonDb():null);
       const unlocked=rtgAlbumUnlockedSet();
+      // Build indexes once per collection rather than scanning all players/profiles per team.
+      const teamsById=new Map((db?.teams||[]).map(team=>[deps.id(team?.teamId||team?.id),team]));
+      const profilesByTeam=new Map();
+      if(db?.requiresProfileAwareRuntime){
+        for(const profile of db?.profiles||[]){
+          const teamId=deps.id(profile?.teamId);
+          if(!profilesByTeam.has(teamId))profilesByTeam.set(teamId,[]);
+          profilesByTeam.get(teamId).push(profile);
+        }
+      }
       const configured=Array.from(albumConfigFor(sid)?.mainTeams||[]);
       return configured.map(teamId=>{
-        const team=(db?.teams||[]).find(entry=>deps.id(entry?.teamId||entry?.id)===deps.id(teamId));
+        const team=teamsById.get(deps.id(teamId));
         if(!team)return null;
         const playerIds=Array.from(team?.playerIds||[]).map(id).filter(Boolean);
         const profileIds=db?.requiresProfileAwareRuntime
-          ? Array.from(db?.profiles||[]).filter(profile=>deps.id(profile?.teamId)===deps.id(teamId)).map(profile=>deps.id(profile?.profileId||profile?.id)).filter(Boolean)
+          ? Array.from(profilesByTeam.get(deps.id(teamId))||[]).map(profile=>deps.id(profile?.profileId||profile?.id)).filter(Boolean)
           : [];
         const sourceIds=profileIds.length?profileIds:playerIds;
         const cardIds=sourceIds.map(playerId=>db?.requiresProfileAwareRuntime
@@ -83,37 +97,79 @@
         total:teams.reduce((sum,team)=>sum+(Number(team.total)||0),0),
       };
     }
-    async function renderAlbum(){
-      const campaign=deps.getCampaign();
-      await deps.ensureData();
-      syncCurrentPullsIntoAlbum();
-      const collections=await Promise.all((deps.config.SEASON_IDS||["ie1"]).map(albumCollectionSummary));
-      deps.renderHtml(deps.runView.albumCollectionMarkup({state:campaign,collections}));
-      deps.app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
+    function leaveAlbum(){
+      // The return destination belongs to the current UI visit, never to persisted state.
+      ++albumNavigationEpoch;
+      const origin=albumReturnContext;
+      albumReturnContext=null;
+      if(origin?.source==="vending"&&typeof deps.returnToVending==="function"){
+        return deps.returnToVending(origin.mode);
+      }
+      return deps.renderHome?.({initialPage:"rtg"});
+    }
+    function showAlbumCollections(campaign,collections,preserveScroll=false){
+      deps.renderHtml(deps.runView.albumCollectionMarkup({state:campaign,collections}),{preserveScroll});
+      deps.app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",leaveAlbum);
       deps.app?.querySelectorAll?.("[data-rtg-album-collection]")?.forEach(button=>button.addEventListener("click",()=>renderAlbumTeams(button.dataset.rtgAlbumCollection)));
       deps.mountDevQuickTools();
+    }
+    async function renderAlbum(options={}){
+      if(!options?.preserveOrigin){
+        albumReturnContext=options?.source==="vending"
+          ?{source:"vending",mode:options.mode==="recruitment"?"recruitment":"team"}
+          :null;
+      }
+      const epoch=++albumNavigationEpoch;
+      const campaign=deps.getCampaign();
+      const seasonIds=deps.config.SEASON_IDS||["ie1"];
+      const initialCollections=cachedCollections||seasonIds.map(seasonId=>({seasonId,pending:true}));
+      // Paint synchronously BEFORE loading Season databases: no exposed route behind the modal.
+      showAlbumCollections(campaign,initialCollections);
+      try{
+        await deps.ensureData();
+        syncCurrentPullsIntoAlbum();
+        const cardKey=JSON.stringify(readRtgAlbum().cardIds);
+        if(!cachedCollections||cachedCollectionsForCards!==cardKey){
+          const collections=await Promise.all((deps.config.SEASON_IDS||["ie1"]).map(albumCollectionSummary));
+          cachedCollections=collections;
+          cachedCollectionsForCards=cardKey;
+        }
+        // A slow Season response must not replace a team view or a closed Album.
+        if(epoch===albumNavigationEpoch&&deps.app?.querySelector?.(".rtg-album-collections-screen")&&initialCollections!==cachedCollections){
+          showAlbumCollections(campaign,cachedCollections,true);
+        }
+      }catch(error){
+        global.console?.error?.("[RTG] Album collections unavailable",error);
+        if(epoch===albumNavigationEpoch&&deps.app?.querySelector?.(".rtg-album-collections-screen")&&!cachedCollections){
+          showAlbumCollections(campaign,seasonIds.map(seasonId=>({seasonId,error:true})),true);
+        }
+      }
       return campaign;
     }
     async function renderAlbumTeams(seasonId=selectedAlbumSeasonId){
+      const epoch=++albumNavigationEpoch;
       const campaign=deps.getCampaign();
       await deps.ensureData();
       syncCurrentPullsIntoAlbum();
       const sid=(deps.config.SEASON_IDS||[]).includes(deps.id(seasonId))?deps.id(seasonId):deps.activeSeasonId();
       selectedAlbumSeasonId=sid;
       const db=await ensureAlbumSeasonDb(sid);
+      if(epoch!==albumNavigationEpoch)return campaign;
       deps.renderHtml(deps.runView.albumTeamsMarkup({state:{...(campaign||{}),activeSeasonId:sid},seasonId:sid,teams:rtgAlbumTeams(sid,db)}));
-      deps.app?.querySelector?.("[data-rtg-album-collection-back]")?.addEventListener("click",()=>renderAlbum());
+      deps.app?.querySelector?.("[data-rtg-album-collection-back]")?.addEventListener("click",()=>renderAlbum({preserveOrigin:true}));
       deps.app?.querySelectorAll?.("[data-rtg-album-team]")?.forEach(button=>button.addEventListener("click",()=>renderAlbumRoster(button.dataset.rtgAlbumTeam,sid)));
       deps.mountDevQuickTools();
       return campaign;
     }
     async function renderAlbumRoster(teamId,seasonId=selectedAlbumSeasonId){
+      const epoch=++albumNavigationEpoch;
       const campaign=deps.getCampaign();
       await deps.ensureData();
       syncCurrentPullsIntoAlbum();
       const sid=(deps.config.SEASON_IDS||[]).includes(deps.id(seasonId))?deps.id(seasonId):selectedAlbumSeasonId;
       selectedAlbumSeasonId=sid;
       const db=await ensureAlbumSeasonDb(sid);
+      if(epoch!==albumNavigationEpoch)return campaign;
       const team=rtgAlbumTeams(sid,db).find(entry=>deps.id(entry.teamId)===deps.id(teamId));
       if(!team)return renderAlbumTeams(sid);
       const unlocked=rtgAlbumUnlockedSet();
