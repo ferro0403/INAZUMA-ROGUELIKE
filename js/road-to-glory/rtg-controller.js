@@ -159,8 +159,13 @@
       const seasons=new Set((campaign?.gachaAcquiredCards||[])
         .map(entry=>cardIdentity?.parse?.(entry)?.legacySeasonId)
         .filter(sid=>sid&&sid!=="free_agents"&&config?.season?.(sid)));
-      await Promise.all(Array.from(seasons).filter(sid=>!global.SeasonRegistry?.database?.(sid))
-        .map(sid=>global.SeasonRegistry.loadDatabase(sid)));
+      const registry=global.SeasonRegistry,previousActive=registry?.activeId?.();
+      try{
+        await Promise.all(Array.from(seasons).filter(sid=>!registry?.database?.(sid))
+          .map(sid=>registry.loadDatabase(sid)));
+      }finally{
+        if(previousActive&&registry?.setActive)registry.setActive(previousActive);
+      }
     }
     function cardMeta(cardRef){return cardIdentity?.parse?.(cardRef)||{cardId:id(cardRef),playerId:id(cardRef),legacySeasonId:null,sourceKind:"legacy"};}
     function freeAgentCardId(playerId){return cardIdentity?.cardIdForFreeAgent?.(playerId)||id(playerId);}
