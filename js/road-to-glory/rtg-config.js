@@ -189,7 +189,7 @@
     entry.teamId,Object.freeze({cap:entry.cap,minRecruit:entry.minRecruit,recentCount:entry.recentCount,recentWindow:entry.recentWindow})
   ])));
   const ARES=Object.freeze({
-    seasonId:"ie2",seasonNumber:"AR",previousSeasonId:null,nextSeasonId:null,
+    seasonId:"ie2",seasonNumber:"AR",previousSeasonId:null,nextSeasonId:"orion",
     campaignId:"rtg-ares-orion",mainTeams:aresTeams,importantMatches:aresMatches,formations,
     checkpointMainIndexes:Object.freeze([2,5,8]),visualBlocks:Object.freeze([Object.freeze([0,2]),Object.freeze([3,5]),Object.freeze([6,8]),Object.freeze([9,10])]),
     livesPerCheckpoint:2,pullCost:300,recruitmentPullCost:null,
@@ -202,7 +202,35 @@
     albumCover:"https://www.akibagamers.it/wp-content/uploads/2019/12/inazuma-eleven-great-road-of-heroes-cover.jpg",
     albumCoverPosition:"center",secondaryMatchesPerGap:1,
   });
-  const SEASONS=Object.freeze({ie1:SEASON1,ie1_s2:SEASON2,ie1_s3:SEASON3,ie2:ARES});
+
+  const orionOrder=Object.freeze([
+    ["raging_bulls",79,0,0],["fallen_angels",81,1,0],["eternal_dancers",82,1,0],
+    ["arabian_firebirds",83,2,1],["avenging_acrobats",84,3,1],["los_invencibles",87,3,1],
+    ["ace_invaders",87,4,2],["the_sambassadors",89,4,2],["guardians_of_the_queen",90,5,2],
+    ["pitch_perfectionists",91,5,2],["orion_eclipse",92,6,3],
+    ["inazuma_national_2",93,7,3],["zhao_eclipse",94,8,4],
+  ]);
+  const orionMatches=Object.freeze(orionOrder.map(([teamId,cap,minRecruit,recentCount])=>
+    Object.freeze({teamId,cap,minRecruit,recentCount,recentWindow:recentCount?recentCount+2:0})
+  ));
+  const orionTeams=Object.freeze(orionMatches.map(entry=>entry.teamId));
+  const orionConstraints=Object.freeze(Object.fromEntries(orionMatches.map(entry=>[
+    entry.teamId,Object.freeze({cap:entry.cap,minRecruit:entry.minRecruit,recentCount:entry.recentCount,recentWindow:entry.recentWindow})
+  ])));
+  const ORION=Object.freeze({
+    seasonId:"orion",seasonNumber:"OR",previousSeasonId:"ie2",nextSeasonId:null,
+    campaignId:"rtg-ares-orion",mainTeams:orionTeams,importantMatches:orionMatches,formations,
+    checkpointMainIndexes:Object.freeze([2,5,8,11]),
+    visualBlocks:Object.freeze([Object.freeze([0,5]),Object.freeze([6,9]),Object.freeze([10,12])]),
+    livesPerCheckpoint:2,pullCost:300,recruitmentPullCost:150,
+    mainRewards:Object.freeze(Object.fromEntries(orionTeams.map(teamId=>[teamId,MAIN_WIN_REWARD]))),
+    secondaryRewards:SEASON1.secondaryRewards,
+    rarityWeights:ARES.rarityWeights,duplicateRefunds:SEASON1.duplicateRefunds,constraints:orionConstraints,
+    routeBackground:ARES.routeBackground,routeClass:"rtg-route--ares rtg-route--orion",
+    albumCover:"https://i0.wp.com/nicolaraccasceneggiature.altervista.org/wp-content/uploads/2019/05/Dlhck3sVAAA2Lgd-1.jpg?fit=1200%2C896&ssl=1",
+    albumCoverPosition:"center",secondaryMatchesPerGap:0,
+  });
+  const SEASONS=Object.freeze({ie1:SEASON1,ie1_s2:SEASON2,ie1_s3:SEASON3,ie2:ARES,orion:ORION});
   const SEASON_IDS=Object.freeze(Object.keys(SEASONS));
   function season(seasonId){ return SEASONS[String(seasonId||"ie1")]||null; }
   const buildSeason1Nodes=buildSeasonNodes;
@@ -218,7 +246,7 @@
         id:`main:${match.teamId}`,type:"main",teamId:match.teamId,mainIndex:index,special:!!match.special,
         checkpointAfter:seasonConfig.checkpointMainIndexes.includes(index),
       }));
-      if(index>=matches.length-1)return;
+      if(index>=matches.length-1||Number(seasonConfig.secondaryMatchesPerGap||0)<=0)return;
       const beforeTeamId=matches[index+1].teamId;
       const userCap=seasonConfig.constraints[beforeTeamId].cap;
       nodes.push(Object.freeze({
@@ -229,5 +257,5 @@
     return Object.freeze(nodes);
   }
 
-  global.RoadToGloryConfig = Object.freeze({ MAIN_WIN_REWARD, SECONDARY_WIN_REWARD, SEASON_TRANSITION_REWARD, SEASON1, SEASON2, SEASON3, ARES, SEASONS, SEASON_IDS, season, buildSeasonNodes:buildAnySeasonNodes });
+  global.RoadToGloryConfig = Object.freeze({ MAIN_WIN_REWARD, SECONDARY_WIN_REWARD, SEASON_TRANSITION_REWARD, SEASON1, SEASON2, SEASON3, ARES, ORION, SEASONS, SEASON_IDS, season, buildSeasonNodes:buildAnySeasonNodes });
 })(globalThis);

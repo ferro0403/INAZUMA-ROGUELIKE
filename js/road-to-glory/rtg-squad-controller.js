@@ -92,7 +92,7 @@
       return ["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"];
     }
 
-    const SQUAD_FILTER_SEASON_LABELS=Object.freeze({ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares"});
+    const SQUAD_FILTER_SEASON_LABELS=Object.freeze({ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares",orion:"Orion"});
     function squadFilterSeasonIds(){
       return Array.from(deps.config?.SEASON_IDS||[]).map(deps.id).filter(Boolean);
     }
@@ -101,7 +101,7 @@
       return SQUAD_FILTER_SEASON_LABELS[sid]||global.SeasonRegistry?.get?.(sid)?.name||sid.toUpperCase();
     }
     function squadFilterSeasonShortLabel(seasonId){
-      return ({ie1:"S1",ie1_s2:"S2",ie1_s3:"S3",ie2:"AR"})[deps.id(seasonId)]||squadFilterSeasonLabel(seasonId);
+      return ({ie1:"S1",ie1_s2:"S2",ie1_s3:"S3",ie2:"AR",orion:"OR"})[deps.id(seasonId)]||squadFilterSeasonLabel(seasonId);
     }
     function squadFilterSeasonOptions(){
       return [{value:"all",label:"Tutte"},...squadFilterSeasonIds().map(seasonId=>({value:seasonId,label:squadFilterSeasonLabel(seasonId)}))];
