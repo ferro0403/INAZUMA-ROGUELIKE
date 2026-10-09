@@ -4,7 +4,7 @@
   // Fixed 120 Hz steps keep contacts stable on both 60 Hz and 120 Hz displays.
   function createSimulation({width,height,radius,count}){
     const balls=[],diameter=radius*2,columns=Math.floor(width/diameter);
-    let time=0,agitation=0,paddleX=width/2;
+    let time=0;
     for(let row=0,id=0;id<count;row++){
       const n=columns-(row%2),spacing=diameter+.2;
       for(let column=0;column<n&&id<count;column++,id++){
@@ -15,20 +15,20 @@
       if(b.x<radius){b.x=radius;b.vx=Math.abs(b.vx)*.22;}
       if(b.x>width-radius){b.x=width-radius;b.vx=-Math.abs(b.vx)*.22;}
       if(b.y<radius){b.y=radius;b.vy=Math.abs(b.vy)*.22;}
-      const lift=agitation*Math.exp(-Math.pow((b.x-paddleX)/(radius*1.6),2));
-      const floor=height-radius-3-4*Math.abs(b.x-width/2)/(width/2)-lift;
-      if(b.y>floor){b.y=floor;b.vy=-Math.max(0,b.vy)*.12;b.vx*=.94;}
+      const floor=height-radius-3-4*Math.abs(b.x-width/2)/(width/2);
+      if(b.y>floor){b.y=floor;if(b.vy>0){b.vy=-b.vy*.12;b.vx*=.94;}}
     }
     function step(dt,driven=false){
       dt=Math.min(1/120,Math.max(0,dt));time+=dt;
-      const phase=time/.31,pass=Math.floor(phase),sweep=phase-pass;
-      paddleX=radius+(width-diameter)*sweep;
-      agitation=driven&&pass<2?22*Math.pow(Math.sin(Math.PI*sweep),2):0;
+      // A rotating agitator carries the pile around its axis. Contacts still
+      // resolve every step: capsules roll past each other instead of moving as
+      // one rigid block, then fall freely once the crank disengages.
+      const drive=driven?Math.min(1,time/.08)*Math.min(1,Math.max(0,(.62-time)/.12)):0;
       for(const b of balls){
-        // Two passes of an agitator beneath the pile, never a global shake.
-        if(driven&&pass<2&&Math.abs(b.x-paddleX)<radius*1.35&&b.y>height-diameter*1.5){
-          b.vx+=Math.cos(sweep*Math.PI)*1050*dt;
-          b.vy-=2500*Math.sin(Math.PI*sweep)*dt;
+        if(drive>0){
+          const dx=b.x-width/2,dy=b.y-height*.55;
+          b.vx+=(-dy*9-b.vx)*22*drive*dt;
+          b.vy+=(dx*9-b.vy)*22*drive*dt;
         }
         b.vy+=850*dt;
         b.vx*=.996;b.vy*=.998;
@@ -36,7 +36,7 @@
         b.angle+=b.vx*dt/radius*180/Math.PI;
         walls(b);
       }
-      for(let iteration=0;iteration<12;iteration++){
+      for(let iteration=0;iteration<20;iteration++){
         for(let i=0;i<balls.length;i++)for(let j=i+1;j<balls.length;j++){
           const a=balls[i],b=balls[j],dx=b.x-a.x,dy=b.y-a.y;
           const distance=Math.hypot(dx,dy);

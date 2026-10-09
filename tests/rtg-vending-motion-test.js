@@ -8,9 +8,11 @@ const {createSimulation}=context.RoadToGloryVendingMotion;
 for(const [width,height,radius] of [[184,156,18],[200,174,19.5]]){
  const s=createSimulation({width,height,radius,count:14});
  const before=s.balls.map(b=>({...b}));
+ const peak=before.map(()=>0),sideways=before.map(()=>0);
  let travel=0;
  for(let i=0;i<200;i++){
   s.step(1/120,i<74);
+  if(i<74)s.balls.forEach((b,j)=>{peak[j]=Math.max(peak[j],Math.hypot(b.x-before[j].x,b.y-before[j].y));sideways[j]=Math.max(sideways[j],Math.abs(b.x-before[j].x));});
   for(const b of s.balls){
    assert(Number.isFinite(b.x+b.y+b.angle));
    assert(b.x>=radius-.1 && b.x<=width-radius+.1,'capsules stay behind glass side walls');
@@ -23,6 +25,8 @@ for(const [width,height,radius] of [[184,156,18],[200,174,19.5]]){
   if(i===60)travel=s.balls.reduce((sum,b,j)=>sum+Math.hypot(b.x-before[j].x,b.y-before[j].y),0);
  }
  assert(travel>50,'crank transfers visible movement into the pile');
+ assert(peak.filter(distance=>distance>radius*2).length>=10,'at least ten capsules visibly tumble by more than their diameter during the crank');
+ assert(sideways.filter(distance=>distance>radius*2).length>=6,'mixing exchanges positions across the pile, not just a vertical bounce');
  for(let i=0;i<300;i++)s.step(1/120,false);
  assert(s.balls.every(b=>Math.hypot(b.vx,b.vy)<8),'pile settles after the crank stops');
  const lowest=s.balls.reduce((a,b)=>a.y>b.y?a:b);
