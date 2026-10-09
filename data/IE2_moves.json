@@ -988,7 +988,7 @@
       "jpName": "アイスグランド",
       "type": "defense",
       "element": "Wind",
-      "power": 65,
+      "power": 85,
       "tension": 60,
       "source": "database"
     },
@@ -1018,7 +1018,7 @@
       "jpName": "後ろの正面",
       "type": "defense",
       "element": "Mountain",
-      "power": 50,
+      "power": 80,
       "tension": 50,
       "source": "database"
     },

@@ -968,7 +968,7 @@
       "jpName": "アイスグランド",
       "type": "defense",
       "element": "Wind",
-      "power": 65,
+      "power": 85,
       "tension": 60,
       "source": "database"
     },
@@ -998,7 +998,7 @@
       "jpName": "後ろの正面",
       "type": "defense",
       "element": "Mountain",
-      "power": 50,
+      "power": 80,
       "tension": 50,
       "source": "database"
     },
@@ -1040,7 +1040,29 @@
       "element": "Wind",
       "power": 105,
       "tension": 100,
-      "source": "database"
+      "source": "database",
+      "roleMoves": {
+        "FW": {
+          "moveId": "4538_7",
+          "name": "Triple Blizzard",
+          "jpName": "トリプルブリザード",
+          "type": "shot",
+          "element": "Wind",
+          "power": 105,
+          "tension": 100,
+          "source": "database"
+        },
+        "DF": {
+          "moveId": "4538_2",
+          "name": "Land of Ice",
+          "jpName": "アイスグランド",
+          "type": "defense",
+          "element": "Wind",
+          "power": 85,
+          "tension": 60,
+          "source": "database"
+        }
+      }
     },
     "4539": {
       "moveId": "4539_7",
@@ -1190,7 +1212,29 @@
       "element": "Fire",
       "power": 80,
       "tension": 60,
-      "source": "database"
+      "source": "database",
+      "roleMoves": {
+        "DF": {
+          "moveId": "4555_2",
+          "name": "Photon Crash",
+          "jpName": "フォトンフラッシュ",
+          "type": "defense",
+          "element": "Fire",
+          "power": 80,
+          "tension": 60,
+          "source": "database"
+        },
+        "FW": {
+          "moveId": "4555_1",
+          "name": "Meteor Blade",
+          "jpName": "流星ブレード",
+          "type": "shot",
+          "element": "Fire",
+          "power": 85,
+          "tension": 70,
+          "source": "database"
+        }
+      }
     },
     "4556": {
       "moveId": "4556_7",
@@ -2210,7 +2254,29 @@
       "element": "Mountain",
       "power": 90,
       "tension": 70,
-      "source": "database"
+      "source": "database",
+      "roleMoves": {
+        "MF": {
+          "moveId": "4725_1",
+          "name": "Avenging Eagle",
+          "jpName": "天空隼弾",
+          "type": "shot",
+          "element": "Mountain",
+          "power": 90,
+          "tension": 70,
+          "source": "database"
+        },
+        "DF": {
+          "moveId": "4725_4",
+          "name": "About Face",
+          "jpName": "後ろの正面",
+          "type": "defense",
+          "element": "Mountain",
+          "power": 80,
+          "tension": 50,
+          "source": "database"
+        }
+      }
     },
     "4726": {
       "moveId": "4726_1",
