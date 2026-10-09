@@ -35,14 +35,14 @@ assert(picker.includes("data-rtg-picker-team"), "Replacement picker must expose 
 assert(picker.includes('value="ie1_s2" selected'), "Replacement picker must preserve the selected season");
 
 const controller = fs.readFileSync("js/road-to-glory/rtg-squad-controller.js","utf8");
-assert(controller.includes("SQUAD_FILTER_SEASON_LABELS"), "Squad filters must define the four RTG season labels");
+assert(controller.includes("SQUAD_FILTER_SEASON_LABELS"), "Squad filters must define all five RTG season labels");
 assert(controller.includes("squadFilterTeamOptions"), "Team options must be derived dynamically from player cards");
 assert(controller.includes("cardMatchesSquadFilters"), "Season/team filters must participate in candidate filtering");
 assert(/seasonFilter=String\(event\.target\?\.value\|\|"all"\);\s*refreshTeamFilterControl\(\)/s.test(controller), "Changing season must refresh and validate the team selector");
 assert(controller.includes("reconcileSquadTeamFilter"), "Team selection must be preserved only when the same team exists in the selected season, otherwise reset to Tutte");
 
 const config = fs.readFileSync("js/road-to-glory/rtg-config.js","utf8");
-assert(config.includes("const SEASONS=Object.freeze({ie1:SEASON1,ie1_s2:SEASON2,ie1_s3:SEASON3,ie2:ARES})"), "RTG filter season source must remain the four configured RTG seasons");
+assert(config.includes("const SEASONS=Object.freeze({ie1:SEASON1,ie1_s2:SEASON2,ie1_s3:SEASON3,ie2:ARES,orion:ORION})"), "RTG filter season source must remain all five configured RTG seasons");
 
 const theme = fs.readFileSync("css/rtg-theme.css","utf8");
 assert(theme.includes(".rtg-picker-season-team-filters"), "Replacement season/team controls need responsive layout");

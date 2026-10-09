@@ -1,7 +1,7 @@
 (function (global) {
   "use strict";
 
-  const ORDER = Object.freeze(["ie1", "ie1_s2", "ie1_s3"]);
+  const ORDER = Object.freeze(["ie1", "ie1_s2", "ie1_s3", "ie2", "orion"]);
   const id = (value) => String(value ?? "");
   const cardIdentity = () => global.RoadToGloryCardIdentity;
 

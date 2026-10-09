@@ -65,14 +65,16 @@
   }
 
   function recruitmentCandidates(state, seasonDb) {
-    if (id(state?.activeSeasonId || seasonDb?.seasonId) !== "ie1_s3") return [];
+    const seasonId=id(state?.activeSeasonId || seasonDb?.seasonId);
+    if(!["ie1_s3","orion"].includes(seasonId))return [];
+    const expectedSource=seasonId==="orion"?"orion_recruitment_profile":"season3_recruitment_profile";
     const api=cards(),profiles=new Map((seasonDb?.profiles||[]).map(profile=>[id(profile.profileId),profile]));
     return (seasonDb?.recruitmentPool?.entries||[])
-      .filter(entry=>entry?.eligiblePullFreeAgents===true&&entry?.sourceKind==="season3_recruitment_profile"&&id(entry.profileId)&&profiles.has(id(entry.profileId)))
+      .filter(entry=>entry?.eligiblePullFreeAgents===true&&entry?.sourceKind===expectedSource&&id(entry.profileId)&&profiles.has(id(entry.profileId)))
       .map(entry=>{
         const profile=profiles.get(id(entry.profileId));
-        const cardId=api.cardIdForProfile(id(entry.profileId),"ie1_s3");
-        return Object.freeze({...profile,...entry,playerId:api.parse(cardId).playerId,profileId:id(entry.profileId),cardId,legacySeasonId:"ie1_s3",sourceKind:"season"});
+        const cardId=api.cardIdForProfile(id(entry.profileId),seasonId);
+        return Object.freeze({...profile,...entry,playerId:api.parse(cardId).playerId,profileId:id(entry.profileId),cardId,legacySeasonId:seasonId,sourceKind:"season"});
       });
   }
 

@@ -1213,3 +1213,9 @@ button.player-card:has(> .rtg-legacy-badge),
   --rtg-legacy-color:#46d7c8;
   --rtg-legacy-ink:#061817;
 }
+/* Orion RTG pastel green card and detail badge. */
+.rtg-legacy-badge[data-legacy-season="OR"],
+.player-detail-rtg-legacy-badge[data-legacy-season="OR"]{
+  --rtg-legacy-color:#A8DDB5;
+  --rtg-legacy-ink:#234A34;
+}

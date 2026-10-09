@@ -4,7 +4,7 @@
   function create(deps = {}) {
     function openVending(mode="team"){
       const campaign=deps.getCampaign(),seasonDb=deps.getSeasonDb();
-      const selectedMode=mode==="recruitment"&&deps.activeSeasonId()==="ie1_s3"?"recruitment":"team";
+      const selectedMode=mode==="recruitment"&&Number(deps.activeConfig()?.recruitmentPullCost)>0?"recruitment":"team";
       const pool=deps.gacha.previewPool(campaign,seasonDb,deps.accessibleCards(campaign),selectedMode);
       const cost=selectedMode==="recruitment"?deps.activeConfig()?.recruitmentPullCost:deps.activeConfig()?.pullCost;
       deps.openModal?.(deps.runView.vendingMarkup({...pool,tokens:campaign.tokens,seasonId:deps.activeSeasonId(),mode:selectedMode,cost}),{className:"rtg-modal rtg-vending-modal"});

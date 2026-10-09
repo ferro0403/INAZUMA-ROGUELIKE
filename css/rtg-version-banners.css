@@ -11,6 +11,7 @@ button.player-card:has(> .rtg-version-count-badge),
 .rtg-legacy-badge[data-legacy-season="S1"]{--rtg-legacy-color:#ffd21f;--rtg-legacy-ink:#111216;}
 .rtg-legacy-badge[data-legacy-season="S2"]{--rtg-legacy-color:#35b8f4;--rtg-legacy-ink:#07131b;}
 .rtg-legacy-badge[data-legacy-season="S3"]{--rtg-legacy-color:#a678ff;--rtg-legacy-ink:#130b24;}
+.rtg-legacy-badge[data-legacy-season="OR"]{--rtg-legacy-color:#A8DDB5;--rtg-legacy-ink:#234A34;}
 .rtg-version-count-badge{position:absolute!important;z-index:25!important;left:-4px!important;right:auto!important;top:auto!important;bottom:-11px!important;display:grid!important;place-items:center!important;min-width:42px!important;height:16px!important;padding:0 6px!important;border:2px solid #111216!important;border-radius:0!important;background:#fffdf7!important;color:#111216!important;box-shadow:1px 2px 0 #111216!important;font:1000 7px/1 system-ui,sans-serif!important;letter-spacing:.04em!important;pointer-events:none!important;white-space:nowrap!important;}
 
 /* The replacement picker gets its card dimensions from selectors scoped to

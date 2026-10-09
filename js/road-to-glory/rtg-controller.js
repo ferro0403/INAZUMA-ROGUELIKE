@@ -155,6 +155,18 @@
       }
       return {seasonDb,freeAgentsDb};
     }
+    async function ensureOwnedCardSeasons(){
+      const seasons=new Set((campaign?.gachaAcquiredCards||[])
+        .map(entry=>cardIdentity?.parse?.(entry)?.legacySeasonId)
+        .filter(sid=>sid&&sid!=="free_agents"&&config?.season?.(sid)));
+      const registry=global.SeasonRegistry,previousActive=registry?.activeId?.();
+      try{
+        await Promise.all(Array.from(seasons).filter(sid=>!registry?.database?.(sid))
+          .map(sid=>registry.loadDatabase(sid)));
+      }finally{
+        if(previousActive&&registry?.setActive)registry.setActive(previousActive);
+      }
+    }
     function cardMeta(cardRef){return cardIdentity?.parse?.(cardRef)||{cardId:id(cardRef),playerId:id(cardRef),legacySeasonId:null,sourceKind:"legacy"};}
     function freeAgentCardId(playerId){return cardIdentity?.cardIdForFreeAgent?.(playerId)||id(playerId);}
     function accessibleCards(state){
@@ -987,7 +999,7 @@
       }
       campaign=await repository.ensureCampaign();
       progression?.setSeasonContext?.(campaign);
-      if(activeSeasonId()==="ie2"){
+      if(["ie2","orion"].includes(activeSeasonId())){
         try{await ensureAresRouteMap();}
         catch(error){global.console?.error?.("[RTG] Impossibile caricare lo sfondo Ares",error);}
       }
@@ -997,6 +1009,7 @@
         for(const player of seasonDb?.players||[])rawPlayerById.set(id(player.playerId||player.id),player);
         for(const profile of seasonDb?.profiles||[])rawPlayerById.set(id(profile.profileId||profile.id),profile);
       }
+      await ensureOwnedCardSeasons();
       await ensureInitialSquad();
       activeSquadSlot=readActiveSquadSlot();
       const existingSlots=readSquadSlots();

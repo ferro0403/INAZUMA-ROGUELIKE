@@ -2,7 +2,7 @@ const assert=require('assert'),fs=require('fs'),vm=require('vm');
 const context={console};context.globalThis=context;
 for(const file of ['js/road-to-glory/rtg-card-identity.js','js/road-to-glory/rtg-rng.js','js/road-to-glory/rtg-config.js','js/road-to-glory/rtg-state.js','js/road-to-glory/rtg-gacha.js','js/road-to-glory/rtg-progression.js'])vm.runInNewContext(fs.readFileSync(file,'utf8'),context,{filename:file});
 const C=context.RoadToGloryConfig,S=C.SEASON3,nodes=Array.from(C.buildSeasonNodes('ie1_s3'));
-assert.deepStrictEqual(Array.from(C.SEASON_IDS),['ie1','ie1_s2','ie1_s3']);
+assert.deepStrictEqual(Array.from(C.SEASON_IDS),['ie1','ie1_s2','ie1_s3','ie2','orion']);
 assert.strictEqual(S.seasonNumber,3);assert.strictEqual(S.previousSeasonId,'ie1_s2');assert.strictEqual(S.nextSeasonId,null);
 assert.strictEqual(S.routeBackground,'assets/rtg/rtg-season3-route-map-user.webp');assert.strictEqual(S.livesPerCheckpoint,2);assert.strictEqual(S.pullCost,300);assert.strictEqual(S.recruitmentPullCost,150);
 const order=['big_waves','neo_national','desert_lions','fire_dragon','brocken_brigade','queen_s_knights','the_cape_crusaders','the_empire','rose_griffons','unicorn','team_d','orpheus','team_zoolan','the_kingdom','red_matador','dark_angels','little_gigantes','team_ogre','inazuma_national'];
