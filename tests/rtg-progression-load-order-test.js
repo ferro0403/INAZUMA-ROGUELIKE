@@ -1,0 +1,10 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const index=fs.readFileSync("index.html","utf8");
+const foundation=["js/road-to-glory/rtg-config.js","js/road-to-glory/rtg-storage.js","js/road-to-glory/rtg-state.js","js/road-to-glory/rtg-repository.js","js/road-to-glory/rtg-entitlements.js","js/road-to-glory/rtg-player-resolver.js"];
+const progression=["js/road-to-glory/rtg-rng.js","js/road-to-glory/rtg-progression.js","js/road-to-glory/rtg-gacha.js","js/road-to-glory/rtg-squad-runtime.js"];
+let previous=-1;for(const script of [...foundation,...progression]){const pos=index.indexOf(script);assert(pos>previous,`${script} load order`);previous=pos;}assert(previous<index.indexOf("js/app.js"),"RTG progression must load before app.js");
+let openCalls=0;const indexedDB={open(){openCalls++;throw new Error("pure module load must not open IndexedDB");}};
+const c={globalThis:null,window:null,console,Error,TypeError,Object,Array,String,Number,Promise,JSON,Math,RegExp,Set,Map,indexedDB,SeasonRegistry:{database:()=>null,player:()=>null},ProfiledSeasonRuntime:{canonicalPlayerId:(_s,id)=>String(id)},InazumaProgression:{},MatchMoveRuntime:{}};c.globalThis=c;c.window=c;vm.createContext(c);
+for(const script of [...foundation,...progression])vm.runInContext(fs.readFileSync(script,"utf8"),c,{filename:script});assert.strictEqual(openCalls,0);
+console.log("rtg-progression-load-order-test: PASS");

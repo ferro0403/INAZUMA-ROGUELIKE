@@ -1,0 +1,23 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const db=JSON.parse(fs.readFileSync("data/IE1_S2_season_compact.json","utf8"));
+const byPlayer=new Map();
+for(const p of db.profiles||[]){const a=byPlayer.get(String(p.playerId))||[];a.push(p);byPlayer.set(String(p.playerId),a);}
+const versions=[...byPlayer.values()].find(a=>a.length>1);
+assert(versions&&versions.length>1,"fixture needs a canonical player with multiple S2 profiles");
+const profiles=new Map((db.profiles||[]).map(p=>[String(p.profileId),p]));
+const ctx={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};ctx.globalThis=ctx;
+ctx.SeasonRegistry={normalizeSeasonId:x=>x,player:()=>null};
+ctx.ProfiledSeasonRuntime={resolveProfile:(sid,pid)=>profiles.get(String(pid))||null,canonicalPlayerId:(sid,pid)=>profiles.get(String(pid))?.playerId||pid};
+vm.createContext(ctx);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),ctx);
+const C=ctx.RoadToGloryCardIdentity,a=versions[0],b=versions[1];
+const ca=C.cardIdForProfile(a.profileId,"ie1_s2"),cb=C.cardIdForProfile(b.profileId,"ie1_s2");
+assert.strictEqual(C.cardIdForSeason(a.profileId,"ie1_s2"),`ie1_s2::${a.playerId}`,"canonical season card helper must collapse only when explicitly requested");
+assert.strictEqual(ca,`ie1_s2::${a.profileId}`);
+assert.strictEqual(cb,`ie1_s2::${b.profileId}`);
+assert.notStrictEqual(ca,cb,"different profiles of same player must remain distinct cards");
+const pa=C.parse(ca),pb=C.parse(cb);
+assert.strictEqual(pa.profileId,a.profileId);assert.strictEqual(pb.profileId,b.profileId);
+assert.strictEqual(pa.canonicalPlayerId,pb.canonicalPlayerId);
+assert.strictEqual(pa.canonicalPlayerId,String(a.playerId));
+console.log("rtg-season2-card-profile-identity-test: PASS");

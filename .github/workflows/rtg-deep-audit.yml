@@ -1,0 +1,96 @@
+name: RTG deep branch audit
+on:
+  push:
+    branches:
+      - refactor/rtg-css-cleanup
+    paths:
+      - .github/workflows/rtg-deep-audit.yml
+      - scripts/rtg-browser-bootstrap-diagnostics.mjs
+      - scripts/verify-css-local-assets.cjs
+      - css/aurico-rarity.css
+      - css/rtg-*.css
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/rtg-css-cleanup
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify index local references
+        run: node scripts/verify-index-local-assets.cjs
+      - name: Verify CSS local asset references
+        run: node scripts/verify-css-local-assets.cjs
+      - name: Syntax check all production JavaScript
+        shell: bash
+        run: |
+          set -euo pipefail
+          while IFS= read -r -d '' file; do
+            node --check "$file"
+          done < <(find js -type f -name '*.js' -print0 | sort -z)
+      - name: Verify critical application bootstrap
+        shell: bash
+        run: |
+          set -euo pipefail
+          for item in             js/app/ui-shell.js             js/app/app-bootstrap.js             js/home/home-view.js             js/home/home-controller.js             js/run/run-roster-runtime.js             js/player/player-visuals.js             js/player/player-view.js             js/player/player-detail-controller.js             js/app.js; do
+            grep -q "$item" index.html
+          done
+          ! grep -q 'css/road-to-glory.css' index.html
+      - name: Browser bootstrap diagnostics
+        run: node scripts/rtg-browser-bootstrap-diagnostics.mjs
+      - name: Verify CSS architecture before compatibility audit
+        run: node tests/rtg-css-architecture-test.js
+      - name: Build temporary legacy CSS compatibility view for stale tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          cp css/rtg-theme.css /tmp/rtg-theme-original.css
+          cat             css/rtg-foundation.css             css/rtg-shell.css             css/rtg-run.css             css/rtg-squad.css             css/rtg-prematch.css             css/rtg-match.css             css/rtg-vending.css             css/rtg-economy.css             css/rtg-theme.css             css/rtg-version-banners.css > /tmp/rtg-all-owners.css
+          cp /tmp/rtg-all-owners.css css/road-to-glory.css
+          cp /tmp/rtg-all-owners.css css/rtg-theme-core.css
+          cp /tmp/rtg-all-owners.css css/rtg-theme.css
+      - name: Run complete RTG and bootstrap test audit
+        shell: bash
+        run: |
+          set +e
+          failures=0
+          total=0
+          shopt -s nullglob
+          tests=(tests/rtg-*-test.js)
+          tests+=(
+            tests/app-ui-shell-domain-test.js
+            tests/app-bootstrap-domain-test.js
+            tests/home-season-resume-production-path-test.js
+            tests/run-roster-runtime-domain-test.js
+            tests/player-presentation-production-path-test.js
+            tests/permanent-club-ui-production-path-test.js
+          )
+          for test_file in "${tests[@]}"; do
+            if [ "$test_file" = "tests/rtg-css-architecture-test.js" ]; then continue; fi
+            total=$((total+1))
+            echo "::group::$test_file"
+            node "$test_file"
+            code=$?
+            echo "::endgroup::"
+            if [ $code -ne 0 ]; then
+              failures=$((failures+1))
+              echo "::error file=$test_file::FAILED ($code)"
+            fi
+          done
+          echo "AUDIT_TOTAL=$total"
+          echo "AUDIT_FAILURES=$failures"
+          [ $failures -eq 0 ]
+      - name: Restore audit-only CSS shims
+        if: always()
+        shell: bash
+        run: |
+          if [ -f /tmp/rtg-theme-original.css ]; then cp /tmp/rtg-theme-original.css css/rtg-theme.css; fi
+          rm -f css/road-to-glory.css css/rtg-theme-core.css
+      - name: Final whitespace check
+        if: always()
+        run: git diff --check
