@@ -1,0 +1,1369 @@
+@import url("./rtg-theme-core.css?v=20260921-duel-actions-mobile-1");
+@import url("./rtg-run.css?v=20261001-rtg-qol-1");
+
+/* RTG token HUD: compact Ramen Sticker currency and separate resource cards. */
+.rtg-token-icon{display:inline-block!important;width:22px!important;height:22px!important;min-width:22px!important;max-width:22px!important;min-height:22px!important;max-height:22px!important;object-fit:contain!important;object-position:center!important;vertical-align:-5px!important;flex:0 0 22px!important;margin:0 4px 0 0!important;}
+.rtg-main-topbar .status-strip{display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-end!important;gap:10px!important;flex-wrap:nowrap!important;}
+.rtg-main-topbar .status-pill{position:relative!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;min-height:42px!important;padding:7px 11px!important;white-space:nowrap!important;background:#fffdf6!important;color:#111216!important;border:2px solid #111216!important;box-shadow:3px 4px 0 #111216!important;}
+.rtg-main-topbar .rtg-token-pill{min-width:82px!important;}
+.rtg-main-topbar .status-pill.lives{display:inline-block!important;min-width:88px!important;padding:10px 11px!important;color:#111216!important;font-size:.86rem!important;font-weight:800!important;line-height:1.15!important;text-align:center!important;letter-spacing:0!important;}
+.rtg-main-topbar .status-pill.lives::before,.rtg-main-topbar .status-pill.lives::after{content:none!important;display:none!important;}
+.rtg-main-topbar .status-pill.lives::first-letter{color:#e23b3b!important;font-size:1.28em!important;}
+.rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:20px!important;height:20px!important;min-width:20px!important;max-width:20px!important;min-height:20px!important;max-height:20px!important;flex-basis:20px!important;vertical-align:-4px!important;}
+.rtg-vending-button span,.rtg-vending-wallet-chip strong,.rtg-vending-pull{align-items:center!important;}
+
+/* Development currency artwork is intentionally much larger than the compact HUD token.
+   This wins over the global .rtg-token-icon !important rule and keeps the sticker centered
+   in the selected-player requirement, confirmation cost, and development wallet. */
+.rtg-development-screen .rtg-development-token-icon{
+  width:74px!important;height:74px!important;min-width:74px!important;min-height:74px!important;
+  display:inline-flex!important;align-items:center!important;justify-content:center!important;
+  padding:0!important;margin:0!important;overflow:visible!important;
+}
+.rtg-development-screen .rtg-development-token-icon>.rtg-token-icon{
+  display:block!important;width:66px!important;height:66px!important;min-width:66px!important;max-width:66px!important;
+  min-height:66px!important;max-height:66px!important;flex:0 0 66px!important;margin:0!important;
+  object-fit:contain!important;object-position:center!important;vertical-align:middle!important;
+}
+.rtg-development-screen .development-requirement .rtg-development-token-icon{
+  align-self:center!important;justify-self:center!important;
+}
+.rtg-development-screen .development-wallet>span:first-child{
+  align-items:center!important;
+}
+.rtg-development-screen .development-wallet .rtg-development-token-icon{
+  width:82px!important;height:82px!important;min-width:82px!important;min-height:82px!important;
+  align-self:center!important;justify-self:center!important;
+}
+.rtg-development-screen .development-wallet .rtg-development-token-icon>.rtg-token-icon{
+  width:74px!important;height:74px!important;min-width:74px!important;max-width:74px!important;
+  min-height:74px!important;max-height:74px!important;flex-basis:74px!important;
+}
+
+/* Squad replacement picker. One canonical OVR control, matching the RTG filter language. */
+.rtg-picker-ovr-sort{
+  grid-column:1/-1!important;
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) 42px!important;
+  align-items:stretch!important;
+  width:100%!important;
+  min-height:38px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:2px solid #111216!important;
+  border-radius:2px!important;
+  background:#fff!important;
+  color:#111216!important;
+  box-shadow:2px 3px 0 rgba(17,18,22,.18)!important;
+  font:950 .76rem/1 system-ui,sans-serif!important;
+  letter-spacing:.06em!important;
+  cursor:pointer!important;
+  appearance:none!important;
+}
+.rtg-picker-ovr-sort>span{display:grid!important;place-items:center!important;min-width:0!important;padding:8px 10px!important;}
+.rtg-picker-ovr-sort>[data-rtg-picker-sort-arrow]{display:grid!important;place-items:center!important;min-width:42px!important;border-left:2px solid #111216!important;background:#ffd21f!important;font:1000 1.05rem/1 system-ui,sans-serif!important;}
+.rtg-picker-ovr-sort:active{transform:translate(1px,1px)!important;box-shadow:1px 2px 0 rgba(17,18,22,.24)!important;}
+.rtg-picker-ovr-sort:focus-visible{outline:3px solid #ffd21f!important;outline-offset:2px!important;}
+
+/* Catalog controls only layout. Card appearance is the canonical squad card. */
+.rtg-modal .rtg-player-catalog .rtg-catalog-grid{display:grid!important;grid-template-columns:repeat(4,minmax(0,1fr))!important;grid-auto-flow:row!important;gap:12px 8px!important;align-items:start!important;justify-content:center!important;width:100%!important;padding:14px 0 4px!important;}
+.rtg-picker-season-team-filters,.rtg-catalog-filter-grid{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;min-width:0!important;}
+.rtg-picker-season-team-filters{grid-column:1/-1!important;}
+.rtg-catalog-filter-grid{margin:0 0 10px!important;}
+.rtg-picker-season-team-filters .rtg-picker-rarity-filter,.rtg-catalog-filter-grid .rtg-picker-rarity-filter{grid-column:auto!important;grid-template-columns:1fr!important;gap:5px!important;margin-top:0!important;}
+.rtg-picker-season-team-filters .rtg-picker-rarity-filter select,.rtg-catalog-filter-grid .rtg-picker-rarity-filter select{min-width:0!important;text-overflow:ellipsis!important;}
+@media(max-width:430px){
+  .rtg-picker-season-team-filters,.rtg-catalog-filter-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:6px!important;}
+  .rtg-picker-season-team-filters .rtg-picker-rarity-filter>span,.rtg-catalog-filter-grid .rtg-picker-rarity-filter>span{font-size:.56rem!important;}
+  .rtg-picker-season-team-filters .rtg-picker-rarity-filter select,.rtg-catalog-filter-grid .rtg-picker-rarity-filter select{min-height:34px!important;padding-left:8px!important;padding-right:26px!important;font-size:.64rem!important;}
+}
+
+/* Duel action cards: give long move labels their own full-width row. */
+.rtg-duel-card--clean .rtg-duel-choice-card{min-width:0!important;min-height:108px!important;display:grid!important;grid-template-columns:minmax(0,1fr) auto!important;grid-template-rows:minmax(42px,auto) auto!important;grid-template-areas:"copy copy" "probability probability"!important;align-content:space-between!important;align-items:start!important;gap:10px 8px!important;padding:12px!important;}
+.rtg-duel-card--clean .rtg-choice-icon{display:none!important;}
+.rtg-duel-card--clean .rtg-choice-copy{grid-area:copy!important;align-self:start!important;display:grid!important;gap:4px!important;min-width:0!important;width:100%!important;padding:0!important;overflow:visible!important;text-align:left!important;}
+.rtg-duel-card--clean .rtg-choice-copy strong{display:-webkit-box!important;min-width:0!important;width:100%!important;margin:0!important;overflow:hidden!important;color:#111216!important;font-size:clamp(12px,3.3vw,15px)!important;font-weight:1000!important;line-height:1.08!important;letter-spacing:-.01em!important;overflow-wrap:break-word!important;word-break:normal!important;white-space:normal!important;hyphens:none!important;-webkit-box-orient:vertical!important;-webkit-line-clamp:2!important;}
+.rtg-duel-card--clean .rtg-choice-copy em{display:block!important;min-width:0!important;max-width:100%!important;margin:0!important;overflow:hidden!important;color:#5f6167!important;font-size:9px!important;font-style:normal!important;font-weight:850!important;line-height:1.15!important;text-align:left!important;text-overflow:ellipsis!important;white-space:nowrap!important;}
+.rtg-duel-card--clean .rtg-choice-probability{grid-area:probability!important;align-self:end!important;justify-self:stretch!important;display:flex!important;align-items:center!important;justify-content:space-between!important;gap:6px!important;min-width:0!important;width:100%!important;padding:0!important;margin:0!important;}
+.rtg-duel-card--clean .rtg-choice-probability strong{flex:0 1 auto!important;min-width:0!important;margin:0!important;font-size:clamp(18px,5vw,22px)!important;line-height:.95!important;white-space:nowrap!important;}
+.rtg-duel-card--clean .rtg-choice-delta{flex:0 0 auto!important;margin:0!important;padding:3px 6px!important;font-size:8px!important;white-space:nowrap!important;}
+
+/* Automatic secondary encounters may win/lose their internal duel, but by rule they never transfer the ball.
+   The engine already restores possession; prevent the ticker from claiming a fake recovery/turnover. */
+.rtg-match-ticker-list > li.is-auto.match-event-type--recovery .match-event-kind,
+.rtg-match-ticker-list > li.is-auto.match-event-type--recovery .match-event-copy,
+.rtg-match-ticker-list > li.is-auto.match-event-type--defensive-stop .match-event-kind,
+.rtg-match-ticker-list > li.is-auto.match-event-type--defensive-stop .match-event-copy{display:none!important;}
+.rtg-match-ticker-list > li.is-auto.match-event-type--recovery p::after,
+.rtg-match-ticker-list > li.is-auto.match-event-type--defensive-stop p::after{content:"Duello secondario · Possesso invariato";display:block;font-weight:850;line-height:1.2;}
+
+.rtg-match-shell:has(.rtg-duel-resolving) .rtg-match-ticker-list > li.is-latest{visibility:hidden!important;}
+.rtg-match-shell:has(.rtg-duel-resolving) .rtg-score-capsule{visibility:hidden!important;}
+
+@media(max-width:430px){
+  .rtg-main-topbar .status-strip{gap:7px!important;}
+  .rtg-main-topbar .status-pill{min-height:38px!important;padding:6px 8px!important;font-size:.72rem!important;box-shadow:2px 3px 0 #111216!important;}
+  .rtg-main-topbar .rtg-token-pill{min-width:72px!important;}
+  .rtg-main-topbar .status-pill.lives{min-width:78px!important;padding:9px 8px!important;font-size:.72rem!important;}
+  .rtg-token-icon{width:19px!important;height:19px!important;min-width:19px!important;max-width:19px!important;min-height:19px!important;max-height:19px!important;flex-basis:19px!important;margin-right:3px!important;vertical-align:-4px!important;}
+  .rtg-vending-button .rtg-token-icon,.rtg-vending-wallet-chip .rtg-token-icon,.rtg-vending-pull .rtg-token-icon{width:18px!important;height:18px!important;min-width:18px!important;max-width:18px!important;min-height:18px!important;max-height:18px!important;flex-basis:18px!important;}
+  .rtg-development-screen .rtg-development-token-icon{width:70px!important;height:70px!important;min-width:70px!important;min-height:70px!important;}
+  .rtg-development-screen .rtg-development-token-icon>.rtg-token-icon{width:62px!important;height:62px!important;min-width:62px!important;max-width:62px!important;min-height:62px!important;max-height:62px!important;flex-basis:62px!important;margin:0!important;}
+  .rtg-development-screen .development-wallet .rtg-development-token-icon{width:78px!important;height:78px!important;min-width:78px!important;min-height:78px!important;}
+  .rtg-development-screen .development-wallet .rtg-development-token-icon>.rtg-token-icon{width:70px!important;height:70px!important;min-width:70px!important;max-width:70px!important;min-height:70px!important;max-height:70px!important;flex-basis:70px!important;}
+  .rtg-picker-ovr-sort{min-height:36px!important;grid-template-columns:minmax(0,1fr) 38px!important;font-size:.7rem!important;}
+  .rtg-picker-ovr-sort>[data-rtg-picker-sort-arrow]{min-width:38px!important;font-size:1rem!important;}
+  .rtg-duel-card--clean .rtg-duel-choice-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;}
+  .rtg-duel-card--clean .rtg-duel-choice-card{min-height:112px!important;padding:11px 10px!important;}
+  .rtg-duel-card--clean .rtg-choice-copy strong{font-size:12px!important;line-height:1.08!important;}
+  .rtg-duel-card--clean .rtg-choice-copy em{font-size:8px!important;}
+  .rtg-duel-card--clean .rtg-choice-probability strong{font-size:18px!important;}
+}
+
+@media(max-width:360px){
+  .rtg-modal .rtg-player-catalog .rtg-catalog-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;}
+  .rtg-duel-card--clean .rtg-duel-choice-grid{gap:7px!important;}
+  .rtg-duel-card--clean .rtg-duel-choice-card{min-height:116px!important;padding:10px 8px!important;}
+  .rtg-duel-card--clean .rtg-choice-copy strong{font-size:11px!important;}
+  .rtg-duel-card--clean .rtg-choice-delta{padding:3px 5px!important;font-size:7px!important;}
+}
+
+/* RTG route artwork — verified JPEG across the whole Season 1 route. */
+.rtg-map .rtg-map-block .route-map.rtg-route-stage {
+  background-color:#082c52!important;
+  background-image:url("../assets/rtg/rtg-season1-route-map.jpg?v=5")!important;
+  background-position:50% 48%!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+  background-blend-mode:normal!important;
+  filter:none!important;
+}
+
+/* Season 2 must override the global Season 1 artwork rule above.
+   Keep !important here because the legacy S1 selector is also !important. */
+.rtg-run-screen--s2 .rtg-map .rtg-map-block--season2-part .route-map.rtg-route-stage--season2 {
+  background-color:#082c52!important;
+  background-image:var(--rtg-route-image,url("../assets/rtg/rtg-season2-route-map-user.webp?v=20260924-s2-map-hq-1"))!important;
+  background-position:var(--rtg-route-bg-position,center)!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+  background-blend-mode:normal!important;
+  filter:none!important;
+}
+
+/* Route fitted to the illustrated island map. */
+.rtg-route-stage .rtg-map-lines{pointer-events:none!important;}
+.rtg-route-stage .rtg-map-lines .rtg-route-line-shadow{
+  fill:none!important;
+  stroke:#111216!important;
+  stroke-width:2.45!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  opacity:.72!important;
+}
+.rtg-route-stage .rtg-map-lines .rtg-route-line{
+  fill:none!important;
+  stroke:#ffd21f!important;
+  stroke-width:1.5!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  opacity:.94!important;
+}
+
+/* RTG screens reuse the exact Home stadium background. */
+.rtg-run-screen,
+.rtg-squad-shell{
+  background:url("../assets/home/inazuma-stadium-mobile-light.jpeg") center top / cover no-repeat!important;
+}
+.rtg-run-content,
+.rtg-squad-content{
+  background:transparent!important;
+}
+@media (min-width:781px){
+  .rtg-run-screen,
+  .rtg-squad-shell{
+    background:url("../assets/home/inazuma-stadium-desktop-light.jpeg") center / cover no-repeat!important;
+  }
+}
+/* =========================================================
+   RTG capsule cabinet — shared by all seasons and both pull modes.
+   Presentation only: existing DOM hooks, rarity colors and controller timing.
+   Light comes from the upper left; the right-hand shell supplies real depth.
+   ========================================================= */
+.rtg-vending-machine-v12{
+--rtg-vending-reveal:#929ba8;
+  --rtg-cabinet-width:208px;
+  position:relative;
+  z-index:2;
+  width:min(246px,69vw);
+  margin:8px auto 0;
+  display:grid;
+  grid-template-rows:auto auto auto;
+  justify-items:center;
+  isolation:isolate;
+  filter:drop-shadow(8px 16px 12px rgba(20,27,32,.22));
+}
+.rtg-vending-machine-v12::before{
+content:"";
+  position:absolute;
+  z-index:-2;
+  left:50%;bottom:-13px;
+  width:92%;height:22px;
+  transform:translateX(-46%);
+  border-radius:50%;
+  background:radial-gradient(ellipse,rgba(15,22,28,.38),transparent 70%);
+  pointer-events:none;
+}
+.rtg-vending-machine-v12::after{
+  content:"";
+  position:absolute;
+  z-index:-1;
+  top:5px;bottom:0;
+  left:calc(50% - var(--rtg-cabinet-width) / 2 + 9px);
+  width:var(--rtg-cabinet-width);
+  border:1px solid #232a30;
+  border-radius:26px 26px 23px 23px;
+  background:linear-gradient(90deg,#606970,#a4aba9 84%,#727c7f 91%,#343d43);
+  box-shadow:inset -2px 0 2px #ffffff50,3px 5px 0 #172027;
+  pointer-events:none;
+}
+.rtg-vending-head-v9{
+position:relative;
+  z-index:5;
+  width:var(--rtg-cabinet-width);
+  min-height:52px;
+  display:grid;place-items:center;align-content:center;
+  padding:12px 12px 10px;
+  border:1px solid #242e35;
+  border-bottom:4px solid #171f26;
+  border-radius:24px 24px 7px 7px / 20px 20px 5px 5px;
+  background:
+    linear-gradient(100deg,#ffffff26,transparent 28% 76%,#00000050),
+    linear-gradient(180deg,#606a74 0%,#2c3640 16%,#1c242c 80%,#3e4850);
+  color:#fff;
+  box-shadow:inset 0 2px 1px #ffffff80,inset 3px 0 3px #ffffff20,inset -4px 0 5px #00000050,0 3px 3px #15212b55;
+  text-align:center;text-transform:uppercase;
+}
+.rtg-vending-head-v9::after{
+content:"";
+  position:absolute;
+  left:13px;right:13px;bottom:0;
+  height:2px;
+  border-radius:50%;
+  background:linear-gradient(90deg,#9d7617,#fff2a9 20%,#ffd34a 80%,#936712);
+  box-shadow:0 1px 6px #ffd34a66;
+}
+.rtg-vending-head-v9 span{
+  color:#ffd21f;
+  font:900 6px/1 system-ui,sans-serif;
+  letter-spacing:.18em;
+}
+.rtg-vending-head-v9 strong{
+  margin-top:3px;
+  font:1000 15px/.95 system-ui,sans-serif;
+  letter-spacing:.06em;
+}
+
+.rtg-vending-window-v9{
+position:relative;
+  width:var(--rtg-cabinet-width);
+  height:232px;
+  overflow:hidden;
+  isolation:isolate;
+  border:4px solid #3a4952;
+  border-top:0;
+  border-bottom:6px solid #53606a;
+  border-radius:28px 28px 36px 36px / 14px 14px 24px 24px;
+  background:
+    radial-gradient(ellipse at 50% 88%,#2d485b55 0%,transparent 55%),
+    radial-gradient(ellipse at 44% 20%,#f6fdff 0%,#c7e0e4 46%,#7295a2 100%);
+  box-shadow:inset 6px 0 6px #ffffffbb,inset -9px 0 12px #253f5266,inset 0 8px 10px #17283355,inset 0 -10px 12px #425c6655,0 1px 0 #e9f0ec;
+}
+.rtg-vending-window-v9::before{
+content:"";
+  position:absolute;
+  z-index:20;
+  inset:0;
+  width:auto;
+  height:auto;
+  border-radius:inherit;
+  background:linear-gradient(90deg,#ffffff55,transparent 8% 85%,#173f4e33);
+  border:2px solid #8da5ae;
+  border-left:3px solid #536975;
+  border-right:3px solid #536975;
+  box-shadow:inset 2px 0 0 #e9ffffcc,inset -2px 0 0 #d8f4fa99,0 0 0 1px #273b48;
+  pointer-events:none;
+}
+.rtg-vending-window-v9::after{
+content:"";
+  position:absolute;
+  z-index:2;
+  left:0;right:0;bottom:-6px;
+  height:32px;
+  border-radius:50%;
+  background:radial-gradient(ellipse,#23343f 10%,#6d8991 58%,#b6c9c8 68%,#4b626f 73%);
+  box-shadow:0 -2px 4px #f1ffff80;
+  pointer-events:none;
+}
+.rtg-vending-funnel-v10{
+position:absolute;
+  z-index:3;
+  left:12px;right:12px;bottom:0;
+  height:52px;
+  clip-path:polygon(0 0,100% 0,68% 100%,32% 100%);
+  background:linear-gradient(110deg,#bdd1d988,#f2fbff99 30%,#7d98a5aa 65%,#203c50);
+  border-top:1px solid #efffff88;
+  pointer-events:none;
+}
+.rtg-vending-funnel-v10::after{
+  content:"";
+  position:absolute;
+  left:50%;
+  bottom:-1px;
+  width:70px;
+  height:14px;
+  transform:translateX(-50%);
+  border-radius:50% 50% 0 0;
+  background:#30343a;
+  box-shadow:inset 0 4px 0 #14171b;
+}
+.rtg-vending-funnel-v10::before{
+  content:"";position:absolute;z-index:1;left:calc(50% - 35px);bottom:0;
+  width:70px;height:8px;border-radius:3px;
+  background:linear-gradient(#d5e3e6,#6d8795 45%,#263e50);
+  box-shadow:0 2px 3px #142734;transform-origin:right;
+}
+.has-capsule-physics.is-turning .rtg-vending-funnel-v10::before{
+  animation:rtg-vending-gate var(--rtg-gate-duration,500ms) linear 750ms both;
+}
+@keyframes rtg-vending-gate{
+  0%,100%{transform:scaleX(1)}
+  12%,85%{transform:scaleX(.06)}
+}
+.rtg-vending-window-glare-v9{
+position:absolute;
+  z-index:19;
+  top:9px;left:12px;
+  width:24px;height:76%;
+  border-radius:70% 20% 30% 50%;
+  background:linear-gradient(90deg,#ffffff88,#ffffff22 65%,transparent);
+  transform:rotate(7deg);
+  pointer-events:none;
+}
+
+.rtg-vending-capsule-v9{
+--rtg-capsule-color:#d9dee4;
+  position:absolute;
+  z-index:5;
+  width:39px;height:39px;
+  border:1px solid #293845bb;
+  border-radius:50%;
+  background:
+    radial-gradient(ellipse at 29% 19%,#fff 0 4%,#ffffffa0 5%,transparent 26%),
+    radial-gradient(circle at 34% 26%,transparent 33%,#16223222 62%,#10172288 100%),
+    linear-gradient(to bottom,#fffefb 0 49%,var(--rtg-capsule-color) 50% 100%);
+  box-shadow:inset 1px 2px 2px #ffffffcc,inset -3px -4px 5px #0c172044,2px 4px 4px #152c3c55;
+  transform:rotate(var(--r,0deg)) scale(var(--s,1));
+}
+.rtg-vending-capsule-v9::after{
+content:"";
+  position:absolute;
+  left:0;right:0;top:calc(50% - 1px);
+  height:3px;
+  border-radius:50%;
+  background:linear-gradient(#ffffffaa,#2b354dcc 60%,#ffffff66);
+}
+.rtg-vending-capsule-v9[data-capsule-rarity="normale"]{--rtg-capsule-color:#d9dee4;}
+.rtg-vending-capsule-v9[data-capsule-rarity="buono"]{--rtg-capsule-color:#2fa866;}
+.rtg-vending-capsule-v9[data-capsule-rarity="forte"]{--rtg-capsule-color:#27a8e8;}
+.rtg-vending-capsule-v9[data-capsule-rarity="elite"]{--rtg-capsule-color:#8254d1;}
+.rtg-vending-capsule-v9[data-capsule-rarity="mondiale"]{--rtg-capsule-color:#d93842;}
+.rtg-vending-capsule-v9[data-capsule-rarity="leggenda"]{--rtg-capsule-color:#d4a017;}
+.rtg-vending-capsule-v9[data-capsule-rarity="aurico"]{--rtg-capsule-color:#050506;}
+.rtg-vending-capsule-v9.c1{left:8px;bottom:5px;--tx:31px;--ty:-35px;--r:15deg;--d:-.04s;--s:1.04;z-index:11}
+.rtg-vending-capsule-v9.c2{left:43px;bottom:1px;--tx:-24px;--ty:-39px;--r:-19deg;--d:-.18s;--s:1.06;z-index:12}
+.rtg-vending-capsule-v9.c3{left:80px;bottom:7px;--tx:28px;--ty:-37px;--r:8deg;--d:-.30s;--s:1.01;z-index:13}
+.rtg-vending-capsule-v9.c4{left:116px;bottom:2px;--tx:-27px;--ty:-41px;--r:-13deg;--d:-.11s;--s:1.06;z-index:12}
+.rtg-vending-capsule-v9.c5{left:151px;bottom:7px;--tx:-31px;--ty:-32px;--r:20deg;--d:-.25s;--s:.99;z-index:11}
+.rtg-vending-capsule-v9.c6{left:24px;bottom:34px;--tx:38px;--ty:-24px;--r:-12deg;--d:-.08s;--s:.99;z-index:9}
+.rtg-vending-capsule-v9.c7{left:61px;bottom:38px;--tx:-29px;--ty:-28px;--r:18deg;--d:-.21s;--s:1.05;z-index:10}
+.rtg-vending-capsule-v9.c8{left:100px;bottom:34px;--tx:26px;--ty:-27px;--r:-17deg;--d:-.34s;--s:1.03;z-index:10}
+.rtg-vending-capsule-v9.c9{left:137px;bottom:37px;--tx:-32px;--ty:-24px;--r:11deg;--d:-.13s;--s:.98;z-index:9}
+.rtg-vending-capsule-v9.c10{left:44px;bottom:66px;--tx:28px;--ty:18px;--r:14deg;--d:-.28s;--s:.96;z-index:7}
+.rtg-vending-capsule-v9.c11{left:82px;bottom:69px;--tx:-27px;--ty:19px;--r:-15deg;--d:-.16s;--s:1.03;z-index:8}
+.rtg-vending-capsule-v9.c12{left:121px;bottom:64px;--tx:25px;--ty:17px;--r:21deg;--d:-.31s;--s:.97;z-index:7}
+.rtg-vending-capsule-v9.c13{left:64px;bottom:94px;--tx:22px;--ty:21px;--r:-8deg;--d:-.09s;--s:.92;z-index:5}
+.rtg-vending-capsule-v9.c14{left:105px;bottom:91px;--tx:-24px;--ty:20px;--r:12deg;--d:-.23s;--s:.96;z-index:6}
+
+.rtg-vending-body-v9{
+position:relative;
+  width:var(--rtg-cabinet-width);
+  min-height:150px;
+  margin-top:-3px;
+  display:grid;
+  grid-template-columns:minmax(0,1fr) 68px;
+  grid-template-rows:69px 53px;
+  gap:9px 11px;
+  padding:14px 13px 13px;
+  border:1px solid #68706d;
+  border-top:3px solid #d2d5cb;
+  border-radius:9px 9px 22px 22px / 5px 5px 18px 18px;
+  background:
+    radial-gradient(circle at 8px 9px,#eff1e9 0 1px,#8b928e 1.5px 2px,transparent 2.5px),
+    radial-gradient(circle at calc(100% - 8px) 9px,#eff1e9 0 1px,#8b928e 1.5px 2px,transparent 2.5px),
+    linear-gradient(90deg,#bec3b8,#fffdf0 6%,#f1f0e5 45%,#d3d5c9 92%,#a4aca5);
+  box-shadow:inset 0 2px 1px #fffef9,inset 3px 0 4px #ffffffbb,inset -4px -6px 7px #555c5733,0 3px 0 #59635f;
+  isolation:isolate;
+}
+.rtg-vending-body-v9::before{
+content:"";
+  position:absolute;
+  z-index:0;
+  top:9px;right:8px;
+  width:70px;height:128px;
+  border:1px solid #b69026;
+  border-radius:35px 35px 12px 12px;
+  background:
+    linear-gradient(90deg,#a57116,#f3c541 5%,#ffe997 22%,#efbc30 80%,#aa7514),
+    #efbc30;
+  box-shadow:inset 0 2px 1px #ffffc1,inset 0 -3px 5px #8a550044,0 1px 2px #474a4655;
+}
+.rtg-vending-body-v9::after{
+content:"";
+  position:absolute;
+  z-index:-1;
+  left:10px;right:7px;bottom:-9px;height:13px;
+  border-radius:2px 2px 12px 12px;
+  background:linear-gradient(#606968,#303a3d 35%,#18242b);
+  box-shadow:inset 0 1px 0 #ffffff66,2px 3px 3px #0d1c2855;
+}
+.rtg-vending-body-v9>*{position:relative;z-index:2;}
+
+.rtg-vending-info-v9{
+display:grid;place-items:center;align-content:center;gap:3px;
+  margin:6px 0;
+  border:1px solid #979e92;
+  border-radius:6px;
+  background:linear-gradient(120deg,#e5e5d8,#faf9ef 48%,#d8ddcd);
+  color:#202d2d;
+  box-shadow:inset 1px 2px 3px #454e4033,0 1px 0 #ffffffcc;
+}
+.rtg-vending-info-v9 small{font:900 7px/1 system-ui,sans-serif;letter-spacing:.13em;color:#55514a;}
+.rtg-vending-info-v9 strong{font:1000 25px/.92 system-ui,sans-serif;color:#17181b;}
+
+.rtg-vending-crank-v9{
+position:relative;
+  width:58px;height:58px;
+  align-self:center;justify-self:center;
+  border:2px solid #485457;
+  border-radius:50%;
+  background:conic-gradient(from 20deg,#9ca8a8,#f8fff9 12%,#727f83 26%,#dce5dc 42%,#67767a 56%,#f5fff9 76%,#9ca8a8);
+  box-shadow:0 0 0 3px #293638,0 0 0 4px #fff1a3,inset 0 0 0 3px #d4dddaaa,inset 0 0 4px 4px #263c4655,1px 5px 6px #573e1f77;
+}
+.rtg-vending-crank-v9::before{
+content:"";
+  position:absolute;
+  z-index:3;
+  left:50%;top:50%;
+  width:16px;height:16px;
+  transform:translate(-50%,-50%);
+  border:1px solid #657273;
+  border-radius:50%;
+  background:radial-gradient(circle at 30% 25%,#fffef0,#cbd5d0 52%,#637274);
+  box-shadow:0 1px 2px #15222d88,inset 0 1px 1px #fff;
+}
+.rtg-vending-crank-v9::after{
+content:"";
+  position:absolute;
+  z-index:4;
+  right:-2px;bottom:7px;
+  width:18px;height:18px;
+  border:1px solid #4d380e;
+  border-radius:50%;
+  background:radial-gradient(circle at 32% 23%,#fffbd6,#ffdf54 28%,#e8aa15 64%,#8b5b14);
+  box-shadow:inset 0 1px 1px #fffbd1,2px 3px 3px #18252c80;
+}
+.rtg-vending-crank-v9 span{
+position:absolute;
+  z-index:2;
+  left:24px;top:22px;
+  width:29px;height:12px;
+  margin:0;
+  transform:rotate(28deg);
+  transform-origin:5px 50%;
+  border:1px solid #596864;
+  border-radius:5px;
+  background:linear-gradient(#fffceb,#c0cbc1 40%,#647677);
+  box-shadow:0 3px 2px #27373966;
+}
+
+.rtg-vending-chute-v9{
+grid-column:1 / 2;
+  position:relative;
+  overflow:hidden;
+  border:3px solid #646e6c;
+  border-radius:9px 9px 16px 16px;
+  background:linear-gradient(#0b171e 8%,#1a2c36 65%,#455355);
+  box-shadow:0 1px 0 #ffffff,inset 0 4px 6px #000000bb,inset 3px 0 3px #050f1880,0 0 0 1px #b3b9ab;
+}
+.rtg-vending-chute-well-v9{
+position:absolute;
+  left:50%;bottom:-3px;
+  width:100%;height:17px;
+  transform:translateX(-50%);
+  border-radius:50% 50% 0 0;
+  background:linear-gradient(#6b7d7b,#26393e 30%,#0a1820);
+  box-shadow:inset 0 2px 0 #9fada266;
+}
+.rtg-vending-chute-flap-v10{
+position:absolute;
+  z-index:7;
+  left:50%;top:0;
+  width:100%;height:18px;
+  transform:translateX(-50%) perspective(120px) rotateX(0deg);
+  transform-origin:50% 0%;
+  border:1px solid #8b9b9c88;
+  border-top:2px solid #d6dfd388;
+  border-radius:0 0 7px 7px;
+  background:linear-gradient(#859492,#526466 35%,#2b3d44);
+  box-shadow:0 4px 5px #00000088,inset 0 -2px 0 #a1b6ad55;
+  pointer-events:none;
+}
+
+.rtg-vending-brand-v9{
+grid-column:2;
+  align-self:end;justify-self:center;
+  width:49px;min-height:26px;
+  display:grid;place-items:center;
+  padding:4px;
+  border:1px solid #c0aa5d;
+  border-radius:5px;
+  background:linear-gradient(#263238,#17232c);
+  color:#ffe48a;
+  box-shadow:0 1px 0 #fff1ae,inset 0 1px 3px #0009;
+  font:900 10px/1 system-ui,sans-serif;
+  letter-spacing:.16em;
+}
+
+.rtg-vending-prize-track-v9{
+  position:absolute;
+  z-index:5;
+  inset:0;
+  overflow:hidden;
+  pointer-events:none;
+}
+.rtg-vending-prize-v9{
+position:absolute;
+  left:50%;bottom:3px;
+  width:34px;height:34px;
+  opacity:0;
+  border:1px solid #263743;
+  border-radius:50%;
+  background:
+    radial-gradient(ellipse at 28% 19%,#fff 0 4%,#ffffff99 5%,transparent 28%),
+    radial-gradient(circle at 34% 26%,transparent 33%,#16223222 62%,#10172288 100%),
+    linear-gradient(to bottom,#fffefb 0 47%,#45505b 48% 51%,var(--rtg-prize-color,#d9dee4) 52% 100%);
+  box-shadow:inset 1px 2px 2px #ffffffaa,inset -3px -4px 5px #0c172044,1px 3px 3px #00000088;
+  transform:translateX(-50%) translateY(-55px) rotate(-90deg);
+}
+
+.rtg-vending-machine-v12.is-turning{animation:rtg-vending-v12-body .98s ease-out both;}
+.rtg-vending-machine-v12.is-turning .rtg-vending-crank-v9{animation:rtg-vending-v12-crank .62s cubic-bezier(.18,.72,.22,1) both;}
+.rtg-vending-machine-v12.is-turning .rtg-vending-capsule-v9{animation:rtg-vending-v12-mix .42s ease-in-out var(--d,0s) infinite alternate;}
+.rtg-vending-machine-v12.is-revealing .rtg-vending-capsule-v9{animation-play-state:paused;}
+.rtg-vending-machine-v12.is-revealing .rtg-vending-capsule-v9.is-selected{animation:rtg-vending-v13-feed .48s ease-in both!important;}
+.rtg-vending-machine-v12.is-revealing .rtg-vending-prize-v9{animation:rtg-vending-v12-drop .95s cubic-bezier(.18,.72,.28,1) both;}
+.rtg-vending-machine-v12.is-revealing .rtg-vending-chute-v9{animation:rtg-vending-v12-chute .95s ease-out both;}
+.rtg-vending-machine-v12.is-revealing .rtg-vending-chute-flap-v10{animation:rtg-vending-v12-flap .95s cubic-bezier(.2,.75,.28,1) both;}
+
+/* One continuous collision-resolved path, including the throat. No CSS teleport. */
+.rtg-vending-machine-v12.has-capsule-physics .rtg-vending-capsule-v9{animation:none!important;}
+.rtg-vending-machine-v12.has-capsule-physics .rtg-vending-funnel-v10{z-index:16;}
+
+.rtg-vending-machine-v12[data-pull-rarity="normale"]{--rtg-vending-reveal:#929ba8;--rtg-prize-color:#d9dee4}
+.rtg-vending-machine-v12[data-pull-rarity="buono"]{--rtg-vending-reveal:#2fa866;--rtg-prize-color:#2fa866}
+.rtg-vending-machine-v12[data-pull-rarity="forte"]{--rtg-vending-reveal:#27a8e8;--rtg-prize-color:#27a8e8}
+.rtg-vending-machine-v12[data-pull-rarity="elite"]{--rtg-vending-reveal:#8254d1;--rtg-prize-color:#8254d1}
+.rtg-vending-machine-v12[data-pull-rarity="mondiale"]{--rtg-vending-reveal:#d93842;--rtg-prize-color:#d93842}
+.rtg-vending-machine-v12[data-pull-rarity="leggenda"]{--rtg-vending-reveal:#d4a017;--rtg-prize-color:#d4a017}
+.rtg-vending-machine-v12[data-pull-rarity="aurico"]{--rtg-vending-reveal:#050506;--rtg-prize-color:#050506}
+
+@keyframes rtg-vending-v12-crank{
+  0%{transform:rotate(0deg)}
+  18%{transform:rotate(12deg)}
+  80%{transform:rotate(350deg)}
+  92%{transform:rotate(363deg)}
+  100%{transform:rotate(360deg)}
+}
+@keyframes rtg-vending-v12-mix{
+  0%{transform:translate3d(0,0,0) rotate(var(--r,0deg)) scale(var(--s,1))}
+  55%{transform:translate3d(var(--tx,28px),var(--ty,-34px),0) rotate(130deg) scale(var(--s,1))}
+  100%{transform:translate3d(-9px,7px,0) rotate(-58deg) scale(var(--s,1))}
+}
+@keyframes rtg-vending-v12-body{
+  0%,100%{transform:translate3d(0,0,0)}
+  26%{transform:translate3d(-1px,0,0)}
+  48%{transform:translate3d(1px,0,0)}
+  72%{transform:translate3d(-1px,0,0)}
+}
+/* The selected ball converges on the centre funnel from any pile position. */
+@keyframes rtg-vending-v13-feed{
+  0%{opacity:1;transform:rotate(var(--r,0deg)) scale(var(--s,1))}
+  65%{opacity:1;left:calc(50% - 19px);bottom:0;transform:rotate(100deg) scale(.82)}
+  100%{opacity:0;left:calc(50% - 19px);bottom:-38px;transform:rotate(150deg) scale(.65)}
+}
+@keyframes rtg-vending-v12-drop{
+  0%,48%{opacity:0;transform:translateX(-50%) translateY(-55px) rotate(-90deg)}
+  52%{opacity:1;transform:translateX(-50%) translateY(-48px) rotate(-80deg)}
+  76%{opacity:1;transform:translateX(-50%) translateY(1px) rotate(14deg)}
+  88%{opacity:1;transform:translateX(-50%) translateY(-7px) rotate(3deg)}
+  100%{opacity:1;transform:translateX(-50%) translateY(0) rotate(10deg)}
+}
+@keyframes rtg-vending-v12-chute{
+  0%,48%{border-color:#646e6c}
+  76%,100%{border-color:var(--rtg-vending-reveal)}
+}
+@keyframes rtg-vending-v12-flap{
+  0%,46%{transform:translateX(-50%) perspective(120px) rotateX(0deg)}
+  62%{transform:translateX(-50%) perspective(120px) rotateX(76deg)}
+  80%{transform:translateX(-50%) perspective(120px) rotateX(58deg)}
+  100%{transform:translateX(-50%) perspective(120px) rotateX(48deg)}
+}
+
+.rtg-vending-pull:focus-visible{
+  outline:3px solid #236492;
+  outline-offset:4px;
+}
+
+
+/* Rarity rate chips — every rarity uses the same full-colour treatment. */
+.rtg-vending-ratebar>span[data-rarity="Normale"]{
+  background:#929ba8!important;border-color:#68717d!important;color:#fff!important;box-shadow:inset 0 -4px 0 #68717d!important;
+}
+.rtg-vending-ratebar>span[data-rarity="Buono"]{
+  background:#2fa866!important;border-color:#1e7446!important;color:#fff!important;box-shadow:inset 0 -4px 0 #1e7446!important;
+}
+.rtg-vending-ratebar>span[data-rarity="Forte"]{
+  background:#27a8e8!important;border-color:#176f9e!important;color:#fff!important;box-shadow:inset 0 -4px 0 #176f9e!important;
+}
+.rtg-vending-ratebar>span[data-rarity="Elite"]{
+  background:#8254d1!important;border-color:#5f389f!important;color:#fff!important;box-shadow:inset 0 -4px 0 #5f389f!important;
+}
+.rtg-vending-ratebar>span[data-rarity="Mondiale"]{
+  background:#d93842!important;border-color:#9f222b!important;color:#fff!important;box-shadow:inset 0 -4px 0 #9f222b!important;
+}
+.rtg-vending-ratebar>span[data-rarity="Leggenda"]{
+  background:#d4a017!important;border-color:#946f0d!important;color:#171006!important;box-shadow:inset 0 -4px 0 #946f0d!important;
+}
+.rtg-vending-ratebar>span[data-rarity="Aurico"]{
+  background:#f5c842!important;border-color:#b98d13!important;color:#171006!important;box-shadow:inset 0 -4px 0 #b98d13!important;
+}
+.rtg-vending-ratebar>span em{color:inherit!important;opacity:.92;}
+
+/* Wallet is a separate HUD chip, not part of the machine cabinet. */
+.rtg-vending-stage{row-gap:0!important;}
+.rtg-vending-wallet-chip{
+  margin-top:31px!important;
+  min-width:178px!important;
+  border-radius:8px!important;
+  box-shadow:0 8px 15px rgba(17,18,22,.17)!important;
+}
+
+@media(max-width:430px){
+  .rtg-vending-machine-v12{--rtg-cabinet-width:192px;width:min(228px,67vw);}
+  .rtg-vending-head-v9,.rtg-vending-window-v9{width:192px;}
+  .rtg-vending-window-v9{height:214px;}
+  .rtg-vending-body-v9{width:192px;min-height:132px;padding:11px;}
+  .rtg-vending-body-v9::before{right:7px;width:68px;height:122px;}
+  .rtg-vending-capsule-v9{width:36px;height:36px;}
+}
+@media(prefers-reduced-motion:reduce){
+  .has-capsule-physics.is-turning .rtg-vending-funnel-v10::before{animation:none;}
+  .rtg-vending-machine-v12.has-capsule-physics.is-revealing .rtg-vending-capsule-v9.is-selected,
+  .rtg-vending-machine-v12.is-turning,
+  .rtg-vending-machine-v12.is-turning .rtg-vending-crank-v9,
+  .rtg-vending-machine-v12.is-turning .rtg-vending-capsule-v9,
+  .rtg-vending-machine-v12.is-revealing .rtg-vending-capsule-v9.is-selected,
+  .rtg-vending-machine-v12.is-revealing .rtg-vending-prize-v9,
+  .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-v9,
+  .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-flap-v10{
+    animation-duration:.01ms!important;
+    animation-iteration-count:1!important;
+  }
+}
+
+/* Pull result continues the gacha loop instead of dropping back to the route. */
+.rtg-pull-continue{
+  display:block!important;
+  width:calc(100% - 36px)!important;
+  min-height:46px!important;
+  margin:0 18px 18px!important;
+  border:2px solid #111216!important;
+  border-radius:8px!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+  box-shadow:3px 4px 0 #111216!important;
+  font-weight:1000!important;
+  letter-spacing:.08em!important;
+}
+.rtg-pull-continue:active{
+  transform:translate(2px,2px);
+  box-shadow:1px 2px 0 #111216!important;
+}
+@media(max-width:430px){
+  .rtg-pull-continue{
+    width:calc(100% - 26px)!important;
+    margin:0 13px 14px!important;
+  }
+}
+
+/* RTG Legacy marker: sits outside the bottom-right card corner so it never covers role, OVR, portrait or name. */
+button.player-card:has(> .rtg-legacy-badge),
+.player-card:has(> .rtg-legacy-badge){
+  overflow:visible!important;
+}
+.rtg-legacy-badge{
+  position:absolute!important;
+  z-index:24!important;
+  left:auto!important;
+  right:-4px!important;
+  top:auto!important;
+  bottom:-11px!important;
+  transform:none!important;
+  display:grid!important;
+  place-items:center!important;
+  width:auto!important;
+  min-width:27px!important;
+  height:16px!important;
+  min-height:16px!important;
+  padding:0 5px!important;
+  border:2px solid #111216!important;
+  border-radius:0!important;
+  background:var(--rtg-legacy-color,#ffd21f)!important;
+  color:var(--rtg-legacy-ink,#111216)!important;
+  box-shadow:1px 2px 0 #111216!important;
+  font:1000 7px/1 system-ui,sans-serif!important;
+  letter-spacing:.04em!important;
+  pointer-events:none!important;
+}
+.rtg-pull-player-card .rtg-legacy-badge{
+  left:auto!important;
+  right:-4px!important;
+  top:auto!important;
+  bottom:-11px!important;
+}
+
+/* Legacy season palette: same color language on cards and player detail. */
+.rtg-legacy-badge[data-legacy-season="S1"],
+.player-detail-rtg-legacy-badge[data-legacy-season="S1"]{
+  --rtg-legacy-color:#ffd21f;
+  --rtg-legacy-ink:#111216;
+}
+.rtg-legacy-badge[data-legacy-season="S2"],
+.player-detail-rtg-legacy-badge[data-legacy-season="S2"]{
+  --rtg-legacy-color:#35b8f4;
+  --rtg-legacy-ink:#07131b;
+}
+.rtg-legacy-badge[data-legacy-season="S3"],
+.player-detail-rtg-legacy-badge[data-legacy-season="S3"]{
+  --rtg-legacy-color:#a678ff;
+  --rtg-legacy-ink:#130b24;
+}
+
+/* Give the protruding Legacy tab a clean lane below dense card grids. */
+.rtg-modal .rtg-picker-grid,
+.rtg-modal .rtg-catalog-grid{
+  row-gap:22px!important;
+  padding-top:14px!important;
+  padding-bottom:18px!important;
+}
+
+
+
+/* RTG development token sizing: selected-player requirement and confirmation use
+   different artwork sizes; wallet keeps the larger presentation. */
+.rtg-development-screen .development-selected .development-requirement .rtg-development-token-icon{
+  width:54px!important;
+  height:54px!important;
+  min-width:54px!important;
+  min-height:54px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  margin:0!important;
+  overflow:visible!important;
+}
+.rtg-development-screen .development-selected .development-requirement .rtg-development-token-icon>.rtg-token-icon{
+  width:48px!important;
+  height:48px!important;
+  min-width:48px!important;
+  max-width:48px!important;
+  min-height:48px!important;
+  max-height:48px!important;
+  flex:0 0 48px!important;
+  margin:0!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  vertical-align:middle!important;
+}
+.rtg-development-confirm .development-confirm-costs .rtg-development-token-icon{
+  width:64px!important;
+  height:64px!important;
+  min-width:64px!important;
+  min-height:64px!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:0!important;
+  margin:0!important;
+  overflow:visible!important;
+}
+.rtg-development-confirm .development-confirm-costs .rtg-development-token-icon>.rtg-token-icon{
+  width:58px!important;
+  height:58px!important;
+  min-width:58px!important;
+  max-width:58px!important;
+  min-height:58px!important;
+  max-height:58px!important;
+  flex:0 0 58px!important;
+  margin:0!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  vertical-align:middle!important;
+}
+@media(max-width:430px){
+  .rtg-development-screen .development-selected .development-requirement .rtg-development-token-icon{
+    width:50px!important;height:50px!important;min-width:50px!important;min-height:50px!important;
+  }
+  .rtg-development-screen .development-selected .development-requirement .rtg-development-token-icon>.rtg-token-icon{
+    width:44px!important;height:44px!important;min-width:44px!important;max-width:44px!important;
+    min-height:44px!important;max-height:44px!important;flex-basis:44px!important;
+  }
+  .rtg-development-confirm .development-confirm-costs .rtg-development-token-icon{
+    width:62px!important;height:62px!important;min-width:62px!important;min-height:62px!important;
+  }
+  .rtg-development-confirm .development-confirm-costs .rtg-development-token-icon>.rtg-token-icon{
+    width:56px!important;height:56px!important;min-width:56px!important;max-width:56px!important;
+    min-height:56px!important;max-height:56px!important;flex-basis:56px!important;
+  }
+}
+
+/* RTG final detail legacy + development wallet polish 20260926 */
+
+/* Restore the original RTG Legacy card on player details. */
+.player-detail-rtg-legacy-badge{
+  position:absolute!important;
+  z-index:8!important;
+  top:18px!important;
+  right:82px!important;
+  width:50px!important;
+  min-width:50px!important;
+  min-height:48px!important;
+  display:grid!important;
+  grid-template-rows:auto 1fr!important;
+  place-items:center!important;
+  align-content:center!important;
+  padding:5px 5px 4px!important;
+  border:3px solid #111216!important;
+  border-radius:0!important;
+  background:var(--rtg-legacy-color,#ffd21f)!important;
+  color:var(--rtg-legacy-ink,#111216)!important;
+  box-shadow:4px 4px 0 #111216!important;
+  transform:skew(-4deg)!important;
+  text-transform:uppercase!important;
+  pointer-events:none!important;
+  white-space:nowrap!important;
+}
+.player-detail-rtg-legacy-badge > *{transform:skew(4deg)!important;}
+.player-detail-rtg-legacy-badge small{
+  display:block!important;
+  font:950 6px/1 system-ui,sans-serif!important;
+  letter-spacing:.12em!important;
+}
+.player-detail-rtg-legacy-badge strong{
+  display:block!important;
+  align-self:end!important;
+  font:1000 19px/.9 system-ui,sans-serif!important;
+  letter-spacing:-.04em!important;
+}
+.player-detail-rtg-legacy-badge[data-legacy-season="S1"]{
+  --rtg-legacy-color:#ffd21f;
+  --rtg-legacy-ink:#111216;
+}
+.player-detail-rtg-legacy-badge[data-legacy-season="S2"]{
+  --rtg-legacy-color:#35b8f4;
+  --rtg-legacy-ink:#07131b;
+}
+.player-detail-rtg-legacy-badge[data-legacy-season="S3"]{
+  --rtg-legacy-color:#a678ff;
+  --rtg-legacy-ink:#130b24;
+}
+
+/* RTG development wallet: purpose-built 2-cell banner instead of the generic development wallet grid. */
+.rtg-development-screen .rtg-development-wallet{
+  display:grid!important;
+  grid-template-columns:minmax(0,1.6fr) minmax(108px,.75fr)!important;
+  gap:0!important;
+  width:100%!important;
+  margin:16px 0 18px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:3px solid #111216!important;
+  border-radius:0!important;
+  background:#fffdf6!important;
+  box-shadow:5px 6px 0 #111216!important;
+}
+.rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell{
+  min-width:0!important;
+  min-height:116px!important;
+  margin:0!important;
+  padding:14px 16px!important;
+  border:0!important;
+  background:#fffdf6!important;
+  color:#111216!important;
+  transform:none!important;
+}
+.rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell--tokens{
+  display:grid!important;
+  grid-template-columns:82px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:14px!important;
+  border-right:3px solid #111216!important;
+}
+.rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell--projects{
+  display:grid!important;
+  place-items:center!important;
+  text-align:center!important;
+}
+.rtg-development-screen .rtg-development-wallet-copy{
+  display:grid!important;
+  align-content:center!important;
+  justify-items:start!important;
+  min-width:0!important;
+  gap:5px!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  background:transparent!important;
+  color:#111216!important;
+  transform:none!important;
+}
+.rtg-development-screen .rtg-development-wallet-cell--projects .rtg-development-wallet-copy{
+  justify-items:center!important;
+}
+.rtg-development-screen .rtg-development-wallet-copy small{
+  display:block!important;
+  color:#111216!important;
+  font:900 12px/1.05 system-ui,sans-serif!important;
+  letter-spacing:.06em!important;
+  white-space:normal!important;
+}
+.rtg-development-screen .rtg-development-wallet-copy strong{
+  display:block!important;
+  max-width:100%!important;
+  color:#9b6b00!important;
+  font:1000 clamp(24px,4.8vw,38px)/.92 system-ui,sans-serif!important;
+  letter-spacing:-.035em!important;
+  white-space:nowrap!important;
+}
+.rtg-development-screen .rtg-development-wallet .rtg-development-token-icon{
+  width:74px!important;
+  height:74px!important;
+  min-width:74px!important;
+  min-height:74px!important;
+  display:grid!important;
+  place-items:center!important;
+  align-self:center!important;
+  justify-self:center!important;
+  padding:0!important;
+  margin:0!important;
+  border:2px solid #111216!important;
+  background:#f7f1df!important;
+  overflow:hidden!important;
+}
+.rtg-development-screen .rtg-development-wallet .rtg-development-token-icon>.rtg-token-icon{
+  width:66px!important;
+  height:66px!important;
+  min-width:66px!important;
+  max-width:66px!important;
+  min-height:66px!important;
+  max-height:66px!important;
+  flex:0 0 66px!important;
+  margin:0!important;
+  object-fit:contain!important;
+  object-position:center!important;
+  vertical-align:middle!important;
+}
+
+/* Selected-player requirement stays medium; confirmation is deliberately a little smaller. */
+.rtg-development-screen .development-selected .development-requirement .rtg-development-token-icon{
+  width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;
+  display:grid!important;place-items:center!important;padding:0!important;margin:0!important;overflow:visible!important;
+}
+.rtg-development-screen .development-selected .development-requirement .rtg-development-token-icon>.rtg-token-icon{
+  width:42px!important;height:42px!important;min-width:42px!important;max-width:42px!important;
+  min-height:42px!important;max-height:42px!important;flex:0 0 42px!important;margin:0!important;
+  object-fit:contain!important;object-position:center!important;vertical-align:middle!important;
+}
+.rtg-development-confirm .development-confirm-costs .development-requirement--compact{
+  grid-template-columns:48px minmax(0,1fr)!important;
+  align-items:center!important;
+  gap:10px!important;
+}
+.rtg-development-confirm .development-confirm-costs .rtg-development-token-icon{
+  width:48px!important;height:48px!important;min-width:48px!important;min-height:48px!important;
+  display:grid!important;place-items:center!important;padding:0!important;margin:0!important;overflow:visible!important;
+}
+.rtg-development-confirm .development-confirm-costs .rtg-development-token-icon>.rtg-token-icon{
+  width:42px!important;height:42px!important;min-width:42px!important;max-width:42px!important;
+  min-height:42px!important;max-height:42px!important;flex:0 0 42px!important;margin:0!important;
+  object-fit:contain!important;object-position:center!important;vertical-align:middle!important;
+}
+
+@media(max-width:520px){
+  .player-detail-rtg-legacy-badge{
+    top:16px!important;
+    right:72px!important;
+    width:42px!important;
+    min-width:42px!important;
+    min-height:42px!important;
+    padding:4px 3px 3px!important;
+    border-width:2px!important;
+    box-shadow:3px 3px 0 #111216!important;
+  }
+  .player-detail-rtg-legacy-badge small{font-size:5px!important;}
+  .player-detail-rtg-legacy-badge strong{font-size:16px!important;}
+
+  .rtg-development-screen .rtg-development-wallet{
+    grid-template-columns:minmax(0,1.55fr) minmax(94px,.72fr)!important;
+    margin:12px 0 16px!important;
+  }
+  .rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell{
+    min-height:100px!important;
+    padding:10px 11px!important;
+  }
+  .rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell--tokens{
+    grid-template-columns:66px minmax(0,1fr)!important;
+    gap:10px!important;
+  }
+  .rtg-development-screen .rtg-development-wallet .rtg-development-token-icon{
+    width:62px!important;height:62px!important;min-width:62px!important;min-height:62px!important;
+  }
+  .rtg-development-screen .rtg-development-wallet .rtg-development-token-icon>.rtg-token-icon{
+    width:56px!important;height:56px!important;min-width:56px!important;max-width:56px!important;
+    min-height:56px!important;max-height:56px!important;flex-basis:56px!important;
+  }
+  .rtg-development-screen .rtg-development-wallet-copy{gap:4px!important;}
+  .rtg-development-screen .rtg-development-wallet-copy small{
+    font-size:10px!important;
+    line-height:1.05!important;
+  }
+  .rtg-development-screen .rtg-development-wallet-copy strong{
+    font-size:clamp(21px,6.2vw,29px)!important;
+    line-height:.95!important;
+  }
+  .rtg-development-confirm .development-confirm-costs .development-requirement--compact{
+    grid-template-columns:44px minmax(0,1fr)!important;
+    gap:8px!important;
+  }
+  .rtg-development-confirm .development-confirm-costs .rtg-development-token-icon{
+    width:44px!important;height:44px!important;min-width:44px!important;min-height:44px!important;
+  }
+  .rtg-development-confirm .development-confirm-costs .rtg-development-token-icon>.rtg-token-icon{
+    width:38px!important;height:38px!important;min-width:38px!important;max-width:38px!important;
+    min-height:38px!important;max-height:38px!important;flex-basis:38px!important;
+  }
+}
+@media(max-width:370px){
+  .player-detail-rtg-legacy-badge{
+    top:14px!important;right:68px!important;width:38px!important;min-width:38px!important;min-height:38px!important;
+  }
+  .player-detail-rtg-legacy-badge strong{font-size:15px!important;}
+  .rtg-development-screen .rtg-development-wallet>.rtg-development-wallet-cell--tokens{
+    grid-template-columns:58px minmax(0,1fr)!important;
+    gap:8px!important;
+  }
+  .rtg-development-screen .rtg-development-wallet .rtg-development-token-icon{
+    width:54px!important;height:54px!important;min-width:54px!important;min-height:54px!important;
+  }
+  .rtg-development-screen .rtg-development-wallet .rtg-development-token-icon>.rtg-token-icon{
+    width:48px!important;height:48px!important;min-width:48px!important;max-width:48px!important;
+    min-height:48px!important;max-height:48px!important;flex-basis:48px!important;
+  }
+}
+
+/* Restore RTG player-detail role switch styling. */
+.player-detail-rtg-role-switch{
+  position:absolute!important;z-index:9!important;top:18px!important;right:140px!important;
+  width:50px!important;min-width:50px!important;min-height:48px!important;
+  display:grid!important;grid-template-rows:auto 1fr!important;place-items:center!important;align-content:center!important;
+  padding:5px 5px 4px!important;border:3px solid #111216!important;border-radius:0!important;
+  background:#ffd21f!important;color:#111216!important;box-shadow:4px 4px 0 #111216!important;
+  transform:skew(-4deg)!important;text-transform:uppercase!important;cursor:pointer!important;
+}
+.player-detail-rtg-role-switch > *{transform:skew(4deg)!important;}
+.player-detail-rtg-role-switch small{font:950 6px/1 system-ui,sans-serif!important;letter-spacing:.12em!important;}
+.player-detail-rtg-role-switch strong{align-self:end!important;font:1000 20px/.9 system-ui,sans-serif!important;letter-spacing:-.04em!important;}
+.player-detail-rtg-role-switch:active{translate:2px 2px!important;box-shadow:2px 2px 0 #111216!important;}
+@media(max-width:520px){
+  .player-detail-rtg-role-switch{top:16px!important;right:122px!important;width:42px!important;min-width:42px!important;min-height:42px!important;padding:4px 3px 3px!important;border-width:2px!important;box-shadow:3px 3px 0 #111216!important;}
+  .player-detail-rtg-role-switch small{font-size:5px!important;}
+  .player-detail-rtg-role-switch strong{font-size:17px!important;}
+}
+@media(max-width:370px){
+  .player-detail-rtg-role-switch{top:14px!important;right:114px!important;width:38px!important;min-width:38px!important;min-height:38px!important;}
+  .player-detail-rtg-role-switch strong{font-size:16px!important;}
+}
+
+/* Shawn 1162 FW duel-only portrait zoom.
+   Apply the exact same framing in every duel state: choice, resolving and
+   win/loss result. The action recap uses a different element and is excluded. */
+.rtg-duel-render.rtg-duel-render--shawn-1162-fw > img {
+  transform: scale(1.80) !important;
+  transform-origin: center bottom !important;
+}
+
+/* S3 vending mode selector: tactile RTG segmented control. */
+.rtg-vending-mode-toggle{
+  display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:5px!important;
+  width:100%;margin:10px 0 14px!important;padding:5px!important;border:3px solid #111216!important;
+  border-radius:8px!important;background:#e7e3d7!important;box-shadow:4px 5px 0 rgba(17,18,22,.2)!important;
+}
+.rtg-vending-mode-toggle button{
+  min-height:46px!important;padding:8px 10px!important;border:2px solid transparent!important;border-radius:4px!important;
+  background:#fffdf7!important;color:#30333a!important;box-shadow:inset 0 -3px 0 #d4cfc2!important;
+  font:1000 .68rem/1.05 system-ui,sans-serif!important;letter-spacing:.045em!important;cursor:pointer;touch-action:manipulation;
+}
+.rtg-vending-mode-toggle button.active,.rtg-vending-mode-toggle button[aria-pressed="true"]{
+  border-color:#111216!important;background:#ffd21f!important;color:#111216!important;
+  box-shadow:inset 0 -4px 0 #d49a14,3px 3px 0 #111216!important;transform:translate(-1px,-1px);
+}
+.rtg-vending-mode-toggle button:focus-visible{outline:3px solid #2584dc!important;outline-offset:3px;}
+.rtg-vending-stage>.rtg-vending-pull{margin-top:18px!important;}
+@media(max-width:430px){.rtg-vending-mode-toggle button{min-height:48px!important;font-size:.64rem!important}.rtg-vending-stage>.rtg-vending-pull{margin-top:16px!important}}
+
+/* RTG surrounding UI polish: economy cross-links + Album back-button alignment. */
+.rtg-shop-screen .rtg-economy-crosslink{
+  max-width:1100px;
+  margin:26px auto 8px;
+  padding:0 0 6px;
+}
+.rtg-shop-screen .rtg-economy-crosslink>[data-rtg-open-development],
+.rtg-development-screen .development-projects>[data-rtg-open-shop]{
+  min-height:48px;
+  padding:10px 18px!important;
+  border:3px solid #111216!important;
+  border-radius:0!important;
+  background:#ffd21f!important;
+  background-image:none!important;
+  color:#111216!important;
+  box-shadow:4px 4px 0 #111216!important;
+  font-weight:1000;
+  line-height:1;
+}
+.rtg-development-screen .development-projects>[data-rtg-open-shop]{
+  margin:26px 0 8px;
+}
+:is(.rtg-album-collections-screen,.rtg-album-teams-screen,.rtg-album-roster-screen) .section-root-button{
+  display:grid!important;
+  place-items:center!important;
+  padding:0!important;
+}
+:is(.rtg-album-collections-screen,.rtg-album-teams-screen,.rtg-album-roster-screen) .section-root-button>span{
+  display:grid;
+  place-items:center;
+  width:100%;
+  height:100%;
+  line-height:1;
+  transform:translateX(-2px);
+}
+
+.rtg-legacy-badge[data-legacy-season="AR"],
+.player-detail-rtg-legacy-badge[data-legacy-season="AR"]{
+  --rtg-legacy-color:#ff6b35;
+  --rtg-legacy-ink:#1b0b05;
+}
+.rtg-legacy-badge[data-legacy-season="OR"],
+.player-detail-rtg-legacy-badge[data-legacy-season="OR"]{
+  --rtg-legacy-color:#46d7c8;
+  --rtg-legacy-ink:#061817;
+}
+/* Orion RTG pastel green card and detail badge. */
+.rtg-legacy-badge[data-legacy-season="OR"],
+.player-detail-rtg-legacy-badge[data-legacy-season="OR"]{
+  --rtg-legacy-color:#A8DDB5;
+  --rtg-legacy-ink:#234A34;
+}
+/* RTG detail: reserve the Role + Legacy controls before laying out long team names. */
+.player-detail-hero:has(.player-detail-rtg-role-switch) .player-detail-team{
+  box-sizing:border-box!important;
+  min-width:0!important;
+  max-width:calc(100% - 208px)!important;
+  margin-right:0!important;
+  overflow:hidden!important;
+}
+.player-detail-hero:has(.player-detail-rtg-role-switch) .player-detail-team strong{
+  display:block!important;
+  flex:1 1 auto!important;
+  min-width:0!important;
+  max-width:100%!important;
+  white-space:nowrap!important;
+  overflow:hidden!important;
+  text-overflow:ellipsis!important;
+}
+@media(max-width:520px){
+  .player-detail-hero:has(.player-detail-rtg-role-switch) .player-detail-team{
+    max-width:calc(100% - 188px)!important;
+  }
+}
+
+/* RTG Cambia giocatore: four quick-bench cards on one fixed row.
+   This override belongs to the loaded RTG stylesheet: legacy quick-strip rules
+   still force 82-88px card widths and horizontal scrolling on narrow phones.
+   Only the quick bench is affected; the full picker grid stays untouched. */
+.modal.rtg-squad-picker-modal .rtg-picker-quick-bench{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  padding:9px 8px 10px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-head{
+  min-width:0!important;
+  gap:6px!important;
+  margin-bottom:7px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-strip{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-auto-flow:row!important;
+  align-items:start!important;
+  justify-items:stretch!important;
+  gap:6px!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:2px 3px 12px!important;
+  overflow:visible!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-strip > [data-rtg-picker-player]{
+  flex:none!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0!important;
+  justify-self:stretch!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-strip .player-portrait-wrap{
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  aspect-ratio:1.05!important;
+  padding:5px 3px 2px!important;
+  overflow:hidden!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-strip .player-info{
+  min-height:22px!important;
+  padding:3px 2px 4px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-strip .player-title strong{
+  display:-webkit-box!important;
+  -webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  overflow-wrap:anywhere!important;
+  height:18px!important;
+  max-height:18px!important;
+  font-size:8px!important;
+  line-height:1.1!important;
+  text-align:center!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-strip :is(.player-role,.player-overall){
+  min-width:16px!important;
+  height:15px!important;
+  padding:1px 2px!important;
+  font-size:8px!important;
+  line-height:12px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-strip .rtg-legacy-badge{
+  right:-2px!important;
+  bottom:-9px!important;
+  min-width:22px!important;
+  min-height:14px!important;
+  height:14px!important;
+  padding:0 3px!important;
+  font-size:6px!important;
+}
+@media(max-width:430px){
+  .modal.rtg-squad-picker-modal .rtg-picker-quick-head strong{
+    display:none!important; /* The title and modal already explain the free role selection. */
+  }
+}
+@media(max-width:365px){
+  .modal.rtg-squad-picker-modal .rtg-picker-quick-bench{
+    padding-inline:6px!important;
+  }
+  .modal.rtg-squad-picker-modal .rtg-picker-quick-strip{
+    gap:4px!important;
+    padding-inline:2px!important;
+  }
+  .modal.rtg-squad-picker-modal .rtg-picker-quick-strip .player-title strong{
+    font-size:7px!important;
+  }
+}
+
+/* RTG owned-player role filters (catalog and squad replacement picker). */
+/* Pull reveal: the same player card, framed by its rarity colour. */
+.rtg-pull-result.rtg-paper-modal{
+  background:radial-gradient(ellipse at 16% 44%,var(--unlock-soft),transparent 62%),#fffdf8!important;
+  border-radius:16px!important;
+}
+.rtg-pull-result .rtg-pull-result-head{
+  gap:10px;flex-wrap:wrap;
+  padding:16px 54px 14px 16px!important;
+  border-bottom:1px solid #11121622!important;
+  background:linear-gradient(110deg,#fffdf8,var(--unlock-soft))!important;
+}
+.rtg-pull-result .rtg-pull-series{white-space:normal;line-height:1.5;font-size:.55rem;letter-spacing:.07em;}
+.rtg-pull-result .rtg-pull-reveal-label{margin:20px 16px 0!important;}
+.rtg-pull-result .rtg-pull-reveal-label span{border-radius:5px;letter-spacing:.11em;box-shadow:3px 3px 0 var(--unlock-accent);}
+.rtg-pull-result .rtg-pull-result-body{padding:24px 18px 26px!important;gap:18px!important;}
+.rtg-pull-result .rtg-pull-card-stage{isolation:isolate;min-height:166px;}
+.rtg-pull-result .rtg-pull-card-stage::before{
+  content:"";position:absolute;z-index:-1;inset:6px -5px;
+  border:1px solid var(--unlock-accent);border-radius:18px;
+  background:linear-gradient(145deg,#ffffffcc,var(--unlock-soft));
+  box-shadow:0 10px 20px var(--unlock-glow),inset 0 0 0 4px #ffffff66;
+  transform:rotate(-5deg);pointer-events:none;
+}
+.rtg-pull-result .rtg-pull-result-copy h2{font-size:clamp(1.55rem,6vw,2.2rem)!important;line-height:1.07!important;margin-bottom:13px!important;text-wrap:balance;}
+.rtg-pull-result .rtg-pull-team{box-shadow:none;border:0;border-radius:0;background:transparent;padding:0;gap:6px;min-height:30px;}
+.rtg-pull-result .rtg-pull-team strong{max-width:none;white-space:normal;overflow:visible;overflow-wrap:anywhere;line-height:1.3;font-size:.7rem;}
+.rtg-pull-result .rtg-pull-player-identity{gap:7px;}
+.rtg-pull-result .rtg-pull-role{min-height:28px;min-width:28px;padding:4px;border-width:1px;border-radius:5px;box-shadow:none;font-size:.64rem;}
+.rtg-pull-result .rtg-pull-meta{margin-top:12px;gap:5px;}
+.rtg-pull-result .rtg-pull-meta span{border-width:1px;box-shadow:none;padding:4px 6px;font-size:.6rem;}
+.rtg-pull-result .rtg-pull-balance{margin:0 16px 14px!important;padding:12px 14px!important;border-width:1px!important;border-left:4px solid var(--unlock-accent)!important;border-radius:8px!important;box-shadow:none!important;background:#fffdf8!important;}
+.rtg-pull-result .rtg-pull-balance>span{font-size:.62rem;letter-spacing:.09em;}
+.rtg-pull-result .rtg-pull-balance>strong{font-size:1.25rem;}
+.rtg-pull-result .rtg-pull-continue{width:calc(100% - 32px)!important;margin:0 16px 20px!important;min-height:48px!important;}
+@media(max-width:365px){
+  .rtg-pull-result .rtg-pull-result-body{grid-template-columns:90px minmax(0,1fr)!important;gap:12px!important;padding:22px 12px!important;}
+  .rtg-pull-result .rtg-pull-card-stage::before{inset:12px -2px;}
+  .rtg-pull-result .rtg-pull-result-head{padding-left:12px!important;}
+}
+
+.rtg-modal .rtg-role-filter-group{min-width:0;width:100%;display:grid;gap:6px;margin:0 0 11px;}
+.rtg-modal .rtg-picker-toolbar .rtg-role-filter-group{grid-column:1/-1!important;margin:0!important;}
+.rtg-modal .rtg-role-filter-heading{color:#5f574c;font-size:.62rem;font-weight:1000;letter-spacing:.1em;}
+.rtg-modal .rtg-role-filter-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;min-width:0;}
+.rtg-modal .rtg-role-filter-button{min-width:0;min-height:36px;padding:5px 2px;border:2px solid #111216;border-radius:2px;background:#fff;color:#111216;box-shadow:2px 3px 0 #11121624;font:950 .72rem/1 system-ui,sans-serif;letter-spacing:.015em;cursor:pointer;}
+.rtg-modal .rtg-role-filter-button.active{background:#ffd21f;color:#111216;box-shadow:inset 0 -2px #1112162b;}
+.rtg-modal .rtg-role-filter-button:focus-visible{outline:3px solid #ffd21f;outline-offset:3px;}
+@media(max-width:430px){.rtg-modal .rtg-role-filter-options{gap:4px;}.rtg-modal .rtg-role-filter-button{min-height:33px;font-size:.67rem;padding:4px 1px;}}

@@ -5,6 +5,7 @@
     wind:Object.freeze({key:"wind",label:"Vento"}),
     mountain:Object.freeze({key:"mountain",label:"Montagna"}),
     forest:Object.freeze({key:"forest",label:"Albero"}),
+    void:Object.freeze({key:"void",label:"Void"}),
   });
   const TYPE_LABELS=Object.freeze({shot:"Tiro",defense:"Difesa",dribble:"Dribbling",save:"Parata"});
   const EVENT_ICONS=Object.freeze({goal:"⚽",save:"🧤",counter:"⚡",long_shot:"🎯",post:"🥅",crossbar:"🥅",shot:"👟",defensive_stop:"🛡️",dribble:"↝",recovery:"↺",key_pass:"➜",build_up:"◆",first_half_start:"▶",second_half_start:"▶"});
@@ -27,7 +28,7 @@
     const portraitUrl=String(event?.portraitUrl||"");
     if(portraitUrl&&event?.playerId){
       const fallbacks=[...new Set([portraitUrl,...(Array.isArray(event.portraitFallbacks)?event.portraitFallbacks:[])].filter(Boolean))];
-      return `<span class="match-event-avatar" aria-hidden="true"><img src="${escapeHtml(portraitUrl)}" alt="" loading="lazy" data-image-fallbacks="${escapeHtml(JSON.stringify(fallbacks))}" data-image-fallback-index="0" onerror="globalThis.handlePlayerImageError && globalThis.handlePlayerImageError(this)" /></span>`;
+      return `<span class="match-event-avatar" aria-hidden="true" data-player-id="${escapeHtml(String(event.playerId))}"><img src="${escapeHtml(portraitUrl)}" alt="" loading="lazy" data-image-fallbacks="${escapeHtml(JSON.stringify(fallbacks))}" data-image-fallback-index="0" onerror="globalThis.handlePlayerImageError && globalThis.handlePlayerImageError(this)" /></span>`;
     }
     return `<span class="match-event-symbol" aria-hidden="true">${escapeHtml(event?.icon||eventIcon(event?.type))}</span>`;
   }
@@ -51,5 +52,41 @@
       <div class="player-move-power"><small>Potenza</small><strong>${escapeHtml(move.power)}</strong></div>
     </div>`;
   }
+
+  function installRtgLiveFeedPolish(){
+    const doc=global.document;
+    if(!doc?.documentElement)return;
+    if(!doc.getElementById("rtg-live-feed-polish")){
+      const style=doc.createElement("style");
+      style.id="rtg-live-feed-polish";
+      style.textContent=`
+        .rtg-halftime-field-panel>.rtg-halftime-section-title{display:none!important}
+        .rtg-match-ticker-list>li.match-event--user{border-left:5px solid #2d8fd5!important;background:linear-gradient(90deg,rgba(45,143,213,.10),rgba(45,143,213,0) 34%)!important}
+        .rtg-match-ticker-list>li.match-event--opponent{border-left:5px solid #d65353!important;background:linear-gradient(90deg,rgba(214,83,83,.10),rgba(214,83,83,0) 34%)!important}
+        .rtg-match-ticker-list>li.match-event--user .match-event-kind{color:#247ab8!important}
+        .rtg-match-ticker-list>li.match-event--opponent .match-event-kind{color:#bd4141!important}
+      `;
+      (doc.head||doc.documentElement).appendChild(style);
+    }
+    let lastList=null,lastCount=-1;
+    const followLatest=()=>{
+      const list=doc.querySelector?.(".rtg-match-ticker-list");
+      if(!list){lastList=null;lastCount=-1;return;}
+      const count=Number(list.children?.length||0);
+      if(list!==lastList||count!==lastCount){
+        lastList=list;lastCount=count;
+        const latest=list.querySelector?.("li.is-latest")||list.lastElementChild;
+        if(latest?.scrollIntoView)latest.scrollIntoView({block:"end",behavior:"smooth"});
+        else list.scrollTop=list.scrollHeight;
+      }
+    };
+    followLatest();
+    if(typeof global.MutationObserver==="function"){
+      const observer=new global.MutationObserver(followLatest);
+      observer.observe(doc.documentElement,{childList:true,subtree:true});
+    }
+  }
+
   global.MovePresentationRuntime=Object.freeze({normalizeElement,typeLabel,eventIcon,eventLabel,decorateEventVisual,eventMarkerMarkup,eventTextMarkup,eventContentMarkup,detailMarkup});
+  installRtgLiveFeedPolish();
 })(globalThis);
