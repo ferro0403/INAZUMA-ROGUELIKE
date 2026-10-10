@@ -431,9 +431,22 @@
     }
     function resolvedSquad(snapshot,state=campaign){
       const variants=snapshot?.activeRoleVariantByCardId||{};
+      const seasonId=id(state?.activeSeasonId||activeSeasonId());
+      const formation=(config?.season?.(seasonId)?.formations||seasonDb?.formations?.eleven||[])
+        .find(entry=>id(entry.id)===id(snapshot?.formationId));
+      const slotRoles=Array.isArray(formation?.slotRoles)?formation.slotRoles:[];
+      let lineup=(snapshot?.lineup||[]).map(cardId=>resolvedWithDevelopment(cardId,variants[cardId]||null,state?.developmentByCardId||{})).filter(Boolean);
+      if(snapshot?.lineupOrderedBySlot!==true&&slotRoles.length===lineup.length){
+        // Historical campaigns group by innate role, sometimes GK-first.
+        const remaining=lineup.slice();
+        lineup=slotRoles.map(slot=>{
+          const index=remaining.findIndex(player=>String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase()===String(slot).toUpperCase());
+          return remaining.splice(index>=0?index:0,1)[0];
+        });
+      }
       return {
         formationId:snapshot?.formationId||null,
-        lineup:(snapshot?.lineup||[]).map(cardId=>resolvedWithDevelopment(cardId,variants[cardId]||null,state?.developmentByCardId||{})).filter(Boolean),
+        lineup:lineup.map((player,index)=>({...player,tacticalRole:String(slotRoles[index]||player?.normalizedRole||player?.position||player?.role||"").toUpperCase()})),
         bench:(snapshot?.bench||[]).map(cardId=>resolvedWithDevelopment(cardId,variants[cardId]||null,state?.developmentByCardId||{})).filter(Boolean),
         activeRoleVariantByCardId:{...variants},
       };
@@ -878,14 +891,14 @@
         const firstIndex=halftimeDraft.lineup.findIndex(player=>id(player.cardId||player.playerId)===id(selectedPlayerId));
         const secondIndex=halftimeDraft.bench.findIndex(player=>id(player.cardId||player.playerId)===benchId);
         const first=halftimeDraft.lineup[firstIndex],second=halftimeDraft.bench[secondIndex];
-        const firstRole=String(first?.normalizedRole||first?.position||"").toUpperCase();
-        const secondRole=String(second?.normalizedRole||second?.position||"").toUpperCase();
-        if(firstIndex<0||secondIndex<0||!firstRole||firstRole!==secondRole){
-          deps.toast?.("Cambio consentito solo ruolo per ruolo","error");
+        if(firstIndex<0||secondIndex<0||!first||!second){
+          deps.toast?.("Cambio non disponibile","error");
           return repaint(null);
         }
-        halftimeDraft.lineup[firstIndex]=second;
-        halftimeDraft.bench[secondIndex]=first;
+        const tacticalRole=String(first.tacticalRole||first.normalizedRole||first.position||first.role||"").toUpperCase();
+        halftimeDraft.lineup[firstIndex]={...second,tacticalRole};
+        halftimeDraft.bench[secondIndex]={...first};
+        delete halftimeDraft.bench[secondIndex].tacticalRole;
         repaint(null);
       }));
       overlay?.querySelector?.("[data-rtg-half-confirm]")?.addEventListener("click",()=>confirmHalftime(halftimeDraft));
@@ -905,9 +918,9 @@
       const history=match.shootout?.history||[];
       const attackingSide=history.length%2===0?"user":"opponent";
       const defendingSide=attackingSide==="user"?"opponent":"user";
-      const attackers=(attackingSide==="user"?match.userSquad:match.opponentSquad).lineup.filter(player=>String(player.normalizedRole||player.position)!=="GK");
+      const attackers=(attackingSide==="user"?match.userSquad:match.opponentSquad).lineup.filter(player=>String(player.tacticalRole||player.normalizedRole||player.position)!=="GK");
       const shooter=attackers[(match.shootout?.kicks?.[attackingSide]||0)%Math.max(1,attackers.length)]||attackers[0];
-      const keeper=(defendingSide==="user"?match.userSquad:match.opponentSquad).lineup.find(player=>String(player.normalizedRole||player.position)==="GK");
+      const keeper=(defendingSide==="user"?match.userSquad:match.opponentSquad).lineup.find(player=>String(player.tacticalRole||player.normalizedRole||player.position)==="GK");
       const userPlayer=attackingSide==="user"?shooter:keeper;
       const userKind=attackingSide==="user"?"shot":"save";
       const userMove=userPlayer?.move&&String(userPlayer.move.type)===userKind?userPlayer.move:null;

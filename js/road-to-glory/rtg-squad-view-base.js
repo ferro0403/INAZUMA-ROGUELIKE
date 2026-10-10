@@ -92,7 +92,7 @@
     }
 
     function formationRows(formation, lineupEntries) {
-      const byRole = new Map(["FW", "MF", "DF", "GK"].map((role) => [role, lineupEntries.filter((entry) => roleOf(entry.player) === role)]));
+      const byRole = new Map(["FW", "MF", "DF", "GK"].map((role) => [role, lineupEntries.filter((entry) => String(entry.tacticalRole||roleOf(entry.player)).toUpperCase() === role)]));
       const requirements = formation?.requirements || { FW:3, MF:3, DF:4, GK:1 };
       const rows = formationLayout?.displayRows?.(formation) || [
         { role: "FW", count: Number(requirements.FW || 0) },
@@ -125,7 +125,7 @@
           const selected = mode === "halftime" && currentId === selectedId;
           const latestClass = latest?.actorId === currentId ? "is-latest-actor" : latest?.opponentId === currentId ? "is-latest-opponent" : "";
           const dataAttr = !attrName ? "" : mode === "halftime"
-            ? `${attrName}="${escape(currentId)}" data-role="${escape(roleOf(entry.player))}" aria-pressed="${selected ? "true" : "false"}"`
+            ? `${attrName}="${escape(currentId)}" data-role="${escape(entry.tacticalRole||roleOf(entry.player))}" aria-pressed="${selected ? "true" : "false"}"`
             : `${attrName}="${escape(currentId)}" data-side="${escape(side)}"`;
           return playerCard(entry, "lineup", {
             readOnly,
@@ -142,7 +142,7 @@
       const selectedId = String(options.selectedId || "");
       const latest = options.latest || null;
       const formation = formationForId(squad?.formationId) || { requirements: { FW:3, MF:3, DF:4, GK:1 } };
-      const entries = (squad?.lineup || []).map((player) => ({ cardId: cardIdOf(player), playerId: playerIdOf(player), source:"", player }));
+      const entries = (squad?.lineup || []).map((player) => ({ cardId: cardIdOf(player), playerId: playerIdOf(player), source:"", player, tacticalRole:player?.tacticalRole||roleOf(player) }));
       const rows = formationRows(formation, entries);
       return `<section class="squad-field-panel rtg-match-squad-field-shell rtg-match-squad-field-shell--${escape(mode)}" data-side="${escape(side)}">${lineupPitchMarkup(rows,{readOnly:true,side,mode,selectedId,latest})}</section>`;
     }
@@ -173,7 +173,13 @@
       const formations = Array.from(global.RoadToGloryConfig?.season?.(seasonId)?.formations || seasonDb?.formations?.eleven || global.RoadToGloryConfig?.SEASON1?.formations || []);
       const formation = formations.find((item) => String(item.id) === String(squad.formationId)) || formations[0] || null;
       const toEntry = (cardId) => { const player=resolve(String(cardId)); return { cardId:String(cardId), playerId:String(player?.playerId || global.RoadToGloryCardIdentity?.parse?.(cardId)?.playerId || cardId), source:sourceFor(cardId), player }; };
-      const lineup = (squad.lineup || []).map(toEntry);
+      const slotRoles=Array.isArray(formation?.slotRoles)?formation.slotRoles:[];
+      const lineup = (squad.lineup || []).map((cardId,index)=>{
+        const entry=toEntry(cardId);
+        return {...entry,tacticalRole:squad.lineupOrderedBySlot===true
+          ? String(slotRoles[index]||roleOf(entry.player)).toUpperCase()
+          : roleOf(entry.player)};
+      });
       const bench = (squad.bench || []).map(toEntry);
       const freeCards=(freeAgentIds||[]).map((playerId)=>global.RoadToGloryCardIdentity?.cardIdForFreeAgent?.(playerId)||String(playerId));
       return Object.freeze({
@@ -256,7 +262,7 @@
         <div class="modal-head rtg-squad-picker-head">
           <div><p class="eyebrow">Cambio giocatore</p><h2>${escape(targetName)}</h2><p class="muted">Scegli un sostituto · ${escape(allowAnyRole ? "qualsiasi ruolo" : (role || "stesso ruolo"))}</p></div>
         </div>
-        ${quickEntries.length ? `<section class="rtg-picker-quick-bench"><div class="rtg-picker-quick-head"><span>PANCHINA · CAMBIO RAPIDO</span><strong>STESSO RUOLO</strong></div><div class="rtg-picker-quick-strip">${quickEntries.map((entry) => playerCard(entry, "picker")).join("")}</div></section>` : ""}
+        ${quickEntries.length ? `<section class="rtg-picker-quick-bench"><div class="rtg-picker-quick-head"><span>PANCHINA · CAMBIO RAPIDO</span><strong>TUTTI I RUOLI</strong></div><div class="rtg-picker-quick-strip">${quickEntries.map((entry) => playerCard(entry, "picker")).join("")}</div></section>` : ""}
         <div class="rtg-picker-toolbar">
           <label class="rtg-picker-search"><span>Cerca per nome</span><input type="search" inputmode="search" autocomplete="off" placeholder="Es. Jude, Axel, Mark…" value="${escape(query)}" data-rtg-picker-search /></label>
           <div class="rtg-picker-source-filters" aria-label="Filtra provenienza">

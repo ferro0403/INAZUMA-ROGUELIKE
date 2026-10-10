@@ -221,7 +221,7 @@
 
     function formationRows(formationId, players = []) {
       const formation = formationById(formationId) || { requirements: { FW:3, MF:3, DF:4, GK:1 } };
-      const byRole = new Map(["FW","MF","DF","GK"].map((key) => [key, players.filter((player) => role(player) === key)]));
+      const byRole = new Map(["FW","MF","DF","GK"].map((key) => [key, players.filter((player) => String(player?.tacticalRole||role(player)).toUpperCase() === key)]));
       const rows = formationLayout?.displayRows?.(formation) || [
         { role:"FW", count:Number(formation.requirements?.FW || 0) },
         { role:"MF", count:Number(formation.requirements?.MF || 0) },
@@ -819,8 +819,8 @@
       const lineup = model.lineup || [], bench = model.bench || [];
       const selectedId = String(options.selectedPlayerId || "");
       const selected = lineup.find((player) => pid(player) === selectedId) || null;
-      const selectedRole = selected ? role(selected) : "";
-      const compatibleBench = selected ? bench.filter((player) => role(player) === selectedRole) : [];
+      const selectedRole = selected ? String(selected.tacticalRole||role(selected)) : "";
+      const compatibleBench = selected ? bench : [];
       const rows = formationRows(model.formationId, lineup);
       const match = options.match || {};
       const scoreUser = Number(match.score?.user ?? 0);
@@ -858,7 +858,7 @@
             <div class="rtg-halftime-section-title"><span>PANCHINA</span></div>
             <div class="rtg-halftime-bench-strip">
               ${bench.map((player) => {
-                const compatible = !!selected && role(player) === selectedRole;
+                const compatible = !!selected;
                 const attrs = [
                   `data-rtg-half-bench-player="${escape(pid(player))}"`,
                   `data-role="${escape(role(player))}"`,

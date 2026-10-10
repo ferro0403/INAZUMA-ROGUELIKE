@@ -21,12 +21,22 @@
     }
     function canUseDraftFormation(formation){
       if(!formation)return false;
-      const counts={GK:0,DF:0,MF:0,FW:0};
-      for(const playerId of accessibleDraftIds()){
-        const role=deps.rawRole(playerId);
-        if(Object.prototype.hasOwnProperty.call(counts,role))counts[role]+=1;
-      }
-      return Object.entries(formation.requirements||{}).every(([role,amount])=>Number(counts[String(role).toUpperCase()]||0)>=Number(amount||0));
+      const slots=Array.isArray(formation.slotRoles)?formation.slotRoles:[];
+      const requiredTotal=Object.values(formation.requirements||{}).reduce((sum,count)=>sum+Number(count||0),0);
+      return new Set(accessibleDraftIds()).size>=15&&(slots.length===11||requiredTotal===11);
+    }
+    // Older saved squads store XI by natural role, not by tactical slot.
+    // Convert only the editable draft when the user actually changes a field position.
+    function orderedLineupForFormation(lineup,formation,roleFor){
+      const slots=Array.isArray(formation?.slotRoles)&&formation.slotRoles.length===11
+        ? formation.slotRoles
+        : Object.entries(formation?.requirements||{}).flatMap(([role,count])=>Array.from({length:Number(count)||0},()=>role));
+      const remaining=Array.from(lineup||[]);
+      if(slots.length!==remaining.length)return remaining;
+      return slots.map(slot=>{
+        const index=remaining.findIndex(entry=>String(roleFor(entry)||"").toUpperCase()===String(slot).toUpperCase());
+        return remaining.splice(index>=0?index:0,1)[0];
+      });
     }
     function arrangeDraftForFormation(formation){
       if(!formation||!canUseDraftFormation(formation))return{ok:false,reason:"formation-incompatible"};
@@ -44,7 +54,7 @@
         : Object.entries(formation.requirements||{}).flatMap(([role,amount])=>Array.from({length:Number(amount)||0},()=>String(role).toUpperCase()));
       const used=new Set(),lineup=[];
       for(const role of slotRoles){
-        const candidate=accessible.find(entry=>entry.role===role&&!used.has(entry.playerId));
+        const candidate=accessible.find(entry=>entry.role===role&&!used.has(entry.playerId))||accessible.find(entry=>!used.has(entry.playerId));
         if(!candidate)return{ok:false,reason:"formation-incompatible"};
         used.add(candidate.playerId);lineup.push(candidate.playerId);
       }
@@ -56,7 +66,7 @@
       });
       const bench=remaining.slice(0,4).map(entry=>entry.playerId);
       if(bench.length!==4)return{ok:false,reason:"bench-unavailable"};
-      deps.squadDraft={...deps.squadDraft,formationId:deps.id(formation.id),lineup,bench,activeRoleVariantByCardId:{...(deps.squadDraft?.activeRoleVariantByCardId||{})}};
+      deps.squadDraft={...deps.squadDraft,formationId:deps.id(formation.id),lineup,bench,lineupOrderedBySlot:true,activeRoleVariantByCardId:{...(deps.squadDraft?.activeRoleVariantByCardId||{})}};
       return{ok:true};
     }
     function openFormationSelector(model){
@@ -66,7 +76,7 @@
         if(button.disabled)return;
         const formation=(model.formations||[]).find(item=>deps.id(item.id)===deps.id(button.dataset.rtgFormationOption));
         const result=arrangeDraftForFormation(formation);
-        if(!result.ok){deps.toast?.("Non ci sono abbastanza giocatori sbloccati nei ruoli richiesti","error");return;}
+        if(!result.ok){deps.toast?.("Servono almeno 15 giocatori disponibili per usare il modulo","error");return;}
         deps.closeModal?.();
         renderSquad();
       }));
@@ -77,7 +87,6 @@
       return accessible
         .filter(playerId=>playerId!==deps.id(targetId))
         .filter(playerId=>!benchTarget||!rosterIds.has(playerId))
-        .filter(playerId=>!role||deps.rawRole(playerId)===role)
         .sort((a,b)=>deps.rawOverall(b)-deps.rawOverall(a)||deps.rawName(a).localeCompare(deps.rawName(b),"it"));
     }
     function squadPickerRarity(playerId){
@@ -218,10 +227,9 @@
       const targetLoc=locationInDraft(targetId);
       if(!targetLoc)return;
       const strictRole=targetLoc.area==="lineup";
-      const role=strictRole?roleOfDraftPlayer(targetId):"";
-      if(strictRole&&!role)return deps.toast?.("Ruolo giocatore non disponibile","error");
+      const role="";
       const quickEntries=strictRole
-        ? (deps.squadDraft?.bench||[]).map(deps.id).filter(playerId=>roleOfDraftPlayer(playerId)===role).map(playerId=>({
+        ? (deps.squadDraft?.bench||[]).map(deps.id).map(playerId=>({
             playerId,
             source:deps.sourceForDraftPlayer(playerId),
             player:deps.resolved(playerId,deps.squadDraft?.activeRoleVariantByCardId?.[playerId]||null),
@@ -333,7 +341,7 @@
         candidateGroups=buildGroups(candidateIds);
         visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateGroups.length);
       }
-      deps.openModal?.(deps.squadView.replacementPickerMarkup({target,role,allowAnyRole:!strictRole,quickEntries,entries:deps.getModalRoot?[]:entries(),total:deps.getModalRoot?0:candidateGroups.length,visibleCount:deps.getModalRoot?0:visibleCount,query,sourceFilter,rarityFilter,rarityOptions,seasonFilter,teamFilter,seasonOptions,teamOptions:currentTeamOptions()}),{className:"rtg-modal rtg-squad-picker-modal"});
+      deps.openModal?.(deps.squadView.replacementPickerMarkup({target,role,allowAnyRole:true,quickEntries,entries:deps.getModalRoot?[]:entries(),total:deps.getModalRoot?0:candidateGroups.length,visibleCount:deps.getModalRoot?0:visibleCount,query,sourceFilter,rarityFilter,rarityOptions,seasonFilter,teamFilter,seasonOptions,teamOptions:currentTeamOptions()}),{className:"rtg-modal rtg-squad-picker-modal"});
       const modal=deps.getModalRoot?.();
       if(!overallDescending){
         const sortButton=modal?.querySelector?.("[data-rtg-picker-sort]");
@@ -726,8 +734,9 @@
       const state=deps.clone(draftState());
       state.squads[deps.activeSeasonId()]={
         formationId:deps.id(formation.id),
-        lineup:selected.map(entry=>entry.playerId),
+        lineup:orderedLineupForFormation(selected,formation,entry=>entry.role).map(entry=>entry.playerId),
         bench:bench.map(entry=>entry.playerId),
+        lineupOrderedBySlot:true,
         activeRoleVariantByCardId:{...(deps.squadDraft?.activeRoleVariantByCardId||{})},
       };
       const eligibility=deps.squadRuntime.mainEligibility({teamId,state,seasonDb:deps.seasonDb,freeAgentIds:deps.freeAgentIds,freeAgentsDb:deps.freeAgentsDb,playerResolver:deps.playerResolverForState(state)});
@@ -813,13 +822,19 @@
       if(!first||!second||first===second)return{ok:false,reason:"same-player"};
       const accessible=new Set(deps.accessibleCards(draftState()).map(deps.id));
       if(!accessible.has(first)||!accessible.has(second))return{ok:false,reason:"inaccessible-player"};
-      const firstRole=roleOfDraftPlayer(first),secondRole=roleOfDraftPlayer(second);
-      const firstLoc=locationInDraft(first),secondLoc=locationInDraft(second);
+      let firstLoc=locationInDraft(first),secondLoc=locationInDraft(second);
       if(!firstLoc&&!secondLoc)return{ok:false,reason:"collection-only"};
-      // The XI must preserve the role required by the formation. Bench slots are
-      // role-free: replacing a bench DF with a FW/MF/GK is always allowed.
-      if(firstLoc?.area==="lineup"&&(!secondRole||secondRole!==firstRole))return{ok:false,reason:"role-mismatch"};
-      if(secondLoc?.area==="lineup"&&(!firstRole||firstRole!==secondRole))return{ok:false,reason:"role-mismatch"};
+      if((firstLoc?.area==="lineup"||secondLoc?.area==="lineup")&&deps.squadDraft?.lineupOrderedBySlot!==true){
+        const formation=(deps.activeConfig()?.formations||deps.seasonDb?.formations?.eleven||[])
+          .find(entry=>deps.id(entry.id)===deps.id(deps.squadDraft?.formationId));
+        if(!formation)return{ok:false,reason:"formation-unavailable"};
+        const ordered=orderedLineupForFormation(deps.squadDraft.lineup,formation,roleOfDraftPlayer);
+        deps.squadDraft={...deps.squadDraft,lineup:ordered,lineupOrderedBySlot:true};
+        firstLoc=locationInDraft(first);
+        secondLoc=locationInDraft(second);
+      }
+      // Tactical slot is fixed; any owned player can occupy it, regardless
+      // of their natural card role. Bench replacements remain unrestricted.
       if(firstLoc&&secondLoc){
         deps.squadDraft[firstLoc.area][firstLoc.index]=second;
         deps.squadDraft[secondLoc.area][secondLoc.index]=first;
