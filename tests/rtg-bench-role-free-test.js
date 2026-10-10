@@ -99,8 +99,15 @@ const controller=c.RoadToGloryController.create({
   assert.strictEqual(pickerArgs.quickEntries.length,4);
   assert(pickerArgs.quickEntries.some(entry=>entry.playerId==="bg"),"GK must be available for a DF tactical slot");
   assert(pickerArgs.quickEntries.some(entry=>entry.playerId==="bf"),"FW must be available for a DF tactical slot");
-  assert(pickerArgs.entries.some(entry=>entry.playerId==="xg"),"owned outside GK must appear in lineup picker");
-  assert(pickerArgs.entries.some(entry=>entry.playerId==="xm"),"owned outside MF must appear in lineup picker");
+  assert(pickerArgs.entries.length<=12,"picker must not render more than 12 cards on the first page");
+  // With 12-card paging, an outside GK or MF might be on a later page.
+  // Both must nevertheless remain valid replacement choices in RTG.
+  for(const outside of ["xg","xm"]){
+    const outsideSwap=controller.swapSquadDraft("d1",outside,{render:false});
+    assert.strictEqual(outsideSwap.ok,true,`${outside} must be a valid cross-role lineup replacement`);
+    const restored=controller.swapSquadDraft(outside,"d1",{render:false});
+    assert.strictEqual(restored.ok,true,`${outside} swap must be reversible without losing players`);
+  }
 
   const benchSwap=controller.swapSquadDraft("bd","xf",{render:false});
   assert.strictEqual(benchSwap.ok,true);
