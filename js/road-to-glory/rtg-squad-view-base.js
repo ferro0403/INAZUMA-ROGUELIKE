@@ -84,7 +84,10 @@
             trailingMarkup: `${legacyBadge({ ...entry, player })}${versionCountBadge(entry)}`,
           })
         : fallbackPlayerCard(player, "", attrs, extraClass);
-      if (isPicker || isCatalog || isVersion) return cardMarkup;
+      if (isPicker || isCatalog || isVersion) {
+        // Off-screen cards can decode later; keep the canonical portrait URLs.
+        return cardMarkup.replace(/<img\b(?![^>]*\bloading\s*=)/gi,'<img loading="lazy" decoding="async"');
+      }
       return `<div class="rtg-squad-card-slot ${options.readOnly ? "rtg-squad-card-slot--readonly" : ""}" data-rtg-card-slot="${escape(cardId)}">
         ${cardMarkup}
         ${options.readOnly ? "" : `<button type="button" class="rtg-squad-change-trigger" data-rtg-change-player="${escape(cardId)}" aria-label="Cambia ${escape(player?.name || playerId)}"><span aria-hidden="true">↔</span><span>Cambia</span></button>`}
@@ -240,7 +243,7 @@
       return `<div class="rtg-catalog-grid">${entries.map((entry) => playerCard(entry, "catalog")).join("")}</div>${remaining > 0 ? `<div class="album-load-more-wrap rtg-picker-load-more-wrap"><button type="button" class="btn btn-yellow album-load-more rtg-picker-load-more" data-rtg-catalog-load-more>MOSTRA ALTRI ${escape(Math.min(24, remaining))}</button><small>${escape(entries.length)} di ${escape(total)}</small></div>` : `<div class="rtg-picker-count"><small>${escape(entries.length)} di ${escape(total)}</small></div>`}`;
     }
 
-    function catalogMarkup({ entries = [], total = 0, query = "", seasonFilter = "all", teamFilter = "all", roleFilter = "all", seasonOptions = [], teamOptions = [] } = {}) {
+    function catalogMarkup({ entries = [], total = 0, deferResults = false, query = "", seasonFilter = "all", teamFilter = "all", roleFilter = "all", seasonOptions = [], teamOptions = [] } = {}) {
       return `<section class="rtg-player-catalog development-squad-card-scope">
         <div class="modal-head rtg-catalog-head">
           <div><p class="eyebrow">Collezione Road to Glory</p><h2>Giocatori RTG</h2><p class="muted">${escape(total)} giocatori ottenuti dal percorso e dal distributore.</p></div>
@@ -251,7 +254,7 @@
           <label class="rtg-picker-rarity-filter rtg-picker-team-filter"><span>Squadra</span><select data-rtg-catalog-team aria-label="Filtra per squadra">${filterOptionsMarkup(teamOptions,teamFilter)}</select></label>
         </div>
         ${roleFilterMarkup("catalog",roleFilter)}
-        <div data-rtg-catalog-results>${catalogResultsMarkup({ entries, total })}</div>
+        <div data-rtg-catalog-results>${deferResults ? `<p class="rtg-catalog-loading" role="status">Preparazione giocatori…</p>` : catalogResultsMarkup({ entries, total })}</div>
       </section>`;
     }
 

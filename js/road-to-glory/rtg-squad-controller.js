@@ -2,6 +2,7 @@
   "use strict";
 
   const SQUAD_PICKER_PAGE_SIZE=24;
+  const CATALOG_INITIAL_PAGE_SIZE=16;
   function create(deps={}){
     function draftState(){
       const state=deps.clone(deps.campaign);
@@ -223,7 +224,7 @@
     }
 
     function openSquadPlayerPicker(targetId,restoreState=null){
-      if(waitForSquadFilterData(()=>openSquadPlayerPicker(targetId,restoreState)))return{loading:true};
+      // Render picker immediately; wait for cross-season team data in the background.
       const targetLoc=locationInDraft(targetId);
       if(!targetLoc)return;
       const strictRole=targetLoc.area==="lineup";
@@ -419,6 +420,19 @@
       if(typeof requestAnimationFrame==="function")requestAnimationFrame(()=>typeof setTimeout==="function"?setTimeout(hydratePicker,0):hydratePicker());
       else if(typeof setTimeout==="function")setTimeout(hydratePicker,0);
       else hydratePicker();
+      if(!squadFilterDataReady()){
+        const mountedPicker=deps.getModalRoot?.()?.querySelector?.(".modal");
+        ensureSquadFilterSeasonData().then(()=>{
+          if(!mountedPicker||deps.getModalRoot?.()?.querySelector?.(".modal")!==mountedPicker)return;
+          filterMetaCache.clear();
+          refreshTeamFilterControl();
+          renderResults();
+        }).catch(error=>{
+          global.console?.error?.("[RTG] Caricamento filtri cambio giocatore fallito",error);
+          if(mountedPicker&&deps.getModalRoot?.()?.querySelector?.(".modal")===mountedPicker)
+            deps.toast?.("Filtri Season/Squadra non disponibili","error");
+        });
+      }
     }
     function canonicalCardPlayerId(cardRef){
       const meta=deps.cardMeta(cardRef);
@@ -487,7 +501,7 @@
       let seasonFilter=restoreState?.seasonFilter||"all";
       let teamFilter=restoreState?.teamFilter||"all";
       let roleFilter=restoreState?.roleFilter||"all";
-      let visibleCount=Math.min(catalogGroups.length,Math.max(SQUAD_PICKER_PAGE_SIZE,Number(restoreState?.visibleCount)||0));
+      let visibleCount=Math.min(catalogGroups.length,Math.max(CATALOG_INITIAL_PAGE_SIZE,Number(restoreState?.visibleCount)||0));
       const seasonOptions=squadFilterSeasonOptions();
       const filterMetaCache=new Map();
       const filterMetaFor=(cardId)=>{
@@ -503,7 +517,7 @@
         if(needle&&!deps.rawName(representativeId).toLocaleLowerCase("it").includes(needle))return null;
         return{...group,representativeId,matchingCardIds};
       }).filter(Boolean).sort((a,b)=>deps.rawRole(a.representativeId).localeCompare(deps.rawRole(b.representativeId))||deps.rawOverall(b.representativeId)-deps.rawOverall(a.representativeId)||deps.rawName(a.representativeId).localeCompare(deps.rawName(b.representativeId),"it"));
-      const entries=()=>filtered().slice(0,visibleCount).map(group=>({
+      const entries=(matching=filtered())=>matching.slice(0,visibleCount).map(group=>({
         cardId:group.representativeId,
         playerId:group.representativeId,
         source:"RTG",
@@ -545,14 +559,15 @@
         const modal=deps.getModalRoot?.();
         const results=modal?.querySelector?.("[data-rtg-catalog-results]");
         const filteredGroups=filtered();
-        if(results)results.innerHTML=deps.squadView.catalogResultsMarkup({entries:entries(),total:filteredGroups.length});
+        if(results)results.innerHTML=deps.squadView.catalogResultsMarkup({entries:entries(filteredGroups),total:filteredGroups.length});
         bindCatalog();
       };
-      deps.openModal?.(deps.squadView.catalogMarkup({entries:entries(),total:catalogGroups.length,query,seasonFilter,teamFilter,roleFilter,seasonOptions,teamOptions:currentTeamOptions()}),{className:"rtg-modal rtg-player-catalog-modal"});
+      const deferFirstPaint=!restoreState&&typeof requestAnimationFrame==="function"&&typeof setTimeout==="function";
+      deps.openModal?.(deps.squadView.catalogMarkup({entries:deferFirstPaint?[]:entries(),deferResults:deferFirstPaint,total:catalogGroups.length,query,seasonFilter,teamFilter,roleFilter,seasonOptions,teamOptions:currentTeamOptions()}),{className:"rtg-modal rtg-player-catalog-modal"});
       const modal=deps.getModalRoot?.();
       modal?.querySelector?.("[data-rtg-catalog-search]")?.addEventListener("input",event=>{
         query=String(event.target?.value||"");
-        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        visibleCount=CATALOG_INITIAL_PAGE_SIZE;
         renderCatalogResults();
       });
       modal?.querySelectorAll?.("[data-rtg-catalog-role]")?.forEach(button=>button.addEventListener("click",()=>{
@@ -568,15 +583,20 @@
       modal?.querySelector?.("[data-rtg-catalog-season]")?.addEventListener("change",event=>{
         seasonFilter=String(event.target?.value||"all");
         refreshTeamFilterControl();
-        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        visibleCount=CATALOG_INITIAL_PAGE_SIZE;
         renderCatalogResults();
       });
       modal?.querySelector?.("[data-rtg-catalog-team]")?.addEventListener("change",event=>{
         teamFilter=String(event.target?.value||"all");
-        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        visibleCount=CATALOG_INITIAL_PAGE_SIZE;
         renderCatalogResults();
       });
-      bindCatalog();
+      if(deferFirstPaint){
+        const mounted=modal?.querySelector?.(".rtg-player-catalog-modal");
+        requestAnimationFrame(()=>setTimeout(()=>{
+          if(mounted&&deps.getModalRoot?.()?.querySelector?.(".rtg-player-catalog-modal")===mounted)renderCatalogResults();
+        },0));
+      }else bindCatalog();
       if(restoreState){
         const scroller=modal?.querySelector?.(".rtg-player-catalog-modal");
         const restoreScroll=()=>{
