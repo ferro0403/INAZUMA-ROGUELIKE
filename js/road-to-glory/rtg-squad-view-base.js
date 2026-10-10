@@ -239,10 +239,10 @@
     }
 
     function versionPickerMarkup({ entries = [], mode = "details" } = {}) {
-      const action = mode === "select" ? "da usare nel cambio" : "da aprire";
+
       return `<section class="rtg-version-picker development-squad-card-scope">
         <div class="modal-head rtg-version-picker-head">
-          <div><p class="eyebrow">Versioni possedute</p><h2>Scegli la versione</h2><p class="muted">Le versioni dello stesso giocatore sono raccolte in una sola carta. Scegli quella ${escape(action)}.</p></div>
+          <div><p class="eyebrow">Versioni possedute</p><h2>Scegli la versione</h2></div>
         </div>
         <div class="rtg-version-card-grid">${entries.map((entry)=>playerCard(entry,"version")).join("")}</div>
       </section>`;
