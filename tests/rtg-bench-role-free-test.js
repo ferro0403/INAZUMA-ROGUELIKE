@@ -91,6 +91,17 @@ const controller=c.RoadToGloryController.create({
   assert(pickerIds.includes("xd"),"bench picker must offer an outside DF too");
   assert(!pickerIds.includes("d1"),"bench picker must not steal a current starter");
 
+  // A starter's Cambia button must show every natural role, including the
+  // entire four-player bench and outside players with different roles.
+  controller.openSquadPlayerPicker("d1");
+  assert.strictEqual(pickerArgs.allowAnyRole,true);
+  assert.strictEqual(pickerArgs.role,"");
+  assert.strictEqual(pickerArgs.quickEntries.length,4);
+  assert(pickerArgs.quickEntries.some(entry=>entry.playerId==="bg"),"GK must be available for a DF tactical slot");
+  assert(pickerArgs.quickEntries.some(entry=>entry.playerId==="bf"),"FW must be available for a DF tactical slot");
+  assert(pickerArgs.entries.some(entry=>entry.playerId==="xg"),"owned outside GK must appear in lineup picker");
+  assert(pickerArgs.entries.some(entry=>entry.playerId==="xm"),"owned outside MF must appear in lineup picker");
+
   const benchSwap=controller.swapSquadDraft("bd","xf",{render:false});
   assert.strictEqual(benchSwap.ok,true);
   assert(controller.getDraftSquad().bench.includes("xf"),"bench DF must be replaceable with FW");
