@@ -562,6 +562,7 @@
         ensureSquadFilterSeasonData().then(()=>{
           // Never reopen an already closed catalogue or replace another modal.
           if(!mountedCatalog||deps.getModalRoot?.()?.querySelector?.(".rtg-player-catalog-modal")!==mountedCatalog)return;
+          filterMetaCache.clear();
           refreshTeamFilterControl();
           renderCatalogResults();
         }).catch(error=>{
