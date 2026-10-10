@@ -192,6 +192,17 @@
     function rawRole(cardRef){const player=resolved(cardRef)||rawPlayer(cardRef);return String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();}
     function rawOverall(cardRef){const player=resolved(cardRef)||rawPlayer(cardRef);const value=Number(player?.overall??player?.finalOverall??player?.baseOverall);return Number.isFinite(value)?value:0;}
     function rawName(cardRef){const meta=cardMeta(cardRef);return String((resolved(cardRef)||rawPlayer(cardRef))?.name||meta.playerId||cardRef);}
+    // Group the three native raw accessors into one resolution for large
+    // picker lists. The values exactly mirror rawRole/rawOverall/rawName.
+    function rawSummary(cardRef){
+      const player=resolved(cardRef)||rawPlayer(cardRef),meta=cardMeta(cardRef);
+      const value=Number(player?.overall??player?.finalOverall??player?.baseOverall);
+      return {
+        role:String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase(),
+        overall:Number.isFinite(value)?value:0,
+        name:String(player?.name||meta.playerId||cardRef),
+      };
+    }
     function acquiredCardIdSet(state=campaign){
       const modern=(state?.gachaAcquiredCards||[]).map(entry=>cardIdentity?.parse?.(entry)?.cardId||id(entry?.cardId||entry?.playerId||entry));
       const legacy=(state?.gachaAcquiredPlayerIds||[]).map(playerId=>cardIdentity?.cardIdForSeason?.(playerId,state?.activeSeasonId||"ie1")||id(playerId));
@@ -544,7 +555,7 @@
         const context={
           app,config,squadRuntime,runView,squadView,economy,repository,cardIdentity,playerResolver,
           clone,id,activeSeasonId,activeConfig,activeSquad,resolved,resolvedStandard,resolvedWithDevelopment,resolvedSquad,playerResolverForState,bestPlayerIdsForRole,
-          rawRole,rawOverall,rawName,rawPlayer,cardMeta,accessibleCards,acquiredCardIdSet,sourceForDraftPlayer,detailDatabaseFor,openRtgPlayerDetails,
+          rawRole,rawOverall,rawName,rawSummary,rawPlayer,cardMeta,accessibleCards,acquiredCardIdSet,sourceForDraftPlayer,detailDatabaseFor,openRtgPlayerDetails,
           renderHtml,bindHomeAndTabs,mountDevQuickTools,readSquadSlots,writeSquadSlots,storeSquadSlot,readActiveSquadSlot,
           writeActiveSquadSlot,squadForSlot,selectSquadSlot,freeAgentCardId,nodeById,openModal:deps.openModal,getModalRoot:deps.getModalRoot,
           closeModal:deps.closeModal,toast:deps.toast,renderHome:deps.renderHome,getUserTeamMeta:deps.getUserTeamMeta,compactPlayerCardMarkup:deps.compactPlayerCardMarkup,

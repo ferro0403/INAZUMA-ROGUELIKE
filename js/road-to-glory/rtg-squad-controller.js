@@ -240,9 +240,16 @@
         if(!map.has(key))map.set(key,fn(key));
         return map.get(key);
       };
-      const overallFor=cardId=>memo(summaries.ovr,deps.rawOverall,cardId);
-      const nameFor=cardId=>memo(summaries.name,deps.rawName,cardId);
-      const roleFor=cardId=>memo(summaries.role,deps.rawRole,cardId);
+      const combined=new Map();
+      const combinedFor=cardId=>{
+        if(typeof deps.rawSummary!=="function")return null;
+        const key=deps.id(cardId);
+        if(!combined.has(key))combined.set(key,deps.rawSummary(key));
+        return combined.get(key);
+      };
+      const overallFor=cardId=>combinedFor(cardId)?.overall??memo(summaries.ovr,deps.rawOverall,cardId);
+      const nameFor=cardId=>combinedFor(cardId)?.name??memo(summaries.name,deps.rawName,cardId);
+      const roleFor=cardId=>combinedFor(cardId)?.role??memo(summaries.role,deps.rawRole,cardId);
       const strictRole=targetLoc.area==="lineup";
       const role="";
       const quickEntries=strictRole
