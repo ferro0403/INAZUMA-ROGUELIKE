@@ -14,6 +14,7 @@
 <label>Larghezza <select id="width"><option>320</option><option selected>390</option><option>430</option><option>768</option><option>1024</option></select></label>
 <label>Esito <select id="rarity"><option>Normale</option><option>Buono</option><option>Forte</option><option>Elite</option><option>Mondiale</option><option selected>Leggenda</option><option>Aurico</option></select></label>
 <button id="reload">Ricarica prova</button></header>
+<label><input type="checkbox" id="result-preview"> Mostra il risultato giocatore reale</label>
 <p>Fixture isolata: CSS, vista e controller reali; pool e risultato simulati. Nessun salvataggio, costo o account viene modificato. Premi GIRA per controllare la sequenza.</p>
 <iframe id="preview" title="Distributore con larghezza di viewport selezionata"></iframe>
 <script>
@@ -26,6 +27,7 @@
     const seasonId=document.getElementById('season').value,rarity=document.getElementById('rarity').value;
     frame.srcdoc=`<!doctype html><html lang="it"><head><base href="../"><meta name="viewport" content="width=device-width,initial-scale=1">${styles}</head><body><div id="modal-root"></div>
     <script src="js/road-to-glory/rtg-config.js"><\/script>
+    <script src="js/player/player-view.js"><\/script>
     <script src="js/road-to-glory/rtg-route-view.js"><\/script>
     <script src="js/road-to-glory/rtg-album-view.js"><\/script>
     <script src="js/road-to-glory/rtg-run-view.js"><\/script>
@@ -33,7 +35,8 @@
     <script src="js/road-to-glory/rtg-vending-controller.js"><\/script>
     <script>
     const root=document.getElementById('modal-root');
-    const realView=RoadToGloryRunView.create({escapeHtml:s=>String(s)});
+    const playerView=PlayerView.create({escapeHtml:s=>String(s),visuals:{portraitUrl:()=> 'https://dxi4wb638ujep.cloudfront.net/1/k/s/5/s5yj0aoq03u.png',resolve:()=>({cardFallbacks:[]}),imageFallbackAttributes:()=>''}});
+    const realView=RoadToGloryRunView.create({escapeHtml:s=>String(s),compactPlayerCardMarkup:playerView.compactCard});
     const campaign={tokens:900};
     let pulls=0;
     let observedAnimations=new Set(),completed=0;
@@ -48,7 +51,7 @@
       getCampaign:()=>campaign,getSeasonDb:()=>({}),activeSeasonId:()=>${JSON.stringify(seasonId)},
       activeConfig:()=>RoadToGloryConfig.season(${JSON.stringify(seasonId)}),accessibleCards:()=>[],
       gacha:{previewPool:()=>({candidates:['fixture'],rarities:['Normale','Buono','Forte','Elite','Mondiale','Leggenda','Aurico'].map(rarity=>({rarity,weight:100/7}))})},
-      runView:{...realView,pullResultMarkup:()=>'<div class="rtg-paper-modal" style="padding:24px"><h2>Sequenza completata</h2><p>Richieste di estrazione: '+pulls+'</p><p>Risultato simulato: ${rarity}</p>'+motionReport()+'<button class="btn btn-yellow" data-rtg-pull-continue>Riprova</button></div>'},
+      runView:{...realView,pullResultMarkup:()=>${document.getElementById('result-preview').checked?"realView.pullResultMarkup({rarity:"+JSON.stringify(rarity)+",balanceAfter:600},{playerId:'4751',name:'Judge',category:"+JSON.stringify(rarity)+",overall:87,position:'DF',teamName:'Ace Invaders'})":"'<div class=\"rtg-paper-modal\" style=\"padding:24px\"><h2>Sequenza completata</h2><p>Richieste di estrazione: '+pulls+'</p><p>Risultato simulato: '+"+JSON.stringify(rarity)+"+'</p>'+motionReport()+'<button class=\"btn btn-yellow\" data-rtg-pull-continue>Riprova</button></div>'"}},
       getModalRoot:()=>root,
       openModal:html=>{root.innerHTML='<div class="modal-backdrop"><section class="modal rtg-modal rtg-vending-modal">'+html+'</section></div>'},
       closeModal:()=>runtime.openVending(),renderAlbum:()=>{},
@@ -58,6 +61,7 @@
     <\/script></body></html>`;
   }
   document.querySelectorAll('select').forEach(select=>select.addEventListener('change',render));
+  document.getElementById('result-preview').addEventListener('change',render);
   document.getElementById('reload').addEventListener('click',render);
   render();
 })();

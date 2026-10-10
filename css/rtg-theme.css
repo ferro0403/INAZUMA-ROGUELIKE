@@ -288,7 +288,10 @@ content:"";
   height:auto;
   border-radius:inherit;
   background:linear-gradient(90deg,#ffffff55,transparent 8% 85%,#173f4e33);
-  box-shadow:inset 2px 0 0 #ffffffaa,inset -2px 0 0 #d8f4fa77;
+  border:2px solid #8da5ae;
+  border-left:3px solid #536975;
+  border-right:3px solid #536975;
+  box-shadow:inset 2px 0 0 #e9ffffcc,inset -2px 0 0 #d8f4fa99,0 0 0 1px #273b48;
   pointer-events:none;
 }
 .rtg-vending-window-v9::after{
@@ -339,7 +342,7 @@ position:absolute;
 }
 .rtg-vending-window-glare-v9{
 position:absolute;
-  z-index:21;
+  z-index:19;
   top:9px;left:12px;
   width:24px;height:76%;
   border-radius:70% 20% 30% 50%;
@@ -1316,6 +1319,46 @@ button.player-card:has(> .rtg-legacy-badge),
 }
 
 /* RTG owned-player role filters (catalog and squad replacement picker). */
+/* Pull reveal: the same player card, framed by its rarity colour. */
+.rtg-pull-result.rtg-paper-modal{
+  background:radial-gradient(ellipse at 16% 44%,var(--unlock-soft),transparent 62%),#fffdf8!important;
+  border-radius:16px!important;
+}
+.rtg-pull-result .rtg-pull-result-head{
+  gap:10px;flex-wrap:wrap;
+  padding:16px 54px 14px 16px!important;
+  border-bottom:1px solid #11121622!important;
+  background:linear-gradient(110deg,#fffdf8,var(--unlock-soft))!important;
+}
+.rtg-pull-result .rtg-pull-series{white-space:normal;line-height:1.5;font-size:.55rem;letter-spacing:.07em;}
+.rtg-pull-result .rtg-pull-reveal-label{margin:20px 16px 0!important;}
+.rtg-pull-result .rtg-pull-reveal-label span{border-radius:5px;letter-spacing:.11em;box-shadow:3px 3px 0 var(--unlock-accent);}
+.rtg-pull-result .rtg-pull-result-body{padding:24px 18px 26px!important;gap:18px!important;}
+.rtg-pull-result .rtg-pull-card-stage{isolation:isolate;min-height:166px;}
+.rtg-pull-result .rtg-pull-card-stage::before{
+  content:"";position:absolute;z-index:-1;inset:6px -5px;
+  border:1px solid var(--unlock-accent);border-radius:18px;
+  background:linear-gradient(145deg,#ffffffcc,var(--unlock-soft));
+  box-shadow:0 10px 20px var(--unlock-glow),inset 0 0 0 4px #ffffff66;
+  transform:rotate(-5deg);pointer-events:none;
+}
+.rtg-pull-result .rtg-pull-result-copy h2{font-size:clamp(1.55rem,6vw,2.2rem)!important;line-height:1.07!important;margin-bottom:13px!important;text-wrap:balance;}
+.rtg-pull-result .rtg-pull-team{box-shadow:none;border:0;border-radius:0;background:transparent;padding:0;gap:6px;min-height:30px;}
+.rtg-pull-result .rtg-pull-team strong{max-width:none;white-space:normal;overflow:visible;overflow-wrap:anywhere;line-height:1.3;font-size:.7rem;}
+.rtg-pull-result .rtg-pull-player-identity{gap:7px;}
+.rtg-pull-result .rtg-pull-role{min-height:28px;min-width:28px;padding:4px;border-width:1px;border-radius:5px;box-shadow:none;font-size:.64rem;}
+.rtg-pull-result .rtg-pull-meta{margin-top:12px;gap:5px;}
+.rtg-pull-result .rtg-pull-meta span{border-width:1px;box-shadow:none;padding:4px 6px;font-size:.6rem;}
+.rtg-pull-result .rtg-pull-balance{margin:0 16px 14px!important;padding:12px 14px!important;border-width:1px!important;border-left:4px solid var(--unlock-accent)!important;border-radius:8px!important;box-shadow:none!important;background:#fffdf8!important;}
+.rtg-pull-result .rtg-pull-balance>span{font-size:.62rem;letter-spacing:.09em;}
+.rtg-pull-result .rtg-pull-balance>strong{font-size:1.25rem;}
+.rtg-pull-result .rtg-pull-continue{width:calc(100% - 32px)!important;margin:0 16px 20px!important;min-height:48px!important;}
+@media(max-width:365px){
+  .rtg-pull-result .rtg-pull-result-body{grid-template-columns:90px minmax(0,1fr)!important;gap:12px!important;padding:22px 12px!important;}
+  .rtg-pull-result .rtg-pull-card-stage::before{inset:12px -2px;}
+  .rtg-pull-result .rtg-pull-result-head{padding-left:12px!important;}
+}
+
 .rtg-modal .rtg-role-filter-group{min-width:0;width:100%;display:grid;gap:6px;margin:0 0 11px;}
 .rtg-modal .rtg-picker-toolbar .rtg-role-filter-group{grid-column:1/-1!important;margin:0!important;}
 .rtg-modal .rtg-role-filter-heading{color:#5f574c;font-size:.62rem;font-weight:1000;letter-spacing:.1em;}
