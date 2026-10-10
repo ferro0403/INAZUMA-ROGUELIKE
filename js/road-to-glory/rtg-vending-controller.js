@@ -23,13 +23,10 @@
         if(button?.disabled)return;
         const machine=modalRoot?.querySelector?.("[data-rtg-vending-machine]");
         button.disabled=true;
-        machine?.classList?.add("is-turning");
         try{
-          motion?.start();
-          const preparedPromise=deps.pull({reveal:false,mode:selectedMode});
-          await new Promise(resolve=>setTimeout(resolve,620));
-          const prepared=await preparedPromise;
+          const prepared=await deps.pull({reveal:false,mode:selectedMode});
           if(!prepared?.result||!prepared?.player)return;
+          if(machine&&!machine.isConnected)return;
           const rarityKey=String(prepared.result.rarity||prepared.player.category||"normale").trim().toLowerCase().replace(/[^a-z0-9_-]+/g,"-");
           if(machine){
             const capsules=Array.from(machine.querySelectorAll?.("[data-capsule-rarity]")||[]);
@@ -37,13 +34,16 @@
             const matching=capsules.filter(capsule=>capsule.dataset.capsuleRarity===rarityKey);
             const choices=matching.length?matching:capsules;
             const visualChoice=choices.length?choices[Math.floor(Math.random()*choices.length)]:null;
-            const selected=motion?.select(choices)||visualChoice;
-            if(selected){
-              selected.dataset.capsuleRarity=rarityKey;
-              selected.classList.add("is-selected");
-              motion?.release(selected);
-            }
             machine.dataset.pullRarity=rarityKey;
+            if(motion){
+              if(!await motion.play(rarityKey))return;
+            }else{
+              // Reduced-capability fallback: no capsule crosses the pile.
+              machine.classList.add("is-turning");
+              await new Promise(resolve=>setTimeout(resolve,620));
+              if(visualChoice)visualChoice.style.opacity="0";
+            }
+            if(!machine.isConnected)return;
             machine.classList.add("is-revealing");
           }
           await new Promise(resolve=>setTimeout(resolve,980));

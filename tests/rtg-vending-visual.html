@@ -36,11 +36,19 @@
     const realView=RoadToGloryRunView.create({escapeHtml:s=>String(s)});
     const campaign={tokens:900};
     let pulls=0;
+    let observedAnimations=new Set(),completed=0;
+    root.addEventListener('click',event=>{if(event.target.closest('[data-rtg-pull]')){observedAnimations=new Set();completed=0;}});
+    new MutationObserver(()=>{
+      for(const el of root.querySelectorAll('[data-capsule-rarity]'))for(const animation of el.getAnimations())if(!observedAnimations.has(animation)){
+        observedAnimations.add(animation);animation.finished.then(()=>completed++,()=>{});
+      }
+    }).observe(root,{subtree:true,attributes:true,attributeFilter:['class']});
+    const motionReport=()=>'<p>Traiettorie browser completate: '+completed+'/'+observedAnimations.size+'</p>';
     const runtime=RoadToGloryVendingController.create({
       getCampaign:()=>campaign,getSeasonDb:()=>({}),activeSeasonId:()=>${JSON.stringify(seasonId)},
       activeConfig:()=>RoadToGloryConfig.season(${JSON.stringify(seasonId)}),accessibleCards:()=>[],
       gacha:{previewPool:()=>({candidates:['fixture'],rarities:['Normale','Buono','Forte','Elite','Mondiale','Leggenda','Aurico'].map(rarity=>({rarity,weight:100/7}))})},
-      runView:{...realView,pullResultMarkup:()=>'<div class="rtg-paper-modal" style="padding:24px"><h2>Sequenza completata</h2><p>Richieste di estrazione: '+pulls+'</p><p>Risultato simulato: ${rarity}</p><button class="btn btn-yellow" data-rtg-pull-continue>Riprova</button></div>'},
+      runView:{...realView,pullResultMarkup:()=>'<div class="rtg-paper-modal" style="padding:24px"><h2>Sequenza completata</h2><p>Richieste di estrazione: '+pulls+'</p><p>Risultato simulato: ${rarity}</p>'+motionReport()+'<button class="btn btn-yellow" data-rtg-pull-continue>Riprova</button></div>'},
       getModalRoot:()=>root,
       openModal:html=>{root.innerHTML='<div class="modal-backdrop"><section class="modal rtg-modal rtg-vending-modal">'+html+'</section></div>'},
       closeModal:()=>runtime.openVending(),renderAlbum:()=>{},
