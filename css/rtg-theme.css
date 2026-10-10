@@ -267,15 +267,16 @@ content:"";
 .rtg-vending-window-v9{
 position:relative;
   width:var(--rtg-cabinet-width);
-  height:180px;
+  height:232px;
   overflow:hidden;
   isolation:isolate;
   border:4px solid #3a4952;
   border-top:0;
   border-bottom:6px solid #53606a;
-  border-radius:8px 8px 28px 28px / 5px 5px 12px 12px;
+  border-radius:28px 28px 36px 36px / 14px 14px 24px 24px;
   background:
-    radial-gradient(ellipse at 48% 18%,#f6fdff 0%,#d3e7e9 48%,#8ba9b0 100%);
+    radial-gradient(ellipse at 50% 88%,#2d485b55 0%,transparent 55%),
+    radial-gradient(ellipse at 44% 20%,#f6fdff 0%,#c7e0e4 46%,#7295a2 100%);
   box-shadow:inset 6px 0 6px #ffffffbb,inset -9px 0 12px #253f5266,inset 0 8px 10px #17283355,inset 0 -10px 12px #425c6655,0 1px 0 #e9f0ec;
 }
 .rtg-vending-window-v9::before{
@@ -305,9 +306,9 @@ content:"";
 position:absolute;
   z-index:3;
   left:12px;right:12px;bottom:0;
-  height:38px;
-  clip-path:polygon(0 12%,100% 12%,65% 100%,35% 100%);
-  background:linear-gradient(110deg,#b1c9cc66,#eaf4ecaa 30%,#667d8988 65%,#213a49aa);
+  height:52px;
+  clip-path:polygon(0 0,100% 0,68% 100%,32% 100%);
+  background:linear-gradient(110deg,#bdd1d988,#f2fbff99 30%,#7d98a5aa 65%,#203c50);
   border-top:1px solid #efffff88;
   pointer-events:none;
 }
@@ -316,12 +317,25 @@ position:absolute;
   position:absolute;
   left:50%;
   bottom:-1px;
-  width:38px;
-  height:10px;
+  width:70px;
+  height:14px;
   transform:translateX(-50%);
   border-radius:50% 50% 0 0;
   background:#30343a;
   box-shadow:inset 0 4px 0 #14171b;
+}
+.rtg-vending-funnel-v10::before{
+  content:"";position:absolute;z-index:1;left:calc(50% - 35px);bottom:0;
+  width:70px;height:8px;border-radius:3px;
+  background:linear-gradient(#d5e3e6,#6d8795 45%,#263e50);
+  box-shadow:0 2px 3px #142734;transform-origin:right;
+}
+.has-capsule-physics.is-turning .rtg-vending-funnel-v10::before{
+  animation:rtg-vending-gate var(--rtg-gate-duration,500ms) linear 750ms both;
+}
+@keyframes rtg-vending-gate{
+  0%,100%{transform:scaleX(1)}
+  12%,85%{transform:scaleX(.06)}
 }
 .rtg-vending-window-glare-v9{
 position:absolute;
@@ -559,19 +573,9 @@ position:absolute;
 .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-v9{animation:rtg-vending-v12-chute .95s ease-out both;}
 .rtg-vending-machine-v12.is-revealing .rtg-vending-chute-flap-v10{animation:rtg-vending-v12-flap .95s cubic-bezier(.2,.75,.28,1) both;}
 
-/* The DOM capsules retain their bicolour material; only their poses are simulated.
-   The selected capsule rolls towards the rear funnel, behind the remaining pile. */
-.rtg-vending-machine-v12.has-capsule-physics .rtg-vending-capsule-v9:not(.is-selected){animation:none!important;}
-.rtg-vending-machine-v12.has-capsule-physics.is-revealing .rtg-vending-capsule-v9.is-selected{
-  z-index:4;
-  animation:rtg-vending-physical-feed .48s ease-in both!important;
-}
-@keyframes rtg-vending-physical-feed{
-  0%{opacity:1;transform:translate3d(var(--feed-x),var(--feed-y),0) rotate(var(--feed-angle)) scale(1)}
-  45%{opacity:1;transform:translate3d(var(--feed-x),var(--feed-y),0) rotate(calc(var(--feed-angle) + 25deg)) scale(.76)}
-  75%{opacity:1;transform:translate3d(var(--outlet-x),var(--outlet-y),0) rotate(calc(var(--feed-angle) + 60deg)) scale(.7)}
-  100%{opacity:0;transform:translate3d(var(--outlet-x),calc(var(--outlet-y) + 38px),0) rotate(calc(var(--feed-angle) + 100deg)) scale(.65)}
-}
+/* One continuous collision-resolved path, including the throat. No CSS teleport. */
+.rtg-vending-machine-v12.has-capsule-physics .rtg-vending-capsule-v9{animation:none!important;}
+.rtg-vending-machine-v12.has-capsule-physics .rtg-vending-funnel-v10{z-index:16;}
 
 .rtg-vending-machine-v12[data-pull-rarity="normale"]{--rtg-vending-reveal:#929ba8;--rtg-prize-color:#d9dee4}
 .rtg-vending-machine-v12[data-pull-rarity="buono"]{--rtg-vending-reveal:#2fa866;--rtg-prize-color:#2fa866}
@@ -665,12 +669,13 @@ position:absolute;
 @media(max-width:430px){
   .rtg-vending-machine-v12{--rtg-cabinet-width:192px;width:min(228px,67vw);}
   .rtg-vending-head-v9,.rtg-vending-window-v9{width:192px;}
-  .rtg-vending-window-v9{height:162px;}
+  .rtg-vending-window-v9{height:214px;}
   .rtg-vending-body-v9{width:192px;min-height:132px;padding:11px;}
   .rtg-vending-body-v9::before{right:7px;width:68px;height:122px;}
   .rtg-vending-capsule-v9{width:36px;height:36px;}
 }
 @media(prefers-reduced-motion:reduce){
+  .has-capsule-physics.is-turning .rtg-vending-funnel-v10::before{animation:none;}
   .rtg-vending-machine-v12.has-capsule-physics.is-revealing .rtg-vending-capsule-v9.is-selected,
   .rtg-vending-machine-v12.is-turning,
   .rtg-vending-machine-v12.is-turning .rtg-vending-crank-v9,

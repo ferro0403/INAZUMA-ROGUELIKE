@@ -36,16 +36,14 @@
     const realView=RoadToGloryRunView.create({escapeHtml:s=>String(s)});
     const campaign={tokens:900};
     let pulls=0;
-    let observedCapsules=[],observedFrames=0,frameProbe=null;
-    const probe=()=>{observedFrames++;frameProbe=requestAnimationFrame(probe);};
-    const pose=el=>{const match=el.style.transform.match(/translate3d\\(([-.0-9]+)px,\\s*([-.0-9]+)px/);return match?[Number(match[1]),Number(match[2])]:[0,0];};
-    root.addEventListener('click',event=>{
-      if(event.target.closest('[data-rtg-pull]')){observedFrames=0;frameProbe=requestAnimationFrame(probe);observedCapsules=Array.from(root.querySelectorAll('[data-capsule-rarity]'),el=>({el,start:pose(el),peak:0}));}
-    });
+    let observedAnimations=new Set(),completed=0;
+    root.addEventListener('click',event=>{if(event.target.closest('[data-rtg-pull]')){observedAnimations=new Set();completed=0;}});
     new MutationObserver(()=>{
-      for(const item of observedCapsules){const current=pose(item.el);item.peak=Math.max(item.peak,Math.hypot(current[0]-item.start[0],current[1]-item.start[1]));}
-    }).observe(root,{subtree:true,attributes:true,attributeFilter:['style']});
-    const motionReport=()=>{cancelAnimationFrame(frameProbe);return '<p>Frame browser: '+observedFrames+'</p><p>Capsule mosse: '+observedCapsules.filter(item=>item.peak>20).length+'/14 · Spostamento massimo medio: '+(observedCapsules.reduce((sum,item)=>sum+item.peak,0)/14).toFixed(1)+' px</p>';};
+      for(const el of root.querySelectorAll('[data-capsule-rarity]'))for(const animation of el.getAnimations())if(!observedAnimations.has(animation)){
+        observedAnimations.add(animation);animation.finished.then(()=>completed++,()=>{});
+      }
+    }).observe(root,{subtree:true,attributes:true,attributeFilter:['class']});
+    const motionReport=()=>'<p>Traiettorie browser completate: '+completed+'/'+observedAnimations.size+'</p>';
     const runtime=RoadToGloryVendingController.create({
       getCampaign:()=>campaign,getSeasonDb:()=>({}),activeSeasonId:()=>${JSON.stringify(seasonId)},
       activeConfig:()=>RoadToGloryConfig.season(${JSON.stringify(seasonId)}),accessibleCards:()=>[],
