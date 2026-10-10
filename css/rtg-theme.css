@@ -1214,3 +1214,103 @@ button.player-card:has(> .rtg-legacy-badge),
     max-width:calc(100% - 188px)!important;
   }
 }
+
+/* RTG Cambia giocatore: four quick-bench cards on one fixed row.
+   This override belongs to the loaded RTG stylesheet: legacy quick-strip rules
+   still force 82-88px card widths and horizontal scrolling on narrow phones.
+   Only the quick bench is affected; the full picker grid stays untouched. */
+.modal.rtg-squad-picker-modal .rtg-picker-quick-bench{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  padding:9px 8px 10px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-head{
+  min-width:0!important;
+  gap:6px!important;
+  margin-bottom:7px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-strip{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  grid-auto-flow:row!important;
+  align-items:start!important;
+  justify-items:stretch!important;
+  gap:6px!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:2px 3px 12px!important;
+  overflow:visible!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-strip > [data-rtg-picker-player]{
+  flex:none!important;
+  box-sizing:border-box!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  margin:0!important;
+  justify-self:stretch!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-strip .player-portrait-wrap{
+  width:100%!important;
+  height:auto!important;
+  min-height:0!important;
+  aspect-ratio:1.05!important;
+  padding:5px 3px 2px!important;
+  overflow:hidden!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-strip .player-info{
+  min-height:22px!important;
+  padding:3px 2px 4px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-strip .player-title strong{
+  display:-webkit-box!important;
+  -webkit-line-clamp:2!important;
+  -webkit-box-orient:vertical!important;
+  white-space:normal!important;
+  overflow:hidden!important;
+  overflow-wrap:anywhere!important;
+  height:18px!important;
+  max-height:18px!important;
+  font-size:8px!important;
+  line-height:1.1!important;
+  text-align:center!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-strip :is(.player-role,.player-overall){
+  min-width:16px!important;
+  height:15px!important;
+  padding:1px 2px!important;
+  font-size:8px!important;
+  line-height:12px!important;
+}
+.modal.rtg-squad-picker-modal .rtg-picker-quick-strip .rtg-legacy-badge{
+  right:-2px!important;
+  bottom:-9px!important;
+  min-width:22px!important;
+  min-height:14px!important;
+  height:14px!important;
+  padding:0 3px!important;
+  font-size:6px!important;
+}
+@media(max-width:430px){
+  .modal.rtg-squad-picker-modal .rtg-picker-quick-head strong{
+    display:none!important; /* The title and modal already explain the free role selection. */
+  }
+}
+@media(max-width:365px){
+  .modal.rtg-squad-picker-modal .rtg-picker-quick-bench{
+    padding-inline:6px!important;
+  }
+  .modal.rtg-squad-picker-modal .rtg-picker-quick-strip{
+    gap:4px!important;
+    padding-inline:2px!important;
+  }
+  .modal.rtg-squad-picker-modal .rtg-picker-quick-strip .player-title strong{
+    font-size:7px!important;
+  }
+}
