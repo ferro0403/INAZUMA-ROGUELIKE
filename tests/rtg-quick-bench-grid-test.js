@@ -3,7 +3,7 @@ const assert=require("assert"),fs=require("fs"),vm=require("vm");
 const css=fs.readFileSync("css/rtg-theme.css","utf8");
 const index=fs.readFileSync("index.html","utf8");
 const viewSource=fs.readFileSync("js/road-to-glory/rtg-squad-view-base.js","utf8");
-assert(index.includes("css/rtg-theme.css?v=20261010-quick-bench-grid-1"),"live stylesheet must bust mobile cache");
+assert(index.includes("css/rtg-theme.css?v=20261010-role-filters-1"),"live stylesheet must bust mobile cache");
 assert(viewSource.includes('class="rtg-picker-quick-strip"'),"quick-bench markup must remain present");
 const override=css.slice(css.indexOf("/* RTG Cambia giocatore: four quick-bench cards"));
 assert(override.includes(".modal.rtg-squad-picker-modal .rtg-picker-quick-strip{"),"CSS must target actual picker modal");

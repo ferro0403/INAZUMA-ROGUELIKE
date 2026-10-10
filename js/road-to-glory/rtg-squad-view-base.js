@@ -225,12 +225,22 @@
       }).join("");
     }
 
+    // Compact filters shared by catalog and replacement picker. Filtering the
+    // underlying card versions is handled by the RTG squad controller.
+    function roleFilterMarkup(area,selected="all"){
+      const options=[["all","Tutti"],["FW","FW"],["MF","MF"],["DF","DF"],["GK","GK"]];
+      return `<div class="rtg-role-filter-group" role="group" aria-label="Filtra giocatori per ruolo">
+        <span class="rtg-role-filter-heading">RUOLO</span>
+        <div class="rtg-role-filter-options">${options.map(([value,label])=>`<button type="button" class="rtg-role-filter-button ${selected===value?"active":""}" data-rtg-${escape(area)}-role="${escape(value)}" aria-pressed="${selected===value?"true":"false"}">${escape(label)}</button>`).join("")}</div>
+      </div>`;
+    }
+
     function catalogResultsMarkup({ entries = [], total = 0 } = {}) {
       const remaining = Math.max(0, Number(total) - Number(entries.length));
       return `<div class="rtg-catalog-grid">${entries.map((entry) => playerCard(entry, "catalog")).join("")}</div>${remaining > 0 ? `<div class="album-load-more-wrap rtg-picker-load-more-wrap"><button type="button" class="btn btn-yellow album-load-more rtg-picker-load-more" data-rtg-catalog-load-more>MOSTRA ALTRI ${escape(Math.min(24, remaining))}</button><small>${escape(entries.length)} di ${escape(total)}</small></div>` : `<div class="rtg-picker-count"><small>${escape(entries.length)} di ${escape(total)}</small></div>`}`;
     }
 
-    function catalogMarkup({ entries = [], total = 0, query = "", seasonFilter = "all", teamFilter = "all", seasonOptions = [], teamOptions = [] } = {}) {
+    function catalogMarkup({ entries = [], total = 0, query = "", seasonFilter = "all", teamFilter = "all", roleFilter = "all", seasonOptions = [], teamOptions = [] } = {}) {
       return `<section class="rtg-player-catalog development-squad-card-scope">
         <div class="modal-head rtg-catalog-head">
           <div><p class="eyebrow">Collezione Road to Glory</p><h2>Giocatori RTG</h2><p class="muted">${escape(total)} giocatori ottenuti dal percorso e dal distributore.</p></div>
@@ -240,6 +250,7 @@
           <label class="rtg-picker-rarity-filter rtg-picker-season-filter"><span>Season</span><select data-rtg-catalog-season aria-label="Filtra per season">${filterOptionsMarkup(seasonOptions,seasonFilter)}</select></label>
           <label class="rtg-picker-rarity-filter rtg-picker-team-filter"><span>Squadra</span><select data-rtg-catalog-team aria-label="Filtra per squadra">${filterOptionsMarkup(teamOptions,teamFilter)}</select></label>
         </div>
+        ${roleFilterMarkup("catalog",roleFilter)}
         <div data-rtg-catalog-results>${catalogResultsMarkup({ entries, total })}</div>
       </section>`;
     }
@@ -254,7 +265,7 @@
       </section>`;
     }
 
-    function replacementPickerMarkup({ target = null, role = "", allowAnyRole = false, quickEntries = [], entries = [], total = 0, visibleCount = entries.length, query = "", sourceFilter = "all", rarityFilter = "all", rarityOptions = [], seasonFilter = "all", teamFilter = "all", seasonOptions = [], teamOptions = [] } = {}) {
+    function replacementPickerMarkup({ target = null, role = "", allowAnyRole = false, quickEntries = [], entries = [], total = 0, visibleCount = entries.length, query = "", sourceFilter = "all", rarityFilter = "all", rarityOptions = [], seasonFilter = "all", teamFilter = "all", roleFilter = "all", seasonOptions = [], teamOptions = [] } = {}) {
       const targetName = target?.player?.name || target?.playerId || "Giocatore";
       const filterButton = (value,label) => `<button type="button" class="rtg-picker-filter ${sourceFilter===value?"active":""}" data-rtg-picker-source="${escape(value)}">${escape(label)}</button>`;
       const rarityOptionMarkup = ['<option value="all">Tutte</option>', ...rarityOptions.map((rarity) => `<option value="${escape(rarity)}" ${String(rarityFilter)===String(rarity)?"selected":""}>${escape(rarity)}</option>`)].join("");
@@ -274,6 +285,7 @@
             <label class="rtg-picker-rarity-filter rtg-picker-season-filter"><span>Season</span><select data-rtg-picker-season aria-label="Filtra per season">${filterOptionsMarkup(seasonOptions,seasonFilter)}</select></label>
             <label class="rtg-picker-rarity-filter rtg-picker-team-filter"><span>Squadra</span><select data-rtg-picker-team aria-label="Filtra per squadra">${filterOptionsMarkup(teamOptions,teamFilter)}</select></label>
           </div>
+          ${roleFilterMarkup("picker",roleFilter)}
           <label class="rtg-picker-rarity-filter">
             <span>Rarità</span>
             <select data-rtg-picker-rarity aria-label="Filtra per rarità">${rarityOptionMarkup}</select>

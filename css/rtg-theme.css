@@ -1314,3 +1314,13 @@ button.player-card:has(> .rtg-legacy-badge),
     font-size:7px!important;
   }
 }
+
+/* RTG owned-player role filters (catalog and squad replacement picker). */
+.rtg-modal .rtg-role-filter-group{min-width:0;width:100%;display:grid;gap:6px;margin:0 0 11px;}
+.rtg-modal .rtg-picker-toolbar .rtg-role-filter-group{grid-column:1/-1!important;margin:0!important;}
+.rtg-modal .rtg-role-filter-heading{color:#5f574c;font-size:.62rem;font-weight:1000;letter-spacing:.1em;}
+.rtg-modal .rtg-role-filter-options{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:6px;min-width:0;}
+.rtg-modal .rtg-role-filter-button{min-width:0;min-height:36px;padding:5px 2px;border:2px solid #111216;border-radius:2px;background:#fff;color:#111216;box-shadow:2px 3px 0 #11121624;font:950 .72rem/1 system-ui,sans-serif;letter-spacing:.015em;cursor:pointer;}
+.rtg-modal .rtg-role-filter-button.active{background:#ffd21f;color:#111216;box-shadow:inset 0 -2px #1112162b;}
+.rtg-modal .rtg-role-filter-button:focus-visible{outline:3px solid #ffd21f;outline-offset:3px;}
+@media(max-width:430px){.rtg-modal .rtg-role-filter-options{gap:4px;}.rtg-modal .rtg-role-filter-button{min-height:33px;font-size:.67rem;padding:4px 1px;}}
