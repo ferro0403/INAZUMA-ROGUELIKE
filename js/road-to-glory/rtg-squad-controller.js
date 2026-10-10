@@ -428,7 +428,7 @@
       if(versions.length<=1){
         const only=versions[0];
         if(!only)return null;
-        return onSelect?onSelect(only):deps.openRtgPlayerDetails(only);
+        return onSelect?onSelect(only):deps.openRtgPlayerDetails(only,"",{onClose:options.onDetailsClose||null});
       }
       // Resolve/render every version only after the unified player card is opened.
       const entries=versions.map(cardId=>({
@@ -452,20 +452,22 @@
           onSelect(selected);
           return;
         }
-        const open=()=>deps.openRtgPlayerDetails(selected);
-        if(typeof setTimeout==="function")setTimeout(open,0);else open();
+        // Return straight to the originating catalogue after closing the detail card.
+        // Opening synchronously also avoids flashing the Squad beneath the modal.
+        deps.openRtgPlayerDetails(selected,"",{onClose:options.onDetailsClose||null});
       }));
       return {count:versions.length};
     }
-    function openRtgCatalog(){
-      if(waitForSquadFilterData(()=>openRtgCatalog()))return{loading:true};
+    function openRtgCatalog(restoreState=null){
+      // The catalog is immediately usable even while other Season DBs preload.
+      // Never hold the button behind several sequential Season network requests.
       const owned=Array.from(deps.acquiredCardIdSet()).filter(Boolean);
       const groups=groupVersionCards(owned);
       const catalogGroups=Array.from(groups.entries()).map(([key,cardIds])=>({key,cardIds,representativeId:preferredVersionCardId(cardIds)})).filter(group=>group.representativeId);
-      let query="";
-      let seasonFilter="all";
-      let teamFilter="all";
-      let visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,catalogGroups.length);
+      let query=String(restoreState?.query||"");
+      let seasonFilter=restoreState?.seasonFilter||"all";
+      let teamFilter=restoreState?.teamFilter||"all";
+      let visibleCount=Math.min(catalogGroups.length,Math.max(SQUAD_PICKER_PAGE_SIZE,Number(restoreState?.visibleCount)||0));
       const seasonOptions=squadFilterSeasonOptions();
       const filterMetaCache=new Map();
       const filterMetaFor=(cardId)=>{
@@ -496,13 +498,23 @@
         if(select)select.innerHTML=deps.squadView.filterOptionsMarkup(options,teamFilter);
         return options;
       };
+      const catalogState=()=>{
+        const scroller=deps.getModalRoot?.()?.querySelector?.(".rtg-player-catalog-modal");
+        return {query,seasonFilter,teamFilter,visibleCount,
+          scrollTop:scroller?.scrollTop||0,scrollLeft:scroller?.scrollLeft||0};
+      };
       const bindCatalog=()=>{
         const modal=deps.getModalRoot?.();
         modal?.querySelectorAll?.("[data-rtg-catalog-player]")?.forEach(button=>button.addEventListener("click",()=>{
           const cardId=deps.id(button.dataset.rtgCatalogPlayer);
           if(!cardId)return;
           const group=filtered().find(entry=>entry.key===versionGroupKey(cardId));
-          openRtgVersionPicker(group?.matchingCardIds||group?.cardIds||groups.get(versionGroupKey(cardId))||[cardId]);
+          const savedState=catalogState();
+          const returnToCatalog=()=>openRtgCatalog(savedState);
+          openRtgVersionPicker(group?.matchingCardIds||group?.cardIds||groups.get(versionGroupKey(cardId))||[cardId],{
+            onClose:returnToCatalog,
+            onDetailsClose:returnToCatalog,
+          });
         }));
         modal?.querySelector?.("[data-rtg-catalog-load-more]")?.addEventListener("click",()=>{
           visibleCount=Math.min(filtered().length,visibleCount+SQUAD_PICKER_PAGE_SIZE);
@@ -535,6 +547,29 @@
         renderCatalogResults();
       });
       bindCatalog();
+      if(restoreState){
+        const scroller=modal?.querySelector?.(".rtg-player-catalog-modal");
+        const restoreScroll=()=>{
+          if(!scroller||scroller.isConnected===false)return;
+          scroller.scrollTop=Number(restoreState.scrollTop)||0;
+          scroller.scrollLeft=Number(restoreState.scrollLeft)||0;
+        };
+        if(typeof requestAnimationFrame==="function")requestAnimationFrame(()=>requestAnimationFrame(restoreScroll));
+        else restoreScroll();
+      }
+      if(!squadFilterDataReady()){
+        const mountedCatalog=modal?.querySelector?.(".rtg-player-catalog-modal");
+        ensureSquadFilterSeasonData().then(()=>{
+          // Never reopen an already closed catalogue or replace another modal.
+          if(!mountedCatalog||deps.getModalRoot?.()?.querySelector?.(".rtg-player-catalog-modal")!==mountedCatalog)return;
+          refreshTeamFilterControl();
+          renderCatalogResults();
+        }).catch(error=>{
+          global.console?.error?.("[RTG] Impossibile caricare i filtri Giocatori RTG",error);
+          if(mountedCatalog&&deps.getModalRoot?.()?.querySelector?.(".rtg-player-catalog-modal")===mountedCatalog)
+            deps.toast?.("Filtri Season/Squadra non disponibili","error");
+        });
+      }
       return {count:catalogGroups.length,versionCount:owned.length};
     }
 
