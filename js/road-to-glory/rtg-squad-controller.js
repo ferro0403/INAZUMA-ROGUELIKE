@@ -279,8 +279,7 @@
         const delta=deps.rawOverall(b.representativeId)-deps.rawOverall(a.representativeId);
         return (overallDescending?delta:-delta)||deps.rawName(a.representativeId).localeCompare(deps.rawName(b.representativeId),"it");
       });
-      const entries=()=>{
-        const groups=filteredGroups();
+      const entries=(groups=filteredGroups())=>{
         return groups.slice(0,visibleCount).map(group=>({
           cardId:group.representativeId,
           playerId:group.representativeId,
@@ -300,7 +299,7 @@
         const modal=deps.getModalRoot?.();
         const groups=filteredGroups();
         const results=modal?.querySelector?.("[data-rtg-picker-results]");
-        if(results)results.innerHTML=deps.squadView.replacementPickerResultsMarkup({entries:entries(),total:groups.length,visibleCount});
+        if(results)results.innerHTML=deps.squadView.replacementPickerResultsMarkup({entries:entries(groups),total:groups.length,visibleCount});
         modal?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(button=>button.classList.toggle("active",button.dataset.rtgPickerSource===sourceFilter));
         bindResults();
       };
