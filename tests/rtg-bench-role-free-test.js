@@ -95,10 +95,11 @@ const controller=c.RoadToGloryController.create({
   assert.strictEqual(benchSwap.ok,true);
   assert(controller.getDraftSquad().bench.includes("xf"),"bench DF must be replaceable with FW");
 
-  const illegalLineupSwap=controller.swapSquadDraft("d1","xf",{render:false});
-  assert.strictEqual(illegalLineupSwap.ok,false);
-  assert.strictEqual(illegalLineupSwap.reason,"role-mismatch");
-  assert(controller.getDraftSquad().lineup.includes("d1"),"starter role constraint must remain intact");
+  const tacticalLineupSwap=controller.swapSquadDraft("d1","xf",{render:false});
+  assert.strictEqual(tacticalLineupSwap.ok,true);
+  assert(controller.getDraftSquad().lineup.includes("xf"),"FW from bench must be free to occupy a DF slot");
+  assert(controller.getDraftSquad().bench.includes("d1"),"outgoing DF must reach the bench");
+  assert.strictEqual(controller.getDraftSquad().lineupOrderedBySlot,true,"new tactical order must persist");
 
   console.log("rtg-bench-role-free-test: PASS");
 })().catch(error=>{console.error(error);process.exitCode=1;});
