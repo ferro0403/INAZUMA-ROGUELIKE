@@ -1,7 +1,7 @@
 (function (global) {
   "use strict";
 
-  const SQUAD_PICKER_PAGE_SIZE=24;
+  const SQUAD_PICKER_PAGE_SIZE=12;
   const CATALOG_INITIAL_PAGE_SIZE=16;
   function create(deps={}){
     function draftState(){
@@ -82,13 +82,13 @@
         renderSquad();
       }));
     }
-    function squadPickerCandidateIds(targetId,role,{benchTarget=false}={}){
+    function squadPickerCandidateIds(targetId,role,{benchTarget=false,overallFor=deps.rawOverall,nameFor=deps.rawName}={}){
       const accessible=deps.accessibleCards(draftState()).map(deps.id);
       const rosterIds=new Set(draftRosterIds());
       return accessible
         .filter(playerId=>playerId!==deps.id(targetId))
         .filter(playerId=>!benchTarget||!rosterIds.has(playerId))
-        .sort((a,b)=>deps.rawOverall(b)-deps.rawOverall(a)||deps.rawName(a).localeCompare(deps.rawName(b),"it"));
+        .sort((a,b)=>overallFor(b)-overallFor(a)||nameFor(a).localeCompare(nameFor(b),"it"));
     }
     function squadPickerRarity(playerId){
       return String(
@@ -206,6 +206,11 @@
       }))];
     }
     function cardMatchesSquadFilters(cardId,seasonFilter,teamFilter,metaFor){
+      // Avoid resolving every player just to check the default season/team.
+      if(teamFilter==="all"){
+        if(seasonFilter==="all")return true;
+        return deps.id(deps.cardMeta(cardId)?.legacySeasonId)===seasonFilter;
+      }
       const meta=metaFor(cardId);
       if(seasonFilter!=="all"&&meta.seasonId!==seasonFilter)return false;
       if(teamFilter!=="all"&&!Array.from(meta.teamIds||[]).some(teamId=>teamFilter===`${meta.seasonId}::${teamId}`))return false;
@@ -227,6 +232,17 @@
       // Render picker immediately; wait for cross-season team data in the background.
       const targetLoc=locationInDraft(targetId);
       if(!targetLoc)return;
+      // raw accessors resolve cards; call them at most once per card in
+      // this picker session, not once for every sorting comparison.
+      const summaries={ovr:new Map(),name:new Map(),role:new Map()};
+      const memo=(map,fn,cardId)=>{
+        const key=deps.id(cardId);
+        if(!map.has(key))map.set(key,fn(key));
+        return map.get(key);
+      };
+      const overallFor=cardId=>memo(summaries.ovr,deps.rawOverall,cardId);
+      const nameFor=cardId=>memo(summaries.name,deps.rawName,cardId);
+      const roleFor=cardId=>memo(summaries.role,deps.rawRole,cardId);
       const strictRole=targetLoc.area==="lineup";
       const role="";
       const quickEntries=strictRole
@@ -263,22 +279,29 @@
         cardIds,
         representativeId:preferredVersionCardId(cardIds),
       })).filter(group=>group.representativeId);
-      const filteredGroups=()=>candidateGroups.map(group=>{
-        let matchingCardIds=(group.cardIds||[]).filter(cardId=>cardMatchesSquadFilters(cardId,seasonFilter,teamFilter,filterMetaFor)&&(roleFilter==="all"||deps.rawRole(cardId)===roleFilter));
-        if(!matchingCardIds.length)return null;
-        const source=deps.sourceForDraftPlayer(preferredVersionCardId(matchingCardIds));
-        if(sourceFilter==="free"&&source!=="Svincolato")return null;
-        if(sourceFilter==="rtg"&&source!=="RTG")return null;
-        if(rarityFilter!=="all")matchingCardIds=matchingCardIds.filter(cardId=>squadPickerRarity(cardId).toLocaleLowerCase("it")===rarityFilter.toLocaleLowerCase("it"));
-        if(!matchingCardIds.length)return null;
-        const representativeId=preferredVersionCardId(matchingCardIds);
+      const filteredGroups=()=>{
         const needle=query.trim().toLocaleLowerCase("it");
-        if(needle&&!deps.rawName(representativeId).toLocaleLowerCase("it").includes(needle))return null;
-        return{...group,representativeId,matchingCardIds};
-      }).filter(Boolean).sort((a,b)=>{
-        const delta=deps.rawOverall(b.representativeId)-deps.rawOverall(a.representativeId);
-        return (overallDescending?delta:-delta)||deps.rawName(a.representativeId).localeCompare(deps.rawName(b.representativeId),"it");
-      });
+        const rarityNeedle=rarityFilter.toLocaleLowerCase("it");
+        return candidateGroups.map(group=>{
+          let matchingCardIds=(group.cardIds||[]).filter(cardId=>
+            (roleFilter==="all"||roleFor(cardId)===roleFilter)
+            &&cardMatchesSquadFilters(cardId,seasonFilter,teamFilter,filterMetaFor));
+          if(!matchingCardIds.length)return null;
+          if(sourceFilter!=="all"){
+            const source=deps.sourceForDraftPlayer(preferredVersionCardId(matchingCardIds));
+            if(sourceFilter==="free"&&source!=="Svincolato")return null;
+            if(sourceFilter==="rtg"&&source!=="RTG")return null;
+          }
+          if(rarityFilter!=="all")matchingCardIds=matchingCardIds.filter(cardId=>squadPickerRarity(cardId).toLocaleLowerCase("it")===rarityNeedle);
+          if(!matchingCardIds.length)return null;
+          const representativeId=preferredVersionCardId(matchingCardIds);
+          if(needle&&!nameFor(representativeId).toLocaleLowerCase("it").includes(needle))return null;
+          return{...group,representativeId,matchingCardIds};
+        }).filter(Boolean).sort((a,b)=>{
+          const delta=overallFor(b.representativeId)-overallFor(a.representativeId);
+          return (overallDescending?delta:-delta)||nameFor(a.representativeId).localeCompare(nameFor(b.representativeId),"it");
+        });
+      };
       const entries=(groups=filteredGroups())=>{
         return groups.slice(0,visibleCount).map(group=>({
           cardId:group.representativeId,
@@ -338,7 +361,7 @@
         return options;
       };
       if(!deps.getModalRoot){
-        const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(deps.id(playerId)));
+        const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole,overallFor,nameFor}).filter(playerId=>!quickIds.has(deps.id(playerId)));
         candidateGroups=buildGroups(candidateIds);
         visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateGroups.length);
       }
@@ -400,7 +423,7 @@
       });
       bindResults();
       const hydratePicker=()=>{
-        const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(deps.id(playerId)));
+        const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole,overallFor,nameFor}).filter(playerId=>!quickIds.has(deps.id(playerId)));
         candidateGroups=buildGroups(candidateIds);
         visibleCount=Math.min(candidateGroups.length,Math.max(SQUAD_PICKER_PAGE_SIZE,Number(restoreState?.visibleCount)||0));
         refreshTeamFilterControl();

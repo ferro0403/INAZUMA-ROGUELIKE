@@ -24,7 +24,8 @@ const grouped=view.replacementPickerResultsMarkup({
   visibleCount:1,
 });
 assert.strictEqual((grouped.match(/data-rtg-picker-player=/g)||[]).length,1,"picker must render one Erik card, not one per Season");
-assert.match(grouped,/2 VERS\./,"unified card must expose that more versions are available");
+assert.match(grouped,/class="rtg-version-count-badge"[^>]*>2<\/span>/,"unified card must expose numeric version badge");
+assert.doesNotMatch(grouped,/VERS\./,"banner must show only its numeric count");
 
 const picker=view.versionPickerMarkup({
   mode:"select",

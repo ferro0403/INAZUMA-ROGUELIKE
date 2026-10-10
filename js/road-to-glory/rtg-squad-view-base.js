@@ -22,7 +22,7 @@
     const versionCountBadge = (entry) => {
       const count = Math.max(1, Number(entry?.versionCount) || 1);
       return count > 1
-        ? `<span class="rtg-version-count-badge" title="${escape(count)} versioni disponibili">${escape(count)} VERS.</span>`
+        ? `<span class="rtg-version-count-badge" title="${escape(count)} versioni disponibili" aria-label="${escape(count)} versioni disponibili">${escape(count)}</span>`
         : "";
     };
 
@@ -217,7 +217,7 @@
 
     function replacementPickerResultsMarkup({ entries = [], total = 0, visibleCount = entries.length } = {}) {
       const remaining = Math.max(0, Number(total) - Number(entries.length));
-      return `<div class="rtg-picker-grid">${entries.map((entry) => playerCard(entry, "picker")).join("")}</div>${remaining > 0 ? `<div class="album-load-more-wrap rtg-picker-load-more-wrap"><button type="button" class="btn btn-yellow album-load-more rtg-picker-load-more" data-rtg-picker-load-more>MOSTRA ALTRI ${escape(Math.min(24, remaining))}</button><small>${escape(entries.length)} di ${escape(total)}</small></div>` : `<div class="rtg-picker-count"><small>${escape(entries.length)} di ${escape(total)}</small></div>`}`;
+      return `<div class="rtg-picker-grid">${entries.map((entry) => playerCard(entry, "picker")).join("")}</div>${remaining > 0 ? `<div class="album-load-more-wrap rtg-picker-load-more-wrap"><button type="button" class="btn btn-yellow album-load-more rtg-picker-load-more" data-rtg-picker-load-more>MOSTRA ALTRI ${escape(Math.min(12, remaining))}</button><small>${escape(entries.length)} di ${escape(total)}</small></div>` : `<div class="rtg-picker-count"><small>${escape(entries.length)} di ${escape(total)}</small></div>`}`;
     }
 
     function filterOptionsMarkup(options = [], selected = "all") {
