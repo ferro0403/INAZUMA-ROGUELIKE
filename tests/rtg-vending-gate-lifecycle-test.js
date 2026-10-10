@@ -3,7 +3,7 @@ const assert=require('node:assert/strict'),fs=require('node:fs'),vm=require('nod
 function harness(reduce=false){
  const animations=[],timers=[],observers=[];
  const classes=()=>{const set=new Set();return {add:(...a)=>a.forEach(x=>set.add(x)),remove:(...a)=>a.forEach(x=>set.delete(x)),contains:x=>set.has(x)};};
- const elements=Array.from({length:10},(_,id)=>({offsetWidth:36,dataset:{capsuleRarity:id%2?'elite':'forte'},classList:classes(),style:{},animate(keyframes,options){
+ const elements=Array.from({length:12},(_,id)=>({offsetWidth:36,dataset:{capsuleRarity:id%2?'elite':'forte'},classList:classes(),style:{},animate(keyframes,options){
   let resolve,reject;const finished=new Promise((a,b)=>{resolve=a;reject=b;});
   const animation={keyframes,options,finished,resolve,cancel(){this.cancelled=true;reject(Error('cancelled'));},el:this};animations.push(animation);return animation;
  }}));
@@ -19,11 +19,11 @@ const flush=async()=>{for(let i=0;i<8;i++)await Promise.resolve();};
   const h=harness(reduced),motion=h.c.RoadToGloryVendingMotion.mount(h.machine);
   assert(motion);const pending=motion.play('elite');assert.equal(motion.play('elite'),pending,'double play shares the same presentation');
   if(!reduced){
-   assert.equal(h.animations.length,10);
+   assert.equal(h.animations.length,12);
    const exit=h.animations.reduce((a,b)=>a.options.duration<b.options.duration?a:b);
    assert.equal(exit.el.dataset.capsuleRarity,'elite','the travelling capsule has the committed rarity from the first frame');
    assert(exit.keyframes.length>30,'one continuous collision-resolved trajectory');
-   assert.equal(h.elements.filter(e=>e.dataset.capsuleRarity==='elite').length,5,'colour binding preserves the decorative palette');
+   assert.equal(h.elements.filter(e=>e.dataset.capsuleRarity==='elite').length,6,'colour binding preserves the decorative palette');
    exit.resolve();
   }else assert.equal(h.animations.length,0,'reduced-motion creates no animated trajectory');
   assert.equal(await pending,true);motion.stop();assert(h.animations.every(a=>a.cancelled));
@@ -34,7 +34,7 @@ const flush=async()=>{for(let i=0;i<8;i++)await Promise.resolve();};
   assert.equal(await pending,false,'closing the modal cancels the pending result sequence');
   assert(h.animations.every(a=>a.cancelled));
  }
- for(const result of ['success','failure','throw','close']){
+ for(const result of ['success','failure','throw','close','close-flap']){
   const h=harness();let click,pulls=0,opens=0;
   const button={disabled:false,isConnected:true,addEventListener:(_event,cb)=>click=cb};
   const root={querySelectorAll:()=>[],querySelector:s=>s==='[data-rtg-vending-machine]'?h.machine:s==='[data-rtg-pull]'?button:null};
@@ -44,11 +44,13 @@ const flush=async()=>{for(let i=0;i<8;i++)await Promise.resolve();};
   if(result==='throw')await pending.catch(e=>assert.equal(e.message,'save failed'));
   else{
    await click({currentTarget:button});await flush();assert.equal(pulls,1);
-   if(result==='success'){
+   if(result==='success'||result==='close-flap'){
     assert(!h.machine.classList.contains('is-revealing'),'flap cannot open before the capsule clears the hopper');
     h.animations.reduce((a,b)=>a.options.duration<b.options.duration?a:b).resolve();await flush();
     assert(h.machine.classList.contains('is-revealing'),'flap opens after physical delivery');assert.equal(opens,1);
-    assert.equal(h.timers.length,1);h.timers.shift()();
+    assert.equal(h.timers.length,1);
+    if(result==='close-flap'){h.machine.isConnected=false;h.observers[0].cb();}
+    h.timers.shift()();
    }else if(result==='close'){h.machine.isConnected=false;h.observers[0].cb();}
    else {assert.equal(h.animations.length,0);assert.equal(h.timers.length,0,'failed commit starts no animation or reveal timer');}
    await pending;

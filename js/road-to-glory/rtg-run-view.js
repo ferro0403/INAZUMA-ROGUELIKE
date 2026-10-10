@@ -63,7 +63,7 @@
       const colors=Array.from({length:14},(_,index)=>index<palette.length?palette[index]:palette[Math.floor(Math.random()*palette.length)]);
       for(let i=colors.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[colors[i],colors[j]]=[colors[j],colors[i]];}
       // Keep the same cosmetic RNG draws; leave room for rolling and the hopper.
-      for(let i=colors.length-1;colors.length>10;i--)if(colors.indexOf(colors[i])!==i)colors.splice(i,1);
+      for(let i=colors.length-1;colors.length>12;i--)if(colors.indexOf(colors[i])!==i)colors.splice(i,1);
       return colors;
     }
     function vendingMarkup(model={}){

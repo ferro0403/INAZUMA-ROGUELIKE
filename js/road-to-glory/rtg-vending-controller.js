@@ -47,6 +47,7 @@
             machine.classList.add("is-revealing");
           }
           await new Promise(resolve=>setTimeout(resolve,980));
+          if(machine&&!machine.isConnected)return;
           showPullResult(prepared.result,prepared.player,selectedMode);
         }finally{
           motion?.stop();

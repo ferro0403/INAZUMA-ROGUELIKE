@@ -91,14 +91,33 @@ const controller=c.RoadToGloryController.create({
   assert(pickerIds.includes("xd"),"bench picker must offer an outside DF too");
   assert(!pickerIds.includes("d1"),"bench picker must not steal a current starter");
 
+  // A starter's Cambia button must show every natural role, including the
+  // entire four-player bench and outside players with different roles.
+  controller.openSquadPlayerPicker("d1");
+  assert.strictEqual(pickerArgs.allowAnyRole,true);
+  assert.strictEqual(pickerArgs.role,"");
+  assert.strictEqual(pickerArgs.quickEntries.length,4);
+  assert(pickerArgs.quickEntries.some(entry=>entry.playerId==="bg"),"GK must be available for a DF tactical slot");
+  assert(pickerArgs.quickEntries.some(entry=>entry.playerId==="bf"),"FW must be available for a DF tactical slot");
+  assert(pickerArgs.entries.length<=12,"picker must not render more than 12 cards on the first page");
+  // With 12-card paging, an outside GK or MF might be on a later page.
+  // Both must nevertheless remain valid replacement choices in RTG.
+  for(const outside of ["xg","xm"]){
+    const outsideSwap=controller.swapSquadDraft("d1",outside,{render:false});
+    assert.strictEqual(outsideSwap.ok,true,`${outside} must be a valid cross-role lineup replacement`);
+    const restored=controller.swapSquadDraft(outside,"d1",{render:false});
+    assert.strictEqual(restored.ok,true,`${outside} swap must be reversible without losing players`);
+  }
+
   const benchSwap=controller.swapSquadDraft("bd","xf",{render:false});
   assert.strictEqual(benchSwap.ok,true);
   assert(controller.getDraftSquad().bench.includes("xf"),"bench DF must be replaceable with FW");
 
-  const illegalLineupSwap=controller.swapSquadDraft("d1","xf",{render:false});
-  assert.strictEqual(illegalLineupSwap.ok,false);
-  assert.strictEqual(illegalLineupSwap.reason,"role-mismatch");
-  assert(controller.getDraftSquad().lineup.includes("d1"),"starter role constraint must remain intact");
+  const tacticalLineupSwap=controller.swapSquadDraft("d1","xf",{render:false});
+  assert.strictEqual(tacticalLineupSwap.ok,true);
+  assert(controller.getDraftSquad().lineup.includes("xf"),"FW from bench must be free to occupy a DF slot");
+  assert(controller.getDraftSquad().bench.includes("d1"),"outgoing DF must reach the bench");
+  assert.strictEqual(controller.getDraftSquad().lineupOrderedBySlot,true,"new tactical order must persist");
 
   console.log("rtg-bench-role-free-test: PASS");
 })().catch(error=>{console.error(error);process.exitCode=1;});
