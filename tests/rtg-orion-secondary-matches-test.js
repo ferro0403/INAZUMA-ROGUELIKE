@@ -30,8 +30,8 @@ for(let i=0;i<13;i++){
 assert.strictEqual(C.buildSeasonNodes("ie1_s2").filter(n=>n.type==="secondary").length,16);
 assert.strictEqual(C.buildSeasonNodes("ie1_s3").filter(n=>n.type==="secondary").length,18);
 assert.strictEqual(C.buildSeasonNodes("ie2").filter(n=>n.type==="secondary").length,10);
-assert.strictEqual(config.pullCost,300);
-assert.strictEqual(config.recruitmentPullCost,150);
+assert.strictEqual(config.pullCost,200);
+assert.strictEqual(config.recruitmentPullCost,100);
 const db=JSON.parse(fs.readFileSync("data/ORION_season_compact.json","utf8"));
 const escape=String,view=context.RoadToGloryRouteView.create({
  escapeHtml:escape,teamEmblemMarkup:()=>"<span>⚡</span>",seasonNumber:()=>2,

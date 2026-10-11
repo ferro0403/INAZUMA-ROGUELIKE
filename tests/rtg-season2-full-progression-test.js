@@ -13,9 +13,10 @@ for(const node of nodes){
  if(node.type==="main"){
    s=P.recordMainVictory(s,{teamId:node.teamId,matchId:`m-${node.mainIndex}`});
    expectedTokens+=Number(C.SEASON2.mainRewards[node.teamId]||0);
+   if(node.teamId===C.SEASON2.mainTeams.at(-1))expectedTokens+=C.SEASON_COMPLETION_REWARD;
  }else{
+   expectedTokens+=Number(C.rewardForNode(s,node));
    s=P.recordSecondaryResult(s,{nodeId:node.id,result:"victory",attemptNumber:1});
-   expectedTokens+=Number(C.SEASON2.secondaryRewards[0].amount);
  }
 }
 assert.strictEqual(s.seasonComplete,true,"final Raimon S2 victory must complete Season 2");
