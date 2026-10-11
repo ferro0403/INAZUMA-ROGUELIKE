@@ -42,8 +42,7 @@ assert(aresMarkup.includes(aresSentinel),"Ares must retain its existing runtime 
 const controller=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
 assert(controller.includes('if(activeSeasonId()==="ie2"){'),"Orion must not fetch Ares map chunks");
 const index=fs.readFileSync("index.html","utf8");
-for(const script of ["rtg-config","rtg-route-view"]){
-  assert(index.includes(`${script}.js?v=20261011-orion-island-1`),`${script} mobile cache key is stale`);
-}
-assert(index.includes("rtg-controller.js?v=20261011-orion-origin-cards-1"),"rtg-controller mobile cache key is stale");
+assert(index.includes("rtg-config.js?v=20261011-balanced-economy-1"),"rtg-config mobile cache key is stale");
+assert(index.includes("rtg-route-view.js?v=20261011-orion-island-1"),"rtg-route-view mobile cache key is stale");
+assert(index.includes("rtg-controller.js?v=20261011-balanced-economy-1"),"rtg-controller mobile cache key is stale");
 console.log("RTG Orion: independent attached map, Ares preserved, browser cache refreshed: PASS");
