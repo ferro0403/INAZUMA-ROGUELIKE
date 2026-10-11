@@ -35,8 +35,10 @@
       syncCurrentPullsIntoAlbum();
       return readRtgAlbum().cardIds.map(cardId=>deps.playerResolver.resolveAtLevel20(cardId,deps.getCampaign()?.activeSeasonId||"ie1",null,deps.getFreeAgentsDb())).filter(Boolean);
     }
-    function rtgAlbumUnlockedSet(){
-      return new Set(readRtgAlbum().cardIds.map(id));
+    function rtgAlbumUnlockedSet(seasonDb=null){
+      return new Set(readRtgAlbum().cardIds.map(cardId=>
+        deps.gacha?.canonicalCollectibleCardId?.(cardId,seasonDb)||cardId
+      ));
     }
     async function ensureAlbumSeasonDb(seasonId){
       const sid=deps.id(seasonId||"ie1");
@@ -57,7 +59,7 @@
     function rtgAlbumTeams(seasonId=selectedAlbumSeasonId,albumDb=null){
       const sid=deps.id(seasonId||"ie1");
       const db=albumDb||global.SeasonRegistry?.database?.(sid)||(sid===deps.activeSeasonId()?deps.getSeasonDb():null);
-      const unlocked=rtgAlbumUnlockedSet();
+      const unlocked=rtgAlbumUnlockedSet(db);
       // Build indexes once per collection rather than scanning all players/profiles per team.
       const teamsById=new Map((db?.teams||[]).map(team=>[deps.id(team?.teamId||team?.id),team]));
       const profilesByTeam=new Map();
@@ -76,7 +78,11 @@
         const profileIds=db?.requiresProfileAwareRuntime
           ? Array.from(profilesByTeam.get(deps.id(teamId))||[]).map(profile=>deps.id(profile?.profileId||profile?.id)).filter(Boolean)
           : [];
-        const sourceIds=profileIds.length?profileIds:playerIds;
+        const sourceIds=(profileIds.length?profileIds:playerIds).filter(playerId=>{
+          if(!db?.requiresProfileAwareRuntime)return true;
+          const cardId=deps.cardIdentity?.cardIdForProfile?.(playerId,sid)||playerId;
+          return (deps.gacha?.canonicalCollectibleCardId?.(cardId,db)||cardId)===cardId;
+        });
         const cardIds=sourceIds.map(playerId=>db?.requiresProfileAwareRuntime
           ? (deps.cardIdentity?.cardIdForProfile?.(playerId,sid)||playerId)
           : (deps.cardIdentity?.cardIdForSeason?.(playerId,sid)||playerId));
@@ -172,7 +178,7 @@
       if(epoch!==albumNavigationEpoch)return campaign;
       const team=rtgAlbumTeams(sid,db).find(entry=>deps.id(entry.teamId)===deps.id(teamId));
       if(!team)return renderAlbumTeams(sid);
-      const unlocked=rtgAlbumUnlockedSet();
+      const unlocked=rtgAlbumUnlockedSet(db);
       const allEntries=rtgAlbumTeamPlayers(team,sid);
       const entries=allEntries.filter(player=>unlocked.has(deps.id(player?.cardId||player?.playerId||player?.id)));
       deps.renderHtml(deps.runView.albumRosterMarkup({state:{...(campaign||{}),activeSeasonId:sid},seasonId:sid,team,entries,allEntries,database:db}));

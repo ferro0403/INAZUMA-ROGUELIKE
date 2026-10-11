@@ -26,10 +26,44 @@
   const cards = () => global.RoadToGloryCardIdentity || legacyCardApi;
   const clone = (value) => JSON.parse(JSON.stringify(value));
 
+
+  // Zhao Eclipse repeats existing Orion profiles. The full set of playable role
+  // variants (not merely the default role) defines whether a card is equivalent.
+  // Never rewrite old card IDs: this adapter is for the collectible pool only.
+  function roleSetSignature(profile) {
+    const variants=profile?.roleVariants?.length ? profile.roleVariants : [profile];
+    return JSON.stringify(variants.map(variant=>({
+      role:id(variant?.position||variant?.normalizedRole),
+      overall:Number(variant?.finalOverall),
+      rarity:id(variant?.category),
+      ratings:variant?.ratings||{},
+    })).sort((a,b)=>a.role.localeCompare(b.role)));
+  }
+
+  function orionZhaoOrigin(seasonDb, profile) {
+    if(id(seasonDb?.seasonId)!=="orion" || id(profile?.teamId)!=="zhao_eclipse") return null;
+    const playerId=id(profile?.playerId),signature=roleSetSignature(profile);
+    return (seasonDb?.profiles||[]).find(other=>
+      id(other?.playerId)===playerId
+      && id(other?.teamId)!=="zhao_eclipse"
+      && id(other?.element)===id(profile?.element)
+      && Boolean(other?.roleSwitchEnabled)===Boolean(profile?.roleSwitchEnabled)
+      && roleSetSignature(other)===signature
+    )||null;
+  }
+
+  function canonicalCollectibleCardId(cardRef, seasonDb) {
+    const api=cards(),parsed=api.parse(cardRef),cardId=id(parsed?.cardId);
+    if(id(seasonDb?.seasonId)!=="orion" || id(parsed?.legacySeasonId)!=="orion" || !id(parsed?.playerId).endsWith("@zhao_eclipse"))return cardId;
+    const zhao=(seasonDb?.profiles||[]).find(profile=>id(profile?.profileId)===id(parsed.playerId));
+    const original=orionZhaoOrigin(seasonDb,zhao);
+    return original ? api.cardIdForProfile(id(original.profileId),"orion") : cardId;
+  }
+
   function teamPlayerIds(seasonDb, teamId) {
     if(seasonDb?.requiresProfileAwareRuntime){
       const profiles=(seasonDb?.profiles||[]).filter(entry=>id(entry?.teamId)===id(teamId));
-      if(profiles.length)return profiles.map(entry=>id(entry.profileId||entry.id)).filter(Boolean);
+      if(profiles.length)return profiles.filter(entry=>!orionZhaoOrigin(seasonDb,entry)).map(entry=>id(entry.profileId||entry.id)).filter(Boolean);
     }
     const team = (seasonDb?.teams || []).find((entry) => id(entry?.teamId || entry?.id) === id(teamId));
     if (team?.playerIds?.length) return team.playerIds.map(id);
@@ -86,9 +120,9 @@
   }
 
   function unownedCandidates(state, seasonDb, accessibleCardIds = [], mode="team") {
-    const owned = ownedCardIds(state, accessibleCardIds);
+    const owned = new Set(Array.from(ownedCardIds(state, accessibleCardIds),cardId=>canonicalCollectibleCardId(cardId,seasonDb)));
     const source=mode==="recruitment"?recruitmentCandidates(state,seasonDb):unlockedCandidates(state, seasonDb);
-    return source.filter((player) => !owned.has(id(player?.cardId)));
+    return source.filter((player) => !owned.has(canonicalCollectibleCardId(player?.cardId,seasonDb)));
   }
 
   function rarityWeightsForCandidates(candidates, state=null) {
@@ -167,5 +201,5 @@
     };
   }
 
-  global.RoadToGloryGacha = Object.freeze({ unlockedCandidates, recruitmentCandidates, ownedCardIds, unownedCandidates, availableRarityWeights, previewPool, pull });
+  global.RoadToGloryGacha = Object.freeze({ canonicalCollectibleCardId, unlockedCandidates, recruitmentCandidates, ownedCardIds, unownedCandidates, availableRarityWeights, previewPool, pull });
 })(globalThis);
