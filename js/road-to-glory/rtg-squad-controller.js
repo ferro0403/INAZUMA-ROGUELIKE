@@ -1,7 +1,8 @@
 (function (global) {
   "use strict";
 
-  const SQUAD_PICKER_PAGE_SIZE=24;
+  const SQUAD_PICKER_PAGE_SIZE=12;
+  const CATALOG_INITIAL_PAGE_SIZE=16;
   function create(deps={}){
     function draftState(){
       const state=deps.clone(deps.campaign);
@@ -21,12 +22,22 @@
     }
     function canUseDraftFormation(formation){
       if(!formation)return false;
-      const counts={GK:0,DF:0,MF:0,FW:0};
-      for(const playerId of accessibleDraftIds()){
-        const role=deps.rawRole(playerId);
-        if(Object.prototype.hasOwnProperty.call(counts,role))counts[role]+=1;
-      }
-      return Object.entries(formation.requirements||{}).every(([role,amount])=>Number(counts[String(role).toUpperCase()]||0)>=Number(amount||0));
+      const slots=Array.isArray(formation.slotRoles)?formation.slotRoles:[];
+      const requiredTotal=Object.values(formation.requirements||{}).reduce((sum,count)=>sum+Number(count||0),0);
+      return new Set(accessibleDraftIds()).size>=15&&(slots.length===11||requiredTotal===11);
+    }
+    // Older saved squads store XI by natural role, not by tactical slot.
+    // Convert only the editable draft when the user actually changes a field position.
+    function orderedLineupForFormation(lineup,formation,roleFor){
+      const slots=Array.isArray(formation?.slotRoles)&&formation.slotRoles.length===11
+        ? formation.slotRoles
+        : Object.entries(formation?.requirements||{}).flatMap(([role,count])=>Array.from({length:Number(count)||0},()=>role));
+      const remaining=Array.from(lineup||[]);
+      if(slots.length!==remaining.length)return remaining;
+      return slots.map(slot=>{
+        const index=remaining.findIndex(entry=>String(roleFor(entry)||"").toUpperCase()===String(slot).toUpperCase());
+        return remaining.splice(index>=0?index:0,1)[0];
+      });
     }
     function arrangeDraftForFormation(formation){
       if(!formation||!canUseDraftFormation(formation))return{ok:false,reason:"formation-incompatible"};
@@ -44,7 +55,7 @@
         : Object.entries(formation.requirements||{}).flatMap(([role,amount])=>Array.from({length:Number(amount)||0},()=>String(role).toUpperCase()));
       const used=new Set(),lineup=[];
       for(const role of slotRoles){
-        const candidate=accessible.find(entry=>entry.role===role&&!used.has(entry.playerId));
+        const candidate=accessible.find(entry=>entry.role===role&&!used.has(entry.playerId))||accessible.find(entry=>!used.has(entry.playerId));
         if(!candidate)return{ok:false,reason:"formation-incompatible"};
         used.add(candidate.playerId);lineup.push(candidate.playerId);
       }
@@ -56,7 +67,7 @@
       });
       const bench=remaining.slice(0,4).map(entry=>entry.playerId);
       if(bench.length!==4)return{ok:false,reason:"bench-unavailable"};
-      deps.squadDraft={...deps.squadDraft,formationId:deps.id(formation.id),lineup,bench,activeRoleVariantByCardId:{...(deps.squadDraft?.activeRoleVariantByCardId||{})}};
+      deps.squadDraft={...deps.squadDraft,formationId:deps.id(formation.id),lineup,bench,lineupOrderedBySlot:true,activeRoleVariantByCardId:{...(deps.squadDraft?.activeRoleVariantByCardId||{})}};
       return{ok:true};
     }
     function openFormationSelector(model){
@@ -66,19 +77,18 @@
         if(button.disabled)return;
         const formation=(model.formations||[]).find(item=>deps.id(item.id)===deps.id(button.dataset.rtgFormationOption));
         const result=arrangeDraftForFormation(formation);
-        if(!result.ok){deps.toast?.("Non ci sono abbastanza giocatori sbloccati nei ruoli richiesti","error");return;}
+        if(!result.ok){deps.toast?.("Servono almeno 15 giocatori disponibili per usare il modulo","error");return;}
         deps.closeModal?.();
         renderSquad();
       }));
     }
-    function squadPickerCandidateIds(targetId,role,{benchTarget=false}={}){
+    function squadPickerCandidateIds(targetId,role,{benchTarget=false,overallFor=deps.rawOverall,nameFor=deps.rawName}={}){
       const accessible=deps.accessibleCards(draftState()).map(deps.id);
       const rosterIds=new Set(draftRosterIds());
       return accessible
         .filter(playerId=>playerId!==deps.id(targetId))
         .filter(playerId=>!benchTarget||!rosterIds.has(playerId))
-        .filter(playerId=>!role||deps.rawRole(playerId)===role)
-        .sort((a,b)=>deps.rawOverall(b)-deps.rawOverall(a)||deps.rawName(a).localeCompare(deps.rawName(b),"it"));
+        .sort((a,b)=>overallFor(b)-overallFor(a)||nameFor(a).localeCompare(nameFor(b),"it"));
     }
     function squadPickerRarity(playerId){
       return String(
@@ -196,6 +206,11 @@
       }))];
     }
     function cardMatchesSquadFilters(cardId,seasonFilter,teamFilter,metaFor){
+      // Avoid resolving every player just to check the default season/team.
+      if(teamFilter==="all"){
+        if(seasonFilter==="all")return true;
+        return deps.id(deps.cardMeta(cardId)?.legacySeasonId)===seasonFilter;
+      }
       const meta=metaFor(cardId);
       if(seasonFilter!=="all"&&meta.seasonId!==seasonFilter)return false;
       if(teamFilter!=="all"&&!Array.from(meta.teamIds||[]).some(teamId=>teamFilter===`${meta.seasonId}::${teamId}`))return false;
@@ -214,14 +229,31 @@
     }
 
     function openSquadPlayerPicker(targetId,restoreState=null){
-      if(waitForSquadFilterData(()=>openSquadPlayerPicker(targetId,restoreState)))return{loading:true};
+      // Render picker immediately; wait for cross-season team data in the background.
       const targetLoc=locationInDraft(targetId);
       if(!targetLoc)return;
+      // raw accessors resolve cards; call them at most once per card in
+      // this picker session, not once for every sorting comparison.
+      const summaries={ovr:new Map(),name:new Map(),role:new Map()};
+      const memo=(map,fn,cardId)=>{
+        const key=deps.id(cardId);
+        if(!map.has(key))map.set(key,fn(key));
+        return map.get(key);
+      };
+      const combined=new Map();
+      const combinedFor=cardId=>{
+        if(typeof deps.rawSummary!=="function")return null;
+        const key=deps.id(cardId);
+        if(!combined.has(key))combined.set(key,deps.rawSummary(key));
+        return combined.get(key);
+      };
+      const overallFor=cardId=>combinedFor(cardId)?.overall??memo(summaries.ovr,deps.rawOverall,cardId);
+      const nameFor=cardId=>combinedFor(cardId)?.name??memo(summaries.name,deps.rawName,cardId);
+      const roleFor=cardId=>combinedFor(cardId)?.role??memo(summaries.role,deps.rawRole,cardId);
       const strictRole=targetLoc.area==="lineup";
-      const role=strictRole?roleOfDraftPlayer(targetId):"";
-      if(strictRole&&!role)return deps.toast?.("Ruolo giocatore non disponibile","error");
+      const role="";
       const quickEntries=strictRole
-        ? (deps.squadDraft?.bench||[]).map(deps.id).filter(playerId=>roleOfDraftPlayer(playerId)===role).map(playerId=>({
+        ? (deps.squadDraft?.bench||[]).map(deps.id).map(playerId=>({
             playerId,
             source:deps.sourceForDraftPlayer(playerId),
             player:deps.resolved(playerId,deps.squadDraft?.activeRoleVariantByCardId?.[playerId]||null),
@@ -237,6 +269,7 @@
       let rarityFilter=restoreState?.rarityFilter||"all";
       let seasonFilter=restoreState?.seasonFilter||"all";
       let teamFilter=restoreState?.teamFilter||"all";
+      let roleFilter=restoreState?.roleFilter||"all";
       let overallDescending=restoreState?.overallDescending!==false;
       const rarityOptions=squadPickerRarityOptions();
       const seasonOptions=squadFilterSeasonOptions();
@@ -253,24 +286,30 @@
         cardIds,
         representativeId:preferredVersionCardId(cardIds),
       })).filter(group=>group.representativeId);
-      const filteredGroups=()=>candidateGroups.map(group=>{
-        let matchingCardIds=(group.cardIds||[]).filter(cardId=>cardMatchesSquadFilters(cardId,seasonFilter,teamFilter,filterMetaFor));
-        if(!matchingCardIds.length)return null;
-        const source=deps.sourceForDraftPlayer(preferredVersionCardId(matchingCardIds));
-        if(sourceFilter==="free"&&source!=="Svincolato")return null;
-        if(sourceFilter==="rtg"&&source!=="RTG")return null;
-        if(rarityFilter!=="all")matchingCardIds=matchingCardIds.filter(cardId=>squadPickerRarity(cardId).toLocaleLowerCase("it")===rarityFilter.toLocaleLowerCase("it"));
-        if(!matchingCardIds.length)return null;
-        const representativeId=preferredVersionCardId(matchingCardIds);
+      const filteredGroups=()=>{
         const needle=query.trim().toLocaleLowerCase("it");
-        if(needle&&!deps.rawName(representativeId).toLocaleLowerCase("it").includes(needle))return null;
-        return{...group,representativeId,matchingCardIds};
-      }).filter(Boolean).sort((a,b)=>{
-        const delta=deps.rawOverall(b.representativeId)-deps.rawOverall(a.representativeId);
-        return (overallDescending?delta:-delta)||deps.rawName(a.representativeId).localeCompare(deps.rawName(b.representativeId),"it");
-      });
-      const entries=()=>{
-        const groups=filteredGroups();
+        const rarityNeedle=rarityFilter.toLocaleLowerCase("it");
+        return candidateGroups.map(group=>{
+          let matchingCardIds=(group.cardIds||[]).filter(cardId=>
+            (roleFilter==="all"||roleFor(cardId)===roleFilter)
+            &&cardMatchesSquadFilters(cardId,seasonFilter,teamFilter,filterMetaFor));
+          if(!matchingCardIds.length)return null;
+          if(sourceFilter!=="all"){
+            const source=deps.sourceForDraftPlayer(preferredVersionCardId(matchingCardIds));
+            if(sourceFilter==="free"&&source!=="Svincolato")return null;
+            if(sourceFilter==="rtg"&&source!=="RTG")return null;
+          }
+          if(rarityFilter!=="all")matchingCardIds=matchingCardIds.filter(cardId=>squadPickerRarity(cardId).toLocaleLowerCase("it")===rarityNeedle);
+          if(!matchingCardIds.length)return null;
+          const representativeId=preferredVersionCardId(matchingCardIds);
+          if(needle&&!nameFor(representativeId).toLocaleLowerCase("it").includes(needle))return null;
+          return{...group,representativeId,matchingCardIds};
+        }).filter(Boolean).sort((a,b)=>{
+          const delta=overallFor(b.representativeId)-overallFor(a.representativeId);
+          return (overallDescending?delta:-delta)||nameFor(a.representativeId).localeCompare(nameFor(b.representativeId),"it");
+        });
+      };
+      const entries=(groups=filteredGroups())=>{
         return groups.slice(0,visibleCount).map(group=>({
           cardId:group.representativeId,
           playerId:group.representativeId,
@@ -290,7 +329,7 @@
         const modal=deps.getModalRoot?.();
         const groups=filteredGroups();
         const results=modal?.querySelector?.("[data-rtg-picker-results]");
-        if(results)results.innerHTML=deps.squadView.replacementPickerResultsMarkup({entries:entries(),total:groups.length,visibleCount});
+        if(results)results.innerHTML=deps.squadView.replacementPickerResultsMarkup({entries:entries(groups),total:groups.length,visibleCount});
         modal?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(button=>button.classList.toggle("active",button.dataset.rtgPickerSource===sourceFilter));
         bindResults();
       };
@@ -304,7 +343,7 @@
           if(versions.length>1){
             const pickerModal=deps.getModalRoot?.()?.querySelector?.(".modal");
             const stateToRestore={
-              query,sourceFilter,rarityFilter,seasonFilter,teamFilter,overallDescending,visibleCount,
+              query,sourceFilter,rarityFilter,seasonFilter,teamFilter,roleFilter,overallDescending,visibleCount,
               scrollTop:pickerModal?.scrollTop||0,scrollLeft:pickerModal?.scrollLeft||0,
             };
             openRtgVersionPicker(versions,{
@@ -329,11 +368,11 @@
         return options;
       };
       if(!deps.getModalRoot){
-        const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(deps.id(playerId)));
+        const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole,overallFor,nameFor}).filter(playerId=>!quickIds.has(deps.id(playerId)));
         candidateGroups=buildGroups(candidateIds);
         visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,candidateGroups.length);
       }
-      deps.openModal?.(deps.squadView.replacementPickerMarkup({target,role,allowAnyRole:!strictRole,quickEntries,entries:deps.getModalRoot?[]:entries(),total:deps.getModalRoot?0:candidateGroups.length,visibleCount:deps.getModalRoot?0:visibleCount,query,sourceFilter,rarityFilter,rarityOptions,seasonFilter,teamFilter,seasonOptions,teamOptions:currentTeamOptions()}),{className:"rtg-modal rtg-squad-picker-modal"});
+      deps.openModal?.(deps.squadView.replacementPickerMarkup({target,role,allowAnyRole:true,quickEntries,entries:deps.getModalRoot?[]:entries(),total:deps.getModalRoot?0:candidateGroups.length,visibleCount:deps.getModalRoot?0:visibleCount,query,sourceFilter,rarityFilter,rarityOptions,seasonFilter,teamFilter,roleFilter,seasonOptions,teamOptions:currentTeamOptions()}),{className:"rtg-modal rtg-squad-picker-modal"});
       const modal=deps.getModalRoot?.();
       if(!overallDescending){
         const sortButton=modal?.querySelector?.("[data-rtg-picker-sort]");
@@ -349,6 +388,16 @@
       });
       modal?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(button=>button.addEventListener("click",()=>{
         sourceFilter=String(button.dataset.rtgPickerSource||"all");
+        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        renderResults();
+      }));
+      modal?.querySelectorAll?.("[data-rtg-picker-role]")?.forEach(button=>button.addEventListener("click",()=>{
+        roleFilter=deps.id(button.dataset.rtgPickerRole||"all");
+        modal?.querySelectorAll?.("[data-rtg-picker-role]")?.forEach(item=>{
+          const active=item.dataset.rtgPickerRole===roleFilter;
+          item.classList.toggle("active",active);
+          item.setAttribute("aria-pressed",active?"true":"false");
+        });
         visibleCount=SQUAD_PICKER_PAGE_SIZE;
         renderResults();
       }));
@@ -381,7 +430,7 @@
       });
       bindResults();
       const hydratePicker=()=>{
-        const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole}).filter(playerId=>!quickIds.has(deps.id(playerId)));
+        const candidateIds=squadPickerCandidateIds(targetId,role,{benchTarget:!strictRole,overallFor,nameFor}).filter(playerId=>!quickIds.has(deps.id(playerId)));
         candidateGroups=buildGroups(candidateIds);
         visibleCount=Math.min(candidateGroups.length,Math.max(SQUAD_PICKER_PAGE_SIZE,Number(restoreState?.visibleCount)||0));
         refreshTeamFilterControl();
@@ -400,6 +449,19 @@
       if(typeof requestAnimationFrame==="function")requestAnimationFrame(()=>typeof setTimeout==="function"?setTimeout(hydratePicker,0):hydratePicker());
       else if(typeof setTimeout==="function")setTimeout(hydratePicker,0);
       else hydratePicker();
+      if(!squadFilterDataReady()){
+        const mountedPicker=deps.getModalRoot?.()?.querySelector?.(".modal");
+        ensureSquadFilterSeasonData().then(()=>{
+          if(!mountedPicker||deps.getModalRoot?.()?.querySelector?.(".modal")!==mountedPicker)return;
+          filterMetaCache.clear();
+          refreshTeamFilterControl();
+          renderResults();
+        }).catch(error=>{
+          global.console?.error?.("[RTG] Caricamento filtri cambio giocatore fallito",error);
+          if(mountedPicker&&deps.getModalRoot?.()?.querySelector?.(".modal")===mountedPicker)
+            deps.toast?.("Filtri Season/Squadra non disponibili","error");
+        });
+      }
     }
     function canonicalCardPlayerId(cardRef){
       const meta=deps.cardMeta(cardRef);
@@ -428,7 +490,7 @@
       if(versions.length<=1){
         const only=versions[0];
         if(!only)return null;
-        return onSelect?onSelect(only):deps.openRtgPlayerDetails(only);
+        return onSelect?onSelect(only):deps.openRtgPlayerDetails(only,"",{onClose:options.onDetailsClose||null});
       }
       // Resolve/render every version only after the unified player card is opened.
       const entries=versions.map(cardId=>({
@@ -452,20 +514,23 @@
           onSelect(selected);
           return;
         }
-        const open=()=>deps.openRtgPlayerDetails(selected);
-        if(typeof setTimeout==="function")setTimeout(open,0);else open();
+        // Return straight to the originating catalogue after closing the detail card.
+        // Opening synchronously also avoids flashing the Squad beneath the modal.
+        deps.openRtgPlayerDetails(selected,"",{onClose:options.onDetailsClose||null});
       }));
       return {count:versions.length};
     }
-    function openRtgCatalog(){
-      if(waitForSquadFilterData(()=>openRtgCatalog()))return{loading:true};
+    function openRtgCatalog(restoreState=null){
+      // The catalog is immediately usable even while other Season DBs preload.
+      // Never hold the button behind several sequential Season network requests.
       const owned=Array.from(deps.acquiredCardIdSet()).filter(Boolean);
       const groups=groupVersionCards(owned);
       const catalogGroups=Array.from(groups.entries()).map(([key,cardIds])=>({key,cardIds,representativeId:preferredVersionCardId(cardIds)})).filter(group=>group.representativeId);
-      let query="";
-      let seasonFilter="all";
-      let teamFilter="all";
-      let visibleCount=Math.min(SQUAD_PICKER_PAGE_SIZE,catalogGroups.length);
+      let query=String(restoreState?.query||"");
+      let seasonFilter=restoreState?.seasonFilter||"all";
+      let teamFilter=restoreState?.teamFilter||"all";
+      let roleFilter=restoreState?.roleFilter||"all";
+      let visibleCount=Math.min(catalogGroups.length,Math.max(CATALOG_INITIAL_PAGE_SIZE,Number(restoreState?.visibleCount)||0));
       const seasonOptions=squadFilterSeasonOptions();
       const filterMetaCache=new Map();
       const filterMetaFor=(cardId)=>{
@@ -474,14 +539,14 @@
         return filterMetaCache.get(key);
       };
       const filtered=()=>catalogGroups.map(group=>{
-        const matchingCardIds=(group.cardIds||[]).filter(cardId=>cardMatchesSquadFilters(cardId,seasonFilter,teamFilter,filterMetaFor));
+        const matchingCardIds=(group.cardIds||[]).filter(cardId=>cardMatchesSquadFilters(cardId,seasonFilter,teamFilter,filterMetaFor)&&(roleFilter==="all"||deps.rawRole(cardId)===roleFilter));
         if(!matchingCardIds.length)return null;
         const representativeId=preferredVersionCardId(matchingCardIds);
         const needle=query.trim().toLocaleLowerCase("it");
         if(needle&&!deps.rawName(representativeId).toLocaleLowerCase("it").includes(needle))return null;
         return{...group,representativeId,matchingCardIds};
       }).filter(Boolean).sort((a,b)=>deps.rawRole(a.representativeId).localeCompare(deps.rawRole(b.representativeId))||deps.rawOverall(b.representativeId)-deps.rawOverall(a.representativeId)||deps.rawName(a.representativeId).localeCompare(deps.rawName(b.representativeId),"it"));
-      const entries=()=>filtered().slice(0,visibleCount).map(group=>({
+      const entries=(matching=filtered())=>matching.slice(0,visibleCount).map(group=>({
         cardId:group.representativeId,
         playerId:group.representativeId,
         source:"RTG",
@@ -496,13 +561,23 @@
         if(select)select.innerHTML=deps.squadView.filterOptionsMarkup(options,teamFilter);
         return options;
       };
+      const catalogState=()=>{
+        const scroller=deps.getModalRoot?.()?.querySelector?.(".rtg-player-catalog-modal");
+        return {query,seasonFilter,teamFilter,roleFilter,visibleCount,
+          scrollTop:scroller?.scrollTop||0,scrollLeft:scroller?.scrollLeft||0};
+      };
       const bindCatalog=()=>{
         const modal=deps.getModalRoot?.();
         modal?.querySelectorAll?.("[data-rtg-catalog-player]")?.forEach(button=>button.addEventListener("click",()=>{
           const cardId=deps.id(button.dataset.rtgCatalogPlayer);
           if(!cardId)return;
           const group=filtered().find(entry=>entry.key===versionGroupKey(cardId));
-          openRtgVersionPicker(group?.matchingCardIds||group?.cardIds||groups.get(versionGroupKey(cardId))||[cardId]);
+          const savedState=catalogState();
+          const returnToCatalog=()=>openRtgCatalog(savedState);
+          openRtgVersionPicker(group?.matchingCardIds||group?.cardIds||groups.get(versionGroupKey(cardId))||[cardId],{
+            onClose:returnToCatalog,
+            onDetailsClose:returnToCatalog,
+          });
         }));
         modal?.querySelector?.("[data-rtg-catalog-load-more]")?.addEventListener("click",()=>{
           visibleCount=Math.min(filtered().length,visibleCount+SQUAD_PICKER_PAGE_SIZE);
@@ -513,28 +588,68 @@
         const modal=deps.getModalRoot?.();
         const results=modal?.querySelector?.("[data-rtg-catalog-results]");
         const filteredGroups=filtered();
-        if(results)results.innerHTML=deps.squadView.catalogResultsMarkup({entries:entries(),total:filteredGroups.length});
+        if(results)results.innerHTML=deps.squadView.catalogResultsMarkup({entries:entries(filteredGroups),total:filteredGroups.length});
         bindCatalog();
       };
-      deps.openModal?.(deps.squadView.catalogMarkup({entries:entries(),total:catalogGroups.length,query,seasonFilter,teamFilter,seasonOptions,teamOptions:currentTeamOptions()}),{className:"rtg-modal rtg-player-catalog-modal"});
+      const deferFirstPaint=!restoreState&&typeof requestAnimationFrame==="function"&&typeof setTimeout==="function";
+      deps.openModal?.(deps.squadView.catalogMarkup({entries:deferFirstPaint?[]:entries(),deferResults:deferFirstPaint,total:catalogGroups.length,query,seasonFilter,teamFilter,roleFilter,seasonOptions,teamOptions:currentTeamOptions()}),{className:"rtg-modal rtg-player-catalog-modal"});
       const modal=deps.getModalRoot?.();
       modal?.querySelector?.("[data-rtg-catalog-search]")?.addEventListener("input",event=>{
         query=String(event.target?.value||"");
-        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        visibleCount=CATALOG_INITIAL_PAGE_SIZE;
         renderCatalogResults();
       });
+      modal?.querySelectorAll?.("[data-rtg-catalog-role]")?.forEach(button=>button.addEventListener("click",()=>{
+        roleFilter=deps.id(button.dataset.rtgCatalogRole||"all");
+        modal?.querySelectorAll?.("[data-rtg-catalog-role]")?.forEach(item=>{
+          const active=item.dataset.rtgCatalogRole===roleFilter;
+          item.classList.toggle("active",active);
+          item.setAttribute("aria-pressed",active?"true":"false");
+        });
+        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        renderCatalogResults();
+      }));
       modal?.querySelector?.("[data-rtg-catalog-season]")?.addEventListener("change",event=>{
         seasonFilter=String(event.target?.value||"all");
         refreshTeamFilterControl();
-        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        visibleCount=CATALOG_INITIAL_PAGE_SIZE;
         renderCatalogResults();
       });
       modal?.querySelector?.("[data-rtg-catalog-team]")?.addEventListener("change",event=>{
         teamFilter=String(event.target?.value||"all");
-        visibleCount=SQUAD_PICKER_PAGE_SIZE;
+        visibleCount=CATALOG_INITIAL_PAGE_SIZE;
         renderCatalogResults();
       });
-      bindCatalog();
+      if(deferFirstPaint){
+        const mounted=modal?.querySelector?.(".rtg-player-catalog-modal");
+        requestAnimationFrame(()=>setTimeout(()=>{
+          if(mounted&&deps.getModalRoot?.()?.querySelector?.(".rtg-player-catalog-modal")===mounted)renderCatalogResults();
+        },0));
+      }else bindCatalog();
+      if(restoreState){
+        const scroller=modal?.querySelector?.(".rtg-player-catalog-modal");
+        const restoreScroll=()=>{
+          if(!scroller||scroller.isConnected===false)return;
+          scroller.scrollTop=Number(restoreState.scrollTop)||0;
+          scroller.scrollLeft=Number(restoreState.scrollLeft)||0;
+        };
+        if(typeof requestAnimationFrame==="function")requestAnimationFrame(()=>requestAnimationFrame(restoreScroll));
+        else restoreScroll();
+      }
+      if(!squadFilterDataReady()){
+        const mountedCatalog=modal?.querySelector?.(".rtg-player-catalog-modal");
+        ensureSquadFilterSeasonData().then(()=>{
+          // Never reopen an already closed catalogue or replace another modal.
+          if(!mountedCatalog||deps.getModalRoot?.()?.querySelector?.(".rtg-player-catalog-modal")!==mountedCatalog)return;
+          filterMetaCache.clear();
+          refreshTeamFilterControl();
+          renderCatalogResults();
+        }).catch(error=>{
+          global.console?.error?.("[RTG] Impossibile caricare i filtri Giocatori RTG",error);
+          if(mountedCatalog&&deps.getModalRoot?.()?.querySelector?.(".rtg-player-catalog-modal")===mountedCatalog)
+            deps.toast?.("Filtri Season/Squadra non disponibili","error");
+        });
+      }
       return {count:catalogGroups.length,versionCount:owned.length};
     }
 
@@ -690,8 +805,9 @@
       const state=deps.clone(draftState());
       state.squads[deps.activeSeasonId()]={
         formationId:deps.id(formation.id),
-        lineup:selected.map(entry=>entry.playerId),
+        lineup:orderedLineupForFormation(selected,formation,entry=>entry.role).map(entry=>entry.playerId),
         bench:bench.map(entry=>entry.playerId),
+        lineupOrderedBySlot:true,
         activeRoleVariantByCardId:{...(deps.squadDraft?.activeRoleVariantByCardId||{})},
       };
       const eligibility=deps.squadRuntime.mainEligibility({teamId,state,seasonDb:deps.seasonDb,freeAgentIds:deps.freeAgentIds,freeAgentsDb:deps.freeAgentsDb,playerResolver:deps.playerResolverForState(state)});
@@ -777,13 +893,19 @@
       if(!first||!second||first===second)return{ok:false,reason:"same-player"};
       const accessible=new Set(deps.accessibleCards(draftState()).map(deps.id));
       if(!accessible.has(first)||!accessible.has(second))return{ok:false,reason:"inaccessible-player"};
-      const firstRole=roleOfDraftPlayer(first),secondRole=roleOfDraftPlayer(second);
-      const firstLoc=locationInDraft(first),secondLoc=locationInDraft(second);
+      let firstLoc=locationInDraft(first),secondLoc=locationInDraft(second);
       if(!firstLoc&&!secondLoc)return{ok:false,reason:"collection-only"};
-      // The XI must preserve the role required by the formation. Bench slots are
-      // role-free: replacing a bench DF with a FW/MF/GK is always allowed.
-      if(firstLoc?.area==="lineup"&&(!secondRole||secondRole!==firstRole))return{ok:false,reason:"role-mismatch"};
-      if(secondLoc?.area==="lineup"&&(!firstRole||firstRole!==secondRole))return{ok:false,reason:"role-mismatch"};
+      if((firstLoc?.area==="lineup"||secondLoc?.area==="lineup")&&deps.squadDraft?.lineupOrderedBySlot!==true){
+        const formation=(deps.activeConfig()?.formations||deps.seasonDb?.formations?.eleven||[])
+          .find(entry=>deps.id(entry.id)===deps.id(deps.squadDraft?.formationId));
+        if(!formation)return{ok:false,reason:"formation-unavailable"};
+        const ordered=orderedLineupForFormation(deps.squadDraft.lineup,formation,roleOfDraftPlayer);
+        deps.squadDraft={...deps.squadDraft,lineup:ordered,lineupOrderedBySlot:true};
+        firstLoc=locationInDraft(first);
+        secondLoc=locationInDraft(second);
+      }
+      // Tactical slot is fixed; any owned player can occupy it, regardless
+      // of their natural card role. Bench replacements remain unrestricted.
       if(firstLoc&&secondLoc){
         deps.squadDraft[firstLoc.area][firstLoc.index]=second;
         deps.squadDraft[secondLoc.area][secondLoc.index]=first;

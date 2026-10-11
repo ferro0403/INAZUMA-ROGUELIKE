@@ -26,11 +26,11 @@ const ctrl=c.RoadToGloryController.create({
  await ctrl.open();
  ctrl.renderSquad();
  let result=ctrl.swapSquadDraft("d1","g2");
- assert.strictEqual(result.ok,false);
- assert.strictEqual(result.reason,"role-mismatch");
+ assert.strictEqual(result.ok,true);
  let state=ctrl.getDraftSquad();
- assert(state.lineup.includes("d1"));assert(state.bench.includes("g2"));
- result=ctrl.swapSquadDraft("d1","d5");
+ assert(state.lineup.includes("g2"));assert(state.bench.includes("d1"));
+ assert.strictEqual(state.lineupOrderedBySlot,true);
+ result=ctrl.swapSquadDraft("g2","d5");
  assert.strictEqual(result.ok,true);
  state=ctrl.getDraftSquad();
  assert(state.lineup.includes("d5"));assert(state.bench.includes("d1"));

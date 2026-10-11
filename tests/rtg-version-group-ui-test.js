@@ -24,7 +24,8 @@ const grouped=view.replacementPickerResultsMarkup({
   visibleCount:1,
 });
 assert.strictEqual((grouped.match(/data-rtg-picker-player=/g)||[]).length,1,"picker must render one Erik card, not one per Season");
-assert.match(grouped,/2 VERS\./,"unified card must expose that more versions are available");
+assert.match(grouped,/class="rtg-version-count-badge"[^>]*>2<\/span>/,"unified card must expose numeric version badge");
+assert.doesNotMatch(grouped,/VERS\./,"banner must show only its numeric count");
 
 const picker=view.versionPickerMarkup({
   mode:"select",
@@ -39,12 +40,13 @@ assert.match(picker,/data-legacy-season="S2"/);
 assert.match(picker,/rtg-picker-player-card/,"version chooser must reuse the large replacement-picker card style");
 assert.match(picker,/rtg-version-player-card/,"version chooser must keep its dedicated interaction hook");
 assert.doesNotMatch(picker,/rtg-version-choice/,"old grey version buttons must be gone");
+assert.doesNotMatch(picker,/Le versioni dello stesso giocatore/,"version picker must not show redundant explanatory copy");
 
 const controller=["js/road-to-glory/rtg-squad-controller.js","js/road-to-glory/rtg-controller.js"].map(file=>fs.readFileSync(file,"utf8")).join("\n").replaceAll("deps.","");
 assert.match(controller,/const buildGroups=\(cardIds\)=>Array\.from\(groupVersionCards\(cardIds\)\.entries\(\)\)/,"replacement picker must group canonical versions before rendering");
 assert.match(controller,/versionCount:group\.matchingCardIds\?\.length\|\|group\.cardIds\.length/,"replacement picker must mark unified cards");
 assert.match(controller,/openRtgVersionPicker\(versions,\{[\s\S]*onSelect:chooseCandidate,[\s\S]*onClose:[\s\S]*openSquadPlayerPicker\(targetId,stateToRestore\)/,"choosing a unified card in a squad change must open the version selector");
 assert.match(controller,/Resolve\/render every version only after the unified player card is opened/,"all versions must stay lazy until the group is opened");
-assert.match(controller,/closeModal\?\.\(\{invokeOnClose:false\}\);[\s\S]*openRtgPlayerDetails\(selected\)/,"catalog version selection must close the chooser before opening details");
+assert.match(controller,/closeModal\?\.\(\{invokeOnClose:false\}\);[\s\S]*openRtgPlayerDetails\(selected,"",\{onClose:options\.onDetailsClose\|\|null\}\)/,"catalog version selection must close chooser before opening details and retain the return callback");
 
 console.log("rtg-version-group-ui-test: PASS");

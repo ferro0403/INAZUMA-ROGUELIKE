@@ -90,7 +90,7 @@
       duration=i/120*1000;
       if(i%2===0)snapshot(duration);
       const captured=simulation.balls.find(b=>b.id===simulation.captured);
-      if(captured&&captured.y>=options.height+options.radius&&exitTime===null)exitTime=duration;
+      if(captured&&captured.y>=options.height+options.radius&&exitTime===null){exitTime=duration;if(i%2)snapshot(duration);}
       if(exitTime!==null&&duration>=exitTime+600){if(i%2)snapshot(duration);break;}
     }
     return {frames,duration,exitTime,exitedId:simulation.captured};

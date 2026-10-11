@@ -200,6 +200,9 @@ jobs:
           set -euo pipefail
           tests=(
             tests/rtg-orion-season-implementation-test.js
+            tests/rtg-orion-route-background-test.js
+            tests/rtg-orion-origin-card-identity-test.js
+            tests/rtg-player-detail-team-name-responsive-test.js
             tests/rtg-orion-secondary-matches-test.js
             tests/rtg-four-qol-navigation-test.js
             tests/rtg-four-qol-modal-flows-test.js

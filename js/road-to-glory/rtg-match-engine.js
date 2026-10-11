@@ -5,7 +5,7 @@
   const id=(value)=>String(value??"");
   const otherSide=(side)=>side==="user"?"opponent":"user";
   const actionLabel=(kind)=>({shot:"Tiro",save:"Parata",dribble:"Dribbling",defense:"Difesa",midfield:"Dribbling"}[kind]||"Dribbling");
-  const playerRole=(player)=>String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
+  const playerRole=(player)=>String(player?.tacticalRole||player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
   const playerId=(player)=>id(player?.cardId||player?.playerId||player?.id);
   const allPlayers=(squad)=>[...(squad?.lineup||[]),...(squad?.bench||[])];
 

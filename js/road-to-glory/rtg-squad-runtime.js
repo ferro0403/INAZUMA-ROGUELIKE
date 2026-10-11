@@ -60,17 +60,23 @@
     const benchPlayers = bench.map(resolve);
     if ([...lineupPlayers, ...benchPlayers].some((player) => !player)) reasons.push("unresolved-card");
 
-    if (formation && lineupPlayers.every(Boolean)) {
-      const counts = { GK:0, DF:0, MF:0, FW:0 };
-      for (const player of lineupPlayers) {
-        const role = String(player?.normalizedRole || player?.position || player?.role || "").toUpperCase();
-        if (Object.prototype.hasOwnProperty.call(counts, role)) counts[role] += 1;
+    if (formation) {
+      const required = formation.requirements || {};
+      const requiredTotal = Object.values(required).reduce((sum,value)=>sum+Number(value||0),0);
+      if (requiredTotal!==11) reasons.push("formation-total");
+      const slots=Array.isArray(formation.slotRoles)?formation.slotRoles:[];
+      if (slots.length) {
+        const counts={GK:0,DF:0,MF:0,FW:0};
+        for(const slot of slots){
+          const role=String(slot||"").toUpperCase();
+          if(Object.prototype.hasOwnProperty.call(counts,role))counts[role]+=1;
+          else reasons.push("formation-invalid-slot");
+        }
+        if(slots.length!==11)reasons.push("formation-invalid-slots");
+        for(const [role,count] of Object.entries(required)){
+          if(Number(counts[String(role).toUpperCase()]||0)!==Number(count||0))reasons.push("formation-slot-count");
+        }
       }
-      for (const [role, required] of Object.entries(formation.requirements || {})) {
-        if (Number(counts[String(role).toUpperCase()] || 0) !== Number(required || 0)) reasons.push(`formation-${String(role).toLowerCase()}`);
-      }
-      const requiredTotal = Object.values(formation.requirements || {}).reduce((sum, value) => sum + Number(value || 0), 0);
-      if (requiredTotal !== lineup.length) reasons.push("formation-total");
     }
 
     return { valid: reasons.length === 0, reasons, lineupPlayers, benchPlayers, formation, seasonId };

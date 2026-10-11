@@ -109,7 +109,7 @@ assert.strictEqual(few.aria(),"Ordina per overall crescente");
 const manyInput=[...Array.from({length:28},(_,index)=>70+(index%9)),69,68];
 const many=makeHarness(manyInput);
 const visible=many.ascending();
-assert.strictEqual(visible.length,24,"picker pagination must still render only the first page");
+assert.strictEqual(visible.length,12,"picker pagination must render only 12 players initially");
 assert.deepStrictEqual(visible.slice(0,4),[68,69,70,70],"weakest players must be selected before pagination, not hidden below a page of 70 OVR cards");
 for(let index=1;index<visible.length;index++)assert(visible[index-1]<=visible[index],"visible ascending page must be globally sorted");
 

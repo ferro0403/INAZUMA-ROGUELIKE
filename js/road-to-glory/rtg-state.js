@@ -96,6 +96,7 @@
       formationId: squad.formationId == null ? null : id(squad.formationId),
       lineup: uniqueIds(lineup),
       bench: uniqueIds(bench),
+      ...(squad.lineupOrderedBySlot===true?{lineupOrderedBySlot:true}:{}),
       activeRoleVariantByCardId,
     };
   }

@@ -89,7 +89,7 @@
         :points;
     }
     function routeBackgroundValue(seasonConfig){
-      const runtimeAresSource=["ie2","orion"].includes(seasonConfig?.seasonId) ? global.__RTG_ARES_ROUTE_MAP_DATA_URL : "";
+      const runtimeAresSource=seasonConfig?.seasonId==="ie2" ? global.__RTG_ARES_ROUTE_MAP_DATA_URL : "";
       const source=String(runtimeAresSource||seasonConfig?.routeBackground||"").trim();
       if(!source)return "";
       const absolute=/^(?:https?:|data:|\/)/.test(source)?source:`/${source.replace(/^\.\//,"")}`;

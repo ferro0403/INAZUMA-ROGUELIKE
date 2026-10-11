@@ -4,9 +4,11 @@ const c={};vm.createContext(c);vm.runInContext(fs.readFileSync('js/road-to-glory
 assert.equal(typeof c.RoadToGloryVendingMotion.createCycle,'function','the exit must be planned with the same collision simulation as the mixing');
 const {createCycle}=c.RoadToGloryVendingMotion;
 for(const [width,height,radius] of [[184,208,18],[200,226,19.5]])for(let seed=1;seed<=30;seed++){
- const cycle=createCycle({width,height,radius,count:10,seed});
+ const cycle=createCycle({width,height,radius,count:12,seed});
  assert(cycle.exitedId!==null,'exactly one capsule reaches the gate');
  assert(cycle.duration<4000,'gate must not leave the presentation hanging');
+ const exitFrame=cycle.frames.find(frame=>frame.time===cycle.exitTime);
+ assert(exitFrame&&exitFrame.balls[cycle.exitedId].y>=height+radius,'playback records the exact fully cleared exit pose');
  for(const frame of cycle.frames){
   const balls=frame.balls;
   for(let i=0;i<balls.length;i++){
