@@ -20,7 +20,7 @@ assert.deepStrictEqual(Array.from(S.importantMatches,x=>x.cap),[79,81,82,83,84,8
 assert.deepStrictEqual(Array.from(S.importantMatches,x=>x.minRecruit),[0,1,1,2,3,3,4,4,5,5,6,7,8]);
 assert.deepStrictEqual(Array.from(S.importantMatches,x=>x.recentCount),[0,0,0,1,1,1,2,2,2,2,3,3,4]);
 assert.strictEqual(S.pullCost,300);assert.strictEqual(S.recruitmentPullCost,150);assert.strictEqual(cfg.SEASON_TRANSITION_REWARD,1000);
-assert.strictEqual(S.routeBackground,cfg.ARES.routeBackground);assert.strictEqual(S.livesPerCheckpoint,2);
+assert.strictEqual(S.routeBackground,"assets/rtg/rtg-orion-route-map-user.webp");assert.notStrictEqual(S.routeBackground,cfg.ARES.routeBackground);assert.strictEqual(S.livesPerCheckpoint,2);
 const seed={activeSeasonId:"orion",campaignSeed:"orion",tokens:1000,defeatedTeamIds:[],gachaAcquiredCards:[],gacha:{pullCount:0,recruitmentPullCount:0}};
 const recruit=G.recruitmentCandidates(seed,db);
 assert.strictEqual(recruit.length,129);

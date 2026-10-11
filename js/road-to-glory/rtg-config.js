@@ -226,7 +226,7 @@
     mainRewards:Object.freeze(Object.fromEntries(orionTeams.map(teamId=>[teamId,MAIN_WIN_REWARD]))),
     secondaryRewards:SEASON1.secondaryRewards,
     rarityWeights:ARES.rarityWeights,duplicateRefunds:SEASON1.duplicateRefunds,constraints:orionConstraints,
-    routeBackground:ARES.routeBackground,routeClass:"rtg-route--ares rtg-route--orion",
+    routeBackground:"assets/rtg/rtg-orion-route-map-user.webp",routeClass:"rtg-route--ares rtg-route--orion",
     albumCover:"https://i0.wp.com/nicolaraccasceneggiature.altervista.org/wp-content/uploads/2019/05/Dlhck3sVAAA2Lgd-1.jpg?fit=1200%2C896&ssl=1",
     albumCoverPosition:"center",secondaryMatchesPerGap:1,
   });

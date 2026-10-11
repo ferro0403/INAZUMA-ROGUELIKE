@@ -1024,7 +1024,7 @@
       }
       campaign=await repository.ensureCampaign();
       progression?.setSeasonContext?.(campaign);
-      if(["ie2","orion"].includes(activeSeasonId())){
+      if(activeSeasonId()==="ie2"){
         try{await ensureAresRouteMap();}
         catch(error){global.console?.error?.("[RTG] Impossibile caricare lo sfondo Ares",error);}
       }
