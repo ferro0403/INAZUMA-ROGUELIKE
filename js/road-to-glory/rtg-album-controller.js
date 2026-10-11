@@ -78,25 +78,49 @@
         const profileIds=db?.requiresProfileAwareRuntime
           ? Array.from(profilesByTeam.get(deps.id(teamId))||[]).map(profile=>deps.id(profile?.profileId||profile?.id)).filter(Boolean)
           : [];
-        const sourceIds=(profileIds.length?profileIds:playerIds).filter(playerId=>{
-          if(!db?.requiresProfileAwareRuntime)return true;
-          const cardId=deps.cardIdentity?.cardIdForProfile?.(playerId,sid)||playerId;
-          return (deps.gacha?.canonicalCollectibleCardId?.(cardId,db)||cardId)===cardId;
+        // The Zhao roster stays visible in the Album, but each of its 20
+        // entries points to the already collectible card from its origin team.
+        const sourceIds=profileIds.length?profileIds:playerIds;
+        const cardIds=sourceIds.map(playerId=>{
+          const exact=db?.requiresProfileAwareRuntime
+            ? (deps.cardIdentity?.cardIdForProfile?.(playerId,sid)||playerId)
+            : (deps.cardIdentity?.cardIdForSeason?.(playerId,sid)||playerId);
+          return sid==="orion"&&deps.id(teamId)==="zhao_eclipse"
+            ? (deps.gacha?.canonicalCollectibleCardId?.(exact,db)||exact)
+            : exact;
         });
-        const cardIds=sourceIds.map(playerId=>db?.requiresProfileAwareRuntime
-          ? (deps.cardIdentity?.cardIdForProfile?.(playerId,sid)||playerId)
-          : (deps.cardIdentity?.cardIdForSeason?.(playerId,sid)||playerId));
         return {seasonId:sid,teamId:deps.id(teamId),teamName:team?.teamName||team?.name||teamId,logoUrl:team?.logoUrl||"",playerIds,profileIds,cardIds,total:cardIds.length,unlocked:cardIds.filter(cardId=>unlocked.has(cardId)).length};
       }).filter(team=>team&&team.total>0);
     }
     function rtgAlbumTeamPlayers(team,seasonId=selectedAlbumSeasonId){
       const sid=deps.id(seasonId||team?.seasonId||"ie1");
-      return Array.from(team?.cardIds||[]).map(cardId=>deps.playerResolver.resolveAtLevel20(cardId,sid,null,deps.getFreeAgentsDb())).filter(Boolean);
+      const isZhao=sid==="orion"&&deps.id(team?.teamId)==="zhao_eclipse";
+      const db=isZhao?(global.SeasonRegistry?.database?.(sid)||deps.getSeasonDb?.()):null;
+      const profilesById=isZhao
+        ? new Map((db?.profiles||[]).map(profile=>[deps.id(profile?.profileId),profile]))
+        : null;
+      return Array.from(team?.cardIds||[]).map((cardId,index)=>{
+        // Present Zhao's actual lineup (e.g. Jimmy's default DF role), while
+        // opening/owning the single canonical card unlocked at the origin.
+        const role=isZhao?profilesById.get(deps.id(team?.profileIds?.[index]))?.defaultRoleVariantId||null:null;
+        return deps.playerResolver.resolveAtLevel20(cardId,sid,role,deps.getFreeAgentsDb());
+      }).filter(Boolean);
     }
     async function albumCollectionSummary(seasonId){
       const sid=deps.id(seasonId||"ie1");
       const db=await ensureAlbumSeasonDb(sid);
       const teams=rtgAlbumTeams(sid,db);
+      if(sid==="orion"){
+        // Count each collectible once in the Season total. Team rosters still
+        // show the player wherever they appear (including Zhao Eclipse).
+        const distinct=new Set(teams.flatMap(team=>team.cardIds));
+        const unlocked=rtgAlbumUnlockedSet(db);
+        return {
+          seasonId:sid,
+          unlocked:Array.from(distinct).filter(cardId=>unlocked.has(cardId)).length,
+          total:distinct.size,
+        };
+      }
       return {
         seasonId:sid,
         unlocked:teams.reduce((sum,team)=>sum+(Number(team.unlocked)||0),0),

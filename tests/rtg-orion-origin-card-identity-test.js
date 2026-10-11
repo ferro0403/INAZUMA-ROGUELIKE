@@ -49,25 +49,45 @@ assert(!G.previewPool(unlocked,orion,[legacyZhaoId]).candidates.some(p=>p.cardId
   "Legacy Zhao owners must not be offered the same card again");
 assert(!G.previewPool({...unlocked,gachaAcquiredCards:[I.record(legacyZhaoId)]},orion,[]).candidates.some(p=>p.cardId===originalJimmy));
 
-let writes=0,captured=null;
+let writes=0,captured=null,rosterCapture=null,collectionsCapture=null,albumSavedState=null;
 const albumSaved={version:1,cardIds:zhao.map(p=>I.cardIdForProfile(p.profileId,"orion"))};
+albumSavedState=albumSaved;
 ctx.SeasonRegistry={
   database:id=>id==="orion"?orion:null,loadDatabase:async id=>orion,
   activeId:()=>"orion",setActive:()=>{}
 };
 const album=ctx.RoadToGloryAlbumController.create({
- id:String,localStorage:{getItem:()=>JSON.stringify(albumSaved),setItem:()=>{writes++;}},
+ id:String,localStorage:{getItem:()=>JSON.stringify(albumSavedState),setItem:()=>{writes++;}},
  cardMeta:()=>({cardId:""}),cardIdentity:I,gacha:G,
  acquiredCardIdSet:()=>new Set(),getCampaign:()=>unlocked,activeSeasonId:()=>"orion",
- getSeasonDb:()=>orion,getFreeAgentsDb:()=>null,config,ensureData:async()=>{},
- playerResolver:{resolveAtLevel20:()=>null},
- runView:{albumTeamsMarkup:({teams})=>{captured=teams;return ""}},
- renderHtml:()=>{},app:null,mountDevQuickTools:()=>{},renderHome:()=>{}
+ getSeasonDb:()=>orion,getFreeAgentsDb:()=>null,config:{...config,SEASON_IDS:["orion"]},ensureData:async()=>{},
+ playerResolver:{resolveAtLevel20:(cardId,seasonId,role)=>{
+   const profile=orion.profiles.find(p=>cardId===I.cardIdForProfile(p.profileId,"orion"));
+   if(!profile)return null;
+   const variant=profile.roleVariants.find(v=>v.variantId===role)||profile.roleVariants.find(v=>v.variantId===profile.defaultRoleVariantId);
+   return {...profile,...variant,cardId,legacySeasonId:"orion"};
+ }},
+ runView:{
+   albumTeamsMarkup:({teams})=>{captured=teams;return "";},
+   albumRosterMarkup:payload=>{rosterCapture=payload;return "";},
+   albumCollectionMarkup:({collections})=>{collectionsCapture=collections;return "";},
+ },
+ renderHtml:()=>{},
+ app:{querySelector:selector=>selector===".rtg-album-collections-screen"?{}:null,querySelectorAll:()=>[]},
+ mountDevQuickTools:()=>{},renderHome:()=>{}
 });
 (async()=>{
  await album.renderAlbumTeams("orion");
  assert(Array.isArray(captured));
- assert(!captured.some(t=>t.teamId==="zhao_eclipse"),"Zhao cannot contribute duplicate cards to Album");
+ const zhaoTeam=captured.find(t=>t.teamId==="zhao_eclipse");
+ assert(zhaoTeam,"Zhao must remain a visible Album team even though it has no exclusive cards");
+ assert.strictEqual(zhaoTeam.total,20);
+ assert.strictEqual(zhaoTeam.unlocked,20,"Owned legacy Zhao cards must appear unlocked in the Zhao roster");
+ const zhaoCanonical=zhao.map(p=>I.cardIdForProfile(originalByPlayer.get(String(p.playerId)).profileId,"orion"));
+ assert.deepStrictEqual([...zhaoTeam.cardIds].sort(),[...zhaoCanonical].sort(),
+   "Zhao roster must reuse all 20 cards from their original teams");
+ assert(!zhaoTeam.cardIds.some(cardId=>cardId.endsWith("@zhao_eclipse")),
+   "No Zhao-only collectible identities may be created");
  for(const p of zhao){
    const origin=originalByPlayer.get(String(p.playerId));
    const team=captured.find(t=>t.teamId===origin.teamId);
@@ -76,11 +96,26 @@ const album=ctx.RoadToGloryAlbumController.create({
    assert(team.unlocked>=1,`Legacy owned Zhao card not recognized in ${origin.teamId}`);
  }
  const unique=new Set(captured.flatMap(t=>t.cardIds));
- assert.strictEqual(unique.size,captured.reduce((sum,t)=>sum+t.total,0),"Orion album must count cards only once");
+ assert.strictEqual(captured.reduce((sum,t)=>sum+t.total,0),unique.size+20,
+   "The Zhao Album roster must mirror exactly 20 existing cards");
+ await album.renderAlbumRoster("zhao_eclipse","orion");
+ assert.strictEqual(rosterCapture?.allEntries.length,20,"Zhao's 20 players must be shown in the roster");
+ assert.strictEqual(rosterCapture?.entries.length,20,"Legacy-owned Zhao cards must be unlocked");
+ assert.strictEqual(rosterCapture?.allEntries.find(p=>p.playerId==="4725")?.position,"DF",
+   "Jimmy must keep Zhao's default defender role in this Album view");
+ assert(!rosterCapture?.allEntries.some(p=>String(p.cardId).endsWith("@zhao_eclipse")),
+   "Every Zhao card in the roster must open its original playable card");
+ // The Season collection counts only unique cards; Zhao is a mirrored roster.
+ await album.renderAlbum();
+ const summary=collectionsCapture?.find(entry=>entry.seasonId==="orion");
+ assert.strictEqual(summary?.total,unique.size,"Mirrored Zhao cards must not inflate the Season total");
+ assert.strictEqual(summary?.unlocked,20,"Legacy-owned Zhao cards count once in the Season summary");
  assert.strictEqual(writes,0,"Album equivalence must be read-only");
  const index=fs.readFileSync("index.html","utf8");
- for(const js of ["rtg-gacha","rtg-album-controller","rtg-controller"]){
+ for(const js of ["rtg-gacha","rtg-controller"]){
    assert(index.includes(`${js}.js?v=20261011-orion-origin-cards-1`),`Stale mobile script: ${js}`);
  }
- console.log("RTG Orion: all 20 Zhao cards unlock at their source teams; old ownership/Album preserved: PASS");
+ assert(index.includes("rtg-album-controller.js?v=20261011-orion-zhao-album-1"),
+   "Orion Album changes must invalidate the cached script on mobile");
+ console.log("RTG Orion: Zhao remains visible (20/20 shared origin cards); collection unique; old ownership/Album preserved: PASS");
 })().catch(error=>{console.error(error);process.exitCode=1});
