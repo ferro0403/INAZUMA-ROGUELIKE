@@ -17,8 +17,8 @@ assert.strictEqual(E.PROJECT_PRICES.Aurico+E.EVOLUTION_COSTS.Aurico.tokens,3000,
 assert.strictEqual(C.MAIN_WIN_REWARD,350);
 assert.strictEqual(C.SECONDARY_WIN_REWARD,200);
 assert.strictEqual(C.SEASON_TRANSITION_REWARD,1000);
-assert(Object.values(C.SEASON1.mainRewards).every(value=>value===350));
-assert(Object.values(C.SEASON2.mainRewards).every(value=>value===350));
+assert.strictEqual(C.SEASON1.mainRewards.occult,350);assert.strictEqual(C.SEASON1.mainRewards.raimon,650);
+assert.strictEqual(C.SEASON2.mainRewards.secret_service,350);assert.strictEqual(C.SEASON2.mainRewards.raimon_inazuma_eleven_2,650);assert.strictEqual(C.SEASON_COMPLETION_REWARD,2000);
 assert.deepStrictEqual(JSON.parse(JSON.stringify(C.SEASON1.secondaryRewards)),[{amount:200,weight:100}]);
 assert.deepStrictEqual(JSON.parse(JSON.stringify(C.SEASON2.secondaryRewards)),[{amount:200,weight:100}]);
 

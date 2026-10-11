@@ -112,9 +112,8 @@ const album=ctx.RoadToGloryAlbumController.create({
  assert.strictEqual(summary?.unlocked,20,"Legacy-owned Zhao cards count once in the Season summary");
  assert.strictEqual(writes,0,"Album equivalence must be read-only");
  const index=fs.readFileSync("index.html","utf8");
- for(const js of ["rtg-gacha","rtg-controller"]){
-   assert(index.includes(`${js}.js?v=20261011-orion-origin-cards-1`),`Stale mobile script: ${js}`);
- }
+ assert(index.includes("rtg-gacha.js?v=20261011-orion-origin-cards-1"),"Stale mobile script: rtg-gacha");
+ assert(index.includes("rtg-controller.js?v=20261011-balanced-economy-1"),"Stale mobile script: rtg-controller");
  assert(index.includes("rtg-album-controller.js?v=20261011-orion-zhao-album-1"),
    "Orion Album changes must invalidate the cached script on mobile");
  console.log("RTG Orion: Zhao remains visible (20/20 shared origin cards); collection unique; old ownership/Album preserved: PASS");

@@ -594,12 +594,12 @@
       if(node.type==="main"){
         const eligibility=squadRuntime.mainEligibility({teamId:node.teamId,state:campaign,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(campaign)});
         body=runView.nodeModalMarkup
-          ? runView.nodeModalMarkup({node,eligibility,seasonDb,allowed})
+          ? runView.nodeModalMarkup({node,eligibility,seasonDb,allowed,state:campaign})
           : `<div class="rtg-node-modal"><h2>${id(node.teamId)}</h2>${runView.requirementsMarkup(eligibility)}<button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed||!eligibility.eligible?"disabled":""}>GIOCA</button></div>`;
       }else{
         body=runView.nodeModalMarkup
-          ? runView.nodeModalMarkup({node,seasonDb,allowed})
-          : `<div class="rtg-node-modal"><h2>Partita secondaria</h2><p>Avversari svincolati casuali. Vittoria: 200 Gettoni RTG.</p><button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed?"disabled":""}>GIOCA</button></div>`;
+          ? runView.nodeModalMarkup({node,seasonDb,allowed,state:campaign})
+          : `<div class="rtg-node-modal"><h2>Partita secondaria</h2><p>Avversari svincolati casuali. Vittoria: ${config.rewardForNode?.(campaign,node)??200} Gettoni RTG.</p><button type="button" class="btn btn-yellow" data-rtg-start-node ${!allowed?"disabled":""}>GIOCA</button></div>`;
       }
       deps.openModal?.(body,{className:"rtg-modal"});
       deps.getModalRoot?.()?.querySelector?.("[data-rtg-start-node]")?.addEventListener("click",()=>{deps.closeModal?.();startMatch(node.id);});

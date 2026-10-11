@@ -69,7 +69,11 @@
       state.checkpointMainIndex = mainIndex;
       state.lives = seasonCfg.livesPerCheckpoint;
     }
-    if (mainIndex === seasonCfg.mainTeams.length - 1) state.seasonComplete = true;
+    if (mainIndex === seasonCfg.mainTeams.length - 1) {
+      // Award on the first clear only, in the same atomic match-result mutation.
+      if(firstClear && !state.seasonComplete)state.tokens += Number(configApi.SEASON_COMPLETION_REWARD||0);
+      state.seasonComplete = true;
+    }
     advanceIfCurrent(state, mainNodeId);
     return state;
   }
@@ -117,7 +121,8 @@
         (item) => item.weight,
         rng.float(state.campaignSeed, `secondary-reward:${id}`, attemptNumber)
       );
-      state.tokens = Math.max(0, Number(state.tokens) || 0) + Number(reward?.amount || 0);
+      const amount=typeof configApi.rewardForNode==="function"?configApi.rewardForNode(state,node):Number(reward?.amount||0);
+      state.tokens = Math.max(0, Number(state.tokens) || 0) + Number(amount||0);
       entry.clears += 1;
       advanceIfCurrent(state, id);
     }

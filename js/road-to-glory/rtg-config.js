@@ -24,7 +24,16 @@
   const MAIN_WIN_REWARD = 350;
   const SECONDARY_WIN_REWARD = 200;
   const SEASON_TRANSITION_REWARD = 1000;
-  const mainRewards = Object.freeze(Object.fromEntries(mainTeams.map((teamId)=>[teamId,MAIN_WIN_REWARD])));
+  const SEASON_COMPLETION_REWARD = 2000;
+  const MAIN_REWARDS_BY_STAGE = Object.freeze([350,500,650]);
+  const SECONDARY_REWARDS_BY_STAGE = Object.freeze([200,300,400]);
+  function stageForMainIndex(index,total){
+    return Math.min(2,Math.floor(Math.max(0,index)*3/Math.max(1,total)));
+  }
+  function mainRewardMap(teams){
+    return Object.freeze(Object.fromEntries(teams.map((teamId,index)=>[teamId,MAIN_REWARDS_BY_STAGE[stageForMainIndex(index,teams.length)]])));
+  }
+  const mainRewards = mainRewardMap(mainTeams);
 
   const constraints = Object.freeze({
     occult: Object.freeze({ cap: 75, minRecruit: 0, recentCount: 0, recentWindow: 0 }),
@@ -52,8 +61,9 @@
       Object.freeze([6, 8]), Object.freeze([9, 9]),
     ]),
     livesPerCheckpoint: 2,
-    pullCost: 300,
+    pullCost: 250,
     recruitmentPullCost: null,
+    postgameAdvancedReward: 500,
     mainRewards,
     secondaryRewards: Object.freeze([
       Object.freeze({ amount: SECONDARY_WIN_REWARD, weight: 100 }),
@@ -116,7 +126,7 @@
     entry.teamId,
     Object.freeze({cap:entry.cap,minRecruit:entry.minRecruit,recentCount:entry.recentCount,recentWindow:entry.recentWindow})
   ])));
-  const season2Rewards = Object.freeze(Object.fromEntries(season2Matches.map((entry)=>[entry.teamId,MAIN_WIN_REWARD])));
+  const season2Rewards = mainRewardMap(season2Teams);
   const SEASON2 = Object.freeze({
     seasonId:"ie1_s2",
     seasonNumber:2,
@@ -128,8 +138,9 @@
     checkpointMainIndexes:Object.freeze([2,5,8,11,14]),
     visualBlocks:Object.freeze([Object.freeze([0,4]),Object.freeze([5,10]),Object.freeze([11,14]),Object.freeze([15,16])]),
     livesPerCheckpoint:2,
-    pullCost:300,
+    pullCost:200,
     recruitmentPullCost:null,
+    postgameAdvancedReward:500,
     mainRewards:season2Rewards,
     secondaryRewards:SEASON1.secondaryRewards,
     rarityWeights:Object.freeze({ Normale:40, Buono:27, Forte:18, Elite:10, Mondiale:5, Leggenda:1 }),
@@ -164,8 +175,8 @@
     mainTeams:season3Teams,importantMatches:season3Matches,formations,
     checkpointMainIndexes:Object.freeze([2,5,8,11,14,17]),
     visualBlocks:Object.freeze([Object.freeze([0,5]),Object.freeze([6,11]),Object.freeze([12,17]),Object.freeze([18,18])]),
-    livesPerCheckpoint:2,pullCost:300,recruitmentPullCost:150,
-    mainRewards:Object.freeze(Object.fromEntries(season3Teams.map(teamId=>[teamId,MAIN_WIN_REWARD]))),
+    livesPerCheckpoint:2,pullCost:180,recruitmentPullCost:90,postgameAdvancedReward:900,
+    mainRewards:mainRewardMap(season3Teams),
     secondaryRewards:SEASON1.secondaryRewards,
     rarityWeights:Object.freeze({Normale:40,Buono:27,Forte:18,Elite:10,Mondiale:5,Leggenda:1}),
     duplicateRefunds:SEASON1.duplicateRefunds,constraints:season3Constraints,
@@ -192,8 +203,8 @@
     seasonId:"ie2",seasonNumber:"AR",previousSeasonId:null,nextSeasonId:"orion",
     campaignId:"rtg-ares-orion",mainTeams:aresTeams,importantMatches:aresMatches,formations,
     checkpointMainIndexes:Object.freeze([2,5,8]),visualBlocks:Object.freeze([Object.freeze([0,2]),Object.freeze([3,5]),Object.freeze([6,8]),Object.freeze([9,10])]),
-    livesPerCheckpoint:2,pullCost:300,recruitmentPullCost:null,
-    mainRewards:Object.freeze(Object.fromEntries(aresTeams.map(teamId=>[teamId,MAIN_WIN_REWARD]))),
+    livesPerCheckpoint:2,pullCost:250,recruitmentPullCost:null,postgameAdvancedReward:500,
+    mainRewards:mainRewardMap(aresTeams),
     secondaryRewards:SEASON1.secondaryRewards,
     rarityWeights:Object.freeze({Normale:40,Buono:27,Forte:18,Elite:10,Mondiale:5,Leggenda:1}),
     duplicateRefunds:SEASON1.duplicateRefunds,constraints:aresConstraints,
@@ -222,8 +233,8 @@
     campaignId:"rtg-ares-orion",mainTeams:orionTeams,importantMatches:orionMatches,formations,
     checkpointMainIndexes:Object.freeze([2,5,8,11]),
     visualBlocks:Object.freeze([Object.freeze([0,5]),Object.freeze([6,9]),Object.freeze([10,12])]),
-    livesPerCheckpoint:2,pullCost:300,recruitmentPullCost:150,
-    mainRewards:Object.freeze(Object.fromEntries(orionTeams.map(teamId=>[teamId,MAIN_WIN_REWARD]))),
+    livesPerCheckpoint:2,pullCost:200,recruitmentPullCost:100,postgameAdvancedReward:700,
+    mainRewards:mainRewardMap(orionTeams),
     secondaryRewards:SEASON1.secondaryRewards,
     rarityWeights:ARES.rarityWeights,duplicateRefunds:SEASON1.duplicateRefunds,constraints:orionConstraints,
     routeBackground:"assets/rtg/rtg-orion-route-map-user.webp",routeClass:"rtg-route--ares rtg-route--orion",
@@ -257,5 +268,17 @@
     return Object.freeze(nodes);
   }
 
-  global.RoadToGloryConfig = Object.freeze({ MAIN_WIN_REWARD, SECONDARY_WIN_REWARD, SEASON_TRANSITION_REWARD, SEASON1, SEASON2, SEASON3, ARES, ORION, SEASONS, SEASON_IDS, season, buildSeasonNodes:buildAnySeasonNodes });
+  // Replay rewards reflect the difficulty of their original node, not the current chapter.
+  function rewardForNode(state,node){
+    const seasonCfg=season(state?.activeSeasonId||"ie1")||SEASON1;
+    if(node?.type==="main")return Number(seasonCfg.mainRewards[node.teamId]||MAIN_WIN_REWARD);
+    if(node?.type!=="secondary")return 0;
+    const mainIndex=seasonCfg.mainTeams.indexOf(String(node.afterTeamId||""));
+    const stage=stageForMainIndex(mainIndex,seasonCfg.mainTeams.length);
+    return stage===2&&state?.seasonComplete===true
+      ?Number(seasonCfg.postgameAdvancedReward||SECONDARY_REWARDS_BY_STAGE[2])
+      :SECONDARY_REWARDS_BY_STAGE[stage];
+  }
+
+  global.RoadToGloryConfig = Object.freeze({ MAIN_WIN_REWARD, SECONDARY_WIN_REWARD, SEASON_TRANSITION_REWARD, SEASON_COMPLETION_REWARD, MAIN_REWARDS_BY_STAGE, SECONDARY_REWARDS_BY_STAGE, rewardForNode, SEASON1, SEASON2, SEASON3, ARES, ORION, SEASONS, SEASON_IDS, season, buildSeasonNodes:buildAnySeasonNodes });
 })(globalThis);
