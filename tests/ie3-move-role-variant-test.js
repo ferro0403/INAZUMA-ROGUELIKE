@@ -7,7 +7,7 @@ const move=(id,position)=>JSON.parse(JSON.stringify(c.MatchMoveRuntime.moveForPl
 assert.deepStrictEqual(move("1","GK"),{playerId:"1",name:"God Catch",type:"save",element:"Mountain",power:105});
 assert.deepStrictEqual(move("1","MF"),{playerId:"1",name:"Megaton Head",type:"shot",element:"Mountain",power:70});
 assert.deepStrictEqual(move("1166","FW"),{playerId:"1166",name:"Cross Fire",type:"shot",element:"Fire",power:95});
-assert.deepStrictEqual(move("1166","DF"),{playerId:"1166",name:"Land of Ice",type:"defense",element:"Wind",power:65});
+assert.deepStrictEqual(move("1166","DF"),{playerId:"1166",name:"Land of Ice",type:"defense",element:"Wind",power:85});
 assert.deepStrictEqual(move("30","FW"),{playerId:"30",name:"Emperor Penguin No. 2",type:"shot",element:"Forest",power:85});
 assert.deepStrictEqual(move("30","DF"),{playerId:"30",name:"Killer Slide",type:"defense",element:"Forest",power:50});
 assert.deepStrictEqual(move("1957","GK"),{playerId:"1957",name:"Soul Hand",type:"save",element:"Fire",power:110});

@@ -1,0 +1,20 @@
+"use strict";
+const assert=require("assert"),fs=require("fs"),vm=require("vm");
+const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON};c.globalThis=c;vm.createContext(c);
+for(const file of["js/road-to-glory/rtg-rng.js","js/road-to-glory/rtg-encounter-runtime.js","js/road-to-glory/rtg-ai-policy.js","js/road-to-glory/rtg-penalty-runtime.js","js/road-to-glory/rtg-match-engine.js","js/road-to-glory/rtg-match-halftime-fix.js"])vm.runInContext(fs.readFileSync(file,"utf8"),c,{filename:file});
+const E=c.RoadToGloryMatchEngine;
+const p=(id,role)=>({playerId:id,name:id,normalizedRole:role,position:role,overall:80,attack:80,control:80,speed:80,grit:80,physical:80,stamina:80,defense:80,save:80,element:"Wind"});
+function squad(prefix){return{formationId:"4-3-3",lineup:[p(prefix+"g","GK"),p(prefix+"d1","DF"),p(prefix+"d2","DF"),p(prefix+"d3","DF"),p(prefix+"d4","DF"),p(prefix+"m1","MF"),p(prefix+"m2","MF"),p(prefix+"m3","MF"),p(prefix+"f1","FW"),p(prefix+"f2","FW"),p(prefix+"f3","FW")],bench:[p(prefix+"bg","GK"),p(prefix+"bd","DF"),p(prefix+"bm","MF"),p(prefix+"bf","FW")]};}
+let s=E.createMatch({matchId:"halftime-restart",seed:"halftime-restart",userSquad:squad("u"),opponentSquad:squad("o")});
+s.firstHalfTarget=10;s.actionTarget=21;s.actionIndex=10;s.period="halftime";s.status="halftime";s.fieldZone="shot";s.possession="user";s.pendingEncounter=null;
+s.log=[{period:"first_half",minute:43,kind:"dribble",actorWon:true,actorSide:"user",actorPlayerId:"uf1"}];
+const beforeLog=s.log.length;
+s=E.confirmHalftime(s,s.userSquad,{validateHalftime:()=>({eligible:true})});
+assert.strictEqual(s.period,"second_half");
+assert.strictEqual(s.status,"active");
+assert(s.pendingEncounter,"second half must expose a restart encounter");
+assert.strictEqual(s.pendingEncounter.kind,"midfield","second half must restart from midfield, never inherit a shot");
+assert.strictEqual(s.pendingEncounter.minute,46,"first second-half action must start at 46th minute");
+assert.strictEqual(s.log.length,beforeLog,"restart must not auto-simulate hidden actions before the first second-half duel");
+assert.strictEqual(s.possession,"opponent","second-half kickoff must go to the side that did not start the first half");
+console.log("rtg-halftime-restart-test: PASS");
