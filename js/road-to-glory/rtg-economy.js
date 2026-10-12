@@ -3,24 +3,26 @@
 
   const RARITIES = Object.freeze(["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"]);
   const PROJECT_RARITIES = Object.freeze(["Buono","Forte","Elite","Mondiale","Leggenda","Aurico"]);
-  // Flat across Seasons. Entry-level upgrades stay affordable while higher
-  // rarities retain their long-term cost under the rebalanced RTG match rewards.
+  // Same prices in every Season: preserve early upgrades and make later
+  // improvements meaningful without forcing excessive secondary grinding.
+  // Project + token evolution costs: 100 / 350 / 650 / 1100 /
+  // 1700 / 2500 / 3500 (Normale through Aurico).
   const PROJECT_PRICES = Object.freeze({
     Buono:150,
-    Forte:350,
-    Elite:650,
-    Mondiale:1050,
-    Leggenda:1600,
-    Aurico:2400,
+    Forte:300,
+    Elite:550,
+    Mondiale:850,
+    Leggenda:1300,
+    Aurico:2000,
   });
   const EVOLUTION_COSTS = Object.freeze({
     Normale:Object.freeze({tokens:100,projects:0}),
     Buono:Object.freeze({tokens:200,projects:1}),
-    Forte:Object.freeze({tokens:400,projects:1}),
-    Elite:Object.freeze({tokens:650,projects:1}),
-    Mondiale:Object.freeze({tokens:1050,projects:1}),
-    Leggenda:Object.freeze({tokens:1550,projects:1}),
-    Aurico:Object.freeze({tokens:2100,projects:1}),
+    Forte:Object.freeze({tokens:350,projects:1}),
+    Elite:Object.freeze({tokens:550,projects:1}),
+    Mondiale:Object.freeze({tokens:850,projects:1}),
+    Leggenda:Object.freeze({tokens:1200,projects:1}),
+    Aurico:Object.freeze({tokens:1500,projects:1}),
   });
 
   const clone=(value)=>value==null?value:JSON.parse(JSON.stringify(value));

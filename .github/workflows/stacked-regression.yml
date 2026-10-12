@@ -203,6 +203,8 @@ jobs:
             tests/rtg-orion-route-background-test.js
             tests/rtg-orion-origin-card-identity-test.js
             tests/rtg-four-audit-fixes-test.js
+            tests/rtg-economy-test.js
+            tests/rtg-shop-development-balance-test.js
             tests/rtg-player-detail-team-name-responsive-test.js
             tests/rtg-orion-secondary-matches-test.js
             tests/rtg-four-qol-navigation-test.js
