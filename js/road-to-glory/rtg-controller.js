@@ -768,14 +768,11 @@
       next.activeMatch=null;
       return next;
     }
-    // Derive the match reward from the atomic, committed token delta.
-    // No new state fields or independent writes are introduced.
+    // Derive reward details from the same committed match mutation.
     function terminalRewardSummary(before,after,match){
       if(match?.result?.winner!=="user")return null;
-      const node=nodeById(match.nodeId);
       const total=Math.max(0,Number(after?.tokens||0)-Number(before?.tokens||0));
-      const expected=Number(config.rewardForNode?.(before,node)??total);
-      const matchReward=Math.min(total,Math.max(0,expected));
+      const matchReward=Math.min(total,Math.max(0,Number(config.rewardForNode?.(before,nodeById(match.nodeId))??total)));
       return {matchReward,completionBonus:Math.max(0,total-matchReward),total};
     }
     async function commitMatchState(label,mutator,renderOptions={}){
