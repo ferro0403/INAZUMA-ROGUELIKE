@@ -125,9 +125,15 @@
     return source.filter((player) => !owned.has(canonicalCollectibleCardId(player?.cardId,seasonDb)));
   }
 
-  function rarityWeightsForCandidates(candidates, state=null) {
+  // IE3 has a Debole recruitment profile: it belongs to the Normale draw
+  // tier but keeps its original displayed rarity. Other draws are unchanged.
+  function pullRarity(player,mode="team"){
+    const category=String(player?.category||"Normale");
+    return mode==="recruitment"&&category==="Debole"?"Normale":category;
+  }
+  function rarityWeightsForCandidates(candidates, state=null, mode="team") {
     const configured = cfg(state).rarityWeights || {};
-    const available = new Set((candidates || []).map((player) => String(player?.category || "Normale")));
+    const available = new Set((candidates || []).map((player) => pullRarity(player,mode)));
     const entries = Object.entries(configured)
       .filter(([rarity, weight]) => Number(weight) > 0 && available.has(rarity))
       .map(([rarity, weight]) => ({ rarity, weight: Number(weight) }));
@@ -144,7 +150,7 @@
     const candidates = unownedCandidates(state, seasonDb, accessibleCardIds,mode);
     return Object.freeze({
       candidates: Object.freeze(candidates),
-      rarities: Object.freeze(rarityWeightsForCandidates(candidates,state)),
+      rarities: Object.freeze(rarityWeightsForCandidates(candidates,state,mode)),
     });
   }
 
@@ -162,7 +168,7 @@
     if (!candidates.length) {
       throw Object.assign(new Error("Nessun nuovo giocatore RTG disponibile"), { code: "rtg-gacha-empty-pool" });
     }
-    const rarities = rarityWeightsForCandidates(candidates,state);
+    const rarities = rarityWeightsForCandidates(candidates,state,mode);
     const activeRarities = rarities.filter((entry) => Number(entry.weight) > 0);
     if (!activeRarities.length) {
       throw Object.assign(new Error("Nessuna rarità RTG disponibile"), { code: "rtg-gacha-empty-pool" });
@@ -171,7 +177,7 @@
     const namespace=recruitment?"gacha-recruitment":"gacha";
     const pullIndex = Math.max(0, Number(state.gacha?.[countKey]) || 0);
     const rarity = rng().weightedPick(activeRarities, (entry) => entry.weight, rng().float(state.campaignSeed, `${namespace}-rarity`, pullIndex))?.rarity;
-    const rarityPool = candidates.filter((player) => String(player?.category || "Normale") === String(rarity));
+    const rarityPool = candidates.filter((player) => pullRarity(player,mode) === String(rarity));
     const playerRoll = rng().float(state.campaignSeed, `${namespace}-player:${rarity}`, pullIndex);
     const player = rarityPool[Math.min(rarityPool.length - 1, Math.floor(playerRoll * rarityPool.length))] || rarityPool[0];
     if (!player) throw Object.assign(new Error("Nessun giocatore RTG disponibile"), { code: "rtg-gacha-empty-pool" });
