@@ -1034,7 +1034,7 @@
       const label = won ? "VITTORIA" : lost ? "SCONFITTA" : "PAREGGIO";
       const userName = userNameFor(match);
       const opponentName = match.opponentSquad?.name || "Avversario";
-      const formatTokens=value=>Math.max(0,Math.trunc(Number(value)||0)).toLocaleString("it-IT");
+      const formatTokens=value=>String(Math.max(0,Math.trunc(Number(value)||0))).replace(/\B(?=(\d{3})+(?!\d))/g,".");
       const rewardMarkup=won&&rewards&&Number.isFinite(Number(rewards.total))
         ? `<div class="rtg-final-verdict rtg-final-token-rewards" style="gap:9px" aria-label="Ricompense partita">
           <span>VITTORIA · +${escape(formatTokens(rewards.matchReward))} GETTONI RTG</span>
