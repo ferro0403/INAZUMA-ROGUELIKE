@@ -11,6 +11,7 @@
     const RTG_ALBUM_S2_COVER_URL=deps.albumSeason2CoverUrl;
     function albumTeamLogoMarkup(team={}){
       if(team?.logoUrl)return `<img src="${escape(team.logoUrl)}" alt="${escape(team.teamName||team.name||"Squadra")}" loading="lazy" decoding="async">`;
+      if(team?.isRecruitmentPool)return '<span class="album-free-agent-logo" aria-hidden="true">⚡</span>';
       return team?.teamId ? emblem(team.teamId) : '<span class="album-free-agent-logo" aria-hidden="true">⚡</span>';
     }
     function albumCollectionMarkup({state={},unlocked=0,total=0,collections=null}={}){

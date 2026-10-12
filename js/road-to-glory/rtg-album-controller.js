@@ -71,7 +71,7 @@
         }
       }
       const configured=Array.from(albumConfigFor(sid)?.mainTeams||[]);
-      return configured.map(teamId=>{
+      const configuredTeams=configured.map(teamId=>{
         const team=teamsById.get(deps.id(teamId));
         if(!team)return null;
         const playerIds=Array.from(team?.playerIds||[]).map(id).filter(Boolean);
@@ -91,6 +91,21 @@
         });
         return {seasonId:sid,teamId:deps.id(teamId),teamName:team?.teamName||team?.name||teamId,logoUrl:team?.logoUrl||"",playerIds,profileIds,cardIds,total:cardIds.length,unlocked:cardIds.filter(cardId=>unlocked.has(cardId)).length};
       }).filter(team=>team&&team.total>0);
+      // Preserve existing collectible identities and persisted Album shape.
+      // Display the exact pool offered by each recruitment dispenser.
+      if(["ie1_s3","orion"].includes(sid)){
+        const agents=deps.gacha?.recruitmentCandidates?.({activeSeasonId:sid},db)||[];
+        if(agents.length){
+          const cardIds=Array.from(new Set(agents.map(entry=>deps.id(entry.cardId)).filter(Boolean)));
+          return [...configuredTeams,{
+            seasonId:sid,teamId:"rtg_recruitment",teamName:"Svincolati",isRecruitmentPool:true,
+            logoUrl:"",playerIds:agents.map(entry=>deps.id(entry.playerId)),
+            profileIds:agents.map(entry=>deps.id(entry.profileId)),
+            cardIds,total:cardIds.length,unlocked:cardIds.filter(cardId=>unlocked.has(cardId)).length,
+          }];
+        }
+      }
+      return configuredTeams;
     }
     function rtgAlbumTeamPlayers(team,seasonId=selectedAlbumSeasonId){
       const sid=deps.id(seasonId||team?.seasonId||"ie1");
@@ -110,8 +125,8 @@
       const sid=deps.id(seasonId||"ie1");
       const db=await ensureAlbumSeasonDb(sid);
       const teams=rtgAlbumTeams(sid,db);
-      if(sid==="orion"){
-        // Count each collectible once in the Season total. Team rosters still
+      if(["ie1_s3","orion"].includes(sid)){
+        // Count boss and recruitment cards once. Orion's Zhao roster still
         // show the player wherever they appear (including Zhao Eclipse).
         const distinct=new Set(teams.flatMap(team=>team.cardIds));
         const unlocked=rtgAlbumUnlockedSet(db);

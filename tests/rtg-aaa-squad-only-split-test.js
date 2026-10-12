@@ -13,7 +13,7 @@ for(const marker of[
   "async function startMatch(nodeId){",
   "function renderMatch(match=campaign?.activeMatch,options={}){",
   "async function chooseEncounter(choice){",
-  "function showMatchResult(match){"
+  "function showMatchResult(match,rewards=null){"
 ]) assert(controller.includes(marker),`match flow must remain inline: ${marker}`);
 
 assert.doesNotMatch(controller,/function getMatchController\(\)/,"match controller extraction must stay reverted");

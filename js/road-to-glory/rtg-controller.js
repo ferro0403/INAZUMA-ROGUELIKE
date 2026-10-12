@@ -768,40 +768,53 @@
       next.activeMatch=null;
       return next;
     }
+    // Derive reward details from the same committed match mutation.
+    function terminalRewardSummary(before,after,match){
+      if(match?.result?.winner!=="user")return null;
+      const total=Math.max(0,Number(after?.tokens||0)-Number(before?.tokens||0));
+      const matchReward=Math.min(total,Math.max(0,Number(config.rewardForNode?.(before,nodeById(match.nodeId))??total)));
+      return {matchReward,completionBonus:Math.max(0,total-matchReward),total};
+    }
     async function commitMatchState(label,mutator,renderOptions={}){
-      let terminalSnapshot=null;
+      let terminalSnapshot=null,terminalReward=null;
       campaign=await repository.update(label,current=>{
         if(!current.activeMatch)throw Object.assign(new Error("Nessuna partita RTG attiva"),{code:"rtg-match-not-active"});
         let match=mutator(clone(current.activeMatch));
         if(["completed","completed-draw","abandoned"].includes(match.status)){
           terminalSnapshot=clone(match);
-          return applyTerminal(current,match);
+          const next=applyTerminal(current,match);
+          terminalReward=terminalRewardSummary(current,next,match);
+          return next;
         }
         current.activeMatch=match;return current;
       });
-      if(terminalSnapshot)return showMatchResult(terminalSnapshot);
+      if(terminalSnapshot)return showMatchResult(terminalSnapshot,terminalReward);
       return renderMatch(campaign.activeMatch,renderOptions);
     }
     async function continueEncounterFlow(){
-      let terminalSnapshot=null;
+      let terminalSnapshot=null,terminalReward=null;
       campaign=await repository.update("rtg-encounter-continue",current=>{
         if(!current.activeMatch)throw Object.assign(new Error("Nessuna partita RTG attiva"),{code:"rtg-match-not-active"});
         let match=clone(current.activeMatch);
         if(["completed","completed-draw"].includes(match.status)){
           terminalSnapshot=clone(match);
-          return applyTerminal(current,match);
+          const next=applyTerminal(current,match);
+          terminalReward=terminalRewardSummary(current,next,match);
+          return next;
         }
         if(match.status==="active")match=matchEngine.prepareNext(match);
         if(["completed","completed-draw"].includes(match.status)){
           terminalSnapshot=clone(match);
-          return applyTerminal(current,match);
+          const next=applyTerminal(current,match);
+          terminalReward=terminalRewardSummary(current,next,match);
+          return next;
         }
         current.activeMatch=match;
         return current;
       });
       selectedEncounterChoice=null;
       selectedEncounterId=null;
-      if(terminalSnapshot)return showMatchResult(terminalSnapshot);
+      if(terminalSnapshot)return showMatchResult(terminalSnapshot,terminalReward);
       return renderMatch(campaign.activeMatch,{delayEncounter:true});
     }
     async function chooseEncounter(choice){
@@ -969,9 +982,9 @@
       });
     }
     async function abandonMatch(){return commitMatchState("rtg-abandon",match=>matchEngine.abandon(match));}
-    function showMatchResult(match){
+    function showMatchResult(match,rewards=null){
       renderRun();
-      deps.openModal?.(matchView.resultMarkup(match),{className:"rtg-modal rtg-result-modal",closeable:false});
+      deps.openModal?.(matchView.resultMarkup(match,rewards),{className:"rtg-modal rtg-result-modal",closeable:false});
       deps.getModalRoot?.()?.querySelector?.("[data-rtg-result-continue]")?.addEventListener("click",()=>{deps.closeModal?.();renderRun();});
       return match;
     }
@@ -1044,8 +1057,13 @@
         const status=campaign.activeMatch.status;
         if(["completed","completed-draw","abandoned"].includes(status)){
           let snapshot=clone(campaign.activeMatch);
-          campaign=await repository.update("rtg-resume-terminal",current=>applyTerminal(current,current.activeMatch));
-          return showMatchResult(snapshot);
+          let reward=null;
+          campaign=await repository.update("rtg-resume-terminal",current=>{
+            const next=applyTerminal(current,current.activeMatch);
+            reward=terminalRewardSummary(current,next,current.activeMatch);
+            return next;
+          });
+          return showMatchResult(snapshot,reward);
         }
         return renderMatch(campaign.activeMatch);
       }

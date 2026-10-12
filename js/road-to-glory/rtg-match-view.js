@@ -1027,13 +1027,20 @@
       </section>`;
     }
 
-    function resultMarkup(match = {}) {
+    function resultMarkup(match = {},rewards=null) {
       const winner = match.result?.winner || null;
       const won = winner === "user";
       const lost = !!winner && winner !== "user";
       const label = won ? "VITTORIA" : lost ? "SCONFITTA" : "PAREGGIO";
       const userName = userNameFor(match);
       const opponentName = match.opponentSquad?.name || "Avversario";
+      const formatTokens=value=>String(Math.max(0,Math.trunc(Number(value)||0))).replace(/\B(?=(\d{3})+(?!\d))/g,".");
+      const rewardMarkup=won&&rewards&&Number.isFinite(Number(rewards.total))
+        ? `<div class="rtg-final-verdict rtg-final-token-rewards" style="gap:9px" aria-label="Ricompense partita">
+          <span>VITTORIA · +${escape(formatTokens(rewards.matchReward))} GETTONI RTG</span>
+          ${Number(rewards.completionBonus)>0?`<span>BONUS FINE SEASON · +${escape(formatTokens(rewards.completionBonus))} GETTONI RTG</span>`:""}
+          <strong>TOTALE +${escape(formatTokens(rewards.total))} GETTONI RTG</strong>
+        </div>`:"";
       return `<section class="panel rtg-match-result rtg-match-result--cabin rtg-paper-modal ${won ? "is-win" : lost ? "is-loss" : "is-draw"}">
         <header class="rtg-final-head">
           <div><p class="eyebrow">ROAD TO GLORY · RISULTATO</p><h2>${escape(label)}</h2></div>
@@ -1045,6 +1052,7 @@
           <div class="rtg-final-team rtg-final-team--opponent"><strong>${escape(opponentName)}</strong>${emblem(match.opponentSquad,"opponent","rtg-final-emblem")}</div>
         </section>
         <div class="rtg-final-verdict"><span>${won ? "MATCH COMPLETATO" : lost ? "RIPROVA DAL PERCORSO" : "PAREGGIO REGISTRATO"}</span></div>
+        ${rewardMarkup}
         <button type="button" class="btn btn-yellow rtg-final-continue" data-rtg-result-continue><span>TORNA A ROAD TO GLORY</span><b>›</b></button>
       </section>`;
     }
