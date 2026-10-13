@@ -10,7 +10,7 @@ const base={activeSeasonId:"ie1_s2",currentNodeId:"main:raimon_inazuma_eleven_2"
 const html=V.runMarkup({state:base,nodes,seasonDb:db,seasonConfig:{routeBackground:"assets/rtg/rtg-season2-route-map-user.webp?v=20260924-user-map-2"}});
 assert(html.includes("Season 2 completata"));
 assert(html.includes("Percorso concluso · 33 tappe completate"));
-assert(html.includes("Distributore S2"));
+assert(html.includes("Distributore Season 2"));
 assert(!html.includes("data-rtg-enter-season2"),"S2 completion must not offer another season transition");
 assert(!html.includes("data-rtg-current-node"),"completed S2 must not offer another match");
 assert(html.includes("--rtg-route-image:url('/assets/rtg/rtg-season2-route-map-user.webp?v=20260924-user-map-2')"));

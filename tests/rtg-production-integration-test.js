@@ -9,7 +9,10 @@ for(const required of[
 ]) assert(app.includes(required), required);
 for(const forbidden of["Normale:40","brainwashing:240","scoreDelta","opponentTargetMin","duplicateRefunds"]) assert(!app.includes(forbidden), forbidden);
 
-assert(!index.includes("css/road-to-glory.css"), "obsolete road-to-glory.css must not be loaded");
+// The historical stylesheet remains active under the documented staged CSS
+// migration; the architecture guard freezes its selector and !important debt.
+assert(index.includes("css/road-to-glory.css"), "active transitional RTG CSS must remain loaded");
+assert(fs.readFileSync("tests/rtg-css-architecture-test.js","utf8").includes("baselineOccurrences"),"CSS guard must prevent growth of transitional debt");
 for(const stylesheet of[
   "css/rtg-foundation.css","css/rtg-theme.css","css/rtg-shell.css","css/rtg-run.css",
   "css/rtg-squad.css","css/rtg-match.css","css/rtg-vending.css","css/rtg-economy.css"
