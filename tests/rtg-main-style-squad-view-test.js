@@ -14,7 +14,7 @@ const state={activeSeasonId:"ie1",gachaAcquiredPlayerIds:["f9"],squads:{ie1:{for
 const seasonDb={formations:{eleven:[{id:"4-3-3",name:"4-3-3",requirements:{GK:1,DF:4,MF:3,FW:3}}]}};
 const model=view.renderModel({state,freeAgentIds:[...lineup,...bench,...Array.from({length:1200},(_,i)=>"fpool"+i)],seasonDb,freeAgentsDb:{players:[]}});
 const html=view.markup(model);
-assert.match(html,/class="screen squad-screen rtg-squad-shell"/);
+assert.match(html,/class="screen squad-screen rtg-squad-shell(?:\s|")/); // Season modifier / whitespace are valid.
 assert.match(html,/class="squad-field-panel"/);
 assert.match(html,/class="pitch(?:\s|")/);
 assert.doesNotMatch(html,/class="squad-module-card"/);
