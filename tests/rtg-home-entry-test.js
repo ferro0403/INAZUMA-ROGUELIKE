@@ -4,7 +4,11 @@ const view=fs.readFileSync("js/home/home-view.js","utf8");
 const controller=fs.readFileSync("js/home/home-controller.js","utf8");
 assert.match(view,/home-swipe-page--main/);
 assert.match(view,/home-swipe-page--rtg/);
-assert.match(view,/data-rtg-home-open="run"/);
+// The primary CTA deliberately opens the dual-campaign selector, not a
+// hardcoded legacy Season 1 run.
+assert.match(view,/data-rtg-home-open="campaigns"/);
+const rtgController=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+assert.match(rtgController,/options\?\.destination==="campaigns"\)return renderCampaignSelect\(\)/);
 assert.match(view,/data-rtg-home-open="squad"/);
 assert.doesNotMatch(view,/data-rtg-home-open="catalog"/);
 assert.match(view,/data-rtg-home-open="vending"/);
