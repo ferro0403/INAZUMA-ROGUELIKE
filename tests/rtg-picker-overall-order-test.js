@@ -11,5 +11,6 @@ assert(html.indexOf(">80<")<html.indexOf(">74<"));
 assert(html.indexOf(">74<")<html.indexOf(">73<"));
 assert.match(html,/data-rtg-picker-overall="73"/);
 assert.match(html,/data-rtg-picker-sort/);
-assert.match(html,/OVR ↓/);
+assert.match(html,/data-rtg-picker-sort-arrow[^>]*>↓<\/strong>/);
+assert.match(html,/aria-label="Ordina per overall decrescente"/);
 console.log("rtg-picker-overall-order-test: PASS");
