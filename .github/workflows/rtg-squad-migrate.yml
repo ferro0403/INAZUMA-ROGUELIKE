@@ -1,0 +1,29 @@
+name: RTG Squad CSS migrate
+on:
+  push:
+    branches: [refactor/rtg-css-cleanup]
+    paths: [.github/workflows/rtg-squad-migrate.yml]
+permissions:
+  contents: write
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/rtg-css-cleanup
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Remove legacy Squad ownership
+        run: node scripts/rtg-cleanup-squad-css.mjs
+      - name: Verify architecture
+        run: node tests/rtg-css-architecture-test.js
+      - name: Commit migration
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add css/road-to-glory.css
+          git diff --cached --check
+          git commit -m "refactor(RTG): remove legacy squad CSS ownership"
+          git push origin HEAD:refactor/rtg-css-cleanup

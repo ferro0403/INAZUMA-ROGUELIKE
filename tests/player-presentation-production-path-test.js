@@ -9,6 +9,7 @@ const freeAgentFixture = require("../data/FREE_AGENTS_compact.json");
 const ie1Fixture = require("../data/IE1_season_compact.json");
 const ie1MovesFixture = require("../data/IE1_moves.json");
 const aresFixture = require("../data/IE2_season_compact.json");
+const aresMovesFixture = require("../data/IE2_moves.json");
 const playerVisualsFixture = require("../data/PLAYER_VISUALS.json");
 
 function assertIe1IdentityVisualCorrections() {
@@ -163,9 +164,10 @@ function assertAresIdentityVisualCorrections() {
 async function assertIe1LegacyLookupCompatibility() {
   const registryContext = {
     fetch: async (url) => ({
-      ok: ["data/IE1_season_compact.json", "data/IE1_moves.json", "data/IE2_season_compact.json"].includes(url),
+      ok: ["data/IE1_season_compact.json", "data/IE1_moves.json", "data/IE2_season_compact.json", "data/IE2_moves.json"].includes(url),
       json: async () => {
         if (url === "data/IE1_moves.json") return ie1MovesFixture;
+        if (url === "data/IE2_moves.json") return aresMovesFixture;
         return url === "data/IE2_season_compact.json" ? aresFixture : ie1Fixture;
       },
     }),
@@ -201,6 +203,7 @@ async function assertIe1LegacyLookupCompatibility() {
   assert.strictEqual(removed.finalOverall, 81);
 
   await registry.loadDatabase("ie2");
+  assert.strictEqual(registry.database("ie2").moveCatalog,aresMovesFixture,"Ares moves must be attached by registry");
   const aresMapped = registry.player("167", "ie2");
   assert.ok(aresMapped, "historic Ares Marvin Murdock id remains resolvable");
   assert.strictEqual(aresMapped.playerId, "167");
