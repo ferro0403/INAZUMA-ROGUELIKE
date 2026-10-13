@@ -8,7 +8,9 @@ const databases={
 const calls={levels:[],moves:[]};
 const developmentState={players:{f1:{legacyNormale:null,steps:[{rarity:"Elite",profile:{category:"Elite"}}]}}};
 const c={globalThis:null,Object,Array,String,Number,JSON,Map,Set,SeasonRegistry:{database:id=>databases[id]||null,player:(pid,sid)=>(databases[sid]?.players||[]).find(p=>String(p.playerId)===String(pid))||null},ProfiledSeasonRuntime:{canonicalPlayerId:(_sid,pid)=>String(pid),resolveEffectivePlayerAtLevel:(entry,ctx)=>{calls.levels.push({entry:{...entry},seasonId:ctx.seasonId,database:ctx.database});const base=(ctx.database.players||[]).find(p=>String(p.playerId)===String(entry.playerId));return base?{...base,level:entry.level,roleVariantId:entry.activeRoleVariantId||null}:null;}},DevelopmentAccountV3:{read:()=>developmentState},DevelopmentRuntime:{resolveAccountPlayer:(base,level,_db,{state})=>{const active=state.players[String(base.playerId)]?.steps?.at(-1);return active?{...base,level,overall:87,potential:87,category:active.profile.category}:{...base,level};}},InazumaProgression:{getPlayerAtLevel:(player,level)=>({...player,level})},MatchMoveRuntime:{moveForPlayer:(seasonId,player,role)=>{calls.moves.push({seasonId,playerId:player.playerId,role});return{name:"Test Move",type:"shot",power:80,element:"Fire"};}}};
-c.globalThis=c;vm.createContext(c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-player-resolver.js","utf8"),c);
+c.globalThis=c;vm.createContext(c);// Player resolver is always loaded after canonical card identity in index.html.
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-player-resolver.js","utf8"),c);
 const r=c.RoadToGloryPlayerResolver;
 let v=r.resolveVersion("p1","ie1");assert.strictEqual(v.seasonId,"ie1");assert.strictEqual(v.player.name,"P1 S1");
 v=r.resolveVersion("p1","ie1_s2");assert.strictEqual(v.seasonId,"ie1_s2");assert.strictEqual(v.player.name,"P1 S2");

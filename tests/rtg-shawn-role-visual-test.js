@@ -1,15 +1,20 @@
-const fs = require('fs');
-const assert = require('assert');
-
-const css = fs.readFileSync('css/match-ui-cleanup.css', 'utf8');
-const FW = 'https://dxi4wb638ujep.cloudfront.net/1/k/v/t/vtvoof1qo6m_r0.webp';
-const OLD_1162_FW = 'wk5ezxf-7dm.png';
-
-assert(css.includes(`.rtg-duel-render > img[src*="${OLD_1162_FW}"]`), 'duel override must target only the old 1162 FW render source');
-assert(css.includes(`.rtg-match-ticker img[src*="${OLD_1162_FW}"]`), 'ticker override must target only the old 1162 FW render source');
-assert(css.includes(`content: url("${FW}")`), '1162 FW must use the supplied portrait');
-assert(!css.includes('img[alt="Shawn Froste"]'), 'must not target Shawn by name: that would also modify 1166 and the 1162 DF variant');
-assert(css.includes('transform: scale(1.72)'), 'only the supplied 1162 FW portrait must receive its dedicated duel zoom');
-assert(!css.includes('data-player-id="1166"'), '1166 Raimon must not be overridden');
-
-console.log('rtg-shawn-role-visual-test: ok');
+"use strict";
+// The 1162 FW portrait is now a role-specific profiled-season asset. A global
+// CSS src/alt override would incorrectly affect the separate 1166 card.
+const fs=require("fs"),assert=require("assert");
+const db=JSON.parse(fs.readFileSync("data/IE1_S2_season_compact.json","utf8"));
+const css=fs.readFileSync("css/match-ui-cleanup.css","utf8");
+const shawn1162=db.profiles.find(p=>p.profileId==="1162@alpine_ie2");
+const shawn1166=db.profiles.find(p=>p.profileId==="1166@raimon_inazuma_eleven_2");
+assert(shawn1162&&shawn1166,"Both independent IE2 Shawn cards must remain present");
+assert.strictEqual(shawn1162.defaultRoleVariantId,"df");
+const defender=shawn1162.roleVariants.find(p=>p.position==="DF");
+const forward=shawn1162.roleVariants.find(p=>p.position==="FW");
+assert(defender&&forward,"Alpine 1162 retains selectable DF and FW roles");
+assert.strictEqual(forward.portraitUrl,"https://dxi4wb638ujep.cloudfront.net/1/k/i/g/iggcoacccik.webp");
+assert.strictEqual(forward.frontFullbodyUrl,"https://dxi4wb638ujep.cloudfront.net/1/k/v/t/vtvoof1qo6m_r0_fullbody.webp");
+assert.strictEqual(shawn1166.portraitUrl,"https://dxi4wb638ujep.cloudfront.net/1/k/w/k/wk5ezxf-7dm.png");
+assert.notStrictEqual(forward.portraitUrl,shawn1166.portraitUrl,"The Alpine FW variation must not reuse the Raimon card portrait");
+assert(!/img\[alt="Shawn Froste"\]/.test(css),"Never override all Shawn versions by name");
+assert(!/\.rtg-duel-render\s*>\s*img\[src\*=/.test(css),"Avoid old global CSS src-patching for canonical card profiles");
+console.log("rtg-shawn-role-visual-test: original 1162 DF/FW and independent 1166 profile portraits PASS");

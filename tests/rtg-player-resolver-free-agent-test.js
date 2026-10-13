@@ -7,7 +7,9 @@ SeasonRegistry:{database:()=>null,player:()=>null},
 ProfiledSeasonRuntime:{canonicalPlayerId:(_sid,pid)=>String(pid)},
 InazumaProgression:{getPlayerAtLevel:(player,level,database)=>({...player,level,overall:player.finalOverall,stats:player.finalStats,databaseMarker:database===freeAgentsDb})},
 MatchMoveRuntime:{moveForPlayer:()=>{moveCalls++;return{name:"Should not happen"};}}};
-c.globalThis=c;vm.createContext(c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-player-resolver.js","utf8"),c);
+c.globalThis=c;vm.createContext(c);// Player resolver is always loaded after canonical card identity in index.html.
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-player-resolver.js","utf8"),c);
 const r=c.RoadToGloryPlayerResolver;
 const v=r.resolveVersion("fa1","ie1",freeAgentsDb);assert.strictEqual(v.seasonId,"free_agents");assert.strictEqual(v.player.playerId,"fa1");
 const p=r.resolveAtLevel20("fa1","ie1",null,freeAgentsDb);assert.strictEqual(p.level,20);assert.strictEqual(p.overall,73);assert.strictEqual(p.databaseMarker,true);

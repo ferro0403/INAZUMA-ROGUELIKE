@@ -19,7 +19,10 @@ const half=view.halftimeMarkup({formationId:"4-3-3",lineup,bench},{selectedPlaye
 assert.match(half,/rtg-halftime-pitch/);
 assert.strictEqual((half.match(/data-rtg-half-lineup=/g)||[]).length,11);
 assert.strictEqual((half.match(/data-rtg-half-bench-player=/g)||[]).length,4);
-assert.strictEqual((half.match(/data-rtg-half-bench="/g)||[]).length,1);
+// Bench swaps are role-free in the current RTG halftime flow: every one
+// of the four substitutes is selectable while a starter is selected.
+assert.strictEqual((half.match(/data-rtg-half-bench="/g)||[]).length,4);
+for(const card of ["bg","bd","bm","bf"])assert(half.includes(`data-rtg-half-bench="${card}"`));
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-view-base.js","utf8"),c);
 const squadView=c.RoadToGlorySquadView.create({escapeHtml:s=>String(s),playerResolver:{resolveAtLevel20:id=>p(id,id.startsWith("g")?"GK":id.startsWith("d")?"DF":id.startsWith("m")?"MF":"FW")}});
 const state={activeSeasonId:"ie1",gachaAcquiredPlayerIds:[],squads:{ie1:{formationId:"4-3-3",lineup:["g1","d1","d2","d3","d4","m1","m2","m3","f1","f2","f3"],bench:["g2","d5","m4","f4"],activeRoleVariantByPlayerId:{}}}};
