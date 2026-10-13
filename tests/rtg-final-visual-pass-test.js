@@ -14,6 +14,8 @@ const squadViewBase = fs.readFileSync(path.join(root, "js", "road-to-glory", "rt
 const squadViewSource = [squadView, squadViewBase].join("\n");
 const runView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-run-view.js"), "utf8");
 const matchView = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-match-view.js"), "utf8");
+const vendingMotion = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-vending-motion.js"), "utf8");
+const vendingController = fs.readFileSync(path.join(root, "js", "road-to-glory", "rtg-vending-controller.js"), "utf8");
 
 assert(
   baseCss.includes('url("../assets/home/inazuma-stadium-mobile-light.jpeg")'),
@@ -69,8 +71,10 @@ assert(
   "RTG capsule station should keep a compact mobile-friendly footprint"
 );
 assert(
-  /rtg-vending-dispense-v14/.test(css) && /rtg-vending-capsule-v14/.test(css) && /rtg-vending-capsule-drop/.test(css) && /rtg-vending-capsule-open/.test(css),
-  "RTG vending pull should retain the current machine and capsule animations"
+  /RoadToGloryVendingMotion/.test(vendingMotion) && /function createCycle\(options\)/.test(vendingMotion) &&
+  /el\.animate\(keyframes/.test(vendingMotion) && /motion\.play\(rarityKey\)/.test(vendingController) &&
+  /has-capsule-physics/.test(vendingMotion),
+  "RTG vending pull should retain its current physical capsule simulation and animation"
 );
 
 assert(
