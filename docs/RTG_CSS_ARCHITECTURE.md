@@ -46,6 +46,35 @@ During migration the historical files may remain loaded to preserve visual parit
 9. **Keep specificity low.** Prefer one RTG root + one component class. Deep descendant chains and selector duplication require justification.
 10. **No visual redesign during cleanup.** CSS migration must preserve the approved Netlify appearance. Visual changes are separate changes after ownership is deterministic.
 
+## Temporary CI guard for active legacy CSS (13 October 2026)
+
+**Migration not finished.** At production preview commit `ab75a258`,
+`index.html` loads `rtg-theme.css`, which imports `rtg-theme-core.css`,
+which imports `rtg-theme-base.css`. The historical `road-to-glory.css`
+still contains RTG selectors awaiting migration to their target owners.
+
+The architecture test uses a **frozen baseline**, not a claim of completed migration:
+
+- Core/base are permitted only while both are connected through their existing
+  `@import` chain and the root RTG theme is loaded from `index.html`.
+  Disconnected or missing-but-imported legacy files are failures.
+- `rtg-match-final.css`, `rtg-vending-depth.css` and
+  `rtg-vending-perspective.css` stay forbidden; new finishing/override
+  CSS filenames remain forbidden.
+- Every known legacy selector in `road-to-glory.css` has an individually
+  frozen occurrence ceiling derived from `ab75a258`. Debt must decrease or
+  remain unchanged; duplicating an owned selector in the legacy file fails.
+- Existing `!important` declaration ceilings are **976** in
+  `road-to-glory.css`, **867** in `rtg-theme.css` and **84** in
+  `rtg-version-banners.css`, so added priority debt fails the test.
+
+These are **temporary allowances for known active files**, not a waiver of
+the target architecture. Remove them only when the real CSS migration and
+desktop/mobile visual parity checks are complete. The negative regression
+test `rtg-css-migration-contract-test.js` verifies the guard rejects orphan
+imports, forbidden layers, duplicate selector debt, and increased
+`!important` debt.
+
 ## Migration order
 
 1. Freeze this document and add automated architecture guardrails.
