@@ -58,11 +58,19 @@ jobs:
             echo "No RTG tests found."
             exit 0
           fi
+          failures=()
           for test_file in "${tests[@]}"; do
             echo "::group::$test_file"
-            node "$test_file"
+            if ! node "$test_file"; then
+              failures+=("$test_file")
+            fi
             echo "::endgroup::"
           done
+          if (( ${#failures[@]} > 0 )); then
+            printf 'RTG regression failures (%s):\\n' "${#failures[@]}"
+            printf ' - %s\\n' "${failures[@]}"
+            exit 1
+          fi
 
       - name: Core persistence and ownership regressions
         shell: bash
