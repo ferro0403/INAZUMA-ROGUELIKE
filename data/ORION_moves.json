@@ -148,7 +148,7 @@
       "jpName": "ゾーン・オブ・ペンタグラム",
       "type": "defense",
       "element": "Forest",
-      "power": 105,
+      "power": 100,
       "tension": 80,
       "source": "database"
     },
@@ -228,7 +228,7 @@
       "jpName": "ゾーン・オブ・ペンタグラム",
       "type": "defense",
       "element": "Forest",
-      "power": 105,
+      "power": 100,
       "tension": 80,
       "source": "database"
     },
@@ -1632,7 +1632,7 @@
       "jpName": "マーメイドヴェール",
       "type": "save",
       "element": "Wind",
-      "power": 95,
+      "power": 100,
       "tension": 100,
       "source": "database"
     },
@@ -3154,7 +3154,7 @@
       "jpName": "ユニコーンブースト",
       "type": "shot",
       "element": "Mountain",
-      "power": 80,
+      "power": 85,
       "tension": 80,
       "source": "database"
     }

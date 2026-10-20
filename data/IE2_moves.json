@@ -158,7 +158,7 @@
       "jpName": "ゾーン・オブ・ペンタグラム",
       "type": "defense",
       "element": "Forest",
-      "power": 105,
+      "power": 100,
       "tension": 80,
       "source": "database"
     },
@@ -238,7 +238,7 @@
       "jpName": "ゾーン・オブ・ペンタグラム",
       "type": "defense",
       "element": "Forest",
-      "power": 105,
+      "power": 100,
       "tension": 80,
       "source": "database"
     },
