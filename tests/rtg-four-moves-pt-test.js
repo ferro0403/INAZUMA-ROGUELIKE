@@ -12,7 +12,7 @@ vm.runInNewContext(runtimeCode,context);
   assert.equal(runtime.ptMax({stamina:70,grit:70,control:70,physical:70}),185);
   assert.equal(runtime.ptMax({stamina:100,grit:100,control:100,physical:100}),230);
   assert.equal(runtime.ptMax({stamina:0,grit:0,control:0,physical:0}),120);
-  const bySeason={ie1:157,ie1_s2:203,ie1_s3:184,ie2:156,orion:180};
+  const bySeason={ie1:157,ie1_s2:203,ie1_s3:296,ie2:156,orion:180};
   for (const [season,expected] of Object.entries(bySeason)) {
     // Inspect encoded data independently to validate completeness.
     const zlib=require('node:zlib');
