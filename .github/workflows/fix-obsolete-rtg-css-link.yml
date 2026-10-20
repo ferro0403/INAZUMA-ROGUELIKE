@@ -1,0 +1,31 @@
+name: Fix obsolete RTG CSS link
+on:
+  push:
+    branches:
+      - refactor/rtg-css-cleanup
+    paths:
+      - scripts/fix-obsolete-rtg-css-link.cjs
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: refactor/rtg-css-cleanup
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Remove obsolete CSS link
+        run: node scripts/fix-obsolete-rtg-css-link.cjs
+      - name: Verify obsolete link is gone
+        run: '! grep -q "css/road-to-glory.css" index.html'
+      - name: Commit fix
+        run: |
+          git config user.name github-actions
+          git config user.email github-actions@github.com
+          git add index.html
+          if git diff --cached --quiet; then exit 0; fi
+          git commit -m "fix(RTG): remove obsolete CSS link"
+          git push
