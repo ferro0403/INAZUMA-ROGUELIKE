@@ -1,0 +1,40 @@
+/* RTG-only player details; reuse the existing reference move card exactly. */
+.player-detail-section.player-detail-rtg-pt .rtg-pt-panel {
+  border: 3px solid var(--pd-ink, #101010);
+  background: #fff9e5;
+  box-shadow: 4px 4px 0 rgba(16,16,16,.16);
+  padding: 12px 13px;
+  display: grid;
+  gap: 10px;
+}
+.rtg-pt-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.rtg-pt-top span { font-size: .73rem; letter-spacing: .11em; font-weight: 900; text-transform: uppercase; }
+.rtg-pt-top strong { font-size: 1.6rem; line-height: 1; font-weight: 1000; color: var(--pd-ink,#101010); }
+.rtg-pt-top strong small { font-size: .68rem; font-weight: 900; }
+.rtg-pt-track { height: 11px; background: #e1e2d9; border: 2px solid var(--pd-ink,#101010); overflow: hidden; }
+.rtg-pt-track > i { display: block; height: 100%; background: #ffd32b; width: var(--pt-fill, 0%); }
+.rtg-pt-note { margin: 0; font-size: .71rem; font-weight: 650; color: #515151; }
+.player-detail-rtg-four-moves .rtg-four-moves-stack { display: grid; gap: 14px; }
+.player-detail-rtg-four-moves .rtg-four-moves-item { display: grid; gap: 0; }
+.player-detail-rtg-four-moves .rtg-move-slot-label {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #f4f0e5; border: 2px solid var(--pd-ink,#101010);
+  border-bottom: 0; padding: 7px 10px; font-size: .68rem; font-weight: 950;
+  text-transform: uppercase; letter-spacing: .075em;
+}
+.player-detail-rtg-four-moves .rtg-pt-cost {
+  display: flex; justify-content: space-between; align-items: center;
+  background: #fff7dc; border: 2px solid var(--pd-ink,#101010); border-top: 0;
+  padding: 7px 11px; font-size: .75rem; font-weight: 950;
+  text-transform: uppercase; letter-spacing: .06em;
+}
+.player-detail-rtg-four-moves .rtg-pt-cost strong { font-size: 1rem; }
+.player-detail-rtg-four-moves .rtg-move-missing {
+  padding: 17px 12px; background: #f9f7f0; border: 2px dashed #aaa;
+  color: #555; font-size: .75rem; font-weight: 750;
+}
+.player-detail-rtg-four-moves .rtg-four-moves-item .player-move-card { margin: 0; }
+@media (max-width: 420px) {
+  .player-detail-rtg-four-moves .rtg-four-moves-stack { gap: 10px; }
+  .player-detail-section.player-detail-rtg-pt .rtg-pt-panel { padding: 10px; }
+}

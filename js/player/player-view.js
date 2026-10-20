@@ -108,6 +108,7 @@
         rtgRoleSwitch = null,
         moveSeasonId = null,
         rtgKitPreview = false,
+        rtgFourMoves = false,
       } = {},
     ) {
       if (!player) return "";
@@ -209,12 +210,46 @@
         .find((seasonId) => global.SeasonRegistry?.isSeasonSource?.(seasonId)) || getSeasonId();
       const movePlayerId = player.legacyCanonicalPlayerId || sourceFallback.legacyCanonicalPlayerId || playerId;
       const playerMove = global.MatchMoveRuntime?.moveForPlayer?.(resolvedMoveSeasonId, { playerId: movePlayerId, position: resolved.position || player.position || sourceFallback.position }) || null;
-      const moveSectionMarkup = playerMove && global.MovePresentationRuntime?.detailMarkup
-        ? `<section class="player-detail-section player-detail-move">
-              <h3><span>Mossa</span></h3>
-              ${global.MovePresentationRuntime.detailMarkup(playerMove, escapeHtml)}
-            </section>`
-        : "";
+      const rtgMovesApi = rtgFourMoves ? global.RtgFourMovesRuntime : null;
+      const rtgPtMax = rtgMovesApi?.ptMax?.(baseStats) ?? null;
+      const rtgList = rtgMovesApi?.movesFor?.(resolvedMoveSeasonId, movePlayerId) || [];
+      // Only the RTG detail reads four-move data; all other modes keep one move.
+      // When a database has fewer than four verified moves, show empty slots rather
+      // than fabricate moves. Preserve the legacy move as a fallback when missing.
+      const rtgDisplayMoves = rtgList.length ? rtgList : (playerMove ? [playerMove] : []);
+      const rtgPtMarkup = rtgMovesApi && rtgPtMax !== null
+        ? `<section class="player-detail-section player-detail-rtg-pt">
+             <h3><span>Punti tecnica</span></h3>
+             <div class="rtg-pt-panel" aria-label="PT massimi ${escapeHtml(rtgPtMax)}">
+               <div class="rtg-pt-top"><span>PT massimi</span><strong>${escapeHtml(rtgPtMax)} <small>PT</small></strong></div>
+               <div class="rtg-pt-track" aria-hidden="true"><i style="--pt-fill:${Math.round(100 * rtgPtMax / 260)}%"></i></div>
+               <p class="rtg-pt-note">Calcolati da Resistenza, Grinta, Controllo e Fisico · recupero e consumo in partita non ancora attivi.</p>
+             </div>
+           </section>` : "";
+      const rtgCardsMarkup = Array.from({length: 4}, (_, index) => {
+        const move = rtgDisplayMoves[index];
+        const slotLabel = `<div class="rtg-move-slot-label"><span>Mossa ${index + 1}</span><span>${index === 0 ? "Principale" : ""}</span></div>`;
+        if (!move || !global.MovePresentationRuntime?.detailMarkup) {
+          return `<div class="rtg-four-moves-item">${slotLabel}<div class="rtg-move-missing">Tecnica non presente nei dati disponibili</div></div>`;
+        }
+        const power = Number(move.power);
+        const cost = Number.isFinite(power) && power > 0 && power <= 110 ? Math.round(power) : null;
+        const safeMove = {...move, power: cost ?? "N/D"};
+        return `<div class="rtg-four-moves-item">${slotLabel}
+          ${global.MovePresentationRuntime.detailMarkup(safeMove, escapeHtml)}
+          <div class="rtg-pt-cost"><span>Costo PT</span><strong>${cost == null ? "Da definire" : escapeHtml(cost) + " PT"}</strong></div>
+        </div>`;
+      }).join("");
+      const moveSectionMarkup = rtgMovesApi
+        ? `<section class="player-detail-section player-detail-move player-detail-rtg-four-moves">
+             <h3><span>Mosse · RTG</span></h3><div class="rtg-four-moves-stack">${rtgCardsMarkup}</div>
+           </section>`
+        : playerMove && global.MovePresentationRuntime?.detailMarkup
+          ? `<section class="player-detail-section player-detail-move">
+               <h3><span>Mossa</span></h3>
+               ${global.MovePresentationRuntime.detailMarkup(playerMove, escapeHtml)}
+             </section>`
+          : "";
       const kitOptions = kitPreviewEnabled && kitVisuals?.optionsFor
         ? kitVisuals.optionsFor(playerId)
         : [];
@@ -288,6 +323,7 @@
               <h3><span>Statistiche</span></h3>
               <div class="detail-stats">${stats}</div>
             </section>
+            ${rtgPtMarkup}
             ${moveSectionMarkup}
             ${kitTestMarkup}
             <section class="player-detail-section player-detail-equipment">
