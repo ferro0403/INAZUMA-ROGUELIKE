@@ -30,6 +30,9 @@ vm.runInNewContext(runtimeCode,context);
     }
   }
   assert.deepEqual(Array.from(runtime.movesFor('ie1','1'),m=>m.name),["God Hand","Fireball Knuckle","Majin the Hand","Triple Defence"]);
+  assert.equal(runtime.movesFor('orion','4539').find(m=>m.name==='Icebreaker')?.ptCost,105);
+  assert.equal(runtime.movesFor('orion','4538').find(m=>m.name==='Triple Blizzard')?.ptCost,105);
+  assert.equal(runtime.movesFor('orion','4417').find(m=>m.name==='Beyond the Death Zone')?.ptCost,105);
   assert.equal(runtime.movesFor('orion','4390')[0].element,"Void");
   assert.equal(runtime.movesFor('orion','4390')[0].power,110);
   assert.equal(runtime.movesFor('orion','4410').find(m=>m.name==="Containment Field")?.power,100);
