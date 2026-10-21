@@ -5,7 +5,7 @@
   const fallback=c=>`<span class="rtg-coach-placeholder" aria-hidden="true"><span>⚽</span><b>${esc(c.name.split(" ").map(w=>w[0]).slice(0,2).join(""))}</b></span>`;
   const portrait=(c,fullbody=false)=>{
     const url=fullbody?(c.frontFullbodyUrl||c.imageUrl):(c.imageUrl||c.frontFullbodyUrl);
-    return url?`<img class="player-portrait rtg-coach-portrait${fullbody?" rtg-coach-portrait--full":""}" src="${esc(url)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">${fallback(c).replace('class="rtg-coach-placeholder"','class="rtg-coach-placeholder rtg-coach-placeholder--backup"')}`:fallback(c);
+    return url?`<img class="${fullbody?"player-fullbody player-fullbody--fullbody rtg-coach-fullbody":"player-portrait rtg-coach-portrait"}" src="${esc(url)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">${fallback(c).replace('class="rtg-coach-placeholder"','class="rtg-coach-placeholder rtg-coach-placeholder--backup"')}`:fallback(c);
   };
   const statusLabel=code=>({owned:"POSSEDUTO",available:"DISPONIBILE",locked:"BLOCCATO","other-campaign":"ALTRA CAMPAGNA"})[code]||"";
   function card(c,status="locked",selected=false){
