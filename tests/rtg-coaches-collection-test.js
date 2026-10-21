@@ -85,6 +85,19 @@
     s.squads.ie1.coachId="208";
     assert.equal(stateApi.validate(s).squads.ie1.coachId,"");
   });
+  test("Layout allenatori usa markup reale di carte, schede e distributore",()=>{
+    const s=campaign();s.tokens=900;s.seasonComplete=true;
+    const html=view.markup(s,{tab:"draw"});
+    assert.match(html,/rtg-vending-machine-v12/);
+    assert.equal((html.match(/data-capsule-rarity="coach"/g)||[]).length,14);
+    assert.match(html,/data-rtg-coaches-pull/);
+    assert.match(view.card(api.CATALOG[0],"owned"),/tactical-player-card--mobile/);
+    assert.match(view.card(api.CATALOG[0],"owned"),/player-corner player-level/);
+    assert.match(view.detail(s,"36"),/player-detail-hero/);
+    assert.match(view.detail(s,"36"),/player-detail-content/);
+    assert.doesNotMatch(view.detail(s,"36"),/overall-comparison/);
+    assert.match(view.albumMarkup(s),/album-player-grid/);
+  });
   test("Squadra: slot allenatore e comandi coerenti",()=>{
     const s=campaign();s.coachOwnedIds=["36"];
     const empty=view.squadSlot(s,"");assert.match(empty,/Nessun allenatore assegnato/);

@@ -1,57 +1,54 @@
 
-/* RTG Allenatori – scope deliberately limited to the coach surfaces. */
-.rtg-coaches-modal .modal,.modal.rtg-coaches-modal{max-width:780px!important;}
-.rtg-coaches-window,.rtg-coach-detail,.rtg-coaches-reward{--coach:#ff8a2a;--coach-dark:#b34a14;color:#15171b;background:#fffdf4;border:3px solid #14161b;box-shadow:6px 6px 0 #14161b;padding:16px;max-width:100%;}
-.rtg-coaches-heading{display:flex;justify-content:space-between;gap:10px;align-items:center;border-bottom:5px solid var(--coach);padding-bottom:12px;}
-.rtg-coaches-heading h2{font-weight:1000;font-size:clamp(25px,5vw,40px);line-height:1;letter-spacing:-.06em;margin:4px 0;}
-.rtg-coaches-heading p{margin:0;font-size:12px;}
-.rtg-coach-title-stamp{background:var(--coach);border:3px solid #12151a;padding:10px;transform:rotate(3deg);font-weight:1000;}
+/* Allenatori use the game's canonical PlayerView card, detail, vending and Album markup.
+   Only the orange visual token is changed; do not resize the base player components. */
+.rtg-coaches-window{width:min(100%,720px);margin:auto;--coach-orange:#ff8925;}
+.rtg-coaches-heading{display:flex;align-items:center;justify-content:space-between;padding:4px 0 12px;border-bottom:5px solid #ff8925;color:#131519;}
+.rtg-coaches-heading h2{font-size:clamp(24px,6vw,36px);line-height:1;margin:5px 0;font-weight:1000;}
+.rtg-coaches-heading p{margin:0;font-size:13px;}
 .rtg-coaches-tabs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:14px 0;}
-.rtg-coaches-tabs button{background:#fff;border:2px solid #12151a;padding:11px 3px;font-weight:900;font-size:12px;color:#111;}
-.rtg-coaches-tabs button.active{background:var(--coach);box-shadow:3px 3px 0 #12151a;}
-.rtg-coaches-vending{background:linear-gradient(130deg,#ffe4bf,#ffb46b);border:3px solid #15171b;padding:13px;display:grid;justify-items:center;gap:10px;text-align:center;margin:12px auto 18px;}
-.rtg-coaches-vending-emblem{width:108px;height:108px;border:5px solid #16181b;border-radius:50%;background:radial-gradient(circle at 30% 27%,#fff8cf,#ff8a2a 68%,#ba4d10);display:grid;place-content:center;box-shadow:inset -8px -8px 0 #983c1366,5px 7px 0 #14161b;transform:rotate(-7deg);font-weight:1000;font-size:28px;}
-.rtg-coaches-vending-emblem b{font-size:16px;letter-spacing:.12em;}
-.rtg-coaches-vending-description{display:grid;gap:2px;}.rtg-coaches-vending-description span{font-size:12px;}
-.rtg-coaches-vending .btn{min-height:45px;width:min(100%,330px);background:#15171b!important;color:white!important;border:2px solid #15171b!important;font-weight:900;}
-.rtg-coaches-vending .btn:disabled{opacity:.52!important;}
-.rtg-coaches-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:start;margin:14px 0;}
-.rtg-coach-card.player-card{--coach:#ff8a2a;display:flex!important;flex-direction:column;position:relative;isolation:isolate;min-width:0;min-height:175px;height:auto!important;overflow:hidden;border:3px solid #15171b!important;border-radius:3px!important;background:linear-gradient(140deg,#fffdfa 0%,#fffdfa 38%,#ffe1b7 38%,#ffad6a 100%)!important;box-shadow:3px 4px 0 #15171b!important;color:#15171b!important;cursor:pointer;}
-.rtg-coach-card .player-corner.player-role{background:var(--coach)!important;color:#101116!important;font-size:11px!important;}
-.rtg-coach-card .player-corner.player-overall{background:#fff!important;color:#15171b!important;font-size:10px!important;}
-.rtg-coach-card .player-portrait-wrap{height:105px;display:grid;place-items:center;margin-top:9px;overflow:hidden;flex:0 0 auto;}
-.rtg-coach-card img.player-portrait{width:100%;height:100%;object-fit:contain;object-position:center bottom;}
-.rtg-coach-placeholder{display:grid;place-content:center;gap:2px;text-align:center;font-size:26px;color:#71300f;min-height:90px;}.rtg-coach-placeholder b{font-size:13px;}
-.rtg-coach-placeholder--backup{display:none;}
-.rtg-coach-card .player-info{width:100%;background:#fffaf0;border-top:3px solid #15171b;padding:5px!important;min-width:0;}
-.rtg-coach-card .player-title strong{font-size:clamp(11px,2.8vw,15px);line-height:1.1;overflow-wrap:anywhere;}
-.rtg-coach-card .player-meta{display:block;font-size:9px;line-height:1.15;overflow-wrap:anywhere;}
-.rtg-coach-status{display:block;background:var(--coach);color:#15171b;width:100%;font-size:9px;font-weight:1000;letter-spacing:.08em;padding:4px;}
-.rtg-coach-card--locked{filter:saturate(.5);}.rtg-coach-card--locked .player-portrait-wrap{opacity:.65;}
-.rtg-coach-card.is-equipped{outline:3px solid #ff8a2a;outline-offset:2px;}
-.rtg-coaches-help,.rtg-coaches-collection-intro{color:#5e5b55;font-size:12px;margin:10px 0;}
-.rtg-coach-detail{padding:0;overflow:hidden;}.rtg-coach-detail-hero{position:relative;min-height:350px;background:linear-gradient(123deg,#fffdf5 0%,#fffdf5 45%,#ffe0bb 45%,#ffab5d 100%);padding:24px 15px 20px;overflow:hidden;border-bottom:5px solid #15171b;}
-.rtg-coach-detail-back{position:relative;z-index:3;border:3px solid #15171b;background:var(--coach);font-size:26px;font-weight:900;width:50px;height:50px;}
-.rtg-coach-role-tag{display:inline-flex;position:relative;z-index:2;background:#fff;border:3px solid #15171b;margin:18px 0 12px;padding:9px 14px;font-weight:1000;transform:skew(-4deg);}
-.rtg-coach-eyebrow{font-size:12px;letter-spacing:.21em;color:#98601d;font-weight:900;}
-.rtg-coach-detail-hero h2{font-size:clamp(27px,7vw,54px);line-height:.98;letter-spacing:-.065em;text-transform:uppercase;max-width:65%;font-weight:1000;position:relative;z-index:2;margin:12px 0;}
-.rtg-coach-identity{display:grid;gap:6px;max-width:60%;position:relative;z-index:2;}
-.rtg-coach-identity span{background:#fff;border:2px solid #15171b;padding:6px 9px;font-size:12px;font-weight:850;width:fit-content;}
-.rtg-coach-hero-portrait{position:absolute;bottom:0;right:0;width:45%;height:77%;display:flex;align-items:flex-end;justify-content:center;}
-.rtg-coach-hero-portrait img{width:100%;height:100%;object-fit:contain;object-position:center bottom;}
-.rtg-coach-hero-portrait .rtg-coach-placeholder{font-size:68px;height:100%;}
-.rtg-coach-card-status{position:relative;z-index:2;width:fit-content;margin-top:13px;background:var(--coach);border:2px solid #15171b;padding:8px;font-weight:1000;}
-.rtg-coach-detail-body{padding:20px 15px;}.rtg-coach-detail-body h3{border-bottom:4px solid var(--coach);margin:0 0 12px;padding-bottom:9px;font-size:17px;letter-spacing:.08em;}
-.rtg-coach-power-placeholder{border:3px solid #15171b;padding:14px;background:#fff3e0;}.rtg-coach-power-placeholder b{font-size:18px;}.rtg-coach-power-placeholder p{margin:6px 0 0;font-size:13px;}
-.rtg-coach-detail-info{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin:14px 0;}.rtg-coach-detail-info span{border:2px solid #15171b;background:#f8f5ee;padding:7px 5px;min-width:0;overflow-wrap:anywhere;}.rtg-coach-detail-info small{display:block;font-size:9px;color:#666;}.rtg-coach-detail-info strong{font-size:11px;}
-.rtg-coach-equip{width:100%;min-height:45px;background:#ff8a2a!important;border:3px solid #15171b!important;color:#15171b!important;font-weight:900;}
-.rtg-coaches-reward{text-align:center;}.rtg-coaches-reward>p:first-child{font-size:12px;font-weight:900;letter-spacing:.2em;}.rtg-coaches-reward h2{font-size:32px;margin:8px 0;}.rtg-coaches-reward-card{max-width:172px;margin:10px auto;}.rtg-coaches-reward .btn{background:#ff8a2a!important;color:#15171b!important;}
-.rtg-coaches-cta{background:#fff3e5!important;border:2px solid #15171b!important;color:#15171b!important;font-weight:900!important;}
-@media(min-width:600px){.rtg-coaches-grid{grid-template-columns:repeat(4,minmax(0,1fr));}.rtg-coach-detail-hero{min-height:410px;}}
-@media(max-width:380px){.rtg-coaches-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.rtg-coach-detail-hero h2{font-size:27px;}.rtg-coach-detail-info{grid-template-columns:1fr 1fr;}}
-
-/* A dedicated third management button keeps the existing 2-column squad layout. */
-.rtg-squad-shell .squad-management-actions .rtg-coaches-cta{grid-column:1 / -1!important;background:#ffead6!important;color:#17171b!important;border-color:#15171b!important;}
+.rtg-coaches-tabs button{min-height:46px;padding:7px;border:3px solid #131519;background:#fffdf6;font-size:12px;font-weight:1000;color:#131519;box-shadow:3px 4px 0 #131519;}
+.rtg-coaches-tabs button.active{background:#ff8925;}
+.rtg-coaches-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0;}
+.rtg-coach-entry{min-width:0;}
+.rtg-coach-entry.is-locked{filter:saturate(.65);}
+.rtg-coach-card.player-card{--rarity-color:#ff8925;--rarity-accent:#ff8925;--accent:#ff8925;--card-accent:#ff8925;background:linear-gradient(135deg,#fffaf3 0 67%,#ffb365 67%)!important;border-color:#ff8925!important;width:100%;max-width:100%;min-width:0;}
+.rtg-coach-card .player-corner.player-role{background:#fff!important;color:#131519!important;}
+.rtg-coach-card .player-corner.player-overall{background:#ff8925!important;color:#131519!important;}
+.rtg-coach-card .player-corner.player-level{background:#ff8925!important;color:#131519!important;}
+.rtg-coach-card .player-portrait{object-fit:contain;object-position:center bottom;}
+.rtg-coach-card .player-info{background:#fffaf2!important;}
+.rtg-coach-card .player-meta{font-size:9px;overflow-wrap:anywhere;}
+.rtg-coach-card .player-title strong{white-space:normal;overflow-wrap:anywhere;}
+.rtg-vending--coaches .rtg-vending-capsule-v9[data-capsule-rarity="coach"]{--rtg-capsule-color:#ff8925!important;}
+.rtg-vending--coaches .rtg-vending-title{border-bottom-color:#ff8925!important;}
+.rtg-vending--coaches .rtg-vending-pull{background:#ff8925!important;color:#131519!important;}
+.rtg-coach-vending-notice{text-align:center;margin:10px auto 14px;color:#47433e;font-weight:700;font-size:12px;}
+.rtg-coach-detail.player-detail-layout{--rarity-color:#ff8925;--rarity-accent:#ff8925;--accent:#ff8925;--detail-accent:#ff8925;}
+.rtg-coach-detail .player-detail-hero{background:linear-gradient(124deg,#fffdf5 0 59%,#ffd3a1 59% 100%)!important;}
+.rtg-coach-detail .player-detail-team{background:#fffdf6!important;border-color:#131519!important;}
+.rtg-coach-detail .player-detail-name{color:#131519!important;}
+.rtg-coach-detail .player-detail-visual{display:flex;align-items:flex-end;justify-content:center;}
+.rtg-coach-detail .player-fullbody{width:100%;height:100%;object-fit:contain;object-position:center bottom;}
+.rtg-coach-detail .detail-category{border-color:#ff8925!important;}
+.rtg-coach-detail .detail-category::before{background:#ff8925!important;}
+.rtg-coach-detail .player-detail-section h3{border-color:#ff8925!important;}
+.rtg-coach-team-icon{font-size:23px;display:inline-grid;place-items:center;}
+.rtg-coach-power{padding:14px;border:3px solid #17191b;background:#fff4e5;}
+.rtg-coach-power strong{font-size:18px;font-weight:1000;}
+.rtg-coach-power p{margin:7px 0 0;font-size:13px;}
+.rtg-coach-profile-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0;}
+.rtg-coach-profile-meta span{padding:8px 6px;border:2px solid #17191b;overflow-wrap:anywhere;background:#fffdf7;}
+.rtg-coach-profile-meta small{font-size:10px;display:block;color:#675a4e;text-transform:uppercase;}
+.rtg-coach-profile-meta b{font-size:12px;display:block;}
+.rtg-coach-equip,.rtg-coach-back{min-height:43px;margin:8px 0;width:100%;font-weight:900;}
+.rtg-coach-equip{background:#ff8925!important;color:#17191b!important;}
+.rtg-coaches-reward .rtg-pull-card-stage .rtg-coach-card{width:100%;}
+.rtg-coaches-reward .rtg-pull-rarity{background:#ff8925!important;}
+.rtg-coaches-album .album-roster-hero__bar>span{background:#ff8925!important;}
+.rtg-coaches-album .rtg-coach-album-entry .rtg-coach-card{width:100%;}
+.rtg-run-command>.rtg-coaches-cta{min-width:0!important;width:100%!important;grid-column:2;background:#ffd21f!important;color:#131519!important;border:3px solid #131519!important;box-shadow:4px 5px 0 #131519!important;font-weight:1000!important;}
+@media(max-width:710px){.rtg-run-command>.rtg-coaches-cta{grid-column:1/-1!important;}.rtg-coaches-grid{grid-template-columns:repeat(2,minmax(0,1fr));}}
+@media(max-width:390px){.rtg-coach-profile-meta{grid-template-columns:repeat(2,minmax(0,1fr));}}
 
 /* Squad coach slot – intentionally outside pitch/bench. */
 .rtg-squad-shell .rtg-coach-squad-slot{margin:12px 0;padding:12px;border:3px solid #17181b;box-shadow:4px 5px 0 #17181b33;background:#fffdf6;color:#17181b;}
