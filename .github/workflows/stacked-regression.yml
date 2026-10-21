@@ -48,6 +48,30 @@ jobs:
           set -euo pipefail
           git diff --check "${{ github.event.pull_request.base.sha }}...${{ github.event.pull_request.head.sha }}"
 
+      - name: Road to Glory regressions
+        shell: bash
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          tests=(tests/rtg-*-test.js)
+          if (( ${#tests[@]} == 0 )); then
+            echo "No RTG tests found."
+            exit 0
+          fi
+          failures=()
+          for test_file in "${tests[@]}"; do
+            echo "::group::$test_file"
+            if ! node "$test_file"; then
+              failures+=("$test_file")
+            fi
+            echo "::endgroup::"
+          done
+          if (( ${#failures[@]} > 0 )); then
+            printf 'RTG regression failures (%s):\\n' "${#failures[@]}"
+            printf ' - %s\\n' "${failures[@]}"
+            exit 1
+          fi
+
       - name: Core persistence and ownership regressions
         shell: bash
         run: |
@@ -96,6 +120,7 @@ jobs:
             tests/app-test-seams-domain-test.js
             tests/team-profile-runtime-domain-test.js
             tests/run-roster-runtime-domain-test.js
+            tests/rtg-player-kit-preview-test.js
             tests/player-presentation-production-path-test.js
             tests/permanent-club-ui-production-path-test.js
             tests/champion-hall-presentation-domain-test.js
@@ -165,6 +190,57 @@ jobs:
         run: |
           set -euo pipefail
           node tests/500-run-soak-fuzz-gate.js
+
+  orion_focus:
+    name: RTG Orion focused regressions
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Orion and existing cross-season contract tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          tests=(
+            tests/rtg-orion-season-implementation-test.js
+            tests/rtg-orion-route-background-test.js
+            tests/rtg-orion-origin-card-identity-test.js
+            tests/rtg-four-audit-fixes-test.js
+            tests/rtg-economy-test.js
+            tests/rtg-shop-development-balance-test.js
+            tests/rtg-player-detail-team-name-responsive-test.js
+            tests/rtg-orion-secondary-matches-test.js
+            tests/rtg-four-qol-navigation-test.js
+            tests/rtg-four-qol-modal-flows-test.js
+            tests/rtg-version-group-ui-test.js
+            tests/rtg-squad-lazy-picker-test.js
+            tests/rtg-bbd-picker-overall-sort-runtime-test.js
+            tests/rtg-vending-motion-test.js
+            tests/rtg-vending-restyle-test.js
+            tests/rtg-banner-ares-qol-test.js
+            tests/rtg-ares-orion-transition-test.js
+            tests/rtg-season3-generic-seasons-test.js
+            tests/rtg-dual-campaign-ares-test.js
+            tests/rtg-legacy-cross-season-contract-test.js
+            tests/rtg-distinct-version-lineup-test.js
+            tests/rtg-bbb-season-team-filters-test.js
+            tests/rtg-bbc-season-team-filter-runtime-test.js
+            tests/rtg-bbg-development-owned-season-preload-test.js
+            tests/rtg-season2-full-progression-test.js
+            tests/rtg-season2-transition-contract-test.js
+            tests/rtg-season2-distributor-unlock-flow-test.js
+            tests/rtg-legacy-player-resolver-test.js
+          )
+          for test_file in "${tests[@]}"; do
+            echo "::group::$test_file"
+            node "$test_file"
+            echo "::endgroup::"
+          done
 
   complete_soak:
     name: 500 complete stateful campaigns

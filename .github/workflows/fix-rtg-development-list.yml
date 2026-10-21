@@ -1,0 +1,46 @@
+name: Fix RTG development list
+on:
+  push:
+    branches: [feature/rtg-shop-development]
+    paths: [.github/workflows/fix-rtg-development-list.yml]
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: feature/rtg-shop-development
+      - name: Patch RTG development
+        shell: python
+        run: |
+          from pathlib import Path
+          p=Path('js/road-to-glory/rtg-controller.js')
+          s=p.read_text()
+          s=s.replace('    let developmentRarity="Tutti";\n    const SQUAD_PICKER_PAGE_SIZE=24;', '    let developmentRarity="Tutti";\n    let developmentPage=1;\n    const DEVELOPMENT_PLAYER_PAGE_SIZE=24;\n    const SQUAD_PICKER_PAGE_SIZE=24;')
+          old='''    function bindDevelopmentGrid(players){\n      const results=app?.querySelector?.("[data-rtg-development-results]");\n      if(!results)return;\n      results.onclick=(event)=>{\n        const element=event.target?.closest?.("[data-rtg-development-player]");\n        if(!element)return;\n        selectedDevelopmentCardId=id(element.dataset.rtgDevelopmentPlayer);\n        renderDevelopment("players");\n      };\n      const refresh=()=>{\n        results.innerHTML=economyView.playerGrid(filteredDevelopmentPlayers(players));\n      };\n      const search=app?.querySelector?.("[data-rtg-development-search]");\n      search?.addEventListener("input",(event)=>{\n        developmentQuery=event.currentTarget.value||"";\n        refresh();\n      });\n      app?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",(event)=>{\n        developmentRarity=event.currentTarget.value||"Tutti";\n        refresh();\n      });\n    }'''
+          new='''    function bindDevelopmentGrid(players){\n      const results=app?.querySelector?.("[data-rtg-development-results]");\n      if(!results)return;\n      const refresh=()=>{\n        const filtered=filteredDevelopmentPlayers(players);\n        const totalPages=Math.max(1,Math.ceil(filtered.length/DEVELOPMENT_PLAYER_PAGE_SIZE));\n        developmentPage=Math.max(1,Math.min(developmentPage,totalPages));\n        const start=(developmentPage-1)*DEVELOPMENT_PLAYER_PAGE_SIZE;\n        const pagePlayers=filtered.slice(start,start+DEVELOPMENT_PLAYER_PAGE_SIZE);\n        results.innerHTML=economyView.playerGrid(pagePlayers)+economyView.playerPaginationMarkup?.(developmentPage,totalPages,filtered.length);\n      };\n      results.onclick=(event)=>{\n        const pageButton=event.target?.closest?.("[data-rtg-development-page]");\n        if(pageButton){developmentPage=Math.max(1,Number(pageButton.dataset.rtgDevelopmentPage)||1);refresh();return;}\n        const element=event.target?.closest?.("[data-rtg-development-player]");\n        if(!element)return;\n        selectedDevelopmentCardId=id(element.dataset.rtgDevelopmentPlayer);\n        renderDevelopment("players");\n      };\n      const search=app?.querySelector?.("[data-rtg-development-search]");\n      search?.addEventListener("input",(event)=>{developmentQuery=event.currentTarget.value||"";developmentPage=1;refresh();});\n      app?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",(event)=>{developmentRarity=event.currentTarget.value||"Tutti";developmentPage=1;refresh();});\n      refresh();\n    }'''
+          if old not in s: raise SystemExit('bindDevelopmentGrid anchor missing')
+          s=s.replace(old,new)
+          p.write_text(s)
+          p=Path('js/road-to-glory/rtg-economy-view.js')
+          s=p.read_text()
+          s=s.replace('const tokenIcon=(className="")=>`<img class="rtg-token-icon ${escape(className)}"', 'const rtgTokenIcon=(className="")=>`<img class="rtg-token-icon ${escape(className)}"')
+          s=s.replace('tokenIcon("rtg-shop-price-icon")','rtgTokenIcon("rtg-shop-price-icon")').replace('${tokenIcon()}','${rtgTokenIcon()}')
+          s=s.replace('return `<span class="development-resource-icon rtg-development-token-icon">${tokenIcon()}</span>`;', 'return `<span class="development-resource-icon rtg-development-token-icon">${rtgTokenIcon("rtg-development-token-sprite")}</span>`;')
+          insert='''\n    function playerPaginationMarkup(page=1,totalPages=1,total=0){\n      if(totalPages<=1)return "";\n      const prev=page>1?`<button type="button" class="btn btn-ghost" data-rtg-development-page="${page-1}">← PRECEDENTI</button>`:"";\n      const next=page<totalPages?`<button type="button" class="btn btn-ghost" data-rtg-development-page="${page+1}">SUCCESSIVI →</button>`:"";\n      return `<nav class="development-pagination" aria-label="Pagine giocatori">${prev}<strong>${escape(page)} / ${escape(totalPages)}</strong>${next}<small>${escape(total)} giocatori</small></nav>`;\n    }\n'''
+          marker='    function selectedMarkup(model={}){'
+          if marker not in s: raise SystemExit('view marker missing')
+          s=s.replace(marker,insert+'\n'+marker)
+          s=s.replace('      tokenIcon,\n      rarityClass,','      tokenIcon:rtgTokenIcon,\n      rtgTokenIcon,\n      playerPaginationMarkup,\n      rarityClass,')
+          p.write_text(s)
+      - name: Run focused regression
+        run: node tests/rtg-development-pagination-test.js
+      - name: Commit fix
+        run: |
+          git config user.name github-actions[bot]
+          git config user.email 41898282+github-actions[bot]@users.noreply.github.com
+          git add js/road-to-glory/rtg-controller.js js/road-to-glory/rtg-economy-view.js
+          git commit -m "fix(RTG): paginate development players and token sprite"
+          git push origin HEAD:feature/rtg-shop-development

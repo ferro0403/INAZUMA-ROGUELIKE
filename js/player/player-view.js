@@ -55,6 +55,8 @@
       historicalTeamIdentity,
       teamLogoMarkup,
       playerStatsMarkup,
+      kitVisuals = null,
+      devMode = false,
     } = deps;
     function compactCard(
       player,
@@ -102,6 +104,12 @@
         team = null,
         runStats = null,
         albumUnlocked = false,
+        rtgLegacyLabel = "",
+        rtgRoleSwitch = null,
+        moveSeasonId = null,
+        rtgKitPreview = false,
+        rtgFourMoves = false,
+        rtgRarity = null,
       } = {},
     ) {
       if (!player) return "";
@@ -112,15 +120,26 @@
           sourcePlayer(playerId) ||
           {}
         : {};
+      const kitPreviewEnabled = Boolean(devMode && rtgKitPreview && !historical && !albumMode);
+      const selectedKitVisual = kitPreviewEnabled ? (kitVisuals?.resolve?.(playerId) || null) : null;
       const detailVisual = visuals.resolve(
         { ...sourceFallback, ...player },
-        { playerId },
+        {
+          playerId,
+          detailFullbodyOverride: selectedKitVisual?.fullbodyUrl || null,
+        },
       );
       const teamIdentity = historical
         ? historicalTeamIdentity(player, team, sourceFallback)
         : playerTeamIdentity(player, playerId);
       const teamBadge = teamIdentity.name
-        ? `<div class="player-detail-team" aria-label="Squadra ${escapeHtml(teamIdentity.name)}">${teamLogoMarkup(teamIdentity)}<strong>${escapeHtml(teamIdentity.name)}</strong></div>`
+        ? `<div class="player-detail-team" aria-label="Squadra ${escapeHtml(teamIdentity.name)}">${teamLogoMarkup(teamIdentity)}<strong title="${escapeHtml(teamIdentity.name)}">${escapeHtml(teamIdentity.name)}</strong></div>`
+        : "";
+      const rtgLegacyBadge = rtgLegacyLabel
+        ? `<span class="player-detail-rtg-legacy-badge" data-legacy-season="${escapeHtml(rtgLegacyLabel)}" aria-label="Legacy ${escapeHtml(rtgLegacyLabel)}"><small>Legacy</small><strong>${escapeHtml(rtgLegacyLabel)}</strong></span>`
+        : "";
+      const rtgRoleSwitchButton = rtgRoleSwitch?.enabled
+        ? `<button type="button" class="player-detail-rtg-role-switch" data-detail-rtg-role-switch aria-label="Cambia ruolo di ${escapeHtml(player.name || "giocatore")}"><small>Ruolo</small><strong aria-hidden="true">↻</strong></button>`
         : "";
       const resolved = historical
         ? {
@@ -188,14 +207,81 @@
       const equipmentMarkup = equipment
         ? `<div class="equipped-detail"><div class="equipped-detail-art">${itemIcon(equipment)}</div><div class="equipped-detail-copy"><span>${historical ? "Equipaggiamento storico" : "Oggetto assegnato"}</span><strong>${escapeHtml(item.name)}</strong><small>${escapeHtml(item.description)}</small><em>+${Number(item.bonus || 0)} ${escapeHtml(STAT_LABELS[item.stat] || item.stat || "")}</em></div>${!readOnly && playerId ? `<button type="button" class="btn btn-ghost" data-detail-unequip="${escapeHtml(playerId)}">Rimuovi oggetto</button>` : ""}</div>`
         : `<div class="equipped-detail equipped-detail-empty"><div class="equipped-detail-copy"><span>Slot disponibile</span><strong>Nessun equipaggiamento</strong><small>Questo giocatore non ha ancora un oggetto assegnato.</small></div></div>`;
-      const moveSeasonId = [player.seasonId, player.recruitmentSource, sourceFallback.seasonId, getSeasonId()]
+      const resolvedMoveSeasonId = [moveSeasonId, player.resolvedSeasonId, player.legacySeasonId, player.seasonId, player.recruitmentSource, sourceFallback.seasonId, getSeasonId()]
         .find((seasonId) => global.SeasonRegistry?.isSeasonSource?.(seasonId)) || getSeasonId();
       const movePlayerId = player.legacyCanonicalPlayerId || sourceFallback.legacyCanonicalPlayerId || playerId;
-      const playerMove = global.MatchMoveRuntime?.moveForPlayer?.(moveSeasonId, { playerId: movePlayerId, position: resolved.position || player.position || sourceFallback.position }) || null;
-      const moveSectionMarkup = playerMove && global.MovePresentationRuntime?.detailMarkup
-        ? `<section class="player-detail-section player-detail-move">
-              <h3><span>Mossa</span></h3>
-              ${global.MovePresentationRuntime.detailMarkup(playerMove, escapeHtml)}
+      const playerMove = global.MatchMoveRuntime?.moveForPlayer?.(resolvedMoveSeasonId, { playerId: movePlayerId, position: resolved.position || player.position || sourceFallback.position }) || null;
+      const rtgMovesApi = rtgFourMoves ? global.RtgFourMovesRuntime : null;
+      // Use the current RTG development rarity when provided, not the initial catalog rarity.
+      const currentRarity = rtgMovesApi && rtgRarity ? rtgRarity : resolved.category;
+      const rtgPt = rtgMovesApi?.ptBreakdown?.(baseStats, currentRarity) || null;
+      const rtgList = rtgMovesApi?.movesFor?.(resolvedMoveSeasonId, movePlayerId) || [];
+      // Only the RTG detail reads four-move data; all other modes keep one move.
+      // When a database has fewer than four verified moves, show empty slots rather
+      // than fabricate moves. Preserve the legacy move as a fallback when missing.
+      const rtgDisplayMoves = rtgList.length ? rtgList : (playerMove ? [playerMove] : []);
+      const rtgPtMarkup = rtgMovesApi && rtgPt
+        ? `<section class="player-detail-section player-detail-rtg-pt">
+             <h3><span>Punti tecnica</span></h3>
+             <div class="rtg-pt-panel" aria-label="PT totali ${escapeHtml(rtgPt.total)}">
+               <div class="rtg-pt-top"><span>PT massimi</span><strong>${escapeHtml(rtgPt.total)} <small>PT</small></strong></div>
+               <div class="rtg-pt-breakdown" aria-label="Dettaglio punti tecnica">
+                 <div><span>PT base</span><strong>${escapeHtml(rtgPt.base)} PT</strong></div>
+                 <div><span>Bonus rarità · ${escapeHtml(currentRarity)}</span><strong>+${escapeHtml(rtgPt.bonus)} PT</strong></div>
+               </div>
+               <div class="rtg-pt-track" aria-hidden="true"><i style="--pt-fill:${Math.min(100,Math.round(100 * rtgPt.total / 280))}%"></i></div>
+               <p class="rtg-pt-note">Base calcolata da Resistenza, Grinta, Controllo e Fisico (120–260 PT). Bonus rarità aggiunto fuori dal limite e aggiornato quando il giocatore evolve. Consumo in partita non ancora attivo.</p>
+             </div>
+           </section>` : "";
+      const rtgCardsMarkup = Array.from({length: 4}, (_, index) => {
+        const move = rtgDisplayMoves[index];
+        const slotLabel = `<div class="rtg-move-slot-label"><span>Mossa ${index + 1}</span><span>${index === 0 ? "Principale" : ""}</span></div>`;
+        if (!move || !global.MovePresentationRuntime?.detailMarkup) {
+          return `<div class="rtg-four-moves-item">${slotLabel}<div class="rtg-move-missing">Tecnica non presente nei dati disponibili</div></div>`;
+        }
+        const power = Number(move.power);
+        const cost = Number.isFinite(power) && power > 0 && power <= 110 ? Math.round(power) : null;
+        const safeMove = {...move, power: cost ?? "N/D"};
+        return `<div class="rtg-four-moves-item">${slotLabel}
+          ${global.MovePresentationRuntime.detailMarkup(safeMove, escapeHtml)}
+          <div class="rtg-pt-cost"><span>Costo PT</span><strong>${cost == null ? "Da definire" : escapeHtml(cost) + " PT"}</strong></div>
+        </div>`;
+      }).join("");
+      const moveSectionMarkup = rtgMovesApi
+        ? `<section class="player-detail-section player-detail-move player-detail-rtg-four-moves">
+             <h3><span>Mosse · RTG</span></h3><div class="rtg-four-moves-stack">${rtgCardsMarkup}</div>
+           </section>`
+        : playerMove && global.MovePresentationRuntime?.detailMarkup
+          ? `<section class="player-detail-section player-detail-move">
+               <h3><span>Mossa</span></h3>
+               ${global.MovePresentationRuntime.detailMarkup(playerMove, escapeHtml)}
+             </section>`
+          : "";
+      const kitOptions = kitPreviewEnabled && kitVisuals?.optionsFor
+        ? kitVisuals.optionsFor(playerId)
+        : [];
+      const selectedKitId = kitPreviewEnabled ? (kitVisuals?.selectedKitId?.(playerId) || "") : "";
+      const selectedKit = selectedKitId
+        ? kitOptions.find((kit) => kit.kitId === selectedKitId) || null
+        : null;
+      const kitTestMarkup = kitOptions.length
+        ? `<section class="player-detail-section player-detail-kit-test">
+              <h3><span>Divisa VR · DEV</span></h3>
+              <div class="equipped-detail">
+                <div class="equipped-detail-copy">
+                  <span>Preview RTG · playerId + kitId</span>
+                  <strong>${escapeHtml(selectedKit?.label || "Visuale originale")}</strong>
+                  <small>${selectedKit
+                    ? escapeHtml(selectedKit.diagnostic
+                      ? `Routing verificato · render atteso: ${selectedKit.expectedAssetUrl || "da generare"}`
+                      : `Render collegato: ${selectedKit.fullbodyUrl || selectedKit.expectedAssetUrl || "asset"}`)
+                    : "Nessun override: usa la visuale attuale del giocatore."}</small>
+                </div>
+                <select data-detail-kit-select="${escapeHtml(playerId)}" aria-label="Seleziona divisa VR di test">
+                  <option value="">Visuale originale</option>
+                  ${kitOptions.map((kit) => `<option value="${escapeHtml(kit.kitId)}" ${kit.kitId === selectedKitId ? "selected" : ""}>${escapeHtml(kit.label)}</option>`).join("")}
+                </select>
+              </div>
             </section>`
         : "";
       const displayLevel = historical
@@ -212,8 +298,10 @@
           ? "Squadra campione"
           : "";
       return `
-        <div class="player-detail-layout ${rarityClass(resolved.category)} ${historical ? "player-detail-historical" : ""}">
+        <div class="player-detail-layout ${rarityClass(currentRarity)} ${historical ? "player-detail-historical" : ""}">
           <section class="player-detail-hero ${String(resolved.name || "").length > 18 ? "player-detail-hero--extra-long-name" : String(resolved.name || "").length > 12 ? "player-detail-hero--long-name" : ""}">
+            ${rtgRoleSwitchButton}
+            ${rtgLegacyBadge}
             <div class="player-detail-identity">
               ${teamBadge}
               <div class="player-detail-heading">
@@ -231,7 +319,7 @@
                 <div><span>Overall<br><b>attuale</b></span><strong>${escapeHtml(resolved.overall ?? "N/D")}</strong></div>
                 <div><span>Potenziale</span><strong>${escapeHtml(potential)}</strong></div>
               </div>
-              <p class="detail-category"><span aria-hidden="true">★</span><small>Rarità</small><strong>${escapeHtml(resolved.category)}</strong></p>
+              <p class="detail-category"><span aria-hidden="true">★</span><small>Rarità</small><strong>${escapeHtml(currentRarity)}</strong></p>
             </div>
             <div class="player-detail-visual ${rarityClass(resolved.category)}">
               ${detailVisual.detailImageUrl ? `<img class="player-fullbody player-fullbody--${escapeHtml(detailVisual.detailImageKind)}" src="${escapeHtml(detailVisual.detailImageUrl)}" alt="${escapeHtml(resolved.name)}" loading="lazy" decoding="async" ${visuals.imageFallbackAttributes(detailVisual.detailFallbacks)} />` : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`}
@@ -242,7 +330,9 @@
               <h3><span>Statistiche</span></h3>
               <div class="detail-stats">${stats}</div>
             </section>
+            ${rtgPtMarkup}
             ${moveSectionMarkup}
+            ${kitTestMarkup}
             <section class="player-detail-section player-detail-equipment">
               <h3><span>Equipaggiamento</span></h3>
               ${equipmentMarkup}

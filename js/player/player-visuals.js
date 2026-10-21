@@ -24,19 +24,33 @@
       };
     }
 
-    function resolve(player, { playerId = player?.playerId, placeholder = PLAYER_IMAGE_PLACEHOLDER } = {}) {
+    function resolve(
+      player,
+      {
+        playerId = player?.playerId,
+        placeholder = PLAYER_IMAGE_PLACEHOLDER,
+        detailFullbodyOverride = null,
+      } = {},
+    ) {
       const visual = candidates(player, playerId);
-      const detailFallbacks = [visual.frontFullbodyUrl, visual.portraitUrl, placeholder].filter(Boolean);
+      const overrideFront = detailFullbodyOverride ? String(detailFullbodyOverride) : null;
+      const detailFallbacks = [
+        overrideFront,
+        visual.seasonalFront,
+        visual.globalFront,
+        visual.portraitUrl,
+        placeholder,
+      ].filter(Boolean);
       const cardFallbacks = [visual.portraitUrl, visual.frontFullbodyUrl, placeholder].filter(Boolean);
       return {
         playerId: visual.playerId,
         portraitUrl: visual.portraitUrl,
-        frontFullbodyUrl: visual.frontFullbodyUrl,
+        frontFullbodyUrl: overrideFront || visual.frontFullbodyUrl,
         detailImageUrl: detailFallbacks[0] || null,
         cardImageUrl: cardFallbacks[0] || null,
         detailFallbacks,
         cardFallbacks,
-        detailImageKind: visual.frontFullbodyUrl ? "fullbody" : (visual.portraitUrl ? "portrait" : "placeholder"),
+        detailImageKind: (overrideFront || visual.frontFullbodyUrl) ? "fullbody" : (visual.portraitUrl ? "portrait" : "placeholder"),
         cardImageKind: visual.portraitUrl ? "portrait" : (visual.frontFullbodyUrl ? "fullbody" : "placeholder"),
       };
     }
