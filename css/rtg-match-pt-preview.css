@@ -7,12 +7,12 @@
   grid-template-rows:minmax(42px,auto) auto!important;
 }
 .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected {
-  grid-template-rows:18px minmax(42px,auto) auto!important;
-  grid-template-areas:"confirm confirm" "copy copy" "probability probability"!important;
+  grid-template-rows:minmax(48px,auto) auto!important;
+  grid-template-areas:"copy copy" "probability probability"!important;
   align-content:space-between!important;
-  min-height:116px!important;
-  row-gap:4px!important;
-  padding:7px 8px!important;
+  min-height:104px!important;
+  row-gap:5px!important;
+  padding:8px!important;
 }
 /* Use the real text node, not a pseudo-element that can overlap the move name. */
 .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected::before {
@@ -146,7 +146,7 @@
 .rtg-duel-pt-projection strong {font-weight:1000;}
 @media(max-width:390px){
   .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card {padding:7px!important;}
-  .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected {min-height:110px!important;}
+  .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected {min-height:102px!important;}
   .rtg-duel-player-meta .rtg-duel-pt-inline {padding:3px 4px!important;gap:3px!important;font-size:.6rem!important;}
   .rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current strong {font-size:.65rem;}
   .rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-projection {font-size:.63rem;gap:2px;}
@@ -194,4 +194,55 @@
     line-height:1.05!important;
     white-space:nowrap!important;
   }
+}
+
+/* Selection is still confirmed by tapping the SAME card again.
+   Replace the big confirmation strip with a quiet hint next to probability. */
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-probability .rtg-pt-tap-to-confirm {
+  color:#584b24!important;
+  background:#fff7d6!important;
+  border:1px solid #bcaa71!important;
+  border-radius:999px!important;
+  padding:3px 5px!important;
+  font-size:7px!important;
+  line-height:1.1!important;
+  letter-spacing:0!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+}
+/* Use the actual element artwork (including a distinct Void symbol),
+   but keep its badge small enough for half-width phone cards. */
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge {
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-self:start!important;
+  gap:3px!important;
+  max-width:100%!important;
+  width:max-content!important;
+  padding:2px 5px!important;
+  border:1.5px solid var(--pt-el)!important;
+  border-radius:999px!important;
+  line-height:1!important;
+  font-size:9px!important;
+  letter-spacing:.035em!important;
+  font-weight:950!important;
+  font-style:normal!important;
+  white-space:nowrap!important;
+  box-sizing:border-box!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge svg {
+  width:12px!important;
+  height:12px!important;
+  min-width:12px!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:2!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  flex-shrink:0!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge span {
+  font-size:9px!important;
+  color:inherit!important;
+  line-height:1!important;
 }
