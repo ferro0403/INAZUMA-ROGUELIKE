@@ -156,6 +156,7 @@
       deps.renderHtml(deps.runView.albumCollectionMarkup({state:campaign,collections}),{preserveScroll});
       deps.app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",leaveAlbum);
       deps.app?.querySelectorAll?.("[data-rtg-album-collection]")?.forEach(button=>button.addEventListener("click",()=>renderAlbumTeams(button.dataset.rtgAlbumCollection)));
+      deps.app?.querySelector?.("[data-rtg-album-coaches-open]")?.addEventListener("click",renderAlbumCoaches);
       deps.mountDevQuickTools();
     }
     async function renderAlbum(options={}){
@@ -189,6 +190,17 @@
           showAlbumCollections(campaign,seasonIds.map(seasonId=>({seasonId,error:true})),true);
         }
       }
+      return campaign;
+    }
+    function renderAlbumCoaches(){
+      ++albumNavigationEpoch;
+      const campaign=deps.getCampaign();
+      const view=global.RoadToGloryCoachesView;
+      if(!view?.albumMarkup)return renderAlbum({preserveOrigin:true});
+      deps.renderHtml(view.albumMarkup(campaign));
+      deps.app?.querySelector?.("[data-rtg-album-coaches-back]")?.addEventListener("click",()=>renderAlbum({preserveOrigin:true}));
+      deps.app?.querySelectorAll?.("[data-rtg-album-coach-entry]")?.forEach(entry=>entry.addEventListener("click",()=>deps.openCoaches?.(entry.dataset.rtgAlbumCoachEntry)));
+      deps.mountDevQuickTools();
       return campaign;
     }
     async function renderAlbumTeams(seasonId=selectedAlbumSeasonId){

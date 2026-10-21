@@ -79,7 +79,7 @@
         getSeasonDb:()=>seasonDb,getFreeAgentsDb:()=>freeAgentsDb,activeSeasonId,config,cardIdentity,gacha,
         playerResolver,ensureSeason1Db:deps.ensureSeason1Db,ensureData,renderHtml,runView,
         mountDevQuickTools,renderHome:deps.renderHome,openPlayerDetails:openRtgPlayerDetails,
-        returnToVending:(mode)=>{renderRun();return openVending(mode);},
+        returnToVending:(mode)=>{renderRun();return openVending(mode);},openCoaches:(coachId)=>openCoaches("collection",coachId),
       });
       return albumController;
     }

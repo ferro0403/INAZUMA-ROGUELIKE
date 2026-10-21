@@ -7,15 +7,18 @@
     if(!coaches||!view)return ctx.toast?.("Catalogo allenatori non disponibile","error");
     const selected=String(ctx.getSquadDraft()?.coachId||ctx.activeSquad()?.coachId||"");
     const markup=newCoach?view.result(newCoach):detailId?view.detail(state,detailId,{equippedId:selected}):view.markup(state,{tab,equippedId:selected});
-    ctx.openModal?.(markup,{className:"rtg-modal rtg-coaches-modal"});
+    ctx.openModal?.(markup,{className:detailId?"rtg-modal player-detail-modal rtg-coaches-modal":"rtg-modal rtg-coaches-modal"});
     const root=ctx.getModalRoot?.();
+    const machine=root?.querySelector?.("[data-rtg-vending-machine]");
+    const motion=global.RoadToGloryVendingMotion?.mount?.(machine);
     root?.querySelectorAll?.("[data-rtg-coaches-tab]")?.forEach(button=>button.addEventListener("click",()=>open(ctx,button.dataset.rtgCoachesTab)));
     root?.querySelectorAll?.("[data-rtg-coach-detail]")?.forEach(button=>button.addEventListener("click",()=>open(ctx,"collection",button.dataset.rtgCoachDetail)));
     root?.querySelector?.("[data-rtg-coaches-back]")?.addEventListener("click",()=>open(ctx,"collection"));
     root?.querySelector?.("[data-rtg-coaches-collection]")?.addEventListener("click",()=>open(ctx,"collection"));
-    root?.querySelector?.("[data-rtg-coaches-pull]")?.addEventListener("click",async()=>{
+    root?.querySelector?.("[data-rtg-coaches-pull]")?.addEventListener("click",async(event)=>{
       if(busy)return;
       busy=true;
+      if(event?.currentTarget)event.currentTarget.disabled=true;
       let chosen=null;
       try{
         const next=await ctx.repository.update("rtg-coaches-draw",current=>{
@@ -24,9 +27,16 @@
           return result.state;
         });
         ctx.setCampaign(next);
-        if(chosen)open(ctx,"collection",null,chosen);
+        if(chosen){
+          if(machine?.isConnected){
+            if(motion){await motion.play("coach");}
+            else {machine.classList.add("is-turning");await new Promise(done=>setTimeout(done,650));}
+            if(machine.isConnected)machine.classList.add("is-revealing");
+          }
+          if(!machine||machine.isConnected)open(ctx,"collection",null,chosen);
+        }
       }catch(error){ctx.toast?.(error?.message||"Estrazione allenatore fallita","error");}
-      finally{busy=false;}
+      finally{motion?.stop?.();busy=false;}
     });
     root?.querySelector?.("[data-rtg-coaches-equip]")?.addEventListener("click",async event=>{
       const coachId=String(event.currentTarget.dataset.rtgCoachesEquip||"");
