@@ -329,6 +329,7 @@
                 <div class="squad-panel-head rtg-squad-section-head"><h2>Panchina</h2><span class="squad-bench-count">${bench.length}/4</span></div>
                 <div class="bench-list squad-bench-list rtg-bench-list">${bench.map((entry) => playerCard(entry, "bench")).join("")}</div>
               </section>
+              ${context.coachSlotMarkup||""}
               <div class="squad-management-actions rtg-squad-actions rtg-squad-actions--four">
                 <button type="button" class="btn squad-module-button" data-rtg-open-formation>Modifica modulo</button>
                 <button type="button" class="btn squad-info-button rtg-catalog-button" data-rtg-open-catalog>Giocatori RTG</button><button type="button" class="btn rtg-coaches-cta" data-rtg-open-coaches>Allenatori RTG</button>
@@ -364,6 +365,8 @@
       root?.querySelector?.("[data-rtg-open-formation]")?.addEventListener("click", () => actions.onOpenFormation?.());
       root?.querySelector?.("[data-rtg-open-catalog]")?.addEventListener("click", () => actions.onOpenCatalog?.());
       root?.querySelector?.("[data-rtg-open-coaches]")?.addEventListener("click",()=>actions.onOpenCoaches?.());
+      root?.querySelector?.("[data-rtg-squad-coach-select]")?.addEventListener("click",()=>actions.onOpenCoaches?.());
+      root?.querySelectorAll?.("[data-rtg-squad-coach-detail]")?.forEach(button=>button.addEventListener("click",()=>actions.onOpenCoachDetails?.()));
       root?.querySelector?.("[data-rtg-save-squad]")?.addEventListener("click", () => actions.onSave?.());
       root?.querySelectorAll?.("[data-rtg-squad-slot]")?.forEach((button)=>button.addEventListener("click",()=>actions.onSelectSquadSlot?.(Number(button.dataset.rtgSquadSlot)||1)));
     }

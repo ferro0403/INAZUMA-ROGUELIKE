@@ -855,6 +855,7 @@
         teamPower:eligibility?.teamPower ?? deps.squadRuntime.teamPower?.({lineup:deps.squadDraft.lineup||[],activeSeasonId:deps.campaign.activeSeasonId||"ie1",playerResolver:deps.playerResolver,freeAgentsDb:deps.freeAgentsDb,activeRoleVariantByCardId:deps.squadDraft.activeRoleVariantByCardId||{}}) ?? null,
         dirty:JSON.stringify(deps.squadDraft)!==JSON.stringify(deps.activeSquad(deps.campaign)),
         activeSquadSlot:deps.activeSquadSlot,
+        coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(deps.campaign,deps.squadDraft?.coachId)||"",
       }));
       deps.bindHomeAndTabs();
       deps.squadView.bind(deps.app,{
@@ -863,6 +864,7 @@
         onOpenDetails:(playerId)=>deps.openRtgPlayerDetails(playerId,"",{allowRoleSwitch:true}),
         onOpenCatalog:()=>openRtgCatalog(),
         onOpenCoaches:()=>deps.openCoaches?.("collection"),
+        onOpenCoachDetails:()=>deps.squadDraft?.coachId&&deps.openCoaches?.("collection",deps.squadDraft.coachId),
         onAdaptRequirements:()=>adaptSquadToCurrentRequirements(),
         onSave:()=>saveSquad(deps.squadDraft),
         onSelectSquadSlot:(slot)=>deps.selectSquadSlot(slot),

@@ -74,6 +74,16 @@
     s.squads.ie1.coachId="208";
     assert.equal(stateApi.validate(s).squads.ie1.coachId,"");
   });
+  test("Squadra: slot allenatore e comandi coerenti",()=>{
+    const s=campaign();s.coachOwnedIds=["36"];
+    const empty=view.squadSlot(s,"");assert.match(empty,/Nessun allenatore assegnato/);
+    assert.match(empty,/data-rtg-squad-coach-select/);
+    const active=view.squadSlot(s,"36");assert.match(active,/Ray Dark/);
+    assert.match(active,/data-rtg-squad-coach-detail/);
+    assert.match(active,/SCHEDA \/ RIMUOVI/);
+    assert.match(view.squadSlot(s,"208"),/Nessun allenatore assegnato/);
+    assert.match(read("js/road-to-glory/rtg-squad-view-base.js"),/context.coachSlotMarkup/);
+  });
   test("UI: nessun potere abilitato, schede e acquisto gestiti",()=>{
     const s=campaign();s.tokens=1000;s.seasonComplete=true;
     assert.match(view.markup(s,{tab:"draw"}),/data-rtg-coaches-pull/);
