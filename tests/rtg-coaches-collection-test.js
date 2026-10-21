@@ -17,6 +17,17 @@
   vm.runInNewContext(read("js/road-to-glory/rtg-coaches-view.js"),sandbox);
   const api=sandbox.RoadToGloryCoaches,stateApi=sandbox.RoadToGloryState,view=sandbox.RoadToGloryCoachesView;
   const campaign=(name="rtg-ie-trilogy")=>stateApi.createInitial({campaignSeed:"coach-tests",campaignId:name});
+  test("Ritratti Zukan: tutti i dieci allenatori hanno immagine e figura intera",()=>{
+    assert.equal(api.CATALOG.length,10);
+    for(const coach of api.CATALOG){
+      assert.ok(coach.imageUrl.startsWith("https://dxi4wb638ujep.cloudfront.net/1/k/"));
+      assert.ok(coach.frontFullbodyUrl.startsWith("https://dxi4wb638ujep.cloudfront.net/1/k/"));
+      assert.ok(coach.imageUrl.endsWith(".png"));
+      assert.ok(coach.frontFullbodyUrl.endsWith("_r0_fullbody.webp"));
+      assert.ok(view.card(coach,"owned").includes(coach.imageUrl));
+      assert.ok(view.detail(campaign(),coach.id).includes(coach.frontFullbodyUrl));
+    }
+  });
   test("Catalogo: 10 Zukan ID univoci e due campagne isolate",()=>{
     assert.equal(api.CATALOG.length,10);
     assert.equal(new Set(api.CATALOG.map(c=>c.id)).size,10);
