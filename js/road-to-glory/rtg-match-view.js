@@ -711,7 +711,7 @@
           <span class="rtg-choice-icon" aria-hidden="true">${isMove?"⚡":"●"}</span>
           <span class="rtg-choice-copy"><strong>${escape(label)}</strong>${subMarkup}${ptAfterMarkup}</span>
           <span class="rtg-choice-probability"><strong>${escape(Number(probability).toFixed(1))}%</strong><em class="rtg-choice-delta ${delta>0?"is-positive":delta<0?"is-negative":""}">${escape(deltaText)}</em></span>
-          ${selected?'<span class="rtg-choice-confirm">TOCCA DI NUOVO PER CONFERMARE</span>':""}
+          ${selected?`<span class="rtg-choice-confirm">${ptMode?"CONFERMA":"TOCCA DI NUOVO PER CONFERMARE"}</span>`:""}
         </button>`;
       };
       const moveCard = () => {
