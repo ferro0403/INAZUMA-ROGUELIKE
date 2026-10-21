@@ -121,7 +121,7 @@ assert.match(polishCss,/\.rtg-duel-choice-card \.rtg-choice-confirm\s*\{/,"real 
 assert.match(polishCss,/grid-area:confirm!important/,"selected move confirmation must occupy its own compact row");
 for(const element of ["forest","fire","mountain","wind","void"])
   assert(polishCss.includes(".element-"+element),"missing colored element: "+element);
-assert.match(indexHtml,/rtg-match-pt-preview\.css\?v=20261021-pt-preview-2/);
+assert.match(indexHtml,/rtg-match-pt-preview\.css\?v=20261021-compact-pt-reveal-3/);
 
 // Committed PT must stay hidden during the final comparison, including a
 // successful/failed conditional move; reveal the canonical balance only with
