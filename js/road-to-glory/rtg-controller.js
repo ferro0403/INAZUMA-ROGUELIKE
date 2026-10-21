@@ -820,13 +820,10 @@
       return renderMatch(campaign.activeMatch,{delayEncounter:true});
     }
     async function chooseEncounter(choice){
-      const before=clone(campaign.activeMatch?.pendingEncounter);
-      const scoreBefore=clone(campaign.activeMatch?.score||{user:0,opponent:0});
-      // The persisted encounter is resolved atomically. Keep pre-resolution PT for
-      // the comparison animation so conditional costs cannot reveal who won.
+      const before=clone(campaign.activeMatch?.pendingEncounter),scoreBefore=clone(campaign.activeMatch?.score||{user:0,opponent:0});
+      // Keep pre-commit balances visible while the outcome is still hidden.
       const ptRuntime=global.RoadToGloryMatchPtRuntime;
-      const userPtBefore=before&&ptRuntime?.inMatch?.(campaign.activeMatch)?ptRuntime.pt(campaign.activeMatch,"user",before.userPlayerId):null;
-      const opponentPtBefore=before&&ptRuntime?.inMatch?.(campaign.activeMatch)?ptRuntime.pt(campaign.activeMatch,"opponent",before.aiPlayerId):null;
+      const ptBefore=before&&ptRuntime?.inMatch?.(campaign.activeMatch)?[ptRuntime.pt(campaign.activeMatch,"user",before.userPlayerId),ptRuntime.pt(campaign.activeMatch,"opponent",before.aiPlayerId)]:[null,null];
       let resolvedMatch=null;
       campaign=await repository.update("rtg-encounter",current=>{
         const match=matchEngine.resolvePendingEncounter(current.activeMatch,choice);
@@ -834,12 +831,10 @@
         current.activeMatch=match;
         return current;
       });
-      const log=resolvedMatch?.log?.find?.(entry=>id(entry.encounterId)===id(before?.encounterId));
-      if(before&&log){
+      const log=resolvedMatch?.log?.find?.(entry=>id(entry.encounterId)===id(before?.encounterId));if(before&&log){
         renderMatch(resolvedMatch);
         const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
-        const userWon=before.userSide===before.actorSide?!!log.actorWon:!log.actorWon;
-        const userProbability=before.userSide===before.actorSide?Number(log.probability):100-Number(log.probability);
+        const userWon=before.userSide===before.actorSide?!!log.actorWon:!log.actorWon,userProbability=before.userSide===before.actorSide?Number(log.probability):100-Number(log.probability);
         const userPlayer=findMatchPlayer(resolvedMatch,"user",before.userPlayerId);
         const aiPlayer=findMatchPlayer(resolvedMatch,"opponent",before.aiPlayerId||before.opponentPlayerId);
         const selectedMove=choice.startsWith("move:")?before.userMoveOptions?.[Number(choice.slice(5))]:choice==="move"?before.userMove:null,userChoiceLabel=selectedMove?.name||(before.userBaseActionLabel||"Azione base");
@@ -869,12 +864,9 @@
         const previewUserProbability=userIsActor?previewActorProbability:100-previewActorProbability;
         const presentation={
           userWon,probability:userProbability,previewProbability:previewUserProbability,outcomeLabel,userKind:before.userKind,
-          userPlayerName:userPlayer?.name||before.userPlayerId,
-          aiPlayerName:aiPlayer?.name||before.aiPlayerId,
-          userPlayer,opponentPlayer:aiPlayer,
-          userPtBefore,opponentPtBefore,
-          userPtAfter:ptRuntime?.pt?.(resolvedMatch,"user",before.userPlayerId)||null,
-          opponentPtAfter:ptRuntime?.pt?.(resolvedMatch,"opponent",before.aiPlayerId)||null,
+          userPlayerName:userPlayer?.name||before.userPlayerId,aiPlayerName:aiPlayer?.name||before.aiPlayerId,
+          userPlayer,opponentPlayer:aiPlayer,userPtBefore:ptBefore[0],opponentPtBefore:ptBefore[1],
+          userPtAfter:ptRuntime?.pt?.(resolvedMatch,"user",before.userPlayerId)||null,opponentPtAfter:ptRuntime?.pt?.(resolvedMatch,"opponent",before.aiPlayerId)||null,
           opponentLabel:resolvedMatch.opponentSquad?.name||"AVVERSARIO",
           actorSide:before.actorSide,
           aiKind:before.aiKind,
