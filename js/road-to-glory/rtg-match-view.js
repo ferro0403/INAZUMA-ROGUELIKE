@@ -189,7 +189,7 @@
           <strong class="rtg-duel-player-name">${escape(name)}</strong>
           <span class="rtg-duel-player-meta">
             <small><b>${escape(playerRole)}</b><span>OVR ${escape(overall)}</span></small>
-            ${ptInfo ? `<span class="rtg-duel-pt-inline ${ptProjection?"is-projected":""}" aria-label="Punti tecnica residui ${escape(ptInfo.remaining)} di ${escape(ptInfo.max)}${ptProjection?`; ${ptProjection.conditional?"se la tecnica riesce":"dopo l’utilizzo"} ${ptProjection.after}`:""}"><span class="rtg-duel-pt-current"><b>PT</b><strong>${escape(ptInfo.remaining)}</strong><span>/ ${escape(ptInfo.max)}</span></span>${ptProjection ? `<span class="rtg-duel-pt-projection">${ptProjection.conditional?"SE RIESCE":"DOPO USO"} <strong>→ ${escape(ptProjection.after)} PT</strong></span>` : ""}</span>` : ""}
+            ${ptInfo ? `<span class="rtg-duel-pt-inline ${ptProjection?"is-projected":""}" aria-label="Punti tecnica residui ${escape(ptInfo.remaining)} di ${escape(ptInfo.max)}${ptProjection?.after!=null?`; saldo previsto ${escape(ptProjection.after)}`:""}"><span class="rtg-duel-pt-current"><b>PT</b><strong>${escape(ptInfo.remaining)}</strong><span>/ ${escape(ptInfo.max)}</span></span>${ptProjection?.after!=null?`<span class="rtg-duel-pt-projection" aria-label="Saldo previsto ${escape(ptProjection.after)} PT">→ <strong>${escape(ptProjection.after)}</strong></span>`:""}</span>` : ""}
             <em class="rtg-duel-player-element has-native-element-icon ${escape(elementClass)} ${escape(elementStateClass)}">${duelElementIcon(player)}<span>${escape(element)}</span></em>
           </span>
         </span>
@@ -797,9 +797,9 @@
       return `<section class="panel rtg-duel-card rtg-duel-card--clean rtg-duel-resolving rtg-paper-modal development-squad-card-scope">
         <div class="rtg-duel-resolving-head"><small>SCELTE BLOCCATE</small><strong>CONFRONTO FINALE</strong></div>
         <div class="rtg-duel-versus-board rtg-duel-versus-board--resolving">
-          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userMove?"has-special-move":""}">${duelCompareVisualMarkup(user,"user","",opponent,resolution.userPt)}<div class="rtg-duel-resolving-action ${userMove?`is-move ${escape(userMoveCategory)}`:""}"><small>${userMove?"MOSSA":"AZIONE"}</small><strong>${escape(userAction)}</strong>${userMove?`<em>POWER ${escape(resolution.userMovePower??"—")}${resolution.userMoveElement?` · ${escape(moveElementLabel(resolution.userMoveElement))}`:""}</em>`:""}</div></article>
+          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userMove?"has-special-move":""}">${duelCompareVisualMarkup(user,"user","",opponent,resolution.userPtBefore??resolution.userPt)}<div class="rtg-duel-resolving-action ${userMove?`is-move ${escape(userMoveCategory)}`:""}"><small>${userMove?"MOSSA":"AZIONE"}</small><strong>${escape(userAction)}</strong>${userMove?`<em>POWER ${escape(resolution.userMovePower??"—")}${resolution.userMoveElement?` · ${escape(moveElementLabel(resolution.userMoveElement))}`:""}</em>`:""}</div></article>
           <div class="rtg-duel-vs-core rtg-duel-vs-core--resolving"><small>PROBABILITÀ</small><span>VS</span></div>
-          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)} ${aiMove?"has-special-move":""}">${duelCompareVisualMarkup(opponent,"opponent","",user,resolution.opponentPt)}<div class="rtg-duel-resolving-action ${aiMove?`is-move ${escape(aiMoveCategory)}`:""}"><small>${aiMove?"MOSSA":"AZIONE"}</small><strong>${escape(aiAction)}</strong>${aiMove?`<em>POWER ${escape(resolution.aiMovePower??"—")}${resolution.aiMoveElement?` · ${escape(moveElementLabel(resolution.aiMoveElement))}`:""}</em>`:""}</div></article>
+          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)} ${aiMove?"has-special-move":""}">${duelCompareVisualMarkup(opponent,"opponent","",user,resolution.opponentPtBefore??resolution.opponentPt)}<div class="rtg-duel-resolving-action ${aiMove?`is-move ${escape(aiMoveCategory)}`:""}"><small>${aiMove?"MOSSA":"AZIONE"}</small><strong>${escape(aiAction)}</strong>${aiMove?`<em>POWER ${escape(resolution.aiMovePower??"—")}${resolution.aiMoveElement?` · ${escape(moveElementLabel(resolution.aiMoveElement))}`:""}</em>`:""}</div></article>
         </div>
         <div class="rtg-duel-final-probability rtg-duel-final-probability--persistent"><small>PROBABILITÀ EFFETTIVA</small><div class="rtg-duel-prob-sides"><span><em>TU</em><strong>${escape(final.toFixed(1))}%</strong></span><i>VS</i><span><em>AVVERSARIO</em><strong>${escape(other.toFixed(1))}%</strong></span></div></div>
         <div class="rtg-duel-resolving-footer"><span>RISOLUZIONE AUTOMATICA</span><b><i></i><i></i><i></i></b></div>
@@ -822,12 +822,12 @@
         <div class="rtg-duel-resolving-head"><small>SCONTRO IN CORSO</small><strong>CHI AVRÀ LA MEGLIO?</strong></div>
         <div class="rtg-duel-versus-board rtg-duel-versus-board--resolving">
           <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userMove?"has-special-move":""}">
-            ${duelCompareVisualMarkup(user,"user","",opponent,resolution.userPt)}
+            ${duelCompareVisualMarkup(user,"user","",opponent,resolution.userPtBefore??resolution.userPt)}
             <div class="rtg-duel-resolving-action ${userMove?`is-move ${escape(userMoveCategory)}`:""}"><small>${userMove?"MOSSA":"AZIONE"}</small><strong>${escape(userAction)}</strong>${userMove?`<em>POWER ${escape(resolution.userMovePower ?? "—")}</em>`:""}</div>
           </article>
           <div class="rtg-duel-vs-core rtg-duel-vs-core--resolving" aria-hidden="true"><small>RISOLUZIONE</small><span>VS</span><i></i></div>
           <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)} ${aiMove?"has-special-move":""}">
-            ${duelCompareVisualMarkup(opponent,"opponent","",user,resolution.opponentPt)}
+            ${duelCompareVisualMarkup(opponent,"opponent","",user,resolution.opponentPtBefore??resolution.opponentPt)}
             <div class="rtg-duel-resolving-action ${aiMove?`is-move ${escape(aiMoveCategory)}`:""}"><small>${aiMove?"MOSSA":"AZIONE"}</small><strong>${escape(aiAction)}</strong>${aiMove?`<em>POWER ${escape(resolution.aiMovePower ?? "—")}</em>`:""}</div>
           </article>
         </div>
@@ -862,14 +862,14 @@
         </div>
         <div class="rtg-duel-versus-board rtg-duel-versus-board--result">
           <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userWon ? "is-duel-winner" : "is-duel-loser"}" ${userWon ? "" : `style="${loserStyle}"`}>
-            ${duelCompareVisualMarkup(user,"user",pid(user) ? `data-rtg-duel-player="${escape(pid(user))}" data-side="user"` : "",opponent,resolution.userPt)}
+            ${duelCompareVisualMarkup(user,"user",pid(user) ? `data-rtg-duel-player="${escape(pid(user))}" data-side="user"` : "",opponent,resolution.userPtAfter??resolution.userPt)}
             ${userWon && userWinningMove
               ? `<div class="rtg-duel-result-move ${escape(userMoveCategory)}"><small>MOSSA</small><strong>${escape(userAction)}</strong><em>POWER ${escape(resolution.userMovePower ?? "—")}</em></div>`
               : ""}
           </article>
           <div class="rtg-duel-result-vs" aria-hidden="true"><small>ESITO</small><span>VS</span></div>
           <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)} ${userWon ? "is-duel-loser" : "is-duel-winner"}" ${userWon ? `style="${loserStyle}"` : ""}>
-            ${duelCompareVisualMarkup(opponent,"opponent",pid(opponent) ? `data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"` : "",user,resolution.opponentPt)}
+            ${duelCompareVisualMarkup(opponent,"opponent",pid(opponent) ? `data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"` : "",user,resolution.opponentPtAfter??resolution.opponentPt)}
             ${!userWon && opponentWinningMove
               ? `<div class="rtg-duel-result-move rtg-duel-result-move--opponent ${escape(opponentMoveCategory)}"><small>MOSSA</small><strong>${escape(opponentAction)}</strong><em>POWER ${escape(resolution.aiMovePower ?? "—")}</em></div>`
               : ""}
