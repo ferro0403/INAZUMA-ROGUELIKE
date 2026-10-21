@@ -31,8 +31,10 @@
   test("Catalogo: 10 Zukan ID univoci e due campagne isolate",()=>{
     assert.equal(api.CATALOG.length,10);
     assert.equal(new Set(api.CATALOG.map(c=>c.id)).size,10);
-    assert.equal(api.catalog(campaign()).length,8);
-    assert.equal(api.catalog(campaign("rtg-ares-orion")).length,2);
+    assert.equal(api.catalog(campaign()).length,10);
+    assert.equal(api.catalog(campaign("rtg-ares-orion")).length,10);
+    assert.equal(api.eligible(campaign("rtg-ares-orion")).length,0);
+    assert.equal(api.status(campaign("rtg-ares-orion"),"36"),"locked");
   });
   test("Season bloccate fino al completamento e completamento storico",()=>{
     let s=campaign();s.tokens=4000;
@@ -97,6 +99,12 @@
     assert.match(view.detail(s,"36"),/player-detail-content/);
     assert.doesNotMatch(view.detail(s,"36"),/overall-comparison/);
     assert.match(view.albumMarkup(s),/album-player-grid/);
+    assert.equal((view.albumMarkup(s).match(/class="album-player-entry /g)||[]).length,10);
+    assert.equal((view.markup(s,{tab:"collection"}).match(/data-rtg-coach-detail=/g)||[]).length,10);
+    assert.match(view.albumCard(api.CATALOG[0],"owned"),/player-card-large pull-player-card/);
+    assert.match(view.albumCard(api.CATALOG[0],"owned"),/album-player-card/);
+    assert.match(view.card(api.CATALOG[0],"owned"),/rtg-picker-squad-card/);
+    assert.doesNotMatch(read("js/road-to-glory/rtg-route-view.js"),/data-rtg-open-coaches/);
   });
   test("Squadra: slot allenatore e comandi coerenti",()=>{
     const s=campaign();s.coachOwnedIds=["36"];

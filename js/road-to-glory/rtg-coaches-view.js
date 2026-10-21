@@ -11,11 +11,23 @@
   function card(c,status="locked",selected=false){
     const state=statusLabel(status);
     // Same markup/classes as PlayerView.compactCard: the card differs only in data and orange trim.
-    return `<button type="button" class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player rtg-coach-card ${selected?"selected":""} ${status==="locked"?"rtg-coach-locked":""}" data-rtg-coach-detail="${esc(c.id)}" aria-label="Scheda allenatore ${esc(c.name)}">
+    return `<button type="button" class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player squad-player-card rtg-picker-squad-card rtg-coach-card ${selected?"selected":""} ${status==="locked"?"rtg-coach-locked":""}" data-rtg-coach-detail="${esc(c.id)}" aria-label="Scheda allenatore ${esc(c.name)}">
       <span class="player-corner player-role" aria-label="Allenatore">ALL.</span><span class="player-corner player-overall" aria-label="${esc(c.season)}">${esc(c.season.replace("Season ","S"))}</span>
       <div class="player-portrait-wrap">${portrait(c)}</div>
       <div class="player-info"><div class="player-title"><strong title="${esc(c.name)}">${esc(c.name)}</strong></div>
       <div class="player-meta" aria-label="Dettagli allenatore"><span>${esc(c.team)}</span><span>${esc(state)}</span></div></div>
+      <span class="player-corner player-level" aria-label="Staff">STAFF</span>
+    </button>`;
+  }
+  // Exact structural counterpart of RoadToGloryAlbumView.albumRosterMarkup's
+  // full-size player card; mini cards are ONLY used in the Squad/selection modal.
+  function albumCard(c,status="locked"){
+    return `<button type="button" class="player-card player-card-large pull-player-card pull-player-card--desktop pull-player-card--mobile album-player-card rtg-coach-album-card" data-rtg-coach-detail="${esc(c.id)}" aria-label="Apri scheda di ${esc(c.name)}">
+      <span class="player-corner player-role" aria-label="Allenatore">ALL.</span>
+      <span class="player-corner player-overall" aria-label="${esc(c.season)}">${esc(c.season.replace("Season ","S"))}</span>
+      <div class="player-portrait-wrap">${portrait(c)}</div>
+      <div class="player-info"><div class="player-title"><strong>${esc(c.name)}</strong></div>
+      <div class="player-meta" aria-label="Dettagli allenatore"><span>${esc(c.team)}</span><span>${esc(statusLabel(status))}</span></div></div>
       <span class="player-corner player-level" aria-label="Staff">STAFF</span>
     </button>`;
   }
@@ -79,11 +91,11 @@
     const coaches=model().catalog(state),owned=model().owned(state),got=coaches.filter(c=>owned.has(c.id)).length,total=coaches.length;
     return `<main class="album-screen album-roster-screen album-roster-screen--modern rtg-album-roster-screen rtg-coaches-album">
       <header class="album-roster-hero"><div class="album-roster-hero__nav"><button type="button" class="btn section-root-button album-roster-back-button" data-rtg-album-coaches-back>←</button></div><div class="album-roster-hero__identity"><span class="album-team-logo album-roster-hero__logo">⚽</span><h1 class="album-roster-hero__name">ALLENATORI</h1></div><div class="album-roster-hero__stats"><span>${got} / ${total} allenatori sbloccati</span><strong class="album-roster-percent">${total?Math.round(100*got/total):0}%</strong></div><span class="album-roster-hero__bar"><span style="width:${total?100*got/total:0}%"></span></span></header>
-      <section class="album-player-grid album-player-grid--modern" data-rtg-album-coaches>${coaches.map(c=>`<div class="album-player-entry rtg-coach-album-entry ${owned.has(c.id)?"is-unlocked":"is-locked"}" data-rtg-album-coach-entry="${esc(c.id)}">${card(c,model().status(state,c.id))}${owned.has(c.id)?"":'<span class="album-player-lock"><span aria-hidden="true">🔒</span>NON SBLOCCATO</span>'}</div>`).join("")}</section>
+      <section class="album-player-grid album-player-grid--modern" data-rtg-album-coaches>${coaches.map(c=>`<div class="album-player-entry rtg-coach-album-entry ${owned.has(c.id)?"is-unlocked":"is-locked"}" data-rtg-album-coach-entry="${esc(c.id)}">${albumCard(c,model().status(state,c.id))}${owned.has(c.id)?"":'<span class="album-player-lock"><span aria-hidden="true">🔒</span>NON SBLOCCATO</span>'}</div>`).join("")}</section>
     </main>`;
   }
   function result(coach){
     return `<div class="rtg-pull-result rtg-paper-modal rtg-coaches-reward"><div class="rtg-pull-result-head"><span class="rtg-pull-rarity">ALLENATORE</span><span class="rtg-pull-series">ROAD TO GLORY</span></div><div class="rtg-pull-reveal-label"><span>NUOVO ALLENATORE!</span></div><div class="rtg-pull-result-body"><div class="rtg-pull-card-stage rtg-picker-grid">${card(coach,"owned")}</div><div class="rtg-pull-result-copy"><h2>${esc(coach.name)}</h2><span class="rtg-pull-team">${esc(coach.team)}</span><p>${esc(coach.season)} · aggiunto alla collezione.</p></div></div><button type="button" class="btn btn-yellow" data-rtg-coaches-collection>CONTINUA →</button></div>`;
   }
-  global.RoadToGloryCoachesView=Object.freeze({card,squadSlot,vending,markup,detail,albumMarkup,result});
+  global.RoadToGloryCoachesView=Object.freeze({card,albumCard,squadSlot,vending,markup,detail,albumMarkup,result});
 })(globalThis);

@@ -24,12 +24,13 @@
     if(current===required&&state?.seasonComplete===true)return true;
     return (state?.seasonTransitionRewardedIds||[]).some(entry=>String(entry).startsWith(seasonId+"->"));
   }
-  function catalog(state){return CATALOG.filter(c=>order(state).includes(c.seasonId));}
+  function catalog(_state){return CATALOG.slice();} // Always show all ten coaches in either RTG campaign.
   function owned(state){return new Set((Array.isArray(state?.coachOwnedIds)?state.coachOwnedIds:[]).map(String));}
   function eligible(state){const have=owned(state);return catalog(state).filter(c=>seasonCompleted(state,c.seasonId)&&!have.has(c.id));}
   function status(state,coachId){
     const c=BY_ID[String(coachId)];
-    if(!c||!order(state).includes(c.seasonId))return "other-campaign";
+    if(!c)return "locked";
+    if(!order(state).includes(c.seasonId))return "locked"; // Visible but not purchasable in the other campaign.
     if(owned(state).has(c.id))return "owned";
     return seasonCompleted(state,c.seasonId)?"available":"locked";
   }
