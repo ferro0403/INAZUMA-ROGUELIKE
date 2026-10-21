@@ -1,0 +1,57 @@
+{
+  "schema": "inazuma-player-kit-visuals-v1",
+  "note": "RTG kit visual fixtures. Mark Evans / Raimon GK Home uses a real Blender-generated render; remaining entries are diagnostic until their generated fullbody assets are connected.",
+  "players": {
+    "1": {
+      "name": "Mark Evans",
+      "kits": [
+        {
+          "kitId": "raimon-gk-home",
+          "label": "Raimon GK · Home",
+          "variant": "home",
+          "diagnostic": false,
+          "fullbodyUrl": "assets/vr-players/1/raimon-gk-home.webp",
+          "expectedAssetUrl": "assets/vr-players/1/raimon-gk-home.webp"
+        },
+        {
+          "kitId": "zeus-gk-home",
+          "label": "Zeus GK · Home",
+          "variant": "home",
+          "diagnostic": true,
+          "expectedAssetUrl": "assets/vr-players/1/zeus-gk-home.webp"
+        }
+      ]
+    },
+    "2": {
+      "name": "Axel Blaze",
+      "kits": [
+        {
+          "kitId": "genesis-home",
+          "label": "Genesis · Home",
+          "variant": "home",
+          "diagnostic": true,
+          "expectedAssetUrl": "assets/vr-players/2/genesis-home.webp"
+        }
+      ]
+    },
+    "1096": {
+      "name": "Xene",
+      "kits": [
+        {
+          "kitId": "backwater-raimon-home",
+          "label": "Backwater Raimon · Home",
+          "variant": "home",
+          "diagnostic": true,
+          "expectedAssetUrl": "assets/vr-players/1096/backwater-raimon-home.webp"
+        },
+        {
+          "kitId": "backwater-raimon-away",
+          "label": "Backwater Raimon · Away",
+          "variant": "away",
+          "diagnostic": true,
+          "expectedAssetUrl": "assets/vr-players/1096/backwater-raimon-away.webp"
+        }
+      ]
+    }
+  }
+}

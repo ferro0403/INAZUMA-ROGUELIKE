@@ -1,0 +1,57 @@
+/* Shared player-detail team banner: all Seasons, RTG and standard Album.
+   The legacy layout constrains the whole badge to the 55-59% identity column,
+   so long team names get clipped at the hero boundary without an ellipsis.
+   Let the banner use the free top-row lane while preserving the badge/close areas. */
+.player-detail-modal .player-detail-team {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  width: max-content;
+  min-width: 0;
+  max-width: min(580px, calc(100vw - 180px));
+  overflow: hidden;
+}
+.player-detail-modal .player-detail-team img,
+.player-detail-modal .player-detail-team .team-logo-placeholder {
+  flex: 0 0 auto;
+}
+.player-detail-modal .player-detail-team strong {
+  display: block !important;
+  flex: 0 1 auto !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  overflow: hidden !important;
+  white-space: nowrap !important;
+  text-overflow: ellipsis !important;
+  -webkit-line-clamp: unset !important;
+}
+/* Standard detail: there is no Legacy badge to reserve. */
+.player-detail-modal .player-detail-hero:not(:has(.player-detail-rtg-legacy-badge)) .player-detail-team {
+  max-width: min(620px, calc(100vw - 100px));
+}
+/* Two top-right RTG badges: leave space for Role, Legacy and close.
+   Override the earlier RTG percentage-based cap that uses the narrow column. */
+.player-detail-modal .player-detail-hero:has(.player-detail-rtg-role-switch) .player-detail-team {
+  max-width: min(520px, calc(100vw - 240px)) !important;
+}
+@media (max-width: 520px) {
+  .player-detail-modal .player-detail-team {
+    max-width: calc(100vw - 150px);
+  }
+  .player-detail-modal .player-detail-hero:not(:has(.player-detail-rtg-legacy-badge)) .player-detail-team {
+    max-width: calc(100vw - 100px);
+  }
+  .player-detail-modal .player-detail-hero:has(.player-detail-rtg-role-switch) .player-detail-team {
+    max-width: calc(100vw - 200px) !important;
+  }
+}
+@media (max-width: 370px) {
+  .player-detail-modal .player-detail-team {
+    max-width: calc(100vw - 140px);
+  }
+  .player-detail-modal .player-detail-hero:has(.player-detail-rtg-role-switch) .player-detail-team {
+    max-width: calc(100vw - 185px) !important;
+  }
+}
