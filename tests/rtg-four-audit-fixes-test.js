@@ -104,7 +104,8 @@ const seasons=[
   assert(controller.includes("terminalRewardSummary(current,next,match)"));
   assert(controller.includes("showMatchResult(snapshot,reward)"));
   const index=fs.readFileSync("index.html","utf8");
-  for(const file of ["rtg-route-view","rtg-album-view","rtg-album-controller","rtg-gacha","rtg-controller","rtg-match-view"])
+  for(const file of ["rtg-route-view","rtg-album-view","rtg-album-controller","rtg-gacha","rtg-match-view"])
     assert(index.includes(`${file}.js?v=20261012-four-audit-fixes-1`));
+  assert(index.includes("rtg-controller.js?v=20261021-pt-rarity-1"),"RTG controller cache key must track PT/rarity update");
   console.log("rtg-four-audit-fixes-test: five real map prices, IE3/Orion recruitment albums, Debole collection, terminal rewards PASS");
 })().catch(error=>{console.error(error);process.exitCode=1;});
