@@ -147,7 +147,7 @@ for (const kind of ["dribble","defense","shot","save"]) {
   }
 }
 const matchController=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
-assert.match(matchController,/userPtBefore,opponentPtBefore/,"controller must supply pre-resolution balances");
+assert.match(matchController,/userPtBefore:ptBefore\[0\],opponentPtBefore:ptBefore\[1\]/,"controller must supply pre-resolution balances");
 assert.match(matchController,/userPtAfter:ptRuntime\?\.pt\?\.\(resolvedMatch/,"controller must supply committed balances");
 
 catalogType="shot";
