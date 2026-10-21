@@ -154,6 +154,7 @@
       if (["forest","albero","wood","bosco"].includes(key)) return "forest";
       if (["wind","vento"].includes(key)) return "wind";
       if (["mountain","montagna","earth","terra"].includes(key)) return "mountain";
+      if (key==="void") return "void";
       return "";
     }
 
@@ -163,7 +164,8 @@
         fire:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1.4 3.6 5 5.2 5 9.4A5 5 0 1 1 7 12c0-2.3 1.2-4.3 3.4-6.3-.1 2.2.5 3.7 1.6 4.7.9-2 .7-4.5 0-7.4Z"/></svg>',
         mountain:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 19 6.2-10 3.1 4.6L15.5 9 21 19H3Z"/><path d="m7.5 12 1.8 1.1 1.4-1.1"/></svg>',
         forest:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 7.5 9h2.3L6 14h4v4H8v3h8v-3h-2v-4h4l-3.8-5h2.3L12 3Z"/></svg>',
-        wind:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h10.5c2 0 2.5-3 0-3-1.1 0-1.8.5-2.2 1.2"/><path d="M3 12h15c2.4 0 2.8 3.5.2 3.5-1.2 0-2-.6-2.4-1.4"/><path d="M3 16h8"/></svg>'
+        wind:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h10.5c2 0 2.5-3 0-3-1.1 0-1.8.5-2.2 1.2"/><path d="M3 12h15c2.4 0 2.8 3.5.2 3.5-1.2 0-2-.6-2.4-1.4"/><path d="M3 16h8"/></svg>',
+        void:'<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="7"/><path d="M12 5a7 7 0 0 1 5 12M12 9l3 3-3 3-3-3 3-3Z"/></svg>'
       })[key] || "";
     }
 
@@ -705,13 +707,13 @@
         const parsedSub=String(sub).split("|ELEMENT|");
         const elementParts=String(parsedSub[1]||"").split("|");
         const subMarkup = parsedSub.length>1
-          ? `<em>${escape(parsedSub[0])}</em><span class="rtg-move-element-badge element-${escape(elementParts[1]||"")}"><i></i>${escape(elementParts[0]||"")}</span>`
+          ? `<em>${escape(parsedSub[0])}</em><span class="rtg-move-element-badge element-${escape(elementParts[1]||"")}">${duelElementIcon({element:elementParts[1]})}<span>${escape(elementParts[0]||"")}</span></span>`
           : `<em>${escape(sub)}</em>`;
         return `<button type="button" class="rtg-duel-choice-card ${isMove?"is-move":"is-base"} ${escape(categoryClass)} ${selected?"is-selected":""}" data-rtg-choice="${escape(choice)}" data-rtg-confirm="${selected?"1":"0"}" ${disabled?"disabled":""}>
           <span class="rtg-choice-icon" aria-hidden="true">${isMove?"⚡":"●"}</span>
           <span class="rtg-choice-copy"><strong>${escape(label)}</strong>${subMarkup}${ptAfterMarkup}</span>
-          <span class="rtg-choice-probability"><strong>${escape(Number(probability).toFixed(1))}%</strong><em class="rtg-choice-delta ${delta>0?"is-positive":delta<0?"is-negative":""}">${escape(deltaText)}</em></span>
-          ${selected?`<span class="rtg-choice-confirm">${ptMode?"CONFERMA":"TOCCA DI NUOVO PER CONFERMARE"}</span>`:""}
+          <span class="rtg-choice-probability"><strong>${escape(Number(probability).toFixed(1))}%</strong><em class="rtg-choice-delta ${selected&&ptMode?"rtg-pt-tap-to-confirm":delta>0?"is-positive":delta<0?"is-negative":""}">${escape(selected&&ptMode?"CONFERMA":deltaText)}</em></span>
+          ${selected&&!ptMode?'<span class="rtg-choice-confirm">TOCCA DI NUOVO PER CONFERMARE</span>':""}
         </button>`;
       };
       const moveCard = () => {
@@ -734,9 +736,7 @@
         if(!move)return "";
         const prob=calculateMove(move),cost=move.ptCost;
         const sub=`POWER ${move.power??"—"} · COSTO ${cost??"N/D"} PT${move.element?`|ELEMENT|${moveElementLabel(move.element)}|${String(move.element).toLowerCase()}`:""}`;
-        const after=ptAfter(move);
-        const ptLabel=after==null?"":`<span class="rtg-pt-after-use">${ptAfterCaption(move)}: <b>${escape(after)} PT</b></span>`;
-        return choiceCard(`move:${i}`,move.name,sub,prob,prob-baseProbability,!available(move),moveCategoryClass(move,userKind),ptLabel);
+        return choiceCard(`move:${i}`,move.name,sub,prob,prob-baseProbability,!available(move),moveCategoryClass(move,userKind));
       };
       const chooser=ptMode && selectedChoice==="list" && options.length>1
         ? `<div class="rtg-pt-technique-picker" role="group" aria-label="Seleziona tecnica">
