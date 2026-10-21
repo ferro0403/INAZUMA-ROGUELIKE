@@ -9,7 +9,7 @@
     {id:"1275",name:"Godric Wyles",seasonId:"ie1_s2",season:"Season 2",team:"Dark Emperors",portrait:""},
     {id:"1777",name:"Percival Travis",seasonId:"ie1_s3",season:"Season 3",team:"Inazuma National",portrait:""},
     {id:"1940",name:"Zoolan Rice",seasonId:"ie1_s3",season:"Season 3",team:"The Kingdom",portrait:"https://inazuma-eleven-legends.vercel.app/images/characters/char_zoolan-rice.png"},
-    {id:"1974",name:"David Arrows",seasonId:"ie1_s3",season:"Season 3",team:"Little Gigantes",portrait:""},
+    {id:"1974",name:"David Arrows",seasonId:"ie1_s3",season:"Season 3",team:"Little Gigantes",portrait:"https://dxi4wb638ujep.cloudfront.net/1/k/r/s/rsela18svss_r0.webp"},
     {id:"4401",name:"Mister Yi",seasonId:"ie2",season:"Ares",team:"Raimon",portrait:"https://ami.animecharactersdatabase.com/uploads/chars/38910-1301320284.png"},
     {id:"4761",name:"René Gadé",seasonId:"orion",season:"Orion",team:"Ace Invaders",portrait:""}
   ].map(c=>Object.freeze(c)));
