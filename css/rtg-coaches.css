@@ -49,3 +49,6 @@
 .rtg-coaches-cta{background:#fff3e5!important;border:2px solid #15171b!important;color:#15171b!important;font-weight:900!important;}
 @media(min-width:600px){.rtg-coaches-grid{grid-template-columns:repeat(4,minmax(0,1fr));}.rtg-coach-detail-hero{min-height:410px;}}
 @media(max-width:380px){.rtg-coaches-grid{grid-template-columns:repeat(2,minmax(0,1fr));}.rtg-coach-detail-hero h2{font-size:27px;}.rtg-coach-detail-info{grid-template-columns:1fr 1fr;}}
+
+/* A dedicated third management button keeps the existing 2-column squad layout. */
+.rtg-squad-shell .squad-management-actions .rtg-coaches-cta{grid-column:1 / -1!important;background:#ffead6!important;color:#17171b!important;border-color:#15171b!important;}
