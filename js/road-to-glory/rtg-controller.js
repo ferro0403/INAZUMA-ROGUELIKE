@@ -238,6 +238,12 @@
         && Array.isArray(player?.roleVariants)
         && player.roleVariants.length>1;
       const reopenOptions={...options,allowRoleSwitch:true};
+      // RTG evolution updates currentRarity in the canonical campaign state.
+      // Read it each time the detail opens; do not persist a separate PT value.
+      const rarityKey=id(detailPlayer.cardId||key);
+      const rtgRarity=campaign?.developmentByCardId?.[rarityKey]?.currentRarity
+        ||campaign?.developmentByCardId?.[key]?.currentRarity
+        ||detailPlayer.category;
       return deps.showPlayerDetailsFor?.(detailPlayer,{
         playerId:id(detailMeta.canonicalPlayerId||player.playerId||detailMeta.playerId),
         level:20,
@@ -253,7 +259,7 @@
           return openRtgPlayerDetails(key,"",reopenOptions);
         }:null,
         moveSeasonId:id(detailMeta.legacySeasonId||player.resolvedSeasonId||campaign?.activeSeasonId||"ie1"),
-        rtgKitPreview:true,rtgFourMoves:true,
+        rtgKitPreview:true,rtgFourMoves:true,rtgRarity,
         readOnly:true,
         mode:options?.mode||undefined,
         albumUnlocked:options?.albumUnlocked,

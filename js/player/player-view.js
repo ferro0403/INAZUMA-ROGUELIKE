@@ -109,6 +109,7 @@
         moveSeasonId = null,
         rtgKitPreview = false,
         rtgFourMoves = false,
+        rtgRarity = null,
       } = {},
     ) {
       if (!player) return "";
@@ -211,19 +212,25 @@
       const movePlayerId = player.legacyCanonicalPlayerId || sourceFallback.legacyCanonicalPlayerId || playerId;
       const playerMove = global.MatchMoveRuntime?.moveForPlayer?.(resolvedMoveSeasonId, { playerId: movePlayerId, position: resolved.position || player.position || sourceFallback.position }) || null;
       const rtgMovesApi = rtgFourMoves ? global.RtgFourMovesRuntime : null;
-      const rtgPtMax = rtgMovesApi?.ptMax?.(baseStats) ?? null;
+      // Use the current RTG development rarity when provided, not the initial catalog rarity.
+      const currentRarity = rtgMovesApi && rtgRarity ? rtgRarity : resolved.category;
+      const rtgPt = rtgMovesApi?.ptBreakdown?.(baseStats, currentRarity) || null;
       const rtgList = rtgMovesApi?.movesFor?.(resolvedMoveSeasonId, movePlayerId) || [];
       // Only the RTG detail reads four-move data; all other modes keep one move.
       // When a database has fewer than four verified moves, show empty slots rather
       // than fabricate moves. Preserve the legacy move as a fallback when missing.
       const rtgDisplayMoves = rtgList.length ? rtgList : (playerMove ? [playerMove] : []);
-      const rtgPtMarkup = rtgMovesApi && rtgPtMax !== null
+      const rtgPtMarkup = rtgMovesApi && rtgPt
         ? `<section class="player-detail-section player-detail-rtg-pt">
              <h3><span>Punti tecnica</span></h3>
-             <div class="rtg-pt-panel" aria-label="PT massimi ${escapeHtml(rtgPtMax)}">
-               <div class="rtg-pt-top"><span>PT massimi</span><strong>${escapeHtml(rtgPtMax)} <small>PT</small></strong></div>
-               <div class="rtg-pt-track" aria-hidden="true"><i style="--pt-fill:${Math.round(100 * rtgPtMax / 260)}%"></i></div>
-               <p class="rtg-pt-note">Calcolati da Resistenza, Grinta, Controllo e Fisico · recupero e consumo in partita non ancora attivi.</p>
+             <div class="rtg-pt-panel" aria-label="PT totali ${escapeHtml(rtgPt.total)}">
+               <div class="rtg-pt-top"><span>PT massimi</span><strong>${escapeHtml(rtgPt.total)} <small>PT</small></strong></div>
+               <div class="rtg-pt-breakdown" aria-label="Dettaglio punti tecnica">
+                 <div><span>PT base</span><strong>${escapeHtml(rtgPt.base)} PT</strong></div>
+                 <div><span>Bonus rarità · ${escapeHtml(currentRarity)}</span><strong>+${escapeHtml(rtgPt.bonus)} PT</strong></div>
+               </div>
+               <div class="rtg-pt-track" aria-hidden="true"><i style="--pt-fill:${Math.min(100,Math.round(100 * rtgPt.total / 280))}%"></i></div>
+               <p class="rtg-pt-note">Base calcolata da Resistenza, Grinta, Controllo e Fisico (120–260 PT). Bonus rarità aggiunto fuori dal limite e aggiornato quando il giocatore evolve. Consumo in partita non ancora attivo.</p>
              </div>
            </section>` : "";
       const rtgCardsMarkup = Array.from({length: 4}, (_, index) => {
@@ -291,7 +298,7 @@
           ? "Squadra campione"
           : "";
       return `
-        <div class="player-detail-layout ${rarityClass(resolved.category)} ${historical ? "player-detail-historical" : ""}">
+        <div class="player-detail-layout ${rarityClass(currentRarity)} ${historical ? "player-detail-historical" : ""}">
           <section class="player-detail-hero ${String(resolved.name || "").length > 18 ? "player-detail-hero--extra-long-name" : String(resolved.name || "").length > 12 ? "player-detail-hero--long-name" : ""}">
             ${rtgRoleSwitchButton}
             ${rtgLegacyBadge}
@@ -312,7 +319,7 @@
                 <div><span>Overall<br><b>attuale</b></span><strong>${escapeHtml(resolved.overall ?? "N/D")}</strong></div>
                 <div><span>Potenziale</span><strong>${escapeHtml(potential)}</strong></div>
               </div>
-              <p class="detail-category"><span aria-hidden="true">★</span><small>Rarità</small><strong>${escapeHtml(resolved.category)}</strong></p>
+              <p class="detail-category"><span aria-hidden="true">★</span><small>Rarità</small><strong>${escapeHtml(currentRarity)}</strong></p>
             </div>
             <div class="player-detail-visual ${rarityClass(resolved.category)}">
               ${detailVisual.detailImageUrl ? `<img class="player-fullbody player-fullbody--${escapeHtml(detailVisual.detailImageKind)}" src="${escapeHtml(detailVisual.detailImageUrl)}" alt="${escapeHtml(resolved.name)}" loading="lazy" decoding="async" ${visuals.imageFallbackAttributes(detailVisual.detailFallbacks)} />` : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`}

@@ -32,13 +32,29 @@
     const n = Number(value);
     return Number.isFinite(n) ? Math.max(0, Math.min(100, n)) : 0;
   }
+  // Only the RTG player-detail PT preview uses this resource formula.
+  // PT base (120–260): existing stat weights rescaled to reach 260 at all 100.
+  // Rarity bonus is computed AFTER that limit, never capped back to 260.
+  const RARITY_PT_BONUS = Object.freeze({
+    Scarso: 0, Debole: 2, Normale: 4, Buono: 6, Forte: 8,
+    Elite: 10, Mondiale: 12, Leggenda: 15, Aurico: 20,
+  });
   function ptMax(stats) {
     // Statistics are in the same 0–100 scale displayed in the player detail.
     const stamina = validNumber(stats?.stamina);
     const grit = validNumber(stats?.grit);
     const control = validNumber(stats?.control);
     const physical = validNumber(stats?.physical);
-    return Math.max(120, Math.min(260, Math.round(80 + stamina * 0.6 + grit * 0.4 + control * 0.3 + physical * 0.2)));
+    return Math.max(120, Math.min(260, Math.round(80 + stamina * 0.72 + grit * 0.48 + control * 0.36 + physical * 0.24)));
+  }
+  function ptBonusForRarity(rarity) {
+    return Object.prototype.hasOwnProperty.call(RARITY_PT_BONUS, rarity)
+      ? RARITY_PT_BONUS[rarity] : 0;
+  }
+  function ptBreakdown(stats, currentRarity) {
+    const base = ptMax(stats);
+    const bonus = ptBonusForRarity(currentRarity);
+    return Object.freeze({ base, bonus, total: base + bonus });
   }
   function movesFor(seasonId, playerId) {
     if (!dataset) return [];
@@ -63,6 +79,8 @@
     isReady: () => dataset !== null || loadError !== null,
     error: () => loadError,
     ptMax,
+    ptBonusForRarity,
+    ptBreakdown,
     movesFor,
   });
 })(globalThis);

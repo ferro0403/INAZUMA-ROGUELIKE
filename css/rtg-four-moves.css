@@ -11,6 +11,11 @@
 .rtg-pt-top span { font-size: .73rem; letter-spacing: .11em; font-weight: 900; text-transform: uppercase; }
 .rtg-pt-top strong { font-size: 1.6rem; line-height: 1; font-weight: 1000; color: var(--pd-ink,#101010); }
 .rtg-pt-top strong small { font-size: .68rem; font-weight: 900; }
+.rtg-pt-breakdown { display: grid; gap: 6px; padding: 7px 0; border-top: 1px solid #d4cfbb; }
+.rtg-pt-breakdown > div { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 12px; }
+.rtg-pt-breakdown span { font-size: .72rem; font-weight: 850; color: #49473f; }
+.rtg-pt-breakdown strong { font-size: .87rem; font-weight: 950; color: var(--pd-ink,#101010); font-variant-numeric: tabular-nums; }
+.rtg-pt-breakdown > div:last-child strong { color: #86610d; }
 .rtg-pt-track { height: 11px; background: #e1e2d9; border: 2px solid var(--pd-ink,#101010); overflow: hidden; }
 .rtg-pt-track > i { display: block; height: 100%; background: #ffd32b; width: var(--pt-fill, 0%); }
 .rtg-pt-note { margin: 0; font-size: .71rem; font-weight: 650; color: #515151; }

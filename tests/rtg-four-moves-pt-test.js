@@ -9,9 +9,20 @@ vm.runInNewContext(runtimeCode,context);
 (async()=>{
   const runtime=context.RtgFourMovesRuntime;
   assert.equal(await runtime.ready,true,"static four-move data must decode");
-  assert.equal(runtime.ptMax({stamina:70,grit:70,control:70,physical:70}),185);
-  assert.equal(runtime.ptMax({stamina:100,grit:100,control:100,physical:100}),230);
+  assert.equal(runtime.ptMax({stamina:70,grit:70,control:70,physical:70}),206);
+  assert.equal(runtime.ptMax({stamina:100,grit:100,control:100,physical:100}),260);
   assert.equal(runtime.ptMax({stamina:0,grit:0,control:0,physical:0}),120);
+  const rarityBonuses={Scarso:0,Debole:2,Normale:4,Buono:6,Forte:8,Elite:10,Mondiale:12,Leggenda:15,Aurico:20};
+  for (const [rarity, bonus] of Object.entries(rarityBonuses)) {
+    assert.equal(runtime.ptBonusForRarity(rarity),bonus,'rarity '+rarity);
+    assert.equal(runtime.ptBreakdown({stamina:100,grit:100,control:100,physical:100},rarity).total,260+bonus);
+  }
+  assert.equal(runtime.ptBonusForRarity('non-valid'),0,'unknown rarity has no bonus');
+  assert.deepEqual(JSON.parse(JSON.stringify(runtime.ptBreakdown({stamina:70,grit:70,control:70,physical:70},'Leggenda'))),{base:206,bonus:15,total:221});
+  assert.equal(runtime.ptBreakdown({stamina:100,grit:100,control:100,physical:100},'Aurico').total,280,'rarity exceeds base cap');
+  // A rarity upgrade adds only the delta; the stat-driven PT base must not change.
+  assert.equal(runtime.ptBreakdown({stamina:70,grit:70,control:70,physical:70},'Aurico').total
+    - runtime.ptBreakdown({stamina:70,grit:70,control:70,physical:70},'Leggenda').total,5);
   const bySeason={ie1:157,ie1_s2:203,ie1_s3:296,ie2:156,orion:180};
   for (const [season,expected] of Object.entries(bySeason)) {
     // Inspect encoded data independently to validate completeness.
@@ -55,7 +66,13 @@ vm.runInNewContext(runtimeCode,context);
   const p={playerId:'1',name:'Mark Evans',stats:{stamina:70,grit:70,control:70,physical:70},baseStats:{stamina:70,grit:70,control:70,physical:70},position:'GK',category:'Leggenda',element:'Mountain',overall:90,potential:92};
   const rtg=view.detailMarkup(p,{playerId:'1',rtgFourMoves:true,moveSeasonId:'ie1'});
   assert.equal((rtg.match(/class="player-move-card /g)||[]).length,4,"RTG shows all four full-size cards");
-  assert.match(rtg,/185\s*<small>PT<\/small>/);
+  assert.match(rtg,/221\s*<small>PT<\/small>/);
+  assert.match(rtg,/PT base<\/span><strong>206 PT<\/strong>/);
+  assert.match(rtg,/Bonus rarità · Leggenda<\/span><strong>\+15 PT<\/strong>/);
+  const evolved=view.detailMarkup(p,{playerId:'1',rtgFourMoves:true,moveSeasonId:'ie1',rtgRarity:'Aurico'});
+  assert.match(evolved,/226\s*<small>PT<\/small>/);
+  assert.match(evolved,/Bonus rarità · Aurico<\/span><strong>\+20 PT<\/strong>/);
+  assert.match(evolved,/<small>Rarità<\/small><strong>Aurico<\/strong>/);
   assert.equal((rtg.match(/class="rtg-pt-cost"/g)||[]).length,4);
   const classic=view.detailMarkup(p,{playerId:'1',moveSeasonId:'ie1'});
   assert.equal((classic.match(/class="player-move-card /g)||[]).length,1,"classic keeps one move");
