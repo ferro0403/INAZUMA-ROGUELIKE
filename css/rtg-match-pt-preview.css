@@ -1,0 +1,106 @@
+/* RTG match-only: readable confirmations and non-destructive PT forecasts. */
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected {
+  grid-template-rows:auto minmax(42px,auto) auto!important;
+  grid-template-areas:"confirm confirm" "copy copy" "probability probability"!important;
+  align-content:space-between!important;
+  row-gap:7px!important;
+  min-height:145px!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected::before {
+  position:static!important;
+  inset:auto!important;
+  grid-area:confirm!important;
+  justify-self:end!important;
+  align-self:start!important;
+  margin:0!important;
+  padding:4px 7px!important;
+  display:block!important;
+  max-width:100%!important;
+  white-space:nowrap!important;
+  line-height:1.1!important;
+}
+/* No overlap for two-line techniques on small iPhones. */
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card .rtg-choice-copy {
+  min-width:0!important;
+  overflow:visible!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card .rtg-choice-copy strong {
+  overflow-wrap:anywhere!important;
+  white-space:normal!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-move:not(.rtg-pt-open-selector) {
+  min-height:142px!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-pt-after-use {
+  display:block!important;
+  margin-top:1px!important;
+  width:100%!important;
+  color:#3a3b32!important;
+  background:#fff5d2;
+  border-left:3px solid #a6750a;
+  padding:3px 5px!important;
+  font-size:9px!important;
+  font-style:normal!important;
+  line-height:1.25!important;
+  font-weight:900!important;
+  overflow-wrap:normal!important;
+  white-space:normal!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-pt-option-after {
+  display:block;
+  width:max-content;
+  max-width:100%;
+  margin-top:1px;
+  padding:4px 6px;
+  font-size:.7rem;
+  font-weight:900;
+  letter-spacing:.02em;
+  background:#fff4d6;
+  border-left:3px solid #b77b11;
+  color:#35312a;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-pt-option-after strong { font-weight:1000; }
+/* Element-specific badges in the technique menu and the selected move card. */
+.rtg-paper-modal .rtg-pt-option-info .rtg-move-element-badge,
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge {
+  --pt-el:#52545a;
+  color:var(--pt-el)!important;
+  border-color:var(--pt-el)!important;
+  background:color-mix(in srgb,var(--pt-el) 14%,white)!important;
+  font-weight:1000!important;
+}
+.rtg-paper-modal .rtg-pt-option-info .rtg-move-element-badge:is(.element-forest,.element-wood,.element-tree,.element-albero),
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge:is(.element-forest,.element-wood,.element-tree,.element-albero){--pt-el:#228448;}
+.rtg-paper-modal .rtg-pt-option-info .rtg-move-element-badge:is(.element-fire,.element-fuoco),
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge:is(.element-fire,.element-fuoco){--pt-el:#c73932;}
+.rtg-paper-modal .rtg-pt-option-info .rtg-move-element-badge:is(.element-mountain,.element-montagna),
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge:is(.element-mountain,.element-montagna){--pt-el:#845624;}
+.rtg-paper-modal .rtg-pt-option-info .rtg-move-element-badge:is(.element-wind,.element-vento),
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge:is(.element-wind,.element-vento){--pt-el:#087fae;}
+.rtg-paper-modal .rtg-pt-option-info .rtg-move-element-badge.element-void,
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge.element-void{--pt-el:#7643af;}
+/* Preserve actual PT; show an additional conditional preview inside the same player card. */
+.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current {
+  display:inline-flex;align-items:center;gap:5px;min-width:0;
+}
+.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current b {color:#ab6c0b;font-weight:1000;font-size:.65rem;}
+.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current strong {font-size:.79rem;font-weight:1000;}
+.rtg-duel-player-meta .rtg-duel-pt-inline.is-projected {
+  display:inline-flex;flex-direction:column;align-items:flex-start;gap:3px;
+  max-width:100%;width:max-content;
+  white-space:normal!important;
+}
+.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-projection {
+  display:flex;align-items:center;gap:4px;
+  width:100%;justify-content:space-between;
+  border-top:1px solid #c9ae67;padding-top:3px;
+  color:#60440c;font-size:8px;font-weight:950;
+  white-space:nowrap;
+}
+.rtg-duel-pt-projection strong{font-weight:1000;}
+@media(max-width:390px){
+  .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected {padding:9px!important;}
+  .rtg-duel-player-meta .rtg-duel-pt-inline.is-projected{padding:3px 5px;gap:2px;}
+  .rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-projection{font-size:7px;gap:2px;}
+  .rtg-paper-modal.rtg-pt-duel .rtg-pt-option-after{font-size:.66rem;}
+}

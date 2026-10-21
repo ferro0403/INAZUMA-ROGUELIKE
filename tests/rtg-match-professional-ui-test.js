@@ -99,6 +99,6 @@ assert.match(css,/\.rtg-duel-card\.is-opponent-possession/);
 assert.match(css,/\.rtg-halftime-break-banner/);
 assert.match(css,/\.rtg-match-scoreboard \.rtg-abandon-button/);
 const controllerSource=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
-assert.match(controllerSource,/userUsedMove:choice==="move"/);
+assert.match(controllerSource,/userUsedMove:!!selectedMove/);
 assert.match(controllerSource,/aiUsedMove:before\.aiChoice==="move"/);
 console.log("rtg-match-professional-ui-test: PASS");
