@@ -862,6 +862,7 @@
         onOpenPlayer:(playerId)=>openSquadPlayerPicker(playerId),
         onOpenDetails:(playerId)=>deps.openRtgPlayerDetails(playerId,"",{allowRoleSwitch:true}),
         onOpenCatalog:()=>openRtgCatalog(),
+        onOpenCoaches:()=>deps.openCoaches?.("collection"),
         onAdaptRequirements:()=>adaptSquadToCurrentRequirements(),
         onSave:()=>saveSquad(deps.squadDraft),
         onSelectSquadSlot:(slot)=>deps.selectSquadSlot(slot),

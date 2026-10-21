@@ -11,6 +11,8 @@
     const config=deps.config||global.RoadToGloryConfig;
     const progression=deps.progression||global.RoadToGloryProgression;
     const gacha=deps.gacha||global.RoadToGloryGacha;
+    const coaches=global.RoadToGloryCoaches;
+    const coachView=global.RoadToGloryCoachesView;
     const squadRuntime=deps.squadRuntime||global.RoadToGlorySquadRuntime;
     const matchEngine=deps.matchEngine||global.RoadToGloryMatchEngine;
     const opponentGenerator=deps.opponentGenerator||global.RoadToGloryOpponentGenerator;
@@ -520,6 +522,7 @@
     function bindRun(){
       bindHomeAndTabs();
       app?.querySelector?.("[data-rtg-open-vending]")?.addEventListener("click",()=>openVending());
+      app?.querySelector?.("[data-rtg-open-coaches]")?.addEventListener("click",()=>openCoaches("draw"));
       app?.querySelector?.("[data-rtg-current-node]")?.addEventListener("click",event=>openNode(event.currentTarget.dataset.rtgCurrentNode));
       app?.querySelectorAll?.("[data-rtg-node-id]")?.forEach(button=>button.addEventListener("click",()=>openNode(button.dataset.rtgNodeId)));
     }
@@ -559,7 +562,7 @@
           rawRole,rawOverall,rawName,rawSummary,rawPlayer,cardMeta,accessibleCards,acquiredCardIdSet,sourceForDraftPlayer,detailDatabaseFor,openRtgPlayerDetails,
           renderHtml,bindHomeAndTabs,mountDevQuickTools,readSquadSlots,writeSquadSlots,storeSquadSlot,readActiveSquadSlot,
           writeActiveSquadSlot,squadForSlot,selectSquadSlot,freeAgentCardId,nodeById,openModal:deps.openModal,getModalRoot:deps.getModalRoot,
-          closeModal:deps.closeModal,toast:deps.toast,renderHome:deps.renderHome,getUserTeamMeta:deps.getUserTeamMeta,compactPlayerCardMarkup:deps.compactPlayerCardMarkup,
+          closeModal:deps.closeModal,toast:deps.toast,renderHome:deps.renderHome,getUserTeamMeta:deps.getUserTeamMeta,compactPlayerCardMarkup:deps.compactPlayerCardMarkup,openCoaches,
         };
         Object.defineProperties(context,{
           campaign:{get:()=>campaign,set:value=>{campaign=value;}},squadDraft:{get:()=>squadDraft,set:value=>{squadDraft=value;}},
@@ -999,6 +1002,54 @@
       });
       return vendingRuntime;
     }
+    let coachPurchaseBusy=false;
+    function openCoaches(tab="draw",detailId=null,newCoach=null){
+      if(!coaches||!coachView)return deps.toast?.("Catalogo allenatori non disponibile","error");
+      const equippedId=String(squadDraft?.coachId||activeSquad()?.coachId||"");
+      const html=newCoach?coachView.result(newCoach):detailId?coachView.detail(campaign,detailId,{equippedId}):coachView.markup(campaign,{tab,equippedId});
+      deps.openModal?.(html,{className:"rtg-modal rtg-coaches-modal"});
+      const root=deps.getModalRoot?.();
+      root?.querySelectorAll?.("[data-rtg-coaches-tab]")?.forEach(button=>button.addEventListener("click",()=>openCoaches(button.dataset.rtgCoachesTab)));
+      root?.querySelectorAll?.("[data-rtg-coach-detail]")?.forEach(button=>button.addEventListener("click",()=>openCoaches("collection",button.dataset.rtgCoachDetail)));
+      root?.querySelector?.("[data-rtg-coaches-back]")?.addEventListener("click",()=>openCoaches("collection"));
+      root?.querySelector?.("[data-rtg-coaches-collection]")?.addEventListener("click",()=>openCoaches("collection"));
+      root?.querySelector?.("[data-rtg-coaches-pull]")?.addEventListener("click",async()=>{
+        if(coachPurchaseBusy)return;
+        coachPurchaseBusy=true;
+        let chosen=null;
+        try{
+          const next=await repository.update("rtg-coaches-draw",current=>{
+            const result=coaches.draw(current);
+            chosen=result.coach;
+            return result.state;
+          });
+          campaign=next;
+          if(chosen)openCoaches("collection",null,chosen);
+        }catch(error){deps.toast?.(error?.message||"Estrazione allenatore fallita","error");}
+        finally{coachPurchaseBusy=false;}
+      });
+      root?.querySelector?.("[data-rtg-coaches-equip]")?.addEventListener("click",async buttonEvent=>{
+        const coachId=String(buttonEvent.currentTarget.dataset.rtgCoachesEquip||"");
+        if(coachId&&!coaches.owned(campaign).has(coachId))return deps.toast?.("Allenatore non posseduto","error");
+        if(campaign?.activeMatch)return deps.toast?.("Completa prima la partita in corso","error");
+        const sid=activeSeasonId();
+        try{
+          campaign=await repository.update("rtg-coaches-equip",current=>{
+            if(coachId&&!coaches.owned(current).has(coachId))throw new Error("Allenatore non posseduto");
+            const old=current.squads?.[sid];
+            if(!old)throw new Error("Formazione RTG non disponibile");
+            current.squads[sid]={...old,coachId};
+            return current;
+          });
+          squadDraft={...(squadDraft||activeSquad()),coachId};
+          storeSquadSlot(activeSquadSlot,squadDraft);
+          deps.toast?.(coachId?"Allenatore assegnato alla squadra":"Allenatore rimosso");
+          renderSquad();
+          openCoaches("collection",detailId);
+        }catch(error){deps.toast?.(error?.message||"Salvataggio allenatore fallito","error");}
+      });
+      return campaign;
+    }
     function openVending(mode="team"){return getVendingRuntime().openVending(mode);}
     function showPullResult(result,player,mode="team"){return getVendingRuntime().showPullResult(result,player,mode);}
 
@@ -1088,7 +1139,7 @@
     }
 
     return Object.freeze({
-      open,renderRun,renderSquad,renderAlbum,renderAlbumRoster,renderShop,renderDevelopment,openNode,startMatch,confirmPreMatch,chooseEncounter,continueEncounterFlow,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
+      open,renderRun,renderSquad,openCoaches,renderAlbum,renderAlbumRoster,renderShop,renderDevelopment,openNode,startMatch,confirmPreMatch,chooseEncounter,continueEncounterFlow,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
       swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,adaptSquadToCurrentRequirements,
       getDraftSquad:()=>clone(squadDraft),getState:()=>clone(campaign),getRenderedHtml,
     });
