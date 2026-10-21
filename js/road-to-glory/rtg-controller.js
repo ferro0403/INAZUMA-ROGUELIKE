@@ -39,7 +39,7 @@
     let displayedMinute=0;
     let aresRouteMapPromise=null;
     let selectedEncounterChoice=null;
-    let selectedEncounterId=null;
+    let selectedEncounterId=null,penaltyChoiceBusy=false;
     const SQUAD_PICKER_PAGE_SIZE=24;
     const ENCOUNTER_REVEAL_DELAY_MS=2200;
     const FINAL_COMPARISON_DELAY_MS=1700;
@@ -693,15 +693,15 @@
       const normalized=String(choice||"");
       const pending=campaign?.activeMatch?.pendingEncounter;
       if(!pending||!(/^(base|move|list|move:\d+)$/.test(normalized)))return;
-      const encounterId=id(pending.encounterId);
+      const encounterId=id(pending.encounterId);if(selectedEncounterId===`submitting:${encounterId}`)return;
 
       // Confirmation is accepted only from a button that was rendered in the
       // selected state. A stale JS selection can therefore never resolve on
       // the first visible tap of a new/updated duel.
       if(normalized!=="list"&&isConfirm===true&&selectedEncounterId===encounterId&&selectedEncounterChoice===normalized){
         selectedEncounterChoice=null;
-        selectedEncounterId=null;
-        return chooseEncounter(normalized);
+        selectedEncounterId=`submitting:${encounterId}`;
+        return chooseEncounter(normalized).catch(error=>{selectedEncounterId=null;deps.toast?.(error?.message||"Errore salvataggio PT","error");});
       }
 
       selectedEncounterId=encounterId;
@@ -958,7 +958,7 @@
       return (match.shootout?.history||[]).map(item=>({userDirection:item.attackingSide==="user"?item.shooterChoice:item.goalkeeperChoice})).filter(item=>item.userDirection);
     }
     async function choosePenalty({direction,useMove,moveIndex=0}={}){
-      return commitMatchState("rtg-penalty",match=>{
+      if(penaltyChoiceBusy)return null;penaltyChoiceBusy=true;try{return await commitMatchState("rtg-penalty",match=>{
         const ctx=penaltyContext(match);
         const kickIndex=match.shootout?.history?.length||0;
         const aiDirection=penaltyRuntime.aiDirection(previousUserDirections(match),`${match.seed}:penalty-ai`,kickIndex);
@@ -981,7 +981,7 @@
           encounterContext:{actor:ctx.shooter,opponent:ctx.keeper},
         });
         return result.state;
-      });
+      });}catch(error){deps.toast?.(error?.message||"Errore salvataggio rigori","error");return null;}finally{penaltyChoiceBusy=false;}
     }
     async function abandonMatch(){return commitMatchState("rtg-abandon",match=>matchEngine.abandon(match));}
     function showMatchResult(match,rewards=null){
