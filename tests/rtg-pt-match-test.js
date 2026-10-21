@@ -95,7 +95,9 @@ assert.match(chosen,/Strong shot/);
 assert.match(chosen,/COSTO 95 PT/);
 assert.match(chosen,/data-rtg-confirm="1"/);
 assert.match(chosen,/DOPO USO:/,"shot must show immediate forecast");
-assert.match(chosen,/→ 120 PT/,"215 minus 95 PT forecast on player badge");
+assert.match(chosen,/rtg-duel-pt-projection"[^>]*>→ <strong>120<\/strong>/,"one-line forecast on player badge");
+assert.doesNotMatch(chosen,/rtg-duel-pt-projection[^<]*SE RIESCE/,"player badge must have no conditional label");
+assert.match(chosen,/>CONFERMA<\/span>/,"compact confirmation must use a real label");
 assert.match(chosen,/rtg-duel-pt-projection/,"selected card must show PT forecast");
 assert.match(chosen,/rtg-pt-after-use/,"selected technique card must show projected PT");
 assert.equal(encounter.ptCurrentByPlayerId["user:u"],215,"rendering the PT preview must not spend PT");
@@ -104,20 +106,49 @@ assert.match(menu,/element-wind/,"element type class must be present");
 const defending=make("defense");
 const defensePreview=view.encounterMarkup(defending,{userPlayer:defending.userSquad.lineup[0],opponentPlayer:defending.opponentSquad.lineup[0],selectedChoice:"move:1"});
 assert.match(defensePreview,/SE RIESCE/,"defensive PT preview must be conditional");
-assert.match(defensePreview,/→ 120 PT/);
+assert.match(defensePreview,/rtg-duel-pt-projection"[^>]*>→ <strong>120<\/strong>/);
 assert.equal(defending.ptCurrentByPlayerId["user:u"],215,"defense preview must not debit PT");
 const dribbling=make("dribble");
 const dribblePreview=view.encounterMarkup(dribbling,{userPlayer:dribbling.userSquad.lineup[0],opponentPlayer:dribbling.opponentSquad.lineup[0],selectedChoice:"move:0"});
 assert.match(dribblePreview,/SE RIESCE/,"dribble PT preview must be conditional");
-assert.match(dribblePreview,/→ 140 PT/);
+assert.match(dribblePreview,/rtg-duel-pt-projection"[^>]*>→ <strong>140<\/strong>/);
 assert.equal(dribbling.ptCurrentByPlayerId["user:u"],215);
 const polishCss=fs.readFileSync("css/rtg-match-pt-preview.css","utf8");
 const indexHtml=fs.readFileSync("index.html","utf8");
-assert.match(polishCss,/\.rtg-duel-choice-card\.is-selected::before\s*\{/,"confirmation badge must be inside the grid");
-assert.match(polishCss,/position:static!important/,"confirm badge must not overlap move name");
+assert.match(polishCss,/\.rtg-duel-choice-card\.is-selected::before\s*\{/,"legacy pseudo-confirm selector must be explicitly suppressed");
+assert.match(polishCss,/content:none!important/,"pseudo confirmation cannot overlap name");
+assert.match(polishCss,/\.rtg-duel-choice-card \.rtg-choice-confirm\s*\{/,"real confirmation must be positioned");
+assert.match(polishCss,/grid-area:confirm!important/,"selected move confirmation must occupy its own compact row");
 for(const element of ["forest","fire","mountain","wind","void"])
   assert(polishCss.includes(".element-"+element),"missing colored element: "+element);
 assert.match(indexHtml,/rtg-match-pt-preview\.css\?v=20261021-pt-preview-2/);
+
+// Committed PT must stay hidden during the final comparison, including a
+// successful/failed conditional move; reveal the canonical balance only with
+// the result. No extra write or pending-save state is introduced.
+for (const kind of ["dribble","defense","shot","save"]) {
+  for (const win of [true,false]) {
+    const pre=make(kind,win),post=E.resolvePendingEncounter(pre,"move:1");
+    const p={
+      userPlayer:pre.userSquad.lineup[0],opponentPlayer:pre.opponentSquad.lineup[0],
+      userKind:kind,aiKind:kind==="shot"?"save":"shot",userChoiceLabel:"Strong "+kind,
+      userUsedMove:true,userWon:win,actorSide:pre.pendingEncounter.actorSide,
+      userPtBefore:pt.pt(pre,"user","u"),opponentPtBefore:pt.pt(pre,"opponent","o"),
+      userPtAfter:pt.pt(post,"user","u"),opponentPtAfter:pt.pt(post,"opponent","o"),
+    };
+    const beforeHtml=view.finalComparisonMarkup(p);
+    const waitingHtml=view.resolvingEncounterMarkup(p);
+    const resultHtml=view.resolvedEncounterMarkup(p);
+    assert.match(beforeHtml,/rtg-duel-pt-current[^>]*><b>PT<\/b><strong>215<\/strong>/,"before result must retain original PT ("+kind+")");
+    assert.match(waitingHtml,/rtg-duel-pt-current[^>]*><b>PT<\/b><strong>215<\/strong>/,"waiting phase must not reveal PT ("+kind+")");
+    const expected=215-(["shot","save"].includes(kind)||win?95:0);
+    assert.match(resultHtml,new RegExp('rtg-duel-pt-current[^>]*><b>PT<\\/b><strong>'+expected+'<\\/strong>'),"result reveals committed PT ("+kind+", won="+win+")");
+    assert.equal(pt.pt(pre,"user","u").remaining,215,"presentation cannot mutate original match");
+  }
+}
+const matchController=fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8");
+assert.match(matchController,/userPtBefore,opponentPtBefore/,"controller must supply pre-resolution balances");
+assert.match(matchController,/userPtAfter:ptRuntime\?\.pt\?\.\(resolvedMatch/,"controller must supply committed balances");
 
 catalogType="shot";
 const ptx={ptMode:true,attackingSide:"user",shooter:args.userPlayer,keeper:args.opponentPlayer,userRole:"shot",
