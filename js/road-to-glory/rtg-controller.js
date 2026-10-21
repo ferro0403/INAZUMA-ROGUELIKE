@@ -822,6 +822,11 @@
     async function chooseEncounter(choice){
       const before=clone(campaign.activeMatch?.pendingEncounter);
       const scoreBefore=clone(campaign.activeMatch?.score||{user:0,opponent:0});
+      // The persisted encounter is resolved atomically. Keep pre-resolution PT for
+      // the comparison animation so conditional costs cannot reveal who won.
+      const ptRuntime=global.RoadToGloryMatchPtRuntime;
+      const userPtBefore=before&&ptRuntime?.inMatch?.(campaign.activeMatch)?ptRuntime.pt(campaign.activeMatch,"user",before.userPlayerId):null;
+      const opponentPtBefore=before&&ptRuntime?.inMatch?.(campaign.activeMatch)?ptRuntime.pt(campaign.activeMatch,"opponent",before.aiPlayerId):null;
       let resolvedMatch=null;
       campaign=await repository.update("rtg-encounter",current=>{
         const match=matchEngine.resolvePendingEncounter(current.activeMatch,choice);
@@ -866,7 +871,10 @@
           userWon,probability:userProbability,previewProbability:previewUserProbability,outcomeLabel,userKind:before.userKind,
           userPlayerName:userPlayer?.name||before.userPlayerId,
           aiPlayerName:aiPlayer?.name||before.aiPlayerId,
-          userPlayer,opponentPlayer:aiPlayer,userPt:global.RoadToGloryMatchPtRuntime?.pt?.(resolvedMatch,"user",before.userPlayerId)||null,opponentPt:global.RoadToGloryMatchPtRuntime?.pt?.(resolvedMatch,"opponent",before.aiPlayerId)||null,
+          userPlayer,opponentPlayer:aiPlayer,
+          userPtBefore,opponentPtBefore,
+          userPtAfter:ptRuntime?.pt?.(resolvedMatch,"user",before.userPlayerId)||null,
+          opponentPtAfter:ptRuntime?.pt?.(resolvedMatch,"opponent",before.aiPlayerId)||null,
           opponentLabel:resolvedMatch.opponentSquad?.name||"AVVERSARIO",
           actorSide:before.actorSide,
           aiKind:before.aiKind,
