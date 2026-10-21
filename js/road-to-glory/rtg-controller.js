@@ -79,7 +79,7 @@
         getSeasonDb:()=>seasonDb,getFreeAgentsDb:()=>freeAgentsDb,activeSeasonId,config,cardIdentity,gacha,
         playerResolver,ensureSeason1Db:deps.ensureSeason1Db,ensureData,renderHtml,runView,
         mountDevQuickTools,renderHome:deps.renderHome,openPlayerDetails:openRtgPlayerDetails,
-        returnToVending:(mode)=>{renderRun();return openVending(mode);},
+        returnToVending:(mode)=>{renderRun();return openVending(mode);},openCoaches:(coachId)=>openCoaches("collection",coachId),
       });
       return albumController;
     }
@@ -519,7 +519,7 @@
     }
     function bindRun(){
       bindHomeAndTabs();
-      app?.querySelector?.("[data-rtg-open-vending]")?.addEventListener("click",()=>openVending());
+      app?.querySelector?.("[data-rtg-open-vending]")?.addEventListener("click",()=>openVending());app?.querySelector?.("[data-rtg-open-coaches]")?.addEventListener("click",()=>openCoaches("draw"));
       app?.querySelector?.("[data-rtg-current-node]")?.addEventListener("click",event=>openNode(event.currentTarget.dataset.rtgCurrentNode));
       app?.querySelectorAll?.("[data-rtg-node-id]")?.forEach(button=>button.addEventListener("click",()=>openNode(button.dataset.rtgNodeId)));
     }
@@ -559,7 +559,7 @@
           rawRole,rawOverall,rawName,rawSummary,rawPlayer,cardMeta,accessibleCards,acquiredCardIdSet,sourceForDraftPlayer,detailDatabaseFor,openRtgPlayerDetails,
           renderHtml,bindHomeAndTabs,mountDevQuickTools,readSquadSlots,writeSquadSlots,storeSquadSlot,readActiveSquadSlot,
           writeActiveSquadSlot,squadForSlot,selectSquadSlot,freeAgentCardId,nodeById,openModal:deps.openModal,getModalRoot:deps.getModalRoot,
-          closeModal:deps.closeModal,toast:deps.toast,renderHome:deps.renderHome,getUserTeamMeta:deps.getUserTeamMeta,compactPlayerCardMarkup:deps.compactPlayerCardMarkup,
+          closeModal:deps.closeModal,toast:deps.toast,renderHome:deps.renderHome,getUserTeamMeta:deps.getUserTeamMeta,compactPlayerCardMarkup:deps.compactPlayerCardMarkup,openCoaches,
         };
         Object.defineProperties(context,{
           campaign:{get:()=>campaign,set:value=>{campaign=value;}},squadDraft:{get:()=>squadDraft,set:value=>{squadDraft=value;}},
@@ -999,9 +999,9 @@
       });
       return vendingRuntime;
     }
+    const openCoaches=(tab="draw",detailId=null,newCoach=null)=>global.RoadToGloryCoachesController.open({getCampaign:()=>campaign,setCampaign:v=>{campaign=v;},getSquadDraft:()=>squadDraft,setSquadDraft:v=>{squadDraft=v;},activeSquad,activeSeasonId,getActiveSquadSlot:()=>activeSquadSlot,storeSquadSlot,renderSquad,repository,openModal:deps.openModal,getModalRoot:deps.getModalRoot,toast:deps.toast},tab,detailId,newCoach);
     function openVending(mode="team"){return getVendingRuntime().openVending(mode);}
     function showPullResult(result,player,mode="team"){return getVendingRuntime().showPullResult(result,player,mode);}
-
     async function pull(options={}){
       let result=null;const mode=options?.mode==="recruitment"?"recruitment":"team";
       campaign=await repository.update("rtg-gacha-pull",current=>{
@@ -1088,7 +1088,7 @@
     }
 
     return Object.freeze({
-      open,renderRun,renderSquad,renderAlbum,renderAlbumRoster,renderShop,renderDevelopment,openNode,startMatch,confirmPreMatch,chooseEncounter,continueEncounterFlow,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
+      open,renderRun,renderSquad,openCoaches,renderAlbum,renderAlbumRoster,renderShop,renderDevelopment,openNode,startMatch,confirmPreMatch,chooseEncounter,continueEncounterFlow,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
       swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,adaptSquadToCurrentRequirements,
       getDraftSquad:()=>clone(squadDraft),getState:()=>clone(campaign),getRenderedHtml,
     });

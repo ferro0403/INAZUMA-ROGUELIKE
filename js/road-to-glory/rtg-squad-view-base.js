@@ -329,9 +329,10 @@
                 <div class="squad-panel-head rtg-squad-section-head"><h2>Panchina</h2><span class="squad-bench-count">${bench.length}/4</span></div>
                 <div class="bench-list squad-bench-list rtg-bench-list">${bench.map((entry) => playerCard(entry, "bench")).join("")}</div>
               </section>
+              ${context.coachSlotMarkup||""}
               <div class="squad-management-actions rtg-squad-actions rtg-squad-actions--four">
                 <button type="button" class="btn squad-module-button" data-rtg-open-formation>Modifica modulo</button>
-                <button type="button" class="btn squad-info-button rtg-catalog-button" data-rtg-open-catalog>Giocatori RTG</button>
+                <button type="button" class="btn squad-info-button rtg-catalog-button" data-rtg-open-catalog>Giocatori RTG</button><button type="button" class="btn rtg-coaches-cta" data-rtg-open-coaches>Allenatori RTG</button>
               </div>
               ${context.requirementsMarkup ? `<section class="rtg-squad-next"><div class="rtg-next-heading"><div><p class="eyebrow">Prossima sfida</p><h2>${escape(context.nextTeamName || (`Season ${global.RoadToGloryConfig?.season?.(model.seasonId)?.seasonNumber||1}`))}</h2></div><details class="rtg-requirements-disclosure"><summary aria-label="Informazioni sui requisiti della prossima sfida"><span aria-hidden="true">i</span> Requisiti</summary><div class="rtg-requirements-drawer">${context.requirementsMarkup}<button type="button" class="btn rtg-adapt-button" data-rtg-adapt-requirements>Adatta ai requisiti</button></div></details></div></section>` : '<button type="button" class="btn rtg-adapt-button" data-rtg-adapt-requirements disabled>Adatta ai requisiti</button>'}
               <div class="rtg-squad-savebar"><span>${context.dirty ? "Modifiche da salvare" : "Squadra salvata"}</span><button type="button" class="btn btn-yellow" data-rtg-save-squad>Salva squadra</button></div>
@@ -363,6 +364,9 @@
       root?.querySelector?.("[data-rtg-adapt-requirements]")?.addEventListener("click", () => actions.onAdaptRequirements?.());
       root?.querySelector?.("[data-rtg-open-formation]")?.addEventListener("click", () => actions.onOpenFormation?.());
       root?.querySelector?.("[data-rtg-open-catalog]")?.addEventListener("click", () => actions.onOpenCatalog?.());
+      root?.querySelector?.("[data-rtg-open-coaches]")?.addEventListener("click",()=>actions.onOpenCoaches?.());
+      root?.querySelector?.("[data-rtg-squad-coach-select]")?.addEventListener("click",()=>actions.onOpenCoaches?.());
+      root?.querySelectorAll?.("[data-rtg-squad-coach-detail]")?.forEach(button=>button.addEventListener("click",()=>actions.onOpenCoachDetails?.()));
       root?.querySelector?.("[data-rtg-save-squad]")?.addEventListener("click", () => actions.onSave?.());
       root?.querySelectorAll?.("[data-rtg-squad-slot]")?.forEach((button)=>button.addEventListener("click",()=>actions.onSelectSquadSlot?.(Number(button.dataset.rtgSquadSlot)||1)));
     }

@@ -104,9 +104,11 @@ const seasons=[
   assert(controller.includes("terminalRewardSummary(current,next,match)"));
   assert(controller.includes("showMatchResult(snapshot,reward)"));
   const index=fs.readFileSync("index.html","utf8");
-  for(const file of ["rtg-route-view","rtg-album-view","rtg-album-controller","rtg-gacha"])
-    assert(index.includes(`${file}.js?v=20261012-four-audit-fixes-1`));
+  for(const file of ["rtg-album-view","rtg-album-controller"])
+    assert(index.includes(`${file}.js?v=20261021-canonical-ui-2`),`${file} mobile cache key must track coaches/album UI`);
+  assert(index.includes("rtg-route-view.js?v=20261021-unified-coach-cards-1"),"Coach link removal must invalidate the route view on mobile");
+  assert(index.includes("rtg-gacha.js?v=20261012-four-audit-fixes-1"));
   assert(index.includes("rtg-match-view.js?v=20261021-rtg-element-ux-6"),"PT match view cache key must update");
-  assert(index.includes("rtg-controller.js?v=20261021-compact-pt-reveal-3"),"RTG controller cache key must track PT/rarity update");
+  assert(index.includes("rtg-controller.js?v=20261021-canonical-ui-2"),"RTG controller cache key must track PT/rarity update");
   console.log("rtg-four-audit-fixes-test: five real map prices, IE3/Orion recruitment albums, Debole collection, terminal rewards PASS");
 })().catch(error=>{console.error(error);process.exitCode=1;});

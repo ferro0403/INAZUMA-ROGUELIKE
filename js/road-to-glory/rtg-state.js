@@ -41,6 +41,8 @@
       projects: Object.fromEntries(PROJECT_RARITIES.map((rarity) => [rarity, 0])),
       developmentByCardId: {},
       seasonTransitionRewardedIds: [],
+      coachOwnedIds: [],
+      coachPullCount: 0,
       lives: 2,
       checkpointMainIndex: -1,
       currentNodeId: startNodeId,
@@ -98,6 +100,7 @@
       bench: uniqueIds(bench),
       ...(squad.lineupOrderedBySlot===true?{lineupOrderedBySlot:true}:{}),
       activeRoleVariantByCardId,
+      coachId: id(squad.coachId || ""),
     };
   }
 
@@ -147,6 +150,8 @@
       projects,
       developmentByCardId,
       seasonTransitionRewardedIds: uniqueIds(source.seasonTransitionRewardedIds),
+      coachOwnedIds: uniqueIds(source.coachOwnedIds).filter(coachId => global.RoadToGloryCoaches?.BY_ID?.[coachId] && (global.RoadToGloryCoaches.CAMPAIGN_SEASONS[id(source.campaignId || CAMPAIGN_ID)] || []).includes(global.RoadToGloryCoaches.BY_ID[coachId].seasonId)),
+      coachPullCount: Math.max(0, integer(source.coachPullCount, 0)),
       lives: Math.max(0, Math.min(2, integer(source.lives, 2))),
       checkpointMainIndex: Math.max(-1, integer(source.checkpointMainIndex, -1)),
       currentNodeId: id(source.currentNodeId || initial.currentNodeId),
@@ -188,6 +193,11 @@
         if (!DEVELOPMENT_RARITIES.includes(id(record.currentRarity))) fail("rtg-state-invalid-development-rarity", "Rarità evoluzione RTG non valida", { cardId });
       }
     }
+    if (raw.coachOwnedIds != null) {
+      if(!Array.isArray(raw.coachOwnedIds) || raw.coachOwnedIds.some(v=>!global.RoadToGloryCoaches?.BY_ID?.[id(v)]))fail("rtg-coaches-invalid-collection","Collezione allenatori RTG non valida");
+      if(new Set(raw.coachOwnedIds.map(id)).size!==raw.coachOwnedIds.length)fail("rtg-coaches-duplicates","Allenatori RTG duplicati");
+    }
+    if(raw.coachPullCount != null && (!Number.isSafeInteger(Number(raw.coachPullCount)) || Number(raw.coachPullCount)<0))fail("rtg-coaches-invalid-count","Contatore allenatori non valido");
     if (raw.seasonTransitionRewardedIds != null) {
       if (!Array.isArray(raw.seasonTransitionRewardedIds)) fail("rtg-state-invalid-season-reward", "Storico bonus Season RTG non valido");
       const rewardIds = raw.seasonTransitionRewardedIds.map(id).filter(Boolean);
@@ -217,6 +227,7 @@
       if (!Number.isInteger(record.evolutionCount) || record.evolutionCount < 0) fail("rtg-state-invalid-development-count", "Conteggio evoluzioni RTG non valido", { cardId });
     }
     if (new Set(normalized.seasonTransitionRewardedIds || []).size !== (normalized.seasonTransitionRewardedIds || []).length) fail("rtg-state-duplicate-season-reward", "Bonus cambio Season RTG duplicato");
+    for(const sq of Object.values(normalized.squads||{})) if(sq.coachId&&!normalized.coachOwnedIds.includes(sq.coachId))sq.coachId="";
     const ownedIds = normalized.gachaAcquiredCards.map((entry) => id(entry.cardId));
     if (new Set(ownedIds).size !== ownedIds.length) fail("rtg-state-duplicate-card", "Carta RTG duplicata nella collezione");
     for (const [seasonId, squad] of Object.entries(normalized.squads || {})) {
