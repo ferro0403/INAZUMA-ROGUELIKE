@@ -1,58 +1,78 @@
-/* RTG match-only: readable confirmations and non-destructive PT forecasts. */
+/* RTG PT duels only: compact, readable actions and an actual confirmation label. */
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-grid { gap:8px!important; }
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card {
+  min-height:100px!important;
+  padding:8px!important;
+  gap:4px 6px!important;
+  grid-template-rows:minmax(42px,auto) auto!important;
+}
 .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected {
-  grid-template-rows:auto minmax(42px,auto) auto!important;
+  grid-template-rows:18px minmax(42px,auto) auto!important;
   grid-template-areas:"confirm confirm" "copy copy" "probability probability"!important;
   align-content:space-between!important;
-  row-gap:7px!important;
-  min-height:145px!important;
+  min-height:116px!important;
+  row-gap:4px!important;
+  padding:7px 8px!important;
 }
+/* Use the real text node, not a pseudo-element that can overlap the move name. */
 .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected::before {
-  position:static!important;
-  inset:auto!important;
-  grid-area:confirm!important;
-  justify-self:end!important;
-  align-self:start!important;
-  margin:0!important;
-  padding:4px 7px!important;
-  display:block!important;
-  max-width:100%!important;
-  white-space:nowrap!important;
-  line-height:1.1!important;
+  content:none!important;
+  display:none!important;
 }
-/* No overlap for two-line techniques on small iPhones. */
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card .rtg-choice-confirm {
+  grid-area:confirm!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-self:end!important;
+  width:max-content!important;
+  min-height:18px!important;
+  margin:0!important;
+  padding:2px 6px!important;
+  border:2px solid #111216!important;
+  border-radius:3px!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+  font-size:9px!important;
+  font-weight:1000!important;
+  line-height:1!important;
+  letter-spacing:.055em!important;
+  white-space:nowrap!important;
+}
 .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card .rtg-choice-copy {
   min-width:0!important;
+  gap:3px!important;
   overflow:visible!important;
 }
 .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card .rtg-choice-copy strong {
   overflow-wrap:anywhere!important;
   white-space:normal!important;
 }
-.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-move:not(.rtg-pt-open-selector) {
-  min-height:142px!important;
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card .rtg-choice-probability strong {
+  font-size:clamp(16px,4.5vw,19px)!important;
 }
 .rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-pt-after-use {
-  display:block!important;
-  margin-top:1px!important;
-  width:100%!important;
-  color:#3a3b32!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  margin-top:0!important;
+  width:max-content!important;
+  max-width:100%;
   background:#fff5d2;
   border-left:3px solid #a6750a;
-  padding:3px 5px!important;
-  font-size:9px!important;
+  padding:2px 4px!important;
+  color:#3a3b32!important;
+  font-size:8px!important;
   font-style:normal!important;
-  line-height:1.25!important;
   font-weight:900!important;
-  overflow-wrap:normal!important;
+  line-height:1.2!important;
   white-space:normal!important;
 }
 .rtg-paper-modal.rtg-pt-duel .rtg-pt-option-after {
-  display:block;
+  display:inline-flex;
   width:max-content;
   max-width:100%;
   margin-top:1px;
-  padding:4px 6px;
-  font-size:.7rem;
+  padding:3px 5px;
+  font-size:.66rem;
   font-weight:900;
   letter-spacing:.02em;
   background:#fff4d6;
@@ -79,28 +99,55 @@
 .rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge:is(.element-wind,.element-vento){--pt-el:#087fae;}
 .rtg-paper-modal .rtg-pt-option-info .rtg-move-element-badge.element-void,
 .rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge.element-void{--pt-el:#7643af;}
-/* Preserve actual PT; show an additional conditional preview inside the same player card. */
+/* One-line forecast: PT 243 / 243 → 193. No status leaks during resolution. */
+.rtg-duel-player-meta .rtg-duel-pt-inline {
+  max-width:100%;
+  padding:3px 5px!important;
+  gap:4px!important;
+}
 .rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current {
-  display:inline-flex;align-items:center;gap:5px;min-width:0;
-}
-.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current b {color:#ab6c0b;font-weight:1000;font-size:.65rem;}
-.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current strong {font-size:.79rem;font-weight:1000;}
-.rtg-duel-player-meta .rtg-duel-pt-inline.is-projected {
-  display:inline-flex;flex-direction:column;align-items:flex-start;gap:3px;
-  max-width:100%;width:max-content;
-  white-space:normal!important;
-}
-.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-projection {
-  display:flex;align-items:center;gap:4px;
-  width:100%;justify-content:space-between;
-  border-top:1px solid #c9ae67;padding-top:3px;
-  color:#60440c;font-size:8px;font-weight:950;
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  min-width:0;
   white-space:nowrap;
 }
-.rtg-duel-pt-projection strong{font-weight:1000;}
+.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current b {
+  color:#ab6c0b;
+  font-size:.6rem;
+  font-weight:1000;
+}
+.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current strong {
+  font-size:.7rem;
+  font-weight:1000;
+}
+.rtg-duel-player-meta .rtg-duel-pt-inline.is-projected {
+  display:inline-flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  gap:4px!important;
+  max-width:100%;
+  width:max-content;
+  white-space:nowrap!important;
+}
+.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-projection {
+  display:inline-flex!important;
+  align-items:center;
+  gap:3px;
+  width:auto;
+  margin:0;
+  padding:0;
+  border:0;
+  color:#60440c;
+  font-size:.69rem;
+  font-weight:950;
+  white-space:nowrap!important;
+}
+.rtg-duel-pt-projection strong {font-weight:1000;}
 @media(max-width:390px){
-  .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected {padding:9px!important;}
-  .rtg-duel-player-meta .rtg-duel-pt-inline.is-projected{padding:3px 5px;gap:2px;}
-  .rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-projection{font-size:7px;gap:2px;}
-  .rtg-paper-modal.rtg-pt-duel .rtg-pt-option-after{font-size:.66rem;}
+  .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card {padding:7px!important;}
+  .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected {min-height:110px!important;}
+  .rtg-duel-player-meta .rtg-duel-pt-inline {padding:3px 4px!important;gap:3px!important;font-size:.6rem!important;}
+  .rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current strong {font-size:.65rem;}
+  .rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-projection {font-size:.63rem;gap:2px;}
 }
