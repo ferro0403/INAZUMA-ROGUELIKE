@@ -121,7 +121,13 @@ assert.match(polishCss,/\.rtg-duel-choice-card \.rtg-choice-confirm\s*\{/,"real 
 assert.match(polishCss,/grid-area:confirm!important/,"selected move confirmation must occupy its own compact row");
 for(const element of ["forest","fire","mountain","wind","void"])
   assert(polishCss.includes(".element-"+element),"missing colored element: "+element);
-assert.match(indexHtml,/rtg-match-pt-preview\.css\?v=20261021-compact-pt-reveal-3/);
+// Half-width portrait cards must never clip the current or projected PT.
+assert.match(polishCss,/\.rtg-duel-portrait-panel \.rtg-duel-player-meta \.rtg-duel-pt-inline\s*\{/,"portrait PT must stay within its card");
+assert.match(polishCss,/max-width:100%!important/,"PT badge cannot extend beyond its parent");
+assert.match(polishCss,/@media\(max-width:480px\)/,"mobile portrait PT layout must be responsive");
+assert.match(polishCss,/\.rtg-duel-pt-inline\.is-projected\s*\{[\s\S]*?flex-direction:column!important/,"narrow projected PT must stack in two compact rows");
+assert.match(polishCss,/\.rtg-duel-pt-inline\.is-projected \.rtg-duel-pt-projection\s*\{[\s\S]*?width:100%!important/,"forecast arrow/value must fit inside badge");
+assert.match(indexHtml,/rtg-match-pt-preview\.css\?v=20261021-pt-badge-fit-4/);
 
 // Committed PT must stay hidden during the final comparison, including a
 // successful/failed conditional move; reveal the canonical balance only with
