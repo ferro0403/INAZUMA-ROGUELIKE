@@ -66,3 +66,9 @@
 .rtg-squad-shell .rtg-coach-squad-buttons .btn{flex:1;min-width:0;min-height:41px;padding:7px 4px;background:#ff8a2a!important;border:2px solid #17181b!important;color:#17181b!important;font-size:11px;font-weight:950!important;border-radius:0!important;}
 .rtg-squad-shell .rtg-coach-squad-buttons .btn+ .btn{background:#fffdf6!important;}
 @media(max-width:370px){.rtg-coach-squad-image{width:60px;min-width:60px;height:75px}.rtg-coach-squad-selected{gap:7px}.rtg-coach-squad-buttons .btn{font-size:10px!important}}
+
+/* Album coach cover uses the canonical collection card, with an orange illustration. */
+.rtg-coach-album-collection .album-collection-cover{display:grid;place-items:center;background:linear-gradient(130deg,#ffb668,#ff8223)!important;}
+.rtg-coach-album-cover-icon{font-size:clamp(3.4rem,11vw,7rem);filter:drop-shadow(3px 5px 0 #12141855);}
+.rtg-coach-album-collection .album-collection-progress-bar>span{background:#ff8925!important;}
+.rtg-coach-album-collection .album-collection-title{color:#15171b!important;}
