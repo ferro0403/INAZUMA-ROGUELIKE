@@ -151,3 +151,47 @@
   .rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current strong {font-size:.65rem;}
   .rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-projection {font-size:.63rem;gap:2px;}
 }
+
+/* The portrait cards are half-width on phones: keep the full PT balance
+   and forecast INSIDE one badge, arranged in two tight rows when needed. */
+.rtg-duel-portrait-panel .rtg-duel-player-meta .rtg-duel-pt-inline {
+  box-sizing:border-box!important;
+  min-width:0!important;
+  max-width:100%!important;
+}
+@media(max-width:480px){
+  .rtg-duel-portrait-panel .rtg-duel-player-meta .rtg-duel-pt-inline.is-projected {
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:stretch!important;
+    width:100%!important;
+    min-width:0!important;
+    max-width:100%!important;
+    gap:2px!important;
+    padding:3px 4px!important;
+    white-space:normal!important;
+    box-sizing:border-box!important;
+  }
+  .rtg-duel-portrait-panel .rtg-duel-pt-inline.is-projected .rtg-duel-pt-current {
+    display:flex!important;
+    align-items:baseline!important;
+    width:100%!important;
+    min-width:0!important;
+    gap:2px!important;
+    line-height:1.05!important;
+    white-space:nowrap!important;
+  }
+  .rtg-duel-portrait-panel .rtg-duel-pt-inline.is-projected .rtg-duel-pt-projection {
+    display:flex!important;
+    align-items:baseline!important;
+    justify-content:flex-end!important;
+    width:100%!important;
+    min-width:0!important;
+    gap:3px!important;
+    padding-top:2px!important;
+    border-top:1px solid #c9ae67!important;
+    font-size:.66rem!important;
+    line-height:1.05!important;
+    white-space:nowrap!important;
+  }
+}
