@@ -174,7 +174,7 @@
       return !!mine && !!theirs && beats[theirs] === mine;
     }
 
-    function duelCompareVisualMarkup(player = {}, side = "user", attrs = "", opponent = null) {
+    function duelCompareVisualMarkup(player = {}, side = "user", attrs = "", opponent = null, ptInfo = null) {
       const name = player?.name || pid(player) || (side === "user" ? "Tu" : "Avversario");
       const visual = duelVisualUrl(player);
       const playerRole = role(player) || "—";
@@ -189,6 +189,7 @@
           <strong class="rtg-duel-player-name">${escape(name)}</strong>
           <span class="rtg-duel-player-meta">
             <small><b>${escape(playerRole)}</b><span>OVR ${escape(overall)}</span></small>
+            ${ptInfo ? `<span class="rtg-duel-pt-inline" aria-label="Punti tecnica residui ${escape(ptInfo.remaining)} di ${escape(ptInfo.max)}"><b>PT</b><strong>${escape(ptInfo.remaining)}</strong><span>/ ${escape(ptInfo.max)}</span></span>` : ""}
             <em class="rtg-duel-player-element has-native-element-icon ${escape(elementClass)} ${escape(elementStateClass)}">${duelElementIcon(player)}<span>${escape(element)}</span></em>
           </span>
         </span>
@@ -657,38 +658,90 @@
       const pending = match.pendingEncounter || {};
       const user = preview.userPlayer || {};
       const opponent = preview.opponentPlayer || {};
-      const selectedChoice = ["base","move"].includes(String(preview.selectedChoice||"")) ? String(preview.selectedChoice) : "";
-      const key = `user:${String(pending.userPlayerId || "")}`;
-      const uses = Number(match.moveUsesByPlayerId?.[key] || 0);
+      const ptMode = match.ptModeVersion === 1;
+      const selection = String(preview.selectedChoice || "");
+      const selectedChoice = ptMode
+        ? (/^(base|list|move:\d+)$/.test(selection) ? selection : "")
+        : (["base","move"].includes(selection) ? selection : "");
+      const userKind = inferredUserKind(pending);
+      const options = ptMode ? (pending.userMoveOptions || []) : (pending.userMove ? [pending.userMove] : []);
+      const selectedIndex = ptMode && /^move:\d+$/.test(selectedChoice) ? Number(selectedChoice.slice(5)) : -1;
+      const selectedMove = ptMode ? options[selectedIndex] : pending.userMove;
+      const ptRules = global.RoadToGloryMatchPtRuntime;
+      const userPt = ptMode ? ptRules?.pt?.(match,"user",pending.userPlayerId) : null;
+      const opponentPt = ptMode ? ptRules?.pt?.(match,"opponent",pending.aiPlayerId) : null;
+      const available = (move) => !ptMode || !!(userPt && move?.ptCost != null && move.ptCost <= userPt.remaining);
+      const currentMove = ptMode ? selectedMove : pending.userMove;
+      const showingMove = ptMode ? selectedIndex >= 0 && !!currentMove && available(currentMove)
+        : selectedChoice === "move" && !!currentMove;
       const baseProbability = previewProbability(pending,user,opponent,"base");
-      const moveProbability = pending.userMove && uses > 0 ? previewProbability(pending,user,opponent,"move") : null;
-      const selectedProbability = selectedChoice === "move" && moveProbability != null ? moveProbability : baseProbability;
+      const calculateMove = move => previewProbability({...pending,userMove:move},user,opponent,"move");
+      const moveProbability = currentMove && available(currentMove) ? calculateMove(currentMove) : null;
+      const selectedProbability = showingMove && moveProbability != null ? moveProbability : baseProbability;
       const moveDelta = moveProbability == null ? 0 : moveProbability-baseProbability;
       const userHasPossession = pending.actorSide === "user";
       const opponentName = match.opponentSquad?.name || "CPU";
       const possessionText = userHasPossession ? "TU HAI PALLA" : `${opponentName} HA PALLA`;
       const possessionClass = userHasPossession ? "is-user" : "is-opponent";
       const callout = actionCallout(pending,user,opponent);
-      const baseVerb = choiceVerb(inferredUserKind(pending));
-      const selectedLabel = selectedChoice === "move" ? (pending.userMove?.name || "Mossa") : selectedChoice === "base" ? baseVerb : "AZIONE BASE";
-      const userKind = inferredUserKind(pending);
+      const baseVerb = choiceVerb(userKind);
+      const selectedLabel = showingMove ? (currentMove?.name || "Mossa") : selectedChoice === "base" ? baseVerb : "AZIONE BASE";
       const aiKind = String(pending.aiKind || counterpartKind(userKind)).toLowerCase();
-      const userMoveSelected = selectedChoice === "move" && !!pending.userMove && uses > 0;
-      const userActionShort = userMoveSelected ? pending.userMove.name : baseResultActionLabel(userKind,pending.actorSide==="user");
+      const userActionShort = showingMove ? currentMove.name : baseResultActionLabel(userKind,userHasPossession);
       const opponentActionShort = baseResultActionLabel(aiKind,pending.actorSide==="opponent");
       const userRarityClass = duelRarityClass(user);
       const opponentRarityClass = duelRarityClass(opponent);
+      const moveKindClass = duelActionCategory(userKind,"user",pending.actorSide);
       const choiceCard = (choice,label,sub,probability,delta=0,disabled=false,categoryClass="") => {
         const selected = selectedChoice === choice;
+        const isMove = choice.startsWith("move");
         const deltaText = delta > 0.05 ? `+${delta.toFixed(1)}%` : delta < -0.05 ? `${delta.toFixed(1)}%` : "BASE";
-        return `<button type="button" class="rtg-duel-choice-card ${choice==="move"?"is-move":"is-base"} ${escape(categoryClass)} ${selected?"is-selected":""}" data-rtg-choice="${choice}" data-rtg-confirm="${selected?"1":"0"}" ${disabled?"disabled":""}>
-          <span class="rtg-choice-icon" aria-hidden="true">${choice==="move"?"⚡":"●"}</span>
-          <span class="rtg-choice-copy"><strong>${escape(label)}</strong>${String(sub).includes("|ELEMENT|")?(()=>{const [main,el,key]=String(sub).split("|ELEMENT|");const parts=String(el||"").split("|");return `<em>${escape(main)}</em><span class="rtg-move-element-badge element-${escape(parts[1]||key||"")}"><i></i>${escape(parts[0]||"")}</span>`;})():`<em>${escape(sub)}</em>`}</span>
+        const parsedSub=String(sub).split("|ELEMENT|");
+        const subMarkup = parsedSub.length>1
+          ? `<em>${escape(parsedSub[0])}</em><span class="rtg-move-element-badge element-${escape(parsedSub[2]||"")}"><i></i>${escape(parsedSub[1]||"")}</span>`
+          : `<em>${escape(sub)}</em>`;
+        return `<button type="button" class="rtg-duel-choice-card ${isMove?"is-move":"is-base"} ${escape(categoryClass)} ${selected?"is-selected":""}" data-rtg-choice="${escape(choice)}" data-rtg-confirm="${selected?"1":"0"}" ${disabled?"disabled":""}>
+          <span class="rtg-choice-icon" aria-hidden="true">${isMove?"⚡":"●"}</span>
+          <span class="rtg-choice-copy"><strong>${escape(label)}</strong>${subMarkup}</span>
           <span class="rtg-choice-probability"><strong>${escape(Number(probability).toFixed(1))}%</strong><em class="rtg-choice-delta ${delta>0?"is-positive":delta<0?"is-negative":""}">${escape(deltaText)}</em></span>
           ${selected?'<span class="rtg-choice-confirm">TOCCA DI NUOVO PER CONFERMARE</span>':""}
         </button>`;
       };
-      return `<section class="panel rtg-duel-card rtg-duel-card--revolution rtg-duel-card--clean rtg-paper-modal ${userHasPossession ? "is-user-possession" : "is-opponent-possession"} ${userMoveSelected ? "is-user-move-preview" : ""}">
+      const moveCard = () => {
+        if (!ptMode) {
+          const uses = Number(match.moveUsesByPlayerId?.[`user:${String(pending.userPlayerId || "")}`] || 0);
+          return pending.userMove && uses > 0
+            ? choiceCard("move",pending.userMove.name,`${uses}/2 USI · POWER ${pending.userMove.power || "—"}${pending.userMove.element?`|ELEMENT|${moveElementLabel(pending.userMove.element)}|${String(pending.userMove.element).toLowerCase()}`:""}`,calculateMove(pending.userMove),calculateMove(pending.userMove)-baseProbability,false,moveCategoryClass(pending.userMove,userKind))
+            : "";
+        }
+        if (!options.length) return "";
+        if (options.length>1 && !showingMove) {
+          return `<button type="button" class="rtg-duel-choice-card is-move rtg-pt-open-selector ${escape(moveKindClass)} ${selectedChoice==="list"?"is-selected":""}" data-rtg-choice="list" data-rtg-confirm="0">
+             <span class="rtg-choice-icon" aria-hidden="true">⚡</span>
+             <span class="rtg-choice-copy"><strong>SELEZIONA TECNICA</strong><em>${options.length} tecniche ${escape(choiceVerb(userKind).toLowerCase())} disponibili</em></span>
+             <span class="rtg-pt-selector-chevron" aria-hidden="true">›</span>
+           </button>`;
+        }
+        const i = options.length === 1 ? 0 : selectedIndex;
+        const move = options[i];
+        if(!move)return "";
+        const prob=calculateMove(move),cost=move.ptCost;
+        const sub=`POWER ${move.power??"—"} · COSTO ${cost??"N/D"} PT · ${moveElementLabel(move.element)}`;
+        return choiceCard(`move:${i}`,move.name,sub,prob,prob-baseProbability,!available(move),moveCategoryClass(move,userKind));
+      };
+      const chooser=ptMode && selectedChoice==="list" && options.length>1
+        ? `<div class="rtg-pt-technique-picker" role="group" aria-label="Seleziona tecnica">
+           <div class="rtg-pt-technique-heading"><strong>SELEZIONA TECNICA</strong><span>PT disponibili: ${escape(userPt?.remaining??"—")}</span></div>
+           ${options.map((move,i)=>{
+             const price=move.ptCost,ok=available(move),prob=calculateMove(move),delta=prob-baseProbability;
+             return `<button type="button" class="rtg-pt-technique-option ${escape(moveKindClass)} ${ok?"":"is-unaffordable"}" data-rtg-choice="move:${i}" data-rtg-confirm="0" ${ok?"":"disabled"} aria-label="${escape(move.name)} costo ${escape(price??"non disponibile")} PT">
+               <span class="rtg-pt-option-head"><strong>${escape(move.name)}</strong><b>POWER ${escape(move.power??"—")}</b></span>
+               <span class="rtg-pt-option-info"><em class="rtg-move-element-badge element-${escape(String(move.element||"").toLowerCase())}">${escape(moveElementLabel(move.element))}</em><span>COSTO ${escape(price??"N/D")} PT</span><span>${ok?`${prob.toFixed(1)}% · ${delta>=0?"+":""}${delta.toFixed(1)}%`:"PT INSUFFICIENTI"}</span></span>
+             </button>`;
+           }).join("")}
+          </div>`
+        : "";
+      return `<section class="panel rtg-duel-card rtg-duel-card--revolution rtg-duel-card--clean rtg-paper-modal ${userHasPossession ? "is-user-possession" : "is-opponent-possession"} ${showingMove ? "is-user-move-preview" : ""}">
         <div class="rtg-duel-contextbar">
           <strong class="rtg-duel-possession ${possessionClass}">${escape(possessionText)}</strong>
           <span class="rtg-duel-context-meta"><b class="rtg-duel-minute">${escape(currentMinute(match))}'</b><b class="rtg-duel-zone">${escape(({midfield:"CENTROCAMPO",attack:"TRE QUARTI",shot:"ZONA TIRO"}[pending.zone || match.fieldZone] || "AZIONE"))}</b></span>
@@ -697,23 +750,25 @@
           <div><p class="eyebrow">SCONTRO</p><h2>${escape(duelTypeLabel(pending))}</h2></div>
         </header>
         <div class="rtg-duel-versus-board">
-          <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userMoveSelected ? "has-special-move" : ""}">
-            <div class="rtg-duel-panel-heading"><span class="rtg-duel-panel-tag">TU</span><span class="rtg-duel-action-chip ${userMoveSelected ? `rtg-duel-action-chip--move ${moveCategoryClass(pending.userMove,userKind)}` : ""}">${escape(userActionShort)}</span></div>
-            ${duelCompareVisualMarkup(user,"user",`data-rtg-duel-player="${escape(pid(user))}" data-side="user"`,opponent)}
-            ${userMoveSelected ? `<div class="rtg-duel-active-move ${duelActionCategory(userKind,"user",pending.actorSide)}"><small>MOSSA SPECIALE</small><strong>${escape(pending.userMove.name)}</strong><em>POWER ${escape(pending.userMove.power ?? "—")}</em></div>` : ""}
+          <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${showingMove ? "has-special-move" : ""}">
+            <div class="rtg-duel-panel-heading"><span class="rtg-duel-panel-tag">TU</span><span class="rtg-duel-action-chip ${showingMove ? `rtg-duel-action-chip--move ${moveCategoryClass(currentMove,userKind)}` : ""}">${escape(userActionShort)}</span></div>
+            ${duelCompareVisualMarkup(user,"user",`data-rtg-duel-player="${escape(pid(user))}" data-side="user"`,opponent,userPt)}
+            ${showingMove ? `<div class="rtg-duel-active-move ${moveKindClass}"><small>MOSSA SPECIALE</small><strong>${escape(currentMove.name)}</strong><em>POWER ${escape(currentMove.power ?? "—")} · ${escape(currentMove.ptCost??"N/D")} PT</em></div>` : ""}
           </article>
           <div class="rtg-duel-vs-core" aria-hidden="true"><small>SCONTRO</small><span>VS</span></div>
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)}">
             <div class="rtg-duel-panel-heading"><span class="rtg-duel-panel-tag">${escape(opponentName)}</span><span class="rtg-duel-action-chip">${escape(opponentActionShort)}</span></div>
-            ${duelCompareVisualMarkup(opponent,"opponent",`data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"`,user)}
+            ${duelCompareVisualMarkup(opponent,"opponent",`data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"`,user,opponentPt)}
           </article>
         </div>
         <section class="rtg-duel-choice-section">
           <div class="rtg-duel-choice-head"><strong>SCEGLI L'AZIONE</strong><span>1° tocco: anteprima · 2° tocco: conferma</span></div>
           <div class="rtg-duel-choice-grid">
-            ${choiceCard("base",baseVerb,"Nessun uso consumato",baseProbability,0)}
-            ${pending.userMove && uses > 0 ? choiceCard("move",pending.userMove.name,`${uses}/2 USI · POWER ${pending.userMove.power || "—"}${pending.userMove.element ? `|ELEMENT|${moveElementLabel(pending.userMove.element)}|${String(pending.userMove.element).toLowerCase()}` : ""}`,moveProbability,moveDelta,false,moveCategoryClass(pending.userMove,userKind)) : ""}
+            ${choiceCard("base",baseVerb,ptMode?"Nessun PT consumato":"Nessun uso consumato",baseProbability,0)}
+            ${moveCard()}
           </div>
+          ${ptMode && showingMove && options.length>1 ? `<button type="button" class="rtg-pt-change-technique ${escape(moveKindClass)}" data-rtg-choice="list" data-rtg-confirm="0">‹ CAMBIA TECNICA</button>` : ""}
+          ${chooser}
         </section>
       </section>`;
     }
@@ -732,9 +787,9 @@
       return `<section class="panel rtg-duel-card rtg-duel-card--clean rtg-duel-resolving rtg-paper-modal development-squad-card-scope">
         <div class="rtg-duel-resolving-head"><small>SCELTE BLOCCATE</small><strong>CONFRONTO FINALE</strong></div>
         <div class="rtg-duel-versus-board rtg-duel-versus-board--resolving">
-          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userMove?"has-special-move":""}">${duelCompareVisualMarkup(user,"user","",opponent)}<div class="rtg-duel-resolving-action ${userMove?`is-move ${escape(userMoveCategory)}`:""}"><small>${userMove?"MOSSA":"AZIONE"}</small><strong>${escape(userAction)}</strong>${userMove?`<em>POWER ${escape(resolution.userMovePower??"—")}${resolution.userMoveElement?` · ${escape(moveElementLabel(resolution.userMoveElement))}`:""}</em>`:""}</div></article>
+          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userMove?"has-special-move":""}">${duelCompareVisualMarkup(user,"user","",opponent,resolution.userPt)}<div class="rtg-duel-resolving-action ${userMove?`is-move ${escape(userMoveCategory)}`:""}"><small>${userMove?"MOSSA":"AZIONE"}</small><strong>${escape(userAction)}</strong>${userMove?`<em>POWER ${escape(resolution.userMovePower??"—")}${resolution.userMoveElement?` · ${escape(moveElementLabel(resolution.userMoveElement))}`:""}</em>`:""}</div></article>
           <div class="rtg-duel-vs-core rtg-duel-vs-core--resolving"><small>PROBABILITÀ</small><span>VS</span></div>
-          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)} ${aiMove?"has-special-move":""}">${duelCompareVisualMarkup(opponent,"opponent","",user)}<div class="rtg-duel-resolving-action ${aiMove?`is-move ${escape(aiMoveCategory)}`:""}"><small>${aiMove?"MOSSA":"AZIONE"}</small><strong>${escape(aiAction)}</strong>${aiMove?`<em>POWER ${escape(resolution.aiMovePower??"—")}${resolution.aiMoveElement?` · ${escape(moveElementLabel(resolution.aiMoveElement))}`:""}</em>`:""}</div></article>
+          <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)} ${aiMove?"has-special-move":""}">${duelCompareVisualMarkup(opponent,"opponent","",user,resolution.opponentPt)}<div class="rtg-duel-resolving-action ${aiMove?`is-move ${escape(aiMoveCategory)}`:""}"><small>${aiMove?"MOSSA":"AZIONE"}</small><strong>${escape(aiAction)}</strong>${aiMove?`<em>POWER ${escape(resolution.aiMovePower??"—")}${resolution.aiMoveElement?` · ${escape(moveElementLabel(resolution.aiMoveElement))}`:""}</em>`:""}</div></article>
         </div>
         <div class="rtg-duel-final-probability rtg-duel-final-probability--persistent"><small>PROBABILITÀ EFFETTIVA</small><div class="rtg-duel-prob-sides"><span><em>TU</em><strong>${escape(final.toFixed(1))}%</strong></span><i>VS</i><span><em>AVVERSARIO</em><strong>${escape(other.toFixed(1))}%</strong></span></div></div>
         <div class="rtg-duel-resolving-footer"><span>RISOLUZIONE AUTOMATICA</span><b><i></i><i></i><i></i></b></div>
@@ -757,12 +812,12 @@
         <div class="rtg-duel-resolving-head"><small>SCONTRO IN CORSO</small><strong>CHI AVRÀ LA MEGLIO?</strong></div>
         <div class="rtg-duel-versus-board rtg-duel-versus-board--resolving">
           <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userMove?"has-special-move":""}">
-            ${duelCompareVisualMarkup(user,"user","",opponent)}
+            ${duelCompareVisualMarkup(user,"user","",opponent,resolution.userPt)}
             <div class="rtg-duel-resolving-action ${userMove?`is-move ${escape(userMoveCategory)}`:""}"><small>${userMove?"MOSSA":"AZIONE"}</small><strong>${escape(userAction)}</strong>${userMove?`<em>POWER ${escape(resolution.userMovePower ?? "—")}</em>`:""}</div>
           </article>
           <div class="rtg-duel-vs-core rtg-duel-vs-core--resolving" aria-hidden="true"><small>RISOLUZIONE</small><span>VS</span><i></i></div>
           <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)} ${aiMove?"has-special-move":""}">
-            ${duelCompareVisualMarkup(opponent,"opponent","",user)}
+            ${duelCompareVisualMarkup(opponent,"opponent","",user,resolution.opponentPt)}
             <div class="rtg-duel-resolving-action ${aiMove?`is-move ${escape(aiMoveCategory)}`:""}"><small>${aiMove?"MOSSA":"AZIONE"}</small><strong>${escape(aiAction)}</strong>${aiMove?`<em>POWER ${escape(resolution.aiMovePower ?? "—")}</em>`:""}</div>
           </article>
         </div>
@@ -797,14 +852,14 @@
         </div>
         <div class="rtg-duel-versus-board rtg-duel-versus-board--result">
           <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${userWon ? "is-duel-winner" : "is-duel-loser"}" ${userWon ? "" : `style="${loserStyle}"`}>
-            ${duelCompareVisualMarkup(user,"user",pid(user) ? `data-rtg-duel-player="${escape(pid(user))}" data-side="user"` : "",opponent)}
+            ${duelCompareVisualMarkup(user,"user",pid(user) ? `data-rtg-duel-player="${escape(pid(user))}" data-side="user"` : "",opponent,resolution.userPt)}
             ${userWon && userWinningMove
               ? `<div class="rtg-duel-result-move ${escape(userMoveCategory)}"><small>MOSSA</small><strong>${escape(userAction)}</strong><em>POWER ${escape(resolution.userMovePower ?? "—")}</em></div>`
               : ""}
           </article>
           <div class="rtg-duel-result-vs" aria-hidden="true"><small>ESITO</small><span>VS</span></div>
           <article class="rtg-duel-portrait-panel rtg-duel-result-player rtg-duel-portrait-panel--opponent ${escape(opponentRarityClass)} ${userWon ? "is-duel-loser" : "is-duel-winner"}" ${userWon ? `style="${loserStyle}"` : ""}>
-            ${duelCompareVisualMarkup(opponent,"opponent",pid(opponent) ? `data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"` : "",user)}
+            ${duelCompareVisualMarkup(opponent,"opponent",pid(opponent) ? `data-rtg-duel-player="${escape(pid(opponent))}" data-side="opponent"` : "",user,resolution.opponentPt)}
             ${!userWon && opponentWinningMove
               ? `<div class="rtg-duel-result-move rtg-duel-result-move--opponent ${escape(opponentMoveCategory)}"><small>MOSSA</small><strong>${escape(opponentAction)}</strong><em>POWER ${escape(resolution.aiMovePower ?? "—")}</em></div>`
               : ""}
@@ -1023,7 +1078,19 @@
             </button>
           </div>
         </div>
-        ${moveAvailable ? `<button type="button" class="btn btn-yellow rtg-penalty-move" data-rtg-penalty-move><strong>${escape(moveLabel)}</strong><small>${escape(context.userMoveUses || 0)}/2 usi rimasti</small></button>` : ""}
+        ${context.ptMode
+          ? (context.userOptions?.length > 1
+              ? `<details class="rtg-pt-penalty-list ${context.userRole==="save"?"is-save":""}"><summary>SELEZIONA TECNICA · ${escape(context.userOptions.length)} MOSSE</summary>
+                   <div class="rtg-pt-technique-picker">${context.userOptions.map((move,index)=>{
+                     const affordable=move.ptCost!=null&&move.ptCost<=(context.userPt?.remaining||0);
+                     return `<button type="button" class="rtg-pt-technique-option ${moveCategoryClass(move,context.userRole)}" data-rtg-penalty-technique="${index}" ${affordable?"":"disabled"}>
+                       <span class="rtg-pt-option-head"><strong>${escape(move.name)}</strong><b>POWER ${escape(move.power??"—")}</b></span>
+                       <span class="rtg-pt-option-info"><em class="rtg-move-element-badge element-${escape(String(move.element||"").toLowerCase())}">${escape(moveElementLabel(move.element))}</em><span>COSTO ${escape(move.ptCost??"N/D")} PT</span><span>${affordable?"USA TECNICA":"PT INSUFFICIENTI"}</span></span>
+                     </button>`;
+                   }).join("")}</div></details>`
+              : (moveAvailable?`<button type="button" class="btn btn-yellow rtg-penalty-move" data-rtg-penalty-move><strong>${escape(moveLabel)}</strong><small>POWER ${escape(context.userMove?.power??"—")} · COSTO ${escape(context.userMove?.ptCost??"—")} PT</small></button>`:""))
+          : (moveAvailable?`<button type="button" class="btn btn-yellow rtg-penalty-move" data-rtg-penalty-move><strong>${escape(moveLabel)}</strong><small>${escape(context.userMoveUses||0)}/2 usi rimasti</small></button>`:"")}
+        ${context.ptMode?`<div class="rtg-pt-penalty-balance">TU: ${escape(context.userPt?.remaining??"—")} / ${escape(context.userPt?.max??"—")} PT · AVVERSARIO: ${escape(context.opponentPt?.remaining??"—")} / ${escape(context.opponentPt?.max??"—")} PT</div>`:""}
       </section>`;
     }
 
@@ -1083,7 +1150,8 @@
       root?.querySelector?.("[data-rtg-abandon]")?.addEventListener("click", () => actions.onAbandon?.());
       root?.querySelector?.("[data-rtg-half-confirm]")?.addEventListener("click", () => actions.onHalftimeConfirm?.());
       root?.querySelectorAll?.("[data-rtg-penalty-direction]")?.forEach((button) => button.addEventListener("click", () => actions.onPenaltyDirection?.(button.dataset.rtgPenaltyDirection)));
-      root?.querySelector?.("[data-rtg-penalty-move]")?.addEventListener("click", () => actions.onPenaltyMove?.());
+      root?.querySelector?.("[data-rtg-penalty-move]")?.addEventListener("click", () => actions.onPenaltyMove?.(0));
+      root?.querySelectorAll?.("[data-rtg-penalty-technique]")?.forEach(button=>button.addEventListener("click",()=>actions.onPenaltyMove?.(Number(button.dataset.rtgPenaltyTechnique))));
       root?.querySelector?.("[data-rtg-result-continue]")?.addEventListener("click", () => actions.onContinue?.());
     }
 

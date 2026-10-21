@@ -626,6 +626,7 @@
       return {formationId:generated.formationId,lineup:generated.playerIds.map(playerId=>resolvedStandard(playerId)).filter(Boolean),bench:[],teamPower:generated.teamPower,name:generated.name,specialType:"free-agents"};
     }
     async function startMatch(nodeId){
+      if(global.RtgFourMovesRuntime&&!(await global.RtgFourMovesRuntime.ready)){deps.toast?.("Dati delle quattro mosse non disponibili","error");return null;}
       const node=nodeById(nodeId);
       let started=null;
       campaign=await repository.update("rtg-start-match",current=>{
@@ -647,7 +648,7 @@
         const opponentSquad=node.type==="main"?mainOpponent(node):secondaryOpponent(node,current,attemptNumber);
         const seed=`${current.campaignSeed}:${node.id}:${attemptNumber}`;
         const matchId=`rtg:${node.id}:${attemptNumber}`;
-        let match=matchEngine.createMatch({matchId,nodeId:node.id,matchType:node.type,attemptNumber,seed,userSquad,opponentSquad});
+        let match=matchEngine.createMatch({matchId,nodeId:node.id,matchType:node.type,attemptNumber,seed,userSquad,opponentSquad,seasonId:id(current.activeSeasonId||activeSeasonId())});
         match=matchEngine.prepareNext(match);
         match.presentation={...(match.presentation||{}),preMatchSeen:false};
         current.activeMatch=match;started=clone(match);return current;
@@ -670,7 +671,7 @@
         onAbandon:()=>abandonMatch(),
         onHalftimeConfirm:()=>confirmHalftime(halftimeDraft),
         onPenaltyDirection:direction=>choosePenalty({direction,useMove:false}),
-        onPenaltyMove:()=>choosePenalty({direction:"center",useMove:true}),
+        onPenaltyMove:moveIndex=>choosePenalty({direction:"center",useMove:true,moveIndex:moveIndex??0}),
       });
     }
     function showEncounterOverlay(match,selectedChoice=null){
@@ -682,7 +683,7 @@
         selectedEncounterId=encounterId;
         selectedEncounterChoice=null;
       }
-      if(["base","move"].includes(String(selectedChoice||"")))selectedEncounterChoice=String(selectedChoice);
+      if(/^(base|move|list|move:\d+)$/.test(String(selectedChoice||"")))selectedEncounterChoice=String(selectedChoice);
       const userPlayer=findMatchPlayer(match,"user",pending.userPlayerId);
       const opponentPlayer=findMatchPlayer(match,"opponent",pending.aiPlayerId||pending.opponentPlayerId);
       overlay.innerHTML=matchView.encounterMarkup(match,{userPlayer,opponentPlayer,selectedChoice:selectedEncounterChoice});
@@ -691,13 +692,13 @@
     function handleEncounterChoiceTap(choice,isConfirm=false){
       const normalized=String(choice||"");
       const pending=campaign?.activeMatch?.pendingEncounter;
-      if(!pending||!["base","move"].includes(normalized))return;
+      if(!pending||!(/^(base|move|list|move:\d+)$/.test(normalized)))return;
       const encounterId=id(pending.encounterId);
 
       // Confirmation is accepted only from a button that was rendered in the
       // selected state. A stale JS selection can therefore never resolve on
       // the first visible tap of a new/updated duel.
-      if(isConfirm===true&&selectedEncounterId===encounterId&&selectedEncounterChoice===normalized){
+      if(normalized!=="list"&&isConfirm===true&&selectedEncounterId===encounterId&&selectedEncounterChoice===normalized){
         selectedEncounterChoice=null;
         selectedEncounterId=null;
         return chooseEncounter(normalized);
@@ -836,7 +837,7 @@
         const userProbability=before.userSide===before.actorSide?Number(log.probability):100-Number(log.probability);
         const userPlayer=findMatchPlayer(resolvedMatch,"user",before.userPlayerId);
         const aiPlayer=findMatchPlayer(resolvedMatch,"opponent",before.aiPlayerId||before.opponentPlayerId);
-        const userChoiceLabel=choice==="move"?(before.userMove?.name||"Mossa"):(before.userBaseActionLabel||"Azione base");
+        const selectedMove=choice.startsWith("move:")?before.userMoveOptions?.[Number(choice.slice(5))]:choice==="move"?before.userMove:null,userChoiceLabel=selectedMove?.name||(before.userBaseActionLabel||"Azione base");
         const aiChoiceLabel=before.aiChoice==="move"?(before.aiMove?.name||"Mossa"):null;
         const outcomeLabel=before.userKind==="shot"
           ?(userWon?"GOAL!":"Tiro fermato")
@@ -850,7 +851,7 @@
         const userIsActor=before.userSide===before.actorSide;
         const previewActor=userIsActor?userPlayer:aiPlayer;
         const previewOpponent=userIsActor?aiPlayer:userPlayer;
-        const previewUserMove=choice==="move"?before.userMove:null;
+        const previewUserMove=selectedMove;
         const previewCalc=global.RoadToGloryEncounterRuntime?.probability?.({
           actor:previewActor,
           opponent:previewOpponent,
@@ -865,18 +866,18 @@
           userWon,probability:userProbability,previewProbability:previewUserProbability,outcomeLabel,userKind:before.userKind,
           userPlayerName:userPlayer?.name||before.userPlayerId,
           aiPlayerName:aiPlayer?.name||before.aiPlayerId,
-          userPlayer,opponentPlayer:aiPlayer,
+          userPlayer,opponentPlayer:aiPlayer,userPt:global.RoadToGloryMatchPtRuntime?.pt?.(resolvedMatch,"user",before.userPlayerId)||null,opponentPt:global.RoadToGloryMatchPtRuntime?.pt?.(resolvedMatch,"opponent",before.aiPlayerId)||null,
           opponentLabel:resolvedMatch.opponentSquad?.name||"AVVERSARIO",
           actorSide:before.actorSide,
           aiKind:before.aiKind,
           userChoiceLabel,aiChoiceLabel,
-          userUsedMove:choice==="move",
+          userUsedMove:!!selectedMove,
           aiUsedMove:before.aiChoice==="move",
-          userMovePower:choice==="move" ? (before.userMove?.power ?? null) : null,
+          userMovePower:selectedMove?.power ?? null,
           aiMovePower:before.aiChoice==="move" ? (before.aiMove?.power ?? null) : null,
-          userMoveType:choice==="move" ? (before.userMove?.type || before.userKind || null) : null,
+          userMoveType:selectedMove?.type || null,
           aiMoveType:before.aiChoice==="move" ? (before.aiMove?.type || before.aiKind || null) : null,
-          userMoveElement:choice==="move" ? (before.userMove?.element || null) : null,
+          userMoveElement:selectedMove?.element || null,
           aiMoveElement:before.aiChoice==="move" ? (before.aiMove?.element || null) : null,
           scoreBefore,scoreAfter:clone(resolvedMatch.score||scoreBefore),
           goalSide:log.goalSide||null,
@@ -948,27 +949,27 @@
       const keeper=(defendingSide==="user"?match.userSquad:match.opponentSquad).lineup.find(player=>String(player.tacticalRole||player.normalizedRole||player.position)==="GK");
       const userPlayer=attackingSide==="user"?shooter:keeper;
       const userKind=attackingSide==="user"?"shot":"save";
-      const userMove=userPlayer?.move&&String(userPlayer.move.type)===userKind?userPlayer.move:null;
+      const ptRules=global.RoadToGloryMatchPtRuntime,ptMode=ptRules?.inMatch(match)===true,userOptions=ptMode?ptRules.compatible(match,"user",id(userPlayer?.cardId||userPlayer?.playerId),userKind):[],userMove=ptMode?(userOptions[0]||null):(userPlayer?.move&&String(userPlayer.move.type)===userKind?userPlayer.move:null);
       const userKey=`user:${id(userPlayer?.cardId||userPlayer?.playerId)}`;
       const userMoveUses=Number(match.moveUsesByPlayerId?.[userKey]||0);
-      return {attackingSide,defendingSide,shooter,keeper,userRole:userKind,userMove,userMoveUses,userMoveAvailable:!!userMove&&userMoveUses>0};
+      return {attackingSide,defendingSide,shooter,keeper,userRole:userKind,userMove,userMoveUses,userOptions,ptMode,userPt:ptRules?.pt?.(match,"user",id(userPlayer?.cardId||userPlayer?.playerId))||null,opponentPt:ptRules?.pt?.(match,"opponent",id((attackingSide==="user"?keeper:shooter)?.cardId||(attackingSide==="user"?keeper:shooter)?.playerId))||null,userMoveAvailable:ptMode?ptRules.affordable(match,"user",id(userPlayer?.cardId||userPlayer?.playerId),userOptions).length>0:!!userMove&&userMoveUses>0};
     }
     function previousUserDirections(match){
       return (match.shootout?.history||[]).map(item=>({userDirection:item.attackingSide==="user"?item.shooterChoice:item.goalkeeperChoice})).filter(item=>item.userDirection);
     }
-    async function choosePenalty({direction,useMove}={}){
+    async function choosePenalty({direction,useMove,moveIndex=0}={}){
       return commitMatchState("rtg-penalty",match=>{
         const ctx=penaltyContext(match);
         const kickIndex=match.shootout?.history?.length||0;
         const aiDirection=penaltyRuntime.aiDirection(previousUserDirections(match),`${match.seed}:penalty-ai`,kickIndex);
         const aiPlayer=ctx.attackingSide==="user"?ctx.keeper:ctx.shooter;
         const aiKind=ctx.attackingSide==="user"?"save":"shot";
-        const aiMove=aiPlayer?.move&&String(aiPlayer.move.type)===aiKind?aiPlayer.move:null;
+        const ptRules=global.RoadToGloryMatchPtRuntime,ptMode=ptRules?.inMatch(match)===true,aiOptions=ptMode?ptRules.compatible(match,"opponent",id(aiPlayer?.cardId||aiPlayer?.playerId),aiKind):[],aiMove=ptMode?ptRules.chosenAi(match,"opponent",id(aiPlayer?.cardId||aiPlayer?.playerId),aiOptions,`penalty-ai-option:${kickIndex}`):(aiPlayer?.move&&String(aiPlayer.move.type)===aiKind?aiPlayer.move:null);
         const aiSide=ctx.attackingSide==="user"?"opponent":"opponent";
         const aiKey=`${aiSide}:${id(aiPlayer?.cardId||aiPlayer?.playerId)}`;
-        const aiUses=Number(match.moveUsesByPlayerId?.[aiKey]||0);
+        const aiUses=ptMode?(aiMove?1:0):Number(match.moveUsesByPlayerId?.[aiKey]||0);
         const aiChoice=aiPolicy.chooseMove({minute:120,score:{ai:match.shootout?.score?.opponent||0,user:match.shootout?.score?.user||0},encounterKind:aiKind,baseProbabilityForAi:50,remainingUses:aiUses,hasCompatibleMove:!!aiMove&&aiUses>0},rng.float(match.seed,"penalty-ai-move",kickIndex));
-        const userMove=useMove?ctx.userMove:null;
+        const userMove=useMove?(ptMode?ctx.userOptions?.[Number(moveIndex)]:ctx.userMove):null;
         const shooterMove=ctx.attackingSide==="user"?userMove:(aiChoice==="move"?aiMove:null);
         const goalkeeperMove=ctx.attackingSide==="user"?(aiChoice==="move"?aiMove:null):userMove;
         const result=matchEngine.resolvePenaltyKick(match,{
