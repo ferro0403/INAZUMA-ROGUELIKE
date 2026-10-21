@@ -219,6 +219,7 @@
       return global.SeasonRegistry?.database?.(meta.legacySeasonId)||seasonDb;
     }
     function openRtgPlayerDetails(cardRef,side="",options={}){
+      const fourMoves=global.RtgFourMovesRuntime;if(fourMoves&&!fourMoves.isReady())return fourMoves.ready.then(()=>openRtgPlayerDetails(cardRef,side,options));
       const key=id(cardRef);
       let player=null;
       if(side&&campaign?.activeMatch)player=findMatchPlayer(campaign.activeMatch,side,key);
@@ -252,7 +253,7 @@
           return openRtgPlayerDetails(key,"",reopenOptions);
         }:null,
         moveSeasonId:id(detailMeta.legacySeasonId||player.resolvedSeasonId||campaign?.activeSeasonId||"ie1"),
-        rtgKitPreview:true,
+        rtgKitPreview:true,rtgFourMoves:true,rtgRarity:campaign?.developmentByCardId?.[id(detailPlayer.cardId||key)]?.currentRarity||campaign?.developmentByCardId?.[key]?.currentRarity||detailPlayer.category,
         readOnly:true,
         mode:options?.mode||undefined,
         albumUnlocked:options?.albumUnlocked,
