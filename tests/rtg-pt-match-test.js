@@ -127,7 +127,9 @@ assert.match(polishCss,/max-width:100%!important/,"PT badge cannot extend beyond
 assert.match(polishCss,/@media\(max-width:480px\)/,"mobile portrait PT layout must be responsive");
 assert.match(polishCss,/\.rtg-duel-pt-inline\.is-projected\s*\{[\s\S]*?flex-direction:column!important/,"narrow projected PT must stack in two compact rows");
 assert.match(polishCss,/\.rtg-duel-pt-inline\.is-projected \.rtg-duel-pt-projection\s*\{[\s\S]*?width:100%!important/,"forecast arrow/value must fit inside badge");
-assert.match(indexHtml,/rtg-match-pt-preview\.css\?v=20261021-pt-badge-fit-4/);
+assert.match(polishCss,/align-items:flex-start!important;\s*width:max-content!important/,"mobile PT badge must hug content and align left");
+assert.match(polishCss,/justify-content:flex-start!important;\s*width:100%!important/,"forecast PT must align left inside badge");
+assert.match(indexHtml,/rtg-match-pt-preview\.css\?v=20261021-pt-badge-left-5/);
 
 // Committed PT must stay hidden during the final comparison, including a
 // successful/failed conditional move; reveal the canonical balance only with
