@@ -174,7 +174,7 @@
       return !!mine && !!theirs && beats[theirs] === mine;
     }
 
-    function duelCompareVisualMarkup(player = {}, side = "user", attrs = "", opponent = null, ptInfo = null) {
+    function duelCompareVisualMarkup(player = {}, side = "user", attrs = "", opponent = null, ptInfo = null, ptProjection = null) {
       const name = player?.name || pid(player) || (side === "user" ? "Tu" : "Avversario");
       const visual = duelVisualUrl(player);
       const playerRole = role(player) || "—";
@@ -189,7 +189,7 @@
           <strong class="rtg-duel-player-name">${escape(name)}</strong>
           <span class="rtg-duel-player-meta">
             <small><b>${escape(playerRole)}</b><span>OVR ${escape(overall)}</span></small>
-            ${ptInfo ? `<span class="rtg-duel-pt-inline" aria-label="Punti tecnica residui ${escape(ptInfo.remaining)} di ${escape(ptInfo.max)}"><b>PT</b><strong>${escape(ptInfo.remaining)}</strong><span>/ ${escape(ptInfo.max)}</span></span>` : ""}
+            ${ptInfo ? `<span class="rtg-duel-pt-inline ${ptProjection?"is-projected":""}" aria-label="Punti tecnica residui ${escape(ptInfo.remaining)} di ${escape(ptInfo.max)}${ptProjection?`; ${ptProjection.conditional?"se la tecnica riesce":"dopo l’utilizzo"} ${ptProjection.after}`:""}"><span class="rtg-duel-pt-current"><b>PT</b><strong>${escape(ptInfo.remaining)}</strong><span>/ ${escape(ptInfo.max)}</span></span>${ptProjection ? `<span class="rtg-duel-pt-projection">${ptProjection.conditional?"SE RIESCE":"DOPO USO"} <strong>→ ${escape(ptProjection.after)} PT</strong></span>` : ""}</span>` : ""}
             <em class="rtg-duel-player-element has-native-element-icon ${escape(elementClass)} ${escape(elementStateClass)}">${duelElementIcon(player)}<span>${escape(element)}</span></em>
           </span>
         </span>
@@ -674,6 +674,12 @@
       const currentMove = ptMode ? selectedMove : pending.userMove;
       const showingMove = ptMode ? selectedIndex >= 0 && !!currentMove && available(currentMove)
         : selectedChoice === "move" && !!currentMove;
+      // Preview only: do not change match state before the encounter result.
+      const isConditionalPt = move => ["dribble","defense"].includes(String(move?.type||"").toLowerCase());
+      const ptAfter = move => move?.ptCost != null && userPt ? Math.max(0,userPt.remaining-move.ptCost) : null;
+      const ptAfterCaption = move => isConditionalPt(move) ? "SE RIESCE" : "DOPO USO";
+      const userPtProjection = showingMove && ptMode
+        ? {after:ptAfter(currentMove),conditional:isConditionalPt(currentMove)} : null;
       const baseProbability = previewProbability(pending,user,opponent,"base");
       const calculateMove = move => previewProbability({...pending,userMove:move},user,opponent,"move");
       const moveProbability = currentMove && available(currentMove) ? calculateMove(currentMove) : null;
@@ -692,17 +698,18 @@
       const userRarityClass = duelRarityClass(user);
       const opponentRarityClass = duelRarityClass(opponent);
       const moveKindClass = duelActionCategory(userKind,"user",pending.actorSide);
-      const choiceCard = (choice,label,sub,probability,delta=0,disabled=false,categoryClass="") => {
+      const choiceCard = (choice,label,sub,probability,delta=0,disabled=false,categoryClass="",ptAfterMarkup="") => {
         const selected = selectedChoice === choice;
         const isMove = choice.startsWith("move");
         const deltaText = delta > 0.05 ? `+${delta.toFixed(1)}%` : delta < -0.05 ? `${delta.toFixed(1)}%` : "BASE";
         const parsedSub=String(sub).split("|ELEMENT|");
+        const elementParts=String(parsedSub[1]||"").split("|");
         const subMarkup = parsedSub.length>1
-          ? `<em>${escape(parsedSub[0])}</em><span class="rtg-move-element-badge element-${escape(parsedSub[2]||"")}"><i></i>${escape(parsedSub[1]||"")}</span>`
+          ? `<em>${escape(parsedSub[0])}</em><span class="rtg-move-element-badge element-${escape(elementParts[1]||"")}"><i></i>${escape(elementParts[0]||"")}</span>`
           : `<em>${escape(sub)}</em>`;
         return `<button type="button" class="rtg-duel-choice-card ${isMove?"is-move":"is-base"} ${escape(categoryClass)} ${selected?"is-selected":""}" data-rtg-choice="${escape(choice)}" data-rtg-confirm="${selected?"1":"0"}" ${disabled?"disabled":""}>
           <span class="rtg-choice-icon" aria-hidden="true">${isMove?"⚡":"●"}</span>
-          <span class="rtg-choice-copy"><strong>${escape(label)}</strong>${subMarkup}</span>
+          <span class="rtg-choice-copy"><strong>${escape(label)}</strong>${subMarkup}${ptAfterMarkup}</span>
           <span class="rtg-choice-probability"><strong>${escape(Number(probability).toFixed(1))}%</strong><em class="rtg-choice-delta ${delta>0?"is-positive":delta<0?"is-negative":""}">${escape(deltaText)}</em></span>
           ${selected?'<span class="rtg-choice-confirm">TOCCA DI NUOVO PER CONFERMARE</span>':""}
         </button>`;
@@ -726,8 +733,10 @@
         const move = options[i];
         if(!move)return "";
         const prob=calculateMove(move),cost=move.ptCost;
-        const sub=`POWER ${move.power??"—"} · COSTO ${cost??"N/D"} PT · ${moveElementLabel(move.element)}`;
-        return choiceCard(`move:${i}`,move.name,sub,prob,prob-baseProbability,!available(move),moveCategoryClass(move,userKind));
+        const sub=`POWER ${move.power??"—"} · COSTO ${cost??"N/D"} PT${move.element?`|ELEMENT|${moveElementLabel(move.element)}|${String(move.element).toLowerCase()}`:""}`;
+        const after=ptAfter(move);
+        const ptLabel=after==null?"":`<span class="rtg-pt-after-use">${ptAfterCaption(move)}: <b>${escape(after)} PT</b></span>`;
+        return choiceCard(`move:${i}`,move.name,sub,prob,prob-baseProbability,!available(move),moveCategoryClass(move,userKind),ptLabel);
       };
       const chooser=ptMode && selectedChoice==="list" && options.length>1
         ? `<div class="rtg-pt-technique-picker" role="group" aria-label="Seleziona tecnica">
@@ -737,11 +746,12 @@
              return `<button type="button" class="rtg-pt-technique-option ${escape(moveKindClass)} ${ok?"":"is-unaffordable"}" data-rtg-choice="move:${i}" data-rtg-confirm="0" ${ok?"":"disabled"} aria-label="${escape(move.name)} costo ${escape(price??"non disponibile")} PT">
                <span class="rtg-pt-option-head"><strong>${escape(move.name)}</strong><b>POWER ${escape(move.power??"—")}</b></span>
                <span class="rtg-pt-option-info"><em class="rtg-move-element-badge element-${escape(String(move.element||"").toLowerCase())}">${escape(moveElementLabel(move.element))}</em><span>COSTO ${escape(price??"N/D")} PT</span><span>${ok?`${prob.toFixed(1)}% · ${delta>=0?"+":""}${delta.toFixed(1)}%`:"PT INSUFFICIENTI"}</span></span>
+               ${ok?`<small class="rtg-pt-option-after">${ptAfterCaption(move)}: <strong>${escape(ptAfter(move))} PT</strong></small>`:""}
              </button>`;
            }).join("")}
           </div>`
         : "";
-      return `<section class="panel rtg-duel-card rtg-duel-card--revolution rtg-duel-card--clean rtg-paper-modal ${userHasPossession ? "is-user-possession" : "is-opponent-possession"} ${showingMove ? "is-user-move-preview" : ""}">
+      return `<section class="panel rtg-duel-card rtg-duel-card--revolution rtg-duel-card--clean rtg-paper-modal ${ptMode?"rtg-pt-duel":""} ${userHasPossession ? "is-user-possession" : "is-opponent-possession"} ${showingMove ? "is-user-move-preview" : ""}">
         <div class="rtg-duel-contextbar">
           <strong class="rtg-duel-possession ${possessionClass}">${escape(possessionText)}</strong>
           <span class="rtg-duel-context-meta"><b class="rtg-duel-minute">${escape(currentMinute(match))}'</b><b class="rtg-duel-zone">${escape(({midfield:"CENTROCAMPO",attack:"TRE QUARTI",shot:"ZONA TIRO"}[pending.zone || match.fieldZone] || "AZIONE"))}</b></span>
@@ -752,7 +762,7 @@
         <div class="rtg-duel-versus-board">
           <article class="rtg-duel-portrait-panel rtg-duel-portrait-panel--user ${escape(userRarityClass)} ${showingMove ? "has-special-move" : ""}">
             <div class="rtg-duel-panel-heading"><span class="rtg-duel-panel-tag">TU</span><span class="rtg-duel-action-chip ${showingMove ? `rtg-duel-action-chip--move ${moveCategoryClass(currentMove,userKind)}` : ""}">${escape(userActionShort)}</span></div>
-            ${duelCompareVisualMarkup(user,"user",`data-rtg-duel-player="${escape(pid(user))}" data-side="user"`,opponent,userPt)}
+            ${duelCompareVisualMarkup(user,"user",`data-rtg-duel-player="${escape(pid(user))}" data-side="user"`,opponent,userPt,userPtProjection)}
             ${showingMove ? `<div class="rtg-duel-active-move ${moveKindClass}"><small>MOSSA SPECIALE</small><strong>${escape(currentMove.name)}</strong><em>POWER ${escape(currentMove.power ?? "—")} · ${escape(currentMove.ptCost??"N/D")} PT</em></div>` : ""}
           </article>
           <div class="rtg-duel-vs-core" aria-hidden="true"><small>SCONTRO</small><span>VS</span></div>

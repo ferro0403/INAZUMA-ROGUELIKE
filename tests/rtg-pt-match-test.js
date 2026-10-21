@@ -94,6 +94,31 @@ const chosen=view.encounterMarkup(encounter,{...args,selectedChoice:"move:1"});
 assert.match(chosen,/Strong shot/);
 assert.match(chosen,/COSTO 95 PT/);
 assert.match(chosen,/data-rtg-confirm="1"/);
+assert.match(chosen,/DOPO USO:/,"shot must show immediate forecast");
+assert.match(chosen,/→ 120 PT/,"215 minus 95 PT forecast on player badge");
+assert.match(chosen,/rtg-duel-pt-projection/,"selected card must show PT forecast");
+assert.match(chosen,/rtg-pt-after-use/,"selected technique card must show projected PT");
+assert.equal(encounter.ptCurrentByPlayerId["user:u"],215,"rendering the PT preview must not spend PT");
+assert.match(menu,/rtg-pt-option-after/,"technique list must show PT after use");
+assert.match(menu,/element-wind/,"element type class must be present");
+const defending=make("defense");
+const defensePreview=view.encounterMarkup(defending,{userPlayer:defending.userSquad.lineup[0],opponentPlayer:defending.opponentSquad.lineup[0],selectedChoice:"move:1"});
+assert.match(defensePreview,/SE RIESCE/,"defensive PT preview must be conditional");
+assert.match(defensePreview,/→ 120 PT/);
+assert.equal(defending.ptCurrentByPlayerId["user:u"],215,"defense preview must not debit PT");
+const dribbling=make("dribble");
+const dribblePreview=view.encounterMarkup(dribbling,{userPlayer:dribbling.userSquad.lineup[0],opponentPlayer:dribbling.opponentSquad.lineup[0],selectedChoice:"move:0"});
+assert.match(dribblePreview,/SE RIESCE/,"dribble PT preview must be conditional");
+assert.match(dribblePreview,/→ 140 PT/);
+assert.equal(dribbling.ptCurrentByPlayerId["user:u"],215);
+const polishCss=fs.readFileSync("css/rtg-match-pt-preview.css","utf8");
+const indexHtml=fs.readFileSync("index.html","utf8");
+assert.match(polishCss,/\.rtg-duel-choice-card\.is-selected::before\s*\{/,"confirmation badge must be inside the grid");
+assert.match(polishCss,/position:static!important/,"confirm badge must not overlap move name");
+for(const element of ["forest","fire","mountain","wind","void"])
+  assert(polishCss.includes(".element-"+element),"missing colored element: "+element);
+assert.match(indexHtml,/rtg-match-pt-preview\.css\?v=20261021-pt-preview-2/);
+
 catalogType="shot";
 const ptx={ptMode:true,attackingSide:"user",shooter:args.userPlayer,keeper:args.opponentPlayer,userRole:"shot",
   userOptions:moveSet(),userMove:moveSet()[0],userPt:{remaining:215,max:215},opponentPt:{remaining:215,max:215},userMoveAvailable:true};
