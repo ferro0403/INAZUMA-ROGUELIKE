@@ -141,6 +141,79 @@
     assert.match(view.card(api.CATALOG[6],"owned"),/data-coach-alternate=/);
     assert.match(view.card(api.CATALOG[9],"owned"),/data-coach-alternate=/);
   });
+
+  test("Rene compact portrait: fullbody prima, WebP indicato e PNG storico come fallback",()=>{
+    const rene=api.BY_ID["4761"];
+    const markup=view.card(rene,"locked");
+    assert.ok(markup.includes('src="'+rene.frontFullbodyUrl+'"'));
+    assert.ok(markup.includes('data-coach-fallbacks="'+rene.imageUrl+"|"+rene.imageFallbackUrls[0]+'"'));
+    assert.match(markup,/rtg-coach-portrait--fullbody-thumbnail/);
+    // The Album retains the user-supplied WebP primary; the fix targets
+    // the assignment selector, which was still blank on Safari.
+    assert.ok(view.albumCard(rene,"locked").includes('src="'+rene.imageUrl+'"'));
+    assert.ok(view.card(api.BY_ID["36"],"locked").includes('src="'+api.BY_ID["36"].imageUrl+'"'));
+  });
+  test("Browser image error listener cycles through every Rene URL and shows fallback",()=>{
+    const listeners={};
+    const client={
+      document:{
+        addEventListener(name,callback,capture){
+          listeners[name]=callback;
+          assert.equal(capture,true);
+        },
+      },
+    };
+    vm.runInNewContext(read("js/road-to-glory/rtg-coaches-view.js"),client);
+    assert.equal(typeof listeners.error,"function");
+    assert.equal(typeof listeners.load,"function");
+    const rene=api.BY_ID["4761"];
+    const fallback={style:{display:"none"}};
+    const classes=new Set(["rtg-coach-portrait--fullbody-thumbnail"]);
+    const image={
+      src:rene.frontFullbodyUrl,
+      hidden:false,style:{display:""},
+      dataset:{
+        coachFallbacks:rene.imageUrl+"|"+rene.imageFallbackUrls[0],
+        coachFullbodyUrl:rene.frontFullbodyUrl,
+        coachCompactFullbody:"true",
+      },
+      nextElementSibling:fallback,
+      getAttribute:key=>key==="data-rtg-coach-image"?"4761":null,
+      classList:{toggle(name,active){
+        if(active)classes.add(name);else classes.delete(name);
+      }},
+    };
+    listeners.error({target:image});
+    assert.equal(image.src,rene.imageUrl);
+    assert.equal(classes.has("rtg-coach-portrait--fullbody-thumbnail"),false);
+    listeners.error({target:image});
+    assert.equal(image.src,rene.imageFallbackUrls[0]);
+    listeners.error({target:image});
+    assert.equal(image.hidden,true);
+    assert.equal(image.style.display,"none");
+    assert.equal(fallback.style.display,"grid");
+  });
+  test("Un'immagine caricata con dimensioni zero passa alla variante successiva",()=>{
+    const listeners={};
+    vm.runInNewContext(read("js/road-to-glory/rtg-coaches-view.js"),{
+      document:{addEventListener(name,cb){listeners[name]=cb;}},
+    });
+    const rene=api.BY_ID["4761"];
+    const image={
+      src:rene.frontFullbodyUrl,
+      naturalWidth:0,naturalHeight:0,
+      style:{},dataset:{
+        coachFallbacks:rene.imageUrl,
+        coachFullbodyUrl:rene.frontFullbodyUrl,
+        coachCompactFullbody:"true"
+      },
+      getAttribute:key=>key==="data-rtg-coach-image"?"4761":null,
+      classList:{toggle(){}},
+    };
+    listeners.load({target:image});
+    assert.equal(image.src,rene.imageUrl);
+  });
+
   test("Risultato distributore: carta grande, nessuna griglia pull legacy, CTA e saldo",()=>{
     const s=campaign();s.tokens=510;
     const html=view.result(api.CATALOG[0],s);
