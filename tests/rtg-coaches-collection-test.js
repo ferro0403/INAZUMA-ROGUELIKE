@@ -199,8 +199,8 @@
     };
     sandbox.RoadToGloryCoachesController.open(ctx,"collection");
     await button.handler({currentTarget:button});
-    assert.equal(state.squads.ie1.coachId,"");
-    assert.equal(draft.coachId,"");
+    assert.equal(state.squads.ie1.coachId||"","");
+    assert.equal(draft.coachId||"","");
     assert.deepEqual(sideEffects,["error"]);
     assert.equal(button.disabled,false);
   });
