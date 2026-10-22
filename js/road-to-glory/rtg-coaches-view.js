@@ -5,7 +5,11 @@
   const fallback=c=>`<span class="rtg-coach-placeholder" aria-hidden="true"><span>⚽</span><b>${esc(c.name.split(" ").map(w=>w[0]).slice(0,2).join(""))}</b></span>`;
   const portrait=(c,fullbody=false)=>{
     const url=fullbody?(c.frontFullbodyUrl||c.imageUrl):(c.imageUrl||c.frontFullbodyUrl);
-    return url?`<img class="${fullbody?"player-fullbody player-fullbody--fullbody rtg-coach-fullbody":"player-portrait rtg-coach-portrait"}" src="${esc(url)}" alt="" loading="lazy" decoding="async" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">${fallback(c).replace('class="rtg-coach-placeholder"','class="rtg-coach-placeholder rtg-coach-placeholder--backup"')}`:fallback(c);
+    const alternate=fullbody?c.imageUrl:c.frontFullbodyUrl;
+    // Some official Zukan thumbnails intermittently fail on mobile. Try the
+    // verified alternate artwork before showing an explicit fallback.
+    const backup=fallback(c).replace('class="rtg-coach-placeholder"','class="rtg-coach-placeholder rtg-coach-placeholder--backup"');
+    return url?`<img class="${fullbody?"player-fullbody player-fullbody--fullbody rtg-coach-fullbody":"player-portrait rtg-coach-portrait"}" src="${esc(url)}" data-coach-alternate="${esc(alternate&&alternate!==url?alternate:"")}" alt="${esc(c.name)}" loading="${fullbody?"eager":"lazy"}" decoding="async" onerror="if(this.dataset.coachAlternate&&!this.dataset.coachRetried){this.dataset.coachRetried='1';this.src=this.dataset.coachAlternate;}else{this.hidden=true;this.style.display='none';this.nextElementSibling.style.display='grid';}">${backup}`:fallback(c);
   };
   const statusLabel=code=>({owned:"POSSEDUTO",available:"DISPONIBILE",locked:"BLOCCATO","other-campaign":"ALTRA CAMPAGNA"})[code]||"";
   function card(c,status="locked",selected=false){
@@ -62,7 +66,7 @@
     const coaches=model().catalog(state),got=coaches.filter(c=>model().status(state,c.id)==="owned").length;
     return `<section class="rtg-coaches-window" aria-label="Allenatori"><header class="rtg-coaches-heading"><div><p class="eyebrow">ROAD TO GLORY · COLLEZIONE</p><h2>ALLENATORI</h2><p>${got} / ${coaches.length} ottenuti</p></div></header>
       <div class="rtg-coaches-tabs"><button type="button" class="${tab==="draw"?"active":""}" data-rtg-coaches-tab="draw">DISTRIBUTORE</button><button type="button" class="${tab==="collection"?"active":""}" data-rtg-coaches-tab="collection">COLLEZIONE</button></div>
-      ${tab==="draw"?vending(state):`<div class="rtg-coaches-grid rtg-picker-grid">${coaches.map(c=>`<div class="rtg-coach-entry ${model().status(state,c.id)==="owned"?"is-unlocked":"is-locked"}">${card(c,model().status(state,c.id),equippedId===c.id)}</div>`).join("")}</div>`}
+      ${tab==="draw"?vending(state):`<div class="rtg-coaches-grid rtg-picker-grid">${coaches.map(c=>`<div class="rtg-coach-entry ${model().status(state,c.id)==="owned"?"is-unlocked":"is-locked"}">${card(c,model().status(state,c.id),equippedId===c.id)}${model().status(state,c.id)==="owned"?`<button type="button" class="rtg-coach-quick-equip" data-rtg-coaches-equip="${equippedId===c.id?"":esc(c.id)}" aria-label="${equippedId===c.id?"Rimuovi":"Assegna"} ${esc(c.name)}">${equippedId===c.id?"✓ ASSEGNATO":"＋ ASSEGNA"}</button>`:""}</div>`).join("")}</div>`}
     </section>`;
   }
   function detail(state,coachId,{equippedId=""}={}){
@@ -94,8 +98,19 @@
       <section class="album-player-grid album-player-grid--modern" data-rtg-album-coaches>${coaches.map(c=>`<div class="album-player-entry rtg-coach-album-entry ${owned.has(c.id)?"is-unlocked":"is-locked"}" data-rtg-album-coach-entry="${esc(c.id)}">${albumCard(c,model().status(state,c.id))}${owned.has(c.id)?"":'<span class="album-player-lock"><span aria-hidden="true">🔒</span>NON SBLOCCATO</span>'}</div>`).join("")}</section>
     </main>`;
   }
-  function result(coach){
-    return `<div class="rtg-pull-result rtg-paper-modal rtg-coaches-reward"><div class="rtg-pull-result-head"><span class="rtg-pull-rarity">ALLENATORE</span><span class="rtg-pull-series">ROAD TO GLORY</span></div><div class="rtg-pull-reveal-label"><span>NUOVO ALLENATORE!</span></div><div class="rtg-pull-result-body"><div class="rtg-pull-card-stage rtg-picker-grid">${card(coach,"owned")}</div><div class="rtg-pull-result-copy"><h2>${esc(coach.name)}</h2><span class="rtg-pull-team">${esc(coach.team)}</span><p>${esc(coach.season)} · aggiunto alla collezione.</p></div></div><button type="button" class="btn btn-yellow" data-rtg-coaches-collection>CONTINUA →</button></div>`;
+  function result(coach,state=null){
+    // Separate coach reveal from the player pull result layout: no 92px card,
+    // tilted frame, accidental min-height, or empty column on mobile.
+    return `<div class="rtg-coaches-reward rtg-paper-modal" aria-label="Allenatore ottenuto">
+      <header class="rtg-coaches-reward-heading"><span>ROAD TO GLORY · STAFF</span><b>NUOVO!</b></header>
+      <h2 class="rtg-coaches-reward-title">NUOVO ALLENATORE!</h2>
+      <div class="rtg-coaches-reward-feature"><div class="rtg-coaches-reward-art">${card(coach,"owned")}</div>
+        <div class="rtg-coaches-reward-info"><small>${esc(coach.season)} · STAFF</small><h3>${esc(coach.name)}</h3>
+          <p>${esc(coach.team)}</p><span class="rtg-coaches-reward-unlocked">✓ AGGIUNTO ALLA COLLEZIONE</span></div>
+      </div>
+      ${state?`<div class="rtg-coaches-reward-balance"><span>SALDO GETTONI RTG</span><strong>${esc(Number(state.tokens)||0)}</strong></div>`:""}
+      <button type="button" class="btn btn-yellow rtg-coaches-reward-continue" data-rtg-coaches-collection>CONTINUA →</button>
+    </div>`;
   }
   global.RoadToGloryCoachesView=Object.freeze({card,albumCard,squadSlot,vending,markup,detail,albumMarkup,result});
 })(globalThis);
