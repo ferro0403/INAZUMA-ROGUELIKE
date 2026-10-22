@@ -471,3 +471,13 @@
   }
   .rtg-coaches-album .rtg-coach-album-card .player-portrait-wrap{height:163px!important;}
 }
+
+
+/* René Gadé: a reliable full-body source fills the small selector artwork area.
+   When the next CDN candidate is used, JS removes this class automatically. */
+.rtg-coaches-modal .rtg-coach-card img.rtg-coach-portrait--fullbody-thumbnail,
+.rtg-coaches-reward-art .rtg-coach-card img.rtg-coach-portrait--fullbody-thumbnail{
+  width:100%!important;height:100%!important;
+  object-fit:cover!important;
+  object-position:center 12%!important;
+}
