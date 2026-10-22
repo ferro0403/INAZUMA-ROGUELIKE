@@ -9,7 +9,7 @@
     // Some official Zukan thumbnails intermittently fail on mobile. Try the
     // verified alternate artwork before showing an explicit fallback.
     const backup=fallback(c).replace('class="rtg-coach-placeholder"','class="rtg-coach-placeholder rtg-coach-placeholder--backup"');
-    return url?`<img class="${fullbody?"player-fullbody player-fullbody--fullbody rtg-coach-fullbody":"player-portrait rtg-coach-portrait"}" src="${esc(url)}" data-coach-alternate="${esc(alternate&&alternate!==url?alternate:"")}" alt="${esc(c.name)}" loading="${fullbody?"eager":"lazy"}" decoding="async" onerror="if(this.dataset.coachAlternate&&!this.dataset.coachRetried){this.dataset.coachRetried='1';this.src=this.dataset.coachAlternate;}else{this.hidden=true;this.style.display='none';this.nextElementSibling.style.display='grid';}">${backup}`:fallback(c);
+    return url?`<img class="${fullbody?"player-fullbody player-fullbody--fullbody rtg-coach-fullbody":"player-portrait rtg-coach-portrait"}" src="${esc(url)}" data-coach-alternate="${esc(alternate&&alternate!==url?alternate:"")}" alt="${esc(c.name)}" loading="eager" decoding="async" onerror="if(this.dataset.coachAlternate&&!this.dataset.coachRetried){this.dataset.coachRetried='1';this.src=this.dataset.coachAlternate;}else{this.hidden=true;this.style.display='none';this.nextElementSibling.style.display='grid';}">${backup}`:fallback(c);
   };
   const statusLabel=code=>({owned:"POSSEDUTO",available:"DISPONIBILE",locked:"BLOCCATO","other-campaign":"ALTRA CAMPAGNA"})[code]||"";
   function card(c,status="locked",selected=false){
