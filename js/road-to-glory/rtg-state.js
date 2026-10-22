@@ -150,7 +150,8 @@
       projects,
       developmentByCardId,
       seasonTransitionRewardedIds: uniqueIds(source.seasonTransitionRewardedIds),
-      coachOwnedIds: uniqueIds(source.coachOwnedIds).filter(coachId => global.RoadToGloryCoaches?.BY_ID?.[coachId] && (global.RoadToGloryCoaches.CAMPAIGN_SEASONS[id(source.campaignId || CAMPAIGN_ID)] || []).includes(global.RoadToGloryCoaches.BY_ID[coachId].seasonId)),
+      // Ownership is account-wide; a coach from Orion remains owned in IE1/IE2/IE3.
+      coachOwnedIds: uniqueIds(source.coachOwnedIds).filter(coachId => !!global.RoadToGloryCoaches?.BY_ID?.[coachId]),
       coachPullCount: Math.max(0, integer(source.coachPullCount, 0)),
       lives: Math.max(0, Math.min(2, integer(source.lives, 2))),
       checkpointMainIndex: Math.max(-1, integer(source.checkpointMainIndex, -1)),
