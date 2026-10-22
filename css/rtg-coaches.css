@@ -149,3 +149,204 @@
   .rtg-coaches-modal .rtg-coaches-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;}
   .rtg-coaches-modal .rtg-coach-card .player-portrait-wrap{height:108px!important;}
 }
+
+
+/* Coach-only mobile parity with the three-column RTG player collection.
+   The original two-column override made staff twice as large as player cards. */
+.rtg-coach-placeholder{min-width:0;min-height:100%;width:100%;display:grid;place-content:center;gap:3px;text-align:center;color:#7a481f;font-size:19px;font-weight:1000;background:#ffe7cb;}
+.rtg-coach-placeholder b{font-size:12px;}
+.rtg-coach-placeholder--backup{display:none;}
+.rtg-coaches-modal .rtg-coaches-grid{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:16px 8px!important;
+  align-items:start;
+  padding:8px 0 12px!important;
+}
+.rtg-coaches-modal .rtg-coach-entry{min-width:0;display:flex;flex-direction:column;gap:4px;}
+.rtg-coaches-modal .rtg-coach-entry .player-card.rtg-coach-card{
+  width:100%!important;min-width:0!important;max-width:none!important;
+  min-height:129px!important;height:129px!important;
+  border:3px solid #f18a2b!important;border-radius:5px!important;
+  background:linear-gradient(145deg,#fff9f0 0 68%,#ffae69 68% 100%)!important;
+  overflow:hidden!important;
+}
+.rtg-coaches-modal .rtg-coach-card .player-portrait-wrap{
+  height:94px!important;min-height:0!important;width:100%!important;
+  padding:21px 2px 0!important;display:grid!important;place-items:end center!important;
+  overflow:hidden!important;background:transparent!important;
+}
+.rtg-coaches-modal .rtg-coach-card img.player-portrait{max-height:100%!important;max-width:100%!important;transform:none!important;object-fit:contain!important;object-position:center bottom!important;}
+.rtg-coaches-modal .rtg-coach-card .player-info{
+  height:29px!important;min-height:29px!important;width:100%!important;
+  padding:5px 2px!important;border-top:2px solid #111216!important;
+  display:grid!important;place-content:center!important;overflow:hidden!important;
+}
+.rtg-coaches-modal .rtg-coach-card .player-title strong{
+  display:block!important;color:#111216!important;font-size:clamp(8px,2.3vw,11px)!important;
+  line-height:1.05!important;white-space:nowrap!important;overflow:hidden!important;
+  text-overflow:ellipsis!important;text-align:center!important;
+}
+.rtg-coaches-modal .rtg-coach-card .player-meta,
+.rtg-coaches-modal .rtg-coach-card .player-level{display:none!important;}
+.rtg-coaches-modal .rtg-coach-card .player-role,
+.rtg-coaches-modal .rtg-coach-card .player-overall{
+  top:4px!important;z-index:5!important;padding:2px 4px!important;
+  min-width:0!important;min-height:23px!important;font-size:10px!important;
+  border:2px solid #111216!important;border-radius:4px!important;
+  box-shadow:1px 2px 0 #11121633!important;
+}
+.rtg-coaches-modal .rtg-coach-card .player-role{left:4px!important;}
+.rtg-coaches-modal .rtg-coach-card .player-overall{right:4px!important;background:#ff8925!important;}
+.rtg-coach-quick-equip{
+  width:100%;min-height:25px;padding:3px 1px;border:2px solid #151619;
+  background:#ff902f;color:#141518;font-size:9px;font-weight:1000;
+  line-height:1.1;cursor:pointer;box-shadow:2px 2px 0 #14151833;
+}
+.rtg-coach-entry .rtg-coach-card.selected{outline:3px solid #101116;outline-offset:1px;}
+.rtg-coach-entry .rtg-coach-card:focus-visible,
+.rtg-coach-quick-equip:focus-visible{outline:3px solid #111216;outline-offset:2px;}
+.rtg-coach-entry.is-locked .player-portrait-wrap{filter:grayscale(.75);}
+.rtg-coach-quick-equip:disabled{opacity:.6;cursor:wait;}
+
+/* Album has the same three-across card rhythm as the player's 866-card listing. */
+.rtg-coaches-album .album-player-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:18px 9px!important;
+  align-items:start!important;
+}
+.rtg-coaches-album .album-player-entry{min-width:0!important;width:100%!important;}
+.rtg-coaches-album .album-player-entry>.rtg-coach-album-card{
+  width:100%!important;min-width:0!important;max-width:none!important;
+  height:142px!important;min-height:142px!important;overflow:hidden!important;
+  border:3px solid #f18a2b!important;border-radius:5px!important;
+  background:linear-gradient(150deg,#fffaf4 0 67%,#ffb477 67%)!important;
+  box-shadow:3px 4px 0 #11121666!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-portrait-wrap{
+  height:100px!important;min-height:0!important;padding:22px 2px 0!important;
+  display:grid!important;place-items:end center!important;background:transparent!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-info{
+  height:36px!important;min-height:36px!important;padding:4px 2px!important;
+  background:#fffaf4!important;display:grid!important;place-items:center!important;
+  border-top:2px solid #111216!important;overflow:hidden!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-title strong{
+  display:block!important;font-size:clamp(8px,2.35vw,12px)!important;
+  line-height:1.08!important;overflow:hidden!important;white-space:nowrap!important;
+  text-overflow:ellipsis!important;text-align:center!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-meta,
+.rtg-coaches-album .rtg-coach-album-card .player-level{display:none!important;}
+.rtg-coaches-album .rtg-coach-album-card .player-role,
+.rtg-coaches-album .rtg-coach-album-card .player-overall{
+  z-index:4!important;top:5px!important;padding:3px 4px!important;
+  font-size:10px!important;background:#fff!important;color:#111216!important;
+}
+.rtg-coaches-album .rtg-coach-album-card .player-overall{background:#ff8925!important;}
+@media(min-width:700px){
+  .rtg-coaches-album .album-player-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:22px 15px!important;}
+  .rtg-coaches-modal .rtg-coaches-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:20px 12px!important;}
+}
+@media(max-width:360px){
+  .rtg-coaches-modal .rtg-coaches-grid{gap:14px 5px!important;}
+  .rtg-coaches-album .album-player-grid{gap:14px 5px!important;}
+  .rtg-coaches-modal .rtg-coach-entry .player-card.rtg-coach-card{height:117px!important;min-height:117px!important;}
+  .rtg-coaches-modal .rtg-coach-card .player-portrait-wrap{height:82px!important;}
+}
+
+/* Dedicated staff-unlock layout: does not inherit player-pull tilt or its
+   fixed 92px art column, which broke the 22 Oct phone preview. */
+.rtg-coaches-reward.rtg-paper-modal{
+  --coach-orange:#ff8925;
+  position:relative;display:flex;flex-direction:column;gap:14px;
+  width:min(100%,530px)!important;max-width:100%;min-height:0!important;
+  padding:18px!important;margin:0 auto!important;
+  background:radial-gradient(circle at 50% 36%,#ffe9cf,#fffdf6 64%)!important;
+  color:#111216;border:3px solid #111216!important;
+  border-radius:8px!important;box-shadow:5px 6px 0 #111216!important;
+  text-align:center!important;
+}
+.rtg-coaches-reward .rtg-coaches-reward-heading{
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  padding:0 0 12px;border-bottom:3px solid #111216;
+  font-size:10px;font-weight:1000;letter-spacing:.13em;
+}
+.rtg-coaches-reward-heading b{
+  padding:6px 9px;background:#ff8925;border:2px solid #111216;
+  transform:rotate(3deg);font-size:12px;letter-spacing:.08em;
+}
+.rtg-coaches-reward-title{
+  font-size:clamp(20px,5vw,29px)!important;font-weight:1000!important;
+  line-height:1.1!important;letter-spacing:.04em;margin:0!important;
+  color:#111216!important;
+}
+.rtg-coaches-reward-feature{
+  display:grid;grid-template-columns:170px minmax(0,1fr);gap:18px;
+  align-items:center;min-width:0;
+}
+.rtg-coaches-reward-art{display:grid;justify-items:center;min-width:0;}
+.rtg-coaches-reward-art .rtg-coach-card.player-card{
+  width:170px!important;max-width:170px!important;min-width:0!important;
+  height:205px!important;min-height:205px!important;
+  padding:0!important;display:block!important;
+  background:linear-gradient(145deg,#fff4e3 0 64%,#ff9f50 64%)!important;
+  border:4px solid #ff8925!important;border-radius:7px!important;
+  transform:none!important;box-shadow:4px 5px 0 #11121655!important;
+  overflow:hidden!important;
+}
+.rtg-coaches-reward-art .rtg-coach-card .player-portrait-wrap{
+  height:158px!important;min-height:0!important;
+  padding:26px 6px 0!important;display:grid!important;place-items:end center!important;
+  overflow:hidden!important;background:transparent!important;
+}
+.rtg-coaches-reward-art .rtg-coach-card .player-portrait{
+  width:100%!important;height:100%!important;max-width:100%!important;
+  object-fit:contain!important;object-position:center bottom!important;transform:none!important;
+}
+.rtg-coaches-reward-art .rtg-coach-card .player-info{
+  height:42px!important;min-height:42px!important;padding:6px 3px!important;
+  display:grid!important;place-items:center!important;background:#fffaf1!important;
+  border-top:3px solid #111216!important;overflow:hidden!important;
+}
+.rtg-coaches-reward-art .rtg-coach-card .player-title strong{
+  font-weight:1000!important;font-size:12px!important;line-height:1.1!important;
+  white-space:nowrap!important;overflow:hidden!important;text-overflow:ellipsis!important;
+}
+.rtg-coaches-reward-art .rtg-coach-card .player-meta,
+.rtg-coaches-reward-art .rtg-coach-card .player-level{display:none!important;}
+.rtg-coaches-reward-info{text-align:left;display:flex;flex-direction:column;gap:8px;min-width:0;}
+.rtg-coaches-reward-info small{font-size:11px;font-weight:1000;color:#a5511c;letter-spacing:.1em;}
+.rtg-coaches-reward-info h3{
+  font-size:clamp(21px,5vw,32px);font-weight:1000;line-height:1.05;
+  color:#111216;margin:0;overflow-wrap:anywhere;
+}
+.rtg-coaches-reward-info p{font-size:14px;font-weight:800;color:#62564c;margin:0;}
+.rtg-coaches-reward-unlocked{
+  display:block;padding:8px 6px;border:2px solid #111216;
+  background:#fff1de;color:#8a471a;font-size:10px;font-weight:1000;text-align:center;
+}
+.rtg-coaches-reward-balance{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:9px 12px;border:2px solid #111216;background:#fffaf1;
+}
+.rtg-coaches-reward-balance span{font-size:11px;font-weight:950;}
+.rtg-coaches-reward-balance strong{font-size:21px;font-weight:1000;}
+.rtg-coaches-reward-continue.btn{
+  display:block;width:100%!important;min-height:51px!important;
+  padding:10px 12px!important;margin:0!important;background:#ffd21f!important;
+  color:#111216!important;border:3px solid #111216!important;border-radius:0!important;
+  font-size:18px!important;font-weight:1000!important;box-shadow:3px 4px 0 #111216!important;
+}
+@media(max-width:520px){
+  .rtg-coaches-reward.rtg-paper-modal{padding:13px!important;gap:11px;}
+  .rtg-coaches-reward-feature{grid-template-columns:1fr!important;gap:13px!important;}
+  .rtg-coaches-reward-info{align-items:center;text-align:center;}
+  .rtg-coaches-reward-art .rtg-coach-card.player-card{
+    width:154px!important;max-width:154px!important;height:184px!important;min-height:184px!important;
+  }
+  .rtg-coaches-reward-art .rtg-coach-card .player-portrait-wrap{height:139px!important;}
+  .rtg-coaches-reward-art .rtg-coach-card .player-info{height:39px!important;min-height:39px!important;}
+  .rtg-coaches-reward-info h3{font-size:23px;}
+}
