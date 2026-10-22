@@ -139,7 +139,7 @@
     assert.match(html,/ASSEGNA/);
     assert.match(view.card(api.CATALOG[6],"owned"),/loading="eager"/);
     assert.match(view.card(api.CATALOG[6],"owned"),/data-coach-alternate=/);
-    assert.match(view.card(api.CATALOG[9],"owned"),/data-coach-alternate=/);
+    assert.match(view.card(api.CATALOG[9],"owned"),/rtg-coach-portrait--rene-direct/);
   });
 
   test("René: ID Inazugle 4763 e vecchio ID 4761 RTG preservato",()=>{
