@@ -4,16 +4,13 @@
   const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const fallback=c=>`<span class="rtg-coach-placeholder" aria-hidden="true"><span>⚽</span><b>${esc(c.name.split(" ").map(w=>w[0]).slice(0,2).join(""))}</b></span>`;
 
-  // Coach artwork can fail for a single CDN variant even when the image URL is
-  // structurally valid. Keep the user-provided WebP plus the original PNG and
-  // full-body artwork as distinct candidates; do not affect any other coach.
+  // Full-body artwork MUST remain primary in coach details, irrespective of the
+  // thumbnail. The legacy RTG id 4761 identifies Rene (Inazugle id 4763).
   const portraitCandidates=(c,fullbody=false,preferFullbodyThumbnail=false)=>{
     const extra=Array.isArray(c.imageFallbackUrls)?c.imageFallbackUrls:[];
-    const sources=String(c.id)==="4761"
-      ?[c.imageUrl,...extra,c.frontFullbodyUrl] // verified PNG first in card, album and detail
-      :(fullbody||preferFullbodyThumbnail)
-        ?[c.frontFullbodyUrl,c.imageUrl,...extra]
-        :[c.imageUrl,...extra,c.frontFullbodyUrl];
+    const sources=(fullbody||preferFullbodyThumbnail)
+      ?[c.frontFullbodyUrl,c.imageUrl,...extra]
+      :[c.imageUrl,...extra,c.frontFullbodyUrl];
     return [...new Set(sources.map(url=>String(url||"").trim()).filter(Boolean))];
   };
   function recoverPortraitImage(image){
@@ -26,6 +23,7 @@
       if(image.style?.removeProperty)image.style.removeProperty("display");
       else if(image.style)image.style.display="";
       image.classList?.toggle?.("rtg-coach-portrait--fullbody-thumbnail",next===image.dataset.coachFullbodyUrl&&image.dataset.coachCompactFullbody==="true");
+      image.classList?.toggle?.("rtg-coach-fullbody--portrait-fallback",image.classList?.contains?.("rtg-coach-fullbody")&&next!==image.dataset.coachFullbodyUrl);
       image.src=next;
       return true;
     }
@@ -49,6 +47,14 @@
       recoverPortraitImage(image);
   },true);
   const portrait=(c,fullbody=false,preferFullbodyThumbnail=false)=>{
+    if(!fullbody&&String(c.zukanId||"")==="4763"){
+      // Direct official Inazugle thumbnail. This bypasses the generic player
+      // portrait and its retry/visibility state, which left Rene blank in
+      // mobile selection even though the SAME PNG loaded in his detail.
+      // No guessed image extensions or fallback network URLs on these cards.
+      const backup=fallback(c).replace('class="rtg-coach-placeholder"','class="rtg-coach-placeholder rtg-coach-placeholder--backup"');
+      return `<img class="rtg-coach-portrait--rene-direct" src="${esc(c.imageUrl)}" alt="${esc(c.name)}" loading="eager" decoding="sync" referrerpolicy="no-referrer" onerror="this.onerror=null;this.hidden=true;this.style.setProperty('display','none','important');this.nextElementSibling?.classList.add('is-visible')">${backup}`;
+    }
     const urls=portraitCandidates(c,fullbody,preferFullbodyThumbnail);
     const [url,...alternates]=urls;
     const backup=fallback(c).replace('class="rtg-coach-placeholder"','class="rtg-coach-placeholder rtg-coach-placeholder--backup"');
