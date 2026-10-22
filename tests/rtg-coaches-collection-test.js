@@ -16,6 +16,7 @@
   vm.runInNewContext(read("js/road-to-glory/rtg-state.js"),sandbox);
   vm.runInNewContext(read("js/road-to-glory/rtg-coaches-view.js"),sandbox);
   vm.runInNewContext(read("js/road-to-glory/rtg-coaches-controller.js"),sandbox);
+  vm.runInNewContext(read("js/road-to-glory/rtg-repository.js"),sandbox);
   const api=sandbox.RoadToGloryCoaches,stateApi=sandbox.RoadToGloryState,view=sandbox.RoadToGloryCoachesView;
   const campaign=(name="rtg-ie-trilogy")=>stateApi.createInitial({campaignSeed:"coach-tests",campaignId:name});
   test("Ritratti Zukan: tutti i dieci allenatori hanno immagine e figura intera",()=>{
@@ -23,7 +24,8 @@
     for(const coach of api.CATALOG){
       assert.ok(coach.imageUrl.startsWith("https://dxi4wb638ujep.cloudfront.net/1/k/"));
       assert.ok(coach.frontFullbodyUrl.startsWith("https://dxi4wb638ujep.cloudfront.net/1/k/"));
-      assert.ok(coach.imageUrl.endsWith(".png"));
+      assert.ok(/\.(png|webp)$/.test(coach.imageUrl));
+      assert.ok(coach.teamLogoUrl.startsWith("https://"));
       assert.ok(coach.frontFullbodyUrl.endsWith("_r0_fullbody.webp"));
       assert.ok(view.card(coach,"owned").includes(coach.imageUrl));
       assert.ok(view.detail(campaign(),coach.id).includes(coach.frontFullbodyUrl));
@@ -76,7 +78,7 @@
     assert.equal(normalized.coachOwnedIds.length,0);
     assert.equal(normalized.coachPullCount,0);
     const ares=campaign("rtg-ares-orion");ares.seasonComplete=true;ares.coachOwnedIds=["36","4401"];
-    assert.deepEqual(Array.from(stateApi.validate(ares).coachOwnedIds),["4401"]);
+    assert.deepEqual(Array.from(stateApi.validate(ares).coachOwnedIds),["36","4401"]);
   });
   test("Duplicati nei salvataggi invalidi rigettati",()=>{
     const s=campaign();s.coachOwnedIds=["36","36"];
@@ -102,8 +104,8 @@
     assert.match(view.albumMarkup(s),/album-player-grid/);
     assert.equal((view.albumMarkup(s).match(/class="album-player-entry /g)||[]).length,10);
     assert.equal((view.markup(s,{tab:"collection"}).match(/data-rtg-coach-detail=/g)||[]).length,10);
-    assert.match(view.albumCard(api.CATALOG[0],"owned"),/player-card-large pull-player-card/);
-    assert.match(view.albumCard(api.CATALOG[0],"owned"),/album-player-card/);
+    assert.match(view.albumCard(api.CATALOG[0],"owned"),/rtg-coach-album-card/);
+    assert.doesNotMatch(view.albumMarkup(s),/album-player-lock/);
     assert.match(view.card(api.CATALOG[0],"owned"),/rtg-picker-squad-card/);
     assert.doesNotMatch(read("js/road-to-glory/rtg-route-view.js"),/data-rtg-open-coaches/);
   });
@@ -204,4 +206,97 @@
     assert.deepEqual(sideEffects,["error"]);
     assert.equal(button.disabled,false);
   });
+  test("Rene Gade: stessa immagine WebP fornita in modal, collezione e Album",()=>{
+    const rene=api.BY_ID["4761"];
+    const exact="https://dxi4wb638ujep.cloudfront.net/1/k/a/t/atcna3pn7ds.webp";
+    assert.equal(rene.imageUrl,exact);
+    assert.match(view.card(rene,"locked"),/atcna3pn7ds\.webp/);
+    assert.match(view.albumCard(rene,"locked"),/atcna3pn7ds\.webp/);
+    assert.match(view.result(rene,campaign()),/atcna3pn7ds\.webp/);
+  });
+  test("Dettaglio: stemma squadra nelle due sezioni, senza ID Zukan; risultato senza badge NUOVO",()=>{
+    const html=view.detail(campaign(),"1940");
+    assert.match(html,/rtg-coach-team-chip/);
+    assert.match(html,/rtg-coach-profile-team/);
+    assert.match(html,/The_Kingdom_emblem/);
+    assert.doesNotMatch(html,/ID Zukan/);
+    const reward=view.result(api.BY_ID["4401"],campaign("rtg-ares-orion"));
+    assert.match(reward,/NUOVO ALLENATORE!/);
+    assert.ok(!reward.includes("<b>NUOVO!</b>"));
+  });
+  test("Album: nessun banner copre i ritratti e le 10 card sono autonome",()=>{
+    const html=view.albumMarkup(campaign());
+    assert.equal((html.match(/rtg-coach-album-card/g)||[]).length,10);
+    assert.equal((html.match(/rtg-coach-album-status/g)||[]).length,10);
+    assert.doesNotMatch(html,/album-player-lock|NON SBLOCCATO/);
+    const css=read("css/rtg-coaches.css");
+    assert.match(css,/rtg-coach-album-card::before/);
+    assert.match(css,/rtg-coach-album-status/);
+  });
+  test("Condivisione account: lettura legacy non distruttiva, equip cross-campagna e nessun doppione",async()=>{
+    const clone=v=>v==null?v:JSON.parse(JSON.stringify(v));
+    const trilogy=campaign();trilogy.coachOwnedIds=["36"];
+    const ares=campaign("rtg-ares-orion");ares.coachOwnedIds=["4401"];ares.seasonComplete=true;
+    const storageData=new Map([
+      ["state",clone(trilogy)],["state:rtg-ares-orion",clone(ares)],
+      ["shared:account",{tokens:3000,gachaAcquiredCards:[],developmentByCardId:{}}],
+    ]);
+    const writes=[];
+    const storage={
+      async read(key="state"){return clone(storageData.get(key)||null);},
+      async write(value,key="state"){writes.push(key);storageData.set(key,clone(value));},
+      async update(fn,key="state"){
+        const value=fn(clone(storageData.get(key)||null));
+        storageData.set(key,clone(value));return clone(value);
+      },
+    };
+    const repo=sandbox.RoadToGloryRepository.create({storage,seedFactory:()=>"seed"});
+    repo.selectCampaign("rtg-ares-orion");
+    let a=await repo.read();
+    assert.deepEqual(Array.from(a.coachOwnedIds),["36","4401"]);
+    assert.equal(api.status(a,"36"),"owned");
+    assert.equal(api.eligible(a).length,0);
+    assert.equal(writes.length,0,"read must not migrate or write");
+    repo.selectCampaign("rtg-ie-trilogy");
+    let t=await repo.read();
+    assert.deepEqual(Array.from(t.coachOwnedIds),["36","4401"]);
+    assert.equal(api.status(t,"4401"),"owned");
+    assert.match(view.markup(t,{tab:"collection"}),/data-rtg-coaches-equip="4401"/);
+    const updated=await repo.update("cross-campaign-equip",state=>{
+      state.squads.ie1.coachId="4401";return state;
+    });
+    assert.equal(updated.squads.ie1.coachId,"4401");
+    assert.equal(storageData.get("state").squads.ie1.coachId,"4401");
+    assert.deepEqual(Array.from(storageData.get("shared:account").coachOwnedIds),["36","4401"]);
+    repo.selectCampaign("rtg-ares-orion");
+    a=await repo.read();assert.equal(api.status(a,"36"),"owned");
+    assert.equal(a.tokens,3000);
+    assert.equal(storageData.get("state:rtg-ares-orion").coachOwnedIds.length,1,"legacy save preserved");
+  });
+  test("Legacy recovery: shared account reconstruito dopo write interrotta",async()=>{
+    const clone=v=>v==null?v:JSON.parse(JSON.stringify(v));
+    const ares=campaign("rtg-ares-orion");ares.seasonComplete=true;
+    const values=new Map([["state",campaign()],["state:rtg-ares-orion",ares],
+      ["shared:account",{tokens:1800,gachaAcquiredCards:[],developmentByCardId:{}}]]);
+    let failShared=true;
+    const storage={
+      async read(key){return clone(values.get(key)||null);},
+      async update(fn,key){const next=fn(clone(values.get(key)||null));values.set(key,clone(next));return clone(next);},
+      async write(data,key){if(key==="shared:account"&&failShared)throw Error("offline shared");
+        values.set(key,clone(data));},
+    };
+    const repo=sandbox.RoadToGloryRepository.create({storage,seedFactory:()=>"seed"});
+    repo.selectCampaign("rtg-ares-orion");
+    await assert.rejects(repo.update("draw-with-interrupted-shared",state=>{
+      state.coachOwnedIds.push("4401");return state;
+    }),/offline shared/);
+    const before=values.get("state:rtg-ares-orion");
+    assert.deepEqual(before.coachOwnedIds,["4401"]);
+    failShared=false;
+    repo.selectCampaign("rtg-ie-trilogy");
+    const recovered=await repo.read();
+    assert.equal(api.status(recovered,"4401"),"owned");
+    assert.equal(values.get("shared:account").coachOwnedIds,undefined,"reading never writes shared");
+  });
+
 })();
