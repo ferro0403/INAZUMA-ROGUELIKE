@@ -504,3 +504,38 @@
   max-width:100%!important;
   flex:none!important;
 }
+
+
+/* Rene Gadé (official Inazugle 4763): thumbnail is a direct PNG, not the
+   generic player-portrait cascade. The same rules cover selection, Album and
+   the Squad coach slot without changing other nine coaches. */
+.rtg-coach-portrait--rene-direct{
+  display:block!important;
+  position:relative!important;
+  z-index:3!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  object-position:center bottom!important;
+  opacity:1!important;
+  visibility:visible!important;
+  transform:none!important;
+}
+.rtg-coach-placeholder--backup.is-visible{
+  display:grid!important;
+  position:relative!important;
+  z-index:4!important;
+}
+.rtg-coach-detail img.rtg-coach-fullbody--portrait-fallback{
+  /* If Inazugle's true full-body fails, don't stretch a face-only PNG
+     across the whole hero as in the reported iPhone screenshot. */
+  max-width:70%!important;
+  max-height:65%!important;
+  width:auto!important;
+  height:auto!important;
+  object-fit:contain!important;
+}
