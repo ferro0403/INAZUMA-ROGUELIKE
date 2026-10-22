@@ -142,15 +142,14 @@
     assert.match(view.card(api.CATALOG[9],"owned"),/data-coach-alternate=/);
   });
 
-  test("Rene compact portrait: fullbody prima, WebP indicato e PNG storico come fallback",()=>{
+  test("René Gadé usa il PNG ufficiale funzionante come prima sorgente in ogni vista",()=>{
     const rene=api.BY_ID["4761"];
-    const markup=view.card(rene,"locked");
-    assert.ok(markup.includes('src="'+rene.frontFullbodyUrl+'"'));
-    assert.ok(markup.includes('data-coach-fallbacks="'+rene.imageUrl+"|"+rene.imageFallbackUrls[0]+'"'));
-    assert.match(markup,/rtg-coach-portrait--fullbody-thumbnail/);
-    // The Album retains the user-supplied WebP primary; the fix targets
-    // the assignment selector, which was still blank on Safari.
-    assert.ok(view.albumCard(rene,"locked").includes('src="'+rene.imageUrl+'"'));
+    const source="https://dxi4wb638ujep.cloudfront.net/1/k/a/t/atcna3pn7ds.png";
+    assert.equal(rene.imageUrl,source);
+    for(const markup of [view.card(rene,"locked"),view.albumCard(rene,"locked"),view.result(rene,campaign()),view.detail(campaign(),"4761")]){
+      assert.ok(markup.includes('src="'+source+'"'));
+    }
+    assert.ok(view.card(rene,"locked").includes('data-coach-fallbacks="'+rene.imageFallbackUrls[0]+"|"+rene.frontFullbodyUrl+'"'));
     assert.ok(view.card(api.BY_ID["36"],"locked").includes('src="'+api.BY_ID["36"].imageUrl+'"'));
   });
   test("Browser image error listener cycles through every Rene URL and shows fallback",()=>{
@@ -168,12 +167,12 @@
     assert.equal(typeof listeners.load,"function");
     const rene=api.BY_ID["4761"];
     const fallback={style:{display:"none"}};
-    const classes=new Set(["rtg-coach-portrait--fullbody-thumbnail"]);
+    const classes=new Set();
     const image={
-      src:rene.frontFullbodyUrl,
+      src:rene.imageUrl,
       hidden:false,style:{display:""},
       dataset:{
-        coachFallbacks:rene.imageUrl+"|"+rene.imageFallbackUrls[0],
+        coachFallbacks:rene.imageFallbackUrls[0]+"|"+rene.frontFullbodyUrl,
         coachFullbodyUrl:rene.frontFullbodyUrl,
         coachCompactFullbody:"true",
       },
@@ -184,10 +183,10 @@
       }},
     };
     listeners.error({target:image});
-    assert.equal(image.src,rene.imageUrl);
+    assert.equal(image.src,rene.imageFallbackUrls[0]);
     assert.equal(classes.has("rtg-coach-portrait--fullbody-thumbnail"),false);
     listeners.error({target:image});
-    assert.equal(image.src,rene.imageFallbackUrls[0]);
+    assert.equal(image.src,rene.frontFullbodyUrl);
     listeners.error({target:image});
     assert.equal(image.hidden,true);
     assert.equal(image.style.display,"none");
@@ -200,10 +199,10 @@
     });
     const rene=api.BY_ID["4761"];
     const image={
-      src:rene.frontFullbodyUrl,
+      src:rene.imageUrl,
       naturalWidth:0,naturalHeight:0,
       style:{},dataset:{
-        coachFallbacks:rene.imageUrl,
+        coachFallbacks:rene.imageFallbackUrls[0],
         coachFullbodyUrl:rene.frontFullbodyUrl,
         coachCompactFullbody:"true"
       },
@@ -211,9 +210,16 @@
       classList:{toggle(){}},
     };
     listeners.load({target:image});
-    assert.equal(image.src,rene.imageUrl);
+    assert.equal(image.src,rene.imageFallbackUrls[0]);
   });
 
+  test("Coach grid non restringe David Arrows o altre card al contenuto dell'immagine",()=>{
+    const css=read("css/rtg-coaches.css");
+    assert.match(css,/\.rtg-coaches-modal \.rtg-coaches-grid\.rtg-picker-grid\s*\{[^}]*justify-items:stretch!important/);
+    assert.match(css,/\.rtg-coaches-modal \.rtg-coach-entry\s*\{[^}]*width:100%!important/);
+    assert.match(css,/\.rtg-coaches-modal \.rtg-coach-entry>\.rtg-coach-card\.player-card\s*\{[^}]*width:100%!important/);
+    assert.match(view.card(api.BY_ID["1974"],"locked"),/David Arrows/);
+  });
   test("Risultato distributore: carta grande, nessuna griglia pull legacy, CTA e saldo",()=>{
     const s=campaign();s.tokens=510;
     const html=view.result(api.CATALOG[0],s);
@@ -279,13 +285,12 @@
     assert.deepEqual(sideEffects,["error"]);
     assert.equal(button.disabled,false);
   });
-  test("Rene Gade: stessa immagine WebP fornita in modal, collezione e Album",()=>{
+  test("Il WebP fornito resta come alternativa al PNG ufficiale, non come prima sorgente",()=>{
     const rene=api.BY_ID["4761"];
-    const exact="https://dxi4wb638ujep.cloudfront.net/1/k/a/t/atcna3pn7ds.webp";
-    assert.equal(rene.imageUrl,exact);
-    assert.match(view.card(rene,"locked"),/atcna3pn7ds\.webp/);
-    assert.match(view.albumCard(rene,"locked"),/atcna3pn7ds\.webp/);
-    assert.match(view.result(rene,campaign()),/atcna3pn7ds\.webp/);
+    assert.equal(rene.imageFallbackUrls[0],"https://dxi4wb638ujep.cloudfront.net/1/k/a/t/atcna3pn7ds.webp");
+    assert.match(view.card(rene,"locked"),/atcna3pn7ds\.png/);
+    assert.match(view.albumCard(rene,"locked"),/atcna3pn7ds\.png/);
+    assert.match(view.result(rene,campaign()),/atcna3pn7ds\.png/);
   });
   test("Dettaglio: stemma squadra nelle due sezioni, senza ID Zukan; risultato senza badge NUOVO",()=>{
     const html=view.detail(campaign(),"1940");
