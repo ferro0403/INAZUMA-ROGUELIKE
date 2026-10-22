@@ -142,75 +142,53 @@
     assert.match(view.card(api.CATALOG[9],"owned"),/data-coach-alternate=/);
   });
 
-  test("René Gadé usa il PNG ufficiale funzionante come prima sorgente in ogni vista",()=>{
+  test("René: ID Inazugle 4763 e vecchio ID 4761 RTG preservato",()=>{
     const rene=api.BY_ID["4761"];
-    const source="https://dxi4wb638ujep.cloudfront.net/1/k/a/t/atcna3pn7ds.png";
-    assert.equal(rene.imageUrl,source);
-    for(const markup of [view.card(rene,"locked"),view.albumCard(rene,"locked"),view.result(rene,campaign()),view.detail(campaign(),"4761")]){
-      assert.ok(markup.includes('src="'+source+'"'));
+    assert.equal(rene.zukanId,"4763");
+    assert.equal(rene.id,"4761","saved RTG coach identity must not change");
+    assert.equal(api.BY_ID["4763"],undefined);
+  });
+  test("René: PNG diretto nelle tre card, full-body esclusivo nella scheda",()=>{
+    const rene=api.BY_ID["4761"];
+    const url="https://dxi4wb638ujep.cloudfront.net/1/k/a/t/atcna3pn7ds.png";
+    assert.equal(rene.imageUrl,url);
+    for(const html of [view.card(rene,"locked"),view.albumCard(rene,"locked"),view.squadSlot({...campaign(),coachOwnedIds:["4761"]},"4761")]){
+      assert.ok(html.includes('class="rtg-coach-portrait--rene-direct"'),"direct mini-card artwork");
+      assert.ok(html.includes('src="'+url+'"'),"official PNG as only compact src");
+      assert.ok(!html.includes('data-coach-fallbacks='),"no guessed WebP/CDN fallback for compact card");
+      assert.ok(html.includes("this.nextElementSibling?.classList.add('is-visible')"),"error must surface fallback");
     }
-    assert.ok(view.card(rene,"locked").includes('data-coach-fallbacks="'+rene.imageFallbackUrls[0]+"|"+rene.frontFullbodyUrl+'"'));
-    assert.ok(view.card(api.BY_ID["36"],"locked").includes('src="'+api.BY_ID["36"].imageUrl+'"'));
+    const detail=view.detail(campaign(),"4761");
+    assert.ok(detail.includes('src="'+rene.frontFullbodyUrl+'"'),"full-body must be source in detail");
+    assert.ok(!detail.includes('src="'+url+'"'),"portrait PNG must not replace full-body");
+    assert.ok(detail.includes('data-coach-fallbacks="'+url+'|'+rene.imageFallbackUrls[0]+'"'));
+    assert.ok(view.card(api.BY_ID["36"],"locked").includes('src="'+api.BY_ID["36"].imageUrl+'"'),"other coach cards untouched");
   });
-  test("Browser image error listener cycles through every Rene URL and shows fallback",()=>{
-    const listeners={};
-    const client={
-      document:{
-        addEventListener(name,callback,capture){
-          listeners[name]=callback;
-          assert.equal(capture,true);
-        },
-      },
-    };
-    vm.runInNewContext(read("js/road-to-glory/rtg-coaches-view.js"),client);
-    assert.equal(typeof listeners.error,"function");
-    assert.equal(typeof listeners.load,"function");
-    const rene=api.BY_ID["4761"];
-    const fallback={style:{display:"none"}};
-    const classes=new Set();
-    const image={
-      src:rene.imageUrl,
-      hidden:false,style:{display:""},
-      dataset:{
-        coachFallbacks:rene.imageFallbackUrls[0]+"|"+rene.frontFullbodyUrl,
-        coachFullbodyUrl:rene.frontFullbodyUrl,
-        coachCompactFullbody:"true",
-      },
-      nextElementSibling:fallback,
-      getAttribute:key=>key==="data-rtg-coach-image"?"4761":null,
-      classList:{toggle(name,active){
-        if(active)classes.add(name);else classes.delete(name);
-      }},
-    };
-    listeners.error({target:image});
-    assert.equal(image.src,rene.imageFallbackUrls[0]);
-    assert.equal(classes.has("rtg-coach-portrait--fullbody-thumbnail"),false);
-    listeners.error({target:image});
-    assert.equal(image.src,rene.frontFullbodyUrl);
-    listeners.error({target:image});
-    assert.equal(image.hidden,true);
-    assert.equal(image.style.display,"none");
-    assert.equal(fallback.style.display,"grid");
-  });
-  test("Un'immagine caricata con dimensioni zero passa alla variante successiva",()=>{
+  test("Full-body loading error falls back proportionally, not oversized portrait",()=>{
     const listeners={};
     vm.runInNewContext(read("js/road-to-glory/rtg-coaches-view.js"),{
-      document:{addEventListener(name,cb){listeners[name]=cb;}},
+      document:{addEventListener(name,cb,capture){listeners[name]=cb;assert.equal(capture,true);}}
     });
     const rene=api.BY_ID["4761"];
+    const classes=new Set(["rtg-coach-fullbody"]);
     const image={
-      src:rene.imageUrl,
-      naturalWidth:0,naturalHeight:0,
-      style:{},dataset:{
-        coachFallbacks:rene.imageFallbackUrls[0],
-        coachFullbodyUrl:rene.frontFullbodyUrl,
-        coachCompactFullbody:"true"
-      },
-      getAttribute:key=>key==="data-rtg-coach-image"?"4761":null,
-      classList:{toggle(){}},
+      hidden:false,
+      src:rene.frontFullbodyUrl,
+      style:{display:""},
+      dataset:{coachFallbacks:rene.imageUrl,coachFullbodyUrl:rene.frontFullbodyUrl,coachCompactFullbody:"false"},
+      getAttribute:attr=>attr==="data-rtg-coach-image"?"4761":null,
+      classList:{contains:cls=>classes.has(cls),toggle(cls,val){if(val)classes.add(cls);else classes.delete(cls);}}
     };
-    listeners.load({target:image});
-    assert.equal(image.src,rene.imageFallbackUrls[0]);
+    listeners.error({target:image});
+    assert.equal(image.src,rene.imageUrl);
+    assert.ok(classes.has("rtg-coach-fullbody--portrait-fallback"));
+    assert.match(read("css/rtg-coaches.css"),/rtg-coach-fullbody--portrait-fallback/);
+  });
+  test("Compact direct PNG errors are not consumed by the generic gallery handler",()=>{
+    const html=view.card(api.BY_ID["4761"],"locked");
+    assert.match(html,/decoding="sync"/);
+    assert.doesNotMatch(html,/data-rtg-coach-image=/);
+    assert.match(read("css/rtg-coaches.css"),/rtg-coach-placeholder--backup\.is-visible/);
   });
 
   test("Coach grid non restringe David Arrows o altre card al contenuto dell'immagine",()=>{
