@@ -9,9 +9,11 @@
   // full-body artwork as distinct candidates; do not affect any other coach.
   const portraitCandidates=(c,fullbody=false,preferFullbodyThumbnail=false)=>{
     const extra=Array.isArray(c.imageFallbackUrls)?c.imageFallbackUrls:[];
-    const sources=(fullbody||preferFullbodyThumbnail)
-      ?[c.frontFullbodyUrl,c.imageUrl,...extra]
-      :[c.imageUrl,...extra,c.frontFullbodyUrl];
+    const sources=String(c.id)==="4761"
+      ?[c.imageUrl,...extra,c.frontFullbodyUrl] // verified PNG first in card, album and detail
+      :(fullbody||preferFullbodyThumbnail)
+        ?[c.frontFullbodyUrl,c.imageUrl,...extra]
+        :[c.imageUrl,...extra,c.frontFullbodyUrl];
     return [...new Set(sources.map(url=>String(url||"").trim()).filter(Boolean))];
   };
   function recoverPortraitImage(image){
@@ -63,7 +65,7 @@
     // Same markup/classes as PlayerView.compactCard: the card differs only in data and orange trim.
     return `<button type="button" class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player squad-player-card rtg-picker-squad-card rtg-coach-card ${selected?"selected":""} ${status==="locked"?"rtg-coach-locked":""}" data-rtg-coach-detail="${esc(c.id)}" aria-label="Scheda allenatore ${esc(c.name)}">
       <span class="player-corner player-role" aria-label="Allenatore">ALL.</span><span class="player-corner player-overall" aria-label="${esc(c.season)}">${esc(c.season.replace("Season ","S"))}</span>
-      <div class="player-portrait-wrap">${portrait(c,false,String(c.id)==="4761")}</div>
+      <div class="player-portrait-wrap">${portrait(c)}</div>
       <div class="player-info"><div class="player-title"><strong title="${esc(c.name)}">${esc(c.name)}</strong></div>
       <div class="player-meta" aria-label="Dettagli allenatore"><span>${esc(c.team)}</span><span>${esc(state)}</span></div></div>
       <span class="player-corner player-level" aria-label="Staff">STAFF</span>
