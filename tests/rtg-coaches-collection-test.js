@@ -129,8 +129,8 @@
 
   test("Mobile: tre colonne, immagini eager con fallback e pulsante ASSEGNA in collezione",()=>{
     const css=read("css/rtg-coaches.css");
-    assert.match(css,/rtg-coaches-modal \\.rtg-coaches-grid\\s*\\{[^}]*repeat\\(3,minmax\\(0,1fr\\)\\)/);
-    assert.match(css,/rtg-coaches-album \\.album-player-grid\\s*\\{[^}]*repeat\\(3,minmax\\(0,1fr\\)\\)/);
+    assert.match(css,/rtg-coaches-modal \.rtg-coaches-grid\s*\{[^}]*repeat\(3,minmax\(0,1fr\)\)/);
+    assert.match(css,/rtg-coaches-album \.album-player-grid\s*\{[^}]*repeat\(3,minmax\(0,1fr\)\)/);
     const s=campaign();s.coachOwnedIds=["36"];
     const html=view.markup(s,{tab:"collection"});
     assert.match(html,/data-rtg-coaches-equip="36"/);
