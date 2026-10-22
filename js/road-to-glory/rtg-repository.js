@@ -57,6 +57,10 @@
       return merged;
     }
 
+    // A non-destructive union of every previously acquired coach. Legacy saves
+    // retain their lists in each campaign; reads never migrate or erase them.
+    const mergeCoaches=(...lists)=>Array.from(new Set(lists.flatMap(ids=>Array.isArray(ids)?ids:[])
+      .map(String).filter(id=>!!global.RoadToGloryCoaches?.BY_ID?.[id])));
     async function sharedFor(state){
       let shared=await storage.read(SHARED_KEY);
       const legacyShared=!shared||!Object.prototype.hasOwnProperty.call(shared,"developmentByCardId");
@@ -81,20 +85,32 @@
         };
         await storage.write(shared,SHARED_KEY);
       }
-      return shared;
+      // Account-wide ownership is reconstructed from both legacy campaigns even
+      // when shared:account was written before the coach feature existed.
+      const trilogy=await storage.read("state");
+      const aresOrion=await storage.read(`state:${ARES_ORION_ID}`);
+      return {
+        ...shared,
+        coachOwnedIds:mergeCoaches(shared.coachOwnedIds,trilogy?.coachOwnedIds,aresOrion?.coachOwnedIds,state?.coachOwnedIds),
+      };
     }
     function applyShared(state,shared){
       if(!state)return state;
       state.tokens=Math.max(0,Number(shared?.tokens||0));
       state.gachaAcquiredCards=Array.isArray(shared?.gachaAcquiredCards)?stateApi.clone(shared.gachaAcquiredCards):[];
       state.developmentByCardId=mergeDevelopmentMaps(shared?.developmentByCardId);
+      state.coachOwnedIds=mergeCoaches(shared?.coachOwnedIds,state.coachOwnedIds);
       return stateApi.validate(state);
     }
     async function persistShared(state){
+      // Keep the existing shared-store commit path. Re-read before writing so a
+      // successful pull in either campaign cannot be erased by a stale list.
+      const shared=await sharedFor(state);
       await storage.write({
         tokens:Math.max(0,Number(state?.tokens||0)),
         gachaAcquiredCards:Array.isArray(state?.gachaAcquiredCards)?stateApi.clone(state.gachaAcquiredCards):[],
         developmentByCardId:mergeDevelopmentMaps(state?.developmentByCardId),
+        coachOwnedIds:mergeCoaches(shared.coachOwnedIds,state?.coachOwnedIds),
       },SHARED_KEY);
     }
 
