@@ -5,8 +5,8 @@
     const coaches=global.RoadToGloryCoaches,view=global.RoadToGloryCoachesView;
     const state=ctx.getCampaign();
     if(!coaches||!view)return ctx.toast?.("Catalogo allenatori non disponibile","error");
-    const selected=String(ctx.getSquadDraft()?.coachId||ctx.activeSquad()?.coachId||"");
-    const markup=newCoach?view.result(newCoach):detailId?view.detail(state,detailId,{equippedId:selected}):view.markup(state,{tab,equippedId:selected});
+    const selected=String(ctx.getSquadDraft()?.coachId??ctx.activeSquad()?.coachId??"");
+    const markup=newCoach?view.result(newCoach,state):detailId?view.detail(state,detailId,{equippedId:selected}):view.markup(state,{tab,equippedId:selected});
     ctx.openModal?.(markup,{className:detailId?"rtg-modal player-detail-modal rtg-coaches-modal":"rtg-modal rtg-coaches-modal"});
     const root=ctx.getModalRoot?.();
     const machine=root?.querySelector?.("[data-rtg-vending-machine]");
@@ -38,12 +38,16 @@
       }catch(error){ctx.toast?.(error?.message||"Estrazione allenatore fallita","error");}
       finally{motion?.stop?.();busy=false;}
     });
-    root?.querySelector?.("[data-rtg-coaches-equip]")?.addEventListener("click",async event=>{
-      const coachId=String(event.currentTarget.dataset.rtgCoachesEquip||"");
-      if(coachId&&!coaches.owned(ctx.getCampaign()).has(coachId))return ctx.toast?.("Allenatore non posseduto","error");
-      if(ctx.getCampaign()?.activeMatch)return ctx.toast?.("Completa prima la partita in corso","error");
-      const sid=ctx.activeSeasonId();
+    root?.querySelectorAll?.("[data-rtg-coaches-equip]")?.forEach(button=>button.addEventListener("click",async event=>{
+      if(busy)return;
+      busy=true;
+      const clicked=event.currentTarget;
+      clicked.disabled=true;
+      const coachId=String(clicked.dataset.rtgCoachesEquip||"");
       try{
+        if(coachId&&!coaches.owned(ctx.getCampaign()).has(coachId))throw new Error("Allenatore non posseduto");
+        if(ctx.getCampaign()?.activeMatch)throw new Error("Completa prima la partita in corso");
+        const sid=ctx.activeSeasonId();
         const updated=await ctx.repository.update("rtg-coaches-equip",current=>{
           if(coachId&&!coaches.owned(current).has(coachId))throw new Error("Allenatore non posseduto");
           const original=current.squads?.[sid];
@@ -55,11 +59,18 @@
         const draft={...(ctx.getSquadDraft()||ctx.activeSquad()),coachId};
         ctx.setSquadDraft(draft);
         ctx.storeSquadSlot(ctx.getActiveSquadSlot(),draft);
-        ctx.toast?.(coachId?"Allenatore assegnato alla squadra":"Allenatore rimosso");
+        // The selection is visible only after the canonical repository commit;
+        // return directly to Squadra so the newly assigned staff is evident.
+        ctx.closeModal?.();
         ctx.renderSquad();
-        open(ctx,"collection",detailId);
-      }catch(error){ctx.toast?.(error?.message||"Salvataggio allenatore fallito","error");}
-    });
+        ctx.toast?.(coachId?"Allenatore assegnato alla squadra":"Allenatore rimosso");
+      }catch(error){
+        ctx.toast?.(error?.message||"Salvataggio allenatore fallito","error");
+      }finally{
+        busy=false;
+        if(clicked?.isConnected)clicked.disabled=false;
+      }
+    }));
     return state;
   }
   global.RoadToGloryCoachesController=Object.freeze({open});
