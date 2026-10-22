@@ -3,13 +3,54 @@
   const model=()=>global.RoadToGloryCoaches;
   const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const fallback=c=>`<span class="rtg-coach-placeholder" aria-hidden="true"><span>⚽</span><b>${esc(c.name.split(" ").map(w=>w[0]).slice(0,2).join(""))}</b></span>`;
-  const portrait=(c,fullbody=false)=>{
-    const url=fullbody?(c.frontFullbodyUrl||c.imageUrl):(c.imageUrl||c.frontFullbodyUrl);
-    const alternate=fullbody?c.imageUrl:c.frontFullbodyUrl;
-    // Some official Zukan thumbnails intermittently fail on mobile. Try the
-    // verified alternate artwork before showing an explicit fallback.
+
+  // Coach artwork can fail for a single CDN variant even when the image URL is
+  // structurally valid. Keep the user-provided WebP plus the original PNG and
+  // full-body artwork as distinct candidates; do not affect any other coach.
+  const portraitCandidates=(c,fullbody=false,preferFullbodyThumbnail=false)=>{
+    const extra=Array.isArray(c.imageFallbackUrls)?c.imageFallbackUrls:[];
+    const sources=(fullbody||preferFullbodyThumbnail)
+      ?[c.frontFullbodyUrl,c.imageUrl,...extra]
+      :[c.imageUrl,...extra,c.frontFullbodyUrl];
+    return [...new Set(sources.map(url=>String(url||"").trim()).filter(Boolean))];
+  };
+  function recoverPortraitImage(image){
+    if(!image?.dataset)return false;
+    const remaining=String(image.dataset.coachFallbacks||"").split("|").filter(Boolean);
+    const next=remaining.shift();
+    image.dataset.coachFallbacks=remaining.join("|");
+    if(next){
+      image.hidden=false;
+      if(image.style)image.style.display="";
+      image.classList?.toggle?.("rtg-coach-portrait--fullbody-thumbnail",next===image.dataset.coachFullbodyUrl&&image.dataset.coachCompactFullbody==="true");
+      image.src=next;
+      return true;
+    }
+    image.hidden=true;
+    if(image.style)image.style.display="none";
+    const backup=image.nextElementSibling;
+    if(backup?.style)backup.style.display="grid";
+    return false;
+  }
+  // Capture image events on document: dynamically inserted modal cards may be
+  // detached/replaced while loading; per-element inline onerror was unreliable
+  // on the user's mobile preview and could leave a completely blank card.
+  const isCoachPortrait=img=>img?.getAttribute?.("data-rtg-coach-image")!==null&&img?.getAttribute?.("data-rtg-coach-image")!==undefined;
+  global.document?.addEventListener?.("error",event=>{
+    if(isCoachPortrait(event.target))recoverPortraitImage(event.target);
+  },true);
+  global.document?.addEventListener?.("load",event=>{
+    const image=event.target;
+    if(isCoachPortrait(image)&&(Number(image.naturalWidth)<=1||Number(image.naturalHeight)<=1))
+      recoverPortraitImage(image);
+  },true);
+  const portrait=(c,fullbody=false,preferFullbodyThumbnail=false)=>{
+    const urls=portraitCandidates(c,fullbody,preferFullbodyThumbnail);
+    const [url,...alternates]=urls;
     const backup=fallback(c).replace('class="rtg-coach-placeholder"','class="rtg-coach-placeholder rtg-coach-placeholder--backup"');
-    return url?`<img class="${fullbody?"player-fullbody player-fullbody--fullbody rtg-coach-fullbody":"player-portrait rtg-coach-portrait"}" src="${esc(url)}" data-coach-alternate="${esc(alternate&&alternate!==url?alternate:"")}" alt="${esc(c.name)}" loading="eager" decoding="async" onerror="if(this.dataset.coachAlternate&&!this.dataset.coachRetried){this.dataset.coachRetried='1';this.src=this.dataset.coachAlternate;}else{this.hidden=true;this.style.display='none';this.nextElementSibling.style.display='grid';}">${backup}`:fallback(c);
+    const compactFullbody=preferFullbodyThumbnail&&!fullbody;
+    const fullbodyArt=compactFullbody&&url===c.frontFullbodyUrl;
+    return url?`<img class="${fullbody?"player-fullbody player-fullbody--fullbody rtg-coach-fullbody":"player-portrait rtg-coach-portrait"} ${fullbodyArt?"rtg-coach-portrait--fullbody-thumbnail":""}" src="${esc(url)}" data-rtg-coach-image="${esc(c.id)}" data-coach-alternate="${esc(alternates[0]||"")}" data-coach-fallbacks="${esc(alternates.join("|"))}" data-coach-fullbody-url="${esc(c.frontFullbodyUrl||"")}" data-coach-compact-fullbody="${compactFullbody}" alt="${esc(c.name)}" loading="eager" decoding="async">${backup}`:fallback(c);
   };
   const teamEmblem=c=>c.teamLogoUrl
     ? `<img class="rtg-coach-team-logo" src="${esc(c.teamLogoUrl)}" alt="" aria-hidden="true" decoding="async" referrerpolicy="no-referrer" onerror="this.onerror=null;this.src='assets/emblems/neutral-team.svg'">`
@@ -20,7 +61,7 @@
     // Same markup/classes as PlayerView.compactCard: the card differs only in data and orange trim.
     return `<button type="button" class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player squad-player-card rtg-picker-squad-card rtg-coach-card ${selected?"selected":""} ${status==="locked"?"rtg-coach-locked":""}" data-rtg-coach-detail="${esc(c.id)}" aria-label="Scheda allenatore ${esc(c.name)}">
       <span class="player-corner player-role" aria-label="Allenatore">ALL.</span><span class="player-corner player-overall" aria-label="${esc(c.season)}">${esc(c.season.replace("Season ","S"))}</span>
-      <div class="player-portrait-wrap">${portrait(c)}</div>
+      <div class="player-portrait-wrap">${portrait(c,false,String(c.id)==="4761")}</div>
       <div class="player-info"><div class="player-title"><strong title="${esc(c.name)}">${esc(c.name)}</strong></div>
       <div class="player-meta" aria-label="Dettagli allenatore"><span>${esc(c.team)}</span><span>${esc(state)}</span></div></div>
       <span class="player-corner player-level" aria-label="Staff">STAFF</span>
