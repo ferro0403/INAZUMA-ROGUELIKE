@@ -999,7 +999,7 @@
       });
       return vendingRuntime;
     }
-    const openCoaches=(tab="draw",detailId=null,newCoach=null)=>global.RoadToGloryCoachesController.open({getCampaign:()=>campaign,setCampaign:v=>{campaign=v;},getSquadDraft:()=>squadDraft,setSquadDraft:v=>{squadDraft=v;},activeSquad,activeSeasonId,getActiveSquadSlot:()=>activeSquadSlot,storeSquadSlot,renderSquad,repository,openModal:deps.openModal,getModalRoot:deps.getModalRoot,toast:deps.toast},tab,detailId,newCoach);
+    const openCoaches=(tab="draw",detailId=null,newCoach=null)=>global.RoadToGloryCoachesController.open({getCampaign:()=>campaign,setCampaign:v=>{campaign=v;},getSquadDraft:()=>squadDraft,setSquadDraft:v=>{squadDraft=v;},activeSquad,activeSeasonId,getActiveSquadSlot:()=>activeSquadSlot,storeSquadSlot,renderSquad,repository,openModal:deps.openModal,closeModal:deps.closeModal,getModalRoot:deps.getModalRoot,toast:deps.toast},tab,detailId,newCoach);
     function openVending(mode="team"){return getVendingRuntime().openVending(mode);}
     function showPullResult(result,player,mode="team"){return getVendingRuntime().showPullResult(result,player,mode);}
     async function pull(options={}){
