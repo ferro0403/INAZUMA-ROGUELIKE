@@ -15,6 +15,7 @@
   vm.runInNewContext(read("js/road-to-glory/rtg-rng.js"),sandbox);
   vm.runInNewContext(read("js/road-to-glory/rtg-state.js"),sandbox);
   vm.runInNewContext(read("js/road-to-glory/rtg-coaches-view.js"),sandbox);
+  vm.runInNewContext(read("js/road-to-glory/rtg-coaches-controller.js"),sandbox);
   const api=sandbox.RoadToGloryCoaches,stateApi=sandbox.RoadToGloryState,view=sandbox.RoadToGloryCoachesView;
   const campaign=(name="rtg-ie-trilogy")=>stateApi.createInitial({campaignSeed:"coach-tests",campaignId:name});
   test("Ritratti Zukan: tutti i dieci allenatori hanno immagine e figura intera",()=>{
@@ -124,5 +125,83 @@
     assert.doesNotMatch(view.detail(s,"36"),/data-rtg-coaches-equip/);
     s.coachOwnedIds=["36"];
     assert.match(view.detail(s,"36"),/data-rtg-coaches-equip/);
+  });
+
+  test("Mobile: tre colonne, immagini eager con fallback e pulsante ASSEGNA in collezione",()=>{
+    const css=read("css/rtg-coaches.css");
+    assert.match(css,/rtg-coaches-modal \\.rtg-coaches-grid\\s*\\{[^}]*repeat\\(3,minmax\\(0,1fr\\)\\)/);
+    assert.match(css,/rtg-coaches-album \\.album-player-grid\\s*\\{[^}]*repeat\\(3,minmax\\(0,1fr\\)\\)/);
+    const s=campaign();s.coachOwnedIds=["36"];
+    const html=view.markup(s,{tab:"collection"});
+    assert.match(html,/data-rtg-coaches-equip="36"/);
+    assert.match(html,/ASSEGNA/);
+    assert.match(view.card(api.CATALOG[6],"owned"),/loading="eager"/);
+    assert.match(view.card(api.CATALOG[6],"owned"),/data-coach-alternate=/);
+    assert.match(view.card(api.CATALOG[9],"owned"),/data-coach-alternate=/);
+  });
+  test("Risultato distributore: carta grande, nessuna griglia pull legacy, CTA e saldo",()=>{
+    const s=campaign();s.tokens=510;
+    const html=view.result(api.CATALOG[0],s);
+    assert.match(html,/rtg-coaches-reward-feature/);
+    assert.match(html,/rtg-coaches-reward-art/);
+    assert.match(html,/SALDO GETTONI RTG/);
+    assert.match(html,/510/);
+    assert.match(html,/data-rtg-coaches-collection/);
+    assert.doesNotMatch(html,/rtg-pull-card-stage|rtg-pull-result-body/);
+  });
+  test("Assegnazione dal catalogo: committa, aggiorna slot, chiude e ritorna a Squadra",async()=>{
+    let state=campaign();state.coachOwnedIds=["36"];
+    let draft=stateApi.clone(state.squads.ie1);
+    const sequence=[];
+    const button={dataset:{rtgCoachesEquip:"36"},disabled:false,isConnected:true,addEventListener(_type,cb){this.handler=cb;}};
+    const root={
+      querySelector(){return null;},
+      querySelectorAll(selector){return selector==="[data-rtg-coaches-equip]"?[button]:[];}
+    };
+    const ctx={
+      getCampaign:()=>state,setCampaign:next=>{state=next;},
+      getSquadDraft:()=>draft,setSquadDraft:next=>{draft=next;},
+      activeSquad:()=>state.squads.ie1,activeSeasonId:()=>"ie1",
+      getActiveSquadSlot:()=>2,storeSquadSlot:(slot,record)=>sequence.push(["slot",slot,record.coachId]),
+      openModal:()=>{},getModalRoot:()=>root,
+      closeModal:()=>sequence.push("close"),renderSquad:()=>sequence.push("render"),
+      toast:(message,type)=>sequence.push(["toast",message,type]),
+      repository:{update:async(_label,mutate)=>{
+        sequence.push("saving");
+        const next=stateApi.validate(mutate(stateApi.clone(state)));
+        sequence.push("committed");
+        return next;
+      }}
+    };
+    sandbox.RoadToGloryCoachesController.open(ctx,"collection");
+    await button.handler({currentTarget:button});
+    assert.equal(state.squads.ie1.coachId,"36");
+    assert.equal(draft.coachId,"36");
+    assert.deepEqual(sequence.slice(0,3),["saving","committed",["slot",2,"36"]]);
+    assert.equal(sequence[3],"close");
+    assert.equal(sequence[4],"render");
+    assert.equal(button.disabled,false);
+  });
+  test("Assegnazione: se il commit fallisce non modifica Squadra né mostra successo",async()=>{
+    let state=campaign();state.coachOwnedIds=["36"];
+    let draft=stateApi.clone(state.squads.ie1);
+    const sideEffects=[];
+    const button={dataset:{rtgCoachesEquip:"36"},disabled:false,isConnected:true,addEventListener(_type,cb){this.handler=cb;}};
+    const root={querySelector(){return null;},querySelectorAll(selector){return selector==="[data-rtg-coaches-equip]"?[button]:[];}};
+    const ctx={
+      getCampaign:()=>state,setCampaign:next=>{state=next;},getSquadDraft:()=>draft,
+      setSquadDraft:next=>{draft=next;},activeSquad:()=>state.squads.ie1,
+      activeSeasonId:()=>"ie1",getActiveSquadSlot:()=>1,
+      storeSquadSlot:()=>sideEffects.push("slot"),closeModal:()=>sideEffects.push("close"),
+      renderSquad:()=>sideEffects.push("render"),openModal:()=>{},getModalRoot:()=>root,
+      toast:(_message,type)=>sideEffects.push(type),
+      repository:{update:async()=>{throw Error("write failure");}}
+    };
+    sandbox.RoadToGloryCoachesController.open(ctx,"collection");
+    await button.handler({currentTarget:button});
+    assert.equal(state.squads.ie1.coachId,"");
+    assert.equal(draft.coachId,"");
+    assert.deepEqual(sideEffects,["error"]);
+    assert.equal(button.disabled,false);
   });
 })();
