@@ -21,13 +21,15 @@
     image.dataset.coachFallbacks=remaining.join("|");
     if(next){
       image.hidden=false;
-      if(image.style)image.style.display="";
+      if(image.style?.removeProperty)image.style.removeProperty("display");
+      else if(image.style)image.style.display="";
       image.classList?.toggle?.("rtg-coach-portrait--fullbody-thumbnail",next===image.dataset.coachFullbodyUrl&&image.dataset.coachCompactFullbody==="true");
       image.src=next;
       return true;
     }
     image.hidden=true;
-    if(image.style)image.style.display="none";
+    if(image.style?.setProperty)image.style.setProperty("display","none","important");
+    else if(image.style)image.style.display="none";
     const backup=image.nextElementSibling;
     if(backup?.style)backup.style.display="grid";
     return false;
