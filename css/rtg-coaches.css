@@ -481,3 +481,26 @@
   object-fit:cover!important;
   object-position:center 12%!important;
 }
+
+/* Every selection item must fill its grid track. The inherited rtg-picker-grid
+   sets justify-items:center: without this, an unowned coach such as David
+   Arrows shrinks to the intrinsic size of its portrait. */
+.rtg-coaches-modal .rtg-coaches-grid.rtg-picker-grid{
+  justify-items:stretch!important;
+  align-items:stretch!important;
+}
+.rtg-coaches-modal .rtg-coach-entry{
+  box-sizing:border-box!important;
+  width:100%!important;
+  min-width:0!important;
+  justify-self:stretch!important;
+  align-self:stretch!important;
+}
+.rtg-coaches-modal .rtg-coach-entry>.rtg-coach-card.player-card{
+  box-sizing:border-box!important;
+  display:block!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  flex:none!important;
+}
