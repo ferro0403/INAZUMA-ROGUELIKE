@@ -60,7 +60,7 @@
         '</div>'+moveButtons+'<div class="rtg-coach-power-actions">'+
         '<button type="button" class="btn btn-yellow" data-rtg-coach-power-save '+(isComplete()?'':'disabled')+
         '>CONFERMA POTERE</button><button type="button" class="btn" data-rtg-coach-power-cancel>ANNULLA</button>'+
-        '<button type="button" class="btn" data-rtg-coach-power-clear>AZZERA SELEZIONE</button></div></section>';
+        '<button type="button" class="btn" data-rtg-coach-power-clear>RIMUOVI POTERE</button></div></section>';
       ctx.openModal?.(body,{className:"rtg-modal rtg-coach-power-modal"});
       const root=ctx.getModalRoot?.();
       root?.querySelectorAll?.("[data-rtg-coach-power-player]")?.forEach(button=>button.addEventListener("click",()=>{
@@ -80,9 +80,18 @@
         render();
       }));
       root?.querySelector?.("[data-rtg-coach-power-cancel]")?.addEventListener("click",()=>ctx.closeModal?.());
-      root?.querySelector?.("[data-rtg-coach-power-clear]")?.addEventListener("click",()=>{
+      root?.querySelector?.("[data-rtg-coach-power-clear]")?.addEventListener("click",async()=>{
         if(busy)return;
-        choice.cardIds=[];choice.moveIndices=[];render();
+        busy=true;
+        try{
+          const current=ctx.getSquadDraft();
+          if(id(current?.coachId)!==coachId)throw new Error("Allenatore cambiato");
+          if(ctx.getCampaign()?.activeMatch)throw new Error("Partita già in corso");
+          await ctx.saveSquad({...current,coachPowerSelection:null});
+          ctx.closeModal?.();
+          ctx.toast?.("Potere rimosso dalla configurazione");
+        }catch(error){ctx.toast?.(error?.message||"Impossibile rimuovere il potere","error");}
+        finally{busy=false;}
       });
       root?.querySelector?.("[data-rtg-coach-power-save]")?.addEventListener("click",async()=>{
         if(busy||!isComplete())return;
