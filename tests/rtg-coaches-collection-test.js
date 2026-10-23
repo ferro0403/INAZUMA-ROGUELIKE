@@ -139,11 +139,11 @@
       ["36","Cambio forzato","Scegli un titolare avversario e lo sostituisci con una riserva della squadra avversaria, scelta sempre da te. La riserva deve avere lo stesso ruolo."],
       ["208","Fiducia nei campioni","Scegli 2 tuoi titolari: entrambi ricevono +50 ai PT iniziali e massimi."],
       ["1225","Prestito a sorpresa","Scegli una riserva avversaria e la inserisci temporaneamente nella tua panchina, al posto di una delle tue 4 riserve."],
-      ["1329","Allenamento specializzato","Scegli una delle 4 mosse di un tuo titolare: il suo costo in PT viene dimezzato, arrotondando per eccesso."],
-      ["1275","Esaurimento oscuro","Scegli un titolare avversario: inizia con il 50% dei suoi PT normali. I PT massimi rimangono invariati."],
-      ["1777","Preparazione tecnica","Scegli due mosse speciali di un tuo giocatore: entrambe ottengono +10 Potenza, anche superando 110. Il costo in PT non cambia."],
+      ["1329","Allenamento specializzato","Scegli 2 delle 4 mosse speciali di un tuo titolare. Il costo in PT di entrambe viene dimezzato, arrotondando per eccesso."],
+      ["1275","Esaurimento oscuro","Scegli 2 titolari avversari. Entrambi iniziano la partita con il 50% dei loro PT normali. I PT massimi rimangono invariati."],
+      ["1777","Fuori quota","Scegli una delle tue 4 riserve. Il suo contributo viene escluso dal conteggio dell'overall utilizzato per verificare i requisiti massimi di accesso alla partita. La riserva resta in panchina, mantiene statistiche e overall effettivi ed è normalmente utilizzabile."],
       ["1940","Tecnica proibita","Scegli un titolare avversario e blocchi 2 delle sue 4 mosse speciali per tutta la partita."],
-      ["1974","Potenziale risvegliato","Scegli un tuo giocatore, titolare o riserva: sale temporaneamente di 1 rarità, ottenendo anche i relativi aumenti reali delle statistiche, fino ad Aurico."],
+      ["1974","Potenziale risvegliato","Scegli un tuo giocatore, titolare o riserva: sale temporaneamente di 1 rarità, fino ad Aurico, ottenendo i relativi aumenti reali delle statistiche. Ai soli fini del conteggio dell'overall e dei requisiti massimi di accesso alla partita, viene considerato con la rarità e l'overall precedenti al potenziamento."],
       ["4401","Cambio di elemento","Scegli un tuo titolare e cambi temporaneamente il suo elemento in Fuoco, Vento, Bosco o Montagna per quella partita."],
       ["4761","Disordine tattico","Scegli 2 giocatori di movimento avversari e scambi le loro posizioni tattiche nella formazione iniziale."]
     ];
