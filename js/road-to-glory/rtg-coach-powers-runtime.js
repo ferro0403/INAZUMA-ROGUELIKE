@@ -118,8 +118,8 @@
       effect.previousRarity=rarityOf(original);
       effect.targetRarity=target;
       effect.previousOverall=Number(original.overall);
-      const current={...(match.ptCurrentByPlayerId||{}),"user:"+card:total};
-      const maximum={...(match.ptMaxByPlayerId||{}),"user:"+card:total};
+      const current={...(match.ptCurrentByPlayerId||{}),["user:"+card]:total};
+      const maximum={...(match.ptMaxByPlayerId||{}),["user:"+card]:total};
       return {...match,ptCurrentByPlayerId:current,ptMaxByPlayerId:maximum,
         userSquad:{...match.userSquad,lineup:transform(match.userSquad.lineup),
           bench:transform(match.userSquad.bench)},coachPowerEffect:effect};
