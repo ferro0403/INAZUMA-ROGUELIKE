@@ -259,7 +259,7 @@
         preserveScroll:true,
         onClose:typeof options?.onClose==="function"?options.onClose:null,
       });
-      if(!side)global.RoadToGloryCoachSquadPreview?.decorateDetail?.({
+      if(!side||options?.coachMovePicker)global.RoadToGloryCoachSquadPreview?.decorateDetail?.({
         root:deps.getModalRoot?.(),info:previewInfo,movePicker:options?.coachMovePicker,
       });
       return result;
