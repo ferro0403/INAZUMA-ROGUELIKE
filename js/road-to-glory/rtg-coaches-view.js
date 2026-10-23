@@ -76,16 +76,18 @@
     loader.loading="eager";
     loader.decoding="sync";
     loader.fetchPriority="high";
+    loader.referrerPolicy="no-referrer";
     loader.onload=()=>{
-      // decode() is essential: loaded bytes do not guarantee a painted image
-      // in a scrollable Safari modal. A decode rejection after load is not a
-      // network failure: the loaded image can still paint as CSS background.
-      Promise.resolve().then(()=>typeof loader.decode==="function"?loader.decode():null)
-        .catch(()=>null).then(()=>{
-          reneImageReady=true;
-          reneImageFailed=false;
-          refreshReneArtwork(true);
-        });
+      // Never wait for decode() before painting: WebKit may defer decoding
+      // offscreen elements until the tab becomes active again.
+      reneImageReady=true;
+      reneImageFailed=false;
+      refreshReneArtwork(true);
+      // An extra decode + repaint is best-effort, not a visibility gate.
+      if(typeof loader.decode==="function"){
+        Promise.resolve().then(()=>loader.decode()).catch(()=>null)
+          .then(()=>refreshReneArtwork(true));
+      }
     };
     loader.onerror=()=>{
       reneImageFailed=true;
