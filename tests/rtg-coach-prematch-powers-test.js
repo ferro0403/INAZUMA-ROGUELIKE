@@ -117,7 +117,8 @@ test("Pre-match gating, UI and canonical atomic save are linked; old matches una
  assert.equal(runtime.coachFor({squads:{ie1:{coachId:"36"}},coachOwnedIds:[]},"ie1"),"");
  assert.equal(runtime.skip(match).presentation.preMatchPowerStatus,"skipped");
  assert.equal(runtime.apply(match,"36",{playerIds:["gk","rb-gk"]}).presentation.preMatchPowerStatus,"applied");
- assert.equal(runtime.apply({...match,presentation:{preMatchSeen:true}},"36",{playerIds:["gk","rb-gk"]}),null);
+ const oldMatch={...match,presentation:{preMatchSeen:true}};
+ assert.equal(runtime.apply(oldMatch,"36",{playerIds:["gk","rb-gk"]}),oldMatch);
  const ctrl=read("js/road-to-glory/rtg-controller.js");
  assert.match(ctrl,/preMatchPowerStatus:"pending"/);
  assert.match(ctrl,/RoadToGloryCoachPreMatchController\.commit/);
