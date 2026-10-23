@@ -56,25 +56,29 @@ test("Squad UI and match wiring use canonical repository persistence",()=>{
 });
 
 
-test("Travis excludes exactly one configured bench player from OVR cap, never from real squad",()=>{
+test("Travis counts 15 players but caps one chosen bench OVR at 60",()=>{
   const lineup=Array.from({length:11},(_,i)=>"t"+i);
   const bench=["r0","r1","r2","r3"];
   const squad={coachId:"1777",lineup,bench,coachPowerSelection:{coachId:"1777",cardIds:["r0"]}};
   const state={activeSeasonId:"ie1",coachOwnedIds:["1777"]};
-  const entries=rules.eligibleRosterForCap(squad,state);
-  assert.equal(entries.length,14);
-  assert.equal(entries.includes("r0"),false);
-  assert.equal(entries.includes("r1"),true);
+  assert.equal(rules.capOverrideFor(squad,state),"r0");
+  assert.equal(rules.eligibleRosterForCap(squad,state).length,15);
   assert.equal(squad.bench.length,4);
-  assert.equal(rules.eligibleRosterForCap(squad,{...state,coachOwnedIds:[]}).length,15);
-  assert.equal(rules.eligibleRosterForCap({...squad,coachPowerSelection:{coachId:"1777",cardIds:["t0"]}},state).length,15);
+  assert.equal(rules.capOverrideFor(squad,{...state,coachOwnedIds:[]}),null);
+  assert.equal(rules.capOverrideFor({...squad,coachPowerSelection:{coachId:"1777",cardIds:["t0"]}},state),null);
+  const sandbox={RoadToGloryCoachPowerRuntime:rules};
+  vm.runInNewContext(read("js/road-to-glory/rtg-squad-runtime.js"),sandbox);
   const resolver={resolveAtLevel20:key=>({overall:key==="r0"?99:70}),resolveMove:()=>null};
-  const total=(entries)=>entries.reduce((s,key)=>s+(key==="r0"?99:70),0)/entries.length;
-  assert.equal(total(entries),70);
-  assert.equal(Math.round(total([...lineup,...bench])*10)/10,71.9);
+  const common={lineup:[...lineup,...bench],playerResolver:resolver};
+  assert.equal(sandbox.RoadToGlorySquadRuntime.teamPower(common),71.9);
+  assert.equal(sandbox.RoadToGlorySquadRuntime.teamPower({...common,coachCapCardId:"r0"}),69.3);
+  // A value lower than 60 must never get worse.
+  const weaker={resolveAtLevel20:key=>({overall:key==="r0"?40:70}),resolveMove:()=>null};
+  assert.equal(sandbox.RoadToGlorySquadRuntime.teamPower({...common,playerResolver:weaker}),
+    sandbox.RoadToGlorySquadRuntime.teamPower({...common,playerResolver:weaker,coachCapCardId:"r0"}));
   const source=read("js/road-to-glory/rtg-squad-runtime.js");
-  assert.match(source,/eligibleRosterForCap\?\.\(squad,state\)/);
-  assert.match(source,/lineup: capRoster/);
+  assert.match(source,/capOverrideFor\?\.\(squad,state\)/);
+  assert.match(source,/lineup: activeRoster/);
 });
 test("Arrows upgrades actual match player stats/rarity including PT while preserving cap values",()=>{
   const original=match();
@@ -168,4 +172,46 @@ test("Five Squad power controls and season-safe element roundtrip are wired",()=
   const html=read("index.html");
   assert.match(html,/rtg-coach-powers-rarity\.js/);
   assert.match(html,/rtg-coach-powers-runtime\.js/);
+});
+
+test("Squad power preview shows all five targeted effects without mutating canonical cards",()=>{
+  const sandbox={
+    RoadToGloryCoachPowerRuntime:rules,
+    RoadToGloryCoaches:{owned:s=>new Set(s.coachOwnedIds||[])},
+    RtgFourMovesRuntime:{movesFor:()=>moves,ptBreakdown:()=>({base:180,bonus:20,total:200})},
+    RoadToGloryCoachRarityPower:{upgrade:({player,targetRarity})=>
+      ({...player,category:targetRarity,overall:90,stats:{attack:85,control:60},attack:85})},
+  };
+  vm.runInNewContext(read("js/road-to-glory/rtg-coach-powers-preview.js"),sandbox);
+  const preview=sandbox.RoadToGloryCoachSquadPreview;
+  const player={cardId:"a",playerId:"a",name:"Tester",overall:88,category:"Elite",element:"wind",
+    stats:{attack:70,control:60}};
+  const base={player,cardId:"a",state:{coachOwnedIds:["208","1329","1974","4401","1777"]},
+    seasonId:"ie1",playerResolver:{},freeAgentsDb:null};
+  const given=extra=>preview.projected({...base,...extra});
+  const hillman=given({squad:{coachId:"208",lineup:["a","b"],bench:[],
+    coachPowerSelection:{coachId:"208",cardIds:["a","b"]}}});
+  assert.equal(hillman.pt.total,250);
+  const aquilina=given({squad:{coachId:"1329",lineup:["a"],bench:[],
+    coachPowerSelection:{coachId:"1329",cardIds:["a"],moveIndices:[0,3]}}});
+  assert.equal(aquilina.costs[0],20);
+  assert.equal(aquilina.costs[3],51);
+  const yi=given({squad:{coachId:"4401",lineup:["a"],bench:[],
+    coachPowerSelection:{coachId:"4401",cardIds:["a"],element:"fire"}}});
+  assert.equal(yi.player.element,"Fuoco");
+  const arrows=given({squad:{coachId:"1974",lineup:["a"],bench:[],
+    coachPowerSelection:{coachId:"1974",cardIds:["a"]}}});
+  assert.equal(arrows.player.overall,90);
+  assert.equal(arrows.stats.find(s=>s.key==="attack").after,85);
+  assert.equal(player.overall,88);
+  assert.equal(player.element,"wind");
+  const travis=given({squad:{coachId:"1777",lineup:[],bench:["a"],
+    coachPowerSelection:{coachId:"1777",cardIds:["a"]}}});
+  assert.match(travis.note,/contributo al limite squadra 60/);
+  const ui=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
+  assert.match(ui,/lineupPitchMarkup/);
+  assert.match(ui,/data-rtg-coach-power-save/);
+  assert.match(ui,/openPlayerDetails/);
+  assert.match(ui,/coachMovePicker/);
+  assert.doesNotMatch(ui,/localStorage\.setItem|firebase|indexedDB/i);
 });
