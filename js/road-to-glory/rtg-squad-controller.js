@@ -919,7 +919,9 @@
             })||null;
           },
         }),
-        onAdaptRequirements:()=>adaptSquadToCurrentRequirements(),
+        onAdaptRequirements:()=>{try{return adaptSquadToCurrentRequirements();}catch(error){
+          deps.toast?.(error?.message||"Errore durante l'adattamento della squadra","error");
+          return{ok:false,reason:"adapt-error"};}},
         onSave:()=>saveSquad(deps.squadDraft),
         onSelectSquadSlot:(slot)=>deps.selectSquadSlot(slot),
       });
