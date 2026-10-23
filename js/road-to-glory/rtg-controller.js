@@ -643,12 +643,15 @@
         const userMeta=deps.getUserTeamMeta?.()||{};
         userSquad.name=userMeta.name||userSquad.name||"La tua squadra";
         if(userMeta.teamIdentity)userSquad.teamIdentity=clone(userMeta.teamIdentity);
-        const opponentSquad=node.type==="main"?mainOpponent(node):secondaryOpponent(node,current,attemptNumber);
+        const preMatchCoach=global.RoadToGloryCoachPreMatchRuntime?.coachFor?.(current,id(current.activeSeasonId||activeSeasonId()))||"";
+        let opponentSquad=node.type==="main"?mainOpponent(node):secondaryOpponent(node,current,attemptNumber);
+        if(["36","1225"].includes(preMatchCoach))opponentSquad=global.RoadToGloryCoachOpponentBench?.build?.({opponent:opponentSquad,node:{...node,coachId:preMatchCoach},teamRecord:teamRecordForId(node.teamId),freeAgentsDb,resolveForTeam,resolvedStandard,resolveStandard:resolvedStandard})||opponentSquad;
         const seed=`${current.campaignSeed}:${node.id}:${attemptNumber}`;
         const matchId=`rtg:${node.id}:${attemptNumber}`;
         let match=matchEngine.createMatch({matchId,nodeId:node.id,matchType:node.type,attemptNumber,seed,userSquad,opponentSquad,seasonId:id(current.activeSeasonId||activeSeasonId())});
         match=global.RoadToGloryCoachPowerRuntime?.applyToMatch?.(match,current.squads[id(current.activeSeasonId||activeSeasonId())],current,{upgradeRarity:(player,targetRarity,cardId)=>global.RoadToGloryCoachRarityPower?.upgrade?.({player,targetRarity,cardId,playerResolver,freeAgentsDb,seasonId:id(current.activeSeasonId||activeSeasonId()),squad:current.squads[id(current.activeSeasonId||activeSeasonId())]})})||match;
-        match=matchEngine.prepareNext(match);
+        if(preMatchCoach){match.preMatchCoachId=preMatchCoach;match.presentation={...(match.presentation||{}),preMatchPowerStatus:"pending"};}
+        else match=matchEngine.prepareNext(match);
         match.presentation={...(match.presentation||{}),preMatchSeen:false};
         current.activeMatch=match;started=clone(match);return current;
       });
@@ -666,6 +669,7 @@
       matchView.bind(app,{
         onOpenPlayerDetails:(playerId,side)=>openRtgPlayerDetails(playerId,side),
         onPreMatchStart:()=>confirmPreMatch(),
+        onPreMatchCoachPower:()=>openPreMatchPower(),
         onEncounterChoice:(choice,isConfirm)=>handleEncounterChoiceTap(choice,isConfirm),
         onAbandon:()=>abandonMatch(),
         onHalftimeConfirm:()=>confirmHalftime(halftimeDraft),
@@ -708,6 +712,15 @@
       return showEncounterOverlay(campaign.activeMatch,normalized);
     }
 
+    function openPreMatchPower(){
+      if(campaign?.activeMatch?.presentation?.preMatchPowerStatus!=="pending")return;
+      global.RoadToGloryCoachPreMatchUi?.open?.({
+        getMatch:()=>campaign.activeMatch,squadView,openModal:deps.openModal,getModalRoot:deps.getModalRoot,closeModal:deps.closeModal,toast:deps.toast,
+        openPlayerDetails:(key,side,opts)=>openRtgPlayerDetails(key,side,opts),
+        commit:async(matchId,selection,skip)=>{campaign=await global.RoadToGloryCoachPreMatchController.commit({repository,matchEngine,matchId,selection,skip});},
+        render:()=>renderMatch(campaign.activeMatch),
+      });
+    }
     function renderMatch(match=campaign?.activeMatch,options={}){
       clearMatchFlowTimer();
       if(!match)return renderRun();
@@ -716,6 +729,7 @@
         renderHtml(matchView.preMatchMarkup(match));
         bindMatchViewActions();
         mountDevQuickTools();
+        if(match.presentation?.preMatchPowerStatus==="pending")openPreMatchPower();
         return match;
       }
       renderHtml(matchView.matchMarkup(match),{preserveMatchTimeline:true});
@@ -745,6 +759,7 @@
       return match;
     }
     async function confirmPreMatch(){
+      if(campaign?.activeMatch?.presentation?.preMatchPowerStatus==="pending")return openPreMatchPower();
       campaign=await repository.update("rtg-prematch-start",current=>{
         if(!current.activeMatch)throw Object.assign(new Error("Nessuna partita RTG attiva"),{code:"rtg-match-not-active"});
         current.activeMatch.presentation={...(current.activeMatch.presentation||{}),preMatchSeen:true};
