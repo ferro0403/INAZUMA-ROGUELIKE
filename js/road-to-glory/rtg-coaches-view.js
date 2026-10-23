@@ -88,7 +88,6 @@
     img.loading="eager";
     img.decoding="sync";
     img.fetchPriority="high";
-    img.referrerPolicy="no-referrer";
     img.onload=()=>{
       reneState="loaded";
       paintReneCanvas();
