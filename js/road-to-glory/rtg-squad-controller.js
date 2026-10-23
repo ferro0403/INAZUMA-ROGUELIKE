@@ -844,7 +844,7 @@
       deps.squadDraft=deps.clone(deps.squadDraft||deps.activeSquad(deps.campaign));
       const model=deps.squadView.renderModel({state:draftState(),freeAgentIds:deps.freeAgentIds,seasonDb:deps.seasonDb,freeAgentsDb:deps.freeAgentsDb,playerResolver:deps.playerResolverForState(draftState())});
       const teamId=currentRequirementTeamId();
-      const eligibility=teamId?deps.squadRuntime.mainEligibility?.({teamId,state:draftState(),seasonDb:deps.seasonDb,freeAgentIds:deps.freeAgentIds,freeAgentsDb:deps.freeAgentsDb,playerResolver:deps.playerResolver}):null;
+      const eligibility=teamId?deps.squadRuntime.mainEligibility?.({teamId,state:draftState(),seasonDb:deps.seasonDb,freeAgentIds:deps.freeAgentIds,freeAgentsDb:deps.freeAgentsDb,playerResolver:deps.playerResolverForState(draftState())}):null;
       const nextTeam=(deps.seasonDb?.teams||[]).find(team=>deps.id(team.teamId||team.id)===teamId);
       const userMeta=deps.getUserTeamMeta?.()||{};
       deps.renderHtml(deps.squadView.markup(model,{
@@ -852,7 +852,7 @@
         teamIdentity:userMeta.teamIdentity||null,
         nextTeamName:nextTeam?.name||nextTeam?.teamName||teamId,
         requirementsMarkup:eligibility?deps.runView.requirementsMarkup(eligibility):"",
-        teamPower:eligibility?.teamPower ?? deps.squadRuntime.teamPower?.({lineup:deps.squadDraft.lineup||[],activeSeasonId:deps.campaign.activeSeasonId||"ie1",playerResolver:deps.playerResolver,freeAgentsDb:deps.freeAgentsDb,activeRoleVariantByCardId:deps.squadDraft.activeRoleVariantByCardId||{}}) ?? null,
+        teamPower:eligibility?.teamPower ?? deps.squadRuntime.teamPower?.({lineup:[...(deps.squadDraft.lineup||[]),...(deps.squadDraft.bench||[])],activeSeasonId:deps.campaign.activeSeasonId||"ie1",playerResolver:deps.playerResolverForState(draftState()),freeAgentsDb:deps.freeAgentsDb,activeRoleVariantByCardId:deps.squadDraft.activeRoleVariantByCardId||{},coachCapCardId:global.RoadToGloryCoachPowerRuntime?.capOverrideFor?.(deps.squadDraft,deps.campaign)||null}) ?? null,
         dirty:JSON.stringify(deps.squadDraft)!==JSON.stringify(deps.activeSquad(deps.campaign)),
         activeSquadSlot:deps.activeSquadSlot,
         coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(deps.campaign,deps.squadDraft?.coachId,deps.squadDraft?.coachPowerSelection)||"",
