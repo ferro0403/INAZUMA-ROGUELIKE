@@ -81,7 +81,7 @@
             overall: player?.overall ?? player?.finalOverall,
             dataAttr: attrs,
             extraClass,
-            trailingMarkup: `${legacyBadge({ ...entry, player })}${versionCountBadge(entry)}${entry?.coachPreview?.note?'<span class="rtg-coach-card-buff" title="'+escape(entry.coachPreview.note)+'">'+escape(entry.coachPreview.badge||"★ POTERE")+'</span>':""}`,
+            trailingMarkup: `${legacyBadge({ ...entry, player })}${versionCountBadge(entry)}${entry?.coachPreview?.note&&entry.coachPreview.coachId!=="4401"?'<span class="rtg-coach-card-buff" title="'+escape(entry.coachPreview.note)+'">'+escape(entry.coachPreview.badge||"★ POTERE")+'</span>':""}`,
           })
         : fallbackPlayerCard(player, "", attrs, extraClass);
       if (isPicker || isCatalog || isVersion) {
