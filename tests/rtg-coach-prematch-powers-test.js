@@ -132,4 +132,7 @@ test("Pre-match gating, UI and canonical atomic save are linked; old matches una
  assert.match(ui,/CONTINUA SENZA POTERE/);
  const view=read("js/road-to-glory/rtg-match-view.js");
  assert.match(view,/data-rtg-prematch-coach-power/);
+ const controller=read("js/road-to-glory/rtg-controller.js");
+ assert.match(controller,/if\(!side\|\|options\?\.coachMovePicker\)/,
+   "opponent player details must mount Zoolan's two-move selector");
 });
