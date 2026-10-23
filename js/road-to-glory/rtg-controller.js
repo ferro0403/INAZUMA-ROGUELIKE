@@ -224,9 +224,14 @@
       if(side&&campaign?.activeMatch)player=findMatchPlayer(campaign.activeMatch,side,key);
       player=player||resolved(key,squadDraft?.activeRoleVariantByCardId?.[key]||null);
       if(!player)return deps.toast?.("Giocatore non disponibile","error");
-      const detailPlayer=player?.stats&&!player?.baseStats
-        ? {...player,baseStats:{...player.stats}}
-        : player;
+      const previewInfo=!side?global.RoadToGloryCoachSquadPreview?.projected?.({
+        player,cardId:key,squad:squadDraft,state:campaign,seasonId:activeSeasonId(),
+        playerResolver,freeAgentsDb,
+      }):null;
+      const effectivePlayer=previewInfo?.player||player;
+      const detailPlayer=effectivePlayer?.stats&&!effectivePlayer?.baseStats
+        ? {...effectivePlayer,baseStats:{...effectivePlayer.stats}}
+        : effectivePlayer;
       const detailMeta=cardMeta(player?.cardId||key);
       const rtgLegacyLabel=detailMeta.sourceKind==="season"
         ? (cardIdentity?.legacyLabel?.(detailMeta.legacySeasonId)||"")
@@ -237,7 +242,7 @@
         && Array.isArray(player?.roleVariants)
         && player.roleVariants.length>1;
       const reopenOptions={...options,allowRoleSwitch:true};
-      return deps.showPlayerDetailsFor?.(detailPlayer,{
+      const result=deps.showPlayerDetailsFor?.(detailPlayer,{
         playerId:id(detailMeta.canonicalPlayerId||player.playerId||detailMeta.playerId),
         level:20,
         database:detailDatabaseFor(key),
@@ -259,6 +264,10 @@
         preserveScroll:true,
         onClose:typeof options?.onClose==="function"?options.onClose:null,
       });
+      if(!side)global.RoadToGloryCoachSquadPreview?.decorateDetail?.({
+        root:deps.getModalRoot?.(),info:previewInfo,movePicker:options?.coachMovePicker,
+      });
+      return result;
     }
     function refreshEntitlements(){
       const albumProgress=deps.getAlbumProgress?.();
