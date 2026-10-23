@@ -593,6 +593,7 @@
               <div data-rtg-prematch-field="opponent" hidden>${formationPitchMarkup(match.opponentSquad,"opponent","prematch")}</div>
             </div>
           </section>
+          ${match.presentation?.preMatchPowerStatus==="pending"?'<button type="button" class="btn rtg-prematch-coach-power-launch" data-rtg-prematch-coach-power>CONFIGURA POTERE ALLENATORE</button>':""}
           <button type="button" class="btn btn-yellow rtg-prematch-start" data-rtg-prematch-start>
             <span class="rtg-prematch-start-icon" aria-hidden="true">▶</span>
             <span><small>TUTTO PRONTO</small><strong>INIZIA PARTITA</strong></span>
@@ -1151,6 +1152,7 @@
         root.querySelectorAll("[data-rtg-live-field]").forEach((field)=>{field.hidden=field.dataset.rtgLiveField!==side;});
       }));
       root?.querySelector?.("[data-rtg-prematch-start]")?.addEventListener("click", () => actions.onPreMatchStart?.());
+      root?.querySelector?.("[data-rtg-prematch-coach-power]")?.addEventListener("click", () => actions.onPreMatchCoachPower?.());
       root?.querySelectorAll?.("[data-rtg-choice]")?.forEach((button) => button.addEventListener("click", () => actions.onEncounterChoice?.(button.dataset.rtgChoice, button.dataset.rtgConfirm === "1")));
       root?.querySelectorAll?.("[data-rtg-duel-player]")?.forEach((button) => button.addEventListener("click", () => {
         const playerId = String(button.dataset.rtgDuelPlayer || "");
