@@ -854,6 +854,8 @@
     }
 
     function renderSquad(){
+      const oldShell=deps.app?.querySelector?.(".rtg-squad-shell");
+      const oldScroll=oldShell?{shell:oldShell.scrollTop||0,app:deps.app.scrollTop||0,window:global.scrollY||0}:null;
       ensureSquadFilterSeasonData().catch(error=>global.console?.error?.("[RTG] Preload filtri Season/Squadra fallito",error));
       deps.squadDraft=deps.clone(deps.squadDraft||deps.activeSquad(deps.campaign));
       const model=deps.squadView.renderModel({state:draftState(),freeAgentIds:deps.freeAgentIds,seasonDb:deps.seasonDb,freeAgentsDb:deps.freeAgentsDb,playerResolver:deps.playerResolverForState(draftState())});
@@ -870,7 +872,16 @@
         dirty:JSON.stringify(deps.squadDraft)!==JSON.stringify(deps.activeSquad(deps.campaign)),
         activeSquadSlot:deps.activeSquadSlot,
         coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(deps.campaign,deps.squadDraft?.coachId,deps.squadDraft?.coachPowerSelection)||"",
-      }));
+      }),{preserveScroll:!!oldScroll});
+      if(oldScroll){
+        const restore=()=>{
+          const shell=deps.app?.querySelector?.(".rtg-squad-shell");
+          if(!shell)return;
+          shell.scrollTop=oldScroll.shell;deps.app.scrollTop=oldScroll.app;
+          try{global.scrollTo?.({top:oldScroll.window,left:0,behavior:"auto"});}catch(_){}
+        };
+        restore();global.requestAnimationFrame?.(()=>global.requestAnimationFrame?.(restore));
+      }
       deps.bindHomeAndTabs();
       deps.squadView.bind(deps.app,{
         onOpenFormation:()=>openFormationSelector(model),
