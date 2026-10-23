@@ -720,8 +720,10 @@
       };
       // Composition requirements apply to all 15 active players. Only the amount
       // that cannot fit on the four-player bench is forced into the XI.
-      const minFieldRecent=Math.max(0,Number(constraint.recentCount||0)-4);
-      const minFieldRecruit=Math.max(0,Number(constraint.minRecruit||0)-4);
+      const recentBenchCapacity=forcedBench&&!forcedBench.recent?3:4;
+      const recruitBenchCapacity=forcedBench&&!forcedBench.recruit?3:4;
+      const minFieldRecent=Math.max(0,Number(constraint.recentCount||0)-recentBenchCapacity);
+      const minFieldRecruit=Math.max(0,Number(constraint.minRecruit||0)-recruitBenchCapacity);
       if(addLineupFrom(candidates.filter(entry=>entry.playerId!==fixedBenchId&&entry.recent).sort(balanced),minFieldRecent)>0)return null;
       const fieldRecruitNow=selected.filter(entry=>entry.recruit).length;
       if(addLineupFrom(candidates.filter(entry=>entry.playerId!==fixedBenchId&&entry.recruit).sort(balanced),Math.max(0,minFieldRecruit-fieldRecruitNow))>0)return null;
