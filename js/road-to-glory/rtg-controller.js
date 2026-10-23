@@ -931,7 +931,12 @@
     async function confirmHalftime(nextSquad){
       return commitMatchState("rtg-halftime",match=>matchEngine.confirmHalftime(match,nextSquad,{validateHalftime:(candidate)=>{
         const ids=candidate.lineup.map(player=>id(player.cardId||player.playerId)),benchIds=candidate.bench.map(player=>id(player.cardId||player.playerId));
-        const candidateState=clone(campaign);candidateState.squads[activeSeasonId()]={formationId:candidate.formationId,lineup:ids,bench:benchIds,activeRoleVariantByCardId:{...(candidate.activeRoleVariantByCardId||{})}};
+        const candidateState=clone(campaign);
+        candidateState.squads[activeSeasonId()]={
+          ...(candidateState.squads?.[activeSeasonId()]||{}),
+          formationId:candidate.formationId,lineup:ids,bench:benchIds,
+          activeRoleVariantByCardId:{...(candidate.activeRoleVariantByCardId||{})},
+        };
         if(match.matchType==="secondary"){
           const validation=squadRuntime.validateSquad({state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(candidateState)});
           return {eligible:validation.valid,reasons:validation.reasons||[]};
