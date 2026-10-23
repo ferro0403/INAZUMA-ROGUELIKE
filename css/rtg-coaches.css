@@ -788,3 +788,41 @@
   .rtg-coach-picker-elements .rtg-coach-element-choice{gap:5px!important;font-size:11px!important}
   .rtg-coach-element-choice .rtg-coach-element-art{width:26px;height:26px;flex-basis:26px}
 }
+
+
+/* Mister Yi: two independently selected players and two techniques each. */
+.rtg-coach-yi-targets .rtg-coach-yi-target{
+  grid-column:1/-1;min-width:0;padding:12px;background:#fffaf0;
+  border:2px solid #161719;box-shadow:3px 4px 0 #161719;
+}
+.rtg-coach-yi-targets .rtg-coach-yi-target>h4{
+  margin:0 0 12px;font-size:13px;font-weight:950;letter-spacing:.065em;
+  overflow-wrap:anywhere;
+}
+.rtg-coach-yi-element-options{
+  display:grid;grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:clamp(4px,1.2vw,9px);
+}
+.rtg-coach-yi-element-options .rtg-coach-element-choice{
+  min-height:60px!important;flex-direction:column;gap:5px!important;
+  padding:6px 3px!important;font-size:11px!important;letter-spacing:.02em!important;
+}
+.rtg-coach-yi-element-options .rtg-coach-element-choice .rtg-coach-element-art{
+  width:24px;height:24px;flex-basis:24px;
+}
+.rtg-coach-yi-element-options .rtg-coach-element-art svg{width:18px;height:18px}
+.rtg-coach-yi-moves-button{
+  display:block;width:100%;margin:15px 0 2px!important;
+  min-height:48px;padding:9px!important;background:#ffd21f!important;
+  color:#151719!important;border:2px solid #151719!important;border-radius:2px!important;
+  box-shadow:3px 4px 0 #151719!important;font-weight:950!important;
+  text-align:center;white-space:normal;
+}
+.rtg-coach-yi-moves-button:disabled{opacity:.55!important;cursor:not-allowed!important}
+.rtg-coach-move-transformed .player-move-element{
+  outline:2px solid #ffd21f;outline-offset:2px;
+}
+@media(max-width:360px){
+  .rtg-coach-yi-element-options{gap:3px}
+  .rtg-coach-yi-element-options .rtg-coach-element-choice{font-size:10px!important}
+}
