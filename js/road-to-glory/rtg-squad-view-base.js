@@ -367,6 +367,7 @@
       root?.querySelector?.("[data-rtg-open-coaches]")?.addEventListener("click",()=>actions.onOpenCoaches?.());
       root?.querySelector?.("[data-rtg-squad-coach-select]")?.addEventListener("click",()=>actions.onOpenCoaches?.());
       root?.querySelectorAll?.("[data-rtg-squad-coach-detail]")?.forEach(button=>button.addEventListener("click",()=>actions.onOpenCoachDetails?.()));
+      root?.querySelector?.("[data-rtg-coach-power-configure]")?.addEventListener("click",()=>actions.onConfigureCoachPower?.());
       root?.querySelector?.("[data-rtg-save-squad]")?.addEventListener("click", () => actions.onSave?.());
       root?.querySelectorAll?.("[data-rtg-squad-slot]")?.forEach((button)=>button.addEventListener("click",()=>actions.onSelectSquadSlot?.(Number(button.dataset.rtgSquadSlot)||1)));
     }
