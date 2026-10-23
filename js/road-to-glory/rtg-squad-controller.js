@@ -875,6 +875,14 @@
             freeAgentIds:deps.freeAgentIds,seasonDb:deps.seasonDb,
             freeAgentsDb:deps.freeAgentsDb,playerResolver:deps.playerResolverForState(draftState())}),
           openPlayerDetails:(key,options)=>deps.openRtgPlayerDetails(key,"",options),
+          previewSquadOverall:(selection)=>{
+            const draft=deps.squadDraft,team=[...(draft.lineup||[]),...(draft.bench||[])];
+            const base={lineup:team,activeSeasonId:deps.activeSeasonId(),
+              playerResolver:deps.playerResolverForState(draftState()),freeAgentsDb:deps.freeAgentsDb,
+              activeRoleVariantByCardId:draft.activeRoleVariantByCardId||{}};
+            return {before:deps.squadRuntime.teamPower(base),
+              after:deps.squadRuntime.teamPower({...base,coachCapCardId:selection?.cardIds?.[0]||null})};
+          },
           previewChoice:(key,selection)=>{
             const card=deps.resolved(key,deps.squadDraft?.activeRoleVariantByCardId?.[key]||null);
             return global.RoadToGloryCoachSquadPreview?.projected?.({
