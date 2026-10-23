@@ -81,7 +81,7 @@
             overall: player?.overall ?? player?.finalOverall,
             dataAttr: attrs,
             extraClass,
-            trailingMarkup: `${legacyBadge({ ...entry, player })}${versionCountBadge(entry)}`,
+            trailingMarkup: `${legacyBadge({ ...entry, player })}${versionCountBadge(entry)}${entry?.coachPreview?.note?'<span class="rtg-coach-card-buff" title="'+escape(entry.coachPreview.note)+'">★ POTERE</span>':""}`,
           })
         : fallbackPlayerCard(player, "", attrs, extraClass);
       if (isPicker || isCatalog || isVersion) {
@@ -175,7 +175,15 @@
       const sourceFor = (cardId) => gacha.has(String(cardId)) ? "RTG" : "Svincolato";
       const formations = Array.from(global.RoadToGloryConfig?.season?.(seasonId)?.formations || seasonDb?.formations?.eleven || global.RoadToGloryConfig?.SEASON1?.formations || []);
       const formation = formations.find((item) => String(item.id) === String(squad.formationId)) || formations[0] || null;
-      const toEntry = (cardId) => { const player=resolve(String(cardId)); return { cardId:String(cardId), playerId:String(player?.playerId || global.RoadToGloryCardIdentity?.parse?.(cardId)?.playerId || cardId), source:sourceFor(cardId), player }; };
+      const toEntry = (cardId) => {
+        const player=resolve(String(cardId));
+        const preview=global.RoadToGloryCoachSquadPreview?.projected?.({
+          player,cardId:String(cardId),squad,state,seasonId,
+          playerResolver:activeResolver,freeAgentsDb,
+        })||null;
+        return {cardId:String(cardId),playerId:String(player?.playerId||global.RoadToGloryCardIdentity?.parse?.(cardId)?.playerId||cardId),
+          source:sourceFor(cardId),player:preview?.player||player,coachPreview:preview};
+      };
       const slotRoles=Array.isArray(formation?.slotRoles)?formation.slotRoles:[];
       const lineup = (squad.lineup || []).map((cardId,index)=>{
         const entry=toEntry(cardId);
