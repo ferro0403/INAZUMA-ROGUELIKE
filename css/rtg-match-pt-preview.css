@@ -1,0 +1,248 @@
+/* RTG PT duels only: compact, readable actions and an actual confirmation label. */
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-grid { gap:8px!important; }
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card {
+  min-height:100px!important;
+  padding:8px!important;
+  gap:4px 6px!important;
+  grid-template-rows:minmax(42px,auto) auto!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected {
+  grid-template-rows:minmax(48px,auto) auto!important;
+  grid-template-areas:"copy copy" "probability probability"!important;
+  align-content:space-between!important;
+  min-height:104px!important;
+  row-gap:5px!important;
+  padding:8px!important;
+}
+/* Use the real text node, not a pseudo-element that can overlap the move name. */
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected::before {
+  content:none!important;
+  display:none!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card .rtg-choice-confirm {
+  grid-area:confirm!important;
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-self:end!important;
+  width:max-content!important;
+  min-height:18px!important;
+  margin:0!important;
+  padding:2px 6px!important;
+  border:2px solid #111216!important;
+  border-radius:3px!important;
+  background:#ffd21f!important;
+  color:#111216!important;
+  font-size:9px!important;
+  font-weight:1000!important;
+  line-height:1!important;
+  letter-spacing:.055em!important;
+  white-space:nowrap!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card .rtg-choice-copy {
+  min-width:0!important;
+  gap:3px!important;
+  overflow:visible!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card .rtg-choice-copy strong {
+  overflow-wrap:anywhere!important;
+  white-space:normal!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card .rtg-choice-probability strong {
+  font-size:clamp(16px,4.5vw,19px)!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-pt-after-use {
+  display:inline-flex!important;
+  align-items:center!important;
+  margin-top:0!important;
+  width:max-content!important;
+  max-width:100%;
+  background:#fff5d2;
+  border-left:3px solid #a6750a;
+  padding:2px 4px!important;
+  color:#3a3b32!important;
+  font-size:8px!important;
+  font-style:normal!important;
+  font-weight:900!important;
+  line-height:1.2!important;
+  white-space:normal!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-pt-option-after {
+  display:inline-flex;
+  width:max-content;
+  max-width:100%;
+  margin-top:1px;
+  padding:3px 5px;
+  font-size:.66rem;
+  font-weight:900;
+  letter-spacing:.02em;
+  background:#fff4d6;
+  border-left:3px solid #b77b11;
+  color:#35312a;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-pt-option-after strong { font-weight:1000; }
+/* Element-specific badges in the technique menu and the selected move card. */
+.rtg-paper-modal .rtg-pt-option-info .rtg-move-element-badge,
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge {
+  --pt-el:#52545a;
+  color:var(--pt-el)!important;
+  border-color:var(--pt-el)!important;
+  background:color-mix(in srgb,var(--pt-el) 14%,white)!important;
+  font-weight:1000!important;
+}
+.rtg-paper-modal .rtg-pt-option-info .rtg-move-element-badge:is(.element-forest,.element-wood,.element-tree,.element-albero),
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge:is(.element-forest,.element-wood,.element-tree,.element-albero){--pt-el:#228448;}
+.rtg-paper-modal .rtg-pt-option-info .rtg-move-element-badge:is(.element-fire,.element-fuoco),
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge:is(.element-fire,.element-fuoco){--pt-el:#c73932;}
+.rtg-paper-modal .rtg-pt-option-info .rtg-move-element-badge:is(.element-mountain,.element-montagna),
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge:is(.element-mountain,.element-montagna){--pt-el:#845624;}
+.rtg-paper-modal .rtg-pt-option-info .rtg-move-element-badge:is(.element-wind,.element-vento),
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge:is(.element-wind,.element-vento){--pt-el:#087fae;}
+.rtg-paper-modal .rtg-pt-option-info .rtg-move-element-badge.element-void,
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge.element-void{--pt-el:#7643af;}
+/* One-line forecast: PT 243 / 243 → 193. No status leaks during resolution. */
+.rtg-duel-player-meta .rtg-duel-pt-inline {
+  max-width:100%;
+  padding:3px 5px!important;
+  gap:4px!important;
+}
+.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current {
+  display:inline-flex;
+  align-items:center;
+  gap:2px;
+  min-width:0;
+  white-space:nowrap;
+}
+.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current b {
+  color:#ab6c0b;
+  font-size:.6rem;
+  font-weight:1000;
+}
+.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current strong {
+  font-size:.7rem;
+  font-weight:1000;
+}
+.rtg-duel-player-meta .rtg-duel-pt-inline.is-projected {
+  display:inline-flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  gap:4px!important;
+  max-width:100%;
+  width:max-content;
+  white-space:nowrap!important;
+}
+.rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-projection {
+  display:inline-flex!important;
+  align-items:center;
+  gap:3px;
+  width:auto;
+  margin:0;
+  padding:0;
+  border:0;
+  color:#60440c;
+  font-size:.69rem;
+  font-weight:950;
+  white-space:nowrap!important;
+}
+.rtg-duel-pt-projection strong {font-weight:1000;}
+@media(max-width:390px){
+  .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card {padding:7px!important;}
+  .rtg-paper-modal.rtg-pt-duel .rtg-duel-choice-card.is-selected {min-height:102px!important;}
+  .rtg-duel-player-meta .rtg-duel-pt-inline {padding:3px 4px!important;gap:3px!important;font-size:.6rem!important;}
+  .rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-current strong {font-size:.65rem;}
+  .rtg-duel-player-meta .rtg-duel-pt-inline .rtg-duel-pt-projection {font-size:.63rem;gap:2px;}
+}
+
+/* The portrait cards are half-width on phones: keep the full PT balance
+   and forecast INSIDE one badge, arranged in two tight rows when needed. */
+.rtg-duel-portrait-panel .rtg-duel-player-meta .rtg-duel-pt-inline {
+  box-sizing:border-box!important;
+  min-width:0!important;
+  max-width:100%!important;
+}
+@media(max-width:480px){
+  .rtg-duel-portrait-panel .rtg-duel-player-meta .rtg-duel-pt-inline.is-projected {
+    display:flex!important;
+    flex-direction:column!important;
+    align-items:flex-start!important;
+    width:max-content!important;
+    min-width:0!important;
+    max-width:100%!important;
+    gap:2px!important;
+    padding:3px 4px!important;
+    white-space:normal!important;
+    box-sizing:border-box!important;
+  }
+  .rtg-duel-portrait-panel .rtg-duel-pt-inline.is-projected .rtg-duel-pt-current {
+    display:flex!important;
+    align-items:baseline!important;
+    width:100%!important;
+    min-width:0!important;
+    gap:2px!important;
+    line-height:1.05!important;
+    white-space:nowrap!important;
+  }
+  .rtg-duel-portrait-panel .rtg-duel-pt-inline.is-projected .rtg-duel-pt-projection {
+    display:flex!important;
+    align-items:baseline!important;
+    justify-content:flex-start!important;
+    width:100%!important;
+    min-width:0!important;
+    gap:3px!important;
+    padding-top:2px!important;
+    border-top:1px solid #c9ae67!important;
+    font-size:.66rem!important;
+    line-height:1.05!important;
+    white-space:nowrap!important;
+  }
+}
+
+/* Selection is still confirmed by tapping the SAME card again.
+   Replace the big confirmation strip with a quiet hint next to probability. */
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-probability .rtg-pt-tap-to-confirm {
+  color:#584b24!important;
+  background:#fff7d6!important;
+  border:1px solid #bcaa71!important;
+  border-radius:999px!important;
+  padding:3px 5px!important;
+  font-size:7px!important;
+  line-height:1.1!important;
+  letter-spacing:0!important;
+  font-weight:900!important;
+  white-space:nowrap!important;
+}
+/* Use the actual element artwork (including a distinct Void symbol),
+   but keep its badge small enough for half-width phone cards. */
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge {
+  display:inline-flex!important;
+  align-items:center!important;
+  justify-self:start!important;
+  gap:3px!important;
+  max-width:100%!important;
+  width:max-content!important;
+  padding:2px 5px!important;
+  border:1.5px solid var(--pt-el)!important;
+  border-radius:999px!important;
+  line-height:1!important;
+  font-size:9px!important;
+  letter-spacing:.035em!important;
+  font-weight:950!important;
+  font-style:normal!important;
+  white-space:nowrap!important;
+  box-sizing:border-box!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge svg {
+  width:12px!important;
+  height:12px!important;
+  min-width:12px!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:2!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  flex-shrink:0!important;
+}
+.rtg-paper-modal.rtg-pt-duel .rtg-choice-copy .rtg-move-element-badge span {
+  font-size:9px!important;
+  color:inherit!important;
+  line-height:1!important;
+}
