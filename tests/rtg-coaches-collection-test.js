@@ -139,7 +139,7 @@
     assert.match(html,/ASSEGNA/);
     assert.match(view.card(api.CATALOG[6],"owned"),/loading="eager"/);
     assert.match(view.card(api.CATALOG[6],"owned"),/data-coach-alternate=/);
-    assert.match(view.card(api.CATALOG[9],"owned"),/rtg-coach-portrait--rene-direct/);
+    assert.match(view.card(api.CATALOG[9],"owned"),/rtg-coach-rene-artwork/);
   });
 
   test("René: ID Inazugle 4763 e vecchio ID 4761 RTG preservato",()=>{
@@ -148,15 +148,16 @@
     assert.equal(rene.id,"4761","saved RTG coach identity must not change");
     assert.equal(api.BY_ID["4763"],undefined);
   });
-  test("René: PNG diretto nelle tre card, full-body esclusivo nella scheda",()=>{
+  test("René: sprite PNG preloaded nelle tre card, full-body esclusivo nella scheda",()=>{
     const rene=api.BY_ID["4761"];
     const url="https://dxi4wb638ujep.cloudfront.net/1/k/a/t/atcna3pn7ds.png";
     assert.equal(rene.imageUrl,url);
     for(const html of [view.card(rene,"locked"),view.albumCard(rene,"locked"),view.squadSlot({...campaign(),coachOwnedIds:["4761"]},"4761")]){
-      assert.ok(html.includes('class="rtg-coach-portrait--rene-direct"'),"direct mini-card artwork");
-      assert.ok(html.includes('src="'+url+'"'),"official PNG as only compact src");
-      assert.ok(!html.includes('data-coach-fallbacks='),"no guessed WebP/CDN fallback for compact card");
-      assert.ok(html.includes("this.nextElementSibling?.classList.add('is-visible')"),"error must surface fallback");
+      assert.ok(html.includes('class="rtg-coach-rene-artwork '),"dedicated CSS sprite");
+      assert.ok(html.includes("background-image:url('"+url+"')"),"official PNG used as background");
+      assert.ok(html.includes("data-rtg-rene-artwork"),"sprite can be repainted");
+      assert.ok(html.includes('class="rtg-coach-rene-loading"'),"never leave card blank while loading");
+      assert.ok(!html.includes('data-coach-fallbacks='),"compact sprite must not enter generic image retry logic");
     }
     const detail=view.detail(campaign(),"4761");
     assert.ok(detail.includes('src="'+rene.frontFullbodyUrl+'"'),"full-body must be source in detail");
@@ -184,12 +185,54 @@
     assert.ok(classes.has("rtg-coach-fullbody--portrait-fallback"));
     assert.match(read("css/rtg-coaches.css"),/rtg-coach-fullbody--portrait-fallback/);
   });
-  test("Compact direct PNG errors are not consumed by the generic gallery handler",()=>{
+  test("René sprite: preload in HTML e nessun img offscreen da decodificare",()=>{
     const html=view.card(api.BY_ID["4761"],"locked");
-    assert.match(html,/decoding="sync"/);
+    assert.match(html,/data-rtg-rene-artwork/);
+    assert.match(html,/rtg-coach-rene-artwork/);
     assert.doesNotMatch(html,/data-rtg-coach-image=/);
-    assert.match(read("css/rtg-coaches.css"),/rtg-coach-placeholder--backup\.is-visible/);
+    assert.doesNotMatch(html,/<img /);
+    const page=read("index.html");
+    assert.ok(page.includes('rel="preload" as="image" href="'+api.BY_ID["4761"].imageUrl+'"'));
+    const css=read("css/rtg-coaches.css");
+    assert.match(css,/rtg-coach-rene-artwork\.is-ready \.rtg-coach-rene-loading/);
   });
+  test("Safari: preloader decodifica, mostra lo sprite e forza repaint",async()=>{
+    const elements=[];
+    const events={};
+    const classes=new Set();
+    const display={
+      dataset:{},offsetWidth:72,
+      style:{backgroundImage:""},
+      classList:{toggle(name,active){if(active)classes.add(name);else classes.delete(name);}}
+    };
+    const client={
+      RoadToGloryCoaches:api,
+      Image:class {
+        constructor(){elements.push(this);}
+        set src(value){this._src=value;}
+        get src(){return this._src;}
+        decode(){return Promise.resolve();}
+      },
+      document:{
+        querySelectorAll(selector){assert.equal(selector,"[data-rtg-rene-artwork]");return [display];},
+        addEventListener(type,callback){events[type]=callback;},
+        hidden:false,
+      }
+    };
+    vm.runInNewContext(read("js/road-to-glory/rtg-coaches-view.js"),client);
+    assert.equal(elements.length,1,"preload started at script evaluation");
+    assert.equal(elements[0].src,api.BY_ID["4761"].imageUrl);
+    elements[0].onload();
+    await new Promise(resolve=>setImmediate(resolve));
+    assert.ok(classes.has("is-ready"),"decoded sprite visible");
+    assert.equal(display.style.backgroundImage,'url("'+api.BY_ID["4761"].imageUrl+'")');
+    assert.equal(display.dataset.renePainted,"true");
+    const original=display.style;
+    display.dataset.renePainted="false";
+    events.scroll();
+    assert.equal(display.dataset.renePainted,"true","scroll restores paint for below-fold card");
+  });
+
 
   test("Coach grid non restringe David Arrows o altre card al contenuto dell'immagine",()=>{
     const css=read("css/rtg-coaches.css");
