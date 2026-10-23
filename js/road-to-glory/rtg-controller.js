@@ -528,6 +528,11 @@
       renderHtml(runView.runMarkup({state:campaign,nodes,seasonDb,seasonConfig:activeConfig()}));
       bindRun();
       app?.querySelectorAll?.("[data-rtg-enter-next-season]")?.forEach(button=>button.addEventListener("click",()=>enterNextSeason()));
+      app?.querySelectorAll?.("[data-rtg-restart-campaign]")?.forEach(button=>button.addEventListener("click",()=>{
+        deps.openModal?.('<section class="rtg-node-modal rtg-paper-modal"><h2>RICOMINCIA IL PERCORSO?</h2><p>Ripartirai dalla prima Season. Carte, allenatori, squadre, Gettoni e potenziamenti resteranno salvati.</p><div class="rtg-coach-power-actions"><button type="button" class="btn btn-yellow" data-rtg-restart-confirm>CONFERMA RIAVVIO</button><button type="button" class="btn" data-rtg-restart-cancel>ANNULLA</button></div></section>',{className:"rtg-modal rtg-replay-confirm"});
+        deps.getModalRoot?.()?.querySelector?.("[data-rtg-restart-cancel]")?.addEventListener("click",()=>deps.closeModal?.());
+        deps.getModalRoot?.()?.querySelector?.("[data-rtg-restart-confirm]")?.addEventListener("click",async event=>{const btn=event.currentTarget;if(btn.disabled)return;btn.disabled=true;try{await restartCampaign();deps.closeModal?.();}catch(error){btn.disabled=false;deps.toast?.(error?.message||"Impossibile ricominciare il percorso","error");}});
+      }));
       mountDevQuickTools();
       return campaign;
     }
@@ -548,6 +553,7 @@
       });
       return seasonTransitionController.enterNextSeason();
     }
+    function restartCampaign(){if(!seasonTransitionController)enterNextSeason();return seasonTransitionController.restartCompletedCampaign();}
     let squadController=null;
     function getSquadController(){
       if(!squadController){
