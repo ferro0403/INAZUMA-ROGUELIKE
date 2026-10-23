@@ -87,7 +87,7 @@
     return id(entry);
   }
 
-  function teamPower({ lineup = [], activeSeasonId = "ie1", playerResolver, freeAgentsDb = null, activeRoleVariantByCardId = {}, activeRoleVariantByPlayerId = {} } = {}) {
+  function teamPower({ lineup = [], activeSeasonId = "ie1", playerResolver, freeAgentsDb = null, activeRoleVariantByCardId = {}, activeRoleVariantByPlayerId = {}, coachCapCardId = null } = {}) {
     const entries = Array.isArray(lineup) ? lineup : [];
     if (!entries.length) return 0;
     let overallTotal = 0;
@@ -99,7 +99,7 @@
       const player = playerResolver?.resolveAtLevel20?.(cardId, activeSeasonId, variant, freeAgentsDb);
       if (!player) throw Object.assign(new Error(`RTG card unresolved: ${cardId}`), { code: "rtg-squad-player-unresolved", cardId });
       const overall = Number(player.overall ?? player.displayOverall ?? player.finalOverall ?? 0);
-      overallTotal += Number.isFinite(overall) ? overall : 0;
+      overallTotal += Number.isFinite(overall) ? (cardId===String(coachCapCardId||"")?Math.min(overall,60):overall) : 0;
       const role = String(player.normalizedRole || player.position || player.role || "").toUpperCase();
       const move = playerResolver?.resolveMove?.(cardId, activeSeasonId, role, freeAgentsDb, variant) || null;
       const power = Number(move?.power);
@@ -142,8 +142,8 @@
     const lineup = squad?.lineup || [];
     const bench = squad?.bench || [];
     const activeRoster = [...lineup, ...bench];
-    const capRoster=global.RoadToGloryCoachPowerRuntime?.eligibleRosterForCap?.(squad,state)||activeRoster;
-    const power = validation.valid ? teamPower({ lineup: capRoster, activeSeasonId: seasonId, playerResolver, freeAgentsDb, activeRoleVariantByCardId: squad.activeRoleVariantByCardId || {} }) : null;
+    const coachCapCardId=global.RoadToGloryCoachPowerRuntime?.capOverrideFor?.(squad,state)||null;
+    const power = validation.valid ? teamPower({ lineup: activeRoster, activeSeasonId: seasonId, playerResolver, freeAgentsDb, activeRoleVariantByCardId: squad.activeRoleVariantByCardId || {}, coachCapCardId }) : null;
     const recruitSet = new Set([
       ...(state?.gachaAcquiredCards || []).map((entry) => cards().parse(entry).cardId),
       ...(state?.gachaAcquiredPlayerIds || []).map(id),
