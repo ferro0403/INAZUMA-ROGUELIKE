@@ -44,5 +44,5 @@ assert(controller.includes('if(activeSeasonId()==="ie2"){'),"Orion must not fetc
 const index=fs.readFileSync("index.html","utf8");
 assert(index.includes("rtg-config.js?v=20261011-balanced-economy-1"),"rtg-config mobile cache key is stale");
 assert(index.includes("rtg-route-view.js?v=20261021-unified-coach-cards-1"),"rtg-route-view mobile cache key is stale");
-assert(index.includes("rtg-controller.js?v=20261022-coach-assign-1"),"rtg-controller mobile cache key is stale");
+assert(index.includes("rtg-controller.js?v=20261023-squad-power-v1"),"rtg-controller mobile cache key is stale");
 console.log("RTG Orion: independent attached map, Ares preserved, browser cache refreshed: PASS");
