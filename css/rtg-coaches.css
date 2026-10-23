@@ -683,11 +683,11 @@
 .rtg-coach-field-picker .rtg-squad-card-slot{min-width:0;max-width:110px;flex:1 1 0;position:relative}
 .rtg-coach-field-picker .rtg-squad-card-slot .player-card{min-width:0!important;width:100%!important;max-width:100%!important;cursor:pointer;transition:transform .12s,border-color .12s}
 .rtg-coach-field-picker .rtg-squad-card-slot.rtg-coach-power-picked .player-card{
-  outline:4px solid #ffd21f;outline-offset:2px;filter:drop-shadow(0 0 7px #ffdd62);transform:translateY(-2px);
+  outline:2px solid #ffd21f;outline-offset:2px;filter:drop-shadow(0 0 5px #ffdd62);transform:translateY(-2px);
 }
 .rtg-coach-field-picker .rtg-squad-card-slot.rtg-coach-power-picked:after{
   content:"✓";position:absolute;right:-4px;bottom:10px;z-index:5;
-  background:#ffd21f;border:2px solid #111216;color:#111216;padding:1px 6px;font-weight:1000;
+  background:#ffd21f;border:1px solid #111216;color:#111216;padding:1px 6px;font-weight:1000;
 }
 .rtg-coach-field-picker [data-rtg-squad-player]:disabled{cursor:not-allowed;opacity:.55;filter:grayscale(.35)}
 .rtg-coach-picker-bench{border:3px solid #17181a;padding:10px;background:#fffdf4;box-shadow:3px 4px 0 #17181a}
@@ -707,7 +707,6 @@
 .rtg-coach-preview-stat-grid b{color:#176d37}
 .rtg-coach-player-preview{padding:13px!important;background:#fff4dc;border:3px solid #141719!important}
 .rtg-coach-player-preview p{font-size:13px;line-height:1.55}
-.rtg-coach-card-buff{display:block;margin:2px 0;font-size:9px;font-weight:900;color:#17181b;background:#ffce25;border:1px solid #151719;text-align:center}
 .rtg-coach-move-discount .rtg-pt-cost strong{color:#11703d!important}
 .rtg-coach-move-select,.rtg-coach-moves-confirm{width:100%;min-height:42px;margin:9px 0!important;font-size:12px;font-weight:900}
 .rtg-coach-move-select.is-selected{background:#ffd21f!important;color:#111216!important}
@@ -726,8 +725,8 @@
 .rtg-coach-field-picker.development-squad-card-scope .rtg-squad-card-slot .squad-player-card{
   color:var(--squad-ink,#111216)!important;
   background:linear-gradient(165deg,#fff 0 70%,#eee9dc 70%)!important;
-  border:3px solid var(--rarity-border,#646464)!important;border-left-width:4px!important;
-  box-shadow:4px 5px 0 rgba(5,18,12,.48),0 0 13px var(--rarity-glow,transparent),inset 0 -4px 0 var(--rarity-border,#646464)!important;
+  border:2px solid var(--rarity-border,#646464)!important;
+  box-shadow:3px 4px 0 rgba(5,18,12,.38),0 0 10px var(--rarity-glow,transparent),inset 0 -3px 0 var(--rarity-border,#646464)!important;
   overflow:visible!important;
 }
 .rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-info{
@@ -737,7 +736,7 @@
   color:#111216!important;
 }
 .rtg-coach-field-picker.development-squad-card-scope .squad-player-card :is(.player-role,.player-overall){
-  display:grid!important;place-items:center!important;color:#111216!important;border:2px solid #111216!important;
+  display:grid!important;place-items:center!important;color:#111216!important;border:1px solid #111216!important;
 }
 .rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-role{background:#fff!important}
 .rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-overall{background:#ffd21f!important}
