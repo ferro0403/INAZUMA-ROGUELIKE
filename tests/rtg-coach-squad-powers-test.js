@@ -261,3 +261,76 @@ test("All Squad powers hide yellow card footer; selector matches slim RTG card b
   assert.match(html,/rtg-coaches\.css\?v=20261023-coach-ui-v5/);
   assert.match(html,/rtg-squad-view\.js\?v=20261023-coach-ui-v5/);
 });
+
+
+test("Yi total transformation applies independent elements to two starters and two moves each",()=>{
+  const m=match();
+  m.userSquad.lineup=[
+    {...player("a"),element:"mountain",overall:90,stats:{}},
+    {...player("b"),element:"fire",overall:85,stats:{}},
+    player("c"),
+  ];
+  const config={coachId:"4401",cardIds:["a","b"],targets:[
+    {cardId:"a",element:"wind",moveIndices:[0,2]},
+    {cardId:"b",element:"forest",moveIndices:[1,3]},
+  ]};
+  const squad={coachId:"4401",coachPowerSelection:config};
+  assert.equal(rules.validConfig(squad,m.userSquad.lineup,"ie1",[]).targets.length,2);
+  const transformed=rules.applyToMatch(m,squad,{coachOwnedIds:["4401"]});
+  assert.equal(transformed.userSquad.lineup[0].element,"wind");
+  assert.equal(transformed.userSquad.lineup[1].element,"forest");
+  assert.equal(m.userSquad.lineup[0].element,"mountain");
+  assert.equal(m.userSquad.lineup[1].element,"fire");
+  assert.equal(transformed.coachPowerEffect.targets.length,2);
+  const a=pt.compatible(transformed,"user","a","shot");
+  const b=pt.compatible(transformed,"user","b","shot");
+  assert.equal(a[0].element,"wind");
+  assert.equal(a[2].element,"wind");
+  assert.equal(a[1].element,undefined);
+  assert.equal(b[1].element,"forest");
+  assert.equal(b[3].element,"forest");
+  assert.equal(b[0].element,undefined);
+  assert.deepEqual(Array.from(a.map(x=>x.ptCost)),[40,75,52,101]);
+  assert.deepEqual(Array.from(b.map(x=>x.ptCost)),[40,75,52,101]);
+  assert.equal(rules.moveElement(transformed,"opponent","a",0,"fire"),"fire");
+  assert.equal(rules.moveElement(transformed,"user","a",1,"fire"),"fire");
+  assert.equal(transformed.ptCurrentByPlayerId["user:a"],m.ptCurrentByPlayerId["user:a"]);
+  assert.equal(rules.applyToMatch(transformed,squad,{coachOwnedIds:["4401"]}),transformed);
+  const invalid=(targets,cardIds=["a","b"])=>rules.validConfig({
+    coachId:"4401",coachPowerSelection:{coachId:"4401",cardIds,targets},
+  },m.userSquad.lineup,"ie1",[]);
+  assert.equal(invalid([config.targets[0]]),null);
+  assert.equal(invalid([
+    {...config.targets[0],element:"mountain"},config.targets[1],
+  ]),null);
+  assert.equal(invalid([
+    {...config.targets[0],moveIndices:[0,0]},config.targets[1],
+  ]),null);
+  assert.equal(invalid([
+    config.targets[0],{...config.targets[1],cardId:"a"},
+  ]),null);
+  assert.equal(invalid([
+    config.targets[0],{...config.targets[1],moveIndices:[1]},
+  ]),null);
+  const missingCoach={coachOwnedIds:[]};
+  assert.equal(rules.applyToMatch(m,squad,missingCoach),m);
+});
+test("Yi double choice persists in canonical optional Squad config without changing other powers",()=>{
+  const state=read("js/road-to-glory/rtg-state.js");
+  assert.match(state,/targets:Array\.isArray\(squad\.coachPowerSelection\.targets\)/);
+  assert.match(state,/moveIndices:Array\.from\(new Set/);
+  const ui=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
+  assert.match(ui,/TRASFORMAZIONE TOTALE/);
+  assert.match(ui,/openYiMoves/);
+  assert.match(ui,/choice\.targets\.length<2/);
+  assert.match(ui,/targets:choice\.targets\.map/);
+  assert.match(ui,/rtg-coach-yi-moves-button/);
+  const preview=read("js/road-to-glory/rtg-coach-powers-preview.js");
+  assert.match(preview,/details\.moveElements/);
+  assert.match(preview,/rtg-coach-move-transformed/);
+  const matchSource=read("js/road-to-glory/rtg-match-pt-runtime.js");
+  assert.match(matchSource,/moveElement\?\.\(state,side,pid,index,m\.element\)/);
+  const catalog=read("js/road-to-glory/rtg-coaches.js");
+  assert.match(catalog,/powerName:"Trasformazione totale"/);
+  assert.doesNotMatch(ui,/localStorage\.setItem|firebase|indexedDB/i);
+});
