@@ -43,7 +43,7 @@
     }else if(coachId==="4401"){
       if((squad.lineup||[]).every(x=>cardId(x)!==key)||
          !engine.ELEMENTS.includes(config.element)||config.cardIds.length!==1)return null;
-      details.player={...player,element:config.element};
+      details.player={...player,element:elementNames[config.element]||config.element};
       details.note="CAMBIO DI ELEMENTO · "+(elementNames[config.element]||config.element)+" durante la partita";
     }else if(coachId==="1974"){
       if(config.cardIds.length!==1)return null;
