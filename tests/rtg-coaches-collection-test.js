@@ -144,7 +144,7 @@
       ["1777","Fuori quota","Scegli una delle tue 4 riserve. Il suo contributo viene escluso dal conteggio dell'overall utilizzato per verificare i requisiti massimi di accesso alla partita. La riserva resta in panchina, mantiene statistiche e overall effettivi ed è normalmente utilizzabile."],
       ["1940","Tecnica proibita","Scegli un titolare avversario e blocchi 2 delle sue 4 mosse speciali per tutta la partita."],
       ["1974","Potenziale risvegliato","Scegli un tuo giocatore, titolare o riserva: sale temporaneamente di 1 rarità, fino ad Aurico, ottenendo i relativi aumenti reali delle statistiche. Ai soli fini del conteggio dell'overall e dei requisiti massimi di accesso alla partita, viene considerato con la rarità e l'overall precedenti al potenziamento."],
-      ["4401","Cambio di elemento","Scegli un tuo titolare e cambi temporaneamente il suo elemento in uno dei tre elementi diversi dal suo (Fuoco, Vento, Albero o Montagna) per quella partita."],
+      ["4401","Trasformazione totale","Scegli 2 tuoi titolari. Per ciascuno cambi temporaneamente l'elemento in uno dei tre diversi dall'originale (Fuoco, Vento, Albero o Montagna) e trasformi anche 2 delle sue 4 mosse speciali nello stesso elemento. La Potenza e il costo in PT delle mosse rimangono invariati."],
       ["4761","Disordine tattico","Scegli 2 giocatori di movimento avversari e scambi le loro posizioni tattiche nella formazione iniziale."]
     ];
     assert.equal(api.CATALOG.length,expected.length);
