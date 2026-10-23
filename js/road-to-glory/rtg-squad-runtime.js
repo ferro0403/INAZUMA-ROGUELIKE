@@ -142,7 +142,8 @@
     const lineup = squad?.lineup || [];
     const bench = squad?.bench || [];
     const activeRoster = [...lineup, ...bench];
-    const power = validation.valid ? teamPower({ lineup: activeRoster, activeSeasonId: seasonId, playerResolver, freeAgentsDb, activeRoleVariantByCardId: squad.activeRoleVariantByCardId || {} }) : null;
+    const capRoster=global.RoadToGloryCoachPowerRuntime?.eligibleRosterForCap?.(squad,state)||activeRoster;
+    const power = validation.valid ? teamPower({ lineup: capRoster, activeSeasonId: seasonId, playerResolver, freeAgentsDb, activeRoleVariantByCardId: squad.activeRoleVariantByCardId || {} }) : null;
     const recruitSet = new Set([
       ...(state?.gachaAcquiredCards || []).map((entry) => cards().parse(entry).cardId),
       ...(state?.gachaAcquiredPlayerIds || []).map(id),
