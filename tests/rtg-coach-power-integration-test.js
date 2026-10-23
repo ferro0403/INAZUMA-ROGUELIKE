@@ -226,7 +226,7 @@ test("All coach UIs retain their scroll on incremental selection",()=>{
   assert.match(draft,/forcedBench=fixedBenchId/);
   assert.match(draft,/outgoing\.playerId===fixedBenchId/);
   const squadView=read("js/road-to-glory/rtg-squad-view-base.js");
-  assert(squadView.includes('</details><button type="button" class="btn rtg-adapt-button'),
+  assert(squadView.includes('</details></div><button type="button" class="btn rtg-adapt-button'),
     "Adapt action remains visible outside its collapsible requirements section");
   assert.match(draft,/\.\.\.\(state\.squads\?\.\[deps\.activeSeasonId\(\)\]\|\|\{\}\)/);
 });
