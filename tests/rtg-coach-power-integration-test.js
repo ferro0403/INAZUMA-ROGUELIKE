@@ -175,3 +175,55 @@ test("David real progression upgrades a player from Elite to Mondiale, stats and
   "the real rarity bonus updates match PT");
  assert.equal(match.userSquad.lineup[8].overall,88,"canonical match draft is unchanged");
 });
+
+
+test("Nerina borrowed substitute survives the actual match halftime/resume engine",()=>{
+  vm.runInContext(read("js/road-to-glory/rtg-coach-powers-prematch.js"),sandbox);
+  const power=sandbox.RoadToGloryCoachPreMatchRuntime;
+  const original=create(),loan=original.opponentSquad.bench[1].cardId;
+  const displaced=original.userSquad.bench[1].cardId;
+  original.preMatchCoachId="1225";
+  original.presentation={preMatchSeen:false,preMatchPowerStatus:"pending"};
+  const live=power.apply(original,"1225",{playerIds:[loan,displaced]});
+  assert.equal(live.userSquad.bench[1].cardId,loan);
+  assert.equal(live.userSquad.bench.length,4);
+  assert.equal(live.userRosterIds.length,15);
+  assert.equal(new Set(live.userRosterIds).size,15);
+  assert.equal(live.ptCurrentByPlayerId["user:"+loan],original.ptCurrentByPlayerId["opponent:"+loan]);
+  assert.equal(live.ptCurrentByPlayerId["user:"+displaced],undefined);
+  live.status="halftime";live.period="halftime";live.pendingEncounter=null;
+  live.actionIndex=live.firstHalfTarget;
+  const next=JSON.parse(JSON.stringify(live.userSquad));
+  // The borrowed player can even enter the XI, but the roster remains the same 15.
+  const outgoing=next.lineup[6],incoming=next.bench[1],role=next.lineup[6].tacticalRole||next.lineup[6].position;
+  next.lineup[6]={...incoming,tacticalRole:role};next.bench[1]={...outgoing};
+  delete next.bench[1].tacticalRole;
+  const resumed=E.confirmHalftime(live,next,{validateHalftime:()=>{
+    const controller=read("js/road-to-glory/rtg-controller.js");
+    assert.match(controller,/match\.preMatchCoachEffect\?\.coachId==="1225"/);
+    return{eligible:true,reasons:[]};
+  }});
+  assert.notEqual(resumed.status,"halftime");
+  assert.equal(resumed.userSquad.lineup[6].cardId,loan);
+  assert.equal(resumed.userRosterIds.includes(loan),true);
+  assert.equal(resumed.ptCurrentByPlayerId["user:"+loan],live.ptCurrentByPlayerId["user:"+loan]);
+});
+test("All coach UIs retain their scroll on incremental selection",()=>{
+  const squad=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
+  const prematch=read("js/road-to-glory/rtg-coach-powers-prematch-ui.js");
+  for(const ui of [squad,prematch]){
+    assert.match(ui,/active\.outerHTML=/);
+    assert.match(ui,/rememberModalScroll\(\)/);
+    assert.match(ui,/restoreModalScroll\(\)/);
+    assert.match(ui,/modal\.scrollTop=retainedModalTop/);
+  }
+  const control=read("js/road-to-glory/rtg-controller.js");
+  assert.match(control,/querySelector\("\.rtg-halftime"\)\?\.scrollTop/);
+  assert.match(control,/panel\.scrollTop=top/);
+  assert.match(control,/Promise\.resolve\(confirmHalftime/);
+  const draft=read("js/road-to-glory/rtg-squad-controller.js");
+  assert.match(draft,/preserveScroll:!!oldScroll/);
+  assert.match(draft,/forcedBench=fixedBenchId/);
+  assert.match(draft,/outgoing\.playerId===fixedBenchId/);
+  assert.match(draft,/\.\.\.\(state\.squads\?\.\[deps\.activeSeasonId\(\)\]\|\|\{\}\)/);
+});
