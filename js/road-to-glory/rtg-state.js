@@ -101,6 +101,13 @@
       ...(squad.lineupOrderedBySlot===true?{lineupOrderedBySlot:true}:{}),
       activeRoleVariantByCardId,
       coachId: id(squad.coachId || ""),
+      ...(squad.coachPowerSelection && typeof squad.coachPowerSelection==="object" && !Array.isArray(squad.coachPowerSelection)
+        ? {coachPowerSelection:{
+          coachId:id(squad.coachPowerSelection.coachId||""),
+          cardIds:uniqueIds(squad.coachPowerSelection.cardIds).slice(0,2),
+          moveIndices:Array.from(new Set((Array.isArray(squad.coachPowerSelection.moveIndices)?squad.coachPowerSelection.moveIndices:[])
+            .filter(value=>Number.isInteger(value)&&value>=0&&value<4))).slice(0,2),
+        }} : {}),
     };
   }
 
