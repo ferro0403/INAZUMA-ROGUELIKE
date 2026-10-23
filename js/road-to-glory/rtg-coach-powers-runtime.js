@@ -60,14 +60,14 @@
     }
     return null;
   }
-  function eligibleRosterForCap(squad,state){
-    const roster=[...(squad?.lineup||[]),...(squad?.bench||[])];
-    if(id(squad?.coachId)!=="1777"||!owned(state,"1777"))return roster;
-    const config=validConfig(squad,squad.lineup||[],state?.activeSeasonId,squad.bench||[]);
-    if(!config)return roster;
-    const excluded=config.cardIds[0];
-    // Do not change legal roster size, recruits, or any other requirement.
-    return roster.filter(player=>cardId(player)!==excluded);
+  function capOverrideFor(squad,state){
+    if(id(squad?.coachId)!=="1777"||!owned(state,"1777"))return null;
+    const config=validConfig(squad,squad?.lineup||[],state?.activeSeasonId,squad?.bench||[]);
+    return config?.cardIds?.[0]||null;
+  }
+  function eligibleRosterForCap(squad){
+    // Preserve all 15 squad members. The capped value is substituted in teamPower.
+    return [...(squad?.lineup||[]),...(squad?.bench||[])];
   }
   function applyToMatch(match,squad,state,options={}){
     if(!match||!squad||!owned(state,squad.coachId)||match.coachPowerEffect)return match;
@@ -134,6 +134,6 @@
   }
   global.RoadToGloryCoachPowerRuntime=Object.freeze({
     RARITIES,ELEMENTS,powerReady,nextRarity,rarityOf,selected,fourMoves,validConfig,
-    eligibleRosterForCap,applyToMatch,moveCost,
+    eligibleRosterForCap,capOverrideFor,applyToMatch,moveCost,
   });
 })(globalThis);
