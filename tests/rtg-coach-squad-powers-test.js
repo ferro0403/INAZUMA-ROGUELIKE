@@ -176,7 +176,7 @@ test("Yi only permits the other three elements and keeps his Squad badge hidden"
   assert.match(ui,/rtg-coach-element-art/);
   assert.match(ui,/<svg viewBox=/);
   const view=read("js/road-to-glory/rtg-squad-view-base.js");
-  assert.match(view,/coachPreview\.coachId!=="4401"/);
+  assert.doesNotMatch(view,/rtg-coach-card-buff/);
   assert.match(read("js/road-to-glory/rtg-coach-powers-preview.js"),/forest:"Albero"/);
   const css=read("css/rtg-coaches.css");
   assert.match(css,/\.player-detail-modal \.rtg-coach-move-select/);
@@ -243,4 +243,19 @@ test("Squad power preview shows all five targeted effects without mutating canon
   assert.match(ui,/openPlayerDetails/);
   assert.match(ui,/coachMovePicker/);
   assert.doesNotMatch(ui,/localStorage\.setItem|firebase|indexedDB/i);
+});
+
+test("All Squad powers hide yellow card footer; selector matches slim RTG card border",()=>{
+  const view=read("js/road-to-glory/rtg-squad-view-base.js");
+  assert.match(view,/trailingMarkup: \x60\$\{legacyBadge/);
+  assert.doesNotMatch(view,/rtg-coach-card-buff/);
+  assert.match(view,/coachPreview:preview/); // projected PT, rarity and element remain available in detail
+  const styles=read("css/rtg-coaches.css");
+  assert.doesNotMatch(styles,/\.rtg-coach-card-buff\s*\{/);
+  assert.match(styles,/border:2px solid var\(--rarity-border,#646464\)!important/);
+  assert.doesNotMatch(styles,/border-left-width:4px!important/);
+  assert.match(styles,/outline:2px solid #ffd21f/);
+  const html=read("index.html");
+  assert.match(html,/rtg-coaches\.css\?v=20261023-coach-ui-v5/);
+  assert.match(html,/rtg-squad-view\.js\?v=20261023-coach-ui-v5/);
 });
