@@ -27,7 +27,12 @@
       assert.ok(/\.(png|webp)$/.test(coach.imageUrl));
       assert.ok(coach.teamLogoUrl.startsWith("https://"));
       assert.ok(coach.frontFullbodyUrl.endsWith("_r0_fullbody.webp"));
-      assert.ok(view.card(coach,"owned").includes(coach.imageUrl));
+      // René's card intentionally rasterizes his PNG to a canvas, while the
+      // other nine coach cards still carry their image URL in an <img>.
+      if(coach.zukanId==="4763"){
+        assert.match(view.card(coach,"owned"),/data-rtg-rene-canvas/);
+        assert.ok(read("index.html").includes(coach.imageUrl));
+      }else assert.ok(view.card(coach,"owned").includes(coach.imageUrl));
       assert.ok(view.detail(campaign(),coach.id).includes(coach.frontFullbodyUrl));
     }
   });
