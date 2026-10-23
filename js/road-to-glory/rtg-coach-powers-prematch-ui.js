@@ -19,6 +19,15 @@
     const idMatch=id(match.matchId),coach=id(match.preMatchCoachId);
     const selected={playerIds:[],moveIndices:[]};
     openForMatch=idMatch;
+    let retainedModalTop=0;
+    const rememberModalScroll=()=>{const modal=ctx.getModalRoot?.()?.querySelector?.(".modal");if(modal)retainedModalTop=modal.scrollTop||0;};
+    const restoreModalScroll=()=>{
+      const modal=ctx.getModalRoot?.()?.querySelector?.(".modal");
+      if(!modal)return;
+      const restore=()=>{if(modal.isConnected!==false)modal.scrollTop=retainedModalTop;};
+      const raf=global.requestAnimationFrame;
+      if(typeof raf==="function")raf(()=>raf(restore));else restore();
+    };
     const byId=(arr,x)=>arr.find(p=>key(p)===x)||null;
     const o=match.opponentSquad||{},u=match.userSquad||{};
     const oppLineup=o.lineup||[],oppBench=o.bench||[],userBench=u.bench||[];
@@ -52,6 +61,7 @@
         selected.playerIds=[pid];selected.moveIndices=[];
         const moves=runtime.movesFor(match,byId(oppLineup,pid));
         if(moves.length!==4)return ctx.toast?.("Quattro mosse speciali non disponibili.","error");
+        rememberModalScroll();
         ctx.openPlayerDetails?.(pid,"opponent",{
           allowRoleSwitch:false,onClose:()=>render(),
           coachMovePicker:{moves,selectedIndices:[],onConfirm:indices=>{
@@ -97,7 +107,9 @@
         '<div class="rtg-coach-power-actions">'+
         '<button type="button" class="btn btn-yellow" data-coach-prematch-apply'+disabled+'>CONFERMA POTERE</button>'+
         '<button type="button" class="btn" data-coach-prematch-skip>CONTINUA SENZA POTERE</button></div></section>';
-      ctx.openModal?.(markup,{className:"rtg-modal rtg-coach-power-modal"});
+      const active=ctx.getModalRoot?.()?.querySelector?.(".rtg-coach-prematch-config");
+      if(active)active.outerHTML=markup;
+      else {ctx.openModal?.(markup,{className:"rtg-modal rtg-coach-power-modal"});restoreModalScroll();}
       const root=ctx.getModalRoot?.();
       root?.querySelectorAll?.("[data-coach-area] [data-rtg-squad-player]")?.forEach(button=>{
         const area=button.closest("[data-coach-area]")?.dataset.coachArea||"",pid=id(button.dataset.rtgSquadPlayer);
