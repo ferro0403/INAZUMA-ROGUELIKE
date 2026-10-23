@@ -188,8 +188,10 @@ test("Five Squad power controls and season-safe element roundtrip are wired",()=
   const ui=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
   assert.match(ui,/lineupPitchMarkup/);
   assert.match(ui,/PANCHINA/);
-  assert.match(ui,/ELEMENTO PER LA PARTITA/);
+  assert.match(ui,/TRASFORMAZIONE DEI GIOCATORI/);
   assert.match(ui,/MONTAGNA/);
+  assert.match(ui,/openYiMoves/);
+  assert.match(ui,/rtg-coach-yi-moves/);
   assert.match(ui,/ctx\.saveSquad\(draft\)/);
   const view=read("js/road-to-glory/rtg-coaches-view.js");
   for(const key of ['"208"','"1329"','"1777"','"1974"','"4401"'])
