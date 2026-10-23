@@ -157,9 +157,9 @@ test("Mister Yi changes only selected starting player's elemental affinity in ma
 });
 test("Five Squad power controls and season-safe element roundtrip are wired",()=>{
   const ui=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
-  assert.match(ui,/TITOLARI E RISERVE/);
+  assert.match(ui,/lineupPitchMarkup/);
   assert.match(ui,/RISERVE/);
-  assert.match(ui,/NUOVO ELEMENTO/);
+  assert.match(ui,/ELEMENTO PER LA PARTITA/);
   assert.match(ui,/MONTAGNA/);
   assert.match(ui,/ctx\.saveSquad\(draft\)/);
   const view=read("js/road-to-glory/rtg-coaches-view.js");
