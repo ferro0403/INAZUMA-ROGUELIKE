@@ -128,7 +128,7 @@
     const s=campaign();s.tokens=1000;s.seasonComplete=true;
     assert.match(view.markup(s,{tab:"draw"}),/data-rtg-coaches-pull/);
     assert.match(view.markup(s,{tab:"collection"}),/Ray Dark/);
-    assert.match(view.detail(s,"36"),/PROSSIMAMENTE/);
+    assert.match(view.detail(s,"36"),/DISPONIBILE · ATTIVAZIONE PREPARTITA/);
     assert.doesNotMatch(view.detail(s,"36"),/data-rtg-coaches-equip/);
     s.coachOwnedIds=["36"];
     assert.match(view.detail(s,"36"),/data-rtg-coaches-equip/);
@@ -136,7 +136,7 @@
 
   test("Descrizioni: tutti i dieci poteri sono distinti, leggibili e non attivi",()=>{
     const expected=[
-      ["36","Cambio forzato","Scegli un titolare avversario e lo sostituisci con una riserva della squadra avversaria, scelta sempre da te. La riserva deve avere lo stesso ruolo."],
+      ["36","Cambio forzato","Scegli un titolare avversario e lo sostituisci con una riserva della squadra avversaria, scelta sempre da te. Se sostituisci un portiere, la riserva deve essere un portiere; per i giocatori di movimento puoi scegliere una riserva di qualsiasi ruolo di movimento."],
       ["208","Fiducia nei campioni","Scegli 2 tuoi titolari: entrambi ricevono +50 ai PT iniziali e massimi."],
       ["1225","Prestito a sorpresa","Scegli una riserva avversaria e la inserisci temporaneamente nella tua panchina, al posto di una delle tue 4 riserve."],
       ["1329","Allenamento specializzato","Scegli 2 delle 4 mosse speciali di un tuo titolare. Il costo in PT di entrambe viene dimezzato, arrotondando per eccesso."],
@@ -157,7 +157,7 @@
         const html=view.detail(campaign(campaignId),id);
         assert.ok(html.includes(`<strong>${name}</strong>`),`Missing power title for ${id}`);
         assert.ok(html.includes(`<p>${description.replace(/'/g,"&#39;")}</p>`),`Missing power description for ${id}`);
-        assert.match(html,/(?:PROSSIMAMENTE · POTERE NON ANCORA ATTIVO|DISPONIBILE · CONFIGURA IN SQUADRA)/);
+        assert.match(html,/(?:DISPONIBILE · ATTIVAZIONE PREPARTITA|DISPONIBILE · CONFIGURA IN SQUADRA)/);
         assert.doesNotMatch(html,/data-rtg-coaches-activate-power|data-rtg-coaches-use-power/);
       }
     }
