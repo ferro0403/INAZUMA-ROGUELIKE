@@ -42,11 +42,21 @@
       details.note="FUORI QUOTA · OVR reale "+overall+" · contributo al limite squadra "+Math.min(overall,60)+" (su 15 giocatori)";
       details.badge="CAP "+Math.min(overall,60);
     }else if(coachId==="4401"){
-      if((squad.lineup||[]).every(x=>cardId(x)!==key)||
-         !engine.ELEMENTS.includes(config.element)||config.cardIds.length!==1)return null;
-      details.player={...player,element:elementNames[config.element]||config.element};
-      details.note="CAMBIO DI ELEMENTO · "+(elementNames[config.element]||config.element)+" durante la partita";
-      details.badge=elementNames[config.element]||config.element;
+      if((squad.lineup||[]).every(x=>cardId(x)!==key))return null;
+      const target=config.targets?.find(t=>t.cardId===key);
+      const effectiveElement=target?.element||(config.cardIds.length===1?config.element:"");
+      if(!engine.ELEMENTS.includes(effectiveElement)||
+         engine.elementKey(player.element||player.type)===effectiveElement)return null;
+      const shown=elementNames[effectiveElement]||effectiveElement;
+      details.player={...player,element:shown};
+      details.moveElements={};
+      if(target?.moveIndices?.length===2){
+        target.moveIndices.forEach(index=>{details.moveElements[index]=shown;});
+        details.note="TRASFORMAZIONE TOTALE · elemento "+shown+
+          " e 2 mosse trasformate per la partita. Potenza e costo PT invariati.";
+      }else{
+        details.note="CAMBIO DI ELEMENTO · "+shown+" durante la partita (selezione precedente)";
+      }
     }else if(coachId==="1974"){
       if(config.cardIds.length!==1)return null;
       const target=engine.nextRarity(engine.rarityOf(player));
@@ -94,6 +104,18 @@
           esc(info.pt.coachBonus)+' PT</strong></div>':"");
         const note=root.querySelector(".rtg-pt-note");
         if(note)note.textContent="Anteprima effettiva per la prossima partita. La carta permanente non cambia.";
+      }
+      for(const [index,name] of Object.entries(info.moveElements||{})){
+        const card=root.querySelectorAll(".rtg-four-moves-item")?.[Number(index)];
+        const badge=card?.querySelector(".player-move-element");
+        const caption=badge?.querySelector("b");
+        const element=global.RoadToGloryCoachPowerRuntime?.elementKey?.(name);
+        if(badge&&caption&&element){
+          for(const cls of [...badge.classList])if(cls.startsWith("move-element--"))badge.classList.remove(cls);
+          badge.classList.add("move-element--"+element);
+          caption.textContent=name;
+          card.classList.add("rtg-coach-move-transformed");
+        }
       }
       for(const [index,value] of Object.entries(info.costs)){
         const card=root.querySelectorAll(".rtg-four-moves-item")?.[Number(index)];
