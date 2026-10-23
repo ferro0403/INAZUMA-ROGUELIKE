@@ -1,6 +1,5 @@
 (function (global) {
   "use strict";
-
   function create(deps={}){
     const app=deps.app;
     const repository=deps.repository;
@@ -645,7 +644,7 @@
         if(userMeta.teamIdentity)userSquad.teamIdentity=clone(userMeta.teamIdentity);
         const preMatchCoach=global.RoadToGloryCoachPreMatchRuntime?.coachFor?.(current,id(current.activeSeasonId||activeSeasonId()))||"";
         let opponentSquad=node.type==="main"?mainOpponent(node):secondaryOpponent(node,current,attemptNumber);
-        if(["36","1225"].includes(preMatchCoach))opponentSquad=global.RoadToGloryCoachOpponentBench?.build?.({opponent:opponentSquad,node:{...node,coachId:preMatchCoach},teamRecord:teamRecordForId(node.teamId),freeAgentsDb,resolveForTeam,resolvedStandard,resolveStandard:resolvedStandard})||opponentSquad;
+        if(["36","1225"].includes(preMatchCoach))opponentSquad=global.RoadToGloryCoachOpponentBench?.build?.({opponent:opponentSquad,node:{...node,coachId:preMatchCoach},teamRecord:teamRecordForId(node.teamId),freeAgentsDb,resolveForTeam:resolvedForTeam,resolveStandard:resolvedStandard})||opponentSquad;
         const seed=`${current.campaignSeed}:${node.id}:${attemptNumber}`;
         const matchId=`rtg:${node.id}:${attemptNumber}`;
         let match=matchEngine.createMatch({matchId,nodeId:node.id,matchType:node.type,attemptNumber,seed,userSquad,opponentSquad,seasonId:id(current.activeSeasonId||activeSeasonId())});
@@ -697,7 +696,6 @@
       const pending=campaign?.activeMatch?.pendingEncounter;
       if(!pending||!(/^(base|move|list|move:\d+)$/.test(normalized)))return;
       const encounterId=id(pending.encounterId);if(selectedEncounterId===`submitting:${encounterId}`)return;
-
       // Confirmation is accepted only from a button that was rendered in the
       // selected state. A stale JS selection can therefore never resolve on
       // the first visible tap of a new/updated duel.
@@ -706,21 +704,11 @@
         selectedEncounterId=`submitting:${encounterId}`;
         return chooseEncounter(normalized).catch(error=>{selectedEncounterId=null;deps.toast?.(error?.message||"Errore salvataggio PT","error");});
       }
-
       selectedEncounterId=encounterId;
       selectedEncounterChoice=normalized;
       return showEncounterOverlay(campaign.activeMatch,normalized);
     }
-
-    function openPreMatchPower(){
-      if(campaign?.activeMatch?.presentation?.preMatchPowerStatus!=="pending")return;
-      global.RoadToGloryCoachPreMatchUi?.open?.({
-        getMatch:()=>campaign.activeMatch,squadView,openModal:deps.openModal,getModalRoot:deps.getModalRoot,closeModal:deps.closeModal,toast:deps.toast,
-        openPlayerDetails:(key,side,opts)=>openRtgPlayerDetails(key,side,opts),
-        commit:async(matchId,selection,skip)=>{campaign=await global.RoadToGloryCoachPreMatchController.commit({repository,matchEngine,matchId,selection,skip});},
-        render:()=>renderMatch(campaign.activeMatch),
-      });
-    }
+    function openPreMatchPower(){if(campaign?.activeMatch?.presentation?.preMatchPowerStatus!=="pending")return;global.RoadToGloryCoachPreMatchUi?.open?.({getMatch:()=>campaign.activeMatch,squadView,openModal:deps.openModal,getModalRoot:deps.getModalRoot,closeModal:deps.closeModal,toast:deps.toast,openPlayerDetails:(key,side,opts)=>openRtgPlayerDetails(key,side,opts),commit:async(matchId,selection,skip)=>{campaign=await global.RoadToGloryCoachPreMatchController.commit({repository,matchEngine,matchId,selection,skip});},render:()=>renderMatch(campaign.activeMatch)});}
     function renderMatch(match=campaign?.activeMatch,options={}){
       clearMatchFlowTimer();
       if(!match)return renderRun();
@@ -914,7 +902,6 @@
       }
       return continueEncounterFlow();
     }
-
     function bindHalftimeEditor(match,selectedPlayerId=null){
       const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
       const repaint=(nextSelected=null)=>{
@@ -1101,13 +1088,11 @@
       if(destination==="development")return renderDevelopment("players");
       return renderRun();
     }
-
     return Object.freeze({
       open,renderRun,renderSquad,openCoaches,renderAlbum,renderAlbumRoster,renderShop,renderDevelopment,openNode,startMatch,confirmPreMatch,chooseEncounter,continueEncounterFlow,confirmHalftime,choosePenalty,abandonMatch,openVending,pull,saveSquad,openRtgPlayerDetails,openRtgCatalog,
       swapSquadDraft,canUseDraftFormation,arrangeDraftForFormation,openSquadPlayerPicker,adaptSquadToCurrentRequirements,
       getDraftSquad:()=>clone(squadDraft),getState:()=>clone(campaign),getRenderedHtml,
     });
   }
-
   global.RoadToGloryController=Object.freeze({create});
 })(globalThis);
