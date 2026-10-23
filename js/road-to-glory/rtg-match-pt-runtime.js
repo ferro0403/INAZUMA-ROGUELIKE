@@ -51,7 +51,11 @@
     const moves=catalog.length?catalog:[player.activeMove||player.move].filter(Boolean);
     const type=kindOf(kind,hasPossession);
     return moves.map((m,index)=>({m,index})).filter(({m})=>m&&String(m.type||"").toLowerCase()===type)
-      .map(({m,index})=>({...m,ptCost:global.RoadToGloryCoachPowerRuntime?.moveCost?.(state,side,pid,index,cost(m))??cost(m)}));
+      .map(({m,index})=>({
+        ...m,
+        element:global.RoadToGloryCoachPowerRuntime?.moveElement?.(state,side,pid,index,m.element)??m.element,
+        ptCost:global.RoadToGloryCoachPowerRuntime?.moveCost?.(state,side,pid,index,cost(m))??cost(m),
+      }));
   }
   function affordable(state,side,pid,options) {
     const balance=pt(state,side,pid)?.remaining??0;
