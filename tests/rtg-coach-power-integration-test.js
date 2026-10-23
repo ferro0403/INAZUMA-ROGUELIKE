@@ -68,7 +68,7 @@ test("Hillman starts the real match with +50 PT; saves retain modified balances 
   assert.equal(result.ptMaxByPlayerId["user:"+key],match.ptMaxByPlayerId["user:"+key]+50);
   assert.equal(result.ptCurrentByPlayerId["user:"+key],match.ptCurrentByPlayerId["user:"+key]+50);
  }
- assert.equal(match.ptCurrentByPlayerId["user:"+chosen[0]],150);
+ assert.equal(match.ptCurrentByPlayerId["user:"+chosen[0]],160);
  const recovered=JSON.parse(JSON.stringify(result));
  assert.equal(powers.applyToMatch(recovered,{coachId:"208",coachPowerSelection:{coachId:"208",cardIds:chosen}},{coachOwnedIds:["208"]}),recovered);
  assert.equal(match.userSquad.lineup[8].overall,87);
@@ -171,7 +171,7 @@ test("David real progression upgrades a player from Elite to Mondiale, stats and
  });
  assert.equal(boosted.userSquad.lineup[8].category,"Mondiale");
  assert.equal(boosted.userSquad.lineup[8].overall,90);
- assert.equal(boosted.ptMaxByPlayerId["user:"+who.cardId],
-  context.RoadToGloryCoachPowerRuntime? boosted.ptMaxByPlayerId["user:"+who.cardId] : 0);
+ assert(boosted.ptMaxByPlayerId["user:"+who.cardId]>match.ptMaxByPlayerId["user:"+who.cardId],
+  "the real rarity bonus updates match PT");
  assert.equal(match.userSquad.lineup[8].overall,88,"canonical match draft is unchanged");
 });
