@@ -71,7 +71,12 @@
     }
     if (mainIndex === seasonCfg.mainTeams.length - 1) {
       // Award on the first clear only, in the same atomic match-result mutation.
-      if(firstClear && !state.seasonComplete)state.tokens += Number(configApi.SEASON_COMPLETION_REWARD||0);
+      // A completed campaign can be replayed; its one-time finale bonus cannot.
+      const marker=`completion:${activeSeasonId(state)}`;
+      const paid=new Set(state.seasonTransitionRewardedIds||[]);
+      if(firstClear && !state.seasonComplete && !paid.has(marker))
+        state.tokens += Number(configApi.SEASON_COMPLETION_REWARD||0);
+      paid.add(marker);state.seasonTransitionRewardedIds=Array.from(paid);
       state.seasonComplete = true;
     }
     advanceIfCurrent(state, mainNodeId);
@@ -79,9 +84,13 @@
   }
 
   function rollbackNodeId(state) {
-    const checkpointIndex = Number(state?.checkpointMainIndex);
-    if (!Number.isInteger(checkpointIndex) || checkpointIndex < 0) return `main:${cfg(state).mainTeams[0]}`;
-    const checkpointTeam = cfg(state).mainTeams[checkpointIndex];
+    const season=cfg(state),wins=new Set(state?.defeatedTeamIds||[]);
+    // Recover an achieved checkpoint even if an old save's numeric index is stale.
+    const achieved=(season.checkpointMainIndexes||[]).filter(i=>
+      Number.isInteger(i)&&i>=0&&wins.has(season.mainTeams[i]));
+    const checkpointIndex=achieved.length?Math.max(...achieved):-1;
+    if(checkpointIndex<0)return `main:${season.mainTeams[0]}`;
+    const checkpointTeam = season.mainTeams[checkpointIndex];
     const checkpointNodeIndex = indexForNodeId(`main:${checkpointTeam}`, state);
     const list = nodes(state);
     return list[checkpointNodeIndex + 1]?.id || `main:${checkpointTeam}`;
