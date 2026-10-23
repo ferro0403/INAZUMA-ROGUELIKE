@@ -211,7 +211,7 @@
         constructor(){elements.push(this);}
         set src(value){this._src=value;}
         get src(){return this._src;}
-        decode(){return Promise.resolve();}
+        decode(){return new Promise(()=>{});} // Safari may delay offscreen decode indefinitely
       },
       document:{
         querySelectorAll(selector){assert.equal(selector,"[data-rtg-rene-artwork]");return [display];},
@@ -223,8 +223,9 @@
     assert.equal(elements.length,1,"preload started at script evaluation");
     assert.equal(elements[0].src,api.BY_ID["4761"].imageUrl);
     elements[0].onload();
+    // The portrait must paint NOW, without waiting for a pending decode().
+    assert.ok(classes.has("is-ready"),"visible immediately after bytes load");
     await new Promise(resolve=>setImmediate(resolve));
-    assert.ok(classes.has("is-ready"),"decoded sprite visible");
     assert.equal(display.style.backgroundImage,'url("'+api.BY_ID["4761"].imageUrl+'")');
     assert.equal(display.dataset.renePainted,"true");
     const original=display.style;
