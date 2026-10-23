@@ -584,3 +584,57 @@
 .rtg-coach-rene-artwork.is-failed .rtg-coach-rene-loading{
   color:#6f5946!important;
 }
+
+
+/* René (official Inazugle PNG): canvas rasterized at DOM insertion rather
+   than remote-image CSS background composited under Safari grayscale. */
+.rtg-coach-rene-wrap{
+  filter:none!important;
+}
+.rtg-coaches-modal .rtg-coach-entry.is-rene.is-locked,
+.rtg-coaches-modal .rtg-coach-entry.is-rene.is-locked .player-portrait-wrap,
+.rtg-coaches-album .rtg-coach-album-entry.is-rene.is-locked .player-portrait-wrap{
+  filter:none!important;
+}
+.rtg-coach-rene-frame{
+  position:relative!important;
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  min-height:0!important;
+  min-width:0!important;
+  overflow:hidden!important;
+  align-self:stretch!important;
+  isolation:isolate;
+}
+.rtg-coach-rene-canvas{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;
+  opacity:1!important;
+  visibility:visible!important;
+  transform:none!important;
+}
+.rtg-coach-entry.is-rene.is-locked .rtg-coach-rene-canvas,
+.rtg-coach-album-entry.is-rene.is-locked .rtg-coach-rene-canvas{
+  opacity:.65!important; /* avoid GPU grayscale filter on below-fold canvas */
+}
+.rtg-coach-rene-frame .rtg-coach-rene-loading{
+  position:absolute!important;
+  inset:0!important;
+  display:grid!important;
+  place-items:center!important;
+  width:100%!important;
+  height:100%!important;
+  background:transparent!important;
+  color:#7b4d2c!important;
+  font-weight:1000!important;
+  font-size:18px!important;
+  pointer-events:none!important;
+}
+.rtg-coach-rene-frame.is-ready .rtg-coach-rene-loading{
+  display:none!important;
+}
