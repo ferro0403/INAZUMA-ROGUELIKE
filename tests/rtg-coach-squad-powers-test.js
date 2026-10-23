@@ -54,3 +54,118 @@ test("Squad UI and match wiring use canonical repository persistence",()=>{
   assert.match(index,/rtg-coach-powers-runtime\.js/);
   assert.match(index,/rtg-coach-powers-squad-ui\.js/);
 });
+
+
+test("Travis excludes exactly one configured bench player from OVR cap, never from real squad",()=>{
+  const lineup=Array.from({length:11},(_,i)=>"t"+i);
+  const bench=["r0","r1","r2","r3"];
+  const squad={coachId:"1777",lineup,bench,coachPowerSelection:{coachId:"1777",cardIds:["r0"]}};
+  const state={activeSeasonId:"ie1",coachOwnedIds:["1777"]};
+  const entries=rules.eligibleRosterForCap(squad,state);
+  assert.equal(entries.length,14);
+  assert.equal(entries.includes("r0"),false);
+  assert.equal(entries.includes("r1"),true);
+  assert.equal(squad.bench.length,4);
+  assert.equal(rules.eligibleRosterForCap(squad,{...state,coachOwnedIds:[]}).length,15);
+  assert.equal(rules.eligibleRosterForCap({...squad,coachPowerSelection:{coachId:"1777",cardIds:["t0"]}},state).length,15);
+  const resolver={resolveAtLevel20:key=>({overall:key==="r0"?99:70}),resolveMove:()=>null};
+  const total=(entries)=>entries.reduce((s,key)=>s+(key==="r0"?99:70),0)/entries.length;
+  assert.equal(total(entries),70);
+  assert.equal(Math.round(total([...lineup,...bench])*10)/10,71.9);
+  const source=read("js/road-to-glory/rtg-squad-runtime.js");
+  assert.match(source,/eligibleRosterForCap\?\.\(squad,state\)/);
+  assert.match(source,/lineup: capRoster/);
+});
+test("Arrows upgrades actual match player stats/rarity including PT while preserving cap values",()=>{
+  const original=match();
+  original.userSquad.bench=[{...player("reserve"),category:"Elite",overall:88,potential:88,
+    stats:{stamina:60,grit:50,control:70,physical:55},attack:70}];
+  original.ptCurrentByPlayerId["user:reserve"]=200;
+  original.ptMaxByPlayerId["user:reserve"]=200;
+  const squad={coachId:"1974",coachPowerSelection:{coachId:"1974",cardIds:["reserve"]}};
+  let calls=0;
+  const result=rules.applyToMatch(original,squad,{coachOwnedIds:["1974"]},{
+    upgradeRarity:(p,rarity,key)=>{
+      calls++;assert.equal(p.cardId,"reserve");assert.equal(rarity,"Mondiale");
+      assert.equal(key,"reserve");
+      return {...p,category:rarity,overall:90,potential:90,
+        stats:{stamina:80,grit:70,control:80,physical:75},attack:95};
+    },
+  });
+  assert.equal(calls,1);
+  assert.equal(result.userSquad.bench[0].category,"Mondiale");
+  assert.equal(result.userSquad.bench[0].overall,90);
+  assert.equal(result.userSquad.bench[0].attack,95);
+  assert.equal(result.coachPowerEffect.previousOverall,88);
+  assert.equal(result.coachPowerEffect.previousRarity,"Elite");
+  assert.equal(result.coachPowerEffect.targetRarity,"Mondiale");
+  assert.equal(result.ptCurrentByPlayerId["user:reserve"],200);
+  assert.equal(result.ptMaxByPlayerId["user:reserve"],200);
+  assert.equal(original.userSquad.bench[0].overall,88);
+  assert.equal(original.userSquad.bench[0].category,"Elite");
+  assert.equal(original.ptCurrentByPlayerId["user:reserve"],200);
+  assert.equal(rules.applyToMatch(result,squad,{coachOwnedIds:["1974"]}),result);
+});
+test("Arrows rarity production resolver uses next threshold, original card and no account writes",()=>{
+  const context={RoadToGloryCoachPowerRuntime:rules,
+    InazumaProgression:{RARITY_THRESHOLDS:[
+      {category:"Elite",min:85},{category:"Mondiale",min:90},{category:"Leggenda",min:95},{category:"Aurico",min:99}]}};
+  vm.runInNewContext(read("js/road-to-glory/rtg-coach-powers-rarity.js"),context);
+  const captured=[];
+  const playerResolver={
+    resolveVersion:()=>({player:{finalOverall:80}}),
+    resolveBaseAtLevel20:(card,season,variant,_db,options)=>{
+      captured.push({card,season,variant,boost:options.potentialBoost,apps:options.potentialBoostApplications.length});
+      return {category:"Mondiale",overall:90,stats:{attack:94},attack:94,potential:90};
+    },
+  };
+  const upgraded=context.RoadToGloryCoachRarityPower.upgrade({
+    player:{category:"Elite",overall:88,potential:88},targetRarity:"Mondiale",
+    cardId:"card-A",playerResolver,seasonId:"ie1",squad:{activeRoleVariantByCardId:{"card-A":"FW"}},
+  });
+  assert.equal(upgraded.category,"Mondiale");
+  assert.equal(upgraded.attack,94);
+  assert.equal(captured.length,1);
+  assert.deepEqual(JSON.parse(JSON.stringify(captured[0])),{
+    card:"card-A",season:"ie1",variant:"FW",boost:10,apps:1
+  });
+  assert.equal(context.RoadToGloryCoachRarityPower.upgrade({
+    player:{category:"Aurico",overall:99,potential:99},targetRarity:"Aurico",
+    cardId:"card-A",playerResolver,seasonId:"ie1"}),null);
+});
+test("Mister Yi changes only selected starting player's elemental affinity in match snapshot",()=>{
+  const m=match();
+  m.userSquad.lineup=[{...player("a"),element:"wind",overall:80,stats:{}},
+    {...player("b"),element:"forest",overall:80,stats:{}}];
+  const squad={coachId:"4401",coachPowerSelection:{
+    coachId:"4401",cardIds:["a"],element:"fire"}};
+  const result=rules.applyToMatch(m,squad,{coachOwnedIds:["4401"]});
+  assert.equal(result.userSquad.lineup[0].element,"fire");
+  assert.equal(result.userSquad.lineup[1].element,"forest");
+  assert.equal(m.userSquad.lineup[0].element,"wind");
+  assert.equal(result.coachPowerEffect.element,"fire");
+  assert.equal(result.coachPowerEffect.cardIds[0],"a");
+  assert.equal(rules.applyToMatch(result,squad,{coachOwnedIds:["4401"]}),result);
+  const bad={...squad,coachPowerSelection:{...squad.coachPowerSelection,element:"thunder"}};
+  assert.equal(rules.applyToMatch(m,bad,{coachOwnedIds:["4401"]}),m);
+  assert.equal(rules.nextRarity("Leggenda"),"Aurico");
+  assert.equal(rules.nextRarity("Aurico"),null);
+});
+test("Five Squad power controls and season-safe element roundtrip are wired",()=>{
+  const ui=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
+  assert.match(ui,/TITOLARI E RISERVE/);
+  assert.match(ui,/RISERVE/);
+  assert.match(ui,/NUOVO ELEMENTO/);
+  assert.match(ui,/MONTAGNA/);
+  assert.match(ui,/ctx\.saveSquad\(draft\)/);
+  const view=read("js/road-to-glory/rtg-coaches-view.js");
+  for(const key of ['"208"','"1329"','"1777"','"1974"','"4401"'])
+    assert(view.includes(key));
+  const stateSource=read("js/road-to-glory/rtg-state.js");
+  assert.match(stateSource,/coachPowerSelection\.element/);
+  const mainSource=read("js/road-to-glory/rtg-controller.js");
+  assert.match(mainSource,/RoadToGloryCoachRarityPower\?\.upgrade/);
+  const html=read("index.html");
+  assert.match(html,/rtg-coach-powers-rarity\.js/);
+  assert.match(html,/rtg-coach-powers-runtime\.js/);
+});
