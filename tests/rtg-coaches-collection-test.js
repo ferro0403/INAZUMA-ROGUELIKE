@@ -359,9 +359,10 @@
   test("Il WebP fornito resta come alternativa al PNG ufficiale, non come prima sorgente",()=>{
     const rene=api.BY_ID["4761"];
     assert.equal(rene.imageFallbackUrls[0],"https://dxi4wb638ujep.cloudfront.net/1/k/a/t/atcna3pn7ds.webp");
-    assert.match(view.card(rene,"locked"),/atcna3pn7ds\.png/);
-    assert.match(view.albumCard(rene,"locked"),/atcna3pn7ds\.png/);
-    assert.match(view.result(rene,campaign()),/atcna3pn7ds\.png/);
+    assert.match(view.card(rene,"locked"),/data-rtg-rene-canvas/);
+    assert.match(view.albumCard(rene,"locked"),/data-rtg-rene-canvas/);
+    assert.match(view.result(rene,campaign()),/data-rtg-rene-canvas/);
+    assert.ok(read("index.html").includes(rene.imageUrl));
   });
   test("Dettaglio: stemma squadra nelle due sezioni, senza ID Zukan; risultato senza badge NUOVO",()=>{
     const html=view.detail(campaign(),"1940");
