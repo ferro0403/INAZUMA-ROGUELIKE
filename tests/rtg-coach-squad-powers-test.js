@@ -155,6 +155,35 @@ test("Mister Yi changes only selected starting player's elemental affinity in ma
   assert.equal(rules.nextRarity("Leggenda"),"Aurico");
   assert.equal(rules.nextRarity("Aurico"),null);
 });
+test("Yi only permits the other three elements and keeps his Squad badge hidden",()=>{
+  for(const [source,normalized] of [
+    ["mountain","mountain"],["Montagna","mountain"],["wood","forest"],["Bosco","forest"],
+    ["Albero","forest"],["Vento","wind"],["Fuoco","fire"]
+  ]) assert.equal(rules.elementKey(source),normalized);
+  const m=match();
+  m.userSquad.lineup=[{...player("a"),element:"Montagna",overall:80,stats:{}},player("b")];
+  const squad={coachId:"4401",coachPowerSelection:{coachId:"4401",cardIds:["a"],element:"mountain"}};
+  assert.equal(rules.validConfig(squad,m.userSquad.lineup,"ie1",[]),null);
+  assert.equal(rules.applyToMatch(m,squad,{coachOwnedIds:["4401"]}),m);
+  squad.coachPowerSelection.element="forest";
+  assert.equal(rules.validConfig(squad,m.userSquad.lineup,"ie1",[]).element,"forest");
+  assert.equal(rules.applyToMatch(m,squad,{coachOwnedIds:["4401"]}).userSquad.lineup[0].element,"forest");
+  const ui=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
+  assert.match(ui,/ELEMENTS\.filter\(e=>e\.key!==originalElement\)/);
+  assert.match(ui,/rules\.elementKey/);
+  assert.match(ui,/development-squad-card-scope/);
+  assert.match(ui,/ALBERO/);
+  assert.match(ui,/rtg-coach-element-art/);
+  assert.match(ui,/<svg viewBox=/);
+  const view=read("js/road-to-glory/rtg-squad-view-base.js");
+  assert.match(view,/coachPreview\.coachId!=="4401"/);
+  assert.match(read("js/road-to-glory/rtg-coach-powers-preview.js"),/forest:"Albero"/);
+  const css=read("css/rtg-coaches.css");
+  assert.match(css,/\.player-detail-modal \.rtg-coach-move-select/);
+  assert.match(css,/\.player-detail-modal \.rtg-coach-moves-confirm/);
+  assert.match(css,/border-radius:2px!important/);
+  assert.match(css,/Squad card visuals in coach selector/);
+});
 test("Five Squad power controls and season-safe element roundtrip are wired",()=>{
   const ui=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
   assert.match(ui,/lineupPitchMarkup/);
