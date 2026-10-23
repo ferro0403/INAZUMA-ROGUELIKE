@@ -47,67 +47,79 @@
       recoverPortraitImage(image);
   },true);
 
-  // The 10th coach sits below the fold of a nested modal on iOS WebKit.
-  // Preload AND decode the official Inazugle thumbnail before the selector
-  // opens; CSS background painting avoids deferred <img> decoding in Safari.
-  // No save, RNG, or other coach image behavior is touched.
+  // WebKit can defer compositing a CSS background (or an offscreen <img>)
+  // under the locked-card grayscale filter. Rasterize the already fetched
+  // official PNG into a small same-page canvas instead. Canvas drawImage does
+  // not read pixels back, so this works with a cross-origin Inazugle image.
   const reneImageUrl=()=>model()?.BY_ID?.["4761"]?.imageUrl||"";
-  let reneImageReady=false;
-  let reneImageFailed=false;
-  function refreshReneArtwork(force=false){
-    const nodes=global.document?.querySelectorAll?.("[data-rtg-rene-artwork]")||[];
-    for(const node of nodes){
-      node.classList?.toggle?.("is-ready",reneImageReady);
-      node.classList?.toggle?.("is-failed",reneImageFailed);
-      if(reneImageReady&&(force||node.dataset?.renePainted!=="true")){
-        // Make Safari create a fresh background paint layer after the source
-        // has already decoded, including when a scroll reveals the last row.
-        if(node.dataset)node.dataset.renePainted="true";
-        if(node.style){
-          node.style.backgroundImage="none";
-          void node.offsetWidth;
-          node.style.backgroundImage='url("'+reneImageUrl()+'")';
-        }
+  let reneAsset=null;
+  let reneState="pending";
+  function paintReneCanvas(root=global.document){
+    if(!root?.querySelectorAll)return;
+    const canvases=root.querySelectorAll("[data-rtg-rene-canvas]");
+    for(const canvas of canvases){
+      const frame=canvas.parentElement;
+      if(!frame||canvas.dataset?.renePainted==="true")continue;
+      if(reneState!=="loaded"||!reneAsset?.naturalWidth||!reneAsset?.naturalHeight){
+        frame.classList?.toggle?.("is-failed",reneState==="failed");
+        continue; // RG remains visible and readable until rasterization succeeds
+      }
+      try{
+        const ctx=canvas.getContext("2d",{alpha:true});
+        if(!ctx)continue;
+        const w=canvas.width,h=canvas.height;
+        const sourceWidth=reneAsset.naturalWidth,sourceHeight=reneAsset.naturalHeight;
+        const scale=Math.min(w/sourceWidth,h/sourceHeight);
+        const dw=Math.max(1,sourceWidth*scale),dh=Math.max(1,sourceHeight*scale);
+        ctx.clearRect(0,0,w,h);
+        ctx.drawImage(reneAsset,(w-dw)/2,h-dh,dw,dh);
+        canvas.dataset.renePainted="true";
+        frame.classList?.add?.("is-ready");
+        frame.classList?.remove?.("is-failed");
+      }catch(_error){
+        // A pending frame must remain retryable. Never hide the RG fallback.
       }
     }
   }
-  if(typeof global.Image==="function"&&reneImageUrl()){
-    const loader=new global.Image();
-    loader.loading="eager";
-    loader.decoding="sync";
-    loader.fetchPriority="high";
-    loader.referrerPolicy="no-referrer";
-    loader.onload=()=>{
-      // Never wait for decode() before painting: WebKit may defer decoding
-      // offscreen elements until the tab becomes active again.
-      reneImageReady=true;
-      reneImageFailed=false;
-      refreshReneArtwork(true);
-      // An extra decode + repaint is best-effort, not a visibility gate.
-      if(typeof loader.decode==="function"){
-        Promise.resolve().then(()=>loader.decode()).catch(()=>null)
-          .then(()=>refreshReneArtwork(true));
+  function startReneAsset(){
+    if(reneAsset||typeof global.Image!=="function"||!reneImageUrl())return;
+    const img=new global.Image();
+    reneAsset=img;
+    img.loading="eager";
+    img.decoding="sync";
+    img.fetchPriority="high";
+    img.referrerPolicy="no-referrer";
+    img.onload=()=>{
+      reneState="loaded";
+      paintReneCanvas();
+      if(typeof img.decode==="function"){
+        Promise.resolve().then(()=>img.decode()).catch(()=>null).then(()=>paintReneCanvas());
       }
     };
-    loader.onerror=()=>{
-      reneImageFailed=true;
-      refreshReneArtwork(true);
+    img.onerror=()=>{
+      reneState="failed";
+      paintReneCanvas();
     };
-    loader.src=reneImageUrl();
+    img.src=reneImageUrl();
+    if(img.complete&&img.naturalWidth>0)img.onload();
   }
-  global.document?.addEventListener?.("scroll",()=>{
-    if(reneImageReady||reneImageFailed)refreshReneArtwork();
-  },true);
+  startReneAsset();
+  // The modal, Album and Squad are mounted with innerHTML. A MutationObserver
+  // handles new canvases without a page/tab switch or a scroll event.
+  if(typeof global.MutationObserver==="function"&&global.document?.documentElement){
+    const observer=new global.MutationObserver(()=>paintReneCanvas());
+    observer.observe(global.document.documentElement,{childList:true,subtree:true});
+  }
+  global.document?.addEventListener?.("pageshow",()=>paintReneCanvas(),true);
   global.document?.addEventListener?.("visibilitychange",()=>{
-    if(!global.document?.hidden)refreshReneArtwork(true);
+    if(!global.document?.hidden)paintReneCanvas();
   },true);
 
   const portrait=(c,fullbody=false,preferFullbodyThumbnail=false)=>{
     if(!fullbody&&String(c.zukanId||"")==="4763"){
-      // Background artwork is preloaded/decoded at application startup.
-      // A visible initials placeholder is shown until it is ready, never an
-      // empty card; the portrait PNG is not loaded as an offscreen <img>.
-      return `<span class="rtg-coach-rene-artwork ${reneImageReady?"is-ready":""} ${reneImageFailed?"is-failed":""}" data-rtg-rene-artwork role="img" aria-label="${esc(c.name)}" style="background-image:url('${esc(c.imageUrl)}')"><span class="rtg-coach-rene-loading" aria-hidden="true">RG</span></span>`;
+      // Draw into a real bitmap surface; the canvas is painted explicitly
+      // immediately after the modal mounts. RG remains until pixels exist.
+      return `<span class="rtg-coach-rene-frame"><canvas class="rtg-coach-rene-canvas" width="240" height="200" data-rtg-rene-canvas role="img" aria-label="${esc(c.name)}"></canvas><span class="rtg-coach-rene-loading" aria-hidden="true">RG</span></span>`;
     }
     const urls=portraitCandidates(c,fullbody,preferFullbodyThumbnail);
     const [url,...alternates]=urls;
@@ -125,7 +137,7 @@
     // Same markup/classes as PlayerView.compactCard: the card differs only in data and orange trim.
     return `<button type="button" class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player squad-player-card rtg-picker-squad-card rtg-coach-card ${selected?"selected":""} ${status==="locked"?"rtg-coach-locked":""}" data-rtg-coach-detail="${esc(c.id)}" aria-label="Scheda allenatore ${esc(c.name)}">
       <span class="player-corner player-role" aria-label="Allenatore">ALL.</span><span class="player-corner player-overall" aria-label="${esc(c.season)}">${esc(c.season.replace("Season ","S"))}</span>
-      <div class="player-portrait-wrap">${portrait(c)}</div>
+      <div class="player-portrait-wrap ${c.zukanId==="4763"?"rtg-coach-rene-wrap":""}">${portrait(c)}</div>
       <div class="player-info"><div class="player-title"><strong title="${esc(c.name)}">${esc(c.name)}</strong></div>
       <div class="player-meta" aria-label="Dettagli allenatore"><span>${esc(c.team)}</span><span>${esc(state)}</span></div></div>
       <span class="player-corner player-level" aria-label="Staff">STAFF</span>
@@ -174,7 +186,7 @@
     const coaches=model().catalog(state),got=coaches.filter(c=>model().status(state,c.id)==="owned").length;
     return `<section class="rtg-coaches-window" aria-label="Allenatori"><header class="rtg-coaches-heading"><div><p class="eyebrow">ROAD TO GLORY · COLLEZIONE</p><h2>ALLENATORI</h2><p>${got} / ${coaches.length} ottenuti</p></div></header>
       <div class="rtg-coaches-tabs"><button type="button" class="${tab==="draw"?"active":""}" data-rtg-coaches-tab="draw">DISTRIBUTORE</button><button type="button" class="${tab==="collection"?"active":""}" data-rtg-coaches-tab="collection">COLLEZIONE</button></div>
-      ${tab==="draw"?vending(state):`<div class="rtg-coaches-grid rtg-picker-grid">${coaches.map(c=>`<div class="rtg-coach-entry ${model().status(state,c.id)==="owned"?"is-unlocked":"is-locked"}">${card(c,model().status(state,c.id),equippedId===c.id)}${model().status(state,c.id)==="owned"?`<button type="button" class="rtg-coach-quick-equip" data-rtg-coaches-equip="${equippedId===c.id?"":esc(c.id)}" aria-label="${equippedId===c.id?"Rimuovi":"Assegna"} ${esc(c.name)}">${equippedId===c.id?"✓ ASSEGNATO":"＋ ASSEGNA"}</button>`:""}</div>`).join("")}</div>`}
+      ${tab==="draw"?vending(state):`<div class="rtg-coaches-grid rtg-picker-grid">${coaches.map(c=>`<div class="rtg-coach-entry ${c.zukanId==="4763"?"is-rene":""} ${model().status(state,c.id)==="owned"?"is-unlocked":"is-locked"}">${card(c,model().status(state,c.id),equippedId===c.id)}${model().status(state,c.id)==="owned"?`<button type="button" class="rtg-coach-quick-equip" data-rtg-coaches-equip="${equippedId===c.id?"":esc(c.id)}" aria-label="${equippedId===c.id?"Rimuovi":"Assegna"} ${esc(c.name)}">${equippedId===c.id?"✓ ASSEGNATO":"＋ ASSEGNA"}</button>`:""}</div>`).join("")}</div>`}
     </section>`;
   }
   function detail(state,coachId,{equippedId=""}={}){
@@ -203,7 +215,7 @@
     const coaches=model().catalog(state),owned=model().owned(state),got=coaches.filter(c=>owned.has(c.id)).length,total=coaches.length;
     return `<main class="album-screen album-roster-screen album-roster-screen--modern rtg-album-roster-screen rtg-coaches-album">
       <header class="album-roster-hero"><div class="album-roster-hero__nav"><button type="button" class="btn section-root-button album-roster-back-button" data-rtg-album-coaches-back>←</button></div><div class="album-roster-hero__identity"><span class="album-team-logo album-roster-hero__logo">⚽</span><h1 class="album-roster-hero__name">ALLENATORI</h1></div><div class="album-roster-hero__stats"><span>${got} / ${total} allenatori sbloccati</span><strong class="album-roster-percent">${total?Math.round(100*got/total):0}%</strong></div><span class="album-roster-hero__bar"><span style="width:${total?100*got/total:0}%"></span></span></header>
-      <section class="album-player-grid album-player-grid--modern" data-rtg-album-coaches>${coaches.map(c=>`<div class="album-player-entry rtg-coach-album-entry ${owned.has(c.id)?"is-unlocked":"is-locked"}" data-rtg-album-coach-entry="${esc(c.id)}">${albumCard(c,model().status(state,c.id))}<span class="rtg-coach-album-status ${owned.has(c.id)?"is-owned":""}">${owned.has(c.id)?"✓ OTTENUTO":"🔒 BLOCCATO"}</span></div>`).join("")}</section>
+      <section class="album-player-grid album-player-grid--modern" data-rtg-album-coaches>${coaches.map(c=>`<div class="album-player-entry rtg-coach-album-entry ${c.zukanId==="4763"?"is-rene":""} ${owned.has(c.id)?"is-unlocked":"is-locked"}" data-rtg-album-coach-entry="${esc(c.id)}">${albumCard(c,model().status(state,c.id))}<span class="rtg-coach-album-status ${owned.has(c.id)?"is-owned":""}">${owned.has(c.id)?"✓ OTTENUTO":"🔒 BLOCCATO"}</span></div>`).join("")}</section>
     </main>`;
   }
   function result(coach,state=null){
@@ -220,5 +232,5 @@
       <button type="button" class="btn btn-yellow rtg-coaches-reward-continue" data-rtg-coaches-collection>CONTINUA →</button>
     </div>`;
   }
-  global.RoadToGloryCoachesView=Object.freeze({card,albumCard,squadSlot,vending,markup,detail,albumMarkup,result});
+  global.RoadToGloryCoachesView=Object.freeze({card,albumCard,squadSlot,vending,markup,detail,albumMarkup,result,mountArtwork:paintReneCanvas});
 })(globalThis);
