@@ -55,11 +55,12 @@
           if(coachId&&!coaches.owned(current).has(coachId))throw new Error("Allenatore non posseduto");
           const original=current.squads?.[sid];
           if(!original)throw new Error("Formazione RTG non disponibile");
-          current.squads[sid]={...original,coachId};
+          current.squads[sid]={...original,coachId,...(String(original.coachId||"")===coachId?{}:{coachPowerSelection:null})};
           return current;
         });
         ctx.setCampaign(updated);
-        const draft={...(ctx.getSquadDraft()||ctx.activeSquad()),coachId};
+        const priorDraft=ctx.getSquadDraft()||ctx.activeSquad();
+        const draft={...priorDraft,coachId,...(String(priorDraft?.coachId||"")===coachId?{}:{coachPowerSelection:null})};
         ctx.setSquadDraft(draft);
         ctx.storeSquadSlot(ctx.getActiveSquadSlot(),draft);
         // The selection is visible only after the canonical repository commit;
