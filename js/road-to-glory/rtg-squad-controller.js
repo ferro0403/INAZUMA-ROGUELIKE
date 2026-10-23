@@ -870,6 +870,19 @@
           seasonId:deps.activeSeasonId,resolve:deps.resolved,
           openModal:deps.openModal,getModalRoot:deps.getModalRoot,closeModal:deps.closeModal,
           toast:deps.toast,saveSquad:(draft)=>saveSquad(draft,{quiet:true}),
+          closeModal:deps.closeModal,squadView:deps.squadView,
+          getModel:()=>deps.squadView.renderModel({state:draftState(),
+            freeAgentIds:deps.freeAgentIds,seasonDb:deps.seasonDb,
+            freeAgentsDb:deps.freeAgentsDb,playerResolver:deps.playerResolverForState(draftState())}),
+          openPlayerDetails:(key,options)=>deps.openRtgPlayerDetails(key,"",options),
+          previewChoice:(key,selection)=>{
+            const card=deps.resolved(key,deps.squadDraft?.activeRoleVariantByCardId?.[key]||null);
+            return global.RoadToGloryCoachSquadPreview?.projected?.({
+              player:card,cardId:key,squad:{...deps.squadDraft,coachPowerSelection:selection},
+              state:deps.campaign,seasonId:deps.activeSeasonId(),
+              playerResolver:deps.playerResolver,freeAgentsDb:deps.freeAgentsDb,
+            })||null;
+          },
         }),
         onAdaptRequirements:()=>adaptSquadToCurrentRequirements(),
         onSave:()=>saveSquad(deps.squadDraft),
