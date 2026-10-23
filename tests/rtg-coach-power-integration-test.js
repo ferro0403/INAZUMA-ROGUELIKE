@@ -78,17 +78,17 @@ test("Aquilina's actual duels consume half-cost PT of chosen techniques, no disc
  const powered=withPower(match,"1329",{cardIds:[key],moveIndices:[0,3]});
  assert.deepEqual(Array.from(PT.compatible(powered,"user",key,"shot").map(m=>m.ptCost)),[43,55,75,51]);
  assert.equal(PT.compatible(powered,"user",match.userSquad.lineup[9].cardId,"shot")[0].ptCost,85);
+ // Force the selected player into the duel: the test must never skip consumption.
+ powered.userSquad.lineup=powered.userSquad.lineup.filter(p=>p.cardId===key);
  powered.fieldZone="shot";powered.possession="user";powered.manualIndexes=[0];
  const prepared=E.prepareNext(powered);
  assert(prepared.pendingEncounter);
- const actor=prepared.userSquad.lineup.find(p=>p.cardId===prepared.pendingEncounter.userPlayerId);
- if(actor?.cardId===key){
-   const idx=prepared.pendingEncounter.userMoveOptions.findIndex(m=>m.name==="Test technique 0");
-   assert(idx>=0);
-   const before=PT.pt(prepared,"user",key).remaining;
-   const resolved=E.resolvePendingEncounter(prepared,"move:"+idx);
-   assert.equal(PT.pt(resolved,"user",key).remaining,before-43);
- }
+ assert.equal(prepared.pendingEncounter.userPlayerId,key);
+ const idx=prepared.pendingEncounter.userMoveOptions.findIndex(m=>m.name==="Test technique 0");
+ assert(idx>=0);
+ const before=PT.pt(prepared,"user",key).remaining;
+ const resolved=E.resolvePendingEncounter(prepared,"move:"+idx);
+ assert.equal(PT.pt(resolved,"user",key).remaining,before-43);
 });
 test("Mister Yi's two players and four moves change real duel elements without changing PT and power",()=>{
  const match=create(),a=match.userSquad.lineup[8],b=match.userSquad.lineup[9];
