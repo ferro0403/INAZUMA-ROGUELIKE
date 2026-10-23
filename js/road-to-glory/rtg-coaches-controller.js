@@ -9,6 +9,9 @@
     const markup=newCoach?view.result(newCoach,state):detailId?view.detail(state,detailId,{equippedId:selected}):view.markup(state,{tab,equippedId:selected});
     ctx.openModal?.(markup,{className:detailId?"rtg-modal player-detail-modal rtg-coaches-modal":"rtg-modal rtg-coaches-modal"});
     const root=ctx.getModalRoot?.();
+    // Rasterize the below-fold René art immediately after the modal is
+    // inserted, without waiting for a scroll, observer or visibility event.
+    view.mountArtwork?.(root);
     const machine=root?.querySelector?.("[data-rtg-vending-machine]");
     const motion=global.RoadToGloryVendingMotion?.mount?.(machine);
     root?.querySelectorAll?.("[data-rtg-coaches-tab]")?.forEach(button=>button.addEventListener("click",()=>open(ctx,button.dataset.rtgCoachesTab)));
