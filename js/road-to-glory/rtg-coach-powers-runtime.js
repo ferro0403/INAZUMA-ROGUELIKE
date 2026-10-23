@@ -11,7 +11,7 @@
     const token=id(value).trim().toLowerCase();
     if(["fire","fuoco"].includes(token))return "fire";
     if(["wind","vento"].includes(token))return "wind";
-    if(["forest","wood","bosco","albero"].includes(token))return "forest";
+    if(["forest","wood","tree","bosco","albero"].includes(token))return "forest";
     if(["mountain","montagna"].includes(token))return "mountain";
     return "";
   };
