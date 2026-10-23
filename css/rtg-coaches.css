@@ -639,3 +639,30 @@
 .rtg-coach-rene-frame.is-ready .rtg-coach-rene-loading{
   display:none!important;
 }
+
+/* Squad-configurable coach powers: separate from the coach collection and match UI. */
+.rtg-squad-shell .rtg-coach-squad-buttons [data-rtg-coach-power-configure]{
+  grid-column:1/-1;min-height:48px;width:100%;font-weight:950;background:#ffd31a!important;
+  color:#18191a!important;border:3px solid #18191a!important;box-shadow:3px 4px 0 #18191a!important;
+}
+.rtg-coach-power-config{padding:12px 6px 18px;width:min(100%,650px);margin:auto;color:#161718;}
+.rtg-coach-power-config h2{font-size:clamp(22px,5vw,32px);font-weight:1000;line-height:1.08;overflow-wrap:anywhere;margin:5px 0 10px;}
+.rtg-coach-power-config>p{font-size:14px;line-height:1.5;}
+.rtg-coach-power-choices{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0;}
+.rtg-coach-power-choices h4{grid-column:1/-1;margin:0;font-size:13px;letter-spacing:.08em;font-weight:950;}
+.rtg-coach-power-choices>p{grid-column:1/-1;}
+.rtg-coach-power-option{
+  display:flex;flex-direction:column;gap:4px;min-width:0;min-height:70px;padding:11px 9px;
+  background:#fffdf6;color:#17181a;border:3px solid #17181a;box-shadow:2px 3px 0 #17181a;
+  text-align:left;overflow-wrap:anywhere;position:relative;cursor:pointer;
+}
+.rtg-coach-power-option strong{font-size:13px;font-weight:900;line-height:1.25;padding-right:12px;}
+.rtg-coach-power-option span{font-size:11px;font-weight:750;opacity:.8;}
+.rtg-coach-power-option b{position:absolute;top:5px;right:7px;font-size:18px;}
+.rtg-coach-power-option.is-selected{background:#ffcf28;border-color:#17181a;}
+.rtg-coach-power-option:disabled{opacity:.5;cursor:not-allowed;}
+.rtg-coach-power-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:14px;}
+.rtg-coach-power-actions [data-rtg-coach-power-save]{grid-column:1/-1;}
+.rtg-coach-power-actions .btn{width:100%;min-height:44px;font-weight:900;}
+.rtg-coach-power-actions [data-rtg-coach-power-save]:disabled{opacity:.55;}
+@media(max-width:370px){.rtg-coach-power-choices{gap:7px}.rtg-coach-power-option{padding:9px 7px}}
