@@ -46,14 +46,66 @@
     if(isCoachPortrait(image)&&(Number(image.naturalWidth)<=1||Number(image.naturalHeight)<=1))
       recoverPortraitImage(image);
   },true);
+
+  // The 10th coach sits below the fold of a nested modal on iOS WebKit.
+  // Preload AND decode the official Inazugle thumbnail before the selector
+  // opens; CSS background painting avoids deferred <img> decoding in Safari.
+  // No save, RNG, or other coach image behavior is touched.
+  const reneImageUrl=()=>model()?.BY_ID?.["4761"]?.imageUrl||"";
+  let reneImageReady=false;
+  let reneImageFailed=false;
+  function refreshReneArtwork(force=false){
+    const nodes=global.document?.querySelectorAll?.("[data-rtg-rene-artwork]")||[];
+    for(const node of nodes){
+      node.classList?.toggle?.("is-ready",reneImageReady);
+      node.classList?.toggle?.("is-failed",reneImageFailed);
+      if(reneImageReady&&(force||node.dataset?.renePainted!=="true")){
+        // Make Safari create a fresh background paint layer after the source
+        // has already decoded, including when a scroll reveals the last row.
+        if(node.dataset)node.dataset.renePainted="true";
+        if(node.style){
+          node.style.backgroundImage="none";
+          void node.offsetWidth;
+          node.style.backgroundImage='url("'+reneImageUrl()+'")';
+        }
+      }
+    }
+  }
+  if(typeof global.Image==="function"&&reneImageUrl()){
+    const loader=new global.Image();
+    loader.loading="eager";
+    loader.decoding="sync";
+    loader.fetchPriority="high";
+    loader.onload=()=>{
+      // decode() is essential: loaded bytes do not guarantee a painted image
+      // in a scrollable Safari modal. A decode rejection after load is not a
+      // network failure: the loaded image can still paint as CSS background.
+      Promise.resolve().then(()=>typeof loader.decode==="function"?loader.decode():null)
+        .catch(()=>null).then(()=>{
+          reneImageReady=true;
+          reneImageFailed=false;
+          refreshReneArtwork(true);
+        });
+    };
+    loader.onerror=()=>{
+      reneImageFailed=true;
+      refreshReneArtwork(true);
+    };
+    loader.src=reneImageUrl();
+  }
+  global.document?.addEventListener?.("scroll",()=>{
+    if(reneImageReady||reneImageFailed)refreshReneArtwork();
+  },true);
+  global.document?.addEventListener?.("visibilitychange",()=>{
+    if(!global.document?.hidden)refreshReneArtwork(true);
+  },true);
+
   const portrait=(c,fullbody=false,preferFullbodyThumbnail=false)=>{
     if(!fullbody&&String(c.zukanId||"")==="4763"){
-      // Direct official Inazugle thumbnail. This bypasses the generic player
-      // portrait and its retry/visibility state, which left Rene blank in
-      // mobile selection even though the SAME PNG loaded in his detail.
-      // No guessed image extensions or fallback network URLs on these cards.
-      const backup=fallback(c).replace('class="rtg-coach-placeholder"','class="rtg-coach-placeholder rtg-coach-placeholder--backup"');
-      return `<img class="rtg-coach-portrait--rene-direct" src="${esc(c.imageUrl)}" alt="${esc(c.name)}" loading="eager" decoding="sync" referrerpolicy="no-referrer" onerror="this.onerror=null;this.hidden=true;this.style.setProperty('display','none','important');this.nextElementSibling?.classList.add('is-visible')">${backup}`;
+      // Background artwork is preloaded/decoded at application startup.
+      // A visible initials placeholder is shown until it is ready, never an
+      // empty card; the portrait PNG is not loaded as an offscreen <img>.
+      return `<span class="rtg-coach-rene-artwork ${reneImageReady?"is-ready":""} ${reneImageFailed?"is-failed":""}" data-rtg-rene-artwork role="img" aria-label="${esc(c.name)}" style="background-image:url('${esc(c.imageUrl)}')"><span class="rtg-coach-rene-loading" aria-hidden="true">RG</span></span>`;
     }
     const urls=portraitCandidates(c,fullbody,preferFullbodyThumbnail);
     const [url,...alternates]=urls;
