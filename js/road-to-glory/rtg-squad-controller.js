@@ -673,6 +673,7 @@
       const constraint=deps.activeConfig()?.constraints?.[teamId];
       if(!constraint)return[];
       const recruitSet=deps.acquiredCardIdSet();
+      const coachCapId=global.RoadToGloryCoachPowerRuntime?.capOverrideFor?.(deps.squadDraft,deps.campaign)||"";
       const recentTeams=new Set(deps.squadRuntime.recentDefeatedTeamIds(teamId,draftState(),constraint.recentWindow));
       return accessibleDraftIds().map(playerId=>{
         const player=deps.resolved(playerId,deps.squadDraft?.activeRoleVariantByCardId?.[playerId]||null);
@@ -681,7 +682,9 @@
         if(!["GK","DF","MF","FW"].includes(role))return null;
         const move=deps.playerResolver.resolveMove?.(playerId,deps.activeSeasonId(),role,deps.freeAgentsDb,deps.squadDraft?.activeRoleVariantByCardId?.[playerId]||null)||null;
         const movePower=Number(move?.power);
-        const contribution=Number(player.overall||0)+(Number.isFinite(movePower)?Math.max(0,Math.min(2,(movePower-50)/30)):0);
+        const realOverall=Number(player.overall||0);
+        const contribution=(playerId===coachCapId?Math.min(realOverall,60):realOverall)+
+          (Number.isFinite(movePower)?Math.max(0,Math.min(2,(movePower-50)/30)):0);
         const recruit=recruitSet.has(playerId);
         const recent=recruit&&seasonTeamIdsForPlayer(playerId).some(team=>recentTeams.has(team));
         return{playerId,role,overall:Number(player.overall||0),contribution,recruit,recent};
@@ -691,6 +694,9 @@
       const constraint=deps.activeConfig()?.constraints?.[teamId];
       if(!formation||!constraint)return null;
       const candidates=Array.from(pool||[]);
+      const fixedBenchId=global.RoadToGloryCoachPowerRuntime?.capOverrideFor?.(deps.squadDraft,deps.campaign)||"";
+      const forcedBench=fixedBenchId?candidates.find(entry=>entry.playerId===fixedBenchId):null;
+      if(fixedBenchId&&!forcedBench)return null;
       const targetPower=Number(constraint.cap);
       const required={GK:0,DF:0,MF:0,FW:0,...(formation.requirements||{})};
       const left={GK:Number(required.GK)||0,DF:Number(required.DF)||0,MF:Number(required.MF)||0,FW:Number(required.FW)||0};
@@ -716,16 +722,16 @@
       // that cannot fit on the four-player bench is forced into the XI.
       const minFieldRecent=Math.max(0,Number(constraint.recentCount||0)-4);
       const minFieldRecruit=Math.max(0,Number(constraint.minRecruit||0)-4);
-      if(addLineupFrom(candidates.filter(entry=>entry.recent).sort(balanced),minFieldRecent)>0)return null;
+      if(addLineupFrom(candidates.filter(entry=>entry.playerId!==fixedBenchId&&entry.recent).sort(balanced),minFieldRecent)>0)return null;
       const fieldRecruitNow=selected.filter(entry=>entry.recruit).length;
-      if(addLineupFrom(candidates.filter(entry=>entry.recruit).sort(balanced),Math.max(0,minFieldRecruit-fieldRecruitNow))>0)return null;
+      if(addLineupFrom(candidates.filter(entry=>entry.playerId!==fixedBenchId&&entry.recruit).sort(balanced),Math.max(0,minFieldRecruit-fieldRecruitNow))>0)return null;
       for(const role of ["GK","DF","MF","FW"]){
-        if(addLineupFrom(candidates.filter(entry=>entry.role===role).sort(balanced),left[role])>0)return null;
+        if(addLineupFrom(candidates.filter(entry=>entry.playerId!==fixedBenchId&&entry.role===role).sort(balanced),left[role])>0)return null;
       }
       if(selected.length!==11)return null;
 
-      const bench=[];
-      const benchUsed=new Set(used);
+      const bench=forcedBench?[forcedBench]:[];
+      const benchUsed=new Set([...used,...(forcedBench?[forcedBench.playerId]:[])]);
       const addBenchFrom=(source,needed)=>{
         for(const entry of source){
           if(needed<=0||bench.length>=4)break;
@@ -777,6 +783,7 @@
         let best=null;
         for(let index=0;index<active.length;index++){
           const outgoing=active[index];
+          if(outgoing.playerId===fixedBenchId)continue;
           const isLineup=index<selected.length;
           for(const incoming of candidates){
             if(activeIds.has(incoming.playerId))continue;
@@ -804,6 +811,7 @@
 
       const state=deps.clone(draftState());
       state.squads[deps.activeSeasonId()]={
+        ...(state.squads?.[deps.activeSeasonId()]||{}),
         formationId:deps.id(formation.id),
         lineup:orderedLineupForFormation(selected,formation,entry=>entry.role).map(entry=>entry.playerId),
         bench:bench.map(entry=>entry.playerId),
@@ -832,7 +840,13 @@
         if(!candidate)continue;
         if(!best||candidate.targetShortfall<best.targetShortfall-1e-9||(Math.abs(candidate.targetShortfall-best.targetShortfall)<=1e-9&&candidate.balanceSpread<best.balanceSpread-1e-9))best=candidate;
       }
-      if(!best){deps.toast?.("Non riesco a costruire automaticamente una squadra valida con i giocatori disponibili","error");return{ok:false,reason:"no-valid-squad"};}
+      if(!best){
+        const state=draftState();
+        const eligibility=deps.squadRuntime.mainEligibility({teamId,state,seasonDb:deps.seasonDb,freeAgentIds:deps.freeAgentIds,freeAgentsDb:deps.freeAgentsDb,playerResolver:deps.playerResolverForState(state)});
+        if(eligibility.eligible){deps.toast?.("La squadra rispetta già i requisiti; non serve adattarla.");return{ok:true,reason:"already-eligible",eligibility};}
+        deps.toast?.("Nessuna formazione automatica valida con le carte disponibili: prova a cambiare modulo o riserve.","error");
+        return{ok:false,reason:"no-valid-squad",eligibility};
+      }
       deps.squadDraft=deps.clone(best.squad);
       renderSquad();
       deps.toast?.(`Squadra adattata: Potenza ${best.eligibility.teamPower} / ${best.eligibility.cap}`);
