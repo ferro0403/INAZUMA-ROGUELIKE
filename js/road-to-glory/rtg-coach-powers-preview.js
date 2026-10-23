@@ -8,7 +8,7 @@
   const statOrder=["attack","control","speed","stamina","grit","defense","physical","save"];
   const label={attack:"Tiro",control:"Controllo",speed:"Velocità",stamina:"Resistenza",
     grit:"Grinta",defense:"Difesa",physical:"Fisico",save:"Parata"};
-  const elementNames={fire:"Fuoco",wind:"Vento",forest:"Bosco",mountain:"Montagna"};
+  const elementNames={fire:"Fuoco",wind:"Vento",forest:"Albero",mountain:"Montagna"};
   function projected({player,cardId:ref,squad,state,seasonId,playerResolver,freeAgentsDb}={}){
     if(!player||!squad||!ref)return null;
     const engine=global.RoadToGloryCoachPowerRuntime;
