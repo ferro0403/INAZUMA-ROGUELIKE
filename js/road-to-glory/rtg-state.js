@@ -107,6 +107,8 @@
           cardIds:uniqueIds(squad.coachPowerSelection.cardIds).slice(0,2),
           moveIndices:Array.from(new Set((Array.isArray(squad.coachPowerSelection.moveIndices)?squad.coachPowerSelection.moveIndices:[])
             .filter(value=>Number.isInteger(value)&&value>=0&&value<4))).slice(0,2),
+          element:["fire","wind","forest","mountain"].includes(id(squad.coachPowerSelection.element))
+            ?id(squad.coachPowerSelection.element):"",
         }} : {}),
     };
   }
