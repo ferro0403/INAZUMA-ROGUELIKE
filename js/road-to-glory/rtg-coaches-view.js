@@ -158,9 +158,9 @@
     const c=model().owned(state).has(String(coachId))?model().BY_ID[String(coachId)]:null;
     return `<section class="rtg-coach-squad-slot" aria-label="Allenatore della formazione">
       <div class="rtg-coach-squad-heading"><h2>ALLENATORE</h2><b>STAFF</b></div>
-      ${c?`<div class="rtg-coach-squad-selected"><button type="button" data-rtg-squad-coach-detail class="rtg-coach-squad-image" aria-label="Scheda di ${esc(c.name)}">${portrait(c)}</button><div><strong>${esc(c.name)}</strong><span>${esc(c.team)} · ${esc(c.season)}</span><small>${["208","1329"].includes(c.id)?(selection?.coachId===c.id?"Potere configurabile · selezione salvata":"Potere configurabile in Squadra"):"Potere non ancora attivo"}</small></div></div>`:
+      ${c?`<div class="rtg-coach-squad-selected"><button type="button" data-rtg-squad-coach-detail class="rtg-coach-squad-image" aria-label="Scheda di ${esc(c.name)}">${portrait(c)}</button><div><strong>${esc(c.name)}</strong><span>${esc(c.team)} · ${esc(c.season)}</span><small>${["208","1329","1777","1974","4401"].includes(c.id)?(selection?.coachId===c.id?"Potere configurabile · selezione salvata":"Potere configurabile in Squadra"):"Potere non ancora attivo"}</small></div></div>`:
       `<div class="rtg-coach-squad-empty"><b aria-hidden="true">+</b><span>Nessun allenatore assegnato</span></div>`}
-      <div class="rtg-coach-squad-buttons"><button type="button" class="btn" data-rtg-squad-coach-select>${c?"CAMBIA ALLENATORE":"ASSEGNA ALLENATORE"}</button>${c?'<button type="button" class="btn" data-rtg-squad-coach-detail>SCHEDA / RIMUOVI</button>':""}${c&&["208","1329"].includes(c.id)?'<button type="button" class="btn btn-yellow" data-rtg-coach-power-configure>CONFIGURA POTERE</button>':""}</div>
+      <div class="rtg-coach-squad-buttons"><button type="button" class="btn" data-rtg-squad-coach-select>${c?"CAMBIA ALLENATORE":"ASSEGNA ALLENATORE"}</button>${c?'<button type="button" class="btn" data-rtg-squad-coach-detail>SCHEDA / RIMUOVI</button>':""}${c&&["208","1329","1777","1974","4401"].includes(c.id)?'<button type="button" class="btn btn-yellow" data-rtg-coach-power-configure>CONFIGURA POTERE</button>':""}</div>
     </section>`;
   }
   function vending(state){
@@ -203,7 +203,7 @@
         </div><div class="player-detail-visual rarity-coach">${portrait(c,true)}</div>
       </section>
       <section class="player-detail-content">
-        <section class="player-detail-section"><h3><span>Potere allenatore</span></h3><div class="rtg-coach-power"><strong>${esc(c.powerName)}</strong><p>${esc(c.powerDescription)}</p><small class="rtg-coach-power-status">${["208","1329"].includes(c.id)?"DISPONIBILE · CONFIGURA IN SQUADRA":"PROSSIMAMENTE · POTERE NON ANCORA ATTIVO"}</small></div></section>
+        <section class="player-detail-section"><h3><span>Potere allenatore</span></h3><div class="rtg-coach-power"><strong>${esc(c.powerName)}</strong><p>${esc(c.powerDescription)}</p><small class="rtg-coach-power-status">${["208","1329","1777","1974","4401"].includes(c.id)?"DISPONIBILE · CONFIGURA IN SQUADRA":"PROSSIMAMENTE · POTERE NON ANCORA ATTIVO"}</small></div></section>
         <section class="player-detail-section"><h3><span>Informazioni</span></h3><div class="rtg-coach-profile-meta"><span><small>Squadra</small><b class="rtg-coach-profile-team">${teamEmblem(c)}${esc(c.team)}</b></span><span><small>Season</small><b>${esc(c.season)}</b></span></div>
         ${isOwned?`<button type="button" class="btn btn-yellow rtg-coach-equip" data-rtg-coaches-equip="${selected?"":esc(c.id)}">${selected?"RIMUOVI DALLA FORMAZIONE":"ASSEGNA ALLA FORMAZIONE"}</button>`:`<p class="rtg-coach-locked-note">${status==="locked"?`Completa ${esc(c.season)} per ottenere questa carta.`:"Disponibile nell'altra campagna."}</p>`}
         <button type="button" class="btn rtg-coach-back" data-rtg-coaches-back>← TORNA AGLI ALLENATORI</button></section>
