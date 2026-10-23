@@ -826,3 +826,43 @@
   .rtg-coach-yi-element-options{gap:3px}
   .rtg-coach-yi-element-options .rtg-coach-element-choice{font-size:10px!important}
 }
+
+
+/* Pre-match coach powers reuse the same native Squad pitch and cards. */
+.rtg-coach-prematch-config{max-width:720px;padding:10px 0 22px}
+.rtg-coach-prematch-config .rtg-coach-prematch-area{margin:16px 0;min-width:0}
+.rtg-coach-prematch-config .rtg-coach-prematch-area>h3{
+  margin:0 0 10px;font-size:13px;font-weight:950;letter-spacing:.075em;
+}
+.rtg-coach-prematch-config .rtg-match-squad-field-shell{
+  background:#fff;border:3px solid #141719;padding:7px;margin:0;box-shadow:4px 5px 0 #141719;
+}
+.rtg-coach-prematch-config .rtg-match-squad-field-shell .pitch{
+  padding:10px 6px!important;min-height:430px!important;display:flex;flex-direction:column;
+  justify-content:space-around;gap:10px;background:repeating-linear-gradient(180deg,#326d43 0 12.5%,#265c38 12.5% 25%)!important;
+}
+.rtg-coach-prematch-config .rtg-match-squad-field-shell .pitch-row{
+  display:flex;width:100%;align-items:center;justify-content:center;gap:clamp(4px,1.4vw,10px);
+}
+.rtg-coach-prematch-config .rtg-squad-card-slot{min-width:0;max-width:110px;flex:1 1 0;position:relative}
+.rtg-coach-prematch-config .rtg-squad-card-slot .squad-player-card{width:100%!important;min-width:0!important;max-width:100%!important}
+.rtg-coach-prematch-config .rtg-coach-picker-bench-grid .rtg-squad-card-slot{max-width:none}
+.rtg-coach-prematch-config [data-rtg-squad-player]:disabled{opacity:.46!important;filter:grayscale(.6);cursor:not-allowed}
+.rtg-coach-prematch-config .rtg-squad-card-slot.rtg-coach-power-picked .squad-player-card{
+  outline:2px solid #ffd21f;outline-offset:2px;filter:drop-shadow(0 0 6px #ffda3f);
+}
+.rtg-coach-prematch-config .rtg-squad-card-slot.rtg-coach-power-picked::after{
+  content:"✓";position:absolute;bottom:7px;right:-5px;background:#ffd21f;color:#111;
+  border:2px solid #111;padding:2px 6px;font-size:17px;font-weight:950;z-index:5;
+}
+.rtg-coach-prematch-config .rtg-coach-prematch-empty{
+  font-size:13px;font-weight:750;padding:15px;border:2px solid #111;margin:0;
+}
+.rtg-prematch-coach-power-launch{
+  width:100%;min-height:50px;margin:12px 0!important;border:3px solid #101114!important;
+  border-radius:2px!important;background:#fffdf5!important;color:#111!important;
+  box-shadow:4px 5px 0 #101114!important;font-weight:950!important;
+}
+@media(max-width:390px){
+  .rtg-coach-prematch-config .rtg-match-squad-field-shell .pitch{min-height:390px!important}
+}
