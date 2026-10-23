@@ -30,6 +30,11 @@
       cardIds:ids(config.cardIds),
       moveIndices:Array.isArray(config.moveIndices)?config.moveIndices.map(Number):[],
       element:id(config.element),
+      // Yi v2 has two independent targets; missing means legacy single-element selection.
+      targets:Array.isArray(config.targets)?config.targets.slice(0,2).map(t=>({
+        cardId:id(t?.cardId),element:id(t?.element),
+        moveIndices:Array.isArray(t?.moveIndices)?t.moveIndices.map(Number):[],
+      })):[],
     };
   }
   function fourMoves(player,seasonId){
@@ -63,6 +68,23 @@
       return player&&nextRarity(rarityOf(player))?config:null;
     }
     if(config.coachId==="4401"){
+      if(config.targets.length){
+        if(config.cardIds.length!==2||config.targets.length!==2||
+           new Set(config.targets.map(t=>t.cardId)).size!==2||
+           !config.cardIds.every(card=>config.targets.some(t=>t.cardId===card)))return null;
+        for(const target of config.targets){
+          const player=lineup.get(target.cardId);
+          if(!player||!ELEMENTS.includes(target.element)||
+             elementKey(player.element||player.type)===target.element||
+             target.moveIndices.length!==2||
+             new Set(target.moveIndices).size!==2||
+             target.moveIndices.some(index=>!Number.isInteger(index)||index<0||index>=4))return null;
+          const moves=fourMoves(player,seasonId);
+          if(moves.length!==4||target.moveIndices.some(index=>!(Number(moves[index]?.ptCost)>0)))return null;
+        }
+        return config;
+      }
+      // Preserve existing single-player choices from saves made before Total Transformation.
       const target=config.cardIds[0],source=target&&lineup.get(target);
       return config.cardIds.length===1&&!!source&&
         ELEMENTS.includes(config.element)&&
@@ -102,8 +124,14 @@
       return {...match,coachPowerEffect:effect};
     }
     if(coachId==="4401"){
-      const lineup=match.userSquad.lineup.map(player=>cardId(player)===card?
-        {...player,element:config.element}:player);
+      const targets=config.targets||[];
+      effect.targets=targets.map(t=>({cardId:t.cardId,element:t.element,moveIndices:t.moveIndices.slice()}));
+      const changeById=new Map(targets.map(t=>[t.cardId,t.element]));
+      const lineup=match.userSquad.lineup.map(player=>{
+        const key=cardId(player);
+        const nextElement=changeById.get(key)||(key===card?config.element:null);
+        return nextElement?{...player,element:nextElement}:player;
+      });
       return {...match,userSquad:{...match.userSquad,lineup},coachPowerEffect:effect};
     }
     if(coachId==="1974"){
@@ -142,8 +170,16 @@
        !config.moveIndices?.includes(moveIndex))return ordinaryCost;
     return Number.isInteger(ordinaryCost)&&ordinaryCost>0?Math.ceil(ordinaryCost/2):ordinaryCost;
   }
+  function moveElement(match,side,playerId,moveIndex,originalElement){
+    if(side!=="user"||match?.coachPowerEffect?.coachId!=="4401")return originalElement;
+    const targets=match.coachPowerEffect.targets;
+    const target=Array.isArray(targets)?
+      targets.find(t=>t.cardId===id(playerId)):null;
+    return target?.moveIndices?.includes(moveIndex)&&ELEMENTS.includes(target.element)
+      ?target.element:originalElement;
+  }
   global.RoadToGloryCoachPowerRuntime=Object.freeze({
     RARITIES,ELEMENTS,elementKey,powerReady,nextRarity,rarityOf,selected,fourMoves,validConfig,
-    eligibleRosterForCap,capOverrideFor,applyToMatch,moveCost,
+    eligibleRosterForCap,capOverrideFor,applyToMatch,moveCost,moveElement,
   });
 })(globalThis);
