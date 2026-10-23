@@ -35,7 +35,8 @@
 .rtg-coach-team-icon{font-size:23px;display:inline-grid;place-items:center;}
 .rtg-coach-power{padding:14px;border:3px solid #17191b;background:#fff4e5;}
 .rtg-coach-power strong{font-size:18px;font-weight:1000;}
-.rtg-coach-power p{margin:7px 0 0;font-size:13px;}
+.rtg-coach-power p{margin:7px 0 0;font-size:13px;line-height:1.55;}
+.rtg-coach-power-status{display:block;margin-top:12px;font-size:10px;font-weight:850;letter-spacing:.055em;color:#835322;}
 .rtg-coach-profile-meta{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:12px 0;}
 .rtg-coach-profile-meta span{padding:8px 6px;border:2px solid #17191b;overflow-wrap:anywhere;background:#fffdf7;}
 .rtg-coach-profile-meta small{font-size:10px;display:block;color:#675a4e;text-transform:uppercase;}
