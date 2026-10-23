@@ -539,3 +539,48 @@
   height:auto!important;
   object-fit:contain!important;
 }
+
+
+/* Safari: the last (Orion) coach is below the fold in a nested scroll
+   container. A decoded background sprite avoids the deferred <img> paint
+   that appeared only after an iPhone app/tab switch. */
+.rtg-coach-rene-artwork{
+  box-sizing:border-box!important;
+  display:block!important;
+  position:relative!important;
+  z-index:3!important;
+  flex:0 0 auto!important;
+  align-self:stretch!important;
+  width:100%!important;
+  height:100%!important;
+  min-width:0!important;
+  min-height:0!important;
+  max-width:100%!important;
+  max-height:100%!important;
+  margin:0!important;
+  padding:0!important;
+  background-color:transparent!important;
+  background-repeat:no-repeat!important;
+  background-size:contain!important;
+  background-position:center bottom!important;
+  opacity:1!important;
+  visibility:visible!important;
+  transform:none!important;
+}
+.rtg-coach-rene-artwork .rtg-coach-rene-loading{
+  box-sizing:border-box!important;
+  display:grid!important;
+  place-items:center!important;
+  height:100%!important;
+  width:100%!important;
+  color:#a45c26!important;
+  font-size:18px!important;
+  font-weight:1000!important;
+  text-shadow:1px 1px 0 #fff9ed!important;
+}
+.rtg-coach-rene-artwork.is-ready .rtg-coach-rene-loading{
+  display:none!important;
+}
+.rtg-coach-rene-artwork.is-failed .rtg-coach-rene-loading{
+  color:#6f5946!important;
+}
