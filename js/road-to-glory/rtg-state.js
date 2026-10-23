@@ -109,6 +109,14 @@
             .filter(value=>Number.isInteger(value)&&value>=0&&value<4))).slice(0,2),
           element:["fire","wind","forest","mountain"].includes(id(squad.coachPowerSelection.element))
             ?id(squad.coachPowerSelection.element):"",
+          // Optional Yi v2 settings; legacy one-player selections remain readable.
+          targets:Array.isArray(squad.coachPowerSelection.targets)?
+            squad.coachPowerSelection.targets.slice(0,2).filter(t=>t&&typeof t==="object").map(t=>({
+              cardId:legacySquadCardId(t.cardId,ownedCards)||id(t.cardId),
+              element:["fire","wind","forest","mountain"].includes(id(t.element))?id(t.element):"",
+              moveIndices:Array.from(new Set((Array.isArray(t.moveIndices)?t.moveIndices:[])
+                .filter(v=>Number.isInteger(v)&&v>=0&&v<4))).slice(0,2),
+            })):[],
         }} : {}),
     };
   }
