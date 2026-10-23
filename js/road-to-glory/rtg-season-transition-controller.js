@@ -31,7 +31,45 @@
       deps.applyTransition({campaign:nextCampaign,seasonDb:nextDb,nextSeasonId,transitionRewarded});
       return deps.renderRun();
     }
-    return Object.freeze({enterNextSeason});
+    async function restartCompletedCampaign(){
+      const campaign=deps.getCampaign(),fromId=deps.activeSeasonId();
+      const terminal=campaign?.campaignId==="rtg-ares-orion"?"orion":"ie1_s3";
+      const first=campaign?.campaignId==="rtg-ares-orion"?"ie2":"ie1";
+      if(fromId!==terminal||!campaign?.seasonComplete||campaign?.activeMatch)
+        throw Object.assign(new Error("La campagna deve essere completata prima di ricominciare"),{code:"rtg-replay-unavailable"});
+      const firstConfig=deps.config.season?.(first);
+      const firstNode=deps.config.buildSeasonNodes(first)?.[0]?.id;
+      const firstDb=await global.SeasonRegistry?.loadDatabase?.(first);
+      if(!firstConfig||!firstNode||!firstDb)throw new Error("Dati iniziali della campagna non disponibili");
+      const nextCampaign=await deps.repository.update("rtg-restart-completed-campaign",current=>{
+        if(current.activeSeasonId!==terminal||!current.seasonComplete||current.activeMatch||
+           current.campaignId!==campaign.campaignId)
+          throw Object.assign(new Error("Il completamento della campagna non è più valido"),{code:"rtg-replay-stale"});
+        // Existing transition IDs also document first clears in old saves.
+        const paid=new Set(current.seasonTransitionRewardedIds||[]);
+        for(const entry of [...paid]){
+          const match=String(entry).match(/^(.+)->(.+)$/);
+          if(match)paid.add("completion:"+match[1]);
+        }
+        paid.add("completion:"+terminal);
+        current.seasonTransitionRewardedIds=Array.from(paid);
+        current.activeSeasonId=first;
+        current.seasonComplete=false;
+        current.lives=Number(firstConfig.livesPerCheckpoint)||2;
+        current.checkpointMainIndex=-1;
+        current.currentNodeId=firstNode;
+        current.furthestNodeIndex=0;
+        current.defeatedTeamIds=[];
+        current.firstClearMatchIds=[];
+        current.attemptsByNode={};
+        current.activeMatch=null;
+        // Cards, team builds, tokens, owned coaches and development are permanent.
+        return current;
+      });
+      deps.applyTransition({campaign:nextCampaign,seasonDb:firstDb,nextSeasonId:first,transitionRewarded:false});
+      return deps.renderRun();
+    }
+    return Object.freeze({enterNextSeason,restartCompletedCampaign});
   }
 
   global.RoadToGlorySeasonTransitionController=Object.freeze({create});
