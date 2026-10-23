@@ -71,7 +71,6 @@
       return renderSquad();
     }
 
-
     let albumController=null;
     function getAlbumController(){
       if(!albumController)albumController=global.RoadToGloryAlbumController.create({
