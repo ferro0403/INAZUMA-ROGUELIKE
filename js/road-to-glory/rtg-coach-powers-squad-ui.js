@@ -2,9 +2,12 @@
   "use strict";
   const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const id=value=>String(value??"");
+  // Same element glyphs as the existing player-detail badges.
   const ELEMENTS=Object.freeze([
-    {key:"fire",label:"FUOCO"},{key:"wind",label:"VENTO"},
-    {key:"forest",label:"BOSCO"},{key:"mountain",label:"MONTAGNA"},
+    {key:"fire",label:"FUOCO",art:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3c1.4 3.6 5 5.2 5 9.4A5 5 0 1 1 7 12c0-2.3 1.2-4.3 3.4-6.3-.1 2.2.5 3.7 1.6 4.7.9-2 .7-4.5 0-7.4Z"/></svg>'},
+    {key:"wind",label:"VENTO",art:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 8h10.5c2 0 2.5-3 0-3-1.1 0-1.8.5-2.2 1.2"/><path d="M3 12h15c2.4 0 2.8 3.5.2 3.5-1.2 0-2-.6-2.4-1.4"/><path d="M3 16h8"/></svg>'},
+    {key:"forest",label:"ALBERO",art:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 7.5 9h2.3L6 14h4v4H8v3h8v-3h-2v-4h4l-3.8-5h2.3L12 3Z"/></svg>'},
+    {key:"mountain",label:"MONTAGNA",art:'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 19 6.2-10 3.1 4.6L15.5 9 21 19H3Z"/><path d="m7.5 12 1.8 1.1 1.4-1.1"/></svg>'},
   ]);
   const NAMES={
     "208":"FIDUCIA NEI CAMPIONI","1329":"ALLENAMENTO SPECIALIZZATO",
@@ -15,7 +18,7 @@
     "1329":"Tocca un titolare sul campo per aprire la sua scheda e selezionarvi due delle quattro mosse.",
     "1777":"Tocca una riserva sulla panchina: nel calcolo dell'overall squadra conterà al massimo 60. I valori reali non cambiano.",
     "1974":"Tocca una carta sul campo o in panchina: potrai vedere qui sotto la rarità successiva e le statistiche che aumentano.",
-    "4401":"Tocca un titolare sul campo e scegli Fuoco, Vento, Bosco o Montagna per la prossima partita.",
+    "4401":"Tocca un titolare sul campo e scegli uno dei tre elementi diversi dal suo per la prossima partita.",
   };
   let busy=false;
   function open(ctx){
@@ -28,6 +31,7 @@
     const choice={coachId,cardIds:previous?.cardIds?.slice()||[],
       moveIndices:previous?.moveIndices?.slice()||[],element:previous?.element||""};
     const resolve=key=>ctx.resolve?.(key,squad.activeRoleVariantByCardId?.[key]||null);
+    const ownElement=key=>rules.elementKey?.(resolve(key)?.element||resolve(key)?.type)||"";
     const from=keys=>(keys||[]).map(key=>{
       const p=resolve(key);return p?{...p,cardId:id(key)}:null;
     }).filter(Boolean);
@@ -61,6 +65,7 @@
       if(choice.cardIds.includes(key))choice.cardIds=choice.cardIds.filter(x=>x!==key);
       else if(cap===1)choice.cardIds=[key];
       else if(choice.cardIds.length<2)choice.cardIds.push(key);
+      if(coachId==="4401"&&choice.cardIds.length===1&&ownElement(choice.cardIds[0])===choice.element)choice.element="";
       render();
     }
     function projectedChanges(){
@@ -89,14 +94,18 @@
       const model=ctx.getModel?.();
       const pitch=ctx.squadView?.lineupPitchMarkup?.(model?.lineupRows||[],{readOnly:true})||"";
       const bench=(model?.bench||[]).map(row=>ctx.squadView?.playerCard?.(row,"bench",{readOnly:true})||"").join("");
+      const originalElement=choice.cardIds.length===1?ownElement(choice.cardIds[0]):"";
       const elementButtons=coachId==="4401"&&choice.cardIds.length===1
-        ?'<div class="rtg-coach-picker-elements"><h4>ELEMENTO PER LA PARTITA</h4>'+
-          ELEMENTS.map(e=>'<button type="button" class="btn'+(choice.element===e.key?' is-selected':'')+
-          '" data-rtg-coach-power-element="'+e.key+'" aria-pressed="'+(choice.element===e.key)+'">'+
-          e.label+'</button>').join("")+'</div>':"";
+        ?'<div class="rtg-coach-picker-elements"><h4>CAMBIA ELEMENTO PER LA PARTITA</h4>'+
+          ELEMENTS.filter(e=>e.key!==originalElement).map(e=>
+            '<button type="button" class="btn rtg-coach-element-choice'+(choice.element===e.key?' is-selected':'')+
+            '" data-rtg-coach-power-element="'+e.key+'" data-element="'+e.key+
+            '" aria-pressed="'+(choice.element===e.key)+'">'+
+            '<span class="rtg-coach-element-art">'+e.art+'</span><span>'+e.label+'</span></button>'
+          ).join("")+'</div>':"";
       const title=coachId==="1777"?"SCEGLI UNA RISERVA":"SCEGLI SUL CAMPO";
       const summary=coachId==="1329"?' · MOSSE '+choice.moveIndices.length+'/2':"";
-      const main='<section class="rtg-coach-power-config rtg-coach-field-picker" aria-label="Configura potere allenatore">'+
+      const main='<section class="rtg-coach-power-config rtg-coach-field-picker development-squad-card-scope" aria-label="Configura potere allenatore">'+
         '<h2>'+NAMES[coachId]+'</h2><p>'+NOTES[coachId]+'</p>'+
         '<h3>'+title+' ('+choice.cardIds.length+'/'+cap+summary+')</h3>'+
         '<div class="rtg-coach-picker-pitch squad-field-panel">'+pitch+'</div>'+
