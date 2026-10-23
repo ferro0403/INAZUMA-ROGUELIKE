@@ -252,7 +252,8 @@
           return openRtgPlayerDetails(key,"",reopenOptions);
         }:null,
         moveSeasonId:id(detailMeta.legacySeasonId||player.resolvedSeasonId||campaign?.activeSeasonId||"ie1"),
-        rtgKitPreview:true,rtgFourMoves:true,rtgRarity:campaign?.developmentByCardId?.[id(detailPlayer.cardId||key)]?.currentRarity||campaign?.developmentByCardId?.[key]?.currentRarity||detailPlayer.category,
+        rtgKitPreview:true,rtgFourMoves:true,rtgRarity:previewInfo?.coachId==="1974"?detailPlayer.category:
+          (campaign?.developmentByCardId?.[id(detailPlayer.cardId||key)]?.currentRarity||campaign?.developmentByCardId?.[key]?.currentRarity||detailPlayer.category),
         readOnly:true,
         mode:options?.mode||undefined,
         albumUnlocked:options?.albumUnlocked,
