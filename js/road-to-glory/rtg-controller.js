@@ -904,13 +904,8 @@
     }
     function bindHalftimeEditor(match,selectedPlayerId=null){
       const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
-      const repaint=(nextSelected=null)=>{
-        const scrollTop=overlay?.querySelector(".rtg-halftime")?.scrollTop||0;
-        if(overlay)overlay.innerHTML=matchView.halftimeMarkup(halftimeDraft,{selectedPlayerId:nextSelected,match});
-        const panel=overlay?.querySelector(".rtg-halftime");
-        if(panel){panel.scrollTop=scrollTop;global.requestAnimationFrame?.(()=>{if(panel.isConnected)panel.scrollTop=scrollTop;});}
-        bindHalftimeEditor(match,nextSelected);
-      };
+      const repaint=(nextSelected=null)=>{const top=overlay?.querySelector(".rtg-halftime")?.scrollTop||0;if(overlay)overlay.innerHTML=matchView.halftimeMarkup(halftimeDraft,{selectedPlayerId:nextSelected,match});
+        const panel=overlay?.querySelector(".rtg-halftime");if(panel){panel.scrollTop=top;global.requestAnimationFrame?.(()=>{if(panel.isConnected)panel.scrollTop=top;});}bindHalftimeEditor(match,nextSelected);};
       overlay?.querySelectorAll?.("[data-rtg-half-lineup]")?.forEach(button=>button.addEventListener("click",()=>{
         const playerId=id(button.dataset.rtgHalfLineup);
         repaint(selectedPlayerId===playerId?null:playerId);
@@ -931,19 +926,15 @@
         delete halftimeDraft.bench[secondIndex].tacticalRole;
         repaint(null);
       }));
-      overlay?.querySelector?.("[data-rtg-half-confirm]")?.addEventListener("click",event=>{
-        const button=event.currentTarget;if(button.disabled)return;button.disabled=true;
-        Promise.resolve(confirmHalftime(halftimeDraft)).catch(error=>{button.disabled=false;deps.toast?.(error?.message||"Impossibile riprendere la partita","error");});
-      });
+      overlay?.querySelector?.("[data-rtg-half-confirm]")?.addEventListener("click",event=>{const button=event.currentTarget;if(button.disabled)return;button.disabled=true;
+        Promise.resolve(confirmHalftime(halftimeDraft)).catch(error=>{button.disabled=false;deps.toast?.(error?.message||"Impossibile riprendere la partita","error");});});
     }
     async function confirmHalftime(nextSquad){
       return commitMatchState("rtg-halftime",match=>matchEngine.confirmHalftime(match,nextSquad,{validateHalftime:(candidate)=>{
         const ids=candidate.lineup.map(player=>id(player.cardId||player.playerId)),benchIds=candidate.bench.map(player=>id(player.cardId||player.playerId));
         const candidateState=clone(campaign);
         candidateState.squads[activeSeasonId()]={...(candidateState.squads?.[activeSeasonId()]||{}),formationId:candidate.formationId,lineup:ids,bench:benchIds,activeRoleVariantByCardId:{...(candidate.activeRoleVariantByCardId||{})}};
-        // Nerina's loan is match-only and must not be checked as a newly owned card.
-        // The frozen roster has already passed kickoff eligibility, and the match
-        // engine separately checks all 15 original match participant IDs.
+        // The engine checks the frozen 15-player roster; Nerina's loan is not owned.
         if(match.preMatchCoachEffect?.coachId==="1225")return {eligible:true,reasons:[]};
         if(match.matchType==="secondary"){
           const validation=squadRuntime.validateSquad({state:candidateState,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(candidateState)});
