@@ -94,6 +94,14 @@
   }
   function capOverrideFor(squad,state){
     if(id(squad?.coachId)!=="1777"||!owned(state,"1777"))return null;
+    // The power was committed at kickoff. At halftime the protected player
+    // may enter the field, but its cap discount must not vanish mid-match.
+    const match=state?.activeMatch,effect=match?.coachPowerEffect;
+    const selectedId=id(effect?.cardIds?.[0]);
+    if(effect?.coachId==="1777"&&selectedId&&
+       id(match.seasonId)===id(state?.activeSeasonId)&&
+       [...(squad?.lineup||[]),...(squad?.bench||[])].some(p=>cardId(p)===selectedId))
+      return selectedId;
     const config=validConfig(squad,squad?.lineup||[],state?.activeSeasonId,squad?.bench||[]);
     return config?.cardIds?.[0]||null;
   }
