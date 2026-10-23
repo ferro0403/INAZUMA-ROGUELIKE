@@ -7,6 +7,14 @@
   const cardId=player=>id(player?.cardId||player?.playerId||player?.id||player);
   const RARITIES=Object.freeze(["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"]);
   const ELEMENTS=Object.freeze(["fire","wind","forest","mountain"]);
+  const elementKey=value=>{
+    const token=id(value).trim().toLowerCase();
+    if(["fire","fuoco"].includes(token))return "fire";
+    if(["wind","vento"].includes(token))return "wind";
+    if(["forest","wood","bosco","albero"].includes(token))return "forest";
+    if(["mountain","montagna"].includes(token))return "mountain";
+    return "";
+  };
   const powerReady=coachId=>["208","1329","1777","1974","4401"].includes(id(coachId));
   const nextRarity=rarity=>{
     const index=RARITIES.indexOf(String(rarity||""));
@@ -55,8 +63,10 @@
       return player&&nextRarity(rarityOf(player))?config:null;
     }
     if(config.coachId==="4401"){
-      return config.cardIds.length===1&&lineup.has(config.cardIds[0])&&
-        ELEMENTS.includes(config.element)?config:null;
+      const target=config.cardIds[0],source=target&&lineup.get(target);
+      return config.cardIds.length===1&&!!source&&
+        ELEMENTS.includes(config.element)&&
+        elementKey(source.element||source.type)!==config.element?config:null;
     }
     return null;
   }
@@ -133,7 +143,7 @@
     return Number.isInteger(ordinaryCost)&&ordinaryCost>0?Math.ceil(ordinaryCost/2):ordinaryCost;
   }
   global.RoadToGloryCoachPowerRuntime=Object.freeze({
-    RARITIES,ELEMENTS,powerReady,nextRarity,rarityOf,selected,fourMoves,validConfig,
+    RARITIES,ELEMENTS,elementKey,powerReady,nextRarity,rarityOf,selected,fourMoves,validConfig,
     eligibleRosterForCap,capOverrideFor,applyToMatch,moveCost,
   });
 })(globalThis);
