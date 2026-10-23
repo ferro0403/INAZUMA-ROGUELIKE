@@ -26,7 +26,6 @@
     const activeSeasonId=()=>id(campaign?.activeSeasonId||"ie1");
     const activeConfig=()=>config?.season?.(activeSeasonId())||config.SEASON1;
     const activeSquad=(state=campaign)=>state?.squads?.[id(state?.activeSeasonId||activeSeasonId())]||state?.squads?.ie1;
-
     let seasonDb=null;
     let freeAgentsDb=null;
     let campaign=null;
@@ -70,7 +69,6 @@
       squadDraft=squadForSlot(next);
       return renderSquad();
     }
-
     let albumController=null;
     function getAlbumController(){
       if(!albumController)albumController=global.RoadToGloryAlbumController.create({
@@ -87,7 +85,6 @@
     function renderAlbum(options={}){return getAlbumController().renderAlbum(options);}
     function renderAlbumTeams(seasonId){return getAlbumController().renderAlbumTeams(seasonId);}
     function renderAlbumRoster(teamId,seasonId){return getAlbumController().renderAlbumRoster(teamId,seasonId);}
-
     function matchTimelineAnchor(){
       if(!app)return null;
       const items=app.querySelectorAll?.(".rtg-match-ticker-item, .rtg-match-log-item, [data-rtg-log-entry]")||[];
@@ -115,7 +112,6 @@
       return lastRenderedHtml;
     }
     function getRenderedHtml(){return app?.innerHTML||lastRenderedHtml;}
-
     async function ensureAresRouteMap(){
       if(global.__RTG_ARES_ROUTE_MAP_DATA_URL)return global.__RTG_ARES_ROUTE_MAP_DATA_URL;
       if(aresRouteMapPromise)return aresRouteMapPromise;
@@ -139,7 +135,6 @@
       });
       return aresRouteMapPromise;
     }
-
     async function ensureData(){
       const sid=activeSeasonId();
       seasonDb=global.SeasonRegistry?.database?.(sid)||seasonDb;
@@ -282,7 +277,6 @@
         formationIds:Object.freeze((seasonDb?.formations?.eleven||[]).map(formation=>id(formation?.id)).filter(Boolean)),
       });
     }
-
     function devRenderCurrentSurface(){
       if(campaign?.activeMatch)return renderMatch(campaign.activeMatch);
       if(app?.querySelector?.(".rtg-squad-shell"))return renderSquad();
@@ -366,7 +360,6 @@
         const matchButtons=!active?"":'<button type="button" data-dev-rtg="halftime">VAI ALL\'INTERVALLO</button><button type="button" data-dev-rtg="extra">VAI AI SUPPLEMENTARI</button><button type="button" data-dev-rtg="penalties">VAI AI RIGORI</button><button type="button" data-dev-rtg="moves">RICARICA MOSSE</button><button type="button" data-dev-rtg="win">FORZA VITTORIA</button><button type="button" class="danger" data-dev-rtg="loss">FORZA SCONFITTA</button>';
         panel.innerHTML=`<summary>DEV RTG</summary><div><p><b>Gettoni: ${Number(campaign.tokens)||0}</b><br>Vite: ${Number(campaign.lives)||0}${active?` · ${active.status} / ${active.period}`:""}</p><button type="button" data-dev-rtg="tokens">999.999 GETTONI</button><button type="button" data-dev-rtg="lives">RIPRISTINA VITE</button><button type="button" data-dev-rtg="pool">SBLOCCA TUTTO IL POOL</button>${routeButtons}${matchButtons}</div>`;
         doc.body?.appendChild(panel);
-
         panel.querySelector('[data-dev-rtg="tokens"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-tokens",state=>{state.tokens=999999;},"Gettoni RTG portati a 999.999"));
         panel.querySelector('[data-dev-rtg="lives"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-lives",state=>{state.lives=Number(activeConfig()?.livesPerCheckpoint)||2;},"Vite RTG ripristinate"));
         panel.querySelector('[data-dev-rtg="pool"]')?.addEventListener("click",()=>devUpdateCampaign("rtg-dev-pool",state=>{state.defeatedTeamIds=Array.from(new Set(activeConfig()?.mainTeams||[]));},"Pool distributore RTG sbloccato"));
@@ -518,7 +511,6 @@
     }
     function renderShop(options={}){return getDevelopmentController().renderShop(options);}
     function renderDevelopment(tab="players"){return getDevelopmentController().renderDevelopment(tab);}
-
     function bindHomeAndTabs(){
       app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
       app?.querySelector?.('[data-rtg-tab="run"]')?.addEventListener("click",()=>renderRun());
@@ -556,8 +548,6 @@
       });
       return seasonTransitionController.enterNextSeason();
     }
-
-
     let squadController=null;
     function getSquadController(){
       if(!squadController){
@@ -588,7 +578,6 @@
     function locationInDraft(playerId){return getSquadController().locationInDraft(playerId);}
     function switchBenchRole(cardRef,options={}){return getSquadController().switchBenchRole(cardRef,options);}
     function adaptSquadToCurrentRequirements(){return getSquadController().adaptSquadToCurrentRequirements();}
-
     function nodeById(nodeId){return Array.from(config.buildSeasonNodes(activeSeasonId())).find(node=>node.id===id(nodeId))||null;}
     function canStartNode(node){
       if(!node)return false;
