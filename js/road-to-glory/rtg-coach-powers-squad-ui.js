@@ -11,14 +11,14 @@
   ]);
   const NAMES={
     "208":"FIDUCIA NEI CAMPIONI","1329":"ALLENAMENTO SPECIALIZZATO",
-    "1777":"FUORI QUOTA","1974":"POTENZIALE RISVEGLIATO","4401":"CAMBIO DI ELEMENTO",
+    "1777":"FUORI QUOTA","1974":"POTENZIALE RISVEGLIATO","4401":"TRASFORMAZIONE TOTALE",
   };
   const NOTES={
     "208":"Tocca due titolari direttamente sul campo. Entrambi riceveranno +50 PT iniziali e massimi.",
     "1329":"Tocca un titolare sul campo per aprire la sua scheda e selezionarvi due delle quattro mosse.",
     "1777":"Tocca una riserva sulla panchina: nel calcolo dell'overall squadra conterà al massimo 60. I valori reali non cambiano.",
     "1974":"Tocca una carta sul campo o in panchina: potrai vedere qui sotto la rarità successiva e le statistiche che aumentano.",
-    "4401":"Tocca un titolare sul campo e scegli uno dei tre elementi diversi dal suo per la prossima partita.",
+    "4401":"Scegli 2 titolari. Per ognuno imposta un elemento diverso dall'originale e trasforma 2 delle sue 4 mosse speciali nello stesso elemento. Potenza e costo PT non cambiano.",
   };
   let busy=false;
   function open(ctx){
@@ -29,7 +29,10 @@
     if(ctx.getCampaign()?.activeMatch)return ctx.toast?.("Completa prima la partita in corso.","error");
     const previous=rules.selected(squad);
     const choice={coachId,cardIds:previous?.cardIds?.slice()||[],
-      moveIndices:previous?.moveIndices?.slice()||[],element:previous?.element||""};
+      moveIndices:previous?.moveIndices?.slice()||[],element:previous?.element||"",
+      targets:coachId==="4401"&&previous?.targets?.length===2?
+        previous.targets.map(t=>({cardId:t.cardId,element:t.element,moveIndices:t.moveIndices.slice()})):[]};
+    if(coachId==="4401")choice.cardIds=choice.targets.map(t=>t.cardId);
     const resolve=key=>ctx.resolve?.(key,squad.activeRoleVariantByCardId?.[key]||null);
     const ownElement=key=>rules.elementKey?.(resolve(key)?.element||resolve(key)?.type)||"";
     const from=keys=>(keys||[]).map(key=>{
@@ -37,7 +40,7 @@
     }).filter(Boolean);
     const selectionSquad=()=>({...squad,coachPowerSelection:choice});
     const valid=()=>!!rules.validConfig(selectionSquad(),from(squad.lineup),ctx.seasonId(),from(squad.bench));
-    const cap=coachId==="208"?2:1;
+    const cap=["208","4401"].includes(coachId)?2:1;
     const allowed=key=>coachId==="1777"?(squad.bench||[]).includes(key):
       coachId==="1974"?[...(squad.lineup||[]),...(squad.bench||[])].includes(key)&&
         !!rules.nextRarity(rules.rarityOf(resolve(key))):
@@ -59,13 +62,37 @@
         },
       });
     }
+    function openYiMoves(key){
+      const target=choice.targets.find(t=>t.cardId===key);
+      if(!target?.element)return ctx.toast?.("Seleziona prima il nuovo elemento del giocatore.","error");
+      const moves=rules.fourMoves(resolve(key),ctx.seasonId());
+      if(moves.length!==4||moves.some(m=>!(Number(m?.ptCost)>0)))
+        return ctx.toast?.("Le quattro mosse non sono disponibili per questo giocatore.","error");
+      ctx.openPlayerDetails?.(key,{
+        allowRoleSwitch:false,onClose:()=>render(),
+        coachMovePicker:{
+          moves,selectedIndices:target.moveIndices,
+          onConfirm:indices=>{
+            const current=choice.targets.find(t=>t.cardId===key);
+            if(current)current.moveIndices=indices;
+            ctx.closeModal?.({invokeOnClose:false});render();
+          },
+        },
+      });
+    }
     function pick(key){
       if(busy||!allowed(key))return;
+      if(coachId==="4401"){
+        const index=choice.targets.findIndex(t=>t.cardId===key);
+        if(index>=0)choice.targets.splice(index,1);
+        else if(choice.targets.length<2)choice.targets.push({cardId:key,element:"",moveIndices:[]});
+        choice.cardIds=choice.targets.map(t=>t.cardId);
+        return render();
+      }
       if(coachId==="1329")return openMoves(key);
       if(choice.cardIds.includes(key))choice.cardIds=choice.cardIds.filter(x=>x!==key);
       else if(cap===1)choice.cardIds=[key];
       else if(choice.cardIds.length<2)choice.cardIds.push(key);
-      if(coachId==="4401"&&choice.cardIds.length===1&&ownElement(choice.cardIds[0])===choice.element)choice.element="";
       render();
     }
     function projectedChanges(){
@@ -94,17 +121,27 @@
       const model=ctx.getModel?.();
       const pitch=ctx.squadView?.lineupPitchMarkup?.(model?.lineupRows||[],{readOnly:true})||"";
       const bench=(model?.bench||[]).map(row=>ctx.squadView?.playerCard?.(row,"bench",{readOnly:true})||"").join("");
-      const originalElement=choice.cardIds.length===1?ownElement(choice.cardIds[0]):"";
-      const elementButtons=coachId==="4401"&&choice.cardIds.length===1
-        ?'<div class="rtg-coach-picker-elements"><h4>CAMBIA ELEMENTO PER LA PARTITA</h4>'+
-          ELEMENTS.filter(e=>e.key!==originalElement).map(e=>
-            '<button type="button" class="btn rtg-coach-element-choice'+(choice.element===e.key?' is-selected':'')+
-            '" data-rtg-coach-power-element="'+e.key+'" data-element="'+e.key+
-            '" aria-pressed="'+(choice.element===e.key)+'">'+
-            '<span class="rtg-coach-element-art">'+e.art+'</span><span>'+e.label+'</span></button>'
-          ).join("")+'</div>':"";
+      const elementButtons=coachId==="4401"&&choice.targets.length
+        ?'<div class="rtg-coach-picker-elements rtg-coach-yi-targets"><h4>TRASFORMAZIONE DEI GIOCATORI</h4>'+
+          choice.targets.map((target,index)=>{
+            const originalElement=ownElement(target.cardId);
+            const player=resolve(target.cardId);
+            const name=esc(player?.name||player?.displayName||player?.playerName||target.cardId);
+            const options=ELEMENTS.filter(e=>e.key!==originalElement).map(e=>
+              '<button type="button" class="btn rtg-coach-element-choice'+(target.element===e.key?' is-selected':'')+
+              '" data-rtg-coach-power-element="'+e.key+'" data-rtg-coach-power-target="'+esc(target.cardId)+
+              '" data-element="'+e.key+'" aria-pressed="'+(target.element===e.key)+'">'+
+              '<span class="rtg-coach-element-art">'+e.art+'</span><span>'+e.label+'</span></button>'
+            ).join("");
+            const selected=target.moveIndices.length;
+            return '<section class="rtg-coach-yi-target"><h4>GIOCATORE '+(index+1)+' · '+name+'</h4>'+
+              '<div class="rtg-coach-yi-element-options">'+options+'</div>'+
+              '<button type="button" class="btn rtg-coach-yi-moves-button" data-rtg-coach-yi-moves="'+esc(target.cardId)+
+              '"'+(target.element?'':' disabled')+'>SELEZIONA 2 MOSSE NELLA SCHEDA ('+selected+'/2)</button></section>';
+          }).join("")+'</div>':"";
       const title=coachId==="1777"?"SCEGLI UNA RISERVA":"SCEGLI SUL CAMPO";
-      const summary=coachId==="1329"?' · MOSSE '+choice.moveIndices.length+'/2':"";
+      const summary=coachId==="1329"?' · MOSSE '+choice.moveIndices.length+'/2':
+        coachId==="4401"?' · MOSSE '+choice.targets.reduce((n,t)=>n+t.moveIndices.length,0)+'/4':"";
       const main='<section class="rtg-coach-power-config rtg-coach-field-picker development-squad-card-scope" aria-label="Configura potere allenatore">'+
         '<h2>'+NAMES[coachId]+'</h2><p>'+NOTES[coachId]+'</p>'+
         '<h3>'+title+' ('+choice.cardIds.length+'/'+cap+summary+')</h3>'+
@@ -124,7 +161,14 @@
         if(ok)button.addEventListener("click",()=>pick(key));
       });
       root?.querySelectorAll?.("[data-rtg-coach-power-element]")?.forEach(button=>button.addEventListener("click",()=>{
-        if(busy)return;choice.element=id(button.dataset.rtgCoachPowerElement);render();
+        if(busy)return;
+        const target=choice.targets.find(t=>t.cardId===id(button.dataset.rtgCoachPowerTarget));
+        const next=id(button.dataset.rtgCoachPowerElement);
+        if(!target||ownElement(target.cardId)===next)return;
+        target.element=next;render();
+      }));
+      root?.querySelectorAll?.("[data-rtg-coach-yi-moves]")?.forEach(button=>button.addEventListener("click",()=>{
+        if(!busy)openYiMoves(id(button.dataset.rtgCoachYiMoves));
       }));
       root?.querySelector?.("[data-rtg-coach-power-cancel]")?.addEventListener("click",()=>ctx.closeModal?.());
       root?.querySelector?.("[data-rtg-coach-power-clear]")?.addEventListener("click",async()=>{
@@ -146,6 +190,7 @@
           if(id(current?.coachId)!==coachId||ctx.getCampaign()?.activeMatch)throw new Error("Configurazione non più disponibile");
           const draft={...current,coachPowerSelection:{
             coachId,cardIds:choice.cardIds.slice(),moveIndices:choice.moveIndices.slice(),element:choice.element,
+            targets:choice.targets.map(t=>({cardId:t.cardId,element:t.element,moveIndices:t.moveIndices.slice()})),
           }};
           if(!rules.validConfig(draft,from(draft.lineup),ctx.seasonId(),from(draft.bench)))throw new Error("Selezione non valida");
           await ctx.saveSquad(draft);
