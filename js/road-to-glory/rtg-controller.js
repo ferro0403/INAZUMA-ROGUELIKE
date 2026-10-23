@@ -649,6 +649,7 @@
         const seed=`${current.campaignSeed}:${node.id}:${attemptNumber}`;
         const matchId=`rtg:${node.id}:${attemptNumber}`;
         let match=matchEngine.createMatch({matchId,nodeId:node.id,matchType:node.type,attemptNumber,seed,userSquad,opponentSquad,seasonId:id(current.activeSeasonId||activeSeasonId())});
+        match=global.RoadToGloryCoachPowerRuntime?.applyToMatch?.(match,current.squads[id(current.activeSeasonId||activeSeasonId())],current)||match;
         match=matchEngine.prepareNext(match);
         match.presentation={...(match.presentation||{}),preMatchSeen:false};
         current.activeMatch=match;started=clone(match);return current;
