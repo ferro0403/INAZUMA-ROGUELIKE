@@ -24,7 +24,7 @@
       if(config.cardIds.length!==2||!config.cardIds.every(x=>(squad.lineup||[]).map(cardId).includes(x)))return null;
       const base=global.RtgFourMovesRuntime?.ptBreakdown?.(player.stats||player.baseStats||player,player.finalRarity||player.category);
       if(!base)return null;
-      details.pt={...base,total:base.total+50,coachBonus:50};
+      details.pt={...base,total:base.total+50,coachBonus:50};details.badge="+50 PT";
       details.note="FIDUCIA NEI CAMPIONI · +50 PT iniziali e massimi per la partita";
     }else if(coachId==="1329"){
       if((squad.lineup||[]).every(x=>cardId(x)!==key)||config.moveIndices.length!==2)return null;
@@ -35,16 +35,18 @@
         if(!Number.isInteger(price)||price<=0)return null;
         details.costs[index]=Math.ceil(price/2);
       }
-      details.note="ALLENAMENTO SPECIALIZZATO · 2 mosse a metà costo PT";
+      details.note="ALLENAMENTO SPECIALIZZATO · 2 mosse a metà costo PT";details.badge="PT -50%";
     }else if(coachId==="1777"){
       if((squad.bench||[]).every(x=>cardId(x)!==key)||config.cardIds.length!==1)return null;
       const overall=Number(player.overall);
       details.note="FUORI QUOTA · OVR reale "+overall+" · contributo al limite squadra "+Math.min(overall,60)+" (su 15 giocatori)";
+      details.badge="CAP "+Math.min(overall,60);
     }else if(coachId==="4401"){
       if((squad.lineup||[]).every(x=>cardId(x)!==key)||
          !engine.ELEMENTS.includes(config.element)||config.cardIds.length!==1)return null;
       details.player={...player,element:elementNames[config.element]||config.element};
       details.note="CAMBIO DI ELEMENTO · "+(elementNames[config.element]||config.element)+" durante la partita";
+      details.badge=elementNames[config.element]||config.element;
     }else if(coachId==="1974"){
       if(config.cardIds.length!==1)return null;
       const target=engine.nextRarity(engine.rarityOf(player));
@@ -60,6 +62,7 @@
       details.player={...player,...upgraded,cardId:key,playerId:player.playerId,
         baseStats:{...baseStats},category:target,finalRarity:target};
       details.pt=global.RtgFourMovesRuntime?.ptBreakdown?.(newStats,target)||null;
+      details.badge=target;
       details.note="POTENZIALE RISVEGLIATO · "+engine.rarityOf(player)+" → "+target+
         " · OVR "+Number(player.overall)+" → "+Number(upgraded.overall)+
         " in partita. Il limite squadra continua a usare l'OVR originale.";
