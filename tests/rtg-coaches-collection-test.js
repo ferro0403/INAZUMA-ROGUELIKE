@@ -134,6 +134,35 @@
     assert.match(view.detail(s,"36"),/data-rtg-coaches-equip/);
   });
 
+  test("Descrizioni: tutti i dieci poteri sono distinti, leggibili e non attivi",()=>{
+    const expected=[
+      ["36","Cambio forzato","Scegli un titolare avversario e lo sostituisci con una riserva della squadra avversaria, scelta sempre da te. La riserva deve avere lo stesso ruolo."],
+      ["208","Fiducia nei campioni","Scegli 2 tuoi titolari: entrambi ricevono +50 ai PT iniziali e massimi."],
+      ["1225","Prestito a sorpresa","Scegli una riserva avversaria e la inserisci temporaneamente nella tua panchina, al posto di una delle tue 4 riserve."],
+      ["1329","Allenamento specializzato","Scegli una delle 4 mosse di un tuo titolare: il suo costo in PT viene dimezzato, arrotondando per eccesso."],
+      ["1275","Esaurimento oscuro","Scegli un titolare avversario: inizia con il 50% dei suoi PT normali. I PT massimi rimangono invariati."],
+      ["1777","Preparazione tecnica","Scegli due mosse speciali di un tuo giocatore: entrambe ottengono +10 Potenza, anche superando 110. Il costo in PT non cambia."],
+      ["1940","Tecnica proibita","Scegli un titolare avversario e blocchi 2 delle sue 4 mosse speciali per tutta la partita."],
+      ["1974","Potenziale risvegliato","Scegli un tuo giocatore, titolare o riserva: sale temporaneamente di 1 rarità, ottenendo anche i relativi aumenti reali delle statistiche, fino ad Aurico."],
+      ["4401","Cambio di elemento","Scegli un tuo titolare e cambi temporaneamente il suo elemento in Fuoco, Vento, Bosco o Montagna per quella partita."],
+      ["4761","Disordine tattico","Scegli 2 giocatori di movimento avversari e scambi le loro posizioni tattiche nella formazione iniziale."]
+    ];
+    assert.equal(api.CATALOG.length,expected.length);
+    assert.equal(new Set(api.CATALOG.map(c=>c.powerName)).size,10);
+    for(const [id,name,description] of expected){
+      const coach=api.BY_ID[id];
+      assert.equal(coach.powerName,name);
+      assert.equal(coach.powerDescription,description);
+      for(const campaignId of ["rtg-ie-trilogy","rtg-ares-orion"]){
+        const html=view.detail(campaign(campaignId),id);
+        assert.ok(html.includes(`<strong>${name}</strong>`),`Missing power title for ${id}`);
+        assert.ok(html.includes(`<p>${description}</p>`),`Missing power description for ${id}`);
+        assert.match(html,/PROSSIMAMENTE · POTERE NON ANCORA ATTIVO/);
+        assert.doesNotMatch(html,/data-rtg-coaches-activate-power|data-rtg-coaches-use-power/);
+      }
+    }
+  });
+
   test("Mobile: tre colonne, immagini eager con fallback e pulsante ASSEGNA in collezione",()=>{
     const css=read("css/rtg-coaches.css");
     assert.match(css,/rtg-coaches-modal \.rtg-coaches-grid\s*\{[^}]*repeat\(3,minmax\(0,1fr\)\)/);
