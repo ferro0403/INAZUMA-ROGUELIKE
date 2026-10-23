@@ -666,3 +666,57 @@
 .rtg-coach-power-actions .btn{width:100%;min-height:44px;font-weight:900;}
 .rtg-coach-power-actions [data-rtg-coach-power-save]:disabled{opacity:.55;}
 @media(max-width:370px){.rtg-coach-power-choices{gap:7px}.rtg-coach-power-option{padding:9px 7px}}
+
+/* Coach power Squad configuration: real RTG formation pitch and bench cards. */
+.rtg-coach-field-picker{max-width:690px;width:100%;padding:10px 0 22px}
+.rtg-coach-field-picker h3{font-size:14px;font-weight:1000;letter-spacing:.08em;margin:18px 0 10px}
+.rtg-coach-picker-pitch{margin:8px 0 16px;padding:7px;background:#fff;border:3px solid #141719;box-shadow:4px 5px 0 #141719}
+.rtg-coach-field-picker .rtg-squad-pitch-main.pitch{
+  padding:14px 7px!important;margin:0!important;min-height:490px!important;display:flex;flex-direction:column;
+  justify-content:space-around;gap:12px;border:3px solid #153b24!important;
+  background:radial-gradient(circle at center,transparent 0 35px,#ffffff55 36px 37px,transparent 38px),
+    linear-gradient(transparent 49.85%,#ffffff55 50%,transparent 50.15%),
+    repeating-linear-gradient(180deg,#326d43 0 12.5%,#265c38 12.5% 25%)!important;
+  box-shadow:inset 0 0 0 4px #245839,inset 0 0 0 6px #c2e0c544!important;
+}
+.rtg-coach-field-picker .rtg-squad-pitch-main .pitch-row{width:100%;display:flex;align-items:center;justify-content:center;gap:clamp(3px,1.5vw,11px)}
+.rtg-coach-field-picker .rtg-squad-card-slot{min-width:0;max-width:110px;flex:1 1 0;position:relative}
+.rtg-coach-field-picker .rtg-squad-card-slot .player-card{min-width:0!important;width:100%!important;max-width:100%!important;cursor:pointer;transition:transform .12s,border-color .12s}
+.rtg-coach-field-picker .rtg-squad-card-slot.rtg-coach-power-picked .player-card{
+  outline:4px solid #ffd21f;outline-offset:2px;filter:drop-shadow(0 0 7px #ffdd62);transform:translateY(-2px);
+}
+.rtg-coach-field-picker .rtg-squad-card-slot.rtg-coach-power-picked:after{
+  content:"✓";position:absolute;right:-4px;bottom:10px;z-index:5;
+  background:#ffd21f;border:2px solid #111216;color:#111216;padding:1px 6px;font-weight:1000;
+}
+.rtg-coach-field-picker [data-rtg-squad-player]:disabled{cursor:not-allowed;opacity:.55;filter:grayscale(.35)}
+.rtg-coach-picker-bench{border:3px solid #17181a;padding:10px;background:#fffdf4;box-shadow:3px 4px 0 #17181a}
+.rtg-coach-picker-bench-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));align-items:start;gap:clamp(4px,1.5vw,10px)}
+.rtg-coach-picker-bench-grid .rtg-squad-card-slot{width:100%;max-width:none;min-width:0}
+.rtg-coach-picker-bench-grid .player-card{width:100%!important;min-width:0!important;max-width:none!important}
+.rtg-coach-picker-elements{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:16px 0}
+.rtg-coach-picker-elements h4{grid-column:1/-1;margin:0;font-size:13px;font-weight:1000}
+.rtg-coach-picker-elements .btn{min-width:0;min-height:45px;background:#fff}
+.rtg-coach-picker-elements .btn.is-selected{background:#ffd21f!important;color:#111216!important}
+.rtg-coach-power-projection{border:3px solid #111216;background:#fff5df;padding:12px;margin:16px 0}
+.rtg-coach-power-projection h4{margin:0 0 8px;font-size:13px}
+.rtg-coach-power-projection p,.rtg-coach-power-projection strong{font-size:13px;line-height:1.45}
+.rtg-coach-preview-stat-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px;margin-top:12px}
+.rtg-coach-preview-stat-grid span{padding:6px;background:#fff;border:2px solid #161718;font-size:12px}
+.rtg-coach-preview-stat-grid strong{font-weight:900}
+.rtg-coach-preview-stat-grid b{color:#176d37}
+.rtg-coach-player-preview{padding:13px!important;background:#fff4dc;border:3px solid #141719!important}
+.rtg-coach-player-preview p{font-size:13px;line-height:1.55}
+.rtg-coach-card-buff{display:block;margin:2px 0;font-size:9px;font-weight:900;color:#17181b;background:#ffce25;border:1px solid #151719;text-align:center}
+.rtg-coach-move-discount .rtg-pt-cost strong{color:#11703d!important}
+.rtg-coach-move-select,.rtg-coach-moves-confirm{width:100%;min-height:42px;margin:9px 0!important;font-size:12px;font-weight:900}
+.rtg-coach-move-select.is-selected{background:#ffd21f!important;color:#111216!important}
+.player-detail-rtg-four-moves .rtg-four-moves-item.is-selected{outline:3px solid #ffc91b;outline-offset:2px}
+.rtg-coach-moves-confirm{min-height:50px;background:#ffd21f!important;color:#17181b!important}
+.rtg-coach-moves-confirm:disabled{opacity:.55}
+@media(max-width:430px){
+ .rtg-coach-field-picker .rtg-squad-pitch-main.pitch{min-height:420px!important;padding:10px 5px!important;gap:9px}
+ .rtg-coach-picker-bench{padding:7px}
+ .rtg-coach-preview-stat-grid{gap:4px}
+ .rtg-coach-preview-stat-grid span{font-size:10px;padding:4px}
+}
