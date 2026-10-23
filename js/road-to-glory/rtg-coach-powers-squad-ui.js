@@ -33,6 +33,15 @@
       targets:coachId==="4401"&&previous?.targets?.length===2?
         previous.targets.map(t=>({cardId:t.cardId,element:t.element,moveIndices:t.moveIndices.slice()})):[]};
     if(coachId==="4401")choice.cardIds=choice.targets.map(t=>t.cardId);
+    let retainedModalTop=0;
+    const rememberModalScroll=()=>{const modal=ctx.getModalRoot?.()?.querySelector?.(".modal");if(modal)retainedModalTop=modal.scrollTop||0;};
+    const restoreModalScroll=()=>{
+      const modal=ctx.getModalRoot?.()?.querySelector?.(".modal");
+      if(!modal)return;
+      const restore=()=>{if(modal.isConnected!==false)modal.scrollTop=retainedModalTop;};
+      const raf=global.requestAnimationFrame;
+      if(typeof raf==="function")raf(()=>raf(restore));else restore();
+    };
     const resolve=key=>ctx.resolve?.(key,squad.activeRoleVariantByCardId?.[key]||null);
     const ownElement=key=>rules.elementKey?.(resolve(key)?.element||resolve(key)?.type)||"";
     const from=keys=>(keys||[]).map(key=>{
@@ -51,6 +60,7 @@
         return ctx.toast?.("Le quattro mosse non sono disponibili per questo giocatore.","error");
       const prevSelected=choice.cardIds[0]===key?choice.moveIndices.slice():[];
       choice.cardIds=[key];choice.moveIndices=prevSelected;
+      rememberModalScroll();
       ctx.openPlayerDetails?.(key,{
         allowRoleSwitch:false,onClose:()=>render(),
         coachMovePicker:{
@@ -68,6 +78,7 @@
       const moves=rules.fourMoves(resolve(key),ctx.seasonId());
       if(moves.length!==4||moves.some(m=>!(Number(m?.ptCost)>0)))
         return ctx.toast?.("Le quattro mosse non sono disponibili per questo giocatore.","error");
+      rememberModalScroll();
       ctx.openPlayerDetails?.(key,{
         allowRoleSwitch:false,onClose:()=>render(),
         coachMovePicker:{
@@ -152,7 +163,9 @@
         (valid()?'':' disabled')+'>CONFERMA POTERE</button>'+
         '<button type="button" class="btn" data-rtg-coach-power-cancel>ANNULLA</button>'+
         '<button type="button" class="btn" data-rtg-coach-power-clear>RIMUOVI POTERE</button></div></section>';
-      ctx.openModal?.(main,{className:"rtg-modal rtg-coach-power-modal"});
+      const active=ctx.getModalRoot?.()?.querySelector?.(".rtg-coach-power-config");
+      if(active)active.outerHTML=main;
+      else {ctx.openModal?.(main,{className:"rtg-modal rtg-coach-power-modal"});restoreModalScroll();}
       const root=ctx.getModalRoot?.();
       root?.querySelectorAll?.(".rtg-coach-field-picker [data-rtg-squad-player]")?.forEach(button=>{
         const key=id(button.dataset.rtgSquadPlayer),ok=allowed(key),isSelected=choice.cardIds.includes(key);
