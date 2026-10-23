@@ -77,6 +77,14 @@
           esc(item.after)+' <b>+'+esc(item.after-item.before)+'</b></span>').join("")+'</div>':
           '<p>Nessuna statistica aumentata.</p>')+'</section>';
     }
+    function overallPreview(){
+      if(coachId!=="1777"||choice.cardIds.length!==1)return "";
+      const overall=ctx.previewSquadOverall?.(choice);
+      if(!overall||!Number.isFinite(overall.before)||!Number.isFinite(overall.after))return "";
+      return '<section class="rtg-coach-power-projection" aria-label="Overall squadra con Fuori quota">'+
+        '<h4>OVERALL SQUADRA · ANTEPRIMA</h4><strong>'+esc(overall.before)+
+        ' → '+esc(overall.after)+'</strong><p>La media resta su 15 giocatori. Solo la riserva scelta pesa al massimo 60.</p></section>';
+    }
     function render(){
       const model=ctx.getModel?.();
       const pitch=ctx.squadView?.lineupPitchMarkup?.(model?.lineupRows||[],{readOnly:true})||"";
@@ -93,7 +101,7 @@
         '<h3>'+title+' ('+choice.cardIds.length+'/'+cap+summary+')</h3>'+
         '<div class="rtg-coach-picker-pitch squad-field-panel">'+pitch+'</div>'+
         '<section class="rtg-coach-picker-bench"><h3>PANCHINA</h3><div class="rtg-coach-picker-bench-grid">'+bench+'</div></section>'+
-        elementButtons+projectedChanges()+
+        elementButtons+projectedChanges()+overallPreview()+
         '<div class="rtg-coach-power-actions"><button type="button" class="btn btn-yellow" data-rtg-coach-power-save'+
         (valid()?'':' disabled')+'>CONFERMA POTERE</button>'+
         '<button type="button" class="btn" data-rtg-coach-power-cancel>ANNULLA</button>'+
