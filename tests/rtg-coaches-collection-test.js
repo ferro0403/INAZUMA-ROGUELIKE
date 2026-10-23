@@ -139,7 +139,7 @@
     assert.match(html,/ASSEGNA/);
     assert.match(view.card(api.CATALOG[6],"owned"),/loading="eager"/);
     assert.match(view.card(api.CATALOG[6],"owned"),/data-coach-alternate=/);
-    assert.match(view.card(api.CATALOG[9],"owned"),/rtg-coach-rene-artwork/);
+    assert.match(view.card(api.CATALOG[9],"owned"),/rtg-coach-rene-canvas/);
   });
 
   test("René: ID Inazugle 4763 e vecchio ID 4761 RTG preservato",()=>{
@@ -148,22 +148,20 @@
     assert.equal(rene.id,"4761","saved RTG coach identity must not change");
     assert.equal(api.BY_ID["4763"],undefined);
   });
-  test("René: sprite PNG preloaded nelle tre card, full-body esclusivo nella scheda",()=>{
+  test("René: canvas locale nelle card, full-body intatto nella scheda",()=>{
     const rene=api.BY_ID["4761"];
     const url="https://dxi4wb638ujep.cloudfront.net/1/k/a/t/atcna3pn7ds.png";
     assert.equal(rene.imageUrl,url);
     for(const html of [view.card(rene,"locked"),view.albumCard(rene,"locked"),view.squadSlot({...campaign(),coachOwnedIds:["4761"]},"4761")]){
-      assert.ok(html.includes('class="rtg-coach-rene-artwork '),"dedicated CSS sprite");
-      assert.ok(html.includes("background-image:url('"+url+"')"),"official PNG used as background");
-      assert.ok(html.includes("data-rtg-rene-artwork"),"sprite can be repainted");
-      assert.ok(html.includes('class="rtg-coach-rene-loading"'),"never leave card blank while loading");
-      assert.ok(!html.includes('data-coach-fallbacks='),"compact sprite must not enter generic image retry logic");
+      assert.ok(html.includes('data-rtg-rene-canvas'),"local canvas is mounted");
+      assert.ok(html.includes('class="rtg-coach-rene-loading"'),"loading text never blank");
+      assert.ok(!html.includes('data-coach-fallbacks='),"no offscreen generic CDN retry");
     }
     const detail=view.detail(campaign(),"4761");
-    assert.ok(detail.includes('src="'+rene.frontFullbodyUrl+'"'),"full-body must be source in detail");
-    assert.ok(!detail.includes('src="'+url+'"'),"portrait PNG must not replace full-body");
+    assert.ok(detail.includes('src="'+rene.frontFullbodyUrl+'"'),"fullbody preserved");
+    assert.ok(!detail.includes('src="'+url+'"'),"PNG thumbnail does not supersede fullbody");
     assert.ok(detail.includes('data-coach-fallbacks="'+url+'|'+rene.imageFallbackUrls[0]+'"'));
-    assert.ok(view.card(api.BY_ID["36"],"locked").includes('src="'+api.BY_ID["36"].imageUrl+'"'),"other coach cards untouched");
+    assert.ok(view.card(api.BY_ID["36"],"locked").includes('src="'+api.BY_ID["36"].imageUrl+'"'),"other nine unmodified");
   });
   test("Full-body loading error falls back proportionally, not oversized portrait",()=>{
     const listeners={};
@@ -185,56 +183,102 @@
     assert.ok(classes.has("rtg-coach-fullbody--portrait-fallback"));
     assert.match(read("css/rtg-coaches.css"),/rtg-coach-fullbody--portrait-fallback/);
   });
-  test("René sprite: preload in HTML e nessun img offscreen da decodificare",()=>{
+  test("René: PNG richiesto subito, canvas visibile senza tab switch",()=>{
     const html=view.card(api.BY_ID["4761"],"locked");
-    assert.match(html,/data-rtg-rene-artwork/);
-    assert.match(html,/rtg-coach-rene-artwork/);
+    assert.match(html,/data-rtg-rene-canvas/);
+    assert.match(html,/<canvas/);
     assert.doesNotMatch(html,/data-rtg-coach-image=/);
     assert.doesNotMatch(html,/<img /);
     const page=read("index.html");
     assert.ok(page.includes('rel="preload" as="image" href="'+api.BY_ID["4761"].imageUrl+'"'));
-    const css=read("css/rtg-coaches.css");
-    assert.match(css,/rtg-coach-rene-artwork\.is-ready \.rtg-coach-rene-loading/);
+    assert.match(read("css/rtg-coaches.css"),/\.rtg-coach-rene-frame\.is-ready \.rtg-coach-rene-loading/);
   });
-  test("Safari: preloader decodifica, mostra lo sprite e forza repaint",async()=>{
-    const elements=[];
-    const events={};
-    const classes=new Set();
-    const display={
-      dataset:{},offsetWidth:72,
-      style:{backgroundImage:""},
-      classList:{toggle(name,active){if(active)classes.add(name);else classes.delete(name);}}
+  test("Safari: canvas dipinto al mount immediato, con drawImage e nessun decode bloccante",()=>{
+    const imgs=[],events={},canvases=[],draws=[];
+    let observer=null;
+    const classes=new Set(),ctx={
+      clearRect(...args){draws.push(["clear",...args]);},
+      drawImage(...args){draws.push(["image",...args]);}
+    };
+    const frame={classList:{
+      add(name){classes.add(name);},
+      remove(name){classes.delete(name);},
+      toggle(name,state){if(state)classes.add(name);else classes.delete(name);}
+    }};
+    const canvas={
+      dataset:{},parentElement:frame,width:240,height:200,
+      getContext(mode){assert.equal(mode,"2d");return ctx;}
+    };
+    const document={
+      documentElement:{},
+      hidden:false,
+      querySelectorAll(selector){assert.equal(selector,"[data-rtg-rene-canvas]");return canvases;},
+      addEventListener(type,callback){events[type]=callback;}
     };
     const client={
       RoadToGloryCoaches:api,
       Image:class {
-        constructor(){elements.push(this);}
+        constructor(){imgs.push(this);this.naturalWidth=500;this.naturalHeight=500;}
         set src(value){this._src=value;}
         get src(){return this._src;}
-        decode(){return new Promise(()=>{});} // Safari may delay offscreen decode indefinitely
+        decode(){return new Promise(()=>{});} // unresolved Safari decode
       },
-      document:{
-        querySelectorAll(selector){assert.equal(selector,"[data-rtg-rene-artwork]");return [display];},
-        addEventListener(type,callback){events[type]=callback;},
-        hidden:false,
-      }
+      MutationObserver:class {
+        constructor(callback){observer=callback;}
+        observe(root,config){
+          assert.equal(root,document.documentElement);
+          assert.deepEqual(JSON.parse(JSON.stringify(config)),{childList:true,subtree:true});
+        }
+      },
+      document
     };
     vm.runInNewContext(read("js/road-to-glory/rtg-coaches-view.js"),client);
-    assert.equal(elements.length,1,"preload started at script evaluation");
-    assert.equal(elements[0].src,api.BY_ID["4761"].imageUrl);
-    elements[0].onload();
-    // The portrait must paint NOW, without waiting for a pending decode().
-    assert.ok(classes.has("is-ready"),"visible immediately after bytes load");
-    await new Promise(resolve=>setImmediate(resolve));
-    assert.equal(display.style.backgroundImage,'url("'+api.BY_ID["4761"].imageUrl+'")');
-    assert.equal(display.dataset.renePainted,"true");
-    const original=display.style;
-    display.dataset.renePainted="false";
-    events.scroll();
-    assert.equal(display.dataset.renePainted,"true","scroll restores paint for below-fold card");
+    assert.equal(imgs.length,1,"asset starts loading at script boot");
+    assert.equal(imgs[0].src,api.BY_ID["4761"].imageUrl);
+    imgs[0].onload(); // decoded image asset, before cards mounted
+    assert.equal(draws.length,0);
+    canvases.push(canvas);
+    assert.equal(typeof client.RoadToGloryCoachesView.mountArtwork,"function");
+    client.RoadToGloryCoachesView.mountArtwork(document);
+    assert.equal(canvas.dataset.renePainted,"true");
+    assert.ok(classes.has("is-ready"),"canvas visible after pixels drawn");
+    assert.equal(draws.filter(d=>d[0]==="image").length,1);
+    assert.equal(draws[1][1],imgs[0],"same decoded source");
+    observer(); // no expensive repaint of an already painted element
+    assert.equal(draws.filter(d=>d[0]==="image").length,1);
+    assert.ok(events.pageshow);
   });
-
-
+  test("Safari: onload dopo mount disegna appena i pixel sono disponibili",()=>{
+    const imgs=[],draws=[];
+    const classes=new Set(),canvas={
+      dataset:{},width:240,height:200,
+      parentElement:{classList:{
+        add(name){classes.add(name);},remove(name){classes.delete(name);},
+        toggle(name,state){if(state)classes.add(name);else classes.delete(name);}
+      }},
+      getContext:()=>({
+        clearRect(){},
+        drawImage(){draws.push("rendered");}
+      })
+    };
+    const client={
+      RoadToGloryCoaches:api,
+      Image:class {
+        constructor(){imgs.push(this);this.naturalWidth=512;this.naturalHeight=512;}
+        set src(v){this._src=v;}get src(){return this._src;}
+        decode(){return new Promise(()=>{});}
+      },
+      document:{querySelectorAll:()=>[canvas],addEventListener(){}}
+    };
+    vm.runInNewContext(read("js/road-to-glory/rtg-coaches-view.js"),client);
+    client.RoadToGloryCoachesView.mountArtwork(client.document);
+    assert.equal(draws.length,0);
+    assert.equal(canvas.dataset.renePainted,undefined);
+    imgs[0].onload();
+    assert.deepEqual(draws,["rendered"]);
+    assert.ok(classes.has("is-ready"));
+    assert.equal(canvas.dataset.renePainted,"true");
+  });
   test("Coach grid non restringe David Arrows o altre card al contenuto dell'immagine",()=>{
     const css=read("css/rtg-coaches.css");
     assert.match(css,/\.rtg-coaches-modal \.rtg-coaches-grid\.rtg-picker-grid\s*\{[^}]*justify-items:stretch!important/);
