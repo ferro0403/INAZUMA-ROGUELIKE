@@ -203,7 +203,7 @@
         </div><div class="player-detail-visual rarity-coach">${portrait(c,true)}</div>
       </section>
       <section class="player-detail-content">
-        <section class="player-detail-section"><h3><span>Potere allenatore</span></h3><div class="rtg-coach-power"><strong>PROSSIMAMENTE</strong><p>Il potere non è ancora attivo; verrà applicato soltanto prima delle partite.</p></div></section>
+        <section class="player-detail-section"><h3><span>Potere allenatore</span></h3><div class="rtg-coach-power"><strong>${esc(c.powerName)}</strong><p>${esc(c.powerDescription)}</p><small class="rtg-coach-power-status">PROSSIMAMENTE · POTERE NON ANCORA ATTIVO</small></div></section>
         <section class="player-detail-section"><h3><span>Informazioni</span></h3><div class="rtg-coach-profile-meta"><span><small>Squadra</small><b class="rtg-coach-profile-team">${teamEmblem(c)}${esc(c.team)}</b></span><span><small>Season</small><b>${esc(c.season)}</b></span></div>
         ${isOwned?`<button type="button" class="btn btn-yellow rtg-coach-equip" data-rtg-coaches-equip="${selected?"":esc(c.id)}">${selected?"RIMUOVI DALLA FORMAZIONE":"ASSEGNA ALLA FORMAZIONE"}</button>`:`<p class="rtg-coach-locked-note">${status==="locked"?`Completa ${esc(c.season)} per ottenere questa carta.`:"Disponibile nell'altra campagna."}</p>`}
         <button type="button" class="btn rtg-coach-back" data-rtg-coaches-back>← TORNA AGLI ALLENATORI</button></section>
