@@ -720,3 +720,72 @@
  .rtg-coach-preview-stat-grid{gap:4px}
  .rtg-coach-preview-stat-grid span{font-size:10px;padding:4px}
 }
+
+
+/* Squad card visuals in coach selector: restore canonical white rarity design. */
+.rtg-coach-field-picker.development-squad-card-scope .rtg-squad-card-slot .squad-player-card{
+  color:var(--squad-ink,#111216)!important;
+  background:linear-gradient(165deg,#fff 0 70%,#eee9dc 70%)!important;
+  border:3px solid var(--rarity-border,#646464)!important;border-left-width:4px!important;
+  box-shadow:4px 5px 0 rgba(5,18,12,.48),0 0 13px var(--rarity-glow,transparent),inset 0 -4px 0 var(--rarity-border,#646464)!important;
+  overflow:visible!important;
+}
+.rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-info{
+  background:transparent!important;color:#111216!important;
+}
+.rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-title strong{
+  color:#111216!important;
+}
+.rtg-coach-field-picker.development-squad-card-scope .squad-player-card :is(.player-role,.player-overall){
+  display:grid!important;place-items:center!important;color:#111216!important;border:2px solid #111216!important;
+}
+.rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-role{background:#fff!important}
+.rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-overall{background:#ffd21f!important}
+.rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-portrait-wrap{
+  background:linear-gradient(160deg,color-mix(in srgb,var(--rarity-border,#646464) 9%,#fff),#ddd7c8)!important;
+}
+.rtg-coach-field-picker.development-squad-card-scope .squad-player-card .player-portrait-wrap::after{
+  content:"";display:block!important;position:absolute;z-index:2;top:17px;right:-1px;width:13px;height:51px;
+  background:linear-gradient(180deg,color-mix(in srgb,var(--rarity-border,#646464) 82%,white),var(--rarity-border,#646464));
+  clip-path:polygon(58% 0,100% 0,42% 100%,0 100%);pointer-events:none;
+}
+/* Element pictograms and native square RTG buttons */
+.rtg-coach-picker-elements .rtg-coach-element-choice{
+  display:flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;
+  padding:10px 8px!important;min-height:58px!important;background:#fffdf6!important;
+  border:3px solid #111216!important;border-radius:2px!important;
+  box-shadow:3px 4px 0 #111216!important;color:#111216!important;
+  font-size:13px!important;font-weight:1000!important;letter-spacing:.055em;
+}
+.rtg-coach-picker-elements .rtg-coach-element-choice.is-selected{
+  background:#ffd21f!important;box-shadow:inset 0 0 0 2px #fffdf6,3px 4px 0 #111216!important;
+}
+.rtg-coach-element-choice .rtg-coach-element-art{
+  width:30px;height:30px;display:grid;place-items:center;flex:0 0 30px;
+  border:2px solid currentColor;border-radius:2px;background:#fff;
+}
+.rtg-coach-element-art svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.1;stroke-linecap:round;stroke-linejoin:round}
+.rtg-coach-element-choice[data-element="fire"] .rtg-coach-element-art{color:#cb392e}
+.rtg-coach-element-choice[data-element="wind"] .rtg-coach-element-art{color:#2981c6}
+.rtg-coach-element-choice[data-element="forest"] .rtg-coach-element-art{color:#2b8452}
+.rtg-coach-element-choice[data-element="mountain"] .rtg-coach-element-art{color:#a66c2b}
+.player-detail-modal .rtg-coach-move-select,
+.player-detail-modal .rtg-coach-moves-confirm{
+  display:flex!important;align-items:center!important;justify-content:center!important;text-align:center!important;
+  width:100%!important;min-height:49px!important;margin:11px 0 15px!important;padding:10px!important;
+  border:3px solid #111216!important;border-radius:2px!important;
+  box-shadow:4px 5px 0 #111216!important;background:#fffdf6!important;color:#111216!important;
+  font:1000 12px/1.2 system-ui,sans-serif!important;letter-spacing:.06em!important;text-transform:uppercase!important;
+}
+.player-detail-modal .rtg-coach-move-select.is-selected{background:#ffd21f!important;color:#111216!important}
+.player-detail-modal .rtg-coach-moves-confirm{
+  background:#ffd21f!important;min-height:57px!important;font-size:14px!important;
+}
+.player-detail-modal .rtg-coach-moves-confirm:disabled{
+  background:#eee5be!important;color:#716c5b!important;opacity:.75!important;
+  box-shadow:3px 4px 0 #777169!important;cursor:not-allowed!important;
+}
+@media(max-width:390px){
+  .rtg-coach-picker-elements .rtg-coach-element-choice{gap:5px!important;font-size:11px!important}
+  .rtg-coach-element-choice .rtg-coach-element-art{width:26px;height:26px;flex-basis:26px}
+}
