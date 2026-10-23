@@ -258,7 +258,7 @@ test("All Squad powers hide yellow card footer; selector matches slim RTG card b
   assert.doesNotMatch(styles,/border-left-width:4px!important/);
   assert.match(styles,/outline:2px solid #ffd21f/);
   const html=read("index.html");
-  assert.match(html,/rtg-coaches\.css\?v=20261023-coach-ui-v5/);
+  assert.match(html,/rtg-coaches\.css\?v=20261023-yi-total-v1/);
   assert.match(html,/rtg-squad-view\.js\?v=20261023-coach-ui-v5/);
 });
 
