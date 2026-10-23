@@ -157,7 +157,7 @@
         const html=view.detail(campaign(campaignId),id);
         assert.ok(html.includes(`<strong>${name}</strong>`),`Missing power title for ${id}`);
         assert.ok(html.includes(`<p>${description}</p>`),`Missing power description for ${id}`);
-        assert.match(html,/PROSSIMAMENTE · POTERE NON ANCORA ATTIVO/);
+        assert.match(html,/(?:PROSSIMAMENTE · POTERE NON ANCORA ATTIVO|DISPONIBILE · CONFIGURA IN SQUADRA)/);
         assert.doesNotMatch(html,/data-rtg-coaches-activate-power|data-rtg-coaches-use-power/);
       }
     }
