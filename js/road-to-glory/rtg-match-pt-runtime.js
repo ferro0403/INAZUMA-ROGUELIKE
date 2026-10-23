@@ -50,8 +50,8 @@
     // A free agent without an extracted 4-move catalog keeps its verified legacy move.
     const moves=catalog.length?catalog:[player.activeMove||player.move].filter(Boolean);
     const type=kindOf(kind,hasPossession);
-    return moves.filter(m=>m&&String(m.type||"").toLowerCase()===type)
-      .map(m=>({...m,ptCost:cost(m)}));
+    return moves.map((m,index)=>({m,index})).filter(({m})=>m&&String(m.type||"").toLowerCase()===type)
+      .map(({m,index})=>({...m,ptCost:global.RoadToGloryCoachPowerRuntime?.moveCost?.(state,side,pid,index,cost(m))??cost(m)}));
   }
   function affordable(state,side,pid,options) {
     const balance=pt(state,side,pid)?.remaining??0;
