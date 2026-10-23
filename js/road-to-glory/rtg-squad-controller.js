@@ -855,7 +855,7 @@
         teamPower:eligibility?.teamPower ?? deps.squadRuntime.teamPower?.({lineup:deps.squadDraft.lineup||[],activeSeasonId:deps.campaign.activeSeasonId||"ie1",playerResolver:deps.playerResolver,freeAgentsDb:deps.freeAgentsDb,activeRoleVariantByCardId:deps.squadDraft.activeRoleVariantByCardId||{}}) ?? null,
         dirty:JSON.stringify(deps.squadDraft)!==JSON.stringify(deps.activeSquad(deps.campaign)),
         activeSquadSlot:deps.activeSquadSlot,
-        coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(deps.campaign,deps.squadDraft?.coachId)||"",
+        coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(deps.campaign,deps.squadDraft?.coachId,deps.squadDraft?.coachPowerSelection)||"",
       }));
       deps.bindHomeAndTabs();
       deps.squadView.bind(deps.app,{
@@ -865,6 +865,12 @@
         onOpenCatalog:()=>openRtgCatalog(),
         onOpenCoaches:()=>deps.openCoaches?.("collection"),
         onOpenCoachDetails:()=>deps.squadDraft?.coachId&&deps.openCoaches?.("collection",deps.squadDraft.coachId),
+        onConfigureCoachPower:()=>global.RoadToGloryCoachSquadPowerUi?.open?.({
+          getCampaign:()=>deps.campaign,getSquadDraft:()=>deps.squadDraft,
+          seasonId:deps.activeSeasonId,resolve:deps.resolved,
+          openModal:deps.openModal,getModalRoot:deps.getModalRoot,closeModal:deps.closeModal,
+          toast:deps.toast,saveSquad:(draft)=>saveSquad(draft,{quiet:true}),
+        }),
         onAdaptRequirements:()=>adaptSquadToCurrentRequirements(),
         onSave:()=>saveSquad(deps.squadDraft),
         onSelectSquadSlot:(slot)=>deps.selectSquadSlot(slot),
