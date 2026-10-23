@@ -905,7 +905,10 @@
     function bindHalftimeEditor(match,selectedPlayerId=null){
       const overlay=app?.querySelector?.("[data-rtg-match-overlay]");
       const repaint=(nextSelected=null)=>{
+        const scrollTop=overlay?.querySelector(".rtg-halftime")?.scrollTop||0;
         if(overlay)overlay.innerHTML=matchView.halftimeMarkup(halftimeDraft,{selectedPlayerId:nextSelected,match});
+        const panel=overlay?.querySelector(".rtg-halftime");
+        if(panel){panel.scrollTop=scrollTop;global.requestAnimationFrame?.(()=>{if(panel.isConnected)panel.scrollTop=scrollTop;});}
         bindHalftimeEditor(match,nextSelected);
       };
       overlay?.querySelectorAll?.("[data-rtg-half-lineup]")?.forEach(button=>button.addEventListener("click",()=>{
