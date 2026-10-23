@@ -22,7 +22,7 @@
     const coachId=config.coachId,details={coachId,player,original:player,note:"",stats:[],pt:null,costs:{}};
     if(coachId==="208"){
       if(config.cardIds.length!==2||!config.cardIds.every(x=>(squad.lineup||[]).map(cardId).includes(x)))return null;
-      const base=global.RtgFourMovesRuntime?.ptBreakdown?.(player.stats||player.baseStats||player,player.finalRarity||player.category);
+      const base=global.RtgFourMovesRuntime?.ptBreakdown?.(player.baseStats||player.stats||player,player.finalRarity||player.category);
       if(!base)return null;
       details.pt={...base,total:base.total+50,coachBonus:50};details.badge="+50 PT";
       details.note="FIDUCIA NEI CAMPIONI · +50 PT iniziali e massimi per la partita";
