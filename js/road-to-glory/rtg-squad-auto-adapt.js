@@ -103,8 +103,11 @@
           const nextGk=gk-Number(roleOf(outgoing))+Number(roleOf(incoming));
           if(nextGk<neededGK||nextGk>5)continue;
           // Keep GK-only constraints, allow FW/MF/DF swaps freely.
-          if(!best||gain>best.gain+1e-8||(Math.abs(gain-best.gain)<1e-8&&id(incoming)<id(best.incoming)))
-            best={i,outgoing,incoming,gain};
+          const spreadImprovement=Math.abs(cost(outgoing)-cap)-Math.abs(cost(incoming)-cap);
+          if(!best||spreadImprovement>best.spreadImprovement+1e-8||
+             (Math.abs(spreadImprovement-best.spreadImprovement)<1e-8&&gain>best.gain+1e-8)||
+             (Math.abs(spreadImprovement-best.spreadImprovement)<1e-8&&Math.abs(gain-best.gain)<1e-8&&id(incoming)<id(best.incoming)))
+            best={i,outgoing,incoming,gain,spreadImprovement};
         }
       }
       if(!best)break;
