@@ -685,7 +685,9 @@
         const realOverall=Number(player.overall||0);
         const contribution=(playerId===coachCapId?Math.min(realOverall,60):realOverall)+
           (Number.isFinite(movePower)?Math.max(0,Math.min(2,(movePower-50)/30)):0);
-        const recruit=recruitSet.has(playerId);
+        const season=deps.activeSeasonId();
+        const parsed=deps.cardIdentity?.parse?.(playerId,season)||{};
+        const recruit=recruitSet.has(playerId)&&(season==="ie1"||String(parsed.legacySeasonId||"")===season);
         const recent=recruit&&seasonTeamIdsForPlayer(playerId).some(team=>recentTeams.has(team));
         return{playerId,role,overall:Number(player.overall||0),contribution,recruit,recent};
       }).filter(Boolean);
@@ -829,29 +831,32 @@
         balanceSpread:spread,
       };
     }
-    function adaptSquadToCurrentRequirements(){
+    async function adaptSquadToCurrentRequirements(){
       const teamId=currentRequirementTeamId();
       if(!teamId){deps.toast?.("Nessun requisito principale attivo","error");return{ok:false,reason:"no-target"};}
+      const constraints=deps.activeConfig()?.constraints?.[teamId];
       const formations=deps.activeConfig()?.formations||deps.seasonDb?.formations?.eleven||[];
-      const pool=requirementPool(teamId);
-      const currentId=deps.id(deps.squadDraft?.formationId||deps.activeSquad(deps.campaign)?.formationId);
-      const ordered=[...formations].sort((a,b)=>(deps.id(a.id)===currentId?-1:0)-(deps.id(b.id)===currentId?-1:0));
-      let best=null;
-      for(const formation of ordered){
-        const candidate=buildRequirementCandidate(formation,teamId,pool);
-        if(!candidate)continue;
-        if(!best||candidate.targetShortfall<best.targetShortfall-1e-9||(Math.abs(candidate.targetShortfall-best.targetShortfall)<=1e-9&&candidate.balanceSpread<best.balanceSpread-1e-9))best=candidate;
-      }
-      if(!best){
-        const state=draftState();
-        const eligibility=deps.squadRuntime.mainEligibility({teamId,state,seasonDb:deps.seasonDb,freeAgentIds:deps.freeAgentIds,freeAgentsDb:deps.freeAgentsDb,playerResolver:deps.playerResolverForState(state)});
-        if(eligibility.eligible){deps.toast?.("La squadra rispetta già i requisiti; non serve adattarla.");return{ok:true,reason:"already-eligible",eligibility};}
-        deps.toast?.("Nessuna formazione automatica valida con le carte disponibili: prova a cambiare modulo o riserve.","error");
-        return{ok:false,reason:"no-valid-squad",eligibility};
-      }
-      deps.squadDraft=deps.clone(best.squad);
-      renderSquad();
-      deps.toast?.(`Squadra adattata: Potenza ${best.eligibility.teamPower} / ${best.eligibility.cap}`);
+      const current=draftState();
+      const check=squad=>{
+        const state=deps.clone(current);
+        state.squads[deps.activeSeasonId()]=squad;
+        return deps.squadRuntime.mainEligibility({teamId,state,seasonDb:deps.seasonDb,
+          freeAgentIds:deps.freeAgentIds,freeAgentsDb:deps.freeAgentsDb,
+          playerResolver:deps.playerResolverForState(state)});
+      };
+      const before=check(deps.squadDraft);
+      if(before.eligible){deps.toast?.("La squadra rispetta già i requisiti.");return{ok:true,reason:"already-eligible",eligibility:before};}
+      const fixedBenchId=global.RoadToGloryCoachPowerRuntime?.capOverrideFor?.(deps.squadDraft,deps.campaign)||"";
+      const best=global.RoadToGlorySquadAutoAdapt?.plan?.({
+        pool:requirementPool(teamId),formations,constraint:constraints,
+        fixedBenchId,originalSquad:deps.squadDraft,evaluate:check,
+      });
+      if(!best){deps.toast?.("Nessuna rosa valida trovata fra le carte disponibili, anche provando gli altri moduli e i giocatori fuori ruolo.","error");
+        return{ok:false,reason:"no-valid-squad",eligibility:before};}
+      // Save atomically before updating UI or showing success; do not leave a
+      // visually adapted but canonically invalid formation on failure.
+      await saveSquad(best.squad,{quiet:true});
+      deps.toast?.(`Squadra adattata e salvata: Potenza ${best.eligibility.teamPower} / ${best.eligibility.cap}`);
       return{ok:true,teamId,eligibility:best.eligibility,squad:deps.clone(deps.squadDraft)};
     }
 
@@ -919,7 +924,7 @@
             })||null;
           },
         }),
-        onAdaptRequirements:()=>{try{return adaptSquadToCurrentRequirements();}catch(error){
+        onAdaptRequirements:async()=>{try{return await adaptSquadToCurrentRequirements();}catch(error){
           deps.toast?.(error?.message||"Errore durante l'adattamento della squadra","error");
           return{ok:false,reason:"adapt-error"};}},
         onSave:()=>saveSquad(deps.squadDraft),
