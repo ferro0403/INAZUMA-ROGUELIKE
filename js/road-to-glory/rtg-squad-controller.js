@@ -831,7 +831,13 @@
         balanceSpread:spread,
       };
     }
+    let adaptPending=false;
     async function adaptSquadToCurrentRequirements(){
+      if(adaptPending)return{ok:false,reason:"already-adapting"};
+      adaptPending=true;
+      const action=deps.app?.querySelector?.("[data-rtg-adapt-requirements]");
+      if(action){action.disabled=true;action.textContent="ADATTAMENTO IN CORSO…";}
+      try{
       const teamId=currentRequirementTeamId();
       if(!teamId){deps.toast?.("Nessun requisito principale attivo","error");return{ok:false,reason:"no-target"};}
       const constraints=deps.activeConfig()?.constraints?.[teamId];
@@ -864,6 +870,10 @@
       await saveSquad(best.squad,{quiet:true});
       deps.toast?.(`Squadra adattata e salvata: Potenza ${best.eligibility.teamPower} / ${best.eligibility.cap}`);
       return{ok:true,teamId,eligibility:best.eligibility,squad:deps.clone(deps.squadDraft)};
+      }finally{
+        adaptPending=false;
+        if(action?.isConnected!==false&&action){action.disabled=false;action.textContent="Adatta ai requisiti";}
+      }
     }
 
     function renderSquad(){
