@@ -372,6 +372,16 @@
 .rtg-coach-detail .rtg-coach-profile-team .rtg-coach-team-logo{width:28px!important;height:28px!important;}
 .rtg-coach-detail .rtg-coach-profile-meta>span{min-width:0!important;}
 
+/* Keep long coach-team badges (e.g. Inazuma National) inside the identity column on phones. */
+@media(max-width:700px){
+  .rtg-coach-detail .player-detail-tags{flex-wrap:wrap!important;max-width:100%!important;}
+  .rtg-coach-detail .rtg-coach-team-chip{
+    max-width:100%!important;box-sizing:border-box!important;flex:0 1 auto!important;
+    white-space:normal!important;overflow-wrap:anywhere!important;
+  }
+}
+
+
 /* Album: coach card is a self-contained compact card.
    Never place the locked label over the portrait, name or season badge. */
 .rtg-coaches-album .album-player-grid{
