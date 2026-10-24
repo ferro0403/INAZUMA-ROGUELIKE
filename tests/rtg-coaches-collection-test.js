@@ -330,6 +330,40 @@
     assert.match(html,/data-rtg-coaches-collection/);
     assert.doesNotMatch(html,/rtg-pull-card-stage|rtg-pull-result-body/);
   });
+  test("La X della scheda aperta dal selettore torna alla Collezione, non a Squadra",()=>{
+    const s=campaign();
+    const opened=[];
+    const cardButton={dataset:{rtgCoachDetail:"1777"},addEventListener(_type,handler){this.click=handler;}};
+    const root={
+      querySelector(){return null;},
+      querySelectorAll(selector){return selector==="[data-rtg-coach-detail]"?[cardButton]:[];}
+    };
+    const ctx={
+      getCampaign:()=>s,getSquadDraft:()=>s.squads.ie1,activeSquad:()=>s.squads.ie1,
+      openModal:(markup,options)=>opened.push({markup,options}),getModalRoot:()=>root,
+      toast:()=>{}
+    };
+    sandbox.RoadToGloryCoachesController.open(ctx,"collection");
+    assert.match(opened[0].markup,/data-rtg-coaches-tab="collection"/);
+    cardButton.click();
+    assert.match(opened[1].markup,/Scheda allenatore Percival Travis/);
+    assert.equal(typeof opened[1].options.onClose,"function");
+    opened[1].options.onClose();
+    assert.match(opened[2].markup,/data-rtg-coaches-tab="collection"/);
+    assert.match(opened[2].markup,/data-rtg-coach-detail="1777"/);
+    assert.equal(opened[2].options.onClose,null);
+    // Opening the same detail from Squadra directly must still close normally.
+    sandbox.RoadToGloryCoachesController.open(ctx,"collection","1777");
+    assert.equal(opened.at(-1).options.onClose,null);
+  });
+  test("Il badge Inazuma National può andare a capo senza uscire dal dettaglio mobile",()=>{
+    const markup=view.detail(campaign(),"1777");
+    const css=read("css/rtg-coaches.css");
+    assert.match(markup,/rtg-coach-team-chip/);
+    assert.match(markup,/Inazuma National/);
+    assert.match(css,/\.rtg-coach-detail \.player-detail-tags\{flex-wrap:wrap!important;max-width:100%!important;\}/);
+    assert.match(css,/\.rtg-coach-detail \.rtg-coach-team-chip\{[^}]*max-width:100%!important;[^}]*white-space:normal!important;/);
+  });
   test("Assegnazione dal catalogo: committa, aggiorna slot, chiude e ritorna a Squadra",async()=>{
     let state=campaign();state.coachOwnedIds=["36"];
     let draft=stateApi.clone(state.squads.ie1);
