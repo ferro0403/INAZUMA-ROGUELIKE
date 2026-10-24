@@ -845,7 +845,13 @@
           playerResolver:deps.playerResolverForState(state)});
       };
       const before=check(deps.squadDraft);
-      if(before.eligible){deps.toast?.("La squadra rispetta già i requisiti.");return{ok:true,reason:"already-eligible",eligibility:before};}
+      if(before.eligible){
+        const saved=deps.campaign?.squads?.[deps.activeSeasonId()];
+        if(JSON.stringify(saved||{})!==JSON.stringify(deps.squadDraft||{}))
+          await saveSquad(deps.squadDraft,{quiet:true});
+        deps.toast?.("La squadra rispetta già i requisiti ed è salvata.");
+        return{ok:true,reason:"already-eligible",eligibility:before};
+      }
       const fixedBenchId=global.RoadToGloryCoachPowerRuntime?.capOverrideFor?.(deps.squadDraft,deps.campaign)||"";
       const best=global.RoadToGlorySquadAutoAdapt?.plan?.({
         pool:requirementPool(teamId),formations,constraint:constraints,
