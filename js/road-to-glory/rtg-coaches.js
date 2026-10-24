@@ -20,6 +20,10 @@
   function seasonCompleted(state,seasonId){
     const seasons=order(state),required=seasons.indexOf(seasonId),current=seasons.indexOf(String(state?.activeSeasonId||""));
     if(required<0||current<0)return false;
+    // Replay restores the first Season, but never revokes an earned coach unlock.
+    // Completion markers are stored in the existing canonical season reward ledger.
+    const ledger=state?.seasonTransitionRewardedIds||[];
+    if(ledger.includes("completion:"+seasonId))return true;
     if(current>required)return true;
     if(current===required&&state?.seasonComplete===true)return true;
     return (state?.seasonTransitionRewardedIds||[]).some(entry=>String(entry).startsWith(seasonId+"->"));
