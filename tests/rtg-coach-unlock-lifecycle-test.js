@@ -30,7 +30,7 @@ function controller(initial){
  });
  return {api,get:()=>current,writes:()=>writes};
 }
-const ids=s=>M.eligible(s).map(coach=>coach.id).sort(),expected=values=>[...values].sort();
+const ids=s=>Array.from(M.eligible(s),coach=>String(coach.id)).sort(),expected=values=>[...values].sort();
 test("IE1→IE2→IE3 transitions keep prior coach unlocks without prematurely unlocking later ones",async()=>{
  const first=controller(state("rtg-ie-trilogy","ie1",true,["completion:ie1"],["36"]));
  assert.equal(M.status(first.get(),"36"),"owned");
