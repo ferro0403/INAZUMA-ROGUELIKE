@@ -15,7 +15,8 @@ const c={globalThis:null,Object,Array,String,Number,Math,Set,Map,JSON,Promise,Er
 c.globalThis=c;
 vm.createContext(c);
 vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-runtime.js","utf8"),c);
-vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-slot-runtime.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-season-transition-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-album-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-development-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-vending-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8"),c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-slot-runtime.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-season-transition-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-album-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-development-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-vending-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-auto-adapt.js","utf8"),c);
+vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-squad-controller.js","utf8"),c);vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-controller.js","utf8"),c);
 
 const make=(prefix,overall)=>{
   const roles=["GK","DF","DF","DF","DF","MF","MF","MF","FW","FW","FW","GK","DF","MF","FW"];
@@ -104,10 +105,12 @@ const controller=c.RoadToGloryController.create({
   assert.strictEqual(before.eligible,false);
   assert.strictEqual(before.teamPower,86);
 
-  const adapted=controller.adaptSquadToCurrentRequirements();
+  const adapted=await controller.adaptSquadToCurrentRequirements();
   assert.strictEqual(adapted.ok,true);
   assert.strictEqual(adapted.eligibility.eligible,true);
   assert.strictEqual(adapted.eligibility.teamPower,75);
+  assert.strictEqual(current.squads.ie1.lineup.length,11,"adattamento deve essere salvato prima del successo");
+  assert.strictEqual(current.squads.ie1.bench.length,4);
 
   const squad=controller.getDraftSquad();
   assert.strictEqual(squad.lineup.length,11);
