@@ -582,7 +582,7 @@
     function canStartNode(node){
       if(!node)return false;
       if(node.id===campaign.currentNodeId)return true;
-      return node.type==="secondary"&&Number(campaign.attemptsByNode?.[node.id]?.clears||0)>0;
+      return node.type==="secondary"&&(campaign.seasonComplete||Number(campaign.attemptsByNode?.[node.id]?.clears||0)>0);
     }
     function openNode(nodeId){
       const node=nodeById(nodeId);
@@ -628,7 +628,7 @@
       let started=null;
       campaign=await repository.update("rtg-start-match",current=>{
         if(current.activeMatch)throw Object.assign(new Error("Partita RTG già attiva"),{code:"rtg-match-already-active"});
-        const allowed=node?.id===current.currentNodeId||(node?.type==="secondary"&&Number(current.attemptsByNode?.[node.id]?.clears||0)>0);
+        const allowed=node?.id===current.currentNodeId||(node?.type==="secondary"&&(current.seasonComplete||Number(current.attemptsByNode?.[node.id]?.clears||0)>0));
         if(!node||!allowed)throw Object.assign(new Error("Nodo RTG non disponibile"),{code:"rtg-node-not-available"});
         if(node.type==="main"){
           const eligibility=squadRuntime.mainEligibility({teamId:node.teamId,state:current,seasonDb,freeAgentIds,freeAgentsDb,playerResolver:playerResolverForState(current)});
