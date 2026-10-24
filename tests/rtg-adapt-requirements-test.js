@@ -63,9 +63,13 @@ let current={
 };
 
 const clone=value=>JSON.parse(JSON.stringify(value));
+let failNextUpdate=false;
 const repository={
   ensureCampaign:async()=>clone(current),
-  update:async(_label,mutate)=>{current=mutate(clone(current));return clone(current);},
+  update:async(_label,mutate)=>{
+    if(failNextUpdate){failNextUpdate=false;throw new Error("canonical save failed");}
+    current=mutate(clone(current));return clone(current);
+  },
 };
 const resolver={
   resolveAtLevel20:(playerId)=>{
@@ -128,5 +132,15 @@ const controller=c.RoadToGloryController.create({
   });
   assert.strictEqual(after.eligible,true);
   assert.strictEqual(after.teamPower,75);
+  const beforeFailure=clone(current);
+  const exchanged=controller.swapSquadDraft("m2","m3");
+  assert.strictEqual(exchanged.ok,true);
+  failNextUpdate=true;
+  await assert.rejects(controller.adaptSquadToCurrentRequirements(),/canonical save failed/);
+  assert.deepStrictEqual(current,beforeFailure,"failed persistence must not change the canonical squad");
+  const validAgain=await controller.adaptSquadToCurrentRequirements();
+  assert.strictEqual(validAgain.ok,true);
+  assert.deepStrictEqual(current.squads.ie1,clone(controller.getDraftSquad()),
+    "already-valid but unsaved draft must be committed by Adapt");
   console.log("rtg-adapt-requirements-test: PASS");
 })().catch(error=>{console.error(error);process.exitCode=1;});
