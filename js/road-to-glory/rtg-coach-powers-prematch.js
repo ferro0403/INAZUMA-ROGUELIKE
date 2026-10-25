@@ -30,7 +30,7 @@
     const opponents=match.opponentSquad||{},users=match.userSquad||{};
     const oppLineup=opponents.lineup||[],oppBench=opponents.bench||[],userBench=users.bench||[];
     const byId=(players,key)=>players.find(p=>pid(p)===id(key));
-    const players=ids(selection.playerIds),moveIdx=indices(selection.moveIndices);
+    const players=ids(selection.playerIds);
     switch(id(coachId)){
       case "36": {
         if(players.length!==2)return null;
@@ -49,11 +49,12 @@
           players.every(key=>byId(oppLineup,key))&&match.ptModeVersion===1
             ?{playerIds:players}:null;
       case "1940": {
-        if(players.length!==1||moveIdx.length!==2||new Set(moveIdx).size!==2||
-           moveIdx.some(i=>!Number.isInteger(i)||i<0||i>3))return null;
+        if(players.length!==1)return null;
         const p=byId(oppLineup,players[0]),catalog=movesFor(match,p);
-        return p&&catalog.length===4&&moveIdx.every(i=>catalog[i]&&Number(catalog[i].ptCost)>0)
-          ?{playerIds:players,moveIndices:moveIdx}:null;
+        // Store every available real move in the new match; old match snapshots stay unchanged.
+        return p&&catalog.length>0&&catalog.length<=4&&
+          catalog.every(m=>Number.isInteger(Number(m?.ptCost))&&Number(m.ptCost)>0)
+          ?{playerIds:players,moveIndices:catalog.map((_,index)=>index)}:null;
       }
       case "4761":
         return players.length===2&&new Set(players).size===2&&players.every(key=>{
