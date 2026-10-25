@@ -27,15 +27,16 @@
       details.pt={...base,total:base.total+50,coachBonus:50};details.badge="+50 PT";
       details.note="FIDUCIA NEI CAMPIONI · +50 PT iniziali e massimi per la partita";
     }else if(coachId==="1329"){
-      if((squad.lineup||[]).every(x=>cardId(x)!==key)||config.moveIndices.length!==2)return null;
+      if((squad.lineup||[]).every(x=>cardId(x)!==key))return null;
       const moves=engine.fourMoves(player,seasonId);
-      if(moves.length!==4||new Set(config.moveIndices).size!==2)return null;
-      for(const index of config.moveIndices){
+      const allIndices=engine.availableMoveIndices(moves);
+      if(!allIndices)return null;
+      for(const index of allIndices){
         const price=Number(moves[index]?.ptCost);
         if(!Number.isInteger(price)||price<=0)return null;
         details.costs[index]=Math.ceil(price/2);
       }
-      details.note="ALLENAMENTO SPECIALIZZATO · 2 mosse a metà costo PT";details.badge="PT -50%";
+      details.note="ALLENAMENTO SPECIALIZZATO · tutte le "+allIndices.length+" mosse a metà costo PT";details.badge="PT -50%";
     }else if(coachId==="1777"){
       if((squad.bench||[]).every(x=>cardId(x)!==key)||config.cardIds.length!==1)return null;
       const overall=Number(player.overall);
@@ -50,10 +51,11 @@
       const shown=elementNames[effectiveElement]||effectiveElement;
       details.player={...player,element:shown};
       details.moveElements={};
-      if(target?.moveIndices?.length===2){
-        target.moveIndices.forEach(index=>{details.moveElements[index]=shown;});
+      const allIndices=engine.availableMoveIndices(engine.fourMoves(player,seasonId));
+      if(target&&allIndices){
+        allIndices.forEach(index=>{details.moveElements[index]=shown;});
         details.note="TRASFORMAZIONE TOTALE · elemento "+shown+
-          " e 2 mosse trasformate per la partita. Potenza e costo PT invariati.";
+          " e tutte le "+allIndices.length+" mosse trasformate per la partita. Potenza e costo PT invariati.";
       }else{
         details.note="CAMBIO DI ELEMENTO · "+shown+" durante la partita (selezione precedente)";
       }
