@@ -214,12 +214,12 @@ test("Nerina borrowed substitute survives the actual match halftime/resume engin
 test("All coach UIs retain their scroll on incremental selection",()=>{
   const squad=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
   const prematch=read("js/road-to-glory/rtg-coach-powers-prematch-ui.js");
-  for(const ui of [squad,prematch]){
-    assert.match(ui,/active\.outerHTML=/);
-    assert.match(ui,/rememberModalScroll\(\)/);
-    assert.match(ui,/restoreModalScroll\(\)/);
-    assert.match(ui,/modal\.scrollTop=retainedModalTop/);
-  }
+  for(const ui of [squad,prematch])assert.match(ui,/active\.outerHTML=/);
+  // All-move coaches now select their target directly inside the mounted modal,
+  // so re-rendering preserves the scroll without opening an extra detail picker.
+  assert.match(squad,/if\(active\)active\.outerHTML=main/);
+  assert.match(prematch,/if\(active\)active\.outerHTML=markup/);
+  assert.doesNotMatch(squad,/coachMovePicker/);
   const control=read("js/road-to-glory/rtg-controller.js");
   assert.match(control,/querySelector\("\.rtg-halftime"\)\?\.scrollTop/);
   assert.match(control,/panel\.scrollTop=top/);
