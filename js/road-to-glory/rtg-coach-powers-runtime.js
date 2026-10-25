@@ -42,6 +42,9 @@
     const season=id(player?.resolvedSeasonId||player?.legacySeasonId||seasonId||"ie1");
     return global.RtgFourMovesRuntime?.movesFor?.(season,canonical)||[];
   }
+  const availableMoveIndices=moves=>Array.isArray(moves)&&moves.length>0&&moves.length<=4&&
+    moves.every(move=>Number.isInteger(Number(move?.ptCost))&&Number(move.ptCost)>0)
+    ?moves.map((_,index)=>index):null;
   function validConfig(squad,players,seasonId,benchPlayers=[]){
     const config=selected(squad);
     if(!config||!Array.isArray(players)||!Array.isArray(benchPlayers)||
@@ -53,10 +56,9 @@
     }
     if(config.coachId==="1329"){
       if(config.cardIds.length!==1||!lineup.has(config.cardIds[0]))return null;
-      if(config.moveIndices.length!==2||new Set(config.moveIndices).size!==2||
-         config.moveIndices.some(index=>!Number.isInteger(index)||index<0||index>=4))return null;
-      const moves=fourMoves(lineup.get(config.cardIds[0]),seasonId);
-      return moves.length===4&&config.moveIndices.every(index=>Number(moves[index]?.ptCost)>0)?config:null;
+      const allMoves=availableMoveIndices(fourMoves(lineup.get(config.cardIds[0]),seasonId));
+      // Legacy two-move selections remain readable; each NEW match snapshots all real moves.
+      return allMoves?{...config,moveIndices:allMoves}:null;
     }
     if(config.coachId==="1777"){
       // Bench player is excluded from the 15-player *cap average* only.
@@ -76,13 +78,10 @@
           const player=lineup.get(target.cardId);
           if(!player||!ELEMENTS.includes(target.element)||
              elementKey(player.element||player.type)===target.element||
-             target.moveIndices.length!==2||
-             new Set(target.moveIndices).size!==2||
-             target.moveIndices.some(index=>!Number.isInteger(index)||index<0||index>=4))return null;
-          const moves=fourMoves(player,seasonId);
-          if(moves.length!==4||target.moveIndices.some(index=>!(Number(moves[index]?.ptCost)>0)))return null;
+             !availableMoveIndices(fourMoves(player,seasonId)))return null;
         }
-        return config;
+        return {...config,targets:config.targets.map(t=>({...t,
+          moveIndices:availableMoveIndices(fourMoves(lineup.get(t.cardId),seasonId))}))};
       }
       // Preserve existing single-player choices from saves made before Total Transformation.
       const target=config.cardIds[0],source=target&&lineup.get(target);
@@ -187,7 +186,7 @@
       ?target.element:originalElement;
   }
   global.RoadToGloryCoachPowerRuntime=Object.freeze({
-    RARITIES,ELEMENTS,elementKey,powerReady,nextRarity,rarityOf,selected,fourMoves,validConfig,
+    RARITIES,ELEMENTS,elementKey,powerReady,nextRarity,rarityOf,selected,fourMoves,availableMoveIndices,validConfig,
     eligibleRosterForCap,capOverrideFor,applyToMatch,moveCost,moveElement,
   });
 })(globalThis);
