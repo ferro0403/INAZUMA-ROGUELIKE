@@ -8,7 +8,7 @@
     "36":["CAMBIO FORZATO","Seleziona un titolare avversario e la riserva che entrerà al suo posto. Il portiere si sostituisce solo con un altro portiere; gli altri giocatori di movimento possono avere ruoli differenti."],
     "1225":["PRESTITO A SORPRESA","Scegli una riserva avversaria da prendere in prestito e una delle tue 4 riserve da sostituire per questa partita."],
     "1275":["ESAURIMENTO OSCURO","Seleziona 2 titolari avversari. Inizieranno con metà dei PT, mantenendo invariati i PT massimi."],
-    "1940":["TECNICA PROIBITA","Seleziona un titolare avversario e blocca 2 delle sue 4 mosse speciali dalla sua scheda giocatore."],
+    "1940":["TECNICA PROIBITA","Seleziona un titolare avversario: bloccherai tutte le sue mosse speciali disponibili."],
     "4761":["DISORDINE TATTICO","Scegli 2 giocatori di movimento avversari: si scambieranno le posizioni tattiche iniziali. Il portiere non può essere selezionato."],
   };
   let openForMatch=null;
@@ -59,16 +59,7 @@
         else if(selected.playerIds.length<2)selected.playerIds.push(pid);
       }else if(coach==="1940"){
         selected.playerIds=[pid];selected.moveIndices=[];
-        const moves=runtime.movesFor(match,byId(oppLineup,pid));
-        if(moves.length!==4)return ctx.toast?.("Quattro mosse speciali non disponibili.","error");
-        rememberModalScroll();
-        ctx.openPlayerDetails?.(pid,"opponent",{
-          allowRoleSwitch:false,onClose:()=>render(),
-          coachMovePicker:{moves,selectedIndices:[],onConfirm:indices=>{
-            selected.moveIndices=indices;ctx.closeModal?.({invokeOnClose:false});render();
-          }},
-        });
-        return;
+        return render();
       }
       render();
     }
@@ -86,7 +77,7 @@
       const disabled=valid()?"":" disabled";
       const step=coach==="36"?selected.playerIds.length===0?"PRIMA: TITOLARE AVVERSARIO":"POI: RISERVA AVVERSARIA":
         coach==="1225"?selected.playerIds.length===0?"PRIMA: RISERVA AVVERSARIA":"POI: UNA TUA RISERVA":
-        coach==="1940"?"GIOCATORE E DUE MOSSE": "SELEZIONA 2 TITOLARI";
+        coach==="1940"?"GIOCATORE · TUTTE LE MOSSE": "SELEZIONA 2 TITOLARI";
       const opposingNeeded=coach!=="1225";
       const opponentCards=fieldMarkup("opponent");
       const ownCards=coach==="1225"?fieldMarkup("user"):"";
@@ -103,7 +94,7 @@
         opponentCards+'</section>'+oppBenchSection+
         (coach==="1225"?'<section class="rtg-coach-prematch-area" data-coach-area="userLineup"><h3>LA TUA FORMAZIONE</h3>'+ownCards+'</section>':"")+
         ownBenchSection+
-        (coach==="1940"&&selected.playerIds.length?'<p>Mosse selezionate: '+selected.moveIndices.length+'/2. Tocca di nuovo il giocatore per modificarle.</p>':"")+
+        (coach==="1940"&&selected.playerIds.length?'<p>Tutte le mosse speciali disponibili del giocatore selezionato saranno bloccate.</p>':"")+
         '<div class="rtg-coach-power-actions">'+
         '<button type="button" class="btn btn-yellow" data-coach-prematch-apply'+disabled+'>CONFERMA POTERE</button>'+
         '<button type="button" class="btn" data-coach-prematch-skip>CONTINUA SENZA POTERE</button></div></section>';
