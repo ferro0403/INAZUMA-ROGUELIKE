@@ -103,3 +103,30 @@ test("Auto-adapt never fabricates accessible cards or bypasses an impossible cap
  assert.equal(adapted.plan({pool,formations:[formation],constraint:{cap:75,minRecruit:0,recentCount:0},
   originalSquad:{lineup:[],bench:[]},evaluate:verify({cap:75})}),null);
 });
+
+test("Adatta prioritizes all affordable RTG Season cards over better-fitting free agents",()=>{
+ const rtg=[entry("rtg-gk","GK",74,false,false),
+  ...Array.from({length:14},(_,i)=>entry("rtg"+i,"FW",74,false,false))].map(x=>({...x,isRtg:true}));
+ const free=[entry("fa-gk","GK",75),...Array.from({length:20},(_,i)=>entry("fa"+i,"FW",75))];
+ const pool=[...rtg,...free];verify.currentPool=pool;
+ const plan=adapted.plan({pool,formations:[formation],constraint:{cap:75,minRecruit:0,recentCount:0},
+  originalSquad:{lineup:free.slice(0,11).map(e=>e.playerId),bench:free.slice(11,15).map(e=>e.playerId),formationId:"4-4-2"},
+  evaluate:verify({cap:75})});
+ assert(plan?.eligibility?.eligible);
+ const chosen=[...plan.squad.lineup,...plan.squad.bench];
+ assert.equal(chosen.filter(id=>id.startsWith("rtg")).length,15,"RTG cards outrank closer-to-cap free agents");
+ assert.equal(chosen.length,15);
+ assert.equal(plan.squad.lineup[0],"rtg-gk");
+});
+test("RTG priority yields only when more Season cards would breach the real cap",()=>{
+ const rtg=[entry("rtg-gk","GK",90),
+  ...Array.from({length:14},(_,i)=>entry("rtg"+i,"FW",90))].map(x=>({...x,isRtg:true}));
+ const free=[entry("fa-gk","GK",70),...Array.from({length:22},(_,i)=>entry("fa"+i,"FW",70))];
+ const pool=[...rtg,...free];verify.currentPool=pool;
+ const plan=adapted.plan({pool,formations:[formation],constraint:{cap:75,minRecruit:0,recentCount:0},
+  originalSquad:{lineup:[],bench:[],formationId:"4-4-2"},evaluate:verify({cap:75})});
+ assert(plan?.eligibility?.eligible);
+ assert.equal([...plan.squad.lineup,...plan.squad.bench].filter(id=>id.startsWith("rtg")).length,4,
+   "maximal RTG roster still obeys cap 75 and starts a genuine GK");
+ assert(plan.eligibility.teamPower<=75);
+});
