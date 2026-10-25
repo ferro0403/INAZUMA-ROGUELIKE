@@ -15,10 +15,10 @@
   };
   const NOTES={
     "208":"Tocca due titolari direttamente sul campo. Entrambi riceveranno +50 PT iniziali e massimi.",
-    "1329":"Tocca un titolare sul campo per aprire la sua scheda e selezionarvi due delle quattro mosse.",
+    "1329":"Tocca un titolare sul campo: tutte le sue mosse speciali disponibili costeranno la metà dei PT.",
     "1777":"Tocca una riserva sulla panchina: nel calcolo dell'overall squadra conterà al massimo 60. I valori reali non cambiano.",
     "1974":"Tocca una carta sul campo o in panchina: potrai vedere qui sotto la rarità successiva e le statistiche che aumentano.",
-    "4401":"Scegli 2 titolari. Per ognuno imposta un elemento diverso dall'originale e trasforma 2 delle sue 4 mosse speciali nello stesso elemento. Potenza e costo PT non cambiano.",
+    "4401":"Scegli 2 titolari. Per ognuno imposta un elemento diverso dall'originale: tutte le sue mosse speciali disponibili cambiano nello stesso elemento. Potenza e costo PT non cambiano.",
   };
   let busy=false;
   function open(ctx){
