@@ -44,8 +44,9 @@
       details.badge="CAP "+Math.min(overall,60);
     }else if(coachId==="4401"){
       if((squad.lineup||[]).every(x=>cardId(x)!==key))return null;
-      const target=config.targets?.find(t=>t.cardId===key);
-      const effectiveElement=target?.element||(config.cardIds.length===1?config.element:"");
+      const target=config.targets?.find(t=>t.cardId===key)||
+        (config.cardIds.length===1?{cardId:key,element:config.element}:null);
+      const effectiveElement=target?.element||"";
       if(!engine.ELEMENTS.includes(effectiveElement)||
          engine.elementKey(player.element||player.type)===effectiveElement)return null;
       const shown=elementNames[effectiveElement]||effectiveElement;
