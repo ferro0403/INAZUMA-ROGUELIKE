@@ -329,7 +329,7 @@ test("Yi double choice persists in canonical optional Squad config without chang
   assert.match(ui,/availableMoveIndices/);
   assert.match(ui,/choice\.targets\.length<2/);
   assert.match(ui,/targets:choice\.targets\.map/);
-  assert.match(ui,/rtg-coach-yi-all-moves/);
+  assert.doesNotMatch(ui,/rtg-coach-yi-all-moves|MOSSE DISPONIBILI/);
   const preview=read("js/road-to-glory/rtg-coach-powers-preview.js");
   assert.match(preview,/details\.moveElements/);
   assert.match(preview,/rtg-coach-move-transformed/);
