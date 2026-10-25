@@ -72,16 +72,17 @@ test("René: swap precisely two outfield tactical slots, never GK",()=>{
  assert.equal(runtime.validate(m,"4761",{playerIds:["gk","m1"]}),null);
  assert.equal(runtime.validate(m,"4761",{playerIds:["m1","m1"]}),null);
 });
-test("Zoolan: two of four opponent moves are disabled only in opposing match",()=>{
+test("Zoolan: every available opposing move is disabled only for the chosen rival",()=>{
  const match=makeMatch("1940"),choice={playerIds:["m1"],moveIndices:[0,3]};
  const powered=runtime.apply(match,"1940",choice);
  assert.equal(runtime.blocked(powered,"opponent","m1",0),true);
  assert.equal(runtime.blocked(powered,"opponent","m1",3),true);
- assert.equal(runtime.blocked(powered,"opponent","m1",1),false);
+ assert.equal(runtime.blocked(powered,"opponent","m1",1),true);
+ assert.equal(runtime.blocked(powered,"opponent","m1",2),true);
  assert.equal(runtime.blocked(powered,"opponent","m2",0),false);
  assert.equal(runtime.blocked(powered,"user","m1",0),false);
- assert.equal(runtime.validate(match,"1940",{playerIds:["m1"],moveIndices:[0,0]}),null);
- assert.equal(runtime.validate(match,"1940",{playerIds:["m1"],moveIndices:[1,4]}),null);
+ assert.deepEqual(Array.from(runtime.validate(match,"1940",{playerIds:["m1"],moveIndices:[0,0]}).moveIndices),[0,1,2,3]);
+ assert.equal(runtime.validate(match,"1940",{playerIds:["missing"]}),null);
  assert.match(read("js/road-to-glory/rtg-match-pt-runtime.js"),/RoadToGloryCoachPreMatchRuntime\?\.blocked\?/);
 });
 test("Nerina: true opposing reserve moves to user bench; replaced reserve remains permanent",()=>{
@@ -134,5 +135,5 @@ test("Pre-match gating, UI and canonical atomic save are linked; old matches una
  assert.match(view,/data-rtg-prematch-coach-power/);
  const controller=read("js/road-to-glory/rtg-controller.js");
  assert.match(controller,/if\(!side\|\|options\?\.coachMovePicker\)/,
-   "opponent player details must mount Zoolan's two-move selector");
+   "player details stay available for other contextual RTG previews");
 });
