@@ -54,43 +54,6 @@
       coachId==="1974"?[...(squad.lineup||[]),...(squad.bench||[])].includes(key)&&
         !!rules.nextRarity(rules.rarityOf(resolve(key))):
         (squad.lineup||[]).includes(key);
-    function openMoves(key){
-      const player=resolve(key),moves=rules.fourMoves(player,ctx.seasonId());
-      if(moves.length!==4||moves.some(m=>!(Number(m?.ptCost)>0)))
-        return ctx.toast?.("Le quattro mosse non sono disponibili per questo giocatore.","error");
-      const prevSelected=choice.cardIds[0]===key?choice.moveIndices.slice():[];
-      choice.cardIds=[key];choice.moveIndices=prevSelected;
-      rememberModalScroll();
-      ctx.openPlayerDetails?.(key,{
-        allowRoleSwitch:false,onClose:()=>render(),
-        coachMovePicker:{
-          moves,selectedIndices:choice.moveIndices,
-          onConfirm:indices=>{
-            choice.cardIds=[key];choice.moveIndices=indices;
-            ctx.closeModal?.({invokeOnClose:false});render();
-          },
-        },
-      });
-    }
-    function openYiMoves(key){
-      const target=choice.targets.find(t=>t.cardId===key);
-      if(!target?.element)return ctx.toast?.("Seleziona prima il nuovo elemento del giocatore.","error");
-      const moves=rules.fourMoves(resolve(key),ctx.seasonId());
-      if(moves.length!==4||moves.some(m=>!(Number(m?.ptCost)>0)))
-        return ctx.toast?.("Le quattro mosse non sono disponibili per questo giocatore.","error");
-      rememberModalScroll();
-      ctx.openPlayerDetails?.(key,{
-        allowRoleSwitch:false,onClose:()=>render(),
-        coachMovePicker:{
-          moves,selectedIndices:target.moveIndices,
-          onConfirm:indices=>{
-            const current=choice.targets.find(t=>t.cardId===key);
-            if(current)current.moveIndices=indices;
-            ctx.closeModal?.({invokeOnClose:false});render();
-          },
-        },
-      });
-    }
     function pick(key){
       if(busy||!allowed(key))return;
       if(coachId==="4401"){
@@ -100,7 +63,12 @@
         choice.cardIds=choice.targets.map(t=>t.cardId);
         return render();
       }
-      if(coachId==="1329")return openMoves(key);
+      // A single starter is enough: the next match affects every real move.
+      if(coachId==="1329"){
+        choice.cardIds=choice.cardIds.includes(key)?[]:[key];
+        choice.moveIndices=[]; // no fixed two-move choice
+        return render();
+      }
       if(choice.cardIds.includes(key))choice.cardIds=choice.cardIds.filter(x=>x!==key);
       else if(cap===1)choice.cardIds=[key];
       else if(choice.cardIds.length<2)choice.cardIds.push(key);
@@ -144,15 +112,15 @@
               '" data-element="'+e.key+'" aria-pressed="'+(target.element===e.key)+'">'+
               '<span class="rtg-coach-element-art">'+e.art+'</span><span>'+e.label+'</span></button>'
             ).join("");
-            const selected=target.moveIndices.length;
+            const available=rules.availableMoveIndices(rules.fourMoves(resolve(target.cardId),ctx.seasonId()));
             return '<section class="rtg-coach-yi-target"><h4>GIOCATORE '+(index+1)+' · '+name+'</h4>'+
               '<div class="rtg-coach-yi-element-options">'+options+'</div>'+
-              '<button type="button" class="btn rtg-coach-yi-moves-button" data-rtg-coach-yi-moves="'+esc(target.cardId)+
-              '"'+(target.element?'':' disabled')+'>SELEZIONA 2 MOSSE NELLA SCHEDA ('+selected+'/2)</button></section>';
+              '<p class="rtg-coach-yi-all-moves">TUTTE LE '+(available?.length||0)+' MOSSE DISPONIBILI</p></section>';
           }).join("")+'</div>':"";
       const title=coachId==="1777"?"SCEGLI UNA RISERVA":"SCEGLI SUL CAMPO";
-      const summary=coachId==="1329"?' · MOSSE '+choice.moveIndices.length+'/2':
-        coachId==="4401"?' · MOSSE '+choice.targets.reduce((n,t)=>n+t.moveIndices.length,0)+'/4':"";
+      const summary=coachId==="1329"&&choice.cardIds[0]
+        ?' · TUTTE LE '+(rules.availableMoveIndices(rules.fourMoves(resolve(choice.cardIds[0]),ctx.seasonId()))?.length||0)+' MOSSE':
+        coachId==="4401"?' · TUTTE LE MOSSE':"";
       const main='<section class="rtg-coach-power-config rtg-coach-field-picker development-squad-card-scope" aria-label="Configura potere allenatore">'+
         '<h2>'+NAMES[coachId]+'</h2><p>'+NOTES[coachId]+'</p>'+
         '<h3>'+title+' ('+choice.cardIds.length+'/'+cap+summary+')</h3>'+
@@ -179,9 +147,6 @@
         const next=id(button.dataset.rtgCoachPowerElement);
         if(!target||ownElement(target.cardId)===next)return;
         target.element=next;render();
-      }));
-      root?.querySelectorAll?.("[data-rtg-coach-yi-moves]")?.forEach(button=>button.addEventListener("click",()=>{
-        if(!busy)openYiMoves(id(button.dataset.rtgCoachYiMoves));
       }));
       root?.querySelector?.("[data-rtg-coach-power-cancel]")?.addEventListener("click",()=>ctx.closeModal?.());
       root?.querySelector?.("[data-rtg-coach-power-clear]")?.addEventListener("click",async()=>{
