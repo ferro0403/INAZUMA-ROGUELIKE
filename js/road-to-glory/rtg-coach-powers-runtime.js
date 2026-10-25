@@ -85,9 +85,11 @@
       }
       // Preserve existing single-player choices from saves made before Total Transformation.
       const target=config.cardIds[0],source=target&&lineup.get(target);
-      return config.cardIds.length===1&&!!source&&
+      const allMoves=source?availableMoveIndices(fourMoves(source,seasonId)):null;
+      return config.cardIds.length===1&&!!source&&allMoves&&
         ELEMENTS.includes(config.element)&&
-        elementKey(source.element||source.type)!==config.element?config:null;
+        elementKey(source.element||source.type)!==config.element
+        ?{...config,targets:[{cardId:target,element:config.element,moveIndices:allMoves}]}:null;
     }
     return null;
   }
