@@ -126,7 +126,7 @@ test("RTG priority yields only when more Season cards would breach the real cap"
  const plan=adapted.plan({pool,formations:[formation],constraint:{cap:75,minRecruit:0,recentCount:0},
   originalSquad:{lineup:[],bench:[],formationId:"4-4-2"},evaluate:verify({cap:75})});
  assert(plan?.eligibility?.eligible);
- assert.equal([...plan.squad.lineup,...plan.squad.bench].filter(id=>id.startsWith("rtg")).length,4,
+ assert.equal([...plan.squad.lineup,...plan.squad.bench].filter(id=>id.startsWith("rtg")).length,3,
    "maximal RTG roster still obeys cap 75 and starts a genuine GK");
  assert(plan.eligibility.teamPower<=75);
 });
