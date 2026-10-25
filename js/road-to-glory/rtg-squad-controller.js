@@ -689,7 +689,8 @@
         const parsed=deps.cardIdentity?.parse?.(playerId,season)||{};
         const recruit=recruitSet.has(playerId)&&(season==="ie1"||String(parsed.legacySeasonId||"")===season);
         const recent=recruit&&seasonTeamIdsForPlayer(playerId).some(team=>recentTeams.has(team));
-        return{playerId,role,overall:Number(player.overall||0),contribution,recruit,recent};
+        return{playerId,role,overall:Number(player.overall||0),contribution,recruit,recent,
+          isRtg:parsed.sourceKind==="season"};
       }).filter(Boolean);
     }
     function buildRequirementCandidate(formation,teamId,pool){
@@ -851,18 +852,26 @@
           playerResolver:deps.playerResolverForState(state)});
       };
       const before=check(deps.squadDraft);
-      if(before.eligible){
+      const pool=requirementPool(teamId);
+      const rtgIds=new Set(pool.filter(entry=>entry.isRtg).map(entry=>entry.playerId));
+      const currentRtg=[...(deps.squadDraft?.lineup||[]),...(deps.squadDraft?.bench||[])]
+        .filter(cardId=>rtgIds.has(deps.id(cardId))).length;
+      const saveEligibleDraft=async()=>{
         const saved=deps.campaign?.squads?.[deps.activeSeasonId()];
         if(JSON.stringify(saved||{})!==JSON.stringify(deps.squadDraft||{}))
           await saveSquad(deps.squadDraft,{quiet:true});
         deps.toast?.("La squadra rispetta già i requisiti ed è salvata.");
         return{ok:true,reason:"already-eligible",eligibility:before};
-      }
+      };
+      // An already-valid squad still adapts when more RTG cards can fit legally.
+      if(before.eligible&&currentRtg>=Math.min(15,rtgIds.size))return saveEligibleDraft();
       const fixedBenchId=global.RoadToGloryCoachPowerRuntime?.capOverrideFor?.(deps.squadDraft,deps.campaign)||"";
       const best=global.RoadToGlorySquadAutoAdapt?.plan?.({
-        pool:requirementPool(teamId),formations,constraint:constraints,
+        pool,formations,constraint:constraints,
         fixedBenchId,originalSquad:deps.squadDraft,evaluate:check,
       });
+      if(before.eligible&&(!best||[...best.squad.lineup,...best.squad.bench]
+        .filter(cardId=>rtgIds.has(deps.id(cardId))).length<=currentRtg))return saveEligibleDraft();
       if(!best){deps.toast?.("Nessuna rosa valida trovata fra le carte disponibili, anche provando gli altri moduli e i giocatori fuori ruolo.","error");
         return{ok:false,reason:"no-valid-squad",eligibility:before};}
       // Save atomically before updating UI or showing success; do not leave a
