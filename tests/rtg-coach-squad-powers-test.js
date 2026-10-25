@@ -26,11 +26,11 @@ test("Hillman adds 50 initial and max PT to exactly two starters, once, without 
   assert.equal(original.ptCurrentByPlayerId["user:a"],200);
   assert.equal(rules.applyToMatch(result,squad,{coachOwnedIds:["208"]}),result,"no second bonus");
 });
-test("Aquilina halves only the selected two moves of the selected starter",()=>{
+test("Aquilina halves all available moves of the selected starter, including legacy two-move saves",()=>{
   const squad={coachId:"1329",coachPowerSelection:{coachId:"1329",cardIds:["a"],moveIndices:[0,3]}};
   const result=rules.applyToMatch(match(),squad,{coachOwnedIds:["1329"]});
   assert.equal(result.coachPowerEffect.coachId,"1329");
-  assert.deepEqual(Array.from(pt.compatible(result,"user","a","shot").map(move=>move.ptCost)),[20,75,52,51]);
+  assert.deepEqual(Array.from(pt.compatible(result,"user","a","shot").map(move=>move.ptCost)),[20,38,26,51]);
   assert.deepEqual(Array.from(pt.compatible(result,"user","b","shot").map(move=>move.ptCost)),[40,75,52,101]);
   assert.equal(result.ptCurrentByPlayerId["user:a"],200);
 });
@@ -41,8 +41,10 @@ test("Unavailable coaches, invalid/stale selection, old match PT: no effect",()=
   s.coachPowerSelection.cardIds=["a","b"];
   assert.equal(rules.applyToMatch(original,s,{coachOwnedIds:[]}),original);
   assert.equal(rules.applyToMatch({...original,ptModeVersion:undefined},s,{coachOwnedIds:["208"]}).coachPowerEffect,undefined);
-  const invalid={coachId:"1329",coachPowerSelection:{coachId:"1329",cardIds:["a"],moveIndices:[0,0]}};
+  const invalid={coachId:"1329",coachPowerSelection:{coachId:"1329",cardIds:["missing"],moveIndices:[0,0]}};
   assert.equal(rules.applyToMatch(original,invalid,{coachOwnedIds:["1329"]}),original);
+  const legacy={coachId:"1329",coachPowerSelection:{coachId:"1329",cardIds:["a"],moveIndices:[0,0]}};
+  assert.deepEqual(Array.from(rules.applyToMatch(original,legacy,{coachOwnedIds:["1329"]}).coachPowerEffect.moveIndices),[0,1,2,3]);
 });
 test("Squad UI and match wiring use canonical repository persistence",()=>{
   const source=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
@@ -190,8 +192,8 @@ test("Five Squad power controls and season-safe element roundtrip are wired",()=
   assert.match(ui,/PANCHINA/);
   assert.match(ui,/TRASFORMAZIONE DEI GIOCATORI/);
   assert.match(ui,/MONTAGNA/);
-  assert.match(ui,/openYiMoves/);
-  assert.match(ui,/rtg-coach-yi-moves/);
+  assert.match(ui,/TUTTE LE/);
+  assert.doesNotMatch(ui,/SELEZIONA 2 MOSSE NELLA SCHEDA/);
   assert.match(ui,/ctx\.saveSquad\(draft\)/);
   const view=read("js/road-to-glory/rtg-coaches-view.js");
   for(const key of ['"208"','"1329"','"1777"','"1974"','"4401"'])
@@ -227,9 +229,12 @@ test("Squad power preview shows all five targeted effects without mutating canon
     coachPowerSelection:{coachId:"1329",cardIds:["a"],moveIndices:[0,3]}}});
   assert.equal(aquilina.costs[0],20);
   assert.equal(aquilina.costs[3],51);
+  assert.equal(aquilina.costs[1],38);
+  assert.equal(aquilina.costs[2],26);
   const yi=given({squad:{coachId:"4401",lineup:["a"],bench:[],
     coachPowerSelection:{coachId:"4401",cardIds:["a"],element:"fire"}}});
   assert.equal(yi.player.element,"Fuoco");
+  assert.equal(Object.keys(yi.moveElements).length,4);
   const arrows=given({squad:{coachId:"1974",lineup:["a"],bench:[],
     coachPowerSelection:{coachId:"1974",cardIds:["a"]}}});
   assert.equal(arrows.player.overall,90);
@@ -242,8 +247,8 @@ test("Squad power preview shows all five targeted effects without mutating canon
   const ui=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
   assert.match(ui,/lineupPitchMarkup/);
   assert.match(ui,/data-rtg-coach-power-save/);
-  assert.match(ui,/openPlayerDetails/);
-  assert.match(ui,/coachMovePicker/);
+  assert.match(ui,/choice.cardIds=choice.cardIds.includes\(key\)\?\[\]:\[key\]/);
+  assert.doesNotMatch(ui,/coachMovePicker/);
   assert.doesNotMatch(ui,/localStorage\.setItem|firebase|indexedDB/i);
 });
 
@@ -263,7 +268,7 @@ test("All Squad powers hide yellow card footer; selector matches slim RTG card b
 });
 
 
-test("Yi total transformation applies independent elements to two starters and two moves each",()=>{
+test("Yi total transformation applies independent elements to every move of both starters",()=>{
   const m=match();
   m.userSquad.lineup=[
     {...player("a"),element:"mountain",overall:90,stats:{}},
@@ -286,14 +291,14 @@ test("Yi total transformation applies independent elements to two starters and t
   const b=pt.compatible(transformed,"user","b","shot");
   assert.equal(a[0].element,"wind");
   assert.equal(a[2].element,"wind");
-  assert.equal(a[1].element,undefined);
+  assert.equal(a[1].element,"wind");
   assert.equal(b[1].element,"forest");
   assert.equal(b[3].element,"forest");
-  assert.equal(b[0].element,undefined);
+  assert.equal(b[0].element,"forest");
   assert.deepEqual(Array.from(a.map(x=>x.ptCost)),[40,75,52,101]);
   assert.deepEqual(Array.from(b.map(x=>x.ptCost)),[40,75,52,101]);
   assert.equal(rules.moveElement(transformed,"opponent","a",0,"fire"),"fire");
-  assert.equal(rules.moveElement(transformed,"user","a",1,"fire"),"fire");
+  assert.equal(rules.moveElement(transformed,"user","a",1,"fire"),"wind");
   assert.equal(transformed.ptCurrentByPlayerId["user:a"],m.ptCurrentByPlayerId["user:a"]);
   assert.equal(rules.applyToMatch(transformed,squad,{coachOwnedIds:["4401"]}),transformed);
   const invalid=(targets,cardIds=["a","b"])=>rules.validConfig({
@@ -303,15 +308,15 @@ test("Yi total transformation applies independent elements to two starters and t
   assert.equal(invalid([
     {...config.targets[0],element:"mountain"},config.targets[1],
   ]),null);
-  assert.equal(invalid([
+  assert.deepEqual(Array.from(invalid([
     {...config.targets[0],moveIndices:[0,0]},config.targets[1],
-  ]),null);
+  ]).targets[0].moveIndices),[0,1,2,3]);
   assert.equal(invalid([
     config.targets[0],{...config.targets[1],cardId:"a"},
   ]),null);
-  assert.equal(invalid([
+  assert.deepEqual(Array.from(invalid([
     config.targets[0],{...config.targets[1],moveIndices:[1]},
-  ]),null);
+  ]).targets[1].moveIndices),[0,1,2,3]);
   const missingCoach={coachOwnedIds:[]};
   assert.equal(rules.applyToMatch(m,squad,missingCoach),m);
 });
@@ -321,10 +326,10 @@ test("Yi double choice persists in canonical optional Squad config without chang
   assert.match(state,/moveIndices:Array\.from\(new Set/);
   const ui=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
   assert.match(ui,/TRASFORMAZIONE TOTALE/);
-  assert.match(ui,/openYiMoves/);
+  assert.match(ui,/availableMoveIndices/);
   assert.match(ui,/choice\.targets\.length<2/);
   assert.match(ui,/targets:choice\.targets\.map/);
-  assert.match(ui,/rtg-coach-yi-moves-button/);
+  assert.match(ui,/rtg-coach-yi-all-moves/);
   const preview=read("js/road-to-glory/rtg-coach-powers-preview.js");
   assert.match(preview,/details\.moveElements/);
   assert.match(preview,/rtg-coach-move-transformed/);
