@@ -56,7 +56,19 @@
       inLineup:(originalSquad?.lineup||[]).includes(id(e))}));
     const forced=fixedBenchId?entries.find(e=>id(e)===fixedBenchId):null;
     if(fixedBenchId&&!forced)return null;
-    const remaining=entries.filter(e=>id(e)!==fixedBenchId);
+    // The cheapest 15 per equivalent class are sufficient for a 15-card
+    // capped feasibility search. Keep role, quota and RTG origin distinct;
+    // upgrades still consider the complete accessible pool below.
+    const groups=new Map();
+    for(const e of entries){
+      if(id(e)===fixedBenchId)continue;
+      const key=[role(e),Number(e.recruit),Number(e.recent),Number(e.isRtg)].join(":");
+      if(!groups.has(key))groups.set(key,[]);
+      groups.get(key).push(e);
+    }
+    const remaining=Array.from(groups.values()).flatMap(items=>items
+      .sort((a,b)=>cost(a)-cost(b)||Number(b.inLineup)-Number(a.inLineup)||id(a).localeCompare(id(b)))
+      .slice(0,15));
     // RTG count is an independent DP dimension: power alone would evict RTG cards.
     const countKey=x=>[x.n,x.r,x.t,x.g,x.p].join(":");
     const root={n:forced?1:0,r:forced?.recruit?1:0,t:forced?.recent?1:0,
