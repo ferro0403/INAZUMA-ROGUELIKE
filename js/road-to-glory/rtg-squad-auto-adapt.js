@@ -1,8 +1,8 @@
 (function(global){
   "use strict";
   // Deterministic, bounded, formation-aware RTG squad planner. Owns no persistence.
-  // First find a minimum-power feasible 15-card roster (nested quotas), then
-  // spend the remaining power budget without losing recruitment requirements.
+  // First maximize RTG Season cards subject to all match requirements, then
+  // optimize power and positions without replacing them with free agents.
   const role=e=>String(e?.role||"").toUpperCase();
   const id=e=>String(e?.playerId||"");
   const cost=e=>Number(e?.contribution||0);
@@ -19,7 +19,7 @@
     const keepers=entries.filter(e=>role(e)==="GK"&&id(e)!==forcedId);
     if(!keepers.length)return null;
     const initialGK=keepers.sort((a,b)=>Number(b.inLineup||0)-Number(a.inLineup||0)
-      ||cost(b)-cost(a)||id(a).localeCompare(id(b)))[0];
+      ||Number(!!b.isRtg)-Number(!!a.isRtg)||cost(b)-cost(a)||id(a).localeCompare(id(b)))[0];
     const movement=entries.filter(e=>role(e)!=="GK"&&id(e)!==forcedId);
     if(movement.length<10)return null;
     const lineup=new Array(11);
@@ -34,6 +34,7 @@
     for(const {r,i} of outfieldSlots){
       const chosen=movement.filter(e=>!used.has(id(e))).sort((a,b)=>
         Number(role(b)===r)-Number(role(a)===r)||
+        Number(!!b.isRtg)-Number(!!a.isRtg)||
         Number(b.inLineup||0)-Number(a.inLineup||0)||
         cost(b)-cost(a)||id(a).localeCompare(id(b)))[0];
       if(!chosen)return null;
@@ -51,14 +52,15 @@
       const key=id(e);
       if(!key||seen.has(key)||!Number.isFinite(cost(e)))return false;
       seen.add(key);return true;
-    }).map(e=>({...e,role:role(e),recruit:!!e.recruit,recent:!!e.recent,
+    }).map(e=>({...e,role:role(e),recruit:!!e.recruit,recent:!!e.recent,isRtg:!!e.isRtg,
       inLineup:(originalSquad?.lineup||[]).includes(id(e))}));
     const forced=fixedBenchId?entries.find(e=>id(e)===fixedBenchId):null;
     if(fixedBenchId&&!forced)return null;
     const remaining=entries.filter(e=>id(e)!==fixedBenchId);
-    const countKey=x=>[x.n,x.r,x.t,x.g].join(":");
+    // RTG count is an independent DP dimension: power alone would evict RTG cards.
+    const countKey=x=>[x.n,x.r,x.t,x.g,x.p].join(":");
     const root={n:forced?1:0,r:forced?.recruit?1:0,t:forced?.recent?1:0,
-      g:role(forced)==="GK"?1:0,sum:forced?cost(forced):0,
+      g:role(forced)==="GK"?1:0,p:Number(!!forced?.isRtg),sum:forced?cost(forced):0,
       keep:Number(!!forced?.inLineup),chain:forced?{e:forced,prev:null}:null};
     const dp=new Map([[countKey(root),root]]);
     for(const e of remaining){
@@ -69,7 +71,7 @@
         if(g>5)continue; // exactly 11 on field and at most four bench keepers
         const next={n:item.n+1,r:Math.min(minRecruit,item.r+Number(e.recruit)),
           t:Math.min(minRecent,item.t+Number(e.recent)),
-          g,sum:item.sum+cost(e),keep:item.keep+Number(e.inLineup),
+          g,p:item.p+Number(e.isRtg),sum:item.sum+cost(e),keep:item.keep+Number(e.inLineup),
           chain:{e,prev:item.chain}};
         const key=countKey(next),prior=dp.get(key);
         if(!prior||next.sum<prior.sum-1e-8||
@@ -77,9 +79,9 @@
       }
     }
     const neededGK=role(forced)==="GK"?2:1;
-    const final=Array.from(dp.values()).filter(x=>x.n===15&&x.r>=minRecruit&&x.t>=minRecent&&x.g>=neededGK&&x.g<=5)
-      .sort((a,b)=>a.sum-b.sum||b.keep-a.keep)[0];
-    if(!final||final.sum>cap*15+1e-8)return null;
+    const final=Array.from(dp.values()).filter(x=>x.n===15&&x.r>=minRecruit&&x.t>=minRecent&&x.g>=neededGK&&x.g<=5&&x.sum<=cap*15+1e-8)
+      .sort((a,b)=>b.p-a.p||a.sum-b.sum||b.keep-a.keep)[0];
+    if(!final)return null;
     const chosen=[];for(let node=final.chain;node;node=node.prev)chosen.push(node.e);
     let total=final.sum;
     const selected=new Set(chosen.map(id));
@@ -95,7 +97,8 @@
         const outgoing=chosen[i];
         if(id(outgoing)===fixedBenchId)continue;
         for(const incoming of entries){
-          if(selected.has(id(incoming)))continue;
+          if(selected.has(id(incoming))||!!outgoing.isRtg!==!!incoming.isRtg)continue;
+          // Power improvements can swap cards only within the same source tier.
           const gain=cost(incoming)-cost(outgoing);
           if(gain<=1e-7||total+gain>cap*15+1e-8)continue;
           if(recruits-Number(outgoing.recruit)+Number(incoming.recruit)<minRecruit||
