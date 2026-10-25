@@ -112,10 +112,8 @@
               '" data-element="'+e.key+'" aria-pressed="'+(target.element===e.key)+'">'+
               '<span class="rtg-coach-element-art">'+e.art+'</span><span>'+e.label+'</span></button>'
             ).join("");
-            const available=rules.availableMoveIndices(rules.fourMoves(resolve(target.cardId),ctx.seasonId()));
             return '<section class="rtg-coach-yi-target"><h4>GIOCATORE '+(index+1)+' · '+name+'</h4>'+
-              '<div class="rtg-coach-yi-element-options">'+options+'</div>'+
-              '<p class="rtg-coach-yi-all-moves">TUTTE LE '+(available?.length||0)+' MOSSE DISPONIBILI</p></section>';
+              '<div class="rtg-coach-yi-element-options">'+options+'</div></section>';
           }).join("")+'</div>':"";
       const title=coachId==="1777"?"SCEGLI UNA RISERVA":"SCEGLI SUL CAMPO";
       const summary=coachId==="1329"&&choice.cardIds[0]
