@@ -73,10 +73,10 @@ test("Hillman starts the real match with +50 PT; saves retain modified balances 
  assert.equal(powers.applyToMatch(recovered,{coachId:"208",coachPowerSelection:{coachId:"208",cardIds:chosen}},{coachOwnedIds:["208"]}),recovered);
  assert.equal(match.userSquad.lineup[8].overall,87);
 });
-test("Aquilina's actual duels consume half-cost PT of chosen techniques, no discount on others",()=>{
+test("Aquilina's real duels consume half-cost PT for every move of the target, never allies",()=>{
  const match=create(),key=match.userSquad.lineup[8].cardId;
  const powered=withPower(match,"1329",{cardIds:[key],moveIndices:[0,3]});
- assert.deepEqual(Array.from(PT.compatible(powered,"user",key,"shot").map(m=>m.ptCost)),[43,55,75,51]);
+ assert.deepEqual(Array.from(PT.compatible(powered,"user",key,"shot").map(m=>m.ptCost)),[43,28,38,51]);
  assert.equal(PT.compatible(powered,"user",match.userSquad.lineup[9].cardId,"shot")[0].ptCost,85);
  // Force the selected player into the duel: the test must never skip consumption.
  powered.userSquad.lineup=powered.userSquad.lineup.filter(p=>p.cardId===key);
@@ -90,7 +90,7 @@ test("Aquilina's actual duels consume half-cost PT of chosen techniques, no disc
  const resolved=E.resolvePendingEncounter(prepared,"move:"+idx);
  assert.equal(PT.pt(resolved,"user",key).remaining,before-43);
 });
-test("Mister Yi's two players and four moves change real duel elements without changing PT and power",()=>{
+test("Mister Yi changes every move for both targeted players without changing PT and power",()=>{
  const match=create(),a=match.userSquad.lineup[8],b=match.userSquad.lineup[9];
  const powered=withPower(match,"4401",{
    cardIds:[a.cardId,b.cardId],targets:[
@@ -104,10 +104,13 @@ test("Mister Yi's two players and four moves change real duel elements without c
  const aa=PT.compatible(powered,"user",a.cardId,"shot");
  const bb=PT.compatible(powered,"user",b.cardId,"shot");
  assert.equal(aa[0].element,"wind");
- assert.equal(aa[1].element,"forest");
+ assert.equal(aa[1].element,"wind");
  assert.equal(aa[2].element,"wind");
+ assert.equal(aa[3].element,"wind");
  assert.equal(bb[1].element,"mountain");
  assert.equal(bb[3].element,"mountain");
+ assert.equal(bb[0].element,"mountain");
+ assert.equal(bb[2].element,"mountain");
  assert.deepEqual(Array.from(aa.map(m=>m.power)),[85,55,75,101]);
  assert.deepEqual(Array.from(aa.map(m=>m.ptCost)),[85,55,75,101]);
  const opponent={...match.opponentSquad.lineup[0],element:"mountain"};
