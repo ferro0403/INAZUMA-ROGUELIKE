@@ -77,6 +77,13 @@ const records = {
   }, null);
   assert.strictEqual((await otherStarted.instance.captureStable()).status, "deferred");
 
+  const oldAlbum = harness(records, JSON.stringify({ cardIds: ["pre-version-card"] }));
+  assert.deepStrictEqual((await oldAlbum.instance.captureStable()).snapshot.album.cardIds, ["pre-version-card"]);
+  const oldEvolution = clone(records);
+  delete oldEvolution.state.developmentByCardId["ie2::hero"].evolutionCount;
+  const oldRecord = harness(oldEvolution, null);
+  assert.strictEqual((await oldRecord.instance.captureStable()).snapshot.shared.developmentByCardId["ie2::hero"].evolutionCount, 0);
+
   const noAlbum = harness(records, null);
   assert.deepStrictEqual((await noAlbum.instance.captureStable()).snapshot.album, { version: 1, cardIds: [] });
   const corruptAlbum = harness(records, "{bad json");
