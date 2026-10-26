@@ -179,6 +179,105 @@
       });
     }
 
+    // A coherent snapshot of related RTG records. Unlike separate reads, all
+    // requests belong to the same IndexedDB readonly transaction.
+    function recordKeys(keys) {
+      if (!Array.isArray(keys) || !keys.length || keys.some((key) => typeof key !== "string" || !key)) {
+        throw new TypeError("RTG record keys required");
+      }
+      return Array.from(new Set(keys));
+    }
+
+    async function readMany(keys) {
+      const names = recordKeys(keys);
+      const db = await open();
+      return new Promise((resolve, reject) => {
+        let tx, settled = false;
+        const values = Object.create(null);
+        const fail = (error) => {
+          if (settled) return;
+          settled = true;
+          reject(wrapError(error, "rtg-indexeddb-read-failed", "rtg-indexeddb-read-many"));
+        };
+        try {
+          tx = db.transaction(STORE_NAME, "readonly");
+          const store = tx.objectStore(STORE_NAME);
+          tx.oncomplete = () => { if (!settled) { settled = true; resolve(values); } };
+          tx.onerror = () => fail(tx.error);
+          tx.onabort = () => fail(tx.error);
+          for (const name of names) {
+            const request = store.get(name);
+            request.onsuccess = () => { values[name] = request.result; };
+            request.onerror = () => fail(request.error);
+          }
+        } catch (error) {
+          if (tx) { try { tx.abort(); } catch (_) {} }
+          fail(error);
+        }
+      });
+    }
+
+    // Update several records within one IDB readwrite transaction. The
+    // updater is synchronous and returns { writes: { key: value }, value }.
+    // A failed read, updater, put or commit aborts the entire logical change.
+    async function updateMany(keys, updater) {
+      if (typeof updater !== "function") throw new TypeError("RTG multi-record updater required");
+      const names = recordKeys(keys);
+      const allowed = new Set(names);
+      const db = await open();
+      return new Promise((resolve, reject) => {
+        let tx, settled = false, lastError = null, output;
+        const values = Object.create(null);
+        let remaining = names.length;
+        const fail = (error, stage = "rtg-indexeddb-update-many") => {
+          if (settled) return;
+          lastError = error?.code ? error : wrapError(error, "rtg-indexeddb-update-failed", stage);
+          try { tx?.abort(); } catch (_) {}
+          settled = true;
+          reject(lastError);
+        };
+        try {
+          tx = db.transaction(STORE_NAME, "readwrite");
+          const store = tx.objectStore(STORE_NAME);
+          tx.oncomplete = () => { if (!settled) { settled = true; resolve(output); } };
+          tx.onerror = () => {
+            if (!lastError) lastError = wrapError(tx.error, "rtg-indexeddb-update-failed", "rtg-indexeddb-update-many");
+          };
+          tx.onabort = () => fail(lastError || tx.error || new Error("RTG transaction aborted"));
+          for (const name of names) {
+            const request = store.get(name);
+            request.onerror = () => fail(request.error, "rtg-indexeddb-update-many-read");
+            request.onsuccess = () => {
+              if (settled) return;
+              values[name] = request.result;
+              if (--remaining !== 0) return;
+              try {
+                const mutation = updater(values);
+                if (mutation && typeof mutation.then === "function") {
+                  throw Object.assign(new Error("Async RTG multi-record updater not supported"), {
+                    code: "rtg-indexeddb-async-updater-not-supported",
+                    stage: "rtg-indexeddb-update-many",
+                  });
+                }
+                if (!mutation || !mutation.writes || typeof mutation.writes !== "object" || Array.isArray(mutation.writes)) {
+                  throw new TypeError("RTG multi-record updater must return { writes, value }");
+                }
+                const writes = Object.entries(mutation.writes);
+                if (!writes.length || writes.some(([key]) => !allowed.has(key))) {
+                  throw new TypeError("RTG multi-record update keys invalid");
+                }
+                output = mutation.value;
+                for (const [key, value] of writes) {
+                  const write = store.put(value, key);
+                  write.onerror = () => fail(write.error, "rtg-indexeddb-update-many-write");
+                }
+              } catch (error) { fail(error); }
+            };
+          }
+        } catch (error) { fail(error); }
+      });
+    }
+
     async function remove(key = DEFAULT_KEY) {
       const db = await open();
       return new Promise((resolve, reject) => {
@@ -204,7 +303,7 @@
       openPromise = null;
     }
 
-    return Object.freeze({ open, read, write, update, remove, close });
+    return Object.freeze({ open, read, readMany, write, update, updateMany, remove, close });
   }
 
   global.RoadToGloryStorage = Object.freeze({ DB_NAME, DB_VERSION, STORE_NAME, DEFAULT_KEY, create });

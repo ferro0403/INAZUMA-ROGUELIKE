@@ -43,13 +43,13 @@ keys.set("shared:account",{
 
 const storage={
   async read(key="state"){return clone(keys.get(key)??null);},
-  async write(value,key="state"){keys.set(key,clone(value));return clone(value);},
-  async update(updater,key="state"){
-    const current=clone(keys.get(key)??null);
-    const next=updater(current);
-    if(next&&typeof next.then==="function")throw new Error("async updater not supported");
-    keys.set(key,clone(next));
-    return clone(next);
+  async readMany(names){return Object.fromEntries(names.map(name=>[name,clone(keys.get(name))]));},
+  async updateMany(names,updater){
+    const records=await this.readMany(names);
+    const mutation=updater(records);
+    if(mutation&&typeof mutation.then==="function")throw new Error("async updater not supported");
+    for(const [key,value] of Object.entries(mutation.writes))keys.set(key,clone(value));
+    return clone(mutation.value);
   },
 };
 const stateApi={
@@ -74,7 +74,7 @@ vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-repository.js","utf8"),con
   assert.strictEqual(ares.projects.Aurico,9,"project inventory remains campaign-local");
 
   const migratedShared=keys.get("shared:account");
-  assert.strictEqual(migratedShared.developmentByCardId["ie2::4410"].currentRarity,"Aurico","legacy shared account must migrate development from both campaign states");
+  assert.strictEqual(migratedShared.developmentByCardId,undefined,"reading legacy account must not migrate or write");
 
   await repository.update("test-new-development",state=>{
     state.developmentByCardId["ie2::4500"]={
@@ -85,6 +85,8 @@ vm.runInContext(fs.readFileSync("js/road-to-glory/rtg-repository.js","utf8"),con
     };
     return state;
   });
+
+  assert.strictEqual(keys.get("shared:account").developmentByCardId["ie2::4410"].currentRarity,"Aurico","first explicit write persists legacy development in the same commit");
 
   repository.selectCampaign("rtg-ie-trilogy");
   const trilogy=await repository.read();

@@ -1,6 +1,6 @@
 "use strict";
 const assert=require("assert"),fs=require("fs"),vm=require("vm");
-const {makeFakeIndexedDb}=require("./helpers/fake-indexeddb-lite");
+const {makeFakeIndexedDb}=require("./helpers/fake-indexeddb-atomic");
 function load(fake){
   const c={globalThis:null,window:null,console,Error,TypeError,Object,Array,String,Number,Promise,JSON,Math,RegExp,Set,Map,indexedDB:fake};
   c.globalThis=c;c.window=c;c.SeasonRegistry={normalizeSeasonId:v=>String(v),player:()=>null};c.ProfiledSeasonRuntime={canonicalPlayerId:(_s,p)=>String(p)};
