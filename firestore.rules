@@ -48,8 +48,50 @@ service cloud.firestore {
         'profile',
         'album',
         'development',
-        'hall_index'
+        'hall_index',
+        'rtg'
       ] || isAnyRunSector(name);
+    }
+
+    function hasRtg(m) {
+      return 'sectors' in m
+        && m.sectors is map
+        && 'rtg' in m.sectors
+        && m.sectors.rtg == true;
+    }
+
+    function validRtgDeclaration(m) {
+      return !hasRtg(m) || (
+        m.schemaVersion == 1
+        && m.revision is int
+        && m.revision > 0
+        && m.cloudCommitId is string
+        && m.cloudCommitId.size() > 0
+        && m.sectorRevisions is map
+        && m.sectorRevisions.rtg == m.revision
+        && m.sectorHashes is map
+        && m.sectorHashes.rtg is string
+      );
+    }
+
+    function stagedRtgMatches(uid, m) {
+      let sectorPath = /databases/$(database)/documents/users/$(uid)/saveCommits/$(m.cloudCommitId)/sectors/rtg;
+      let staged = getAfter(sectorPath);
+
+      return existsAfter(sectorPath)
+        && staged.data.sector == 'rtg'
+        && staged.data.schemaVersion == 1
+        && staged.data.revision == m.sectorRevisions.rtg
+        && staged.data.payloadHash == m.sectorHashes.rtg
+        && staged.data.cloudCommitId == m.cloudCommitId;
+    }
+
+    function validPublishedRtg(uid, m) {
+      // Metadata is staged before sectors. Check the complete immutable bundle
+      // only when publishing, including writes in the same atomic batch.
+      return !hasRtg(m) || (
+        validRtgDeclaration(m) && stagedRtgMatches(uid, m)
+      );
     }
 
     function revisionAfter(m, name) {
@@ -62,7 +104,12 @@ service cloud.firestore {
           ? old.sectorRevisions[name]
           : old.revision;
 
-      return fresh.sectorRevisions[name] == previous
+      // Current account-only bundles never add run metadata. Missing legacy
+      // run revision keys must stay absent instead of causing a map-key error.
+      return (isAnyRunSector(name)
+          && !('sectorRevisions' in old && name in old.sectorRevisions)
+          && !(name in fresh.sectorRevisions))
+        || fresh.sectorRevisions[name] == previous
         || fresh.sectorRevisions[name] == fresh.revision;
     }
 
@@ -90,6 +137,11 @@ service cloud.firestore {
         && fresh.hallTeamIds is list
         && fresh.hallTeamHashes is map
         && fresh.hallTeamRevisions is map
+
+        // An older client must not drop RTG or carry its metadata forward
+        // without restaging the payload at this bundle's revision.
+        && (!hasRtg(old) || hasRtg(fresh))
+        && validPublishedRtg(uid, fresh)
 
         && validSectorRevisionStep(old, fresh, 'profile')
         && validSectorRevisionStep(old, fresh, 'run_ie1')
@@ -145,7 +197,8 @@ service cloud.firestore {
           && request.resource.data.revision == 1
           && request.resource.data.initialized == true
           && request.resource.data.createdAt == request.time
-          && request.resource.data.updatedAt == request.time;
+          && request.resource.data.updatedAt == request.time
+          && validPublishedRtg(uid, request.resource.data);
 
         allow update: if isOwner(uid)
           && documentId == 'manifest'
@@ -220,7 +273,8 @@ service cloud.firestore {
             request.resource.data.revision - 1
           && request.resource.data.sectorHashes is map
           && request.resource.data.hallTeamIds is list
-          && request.resource.data.hallTeamHashes is map;
+          && request.resource.data.hallTeamHashes is map
+          && validRtgDeclaration(request.resource.data);
 
         allow update, delete: if false;
       }
