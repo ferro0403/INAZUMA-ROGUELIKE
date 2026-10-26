@@ -1,0 +1,65 @@
+"use strict";
+const cp = require("child_process");
+if (typeof require("vm").SourceTextModule !== "function") { const r = cp.spawnSync(process.execPath, ["--experimental-vm-modules", __filename], { stdio: "inherit" }); process.exit(r.status ?? 1); }
+const assert = require("assert"), fs = require("fs"), vm = require("vm");
+require("../js/road-to-glory/rtg-cloud-snapshot");
+const BudgetStorage = require("./helpers/budget-storage"), { load } = require("./helpers/production-runtime");
+const { makeFakeIndexedDb } = require("./helpers/fake-indexeddb-atomic");
+const { attachAuthenticatedCloud, createAuthenticatedFirestoreBackend } = require("./helpers/authenticated-cloud-runtime");
+const { input, clone } = require("./helpers/rtg-cloud-fixtures");
+const { client } = require("./helpers/rtg-cloud-client");
+const tick = () => new Promise(resolve => setImmediate(resolve));
+(async () => {
+  const backend = createAuthenticatedFirestoreBackend();
+  const pc = await client(backend);
+  let manifest = backend.documents.get(backend.manifestPath);
+  assert.equal(manifest.sectors.rtg, true, "RTG must use the same account manifest");
+  let rtgDoc = backend.documents.get(`users/test-user/saveCommits/${manifest.cloudCommitId}/sectors/rtg`);
+  assert.ok(rtgDoc);
+  assert.equal(pc.c.InazumaCloudSaveCore.decodeFirestorePayload(rtgDoc.payload).campaigns["rtg-ie-trilogy"].gacha.recruitmentPullCount, 9);
+  const run = pc.c.RunState.createRun({ name: "Keep local run" }, "ie1"); pc.c.RunState.save(run);
+  const beforeRun = pc.local.getItem("run:ie1");
+  backend.backend.failure = "unavailable";
+  await pc.repo.update("offline-progress", state => { state.tokens += 13; return state; });
+  assert.equal((await pc.repo.read()).tokens, 913, "Firebase failure cannot roll back a local commit");
+  await pc.api.syncNow();
+  assert.equal(pc.api.getState().status, "sync-error");
+  backend.backend.failure = null; await pc.api.retrySync();
+  assert.equal(pc.api.getState().status, "synced");
+  assert.equal(pc.local.getItem("run:ie1"), beforeRun);
+  const phoneInput = input(); phoneInput.shared.tokens = 20;
+  phoneInput.trilogy.squads.ie1.formationId = "phone-formation";
+  const phone = await client(backend, phoneInput);
+  assert.equal(phone.api.getState().status, "local-conflict", "no cross-device automatic import");
+  assert.equal((await phone.repo.read()).tokens, 20);
+  const deviceSquad = clone((await phone.storage.read("state")).squads);
+  assert.equal(phone.api.requestConflictResolution("cloud"), true);
+  await phone.api.resolveConflictUseCloud();
+  assert.equal(phone.api.getState().status, "restored");
+  assert.equal((await phone.repo.read()).tokens, 913);
+  assert.deepStrictEqual(clone((await phone.storage.read("state")).squads), deviceSquad);
+  assert.equal(phone.local.getItem("inazuma.cloud.restoreJournal.test-user"), null);
+  // A match changes device state, but another permanent sector may still sync
+  // while RTG carries forward the last verified checkpoint.
+  await pc.repo.update("start-local-match", state => { state.tokens += 5; state.activeMatch = { status: "active" }; return state; });
+  const development = pc.c.DevelopmentV2.read(); development.coins += 1; pc.c.DevelopmentV2.write(development);
+  await pc.api.syncNow();
+  manifest = backend.documents.get(backend.manifestPath);
+  rtgDoc = backend.documents.get(`users/test-user/saveCommits/${manifest.cloudCommitId}/sectors/rtg`);
+  assert.equal(pc.c.InazumaCloudSaveCore.decodeFirestorePayload(rtgDoc.payload).shared.tokens, 913, "active match must not advance RTG cloud checkpoint");
+  await pc.repo.update("end-local-match", state => { state.activeMatch = null; return state; });
+  await pc.api.syncNow();
+  manifest = backend.documents.get(backend.manifestPath);
+  rtgDoc = backend.documents.get(`users/test-user/saveCommits/${manifest.cloudCommitId}/sectors/rtg`);
+  assert.equal(pc.c.InazumaCloudSaveCore.decodeFirestorePayload(rtgDoc.payload).shared.tokens, 918);
+  await phone.repo.update("phone-offline", state => { state.tokens += 1; return state; });
+  await phone.api.syncNow();
+  assert.equal(phone.api.getState().status, "sync-conflict", "PC/phone CAS must reject stale account publication");
+  await phone.api.checkForCloudUpdate();
+  assert.equal(phone.api.getState().status, "local-conflict");
+  // End with no pending retry timers in synthetic clients.
+  pc.c.dispatchEvent(new pc.c.CustomEvent("inazuma:auth-state-changed", { detail: { status: "signed-out" } }));
+  phone.c.dispatchEvent(new phone.c.CustomEvent("inazuma:auth-state-changed", { detail: { status: "signed-out" } }));
+  await tick();
+  console.log("rtg-cloud-firebase-integration-test: PASS (local-first, retry, account conflict, protected restore, deferred match, CAS, local run)");
+})().catch(error => { console.error(error); process.exitCode = 1; });

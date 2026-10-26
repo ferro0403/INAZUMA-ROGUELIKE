@@ -52,7 +52,17 @@
   function beginRestore(journal) {
     if (!journal?.operationId || !journal?.uid) throw fail("restore-ownership-lost");
     const previous = readFence();
-    if (previous?.generation === journal.operationId && previous.uid === journal.uid) return previous.generation;
+    if (previous?.generation === journal.operationId && previous.uid === journal.uid) {
+      // A failed prepared-stage cleanup can leave a completed fence beside a
+      // durable journal. Re-arm it before retrying any account store writes.
+      if (!previous.active && journal.stage !== "complete") {
+        let pending;
+        try { pending = JSON.parse(global.localStorage.getItem(`inazuma.cloud.restoreJournal.${journal.uid}`) || "null"); }
+        catch (error) { throw storageError(error); }
+        if (pending?.operationId === journal.operationId && pending.stage !== "complete") return persist({ ...previous, active: true });
+      }
+      return previous.generation;
+    }
     if (previous?.active) throw fail("restore-ownership-lost");
     return persist({ generation: journal.operationId, uid: journal.uid, active: true });
   }

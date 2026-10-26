@@ -28,6 +28,7 @@ async function attachAuthenticatedCloud(context, options = {}) {
   };
   const doc = (_db, ...path) => ({ path });
   const read = async ref => {
+    if (backend.readFailure) throw Object.assign(new Error(backend.readFailure), { code: backend.readFailure });
     if (pathOf(ref) === manifestPath) records.manifestReads += 1;
     if (backend.readBarrier) await backend.readBarrier(pathOf(ref));
     return snapshot(documents.get(pathOf(ref)));
@@ -38,6 +39,7 @@ async function attachAuthenticatedCloud(context, options = {}) {
       set(ref, value) { writes.push(["set", ref, structuredClone(value)]); },
       delete(ref) { writes.push(["delete", ref]); },
       async commit() {
+        await backend.beforeBatchCommit?.(writes);
         maybeFail("batch.commit");
         for (const [operation, ref, value] of writes) {
           const path = pathOf(ref);
@@ -88,6 +90,9 @@ async function attachAuthenticatedCloud(context, options = {}) {
       getFirestoreInstance: () => ({ mock: true }),
     },
   });
+  // Optional production adapter setup for additional account sectors. Original
+  // test clients continue to use exactly the same four-sector runtime.
+  await options.configureCore?.(context);
   const firebase = new vm.SyntheticModule(["doc", "getDoc", "getDocFromServer", "writeBatch", "runTransaction", "serverTimestamp"], function () {
     this.setExport("doc", doc); this.setExport("getDoc", read); this.setExport("getDocFromServer", read);
     this.setExport("writeBatch", writeBatch); this.setExport("runTransaction", runTransaction);
