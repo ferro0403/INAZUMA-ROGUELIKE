@@ -14,10 +14,10 @@
     "1777":"FUORI QUOTA","1974":"POTENZIALE RISVEGLIATO","4401":"TRASFORMAZIONE TOTALE",
   };
   const NOTES={
-    "208":"Tocca due titolari direttamente sul campo. Entrambi riceveranno +50 PT iniziali e massimi.",
+    "208":"Tocca due titolari direttamente sul campo. Entrambi riceveranno +100 PT iniziali e massimi.",
     "1329":"Tocca un titolare sul campo: tutte le sue mosse speciali disponibili costeranno la metà dei PT.",
     "1777":"Tocca una riserva sulla panchina: nel calcolo dell'overall squadra conterà al massimo 60. I valori reali non cambiano.",
-    "1974":"Tocca una carta sul campo o in panchina: potrai vedere qui sotto la rarità successiva e le statistiche che aumentano.",
+    "1974":"Scegli 2 giocatori, titolari o riserve: entrambi salgono temporaneamente di 1 rarità. Puoi vedere le statistiche potenziate qui sotto.",
     "4401":"Scegli 2 titolari. Per ognuno imposta un elemento diverso dall'originale: tutte le sue mosse speciali disponibili cambiano nello stesso elemento. Potenza e costo PT non cambiano.",
   };
   let busy=false;
@@ -49,7 +49,7 @@
     }).filter(Boolean);
     const selectionSquad=()=>({...squad,coachPowerSelection:choice});
     const valid=()=>!!rules.validConfig(selectionSquad(),from(squad.lineup),ctx.seasonId(),from(squad.bench));
-    const cap=["208","4401"].includes(coachId)?2:1;
+    const cap=["208","1974","4401"].includes(coachId)?2:1;
     const allowed=key=>coachId==="1777"?(squad.bench||[]).includes(key):
       coachId==="1974"?[...(squad.lineup||[]),...(squad.bench||[])].includes(key)&&
         !!rules.nextRarity(rules.rarityOf(resolve(key))):
@@ -75,18 +75,20 @@
       render();
     }
     function projectedChanges(){
-      if(coachId!=="1974"||choice.cardIds.length!==1)return "";
-      const preview=ctx.previewChoice?.(choice.cardIds[0],choice);
-      if(!preview)return '<p class="rtg-coach-picker-note">Rarità massima o anteprima non disponibile: scegli un altro giocatore.</p>';
-      const original=preview.original||{},updated=preview.player||{};
-      return '<section class="rtg-coach-power-projection"><h4>ANTEPRIMA POTENZIAMENTO</h4>'+
-        '<strong>'+esc(original.name||"Giocatore")+' · '+esc(original.category)+' → '+esc(updated.category)+
-        '</strong><p>Overall personale: '+esc(original.overall)+' → '+esc(updated.overall)+
-        ' (non modifica l’overall squadra per i requisiti)</p>'+
-        (preview.stats?.length?'<div class="rtg-coach-preview-stat-grid">'+preview.stats.map(item=>
-          '<span><strong>'+esc(item.label)+'</strong> '+esc(item.before)+' → '+
-          esc(item.after)+' <b>+'+esc(item.after-item.before)+'</b></span>').join("")+'</div>':
-          '<p>Nessuna statistica aumentata.</p>')+'</section>';
+      if(coachId!=="1974"||!choice.cardIds.length)return "";
+      return choice.cardIds.map(key=>{
+        const preview=ctx.previewChoice?.(key,choice);
+        if(!preview)return '<p class="rtg-coach-picker-note">Rarità massima o anteprima non disponibile: scegli un altro giocatore.</p>';
+        const original=preview.original||{},updated=preview.player||{};
+        return '<section class="rtg-coach-power-projection"><h4>ANTEPRIMA POTENZIAMENTO</h4>'+
+          '<strong>'+esc(original.name||"Giocatore")+' · '+esc(original.category)+' → '+esc(updated.category)+
+          '</strong><p>Overall personale: '+esc(original.overall)+' → '+esc(updated.overall)+
+          ' (non modifica l’overall squadra per i requisiti)</p>'+
+          (preview.stats?.length?'<div class="rtg-coach-preview-stat-grid">'+preview.stats.map(item=>
+            '<span><strong>'+esc(item.label)+'</strong> '+esc(item.before)+' → '+
+            esc(item.after)+' <b>+'+esc(item.after-item.before)+'</b></span>').join("")+'</div>':
+            '<p>Nessuna statistica aumentata.</p>')+'</section>';
+      }).join("");
     }
     function overallPreview(){
       if(coachId!=="1777"||choice.cardIds.length!==1)return "";
@@ -126,7 +128,7 @@
         '<section class="rtg-coach-picker-bench"><h3>PANCHINA</h3><div class="rtg-coach-picker-bench-grid">'+bench+'</div></section>'+
         elementButtons+projectedChanges()+overallPreview()+
         '<div class="rtg-coach-power-actions"><button type="button" class="btn btn-yellow" data-rtg-coach-power-save'+
-        (valid()?'':' disabled')+'>CONFERMA POTERE</button>'+
+        (valid()&&!(coachId==="1974"&&choice.cardIds.length!==2)?'':' disabled')+'>CONFERMA POTERE</button>'+
         '<button type="button" class="btn" data-rtg-coach-power-cancel>ANNULLA</button>'+
         '<button type="button" class="btn" data-rtg-coach-power-clear>RIMUOVI POTERE</button></div></section>';
       const active=ctx.getModalRoot?.()?.querySelector?.(".rtg-coach-power-config");
@@ -159,7 +161,7 @@
         finally{busy=false;}
       });
       root?.querySelector?.("[data-rtg-coach-power-save]")?.addEventListener("click",async()=>{
-        if(busy||!valid())return;
+        if(busy||!valid()||(coachId==="1974"&&choice.cardIds.length!==2))return;
         busy=true;
         try{
           const current=ctx.getSquadDraft();
