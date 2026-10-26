@@ -61,20 +61,23 @@
     // retain their lists in each campaign; reads never migrate or erase them.
     const mergeCoaches=(...lists)=>Array.from(new Set(lists.flatMap(ids=>Array.isArray(ids)?ids:[])
       .map(String).filter(id=>!!global.RoadToGloryCoaches?.BY_ID?.[id])));
-    async function sharedFor(state){
-      let shared=await storage.read(SHARED_KEY);
+    const allKeys=()=>["state",`state:${ARES_ORION_ID}`,SHARED_KEY];
+
+    // Derive legacy account ownership in memory. A read never migrates or
+    // writes any IndexedDB record (important during cloud restore/recovery).
+    function sharedForRecords(records,state){
+      let shared=records[SHARED_KEY];
       const legacyShared=!shared||!Object.prototype.hasOwnProperty.call(shared,"developmentByCardId");
+      const trilogy=records.state;
+      const aresOrion=records[`state:${ARES_ORION_ID}`];
       if(!shared){
-        const legacy=await storage.read("state");
-        const source=legacy&&typeof legacy==="object"?legacy:state;
+        const source=trilogy&&typeof trilogy==="object"?trilogy:state;
         shared={
           tokens:Math.max(0,Number(source?.tokens||0)),
           gachaAcquiredCards:Array.isArray(source?.gachaAcquiredCards)?stateApi.clone(source.gachaAcquiredCards):[],
         };
       }
       if(legacyShared){
-        const trilogy=await storage.read("state");
-        const aresOrion=await storage.read(`state:${ARES_ORION_ID}`);
         shared={
           ...shared,
           developmentByCardId:mergeDevelopmentMaps(
@@ -83,12 +86,7 @@
             state?.developmentByCardId
           ),
         };
-        await storage.write(shared,SHARED_KEY);
       }
-      // Account-wide ownership is reconstructed from both legacy campaigns even
-      // when shared:account was written before the coach feature existed.
-      const trilogy=await storage.read("state");
-      const aresOrion=await storage.read(`state:${ARES_ORION_ID}`);
       return {
         ...shared,
         coachOwnedIds:mergeCoaches(shared.coachOwnedIds,trilogy?.coachOwnedIds,aresOrion?.coachOwnedIds,state?.coachOwnedIds),
@@ -102,59 +100,60 @@
       state.coachOwnedIds=mergeCoaches(shared?.coachOwnedIds,state.coachOwnedIds);
       return stateApi.validate(state);
     }
-    async function persistShared(state){
-      // Keep the existing shared-store commit path. Re-read before writing so a
-      // successful pull in either campaign cannot be erased by a stale list.
-      const shared=await sharedFor(state);
-      await storage.write({
+    function sharedRecord(state,shared){
+      return {
         tokens:Math.max(0,Number(state?.tokens||0)),
         gachaAcquiredCards:Array.isArray(state?.gachaAcquiredCards)?stateApi.clone(state.gachaAcquiredCards):[],
         developmentByCardId:mergeDevelopmentMaps(state?.developmentByCardId),
         coachOwnedIds:mergeCoaches(shared.coachOwnedIds,state?.coachOwnedIds),
-      },SHARED_KEY);
+      };
     }
 
     async function read() {
-      const raw = await storage.read(campaignKey());
+      const key=campaignKey();
+      const records=await storage.readMany(allKeys());
+      const raw=records[key];
       if(raw==null)return null;
       const state=stateApi.validate(raw);
-      return applyShared(state,await sharedFor(state));
+      return applyShared(state,sharedForRecords(records,state));
     }
 
     async function ensureCampaign() {
-      let result=await storage.update((currentRaw) => {
-        if (currentRaw != null) {
-          const current = stateApi.validate(currentRaw);
-          const match = current.activeMatch;
-          const matchEngine = global.RoadToGloryMatchEngine;
-          if (match && match.status === "active" && match.presentation?.preMatchSeen !== false && !match.pendingEncounter && typeof matchEngine?.prepareNext === "function") {
-            current.activeMatch = matchEngine.prepareNext(stateApi.clone(match));
-          }
-          return stateApi.validate(current);
+      const key=campaignKey();
+      return storage.updateMany(allKeys(),records=>{
+        const currentRaw=records[key];
+        let current=currentRaw!=null
+          ? stateApi.validate(currentRaw)
+          : stateApi.validate(stateApi.createInitial({campaignSeed:seedFactory(),campaignId:selectedCampaignId}));
+        const shared=sharedForRecords(records,current);
+        current=applyShared(current,shared);
+        const match=current.activeMatch;
+        const matchEngine=global.RoadToGloryMatchEngine;
+        if(currentRaw!=null&&match&&match.status==="active"&&match.presentation?.preMatchSeen!==false&&!match.pendingEncounter&&typeof matchEngine?.prepareNext==="function"){
+          current.activeMatch=matchEngine.prepareNext(stateApi.clone(match));
         }
-        return stateApi.validate(stateApi.createInitial({ campaignSeed: seedFactory(), campaignId:selectedCampaignId }));
-      },campaignKey());
-      result=applyShared(result,await sharedFor(result));
-      await storage.write(result,campaignKey());
-      return result;
+        const result=stateApi.validate(current);
+        return {writes:{[key]:result,[SHARED_KEY]:sharedRecord(result,shared)},value:result};
+      });
     }
 
-    async function update(label, updater) {
-      if (typeof updater !== "function") throw new TypeError("RTG updater required");
-      const shared=await sharedFor(null);
-      const result=await storage.update((currentRaw) => {
-        let current = currentRaw == null
-          ? stateApi.createInitial({ campaignSeed: seedFactory(), campaignId:selectedCampaignId })
+    async function update(label,updater) {
+      if(typeof updater!=="function")throw new TypeError("RTG updater required");
+      const key=campaignKey();
+      return storage.updateMany(allKeys(),records=>{
+        const currentRaw=records[key];
+        let current=currentRaw==null
+          ? stateApi.createInitial({campaignSeed:seedFactory(),campaignId:selectedCampaignId})
           : stateApi.validate(currentRaw);
+        const shared=sharedForRecords(records,null);
         current=applyShared(current,shared);
-        const next = updater(stateApi.clone(current));
-        if (next && typeof next.then === "function") {
-          throw Object.assign(new Error("Async RTG updater not supported"), { code: "rtg-async-updater-not-supported", label });
+        const next=updater(stateApi.clone(current));
+        if(next&&typeof next.then==="function"){
+          throw Object.assign(new Error("Async RTG updater not supported"),{code:"rtg-async-updater-not-supported",label});
         }
-        return stateApi.validate(next == null ? current : next);
-      },campaignKey());
-      await persistShared(result);
-      return result;
+        const result=stateApi.validate(next==null?current:next);
+        return {writes:{[key]:result,[SHARED_KEY]:sharedRecord(result,shared)},value:result};
+      });
     }
 
     return Object.freeze({ read, ensureCampaign, update, selectCampaign, activeCampaignId });
