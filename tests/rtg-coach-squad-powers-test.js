@@ -17,11 +17,11 @@ const player=(cardId)=>({cardId,playerId:cardId,legacySeasonId:"ie1",baseStats:{
 const match=()=>({seasonId:"ie1",ptModeVersion:1,ptCurrentByPlayerId:{"user:a":200,"user:b":200,"user:c":200},
   ptMaxByPlayerId:{"user:a":200,"user:b":200,"user:c":200},
   userSquad:{lineup:[player("a"),player("b"),player("c")],bench:[]}});
-test("Hillman adds 50 initial and max PT to exactly two starters, once, without mutating input",()=>{
+test("Hillman adds 100 initial and max PT to exactly two starters, once, without mutating input",()=>{
   const original=match(),squad={coachId:"208",coachPowerSelection:{coachId:"208",cardIds:["a","b"],moveIndices:[]}};
   const result=rules.applyToMatch(original,squad,{coachOwnedIds:["208"]});
-  assert.equal(result.ptCurrentByPlayerId["user:a"],250);
-  assert.equal(result.ptMaxByPlayerId["user:b"],250);
+  assert.equal(result.ptCurrentByPlayerId["user:a"],300);
+  assert.equal(result.ptMaxByPlayerId["user:b"],300);
   assert.equal(result.ptMaxByPlayerId["user:c"],200);
   assert.equal(original.ptCurrentByPlayerId["user:a"],200);
   assert.equal(rules.applyToMatch(result,squad,{coachOwnedIds:["208"]}),result,"no second bonus");
@@ -224,7 +224,7 @@ test("Squad power preview shows all five targeted effects without mutating canon
   const given=extra=>preview.projected({...base,...extra});
   const hillman=given({squad:{coachId:"208",lineup:["a","b"],bench:[],
     coachPowerSelection:{coachId:"208",cardIds:["a","b"]}}});
-  assert.equal(hillman.pt.total,250);
+  assert.equal(hillman.pt.total,300);
   const aquilina=given({squad:{coachId:"1329",lineup:["a"],bench:[],
     coachPowerSelection:{coachId:"1329",cardIds:["a"],moveIndices:[0,3]}}});
   assert.equal(aquilina.costs[0],20);
