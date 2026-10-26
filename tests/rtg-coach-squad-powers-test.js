@@ -299,6 +299,13 @@ test("Squad power preview shows all five targeted effects without mutating canon
     coachPowerSelection:{coachId:"1974",cardIds:["a"]}}});
   assert.equal(arrows.player.overall,90);
   assert.equal(arrows.stats.find(s=>s.key==="attack").after,85);
+  const dual={coachId:"1974",lineup:["a"],bench:["b"],
+    coachPowerSelection:{coachId:"1974",cardIds:["a","b"]}};
+  const second=given({player:{...player,cardId:"b",playerId:"b",name:"Secondo"},
+    cardId:"b",squad:dual});
+  assert.equal(given({squad:dual}).player.overall,90);
+  assert.equal(second.player.overall,90);
+  assert.match(second.note,/OVR/);
   assert.equal(player.overall,88);
   assert.equal(player.element,"wind");
   const travis=given({squad:{coachId:"1777",lineup:[],bench:["a"],
