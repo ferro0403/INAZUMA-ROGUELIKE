@@ -135,6 +135,11 @@
       album: albumData(input.album),
     };
   }
+  function canonicalJson(value) {
+    if (Array.isArray(value)) return `[${value.map(canonicalJson).join(",")}]`;
+    if (object(value)) return `{${Object.keys(value).sort().map((key) => `${JSON.stringify(key)}:${canonicalJson(value[key])}`).join(",")}}`;
+    return JSON.stringify(value);
+  }
   function validate(snapshot) {
     if (!object(snapshot) || snapshot.schemaVersion !== SNAPSHOT_VERSION
       || !object(snapshot.campaigns)
@@ -152,7 +157,7 @@
     });
     // Reject local-only or unknown fields rather than silently accepting them
     // from a malformed cloud document. The producer always strips them.
-    if (JSON.stringify(clean) !== JSON.stringify(snapshot)) throw failure("rtg-cloud-noncanonical-snapshot");
+    if (canonicalJson(clean) !== canonicalJson(snapshot)) throw failure("rtg-cloud-noncanonical-snapshot");
     return clean;
   }
 
