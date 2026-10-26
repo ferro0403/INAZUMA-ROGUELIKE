@@ -91,7 +91,8 @@
     }else if(coachId==="1275"){
       for(const key of players) {
         const ptKey="opponent:"+key;
-        next.ptCurrentByPlayerId[ptKey]=Math.ceil(next.ptCurrentByPlayerId[ptKey]/2);
+        // Reduce initial PT by 75%; keep maximum PT unchanged.
+        next.ptCurrentByPlayerId[ptKey]=Math.ceil(next.ptCurrentByPlayerId[ptKey]/4);
       }
     }else if(coachId==="4761"){
       const i=idx(opp.lineup,players[0]),j=idx(opp.lineup,players[1]);
