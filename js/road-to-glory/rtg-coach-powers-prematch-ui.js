@@ -7,7 +7,7 @@
   const POWER={
     "36":["CAMBIO FORZATO","Seleziona un titolare avversario e la riserva che entrerà al suo posto. Il portiere si sostituisce solo con un altro portiere; gli altri giocatori di movimento possono avere ruoli differenti."],
     "1225":["PRESTITO A SORPRESA","Scegli una riserva avversaria da prendere in prestito e una delle tue 4 riserve da sostituire per questa partita."],
-    "1275":["ESAURIMENTO OSCURO","Seleziona 2 titolari avversari. Inizieranno con metà dei PT, mantenendo invariati i PT massimi."],
+    "1275":["ESAURIMENTO OSCURO","Seleziona 2 titolari avversari. Inizieranno con il 25% dei PT normali (-75%), mantenendo invariati i PT massimi."],
     "1940":["TECNICA PROIBITA","Seleziona un titolare avversario: bloccherai tutte le sue mosse speciali disponibili."],
     "4761":["DISORDINE TATTICO","Scegli 2 giocatori di movimento avversari: si scambieranno le posizioni tattiche iniziali. Il portiere non può essere selezionato."],
   };
