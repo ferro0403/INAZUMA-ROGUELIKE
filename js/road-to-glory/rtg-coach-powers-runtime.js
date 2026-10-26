@@ -65,9 +65,13 @@
       return config.cardIds.length===1&&bench.has(config.cardIds[0])?config:null;
     }
     if(config.coachId==="1974"){
-      const player=config.cardIds.length===1?
-        (lineup.get(config.cardIds[0])||bench.get(config.cardIds[0])):null;
-      return player&&nextRarity(rarityOf(player))?config:null;
+      // Two distinct cards, each either starter or reserve. A previously saved
+      // one-card choice remains valid until the user edits the configuration.
+      return config.cardIds.length>=1&&config.cardIds.length<=2&&
+        config.cardIds.every(key=>{
+          const player=lineup.get(key)||bench.get(key);
+          return player&&nextRarity(rarityOf(player));
+        })?config:null;
     }
     if(config.coachId==="4401"){
       if(config.targets.length){
@@ -125,7 +129,7 @@
       const maximum={...(match.ptMaxByPlayerId||{})};
       for(const key of config.cardIds){
         if(!Number.isFinite(current["user:"+key])||!Number.isFinite(maximum["user:"+key]))return match;
-        current["user:"+key]+=50; maximum["user:"+key]+=50;
+        current["user:"+key]+=100; maximum["user:"+key]+=100;
       }
       return {...match,ptCurrentByPlayerId:current,ptMaxByPlayerId:maximum,coachPowerEffect:effect};
     }
@@ -144,29 +148,39 @@
       return {...match,userSquad:{...match.userSquad,lineup},coachPowerEffect:effect};
     }
     if(coachId==="1974"){
-      const original=[...(match.userSquad?.lineup||[]),...(match.userSquad?.bench||[])]
-        .find(player=>cardId(player)===card);
-      const target=nextRarity(rarityOf(original));
-      if(!original||!target||typeof options.upgradeRarity!=="function")return match;
-      const upgraded=options.upgradeRarity(original,target,card);
-      if(!upgraded||rarityOf(upgraded)!==target||
-         !Number.isFinite(Number(upgraded.overall))||
-         !upgraded.stats||typeof upgraded.stats!=="object")return match;
+      const all=[...(match.userSquad?.lineup||[]),...(match.userSquad?.bench||[])];
       const ptBreakdown=global.RtgFourMovesRuntime?.ptBreakdown;
-      if(typeof ptBreakdown!=="function")return match;
-      const total=Number(ptBreakdown(upgraded.stats,target)?.total);
-      if(!Number.isInteger(total)||total<0)return match;
-      const boosted={
-        ...original,...upgraded,cardId:card,playerId:original.playerId,
-        tacticalRole:original.tacticalRole,move:original.move,
-        activeMove:original.activeMove,category:target,finalRarity:target,
-      };
-      const transform=arr=>(arr||[]).map(player=>cardId(player)===card?boosted:player);
-      effect.previousRarity=rarityOf(original);
-      effect.targetRarity=target;
-      effect.previousOverall=Number(original.overall);
-      const current={...(match.ptCurrentByPlayerId||{}),["user:"+card]:total};
-      const maximum={...(match.ptMaxByPlayerId||{}),["user:"+card]:total};
+      if(typeof options.upgradeRarity!=="function"||typeof ptBreakdown!=="function")return match;
+      const upgrades=new Map(),snapshot=[];
+      // Prepare and validate every upgrade before changing even one player or PT.
+      for(const key of config.cardIds){
+        const original=all.find(player=>cardId(player)===key);
+        const target=nextRarity(rarityOf(original));
+        if(!original||!target)return match;
+        const upgraded=options.upgradeRarity(original,target,key);
+        if(!upgraded||rarityOf(upgraded)!==target||
+           !Number.isFinite(Number(upgraded.overall))||
+           !upgraded.stats||typeof upgraded.stats!=="object")return match;
+        const total=Number(ptBreakdown(upgraded.stats,target)?.total);
+        if(!Number.isInteger(total)||total<0)return match;
+        const boosted={
+          ...original,...upgraded,cardId:key,playerId:original.playerId,
+          tacticalRole:original.tacticalRole,move:original.move,
+          activeMove:original.activeMove,category:target,finalRarity:target,
+        };
+        upgrades.set(key,{player:boosted,total});
+        snapshot.push({cardId:key,previousRarity:rarityOf(original),
+          targetRarity:target,previousOverall:Number(original.overall)});
+      }
+      const current={...(match.ptCurrentByPlayerId||{})};
+      const maximum={...(match.ptMaxByPlayerId||{})};
+      for(const [key,entry] of upgrades){
+        current["user:"+key]=entry.total;
+        maximum["user:"+key]=entry.total;
+      }
+      const transform=arr=>(arr||[]).map(player=>upgrades.get(cardId(player))?.player||player);
+      // Keep the original single-player metadata accessible in old UI/readers.
+      Object.assign(effect,snapshot[0],{targets:snapshot});
       return {...match,ptCurrentByPlayerId:current,ptMaxByPlayerId:maximum,
         userSquad:{...match.userSquad,lineup:transform(match.userSquad.lineup),
           bench:transform(match.userSquad.bench)},coachPowerEffect:effect};
