@@ -60,13 +60,13 @@ const create=()=>{
 const withPower=(match,coachId,selection,options={})=>powers.applyToMatch(match,{
  coachId,coachPowerSelection:{coachId,...selection},
 },{coachOwnedIds:[coachId]},options);
-test("Hillman starts the real match with +50 PT; saves retain modified balances exactly once",()=>{
+test("Hillman starts the real match with +100 PT; saves retain modified balances exactly once",()=>{
  const match=create();
  const chosen=[match.userSquad.lineup[8].cardId,match.userSquad.lineup[9].cardId];
  const result=withPower(match,"208",{cardIds:chosen});
  for(const key of chosen){
-  assert.equal(result.ptMaxByPlayerId["user:"+key],match.ptMaxByPlayerId["user:"+key]+50);
-  assert.equal(result.ptCurrentByPlayerId["user:"+key],match.ptCurrentByPlayerId["user:"+key]+50);
+  assert.equal(result.ptMaxByPlayerId["user:"+key],match.ptMaxByPlayerId["user:"+key]+100);
+  assert.equal(result.ptCurrentByPlayerId["user:"+key],match.ptCurrentByPlayerId["user:"+key]+100);
  }
  assert.equal(match.ptCurrentByPlayerId["user:"+chosen[0]],160);
  const recovered=JSON.parse(JSON.stringify(result));
