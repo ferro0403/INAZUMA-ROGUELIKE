@@ -59,7 +59,8 @@ Risultati macchina e lista completa dei fallimenti: [rtg-cloud-validation.json](
 - Gate **500 scenari soak/fuzz PASS**.
 - Gate **500 campagne complete PASS**: 300 campioni, 200 GameOver, 100 campagne per ciascuna delle cinque Season; 29 retry di quota, 55 azioni doppie, 104 refresh; controlli Album per tutte le 500 campagne e finalizzazione asincrona per le 300 vittorie.
 - Sintassi **198 JS di produzione PASS**; **229 riferimenti JS/CSS** e **82 URL CSS** verificati; diff whitespace pulito.
-- **Firestore Emulator in GitHub Actions: 64/64 PASS**, di cui 60 casi comportamentali e 4 guard statici, nessuno saltato. [Esecuzione verificata](https://github.com/ferro0403/INAZUMA-ROGUELIKE/actions/runs/40411806141/job/121884115176).
+- **Workflow RTG Cloud Save validation PASS sul codice finale**: test runtime e browser reale superati in CI dopo la correzione del launcher; [esecuzione verificata](https://github.com/ferro0403/INAZUMA-ROGUELIKE/actions/runs/40412162949).
+- **Firestore Emulator in GitHub Actions: 64/64 PASS**, di cui 60 casi comportamentali e 4 guard statici, nessuno saltato. [Esecuzione verificata](https://github.com/ferro0403/INAZUMA-ROGUELIKE/actions/runs/40412162949/job/121885327457).
 - Review indipendente: trovati e risolti con regressioni la validazione tardiva, il journal rimosso troppo presto, valori semanticamente non conservabili e la perdita del dirty state durante upload sovrapposti.
 
 Comandi principali:

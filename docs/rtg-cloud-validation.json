@@ -92,11 +92,18 @@
       "behavioral_cases": 60,
       "static_guards": 4,
       "skipped": 0,
-      "run_url": "https://github.com/ferro0403/INAZUMA-ROGUELIKE/actions/runs/40411806141",
-      "job_id": 121884115176,
-      "tested_source_commit": "8a688f97113e407147cec0131e662c138d3f5849"
+      "run_url": "https://github.com/ferro0403/INAZUMA-ROGUELIKE/actions/runs/40412162949",
+      "job_id": 121885327457,
+      "tested_source_commit": "77f379b6b3b583310e50c4877081a3cd0276a73a"
     },
     "runtime_cloud_scripts": "PASS on Node22 in CI",
-    "browser": "initial runner-launcher failure reproduced; binary selection corrected and verified locally, CI rerun pending"
+    "browser": {
+      "status": "success",
+      "cases": 7,
+      "job_id": 121885327875,
+      "run_url": "https://github.com/ferro0403/INAZUMA-ROGUELIKE/actions/runs/40412162949",
+      "tested_source_commit": "77f379b6b3b583310e50c4877081a3cd0276a73a"
+    },
+    "workflow_status": "success"
   }
 }
