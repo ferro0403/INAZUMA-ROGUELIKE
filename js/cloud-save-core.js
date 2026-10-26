@@ -90,6 +90,15 @@
 
   function own(object, key) { return Object.prototype.hasOwnProperty.call(object || {}, key); }
   function cloudError(code, problemSector = null) { return Object.assign(new Error(code), { code, problemSector }); }
+  // The legacy four sectors remain unchanged; RTG is optional for old accounts.
+  function sectorNames(value) {
+    return [...SECTOR_NAMES, ...(value?.sectors?.rtg === true || own(value?.payloads, "rtg") || own(value, "rtg") ? ["rtg"] : [])];
+  }
+  function validateRtg(value) {
+    if (!global.RoadToGloryCloudSnapshot?.validate) throw cloudError("rtg-cloud-adapter-unavailable", "rtg");
+    try { return global.RoadToGloryCloudSnapshot.validate(value); }
+    catch (error) { error.problemSector = "rtg"; throw error; }
+  }
   function nonEmptyObject(value) { return !!value && typeof value === "object" && Object.keys(value).length > 0; }
   function positiveValues(value) { return Object.values(value || {}).some((item) => Number(item) > 0); }
 
@@ -111,6 +120,10 @@
     if (summary.albumUnlocked) reasons.push("album");
     if (summary.developmentProgress) reasons.push("development");
     if (summary.hallOfFameCount) reasons.push("hall_of_fame");
+    if (value.rtg && (Object.values(value.rtg.campaigns || {}).some(Boolean)
+      || Number(value.rtg.shared?.tokens) > 0 || value.rtg.shared?.gachaAcquiredCards?.length
+      || value.rtg.shared?.coachOwnedIds?.length || nonEmptyObject(value.rtg.shared?.developmentByCardId)
+      || value.rtg.album?.cardIds?.length)) { summary.rtg = true; reasons.push("rtg"); }
     return { empty: reasons.length === 0, meaningful: reasons.length > 0, reasons, summary };
   }
 
@@ -126,6 +139,11 @@
       const hashValue = manifest.sectorHashes[name];
       if (!SHA256_REGEX.test(hashValue || "")) throw cloudError("invalid-manifest", name);
       if (manifest.sectorRevisions != null && (!Number.isInteger(manifest.sectorRevisions[name]) || manifest.sectorRevisions[name] < 1 || manifest.sectorRevisions[name] > manifest.revision)) throw cloudError("invalid-manifest", name);
+    }
+    if (own(manifest.sectors, "rtg") || own(manifest.sectorHashes, "rtg") || own(manifest.sectorRevisions, "rtg")) {
+      if (manifest.sectors.rtg !== true || !SHA256_REGEX.test(manifest.sectorHashes.rtg || "")
+        || !Number.isSafeInteger(manifest.sectorRevisions?.rtg) || manifest.sectorRevisions.rtg < 1
+        || manifest.sectorRevisions.rtg > manifest.revision) throw cloudError("invalid-manifest", "rtg");
     }
     if (manifest.hallTeamIds != null && (!Array.isArray(manifest.hallTeamIds) || new Set(manifest.hallTeamIds).size !== manifest.hallTeamIds.length)) throw cloudError("invalid-manifest", "hall_index");
     const count = manifest.sectors.hallOfFameCount;
@@ -148,7 +166,7 @@
     const payload = logicalPayload(data, name);
     const calculated = await hash(payload, cryptoApi);
     if (calculated !== data.payloadHash || calculated !== manifest.sectorHashes[name]) throw cloudError("hash-mismatch", name);
-    return normalize(payload);
+    return normalize(name === "rtg" ? validateRtg(payload) : payload);
   }
 
   function validateHallIndex(payload, manifest, maxTeams = MAX_HALL_TEAMS) {
@@ -175,18 +193,21 @@
     const index = payloads.hall_index;
     const entries = hallPayloads.map((entry) => own(entry, "payload") ? entry : { hallTeamId: entry?.hallTeamId, archiveKey: entry?.archiveKey, payload: entry, payloadHash: null });
     return normalize({ profile: payloads.profile, album: payloads.album, development: payloads.development,
+      ...(own(payloads, "rtg") ? { rtg: validateRtg(payloads.rtg) } : {}),
       hallOfFame: { archiveSchemaVersion: index.archiveSchemaVersion, updatedAt: index.updatedAt ?? null, teams: entries.map((entry) => entry.payload), index: index.index, cloudEntries: entries } });
   }
 
   async function prepareSnapshot(snapshot, cryptoApi = global.crypto) {
     const input = normalize(snapshot);
-    const clean = normalize({ profile: input.profile, album: input.album, development: input.development, hallOfFame: input.hallOfFame });
+    const clean = normalize({ profile: input.profile, album: input.album, development: input.development, hallOfFame: input.hallOfFame,
+      ...(own(snapshot, "rtg") ? { rtg: validateRtg(snapshot.rtg) } : {}) });
     const payloads = {
       profile: clean.profile ?? {},
       album: clean.album ?? {}, development: clean.development ?? {}, hall_index: hallIndex(clean),
+      ...(own(clean, "rtg") ? { rtg: clean.rtg } : {}),
     };
     const hashes = {};
-    for (const name of SECTOR_NAMES) hashes[name] = await hash(payloads[name], cryptoApi);
+    for (const name of sectorNames(clean)) hashes[name] = await hash(payloads[name], cryptoApi);
     const hallEntries = [];
     const preserved = Array.isArray(clean.hallOfFame.cloudEntries) ? clean.hallOfFame.cloudEntries : [];
     for (let i = 0; i < clean.hallOfFame.teams.length; i += 1) {
@@ -213,7 +234,7 @@
   async function compareSnapshots(expected, actual, cryptoApi = global.crypto) {
     const expectedPrepared = await prepareSnapshot(expected, cryptoApi);
     const actualPrepared = await prepareSnapshot(actual, cryptoApi);
-    const mismatches = SECTOR_NAMES.filter((name) => expectedPrepared.hashes[name] !== actualPrepared.hashes[name]);
+    const mismatches = [...new Set([...sectorNames(expectedPrepared), ...sectorNames(actualPrepared)])].filter((name) => expectedPrepared.hashes[name] !== actualPrepared.hashes[name]);
     const expectedHalls = new Map(expectedPrepared.hallEntries.map((entry) => [entry.hallTeamId, entry.payloadHash]));
     const actualHalls = new Map(actualPrepared.hallEntries.map((entry) => [entry.hallTeamId, entry.payloadHash]));
     for (const id of new Set([...expectedHalls.keys(), ...actualHalls.keys()])) {
@@ -223,7 +244,7 @@
   }
 
   function preflight(prepared, limit = DOCUMENT_LIMIT_BYTES) {
-    for (const name of SECTOR_NAMES) {
+    for (const name of sectorNames(prepared)) {
       const document = { schemaVersion: 1, revision: 1, sector: name, payloadEncoding: PAYLOAD_ENCODING, payload: encodeFirestorePayload(prepared.payloads[name]), payloadHash: sectorLogicalHash(prepared, name), sourceDeviceId: "device" };
       if (byteSize(document) > limit) throw Object.assign(new Error(`Documento ${name} troppo grande`), { code: "document-too-large", problemSector: name });
     }
@@ -238,16 +259,17 @@
   function buildManifest(prepared, uid, deviceId, timestamp, commit = {}) {
     const revision = Number(commit.revision || 1), cloudCommitId = commit.cloudCommitId || null;
     const previous = commit.expectedManifest || null;
+    if (previous?.sectors?.rtg === true && !own(prepared.payloads, "rtg")) throw cloudError("rtg-cloud-checkpoint-required", "rtg");
     return { schemaVersion: previous?.schemaVersion ?? 1, revision, baseRevision: Number(commit.baseRevision || 0), cloudCommitId, initialized: previous?.initialized ?? true, createdAt: previous ? previous.createdAt : timestamp, updatedAt: timestamp, source: previous ? previous.source : "local-first-association", deviceId, sourceDeviceId: deviceId, accountUid: previous?.accountUid ?? uid,
       // Preserve unknown/legacy manifest fields byte-logically. In particular,
       // old run sector metadata remains untouched and is never made active.
       ...(previous?.runProvenance ? { runProvenance: clone(previous.runProvenance) } : {}),
-      sectors: { ...(previous?.sectors || {}), profile: true, album: true, development: true, hallOfFameCount: prepared.hallEntries.length },
-      sectorHashes: { ...(previous?.sectorHashes || {}), profile: prepared.hashes.profile, album: prepared.hashes.album, development: prepared.hashes.development, hall_index: prepared.hashes.hall_index },
-      sectorRevisions: { ...(previous?.sectorRevisions || {}), ...Object.fromEntries(SECTOR_NAMES.map((name) => [name, revision])) }, hallTeamIds: prepared.hallEntries.map((entry) => entry.hallTeamId),
+      sectors: { ...(previous?.sectors || {}), profile: true, album: true, development: true, hallOfFameCount: prepared.hallEntries.length, ...(own(prepared.payloads, "rtg") ? { rtg: true } : {}) },
+      sectorHashes: { ...(previous?.sectorHashes || {}), ...prepared.hashes },
+      sectorRevisions: { ...(previous?.sectorRevisions || {}), ...Object.fromEntries(sectorNames(prepared).map((name) => [name, revision])) }, hallTeamIds: prepared.hallEntries.map((entry) => entry.hallTeamId),
       hallTeamHashes: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, entry.payloadHash])), hallTeamRevisions: Object.fromEntries(prepared.hallEntries.map((entry) => [entry.hallTeamId, revision])) };
   }
 
-  global.InazumaCloudSaveCore = Object.freeze({ DOCUMENT_LIMIT_BYTES, CLOUD_SCHEMA_VERSION, MAX_HALL_TEAMS, SECTOR_NAMES, PAYLOAD_ENCODING, encodeFirestorePayload, decodeFirestorePayload, normalize, clone, stableSerialize, byteSize, hash, readLocalSnapshot, hallIndex, inspectLocalProgress, validateManifest, validateSectorDocument, validateHallIndex, validateHallDocument, reconstructSnapshot, prepareSnapshot, compareSnapshots, preflight, manifestMatchesExpected, buildManifest });
+  global.InazumaCloudSaveCore = Object.freeze({ DOCUMENT_LIMIT_BYTES, CLOUD_SCHEMA_VERSION, MAX_HALL_TEAMS, SECTOR_NAMES, PAYLOAD_ENCODING, sectorNames, encodeFirestorePayload, decodeFirestorePayload, normalize, clone, stableSerialize, byteSize, hash, readLocalSnapshot, hallIndex, inspectLocalProgress, validateManifest, validateSectorDocument, validateHallIndex, validateHallDocument, reconstructSnapshot, prepareSnapshot, compareSnapshots, preflight, manifestMatchesExpected, buildManifest });
   if (typeof module !== "undefined" && module.exports) module.exports = global.InazumaCloudSaveCore;
 })(globalThis);
