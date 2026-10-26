@@ -456,11 +456,13 @@
     ]);
     const writes=[];
     const storage={
-      async read(key="state"){return clone(storageData.get(key)||null);},
-      async write(value,key="state"){writes.push(key);storageData.set(key,clone(value));},
-      async update(fn,key="state"){
-        const value=fn(clone(storageData.get(key)||null));
-        storageData.set(key,clone(value));return clone(value);
+      async readMany(names){return Object.fromEntries(names.map(key=>[key,clone(storageData.get(key))]));},
+      async updateMany(names,fn){
+        const mutation=fn(await this.readMany(names));
+        for(const [key,value] of Object.entries(mutation.writes)){
+          writes.push(key);storageData.set(key,clone(value));
+        }
+        return clone(mutation.value);
       },
     };
     const repo=sandbox.RoadToGloryRepository.create({storage,seedFactory:()=>"seed"});
@@ -493,10 +495,14 @@
       ["shared:account",{tokens:1800,gachaAcquiredCards:[],developmentByCardId:{}}]]);
     let failShared=true;
     const storage={
-      async read(key){return clone(values.get(key)||null);},
-      async update(fn,key){const next=fn(clone(values.get(key)||null));values.set(key,clone(next));return clone(next);},
-      async write(data,key){if(key==="shared:account"&&failShared)throw Error("offline shared");
-        values.set(key,clone(data));},
+      async readMany(names){return Object.fromEntries(names.map(key=>[key,clone(values.get(key))]));},
+      async updateMany(names,fn){
+        const mutation=fn(await this.readMany(names));
+        // Simulate an aborted transaction, never a committed first write.
+        if(failShared&&Object.hasOwn(mutation.writes,"shared:account"))throw Error("offline shared");
+        for(const [key,value] of Object.entries(mutation.writes))values.set(key,clone(value));
+        return clone(mutation.value);
+      },
     };
     const repo=sandbox.RoadToGloryRepository.create({storage,seedFactory:()=>"seed"});
     repo.selectCampaign("rtg-ares-orion");
@@ -504,12 +510,14 @@
       state.coachOwnedIds.push("4401");return state;
     }),/offline shared/);
     const before=values.get("state:rtg-ares-orion");
-    assert.deepEqual(before.coachOwnedIds,["4401"]);
+    assert.deepEqual(before.coachOwnedIds,[],"a failed shared commit must roll back campaign ownership");
+    assert.equal(values.get("shared:account").coachOwnedIds,undefined);
     failShared=false;
+    await repo.update("draw-retry",state=>{state.coachOwnedIds.push("4401");return state;});
     repo.selectCampaign("rtg-ie-trilogy");
     const recovered=await repo.read();
     assert.equal(api.status(recovered,"4401"),"owned");
-    assert.equal(values.get("shared:account").coachOwnedIds,undefined,"reading never writes shared");
+    assert.deepEqual(Array.from(values.get("shared:account").coachOwnedIds),["4401"]);
   });
 
 })();
