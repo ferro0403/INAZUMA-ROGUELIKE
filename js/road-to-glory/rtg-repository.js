@@ -61,7 +61,23 @@
     // retain their lists in each campaign; reads never migrate or erase them.
     const mergeCoaches=(...lists)=>Array.from(new Set(lists.flatMap(ids=>Array.isArray(ids)?ids:[])
       .map(String).filter(id=>!!global.RoadToGloryCoaches?.BY_ID?.[id])));
-    const allKeys=()=>["state",`state:${ARES_ORION_ID}`,SHARED_KEY];
+    const squadsKey=campaignId=>`local:squads:${campaignId}`;
+    const allKeys=()=>["state",`state:${ARES_ORION_ID}`,SHARED_KEY,squadsKey(TRILOGY_ID),squadsKey(ARES_ORION_ID)];
+
+    function validate(raw){
+      const result=stateApi.validate(raw);
+      if(raw?.localSquadsPreserved===true){
+        result.squads=stateApi.clone(raw.squads);
+        result.localSquadsPreserved=true;
+      }
+      return result;
+    }
+    function initialCampaign(records,campaignId){
+      const state=stateApi.createInitial({campaignSeed:seedFactory(),campaignId});
+      const squads=records[squadsKey(campaignId)];
+      if(squads!=null){state.squads=stateApi.clone(squads);state.localSquadsPreserved=true;}
+      return validate(state);
+    }
 
     // Derive legacy account ownership in memory. A read never migrates or
     // writes any IndexedDB record (important during cloud restore/recovery).
@@ -98,7 +114,7 @@
       state.gachaAcquiredCards=Array.isArray(shared?.gachaAcquiredCards)?stateApi.clone(shared.gachaAcquiredCards):[];
       state.developmentByCardId=mergeDevelopmentMaps(shared?.developmentByCardId);
       state.coachOwnedIds=mergeCoaches(shared?.coachOwnedIds,state.coachOwnedIds);
-      return stateApi.validate(state);
+      return validate(state);
     }
     function sharedRecord(state,shared){
       return {
@@ -114,17 +130,18 @@
       const records=await storage.readMany(allKeys());
       const raw=records[key];
       if(raw==null)return null;
-      const state=stateApi.validate(raw);
+      const state=validate(raw);
       return applyShared(state,sharedForRecords(records,state));
     }
 
-    async function ensureCampaign() {
+    async function ensureCampaign(options = {}) {
+      const campaignId=selectedCampaignId;
       const key=campaignKey();
       return storage.updateMany(allKeys(),records=>{
         const currentRaw=records[key];
         let current=currentRaw!=null
-          ? stateApi.validate(currentRaw)
-          : stateApi.validate(stateApi.createInitial({campaignSeed:seedFactory(),campaignId:selectedCampaignId}));
+          ? validate(currentRaw)
+          : initialCampaign(records,campaignId);
         const shared=sharedForRecords(records,current);
         current=applyShared(current,shared);
         const match=current.activeMatch;
@@ -132,28 +149,29 @@
         if(currentRaw!=null&&match&&match.status==="active"&&match.presentation?.preMatchSeen!==false&&!match.pendingEncounter&&typeof matchEngine?.prepareNext==="function"){
           current.activeMatch=matchEngine.prepareNext(stateApi.clone(match));
         }
-        const result=stateApi.validate(current);
+        const result=validate(current);
         return {writes:{[key]:result,[SHARED_KEY]:sharedRecord(result,shared)},value:result};
-      });
+      },options);
     }
 
-    async function update(label,updater) {
+    async function update(label,updater,options = {}) {
+      const campaignId=selectedCampaignId;
       if(typeof updater!=="function")throw new TypeError("RTG updater required");
       const key=campaignKey();
       return storage.updateMany(allKeys(),records=>{
         const currentRaw=records[key];
         let current=currentRaw==null
-          ? stateApi.createInitial({campaignSeed:seedFactory(),campaignId:selectedCampaignId})
-          : stateApi.validate(currentRaw);
+          ? initialCampaign(records,campaignId)
+          : validate(currentRaw);
         const shared=sharedForRecords(records,null);
         current=applyShared(current,shared);
         const next=updater(stateApi.clone(current));
         if(next&&typeof next.then==="function"){
           throw Object.assign(new Error("Async RTG updater not supported"),{code:"rtg-async-updater-not-supported",label});
         }
-        const result=stateApi.validate(next==null?current:next);
+        const result=validate(next==null?current:next);
         return {writes:{[key]:result,[SHARED_KEY]:sharedRecord(result,shared)},value:result};
-      });
+      },options);
     }
 
     return Object.freeze({ read, ensureCampaign, update, selectCampaign, activeCampaignId });
