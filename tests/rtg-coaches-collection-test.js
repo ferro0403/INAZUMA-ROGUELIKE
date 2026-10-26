@@ -510,7 +510,7 @@
       state.coachOwnedIds.push("4401");return state;
     }),/offline shared/);
     const before=values.get("state:rtg-ares-orion");
-    assert.deepEqual(before.coachOwnedIds,[],"a failed shared commit must roll back campaign ownership");
+    assert.deepEqual(Array.from(before.coachOwnedIds),[],"a failed shared commit must roll back campaign ownership");
     assert.equal(values.get("shared:account").coachOwnedIds,undefined);
     failShared=false;
     await repo.update("draw-retry",state=>{state.coachOwnedIds.push("4401");return state;});
