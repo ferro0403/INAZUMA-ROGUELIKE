@@ -49,11 +49,11 @@ test("Ray: any outfield role may replace another; goalkeeper only replaces goalk
  assert.equal(runtime.validate(m,"36",{playerIds:["f1","rb-gk"]}),null);
  assert(runtime.validate(m,"36",{playerIds:["gk","rb-gk"]}));
 });
-test("Wyles: exactly two distinct opponents start on 50% PT; maxima unchanged",()=>{
+test("Wyles: exactly two distinct opponents lose 75% of starting PT; maxima unchanged",()=>{
  const match=makeMatch("1275"),chosen={playerIds:["d1","m2"]};
  const powered=runtime.apply(match,"1275",chosen);
- assert.equal(powered.ptCurrentByPlayerId["opponent:d1"],100);
- assert.equal(powered.ptCurrentByPlayerId["opponent:m2"],100);
+ assert.equal(powered.ptCurrentByPlayerId["opponent:d1"],50);
+ assert.equal(powered.ptCurrentByPlayerId["opponent:m2"],50);
  assert.equal(powered.ptMaxByPlayerId["opponent:d1"],200);
  assert.equal(powered.ptMaxByPlayerId["opponent:m2"],200);
  assert.equal(powered.ptCurrentByPlayerId["opponent:d2"],200);
