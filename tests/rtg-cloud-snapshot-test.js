@@ -51,6 +51,8 @@ function rejects(code, call) { assert.throws(call, (error) => error.code === cod
   }
   assert.strictEqual(JSON.stringify(original), unmodified, "project must never mutate the source");
   assert.deepStrictEqual(snapshot.validate(projected), projected, "roundtrip cloud payload");
+  const reordered = { album: { cardIds: [...projected.album.cardIds], version: 1 }, shared: projected.shared, campaigns: projected.campaigns, schemaVersion: 1 };
+  assert.deepStrictEqual(snapshot.validate(reordered), projected, "Firestore map property ordering must not matter");
 
   const active = fixture(); active.trilogy.activeMatch = { status: "active", score: { user: 0, opponent: 0 } };
   rejects("rtg-cloud-match-in-progress", () => snapshot.project(active));
