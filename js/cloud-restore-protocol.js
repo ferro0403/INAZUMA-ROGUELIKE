@@ -6,13 +6,16 @@
   }
   async function recover({ journal, loadTarget, writeJournal, clearJournal, adapters, onBlocked = () => {}, onComplete = () => {}, crash = () => {} }) {
     onBlocked(journal); const target = await loadTarget(journal); if (!target?.snapshot || !target?.manifest) throw Object.assign(new Error("restore-journal-repair-needed"), { code: "restore-journal-repair-needed" });
+    await adapters.preflight?.(target.snapshot);
     const persist = (stage) => { journal = writeJournal({ ...journal, stage }); return journal; };
-    for (const stage of STAGES) {
+    const stages = target.snapshot.rtg ? [...STAGES.slice(0, 4), "rtg", ...STAGES.slice(4)] : STAGES;
+    for (const stage of stages) {
       await adapters.assertActive?.(); persist(stage); await crash(`before:${stage}`, journal);
-      if (["profile", "album", "development", "hall"].includes(stage)) {
+      if (["profile", "album", "development", "hall", "rtg"].includes(stage)) {
         if (!await adapters.storeEquals(stage, target.snapshot)) { await adapters.assertOwnership(journal, stage); await adapters.applyStore(stage, target.snapshot, journal); }
       } else if (stage === "verify") { if (!await adapters.verify(target.snapshot)) throw Object.assign(new Error("post-write-verification-failed"), { code: "post-write-verification-failed" }); }
       else if (stage === "metadata") await adapters.writeMetadata(target.manifest, target.snapshot);
+      else if (stage === "complete") await adapters.complete?.(target.snapshot);
       await crash(`after:${stage}`, journal);
     }
     await adapters.assertActive?.();

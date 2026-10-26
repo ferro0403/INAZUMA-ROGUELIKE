@@ -1,8 +1,10 @@
 (function (global) {
   "use strict";
   function create(deps={}){
-    const app=deps.app;
-    const repository=deps.repository;
+    const app=deps.app,persistence=global.RoadToGloryPersistence;
+    const controllerFence=persistence?.createControllerFence({repository:deps.repository,onInvalidate:()=>invalidateCampaign()});
+    const assertCurrent=()=>controllerFence?.assertCurrent();
+    let repository=controllerFence?.repository||deps.repository;
     const runView=deps.runView;
     const squadView=deps.squadView;
     const matchView=deps.matchView;
@@ -37,7 +39,7 @@
     let displayedMinute=0;
     let aresRouteMapPromise=null;
     let selectedEncounterChoice=null;
-    let selectedEncounterId=null,penaltyChoiceBusy=false;
+    let selectedEncounterId=null,penaltyChoiceBusy=false,pullBusy=false;
     const SQUAD_PICKER_PAGE_SIZE=24;
     const ENCOUNTER_REVEAL_DELAY_MS=2200;
     const FINAL_COMPARISON_DELAY_MS=1700;
@@ -49,7 +51,8 @@
     let squadSlotRuntime=null;
     function getSquadSlotRuntime(){
       if(!squadSlotRuntime)squadSlotRuntime=global.RoadToGlorySquadSlotRuntime.create({
-        localStorage:global.localStorage,id,clone,activeSeasonId,activeSquad,getCampaign:()=>campaign,getSquadDraft:()=>squadDraft,
+        localStorage:global.localStorage,id,clone,activeSeasonId,activeSquad,getCampaign:()=>campaign,getSquadDraft:()=>squadDraft,assertCurrent,
+        getActiveSquadSlot:()=>activeSquadSlot,setActiveSquadSlot:value=>{activeSquadSlot=value;},loadSquadDraft:next=>{squadDraft=squadForSlot(next);},renderSquad,
       });
       return squadSlotRuntime;
     }
@@ -59,19 +62,11 @@
     function readActiveSquadSlot(){return getSquadSlotRuntime().readActiveSquadSlot();}
     function writeActiveSquadSlot(slot){return getSquadSlotRuntime().writeActiveSquadSlot(slot);}
     function squadForSlot(slot){return getSquadSlotRuntime().squadForSlot(slot);}
-    async function selectSquadSlot(slot){
-      const next=Math.max(1,Math.min(3,Number(slot)||1));
-      if(next===activeSquadSlot)return;
-      storeSquadSlot(activeSquadSlot,squadDraft||activeSquad(campaign));
-      activeSquadSlot=next;
-      writeActiveSquadSlot(next);
-      squadDraft=squadForSlot(next);
-      return renderSquad();
-    }
+    function selectSquadSlot(slot){return getSquadSlotRuntime().selectSquadSlot(slot);}
     let albumController=null;
     function getAlbumController(){
       if(!albumController)albumController=global.RoadToGloryAlbumController.create({
-        app,localStorage:global.localStorage,id,cardMeta,acquiredCardIdSet,getCampaign:()=>campaign,
+        app,localStorage:global.localStorage,id,cardMeta,acquiredCardIdSet,getCampaign:()=>campaign,assertCurrent,
         getSeasonDb:()=>seasonDb,getFreeAgentsDb:()=>freeAgentsDb,activeSeasonId,config,cardIdentity,gacha,
         playerResolver,ensureSeason1Db:deps.ensureSeason1Db,ensureData,renderHtml,runView,
         mountDevQuickTools,renderHome:deps.renderHome,openPlayerDetails:openRtgPlayerDetails,
@@ -101,6 +96,7 @@
       }
     }
     function renderHtml(html,options={}){
+      assertCurrent();
       lastRenderedHtml=String(html||"");
       if(app)app.innerHTML=lastRenderedHtml;
       if(options.preserveMatchTimeline===true){
@@ -135,10 +131,12 @@
       return aresRouteMapPromise;
     }
     async function ensureData(){
+      assertCurrent();const checkData=controllerFence?.checkpoint();
       const sid=activeSeasonId();
       seasonDb=global.SeasonRegistry?.database?.(sid)||seasonDb;
       if(!seasonDb||id(seasonDb?.seasonId||"ie1")!==sid){
-        seasonDb=sid==="ie1"?await deps.ensureSeason1Db():await global.SeasonRegistry?.loadDatabase?.(sid);
+        const loaded=sid==="ie1"?await deps.ensureSeason1Db():await global.SeasonRegistry?.loadDatabase?.(sid);
+        checkData?.();seasonDb=loaded;
       }
       freeAgentsDb=deps.getFreeAgentsDb?.()||freeAgentsDb||{players:[]};
       if(!rawPlayerById.size){
@@ -149,18 +147,7 @@
       }
       return {seasonDb,freeAgentsDb};
     }
-    async function ensureOwnedCardSeasons(){
-      const seasons=new Set((campaign?.gachaAcquiredCards||[])
-        .map(entry=>cardIdentity?.parse?.(entry)?.legacySeasonId)
-        .filter(sid=>sid&&sid!=="free_agents"&&config?.season?.(sid)));
-      const registry=global.SeasonRegistry,previousActive=registry?.activeId?.();
-      try{
-        await Promise.all(Array.from(seasons).filter(sid=>!registry?.database?.(sid))
-          .map(sid=>registry.loadDatabase(sid)));
-      }finally{
-        if(previousActive&&registry?.setActive)registry.setActive(previousActive);
-      }
-    }
+    function ensureOwnedCardSeasons(){return global.RoadToGloryAlbumController.ensureOwnedCardSeasons({campaign,cardIdentity,config,assertCurrent:controllerFence?.checkpoint()});}
     function cardMeta(cardRef){return cardIdentity?.parse?.(cardRef)||{cardId:id(cardRef),playerId:id(cardRef),legacySeasonId:null,sourceKind:"legacy"};}
     function freeAgentCardId(playerId){return cardIdentity?.cardIdForFreeAgent?.(playerId)||id(playerId);}
     function accessibleCards(state){
@@ -373,9 +360,9 @@
           }
         },"Avanzamento RTG spostato alla tappa successiva"));
         panel.querySelector('[data-dev-rtg="previous-season"]')?.addEventListener("click",async()=>{
-          const previousId=activeConfig()?.previousSeasonId;if(!previousId)return;
+          const previousId=activeConfig()?.previousSeasonId,checkPrevious=controllerFence?.checkpoint();if(!previousId)return;
           const previousConfig=config.season(previousId),previousDb=global.SeasonRegistry?.database?.(previousId)||await global.SeasonRegistry?.loadDatabase?.(previousId);
-          const previousNodes=Array.from(config.buildSeasonNodes?.(previousId)||[]);
+          checkPrevious?.();const previousNodes=Array.from(config.buildSeasonNodes?.(previousId)||[]);
           campaign=await repository.update("rtg-dev-return-previous-season",state=>{
             state.activeSeasonId=previousId;state.currentNodeId=previousNodes.at(-1)?.id||`main:${previousConfig.mainTeams.at(-1)}`;
             state.furthestNodeIndex=Math.max(0,previousNodes.length-1);state.seasonComplete=true;
@@ -622,9 +609,9 @@
       const generated=opponentGenerator.generate({seed:`${current.campaignSeed}:${node.id}`,attemptNumber,freeAgentsDb,formations:seasonDb?.formations?.eleven||[],targetMin:node.opponentTargetMin,targetMax:node.opponentTargetMax,playerResolver,seasonId:id(current?.activeSeasonId||activeSeasonId())});
       return {formationId:generated.formationId,lineup:generated.playerIds.map(playerId=>resolvedStandard(playerId)).filter(Boolean),bench:[],teamPower:generated.teamPower,name:generated.name,specialType:"free-agents"};
     }
-    async function startMatch(nodeId){
+    async function startMatch(nodeId){const checkStart=controllerFence?.checkpoint();
       if(global.RtgFourMovesRuntime&&!(await global.RtgFourMovesRuntime.ready)){deps.toast?.("Dati delle quattro mosse non disponibili","error");return null;}
-      const node=nodeById(nodeId);
+      checkStart?.();const node=nodeById(nodeId);
       let started=null;
       campaign=await repository.update("rtg-start-match",current=>{
         if(current.activeMatch)throw Object.assign(new Error("Partita RTG già attiva"),{code:"rtg-match-already-active"});
@@ -1006,17 +993,20 @@
     function openVending(mode="team"){return getVendingRuntime().openVending(mode);}
     function showPullResult(result,player,mode="team"){return getVendingRuntime().showPullResult(result,player,mode);}
     async function pull(options={}){
+      assertCurrent();if(pullBusy)return null;pullBusy=true;try{
       let result=null;const mode=options?.mode==="recruitment"?"recruitment":"team";
       campaign=await repository.update("rtg-gacha-pull",current=>{
         const pulled=gacha.pull(current,{seasonDb,accessibleCardIds:accessibleCards(current),mode});
         result=pulled.result;return pulled.state;
       });
+      assertCurrent();
       if(!result)return campaign;
       rememberRtgAlbumCard(result.cardId||result.playerId);
       const player=playerResolver.resolveAtLevel20(result.cardId,campaign?.activeSeasonId||"ie1",null,freeAgentsDb)||{playerId:result.playerId,cardId:result.cardId,legacySeasonId:result.legacySeasonId,name:result.playerId};
       if(options?.reveal===false)return {result,player};
       showPullResult(result,player);
       return result;
+      }finally{pullBusy=false;}
     }
     function renderCampaignSelect(){
       renderHtml(runView.campaignSelectorMarkup());
@@ -1029,32 +1019,42 @@
       }));
       return {selector:true};
     }
+    function invalidateCampaign(){
+      campaign=null;seasonDb=null;squadDraft=null;halftimeDraft=null;
+      rawPlayerById=new Map();freeAgentIds=[];
+      squadSlotRuntime=albumController=vendingRuntime=developmentController=seasonTransitionController=squadController=null;
+      if(matchFlowTimer!=null){cancelSchedule?.(matchFlowTimer);matchFlowTimer=null;}
+      selectedEncounterChoice=null;selectedEncounterId=null;
+    }
     async function open(options={}){
+      repository=controllerFence?.reopen()||deps.repository;
+      if(!controllerFence)global.PersistenceRecoveryGuard?.assertWritable();
+      const checkOpen=controllerFence?.checkpoint()||(()=>{});
       deps.closeModal?.({invokeOnClose:false});
       if(options?.destination==="campaigns")return renderCampaignSelect();
       if(options?.campaignId)repository.selectCampaign?.(options.campaignId);
-      await ensureData();
+      await ensureData();checkOpen();
       const access=refreshEntitlements();
       if(!access.unlocked){
         renderHtml(runView.lockedMarkup(access));
         app?.querySelector?.("[data-rtg-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
         return {locked:true,access};
       }
-      campaign=await repository.ensureCampaign();
+      campaign=await repository.ensureCampaign();checkOpen();
       progression?.setSeasonContext?.(campaign);
       if(activeSeasonId()==="ie2"){
         try{await ensureAresRouteMap();}
         catch(error){global.console?.error?.("[RTG] Impossibile caricare lo sfondo Ares",error);}
       }
+      checkOpen();
       if(activeSeasonId()!=="ie1"){
         seasonDb=await global.SeasonRegistry?.loadDatabase?.(activeSeasonId());
-        rawPlayerById=new Map();
+        checkOpen();rawPlayerById=new Map();
         for(const player of seasonDb?.players||[])rawPlayerById.set(id(player.playerId||player.id),player);
         for(const profile of seasonDb?.profiles||[])rawPlayerById.set(id(profile.profileId||profile.id),profile);
       }
-      await ensureOwnedCardSeasons();
-      await ensureInitialSquad();
-      activeSquadSlot=readActiveSquadSlot();
+      checkOpen();await ensureOwnedCardSeasons();checkOpen();
+      await ensureInitialSquad();checkOpen();activeSquadSlot=readActiveSquadSlot();
       const existingSlots=readSquadSlots();
       if(!existingSlots["1"])storeSquadSlot(1,activeSquad(campaign));
       squadDraft=squadForSlot(activeSquadSlot);

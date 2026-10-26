@@ -6,6 +6,9 @@
   // The caller must supply a stable, locally committed three-record snapshot.
   const SNAPSHOT_VERSION = 1;
   const CAMPAIGN_IDS = Object.freeze(["rtg-ie-trilogy", "rtg-ares-orion"]);
+  const PROJECT_RARITIES = Object.freeze(["Buono", "Forte", "Elite", "Mondiale", "Leggenda", "Aurico"]);
+  const DEVELOPMENT_RARITIES = Object.freeze(["Scarso", "Debole", "Normale", ...PROJECT_RARITIES]);
+  const owns = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
   const SEASONS = Object.freeze({
     "rtg-ie-trilogy": Object.freeze(["ie1", "ie1_s2", "ie1_s3"]),
     "rtg-ares-orion": Object.freeze(["ie2", "orion"]),
@@ -24,23 +27,46 @@
   function object(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value);
   }
-  function identifier(value) { return typeof value === "string" && value.trim().length > 0; }
+  function identifier(value) { return typeof value === "string" && value.trim().length > 0 && value === value.trim() && !["__proto__", "prototype", "constructor"].includes(value); }
   function count(value) { return Number.isSafeInteger(value) && value >= 0; }
+  function intrinsicPrototype(prototype, constructor) {
+    if (!prototype) return false;
+    const descriptor = Object.getOwnPropertyDescriptor(prototype, "constructor");
+    const actual = descriptor?.value;
+    return typeof actual === "function" && actual.prototype === prototype
+      && Function.prototype.toString.call(actual) === Function.prototype.toString.call(constructor);
+  }
   function jsonCopy(value) {
     const stack = new Set();
     function check(input) {
       if (input === null || typeof input === "string" || typeof input === "boolean") return;
       if (typeof input === "number" && Number.isFinite(input)) return;
       if (!input || typeof input !== "object" || stack.has(input)) throw failure("rtg-cloud-non-json-data");
-      if (!Array.isArray(input) && Object.getPrototypeOf(input) !== Object.prototype && Object.getPrototypeOf(input) !== null) throw failure("rtg-cloud-non-json-data");
+      const array = Array.isArray(input);
+      const prototype = Object.getPrototypeOf(input);
+      // A VM/iframe has its own intrinsic prototypes. Recognize the native
+      // constructor and its actual prototype, never constructor.name or a
+      // spoofable toString tag. Class instances/custom prototypes still fail.
+      if (array ? !intrinsicPrototype(prototype, Array)
+        : prototype !== null && !(Object.getPrototypeOf(prototype) === null && intrinsicPrototype(prototype, Object))) {
+        throw failure("rtg-cloud-non-json-data");
+      }
       stack.add(input);
-      if (Array.isArray(input)) {
-        for (let i = 0; i < input.length; i += 1) {
-          if (!Object.prototype.hasOwnProperty.call(input, i)) throw failure("rtg-cloud-non-json-data");
-          check(input[i]);
+      // JSON.stringify silently drops symbols, hidden properties and array
+      // properties, and can execute getters/toJSON. Reject lossy data first.
+      for (const key of Reflect.ownKeys(input)) {
+        if (array && key === "length") continue;
+        const descriptor = Object.getOwnPropertyDescriptor(input, key);
+        if (typeof key !== "string" || !descriptor.enumerable || !owns(descriptor, "value")
+          || (array && (!/^(0|[1-9]\d*)$/.test(key) || Number(key) >= input.length))) {
+          throw failure("rtg-cloud-non-json-data");
         }
-      } else {
-        for (const key of Object.keys(input)) check(input[key]);
+        check(descriptor.value);
+      }
+      if (array) {
+        for (let i = 0; i < input.length; i += 1) {
+          if (!owns(input, i)) throw failure("rtg-cloud-non-json-data");
+        }
       }
       stack.delete(input);
     }
@@ -51,7 +77,7 @@
     if (!Array.isArray(value) || value.some((entry) => !identifier(entry)) || new Set(value).size !== value.length) {
       throw failure("rtg-cloud-invalid-ids", label);
     }
-    return [...value];
+    return jsonCopy(value);
   }
   function campaign(source, campaignId) {
     if (source == null) return null; // Campaign not yet started on this device.
@@ -64,18 +90,26 @@
     // Do not publish transient match state, nor changes made during a match:
     // the last published manifest remains the safe cloud checkpoint.
     if (source.activeMatch != null) throw failure("rtg-cloud-match-in-progress", campaignId);
-    if (!count(source.coachPullCount) || !count(source.gacha?.pullCount)
-      || !count(source.lives) || !Number.isSafeInteger(source.checkpointMainIndex)
+    if (!count(source.coachPullCount) || !object(source.gacha) || !count(source.gacha.pullCount)
+      || (owns(source.gacha, "recruitmentPullCount") && !count(source.gacha.recruitmentPullCount))
+      || !count(source.lives) || source.lives > 2 || !Number.isSafeInteger(source.checkpointMainIndex)
       || source.checkpointMainIndex < -1 || !count(source.furthestNodeIndex)
       || !object(source.projects) || !object(source.attemptsByNode)) {
       throw failure("rtg-cloud-invalid-campaign", campaignId);
     }
     for (const field of ["seasonTransitionRewardedIds", "defeatedTeamIds", "firstClearMatchIds"]) ids(source[field], field);
-    for (const [rarity, amount] of Object.entries(source.projects)) if (!count(amount)) throw failure("rtg-cloud-invalid-projects", rarity);
+    for (const [rarity, amount] of Object.entries(source.projects)) {
+      if (!PROJECT_RARITIES.includes(rarity) || !count(amount)) throw failure("rtg-cloud-invalid-projects", rarity);
+    }
+    for (const [nodeId, attempts] of Object.entries(source.attemptsByNode)) {
+      if (!identifier(nodeId) || !count(attempts)) throw failure("rtg-cloud-invalid-campaign", campaignId);
+    }
     const result = {};
     for (const field of CAMPAIGN_FIELDS) result[field] = jsonCopy(source[field]);
-    // Only the permanent pull counter is transported; no incidental gacha UI fields.
+    // Preserve absence for schema-1 cloud snapshots predating recruitment.
+    // Both counters affect deterministic pulls; incidental UI fields stay local.
     result.gacha = { pullCount: source.gacha.pullCount };
+    if (owns(source.gacha, "recruitmentPullCount")) result.gacha.recruitmentPullCount = source.gacha.recruitmentPullCount;
     return result;
   }
   function sharedData(source, campaigns) {
@@ -88,22 +122,34 @@
       throw failure("rtg-cloud-invalid-shared");
     }
     const seenCards = new Set();
-    const acquired = source.gachaAcquiredCards.map((card) => {
+    const acquired = jsonCopy(source.gachaAcquiredCards).map((card) => {
       if (!object(card) || !identifier(card.cardId) || seenCards.has(card.cardId)) {
         throw failure("rtg-cloud-invalid-card-collection");
       }
       seenCards.add(card.cardId);
       return jsonCopy(card);
     });
-    for (const [cardId, value] of Object.entries(source.developmentByCardId)) {
-      if (!identifier(cardId) || !object(value)) throw failure("rtg-cloud-invalid-development");
+    const development = jsonCopy(source.developmentByCardId);
+    for (const [cardId, value] of Object.entries(development)) {
+      if (!identifier(cardId) || !object(value)
+        || !Number.isSafeInteger(value.targetPotential) || value.targetPotential < 1 || value.targetPotential > 99
+        || !DEVELOPMENT_RARITIES.includes(value.currentRarity)
+        || (owns(value, "evolutionCount") && !count(value.evolutionCount))
+        || (owns(value, "updatedAt") && value.updatedAt !== null && typeof value.updatedAt !== "string")) {
+        throw failure("rtg-cloud-invalid-development");
+      }
+      // Development records contain progress only, never local configuration.
+      development[cardId] = Object.fromEntries(["targetPotential", "currentRarity", "evolutionCount", "updatedAt"]
+        .filter((field) => owns(value, field)).map((field) => [field, value[field]]));
     }
     // RTG already reads coach ownership from both legacy campaigns. Reproduce
     // that read-only union, without changing a store or merging devices.
-    const coachSources = [source.coachOwnedIds || [], ...campaigns.map((value) => value?.coachOwnedIds || [])];
+    const coachSources = [owns(source, "coachOwnedIds") ? source.coachOwnedIds : [],
+      ...campaigns.map((value) => value != null && owns(value, "coachOwnedIds") ? value.coachOwnedIds : [])];
     const coachIds = [];
     for (const list of coachSources) {
       if (!Array.isArray(list)) throw failure("rtg-cloud-invalid-coaches");
+      jsonCopy(list);
       for (const id of list) {
         if (!identifier(id)) throw failure("rtg-cloud-invalid-coaches");
         if (!coachIds.includes(id)) coachIds.push(id);
@@ -112,7 +158,7 @@
     return {
       tokens: source.tokens,
       gachaAcquiredCards: acquired,
-      developmentByCardId: jsonCopy(source.developmentByCardId),
+      developmentByCardId: development,
       coachOwnedIds: coachIds,
     };
   }
@@ -141,6 +187,9 @@
     return JSON.stringify(value);
   }
   function validate(snapshot) {
+    // Validate the entire received payload before projection can drop fields or
+    // canonical comparison can hide non-JSON values. Never invoke accessors.
+    jsonCopy(snapshot);
     if (!object(snapshot) || snapshot.schemaVersion !== SNAPSHOT_VERSION
       || !object(snapshot.campaigns)
       || !Object.prototype.hasOwnProperty.call(snapshot.campaigns, CAMPAIGN_IDS[0])

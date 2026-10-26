@@ -6,9 +6,9 @@
   const ALBUM_KEY = "inazuma.rtg.album.v1";
   const RECORD_KEYS = Object.freeze(["state", "state:rtg-ares-orion", "shared:account"]);
   const RARITIES = Object.freeze(["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"]);
+  const owns = (value, key) => Object.prototype.hasOwnProperty.call(value, key);
 
   function fail(code) { return Object.assign(new Error(code), { code }); }
-  function clone(value) { return value == null ? value : JSON.parse(JSON.stringify(value)); }
   function albumRead(local) {
     let raw;
     try { raw = local.getItem(ALBUM_KEY); }
@@ -35,21 +35,39 @@
   }
   function developmentRecord(value) {
     if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-    const targetPotential = Number(value.targetPotential);
-    const evolutionCount = Number(value.evolutionCount);
-    const currentRarity = String(value.currentRarity || "");
-    if (!Number.isInteger(targetPotential) || targetPotential < 1 || targetPotential > 99
-        || !RARITIES.includes(currentRarity)) return null;
+    const { targetPotential, currentRarity } = value;
+    const evolutionCount = owns(value, "evolutionCount") ? value.evolutionCount : 0;
+    const updatedAt = owns(value, "updatedAt") ? value.updatedAt : null;
+    if (!Number.isSafeInteger(targetPotential) || targetPotential < 1 || targetPotential > 99
+        || !RARITIES.includes(currentRarity) || !Number.isSafeInteger(evolutionCount) || evolutionCount < 0
+        || (updatedAt !== null && typeof updatedAt !== "string")) return null;
     return {
-      targetPotential, currentRarity,
-      evolutionCount: Number.isInteger(evolutionCount) && evolutionCount >= 0 ? evolutionCount : 0,
-      updatedAt: value.updatedAt ? String(value.updatedAt) : null,
+      ...value, targetPotential, currentRarity, evolutionCount, updatedAt,
     };
+  }
+
+  // Only absent fields introduced after the first saves get defaults. Do not
+  // call State.normalize/validate: those coerce corrupt counters and rewrite
+  // squads. This view never changes a persisted record or schema version.
+  function legacyCampaign(source) {
+    if (source == null || typeof source !== "object" || Array.isArray(source)) return source;
+    const defaults = {
+      projects: { Buono: 0, Forte: 0, Elite: 0, Mondiale: 0, Leggenda: 0, Aurico: 0 },
+      seasonTransitionRewardedIds: [], coachPullCount: 0,
+    };
+    let result = source;
+    for (const [field, value] of Object.entries(defaults)) {
+      if (!owns(source, field)) {
+        if (result === source) result = { ...source };
+        result[field] = value;
+      }
+    }
+    return result;
   }
 
   // Legacy versions stored player development in individual campaigns. This
   // reconstruction matches RTG repository's winner policy but never migrates.
-  function reconstructShared(records) {
+  function reconstructShared(records, projector) {
     const trilogy = records.state;
     const ares = records["state:rtg-ares-orion"];
     const original = records["shared:account"];
@@ -58,18 +76,18 @@
       throw fail("rtg-cloud-shared-corrupt");
     }
     const fallback = trilogy || ares || {};
-    const shared = original || {
-      tokens: fallback.tokens,
-      gachaAcquiredCards: fallback.gachaAcquiredCards,
-    };
-    const winner = {};
-    const fromLegacy = !Object.prototype.hasOwnProperty.call(shared, "developmentByCardId");
-    const sourceMaps = fromLegacy
-      ? [trilogy?.developmentByCardId, ares?.developmentByCardId]
-      : [shared.developmentByCardId];
-    for (const entries of sourceMaps) {
-      if (entries == null) continue;
-      if (typeof entries !== "object" || Array.isArray(entries)) throw fail("rtg-cloud-development-corrupt");
+    const shared = original ?? fallback;
+    const winner = Object.create(null);
+    const fromLegacy = original == null || !owns(original, "developmentByCardId");
+    const sourceRecords = fromLegacy ? [trilogy, ares] : [shared];
+    for (const record of sourceRecords) {
+      if (record == null || !owns(record, "developmentByCardId")) continue;
+      const entries = record.developmentByCardId;
+      if (entries == null || typeof entries !== "object" || Array.isArray(entries)) throw fail("rtg-cloud-development-corrupt");
+      // Check raw records before defaults/winner selection can hide malformed
+      // values or non-JSON properties (including a losing legacy record).
+      projector.project({ shared: { tokens: 0, gachaAcquiredCards: [],
+        developmentByCardId: entries, coachOwnedIds: [] } });
       for (const [key, raw] of Object.entries(entries)) {
         const normalized = developmentRecord(raw);
         if (!key || !normalized) throw fail("rtg-cloud-development-corrupt");
@@ -77,11 +95,28 @@
       }
     }
     return {
-      tokens: shared.tokens == null ? 0 : shared.tokens,
-      gachaAcquiredCards: shared.gachaAcquiredCards == null ? [] : clone(shared.gachaAcquiredCards),
+      tokens: owns(shared, "tokens") ? shared.tokens : 0,
+      gachaAcquiredCards: ownedCards(shared),
       developmentByCardId: winner,
-      coachOwnedIds: shared.coachOwnedIds == null ? [] : clone(shared.coachOwnedIds),
+      coachOwnedIds: owns(shared, "coachOwnedIds") ? shared.coachOwnedIds : [],
     };
+  }
+
+  function ownedCards(source) {
+    if (owns(source, "gachaAcquiredCards")) return source.gachaAcquiredCards;
+    if (!owns(source, "gachaAcquiredPlayerIds")) return [];
+    const players = source.gachaAcquiredPlayerIds;
+    if (!Array.isArray(players) || players.some(value => typeof value !== "string" || !value.trim())
+      || new Set(players).size !== players.length) throw fail("rtg-cloud-invalid-card-collection");
+    const identity = global.RoadToGloryCardIdentity;
+    if (!identity?.record) throw fail("rtg-cloud-card-identity-required");
+    // This is the canonical legacy identity migration, in memory only. The
+    // identity API emits optional profileId: undefined; omit that known field
+    // rather than using a lossy JSON clone on arbitrary persisted data.
+    return players.map(playerId => {
+      const { profileId, ...record } = identity.record({ playerId, legacySeasonId: "ie1" });
+      return profileId === undefined ? record : { ...record, profileId };
+    });
   }
 
   function create({ storage, localStorage: local = global.localStorage,
@@ -93,17 +128,20 @@
     async function captureOnce() {
       const records = await storage.readMany(RECORD_KEYS);
       const album = albumRead(local);
-      const input = {
-        trilogy: records.state || null,
-        aresOrion: records["state:rtg-ares-orion"] || null,
-        shared: reconstructShared(records),
-        album,
-      };
-      // A live encounter must NOT advance the cloud checkpoint. No other
-      // domain should be blocked on this result; caller must defer RTG only.
-      if (input.trilogy?.activeMatch != null || input.aresOrion?.activeMatch != null) {
+      // Presence of an encounter always defers RTG, even if other permanent
+      // fields need repair. Capture remains read-only in either case.
+      if (records.state?.activeMatch != null || records["state:rtg-ares-orion"]?.activeMatch != null) {
         return { status: "deferred", reason: "rtg-cloud-match-in-progress" };
       }
+      const input = {
+        trilogy: legacyCampaign(records.state ?? null),
+        aresOrion: legacyCampaign(records["state:rtg-ares-orion"] ?? null),
+        shared: reconstructShared(records, projector),
+        album,
+      };
+      // Match repository ownership: union shared and both campaign lists,
+      // including legacy saves with an empty shared list. Restore replaces
+      // all three records atomically; preserved squads never grant ownership.
       const snapshot = projector.project(input);
       projector.validate(snapshot);
       return { status: "ready", snapshot };

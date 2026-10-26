@@ -68,6 +68,30 @@ const records = {
   assert.deepStrictEqual(h.data, original, "No legacy state modifications");
   assert.deepStrictEqual(h.stats(), { reads: 2, writes: 0, albumReads: 2 });
 
+  const emptySharedCoaches = clone(records);
+  emptySharedCoaches["shared:account"].coachOwnedIds = [];
+  const legacyOwnership = harness(emptySharedCoaches, null);
+  const ownershipBefore = clone(legacyOwnership.data);
+  const ownershipResult = await legacyOwnership.instance.captureStable();
+  assert.deepStrictEqual(ownershipResult.snapshot.shared.coachOwnedIds, ["36", "4401"],
+    "An empty legacy shared list must preserve coaches earned in either campaign");
+  assert.deepStrictEqual(legacyOwnership.data, ownershipBefore);
+  assert.strictEqual(legacyOwnership.stats().writes, 0);
+
+  const legacyRaw = clone(records);
+  legacyRaw.state.schemaVersion = 1;
+  for (const field of ["projects", "coachPullCount", "seasonTransitionRewardedIds"]) delete legacyRaw.state[field];
+  legacyRaw.state.gacha.recruitmentPullCount = 17;
+  const legacyCapture = harness(legacyRaw, null);
+  const legacyBefore = clone(legacyCapture.data);
+  const legacyResult = await legacyCapture.instance.captureStable();
+  const legacyCampaign = legacyResult.snapshot.campaigns["rtg-ie-trilogy"];
+  assert.strictEqual(legacyCampaign.coachPullCount, 0);
+  assert.deepStrictEqual(legacyCampaign.seasonTransitionRewardedIds, []);
+  assert.strictEqual(legacyCampaign.gacha.recruitmentPullCount, 17);
+  assert.deepStrictEqual(legacyCapture.data, legacyBefore, "Legacy defaults stay in memory");
+  assert.strictEqual(legacyCapture.stats().writes, 0);
+
   const started = harness({ ...records, state: { ...records.state, activeMatch: { status: "active" } } }, null);
   const deferred = await started.instance.captureStable();
   assert.deepStrictEqual(deferred, { status: "deferred", reason: "rtg-cloud-match-in-progress" });

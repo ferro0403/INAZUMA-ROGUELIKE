@@ -113,8 +113,8 @@ const album=ctx.RoadToGloryAlbumController.create({
  assert.strictEqual(writes,0,"Album equivalence must be read-only");
  const index=fs.readFileSync("index.html","utf8");
  assert(index.includes("rtg-gacha.js?v=20261012-four-audit-fixes-1"),"Stale mobile script: rtg-gacha");
- assert(index.includes("rtg-controller.js?v=20261024-replay-farming-v1"),"Stale mobile script: rtg-controller");
- assert(index.includes("rtg-album-controller.js?v=20261021-canonical-ui-2"),
+ assert(index.includes("rtg-controller.js?v=20261026-rtg-cloud-1"),"Stale mobile script: rtg-controller");
+ assert(index.includes("rtg-album-controller.js?v=20261026-rtg-cloud-1"),
    "Orion Album changes must invalidate the cached script on mobile");
  console.log("RTG Orion: Zhao remains visible (20/20 shared origin cards); collection unique; old ownership/Album preserved: PASS");
 })().catch(error=>{console.error(error);process.exitCode=1});

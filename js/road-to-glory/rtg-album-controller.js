@@ -4,6 +4,17 @@
   const RTG_ALBUM_STORAGE_KEY="inazuma.rtg.album.v1";
   function create(deps={}){
     const id=deps.id;
+    const persistence=global.RoadToGloryPersistence;
+    const generation=persistence?.capture();
+    function assertCurrent(){
+      persistence?.assertGeneration(generation);
+      deps.assertCurrent?.();
+    }
+    function reserveWrite(){
+      assertCurrent();
+      (persistence||global.PersistenceRecoveryGuard)?.assertWritable({expectedRtgGeneration:generation});
+      (persistence||global.PersistenceRecoveryGuard)?.reserve({expectedRtgGeneration:generation});
+    }
     let selectedAlbumSeasonId="ie1";
     let albumReturnContext=null;
     let albumNavigationEpoch=0;
@@ -18,15 +29,18 @@
     }
     function writeRtgAlbum(cardIds){
       const normalized=Array.from(new Set(Array.from(cardIds||[]).map(id).filter(Boolean)));
-      try{deps.localStorage?.setItem?.(RTG_ALBUM_STORAGE_KEY,JSON.stringify({version:1,cardIds:normalized}));}catch(_error){}
+      reserveWrite();
+      deps.localStorage?.setItem?.(RTG_ALBUM_STORAGE_KEY,JSON.stringify({version:1,cardIds:normalized}));
       return normalized;
     }
     function rememberRtgAlbumCard(cardRef){
+      assertCurrent();
       const cardId=deps.cardMeta(cardRef).cardId;
       if(!cardId)return readRtgAlbum().cardIds;
       return writeRtgAlbum([...readRtgAlbum().cardIds,cardId]);
     }
     function syncCurrentPullsIntoAlbum(){
+      assertCurrent();
       const current=Array.from(deps.acquiredCardIdSet(deps.getCampaign()));
       if(!current.length)return readRtgAlbum().cardIds;
       return writeRtgAlbum([...readRtgAlbum().cardIds,...current]);
@@ -41,6 +55,7 @@
       ));
     }
     async function ensureAlbumSeasonDb(seasonId){
+      assertCurrent();
       const sid=deps.id(seasonId||"ie1");
       const previous=global.SeasonRegistry?.activeId?.();
       let db=global.SeasonRegistry?.database?.(sid)||null;
@@ -49,6 +64,7 @@
           ? await deps.ensureSeason1Db?.()
           : await global.SeasonRegistry?.loadDatabase?.(sid);
       }
+      assertCurrent();
       if(previous&&previous!==sid)global.SeasonRegistry?.setActive?.(previous);
       return db;
     }
@@ -124,6 +140,7 @@
     async function albumCollectionSummary(seasonId){
       const sid=deps.id(seasonId||"ie1");
       const db=await ensureAlbumSeasonDb(sid);
+      assertCurrent();
       const teams=rtgAlbumTeams(sid,db);
       if(["ie1_s3","orion"].includes(sid)){
         // Count boss and recruitment cards once. Orion's Zhao roster still
@@ -160,11 +177,13 @@
       deps.mountDevQuickTools();
     }
     async function renderAlbum(options={}){
+      assertCurrent();
       if(!options?.preserveOrigin){
         albumReturnContext=options?.source==="vending"
           ?{source:"vending",mode:options.mode==="recruitment"?"recruitment":"team"}
           :null;
       }
+      assertCurrent();
       const epoch=++albumNavigationEpoch;
       const campaign=deps.getCampaign();
       const seasonIds=deps.config.SEASON_IDS||["ie1"];
@@ -173,10 +192,12 @@
       showAlbumCollections(campaign,initialCollections);
       try{
         await deps.ensureData();
+        assertCurrent();
         syncCurrentPullsIntoAlbum();
         const cardKey=JSON.stringify(readRtgAlbum().cardIds);
         if(!cachedCollections||cachedCollectionsForCards!==cardKey){
           const collections=await Promise.all((deps.config.SEASON_IDS||["ie1"]).map(albumCollectionSummary));
+          assertCurrent();
           cachedCollections=collections;
           cachedCollectionsForCards=cardKey;
         }
@@ -185,6 +206,8 @@
           showAlbumCollections(campaign,cachedCollections,true);
         }
       }catch(error){
+        assertCurrent();
+        if(error?.code||error?.name==="QuotaExceededError"||error?.name==="SecurityError")throw error;
         global.console?.error?.("[RTG] Album collections unavailable",error);
         if(epoch===albumNavigationEpoch&&deps.app?.querySelector?.(".rtg-album-collections-screen")&&!cachedCollections){
           showAlbumCollections(campaign,seasonIds.map(seasonId=>({seasonId,error:true})),true);
@@ -193,6 +216,7 @@
       return campaign;
     }
     function renderAlbumCoaches(){
+      assertCurrent();
       ++albumNavigationEpoch;
       const campaign=deps.getCampaign();
       const view=global.RoadToGloryCoachesView;
@@ -204,13 +228,16 @@
       return campaign;
     }
     async function renderAlbumTeams(seasonId=selectedAlbumSeasonId){
+      assertCurrent();
       const epoch=++albumNavigationEpoch;
       const campaign=deps.getCampaign();
       await deps.ensureData();
+      assertCurrent();
       syncCurrentPullsIntoAlbum();
       const sid=(deps.config.SEASON_IDS||[]).includes(deps.id(seasonId))?deps.id(seasonId):deps.activeSeasonId();
       selectedAlbumSeasonId=sid;
       const db=await ensureAlbumSeasonDb(sid);
+      assertCurrent();
       if(epoch!==albumNavigationEpoch)return campaign;
       deps.renderHtml(deps.runView.albumTeamsMarkup({state:{...(campaign||{}),activeSeasonId:sid},seasonId:sid,teams:rtgAlbumTeams(sid,db)}));
       deps.app?.querySelector?.("[data-rtg-album-collection-back]")?.addEventListener("click",()=>renderAlbum({preserveOrigin:true}));
@@ -219,13 +246,16 @@
       return campaign;
     }
     async function renderAlbumRoster(teamId,seasonId=selectedAlbumSeasonId){
+      assertCurrent();
       const epoch=++albumNavigationEpoch;
       const campaign=deps.getCampaign();
       await deps.ensureData();
+      assertCurrent();
       syncCurrentPullsIntoAlbum();
       const sid=(deps.config.SEASON_IDS||[]).includes(deps.id(seasonId))?deps.id(seasonId):selectedAlbumSeasonId;
       selectedAlbumSeasonId=sid;
       const db=await ensureAlbumSeasonDb(sid);
+      assertCurrent();
       if(epoch!==albumNavigationEpoch)return campaign;
       const team=rtgAlbumTeams(sid,db).find(entry=>deps.id(entry.teamId)===deps.id(teamId));
       if(!team)return renderAlbumTeams(sid);
@@ -252,5 +282,18 @@
 
     return Object.freeze({rememberRtgAlbumCard,syncCurrentPullsIntoAlbum,renderAlbum,renderAlbumTeams,renderAlbumRoster,setSelectedSeason:(seasonId)=>{selectedAlbumSeasonId=id(seasonId||"ie1");}});
   }
-  global.RoadToGloryAlbumController=Object.freeze({create});
+    async function ensureOwnedCardSeasons({campaign,cardIdentity,config,assertCurrent}={}){
+      const seasons=new Set((campaign?.gachaAcquiredCards||[])
+        .map(entry=>cardIdentity?.parse?.(entry)?.legacySeasonId)
+        .filter(sid=>sid&&sid!=="free_agents"&&config?.season?.(sid)));
+      const registry=global.SeasonRegistry,previousActive=registry?.activeId?.();
+      try{
+        await Promise.all(Array.from(seasons).filter(sid=>!registry?.database?.(sid))
+          .map(sid=>registry.loadDatabase(sid)));
+      }finally{
+        assertCurrent?.();
+        if(previousActive&&registry?.setActive)registry.setActive(previousActive);
+      }
+    }
+  global.RoadToGloryAlbumController=Object.freeze({create,ensureOwnedCardSeasons});
 })(globalThis);
