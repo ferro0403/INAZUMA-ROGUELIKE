@@ -18,7 +18,7 @@
     try { value = JSON.parse(raw); }
     catch (_) { throw fail("rtg-cloud-album-corrupt"); }
     if (!value || typeof value !== "object" || Array.isArray(value)
-        || value.version !== 1 || !Array.isArray(value.cardIds)) {
+        || (value.version != null && value.version !== 1) || !Array.isArray(value.cardIds)) {
       throw fail("rtg-cloud-album-corrupt");
     }
     return value;
@@ -33,11 +33,18 @@
     if (candidate.evolutionCount !== current.evolutionCount) return candidate.evolutionCount > current.evolutionCount;
     return String(candidate.updatedAt || "") > String(current.updatedAt || "");
   }
-  function validDevelopment(value) {
-    return value && typeof value === "object" && !Array.isArray(value)
-      && Number.isInteger(value.targetPotential) && value.targetPotential >= 1 && value.targetPotential <= 99
-      && RARITIES.includes(value.currentRarity)
-      && Number.isInteger(value.evolutionCount) && value.evolutionCount >= 0;
+  function developmentRecord(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+    const targetPotential = Number(value.targetPotential);
+    const evolutionCount = Number(value.evolutionCount);
+    const currentRarity = String(value.currentRarity || "");
+    if (!Number.isInteger(targetPotential) || targetPotential < 1 || targetPotential > 99
+        || !RARITIES.includes(currentRarity)) return null;
+    return {
+      targetPotential, currentRarity,
+      evolutionCount: Number.isInteger(evolutionCount) && evolutionCount >= 0 ? evolutionCount : 0,
+      updatedAt: value.updatedAt ? String(value.updatedAt) : null,
+    };
   }
 
   // Legacy versions stored player development in individual campaigns. This
@@ -64,8 +71,9 @@
       if (entries == null) continue;
       if (typeof entries !== "object" || Array.isArray(entries)) throw fail("rtg-cloud-development-corrupt");
       for (const [key, raw] of Object.entries(entries)) {
-        if (!key || !validDevelopment(raw)) throw fail("rtg-cloud-development-corrupt");
-        if (recordWins(raw, winner[key])) winner[key] = clone(raw);
+        const normalized = developmentRecord(raw);
+        if (!key || !normalized) throw fail("rtg-cloud-development-corrupt");
+        if (recordWins(normalized, winner[key])) winner[key] = normalized;
       }
     }
     return {
