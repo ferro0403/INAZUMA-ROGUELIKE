@@ -112,6 +112,66 @@ test("Arrows upgrades actual match player stats/rarity including PT while preser
   assert.equal(original.ptCurrentByPlayerId["user:reserve"],200);
   assert.equal(rules.applyToMatch(result,squad,{coachOwnedIds:["1974"]}),result);
 });
+test("Arrows upgrades two distinct starters/reserves atomically and keeps a one-card save compatible",()=>{
+  const original=match();
+  original.userSquad.lineup[0]={...player("a"),category:"Elite",overall:88,
+    stats:{stamina:60,grit:55,control:70,physical:65}};
+  original.userSquad.bench=[{...player("reserve"),category:"Forte",overall:83,
+    stats:{stamina:58,grit:62,control:55,physical:70}}];
+  original.ptCurrentByPlayerId["user:reserve"]=160;
+  original.ptMaxByPlayerId["user:reserve"]=160;
+  const selected={coachId:"1974",coachPowerSelection:{
+    coachId:"1974",cardIds:["a","reserve"]}};
+  assert.equal(rules.validConfig(selected,original.userSquad.lineup,"ie1",original.userSquad.bench).cardIds.length,2);
+  const seen=[];
+  const upgradeRarity=(p,target,key)=>{
+    seen.push(key);
+    return {...p,category:target,overall:Number(p.overall)+2,
+      stats:{...p.stats,stamina:Number(p.stats.stamina)+20}};
+  };
+  const powered=rules.applyToMatch(original,selected,{coachOwnedIds:["1974"]},{upgradeRarity});
+  assert.deepEqual(seen,["a","reserve"]);
+  assert.equal(powered.userSquad.lineup[0].category,"Mondiale");
+  assert.equal(powered.userSquad.bench[0].category,"Elite");
+  assert.equal(powered.userSquad.lineup[0].overall,90);
+  assert.equal(powered.userSquad.bench[0].overall,85);
+  assert.equal(powered.ptCurrentByPlayerId["user:a"],200);
+  assert.equal(powered.ptMaxByPlayerId["user:reserve"],200);
+  assert.equal(powered.coachPowerEffect.targets.length,2);
+  assert.equal(powered.coachPowerEffect.targets[0].previousOverall,88);
+  assert.equal(powered.coachPowerEffect.targets[1].previousOverall,83);
+  assert.equal(powered.coachPowerEffect.targetRarity,"Mondiale");
+  assert.equal(original.userSquad.lineup[0].category,"Elite");
+  assert.equal(original.userSquad.bench[0].category,"Forte");
+  assert.equal(original.ptCurrentByPlayerId["user:reserve"],160);
+  assert.equal(rules.applyToMatch(powered,selected,{coachOwnedIds:["1974"]},{upgradeRarity}),powered,
+    "Reapplying a snapshot must never boost rarity a second time");
+
+  // Invalid second upgrade cannot partially change the first player or PT.
+  const invalid=rules.applyToMatch(original,selected,{coachOwnedIds:["1974"]},{
+    upgradeRarity:(p,target,key)=>key==="reserve"?null:upgradeRarity(p,target,key),
+  });
+  assert.equal(invalid,original);
+  const duplicate={coachId:"1974",coachPowerSelection:{coachId:"1974",cardIds:["a","a"]}};
+  assert.equal(rules.validConfig(duplicate,original.userSquad.lineup,"ie1",original.userSquad.bench),null);
+  const maxed={...original,userSquad:{...original.userSquad,
+    bench:[{...original.userSquad.bench[0],category:"Aurico",finalRarity:"Aurico"}]}};
+  assert.equal(rules.validConfig(selected,maxed.userSquad.lineup,"ie1",maxed.userSquad.bench),null);
+  const historic={...selected,coachPowerSelection:{...selected.coachPowerSelection,cardIds:["a"]}};
+  assert.equal(rules.validConfig(historic,original.userSquad.lineup,"ie1",original.userSquad.bench).cardIds.length,1,
+    "Legacy one-card selection must still work");
+  assert.equal(rules.applyToMatch(original,historic,{coachOwnedIds:["1974"]},{upgradeRarity}).coachPowerEffect.targets.length,1);
+});
+test("Arrows squad selection shows two cards and validates both previews",()=>{
+  const ui=read("js/road-to-glory/rtg-coach-powers-squad-ui.js");
+  const preview=read("js/road-to-glory/rtg-coach-powers-preview.js");
+  const state=read("js/road-to-glory/rtg-state.js");
+  assert.match(ui,/\["208","1974","4401"\]\.includes\(coachId\)\?2:1/);
+  assert.match(ui,/choice\.cardIds\.map\(key=>/);
+  assert.match(ui,/coachId==="1974"&&choice\.cardIds\.length!==2/);
+  assert.match(preview,/config\.cardIds\.length<1\|\|config\.cardIds\.length>2/);
+  assert.match(state,/cardIds:uniqueIds\(squad\.coachPowerSelection\.cardIds\)\.slice\(0,2\)/);
+});
 test("Arrows rarity production resolver uses next threshold, original card and no account writes",()=>{
   const context={RoadToGloryCoachPowerRuntime:rules,
     InazumaProgression:{RARITY_THRESHOLDS:[
