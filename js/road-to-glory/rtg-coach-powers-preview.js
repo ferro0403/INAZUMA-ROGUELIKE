@@ -24,8 +24,8 @@
       if(config.cardIds.length!==2||!config.cardIds.every(x=>(squad.lineup||[]).map(cardId).includes(x)))return null;
       const base=global.RtgFourMovesRuntime?.ptBreakdown?.(player.baseStats||player.stats||player,player.finalRarity||player.category);
       if(!base)return null;
-      details.pt={...base,total:base.total+50,coachBonus:50};details.badge="+50 PT";
-      details.note="FIDUCIA NEI CAMPIONI · +50 PT iniziali e massimi per la partita";
+      details.pt={...base,total:base.total+100,coachBonus:100};details.badge="+100 PT";
+      details.note="FIDUCIA NEI CAMPIONI · +100 PT iniziali e massimi per la partita";
     }else if(coachId==="1329"){
       if((squad.lineup||[]).every(x=>cardId(x)!==key))return null;
       const moves=engine.fourMoves(player,seasonId);
@@ -61,7 +61,9 @@
         details.note="CAMBIO DI ELEMENTO · "+shown+" durante la partita (selezione precedente)";
       }
     }else if(coachId==="1974"){
-      if(config.cardIds.length!==1)return null;
+      // Both selected players have independent temporary upgrades; keep the
+      // old one-player saved configuration readable until it is changed.
+      if(config.cardIds.length<1||config.cardIds.length>2)return null;
       const target=engine.nextRarity(engine.rarityOf(player));
       if(!target)return null;
       const upgraded=global.RoadToGloryCoachRarityPower?.upgrade?.({
