@@ -137,13 +137,13 @@
   test("Descrizioni: tutti i dieci poteri sono distinti, leggibili e non attivi",()=>{
     const expected=[
       ["36","Cambio forzato","Scegli un titolare avversario e lo sostituisci con una riserva della squadra avversaria, scelta sempre da te. Se sostituisci un portiere, la riserva deve essere un portiere; per i giocatori di movimento puoi scegliere una riserva di qualsiasi ruolo di movimento."],
-      ["208","Fiducia nei campioni","Scegli 2 tuoi titolari: entrambi ricevono +50 ai PT iniziali e massimi."],
+      ["208","Fiducia nei campioni","Scegli 2 tuoi titolari: entrambi ricevono +100 ai PT iniziali e massimi."],
       ["1225","Prestito a sorpresa","Scegli una riserva avversaria e la inserisci temporaneamente nella tua panchina, al posto di una delle tue 4 riserve."],
       ["1329","Allenamento specializzato","Scegli un tuo titolare: il costo in PT di tutte le sue mosse speciali disponibili viene dimezzato, arrotondando per eccesso."],
-      ["1275","Esaurimento oscuro","Scegli 2 titolari avversari. Entrambi iniziano la partita con il 50% dei loro PT normali. I PT massimi rimangono invariati."],
+      ["1275","Esaurimento oscuro","Scegli 2 titolari avversari. Entrambi iniziano la partita con il 25% dei loro PT normali (-75%). I PT massimi rimangono invariati."],
       ["1777","Fuori quota","Scegli una delle tue 4 riserve. Il suo contributo viene escluso dal conteggio dell'overall utilizzato per verificare i requisiti massimi di accesso alla partita. La riserva resta in panchina, mantiene statistiche e overall effettivi ed è normalmente utilizzabile."],
       ["1940","Tecnica proibita","Scegli un titolare avversario e blocchi tutte le sue mosse speciali disponibili per tutta la partita."],
-      ["1974","Potenziale risvegliato","Scegli un tuo giocatore, titolare o riserva: sale temporaneamente di 1 rarità, fino ad Aurico, ottenendo i relativi aumenti reali delle statistiche. Ai soli fini del conteggio dell'overall e dei requisiti massimi di accesso alla partita, viene considerato con la rarità e l'overall precedenti al potenziamento."],
+      ["1974","Potenziale risvegliato","Scegli 2 tuoi giocatori, titolari o riserve: entrambi salgono temporaneamente di 1 rarità, fino ad Aurico, ottenendo i relativi aumenti reali delle statistiche. Ai soli fini del conteggio dell'overall e dei requisiti massimi di accesso alla partita, ciascuno viene considerato con la rarità e l'overall precedenti al potenziamento."],
       ["4401","Trasformazione totale","Scegli 2 tuoi titolari. Per ciascuno cambi temporaneamente l'elemento in uno dei tre diversi dall'originale (Fuoco, Vento, Albero o Montagna) e trasformi anche tutte le sue mosse speciali disponibili nello stesso elemento. La Potenza e il costo in PT delle mosse rimangono invariati."],
       ["4761","Disordine tattico","Scegli 2 giocatori di movimento avversari e scambi le loro posizioni tattiche nella formazione iniziale."]
     ];
