@@ -61,6 +61,24 @@ test("Wyles: exactly two distinct opponents lose 75% of starting PT; maxima unch
  assert.equal(runtime.validate(match,"1275",{playerIds:["d1","d1"]}),null);
  assert.equal(runtime.validate(match,"1275",{playerIds:["d1"]}),null);
 });
+test("Wyles 75% PT reduction rounds up odd balances, preserves caps, and never reruns",()=>{
+ const match=makeMatch("1275");
+ match.ptCurrentByPlayerId["opponent:d1"]=201;
+ match.ptMaxByPlayerId["opponent:d1"]=234;
+ match.ptCurrentByPlayerId["opponent:m2"]=3;
+ const before=JSON.stringify(match);
+ const powered=runtime.apply(match,"1275",{playerIds:["d1","m2"]});
+ assert.equal(powered.ptCurrentByPlayerId["opponent:d1"],51);
+ assert.equal(powered.ptMaxByPlayerId["opponent:d1"],234);
+ assert.equal(powered.ptCurrentByPlayerId["opponent:m2"],1);
+ assert.equal(powered.ptCurrentByPlayerId["opponent:d2"],200);
+ assert.equal(runtime.apply(powered,"1275",{playerIds:["d1","m2"]}),powered);
+ assert.equal(JSON.stringify(match),before,"Pre-match power must not mutate the uncommitted match");
+ const oldSnapshot={...powered,ptCurrentByPlayerId:{"opponent:d1":100},
+   preMatchCoachEffect:{coachId:"1275",playerIds:["d1","m2"]}};
+ assert.equal(oldSnapshot.ptCurrentByPlayerId["opponent:d1"],100,
+   "Preexisting match snapshots keep their original PT after a deployment");
+});
 test("René: swap precisely two outfield tactical slots, never GK",()=>{
  const m=makeMatch("4761");
  const powered=runtime.apply(m,"4761",{playerIds:["d1","f2"]});
