@@ -42,7 +42,7 @@ Non sono state cambiate formule, probabilità, reward, costi, RNG, match engine,
 
 Il cloud legacy senza settore RTG lascia intatti i dati RTG del dispositivo. Non si introduce un'importazione/fusione automatica tra dispositivi. Lo schema cloud resta 1 e la lista storica dei quattro settori resta disponibile; l'enumerazione effettiva è opzionale. La prova del journal RTG include un discriminante che impedisce al vecchio manager di completarlo ignorandone il settore.
 
-Le nuove rules richiedono che un bundle pubblicato con RTG contenga il documento RTG della stessa revisione/hash/commit. Il vecchio client che carica soltanto i quattro settori non può pubblicare un bundle incompleto al posto di quello RTG. Il controllo completo di queste rules è delegato alla suite emulatore descritta sotto: non è dichiarato eseguito localmente.
+Le nuove rules richiedono che un bundle pubblicato con RTG contenga il documento RTG della stessa revisione/hash/commit. Il vecchio client che carica soltanto i quattro settori non può pubblicare un bundle incompleto al posto di quello RTG. Il controllo completo di queste rules è stato eseguito in GitHub Actions: 60 casi comportamentali nell’emulatore più 4 guard statici, tutti superati; resta non eseguito soltanto nell’ambiente locale con proxy restrittivo.
 
 È stato corretto anche il predicato delle revisioni che accedeva a chiavi run assenti nei manifest a quattro settori: l'omissione resta permessa solo per metadati run già assenti; revisioni storiche presenti continuano a essere protette. Il test esegue il corpo effettivo del predicato con mappe che segnalano accessi a chiavi mancanti.
 
@@ -59,6 +59,7 @@ Risultati macchina e lista completa dei fallimenti: [rtg-cloud-validation.json](
 - Gate **500 scenari soak/fuzz PASS**.
 - Gate **500 campagne complete PASS**: 300 campioni, 200 GameOver, 100 campagne per ciascuna delle cinque Season; 29 retry di quota, 55 azioni doppie, 104 refresh; controlli Album per tutte le 500 campagne e finalizzazione asincrona per le 300 vittorie.
 - Sintassi **198 JS di produzione PASS**; **229 riferimenti JS/CSS** e **82 URL CSS** verificati; diff whitespace pulito.
+- **Firestore Emulator in GitHub Actions: 64/64 PASS**, di cui 60 casi comportamentali e 4 guard statici, nessuno saltato. [Esecuzione verificata](https://github.com/ferro0403/INAZUMA-ROGUELIKE/actions/runs/40411806141/job/121884115176).
 - Review indipendente: trovati e risolti con regressioni la validazione tardiva, il journal rimosso troppo presto, valori semanticamente non conservabili e la perdita del dirty state durante upload sovrapposti.
 
 Comandi principali:
@@ -77,7 +78,7 @@ I test storici aggiornati mantengono le verifiche comportamentali: tre guard sul
 
 ## Verifiche non eseguite localmente e rilascio
 
-Il download del JAR Firestore Emulator ha ricevuto HTTP **403 dal proxy** dell'ambiente. I quattro guard statici delle rules e il predicato revisioni passano; la suite completa di enforcement **non è stata eseguita localmente**. Il workflow dedicato `.github/workflows/rtg-cloud-validation.yml` esegue runtime/browser e un job separato con emulatore, progetto `demo-rtg-cloud-ci` e `--require-emulator`: l'assenza dell'emulatore non può risultare un successo di quel job.
+Il download del JAR Firestore Emulator ha ricevuto HTTP **403 dal proxy** dell'ambiente locale. La suite completa di enforcement **è stata poi eseguita e superata in CI (64/64)**; non si dichiara un’esecuzione locale che non è avvenuta. Il workflow dedicato `.github/workflows/rtg-cloud-validation.yml` esegue runtime/browser e un job separato con emulatore, progetto `demo-rtg-cloud-ci` e `--require-emulator`: l'assenza dell'emulatore non può risultare un successo di quel job. Il primo avvio browser in CI ha rilevato un launcher Chromium non eseguibile sul runner Ubuntu: il test ora verifica il binario e preferisce Chrome installato. La regressione è stata riprodotta con un wrapper non funzionante davanti a un browser valido e verificata dopo la correzione; la logica del gioco è invariata.
 
 Per eseguire le rules localmente in un ambiente che consenta il download, installare in una cartella scratch `firebase-tools@14.12.0`, `@firebase/rules-unit-testing@4.0.1`, `firebase@11.10.0`; avviare `firebase emulators:exec --only firestore --project demo-rtg-cloud-ci` e dentro l'emulatore eseguire `node tests/rtg-cloud-firestore-rules-test.js --require-emulator` con `NODE_PATH` configurato. Il workflow contiene il comando completo e la configurazione locale.
 

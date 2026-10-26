@@ -8,8 +8,14 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-const candidates = process.env.CHROME_PATH ? [process.env.CHROME_PATH] : ['chromium', 'google-chrome', 'google-chrome-stable', 'chromium-browser'];
-const chromePath = candidates.map(name => { const value = spawnSync('which', [name], { encoding: 'utf8' }); return value.status === 0 ? value.stdout.trim() : null; }).find(Boolean);
+const candidates = process.env.CHROME_PATH ? [process.env.CHROME_PATH] : ['google-chrome', 'google-chrome-stable', 'chromium', 'chromium-browser'];
+const chromePath = candidates.map(name => {
+  const value = spawnSync('which', [name], { encoding: 'utf8' });
+  if (value.status !== 0) return null;
+  const path = value.stdout.trim(), version = spawnSync(path, ['--version'], { encoding: 'utf8', timeout: 5000 });
+  // Ubuntu may expose a Chromium snap wrapper although no snap is installed.
+  return version.status === 0 && /Chrom(?:e|ium)/i.test(version.stdout) ? path : null;
+}).find(Boolean);
 if (!chromePath) throw Error('Chrome/Chromium unavailable: real browser checks NOT executed');
 const profile = mkdtempSync(join(tmpdir(), 'rtg-cloud-verification-'));
 const server = createServer((request, response) => {
@@ -19,12 +25,14 @@ const server = createServer((request, response) => {
   catch { response.writeHead(404).end(); }
 });
 await new Promise(resolve => server.listen(0, '127.0.0.1', resolve));
-const browser = spawn(chromePath, ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'], { stdio: 'ignore' });
+const browser = spawn(chromePath, ['--headless=new', '--no-sandbox', '--disable-gpu', '--disable-dev-shm-usage', '--remote-debugging-port=0', `--user-data-dir=${profile}`, 'about:blank'], { stdio: ['ignore', 'ignore', 'pipe'] });
+let browserError = '';
+browser.stderr.on('data', value => { browserError = (browserError + value).slice(-5000); });
 let socket;
 try {
   const activePort = join(profile, 'DevToolsActivePort');
-  for (let i = 0; i < 100 && !existsSync(activePort); i++) await delay(100);
-  if (!existsSync(activePort)) throw Error('Chromium failed to start');
+  for (let i = 0; i < 100 && !existsSync(activePort) && browser.exitCode === null; i++) await delay(100);
+  if (!existsSync(activePort)) throw Error(`Chromium failed to start: ${browserError}`);
   const port = readFileSync(activePort, 'utf8').split('\n')[0];
   const pages = await (await fetch(`http://127.0.0.1:${port}/json/list`)).json();
   socket = new WebSocket(pages.find(page => page.type === 'page').webSocketDebuggerUrl);

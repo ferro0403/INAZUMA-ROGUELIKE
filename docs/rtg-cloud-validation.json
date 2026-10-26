@@ -75,7 +75,8 @@
     "198 production JavaScript syntax checks: PASS",
     "229 local JS/CSS references: PASS; 82 CSS URLs in 49 stylesheets: PASS",
     "Independent review: 3 Important findings + overlapping-upload findings corrected and covered by regressions",
-    "4 static Firestore rules guards and source-derived revision predicate: PASS"
+    "4 static Firestore rules guards and source-derived revision predicate: PASS",
+    "Firestore emulator CI: 64/64 PASS (60 behavioral +4 static; zero skipped), job121884115176"
   ],
   "not_executed_locally": [
     "Complete Firestore emulator enforcement suite: emulator JAR download returned HTTP403 from the environment proxy",
@@ -83,5 +84,19 @@
   ],
   "firebase_accounts_used": 0,
   "production_deploys": 0,
-  "merges": 0
+  "merges": 0,
+  "ci": {
+    "rules": {
+      "status": "success",
+      "tests": 64,
+      "behavioral_cases": 60,
+      "static_guards": 4,
+      "skipped": 0,
+      "run_url": "https://github.com/ferro0403/INAZUMA-ROGUELIKE/actions/runs/40411806141",
+      "job_id": 121884115176,
+      "tested_source_commit": "8a688f97113e407147cec0131e662c138d3f5849"
+    },
+    "runtime_cloud_scripts": "PASS on Node22 in CI",
+    "browser": "initial runner-launcher failure reproduced; binary selection corrected and verified locally, CI rerun pending"
+  }
 }
