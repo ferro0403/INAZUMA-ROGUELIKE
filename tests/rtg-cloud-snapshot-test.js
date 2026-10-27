@@ -51,6 +51,31 @@ function rejects(code, call) { assert.throws(call, (error) => error.code === cod
   }
   assert.strictEqual(JSON.stringify(original), unmodified, "project must never mutate the source");
   assert.deepStrictEqual(snapshot.validate(projected), projected, "roundtrip cloud payload");
+  // rtg-progression.recordSecondaryResult() persists structured attempts,
+  // not numeric counters. This real gameplay shape must roundtrip intact.
+  const secondary = fixture();
+  secondary.trilogy.attemptsByNode["secondary:training"] = {
+    lastAttempt: 3, lastResult: "victory", clears: 2,
+  };
+  const secondaryBefore = JSON.stringify(secondary);
+  const secondaryProjected = snapshot.project(secondary);
+  assert.deepStrictEqual(secondaryProjected.campaigns["rtg-ie-trilogy"].attemptsByNode["secondary:training"],
+    { lastAttempt: 3, lastResult: "victory", clears: 2 });
+  assert.deepStrictEqual(snapshot.validate(secondaryProjected), secondaryProjected);
+  assert.strictEqual(JSON.stringify(secondary), secondaryBefore, "secondary result projection stays read-only");
+  // Keep historic numeric attempts compatible; reject incomplete/corrupt
+  // structured attempts without silently rewriting a user's progress.
+  for (const invalidAttempt of [
+    { lastAttempt: 3, lastResult: "victory", clears: "2" },
+    { lastAttempt: -1, lastResult: "victory", clears: 2 },
+    { lastAttempt: 3, clears: 2 },
+    { lastAttempt: 3, lastResult: "victory" },
+  ]) {
+    const invalidSecondary = fixture();
+    invalidSecondary.trilogy.attemptsByNode["secondary:training"] = invalidAttempt;
+    rejects("rtg-cloud-invalid-campaign", () => snapshot.project(invalidSecondary));
+  }
+
   const recruitment = fixture();
   recruitment.trilogy.gacha.recruitmentPullCount = 17;
   const recruitmentSnapshot = snapshot.project(recruitment);
