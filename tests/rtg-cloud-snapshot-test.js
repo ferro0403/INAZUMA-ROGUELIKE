@@ -1,6 +1,7 @@
 "use strict";
 const assert = require("assert");
 const snapshot = require("../js/road-to-glory/rtg-cloud-snapshot.js");
+const policy = require("../js/cloud-write-failure-policy.js");
 
 function campaign(campaignId, seasonId) {
   return {
@@ -99,6 +100,20 @@ function rejects(code, call) { assert.throws(call, (error) => error.code === cod
   rejects("rtg-cloud-invalid-campaign", () => snapshot.project(invalidId));
   const invalidSeason = fixture(); invalidSeason.trilogy.activeSeasonId = "orion";
   rejects("rtg-cloud-invalid-campaign", () => snapshot.project(invalidSeason));
+  assert.throws(() => snapshot.project(invalidSeason), error =>
+    error.code === "rtg-cloud-invalid-campaign" &&
+    error.detail === "rtg-ie-trilogy:activeSeasonId");
+  const invalidAttempts = fixture();
+  invalidAttempts.trilogy.attemptsByNode["secondary:training"] = { lastAttempt: 3, lastResult: "victory" };
+  assert.throws(() => snapshot.project(invalidAttempts), error =>
+    error.code === "rtg-cloud-invalid-campaign" &&
+    error.detail === "rtg-ie-trilogy:attemptsByNode");
+  const diagnosed = policy.classifyCloudWriteFailure({ code: "rtg-cloud-invalid-campaign",
+    problemSector: "rtg", detail: "rtg-ie-trilogy:attemptsByNode" });
+  assert.strictEqual(diagnosed.errorDetail, "rtg-ie-trilogy:attemptsByNode");
+  assert.strictEqual(policy.classifyCloudWriteFailure({ code: "permission-denied",
+    problemSector: "rtg", detail: "rtg-ie-trilogy:private<value>" }).errorDetail, null);
+
   const invalidAlbum = fixture(); invalidAlbum.album.cardIds.push("old-album-only");
   rejects("rtg-cloud-invalid-ids", () => snapshot.project(invalidAlbum));
   const invalidCount = fixture(); invalidCount.aresOrion.coachPullCount = -1;
