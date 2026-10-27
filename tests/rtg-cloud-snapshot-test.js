@@ -64,13 +64,30 @@ function rejects(code, call) { assert.throws(call, (error) => error.code === cod
     { lastAttempt: 3, lastResult: "victory", clears: 2 });
   assert.deepStrictEqual(snapshot.validate(secondaryProjected), secondaryProjected);
   assert.strictEqual(JSON.stringify(secondary), secondaryBefore, "secondary result projection stays read-only");
-  // Keep historic numeric attempts compatible; reject incomplete/corrupt
-  // structured attempts without silently rewriting a user's progress.
+  // rtg-controller.startMatch() records {lastAttempt} in BOTH main and
+  // secondary nodes. Main nodes never acquire the secondary-only fields;
+  // unfinished secondary nodes have them added only at result resolution.
+  const started = fixture();
+  started.trilogy.attemptsByNode["main:occult"] = { lastAttempt: 4 };
+  started.trilogy.attemptsByNode["secondary:occult:wild:1"] = { lastAttempt: 1 };
+  const startedCopy = JSON.stringify(started);
+  const startedProjected = snapshot.project(started);
+  assert.deepStrictEqual(startedProjected.campaigns["rtg-ie-trilogy"].attemptsByNode["main:occult"],
+    { lastAttempt: 4 });
+  assert.deepStrictEqual(startedProjected.campaigns["rtg-ie-trilogy"].attemptsByNode["secondary:occult:wild:1"],
+    { lastAttempt: 1 });
+  assert.deepStrictEqual(snapshot.validate(startedProjected), startedProjected);
+  assert.strictEqual(JSON.stringify(started), startedCopy, "unfinished/main history is read-only");
+
+  // Historic numeric attempts stay supported. Optional gameplay fields may
+  // be absent but present values must be valid; never coerce broken counters.
   for (const invalidAttempt of [
     { lastAttempt: 3, lastResult: "victory", clears: "2" },
     { lastAttempt: -1, lastResult: "victory", clears: 2 },
-    { lastAttempt: 3, clears: 2 },
-    { lastAttempt: 3, lastResult: "victory" },
+    { lastAttempt: 3.25 },
+    { lastAttempt: 3, lastResult: 7 },
+    { lastAttempt: null },
+    { lastResult: "victory", clears: 1 },
   ]) {
     const invalidSecondary = fixture();
     invalidSecondary.trilogy.attemptsByNode["secondary:training"] = invalidAttempt;
@@ -104,7 +121,7 @@ function rejects(code, call) { assert.throws(call, (error) => error.code === cod
     error.code === "rtg-cloud-invalid-campaign" &&
     error.detail === "rtg-ie-trilogy:activeSeasonId");
   const invalidAttempts = fixture();
-  invalidAttempts.trilogy.attemptsByNode["secondary:training"] = { lastAttempt: 3, lastResult: "victory" };
+  invalidAttempts.trilogy.attemptsByNode["secondary:training"] = { lastAttempt: 3, lastResult: "victory", clears: -1 };
   assert.throws(() => snapshot.project(invalidAttempts), error =>
     error.code === "rtg-cloud-invalid-campaign" &&
     error.detail === "rtg-ie-trilogy:attemptsByNode");
