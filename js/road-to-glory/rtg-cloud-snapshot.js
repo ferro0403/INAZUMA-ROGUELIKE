@@ -112,15 +112,16 @@
       if (!PROJECT_RARITIES.includes(rarity) || !count(amount)) throw failure("rtg-cloud-invalid-projects", rarity);
     }
     for (const [nodeId, attempts] of Object.entries(source.attemptsByNode)) {
-      // Legacy test/saves may contain a simple count, while production RTG
-      // records secondary matches as {lastAttempt, lastResult, clears}.
-      // Both representations are permanent progress and must survive cloud
-      // projection without coercion or loss.
-      const secondaryRecord = object(attempts)
+      // Production startMatch records {lastAttempt} for BOTH main and secondary
+      // nodes before resolution. recordSecondaryResult adds lastResult/clears
+      // after a secondary result; main nodes retain only lastAttempt.
+      // Preserve valid partial history as-is; never fill in a fabricated
+      // match result, rewrite a counter, or discard any attempt record.
+      const gameplayRecord = object(attempts)
         && count(attempts.lastAttempt)
-        && typeof attempts.lastResult === "string"
-        && count(attempts.clears);
-      if (!identifier(nodeId) || (!count(attempts) && !secondaryRecord)) {
+        && (!owns(attempts, "lastResult") || typeof attempts.lastResult === "string")
+        && (!owns(attempts, "clears") || count(attempts.clears));
+      if (!identifier(nodeId) || (!count(attempts) && !gameplayRecord)) {
         throw invalid("attemptsByNode");
       }
     }
