@@ -102,7 +102,17 @@
       if (!PROJECT_RARITIES.includes(rarity) || !count(amount)) throw failure("rtg-cloud-invalid-projects", rarity);
     }
     for (const [nodeId, attempts] of Object.entries(source.attemptsByNode)) {
-      if (!identifier(nodeId) || !count(attempts)) throw failure("rtg-cloud-invalid-campaign", campaignId);
+      // Legacy test/saves may contain a simple count, while production RTG
+      // records secondary matches as {lastAttempt, lastResult, clears}.
+      // Both representations are permanent progress and must survive cloud
+      // projection without coercion or loss.
+      const secondaryRecord = object(attempts)
+        && count(attempts.lastAttempt)
+        && typeof attempts.lastResult === "string"
+        && count(attempts.clears);
+      if (!identifier(nodeId) || (!count(attempts) && !secondaryRecord)) {
+        throw failure("rtg-cloud-invalid-campaign", campaignId);
+      }
     }
     const result = {};
     for (const field of CAMPAIGN_FIELDS) result[field] = jsonCopy(source[field]);
