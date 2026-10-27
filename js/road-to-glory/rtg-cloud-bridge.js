@@ -19,7 +19,9 @@
     if (!snapshot?.[LOCAL]) return prepared;
     let captured;
     try { captured = await local.captureStable(); }
-    catch (error) { captured = { status: "error", reason: error.code || "rtg-cloud-capture-failed" }; }
+    catch (error) { captured = { status: "error", reason: error.code || "rtg-cloud-capture-failed",
+      detail: typeof error.detail === "string" && /^(rtg-ie-trilogy|rtg-ares-orion):[A-Za-z][A-Za-z.]*$/.test(error.detail)
+        ? error.detail : null }; }
     if (captured.status !== "ready") return { ...prepared, rtgCapture: captured };
     const rtg = captured.snapshot;
     try { restoreAdapter().validateTarget(rtg); }

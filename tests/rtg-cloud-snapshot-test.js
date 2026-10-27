@@ -1,6 +1,7 @@
 "use strict";
 const assert = require("assert");
 const snapshot = require("../js/road-to-glory/rtg-cloud-snapshot.js");
+const policy = require("../js/cloud-write-failure-policy.js");
 
 function campaign(campaignId, seasonId) {
   return {
@@ -51,6 +52,48 @@ function rejects(code, call) { assert.throws(call, (error) => error.code === cod
   }
   assert.strictEqual(JSON.stringify(original), unmodified, "project must never mutate the source");
   assert.deepStrictEqual(snapshot.validate(projected), projected, "roundtrip cloud payload");
+  // rtg-progression.recordSecondaryResult() persists structured attempts,
+  // not numeric counters. This real gameplay shape must roundtrip intact.
+  const secondary = fixture();
+  secondary.trilogy.attemptsByNode["secondary:training"] = {
+    lastAttempt: 3, lastResult: "victory", clears: 2,
+  };
+  const secondaryBefore = JSON.stringify(secondary);
+  const secondaryProjected = snapshot.project(secondary);
+  assert.deepStrictEqual(secondaryProjected.campaigns["rtg-ie-trilogy"].attemptsByNode["secondary:training"],
+    { lastAttempt: 3, lastResult: "victory", clears: 2 });
+  assert.deepStrictEqual(snapshot.validate(secondaryProjected), secondaryProjected);
+  assert.strictEqual(JSON.stringify(secondary), secondaryBefore, "secondary result projection stays read-only");
+  // rtg-controller.startMatch() records {lastAttempt} in BOTH main and
+  // secondary nodes. Main nodes never acquire the secondary-only fields;
+  // unfinished secondary nodes have them added only at result resolution.
+  const started = fixture();
+  started.trilogy.attemptsByNode["main:occult"] = { lastAttempt: 4 };
+  started.trilogy.attemptsByNode["secondary:occult:wild:1"] = { lastAttempt: 1 };
+  const startedCopy = JSON.stringify(started);
+  const startedProjected = snapshot.project(started);
+  assert.deepStrictEqual(startedProjected.campaigns["rtg-ie-trilogy"].attemptsByNode["main:occult"],
+    { lastAttempt: 4 });
+  assert.deepStrictEqual(startedProjected.campaigns["rtg-ie-trilogy"].attemptsByNode["secondary:occult:wild:1"],
+    { lastAttempt: 1 });
+  assert.deepStrictEqual(snapshot.validate(startedProjected), startedProjected);
+  assert.strictEqual(JSON.stringify(started), startedCopy, "unfinished/main history is read-only");
+
+  // Historic numeric attempts stay supported. Optional gameplay fields may
+  // be absent but present values must be valid; never coerce broken counters.
+  for (const invalidAttempt of [
+    { lastAttempt: 3, lastResult: "victory", clears: "2" },
+    { lastAttempt: -1, lastResult: "victory", clears: 2 },
+    { lastAttempt: 3.25 },
+    { lastAttempt: 3, lastResult: 7 },
+    { lastAttempt: null },
+    { lastResult: "victory", clears: 1 },
+  ]) {
+    const invalidSecondary = fixture();
+    invalidSecondary.trilogy.attemptsByNode["secondary:training"] = invalidAttempt;
+    rejects("rtg-cloud-invalid-campaign", () => snapshot.project(invalidSecondary));
+  }
+
   const recruitment = fixture();
   recruitment.trilogy.gacha.recruitmentPullCount = 17;
   const recruitmentSnapshot = snapshot.project(recruitment);
@@ -74,6 +117,20 @@ function rejects(code, call) { assert.throws(call, (error) => error.code === cod
   rejects("rtg-cloud-invalid-campaign", () => snapshot.project(invalidId));
   const invalidSeason = fixture(); invalidSeason.trilogy.activeSeasonId = "orion";
   rejects("rtg-cloud-invalid-campaign", () => snapshot.project(invalidSeason));
+  assert.throws(() => snapshot.project(invalidSeason), error =>
+    error.code === "rtg-cloud-invalid-campaign" &&
+    error.detail === "rtg-ie-trilogy:activeSeasonId");
+  const invalidAttempts = fixture();
+  invalidAttempts.trilogy.attemptsByNode["secondary:training"] = { lastAttempt: 3, lastResult: "victory", clears: -1 };
+  assert.throws(() => snapshot.project(invalidAttempts), error =>
+    error.code === "rtg-cloud-invalid-campaign" &&
+    error.detail === "rtg-ie-trilogy:attemptsByNode");
+  const diagnosed = policy.classifyCloudWriteFailure({ code: "rtg-cloud-invalid-campaign",
+    problemSector: "rtg", detail: "rtg-ie-trilogy:attemptsByNode" });
+  assert.strictEqual(diagnosed.errorDetail, "rtg-ie-trilogy:attemptsByNode");
+  assert.strictEqual(policy.classifyCloudWriteFailure({ code: "permission-denied",
+    problemSector: "rtg", detail: "rtg-ie-trilogy:private<value>" }).errorDetail, null);
+
   const invalidAlbum = fixture(); invalidAlbum.album.cardIds.push("old-album-only");
   rejects("rtg-cloud-invalid-ids", () => snapshot.project(invalidAlbum));
   const invalidCount = fixture(); invalidCount.aresOrion.coachPullCount = -1;

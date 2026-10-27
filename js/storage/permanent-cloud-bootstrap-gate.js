@@ -16,4 +16,4 @@ if (global.DevelopmentIndexedDbStorage?.ensureReady) {
   }
 }
 
-await import("../firebase-cloud-save.js?v=20261026-rtg-cloud-1");
+await import("../firebase-cloud-save.js?v=20261027-rtg-cloud-fielddiag-2");

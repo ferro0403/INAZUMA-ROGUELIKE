@@ -16,6 +16,38 @@ async function conflictCloud(value) { assert.equal(value.api.requestConflictReso
   offline.backend.readFailure = null; await first.api.retryAssociation();
   assert.equal(first.api.getState().status, "synced"); stop(first);
 
+  // Production startMatch saves {lastAttempt} for main/unfinished matches.
+  // Publishing must preserve both these and completed secondary records.
+  const realAttempts = createAuthenticatedFirestoreBackend();
+  const realInput = input();
+  realInput.trilogy.attemptsByNode = {
+    "main:occult": { lastAttempt: 3 },
+    "secondary:occult:wild:1": { lastAttempt: 2, lastResult: "victory", clears: 1 },
+  };
+  const realClient = await client(realAttempts, realInput);
+  assert.equal(realClient.api.getState().status, "synced", "valid production attempt history must upload");
+  const remoteManifest = realAttempts.documents.get(realAttempts.manifestPath);
+  assert.equal(remoteManifest.sectors.rtg, true);
+  const rtgPath = `users/test-user/saveCommits/${remoteManifest.cloudCommitId}/sectors/rtg`;
+  const stagedRtg = realAttempts.documents.get(rtgPath);
+  assert(stagedRtg, "RTG sector must be in immutable bundle");
+  stop(realClient);
+
+  // An invalid RTG capture must NEVER claim account synced just because
+  // the other permanent sectors match an existing cloud manifest.
+  const protectedBackend = createAuthenticatedFirestoreBackend();
+  const protectedPc = await client(protectedBackend);
+  const protectedManifest = clone(protectedBackend.documents.get(protectedBackend.manifestPath));
+  const brokenInput = input();
+  brokenInput.trilogy.attemptsByNode["main:occult"] = { lastAttempt: -1 };
+  const corruptPhone = await client(protectedBackend, brokenInput);
+  assert.equal(corruptPhone.api.getState().status, "sync-error");
+  assert.equal(corruptPhone.api.getState().error, "rtg-cloud-invalid-campaign");
+  assert.equal(corruptPhone.api.getState().errorDetail, "rtg-ie-trilogy:attemptsByNode");
+  assert.deepStrictEqual(protectedBackend.documents.get(protectedBackend.manifestPath), protectedManifest,
+    "invalid local RTG must never replace the cloud manifest");
+  stop(corruptPhone); stop(protectedPc);
+
   // A legacy account contains no RTG sector: explicit cloud restore must leave
   // the device's whole RTG state and Album untouched.
   const legacy = createAuthenticatedFirestoreBackend(), legacySource = await client(legacy, null);

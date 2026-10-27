@@ -81,28 +81,49 @@
   }
   function campaign(source, campaignId) {
     if (source == null) return null; // Campaign not yet started on this device.
-    if (!object(source) || source.campaignId !== campaignId || !identifier(source.campaignSeed)
-      || !SEASONS[campaignId].includes(source.activeSeasonId)
-      || !Number.isSafeInteger(source.schemaVersion) || source.schemaVersion < 1 || source.schemaVersion > 3
-      || typeof source.seasonComplete !== "boolean" || !identifier(source.currentNodeId)) {
-      throw failure("rtg-cloud-invalid-campaign", campaignId);
-    }
+    const invalid = field => failure("rtg-cloud-invalid-campaign", `${campaignId}:${field}`);
+    if (!object(source)) throw invalid("record");
+    const identityChecks = [
+      ["campaignId", source.campaignId === campaignId],
+      ["campaignSeed", identifier(source.campaignSeed)],
+      ["activeSeasonId", SEASONS[campaignId].includes(source.activeSeasonId)],
+      ["schemaVersion", Number.isSafeInteger(source.schemaVersion) && source.schemaVersion >= 1 && source.schemaVersion <= 3],
+      ["seasonComplete", typeof source.seasonComplete === "boolean"],
+      ["currentNodeId", identifier(source.currentNodeId)],
+    ];
+    for (const [field, valid] of identityChecks) if (!valid) throw invalid(field);
     // Do not publish transient match state, nor changes made during a match:
     // the last published manifest remains the safe cloud checkpoint.
     if (source.activeMatch != null) throw failure("rtg-cloud-match-in-progress", campaignId);
-    if (!count(source.coachPullCount) || !object(source.gacha) || !count(source.gacha.pullCount)
-      || (owns(source.gacha, "recruitmentPullCount") && !count(source.gacha.recruitmentPullCount))
-      || !count(source.lives) || source.lives > 2 || !Number.isSafeInteger(source.checkpointMainIndex)
-      || source.checkpointMainIndex < -1 || !count(source.furthestNodeIndex)
-      || !object(source.projects) || !object(source.attemptsByNode)) {
-      throw failure("rtg-cloud-invalid-campaign", campaignId);
-    }
+    const progressChecks = [
+      ["coachPullCount", count(source.coachPullCount)],
+      ["gacha", object(source.gacha)],
+      ["gacha.pullCount", count(source.gacha?.pullCount)],
+      ["gacha.recruitmentPullCount", !object(source.gacha) || !owns(source.gacha, "recruitmentPullCount") || count(source.gacha.recruitmentPullCount)],
+      ["lives", count(source.lives) && source.lives <= 2],
+      ["checkpointMainIndex", Number.isSafeInteger(source.checkpointMainIndex) && source.checkpointMainIndex >= -1],
+      ["furthestNodeIndex", count(source.furthestNodeIndex)],
+      ["projects", object(source.projects)],
+      ["attemptsByNode", object(source.attemptsByNode)],
+    ];
+    for (const [field, valid] of progressChecks) if (!valid) throw invalid(field);
     for (const field of ["seasonTransitionRewardedIds", "defeatedTeamIds", "firstClearMatchIds"]) ids(source[field], field);
     for (const [rarity, amount] of Object.entries(source.projects)) {
       if (!PROJECT_RARITIES.includes(rarity) || !count(amount)) throw failure("rtg-cloud-invalid-projects", rarity);
     }
     for (const [nodeId, attempts] of Object.entries(source.attemptsByNode)) {
-      if (!identifier(nodeId) || !count(attempts)) throw failure("rtg-cloud-invalid-campaign", campaignId);
+      // Production startMatch records {lastAttempt} for BOTH main and secondary
+      // nodes before resolution. recordSecondaryResult adds lastResult/clears
+      // after a secondary result; main nodes retain only lastAttempt.
+      // Preserve valid partial history as-is; never fill in a fabricated
+      // match result, rewrite a counter, or discard any attempt record.
+      const gameplayRecord = object(attempts)
+        && count(attempts.lastAttempt)
+        && (!owns(attempts, "lastResult") || typeof attempts.lastResult === "string")
+        && (!owns(attempts, "clears") || count(attempts.clears));
+      if (!identifier(nodeId) || (!count(attempts) && !gameplayRecord)) {
+        throw invalid("attemptsByNode");
+      }
     }
     const result = {};
     for (const field of CAMPAIGN_FIELDS) result[field] = jsonCopy(source[field]);
