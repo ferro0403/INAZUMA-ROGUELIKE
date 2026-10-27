@@ -114,7 +114,7 @@ async function readServerDocument(db, ...path) { return getDocFromServer(doc(db,
 
 function manifestBundleIdentity(manifest) { const value = Object.fromEntries(["revision", "cloudCommitId", "sectorHashes", "sectorRevisions", "hallTeamIds", "hallTeamHashes", "hallTeamRevisions", "sectors"].map((key) => [key, manifest[key]])); if (manifest.sectors?.rtg === true) value.rtgRestoreVersion = 1; return core.stableSerialize(value); }
 function canonicalManifestBundleIdentity(manifest, uid) { return manifestBundleIdentity(core.validateManifest(core.clone(manifest), uid)); }
-function restoreError(code, problemSector = null) { return Object.assign(new Error(code), { code, problemSector }); }
+function restoreError(code, problemSector = null, detail = null) { return Object.assign(new Error(code), { code, problemSector, detail }); }
 async function downloadStableCloudBundle({ uid, token, maxAttempts = 2 }) {
   const db = globalThis.InazumaAccount.getFirestoreInstance();
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
@@ -190,7 +190,7 @@ async function associateLocalSave({ force = false } = {}) {
       const interrupted = readRestoreJournal(uid);
       if (interrupted?.uid === uid) { publish({ status: "restore-error", restoreStage: interrupted.stage, error: "restore-recovery-required" }, token); await restoreCloudSave({ explicitConflict: true, restoreType: interrupted.restoreType || "journal-recovery" }); return; }
       await reconcile(uid, id, manifest, prepared, token); return; }
-    if (prepared.rtgDeferred) throw restoreError(prepared.rtgCapture?.reason || "rtg-cloud-capture-deferred", "rtg");
+    if (prepared.rtgDeferred) throw restoreError(prepared.rtgCapture?.reason || "rtg-cloud-capture-deferred", "rtg", prepared.rtgCapture?.detail || null);
     if (!progress.meaningful) { automaticUid = null; publish({ status: "awaiting-local-save", localProgressSummary: progress.summary, error: null, problemSector: null }, token); return; }
     publish({ status: "uploading" }, token); const raw = await upload(uid, id, prepared, db), manifest = core.validateManifest(raw, uid); cachedManifest = { uid, token, raw, data: manifest }; const metadata = metadataFrom(uid, id, manifest, prepared); writeMetadata(uid, metadata); if (localSaveSerial === prepared.sourceSerial) dirtySectors.clear(); publish({ status: "synced", pendingSectors: [...dirtySectors], revision: 1, localRevision: 1, cloudRevision: 1, hallOfFameCount: prepared.hallEntries.length, lastSyncedAt: metadata.lastSyncedAt }, token);
   } catch (error) { const manifestProblem = error?.problemSector === "manifest" || error?.code === "unsupported-cloud-schema"; console.warn("Cloud association:", { code: error?.code || "association-failed", problemSector: error?.problemSector || null, localProgressReasons: progress?.reasons || [] }); publish({ status: manifestProblem ? "restore-error" : "error", error: error?.code || "association-failed", problemSector: error?.problemSector || null }, token); } finally { associationInFlight = null; if (cachedManifest && dirtySectors.size && !conflictPending() && state.status === "synced") scheduleSync(token); } })(); return associationInFlight;
@@ -327,7 +327,7 @@ async function resolveConflictUseLocal() {
   const token = generation, uid = cachedManifest.uid, cached = cachedManifest, id = deviceId();
   conflictInFlight = (async () => { let attemptedRevision = null; try {
     if (!current(token, uid)) return; publish({ status: "conflict-resolving-local", error: null }, token);
-    const prepared = await prepareStableLocalSnapshot(); if (prepared.rtgDeferred) throw restoreError(prepared.rtgCapture?.reason || "rtg-cloud-capture-deferred", "rtg"); core.preflight(prepared); if (!current(token, uid)) return;
+    const prepared = await prepareStableLocalSnapshot(); if (prepared.rtgDeferred) throw restoreError(prepared.rtgCapture?.reason || "rtg-cloud-capture-deferred", "rtg", prepared.rtgCapture?.detail || null); core.preflight(prepared); if (!current(token, uid)) return;
     const old = cached.data, nextRevision = old.revision + 1; attemptedRevision = nextRevision;
     const db = globalThis.InazumaAccount.getFirestoreInstance(), commitId = newCloudCommitId();
     const committed = await commitBundle(uid, id, prepared, db, old, commitId);
