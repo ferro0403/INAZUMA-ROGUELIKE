@@ -69,7 +69,7 @@
             const result = await adapter.captureStable();
             if (result.status === "ready") {
               global.RoadToGloryCloudBridge?.restoreAdapter?.()?.validateTarget(result.snapshot);
-              message = "RTG LOCALE VALIDO. Questa verifica NON controlla i permessi Firebase ne conferma un upload.";
+              message = "RTG LOCALE VALIDO. Non verifica permessi remoti e non conferma alcun upload.";
             } else {
               message = "RTG CLOUD: " + String(result.reason || result.status || "capture-failed");
             }
