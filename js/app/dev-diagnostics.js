@@ -61,7 +61,7 @@
           feedback.textContent = "VERIFICA RTG IN CORSO...";
           let message = "";
           try {
-            // Read-only validation: no Firebase calls, no IDB/localStorage writes,
+            // Read-only validation: no remote calls, no IDB/localStorage writes,
             // no journal changes and no account conflict resolution.
             const storage = global.RoadToGloryStorage?.create?.();
             const adapter = global.RoadToGloryCloudLocalAdapter?.create?.({ storage });
