@@ -162,6 +162,14 @@ async function reconcile(uid, id, manifest, prepared, token) {
   cloudUpdateBaseline = null;
   const metadata = readMetadata(uid, id); const localHashes = Object.fromEntries(sectorNames(prepared).map((name) => [name, sectorHash(prepared, name)]));
   const base = { revision: manifest.revision, cloudRevision: manifest.revision, localRevision: metadata?.revision ?? null, hallOfFameCount: manifest.sectors.hallOfFameCount, lastCompletedAt: new Date().toISOString(), localProgressSummary: localProgress(prepared).summary, rtgStatus: prepared.rtgCapture?.status || null, error: null, problemSector: null };
+  // A failed RTG capture cannot be labelled "account synchronized" simply
+  // because the old (non-RTG) sectors happen to match the manifest.
+  if (prepared.rtgCapture?.status === "error") {
+    publish({ ...base, status: "sync-error", problemSector: "rtg",
+      error: prepared.rtgCapture.reason || "rtg-cloud-capture-failed",
+      errorDetail: prepared.rtgCapture.detail || null }, token);
+    return;
+  }
   if (prepared.rtgMissing || (prepared.rtgDeferred && (!metadata || manifest.revision !== metadata.revision))) { publish({ ...base, status: "local-conflict", error: prepared.rtgCapture?.reason || "rtg-cloud-local-unavailable" }, token); return; }
   if (!metadata) { const progress = localProgress(prepared); if (hashesMatchManifest(manifest, prepared)) { const repaired = metadataFrom(uid, id, manifest, prepared); writeMetadata(uid, repaired); publish({ ...base, status: "synced", localRevision: manifest.revision, lastSyncedAt: repaired.lastSyncedAt }, token); } else publish({ ...base, status: progress.meaningful ? "local-conflict" : "cloud-available" }, token); return; }
   if (manifest.revision > metadata.revision) {
@@ -200,7 +208,9 @@ async function syncNow() {
   if (guard()?.isBlocked()) return null;
   if (syncInFlight) return syncInFlight; if (!dirtySectors.size || !cachedManifest || conflictPending()) return null;
   clearTimer(); const token = generation, uid = cachedManifest.uid, id = deviceId(), cycle = new Set(dirtySectors); let attemptedRevision = null, deferredRtg = false, preparedSerial = localSaveSerial; cycle.forEach((name) => dirtySectors.delete(name));
-  syncInFlight = (async () => { try { if (!current(token, uid)) return; const prepared = await prepareStableLocalSnapshot(); deferredRtg = !!prepared.rtgDeferred; preparedSerial = prepared.sourceSerial; core.preflight(prepared); const old = cachedManifest.data;
+  syncInFlight = (async () => { try { if (!current(token, uid)) return; const prepared = await prepareStableLocalSnapshot(); deferredRtg = !!prepared.rtgDeferred; preparedSerial = prepared.sourceSerial;
+    if (prepared.rtgCapture?.status === "error") throw restoreError(prepared.rtgCapture.reason || "rtg-cloud-capture-failed", "rtg", prepared.rtgCapture.detail || null);
+    core.preflight(prepared); const old = cachedManifest.data;
     if (prepared.rtgDeferred) dirtySectors.add("rtg");
     const changed = [...cycle].filter((name) => !(name === "rtg" && prepared.rtgDeferred) && sectorHash(prepared, name) !== old.sectorHashes[name]);
     if (!changed.length) { if (state.error === "metadata-repair-needed") await repairCommittedMetadata(uid, id, old, token); else publish({ status: "synced", pendingSectors: [...dirtySectors] }, token); return; }
