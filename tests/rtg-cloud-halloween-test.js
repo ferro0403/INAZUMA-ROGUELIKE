@@ -240,6 +240,64 @@ async function main() {
     shared:{tokens:83,gachaAcquiredCards:[],developmentByCardId:{},coachOwnedIds:[]}
   });
   assert.ok(!Object.prototype.hasOwnProperty.call(context.RoadToGloryCloudSnapshot.validate(legacy).shared,"halloween"));
+  // Real controller regression: a duel resolved at exactly 45' must be
+  // shown BEFORE the native halftime editor. Acknowledging it must NOT
+  // call prepareNext again (the boundary is already committed).
+  const duelApp=createApp();
+  const duelOverlay={innerHTML:""};
+  let onDuelChoice=null,continueDuel=null,duelTimer=null,extraEngineSteps=0;
+  const originalDuelQuery=duelApp.querySelector.bind(duelApp);
+  duelApp.querySelector=selector=>{
+    if(selector==="[data-rtg-match-overlay]")return duelOverlay;
+    if(selector==="[data-rtg-duel-continue]"&&duelOverlay.innerHTML.includes("data-rtg-duel-continue"))
+      return {addEventListener:(_type,callback)=>{continueDuel=callback;}};
+    return originalDuelQuery(selector);
+  };
+  const duelView={
+    preMatchMarkup:()=>'<main class="screen">PREMATCH</main>',
+    matchMarkup:()=>'<main class="screen"><div data-rtg-match-overlay></div></main>',
+    encounterMarkup:()=>'<div>CHOICE 45</div>',
+    finalComparisonMarkup:()=>'<div>COMPARISON 45</div>',
+    resolvedEncounterMarkup:()=>'<button data-rtg-duel-continue>RESULT 45</button>',
+    halftimeMarkup:()=>'<div>INTERVALLO DOPO RISULTATO</div>',
+    bind:(_root,actions)=>{onDuelChoice=actions.onEncounterChoice;}
+  };
+  const oldPrepare=context.RoadToGloryMatchEngine.prepareNext;
+  const oldResolve=context.RoadToGloryMatchEngine.resolvePendingEncounter;
+  const oldSetTimeout=context.setTimeout,oldClearTimeout=context.clearTimeout;
+  context.RoadToGloryMatchEngine.prepareNext=()=>{extraEngineSteps++;throw Error("Boundary must not advance the match engine again");};
+  context.RoadToGloryMatchEngine.resolvePendingEncounter=(state,_choice)=>({
+    ...clone(state),status:"halftime",period:"halftime",pendingEncounter:null,
+    log:[{encounterId:"enc-45",actorWon:true,probability:64,goalSide:null}]
+  });
+  context.setTimeout=callback=>{duelTimer=callback;return 1;};
+  context.clearTimeout=()=>{duelTimer=null;};
+  records["local:halloween2026:match"]={
+    matchId:"boundary-45",status:"active",period:"first",score:{user:0,opponent:0},
+    presentation:{preMatchSeen:true},userSquad:{lineup:[],bench:[]},opponentSquad:{name:"Occult Halloween",lineup:[]},
+    pendingEncounter:{encounterId:"enc-45",userSide:"user",actorSide:"user",userKind:"defense",aiKind:"dribble",
+      userPlayerId:"free_agents::halloween-free-1",aiPlayerId:"45",userBaseActionLabel:"Contrasto",aiChoice:"base",userMoveOptions:[]}
+  };
+  const duelController=E.create({app:duelApp,storage,matchView:duelView,squadView,runView:nativeRunView,toast:()=>{}});
+  await duelController.open();
+  assert.match(duelOverlay.innerHTML,/CHOICE 45/,"The 45-minute encounter must be selectable");
+  await onDuelChoice("base",false);
+  await onDuelChoice("base",true);
+  assert.match(duelOverlay.innerHTML,/COMPARISON 45/,"45-minute duel comparison appears before halftime");
+  assert.doesNotMatch(duelOverlay.innerHTML,/INTERVALLO/,"Halftime must not cover the duel");
+  const reveal45=duelTimer;assert.equal(typeof reveal45,"function");
+  reveal45();
+  assert.match(duelOverlay.innerHTML,/RESULT 45/,"The 45-minute duel must show the winner");
+  assert.equal(typeof continueDuel,"function");
+  await continueDuel();
+  assert.match(duelOverlay.innerHTML,/INTERVALLO DOPO RISULTATO/,"Halftime appears only after the player continues");
+  assert.equal(extraEngineSteps,0,"Boundary continuation must not re-simulate the match");
+  duelController.dispose();
+  context.RoadToGloryMatchEngine.prepareNext=oldPrepare;
+  context.RoadToGloryMatchEngine.resolvePendingEncounter=oldResolve;
+  context.setTimeout=oldSetTimeout;
+  context.clearTimeout=oldClearTimeout;
+  delete records["local:halloween2026:match"];
   console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 prizes, unique 300-pumpkin pulls, cloud compatibility PASS");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
