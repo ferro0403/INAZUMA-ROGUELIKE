@@ -71,7 +71,7 @@
     return {
       ...raw, ...stats, playerId:asId(raw.playerId), cardId:EVENT_ID+"::"+asId(raw.playerId),
       legacySeasonId:EVENT_ID, resolvedSeasonId:EVENT_ID, teamId:TEAM_ID,
-      teamName:"Occult Halloween", level:20, stats, baseStats:stats,
+      teamName:"Occult Halloween", teamLogoUrl:LOGO_URL, level:20, stats, baseStats:stats,
       normalizedRole:raw.position, finalOverall:Number(raw.overall)||0,
       category:raw.category, finalRarity:raw.category, activeMove:moves[0] || null,
       halloweenMoves:moves, halloweenVampire:!SPECIAL.includes(asId(pid)),
