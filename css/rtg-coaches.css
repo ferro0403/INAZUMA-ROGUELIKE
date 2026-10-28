@@ -966,9 +966,18 @@
   overflow:hidden!important;
 }
 .rtg-coach-detail.rtg-coach-halloween .player-detail-visual img.rtg-coach-fullbody{
+  /* Same centered image anchoring as Ray Dark and the other RTG coaches.
+     This image inherits left:60% from PlayerDetail; overriding its translateX
+     with transform:none pushed nearly all of Hekyll outside the clipping area. */
+  position:absolute!important;
+  left:50%!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:0!important;
   display:block!important;
-  width:100%!important;height:100%!important;max-width:100%!important;
-  max-height:100%!important;
+  width:100%!important;height:96%!important;max-width:100%!important;
+  max-height:96%!important;
   object-fit:contain!important;object-position:center bottom!important;
-  transform:none!important;
+  transform:translateX(-50%)!important;
+  transform-origin:center bottom!important;
 }
