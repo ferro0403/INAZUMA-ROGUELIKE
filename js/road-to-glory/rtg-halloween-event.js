@@ -6,7 +6,7 @@
   const MATCH_KEY = "local:halloween2026:match";
   const SQUAD_KEY = "local:halloween2026:squad";
   const SHARED_KEY = "shared:account";
-  const PRICE = 200;
+  const PRICE = 300;
   const PRIZE = 300;
   const LUCKY_PRIZE = 600;
   const BANNER_URL = "https://img.magnific.com/foto-gratuito/illustrazione-digitale-di-halloween_23-2151822706.jpg?semt=ais_hybrid&w=740&q=80";
@@ -267,7 +267,7 @@
         (!can?'<p class="halloween-squad-requirement">La tua squadra: '+(own??"—")+' OVR · limite '+limit+' · 11 titolari e 4 riserve. <button data-halloween-tab="squad">GESTISCI SQUADRA →</button></p>':'')+
         '<div class="rtg-journey-progress" role="progressbar" aria-valuenow="1" aria-valuemin="0" aria-valuemax="1"><span style="width:100%"></span></div></section>'+
         '<section class="panel rtg-run-command halloween-original-command halloween-vending-banner">'+
-        '<button type="button" class="btn btn-yellow rtg-vending-button" data-halloween-open-vending>DISTRIBUTORE HALLOWEEN</button></section>'+
+        '<button type="button" class="btn btn-yellow rtg-vending-button" data-halloween-open-vending>DISTRIBUTORE STREGATO · '+PRICE+' ZUCCHE</button></section>'+
         '<section class="halloween-play-banner" aria-label="Sfida Occult Halloween">'+
         '<div class="halloween-play-banner-copy"><small>SFIDA A TEMPO · OCCULT</small><h2>IL CIMITERO STREGATO</h2>'+
         '<p>Affronta Occult Halloween prima della fine dell’evento.</p></div>'+
@@ -295,7 +295,7 @@
     function vendingSection() {
       const available=Array.from(assets.players.keys()).filter(pid=>!isOwned(pid)),enough=shared.halloween.pumpkins>=PRICE;
       const capsules=Array.from({length:12},(_,i)=>'<div class="rtg-vending-capsule-v9 c'+(i%6+1)+'" data-capsule-rarity="'+(i%2?"orange":"black")+'"></div>').join("");
-      return '<div class="halloween-vending"><p class="eyebrow">CAPSULE STATION · HALLOWEEN</p><h2>IL DISTRIBUTORE STREGATO</h2>'+
+      return '<div class="halloween-vending"><button type="button" class="halloween-vending-close" data-halloween-close-vending aria-label="Chiudi distributore">×</button><p class="eyebrow">CAPSULE STATION · HALLOWEEN</p><h2>IL DISTRIBUTORE STREGATO</h2>'+
         '<div class="rtg-vending halloween-vending-classic"><div class="rtg-vending-stage"><div class="rtg-vending-machine-v9 rtg-vending-machine-v12" data-rtg-vending-machine aria-label="Distributore Halloween">'+
         '<div class="rtg-vending-head-v9"><span>CAPSULE STATION</span><strong>OCCULT HALLOWEEN</strong></div>'+
         '<div class="rtg-vending-window-v9">'+capsules+'<span class="rtg-vending-funnel-v10"></span><span class="rtg-vending-window-glare-v9"></span></div>'+
@@ -357,7 +357,7 @@
         return '<main class="screen rtg-match-shell halloween-native-match"><div class="content narrow">'+result+'</div></main>';
       }
       if(match.presentation?.preMatchSeen===false)return v.preMatchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
-      const presented=lastResolution&&["completed","completed-draw"].includes(match.status)?{...match,status:"active"}:match;
+      const presented=lastResolution&&["halftime","penalties","completed","completed-draw"].includes(match.status)?{...match,status:"active"}:match;
       return v.matchMarkup(presented).replace('<main class="screen','<main class="screen halloween-native-match');
     }
     function bindNativeMatch(){
@@ -367,14 +367,14 @@
       if((!done||lastResolution)&&m.presentation?.preMatchSeen!==false){
         const overlay=app.querySelector?.("[data-rtg-match-overlay]");
         if(overlay){
-          if(m.status==="halftime"){
-            if(!halftimeDraft)halftimeDraft=clone(m.userSquad);
-            overlay.innerHTML=v.halftimeMarkup(halftimeDraft,{match:m,selectedPlayerId:halfSelected});
-          }else if(m.status==="penalties")overlay.innerHTML=v.penaltyMarkup(m,nativePenaltyContext(m));
-          else if(lastResolution){
+          if(lastResolution){
             overlay.innerHTML=lastResolutionStage==="comparison"&&v.finalComparisonMarkup?v.finalComparisonMarkup(lastResolution)
               :lastResolutionStage==="resolving"&&v.resolvingEncounterMarkup?v.resolvingEncounterMarkup(lastResolution)
               :v.resolvedEncounterMarkup(lastResolution);
+          }else if(m.status==="halftime"){
+            if(!halftimeDraft)halftimeDraft=clone(m.userSquad);
+            overlay.innerHTML=v.halftimeMarkup(halftimeDraft,{match:m,selectedPlayerId:halfSelected});
+          }else if(m.status==="penalties")overlay.innerHTML=v.penaltyMarkup(m,nativePenaltyContext(m));
           }else if(m.pendingEncounter){
             if(pendingRevealHidden){overlay.innerHTML="";}else{
             const pending=m.pendingEncounter;
@@ -426,7 +426,7 @@
         lastResolution=null;
         // The terminal encounter has already been committed and awarded.
         // Keep its native duel result visible until the player continues.
-        if(["completed","completed-draw","abandoned"].includes(match?.status))return render();
+        if(["halftime","penalties","completed","completed-draw","abandoned"].includes(match?.status))return render();
         return perform(()=>stepMatch(null));
       });
       if(lastResolution&&lastResolutionStage!=="resolved"&&typeof global.setTimeout==="function"){
@@ -664,6 +664,7 @@
         if(target==="squad"||target==="run"||target==="match"){view=target==="squad"?"squad":"match";render();}
       }));
       app.querySelector?.("[data-halloween-open-vending]")?.addEventListener("click",()=>{view="vending";render();});
+      app.querySelector?.("[data-halloween-close-vending]")?.addEventListener("click",()=>{view="match";render();});
       app.querySelectorAll?.("[data-halloween-start]")?.forEach(el=>el.addEventListener("click",()=>perform(startMatch)));
       app.querySelector?.("[data-halloween-resume]")?.addEventListener("click",()=>{view="match";render();});
       app.querySelector?.("[data-halloween-next]")?.addEventListener("click",()=>perform(()=>stepMatch(null)));
@@ -695,10 +696,12 @@
           if(!deps.runView?.pullResultMarkup||!deps.openModal)return;
           let markup=deps.runView.pullResultMarkup(drawn.result,drawn.player,{teams:[{teamId:TEAM_ID,teamName:"Occult Halloween",logoUrl:LOGO_URL}]});
           markup=markup.replace("SALDO RTG","ZUCCHE HALLOWEEN")
-            .replace(/(<div class="rtg-pull-balance">[\s\S]*?<strong>)([\d.,]+) ◈(<\/strong>)/,
-              (_all,before,amount,after)=>before+'<img class="halloween-reveal-currency-icon" src="'+escape(PUMPKIN_URL)+'" alt=""> '+amount+' ZUCCHE'+after)
+            .replace(/(<div class="rtg-pull-balance">[\\s\\S]*?<strong>)[\\s\\S]*?(<\\/strong>)/,
+              (_all,before,after)=>before+currency(drawn.result.balanceAfter)+after)
             .replace(/ROAD TO GLORY · LEGACY [^<]*/,"OCCULT · HALLOWEEN");
           deps.openModal(markup,{className:"rtg-modal rtg-pull-modal rtg-halloween-pull-modal"});
+          const eventBalance=modalRoot()?.querySelector?.(".rtg-pull-balance strong");
+          if(eventBalance)eventBalance.innerHTML=currency(drawn.result.balanceAfter);
           modalRoot()?.querySelector?.("[data-rtg-pull-continue]")?.addEventListener("click",()=>deps.closeModal?.());
           modalRoot()?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",()=>openNativeDetail(drawn.result.cardId));
         }).finally?.(()=>{if(button.isConnected)button.disabled=false;});
