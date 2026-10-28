@@ -579,3 +579,26 @@
 .player-detail-rtg-legacy-badge[data-legacy-season="HW"] > *{
   color:#fff!important;
 }
+
+/* Halloween custom fullbody sizing: native reference proportions.
+   The two user-supplied fullbody PNGs have tall, fully drawn canvases.
+   Display them like the smaller Nathan Jones reference (fully visible,
+   grounded near the bottom of the hero), without changing other cards. */
+.player-detail-layout.halloween-event-detail .player-detail-visual
+  img.player-fullbody--fullbody[src$="halloween-nathan-fullbody.png"],
+.player-detail-layout.halloween-event-detail .player-detail-visual
+  img.player-fullbody--fullbody[src$="halloween-samford-fullbody.png"]{
+  position:absolute!important;
+  left:55%!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:7%!important;
+  width:100%!important;
+  height:61%!important;
+  max-width:100%!important;
+  max-height:61%!important;
+  object-fit:contain!important;
+  object-position:center bottom!important;
+  transform:translateX(-50%) scale(1)!important;
+  transform-origin:center bottom!important;
+}
