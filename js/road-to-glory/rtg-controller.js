@@ -1041,6 +1041,9 @@
         return {locked:true,access};
       }
       campaign=await repository.ensureCampaign();checkOpen();
+      if((campaign?.gachaAcquiredCards||[]).some(card=>id(card?.cardId).startsWith("halloween2026::"))){
+        await global.RoadToGloryHalloween?.prepare?.();checkOpen();
+      }
       progression?.setSeasonContext?.(campaign);
       if(activeSeasonId()==="ie2"){
         try{await ensureAresRouteMap();}
