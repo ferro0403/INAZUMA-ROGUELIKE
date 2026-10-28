@@ -88,6 +88,7 @@ const context={
   },
   RoadToGloryRng:{int:()=>0}
 };
+vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-cloud-snapshot.js","utf8"),context);
 const E=context.RoadToGloryHalloween;
@@ -125,6 +126,7 @@ async function main() {
   assert.ok(control("data-halloween-start"));
   await control("data-halloween-start").fire();
   assert.equal(records["local:halloween2026:match"].status,"active");
+  assert.match(app.innerHTML,/rtg-live-pitch/,"Event must use original RTG 11v11 pitch");
   await control("data-halloween-next").fire();
   assert.equal(records["shared:account"].halloween.pumpkins,600,"10%-lucky victory grants 600 total");
   assert.equal(records["shared:account"].halloween.completedIds.length,1);
@@ -141,15 +143,24 @@ async function main() {
   assert.equal(records["shared:account"].halloween.ownedIds.length,2);
   assert.equal(new Set(records["shared:account"].halloween.ownedIds).size,2,"No duplicate players");
   assert.equal(records["shared:account"].tokens,83,"Regular RTG tokens must not be changed");
+  await control("data-halloween-tab",d=>d.halloweenTab==="match").fire();
+  context.RoadToGloryMatchEngine.prepareNext = state => ({
+    ...clone(state),status:"completed",result:{winner:"opponent"}
+  });
+  await control("data-halloween-start").fire();
+  await control("data-halloween-next").fire();
+  assert.equal(records["shared:account"].halloween.pumpkins,500,"Defeat must award 300, never 600");
+  assert.equal(records["shared:account"].halloween.completedIds.length,2);
+
   const snapshot=context.RoadToGloryCloudSnapshot.project({
     trilogy:null,aresOrion:null,shared:records["shared:account"],album:{version:1,cardIds:[]}
   });
-  assert.equal(context.RoadToGloryCloudSnapshot.validate(snapshot).shared.halloween.pumpkins,200);
+  assert.equal(context.RoadToGloryCloudSnapshot.validate(snapshot).shared.halloween.pumpkins,500);
   const legacy=context.RoadToGloryCloudSnapshot.project({
     trilogy:null,aresOrion:null,
     shared:{tokens:83,gachaAcquiredCards:[],developmentByCardId:{},coachOwnedIds:[]}
   });
   assert.ok(!Object.prototype.hasOwnProperty.call(context.RoadToGloryCloudSnapshot.validate(legacy).shared,"halloween"));
-  console.log("RTG Halloween: 18 players / 72 moves, OVR+1, 16 vampire filters, countdown, squad, idempotent 600 prize, no duplicate pulls, 200 cost, old-cloud compatibility PASS");
+  console.log("RTG Halloween: 18 players / 72 moves, OVR+1, 11v11 pitch, 16 vampire filters, countdown, squad, idempotent 600/300 prizes, no duplicate pulls, 200 cost, old-cloud compatibility PASS");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
