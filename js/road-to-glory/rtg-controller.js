@@ -489,7 +489,7 @@
     let developmentController=null;
     function getDevelopmentController(){
       if(!developmentController)developmentController=global.RoadToGloryDevelopmentController.create({
-        app,economy,economyView,repository,id,getCampaign:()=>campaign,setCampaign:(next)=>{campaign=next;},
+        app,economy,economyView,squadView,repository,id,getCampaign:()=>campaign,setCampaign:(next)=>{campaign=next;},
         getSquadDraft:()=>squadDraft,activeSquad,resolved,resolvedStandard,resolvedWithDevelopment,
         renderRun,renderHtml,mountDevQuickTools,openPlayerDetails:openRtgPlayerDetails,
         renderHome:deps.renderHome,toast:deps.toast,openModal:deps.openModal,getModalRoot:deps.getModalRoot,closeModal:deps.closeModal,
