@@ -285,7 +285,7 @@
           const n=m.shootout?.history?.length||0,side=n%2===0?"user":"opponent",direction=choice.slice(8);
           const ai=["left","center","right"][global.RoadToGloryRng.int(m.matchId,"halloween-penalty-ai",n,2)];
           latest=global.RoadToGloryMatchEngine.resolvePenaltyKick(m,{attackingSide:side,shooterChoice:side==="user"?direction:ai,goalkeeperChoice:side==="user"?ai:direction}).state;
-        } else if(m.pendingEncounter)latest=global.RoadToGloryMatchEngine.resolvePendingEncounter(m,choice||"base").state||global.RoadToGloryMatchEngine.resolvePendingEncounter(m,choice||"base");
+        } else if(m.pendingEncounter)latest=global.RoadToGloryMatchEngine.resolvePendingEncounter(m,choice||"base");
         else latest=global.RoadToGloryMatchEngine.prepareNext(m);
         if(!latest || typeof latest!=="object")throw fail("halloween-invalid-match-step");
         return {writes:{[MATCH_KEY]:latest},value:true};
