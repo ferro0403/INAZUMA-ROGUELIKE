@@ -352,3 +352,10 @@
 .rtg-halloween-picker .rtg-picker-season-team-filters label>span,
 .rtg-halloween-picker .rtg-picker-rarity-filter>span{color:#222!important}
 .rtg-halloween-picker .rtg-picker-toolbar{background:#fff!important}
+
+.player-detail-layout.halloween-event-detail .player-detail-team img{
+ filter:sepia(.3) saturate(.55) hue-rotate(300deg) brightness(.66) contrast(1.45) drop-shadow(0 0 8px #ff4155)!important
+}
+.player-detail-layout.halloween-event-detail .player-detail-team strong{
+ color:#1a1519!important;text-shadow:none!important
+}
