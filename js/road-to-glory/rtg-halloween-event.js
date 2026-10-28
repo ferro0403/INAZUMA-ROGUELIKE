@@ -125,6 +125,7 @@
       activeSquadSlot = Number(stored?.activeSquadSlot)||1;
       squadSlots = stored?.slots || null;
       localSquad = stored?.slots?.[activeSquadSlot] || stored || initialEventSquad();
+      if (localSquad.lineup?.length<11||localSquad.bench?.length<4) localSquad=initialEventSquad(localSquad);
       if (!localSquad?.formationId) localSquad = {...localSquad,formationId:"4-3-3",activeRoleVariantByCardId:{}};
       match = records[MATCH_KEY] || null;
     }
