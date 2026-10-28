@@ -159,6 +159,8 @@ async function main() {
   assert.doesNotMatch(app.innerHTML,/rtg-map rtg-halloween-map/,"Cemetery is the whole RTG homepage background, not an extra content box");
   assert.match(app.innerHTML,/data-halloween-countdown/);
   assert.match(app.innerHTML,/data-halloween-open-vending/,"Gacha is opened from Run home");
+  assert.match(app.innerHTML,/DISTRIBUTORE STREGATO · 300 ZUCCHE/,"Home advertises the real capsule cost");
+  assert.equal(E.PRICE,300);
   assert.doesNotMatch(app.innerHTML,/data-halloween-tab="album"/);
   assert.doesNotMatch(app.innerHTML,/data-halloween-tab="vending"/);
   await control("data-halloween-tab",d=>d.halloweenTab==="squad").fire();
@@ -213,6 +215,10 @@ async function main() {
   await controller.open();
   assert.equal(records["shared:account"].halloween.pumpkins,600,"Reload must not duplicate reward");
   await control("data-halloween-close-result").fire();
+  await control("data-halloween-open-vending").fire();
+  assert.match(app.innerHTML,/data-halloween-close-vending/,"Vending must have its own mobile close button");
+  await control("data-halloween-close-vending").fire();
+  assert.match(app.innerHTML,/data-halloween-open-vending/,"Closing returns to the event homepage");
   await control("data-halloween-open-vending").fire();
   await control("data-halloween-pull").fire();
   assert.equal(records["shared:account"].halloween.pumpkins,300);
