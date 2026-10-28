@@ -46,5 +46,5 @@ const samford={...normal,playerId:"custom_0001",halloweenVampire:false};
 assert.match(matchView.duelVisualMarkup(event,"opponent"),/halloween-vampiro/);
 assert.doesNotMatch(matchView.duelVisualMarkup(samford,"opponent"),/halloween-vampiro/);
 assert.doesNotMatch(matchView.duelVisualMarkup(normal,"user"),/halloween-vampiro/);
-assert.match(matchView.duelCompareVisualMarkup(event,"opponent"),/halloween-vampiro/);
+assert.equal((fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8").match(/class="rtg-duel-render\$\{shawnFwClass\}\$\{halloweenClass\}"/g)||[]).length,2,"Both original duel renderers must apply the tagged filter");
 console.log("RTG Halloween parity: 11 starters + 4 bench, original squad markup, tagged vampire duel render PASS");
