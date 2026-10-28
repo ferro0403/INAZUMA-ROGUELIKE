@@ -112,9 +112,11 @@
     const app = deps.app, storage = deps.storage || global.RoadToGloryStorage.create();
     const notify = deps.toast || (()=>{});
     let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false;
-    let tick = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
+    let tick = null, matchTimer = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
+    let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="";
     const assertCurrent = epoch => { if (epoch !== session) throw fail("halloween-stale-controller"); global.RoadToGloryPersistence?.assertWritable?.(); };
     function dispose() { session++; if (tick != null) global.clearInterval?.(tick); tick = null;
+      if(matchTimer!=null)global.clearTimeout?.(matchTimer);matchTimer=null;
       deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
     }
     function listen() { if(tick!=null)global.clearInterval?.(tick);tick=global.setInterval?.(()=>{const el=app?.querySelector?.("[data-halloween-countdown]"); if(el)el.textContent=isOpen()?countdown():"EVENTO TERMINATO";if(!isOpen())app?.querySelectorAll?.("[data-halloween-start],[data-halloween-pull]")?.forEach(b=>b.disabled=true);},1000); }
@@ -127,8 +129,9 @@
       activeSquadSlot = Number(stored?.activeSquadSlot)||1;
       squadSlots = stored?.slots || null;
       localSquad = stored?.slots?.[activeSquadSlot] || stored || initialEventSquad();
-      if (localSquad.lineup?.length<11||localSquad.bench?.length<4) localSquad=initialEventSquad(localSquad);
+      if (!match && (localSquad.lineup?.length<11||localSquad.bench?.length<4)) localSquad=initialEventSquad(localSquad);
       if (!localSquad?.formationId) localSquad = {...localSquad,formationId:"4-3-3",activeRoleVariantByCardId:{}};
+      if(!match && localSquad.lineup?.length===11) localSquad.lineupOrderedBySlot=true;
       match = records[MATCH_KEY] || null;
     }
     function recordCard(pid) {
@@ -171,7 +174,10 @@
       const bench=(localSquad?.bench||[]).map(resolveCard);
       if(line.length!==11 || line.some(p=>!p) || bench.length!==4 || bench.some(p=>!p) ||
          new Set([...(localSquad?.lineup||[]),...(localSquad?.bench||[])]).size!==15)return null;
-      return {formationId:"4-4-2",seasonId:"ie1",lineup:line,bench:bench.filter(Boolean),coachId:localSquad?.coachId||""};
+      const formationId=localSquad?.formationId||"4-3-3";
+      const formation=(global.RoadToGloryConfig?.season?.("ie1")?.formations||[]).find(f=>asId(f.id)===formationId);
+      const slots=Array.isArray(formation?.slotRoles)&&formation.slotRoles.length===11?formation.slotRoles:null;
+      return {formationId,seasonId:"ie1",lineup:line.map((p,i)=>({...p,tacticalRole:slots?.[i]||p.tacticalRole||p.normalizedRole||p.position})),bench:bench.filter(Boolean),coachId:localSquad?.coachId||""};
     }
     function opponent() {
       return {name:"Occult Halloween",teamId:TEAM_ID,logoUrl:LOGO_URL,seasonId:EVENT_ID,formationId:"4-4-2",
@@ -199,7 +205,7 @@
       }
       while(lineup.length<11&&available.length)lineup.push(available.shift().cardId);
       while(bench.length<4&&available.length)bench.push(available.shift().cardId);
-      return {formationId:previous.formationId||"4-3-3",lineup,bench,coachId:previous.coachId||"",activeRoleVariantByCardId:previous.activeRoleVariantByCardId||{}};
+      return {formationId:previous.formationId||"4-3-3",lineup,bench,lineupOrderedBySlot:true,coachId:previous.coachId||"",activeRoleVariantByCardId:previous.activeRoleVariantByCardId||{}};
     }
     function activeEventSquad() {return {activeSeasonId:"ie1",gachaAcquiredCards:shared.gachaAcquiredCards,coachOwnedIds:shared.coachOwnedIds,squads:{ie1:localSquad}};}
     function nativeCard(p,opts={}) {
@@ -304,6 +310,112 @@
       const actorVisual=opponentActor?'<div class="halloween-match-actor"><div class="'+(opponentActor.halloweenVampire?'halloween-vampiro':'')+'"><img src="'+escape(opponentActor.fullbodyUrl||opponentActor.portraitUrl||'')+'" alt="'+escape(opponentActor.name||'')+'"></div><strong>'+escape(opponentActor.name||'')+'</strong></div>':'';
       return '<div class="halloween-graveyard"><div class="halloween-match-card"><div class="halloween-match-brand"><img class="halloween-crest halloween-vampiro" src="'+escape(LOGO_URL)+'" alt=""><div><h2>'+status+'</h2><p>Occult Halloween</p></div></div><h1>'+escape(m.score?.user||0)+' – '+escape(m.score?.opponent||0)+'</h1><div class="halloween-original-fields"><div class="halloween-pitch"><h3>LA TUA SQUADRA</h3>'+matchPitch(m,"user")+'</div><div class="halloween-pitch halloween-pitch--opponent"><h3>OCCULT HALLOWEEN</h3>'+matchPitch(m,"opponent")+'</div></div><p>'+escape(info?.kind||"")+' · '+escape(info?.userKind||"")+'</p>'+actorVisual+ (info?'<div class="halloween-choices"><button class="halloween-action" data-halloween-choice="base">AZIONE BASE</button>'+options.map((move,i)=>'<button data-halloween-choice="move:'+i+'">'+escape(move.name||move.moveId||"Tecnica")+' · PT '+escape(move.ptCost||move.power||0)+'</button>').join("")+'</div>':m.status==="halftime"?'<button class="halloween-action" data-halloween-halftime>RIPRENDI SECONDO TEMPO</button>':m.status==="penalties"?'<div class="halloween-choices">'+["left","center","right"].map(d=>'<button data-halloween-penalty="'+d+'">'+({left:"SINISTRA",center:"CENTRO",right:"DESTRA"}[d])+'</button>').join("")+'</div>':'<button class="halloween-action" data-halloween-next>PROSEGUI</button>')+'<p><button data-halloween-abandon>ABBANDONA PARTITA</button></p></div></div>';
     }
+    function findNativeMatchPlayer(side,key){
+      const team=side==="opponent"?match?.opponentSquad:match?.userSquad;
+      return [...(team?.lineup||[]),...(team?.bench||[])].find(p=>asId(p.cardId||p.playerId)===asId(key))||null;
+    }
+    function nativePenaltyContext(m){
+      const attackingSide=(m.shootout?.history?.length||0)%2===0?"user":"opponent";
+      const attackers=(attackingSide==="user"?m.userSquad:m.opponentSquad)?.lineup||[];
+      const defender=(attackingSide==="user"?m.opponentSquad:m.userSquad)?.lineup||[];
+      const shooter=attackers.find(p=>String(p.tacticalRole||p.position)!=="GK")||attackers[0];
+      const keeper=defender.find(p=>String(p.tacticalRole||p.position)==="GK")||defender[0];
+      const userRole=attackingSide==="user"?"shot":"save";
+      const userPlayer=attackingSide==="user"?shooter:keeper;
+      const rules=global.RoadToGloryMatchPtRuntime,ptMode=rules?.inMatch?.(m)===true;
+      const userOptions=ptMode?rules.compatible(m,"user",asId(userPlayer?.cardId||userPlayer?.playerId),userRole):[];
+      return {attackingSide,shooter,keeper,userRole,ptMode,userOptions,userMove:userOptions[0]||null,userMoveAvailable:userOptions.length>0,
+        userPt:rules?.pt?.(m,"user",asId(userPlayer?.cardId||userPlayer?.playerId))||null};
+    }
+    function nativeMatchMarkup(){
+      const v=deps.matchView;if(!v||!match)return pendingSection();
+      if(["completed","completed-draw","abandoned"].includes(match.status))
+        return '<main class="screen rtg-match-shell halloween-native-match"><div class="content narrow">'+v.resultMarkup(match,null)+
+          '<p class="halloween-event-reward">🎃 '+(match.halloweenAward||PRIZE)+' ZUCCHE HALLOWEEN</p></div></main>';
+      if(match.presentation?.preMatchSeen===false)return v.preMatchMarkup(match);
+      return v.matchMarkup(match);
+    }
+    function bindNativeMatch(){
+      const v=deps.matchView,m=match;
+      if(!v||!m)return;
+      const done=["completed","completed-draw","abandoned"].includes(m.status);
+      if(!done&&m.presentation?.preMatchSeen!==false){
+        const overlay=app.querySelector?.("[data-rtg-match-overlay]");
+        if(overlay){
+          if(m.status==="halftime"){
+            if(!halftimeDraft)halftimeDraft=clone(m.userSquad);
+            overlay.innerHTML=v.halftimeMarkup(halftimeDraft,{match:m,selectedPlayerId:halfSelected});
+          }else if(m.status==="penalties")overlay.innerHTML=v.penaltyMarkup(m,nativePenaltyContext(m));
+          else if(m.pendingEncounter){
+            const pending=m.pendingEncounter;
+            if(encounterKey!==asId(pending.encounterId)){encounterKey=asId(pending.encounterId);encounterSelection="";}
+            const user=findNativeMatchPlayer("user",pending.userPlayerId),opp=findNativeMatchPlayer("opponent",pending.aiPlayerId||pending.opponentPlayerId);
+            overlay.innerHTML=v.encounterMarkup(m,{userPlayer:user,opponentPlayer:opp,selectedChoice:encounterSelection});
+          }
+        }
+      }
+      v.bind(app,{
+        onOpenPlayerDetails:(id,side)=>{
+          const p=findNativeMatchPlayer(side,id);
+          if(p&&side==="opponent")openNativeDetail(asId(p.cardId||p.playerId));
+          else if(p)openNativeDetail(asId(p.cardId||p.playerId));
+        },
+        onPreMatchStart:()=>perform(()=>stepMatch("prematch")),
+        onPreMatchCoachPower:()=>openNativePreMatchCoachPower(),
+        onEncounterChoice:(choice,confirm)=>{
+          if(!m.pendingEncounter)return;
+          if(choice==="list"){encounterSelection=choice;render();return;}
+          if(confirm&&encounterSelection===choice){encounterSelection="";return perform(()=>stepMatch(choice));}
+          encounterSelection=choice;render();
+        },
+        onAbandon:()=>perform(abandonMatch),
+        onHalftimeConfirm:()=>perform(()=>stepMatch("halftime")),
+        onPenaltyDirection:direction=>perform(()=>stepMatch("penalty:"+direction)),
+        onPenaltyMove:index=>perform(()=>stepMatch("penalty-move:"+index)),
+        onContinue:()=>perform(closeResult),
+      });
+      if(!done&&m.status==="halftime"){
+        app.querySelectorAll?.("[data-rtg-half-lineup]")?.forEach(b=>b.addEventListener("click",()=>{
+          halfSelected=halfSelected===b.dataset.rtgHalfLineup?"":b.dataset.rtgHalfLineup;render();
+        }));
+        app.querySelectorAll?.("[data-rtg-half-bench]")?.forEach(b=>b.addEventListener("click",()=>{
+          if(!halfSelected)return;
+          const li=halftimeDraft.lineup.findIndex(p=>asId(p.cardId||p.playerId)===halfSelected);
+          const bi=halftimeDraft.bench.findIndex(p=>asId(p.cardId||p.playerId)===b.dataset.rtgHalfBench);
+          if(li<0||bi<0)return;
+          const prior=halftimeDraft.lineup[li],next=halftimeDraft.bench[bi];
+          halftimeDraft.lineup[li]={...next,tacticalRole:prior.tacticalRole||prior.normalizedRole||prior.position};
+          halftimeDraft.bench[bi]={...prior};delete halftimeDraft.bench[bi].tacticalRole;
+          halfSelected="";render();
+        }));
+      }
+      if(!done && m.status==="active" && !m.pendingEncounter && m.presentation?.preMatchSeen===true && typeof global.setTimeout==="function"){
+        const activeId=m.matchId,epoch=session;
+        matchTimer=global.setTimeout(()=>{
+          matchTimer=null;
+          if(epoch===session&&view==="match"&&match?.matchId===activeId&&!busy)perform(()=>stepMatch(null));
+        },550);
+      }
+    }
+    function openNativePreMatchCoachPower(){
+      if(!match||match.presentation?.preMatchPowerStatus!=="pending")return;
+      const ui=global.RoadToGloryCoachPreMatchUi;
+      ui?.open?.({getMatch:()=>match,squadView:deps.squadView,openModal:deps.openModal,getModalRoot:deps.getModalRoot,
+        closeModal:deps.closeModal,toast:notify,openPlayerDetails:(key,side)=>openNativeDetail(key),
+        commit:async(id,selection,skip)=>{
+          const epoch=session;
+          const curr=match;
+          const chosen=skip?global.RoadToGloryCoachPreMatchRuntime.skip(curr):
+            global.RoadToGloryCoachPreMatchRuntime.apply(curr,selection);
+          await storage.updateMany([MATCH_KEY],records=>{
+            if(records[MATCH_KEY]?.matchId!==id)throw fail("halloween-stale-match");
+            return {writes:{[MATCH_KEY]:chosen},value:true};
+          });
+          assertCurrent(epoch);match=chosen;
+        },
+        render:()=>render()});
+    }
+
     function modalRoot(){return deps.getModalRoot?.() || app;}
     function openPicker(cardId) {
       if(match)return notify("Non puoi modificare la squadra durante la partita","error");
@@ -386,8 +498,10 @@
     }
     function render() {
       if(!app)return;
+      if(matchTimer!=null){global.clearTimeout?.(matchTimer);matchTimer=null;}
       if(view==="squad")app.innerHTML=squadSection();
       else if(view==="album")app.innerHTML=albumSection();
+      else if(match&&view==="match"&&deps.matchView)app.innerHTML=nativeMatchMarkup();
       else app.innerHTML=shell(view==="vending"?vendingSection():match?pendingSection():matchSection());
       app.querySelectorAll?.("[data-halloween-back],[data-rtg-home]")?.forEach(el=>el.addEventListener("click",()=>{if(view==="match"){dispose();deps.onReturn?.();}else {view="match";render();}}));
       app.querySelector?.("[data-rtg-album-back]")?.addEventListener("click",()=>{dispose();deps.onReturn?.();});
@@ -405,6 +519,7 @@
       app.querySelector?.("[data-halloween-abandon]")?.addEventListener("click",()=>perform(abandonMatch));
       app.querySelector?.("[data-halloween-close-result]")?.addEventListener("click",()=>perform(closeResult));
       app.querySelector?.("[data-halloween-pull]")?.addEventListener("click",()=>perform(pull));
+      if(match&&view==="match"&&deps.matchView)bindNativeMatch();
       if(view==="squad"&&deps.squadView?.bind) {
         deps.squadView.bind(app,{
           onOpenDetails:cardId=>openNativeDetail(cardId),
@@ -421,7 +536,7 @@
         entry.querySelector?.("[data-rtg-album-player-card]")?.addEventListener("click",()=>openNativeDetail(entry.dataset.rtgAlbumPlayerEntry,true));
       });
     }
-    async function perform(op) {if(busy)return;try{await op();render();}catch(error){global.console?.error?.("[RTG Halloween]",error);notify("Operazione Halloween non riuscita. Nessuna modifica confermata.","error");}}
+    async function perform(op) {if(busy)return;try{await op();render();}catch(error){global.console?.error?.("[RTG Halloween]",error);const reasons={"halloween-pull-unavailable":"Concludi la partita prima di usare il distributore","halloween-insufficient-pumpkins":"Zucca insufficienti per il distributore","halloween-squad-incomplete":"La squadra deve avere 11 titolari e 4 riserve","halloween-overall-cap":"La formazione supera l’OVR massimo dell’evento","halloween-active-match":"Non puoi modificare la squadra durante la partita","halloween-card-identity-invalid":"Errore identità carta evento"};notify(reasons[error?.code]||("Operazione Halloween fallita: "+(error?.code||error?.message||"errore sconosciuto")),"error");}}
     async function editSquad(kind,arg) {
       if(match)throw fail("halloween-active-match");
       lock();
@@ -487,7 +602,7 @@
       const epoch=session;
       const matchId="halloween-2026:"+String(global.crypto?.randomUUID?.()||Date.now()+"-"+Math.random());
       const created=global.RoadToGloryMatchEngine.createMatch({seasonId:EVENT_ID,matchId,seed:matchId,nodeId:"event:occult-halloween",matchType:"event",attemptNumber:1,userSquad:squad,opponentSquad:opponent()});
-      created.presentation={preMatchSeen:true};
+      created.presentation={...(created.presentation||{}),preMatchSeen:false};
       lock();
       await storage.updateMany([MATCH_KEY],records=>{if(records[MATCH_KEY]!=null)throw fail("halloween-active-match");return {writes:{[MATCH_KEY]:created},value:true};});
       assertCurrent(epoch);match=created;
@@ -513,8 +628,9 @@
       let latest;
       await storage.updateMany([MATCH_KEY],records=>{
         const m=records[MATCH_KEY];if(!m||m.matchId!==match.matchId)throw fail("halloween-stale-match");
-        if(choice==="halftime")latest=global.RoadToGloryMatchEngine.confirmHalftime(m,m.userSquad);
-        else if(choice?.startsWith("penalty:")) {
+        if(choice==="prematch"){latest={...m,presentation:{...(m.presentation||{}),preMatchSeen:true}};}
+        else if(choice==="halftime")latest=global.RoadToGloryMatchEngine.confirmHalftime(m,halftimeDraft||m.userSquad);
+        else if(choice?.startsWith("penalty:")||choice?.startsWith("penalty-move:")) {
           const n=m.shootout?.history?.length||0,side=n%2===0?"user":"opponent",direction=choice.slice(8);
           const ai=["left","center","right"][global.RoadToGloryRng.int(m.matchId,"halloween-penalty-ai",n,3)];
           latest=global.RoadToGloryMatchEngine.resolvePenaltyKick(m,{attackingSide:side,shooterChoice:side==="user"?direction:ai,goalkeeperChoice:side==="user"?ai:direction}).state;
@@ -524,6 +640,7 @@
         return {writes:{[MATCH_KEY]:latest},value:true};
       });
       assertCurrent(epoch);match=latest;
+      if(choice==="halftime"){halftimeDraft=null;halfSelected="";}
       await finalizeIfNeeded(latest);
     }
     async function abandonMatch() {
@@ -540,7 +657,7 @@
       assertCurrent(epoch);match=null;
     }
     async function pull() {
-      if(!isOpen()||match)throw fail("halloween-pull-unavailable");
+      if(!isOpen()||(match&&!["completed","completed-draw","abandoned"].includes(match.status)))throw fail("halloween-pull-unavailable");
       let selected="";
       await mutate("halloween-capsule",(account)=>{
         const ev=account.halloween;
