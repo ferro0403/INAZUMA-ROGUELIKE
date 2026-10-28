@@ -99,6 +99,7 @@
       gachaAcquiredCards: ownedCards(shared),
       developmentByCardId: winner,
       coachOwnedIds: owns(shared, "coachOwnedIds") ? shared.coachOwnedIds : [],
+      ...(owns(shared, "halloween") ? {halloween:shared.halloween} : {}),
     };
   }
 
