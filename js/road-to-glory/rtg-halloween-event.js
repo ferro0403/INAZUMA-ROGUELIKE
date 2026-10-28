@@ -534,24 +534,63 @@
       })));
     }
     function openCatalog() {
-      if(!deps.openModal||!deps.squadView?.catalogMarkup)return;
-      const entries=(shared.gachaAcquiredCards||[]).map(meta=>({
-        cardId:meta.cardId,playerId:meta.playerId,source:"RTG",player:resolveCard(meta.cardId)
-      })).filter(x=>x.player);
-      let query="",role="all";
-      function matchList(){return entries.filter(e=>(!query||String(e.player.name||"").toLowerCase().includes(query.toLowerCase()))
-        &&(role==="all"||String(e.player.normalizedRole||e.player.position||"").toUpperCase()===role));}
+      const view=deps.squadView;
+      if(!deps.openModal||!view?.catalogMarkup)return;
+      const seasonName={ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares",orion:"Orion",free_agents:"Svincolati",[EVENT_ID]:"Halloween"};
+      const catalog=(shared.gachaAcquiredCards||[]).map(meta=>{
+        const cardId=asId(meta.cardId),p=resolveCard(cardId),sid=cardId.split("::")[0];
+        if(!p)return null;
+        const db=global.SeasonRegistry?.database?.(sid);
+        const teamIds=[p.resolvedTeamId,p.teamId,...(p.teamIds||[])].map(asId).filter(Boolean);
+        const teamLabels=Array.from(new Set([p.teamName,...(p.teams||[]),...teamIds.flatMap(id=>{
+          const item=(db?.teams||[]).find(t=>asId(t.teamId||t.id)===id);
+          return item?[asId(item.teamName||item.name)]:[];
+        })].map(asId).filter(Boolean)));
+        return {cardId,playerId:cardId,source:"RTG",player:p,seasonId:sid,role:asId(p.normalizedRole||p.position).toUpperCase(),teamLabels};
+      }).filter(Boolean);
+      const seasonOptions=[{value:"all",label:"Tutte"},...Array.from(new Set(catalog.map(x=>x.seasonId))).map(value=>({value,label:seasonName[value]||value}))];
+      let query="",seasonFilter="all",teamFilter="all",roleFilter="all",visibleCount=16;
+      const teamOptions=()=>[{value:"all",label:"Tutte"},...Array.from(new Set(catalog.filter(e=>seasonFilter==="all"||e.seasonId===seasonFilter).flatMap(e=>e.teamLabels)))
+        .sort((a,b)=>a.localeCompare(b,"it")).map(value=>({value,label:value}))];
+      const filtered=()=>catalog.filter(e=>(seasonFilter==="all"||e.seasonId===seasonFilter)
+        &&(teamFilter==="all"||e.teamLabels.includes(teamFilter))
+        &&(roleFilter==="all"||e.role===roleFilter)
+        &&(!query||asId(e.player.name).toLocaleLowerCase("it").includes(query.toLocaleLowerCase("it"))))
+        .sort((a,b)=>a.role.localeCompare(b.role)||Number(b.player.overall??b.player.finalOverall??0)-Number(a.player.overall??a.player.finalOverall??0)||a.player.name.localeCompare(b.player.name,"it"));
       function bindCards(){
-        modalRoot()?.querySelectorAll?.("[data-rtg-catalog-player]")?.forEach(btn=>btn.addEventListener("click",()=>openNativeDetail(btn.dataset.rtgCatalogPlayer)));
+        modalRoot()?.querySelector?.("[data-rtg-catalog-results]")?.querySelectorAll?.("[data-rtg-catalog-player]")?.forEach(btn=>
+          btn.addEventListener("click",()=>openNativeDetail(btn.dataset.rtgCatalogPlayer)));
+        modalRoot()?.querySelector?.("[data-rtg-catalog-load-more]")?.addEventListener("click",()=>{
+          visibleCount+=24;updateResults();
+        });
       }
       function updateResults(){
-        const list=matchList(),target=modalRoot()?.querySelector?.("[data-rtg-catalog-results]");
-        if(target){target.innerHTML=deps.squadView.catalogResultsMarkup({entries:list.slice(0,80),total:list.length});bindCards();}
+        const list=filtered(),target=modalRoot()?.querySelector?.("[data-rtg-catalog-results]");
+        if(target){target.innerHTML=view.catalogResultsMarkup({entries:list.slice(0,visibleCount),total:list.length});bindCards();}
       }
-      deps.openModal(deps.squadView.catalogMarkup({entries,total:entries.length}),{className:"rtg-modal rtg-halloween-picker"});
+      const first=filtered();
+      deps.openModal(view.catalogMarkup({entries:first.slice(0,visibleCount),total:catalog.length,
+        seasonOptions,teamOptions:teamOptions()}),{className:"rtg-modal rtg-player-catalog-modal rtg-halloween-picker"});
       bindCards();
-      modalRoot()?.querySelector?.("[data-rtg-catalog-search]")?.addEventListener("input",e=>{query=e.target.value.trim();updateResults();});
-      modalRoot()?.querySelectorAll?.("[data-rtg-catalog-role]")?.forEach(b=>b.addEventListener("click",()=>{role=b.dataset.rtgCatalogRole;updateResults();}));
+      modalRoot()?.querySelector?.("[data-rtg-catalog-search]")?.addEventListener("input",e=>{
+        query=asId(e.target.value);visibleCount=16;updateResults();
+      });
+      modalRoot()?.querySelectorAll?.("[data-rtg-catalog-role]")?.forEach(button=>button.addEventListener("click",()=>{
+        roleFilter=button.dataset.rtgCatalogRole||"all";
+        modalRoot()?.querySelectorAll?.("[data-rtg-catalog-role]")?.forEach(item=>{
+          const active=item.dataset.rtgCatalogRole===roleFilter;
+          item.classList.toggle("active",active);item.setAttribute("aria-pressed",active?"true":"false");
+        });visibleCount=16;updateResults();
+      }));
+      modalRoot()?.querySelector?.("[data-rtg-catalog-season]")?.addEventListener("change",e=>{
+        seasonFilter=e.target.value||"all";teamFilter="all";visibleCount=16;
+        const select=modalRoot()?.querySelector?.("[data-rtg-catalog-team]");
+        if(select)select.innerHTML=view.filterOptionsMarkup(teamOptions(),"all");
+        updateResults();
+      });
+      modalRoot()?.querySelector?.("[data-rtg-catalog-team]")?.addEventListener("change",e=>{
+        teamFilter=e.target.value||"all";visibleCount=16;updateResults();
+      });
     }
     function openNativeCoachPower(){
       const ui=global.RoadToGloryCoachSquadPowerUi;
