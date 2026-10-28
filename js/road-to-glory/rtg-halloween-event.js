@@ -114,9 +114,11 @@
     let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false;
     let tick = null, matchTimer = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
     let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="";
+    let vendingMotion=null;
     const assertCurrent = epoch => { if (epoch !== session) throw fail("halloween-stale-controller"); global.RoadToGloryPersistence?.assertWritable?.(); };
     function dispose() { session++; if (tick != null) global.clearInterval?.(tick); tick = null;
       if(matchTimer!=null)global.clearTimeout?.(matchTimer);matchTimer=null;
+      vendingMotion?.stop?.();vendingMotion=null;
       deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
     }
     function listen() { if(tick!=null)global.clearInterval?.(tick);tick=global.setInterval?.(()=>{const el=app?.querySelector?.("[data-halloween-countdown]"); if(el)el.textContent=isOpen()?countdown():"EVENTO TERMINATO";if(!isOpen())app?.querySelectorAll?.("[data-halloween-start],[data-halloween-pull]")?.forEach(b=>b.disabled=true);},1000); }
@@ -512,6 +514,7 @@
     function render() {
       if(!app)return;
       if(matchTimer!=null){global.clearTimeout?.(matchTimer);matchTimer=null;}
+      if(view!=="vending"){vendingMotion?.stop?.();vendingMotion=null;}
       if(view==="squad")app.innerHTML=squadSection();
       else if(view==="album")app.innerHTML=albumSection();
       else if(match&&view==="match"&&deps.matchView)app.innerHTML=nativeMatchMarkup();
@@ -531,7 +534,18 @@
       app.querySelectorAll?.("[data-halloween-penalty]")?.forEach(el=>el.addEventListener("click",()=>perform(()=>stepMatch("penalty:"+el.dataset.halloweenPenalty))));
       app.querySelector?.("[data-halloween-abandon]")?.addEventListener("click",()=>perform(abandonMatch));
       app.querySelector?.("[data-halloween-close-result]")?.addEventListener("click",()=>perform(closeResult));
-      app.querySelector?.("[data-halloween-pull]")?.addEventListener("click",()=>perform(pull));
+      if(view==="vending")vendingMotion=global.RoadToGloryVendingMotion?.mount?.(app.querySelector?.("[data-rtg-vending-machine]"))||null;
+      app.querySelector?.("[data-halloween-pull]")?.addEventListener("click",event=>{
+        const button=event.currentTarget;
+        if(button.disabled)return;
+        button.disabled=true;
+        perform(async()=>{
+          await pull();
+          if(vendingMotion){
+            try{await vendingMotion.play("orange");}catch(error){global.console?.warn?.("[Halloween] Animazione distributore",error);}
+          }
+        }).finally?.(()=>{if(button.isConnected)button.disabled=false;});
+      });
       if(match&&view==="match"&&deps.matchView)bindNativeMatch();
       if(view==="squad"&&deps.squadView?.bind) {
         deps.squadView.bind(app,{
