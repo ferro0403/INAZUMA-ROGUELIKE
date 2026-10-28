@@ -348,7 +348,7 @@
     }
     function nativeMatchMarkup(){
       const v=deps.matchView;if(!v||!match)return pendingSection();
-      if(["completed","completed-draw","abandoned"].includes(match.status)){
+      if(["completed","completed-draw","abandoned"].includes(match.status)&&!lastResolution){
         const award=Number.isInteger(match.halloweenAward)?match.halloweenAward:0;
         const rewardHtml='<div class="halloween-final-award" role="status"><span>'+
           (match.status==="abandoned"?"PARTITA ABBANDONATA · NESSUN PREMIO":"PREMIO HALLOWEEN ACCREDITATO")+
@@ -357,13 +357,14 @@
         return '<main class="screen rtg-match-shell halloween-native-match"><div class="content narrow">'+result+'</div></main>';
       }
       if(match.presentation?.preMatchSeen===false)return v.preMatchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
-      return v.matchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
+      const presented=lastResolution&&["completed","completed-draw"].includes(match.status)?{...match,status:"active"}:match;
+      return v.matchMarkup(presented).replace('<main class="screen','<main class="screen halloween-native-match');
     }
     function bindNativeMatch(){
       const v=deps.matchView,m=match;
       if(!v||!m)return;
       const done=["completed","completed-draw","abandoned"].includes(m.status);
-      if(!done&&m.presentation?.preMatchSeen!==false){
+      if((!done||lastResolution)&&m.presentation?.preMatchSeen!==false){
         const overlay=app.querySelector?.("[data-rtg-match-overlay]");
         if(overlay){
           if(m.status==="halftime"){
@@ -420,12 +421,19 @@
           halfSelected="";render();
         }));
       }
-      app.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>{if(lastResolutionStage!=="resolved")return;lastResolution=null;perform(()=>stepMatch(null));});
-      if(!done&&lastResolution&&lastResolutionStage!=="resolved"&&typeof global.setTimeout==="function"){
+      app.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>{
+        if(lastResolutionStage!=="resolved")return;
+        lastResolution=null;
+        // The terminal encounter has already been committed and awarded.
+        // Keep its native duel result visible until the player continues.
+        if(["completed","completed-draw","abandoned"].includes(match?.status))return render();
+        return perform(()=>stepMatch(null));
+      });
+      if(lastResolution&&lastResolutionStage!=="resolved"&&typeof global.setTimeout==="function"){
         const epoch=session,stage=lastResolutionStage;
         matchTimer=global.setTimeout(()=>{matchTimer=null;if(epoch!==session||!lastResolution||lastResolutionStage!==stage)return;
-          lastResolutionStage=stage==="comparison"?"resolving":"resolved";render();
-        },stage==="comparison"?1700:1150);
+          lastResolutionStage="resolved";render();
+        },1700);
       }
       if(!done&&pendingRevealHidden&&m.pendingEncounter&&m.presentation?.preMatchSeen===true&&typeof global.setTimeout==="function"){
         const epoch=session,encounter=asId(m.pendingEncounter.encounterId);
@@ -869,7 +877,7 @@
       pendingRevealHidden=!!latest?.pendingEncounter&&(choice==="prematch"||choice==null);
       lastResolution=null;lastResolutionStage="resolved";
       const log=before?.encounterId&&latest?.log?.find?.(entry=>asId(entry.encounterId)===asId(before.encounterId));
-      if(before&&log&&latest.status==="active"){
+      if(before&&log){
         const userPlayer=findNativeMatchPlayer("user",before.userPlayerId);
         const opponentPlayer=findNativeMatchPlayer("opponent",before.aiPlayerId||before.opponentPlayerId);
         const userWon=before.userSide===before.actorSide?!!log.actorWon:!log.actorWon;
