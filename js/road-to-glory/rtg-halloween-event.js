@@ -133,9 +133,9 @@
       activeSquadSlot = Number(stored?.activeSquadSlot)||1;
       squadSlots = stored?.slots || null;
       localSquad = stored?.slots?.[activeSquadSlot] || stored || initialEventSquad();
-      if (!match && (localSquad.lineup?.length<11||localSquad.bench?.length<4)) localSquad=initialEventSquad(localSquad);
+      if (localSquad.lineup?.length!==11||localSquad.bench?.length!==4) localSquad=initialEventSquad(localSquad);
       if (!localSquad?.formationId) localSquad = {...localSquad,formationId:"4-3-3",activeRoleVariantByCardId:{}};
-      if(!match && localSquad.lineup?.length===11) localSquad.lineupOrderedBySlot=true;
+      if(localSquad.lineup?.length===11 && localSquad.lineupOrderedBySlot!==true) localSquad.lineupOrderedBySlot=false;
       match = records[MATCH_KEY] || null;
     }
     function recordCard(pid) {
@@ -209,7 +209,7 @@
       }
       while(lineup.length<11&&available.length)lineup.push(available.shift().cardId);
       while(bench.length<4&&available.length)bench.push(available.shift().cardId);
-      return {formationId:previous.formationId||"4-3-3",lineup,bench,lineupOrderedBySlot:true,coachId:previous.coachId||"",activeRoleVariantByCardId:previous.activeRoleVariantByCardId||{}};
+      return {formationId:previous.formationId||"4-3-3",lineup,bench,lineupOrderedBySlot:false,coachId:previous.coachId||"",activeRoleVariantByCardId:previous.activeRoleVariantByCardId||{}};
     }
     function activeEventSquad() {return {...shared,activeSeasonId:"ie1",gachaAcquiredCards:shared.gachaAcquiredCards,coachOwnedIds:shared.coachOwnedIds,squads:{ie1:localSquad}};}
     function nativeCard(p,opts={}) {
@@ -653,7 +653,7 @@
         const savedSlots=clone(squadSlots||{"1":curr,"2":curr,"3":curr});
         savedSlots[activeSquadSlot]=curr;
         activeSquadSlot=slot;
-        localSquad=clone(savedSlots[slot]||curr);squadSlots=savedSlots;
+        localSquad=initialEventSquad(clone(savedSlots[slot]||curr));squadSlots=savedSlots;
       } else if(kind==="coach"){
         if(arg&&!shared.coachOwnedIds.includes(arg))throw fail("halloween-coach-unowned");
         curr.coachId=arg;curr.coachPowerSelection=null;
