@@ -135,7 +135,7 @@ async function main() {
     showPlayerDetailsFor:()=>{nativeDetailOpened=true;}});
   await controller.open();
   assert.match(app.innerHTML,/rtg-journey-summary/,"Homepage must reuse RTG run summary");
-  assert.match(app.innerHTML,/rtg-map rtg-halloween-map/,"Cemetery is on RTG route map");
+  assert.doesNotMatch(app.innerHTML,/rtg-map rtg-halloween-map/,"Cemetery is the whole RTG homepage background, not an extra content box");
   assert.match(app.innerHTML,/data-halloween-countdown/);
   assert.match(app.innerHTML,/data-halloween-open-vending/,"Gacha is opened from Run home");
   assert.doesNotMatch(app.innerHTML,/data-halloween-tab="album"/);
