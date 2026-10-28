@@ -209,7 +209,7 @@
       while(bench.length<4&&available.length)bench.push(available.shift().cardId);
       return {formationId:previous.formationId||"4-3-3",lineup,bench,lineupOrderedBySlot:true,coachId:previous.coachId||"",activeRoleVariantByCardId:previous.activeRoleVariantByCardId||{}};
     }
-    function activeEventSquad() {return {activeSeasonId:"ie1",gachaAcquiredCards:shared.gachaAcquiredCards,coachOwnedIds:shared.coachOwnedIds,squads:{ie1:localSquad}};}
+    function activeEventSquad() {return {...shared,activeSeasonId:"ie1",gachaAcquiredCards:shared.gachaAcquiredCards,coachOwnedIds:shared.coachOwnedIds,squads:{ie1:localSquad}};}
     function nativeCard(p,opts={}) {
       const cls=opts.event&&p?.halloweenVampire?" halloween-vampire-card":"";
       const attr=opts.attr||"";
