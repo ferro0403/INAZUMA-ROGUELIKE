@@ -176,7 +176,7 @@
       deps.app?.querySelector?.("[data-rtg-album-coaches-open]")?.addEventListener("click",renderAlbumCoaches);
       deps.app?.querySelector?.("[data-rtg-album-halloween]")?.addEventListener("click",()=>{
         ++albumNavigationEpoch;
-        global.RoadToGloryHalloween?.create?.({app:deps.app,toast:deps.toast,onReturn:()=>renderAlbum({preserveOrigin:true})}).open("album").catch(error=>{global.console?.error?.("[Halloween Album]",error);renderAlbum({preserveOrigin:true});});
+        global.RoadToGloryHalloween?.create?.({app:deps.app,toast:deps.toast,runView:deps.runView,openPlayerDetails:deps.openPlayerDetails,onReturn:()=>renderAlbum({preserveOrigin:true})}).open("album").catch(error=>{global.console?.error?.("[Halloween Album]",error);renderAlbum({preserveOrigin:true});});
       });
       deps.mountDevQuickTools();
     }
