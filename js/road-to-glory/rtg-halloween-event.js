@@ -444,12 +444,12 @@
           teams:Array.from(new Set([p.teamName,...(p.teams||[]),...(p.teamIds||[])].map(asId).filter(Boolean)))
         }:null;
       }).filter(Boolean);
-      const seasons=[{id:"all",name:"Tutte"},...Array.from(new Set(all.map(e=>e.seasonId))).map(id=>({
-        id,name:({ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares",orion:"Orion",free_agents:"Svincolati",[EVENT_ID]:"Evento Halloween"})[id]||id
+      const seasons=[{value:"all",label:"Tutte"},...Array.from(new Set(all.map(e=>e.seasonId))).map(id=>({
+        value:id,label:({ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares",orion:"Orion",free_agents:"Svincolati",[EVENT_ID]:"Evento Halloween"})[id]||id
       }))];
       const rarities=Array.from(new Set(all.map(e=>e.rarity))).sort((a,b)=>a.localeCompare(b,"it"));
       let query="",sourceFilter="all",roleFilter="all",rarityFilter="all",seasonFilter="all",teamFilter="all",descending=true,visibleCount=12;
-      const teams=()=>Array.from(new Set(all.filter(e=>seasonFilter==="all"||e.seasonId===seasonFilter).flatMap(e=>e.teams))).sort((a,b)=>a.localeCompare(b,"it")).map(t=>({id:t,name:t}));
+      const teams=()=>Array.from(new Set(all.filter(e=>seasonFilter==="all"||e.seasonId===seasonFilter).flatMap(e=>e.teams))).sort((a,b)=>a.localeCompare(b,"it")).map(t=>({value:t,label:t}));
       const filtered=()=>all.filter(e=>(!query||e.player.name?.toLocaleLowerCase("it").includes(query.toLocaleLowerCase("it")))
         &&(sourceFilter==="all"||(sourceFilter==="free"?e.source==="Svincolato":e.source==="RTG"))
         &&(roleFilter==="all"||e.role===roleFilter)
@@ -480,7 +480,6 @@
         seasonOptions:seasons,teamOptions:teams()
       }),{className:"rtg-modal rtg-squad-picker-modal rtg-halloween-picker"});
       wireResults();
-      modalRoot()?.querySelectorAll?.(".rtg-picker-quick-bench [data-rtg-picker-player]")?.forEach(b=>b.addEventListener("click",()=>select(b.dataset.rtgPickerPlayer)));
       modalRoot()?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",e=>{query=e.target.value.trim();visibleCount=12;paint();});
       modalRoot()?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(b=>b.addEventListener("click",()=>{sourceFilter=b.dataset.rtgPickerSource;visibleCount=12;paint();}));
       modalRoot()?.querySelectorAll?.("[data-rtg-picker-role]")?.forEach(b=>b.addEventListener("click",()=>{
@@ -490,7 +489,7 @@
       modalRoot()?.querySelector?.("[data-rtg-picker-season]")?.addEventListener("change",e=>{
         seasonFilter=e.target.value;teamFilter="all";visibleCount=12;
         const select=modalRoot()?.querySelector?.("[data-rtg-picker-team]");
-        if(select)select.innerHTML=v.filterOptionsMarkup([{id:"all",name:"Tutte"},...teams()],"all");paint();
+        if(select)select.innerHTML=v.filterOptionsMarkup([{value:"all",label:"Tutte"},...teams()],"all");paint();
       });
       modalRoot()?.querySelector?.("[data-rtg-picker-team]")?.addEventListener("change",e=>{teamFilter=e.target.value;visibleCount=12;paint();});
       modalRoot()?.querySelector?.("[data-rtg-picker-rarity]")?.addEventListener("change",e=>{rarityFilter=e.target.value;visibleCount=12;paint();});
