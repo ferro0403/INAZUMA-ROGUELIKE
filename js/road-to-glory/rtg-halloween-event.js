@@ -330,9 +330,14 @@
     }
     function nativeMatchMarkup(){
       const v=deps.matchView;if(!v||!match)return pendingSection();
-      if(["completed","completed-draw","abandoned"].includes(match.status))
-        return '<main class="screen rtg-match-shell halloween-native-match"><div class="content narrow">'+v.resultMarkup(match,null)+
-          '<p class="halloween-event-reward">'+(match.status==="abandoned"?"Partita abbandonata · nessuna ricompensa":"🎃 "+(Number.isInteger(match.halloweenAward)?match.halloweenAward:0)+" ZUCCHE HALLOWEEN")+'</p></div></main>';
+      if(["completed","completed-draw","abandoned"].includes(match.status)){
+        const award=Number.isInteger(match.halloweenAward)?match.halloweenAward:0;
+        const rewardHtml='<div class="halloween-final-award" role="status"><span>'+
+          (match.status==="abandoned"?"PARTITA ABBANDONATA · NESSUN PREMIO":"PREMIO HALLOWEEN ACCREDITATO")+
+          '</span><strong>'+(match.status==="abandoned"?"0":"+"+escape(award))+' ZUCCHE</strong></div>';
+        const result=v.resultMarkup(match,null).replace(/(<button[^>]*data-rtg-result-continue)/,rewardHtml+'$1');
+        return '<main class="screen rtg-match-shell halloween-native-match"><div class="content narrow">'+result+'</div></main>';
+      }
       if(match.presentation?.preMatchSeen===false)return v.preMatchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
       return v.matchMarkup(match).replace('<main class="screen','<main class="screen halloween-native-match');
     }
