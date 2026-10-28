@@ -1,0 +1,34 @@
+{
+  "exportType": "inazuma_roguelike_lineup_config",
+  "version": 2,
+  "selectionMode": {
+    "bossFormation": "manual",
+    "startingXI": "manual",
+    "bossLevel": "manual",
+    "rewardPool": "all_team_players"
+  },
+  "teams": [
+    {
+      "teamId": "occult_2",
+      "teamName": "Occult Halloween",
+      "sourceFile": "selected-teams-ratings.json",
+      "bossFormation": "4-4-2",
+      "bossLevel": 0,
+      "startingXI": [
+        "custom_0002",
+        "46",
+        "47",
+        "45",
+        "44",
+        "48",
+        "custom_0001",
+        "41",
+        "39",
+        "42",
+        "38"
+      ],
+      "rewardPool": "all_team_players"
+    }
+  ],
+  "warnings": []
+}
