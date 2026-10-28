@@ -173,8 +173,7 @@
     function rawRole(cardRef){const player=resolved(cardRef)||rawPlayer(cardRef);return String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();}
     function rawOverall(cardRef){const player=resolved(cardRef)||rawPlayer(cardRef);const value=Number(player?.overall??player?.finalOverall??player?.baseOverall);return Number.isFinite(value)?value:0;}
     function rawName(cardRef){const meta=cardMeta(cardRef);return String((resolved(cardRef)||rawPlayer(cardRef))?.name||meta.playerId||cardRef);}
-    // Group the three native raw accessors into one resolution for large
-    // picker lists. The values exactly mirror rawRole/rawOverall/rawName.
+    // One resolution for large picker lists, matching rawRole/rawOverall/rawName.
     function rawSummary(cardRef){
       const player=resolved(cardRef)||rawPlayer(cardRef),meta=cardMeta(cardRef);
       const value=Number(player?.overall??player?.finalOverall??player?.baseOverall);
@@ -684,9 +683,7 @@
       const pending=campaign?.activeMatch?.pendingEncounter;
       if(!pending||!(/^(base|move|list|move:\d+)$/.test(normalized)))return;
       const encounterId=id(pending.encounterId);if(selectedEncounterId===`submitting:${encounterId}`)return;
-      // Confirmation is accepted only from a button that was rendered in the
-      // selected state. A stale JS selection can therefore never resolve on
-      // the first visible tap of a new/updated duel.
+      // Only confirm a rendered selected button; stale selections never resolve a new duel.
       if(normalized!=="list"&&isConfirm===true&&selectedEncounterId===encounterId&&selectedEncounterChoice===normalized){
         selectedEncounterChoice=null;
         selectedEncounterId=`submitting:${encounterId}`;
