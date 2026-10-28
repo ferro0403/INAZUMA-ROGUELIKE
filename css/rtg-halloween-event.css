@@ -549,3 +549,7 @@
 .rtg-halloween-pull-modal .rtg-pull-continue{
   font-weight:1000!important;letter-spacing:.055em!important
 }
+
+/* Halloween vending exit: keep it visible and tappable on mobile. */
+.halloween-vending .halloween-vending-close{position:relative;z-index:5;display:flex;align-items:center;justify-content:center;margin:0 0 2px auto;min-width:44px;min-height:44px;border:3px solid #161016;border-radius:4px;background:#ffd21f;color:#171016;font-size:1.65rem;font-weight:900;box-shadow:4px 5px 0 #090709;cursor:pointer;touch-action:manipulation}
+.halloween-vending .halloween-vending-close:focus-visible{outline:3px solid #fff;outline-offset:3px}
