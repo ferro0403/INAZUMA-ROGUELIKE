@@ -337,7 +337,8 @@
       // collection without replacing the native RTG teams/roster screens.
       const teamRecords=[assets.team];
       return teamRecords.filter(Boolean).map(team=>{
-        const roster=(team.players||[]).map(raw=>player(raw.playerId)).filter(Boolean);
+        const roster=(team.players||[]).map(raw=>isOwned(asId(raw.playerId))
+          ?resolveCard(EVENT_ID+"::"+asId(raw.playerId)):player(raw.playerId)).filter(Boolean);
         return {teamId:asId(team.teamId),teamName:asId(team.teamName||team.name)||"Occult Halloween",
           logoUrl:team.logoUrl||LOGO_URL,roster,
           total:roster.length,unlocked:roster.filter(p=>isOwned(asId(p.playerId))).length};
