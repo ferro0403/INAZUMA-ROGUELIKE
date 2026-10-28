@@ -367,15 +367,18 @@
       if((!done||lastResolution)&&m.presentation?.preMatchSeen!==false){
         const overlay=app.querySelector?.("[data-rtg-match-overlay]");
         if(overlay){
-          if(m.status==="halftime"){
-            if(!halftimeDraft)halftimeDraft=clone(m.userSquad);
-            overlay.innerHTML=v.halftimeMarkup(halftimeDraft,{match:m,selectedPlayerId:halfSelected});
-          }else if(m.status==="penalties")overlay.innerHTML=v.penaltyMarkup(m,nativePenaltyContext(m));
-          else if(lastResolution){
+          // The native RTG controller always reveals the committed encounter
+          // before showing halftime/penalties/final. The Halloween controller
+          // must not let a terminal status cover that last duel result.
+          if(lastResolution){
             overlay.innerHTML=lastResolutionStage==="comparison"&&v.finalComparisonMarkup?v.finalComparisonMarkup(lastResolution)
               :lastResolutionStage==="resolving"&&v.resolvingEncounterMarkup?v.resolvingEncounterMarkup(lastResolution)
               :v.resolvedEncounterMarkup(lastResolution);
-          }else if(m.pendingEncounter){
+          }else if(m.status==="halftime"){
+            if(!halftimeDraft)halftimeDraft=clone(m.userSquad);
+            overlay.innerHTML=v.halftimeMarkup(halftimeDraft,{match:m,selectedPlayerId:halfSelected});
+          }else if(m.status==="penalties")overlay.innerHTML=v.penaltyMarkup(m,nativePenaltyContext(m));
+          else if(m.pendingEncounter){
             if(pendingRevealHidden){overlay.innerHTML="";}else{
             const pending=m.pendingEncounter;
             if(encounterKey!==asId(pending.encounterId)){encounterKey=asId(pending.encounterId);encounterSelection="";}
@@ -406,7 +409,7 @@
         onContinue:()=>perform(closeResult),
       });
       if(!done&&m.presentation?.preMatchPowerStatus==="pending"&&m.presentation?.preMatchSeen===false)openNativePreMatchCoachPower();
-      if(!done&&m.status==="halftime"){
+      if(!done&&m.status==="halftime"&&!lastResolution){
         app.querySelectorAll?.("[data-rtg-half-lineup]")?.forEach(b=>b.addEventListener("click",()=>{
           halfSelected=halfSelected===b.dataset.rtgHalfLineup?"":b.dataset.rtgHalfLineup;render();
         }));
@@ -426,7 +429,9 @@
         lastResolution=null;
         // The terminal encounter has already been committed and awarded.
         // Keep its native duel result visible until the player continues.
-        if(["completed","completed-draw","abandoned"].includes(match?.status))return render();
+        // Non-active statuses are already committed by the match engine:
+        // acknowledge the duel, then reveal the native interval/final UI.
+        if(match?.status!=="active")return render();
         return perform(()=>stepMatch(null));
       });
       if(lastResolution&&lastResolutionStage!=="resolved"&&typeof global.setTimeout==="function"){
