@@ -190,6 +190,16 @@ async function main() {
   assert.equal(new Set([...repaired.lineup,...repaired.bench]).size,15,"No duplicated cards after adapt");
   const average=repaired.lineup.reduce((sum,id)=>sum+freeAgents.players.find(p=>id==="free_agents::"+p.playerId).overall,0)/11;
   assert.ok(Math.round(average*10)/10<=87,"Adapt must respect Halloween OVR cap of 87");
+  // If currently far below 87 OVR, the same Adapt button must actively
+  // strengthen the eleven until as close to 87 as the card pool permits.
+  const previouslySelected=new Set(repaired.lineup);
+  freeAgents.players.forEach(p=>{p.overall=previouslySelected.has("free_agents::"+p.playerId)?75:97;});
+  await control("data-rtg-adapt").fire();
+  const boosted=records["local:halloween2026:squad"];
+  const boostedOverall=boosted.lineup.reduce((sum,id)=>sum+freeAgents.players.find(p=>id==="free_agents::"+p.playerId).overall,0)/11;
+  assert.ok(boostedOverall>75&&boostedOverall<=87,
+    "Adapt must upgrade a weak 75-OVR team toward 87, not return without changes");
+  assert.equal(new Set([...boosted.lineup,...boosted.bench]).size,15);
   await control("data-rtg-player-detail").fire();
   assert.equal(nativeDetailOpened,true,"Player details must open original fullbody sheet");
   await control("data-rtg-tab",d=>d.rtgTab==="run").fire();
