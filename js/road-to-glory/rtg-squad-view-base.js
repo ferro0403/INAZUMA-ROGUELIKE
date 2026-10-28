@@ -297,7 +297,7 @@
             <span>Rarità</span>
             <select data-rtg-${escape(area)}-rarity aria-label="Filtra per rarità">${rarityOptionMarkup}</select>
           </label>
-          <button type="button" class="rtg-picker-ovr-sort ${descending?"active":""}" data-rtg-${escape(area)}-sort aria-label="Ordina per overall decrescente" aria-pressed="${descending?"true":"false"}"><span>OVR</span><strong data-rtg-${escape(area)}-sort-arrow aria-hidden="true">${descending?"↓":"↑"}</strong></button>
+          <button type="button" class="rtg-picker-ovr-sort ${descending?"active":""}" data-rtg-${escape(area)}-sort aria-label="Ordina per overall decrescente" aria-pressed="${descending?"true":"false"}"><span>OVR</span><strong data-rtg-picker-sort-arrow aria-hidden="true">${descending?"↓":"↑"}</strong></button>
         </div>`;
     }
 
