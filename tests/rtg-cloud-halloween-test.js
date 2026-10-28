@@ -85,6 +85,7 @@ const context={
   },
   RoadToGloryRng:{int:()=>0}
 };
+vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-encounter-runtime.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8"),context);
@@ -117,6 +118,12 @@ async function main() {
   const assets=await E.prepare();
   assert.equal(E.eventPlayer("45").attack,80,"Combat uses 0-100 RTG stats, not raw 1-10 values");
   assert.equal(E.eventPlayer("45").stats.attack,80);
+  const example=context.RoadToGloryEncounterRuntime.probability({
+    actor:{overall:85,attack:85,control:85,grit:85,element:"Mountain"},
+    opponent:E.eventPlayer("38"),actorKind:"shot",opponentKind:"save"
+  });
+  assert.ok(example.probability>5&&example.probability<95,
+    "Comparable OVR 85 vs GK OVR 83 must not be stuck at 95% due to 1-10 opponent stats");
   assert.equal(E.eventPlayer("45").frontFullbodyUrl?.includes("_fullbody.webp"),true,
     "Existing canonical players must open their true fullbody art");
   assert.equal(assets.players.size,18);
