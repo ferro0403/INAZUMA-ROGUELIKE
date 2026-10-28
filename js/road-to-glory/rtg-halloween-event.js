@@ -727,8 +727,14 @@
         })));
         root?.querySelectorAll?.("[data-rtg-coach-detail]")?.forEach(btn=>btn.addEventListener("click",()=>{
           const id=btn.dataset.rtgCoachDetail;
+          // Standard coaches must get the IDENTICAL detail modal frame used
+          // by the canonical RTG coaches controller (player-detail-modal).
+          // Hekyll alone retains the custom Halloween modal appearance.
+          const coachDetailClassName=id===HALLOWEEN_COACH_ID
+            ?"rtg-modal rtg-coach-detail-modal rtg-halloween-picker"
+            :"rtg-modal player-detail-modal rtg-coaches-modal";
           deps.openModal(view.detail(activeEventSquad(),id,{equippedId:localSquad.coachId||""}),
-            {className:"rtg-modal rtg-coach-detail-modal rtg-halloween-picker"});
+            {className:coachDetailClassName});
           modalRoot()?.querySelectorAll?.("[data-rtg-coaches-equip]")?.forEach(b=>b.addEventListener("click",()=>perform(async()=>{
             await editSquad("coach",b.dataset.rtgCoachesEquip);deps.closeModal?.();
           })));
