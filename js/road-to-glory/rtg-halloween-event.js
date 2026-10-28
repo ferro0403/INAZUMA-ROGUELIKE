@@ -115,12 +115,12 @@
     const notify = deps.toast || (()=>{});
     let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false;
     let tick = null, matchTimer = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
-    let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null,lastResolutionStage="resolved";
+    let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null,lastResolutionStage="resolved",pendingRevealHidden=false;
     let vendingMotion=null;
     const assertCurrent = epoch => { if (epoch !== session) throw fail("halloween-stale-controller"); global.RoadToGloryPersistence?.assertWritable?.(); };
     function dispose() { session++; if (tick != null) global.clearInterval?.(tick); tick = null;
       if(matchTimer!=null)global.clearTimeout?.(matchTimer);matchTimer=null;
-      vendingMotion?.stop?.();vendingMotion=null;lastResolution=null;lastResolutionStage="resolved";
+      vendingMotion?.stop?.();vendingMotion=null;lastResolution=null;lastResolutionStage="resolved";pendingRevealHidden=false;
       deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
     }
     function listen() { if(tick!=null)global.clearInterval?.(tick);tick=global.setInterval?.(()=>{const el=app?.querySelector?.("[data-halloween-countdown]"); if(el)el.textContent=isOpen()?countdown():"EVENTO TERMINATO";if(!isOpen())app?.querySelectorAll?.("[data-halloween-start],[data-halloween-pull]")?.forEach(b=>b.disabled=true);},1000); }
@@ -352,10 +352,12 @@
               :lastResolutionStage==="resolving"&&v.resolvingEncounterMarkup?v.resolvingEncounterMarkup(lastResolution)
               :v.resolvedEncounterMarkup(lastResolution);
           }else if(m.pendingEncounter){
+            if(pendingRevealHidden){overlay.innerHTML="";}else{
             const pending=m.pendingEncounter;
             if(encounterKey!==asId(pending.encounterId)){encounterKey=asId(pending.encounterId);encounterSelection="";}
             const user=findNativeMatchPlayer("user",pending.userPlayerId),opp=findNativeMatchPlayer("opponent",pending.aiPlayerId||pending.opponentPlayerId);
             overlay.innerHTML=v.encounterMarkup(m,{userPlayer:user,opponentPlayer:opp,selectedChoice:encounterSelection});
+            }
           }
         }
       }
@@ -402,12 +404,19 @@
           lastResolutionStage=stage==="comparison"?"resolving":"resolved";render();
         },stage==="comparison"?1700:1150);
       }
+      if(!done&&pendingRevealHidden&&m.pendingEncounter&&m.presentation?.preMatchSeen===true&&typeof global.setTimeout==="function"){
+        const epoch=session,encounter=asId(m.pendingEncounter.encounterId);
+        matchTimer=global.setTimeout(()=>{matchTimer=null;
+          if(epoch!==session||asId(match?.pendingEncounter?.encounterId)!==encounter)return;
+          pendingRevealHidden=false;render();
+        },2200);
+      }
       if(!done && m.status==="active" && !m.pendingEncounter && !lastResolution && m.presentation?.preMatchSeen===true && typeof global.setTimeout==="function"){
         const activeId=m.matchId,epoch=session;
         matchTimer=global.setTimeout(()=>{
           matchTimer=null;
           if(epoch===session&&view==="match"&&match?.matchId===activeId&&!busy)perform(()=>stepMatch(null));
-        },2200);
+        },50);
       }
     }
     function openNativePreMatchCoachPower(){
@@ -739,6 +748,7 @@
       });
       assertCurrent(epoch);match=latest;
       if(choice==="halftime"){halftimeDraft=null;halfSelected="";}
+      pendingRevealHidden=!!latest?.pendingEncounter&&(choice==="prematch"||choice==null);
       lastResolution=null;lastResolutionStage="resolved";
       const log=before?.encounterId&&latest?.log?.find?.(entry=>asId(entry.encounterId)===asId(before.encounterId));
       if(before&&log&&latest.status==="active"){
