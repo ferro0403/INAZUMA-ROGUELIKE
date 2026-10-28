@@ -58,4 +58,17 @@ assert.doesNotMatch(eventSource,/stage==="comparison"\?1700:1150/,
   "Do not add 1.15 seconds of delay not used by the native RTG match controller");
 assert.match(eventSource,/const target=Math\.max\(\.\.\.combined\.keys\(\)\)/,
   "The adapt button must maximize OVR from below as well as lower an overpowered team");
+const halloweenAssets=JSON.parse(fs.readFileSync("data/rtg-halloween-occult-players.json","utf8"))[0].players;
+for (const [playerId, expectedPath] of [
+  ["custom_0002","assets/rtg/halloween-samford-fullbody.png"],
+  ["custom_0001","assets/rtg/halloween-nathan-fullbody.png"]
+]) {
+  const player=halloweenAssets.find(p=>p.playerId===playerId);
+  assert.equal(player?.frontFullbodyUrl,expectedPath,"Custom Halloween fullbody must use uploaded PNG");
+  const image=fs.readFileSync(expectedPath);
+  assert.equal(image.subarray(0,8).toString("hex"),"89504e470d0a1a0a","Fullbody must be a real PNG");
+  assert.ok(image.length>100000,"Fullbody must not be a tiny placeholder");
+}
+assert.match(eventSource,/frontFullbodyUrl:raw\.frontFullbodyUrl \|\| EVENT_FULLBODY_URLS/,
+  "Halloween player resolver must prefer the player-specific fullbody URL");
 console.log("RTG Halloween parity: 11 starters + 4 bench, original squad markup, tagged vampire duel render PASS");
