@@ -690,6 +690,8 @@
       });
     }
     function openNativeCoachPower(){
+      // Clear the player-only modal skin before opening native coach UI.
+      deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
       const ui=global.RoadToGloryCoachSquadPowerUi;
       if(match||!ui?.open)return;
       const currentState=()=>activeEventSquad(),resolver={resolveAtLevel20:id=>resolveCard(id)};
@@ -711,6 +713,9 @@
       });
     }
     function openCoaches() {
+      // The player detail modal root is reused. Its Halloween-only class
+      // must never leak to coaches from normal Seasons.
+      deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
       const view=global.RoadToGloryCoachesView;
       if(!deps.openModal||!view?.markup)return notify("Catalogo allenatori RTG non disponibile","error");
       function openCollection(){
