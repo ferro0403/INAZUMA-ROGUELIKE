@@ -1167,7 +1167,7 @@
       root?.querySelector?.("[data-rtg-result-continue]")?.addEventListener("click", () => actions.onContinue?.());
     }
 
-    return Object.freeze({ preMatchMarkup, matchMarkup, encounterMarkup, finalComparisonMarkup, resolvingEncounterMarkup, resolvedEncounterMarkup, halftimeMarkup, penaltyMarkup, resultMarkup, currentMinute, animateClock, bind });
+    return Object.freeze({ preMatchMarkup, matchMarkup, encounterMarkup, finalComparisonMarkup, resolvingEncounterMarkup, resolvedEncounterMarkup, halftimeMarkup, penaltyMarkup, resultMarkup, currentMinute, animateClock, bind, formationPitchMarkup, duelVisualMarkup });
   }
 
   global.RoadToGloryMatchView = Object.freeze({ create });
