@@ -174,7 +174,7 @@
         const sort=root?.querySelector?.("[data-rtg-development-sort]");
         sort?.classList?.toggle("active",developmentDescending);
         sort?.setAttribute?.("aria-pressed",String(developmentDescending));
-        const arrow=root?.querySelector?.("[data-rtg-development-sort-arrow]");
+        const arrow=root?.querySelector?.("[data-rtg-picker-sort-arrow]");
         if(arrow)arrow.textContent=developmentDescending?"↓":"↑";
       };
       const reset=()=>{developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();};
