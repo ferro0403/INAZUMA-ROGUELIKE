@@ -427,43 +427,74 @@
     function modalRoot(){return deps.getModalRoot?.() || app;}
     function openPicker(cardId) {
       if(match)return notify("Non puoi modificare la squadra durante la partita","error");
-      if(!deps.squadView?.replacementPickerMarkup||!deps.openModal)return;
-      const area=localSquad.lineup.includes(cardId)?"lineup":"bench";
-      const role=String(resolveCard(cardId)?.normalizedRole||resolveCard(cardId)?.position||"").toUpperCase();
-      const chosen=new Set([...localSquad.lineup,...localSquad.bench]);
-      const all=userCards().filter(id=>id===cardId||!chosen.has(id)).map(id=>({
-        cardId:id,playerId:resolveCard(id)?.playerId||id,
-        source:id.startsWith("free_agents::")?"Svincolato":"RTG",player:resolveCard(id)
-      })).filter(e=>e.player&&(area!=="lineup"||String(e.player.normalizedRole||e.player.position||"").toUpperCase()===role))
-        .sort((a,b)=>Number(b.player.overall??b.player.finalOverall??0)-Number(a.player.overall??a.player.finalOverall??0));
-      const target={cardId,playerId:resolveCard(cardId)?.playerId,source:"RTG",player:resolveCard(cardId)};
-      let query="",sourceFilter="all",sortDesc=true;
-      const matches=()=>all.filter(e=>(!query||String(e.player.name||"").toLowerCase().includes(query.toLowerCase()))
-        &&(sourceFilter==="all"||(sourceFilter==="free"?e.source==="Svincolato":e.source==="RTG")))
-        .sort((a,b)=>(sortDesc?-1:1)*(Number(b.player.overall||b.player.finalOverall||0)-Number(a.player.overall||a.player.finalOverall||0)));
-      function bindResults() {
-        modalRoot()?.querySelectorAll?.("[data-rtg-picker-player]")?.forEach(btn=>btn.addEventListener("click",()=>perform(async()=>{
-          await editSquad("replace",{from:cardId,to:btn.dataset.rtgPickerPlayer});deps.closeModal?.();
-        })));
+      const v=deps.squadView;
+      if(!v?.replacementPickerMarkup||!deps.openModal)return;
+      const current=resolveCard(cardId);
+      if(!current)return;
+      const roster=new Set([...(localSquad.lineup||[]),...(localSquad.bench||[])]);
+      const quick=(localSquad.lineup.includes(cardId)?localSquad.bench:[]).map(id=>({
+        cardId:id,playerId:id,source:id.startsWith("free_agents::")?"Svincolato":"RTG",player:resolveCard(id)
+      })).filter(e=>e.player);
+      const all=userCards().filter(id=>id!==cardId&&!roster.has(id)).map(id=>{
+        const p=resolveCard(id),sid=id.split("::")[0];
+        return p?{cardId:id,playerId:id,source:sid==="free_agents"?"Svincolato":"RTG",seasonId:sid,player:p,
+          role:String(p.normalizedRole||p.position||"").toUpperCase(),
+          rarity:String(p.finalRarity||p.category||"Normale"),
+          overall:Number(p.overall??p.finalOverall??0),
+          teams:Array.from(new Set([p.teamName,...(p.teams||[]),...(p.teamIds||[])].map(asId).filter(Boolean)))
+        }:null;
+      }).filter(Boolean);
+      const seasons=[{id:"all",name:"Tutte"},...Array.from(new Set(all.map(e=>e.seasonId))).map(id=>({
+        id,name:({ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares",orion:"Orion",free_agents:"Svincolati",[EVENT_ID]:"Evento Halloween"})[id]||id
+      }))];
+      const rarities=Array.from(new Set(all.map(e=>e.rarity))).sort((a,b)=>a.localeCompare(b,"it"));
+      let query="",sourceFilter="all",roleFilter="all",rarityFilter="all",seasonFilter="all",teamFilter="all",descending=true,visibleCount=12;
+      const teams=()=>Array.from(new Set(all.filter(e=>seasonFilter==="all"||e.seasonId===seasonFilter).flatMap(e=>e.teams))).sort((a,b)=>a.localeCompare(b,"it")).map(t=>({id:t,name:t}));
+      const filtered=()=>all.filter(e=>(!query||e.player.name?.toLocaleLowerCase("it").includes(query.toLocaleLowerCase("it")))
+        &&(sourceFilter==="all"||(sourceFilter==="free"?e.source==="Svincolato":e.source==="RTG"))
+        &&(roleFilter==="all"||e.role===roleFilter)
+        &&(rarityFilter==="all"||e.rarity===rarityFilter)
+        &&(seasonFilter==="all"||e.seasonId===seasonFilter)
+        &&(teamFilter==="all"||e.teams.includes(teamFilter)))
+        .sort((a,b)=>(descending?b.overall-a.overall:a.overall-b.overall)||a.player.name.localeCompare(b.player.name,"it"));
+      const shown=list=>list.slice(0,visibleCount);
+      function select(id){return perform(async()=>{
+        await editSquad("replace",{from:cardId,to:id});deps.closeModal?.();
+      });}
+      function wireResults(){
+        modalRoot()?.querySelectorAll?.("[data-rtg-picker-player]")?.forEach(b=>b.addEventListener("click",()=>select(b.dataset.rtgPickerPlayer)));
+        modalRoot()?.querySelector?.("[data-rtg-picker-load-more]")?.addEventListener("click",()=>{visibleCount+=12;paint();});
       }
-      function drawResults(){
-        const list=matches(),root=modalRoot(),target=root?.querySelector?.("[data-rtg-picker-results]");
-        if(!target)return;
-        target.innerHTML=deps.squadView.replacementPickerResultsMarkup({entries:list.slice(0,80),total:list.length,visibleCount:Math.min(80,list.length)});
-        bindResults();
+      function paint(){
+        const list=filtered(),target=modalRoot()?.querySelector?.("[data-rtg-picker-results]");
+        if(target){target.innerHTML=v.replacementPickerResultsMarkup({entries:shown(list),total:list.length,visibleCount});wireResults();}
+        modalRoot()?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(b=>b.classList?.toggle("active",b.dataset.rtgPickerSource===sourceFilter));
+        modalRoot()?.querySelector?.("[data-rtg-picker-sort]")?.setAttribute?.("aria-pressed",descending?"true":"false");
+        const arrow=modalRoot()?.querySelector?.("[data-rtg-picker-sort-arrow]");if(arrow)arrow.textContent=descending?"↓":"↑";
       }
-      const initial=matches();
-      deps.openModal(deps.squadView.replacementPickerMarkup({
-        target,role,allowAnyRole:area!=="lineup",entries:initial.slice(0,80),total:initial.length,
-        visibleCount:Math.min(80,initial.length),query,sourceFilter,rarityFilter:"all",
-        seasonOptions:[],teamOptions:[]
-      }),{className:"rtg-modal rtg-halloween-picker"});
-      bindResults();
-      modalRoot()?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",e=>{query=e.target.value.trim();drawResults();});
-      modalRoot()?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(button=>button.addEventListener("click",()=>{
-        sourceFilter=button.dataset.rtgPickerSource;modalRoot()?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(b=>b.classList?.toggle("active",b===button));drawResults();
+      const list=filtered();
+      deps.openModal(v.replacementPickerMarkup({
+        target:{cardId,playerId:cardId,source:cardId.startsWith("free_agents::")?"Svincolato":"RTG",player:current},
+        role:String(current.normalizedRole||current.position||""),allowAnyRole:true,quickEntries:quick,
+        entries:shown(list),total:list.length,visibleCount,rarityOptions:rarities,
+        seasonOptions:seasons,teamOptions:teams()
+      }),{className:"rtg-modal rtg-squad-picker-modal rtg-halloween-picker"});
+      wireResults();
+      modalRoot()?.querySelectorAll?.(".rtg-picker-quick-bench [data-rtg-picker-player]")?.forEach(b=>b.addEventListener("click",()=>select(b.dataset.rtgPickerPlayer)));
+      modalRoot()?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",e=>{query=e.target.value.trim();visibleCount=12;paint();});
+      modalRoot()?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(b=>b.addEventListener("click",()=>{sourceFilter=b.dataset.rtgPickerSource;visibleCount=12;paint();}));
+      modalRoot()?.querySelectorAll?.("[data-rtg-picker-role]")?.forEach(b=>b.addEventListener("click",()=>{
+        roleFilter=b.dataset.rtgPickerRole;visibleCount=12;
+        modalRoot()?.querySelectorAll?.("[data-rtg-picker-role]")?.forEach(x=>x.classList.toggle("active",x===b));paint();
       }));
-      modalRoot()?.querySelector?.("[data-rtg-picker-sort]")?.addEventListener("click",()=>{sortDesc=!sortDesc;drawResults();});
+      modalRoot()?.querySelector?.("[data-rtg-picker-season]")?.addEventListener("change",e=>{
+        seasonFilter=e.target.value;teamFilter="all";visibleCount=12;
+        const select=modalRoot()?.querySelector?.("[data-rtg-picker-team]");
+        if(select)select.innerHTML=v.filterOptionsMarkup([{id:"all",name:"Tutte"},...teams()],"all");paint();
+      });
+      modalRoot()?.querySelector?.("[data-rtg-picker-team]")?.addEventListener("change",e=>{teamFilter=e.target.value;visibleCount=12;paint();});
+      modalRoot()?.querySelector?.("[data-rtg-picker-rarity]")?.addEventListener("change",e=>{rarityFilter=e.target.value;visibleCount=12;paint();});
+      modalRoot()?.querySelector?.("[data-rtg-picker-sort]")?.addEventListener("click",()=>{descending=!descending;paint();});
     }
     function openFormation() {
       if(match||!deps.openModal||!deps.squadView?.formationOptionsMarkup)return;
