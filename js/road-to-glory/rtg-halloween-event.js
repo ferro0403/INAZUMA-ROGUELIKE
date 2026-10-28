@@ -740,6 +740,11 @@
         if(arg?.coachId!==curr.coachId)throw fail("halloween-coach-invalid");
         curr.coachPowerSelection=clone(arg.coachPowerSelection||null);
       } else if(kind==="adapt"||kind==="formation"){
+        const cap=opponentOverall()+1;
+        if(kind==="adapt"&&resolvedUser()&&ovr(resolvedUser().lineup)<=cap){
+          notify("La squadra rispetta già il limite di "+cap+" OVR.");
+          return;
+        }
         const formationId=kind==="formation"?asId(arg):curr.formationId;
         const formations=global.RoadToGloryConfig?.season?.("ie1")?.formations||[];
         const formation=formations.find(f=>asId(f.id)===formationId);
@@ -761,6 +766,34 @@
         if(line.length!==11)throw fail("halloween-formation-insufficient-players");
         const bench=[...previous,...owned.map(x=>x.id)].filter((id,i,all)=>!line.includes(id)&&all.indexOf(id)===i).slice(0,4);
         if(bench.length!==4)throw fail("halloween-bench-insufficient");
+        if(kind==="adapt"){
+          // Use the same eleven tactical role slots as the native RTG squad.
+          // Replace only with a weaker player of that role until OVR <= cap.
+          const roleFor=id=>asId(resolveCard(id)?.normalizedRole||resolveCard(id)?.position||resolveCard(id)?.role).toUpperCase();
+          const rating=id=>Number(resolveCard(id)?.overall??resolveCard(id)?.finalOverall??0);
+          const roleSlots=formation?.slotRoles||[];
+          let attempts=0;
+          while(ovr(line.map(resolveCard))>cap && attempts++<100){
+            const requiredDrop=(ovr(line.map(resolveCard))-cap)*11;
+            const choices=[];
+            for(let i=0;i<line.length;i++){
+              const assignedRole=asId(roleSlots[i]||roleFor(line[i])).toUpperCase();
+              for(const id of userCards()){
+                if(line.includes(id)||roleFor(id)!==assignedRole)continue;
+                const drop=rating(line[i])-rating(id);
+                if(drop<=0)continue;
+                choices.push({i,id,drop,score:drop>=requiredDrop?drop:10000-drop});
+              }
+            }
+            choices.sort((a,b)=>a.score-b.score||a.i-b.i);
+            if(!choices.length)break;
+            const choice=choices[0],prior=line[choice.i],benchIndex=bench.indexOf(choice.id);
+            line[choice.i]=choice.id;
+            if(benchIndex>=0)bench[benchIndex]=prior;
+          }
+          if(ovr(line.map(resolveCard))>cap)throw fail("halloween-overall-cap");
+          notify("Squadra adattata al limite di "+cap+" OVR.");
+        }
         curr.lineup=line;curr.bench=bench;curr.formationId=formationId;curr.lineupOrderedBySlot=false;
       }
       nextSlots[nextSlot]=clone(nextSquad);
