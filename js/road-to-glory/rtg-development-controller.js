@@ -5,7 +5,9 @@
     let campaign=deps.getCampaign();
     let selectedDevelopmentCardId=null;
     let developmentQuery="";
-    let developmentRarity="Tutti";
+    let developmentRarity="all";
+    let developmentSource="all",developmentSeason="all",developmentTeam="all",
+      developmentRole="all",developmentDescending=true;
     let developmentVisibleCount=24;
     const DEVELOPMENT_PLAYER_PAGE_SIZE=24;
     function developmentRoleVariant(cardId){
@@ -57,12 +59,52 @@
       return developmentCardIds().map((cardId)=>deps.resolved(cardId,developmentRoleVariant(cardId))).filter(Boolean)
         .sort((a,b)=>String(a.name||"").localeCompare(String(b.name||""),"it"));
     }
+    // Same filter state and same exact RTG squad-picker toolbar, not a
+    // second independent set of UI controls or one-off event filter.
+    const seasonName={ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",
+      ie2:"Ares",orion:"Orion",halloween2026:"Evento Halloween"};
+    const seasonFor=player=>String(player?.cardId||"").split("::")[0]||String(player?.resolvedSeasonId||player?.legacySeasonId||"");
+    const roleFor=player=>String(player?.normalizedRole||player?.position||player?.role||"").toUpperCase();
+    function developmentTeamLabels(player){
+      const sid=seasonFor(player),db=global.SeasonRegistry?.database?.(sid);
+      const teamNames=new Map((db?.teams||[]).map(team=>[
+        String(team?.teamId||team?.id||""),String(team?.teamName||team?.name||"")
+      ]).filter(([id,name])=>id&&name));
+      const labels=new Map();
+      const normalize=value=>String(value||"").replace(/[_-]+/g," ").replace(/\s+/g," ").trim().toLocaleLowerCase("it");
+      for(const raw of [player?.teamName,...(player?.teams||[]),
+        player?.resolvedTeamId,player?.teamId,...(player?.teamIds||[])]){
+        if(typeof raw!=="string"||!raw.trim())continue;
+        const canonical=teamNames.get(raw.trim());
+        const label=canonical||(raw.includes("_")?raw.split("_").filter(Boolean)
+          .map(word=>word[0].toLocaleUpperCase("it")+word.slice(1)).join(" "):raw.trim());
+        const key=normalize(label);
+        if(key&&(!labels.has(key)||canonical))labels.set(key,label);
+      }
+      return [...labels.values()];
+    }
+    function developmentTeamOptions(players){
+      const names=new Set(players.filter(player=>developmentSeason==="all"||seasonFor(player)===developmentSeason)
+        .flatMap(developmentTeamLabels));
+      return [{value:"all",label:"Tutte"},...[...names].sort((a,b)=>a.localeCompare(b,"it"))
+        .map(value=>({value,label:value}))];
+    }
+    function developmentSeasonOptions(players){
+      return [{value:"all",label:"Tutte"},...Array.from(new Set(players.map(seasonFor)))
+        .filter(Boolean).map(value=>({value,label:seasonName[value]||value}))];
+    }
     function filteredDevelopmentPlayers(players){
       const needle=String(developmentQuery||"").trim().toLocaleLowerCase("it");
-      return players.filter((player)=>{
-        const matchesName=!needle||String(player.name||"").toLocaleLowerCase("it").includes(needle);
-        const matchesRarity=developmentRarity==="Tutti"||String(player.category||"")===developmentRarity;
-        return matchesName&&matchesRarity;
+      return players.filter(player=>
+        (!needle||String(player.name||"").toLocaleLowerCase("it").includes(needle))&&
+        (developmentRarity==="all"||String(player.category||"")===developmentRarity)&&
+        (developmentSeason==="all"||seasonFor(player)===developmentSeason)&&
+        (developmentTeam==="all"||developmentTeamLabels(player).includes(developmentTeam))&&
+        (developmentRole==="all"||roleFor(player)===developmentRole)&&
+        (developmentSource==="all"||developmentSource==="rtg")
+      ).sort((a,b)=>{
+        const diff=Number(a.overall??a.finalOverall??0)-Number(b.overall??b.finalOverall??0);
+        return (developmentDescending?-diff:diff)||String(a.name||"").localeCompare(String(b.name||""),"it");
       });
     }
     function developmentModelFor(cardId){
@@ -116,25 +158,63 @@
       return campaign;
     }
     function bindDevelopmentGrid(players){
-      const results=deps.app?.querySelector?.("[data-rtg-development-results]");
+      const root=deps.app;
+      const results=root?.querySelector?.("[data-rtg-development-results]");
       if(!results)return;
       const refresh=()=>{
         const filtered=filteredDevelopmentPlayers(players);
         const visible=filtered.slice(0,developmentVisibleCount);
         const remaining=Math.max(0,filtered.length-visible.length);
-        results.innerHTML=deps.economyView.playerGrid(visible)+(remaining>0?`<div class="development-load-more-wrap"><button type="button" class="btn btn-yellow development-load-more" data-rtg-development-load-more><span>MOSTRA ALTRI <b>${Math.min(DEVELOPMENT_PLAYER_PAGE_SIZE,remaining)}</b></span><small>${visible.length} di ${filtered.length}</small></button></div>`:"");
+        results.innerHTML=deps.economyView.playerGrid(visible)+(remaining>0?
+          `<div class="development-load-more-wrap"><button type="button" class="btn btn-yellow development-load-more" data-rtg-development-load-more><span>MOSTRA ALTRI <b>${Math.min(DEVELOPMENT_PLAYER_PAGE_SIZE,remaining)}</b></span><small>${visible.length} di ${filtered.length}</small></button></div>`:"");
+        root?.querySelectorAll?.("[data-rtg-development-source]")?.forEach(button=>{
+          const active=button.dataset.rtgDevelopmentSource===developmentSource;
+          button.classList.toggle("active",active);button.setAttribute("aria-pressed",String(active));
+        });
+        const sort=root?.querySelector?.("[data-rtg-development-sort]");
+        sort?.classList?.toggle("active",developmentDescending);
+        sort?.setAttribute?.("aria-pressed",String(developmentDescending));
+        const arrow=root?.querySelector?.("[data-rtg-development-sort-arrow]");
+        if(arrow)arrow.textContent=developmentDescending?"↓":"↑";
       };
-      results.onclick=(event)=>{
+      const reset=()=>{developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();};
+      results.onclick=event=>{
         const loadMore=event.target?.closest?.("[data-rtg-development-load-more]");
         if(loadMore){developmentVisibleCount+=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();return;}
-        const element=event.target?.closest?.("[data-rtg-development-player]");
-        if(!element)return;
-        selectedDevelopmentCardId=deps.id(element.dataset.rtgDevelopmentPlayer);
+        const entry=event.target?.closest?.("[data-rtg-development-player]");
+        if(!entry)return;
+        selectedDevelopmentCardId=deps.id(entry.dataset.rtgDevelopmentPlayer);
         renderDevelopment("players");
       };
-      const search=deps.app?.querySelector?.("[data-rtg-development-search]");
-      search?.addEventListener("input",(event)=>{developmentQuery=event.currentTarget.value||"";developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();});
-      deps.app?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",(event)=>{developmentRarity=event.currentTarget.value||"Tutti";developmentVisibleCount=DEVELOPMENT_PLAYER_PAGE_SIZE;refresh();});
+      root?.querySelector?.("[data-rtg-development-search]")?.addEventListener("input",event=>{
+        developmentQuery=event.currentTarget.value||"";reset();
+      });
+      root?.querySelectorAll?.("[data-rtg-development-source]")?.forEach(button=>button.addEventListener("click",()=>{
+        developmentSource=button.dataset.rtgDevelopmentSource||"all";reset();
+      }));
+      root?.querySelectorAll?.("[data-rtg-development-role]")?.forEach(button=>button.addEventListener("click",()=>{
+        developmentRole=button.dataset.rtgDevelopmentRole||"all";
+        root.querySelectorAll?.("[data-rtg-development-role]")?.forEach(other=>{
+          const active=other===button;other.classList.toggle("active",active);
+          other.setAttribute("aria-pressed",String(active));
+        });reset();
+      }));
+      root?.querySelector?.("[data-rtg-development-season]")?.addEventListener("change",event=>{
+        developmentSeason=event.currentTarget.value||"all";developmentTeam="all";
+        const select=root.querySelector?.("[data-rtg-development-team]");
+        if(select&&deps.squadView?.filterOptionsMarkup)select.innerHTML=
+          deps.squadView.filterOptionsMarkup(developmentTeamOptions(players),"all");
+        reset();
+      });
+      root?.querySelector?.("[data-rtg-development-team]")?.addEventListener("change",event=>{
+        developmentTeam=event.currentTarget.value||"all";reset();
+      });
+      root?.querySelector?.("[data-rtg-development-rarity]")?.addEventListener("change",event=>{
+        developmentRarity=event.currentTarget.value||"all";reset();
+      });
+      root?.querySelector?.("[data-rtg-development-sort]")?.addEventListener("click",()=>{
+        developmentDescending=!developmentDescending;reset();
+      });
       refresh();
     }
     async function renderDevelopment(tab="players"){
@@ -154,6 +234,14 @@
         tab,
         query:developmentQuery,
         rarity:developmentRarity,
+        pickerFilterMarkup:deps.squadView?.pickerFilterToolbarMarkup?.({
+          area:"development",query:developmentQuery,sourceFilter:developmentSource,
+          seasonFilter:developmentSeason,teamFilter:developmentTeam,roleFilter:developmentRole,
+          rarityFilter:developmentRarity,descending:developmentDescending,
+          rarityOptions:deps.economy.RARITIES,
+          seasonOptions:developmentSeasonOptions(players),
+          teamOptions:developmentTeamOptions(players),
+        })||"",
       }));
       deps.app?.querySelector?.("[data-rtg-economy-back]")?.addEventListener("click",()=>{
         selectedDevelopmentCardId=null;
