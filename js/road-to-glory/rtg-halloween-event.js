@@ -265,7 +265,7 @@
       const eligible=Boolean(ours&&own!==null&&own<=limit),active=Boolean(match),open=isOpen();
       const overLimit=own!==null&&own>limit;
       const status=active?"PARTITA IN CORSO":!ours?"FORMAZIONE INCOMPLETA":overLimit?"LIMITE SUPERATO":"PRONTA PER LA SFIDA";
-      const statusMessage=overLimit?"Riduci l'overall della tua formazione per giocare.":!ours?"Completa gli 11 titolari e le 4 riserve.":"Affronta Occult Halloween prima della fine dell'evento.";
+      const statusMessage=overLimit?"Riduci l'OVR a "+limit+" per accedere alla sfida.":!ours?"Servono 11 titolari e 4 riserve.":active?"Riprendi la partita dal punto in cui l'hai lasciata.":"Formazione valida · 11 titolari e 4 riserve.";
       const mainAction=active
         ? '<button type="button" class="btn btn-yellow halloween-event-main-cta" data-halloween-resume>RIPRENDI PARTITA →</button>'
         :eligible&&open
@@ -276,7 +276,7 @@
       return '<section class="rtg-journey-summary halloween-journey-summary halloween-event-hero" aria-label="Prossima partita Halloween">'+
         '<div class="halloween-event-hero-top"><div class="halloween-event-hero-copy">'+
         '<p class="eyebrow">SFIDA EVENTO · IL CIMITERO STREGATO</p><h1>OCCULT<br>HALLOWEEN</h1>'+
-        '<p>La sfida di Halloween contro la squadra Occult.</p></div>'+
+        '<p>La sfida del Cimitero Stregato.</p></div>'+
         '<img class="halloween-event-hero-crest" src="'+escape(LOGO_URL)+'" alt="Stemma Occult Halloween"></div>'+
         '<div class="halloween-event-ovr-strip" aria-label="Requisiti overall">'+
         '<div><span>OVR AVVERSARIO</span><strong>'+target+'</strong></div>'+
@@ -334,17 +334,21 @@
       const state={activeSeasonId:EVENT_ID};
       if(view==="album"){
         if(!deps.runView?.albumTeamsMarkup)return '<p>Album squadre RTG non disponibile</p>';
-        return deps.runView.albumTeamsMarkup({state,seasonId:EVENT_ID,teams})
-          .replace('<main class="album-screen album-teams-screen','<main class="album-screen halloween-event-album-teams album-teams-screen')
-          .replace(/(<p class="eyebrow">)ALBUM → [^<]+/,'$1ALBUM → EVENTO HALLOWEEN');
+        return '<div class="rtg-halloween-mode halloween-album-mode">'+
+          deps.runView.albumTeamsMarkup({state,seasonId:EVENT_ID,teams})
+            .replace('<main class="album-screen album-teams-screen','<main class="album-screen halloween-event-album-teams album-teams-screen')
+            .replace(/(<p class="eyebrow">)ALBUM → [^<]+/,'$1ALBUM → EVENTO HALLOWEEN')+
+          '</div>';
       }
       const team=teams.find(item=>item.teamId===selectedAlbumTeamId)||teams[0];
       if(!team||!deps.runView?.albumRosterMarkup)return '<p>Album giocatori non disponibile</p>';
       const entries=team.roster.filter(p=>isOwned(asId(p.playerId)));
-      return deps.runView.albumRosterMarkup({
-        state,seasonId:EVENT_ID,team,entries,allEntries:team.roster,
-        database:{players:team.roster}
-      }).replace('<main class="album-screen album-roster-screen','<main class="album-screen halloween-event-album-roster album-roster-screen');
+      return '<div class="rtg-halloween-mode halloween-album-mode">'+
+        deps.runView.albumRosterMarkup({
+          state,seasonId:EVENT_ID,team,entries,allEntries:team.roster,
+          database:{players:team.roster}
+        }).replace('<main class="album-screen album-roster-screen','<main class="album-screen halloween-event-album-roster album-roster-screen')+
+        '</div>';
     }
 
     function matchPitch(m,side){
