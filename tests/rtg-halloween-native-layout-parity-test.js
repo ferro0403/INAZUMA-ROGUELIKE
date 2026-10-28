@@ -47,4 +47,15 @@ assert.match(matchView.duelVisualMarkup(event,"opponent"),/halloween-vampiro/);
 assert.doesNotMatch(matchView.duelVisualMarkup(samford,"opponent"),/halloween-vampiro/);
 assert.doesNotMatch(matchView.duelVisualMarkup(normal,"user"),/halloween-vampiro/);
 assert.equal((fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8").match(/class="rtg-duel-render\$\{shawnFwClass\}\$\{halloweenClass\}"/g)||[]).length,2,"Both original duel renderers must apply the tagged filter");
+const eventSource=fs.readFileSync("js/road-to-glory/rtg-halloween-event.js","utf8");
+assert.match(eventSource,/if\(before&&log\)\{/,
+  "A terminal duel must never skip its own result overlay");
+assert.match(eventSource,/if\(\["completed","completed-draw","abandoned"\]\.includes\(match\.status\)&&!lastResolution\)/,
+  "Show the RTG final screen only AFTER the terminal encounter result is acknowledged");
+assert.match(eventSource,/stage==="comparison"\?"resolving":"resolved"|lastResolutionStage="resolved";render\(\);/,
+  "Halloween duel transitions to an explicit resolved state");
+assert.doesNotMatch(eventSource,/stage==="comparison"\?1700:1150/,
+  "Do not add 1.15 seconds of delay not used by the native RTG match controller");
+assert.match(eventSource,/const target=Math\.max\(\.\.\.combined\.keys\(\)\)/,
+  "The adapt button must maximize OVR from below as well as lower an overpowered team");
 console.log("RTG Halloween parity: 11 starters + 4 bench, original squad markup, tagged vampire duel render PASS");
