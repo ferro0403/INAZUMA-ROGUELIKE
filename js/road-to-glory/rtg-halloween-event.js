@@ -317,7 +317,7 @@
       const target={cardId,playerId:resolveCard(cardId)?.playerId,source:"RTG",player:resolveCard(cardId)};
       let query="",sourceFilter="all",sortDesc=true;
       const matches=()=>all.filter(e=>(!query||String(e.player.name||"").toLowerCase().includes(query.toLowerCase()))
-        &&(sourceFilter==="all"||(sourceFilter==="recruitment"?e.source==="Svincolato":e.source==="RTG")))
+        &&(sourceFilter==="all"||(sourceFilter==="free"?e.source==="Svincolato":e.source==="RTG")))
         .sort((a,b)=>(sortDesc?-1:1)*(Number(b.player.overall||b.player.finalOverall||0)-Number(a.player.overall||a.player.finalOverall||0)));
       function bindResults() {
         modalRoot()?.querySelectorAll?.("[data-rtg-picker-player]")?.forEach(btn=>btn.addEventListener("click",()=>perform(async()=>{
