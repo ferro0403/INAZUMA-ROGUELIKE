@@ -15,6 +15,18 @@ const freeAgents = {players:Array.from({length:16},(_,i)=>({
 }))};
 const clone = v => v == null ? v : JSON.parse(JSON.stringify(v));
 const records = {"shared:account":{tokens:83,gachaAcquiredCards:[],developmentByCardId:{},coachOwnedIds:[]}};
+// Regression: pre-existing slot 3 was saved with only 7 visible players.
+records["local:halloween2026:squad"]={
+  activeSquadSlot:3,
+  slots:{"3":{
+    formationId:"4-3-3",
+    lineup:["free_agents::halloween-free-10","free_agents::halloween-free-11","free_agents::halloween-free-12",
+      "free_agents::halloween-free-1","free_agents::halloween-free-2","free_agents::halloween-free-3","free_agents::halloween-free-0"],
+    bench:["free_agents::halloween-free-13","free_agents::halloween-free-14",
+      "free_agents::halloween-free-15","free_agents::halloween-free-4"],
+    lineupOrderedBySlot:true
+  }}
+};
 const storage = {
   async readMany(keys) { return Object.fromEntries(keys.map(k=>[k,clone(records[k])])); },
   async read(k) { return clone(records[k]); },
@@ -151,6 +163,8 @@ async function main() {
   assert.match(app.innerHTML,/rtg-squad-shell/,"Squad must use original RTG renderer");
   assert.match(app.innerHTML,/rtg-squad-pitch-main/);
   assert.match(app.innerHTML,/SQUADRA 1/);
+  assert.equal((app.innerHTML.match(/data-rtg-player-detail=/g)||[]).length,11,
+    "Existing 7-player slot must be completed to 11 without dropping selected players");
   await control("data-rtg-player-detail").fire();
   assert.equal(nativeDetailOpened,true,"Player details must open original fullbody sheet");
   await control("data-rtg-tab",d=>d.rtgTab==="run").fire();
