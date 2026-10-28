@@ -99,9 +99,12 @@
     const vals = assets.setup.startingXI.map(id => assets.players.get(asId(id))?.overall);
     return Math.round(vals.reduce((a,b)=>a+Number(b),0)/vals.length);
   }
-  function ovr(lineup) {
+  function ovr(lineup,discount=null) {
     return !Array.isArray(lineup) || lineup.length !== 11 ? null :
-      Math.round((lineup.reduce((sum,p)=>sum + Number(p?.overall ?? p?.finalOverall ?? 0), 0)/11)*10)/10;
+      Math.round((lineup.reduce((sum,p)=>{
+        const value=Math.max(0,Number(p?.overall ?? p?.finalOverall ?? 0));
+        return sum+(p?.cardId===discount?.cardId?Math.max(0,value-Math.max(0,Number(discount.amount)||0)):value);
+      }, 0)/11)*10)/10;
   }
   function weightedPick(missing, random) {
     const pool = missing.map(pid => ({pid,weight:pid===HALLOWEEN_COACH_ID||SPECIAL.includes(pid)?4:5.75}));
@@ -230,6 +233,9 @@
         coachId:previous.coachId||"",activeRoleVariantByCardId:previous.activeRoleVariantByCardId||{}};
     }
     function activeEventSquad() {return {...shared,activeSeasonId:"ie1",gachaAcquiredCards:shared.gachaAcquiredCards,coachOwnedIds:shared.coachOwnedIds,squads:{ie1:localSquad}};}
+    function eventOverallDiscount(squad=localSquad){
+      return global.RoadToGloryCoachPowerRuntime?.overallDiscountFor?.(squad,activeEventSquad())||null;
+    }
     function nativeCard(p,opts={}) {
       const cls=opts.event&&p?.halloweenVampire?" halloween-vampire-card":"";
       const attr=opts.attr||"";
@@ -267,7 +273,7 @@
        '<div class="content narrow rtg-run-content halloween-original-content">'+body+'</div>'+footer("run")+'</main>';
     }
     function matchSection() {
-      const target=opponentOverall(),ours=resolvedUser(),own=ovr(ours?.lineup),limit=target+1;
+      const target=opponentOverall(),ours=resolvedUser(),own=ovr(ours?.lineup,eventOverallDiscount()),limit=target+1;
       const eligible=Boolean(ours&&own!==null&&own<=limit),active=Boolean(match),open=isOpen();
       const overLimit=own!==null&&own>limit;
       const status=active?"PARTITA IN CORSO":!ours?"FORMAZIONE INCOMPLETA":overLimit?"LIMITE SUPERATO":"PRONTA PER LA SFIDA";
@@ -304,7 +310,7 @@
           freeAgentsDb:data.freeAgents,playerResolver:{resolveAtLevel20:cardId=>resolveCard(cardId)}});
       const meta=deps.getUserTeamMeta?.()||{};
       const name=meta.name||"La tua squadra";
-      const squadOvr=ovr(resolvedUser()?.lineup);
+      const squadOvr=ovr(resolvedUser()?.lineup,eventOverallDiscount());
       const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · Evento Halloween</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div></div>';
       return '<div class="rtg-halloween-mode halloween-squad-mode">'+
         view.markup(model,{teamName:name,teamIdentity:meta.teamIdentity,teamPower:squadOvr,activeSquadSlot,
@@ -696,7 +702,12 @@
         closeModal:deps.closeModal,toast:notify,squadView:deps.squadView,getModel:model,
         saveSquad:async draft=>editSquad("coachPower",draft),
         openPlayerDetails:key=>openNativeDetail(key),
-        previewSquadOverall:()=>({before:ovr(resolvedUser()?.lineup),after:ovr(resolvedUser()?.lineup)})
+        previewSquadOverall:selection=>{
+          const line=resolvedUser()?.lineup;
+          return {before:ovr(line),after:ovr(line,
+            localSquad.coachId===HALLOWEEN_COACH_ID&&selection?.cardIds?.length===1
+              ?{cardId:selection.cardIds[0],amount:15}:eventOverallDiscount())};
+        }
       });
     }
     function openCoaches() {
@@ -944,7 +955,7 @@
     async function startMatch() {
       if(!isOpen() || match)throw fail("halloween-event-closed-or-match-active");
       const squad=resolvedUser();if(!squad)throw fail("halloween-squad-incomplete");
-      if(ovr(squad.lineup)>opponentOverall()+1)throw fail("halloween-overall-cap");
+      if(ovr(squad.lineup,eventOverallDiscount())>opponentOverall()+1)throw fail("halloween-overall-cap");
       if(global.RtgFourMovesRuntime && !(await global.RtgFourMovesRuntime.ready))throw fail("halloween-move-catalog-not-ready");
       const epoch=session;
       const matchId="halloween-2026:"+String(global.crypto?.randomUUID?.()||Date.now()+"-"+Math.random());
