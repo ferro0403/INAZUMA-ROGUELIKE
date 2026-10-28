@@ -337,6 +337,42 @@ async function main() {
   context.setTimeout=oldSetTimeout;
   context.clearTimeout=oldClearTimeout;
   delete records["local:halloween2026:match"];
+  // A rare Halloween card must be selectable in EVERY squad slot, including
+  // when it is already assigned to a different starter position. Previously
+  // openPicker excluded the entire 15-card roster and Nathan vanished from
+  // the replacement list in slot 1 while remaining visible in slot 2.
+  const nathanId="halloween2026::custom_0001";
+  const ownedRecord=context.RoadToGloryCardIdentity.record({playerId:"custom_0001",legacySeasonId:"halloween2026"});
+  const owner=records["shared:account"];
+  if(!owner.gachaAcquiredCards.some(card=>card.cardId===nathanId))owner.gachaAcquiredCards.push(ownedRecord);
+  if(!owner.halloween.ownedIds.includes("custom_0001"))owner.halloween.ownedIds.push("custom_0001");
+  const previousSlot=records["local:halloween2026:squad"];
+  const template=clone(previousSlot.slots?.[previousSlot.activeSquadSlot]||previousSlot);
+  const slot1=clone(template),slot2=clone(template);
+  // Place Nathan on a different starter spot from the player we are swapping.
+  slot1.lineup[1]=nathanId;
+  records["local:halloween2026:squad"]={activeSquadSlot:1,slots:{"1":slot1,"2":slot2}};
+  const pickerModal=createApp();
+  let pickerEntries=[];
+  squadView.replacementPickerMarkup=options=>{
+    pickerEntries=options.entries;
+    return '<section class="rtg-squad-picker"><div data-rtg-picker-results></div></section>';
+  };
+  const pickerController=E.create({app,storage,squadView,runView:nativeRunView,toast:()=>{},
+    getModalRoot:()=>pickerModal,openModal:markup=>{pickerModal.innerHTML=markup;}});
+  await pickerController.open("squad");
+  await control("data-rtg-change-player").fire();
+  assert.ok(pickerEntries.some(entry=>entry.cardId===nathanId),
+    "Slot 1 must allow swapping Nathan from another starting position");
+  records["local:halloween2026:squad"].activeSquadSlot=2;
+  await pickerController.open("squad");
+  pickerEntries=[];
+  await control("data-rtg-change-player").fire();
+  assert.ok(pickerEntries.some(entry=>entry.cardId===nathanId),
+    "Slot 2 must list Nathan when he is unassigned");
+  assert.strictEqual(records["shared:account"].gachaAcquiredCards.filter(card=>card.cardId===nathanId).length,1,
+    "Catalog browsing must not duplicate event ownership or spend pumpkins");
+  pickerController.dispose();
   // Event coach is a separate rare prize (same weight as the two specials).
   // The last unowned prize must award into the EXISTING account coachOwnedIds,
   // never into player ownedIds or gachaAcquiredCards.
