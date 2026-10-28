@@ -697,11 +697,11 @@
           let markup=deps.runView.pullResultMarkup(drawn.result,drawn.player,{teams:[{teamId:TEAM_ID,teamName:"Occult Halloween",logoUrl:LOGO_URL}]});
           markup=markup.replace("SALDO RTG","ZUCCHE HALLOWEEN")
             .replace(/(<div class="rtg-pull-balance">[\\s\\S]*?<strong>)[\\s\\S]*?(<\\/strong>)/,
-              (_all,before,after)=>before+currency(drawn.result.balanceAfter)+after)
+              (_all,before,after)=>before+'<span class="halloween-reveal-balance"><img class="halloween-reveal-currency-icon" src="'+escape(PUMPKIN_URL)+'" alt="Zucca Halloween"> '+escape(drawn.result.balanceAfter)+'</span>'+after)
             .replace(/ROAD TO GLORY · LEGACY [^<]*/,"OCCULT · HALLOWEEN");
           deps.openModal(markup,{className:"rtg-modal rtg-pull-modal rtg-halloween-pull-modal"});
           const eventBalance=modalRoot()?.querySelector?.(".rtg-pull-balance strong");
-          if(eventBalance)eventBalance.innerHTML=currency(drawn.result.balanceAfter);
+          if(eventBalance)eventBalance.innerHTML='<span class="halloween-reveal-balance"><img class="halloween-reveal-currency-icon" src="'+escape(PUMPKIN_URL)+'" alt="Zucca Halloween"> '+escape(drawn.result.balanceAfter)+'</span>';
           modalRoot()?.querySelector?.("[data-rtg-pull-continue]")?.addEventListener("click",()=>deps.closeModal?.());
           modalRoot()?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",()=>openNativeDetail(drawn.result.cardId));
         }).finally?.(()=>{if(button.isConnected)button.disabled=false;});
