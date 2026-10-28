@@ -79,12 +79,13 @@
         }) || "");
         if (attrs) markup = markup.replace(/<button\b/, `<button ${attrs}`);
         if (extraClass) markup = markup.replace(/class="/, `class="${escape(extraClass)} `);
+        if(player?.halloweenVampire===true)markup=markup.replace(/class="/,'class="halloween-vampire-player ');
         return markup;
       }
       return card(
         player,
         attrs,
-        `run-tactical-card match-player-card match-player-card--${visualSide} boss-match-card boss-match-card--${visualSide} squad-player-card ${extraClass}`
+        `run-tactical-card match-player-card match-player-card--${visualSide} boss-match-card boss-match-card--${visualSide} squad-player-card ${player?.halloweenVampire===true?"halloween-vampire-player":""} ${extraClass}`
       );
     }
 
