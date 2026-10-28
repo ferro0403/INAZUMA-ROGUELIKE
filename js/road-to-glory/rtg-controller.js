@@ -132,7 +132,10 @@
     }
     async function ensureData(){
       assertCurrent();const checkData=controllerFence?.checkpoint();
-      await global.RoadToGloryHalloween?.prepare?.();checkData?.();
+      // Halloween assets are optional: a seasonal CDN failure must never block regular campaigns.
+      try { await global.RoadToGloryHalloween?.prepare?.(); }
+      catch (error) { global.console?.warn?.("[RTG Halloween] Seasonal assets unavailable; ordinary RTG remains playable", error); }
+      checkData?.();
       const sid=activeSeasonId();
       seasonDb=global.SeasonRegistry?.database?.(sid)||seasonDb;
       if(!seasonDb||id(seasonDb?.seasonId||"ie1")!==sid){
