@@ -162,7 +162,8 @@
     function resolvedUser() {
       const line=(localSquad?.lineup||[]).map(resolveCard);
       const bench=(localSquad?.bench||[]).map(resolveCard);
-      if(line.length!==11 || line.some(p=>!p))return null;
+      if(line.length!==11 || line.some(p=>!p) || bench.length!==4 || bench.some(p=>!p) ||
+         new Set([...(localSquad?.lineup||[]),...(localSquad?.bench||[])]).size!==15)return null;
       return {formationId:"4-4-2",seasonId:"ie1",lineup:line,bench:bench.filter(Boolean),coachId:localSquad?.coachId||""};
     }
     function opponent() {
@@ -190,7 +191,7 @@
     function matchSection() {
       const opp=opponent(),ours=resolvedUser(),target=opponentOverall(),limit=target+1,y=ovr(ours?.lineup),can=ours&&y!==null&&y<=limit;
       const matchInfo=match?'<div class="halloween-resume"><h3>Partita in corso</h3><p>'+escape(match.score?.user||0)+' - '+escape(match.score?.opponent||0)+'</p><button data-halloween-resume>CONTINUA PARTITA</button></div>':"";
-      return '<div class="halloween-graveyard"><div class="halloween-match-card"><div class="halloween-match-brand"><img class="halloween-crest halloween-vampiro" src="'+escape(LOGO_URL)+'" alt=""><div><small>SFIDA A TEMPO</small><h2>OCCULT HALLOWEEN</h2><strong>OVR '+target+'</strong></div></div><p>Sfida la formazione potenziata di Occult. Puoi giocare più volte fino alla scadenza.</p><div class="halloween-duel"><span>LA TUA SQUADRA <strong>'+(y===null?"—":y)+'</strong></span><span>OVR MASSIMO <strong>'+limit+'</strong></span></div>'+ (!can?'<p class="halloween-warning">Seleziona 11 giocatori nella sezione Squadra: OVR complessivo massimo '+limit+'.</p>':"") +
+      return '<div class="halloween-graveyard"><div class="halloween-match-card"><div class="halloween-match-brand"><img class="halloween-crest halloween-vampiro" src="'+escape(LOGO_URL)+'" alt=""><div><small>SFIDA A TEMPO</small><h2>OCCULT HALLOWEEN</h2><strong>OVR '+target+'</strong></div></div><p>Sfida la formazione potenziata di Occult. Puoi giocare più volte fino alla scadenza.</p><div class="halloween-duel"><span>LA TUA SQUADRA <strong>'+(y===null?"—":y)+'</strong></span><span>OVR MASSIMO <strong>'+limit+'</strong></span></div>'+ (!can?'<p class="halloween-warning">Seleziona 11 titolari e 4 riserve nella sezione Squadra: OVR complessivo massimo '+limit+'.</p>':"") +
         matchInfo+'<button class="halloween-action" data-halloween-start '+(!isOpen()||!can||match?"disabled":"")+'>⚽ GIOCA PARTITA</button><p>Premio: '+currency(PRIZE)+' · 10% di vittoria fortunata: '+currency(LUCKY_PRIZE)+' totali</p></div></div>';
     }
     function squadSection() {
@@ -198,7 +199,7 @@
       const display=ids.map(id=>({id,p:resolveCard(id)})).filter(x=>x.p&&(!search||asId(x.p.name).toLowerCase().includes(search.toLowerCase())));
       const max=opponentOverall()+1;const current=resolvedUser(),rating=ovr(current?.lineup);
       const coachOptions=Object.entries(global.RoadToGloryCoaches?.BY_ID||{}).filter(([id])=>(shared.coachOwnedIds||[]).includes(id));
-      return '<div class="halloween-graveyard"><div class="halloween-squad"><h2>LA TUA SQUADRA</h2><p>Tutti gli svincolati e i giocatori sbloccati nelle Season. 11 titolari + fino a 4 riserve.</p><p>OVR titolari: <b>'+(rating??"—")+'</b> / massimo <b>'+max+'</b></p><label>Allenatore <select data-halloween-coach><option value="">Nessuno</option>'+coachOptions.map(([id,c])=>'<option value="'+escape(id)+'" '+(localSquad.coachId===id?"selected":"")+'>'+escape(c.name||c.displayName||id)+'</option>').join("")+'</select></label><div class="halloween-lineup"><h3>TITOLARI ('+(localSquad.lineup||[]).length+'/11)</h3>'+localSquad.lineup.map((id,i)=>'<button data-halloween-remove="'+escape(id)+'">✕ '+escape(resolveCard(id)?.name||id)+'</button>').join("")+'</div><div class="halloween-lineup"><h3>PANCHINA ('+(localSquad.bench||[]).length+'/4)</h3>'+localSquad.bench.map(id=>'<button data-halloween-remove="'+escape(id)+'">✕ '+escape(resolveCard(id)?.name||id)+'</button>').join("")+'</div><label>Cerca un giocatore <input data-halloween-search placeholder="Nome giocatore" value="'+escape(search)+'"></label><div class="halloween-catalog">'+display.slice(0,100).map(({id,p})=>'<button class="halloween-catalog-item" data-halloween-pick="'+escape(id)+'" '+(picked.has(id)?"disabled":"")+'>'+card(p,{event:id.startsWith(EVENT_ID+"::")})+'<span>'+(picked.has(id)?"IN SQUADRA":(localSquad.lineup.length>=11&&localSquad.bench.length>=4?"PIENO":localSquad.lineup.length>=11?"IN PANCHINA":"AGGIUNGI"))+'</span></button>').join("")+'</div>'+(display.length>100?'<p>Mostrati i primi 100 risultati: usa la ricerca.</p>':"")+'</div></div>';
+      return '<div class="halloween-graveyard"><div class="halloween-squad"><h2>LA TUA SQUADRA</h2><p>Tutti gli svincolati e i giocatori sbloccati nelle Season. 11 titolari + 4 riserve.</p><p>OVR titolari: <b>'+(rating??"—")+'</b> / massimo <b>'+max+'</b></p><label>Allenatore <select data-halloween-coach><option value="">Nessuno</option>'+coachOptions.map(([id,c])=>'<option value="'+escape(id)+'" '+(localSquad.coachId===id?"selected":"")+'>'+escape(c.name||c.displayName||id)+'</option>').join("")+'</select></label><div class="halloween-lineup"><h3>TITOLARI ('+(localSquad.lineup||[]).length+'/11)</h3>'+localSquad.lineup.map((id,i)=>'<button data-halloween-remove="'+escape(id)+'">✕ '+escape(resolveCard(id)?.name||id)+'</button>').join("")+'</div><div class="halloween-lineup"><h3>PANCHINA ('+(localSquad.bench||[]).length+'/4)</h3>'+localSquad.bench.map(id=>'<button data-halloween-remove="'+escape(id)+'">✕ '+escape(resolveCard(id)?.name||id)+'</button>').join("")+'</div><label>Cerca un giocatore <input data-halloween-search placeholder="Nome giocatore" value="'+escape(search)+'"></label><div class="halloween-catalog">'+display.slice(0,100).map(({id,p})=>'<button class="halloween-catalog-item" data-halloween-pick="'+escape(id)+'" '+(picked.has(id)?"disabled":"")+'>'+card(p,{event:id.startsWith(EVENT_ID+"::")})+'<span>'+(picked.has(id)?"IN SQUADRA":(localSquad.lineup.length>=11&&localSquad.bench.length>=4?"PIENO":localSquad.lineup.length>=11?"IN PANCHINA":"AGGIUNGI"))+'</span></button>').join("")+'</div>'+(display.length>100?'<p>Mostrati i primi 100 risultati: usa la ricerca.</p>':"")+'</div></div>';
     }
     function vendingSection() {
       const available=Array.from(assets.players.keys()).filter(pid=>!isOwned(pid)),enough=shared.halloween.pumpkins>=PRICE;
@@ -241,7 +242,7 @@
       app.innerHTML=shell(match&&view==="match"?pendingSection():view==="squad"?squadSection():view==="vending"?vendingSection():view==="album"?albumSection():matchSection());
       app.querySelector("[data-halloween-back]")?.addEventListener("click",()=>{dispose();deps.onReturn?.();});
       app.querySelector("[data-halloween-close-detail]")?.addEventListener("click",()=>{detailPid="";render();});
-      app.querySelectorAll("[data-player-card]").forEach(el=>el.addEventListener("click",()=>{detailPid=el.dataset.playerCard;render();}));
+      app.querySelectorAll("[data-player-card]").forEach(el=>el.addEventListener("click",event=>{if(el.closest?.("[data-halloween-pick]"))return;event.stopPropagation?.();detailPid=el.dataset.playerCard;render();}));
       app.querySelectorAll("[data-halloween-tab]").forEach(el=>el.addEventListener("click",()=>{view=el.dataset.halloweenTab;render();}));
       app.querySelector("[data-halloween-start]")?.addEventListener("click",()=>perform(startMatch));
       app.querySelector("[data-halloween-resume]")?.addEventListener("click",()=>{view="match";render();});
@@ -289,7 +290,7 @@
         const live=records[MATCH_KEY];if(!live||live.matchId!==m.matchId)throw fail("halloween-stale-match");
         const ledger=account.halloween.completedIds;
         const already=ledger.includes(m.matchId);
-        const lucky=global.RoadToGloryRng.int(m.matchId,"halloween-lucky",0,99)<10 && m.result?.winner==="user";
+        const lucky=global.RoadToGloryRng.int(m.matchId,"halloween-lucky",0,100)<10 && m.result?.winner==="user";
         const award=already?Number(live.halloweenAward||0):(lucky?LUCKY_PRIZE:PRIZE);
         if(!already){account.halloween.pumpkins+=award;ledger.push(m.matchId);if(lucky)account.halloween.luckyWins++;}
         return {writes:{[MATCH_KEY]:{...m,halloweenAward:award}},match:m};
@@ -306,7 +307,7 @@
         if(choice==="halftime")latest=global.RoadToGloryMatchEngine.confirmHalftime(m,m.userSquad);
         else if(choice?.startsWith("penalty:")) {
           const n=m.shootout?.history?.length||0,side=n%2===0?"user":"opponent",direction=choice.slice(8);
-          const ai=["left","center","right"][global.RoadToGloryRng.int(m.matchId,"halloween-penalty-ai",n,2)];
+          const ai=["left","center","right"][global.RoadToGloryRng.int(m.matchId,"halloween-penalty-ai",n,3)];
           latest=global.RoadToGloryMatchEngine.resolvePenaltyKick(m,{attackingSide:side,shooterChoice:side==="user"?direction:ai,goalkeeperChoice:side==="user"?ai:direction}).state;
         } else if(m.pendingEncounter)latest=global.RoadToGloryMatchEngine.resolvePendingEncounter(m,choice||"base");
         else latest=global.RoadToGloryMatchEngine.prepareNext(m);
