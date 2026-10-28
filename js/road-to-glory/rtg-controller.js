@@ -132,6 +132,7 @@
     }
     async function ensureData(){
       assertCurrent();const checkData=controllerFence?.checkpoint();
+      await global.RoadToGloryHalloween?.prepare?.();checkData?.();
       const sid=activeSeasonId();
       seasonDb=global.SeasonRegistry?.database?.(sid)||seasonDb;
       if(!seasonDb||id(seasonDb?.seasonId||"ie1")!==sid){
@@ -158,6 +159,7 @@
     }
     function rawPlayer(cardRef){
       const meta=cardMeta(cardRef);
+      if(meta.legacySeasonId===global.RoadToGloryHalloween?.EVENT_ID)return global.RoadToGloryHalloween.eventPlayer(meta.playerId);
       if(meta.sourceKind===cardIdentity?.FREE_AGENTS)return (freeAgentsDb?.players||[]).find(player=>id(player?.playerId||player?.id)===id(meta.playerId))||null;
       if(meta.legacySeasonId){
         const db=global.SeasonRegistry?.database?.(meta.legacySeasonId)||(meta.legacySeasonId==="ie1"?seasonDb:null);
@@ -1008,8 +1010,15 @@
       return result;
       }finally{pullBusy=false;}
     }
+    let halloweenMode=null;
+    function openHalloween(){
+      if(!halloweenMode)halloweenMode=global.RoadToGloryHalloween.create({app,toast:deps.toast,onReturn:()=>renderCampaignSelect()});
+      return halloweenMode.open().catch(error=>{global.console?.error?.("[RTG Halloween]",error);deps.toast?.("Evento Halloween non disponibile","error");renderCampaignSelect();});
+    }
     function renderCampaignSelect(){
+      halloweenMode?.dispose?.();
       renderHtml(runView.campaignSelectorMarkup());
+      app?.querySelector?.("[data-rtg-halloween-open]")?.addEventListener("click",()=>openHalloween());
       app?.querySelector?.("[data-rtg-campaign-home]")?.addEventListener("click",()=>deps.renderHome?.({initialPage:"rtg"}));
       app?.querySelectorAll?.("[data-rtg-campaign]")?.forEach(button=>button.addEventListener("click",async()=>{
         const campaignId=id(button.dataset.rtgCampaign);
