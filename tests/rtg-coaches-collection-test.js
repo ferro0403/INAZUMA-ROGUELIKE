@@ -20,8 +20,8 @@
   const api=sandbox.RoadToGloryCoaches,stateApi=sandbox.RoadToGloryState,view=sandbox.RoadToGloryCoachesView;
   const campaign=(name="rtg-ie-trilogy")=>stateApi.createInitial({campaignSeed:"coach-tests",campaignId:name});
   test("Ritratti Zukan: tutti i dieci allenatori hanno immagine e figura intera",()=>{
-    assert.equal(api.CATALOG.length,10);
-    for(const coach of api.CATALOG){
+    assert.equal(api.CATALOG.length,11);
+    for(const coach of api.CATALOG.filter(c=>!c.eventCoach)){
       assert.ok(coach.imageUrl.startsWith("https://dxi4wb638ujep.cloudfront.net/1/k/"));
       assert.ok(coach.frontFullbodyUrl.startsWith("https://dxi4wb638ujep.cloudfront.net/1/k/"));
       assert.ok(/\.(png|webp)$/.test(coach.imageUrl));
@@ -37,12 +37,29 @@
     }
   });
   test("Catalogo: 10 Zukan ID univoci e due campagne isolate",()=>{
-    assert.equal(api.CATALOG.length,10);
-    assert.equal(new Set(api.CATALOG.map(c=>c.id)).size,10);
-    assert.equal(api.catalog(campaign()).length,10);
-    assert.equal(api.catalog(campaign("rtg-ares-orion")).length,10);
+    assert.equal(api.CATALOG.length,11);
+    assert.equal(new Set(api.CATALOG.map(c=>c.id)).size,11);
+    assert.equal(api.catalog(campaign()).length,11);
+    assert.equal(api.catalog(campaign("rtg-ares-orion")).length,11);
     assert.equal(api.eligible(campaign("rtg-ares-orion")).length,0);
     assert.equal(api.status(campaign("rtg-ares-orion"),"36"),"locked");
+  });
+  test("Allenatore evento: il catalogo usa la stessa carta, ma non altera il distributore RTG",()=>{
+    const id="halloween-coach-54",coach=api.BY_ID[id];
+    assert.equal(coach.name,"Hekyll Jyde");
+    assert.equal(coach.zukanId,"54");
+    assert.equal(coach.powerName,"Maschera Maledetta");
+    assert.equal(api.status(campaign(),id),"locked");
+    assert.equal(api.eligible(campaign()).some(c=>c.id===id),false);
+    const s=campaign();s.seasonComplete=true;
+    assert.equal(api.eligible(s).some(c=>c.id===id),false,"Season completion cannot unlock this event-only drop");
+    s.coachOwnedIds=[id];
+    assert.equal(api.status(s,id),"owned");
+    assert.match(view.card(coach,"owned"),/rtg-coach-halloween/);
+    assert.match(view.detail(s,id),/MASCHERA MALEDETTA|Maschera Maledetta/);
+    assert.match(view.squadSlot(s,id),/CONFIGURA POTERE/);
+    const other=campaign("rtg-ares-orion");other.coachOwnedIds=[id];
+    assert.equal(api.status(other,id),"owned","Coach remains usable in the other RTG run");
   });
   test("Season bloccate fino al completamento e completamento storico",()=>{
     let s=campaign();s.tokens=4000;
@@ -107,8 +124,8 @@
     assert.match(view.detail(s,"36"),/player-detail-content/);
     assert.doesNotMatch(view.detail(s,"36"),/overall-comparison/);
     assert.match(view.albumMarkup(s),/album-player-grid/);
-    assert.equal((view.albumMarkup(s).match(/class="album-player-entry /g)||[]).length,10);
-    assert.equal((view.markup(s,{tab:"collection"}).match(/data-rtg-coach-detail=/g)||[]).length,10);
+    assert.equal((view.albumMarkup(s).match(/class="album-player-entry /g)||[]).length,11);
+    assert.equal((view.markup(s,{tab:"collection"}).match(/data-rtg-coach-detail=/g)||[]).length,11);
     assert.match(view.albumCard(api.CATALOG[0],"owned"),/rtg-coach-album-card/);
     assert.doesNotMatch(view.albumMarkup(s),/album-player-lock/);
     assert.match(view.card(api.CATALOG[0],"owned"),/rtg-picker-squad-card/);
@@ -147,8 +164,8 @@
       ["4401","Trasformazione totale","Scegli 2 tuoi titolari. Per ciascuno cambi temporaneamente l'elemento in uno dei tre diversi dall'originale (Fuoco, Vento, Albero o Montagna) e trasformi anche tutte le sue mosse speciali disponibili nello stesso elemento. La Potenza e il costo in PT delle mosse rimangono invariati."],
       ["4761","Disordine tattico","Scegli 2 giocatori di movimento avversari e scambi le loro posizioni tattiche nella formazione iniziale."]
     ];
-    assert.equal(api.CATALOG.length,expected.length);
-    assert.equal(new Set(api.CATALOG.map(c=>c.powerName)).size,10);
+    assert.equal(api.CATALOG.length,expected.length+1);
+    assert.equal(new Set(api.CATALOG.map(c=>c.powerName)).size,11);
     for(const [id,name,description] of expected){
       const coach=api.BY_ID[id];
       assert.equal(coach.powerName,name);
@@ -173,7 +190,7 @@
     assert.match(html,/ASSEGNA/);
     assert.match(view.card(api.CATALOG[6],"owned"),/loading="eager"/);
     assert.match(view.card(api.CATALOG[6],"owned"),/data-coach-alternate=/);
-    assert.match(view.card(api.CATALOG[9],"owned"),/rtg-coach-rene-canvas/);
+    assert.match(view.card(api.BY_ID["4761"],"owned"),/rtg-coach-rene-canvas/);
   });
 
   test("René: ID Inazugle 4763 e vecchio ID 4761 RTG preservato",()=>{
@@ -439,8 +456,8 @@
   });
   test("Album: nessun banner copre i ritratti e le 10 card sono autonome",()=>{
     const html=view.albumMarkup(campaign());
-    assert.equal((html.match(/rtg-coach-album-card/g)||[]).length,10);
-    assert.equal((html.match(/rtg-coach-album-status/g)||[]).length,10);
+    assert.equal((html.match(/rtg-coach-album-card/g)||[]).length,11);
+    assert.equal((html.match(/rtg-coach-album-status/g)||[]).length,11);
     assert.doesNotMatch(html,/album-player-lock|NON SBLOCCATO/);
     const css=read("css/rtg-coaches.css");
     assert.match(css,/rtg-coach-album-card::before/);
