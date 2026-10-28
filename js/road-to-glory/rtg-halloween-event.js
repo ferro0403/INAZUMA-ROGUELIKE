@@ -115,12 +115,12 @@
     const notify = deps.toast || (()=>{});
     let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false;
     let tick = null, matchTimer = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
-    let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null;
+    let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null,lastResolutionStage="resolved";
     let vendingMotion=null;
     const assertCurrent = epoch => { if (epoch !== session) throw fail("halloween-stale-controller"); global.RoadToGloryPersistence?.assertWritable?.(); };
     function dispose() { session++; if (tick != null) global.clearInterval?.(tick); tick = null;
       if(matchTimer!=null)global.clearTimeout?.(matchTimer);matchTimer=null;
-      vendingMotion?.stop?.();vendingMotion=null;lastResolution=null;
+      vendingMotion?.stop?.();vendingMotion=null;lastResolution=null;lastResolutionStage="resolved";
       deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
     }
     function listen() { if(tick!=null)global.clearInterval?.(tick);tick=global.setInterval?.(()=>{const el=app?.querySelector?.("[data-halloween-countdown]"); if(el)el.textContent=isOpen()?countdown():"EVENTO TERMINATO";if(!isOpen())app?.querySelectorAll?.("[data-halloween-start],[data-halloween-pull]")?.forEach(b=>b.disabled=true);},1000); }
@@ -348,7 +348,9 @@
             overlay.innerHTML=v.halftimeMarkup(halftimeDraft,{match:m,selectedPlayerId:halfSelected});
           }else if(m.status==="penalties")overlay.innerHTML=v.penaltyMarkup(m,nativePenaltyContext(m));
           else if(lastResolution){
-            overlay.innerHTML=v.resolvedEncounterMarkup(lastResolution);
+            overlay.innerHTML=lastResolutionStage==="comparison"&&v.finalComparisonMarkup?v.finalComparisonMarkup(lastResolution)
+              :lastResolutionStage==="resolving"&&v.resolvingEncounterMarkup?v.resolvingEncounterMarkup(lastResolution)
+              :v.resolvedEncounterMarkup(lastResolution);
           }else if(m.pendingEncounter){
             const pending=m.pendingEncounter;
             if(encounterKey!==asId(pending.encounterId)){encounterKey=asId(pending.encounterId);encounterSelection="";}
@@ -393,13 +395,19 @@
           halfSelected="";render();
         }));
       }
-      app.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>{lastResolution=null;perform(()=>stepMatch(null));});
+      app.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>{if(lastResolutionStage!=="resolved")return;lastResolution=null;perform(()=>stepMatch(null));});
+      if(!done&&lastResolution&&lastResolutionStage!=="resolved"&&typeof global.setTimeout==="function"){
+        const epoch=session,stage=lastResolutionStage;
+        matchTimer=global.setTimeout(()=>{matchTimer=null;if(epoch!==session||!lastResolution||lastResolutionStage!==stage)return;
+          lastResolutionStage=stage==="comparison"?"resolving":"resolved";render();
+        },stage==="comparison"?1700:1150);
+      }
       if(!done && m.status==="active" && !m.pendingEncounter && !lastResolution && m.presentation?.preMatchSeen===true && typeof global.setTimeout==="function"){
         const activeId=m.matchId,epoch=session;
         matchTimer=global.setTimeout(()=>{
           matchTimer=null;
           if(epoch===session&&view==="match"&&match?.matchId===activeId&&!busy)perform(()=>stepMatch(null));
-        },550);
+        },2200);
       }
     }
     function openNativePreMatchCoachPower(){
@@ -731,13 +739,14 @@
       });
       assertCurrent(epoch);match=latest;
       if(choice==="halftime"){halftimeDraft=null;halfSelected="";}
-      lastResolution=null;
+      lastResolution=null;lastResolutionStage="resolved";
       const log=before?.encounterId&&latest?.log?.find?.(entry=>asId(entry.encounterId)===asId(before.encounterId));
       if(before&&log&&latest.status==="active"){
         const userPlayer=findNativeMatchPlayer("user",before.userPlayerId);
         const opponentPlayer=findNativeMatchPlayer("opponent",before.aiPlayerId||before.opponentPlayerId);
         const userWon=before.userSide===before.actorSide?!!log.actorWon:!log.actorWon;
         const selectedMove=choice?.startsWith("move:")?before.userMoveOptions?.[Number(choice.slice(5))]:null;
+        lastResolutionStage="comparison";
         lastResolution={
           userWon,actorSide:before.actorSide,userKind:before.userKind,aiKind:before.aiKind,
           userPlayer,opponentPlayer,userPlayerName:userPlayer?.name,aiPlayerName:opponentPlayer?.name,
