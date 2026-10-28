@@ -119,9 +119,25 @@ const squadView={
     root.querySelectorAll("[data-rtg-adapt]").forEach(el=>el.addEventListener("click",actions.onAdaptRequirements));
   }
 };
-let nativeDetailOpened=false;
-let nativeAlbumRendered=false;
-const nativeRunView={albumRosterMarkup(){nativeAlbumRendered=true;return '<main class="album-roster-screen"><button data-rtg-album-back>BACK</button></main>';}};
+let nativeDetailOpened=false,albumDetail=null;
+let nativeAlbumTeamsRendered=false,nativeAlbumRendered=false,nativeAlbumCatalog=[];
+const nativeRunView={
+  albumTeamsMarkup({teams}){
+    nativeAlbumTeamsRendered=true;
+    assert.equal(teams.length,1,"Halloween starts with one event team, not a direct roster");
+    assert.equal(teams[0].teamName,"Occult Halloween");
+    assert.equal(teams[0].total,18);
+    return '<main class="album-teams-screen"><button data-rtg-album-collection-back>COLLEZIONI</button>'+
+      teams.map(t=>'<button data-rtg-album-team="'+t.teamId+'">'+t.teamName+'</button>').join("")+'</main>';
+  },
+  albumRosterMarkup({entries,allEntries}){
+    nativeAlbumRendered=true;nativeAlbumCatalog=allEntries;
+    const unlocked=new Set(entries.map(p=>p.cardId));
+    return '<main class="album-roster-screen"><button data-rtg-album-back>SQUADRE</button><div data-rtg-album-roster>'+
+      allEntries.map(p=>'<div data-rtg-album-player-entry="'+p.cardId+'" data-album-unlocked="'+(unlocked.has(p.cardId)?"true":"false")+'">'+p.name+'</div>').join("")+
+      '</div></main>';
+  }
+};
 const E=context.RoadToGloryHalloween;
 function control(attr,predicate=()=>true) {
   return (app.controls[attr]||[]).find(x=>predicate(x.dataset));
@@ -153,7 +169,7 @@ async function main() {
   assert.equal(E.weightedPick(["custom_0002","custom_0001"],0),"custom_0002");
   assert.throws(()=>E.eventState({pumpkins:-1,ownedIds:[],completedIds:[],pullCount:0,luckyWins:0}),/halloween-invalid-account/);
   const controller=E.create({app,storage,toast:()=>{},squadView,runView:nativeRunView,
-    showPlayerDetailsFor:()=>{nativeDetailOpened=true;}});
+    showPlayerDetailsFor:(p,options)=>{nativeDetailOpened=true;albumDetail={player:p,options};}});
   await controller.open();
   assert.match(app.innerHTML,/rtg-journey-summary/,"Homepage must reuse RTG run summary");
   assert.doesNotMatch(app.innerHTML,/rtg-map rtg-halloween-map/,"Cemetery is the whole RTG homepage background, not an extra content box");
@@ -230,7 +246,28 @@ async function main() {
   assert.equal(records["shared:account"].halloween.pumpkins,300,"Defeat must award 300");
   assert.equal(records["shared:account"].halloween.completedIds.length,2);
   await controller.open("album");
-  assert.equal(nativeAlbumRendered,true,"Album uses native RTG roster component");
+  assert.equal(nativeAlbumTeamsRendered,true,"Event album starts with native RTG teams");
+  assert.equal(nativeAlbumRendered,false,"The album must NOT skip the teams page");
+  await control("data-rtg-album-team").fire();
+  assert.equal(nativeAlbumRendered,true,"Opening Occult Halloween uses native RTG roster");
+  assert.equal(nativeAlbumCatalog.length,18,"Locked players remain in the collection");
+  const ownedIds=new Set(records["shared:account"].halloween.ownedIds);
+  const lockedPlayer=nativeAlbumCatalog.find(p=>!ownedIds.has(p.playerId));
+  assert.ok(lockedPlayer,"Collection must contain a locked player for inspection");
+  const rosterControl=control("data-rtg-album-roster");
+  assert.equal(typeof rosterControl?.callbacks?.click,"function","Roster cards must use event-specific delegated click handling");
+  rosterControl.callbacks.click({
+    target:{closest:selector=>selector==="[data-rtg-album-player-entry]"
+      ?{dataset:{rtgAlbumPlayerEntry:lockedPlayer.cardId,albumUnlocked:"false"}}:null},
+    preventDefault(){}
+  });
+  assert.equal(nativeDetailOpened,true,"Locked player details must open");
+  assert.equal(albumDetail?.player?.cardId,lockedPlayer.cardId,"Use the exact locked Halloween card");
+  assert.equal(albumDetail?.options?.mode,"album","Locked details use native album mode");
+  assert.equal(albumDetail?.options?.albumUnlocked,false,"Inspecting must not unlock the card");
+  await control("data-rtg-album-back").fire();
+  assert.match(app.innerHTML,/album-teams-screen/,"Roster back returns to event teams");
+  assert.equal(records["shared:account"].halloween.ownedIds.length,2,"Inspection must not change owned cards");
   const snapshot=context.RoadToGloryCloudSnapshot.project({
     trilogy:null,aresOrion:null,shared:records["shared:account"],album:{version:1,cardIds:[]}
   });
