@@ -84,12 +84,18 @@
     assert.match(css,/\.rtg-coach-halloween img\.rtg-coach-fullbody/);
     assert.match(css,/\.rtg-coach-halloween \.rtg-coach-team-logo/);
     assert.match(css,/\.rtg-coach-halloween img\.rtg-coach-portrait/);
-    const hekyllFullbodyRule=css.match(/\.rtg-coach-detail\.rtg-coach-halloween \.player-detail-visual img\.rtg-coach-fullbody\s*\{([^}]+)\}/)?.[1];
-    assert.ok(hekyllFullbodyRule,"Hekyll must have a scoped fullbody alignment rule");
-    assert.match(hekyllFullbodyRule,/left:50%!important;/,"Centered horizontal anchor, not inherited left:60%");
-    assert.match(hekyllFullbodyRule,/transform:translateX\(-50%\)!important;/,"Restore native centering transform");
-    assert.match(hekyllFullbodyRule,/object-fit:contain!important;/,"Show the whole character without cropping");
-    assert.doesNotMatch(hekyllFullbodyRule,/transform:none!important;/,"Never push fullbody outside the hero again");
+    // Hekyll must inherit the SAME native coach fullbody geometry as Ray Dark.
+    // A previous Hekyll-only transform:none moved him out of frame; an
+    // Hekyll-only scale(1) made him much smaller than the standard coaches.
+    assert.doesNotMatch(css,/\.rtg-coach-detail\.rtg-coach-halloween \.player-detail-visual img\.rtg-coach-fullbody\s*\{/,
+      "Never override the coach fullbody geometry just for Hekyll");
+    const baseArt=read("css/player-detail-reference-tuning.css");
+    assert.match(baseArt,/\.player-detail-hero \.player-fullbody--fullbody\s*\{[^}]*scale\(1\.72\)/s,
+      "The native coach fullbody already has the correct mobile scale");
+    assert.match(css,/\.rtg-coach-detail\.rtg-coach-halloween \.rtg-coach-power\s*\{[^}]*background:#fff4e5!important/s,
+      "Hekyll keeps the Halloween card style");
+    assert.match(css,/\.rtg-coach-detail \.rtg-coach-power p\s*\{[^}]*color:#17191b!important/s,
+      "Coach ability copy stays legible on the cream panel");
   });
   test("Season bloccate fino al completamento e completamento storico",()=>{
     let s=campaign();s.tokens=4000;
