@@ -84,7 +84,7 @@ const context={
   RtgFourMovesRuntime:{ready:Promise.resolve(true)},
   RoadToGloryMatchEngine:{
     createMatch(options){return {...clone(options),status:"active",score:{user:0,opponent:0},result:null};},
-    prepareNext(state){return {...clone(state),status:"completed",result:{winner:"user"}};},
+    prepareNext(state){return !state.__testPrepared?{...clone(state),status:"active",__testPrepared:true}:{...clone(state),status:"completed",result:{winner:"user"}};},
     abandon(state){return {...clone(state),status:"abandoned",result:{winner:"opponent"}};}
   },
   RoadToGloryRng:{int:()=>0}
@@ -165,7 +165,7 @@ async function main() {
   assert.equal(new Set(records["shared:account"].halloween.ownedIds).size,2);
   assert.equal(records["shared:account"].tokens,83,"Regular RTG tokens must not change");
   await controller.open();
-  context.RoadToGloryMatchEngine.prepareNext=state=>({...clone(state),status:"completed",result:{winner:"opponent"}});
+  context.RoadToGloryMatchEngine.prepareNext=state=>!state.__testPrepared?{...clone(state),status:"active",__testPrepared:true}:({...clone(state),status:"completed",result:{winner:"opponent"}});
   await control("data-halloween-start").fire();
   await control("data-halloween-next").fire();
   assert.equal(records["shared:account"].halloween.pumpkins,500,"Defeat must award 300");
