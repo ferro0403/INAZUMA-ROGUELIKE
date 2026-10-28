@@ -178,12 +178,27 @@
 .halloween-album-mode .album-player-entry.is-unlocked .player-card{box-shadow:0 0 10px #ff8c2155}
 .halloween-album-mode .album-player-entry.is-locked{opacity:.53}
 /* Native fullbody player detail modal, never an alternate template. */
-#modal-root.halloween-detail-native .player-detail,#modal-root.halloween-detail-native .player-detail-card,#modal-root.halloween-detail-native .player-detail-content{background-color:#22121b!important;color:#fff0d5!important}
-#modal-root.halloween-detail-native .player-detail-header,#modal-root.halloween-detail-native .player-detail-hero{background:linear-gradient(115deg,#35151b,#aa4818)!important}
-#modal-root.halloween-detail-native .detail-stats>div{border-color:#fe8a26!important;background:#1c1118!important;color:#ffe9c5!important}
-#modal-root.halloween-detail-native .player-detail-section h3{color:#ffa42c!important}
-#modal-root.halloween-detail-native .player-detail-visual{background:linear-gradient(125deg,#50151e,#de721b)!important}
-#modal-root.halloween-detail-vampire .player-fullbody{filter:sepia(.12) saturate(.65) hue-rotate(295deg) brightness(.68) contrast(1.32) drop-shadow(0 0 14px #ff304b90)}
+/* The modal root can survive navigation between player and coach details.
+   Restrict the dark event skin to actual Halloween PLAYER details only:
+   canonical RTG coach details (all 10 regular coaches) must keep their usual
+   white backgrounds, dark text and season-specific styling. */
+#modal-root.halloween-detail-native .player-detail-layout.halloween-event-detail,
+#modal-root.halloween-detail-native .player-detail-layout.halloween-event-detail .player-detail-content{
+  background-color:#22121b!important;color:#fff0d5!important
+}
+#modal-root.halloween-detail-native .player-detail-layout.halloween-event-detail .player-detail-hero{
+  background:linear-gradient(115deg,#35151b,#aa4818)!important
+}
+#modal-root.halloween-detail-native .player-detail-layout.halloween-event-detail .detail-stats>div{
+  border-color:#fe8a26!important;background:#1c1118!important;color:#ffe9c5!important
+}
+#modal-root.halloween-detail-native .player-detail-layout.halloween-event-detail .player-detail-section h3{color:#ffa42c!important}
+#modal-root.halloween-detail-native .player-detail-layout.halloween-event-detail .player-detail-visual{
+  background:linear-gradient(125deg,#50151e,#de721b)!important
+}
+#modal-root.halloween-detail-vampire .player-detail-layout.halloween-event-detail .player-fullbody{
+  filter:sepia(.12) saturate(.65) hue-rotate(295deg) brightness(.68) contrast(1.32) drop-shadow(0 0 14px #ff304b90)
+}
 @media(max-width:640px){.rtg-halloween-run-screen .rtg-run-content{padding-bottom:100px}.rtg-halloween-run-screen .rtg-map.rtg-halloween-map{min-height:480px}.halloween-squad-mode .rtg-squad-content{padding-bottom:90px}}
 
 .rtg-halloween-run-screen.halloween-screen{padding:0!important;width:100%!important}
