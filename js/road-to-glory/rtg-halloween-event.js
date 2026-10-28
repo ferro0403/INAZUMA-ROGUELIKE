@@ -251,7 +251,7 @@
         (match?'<button type="button" class="btn btn-yellow" data-halloween-resume>RIPRENDI PARTITA →</button>':'')+
         (!can?'<p class="halloween-squad-requirement">La tua squadra: '+(own??"—")+' OVR · limite '+limit+' · 11 titolari e 4 riserve. <button data-halloween-tab="squad">GESTISCI SQUADRA →</button></p>':'')+
         '<div class="rtg-journey-progress" role="progressbar" aria-valuenow="1" aria-valuemin="0" aria-valuemax="1"><span style="width:100%"></span></div></section>'+
-        '<section class="panel rtg-run-command halloween-original-command"><div><p class="eyebrow">LA TUA COLLEZIONE</p><h2>Rinforza la squadra</h2><p>Vittoria: '+currency(PRIZE)+' · bonus fortunato 10%: '+currency(LUCKY_PRIZE)+' totali</p></div>'+
+        '<section class="panel rtg-run-command halloween-original-command"><div><p class="eyebrow">LA TUA COLLEZIONE</p><h2>Rinforza la squadra</h2><p class="halloween-reward-description">Vittoria: '+currency(PRIZE)+' · bonus 10%: '+currency(LUCKY_PRIZE)+'</p></div>'+
         '<button type="button" class="btn btn-yellow rtg-vending-button" data-halloween-open-vending>DISTRIBUTORE HALLOWEEN <span>'+currency(PRICE)+'</span></button></section>'+
         '<section class="rtg-map rtg-halloween-map" aria-label="Partita nel cimitero"><div class="halloween-map-content"><span class="eyebrow">SFIDA A TEMPO · OCCULT</span>'+
         '<img class="halloween-map-crest" src="'+escape(LOGO_URL)+'" alt=""><h2>IL CIMITERO STREGATO</h2>'+
@@ -360,7 +360,7 @@
           if(p&&side==="opponent")openNativeDetail(asId(p.cardId||p.playerId));
           else if(p)openNativeDetail(asId(p.cardId||p.playerId));
         },
-        onPreMatchStart:()=>perform(()=>stepMatch("prematch")),
+        onPreMatchStart:()=>m.presentation?.preMatchPowerStatus==="pending"?openNativePreMatchCoachPower():perform(()=>stepMatch("prematch")),
         onPreMatchCoachPower:()=>openNativePreMatchCoachPower(),
         onEncounterChoice:(choice,confirm)=>{
           if(!m.pendingEncounter)return;
@@ -648,7 +648,7 @@
       let latest;
       await storage.updateMany([MATCH_KEY],records=>{
         const m=records[MATCH_KEY];if(!m||m.matchId!==match.matchId)throw fail("halloween-stale-match");
-        if(choice==="prematch"){latest={...m,presentation:{...(m.presentation||{}),preMatchSeen:true}};}
+        if(choice==="prematch"){if(m.presentation?.preMatchPowerStatus==="pending")throw fail("halloween-coach-power-pending");latest={...m,presentation:{...(m.presentation||{}),preMatchSeen:true}};}
         else if(choice==="halftime")latest=global.RoadToGloryMatchEngine.confirmHalftime(m,halftimeDraft||m.userSquad);
         else if(choice?.startsWith("penalty:")||choice?.startsWith("penalty-move:")) {
           const n=m.shootout?.history?.length||0,side=n%2===0?"user":"opponent",direction=choice.slice(8);
