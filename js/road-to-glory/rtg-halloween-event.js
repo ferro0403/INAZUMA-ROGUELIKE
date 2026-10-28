@@ -619,10 +619,27 @@
         if(button.disabled)return;
         button.disabled=true;
         return perform(async()=>{
-          await pull();
+          const drawn=await pull(); // Account debit and card acquisition already committed.
+          if(!drawn?.player||!drawn?.result)return;
+          const machine=app.querySelector?.("[data-rtg-vending-machine]");
+          const rarity=String(drawn.result.rarity||"").toLowerCase();
+          const capsuleColour=rarity==="leggenda"||rarity==="elite"?"orange":"black";
           if(vendingMotion){
-            try{await vendingMotion.play("orange");}catch(error){global.console?.warn?.("[Halloween] Animazione distributore",error);}
+            try{await vendingMotion.play(capsuleColour);}
+            catch(error){global.console?.warn?.("[Halloween] Animazione distributore",error);}
+          }else if(machine){
+            machine.classList.add("is-turning");
+            if(typeof global.setTimeout==="function")await new Promise(resolve=>global.setTimeout(resolve,620));
           }
+          if(machine?.classList)machine.classList.add("is-revealing");
+          if(typeof global.setTimeout==="function")await new Promise(resolve=>global.setTimeout(resolve,980));
+          if(!deps.runView?.pullResultMarkup||!deps.openModal)return;
+          let markup=deps.runView.pullResultMarkup(drawn.result,drawn.player,{teams:[{teamId:TEAM_ID,teamName:"Occult Halloween",logoUrl:LOGO_URL}]});
+          markup=markup.replace("SALDO RTG","ZUCCHE HALLOWEEN").replace(/(\d+) ◈/g,"$1 ZUCCHE")
+            .replace(/ROAD TO GLORY · LEGACY [^<]*/,"OCCULT · HALLOWEEN");
+          deps.openModal(markup,{className:"rtg-modal rtg-pull-modal rtg-halloween-pull-modal"});
+          modalRoot()?.querySelector?.("[data-rtg-pull-continue]")?.addEventListener("click",()=>deps.closeModal?.());
+          modalRoot()?.querySelector?.("[data-rtg-pull-player-detail]")?.addEventListener("click",()=>openNativeDetail(drawn.result.cardId));
         }).finally?.(()=>{if(button.isConnected)button.disabled=false;});
       });
       if(match&&view==="match"&&deps.matchView)bindNativeMatch();
@@ -816,7 +833,8 @@
         account.gachaAcquiredCards.push(record);
       });
       const p=player(selected);
-      notify("🎃 Sbloccato: "+(p?.name||selected)+"! Disponibile in tutte le Season.");
+      return {player:p,result:{cardId:EVENT_ID+"::"+selected,playerId:selected,legacySeasonId:EVENT_ID,rarity:p?.category||"Normale",balanceAfter:shared.halloween.pumpkins}};
+
     }
     async function open(initialView="match") {
       dispose();const epoch=session;
