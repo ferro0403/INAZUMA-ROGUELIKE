@@ -97,6 +97,8 @@ const context={
   },
   RoadToGloryRng:{int:()=>0}
 };
+vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches.js","utf8"),context);
+vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-coaches-view.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-encounter-runtime.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-card-identity.js","utf8"),context);
 vm.runInNewContext(fs.readFileSync("js/road-to-glory/rtg-match-view.js","utf8"),context);
@@ -335,6 +337,30 @@ async function main() {
   context.setTimeout=oldSetTimeout;
   context.clearTimeout=oldClearTimeout;
   delete records["local:halloween2026:match"];
+  // Event coach is a separate rare prize (same weight as the two specials).
+  // The last unowned prize must award into the EXISTING account coachOwnedIds,
+  // never into player ownedIds or gachaAcquiredCards.
+  const coachId="halloween-coach-54";
+  assert.equal(E.weightedPick(["custom_0002",coachId],.49),"custom_0002");
+  const account=records["shared:account"];
+  account.halloween.ownedIds=Array.from(assets.players.keys());
+  account.halloween.pumpkins=300;
+  const originalPlayerCount=account.gachaAcquiredCards.length;
+  assert.equal(account.coachOwnedIds.includes(coachId),false);
+  const coachController=E.create({app,storage,toast:()=>{},squadView,runView:nativeRunView});
+  await coachController.open();
+  await control("data-halloween-open-vending").fire();
+  await control("data-halloween-pull").fire();
+  assert.equal(records["shared:account"].halloween.pumpkins,0,"Coach draw debits exactly 300 pumpkins");
+  assert.equal(records["shared:account"].coachOwnedIds.filter(id=>id===coachId).length,1,"Coach is owned exactly once");
+  assert.equal(records["shared:account"].halloween.ownedIds.length,18,"No imaginary nineteenth player");
+  assert.equal(records["shared:account"].gachaAcquiredCards.length,originalPlayerCount,
+    "Coach is not stored as a player card");
+  assert.equal(context.RoadToGloryCoaches.status({...records["shared:account"],campaignId:"rtg-ares-orion"},coachId),"owned");
+  assert.equal(context.RoadToGloryCoaches.status({...records["shared:account"],campaignId:"rtg-ie-trilogy"},coachId),"owned");
+  await coachController.open();
+  assert.match(app.innerHTML,/DISTRIBUTORE STREGATO/);
+  coachController.dispose();
   console.log("RTG Halloween: 18 players / 72 moves, RTG run/squad/album/fullbody layout, 11v11 pitch, OVR+1, 16 vampire filters, countdown, idempotent 600/300 prizes, unique 300-pumpkin pulls, cloud compatibility PASS");
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
