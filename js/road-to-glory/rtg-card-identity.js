@@ -109,6 +109,7 @@
 
   function versionGroupKey(value, fallbackSeasonId = null) {
     const parsed = parse(value, fallbackSeasonId);
+    if (parsed.legacySeasonId === "halloween2026") return `card${SEP}${parsed.cardId}`;
     if (parsed.sourceKind === "season") {
       const canonical = id(parsed.canonicalPlayerId || canonicalPlayerId(parsed.legacySeasonId, parsed.profileId || parsed.playerId) || parsed.playerId);
       return canonical ? `season${SEP}${canonical}` : `card${SEP}${parsed.cardId}`;
