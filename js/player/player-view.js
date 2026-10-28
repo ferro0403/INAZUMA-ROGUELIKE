@@ -84,7 +84,7 @@
           ? `<div class="player-meta player-meta--stacked" aria-label="Dettagli giocatore"><div class="player-meta-line player-meta-line--role-overall"><span data-player-role>${escapeHtml(playerRole)}</span><span aria-hidden="true">•</span><span data-player-overall>${escapeHtml(overall)}</span></div><div class="player-meta-line player-meta-line--level"><span aria-hidden="true">•</span><span data-player-level>Lv ${escapeHtml(level)}</span></div></div>`
           : `<div class="player-meta" aria-label="Dettagli giocatore"><span>${escapeHtml(playerRole)}</span><span>${escapeHtml(overall)}</span><span>Lv ${escapeHtml(level)}</span></div>`;
       return `
-      <${cardTag} ${cardTag === "button" ? 'type="button"' : ""} class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player ${escapeHtml(extraClass)} ${rarityClass(player.category)} ${equipment ? "has-equipment" : ""} ${selected ? "selected" : ""}" ${dataAttr}>
+      <${cardTag} ${cardTag === "button" ? 'type="button"' : ""} class="player-card player-card-compact tactical-player-card tactical-player-card--desktop tactical-player-card--mobile mini-player ${escapeHtml(extraClass)} ${player?.legacySeasonId==="halloween2026"?"halloween-event-card":""} ${rarityClass(player.category)} ${equipment ? "has-equipment" : ""} ${selected ? "selected" : ""}" ${dataAttr}>
         <span class="player-corner player-role" aria-label="Ruolo ${escapeHtml(playerRole)}">${escapeHtml(playerRole)}</span><span class="player-corner player-overall" aria-label="Overall ${overall}">${overall}</span>
         <div class="player-portrait-wrap"><img class="player-portrait" src="${escapeHtml(visuals.portraitUrl(player))}" alt="" loading="lazy" ${visuals.imageFallbackAttributes(visuals.resolve(player).cardFallbacks)} /></div>
         <div class="player-info"><div class="player-title"><strong title="${escapeHtml(player.name)}">${escapeHtml(player.name)}</strong>${equipmentInFooter ? equipmentMarkup : ""}</div>${detail}</div>
@@ -299,7 +299,7 @@
           ? "Squadra campione"
           : "";
       return `
-        <div class="player-detail-layout ${rarityClass(currentRarity)} ${historical ? "player-detail-historical" : ""}">
+        <div class="player-detail-layout ${rarityClass(currentRarity)} ${historical ? "player-detail-historical" : ""} ${player?.legacySeasonId==="halloween2026"?"halloween-event-detail":""}">
           <section class="player-detail-hero ${String(resolved.name || "").length > 18 ? "player-detail-hero--extra-long-name" : String(resolved.name || "").length > 12 ? "player-detail-hero--long-name" : ""}">
             ${rtgRoleSwitchButton}
             ${rtgLegacyBadge}
@@ -322,7 +322,7 @@
               </div>
               <p class="detail-category"><span aria-hidden="true">★</span><small>Rarità</small><strong>${escapeHtml(currentRarity)}</strong></p>
             </div>
-            <div class="player-detail-visual ${rarityClass(resolved.category)}">
+            <div class="player-detail-visual ${rarityClass(resolved.category)} ${player?.halloweenVampire===true?"halloween-vampiro":""}">
               ${detailVisual.detailImageUrl ? `<img class="player-fullbody player-fullbody--${escapeHtml(detailVisual.detailImageKind)}" src="${escapeHtml(detailVisual.detailImageUrl)}" alt="${escapeHtml(resolved.name)}" loading="lazy" decoding="async" ${visuals.imageFallbackAttributes(detailVisual.detailFallbacks)} />` : `<span class="player-fullbody player-fullbody-placeholder" aria-hidden="true">⚽</span>`}
             </div>
           </section>
