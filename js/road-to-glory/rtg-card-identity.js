@@ -8,7 +8,7 @@
 
   function normalizeSeasonId(value) {
     const raw = id(value);
-    if (!raw || raw === FREE_AGENTS) return raw;
+    if (!raw || raw === FREE_AGENTS || raw === "halloween2026") return raw;
     return id(global.SeasonRegistry?.normalizeSeasonId?.(raw) || raw);
   }
 
