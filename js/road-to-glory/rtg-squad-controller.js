@@ -674,6 +674,7 @@
       if(!constraint)return[];
       const recruitSet=deps.acquiredCardIdSet();
       const coachCapId=global.RoadToGloryCoachPowerRuntime?.capOverrideFor?.(deps.squadDraft,deps.campaign)||"";
+      const coachDiscount=global.RoadToGloryCoachPowerRuntime?.overallDiscountFor?.(deps.squadDraft,deps.campaign)||null;
       const recentTeams=new Set(deps.squadRuntime.recentDefeatedTeamIds(teamId,draftState(),constraint.recentWindow));
       return accessibleDraftIds().map(playerId=>{
         const player=deps.resolved(playerId,deps.squadDraft?.activeRoleVariantByCardId?.[playerId]||null);
@@ -683,7 +684,8 @@
         const move=deps.playerResolver.resolveMove?.(playerId,deps.activeSeasonId(),role,deps.freeAgentsDb,deps.squadDraft?.activeRoleVariantByCardId?.[playerId]||null)||null;
         const movePower=Number(move?.power);
         const realOverall=Number(player.overall||0);
-        const contribution=(playerId===coachCapId?Math.min(realOverall,60):realOverall)+
+        const contribution=Math.max(0,(playerId===coachCapId?Math.min(realOverall,60):realOverall)-
+          (playerId===coachDiscount?.cardId?coachDiscount.amount:0))+
           (Number.isFinite(movePower)?Math.max(0,Math.min(2,(movePower-50)/30)):0);
         const season=deps.activeSeasonId();
         const parsed=deps.cardIdentity?.parse?.(playerId,season)||{};
@@ -938,7 +940,10 @@
               playerResolver:deps.playerResolverForState(draftState()),freeAgentsDb:deps.freeAgentsDb,
               activeRoleVariantByCardId:draft.activeRoleVariantByCardId||{}};
             return {before:deps.squadRuntime.teamPower(base),
-              after:deps.squadRuntime.teamPower({...base,coachCapCardId:selection?.cardIds?.[0]||null})};
+              after:deps.squadRuntime.teamPower({...base,
+                coachCapCardId:deps.squadDraft?.coachId==="1777"?selection?.cardIds?.[0]||null:null,
+                coachOverallDiscount:deps.squadDraft?.coachId==="halloween-coach-54"&&selection?.cardIds?.length===1
+                  ?{cardId:selection.cardIds[0],amount:15}:null})};
           },
           previewChoice:(key,selection)=>{
             const card=deps.resolved(key,deps.squadDraft?.activeRoleVariantByCardId?.[key]||null);
