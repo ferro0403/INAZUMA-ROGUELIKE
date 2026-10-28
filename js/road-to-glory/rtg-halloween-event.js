@@ -375,7 +375,7 @@
             if(!halftimeDraft)halftimeDraft=clone(m.userSquad);
             overlay.innerHTML=v.halftimeMarkup(halftimeDraft,{match:m,selectedPlayerId:halfSelected});
           }else if(m.status==="penalties")overlay.innerHTML=v.penaltyMarkup(m,nativePenaltyContext(m));
-          }else if(m.pendingEncounter){
+          else if(m.pendingEncounter){
             if(pendingRevealHidden){overlay.innerHTML="";}else{
             const pending=m.pendingEncounter;
             if(encounterKey!==asId(pending.encounterId)){encounterKey=asId(pending.encounterId);encounterSelection="";}
