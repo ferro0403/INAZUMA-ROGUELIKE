@@ -15,7 +15,7 @@
     if(["mountain","montagna"].includes(token))return "mountain";
     return "";
   };
-  const powerReady=coachId=>["208","1329","1777","1974","4401"].includes(id(coachId));
+  const powerReady=coachId=>["208","1329","1777","1974","4401","halloween-coach-54"].includes(id(coachId));
   const nextRarity=rarity=>{
     const index=RARITIES.indexOf(String(rarity||""));
     return index>=0&&index<RARITIES.length-1?RARITIES[index+1]:null;
@@ -51,6 +51,11 @@
        new Set(config.cardIds).size!==config.cardIds.length)return null;
     const lineup=new Map(players.map(player=>[cardId(player),player]));
     const bench=new Map(benchPlayers.map(player=>[cardId(player),player]));
+    if(config.coachId==="halloween-coach-54"){
+      // The event coach affects only access requirements, never actual player stats.
+      return config.cardIds.length===1&&lineup.has(config.cardIds[0])&&
+        config.cardIds[0].startsWith("halloween2026::")?config:null;
+    }
     if(config.coachId==="208"){
       return config.cardIds.length===2&&config.cardIds.every(key=>lineup.has(key))?config:null;
     }
@@ -110,6 +115,11 @@
     const config=validConfig(squad,squad?.lineup||[],state?.activeSeasonId,squad?.bench||[]);
     return config?.cardIds?.[0]||null;
   }
+  function overallDiscountFor(squad,state){
+    if(id(squad?.coachId)!=="halloween-coach-54"||!owned(state,"halloween-coach-54"))return null;
+    const config=validConfig(squad,squad?.lineup||[],state?.activeSeasonId,squad?.bench||[]);
+    return config?{cardId:config.cardIds[0],amount:15}:null;
+  }
   function eligibleRosterForCap(squad){
     // Preserve all 15 squad members. The capped value is substituted in teamPower.
     return [...(squad?.lineup||[]),...(squad?.bench||[])];
@@ -118,6 +128,7 @@
     if(!match||!squad||!owned(state,squad.coachId)||match.coachPowerEffect)return match;
     const config=validConfig(squad,match.userSquad?.lineup||[],match.seasonId,match.userSquad?.bench||[]);
     if(!config)return match;
+    if(config.coachId==="halloween-coach-54")return match; // Strictly no in-match effect or snapshot.
     const coachId=config.coachId,card=config.cardIds[0];
     if(["208","1329","1974"].includes(coachId)&&match.ptModeVersion!==1)return match;
     const effect={
@@ -203,6 +214,6 @@
   }
   global.RoadToGloryCoachPowerRuntime=Object.freeze({
     RARITIES,ELEMENTS,elementKey,powerReady,nextRarity,rarityOf,selected,fourMoves,availableMoveIndices,validConfig,
-    eligibleRosterForCap,capOverrideFor,applyToMatch,moveCost,moveElement,
+    eligibleRosterForCap,capOverrideFor,overallDiscountFor,applyToMatch,moveCost,moveElement,
   });
 })(globalThis);
