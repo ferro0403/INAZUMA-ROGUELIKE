@@ -696,7 +696,7 @@
           if(!deps.runView?.pullResultMarkup||!deps.openModal)return;
           let markup=deps.runView.pullResultMarkup(drawn.result,drawn.player,{teams:[{teamId:TEAM_ID,teamName:"Occult Halloween",logoUrl:LOGO_URL}]});
           markup=markup.replace("SALDO RTG","ZUCCHE HALLOWEEN")
-            .replace(/(<div class="rtg-pull-balance">[\\s\\S]*?<strong>)[\\s\\S]*?(<\\/strong>)/,
+            .replace(/(<div class="rtg-pull-balance">[\s\S]*?<strong>)[\s\S]*?(<\/strong>)/,
                (_all,before,after)=>before+'<img class="halloween-reveal-currency-icon" src="'+escape(PUMPKIN_URL)+'" alt="Zucca Halloween"> '+escape(drawn.result.balanceAfter)+' ZUCCHE'+after)
             .replace(/ROAD TO GLORY · LEGACY [^<]*/,"OCCULT · HALLOWEEN");
           deps.openModal(markup,{className:"rtg-modal rtg-pull-modal rtg-halloween-pull-modal"});
