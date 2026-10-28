@@ -113,12 +113,12 @@
     const notify = deps.toast || (()=>{});
     let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false;
     let tick = null, matchTimer = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
-    let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="";
+    let halftimeDraft=null,halfSelected="",encounterSelection="",encounterKey="",lastResolution=null;
     let vendingMotion=null;
     const assertCurrent = epoch => { if (epoch !== session) throw fail("halloween-stale-controller"); global.RoadToGloryPersistence?.assertWritable?.(); };
     function dispose() { session++; if (tick != null) global.clearInterval?.(tick); tick = null;
       if(matchTimer!=null)global.clearTimeout?.(matchTimer);matchTimer=null;
-      vendingMotion?.stop?.();vendingMotion=null;
+      vendingMotion?.stop?.();vendingMotion=null;lastResolution=null;
       deps.getModalRoot?.()?.classList?.remove?.("halloween-detail-native","halloween-detail-vampire");
     }
     function listen() { if(tick!=null)global.clearInterval?.(tick);tick=global.setInterval?.(()=>{const el=app?.querySelector?.("[data-halloween-countdown]"); if(el)el.textContent=isOpen()?countdown():"EVENTO TERMINATO";if(!isOpen())app?.querySelectorAll?.("[data-halloween-start],[data-halloween-pull]")?.forEach(b=>b.disabled=true);},1000); }
@@ -348,7 +348,9 @@
             if(!halftimeDraft)halftimeDraft=clone(m.userSquad);
             overlay.innerHTML=v.halftimeMarkup(halftimeDraft,{match:m,selectedPlayerId:halfSelected});
           }else if(m.status==="penalties")overlay.innerHTML=v.penaltyMarkup(m,nativePenaltyContext(m));
-          else if(m.pendingEncounter){
+          else if(lastResolution){
+            overlay.innerHTML=v.resolvedEncounterMarkup(lastResolution);
+          }else if(m.pendingEncounter){
             const pending=m.pendingEncounter;
             if(encounterKey!==asId(pending.encounterId)){encounterKey=asId(pending.encounterId);encounterSelection="";}
             const user=findNativeMatchPlayer("user",pending.userPlayerId),opp=findNativeMatchPlayer("opponent",pending.aiPlayerId||pending.opponentPlayerId);
@@ -392,7 +394,8 @@
           halfSelected="";render();
         }));
       }
-      if(!done && m.status==="active" && !m.pendingEncounter && m.presentation?.preMatchSeen===true && typeof global.setTimeout==="function"){
+      app.querySelector?.("[data-rtg-duel-continue]")?.addEventListener("click",()=>{lastResolution=null;perform(()=>stepMatch(null));});
+      if(!done && m.status==="active" && !m.pendingEncounter && !lastResolution && m.presentation?.preMatchSeen===true && typeof global.setTimeout==="function"){
         const activeId=m.matchId,epoch=session;
         matchTimer=global.setTimeout(()=>{
           matchTimer=null;
@@ -683,7 +686,7 @@
     async function stepMatch(choice) {
       if(!match || !isOpen())throw fail("halloween-match-unavailable");
       const epoch=session;
-      let latest;
+      let latest,before=null,scoreBefore=null;
       await storage.updateMany([MATCH_KEY],records=>{
         const m=records[MATCH_KEY];if(!m||m.matchId!==match.matchId)throw fail("halloween-stale-match");
         if(choice==="prematch"){if(m.presentation?.preMatchPowerStatus==="pending")throw fail("halloween-coach-power-pending");latest={...m,presentation:{...(m.presentation||{}),preMatchSeen:true}};}
@@ -692,13 +695,34 @@
           const n=m.shootout?.history?.length||0,side=n%2===0?"user":"opponent",direction=choice.slice(8);
           const ai=["left","center","right"][global.RoadToGloryRng.int(m.matchId,"halloween-penalty-ai",n,3)];
           latest=global.RoadToGloryMatchEngine.resolvePenaltyKick(m,{attackingSide:side,shooterChoice:side==="user"?direction:ai,goalkeeperChoice:side==="user"?ai:direction}).state;
-        } else if(m.pendingEncounter)latest=global.RoadToGloryMatchEngine.resolvePendingEncounter(m,choice||"base");
+        } else if(m.pendingEncounter){before=clone(m.pendingEncounter);scoreBefore=clone(m.score||{});latest=global.RoadToGloryMatchEngine.resolvePendingEncounter(m,choice||"base");}
         else latest=global.RoadToGloryMatchEngine.prepareNext(m);
         if(!latest || typeof latest!=="object")throw fail("halloween-invalid-match-step");
         return {writes:{[MATCH_KEY]:latest},value:true};
       });
       assertCurrent(epoch);match=latest;
       if(choice==="halftime"){halftimeDraft=null;halfSelected="";}
+      lastResolution=null;
+      const log=before?.encounterId&&latest?.log?.find?.(entry=>asId(entry.encounterId)===asId(before.encounterId));
+      if(before&&log&&latest.status==="active"){
+        const userPlayer=findNativeMatchPlayer("user",before.userPlayerId);
+        const opponentPlayer=findNativeMatchPlayer("opponent",before.aiPlayerId||before.opponentPlayerId);
+        const userWon=before.userSide===before.actorSide?!!log.actorWon:!log.actorWon;
+        const selectedMove=choice?.startsWith("move:")?before.userMoveOptions?.[Number(choice.slice(5))]:null;
+        lastResolution={
+          userWon,actorSide:before.actorSide,userKind:before.userKind,aiKind:before.aiKind,
+          userPlayer,opponentPlayer,userPlayerName:userPlayer?.name,aiPlayerName:opponentPlayer?.name,
+          probability:before.userSide===before.actorSide?Number(log.probability):100-Number(log.probability),
+          userChoiceLabel:selectedMove?.name||before.userBaseActionLabel||"Azione base",
+          aiChoiceLabel:before.aiChoice==="move"?before.aiMove?.name:null,
+          userUsedMove:!!selectedMove,aiUsedMove:before.aiChoice==="move",
+          userMovePower:selectedMove?.power,aiMovePower:before.aiMove?.power,
+          userMoveType:selectedMove?.type,aiMoveType:before.aiMove?.type,
+          userMoveElement:selectedMove?.element,aiMoveElement:before.aiMove?.element,
+          scoreBefore,scoreAfter:clone(latest.score||scoreBefore),goalSide:log.goalSide||null,
+          opponentLabel:latest.opponentSquad?.name||"Occult Halloween"
+        };
+      }
       await finalizeIfNeeded(latest);
     }
     async function abandonMatch() {
