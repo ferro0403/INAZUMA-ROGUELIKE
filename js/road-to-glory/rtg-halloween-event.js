@@ -112,7 +112,7 @@
     const app = deps.app, storage = deps.storage || global.RoadToGloryStorage.create();
     const notify = deps.toast || (()=>{});
     let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false;
-    let tick = null, session = 0, search = "", detailPid = "";
+    let tick = null, session = 0, search = "", detailPid = "", activeSquadSlot = 1, squadSlots = null;
     const assertCurrent = epoch => { if (epoch !== session) throw fail("halloween-stale-controller"); global.RoadToGloryPersistence?.assertWritable?.(); };
     function dispose() { session++; if (tick != null) global.clearInterval?.(tick); tick = null; }
     function listen() { if(tick!=null)global.clearInterval?.(tick);tick=global.setInterval?.(()=>{const el=app?.querySelector?.("[data-halloween-countdown]"); if(el)el.textContent=isOpen()?countdown():"EVENTO TERMINATO";if(!isOpen())app?.querySelectorAll?.("[data-halloween-start],[data-halloween-pull]")?.forEach(b=>b.disabled=true);},1000); }
@@ -121,7 +121,11 @@
     async function load() {
       const records = await storage.readMany([SHARED_KEY,SQUAD_KEY,MATCH_KEY]);
       shared = readAccount(records[SHARED_KEY]);
-      localSquad = records[SQUAD_KEY] || {lineup:[],bench:[],coachId:""};
+      const stored = records[SQUAD_KEY] || null;
+      activeSquadSlot = Number(stored?.activeSquadSlot)||1;
+      squadSlots = stored?.slots || null;
+      localSquad = stored?.slots?.[activeSquadSlot] || stored || initialEventSquad();
+      if (!localSquad?.formationId) localSquad = {...localSquad,formationId:"4-3-3",activeRoleVariantByCardId:{}};
       match = records[MATCH_KEY] || null;
     }
     function recordCard(pid) {
@@ -172,34 +176,93 @@
     }
     function currency(n) { return '<span class="halloween-currency"><img src="'+escape(PUMPKIN_URL)+'" alt="">'+escape(n)+'</span>'; }
     function isOwned(pid) { return shared?.halloween.ownedIds.includes(pid); }
-    function card(p, options={}) {
-      const pid=asId(p.playerId),cls=options.event?" halloween-card":"";
-      const aura=options.event&&!SPECIAL.includes(pid)?" halloween-vampiro":"";
-      return '<article class="halloween-player-card'+cls+'" data-player-card="'+escape(pid)+'"><div class="halloween-player-image'+aura+'"><img src="'+escape(p.portraitUrl||p.frontFullbodyUrl||"")+'" loading="lazy" alt=""></div>' +
-        '<small>'+escape(p.position||p.normalizedRole||"")+'</small><span class="halloween-rating">'+escape(p.overall??p.finalOverall??"—")+'</span>' +
-        '<strong>'+escape(p.name||pid)+'</strong>'+(options.owned?'<em>SBLOCCATO</em>':"")+'</article>';
+    function initialEventSquad(previous={}) {
+      const chosen=[...(previous.lineup||[]),...(previous.bench||[])];
+      const assigned=new Set(chosen);
+      const available=(data?.freeAgents?.players||[]).map(p=>({
+        cardId:global.RoadToGloryCardIdentity.cardIdForFreeAgent(p.playerId||p.id),
+        role:String(p.position||p.normalizedRole||p.role||"").toUpperCase(),
+        overall:Number(p.overall??p.finalOverall??0)
+      })).filter(x=>x.cardId&&!assigned.has(x.cardId)).sort((a,b)=>a.overall-b.overall);
+      const lineup=[...(previous.lineup||[])],bench=[...(previous.bench||[])];
+      const requirements={FW:3,MF:3,DF:4,GK:1};
+      const slots=["FW","MF","DF","GK"];
+      for(const role of slots) {
+        let have=lineup.filter(cardId=>String(resolveCard(cardId)?.normalizedRole||resolveCard(cardId)?.position||"").toUpperCase()===role).length;
+        while(have<requirements[role]&&lineup.length<11) {
+          const i=available.findIndex(x=>x.role===role);
+          if(i<0)break;const item=available.splice(i,1)[0];lineup.push(item.cardId);assigned.add(item.cardId);have++;
+        }
+      }
+      while(lineup.length<11&&available.length)lineup.push(available.shift().cardId);
+      while(bench.length<4&&available.length)bench.push(available.shift().cardId);
+      return {formationId:previous.formationId||"4-3-3",lineup,bench,coachId:previous.coachId||"",activeRoleVariantByCardId:previous.activeRoleVariantByCardId||{}};
     }
-    function navigation() {
-      const sections=[["match","PARTITA"],["squad","SQUADRA"],["vending","DISTRIBUTORE"],["album","ALBUM"]];
-      return '<nav class="halloween-tabs">'+sections.map(pair=>'<button type="button" data-halloween-tab="'+pair[0]+'" class="'+(view===pair[0]?'active':'')+'">'+pair[1]+'</button>').join("")+'</nav>';
+    function activeEventSquad() {return {activeSeasonId:"ie1",gachaAcquiredCards:shared.gachaAcquiredCards,coachOwnedIds:shared.coachOwnedIds,squads:{ie1:localSquad}};}
+    function nativeCard(p,opts={}) {
+      const cls=opts.event&&p?.halloweenVampire?" halloween-vampire-card":"";
+      const attr=opts.attr||"";
+      return typeof deps.compactPlayerCardMarkup==="function"
+        ? deps.compactPlayerCardMarkup(p,{level:20,overall:p?.overall??p?.finalOverall,
+            dataAttr:attr,extraClass:"halloween-native-card"+cls})
+        : '<button type="button" class="player-card player-card-compact '+cls+'" '+attr+'><span class="player-corner player-role">'+escape(p.position||"")+'</span><span class="player-corner player-overall">'+escape(p.overall||"")+'</span><img class="player-portrait" src="'+escape(p.portraitUrl||"")+'" alt=""><strong>'+escape(p.name||"")+'</strong></button>';
+    }
+    function openNativeDetail(cardId,albumUnlocked=false) {
+      const p=resolveCard(cardId);
+      if(!p)return;
+      if(deps.openPlayerDetails) {
+        deps.openPlayerDetails(cardId,"",{mode:albumUnlocked?"album":undefined,albumUnlocked});
+      } else if(deps.showPlayerDetailsFor) {
+        deps.showPlayerDetailsFor(p,{playerId:p.playerId,level:20,readOnly:true,rtgFourMoves:true,
+          moveSeasonId:p.halloweenMoves?EVENT_ID:(p.resolvedSeasonId||p.legacySeasonId||"ie1"),
+          rtgRarity:p.category,mode:albumUnlocked?"album":"current",albumUnlocked});
+      }
+      const modal=deps.getModalRoot?.();
+      modal?.classList?.toggle("halloween-detail-native",Boolean(p.halloweenMoves));
+      modal?.classList?.toggle("halloween-detail-vampire",Boolean(p.halloweenVampire));
+    }
+    function footer(active="run") {
+      return '<nav class="bottom-nav rtg-bottom-nav" aria-label="Road to Glory Halloween">'+
+      '<button type="button" data-halloween-tab="match" class="'+(active==="run"?"active":"")+'"><span class="nav-icon">▱</span><span class="nav-label">RUN</span></button>'+
+      '<button type="button" data-halloween-tab="squad" class="'+(active==="squad"?"active":"")+'"><span class="nav-icon">♧</span><span class="nav-label">SQUADRA</span></button></nav>';
     }
     function shell(body) {
-      const ended=!isOpen();
-      return '<main class="screen halloween-screen"><div class="halloween-content"><header class="halloween-head"><button class="halloween-back" data-halloween-back>← RTG</button><div><p>ROAD TO GLORY · 2026</p><h1>🎃 EVENTO HALLOWEEN</h1><span data-halloween-countdown>'+ (ended?"EVENTO TERMINATO":countdown()) +'</span></div><div class="halloween-wallet">'+currency(shared?.halloween?.pumpkins||0)+'</div></header>'+
-        navigation()+'<section class="halloween-section">'+body+'</section>'+(detailPid?detailMarkup(detailPid):'')+'</div></main>';
+      return '<main class="screen rtg-run-screen rtg-halloween-run-screen halloween-screen">'+
+       '<header class="topbar rtg-main-topbar halloween-original-topbar"><button type="button" class="btn rtg-home-button" data-halloween-back aria-label="Torna alle campagne"><span>←</span></button>'+
+       '<div class="rtg-main-title"><p class="eyebrow">ROAD TO GLORY · EVENTO</p><strong class="brand">HALLOWEEN</strong><span data-halloween-countdown>'+(isOpen()?countdown():"EVENTO TERMINATO")+'</span></div>'+
+       '<div class="status-strip"><span class="status-pill halloween-wallet">'+currency(shared?.halloween?.pumpkins||0)+'</span></div></header>'+
+       '<div class="content narrow rtg-run-content halloween-original-content">'+body+'</div>'+footer("run")+'</main>';
     }
     function matchSection() {
-      const opp=opponent(),ours=resolvedUser(),target=opponentOverall(),limit=target+1,y=ovr(ours?.lineup),can=ours&&y!==null&&y<=limit;
-      const matchInfo=match?'<div class="halloween-resume"><h3>Partita in corso</h3><p>'+escape(match.score?.user||0)+' - '+escape(match.score?.opponent||0)+'</p><button data-halloween-resume>CONTINUA PARTITA</button></div>':"";
-      return '<div class="halloween-graveyard"><div class="halloween-match-card"><div class="halloween-match-brand"><img class="halloween-crest halloween-vampiro" src="'+escape(LOGO_URL)+'" alt=""><div><small>SFIDA A TEMPO</small><h2>OCCULT HALLOWEEN</h2><strong>OVR '+target+'</strong></div></div><p>Sfida la formazione potenziata di Occult. Puoi giocare più volte fino alla scadenza.</p><div class="halloween-duel"><span>LA TUA SQUADRA <strong>'+(y===null?"—":y)+'</strong></span><span>OVR MASSIMO <strong>'+limit+'</strong></span></div>'+ (!can?'<p class="halloween-warning">Seleziona 11 titolari e 4 riserve nella sezione Squadra: OVR complessivo massimo '+limit+'.</p>':"") +
-        matchInfo+'<button class="halloween-action" data-halloween-start '+(!isOpen()||!can||match?"disabled":"")+'>⚽ GIOCA PARTITA</button><p>Premio: '+currency(PRIZE)+' · 10% di vittoria fortunata: '+currency(LUCKY_PRIZE)+' totali</p></div></div>';
+      const target=opponentOverall(),ours=resolvedUser(),own=ovr(ours?.lineup),limit=target+1,can=Boolean(ours&&own!==null&&own<=limit);
+      return '<section class="rtg-journey-summary halloween-journey-summary" aria-label="Prossima partita Evento Halloween">'+
+        '<div class="rtg-journey-main"><div class="rtg-journey-copy"><p class="eyebrow">LA TUA PROSSIMA PARTITA</p><h1>OCCULT HALLOWEEN</h1>'+
+        '<p>SFIDA EVENTO · OVR AVVERSARIO '+target+' · MASSIMO '+limit+'</p></div><div class="rtg-journey-opponent"><img src="'+escape(LOGO_URL)+'" alt="Occult"></div></div>'+
+        '<button type="button" class="btn btn-yellow" data-halloween-start '+(!isOpen()||!can||match?'disabled':'')+'>PREPARA PARTITA →</button>'+
+        (match?'<button type="button" class="btn btn-yellow" data-halloween-resume>RIPRENDI PARTITA →</button>':'')+
+        (!can?'<p class="halloween-squad-requirement">La tua squadra: '+(own??"—")+' OVR · limite '+limit+' · 11 titolari e 4 riserve. <button data-halloween-tab="squad">GESTISCI SQUADRA →</button></p>':'')+
+        '<div class="rtg-journey-progress" role="progressbar" aria-valuenow="1" aria-valuemin="0" aria-valuemax="1"><span style="width:100%"></span></div></section>'+
+        '<section class="panel rtg-run-command halloween-original-command"><div><p class="eyebrow">LA TUA COLLEZIONE</p><h2>Rinforza la squadra</h2><p>Vittoria: '+currency(PRIZE)+' · bonus fortunato 10%: '+currency(LUCKY_PRIZE)+' totali</p></div>'+
+        '<button type="button" class="btn btn-yellow rtg-vending-button" data-halloween-open-vending>DISTRIBUTORE HALLOWEEN <span>'+currency(PRICE)+'</span></button></section>'+
+        '<section class="rtg-map rtg-halloween-map" aria-label="Partita nel cimitero"><div class="halloween-map-content"><span class="eyebrow">SFIDA A TEMPO · OCCULT</span>'+
+        '<img class="halloween-map-crest" src="'+escape(LOGO_URL)+'" alt=""><h2>IL CIMITERO STREGATO</h2>'+
+        '<p>Termina tra <strong data-halloween-countdown>'+(isOpen()?countdown():"EVENTO TERMINATO")+'</strong></p>'+
+        '<button class="btn btn-yellow" data-halloween-start '+(!isOpen()||!can||match?'disabled':'')+'>GIOCA CONTRO OCCULT →</button></div></section>';
     }
     function squadSection() {
-      const ids=userCards(), picked=new Set([...(localSquad?.lineup||[]),...(localSquad?.bench||[])]);
-      const display=ids.map(id=>({id,p:resolveCard(id)})).filter(x=>x.p&&(!search||asId(x.p.name).toLowerCase().includes(search.toLowerCase())));
-      const max=opponentOverall()+1;const current=resolvedUser(),rating=ovr(current?.lineup);
-      const coachOptions=Object.entries(global.RoadToGloryCoaches?.BY_ID||{}).filter(([id])=>(shared.coachOwnedIds||[]).includes(id));
-      return '<div class="halloween-graveyard"><div class="halloween-squad"><h2>LA TUA SQUADRA</h2><p>Tutti gli svincolati e i giocatori sbloccati nelle Season. 11 titolari + 4 riserve.</p><p>OVR titolari: <b>'+(rating??"—")+'</b> / massimo <b>'+max+'</b></p><label>Allenatore <select data-halloween-coach><option value="">Nessuno</option>'+coachOptions.map(([id,c])=>'<option value="'+escape(id)+'" '+(localSquad.coachId===id?"selected":"")+'>'+escape(c.name||c.displayName||id)+'</option>').join("")+'</select></label><div class="halloween-lineup"><h3>TITOLARI ('+(localSquad.lineup||[]).length+'/11)</h3>'+localSquad.lineup.map((id,i)=>'<button data-halloween-remove="'+escape(id)+'">✕ '+escape(resolveCard(id)?.name||id)+'</button>').join("")+'</div><div class="halloween-lineup"><h3>PANCHINA ('+(localSquad.bench||[]).length+'/4)</h3>'+localSquad.bench.map(id=>'<button data-halloween-remove="'+escape(id)+'">✕ '+escape(resolveCard(id)?.name||id)+'</button>').join("")+'</div><label>Cerca un giocatore <input data-halloween-search placeholder="Nome giocatore" value="'+escape(search)+'"></label><div class="halloween-catalog">'+display.slice(0,100).map(({id,p})=>'<button class="halloween-catalog-item" data-halloween-pick="'+escape(id)+'" '+(picked.has(id)?"disabled":"")+'>'+card(p,{event:id.startsWith(EVENT_ID+"::")})+'<span>'+(picked.has(id)?"IN SQUADRA":(localSquad.lineup.length>=11&&localSquad.bench.length>=4?"PIENO":localSquad.lineup.length>=11?"IN PANCHINA":"AGGIUNGI"))+'</span></button>').join("")+'</div>'+(display.length>100?'<p>Mostrati i primi 100 risultati: usa la ricerca.</p>':"")+'</div></div>';
+      const view=deps.squadView;
+      if(!view?.renderModel||!view?.markup)return '<p>Layout RTG non disponibile</p>';
+      const freeAgentIds=(data.freeAgents?.players||[]).map(p=>asId(p.playerId||p.id));
+      const model=view.renderModel({state:activeEventSquad(),freeAgentIds,seasonDb:global.SeasonRegistry?.database?.("ie1")||{},
+          freeAgentsDb:data.freeAgents,playerResolver:{resolveAtLevel20:cardId=>resolveCard(cardId)}});
+      const meta=deps.getUserTeamMeta?.()||{};
+      const name=meta.name||"La tua squadra";
+      const squadOvr=ovr(resolvedUser()?.lineup);
+      const requirement='<div class="rtg-requirements-list"><div class="rtg-requirement '+(squadOvr!=null&&squadOvr<=opponentOverall()+1?"ok":"bad")+'"><span>Overall max · Evento Halloween</span><strong>'+escape(squadOvr??"—")+' / '+(opponentOverall()+1)+'</strong></div></div>';
+      return '<div class="rtg-halloween-mode halloween-squad-mode">'+
+        view.markup(model,{teamName:name,teamIdentity:meta.teamIdentity,teamPower:squadOvr,activeSquadSlot,
+          coachSlotMarkup:global.RoadToGloryCoachesView?.squadSlot?.(activeEventSquad(),localSquad.coachId)||"",
+          requirementsMarkup:requirement,nextTeamName:"Occult Halloween",dirty:false})+'</div>';
     }
     function vendingSection() {
       const available=Array.from(assets.players.keys()).filter(pid=>!isOwned(pid)),enough=shared.halloween.pumpkins>=PRICE;
@@ -215,7 +278,13 @@
         '<p>Samford e Nathan Swift: 4% ciascuno finché sono entrambi disponibili. Nessun duplicato.</p><p>Giocatori rimasti: '+available.length+' / 18</p></div>';
     }
     function albumSection() {
-      return '<div class="halloween-album"><h2>ALBUM · GIOCATORI EVENTO</h2><p>OCCULT HALLOWEEN · '+shared.halloween.ownedIds.length+'/18</p><div class="halloween-album-grid">'+Array.from(assets.players.values()).map(p=>'<div class="'+(isOwned(asId(p.playerId))?'':'halloween-locked')+'">'+card(p,{event:true,owned:isOwned(asId(p.playerId))})+'</div>').join("")+'</div></div>';
+      const roster=Array.from(assets.players.keys()).map(pid=>player(pid));
+      const owned=new Set(shared.halloween.ownedIds.map(pid=>EVENT_ID+"::"+pid));
+      if(!deps.runView?.albumRosterMarkup) return '<p>Album RTG non disponibile</p>';
+      return '<div class="rtg-halloween-mode halloween-album-mode">'+
+        deps.runView.albumRosterMarkup({state:{activeSeasonId:"ie1"},seasonId:EVENT_ID,
+          team:{teamId:TEAM_ID,teamName:"Occult Halloween",logoUrl:LOGO_URL},
+          entries:roster.filter(p=>owned.has(p.cardId)),allEntries:roster,database:{players:roster}})+'</div>';
     }
     function detailMarkup(pid) {
       const p=player(pid)||resolveCard(pid);
