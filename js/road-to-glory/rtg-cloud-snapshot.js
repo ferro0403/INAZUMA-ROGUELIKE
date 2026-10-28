@@ -133,6 +133,19 @@
     if (owns(source.gacha, "recruitmentPullCount")) result.gacha.recruitmentPullCount = source.gacha.recruitmentPullCount;
     return result;
   }
+  // Optional 2026 Halloween permanent account ledger; older cloud snapshots
+  // legitimately lack this field. Never silently repair corrupt rewards.
+  function halloweenData(value) {
+    if (!object(value) || !count(value.pumpkins) || !count(value.pullCount) ||
+        !count(value.luckyWins) || !Array.isArray(value.ownedIds) ||
+        !Array.isArray(value.completedIds)) throw failure("rtg-cloud-invalid-halloween");
+    const ownedIds = ids(value.ownedIds, "halloween.ownedIds");
+    const completedIds = ids(value.completedIds, "halloween.completedIds");
+    if (ownedIds.length > 18 || ownedIds.some(id => !/^(?:[0-9]+|custom_000[12])$/.test(id)) ||
+        completedIds.some(id => id.length > 120)) throw failure("rtg-cloud-invalid-halloween");
+    return {pumpkins:value.pumpkins,ownedIds,pullCount:value.pullCount,
+      completedIds,luckyWins:value.luckyWins};
+  }
   function sharedData(source, campaigns) {
     if (source == null) {
       if (campaigns.some(Boolean)) throw failure("rtg-cloud-shared-missing");
@@ -181,6 +194,7 @@
       gachaAcquiredCards: acquired,
       developmentByCardId: development,
       coachOwnedIds: coachIds,
+      ...(owns(source,"halloween") ? {halloween:halloweenData(source.halloween)} : {}),
     };
   }
   function albumData(source) {
