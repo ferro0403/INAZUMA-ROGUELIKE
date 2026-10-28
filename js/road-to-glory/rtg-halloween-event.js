@@ -276,7 +276,7 @@
       return '<section class="rtg-journey-summary halloween-journey-summary halloween-event-hero" aria-label="Prossima partita Halloween">'+
         '<div class="halloween-event-hero-top"><div class="halloween-event-hero-copy">'+
         '<p class="eyebrow">SFIDA EVENTO · IL CIMITERO STREGATO</p><h1>OCCULT<br>HALLOWEEN</h1>'+
-        '<p>La sfida del Cimitero Stregato.</p></div>'+
+        '<p>Completa la partita: +'+PRIZE+' zucche.</p></div>'+
         '<img class="halloween-event-hero-crest" src="'+escape(LOGO_URL)+'" alt="Stemma Occult Halloween"></div>'+
         '<div class="halloween-event-ovr-strip" aria-label="Requisiti overall">'+
         '<div><span>OVR AVVERSARIO</span><strong>'+target+'</strong></div>'+
