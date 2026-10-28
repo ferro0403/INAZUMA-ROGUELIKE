@@ -192,3 +192,28 @@
 .halloween-album-mode [data-rtg-album-player-entry^="halloween2026::"]:not([data-rtg-album-player-entry="halloween2026::custom_0001"]):not([data-rtg-album-player-entry="halloween2026::custom_0002"]) .player-portrait{
  filter:sepia(.12) saturate(.65) hue-rotate(295deg) brightness(.68) contrast(1.32) drop-shadow(0 0 14px #ff304b90)
 }
+
+/* Exact compact RTG card geometry; Halloween palette only. */
+.halloween-squad-mode .tactical-player-card,
+.halloween-album-mode .album-player-card{
+ background:linear-gradient(125deg,#461b1d 0%,#22131d 60%,#110f18 100%)!important;
+ border-color:#ff8a24!important;color:#fff0d6!important;
+}
+.halloween-squad-mode .tactical-player-card .player-info,
+.halloween-album-mode .album-player-card .player-info{
+ background:#1b1119ed!important;color:#ffeaca!important;
+}
+.halloween-squad-mode .tactical-player-card .player-title strong,
+.halloween-album-mode .album-player-card .player-title strong{color:#ffe9ca!important}
+.halloween-squad-mode .tactical-player-card .player-corner.player-overall,
+.halloween-album-mode .album-player-card .player-corner.player-overall{
+ background:#ff9d23!important;border-color:#301312!important;color:#1b0c10!important;
+}
+.halloween-squad-mode .tactical-player-card .player-corner.player-role,
+.halloween-album-mode .album-player-card .player-corner.player-role{
+ background:#fff0d7!important;color:#170d11!important;border-color:#ff8822!important;
+}
+.halloween-squad-mode .tactical-player-card .player-portrait-wrap,
+.halloween-album-mode .album-player-card .player-portrait-wrap{
+ background:radial-gradient(circle at 55% 48%,#76302170,#23121b80 68%,#120c1380);
+}
