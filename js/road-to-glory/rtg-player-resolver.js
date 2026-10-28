@@ -79,6 +79,10 @@
     if (!api) return null;
     const parsed = api.parse(cardRef);
     if (!parsed.cardId || !api.isCardId(parsed.cardId)) return null;
+    if(parsed.legacySeasonId===global.RoadToGloryHalloween?.EVENT_ID){
+      const player=global.RoadToGloryHalloween.eventPlayer(parsed.playerId);
+      return player?Object.freeze({cardId:parsed.cardId,playerId:parsed.playerId,legacySeasonId:parsed.legacySeasonId,seasonId:parsed.legacySeasonId,player:Object.freeze(player)}):null;
+    }
     if (parsed.sourceKind === api.FREE_AGENTS) {
       const freeAgent = freeAgentById(parsed.playerId, freeAgentsDb);
       if (!freeAgent) return null;
@@ -152,6 +156,7 @@
   function resolveBaseAtLevel20(playerId, activeSeasonId = "ie1", roleVariantId = null, freeAgentsDb = null, progressionOptions = null) {
     const api = cardIdentity();
     const rawRef = id(playerId?.cardId || playerId);
+    if(rawRef.startsWith("halloween2026::"))return global.RoadToGloryHalloween?.eventPlayer?.(rawRef.slice("halloween2026::".length))||null;
     const exactCard = api?.isCardId?.(rawRef);
     const parsed = exactCard ? api.parse(rawRef) : null;
     const resolved = resolveVersion(playerId, activeSeasonId, freeAgentsDb);
