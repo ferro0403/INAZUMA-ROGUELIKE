@@ -112,7 +112,7 @@
     const app = deps.app, storage = deps.storage || global.RoadToGloryStorage.create();
     const notify = deps.toast || (()=>{});
     let data = null, shared = null, localSquad = null, match = null, view = "match", busy = false;
-    let tick = null, session = 0, search = "";
+    let tick = null, session = 0, search = "", detailPid = "";
     const assertCurrent = epoch => { if (epoch !== session) throw fail("halloween-stale-controller"); global.RoadToGloryPersistence?.assertWritable?.(); };
     function dispose() { session++; if (tick != null) global.clearInterval?.(tick); tick = null; }
     function listen() { if(tick!=null)global.clearInterval?.(tick);tick=global.setInterval?.(()=>{const el=app?.querySelector?.("[data-halloween-countdown]"); if(el)el.textContent=isOpen()?countdown():"EVENTO TERMINATO";if(!isOpen())app?.querySelectorAll?.("[data-halloween-start],[data-halloween-pull]")?.forEach(b=>b.disabled=true);},1000); }
@@ -185,7 +185,7 @@
     function shell(body) {
       const ended=!isOpen();
       return '<main class="screen halloween-screen"><div class="halloween-content"><header class="halloween-head"><button class="halloween-back" data-halloween-back>← RTG</button><div><p>ROAD TO GLORY · 2026</p><h1>🎃 EVENTO HALLOWEEN</h1><span data-halloween-countdown>'+ (ended?"EVENTO TERMINATO":countdown()) +'</span></div><div class="halloween-wallet">'+currency(shared?.halloween?.pumpkins||0)+'</div></header>'+
-        navigation()+'<section class="halloween-section">'+body+'</section></div></main>';
+        navigation()+'<section class="halloween-section">'+body+'</section>'+(detailPid?detailMarkup(detailPid):'')+'</div></main>';
     }
     function matchSection() {
       const opp=opponent(),ours=resolvedUser(),target=opponentOverall(),limit=target+1,y=ovr(ours?.lineup),can=ours&&y!==null&&y<=limit;
@@ -216,18 +216,32 @@
     function albumSection() {
       return '<div class="halloween-album"><h2>ALBUM · GIOCATORI EVENTO</h2><p>OCCULT HALLOWEEN · '+shared.halloween.ownedIds.length+'/18</p><div class="halloween-album-grid">'+Array.from(assets.players.values()).map(p=>'<div class="'+(isOwned(asId(p.playerId))?'':'halloween-locked')+'">'+card(p,{event:true,owned:isOwned(asId(p.playerId))})+'</div>').join("")+'</div></div>';
     }
+    function detailMarkup(pid) {
+      const p=player(pid)||resolveCard(pid);
+      if(!p)return "";
+      const isEvent=asId(p.cardId).startsWith(EVENT_ID+"::"),vampire=isEvent&&p.halloweenVampire;
+      const keys=[["ATTACCO","attack"],["CONTROLLO","control"],["VELOCITÀ","speed"],["GRINTA","grit"],["FISICO","physical"],["RESISTENZA","stamina"],["DIFESA","defense"],["PARATA","save"]];
+      return '<div class="halloween-detail-overlay"><section class="halloween-detail-sheet"><header><span>🎃 SCHEDA GIOCATORE · HALLOWEEN</span><button data-halloween-close-detail aria-label="Chiudi scheda">✕</button></header>'+
+        '<div class="halloween-detail-hero"><div><h2>'+escape(p.name)+'</h2><div class="halloween-duel"><span>RUOLO <strong>'+escape(p.position||p.normalizedRole||"—")+'</strong></span><span>OVERALL <strong>'+escape(p.overall??p.finalOverall??"—")+'</strong></span></div><p>RARITÀ · '+escape(p.category||"Normale")+'</p></div><div class="halloween-detail-render '+(vampire?"halloween-vampiro":"")+'"><img src="'+escape(p.fullbodyUrl||p.portraitUrl||"")+'" alt="'+escape(p.name)+'"></div></div>'+
+        '<h3>STATISTICHE</h3><div class="halloween-detail-stats">'+keys.map(([label,key])=>'<div><small>'+label+'</small><strong>'+escape(p.stats?.[key]??Number(p[key]||0)*10)+'</strong></div>').join("")+'</div>'+
+        '<h3>TECNICHE</h3><div class="halloween-detail-moves">'+(p.halloweenMoves||[]).map(m=>'<span>'+escape(m.name)+' · '+escape(m.type)+' · PT '+escape(m.tension||m.power||0)+'</span>').join("")+'</div></section></div>';
+    }
     function pendingSection() {
       if(!match)return matchSection();
       const m=match,ended=["completed","completed-draw","abandoned"].includes(m.status);
       if(ended) return '<div class="halloween-graveyard"><div class="halloween-match-card"><h2>RISULTATO FINALE</h2><h1>'+escape(m.score.user)+' – '+escape(m.score.opponent)+'</h1><p>'+(m.status==="abandoned"?"Partita abbandonata":m.result?.winner==="user"?"VITTORIA!":"PARTITA CONCLUSA")+'</p><p>'+(m.halloweenAward?'Ricompensa accreditata: '+currency(m.halloweenAward):"")+'</p><button class="halloween-action" data-halloween-close-result>TORNA ALL’EVENTO</button></div></div>';
       const info=m.pendingEncounter,options=info?.userMoveOptions||[];
       const status=m.status==="halftime"?"INTERVALLO":m.status==="penalties"?"CALCI DI RIGORE":info?"AZIONE DECISIVA":"INCONTRO";
-      return '<div class="halloween-graveyard"><div class="halloween-match-card"><div class="halloween-match-brand"><img class="halloween-crest halloween-vampiro" src="'+escape(LOGO_URL)+'" alt=""><div><h2>'+status+'</h2><p>Occult Halloween</p></div></div><h1>'+escape(m.score?.user||0)+' – '+escape(m.score?.opponent||0)+'</h1><p>'+escape(info?.kind||"")+' · '+escape(info?.userKind||"")+'</p>'+ (info?'<div class="halloween-choices"><button class="halloween-action" data-halloween-choice="base">AZIONE BASE</button>'+options.map((move,i)=>'<button data-halloween-choice="move:'+i+'">'+escape(move.name||move.moveId||"Tecnica")+' · PT '+escape(move.ptCost||move.power||0)+'</button>').join("")+'</div>':m.status==="halftime"?'<button class="halloween-action" data-halloween-halftime>RIPRENDI SECONDO TEMPO</button>':m.status==="penalties"?'<div class="halloween-choices">'+["left","center","right"].map(d=>'<button data-halloween-penalty="'+d+'">'+({left:"SINISTRA",center:"CENTRO",right:"DESTRA"}[d])+'</button>').join("")+'</div>':'<button class="halloween-action" data-halloween-next>PROSEGUI</button>')+'<p><button data-halloween-abandon>ABBANDONA PARTITA</button></p></div></div>';
+      const opponentActor=[...(m.opponentSquad?.lineup||[]),...(m.opponentSquad?.bench||[])].find(p=>asId(p.cardId||p.playerId)===asId(info?.aiPlayerId));
+      const actorVisual=opponentActor?'<div class="halloween-match-actor"><div class="'+(opponentActor.halloweenVampire?'halloween-vampiro':'')+'"><img src="'+escape(opponentActor.fullbodyUrl||opponentActor.portraitUrl||'')+'" alt="'+escape(opponentActor.name||'')+'"></div><strong>'+escape(opponentActor.name||'')+'</strong></div>':'';
+      return '<div class="halloween-graveyard"><div class="halloween-match-card"><div class="halloween-match-brand"><img class="halloween-crest halloween-vampiro" src="'+escape(LOGO_URL)+'" alt=""><div><h2>'+status+'</h2><p>Occult Halloween</p></div></div><h1>'+escape(m.score?.user||0)+' – '+escape(m.score?.opponent||0)+'</h1><p>'+escape(info?.kind||"")+' · '+escape(info?.userKind||"")+'</p>'+actorVisual+ (info?'<div class="halloween-choices"><button class="halloween-action" data-halloween-choice="base">AZIONE BASE</button>'+options.map((move,i)=>'<button data-halloween-choice="move:'+i+'">'+escape(move.name||move.moveId||"Tecnica")+' · PT '+escape(move.ptCost||move.power||0)+'</button>').join("")+'</div>':m.status==="halftime"?'<button class="halloween-action" data-halloween-halftime>RIPRENDI SECONDO TEMPO</button>':m.status==="penalties"?'<div class="halloween-choices">'+["left","center","right"].map(d=>'<button data-halloween-penalty="'+d+'">'+({left:"SINISTRA",center:"CENTRO",right:"DESTRA"}[d])+'</button>').join("")+'</div>':'<button class="halloween-action" data-halloween-next>PROSEGUI</button>')+'<p><button data-halloween-abandon>ABBANDONA PARTITA</button></p></div></div>';
     }
     function render() {
       if(!app)return;
       app.innerHTML=shell(match&&view==="match"?pendingSection():view==="squad"?squadSection():view==="vending"?vendingSection():view==="album"?albumSection():matchSection());
       app.querySelector("[data-halloween-back]")?.addEventListener("click",()=>{dispose();deps.onReturn?.();});
+      app.querySelector("[data-halloween-close-detail]")?.addEventListener("click",()=>{detailPid="";render();});
+      app.querySelectorAll("[data-player-card]").forEach(el=>el.addEventListener("click",()=>{detailPid=el.dataset.playerCard;render();}));
       app.querySelectorAll("[data-halloween-tab]").forEach(el=>el.addEventListener("click",()=>{view=el.dataset.halloweenTab;render();}));
       app.querySelector("[data-halloween-start]")?.addEventListener("click",()=>perform(startMatch));
       app.querySelector("[data-halloween-resume]")?.addEventListener("click",()=>{view="match";render();});
@@ -310,6 +324,7 @@
     }
     async function closeResult() {
       if(!match||!["completed","completed-draw","abandoned"].includes(match.status))return;
+      if(["completed","completed-draw"].includes(match.status)&&!Number.isInteger(match.halloweenAward))await finalizeIfNeeded(match);
       const epoch=session,id=match.matchId;
       await storage.updateMany([MATCH_KEY],records=>{if(records[MATCH_KEY]?.matchId!==id)throw fail("halloween-stale-match");return {deletes:[MATCH_KEY],writes:{},value:true};});
       assertCurrent(epoch);match=null;
@@ -343,7 +358,9 @@
       if(!response.ok)throw fail("halloween-free-agent-data-unavailable");
       const freeAgents=await response.json();assertCurrent(epoch);
       data={freeAgents};await load();assertCurrent(epoch);
-      view=initialView==="album"?"album":"match";render();listen();
+      view=initialView==="album"?"album":"match";detailPid="";
+      if(match&&["completed","completed-draw"].includes(match.status)&&!Number.isInteger(match.halloweenAward))await finalizeIfNeeded(match);
+      assertCurrent(epoch);render();listen();
     }
     return Object.freeze({open,render,dispose,getState:()=>({shared:shared&&clone(shared),match:match&&clone(match)})});
   }
