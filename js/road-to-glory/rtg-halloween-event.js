@@ -178,7 +178,9 @@
       return Array.from(new Set(all)).filter(Boolean);
     }
     function resolveCard(cardId) {
-      if(cardId.startsWith(EVENT_ID+"::"))return player(cardId.split("::")[1]);
+      if(cardId.startsWith(EVENT_ID+"::"))return global.RoadToGloryPlayerResolver?.resolveOwnedAtLevel20?.(
+        cardId,"ie1",null,data?.freeAgents,shared?.developmentByCardId||{}
+      ) || player(cardId.split("::")[1]);
       return global.RoadToGloryPlayerResolver?.resolveOwnedAtLevel20?.(cardId,"ie1",null,data.freeAgents,shared?.developmentByCardId||{})||null;
     }
     function resolvedUser() {
@@ -555,7 +557,12 @@
       const quick=(localSquad.lineup.includes(cardId)?localSquad.bench:[]).map(id=>({
         cardId:id,playerId:id,source:id.startsWith("free_agents::")?"Svincolato":"RTG",player:resolveCard(id)
       })).filter(e=>e.player);
-      const all=userCards().filter(id=>id!==cardId&&!roster.has(id)).map(id=>{
+      // Include owned cards already assigned to a different starting position.
+      // The canonical replace mutation swaps roster entries atomically.
+      // Previously excluding the entire roster hid Nathan (or any other
+      // event card) from the picker in one saved slot but not another.
+      const quickIds=new Set(quick.map(entry=>entry.cardId));
+      const all=userCards().filter(id=>id!==cardId&&!quickIds.has(id)).map(id=>{
         const p=resolveCard(id),sid=id.split("::")[0];
         return p?{cardId:id,playerId:id,source:sid==="free_agents"?"Svincolato":"RTG",seasonId:sid,player:p,
           role:String(p.normalizedRole||p.position||"").toUpperCase(),
