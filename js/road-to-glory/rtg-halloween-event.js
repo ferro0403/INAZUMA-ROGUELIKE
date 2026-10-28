@@ -475,6 +475,28 @@
     }
 
     function modalRoot(){return deps.getModalRoot?.() || app;}
+    // Keep the Halloween squad picker aligned with the canonical RTG team
+    // labels. Raw team IDs such as "ace_invaders" and "alpine" are aliases,
+    // not additional teams alongside "Ace Invaders" and "Alpine".
+    function pickerTeamLabels(p,seasonId) {
+      const db=global.SeasonRegistry?.database?.(seasonId);
+      const teamNames=new Map((db?.teams||[]).map(team=>[
+        asId(team?.teamId||team?.id),asId(team?.teamName||team?.name)
+      ]).filter(([id,name])=>id&&name));
+      const normalize=name=>asId(name).replace(/[_-]+/g," ").replace(/\s+/g," ").trim().toLocaleLowerCase("it");
+      const labels=new Map();
+      const raw=[p.teamName,...(p.teams||[]),p.resolvedTeamId,p.teamId,...(p.teamIds||[])];
+      for(const item of raw){
+        if(typeof item!=="string")continue;
+        const value=asId(item);if(!value)continue;
+        const canonical=teamNames.get(value);
+        const label=canonical|| (value.includes("_") ? value.split("_").filter(Boolean)
+          .map(word=>word[0].toLocaleUpperCase("it")+word.slice(1)).join(" ") : value);
+        const key=normalize(label);if(!key)continue;
+        if(!labels.has(key)||canonical)labels.set(key,label);
+      }
+      return [...labels.values()];
+    }
     function openPicker(cardId) {
       if(match)return notify("Non puoi modificare la squadra durante la partita","error");
       const v=deps.squadView;
@@ -491,13 +513,15 @@
           role:String(p.normalizedRole||p.position||"").toUpperCase(),
           rarity:String(p.finalRarity||p.category||"Normale"),
           overall:Number(p.overall??p.finalOverall??0),
-          teams:Array.from(new Set([p.teamName,...(p.teams||[]),...(p.teamIds||[])].map(asId).filter(Boolean)))
+          teams:pickerTeamLabels(p,sid)
         }:null;
       }).filter(Boolean);
       const seasons=[{value:"all",label:"Tutte"},...Array.from(new Set(all.map(e=>e.seasonId))).map(id=>({
         value:id,label:({ie1:"Season 1",ie1_s2:"Season 2",ie1_s3:"Season 3",ie2:"Ares",orion:"Orion",free_agents:"Svincolati",[EVENT_ID]:"Evento Halloween"})[id]||id
       }))];
-      const rarities=Array.from(new Set(all.map(e=>e.rarity))).sort((a,b)=>a.localeCompare(b,"it"));
+      const rarityOrder=["Scarso","Debole","Normale","Buono","Forte","Elite","Mondiale","Leggenda","Aurico"];
+      const rarityRank=value=>{const n=rarityOrder.findIndex(v=>v.toLocaleLowerCase("it")===asId(value).toLocaleLowerCase("it"));return n<0?rarityOrder.length:n;};
+      const rarities=Array.from(new Set(all.map(e=>e.rarity))).sort((a,b)=>rarityRank(a)-rarityRank(b)||a.localeCompare(b,"it"));
       let query="",sourceFilter="all",roleFilter="all",rarityFilter="all",seasonFilter="all",teamFilter="all",descending=true,visibleCount=12;
       const teams=()=>Array.from(new Set(all.filter(e=>seasonFilter==="all"||e.seasonId===seasonFilter).flatMap(e=>e.teams))).sort((a,b)=>a.localeCompare(b,"it")).map(t=>({value:t,label:t}));
       const filtered=()=>all.filter(e=>(!query||e.player.name?.toLocaleLowerCase("it").includes(query.toLocaleLowerCase("it")))
