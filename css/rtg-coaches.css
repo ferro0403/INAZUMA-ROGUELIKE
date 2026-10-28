@@ -936,3 +936,39 @@
 .rtg-coaches-reward.rtg-coach-halloween .rtg-coaches-reward-info h3{
   color:#fff2de!important
 }
+
+/* Halloween coach artwork: the bust belongs ONLY on the compact card;
+   the verified Inazugle full-body render belongs ONLY in the detail.
+   These filters are event-specific and never affect the other ten coaches. */
+.rtg-coach-halloween img.rtg-coach-portrait,
+.rtg-coach-halloween img.rtg-coach-fullbody{
+  filter:sepia(.14) saturate(.85) hue-rotate(322deg) contrast(1.13) brightness(.9)
+    drop-shadow(0 0 7px rgba(253,128,38,.34))!important;
+}
+.rtg-coach-detail.rtg-coach-halloween .rtg-coach-team-logo,
+.rtg-coach-squad-slot.rtg-coach-halloween .rtg-coach-team-logo,
+.rtg-coach-halloween .rtg-coach-team-logo{
+  filter:brightness(.7) contrast(1.48) saturate(.83) hue-rotate(306deg)
+    drop-shadow(0 0 4px rgba(255,105,46,.48))!important;
+}
+.rtg-coaches-album .rtg-coach-album-entry.rtg-coach-halloween.is-locked .player-portrait-wrap,
+.rtg-coaches-modal .rtg-coach-entry.rtg-coach-halloween.is-locked .player-portrait-wrap{
+  filter:none!important;
+}
+.rtg-coaches-album .rtg-coach-album-entry.rtg-coach-halloween.is-locked img.rtg-coach-portrait,
+.rtg-coaches-modal .rtg-coach-entry.rtg-coach-halloween.is-locked img.rtg-coach-portrait{
+  opacity:.8!important;
+}
+.rtg-coaches-album .rtg-coach-album-entry.rtg-coach-halloween{
+  --album-rarity:#ff8f32!important;
+}
+.rtg-coach-detail.rtg-coach-halloween .player-detail-visual{
+  overflow:hidden!important;
+}
+.rtg-coach-detail.rtg-coach-halloween .player-detail-visual img.rtg-coach-fullbody{
+  display:block!important;
+  width:100%!important;height:100%!important;max-width:100%!important;
+  max-height:100%!important;
+  object-fit:contain!important;object-position:center bottom!important;
+  transform:none!important;
+}
