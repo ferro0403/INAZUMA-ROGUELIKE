@@ -116,3 +116,73 @@
 .halloween-pitch .rtg-shared-match-card{max-width:100%}
 .halloween-pitch--opponent [data-rtg-field-player]:not([data-rtg-field-player="halloween2026::custom_0001"]):not([data-rtg-field-player="halloween2026::custom_0002"]) img{filter:sepia(.12) saturate(.65) hue-rotate(295deg) brightness(.68) contrast(1.32) drop-shadow(0 0 14px #ff304b90)}
 @media(max-width:650px){.halloween-original-fields{grid-template-columns:1fr}.halloween-pitch{padding:6px}.halloween-pitch .rtg-live-pitch{min-height:220px}}
+
+
+/* HALLOWEEN RTG PARITY — Use the canonical RTG DOM and skin it; no parallel UI. */
+.rtg-halloween-run-screen{--halloween-accent:#ff8919;background:#111019!important;color:#ffe5c6;min-height:100dvh}
+.rtg-halloween-run-screen .rtg-main-topbar{background:#141015!important;border-bottom:6px solid #e8711a!important}
+.rtg-halloween-run-screen .rtg-main-title .brand{color:#fff0db!important;font-size:1.65rem;font-style:italic}
+.rtg-halloween-run-screen .rtg-main-title .eyebrow,.rtg-halloween-run-screen .eyebrow{color:#ffaa4a!important}
+.rtg-halloween-run-screen .rtg-main-title [data-halloween-countdown]{display:block;font-size:.8rem;font-weight:900;color:#ffd6a2;margin-top:3px;font-variant-numeric:tabular-nums}
+.rtg-halloween-run-screen .rtg-home-button{background:#ff8c14!important;color:#1a1111!important;border-color:#ffac43!important}
+.rtg-halloween-run-screen .rtg-run-content{background:linear-gradient(180deg,#171016,#1b1116 45%,#111013)!important}
+.rtg-halloween-run-screen .rtg-journey-summary{background:#151015!important;border:3px solid #fa7a14!important;box-shadow:7px 9px 0 #a9470a!important;color:#fff4e4!important}
+.rtg-halloween-run-screen .rtg-journey-copy h1{font-size:clamp(1.55rem,6vw,2.7rem);color:#fff2dd!important}
+.rtg-halloween-run-screen .rtg-journey-copy p{color:#ffd9af!important}
+.rtg-halloween-run-screen .rtg-journey-opponent img{width:90px;height:90px;object-fit:contain;filter:brightness(.8) drop-shadow(0 0 8px #a43090)}
+.rtg-halloween-run-screen .btn-yellow{background:#ff9219!important;color:#190c0c!important;border-color:#ef6513!important;box-shadow:5px 6px 0 #0d0709!important;font-weight:1000}
+.rtg-halloween-run-screen .rtg-journey-progress{background:#542517!important}
+.rtg-halloween-run-screen .rtg-journey-progress span{background:#f77f14!important}
+.rtg-halloween-run-screen .rtg-run-command{background:#251416!important;border:3px solid #f08526!important;color:#fff3df!important;box-shadow:5px 6px 0 #0a090d!important}
+.rtg-halloween-run-screen .rtg-run-command h2{color:#fff0db!important}
+.rtg-halloween-run-screen .rtg-run-command p{color:#f9d9b5!important}
+.rtg-halloween-run-screen .rtg-map.rtg-halloween-map{display:flex!important;align-items:center;justify-content:center;min-height:530px;margin:18px 0 80px;padding:25px 15px!important;border:5px solid #f38a25!important;background:linear-gradient(180deg,rgba(10,9,17,.22) 0%,rgba(12,9,18,.66) 60%,rgba(12,8,12,.94) 100%),url("https://static9.depositphotos.com/1014889/1236/i/450/depositphotos_12367834-stock-photo-halloween-background-spooky-graveyard.jpg") center / cover no-repeat!important;box-shadow:6px 8px 0 #0c0709!important}
+.halloween-map-content{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;text-align:center;min-height:390px;width:100%;padding:20px 8px}
+.halloween-map-content .halloween-map-crest{width:105px;height:105px;object-fit:contain;filter:drop-shadow(0 0 12px #f75c2290)}
+.halloween-map-content h2{font-size:clamp(1.65rem,5vw,2.4rem);color:#fff0d1;text-shadow:2px 4px #170711;text-transform:uppercase;margin:12px 0}
+.halloween-map-content p{color:#ffe9cd;font-weight:900;background:#130912c9;padding:12px;border:2px solid #f38625}
+.halloween-map-content .btn{width:min(100%,370px);min-height:55px}
+.halloween-squad-requirement{margin:10px 0;color:#ffcf9e!important}
+.halloween-squad-requirement button{border:0;background:transparent;color:#ffb44a;font-weight:1000;text-decoration:underline}
+.rtg-halloween-run-screen .rtg-bottom-nav{border-top-color:#fc861e!important;background:#190f18!important}
+.rtg-halloween-run-screen .rtg-bottom-nav button.active{background:#ff9a19!important;color:#1b0f0c!important}
+.rtg-halloween-run-screen .rtg-bottom-nav button{color:#ffdab1!important}
+
+/* Squad: native RTG markup with an event-scoped midnight skin. */
+.halloween-squad-mode .rtg-squad-shell{background:linear-gradient(135deg,#171017,#23121c 48%,#14131c)!important;color:#ffe8c7!important;min-height:100dvh}
+.halloween-squad-mode .rtg-squad-topbar{background:#120e15!important;border-bottom:6px solid #ef7824!important;color:#fff6df!important}
+.halloween-squad-mode .rtg-squad-topbar h1{color:#fff0d6!important}
+.halloween-squad-mode .rtg-squad-topbar .eyebrow{color:#ffad4b!important}
+.halloween-squad-mode .rtg-squad-back{background:#fc8b22!important;color:#140b10!important}
+.halloween-squad-mode .rtg-squad-content{background:linear-gradient(180deg,#181018,#24151e)!important}
+.halloween-squad-mode .rtg-squad-slots,.halloween-squad-mode .squad-field-panel,.halloween-squad-mode .squad-bench-panel,.halloween-squad-mode .squad-management-panel{background:#171017!important;border-color:#f28b33!important;color:#ffe7bc!important}
+.halloween-squad-mode .rtg-squad-slots-label{color:#ffa84b!important}
+.halloween-squad-mode .rtg-squad-slot-buttons{background:#281820!important}
+.halloween-squad-mode .rtg-squad-slot{background:#241920!important;color:#ffe2af!important}
+.halloween-squad-mode .rtg-squad-slot.active{background:#ff9a21!important;color:#170b0d!important;border-color:#ffbb5d!important}
+.halloween-squad-mode .rtg-squad-section-head{background:#110e15!important;border-color:#ee7f1e!important;color:#fff4e0!important}
+.halloween-squad-mode .rtg-squad-section-head h2{color:#fff0d5!important}
+.halloween-squad-mode .rtg-squad-live-overall,.halloween-squad-mode .squad-field-formation{background:#ff9b20!important;color:#190e12!important}
+.halloween-squad-mode .rtg-squad-pitch-main{border-color:#b46d39!important;background:linear-gradient(180deg,rgba(22,26,23,.22),rgba(15,12,19,.45)),#233a2b!important}
+.halloween-squad-mode .rtg-squad-card-slot .player-card{box-shadow:3px 4px 0 #0c070c!important}
+.halloween-squad-mode .rtg-squad-change-trigger{background:#20141b!important;border:2px solid #fc8e24!important;color:#ffe1bc!important}
+.halloween-squad-mode .rtg-squad-actions button,.halloween-squad-mode .rtg-squad-savebar button{border-color:#f98322!important}
+.halloween-squad-mode .rtg-squad-next,.halloween-squad-mode .rtg-requirements-list{color:#ffdba8!important}
+.halloween-squad-mode .rtg-squad-savebar{background:#170e13!important;color:#ffdba8!important}
+.halloween-squad-mode .rtg-bottom-nav{background:#171018!important;border-color:#f98c25!important}
+.halloween-squad-mode .rtg-bottom-nav button{color:#ffdcb9!important}
+.halloween-squad-mode .rtg-bottom-nav button.active{background:#f98b20!important;color:#120b0b!important}
+.rtg-halloween-picker .rtg-squad-picker,.rtg-halloween-picker .rtg-formation-options,.rtg-halloween-picker .rtg-player-catalog{background:#171018!important;color:#ffe8cb!important}
+.rtg-halloween-picker .player-card{background-color:#20131a}
+.halloween-album-mode .album-roster-screen{background:linear-gradient(180deg,#22111b,#130e17)!important}
+.halloween-album-mode .album-roster-hero{background:linear-gradient(125deg,#1b1018,#7b2c12)!important;border-bottom-color:#fa8628!important}
+.halloween-album-mode .album-player-entry.is-unlocked .player-card{box-shadow:0 0 10px #ff8c2155}
+.halloween-album-mode .album-player-entry.is-locked{opacity:.53}
+/* Native fullbody player detail modal, never an alternate template. */
+#modal-root.halloween-detail-native .player-detail,#modal-root.halloween-detail-native .player-detail-card,#modal-root.halloween-detail-native .player-detail-content{background-color:#22121b!important;color:#fff0d5!important}
+#modal-root.halloween-detail-native .player-detail-header,#modal-root.halloween-detail-native .player-detail-hero{background:linear-gradient(115deg,#35151b,#aa4818)!important}
+#modal-root.halloween-detail-native .detail-stats>div{border-color:#fe8a26!important;background:#1c1118!important;color:#ffe9c5!important}
+#modal-root.halloween-detail-native .player-detail-section h3{color:#ffa42c!important}
+#modal-root.halloween-detail-native .player-detail-visual{background:linear-gradient(125deg,#50151e,#de721b)!important}
+#modal-root.halloween-detail-vampire .player-fullbody{filter:sepia(.12) saturate(.65) hue-rotate(295deg) brightness(.68) contrast(1.32) drop-shadow(0 0 14px #ff304b90)}
+@media(max-width:640px){.rtg-halloween-run-screen .rtg-run-content{padding-bottom:100px}.rtg-halloween-run-screen .rtg-map.rtg-halloween-map{min-height:480px}.halloween-squad-mode .rtg-squad-content{padding-bottom:90px}}
