@@ -256,7 +256,7 @@
         (!can?'<p class="halloween-squad-requirement">La tua squadra: '+(own??"—")+' OVR · limite '+limit+' · 11 titolari e 4 riserve. <button data-halloween-tab="squad">GESTISCI SQUADRA →</button></p>':'')+
         '<div class="rtg-journey-progress" role="progressbar" aria-valuenow="1" aria-valuemin="0" aria-valuemax="1"><span style="width:100%"></span></div></section>'+
         '<section class="panel rtg-run-command halloween-original-command halloween-vending-banner">'+
-        '<button type="button" class="btn btn-yellow rtg-vending-button" data-halloween-open-vending>HW</button></section>'+
+        '<button type="button" class="btn btn-yellow rtg-vending-button" data-halloween-open-vending>DISTRIBUTORE HALLOWEEN</button></section>'+
         '<section class="halloween-play-banner" aria-label="Sfida Occult Halloween">'+
         '<div class="halloween-play-banner-copy"><small>SFIDA A TEMPO · OCCULT</small><h2>IL CIMITERO STREGATO</h2>'+
         '<p>Affronta Occult Halloween prima della fine dell’evento.</p></div>'+
