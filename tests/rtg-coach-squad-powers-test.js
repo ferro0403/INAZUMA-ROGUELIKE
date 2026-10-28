@@ -58,6 +58,28 @@ test("Squad UI and match wiring use canonical repository persistence",()=>{
 });
 
 
+test("Hekyll Jyde: one Halloween starter counts -15 OVR only for pre-match eligibility in both runs",()=>{
+  const coachId="halloween-coach-54",target="halloween2026::custom_0002";
+  const lineup=[target,...Array.from({length:10},(_,i)=>"normal"+i)],bench=["r0","r1","r2","r3"];
+  const squad={coachId,lineup,bench,coachPowerSelection:{coachId,cardIds:[target]}};
+  const state={activeSeasonId:"orion",campaignId:"rtg-ares-orion",coachOwnedIds:[coachId]};
+  assert.equal(rules.powerReady(coachId),true);
+  assert.equal(rules.validConfig(squad,lineup,"orion",bench)?.cardIds?.[0],target);
+  assert.deepEqual(JSON.parse(JSON.stringify(rules.overallDiscountFor(squad,state))),{cardId:target,amount:15});
+  assert.equal(rules.overallDiscountFor(squad,{...state,coachOwnedIds:[]}),null);
+  assert.equal(rules.overallDiscountFor({...squad,coachPowerSelection:{coachId,cardIds:["normal0"]}},state),null);
+  assert.equal(rules.overallDiscountFor({...squad,coachPowerSelection:{coachId,cardIds:["r0"]}},state),null);
+  const env={RoadToGloryCoachPowerRuntime:rules};
+  vm.runInNewContext(read("js/road-to-glory/rtg-squad-runtime.js"),env);
+  const resolver={resolveAtLevel20:key=>({overall:key===target?96:86,position:"MF"}),resolveMove:()=>null};
+  const common={lineup:[...lineup,...bench],activeSeasonId:"orion",playerResolver:resolver};
+  assert.equal(env.RoadToGlorySquadRuntime.teamPower(common),86.7);
+  assert.equal(env.RoadToGlorySquadRuntime.teamPower({...common,coachOverallDiscount:rules.overallDiscountFor(squad,state)}),85.7);
+  assert.equal(env.RoadToGlorySquadRuntime.teamPower(common),86.7,"Actual overall must never be overwritten");
+  const original={...match(),userSquad:{lineup:lineup.map(player),bench:bench.map(player)}};
+  assert.equal(rules.applyToMatch(original,squad,state),original,
+    "The event manager must NEVER modify match state, stats, moves, PT or probabilities");
+});
 test("Travis counts 15 players but caps one chosen bench OVR at 60",()=>{
   const lineup=Array.from({length:11},(_,i)=>"t"+i);
   const bench=["r0","r1","r2","r3"];
