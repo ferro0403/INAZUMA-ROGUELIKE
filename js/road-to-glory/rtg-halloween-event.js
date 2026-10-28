@@ -313,23 +313,35 @@
         cardId:id,playerId:resolveCard(id)?.playerId||id,
         source:id.startsWith("free_agents::")?"Svincolato":"RTG",player:resolveCard(id)
       })).filter(e=>e.player&&(area!=="lineup"||String(e.player.normalizedRole||e.player.position||"").toUpperCase()===role))
-        .sort((a,b)=>(Number(b.player.overall||b.player.finalOverall||0)-Number(a.player.overall||a.player.finalOverall||0)));
+        .sort((a,b)=>Number(b.player.overall??b.player.finalOverall??0)-Number(a.player.overall??a.player.finalOverall??0));
       const target={cardId,playerId:resolveCard(cardId)?.playerId,source:"RTG",player:resolveCard(cardId)};
-      let query="";
-      function repaint() {
-        const matches=all.filter(e=>!query||String(e.player.name||"").toLowerCase().includes(query.toLowerCase()));
-        deps.openModal(deps.squadView.replacementPickerMarkup({
-          target,role,allowAnyRole:area!=="lineup",entries:matches.slice(0,80),total:matches.length,
-          visibleCount:Math.min(80,matches.length),query,sourceFilter:"all",rarityFilter:"all",
-          seasonOptions:[],teamOptions:[]
-        }),{className:"rtg-modal rtg-halloween-picker"});
-        const root=modalRoot();
-        root?.querySelectorAll?.("[data-rtg-picker-player]")?.forEach(btn=>btn.addEventListener("click",()=>perform(async()=>{
+      let query="",sourceFilter="all",sortDesc=true;
+      const matches=()=>all.filter(e=>(!query||String(e.player.name||"").toLowerCase().includes(query.toLowerCase()))
+        &&(sourceFilter==="all"||(sourceFilter==="recruitment"?e.source==="Svincolato":e.source==="RTG")))
+        .sort((a,b)=>(sortDesc?-1:1)*(Number(b.player.overall||b.player.finalOverall||0)-Number(a.player.overall||a.player.finalOverall||0)));
+      function bindResults() {
+        modalRoot()?.querySelectorAll?.("[data-rtg-picker-player]")?.forEach(btn=>btn.addEventListener("click",()=>perform(async()=>{
           await editSquad("replace",{from:cardId,to:btn.dataset.rtgPickerPlayer});deps.closeModal?.();
         })));
-        root?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",e=>{query=e.target.value;repaint();});
       }
-      repaint();
+      function drawResults(){
+        const list=matches(),root=modalRoot(),target=root?.querySelector?.("[data-rtg-picker-results]");
+        if(!target)return;
+        target.innerHTML=deps.squadView.replacementPickerResultsMarkup({entries:list.slice(0,80),total:list.length,visibleCount:Math.min(80,list.length)});
+        bindResults();
+      }
+      const initial=matches();
+      deps.openModal(deps.squadView.replacementPickerMarkup({
+        target,role,allowAnyRole:area!=="lineup",entries:initial.slice(0,80),total:initial.length,
+        visibleCount:Math.min(80,initial.length),query,sourceFilter,rarityFilter:"all",
+        seasonOptions:[],teamOptions:[]
+      }),{className:"rtg-modal rtg-halloween-picker"});
+      bindResults();
+      modalRoot()?.querySelector?.("[data-rtg-picker-search]")?.addEventListener("input",e=>{query=e.target.value.trim();drawResults();});
+      modalRoot()?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(button=>button.addEventListener("click",()=>{
+        sourceFilter=button.dataset.rtgPickerSource;modalRoot()?.querySelectorAll?.("[data-rtg-picker-source]")?.forEach(b=>b.classList?.toggle("active",b===button));drawResults();
+      }));
+      modalRoot()?.querySelector?.("[data-rtg-picker-sort]")?.addEventListener("click",()=>{sortDesc=!sortDesc;drawResults();});
     }
     function openFormation() {
       if(match||!deps.openModal||!deps.squadView?.formationOptionsMarkup)return;
@@ -346,8 +358,20 @@
       const entries=(shared.gachaAcquiredCards||[]).map(meta=>({
         cardId:meta.cardId,playerId:meta.playerId,source:"RTG",player:resolveCard(meta.cardId)
       })).filter(x=>x.player);
+      let query="",role="all";
+      function matchList(){return entries.filter(e=>(!query||String(e.player.name||"").toLowerCase().includes(query.toLowerCase()))
+        &&(role==="all"||String(e.player.normalizedRole||e.player.position||"").toUpperCase()===role));}
+      function bindCards(){
+        modalRoot()?.querySelectorAll?.("[data-rtg-catalog-player]")?.forEach(btn=>btn.addEventListener("click",()=>openNativeDetail(btn.dataset.rtgCatalogPlayer)));
+      }
+      function updateResults(){
+        const list=matchList(),target=modalRoot()?.querySelector?.("[data-rtg-catalog-results]");
+        if(target){target.innerHTML=deps.squadView.catalogResultsMarkup({entries:list.slice(0,80),total:list.length});bindCards();}
+      }
       deps.openModal(deps.squadView.catalogMarkup({entries,total:entries.length}),{className:"rtg-modal rtg-halloween-picker"});
-      modalRoot()?.querySelectorAll?.("[data-rtg-catalog-player]")?.forEach(btn=>btn.addEventListener("click",()=>openNativeDetail(btn.dataset.rtgCatalogPlayer)));
+      bindCards();
+      modalRoot()?.querySelector?.("[data-rtg-catalog-search]")?.addEventListener("input",e=>{query=e.target.value.trim();updateResults();});
+      modalRoot()?.querySelectorAll?.("[data-rtg-catalog-role]")?.forEach(b=>b.addEventListener("click",()=>{role=b.dataset.rtgCatalogRole;updateResults();}));
     }
     function openCoaches() {
       if(!deps.openModal)return;
